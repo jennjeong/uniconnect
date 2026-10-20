@@ -4,6 +4,7 @@ import { BrandMark } from "../components/BrandMark"
 import { DateLine } from "../components/DateLine"
 import { ProposalControl } from "../components/ProposalControl"
 import { ScoreRing } from "../components/ScoreRing"
+import { TabBar } from "../components/TabBar"
 import { todayIso } from "../lib/date"
 import type { Industry, Match } from "../types"
 
@@ -138,39 +139,25 @@ export function GroupsPage({
       </div>
 
       <div className="match-filters">
-        <div className="match-tabs" role="tablist" aria-label="학생단체 보기">
-          {tabs.map((item) => (
-            <button
-              aria-selected={tab === item}
-              className={tab === item ? "match-tab active" : "match-tab"}
-              key={item}
-              onClick={() => pickTab(item)}
-              role="tab"
-              type="button"
-            >
-              {item}
-            </button>
-          ))}
-        </div>
+        <TabBar
+          items={tabs.map((item) => ({ value: item, label: item }))}
+          label="학생단체 보기"
+          onChange={pickTab}
+          value={tab}
+        />
         {tab === "분야별" && (
-          <div className="industry-chips" aria-label="분야">
-            {fields.map(([value, label]) => (
-              <button
-                aria-pressed={field === value}
-                className={field === value ? "industry-chip active" : "industry-chip"}
-                key={value}
-                onClick={(event) => {
-                  const order = fields.map(([item]) => item)
-                  setDirection(order.indexOf(value) >= order.indexOf(field) ? "forward" : "back")
-                  setField(value)
-                  event.currentTarget.scrollIntoView({ block: "nearest", inline: "center" })
-                }}
-                type="button"
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+          <TabBar
+            chips
+            items={fields.map(([value, label]) => ({ value, label }))}
+            label="분야"
+            onChange={(value, event) => {
+              const order = fields.map(([item]) => item)
+              setDirection(order.indexOf(value) >= order.indexOf(field) ? "forward" : "back")
+              setField(value)
+              event.currentTarget.scrollIntoView({ block: "nearest", inline: "center" })
+            }}
+            value={field}
+          />
         )}
       </div>
 

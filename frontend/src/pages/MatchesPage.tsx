@@ -3,6 +3,7 @@ import { useState } from "react"
 import { BrandMark } from "../components/BrandMark"
 import { ProposalControl } from "../components/ProposalControl"
 import { ScoreRing } from "../components/ScoreRing"
+import { TabBar } from "../components/TabBar"
 import type { Industry, Match, RequestStatus } from "../types"
 
 type Tab = "추천" | "인기" | "전체" | "업종별"
@@ -150,40 +151,26 @@ export function MatchesPage({
       </div>
 
       <div className="match-filters">
-        <div className="match-tabs" role="tablist" aria-label="브랜드 보기">
-          {tabs.map((item) => (
-            <button
-              aria-selected={tab === item}
-              className={tab === item ? "match-tab active" : "match-tab"}
-              key={item}
-              onClick={() => pickTab(item)}
-              role="tab"
-              type="button"
-            >
-              {item}
-            </button>
-          ))}
-        </div>
+        <TabBar
+          items={tabs.map((item) => ({ value: item, label: item }))}
+          label="브랜드 보기"
+          onChange={pickTab}
+          value={tab}
+        />
         {tab === "업종별" && (
-          <div className="industry-chips" aria-label="업종">
-            {industries.map(([value, label]) => (
-              <button
-                aria-pressed={industry === value}
-                className={industry === value ? "industry-chip active" : "industry-chip"}
-                key={value}
-                onClick={(event) => {
-                  const order = industries.map(([item]) => item)
-                  setDirection(order.indexOf(value) >= order.indexOf(industry) ? "forward" : "back")
-                  setIndustry(value)
-                  // The chip row scrolls sideways on phones; keep the pick in view.
-                  event.currentTarget.scrollIntoView({ block: "nearest", inline: "center" })
-                }}
-                type="button"
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+          <TabBar
+            chips
+            items={industries.map(([value, label]) => ({ value, label }))}
+            label="업종"
+            onChange={(value, event) => {
+              const order = industries.map(([item]) => item)
+              setDirection(order.indexOf(value) >= order.indexOf(industry) ? "forward" : "back")
+              setIndustry(value)
+              // The chip row scrolls sideways on phones; keep the pick in view.
+              event.currentTarget.scrollIntoView({ block: "nearest", inline: "center" })
+            }}
+            value={industry}
+          />
         )}
       </div>
 

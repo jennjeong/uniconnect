@@ -52,7 +52,9 @@ body {
 }
 
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
 }
 
@@ -66,7 +68,9 @@ button:disabled {
 }
 
 button:focus-visible,
-input:focus-visible {
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
   outline: 3px solid rgba(234, 166, 27, 0.5);
   outline-offset: 2px;
 }
@@ -296,11 +300,13 @@ input:focus-visible {
   stroke-width: 1.8;
 }
 
+/* Clipped sideways so cards sliding in never widen the page. */
 .main-content {
   width: calc(100% - 248px);
   max-width: 1440px;
   margin-left: 248px;
   padding: 0 40px 70px;
+  overflow-x: clip;
 }
 
 .topbar {
@@ -1392,9 +1398,45 @@ input:focus-visible {
 }
 
 .industry-chip.active {
-  border-color: var(--point-deep);
-  background: var(--point-tint);
   color: var(--point-strong);
+}
+
+/* The picked tab's or chip's highlight slides to the new pick (TabBar.tsx);
+   the buttons sit above it with see-through backgrounds. */
+.match-tabs,
+.industry-chips {
+  position: relative;
+}
+
+.tab-highlight {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 10px;
+  background: var(--point);
+  pointer-events: none;
+  transition:
+    transform 0.4s var(--ease-out),
+    width 0.4s var(--ease-out),
+    height 0.4s var(--ease-out);
+}
+
+.industry-chips .tab-highlight {
+  border: 1px solid var(--point-deep);
+  border-radius: 15px;
+  background: var(--point-tint);
+}
+
+.match-tab,
+.industry-chip {
+  position: relative;
+  z-index: 1;
+}
+
+.match-tab.active,
+.industry-chip.active {
+  border-color: transparent;
+  background: transparent;
 }
 
 .match-logo-wrap {
@@ -1563,6 +1605,13 @@ input:focus-visible {
 .create-head .section-title {
   margin: 0;
   line-height: 1;
+}
+
+/* Trimmed to the letters, so the kicker's capitals start at the box's top
+   edge and the title's baseline sits on its bottom edge. */
+.create-head .section-kicker,
+.create-head .section-title {
+  text-box: trim-both cap alphabetic;
 }
 
 .back-button {
@@ -3079,7 +3128,420 @@ input:focus-visible {
 }
 
 /* 내 정보 page: profile banner, activity counts that open their pages,
-   account details and logout. */
+   the public introduction with its editor button, account details and
+   logout. */
+.profile-public {
+  margin-top: 16px;
+}
+
+.profile-public-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profile-public-head .form-card-title {
+  margin-bottom: 4px;
+}
+
+.profile-public-head .form-card-caption {
+  margin: 0 0 12px;
+}
+
+.profile-public-head .detail-button {
+  height: 36px;
+  flex: 0 0 auto;
+  padding: 0 14px;
+  font-size: 11px;
+}
+
+.profile-public-intro {
+  margin: 0 0 12px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.profile-public-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.profile-public-summary li {
+  padding: 4px 10px;
+  border-radius: 10px;
+  background: var(--canvas);
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Profile editor (ProfileEditPage.tsx). */
+.profile-edit .form-card {
+  margin-top: 14px;
+}
+
+.field textarea,
+.edit-row input,
+.edit-row select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--canvas);
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.field textarea {
+  padding: 12px 14px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.edit-row input,
+.edit-row select {
+  height: 44px;
+  padding: 0 12px;
+}
+
+.field textarea:focus,
+.edit-row input:focus,
+.edit-row select:focus {
+  border-color: var(--point-deep);
+  background: var(--surface);
+}
+
+.field-count {
+  margin-left: 6px;
+  color: var(--muted);
+  font-style: normal;
+  font-weight: 600;
+}
+
+.edit-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 14px;
+}
+
+.edit-facts .field:nth-child(-n + 2) {
+  margin-top: 0;
+}
+
+.edit-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.edit-row {
+  display: grid;
+  align-items: center;
+  gap: 8px;
+}
+
+.edit-row.sns {
+  grid-template-columns: 120px minmax(0, 1fr) 150px 36px;
+}
+
+.edit-row.portfolio {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) 36px;
+}
+
+.edit-row .delete-button {
+  width: 36px;
+  height: 36px;
+}
+
+.add-row-button {
+  display: inline-flex;
+  height: 38px;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 0 14px;
+  border: 1px dashed var(--point-deep);
+  border-radius: 19px;
+  background: var(--point-soft);
+  color: var(--point-strong);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.add-row-button .icon {
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 2;
+}
+
+/* Messages (MessagesPage.tsx): one row per conversation. */
+.chat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-row {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: inherit;
+  text-align: left;
+}
+
+.chat-row.unread {
+  border-color: var(--point-line);
+  background: var(--point-soft);
+}
+
+.chat-row-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chat-row-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+}
+
+.chat-row-head strong {
+  font-size: 14px;
+}
+
+.chat-row-head small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+/* Previews keep to two lines. */
+.chat-row-preview {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.chat-row.unread .chat-row-preview {
+  color: var(--ink);
+  font-weight: 650;
+}
+
+.chat-row-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  align-self: start;
+  gap: 6px;
+}
+
+.chat-row-meta time {
+  color: var(--muted);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.chat-row-meta em,
+.message-count {
+  display: grid;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--point);
+  color: var(--ink);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.message-count {
+  position: absolute;
+  top: -5px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border: 2px solid var(--surface);
+  font-size: 9px;
+}
+
+.messages-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.messages-empty p {
+  margin: 0;
+}
+
+/* A conversation (ChatPage.tsx): bubbles, own ones on the right, and the
+   message box held at the bottom of the screen. The page fills the screen
+   so even a short thread keeps the box at the bottom. */
+.main-content:has(.chat-view) {
+  padding-bottom: 16px;
+}
+
+.chat-view {
+  display: flex;
+  min-height: calc(100dvh - 92px - 16px);
+  flex-direction: column;
+  padding-bottom: 0;
+}
+
+.chat-thread {
+  flex: 1;
+}
+
+.chat-head .detail-button {
+  height: 36px;
+  margin-left: auto;
+  padding: 0 14px;
+  font-size: 11px;
+}
+
+.chat-note {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.chat-thread {
+  display: flex;
+  min-height: 40vh;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 4px 0 16px;
+  list-style: none;
+}
+
+.chat-message {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  animation: rise-in 0.35s var(--ease-out) backwards;
+}
+
+.chat-message.mine {
+  align-items: flex-end;
+}
+
+.chat-day {
+  align-self: center;
+  margin: 8px 0;
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.chat-bubble {
+  max-width: min(72%, 520px);
+  padding: 11px 14px;
+  border: 1px solid var(--line);
+  border-radius: 18px 18px 18px 6px;
+  background: var(--surface);
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.chat-message.mine .chat-bubble {
+  border-color: var(--point);
+  border-radius: 18px 18px 6px 18px;
+  background: var(--point);
+}
+
+.chat-message time {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.chat-start {
+  align-self: center;
+  padding: 18px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.chat-composer {
+  position: sticky;
+  z-index: 5;
+  bottom: 16px;
+  padding-top: 8px;
+}
+
+.chat-composer .form-error {
+  margin: 0 0 6px;
+}
+
+.chat-input {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 7px 7px 7px 16px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: 0 10px 30px rgba(38, 29, 42, 0.1);
+}
+
+.chat-input:focus-within {
+  border-color: var(--point-deep);
+}
+
+.chat-input textarea {
+  min-height: 40px;
+  max-height: 120px;
+  flex: 1;
+  padding: 10px 0;
+  border: 0;
+  background: transparent;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: none;
+  field-sizing: content;
+}
+
+.chat-input textarea:focus-visible {
+  outline: none;
+}
+
+.chat-input .primary-button {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  padding: 0;
+  border-radius: 50%;
+}
 .profile-hero {
   display: flex;
   align-items: center;
@@ -3580,7 +4042,7 @@ input:focus-visible {
 .date-line {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   margin: 0 0 6px;
   color: var(--ink-soft);
   font-size: 11px;
@@ -3689,7 +4151,11 @@ input:focus-visible {
 .detail-event {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
+}
+
+.detail-event .form-card-title {
+  margin-bottom: 4px;
 }
 
 .detail-event > strong {
@@ -3704,7 +4170,7 @@ input:focus-visible {
 .detail-audience {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
   color: var(--ink-soft);
   font-size: 12px;
   font-weight: 650;
@@ -3745,14 +4211,110 @@ input:focus-visible {
   text-align: right;
 }
 
+.detail-subtitle {
+  margin: 18px 0 10px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.detail-sns,
+.detail-portfolio ul {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Icon tile, then the text with room between them. */
+.detail-sns li,
+.detail-portfolio li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.detail-portfolio li {
+  align-items: flex-start;
+}
+
+.detail-icon {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--point-tint);
+  color: var(--point-strong);
+}
+
+.detail-icon .icon,
+.cancel-button .icon {
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
+}
+
+.detail-sns li > span:nth-child(2),
+.detail-portfolio li > span:nth-child(2) {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.detail-sns small {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.detail-sns strong,
+.detail-portfolio strong {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.detail-sns em {
+  flex: 0 0 auto;
+  color: var(--point-strong);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.detail-portfolio small {
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.detail-portfolio {
+  grid-column: 1 / -1;
+}
+
 .detail-actions {
   display: flex;
   justify-content: flex-end;
+  gap: 8px;
   margin-top: 16px;
 }
 
 .detail-actions > * {
   min-width: 240px;
+}
+
+.detail-actions > .cancel-button {
+  display: inline-flex;
+  min-width: 140px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 /* Received proposals: tabs with counts, then one card per proposal. */
@@ -4211,8 +4773,10 @@ input:focus-visible {
     padding-bottom: 78px;
   }
 
+  /* With the body's room for the bottom menu, exactly one screen tall. */
   .app-shell {
     display: block;
+    min-height: calc(100dvh - 78px);
   }
 
   .sidebar {
@@ -4817,6 +5381,76 @@ input:focus-visible {
   }
 }
 
+@media (max-width: 720px) {
+  .detail-actions {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+  }
+
+  .detail-actions > .cancel-button {
+    min-width: 0;
+  }
+
+  .edit-facts {
+    grid-template-columns: 1fr;
+  }
+
+  .edit-facts .field:nth-child(2) {
+    margin-top: 14px;
+  }
+
+  /* SNS: kind, account and delete on one line, followers under them. */
+  .edit-row.sns {
+    grid-template-columns: 96px minmax(0, 1fr) 36px;
+  }
+
+  .edit-row.sns .followers {
+    grid-row: 2;
+    grid-column: 1 / 3;
+  }
+
+  .edit-row.sns .delete-button {
+    grid-row: 1;
+    grid-column: 3;
+  }
+
+  .edit-row.portfolio {
+    grid-template-columns: minmax(0, 1fr) 36px;
+  }
+
+  .edit-row.portfolio .detail {
+    grid-row: 2;
+    grid-column: 1;
+  }
+
+  .edit-row.portfolio .delete-button {
+    grid-row: 1;
+    grid-column: 2;
+  }
+
+  .chat-row {
+    gap: 12px;
+    padding: 12px 14px;
+  }
+
+  .chat-bubble {
+    max-width: 82%;
+  }
+
+  /* Above the bottom menu. */
+  .main-content:has(.chat-view) {
+    padding-bottom: 8px;
+  }
+
+  .chat-view {
+    min-height: calc(100dvh - 86px - 8px - 78px);
+  }
+
+  .chat-composer {
+    bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+}
+
 /* Small phones: give the company info enough width to stay on one line each,
    so the logo tile keeps a near-square shape. */
 @media (max-width: 360px) {
@@ -4975,7 +5609,7 @@ button:active:not(:disabled) {
   transition-duration: 0.08s;
 }
 
-:is(.stat-card, .kpi-card, .live-card, .pilot-card, .profile, .upcoming-item):active:not(
+:is(.stat-card, .kpi-card, .live-card, .pilot-card, .profile, .upcoming-item, .chat-row):active:not(
     :disabled
   ),
 .notification-list > button:active {
@@ -5129,6 +5763,11 @@ button:active:not(:disabled) {
   animation: toast-out 0.24s ease-in forwards;
 }
 
+.notify-panel.closing {
+  pointer-events: none;
+  animation: notify-up 0.22s ease-in forwards;
+}
+
 @media (max-width: 720px) {
   .modal.closing {
     animation-name: sheet-down;
@@ -5151,6 +5790,13 @@ button:active:not(:disabled) {
 @keyframes sheet-down {
   to {
     transform: translateY(100%);
+  }
+}
+
+@keyframes notify-up {
+  to {
+    opacity: 0;
+    transform: translateY(-14px);
   }
 }
 

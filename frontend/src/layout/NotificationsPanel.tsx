@@ -1,11 +1,12 @@
-import { useEffect, useRef, type RefObject } from "react"
+import { useContext, useEffect, useRef, type RefObject } from "react"
 
 import { Icon } from "../components/Icon"
+import { ClosingContext } from "../components/Presence"
 import type { NotificationItem } from "../lib/notifications"
 import type { NavLabel } from "../types"
 
-// Drops down under the bell in the top bar. Escape or a press anywhere
-// outside the panel and its bell closes it.
+// Drops down under the bell in the top bar and slides back up when closed.
+// Escape or a press anywhere outside the panel and its bell closes it.
 export function NotificationsPanel({
   items,
   toggleRef,
@@ -19,8 +20,10 @@ export function NotificationsPanel({
   onOpen: (label: NavLabel) => void
 }) {
   const panelRef = useRef<HTMLElement>(null)
+  const closing = useContext(ClosingContext)
 
   useEffect(() => {
+    if (closing) return
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose()
     }
@@ -34,10 +37,15 @@ export function NotificationsPanel({
       window.removeEventListener("keydown", closeOnEscape)
       document.removeEventListener("pointerdown", closeOutside)
     }
-  }, [onClose, toggleRef])
+  }, [closing, onClose, toggleRef])
 
   return (
-    <section aria-label="알림" className="notify-panel" id="notifications-panel" ref={panelRef}>
+    <section
+      aria-label="알림"
+      className={closing ? "notify-panel closing" : "notify-panel"}
+      id="notifications-panel"
+      ref={panelRef}
+    >
       <div className="notify-head">
         <span className="section-kicker dark">NOTIFICATIONS</span>
         <p className="section-title">새로운 소식</p>

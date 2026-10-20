@@ -3,16 +3,18 @@ import { DateLine } from "../components/DateLine"
 import { Icon } from "../components/Icon"
 import { ProposalControl } from "../components/ProposalControl"
 import { ScoreRing } from "../components/ScoreRing"
+import { profileLabels } from "../data/profile"
 import type { Match, RequestStatus } from "../types"
 
 // One brand (for student groups) or student group (for brands): who they
-// are, what they offer, and the proposal button.
+// are, what they offer, their SNS and portfolio, and ways to get in touch.
 export function MatchDetailPage({
   match,
   kind,
   done,
   status,
   onBack,
+  onChat,
   onPropose,
   onCancel,
 }: {
@@ -22,16 +24,21 @@ export function MatchDetailPage({
   done: boolean
   status?: RequestStatus
   onBack: () => void
+  // Opens the conversation with this brand or group.
+  onChat: () => void
   onPropose: () => void
   onCancel: () => void
 }) {
   const group = kind === "group"
+  const labels = profileLabels[group ? "학생단체" : "브랜드"]
   const facts = [
     ...(match.facts ?? []),
     ...(match.popularity !== undefined
       ? [{ label: "이번 학기 협찬", value: `${match.popularity}회` }]
       : []),
   ]
+  const sns = match.sns ?? []
+  const portfolio = match.portfolio ?? []
 
   return (
     <section className="page-view detail-view">
@@ -64,7 +71,7 @@ export function MatchDetailPage({
           <h3 className="form-card-title">{group ? "단체 소개" : "브랜드 소개"}</h3>
           {match.intro && <p>{match.intro}</p>}
           <div className="detail-offer">
-            <span>{group ? "협찬하면 얻는 것" : "제공하는 협찬"}</span>
+            <span>{labels.offer}</span>
             <strong>{match.offer}</strong>
           </div>
         </div>
@@ -83,9 +90,9 @@ export function MatchDetailPage({
           </div>
         )}
 
-        {facts.length > 0 && (
+        {(facts.length > 0 || sns.length > 0) && (
           <div className="form-card detail-facts">
-            <h3 className="form-card-title">{group ? "단체 정보" : "협찬 정보"}</h3>
+            <h3 className="form-card-title">{group ? "단체 정보" : "브랜드 정보"}</h3>
             <dl>
               {facts.map((fact) => (
                 <div key={fact.label}>
@@ -94,11 +101,52 @@ export function MatchDetailPage({
                 </div>
               ))}
             </dl>
+            {sns.length > 0 && (
+              <>
+                <h4 className="detail-subtitle">SNS</h4>
+                <ul className="detail-sns">
+                  {sns.map((account) => (
+                    <li key={`${account.platform}-${account.handle}`}>
+                      <span className="detail-icon">
+                        <Icon name="at" size={15} />
+                      </span>
+                      <span>
+                        <small>{account.platform}</small>
+                        <strong>{account.handle}</strong>
+                      </span>
+                      {account.followers && <em>{account.followers}</em>}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+        )}
+
+        {portfolio.length > 0 && (
+          <div className="form-card detail-portfolio">
+            <h3 className="form-card-title">{labels.portfolio}</h3>
+            <ul>
+              {portfolio.map((item) => (
+                <li key={item.title}>
+                  <span className="detail-icon">
+                    <Icon name="briefcase" size={15} />
+                  </span>
+                  <span>
+                    <strong>{item.title}</strong>
+                    {item.detail && <small>{item.detail}</small>}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
       </div>
 
       <div className="detail-actions">
+        <button className="cancel-button" onClick={onChat} type="button">
+          <Icon name="chat" size={16} /> 문의하기
+        </button>
         <ProposalControl
           done={done}
           status={status}

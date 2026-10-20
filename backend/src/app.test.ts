@@ -385,6 +385,130 @@ test("brand campaigns take an optional budget", async () => {
   await call("DELETE", `/events/${event.data.event.id}`, undefined, student)
 })
 
+test("accounts write the listing the other side sees", async () => {
+  const student = await login("학생단체")
+  const mine = (await call("GET", "/profile", undefined, student)).data.profile
+  assert.equal(mine.id, "syu-muse")
+  assert.equal(mine.sns.length, 2)
+
+  const draft = {
+    intro: "삼육대학교 밴드 동아리예요. 정기 공연을 열어요.",
+    offer: "관객 150명 · SNS 홍보",
+    tags: ["공연 특화", "밴드"],
+    facts: [
+      { label: "회원 수", value: "45명" },
+      { label: "위치", value: "브랜드 항목은 무시돼요" },
+    ],
+    sns: [{ platform: "인스타그램", handle: "@syu_muse", followers: "3,200명" }],
+    portfolio: [{ title: "가을 버스킹 데이", detail: "관객 160명" }],
+  }
+  assert.equal((await call("PUT", "/profile", { ...draft, intro: "짧아요" }, student)).status, 400)
+  const badSns = { ...draft, sns: [{ platform: "메신저", handle: "@x" }] }
+  assert.equal((await call("PUT", "/profile", badSns, student)).status, 400)
+  const saved = await call("PUT", "/profile", draft, student)
+  assert.equal(saved.status, 200)
+  assert.deepEqual(saved.data.profile.facts, [{ label: "회원 수", value: "45명" }])
+
+  // Brands see the new introduction right away.
+  const { groups } = (await call("GET", "/groups")).data
+  assert.equal(groups.find((group: { id: string }) => group.id === "syu-muse").offer, draft.offer)
+
+  // A new account is listed once it saves its introduction.
+  const sent = await call("POST", "/auth/email-code", { role: "브랜드", email: "hi@newbrand.co.kr" })
+  const verified = await call("POST", "/auth/email-code/verify", {
+    email: "hi@newbrand.co.kr",
+    code: sent.data.devCode,
+  })
+  const signup = await call("POST", "/auth/signup", {
+    role: "브랜드",
+    name: "새로운 브랜드",
+    type: "교육",
+    school: "",
+    email: "hi@newbrand.co.kr",
+    password: "brand-pass-123",
+    verificationToken: verified.data.verificationToken,
+    agreedToTerms: true,
+  })
+  const newBrand = signup.data.token as string
+  assert.equal((await call("GET", "/profile", undefined, newBrand)).data.profile, null)
+  // Chatting needs a listing first.
+  const early = await call("POST", "/conversations", { partnerId: "syu-muse" }, newBrand)
+  assert.equal(early.status, 409)
+  const created = await call(
+    "PUT",
+    "/profile",
+    { intro: "대학생을 위한 온라인 강의 플랫폼이에요.", offer: "수강권 50장" },
+    newBrand,
+  )
+  assert.equal(created.data.profile.industry, "education")
+  const { brands } = (await call("GET", "/brands")).data
+  assert.ok(brands.some((brand: { name: string }) => brand.name === "새로운 브랜드"))
+})
+
+test("a group's next event comes from its own calendar", async () => {
+  const student = await login("학생단체")
+  const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10)
+  const { event } = (
+    await call(
+      "POST",
+      "/events",
+      { name: "깜짝 버스킹", date: tomorrow, people: "80명", types: ["제품"] },
+      student,
+    )
+  ).data
+  const muse = (await call("GET", "/groups")).data.groups.find(
+    (group: { id: string }) => group.id === "syu-muse",
+  )
+  assert.equal(muse.eventName, "깜짝 버스킹")
+  assert.equal(muse.audience, 80)
+  await call("DELETE", `/events/${event.id}`, undefined, student)
+})
+
+test("student groups and brands message each other", async () => {
+  const student = await login("학생단체")
+  const brand = await login("브랜드")
+
+  const forBrand = (await call("GET", "/conversations", undefined, brand)).data.conversations
+  const withMuse = forBrand.find((item: { partner: { id: string } }) => item.partner.id === "syu-muse")
+  assert.equal(withMuse.unread, 1)
+  assert.equal(withMuse.partner.hasAccount, true)
+
+  // Opening it reads it; replying reaches the student group.
+  const opened = (await call("GET", `/conversations/${withMuse.id}`, undefined, brand)).data
+  assert.equal(opened.conversation.messages.length, 3)
+  assert.equal(opened.conversation.messages[0].mine, false)
+  assert.equal(opened.conversation.unread, 0)
+  const empty = await call("POST", `/conversations/${withMuse.id}/messages`, { text: " " }, brand)
+  assert.equal(empty.status, 400)
+  const reply = await call(
+    "POST",
+    `/conversations/${withMuse.id}/messages`,
+    { text: "좋아요, 쿠폰 디자인 시안을 보내 드릴게요." },
+    brand,
+  )
+  assert.equal(reply.status, 201)
+  assert.equal(reply.data.conversation.messages.at(-1).mine, true)
+
+  const forStudent = (await call("GET", "/conversations", undefined, student)).data.conversations
+  const withCoffee = forStudent.find(
+    (item: { partner: { id: string } }) => item.partner.id === "afternoon-coffee",
+  )
+  assert.equal(withCoffee.unread, 1)
+  assert.equal(withCoffee.lastMessage.text, "좋아요, 쿠폰 디자인 시안을 보내 드릴게요.")
+
+  // Starting a conversation twice opens the same one; partners must exist.
+  const started = await call("POST", "/conversations", { partnerId: "glowlab" }, student)
+  assert.equal(started.status, 201)
+  assert.equal(started.data.conversation.partner.hasAccount, false)
+  const again = await call("POST", "/conversations", { partnerId: "glowlab" }, student)
+  assert.equal(again.data.conversation.id, started.data.conversation.id)
+  assert.equal((await call("POST", "/conversations", { partnerId: "nope" }, student)).status, 404)
+
+  // Other accounts can't read it, and visitors have no conversations.
+  assert.equal((await call("GET", `/conversations/${started.data.conversation.id}`, undefined, brand)).status, 404)
+  assert.deepEqual((await call("GET", "/conversations")).data.conversations, [])
+})
+
 test("older data files gain the new collections and calendar dates", async () => {
   const { upgradeDatabase } = await import("./store.js")
   const old = {
@@ -395,8 +519,18 @@ test("older data files gain the new collections and calendar dates", async () =>
   assert.ok(upgraded.metricLog.length > 0)
   assert.equal(upgraded.report.targets.reach, 1100)
   assert.equal(upgraded.groups.length, 8)
-  assert.equal(upgraded.matches.브랜드[0].id, "syu-muse")
-  assert.ok(upgraded.brands.every((brand) => brand.intro))
+  assert.equal(upgraded.catalogVersion, 2)
+  assert.ok(upgraded.brands.every((brand) => brand.intro && brand.sns && brand.portfolio))
+  assert.equal(upgraded.conversations.length, 3)
+
+  // Version 2 catalogs keep their edits.
+  const edited = upgradeDatabase({
+    events: {},
+    catalogVersion: 2,
+    brands: [{ id: "afternoon-coffee", intro: "직접 고친 소개" }],
+    groups: [],
+  } as unknown as Parameters<typeof upgradeDatabase>[0])
+  assert.equal(edited.brands[0].intro, "직접 고친 소개")
   assert.equal(upgraded.requests.length, 4)
   assert.deepEqual(upgraded.sponsorships, {})
 

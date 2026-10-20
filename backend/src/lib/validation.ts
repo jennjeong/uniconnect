@@ -6,6 +6,15 @@ export const accountTypes: Record<Role, string[]> = {
   브랜드: ["카페 · 식음료", "뷰티 · 패션", "콘텐츠 · 미디어", "스포츠 · 웰니스", "교육", "기타"],
 }
 
+// Fixed facts each side's listing can fill in from 내 정보.
+// Keep in sync with frontend/src/data/profile.ts.
+export const factLabels: Record<Role, string[]> = {
+  학생단체: ["회원 수", "주요 활동", "행사 규모", "활동 기간"],
+  브랜드: ["위치", "제공 서비스", "선호 행사", "평균 응답"],
+}
+
+export const snsPlatforms = ["인스타그램", "유튜브", "틱톡", "블로그", "웹사이트", "기타"]
+
 // "기타" comes with a free-text typeNote on the event.
 export const sponsorTypes = ["현금", "제품", "서비스", "기타"]
 

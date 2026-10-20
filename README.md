@@ -18,6 +18,10 @@ Figma Make 프로젝트 [Create Web/App Service](https://www.figma.com/make/mhCa
 | 제안 | 브랜드에 협찬 제안을 보내고 수락·거절 결과를 확인 | 받은 제안: 학생단체가 보낸 제안을 수락하거나 거절 |
 | 일정 | 내 행사 달력 | 캠페인 달력 (예산 포함, 확정된 협찬 일정도 표시) |
 | 성과 | 성과 측정(현장 QR)과 리포트(PDF) | 성과 분석: 협찬별 집행액 · 쿠폰 · 방문 · 방문당 비용 · ROAS (목표를 달성하면 초록색) |
+| 소개 | 내 정보 → 편집하기: 소개, 협찬하면 얻는 것, 회원 수 · 활동 · 행사 규모, SNS, 지난 활동 | 내 정보 → 편집하기: 소개, 제공하는 협찬, 위치 · 제공 서비스, SNS, 포트폴리오 |
+| 메시지 | 브랜드 상세 정보의 문의하기, 상단 말풍선 버튼의 메시지 목록 | 단체 상세 정보의 문의하기, 상단 말풍선 버튼의 메시지 목록 |
+
+소개를 편집하면 상대 쪽 찾기와 상세 정보에 바로 반영되고, 학생단체의 '다음 행사'는 그 단체의 행사 달력에서 가져옵니다. 메시지는 열려 있는 대화에서 몇 초마다 새로 확인해서 상대의 답장이 바로 보입니다.
 
 두 화면은 연결되어 있습니다. 학생단체가 계정이 있는 브랜드(데모에서는 오후의 커피)에 제안하면 그 브랜드의 받은 제안에 도착하고, 브랜드가 수락하면 학생단체 화면에 `협찬 확정`이 표시되며 해당 행사는 `집행 예정`으로 바뀝니다.
 
@@ -52,14 +56,14 @@ npm run dev
 
 | 학생단체 | 브랜드 | 공통 |
 | --- | --- | --- |
-| `/matches`, `/matches/<브랜드 id>`, `/events`, `/measurement`, `/reports` | `/groups`, `/groups/<단체 id>`, `/inbox`, `/campaigns`, `/analytics` | `/` 대시보드, `/new` 등록, `/me` 내 정보 |
+| `/matches`, `/matches/<브랜드 id>`, `/events`, `/measurement`, `/reports` | `/groups`, `/groups/<단체 id>`, `/inbox`, `/campaigns`, `/analytics` | `/` 대시보드, `/new` 등록, `/me` 내 정보, `/me/edit` 소개 편집, `/messages`, `/messages/<대화 id>` |
 
 로그인하지 않았을 때는 주소에 맞는 유형의 화면을 보여 줍니다.
 
 ### 데이터
 
 - 처음 실행할 때 데모 데이터로 `backend/data/db.json`을 만들고, 이후 변경 사항을 여기에 저장합니다. (git에는 포함되지 않음)
-- 브랜드·학생단체 목록(소개와 협찬 정보 포함)은 앱에서 바꾸지 않는 데모 데이터라 서버를 켤 때마다 `seed.ts`의 최신 내용으로 채웁니다.
+- 브랜드·학생단체 목록은 각 계정이 내 정보에서 고친 소개를 저장합니다. 그 전 버전의 데이터 파일은 처음 한 번만 `seed.ts`의 최신 목록(SNS, 포트폴리오 포함)으로 바뀝니다.
 - 처음 상태로 되돌리려면 서버를 끄고 `backend/data/db.json`을 지운 뒤 다시 실행하세요.
 - JSON 파일 저장소는 프로토타입용입니다. 실제 서비스 전에는 데이터베이스로 바꿔야 합니다.
 
@@ -118,6 +122,12 @@ NODE_ENV=production npm start
 | DELETE | `/api/proposals/:matchId` | 협찬 제안 취소 (수락된 제안은 409) | 필요 |
 | GET | `/api/requests` | 브랜드가 받은 협찬 제안 (최신순, 로그인 전에는 데모 브랜드 것) | |
 | POST | `/api/requests/:id/accept` · `/decline` | 받은 제안 수락·거절 (브랜드만, 이미 답한 제안은 409) | 필요 |
+| GET | `/api/profile` | 내 소개(상대가 보는 목록 항목), 아직 없으면 `null` | 필요 |
+| PUT | `/api/profile` | 소개 저장 `{ intro, offer, tags, facts, sns, portfolio }` (처음 저장하면 목록에 등록) | 필요 |
+| GET | `/api/conversations` | 내 대화 목록 (상대, 마지막 메시지, 읽지 않은 수) | |
+| POST | `/api/conversations` | 대화 시작 `{ partnerId }` (이미 있으면 그 대화, 소개가 없으면 409) | 필요 |
+| GET | `/api/conversations/:id` | 대화의 모든 메시지 (읽음 처리) | 필요 |
+| POST | `/api/conversations/:id/messages` | 메시지 보내기 `{ text }` (1,000자까지) | 필요 |
 | GET | `/api/analytics` | 브랜드의 협찬별 집행액·쿠폰·방문·추정 매출·목표 ROAS (측정 중인 행사는 실시간 수치) | |
 | GET | `/api/metrics` | QR 스캔·쿠폰 수령·매장 방문 수 | |
 | POST | `/api/metrics/:kind` | `scans` · `coupons` · `visits` 1 증가하고 참여 기록 추가 (현장 참여 화면이 호출) | |
@@ -156,7 +166,7 @@ npm run typecheck
 │   └── src/
 │       ├── index.ts           서버 시작
 │       ├── app.ts             라우터 연결, 오류 처리, 빌드된 웹 제공
-│       ├── routes/            auth · matches · brands · groups · events · proposals · requests · metrics · report · analytics
+│       ├── routes/            auth · matches · brands · groups · events · proposals · requests · metrics · report · analytics · profile · conversations
 │       ├── middleware/        Bearer 토큰 세션
 │       ├── lib/               비밀번호 해시, 이메일 규칙, 메일 발송 자리, 입력 검증
 │       ├── data/seed.ts       데모 데이터와 데모 계정

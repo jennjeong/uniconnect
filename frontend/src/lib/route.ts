@@ -8,8 +8,11 @@ export type View = {
   page: NavLabel
   // Day the registration page opens on, while it is open.
   create?: string
-  // The 내 정보 page.
-  profile?: true
+  // The 내 정보 page, or its profile editor.
+  profile?: "page" | "edit"
+  // The message list, or one conversation.
+  messages?: true
+  chat?: string
   // Brand or group whose detail page is open.
   detail?: string
 }
@@ -48,7 +51,9 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "")
 
 export function viewPath(view: View) {
   if (view.create) return `${base}/new?date=${view.create}`
-  if (view.profile) return `${base}/me`
+  if (view.profile) return `${base}/me${view.profile === "edit" ? "/edit" : ""}`
+  if (view.chat) return `${base}/messages/${encodeURIComponent(view.chat)}`
+  if (view.messages) return `${base}/messages`
   const path = pagePaths[view.page]
   return `${base}/${view.detail ? `${path}/${encodeURIComponent(view.detail)}` : path}`
 }
@@ -59,7 +64,10 @@ export function readView(location: Location = window.location): View {
     const date = new URLSearchParams(location.search).get("date") ?? ""
     return { page: "대시보드", create: fromIsoDate(date) ? date : todayIso() }
   }
-  if (first === "me") return { page: "대시보드", profile: true }
+  if (first === "me") return { page: "대시보드", profile: second === "edit" ? "edit" : "page" }
+  if (first === "messages") {
+    return second ? { page: "대시보드", chat: decodeURIComponent(second) } : { page: "대시보드", messages: true }
+  }
   const page =
     (Object.keys(pagePaths) as NavLabel[]).find((label) => pagePaths[label] === first) ??
     "대시보드"

@@ -36,7 +36,7 @@ export function setToken(token: string | null) {
 }
 
 type RequestOptions = {
-  method?: "GET" | "POST" | "DELETE"
+  method?: "GET" | "POST" | "PUT" | "DELETE"
   body?: unknown
   query?: Record<string, string>
 }

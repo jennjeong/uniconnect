@@ -2,6 +2,7 @@ import { useRef } from "react"
 
 import logoHorizontal from "../assets/brand/uniconnect_horizontal.svg"
 import { Icon } from "../components/Icon"
+import { Presence } from "../components/Presence"
 import { initialOf } from "../lib/format"
 import type { NotificationItem } from "../lib/notifications"
 import type { Account, NavLabel } from "../types"
@@ -23,7 +24,9 @@ export function Topbar({
   hasUnread,
   notifications,
   notificationsOpen,
+  unreadMessages,
   onNavigate,
+  onOpenMessages,
   onToggleNotifications,
   onCloseNotifications,
   onOpenProfile,
@@ -39,7 +42,10 @@ export function Topbar({
   notifications: NotificationItem[]
   // The notifications panel hangs under the bell while this is true.
   notificationsOpen: boolean
+  // Messages not yet read, shown on the chat button.
+  unreadMessages: number
   onNavigate: (label: NavLabel) => void
+  onOpenMessages: () => void
   onToggleNotifications: () => void
   onCloseNotifications: () => void
   onOpenProfile: () => void
@@ -72,6 +78,15 @@ export function Topbar({
           (account ? (
             <>
               <button
+                className="icon-button"
+                aria-label={unreadMessages > 0 ? `메시지, 읽지 않은 ${unreadMessages}개` : "메시지"}
+                onClick={onOpenMessages}
+                type="button"
+              >
+                <Icon name="chat" size={18} />
+                {unreadMessages > 0 && <span className="message-count">{unreadMessages}</span>}
+              </button>
+              <button
                 className={notificationsOpen ? "icon-button active" : "icon-button"}
                 aria-controls="notifications-panel"
                 aria-expanded={notificationsOpen}
@@ -98,7 +113,7 @@ export function Topbar({
             </button>
           ))}
       </div>
-      {notificationsOpen && account && (
+      <Presence show={notificationsOpen && account !== null}>
         <NotificationsPanel
           items={notifications}
           toggleRef={bellRef}
@@ -108,7 +123,7 @@ export function Topbar({
             onNavigate(label)
           }}
         />
-      )}
+      </Presence>
     </header>
   )
 }

@@ -8,10 +8,12 @@ import { readSession } from "./middleware/session.js"
 import { analyticsRouter } from "./routes/analytics.js"
 import { authRouter } from "./routes/auth.js"
 import { brandsRouter } from "./routes/brands.js"
+import { conversationsRouter } from "./routes/conversations.js"
 import { eventsRouter } from "./routes/events.js"
 import { groupsRouter } from "./routes/groups.js"
 import { matchesRouter } from "./routes/matches.js"
 import { metricsRouter } from "./routes/metrics.js"
+import { profileRouter } from "./routes/profile.js"
 import { proposalsRouter } from "./routes/proposals.js"
 import { reportRouter } from "./routes/report.js"
 import { requestsRouter } from "./routes/requests.js"
@@ -26,7 +28,7 @@ export function createApp() {
       res.set({
         "Access-Control-Allow-Origin": origin,
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
       })
       if (req.method === "OPTIONS") {
         res.status(204).end()
@@ -52,6 +54,8 @@ export function createApp() {
   app.use("/api/metrics", metricsRouter)
   app.use("/api/report", reportRouter)
   app.use("/api/analytics", analyticsRouter)
+  app.use("/api/profile", profileRouter)
+  app.use("/api/conversations", conversationsRouter)
   app.use("/api", () => {
     throw new HttpError(404, "없는 API 경로예요.")
   })

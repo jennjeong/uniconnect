@@ -25,7 +25,8 @@ Run these from the repo root:
 ## Conventions
 
 - `frontend/src/types.ts` mirrors the API shapes in `backend/src/types.ts`.
-- Account types and sponsor types are listed in both `backend/src/lib/validation.ts` and the frontend (`data/roles.ts`, `pages/EventCreatePage.tsx`). Change them together.
+- Account types and sponsor types are listed in both `backend/src/lib/validation.ts` and the frontend (`data/roles.ts`, `pages/EventCreatePage.tsx`). Change them together. The same goes for profile fact labels and SNS platforms (`validation.ts` and `data/profile.ts`).
+- The brand and group catalogs are editable listings: each account's own listing is linked by `brandId`/`groupId` and edited from 내 정보. Recommended matches are the other catalog's top three, worked out in `backend/src/lib/catalog.ts`.
 - Student groups and brands have separate menus and pages (`data/navigation.ts`). A feature for one side gets its own page rather than a role branch inside the other side's page.
 - Every screen is a `View` with its own address (`lib/route.ts`). Change screens through App's `go` and `goBack`, never by setting state directly, so the browser's back and forward buttons and swipe gestures keep working.
 - Popups go inside `<Presence>` (`components/Presence.tsx`) so they animate closed however they are closed.

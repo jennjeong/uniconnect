@@ -1,6 +1,7 @@
 import { hashPassword } from "../lib/password.js"
 import type {
   Account,
+  Conversation,
   Database,
   Match,
   MetricEntry,
@@ -28,9 +29,16 @@ export const seedBrands: Match[] = [
     intro: "공릉동 캠퍼스 앞에서 시작한 스페셜티 카페예요. 대학생 행사에 음료 쿠폰과 운영비를 함께 지원해 왔어요.",
     facts: [
       { label: "위치", value: "공릉역 2번 출구 · 캠퍼스에서 1.2km" },
-      { label: "협찬 방식", value: "음료 쿠폰 + 현금" },
+      { label: "제공 서비스", value: "음료 쿠폰 · 현금 · 시음 부스" },
       { label: "선호 행사", value: "공연 · 축제 · 스터디" },
       { label: "평균 응답", value: "1일 이내" },
+    ],
+    sns: [
+      { platform: "인스타그램", handle: "@afternoon.coffee", followers: "8,700명" },
+    ],
+    portfolio: [
+      { title: "삼육대 뮤즈 가을 버스킹 데이 (2026.10)", detail: "쿠폰 150장 + 현금 20만원 · 추정 ROAS 243%" },
+      { title: "서울여대 러너스 봄 캠퍼스 페스티벌 (2026.05)", detail: "완주 기념 음료 80잔 · 매장 방문 61명" },
     ],
   },
   {
@@ -45,9 +53,17 @@ export const seedBrands: Match[] = [
     intro: "공연과 행사 스냅을 전문으로 하는 사진 스튜디오예요. 촬영본은 행사 다음 날까지 보내 드려요.",
     facts: [
       { label: "위치", value: "노원역 · 캠퍼스에서 2.4km" },
-      { label: "협찬 방식", value: "촬영 서비스" },
+      { label: "제공 서비스", value: "행사 스냅 · 프로필 촬영" },
       { label: "선호 행사", value: "공연 · 졸업 행사" },
       { label: "평균 응답", value: "2일" },
+    ],
+    sns: [
+      { platform: "인스타그램", handle: "@moment.studio", followers: "5,200명" },
+      { platform: "블로그", handle: "모먼트 촬영 후기" },
+    ],
+    portfolio: [
+      { title: "광운대 무브먼트 여름 쇼케이스 (2026.08)", detail: "스냅 600컷 · 다음 날 전달" },
+      { title: "과기대 졸업 전시 (2026.02)", detail: "졸업생 프로필 촬영 45명" },
     ],
   },
   {
@@ -62,9 +78,17 @@ export const seedBrands: Match[] = [
     intro: "20대를 위한 에너지 드링크 브랜드예요. 시험 기간과 체육 행사에 현물 협찬을 자주 해요.",
     facts: [
       { label: "위치", value: "온라인 · 전국 배송" },
-      { label: "협찬 방식", value: "현물 (음료)" },
+      { label: "제공 서비스", value: "에너지 드링크 · 시험 기간 키트" },
       { label: "선호 행사", value: "체육대회 · 시험 응원" },
       { label: "평균 응답", value: "3일" },
+    ],
+    sns: [
+      { platform: "인스타그램", handle: "@freshon_kr", followers: "2.4만 명" },
+      { platform: "유튜브", handle: "프레시온 TV", followers: "9,000명" },
+    ],
+    portfolio: [
+      { title: "5개 대학 시험 응원 (2026.06)", detail: "에너지 드링크 1,200개 배부" },
+      { title: "대학 연합 체육대회 (2026.05)", detail: "부스 운영 · 샘플 800개" },
     ],
   },
   {
@@ -79,9 +103,17 @@ export const seedBrands: Match[] = [
     intro: "비건 립밤과 스킨케어를 만드는 뷰티 브랜드예요. 축제 부스에서 샘플링 이벤트를 함께 운영해요.",
     facts: [
       { label: "위치", value: "성수동 · 팝업 운영" },
-      { label: "협찬 방식", value: "샘플 + 부스 운영" },
+      { label: "제공 서비스", value: "샘플링 · 부스 운영 · SNS 이벤트" },
       { label: "선호 행사", value: "축제 · 플리마켓" },
       { label: "평균 응답", value: "2일" },
+    ],
+    sns: [
+      { platform: "인스타그램", handle: "@glowlab.official", followers: "4.1만 명" },
+      { platform: "틱톡", handle: "@glowlab", followers: "1.8만 명" },
+    ],
+    portfolio: [
+      { title: "덕성여대 봄 축제 (2026.05)", detail: "샘플 500개 · 부스 방문 900명" },
+      { title: "성수 팝업 대학생 체험단 (2026.03)", detail: "체험단 40명 · 후기 120건" },
     ],
   },
   {
@@ -96,9 +128,16 @@ export const seedBrands: Match[] = [
     intro: "직접 로스팅한 원두와 디저트를 파는 캠퍼스 근처 카페예요. 신메뉴가 나오면 학생 행사와 함께 홍보해요.",
     facts: [
       { label: "위치", value: "석계역 · 캠퍼스에서 1.8km" },
-      { label: "협찬 방식", value: "음료 쿠폰" },
+      { label: "제공 서비스", value: "음료 쿠폰 · 디저트 세트" },
       { label: "선호 행사", value: "스터디 · 소모임" },
       { label: "평균 응답", value: "1일 이내" },
+    ],
+    sns: [
+      { platform: "인스타그램", handle: "@brewinglab", followers: "3,900명" },
+    ],
+    portfolio: [
+      { title: "광운대 코드랩 해커톤 (2025.12)", detail: "야식 디저트 140세트" },
+      { title: "신메뉴 시음 이벤트 (2026.09)", detail: "학생 280명 참여" },
     ],
   },
   {
@@ -113,9 +152,17 @@ export const seedBrands: Match[] = [
     intro: "러닝화와 러닝 용품을 파는 스포츠 브랜드예요. 달리기 대회와 체육대회에 기념품을 지원해요.",
     facts: [
       { label: "위치", value: "온라인 · 전국 배송" },
-      { label: "협찬 방식", value: "현물 (양말 · 굿즈)" },
+      { label: "제공 서비스", value: "러닝 양말 · 기념품 · 페이스메이커" },
       { label: "선호 행사", value: "러닝 · 체육대회" },
       { label: "평균 응답", value: "3일" },
+    ],
+    sns: [
+      { platform: "인스타그램", handle: "@runup.sports", followers: "1.6만 명" },
+      { platform: "기타", handle: "스트라바 런업 크루", followers: "1,100명" },
+    ],
+    portfolio: [
+      { title: "서울여대 러너스 여름 나이트 런 (2026.07)", detail: "양말 80켤레 · 페이스메이커 2명" },
+      { title: "대학 연합 마라톤 (2026.04)", detail: "완주 기념품 300개" },
     ],
   },
   {
@@ -130,9 +177,17 @@ export const seedBrands: Match[] = [
     intro: "대학생을 위한 스터디 플래너와 학습 앱을 만들어요. 시험 기간 행사와 학술 동아리를 주로 지원해요.",
     facts: [
       { label: "위치", value: "온라인" },
-      { label: "협찬 방식", value: "플래너 · 앱 이용권" },
+      { label: "제공 서비스", value: "스터디 플래너 · 앱 이용권" },
       { label: "선호 행사", value: "시험 응원 · 학술제" },
       { label: "평균 응답", value: "2일" },
+    ],
+    sns: [
+      { platform: "인스타그램", handle: "@studymate_app", followers: "2.2만 명" },
+      { platform: "블로그", handle: "스터디메이트 공부법" },
+    ],
+    portfolio: [
+      { title: "기말고사 응원 키트 (2026.06)", detail: "플래너 600권 배부" },
+      { title: "학술제 경품 (2025.11)", detail: "앱 이용권 120장" },
     ],
   },
   {
@@ -147,9 +202,16 @@ export const seedBrands: Match[] = [
     intro: "축제 현장에서 바로 인화되는 포토부스를 운영해요. 행사 로고를 넣은 프레임도 만들어 드려요.",
     facts: [
       { label: "위치", value: "서울 전 지역 출장" },
-      { label: "협찬 방식", value: "포토부스 운영" },
+      { label: "제공 서비스", value: "포토부스 운영 · 로고 프레임 제작" },
       { label: "선호 행사", value: "축제 · 공연" },
       { label: "평균 응답", value: "2일" },
+    ],
+    sns: [
+      { platform: "인스타그램", handle: "@filmlog.booth", followers: "1.1만 명" },
+    ],
+    portfolio: [
+      { title: "덕성여대 봄 축제 (2026.05)", detail: "현장 인화 1,800장" },
+      { title: "삼육대 뮤즈 겨울 정기 공연 (2025.12)", detail: "공연 로고 프레임 제작" },
     ],
   },
   {
@@ -164,9 +226,16 @@ export const seedBrands: Match[] = [
     intro: "샐러드와 건강식 도시락을 파는 매장이에요. 운동 동아리와 웰니스 행사에 쿠폰을 지원해요.",
     facts: [
       { label: "위치", value: "공릉역 · 캠퍼스에서 1.5km" },
-      { label: "협찬 방식", value: "식사 쿠폰" },
+      { label: "제공 서비스", value: "식사 쿠폰 · 도시락 케이터링" },
       { label: "선호 행사", value: "운동 · 웰니스" },
       { label: "평균 응답", value: "2일" },
+    ],
+    sns: [
+      { platform: "인스타그램", handle: "@greenday_salad", followers: "2,600명" },
+    ],
+    portfolio: [
+      { title: "서울여대 러너스 가을 5K (2025.11)", detail: "완주자 샐러드 쿠폰 70장" },
+      { title: "헬스 동아리 바디프로필 챌린지 (2026.04)", detail: "도시락 120개" },
     ],
   },
   {
@@ -181,9 +250,16 @@ export const seedBrands: Match[] = [
     intro: "공연 전 헤어와 메이크업을 맡아 주는 살롱이에요. 무대에 서는 단체에 현장 스타일링을 지원해요.",
     facts: [
       { label: "위치", value: "태릉입구역 · 캠퍼스에서 2.1km" },
-      { label: "협찬 방식", value: "현장 스타일링" },
+      { label: "제공 서비스", value: "현장 헤어 · 메이크업 스타일링" },
       { label: "선호 행사", value: "공연 · 패션쇼" },
       { label: "평균 응답", value: "3일" },
+    ],
+    sns: [
+      { platform: "인스타그램", handle: "@mood.salon", followers: "3,300명" },
+    ],
+    portfolio: [
+      { title: "광운대 무브먼트 여름 쇼케이스 (2026.08)", detail: "무대 스타일링 18명" },
+      { title: "대학 연합 패션쇼 (2025.11)", detail: "모델 스타일링 24명" },
     ],
   },
   {
@@ -198,9 +274,17 @@ export const seedBrands: Match[] = [
     intro: "행사 하이라이트 영상을 만드는 영상 제작팀이에요. 완성 영상은 브랜드와 단체 SNS에 함께 올려요.",
     facts: [
       { label: "위치", value: "서울 전 지역 출장" },
-      { label: "협찬 방식", value: "영상 제작" },
+      { label: "제공 서비스", value: "하이라이트 영상 · 숏폼 편집" },
       { label: "선호 행사", value: "공연 · 대회" },
       { label: "평균 응답", value: "4일" },
+    ],
+    sns: [
+      { platform: "유튜브", handle: "클립스튜디오", followers: "2.7만 명" },
+      { platform: "인스타그램", handle: "@clip.studio", followers: "6,100명" },
+    ],
+    portfolio: [
+      { title: "과기대 소리샘 가을 정기 공연 (2026.09)", detail: "하이라이트 영상 조회 1.5만 회" },
+      { title: "광운대 코드랩 해커톤 스케치 (2025.12)", detail: "숏폼 4편" },
     ],
   },
   {
@@ -215,9 +299,17 @@ export const seedBrands: Match[] = [
     intro: "온라인 어학 강의 플랫폼이에요. 학술 행사와 대회 경품으로 수강권을 지원해요.",
     facts: [
       { label: "위치", value: "온라인" },
-      { label: "협찬 방식", value: "강의 수강권" },
+      { label: "제공 서비스", value: "강의 수강권 · 모의 토익" },
       { label: "선호 행사", value: "학술제 · 대회" },
       { label: "평균 응답", value: "2일" },
+    ],
+    sns: [
+      { platform: "유튜브", handle: "잉글리시업", followers: "4.5만 명" },
+      { platform: "인스타그램", handle: "@englishup_kr", followers: "1.3만 명" },
+    ],
+    portfolio: [
+      { title: "학술제 경품 (2025.11)", detail: "수강권 30장" },
+      { title: "대학 연합 모의 토익 (2026.03)", detail: "응시 210명" },
     ],
   },
 ]
@@ -240,8 +332,16 @@ export const seedGroups: Match[] = [
     facts: [
       { label: "회원 수", value: "42명" },
       { label: "주요 활동", value: "정기 공연 · 버스킹" },
-      { label: "SNS", value: "인스타그램 3,100명" },
-      { label: "지난 협찬", value: "8회" },
+      { label: "행사 규모", value: "회당 관객 120~160명" },
+      { label: "활동 기간", value: "2014년부터" },
+    ],
+    sns: [
+      { platform: "인스타그램", handle: "@syu_muse", followers: "3,100명" },
+      { platform: "유튜브", handle: "삼육대 뮤즈", followers: "1,400명" },
+    ],
+    portfolio: [
+      { title: "가을 버스킹 데이 (2026.10)", detail: "오후의 커피 협찬 · 관객 160명 · QR 참여 128명" },
+      { title: "봄 정기 공연 (2026.05)", detail: "관객 140명 · 공연 영상 조회 3,200회" },
     ],
   },
   {
@@ -260,8 +360,16 @@ export const seedGroups: Match[] = [
     facts: [
       { label: "회원 수", value: "65명" },
       { label: "주요 활동", value: "브이로그 · 숏폼 제작" },
-      { label: "SNS", value: "유튜브 1.2만 명" },
-      { label: "지난 협찬", value: "12회" },
+      { label: "행사 규모", value: "콘텐츠당 평균 조회 5,000회" },
+      { label: "활동 기간", value: "2021년부터" },
+    ],
+    sns: [
+      { platform: "유튜브", handle: "노원 크리에이터스", followers: "1.2만 명" },
+      { platform: "인스타그램", handle: "@nowon.creators", followers: "6,800명" },
+    ],
+    portfolio: [
+      { title: "기말고사 응원 이벤트 (2026.06)", detail: "오후의 커피 협찬 · 쿠폰 사용 88장" },
+      { title: "캠퍼스 맛집 지도 (2026.03)", detail: "숏폼 6편 · 누적 조회 4.1만 회" },
     ],
   },
   {
@@ -280,8 +388,16 @@ export const seedGroups: Match[] = [
     facts: [
       { label: "회원 수", value: "38명" },
       { label: "주요 활동", value: "주간 러닝 · 5K 대회" },
-      { label: "SNS", value: "인스타그램 1,800명" },
-      { label: "지난 협찬", value: "5회" },
+      { label: "행사 규모", value: "대회당 참가자 60~80명" },
+      { label: "활동 기간", value: "2019년부터" },
+    ],
+    sns: [
+      { platform: "인스타그램", handle: "@swu_runners", followers: "1,800명" },
+      { platform: "기타", handle: "스트라바 러너스 클럽", followers: "210명" },
+    ],
+    portfolio: [
+      { title: "봄 캠퍼스 페스티벌 (2026.05)", detail: "오후의 커피 협찬 · 매장 방문 61명" },
+      { title: "여름 나이트 런 (2026.07)", detail: "참가자 72명 · 완주율 96%" },
     ],
   },
   {
@@ -300,8 +416,16 @@ export const seedGroups: Match[] = [
     facts: [
       { label: "회원 수", value: "50명" },
       { label: "주요 활동", value: "쇼케이스 · 대회 출전" },
-      { label: "SNS", value: "인스타그램 5,400명" },
-      { label: "지난 협찬", value: "9회" },
+      { label: "행사 규모", value: "공연당 관객 250~300명" },
+      { label: "활동 기간", value: "2012년부터" },
+    ],
+    sns: [
+      { platform: "인스타그램", handle: "@kw_movement", followers: "5,400명" },
+      { platform: "유튜브", handle: "무브먼트 KW", followers: "8,900명" },
+    ],
+    portfolio: [
+      { title: "여름 쇼케이스 (2026.08)", detail: "관객 280명 · 영상 조회 2.3만 회" },
+      { title: "전국 대학 댄스 대회 (2026.05)", detail: "단체 부문 2위" },
     ],
   },
   {
@@ -318,10 +442,18 @@ export const seedGroups: Match[] = [
     audience: 1000,
     intro: "덕성여자대학교 총학생회예요. 축제와 간식 나눔 같은 전교생 행사를 운영해요.",
     facts: [
-      { label: "대표", value: "재학생 약 6,000명" },
+      { label: "회원 수", value: "재학생 약 6,000명 대표" },
       { label: "주요 활동", value: "축제 · 복지 행사" },
-      { label: "SNS", value: "인스타그램 4,200명" },
-      { label: "지난 협찬", value: "15회" },
+      { label: "행사 규모", value: "행사당 1,000명 안팎" },
+      { label: "활동 기간", value: "매년 선출 · 2026 학생회" },
+    ],
+    sns: [
+      { platform: "인스타그램", handle: "@dswu_council", followers: "4,200명" },
+      { platform: "기타", handle: "카카오톡 채널 학생회 소식", followers: "3,000명" },
+    ],
+    portfolio: [
+      { title: "봄 축제 (2026.05)", detail: "방문 3,500명 · 브랜드 부스 6곳" },
+      { title: "시험 기간 간식 나눔 (2026.04)", detail: "간식 900개 배부" },
     ],
   },
   {
@@ -340,8 +472,15 @@ export const seedGroups: Match[] = [
     facts: [
       { label: "회원 수", value: "35명" },
       { label: "주요 활동", value: "정기 공연 · 합동 공연" },
-      { label: "SNS", value: "인스타그램 2,300명" },
-      { label: "지난 협찬", value: "6회" },
+      { label: "행사 규모", value: "공연당 관객 180~200명" },
+      { label: "활동 기간", value: "1986년부터" },
+    ],
+    sns: [
+      { platform: "인스타그램", handle: "@seoultech_sorisaem", followers: "2,300명" },
+    ],
+    portfolio: [
+      { title: "가을 정기 공연 (2026.09)", detail: "관객 190명 · 좌석 매진" },
+      { title: "연합 밴드 페스티벌 (2026.06)", detail: "5개 대학 합동 공연" },
     ],
   },
   {
@@ -360,8 +499,16 @@ export const seedGroups: Match[] = [
     facts: [
       { label: "회원 수", value: "28명" },
       { label: "주요 활동", value: "연탄 나눔 · 교육 봉사" },
-      { label: "SNS", value: "인스타그램 900명" },
-      { label: "지난 협찬", value: "4회" },
+      { label: "행사 규모", value: "행사당 봉사자 40~50명" },
+      { label: "활동 기간", value: "2010년부터" },
+    ],
+    sns: [
+      { platform: "인스타그램", handle: "@syu_nanum", followers: "900명" },
+      { platform: "블로그", handle: "나눔누리 활동 일지", followers: "월 1,200회 방문" },
+    ],
+    portfolio: [
+      { title: "겨울 연탄 나눔 (2025.12)", detail: "연탄 3,000장 · 80가구" },
+      { title: "어린이 과학 교실 (2026.07)", detail: "초등학생 60명" },
     ],
   },
   {
@@ -380,17 +527,87 @@ export const seedGroups: Match[] = [
     facts: [
       { label: "회원 수", value: "45명" },
       { label: "주요 활동", value: "해커톤 · 스터디" },
-      { label: "SNS", value: "깃허브 · 블로그" },
-      { label: "지난 협찬", value: "3회" },
+      { label: "행사 규모", value: "행사당 참가자 120~150명" },
+      { label: "활동 기간", value: "2017년부터" },
+    ],
+    sns: [
+      { platform: "웹사이트", handle: "github.com/kw-codelab", followers: "저장소 40개" },
+      { platform: "블로그", handle: "코드랩 기술 블로그", followers: "월 2,000회 방문" },
+    ],
+    portfolio: [
+      { title: "교내 해커톤 (2025.12)", detail: "참가 138명 · 32팀" },
+      { title: "AI 스터디 발표회 (2026.06)", detail: "발표 12팀" },
     ],
   },
 ]
 
-// A catalog's best three by score, as each side's recommended matches.
-export const topMatches = (catalog: Match[]) =>
-  structuredClone(catalog)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 3)
+// Messages the demo accounts have exchanged (KST). 노원 크리에이터스 and
+// 모먼트 스튜디오 have no account, so their side is history only.
+export function seedConversations(): Conversation[] {
+  const at = (time: string) => new Date(time).toISOString()
+  return [
+    {
+      id: "chat-muse-coffee",
+      groupId: "syu-muse",
+      brandId: "afternoon-coffee",
+      messages: [
+        {
+          id: "msg-muse-1",
+          from: "group",
+          text: "안녕하세요! 11월 27일 종강 공연에 협찬을 제안드리고 싶어요. 쿠폰은 공연 당일 현장에서 나눠 드리면 될까요?",
+          at: at("2026-10-19T13:10:00+09:00"),
+        },
+        {
+          id: "msg-coffee-1",
+          from: "brand",
+          text: "반가워요! 현장 배부도 좋고, QR로 받는 디지털 쿠폰이면 매장 방문까지 집계돼서 더 좋아요. 예상 관객은 몇 명인가요?",
+          at: at("2026-10-19T15:42:00+09:00"),
+        },
+        {
+          id: "msg-muse-2",
+          from: "group",
+          text: "120명 정도 예상하고 있어요. 공연 포스터와 영상에 로고도 넣어 드릴 수 있어요!",
+          at: at("2026-10-19T16:05:00+09:00"),
+        },
+      ],
+      readAt: { group: at("2026-10-19T16:05:00+09:00"), brand: at("2026-10-19T15:42:00+09:00") },
+    },
+    {
+      id: "chat-nowon-coffee",
+      groupId: "nowon-creators",
+      brandId: "afternoon-coffee",
+      messages: [
+        {
+          id: "msg-nowon-1",
+          from: "group",
+          text: "브이로그에 매장 방문 장면을 넣어도 될까요? 촬영하기 좋은 시간대가 궁금해요.",
+          at: at("2026-10-18T11:20:00+09:00"),
+        },
+        {
+          id: "msg-coffee-2",
+          from: "brand",
+          text: "평일 오후 2~5시가 한산해서 촬영하기 좋아요. 미리 알려 주시면 자리를 마련해 둘게요.",
+          at: at("2026-10-18T14:02:00+09:00"),
+        },
+      ],
+      readAt: { group: at("2026-10-18T14:02:00+09:00"), brand: at("2026-10-18T14:02:00+09:00") },
+    },
+    {
+      id: "chat-muse-moment",
+      groupId: "syu-muse",
+      brandId: "moment-studio",
+      messages: [
+        {
+          id: "msg-muse-3",
+          from: "group",
+          text: "종강 공연 스냅 촬영 협찬이 가능한지 문의드려요. 공연은 2시간 정도예요.",
+          at: at("2026-10-17T10:30:00+09:00"),
+        },
+      ],
+      readAt: { group: at("2026-10-17T10:30:00+09:00") },
+    },
+  ]
+}
 
 // Proposals the demo brand has received from student groups (KST).
 export function seedRequests(): SponsorRequest[] {
@@ -572,6 +789,7 @@ export async function createSeed(): Promise<Database> {
     type: "공연 동아리",
     school: "삼육대학교",
     email: "muse@syu.ac.kr",
+    groupId: "syu-muse",
     passwordHash,
     termsAgreedAt: createdAt,
     createdAt,
@@ -593,12 +811,10 @@ export async function createSeed(): Promise<Database> {
     accounts: [muse, coffee],
     sessions: [],
     emailCodes: [],
-    matches: {
-      학생단체: topMatches(seedBrands),
-      브랜드: topMatches(seedGroups),
-    },
     brands: structuredClone(seedBrands),
     groups: structuredClone(seedGroups),
+    catalogVersion: 2,
+    conversations: seedConversations(),
     requests: seedRequests(),
     sponsorships: { [coffee.id]: seedSponsorships() },
     events: {

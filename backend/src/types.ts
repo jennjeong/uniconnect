@@ -10,6 +10,14 @@ export type Industry =
   | "beauty"
   | "education"
 
+// An SNS account on a listing, like 인스타그램 @syu_muse with 3,100명.
+export type SnsAccount = { platform: string; handle: string; followers?: string }
+
+// Brands: past collaborations; student groups: past events and sponsorships.
+export type PortfolioItem = { title: string; detail: string }
+
+// A brand or student group listing that the other side browses. Accounts
+// edit their own listing from 내 정보.
 export type Match = {
   id: string
   name: string
@@ -27,9 +35,12 @@ export type Match = {
   eventName?: string
   eventDate?: string
   audience?: number
-  // Detail page: a short introduction and key facts.
+  // Detail page: a short introduction, key facts (labels per side in
+  // lib/validation.ts), SNS accounts and a portfolio.
   intro?: string
   facts?: { label: string; value: string }[]
+  sns?: SnsAccount[]
+  portfolio?: PortfolioItem[]
 }
 
 export type EventStatus = "매칭 중" | "집행 예정" | "측정 완료"
@@ -56,9 +67,11 @@ export type Account = {
   type: string
   school: string
   email: string
-  // Brand accounts listed in the brand catalog: their catalog id, which
-  // receives the proposals student groups send.
+  // The account's own listing: brands in the brand catalog (which also
+  // receives the proposals student groups send), student groups in the
+  // group catalog.
   brandId?: string
+  groupId?: string
   passwordHash: string
   termsAgreedAt: string
   createdAt: string
@@ -161,16 +174,32 @@ export type Report = {
   valueBreakdown: { type: string; value: number }[]
 }
 
+// One side of a conversation: the student group or the brand.
+export type ChatSide = "group" | "brand"
+
+export type ChatMessage = { id: string; from: ChatSide; text: string; at: string }
+
+// Messages between a student group and a brand, by their listing ids.
+export type Conversation = {
+  id: string
+  groupId: string
+  brandId: string
+  messages: ChatMessage[]
+  // When each side last read the conversation.
+  readAt: Partial<Record<ChatSide, string>>
+}
+
 export type Database = {
   accounts: Account[]
   sessions: Session[]
   emailCodes: EmailCode[]
-  // Recommended partners for each side: brands for student groups and vice versa.
-  matches: Record<Role, Match[]>
-  // Every brand student groups can browse; matches.학생단체 is its top three.
+  // Every brand student groups can browse, and every group brands can.
+  // Each side's recommended matches are the other catalog's top three.
   brands: Match[]
-  // Every student group brands can browse; matches.브랜드 is its top three.
   groups: Match[]
+  // 2 once the catalogs carry SNS and portfolios (store.ts upgrades older files).
+  catalogVersion?: number
+  conversations: Conversation[]
   // Proposals from student groups to brands, answered by the brand.
   requests: SponsorRequest[]
   // Finished sponsorships, keyed by brand account id.

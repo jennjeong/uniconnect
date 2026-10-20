@@ -1,21 +1,13 @@
 import { randomUUID } from "node:crypto"
 import { Router } from "express"
 
+import { groupIndustries } from "../lib/catalog.js"
 import { HttpError } from "../lib/errors.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
-import type { Account, Industry, RequestStatus, SponsorRequest } from "../types.js"
+import type { Account, RequestStatus, SponsorRequest } from "../types.js"
 
 export const proposalsRouter = Router()
-
-// How a student group's proposal is filed in the brand's inbox.
-const groupIndustries: Record<string, Industry> = {
-  "공연 동아리": "performance",
-  "학술 동아리": "education",
-  "봉사 동아리": "wellness",
-  학생회: "performance",
-  "연합 동아리": "content",
-}
 
 // Ids the account proposed to, with each brand's answer so far. Only brands
 // with an account answer; the rest stay "sent".

@@ -2,6 +2,7 @@ import { useState } from "react"
 
 import { BrandMark } from "../components/BrandMark"
 import { Icon } from "../components/Icon"
+import { TabBar } from "../components/TabBar"
 import { dDayLabel, formatDateTime, formatDay } from "../lib/date"
 import type { RequestStatus, SponsorRequest } from "../types"
 
@@ -130,21 +131,20 @@ export function InboxPage({
         <p className="inbox-hint">학생단체가 보낸 제안을 확인하고 협찬 여부를 정해 주세요.</p>
       </div>
 
-      <div className="match-tabs inbox-tabs" role="tablist" aria-label="제안 상태">
-        {tabs.map((item) => (
-          <button
-            aria-selected={tab === item.status}
-            className={tab === item.status ? "match-tab active" : "match-tab"}
-            key={item.status}
-            onClick={() => setTab(item.status)}
-            role="tab"
-            type="button"
-          >
-            {item.label}
-            <em>{requests.filter((request) => request.status === item.status).length}</em>
-          </button>
-        ))}
-      </div>
+      <TabBar
+        items={tabs.map((item) => ({
+          value: item.status,
+          label: (
+            <>
+              {item.label}
+              <em>{requests.filter((request) => request.status === item.status).length}</em>
+            </>
+          ),
+        }))}
+        label="제안 상태"
+        onChange={setTab}
+        value={tab}
+      />
 
       {list.length === 0 ? (
         <p className="day-empty inbox-empty" key={tab}>

@@ -5,12 +5,12 @@ import { config } from "./config.js"
 import {
   createSeed,
   seedBrands,
+  seedConversations,
   seedGroups,
   seedMetricLog,
   seedReport,
   seedRequests,
   seedSponsorships,
-  topMatches,
 } from "./data/seed.js"
 import { toIsoDate } from "./lib/dates.js"
 import type { Database } from "./types.js"
@@ -36,11 +36,21 @@ export async function loadDatabase() {
 // Fills in data added after a db.json was created, so existing accounts,
 // sessions and events survive an update.
 export function upgradeDatabase(stored: Database) {
-  // The brand and group catalogs are seed data the app never edits, so they
-  // always come from the current seed, along with each side's top picks.
-  stored.brands = structuredClone(seedBrands)
-  stored.groups = structuredClone(seedGroups)
-  stored.matches = { 학생단체: topMatches(seedBrands), 브랜드: topMatches(seedGroups) }
+  // Before version 2 nobody could edit the catalogs and they were refreshed
+  // from the seed on every start, so older files take the current seed once
+  // (with SNS and portfolios). From then on, edits made in 내 정보 stay.
+  if ((stored.catalogVersion ?? 1) < 2) {
+    stored.brands = structuredClone(seedBrands)
+    stored.groups = structuredClone(seedGroups)
+    stored.catalogVersion = 2
+  }
+  // Recommended matches are worked out from the catalogs now.
+  delete (stored as { matches?: unknown }).matches
+  stored.conversations ??= seedConversations()
+  const demoStudent = stored.accounts?.find(
+    (account) => account.id === stored.demoAccountIds?.학생단체,
+  )
+  if (demoStudent) demoStudent.groupId ??= "syu-muse"
   stored.metricLog ??= seedMetricLog()
   stored.report ??= structuredClone(seedReport)
   stored.requests ??= seedRequests()

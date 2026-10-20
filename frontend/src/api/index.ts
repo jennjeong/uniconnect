@@ -1,10 +1,12 @@
 import type {
   Account,
+  Conversation,
   EventItem,
   Match,
   MetricEntry,
   MetricKind,
   Metrics,
+  ProfileDraft,
   Report,
   RequestStatus,
   Role,
@@ -87,6 +89,24 @@ export const api = {
       { method: "POST" },
     ),
   analytics: () => request<{ sponsorships: Sponsorship[] }>("/analytics"),
+
+  profile: () => request<{ profile: Match | null }>("/profile"),
+  saveProfile: (body: ProfileDraft) =>
+    request<{ profile: Match }>("/profile", { method: "PUT", body }),
+
+  conversations: () => request<{ conversations: Conversation[] }>("/conversations"),
+  startConversation: (partnerId: string) =>
+    request<{ conversation: Conversation }>("/conversations", {
+      method: "POST",
+      body: { partnerId },
+    }),
+  conversation: (id: string) =>
+    request<{ conversation: Conversation }>(`/conversations/${encodeURIComponent(id)}`),
+  sendMessage: (id: string, text: string) =>
+    request<{ conversation: Conversation }>(
+      `/conversations/${encodeURIComponent(id)}/messages`,
+      { method: "POST", body: { text } },
+    ),
 
   metrics: () => request<{ metrics: Metrics }>("/metrics"),
   metricLog: (kind?: MetricKind) =>

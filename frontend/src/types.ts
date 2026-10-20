@@ -11,6 +11,11 @@ export type Industry =
   | "beauty"
   | "education"
 
+export type SnsAccount = { platform: string; handle: string; followers?: string }
+
+// Brands: past collaborations; student groups: past events and sponsorships.
+export type PortfolioItem = { title: string; detail: string }
+
 export type Match = {
   id: string
   name: string
@@ -27,10 +32,15 @@ export type Match = {
   eventName?: string
   eventDate?: string
   audience?: number
-  // Detail page: a short introduction and key facts.
+  // Detail page: a short introduction, key facts, SNS and a portfolio.
   intro?: string
   facts?: { label: string; value: string }[]
+  sns?: SnsAccount[]
+  portfolio?: PortfolioItem[]
 }
+
+// The parts of its listing an account writes itself in 내 정보.
+export type ProfileDraft = Pick<Match, "intro" | "offer" | "tags" | "facts" | "sns" | "portfolio">
 
 export type EventStatus = "매칭 중" | "집행 예정" | "측정 완료"
 
@@ -55,8 +65,10 @@ export type Account = {
   type: string
   school: string
   email: string
-  // Brand accounts: the catalog id that receives student proposals.
+  // The account's own listing: brands in the brand catalog, student
+  // groups in the group catalog.
   brandId?: string
+  groupId?: string
   createdAt: string
 }
 
@@ -106,6 +118,25 @@ export type Sponsorship = {
   sales: number
   // ROAS goal in percent.
   targetRoas: number
+}
+
+export type ChatMessage = { id: string; text: string; at: string; mine: boolean }
+
+// A conversation with a brand (for student groups) or a group (for brands).
+export type Conversation = {
+  id: string
+  partner: {
+    id: string
+    name: string
+    category: string
+    industry: Industry
+    school?: string
+    // Messages only reach partners who have an account.
+    hasAccount: boolean
+  }
+  lastMessage: { text: string; at: string; mine: boolean } | null
+  unread: number
+  messages?: ChatMessage[]
 }
 
 export type Report = {

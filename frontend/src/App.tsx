@@ -36,20 +36,25 @@ import { EventCreatePage } from "./pages/EventCreatePage"
 import { EventsPage } from "./pages/EventsPage"
 import { GroupsPage } from "./pages/GroupsPage"
 import { InboxPage } from "./pages/InboxPage"
+import { ChatPage } from "./pages/ChatPage"
 import { MatchDetailPage } from "./pages/MatchDetailPage"
 import { MatchesPage } from "./pages/MatchesPage"
 import { MeasurementPage } from "./pages/MeasurementPage"
+import { MessagesPage } from "./pages/MessagesPage"
+import { ProfileEditPage } from "./pages/ProfileEditPage"
 import { ProfilePage, type ActivityItem } from "./pages/ProfilePage"
 import { ReportsPage } from "./pages/ReportsPage"
 import { ReportExport } from "./report/ReportExport"
 import type {
   Account,
+  Conversation,
   EventItem,
   Match,
   MetricKind,
   Metrics,
   ModalName,
   NavLabel,
+  ProfileDraft,
   Report,
   Role,
   Session,
@@ -87,6 +92,9 @@ function App() {
   const [groups, setGroups] = useState<Match[]>([])
   const [requests, setRequests] = useState<SponsorRequest[]>([])
   const [sponsorships, setSponsorships] = useState<Sponsorship[]>([])
+  // The account's own listing (null until written) and its conversations.
+  const [listing, setListing] = useState<Match | null>(null)
+  const [conversations, setConversations] = useState<Conversation[]>([])
   const [report, setReport] = useState<Report | null>(null)
   // Day the 내 행사 calendar opens on, such as a just-registered event's.
   const [eventsFocus, setEventsFocus] = useState<string | undefined>(undefined)
@@ -110,7 +118,9 @@ function App() {
   const page = pageFor(role, view.page)
   // Day the registration page opens on; null while that page is closed.
   const creating = view.create ?? null
-  const profileOpen = view.profile === true && account !== null
+  const profileOpen = view.profile !== undefined && account !== null
+  const chatOpen = view.chat !== undefined && account !== null
+  const unreadMessages = conversations.reduce((sum, item) => sum + item.unread, 0)
   // Brands for student groups, student groups for brands.
   const catalog = students ? brands : groups
   const detailMatch = view.detail
@@ -155,7 +165,8 @@ function App() {
   // page on screen.
   useEffect(() => {
     if (!authReady) return
-    const usable = view.page === page && (account !== null || (!view.profile && !view.create))
+    const usable =
+      view.page === page && (account !== null || (!view.profile && !view.create && !view.chat))
     if (!usable) go({ page }, true)
   })
 
@@ -222,6 +233,36 @@ function App() {
     }
   }, [authReady, role, accountId, showNotice])
 
+  // The account's own listing and conversations; the list refreshes every
+  // 20 seconds so the chat button shows new messages.
+  useEffect(() => {
+    if (!accountId) {
+      setListing(null)
+      setConversations([])
+      return
+    }
+    let cancelled = false
+    api
+      .profile()
+      .then((result) => {
+        if (!cancelled) setListing(result.profile)
+      })
+      .catch(() => {})
+    const loadConversations = () =>
+      api
+        .conversations()
+        .then((result) => {
+          if (!cancelled) setConversations(result.conversations)
+        })
+        .catch(() => {})
+    loadConversations()
+    const timer = window.setInterval(loadConversations, 20_000)
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+    }
+  }, [accountId])
+
   useEffect(() => {
     let cancelled = false
     Promise.all([api.metrics(), api.report()])
@@ -264,7 +305,19 @@ function App() {
 
   const navigate = (label: NavLabel) => go({ page: label })
 
-  const openProfile = () => go({ page, profile: true })
+  const openProfile = () => go({ page, profile: "page" })
+
+  const openMessages = () => go({ page, messages: true })
+
+  // Keeps the conversation list (latest message first) in step with an open
+  // conversation.
+  const updateConversation = useCallback((updated: Conversation) => {
+    setConversations((current) =>
+      [{ ...updated, messages: undefined }, ...current.filter((item) => item.id !== updated.id)].sort(
+        (a, b) => (b.lastMessage?.at ?? "").localeCompare(a.lastMessage?.at ?? ""),
+      ),
+    )
+  }, [])
 
   const openDetail = (match: Match) => go({ page, detail: match.id })
 
@@ -294,7 +347,7 @@ function App() {
     // Keep showing the same side after logging out.
     if (account) setPreviewRole(account.role)
     setAccount(null)
-    if (view.profile || view.create) go({ page: view.page }, true)
+    if (view.profile || view.create || view.chat) go({ page: view.page }, true)
     setNotificationsOpen(false)
   }
 
@@ -399,6 +452,37 @@ function App() {
       showNotice(`${match.name}에 보낸 제안을 취소했어요.`)
     } catch (error) {
       handleError(error)
+    }
+  }
+
+  // 문의하기 on a detail page: opens (or starts) the conversation with it.
+  const openChat = async (match: Match) => {
+    if (!account) {
+      requireLogin("로그인하면 문의를 보낼 수 있어요.")
+      return
+    }
+    try {
+      const { conversation } = await api.startConversation(match.id)
+      updateConversation(conversation)
+      go({ page, chat: conversation.id })
+    } catch (error) {
+      handleError(error)
+      // The other side needs to see who is asking: write an introduction first.
+      if (error instanceof ApiError && error.status === 409) go({ page, profile: "edit" })
+    }
+  }
+
+  // Returns the problem to show on the form, or null once saved.
+  const saveProfile = async (draft: ProfileDraft) => {
+    try {
+      const { profile } = await api.saveProfile(draft)
+      setListing(profile)
+      goBack({ page, profile: "page" })
+      showNotice(`소개를 저장했어요. ${students ? "브랜드" : "학생단체"}가 바로 볼 수 있어요.`)
+      return null
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) handleError(error)
+      return errorMessage(error)
     }
   }
 
@@ -522,14 +606,52 @@ function App() {
         />
       )
     }
+    if (profileOpen && account && view.profile === "edit") {
+      return (
+        <ProfileEditPage
+          role={role}
+          listing={listing}
+          onCancel={() => goBack({ page, profile: "page" })}
+          onSave={saveProfile}
+        />
+      )
+    }
     if (profileOpen && account) {
       return (
         <ProfilePage
           account={account}
+          listing={listing}
           activity={activity}
           onBack={() => goBack({ page })}
+          onEdit={() => go({ page, profile: "edit" })}
           onNavigate={navigate}
           onLogout={logout}
+        />
+      )
+    }
+    if (chatOpen && view.chat) {
+      const browsePage: NavLabel = students ? "추천 매칭" : "단체 찾기"
+      return (
+        <ChatPage
+          id={view.chat}
+          onBack={() => goBack({ page, messages: true })}
+          onChange={updateConversation}
+          onOpenPartner={(partnerId) =>
+            catalog.some((match) => match.id === partnerId)
+              ? go({ page: browsePage, detail: partnerId })
+              : showNotice("상세 정보를 열 수 없는 상대예요.")
+          }
+        />
+      )
+    }
+    if (view.messages) {
+      return (
+        <MessagesPage
+          conversations={conversations}
+          loggedIn={account !== null}
+          onBack={() => goBack({ page })}
+          onLogin={() => openAuth("login")}
+          onOpen={(conversation) => go({ page, chat: conversation.id })}
         />
       )
     }
@@ -641,10 +763,16 @@ function App() {
             creating !== null
               ? createLabel(role)
               : profileOpen
-                ? "내 정보"
-                : detailMatch
-                  ? detailMatch.name
-                  : undefined
+                ? view.profile === "edit"
+                  ? "소개 편집"
+                  : "내 정보"
+                : chatOpen
+                  ? (conversations.find((item) => item.id === view.chat)?.partner.name ?? "메시지")
+                  : view.messages
+                    ? "메시지"
+                    : detailMatch
+                      ? detailMatch.name
+                      : undefined
           }
           activeNav={page}
           account={account}
@@ -652,7 +780,9 @@ function App() {
           hasUnread={!notificationsRead}
           notifications={notifications}
           notificationsOpen={notificationsOpen}
+          unreadMessages={unreadMessages}
           onNavigate={navigate}
+          onOpenMessages={openMessages}
           onToggleNotifications={() => {
             setNotificationsOpen((open) => !open)
             setNotificationsRead(true)
@@ -668,7 +798,17 @@ function App() {
         <div
           className={fromHistory ? "page-enter from-history" : "page-enter"}
           hidden={detailMatch !== undefined}
-          key={`${role}:${creating !== null ? "create" : profileOpen ? "profile" : page}`}
+          key={`${role}:${
+            creating !== null
+              ? "create"
+              : profileOpen
+                ? `profile-${view.profile}`
+                : chatOpen
+                  ? `chat-${view.chat}`
+                  : view.messages
+                    ? "messages"
+                    : page
+          }`}
         >
           {renderPage()}
         </div>
@@ -683,6 +823,7 @@ function App() {
               done={proposals.includes(detailMatch.id)}
               status={statuses[detailMatch.id]}
               onBack={() => goBack({ page })}
+              onChat={() => openChat(detailMatch)}
               onPropose={() => propose(detailMatch)}
               onCancel={() => cancelProposal(detailMatch)}
             />
@@ -690,7 +831,7 @@ function App() {
         )}
       </main>
 
-      {creating === null && !profileOpen && !detailMatch && (
+      {creating === null && !profileOpen && !chatOpen && !view.messages && !detailMatch && (
         <button
           className="create-fab"
           aria-label={createLabel(role)}
