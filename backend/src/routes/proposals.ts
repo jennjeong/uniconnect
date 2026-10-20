@@ -16,8 +16,10 @@ proposalsRouter.post("/", async (req, res) => {
   const account = requireAccount(req)
   const matchId = String(req.body?.matchId ?? "")
   const database = getDatabase()
-  if (!database.matches[account.role].some((match) => match.id === matchId)) {
-    throw new HttpError(404, "추천 목록에 없는 상대예요.")
+  // Student groups can propose to any brand in the catalog, not only the top picks.
+  const partners = account.role === "학생단체" ? database.brands : database.matches[account.role]
+  if (!partners.some((match) => match.id === matchId)) {
+    throw new HttpError(404, "목록에 없는 상대예요.")
   }
 
   const current = database.proposals[account.id] ?? []

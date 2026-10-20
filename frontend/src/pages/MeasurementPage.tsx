@@ -1,27 +1,58 @@
-import { Icon, type IconName } from "../components/Icon"
-import type { MetricKind, Metrics } from "../types"
+import { useEffect, useState } from "react"
 
-const liveCards: { kind: MetricKind; label: string; icon: IconName }[] = [
-  { kind: "scans", label: "QR 스캔", icon: "scan" },
-  { kind: "coupons", label: "쿠폰 수령", icon: "file" },
-  { kind: "visits", label: "매장 방문", icon: "store" },
-]
+import { api } from "../api"
+import { Icon } from "../components/Icon"
+import { metricInfo, metricKinds } from "../data/metrics"
+import { formatDateTime, formatFullDate } from "../lib/date"
+import { percent } from "../lib/format"
+import type { MetricEntry, MetricKind, Metrics, Report } from "../types"
 
-const testButtons: { kind: MetricKind; label: string }[] = [
-  { kind: "scans", label: "QR 스캔 +1" },
-  { kind: "coupons", label: "쿠폰 수령 +1" },
-  { kind: "visits", label: "방문 확인 +1" },
-]
+// How often the counts and the activity feed refresh while this page is open.
+const refreshMs = 10_000
 
 export function MeasurementPage({
   metrics,
+  report,
+  onMetrics,
   onOpenQr,
-  onRecord,
+  onShowLog,
 }: {
   metrics: Metrics
+  report: Report | null
+  // Receives fresh counts from each refresh.
+  onMetrics: (metrics: Metrics) => void
   onOpenQr: () => void
-  onRecord: (kind: MetricKind) => void
+  // Opens the participation history; without a kind, all of it.
+  onShowLog: (kind?: MetricKind) => void
 }) {
+  const [entries, setEntries] = useState<MetricEntry[]>([])
+
+  useEffect(() => {
+    let cancelled = false
+    const load = () =>
+      Promise.all([api.metricLog(), api.metrics()])
+        .then(([log, latest]) => {
+          if (cancelled) return
+          setEntries(log.entries)
+          onMetrics(latest.metrics)
+        })
+        .catch(() => {
+          // Keep showing the last data; the next refresh tries again.
+        })
+    load()
+    const timer = window.setInterval(load, refreshMs)
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+    }
+  }, [onMetrics])
+
+  const funnel: { kind: MetricKind; note: string }[] = [
+    { kind: "scans", note: "현장에서 QR을 스캔했어요" },
+    { kind: "coupons", note: `스캔한 사람의 ${percent(metrics.coupons, metrics.scans)}%가 받았어요` },
+    { kind: "visits", note: `쿠폰 받은 사람의 ${percent(metrics.visits, metrics.coupons)}%가 왔어요` },
+  ]
+
   return (
     <section className="page-view measurement-view">
       <div className="view-intro measurement-intro">
@@ -30,38 +61,102 @@ export function MeasurementPage({
           <p>현장 반응을 실시간으로 측정해요</p>
           <small>고유 QR과 쿠폰 데이터를 행사 성과로 안전하게 집계합니다.</small>
         </div>
-        <button className="primary-button" onClick={onOpenQr} type="button">
-          <Icon name="scan" size={18} /> 현장 QR 열기
+        <button
+          className="primary-button qr-open-button"
+          disabled={!report}
+          onClick={onOpenQr}
+          type="button"
+        >
+          <Icon name="scan" size={15} /> 현장 QR 열기
         </button>
       </div>
-      <div className="live-metrics">
-        {liveCards.map((card) => (
-          <article className="live-card" key={card.kind}>
-            <div className="live-icon">
-              <Icon name={card.icon} />
-            </div>
-            <span>{card.label}</span>
-            <strong>{metrics[card.kind]}</strong>
-            <small>가을 버스킹 데이</small>
-          </article>
-        ))}
+
+      <div className="measure-bar">
+        {report && (
+          <span className="measure-event">
+            <Icon name="calendar" size={15} />
+            {report.eventName} · {formatFullDate(report.eventDate)}
+          </span>
+        )}
+        <span className="live-badge">
+          <i aria-hidden="true" /> 실시간 집계 중
+        </span>
+        {entries[0] && (
+          <span className="measure-updated">마지막 참여 {formatDateTime(entries[0].at)}</span>
+        )}
       </div>
-      <div className="measurement-console">
-        <div>
-          <span className="section-kicker dark">MVP DEMO CONTROL</span>
-          <p className="section-title">측정 이벤트 테스트</p>
-          <small>파일럿에서는 실제 QR·쿠폰 로그가 자동으로 반영됩니다.</small>
-        </div>
-        <div className="console-actions">
-          {testButtons.map((button) => (
+
+      <div className="live-metrics">
+        {metricKinds.map((kind) => {
+          const target = report?.targets[kind]
+          return (
             <button
-              key={button.kind}
-              onClick={() => onRecord(button.kind)}
+              className="live-card"
+              key={kind}
+              onClick={() => onShowLog(kind)}
               type="button"
             >
-              {button.label}
+              <div className="live-card-top">
+                <div className="live-icon">
+                  <Icon name={metricInfo[kind].icon} size={17} />
+                </div>
+                <span>{metricInfo[kind].label}</span>
+              </div>
+              <strong>{metrics[kind].toLocaleString("ko-KR")}</strong>
+              {target !== undefined && (
+                <small className={metrics[kind] >= target ? "good" : ""}>
+                  목표 {target} · {metrics[kind] >= target ? "달성" : `${target - metrics[kind]} 남음`}
+                </small>
+              )}
             </button>
-          ))}
+          )
+        })}
+      </div>
+
+      <div className="measure-grid">
+        <div className="measure-card">
+          <p className="section-title">참여 전환</p>
+          <div className="measure-funnel">
+            {funnel.map((step) => (
+              <div className="measure-step" key={step.kind}>
+                <div className="measure-step-head">
+                  <strong>{metricInfo[step.kind].label}</strong>
+                  <span>{metrics[step.kind].toLocaleString("ko-KR")}명</span>
+                </div>
+                <div className="measure-track">
+                  <i style={{ width: `${percent(metrics[step.kind], metrics.scans)}%` }} />
+                </div>
+                <small>{step.note}</small>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="measure-card">
+          <div className="measure-card-head">
+            <p className="section-title">실시간 참여 기록</p>
+            <button className="subtle-link" onClick={() => onShowLog()} type="button">
+              전체 보기 <Icon name="chevron" size={15} />
+            </button>
+          </div>
+          {entries.length === 0 ? (
+            <p className="day-empty">아직 참여 기록이 없어요.</p>
+          ) : (
+            <ol className="activity-feed">
+              {entries.slice(0, 5).map((entry) => (
+                <li key={entry.id}>
+                  <span className={`activity-kind kind-${entry.kind}`}>
+                    {metricInfo[entry.kind].label}
+                  </span>
+                  <div>
+                    <strong>{entry.participant}</strong>
+                    <small>{entry.detail}</small>
+                  </div>
+                  <time dateTime={entry.at}>{formatDateTime(entry.at)}</time>
+                </li>
+              ))}
+            </ol>
+          )}
         </div>
       </div>
     </section>

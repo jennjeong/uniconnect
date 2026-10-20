@@ -3,7 +3,16 @@ import { Icon } from "../components/Icon"
 import { initialOf } from "../lib/format"
 import type { Account, NavLabel } from "../types"
 
+// "2026 FALL SEMESTER" from today's date.
+function semesterLabel(date = new Date()) {
+  const month = date.getMonth() + 1
+  const season =
+    month >= 9 ? "FALL" : month >= 7 ? "SUMMER" : month >= 3 ? "SPRING" : "WINTER"
+  return `${date.getFullYear()} ${season} SEMESTER`
+}
+
 export function Topbar({
+  title,
   activeNav,
   account,
   authReady,
@@ -13,6 +22,8 @@ export function Topbar({
   onOpenProfile,
   onLogin,
 }: {
+  // Overrides the page name, e.g. on the new event page.
+  title?: string
   activeNav: NavLabel
   account: Account | null
   // False while a saved session is being checked, so the login button doesn't flash.
@@ -35,9 +46,11 @@ export function Topbar({
           <img src={logoHorizontal} alt="" width={128} height={30} />
         </button>
         <div className="topbar-heading">
-          <span className="eyebrow">2026 FALL SEMESTER</span>
+          <span className="eyebrow">{semesterLabel()}</span>
           <p className="page-title">
-            {activeNav !== "대시보드"
+            {title
+              ? title
+              : activeNav !== "대시보드"
               ? activeNav
               : account
                 ? `반가워요, ${account.name}`

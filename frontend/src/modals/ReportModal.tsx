@@ -1,11 +1,15 @@
 import { Modal } from "../components/Modal"
-import type { Metrics } from "../types"
+import { metricInfo, metricKinds } from "../data/metrics"
+import { formatWon, roasSummary } from "../lib/kpis"
+import type { Metrics, Report } from "../types"
 
 export function ReportModal({
+  report,
   metrics,
   onClose,
   onDownload,
 }: {
+  report: Report
   metrics: Metrics
   onClose: () => void
   onDownload: () => void
@@ -15,29 +19,32 @@ export function ReportModal({
       <div className="report-detail">
         <div className="report-detail-score">
           <span>추정 ROAS</span>
-          <strong>243%</strong>
-          <small>목표 대비 +43%</small>
+          <strong>{report.roas}%</strong>
+          <small>
+            목표 {report.targets.roas}%보다 {roasSummary(report)}
+          </small>
         </div>
         <div className="report-detail-rows">
+          {metricKinds.map((kind) => (
+            <div key={kind}>
+              <span>{metricInfo[kind].label}</span>
+              <strong>
+                {metrics[kind].toLocaleString("ko-KR")}명
+                <small> / 목표 {report.targets[kind]}명</small>
+              </strong>
+            </div>
+          ))}
           <div>
-            <span>QR 스캔</span>
-            <strong>{metrics.scans}명</strong>
+            <span>도달 인원</span>
+            <strong>{report.reach.toLocaleString("ko-KR")}명</strong>
           </div>
           <div>
-            <span>쿠폰 수령</span>
-            <strong>{metrics.coupons}명</strong>
-          </div>
-          <div>
-            <span>방문 확인</span>
-            <strong>{metrics.visits}명</strong>
-          </div>
-          <div>
-            <span>예상 협찬 가치</span>
-            <strong>680,000원</strong>
+            <span>협찬 가치</span>
+            <strong>{formatWon(report.sponsorValue)}</strong>
           </div>
         </div>
         <button className="primary-button wide" onClick={onDownload} type="button">
-          리포트 다운로드
+          PDF 리포트 다운로드
         </button>
       </div>
     </Modal>

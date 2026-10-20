@@ -185,8 +185,10 @@ input:focus-visible {
   font-size: 10px;
 }
 
+/* Next event card at the bottom of the sidebar; opens it on the calendar. */
 .pilot-card {
   display: flex;
+  width: 100%;
   flex-direction: column;
   margin-top: auto;
   padding: 17px;
@@ -194,6 +196,11 @@ input:focus-visible {
   border-radius: var(--radius-md);
   background: var(--point-tint);
   color: var(--ink);
+  text-align: left;
+}
+
+.pilot-card:hover {
+  border-color: var(--point-deep);
 }
 
 .pilot-kicker {
@@ -214,20 +221,21 @@ input:focus-visible {
   font-size: 11px;
 }
 
-.pilot-progress {
-  height: 5px;
-  margin: 15px 0 7px;
-  overflow: hidden;
-  border-radius: 3px;
-  background: var(--point-line);
+.pilot-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
 }
 
-.pilot-progress span {
-  display: block;
-  width: 68%;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--point-deep);
+.d-day {
+  padding: 3px 9px;
+  border-radius: 10px;
+  background: var(--point);
+  color: var(--ink);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
 }
 
 .pilot-card small {
@@ -377,7 +385,6 @@ input:focus-visible {
 
 .icon-button .icon,
 .primary-button .icon,
-.text-link .icon,
 .proposal-button .icon,
 .toast .icon {
   stroke: currentColor;
@@ -440,7 +447,7 @@ input:focus-visible {
 .welcome-copy {
   position: relative;
   z-index: 2;
-  padding: 24px 240px 24px 34px;
+  padding: 24px 370px 24px 34px;
 }
 
 .welcome-copy .section-kicker {
@@ -461,13 +468,6 @@ input:focus-visible {
   font-style: normal;
 }
 
-.welcome-footer {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 16px;
-}
-
 .welcome-description {
   margin: 0;
   color: #6e6873;
@@ -476,7 +476,6 @@ input:focus-visible {
   word-break: keep-all;
 }
 
-.text-link,
 .subtle-link,
 .more-button {
   display: inline-flex;
@@ -490,15 +489,23 @@ input:focus-visible {
   font-weight: 750;
 }
 
-/* Laid out at its original 420x286 size, then scaled down into the banner. */
+/* Laid out at its original 420x286 size, then scaled down into the banner,
+   left of the bottom-right corner that holds the button. */
 .connection-art {
   position: absolute;
   top: 50%;
-  right: 4px;
+  right: 184px;
   width: 420px;
   height: 286px;
-  transform: translateY(-50%) scale(0.5);
+  transform: translateY(-50%) scale(0.42);
   transform-origin: right center;
+}
+
+.welcome-action {
+  position: absolute;
+  z-index: 3;
+  right: 24px;
+  bottom: 20px;
 }
 
 @container (min-width: 600px) {
@@ -510,10 +517,19 @@ input:focus-visible {
 @container (max-width: 779px) {
   .welcome-copy {
     padding-right: 34px;
+    padding-bottom: 14px;
   }
 
   .connection-art {
     display: none;
+  }
+
+  /* Below the text, still at the right edge (beats .detail-button's inline-flex). */
+  .welcome-panel .welcome-action {
+    position: static;
+    display: flex;
+    width: fit-content;
+    margin: 0 22px 20px auto;
   }
 }
 
@@ -740,12 +756,34 @@ input:focus-visible {
   margin-top: 16px;
 }
 
+/* A button that opens the page behind its number. Flex column keeps the
+   content at the top (buttons center it vertically by default). */
 .stat-card {
+  display: flex;
   min-height: 112px;
+  flex-direction: column;
   padding: 17px 19px;
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: var(--surface);
+  color: inherit;
+  text-align: left;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+@media (hover: hover) {
+  .stat-card:hover {
+    border-color: var(--point-line);
+    box-shadow: 0 10px 24px rgba(38, 29, 42, 0.07);
+    transform: translateY(-2px);
+  }
+
+  .stat-card:hover .stat-top .icon {
+    stroke: var(--point-deep);
+  }
 }
 
 .stat-top {
@@ -764,20 +802,20 @@ input:focus-visible {
   stroke-width: 1.7;
 }
 
-.stat-card > strong {
+.stat-value > strong {
   display: inline-block;
   margin-top: 9px;
   font-size: 25px;
   letter-spacing: -0.7px;
 }
 
-.stat-card > small {
+.stat-value > small {
   margin-left: 8px;
   color: #aaa5ad;
   font-size: 9px;
 }
 
-.stat-card > small em {
+.stat-value > small em {
   color: var(--point-strong);
   font-style: normal;
   font-weight: 700;
@@ -826,11 +864,15 @@ input:focus-visible {
   border-radius: 14px;
 }
 
-.match-logo .icon {
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.7;
+/* No logo: an industry mark on a light tint of its color (BrandMark.tsx).
+   The art covers the tile; its drawing keeps to the middle of the grid. */
+.match-logo.industry {
+  background: var(--tile);
+}
+
+.industry-art {
+  width: 100%;
+  height: 100%;
 }
 
 .match-logo.has-logo {
@@ -890,9 +932,9 @@ input:focus-visible {
   font-size: 8px;
 }
 
+/* Color follows the score band (scoreBand in lib/score.ts). */
 .score strong {
   margin-top: 3px;
-  color: var(--point-strong);
   font-size: 19px;
 }
 
@@ -1189,28 +1231,6 @@ input:focus-visible {
   gap: 12px;
 }
 
-.choice-row {
-  display: flex;
-  gap: 7px;
-}
-
-.choice {
-  min-width: 68px;
-  height: 34px;
-  border: 1px solid var(--line);
-  border-radius: 17px;
-  background: var(--surface);
-  color: #8c868f;
-  font-size: 10px;
-  font-weight: 650;
-}
-
-.choice.active {
-  border-color: var(--point-line);
-  background: var(--point-soft);
-  color: var(--point-strong);
-}
-
 .modal-actions {
   display: flex;
   justify-content: flex-end;
@@ -1286,24 +1306,100 @@ input:focus-visible {
   font-size: 11px;
 }
 
-.result-count {
-  display: grid;
-  min-width: 88px;
-  height: 34px;
-  place-items: center;
-  border-radius: 18px;
-  background: var(--surface);
-  color: var(--point-strong);
-  font-size: 11px;
-  font-weight: 750;
-}
-
-.full-match-grid,
-.event-grid {
+.full-match-grid {
   display: flex;
   flex-direction: column;
   gap: 12px;
   margin-top: 18px;
+}
+
+/* Brand catalog tabs (추천 · 인기 · 전체 · 업종별) and industry chips. */
+.match-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.match-tabs {
+  display: flex;
+  width: fit-content;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.match-tab {
+  height: 34px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.match-tab.active {
+  background: var(--point);
+  color: var(--ink);
+}
+
+.industry-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.industry-chip {
+  height: 30px;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.industry-chip.active {
+  border-color: var(--point-deep);
+  background: var(--point-tint);
+  color: var(--point-strong);
+}
+
+.match-logo-wrap {
+  position: relative;
+}
+
+/* Ranking on the 인기 tab; the top three are yellow. */
+.rank-badge {
+  position: absolute;
+  top: -7px;
+  left: -7px;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+  background: #8d8790;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.rank-badge.top {
+  background: var(--point);
+  color: var(--ink);
+}
+
+.tag-row .tag-hot {
+  background: #fff1e4;
+  color: #c2560f;
+  font-weight: 700;
 }
 
 .full-match-card {
@@ -1359,40 +1455,56 @@ input:focus-visible {
   justify-content: center;
 }
 
-/* The arc length follows the score; the ring starts at 12 o'clock. */
+/* Thick ring in the score band's color (ScoreRing.tsx) over a light track,
+   with a faint tint of the color behind the number. */
 .match-score-ring svg {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  transform: rotate(-90deg);
 }
 
-.match-score-ring circle {
+.ring-fill {
+  fill: var(--ring-color);
+  fill-opacity: 0.09;
+}
+
+.ring-track,
+.ring-value {
   fill: none;
-  stroke-width: 2.6;
+  stroke-width: 3.6;
 }
 
 .ring-track {
-  stroke: var(--point-tint);
+  stroke: #f0edf2;
 }
 
-/* Stroke color comes from the score band (scoreTone in App.tsx). */
 .ring-value {
+  stroke: var(--ring-color);
   stroke-linecap: round;
 }
 
 .match-score-ring strong {
   position: relative;
-  font-size: 13px;
+  color: var(--ring-text);
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
   line-height: 1;
+}
+
+.match-score-ring strong small {
+  margin-left: 1px;
+  font-size: 10px;
+  font-weight: 750;
 }
 
 .match-score-ring span {
   position: relative;
-  margin-top: 2px;
+  margin-top: 3px;
   color: var(--muted);
-  font-size: 8px;
+  font-size: 9px;
+  font-weight: 600;
 }
 
 .view-heading {
@@ -1400,63 +1512,594 @@ input:focus-visible {
   align-items: center;
 }
 
-.event-card {
-  display: grid;
-  min-height: 112px;
-  grid-template-columns: 68px 1fr auto;
+/* New event page: form cards on the left, the date picker on the right. */
+.create-head {
+  display: flex;
+  min-height: 66px;
   align-items: center;
-  gap: 20px;
-  padding: 20px 24px;
+  gap: 14px;
+}
+
+.back-button {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.back-button .icon,
+.date-picked .icon,
+.check-box .icon {
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.back-button .icon {
+  transform: rotate(180deg);
+}
+
+.create-intro {
+  margin: 2px 0 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.create-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(300px, 1fr);
+  align-items: start;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.create-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-card {
+  min-width: 0;
+  padding: 22px;
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: var(--surface);
 }
 
-.event-empty {
-  margin: 0;
-  padding: 36px 24px;
-  border: 1px dashed var(--line);
+.form-card-title {
+  margin: 0 0 14px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.form-card-caption {
+  margin: -8px 0 12px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 14px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.form-card-title + .field {
+  margin-top: 0;
+}
+
+.field input,
+.other-input {
+  width: 100%;
+  height: 46px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--canvas);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.field input:focus,
+.other-input:focus {
+  border-color: var(--point-deep);
+  background: var(--surface);
+}
+
+.input-suffix {
+  position: relative;
+}
+
+.input-suffix input {
+  padding-right: 40px;
+}
+
+.input-suffix em {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  color: var(--muted);
+  font-size: 13px;
+  font-style: normal;
+  transform: translateY(-50%);
+}
+
+/* Sponsor types as checkboxes; the real input stays for keyboard and screen readers. */
+.check-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.check-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  cursor: pointer;
+}
+
+.check-row input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.check-box {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1.5px solid #cfc9d3;
+  border-radius: 7px;
+  background: var(--surface);
+  color: transparent;
+}
+
+.check-box .icon {
+  stroke-width: 2.6;
+}
+
+.check-row.checked {
+  border-color: var(--point-deep);
+  background: var(--point-soft);
+}
+
+.check-row.checked .check-box {
+  border-color: var(--point-deep);
+  background: var(--point);
+  color: var(--ink);
+}
+
+.check-row input:focus-visible + .check-box {
+  outline: 3px solid rgba(234, 166, 27, 0.5);
+  outline-offset: 2px;
+}
+
+.check-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.check-copy strong {
+  font-size: 13px;
+}
+
+.check-copy small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.other-input {
+  margin-top: 10px;
+}
+
+/* Date picker on the new event page, matching the 내 행사 calendar. */
+.date-picker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.date-picker-head strong {
+  font-size: 15px;
+}
+
+.date-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.date-cell {
+  aspect-ratio: 1 / 1;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: var(--canvas);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.date-cell:hover {
+  border-color: var(--point-line);
+}
+
+.date-cell.sunday {
+  color: #e05b4a;
+}
+
+.date-cell.saturday {
+  color: #3e6591;
+}
+
+.date-cell.outside {
+  background: transparent;
+  color: #c9c5cc;
+}
+
+.date-cell.today {
+  border-color: var(--ink);
+}
+
+.date-cell.selected {
+  border-color: var(--point-deep);
+  background: var(--point);
+  color: var(--ink);
+}
+
+.date-picked {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--point-tint);
+  color: var(--point-strong);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.create-error {
+  margin-top: 14px;
+}
+
+.create-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.create-actions button {
+  height: 44px;
+  padding: 0 22px;
+}
+
+/* My events: a month calendar with the selected day's details beside it. */
+.calendar-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr);
+  align-items: start;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.calendar-card,
+.day-panel {
+  padding: 20px;
+  border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: var(--surface);
+}
+
+.calendar-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.calendar-head strong {
+  min-width: 112px;
+  font-size: 16px;
+  text-align: center;
+}
+
+.calendar-nav,
+.calendar-today {
+  display: grid;
+  height: 32px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink-soft);
+}
+
+.calendar-nav {
+  width: 32px;
+}
+
+.calendar-nav .icon {
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.calendar-nav.previous .icon {
+  transform: rotate(180deg);
+}
+
+.calendar-today {
+  margin-left: auto;
+  padding: 0 14px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.calendar-weekdays,
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.calendar-weekdays span {
+  padding: 6px 0;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.calendar-weekdays span:first-child,
+.calendar-day.sunday .day-number {
+  color: #e05b4a;
+}
+
+.calendar-weekdays span:last-child,
+.calendar-day.saturday .day-number {
+  color: #3e6591;
+}
+
+/* Square day cells; overflow hides extra events past "+n". */
+.calendar-day {
+  display: flex;
+  min-width: 0;
+  aspect-ratio: 1 / 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 6px;
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: var(--canvas);
+  color: var(--ink);
+  text-align: left;
+}
+
+.calendar-day:hover {
+  border-color: var(--point-line);
+}
+
+.calendar-day.outside {
+  background: transparent;
+}
+
+.calendar-day.outside .day-number {
+  color: #c9c5cc;
+}
+
+.calendar-day.selected {
+  border-color: var(--point-deep);
+  background: var(--point-tint);
+}
+
+.day-number {
+  display: grid;
+  min-width: 22px;
+  height: 22px;
+  place-items: center;
+  border-radius: 11px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.calendar-day.today .day-number {
+  background: var(--ink);
+  color: #fff;
+}
+
+.day-events {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+/* Event names on the calendar; color follows the status chips. */
+.day-event {
+  overflow: hidden;
+  padding: 2px 5px;
+  border-radius: 6px;
+  background: #ffedb3;
+  color: #7a5410;
+  font-size: 9px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.day-event.status-측정완료 {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.day-event.status-집행예정 {
+  background: #eaf1fa;
+  color: #3e6591;
+}
+
+.day-more {
+  padding-left: 2px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.calendar-legend span::before {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: var(--point-deep);
+  content: "";
+}
+
+.calendar-legend .legend-scheduled::before {
+  background: #6f9bd1;
+}
+
+.calendar-legend .legend-done::before {
+  background: var(--green);
+}
+
+.calendar-legend small {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.day-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.day-event-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.day-event-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.day-event-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+.day-event-copy strong {
+  font-size: 14px;
+}
+
+.day-event-copy p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.day-event-card .event-card-actions {
+  justify-content: flex-end;
+}
+
+.day-empty {
+  margin: 0;
+  padding: 18px;
+  border: 1px dashed var(--line);
+  border-radius: 14px;
   color: var(--muted);
   font-size: 12px;
   text-align: center;
 }
 
-.event-date {
-  display: flex;
-  height: 62px;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  border-radius: 15px;
-  background: var(--point-tint);
-  color: var(--point-strong);
-}
-
-.event-date span {
-  font-size: 9px;
-}
-
-.event-date strong {
-  font-size: 22px;
-}
-
-.event-card-copy {
+.upcoming {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  gap: 6px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
 }
 
-.event-card-copy > strong {
-  margin-top: 7px;
-  font-size: 14px;
-}
-
-.event-card-copy p {
-  margin: 5px 0 0;
+.upcoming-title {
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.upcoming-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--canvas);
+  color: inherit;
+  text-align: left;
+}
+
+.upcoming-item:hover {
+  background: var(--point-soft);
+}
+
+.upcoming-date {
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.upcoming-item strong {
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .status-chip {
@@ -1506,83 +2149,316 @@ input:focus-visible {
   stroke-width: 1.8;
 }
 
+/* The QR button sits small at the bottom right of the intro. */
+.measurement-intro {
+  align-items: flex-end;
+}
+
+.qr-open-button {
+  flex: 0 0 auto;
+  height: 36px;
+  gap: 6px;
+  padding: 0 16px;
+  font-size: 11px;
+}
+
+/* Three compact counts in one row, on every screen size. */
 .live-metrics {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-  margin-top: 18px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .live-card {
-  display: grid;
-  min-height: 170px;
-  grid-template-columns: 44px 1fr;
-  grid-template-rows: auto auto auto;
-  align-items: center;
-  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  padding: 18px;
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: var(--surface);
+  color: inherit;
+  text-align: left;
+}
+
+.live-card:hover {
+  border-color: var(--point-line);
+}
+
+.live-card > small {
+  color: #c2560f;
+  font-size: 11px;
+  font-weight: 700;
+  word-break: keep-all;
+}
+
+.live-card > small.good {
+  color: #2f8a52;
+}
+
+.live-card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.live-card-top span {
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 650;
 }
 
 .live-icon {
   display: grid;
-  width: 40px;
-  height: 40px;
-  grid-row: 1;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
   place-items: center;
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--point-tint);
   color: var(--point-strong);
 }
 
-.live-card > span {
-  color: var(--muted);
-  font-size: 10px;
-}
-
 .live-card > strong {
-  grid-column: 1 / -1;
-  font-size: 32px;
+  font-size: 28px;
   letter-spacing: -1px;
+  line-height: 1;
 }
 
-.live-card > small {
-  grid-column: 1 / -1;
-  color: #aaa4ac;
-  font-size: 9px;
-}
-
-.measurement-console {
+/* Event, live status and last record above the counts. */
+.measure-bar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  margin-top: 18px;
-  padding: 24px;
+  gap: 8px 12px;
+  margin: 18px 0 10px;
+}
+
+.measure-event {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.measure-event .icon,
+.measure-card .subtle-link .icon,
+.qr-actions .icon {
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.live-badge {
+  display: inline-flex;
+  height: 24px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border-radius: 12px;
+  background: var(--green-soft);
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.live-badge i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #3eab5e;
+  animation: live-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(62, 171, 94, 0.45); }
+  50% { opacity: 0.7; box-shadow: 0 0 0 5px rgba(62, 171, 94, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-badge i {
+    animation: none;
+  }
+}
+
+.measure-updated {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.measure-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.measure-card {
+  padding: 22px;
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: var(--surface);
 }
 
-.measurement-console small {
-  color: var(--muted);
-  font-size: 9px;
-}
-
-.console-actions {
+.measure-card-head {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.console-actions button {
-  height: 35px;
-  padding: 0 13px;
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  background: var(--surface);
+.measure-funnel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.measure-step-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+.measure-step-head span {
+  font-weight: 700;
+}
+
+.measure-track {
+  height: 10px;
+  margin: 7px 0 5px;
+  overflow: hidden;
+  border-radius: 5px;
+  background: var(--canvas);
+}
+
+.measure-track i {
+  display: block;
+  height: 100%;
+  border-radius: 5px;
+  background: linear-gradient(90deg, var(--point), var(--point-deep));
+}
+
+.measure-step small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.activity-feed {
+  display: flex;
+  flex-direction: column;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.activity-feed li {
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.activity-feed li:last-child {
+  border-bottom: 0;
+}
+
+.activity-feed strong {
+  display: block;
+  font-size: 12px;
+}
+
+.activity-feed small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.activity-feed time {
   color: var(--ink-soft);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Kind chip shared by the feed and the full history. */
+.activity-kind {
+  display: inline-flex;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 7px;
+  border-radius: 11px;
+  background: var(--point-tint);
+  color: var(--point-strong);
   font-size: 10px;
-  font-weight: 650;
+  font-style: normal;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.activity-kind.kind-coupons {
+  background: #fff1e4;
+  color: #c2560f;
+}
+
+.activity-kind.kind-visits {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.log-list .activity-kind {
+  margin-left: 6px;
+  vertical-align: 1px;
+}
+
+/* Participation history modal. */
+.log-summary {
+  margin: 0 0 12px;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.log-list {
+  display: flex;
+  max-height: 340px;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.log-list li {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--canvas);
+}
+
+.log-time {
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.log-list strong {
+  display: block;
+  font-size: 12px;
+}
+
+.log-list li span:not(.log-time) {
+  color: var(--muted);
+  font-size: 11px;
 }
 
 .report-overview {
@@ -1592,29 +2468,182 @@ input:focus-visible {
   margin-top: 12px;
 }
 
+/* Report hero: event chip and status, the headline, an ROAS card with its
+   goal marker, rising bars for decoration, and the detail button at the
+   bottom right. */
 .report-hero {
+  position: relative;
+  display: flex;
   min-height: 330px;
-  padding: 38px;
+  flex-direction: column;
+  padding: 30px 32px;
+  overflow: hidden;
   border-radius: var(--radius-lg);
-  background: var(--point-tint);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(250, 202, 75, 0.42), transparent 55%),
+    linear-gradient(160deg, #fffaf0 0%, var(--point-tint) 100%);
 }
 
-.report-hero > span {
-  color: #7c7481;
-  font-size: 10px;
+.report-hero::after {
+  position: absolute;
+  right: -90px;
+  bottom: -130px;
+  width: 300px;
+  height: 300px;
+  border: 34px solid rgba(250, 202, 75, 0.16);
+  border-radius: 50%;
+  content: "";
 }
 
-.report-hero p {
-  margin: 48px 0 52px;
+.hero-bars {
+  position: absolute;
+  top: 30px;
+  right: 32px;
+  display: flex;
+  height: 58px;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.hero-bars span {
+  width: 10px;
+  border-radius: 5px;
+  background: var(--point-deep);
+}
+
+.hero-bars span:nth-child(1) {
+  height: 30%;
+  opacity: 0.25;
+}
+
+.hero-bars span:nth-child(2) {
+  height: 50%;
+  opacity: 0.4;
+}
+
+.hero-bars span:nth-child(3) {
+  height: 72%;
+  opacity: 0.6;
+}
+
+.hero-bars span:nth-child(4) {
+  height: 100%;
+  opacity: 0.9;
+}
+
+.hero-top {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-right: 80px;
+}
+
+.hero-chip,
+.hero-status {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 14px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.hero-chip {
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--ink-soft);
+}
+
+.hero-chip .icon {
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.hero-status {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.report-hero-title {
+  position: relative;
+  margin: 26px 0 22px;
   font-size: 28px;
-  font-weight: 760;
+  font-weight: 800;
   line-height: 1.35;
   letter-spacing: -1px;
 }
 
-.report-hero em {
+.report-hero-title em {
   color: var(--point-strong);
   font-style: normal;
+}
+
+.hero-roas {
+  position: relative;
+  z-index: 1;
+  width: min(250px, 100%);
+  margin-top: auto;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 10px 28px rgba(234, 166, 27, 0.16);
+}
+
+.hero-roas-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.hero-roas-head span {
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.hero-roas-head strong {
+  color: var(--point-strong);
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.hero-roas-track {
+  position: relative;
+  height: 8px;
+  margin: 8px 0 6px;
+  border-radius: 4px;
+  background: var(--point-line);
+}
+
+.hero-roas-track i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--point), var(--point-deep));
+}
+
+.hero-roas-track b {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 2px;
+  background: var(--ink);
+}
+
+.hero-roas small {
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+.hero-action {
+  position: absolute;
+  z-index: 2;
+  right: 28px;
+  bottom: 28px;
 }
 
 .report-metric-grid {
@@ -1623,30 +2652,239 @@ input:focus-visible {
   gap: 12px;
 }
 
-.report-metric-grid article {
+/* Pill button so "상세 데이터 보기" reads as something to press. */
+.detail-button {
+  display: inline-flex;
+  height: 40px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 18px;
+  border: 1px solid var(--point-line);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: 0 4px 12px rgba(234, 166, 27, 0.18);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.detail-button:hover {
+  border-color: var(--point-deep);
+}
+
+.detail-button .icon,
+.kpi-label .icon {
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+/* Each number opens its goal details. */
+.kpi-card {
   display: flex;
   min-height: 158px;
   flex-direction: column;
   justify-content: center;
-  padding: 25px;
+  gap: 6px;
+  padding: 22px;
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: var(--surface);
+  color: inherit;
+  text-align: left;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.report-metric-grid span {
+.kpi-card:hover {
+  border-color: var(--point-line);
+  box-shadow: 0 10px 24px rgba(38, 29, 42, 0.07);
+}
+
+.kpi-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.kpi-label .icon {
   color: var(--muted);
-  font-size: 9px;
 }
 
-.report-metric-grid strong {
-  margin: 8px 0 5px;
-  font-size: 25px;
+.kpi-card strong {
+  font-size: 26px;
+  letter-spacing: -0.5px;
 }
 
-.report-metric-grid small {
-  color: var(--green);
-  font-size: 8px;
+.kpi-status {
+  color: #c2560f;
+  font-size: 12px;
+  font-weight: 700;
+  word-break: keep-all;
+}
+
+/* "113% 달성" wraps as one piece after the goal. */
+.kpi-status b {
+  margin-left: 6px;
+  white-space: nowrap;
+}
+
+.kpi-status.good {
+  color: #2f8a52;
+}
+
+.kpi-note {
+  color: #6f6a73;
+  font-size: 11px;
+}
+
+/* Goal details modal: goal and current side by side, then progress. */
+.goal-compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.goal-compare > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  border-radius: 14px;
+  background: var(--canvas);
+}
+
+.goal-compare > div.current {
+  background: var(--point-tint);
+}
+
+.goal-compare span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.goal-compare strong {
+  font-size: 24px;
+}
+
+.goal-badge {
+  padding: 2px 8px;
+  border-radius: 9px;
+  background: #fff1e4;
+  color: #c2560f;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.achieved .goal-compare > div.current {
+  background: var(--green-soft);
+}
+
+.achieved .goal-compare > div.current strong {
+  color: #2f8a52;
+}
+
+.achieved .goal-badge {
+  background: #d3f0dc;
+  color: #2f8a52;
+}
+
+/* Leaves room for the goal chip that sits above the bar. */
+.goal-progress {
+  margin-top: 52px;
+}
+
+.goal-track {
+  position: relative;
+  height: 12px;
+  border-radius: 6px;
+  background: var(--canvas);
+}
+
+.goal-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #ffc46b, #ef852e);
+}
+
+.achieved .goal-fill {
+  background: linear-gradient(90deg, #7cd69c, #2f8a52);
+}
+
+.goal-marker {
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  width: 2px;
+  background: var(--ink);
+}
+
+/* "목표 30%" chip above the marker, clear of the bar. */
+.goal-marker em {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  padding: 3px 8px;
+  border-radius: 8px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.goal-result {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 16px 0 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.goal-result strong {
+  color: #c2560f;
+}
+
+.achieved .goal-result strong,
+.achieved .goal-result .icon {
+  color: #2f8a52;
+}
+
+.goal-result .icon {
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.4;
+}
+
+.goal-formula {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border: 1px dashed var(--line);
+  border-radius: 14px;
+}
+
+.goal-formula span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.goal-formula p {
+  margin: 4px 0 0;
+  font-size: 12px;
 }
 
 .notification-list {
@@ -1730,13 +2968,18 @@ input:focus-visible {
 .report-detail-rows div {
   display: flex;
   justify-content: space-between;
-  padding: 11px 2px;
+  padding: 12px 2px;
   border-bottom: 1px solid var(--line);
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .report-detail-rows span {
+  color: var(--ink-soft);
+}
+
+.report-detail-rows small {
   color: var(--muted);
+  font-weight: 500;
 }
 
 .primary-button.wide,
@@ -1947,36 +3190,57 @@ input:focus-visible {
   align-items: center;
 }
 
-.qr-code {
-  display: grid;
-  width: 216px;
-  height: 216px;
-  grid-template-columns: repeat(8, 1fr);
-  grid-template-rows: repeat(8, 1fr);
-  gap: 3px;
-  margin: 4px 0 22px;
-  padding: 16px;
+.qr-frame {
+  width: 224px;
+  margin: 4px 0 20px;
+  padding: 14px;
   border: 1px solid var(--line);
-  border-radius: 18px;
-  background: white;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(38, 29, 42, 0.08);
 }
 
-.qr-code span {
-  border-radius: 2px;
-}
-
-.qr-code span.filled {
-  background: var(--dark);
+.qr-svg {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 .qr-content > strong {
-  font-size: 15px;
+  font-size: 16px;
 }
 
 .qr-content > span {
-  margin: 5px 0 22px;
-  color: var(--muted);
-  font-size: 9px;
+  margin: 5px 0 14px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  text-align: center;
+  word-break: keep-all;
+}
+
+.qr-link {
+  max-width: 100%;
+  overflow: hidden;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--canvas);
+  color: var(--ink-soft);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qr-actions {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.qr-actions > * {
+  height: 44px;
+  text-decoration: none;
 }
 
 @media (max-width: 1100px) {
@@ -1998,7 +3262,9 @@ input:focus-visible {
   }
 
   .content-grid,
-  .report-overview {
+  .report-overview,
+  .calendar-layout,
+  .create-layout {
     grid-template-columns: 1fr;
   }
 
@@ -2098,19 +3364,18 @@ input:focus-visible {
     padding: 14px 15px;
   }
 
-  .stat-card > strong {
+  .stat-value > strong {
     display: block;
     margin-top: 7px;
     font-size: 22px;
   }
 
-  .stat-card > small {
+  .stat-value > small {
     display: block;
     margin: 3px 0 0;
   }
 
   .content-grid,
-  .live-metrics,
   .report-overview {
     grid-template-columns: 1fr;
   }
@@ -2201,10 +3466,26 @@ input:focus-visible {
     line-height: 1.6;
   }
 
-  .result-count {
-    min-width: 64px;
-    height: 29px;
-    font-size: 9px;
+  /* Tabs stretch across the screen; industry chips scroll sideways. */
+  .match-tabs {
+    width: 100%;
+  }
+
+  .match-tab {
+    flex: 1;
+    padding: 0;
+  }
+
+  .industry-chips {
+    flex-wrap: nowrap;
+    margin: 0 -16px;
+    padding: 0 16px 2px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .industry-chip {
+    flex: 0 0 auto;
   }
 
   /* Logo, company info and score ring share one row; the button sits below. */
@@ -2224,7 +3505,7 @@ input:focus-visible {
   }
 
   .match-score-ring strong {
-    font-size: 12px;
+    font-size: 15px;
   }
 
   .full-match-card > .primary-button,
@@ -2234,61 +3515,145 @@ input:focus-visible {
     grid-column: 1 / -1;
   }
 
-  .event-card {
-    grid-template-columns: 54px 1fr;
-    gap: 13px;
-    padding: 17px;
+  .form-card {
+    padding: 18px;
   }
 
-  .event-date {
-    height: 56px;
+  /* Cancel and register share the width, register larger. */
+  .create-actions {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
   }
 
-  .event-card-actions {
-    grid-column: 1 / -1;
-    justify-content: flex-end;
+  .create-actions button {
+    padding: 0;
+  }
+
+  /* Calendar first, day details below; event names become colored dots. */
+  .calendar-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-card,
+  .day-panel {
+    padding: 14px;
+  }
+
+  .calendar-day {
+    align-items: center;
+    padding: 4px 2px;
+    border-radius: 10px;
+  }
+
+  .day-events {
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  .day-event {
+    width: 6px;
+    height: 6px;
+    padding: 0;
+    border-radius: 50%;
+    background: var(--point-deep);
+    font-size: 0;
+  }
+
+  .day-event.status-측정완료 {
+    background: var(--green);
+  }
+
+  .day-event.status-집행예정 {
+    background: #6f9bd1;
+  }
+
+  .day-more {
+    display: none;
+  }
+
+  .calendar-legend small {
+    width: 100%;
+    margin-left: 0;
   }
 
   .measurement-intro {
     flex-direction: column;
+    align-items: stretch;
     justify-content: space-between;
   }
 
+  .qr-open-button {
+    align-self: flex-end;
+  }
+
   .live-metrics {
-    display: flex;
-    overflow-x: auto;
-    margin-right: -16px;
-    padding-right: 16px;
+    gap: 8px;
   }
 
   .live-card {
-    min-width: 190px;
+    gap: 8px;
+    padding: 12px;
   }
 
-  .measurement-console {
+  .live-card-top {
     flex-direction: column;
-    align-items: stretch;
-    gap: 20px;
+    align-items: flex-start;
+    gap: 6px;
   }
 
-  .console-actions {
-    display: grid;
+  .live-card > strong {
+    font-size: 22px;
+  }
+
+  .measure-grid {
     grid-template-columns: 1fr;
   }
 
-  .report-hero {
-    min-height: 270px;
-    padding: 28px;
-  }
-
-  .report-hero p {
-    margin: 40px 0;
-    font-size: 24px;
-  }
-
-  .report-metric-grid article {
-    min-height: 125px;
+  .measure-card {
     padding: 18px;
+  }
+
+  .measure-updated {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .report-hero {
+    min-height: 0;
+    padding: 24px 22px;
+  }
+
+  /* The bars give way so the event chip fits on one line. */
+  .hero-bars {
+    display: none;
+  }
+
+  .hero-top {
+    padding-right: 0;
+  }
+
+  .report-hero-title {
+    margin: 22px 0 18px;
+    font-size: 23px;
+  }
+
+  .hero-roas {
+    width: 100%;
+  }
+
+  .hero-action {
+    position: static;
+    align-self: flex-end;
+    margin-top: 14px;
+  }
+
+  .kpi-card {
+    min-height: 0;
+    padding: 16px;
+  }
+
+  .kpi-card strong {
+    font-size: 22px;
   }
 
   .modal-backdrop {
@@ -2314,6 +3679,8 @@ input:focus-visible {
     background: var(--surface);
   }
 
+  /* Light cream so it doesn't compete with yellow call-to-action buttons
+     such as "협찬 제안 보내기". */
   .create-fab {
     position: fixed;
     z-index: 41;
@@ -2323,11 +3690,11 @@ input:focus-visible {
     width: 52px;
     height: 52px;
     place-items: center;
-    border: 0;
+    border: 1px solid var(--point-line);
     border-radius: 50%;
-    background: var(--point);
-    color: var(--ink);
-    box-shadow: 0 10px 24px rgba(234, 166, 27, 0.35);
+    background: var(--point-tint);
+    color: var(--point-strong);
+    box-shadow: 0 8px 22px rgba(38, 29, 42, 0.14);
   }
 
   .create-fab .icon {
@@ -2365,6 +3732,607 @@ input:focus-visible {
   }
 
   .match-score-ring strong {
-    font-size: 11px;
+    font-size: 14px;
   }
+}
+
+/* PDF report pages (report/ReportDocument.tsx): rendered off screen at A4
+   size, 794×1123 px, and captured into the PDF by report/pdf.ts. */
+.pdf-export {
+  position: fixed;
+  top: 0;
+  left: -10000px;
+  pointer-events: none;
+}
+
+.pdf-page {
+  display: flex;
+  width: 794px;
+  height: 1123px;
+  flex-direction: column;
+  gap: 18px;
+  padding: 44px 52px 34px;
+  overflow: hidden;
+  background: #fff;
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+.pdf-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 14px;
+  border-bottom: 2px solid var(--ink);
+}
+
+.pdf-header img {
+  width: auto;
+  height: 30px;
+}
+
+.pdf-header div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+.pdf-title > span {
+  color: var(--point-strong);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.pdf-title h1 {
+  margin: 6px 0 4px;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -1px;
+}
+
+.pdf-title p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.pdf-summary {
+  padding: 18px 22px;
+  border-radius: 16px;
+  background: var(--point-tint);
+}
+
+.pdf-summary strong {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.pdf-summary em {
+  color: var(--point-strong);
+  font-style: normal;
+}
+
+.pdf-summary p {
+  margin: 6px 0 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.pdf-section h2 {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.pdf-section h2::before {
+  display: inline-block;
+  width: 4px;
+  height: 14px;
+  margin-right: 8px;
+  border-radius: 2px;
+  background: var(--point-deep);
+  content: "";
+  vertical-align: -2px;
+}
+
+.pdf-card {
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.pdf-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.pdf-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.pdf-kpi > span {
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.pdf-kpi strong {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.pdf-kpi small {
+  color: #c2560f;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.pdf-kpi small.good {
+  color: #2f8a52;
+}
+
+.pdf-kpi-track {
+  height: 6px;
+  margin-top: 4px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--canvas);
+}
+
+.pdf-kpi-track i {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--point-deep);
+}
+
+.pdf-chart-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.pdf-bar-chart,
+.pdf-hourly {
+  display: flex;
+  height: 170px;
+  align-items: flex-end;
+  gap: 12px;
+  padding-top: 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.pdf-bar-pair {
+  display: flex;
+  height: 100%;
+  flex: 1;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 6px;
+}
+
+.pdf-bar {
+  position: relative;
+  width: 24px;
+  border-radius: 6px 6px 0 0;
+  background: var(--point);
+}
+
+.pdf-bar.target {
+  background: #dcd8de;
+}
+
+.pdf-bar span,
+.pdf-hour span {
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.pdf-bar span {
+  position: absolute;
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.pdf-axis {
+  display: flex;
+  gap: 12px;
+  padding-top: 6px;
+}
+
+.pdf-axis span {
+  flex: 1;
+  color: var(--ink-soft);
+  font-size: 11px;
+  text-align: center;
+}
+
+.pdf-legend {
+  display: flex;
+  gap: 14px;
+  margin-top: 10px;
+  color: var(--ink-soft);
+  font-size: 10.5px;
+}
+
+.pdf-legend span::before {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 5px;
+  border-radius: 2px;
+  background: var(--point);
+  content: "";
+  vertical-align: -1px;
+}
+
+.pdf-legend span.target::before {
+  background: #dcd8de;
+}
+
+.pdf-funnel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.pdf-funnel-row {
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  align-items: center;
+  gap: 4px 10px;
+}
+
+.pdf-funnel-label {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.pdf-funnel-track {
+  height: 28px;
+  border-radius: 8px;
+  background: var(--canvas);
+}
+
+.pdf-funnel-bar {
+  display: flex;
+  height: 100%;
+  min-width: 48px;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 8px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--point), var(--point-deep));
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.pdf-funnel-note {
+  grid-column: 2;
+  color: var(--ink-soft);
+  font-size: 10px;
+}
+
+.pdf-hourly {
+  height: 140px;
+  padding: 20px 6px 0;
+}
+
+.pdf-hour {
+  display: flex;
+  height: 100%;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.pdf-hour i {
+  display: block;
+  width: 100%;
+  max-width: 48px;
+  border-radius: 8px 8px 0 0;
+  background: #ffe39a;
+}
+
+.pdf-hour.peak i {
+  background: var(--point-deep);
+}
+
+.pdf-stack {
+  display: flex;
+  height: 22px;
+  overflow: hidden;
+  border-radius: 11px;
+}
+
+.pdf-value-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.pdf-value-legend li {
+  display: grid;
+  grid-template-columns: 12px 1fr auto 44px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.pdf-value-legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.pdf-value-legend span {
+  color: var(--ink-soft);
+  text-align: right;
+}
+
+.pdf-log {
+  width: 100%;
+  font-size: 11px;
+}
+
+.pdf-log th {
+  padding: 8px;
+  border-bottom: 1px solid var(--ink);
+  color: var(--ink-soft);
+  font-weight: 700;
+  text-align: left;
+}
+
+.pdf-log td {
+  padding: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.pdf-insights {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pdf-insights li {
+  position: relative;
+  padding: 11px 14px 11px 38px;
+  border-radius: 12px;
+  background: var(--canvas);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.pdf-insights b {
+  position: absolute;
+  top: 11px;
+  left: 12px;
+  display: grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--point);
+  font-size: 10px;
+}
+
+.pdf-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 10px;
+}
+
+/* Participant check-in page (checkin/CheckInPage.tsx), opened from the event QR. */
+/* A phone-sized page: drop the app's desktop minimum width. */
+body.checkin-body {
+  min-width: 0;
+  padding-bottom: 0;
+}
+
+.checkin {
+  display: flex;
+  min-width: 0;
+  min-height: 100vh;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 28px 16px 32px;
+  background: linear-gradient(180deg, var(--point-tint) 0%, var(--canvas) 55%);
+}
+
+.checkin-header img {
+  display: block;
+  width: auto;
+  height: 30px;
+}
+
+.checkin-card {
+  display: flex;
+  width: 100%;
+  max-width: 420px;
+  flex-direction: column;
+  gap: 14px;
+  padding: 26px 22px;
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: 0 18px 44px rgba(38, 29, 42, 0.08);
+}
+
+.checkin-kicker {
+  color: var(--point-strong);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.checkin-card h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.checkin-date {
+  margin: -8px 0 4px;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.checkin-loading {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.checkin-welcome {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--green-soft);
+}
+
+.checkin-check {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: #3eab5e;
+  color: #fff;
+}
+
+.checkin-check .icon,
+.checkin-done .icon {
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.4;
+}
+
+.checkin-welcome strong {
+  display: block;
+  font-size: 14px;
+}
+
+.checkin-welcome div > span {
+  color: var(--green);
+  font-size: 12px;
+}
+
+/* Coupon ticket with notches cut into both sides. */
+.coupon {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 20px 20px 18px;
+  border: 1.5px dashed var(--point-deep);
+  border-radius: 18px;
+  background: var(--point-soft);
+}
+
+.coupon::before,
+.coupon::after {
+  position: absolute;
+  top: 46px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--surface);
+  content: "";
+}
+
+.coupon::before {
+  left: -10px;
+}
+
+.coupon::after {
+  right: -10px;
+}
+
+.coupon-store {
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.coupon-title {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.coupon small {
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.coupon-code {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.coupon-code span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.coupon-code strong {
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+}
+
+.checkin-staff p {
+  margin: 0 0 8px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  text-align: center;
+}
+
+.checkin-done {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--green-soft);
+  color: var(--green);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.checkin-footer {
+  color: var(--muted);
+  font-size: 11px;
 }

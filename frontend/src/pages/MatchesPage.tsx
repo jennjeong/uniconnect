@@ -1,58 +1,192 @@
+import { useState } from "react"
+
 import { BrandMark } from "../components/BrandMark"
 import { ProposalControl } from "../components/ProposalControl"
 import { ScoreRing } from "../components/ScoreRing"
-import type { Match, Role } from "../types"
+import type { Industry, Match, Role } from "../types"
+
+type Tab = "추천" | "인기" | "전체" | "업종별"
+
+const tabs: Tab[] = ["추천", "인기", "전체", "업종별"]
+
+const tabIntro: Record<Tab, { title: string; caption: string }> = {
+  추천: {
+    title: "내 행사에 맞는 브랜드를 찾았어요",
+    caption: "행사 정보, 타깃, 거리와 지난 성과를 함께 분석한 결과예요.",
+  },
+  인기: {
+    title: "학생단체가 많이 찾는 브랜드예요",
+    caption: "이번 학기 협찬을 많이 한 순서로 보여드려요.",
+  },
+  전체: {
+    title: "협찬할 수 있는 브랜드 전체예요",
+    caption: "우리 행사와 일치율이 높은 순서로 보여드려요.",
+  },
+  업종별: {
+    title: "업종별로 브랜드를 찾아보세요",
+    caption: "원하는 업종을 고르면 해당 브랜드만 보여드려요.",
+  },
+}
+
+// Order and names of the industry filters.
+const industryLabels: [Industry, string][] = [
+  ["cafe", "카페·식음료"],
+  ["beauty", "뷰티"],
+  ["photo", "사진"],
+  ["content", "영상·콘텐츠"],
+  ["wellness", "웰니스·F&B"],
+  ["education", "교육"],
+  ["sports", "스포츠"],
+]
+
+function MatchCard({
+  match,
+  rank,
+  done,
+  onPropose,
+  onCancel,
+}: {
+  match: Match
+  // Shown on the 인기 tab: ranking badge plus the sponsorship count.
+  rank?: number
+  done: boolean
+  onPropose: () => void
+  onCancel: () => void
+}) {
+  return (
+    <article className="full-match-card">
+      <div className="match-logo-wrap">
+        <BrandMark match={match} large />
+        {rank !== undefined && (
+          <span className={rank <= 3 ? "rank-badge top" : "rank-badge"}>{rank}</span>
+        )}
+      </div>
+      <div className="full-match-copy">
+        <span>{match.category}</span>
+        <strong>{match.name}</strong>
+        <p>{match.offer}</p>
+        <div className="tag-row">
+          {rank !== undefined && match.popularity !== undefined && (
+            <span className="tag-hot">협찬 {match.popularity}회</span>
+          )}
+          {/* With the sponsorship count added, one tag keeps the row on one line. */}
+          {match.tags.slice(0, rank === undefined ? undefined : 1).map((tag) => (
+            <span key={tag}>{tag}</span>
+          ))}
+        </div>
+      </div>
+      <ScoreRing score={match.score} />
+      <ProposalControl
+        done={done}
+        label="협찬 제안 보내기"
+        className="primary-button"
+        onPropose={onPropose}
+        onCancel={onCancel}
+      />
+    </article>
+  )
+}
 
 export function MatchesPage({
   role,
   matches,
+  brands,
   proposals,
   onPropose,
   onCancelProposal,
 }: {
   role: Role
+  // Top picks for the current role.
   matches: Match[]
+  // Every brand student groups can browse (empty for the brand role).
+  brands: Match[]
   proposals: string[]
   onPropose: (match: Match) => void
   onCancelProposal: (match: Match) => void
 }) {
+  const [tab, setTab] = useState<Tab>("추천")
+  const industries = industryLabels.filter(([industry]) =>
+    brands.some((brand) => brand.industry === industry),
+  )
+  const [industry, setIndustry] = useState<Industry>("cafe")
+  // Students browse the whole catalog by tab; brands see their top picks.
+  const browsing = role === "학생단체"
+
+  const list = !browsing
+    ? matches
+    : tab === "추천"
+      ? matches
+      : tab === "인기"
+        ? [...brands].sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0))
+        : tab === "전체"
+          ? brands
+          : brands.filter((brand) => brand.industry === industry)
+
+  const intro = browsing
+    ? tabIntro[tab]
+    : {
+        title: "캠페인에 맞는 학생단체를 찾았어요",
+        caption: tabIntro.추천.caption,
+      }
+
   return (
     <section className="page-view">
       <div className="view-intro match-intro">
         <div>
           <span className="section-kicker">SMART MATCH</span>
-          <p>
-            {role === "학생단체"
-              ? "내 행사에 맞는 브랜드를 찾았어요"
-              : "캠페인에 맞는 학생단체를 찾았어요"}
-          </p>
-          <small>행사 정보, 타깃, 거리와 지난 성과를 함께 분석한 결과예요.</small>
+          <p>{intro.title}</p>
+          <small>{intro.caption}</small>
         </div>
-        <span className="result-count">{matches.length}개 추천</span>
       </div>
-      <div className="full-match-grid">
-        {matches.map((match) => (
-          <article className="full-match-card" key={match.id}>
-            <BrandMark match={match} large />
-            <div className="full-match-copy">
-              <span>{match.category}</span>
-              <strong>{match.name}</strong>
-              <p>{match.offer}</p>
-              <div className="tag-row">
-                {match.tags.map((tag) => (
-                  <span key={tag}>{tag}</span>
-                ))}
-              </div>
+
+      {browsing && (
+        <div className="match-filters">
+          <div className="match-tabs" role="tablist" aria-label="브랜드 보기">
+            {tabs.map((item) => (
+              <button
+                aria-selected={tab === item}
+                className={tab === item ? "match-tab active" : "match-tab"}
+                key={item}
+                onClick={() => setTab(item)}
+                role="tab"
+                type="button"
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+          {tab === "업종별" && (
+            <div className="industry-chips" aria-label="업종">
+              {industries.map(([value, label]) => (
+                <button
+                  aria-pressed={industry === value}
+                  className={industry === value ? "industry-chip active" : "industry-chip"}
+                  key={value}
+                  onClick={(event) => {
+                    setIndustry(value)
+                    // The chip row scrolls sideways on phones; keep the pick in view.
+                    event.currentTarget.scrollIntoView({ block: "nearest", inline: "center" })
+                  }}
+                  type="button"
+                >
+                  {label}
+                </button>
+              ))}
             </div>
-            <ScoreRing score={match.score} />
-            <ProposalControl
-              done={proposals.includes(match.id)}
-              label="협찬 제안 보내기"
-              className="primary-button"
-              onPropose={() => onPropose(match)}
-              onCancel={() => onCancelProposal(match)}
-            />
-          </article>
+          )}
+        </div>
+      )}
+
+      <div className="full-match-grid">
+        {list.map((match, index) => (
+          <MatchCard
+            done={proposals.includes(match.id)}
+            key={match.id}
+            match={match}
+            onCancel={() => onCancelProposal(match)}
+            onPropose={() => onPropose(match)}
+            rank={browsing && tab === "인기" ? index + 1 : undefined}
+          />
         ))}
       </div>
     </section>

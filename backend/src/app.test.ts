@@ -161,14 +161,45 @@ test("events and proposals belong to the logged-in account", async () => {
   })
   const token = data.token as string
 
+  const badDate = await call("POST", "/events", { name: "팝업", date: "다음 주 금요일" }, token)
+  assert.equal(badDate.status, 400)
+
+  const noTypes = await call("POST", "/events", { name: "팝업", date: "2026-12-05" }, token)
+  assert.equal(noTypes.status, 400)
+  const otherWithoutNote = await call(
+    "POST",
+    "/events",
+    { name: "팝업", date: "2026-12-05", types: ["기타"] },
+    token,
+  )
+  assert.equal(otherWithoutNote.status, 400)
+
+  const withNote = await call(
+    "POST",
+    "/events",
+    { name: "팝업", date: "2026-12-06", types: ["기타"], typeNote: "공연장 대관" },
+    token,
+  )
+  assert.equal(withNote.status, 201)
+  assert.equal(withNote.data.event.typeNote, "공연장 대관")
+  await call("DELETE", `/events/${withNote.data.event.id}`, undefined, token)
+
   const created = await call(
     "POST",
     "/events",
-    { name: "겨울 캠퍼스 팝업", date: "2026-12-05", people: "500명", types: ["제품", "기타"] },
+    {
+      name: "겨울 캠퍼스 팝업",
+      date: "2026. 12. 5.",
+      people: "500명",
+      types: ["제품", "모름"],
+      typeNote: "쓰이지 않는 메모",
+    },
     token,
   )
   assert.equal(created.status, 201)
+  assert.equal(created.data.event.date, "2026-12-05")
   assert.deepEqual(created.data.event.types, ["제품"])
+  assert.equal(created.data.event.typeNote, undefined)
 
   const listed = await call("GET", "/events", undefined, token)
   assert.equal(listed.data.events[0].name, "겨울 캠퍼스 팝업")
@@ -181,9 +212,61 @@ test("events and proposals belong to the logged-in account", async () => {
   assert.deepEqual(cancelled.data.proposals, [])
 })
 
-test("metrics count QR scans, coupons and visits", async () => {
+test("metrics count QR scans, coupons and visits with a history", async () => {
   const initial = (await call("GET", "/metrics")).data.metrics
-  const updated = (await call("POST", "/metrics/scans")).data.metrics
-  assert.equal(updated.scans, initial.scans + 1)
+  const recorded = (await call("POST", "/metrics/scans")).data
+  assert.equal(recorded.metrics.scans, initial.scans + 1)
+  assert.equal(recorded.entry.participant, `참여자 #${initial.scans + 1}`)
+
+  const scans = (await call("GET", "/metrics/log?kind=scans")).data.entries
+  assert.equal(scans[0].id, recorded.entry.id)
+  assert.ok(scans.every((entry: { kind: string }) => entry.kind === "scans"))
+  assert.ok((await call("GET", "/metrics/log")).data.entries.length > scans.length)
+
   assert.equal((await call("POST", "/metrics/likes")).status, 404)
+  assert.equal((await call("GET", "/metrics/log?kind=likes")).status, 404)
+})
+
+test("student groups browse the brand catalog and propose to any brand", async () => {
+  const { brands } = (await call("GET", "/brands")).data
+  assert.equal(brands.length, 12)
+  assert.ok(brands.every((brand: { popularity?: number }) => typeof brand.popularity === "number"))
+  assert.deepEqual(
+    brands.slice(0, 3).map((brand: { id: string }) => brand.id),
+    (await call("GET", "/matches?role=학생단체")).data.matches.map((match: { id: string }) => match.id),
+  )
+
+  const { data } = await call("POST", "/auth/login", {
+    role: "학생단체",
+    email: "muse@syu.ac.kr",
+    password: DEMO_PASSWORD,
+  })
+  const proposed = await call("POST", "/proposals", { matchId: "glowlab" }, data.token)
+  assert.equal(proposed.status, 201)
+  assert.ok(proposed.data.proposals.includes("glowlab"))
+})
+
+test("the report has the event's goals", async () => {
+  const { report } = (await call("GET", "/report")).data
+  assert.equal(report.eventName, "가을 버스킹 데이")
+  assert.equal(report.targets.roas, 170)
+  assert.equal(
+    report.valueBreakdown.reduce((sum: number, part: { value: number }) => sum + part.value, 0),
+    report.sponsorValue,
+  )
+})
+
+test("older data files gain the new collections and calendar dates", async () => {
+  const { upgradeDatabase } = await import("./store.js")
+  const old = {
+    events: { someone: [{ date: "2026. 11. 27." }, { date: "미정" }] },
+  } as unknown as Parameters<typeof upgradeDatabase>[0]
+  const upgraded = upgradeDatabase(old)
+  assert.equal(upgraded.brands.length, 12)
+  assert.ok(upgraded.metricLog.length > 0)
+  assert.equal(upgraded.report.targets.reach, 1100)
+  assert.deepEqual(
+    upgraded.events.someone.map((event) => event.date),
+    ["2026-11-27", "미정"],
+  )
 })

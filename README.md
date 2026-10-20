@@ -43,6 +43,12 @@ npm run dev
 아직 메일 발송 서비스가 연결되지 않았습니다. 개발 중에는 인증번호를 API 응답(`devCode`)에 담아 회원가입 화면에 보여 주고, 서버 로그에도 `[mail]`로 출력합니다.
 실제 메일을 보낼 때는 `backend/src/lib/mailer.ts`의 `sendVerificationCode`를 구현하고 `EXPOSE_EMAIL_CODES=false`로 설정하세요.
 
+### 현장 QR 참여
+
+성과 측정의 `현장 QR 열기`는 실제로 스캔되는 QR 코드를 보여 줍니다. 참여자가 스캔하면 `/check-in/<행사 코드>` 참여 화면이 열리고, 이때 QR 스캔이 1건 기록됩니다. 참여자는 그 화면에서 쿠폰을 받고(쿠폰 수령), 매장 직원이 `직원 확인 완료`를 누르면 매장 방문이 기록됩니다. 같은 휴대폰에서 다시 열어도 한 번만 집계됩니다.
+
+QR은 지금 연 주소를 담습니다. 휴대폰으로 스캔해 보려면 컴퓨터에서 `localhost` 대신 Vite가 알려 주는 네트워크 주소(예: `http://192.168.x.x:8443`)로 앱을 열어 주세요.
+
 ## 빌드와 배포
 
 ```bash
@@ -76,15 +82,18 @@ NODE_ENV=production npm start
 | POST | `/api/auth/login` | 로그인 `{ role, email, password }` → `{ token, account }` | |
 | GET | `/api/auth/me` | 내 계정 | 필요 |
 | POST | `/api/auth/logout` | 로그아웃 | |
-| GET | `/api/matches?role=` | 추천 매칭 (로그인하면 내 유형 기준) | |
+| GET | `/api/matches?role=` | 추천 매칭 상위 3곳 (로그인하면 내 유형 기준) | |
+| GET | `/api/brands` | 학생단체가 둘러보는 브랜드 전체 (일치율·협찬 횟수 포함) | |
 | GET | `/api/events?role=` | 행사·캠페인 목록 (로그인 전에는 데모 계정 것) | |
-| POST | `/api/events` | 행사·캠페인 등록 | 필요 |
+| POST | `/api/events` | 행사·캠페인 등록 (`date`는 `YYYY-MM-DD`, 협찬 유형 1개 이상, `기타`는 `typeNote` 함께) | 필요 |
 | DELETE | `/api/events/:id` | 행사·캠페인 삭제 | 필요 |
 | GET | `/api/proposals` | 보낸 협찬 제안 (매칭 id 목록) | |
 | POST | `/api/proposals` | 협찬 제안 보내기 `{ matchId }` | 필요 |
 | DELETE | `/api/proposals/:matchId` | 협찬 제안 취소 | 필요 |
 | GET | `/api/metrics` | QR 스캔·쿠폰 수령·매장 방문 수 | |
-| POST | `/api/metrics/:kind` | `scans` · `coupons` · `visits` 1 증가 (데모 측정용) | |
+| POST | `/api/metrics/:kind` | `scans` · `coupons` · `visits` 1 증가하고 참여 기록 추가 (현장 참여 화면이 호출) | |
+| GET | `/api/metrics/log?kind=` | 최근 참여 기록 (최신순, `kind`로 항목 선택) | |
+| GET | `/api/report` | 측정한 행사의 목표 수치와 결과 (리포트·PDF용) | |
 
 ## 검사
 

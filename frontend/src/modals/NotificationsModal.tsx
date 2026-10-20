@@ -1,11 +1,15 @@
 import { Icon } from "../components/Icon"
 import { Modal } from "../components/Modal"
-import type { NavLabel } from "../types"
+import type { NavLabel, Report } from "../types"
 
 export function NotificationsModal({
+  matchCount,
+  report,
   onClose,
   onOpen,
 }: {
+  matchCount: number
+  report: Report | null
   onClose: () => void
   onOpen: (label: NavLabel) => void
 }) {
@@ -17,21 +21,25 @@ export function NotificationsModal({
             <Icon name="spark" size={18} />
           </span>
           <span>
-            <strong>새 추천 매칭 3건</strong>
-            <small>종강 공연과 잘 맞는 파트너를 찾았어요.</small>
+            <strong>새 추천 매칭 {matchCount}건</strong>
+            <small>다가오는 일정과 잘 맞는 파트너를 찾았어요.</small>
           </span>
           <Icon name="chevron" size={16} />
         </button>
-        <button onClick={() => onOpen("리포트")} type="button">
-          <span className="notification-icon green">
-            <Icon name="chart" size={18} />
-          </span>
-          <span>
-            <strong>성과 리포트가 완성됐어요</strong>
-            <small>가을 버스킹 데이 · ROAS 243%</small>
-          </span>
-          <Icon name="chevron" size={16} />
-        </button>
+        {report && (
+          <button onClick={() => onOpen("리포트")} type="button">
+            <span className="notification-icon green">
+              <Icon name="chart" size={18} />
+            </span>
+            <span>
+              <strong>성과 리포트가 완성됐어요</strong>
+              <small>
+                {report.eventName} · ROAS {report.roas}%
+              </small>
+            </span>
+            <Icon name="chevron" size={16} />
+          </button>
+        )}
       </div>
     </Modal>
   )

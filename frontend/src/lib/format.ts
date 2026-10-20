@@ -1,9 +1,8 @@
-// Accepts "2026. 11. 27.", "2026-11-27", "11월 27일" and similar free-form input.
-export function monthAndDay(date: string) {
-  const numbers = (date.match(/\d+/g) ?? []).filter((part) => part.length <= 2)
-  const [month = "-", day = "-"] = numbers.slice(-2)
-  return { month, day }
-}
+import type { EventItem } from "../types"
+
+// Sponsor types for display, with what "기타" means spelled out.
+export const sponsorTypeLabels = (event: EventItem) =>
+  event.types.map((type) => (type === "기타" && event.typeNote ? `기타(${event.typeNote})` : type))
 
 export function formatRemaining(ms: number) {
   const seconds = Math.ceil(ms / 1000)

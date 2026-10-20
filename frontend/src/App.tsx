@@ -7,19 +7,23 @@ import { useNotice } from "./hooks/useNotice"
 import { MobileNav } from "./layout/MobileNav"
 import { Sidebar } from "./layout/Sidebar"
 import { Topbar } from "./layout/Topbar"
-import { downloadReport } from "./lib/report"
-import { EventModal } from "./modals/EventModal"
+import { todayIso } from "./lib/date"
+import { reportKpis, type KpiKey } from "./lib/kpis"
+import { GoalModal } from "./modals/GoalModal"
 import { LoginModal } from "./modals/LoginModal"
+import { MetricLogModal } from "./modals/MetricLogModal"
 import { NotificationsModal } from "./modals/NotificationsModal"
 import { ProfileModal } from "./modals/ProfileModal"
 import { QrModal } from "./modals/QrModal"
 import { ReportModal } from "./modals/ReportModal"
 import { SignupModal } from "./modals/SignupModal"
 import { DashboardPage } from "./pages/DashboardPage"
+import { EventCreatePage } from "./pages/EventCreatePage"
 import { EventsPage } from "./pages/EventsPage"
 import { MatchesPage } from "./pages/MatchesPage"
 import { MeasurementPage } from "./pages/MeasurementPage"
 import { ReportsPage } from "./pages/ReportsPage"
+import { ReportExport } from "./report/ReportExport"
 import type {
   Account,
   EventItem,
@@ -28,6 +32,7 @@ import type {
   Metrics,
   ModalName,
   NavLabel,
+  Report,
   Role,
   Session,
 } from "./types"
@@ -46,7 +51,20 @@ function App() {
   const [events, setEvents] = useState<EventItem[]>([])
   const [proposals, setProposals] = useState<string[]>([])
   const [metrics, setMetrics] = useState<Metrics>({ scans: 0, coupons: 0, visits: 0 })
+  // Brand catalog that student groups browse on the matches page.
+  const [brands, setBrands] = useState<Match[]>([])
+  const [report, setReport] = useState<Report | null>(null)
+  // Day the new event page opens on; null while that page is closed.
+  const [creating, setCreating] = useState<string | null>(null)
+  // Day the 내 행사 calendar opens on, such as a just-registered event's.
+  const [eventsFocus, setEventsFocus] = useState<string | undefined>(undefined)
+  // Which history or goal the open modal shows.
+  const [logKind, setLogKind] = useState<MetricKind | "all">("all")
+  const [goalKey, setGoalKey] = useState<KpiKey>("reach")
+  const [exporting, setExporting] = useState(false)
   const [notificationsRead, setNotificationsRead] = useState(false)
+  // When matches and events were last loaded, shown on the dashboard.
+  const [updatedAt, setUpdatedAt] = useState<Date | null>(null)
   const { notice, showNotice } = useNotice()
 
   const role = account?.role ?? previewRole
@@ -76,12 +94,20 @@ function App() {
   useEffect(() => {
     if (!authReady) return
     let cancelled = false
-    Promise.all([api.matches(role), api.events(role), api.proposals()])
-      .then(([matchResult, eventResult, proposalResult]) => {
+    Promise.all([
+      api.matches(role),
+      api.events(role),
+      api.proposals(),
+      // Only student groups browse the brand catalog.
+      role === "학생단체" ? api.brands() : Promise.resolve({ brands: [] }),
+    ])
+      .then(([matchResult, eventResult, proposalResult, brandResult]) => {
         if (cancelled) return
         setMatches(matchResult.matches)
+        setUpdatedAt(new Date())
         setEvents(eventResult.events)
         setProposals(proposalResult.proposals)
+        setBrands(brandResult.brands)
       })
       .catch((error) => {
         if (!cancelled) showNotice(errorMessage(error))
@@ -93,10 +119,11 @@ function App() {
 
   useEffect(() => {
     let cancelled = false
-    api
-      .metrics()
-      .then((result) => {
-        if (!cancelled) setMetrics(result.metrics)
+    Promise.all([api.metrics(), api.report()])
+      .then(([metricResult, reportResult]) => {
+        if (cancelled) return
+        setMetrics(metricResult.metrics)
+        setReport(reportResult.report)
       })
       .catch(() => {
         // Connection problems are already reported by the request above.
@@ -107,6 +134,7 @@ function App() {
   }, [])
 
   const navigate = (label: NavLabel) => {
+    setCreating(null)
     setActiveNav(label)
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
@@ -164,7 +192,7 @@ function App() {
     showNotice(`${next} 전용 데이터로 전환했어요.`)
   }
 
-  const openCreate = () => {
+  const openCreate = (date = todayIso()) => {
     if (!account) {
       requireLogin(
         role === "학생단체"
@@ -173,14 +201,15 @@ function App() {
       )
       return
     }
-    setActiveModal("event")
+    setCreating(date)
+    window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
   const createEvent = async (draft: EventDraft) => {
     try {
       const { event } = await api.createEvent(draft)
       setEvents((current) => [event, ...current])
-      setActiveModal(null)
+      setEventsFocus(event.date)
       navigate("내 행사")
       showNotice(
         role === "학생단체"
@@ -235,20 +264,38 @@ function App() {
     }
   }
 
-  const recordMetric = async (kind: MetricKind, message?: string) => {
-    try {
-      const result = await api.recordMetric(kind)
-      setMetrics(result.metrics)
-      if (message) showNotice(message)
-    } catch (error) {
-      handleError(error)
-    }
+  // Without a kind, the history of every measurement.
+  const openLog = (kind?: MetricKind) => {
+    setLogKind(kind ?? "all")
+    setActiveModal("metric-log")
   }
 
-  const saveReport = () => {
-    downloadReport(metrics)
-    showNotice("성과 리포트를 다운로드했어요.")
+  const openEventsOn = (date: string) => {
+    setEventsFocus(date)
+    navigate("내 행사")
   }
+
+  const openGoal = (key: KpiKey) => {
+    setGoalKey(key)
+    setActiveModal("goal")
+  }
+
+  // The PDF is made by ReportExport, which mounts while exporting is true.
+  const saveReport = () => {
+    if (report && !exporting) setExporting(true)
+  }
+
+  const finishExport = useCallback(
+    (failed: boolean) => {
+      setExporting(false)
+      showNotice(
+        failed ? "PDF를 만들지 못했어요. 다시 시도해 주세요." : "PDF 리포트를 다운로드했어요.",
+      )
+    },
+    [showNotice],
+  )
+
+  const goal = report ? reportKpis(report, metrics).find((kpi) => kpi.key === goalKey) : undefined
 
   return (
     <div className="app-shell">
@@ -257,14 +304,17 @@ function App() {
         account={account}
         activeNav={activeNav}
         matchCount={matches.length}
+        events={events}
         onNavigate={navigate}
         onSwitchRole={switchRole}
-        onCreate={openCreate}
+        onCreate={() => openCreate()}
+        onOpenEvent={openEventsOn}
         onOpenAccount={() => (account ? setActiveModal("profile") : openAuth("login"))}
       />
 
       <main className="main-content">
         <Topbar
+          title={creating !== null ? createLabel(role) : undefined}
           activeNav={activeNav}
           account={account}
           authReady={authReady}
@@ -278,68 +328,96 @@ function App() {
           onLogin={() => openAuth("login")}
         />
 
-        {activeNav === "대시보드" && (
+        {creating !== null ? (
+          <EventCreatePage
+            role={role}
+            initialDate={creating}
+            onCancel={() => setCreating(null)}
+            onSubmit={createEvent}
+          />
+        ) : activeNav === "대시보드" ? (
           <DashboardPage
             role={role}
             matches={matches}
+            brands={brands}
+            events={events}
             proposals={proposals}
             metrics={metrics}
+            report={report}
+            updatedAt={updatedAt}
             onNavigate={navigate}
             onPropose={propose}
             onCancelProposal={cancelProposal}
             onOpenReport={() => setActiveModal("report")}
           />
-        )}
-        {activeNav === "추천 매칭" && (
+        ) : activeNav === "추천 매칭" ? (
           <MatchesPage
             role={role}
             matches={matches}
+            brands={brands}
             proposals={proposals}
             onPropose={propose}
             onCancelProposal={cancelProposal}
           />
-        )}
-        {activeNav === "내 행사" && (
+        ) : activeNav === "내 행사" ? (
           <EventsPage
             role={role}
             events={events}
-            onCreate={openCreate}
+            initialDate={eventsFocus}
+            onCreate={(date) => {
+              setEventsFocus(date)
+              openCreate(date)
+            }}
             onShowDetail={showEventDetail}
             onDelete={deleteEvent}
           />
-        )}
-        {activeNav === "성과 측정" && (
+        ) : activeNav === "성과 측정" ? (
           <MeasurementPage
             metrics={metrics}
+            report={report}
+            onMetrics={setMetrics}
             onOpenQr={() => setActiveModal("qr")}
-            onRecord={(kind) => recordMetric(kind)}
+            onShowLog={openLog}
           />
-        )}
-        {activeNav === "리포트" && (
+        ) : (
           <ReportsPage
+            report={report}
             metrics={metrics}
+            exporting={exporting}
             onDownload={saveReport}
             onOpenReport={() => setActiveModal("report")}
+            onOpenGoal={openGoal}
           />
         )}
       </main>
 
-      <button
-        className="create-fab"
-        aria-label={createLabel(role)}
-        onClick={openCreate}
-        type="button"
-      >
-        <Icon name="plus" size={24} />
-      </button>
+      {creating === null && (
+        <button
+          className="create-fab"
+          aria-label={createLabel(role)}
+          onClick={() => openCreate()}
+          type="button"
+        >
+          <Icon name="plus" size={24} />
+        </button>
+      )}
 
       <MobileNav activeNav={activeNav} onNavigate={navigate} />
 
-      {activeModal === "event" && (
-        <EventModal role={role} onClose={closeModal} onSubmit={createEvent} />
+      {activeModal === "metric-log" && (
+        <MetricLogModal
+          kind={logKind === "all" ? undefined : logKind}
+          total={
+            logKind === "all" ? metrics.scans + metrics.coupons + metrics.visits : metrics[logKind]
+          }
+          onClose={closeModal}
+        />
       )}
+      {activeModal === "goal" && goal && <GoalModal kpi={goal} onClose={closeModal} />}
       {activeModal === "notifications" && (
         <NotificationsModal
+          matchCount={matches.length}
+          report={report}
           onClose={closeModal}
           onOpen={(label) => {
             closeModal()
@@ -347,14 +425,16 @@ function App() {
           }}
         />
       )}
-      {activeModal === "report" && (
-        <ReportModal metrics={metrics} onClose={closeModal} onDownload={saveReport} />
-      )}
-      {activeModal === "qr" && (
-        <QrModal
+      {activeModal === "report" && report && (
+        <ReportModal
+          report={report}
+          metrics={metrics}
           onClose={closeModal}
-          onScan={() => recordMetric("scans", "테스트 스캔이 기록됐어요.")}
+          onDownload={saveReport}
         />
+      )}
+      {activeModal === "qr" && report && (
+        <QrModal report={report} onClose={closeModal} onCopied={showNotice} />
       )}
       {activeModal === "profile" && account && (
         <ProfileModal
@@ -384,6 +464,15 @@ function App() {
           }
           onLogin={(next) => openAuth("login", next)}
           onNotice={showNotice}
+        />
+      )}
+
+      {exporting && report && (
+        <ReportExport
+          report={report}
+          metrics={metrics}
+          author={account?.name ?? "uniconnect"}
+          onDone={finishExport}
         />
       )}
 

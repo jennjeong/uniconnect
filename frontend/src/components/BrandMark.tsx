@@ -1,19 +1,18 @@
-import { useState } from "react"
+import { useState, type CSSProperties } from "react"
 
 import type { Industry, Match } from "../types"
-import { Icon, type IconName } from "./Icon"
+import { IndustryArt } from "./IndustryArt"
 
-// Graphic shown in place of a logo, picked by industry.
-const industryMarks: Record<
-  Industry,
-  { icon: IconName; background: string; color: string }
-> = {
-  cafe: { icon: "coffee", background: "#ffe3b5", color: "#a8661c" },
-  photo: { icon: "camera", background: "#dfeaff", color: "#3f6fc4" },
-  wellness: { icon: "leaf", background: "#dcf5e3", color: "#33905a" },
-  performance: { icon: "music", background: "#ffe3ee", color: "#c24a77" },
-  content: { icon: "play", background: "#ebe6ff", color: "#6650c4" },
-  sports: { icon: "trophy", background: "#d9f3f4", color: "#1f8a91" },
+// Light tint of each mark's main color, used as its tile background.
+const tileTints: Record<Industry, string> = {
+  cafe: "#fff1e4",
+  photo: "#e9f4ff",
+  wellness: "#e8f8ee",
+  performance: "#ffedf5",
+  content: "#f1eeff",
+  sports: "#e6f8f7",
+  beauty: "#fff0f0",
+  education: "#eef1ff",
 }
 
 export function BrandMark({ match, large = false }: { match: Match; large?: boolean }) {
@@ -28,14 +27,13 @@ export function BrandMark({ match, large = false }: { match: Match; large?: bool
     )
   }
 
-  const mark = industryMarks[match.industry]
   return (
     <div
       aria-hidden="true"
-      className={className}
-      style={{ backgroundColor: mark.background, color: mark.color }}
+      className={`${className} industry`}
+      style={{ "--tile": tileTints[match.industry] } as CSSProperties}
     >
-      <Icon name={mark.icon} size={large ? 28 : 22} />
+      <IndustryArt industry={match.industry} />
     </div>
   )
 }

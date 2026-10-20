@@ -1,4 +1,5 @@
 import { Modal } from "../components/Modal"
+import { formatFullDate, toIsoDate } from "../lib/date"
 import { initialOf } from "../lib/format"
 import type { Account } from "../types"
 
@@ -47,8 +48,8 @@ export function ProfileModal({
             <strong>{proposalCount}건</strong>
           </div>
           <div>
-            <span>참여 파일럿</span>
-            <strong>삼육대 파일럿 · 11월 30일까지</strong>
+            <span>가입일</span>
+            <strong>{formatFullDate(toIsoDate(new Date(account.createdAt)))}</strong>
           </div>
         </div>
         <button className="cancel-button wide" onClick={onLogout} type="button">

@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto"
 import { Router } from "express"
 
+import { toIsoDate } from "../lib/dates.js"
 import { HttpError } from "../lib/errors.js"
 import { parseRole, sponsorTypes, text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
@@ -19,16 +20,25 @@ eventsRouter.get("/", (req, res) => {
 eventsRouter.post("/", async (req, res) => {
   const account = requireAccount(req)
   const name = text(req.body?.name)
-  const date = text(req.body?.date)
+  const rawDate = text(req.body?.date)
   const people = text(req.body?.people)
   const types: string[] = Array.isArray(req.body?.types)
-    ? req.body.types.filter((type: unknown) => sponsorTypes.includes(String(type)))
+    ? sponsorTypes.filter((type) => req.body.types.map(String).includes(type))
     : []
+  // Free text describing the "기타" type.
+  const typeNote = text(req.body?.typeNote)
 
-  if (!name || !date) {
+  if (!name || !rawDate) {
     const label = account.role === "학생단체" ? "행사명" : "캠페인명"
     throw new HttpError(400, `${label}과 일정을 입력해 주세요.`)
   }
+  const date = toIsoDate(rawDate)
+  if (!date) throw new HttpError(400, "일정은 달력에서 날짜를 골라 주세요.")
+  if (types.length === 0) throw new HttpError(400, "원하는 협찬 유형을 하나 이상 골라 주세요.")
+  if (types.includes("기타") && !typeNote) {
+    throw new HttpError(400, "기타 협찬 유형을 적어 주세요.")
+  }
+  if (typeNote.length > 30) throw new HttpError(400, "기타 협찬 유형은 30자 이하로 적어 주세요.")
 
   const event: EventItem = {
     id: randomUUID(),
@@ -36,6 +46,7 @@ eventsRouter.post("/", async (req, res) => {
     date,
     people,
     types,
+    ...(types.includes("기타") ? { typeNote } : {}),
     status: "매칭 중",
     createdAt: new Date().toISOString(),
   }

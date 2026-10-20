@@ -2,8 +2,10 @@ import type {
   Account,
   EventItem,
   Match,
+  MetricEntry,
   MetricKind,
   Metrics,
+  Report,
   Role,
   Session,
 } from "../types"
@@ -22,7 +24,7 @@ export type SignupPayload = {
   agreedToTerms: boolean
 }
 
-export type EventDraft = Pick<EventItem, "name" | "people" | "date" | "types">
+export type EventDraft = Pick<EventItem, "name" | "people" | "date" | "types" | "typeNote">
 
 // One function per backend endpoint (see backend/src/routes).
 export const api = {
@@ -45,6 +47,7 @@ export const api = {
 
   matches: (role: Role) =>
     request<{ matches: Match[] }>("/matches", { query: { role } }),
+  brands: () => request<{ brands: Match[] }>("/brands"),
 
   events: (role: Role) =>
     request<{ events: EventItem[] }>("/events", { query: { role } }),
@@ -65,6 +68,10 @@ export const api = {
     }),
 
   metrics: () => request<{ metrics: Metrics }>("/metrics"),
+  metricLog: (kind?: MetricKind) =>
+    request<{ entries: MetricEntry[] }>("/metrics/log", { query: kind ? { kind } : {} }),
   recordMetric: (kind: MetricKind) =>
-    request<{ metrics: Metrics }>(`/metrics/${kind}`, { method: "POST" }),
+    request<{ metrics: Metrics; entry: MetricEntry }>(`/metrics/${kind}`, { method: "POST" }),
+
+  report: () => request<{ report: Report }>("/report"),
 }

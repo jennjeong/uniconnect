@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 
-export type IconName = "home" | "spark" | "calendar" | "chart" | "file" | "bell" | "arrow" | "plus" | "users" | "store" | "scan" | "check" | "chevron" | "close" | "coffee" | "camera" | "leaf" | "music" | "play" | "trophy"
+export type IconName = "home" | "spark" | "calendar" | "chart" | "file" | "bell" | "arrow" | "plus" | "users" | "store" | "scan" | "check" | "chevron" | "close"
 
 const icons: Record<IconName, ReactNode> = {
   home: (
@@ -66,45 +66,6 @@ const icons: Record<IconName, ReactNode> = {
   check: <path d="m5 12 4 4L19 6" />,
   chevron: <path d="m9 18 6-6-6-6" />,
   close: <path d="M6 6l12 12M18 6 6 18" />,
-  coffee: (
-    <>
-      <path d="M4 9h12v7a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4Z" />
-      <path d="M16 11h1.5a2.5 2.5 0 0 1 0 5H16" />
-      <path d="M8 3v3M12 3v3" />
-    </>
-  ),
-  camera: (
-    <>
-      <path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z" />
-      <circle cx="12" cy="13" r="3.5" />
-    </>
-  ),
-  leaf: (
-    <>
-      <path d="M5 19C5 10 10 5 20 4c-1 10-6 15-15 15Z" />
-      <path d="M5 19 13 11" />
-    </>
-  ),
-  music: (
-    <>
-      <path d="M9 18V6l11-2v12" />
-      <circle cx="6.5" cy="18" r="2.5" />
-      <circle cx="17.5" cy="16" r="2.5" />
-    </>
-  ),
-  play: (
-    <>
-      <rect x="3" y="5" width="18" height="14" rx="3" />
-      <path d="m10 9 5 3-5 3Z" />
-    </>
-  ),
-  trophy: (
-    <>
-      <path d="M7 4h10v5a5 5 0 0 1-10 0Z" />
-      <path d="M17 6h3v1a3 3 0 0 1-3 3M7 6H4v1a3 3 0 0 0 3 3" />
-      <path d="M12 14v4M8 20h8" />
-    </>
-  ),
 }
 
 export function Icon({ name, size = 20 }: { name: IconName; size?: number }) {

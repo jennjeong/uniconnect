@@ -2,28 +2,37 @@ import logoHorizontal from "../assets/brand/uniconnect_horizontal.svg"
 import { Icon } from "../components/Icon"
 import { navItems } from "../data/navigation"
 import { createLabel, roles } from "../data/roles"
+import { daysUntil, formatDay, nextEvent } from "../lib/date"
 import { initialOf } from "../lib/format"
-import type { Account, NavLabel, Role } from "../types"
+import type { Account, EventItem, NavLabel, Role } from "../types"
 
 export function Sidebar({
   role,
   account,
   activeNav,
   matchCount,
+  events,
   onNavigate,
   onSwitchRole,
   onCreate,
+  onOpenEvent,
   onOpenAccount,
 }: {
   role: Role
   account: Account | null
   activeNav: NavLabel
   matchCount: number
+  events: EventItem[]
   onNavigate: (label: NavLabel) => void
   onSwitchRole: (role: Role) => void
   onCreate: () => void
+  // Opens the 내 행사 calendar on this day.
+  onOpenEvent: (date: string) => void
   onOpenAccount: () => void
 }) {
+  const next = nextEvent(events)
+  const dDay = next ? daysUntil(next.date) : 0
+
   return (
     <aside className="sidebar">
       <button
@@ -88,15 +97,28 @@ export function Sidebar({
         ))}
       </nav>
 
-      <div className="pilot-card">
-        <span className="pilot-kicker">MVP PILOT</span>
-        <strong>삼육대 파일럿</strong>
-        <span>11월 30일까지</span>
-        <div className="pilot-progress">
-          <span />
-        </div>
-        <small>전체 목표의 68%</small>
-      </div>
+      <button
+        className="pilot-card"
+        onClick={() => (next ? onOpenEvent(next.date) : onCreate())}
+        type="button"
+      >
+        <span className="pilot-kicker">다가오는 일정</span>
+        {next ? (
+          <>
+            <strong>{next.name}</strong>
+            <span>{formatDay(next.date)}</span>
+            <span className="pilot-footer">
+              <em className="d-day">{dDay === 0 ? "D-DAY" : `D-${dDay}`}</em>
+              <small>{next.status}</small>
+            </span>
+          </>
+        ) : (
+          <>
+            <strong>예정된 일정이 없어요</strong>
+            <span>{role === "학생단체" ? "새 행사를 등록해 보세요" : "새 캠페인을 등록해 보세요"}</span>
+          </>
+        )}
+      </button>
 
       <button className="profile" onClick={onOpenAccount} type="button">
         <div className="avatar">{account ? initialOf(account.name) : "?"}</div>

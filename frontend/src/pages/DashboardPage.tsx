@@ -1,15 +1,23 @@
+import type { ReactNode } from "react"
+
 import { BrandMark } from "../components/BrandMark"
 import { Icon, type IconName } from "../components/Icon"
 import { ProposalControl } from "../components/ProposalControl"
-import type { Match, Metrics, NavLabel, Role } from "../types"
+import { formatFullDate, fromIsoDate, nextEvent } from "../lib/date"
+import { percent } from "../lib/format"
+import { scoreBand } from "../lib/score"
+import type { EventItem, Match, Metrics, NavLabel, Report, Role } from "../types"
 
-const journey: { icon: IconName; label: string; status: string }[] = [
-  { icon: "check", label: "행사 등록", status: "완료" },
-  { icon: "spark", label: "매칭·제안", status: "진행 중" },
-  { icon: "calendar", label: "집행 관리", status: "11.27 예정" },
-  { icon: "scan", label: "성과 측정", status: "대기" },
-  { icon: "file", label: "리포트", status: "대기" },
-]
+type Stat = {
+  label: string
+  icon: IconName
+  value: string
+  note: ReactNode
+  // Page with the details behind the number.
+  target: NavLabel
+}
+
+const pad = (value: number) => String(value).padStart(2, "0")
 
 // Top of the performance chart's y-axis (150 / 100 / 50 / 0).
 const chartMax = 150
@@ -17,8 +25,12 @@ const chartMax = 150
 export function DashboardPage({
   role,
   matches,
+  brands,
+  events,
   proposals,
   metrics,
+  report,
+  updatedAt,
   onNavigate,
   onPropose,
   onCancelProposal,
@@ -26,13 +38,84 @@ export function DashboardPage({
 }: {
   role: Role
   matches: Match[]
+  // Brand catalog (student groups only).
+  brands: Match[]
+  events: EventItem[]
   proposals: string[]
   metrics: Metrics
+  report: Report | null
+  // When the matches were last loaded.
+  updatedAt: Date | null
   onNavigate: (label: NavLabel) => void
   onPropose: (match: Match) => void
   onCancelProposal: (match: Match) => void
   onOpenReport: () => void
 }) {
+  const students = role === "학생단체"
+  const next = nextEvent(events)
+  const nextDay = next ? fromIsoDate(next.date) : undefined
+  const candidates = students && brands.length > 0 ? brands : matches
+  const strongCut = students ? 80 : 90
+
+  // Summary cards, each opening the page with the details behind its number.
+  const stats: Stat[] = [
+    {
+      label: students ? "추천 브랜드" : "추천 단체",
+      icon: "spark",
+      value: String(candidates.length),
+      note: (
+        <>
+          일치율 {strongCut}% 이상{" "}
+          <em>{candidates.filter((match) => match.score >= strongCut).length}곳</em>
+        </>
+      ),
+      target: "추천 매칭",
+    },
+    {
+      label: "진행 중 협찬",
+      icon: "calendar",
+      value: String(events.filter((event) => event.status !== "측정 완료").length),
+      note: `보낸 제안 ${proposals.length}건`,
+      target: "내 행사",
+    },
+    {
+      label: "예상 협찬 가치",
+      icon: "chart",
+      value: report ? `₩${Math.round(report.sponsorValue / 1000).toLocaleString("ko-KR")}K` : "-",
+      note: "현물 환산 포함",
+      target: "리포트",
+    },
+    {
+      label: "누적 QR 참여",
+      icon: "scan",
+      value: metrics.scans.toLocaleString("ko-KR"),
+      note: (
+        <>
+          참여율 <em>{report ? percent(metrics.scans, report.expectedAudience) : 0}%</em>
+        </>
+      ),
+      target: "성과 측정",
+    },
+  ]
+
+  // Where the next event stands in the sponsorship flow.
+  const currentStep = !next ? 0 : next.status === "매칭 중" ? 1 : next.status === "집행 예정" ? 2 : 3
+  const journey: { icon: IconName; label: string; status: string }[] = [
+    { icon: "check", label: students ? "행사 등록" : "캠페인 등록", status: next ? "완료" : "등록 전" },
+    {
+      icon: "spark",
+      label: "매칭·제안",
+      status: proposals.length > 0 ? `제안 ${proposals.length}건` : next ? "진행 중" : "대기",
+    },
+    {
+      icon: "calendar",
+      label: "집행 관리",
+      status: nextDay ? `${nextDay.getMonth() + 1}.${nextDay.getDate()} 예정` : "대기",
+    },
+    { icon: "scan", label: "성과 측정", status: "대기" },
+    { icon: "file", label: "리포트", status: "대기" },
+  ]
+
   const bars = [
     { label: "QR 스캔", value: metrics.scans },
     { label: "쿠폰 수령", value: metrics.coupons },
@@ -48,20 +131,11 @@ export function DashboardPage({
             {role === "학생단체" ? "좋은 행사는," : "좋은 캠페인은,"} <br />
             <em>좋은 파트너</em>를 만날 때 커져요.
           </p>
-          <div className="welcome-footer">
-            <p className="welcome-description">
-              {role === "학생단체"
-                ? "다가오는 종강 공연과 잘 맞는 브랜드 3곳을 찾았어요."
-                : "이번 캠페인과 잘 맞는 학생단체 3곳을 찾았어요."}
-            </p>
-            <button
-              className="text-link"
-              onClick={() => onNavigate("추천 매칭")}
-              type="button"
-            >
-              추천 매칭 확인하기 <Icon name="arrow" size={18} />
-            </button>
-          </div>
+          <p className="welcome-description">
+            {role === "학생단체"
+              ? `다가오는 행사와 잘 맞는 브랜드 ${matches.length}곳을 찾았어요.`
+              : `이번 캠페인과 잘 맞는 학생단체 ${matches.length}곳을 찾았어요.`}
+          </p>
         </div>
         <div className="connection-art" aria-hidden="true">
           <div className="orbit orbit-one" />
@@ -81,6 +155,13 @@ export function DashboardPage({
           <span className="spark-dot dot-two" />
           <span className="spark-dot dot-three" />
         </div>
+        <button
+          className="detail-button welcome-action"
+          onClick={() => onNavigate("추천 매칭")}
+          type="button"
+        >
+          추천 매칭 확인하기 <Icon name="arrow" size={16} />
+        </button>
       </section>
 
       <section className="workflow-section">
@@ -100,7 +181,7 @@ export function DashboardPage({
         <div className="workflow-card">
           {journey.map((step, index) => (
             <div
-              className={`workflow-step ${index === 1 ? "current" : ""}`}
+              className={`workflow-step ${index === currentStep ? "current" : ""}`}
               key={step.label}
             >
               <div className="step-icon">
@@ -122,42 +203,23 @@ export function DashboardPage({
       </section>
 
       <section className="stats-grid">
-        <article className="stat-card">
-          <div className="stat-top">
-            <span>추천 브랜드</span>
-            <Icon name="spark" size={18} />
-          </div>
-          <strong>12</strong>
-          <small>
-            이번 주 <em>+3곳</em>
-          </small>
-        </article>
-        <article className="stat-card">
-          <div className="stat-top">
-            <span>진행 중 협찬</span>
-            <Icon name="calendar" size={18} />
-          </div>
-          <strong>2</strong>
-          <small>제안 검토 중 1건</small>
-        </article>
-        <article className="stat-card">
-          <div className="stat-top">
-            <span>예상 협찬 가치</span>
-            <Icon name="chart" size={18} />
-          </div>
-          <strong>₩680K</strong>
-          <small>현물 환산 포함</small>
-        </article>
-        <article className="stat-card scan-card">
-          <div className="stat-top">
-            <span>누적 QR 참여</span>
-            <Icon name="scan" size={18} />
-          </div>
-          <strong>428</strong>
-          <small>
-            평균 참여율 <em>36%</em>
-          </small>
-        </article>
+        {stats.map((stat) => (
+          <button
+            className="stat-card"
+            key={stat.label}
+            onClick={() => onNavigate(stat.target)}
+            type="button"
+          >
+            <span className="stat-top">
+              <span>{stat.label}</span>
+              <Icon name={stat.icon} size={18} />
+            </span>
+            <span className="stat-value">
+              <strong>{stat.value}</strong>
+              <small>{stat.note}</small>
+            </span>
+          </button>
+        ))}
       </section>
 
       <section className="content-grid" id="matches">
@@ -165,9 +227,13 @@ export function DashboardPage({
           <div className="section-heading-row">
             <div>
               <span className="section-kicker dark">SMART MATCH</span>
-              <p className="section-title">종강 공연 추천 매칭</p>
+              <p className="section-title">맞춤 추천 매칭</p>
             </div>
-            <span className="updated-at">오늘 10:24 업데이트</span>
+            {updatedAt && (
+              <span className="updated-at">
+                오늘 {pad(updatedAt.getHours())}:{pad(updatedAt.getMinutes())} 업데이트
+              </span>
+            )}
           </div>
           <div className="match-list">
             {matches.map((match) => (
@@ -187,7 +253,7 @@ export function DashboardPage({
                 </div>
                 <div className="score">
                   <span>매칭 적합도</span>
-                  <strong>
+                  <strong style={{ color: scoreBand(match.score).text }}>
                     {match.score}
                     <small>%</small>
                   </strong>
@@ -221,8 +287,8 @@ export function DashboardPage({
           </div>
           <div className="event-summary">
             <div>
-              <strong>가을 버스킹 데이</strong>
-              <span>2026. 10. 12.</span>
+              <strong>{report?.eventName ?? "최근 행사"}</strong>
+              <span>{report ? formatFullDate(report.eventDate) : ""}</span>
             </div>
             <span className="complete-badge">측정 완료</span>
           </div>
@@ -255,7 +321,7 @@ export function DashboardPage({
             </div>
             <div>
               <span>추정 ROAS</span>
-              <strong>243%</strong>
+              <strong>{report ? `${report.roas}%` : "-"}</strong>
             </div>
             <button aria-label="리포트 열기" onClick={onOpenReport} type="button">
               <Icon name="arrow" size={18} />
