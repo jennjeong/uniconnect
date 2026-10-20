@@ -81,38 +81,17 @@ input:focus-visible {
   display: flex;
   align-self: flex-start;
   align-items: center;
-  gap: 9px;
   padding: 0 10px;
   border: 0;
   border-radius: 10px;
   background: transparent;
 }
 
-/* Logo guide: symbol at least 16px, never stretched, tilted or shadowed. */
-.brand-symbol {
-  display: block;
-  width: 36px;
-  height: 36px;
-}
-
-.brand-names {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-}
-
-.brand-wordmark {
+/* Logo guide: horizontal logo at least 24px tall, never tilted or shadowed. */
+.brand-logo {
   display: block;
   width: auto;
-  height: 18px;
-}
-
-.brand-name-ko {
-  color: var(--ink-soft);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.3px;
+  height: 36px;
 }
 
 .role-switch {
@@ -327,16 +306,8 @@ input:focus-visible {
 
 .topbar-home img {
   display: block;
-  width: 30px;
+  width: auto;
   height: 30px;
-}
-
-.topbar-brand {
-  display: none;
-  color: var(--point-strong);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.3px;
 }
 
 .eyebrow,
@@ -2030,22 +2001,13 @@ input:focus-visible {
     backdrop-filter: blur(12px);
   }
 
-  .eyebrow {
+  /* Phones show the named logo in place of the greeting and page title. */
+  .topbar-heading {
     display: none;
-  }
-
-  .page-title {
-    margin: 0;
-    font-size: 18px;
   }
 
   .topbar-home {
     display: block;
-  }
-
-  .topbar-brand {
-    display: block;
-    margin-bottom: 2px;
   }
 
   .welcome-panel {
