@@ -1,0 +1,10 @@
+{
+  "description": "Explore Pinkfong's family entertainment offerings, download official assets, and access the Baby Shark font for creative projects.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
