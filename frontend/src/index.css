@@ -1299,6 +1299,7 @@ input:focus-visible {
   font-size: 27px;
   font-weight: 760;
   letter-spacing: -1px;
+  word-break: keep-all;
 }
 
 .view-intro small {
@@ -3243,6 +3244,604 @@ input:focus-visible {
   text-decoration: none;
 }
 
+/* A brand's answer on the proposal button: confirmed is solid green,
+   declined is grey with a link to propose again. */
+.proposal-button.confirmed {
+  border-color: #2f9b5a;
+  background: #2f9b5a;
+  color: #fff;
+  cursor: default;
+}
+
+.proposal-button.declined {
+  border-color: var(--line);
+  background: #f4f2f5;
+  color: var(--muted);
+  cursor: default;
+}
+
+/* Brand dashboard: proposals waiting for an answer, ROAS of past
+   sponsorships and recommended groups below. */
+.brand-picks {
+  margin-top: 16px;
+}
+
+.inbox-row {
+  display: grid;
+  grid-template-columns: 54px 1fr 92px;
+  align-items: center;
+  gap: 13px;
+  min-height: 104px;
+  border-top: 1px solid var(--line);
+}
+
+.inbox-row-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.proposal-button.accept {
+  border-color: var(--point);
+  background: var(--point);
+  color: var(--ink);
+}
+
+.proposal-button.accept:hover {
+  border-color: var(--point-hover);
+  background: var(--point-hover);
+}
+
+.tag-row .tag-ask {
+  background: var(--point-tint);
+  color: var(--point-strong);
+  font-weight: 700;
+}
+
+.tag-row .tag-event {
+  background: #eef3fb;
+  color: #3e6591;
+  font-weight: 700;
+}
+
+.roas-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.roas-row-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.roas-row-head strong {
+  overflow: hidden;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.roas-row-head span {
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.roas-row-head span.best {
+  color: #2f8a52;
+}
+
+.roas-track {
+  position: relative;
+  height: 8px;
+  margin: 6px 0 5px;
+  border-radius: 4px;
+  background: #f2eff3;
+}
+
+.roas-track i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--point), var(--point-deep));
+}
+
+/* Break-even (ROAS 100%) marker. */
+.roas-track b,
+.roas-legend b {
+  width: 2px;
+  border-radius: 1px;
+  background: var(--ink);
+  opacity: 0.5;
+}
+
+.roas-track b {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+}
+
+.roas-row small {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.roas-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 14px 0;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.roas-legend b {
+  height: 10px;
+}
+
+.measure-card-head .roas-legend {
+  margin: 0;
+  font-size: 10px;
+}
+
+.roas-list.large {
+  gap: 18px;
+  padding-top: 20px;
+  border-top: 0;
+}
+
+.roas-list.large .roas-row-head strong {
+  font-size: 13px;
+}
+
+.roas-list.large .roas-row-head small {
+  margin-left: 8px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.roas-list.large .roas-row-head span {
+  font-size: 16px;
+}
+
+.roas-list.large .roas-track,
+.roas-list.large .roas-track i {
+  height: 12px;
+  border-radius: 6px;
+}
+
+/* Student group cards: school and field on one line, then the next
+   event, D-day first, under the offer. */
+.group-card .full-match-copy > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.group-event {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+}
+
+.group-event span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  word-break: keep-all;
+}
+
+.group-event em {
+  flex: 0 0 auto;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: var(--point-tint);
+  color: var(--point-strong);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+/* Received proposals: tabs with counts, then one card per proposal. */
+.inbox-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.match-tab em {
+  display: inline-grid;
+  min-width: 18px;
+  height: 18px;
+  margin-left: 6px;
+  padding: 0 5px;
+  place-items: center;
+  border-radius: 9px;
+  background: #f2eff3;
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.match-tab.active em {
+  background: rgba(255, 255, 255, 0.75);
+  color: var(--ink);
+}
+
+.inbox-empty {
+  margin-top: 16px;
+}
+
+.request-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.request-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.request-card.pending {
+  border-color: var(--point-line);
+  box-shadow: 0 10px 26px rgba(234, 166, 27, 0.08);
+}
+
+.request-head {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.request-from {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.request-from strong {
+  font-size: 14px;
+}
+
+.request-from span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.request-head time {
+  align-self: flex-start;
+  color: var(--muted);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.request-facts {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 0.9fr;
+  gap: 8px;
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--canvas);
+}
+
+.request-facts div {
+  min-width: 0;
+}
+
+.request-facts dt {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.request-facts dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin: 4px 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  word-break: keep-all;
+}
+
+.request-facts dd em {
+  padding: 1px 5px;
+  border-radius: 7px;
+  background: var(--point-tint);
+  color: var(--point-strong);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.request-ask {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--point-line);
+  border-radius: 12px;
+  background: var(--point-soft);
+}
+
+.request-ask span {
+  color: var(--point-strong);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.request-ask strong {
+  font-size: 13px;
+  text-align: right;
+  word-break: keep-all;
+}
+
+.request-message {
+  margin: 0;
+  padding-left: 12px;
+  border-left: 3px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.6;
+  word-break: keep-all;
+}
+
+.request-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.request-actions .primary-button,
+.request-actions .cancel-button,
+.decline-button {
+  height: 38px;
+}
+
+.request-confirm {
+  margin-right: auto;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.decline-button {
+  padding: 0 16px;
+  border: 0;
+  border-radius: 19px;
+  background: #e03150;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.request-result {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 16px;
+  background: #f4f2f5;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.request-result.confirmed {
+  background: var(--green-soft);
+  color: #2f8a52;
+}
+
+.request-result .icon {
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.2;
+}
+
+.request-result small {
+  margin-left: 2px;
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+/* Brand analytics: totals, ROAS per sponsorship, insights and a table. */
+.analytics-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.analytics-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.analytics-kpi span {
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.analytics-kpi strong {
+  font-size: 24px;
+  letter-spacing: -0.5px;
+}
+
+.analytics-kpi strong.good {
+  color: #2f8a52;
+}
+
+.analytics-kpi small {
+  color: var(--muted);
+  font-size: 11px;
+  word-break: keep-all;
+}
+
+.analytics-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.analytics-card {
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.insight-card {
+  border-color: var(--point-line);
+  background: linear-gradient(160deg, #fffaf0 0%, var(--point-soft) 100%);
+}
+
+.insight-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.insight-list li {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  align-items: start;
+  gap: 10px;
+}
+
+.insight-icon {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--point-strong);
+}
+
+.insight-icon .icon {
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
+}
+
+.insight-list p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.65;
+  word-break: keep-all;
+}
+
+.insight-list b {
+  color: var(--ink);
+}
+
+.analytics-table {
+  margin-top: 12px;
+}
+
+.analytics-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) repeat(5, minmax(0, 1fr));
+  align-items: center;
+  gap: 12px;
+  padding: 14px 4px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.analytics-row > span:not(:first-child) {
+  text-align: right;
+}
+
+.analytics-row.head {
+  padding-top: 6px;
+  padding-bottom: 10px;
+  border-top: 0;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.analytics-event {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.analytics-event strong {
+  font-size: 13px;
+}
+
+.analytics-event small {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.analytics-roas {
+  color: #2f8a52;
+  font-weight: 800;
+}
+
+/* Student events a brand agreed to sponsor, on its campaign calendar. */
+.status-협찬확정 {
+  background: #f1eeff;
+  color: #5b45b0;
+}
+
+.day-event.status-협찬확정 {
+  background: #ece7ff;
+  color: #5b45b0;
+}
+
+.calendar-legend .legend-confirmed::before {
+  background: #8b74e0;
+}
+
 @media (max-width: 1100px) {
   body {
     min-width: 768px;
@@ -3709,6 +4308,124 @@ input:focus-visible {
     bottom: 146px;
     left: 16px;
     justify-content: center;
+  }
+}
+
+@media (max-width: 1100px) {
+  .analytics-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .analytics-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .inbox-row {
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 10px;
+    padding: 16px 0;
+  }
+
+  .inbox-row-actions {
+    grid-column: 2 / -1;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .inbox-row-actions .proposal-button {
+    flex: 1;
+  }
+
+  /* The event wraps to two lines next to its D-day. */
+  .group-event {
+    align-items: flex-start;
+  }
+
+  .group-event span {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    white-space: normal;
+  }
+
+  .inbox-hint {
+    display: none;
+  }
+
+  .request-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .request-card {
+    padding: 16px;
+  }
+
+  .request-facts {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .request-facts div:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .request-actions > button {
+    flex: 1;
+  }
+
+  .request-confirm {
+    width: 100%;
+  }
+
+  .analytics-kpis {
+    gap: 10px;
+  }
+
+  .analytics-kpi {
+    padding: 16px;
+  }
+
+  .analytics-kpi strong {
+    font-size: 20px;
+  }
+
+  .analytics-card {
+    padding: 18px;
+  }
+
+  /* Each sponsorship becomes a small card: event on top, numbers below. */
+  .analytics-row.head {
+    display: none;
+  }
+
+  .analytics-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px 8px;
+    padding: 14px 0;
+  }
+
+  .analytics-event {
+    grid-column: 1 / -1;
+  }
+
+  .analytics-row > span:not(:first-child) {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    text-align: left;
+  }
+
+  .analytics-row > span[data-label]::before {
+    color: var(--muted);
+    content: attr(data-label);
+    font-size: 9px;
+    font-weight: 600;
+  }
+
+  .day-event.status-협찬확정 {
+    background: #8b74e0;
   }
 }
 

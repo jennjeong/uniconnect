@@ -30,6 +30,12 @@ after(async () => {
   await rm(dataDir, { recursive: true, force: true })
 })
 
+async function login(role: "학생단체" | "브랜드") {
+  const email = role === "학생단체" ? "muse@syu.ac.kr" : "hello@afternoon-coffee.kr"
+  const { data } = await call("POST", "/auth/login", { role, email, password: DEMO_PASSWORD })
+  return data.token as string
+}
+
 async function call(method: string, route: string, body?: unknown, token?: string) {
   const response = await fetch(baseUrl + route, {
     method,
@@ -207,6 +213,9 @@ test("events and proposals belong to the logged-in account", async () => {
 
   const proposed = await call("POST", "/proposals", { matchId: "syu-muse" }, token)
   assert.deepEqual(proposed.data.proposals, ["syu-muse"])
+  // Brands propose to any group in the catalog, never to another brand.
+  assert.equal((await call("POST", "/proposals", { matchId: "kw-code" }, token)).status, 201)
+  await call("DELETE", "/proposals/kw-code", undefined, token)
   assert.equal((await call("POST", "/proposals", { matchId: "freshon" }, token)).status, 404)
   const cancelled = await call("DELETE", "/proposals/syu-muse", undefined, token)
   assert.deepEqual(cancelled.data.proposals, [])
@@ -256,6 +265,111 @@ test("the report has the event's goals", async () => {
   )
 })
 
+test("brands browse every student group with its next event", async () => {
+  const { groups } = (await call("GET", "/groups")).data
+  assert.equal(groups.length, 8)
+  assert.equal(groups[0].id, "syu-muse")
+  assert.equal(groups[0].school, "삼육대학교")
+  assert.match(groups[0].eventDate, /^\d{4}-\d{2}-\d{2}$/)
+  assert.ok(groups.every((group: { audience?: number }) => typeof group.audience === "number"))
+})
+
+test("brands answer the proposals in their inbox", async () => {
+  const preview = (await call("GET", "/requests")).data.requests
+  assert.equal(preview.length, 4)
+  assert.equal(preview[0].id, "req-nowon")
+
+  const brand = await login("브랜드")
+  const accepted = await call("POST", "/requests/req-nowon/accept", undefined, brand)
+  assert.equal(accepted.status, 200)
+  assert.equal(accepted.data.request.status, "수락")
+  assert.ok(accepted.data.request.respondedAt)
+  assert.equal((await call("POST", "/requests/req-nowon/decline", undefined, brand)).status, 409)
+  assert.equal((await call("POST", "/requests/req-movement/maybe", undefined, brand)).status, 404)
+  assert.equal((await call("POST", "/requests/req-unknown/accept", undefined, brand)).status, 404)
+
+  const declined = await call("POST", "/requests/req-movement/decline", undefined, brand)
+  assert.equal(declined.data.request.status, "거절")
+
+  const student = await login("학생단체")
+  assert.equal((await call("POST", "/requests/req-nowon/accept", undefined, student)).status, 403)
+  assert.deepEqual((await call("GET", "/requests", undefined, student)).data.requests, [])
+})
+
+test("a student group's proposal reaches the brand, and the answer comes back", async () => {
+  const student = await login("학생단체")
+  const brand = await login("브랜드")
+
+  const sent = await call("POST", "/proposals", { matchId: "afternoon-coffee" }, student)
+  assert.equal(sent.status, 201)
+  assert.equal(sent.data.statuses["afternoon-coffee"], "검토 중")
+  // Sending twice does not file a second request.
+  await call("POST", "/proposals", { matchId: "afternoon-coffee" }, student)
+
+  const inbox = (await call("GET", "/requests", undefined, brand)).data.requests
+  const fromMuse = inbox.filter((request: { groupName: string }) => request.groupName === "삼육대 뮤즈")
+  assert.equal(fromMuse.length, 1)
+  const [request] = fromMuse
+  assert.equal(request.status, "검토 중")
+  assert.equal(request.ask, "쿠폰 150장 + 현금 20만원")
+
+  // The proposal is about the group's next event, if there is one.
+  const today = new Date().toISOString().slice(0, 10)
+  const events = (await call("GET", "/events", undefined, student)).data.events
+  const next = events
+    .filter((event: { date: string }) => event.date >= today)
+    .sort((a: { date: string }, b: { date: string }) => a.date.localeCompare(b.date))[0]
+  assert.equal(request.eventName, next?.name ?? "행사 일정 협의")
+
+  await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+  const answered = (await call("GET", "/proposals", undefined, student)).data
+  assert.equal(answered.statuses["afternoon-coffee"], "수락")
+  if (next) {
+    const updated = (await call("GET", "/events", undefined, student)).data.events
+    assert.equal(updated.find((event: { id: string }) => event.id === next.id).status, "집행 예정")
+  }
+  assert.equal((await call("DELETE", "/proposals/afternoon-coffee", undefined, student)).status, 409)
+
+  // Proposals to brands without an account have no answer to show.
+  const other = await call("POST", "/proposals", { matchId: "studymate" }, student)
+  assert.equal(other.data.statuses.studymate, undefined)
+  const withdrawn = await call("DELETE", "/proposals/studymate", undefined, student)
+  assert.ok(!withdrawn.data.proposals.includes("studymate"))
+})
+
+test("brand analytics follow the live measurement", async () => {
+  const { sponsorships } = (await call("GET", "/analytics")).data
+  assert.equal(sponsorships.length, 3)
+  assert.deepEqual(
+    sponsorships.map((sponsorship: { date: string }) => sponsorship.date),
+    ["2026-10-12", "2026-06-10", "2026-05-20"],
+  )
+  const { metrics } = (await call("GET", "/metrics")).data
+  assert.equal(sponsorships[0].coupons, metrics.coupons)
+  assert.equal(sponsorships[0].visits, metrics.visits)
+
+  const student = await login("학생단체")
+  assert.deepEqual((await call("GET", "/analytics", undefined, student)).data.sponsorships, [])
+})
+
+test("brand campaigns take an optional budget", async () => {
+  const brand = await login("브랜드")
+  const campaign = { name: "겨울 시즌 투어", date: "2026-12-03", types: ["제품"] }
+  const negative = await call("POST", "/events", { ...campaign, budget: -1 }, brand)
+  assert.equal(negative.status, 400)
+  assert.equal((await call("POST", "/events", { ...campaign, budget: "50만" }, brand)).status, 400)
+
+  const created = await call("POST", "/events", { ...campaign, budget: 1200000 }, brand)
+  assert.equal(created.status, 201)
+  assert.equal(created.data.event.budget, 1200000)
+  await call("DELETE", `/events/${created.data.event.id}`, undefined, brand)
+
+  const student = await login("학생단체")
+  const event = await call("POST", "/events", { ...campaign, budget: 1200000 }, student)
+  assert.equal(event.data.event.budget, undefined)
+  await call("DELETE", `/events/${event.data.event.id}`, undefined, student)
+})
+
 test("older data files gain the new collections and calendar dates", async () => {
   const { upgradeDatabase } = await import("./store.js")
   const old = {
@@ -265,6 +379,9 @@ test("older data files gain the new collections and calendar dates", async () =>
   assert.equal(upgraded.brands.length, 12)
   assert.ok(upgraded.metricLog.length > 0)
   assert.equal(upgraded.report.targets.reach, 1100)
+  assert.equal(upgraded.groups.length, 8)
+  assert.equal(upgraded.requests.length, 4)
+  assert.deepEqual(upgraded.sponsorships, {})
   assert.deepEqual(
     upgraded.events.someone.map((event) => event.date),
     ["2026-11-27", "미정"],

@@ -42,6 +42,18 @@ export function daysUntil(iso: string, from = todayIso()) {
   return Math.round((end.getTime() - start.getTime()) / 86_400_000)
 }
 
+// "11.15"
+export function shortDay(iso: string) {
+  const date = fromIsoDate(iso)
+  return date ? `${date.getMonth() + 1}.${date.getDate()}` : iso
+}
+
+// "D-25", "D-DAY", or "종료" once the day has passed.
+export function dDayLabel(iso: string) {
+  const days = daysUntil(iso)
+  return days > 0 ? `D-${days}` : days === 0 ? "D-DAY" : "종료"
+}
+
 // The earliest event from today on.
 export function nextEvent<T extends { date: string }>(events: T[]) {
   const today = todayIso()

@@ -1,7 +1,16 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useState, type ReactNode } from "react"
 
-import { api, ApiError, errorMessage, getToken, setToken, type EventDraft } from "./api"
+import {
+  api,
+  ApiError,
+  errorMessage,
+  getToken,
+  setToken,
+  type EventDraft,
+  type ProposalState,
+} from "./api"
 import { Icon } from "./components/Icon"
+import { pageFor } from "./data/navigation"
 import { createLabel } from "./data/roles"
 import { useNotice } from "./hooks/useNotice"
 import { MobileNav } from "./layout/MobileNav"
@@ -9,6 +18,7 @@ import { Sidebar } from "./layout/Sidebar"
 import { Topbar } from "./layout/Topbar"
 import { todayIso } from "./lib/date"
 import { reportKpis, type KpiKey } from "./lib/kpis"
+import { brandNotifications, studentNotifications } from "./lib/notifications"
 import { GoalModal } from "./modals/GoalModal"
 import { LoginModal } from "./modals/LoginModal"
 import { MetricLogModal } from "./modals/MetricLogModal"
@@ -17,9 +27,13 @@ import { ProfileModal } from "./modals/ProfileModal"
 import { QrModal } from "./modals/QrModal"
 import { ReportModal } from "./modals/ReportModal"
 import { SignupModal } from "./modals/SignupModal"
+import { AnalyticsPage } from "./pages/AnalyticsPage"
+import { BrandDashboardPage } from "./pages/BrandDashboardPage"
 import { DashboardPage } from "./pages/DashboardPage"
 import { EventCreatePage } from "./pages/EventCreatePage"
 import { EventsPage } from "./pages/EventsPage"
+import { GroupsPage } from "./pages/GroupsPage"
+import { InboxPage } from "./pages/InboxPage"
 import { MatchesPage } from "./pages/MatchesPage"
 import { MeasurementPage } from "./pages/MeasurementPage"
 import { ReportsPage } from "./pages/ReportsPage"
@@ -35,6 +49,8 @@ import type {
   Report,
   Role,
   Session,
+  SponsorRequest,
+  Sponsorship,
 } from "./types"
 
 function App() {
@@ -50,9 +66,15 @@ function App() {
   const [matches, setMatches] = useState<Match[]>([])
   const [events, setEvents] = useState<EventItem[]>([])
   const [proposals, setProposals] = useState<string[]>([])
+  // Answers from brands that replied to the student group's proposals.
+  const [statuses, setStatuses] = useState<ProposalState["statuses"]>({})
   const [metrics, setMetrics] = useState<Metrics>({ scans: 0, coupons: 0, visits: 0 })
   // Brand catalog that student groups browse on the matches page.
   const [brands, setBrands] = useState<Match[]>([])
+  // Brand side: the student group catalog, proposals received and results.
+  const [groups, setGroups] = useState<Match[]>([])
+  const [requests, setRequests] = useState<SponsorRequest[]>([])
+  const [sponsorships, setSponsorships] = useState<Sponsorship[]>([])
   const [report, setReport] = useState<Report | null>(null)
   // Day the new event page opens on; null while that page is closed.
   const [creating, setCreating] = useState<string | null>(null)
@@ -69,6 +91,12 @@ function App() {
 
   const role = account?.role ?? previewRole
   const accountId = account?.id
+  const students = role === "학생단체"
+  // The picked page, or the dashboard when this role has no such page.
+  const page = pageFor(role, activeNav)
+  const calendarPage: NavLabel = students ? "내 행사" : "캠페인"
+  const pendingRequests = requests.filter((request) => request.status === "검토 중")
+  const confirmedRequests = requests.filter((request) => request.status === "수락")
 
   // Restore the saved session.
   useEffect(() => {
@@ -94,20 +122,36 @@ function App() {
   useEffect(() => {
     if (!authReady) return
     let cancelled = false
-    Promise.all([
-      api.matches(role),
-      api.events(role),
-      api.proposals(),
-      // Only student groups browse the brand catalog.
-      role === "학생단체" ? api.brands() : Promise.resolve({ brands: [] }),
-    ])
-      .then(([matchResult, eventResult, proposalResult, brandResult]) => {
+    // Student groups browse brands; brands browse groups, answer proposals
+    // and follow their results.
+    const roleData =
+      role === "학생단체"
+        ? api.brands().then(({ brands }) => ({
+            brands,
+            groups: [],
+            requests: [],
+            sponsorships: [],
+          }))
+        : Promise.all([api.groups(), api.requests(), api.analytics()]).then(
+            ([groupResult, requestResult, analyticsResult]) => ({
+              brands: [],
+              groups: groupResult.groups,
+              requests: requestResult.requests,
+              sponsorships: analyticsResult.sponsorships,
+            }),
+          )
+    Promise.all([api.matches(role), api.events(role), api.proposals(), roleData])
+      .then(([matchResult, eventResult, proposalResult, data]) => {
         if (cancelled) return
         setMatches(matchResult.matches)
         setUpdatedAt(new Date())
         setEvents(eventResult.events)
         setProposals(proposalResult.proposals)
-        setBrands(brandResult.brands)
+        setStatuses(proposalResult.statuses)
+        setBrands(data.brands)
+        setGroups(data.groups)
+        setRequests(data.requests)
+        setSponsorships(data.sponsorships)
       })
       .catch((error) => {
         if (!cancelled) showNotice(errorMessage(error))
@@ -154,6 +198,8 @@ function App() {
   const startSession = (session: Session, message: string) => {
     setToken(session.token)
     setAccount(session.account)
+    setActiveNav("대시보드")
+    setCreating(null)
     setActiveModal(null)
     showNotice(message)
   }
@@ -189,6 +235,8 @@ function App() {
   const switchRole = (next: Role) => {
     if (account || next === previewRole) return
     setPreviewRole(next)
+    setActiveNav("대시보드")
+    setCreating(null)
     showNotice(`${next} 전용 데이터로 전환했어요.`)
   }
 
@@ -210,7 +258,7 @@ function App() {
       const { event } = await api.createEvent(draft)
       setEvents((current) => [event, ...current])
       setEventsFocus(event.date)
-      navigate("내 행사")
+      navigate(calendarPage)
       showNotice(
         role === "학생단체"
           ? "행사가 등록되었어요. 추천 매칭을 시작합니다."
@@ -236,8 +284,14 @@ function App() {
   }
 
   const showEventDetail = (event: EventItem) => {
-    navigate(event.status === "측정 완료" ? "리포트" : "추천 매칭")
+    const done = event.status === "측정 완료"
+    navigate(students ? (done ? "리포트" : "추천 매칭") : done ? "성과 분석" : "단체 찾기")
     showNotice(`${event.name} 상세 흐름을 열었어요.`)
+  }
+
+  const applyProposals = (result: ProposalState) => {
+    setProposals(result.proposals)
+    setStatuses(result.statuses)
   }
 
   const propose = async (match: Match) => {
@@ -246,8 +300,7 @@ function App() {
       return
     }
     try {
-      const result = await api.propose(match.id)
-      setProposals(result.proposals)
+      applyProposals(await api.propose(match.id))
       showNotice(`${match.name}에 협찬 제안을 보냈어요.`)
     } catch (error) {
       handleError(error)
@@ -256,11 +309,38 @@ function App() {
 
   const cancelProposal = async (match: Match) => {
     try {
-      const result = await api.cancelProposal(match.id)
-      setProposals(result.proposals)
+      applyProposals(await api.cancelProposal(match.id))
       showNotice(`${match.name}에 보낸 제안을 취소했어요.`)
     } catch (error) {
       handleError(error)
+    }
+  }
+
+  // A brand accepts or declines a student group's proposal.
+  const answerRequest = async (request: SponsorRequest, decision: "accept" | "decline") => {
+    if (!account) {
+      requireLogin("로그인하면 받은 제안에 답할 수 있어요.")
+      return
+    }
+    try {
+      const result = await api.answerRequest(request.id, decision)
+      setRequests((current) =>
+        current.map((item) => (item.id === result.request.id ? result.request : item)),
+      )
+      showNotice(
+        decision === "accept"
+          ? `${request.eventName} 협찬을 확정했어요.`
+          : `${request.groupName}의 제안을 거절했어요.`,
+      )
+    } catch (error) {
+      handleError(error)
+      // Answered elsewhere in the meantime: show the current state.
+      if (error instanceof ApiError && error.status === 409) {
+        api
+          .requests()
+          .then((result) => setRequests(result.requests))
+          .catch(() => {})
+      }
     }
   }
 
@@ -272,7 +352,7 @@ function App() {
 
   const openEventsOn = (date: string) => {
     setEventsFocus(date)
-    navigate("내 행사")
+    navigate(calendarPage)
   }
 
   const openGoal = (key: KpiKey) => {
@@ -297,14 +377,156 @@ function App() {
 
   const goal = report ? reportKpis(report, metrics).find((kpi) => kpi.key === goalKey) : undefined
 
+  // Brands' calendars also hold the student events they agreed to sponsor.
+  const schedule = students
+    ? events
+    : [
+        ...events,
+        ...confirmedRequests.map((request) => ({
+          name: request.eventName,
+          date: request.eventDate,
+          status: "협찬 확정",
+        })),
+      ]
+
+  const notifications = students
+    ? studentNotifications({ matches, brands, statuses, report })
+    : brandNotifications({ matches, requests, sponsorships })
+
+  const activity = students
+    ? [
+        { label: "등록한 행사", value: `${events.length}개` },
+        { label: "보낸 협찬 제안", value: `${proposals.length}건` },
+        {
+          label: "확정된 협찬",
+          value: `${proposals.filter((id) => statuses[id] === "수락").length}건`,
+        },
+      ]
+    : [
+        { label: "등록한 캠페인", value: `${events.length}개` },
+        { label: "받은 협찬 제안", value: `${requests.length}건` },
+        { label: "확정한 협찬", value: `${confirmedRequests.length}건` },
+      ]
+
+  const eventsPage = (
+    <EventsPage
+      role={role}
+      events={events}
+      sponsorships={students ? undefined : confirmedRequests}
+      initialDate={eventsFocus}
+      onCreate={(date) => {
+        setEventsFocus(date)
+        openCreate(date)
+      }}
+      onShowDetail={showEventDetail}
+      onDelete={deleteEvent}
+      onOpenSponsorship={() => navigate("받은 제안")}
+    />
+  )
+
+  const renderPage = (): ReactNode => {
+    if (creating !== null) {
+      return (
+        <EventCreatePage
+          role={role}
+          initialDate={creating}
+          onCancel={() => setCreating(null)}
+          onSubmit={createEvent}
+        />
+      )
+    }
+    switch (page) {
+      case "추천 매칭":
+        return (
+          <MatchesPage
+            matches={matches}
+            brands={brands}
+            proposals={proposals}
+            statuses={statuses}
+            onPropose={propose}
+            onCancelProposal={cancelProposal}
+          />
+        )
+      case "내 행사":
+      case "캠페인":
+        return eventsPage
+      case "성과 측정":
+        return (
+          <MeasurementPage
+            metrics={metrics}
+            report={report}
+            onMetrics={setMetrics}
+            onOpenQr={() => setActiveModal("qr")}
+            onShowLog={openLog}
+          />
+        )
+      case "리포트":
+        return (
+          <ReportsPage
+            report={report}
+            metrics={metrics}
+            exporting={exporting}
+            onDownload={saveReport}
+            onOpenReport={() => setActiveModal("report")}
+            onOpenGoal={openGoal}
+          />
+        )
+      case "단체 찾기":
+        return (
+          <GroupsPage
+            matches={matches}
+            groups={groups}
+            proposals={proposals}
+            onPropose={propose}
+            onCancelProposal={cancelProposal}
+          />
+        )
+      case "받은 제안":
+        return <InboxPage requests={requests} onAnswer={answerRequest} />
+      case "성과 분석":
+        return <AnalyticsPage sponsorships={sponsorships} onNavigate={navigate} />
+      default:
+        return students ? (
+          <DashboardPage
+            matches={matches}
+            brands={brands}
+            events={events}
+            proposals={proposals}
+            statuses={statuses}
+            metrics={metrics}
+            report={report}
+            updatedAt={updatedAt}
+            onNavigate={navigate}
+            onPropose={propose}
+            onCancelProposal={cancelProposal}
+            onOpenReport={() => setActiveModal("report")}
+          />
+        ) : (
+          <BrandDashboardPage
+            matches={matches}
+            requests={requests}
+            sponsorships={sponsorships}
+            proposals={proposals}
+            updatedAt={updatedAt}
+            onNavigate={navigate}
+            onAccept={(request) => answerRequest(request, "accept")}
+            onPropose={propose}
+            onCancelProposal={cancelProposal}
+          />
+        )
+    }
+  }
+
   return (
     <div className="app-shell">
       <Sidebar
         role={role}
         account={account}
-        activeNav={activeNav}
-        matchCount={matches.length}
-        events={events}
+        activeNav={page}
+        badges={
+          students ? { "추천 매칭": matches.length } : { "받은 제안": pendingRequests.length }
+        }
+        events={schedule}
         onNavigate={navigate}
         onSwitchRole={switchRole}
         onCreate={() => openCreate()}
@@ -315,7 +537,7 @@ function App() {
       <main className="main-content">
         <Topbar
           title={creating !== null ? createLabel(role) : undefined}
-          activeNav={activeNav}
+          activeNav={page}
           account={account}
           authReady={authReady}
           hasUnread={!notificationsRead}
@@ -328,67 +550,7 @@ function App() {
           onLogin={() => openAuth("login")}
         />
 
-        {creating !== null ? (
-          <EventCreatePage
-            role={role}
-            initialDate={creating}
-            onCancel={() => setCreating(null)}
-            onSubmit={createEvent}
-          />
-        ) : activeNav === "대시보드" ? (
-          <DashboardPage
-            role={role}
-            matches={matches}
-            brands={brands}
-            events={events}
-            proposals={proposals}
-            metrics={metrics}
-            report={report}
-            updatedAt={updatedAt}
-            onNavigate={navigate}
-            onPropose={propose}
-            onCancelProposal={cancelProposal}
-            onOpenReport={() => setActiveModal("report")}
-          />
-        ) : activeNav === "추천 매칭" ? (
-          <MatchesPage
-            role={role}
-            matches={matches}
-            brands={brands}
-            proposals={proposals}
-            onPropose={propose}
-            onCancelProposal={cancelProposal}
-          />
-        ) : activeNav === "내 행사" ? (
-          <EventsPage
-            role={role}
-            events={events}
-            initialDate={eventsFocus}
-            onCreate={(date) => {
-              setEventsFocus(date)
-              openCreate(date)
-            }}
-            onShowDetail={showEventDetail}
-            onDelete={deleteEvent}
-          />
-        ) : activeNav === "성과 측정" ? (
-          <MeasurementPage
-            metrics={metrics}
-            report={report}
-            onMetrics={setMetrics}
-            onOpenQr={() => setActiveModal("qr")}
-            onShowLog={openLog}
-          />
-        ) : (
-          <ReportsPage
-            report={report}
-            metrics={metrics}
-            exporting={exporting}
-            onDownload={saveReport}
-            onOpenReport={() => setActiveModal("report")}
-            onOpenGoal={openGoal}
-          />
-        )}
+        {renderPage()}
       </main>
 
       {creating === null && (
@@ -402,7 +564,7 @@ function App() {
         </button>
       )}
 
-      <MobileNav activeNav={activeNav} onNavigate={navigate} />
+      <MobileNav role={role} activeNav={page} onNavigate={navigate} />
 
       {activeModal === "metric-log" && (
         <MetricLogModal
@@ -416,8 +578,7 @@ function App() {
       {activeModal === "goal" && goal && <GoalModal kpi={goal} onClose={closeModal} />}
       {activeModal === "notifications" && (
         <NotificationsModal
-          matchCount={matches.length}
-          report={report}
+          items={notifications}
           onClose={closeModal}
           onOpen={(label) => {
             closeModal()
@@ -439,8 +600,7 @@ function App() {
       {activeModal === "profile" && account && (
         <ProfileModal
           account={account}
-          eventCount={events.length}
-          proposalCount={proposals.length}
+          activity={activity}
           onClose={closeModal}
           onLogout={logout}
         />

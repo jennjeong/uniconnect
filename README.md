@@ -7,6 +7,20 @@ Figma Make 프로젝트 [Create Web/App Service](https://www.figma.com/make/mhCa
 - 백엔드 `backend/`: Node.js + Express 5 (TypeScript), JSON 파일 저장소
 - 패키지 매니저: pnpm 10 워크스페이스 (`pnpm-workspace.yaml`, `pnpm-lock.yaml`)
 
+## 회원 유형별 화면
+
+학생단체(협찬 받기)와 브랜드(협찬 하기)는 같은 디자인을 쓰지만 메뉴와 기능이 다릅니다.
+
+| | 학생단체 | 브랜드 |
+| --- | --- | --- |
+| 대시보드 | 다가오는 행사의 진행 현황, 추천 브랜드, 최근 행사 성과 | 답을 기다리는 제안, 협찬별 ROAS, 추천 학생단체 |
+| 파트너 찾기 | 추천 매칭: 추천 · 인기 · 전체 · 업종별 브랜드 | 단체 찾기: 추천 · 행사 임박 · 전체 · 분야별 학생단체 |
+| 제안 | 브랜드에 협찬 제안을 보내고 수락·거절 결과를 확인 | 받은 제안: 학생단체가 보낸 제안을 수락하거나 거절 |
+| 일정 | 내 행사 달력 | 캠페인 달력 (예산 포함, 확정된 협찬 일정도 표시) |
+| 성과 | 성과 측정(현장 QR)과 리포트(PDF) | 성과 분석: 협찬별 집행액 · 쿠폰 · 방문 · 방문당 비용 · ROAS |
+
+두 화면은 연결되어 있습니다. 학생단체가 계정이 있는 브랜드(데모에서는 오후의 커피)에 제안하면 그 브랜드의 받은 제안에 도착하고, 브랜드가 수락하면 학생단체 화면에 `협찬 확정`이 표시되며 해당 행사는 `집행 예정`으로 바뀝니다.
+
 ## 로컬 실행
 
 Node.js 22 이상이 필요합니다. pnpm이 없다면 Node.js에 포함된 corepack으로 같은 버전을 실행할 수 있습니다.
@@ -30,7 +44,7 @@ npm run dev
 | 협찬 받기 (학생단체) | `muse@syu.ac.kr` | `uniconnect2026` |
 | 협찬 하기 (브랜드) | `hello@afternoon-coffee.kr` | `uniconnect2026` |
 
-로그인하지 않으면 사이드바에서 고른 유형의 데모 데이터를 둘러볼 수 있고, 제안하기·행사 등록은 로그인 후에 할 수 있습니다.
+로그인하지 않으면 사이드바에서 고른 유형의 데모 데이터를 둘러볼 수 있고, 제안하기·제안 수락·행사 등록은 로그인 후에 할 수 있습니다.
 
 ### 데이터
 
@@ -84,12 +98,16 @@ NODE_ENV=production npm start
 | POST | `/api/auth/logout` | 로그아웃 | |
 | GET | `/api/matches?role=` | 추천 매칭 상위 3곳 (로그인하면 내 유형 기준) | |
 | GET | `/api/brands` | 학생단체가 둘러보는 브랜드 전체 (일치율·협찬 횟수 포함) | |
+| GET | `/api/groups` | 브랜드가 둘러보는 학생단체 전체 (학교·다음 행사·예상 인원 포함) | |
 | GET | `/api/events?role=` | 행사·캠페인 목록 (로그인 전에는 데모 계정 것) | |
-| POST | `/api/events` | 행사·캠페인 등록 (`date`는 `YYYY-MM-DD`, 협찬 유형 1개 이상, `기타`는 `typeNote` 함께) | 필요 |
+| POST | `/api/events` | 행사·캠페인 등록 (`date`는 `YYYY-MM-DD`, 협찬 유형 1개 이상, `기타`는 `typeNote` 함께, 브랜드는 `budget`(원) 선택) | 필요 |
 | DELETE | `/api/events/:id` | 행사·캠페인 삭제 | 필요 |
-| GET | `/api/proposals` | 보낸 협찬 제안 (매칭 id 목록) | |
-| POST | `/api/proposals` | 협찬 제안 보내기 `{ matchId }` | 필요 |
-| DELETE | `/api/proposals/:matchId` | 협찬 제안 취소 | 필요 |
+| GET | `/api/proposals` | 보낸 협찬 제안 `{ proposals, statuses }` (`statuses`는 브랜드가 답한 결과) | |
+| POST | `/api/proposals` | 협찬 제안 보내기 `{ matchId }` (학생단체→브랜드, 브랜드→학생단체). 계정이 있는 브랜드에는 다음 행사 정보와 함께 받은 제안으로 전달 | 필요 |
+| DELETE | `/api/proposals/:matchId` | 협찬 제안 취소 (수락된 제안은 409) | 필요 |
+| GET | `/api/requests` | 브랜드가 받은 협찬 제안 (최신순, 로그인 전에는 데모 브랜드 것) | |
+| POST | `/api/requests/:id/accept` · `/decline` | 받은 제안 수락·거절 (브랜드만, 이미 답한 제안은 409) | 필요 |
+| GET | `/api/analytics` | 브랜드의 협찬별 집행액·쿠폰·방문·추정 매출 (측정 중인 행사는 실시간 수치) | |
 | GET | `/api/metrics` | QR 스캔·쿠폰 수령·매장 방문 수 | |
 | POST | `/api/metrics/:kind` | `scans` · `coupons` · `visits` 1 증가하고 참여 기록 추가 (현장 참여 화면이 호출) | |
 | GET | `/api/metrics/log?kind=` | 최근 참여 기록 (최신순, `kind`로 항목 선택) | |
@@ -112,11 +130,13 @@ npm run typecheck
 │   ├── src/
 │   │   ├── App.tsx            화면 상태, API 호출, 페이지·모달 전환
 │   │   ├── api/               fetch 래퍼(client.ts)와 엔드포인트 함수(index.ts)
-│   │   ├── pages/             대시보드 · 추천 매칭 · 내 행사 · 성과 측정 · 리포트
-│   │   ├── modals/            행사 등록 · 알림 · 리포트 · QR · 내 정보 · 로그인 · 회원가입
+│   │   ├── pages/             학생단체: 대시보드 · 추천 매칭 · 내 행사 · 성과 측정 · 리포트
+│   │   │                      브랜드: 대시보드 · 단체 찾기 · 받은 제안 · 캠페인 · 성과 분석
+│   │   │                      공통: 행사·캠페인 등록
+│   │   ├── modals/            알림 · 리포트 · 목표 · 참여 기록 · QR · 내 정보 · 로그인 · 회원가입
 │   │   ├── layout/            사이드바 · 상단바 · 모바일 메뉴
 │   │   ├── components/        아이콘, 로고 타일, 일치율 링 등 공용 UI
-│   │   ├── data/ lib/ hooks/  메뉴·회원 유형 상수, 포맷 함수, 알림 토스트
+│   │   ├── data/ lib/ hooks/  회원 유형별 메뉴, 포맷·날짜·성과 계산 함수, 알림 토스트
 │   │   ├── types.ts           API 응답 타입
 │   │   └── index.css          전역 스타일 (Tailwind v4)
 │   ├── vite.config.ts         Vite 설정 (/api 프록시, Figma Make 플러그인)
@@ -125,7 +145,7 @@ npm run typecheck
 │   └── src/
 │       ├── index.ts           서버 시작
 │       ├── app.ts             라우터 연결, 오류 처리, 빌드된 웹 제공
-│       ├── routes/            auth · matches · events · proposals · metrics
+│       ├── routes/            auth · matches · brands · groups · events · proposals · requests · metrics · report · analytics
 │       ├── middleware/        Bearer 토큰 세션
 │       ├── lib/               비밀번호 해시, 이메일 규칙, 메일 발송 자리, 입력 검증
 │       ├── data/seed.ts       데모 데이터와 데모 계정

@@ -14,7 +14,7 @@ Run these from the repo root:
 
 ## Project Structure
 
-- `frontend/src/App.tsx` holds the app state and the API calls, and switches between pages and modals.
+- `frontend/src/App.tsx` holds the app state and the API calls, and switches between pages and modals for the current role.
 - `frontend/src/api/` has the fetch wrapper with the Bearer token (`client.ts`) and one function per endpoint (`index.ts`).
 - `frontend/src/pages/`, `modals/`, `layout/` and `components/` contain the UI. `data/`, `lib/` and `hooks/` contain constants and helpers.
 - `frontend/src/index.css` is the single global stylesheet. Components use its class names, so a renamed class must change in both places.
@@ -25,7 +25,8 @@ Run these from the repo root:
 ## Conventions
 
 - `frontend/src/types.ts` mirrors the API shapes in `backend/src/types.ts`.
-- Account types and sponsor types are listed in both `backend/src/lib/validation.ts` and the frontend (`data/roles.ts`, `modals/EventModal.tsx`). Change them together.
+- Account types and sponsor types are listed in both `backend/src/lib/validation.ts` and the frontend (`data/roles.ts`, `pages/EventCreatePage.tsx`). Change them together.
+- Student groups and brands have separate menus and pages (`data/navigation.ts`). A feature for one side gets its own page rather than a role branch inside the other side's page.
 - The backend is ESM with NodeNext resolution, so relative imports end in `.js`.
 - Express 5 forwards thrown and rejected errors to the error handler. Throw `HttpError(status, message)` with a Korean message the user can read.
 - Design tokens are CSS variables on `:root` in `index.css`; `--point` is the yellow point color. Tailwind v4 is available, but the UI is styled through the classes in `index.css`.

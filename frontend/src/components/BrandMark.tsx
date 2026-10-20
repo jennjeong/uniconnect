@@ -15,7 +15,13 @@ const tileTints: Record<Industry, string> = {
   education: "#eef1ff",
 }
 
-export function BrandMark({ match, large = false }: { match: Match; large?: boolean }) {
+export function BrandMark({
+  match,
+  large = false,
+}: {
+  match: Pick<Match, "industry" | "logo">
+  large?: boolean
+}) {
   const [logoFailed, setLogoFailed] = useState(false)
   const className = large ? "match-logo large" : "match-logo"
 

@@ -4,13 +4,13 @@ import { navItems } from "../data/navigation"
 import { createLabel, roles } from "../data/roles"
 import { daysUntil, formatDay, nextEvent } from "../lib/date"
 import { initialOf } from "../lib/format"
-import type { Account, EventItem, NavLabel, Role } from "../types"
+import type { Account, NavLabel, Role } from "../types"
 
 export function Sidebar({
   role,
   account,
   activeNav,
-  matchCount,
+  badges,
   events,
   onNavigate,
   onSwitchRole,
@@ -21,12 +21,14 @@ export function Sidebar({
   role: Role
   account: Account | null
   activeNav: NavLabel
-  matchCount: number
-  events: EventItem[]
+  // Counts shown next to menu items, such as unanswered proposals.
+  badges: Partial<Record<NavLabel, number>>
+  // Upcoming schedule for the card below the menu.
+  events: { name: string; date: string; status: string }[]
   onNavigate: (label: NavLabel) => void
   onSwitchRole: (role: Role) => void
   onCreate: () => void
-  // Opens the 내 행사 calendar on this day.
+  // Opens the 내 행사 (or 캠페인) calendar on this day.
   onOpenEvent: (date: string) => void
   onOpenAccount: () => void
 }) {
@@ -81,7 +83,7 @@ export function Sidebar({
 
       <nav className="main-nav" aria-label="주요 메뉴">
         <span className="nav-label">MENU</span>
-        {navItems.map((item) => (
+        {navItems[role].map((item) => (
           <button
             className={activeNav === item.label ? "nav-item active" : "nav-item"}
             key={item.label}
@@ -90,8 +92,8 @@ export function Sidebar({
           >
             <Icon name={item.icon} />
             <span>{item.label}</span>
-            {item.label === "추천 매칭" && matchCount > 0 && (
-              <span className="nav-count">{matchCount}</span>
+            {(badges[item.label] ?? 0) > 0 && (
+              <span className="nav-count">{badges[item.label]}</span>
             )}
           </button>
         ))}

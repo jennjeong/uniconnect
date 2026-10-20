@@ -6,7 +6,8 @@ import { ProposalControl } from "../components/ProposalControl"
 import { formatFullDate, fromIsoDate, nextEvent } from "../lib/date"
 import { percent } from "../lib/format"
 import { scoreBand } from "../lib/score"
-import type { EventItem, Match, Metrics, NavLabel, Report, Role } from "../types"
+import { compactWon } from "../lib/sponsorships"
+import type { EventItem, Match, Metrics, NavLabel, Report, RequestStatus } from "../types"
 
 type Stat = {
   label: string
@@ -22,12 +23,14 @@ const pad = (value: number) => String(value).padStart(2, "0")
 // Top of the performance chart's y-axis (150 / 100 / 50 / 0).
 const chartMax = 150
 
+// Dashboard for student groups: the next event's progress, recommended
+// brands and the last event's results.
 export function DashboardPage({
-  role,
   matches,
   brands,
   events,
   proposals,
+  statuses,
   metrics,
   report,
   updatedAt,
@@ -36,12 +39,13 @@ export function DashboardPage({
   onCancelProposal,
   onOpenReport,
 }: {
-  role: Role
   matches: Match[]
-  // Brand catalog (student groups only).
+  // Every brand in the catalog.
   brands: Match[]
   events: EventItem[]
   proposals: string[]
+  // Answers from brands that replied to a proposal.
+  statuses: Partial<Record<string, RequestStatus>>
   metrics: Metrics
   report: Report | null
   // When the matches were last loaded.
@@ -51,16 +55,16 @@ export function DashboardPage({
   onCancelProposal: (match: Match) => void
   onOpenReport: () => void
 }) {
-  const students = role === "학생단체"
   const next = nextEvent(events)
   const nextDay = next ? fromIsoDate(next.date) : undefined
-  const candidates = students && brands.length > 0 ? brands : matches
-  const strongCut = students ? 80 : 90
+  const candidates = brands.length > 0 ? brands : matches
+  const strongCut = 80
+  const confirmedCount = proposals.filter((id) => statuses[id] === "수락").length
 
   // Summary cards, each opening the page with the details behind its number.
   const stats: Stat[] = [
     {
-      label: students ? "추천 브랜드" : "추천 단체",
+      label: "추천 브랜드",
       icon: "spark",
       value: String(candidates.length),
       note: (
@@ -75,13 +79,16 @@ export function DashboardPage({
       label: "진행 중 협찬",
       icon: "calendar",
       value: String(events.filter((event) => event.status !== "측정 완료").length),
-      note: `보낸 제안 ${proposals.length}건`,
+      note:
+        confirmedCount > 0
+          ? `협찬 확정 ${confirmedCount}건 · 제안 ${proposals.length}건`
+          : `보낸 제안 ${proposals.length}건`,
       target: "내 행사",
     },
     {
       label: "예상 협찬 가치",
       icon: "chart",
-      value: report ? `₩${Math.round(report.sponsorValue / 1000).toLocaleString("ko-KR")}K` : "-",
+      value: report ? compactWon(report.sponsorValue) : "-",
       note: "현물 환산 포함",
       target: "리포트",
     },
@@ -101,11 +108,18 @@ export function DashboardPage({
   // Where the next event stands in the sponsorship flow.
   const currentStep = !next ? 0 : next.status === "매칭 중" ? 1 : next.status === "집행 예정" ? 2 : 3
   const journey: { icon: IconName; label: string; status: string }[] = [
-    { icon: "check", label: students ? "행사 등록" : "캠페인 등록", status: next ? "완료" : "등록 전" },
+    { icon: "check", label: "행사 등록", status: next ? "완료" : "등록 전" },
     {
       icon: "spark",
       label: "매칭·제안",
-      status: proposals.length > 0 ? `제안 ${proposals.length}건` : next ? "진행 중" : "대기",
+      status:
+        confirmedCount > 0
+          ? `확정 ${confirmedCount}건`
+          : proposals.length > 0
+            ? `제안 ${proposals.length}건`
+            : next
+              ? "진행 중"
+              : "대기",
     },
     {
       icon: "calendar",
@@ -128,13 +142,11 @@ export function DashboardPage({
         <div className="welcome-copy">
           <span className="section-kicker">YOUR NEXT CONNECTION</span>
           <p className="welcome-title">
-            {role === "학생단체" ? "좋은 행사는," : "좋은 캠페인은,"} <br />
+            좋은 행사는, <br />
             <em>좋은 파트너</em>를 만날 때 커져요.
           </p>
           <p className="welcome-description">
-            {role === "학생단체"
-              ? `다가오는 행사와 잘 맞는 브랜드 ${matches.length}곳을 찾았어요.`
-              : `이번 캠페인과 잘 맞는 학생단체 ${matches.length}곳을 찾았어요.`}
+            다가오는 행사와 잘 맞는 브랜드 {matches.length}곳을 찾았어요.
           </p>
         </div>
         <div className="connection-art" aria-hidden="true">
@@ -260,6 +272,7 @@ export function DashboardPage({
                 </div>
                 <ProposalControl
                   done={proposals.includes(match.id)}
+                  status={statuses[match.id]}
                   label="제안하기"
                   className="proposal-button"
                   onPropose={() => onPropose(match)}

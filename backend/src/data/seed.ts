@@ -1,5 +1,14 @@
 import { hashPassword } from "../lib/password.js"
-import type { Account, Database, Match, MetricEntry, MetricKind, Report } from "../types.js"
+import type {
+  Account,
+  Database,
+  Match,
+  MetricEntry,
+  MetricKind,
+  Report,
+  SponsorRequest,
+  Sponsorship,
+} from "../types.js"
 
 // Demo accounts for trying the app. Both use DEMO_PASSWORD (see README).
 export const DEMO_PASSWORD = "uniconnect2026"
@@ -129,33 +138,218 @@ export const seedBrands: Match[] = [
   },
 ]
 
-const studentGroups: Match[] = [
+// Student groups brands can browse. score is the match for the demo brand.
+export const seedGroups: Match[] = [
   {
     id: "syu-muse",
     name: "삼육대 뮤즈",
     category: "공연 · 동아리",
     industry: "performance",
+    school: "삼육대학교",
     offer: "관객 120명 · 교내 SNS 3개 채널",
     score: 96,
     tags: ["공연 특화", "11월 27일"],
+    eventName: "2026 뮤즈 종강 공연",
+    eventDate: "2026-11-27",
+    audience: 120,
   },
   {
     id: "nowon-creators",
     name: "노원 크리에이터스",
     category: "콘텐츠 · 연합회",
     industry: "content",
+    school: "노원구 5개 대학 연합",
     offer: "콘텐츠 8편 · 예상 도달 4,200명",
     score: 91,
     tags: ["콘텐츠 제작", "20대 타깃"],
+    eventName: "캠퍼스 브이로그 챌린지",
+    eventDate: "2026-11-08",
+    audience: 4200,
   },
   {
     id: "swu-runners",
     name: "서울여대 러너스",
     category: "스포츠 · 동아리",
     industry: "sports",
+    school: "서울여자대학교",
     offer: "참여자 80명 · 현장 부스 운영",
     score: 84,
     tags: ["웰니스", "현장 체험"],
+    eventName: "가을 캠퍼스 런 5K",
+    eventDate: "2026-11-15",
+    audience: 80,
+  },
+  {
+    id: "kw-movement",
+    name: "광운대 무브먼트",
+    category: "공연 · 댄스",
+    industry: "performance",
+    school: "광운대학교",
+    offer: "관객 300명 · 공연 영상 송출",
+    score: 82,
+    tags: ["댄스 공연", "SNS 영상"],
+    eventName: "겨울 댄스 쇼케이스",
+    eventDate: "2026-11-21",
+    audience: 300,
+  },
+  {
+    id: "dswu-council",
+    name: "덕성여대 총학생회",
+    category: "학생회 · 행사",
+    industry: "performance",
+    school: "덕성여자대학교",
+    offer: "재학생 1,000명 · 간식 나눔 부스",
+    score: 81,
+    tags: ["대규모", "학생회 공식"],
+    eventName: "학생회 간식 나눔 행사",
+    eventDate: "2026-11-18",
+    audience: 1000,
+  },
+  {
+    id: "seoultech-band",
+    name: "과기대 소리샘",
+    category: "공연 · 밴드",
+    industry: "performance",
+    school: "서울과학기술대학교",
+    offer: "관객 200명 · 공연 포스터 로고",
+    score: 79,
+    tags: ["밴드 공연", "연말"],
+    eventName: "연말 밴드 공연",
+    eventDate: "2026-12-05",
+    audience: 200,
+  },
+  {
+    id: "syu-nanum",
+    name: "삼육대 나눔누리",
+    category: "봉사 · 동아리",
+    industry: "wellness",
+    school: "삼육대학교",
+    offer: "봉사자 50명 · 지역 홍보",
+    score: 76,
+    tags: ["사회공헌", "지역 연계"],
+    eventName: "연탄 나눔 봉사",
+    eventDate: "2026-11-29",
+    audience: 50,
+  },
+  {
+    id: "kw-code",
+    name: "광운대 코드랩",
+    category: "학술 · 스터디",
+    industry: "education",
+    school: "광운대학교",
+    offer: "참가자 150명 · 해커톤 후원 노출",
+    score: 73,
+    tags: ["IT 학술", "해커톤"],
+    eventName: "교내 해커톤",
+    eventDate: "2026-12-12",
+    audience: 150,
+  },
+]
+
+// A catalog's best three by score, as each side's recommended matches.
+export const topMatches = (catalog: Match[]) =>
+  structuredClone(catalog)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3)
+
+// Proposals the demo brand has received from student groups (KST).
+export function seedRequests(): SponsorRequest[] {
+  const requests: Omit<SponsorRequest, "brandId">[] = [
+    {
+      id: "req-nowon",
+      groupName: "노원 크리에이터스",
+      school: "노원구 5개 대학 연합",
+      industry: "content",
+      eventName: "캠퍼스 브이로그 챌린지",
+      eventDate: "2026-11-08",
+      people: "예상 도달 4,200명",
+      ask: "음료 쿠폰 200장",
+      message: "브이로그 8편에 매장 방문 장면을 자연스럽게 담아 드릴게요.",
+      status: "검토 중",
+      createdAt: "2026-10-19T14:20:00+09:00",
+    },
+    {
+      id: "req-movement",
+      groupName: "광운대 무브먼트",
+      school: "광운대학교",
+      industry: "performance",
+      eventName: "겨울 댄스 쇼케이스",
+      eventDate: "2026-11-21",
+      people: "관객 300명",
+      ask: "현금 30만원 + 음료 100잔",
+      message: "공연 중간에 브랜드 소개 영상을 띄우고 로비에 시음 부스를 마련할게요.",
+      status: "검토 중",
+      createdAt: "2026-10-18T10:05:00+09:00",
+    },
+    {
+      id: "req-runners",
+      groupName: "서울여대 러너스",
+      school: "서울여자대학교",
+      industry: "sports",
+      eventName: "가을 캠퍼스 런 5K",
+      eventDate: "2026-11-15",
+      people: "참가자 80명",
+      ask: "완주 기념 음료 80잔",
+      message: "완주한 참가자 모두에게 오후의 커피 쿠폰을 나눠 드릴게요.",
+      status: "수락",
+      createdAt: "2026-10-12T16:40:00+09:00",
+      respondedAt: "2026-10-13T09:30:00+09:00",
+    },
+    {
+      id: "req-council",
+      groupName: "덕성여대 총학생회",
+      school: "덕성여자대학교",
+      industry: "performance",
+      eventName: "학생회 간식 나눔 행사",
+      eventDate: "2026-11-18",
+      people: "재학생 1,000명",
+      ask: "쿠키 500개",
+      message: "시험 기간 간식 나눔 행사에 함께해 주세요.",
+      status: "거절",
+      createdAt: "2026-10-09T11:00:00+09:00",
+      respondedAt: "2026-10-10T15:20:00+09:00",
+    },
+  ]
+  return requests.map((request) => ({
+    ...request,
+    brandId: "afternoon-coffee",
+    createdAt: new Date(request.createdAt).toISOString(),
+    ...(request.respondedAt ? { respondedAt: new Date(request.respondedAt).toISOString() } : {}),
+  }))
+}
+
+// The demo brand's finished sponsorships (the busking day's counts follow
+// the live metrics in /api/analytics).
+export const seedSponsorships = (): Sponsorship[] => [
+  {
+    id: "sp-busking",
+    groupName: "삼육대 뮤즈",
+    eventName: "가을 버스킹 데이",
+    date: "2026-10-12",
+    spend: 680000,
+    coupons: 94,
+    visits: 41,
+    sales: 1652400,
+  },
+  {
+    id: "sp-finals",
+    groupName: "노원 크리에이터스",
+    eventName: "기말고사 응원 이벤트",
+    date: "2026-06-10",
+    spend: 300000,
+    coupons: 88,
+    visits: 35,
+    sales: 540000,
+  },
+  {
+    id: "sp-festival",
+    groupName: "서울여대 러너스",
+    eventName: "봄 캠퍼스 페스티벌",
+    date: "2026-05-20",
+    spend: 500000,
+    coupons: 140,
+    visits: 61,
+    sales: 1050000,
   },
 ]
 
@@ -245,6 +439,7 @@ export async function createSeed(): Promise<Database> {
     type: "카페 · 식음료",
     school: "",
     email: "hello@afternoon-coffee.kr",
+    brandId: "afternoon-coffee",
     passwordHash,
     termsAgreedAt: createdAt,
     createdAt,
@@ -255,10 +450,13 @@ export async function createSeed(): Promise<Database> {
     sessions: [],
     emailCodes: [],
     matches: {
-      학생단체: structuredClone(seedBrands).sort((a, b) => b.score - a.score).slice(0, 3),
-      브랜드: studentGroups,
+      학생단체: topMatches(seedBrands),
+      브랜드: topMatches(seedGroups),
     },
     brands: structuredClone(seedBrands),
+    groups: structuredClone(seedGroups),
+    requests: seedRequests(),
+    sponsorships: { [coffee.id]: seedSponsorships() },
     events: {
       [muse.id]: [
         {
@@ -287,6 +485,7 @@ export async function createSeed(): Promise<Database> {
           date: "2026-11-14",
           people: "300명",
           types: ["제품"],
+          budget: 800000,
           status: "집행 예정",
           createdAt,
         },

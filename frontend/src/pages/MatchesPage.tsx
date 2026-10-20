@@ -3,7 +3,7 @@ import { useState } from "react"
 import { BrandMark } from "../components/BrandMark"
 import { ProposalControl } from "../components/ProposalControl"
 import { ScoreRing } from "../components/ScoreRing"
-import type { Industry, Match, Role } from "../types"
+import type { Industry, Match, RequestStatus } from "../types"
 
 type Tab = "추천" | "인기" | "전체" | "업종별"
 
@@ -43,6 +43,7 @@ function MatchCard({
   match,
   rank,
   done,
+  status,
   onPropose,
   onCancel,
 }: {
@@ -50,6 +51,7 @@ function MatchCard({
   // Shown on the 인기 tab: ranking badge plus the sponsorship count.
   rank?: number
   done: boolean
+  status?: RequestStatus
   onPropose: () => void
   onCancel: () => void
 }) {
@@ -78,6 +80,7 @@ function MatchCard({
       <ScoreRing score={match.score} />
       <ProposalControl
         done={done}
+        status={status}
         label="협찬 제안 보내기"
         className="primary-button"
         onPropose={onPropose}
@@ -87,20 +90,21 @@ function MatchCard({
   )
 }
 
+// Brands for student groups to propose to, by tab.
 export function MatchesPage({
-  role,
   matches,
   brands,
   proposals,
+  statuses,
   onPropose,
   onCancelProposal,
 }: {
-  role: Role
-  // Top picks for the current role.
+  // Top picks for the group's events.
   matches: Match[]
-  // Every brand student groups can browse (empty for the brand role).
+  // Every brand in the catalog.
   brands: Match[]
   proposals: string[]
+  statuses: Partial<Record<string, RequestStatus>>
   onPropose: (match: Match) => void
   onCancelProposal: (match: Match) => void
 }) {
@@ -109,25 +113,16 @@ export function MatchesPage({
     brands.some((brand) => brand.industry === industry),
   )
   const [industry, setIndustry] = useState<Industry>("cafe")
-  // Students browse the whole catalog by tab; brands see their top picks.
-  const browsing = role === "학생단체"
 
-  const list = !browsing
-    ? matches
-    : tab === "추천"
+  const list =
+    tab === "추천"
       ? matches
       : tab === "인기"
         ? [...brands].sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0))
         : tab === "전체"
           ? brands
           : brands.filter((brand) => brand.industry === industry)
-
-  const intro = browsing
-    ? tabIntro[tab]
-    : {
-        title: "캠페인에 맞는 학생단체를 찾았어요",
-        caption: tabIntro.추천.caption,
-      }
+  const intro = tabIntro[tab]
 
   return (
     <section className="page-view">
@@ -139,43 +134,41 @@ export function MatchesPage({
         </div>
       </div>
 
-      {browsing && (
-        <div className="match-filters">
-          <div className="match-tabs" role="tablist" aria-label="브랜드 보기">
-            {tabs.map((item) => (
+      <div className="match-filters">
+        <div className="match-tabs" role="tablist" aria-label="브랜드 보기">
+          {tabs.map((item) => (
+            <button
+              aria-selected={tab === item}
+              className={tab === item ? "match-tab active" : "match-tab"}
+              key={item}
+              onClick={() => setTab(item)}
+              role="tab"
+              type="button"
+            >
+              {item}
+            </button>
+          ))}
+        </div>
+        {tab === "업종별" && (
+          <div className="industry-chips" aria-label="업종">
+            {industries.map(([value, label]) => (
               <button
-                aria-selected={tab === item}
-                className={tab === item ? "match-tab active" : "match-tab"}
-                key={item}
-                onClick={() => setTab(item)}
-                role="tab"
+                aria-pressed={industry === value}
+                className={industry === value ? "industry-chip active" : "industry-chip"}
+                key={value}
+                onClick={(event) => {
+                  setIndustry(value)
+                  // The chip row scrolls sideways on phones; keep the pick in view.
+                  event.currentTarget.scrollIntoView({ block: "nearest", inline: "center" })
+                }}
                 type="button"
               >
-                {item}
+                {label}
               </button>
             ))}
           </div>
-          {tab === "업종별" && (
-            <div className="industry-chips" aria-label="업종">
-              {industries.map(([value, label]) => (
-                <button
-                  aria-pressed={industry === value}
-                  className={industry === value ? "industry-chip active" : "industry-chip"}
-                  key={value}
-                  onClick={(event) => {
-                    setIndustry(value)
-                    // The chip row scrolls sideways on phones; keep the pick in view.
-                    event.currentTarget.scrollIntoView({ block: "nearest", inline: "center" })
-                  }}
-                  type="button"
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+        )}
+      </div>
 
       <div className="full-match-grid">
         {list.map((match, index) => (
@@ -185,7 +178,8 @@ export function MatchesPage({
             match={match}
             onCancel={() => onCancelProposal(match)}
             onPropose={() => onPropose(match)}
-            rank={browsing && tab === "인기" ? index + 1 : undefined}
+            rank={tab === "인기" ? index + 1 : undefined}
+            status={statuses[match.id]}
           />
         ))}
       </div>

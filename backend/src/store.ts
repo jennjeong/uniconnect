@@ -2,7 +2,16 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises"
 import path from "node:path"
 
 import { config } from "./config.js"
-import { createSeed, seedBrands, seedMetricLog, seedReport } from "./data/seed.js"
+import {
+  createSeed,
+  seedBrands,
+  seedGroups,
+  seedMetricLog,
+  seedReport,
+  seedRequests,
+  seedSponsorships,
+  topMatches,
+} from "./data/seed.js"
 import { toIsoDate } from "./lib/dates.js"
 import type { Database } from "./types.js"
 
@@ -30,6 +39,21 @@ export function upgradeDatabase(stored: Database) {
   stored.brands ??= structuredClone(seedBrands)
   stored.metricLog ??= seedMetricLog()
   stored.report ??= structuredClone(seedReport)
+  if (!stored.groups) {
+    stored.groups = structuredClone(seedGroups)
+    // The brand side's top picks gain the group details (school, event).
+    if (stored.matches) stored.matches.브랜드 = topMatches(stored.groups)
+  }
+  stored.requests ??= seedRequests()
+  const demoBrandId = stored.demoAccountIds?.브랜드
+  stored.sponsorships ??= demoBrandId ? { [demoBrandId]: seedSponsorships() } : {}
+  const demoBrand = stored.accounts?.find((account) => account.id === demoBrandId)
+  if (demoBrand) demoBrand.brandId ??= "afternoon-coffee"
+  // The demo brand's seeded campaign gained a budget.
+  const tasting = demoBrandId
+    ? stored.events?.[demoBrandId]?.find((event) => event.id === "event-coffee-tasting")
+    : undefined
+  if (tasting) tasting.budget ??= 800000
   for (const events of Object.values(stored.events)) {
     for (const event of events) event.date = toIsoDate(event.date) ?? event.date
   }

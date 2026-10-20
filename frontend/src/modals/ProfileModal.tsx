@@ -5,14 +5,13 @@ import type { Account } from "../types"
 
 export function ProfileModal({
   account,
-  eventCount,
-  proposalCount,
+  activity,
   onClose,
   onLogout,
 }: {
   account: Account
-  eventCount: number
-  proposalCount: number
+  // The account's own counts, such as events registered and proposals sent.
+  activity: { label: string; value: string }[]
   onClose: () => void
   onLogout: () => void
 }) {
@@ -39,14 +38,12 @@ export function ProfileModal({
             <span>이메일</span>
             <strong>{account.email}</strong>
           </div>
-          <div>
-            <span>등록한 {account.role === "학생단체" ? "행사" : "캠페인"}</span>
-            <strong>{eventCount}개</strong>
-          </div>
-          <div>
-            <span>보낸 협찬 제안</span>
-            <strong>{proposalCount}건</strong>
-          </div>
+          {activity.map((row) => (
+            <div key={row.label}>
+              <span>{row.label}</span>
+              <strong>{row.value}</strong>
+            </div>
+          ))}
           <div>
             <span>가입일</span>
             <strong>{formatFullDate(toIsoDate(new Date(account.createdAt)))}</strong>

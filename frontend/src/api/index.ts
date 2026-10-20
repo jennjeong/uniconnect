@@ -6,8 +6,11 @@ import type {
   MetricKind,
   Metrics,
   Report,
+  RequestStatus,
   Role,
   Session,
+  SponsorRequest,
+  Sponsorship,
 } from "../types"
 import { request } from "./client"
 
@@ -24,7 +27,16 @@ export type SignupPayload = {
   agreedToTerms: boolean
 }
 
-export type EventDraft = Pick<EventItem, "name" | "people" | "date" | "types" | "typeNote">
+export type EventDraft = Pick<
+  EventItem,
+  "name" | "people" | "date" | "types" | "typeNote" | "budget"
+>
+
+// Proposals the account sent, with each brand's answer so far.
+export type ProposalState = {
+  proposals: string[]
+  statuses: Partial<Record<string, RequestStatus>>
+}
 
 // One function per backend endpoint (see backend/src/routes).
 export const api = {
@@ -48,6 +60,7 @@ export const api = {
   matches: (role: Role) =>
     request<{ matches: Match[] }>("/matches", { query: { role } }),
   brands: () => request<{ brands: Match[] }>("/brands"),
+  groups: () => request<{ groups: Match[] }>("/groups"),
 
   events: (role: Role) =>
     request<{ events: EventItem[] }>("/events", { query: { role } }),
@@ -56,16 +69,24 @@ export const api = {
   deleteEvent: (id: string) =>
     request<void>(`/events/${encodeURIComponent(id)}`, { method: "DELETE" }),
 
-  proposals: () => request<{ proposals: string[] }>("/proposals"),
+  proposals: () => request<ProposalState>("/proposals"),
   propose: (matchId: string) =>
-    request<{ proposals: string[] }>("/proposals", {
+    request<ProposalState>("/proposals", {
       method: "POST",
       body: { matchId },
     }),
   cancelProposal: (matchId: string) =>
-    request<{ proposals: string[] }>(`/proposals/${encodeURIComponent(matchId)}`, {
+    request<ProposalState>(`/proposals/${encodeURIComponent(matchId)}`, {
       method: "DELETE",
     }),
+
+  requests: () => request<{ requests: SponsorRequest[] }>("/requests"),
+  answerRequest: (id: string, decision: "accept" | "decline") =>
+    request<{ request: SponsorRequest }>(
+      `/requests/${encodeURIComponent(id)}/${decision}`,
+      { method: "POST" },
+    ),
+  analytics: () => request<{ sponsorships: Sponsorship[] }>("/analytics"),
 
   metrics: () => request<{ metrics: Metrics }>("/metrics"),
   metricLog: (kind?: MetricKind) =>

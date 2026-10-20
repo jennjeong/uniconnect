@@ -5,13 +5,16 @@ import express, { type ErrorRequestHandler } from "express"
 import { config } from "./config.js"
 import { HttpError } from "./lib/errors.js"
 import { readSession } from "./middleware/session.js"
+import { analyticsRouter } from "./routes/analytics.js"
 import { authRouter } from "./routes/auth.js"
 import { brandsRouter } from "./routes/brands.js"
 import { eventsRouter } from "./routes/events.js"
+import { groupsRouter } from "./routes/groups.js"
 import { matchesRouter } from "./routes/matches.js"
 import { metricsRouter } from "./routes/metrics.js"
 import { proposalsRouter } from "./routes/proposals.js"
 import { reportRouter } from "./routes/report.js"
+import { requestsRouter } from "./routes/requests.js"
 
 export function createApp() {
   const app = express()
@@ -42,10 +45,13 @@ export function createApp() {
   app.use("/api/auth", authRouter)
   app.use("/api/matches", matchesRouter)
   app.use("/api/brands", brandsRouter)
+  app.use("/api/groups", groupsRouter)
   app.use("/api/events", eventsRouter)
   app.use("/api/proposals", proposalsRouter)
+  app.use("/api/requests", requestsRouter)
   app.use("/api/metrics", metricsRouter)
   app.use("/api/report", reportRouter)
+  app.use("/api/analytics", analyticsRouter)
   app.use("/api", () => {
     throw new HttpError(404, "없는 API 경로예요.")
   })

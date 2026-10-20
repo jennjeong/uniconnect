@@ -2,6 +2,7 @@ import { useState } from "react"
 
 import { Icon } from "../components/Icon"
 import { sponsorTypeLabels } from "../lib/format"
+import { formatWon } from "../lib/kpis"
 import {
   calendarDays,
   formatDay,
@@ -11,27 +12,42 @@ import {
   todayIso,
   weekdayNames,
 } from "../lib/date"
-import type { EventItem, Role } from "../types"
+import type { EventItem, Role, SponsorRequest } from "../types"
 
-const statusClass = (event: EventItem) => `status-${event.status.replace(" ", "")}`
+// A day on the calendar holds the account's own events or campaigns and,
+// for brands, the student events whose proposal they accepted.
+type Entry =
+  | { kind: "event"; id: string; date: string; name: string; event: EventItem }
+  | { kind: "sponsorship"; id: string; date: string; name: string; request: SponsorRequest }
+
+const statusClass = (entry: Entry) =>
+  entry.kind === "event" ? `status-${entry.event.status.replace(" ", "")}` : "status-협찬확정"
+
+const statusLabel = (entry: Entry) => (entry.kind === "event" ? entry.event.status : "협찬 확정")
 
 function EventRow({
+  role,
   event,
   onShowDetail,
   onDelete,
 }: {
+  role: Role
   event: EventItem
   onShowDetail: (event: EventItem) => void
   onDelete: (event: EventItem) => void
 }) {
+  const types = event.types.length > 0 ? ` · ${sponsorTypeLabels(event).join(" · ")} 협찬` : ""
   return (
     <article className="day-event-card">
       <div className="day-event-copy">
-        <span className={`status-chip ${statusClass(event)}`}>{event.status}</span>
+        <span className={`status-chip status-${event.status.replace(" ", "")}`}>{event.status}</span>
         <strong>{event.name}</strong>
         <p>
-          예상 참여 {event.people || "미정"}
-          {event.types.length > 0 && ` · ${sponsorTypeLabels(event).join(" · ")} 협찬`}
+          {role === "학생단체"
+            ? `예상 참여 ${event.people || "미정"}${types}`
+            : `목표 도달 ${event.people || "미정"} · 예산 ${
+                event.budget === undefined ? "미정" : formatWon(event.budget)
+              }${types}`}
         </p>
       </div>
       <div className="event-card-actions">
@@ -51,21 +67,52 @@ function EventRow({
   )
 }
 
+// A student event a brand agreed to sponsor.
+function SponsorshipRow({
+  request,
+  onOpen,
+}: {
+  request: SponsorRequest
+  onOpen: () => void
+}) {
+  return (
+    <article className="day-event-card">
+      <div className="day-event-copy">
+        <span className="status-chip status-협찬확정">협찬 확정</span>
+        <strong>{request.eventName}</strong>
+        <p>
+          {request.groupName} · {request.people} · {request.ask}
+        </p>
+      </div>
+      <div className="event-card-actions">
+        <button className="cancel-button" onClick={onOpen} type="button">
+          제안 보기
+        </button>
+      </div>
+    </article>
+  )
+}
+
 export function EventsPage({
   role,
   events,
+  sponsorships = [],
   initialDate,
   onCreate,
   onShowDetail,
   onDelete,
+  onOpenSponsorship,
 }: {
   role: Role
   events: EventItem[]
+  // Brands only: accepted proposals, shown on their event days.
+  sponsorships?: SponsorRequest[]
   // Day to open on, such as the date of a just-registered event.
   initialDate?: string
   onCreate: (date: string) => void
   onShowDetail: (event: EventItem) => void
   onDelete: (event: EventItem) => void
+  onOpenSponsorship?: () => void
 }) {
   const noun = role === "학생단체" ? "행사" : "캠페인"
   const today = todayIso()
@@ -74,14 +121,27 @@ export function EventsPage({
   )
   const [month, setMonth] = useState(() => startOfMonth(fromIsoDate(selected) ?? new Date()))
 
-  const byDate = new Map<string, EventItem[]>()
-  for (const event of events) {
-    if (!fromIsoDate(event.date)) continue
-    byDate.set(event.date, [...(byDate.get(event.date) ?? []), event])
-  }
-  const selectedEvents = byDate.get(selected) ?? []
-  const upcoming = events
-    .filter((event) => fromIsoDate(event.date) && event.date >= today)
+  const entries: Entry[] = [
+    ...events.map((event) => ({
+      kind: "event" as const,
+      id: event.id,
+      date: event.date,
+      name: event.name,
+      event,
+    })),
+    ...sponsorships.map((request) => ({
+      kind: "sponsorship" as const,
+      id: request.id,
+      date: request.eventDate,
+      name: request.eventName,
+      request,
+    })),
+  ].filter((entry) => fromIsoDate(entry.date))
+  const byDate = new Map<string, Entry[]>()
+  for (const entry of entries) byDate.set(entry.date, [...(byDate.get(entry.date) ?? []), entry])
+  const selectedEntries = byDate.get(selected) ?? []
+  const upcoming = entries
+    .filter((entry) => entry.date >= today)
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(0, 4)
 
@@ -99,7 +159,9 @@ export function EventsPage({
     <section className="page-view">
       <div className="section-heading-row view-heading">
         <div>
-          <span className="section-kicker dark">EVENTS & CAMPAIGNS</span>
+          <span className="section-kicker dark">
+            {role === "학생단체" ? "MY EVENTS" : "CAMPAIGN CALENDAR"}
+          </span>
           <p className="section-title">{noun} 일정</p>
         </div>
         <button className="primary-button" onClick={() => onCreate(selected)} type="button">
@@ -143,7 +205,7 @@ export function EventsPage({
           <div className="calendar-grid">
             {calendarDays(month).map((day) => {
               const iso = toIsoDate(day)
-              const dayEvents = byDate.get(iso) ?? []
+              const dayEntries = byDate.get(iso) ?? []
               const className = [
                 "calendar-day",
                 day.getMonth() !== month.getMonth() && "outside",
@@ -156,7 +218,7 @@ export function EventsPage({
                 .join(" ")
               return (
                 <button
-                  aria-label={`${formatDay(iso)}${dayEvents.length ? `, 일정 ${dayEvents.length}개` : ""}`}
+                  aria-label={`${formatDay(iso)}${dayEntries.length ? `, 일정 ${dayEntries.length}개` : ""}`}
                   aria-pressed={iso === selected}
                   className={className}
                   key={iso}
@@ -166,13 +228,13 @@ export function EventsPage({
                 >
                   <span className="day-number">{day.getDate()}</span>
                   <span className="day-events">
-                    {dayEvents.slice(0, 2).map((event) => (
-                      <span className={`day-event ${statusClass(event)}`} key={event.id}>
-                        {event.name}
+                    {dayEntries.slice(0, 2).map((entry) => (
+                      <span className={`day-event ${statusClass(entry)}`} key={entry.id}>
+                        {entry.name}
                       </span>
                     ))}
-                    {dayEvents.length > 2 && (
-                      <span className="day-more">+{dayEvents.length - 2}</span>
+                    {dayEntries.length > 2 && (
+                      <span className="day-more">+{dayEntries.length - 2}</span>
                     )}
                   </span>
                 </button>
@@ -184,6 +246,7 @@ export function EventsPage({
             <span className="legend-matching">매칭 중</span>
             <span className="legend-scheduled">집행 예정</span>
             <span className="legend-done">측정 완료</span>
+            {role === "브랜드" && <span className="legend-confirmed">협찬 확정</span>}
             <small>날짜를 고르고 아래 ‘이 날짜에 {noun} 등록’을 누르면 바로 입력할 수 있어요.</small>
           </div>
         </div>
@@ -195,19 +258,28 @@ export function EventsPage({
           </div>
 
           <div className="day-event-list">
-            {selectedEvents.length === 0 ? (
+            {selectedEntries.length === 0 ? (
               <p className="day-empty">
                 {role === "학생단체" ? "등록된 행사가 없어요." : "등록된 캠페인이 없어요."}
               </p>
             ) : (
-              selectedEvents.map((event) => (
-                <EventRow
-                  event={event}
-                  key={event.id}
-                  onDelete={onDelete}
-                  onShowDetail={onShowDetail}
-                />
-              ))
+              selectedEntries.map((entry) =>
+                entry.kind === "event" ? (
+                  <EventRow
+                    event={entry.event}
+                    key={entry.id}
+                    onDelete={onDelete}
+                    onShowDetail={onShowDetail}
+                    role={role}
+                  />
+                ) : (
+                  <SponsorshipRow
+                    key={entry.id}
+                    onOpen={() => onOpenSponsorship?.()}
+                    request={entry.request}
+                  />
+                ),
+              )
             )}
           </div>
 
@@ -220,16 +292,16 @@ export function EventsPage({
             {upcoming.length === 0 ? (
               <p className="day-empty">예정된 일정이 없어요.</p>
             ) : (
-              upcoming.map((event) => (
+              upcoming.map((entry) => (
                 <button
                   className="upcoming-item"
-                  key={event.id}
-                  onClick={() => jumpTo(event.date)}
+                  key={entry.id}
+                  onClick={() => jumpTo(entry.date)}
                   type="button"
                 >
-                  <span className="upcoming-date">{formatDay(event.date)}</span>
-                  <strong>{event.name}</strong>
-                  <span className={`status-chip ${statusClass(event)}`}>{event.status}</span>
+                  <span className="upcoming-date">{formatDay(entry.date)}</span>
+                  <strong>{entry.name}</strong>
+                  <span className={`status-chip ${statusClass(entry)}`}>{statusLabel(entry)}</span>
                 </button>
               ))
             )}

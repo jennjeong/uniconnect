@@ -22,6 +22,11 @@ export type Match = {
   tags: string[]
   // Sponsorships with student groups this semester (brand catalog only).
   popularity?: number
+  // Student group catalog only: school, next event and its expected audience.
+  school?: string
+  eventName?: string
+  eventDate?: string
+  audience?: number
 }
 
 export type EventStatus = "매칭 중" | "집행 예정" | "측정 완료"
@@ -35,6 +40,8 @@ export type EventItem = {
   types: string[]
   // What "기타" in types means, written by the organizer.
   typeNote?: string
+  // Campaign budget in won (brand accounts only).
+  budget?: number
   status: EventStatus
 }
 
@@ -45,6 +52,8 @@ export type Account = {
   type: string
   school: string
   email: string
+  // Brand accounts: the catalog id that receives student proposals.
+  brandId?: string
   createdAt: string
 }
 
@@ -60,6 +69,38 @@ export type MetricEntry = {
   at: string
   participant: string
   detail: string
+}
+
+export type RequestStatus = "검토 중" | "수락" | "거절"
+
+// A sponsorship proposal a student group sent to a brand.
+export type SponsorRequest = {
+  id: string
+  brandId: string
+  groupName: string
+  school: string
+  industry: Industry
+  eventName: string
+  // "YYYY-MM-DD", or "" while the group has no event scheduled.
+  eventDate: string
+  people: string
+  ask: string
+  message: string
+  status: RequestStatus
+  createdAt: string
+  respondedAt?: string
+}
+
+// One finished sponsorship of a brand, for its analytics.
+export type Sponsorship = {
+  id: string
+  groupName: string
+  eventName: string
+  date: string
+  spend: number
+  coupons: number
+  visits: number
+  sales: number
 }
 
 export type Report = {
@@ -82,7 +123,17 @@ export type Report = {
   valueBreakdown: { type: string; value: number }[]
 }
 
-export type NavLabel = "대시보드" | "추천 매칭" | "내 행사" | "성과 측정" | "리포트"
+// Student groups and brands each have their own menu (data/navigation.ts).
+export type NavLabel =
+  | "대시보드"
+  | "추천 매칭"
+  | "내 행사"
+  | "성과 측정"
+  | "리포트"
+  | "단체 찾기"
+  | "받은 제안"
+  | "캠페인"
+  | "성과 분석"
 
 export type ModalName =
   | "notifications"

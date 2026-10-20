@@ -1,0 +1,54 @@
+import type { Request } from "express"
+import { Router } from "express"
+
+import { HttpError } from "../lib/errors.js"
+import { requireAccount } from "../middleware/session.js"
+import { getDatabase, saveDatabase } from "../store.js"
+import type { RequestStatus } from "../types.js"
+
+export const requestsRouter = Router()
+
+// Brand whose inbox to show: the logged-in brand, or the demo brand for
+// visitors previewing the brand side. Student accounts have no inbox.
+export function brandOwner(req: Request) {
+  const database = getDatabase()
+  if (req.account) return req.account.role === "브랜드" ? req.account : undefined
+  return database.accounts.find((account) => account.id === database.demoAccountIds.브랜드)
+}
+
+// Proposals student groups sent to this brand, newest first.
+requestsRouter.get("/", (req, res) => {
+  const owner = brandOwner(req)
+  const requests = owner?.brandId
+    ? getDatabase()
+        .requests.filter((request) => request.brandId === owner.brandId)
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    : []
+  res.json({ requests })
+})
+
+const decisions: Record<string, RequestStatus> = { accept: "수락", decline: "거절" }
+
+// The brand accepts or declines one proposal.
+requestsRouter.post("/:id/:decision", async (req, res) => {
+  const account = requireAccount(req)
+  if (account.role !== "브랜드") throw new HttpError(403, "브랜드 회원만 제안에 답할 수 있어요.")
+  const decision = decisions[req.params.decision]
+  if (!decision) throw new HttpError(404, "없는 API 경로예요.")
+
+  const database = getDatabase()
+  const request = database.requests.find(
+    (item) => item.id === req.params.id && item.brandId === account.brandId,
+  )
+  if (!request) throw new HttpError(404, "제안을 찾을 수 없어요.")
+  if (request.status !== "검토 중") throw new HttpError(409, "이미 답한 제안이에요.")
+
+  request.status = decision
+  request.respondedAt = new Date().toISOString()
+  if (decision === "수락" && request.fromAccountId) {
+    const event = database.events[request.fromAccountId]?.find((item) => item.id === request.eventId)
+    if (event?.status === "매칭 중") event.status = "집행 예정"
+  }
+  await saveDatabase()
+  res.json({ request })
+})

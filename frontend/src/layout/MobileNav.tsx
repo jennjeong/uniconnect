@@ -1,17 +1,19 @@
 import { Icon } from "../components/Icon"
 import { navItems } from "../data/navigation"
-import type { NavLabel } from "../types"
+import type { NavLabel, Role } from "../types"
 
 export function MobileNav({
+  role,
   activeNav,
   onNavigate,
 }: {
+  role: Role
   activeNav: NavLabel
   onNavigate: (label: NavLabel) => void
 }) {
   return (
     <nav className="mobile-nav" aria-label="모바일 주요 메뉴">
-      {navItems.map((item) => (
+      {navItems[role].map((item) => (
         <button
           className={activeNav === item.label ? "active" : ""}
           key={item.label}
@@ -19,7 +21,7 @@ export function MobileNav({
           type="button"
         >
           <Icon name={item.icon} size={20} />
-          <span>{item.label.replace("추천 ", "")}</span>
+          <span>{item.short ?? item.label}</span>
         </button>
       ))}
     </nav>
