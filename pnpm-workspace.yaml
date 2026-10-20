@@ -1,0 +1,8 @@
+packages:
+  - frontend
+  - backend
+
+# tsx (backend dev runner) depends on esbuild, whose install script pnpm
+# blocks unless it is listed here.
+onlyBuiltDependencies:
+  - esbuild

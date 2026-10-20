@@ -1,35 +1,32 @@
-# figma-make-app
+# uniconnect
 
-React + Vite + Tailwind CSS project running inside Figma Make.
+Sponsorship matching prototype that connects student groups (학생단체) with brands (브랜드). It is a pnpm workspace with a React frontend and an Express API. The UI copy is Korean.
 
-## Development Server
+## Commands
 
-A Vite development server is **already running** on `$PORT` (default 8443). You don't need to start it manually.
+Run these from the repo root:
 
-- Preview URL: The user can access the running app through the preview panel
-- Hot reload: Changes to source files are reflected immediately
+- `corepack pnpm@10.34.3 install` installs every workspace package.
+- `npm run dev` starts the API on http://localhost:4000 and Vite on http://localhost:8443. Vite proxies `/api` to the API.
+- `npm run typecheck` runs tsc for the backend and the frontend.
+- `npm test` runs the backend API tests (`node:test` through tsx).
+- `npm run build`, then `npm start`, builds both packages and serves the API plus the built frontend from Express.
 
 ## Project Structure
 
-This is the canonical project structure. Start with task-relevant files below. Only follow imports or inspect other files when required, when a documented path is missing, or when the repository contradicts this guide.
+- `frontend/src/App.tsx` holds the app state and the API calls, and switches between pages and modals.
+- `frontend/src/api/` has the fetch wrapper with the Bearer token (`client.ts`) and one function per endpoint (`index.ts`).
+- `frontend/src/pages/`, `modals/`, `layout/` and `components/` contain the UI. `data/`, `lib/` and `hooks/` contain constants and helpers.
+- `frontend/src/index.css` is the single global stylesheet. Components use its class names, so a renamed class must change in both places.
+- `backend/src/routes/` has one Express router per resource.
+- `backend/src/data/seed.ts` holds the demo accounts and data.
+- `backend/src/store.ts` is the JSON file store. It writes `backend/data/db.json`, which is gitignored; delete the file to reseed.
 
-- `src/main.tsx` - React entrypoint; imports `src/index.css` and mounts `src/App.tsx` into the `#root` element
-- `src/App.tsx` - Primary application component and the usual starting point for UI work
-- `src/index.css` - Global CSS entrypoint and Tailwind CSS v4 import
-- `index.html` - Vite HTML shell containing the `#root` element and loading `src/main.tsx`
-- `package.json` - Project dependencies and the Vite build, development, preview, and formatting scripts
-- `vite.config.ts` - Vite configuration with React, Tailwind CSS v4, and Figma Make plugins plus the `@` alias for `src`
-- `.mise.toml` - Toolchain versions for Node.js and pnpm
+## Conventions
 
-## Dependencies
-
-- Runtime: React 19 and React DOM 19
-- Styling: Tailwind CSS v4 with the `@tailwindcss/vite` plugin
-- Build tooling: Vite 8, TypeScript 5.7, and `@vitejs/plugin-react`
-- Formatting: oxfmt
-
-## Styling
-
-This project uses **Tailwind CSS v4** through the `@tailwindcss/vite` plugin configured in `vite.config.ts`. `src/index.css` imports Tailwind with `@import 'tailwindcss';`. Use Tailwind utility classes directly in JSX and put global CSS or Tailwind v4 theme customization in `src/index.css`. This scaffold does not need a Tailwind config file or PostCSS config.
-
-`src/main.tsx` imports `src/index.css`, so global font wiring belongs in `src/index.css`. Keep CSS `@import` statements first, then add any `@font-face` rules and font-family defaults there.
+- `frontend/src/types.ts` mirrors the API shapes in `backend/src/types.ts`.
+- Account types and sponsor types are listed in both `backend/src/lib/validation.ts` and the frontend (`data/roles.ts`, `modals/EventModal.tsx`). Change them together.
+- The backend is ESM with NodeNext resolution, so relative imports end in `.js`.
+- Express 5 forwards thrown and rejected errors to the error handler. Throw `HttpError(status, message)` with a Korean message the user can read.
+- Design tokens are CSS variables on `:root` in `index.css`; `--point` is the yellow point color. Tailwind v4 is available, but the UI is styled through the classes in `index.css`.
+- No mail service is connected yet. Email verification codes come back as `devCode` while `EXPOSE_EMAIL_CODES` is on, which is the default outside production. A real sender belongs in `backend/src/lib/mailer.ts`.

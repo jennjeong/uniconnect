@@ -1,0 +1,73 @@
+const TOKEN_KEY = "uniconnect-token"
+
+// Empty in development (Vite proxies /api to the backend). Set VITE_API_URL
+// when the frontend and backend are deployed on different origins.
+const API_BASE = (import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "")
+
+const unreachable = "서버에 연결할 수 없어요. 백엔드가 실행 중인지 확인해 주세요."
+
+export class ApiError extends Error {
+  status: number
+
+  constructor(status: number, message: string) {
+    super(message)
+    this.status = status
+  }
+}
+
+export const errorMessage = (error: unknown) =>
+  error instanceof ApiError ? error.message : "요청을 처리하지 못했어요."
+
+export function getToken() {
+  try {
+    return localStorage.getItem(TOKEN_KEY)
+  } catch {
+    return null
+  }
+}
+
+export function setToken(token: string | null) {
+  try {
+    if (token) localStorage.setItem(TOKEN_KEY, token)
+    else localStorage.removeItem(TOKEN_KEY)
+  } catch {
+    // Storage can be unavailable (private mode); the session then lasts until reload.
+  }
+}
+
+type RequestOptions = {
+  method?: "GET" | "POST" | "DELETE"
+  body?: unknown
+  query?: Record<string, string>
+}
+
+export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const url = new URL(`${API_BASE}/api${path}`, window.location.origin)
+  for (const [key, value] of Object.entries(options.query ?? {})) {
+    url.searchParams.set(key, value)
+  }
+
+  const token = getToken()
+  let response: Response
+  try {
+    response = await fetch(url, {
+      method: options.method ?? "GET",
+      headers: {
+        ...(options.body === undefined ? {} : { "Content-Type": "application/json" }),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+    })
+  } catch {
+    throw new ApiError(0, unreachable)
+  }
+
+  if (response.status === 204) return undefined as T
+  const data = await response.json().catch(() => null)
+  if (!response.ok) {
+    // The API always answers errors as { error }; anything else came from a
+    // proxy or host that could not reach it.
+    throw new ApiError(response.status, data?.error ?? unreachable)
+  }
+  return data as T
+}

@@ -11,7 +11,10 @@ logs/
 *.log
 .claude-replay.*
 .tmp-*
-/.figma/design-context/
+/frontend/.figma/design-context/
+
+# Runtime data written by the API (created from the seed on first start).
+/backend/data/
 
 # Platform-managed agentplat state, not project source. In the
 # client-initiated single-repo workspace layout (make's `Path: "."` spec) the
