@@ -220,11 +220,100 @@ function monthAndDay(date: string) {
   return { month, day }
 }
 
+type Role = "학생단체" | "브랜드"
+
+type Account = { name: string; type: string; school: string; email: string }
+
+const demoProfiles: Record<Role, { name: string; type: string; initial: string }> =
+  {
+    학생단체: { name: "삼육대 뮤즈", type: "공연 동아리", initial: "S" },
+    브랜드: { name: "오후의 커피", type: "지역 브랜드", initial: "O" },
+  }
+
+const roleOptions: {
+  value: Role
+  title: string
+  caption: string
+  icon: IconName
+}[] = [
+  { value: "학생단체", title: "협찬 받기", caption: "학생단체 · 동아리", icon: "users" },
+  { value: "브랜드", title: "협찬 하기", caption: "스폰서 · 브랜드", icon: "store" },
+]
+
+const accountTypes: Record<Role, string[]> = {
+  학생단체: ["공연 동아리", "학술 동아리", "봉사 동아리", "학생회", "연합 동아리", "기타"],
+  브랜드: ["카페 · 식음료", "뷰티 · 패션", "콘텐츠 · 미디어", "스포츠 · 웰니스", "교육", "기타"],
+}
+
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+const emptySignup = {
+  role: "학생단체" as Role,
+  name: "",
+  type: accountTypes.학생단체[0],
+  school: "",
+  email: "",
+  password: "",
+  confirm: "",
+  agreed: false,
+}
+
+function signupError(draft: typeof emptySignup) {
+  if (!draft.name.trim()) {
+    return `${draft.role === "학생단체" ? "단체명" : "브랜드명"}을 입력해 주세요.`
+  }
+  if (draft.role === "학생단체" && !draft.school.trim()) return "학교를 입력해 주세요."
+  if (!emailPattern.test(draft.email.trim())) return "이메일 형식을 확인해 주세요."
+  if (draft.password.length < 8) return "비밀번호는 8자 이상이어야 해요."
+  if (draft.password !== draft.confirm) return "비밀번호가 일치하지 않아요."
+  if (!draft.agreed) return "이용약관에 동의해 주세요."
+  return ""
+}
+
+function RolePicker({
+  name,
+  value,
+  onChange,
+}: {
+  name: string
+  value: Role
+  onChange: (role: Role) => void
+}) {
+  return (
+    <div className="role-picker" role="radiogroup" aria-label="회원 유형">
+      {roleOptions.map((option) => (
+        <label
+          className={value === option.value ? "role-option active" : "role-option"}
+          key={option.value}
+        >
+          <input
+            checked={value === option.value}
+            name={name}
+            onChange={() => onChange(option.value)}
+            type="radio"
+            value={option.value}
+          />
+          <Icon name={option.icon} size={20} />
+          <strong>{option.title}</strong>
+          <span>{option.caption}</span>
+        </label>
+      ))}
+    </div>
+  )
+}
+
 function App() {
   const [activeNav, setActiveNav] = useState("대시보드")
-  const [role, setRole] = useState<"학생단체" | "브랜드">("학생단체")
+  const [role, setRole] = useState<Role>("학생단체")
   const [activeModal, setActiveModal] = useState<
-    "event" | "notifications" | "report" | "qr" | "profile" | "login" | null
+    | "event"
+    | "notifications"
+    | "report"
+    | "qr"
+    | "profile"
+    | "login"
+    | "signup"
+    | null
   >(null)
   const [loggedIn, setLoggedIn] = useState(() => {
     try {
@@ -233,7 +322,23 @@ function App() {
       return true
     }
   })
-  const [loginDraft, setLoginDraft] = useState({ email: "", password: "" })
+  const [loginDraft, setLoginDraft] = useState({
+    role: "학생단체" as Role,
+    email: "",
+    password: "",
+  })
+  const [signupDraft, setSignupDraft] = useState(emptySignup)
+  const [authError, setAuthError] = useState("")
+  // Sign-ups are kept per role in this browser only; passwords are never saved.
+  const [accounts, setAccounts] = useState<Partial<Record<Role, Account>>>(
+    () => {
+      try {
+        return JSON.parse(localStorage.getItem("uniconnect-accounts") || "{}")
+      } catch {
+        return {}
+      }
+    },
+  )
   const [notice, setNotice] = useState("")
   const noticeTimer = useRef<number | undefined>(undefined)
   const [proposed, setProposed] = useState<string[]>(() => {
@@ -266,17 +371,30 @@ function App() {
   })
   const [notificationsRead, setNotificationsRead] = useState(false)
 
+  const profileFor = (target: Role) => {
+    const account = accounts[target]
+    if (!account) return demoProfiles[target]
+    return {
+      name: account.name,
+      type: account.type,
+      initial: account.name.trim().charAt(0).toUpperCase(),
+    }
+  }
+
   const activeMatches = role === "학생단체" ? matches : brandMatches
-  const roleName = role === "학생단체" ? "뮤즈 팀" : "오후의 커피"
-  const profile =
-    role === "학생단체"
-      ? { name: "삼육대 뮤즈", type: "공연 동아리", initial: "S" }
-      : { name: "오후의 커피", type: "지역 브랜드", initial: "O" }
+  const account = accounts[role]
+  const profile = profileFor(role)
+  const greetingName =
+    account?.name ?? (role === "학생단체" ? "뮤즈 팀" : "오후의 커피")
   const createLabel = role === "학생단체" ? "새 행사 등록" : "새 캠페인 등록"
 
   useEffect(() => {
     localStorage.setItem("uniconnect-events", JSON.stringify(events))
   }, [events])
+
+  useEffect(() => {
+    localStorage.setItem("uniconnect-accounts", JSON.stringify(accounts))
+  }, [accounts])
 
   useEffect(() => {
     localStorage.setItem("uniconnect-logged-in", String(loggedIn))
@@ -313,16 +431,70 @@ function App() {
     showNotice(`${name}에 보낸 제안을 취소했어요.`)
   }
 
-  // Demo login: there is no backend, so any non-empty email and password signs in.
+  const applyRole = (next: Role) => {
+    if (next === role) return
+    setRole(next)
+    setProposed([])
+    setEventDraft({
+      name: next === "학생단체" ? "2026 뮤즈 종강 공연" : "11월 캠퍼스 캠페인",
+      people: next === "학생단체" ? "120명" : "1,000명",
+      date: "2026. 11. 27.",
+    })
+  }
+
+  const openLogin = () => {
+    const nextRole = activeModal === "signup" ? signupDraft.role : role
+    setLoginDraft((draft) => ({ ...draft, role: nextRole }))
+    setAuthError("")
+    setActiveModal("login")
+  }
+
+  const openSignup = () => {
+    const nextRole = activeModal === "login" ? loginDraft.role : role
+    setSignupDraft({
+      ...emptySignup,
+      role: nextRole,
+      type: accountTypes[nextRole][0],
+    })
+    setAuthError("")
+    setActiveModal("signup")
+  }
+
+  // Demo login: there is no backend, so any email and password signs in
+  // to the role picked on the form.
   const login = () => {
-    if (!loginDraft.email.trim() || !loginDraft.password) {
-      showNotice("이메일과 비밀번호를 입력해 주세요.")
+    if (!emailPattern.test(loginDraft.email.trim()) || !loginDraft.password) {
+      setAuthError("이메일과 비밀번호를 확인해 주세요.")
       return
     }
+    applyRole(loginDraft.role)
     setLoggedIn(true)
-    setLoginDraft({ email: "", password: "" })
+    setLoginDraft((draft) => ({ ...draft, email: "", password: "" }))
     setActiveModal(null)
-    showNotice(`${profile.name} 계정으로 로그인했어요.`)
+    showNotice(`${profileFor(loginDraft.role).name} 계정으로 로그인했어요.`)
+  }
+
+  const signup = () => {
+    const error = signupError(signupDraft)
+    if (error) {
+      setAuthError(error)
+      return
+    }
+    const name = signupDraft.name.trim()
+    setAccounts((current) => ({
+      ...current,
+      [signupDraft.role]: {
+        name,
+        type: signupDraft.type,
+        school: signupDraft.role === "학생단체" ? signupDraft.school.trim() : "",
+        email: signupDraft.email.trim(),
+      },
+    }))
+    applyRole(signupDraft.role)
+    setLoggedIn(true)
+    setSignupDraft(emptySignup)
+    setActiveModal(null)
+    showNotice(`${name} 계정으로 가입했어요. 환영해요!`)
   }
 
   const logout = () => {
@@ -406,16 +578,8 @@ function App() {
               className={role === item ? "role-button active" : "role-button"}
               key={item}
               onClick={() => {
-                setRole(item)
-                setProposed([])
-                setEventDraft({
-                  name:
-                    item === "학생단체"
-                      ? "2026 뮤즈 종강 공연"
-                      : "11월 캠퍼스 캠페인",
-                  people: item === "학생단체" ? "120명" : "1,000명",
-                  date: "2026. 11. 27.",
-                })
+                if (item === role) return
+                applyRole(item)
                 showNotice(`${item} 전용 데이터로 전환했어요.`)
               }}
               type="button"
@@ -466,7 +630,7 @@ function App() {
 
         <button
           className="profile"
-          onClick={() => setActiveModal(loggedIn ? "profile" : "login")}
+          onClick={() => (loggedIn ? setActiveModal("profile") : openLogin())}
           type="button"
         >
           <div className="avatar">{loggedIn ? profile.initial : "?"}</div>
@@ -495,7 +659,7 @@ function App() {
                 {activeNav !== "대시보드"
                   ? activeNav
                   : loggedIn
-                    ? `반가워요, ${roleName}`
+                    ? `반가워요, ${greetingName}`
                     : "반가워요"}
               </p>
             </div>
@@ -525,13 +689,22 @@ function App() {
                 </button>
               </>
             ) : (
-              <button
-                className="login-button"
-                onClick={() => setActiveModal("login")}
-                type="button"
-              >
-                로그인
-              </button>
+              <>
+                <button
+                  className="signup-link"
+                  onClick={openSignup}
+                  type="button"
+                >
+                  회원가입
+                </button>
+                <button
+                  className="login-button"
+                  onClick={openLogin}
+                  type="button"
+                >
+                  로그인
+                </button>
+              </>
             )}
           </div>
         </header>
@@ -1085,6 +1258,7 @@ function App() {
                   {activeModal === "qr" && "LIVE QR"}
                   {activeModal === "profile" && "MY PAGE"}
                   {activeModal === "login" && "WELCOME"}
+                  {activeModal === "signup" && "JOIN UNICONNECT"}
                 </span>
                 <p id="modal-title">
                   {activeModal === "event" && createLabel}
@@ -1093,6 +1267,7 @@ function App() {
                   {activeModal === "qr" && "현장 참여 QR"}
                   {activeModal === "profile" && "내 정보"}
                   {activeModal === "login" && "로그인"}
+                  {activeModal === "signup" && "회원가입"}
                 </p>
               </div>
               <button
@@ -1309,6 +1484,18 @@ function App() {
                   </div>
                 </div>
                 <div className="report-detail-rows">
+                  {account?.school && (
+                    <div>
+                      <span>학교</span>
+                      <strong>{account.school}</strong>
+                    </div>
+                  )}
+                  {account && (
+                    <div>
+                      <span>이메일</span>
+                      <strong>{account.email}</strong>
+                    </div>
+                  )}
                   <div>
                     <span>
                       등록한 {role === "학생단체" ? "행사" : "캠페인"}
@@ -1336,17 +1523,29 @@ function App() {
 
             {activeModal === "login" && (
               <form
-                className="login-form"
+                className="auth-form"
+                noValidate
                 onSubmit={(event) => {
                   event.preventDefault()
                   login()
                 }}
               >
+                <RolePicker
+                  name="login-role"
+                  value={loginDraft.role}
+                  onChange={(next) =>
+                    setLoginDraft((draft) => ({ ...draft, role: next }))
+                  }
+                />
                 <label>
                   이메일
                   <input
                     autoComplete="email"
-                    placeholder="name@school.ac.kr"
+                    placeholder={
+                      loginDraft.role === "학생단체"
+                        ? "name@school.ac.kr"
+                        : "name@company.com"
+                    }
                     type="email"
                     value={loginDraft.email}
                     onChange={(event) =>
@@ -1371,9 +1570,173 @@ function App() {
                     }
                   />
                 </label>
+                {authError && (
+                  <p className="form-error" role="alert">
+                    {authError}
+                  </p>
+                )}
                 <button className="primary-button wide" type="submit">
-                  로그인
+                  {loginDraft.role === "학생단체"
+                    ? "학생단체로 로그인"
+                    : "스폰서로 로그인"}
                 </button>
+                <p className="auth-switch">
+                  아직 계정이 없나요?{" "}
+                  <button onClick={openSignup} type="button">
+                    회원가입
+                  </button>
+                </p>
+              </form>
+            )}
+
+            {activeModal === "signup" && (
+              <form
+                className="auth-form"
+                noValidate
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  signup()
+                }}
+              >
+                <RolePicker
+                  name="signup-role"
+                  value={signupDraft.role}
+                  onChange={(next) =>
+                    setSignupDraft((draft) => ({
+                      ...draft,
+                      role: next,
+                      type: accountTypes[next][0],
+                    }))
+                  }
+                />
+                <div className="form-row">
+                  <label>
+                    {signupDraft.role === "학생단체" ? "단체명" : "브랜드명"}
+                    <input
+                      autoComplete="organization"
+                      placeholder={
+                        signupDraft.role === "학생단체"
+                          ? "예) 삼육대 뮤즈"
+                          : "예) 오후의 커피"
+                      }
+                      value={signupDraft.name}
+                      onChange={(event) =>
+                        setSignupDraft((draft) => ({
+                          ...draft,
+                          name: event.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                  <label>
+                    {signupDraft.role === "학생단체" ? "단체 분류" : "업종"}
+                    <select
+                      value={signupDraft.type}
+                      onChange={(event) =>
+                        setSignupDraft((draft) => ({
+                          ...draft,
+                          type: event.target.value,
+                        }))
+                      }
+                    >
+                      {accountTypes[signupDraft.role].map((type) => (
+                        <option key={type}>{type}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                {signupDraft.role === "학생단체" && (
+                  <label>
+                    학교
+                    <input
+                      placeholder="예) 삼육대학교"
+                      value={signupDraft.school}
+                      onChange={(event) =>
+                        setSignupDraft((draft) => ({
+                          ...draft,
+                          school: event.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                )}
+                <label>
+                  이메일
+                  <input
+                    autoComplete="email"
+                    placeholder={
+                      signupDraft.role === "학생단체"
+                        ? "name@school.ac.kr"
+                        : "name@company.com"
+                    }
+                    type="email"
+                    value={signupDraft.email}
+                    onChange={(event) =>
+                      setSignupDraft((draft) => ({
+                        ...draft,
+                        email: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                <div className="form-row">
+                  <label>
+                    비밀번호
+                    <input
+                      autoComplete="new-password"
+                      placeholder="8자 이상"
+                      type="password"
+                      value={signupDraft.password}
+                      onChange={(event) =>
+                        setSignupDraft((draft) => ({
+                          ...draft,
+                          password: event.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                  <label>
+                    비밀번호 확인
+                    <input
+                      autoComplete="new-password"
+                      type="password"
+                      value={signupDraft.confirm}
+                      onChange={(event) =>
+                        setSignupDraft((draft) => ({
+                          ...draft,
+                          confirm: event.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                </div>
+                <label className="terms-check">
+                  <input
+                    checked={signupDraft.agreed}
+                    type="checkbox"
+                    onChange={(event) =>
+                      setSignupDraft((draft) => ({
+                        ...draft,
+                        agreed: event.target.checked,
+                      }))
+                    }
+                  />
+                  <span>서비스 이용약관과 개인정보 처리방침에 동의합니다.</span>
+                </label>
+                {authError && (
+                  <p className="form-error" role="alert">
+                    {authError}
+                  </p>
+                )}
+                <button className="primary-button wide" type="submit">
+                  가입하고 시작하기
+                </button>
+                <p className="auth-switch">
+                  이미 계정이 있나요?{" "}
+                  <button onClick={openLogin} type="button">
+                    로그인
+                  </button>
+                </p>
               </form>
             )}
           </div>
