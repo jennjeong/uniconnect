@@ -247,6 +247,53 @@ const accountTypes: Record<Role, string[]> = {
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+const freeMailDomains = [
+  "gmail.com",
+  "naver.com",
+  "daum.net",
+  "hanmail.net",
+  "kakao.com",
+  "nate.com",
+  "yahoo.com",
+  "yahoo.co.kr",
+  "hotmail.com",
+  "outlook.com",
+  "live.com",
+  "icloud.com",
+  "me.com",
+  "proton.me",
+  "protonmail.com",
+]
+
+const isSchoolDomain = (domain: string) =>
+  domain.endsWith(".ac.kr") || /\.edu(\.[a-z]{2})?$/.test(domain)
+
+// Student groups must use a school address; sponsors a company address.
+function emailRuleError(role: Role, email: string) {
+  const address = email.trim().toLowerCase()
+  if (!emailPattern.test(address)) return "이메일 형식을 확인해 주세요."
+  const domain = address.split("@")[1]
+  if (role === "학생단체") {
+    return isSchoolDomain(domain)
+      ? ""
+      : "학교 이메일(예: name@syu.ac.kr)로 인증해 주세요."
+  }
+  if (freeMailDomains.includes(domain)) {
+    return "개인 메일은 사용할 수 없어요. 회사 이메일로 인증해 주세요."
+  }
+  if (isSchoolDomain(domain)) {
+    return "학교 이메일은 '협찬 받기'로 가입해 주세요."
+  }
+  return ""
+}
+
+const codeLifetime = 3 * 60 * 1000
+
+function formatRemaining(ms: number) {
+  const seconds = Math.ceil(ms / 1000)
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`
+}
+
 const emptySignup = {
   role: "학생단체" as Role,
   name: "",
@@ -258,12 +305,14 @@ const emptySignup = {
   agreed: false,
 }
 
-function signupError(draft: typeof emptySignup) {
+function signupError(draft: typeof emptySignup, emailVerified: boolean) {
   if (!draft.name.trim()) {
     return `${draft.role === "학생단체" ? "단체명" : "브랜드명"}을 입력해 주세요.`
   }
   if (draft.role === "학생단체" && !draft.school.trim()) return "학교를 입력해 주세요."
-  if (!emailPattern.test(draft.email.trim())) return "이메일 형식을 확인해 주세요."
+  const emailError = emailRuleError(draft.role, draft.email)
+  if (emailError) return emailError
+  if (!emailVerified) return "이메일 인증을 완료해 주세요."
   if (draft.password.length < 8) return "비밀번호는 8자 이상이어야 해요."
   if (draft.password !== draft.confirm) return "비밀번호가 일치하지 않아요."
   if (!draft.agreed) return "이용약관에 동의해 주세요."
@@ -328,6 +377,13 @@ function App() {
     password: "",
   })
   const [signupDraft, setSignupDraft] = useState(emptySignup)
+  const [verification, setVerification] = useState<{
+    code: string
+    expiresAt: number
+    verified: boolean
+  } | null>(null)
+  const [codeInput, setCodeInput] = useState("")
+  const [now, setNow] = useState(() => Date.now())
   const [authError, setAuthError] = useState("")
   // Sign-ups are kept per role in this browser only; passwords are never saved.
   const [accounts, setAccounts] = useState<Partial<Record<Role, Account>>>(
@@ -407,6 +463,12 @@ function App() {
   useEffect(() => () => window.clearTimeout(noticeTimer.current), [])
 
   useEffect(() => {
+    if (!verification || verification.verified) return
+    const timer = window.setInterval(() => setNow(Date.now()), 1000)
+    return () => window.clearInterval(timer)
+  }, [verification])
+
+  useEffect(() => {
     if (!activeModal) return
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") setActiveModal(null)
@@ -442,6 +504,11 @@ function App() {
     })
   }
 
+  const resetVerification = () => {
+    setVerification(null)
+    setCodeInput("")
+  }
+
   const openLogin = () => {
     const nextRole = activeModal === "signup" ? signupDraft.role : role
     setLoginDraft((draft) => ({ ...draft, role: nextRole }))
@@ -456,8 +523,42 @@ function App() {
       role: nextRole,
       type: accountTypes[nextRole][0],
     })
+    resetVerification()
     setAuthError("")
     setActiveModal("signup")
+  }
+
+  // Demo verification: no mail server exists yet, so the code is shown in the
+  // form instead of being emailed.
+  const sendCode = () => {
+    const error = emailRuleError(signupDraft.role, signupDraft.email)
+    if (error) {
+      setAuthError(error)
+      return
+    }
+    setVerification({
+      code: String(Math.floor(100000 + Math.random() * 900000)),
+      expiresAt: Date.now() + codeLifetime,
+      verified: false,
+    })
+    setCodeInput("")
+    setNow(Date.now())
+    setAuthError("")
+    showNotice(`${signupDraft.email.trim()}로 인증번호를 보냈어요.`)
+  }
+
+  const confirmCode = () => {
+    if (!verification) return
+    if (Date.now() > verification.expiresAt) {
+      setAuthError("인증 시간이 지났어요. 인증번호를 다시 받아 주세요.")
+      return
+    }
+    if (codeInput !== verification.code) {
+      setAuthError("인증번호가 일치하지 않아요.")
+      return
+    }
+    setVerification({ ...verification, verified: true })
+    setAuthError("")
   }
 
   // Demo login: there is no backend, so any email and password signs in
@@ -475,7 +576,7 @@ function App() {
   }
 
   const signup = () => {
-    const error = signupError(signupDraft)
+    const error = signupError(signupDraft, verification?.verified === true)
     if (error) {
       setAuthError(error)
       return
@@ -493,6 +594,7 @@ function App() {
     applyRole(signupDraft.role)
     setLoggedIn(true)
     setSignupDraft(emptySignup)
+    resetVerification()
     setActiveModal(null)
     showNotice(`${name} 계정으로 가입했어요. 환영해요!`)
   }
@@ -1592,13 +1694,14 @@ function App() {
                 <RolePicker
                   name="signup-role"
                   value={signupDraft.role}
-                  onChange={(next) =>
+                  onChange={(next) => {
                     setSignupDraft((draft) => ({
                       ...draft,
                       role: next,
                       type: accountTypes[next][0],
                     }))
-                  }
+                    resetVerification()
+                  }}
                 />
                 <div className="form-row">
                   <label>
@@ -1651,25 +1754,93 @@ function App() {
                     />
                   </label>
                 )}
-                <label>
-                  이메일
-                  <input
-                    autoComplete="email"
-                    placeholder={
-                      signupDraft.role === "학생단체"
-                        ? "name@school.ac.kr"
-                        : "name@company.com"
-                    }
-                    type="email"
-                    value={signupDraft.email}
-                    onChange={(event) =>
-                      setSignupDraft((draft) => ({
-                        ...draft,
-                        email: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
+                <div className="field-group">
+                  <label htmlFor="signup-email">
+                    {signupDraft.role === "학생단체"
+                      ? "학교 이메일"
+                      : "회사 이메일"}
+                  </label>
+                  <div className="field-with-action">
+                    <input
+                      autoComplete="email"
+                      id="signup-email"
+                      placeholder={
+                        signupDraft.role === "학생단체"
+                          ? "name@syu.ac.kr"
+                          : "name@company.com"
+                      }
+                      readOnly={verification?.verified}
+                      type="email"
+                      value={signupDraft.email}
+                      onChange={(event) => {
+                        setSignupDraft((draft) => ({
+                          ...draft,
+                          email: event.target.value,
+                        }))
+                        resetVerification()
+                      }}
+                    />
+                    {verification?.verified ? (
+                      <button
+                        className="field-action secondary"
+                        onClick={resetVerification}
+                        type="button"
+                      >
+                        변경
+                      </button>
+                    ) : (
+                      <button
+                        className="field-action"
+                        onClick={sendCode}
+                        type="button"
+                      >
+                        {verification ? "재전송" : "인증번호 받기"}
+                      </button>
+                    )}
+                  </div>
+                  {verification?.verified ? (
+                    <small className="field-hint success">
+                      이메일 인증이 완료됐어요.
+                    </small>
+                  ) : verification ? (
+                    <>
+                      <div className="field-with-action">
+                        <input
+                          aria-label="인증번호"
+                          autoComplete="one-time-code"
+                          inputMode="numeric"
+                          maxLength={6}
+                          placeholder="6자리 인증번호"
+                          value={codeInput}
+                          onChange={(event) =>
+                            setCodeInput(event.target.value.replace(/\D/g, ""))
+                          }
+                        />
+                        <button
+                          className="field-action"
+                          onClick={confirmCode}
+                          type="button"
+                        >
+                          확인
+                        </button>
+                      </div>
+                      <small className="field-hint">
+                        {now < verification.expiresAt
+                          ? `남은 시간 ${formatRemaining(verification.expiresAt - now)}`
+                          : "인증 시간이 지났어요. 재전송을 눌러 주세요."}
+                        {" · "}
+                        데모라서 메일 대신 인증번호를 여기에 보여드려요:{" "}
+                        <strong>{verification.code}</strong>
+                      </small>
+                    </>
+                  ) : (
+                    <small className="field-hint">
+                      {signupDraft.role === "학생단체"
+                        ? "학교 이메일(ac.kr)로 인증해야 가입할 수 있어요."
+                        : "회사 이메일로 인증해야 가입할 수 있어요. 개인 메일(gmail, naver 등)은 사용할 수 없어요."}
+                    </small>
+                  )}
+                </div>
                 <div className="form-row">
                   <label>
                     비밀번호
