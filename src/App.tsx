@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react"
-import logoHorizontal from "./assets/brand/uniconnect_horizontal.svg"
 import logoSymbol from "./assets/brand/uniconnect_symbol.svg"
+import logoWordmark from "./assets/brand/uniconnect_wordmark.svg"
 
 type IconName = "home" | "spark" | "calendar" | "chart" | "file" | "bell" | "arrow" | "plus" | "users" | "store" | "scan" | "check" | "chevron" | "close"
 
@@ -666,12 +666,22 @@ function App() {
           type="button"
         >
           <img
-            className="brand-logo"
-            src={logoHorizontal}
+            className="brand-symbol"
+            src={logoSymbol}
             alt=""
-            width={154}
+            width={36}
             height={36}
           />
+          <span className="brand-names">
+            <img
+              className="brand-wordmark"
+              src={logoWordmark}
+              alt=""
+              width={88}
+              height={18}
+            />
+            <span className="brand-name-ko">유니커넥트</span>
+          </span>
         </button>
 
         <div className="role-switch" aria-label="사용자 유형">
@@ -757,6 +767,7 @@ function App() {
             </button>
             <div>
               <span className="eyebrow">2026 FALL SEMESTER</span>
+              <span className="topbar-brand">유니커넥트</span>
               <p className="page-title">
                 {activeNav !== "대시보드"
                   ? activeNav
