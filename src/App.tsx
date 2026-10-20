@@ -85,6 +85,38 @@ function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
   )
 }
 
+function ProposalControl({
+  done,
+  label,
+  className,
+  onPropose,
+  onCancel,
+}: {
+  done: boolean
+  label: string
+  className: string
+  onPropose: () => void
+  onCancel: () => void
+}) {
+  if (!done) {
+    return (
+      <button className={className} onClick={onPropose} type="button">
+        {label}
+      </button>
+    )
+  }
+  return (
+    <div className="proposal-actions">
+      <span className="proposal-button done">
+        <Icon name="check" size={16} /> 제안 완료
+      </span>
+      <button className="proposal-cancel" onClick={onCancel} type="button">
+        제안 취소
+      </button>
+    </div>
+  )
+}
+
 const navItems: { label: string; icon: IconName }[] = [
   { label: "대시보드", icon: "home" },
   { label: "추천 매칭", icon: "spark" },
@@ -191,8 +223,17 @@ function monthAndDay(date: string) {
 function App() {
   const [activeNav, setActiveNav] = useState("대시보드")
   const [role, setRole] = useState<"학생단체" | "브랜드">("학생단체")
-  const [activeModal, setActiveModal] =
-    useState<"event" | "notifications" | "report" | "qr" | null>(null)
+  const [activeModal, setActiveModal] = useState<
+    "event" | "notifications" | "report" | "qr" | "profile" | "login" | null
+  >(null)
+  const [loggedIn, setLoggedIn] = useState(() => {
+    try {
+      return localStorage.getItem("uniconnect-logged-in") !== "false"
+    } catch {
+      return true
+    }
+  })
+  const [loginDraft, setLoginDraft] = useState({ email: "", password: "" })
   const [notice, setNotice] = useState("")
   const noticeTimer = useRef<number | undefined>(undefined)
   const [proposed, setProposed] = useState<string[]>(() => {
@@ -227,10 +268,19 @@ function App() {
 
   const activeMatches = role === "학생단체" ? matches : brandMatches
   const roleName = role === "학생단체" ? "뮤즈 팀" : "오후의 커피"
+  const profile =
+    role === "학생단체"
+      ? { name: "삼육대 뮤즈", type: "공연 동아리", initial: "S" }
+      : { name: "오후의 커피", type: "지역 브랜드", initial: "O" }
+  const createLabel = role === "학생단체" ? "새 행사 등록" : "새 캠페인 등록"
 
   useEffect(() => {
     localStorage.setItem("uniconnect-events", JSON.stringify(events))
   }, [events])
+
+  useEffect(() => {
+    localStorage.setItem("uniconnect-logged-in", String(loggedIn))
+  }, [loggedIn])
 
   useEffect(() => {
     localStorage.setItem("uniconnect-proposals", JSON.stringify(proposed))
@@ -256,6 +306,29 @@ function App() {
   const sendProposal = (name: string) => {
     setProposed((current) => [...current, name])
     showNotice(`${name}에 협찬 제안을 보냈어요.`)
+  }
+
+  const cancelProposal = (name: string) => {
+    setProposed((current) => current.filter((item) => item !== name))
+    showNotice(`${name}에 보낸 제안을 취소했어요.`)
+  }
+
+  // Demo login: there is no backend, so any non-empty email and password signs in.
+  const login = () => {
+    if (!loginDraft.email.trim() || !loginDraft.password) {
+      showNotice("이메일과 비밀번호를 입력해 주세요.")
+      return
+    }
+    setLoggedIn(true)
+    setLoginDraft({ email: "", password: "" })
+    setActiveModal(null)
+    showNotice(`${profile.name} 계정으로 로그인했어요.`)
+  }
+
+  const logout = () => {
+    setLoggedIn(false)
+    setActiveModal(null)
+    showNotice("로그아웃했어요.")
   }
 
   const navigate = (label: string) => {
@@ -312,15 +385,20 @@ function App() {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div className="brand-lockup">
+        <button
+          className="brand-lockup"
+          aria-label="uniconnect 홈으로"
+          onClick={() => navigate("대시보드")}
+          type="button"
+        >
           <img
             className="brand-logo"
             src={logoHorizontal}
-            alt="uniconnect"
+            alt=""
             width={154}
             height={36}
           />
-        </div>
+        </button>
 
         <div className="role-switch" aria-label="사용자 유형">
           {(["학생단체", "브랜드"] as const).map((item) => (
@@ -346,6 +424,15 @@ function App() {
             </button>
           ))}
         </div>
+
+        <button
+          className="primary-button sidebar-create"
+          onClick={() => setActiveModal("event")}
+          type="button"
+        >
+          <Icon name="plus" size={18} />
+          <span>{createLabel}</span>
+        </button>
 
         <nav className="main-nav" aria-label="주요 메뉴">
           <span className="nav-label">MENU</span>
@@ -377,58 +464,75 @@ function App() {
           <small>전체 목표의 68%</small>
         </div>
 
-        <div className="profile">
-          <div className="avatar">S</div>
+        <button
+          className="profile"
+          onClick={() => setActiveModal(loggedIn ? "profile" : "login")}
+          type="button"
+        >
+          <div className="avatar">{loggedIn ? profile.initial : "?"}</div>
           <div>
-            <strong>
-              {role === "학생단체" ? "삼육대 뮤즈" : "오후의 커피"}
-            </strong>
-            <span>{role === "학생단체" ? "공연 동아리" : "지역 브랜드"}</span>
+            <strong>{loggedIn ? profile.name : "로그인이 필요해요"}</strong>
+            <span>{loggedIn ? profile.type : "로그인하고 협찬을 관리하세요"}</span>
           </div>
           <Icon name="chevron" size={16} />
-        </div>
+        </button>
       </aside>
 
       <main className="main-content">
         <header className="topbar">
           <div className="topbar-title">
-            <img
-              className="topbar-logo"
-              src={logoSymbol}
-              alt="uniconnect"
-              width={30}
-              height={30}
-            />
+            <button
+              className="topbar-home"
+              aria-label="uniconnect 홈으로"
+              onClick={() => navigate("대시보드")}
+              type="button"
+            >
+              <img src={logoSymbol} alt="" width={30} height={30} />
+            </button>
             <div>
               <span className="eyebrow">2026 FALL SEMESTER</span>
               <p className="page-title">
-                {activeNav === "대시보드" ? `반가워요, ${roleName}` : activeNav}
+                {activeNav !== "대시보드"
+                  ? activeNav
+                  : loggedIn
+                    ? `반가워요, ${roleName}`
+                    : "반가워요"}
               </p>
             </div>
           </div>
           <div className="top-actions">
-            <button
-              className="icon-button"
-              aria-label="알림"
-              onClick={() => {
-                setActiveModal("notifications")
-                setNotificationsRead(true)
-              }}
-              type="button"
-            >
-              <Icon name="bell" />
-              {!notificationsRead && <span className="notification-dot" />}
-            </button>
-            <button
-              className="primary-button"
-              onClick={() => setActiveModal("event")}
-              type="button"
-            >
-              <Icon name="plus" size={18} />
-              <span>
-                {role === "학생단체" ? "새 행사 등록" : "새 캠페인 등록"}
-              </span>
-            </button>
+            {loggedIn ? (
+              <>
+                <button
+                  className="icon-button"
+                  aria-label="알림"
+                  onClick={() => {
+                    setActiveModal("notifications")
+                    setNotificationsRead(true)
+                  }}
+                  type="button"
+                >
+                  <Icon name="bell" size={18} />
+                  {!notificationsRead && <span className="notification-dot" />}
+                </button>
+                <button
+                  className="account-button"
+                  aria-label="내 정보"
+                  onClick={() => setActiveModal("profile")}
+                  type="button"
+                >
+                  {profile.initial}
+                </button>
+              </>
+            ) : (
+              <button
+                className="login-button"
+                onClick={() => setActiveModal("login")}
+                type="button"
+              >
+                로그인
+              </button>
+            )}
           </div>
         </header>
 
@@ -573,7 +677,6 @@ function App() {
                 </div>
                 <div className="match-list">
                   {activeMatches.map((match) => {
-                    const isProposed = proposed.includes(match.name)
                     return (
                       <article className="match-card" key={match.name}>
                         <div
@@ -601,24 +704,13 @@ function App() {
                             <small>%</small>
                           </strong>
                         </div>
-                        <button
-                          className={
-                            isProposed
-                              ? "proposal-button done"
-                              : "proposal-button"
-                          }
-                          disabled={isProposed}
-                          onClick={() => sendProposal(match.name)}
-                          type="button"
-                        >
-                          {isProposed ? (
-                            <>
-                              <Icon name="check" size={16} /> 제안 완료
-                            </>
-                          ) : (
-                            "제안하기"
-                          )}
-                        </button>
+                        <ProposalControl
+                          done={proposed.includes(match.name)}
+                          label="제안하기"
+                          className="proposal-button"
+                          onPropose={() => sendProposal(match.name)}
+                          onCancel={() => cancelProposal(match.name)}
+                        />
                       </article>
                     )
                   })}
@@ -711,7 +803,6 @@ function App() {
             </div>
             <div className="full-match-grid">
               {activeMatches.map((match, index) => {
-                const isProposed = proposed.includes(match.name)
                 return (
                   <article className="full-match-card" key={match.name}>
                     <div className="rank">0{index + 1}</div>
@@ -735,22 +826,13 @@ function App() {
                       <strong>{match.score}</strong>
                       <span>% 일치</span>
                     </div>
-                    <button
-                      className={
-                        isProposed ? "proposal-button done" : "primary-button"
-                      }
-                      disabled={isProposed}
-                      onClick={() => sendProposal(match.name)}
-                      type="button"
-                    >
-                      {isProposed ? (
-                        <>
-                          <Icon name="check" size={16} /> 제안 완료
-                        </>
-                      ) : (
-                        "협찬 제안 보내기"
-                      )}
-                    </button>
+                    <ProposalControl
+                      done={proposed.includes(match.name)}
+                      label="협찬 제안 보내기"
+                      className="primary-button"
+                      onPropose={() => sendProposal(match.name)}
+                      onCancel={() => cancelProposal(match.name)}
+                    />
                   </article>
                 )
               })}
@@ -958,6 +1040,15 @@ function App() {
         )}
       </main>
 
+      <button
+        className="create-fab"
+        aria-label={createLabel}
+        onClick={() => setActiveModal("event")}
+        type="button"
+      >
+        <Icon name="plus" size={24} />
+      </button>
+
       <nav className="mobile-nav" aria-label="모바일 주요 메뉴">
         {navItems.map((item) => (
           <button
@@ -992,13 +1083,16 @@ function App() {
                   {activeModal === "notifications" && "NOTIFICATIONS"}
                   {activeModal === "report" && "PERFORMANCE"}
                   {activeModal === "qr" && "LIVE QR"}
+                  {activeModal === "profile" && "MY PAGE"}
+                  {activeModal === "login" && "WELCOME"}
                 </span>
                 <p id="modal-title">
-                  {activeModal === "event" &&
-                    (role === "학생단체" ? "새 행사 등록" : "새 캠페인 등록")}
+                  {activeModal === "event" && createLabel}
                   {activeModal === "notifications" && "새로운 소식"}
                   {activeModal === "report" && "성과 상세"}
                   {activeModal === "qr" && "현장 참여 QR"}
+                  {activeModal === "profile" && "내 정보"}
+                  {activeModal === "login" && "로그인"}
                 </p>
               </div>
               <button
@@ -1201,6 +1295,86 @@ function App() {
                   테스트 스캔 기록
                 </button>
               </div>
+            )}
+
+            {activeModal === "profile" && (
+              <div className="profile-detail">
+                <div className="profile-summary">
+                  <div className="avatar large">{profile.initial}</div>
+                  <div>
+                    <strong>{profile.name}</strong>
+                    <span>
+                      {role} · {profile.type}
+                    </span>
+                  </div>
+                </div>
+                <div className="report-detail-rows">
+                  <div>
+                    <span>
+                      등록한 {role === "학생단체" ? "행사" : "캠페인"}
+                    </span>
+                    <strong>{events.length}개</strong>
+                  </div>
+                  <div>
+                    <span>보낸 협찬 제안</span>
+                    <strong>{proposed.length}건</strong>
+                  </div>
+                  <div>
+                    <span>참여 파일럿</span>
+                    <strong>삼육대 파일럿 · 11월 30일까지</strong>
+                  </div>
+                </div>
+                <button
+                  className="cancel-button wide"
+                  onClick={logout}
+                  type="button"
+                >
+                  로그아웃
+                </button>
+              </div>
+            )}
+
+            {activeModal === "login" && (
+              <form
+                className="login-form"
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  login()
+                }}
+              >
+                <label>
+                  이메일
+                  <input
+                    autoComplete="email"
+                    placeholder="name@school.ac.kr"
+                    type="email"
+                    value={loginDraft.email}
+                    onChange={(event) =>
+                      setLoginDraft((draft) => ({
+                        ...draft,
+                        email: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                <label>
+                  비밀번호
+                  <input
+                    autoComplete="current-password"
+                    type="password"
+                    value={loginDraft.password}
+                    onChange={(event) =>
+                      setLoginDraft((draft) => ({
+                        ...draft,
+                        password: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                <button className="primary-button wide" type="submit">
+                  로그인
+                </button>
+              </form>
             )}
           </div>
         </div>

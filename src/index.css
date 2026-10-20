@@ -79,8 +79,12 @@ input:focus-visible {
 
 .brand-lockup {
   display: flex;
+  align-self: flex-start;
   align-items: center;
   padding: 0 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
 }
 
 /* Logo guide: horizontal logo at least 24px tall, never tilted or shadowed. */
@@ -94,7 +98,7 @@ input:focus-visible {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 4px;
-  margin: 32px 0 30px;
+  margin: 32px 0 14px;
   padding: 4px;
   border-radius: 12px;
   background: var(--canvas);
@@ -114,6 +118,11 @@ input:focus-visible {
   background: var(--surface);
   color: var(--ink);
   box-shadow: 0 2px 9px rgba(30, 25, 31, 0.08);
+}
+
+.sidebar-create {
+  width: 100%;
+  margin-bottom: 28px;
 }
 
 .main-nav {
@@ -220,10 +229,15 @@ input:focus-visible {
 
 .profile {
   display: grid;
+  width: 100%;
   grid-template-columns: 36px 1fr auto;
   align-items: center;
   gap: 10px;
   padding: 20px 5px 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
 }
 
 .avatar {
@@ -282,8 +296,16 @@ input:focus-visible {
   gap: 10px;
 }
 
-.topbar-logo {
+.topbar-home {
   display: none;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+}
+
+.topbar-home img {
+  display: block;
   width: 30px;
   height: 30px;
 }
@@ -306,19 +328,43 @@ input:focus-visible {
 .top-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .icon-button {
   position: relative;
   display: grid;
-  width: 42px;
-  height: 42px;
+  width: 36px;
+  height: 36px;
   place-items: center;
   border: 1px solid var(--line);
   border-radius: 50%;
   background: var(--surface);
   color: #5b565e;
+}
+
+.account-button {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: #ffe4bc;
+  color: #91631f;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.login-button {
+  height: 36px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--dark);
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .icon-button .icon,
@@ -334,8 +380,8 @@ input:focus-visible {
 
 .notification-dot {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 6px;
+  right: 7px;
   width: 7px;
   height: 7px;
   border: 2px solid var(--surface);
@@ -848,6 +894,28 @@ input:focus-visible {
   background: var(--green-soft);
   color: var(--green);
   cursor: default;
+}
+
+.proposal-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.proposal-cancel {
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.proposal-cancel:hover {
+  color: var(--ink);
 }
 
 .performance-panel {
@@ -1619,8 +1687,47 @@ input:focus-visible {
   color: var(--muted);
 }
 
-.primary-button.wide {
+.primary-button.wide,
+.cancel-button.wide {
   width: 100%;
+}
+
+.profile-summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--point-soft);
+}
+
+.profile-summary > div:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.profile-summary strong {
+  font-size: 15px;
+}
+
+.profile-summary span {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.avatar.large {
+  width: 48px;
+  height: 48px;
+  font-size: 17px;
+}
+
+.login-form .primary-button {
+  margin-top: 24px;
+}
+
+.create-fab {
+  display: none;
 }
 
 .qr-content {
@@ -1693,7 +1800,8 @@ input:focus-visible {
   }
 
   .full-match-card > .primary-button,
-  .full-match-card > .proposal-button {
+  .full-match-card > .proposal-button,
+  .full-match-card > .proposal-actions {
     grid-column: 3 / -1;
     justify-self: end;
   }
@@ -1740,21 +1848,8 @@ input:focus-visible {
     font-size: 18px;
   }
 
-  .topbar-logo {
+  .topbar-home {
     display: block;
-  }
-
-  .top-actions {
-    gap: 7px;
-  }
-
-  .top-actions .primary-button {
-    width: 42px;
-    padding: 0;
-  }
-
-  .top-actions .primary-button span {
-    display: none;
   }
 
   .welcome-panel {
@@ -1824,9 +1919,21 @@ input:focus-visible {
     padding-left: 0;
   }
 
-  .match-card .proposal-button {
+  .match-card > .proposal-button,
+  .match-card > .proposal-actions {
     grid-column: 2 / -1;
     width: 100%;
+  }
+
+  .match-card > .proposal-actions,
+  .full-match-card > .proposal-actions {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .proposal-actions .proposal-button {
+    flex: 1;
   }
 
   .mobile-nav {
@@ -1912,7 +2019,8 @@ input:focus-visible {
   }
 
   .full-match-card > .primary-button,
-  .full-match-card > .proposal-button {
+  .full-match-card > .proposal-button,
+  .full-match-card > .proposal-actions {
     width: 100%;
     grid-column: 1 / -1;
   }
@@ -1997,9 +2105,32 @@ input:focus-visible {
     background: var(--surface);
   }
 
+  .create-fab {
+    position: fixed;
+    z-index: 41;
+    right: 16px;
+    bottom: 82px;
+    display: grid;
+    width: 52px;
+    height: 52px;
+    place-items: center;
+    border: 0;
+    border-radius: 50%;
+    background: var(--dark);
+    color: var(--point);
+    box-shadow: 0 10px 24px rgba(20, 15, 22, 0.24);
+  }
+
+  .create-fab .icon {
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-width: 2;
+  }
+
+  /* Sits above the floating create button. */
   .toast {
     right: 16px;
-    bottom: 86px;
+    bottom: 146px;
     left: 16px;
     justify-content: center;
   }
