@@ -367,16 +367,6 @@ input:focus-visible {
   font-weight: 700;
 }
 
-.signup-link {
-  height: 36px;
-  padding: 0 8px;
-  border: 0;
-  background: transparent;
-  color: var(--ink-soft);
-  font-size: 12px;
-  font-weight: 700;
-}
-
 .icon-button .icon,
 .primary-button .icon,
 .text-link .icon,

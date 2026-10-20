@@ -689,22 +689,13 @@ function App() {
                 </button>
               </>
             ) : (
-              <>
-                <button
-                  className="signup-link"
-                  onClick={openSignup}
-                  type="button"
-                >
-                  회원가입
-                </button>
-                <button
-                  className="login-button"
-                  onClick={openLogin}
-                  type="button"
-                >
-                  로그인
-                </button>
-              </>
+              <button
+                className="login-button"
+                onClick={openLogin}
+                type="button"
+              >
+                로그인
+              </button>
             )}
           </div>
         </header>
