@@ -807,12 +807,28 @@ input:focus-visible {
   display: grid;
   width: 48px;
   height: 48px;
+  flex: 0 0 auto;
   place-items: center;
+  overflow: hidden;
   border-radius: 14px;
-  color: #423b43;
-  font-size: 12px;
-  font-weight: 850;
-  letter-spacing: -0.3px;
+}
+
+.match-logo .icon {
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.match-logo.has-logo {
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.match-logo.has-logo img {
+  width: 78%;
+  height: 78%;
+  object-fit: contain;
 }
 
 .match-title-row {
@@ -1323,24 +1339,53 @@ input:focus-visible {
 }
 
 .match-score-ring {
+  position: relative;
   display: flex;
   width: 66px;
   height: 66px;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border: 5px solid var(--point-tint);
-  border-top-color: var(--point);
-  border-radius: 50%;
+}
+
+/* The arc length follows the score; the ring starts at 12 o'clock. */
+.match-score-ring svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.match-score-ring circle {
+  fill: none;
+  stroke-width: 3.4;
+}
+
+.ring-track {
+  stroke: var(--point-tint);
+}
+
+.ring-value {
+  stroke: var(--point-deep);
+  stroke-linecap: round;
 }
 
 .match-score-ring strong {
-  font-size: 17px;
+  position: relative;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.match-score-ring strong small {
+  font-size: 10px;
 }
 
 .match-score-ring span {
+  position: relative;
+  margin-top: 3px;
   color: var(--muted);
-  font-size: 7px;
+  font-size: 9px;
 }
 
 .view-heading {
@@ -2153,17 +2198,22 @@ input:focus-visible {
     font-size: 9px;
   }
 
+  /* Logo, company info and score ring share one row; the button sits below. */
   .full-match-card {
     position: relative;
-    grid-template-columns: 60px 1fr;
-    gap: 13px;
-    padding: 20px;
+    grid-template-columns: 56px minmax(0, 1fr) 58px;
+    gap: 12px;
+    padding: 26px 16px 18px;
   }
 
   .full-match-card .rank {
     position: absolute;
-    top: 15px;
-    right: 17px;
+    top: 9px;
+    left: 16px;
+  }
+
+  .full-match-copy .tag-row {
+    flex-wrap: wrap;
   }
 
   .match-logo.large {

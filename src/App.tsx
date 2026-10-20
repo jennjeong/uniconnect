@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import logoHorizontal from "./assets/brand/uniconnect_horizontal.svg"
 
-type IconName = "home" | "spark" | "calendar" | "chart" | "file" | "bell" | "arrow" | "plus" | "users" | "store" | "scan" | "check" | "chevron" | "close"
+type IconName = "home" | "spark" | "calendar" | "chart" | "file" | "bell" | "arrow" | "plus" | "users" | "store" | "scan" | "check" | "chevron" | "close" | "coffee" | "camera" | "leaf" | "music" | "play" | "trophy"
 
 const icons: Record<IconName, ReactNode> = {
   home: (
@@ -67,6 +67,45 @@ const icons: Record<IconName, ReactNode> = {
   check: <path d="m5 12 4 4L19 6" />,
   chevron: <path d="m9 18 6-6-6-6" />,
   close: <path d="M6 6l12 12M18 6 6 18" />,
+  coffee: (
+    <>
+      <path d="M4 9h12v7a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4Z" />
+      <path d="M16 11h1.5a2.5 2.5 0 0 1 0 5H16" />
+      <path d="M8 3v3M12 3v3" />
+    </>
+  ),
+  camera: (
+    <>
+      <path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z" />
+      <circle cx="12" cy="13" r="3.5" />
+    </>
+  ),
+  leaf: (
+    <>
+      <path d="M5 19C5 10 10 5 20 4c-1 10-6 15-15 15Z" />
+      <path d="M5 19 13 11" />
+    </>
+  ),
+  music: (
+    <>
+      <path d="M9 18V6l11-2v12" />
+      <circle cx="6.5" cy="18" r="2.5" />
+      <circle cx="17.5" cy="16" r="2.5" />
+    </>
+  ),
+  play: (
+    <>
+      <rect x="3" y="5" width="18" height="14" rx="3" />
+      <path d="m10 9 5 3-5 3Z" />
+    </>
+  ),
+  trophy: (
+    <>
+      <path d="M7 4h10v5a5 5 0 0 1-10 0Z" />
+      <path d="M17 6h3v1a3 3 0 0 1-3 3M7 6H4v1a3 3 0 0 0 3 3" />
+      <path d="M12 14v4M8 20h8" />
+    </>
+  ),
 }
 
 function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
@@ -124,65 +163,144 @@ const navItems: { label: string; icon: IconName }[] = [
   { label: "리포트", icon: "file" },
 ]
 
-const matches = [
+type Industry =
+  | "cafe"
+  | "photo"
+  | "wellness"
+  | "performance"
+  | "content"
+  | "sports"
+
+// Graphic shown in place of a logo, picked by industry.
+const industryMarks: Record<
+  Industry,
+  { icon: IconName; background: string; color: string }
+> = {
+  cafe: { icon: "coffee", background: "#f8d8a6", color: "#8a5a2b" },
+  photo: { icon: "camera", background: "#d8e8ff", color: "#3d5f99" },
+  wellness: { icon: "leaf", background: "#d9f0dd", color: "#3f7d55" },
+  performance: { icon: "music", background: "#ffe1ec", color: "#a5476a" },
+  content: { icon: "play", background: "#e6e1f7", color: "#5a4a99" },
+  sports: { icon: "trophy", background: "#d8eef0", color: "#2f7a80" },
+}
+
+type Match = {
+  name: string
+  category: string
+  industry: Industry
+  // Logo image URL; leave unset to show the industry graphic instead.
+  logo?: string
+  offer: string
+  score: number
+  tags: string[]
+}
+
+const matches: Match[] = [
   {
     name: "오후의 커피",
     category: "카페 · 식음료",
+    industry: "cafe",
     offer: "쿠폰 150장 + 현금 20만원",
     score: 94,
-    color: "#f8d8a6",
-    mark: "OC",
     tags: ["대학생 선호", "반경 1.2km"],
   },
   {
     name: "모먼트 스튜디오",
     category: "사진 · 콘텐츠",
+    industry: "photo",
     offer: "행사 스냅 촬영 전체",
     score: 88,
-    color: "#d8e8ff",
-    mark: "MO",
     tags: ["공연 특화", "재협찬 높음"],
   },
   {
     name: "프레시온",
     category: "웰니스 · F&B",
+    industry: "wellness",
     offer: "에너지 드링크 200개",
     score: 83,
-    color: "#d9f0dd",
-    mark: "FR",
     tags: ["현물 협찬", "20대 타깃"],
   },
 ]
 
-const brandMatches = [
+const brandMatches: Match[] = [
   {
     name: "삼육대 뮤즈",
     category: "공연 · 동아리",
+    industry: "performance",
     offer: "관객 120명 · 교내 SNS 3개 채널",
     score: 96,
-    color: "#ffe1ec",
-    mark: "MU",
     tags: ["공연 특화", "11월 27일"],
   },
   {
     name: "노원 크리에이터스",
     category: "콘텐츠 · 연합회",
+    industry: "content",
     offer: "콘텐츠 8편 · 예상 도달 4,200명",
     score: 91,
-    color: "#d8e8ff",
-    mark: "NC",
     tags: ["콘텐츠 제작", "20대 타깃"],
   },
   {
     name: "서울여대 러너스",
     category: "스포츠 · 동아리",
+    industry: "sports",
     offer: "참여자 80명 · 현장 부스 운영",
     score: 84,
-    color: "#d9f0dd",
-    mark: "SR",
     tags: ["웰니스", "현장 체험"],
   },
 ]
+
+function BrandMark({ match, large = false }: { match: Match; large?: boolean }) {
+  const [logoFailed, setLogoFailed] = useState(false)
+  const className = large ? "match-logo large" : "match-logo"
+
+  if (match.logo && !logoFailed) {
+    return (
+      <div className={`${className} has-logo`}>
+        <img alt="" src={match.logo} onError={() => setLogoFailed(true)} />
+      </div>
+    )
+  }
+
+  const mark = industryMarks[match.industry]
+  return (
+    <div
+      aria-hidden="true"
+      className={className}
+      style={{ backgroundColor: mark.background, color: mark.color }}
+    >
+      <Icon name={mark.icon} size={large ? 28 : 22} />
+    </div>
+  )
+}
+
+const ringRadius = 16
+const ringCircumference = 2 * Math.PI * ringRadius
+
+function ScoreRing({ score }: { score: number }) {
+  return (
+    <div
+      className="match-score-ring"
+      role="img"
+      aria-label={`매칭 일치율 ${score}%`}
+    >
+      <svg aria-hidden="true" viewBox="0 0 36 36">
+        <circle className="ring-track" cx="18" cy="18" r={ringRadius} />
+        <circle
+          className="ring-value"
+          cx="18"
+          cy="18"
+          r={ringRadius}
+          strokeDasharray={`${(score / 100) * ringCircumference} ${ringCircumference}`}
+        />
+      </svg>
+      <strong>
+        {score}
+        <small>%</small>
+      </strong>
+      <span>일치</span>
+    </div>
+  )
+}
 
 type EventItem = {
   id: number
@@ -944,12 +1062,7 @@ function App() {
                   {activeMatches.map((match) => {
                     return (
                       <article className="match-card" key={match.name}>
-                        <div
-                          className="match-logo"
-                          style={{ backgroundColor: match.color }}
-                        >
-                          {match.mark}
-                        </div>
+                        <BrandMark match={match} />
                         <div className="match-details">
                           <div className="match-title-row">
                             <strong>{match.name}</strong>
@@ -1071,12 +1184,7 @@ function App() {
                 return (
                   <article className="full-match-card" key={match.name}>
                     <div className="rank">0{index + 1}</div>
-                    <div
-                      className="match-logo large"
-                      style={{ backgroundColor: match.color }}
-                    >
-                      {match.mark}
-                    </div>
+                    <BrandMark match={match} large />
                     <div className="full-match-copy">
                       <span>{match.category}</span>
                       <strong>{match.name}</strong>
@@ -1087,10 +1195,7 @@ function App() {
                         ))}
                       </div>
                     </div>
-                    <div className="match-score-ring">
-                      <strong>{match.score}</strong>
-                      <span>% 일치</span>
-                    </div>
+                    <ScoreRing score={match.score} />
                     <ProposalControl
                       done={proposed.includes(match.name)}
                       label="협찬 제안 보내기"
