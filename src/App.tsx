@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 
 type IconName = "home" | "spark" | "calendar" | "chart" | "file" | "bell" | "arrow" | "plus" | "users" | "store" | "scan" | "check" | "chevron" | "close"
 
@@ -68,7 +68,7 @@ const icons: Record<IconName, ReactNode> = {
   close: <path d="M6 6l12 12M18 6 6 18" />,
 }
 
-function Icon({ name, size = 20 }: { name: IconName size?: number }) {
+function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
   return (
     <svg
       aria-hidden="true"
@@ -83,7 +83,7 @@ function Icon({ name, size = 20 }: { name: IconName size?: number }) {
   )
 }
 
-const navItems: { label: string icon: IconName }[] = [
+const navItems: { label: string; icon: IconName }[] = [
   { label: "대시보드", icon: "home" },
   { label: "추천 매칭", icon: "spark" },
   { label: "내 행사", icon: "calendar" },
@@ -179,12 +179,20 @@ const initialEvents: EventItem[] = [
   },
 ]
 
+// Accepts "2026. 11. 27.", "2026-11-27", "11월 27일" and similar free-form input.
+function monthAndDay(date: string) {
+  const numbers = (date.match(/\d+/g) ?? []).filter((part) => part.length <= 2)
+  const [month = "-", day = "-"] = numbers.slice(-2)
+  return { month, day }
+}
+
 function App() {
   const [activeNav, setActiveNav] = useState("대시보드")
   const [role, setRole] = useState<"학생단체" | "브랜드">("학생단체")
   const [activeModal, setActiveModal] =
     useState<"event" | "notifications" | "report" | "qr" | null>(null)
   const [notice, setNotice] = useState("")
+  const noticeTimer = useRef<number | undefined>(undefined)
   const [proposed, setProposed] = useState<string[]>(() => {
     try {
       return JSON.parse(localStorage.getItem("uniconnect-proposals") || "[]")
@@ -226,9 +234,21 @@ function App() {
     localStorage.setItem("uniconnect-proposals", JSON.stringify(proposed))
   }, [proposed])
 
+  useEffect(() => () => window.clearTimeout(noticeTimer.current), [])
+
+  useEffect(() => {
+    if (!activeModal) return
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setActiveModal(null)
+    }
+    window.addEventListener("keydown", closeOnEscape)
+    return () => window.removeEventListener("keydown", closeOnEscape)
+  }, [activeModal])
+
   const showNotice = (message: string) => {
+    window.clearTimeout(noticeTimer.current)
     setNotice(message)
-    window.setTimeout(() => setNotice(""), 2400)
+    noticeTimer.current = window.setTimeout(() => setNotice(""), 2400)
   }
 
   const sendProposal = (name: string) => {
@@ -279,8 +299,11 @@ function App() {
     const anchor = document.createElement("a")
     anchor.href = url
     anchor.download = "uniconnect-performance-report.txt"
+    document.body.append(anchor)
     anchor.click()
-    URL.revokeObjectURL(url)
+    anchor.remove()
+    // Revoking right after click() can cancel the download in Safari and Firefox.
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
     showNotice("성과 리포트를 다운로드했어요.")
   }
 
@@ -742,10 +765,8 @@ function App() {
               {events.map((event) => (
                 <article className="event-card" key={event.id}>
                   <div className="event-date">
-                    <span>{event.date.split(". ")[1] || "11"}</span>
-                    <strong>
-                      {event.date.split(". ")[2]?.replace(".", "") || "27"}
-                    </strong>
+                    <span>{monthAndDay(event.date).month}</span>
+                    <strong>{monthAndDay(event.date).day}</strong>
                   </div>
                   <div className="event-card-copy">
                     <span
@@ -1016,8 +1037,12 @@ function App() {
                     />
                   </label>
                 </div>
-                <label>
-                  원하는 협찬 유형
+                <div
+                  className="field-group"
+                  role="group"
+                  aria-labelledby="sponsor-type-label"
+                >
+                  <span id="sponsor-type-label">원하는 협찬 유형</span>
                   <div className="choice-row">
                     {["현금", "제품", "서비스"].map((type) => (
                       <button
@@ -1040,7 +1065,7 @@ function App() {
                       </button>
                     ))}
                   </div>
-                </label>
+                </div>
                 <div className="modal-actions">
                   <button
                     className="cancel-button"
@@ -1134,7 +1159,11 @@ function App() {
 
             {activeModal === "qr" && (
               <div className="qr-content">
-                <div className="qr-code" aria-label="가상 현장 참여 QR 코드">
+                <div
+                  className="qr-code"
+                  role="img"
+                  aria-label="가상 현장 참여 QR 코드"
+                >
                   {Array.from({ length: 64 }, (_, index) => (
                     <span
                       className={(index * 7 + (index % 5)) % 3 ? "filled" : ""}

@@ -1,5 +1,7 @@
 {
-  "description": "Explore Pinkfong's family entertainment offerings, download official assets, and access the Baby Shark font for creative projects.",
+  "title": "uniconnect",
+  "description": "학생단체와 브랜드를 연결하는 협찬 매칭 서비스, 유니커넥트",
+  "language": "ko",
   "robots": {
     "index": false
   },

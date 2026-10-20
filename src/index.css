@@ -5,8 +5,13 @@
 }
 
 :root {
-  --pink: #ff66af;
-  --pink-soft: #fff0f7;
+  /* Point color: toned-down yellow. --point-strong is the text-safe shade (6:1 on white). */
+  --point: #deb95c;
+  --point-deep: #ba9239;
+  --point-strong: #7f5c15;
+  --point-line: #ebd6a3;
+  --point-tint: #f8f0d6;
+  --point-soft: #fcf7e7;
   --ink: #161517;
   --ink-soft: #57545a;
   --muted: #95919a;
@@ -14,8 +19,6 @@
   --surface: #ffffff;
   --canvas: #f7f6f8;
   --dark: #242127;
-  --lavender: #eee7ff;
-  --lavender-strong: #7c63c5;
   --green-soft: #eaf7ee;
   --green: #4f9666;
   --radius-sm: 10px;
@@ -52,7 +55,7 @@ button {
 
 button:focus-visible,
 input:focus-visible {
-  outline: 3px solid rgba(124, 99, 197, 0.28);
+  outline: 3px solid rgba(186, 146, 57, 0.45);
   outline-offset: 2px;
 }
 
@@ -87,9 +90,9 @@ input:focus-visible {
   place-items: center;
   transform: rotate(-7deg);
   border-radius: 12px 12px 14px 10px;
-  background: var(--pink);
-  color: white;
-  box-shadow: 0 5px 0 #ffd1e7;
+  background: var(--point);
+  color: var(--dark);
+  box-shadow: 0 5px 0 var(--point-line);
 }
 
 .brand-symbol span {
@@ -167,8 +170,8 @@ input:focus-visible {
 }
 
 .nav-item.active {
-  background: var(--pink-soft);
-  color: #da438c;
+  background: var(--point-soft);
+  color: var(--point-strong);
 }
 
 .nav-count {
@@ -224,7 +227,7 @@ input:focus-visible {
   width: 68%;
   height: 100%;
   border-radius: inherit;
-  background: var(--pink);
+  background: var(--point);
 }
 
 .pilot-card small {
@@ -342,7 +345,7 @@ input:focus-visible {
   height: 7px;
   border: 2px solid var(--surface);
   border-radius: 50%;
-  background: var(--pink);
+  background: var(--point-deep);
 }
 
 .primary-button {
@@ -367,7 +370,7 @@ input:focus-visible {
   grid-template-columns: 56% 44%;
   overflow: hidden;
   border-radius: var(--radius-lg);
-  background: #f0e9ff;
+  background: var(--point-tint);
 }
 
 .welcome-panel::before {
@@ -396,7 +399,7 @@ input:focus-visible {
 }
 
 .welcome-title em {
-  color: var(--lavender-strong);
+  color: var(--point-strong);
   font-style: normal;
 }
 
@@ -428,7 +431,7 @@ input:focus-visible {
 
 .orbit {
   position: absolute;
-  border: 1px dashed rgba(92, 75, 118, 0.24);
+  border: 1px dashed rgba(127, 92, 21, 0.22);
   border-radius: 50%;
 }
 
@@ -475,13 +478,13 @@ input:focus-visible {
 .brand-node {
   top: 43px;
   right: 69px;
-  color: #745eae;
+  color: var(--ink-soft);
 }
 
 .group-node {
   right: 211px;
   bottom: 31px;
-  color: #d04e8c;
+  color: var(--point-strong);
 }
 
 .art-center {
@@ -490,7 +493,7 @@ input:focus-visible {
   width: 66px;
   height: 66px;
   background: var(--dark);
-  color: var(--pink);
+  color: var(--point);
 }
 
 .spark-dot {
@@ -498,11 +501,11 @@ input:focus-visible {
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: var(--pink);
+  background: var(--point);
 }
 
 .dot-one { top: 64px; left: 56px; }
-.dot-two { right: 45px; bottom: 60px; width: 6px; height: 6px; background: #8062c3; }
+.dot-two { right: 45px; bottom: 60px; width: 6px; height: 6px; background: var(--ink-soft); }
 .dot-three { top: 61px; right: 200px; width: 5px; height: 5px; background: #ffbb72; }
 
 .workflow-section,
@@ -577,9 +580,9 @@ input:focus-visible {
 }
 
 .workflow-step.current .step-icon {
-  background: var(--pink-soft);
-  color: #dd4e93;
-  box-shadow: 0 0 0 5px rgba(255, 102, 175, 0.08);
+  background: var(--point-tint);
+  color: var(--point-strong);
+  box-shadow: 0 0 0 5px rgba(222, 185, 92, 0.16);
 }
 
 .workflow-step > div:nth-child(2) {
@@ -604,7 +607,7 @@ input:focus-visible {
 }
 
 .workflow-step.current small {
-  color: #d4498d;
+  color: var(--point-strong);
 }
 
 .step-line {
@@ -621,7 +624,7 @@ input:focus-visible {
   display: block;
   width: 0;
   height: 100%;
-  background: var(--pink);
+  background: var(--point);
 }
 
 .workflow-step:first-child .step-line span {
@@ -673,7 +676,7 @@ input:focus-visible {
 }
 
 .stat-card > small em {
-  color: #e24a94;
+  color: var(--point-strong);
   font-style: normal;
   font-weight: 700;
 }
@@ -771,7 +774,7 @@ input:focus-visible {
 
 .score strong {
   margin-top: 3px;
-  color: var(--lavender-strong);
+  color: var(--point-strong);
   font-size: 19px;
 }
 
@@ -913,15 +916,15 @@ input:focus-visible {
   left: 0;
   min-height: 6px;
   border-radius: 6px 6px 2px 2px;
-  background: var(--lavender-strong);
+  background: var(--point-deep);
 }
 
 .bar-item:nth-child(2) .bar-track span {
-  background: #b69de8;
+  background: var(--point);
 }
 
 .bar-item:nth-child(3) .bar-track span {
-  background: #e3d8f8;
+  background: var(--point-line);
 }
 
 .bar-item small {
@@ -938,7 +941,7 @@ input:focus-visible {
   gap: 9px;
   padding: 11px;
   border-radius: 12px;
-  background: #f5f1fb;
+  background: var(--point-soft);
 }
 
 .mini-icon {
@@ -948,7 +951,7 @@ input:focus-visible {
   place-items: center;
   border-radius: 10px;
   background: var(--surface);
-  color: var(--lavender-strong);
+  color: var(--point-strong);
 }
 
 .mini-icon .icon,
@@ -1016,7 +1019,8 @@ input:focus-visible {
   font-weight: 750;
 }
 
-.modal label {
+.modal label,
+.modal .field-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -1059,9 +1063,9 @@ input:focus-visible {
 }
 
 .choice.active {
-  border-color: #cfc1eb;
-  background: #f5f0ff;
-  color: #6f58a9;
+  border-color: var(--point-line);
+  background: var(--point-soft);
+  color: var(--point-strong);
 }
 
 .modal-actions {
@@ -1124,7 +1128,7 @@ input:focus-visible {
   padding: 36px 42px;
   overflow: hidden;
   border-radius: var(--radius-lg);
-  background: #f0e9ff;
+  background: var(--point-tint);
 }
 
 .view-intro p {
@@ -1146,7 +1150,7 @@ input:focus-visible {
   place-items: center;
   border-radius: 18px;
   background: var(--surface);
-  color: var(--lavender-strong);
+  color: var(--point-strong);
   font-size: 11px;
   font-weight: 750;
 }
@@ -1211,8 +1215,8 @@ input:focus-visible {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border: 5px solid #eee7fa;
-  border-top-color: var(--lavender-strong);
+  border: 5px solid var(--point-tint);
+  border-top-color: var(--point);
   border-radius: 50%;
 }
 
@@ -1249,8 +1253,8 @@ input:focus-visible {
   align-items: center;
   justify-content: center;
   border-radius: 15px;
-  background: #f3eefb;
-  color: var(--lavender-strong);
+  background: var(--point-tint);
+  color: var(--point-strong);
 }
 
 .event-date span {
@@ -1281,8 +1285,8 @@ input:focus-visible {
 .status-chip {
   padding: 4px 7px;
   border-radius: 9px;
-  background: var(--pink-soft);
-  color: #d44d8f;
+  background: var(--point-tint);
+  color: var(--point-strong);
   font-size: 8px;
   font-weight: 700;
 }
@@ -1292,9 +1296,10 @@ input:focus-visible {
   color: var(--green);
 }
 
+/* Blue keeps "scheduled" distinct from the yellow "matching" chip. */
 .status-집행예정 {
-  background: #fff4dc;
-  color: #a8761c;
+  background: #eaf1fa;
+  color: #3e6591;
 }
 
 .event-card-actions {
@@ -1364,8 +1369,8 @@ input:focus-visible {
   grid-row: 1;
   place-items: center;
   border-radius: 12px;
-  background: var(--pink-soft);
-  color: #d64c8e;
+  background: var(--point-tint);
+  color: var(--point-strong);
 }
 
 .live-card > span {
@@ -1428,7 +1433,7 @@ input:focus-visible {
   min-height: 330px;
   padding: 38px;
   border-radius: var(--radius-lg);
-  background: #f0e9ff;
+  background: var(--point-tint);
 }
 
 .report-hero > span {
@@ -1445,7 +1450,7 @@ input:focus-visible {
 }
 
 .report-hero em {
-  color: var(--lavender-strong);
+  color: var(--point-strong);
   font-style: normal;
 }
 
@@ -1524,8 +1529,8 @@ input:focus-visible {
   height: 38px;
   place-items: center;
   border-radius: 12px;
-  background: var(--pink-soft);
-  color: #d64c8e;
+  background: var(--point-tint);
+  color: var(--point-strong);
 }
 
 .notification-icon.green {
@@ -1540,7 +1545,7 @@ input:focus-visible {
   align-items: center;
   justify-content: center;
   border-radius: 16px;
-  background: #f3eefb;
+  background: var(--point-tint);
 }
 
 .report-detail-score span,
@@ -1551,7 +1556,7 @@ input:focus-visible {
 
 .report-detail-score strong {
   margin: 5px 0;
-  color: var(--lavender-strong);
+  color: var(--point-strong);
   font-size: 32px;
 }
 
@@ -1834,7 +1839,7 @@ input:focus-visible {
   }
 
   .mobile-nav button.active {
-    color: #d74b8f;
+    color: var(--point-strong);
   }
 
   .page-view {
