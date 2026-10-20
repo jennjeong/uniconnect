@@ -365,20 +365,19 @@ input:focus-visible {
 
 .welcome-panel {
   position: relative;
-  display: grid;
-  min-height: 286px;
-  grid-template-columns: 56% 44%;
+  min-height: 132px;
   overflow: hidden;
   border-radius: var(--radius-lg);
   background: var(--point-tint);
+  container-type: inline-size;
 }
 
 .welcome-panel::before {
   position: absolute;
-  top: -100px;
-  left: 36%;
-  width: 290px;
-  height: 290px;
+  top: -150px;
+  right: 120px;
+  width: 260px;
+  height: 260px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.3);
   content: '';
@@ -387,15 +386,20 @@ input:focus-visible {
 .welcome-copy {
   position: relative;
   z-index: 2;
-  padding: 37px 0 34px 42px;
+  padding: 24px 240px 24px 34px;
+}
+
+.welcome-copy .section-kicker {
+  display: block;
 }
 
 .welcome-title {
-  margin: 12px 0 13px;
-  font-size: 31px;
+  margin: 8px 0 10px;
+  font-size: 22px;
   font-weight: 760;
   line-height: 1.3;
-  letter-spacing: -1.2px;
+  letter-spacing: -0.8px;
+  word-break: keep-all;
 }
 
 .welcome-title em {
@@ -403,11 +407,19 @@ input:focus-visible {
   font-style: normal;
 }
 
+.welcome-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
+}
+
 .welcome-description {
-  margin: 0 0 21px;
+  margin: 0;
   color: #6e6873;
   font-size: 12px;
-  line-height: 1.7;
+  line-height: 1.6;
+  word-break: keep-all;
 }
 
 .text-link,
@@ -424,9 +436,41 @@ input:focus-visible {
   font-weight: 750;
 }
 
+/* Laid out at its original 420x286 size, then scaled down into the banner. */
 .connection-art {
-  position: relative;
-  min-height: 286px;
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  width: 420px;
+  height: 286px;
+  transform: translateY(-50%) scale(0.5);
+  transform-origin: right center;
+}
+
+@container (min-width: 600px) {
+  .welcome-title br {
+    display: none;
+  }
+}
+
+@container (max-width: 779px) {
+  .welcome-copy {
+    padding-right: 34px;
+  }
+
+  .connection-art {
+    display: none;
+  }
+}
+
+@container (max-width: 599px) {
+  .welcome-copy {
+    padding: 20px 22px;
+  }
+
+  .welcome-title {
+    font-size: 19px;
+  }
 }
 
 .orbit {
@@ -538,10 +582,8 @@ input:focus-visible {
 
 .workflow-card {
   display: grid;
-  min-height: 104px;
-  grid-template-columns: repeat(5, 1fr);
-  align-items: center;
-  padding: 15px 23px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  padding: 18px 12px 16px;
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: var(--surface);
@@ -550,8 +592,10 @@ input:focus-visible {
 .workflow-step {
   position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 11px;
+  gap: 8px;
+  text-align: center;
 }
 
 .step-icon {
@@ -588,6 +632,7 @@ input:focus-visible {
 .workflow-step > div:nth-child(2) {
   display: flex;
   flex-direction: column;
+  align-items: center;
 }
 
 .workflow-step > div:nth-child(2) span {
@@ -599,23 +644,26 @@ input:focus-visible {
 .workflow-step strong {
   margin: 2px 0;
   font-size: 11px;
+  white-space: nowrap;
 }
 
 .workflow-step small {
   color: #aaa5ad;
   font-size: 9px;
+  white-space: nowrap;
 }
 
 .workflow-step.current small {
   color: var(--point-strong);
 }
 
+/* Spans the gap between neighboring icons only, so it never crosses the labels. */
 .step-line {
   position: absolute;
   z-index: 1;
   top: 19px;
-  left: 38px;
-  width: calc(100% - 27px);
+  left: calc(50% + 27px);
+  width: calc(100% - 54px);
   height: 1px;
   background: #e8e5e9;
 }
@@ -1711,43 +1759,7 @@ input:focus-visible {
   }
 
   .welcome-panel {
-    display: block;
-    min-height: 420px;
     border-radius: 22px;
-  }
-
-  .welcome-copy {
-    padding: 31px 26px;
-  }
-
-  .welcome-title {
-    font-size: 27px;
-  }
-
-  .welcome-description {
-    max-width: 290px;
-  }
-
-  .connection-art {
-    min-height: 190px;
-    transform: scale(0.82);
-    transform-origin: center top;
-  }
-
-  .brand-node {
-    top: 10px;
-    right: 25px;
-  }
-
-  .group-node {
-    right: auto;
-    bottom: 5px;
-    left: 32px;
-  }
-
-  .art-center {
-    top: 72px;
-    right: calc(50% - 34px);
   }
 
   .workflow-section,
@@ -1756,18 +1768,18 @@ input:focus-visible {
   }
 
   .workflow-card {
-    display: flex;
-    overflow-x: auto;
-    gap: 28px;
-    padding: 18px;
+    padding: 16px 4px 14px;
   }
 
-  .workflow-step {
-    min-width: 112px;
+  .step-icon {
+    width: 32px;
+    height: 32px;
   }
 
   .step-line {
-    width: 39px;
+    top: 16px;
+    left: calc(50% + 21px);
+    width: calc(100% - 42px);
   }
 
   .stats-grid {

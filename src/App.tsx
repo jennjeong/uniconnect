@@ -424,24 +424,24 @@ function App() {
               <div className="welcome-copy">
                 <span className="section-kicker">YOUR NEXT CONNECTION</span>
                 <p className="welcome-title">
-                  {role === "학생단체" ? "좋은 행사는," : "좋은 캠페인은,"}
+                  {role === "학생단체" ? "좋은 행사는," : "좋은 캠페인은,"}{" "}
                   <br />
                   <em>좋은 파트너</em>를 만날 때 커져요.
                 </p>
-                <p className="welcome-description">
-                  {role === "학생단체"
-                    ? "다가오는 종강 공연과 잘 맞는 브랜드 3곳을 찾았어요."
-                    : "이번 캠페인과 잘 맞는 학생단체 3곳을 찾았어요."}
-                  <br />
-                  제안부터 성과 리포트까지 한 번에 진행해 보세요.
-                </p>
-                <button
-                  className="text-link"
-                  onClick={() => navigate("추천 매칭")}
-                  type="button"
-                >
-                  추천 매칭 확인하기 <Icon name="arrow" size={18} />
-                </button>
+                <div className="welcome-footer">
+                  <p className="welcome-description">
+                    {role === "학생단체"
+                      ? "다가오는 종강 공연과 잘 맞는 브랜드 3곳을 찾았어요."
+                      : "이번 캠페인과 잘 맞는 학생단체 3곳을 찾았어요."}
+                  </p>
+                  <button
+                    className="text-link"
+                    onClick={() => navigate("추천 매칭")}
+                    type="button"
+                  >
+                    추천 매칭 확인하기 <Icon name="arrow" size={18} />
+                  </button>
+                </div>
               </div>
               <div className="connection-art" aria-hidden="true">
                 <div className="orbit orbit-one" />
