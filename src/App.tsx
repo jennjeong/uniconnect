@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react"
+import logoHorizontal from "./assets/brand/uniconnect_horizontal.svg"
+import logoSymbol from "./assets/brand/uniconnect_symbol.svg"
 
 type IconName = "home" | "spark" | "calendar" | "chart" | "file" | "bell" | "arrow" | "plus" | "users" | "store" | "scan" | "check" | "chevron" | "close"
 
@@ -311,10 +313,13 @@ function App() {
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand-lockup">
-          <div className="brand-symbol">
-            <span>U</span>
-          </div>
-          <span className="brand-name">uniconnect</span>
+          <img
+            className="brand-logo"
+            src={logoHorizontal}
+            alt="uniconnect"
+            width={154}
+            height={36}
+          />
         </div>
 
         <div className="role-switch" aria-label="사용자 유형">
@@ -386,11 +391,20 @@ function App() {
 
       <main className="main-content">
         <header className="topbar">
-          <div>
-            <span className="eyebrow">2026 FALL SEMESTER</span>
-            <p className="page-title">
-              {activeNav === "대시보드" ? `반가워요, ${roleName}` : activeNav}
-            </p>
+          <div className="topbar-title">
+            <img
+              className="topbar-logo"
+              src={logoSymbol}
+              alt="uniconnect"
+              width={30}
+              height={30}
+            />
+            <div>
+              <span className="eyebrow">2026 FALL SEMESTER</span>
+              <p className="page-title">
+                {activeNav === "대시보드" ? `반가워요, ${roleName}` : activeNav}
+              </p>
+            </div>
           </div>
           <div className="top-actions">
             <button

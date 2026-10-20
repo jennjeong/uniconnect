@@ -5,12 +5,13 @@
 }
 
 :root {
-  /* Point color: toned-down yellow. --point-strong is the text-safe shade (6:1 on white). */
-  --point: #deb95c;
-  --point-deep: #ba9239;
+  /* Point color: mustard, deep and cream from the logo guide.
+     --point-strong is the text-safe shade (6:1 on white, 5:1 on cream). */
+  --point: #dfb04a;
+  --point-deep: #c9962c;
   --point-strong: #7f5c15;
   --point-line: #ebd6a3;
-  --point-tint: #f8f0d6;
+  --point-tint: #f5ecd3;
   --point-soft: #fcf7e7;
   --ink: #161517;
   --ink-soft: #57545a;
@@ -55,7 +56,7 @@ button {
 
 button:focus-visible,
 input:focus-visible {
-  outline: 3px solid rgba(186, 146, 57, 0.45);
+  outline: 3px solid rgba(201, 150, 44, 0.45);
   outline-offset: 2px;
 }
 
@@ -79,32 +80,14 @@ input:focus-visible {
 .brand-lockup {
   display: flex;
   align-items: center;
-  gap: 10px;
   padding: 0 10px;
 }
 
-.brand-symbol {
-  display: grid;
-  width: 35px;
-  height: 35px;
-  place-items: center;
-  transform: rotate(-7deg);
-  border-radius: 12px 12px 14px 10px;
-  background: var(--point);
-  color: var(--dark);
-  box-shadow: 0 5px 0 var(--point-line);
-}
-
-.brand-symbol span {
-  transform: rotate(7deg);
-  font-size: 18px;
-  font-weight: 800;
-}
-
-.brand-name {
-  font-size: 19px;
-  font-weight: 750;
-  letter-spacing: -0.6px;
+/* Logo guide: horizontal logo at least 24px tall, never tilted or shadowed. */
+.brand-logo {
+  display: block;
+  width: auto;
+  height: 36px;
 }
 
 .role-switch {
@@ -291,6 +274,18 @@ input:focus-visible {
   height: 92px;
   align-items: center;
   justify-content: space-between;
+}
+
+.topbar-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.topbar-logo {
+  display: none;
+  width: 30px;
+  height: 30px;
 }
 
 .eyebrow,
@@ -626,7 +621,7 @@ input:focus-visible {
 .workflow-step.current .step-icon {
   background: var(--point-tint);
   color: var(--point-strong);
-  box-shadow: 0 0 0 5px rgba(222, 185, 92, 0.16);
+  box-shadow: 0 0 0 5px rgba(223, 176, 74, 0.16);
 }
 
 .workflow-step > div:nth-child(2) {
@@ -1745,6 +1740,10 @@ input:focus-visible {
     font-size: 18px;
   }
 
+  .topbar-logo {
+    display: block;
+  }
+
   .top-actions {
     gap: 7px;
   }
@@ -1783,16 +1782,24 @@ input:focus-visible {
   }
 
   .stats-grid {
-    display: flex;
-    overflow-x: auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
-    margin-right: -16px;
-    padding-right: 16px;
-    scrollbar-width: none;
   }
 
   .stat-card {
-    min-width: 168px;
+    min-height: 0;
+    padding: 14px 15px;
+  }
+
+  .stat-card > strong {
+    display: block;
+    margin-top: 7px;
+    font-size: 22px;
+  }
+
+  .stat-card > small {
+    display: block;
+    margin: 3px 0 0;
   }
 
   .content-grid,
