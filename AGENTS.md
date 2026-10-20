@@ -27,7 +27,10 @@ Run these from the repo root:
 - `frontend/src/types.ts` mirrors the API shapes in `backend/src/types.ts`.
 - Account types and sponsor types are listed in both `backend/src/lib/validation.ts` and the frontend (`data/roles.ts`, `pages/EventCreatePage.tsx`). Change them together.
 - Student groups and brands have separate menus and pages (`data/navigation.ts`). A feature for one side gets its own page rather than a role branch inside the other side's page.
+- Every screen is a `View` with its own address (`lib/route.ts`). Change screens through App's `go` and `goBack`, never by setting state directly, so the browser's back and forward buttons and swipe gestures keep working.
+- Popups go inside `<Presence>` (`components/Presence.tsx`) so they animate closed however they are closed.
 - The backend is ESM with NodeNext resolution, so relative imports end in `.js`.
 - Express 5 forwards thrown and rejected errors to the error handler. Throw `HttpError(status, message)` with a Korean message the user can read.
-- Design tokens are CSS variables on `:root` in `index.css`; `--point` is the yellow point color. Tailwind v4 is available, but the UI is styled through the classes in `index.css`.
+- Design tokens are CSS variables on `:root` in `index.css`; `--point` is the yellow point color.
+- Motion lives in the "Motion" section of `index.css`: a `stagger` class on a list makes its items arrive one after another, `components/AnimatedNumber.tsx` counts numbers up, and `lib/ripple.ts` adds the press ripple. Keep the reduced-motion rule at the end of that section. Tailwind v4 is available, but the UI is styled through the classes in `index.css`.
 - No mail service is connected yet. Email verification codes come back as `devCode` while `EXPOSE_EMAIL_CODES` is on, which is the default outside production. A real sender belongs in `backend/src/lib/mailer.ts`.

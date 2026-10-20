@@ -44,6 +44,7 @@ function MatchCard({
   rank,
   done,
   status,
+  onOpenDetail,
   onPropose,
   onCancel,
 }: {
@@ -52,6 +53,7 @@ function MatchCard({
   rank?: number
   done: boolean
   status?: RequestStatus
+  onOpenDetail: () => void
   onPropose: () => void
   onCancel: () => void
 }) {
@@ -78,14 +80,19 @@ function MatchCard({
         </div>
       </div>
       <ScoreRing score={match.score} />
-      <ProposalControl
-        done={done}
-        status={status}
-        label="협찬 제안 보내기"
-        className="primary-button"
-        onPropose={onPropose}
-        onCancel={onCancel}
-      />
+      <div className="card-actions">
+        <button className="cancel-button" onClick={onOpenDetail} type="button">
+          상세 정보
+        </button>
+        <ProposalControl
+          done={done}
+          status={status}
+          label="협찬 제안 보내기"
+          className="primary-button"
+          onPropose={onPropose}
+          onCancel={onCancel}
+        />
+      </div>
     </article>
   )
 }
@@ -96,6 +103,7 @@ export function MatchesPage({
   brands,
   proposals,
   statuses,
+  onOpenDetail,
   onPropose,
   onCancelProposal,
 }: {
@@ -105,10 +113,17 @@ export function MatchesPage({
   brands: Match[]
   proposals: string[]
   statuses: Partial<Record<string, RequestStatus>>
+  onOpenDetail: (match: Match) => void
   onPropose: (match: Match) => void
   onCancelProposal: (match: Match) => void
 }) {
   const [tab, setTab] = useState<Tab>("추천")
+  // Cards slide in from the side the picked tab or chip lies on.
+  const [direction, setDirection] = useState<"forward" | "back">("forward")
+  const pickTab = (next: Tab) => {
+    setDirection(tabs.indexOf(next) >= tabs.indexOf(tab) ? "forward" : "back")
+    setTab(next)
+  }
   const industries = industryLabels.filter(([industry]) =>
     brands.some((brand) => brand.industry === industry),
   )
@@ -127,7 +142,7 @@ export function MatchesPage({
   return (
     <section className="page-view">
       <div className="view-intro match-intro">
-        <div>
+        <div key={tab}>
           <span className="section-kicker">SMART MATCH</span>
           <p>{intro.title}</p>
           <small>{intro.caption}</small>
@@ -141,7 +156,7 @@ export function MatchesPage({
               aria-selected={tab === item}
               className={tab === item ? "match-tab active" : "match-tab"}
               key={item}
-              onClick={() => setTab(item)}
+              onClick={() => pickTab(item)}
               role="tab"
               type="button"
             >
@@ -157,6 +172,8 @@ export function MatchesPage({
                 className={industry === value ? "industry-chip active" : "industry-chip"}
                 key={value}
                 onClick={(event) => {
+                  const order = industries.map(([item]) => item)
+                  setDirection(order.indexOf(value) >= order.indexOf(industry) ? "forward" : "back")
                   setIndustry(value)
                   // The chip row scrolls sideways on phones; keep the pick in view.
                   event.currentTarget.scrollIntoView({ block: "nearest", inline: "center" })
@@ -170,13 +187,18 @@ export function MatchesPage({
         )}
       </div>
 
-      <div className="full-match-grid">
+      <div
+        className="full-match-grid stagger slide"
+        data-direction={direction}
+        key={tab === "업종별" ? `${tab}-${industry}` : tab}
+      >
         {list.map((match, index) => (
           <MatchCard
             done={proposals.includes(match.id)}
             key={match.id}
             match={match}
             onCancel={() => onCancelProposal(match)}
+            onOpenDetail={() => onOpenDetail(match)}
             onPropose={() => onPropose(match)}
             rank={tab === "인기" ? index + 1 : undefined}
             status={statuses[match.id]}

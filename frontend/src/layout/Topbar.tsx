@@ -1,7 +1,11 @@
+import { useRef } from "react"
+
 import logoHorizontal from "../assets/brand/uniconnect_horizontal.svg"
 import { Icon } from "../components/Icon"
 import { initialOf } from "../lib/format"
+import type { NotificationItem } from "../lib/notifications"
 import type { Account, NavLabel } from "../types"
+import { NotificationsPanel } from "./NotificationsPanel"
 
 // "2026 FALL SEMESTER" from today's date.
 function semesterLabel(date = new Date()) {
@@ -17,8 +21,11 @@ export function Topbar({
   account,
   authReady,
   hasUnread,
+  notifications,
+  notificationsOpen,
   onNavigate,
-  onOpenNotifications,
+  onToggleNotifications,
+  onCloseNotifications,
   onOpenProfile,
   onLogin,
 }: {
@@ -29,11 +36,19 @@ export function Topbar({
   // False while a saved session is being checked, so the login button doesn't flash.
   authReady: boolean
   hasUnread: boolean
+  notifications: NotificationItem[]
+  // The notifications panel hangs under the bell while this is true.
+  notificationsOpen: boolean
   onNavigate: (label: NavLabel) => void
-  onOpenNotifications: () => void
+  onToggleNotifications: () => void
+  onCloseNotifications: () => void
   onOpenProfile: () => void
   onLogin: () => void
 }) {
+  const bellRef = useRef<HTMLButtonElement>(null)
+  const heading =
+    title ?? (activeNav !== "대시보드" ? activeNav : account ? `반가워요, ${account.name}` : "반가워요")
+
   return (
     <header className="topbar">
       <div className="topbar-title">
@@ -47,14 +62,8 @@ export function Topbar({
         </button>
         <div className="topbar-heading">
           <span className="eyebrow">{semesterLabel()}</span>
-          <p className="page-title">
-            {title
-              ? title
-              : activeNav !== "대시보드"
-              ? activeNav
-              : account
-                ? `반가워요, ${account.name}`
-                : "반가워요"}
+          <p className="page-title" key={heading}>
+            {heading}
           </p>
         </div>
       </div>
@@ -63,9 +72,12 @@ export function Topbar({
           (account ? (
             <>
               <button
-                className="icon-button"
+                className={notificationsOpen ? "icon-button active" : "icon-button"}
+                aria-controls="notifications-panel"
+                aria-expanded={notificationsOpen}
                 aria-label="알림"
-                onClick={onOpenNotifications}
+                onClick={onToggleNotifications}
+                ref={bellRef}
                 type="button"
               >
                 <Icon name="bell" size={18} />
@@ -86,6 +98,17 @@ export function Topbar({
             </button>
           ))}
       </div>
+      {notificationsOpen && account && (
+        <NotificationsPanel
+          items={notifications}
+          toggleRef={bellRef}
+          onClose={onCloseNotifications}
+          onOpen={(label) => {
+            onCloseNotifications()
+            onNavigate(label)
+          }}
+        />
+      )}
     </header>
   )
 }

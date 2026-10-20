@@ -36,19 +36,26 @@ export async function loadDatabase() {
 // Fills in data added after a db.json was created, so existing accounts,
 // sessions and events survive an update.
 export function upgradeDatabase(stored: Database) {
-  stored.brands ??= structuredClone(seedBrands)
+  // The brand and group catalogs are seed data the app never edits, so they
+  // always come from the current seed, along with each side's top picks.
+  stored.brands = structuredClone(seedBrands)
+  stored.groups = structuredClone(seedGroups)
+  stored.matches = { 학생단체: topMatches(seedBrands), 브랜드: topMatches(seedGroups) }
   stored.metricLog ??= seedMetricLog()
   stored.report ??= structuredClone(seedReport)
-  if (!stored.groups) {
-    stored.groups = structuredClone(seedGroups)
-    // The brand side's top picks gain the group details (school, event).
-    if (stored.matches) stored.matches.브랜드 = topMatches(stored.groups)
-  }
   stored.requests ??= seedRequests()
   const demoBrandId = stored.demoAccountIds?.브랜드
   stored.sponsorships ??= demoBrandId ? { [demoBrandId]: seedSponsorships() } : {}
   const demoBrand = stored.accounts?.find((account) => account.id === demoBrandId)
   if (demoBrand) demoBrand.brandId ??= "afternoon-coffee"
+  // Sponsorships saved before goals existed take the seeded goal, or
+  // break-even for any other.
+  const seededGoals = new Map(seedSponsorships().map((item) => [item.id, item.targetRoas]))
+  for (const list of Object.values(stored.sponsorships)) {
+    for (const sponsorship of list) {
+      sponsorship.targetRoas ??= seededGoals.get(sponsorship.id) ?? 100
+    }
+  }
   // The demo brand's seeded campaign gained a budget.
   const tasting = demoBrandId
     ? stored.events?.[demoBrandId]?.find((event) => event.id === "event-coffee-tasting")

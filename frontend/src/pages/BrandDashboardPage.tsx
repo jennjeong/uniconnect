@@ -1,12 +1,14 @@
 import type { ReactNode } from "react"
 
+import { AnimatedNumber } from "../components/AnimatedNumber"
 import { BrandMark } from "../components/BrandMark"
+import { DateLine } from "../components/DateLine"
 import { Icon, type IconName } from "../components/Icon"
 import { ProposalControl } from "../components/ProposalControl"
-import { formatDay, nextEvent, shortDay } from "../lib/date"
+import { nextEvent, shortDay } from "../lib/date"
 import { formatWon } from "../lib/kpis"
-import { scoreBand } from "../lib/score"
-import { compactWon, roasOf, sponsorshipTotals } from "../lib/sponsorships"
+import { scoreColors } from "../lib/score"
+import { compactWon, roasMet, roasOf, sponsorshipTotals } from "../lib/sponsorships"
 import type { Match, NavLabel, SponsorRequest, Sponsorship } from "../types"
 
 type Stat = {
@@ -51,10 +53,15 @@ export function BrandDashboardPage({
   const confirmed = requests.filter((request) => request.status === "수락")
   const nextConfirmed = nextEvent(confirmed.map((request) => ({ date: request.eventDate })))
   const totals = sponsorshipTotals(sponsorships)
-  const results = sponsorships.map((sponsorship) => ({ ...sponsorship, roas: roasOf(sponsorship) }))
+  const results = sponsorships.map((sponsorship) => ({
+    ...sponsorship,
+    roas: roasOf(sponsorship),
+    met: roasMet(sponsorship),
+  }))
   const bestRoas = Math.max(0, ...results.map((result) => result.roas))
-  // Bar scale with room past the best result; the marker shows break-even.
-  const roasScale = Math.max(100, bestRoas) * 1.1
+  // Bar scale with room past the best result and every goal marker.
+  const roasScale =
+    Math.max(100, bestRoas, ...results.map((result) => result.targetRoas)) * 1.1
 
   const stats: Stat[] = [
     {
@@ -138,7 +145,7 @@ export function BrandDashboardPage({
         </button>
       </section>
 
-      <section className="stats-grid brand-stats">
+      <section className="stats-grid brand-stats stagger">
         {stats.map((stat) => (
           <button
             className="stat-card"
@@ -151,7 +158,9 @@ export function BrandDashboardPage({
               <Icon name={stat.icon} size={18} />
             </span>
             <span className="stat-value">
-              <strong>{stat.value}</strong>
+              <strong>
+                <AnimatedNumber value={stat.value} />
+              </strong>
               <small>{stat.note}</small>
             </span>
           </button>
@@ -174,7 +183,7 @@ export function BrandDashboardPage({
               새로 받은 제안이 없어요. 단체 찾기에서 먼저 제안해 보세요.
             </p>
           ) : (
-            <div className="match-list">
+            <div className="match-list stagger">
               {pending.map((request) => (
                 <article className="inbox-row" key={request.id}>
                   <BrandMark match={request} />
@@ -183,10 +192,8 @@ export function BrandDashboardPage({
                       <strong>{request.groupName}</strong>
                       <span>{request.school}</span>
                     </div>
-                    <p>
-                      {request.eventName}
-                      {request.eventDate && ` · ${formatDay(request.eventDate)}`}
-                    </p>
+                    <p>{request.eventName}</p>
+                    {request.eventDate && <DateLine date={request.eventDate} />}
                     <div className="tag-row">
                       <span className="tag-ask">요청 · {request.ask}</span>
                       <span>{request.people}</span>
@@ -229,25 +236,27 @@ export function BrandDashboardPage({
               •••
             </button>
           </div>
-          <div className="roas-list">
+          <div className="roas-list stagger">
             {results.map((result) => (
-              <div className="roas-row" key={result.id}>
+              <div className={result.met ? "roas-row met" : "roas-row"} key={result.id}>
                 <div className="roas-row-head">
                   <strong>{result.eventName}</strong>
-                  <span className={result.roas === bestRoas ? "best" : ""}>{result.roas}%</span>
+                  <span>{result.roas}%</span>
                 </div>
                 <div className="roas-track">
                   <i style={{ width: `${(result.roas / roasScale) * 100}%` }} />
-                  <b style={{ left: `${(100 / roasScale) * 100}%` }} />
+                  <b style={{ left: `${(result.targetRoas / roasScale) * 100}%` }} />
                 </div>
                 <small>
-                  {result.groupName} · {formatWon(result.spend)} 집행
+                  {result.groupName} · {formatWon(result.spend)} 집행 · 목표 {result.targetRoas}%
+                  {result.met && " 달성"}
                 </small>
               </div>
             ))}
           </div>
           <p className="roas-legend">
-            <b aria-hidden="true" /> 100% 손익분기
+            <b aria-hidden="true" /> 목표 ROAS
+            <i aria-hidden="true" /> 목표 달성
           </p>
           <div className="report-highlight">
             <div className="mini-icon">
@@ -276,7 +285,7 @@ export function BrandDashboardPage({
             </span>
           )}
         </div>
-        <div className="match-list">
+        <div className="match-list stagger">
           {matches.map((match) => (
             <article className="match-card" key={match.id}>
               <BrandMark match={match} />
@@ -286,12 +295,9 @@ export function BrandDashboardPage({
                   <span>{match.school}</span>
                 </div>
                 <p>{match.offer}</p>
+                {match.eventDate && <DateLine date={match.eventDate} />}
                 <div className="tag-row">
-                  {match.eventDate && (
-                    <span className="tag-event">
-                      {shortDay(match.eventDate)} {match.eventName}
-                    </span>
-                  )}
+                  {match.eventName && <span className="tag-event">{match.eventName}</span>}
                   {match.tags.slice(0, 1).map((tag) => (
                     <span key={tag}>{tag}</span>
                   ))}
@@ -299,7 +305,7 @@ export function BrandDashboardPage({
               </div>
               <div className="score">
                 <span>매칭 적합도</span>
-                <strong style={{ color: scoreBand(match.score).text }}>
+                <strong style={{ color: scoreColors(match.score).text }}>
                   {match.score}
                   <small>%</small>
                 </strong>

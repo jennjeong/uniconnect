@@ -1,5 +1,9 @@
 // Calendar helpers. Days travel as "YYYY-MM-DD" strings (the API's format)
 // and become local Dates only for display, so time zones never shift a day.
+// Displayed dates join their parts with no-break spaces, so a long line
+// moves a date to the next line whole instead of splitting it.
+
+const nbsp = "\u00a0"
 
 export const weekdayNames = ["일", "월", "화", "수", "목", "금", "토"]
 
@@ -24,14 +28,15 @@ export const startOfMonth = (date: Date) => new Date(date.getFullYear(), date.ge
 export function formatDay(iso: string) {
   const date = fromIsoDate(iso)
   if (!date) return iso
-  return `${date.getMonth() + 1}월 ${date.getDate()}일 (${weekdayNames[date.getDay()]})`
+  return `${date.getMonth() + 1}월${nbsp}${date.getDate()}일${nbsp}(${weekdayNames[date.getDay()]})`
 }
 
 // "2026. 10. 12. (월)"
 export function formatFullDate(iso: string) {
   const date = fromIsoDate(iso)
   if (!date) return iso
-  return `${date.getFullYear()}. ${date.getMonth() + 1}. ${date.getDate()}. (${weekdayNames[date.getDay()]})`
+  const parts = [`${date.getFullYear()}.`, `${date.getMonth() + 1}.`, `${date.getDate()}.`]
+  return `${parts.join(nbsp)}${nbsp}(${weekdayNames[date.getDay()]})`
 }
 
 // Whole days from today (or `from`) until an "YYYY-MM-DD" day.
@@ -66,7 +71,7 @@ export function nextEvent<T extends { date: string }>(events: T[]) {
 export function formatDateTime(timestamp: string) {
   const date = new Date(timestamp)
   if (Number.isNaN(date.getTime())) return timestamp
-  return `${date.getMonth() + 1}.${date.getDate()} ${pad(date.getHours())}:${pad(date.getMinutes())}`
+  return `${date.getMonth() + 1}.${date.getDate()}${nbsp}${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
 
 // Whole weeks (Sunday first) covering the month of `month`.

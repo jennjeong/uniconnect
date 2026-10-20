@@ -1,8 +1,9 @@
+import { AnimatedNumber } from "../components/AnimatedNumber"
 import { Icon } from "../components/Icon"
 import { formatFullDate } from "../lib/date"
 import { percent } from "../lib/format"
 import { formatWon } from "../lib/kpis"
-import { costPerVisit, roasOf, sponsorshipTotals } from "../lib/sponsorships"
+import { costPerVisit, roasMet, roasOf, sponsorshipTotals } from "../lib/sponsorships"
 import type { NavLabel, Sponsorship } from "../types"
 
 // Spend, coupons, visits and ROAS of each sponsorship the brand has done.
@@ -18,13 +19,19 @@ export function AnalyticsPage({
   const rows = sponsorships.map((sponsorship) => ({
     ...sponsorship,
     roas: roasOf(sponsorship),
+    met: roasMet(sponsorship),
     perVisit: costPerVisit(sponsorship),
   }))
   const best = [...rows].sort((a, b) => b.roas - a.roas)[0]
+  const metCount = rows.filter((row) => row.met).length
+  // The sponsorship furthest below its goal.
+  const furthestBelow = rows
+    .filter((row) => !row.met)
+    .sort((a, b) => a.roas - a.targetRoas - (b.roas - b.targetRoas))[0]
   const cheapest = [...rows].filter((row) => row.visits > 0).sort((a, b) => a.perVisit - b.perVisit)[0]
   const visitRate = percent(totals.visits, totals.coupons)
-  // Bar scale with room past the best result; the marker shows break-even.
-  const roasScale = Math.max(100, best?.roas ?? 0) * 1.1
+  // Bar scale with room past the best result and every goal marker.
+  const roasScale = Math.max(100, best?.roas ?? 0, ...rows.map((row) => row.targetRoas)) * 1.1
 
   const kpis = [
     {
@@ -66,11 +73,13 @@ export function AnalyticsPage({
         <p className="day-empty">아직 집계된 협찬이 없어요. 협찬이 끝나면 성과를 여기서 볼 수 있어요.</p>
       ) : (
         <>
-          <div className="analytics-kpis">
+          <div className="analytics-kpis stagger">
             {kpis.map((kpi) => (
               <div className="analytics-kpi" key={kpi.label}>
                 <span>{kpi.label}</span>
-                <strong className={kpi.good ? "good" : ""}>{kpi.value}</strong>
+                <strong className={kpi.good ? "good" : ""}>
+                  <AnimatedNumber value={kpi.value} />
+                </strong>
                 <small>{kpi.note}</small>
               </div>
             ))}
@@ -81,23 +90,27 @@ export function AnalyticsPage({
               <div className="measure-card-head">
                 <p className="section-title">협찬별 ROAS</p>
                 <span className="roas-legend">
-                  <b aria-hidden="true" /> 100% 손익분기
+                  <b aria-hidden="true" /> 목표 ROAS
+                  <i aria-hidden="true" /> 목표 달성
                 </span>
               </div>
-              <div className="roas-list large">
+              <div className="roas-list large stagger">
                 {rows.map((row) => (
-                  <div className="roas-row" key={row.id}>
+                  <div className={row.met ? "roas-row met" : "roas-row"} key={row.id}>
                     <div className="roas-row-head">
                       <strong>
                         {row.eventName}
                         <small>{row.groupName}</small>
                       </strong>
-                      <span className={row.id === best?.id ? "best" : ""}>{row.roas}%</span>
+                      <span>{row.roas}%</span>
                     </div>
                     <div className="roas-track">
                       <i style={{ width: `${(row.roas / roasScale) * 100}%` }} />
-                      <b style={{ left: `${(100 / roasScale) * 100}%` }} />
+                      <b style={{ left: `${(row.targetRoas / roasScale) * 100}%` }} />
                     </div>
+                    <small>
+                      목표 {row.targetRoas}%{row.met ? " 달성" : ` · ${row.targetRoas - row.roas}%p 부족`}
+                    </small>
                   </div>
                 ))}
               </div>
@@ -105,7 +118,23 @@ export function AnalyticsPage({
 
             <div className="analytics-card insight-card">
               <p className="section-title">인사이트</p>
-              <ul className="insight-list">
+              <ul className="insight-list stagger">
+                <li>
+                  <span className="insight-icon">
+                    <Icon name="check" size={16} />
+                  </span>
+                  <p>
+                    목표 ROAS를 달성한 협찬은 {rows.length}건 중 <b>{metCount}건</b>이에요.{" "}
+                    {furthestBelow ? (
+                      <>
+                        <b>{furthestBelow.eventName}</b> 협찬은 목표보다{" "}
+                        {furthestBelow.targetRoas - furthestBelow.roas}%p 낮았어요.
+                      </>
+                    ) : (
+                      "모든 협찬이 목표를 넘었어요."
+                    )}
+                  </p>
+                </li>
                 {best && (
                   <li>
                     <span className="insight-icon">
@@ -145,7 +174,7 @@ export function AnalyticsPage({
 
           <div className="analytics-card">
             <p className="section-title">협찬별 상세</p>
-            <div className="analytics-table" role="table" aria-label="협찬별 상세">
+            <div className="analytics-table stagger" role="table" aria-label="협찬별 상세">
               <div className="analytics-row head" role="row">
                 <span role="columnheader">행사</span>
                 <span role="columnheader">집행액</span>
@@ -158,9 +187,8 @@ export function AnalyticsPage({
                 <div className="analytics-row" key={row.id} role="row">
                   <span className="analytics-event" role="cell">
                     <strong>{row.eventName}</strong>
-                    <small>
-                      {row.groupName} · {formatFullDate(row.date)}
-                    </small>
+                    <small>{row.groupName}</small>
+                    <small>{formatFullDate(row.date)}</small>
                   </span>
                   <span role="cell" data-label="집행액">
                     {formatWon(row.spend)}
@@ -174,8 +202,12 @@ export function AnalyticsPage({
                   <span role="cell" data-label="방문당 비용">
                     {formatWon(row.perVisit)}
                   </span>
-                  <span role="cell" data-label="ROAS" className="analytics-roas">
-                    {row.roas}%
+                  <span
+                    role="cell"
+                    data-label="ROAS"
+                    className={row.met ? "analytics-roas met" : "analytics-roas"}
+                  >
+                    {row.roas}%<small>목표 {row.targetRoas}%</small>
                   </span>
                 </div>
               ))}

@@ -1,9 +1,11 @@
-import { useEffect, type ReactNode } from "react"
+import { useContext, useEffect, type ReactNode } from "react"
 
 import type { ModalName } from "../types"
 import { Icon } from "./Icon"
+import { ClosingContext } from "./Presence"
 
 // Shared dialog frame: backdrop click, the close button and Escape all close it.
+// Inside a Presence it slides down while closing.
 export function Modal({
   name,
   kicker,
@@ -17,18 +19,25 @@ export function Modal({
   onClose: () => void
   children: ReactNode
 }) {
+  const closing = useContext(ClosingContext)
+
   useEffect(() => {
+    if (closing) return
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose()
     }
     window.addEventListener("keydown", closeOnEscape)
     return () => window.removeEventListener("keydown", closeOnEscape)
-  }, [onClose])
+  }, [closing, onClose])
 
   return (
-    <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
+    <div
+      className={closing ? "modal-backdrop closing" : "modal-backdrop"}
+      role="presentation"
+      onMouseDown={closing ? undefined : onClose}
+    >
       <div
-        className={`modal modal-${name}`}
+        className={`modal modal-${name}${closing ? " closing" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"

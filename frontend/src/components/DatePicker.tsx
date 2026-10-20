@@ -56,7 +56,7 @@ export function DatePicker({
         ))}
       </div>
 
-      <div className="date-picker-grid">
+      <div className="date-picker-grid" key={toIsoDate(month)}>
         {calendarDays(month).map((day) => {
           const iso = toIsoDate(day)
           const outside = day.getMonth() !== month.getMonth()

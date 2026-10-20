@@ -1,9 +1,10 @@
 import { useState } from "react"
 
 import { BrandMark } from "../components/BrandMark"
+import { DateLine } from "../components/DateLine"
 import { ProposalControl } from "../components/ProposalControl"
 import { ScoreRing } from "../components/ScoreRing"
-import { dDayLabel, formatDay, todayIso } from "../lib/date"
+import { todayIso } from "../lib/date"
 import type { Industry, Match } from "../types"
 
 type Tab = "추천" | "행사 임박" | "전체" | "분야별"
@@ -41,11 +42,13 @@ const fieldLabels: [Industry, string][] = [
 function GroupCard({
   group,
   done,
+  onOpenDetail,
   onPropose,
   onCancel,
 }: {
   group: Match
   done: boolean
+  onOpenDetail: () => void
   onPropose: () => void
   onCancel: () => void
 }) {
@@ -58,23 +61,28 @@ function GroupCard({
         </span>
         <strong>{group.name}</strong>
         <p>{group.offer}</p>
-        {group.eventDate && (
-          <div className="group-event">
-            <em>{dDayLabel(group.eventDate)}</em>
-            <span>
-              {formatDay(group.eventDate)} · {group.eventName}
-            </span>
-          </div>
-        )}
+        {/* The date and the event's features each take their own line. */}
+        {group.eventDate && <DateLine date={group.eventDate} />}
+        <div className="tag-row">
+          {group.eventName && <span className="tag-event">{group.eventName}</span>}
+          {group.tags.map((tag) => (
+            <span key={tag}>{tag}</span>
+          ))}
+        </div>
       </div>
       <ScoreRing score={group.score} />
-      <ProposalControl
-        done={done}
-        label="협찬 제안하기"
-        className="primary-button"
-        onPropose={onPropose}
-        onCancel={onCancel}
-      />
+      <div className="card-actions">
+        <button className="cancel-button" onClick={onOpenDetail} type="button">
+          상세 정보
+        </button>
+        <ProposalControl
+          done={done}
+          label="협찬 제안하기"
+          className="primary-button"
+          onPropose={onPropose}
+          onCancel={onCancel}
+        />
+      </div>
     </article>
   )
 }
@@ -84,6 +92,7 @@ export function GroupsPage({
   matches,
   groups,
   proposals,
+  onOpenDetail,
   onPropose,
   onCancelProposal,
 }: {
@@ -92,11 +101,18 @@ export function GroupsPage({
   // Every student group in the catalog.
   groups: Match[]
   proposals: string[]
+  onOpenDetail: (match: Match) => void
   onPropose: (match: Match) => void
   onCancelProposal: (match: Match) => void
 }) {
   const [tab, setTab] = useState<Tab>("추천")
   const [field, setField] = useState<Industry>("performance")
+  // Cards slide in from the side the picked tab or chip lies on.
+  const [direction, setDirection] = useState<"forward" | "back">("forward")
+  const pickTab = (next: Tab) => {
+    setDirection(tabs.indexOf(next) >= tabs.indexOf(tab) ? "forward" : "back")
+    setTab(next)
+  }
   const fields = fieldLabels.filter(([value]) => groups.some((group) => group.industry === value))
   const today = todayIso()
 
@@ -114,7 +130,7 @@ export function GroupsPage({
   return (
     <section className="page-view">
       <div className="view-intro match-intro groups-intro">
-        <div>
+        <div key={tab}>
           <span className="section-kicker">FIND STUDENT GROUPS</span>
           <p>{tabIntro[tab].title}</p>
           <small>{tabIntro[tab].caption}</small>
@@ -128,7 +144,7 @@ export function GroupsPage({
               aria-selected={tab === item}
               className={tab === item ? "match-tab active" : "match-tab"}
               key={item}
-              onClick={() => setTab(item)}
+              onClick={() => pickTab(item)}
               role="tab"
               type="button"
             >
@@ -144,6 +160,8 @@ export function GroupsPage({
                 className={field === value ? "industry-chip active" : "industry-chip"}
                 key={value}
                 onClick={(event) => {
+                  const order = fields.map(([item]) => item)
+                  setDirection(order.indexOf(value) >= order.indexOf(field) ? "forward" : "back")
                   setField(value)
                   event.currentTarget.scrollIntoView({ block: "nearest", inline: "center" })
                 }}
@@ -156,7 +174,11 @@ export function GroupsPage({
         )}
       </div>
 
-      <div className="full-match-grid">
+      <div
+        className="full-match-grid stagger slide"
+        data-direction={direction}
+        key={tab === "분야별" ? `${tab}-${field}` : tab}
+      >
         {list.length === 0 ? (
           <p className="day-empty">조건에 맞는 학생단체가 없어요.</p>
         ) : (
@@ -166,6 +188,7 @@ export function GroupsPage({
               group={group}
               key={group.id}
               onCancel={() => onCancelProposal(group)}
+              onOpenDetail={() => onOpenDetail(group)}
               onPropose={() => onPropose(group)}
             />
           ))

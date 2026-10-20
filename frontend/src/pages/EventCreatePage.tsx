@@ -147,7 +147,7 @@ export function EventCreatePage({
               {students ? "원하는 협찬 유형" : "제공할 협찬 형태"}
             </h3>
             <p className="form-card-caption">여러 개를 고를 수 있어요.</p>
-            <div className="check-list">
+            <div className="check-list stagger">
               {sponsorOptions[role].map((option) => {
                 const checked = types.includes(option.value)
                 return (

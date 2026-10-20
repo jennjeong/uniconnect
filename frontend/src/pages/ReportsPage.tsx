@@ -1,3 +1,4 @@
+import { AnimatedNumber } from "../components/AnimatedNumber"
 import { Icon } from "../components/Icon"
 import { formatFullDate } from "../lib/date"
 import {
@@ -71,7 +72,9 @@ export function ReportsPage({
             <div className="hero-roas">
               <div className="hero-roas-head">
                 <span>추정 ROAS</span>
-                <strong>{report.roas}%</strong>
+                <strong>
+                  <AnimatedNumber value={`${report.roas}%`} />
+                </strong>
               </div>
               <div className="hero-roas-track">
                 <i style={{ width: `${(report.roas / roasScale) * 100}%` }} />
@@ -85,7 +88,7 @@ export function ReportsPage({
               상세 데이터 보기 <Icon name="arrow" size={16} />
             </button>
           </article>
-          <div className="report-metric-grid">
+          <div className="report-metric-grid stagger">
             {reportKpis(report, metrics).map((kpi) => {
               const rate = achievement(kpi)
               return (
@@ -99,7 +102,9 @@ export function ReportsPage({
                     {kpi.label}
                     <Icon name="chevron" size={14} />
                   </span>
-                  <strong>{formatKpi(kpi.current, kpi.unit)}</strong>
+                  <strong>
+                    <AnimatedNumber value={formatKpi(kpi.current, kpi.unit)} />
+                  </strong>
                   <span className={rate >= 100 ? "kpi-status good" : "kpi-status"}>
                     목표 {formatKpi(kpi.target, kpi.unit)}
                     <b>{rate}% 달성</b>

@@ -27,6 +27,9 @@ export type Match = {
   eventName?: string
   eventDate?: string
   audience?: number
+  // Detail page: a short introduction and key facts.
+  intro?: string
+  facts?: { label: string; value: string }[]
 }
 
 export type EventStatus = "매칭 중" | "집행 예정" | "측정 완료"
@@ -132,6 +135,8 @@ export type Sponsorship = {
   visits: number
   // Estimated store sales the sponsorship brought, in won.
   sales: number
+  // ROAS goal in percent, set before the sponsorship.
+  targetRoas: number
 }
 
 // Performance report of the measured event, with the goals set before it.

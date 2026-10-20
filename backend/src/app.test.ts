@@ -240,6 +240,11 @@ test("student groups browse the brand catalog and propose to any brand", async (
   const { brands } = (await call("GET", "/brands")).data
   assert.equal(brands.length, 12)
   assert.ok(brands.every((brand: { popularity?: number }) => typeof brand.popularity === "number"))
+  assert.ok(
+    brands.every(
+      (brand: { intro?: string; facts?: unknown[] }) => brand.intro && brand.facts?.length === 4,
+    ),
+  )
   assert.deepEqual(
     brands.slice(0, 3).map((brand: { id: string }) => brand.id),
     (await call("GET", "/matches?role=학생단체")).data.matches.map((match: { id: string }) => match.id),
@@ -272,6 +277,12 @@ test("brands browse every student group with its next event", async () => {
   assert.equal(groups[0].school, "삼육대학교")
   assert.match(groups[0].eventDate, /^\d{4}-\d{2}-\d{2}$/)
   assert.ok(groups.every((group: { audience?: number }) => typeof group.audience === "number"))
+  // Every group has what its detail page shows.
+  assert.ok(
+    groups.every(
+      (group: { intro?: string; facts?: unknown[] }) => group.intro && group.facts?.length === 4,
+    ),
+  )
 })
 
 test("brands answer the proposals in their inbox", async () => {
@@ -344,6 +355,10 @@ test("brand analytics follow the live measurement", async () => {
     sponsorships.map((sponsorship: { date: string }) => sponsorship.date),
     ["2026-10-12", "2026-06-10", "2026-05-20"],
   )
+  assert.deepEqual(
+    sponsorships.map((sponsorship: { targetRoas: number }) => sponsorship.targetRoas),
+    [170, 200, 200],
+  )
   const { metrics } = (await call("GET", "/metrics")).data
   assert.equal(sponsorships[0].coupons, metrics.coupons)
   assert.equal(sponsorships[0].visits, metrics.visits)
@@ -380,8 +395,20 @@ test("older data files gain the new collections and calendar dates", async () =>
   assert.ok(upgraded.metricLog.length > 0)
   assert.equal(upgraded.report.targets.reach, 1100)
   assert.equal(upgraded.groups.length, 8)
+  assert.equal(upgraded.matches.브랜드[0].id, "syu-muse")
+  assert.ok(upgraded.brands.every((brand) => brand.intro))
   assert.equal(upgraded.requests.length, 4)
   assert.deepEqual(upgraded.sponsorships, {})
+
+  // Sponsorships saved before goals existed get one.
+  const saved = upgradeDatabase({
+    events: {},
+    sponsorships: { brand: [{ id: "sp-finals" }, { id: "sp-other" }] },
+  } as unknown as Parameters<typeof upgradeDatabase>[0])
+  assert.deepEqual(
+    saved.sponsorships.brand.map((sponsorship) => sponsorship.targetRoas),
+    [200, 100],
+  )
   assert.deepEqual(
     upgraded.events.someone.map((event) => event.date),
     ["2026-11-27", "미정"],

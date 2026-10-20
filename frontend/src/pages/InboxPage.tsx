@@ -147,9 +147,11 @@ export function InboxPage({
       </div>
 
       {list.length === 0 ? (
-        <p className="day-empty inbox-empty">{current.empty}</p>
+        <p className="day-empty inbox-empty" key={tab}>
+          {current.empty}
+        </p>
       ) : (
-        <div className="request-grid">
+        <div className="request-grid stagger" key={tab}>
           {list.map((request) => (
             <RequestCard key={request.id} onAnswer={onAnswer} request={request} />
           ))}

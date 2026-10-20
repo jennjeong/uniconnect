@@ -1,14 +1,14 @@
 import type { CSSProperties } from "react"
 
-import { scoreBand } from "../lib/score"
+import { scoreColors } from "../lib/score"
 
 const radius = 15
 const circumference = 2 * Math.PI * radius
 
-// Match score as a thick ring filling clockwise from 12 o'clock in the score
-// band's color, over a faint tint of it, with the number in the middle.
+// Match score as a thick ring filling clockwise from 12 o'clock in the
+// score's own color, over a faint tint of it, with the number in the middle.
 export function ScoreRing({ score }: { score: number }) {
-  const band = scoreBand(score)
+  const colors = scoreColors(score)
   const value = Math.min(Math.max(score, 0), 100)
 
   return (
@@ -16,7 +16,7 @@ export function ScoreRing({ score }: { score: number }) {
       className="match-score-ring"
       role="img"
       aria-label={`매칭 일치율 ${score}%`}
-      style={{ "--ring-color": band.gradient[1], "--ring-text": band.text } as CSSProperties}
+      style={{ "--ring-color": colors.ring, "--ring-text": colors.text } as CSSProperties}
     >
       <svg aria-hidden="true" viewBox="0 0 36 36">
         <circle className="ring-fill" cx="18" cy="18" r="12.4" />

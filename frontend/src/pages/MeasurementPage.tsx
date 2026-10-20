@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 
 import { api } from "../api"
+import { AnimatedNumber } from "../components/AnimatedNumber"
 import { Icon } from "../components/Icon"
 import { metricInfo, metricKinds } from "../data/metrics"
 import { formatDateTime, formatFullDate } from "../lib/date"
@@ -86,7 +87,7 @@ export function MeasurementPage({
         )}
       </div>
 
-      <div className="live-metrics">
+      <div className="live-metrics stagger">
         {metricKinds.map((kind) => {
           const target = report?.targets[kind]
           return (
@@ -102,7 +103,9 @@ export function MeasurementPage({
                 </div>
                 <span>{metricInfo[kind].label}</span>
               </div>
-              <strong>{metrics[kind].toLocaleString("ko-KR")}</strong>
+              <strong>
+                <AnimatedNumber value={metrics[kind].toLocaleString("ko-KR")} />
+              </strong>
               {target !== undefined && (
                 <small className={metrics[kind] >= target ? "good" : ""}>
                   목표 {target} · {metrics[kind] >= target ? "달성" : `${target - metrics[kind]} 남음`}
@@ -142,7 +145,7 @@ export function MeasurementPage({
           {entries.length === 0 ? (
             <p className="day-empty">아직 참여 기록이 없어요.</p>
           ) : (
-            <ol className="activity-feed">
+            <ol className="activity-feed stagger">
               {entries.slice(0, 5).map((entry) => (
                 <li key={entry.id}>
                   <span className={`activity-kind kind-${entry.kind}`}>

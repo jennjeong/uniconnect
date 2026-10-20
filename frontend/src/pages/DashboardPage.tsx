@@ -1,11 +1,12 @@
 import type { ReactNode } from "react"
 
+import { AnimatedNumber } from "../components/AnimatedNumber"
 import { BrandMark } from "../components/BrandMark"
 import { Icon, type IconName } from "../components/Icon"
 import { ProposalControl } from "../components/ProposalControl"
 import { formatFullDate, fromIsoDate, nextEvent } from "../lib/date"
 import { percent } from "../lib/format"
-import { scoreBand } from "../lib/score"
+import { scoreColors } from "../lib/score"
 import { compactWon } from "../lib/sponsorships"
 import type { EventItem, Match, Metrics, NavLabel, Report, RequestStatus } from "../types"
 
@@ -190,7 +191,7 @@ export function DashboardPage({
             전체 보기 <Icon name="chevron" size={15} />
           </button>
         </div>
-        <div className="workflow-card">
+        <div className="workflow-card stagger">
           {journey.map((step, index) => (
             <div
               className={`workflow-step ${index === currentStep ? "current" : ""}`}
@@ -214,7 +215,7 @@ export function DashboardPage({
         </div>
       </section>
 
-      <section className="stats-grid">
+      <section className="stats-grid stagger">
         {stats.map((stat) => (
           <button
             className="stat-card"
@@ -227,7 +228,9 @@ export function DashboardPage({
               <Icon name={stat.icon} size={18} />
             </span>
             <span className="stat-value">
-              <strong>{stat.value}</strong>
+              <strong>
+                <AnimatedNumber value={stat.value} />
+              </strong>
               <small>{stat.note}</small>
             </span>
           </button>
@@ -247,7 +250,7 @@ export function DashboardPage({
               </span>
             )}
           </div>
-          <div className="match-list">
+          <div className="match-list stagger">
             {matches.map((match) => (
               <article className="match-card" key={match.id}>
                 <BrandMark match={match} />
@@ -265,7 +268,7 @@ export function DashboardPage({
                 </div>
                 <div className="score">
                   <span>매칭 적합도</span>
-                  <strong style={{ color: scoreBand(match.score).text }}>
+                  <strong style={{ color: scoreColors(match.score).text }}>
                     {match.score}
                     <small>%</small>
                   </strong>

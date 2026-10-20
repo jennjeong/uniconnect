@@ -38,6 +38,8 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Long lines wrap between words, never inside one (keep-all for Korean);
+   only a single word too long for its box, like an email, may break. */
 body {
   margin: 0;
   min-width: 1180px;
@@ -45,6 +47,8 @@ body {
   color: var(--ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 button,
@@ -300,6 +304,7 @@ input:focus-visible {
 }
 
 .topbar {
+  position: relative;
   display: flex;
   height: 92px;
   align-items: center;
@@ -381,6 +386,12 @@ input:focus-visible {
   color: var(--ink);
   font-size: 12px;
   font-weight: 700;
+}
+
+.icon-button.active {
+  border-color: var(--point-deep);
+  background: var(--point-tint);
+  color: var(--point-strong);
 }
 
 .icon-button .icon,
@@ -888,8 +899,9 @@ input:focus-visible {
 
 .match-title-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 2px 8px;
 }
 
 .match-title-row strong {
@@ -907,8 +919,10 @@ input:focus-visible {
   font-weight: 600;
 }
 
+/* Tags move to the next line whole. */
 .tag-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 5px;
 }
 
@@ -932,7 +946,7 @@ input:focus-visible {
   font-size: 8px;
 }
 
-/* Color follows the score band (scoreBand in lib/score.ts). */
+/* Each score has its own color (scoreColors in lib/score.ts). */
 .score strong {
   margin-top: 3px;
   font-size: 19px;
@@ -1262,9 +1276,10 @@ input:focus-visible {
   gap: 9px;
   padding: 0 18px;
   border-radius: 14px;
-  background: var(--dark);
+  background: rgba(88, 84, 92, 0.95);
   color: white;
-  box-shadow: 0 14px 40px rgba(20, 15, 22, 0.25);
+  box-shadow: 0 12px 32px rgba(20, 15, 22, 0.2);
+  backdrop-filter: blur(8px);
   font-size: 11px;
   font-weight: 650;
   animation: toast-in 0.25s ease-out;
@@ -1312,6 +1327,17 @@ input:focus-visible {
   flex-direction: column;
   gap: 12px;
   margin-top: 18px;
+}
+
+/* The find pages' top box is a little smaller than other pages'. */
+.view-intro.match-intro {
+  min-height: 148px;
+  padding: 28px 34px;
+}
+
+.match-intro p {
+  margin: 8px 0 6px;
+  font-size: 24px;
 }
 
 /* Brand catalog tabs (추천 · 인기 · 전체 · 업종별) and industry chips. */
@@ -1456,7 +1482,7 @@ input:focus-visible {
   justify-content: center;
 }
 
-/* Thick ring in the score band's color (ScoreRing.tsx) over a light track,
+/* Thick ring in the score's own color (ScoreRing.tsx) over a light track,
    with a faint tint of the color behind the number. */
 .match-score-ring svg {
   position: absolute;
@@ -1521,10 +1547,28 @@ input:focus-visible {
   gap: 14px;
 }
 
+/* The kicker lines up with the back button's top edge and the title with
+   its bottom edge. */
+.create-head > div {
+  display: flex;
+  height: 42px;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.create-head .section-kicker {
+  line-height: 1;
+}
+
+.create-head .section-title {
+  margin: 0;
+  line-height: 1;
+}
+
 .back-button {
   display: grid;
-  width: 38px;
-  height: 38px;
+  width: 42px;
+  height: 42px;
   flex: 0 0 auto;
   place-items: center;
   border: 1px solid var(--line);
@@ -1758,7 +1802,8 @@ input:focus-visible {
 }
 
 .date-cell.today {
-  border-color: var(--ink);
+  border-color: var(--point-deep);
+  box-shadow: inset 0 0 0 1px var(--point-deep);
 }
 
 .date-cell.selected {
@@ -1928,9 +1973,10 @@ input:focus-visible {
   font-weight: 700;
 }
 
+/* Today: a yellow circle behind the day number. */
 .calendar-day.today .day-number {
-  background: var(--ink);
-  color: #fff;
+  background: var(--point);
+  color: var(--ink);
 }
 
 .day-events {
@@ -2097,10 +2143,7 @@ input:focus-visible {
 }
 
 .upcoming-item strong {
-  overflow: hidden;
   font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .status-chip {
@@ -2694,7 +2737,10 @@ input:focus-visible {
   background: var(--surface);
   color: inherit;
   text-align: left;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .kpi-card:hover {
@@ -2888,6 +2934,50 @@ input:focus-visible {
   font-size: 12px;
 }
 
+/* Notifications drop down from the bell (from the top bar on phones). */
+.notify-panel {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% - 14px);
+  right: 0;
+  width: 360px;
+  max-height: min(70vh, 520px);
+  overflow-y: auto;
+  padding: 18px 20px 6px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: 0 24px 60px rgba(20, 15, 22, 0.18);
+  animation: notify-drop 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transform-origin: top right;
+}
+
+.notify-head {
+  margin-bottom: 10px;
+}
+
+.notify-head .section-title {
+  font-size: 16px;
+}
+
+@keyframes notify-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notify-panel {
+    animation: none;
+  }
+}
+
 .notification-list {
   display: flex;
   flex-direction: column;
@@ -2988,34 +3078,89 @@ input:focus-visible {
   width: 100%;
 }
 
-.profile-summary {
+/* 내 정보 page: profile banner, activity counts that open their pages,
+   account details and logout. */
+.profile-hero {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 16px;
-  border-radius: 16px;
-  background: var(--point-soft);
-}
-
-.profile-summary > div:last-child {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.profile-summary strong {
-  font-size: 15px;
-}
-
-.profile-summary span {
-  color: var(--muted);
-  font-size: 10px;
+  gap: 18px;
+  padding: 28px 32px;
+  border-radius: var(--radius-lg);
+  background: var(--point-tint);
 }
 
 .avatar.large {
-  width: 48px;
-  height: 48px;
-  font-size: 17px;
+  width: 64px;
+  height: 64px;
+  flex: 0 0 auto;
+  background: var(--surface);
+  font-size: 24px;
+}
+
+.profile-hero > div:last-child {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.profile-role {
+  color: var(--point-strong);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.profile-hero strong {
+  font-size: 22px;
+  letter-spacing: -0.5px;
+}
+
+.profile-hero small {
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.profile-details {
+  margin-top: 16px;
+}
+
+.profile-details dl {
+  margin: 0;
+}
+
+.profile-details dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 2px;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+
+.profile-details dl div:last-child {
+  border-bottom: 0;
+}
+
+.profile-details dt {
+  color: var(--ink-soft);
+}
+
+.profile-details dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+}
+
+.profile-logout {
+  width: 100%;
+  margin-top: 16px;
 }
 
 .auth-form .primary-button {
@@ -3321,19 +3466,17 @@ input:focus-visible {
 }
 
 .roas-row-head strong {
-  overflow: hidden;
   font-size: 11px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
+/* Below its goal the ROAS reads orange; once met, number and bar turn green. */
 .roas-row-head span {
-  color: var(--ink-soft);
+  color: #c2560f;
   font-size: 13px;
   font-weight: 800;
 }
 
-.roas-row-head span.best {
+.roas-row.met .roas-row-head span {
   color: #2f8a52;
 }
 
@@ -3352,7 +3495,12 @@ input:focus-visible {
   background: linear-gradient(90deg, var(--point), var(--point-deep));
 }
 
-/* Break-even (ROAS 100%) marker. */
+.roas-row.met .roas-track i,
+.roas-legend i {
+  background: linear-gradient(90deg, #7fd89a, #2f9b5a);
+}
+
+/* Goal ROAS marker. */
 .roas-track b,
 .roas-legend b {
   width: 2px;
@@ -3386,6 +3534,13 @@ input:focus-visible {
   height: 10px;
 }
 
+.roas-legend i {
+  width: 14px;
+  height: 6px;
+  margin-left: 8px;
+  border-radius: 3px;
+}
+
 .measure-card-head .roas-legend {
   margin: 0;
   font-size: 10px;
@@ -3411,40 +3566,30 @@ input:focus-visible {
   font-size: 16px;
 }
 
+.roas-list.large .roas-row > small {
+  font-size: 11px;
+}
+
 .roas-list.large .roas-track,
 .roas-list.large .roas-track i {
   height: 12px;
   border-radius: 6px;
 }
 
-/* Student group cards: school and field on one line, then the next
-   event, D-day first, under the offer. */
-.group-card .full-match-copy > span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.group-event {
+/* An event day on its own line: D-day badge, then the date (DateLine.tsx). */
+.date-line {
   display: flex;
   align-items: center;
   gap: 6px;
-  min-width: 0;
+  margin: 0 0 6px;
   color: var(--ink-soft);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 650;
   line-height: 16px;
-}
-
-.group-event span {
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
-  word-break: keep-all;
 }
 
-.group-event em {
-  flex: 0 0 auto;
+.date-line em {
   padding: 1px 6px;
   border-radius: 8px;
   background: var(--point-tint);
@@ -3452,6 +3597,162 @@ input:focus-visible {
   font-size: 9px;
   font-style: normal;
   font-weight: 800;
+}
+
+/* 상세 정보 above the proposal button; side by side on narrow screens. */
+.card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.card-actions > .cancel-button {
+  height: 38px;
+}
+
+/* Brand or group detail page: banner, introduction with the offer, the
+   next event (groups), key facts and the proposal button. */
+.detail-hero {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr) 84px;
+  align-items: center;
+  gap: 20px;
+  padding: 24px 28px;
+  border-radius: var(--radius-lg);
+  background: var(--point-tint);
+}
+
+.detail-hero-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.detail-hero-copy > span {
+  color: var(--point-strong);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.detail-hero-copy strong {
+  font-size: 22px;
+  letter-spacing: -0.5px;
+}
+
+.detail-hero .tag-row span {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+/* The introduction spans the page; facts do too when there is no event. */
+.detail-intro,
+.detail-facts:nth-child(2) {
+  grid-column: 1 / -1;
+}
+
+.detail-intro p {
+  margin: 0 0 14px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.detail-offer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--point-line);
+  border-radius: 12px;
+  background: var(--point-soft);
+}
+
+.detail-offer span {
+  color: var(--point-strong);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.detail-offer strong {
+  font-size: 13px;
+}
+
+.detail-event {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detail-event > strong {
+  font-size: 16px;
+}
+
+.detail-event .date-line {
+  margin: 0;
+  font-size: 12px;
+}
+
+.detail-audience {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.detail-audience .icon {
+  stroke: var(--point-deep);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.detail-facts dl {
+  margin: 0;
+}
+
+.detail-facts dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 2px;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+
+.detail-facts dl div:last-child {
+  border-bottom: 0;
+}
+
+.detail-facts dt {
+  flex: 0 0 auto;
+  color: var(--ink-soft);
+}
+
+.detail-facts dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+}
+
+.detail-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.detail-actions > * {
+  min-width: 240px;
 }
 
 /* Received proposals: tabs with counts, then one card per proposal. */
@@ -3823,8 +4124,20 @@ input:focus-visible {
 }
 
 .analytics-roas {
-  color: #2f8a52;
+  color: #c2560f;
   font-weight: 800;
+}
+
+.analytics-roas.met {
+  color: #2f8a52;
+}
+
+.analytics-roas small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
 }
 
 /* Student events a brand agreed to sponsor, on its campaign calendar. */
@@ -3880,11 +4193,15 @@ input:focus-visible {
     height: 70px;
   }
 
-  .full-match-card > .primary-button,
-  .full-match-card > .proposal-button,
-  .full-match-card > .proposal-actions {
+  .full-match-card > .card-actions {
     grid-column: 2 / -1;
+    flex-direction: row;
+    align-items: flex-start;
     justify-self: end;
+  }
+
+  .detail-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -4002,7 +4319,7 @@ input:focus-visible {
   }
 
   .match-card > .proposal-actions,
-  .full-match-card > .proposal-actions {
+  .card-actions .proposal-actions {
     flex-direction: row;
     align-items: center;
     gap: 12px;
@@ -4107,11 +4424,32 @@ input:focus-visible {
     font-size: 15px;
   }
 
-  .full-match-card > .primary-button,
-  .full-match-card > .proposal-button,
-  .full-match-card > .proposal-actions {
+  .full-match-card > .card-actions {
+    display: grid;
     width: 100%;
     grid-column: 1 / -1;
+    grid-template-columns: 1fr 2fr;
+    gap: 8px;
+  }
+
+  .card-actions > .cancel-button {
+    height: 42px;
+  }
+
+  .detail-hero {
+    grid-template-columns: 64px minmax(0, 1fr) 64px;
+    gap: 12px;
+    padding: 20px 18px;
+    border-radius: 22px;
+  }
+
+  .detail-hero-copy strong {
+    font-size: 19px;
+  }
+
+  .detail-actions > * {
+    width: 100%;
+    min-width: 0;
   }
 
   .form-card {
@@ -4305,9 +4643,19 @@ input:focus-visible {
   /* Sits above the floating create button. */
   .toast {
     right: 16px;
-    bottom: 146px;
+    bottom: calc(80px + env(safe-area-inset-bottom));
     left: 16px;
     justify-content: center;
+  }
+
+  .create-fab {
+    transition:
+      bottom 0.3s var(--ease-out),
+      transform 0.18s var(--ease-out);
+  }
+
+  .has-toast .create-fab {
+    bottom: calc(140px + env(safe-area-inset-bottom));
   }
 }
 
@@ -4337,18 +4685,6 @@ input:focus-visible {
 
   .inbox-row-actions .proposal-button {
     flex: 1;
-  }
-
-  /* The event wraps to two lines next to its D-day. */
-  .group-event {
-    align-items: flex-start;
-  }
-
-  .group-event span {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    white-space: normal;
   }
 
   .inbox-hint {
@@ -4429,6 +4765,58 @@ input:focus-visible {
   }
 }
 
+@media (max-width: 720px) {
+  .notify-panel {
+    top: calc(100% + 8px);
+    right: 12px;
+    left: 12px;
+    width: auto;
+    max-height: min(65vh, 480px);
+    border-radius: 18px;
+    transform-origin: top center;
+  }
+
+  .profile-hero {
+    gap: 14px;
+    padding: 22px 20px;
+    border-radius: 22px;
+  }
+
+  .avatar.large {
+    width: 54px;
+    height: 54px;
+    font-size: 20px;
+  }
+
+  .profile-hero strong {
+    font-size: 19px;
+  }
+
+  .profile-stats {
+    gap: 8px;
+  }
+
+  .profile-stats .stat-card {
+    padding: 13px 12px;
+  }
+
+  .profile-stats .stat-top {
+    gap: 4px;
+    word-break: keep-all;
+  }
+}
+
+@media (max-width: 720px) {
+  .view-intro.match-intro {
+    min-height: 0;
+    padding: 22px 22px 24px;
+  }
+
+  .match-intro p {
+    font-size: 21px;
+  }
+}
+
 /* Small phones: give the company info enough width to stay on one line each,
    so the logo tile keeps a near-square shape. */
 @media (max-width: 360px) {
@@ -4450,6 +4838,392 @@ input:focus-visible {
 
   .match-score-ring strong {
     font-size: 14px;
+  }
+}
+
+/* Motion. Pages, lists and popups ease in; buttons give way when pressed
+   and ripple from the press (lib/ripple.ts); bars grow, score rings draw
+   and numbers count up (AnimatedNumber.tsx); the welcome art drifts.
+   With reduced motion everything settles at once (end of this section). */
+:root {
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-pop: cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+}
+
+@keyframes soft-pop {
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+/* Each page change (App.tsx keys the wrapper) and its title. */
+.page-enter {
+  animation: rise-in 0.45s var(--ease-out) backwards;
+}
+
+.page-title,
+.view-intro > div,
+.day-panel-head .section-title {
+  animation: rise-in 0.4s var(--ease-out) backwards;
+}
+
+/* Cards and rows arrive one after another. Lists re-key on tab, month or
+   day changes, so their items arrive again. */
+.stagger > * {
+  animation: rise-in 0.5s var(--ease-out) backwards;
+}
+
+.stagger > :nth-child(2) {
+  animation-delay: 0.05s;
+}
+
+.stagger > :nth-child(3) {
+  animation-delay: 0.1s;
+}
+
+.stagger > :nth-child(4) {
+  animation-delay: 0.15s;
+}
+
+.stagger > :nth-child(5) {
+  animation-delay: 0.2s;
+}
+
+.stagger > :nth-child(6) {
+  animation-delay: 0.25s;
+}
+
+.stagger > :nth-child(7) {
+  animation-delay: 0.3s;
+}
+
+.stagger > :nth-child(n + 8) {
+  animation-delay: 0.35s;
+}
+
+.calendar-grid,
+.date-picker-grid {
+  animation: fade-in 0.35s var(--ease-out) backwards;
+}
+
+/* Find pages: cards slide in from the side of the tab or chip picked. */
+.stagger.slide > * {
+  animation-name: slide-in-forward;
+}
+
+.stagger.slide[data-direction="back"] > * {
+  animation-name: slide-in-back;
+}
+
+@keyframes slide-in-forward {
+  from {
+    opacity: 0;
+    transform: translateX(36px);
+  }
+}
+
+@keyframes slide-in-back {
+  from {
+    opacity: 0;
+    transform: translateX(-36px);
+  }
+}
+
+/* Back and forward (buttons or swipes) just fade the page in; Safari's
+   swipe already slides it. */
+.page-enter.from-history {
+  animation-name: fade-in;
+  animation-duration: 0.25s;
+}
+
+.from-history .stagger > * {
+  animation: none;
+}
+
+/* Buttons sink a little while pressed; large cards sink less. */
+button {
+  transition:
+    transform 0.18s var(--ease-out),
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+button:active:not(:disabled) {
+  transform: scale(0.95);
+  transition-duration: 0.08s;
+}
+
+:is(.stat-card, .kpi-card, .live-card, .pilot-card, .profile, .upcoming-item):active:not(
+    :disabled
+  ),
+.notification-list > button:active {
+  transform: scale(0.98);
+}
+
+.check-row,
+.modal .role-option {
+  transition:
+    transform 0.18s var(--ease-out),
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.check-row:active,
+.modal .role-option:active {
+  transform: scale(0.98);
+}
+
+.detail-button:hover,
+.primary-button:hover:not(:disabled) {
+  box-shadow: 0 8px 20px rgba(234, 166, 27, 0.32);
+}
+
+/* The ripple layer takes the button's shape and sits behind its label. */
+.ripple-layer {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.16;
+  transform: scale(0);
+  animation: ripple 0.6s ease-out forwards;
+}
+
+@keyframes ripple {
+  to {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+/* Picking something gives a small pop: the active menu icon, the chosen
+   day, a ticked box and a proposal's new state. */
+.nav-item.active .icon,
+.mobile-nav button.active .icon {
+  animation: soft-pop 0.4s var(--ease-pop);
+}
+
+.calendar-day.selected,
+.date-cell.selected,
+.check-row.checked .check-box {
+  animation: soft-pop 0.3s var(--ease-pop);
+}
+
+.proposal-button:is(.done, .confirmed, .declined),
+.request-result {
+  animation: pop-in 0.35s var(--ease-pop) backwards;
+}
+
+/* Bars grow to their value and score rings draw themselves. */
+:is(.roas-track i, .measure-track i, .hero-roas-track i, .goal-fill) {
+  animation: grow-width 0.9s var(--ease-out) backwards;
+}
+
+.bar-track span {
+  animation: grow-height 0.9s var(--ease-out) backwards;
+}
+
+.roas-track b,
+.hero-roas-track b {
+  animation: fade-in 0.4s 0.6s backwards;
+}
+
+@keyframes grow-width {
+  from {
+    width: 0;
+  }
+}
+
+@keyframes grow-height {
+  from {
+    height: 0;
+  }
+}
+
+.ring-value {
+  animation: ring-draw 1s var(--ease-out) backwards;
+}
+
+@keyframes ring-draw {
+  from {
+    stroke-dasharray: 0 100;
+  }
+}
+
+/* Popups: dialogs scale in over a fading backdrop (phones slide them up
+   from the bottom); the toast and the + button pop in. */
+.modal-backdrop {
+  animation: fade-in 0.2s ease-out;
+}
+
+.modal {
+  animation: modal-in 0.3s var(--ease-out);
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+}
+
+@media (max-width: 720px) {
+  .modal {
+    animation-name: sheet-up;
+  }
+
+  .create-fab {
+    animation: pop-in 0.35s var(--ease-pop) backwards;
+  }
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+/* Closing: dialogs slide down over a fading backdrop (off the bottom on
+   phones), and the toast sinks away. Presence.tsx keeps them mounted for
+   0.26s. */
+.modal-backdrop.closing {
+  pointer-events: none;
+  animation: fade-out 0.24s ease-in forwards;
+}
+
+.modal.closing {
+  animation: modal-out 0.24s ease-in forwards;
+}
+
+.toast.closing {
+  animation: toast-out 0.24s ease-in forwards;
+}
+
+@media (max-width: 720px) {
+  .modal.closing {
+    animation-name: sheet-down;
+  }
+}
+
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes modal-out {
+  to {
+    opacity: 0;
+    transform: translateY(48px) scale(0.98);
+  }
+}
+
+@keyframes sheet-down {
+  to {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes toast-out {
+  to {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+/* The unread dot breathes, and the welcome art drifts. */
+.notification-dot {
+  animation: dot-pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes dot-pulse {
+  50% {
+    box-shadow: 0 0 0 4px rgba(234, 166, 27, 0.25);
+  }
+}
+
+.art-node {
+  animation: drift 5s ease-in-out infinite;
+}
+
+.group-node {
+  animation-delay: -2.5s;
+}
+
+.art-center {
+  animation: breathe 3.2s ease-in-out infinite;
+}
+
+.spark-dot {
+  animation: twinkle 2.6s ease-in-out infinite;
+}
+
+.dot-two {
+  animation-delay: -0.9s;
+}
+
+.dot-three {
+  animation-delay: -1.7s;
+}
+
+@keyframes drift {
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes breathe {
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+@keyframes twinkle {
+  50% {
+    opacity: 0.35;
+    transform: scale(0.6);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0s !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

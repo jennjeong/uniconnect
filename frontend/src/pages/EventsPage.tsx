@@ -202,7 +202,7 @@ export function EventsPage({
             ))}
           </div>
 
-          <div className="calendar-grid">
+          <div className="calendar-grid" key={toIsoDate(month)}>
             {calendarDays(month).map((day) => {
               const iso = toIsoDate(day)
               const dayEntries = byDate.get(iso) ?? []
@@ -254,10 +254,12 @@ export function EventsPage({
         <aside className="day-panel">
           <div className="day-panel-head">
             <span className="section-kicker dark">SELECTED DAY</span>
-            <p className="section-title">{formatDay(selected)}</p>
+            <p className="section-title" key={selected}>
+              {formatDay(selected)}
+            </p>
           </div>
 
-          <div className="day-event-list">
+          <div className="day-event-list stagger" key={selected}>
             {selectedEntries.length === 0 ? (
               <p className="day-empty">
                 {role === "학생단체" ? "등록된 행사가 없어요." : "등록된 캠페인이 없어요."}
@@ -287,7 +289,7 @@ export function EventsPage({
             <Icon name="plus" size={17} /> 이 날짜에 {noun} 등록
           </button>
 
-          <div className="upcoming">
+          <div className="upcoming stagger">
             <span className="upcoming-title">다가오는 일정</span>
             {upcoming.length === 0 ? (
               <p className="day-empty">예정된 일정이 없어요.</p>

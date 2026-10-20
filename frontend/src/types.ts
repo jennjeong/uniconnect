@@ -27,6 +27,9 @@ export type Match = {
   eventName?: string
   eventDate?: string
   audience?: number
+  // Detail page: a short introduction and key facts.
+  intro?: string
+  facts?: { label: string; value: string }[]
 }
 
 export type EventStatus = "매칭 중" | "집행 예정" | "측정 완료"
@@ -101,6 +104,8 @@ export type Sponsorship = {
   coupons: number
   visits: number
   sales: number
+  // ROAS goal in percent.
+  targetRoas: number
 }
 
 export type Report = {
@@ -136,10 +141,8 @@ export type NavLabel =
   | "성과 분석"
 
 export type ModalName =
-  | "notifications"
   | "report"
   | "qr"
-  | "profile"
   | "login"
   | "signup"
   | "metric-log"
