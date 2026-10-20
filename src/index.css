@@ -5,14 +5,16 @@
 }
 
 :root {
-  /* Point color: mustard, deep and cream from the logo guide.
-     --point-strong is the text-safe shade (6:1 on white, 5:1 on cream). */
-  --point: #dfb04a;
-  --point-deep: #c9962c;
-  --point-strong: #7f5c15;
-  --point-line: #ebd6a3;
-  --point-tint: #f5ecd3;
-  --point-soft: #fcf7e7;
+  /* Point color: a bright, friendly yellow (the logo keeps its guide colors).
+     --point-strong is the text-safe shade (5.4:1 on white, 5:1 on tint);
+     ink text on --point is 10:1. */
+  --point: #faca4b;
+  --point-hover: #f2bb31;
+  --point-deep: #eaa61b;
+  --point-strong: #916016;
+  --point-line: #f6e4ac;
+  --point-tint: #fff7d9;
+  --point-soft: #fffbec;
   --ink: #161517;
   --ink-soft: #57545a;
   --muted: #95919a;
@@ -56,7 +58,7 @@ button {
 
 button:focus-visible,
 input:focus-visible {
-  outline: 3px solid rgba(201, 150, 44, 0.45);
+  outline: 3px solid rgba(234, 166, 27, 0.5);
   outline-offset: 2px;
 }
 
@@ -183,14 +185,15 @@ input:focus-visible {
   flex-direction: column;
   margin-top: auto;
   padding: 17px;
+  border: 1px solid var(--point-line);
   border-radius: var(--radius-md);
-  background: var(--dark);
-  color: white;
+  background: var(--point-tint);
+  color: var(--ink);
 }
 
 .pilot-kicker {
   margin-bottom: 8px;
-  color: #d0c9d3;
+  color: var(--point-strong);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 1.2px;
@@ -202,16 +205,16 @@ input:focus-visible {
 
 .pilot-card > span:not(.pilot-kicker) {
   margin-top: 3px;
-  color: #a9a2ac;
+  color: var(--ink-soft);
   font-size: 11px;
 }
 
 .pilot-progress {
-  height: 4px;
+  height: 5px;
   margin: 15px 0 7px;
   overflow: hidden;
-  border-radius: 2px;
-  background: #48434a;
+  border-radius: 3px;
+  background: var(--point-line);
 }
 
 .pilot-progress span {
@@ -219,11 +222,11 @@ input:focus-visible {
   width: 68%;
   height: 100%;
   border-radius: inherit;
-  background: var(--point);
+  background: var(--point-deep);
 }
 
 .pilot-card small {
-  color: #aaa4ad;
+  color: var(--ink-soft);
   font-size: 10px;
 }
 
@@ -361,8 +364,8 @@ input:focus-visible {
   padding: 0 18px;
   border: 0;
   border-radius: 18px;
-  background: var(--dark);
-  color: white;
+  background: var(--point);
+  color: var(--ink);
   font-size: 12px;
   font-weight: 700;
 }
@@ -398,10 +401,15 @@ input:focus-visible {
   padding: 0 20px;
   border: 0;
   border-radius: 22px;
-  background: var(--dark);
-  color: white;
+  background: var(--point);
+  color: var(--ink);
+  box-shadow: 0 4px 12px rgba(234, 166, 27, 0.25);
   font-size: 12px;
   font-weight: 700;
+}
+
+.primary-button:hover {
+  background: var(--point-hover);
 }
 
 .welcome-panel {
@@ -516,7 +524,7 @@ input:focus-visible {
 
 .orbit {
   position: absolute;
-  border: 1px dashed rgba(127, 92, 21, 0.22);
+  border: 1px dashed rgba(145, 96, 22, 0.2);
   border-radius: 50%;
 }
 
@@ -667,7 +675,7 @@ input:focus-visible {
 .workflow-step.current .step-icon {
   background: var(--point-tint);
   color: var(--point-strong);
-  box-shadow: 0 0 0 5px rgba(223, 176, 74, 0.16);
+  box-shadow: 0 0 0 5px rgba(250, 202, 75, 0.25);
 }
 
 .workflow-step > div:nth-child(2) {
@@ -1295,8 +1303,7 @@ input:focus-visible {
 
 .full-match-card {
   display: grid;
-  min-height: 132px;
-  grid-template-columns: 28px 70px 1fr 80px 138px;
+  grid-template-columns: 74px 1fr 84px 138px;
   align-items: center;
   gap: 20px;
   padding: 20px 24px;
@@ -1305,15 +1312,11 @@ input:focus-visible {
   background: var(--surface);
 }
 
-.rank {
-  color: #bbb5be;
-  font-size: 10px;
-  font-weight: 750;
-}
-
+/* Square tile as tall as the company info (74px = the line heights below),
+   so its top meets the category line and its bottom meets the tags. */
 .match-logo.large {
-  width: 64px;
-  height: 64px;
+  width: 74px;
+  height: 74px;
   border-radius: 18px;
 }
 
@@ -1324,25 +1327,28 @@ input:focus-visible {
 
 .full-match-copy > span {
   color: var(--muted);
-  font-size: 9px;
+  font-size: 10px;
+  line-height: 13px;
 }
 
 .full-match-copy > strong {
-  margin-top: 4px;
+  margin-top: 2px;
   font-size: 15px;
+  line-height: 19px;
 }
 
 .full-match-copy p {
-  margin: 5px 0 9px;
+  margin: 2px 0 5px;
   color: var(--ink-soft);
   font-size: 11px;
+  line-height: 15px;
 }
 
 .match-score-ring {
   position: relative;
   display: flex;
-  width: 66px;
-  height: 66px;
+  width: 74px;
+  height: 74px;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -1359,33 +1365,29 @@ input:focus-visible {
 
 .match-score-ring circle {
   fill: none;
-  stroke-width: 3.4;
+  stroke-width: 2.6;
 }
 
 .ring-track {
   stroke: var(--point-tint);
 }
 
+/* Stroke color comes from the score band (scoreTone in App.tsx). */
 .ring-value {
-  stroke: var(--point-deep);
   stroke-linecap: round;
 }
 
 .match-score-ring strong {
   position: relative;
-  font-size: 16px;
+  font-size: 13px;
   line-height: 1;
-}
-
-.match-score-ring strong small {
-  font-size: 10px;
 }
 
 .match-score-ring span {
   position: relative;
-  margin-top: 3px;
+  margin-top: 2px;
   color: var(--muted);
-  font-size: 9px;
+  font-size: 8px;
 }
 
 .view-heading {
@@ -1486,20 +1488,6 @@ input:focus-visible {
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 1.8;
-}
-
-.measurement-intro {
-  background: var(--dark);
-  color: white;
-}
-
-.measurement-intro small {
-  color: #b8b0bb;
-}
-
-.measurement-intro .primary-button {
-  background: white;
-  color: var(--dark);
 }
 
 .live-metrics {
@@ -1801,7 +1789,7 @@ input:focus-visible {
 }
 
 .role-option:has(input:focus-visible) {
-  outline: 3px solid rgba(201, 150, 44, 0.45);
+  outline: 3px solid rgba(234, 166, 27, 0.5);
   outline-offset: 2px;
 }
 
@@ -1871,8 +1859,8 @@ input:focus-visible {
   padding: 0 14px;
   border: 0;
   border-radius: 11px;
-  background: var(--dark);
-  color: white;
+  background: var(--point);
+  color: var(--ink);
   font-size: 11px;
   font-weight: 700;
 }
@@ -2003,13 +1991,18 @@ input:focus-visible {
   }
 
   .full-match-card {
-    grid-template-columns: 24px 60px 1fr 70px;
+    grid-template-columns: 74px 1fr 74px;
+  }
+
+  .match-score-ring {
+    width: 70px;
+    height: 70px;
   }
 
   .full-match-card > .primary-button,
   .full-match-card > .proposal-button,
   .full-match-card > .proposal-actions {
-    grid-column: 3 / -1;
+    grid-column: 2 / -1;
     justify-self: end;
   }
 }
@@ -2200,30 +2193,22 @@ input:focus-visible {
 
   /* Logo, company info and score ring share one row; the button sits below. */
   .full-match-card {
-    position: relative;
-    grid-template-columns: 56px minmax(0, 1fr) 58px;
+    grid-template-columns: 74px minmax(0, 1fr) 64px;
     gap: 12px;
-    padding: 26px 16px 18px;
-  }
-
-  .full-match-card .rank {
-    position: absolute;
-    top: 9px;
-    left: 16px;
+    padding: 18px 16px;
   }
 
   .full-match-copy .tag-row {
     flex-wrap: wrap;
   }
 
-  .match-logo.large {
-    width: 56px;
-    height: 56px;
+  .match-score-ring {
+    width: 64px;
+    height: 64px;
   }
 
-  .match-score-ring {
-    width: 58px;
-    height: 58px;
+  .match-score-ring strong {
+    font-size: 12px;
   }
 
   .full-match-card > .primary-button,
@@ -2324,9 +2309,9 @@ input:focus-visible {
     place-items: center;
     border: 0;
     border-radius: 50%;
-    background: var(--dark);
-    color: var(--point);
-    box-shadow: 0 10px 24px rgba(20, 15, 22, 0.24);
+    background: var(--point);
+    color: var(--ink);
+    box-shadow: 0 10px 24px rgba(234, 166, 27, 0.35);
   }
 
   .create-fab .icon {
@@ -2341,5 +2326,29 @@ input:focus-visible {
     bottom: 146px;
     left: 16px;
     justify-content: center;
+  }
+}
+
+/* Small phones: give the company info enough width to stay on one line each,
+   so the logo tile keeps a near-square shape. */
+@media (max-width: 360px) {
+  .full-match-card {
+    grid-template-columns: 64px minmax(0, 1fr) 56px;
+    gap: 10px;
+    padding: 16px 12px;
+  }
+
+  .match-logo.large {
+    width: 64px;
+    height: 64px;
+  }
+
+  .match-score-ring {
+    width: 56px;
+    height: 56px;
+  }
+
+  .match-score-ring strong {
+    font-size: 11px;
   }
 }

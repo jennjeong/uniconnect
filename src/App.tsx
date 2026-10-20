@@ -176,12 +176,12 @@ const industryMarks: Record<
   Industry,
   { icon: IconName; background: string; color: string }
 > = {
-  cafe: { icon: "coffee", background: "#f8d8a6", color: "#8a5a2b" },
-  photo: { icon: "camera", background: "#d8e8ff", color: "#3d5f99" },
-  wellness: { icon: "leaf", background: "#d9f0dd", color: "#3f7d55" },
-  performance: { icon: "music", background: "#ffe1ec", color: "#a5476a" },
-  content: { icon: "play", background: "#e6e1f7", color: "#5a4a99" },
-  sports: { icon: "trophy", background: "#d8eef0", color: "#2f7a80" },
+  cafe: { icon: "coffee", background: "#ffe3b5", color: "#a8661c" },
+  photo: { icon: "camera", background: "#dfeaff", color: "#3f6fc4" },
+  wellness: { icon: "leaf", background: "#dcf5e3", color: "#33905a" },
+  performance: { icon: "music", background: "#ffe3ee", color: "#c24a77" },
+  content: { icon: "play", background: "#ebe6ff", color: "#6650c4" },
+  sports: { icon: "trophy", background: "#d9f3f4", color: "#1f8a91" },
 }
 
 type Match = {
@@ -276,6 +276,15 @@ function BrandMark({ match, large = false }: { match: Match; large?: boolean }) 
 const ringRadius = 16
 const ringCircumference = 2 * Math.PI * ringRadius
 
+// Ring color by score band, so neighboring scores read differently.
+function scoreTone(score: number) {
+  if (score >= 95) return "#3eab5e"
+  if (score >= 90) return "#83b83f"
+  if (score >= 85) return "#ebaa1f"
+  if (score >= 80) return "#ef852e"
+  return "#e05b4a"
+}
+
 function ScoreRing({ score }: { score: number }) {
   return (
     <div
@@ -290,13 +299,11 @@ function ScoreRing({ score }: { score: number }) {
           cx="18"
           cy="18"
           r={ringRadius}
+          stroke={scoreTone(score)}
           strokeDasharray={`${(score / 100) * ringCircumference} ${ringCircumference}`}
         />
       </svg>
-      <strong>
-        {score}
-        <small>%</small>
-      </strong>
+      <strong>{score}%</strong>
       <span>일치</span>
     </div>
   )
@@ -1180,10 +1187,9 @@ function App() {
               </span>
             </div>
             <div className="full-match-grid">
-              {activeMatches.map((match, index) => {
+              {activeMatches.map((match) => {
                 return (
                   <article className="full-match-card" key={match.name}>
-                    <div className="rank">0{index + 1}</div>
                     <BrandMark match={match} large />
                     <div className="full-match-copy">
                       <span>{match.category}</span>
