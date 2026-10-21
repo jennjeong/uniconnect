@@ -107,6 +107,16 @@ export const api = {
       `/conversations/${encodeURIComponent(id)}/messages`,
       { method: "POST", body: { text } },
     ),
+  editMessage: (id: string, messageId: string, text: string) =>
+    request<{ conversation: Conversation }>(
+      `/conversations/${encodeURIComponent(id)}/messages/${encodeURIComponent(messageId)}`,
+      { method: "PUT", body: { text } },
+    ),
+  deleteMessage: (id: string, messageId: string) =>
+    request<{ conversation: Conversation }>(
+      `/conversations/${encodeURIComponent(id)}/messages/${encodeURIComponent(messageId)}`,
+      { method: "DELETE" },
+    ),
 
   metrics: () => request<{ metrics: Metrics }>("/metrics"),
   metricLog: (kind?: MetricKind) =>

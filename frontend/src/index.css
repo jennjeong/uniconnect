@@ -5109,9 +5109,9 @@ button.nav-pill:hover {
   margin: 0;
 }
 
-/* A conversation (ChatPage.tsx): bubbles, own ones on the right, and the
-   message box held at the bottom of the screen. The page fills the screen
-   so even a short thread keeps the box at the bottom. */
+/* A conversation (ChatPage.tsx): bubbles, own ones on the right with their
+   read marks, and the message box held at the bottom of the screen. The
+   page fills the screen so even a short thread keeps the box at the bottom. */
 .main-content:has(.chat-view) {
   padding-bottom: 16px;
 }
@@ -5188,9 +5188,127 @@ button.nav-pill:hover {
   color: #fff;
 }
 
-.chat-message time {
+/* Under each bubble: edited, read and the time, and on own messages a ⋯
+   button that opens edit and delete. */
+.chat-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   color: var(--muted);
   font-size: 12px;
+}
+
+.chat-read.read {
+  color: var(--point-strong);
+  font-weight: var(--weight-label);
+}
+
+.chat-more {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+}
+
+.chat-more:hover,
+.chat-more[aria-expanded="true"] {
+  background: var(--fill);
+  color: var(--ink);
+}
+
+/* With a mouse, the ⋯ shows on the message being pointed at. */
+@media (hover: hover) {
+  .chat-message:not(:hover) .chat-more:not(:focus-visible, [aria-expanded="true"]) {
+    opacity: 0;
+  }
+}
+
+/* A deleted message keeps its place, outlined and emptied, on both sides. */
+.chat-message.deleted .chat-bubble,
+.chat-message.mine.deleted .chat-bubble {
+  background: transparent;
+  color: var(--muted);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+
+/* The message being edited in the box below. */
+.chat-message.editing .chat-bubble {
+  box-shadow: 0 0 0 3px var(--point-line);
+}
+
+/* Scrolled into view clear of the message box below. */
+.chat-actions {
+  display: flex;
+  max-width: min(100%, 420px);
+  scroll-margin-bottom: 120px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow:
+    var(--ring),
+    0 14px 32px -18px rgba(19, 48, 111, 0.45);
+  animation: rise-in 0.2s var(--ease-out);
+}
+
+.chat-actions > span {
+  padding: 0 6px;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.chat-action {
+  display: inline-flex;
+  height: 32px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.chat-action:hover {
+  background: var(--fill-strong);
+}
+
+.chat-action.danger {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+/* Over the box while a message is being edited. */
+.chat-editing {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  padding: 9px 14px;
+  border-radius: 16px;
+  background: var(--point-tint);
+  color: var(--point-strong);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.chat-editing span {
+  min-width: 0;
+  flex: 1;
+}
+
+.chat-editing .subtle-link {
+  color: var(--point-strong);
 }
 
 .chat-start {

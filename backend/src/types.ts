@@ -177,7 +177,16 @@ export type Report = {
 // One side of a conversation: the student group or the brand.
 export type ChatSide = "group" | "brand"
 
-export type ChatMessage = { id: string; from: ChatSide; text: string; at: string }
+export type ChatMessage = {
+  id: string
+  from: ChatSide
+  // Empty once deleted.
+  text: string
+  at: string
+  // When the sender edited or deleted it; both sides are shown which.
+  editedAt?: string
+  deletedAt?: string
+}
 
 // Messages between a student group and a brand, by their listing ids.
 export type Conversation = {

@@ -26,6 +26,8 @@ export type IconName =
   | "arrowUpRight"
   | "mark"
   | "link"
+  | "more"
+  | "trash"
 
 const icons: Record<IconName, ReactNode> = {
   home: (
@@ -137,6 +139,22 @@ const icons: Record<IconName, ReactNode> = {
     <>
       <path d="M10 14a4.5 4.5 0 0 0 6.4 0l3.2-3.2a4.5 4.5 0 0 0-6.4-6.4l-1.1 1.1" />
       <path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3.2 3.2a4.5 4.5 0 0 0 6.4 6.4l1.1-1.1" />
+    </>
+  ),
+  // Three dots, for a menu of actions.
+  more: (
+    <>
+      <circle cx="5" cy="12" r="1.2" />
+      <circle cx="12" cy="12" r="1.2" />
+      <circle cx="19" cy="12" r="1.2" />
+    </>
+  ),
+  trash: (
+    <>
+      <path d="M4 7h16" />
+      <path d="M9 7V4h6v3" />
+      <path d="m6 7 1 12.2a2 2 0 0 0 2 1.8h6a2 2 0 0 0 2-1.8L18 7" />
+      <path d="M10 11v6M14 11v6" />
     </>
   ),
   // A won sign in a coin.

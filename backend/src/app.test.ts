@@ -509,6 +509,47 @@ test("student groups and brands message each other", async () => {
   assert.deepEqual((await call("GET", "/conversations")).data.conversations, [])
 })
 
+test("senders see when messages are read, and both sides see edits and deletions", async () => {
+  const student = await login("학생단체")
+  const brand = await login("브랜드")
+  const forStudent = (await call("GET", "/conversations", undefined, student)).data.conversations
+  const { id } = forStudent.find((item: { partner: { id: string } }) => item.partner.id === "afternoon-coffee")
+
+  // Unread until the brand opens the conversation; the read mark is the sender's alone.
+  const sent = await call("POST", `/conversations/${id}/messages`, { text: "내일 오후 3시에 통화 가능할까요?" }, student)
+  const message = sent.data.conversation.messages.at(-1)
+  assert.equal(message.read, false)
+  const forBrand = (await call("GET", `/conversations/${id}`, undefined, brand)).data.conversation
+  assert.equal(forBrand.messages.at(-1).read, undefined)
+  const reread = (await call("GET", `/conversations/${id}`, undefined, student)).data.conversation
+  assert.equal(reread.messages.at(-1).read, true)
+
+  // Only the sender edits; both sides see the new text marked as edited.
+  const route = `/conversations/${id}/messages/${message.id}`
+  assert.equal((await call("PUT", route, { text: "제가 고칠게요" }, brand)).status, 403)
+  assert.equal((await call("PUT", route, { text: " " }, student)).status, 400)
+  const edited = await call("PUT", route, { text: "내일 오후 4시에 통화 가능할까요?" }, student)
+  assert.equal(edited.status, 200)
+  assert.ok(edited.data.conversation.messages.at(-1).editedAt)
+  const brandSees = (await call("GET", `/conversations/${id}`, undefined, brand)).data.conversation.messages.at(-1)
+  assert.equal(brandSees.text, "내일 오후 4시에 통화 가능할까요?")
+  assert.ok(brandSees.editedAt)
+
+  // Only the sender deletes; the text is gone for both and stays deleted.
+  assert.equal((await call("DELETE", route, undefined, brand)).status, 403)
+  const deleted = await call("DELETE", route, undefined, student)
+  assert.equal(deleted.status, 200)
+  assert.equal(deleted.data.conversation.messages.at(-1).text, "")
+  assert.ok(deleted.data.conversation.messages.at(-1).deletedAt)
+  assert.equal((await call("PUT", route, { text: "다시 보낼게요" }, student)).status, 409)
+  const brandList = (await call("GET", "/conversations", undefined, brand)).data.conversations
+  const last = brandList.find((item: { id: string }) => item.id === id).lastMessage
+  assert.deepEqual([last.text, last.deleted], ["", true])
+  const brandThread = (await call("GET", `/conversations/${id}`, undefined, brand)).data.conversation
+  assert.ok(brandThread.messages.at(-1).deletedAt)
+  assert.equal((await call("DELETE", `/conversations/${id}/messages/nope`, undefined, student)).status, 404)
+})
+
 test("older data files gain the new collections and calendar dates", async () => {
   const { upgradeDatabase } = await import("./store.js")
   const old = {

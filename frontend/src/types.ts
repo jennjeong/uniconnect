@@ -120,7 +120,18 @@ export type Sponsorship = {
   targetRoas: number
 }
 
-export type ChatMessage = { id: string; text: string; at: string; mine: boolean }
+export type ChatMessage = {
+  id: string
+  // Empty once deleted.
+  text: string
+  at: string
+  mine: boolean
+  // Own messages only: whether the partner has read it.
+  read?: boolean
+  // When the sender edited or deleted it; both sides are shown which.
+  editedAt?: string
+  deletedAt?: string
+}
 
 // A conversation with a brand (for student groups) or a group (for brands).
 export type Conversation = {
@@ -134,7 +145,7 @@ export type Conversation = {
     // Messages only reach partners who have an account.
     hasAccount: boolean
   }
-  lastMessage: { text: string; at: string; mine: boolean } | null
+  lastMessage: { text: string; at: string; mine: boolean; deleted?: boolean } | null
   unread: number
   messages?: ChatMessage[]
 }

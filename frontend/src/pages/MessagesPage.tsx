@@ -54,9 +54,13 @@ export function MessagesPage({
                   <small>{conversation.partner.school ?? conversation.partner.category}</small>
                 </span>
                 <span className="chat-row-preview">
-                  {conversation.lastMessage
-                    ? `${conversation.lastMessage.mine ? "나: " : ""}${conversation.lastMessage.text}`
-                    : "아직 메시지가 없어요."}
+                  {!conversation.lastMessage
+                    ? "아직 메시지가 없어요."
+                    : conversation.lastMessage.deleted
+                      ? conversation.lastMessage.mine
+                        ? "메시지를 삭제했어요."
+                        : "삭제된 메시지예요."
+                      : `${conversation.lastMessage.mine ? "나: " : ""}${conversation.lastMessage.text}`}
                 </span>
               </span>
               <span className="chat-row-meta">
