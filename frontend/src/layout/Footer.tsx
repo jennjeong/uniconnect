@@ -78,6 +78,7 @@ export function Footer({
         <div className="footer-cta">
           <span className="eyebrow light">Let&apos;s connect</span>
           <RevealTitle
+            accent={1}
             as="h2"
             className="footer-title"
             lines={students ? ["함께 만들", "협찬이 있나요?"] : ["학생들의 현장과", "이어 볼까요?"]}

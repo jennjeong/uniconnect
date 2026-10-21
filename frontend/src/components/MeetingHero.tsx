@@ -23,13 +23,15 @@ export function MeetingHero({
   secondary,
 }: {
   eyebrow: string
-  // The headline's lines, short enough to stay on the dark side.
+  // The headline's lines, short enough to stay on the dark side; the
+  // second is in the point blue.
   lines: string[]
   stats: HeroStat[]
   insight: string
   detail: string
   primary: { label: string; onClick: () => void }
-  secondary: { label: string; onClick: () => void }
+  // A text link beside the main action, when the page has one.
+  secondary?: { label: string; onClick: () => void }
 }) {
   const sectionRef = useRef<HTMLElement>(null)
   const clipRef = useRef<HTMLDivElement>(null)
@@ -42,7 +44,7 @@ export function MeetingHero({
         <LayersGradient shader={ANTIPODE} />
         <div className="hero-overlay" ref={overlayRef}>
           <span className="hero-eyebrow">{eyebrow}</span>
-          <RevealTitle className="hero-title" lines={lines} ramp />
+          <RevealTitle accent={1} className="hero-title" lines={lines} />
           <div className="hero-band">
             <ul className="hero-stats">
               {stats.map((stat) => (
@@ -61,9 +63,11 @@ export function MeetingHero({
                 <Pill onClick={primary.onClick} variant="white">
                   {primary.label}
                 </Pill>
-                <button className="underline-link" onClick={secondary.onClick} type="button">
-                  {secondary.label}
-                </button>
+                {secondary && (
+                  <button className="underline-link" onClick={secondary.onClick} type="button">
+                    {secondary.label}
+                  </button>
+                )}
               </div>
             </div>
           </div>

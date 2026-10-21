@@ -23,6 +23,10 @@
   --point-soft: #f2f6fd;
   --on-point: #ffffff;
   --point-gradient: linear-gradient(140deg, #2c5bc4 0%, #1b3f8f 48%, #13306f 100%);
+  /* Accent blues for the words and numbers a block turns on: brighter on
+     white (5.6:1), luminous on deep blue. */
+  --point-bright: #2f63d9;
+  --point-glow: #8fb6ff;
   /* Silver: the chrome's color, and fills that read as brushed metal. */
   --silver: #c1c8d6;
   --silver-gradient: linear-gradient(180deg, #f8f9fb 0%, #e9ecf2 100%);
@@ -46,9 +50,11 @@
   /* Deep blue surfaces set this to dark, so the header logo floating over
      them switches to its light version (Header.tsx). */
   --surface-tone: light;
-  /* Goals: met in the point's deep blue, not yet in silver. */
+  /* Goals: met in the point's deep blue, not yet in silver; the goal line
+     itself in amber, which reads over both. */
   --goal-met: linear-gradient(90deg, #3d6ad0, #1b3f8f);
   --goal-short: linear-gradient(90deg, #d3d9e3, #aab5c7);
+  --goal-mark: #ec9a22;
   /* Status colors, dark enough for small text on white and on their tints. */
   --green: #1a7340;
   --green-soft: #e5f4ea;
@@ -67,14 +73,15 @@
   /* Stride's card corners (1.5rem). */
   --radius-lg: 24px;
   --shadow: 0 24px 60px rgba(19, 48, 111, 0.12);
-  /* Pretendard's named weights, one job each: Thin for the largest display
-     (the chain's title on wide screens), ExtraLight for display headings and
-     large numbers, Medium for copy, SemiBold for labels, buttons and card
-     titles, Bold for emphasis, ExtraBold for badges and counts, Black for
-     the wordmark. Regular and Light are left out on purpose. The variable
-     font (main.tsx) draws each of them from one set of files. */
-  --weight-thin: 100;
-  --weight-display: 200;
+  /* Pretendard's named weights, one job each: Bold for display headings,
+     large numbers and emphasis, so what carries a page stays solid;
+     ExtraLight only for decorative large text (the chain's aside); Medium
+     for copy; SemiBold for labels, buttons and card titles; ExtraBold for
+     badges and counts; Black for the wordmark. Thin, Light and Regular are
+     left out. The variable font (main.tsx) draws each of them from one set
+     of files. */
+  --weight-light: 200;
+  --weight-display: 700;
   --weight-body: 500;
   --weight-label: 600;
   --weight-strong: 700;
@@ -525,7 +532,7 @@ button.nav-pill:hover {
 }
 
 /* The full-screen menu (layout/NavMenu.tsx): brushed silver with a blue
-   haze, the pages in large ExtraLight type arriving one after another,
+   haze, the pages in large SemiBold type arriving one after another,
    the account links under them, and the time with register at the bottom. */
 .nav-menu {
   position: fixed;
@@ -629,7 +636,7 @@ button.nav-pill:hover {
   background: none;
   color: var(--ink-soft);
   font-size: clamp(38px, 5.4vw, 68px);
-  font-weight: var(--weight-display);
+  font-weight: var(--weight-label);
   letter-spacing: -0.03em;
   line-height: 1.12;
   text-align: left;
@@ -1115,7 +1122,7 @@ button.nav-pill:hover {
 }
 
 /* Page heading (components/PageIntro.tsx), after Stride's section heads:
-   an eyebrow, a large ExtraLight title and the page's actions on the right. */
+   an eyebrow, a large Bold title and the page's actions on the right. */
 .page-view {
   padding-bottom: 40px;
 }
@@ -1193,7 +1200,7 @@ button.nav-pill:hover {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  color: var(--ink-soft);
+  color: var(--point);
   font-size: 13px;
   font-weight: var(--weight-label);
   letter-spacing: 0.02em;
@@ -1600,7 +1607,7 @@ button.nav-pill:hover {
 .ring-track,
 .ring-value {
   fill: none;
-  stroke-width: 3.6;
+  stroke-width: 3;
 }
 
 .ring-track {
@@ -1615,7 +1622,7 @@ button.nav-pill:hover {
 .match-score-ring strong {
   position: relative;
   color: var(--ring-text);
-  font-size: 18px;
+  font-size: 16px;
   font-weight: var(--weight-strong);
   letter-spacing: -0.02em;
   line-height: 1;
@@ -1623,13 +1630,13 @@ button.nav-pill:hover {
 
 .match-score-ring strong small {
   margin-left: 1px;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: var(--weight-strong);
 }
 
 .match-score-ring span {
   position: relative;
-  margin-top: 3px;
+  margin-top: 2px;
   color: var(--muted);
   font-size: 10px;
   font-weight: var(--weight-label);
@@ -1756,7 +1763,7 @@ button.nav-pill:hover {
   box-shadow: inset 0 0 0 1px var(--point-line);
 }
 
-/* Section heads inside pages: the eyebrow over a large ExtraLight title. */
+/* Section heads inside pages: the eyebrow over a large Bold title. */
 .section-head {
   display: flex;
   flex-direction: column;
@@ -1826,7 +1833,7 @@ button.nav-pill:hover {
   flex-direction: column;
   align-items: flex-start;
   margin-inline: auto;
-  padding: calc(var(--header-h) + 24px) 0 44px;
+  padding: calc(var(--header-h) + 8px) 0 44px;
   transform-origin: 50% 80%;
 }
 
@@ -1857,7 +1864,7 @@ button.nav-pill:hover {
   margin: 48px 0 40px;
   font-size: clamp(48px, 6vw, 96px);
   font-weight: var(--weight-display);
-  letter-spacing: -0.045em;
+  letter-spacing: -0.035em;
   line-height: 1.04;
 }
 
@@ -1880,16 +1887,19 @@ button.nav-pill:hover {
   list-style: none;
 }
 
+/* Each label centered under its own number. */
 .hero-stats li {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 8px;
+  text-align: center;
 }
 
 .hero-stats strong {
   font-size: clamp(38px, 3.8vw, 60px);
   font-weight: var(--weight-display);
-  letter-spacing: -0.045em;
+  letter-spacing: -0.03em;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
@@ -1984,7 +1994,7 @@ button.nav-pill:hover {
   color: var(--point);
 }
 
-/* Stride's About statement (RevealStatement): a large ExtraLight line whose
+/* Stride's About statement (RevealStatement): a large Bold line whose
    second half fades to silver gray, with round icon chips set into the
    words that grow in as the cascade reaches them. */
 .about-statement-section {
@@ -2065,10 +2075,17 @@ button.nav-pill:hover {
     box-shadow 0.3s ease;
 }
 
+/* Numbers shrink with their card (16cqi), so whole amounts such as
+   "1,480,000원" stay on one line. */
+.bento-card,
+.bento-inner {
+  container-type: inline-size;
+}
+
 .bento-card strong {
-  font-size: clamp(44px, 4.4vw, 72px);
+  font-size: min(clamp(44px, 4.4vw, 72px), 16cqi);
   font-weight: var(--weight-display);
-  letter-spacing: -0.05em;
+  letter-spacing: -0.03em;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
@@ -2131,6 +2148,11 @@ button.nav-pill:hover {
 .bento-inner .bento-label,
 .bento-inner .bento-note {
   color: var(--muted);
+}
+
+/* Numbers on white and silver read in the point blue. */
+:is(.bento-inner, .bento-silver, .activity-tile.silver, .kpi-card) strong {
+  color: var(--point);
 }
 
 .bento-silver {
@@ -2324,11 +2346,19 @@ button.nav-pill:hover {
   gap: 10px;
 }
 
+/* The score ring sits level with the name and offer beside it. */
 .work-title {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
+}
+
+.work-name {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .work-title h3 {
@@ -2354,7 +2384,7 @@ button.nav-pill:hover {
   color: var(--point);
 }
 
-.work-bottom > p {
+.work-name p {
   max-width: 30rem;
   margin: 0;
   color: var(--ink-soft);
@@ -2554,15 +2584,8 @@ button.nav-pill:hover {
   margin: 0 0 auto;
   font-size: clamp(56px, 9vw, 148px);
   font-weight: var(--weight-display);
-  letter-spacing: -0.055em;
+  letter-spacing: -0.045em;
   line-height: 0.98;
-}
-
-/* At its largest the title goes down to Thin. */
-@media (min-width: 1101px) {
-  .chain-title {
-    font-weight: var(--weight-thin);
-  }
 }
 
 .chain-bottom {
@@ -2586,7 +2609,7 @@ button.nav-pill:hover {
 
 .chain-aside {
   font-size: clamp(22px, 2.6vw, 36px);
-  font-weight: var(--weight-display);
+  font-weight: var(--weight-light);
   letter-spacing: -0.03em;
   line-height: 1.2;
   text-align: right;
@@ -2631,12 +2654,16 @@ button.nav-pill:hover {
   grid-column: span 3;
 }
 
+/* Trimmed to the digits, so the space above the number matches the space
+   under the status at the bottom. */
 .journey-index {
-  color: var(--muted);
+  color: var(--point);
   font-size: 13px;
   font-weight: var(--weight-badge);
   letter-spacing: 0.06em;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
+  text-box: trim-both cap alphabetic;
 }
 
 .journey-card strong {
@@ -2867,7 +2894,7 @@ button.nav-pill:hover {
 .report-highlight > div:first-child > strong {
   font-size: clamp(56px, 6vw, 96px);
   font-weight: var(--weight-display);
-  letter-spacing: -0.05em;
+  letter-spacing: -0.035em;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
@@ -3095,7 +3122,7 @@ button.nav-pill:hover {
 .about-statement {
   margin: 0;
   font-size: clamp(24px, 2.5vw, 36px);
-  font-weight: var(--weight-display);
+  font-weight: var(--weight-body);
   letter-spacing: -0.03em;
   line-height: 1.45;
 }
@@ -3222,7 +3249,7 @@ button.nav-pill:hover {
   color: var(--point);
   box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.14);
   font-size: 40px;
-  font-weight: var(--weight-display);
+  font-weight: var(--weight-strong);
 }
 
 .profile-logout {
@@ -3265,7 +3292,7 @@ button.nav-pill:hover {
 .activity-tile strong {
   font-size: clamp(44px, 4.4vw, 64px);
   font-weight: var(--weight-display);
-  letter-spacing: -0.05em;
+  letter-spacing: -0.03em;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
@@ -3339,7 +3366,7 @@ button.nav-pill:hover {
 
 .service-index {
   min-width: 2.5rem;
-  color: var(--muted);
+  color: var(--point);
   font-size: 14px;
   font-weight: var(--weight-badge);
   font-variant-numeric: tabular-nums;
@@ -3498,7 +3525,7 @@ button.nav-pill:hover {
 .power-roas-head strong {
   font-size: 52px;
   font-weight: var(--weight-display);
-  letter-spacing: -0.05em;
+  letter-spacing: -0.03em;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
@@ -3510,7 +3537,7 @@ button.nav-pill:hover {
   background: rgba(255, 255, 255, 0.16);
 }
 
-/* The result in silver, the goal as a deep blue tick edged in white. */
+/* The result in silver, the goal as an amber tick edged in white. */
 .power-track i {
   position: absolute;
   inset: 0 auto 0 0;
@@ -3522,9 +3549,9 @@ button.nav-pill:hover {
   position: absolute;
   top: -4px;
   bottom: -4px;
-  width: 2px;
-  border-radius: 1px;
-  background: var(--point-deep);
+  width: 3px;
+  border-radius: 1.5px;
+  background: var(--goal-mark);
   box-shadow: 0 0 0 1.5px #fff;
 }
 
@@ -3576,7 +3603,7 @@ button.nav-pill:hover {
 .power-stats strong {
   font-size: clamp(36px, 3.8vw, 60px);
   font-weight: var(--weight-display);
-  letter-spacing: -0.05em;
+  letter-spacing: -0.03em;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
@@ -3653,7 +3680,7 @@ button.nav-pill:hover {
   margin-top: auto;
   font-size: 44px;
   font-weight: var(--weight-display);
-  letter-spacing: -0.045em;
+  letter-spacing: -0.03em;
   line-height: 1.05;
 }
 
@@ -4812,8 +4839,10 @@ button.nav-pill:hover {
   position: absolute;
   top: -6px;
   bottom: -6px;
-  width: 2px;
-  background: var(--ink);
+  width: 3px;
+  border-radius: 1.5px;
+  background: var(--goal-mark);
+  box-shadow: 0 0 0 1.5px #fff;
 }
 
 /* "목표 30%" chip above the marker, clear of the bar. */
@@ -5715,6 +5744,12 @@ button.nav-pill:hover {
   border-top: 1px solid var(--line);
 }
 
+/* On the dashboard the list opens its panel, with no rule above it. */
+.results-grid .roas-list {
+  padding-top: 0;
+  border-top: 0;
+}
+
 .roas-row-head {
   display: flex;
   align-items: baseline;
@@ -5758,19 +5793,19 @@ button.nav-pill:hover {
   background: var(--goal-met);
 }
 
-/* Goal ROAS marker. */
+/* Goal ROAS marker, edged in white where it crosses a bar. */
 .roas-track b,
 .roas-legend b {
-  width: 2px;
-  border-radius: 1px;
-  background: var(--ink);
-  opacity: 0.6;
+  width: 3px;
+  border-radius: 1.5px;
+  background: var(--goal-mark);
 }
 
 .roas-track b {
   position: absolute;
-  top: -3px;
-  bottom: -3px;
+  top: -4px;
+  bottom: -4px;
+  box-shadow: 0 0 0 1.5px #fff;
 }
 
 .roas-row small {
@@ -6540,11 +6575,11 @@ button.nav-pill:hover {
 
   .hero-overlay {
     min-height: inherit;
-    padding: calc(var(--header-h) + 20px) 0 24px;
+    padding: calc(var(--header-h) + 4px) 0 24px;
   }
 
   .hero-title {
-    margin: 120px 0 36px;
+    margin: 136px 0 36px;
     font-size: 46px;
   }
 
@@ -6617,7 +6652,7 @@ button.nav-pill:hover {
   }
 
   .bento-card strong {
-    font-size: 44px;
+    font-size: min(44px, 16cqi);
   }
 
   .works-section {
@@ -6652,7 +6687,7 @@ button.nav-pill:hover {
   }
 
   .match-score-ring strong {
-    font-size: 16px;
+    font-size: 15px;
   }
 
   .chain-wrap {
@@ -7152,13 +7187,57 @@ button.nav-pill:hover {
   }
 
   .match-score-ring {
-    width: 56px;
-    height: 56px;
+    width: 62px;
+    height: 62px;
   }
 
   .match-score-ring strong {
     font-size: 14px;
   }
+
+  .match-score-ring span {
+    font-size: 9px;
+  }
+}
+
+/* Swiping between screens (lib/swipe.ts): a round arrow follows the swipe
+   in from the left for back and from the right for forward, and fills deep
+   blue once letting go will move. */
+.swipe-hint {
+  --progress: 0;
+  position: fixed;
+  z-index: 100;
+  top: 50%;
+  left: 16px;
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: var(--ring), 0 12px 32px rgba(19, 48, 111, 0.18);
+  color: var(--ink);
+  opacity: min(1, calc(var(--progress) * 2.5));
+  pointer-events: none;
+  transform: translate(calc((var(--progress) - 1) * 72px), -50%) rotate(180deg);
+  transition:
+    opacity 0.15s,
+    transform 0.15s var(--ease-out),
+    background-color 0.2s,
+    color 0.2s,
+    scale 0.25s var(--ease-pop);
+}
+
+.swipe-hint[data-direction="forward"] {
+  right: 16px;
+  left: auto;
+  transform: translate(calc((1 - var(--progress)) * 72px), -50%);
+}
+
+.swipe-hint.ready {
+  background: var(--point);
+  color: var(--on-point);
+  scale: 1.08;
 }
 
 /* Motion. Pages, lists and popups ease in; headings cascade in letter by
@@ -7266,11 +7345,34 @@ button.nav-pill:hover {
   }
 }
 
-/* Back and forward (buttons or swipes) just fade the page in; Safari's
-   swipe already slides it. */
+/* Back and forward just fade the page in, as Safari's own swipe already
+   slides it; after a swipe of this app's own (lib/swipe.ts), the page
+   arrives from the side it was swiped from. */
 .page-enter.from-history {
   animation-name: fade-in;
   animation-duration: 0.25s;
+}
+
+@keyframes slide-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-56px);
+  }
+}
+
+@keyframes slide-from-right {
+  from {
+    opacity: 0;
+    transform: translateX(56px);
+  }
+}
+
+[data-swiped="back"] .page-enter.from-history {
+  animation: slide-from-left 0.4s var(--ease-out) backwards;
+}
+
+[data-swiped="forward"] .page-enter.from-history {
+  animation: slide-from-right 0.4s var(--ease-out) backwards;
 }
 
 .from-history .stagger > * {
@@ -7494,9 +7596,8 @@ button:active:not(:disabled) {
 }
 
 /* Stride's heading cascade (RevealText.tsx): each letter (or word) rises
-   16px out of an 8px blur, starting at its share of the 1.4s run (--s),
-   to its own opacity (--a, for the hero's fading lines). Words never break
-   inside, and lines set by hand stay lines. */
+   16px out of an 8px blur, starting at its share of the 1.4s run (--s).
+   Words never break inside, and lines set by hand stay lines. */
 .reveal-line {
   display: block;
 }
@@ -7519,9 +7620,19 @@ button:active:not(:disabled) {
 }
 
 .is-shown .reveal-letter {
-  opacity: var(--a, 1);
+  opacity: 1;
   filter: none;
   transform: none;
+}
+
+/* A heading's accented line: the brighter blue on white, the luminous one
+   on deep blue. */
+.reveal-line.accent {
+  color: var(--point-bright);
+}
+
+:is(.hero-clip, .chain-stage, .footer-stage, .banner-hero, .cta-panel, .power-panel) .reveal-line.accent {
+  color: var(--point-glow);
 }
 
 /* The hero's own heading runs a little longer (1.6s). */

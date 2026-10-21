@@ -40,22 +40,23 @@ const startOf = (i: number, total: number) => (total > 1 ? (i / (total - 1)) * S
 
 // Stride's heading reveal: letters rise 16px out of an 8px blur and fade in
 // one after another across the heading, words never breaking inside. Give
-// `lines` to set the line breaks yourself; `ramp` fades alternate lines
-// between 55% and full, as on Stride's hero (the first line brightening
-// toward its end). Headings with a digit stay still (Stride's rule), and so
-// does everything with reduced motion. Screen readers get the plain text.
+// `lines` to set the line breaks yourself, and `accent` to color one of
+// them in the point blue. Headings with a digit stay still (Stride's rule),
+// and so does everything with reduced motion. Screen readers get the plain
+// text.
 export function RevealTitle({
   as = "h1",
   className,
   lines,
   children,
-  ramp = false,
+  accent,
 }: {
   as?: Tag
   className?: string
   lines?: string[]
   children?: string
-  ramp?: boolean
+  // Index of the line in the point blue.
+  accent?: number
 }) {
   const { ref, shown } = useShown()
   const Tag = as
@@ -68,7 +69,7 @@ export function RevealTitle({
     return (
       <Tag className={classes}>
         {rows.map((row, index) => (
-          <span className="reveal-line" key={index}>
+          <span className={index === accent ? "reveal-line accent" : "reveal-line"} key={index}>
             {row}
           </span>
         ))}
@@ -82,31 +83,22 @@ export function RevealTitle({
     <Tag className={classes} ref={ref as never}>
       <span className="sr-only">{text}</span>
       <span aria-hidden="true">
-        {rows.map((row, line) => {
-          const letters = [...row.replace(/\s/g, "")].length
-          let position = 0
-          return (
-            <span className="reveal-line" key={line}>
-              {row.split(" ").map((word, w) => (
-                <span key={w}>
-                  {w > 0 && " "}
-                  <span className="reveal-word">
-                    {[...word].map((letter, l) => {
-                      const along = letters > 1 ? position++ / (letters - 1) : 0
-                      const alpha = !ramp ? 1 : line % 2 === 0 ? 0.55 + along * 0.45 : 1 - along * 0.45
-                      const style = { "--s": startOf(index++, total), "--a": alpha } as CSSProperties
-                      return (
-                        <span className="reveal-letter" key={l} style={style}>
-                          {letter}
-                        </span>
-                      )
-                    })}
-                  </span>
+        {rows.map((row, line) => (
+          <span className={line === accent ? "reveal-line accent" : "reveal-line"} key={line}>
+            {row.split(" ").map((word, w) => (
+              <span key={w}>
+                {w > 0 && " "}
+                <span className="reveal-word">
+                  {[...word].map((letter, l) => (
+                    <span className="reveal-letter" key={l} style={{ "--s": startOf(index++, total) } as CSSProperties}>
+                      {letter}
+                    </span>
+                  ))}
                 </span>
-              ))}
-            </span>
-          )
-        })}
+              </span>
+            ))}
+          </span>
+        ))}
       </span>
     </Tag>
   )

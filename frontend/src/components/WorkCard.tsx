@@ -7,9 +7,9 @@ import { ScoreRing } from "./ScoreRing"
 
 // A brand or student group as one of Stride's silver cards from
 // getlayers.ai: what it is at the top with a round badge that opens its
-// page, its mark large on a white glow in the middle, then the name, the
-// offer, tags and the card's actions along the bottom. The card lifts a
-// little on hover.
+// page, its mark large on a white glow in the middle, then the name and the
+// offer with the score ring centered beside them, tags and the card's
+// actions along the bottom. The card lifts a little on hover.
 export function WorkCard({
   match,
   meta,
@@ -52,14 +52,16 @@ export function WorkCard({
 
       <div className="work-bottom">
         <div className="work-title">
-          <h3>
-            <button onClick={onOpenDetail} type="button">
-              {match.name}
-            </button>
-          </h3>
+          <div className="work-name">
+            <h3>
+              <button onClick={onOpenDetail} type="button">
+                {match.name}
+              </button>
+            </h3>
+            <p>{match.offer}</p>
+          </div>
           <ScoreRing score={match.score} />
         </div>
-        <p>{match.offer}</p>
         <div className="work-tags">
           {tags ??
             match.tags.map((tag) => (

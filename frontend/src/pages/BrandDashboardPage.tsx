@@ -12,7 +12,7 @@ import { StatsBento } from "../components/StatsBento"
 import { WorkCard } from "../components/WorkCard"
 import { dDayLabel, nextEvent, semesterLabel, shortDay } from "../lib/date"
 import { formatWon } from "../lib/kpis"
-import { compactWon, roasMet, roasOf, sponsorshipTotals } from "../lib/sponsorships"
+import { fullWon, roasMet, roasOf, sponsorshipTotals } from "../lib/sponsorships"
 import type { Match, NavLabel, SponsorRequest, Sponsorship } from "../types"
 
 const pad = (value: number) => String(value).padStart(2, "0")
@@ -186,7 +186,7 @@ export function BrandDashboardPage({
         stats={[
           {
             label: "누적 집행액",
-            value: compactWon(totals.spend),
+            value: fullWon(totals.spend),
             note: `학생단체와 함께한 협찬 ${sponsorships.length}건이에요.`,
             onClick: () => onNavigate("성과 분석"),
           },

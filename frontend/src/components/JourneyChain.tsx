@@ -45,7 +45,7 @@ export function JourneyChain({
         <ChromeScene anchor={wrapRef} kind="chain" mode="pinned" scrollSpin />
         <div className="chain-overlay">
           <span className="eyebrow light">Sponsorship flow</span>
-          <RevealTitle as="h2" className="chain-title" lines={["끊기지 않는", "협찬의 고리"]} ramp />
+          <RevealTitle accent={1} as="h2" className="chain-title" lines={["끊기지 않는", "협찬의 고리"]} />
           <div className="chain-bottom">
             <p>{intro}</p>
             <p aria-hidden="true" className="chain-aside">

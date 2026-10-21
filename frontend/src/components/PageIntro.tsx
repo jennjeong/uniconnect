@@ -4,7 +4,7 @@ import { Icon } from "./Icon"
 import { RevealTitle } from "./RevealText"
 
 // The top of a page, after Stride's section headings: an eyebrow, a large
-// ExtraLight title whose letters rise into place, a line of description, and the
+// Bold title whose letters rise into place, a line of description, and the
 // page's own actions at the right. Pages opened from another one get a back
 // button over the eyebrow.
 export function PageIntro({

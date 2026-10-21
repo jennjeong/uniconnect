@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react"
 
 const durationMs = 700
 
-// Counts the number in a value such as "₩1,480K", "219%" or "1,240명" up
+// Counts the number in a value such as "1,480,000원", "219%" or "1,240명" up
 // from 0 when it appears, and from the old number when it changes. Text
 // without a number shows as is.
 export function AnimatedNumber({ value }: { value: string }) {

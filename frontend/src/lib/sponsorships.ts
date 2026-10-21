@@ -20,6 +20,5 @@ export function sponsorshipTotals(sponsorships: Sponsorship[]) {
   return { spend, sales, coupons: sum("coupons"), visits: sum("visits"), roas: percent(sales, spend) }
 }
 
-// "₩1,480K", for numbers in small cards.
-export const compactWon = (value: number) =>
-  `₩${Math.round(value / 1000).toLocaleString("ko-KR")}K`
+// The whole amount, "1,480,000원", for the large numbers on dashboard cards.
+export const fullWon = (value: number) => `${value.toLocaleString("ko-KR")}원`

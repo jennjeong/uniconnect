@@ -23,6 +23,7 @@ import { brandNotifications, studentNotifications } from "./lib/notifications"
 import { installReveal } from "./lib/reveal"
 import { installRipple } from "./lib/ripple"
 import { readView, roleOfPage, viewPath, type HistoryEntry, type View } from "./lib/route"
+import { installSwipeNavigation, noteHistoryEnd } from "./lib/swipe"
 import { GoalModal } from "./modals/GoalModal"
 import { LoginModal } from "./modals/LoginModal"
 import { MetricLogModal } from "./modals/MetricLogModal"
@@ -132,10 +133,11 @@ function App() {
   const pendingRequests = requests.filter((request) => request.status === "검토 중")
   const confirmedRequests = requests.filter((request) => request.status === "수락")
 
-  // Buttons ripple from where they are pressed, and marked blocks rise into
-  // view as the page scrolls to them.
+  // Buttons ripple from where they are pressed, marked blocks rise into view
+  // as the page scrolls to them, and swiping sideways moves between views.
   useEffect(() => installRipple(), [])
   useEffect(() => installReveal(), [])
+  useEffect(() => installSwipeNavigation(), [])
 
   // Every view has a history entry, so the back and forward buttons and
   // swipe gestures move between views. Scroll positions are kept per entry.
@@ -143,6 +145,7 @@ function App() {
     history.scrollRestoration = "manual"
     if (!(history.state as HistoryEntry | null)?.view) {
       history.replaceState({ view: initialView, index: 0 } satisfies HistoryEntry, "")
+      noteHistoryEnd(0)
     }
     const showEntry = (event: PopStateEvent) => {
       const entry = event.state as HistoryEntry | null
@@ -294,6 +297,7 @@ function App() {
     } else {
       history.replaceState({ view, index, scrollY: window.scrollY } satisfies HistoryEntry, "")
       history.pushState({ view: next, index: index + 1 } satisfies HistoryEntry, "", viewPath(next))
+      noteHistoryEnd(index + 1)
     }
     setView(next)
     setFromHistory(false)

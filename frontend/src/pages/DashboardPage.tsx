@@ -11,7 +11,7 @@ import { StatsBento } from "../components/StatsBento"
 import { WorkCard } from "../components/WorkCard"
 import { formatFullDate, fromIsoDate, nextEvent, semesterLabel } from "../lib/date"
 import { percent } from "../lib/format"
-import { compactWon } from "../lib/sponsorships"
+import { fullWon } from "../lib/sponsorships"
 import type { EventItem, Match, Metrics, NavLabel, Report, RequestStatus } from "../types"
 
 const pad = (value: number) => String(value).padStart(2, "0")
@@ -117,7 +117,6 @@ export function DashboardPage({
         insight={`다가오는 행사와 잘 맞는 브랜드 ${matches.length}곳을 찾았어요.`}
         detail="학생단체와 브랜드가 맞닿는 곳에서 협찬이 시작돼요. 일치율이 높은 브랜드부터 제안해 보세요."
         primary={{ label: "추천 매칭 확인하기", onClick: () => onNavigate("추천 매칭") }}
-        secondary={{ label: "내 행사 보기", onClick: () => onNavigate("내 행사") }}
       />
 
       <LogoMarquee
@@ -163,7 +162,7 @@ export function DashboardPage({
           },
           {
             label: "예상 협찬 가치",
-            value: report ? compactWon(report.sponsorValue) : "-",
+            value: report ? fullWon(report.sponsorValue) : "-",
             note: "현물 환산을 포함한 금액이에요.",
             onClick: () => onNavigate("리포트"),
           },

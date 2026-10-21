@@ -2,7 +2,7 @@ import type { CSSProperties } from "react"
 
 import { scoreColors } from "../lib/score"
 
-const radius = 15
+const radius = 15.5
 const circumference = 2 * Math.PI * radius
 
 // Match score as a ring filling clockwise from 12 o'clock in the score's
@@ -20,7 +20,7 @@ export function ScoreRing({ score }: { score: number }) {
       style={{ "--ring-color": colors.ring, "--ring-text": colors.text } as CSSProperties}
     >
       <svg aria-hidden="true" viewBox="0 0 36 36">
-        <circle className="ring-fill" cx="18" cy="18" r="12.4" />
+        <circle className="ring-fill" cx="18" cy="18" r="13.5" />
         <circle className="ring-track" cx="18" cy="18" r={radius} />
         <circle
           className="ring-value"
