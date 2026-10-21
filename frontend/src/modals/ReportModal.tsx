@@ -15,7 +15,7 @@ export function ReportModal({
   onDownload: () => void
 }) {
   return (
-    <Modal name="report" kicker="PERFORMANCE" title="성과 상세" onClose={onClose}>
+    <Modal name="report" kicker="Performance" title="성과 상세" onClose={onClose}>
       <div className="report-detail">
         <div className="report-detail-score">
           <span>추정 ROAS</span>

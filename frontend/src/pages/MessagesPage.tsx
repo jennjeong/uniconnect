@@ -1,5 +1,5 @@
 import { BrandMark } from "../components/BrandMark"
-import { Icon } from "../components/Icon"
+import { PageIntro } from "../components/PageIntro"
 import { formatDateTime } from "../lib/date"
 import type { Conversation } from "../types"
 
@@ -20,15 +20,12 @@ export function MessagesPage({
 }) {
   return (
     <section className="page-view messages-view">
-      <div className="create-head">
-        <button aria-label="뒤로" className="back-button" onClick={onBack} type="button">
-          <Icon name="chevron" size={18} />
-        </button>
-        <div>
-          <span className="section-kicker dark">MESSAGES</span>
-          <p className="section-title">메시지</p>
-        </div>
-      </div>
+      <PageIntro
+        onBack={onBack}
+        eyebrow="Messages"
+        title="메시지"
+        description="협찬 상대와 나눈 대화를 최근 순서로 모았어요."
+      />
 
       {!loggedIn ? (
         <div className="day-empty messages-empty">

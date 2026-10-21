@@ -5,8 +5,9 @@ import { percent } from "../lib/format"
 import { achievement, formatKpi, formatWon, kpiGap, reportKpis, roasSummary } from "../lib/kpis"
 import type { MetricEntry, Metrics, Report } from "../types"
 
-// Colors of the sponsorship value parts (cash, products, services).
-const valueColors = ["#faca4b", "#ff9b52", "#5aaeff"]
+// Colors of the sponsorship value parts (cash, products, services): deep
+// blue, a lighter blue and silver.
+const valueColors = ["#1b3f8f", "#5b86e0", "#b9c2d2"]
 
 function PageHeader({ author }: { author: string }) {
   return (

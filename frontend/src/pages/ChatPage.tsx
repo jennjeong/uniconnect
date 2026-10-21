@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type KeyboardEvent } from "react"
 
 import { api, errorMessage } from "../api"
 import { Icon } from "../components/Icon"
+import { PageIntro } from "../components/PageIntro"
 import { formatDay, toIsoDate } from "../lib/date"
 import type { Conversation } from "../types"
 
@@ -92,20 +93,19 @@ export function ChatPage({
 
   return (
     <section className="page-view chat-view">
-      <div className="create-head chat-head">
-        <button aria-label="뒤로" className="back-button" onClick={onBack} type="button">
-          <Icon name="chevron" size={18} />
-        </button>
-        <div>
-          <span className="section-kicker dark">{partner?.school ?? partner?.category ?? "CHAT"}</span>
-          <p className="section-title">{partner?.name ?? "대화"}</p>
-        </div>
-        {partner && onOpenPartner && (
-          <button className="detail-button" onClick={() => onOpenPartner(partner.id)} type="button">
-            상세 정보
-          </button>
-        )}
-      </div>
+      <PageIntro
+        onBack={onBack}
+        eyebrow={partner?.school ?? partner?.category ?? "Chat"}
+        title={partner?.name ?? "대화"}
+        actions={
+          partner &&
+          onOpenPartner && (
+            <button className="detail-button" onClick={() => onOpenPartner(partner.id)} type="button">
+              상세 정보 <Icon name="arrowUpRight" size={15} />
+            </button>
+          )
+        }
+      />
 
       {partner && !partner.hasAccount && (
         <p className="chat-note">

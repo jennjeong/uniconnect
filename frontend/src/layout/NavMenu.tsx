@@ -1,0 +1,159 @@
+import { useContext, useEffect, useRef, type CSSProperties } from "react"
+
+import logo from "../assets/brand/uniconnect_horizontal.svg"
+import { Icon } from "../components/Icon"
+import { ClosingContext } from "../components/Presence"
+import { navItems } from "../data/navigation"
+import { createLabel, roles } from "../data/roles"
+import { useClock } from "../hooks/useClock"
+import type { Account, NavLabel, Role } from "../types"
+
+// The full-screen menu behind Menu: a silver panel with the role's pages in
+// large light type, numbered and arriving one after another, the account
+// links under them, and the time with the register action at the bottom.
+// Escape or 닫기 closes it; the page behind doesn't scroll while it is open.
+export function NavMenu({
+  role,
+  activeNav,
+  account,
+  badges,
+  unreadMessages,
+  onNavigate,
+  onSwitchRole,
+  onCreate,
+  onOpenMessages,
+  onOpenProfile,
+  onLogin,
+  onSignup,
+  onClose,
+}: {
+  role: Role
+  activeNav: NavLabel
+  account: Account | null
+  badges: Partial<Record<NavLabel, number>>
+  unreadMessages: number
+  onNavigate: (label: NavLabel) => void
+  onSwitchRole: (role: Role) => void
+  onCreate: () => void
+  onOpenMessages: () => void
+  onOpenProfile: () => void
+  onLogin: () => void
+  onSignup: () => void
+  onClose: () => void
+}) {
+  const closing = useContext(ClosingContext)
+  const closeRef = useRef<HTMLButtonElement>(null)
+  const now = useClock()
+
+  // Focus moves into the menu and back to where it was when the menu goes,
+  // unless a link opened something that took the focus (a login form).
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null
+    closeRef.current?.focus()
+    const root = document.documentElement
+    root.classList.add("scroll-locked")
+    return () => {
+      root.classList.remove("scroll-locked")
+      if (!document.activeElement || document.activeElement === document.body) previous?.focus()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (closing) return
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose()
+    }
+    window.addEventListener("keydown", closeOnEscape)
+    return () => window.removeEventListener("keydown", closeOnEscape)
+  }, [closing, onClose])
+
+  // Each link closes the menu first, then does its job.
+  const pick = (action: () => void) => () => {
+    onClose()
+    action()
+  }
+
+  const time = now.toLocaleTimeString("ko-KR", { hour: "numeric", minute: "2-digit" })
+  const date = now.toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "long" })
+
+  return (
+    <div
+      aria-label="전체 메뉴"
+      aria-modal="true"
+      className={closing ? "nav-menu closing" : "nav-menu"}
+      id="site-menu"
+      role="dialog"
+    >
+      <div className="nav-menu-top">
+        <img alt="uniconnect" height={29} src={logo} width={124} />
+        <button className="nav-menu-close" onClick={onClose} ref={closeRef} type="button">
+          <Icon name="close" size={14} />
+          닫기
+        </button>
+      </div>
+
+      <nav aria-label="전체 메뉴 목록" className="nav-menu-body">
+        <ul className="nav-menu-list">
+          {navItems[role].map((item, index) => (
+            <li key={item.label} style={{ "--i": index } as CSSProperties}>
+              <button
+                aria-current={activeNav === item.label ? "page" : undefined}
+                className={activeNav === item.label ? "nav-menu-item active" : "nav-menu-item"}
+                onClick={pick(() => onNavigate(item.label))}
+                type="button"
+              >
+                <small>{String(index + 1).padStart(2, "0")}</small>
+                <span>{item.label}</span>
+                {(badges[item.label] ?? 0) > 0 && <em>{badges[item.label]}</em>}
+              </button>
+            </li>
+          ))}
+        </ul>
+
+        <div className="nav-menu-extra" style={{ "--i": navItems[role].length } as CSSProperties}>
+          {account ? (
+            <>
+              <button onClick={pick(onOpenMessages)} type="button">
+                메시지{unreadMessages > 0 && <em>{unreadMessages}</em>}
+              </button>
+              <button onClick={pick(onOpenProfile)} type="button">
+                내 정보
+              </button>
+            </>
+          ) : (
+            <>
+              <button onClick={pick(onLogin)} type="button">
+                로그인
+              </button>
+              <button onClick={pick(onSignup)} type="button">
+                회원가입
+              </button>
+              <span className="nav-menu-roles" aria-label="둘러볼 화면">
+                {roles.map((item) => (
+                  <button
+                    aria-pressed={role === item}
+                    className={role === item ? "active" : undefined}
+                    key={item}
+                    onClick={pick(() => onSwitchRole(item))}
+                    type="button"
+                  >
+                    {item} 화면
+                  </button>
+                ))}
+              </span>
+            </>
+          )}
+        </div>
+      </nav>
+
+      <div className="nav-menu-bottom">
+        <span>
+          지금 — <time dateTime={now.toISOString()}>{time}</time> · {date}
+        </span>
+        <button onClick={pick(onCreate)} type="button">
+          {createLabel(role)} →
+        </button>
+      </div>
+    </div>
+  )
+}

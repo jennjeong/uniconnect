@@ -37,7 +37,7 @@ export function MetricLogModal({
   return (
     <Modal
       name="metric-log"
-      kicker="PARTICIPATION LOG"
+      kicker="Participation log"
       title={kind ? `${metricInfo[kind].label} 참여 내역` : "전체 참여 내역"}
       onClose={onClose}
     >

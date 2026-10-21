@@ -133,7 +133,7 @@ export function SignupModal({
   }
 
   return (
-    <Modal name="signup" kicker="JOIN UNICONNECT" title="회원가입" onClose={onClose}>
+    <Modal banner name="signup" kicker="Join uniconnect" title="회원가입" onClose={onClose}>
       <form
         className="auth-form"
         noValidate

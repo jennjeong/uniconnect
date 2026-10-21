@@ -9,18 +9,18 @@ import {
   type EventDraft,
   type ProposalState,
 } from "./api"
-import { Icon } from "./components/Icon"
+import { Loader } from "./components/Loader"
 import { Presence } from "./components/Presence"
 import { Toast } from "./components/Toast"
 import { pageFor } from "./data/navigation"
-import { createLabel } from "./data/roles"
 import { useNotice } from "./hooks/useNotice"
-import { MobileNav } from "./layout/MobileNav"
-import { Sidebar } from "./layout/Sidebar"
-import { Topbar } from "./layout/Topbar"
+import { Footer } from "./layout/Footer"
+import { Header } from "./layout/Header"
+import { NavMenu } from "./layout/NavMenu"
 import { todayIso } from "./lib/date"
 import { reportKpis, type KpiKey } from "./lib/kpis"
 import { brandNotifications, studentNotifications } from "./lib/notifications"
+import { installReveal } from "./lib/reveal"
 import { installRipple } from "./lib/ripple"
 import { readView, roleOfPage, viewPath, type HistoryEntry, type View } from "./lib/route"
 import { GoalModal } from "./modals/GoalModal"
@@ -105,6 +105,8 @@ function App() {
   const [notificationsRead, setNotificationsRead] = useState(false)
   // The notifications panel under the bell.
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  // The full-screen menu (the Menu button in the header).
+  const [menuOpen, setMenuOpen] = useState(false)
   // Where to scroll once a view from the history has rendered.
   const restoreScroll = useRef<number | null>(null)
   // When matches and events were last loaded, shown on the dashboard.
@@ -130,8 +132,10 @@ function App() {
   const pendingRequests = requests.filter((request) => request.status === "검토 중")
   const confirmedRequests = requests.filter((request) => request.status === "수락")
 
-  // Buttons ripple from where they are pressed.
+  // Buttons ripple from where they are pressed, and marked blocks rise into
+  // view as the page scrolls to them.
   useEffect(() => installRipple(), [])
+  useEffect(() => installReveal(), [])
 
   // Every view has a history entry, so the back and forward buttons and
   // swipe gestures move between views. Scroll positions are kept per entry.
@@ -321,8 +325,14 @@ function App() {
 
   const openDetail = (match: Match) => go({ page, detail: match.id })
 
+  // The dashboard has no address for a detail page of its own, so its cards
+  // open the detail over the catalog page; back returns to the dashboard.
+  const openCatalogDetail = (match: Match) =>
+    go({ page: students ? "추천 매칭" : "단체 찾기", detail: match.id })
+
   const closeModal = useCallback(() => setActiveModal(null), [])
   const closeNotifications = useCallback(() => setNotificationsOpen(false), [])
+  const closeMenu = useCallback(() => setMenuOpen(false), [])
 
   const openAuth = (modal: "login" | "signup", nextRole: Role = role) => {
     setAuthRole(nextRole)
@@ -710,6 +720,7 @@ function App() {
       default:
         return students ? (
           <DashboardPage
+            accountName={account?.name}
             matches={matches}
             brands={brands}
             events={events}
@@ -719,18 +730,22 @@ function App() {
             report={report}
             updatedAt={updatedAt}
             onNavigate={navigate}
+            onOpenDetail={openCatalogDetail}
             onPropose={propose}
             onCancelProposal={cancelProposal}
             onOpenReport={() => setActiveModal("report")}
           />
         ) : (
           <BrandDashboardPage
+            accountName={account?.name}
             matches={matches}
+            groups={groups}
             requests={requests}
             sponsorships={sponsorships}
             proposals={proposals}
             updatedAt={updatedAt}
             onNavigate={navigate}
+            onOpenDetail={openCatalogDetail}
             onAccept={(request) => answerRequest(request, "accept")}
             onPropose={propose}
             onCancelProposal={cancelProposal}
@@ -739,59 +754,56 @@ function App() {
     }
   }
 
+  const badges: Partial<Record<NavLabel, number>> = students
+    ? { "추천 매칭": matches.length }
+    : { "받은 제안": pendingRequests.length }
+
   return (
-    // While a toast shows, phones lift the + button above it.
-    <div className={notice ? "app-shell has-toast" : "app-shell"}>
-      <Sidebar
+    <div className="app-shell">
+      {/* A link (not a fragment, which would add a history entry) to the page body. */}
+      <a
+        className="skip-link"
+        href="#main"
+        onClick={(event) => {
+          event.preventDefault()
+          document.getElementById("main")?.focus()
+        }}
+      >
+        본문으로 건너뛰기
+      </a>
+      <Loader />
+
+      <Header
         role={role}
-        account={account}
         activeNav={page}
-        badges={
-          students ? { "추천 매칭": matches.length } : { "받은 제안": pendingRequests.length }
-        }
+        account={account}
+        authReady={authReady}
+        badges={badges}
         events={schedule}
+        hasUnread={!notificationsRead}
+        notifications={notifications}
+        notificationsOpen={notificationsOpen}
+        menuOpen={menuOpen}
+        unreadMessages={unreadMessages}
         onNavigate={navigate}
         onSwitchRole={switchRole}
         onCreate={() => openCreate()}
         onOpenEvent={openEventsOn}
-        onOpenAccount={() => (account ? openProfile() : openAuth("login"))}
+        onOpenMessages={openMessages}
+        onToggleNotifications={() => {
+          setNotificationsOpen((open) => !open)
+          setNotificationsRead(true)
+        }}
+        onCloseNotifications={closeNotifications}
+        onOpenProfile={openProfile}
+        onLogin={() => openAuth("login")}
+        onOpenMenu={() => {
+          setNotificationsOpen(false)
+          setMenuOpen(true)
+        }}
       />
 
-      <main className="main-content">
-        <Topbar
-          title={
-            creating !== null
-              ? createLabel(role)
-              : profileOpen
-                ? view.profile === "edit"
-                  ? "소개 편집"
-                  : "내 정보"
-                : chatOpen
-                  ? (conversations.find((item) => item.id === view.chat)?.partner.name ?? "메시지")
-                  : view.messages
-                    ? "메시지"
-                    : detailMatch
-                      ? detailMatch.name
-                      : undefined
-          }
-          activeNav={page}
-          account={account}
-          authReady={authReady}
-          hasUnread={!notificationsRead}
-          notifications={notifications}
-          notificationsOpen={notificationsOpen}
-          unreadMessages={unreadMessages}
-          onNavigate={navigate}
-          onOpenMessages={openMessages}
-          onToggleNotifications={() => {
-            setNotificationsOpen((open) => !open)
-            setNotificationsRead(true)
-          }}
-          onCloseNotifications={closeNotifications}
-          onOpenProfile={openProfile}
-          onLogin={() => openAuth("login")}
-        />
-
+      <main className="main-content" id="main" tabIndex={-1}>
         {/* A new key on every page change replays the page's entrance. A
             detail page covers its list, which stays mounted (keeping its
             tab and scroll) and shows again on the way back. */}
@@ -831,18 +843,40 @@ function App() {
         )}
       </main>
 
-      {creating === null && !profileOpen && !chatOpen && !view.messages && !detailMatch && (
-        <button
-          className="create-fab"
-          aria-label={createLabel(role)}
-          onClick={() => openCreate()}
-          type="button"
-        >
-          <Icon name="plus" size={24} />
-        </button>
+      {/* A conversation keeps its message box at the bottom of the screen. */}
+      {!chatOpen && (
+        <Footer
+          role={role}
+          account={account}
+          onNavigate={navigate}
+          onSwitchRole={switchRole}
+          onCreate={() => openCreate()}
+          onOpenMessages={openMessages}
+          onOpenProfile={openProfile}
+          onEditProfile={() => go({ page, profile: "edit" })}
+          onLogin={() => openAuth("login")}
+          onSignup={() => openAuth("signup")}
+          onLogout={logout}
+        />
       )}
 
-      <MobileNav role={role} activeNav={page} onNavigate={navigate} />
+      <Presence show={menuOpen}>
+        <NavMenu
+          role={role}
+          activeNav={page}
+          account={account}
+          badges={badges}
+          unreadMessages={unreadMessages}
+          onNavigate={navigate}
+          onSwitchRole={switchRole}
+          onCreate={() => openCreate()}
+          onOpenMessages={openMessages}
+          onOpenProfile={openProfile}
+          onLogin={() => openAuth("login")}
+          onSignup={() => openAuth("signup")}
+          onClose={closeMenu}
+        />
+      </Presence>
 
       {/* Each popup stays on screen for its closing animation. */}
       <Presence show={activeModal === "metric-log"}>

@@ -2,6 +2,7 @@ import { useState } from "react"
 
 import { BrandMark } from "../components/BrandMark"
 import { Icon } from "../components/Icon"
+import { PageIntro } from "../components/PageIntro"
 import { TabBar } from "../components/TabBar"
 import { dDayLabel, formatDateTime, formatDay } from "../lib/date"
 import type { RequestStatus, SponsorRequest } from "../types"
@@ -123,13 +124,16 @@ export function InboxPage({
 
   return (
     <section className="page-view">
-      <div className="section-heading-row view-heading">
-        <div>
-          <span className="section-kicker dark">PROPOSAL INBOX</span>
-          <p className="section-title">받은 협찬 제안</p>
-        </div>
-        <p className="inbox-hint">학생단체가 보낸 제안을 확인하고 협찬 여부를 정해 주세요.</p>
-      </div>
+      <PageIntro
+        eyebrow="Proposal inbox"
+        title="받은 협찬 제안"
+        description="학생단체가 보낸 제안을 확인하고 협찬 여부를 정해 주세요."
+        actions={
+          <span className="intro-count">
+            검토 중 {requests.filter((request) => request.status === "검토 중").length}건
+          </span>
+        }
+      />
 
       <TabBar
         items={tabs.map((item) => ({

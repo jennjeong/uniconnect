@@ -22,6 +22,10 @@ export type IconName =
   | "edit"
   | "at"
   | "briefcase"
+  | "menu"
+  | "arrowUpRight"
+  | "mark"
+  | "link"
 
 const icons: Record<IconName, ReactNode> = {
   home: (
@@ -116,6 +120,23 @@ const icons: Record<IconName, ReactNode> = {
     <>
       <rect x="2" y="7" width="20" height="14" rx="2" />
       <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+    </>
+  ),
+  menu: <path d="M4 6h16M4 12h16M4 18h16" />,
+  arrowUpRight: <path d="M7 17 17 7M8 7h9v9" />,
+  // A filled four-point spark, used as the brand mark on dark panels.
+  mark: (
+    <path
+      d="M12 1c1.1 6.9 3.95 9.8 11 11-7.05 1.2-9.9 4.1-11 11-1.1-6.9-3.95-9.8-11-11 7.05-1.2 9.9-4.1 11-11Z"
+      fill="currentColor"
+      stroke="none"
+    />
+  ),
+  // Two links of a chain, for what uniconnect does between the two sides.
+  link: (
+    <>
+      <path d="M10 14a4.5 4.5 0 0 0 6.4 0l3.2-3.2a4.5 4.5 0 0 0-6.4-6.4l-1.1 1.1" />
+      <path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3.2 3.2a4.5 4.5 0 0 0 6.4 6.4l1.1-1.1" />
     </>
   ),
   // A won sign in a coin.

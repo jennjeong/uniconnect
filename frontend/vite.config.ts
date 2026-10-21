@@ -18,6 +18,9 @@ export default defineConfig(({ mode }) => {
     build: {
       sourcemap: emitSourcemaps ? 'inline' : false,
       minify: !emitSourcemaps,
+      // three.js (the chrome chain and rings, and the login gradient) loads
+      // lazily in chunks of its own, up to ~0.7 MB.
+      chunkSizeWarningLimit: 800,
     },
     plugins: [
 react(),

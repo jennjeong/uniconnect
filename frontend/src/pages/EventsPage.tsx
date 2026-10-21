@@ -1,6 +1,8 @@
 import { useState } from "react"
 
 import { Icon } from "../components/Icon"
+import { PageIntro } from "../components/PageIntro"
+import { Pill } from "../components/Pill"
 import { sponsorTypeLabels } from "../lib/format"
 import { formatWon } from "../lib/kpis"
 import {
@@ -157,17 +159,16 @@ export function EventsPage({
 
   return (
     <section className="page-view">
-      <div className="section-heading-row view-heading">
-        <div>
-          <span className="section-kicker dark">
-            {role === "학생단체" ? "MY EVENTS" : "CAMPAIGN CALENDAR"}
-          </span>
-          <p className="section-title">{noun} 일정</p>
-        </div>
-        <button className="primary-button" onClick={() => onCreate(selected)} type="button">
-          <Icon name="plus" size={17} /> 새로 등록
-        </button>
-      </div>
+      <PageIntro
+        eyebrow={role === "학생단체" ? "My events" : "Campaign calendar"}
+        title={`${noun} 일정`}
+        description="날짜를 고르면 그날의 일정이 함께 보여요. 두 번 누르면 그 날짜로 바로 등록해요."
+        actions={
+          <Pill arrow="right" onClick={() => onCreate(selected)}>
+            새로 등록
+          </Pill>
+        }
+      />
 
       <div className="calendar-layout">
         <div className="calendar-card">
@@ -253,8 +254,8 @@ export function EventsPage({
 
         <aside className="day-panel">
           <div className="day-panel-head">
-            <span className="section-kicker dark">SELECTED DAY</span>
-            <p className="section-title" key={selected}>
+            <span className="eyebrow">Selected day</span>
+            <p className="day-title" key={selected}>
               {formatDay(selected)}
             </p>
           </div>

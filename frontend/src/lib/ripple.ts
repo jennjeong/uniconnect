@@ -1,21 +1,21 @@
 // Buttons that show a soft ripple spreading from where they are pressed.
 const rippleTargets = [
+  ".pill",
   ".primary-button",
   ".detail-button",
   ".proposal-button",
   ".cancel-button",
   ".decline-button",
-  ".login-button",
   ".match-tab",
   ".industry-chip",
-  ".nav-item",
-  ".mobile-nav button",
+  ".header-link",
   ".role-button",
-  ".create-fab",
+  "button.nav-pill",
+  ".cta-pill",
   ".calendar-today",
-  ".stat-card",
+  ".bento-card",
+  ".activity-tile",
   ".kpi-card",
-  ".live-card",
 ].join(", ")
 
 // Listens for presses anywhere on the page; returns a function that stops it.

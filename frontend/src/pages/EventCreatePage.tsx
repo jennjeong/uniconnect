@@ -3,6 +3,7 @@ import { useState } from "react"
 import type { EventDraft } from "../api"
 import { DatePicker } from "../components/DatePicker"
 import { Icon } from "../components/Icon"
+import { PageIntro } from "../components/PageIntro"
 import { formatFullDate } from "../lib/date"
 import type { Role } from "../types"
 
@@ -86,18 +87,12 @@ export function EventCreatePage({
 
   return (
     <section className="page-view create-view">
-      <div className="create-head">
-        <button aria-label="뒤로" className="back-button" onClick={onCancel} type="button">
-          <Icon name="chevron" size={18} />
-        </button>
-        <div>
-          <span className="section-kicker dark">NEW {students ? "EVENT" : "CAMPAIGN"}</span>
-          <p className="section-title">새 {noun} 등록</p>
-        </div>
-      </div>
-      <p className="create-intro">
-        {noun} 정보를 알려 주시면 잘 맞는 {students ? "브랜드" : "학생단체"}를 찾아 드려요.
-      </p>
+      <PageIntro
+        onBack={onCancel}
+        eyebrow={students ? "New event" : "New campaign"}
+        title={`새 ${noun} 등록`}
+        description={`${noun} 정보를 알려 주시면 잘 맞는 ${students ? "브랜드" : "학생단체"}를 찾아 드려요.`}
+      />
 
       <div className="create-layout">
         <div className="create-column">

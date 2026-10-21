@@ -27,7 +27,7 @@ export function QrModal({
   }
 
   return (
-    <Modal name="qr" kicker="LIVE QR" title="현장 참여 QR" onClose={onClose}>
+    <Modal name="qr" kicker="Live QR" title="현장 참여 QR" onClose={onClose}>
       <div className="qr-content">
         <div className="qr-frame">
           <QrCode label={`${report.eventName} 참여 QR 코드`} value={link} />

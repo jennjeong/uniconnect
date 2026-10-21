@@ -1,6 +1,7 @@
 import { useState } from "react"
 
 import { Icon } from "../components/Icon"
+import { PageIntro } from "../components/PageIntro"
 import { factFields, profileLabels, snsPlatforms } from "../data/profile"
 import type { Match, PortfolioItem, ProfileDraft, Role, SnsAccount } from "../types"
 
@@ -67,18 +68,12 @@ export function ProfileEditPage({
 
   return (
     <section className="page-view create-view profile-edit">
-      <div className="create-head">
-        <button aria-label="뒤로" className="back-button" onClick={onCancel} type="button">
-          <Icon name="chevron" size={18} />
-        </button>
-        <div>
-          <span className="section-kicker dark">EDIT PROFILE</span>
-          <p className="section-title">소개 편집</p>
-        </div>
-      </div>
-      <p className="create-intro">
-        {viewers}가 찾기와 상세 정보에서 보는 내용이에요. 자세할수록 알맞은 상대를 만나기 쉬워요.
-      </p>
+      <PageIntro
+        onBack={onCancel}
+        eyebrow="Edit profile"
+        title="소개 편집"
+        description={`${viewers}가 찾기와 상세 정보에서 보는 내용이에요. 자세할수록 알맞은 상대를 만나기 쉬워요.`}
+      />
 
       <div className="form-card">
         <h3 className="form-card-title">소개</h3>

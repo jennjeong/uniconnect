@@ -1,16 +1,26 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, type CSSProperties } from "react"
 
 import { api } from "../api"
 import { AnimatedNumber } from "../components/AnimatedNumber"
 import { Icon } from "../components/Icon"
+import { PageIntro } from "../components/PageIntro"
+import { Pill } from "../components/Pill"
+import { RevealTitle } from "../components/RevealText"
 import { metricInfo, metricKinds } from "../data/metrics"
 import { formatDateTime, formatFullDate } from "../lib/date"
 import { percent } from "../lib/format"
+import { LayersGradient } from "../scenes/LayersGradient"
+import { INTERFERENCE } from "../scenes/shaders"
 import type { MetricEntry, MetricKind, Metrics, Report } from "../types"
 
 // How often the counts and the activity feed refresh while this page is open.
 const refreshMs = 10_000
 
+const delay = (seconds: number) => ({ "--reveal-delay": `${seconds}s` }) as CSSProperties
+
+// The event's live counts on getlayers.ai's Interference gradient (each scan,
+// coupon and visit adding to the wave), then the funnel and the latest
+// participation as cards.
 export function MeasurementPage({
   metrics,
   report,
@@ -56,21 +66,16 @@ export function MeasurementPage({
 
   return (
     <section className="page-view measurement-view">
-      <div className="view-intro measurement-intro">
-        <div>
-          <span className="section-kicker">LIVE ATTRIBUTION</span>
-          <p>현장 반응을 실시간으로 측정해요</p>
-          <small>고유 QR과 쿠폰 데이터를 행사 성과로 안전하게 집계합니다.</small>
-        </div>
-        <button
-          className="primary-button qr-open-button"
-          disabled={!report}
-          onClick={onOpenQr}
-          type="button"
-        >
-          <Icon name="scan" size={15} /> 현장 QR 열기
-        </button>
-      </div>
+      <PageIntro
+        eyebrow="Live attribution"
+        title="현장 반응을 실시간으로 측정해요"
+        description="고유 QR과 쿠폰 데이터를 행사 성과로 안전하게 집계합니다."
+        actions={
+          <Pill arrow="up-right" disabled={!report} onClick={onOpenQr}>
+            현장 QR 열기
+          </Pill>
+        }
+      />
 
       <div className="measure-bar">
         {report && (
@@ -87,37 +92,41 @@ export function MeasurementPage({
         )}
       </div>
 
-      <div className="live-metrics stagger">
-        {metricKinds.map((kind) => {
-          const target = report?.targets[kind]
-          return (
-            <button
-              className="live-card"
-              key={kind}
-              onClick={() => onShowLog(kind)}
-              type="button"
-            >
-              <div className="live-card-top">
-                <div className="live-icon">
-                  <Icon name={metricInfo[kind].icon} size={17} />
-                </div>
-                <span>{metricInfo[kind].label}</span>
-              </div>
-              <strong>
-                <AnimatedNumber value={metrics[kind].toLocaleString("ko-KR")} />
-              </strong>
-              {target !== undefined && (
-                <small className={metrics[kind] >= target ? "good" : ""}>
-                  목표 {target} · {metrics[kind] >= target ? "달성" : `${target - metrics[kind]} 남음`}
-                </small>
-              )}
-            </button>
-          )
-        })}
-      </div>
+      <section className="power-panel live-panel" data-reveal>
+        <LayersGradient shader={INTERFERENCE} />
+        <div className="power-content">
+          <span className="eyebrow light">Live now</span>
+          <RevealTitle as="h2" className="power-title">
+            지금 이 순간의 현장 반응
+          </RevealTitle>
+          <ul className="power-stats three">
+            {metricKinds.map((kind, index) => {
+              const target = report?.targets[kind]
+              return (
+                <li data-reveal key={kind} style={delay(index * 0.09)}>
+                  <button onClick={() => onShowLog(kind)} type="button">
+                    <strong>
+                      <AnimatedNumber value={metrics[kind].toLocaleString("ko-KR")} />
+                    </strong>
+                    <span>
+                      <Icon name={metricInfo[kind].icon} size={16} />
+                      {metricInfo[kind].label}
+                    </span>
+                    {target !== undefined && (
+                      <small className={metrics[kind] >= target ? "good" : ""}>
+                        목표 {target} · {metrics[kind] >= target ? "달성" : `${target - metrics[kind]} 남음`}
+                      </small>
+                    )}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      </section>
 
       <div className="measure-grid">
-        <div className="measure-card">
+        <div className="measure-card" data-reveal>
           <p className="section-title">참여 전환</p>
           <div className="measure-funnel">
             {funnel.map((step) => (
@@ -135,7 +144,7 @@ export function MeasurementPage({
           </div>
         </div>
 
-        <div className="measure-card">
+        <div className="measure-card" data-reveal style={delay(0.1)}>
           <div className="measure-card-head">
             <p className="section-title">실시간 참여 기록</p>
             <button className="subtle-link" onClick={() => onShowLog()} type="button">

@@ -47,8 +47,8 @@ export function NotificationsPanel({
       ref={panelRef}
     >
       <div className="notify-head">
-        <span className="section-kicker dark">NOTIFICATIONS</span>
-        <p className="section-title">새로운 소식</p>
+        <span className="eyebrow">Notifications</span>
+        <p className="notify-title">새로운 소식</p>
       </div>
       <div className="notification-list stagger">
         {items.length === 0 ? (

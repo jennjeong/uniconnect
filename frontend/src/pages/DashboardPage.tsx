@@ -1,32 +1,32 @@
-import type { ReactNode } from "react"
+import type { CSSProperties } from "react"
 
-import { AnimatedNumber } from "../components/AnimatedNumber"
 import { BrandMark } from "../components/BrandMark"
-import { Icon, type IconName } from "../components/Icon"
+import { Icon } from "../components/Icon"
+import { JourneyChain, type JourneyStep } from "../components/JourneyChain"
+import { LogoMarquee } from "../components/LogoMarquee"
+import { MeetingHero } from "../components/MeetingHero"
 import { ProposalControl } from "../components/ProposalControl"
-import { formatFullDate, fromIsoDate, nextEvent } from "../lib/date"
+import { RevealStatement, RevealTitle } from "../components/RevealText"
+import { StatsBento } from "../components/StatsBento"
+import { WorkCard } from "../components/WorkCard"
+import { formatFullDate, fromIsoDate, nextEvent, semesterLabel } from "../lib/date"
 import { percent } from "../lib/format"
-import { scoreColors } from "../lib/score"
 import { compactWon } from "../lib/sponsorships"
 import type { EventItem, Match, Metrics, NavLabel, Report, RequestStatus } from "../types"
-
-type Stat = {
-  label: string
-  icon: IconName
-  value: string
-  note: ReactNode
-  // Page with the details behind the number.
-  target: NavLabel
-}
 
 const pad = (value: number) => String(value).padStart(2, "0")
 
 // Top of the performance chart's y-axis (150 / 100 / 50 / 0).
 const chartMax = 150
 
-// Dashboard for student groups: the next event's progress, recommended
-// brands and the last event's results.
+const delay = (seconds: number) => ({ "--reveal-delay": `${seconds}s` }) as CSSProperties
+
+// Dashboard for student groups, told in the three moves of a sponsorship:
+// where the group and its brands meet (the hero), what keeps them linked
+// (the steps of the sponsorship, over the chain), and what they make
+// together (the numbers and the last event's results).
 export function DashboardPage({
+  accountName,
   matches,
   brands,
   events,
@@ -36,10 +36,13 @@ export function DashboardPage({
   report,
   updatedAt,
   onNavigate,
+  onOpenDetail,
   onPropose,
   onCancelProposal,
   onOpenReport,
 }: {
+  // The logged-in group's name for the greeting.
+  accountName?: string
   matches: Match[]
   // Every brand in the catalog.
   brands: Match[]
@@ -52,6 +55,7 @@ export function DashboardPage({
   // When the matches were last loaded.
   updatedAt: Date | null
   onNavigate: (label: NavLabel) => void
+  onOpenDetail: (match: Match) => void
   onPropose: (match: Match) => void
   onCancelProposal: (match: Match) => void
   onOpenReport: () => void
@@ -60,59 +64,21 @@ export function DashboardPage({
   const nextDay = next ? fromIsoDate(next.date) : undefined
   const candidates = brands.length > 0 ? brands : matches
   const strongCut = 80
+  const strong = candidates.filter((match) => match.score >= strongCut).length
   const confirmedCount = proposals.filter((id) => statuses[id] === "수락").length
-
-  // Summary cards, each opening the page with the details behind its number.
-  const stats: Stat[] = [
-    {
-      label: "추천 브랜드",
-      icon: "spark",
-      value: String(candidates.length),
-      note: (
-        <>
-          일치율 {strongCut}% 이상{" "}
-          <em>{candidates.filter((match) => match.score >= strongCut).length}곳</em>
-        </>
-      ),
-      target: "추천 매칭",
-    },
-    {
-      label: "진행 중 협찬",
-      icon: "calendar",
-      value: String(events.filter((event) => event.status !== "측정 완료").length),
-      note:
-        confirmedCount > 0
-          ? `협찬 확정 ${confirmedCount}건 · 제안 ${proposals.length}건`
-          : `보낸 제안 ${proposals.length}건`,
-      target: "내 행사",
-    },
-    {
-      label: "예상 협찬 가치",
-      icon: "chart",
-      value: report ? compactWon(report.sponsorValue) : "-",
-      note: "현물 환산 포함",
-      target: "리포트",
-    },
-    {
-      label: "누적 QR 참여",
-      icon: "scan",
-      value: metrics.scans.toLocaleString("ko-KR"),
-      note: (
-        <>
-          참여율 <em>{report ? percent(metrics.scans, report.expectedAudience) : 0}%</em>
-        </>
-      ),
-      target: "성과 측정",
-    },
-  ]
+  const running = events.filter((event) => event.status !== "측정 완료").length
+  const proposed = candidates.filter((match) => proposals.includes(match.id))
 
   // Where the next event stands in the sponsorship flow.
   const currentStep = !next ? 0 : next.status === "매칭 중" ? 1 : next.status === "집행 예정" ? 2 : 3
-  const journey: { icon: IconName; label: string; status: string }[] = [
-    { icon: "check", label: "행사 등록", status: next ? "완료" : "등록 전" },
+  const journey: JourneyStep[] = [
     {
-      icon: "spark",
-      label: "매칭·제안",
+      label: "행사 등록",
+      status: next ? "완료" : "등록 전",
+      detail: "인원 · 일정 · 학과 구성과 노출할 자리를 알려 주세요.",
+    },
+    {
+      label: "매칭 · 제안",
       status:
         confirmedCount > 0
           ? `확정 ${confirmedCount}건`
@@ -121,14 +87,15 @@ export function DashboardPage({
             : next
               ? "진행 중"
               : "대기",
+      detail: "일치율 높은 브랜드에 제안하고 답을 받아요.",
     },
     {
-      icon: "calendar",
       label: "집행 관리",
       status: nextDay ? `${nextDay.getMonth() + 1}.${nextDay.getDate()} 예정` : "대기",
+      detail: "협찬 조건과 받은 물품을 행사 전에 함께 확인해요.",
     },
-    { icon: "scan", label: "성과 측정", status: "대기" },
-    { icon: "file", label: "리포트", status: "대기" },
+    { label: "성과 측정", status: "대기", detail: "행사 QR과 쿠폰으로 참여와 방문을 집계해요." },
+    { label: "재협찬", status: "대기", detail: "쌓인 성과가 신뢰가 되어 다음 협찬으로 이어져요." },
   ]
 
   const bars = [
@@ -138,141 +105,98 @@ export function DashboardPage({
   ]
 
   return (
-    <>
-      <section className="welcome-panel">
-        <div className="welcome-copy">
-          <span className="section-kicker">YOUR NEXT CONNECTION</span>
-          <p className="welcome-title">
-            좋은 행사는, <br />
-            <em>좋은 파트너</em>를 만날 때 커져요.
-          </p>
-          <p className="welcome-description">
-            다가오는 행사와 잘 맞는 브랜드 {matches.length}곳을 찾았어요.
-          </p>
-        </div>
-        <div className="connection-art" aria-hidden="true">
-          <div className="orbit orbit-one" />
-          <div className="orbit orbit-two" />
-          <div className="art-node brand-node">
-            <Icon name="store" size={26} />
-            <span>BRAND</span>
-          </div>
-          <div className="art-center">
-            <Icon name="spark" size={30} />
-          </div>
-          <div className="art-node group-node">
-            <Icon name="users" size={26} />
-            <span>GROUP</span>
-          </div>
-          <span className="spark-dot dot-one" />
-          <span className="spark-dot dot-two" />
-          <span className="spark-dot dot-three" />
-        </div>
-        <button
-          className="detail-button welcome-action"
-          onClick={() => onNavigate("추천 매칭")}
-          type="button"
-        >
-          추천 매칭 확인하기 <Icon name="arrow" size={16} />
-        </button>
+    <div className="dashboard">
+      <MeetingHero
+        eyebrow={accountName ? `반가워요, ${accountName}` : semesterLabel()}
+        lines={["좋은 행사는,", "좋은 파트너를", "만날 때 커져요."]}
+        stats={[
+          { value: `${candidates.length}곳`, label: "추천 브랜드" },
+          { value: `${running}건`, label: "진행 중 협찬" },
+          { value: metrics.scans.toLocaleString("ko-KR"), label: "누적 QR 참여" },
+        ]}
+        insight={`다가오는 행사와 잘 맞는 브랜드 ${matches.length}곳을 찾았어요.`}
+        detail="학생단체와 브랜드가 맞닿는 곳에서 협찬이 시작돼요. 일치율이 높은 브랜드부터 제안해 보세요."
+        primary={{ label: "추천 매칭 확인하기", onClick: () => onNavigate("추천 매칭") }}
+        secondary={{ label: "내 행사 보기", onClick: () => onNavigate("내 행사") }}
+      />
+
+      <LogoMarquee
+        label="함께할 수 있는 브랜드"
+        rows={[
+          candidates.map((match) => ({ key: match.id, mark: <BrandMark match={match} />, label: match.name })),
+          candidates.map((match) => ({
+            key: match.id,
+            mark: <Icon name="link" size={22} />,
+            label: match.offer,
+          })),
+        ]}
+      />
+
+      <section className="about-statement-section">
+        <span className="eyebrow" data-reveal>
+          About uniconnect
+        </span>
+        <RevealStatement
+          lead="학생단체와 브랜드를 잇고,"
+          firstChip={<Icon name="link" size={18} />}
+          muted="협찬의 성과를 숫자로 증명해요"
+          secondChip={<Icon name="chart" size={18} />}
+        />
       </section>
 
-      <section className="workflow-section">
-        <div className="section-heading-row">
-          <div>
-            <span className="section-kicker dark">SPONSORSHIP JOURNEY</span>
-            <p className="section-title">내 협찬 진행 현황</p>
-          </div>
-          <button
-            className="subtle-link"
-            onClick={() => onNavigate("내 행사")}
-            type="button"
-          >
-            전체 보기 <Icon name="chevron" size={15} />
-          </button>
-        </div>
-        <div className="workflow-card stagger">
-          {journey.map((step, index) => (
-            <div
-              className={`workflow-step ${index === currentStep ? "current" : ""}`}
-              key={step.label}
-            >
-              <div className="step-icon">
-                <Icon name={step.icon} size={19} />
-              </div>
-              <div>
-                <span>0{index + 1}</span>
-                <strong>{step.label}</strong>
-                <small>{step.status}</small>
-              </div>
-              {index < journey.length - 1 && (
-                <div className="step-line">
-                  <span />
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="stats-grid stagger">
-        {stats.map((stat) => (
-          <button
-            className="stat-card"
-            key={stat.label}
-            onClick={() => onNavigate(stat.target)}
-            type="button"
-          >
-            <span className="stat-top">
-              <span>{stat.label}</span>
-              <Icon name={stat.icon} size={18} />
-            </span>
-            <span className="stat-value">
-              <strong>
-                <AnimatedNumber value={stat.value} />
-              </strong>
-              <small>{stat.note}</small>
-            </span>
-          </button>
+      <StatsBento
+        stats={[
+          {
+            label: "추천 브랜드",
+            value: `${candidates.length}곳`,
+            note: `일치율 ${strongCut}% 이상 브랜드가 ${strong}곳이에요.`,
+            onClick: () => onNavigate("추천 매칭"),
+          },
+          {
+            label: "진행 중 협찬",
+            value: `${running}건`,
+            note:
+              confirmedCount > 0
+                ? `“협찬 확정 ${confirmedCount}건, 보낸 제안 ${proposals.length}건이에요.”`
+                : `“보낸 제안 ${proposals.length}건이 답을 기다리고 있어요.”`,
+            onClick: () => onNavigate("내 행사"),
+          },
+          {
+            label: "예상 협찬 가치",
+            value: report ? compactWon(report.sponsorValue) : "-",
+            note: "현물 환산을 포함한 금액이에요.",
+            onClick: () => onNavigate("리포트"),
+          },
+          {
+            label: "누적 QR 참여",
+            value: metrics.scans.toLocaleString("ko-KR"),
+            note: `참여율 ${report ? percent(metrics.scans, report.expectedAudience) : 0}%`,
+            onClick: () => onNavigate("성과 측정"),
+          },
+        ]}
+        marks={proposed.slice(0, 4).map((match) => (
+          <BrandMark key={match.id} match={match} />
         ))}
-      </section>
+      />
 
-      <section className="content-grid" id="matches">
-        <div className="matches-panel">
-          <div className="section-heading-row">
-            <div>
-              <span className="section-kicker dark">SMART MATCH</span>
-              <p className="section-title">맞춤 추천 매칭</p>
-            </div>
-            {updatedAt && (
-              <span className="updated-at">
-                오늘 {pad(updatedAt.getHours())}:{pad(updatedAt.getMinutes())} 업데이트
-              </span>
-            )}
-          </div>
-          <div className="match-list stagger">
-            {matches.map((match) => (
-              <article className="match-card" key={match.id}>
-                <BrandMark match={match} />
-                <div className="match-details">
-                  <div className="match-title-row">
-                    <strong>{match.name}</strong>
-                    <span>{match.category}</span>
-                  </div>
-                  <p>{match.offer}</p>
-                  <div className="tag-row">
-                    {match.tags.map((tag) => (
-                      <span key={tag}>{tag}</span>
-                    ))}
-                  </div>
-                </div>
-                <div className="score">
-                  <span>매칭 적합도</span>
-                  <strong style={{ color: scoreColors(match.score).text }}>
-                    {match.score}
-                    <small>%</small>
-                  </strong>
-                </div>
+      <section className="works-section" id="matches">
+        <div className="section-head centered">
+          <span className="eyebrow" data-reveal>
+            Smart match
+          </span>
+          <RevealTitle as="h2" className="section-display">
+            맞춤 추천 매칭
+          </RevealTitle>
+          {updatedAt && (
+            <small className="section-note" data-reveal>
+              오늘 {pad(updatedAt.getHours())}:{pad(updatedAt.getMinutes())} 업데이트
+            </small>
+          )}
+        </div>
+        <ul className="work-grid three">
+          {matches.map((match, index) => (
+            <li data-reveal key={match.id} style={delay(index * 0.09)}>
+              <WorkCard match={match} meta={match.category} onOpenDetail={() => onOpenDetail(match)}>
                 <ProposalControl
                   done={proposals.includes(match.id)}
                   status={statuses[match.id]}
@@ -281,70 +205,84 @@ export function DashboardPage({
                   onPropose={() => onPropose(match)}
                   onCancel={() => onCancelProposal(match)}
                 />
-              </article>
-            ))}
-          </div>
-        </div>
+              </WorkCard>
+            </li>
+          ))}
+        </ul>
+      </section>
 
-        <aside className="performance-panel">
-          <div className="section-heading-row compact">
-            <div>
-              <span className="section-kicker dark">PERFORMANCE</span>
-              <p className="section-title">최근 행사 성과</p>
+      <JourneyChain
+        intro={
+          next
+            ? `다음 행사 ‘${next.name}’은 ${formatFullDate(next.date)}이에요. 지금은 ‘${journey[currentStep].label}’ 단계예요.`
+            : "행사 등록부터 재협찬까지, 한 번의 협찬이 다음 협찬으로 이어지도록 모든 단계를 한곳에서 관리해요."
+        }
+        heading="내 협찬, 지금 여기까지 왔어요"
+        steps={journey}
+        current={currentStep}
+        scheduleLabel="전체 일정 보기"
+        onOpenSchedule={() => onNavigate("내 행사")}
+      />
+
+      <section className="results-section">
+        <div className="section-head">
+          <span className="eyebrow" data-reveal>
+            Last event
+          </span>
+          <RevealTitle as="h2" className="section-display">
+            함께 만든 지난 행사의 결과
+          </RevealTitle>
+        </div>
+        <div className="results-grid">
+          <div className="silver-panel results-chart" data-reveal>
+            <div className="event-summary">
+              <div>
+                <strong>{report?.eventName ?? "최근 행사"}</strong>
+                <span>{report ? formatFullDate(report.eventDate) : ""}</span>
+              </div>
+              <span className="complete-badge">측정 완료</span>
             </div>
-            <button
-              className="more-button"
-              aria-label="성과 더보기"
-              onClick={() => onNavigate("리포트")}
-              type="button"
-            >
-              •••
-            </button>
-          </div>
-          <div className="event-summary">
-            <div>
-              <strong>{report?.eventName ?? "최근 행사"}</strong>
-              <span>{report ? formatFullDate(report.eventDate) : ""}</span>
-            </div>
-            <span className="complete-badge">측정 완료</span>
-          </div>
-          <div className="chart-area">
-            <div className="chart-y">
-              <span>150</span>
-              <span>100</span>
-              <span>50</span>
-              <span>0</span>
-            </div>
-            <div className="bars">
-              {bars.map((bar) => (
-                <div className="bar-item" key={bar.label}>
-                  <span className="bar-value">{bar.value}</span>
-                  <div className="bar-track">
-                    <span
-                      style={{
-                        height: `${Math.min(100, (bar.value / chartMax) * 100)}%`,
-                      }}
-                    />
+            <div className="chart-area">
+              <div className="chart-y" aria-hidden="true">
+                <span>150</span>
+                <span>100</span>
+                <span>50</span>
+                <span>0</span>
+              </div>
+              <div className="bars">
+                {bars.map((bar) => (
+                  <div className="bar-item" key={bar.label}>
+                    <span className="bar-value">{bar.value}</span>
+                    <div className="bar-track">
+                      <span style={{ height: `${Math.min(100, (bar.value / chartMax) * 100)}%` }} />
+                    </div>
+                    <small>{bar.label}</small>
                   </div>
-                  <small>{bar.label}</small>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
-          <div className="report-highlight">
-            <div className="mini-icon">
-              <Icon name="chart" size={18} />
-            </div>
+          <div className="report-highlight" data-reveal style={delay(0.12)}>
             <div>
               <span>추정 ROAS</span>
               <strong>{report ? `${report.roas}%` : "-"}</strong>
+              <small>
+                {report && report.roas >= 100
+                  ? "함께한 브랜드가 쓴 금액보다 더 많이 돌아왔어요."
+                  : "목표까지 남은 만큼은 리포트에서 볼 수 있어요."}
+              </small>
             </div>
-            <button aria-label="리포트 열기" onClick={onOpenReport} type="button">
-              <Icon name="arrow" size={18} />
-            </button>
+            <div className="report-highlight-actions">
+              <button className="pill white" onClick={onOpenReport} type="button">
+                <span>상세 데이터</span>
+              </button>
+              <button className="underline-link light" onClick={() => onNavigate("리포트")} type="button">
+                리포트 페이지로
+              </button>
+            </div>
           </div>
-        </aside>
+        </div>
       </section>
-    </>
+    </div>
   )
 }

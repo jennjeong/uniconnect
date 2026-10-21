@@ -1,13 +1,27 @@
+import type { CSSProperties } from "react"
+
 import { BrandMark } from "../components/BrandMark"
 import { DateLine } from "../components/DateLine"
 import { Icon } from "../components/Icon"
+import { Pill } from "../components/Pill"
 import { ProposalControl } from "../components/ProposalControl"
+import { RevealTitle, RevealWords } from "../components/RevealText"
 import { ScoreRing } from "../components/ScoreRing"
 import { profileLabels } from "../data/profile"
+import { LayersGradient } from "../scenes/LayersGradient"
+import { MeshBackdrop } from "../scenes/MeshBackdrop"
+import { ANTIPODE } from "../scenes/shaders"
 import type { Match, RequestStatus } from "../types"
 
-// One brand (for student groups) or student group (for brands): who they
-// are, what they offer, their SNS and portfolio, and ways to get in touch.
+const pad = (value: number) => String(value).padStart(2, "0")
+
+const delay = (seconds: number) => ({ "--reveal-delay": `${seconds}s` }) as CSSProperties
+
+// One brand (for student groups) or student group (for brands): a banner on
+// getlayers.ai's Antipode gradient (two masses of light meeting — the two
+// sides of a sponsorship) with who they are, their introduction as a
+// statement, their facts, SNS and portfolio as rows, and ways to get in
+// touch at the top and the bottom.
 export function MatchDetailPage({
   match,
   kind,
@@ -39,123 +53,172 @@ export function MatchDetailPage({
   ]
   const sns = match.sns ?? []
   const portfolio = match.portfolio ?? []
+  const proposal = (
+    <ProposalControl
+      done={done}
+      status={status}
+      label={group ? "협찬 제안하기" : "협찬 제안 보내기"}
+      className="primary-button"
+      onPropose={onPropose}
+      onCancel={onCancel}
+    />
+  )
 
   return (
     <section className="page-view detail-view">
-      <div className="create-head">
-        <button aria-label="뒤로" className="back-button" onClick={onBack} type="button">
-          <Icon name="chevron" size={18} />
+      <div className="detail-top">
+        <button aria-label="뒤로" className="back-pill" onClick={onBack} type="button">
+          <Icon name="chevron" size={16} />
+          <span>뒤로</span>
         </button>
-        <div>
-          <span className="section-kicker dark">{group ? "GROUP PROFILE" : "BRAND PROFILE"}</span>
-          <p className="section-title">{group ? "단체 정보" : "브랜드 정보"}</p>
-        </div>
       </div>
 
-      <div className="detail-hero">
-        <BrandMark match={match} large />
-        <div className="detail-hero-copy">
-          <span>{group && match.school ? `${match.school} · ${match.category}` : match.category}</span>
-          <strong>{match.name}</strong>
-          <div className="tag-row">
-            {match.tags.map((tag) => (
-              <span key={tag}>{tag}</span>
-            ))}
+      <header className="banner-hero">
+        <LayersGradient shader={ANTIPODE} />
+        <div className="banner-content">
+          <div className="banner-top">
+            <span className="eyebrow light">{group ? "Group profile" : "Brand profile"}</span>
+            <ScoreRing score={match.score} />
+          </div>
+          <div className="banner-identity">
+            <BrandMark match={match} large />
+            <div>
+              <span className="banner-meta">
+                {group && match.school ? `${match.school} · ${match.category}` : match.category}
+              </span>
+              <RevealTitle className="banner-title">{match.name}</RevealTitle>
+            </div>
+          </div>
+          <div className="banner-bottom">
+            <div className="work-tags">
+              {match.tags.map((tag) => (
+                <span key={tag}>{tag}</span>
+              ))}
+            </div>
+            <div className="banner-actions">
+              <button className="cancel-button" onClick={onChat} type="button">
+                <Icon name="chat" size={16} /> 문의하기
+              </button>
+              {proposal}
+            </div>
           </div>
         </div>
-        <ScoreRing score={match.score} />
-      </div>
+      </header>
 
-      <div className="detail-grid stagger">
-        <div className="form-card detail-intro">
-          <h3 className="form-card-title">{group ? "단체 소개" : "브랜드 소개"}</h3>
-          {match.intro && <p>{match.intro}</p>}
-          <div className="detail-offer">
+      <section className="about-block">
+        <div className="about-side">
+          <span className="eyebrow">{group ? "단체 소개" : "브랜드 소개"}</span>
+          <Icon name="link" size={220} />
+          {group && match.eventName && match.eventDate ? (
+            <div className="about-event" data-reveal>
+              <small>다음 행사</small>
+              <strong>{match.eventName}</strong>
+              <DateLine date={match.eventDate} />
+              {match.audience !== undefined && (
+                <span className="detail-audience">
+                  <Icon name="users" size={15} />
+                  예상 인원 {match.audience.toLocaleString("ko-KR")}명
+                </span>
+              )}
+            </div>
+          ) : (
+            <p className="about-note" data-reveal>
+              <Icon name="spark" size={20} />
+              <span>
+                {group
+                  ? "캠퍼스 현장에서 브랜드를 직접 소개할 수 있는 학생단체예요."
+                  : "학생들이 실제로 찾아가는 캠퍼스 가까운 브랜드예요."}
+              </span>
+            </p>
+          )}
+        </div>
+        <div className="about-copy">
+          {match.intro ? (
+            <RevealWords className="about-statement">{match.intro}</RevealWords>
+          ) : (
+            <p className="about-statement">아직 소개를 쓰지 않았어요.</p>
+          )}
+          <div className="about-offer" data-reveal style={delay(0.15)}>
             <span>{labels.offer}</span>
             <strong>{match.offer}</strong>
           </div>
+          {sns.length > 0 && (
+            <div className="about-foot" data-reveal style={delay(0.2)}>
+              <span>SNS</span>
+              <ul className="sns-chips">
+                {sns.map((account) => (
+                  <li key={`${account.platform}-${account.handle}`}>
+                    <span className="sns-dot">
+                      <Icon name="at" size={14} />
+                    </span>
+                    <span>
+                      <small>{account.platform}</small>
+                      <strong>{account.handle}</strong>
+                    </span>
+                    {account.followers && <em>{account.followers}</em>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
+      </section>
 
-        {group && match.eventName && match.eventDate && (
-          <div className="form-card detail-event">
-            <h3 className="form-card-title">다음 행사</h3>
-            <strong>{match.eventName}</strong>
-            <DateLine date={match.eventDate} />
-            {match.audience !== undefined && (
-              <span className="detail-audience">
-                <Icon name="users" size={15} />
-                예상 인원 {match.audience.toLocaleString("ko-KR")}명
-              </span>
-            )}
-          </div>
-        )}
+      {facts.length > 0 && (
+        <section className="service-section">
+          <span className="eyebrow" data-reveal>
+            {group ? "단체 정보" : "브랜드 정보"}
+          </span>
+          <RevealTitle as="h2" className="section-display">
+            한눈에 보는 정보
+          </RevealTitle>
+          <dl className="service-list">
+            {facts.map((fact, index) => (
+              <div className="service-row" data-reveal key={fact.label} style={delay(index * 0.08)}>
+                <span className="service-index">{pad(index + 1)}</span>
+                <dt>{fact.label}</dt>
+                <dd>{fact.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      )}
 
-        {(facts.length > 0 || sns.length > 0) && (
-          <div className="form-card detail-facts">
-            <h3 className="form-card-title">{group ? "단체 정보" : "브랜드 정보"}</h3>
-            <dl>
-              {facts.map((fact) => (
-                <div key={fact.label}>
-                  <dt>{fact.label}</dt>
-                  <dd>{fact.value}</dd>
-                </div>
-              ))}
-            </dl>
-            {sns.length > 0 && (
-              <>
-                <h4 className="detail-subtitle">SNS</h4>
-                <ul className="detail-sns">
-                  {sns.map((account) => (
-                    <li key={`${account.platform}-${account.handle}`}>
-                      <span className="detail-icon">
-                        <Icon name="at" size={15} />
-                      </span>
-                      <span>
-                        <small>{account.platform}</small>
-                        <strong>{account.handle}</strong>
-                      </span>
-                      {account.followers && <em>{account.followers}</em>}
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-          </div>
-        )}
+      {portfolio.length > 0 && (
+        <section className="service-section">
+          <span className="eyebrow" data-reveal>
+            {labels.portfolio}
+          </span>
+          <RevealTitle as="h2" className="section-display">
+            {group ? "지난 활동" : "함께한 협찬"}
+          </RevealTitle>
+          <ul className="service-list">
+            {portfolio.map((item, index) => (
+              <li className="service-row" data-reveal key={item.title} style={delay(index * 0.08)}>
+                <span className="service-index">{pad(index + 1)}</span>
+                <strong>{item.title}</strong>
+                {item.detail && <span className="service-detail">{item.detail}</span>}
+                <i aria-hidden="true" className="service-badge">
+                  <Icon name="briefcase" size={16} />
+                </i>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
-        {portfolio.length > 0 && (
-          <div className="form-card detail-portfolio">
-            <h3 className="form-card-title">{labels.portfolio}</h3>
-            <ul>
-              {portfolio.map((item) => (
-                <li key={item.title}>
-                  <span className="detail-icon">
-                    <Icon name="briefcase" size={15} />
-                  </span>
-                  <span>
-                    <strong>{item.title}</strong>
-                    {item.detail && <small>{item.detail}</small>}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-
-      <div className="detail-actions">
-        <button className="cancel-button" onClick={onChat} type="button">
-          <Icon name="chat" size={16} /> 문의하기
-        </button>
-        <ProposalControl
-          done={done}
-          status={status}
-          label={group ? "협찬 제안하기" : "협찬 제안 보내기"}
-          className="primary-button"
-          onPropose={onPropose}
-          onCancel={onCancel}
-        />
-      </div>
+      <section className="cta-panel" data-reveal>
+        <MeshBackdrop seed={1.3} />
+        <RevealTitle as="h2" className="cta-title">
+          {group ? `${match.name}의 다음 행사에 함께해 볼까요?` : `${match.name}에 협찬을 제안해 볼까요?`}
+        </RevealTitle>
+        <div className="detail-actions">
+          <Pill arrow="up-right" onClick={onChat} variant="white">
+            문의하기
+          </Pill>
+          {proposal}
+        </div>
+      </section>
     </section>
   )
 }

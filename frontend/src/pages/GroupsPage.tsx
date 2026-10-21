@@ -1,10 +1,10 @@
-import { useState } from "react"
+import { useState, type CSSProperties } from "react"
 
-import { BrandMark } from "../components/BrandMark"
 import { DateLine } from "../components/DateLine"
+import { PageIntro } from "../components/PageIntro"
 import { ProposalControl } from "../components/ProposalControl"
-import { ScoreRing } from "../components/ScoreRing"
 import { TabBar } from "../components/TabBar"
+import { WorkCard } from "../components/WorkCard"
 import { todayIso } from "../lib/date"
 import type { Industry, Match } from "../types"
 
@@ -39,54 +39,6 @@ const fieldLabels: [Industry, string][] = [
   ["wellness", "봉사"],
   ["education", "학술"],
 ]
-
-function GroupCard({
-  group,
-  done,
-  onOpenDetail,
-  onPropose,
-  onCancel,
-}: {
-  group: Match
-  done: boolean
-  onOpenDetail: () => void
-  onPropose: () => void
-  onCancel: () => void
-}) {
-  return (
-    <article className="full-match-card group-card">
-      <BrandMark match={group} large />
-      <div className="full-match-copy">
-        <span>
-          {group.school} · {group.category}
-        </span>
-        <strong>{group.name}</strong>
-        <p>{group.offer}</p>
-        {/* The date and the event's features each take their own line. */}
-        {group.eventDate && <DateLine date={group.eventDate} />}
-        <div className="tag-row">
-          {group.eventName && <span className="tag-event">{group.eventName}</span>}
-          {group.tags.map((tag) => (
-            <span key={tag}>{tag}</span>
-          ))}
-        </div>
-      </div>
-      <ScoreRing score={group.score} />
-      <div className="card-actions">
-        <button className="cancel-button" onClick={onOpenDetail} type="button">
-          상세 정보
-        </button>
-        <ProposalControl
-          done={done}
-          label="협찬 제안하기"
-          className="primary-button"
-          onPropose={onPropose}
-          onCancel={onCancel}
-        />
-      </div>
-    </article>
-  )
-}
 
 // Student groups brands can sponsor, by tab.
 export function GroupsPage({
@@ -130,13 +82,12 @@ export function GroupsPage({
 
   return (
     <section className="page-view">
-      <div className="view-intro match-intro groups-intro">
-        <div key={tab}>
-          <span className="section-kicker">FIND STUDENT GROUPS</span>
-          <p>{tabIntro[tab].title}</p>
-          <small>{tabIntro[tab].caption}</small>
-        </div>
-      </div>
+      <PageIntro
+        eyebrow="Find student groups"
+        title={tabIntro[tab].title}
+        description={tabIntro[tab].caption}
+        actions={<span className="intro-count">{list.length}곳</span>}
+      />
 
       <div className="match-filters">
         <TabBar
@@ -148,7 +99,14 @@ export function GroupsPage({
         {tab === "분야별" && (
           <TabBar
             chips
-            items={fields.map(([value, label]) => ({ value, label }))}
+            items={fields.map(([value, label]) => ({
+              value,
+              label: (
+                <>
+                  {label} <em className="chip-count">{groups.filter((group) => group.industry === value).length}</em>
+                </>
+              ),
+            }))}
             label="분야"
             onChange={(value, event) => {
               const order = fields.map(([item]) => item)
@@ -161,26 +119,48 @@ export function GroupsPage({
         )}
       </div>
 
-      <div
-        className="full-match-grid stagger slide"
-        data-direction={direction}
-        key={tab === "분야별" ? `${tab}-${field}` : tab}
-      >
-        {list.length === 0 ? (
-          <p className="day-empty">조건에 맞는 학생단체가 없어요.</p>
-        ) : (
-          list.map((group) => (
-            <GroupCard
-              done={proposals.includes(group.id)}
-              group={group}
-              key={group.id}
-              onCancel={() => onCancelProposal(group)}
-              onOpenDetail={() => onOpenDetail(group)}
-              onPropose={() => onPropose(group)}
-            />
-          ))
-        )}
-      </div>
+      {list.length === 0 ? (
+        <p className="day-empty" key={tab}>
+          조건에 맞는 학생단체가 없어요.
+        </p>
+      ) : (
+        <ul
+          className="work-grid stagger slide"
+          data-direction={direction}
+          key={tab === "분야별" ? `${tab}-${field}` : tab}
+        >
+          {list.map((group, index) => (
+            <li key={group.id} style={{ "--i": index } as CSSProperties}>
+              <WorkCard
+                match={group}
+                meta={`${group.school} · ${group.category}`}
+                onOpenDetail={() => onOpenDetail(group)}
+                tags={
+                  <>
+                    {/* The date and the event's features each take their own line. */}
+                    {group.eventDate && <DateLine date={group.eventDate} />}
+                    {group.eventName && <span className="tag-event">{group.eventName}</span>}
+                    {group.tags.map((tag) => (
+                      <span key={tag}>{tag}</span>
+                    ))}
+                  </>
+                }
+              >
+                <button className="cancel-button" onClick={() => onOpenDetail(group)} type="button">
+                  상세 정보
+                </button>
+                <ProposalControl
+                  done={proposals.includes(group.id)}
+                  label="협찬 제안하기"
+                  className="primary-button"
+                  onPropose={() => onPropose(group)}
+                  onCancel={() => onCancelProposal(group)}
+                />
+              </WorkCard>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   )
 }

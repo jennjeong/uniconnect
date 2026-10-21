@@ -1,8 +1,13 @@
+import type { CSSProperties } from "react"
+
 import { AnimatedNumber } from "../components/AnimatedNumber"
 import { Icon } from "../components/Icon"
+import { Pill } from "../components/Pill"
+import { RevealTitle, RevealWords } from "../components/RevealText"
 import { profileLabels } from "../data/profile"
 import { formatFullDate, toIsoDate } from "../lib/date"
 import { initialOf } from "../lib/format"
+import { MeshBackdrop } from "../scenes/MeshBackdrop"
 import type { Account, Match, NavLabel } from "../types"
 
 export type ActivityItem = {
@@ -12,8 +17,16 @@ export type ActivityItem = {
   target: NavLabel
 }
 
-// The account's own page: who it is, the introduction the other side sees,
-// what it has done so far, and logout.
+const pad = (value: number) => String(value).padStart(2, "0")
+
+const delay = (seconds: number) => ({ "--reveal-delay": `${seconds}s` }) as CSSProperties
+
+// Blue, silver and slate, as in Stride's stats bento.
+const tileLooks = ["blue", "silver", "slate"]
+
+// The account's own page: a banner on Stride's deep blue mesh with who it
+// is, what it has done so far as three tiles, the introduction the other
+// side sees, the account's details as rows, and logout.
 export function ProfilePage({
   account,
   listing,
@@ -45,97 +58,127 @@ export function ProfilePage({
 
   return (
     <section className="page-view profile-view">
-      <div className="create-head">
-        <button aria-label="뒤로" className="back-button" onClick={onBack} type="button">
-          <Icon name="chevron" size={18} />
+      <div className="detail-top">
+        <button aria-label="뒤로" className="back-pill" onClick={onBack} type="button">
+          <Icon name="chevron" size={16} />
+          <span>뒤로</span>
         </button>
-        <div>
-          <span className="section-kicker dark">MY PAGE</span>
-          <p className="section-title">내 정보</p>
-        </div>
       </div>
 
-      <div className="profile-hero">
-        <div className="avatar large">{initialOf(account.name)}</div>
-        <div>
-          <span className="profile-role">
-            {account.role === "학생단체" ? "협찬 받기 · 학생단체" : "협찬 하기 · 브랜드"}
-          </span>
-          <strong>{account.name}</strong>
-          <small>{account.school ? `${account.school} · ${account.type}` : account.type}</small>
-        </div>
-      </div>
-
-      <div className="profile-stats stagger">
-        {activity.map((item) => (
-          <button
-            className="stat-card"
-            key={item.label}
-            onClick={() => onNavigate(item.target)}
-            type="button"
-          >
-            <span className="stat-top">
-              <span>{item.label}</span>
-              <Icon name="chevron" size={16} />
+      <header className="banner-hero profile-banner">
+        <MeshBackdrop seed={5.1} />
+        <div className="banner-content">
+          <div className="banner-top">
+            <span className="eyebrow light">My page</span>
+            <span className="banner-role">
+              {students ? "협찬 받기 · 학생단체" : "협찬 하기 · 브랜드"}
             </span>
-            <span className="stat-value">
+          </div>
+          <div className="banner-identity">
+            <div aria-hidden="true" className="avatar large">
+              {initialOf(account.name)}
+            </div>
+            <div>
+              <span className="banner-meta">
+                {account.school ? `${account.school} · ${account.type}` : account.type}
+              </span>
+              <RevealTitle className="banner-title">{account.name}</RevealTitle>
+            </div>
+          </div>
+          <div className="banner-bottom">
+            <span className="banner-note">내 정보 · 공개 소개 · 활동</span>
+            <div className="banner-actions">
+              <Pill arrow="up-right" onClick={onEdit} variant="white">
+                {listing ? "소개 편집하기" : "소개 등록하기"}
+              </Pill>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <ul className="activity-tiles">
+        {activity.map((item, index) => (
+          <li data-reveal key={item.label} style={delay(index * 0.12)}>
+            <button className={`activity-tile ${tileLooks[index] ?? "silver"}`} onClick={() => onNavigate(item.target)} type="button">
               <strong>
                 <AnimatedNumber value={item.value} />
               </strong>
-            </span>
-          </button>
+              <small>{item.label}</small>
+            </button>
+          </li>
         ))}
-      </div>
+      </ul>
 
-      <div className="form-card profile-public">
-        <div className="profile-public-head">
-          <div>
-            <h3 className="form-card-title">공개 소개</h3>
-            <p className="form-card-caption">
+      <section className="about-block">
+        <div className="about-side">
+          <span className="eyebrow">공개 소개</span>
+          <Icon name="link" size={220} />
+          <p className="about-note" data-reveal>
+            <Icon name="users" size={20} />
+            <span>
               {viewers}가 {students ? "단체 찾기" : "추천 매칭"}에서 보는 정보예요.
-            </p>
-          </div>
-          <button className="detail-button" onClick={onEdit} type="button">
-            <Icon name="edit" size={15} /> {listing ? "편집하기" : "소개 등록하기"}
-          </button>
-        </div>
-        {listing ? (
-          <>
-            <p className="profile-public-intro">{listing.intro}</p>
-            <div className="detail-offer">
-              <span>{labels.offer}</span>
-              <strong>{listing.offer}</strong>
-            </div>
-            <ul className="profile-public-summary">
-              <li>기본 정보 {listing.facts?.length ?? 0}개</li>
-              <li>SNS {listing.sns?.length ?? 0}개</li>
-              <li>
-                {labels.portfolio} {listing.portfolio?.length ?? 0}개
-              </li>
-            </ul>
-          </>
-        ) : (
-          <p className="day-empty">
-            아직 소개가 없어요. 소개를 등록하면 {viewers}가 찾기에서 보고 문의할 수 있어요.
+            </span>
           </p>
-        )}
-      </div>
+        </div>
+        <div className="about-copy">
+          {listing ? (
+            <>
+              {listing.intro ? (
+                <RevealWords className="about-statement">{listing.intro}</RevealWords>
+              ) : (
+                <p className="about-statement muted">소개 문장이 아직 없어요.</p>
+              )}
+              <div className="about-offer" data-reveal style={delay(0.15)}>
+                <span>{labels.offer}</span>
+                <strong>{listing.offer}</strong>
+              </div>
+            </>
+          ) : (
+            <p className="about-statement muted">
+              아직 소개가 없어요. 소개를 등록하면 {viewers}가 찾기에서 보고 문의할 수 있어요.
+            </p>
+          )}
+          <div className="about-foot" data-reveal style={delay(0.2)}>
+            {listing ? (
+              <ul className="summary-chips">
+                <li>기본 정보 {listing.facts?.length ?? 0}개</li>
+                <li>SNS {listing.sns?.length ?? 0}개</li>
+                <li>
+                  {labels.portfolio} {listing.portfolio?.length ?? 0}개
+                </li>
+              </ul>
+            ) : (
+              <span>소개 · 협찬 내용 · SNS · {labels.portfolio}</span>
+            )}
+            <Pill arrow="up-right" onClick={onEdit} variant="outline">
+              {listing ? "편집하기" : "소개 등록하기"}
+            </Pill>
+          </div>
+        </div>
+      </section>
 
-      <div className="form-card profile-details">
-        <h3 className="form-card-title">계정 정보</h3>
-        <dl>
-          {details.map((detail) => (
-            <div key={detail.label}>
+      <section className="service-section">
+        <span className="eyebrow" data-reveal>
+          Account
+        </span>
+        <RevealTitle as="h2" className="section-display">
+          계정 정보
+        </RevealTitle>
+        <dl className="service-list">
+          {details.map((detail, index) => (
+            <div className="service-row" data-reveal key={detail.label} style={delay(index * 0.08)}>
+              <span className="service-index">{pad(index + 1)}</span>
               <dt>{detail.label}</dt>
               <dd>{detail.value}</dd>
             </div>
           ))}
         </dl>
-      </div>
-
-      <button className="cancel-button profile-logout" onClick={onLogout} type="button">
-        로그아웃
-      </button>
+        <div className="profile-logout">
+          <Pill onClick={onLogout} variant="outline">
+            로그아웃
+          </Pill>
+        </div>
+      </section>
     </section>
   )
 }

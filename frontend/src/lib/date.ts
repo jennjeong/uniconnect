@@ -85,3 +85,10 @@ export function calendarDays(month: Date) {
       new Date(first.getFullYear(), first.getMonth(), 1 - first.getDay() + index),
   )
 }
+
+// "2026 FALL SEMESTER" for today (or `date`).
+export function semesterLabel(date = new Date()) {
+  const month = date.getMonth() + 1
+  const season = month >= 9 ? "FALL" : month >= 7 ? "SUMMER" : month >= 3 ? "SPRING" : "WINTER"
+  return `${date.getFullYear()} ${season} SEMESTER`
+}

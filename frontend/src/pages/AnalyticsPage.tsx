@@ -1,12 +1,23 @@
+import type { CSSProperties } from "react"
+
 import { AnimatedNumber } from "../components/AnimatedNumber"
 import { Icon } from "../components/Icon"
+import { PageIntro } from "../components/PageIntro"
+import { Pill } from "../components/Pill"
+import { RevealTitle } from "../components/RevealText"
 import { formatFullDate } from "../lib/date"
 import { percent } from "../lib/format"
 import { formatWon } from "../lib/kpis"
 import { costPerVisit, roasMet, roasOf, sponsorshipTotals } from "../lib/sponsorships"
+import { LayersGradient } from "../scenes/LayersGradient"
+import { INTERFERENCE } from "../scenes/shaders"
 import type { NavLabel, Sponsorship } from "../types"
 
-// Spend, coupons, visits and ROAS of each sponsorship the brand has done.
+const delay = (seconds: number) => ({ "--reveal-delay": `${seconds}s` }) as CSSProperties
+
+// Spend, coupons, visits and ROAS of each sponsorship the brand has done:
+// the totals over getlayers.ai's Interference gradient, then ROAS, insights
+// and a table.
 export function AnalyticsPage({
   sponsorships,
   onNavigate,
@@ -59,34 +70,46 @@ export function AnalyticsPage({
 
   return (
     <section className="page-view">
-      <div className="section-heading-row view-heading">
-        <div>
-          <span className="section-kicker dark">SPONSORSHIP ANALYTICS</span>
-          <p className="section-title">협찬 성과 분석</p>
-        </div>
-        <button className="primary-button" onClick={() => onNavigate("단체 찾기")} type="button">
-          <Icon name="users" size={16} /> 비슷한 단체 찾기
-        </button>
-      </div>
+      <PageIntro
+        eyebrow="Sponsorship analytics"
+        title="협찬 성과 분석"
+        description="협찬마다 쓴 금액과 돌아온 쿠폰, 방문, 추정 매출을 함께 비교해요."
+        actions={
+          <Pill arrow="right" onClick={() => onNavigate("단체 찾기")}>
+            비슷한 단체 찾기
+          </Pill>
+        }
+      />
 
       {rows.length === 0 ? (
         <p className="day-empty">아직 집계된 협찬이 없어요. 협찬이 끝나면 성과를 여기서 볼 수 있어요.</p>
       ) : (
         <>
-          <div className="analytics-kpis stagger">
-            {kpis.map((kpi) => (
-              <div className="analytics-kpi" key={kpi.label}>
-                <span>{kpi.label}</span>
-                <strong className={kpi.good ? "good" : ""}>
-                  <AnimatedNumber value={kpi.value} />
-                </strong>
-                <small>{kpi.note}</small>
-              </div>
-            ))}
-          </div>
+          <section className="power-panel" data-reveal>
+            <LayersGradient shader={INTERFERENCE} />
+            <div className="power-content">
+              <span className="eyebrow light">By the numbers</span>
+              <RevealTitle as="h2" className="power-title">
+                지금까지의 협찬을 모아 보면
+              </RevealTitle>
+              <ul className="power-stats">
+                {kpis.map((kpi, index) => (
+                  <li data-reveal key={kpi.label} style={delay(index * 0.09)}>
+                    <div className="power-stat">
+                      <strong className={kpi.good ? "good" : ""}>
+                        <AnimatedNumber value={kpi.value} />
+                      </strong>
+                      <span>{kpi.label}</span>
+                      <small>{kpi.note}</small>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
 
           <div className="analytics-grid">
-            <div className="analytics-card">
+            <div className="analytics-card" data-reveal>
               <div className="measure-card-head">
                 <p className="section-title">협찬별 ROAS</p>
                 <span className="roas-legend">
@@ -116,7 +139,7 @@ export function AnalyticsPage({
               </div>
             </div>
 
-            <div className="analytics-card insight-card">
+            <div className="analytics-card insight-card" data-reveal style={delay(0.1)}>
               <p className="section-title">인사이트</p>
               <ul className="insight-list stagger">
                 <li>
@@ -172,7 +195,7 @@ export function AnalyticsPage({
             </div>
           </div>
 
-          <div className="analytics-card">
+          <div className="analytics-card" data-reveal>
             <p className="section-title">협찬별 상세</p>
             <div className="analytics-table stagger" role="table" aria-label="협찬별 상세">
               <div className="analytics-row head" role="row">

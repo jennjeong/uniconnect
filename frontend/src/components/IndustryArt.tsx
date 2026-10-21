@@ -2,8 +2,7 @@ import type { ReactNode } from "react"
 
 import type { Industry } from "../types"
 
-// The app's point yellows (--point, --point-hover in index.css) tie every
-// mark to the brand.
+// Golds close to the logo's tie every mark to the brand.
 const yellow = "#faca4b"
 const yellowDeep = "#f2bb31"
 
