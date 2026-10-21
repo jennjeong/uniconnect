@@ -7,8 +7,11 @@ import { sponsorTypeLabels } from "../lib/format"
 import { formatWon } from "../lib/kpis"
 import {
   calendarDays,
+  daysOf,
   formatDay,
+  formatPeriod,
   fromIsoDate,
+  shortDay,
   startOfMonth,
   toIsoDate,
   todayIso,
@@ -17,10 +20,11 @@ import {
 import type { EventItem, Role, SponsorRequest } from "../types"
 
 // A day on the calendar holds the account's own events or campaigns and,
-// for brands, the student events whose proposal they accepted.
+// for brands, the student events whose proposal they accepted. An event
+// over several days shows on each of them.
 type Entry =
-  | { kind: "event"; id: string; date: string; name: string; event: EventItem }
-  | { kind: "sponsorship"; id: string; date: string; name: string; request: SponsorRequest }
+  | { kind: "event"; id: string; date: string; end?: string; name: string; event: EventItem }
+  | { kind: "sponsorship"; id: string; date: string; end?: string; name: string; request: SponsorRequest }
 
 const statusClass = (entry: Entry) =>
   entry.kind === "event" ? `status-${entry.event.status.replace(" ", "")}` : "status-협찬확정"
@@ -44,6 +48,9 @@ function EventRow({
       <div className="day-event-copy">
         <span className={`status-chip status-${event.status.replace(" ", "")}`}>{event.status}</span>
         <strong>{event.name}</strong>
+        {event.endDate && (
+          <span className="day-event-period">{formatPeriod(event.date, event.endDate)}</span>
+        )}
         <p>
           {role === "학생단체"
             ? `예상 참여 ${event.people || "미정"}${types}`
@@ -128,6 +135,7 @@ export function EventsPage({
       kind: "event" as const,
       id: event.id,
       date: event.date,
+      end: event.endDate,
       name: event.name,
       event,
     })),
@@ -140,10 +148,18 @@ export function EventsPage({
     })),
   ].filter((entry) => fromIsoDate(entry.date))
   const byDate = new Map<string, Entry[]>()
-  for (const entry of entries) byDate.set(entry.date, [...(byDate.get(entry.date) ?? []), entry])
+  for (const entry of entries) {
+    for (const day of daysOf(entry.date, entry.end)) byDate.set(day, [...(byDate.get(day) ?? []), entry])
+  }
   const selectedEntries = byDate.get(selected) ?? []
+  // Everything on the month shown, for the list under the calendar.
+  const monthStart = toIsoDate(month)
+  const monthEnd = toIsoDate(new Date(month.getFullYear(), month.getMonth() + 1, 0))
+  const monthEntries = entries
+    .filter((entry) => entry.date <= monthEnd && (entry.end ?? entry.date) >= monthStart)
+    .sort((a, b) => a.date.localeCompare(b.date))
   const upcoming = entries
-    .filter((entry) => entry.date >= today)
+    .filter((entry) => (entry.end ?? entry.date) >= today)
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(0, 4)
 
@@ -160,8 +176,8 @@ export function EventsPage({
   return (
     <section className="page-view">
       <PageIntro
-        eyebrow={role === "학생단체" ? "My events" : "Campaign calendar"}
-        title={`${noun} 일정`}
+        eyebrow={role === "학생단체" ? "My events" : "Event calendar"}
+        title="행사 일정"
         description="날짜를 고르면 그날의 일정이 함께 보여요. 두 번 누르면 그 날짜로 바로 등록해요."
         actions={
           <Pill arrow="right" onClick={() => onCreate(selected)}>
@@ -209,6 +225,7 @@ export function EventsPage({
               const dayEntries = byDate.get(iso) ?? []
               const className = [
                 "calendar-day",
+                dayEntries.length > 0 && "has-events",
                 day.getMonth() !== month.getMonth() && "outside",
                 day.getDay() === 0 && "sunday",
                 day.getDay() === 6 && "saturday",
@@ -248,7 +265,40 @@ export function EventsPage({
             <span className="legend-scheduled">집행 예정</span>
             <span className="legend-done">측정 완료</span>
             {role === "브랜드" && <span className="legend-confirmed">협찬 확정</span>}
-            <small>날짜를 고르고 아래 ‘이 날짜에 {noun} 등록’을 누르면 바로 입력할 수 있어요.</small>
+          </div>
+
+          <div className="month-agenda">
+            <p className="month-agenda-title">
+              {month.getMonth() + 1}월 일정 <em>{monthEntries.length}</em>
+            </p>
+            {monthEntries.length === 0 ? (
+              <p className="day-empty">이 달에는 일정이 없어요.</p>
+            ) : (
+              <ol className="stagger" key={toIsoDate(month)}>
+                {monthEntries.map((entry) => {
+                  const start = fromIsoDate(entry.date)
+                  return (
+                    <li key={entry.id}>
+                      <button
+                        className={entry.date === selected ? "agenda-item selected" : "agenda-item"}
+                        onClick={() => jumpTo(entry.date)}
+                        type="button"
+                      >
+                        <span className="agenda-day">
+                          <strong>{start?.getDate()}</strong>
+                          <small>{start ? weekdayNames[start.getDay()] : ""}</small>
+                        </span>
+                        <span className="agenda-copy">
+                          <strong>{entry.name}</strong>
+                          <small>{formatPeriod(entry.date, entry.end)}</small>
+                        </span>
+                        <span className={`status-chip ${statusClass(entry)}`}>{statusLabel(entry)}</span>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ol>
+            )}
           </div>
         </div>
 
@@ -302,7 +352,10 @@ export function EventsPage({
                   onClick={() => jumpTo(entry.date)}
                   type="button"
                 >
-                  <span className="upcoming-date">{formatDay(entry.date)}</span>
+                  <span className="upcoming-date">
+                    {formatDay(entry.date)}
+                    {entry.end && ` ~ ${shortDay(entry.end)}`}
+                  </span>
                   <strong>{entry.name}</strong>
                   <span className={`status-chip ${statusClass(entry)}`}>{statusLabel(entry)}</span>
                 </button>

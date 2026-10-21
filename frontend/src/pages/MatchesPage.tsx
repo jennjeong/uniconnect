@@ -88,7 +88,6 @@ export function MatchesPage({
         eyebrow="Smart match"
         title={intro.title}
         description={intro.caption}
-        actions={<span className="intro-count">{list.length}곳</span>}
       />
 
       <div className="match-filters">

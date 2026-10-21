@@ -58,7 +58,8 @@ export function withLiveEvent(database: Database, group: Match): Match {
   if (!account) return group
   const today = new Date().toISOString().slice(0, 10)
   const next = (database.events[account.id] ?? [])
-    .filter((event) => event.date >= today)
+    // An event over several days stays next until its last day.
+    .filter((event) => (event.endDate ?? event.date) >= today)
     .sort((a, b) => a.date.localeCompare(b.date))[0]
   if (!next) return { ...group, eventName: undefined, eventDate: undefined, audience: undefined }
   const audience = Number(next.people.replace(/\D/g, "")) || undefined

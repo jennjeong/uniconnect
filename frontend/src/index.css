@@ -533,7 +533,7 @@ button.nav-pill:hover {
 
 /* The full-screen menu (layout/NavMenu.tsx): brushed silver with a blue
    haze, the pages in large SemiBold type arriving one after another,
-   the account links under them, and the time with register at the bottom. */
+   the account links under them, and register at the bottom. */
 .nav-menu {
   position: fixed;
   z-index: 115;
@@ -630,20 +630,22 @@ button.nav-pill:hover {
   display: flex;
   width: 100%;
   align-items: baseline;
-  gap: 18px;
+  gap: 16px;
   padding: 6px 0;
   border: 0;
   background: none;
   color: var(--ink-soft);
-  font-size: clamp(38px, 5.4vw, 68px);
+  font-size: clamp(28px, 3.6vw, 46px);
   font-weight: var(--weight-label);
   letter-spacing: -0.03em;
   line-height: 1.12;
   text-align: left;
 }
 
+/* The number takes a fixed width, so the account links below (indented by
+   that width and the gap) line up with the page names. */
 .nav-menu-item small {
-  min-width: 2ch;
+  min-width: 20px;
   color: var(--muted);
   font-size: 15px;
   font-weight: var(--weight-label);
@@ -681,7 +683,7 @@ button.nav-pill:hover {
   flex-wrap: wrap;
   align-items: center;
   gap: 10px 28px;
-  padding-top: 24px;
+  padding: 24px 0 0 36px;
   border-top: 1px solid var(--line-strong);
 }
 
@@ -731,7 +733,7 @@ button.nav-pill:hover {
   flex: 0 0 auto;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 12px;
   padding: 24px 0 calc(24px + env(safe-area-inset-bottom));
   border-top: 1px solid var(--line-strong);
@@ -739,11 +741,6 @@ button.nav-pill:hover {
   font-size: 12px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-}
-
-.nav-menu-bottom time {
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
 }
 
 .nav-menu-bottom button {
@@ -1180,21 +1177,6 @@ button.nav-pill:hover {
   gap: 10px;
 }
 
-.intro-count {
-  display: inline-flex;
-  height: 40px;
-  align-items: center;
-  padding: 0 18px;
-  border-radius: 999px;
-  background: var(--silver-gradient);
-  color: var(--ink-soft);
-  box-shadow: var(--silver-ring);
-  font-size: 14px;
-  font-weight: var(--weight-label);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
 /* Stride's label: a deep blue dot held in a faint ring, before the words. */
 .eyebrow {
   display: inline-flex;
@@ -1327,6 +1309,7 @@ button.nav-pill:hover {
   display: grid;
   width: 36px;
   height: 36px;
+  flex: 0 0 auto;
   place-items: center;
   border-radius: 50%;
   background: var(--point);
@@ -1560,8 +1543,9 @@ button.nav-pill:hover {
   border-radius: 20px;
 }
 
+/* Without a logo, the industry mark in the logo's blues on a faint blue tile. */
 .match-logo.industry {
-  background: var(--tile);
+  background: var(--point-tint);
 }
 
 .industry-art {
@@ -2440,6 +2424,31 @@ button.nav-pill:hover {
   flex-direction: row;
   align-items: center;
   gap: 14px;
+}
+
+/* Details beside the proposal: two halves of the row, the status of a sent
+   proposal filling its half with the cancel link under it. */
+.work-actions:has(> :nth-child(2)) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+.work-actions:has(> :nth-child(2)) > *,
+.work-actions:has(> :nth-child(2)) .proposal-button {
+  width: 100%;
+  min-width: 0;
+  flex: none;
+}
+
+.work-actions:has(> :nth-child(2)) .proposal-actions {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.work-actions:has(> :nth-child(2)) .proposal-cancel {
+  align-self: center;
 }
 
 /* Proposals waiting for a brand's answer (pages/BrandDashboardPage.tsx). */
@@ -3626,6 +3635,22 @@ button.nav-pill:hover {
   color: #a9c1f5;
 }
 
+/* Analytics: every number in the luminous accent with its unit set
+   smaller after it, so the four cards read the same way. */
+.power-stat strong {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  color: var(--point-glow);
+}
+
+.power-stat strong small {
+  color: #fff;
+  font-size: 0.4em;
+  font-weight: var(--weight-strong);
+  letter-spacing: 0;
+}
+
 /* Each goal as a silver card that opens its details. */
 .kpi-grid {
   display: grid;
@@ -4139,6 +4164,12 @@ button.nav-pill:hover {
   color: var(--on-point);
 }
 
+/* The days between the first and last of a period, on a faint blue. */
+.date-cell.in-range {
+  background: var(--point-tint);
+  color: var(--point-strong);
+}
+
 .date-picked {
   display: flex;
   align-items: center;
@@ -4286,6 +4317,12 @@ button.nav-pill:hover {
   color: var(--faint);
 }
 
+/* Days with something on them read at a glance on a faint blue. */
+.calendar-day.has-events {
+  background: var(--point-soft);
+  box-shadow: inset 0 0 0 1px var(--point-line);
+}
+
 .calendar-day.selected {
   border-color: var(--point-deep);
   background: var(--point-tint);
@@ -4345,6 +4382,110 @@ button.nav-pill:hover {
   font-weight: var(--weight-label);
 }
 
+/* The month's schedule under the calendar: the day on a white tile, the
+   name and period, then the status. */
+.month-agenda {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.month-agenda-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: var(--weight-strong);
+}
+
+.month-agenda-title em {
+  display: inline-grid;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  place-items: center;
+  border-radius: 11px;
+  background: var(--point);
+  color: var(--on-point);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: var(--weight-badge);
+}
+
+.month-agenda ol {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.agenda-item {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 46px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px 10px 10px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--silver-gradient);
+  color: var(--ink);
+  box-shadow: var(--silver-ring);
+  text-align: left;
+}
+
+.agenda-item:hover,
+.agenda-item.selected {
+  box-shadow: inset 0 0 0 1.5px var(--point);
+}
+
+.agenda-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 0;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.agenda-day strong {
+  color: var(--point);
+  font-size: 18px;
+  font-weight: var(--weight-display);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.agenda-day small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: var(--weight-label);
+}
+
+.agenda-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.agenda-copy strong {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: var(--weight-label);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agenda-copy small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .calendar-legend {
   display: flex;
   flex-wrap: wrap;
@@ -4372,12 +4513,6 @@ button.nav-pill:hover {
 
 .calendar-legend .legend-done::before {
   background: var(--green);
-}
-
-.calendar-legend small {
-  margin-left: auto;
-  color: var(--muted);
-  font-size: 12px;
 }
 
 .day-panel {
@@ -4416,6 +4551,13 @@ button.nav-pill:hover {
   margin: 0;
   color: var(--muted);
   font-size: 13px;
+}
+
+/* The whole period of an event over several days. */
+.day-event-period {
+  color: var(--point-strong);
+  font-size: 13px;
+  font-weight: var(--weight-label);
 }
 
 .day-event-card .event-card-actions {
@@ -6103,6 +6245,86 @@ button.nav-pill:hover {
   opacity: 0.75;
 }
 
+/* An accepted sponsorship's steps under its status: dots on a line, deep
+   blue up to today, a ringed dot for the step under way, silver after. */
+.request-progress {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 18px 0 0;
+  padding: 16px 0 0;
+  border-top: 1px solid var(--line);
+  list-style: none;
+}
+
+.request-progress li {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+/* The line to the previous step, from its dot to this one. */
+.request-progress li + li::before {
+  position: absolute;
+  top: 6px;
+  right: 50%;
+  left: -50%;
+  height: 2px;
+  background: var(--line-strong);
+  content: "";
+}
+
+.request-progress li.step-done::before,
+.request-progress li.step-current::before {
+  background: var(--point);
+}
+
+.request-progress i {
+  position: relative;
+  z-index: 1;
+  width: 14px;
+  height: 14px;
+  margin-bottom: 4px;
+  border-radius: 50%;
+  background: var(--fill-strong);
+  box-shadow: 0 0 0 3px #fff;
+}
+
+.request-progress .step-done i {
+  background: var(--point);
+}
+
+.request-progress .step-current i {
+  background: #fff;
+  box-shadow:
+    inset 0 0 0 4px var(--point),
+    0 0 0 3px #fff;
+}
+
+.request-progress strong {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: var(--weight-label);
+}
+
+.request-progress .step-next strong {
+  color: var(--muted);
+}
+
+.request-progress time {
+  color: var(--muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.request-progress .step-current time {
+  color: var(--point-strong);
+  font-weight: var(--weight-label);
+}
+
 .analytics-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
@@ -7016,7 +7238,8 @@ button.nav-pill:hover {
     padding: 0;
   }
 
-  /* Calendar first, day details below; event names become colored dots. */
+  /* Calendar first, day details below; event names become short colored
+     bars, with the names in the month's list under the calendar. */
   .calendar-day {
     align-items: center;
     padding: 4px 2px;
@@ -7029,10 +7252,10 @@ button.nav-pill:hover {
   }
 
   .day-event {
-    width: 6px;
-    height: 6px;
+    width: 14px;
+    height: 4px;
     padding: 0;
-    border-radius: 50%;
+    border-radius: 2px;
     background: #8a94a6;
     font-size: 0;
   }
@@ -7051,11 +7274,6 @@ button.nav-pill:hover {
 
   .day-more {
     display: none;
-  }
-
-  .calendar-legend small {
-    width: 100%;
-    margin-left: 0;
   }
 
   .measure-grid {
@@ -8224,6 +8442,84 @@ button:active:not(:disabled) {
   background: var(--point);
   color: #fff;
   font-size: 10px;
+}
+
+/* Analytics report: each sponsorship's ROAS as a bar with its goal tick. */
+.pdf-roas {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pdf-roas-row {
+  display: grid;
+  grid-template-columns: 170px 1fr 78px;
+  align-items: center;
+  gap: 12px;
+}
+
+.pdf-roas-name {
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+  font-weight: var(--weight-strong);
+}
+
+.pdf-roas-name small,
+.pdf-roas-value small {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: var(--weight-body);
+}
+
+.pdf-roas-track {
+  position: relative;
+  height: 12px;
+  border-radius: 6px;
+  background: var(--canvas);
+}
+
+.pdf-roas-track i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 6px;
+  background: #b9c2d2;
+}
+
+.pdf-roas-row.met .pdf-roas-track i {
+  background: linear-gradient(90deg, var(--point-deep), var(--point));
+}
+
+.pdf-roas-track b {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 3px;
+  border-radius: 1.5px;
+  background: var(--goal-mark);
+  box-shadow: 0 0 0 1.5px #fff;
+}
+
+.pdf-roas-value {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: 14px;
+  font-weight: var(--weight-badge);
+}
+
+.pdf-roas-row.met .pdf-roas-value {
+  color: var(--point-strong);
+}
+
+.pdf-legend span.goal::before {
+  width: 3px;
+  background: var(--goal-mark);
+}
+
+.pdf-funnel-bar.spend {
+  background: #b9c2d2;
+  color: var(--ink);
 }
 
 .pdf-footer {

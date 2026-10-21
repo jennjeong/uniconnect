@@ -385,6 +385,26 @@ test("brand campaigns take an optional budget", async () => {
   await call("DELETE", `/events/${event.data.event.id}`, undefined, student)
 })
 
+test("events and campaigns can run over a period", async () => {
+  const brand = await login("브랜드")
+  const campaign = { name: "겨울 팝업 주간", date: "2026-12-07", types: ["제품"] }
+  const backwards = await call("POST", "/events", { ...campaign, endDate: "2026-12-01" }, brand)
+  assert.equal(backwards.status, 400)
+  const tooLong = await call("POST", "/events", { ...campaign, endDate: "2027-06-01" }, brand)
+  assert.equal(tooLong.status, 400)
+
+  const week = await call("POST", "/events", { ...campaign, endDate: "2026-12-11" }, brand)
+  assert.equal(week.status, 201)
+  assert.equal(week.data.event.date, "2026-12-07")
+  assert.equal(week.data.event.endDate, "2026-12-11")
+  await call("DELETE", `/events/${week.data.event.id}`, undefined, brand)
+
+  // Ending on the first day is a one-day event.
+  const oneDay = await call("POST", "/events", { ...campaign, endDate: "2026-12-07" }, brand)
+  assert.equal(oneDay.data.event.endDate, undefined)
+  await call("DELETE", `/events/${oneDay.data.event.id}`, undefined, brand)
+})
+
 test("accounts write the listing the other side sees", async () => {
   const student = await login("학생단체")
   const mine = (await call("GET", "/profile", undefined, student)).data.profile

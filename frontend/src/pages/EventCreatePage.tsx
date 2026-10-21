@@ -4,7 +4,7 @@ import type { EventDraft } from "../api"
 import { DatePicker } from "../components/DatePicker"
 import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
-import { formatFullDate } from "../lib/date"
+import { formatPeriod } from "../lib/date"
 import type { Role } from "../types"
 
 // Keep the values in sync with sponsorTypes in backend/src/lib/validation.ts.
@@ -43,7 +43,9 @@ export function EventCreatePage({
   const [people, setPeople] = useState("")
   // Digits only; brands plan a budget in won.
   const [budget, setBudget] = useState("")
+  // The first day, and the last when it runs over several days.
   const [date, setDate] = useState(initialDate)
+  const [endDate, setEndDate] = useState<string | undefined>()
   const [types, setTypes] = useState<string[]>([])
   const [typeNote, setTypeNote] = useState("")
   const [error, setError] = useState("")
@@ -76,6 +78,7 @@ export function EventCreatePage({
         name: name.trim(),
         people: people ? `${Number(people).toLocaleString("ko-KR")}명` : "",
         date,
+        endDate,
         types,
         typeNote: wantsOther ? typeNote.trim() : undefined,
         budget: !students && budget ? Number(budget) : undefined,
@@ -179,10 +182,20 @@ export function EventCreatePage({
 
         <div className="form-card date-card">
           <h3 className="form-card-title">일정</h3>
-          <DatePicker value={date} onChange={setDate} />
+          <p className="form-card-caption">
+            첫날과 마지막 날을 차례로 누르면 기간으로 잡혀요. 하루 일정은 한 번만 누르세요.
+          </p>
+          <DatePicker
+            end={endDate}
+            onChange={(start, end) => {
+              setDate(start)
+              setEndDate(end)
+            }}
+            start={date}
+          />
           <p className="date-picked">
             <Icon name="calendar" size={16} />
-            {formatFullDate(date)}
+            {formatPeriod(date, endDate)}
           </p>
         </div>
       </div>

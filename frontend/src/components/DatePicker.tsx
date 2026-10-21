@@ -11,20 +11,42 @@ import {
 } from "../lib/date"
 import { Icon } from "./Icon"
 
-// Month calendar for picking one day, styled like the 내 행사 calendar.
+// Month calendar for picking a day or a period, styled like the 내 행사
+// calendar. The first press picks the first day; the next press on a later
+// day closes the period (or, on an earlier day, starts over from there),
+// and the one after starts a new pick. One day is a period that ends where
+// it starts.
 export function DatePicker({
-  value,
+  start,
+  end,
   onChange,
 }: {
   // "YYYY-MM-DD"
-  value: string
-  onChange: (iso: string) => void
+  start: string
+  // Last day of the period; absent for one day.
+  end?: string
+  onChange: (start: string, end?: string) => void
 }) {
-  const [month, setMonth] = useState(() => startOfMonth(fromIsoDate(value) ?? new Date()))
+  const [month, setMonth] = useState(() => startOfMonth(fromIsoDate(start) ?? new Date()))
+  // Whether the next press closes the period started by the last one.
+  const [closing, setClosing] = useState(false)
   const today = todayIso()
+  const last = end ?? start
 
   const shiftMonth = (months: number) =>
     setMonth((current) => new Date(current.getFullYear(), current.getMonth() + months, 1))
+
+  const pick = (iso: string) => {
+    if (closing && iso > start) {
+      onChange(start, iso)
+      setClosing(false)
+    } else if (closing && iso === start) {
+      setClosing(false)
+    } else {
+      onChange(iso)
+      setClosing(true)
+    }
+  }
 
   return (
     <div className="date-picker">
@@ -60,24 +82,28 @@ export function DatePicker({
         {calendarDays(month).map((day) => {
           const iso = toIsoDate(day)
           const outside = day.getMonth() !== month.getMonth()
+          const edge = iso === start || iso === last
           const className = [
             "date-cell",
             outside && "outside",
             day.getDay() === 0 && "sunday",
             day.getDay() === 6 && "saturday",
             iso === today && "today",
-            iso === value && "selected",
+            edge && "selected",
+            iso > start && iso < last && "in-range",
+            last !== start && iso === start && "range-start",
+            last !== start && iso === last && "range-end",
           ]
             .filter(Boolean)
             .join(" ")
           return (
             <button
               aria-label={formatDay(iso)}
-              aria-pressed={iso === value}
+              aria-pressed={iso >= start && iso <= last}
               className={className}
               key={iso}
               onClick={() => {
-                onChange(iso)
+                pick(iso)
                 if (outside) setMonth(startOfMonth(day))
               }}
               type="button"

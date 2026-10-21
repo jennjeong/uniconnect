@@ -47,8 +47,10 @@ export type EventStatus = "매칭 중" | "집행 예정" | "측정 완료"
 export type EventItem = {
   id: string
   name: string
-  // Calendar day as "YYYY-MM-DD".
+  // Calendar day as "YYYY-MM-DD"; the first day when it runs over several.
   date: string
+  // Last day of an event that runs over several days; absent for one day.
+  endDate?: string
   people: string
   types: string[]
   // What "기타" in types means, written by the organizer.
@@ -179,7 +181,7 @@ export type NavLabel =
   | "리포트"
   | "단체 찾기"
   | "받은 제안"
-  | "캠페인"
+  | "행사 일정"
   | "성과 분석"
 
 export type ModalName =

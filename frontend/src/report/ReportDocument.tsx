@@ -9,7 +9,8 @@ import type { MetricEntry, Metrics, Report } from "../types"
 // blue, a lighter blue and silver.
 const valueColors = ["#1b3f8f", "#5b86e0", "#b9c2d2"]
 
-function PageHeader({ author }: { author: string }) {
+// The top of every PDF page: the logo, the day and who it was made for.
+export function PageHeader({ author }: { author: string }) {
   return (
     <header className="pdf-header">
       <img alt="uniconnect" src={logo} />
@@ -21,14 +22,20 @@ function PageHeader({ author }: { author: string }) {
   )
 }
 
-function PageFooter({ page }: { page: number }) {
+// The bottom of every PDF page: what it is and the page number.
+export function PageFooter({ note, page, total }: { note: string; page: number; total: number }) {
   return (
     <footer className="pdf-footer">
-      <span>uniconnect · 협찬 성과 리포트 · 행사 측정 데이터로 자동 생성했어요.</span>
-      <span>{page} / 2</span>
+      <span>{note}</span>
+      <span>
+        {page} / {total}
+      </span>
     </footer>
   )
 }
+
+const footerNote = "uniconnect · 협찬 성과 리포트 · 행사 측정 데이터로 자동 생성했어요."
+
 
 // Two A4 pages (794×1123 px) of the event's performance report.
 export function ReportDocument({
@@ -197,7 +204,7 @@ export function ReportDocument({
           </div>
         </section>
 
-        <PageFooter page={1} />
+        <PageFooter note={footerNote} page={1} total={2} />
       </div>
 
       <div className="pdf-page">
@@ -264,7 +271,7 @@ export function ReportDocument({
           </ol>
         </section>
 
-        <PageFooter page={2} />
+        <PageFooter note={footerNote} page={2} total={2} />
       </div>
     </>
   )

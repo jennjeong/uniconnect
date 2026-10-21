@@ -12,11 +12,12 @@ import type { Account, NavLabel, Role } from "../types"
 // Stride's footer from getlayers.ai: a deep blue mesh card where a chrome
 // object settles into the open side as the card scrolls in — here two
 // linked rings, the two sides holding on to each other — with the call to
-// register over it; then the site's links and the name as a large silver
-// wordmark on white.
+// register over it (on the dashboard only); then the site's links and the
+// name as a large silver wordmark on white.
 export function Footer({
   role,
   account,
+  invite = true,
   onNavigate,
   onSwitchRole,
   onCreate,
@@ -29,6 +30,8 @@ export function Footer({
 }: {
   role: Role
   account: Account | null
+  // Whether the deep blue card with the call to register comes first.
+  invite?: boolean
   onNavigate: (label: NavLabel) => void
   onSwitchRole: (role: Role) => void
   onCreate: () => void
@@ -72,27 +75,29 @@ export function Footer({
 
   return (
     <footer className="site-footer">
-      <section aria-label="함께 시작하기" className="footer-stage" ref={stageRef}>
-        <MeshBackdrop seed={7.2} />
-        <ChromeScene anchor={stageRef} kind="rings" mode="enter" spinDirection={-1} />
-        <div className="footer-cta">
-          <span className="eyebrow light">Let&apos;s connect</span>
-          <RevealTitle
-            accent={1}
-            as="h2"
-            className="footer-title"
-            lines={students ? ["함께 만들", "협찬이 있나요?"] : ["학생들의 현장과", "이어 볼까요?"]}
-          />
-          <p className="footer-lead">
-            {students
-              ? "행사를 등록하면 잘 맞는 브랜드를 찾아 드리고, 끝난 뒤에는 성과를 리포트로 정리해 드려요."
-              : "캠페인을 등록하면 잘 맞는 학생단체를 찾아 드리고, 협찬의 효과를 ROAS로 보여 드려요."}
-          </p>
-          <Pill arrow="up-right" onClick={onCreate} variant="white">
-            {createLabel(role)}
-          </Pill>
-        </div>
-      </section>
+      {invite && (
+        <section aria-label="함께 시작하기" className="footer-stage" ref={stageRef}>
+          <MeshBackdrop seed={7.2} />
+          <ChromeScene anchor={stageRef} kind="rings" mode="enter" spinDirection={-1} />
+          <div className="footer-cta">
+            <span className="eyebrow light">Let&apos;s connect</span>
+            <RevealTitle
+              accent={1}
+              as="h2"
+              className="footer-title"
+              lines={students ? ["함께 만들", "협찬이 있나요?"] : ["학생들의 현장과", "이어 볼까요?"]}
+            />
+            <p className="footer-lead">
+              {students
+                ? "행사를 등록하면 잘 맞는 브랜드를 찾아 드리고, 끝난 뒤에는 성과를 리포트로 정리해 드려요."
+                : "캠페인을 등록하면 잘 맞는 학생단체를 찾아 드리고, 협찬의 효과를 ROAS로 보여 드려요."}
+            </p>
+            <Pill arrow="up-right" onClick={onCreate} variant="white">
+              {createLabel(role)}
+            </Pill>
+          </div>
+        </section>
+      )}
 
       <div className="footer-inner">
         <div className="footer-columns">

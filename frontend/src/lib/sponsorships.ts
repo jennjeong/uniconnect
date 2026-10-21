@@ -22,3 +22,37 @@ export function sponsorshipTotals(sponsorships: Sponsorship[]) {
 
 // The whole amount, "1,480,000원", for the large numbers on dashboard cards.
 export const fullWon = (value: number) => `${value.toLocaleString("ko-KR")}원`
+
+// Amounts in 만원 for large numbers: "300", or "12.5" when it isn't whole.
+export const manWon = (value: number) =>
+  (value / 10000).toLocaleString("ko-KR", { maximumFractionDigits: 1 })
+
+// Everything the analytics page and its PDF report say about the brand's
+// sponsorships: each one's ROAS against its goal and cost per visit, the
+// totals, and the standouts the insights name.
+export function analyzeSponsorships(sponsorships: Sponsorship[]) {
+  const totals = sponsorshipTotals(sponsorships)
+  const rows = sponsorships.map((sponsorship) => ({
+    ...sponsorship,
+    roas: roasOf(sponsorship),
+    met: roasMet(sponsorship),
+    perVisit: costPerVisit(sponsorship),
+  }))
+  const best = [...rows].sort((a, b) => b.roas - a.roas)[0]
+  // The sponsorship furthest below its goal.
+  const furthestBelow = rows
+    .filter((row) => !row.met)
+    .sort((a, b) => a.roas - a.targetRoas - (b.roas - b.targetRoas))[0]
+  const cheapest = [...rows].filter((row) => row.visits > 0).sort((a, b) => a.perVisit - b.perVisit)[0]
+  return {
+    totals,
+    rows,
+    best,
+    furthestBelow,
+    cheapest,
+    metCount: rows.filter((row) => row.met).length,
+    visitRate: percent(totals.visits, totals.coupons),
+    // Bar scale with room past the best result and every goal marker.
+    roasScale: Math.max(100, best?.roas ?? 0, ...rows.map((row) => row.targetRoas)) * 1.1,
+  }
+}

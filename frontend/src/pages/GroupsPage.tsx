@@ -86,7 +86,6 @@ export function GroupsPage({
         eyebrow="Find student groups"
         title={tabIntro[tab].title}
         description={tabIntro[tab].caption}
-        actions={<span className="intro-count">{list.length}곳</span>}
       />
 
       <div className="match-filters">

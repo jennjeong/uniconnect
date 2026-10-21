@@ -5,12 +5,12 @@ import { Icon } from "../components/Icon"
 import { ClosingContext } from "../components/Presence"
 import { navItems } from "../data/navigation"
 import { createLabel, roles } from "../data/roles"
-import { useClock } from "../hooks/useClock"
 import type { Account, NavLabel, Role } from "../types"
 
 // The full-screen menu behind Menu: a silver panel with the role's pages in
-// large light type, numbered and arriving one after another, the account
-// links under them, and the time with the register action at the bottom.
+// large type, numbered and arriving one after another, the account links
+// under them in line with the page names, and the register action at the
+// bottom.
 // Escape or 닫기 closes it; the page behind doesn't scroll while it is open.
 export function NavMenu({
   role,
@@ -43,7 +43,6 @@ export function NavMenu({
 }) {
   const closing = useContext(ClosingContext)
   const closeRef = useRef<HTMLButtonElement>(null)
-  const now = useClock()
 
   // Focus moves into the menu and back to where it was when the menu goes,
   // unless a link opened something that took the focus (a login form).
@@ -72,9 +71,6 @@ export function NavMenu({
     onClose()
     action()
   }
-
-  const time = now.toLocaleTimeString("ko-KR", { hour: "numeric", minute: "2-digit" })
-  const date = now.toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "long" })
 
   return (
     <div
@@ -147,9 +143,6 @@ export function NavMenu({
       </nav>
 
       <div className="nav-menu-bottom">
-        <span>
-          지금 — <time dateTime={now.toISOString()}>{time}</time> · {date}
-        </span>
         <button onClick={pick(onCreate)} type="button">
           {createLabel(role)} →
         </button>

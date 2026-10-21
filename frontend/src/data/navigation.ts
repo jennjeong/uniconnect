@@ -22,7 +22,7 @@ export const navItems: Record<Role, NavItem[]> = {
     { label: "대시보드", icon: "home" },
     { label: "단체 찾기", icon: "users" },
     { label: "받은 제안", icon: "inbox" },
-    { label: "캠페인", icon: "calendar" },
+    { label: "행사 일정", icon: "calendar" },
     { label: "성과 분석", icon: "chart" },
   ],
 }

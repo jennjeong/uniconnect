@@ -45,6 +45,7 @@ import { MessagesPage } from "./pages/MessagesPage"
 import { ProfileEditPage } from "./pages/ProfileEditPage"
 import { ProfilePage, type ActivityItem } from "./pages/ProfilePage"
 import { ReportsPage } from "./pages/ReportsPage"
+import { AnalyticsExport } from "./report/AnalyticsExport"
 import { ReportExport } from "./report/ReportExport"
 import type {
   Account,
@@ -103,6 +104,8 @@ function App() {
   const [logKind, setLogKind] = useState<MetricKind | "all">("all")
   const [goalKey, setGoalKey] = useState<KpiKey>("reach")
   const [exporting, setExporting] = useState(false)
+  // Brands' analytics report, made by AnalyticsExport the same way.
+  const [exportingAnalytics, setExportingAnalytics] = useState(false)
   const [notificationsRead, setNotificationsRead] = useState(false)
   // The notifications panel under the bell.
   const [notificationsOpen, setNotificationsOpen] = useState(false)
@@ -129,7 +132,7 @@ function App() {
   const detailMatch = view.detail
     ? catalog.find((match) => match.id === view.detail)
     : undefined
-  const calendarPage: NavLabel = students ? "내 행사" : "캠페인"
+  const calendarPage: NavLabel = students ? "내 행사" : "행사 일정"
   const pendingRequests = requests.filter((request) => request.status === "검토 중")
   const confirmedRequests = requests.filter((request) => request.status === "수락")
 
@@ -559,6 +562,16 @@ function App() {
     [showNotice],
   )
 
+  const finishAnalyticsExport = useCallback(
+    (failed: boolean) => {
+      setExportingAnalytics(false)
+      showNotice(
+        failed ? "PDF를 만들지 못했어요. 다시 시도해 주세요." : "분석 보고서를 다운로드했어요.",
+      )
+    },
+    [showNotice],
+  )
+
   const goal = report ? reportKpis(report, metrics).find((kpi) => kpi.key === goalKey) : undefined
 
   // Brands' calendars also hold the student events they agreed to sponsor.
@@ -588,9 +601,9 @@ function App() {
         },
       ]
     : [
-        { label: "등록한 캠페인", value: `${events.length}개`, target: "캠페인" },
+        { label: "등록한 캠페인", value: `${events.length}개`, target: "행사 일정" },
         { label: "받은 협찬 제안", value: `${requests.length}건`, target: "받은 제안" },
-        { label: "확정한 협찬", value: `${confirmedRequests.length}건`, target: "캠페인" },
+        { label: "확정한 협찬", value: `${confirmedRequests.length}건`, target: "행사 일정" },
       ]
 
   const eventsPage = (
@@ -683,7 +696,7 @@ function App() {
           />
         )
       case "내 행사":
-      case "캠페인":
+      case "행사 일정":
         return eventsPage
       case "성과 측정":
         return (
@@ -720,7 +733,13 @@ function App() {
       case "받은 제안":
         return <InboxPage requests={requests} onAnswer={answerRequest} />
       case "성과 분석":
-        return <AnalyticsPage sponsorships={sponsorships} onNavigate={navigate} />
+        return (
+          <AnalyticsPage
+            exporting={exportingAnalytics}
+            onDownload={() => setExportingAnalytics(true)}
+            sponsorships={sponsorships}
+          />
+        )
       default:
         return students ? (
           <DashboardPage
@@ -847,11 +866,13 @@ function App() {
         )}
       </main>
 
-      {/* A conversation keeps its message box at the bottom of the screen. */}
+      {/* A conversation keeps its message box at the bottom of the screen; the
+          call to register heads the footer on the dashboard only. */}
       {!chatOpen && (
         <Footer
           role={role}
           account={account}
+          invite={viewPath(view) === viewPath({ page: "대시보드" })}
           onNavigate={navigate}
           onSwitchRole={switchRole}
           onCreate={() => openCreate()}
@@ -940,6 +961,14 @@ function App() {
           metrics={metrics}
           author={account?.name ?? "uniconnect"}
           onDone={finishExport}
+        />
+      )}
+
+      {exportingAnalytics && (
+        <AnalyticsExport
+          sponsorships={sponsorships}
+          author={account?.name ?? "uniconnect"}
+          onDone={finishAnalyticsExport}
         />
       )}
 

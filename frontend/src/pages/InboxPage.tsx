@@ -4,7 +4,15 @@ import { BrandMark } from "../components/BrandMark"
 import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { TabBar } from "../components/TabBar"
-import { dDayLabel, formatDateTime, formatDay } from "../lib/date"
+import {
+  dDayLabel,
+  formatDateTime,
+  formatDay,
+  fromIsoDate,
+  shortDay,
+  toIsoDate,
+  todayIso,
+} from "../lib/date"
 import type { RequestStatus, SponsorRequest } from "../types"
 
 // Card class for each status.
@@ -19,6 +27,41 @@ const tabs: { status: RequestStatus; label: string; empty: string }[] = [
   { status: "수락", label: "수락함", empty: "아직 수락한 제안이 없어요." },
   { status: "거절", label: "거절함", empty: "거절한 제안이 없어요." },
 ]
+
+// An accepted sponsorship from the proposal to its report, each step with
+// its day: done up to today, the next one under way.
+function progressSteps(request: SponsorRequest) {
+  const dayOf = (timestamp?: string) => (timestamp ? toIsoDate(new Date(timestamp)) : "")
+  const event = fromIsoDate(request.eventDate)
+  const afterEvent = (days: number) =>
+    event ? toIsoDate(new Date(event.getFullYear(), event.getMonth(), event.getDate() + days)) : ""
+  const today = todayIso()
+  const steps = [
+    { label: "제안 받음", day: dayOf(request.createdAt) },
+    { label: "협찬 확정", day: dayOf(request.respondedAt) },
+    { label: "행사 당일", day: request.eventDate },
+    { label: "성과 리포트", day: afterEvent(7) },
+  ]
+  const next = steps.findIndex((step) => !step.day || step.day > today)
+  return steps.map((step, index) => ({
+    ...step,
+    state: next === -1 || index < next ? "step-done" : index === next ? "step-current" : "step-next",
+  }))
+}
+
+function RequestProgress({ request }: { request: SponsorRequest }) {
+  return (
+    <ol aria-label="협찬 진행 상황" className="request-progress">
+      {progressSteps(request).map((step) => (
+        <li className={step.state} key={step.label}>
+          <i aria-hidden="true" />
+          <strong>{step.label}</strong>
+          <time dateTime={step.day || undefined}>{step.day ? shortDay(step.day) : "미정"}</time>
+        </li>
+      ))}
+    </ol>
+  )
+}
 
 function RequestCard({
   request,
@@ -106,6 +149,7 @@ function RequestCard({
           </span>
         )}
       </div>
+      {request.status === "수락" && <RequestProgress request={request} />}
     </article>
   )
 }
@@ -128,11 +172,6 @@ export function InboxPage({
         eyebrow="Proposal inbox"
         title="받은 협찬 제안"
         description="학생단체가 보낸 제안을 확인하고 협찬 여부를 정해 주세요."
-        actions={
-          <span className="intro-count">
-            검토 중 {requests.filter((request) => request.status === "검토 중").length}건
-          </span>
-        }
       />
 
       <TabBar

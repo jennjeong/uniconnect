@@ -51,7 +51,7 @@ proposalsRouter.post("/", async (req, res) => {
   if (account.role === "학생단체" && hasInbox && !open) {
     const today = new Date().toISOString().slice(0, 10)
     const event = (database.events[account.id] ?? [])
-      .filter((item) => item.date >= today)
+      .filter((item) => (item.endDate ?? item.date) >= today)
       .sort((a, b) => a.date.localeCompare(b.date))[0]
     database.requests.push({
       id: randomUUID(),

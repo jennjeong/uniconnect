@@ -112,7 +112,7 @@ export function BrandDashboardPage({
           label: pending.length > 0 ? "받은 제안 확인하기" : "학생단체 찾아보기",
           onClick: () => onNavigate(pending.length > 0 ? "받은 제안" : "단체 찾기"),
         }}
-        secondary={{ label: "캠페인 보기", onClick: () => onNavigate("캠페인") }}
+        secondary={{ label: "행사 일정 보기", onClick: () => onNavigate("행사 일정") }}
       />
 
       <LogoMarquee
@@ -206,7 +206,7 @@ export function BrandDashboardPage({
             label: "확정된 협찬",
             value: `${confirmed.length}건`,
             note: nextConfirmed ? `다음 일정 ${shortDay(nextConfirmed.date)}` : "예정된 일정 없음",
-            onClick: () => onNavigate("캠페인"),
+            onClick: () => onNavigate("행사 일정"),
           },
         ]}
         marks={confirmed.slice(0, 4).map((request) => (
@@ -263,8 +263,8 @@ export function BrandDashboardPage({
         heading="우리 브랜드의 협찬, 지금 여기까지 왔어요"
         steps={journey}
         current={currentStep}
-        scheduleLabel="캠페인 일정 보기"
-        onOpenSchedule={() => onNavigate("캠페인")}
+        scheduleLabel="행사 일정 보기"
+        onOpenSchedule={() => onNavigate("행사 일정")}
       />
 
       <section className="results-section">

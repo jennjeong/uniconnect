@@ -34,11 +34,11 @@ const pagePaths: Record<NavLabel, string> = {
   리포트: "reports",
   "단체 찾기": "groups",
   "받은 제안": "inbox",
-  캠페인: "campaigns",
+  "행사 일정": "campaigns",
   "성과 분석": "analytics",
 }
 
-const brandPages: NavLabel[] = ["단체 찾기", "받은 제안", "캠페인", "성과 분석"]
+const brandPages: NavLabel[] = ["단체 찾기", "받은 제안", "행사 일정", "성과 분석"]
 
 // The role a page belongs to; the dashboard belongs to both.
 export function roleOfPage(page: NavLabel): Role | undefined {

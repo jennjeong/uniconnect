@@ -6,65 +6,58 @@ import { PageIntro } from "../components/PageIntro"
 import { Pill } from "../components/Pill"
 import { RevealTitle } from "../components/RevealText"
 import { formatFullDate } from "../lib/date"
-import { percent } from "../lib/format"
 import { formatWon } from "../lib/kpis"
-import { costPerVisit, roasMet, roasOf, sponsorshipTotals } from "../lib/sponsorships"
+import { analyzeSponsorships, manWon } from "../lib/sponsorships"
 import { LayersGradient } from "../scenes/LayersGradient"
 import { INTERFERENCE } from "../scenes/shaders"
-import type { NavLabel, Sponsorship } from "../types"
+import type { Sponsorship } from "../types"
 
 const delay = (seconds: number) => ({ "--reveal-delay": `${seconds}s` }) as CSSProperties
 
 // Spend, coupons, visits and ROAS of each sponsorship the brand has done:
 // the totals over getlayers.ai's Interference gradient, then ROAS, insights
-// and a table.
+// and a table. The whole analysis, with a report page for each
+// sponsorship, downloads as a PDF.
 export function AnalyticsPage({
   sponsorships,
-  onNavigate,
+  exporting,
+  onDownload,
 }: {
   // Newest first.
   sponsorships: Sponsorship[]
-  onNavigate: (label: NavLabel) => void
+  // While the PDF report is being made.
+  exporting: boolean
+  // Saves the analysis with each sponsorship's report as a PDF.
+  onDownload: () => void
 }) {
-  const totals = sponsorshipTotals(sponsorships)
-  const rows = sponsorships.map((sponsorship) => ({
-    ...sponsorship,
-    roas: roasOf(sponsorship),
-    met: roasMet(sponsorship),
-    perVisit: costPerVisit(sponsorship),
-  }))
-  const best = [...rows].sort((a, b) => b.roas - a.roas)[0]
-  const metCount = rows.filter((row) => row.met).length
-  // The sponsorship furthest below its goal.
-  const furthestBelow = rows
-    .filter((row) => !row.met)
-    .sort((a, b) => a.roas - a.targetRoas - (b.roas - b.targetRoas))[0]
-  const cheapest = [...rows].filter((row) => row.visits > 0).sort((a, b) => a.perVisit - b.perVisit)[0]
-  const visitRate = percent(totals.visits, totals.coupons)
-  // Bar scale with room past the best result and every goal marker.
-  const roasScale = Math.max(100, best?.roas ?? 0, ...rows.map((row) => row.targetRoas)) * 1.1
+  const { totals, rows, best, furthestBelow, cheapest, metCount, visitRate, roasScale } =
+    analyzeSponsorships(sponsorships)
 
+  // Each number with its unit set smaller after it, so the four read alike.
   const kpis = [
     {
       label: "누적 집행액",
-      value: formatWon(totals.spend),
+      value: manWon(totals.spend),
+      unit: "만원",
       note: `협찬 ${sponsorships.length}건 · 현금과 현물 포함`,
     },
     {
       label: "쿠폰 수령",
-      value: `${totals.coupons.toLocaleString("ko-KR")}장`,
+      value: totals.coupons.toLocaleString("ko-KR"),
+      unit: "장",
       note: `협찬당 평균 ${sponsorships.length ? Math.round(totals.coupons / sponsorships.length) : 0}장`,
     },
     {
       label: "매장 방문",
-      value: `${totals.visits.toLocaleString("ko-KR")}명`,
+      value: totals.visits.toLocaleString("ko-KR"),
+      unit: "명",
       note: `쿠폰 받은 학생의 ${visitRate}%가 방문`,
     },
     {
       label: "평균 ROAS",
-      value: `${totals.roas}%`,
+      value: String(totals.roas),
+      unit: "%",
       note: `추정 매출 ${formatWon(totals.sales)}`,
-      good: totals.roas >= 100,
     },
   ]
 
@@ -75,8 +68,8 @@ export function AnalyticsPage({
         title="협찬 성과 분석"
         description="협찬마다 쓴 금액과 돌아온 쿠폰, 방문, 추정 매출을 함께 비교해요."
         actions={
-          <Pill arrow="right" onClick={() => onNavigate("단체 찾기")}>
-            비슷한 단체 찾기
+          <Pill arrow="up-right" disabled={rows.length === 0 || exporting} onClick={onDownload}>
+            {exporting ? "PDF 만드는 중…" : "분석 보고서 다운로드"}
           </Pill>
         }
       />
@@ -96,8 +89,9 @@ export function AnalyticsPage({
                 {kpis.map((kpi, index) => (
                   <li data-reveal key={kpi.label} style={delay(index * 0.09)}>
                     <div className="power-stat">
-                      <strong className={kpi.good ? "good" : ""}>
+                      <strong>
                         <AnimatedNumber value={kpi.value} />
+                        <small>{kpi.unit}</small>
                       </strong>
                       <span>{kpi.label}</span>
                       <small>{kpi.note}</small>

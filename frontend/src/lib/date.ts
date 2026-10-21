@@ -59,12 +59,29 @@ export function dDayLabel(iso: string) {
   return days > 0 ? `D-${days}` : days === 0 ? "D-DAY" : "종료"
 }
 
-// The earliest event from today on.
-export function nextEvent<T extends { date: string }>(events: T[]) {
+// The earliest event from today on; one over several days counts until
+// its last day.
+export function nextEvent<T extends { date: string; endDate?: string }>(events: T[]) {
   const today = todayIso()
   return events
-    .filter((event) => fromIsoDate(event.date) && event.date >= today)
+    .filter((event) => fromIsoDate(event.date) && (event.endDate ?? event.date) >= today)
     .sort((a, b) => a.date.localeCompare(b.date))[0]
+}
+
+// Every "YYYY-MM-DD" day from `start` to `end`, both included.
+export function daysOf(start: string, end = start) {
+  const first = fromIsoDate(start)
+  const last = fromIsoDate(end)
+  if (!first || !last) return [start]
+  const days: string[] = []
+  for (const day = first; day <= last; day.setDate(day.getDate() + 1)) days.push(toIsoDate(day))
+  return days
+}
+
+// "11월 27일 (금) ~ 11월 29일 (일) · 3일", or one day as formatDay.
+export function formatPeriod(start: string, end?: string) {
+  if (!end || end === start) return formatDay(start)
+  return `${formatDay(start)} ~ ${formatDay(end)} · ${daysOf(start, end).length}일`
 }
 
 // "10.12 19:41" in local time, for an ISO timestamp.

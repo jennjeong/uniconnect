@@ -10,6 +10,9 @@ import type { EventItem } from "../types.js"
 
 export const eventsRouter = Router()
 
+// How many days past the first an event's period can run.
+const maxDays = 89
+
 // Visitors see the demo account's events for the role they are previewing.
 eventsRouter.get("/", (req, res) => {
   const database = getDatabase()
@@ -21,6 +24,8 @@ eventsRouter.post("/", async (req, res) => {
   const account = requireAccount(req)
   const name = text(req.body?.name)
   const rawDate = text(req.body?.date)
+  // The last day, for an event over several days.
+  const rawEndDate = text(req.body?.endDate)
   const people = text(req.body?.people)
   const types: string[] = Array.isArray(req.body?.types)
     ? sponsorTypes.filter((type) => req.body.types.map(String).includes(type))
@@ -37,6 +42,13 @@ eventsRouter.post("/", async (req, res) => {
   }
   const date = toIsoDate(rawDate)
   if (!date) throw new HttpError(400, "일정은 달력에서 날짜를 골라 주세요.")
+  const endDate = rawEndDate ? toIsoDate(rawEndDate) : undefined
+  if (rawEndDate && (!endDate || endDate < date)) {
+    throw new HttpError(400, "끝나는 날은 시작일과 같거나 그 뒤로 골라 주세요.")
+  }
+  if (endDate && Date.parse(endDate) - Date.parse(date) > maxDays * 86_400_000) {
+    throw new HttpError(400, `기간은 최대 ${maxDays + 1}일까지 고를 수 있어요.`)
+  }
   if (types.length === 0) {
     throw new HttpError(
       400,
@@ -57,6 +69,7 @@ eventsRouter.post("/", async (req, res) => {
     id: randomUUID(),
     name,
     date,
+    ...(endDate && endDate !== date ? { endDate } : {}),
     people,
     types,
     ...(types.includes("기타") ? { typeNote } : {}),
