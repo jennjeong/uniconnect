@@ -1,16 +1,13 @@
-// Ring colors at a few match scores: red at 60%, orange in the 70s, yellow
-// at 81%, lime in the high 80s and green from 90% up. Scores in between
-// blend their two neighbors, so every point gets its own shade.
+// Ring colors at a few match scores, from silver blue at 60% to the point's
+// deep blue from 96% up: the closer the match, the deeper the blue. Scores
+// in between blend their two neighbors, so every point gets its own shade.
 const stops: [number, string][] = [
-  [60, "#f0504e"],
-  [70, "#ff6c3c"],
-  [76, "#ff9b2f"],
-  [81, "#f6c21a"],
-  [84, "#cdd12a"],
-  [88, "#92cf3b"],
-  [91, "#4fc65a"],
-  [96, "#17b26f"],
-  [100, "#0d9e6c"],
+  [60, "#a7b4cd"],
+  [70, "#8599c4"],
+  [80, "#5b7cc6"],
+  [88, "#3563c8"],
+  [96, "#1f49a6"],
+  [100, "#1b3f8f"],
 ]
 
 const channels = (hex: string) =>

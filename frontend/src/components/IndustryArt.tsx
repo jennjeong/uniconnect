@@ -2,7 +2,7 @@ import type { ReactNode } from "react"
 
 import type { Industry } from "../types"
 
-// Golds close to the logo's tie every mark to the brand.
+// One shared gold ties the marks together.
 const yellow = "#faca4b"
 const yellowDeep = "#f2bb31"
 

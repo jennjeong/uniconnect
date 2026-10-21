@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 
 import logo from "../assets/brand/uniconnect_horizontal.svg"
+import logoReversed from "../assets/brand/uniconnect_horizontal_reversed.svg"
 import { Icon } from "../components/Icon"
 import { Presence } from "../components/Presence"
 import { navItems } from "../data/navigation"
@@ -11,11 +12,11 @@ import type { NotificationItem } from "../lib/notifications"
 import type { Account, NavLabel, Role } from "../types"
 import { NotificationsPanel } from "./NotificationsPanel"
 
-// Stride's floating navigation from getlayers.ai, in silver glass: the logo
-// and the role's menu as pills on the left; the next event (or, for
-// visitors, the side to preview), the account buttons, Menu and the register
-// action in deep blue on the right. The pills gain a soft shadow once the
-// page scrolls, and slide in after the intro loader.
+// Stride's floating navigation from getlayers.ai: the logo on its own and
+// the role's menu as a silver glass pill on the left; the next event (or,
+// for visitors, the side to preview), the account buttons, Menu and the
+// register action in deep blue on the right. The pills gain a soft shadow
+// once the page scrolls, and slide in after the intro loader.
 export function Header({
   role,
   activeNav,
@@ -68,7 +69,9 @@ export function Header({
   onOpenMenu: () => void
 }) {
   const bellRef = useRef<HTMLButtonElement>(null)
+  const brandRef = useRef<HTMLButtonElement>(null)
   const [scrolled, setScrolled] = useState(false)
+  const [onDark, setOnDark] = useState(false)
   const next = nextEvent(events)
   const dDay = next ? daysUntil(next.date) : 0
 
@@ -79,16 +82,49 @@ export function Header({
     return () => window.removeEventListener("scroll", update)
   }, [])
 
+  // The logo has no pill of its own, so it turns light while it floats over
+  // a deep blue surface (index.css marks those with --surface-tone) and
+  // stays deep blue over white. Checked on scroll, resize and page changes.
+  useEffect(() => {
+    let frame = 0
+    const check = () => {
+      frame = 0
+      const brand = brandRef.current
+      if (!brand) return
+      const box = brand.getBoundingClientRect()
+      const below = document
+        .elementsFromPoint(box.left + box.width / 2, box.top + box.height / 2)
+        .find((element) => !element.closest(".site-header"))
+      setOnDark(below ? getComputedStyle(below).getPropertyValue("--surface-tone").trim() === "dark" : false)
+    }
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(check)
+    }
+    schedule()
+    window.addEventListener("scroll", schedule, { passive: true })
+    window.addEventListener("resize", schedule)
+    const pages = new MutationObserver(schedule)
+    pages.observe(document.body, { childList: true, subtree: true })
+    return () => {
+      cancelAnimationFrame(frame)
+      window.removeEventListener("scroll", schedule)
+      window.removeEventListener("resize", schedule)
+      pages.disconnect()
+    }
+  }, [])
+
   return (
-    <header className={scrolled ? "site-header scrolled" : "site-header"}>
+    <header className={["site-header", scrolled && "scrolled", onDark && "on-dark"].filter(Boolean).join(" ")}>
       <div className="nav-group">
         <button
-          className="nav-pill brand-pill"
           aria-label="uniconnect 홈으로"
+          className="brand-link"
           onClick={() => onNavigate("대시보드")}
+          ref={brandRef}
           type="button"
         >
-          <img src={logo} alt="" width={116} height={27} />
+          <img alt="" className="logo-dark" height={27} src={logo} width={116} />
+          <img alt="" className="logo-light" height={27} src={logoReversed} width={116} />
         </button>
         <nav className="nav-pill links-pill" aria-label="주요 메뉴">
           {navItems[role].map((item) => (

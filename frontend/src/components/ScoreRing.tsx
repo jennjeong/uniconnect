@@ -5,8 +5,9 @@ import { scoreColors } from "../lib/score"
 const radius = 15
 const circumference = 2 * Math.PI * radius
 
-// Match score as a thick ring filling clockwise from 12 o'clock in the
-// score's own color, over a faint tint of it, with the number in the middle.
+// Match score as a ring filling clockwise from 12 o'clock in the score's
+// own shade of blue, over a silver track, with the number on white in the
+// middle.
 export function ScoreRing({ score }: { score: number }) {
   const colors = scoreColors(score)
   const value = Math.min(Math.max(score, 0), 100)

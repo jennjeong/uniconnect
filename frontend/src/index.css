@@ -43,6 +43,12 @@
   --canvas: #ffffff;
   /* The darkest gray, where a dark surface is needed (toasts, tiles). */
   --slate: #3b4456;
+  /* Deep blue surfaces set this to dark, so the header logo floating over
+     them switches to its light version (Header.tsx). */
+  --surface-tone: light;
+  /* Goals: met in the point's deep blue, not yet in silver. */
+  --goal-met: linear-gradient(90deg, #3d6ad0, #1b3f8f);
+  --goal-short: linear-gradient(90deg, #d3d9e3, #aab5c7);
   /* Status colors, dark enough for small text on white and on their tints. */
   --green: #1a7340;
   --green-soft: #e5f4ea;
@@ -238,6 +244,28 @@ strong {
   transform: translateY(-14px);
 }
 
+/* Once the page scrolls, a soft fade under the bar keeps the logo, which
+   has no pill of its own, clear of the content passing beneath it: white
+   over white pages, navy over deep blue sections. */
+.site-header::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0 0 -28px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(255, 255, 255, 0.8) 50%, rgba(255, 255, 255, 0) 100%);
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.site-header.on-dark::before {
+  background: linear-gradient(180deg, rgba(8, 20, 52, 0.6) 0%, rgba(8, 20, 52, 0.36) 50%, rgba(8, 20, 52, 0) 100%);
+}
+
+.site-header.scrolled::before {
+  opacity: 1;
+}
+
 .nav-group {
   display: flex;
   min-width: 0;
@@ -285,15 +313,37 @@ button.nav-pill:hover {
   background: #fff;
 }
 
-/* Logo guide: horizontal logo at least 24px tall, never tilted or shadowed. */
-.brand-pill {
-  padding: 0 20px;
+/* The logo stands on its own, drawn twice so it can crossfade to its light
+   version over deep blue (Header.tsx). Logo guide: horizontal logo at
+   least 24px tall, never tilted or shadowed. */
+.brand-link {
+  display: grid;
+  height: 44px;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 0 2px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
 }
 
-.brand-pill img {
+.brand-link img {
   display: block;
   width: auto;
-  height: 24px;
+  height: 26px;
+  grid-area: 1 / 1;
+  transition:
+    opacity 0.3s ease,
+    transform 0.35s var(--ease-snap);
+}
+
+.brand-link .logo-light,
+.site-header.on-dark .logo-dark {
+  opacity: 0;
+}
+
+.site-header.on-dark .logo-light {
+  opacity: 1;
 }
 
 .links-pill,
@@ -414,6 +464,8 @@ button.nav-pill:hover {
   background: var(--blue);
 }
 
+/* The account's initial on white inside a blue ring, so beside a pressed
+   (deep blue) icon it never reads as pressed itself. */
 .account-button {
   display: grid;
   width: 36px;
@@ -423,10 +475,15 @@ button.nav-pill:hover {
   margin-left: 2px;
   border: 0;
   border-radius: 50%;
-  background: var(--point-gradient);
-  color: #fff;
+  background: #fff;
+  color: var(--point);
+  box-shadow: inset 0 0 0 1.5px var(--point-line);
   font-size: 13px;
   font-weight: var(--weight-strong);
+}
+
+.account-button:hover {
+  background: var(--point-soft);
 }
 
 .login-pill {
@@ -708,6 +765,7 @@ button.nav-pill:hover {
 }
 
 .footer-stage {
+  --surface-tone: dark;
   position: relative;
   isolation: isolate;
   display: flex;
@@ -1408,8 +1466,8 @@ button.nav-pill:hover {
   object-fit: contain;
 }
 
-/* Match score as a thick ring in the score's own color (ScoreRing.tsx),
-   over a faint silver track, with the number in the middle. */
+/* Match score as a ring in the score's own shade of blue (ScoreRing.tsx)
+   over a silver track, the number on white in the middle. */
 .match-score-ring {
   position: relative;
   display: flex;
@@ -1429,8 +1487,7 @@ button.nav-pill:hover {
 }
 
 .ring-fill {
-  fill: var(--ring-color);
-  fill-opacity: 0.12;
+  fill: #fff;
 }
 
 .ring-track,
@@ -1440,7 +1497,7 @@ button.nav-pill:hover {
 }
 
 .ring-track {
-  stroke: rgba(43, 51, 67, 0.1);
+  stroke: #dfe4ec;
 }
 
 .ring-value {
@@ -1635,6 +1692,7 @@ button.nav-pill:hover {
 }
 
 .hero-clip {
+  --surface-tone: dark;
   position: relative;
   isolation: isolate;
   height: 100%;
@@ -1851,7 +1909,7 @@ button.nav-pill:hover {
   margin: 0 0.06em;
   place-items: center;
   border-radius: 999px;
-  vertical-align: -0.1em;
+  vertical-align: 0.13em;
 }
 
 .statement-chip .icon {
@@ -1918,6 +1976,11 @@ button.nav-pill:hover {
   line-height: 1.55;
 }
 
+.bento-blue,
+.bento-column .bento-card {
+  --surface-tone: dark;
+}
+
 .bento-blue {
   min-height: 560px;
   justify-content: space-between;
@@ -1946,6 +2009,7 @@ button.nav-pill:hover {
 }
 
 .bento-inner {
+  --surface-tone: light;
   display: flex;
   width: 100%;
   flex-direction: column;
@@ -2031,8 +2095,8 @@ button.nav-pill:hover {
 
 /* Recommended partners as Stride's silver cards (components/WorkCard.tsx):
    what it is at the top with a round badge to its page, its mark large on
-   a white glow in the middle, details along the bottom. The card lifts a
-   little on hover and its badge turns toward the corner. */
+   a white glow in the room left in the middle, details along the bottom.
+   The card lifts a little on hover and its badge turns toward the corner. */
 .works-section {
   padding: 48px 0 72px;
 }
@@ -2129,9 +2193,9 @@ button.nav-pill:hover {
 }
 
 .work-mark {
-  position: absolute;
-  inset: 0 0 36%;
   display: grid;
+  min-height: 150px;
+  flex: 1 0 auto;
   place-items: center;
   pointer-events: none;
 }
@@ -2339,6 +2403,7 @@ button.nav-pill:hover {
 }
 
 .chain-stage {
+  --surface-tone: dark;
   position: sticky;
   top: 0;
   isolation: isolate;
@@ -2416,15 +2481,14 @@ button.nav-pill:hover {
 .journey {
   position: relative;
   z-index: 1;
-  padding: 104px 0 112px;
+  padding: 104px max(var(--gutter), calc((100% - var(--shell)) / 2)) 112px;
   border-radius: 32px 32px 0 0;
   background: var(--canvas);
   box-shadow: 0 -40px 80px -40px rgba(8, 20, 52, 0.5);
 }
 
-.journey > * {
-  width: min(var(--shell), 100% - 2 * var(--gutter));
-  margin-inline: auto;
+.journey .section-head {
+  margin: 0 0 56px;
 }
 
 /* Five steps as a bento: three across, then two wider. */
@@ -2495,6 +2559,7 @@ button.nav-pill:hover {
 }
 
 .journey-card.current {
+  --surface-tone: dark;
   background: var(--point-gradient);
   color: #fff;
   box-shadow: 0 28px 56px -28px rgba(19, 48, 111, 0.7);
@@ -2660,6 +2725,7 @@ button.nav-pill:hover {
 }
 
 .report-highlight {
+  --surface-tone: dark;
   display: flex;
   min-width: 0;
   flex-direction: column;
@@ -2679,6 +2745,7 @@ button.nav-pill:hover {
 
 .report-highlight > div:first-child > span {
   color: rgba(255, 255, 255, 0.8);
+  line-height: 1;
   font-size: 14px;
   font-weight: var(--weight-label);
 }
@@ -2710,6 +2777,7 @@ button.nav-pill:hover {
    account's own. As on the hero, the copy keeps to a deep navy left side
    and the light plays on the right. */
 .banner-hero {
+  --surface-tone: dark;
   position: relative;
   isolation: isolate;
   min-height: 460px;
@@ -3093,6 +3161,11 @@ button.nav-pill:hover {
   font-weight: var(--weight-label);
 }
 
+.activity-tile.blue,
+.activity-tile.slate {
+  --surface-tone: dark;
+}
+
 .activity-tile.blue {
   background: var(--point-gradient);
   color: #fff;
@@ -3193,6 +3266,7 @@ button.nav-pill:hover {
 
 /* A closing call on Stride's mesh. */
 .cta-panel {
+  --surface-tone: dark;
   position: relative;
   isolation: isolate;
   display: flex;
@@ -3230,6 +3304,7 @@ button.nav-pill:hover {
    a shade from the top left keeps the copy clear of the moving light;
    without WebGL2 the panel's deep blue shows. */
 .power-panel {
+  --surface-tone: dark;
   position: relative;
   isolation: isolate;
   margin: 40px 0;
@@ -3266,8 +3341,8 @@ button.nav-pill:hover {
 .power-status {
   padding: 6px 12px;
   border-radius: 999px;
-  background: rgba(159, 227, 184, 0.16);
-  color: #9fe3b8;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
   font-size: 12px;
   font-weight: var(--weight-badge);
 }
@@ -3321,7 +3396,7 @@ button.nav-pill:hover {
   background: rgba(255, 255, 255, 0.16);
 }
 
-/* The result in silver, the goal as a green tick. */
+/* The result in silver, the goal as a deep blue tick edged in white. */
 .power-track i {
   position: absolute;
   inset: 0 auto 0 0;
@@ -3335,7 +3410,8 @@ button.nav-pill:hover {
   bottom: -4px;
   width: 2px;
   border-radius: 1px;
-  background: #9fe3b8;
+  background: var(--point-deep);
+  box-shadow: 0 0 0 1.5px #fff;
 }
 
 .power-roas small {
@@ -3406,7 +3482,7 @@ button.nav-pill:hover {
 }
 
 .power-stats :is(strong, small).good {
-  color: #9fe3b8;
+  color: #a9c1f5;
 }
 
 /* Each goal as a silver card that opens its details. */
@@ -3478,15 +3554,15 @@ button.nav-pill:hover {
   display: block;
   height: 100%;
   border-radius: 2px;
-  background: var(--orange);
+  background: var(--goal-short);
 }
 
 .kpi-card:has(.kpi-status.good) .kpi-meter i {
-  background: var(--green);
+  background: var(--goal-met);
 }
 
 .kpi-status {
-  color: var(--orange);
+  color: var(--ink-soft);
   font-size: 13px;
   font-weight: var(--weight-strong);
 }
@@ -3498,7 +3574,7 @@ button.nav-pill:hover {
 }
 
 .kpi-status.good {
-  color: var(--green);
+  color: var(--point-strong);
 }
 
 .kpi-note {
@@ -4575,24 +4651,24 @@ button.nav-pill:hover {
 .goal-badge {
   padding: 2px 8px;
   border-radius: 9px;
-  background: var(--orange-soft);
-  color: var(--orange);
+  background: var(--fill);
+  color: var(--ink-soft);
   font-size: 12px;
   font-style: normal;
   font-weight: var(--weight-label);
 }
 
 .achieved .goal-compare > div.current {
-  background: var(--green-soft);
+  background: var(--point-tint);
 }
 
 .achieved .goal-compare > div.current strong {
-  color: var(--green);
+  color: var(--point-strong);
 }
 
 .achieved .goal-badge {
-  background: var(--green-soft);
-  color: var(--green);
+  background: var(--point-tint);
+  color: var(--point-strong);
 }
 
 /* Leaves room for the goal chip that sits above the bar. */
@@ -4611,11 +4687,11 @@ button.nav-pill:hover {
   position: absolute;
   inset: 0 auto 0 0;
   border-radius: 6px;
-  background: linear-gradient(90deg, #ffc46b, #ef852e);
+  background: var(--goal-short);
 }
 
 .achieved .goal-fill {
-  background: linear-gradient(90deg, #7cd69c, #2f8a52);
+  background: var(--goal-met);
 }
 
 .goal-marker {
@@ -4652,12 +4728,12 @@ button.nav-pill:hover {
 }
 
 .goal-result strong {
-  color: var(--orange);
+  color: var(--ink);
 }
 
 .achieved .goal-result strong,
 .achieved .goal-result .icon {
-  color: var(--green);
+  color: var(--point-strong);
 }
 
 .goal-result .icon {
@@ -5418,15 +5494,16 @@ button.nav-pill:hover {
   font-size: 13px;
 }
 
-/* Below its goal the ROAS reads orange; once met, number and bar turn green. */
+/* Below its goal the ROAS bar is silver; once met, number and bar turn the
+   point's deep blue. */
 .roas-row-head span {
-  color: var(--orange);
+  color: var(--ink-soft);
   font-size: 14px;
   font-weight: var(--weight-strong);
 }
 
 .roas-row.met .roas-row-head span {
-  color: var(--green);
+  color: var(--point-strong);
 }
 
 .roas-track {
@@ -5441,12 +5518,12 @@ button.nav-pill:hover {
   position: absolute;
   inset: 0 auto 0 0;
   border-radius: 4px;
-  background: linear-gradient(90deg, var(--point), var(--point-deep));
+  background: var(--goal-short);
 }
 
 .roas-row.met .roas-track i,
 .roas-legend i {
-  background: linear-gradient(90deg, #7fd89a, #2f9b5a);
+  background: var(--goal-met);
 }
 
 /* Goal ROAS marker. */
@@ -5455,7 +5532,7 @@ button.nav-pill:hover {
   width: 2px;
   border-radius: 1px;
   background: var(--ink);
-  opacity: 0.5;
+  opacity: 0.6;
 }
 
 .roas-track b {
@@ -5869,12 +5946,12 @@ button.nav-pill:hover {
 }
 
 .analytics-roas {
-  color: var(--orange);
+  color: var(--ink-soft);
   font-weight: var(--weight-strong);
 }
 
 .analytics-roas.met {
-  color: var(--green);
+  color: var(--point-strong);
 }
 
 .analytics-roas small {
@@ -6111,8 +6188,8 @@ button.nav-pill:hover {
     height: 42px;
   }
 
-  .brand-pill {
-    padding: 0 14px;
+  .brand-link img {
+    height: 24px;
   }
 
   .icons-pill {
@@ -6282,9 +6359,20 @@ button.nav-pill:hover {
     padding-bottom: 56px;
   }
 
-  .bento-blue,
+  .bento-card {
+    padding: 22px;
+  }
+
+  .bento-blue {
+    min-height: 280px;
+  }
+
   .bento-silver {
-    min-height: 380px;
+    min-height: 0;
+  }
+
+  .bento-marks {
+    margin-top: 12px;
   }
 
   .bento-column {
@@ -6292,7 +6380,12 @@ button.nav-pill:hover {
   }
 
   .bento-column .bento-card {
-    min-height: 190px;
+    min-height: 0;
+    gap: 14px;
+  }
+
+  .bento-card strong {
+    font-size: 44px;
   }
 
   .works-section {
@@ -6306,8 +6399,13 @@ button.nav-pill:hover {
   }
 
   .work-card {
-    min-height: 400px;
+    min-height: 0;
+    gap: 16px;
     padding: 24px;
+  }
+
+  .work-mark {
+    min-height: 132px;
   }
 
   .work-mark .match-logo.large {
@@ -6329,10 +6427,11 @@ button.nav-pill:hover {
     margin-top: 48px;
   }
 
-  /* The chain keeps to the band between the title and the paragraph. */
+  /* The paragraph sits under the title, where the cards scrolling up over
+     the stage reach it last, and the chain takes the lower half. */
   .chain-stage .chrome-scene {
-    top: 30%;
-    bottom: 16%;
+    top: 46%;
+    bottom: 2%;
     left: 0;
   }
 
@@ -6341,6 +6440,7 @@ button.nav-pill:hover {
   }
 
   .chain-title {
+    margin-bottom: 0;
     font-size: 58px;
   }
 
@@ -6353,8 +6453,12 @@ button.nav-pill:hover {
   }
 
   .journey {
-    padding: 64px 0 72px;
+    padding-block: 64px 72px;
     border-radius: 24px 24px 0 0;
+  }
+
+  .journey .section-head {
+    margin-bottom: 44px;
   }
 
   .journey-bento {
@@ -7288,12 +7392,8 @@ button:active:not(:disabled) {
 }
 
 @media (hover: hover) {
-  .brand-pill:hover img {
+  .brand-link:hover img {
     transform: scale(1.04);
-  }
-
-  .brand-pill img {
-    transition: transform 0.35s var(--ease-snap);
   }
 
   .pill:hover:not(:disabled) {
