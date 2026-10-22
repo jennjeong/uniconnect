@@ -18,6 +18,7 @@ const draftOf = (report: Report) => ({
   ) as Record<keyof Report["targets"], string>,
   store: report.coupon.store,
   title: report.coupon.title,
+  staffPin: report.staffPin ?? "",
 })
 
 type Draft = ReturnType<typeof draftOf>
@@ -65,6 +66,7 @@ export function GoalsModal({
           Object.entries(draft.targets).map(([key, value]) => [key, Number(value)]),
         ) as Report["targets"],
         coupon: { store: draft.store, title: draft.title },
+        ...(draft.staffPin ? { staffPin: draft.staffPin } : {}),
       })
       onSaved({ eventId: report.eventId, ...result })
     } catch (caught) {
@@ -200,6 +202,17 @@ export function GoalsModal({
               <input maxLength={30} value={draft.title} onChange={(event) => update({ title: event.target.value })} />
             </label>
           </div>
+          {report.staffPin !== undefined && (
+            <label>
+              매장 직원 확인 PIN (숫자 4자리)
+              <input
+                inputMode="numeric"
+                maxLength={4}
+                value={draft.staffPin}
+                onChange={(event) => update({ staffPin: number(event.target.value).slice(0, 4) })}
+              />
+            </label>
+          )}
         </fieldset>
 
         {error && (

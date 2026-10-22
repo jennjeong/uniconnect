@@ -212,6 +212,10 @@ export type Measurement = {
   // Most recent records, oldest first.
   log: MetricEntry[]
   goals: MeasurementGoals
+  // 4 digits the sponsor's store staff enter to confirm a visit.
+  staffPin: string
+  // One pass per scan, so each participant gets one coupon and one visit.
+  passes: Record<string, { coupon?: true; visit?: true }>
 }
 
 // Performance report of one event, worked out from its measurement and
@@ -244,6 +248,8 @@ export type Report = {
   averageSpend: number
   snsReach: number
   coupon: MeasurementGoals["coupon"]
+  // Only for the group that owns the event.
+  staffPin?: string
 }
 
 // One side of a conversation: the student group or the brand.

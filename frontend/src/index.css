@@ -6161,6 +6161,49 @@ button.nav-pill:hover {
   line-height: 1.6;
 }
 
+/* The staff PIN under the check-in link, for the group to give the store. */
+.qr-pin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin: 14px 0 0;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--fill);
+  color: var(--ink-soft);
+  font-size: 13px;
+  text-align: center;
+}
+
+.qr-pin strong {
+  color: var(--point-strong);
+  font-size: 22px;
+  font-weight: var(--weight-badge);
+  letter-spacing: 0.2em;
+}
+
+.qr-pin small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* The staff PIN box on the participant's phone. */
+.checkin-pin {
+  width: 100%;
+  height: 48px;
+  margin-bottom: 10px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--fill);
+  color: var(--ink);
+  font: inherit;
+  font-size: 18px;
+  letter-spacing: 0.3em;
+  text-align: center;
+}
+
 .qr-content {
   display: flex;
   flex-direction: column;

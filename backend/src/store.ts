@@ -13,6 +13,7 @@ import {
   seedSponsorships,
 } from "./data/seed.js"
 import { toIsoDate } from "./lib/dates.js"
+import { newStaffPin } from "./lib/measurements.js"
 import type { Database, Metrics, MetricEntry, Report } from "./types.js"
 
 // A JSON file stands in for a database so the prototype runs without any
@@ -99,6 +100,9 @@ export function upgradeDatabase(stored: Database) {
   }
   for (const measurement of stored.measurements) {
     for (const entry of measurement.log) entry.detail = testDetails[entry.detail] ?? entry.detail
+    // Visits need the staff PIN and a scan's pass now.
+    measurement.staffPin ??= measurement.eventId === "event-busking-day" ? "1012" : newStaffPin()
+    measurement.passes ??= {}
   }
   return stored
 }
