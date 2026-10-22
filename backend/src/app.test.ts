@@ -1048,6 +1048,33 @@ async function signUpMember(email: string, password: string) {
   return signup.data.token as string
 }
 
+test("one verification makes one account, and one reset code sets one password", async () => {
+  const email = "twice@syu.ac.kr"
+  const sent = await call("POST", "/auth/email-code", { role: "학생단체", email })
+  const verified = await call("POST", "/auth/email-code/verify", { email, code: sent.data.devCode })
+  const form = {
+    role: "학생단체",
+    name: "동시 가입 동아리",
+    type: "공연 동아리",
+    school: "삼육대학교",
+    email,
+    password: "twice-pass-123",
+    verificationToken: verified.data.verificationToken,
+    agreedToTerms: true,
+    over14: true,
+  }
+  const signups = await Promise.all(Array.from({ length: 5 }, () => call("POST", "/auth/signup", form)))
+  assert.deepEqual(signups.map((item) => item.status).sort(), [201, 400, 400, 400, 400])
+  assert.equal(getDatabase().accounts.filter((account) => account.email === email).length, 1)
+
+  await call("POST", "/auth/password-reset/code", { email })
+  const code = getDatabase().emailCodes.find((item) => item.email === email && item.purpose === "reset")!.code
+  const resets = await Promise.all(
+    ["reset-one-123", "reset-two-123"].map((password) => call("POST", "/auth/password-reset", { email, code, password })),
+  )
+  assert.deepEqual(resets.map((item) => item.status).sort(), [200, 400])
+})
+
 test("a forgotten password is reset with a code sent to the account's email", async () => {
   const email = "forgetful@syu.ac.kr"
   const before = await signUpMember(email, "first-pass-123")
