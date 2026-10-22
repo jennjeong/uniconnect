@@ -66,6 +66,8 @@ export const api = {
     ),
   resetPassword: (body: { email: string; code: string; password: string }) =>
     request<Session>("/auth/password-reset", { method: "POST", body }),
+  deleteAccount: (body: { password: string }) =>
+    request<void>("/auth/account", { method: "DELETE", body }),
 
   matches: (role: Role) =>
     request<{ matches: Match[] }>("/matches", { query: { role } }),

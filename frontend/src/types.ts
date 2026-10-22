@@ -200,6 +200,7 @@ export type ModalName =
   | "login"
   | "signup"
   | "reset"
+  | "leave"
   | "metric-log"
   | "goal"
   | "ask"

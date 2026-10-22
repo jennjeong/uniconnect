@@ -54,6 +54,7 @@ Figma Make 프로젝트 [Create Web/App Service](https://www.figma.com/make/mhCa
 - 없는 주소는 홈과 주요 메뉴로 안내하는 404 화면을 보여 주고, 빌드한 서버(`npm start`)는 실제 404 상태로 응답해요.
 - 대시보드 맨 아래와 FAQ 페이지(`/faq`, 메뉴의 내 정보 옆)에 자주 묻는 질문 5개가 있어요. 실제 기능만 설명하고, 이용 요금·환불처럼 정해지지 않은 내용은 넣지 않았어요.
 - 로그인 창의 '비밀번호를 잊으셨나요?'에서 가입한 이메일로 인증번호를 받아 새 비밀번호를 정할 수 있어요. 바꾸면 다른 기기에서는 로그아웃돼요.
+- 내 정보 맨 아래의 '회원 탈퇴'에서 비밀번호를 한 번 더 입력하면 탈퇴할 수 있어요. 계정과 그 계정이 만든 소개, 행사, 협찬 제안, 메시지, 질문이 바로 지워져요. 데모 계정은 시연을 위해 탈퇴할 수 없어요.
 - 이용약관(`/terms`)과 개인정보 처리방침(`/privacy`)은 맨 아래 줄과 회원가입 동의 문구에서 열 수 있어요. 둘 다 시연용 초안이라 정식 출시 전에 운영 주체·연락처·개인정보 보호책임자를 정하고 법률 검토를 받아야 해요.
 - FAQ 페이지 위쪽의 '관리자에게 질문하기'를 누르면 질문 창이 열려요. 로그인한 사용자는 여기서 질문을 보내고, 답변을 '내 질문'에서 볼 수 있어요. 관리자 화면은 아직 없고, 서버에 `ADMIN_TOKEN`을 설정한 뒤 아래 관리자 API로 질문을 보고 답해요.
 - 아래 값은 실제 정보가 정해지면 `frontend/.figma/make/site.json`에 넣어요.
@@ -165,6 +166,7 @@ NODE_ENV=production npm start
 | POST | `/api/auth/signup` | 회원가입 → `{ token, account }` | |
 | POST | `/api/auth/login` | 로그인 `{ role, email, password }` → `{ token, account }` | |
 | POST | `/api/auth/password-reset/code` | 비밀번호 재설정 인증번호 발송 `{ email }` (가입된 이메일만) | |
+| DELETE | `/api/auth/account` | 회원 탈퇴 `{ password }` → 204, 계정과 소개·행사·제안·메시지·질문 삭제 (데모 계정은 403) | 필요 |
 | POST | `/api/auth/password-reset` | 새 비밀번호 설정 `{ email, code, password }` → `{ token, account }`, 다른 기기 로그아웃 | |
 | GET | `/api/auth/me` | 내 계정 | 필요 |
 | POST | `/api/auth/logout` | 로그아웃 | |

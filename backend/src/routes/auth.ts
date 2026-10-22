@@ -10,7 +10,7 @@ import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { accountTypes, parseRole, text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
-import type { Account, EmailCode, PublicAccount, Role } from "../types.js"
+import type { Account, Database, EmailCode, PublicAccount, Role } from "../types.js"
 
 export const authRouter = Router()
 
@@ -252,6 +252,54 @@ authRouter.post("/login", async (req, res) => {
   const token = startSession(account.id)
   await saveDatabase()
   res.json({ token, account: toPublic(account) })
+})
+
+// Everything an account made goes with it: its listing and the
+// conversations with it, its events, the proposals it sent or (a brand)
+// received, its questions to the operators, its sessions and codes.
+function removeAccount(database: Database, account: Account) {
+  const listingId = account.groupId ?? account.brandId
+  database.accounts = database.accounts.filter((item) => item.id !== account.id)
+  database.sessions = database.sessions.filter((session) => session.accountId !== account.id)
+  database.emailCodes = database.emailCodes.filter((entry) => entry.email !== account.email)
+  database.inquiries = database.inquiries.filter((inquiry) => inquiry.accountId !== account.id)
+  database.requests = database.requests.filter(
+    (request) =>
+      request.fromAccountId !== account.id && (!account.brandId || request.brandId !== account.brandId),
+  )
+  delete database.events[account.id]
+  delete database.proposals[account.id]
+  delete database.sponsorships[account.id]
+  if (!listingId) return
+  database.brands = database.brands.filter((listing) => listing.id !== listingId)
+  database.groups = database.groups.filter((listing) => listing.id !== listingId)
+  database.conversations = database.conversations.filter(
+    (conversation) => conversation.groupId !== listingId && conversation.brandId !== listingId,
+  )
+  for (const [owner, brandIds] of Object.entries(database.proposals)) {
+    database.proposals[owner] = brandIds.filter((brandId) => brandId !== listingId)
+  }
+}
+
+// Leaving: with the password typed again, the account and everything it
+// made are deleted for good. The demo accounts stay, so the demo keeps
+// working for everyone.
+authRouter.delete("/account", async (req, res) => {
+  const account = requireAccount(req)
+  const database = getDatabase()
+  if (Object.values(database.demoAccountIds).includes(account.id)) {
+    throw new HttpError(403, "데모 계정은 탈퇴할 수 없어요.")
+  }
+  const limitKey = `${clientKey(req)} ${account.email}`
+  loginFailures.check(limitKey)
+  if (!(await verifyPassword(String(req.body?.password ?? ""), account.passwordHash))) {
+    loginFailures.hit(limitKey)
+    // Not 401, which the app reads as a session that has run out.
+    throw new HttpError(400, "비밀번호가 올바르지 않아요.")
+  }
+  removeAccount(database, account)
+  await saveDatabase()
+  res.status(204).end()
 })
 
 authRouter.get("/me", (req, res) => {

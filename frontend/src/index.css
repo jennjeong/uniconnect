@@ -3246,7 +3246,55 @@ button.nav-pill:hover {
 }
 
 .profile-logout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   margin-top: 32px;
+}
+
+/* Leaving sits quietly at the end of 내 정보 (modals/LeaveModal.tsx). */
+.leave-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.leave-link:hover {
+  color: var(--red);
+}
+
+.leave-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 14px 0 0;
+  padding: 14px 16px 14px 34px;
+  border-radius: var(--radius-md);
+  background: var(--red-soft);
+  list-style: disc;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.leave-list li::marker {
+  color: var(--red);
+}
+
+.auth-form .leave-confirm,
+.auth-form .leave-confirm:hover:not(:disabled) {
+  background: var(--red);
+}
+
+.auth-form .leave-confirm:hover:not(:disabled) {
+  filter: brightness(0.92);
 }
 
 /* What the account has done so far, as Stride's bento tiles: deep blue,
