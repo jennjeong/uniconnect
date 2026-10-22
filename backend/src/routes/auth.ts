@@ -294,6 +294,11 @@ function removeAccount(database: Database, account: Account) {
     new Set(database.measurements.filter((item) => item.accountId === account.id).map((item) => item.eventId)),
   )
   database.measurements = database.measurements.filter((measurement) => measurement.accountId !== account.id)
+  // A leaving brand's coupons can no longer be used; the events' totals keep its counts.
+  const leaving = new Set((database.sponsorships[account.id] ?? []).map((sponsorship) => sponsorship.id))
+  for (const measurement of database.measurements) {
+    measurement.sponsors = measurement.sponsors.filter((sponsor) => !leaving.has(sponsor.id))
+  }
   delete database.events[account.id]
   delete database.proposals[account.id]
   delete database.sponsorships[account.id]

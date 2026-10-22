@@ -26,8 +26,8 @@ function writePin(code: string, pin: string) {
 }
 
 // The sponsor's store staff open /check-in/<code>/staff on their own device:
-// with the event's staff PIN, each participant's coupon number confirms one
-// store visit.
+// with their store's staff PIN, each participant's coupon number for that
+// store confirms one store visit.
 export function StaffCheckInPage({ code }: { code: string }) {
   const [info, setInfo] = useState<CheckInInfo | null>(null)
   const [pin, setPin] = useState(() => readPin(code))
@@ -50,9 +50,9 @@ export function StaffCheckInPage({ code }: { code: string }) {
     setBusy(true)
     setError("")
     try {
-      const { entry } = await api.confirmVisit(code, { pin, coupon: number })
+      const { entry, store } = await api.confirmVisit(code, { pin, coupon: number })
       writePin(code, pin)
-      setConfirmed((current) => [`${number} · ${entry.participant}`, ...current].slice(0, 5))
+      setConfirmed((current) => [`${number} · ${store} · ${entry.participant}`, ...current].slice(0, 5))
       setCoupon("")
     } catch (caught) {
       setError(errorMessage(caught))
@@ -72,11 +72,12 @@ export function StaffCheckInPage({ code }: { code: string }) {
         <h1>{info?.eventName ?? "방문 확인"}</h1>
         {info && (
           <p className="checkin-date">
-            {info.coupon.store} · {formatFullDate(info.eventDate)}
+            {info.groupName && `${info.groupName} · `}
+            {formatFullDate(info.eventDate)}
           </p>
         )}
         <p className="checkin-staff">
-          참여자가 보여 주는 쿠폰 번호를 입력하면 매장 방문이 기록돼요. 직원 PIN은 행사 주최 측에서 받아 주세요.
+          참여자가 보여 주는 우리 매장 쿠폰 번호를 입력하면 매장 방문이 기록돼요. 직원 PIN은 행사 주최 측에서 매장마다 받아 주세요.
         </p>
 
         <form

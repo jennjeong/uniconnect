@@ -1,10 +1,11 @@
 import { todayInKorea } from "./dates.js"
-import { estimatedSales } from "./measurements.js"
+import { estimatedSales, shareValue, syncSponsors } from "./measurements.js"
 import type { Database, Sponsorship } from "../types.js"
 
 // An accepted proposal becomes one of the brand's sponsorships: the event
 // it is about, linked by id when it is a student event, so its counts,
-// value and goal come from that event's measurement. Once only.
+// value and goal come from that event's measurement, where it gets its own
+// coupon and counts. Once only.
 export function recordSponsorship(
   database: Database,
   brandAccountId: string,
@@ -13,13 +14,28 @@ export function recordSponsorship(
   const list = (database.sponsorships[brandAccountId] ??= [])
   if (list.some((item) => item.id === sponsorship.id)) return
   list.push({ ...sponsorship, spend: 0, coupons: 0, visits: 0, sales: 0, targetRoas: 150 })
+  const measurement = database.measurements.find((item) => item.eventId === sponsorship.eventId)
+  if (sponsorship.eventId && measurement) syncSponsors(database, measurement)
 }
 
-// A sponsorship of a measured event with that event's live coupons, visits
-// and estimated sales, and the value and ROAS goal the group set.
+// A sponsorship of a measured event with its own share of the event: the
+// coupons and visits of its coupon, their estimated sales and the value it
+// gave, with the ROAS goal the group set. (Without a share, which the
+// measurement gives every sponsor when it loads, the event's own figures.)
 function withLiveFigures(database: Database, sponsorship: Sponsorship): Sponsorship {
   const measurement = database.measurements.find((item) => item.eventId === sponsorship.eventId)
   if (!measurement) return sponsorship
+  const sponsor = measurement.sponsors.find((item) => item.id === sponsorship.id)
+  if (sponsor) {
+    return {
+      ...sponsorship,
+      spend: shareValue(measurement, sponsor) || sponsorship.spend,
+      coupons: sponsor.metrics.coupons,
+      visits: sponsor.metrics.visits,
+      sales: sponsor.metrics.visits * measurement.goals.averageSpend,
+      targetRoas: measurement.goals.targets.roas,
+    }
+  }
   const value = measurement.goals.valueBreakdown.reduce((sum, part) => sum + part.value, 0)
   return {
     ...sponsorship,
@@ -31,25 +47,13 @@ function withLiveFigures(database: Database, sponsorship: Sponsorship): Sponsors
   }
 }
 
-// How many other brands sponsor the same event. Its measurement counts the
-// whole event, so their figures are the same and not split between them.
-function otherSponsors(database: Database, brandAccountId: string, eventId: string) {
-  return Object.entries(database.sponsorships).filter(
-    ([accountId, list]) => accountId !== brandAccountId && list.some((item) => item.eventId === eventId),
-  ).length
-}
-
 // The brand's sponsorships whose day has come, newest first, measured ones
-// with their live figures and the number of brands they share the event with.
+// with their live figures.
 export function finishedSponsorships(database: Database, brandAccountId: string) {
   const today = todayInKorea()
   return (database.sponsorships[brandAccountId] ?? [])
     .filter((sponsorship) => sponsorship.date && sponsorship.date <= today)
-    .map((sponsorship) => {
-      const live = withLiveFigures(database, sponsorship)
-      const shared = sponsorship.eventId ? otherSponsors(database, brandAccountId, sponsorship.eventId) : 0
-      return shared ? { ...live, sharedWith: shared } : live
-    })
+    .map((sponsorship) => withLiveFigures(database, sponsorship))
     .sort((a, b) => b.date.localeCompare(a.date))
 }
 

@@ -142,9 +142,6 @@ export type Sponsorship = {
   sales: number
   // ROAS goal in percent.
   targetRoas: number
-  // Other brands sponsoring the same event, whose counts are the whole
-  // event's rather than this brand's share.
-  sharedWith?: number
 }
 
 export type ChatMessage = {
@@ -222,6 +219,23 @@ export type Report = {
   coupon: { store: string; title: string }
   // 4 digits store staff enter to confirm a visit; only for the owner.
   staffPin?: string
+  // Once brands sponsor the event, each one's own coupon, counts and value;
+  // participants then take these coupons instead of the event's.
+  sponsors?: SponsorReport[]
+}
+
+export type SponsorReport = {
+  // The brand's sponsorship.
+  id: string
+  brandName: string
+  coupon: { store: string; title: string }
+  // Won this sponsor gave (an even split until the group sets each).
+  value: number
+  coupons: number
+  visits: number
+  roas: number
+  // Its store staff's PIN; only for the owner.
+  staffPin?: string
 }
 
 // One event of the group with its live counts and report.
@@ -236,7 +250,8 @@ export type CheckInInfo = {
   eventName: string
   eventDate: string
   groupName: string
-  coupon: Report["coupon"]
+  // One per sponsor, or the event's own ("event") before any.
+  coupons: { id: string; store: string; title: string }[]
 }
 
 // Student groups and brands each have their own menu (data/navigation.ts).

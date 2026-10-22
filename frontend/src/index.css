@@ -6050,6 +6050,25 @@ button.nav-pill:hover {
   margin-top: 8px;
 }
 
+/* Each sponsor's coupon, share and PIN in the goals form. */
+.goals-sponsor {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.goals-sponsor > strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: var(--weight-label);
+}
+
+.goals-form .goals-mismatch {
+  color: var(--red);
+  font-weight: var(--weight-label);
+}
+
 .goals-value-row {
   display: grid;
   grid-template-columns: 96px 1fr 40px;
@@ -6296,6 +6315,21 @@ button.nav-pill:hover {
 .qr-pin small {
   color: var(--muted);
   font-size: 12px;
+}
+
+/* One PIN per sponsor's store once brands sponsor the event. */
+.qr-pins {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 4px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.qr-pins strong {
+  margin-left: 4px;
+  font-size: 16px;
 }
 
 /* The store staff's page (checkin/StaffCheckInPage.tsx): the PIN and the
@@ -6948,6 +6982,15 @@ button.nav-pill:hover {
   font-weight: var(--weight-label);
 }
 
+/* The group's report: each sponsor's share of the event, one column fewer. */
+.sponsor-card {
+  margin-top: 28px;
+}
+
+.sponsor-table .analytics-row {
+  grid-template-columns: minmax(0, 2.2fr) repeat(4, minmax(0, 1fr));
+}
+
 .analytics-event {
   display: flex;
   min-width: 0;
@@ -6963,18 +7006,6 @@ button.nav-pill:hover {
   color: var(--muted);
   font-size: 12px;
   font-weight: var(--weight-body);
-}
-
-.analytics-event .analytics-shared {
-  color: var(--point-strong);
-  font-weight: var(--weight-label);
-}
-
-.analytics-note {
-  margin: 14px 0 0;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.6;
 }
 
 .analytics-roas {
@@ -7870,7 +7901,8 @@ button.nav-pill:hover {
     display: none;
   }
 
-  .analytics-row {
+  .analytics-row,
+  .sponsor-table .analytics-row {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px 8px;
     padding: 14px 0;
@@ -9959,6 +9991,16 @@ body.checkin-body {
 .checkin-welcome div > span {
   color: var(--green);
   font-size: 12px;
+}
+
+/* One ticket per sponsor's coupon. */
+.coupon-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 /* Coupon ticket with notches cut into both sides. */

@@ -6,8 +6,6 @@ import { tmpdir } from "node:os"
 import path from "node:path"
 import { after, before, beforeEach, test } from "node:test"
 
-import type { Sponsorship } from "./types.js"
-
 // Each run starts from a fresh seed in a temp file, never the real data/db.json.
 const dataDir = await mkdtemp(path.join(tmpdir(), "uniconnect-api-"))
 process.env.DATA_FILE = path.join(dataDir, "db.json")
@@ -269,7 +267,8 @@ test("each event counts its own QR scans, coupons and visits", async () => {
   const page = (await call("GET", "/check-in/20261012")).data
   assert.equal(page.eventName, "가을 버스킹 데이")
   assert.equal(page.groupName, "삼육대 뮤즈")
-  assert.equal(page.coupon.title, "아메리카노 1+1")
+  // The busking day's only sponsor took over its coupon.
+  assert.deepEqual(page.coupons, [{ id: "sp-busking", store: "오후의 커피 공릉점", title: "아메리카노 1+1" }])
 
   const recorded = (await call("POST", "/check-in/20261012/scans")).data
   assert.equal(recorded.entry.participant, `참여자 #${initial.scans + 1}`)
@@ -289,7 +288,7 @@ test("each event counts its own QR scans, coupons and visits", async () => {
   assert.match(coupon.coupon, /^UC-[A-HJ-NP-Z2-9]{6}$/)
   assert.equal((await record("coupons", { pass })).status, 409)
   const passState = () => call("GET", `/check-in/20261012/passes/${pass}`)
-  assert.deepEqual((await passState()).data, { coupon: coupon.coupon, visited: false })
+  assert.deepEqual((await passState()).data, { coupons: { "sp-busking": { number: coupon.coupon, visited: false } } })
   const staff = (body: unknown) => call("POST", "/check-in/20261012/staff/visits", body)
   const wrongPin = await staff({ pin: "0000", coupon: coupon.coupon })
   assert.equal(wrongPin.status, 403)
@@ -297,11 +296,13 @@ test("each event counts its own QR scans, coupons and visits", async () => {
   assert.equal((await staff({ pin: "1012", coupon: "UC-ZZZZZZ" })).status, 404)
   assert.equal((await staff({ pin: "1012", coupon: coupon.coupon.toLowerCase() })).status, 200)
   assert.equal((await staff({ pin: "1012", coupon: coupon.coupon })).status, 409)
-  assert.deepEqual((await passState()).data, { coupon: coupon.coupon, visited: true })
+  assert.deepEqual((await passState()).data, { coupons: { "sp-busking": { number: coupon.coupon, visited: true } } })
   // The PIN is for the group that owns the event, not for visitors.
   assert.equal((await call("GET", busking)).data.report.staffPin, undefined)
   const owner = await login("학생단체")
-  assert.equal((await call("GET", busking, undefined, owner)).data.report.staffPin, "1012")
+  const owned = (await call("GET", busking, undefined, owner)).data.report
+  assert.equal(owned.staffPin, "1012")
+  assert.equal(owned.sponsors[0].staffPin, "1012")
 
   const scans = (await call("GET", `${busking}/log?kind=scans`)).data.entries
   assert.equal(scans[0].id, recorded.entry.id)
@@ -499,20 +500,117 @@ test("brand analytics follow the live measurement", async () => {
   assert.deepEqual((await call("GET", "/analytics", undefined, student)).data.sponsorships, [])
 })
 
-test("analytics mark an event another brand sponsors too", async () => {
-  const shown = async () => (await call("GET", "/analytics")).data.sponsorships as { eventId?: string; sharedWith?: number }[]
-  assert.ok((await shown()).every((item) => item.sharedWith === undefined))
+test("an event's first sponsor takes over the coupons handed out before it", async () => {
+  const { syncSponsors } = await import("./lib/measurements.js")
+  const database = structuredClone(getDatabase())
+  const measurement = database.measurements.find((item) => item.eventId === "event-busking-day")!
+  measurement.sponsors = []
+  measurement.metrics = { scans: 3, coupons: 2, visits: 1 }
+  measurement.passes = { a: { coupon: "UC-AAAAAA", visit: true }, b: { coupon: "UC-BBBBBB" }, c: {} }
+  assert.equal(syncSponsors(database, measurement), true)
+  assert.equal(syncSponsors(database, measurement), false)
+  const [sponsor] = measurement.sponsors
+  assert.equal(sponsor.id, "sp-busking")
+  assert.equal(sponsor.staffPin, measurement.staffPin)
+  assert.deepEqual(sponsor.coupon, measurement.goals.coupon)
+  assert.deepEqual(sponsor.metrics, { coupons: 2, visits: 1 })
+  assert.deepEqual(measurement.passes, {
+    a: { sponsors: { "sp-busking": { coupon: "UC-AAAAAA", visit: true } } },
+    b: { sponsors: { "sp-busking": { coupon: "UC-BBBBBB" } } },
+    c: {},
+  })
+})
 
-  // A second sponsor of the busking day: its counts are the whole event's.
+test("each sponsor of an event gets its own coupon, staff PIN and share of the results", async () => {
+  const { recordSponsorship } = await import("./lib/sponsorships.js")
   const database = getDatabase()
-  const [busking] = (await shown()).filter((item) => item.eventId === "event-busking-day")
-  database.sponsorships["another-brand"] = [{ ...busking, id: "sp-another" } as Sponsorship]
+  const measurement = database.measurements.find((item) => item.eventId === "event-busking-day")!
+  const goalsBefore = structuredClone(measurement.goals)
+  const analytics = async () =>
+    ((await call("GET", "/analytics")).data.sponsorships as { id: string; spend: number; visits: number; coupons: number }[]).find(
+      (item) => item.id === "sp-busking",
+    )!
+  const before = await analytics()
+  assert.equal(before.spend, 680000)
+
+  // A second brand sponsors the busking day: it gets a coupon of its own,
+  // and the event's value is split evenly until the group sets each share.
+  recordSponsorship(database, "another-brand", {
+    id: "sp-another",
+    groupName: "삼육대 뮤즈",
+    eventName: "가을 버스킹 데이",
+    date: "2026-10-12",
+    eventId: "event-busking-day",
+  })
   try {
-    const rows = await shown()
-    assert.equal(rows.find((item) => item.eventId === "event-busking-day")?.sharedWith, 1)
-    assert.ok(rows.filter((item) => item.eventId !== "event-busking-day").every((item) => item.sharedWith === undefined))
+    const { coupons } = (await call("GET", "/check-in/20261012")).data
+    assert.deepEqual(
+      coupons.map((item: { id: string }) => item.id),
+      ["sp-busking", "sp-another"],
+    )
+    const owner = await login("학생단체")
+    const report = (await call("GET", "/measurements/event-busking-day", undefined, owner)).data.report
+    const [mine, theirs] = report.sponsors
+    assert.match(theirs.staffPin, /^\d{4}$/)
+    assert.notEqual(theirs.staffPin, mine.staffPin)
+    assert.deepEqual([mine.value, theirs.value], [340000, 340000])
+    assert.deepEqual([theirs.coupons, theirs.visits], [0, 0])
+    assert.equal((await analytics()).spend, 340000)
+
+    // A participant takes both coupons; each store confirms only its own.
+    const { pass } = (await call("POST", "/check-in/20261012/scans")).data
+    const take = (couponId?: string) => call("POST", "/check-in/20261012/coupons", { pass, ...(couponId ? { couponId } : {}) })
+    assert.equal((await take()).status, 404)
+    assert.equal((await take("event")).status, 404)
+    const other = (await take("sp-another")).data.coupon
+    const own = (await take("sp-busking")).data.coupon
+    assert.equal((await take("sp-another")).status, 409)
+    const staff = (pin: string, coupon: string) => call("POST", "/check-in/20261012/staff/visits", { pin, coupon })
+    const wrongStore = await staff(mine.staffPin, other)
+    assert.equal(wrongStore.status, 404)
+    assert.match(wrongStore.data.error, /다른 매장/)
+    const confirmed = await staff(theirs.staffPin, other)
+    assert.equal(confirmed.status, 200)
+    assert.equal(confirmed.data.store, "협찬사")
+    assert.deepEqual((await call("GET", `/check-in/20261012/passes/${pass}`)).data.coupons, {
+      "sp-busking": { number: own, visited: false },
+      "sp-another": { number: other, visited: true },
+    })
+
+    // The demo brand's analytics hold only its own coupon's figures.
+    const after = await analytics()
+    assert.equal(after.coupons, before.coupons + 1)
+    assert.equal(after.visits, before.visits)
+    const split = (await call("GET", "/measurements/event-busking-day", undefined, owner)).data
+    assert.deepEqual([split.report.sponsors[1].coupons, split.report.sponsors[1].visits], [1, 1])
+    assert.equal(split.metrics.visits, before.visits + 1)
+
+    // The group sets each sponsor's share; the shares must add up.
+    const goals = { ...goalsBefore, sponsors: [] as unknown[] }
+    const shares = (first: number, second: number, secondPin = theirs.staffPin) => ({
+      ...goals,
+      sponsors: [
+        { id: "sp-busking", ...mine.coupon, value: first, staffPin: mine.staffPin },
+        { id: "sp-another", store: "다른 카페", title: "쿠키 증정", value: second, staffPin: secondPin },
+      ],
+    })
+    const route = "/measurements/event-busking-day/goals"
+    const uneven = await call("PUT", route, shares(500000, 100000), owner)
+    assert.equal(uneven.status, 400)
+    assert.match(uneven.data.error, /680,000원/)
+    assert.equal((await call("PUT", route, shares(500000, 180000, mine.staffPin), owner)).status, 400)
+    const saved = await call("PUT", route, shares(500000, 180000), owner)
+    assert.equal(saved.status, 200)
+    assert.deepEqual(saved.data.report.sponsors.map((item: { value: number }) => item.value), [500000, 180000])
+    assert.equal(saved.data.report.sponsors[1].coupon.title, "쿠키 증정")
+    assert.equal((await analytics()).spend, 500000)
+    // A change to the event's value alone must keep the shares adding up.
+    const smaller = { ...goalsBefore, valueBreakdown: [{ type: "현금", value: 100000 }] }
+    assert.equal((await call("PUT", route, smaller, owner)).status, 400)
   } finally {
     delete database.sponsorships["another-brand"]
+    measurement.sponsors = measurement.sponsors.filter((sponsor) => sponsor.id !== "sp-another")
+    measurement.goals = goalsBefore
   }
 })
 
@@ -1146,7 +1244,10 @@ test("a student group sets its event's goals, and the report follows", async () 
   assert.equal((await call("PUT", route, { ...goals, coupon: { store: "", title: "x" } }, student)).status, 400)
   assert.equal((await call("PUT", route, { ...goals, staffPin: "12a4" }, student)).status, 400)
 
-  const saved = await call("PUT", route, goals, student)
+  // Once brands sponsor the event, each sponsor's coupon comes with the goals.
+  const current = (await call("GET", "/measurements/event-muse-concert", undefined, student)).data.report
+  const sponsors = (current.sponsors ?? []).map((sponsor: { id: string }) => ({ id: sponsor.id, ...goals.coupon }))
+  const saved = await call("PUT", route, { ...goals, sponsors }, student)
   assert.equal(saved.status, 200)
   const { metrics, report } = saved.data
   assert.equal(report.expectedAudience, 200)
@@ -1157,7 +1258,8 @@ test("a student group sets its event's goals, and the report follows", async () 
   assert.equal(report.targets.roas, 160)
   assert.equal(report.staffPin, "4321")
   const code = report.code as string
-  assert.equal((await call("GET", `/check-in/${code}`)).data.coupon.title, "음료 1잔 무료")
+  const offered = (await call("GET", `/check-in/${code}`)).data.coupons
+  assert.deepEqual(offered.map((coupon: { title: string }) => coupon.title), ["음료 1잔 무료"])
 })
 
 test("the server's today is Korea's, whatever its own time zone", async () => {

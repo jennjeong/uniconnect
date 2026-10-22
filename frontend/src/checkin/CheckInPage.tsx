@@ -7,13 +7,15 @@ import { formatFullDate } from "../lib/date"
 import type { CheckInInfo } from "../types"
 
 // What this phone has done at the event, kept so a refresh doesn't count
-// twice; `pass` lets the server count its coupon once, and `coupon` is the
-// number the store staff confirm the visit with on their own device.
-type CheckIn = { participant: string; pass?: string; coupon?: string; visited?: boolean }
+// twice: `pass` lets the server count each coupon once, and `coupons` holds
+// the numbers the store staff confirm visits with on their own device, by
+// coupon id (one per sponsor).
+type TakenCoupon = { number: string; visited?: boolean }
+type CheckIn = { participant: string; pass?: string; coupons?: Record<string, TakenCoupon> }
 
 const couponTerms = "발급일부터 7일 동안 쓸 수 있어요"
 
-// How often the phone asks whether the store has confirmed the visit.
+// How often the phone asks whether the store has confirmed a visit.
 const visitCheckMs = 3_000
 
 const storageKey = (code: string) => `uniconnect-checkin-${code}`
@@ -36,13 +38,13 @@ function writeCheckIn(code: string, checkIn: CheckIn | null) {
 }
 
 // Page participants reach by scanning the event QR: records the scan for
-// that event and hands out the sponsor's coupon with its number. Store
+// that event and hands out each sponsor's coupon with its number. Store
 // staff confirm the visit on their own device (StaffCheckInPage) with that
 // number; this page then shows it as confirmed.
 export function CheckInPage({ code }: { code: string }) {
   const [info, setInfo] = useState<CheckInInfo | null>(null)
   const [checkIn, setCheckIn] = useState<CheckIn | null>(() => readCheckIn(code))
-  const [busy, setBusy] = useState(false)
+  const [busy, setBusy] = useState("")
   const [error, setError] = useState("")
   // StrictMode runs effects twice while developing; record the scan once.
   const scanned = useRef(false)
@@ -52,7 +54,8 @@ export function CheckInPage({ code }: { code: string }) {
     writeCheckIn(code, next)
   }
 
-  // A check-in kept from before coupon numbers existed scans again.
+  // A check-in kept from before passes existed, or one the server no longer
+  // knows, scans again.
   const restart = () => {
     scanned.current = false
     save(null)
@@ -75,48 +78,62 @@ export function CheckInPage({ code }: { code: string }) {
       .catch((caught) => setError(errorMessage(caught)))
   }, [checkIn, code])
 
-  // Until the store confirms the visit, check every few seconds.
-  const waiting = checkIn?.pass && checkIn.coupon && !checkIn.visited ? checkIn : null
+  // The server's word on this pass's coupons, once on arrival and, while a
+  // taken coupon waits for the store, every few seconds.
+  const pass = checkIn?.pass
+  const waiting = Object.values(checkIn?.coupons ?? {}).some((coupon) => !coupon.visited)
   useEffect(() => {
-    if (!waiting?.pass) return
+    if (!pass) return
     let cancelled = false
     const check = () =>
       api
-        .checkInPass(code, waiting.pass!)
-        .then((state) => {
+        .checkInPass(code, pass)
+        .then(({ coupons }) => {
           if (cancelled) return
-          if (state.coupon !== waiting.coupon) restart()
-          else if (state.visited) save({ ...waiting, visited: true })
+          const taken = Object.fromEntries(
+            Object.entries(coupons).flatMap(([id, coupon]) =>
+              coupon.number ? [[id, { number: coupon.number, visited: coupon.visited }]] : [],
+            ),
+          )
+          setCheckIn((current) => {
+            if (current?.pass !== pass) return current
+            const next = { ...current, coupons: taken }
+            writeCheckIn(code, next)
+            return next
+          })
         })
         .catch((caught) => {
           if (!cancelled && caught instanceof ApiError && caught.status === 404) restart()
         })
     check()
-    const timer = window.setInterval(check, visitCheckMs)
+    const timer = waiting ? window.setInterval(check, visitCheckMs) : undefined
     return () => {
       cancelled = true
       window.clearInterval(timer)
     }
-  }, [code, waiting?.pass, waiting?.coupon])
+  }, [code, pass, waiting])
 
-  const takeCoupon = async () => {
+  const takeCoupon = async (couponId: string) => {
     if (!checkIn) return
     if (!checkIn.pass) {
       restart()
       return
     }
-    setBusy(true)
+    setBusy(couponId)
     setError("")
     try {
-      const { coupon } = await api.recordCheckIn(code, "coupons", { pass: checkIn.pass })
-      save({ ...checkIn, coupon })
+      const { coupon } = await api.recordCheckIn(code, "coupons", { pass: checkIn.pass, couponId })
+      if (coupon) save({ ...checkIn, coupons: { ...checkIn.coupons, [couponId]: { number: coupon } } })
     } catch (caught) {
       if (caught instanceof ApiError && caught.status === 403) restart()
       else setError(errorMessage(caught))
     } finally {
-      setBusy(false)
+      setBusy("")
     }
   }
+
+  const taken = checkIn?.coupons ?? {}
+  const anyWaiting = Object.values(taken).some((coupon) => !coupon.visited)
 
   return (
     <div className="checkin">
@@ -148,32 +165,45 @@ export function CheckInPage({ code }: { code: string }) {
               </div>
             </div>
 
-            <div className="coupon">
-              <span className="coupon-store">{info?.coupon.store ?? "협찬 매장"}</span>
-              <strong className="coupon-title">{info?.coupon.title ?? "참여자 전용 혜택"}</strong>
-              <small>행사 참여자 전용 쿠폰 · {couponTerms}</small>
-              {checkIn.coupon ? (
-                <div className="coupon-code">
-                  <span>쿠폰 번호</span>
-                  <strong>{checkIn.coupon}</strong>
-                </div>
-              ) : (
-                <button className="primary-button wide" disabled={busy} onClick={takeCoupon} type="button">
-                  쿠폰 받기
-                </button>
-              )}
-            </div>
+            <ul className="coupon-list">
+              {(info?.coupons ?? []).map((coupon) => {
+                const mine = taken[coupon.id]
+                return (
+                  <li className="coupon" key={coupon.id}>
+                    <span className="coupon-store">{coupon.store}</span>
+                    <strong className="coupon-title">{coupon.title}</strong>
+                    <small>행사 참여자 전용 쿠폰 · {couponTerms}</small>
+                    {mine ? (
+                      <div className="coupon-code">
+                        <span>쿠폰 번호</span>
+                        <strong>{mine.number}</strong>
+                      </div>
+                    ) : (
+                      <button
+                        aria-label={`${coupon.store} 쿠폰 받기`}
+                        className="primary-button wide"
+                        disabled={busy === coupon.id}
+                        onClick={() => void takeCoupon(coupon.id)}
+                        type="button"
+                      >
+                        쿠폰 받기
+                      </button>
+                    )}
+                    {mine?.visited && (
+                      <p className="checkin-done">
+                        <Icon name="check" size={16} /> 방문이 확인됐어요. 맛있게 드세요!
+                      </p>
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
 
-            {checkIn.coupon &&
-              (checkIn.visited ? (
-                <p className="checkin-done">
-                  <Icon name="check" size={16} /> 방문이 확인됐어요. 맛있게 드세요!
-                </p>
-              ) : (
-                <p className="checkin-staff" role="status">
-                  매장에서 이 쿠폰 번호를 직원에게 보여 주세요. 직원이 확인하면 여기에 바로 표시돼요.
-                </p>
-              ))}
+            {anyWaiting && (
+              <p className="checkin-staff" role="status">
+                매장에서 쿠폰 번호를 직원에게 보여 주세요. 직원이 확인하면 여기에 바로 표시돼요.
+              </p>
+            )}
           </>
         )}
 

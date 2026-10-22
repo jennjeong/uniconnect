@@ -2,7 +2,14 @@ import type { Request } from "express"
 import { Router } from "express"
 
 import { HttpError } from "../lib/errors.js"
-import { buildReport, ensureMeasurement, parseGoals, parseKind, parseStaffPin } from "../lib/measurements.js"
+import {
+  applySponsorGoals,
+  buildReport,
+  ensureMeasurement,
+  parseGoals,
+  parseKind,
+  parseStaffPin,
+} from "../lib/measurements.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 
@@ -63,13 +70,15 @@ measurementsRouter.get("/:eventId/log", async (req, res) => {
 })
 
 // The group sets the event's goals: expected audience, average spend, reach
-// beyond the venue, the sponsorship's value, targets and the coupon. Only
-// the logged-in group that owns the event can.
+// beyond the venue, the sponsorship's value, targets and the coupon, or each
+// sponsor's coupon, value and staff PIN once brands sponsor it. Only the
+// logged-in group that owns the event can.
 measurementsRouter.put("/:eventId/goals", async (req, res) => {
   requireAccount(req)
   const goals = parseGoals(req.body)
   const staffPin = parseStaffPin(req.body?.staffPin)
   const { measurement, event } = await ownedMeasurement(req)
+  applySponsorGoals(measurement, goals, req.body?.sponsors)
   measurement.goals = goals
   if (staffPin) measurement.staffPin = staffPin
   await saveDatabase()

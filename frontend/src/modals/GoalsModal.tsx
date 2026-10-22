@@ -19,6 +19,14 @@ const draftOf = (report: Report) => ({
   store: report.coupon.store,
   title: report.coupon.title,
   staffPin: report.staffPin ?? "",
+  sponsors: (report.sponsors ?? []).map((sponsor) => ({
+    id: sponsor.id,
+    brandName: sponsor.brandName,
+    store: sponsor.coupon.store,
+    title: sponsor.coupon.title,
+    value: String(sponsor.value),
+    staffPin: sponsor.staffPin ?? "",
+  })),
 })
 
 type Draft = ReturnType<typeof draftOf>
@@ -36,7 +44,9 @@ const targetFields: { key: keyof Report["targets"]; label: string }[] = [
 // The event's goals and the inputs its report is worked out from: the
 // expected audience, what a participant spends at the sponsor's store,
 // reach beyond the venue, the sponsorship's value, the targets and the
-// coupon participants get. The server checks every field again.
+// coupon participants get; once brands sponsor the event, each sponsor's
+// coupon, share of the value and staff PIN instead. The server checks every
+// field again.
 export function GoalsModal({
   report,
   onClose,
@@ -52,6 +62,11 @@ export function GoalsModal({
 
   const update = (patch: Partial<Draft>) => setDraft((current) => ({ ...current, ...patch }))
   const number = (value: string) => value.replace(/[^\d]/g, "")
+  const updateSponsor = (id: string, patch: Partial<Draft["sponsors"][number]>) =>
+    update({ sponsors: draft.sponsors.map((sponsor) => (sponsor.id === id ? { ...sponsor, ...patch } : sponsor)) })
+  const several = draft.sponsors.length > 1
+  const total = draft.valueBreakdown.reduce((sum, part) => sum + Number(part.value || 0), 0)
+  const shared = draft.sponsors.reduce((sum, sponsor) => sum + Number(sponsor.value || 0), 0)
 
   const submit = async () => {
     setBusy(true)
@@ -67,6 +82,17 @@ export function GoalsModal({
         ) as Report["targets"],
         coupon: { store: draft.store, title: draft.title },
         ...(draft.staffPin ? { staffPin: draft.staffPin } : {}),
+        ...(draft.sponsors.length
+          ? {
+              sponsors: draft.sponsors.map((sponsor) => ({
+                id: sponsor.id,
+                store: sponsor.store,
+                title: sponsor.title,
+                ...(several ? { value: Number(sponsor.value) } : {}),
+                ...(sponsor.staffPin ? { staffPin: sponsor.staffPin } : {}),
+              })),
+            }
+          : {}),
       })
       onSaved({ eventId: report.eventId, ...result })
     } catch (caught) {
@@ -190,6 +216,67 @@ export function GoalsModal({
           </div>
         </fieldset>
 
+        {draft.sponsors.length > 0 ? (
+          <fieldset>
+            <legend>협찬사별 쿠폰</legend>
+            <small className="field-hint">
+              참여자는 협찬사마다 쿠폰을 따로 받고, 각 매장은 자기 PIN으로 자기 쿠폰만 확인해요. 그래서 협찬사마다 성과가
+              따로 집계돼요.
+            </small>
+            {draft.sponsors.map((sponsor) => (
+              <div className="goals-sponsor" key={sponsor.id}>
+                <strong>{sponsor.brandName}</strong>
+                <div className="form-row">
+                  <label>
+                    매장
+                    <input
+                      maxLength={30}
+                      value={sponsor.store}
+                      onChange={(event) => updateSponsor(sponsor.id, { store: event.target.value })}
+                    />
+                  </label>
+                  <label>
+                    혜택
+                    <input
+                      maxLength={30}
+                      value={sponsor.title}
+                      onChange={(event) => updateSponsor(sponsor.id, { title: event.target.value })}
+                    />
+                  </label>
+                </div>
+                <div className="form-row">
+                  {several && (
+                    <label>
+                      협찬 가치 (원)
+                      <input
+                        inputMode="numeric"
+                        value={sponsor.value}
+                        onChange={(event) => updateSponsor(sponsor.id, { value: number(event.target.value) })}
+                      />
+                    </label>
+                  )}
+                  {report.staffPin !== undefined && (
+                    <label>
+                      매장 직원 확인 PIN (숫자 4자리)
+                      <input
+                        inputMode="numeric"
+                        maxLength={4}
+                        value={sponsor.staffPin}
+                        onChange={(event) => updateSponsor(sponsor.id, { staffPin: number(event.target.value).slice(0, 4) })}
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
+            ))}
+            {several && (
+              <small className={shared === total ? "field-hint" : "field-hint goals-mismatch"}>
+                협찬사별 가치 합계 {shared.toLocaleString("ko-KR")}원 / 협찬 가치 합계 {total.toLocaleString("ko-KR")}원
+                {shared === total ? "" : " · 두 합계가 같아야 저장돼요"}
+              </small>
+            )}
+          </fieldset>
+        ) : (
         <fieldset>
           <legend>참여 쿠폰</legend>
           <div className="form-row">
@@ -214,6 +301,7 @@ export function GoalsModal({
             </label>
           )}
         </fieldset>
+        )}
 
         {error && (
           <p className="form-error" role="alert">

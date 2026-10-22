@@ -209,9 +209,6 @@ export function AnalyticsPage({
                     <strong>{row.eventName}</strong>
                     <small>{row.groupName}</small>
                     <small>{formatFullDate(row.date)}</small>
-                    {row.sharedWith ? (
-                      <small className="analytics-shared">협찬사 {row.sharedWith + 1}곳 공동 · 행사 전체 수치</small>
-                    ) : null}
                   </span>
                   <span role="cell" data-label="집행액">
                     {formatWon(row.spend)}
@@ -235,12 +232,6 @@ export function AnalyticsPage({
                 </div>
               ))}
             </div>
-            {rows.some((row) => row.sharedWith) && (
-              <p className="analytics-note">
-                공동 협찬한 행사의 집행액, 쿠폰, 방문, 추정 매출은 행사 전체 수치예요. 협찬사끼리 나눈 값이 아니라서
-                우리 브랜드의 몫보다 크게 보일 수 있어요.
-              </p>
-            )}
           </div>
         </>
       )}

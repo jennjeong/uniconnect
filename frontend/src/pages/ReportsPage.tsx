@@ -138,6 +138,50 @@ export function ReportsPage({
               )
             })}
           </ul>
+
+          {report.sponsors && report.sponsors.length > 1 && (
+            <div className="analytics-card sponsor-card" data-reveal>
+              <p className="section-title">협찬사별 성과</p>
+              <div className="analytics-table sponsor-table stagger" role="table" aria-label="협찬사별 성과">
+                <div className="analytics-row head" role="row">
+                  <span role="columnheader">협찬사</span>
+                  <span role="columnheader">협찬 가치</span>
+                  <span role="columnheader">쿠폰 수령</span>
+                  <span role="columnheader">매장 방문</span>
+                  <span role="columnheader">ROAS</span>
+                </div>
+                {report.sponsors.map((sponsor) => (
+                  <div className="analytics-row" key={sponsor.id} role="row">
+                    <span className="analytics-event" role="cell">
+                      <strong>{sponsor.brandName}</strong>
+                      <small>
+                        {sponsor.coupon.store} · {sponsor.coupon.title}
+                      </small>
+                    </span>
+                    <span role="cell" data-label="협찬 가치">
+                      {formatWon(sponsor.value)}
+                    </span>
+                    <span role="cell" data-label="쿠폰 수령">
+                      {sponsor.coupons.toLocaleString("ko-KR")}장
+                    </span>
+                    <span role="cell" data-label="매장 방문">
+                      {sponsor.visits.toLocaleString("ko-KR")}명
+                    </span>
+                    <span
+                      role="cell"
+                      data-label="ROAS"
+                      className={sponsor.roas >= report.targets.roas ? "analytics-roas met" : "analytics-roas"}
+                    >
+                      {sponsor.roas}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <small className="field-hint">
+                참여자는 협찬사마다 쿠폰을 따로 받고, 각 매장이 자기 쿠폰의 방문만 확인해요. 위 목표는 행사 전체 기준이에요.
+              </small>
+            </div>
+          )}
         </>
       )}
     </section>
