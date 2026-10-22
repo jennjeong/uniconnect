@@ -902,12 +902,33 @@ test("older data files gain the new collections and calendar dates", async () =>
 })
 
 test("a failed save does not stop later saves", async () => {
+  await saveDatabase()
   const dataFile = config.dataFile
   // Renaming onto a folder that has files fails, as a full disk would.
   config.dataFile = process.env.FRONTEND_DIST!
   await assert.rejects(saveDatabase())
   config.dataFile = dataFile
   await saveDatabase()
+})
+
+test("a request whose save fails leaves nothing behind", async () => {
+  const student = await login("학생단체")
+  await saveDatabase()
+  const count = () => (getDatabase().events[getDatabase().demoAccountIds.학생단체] ?? []).length
+  const before = count()
+  const event = { name: "저장 안 될 행사", date: "2026-12-01", types: ["현금"] }
+  const dataFile = config.dataFile
+  config.dataFile = process.env.FRONTEND_DIST!
+  const failed = await call("POST", "/events", event, student)
+  config.dataFile = dataFile
+  assert.equal(failed.status, 503)
+  assert.match(failed.data.error, /되돌렸어요/)
+  // Nothing stayed in memory, so trying again makes one event, not two.
+  assert.equal(count(), before)
+  const again = await call("POST", "/events", event, student)
+  assert.equal(again.status, 201)
+  assert.equal(count(), before + 1)
+  await call("DELETE", `/events/${again.data.event.id}`, undefined, student)
 })
 
 test("proposal answers only take accept or decline", async () => {
