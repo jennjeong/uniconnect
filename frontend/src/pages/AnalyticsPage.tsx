@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react"
+import type { CSSProperties, ReactNode } from "react"
 
 import { AnimatedNumber } from "../components/AnimatedNumber"
 import { Icon } from "../components/Icon"
@@ -22,6 +22,7 @@ export function AnalyticsPage({
   sponsorships,
   exporting,
   onDownload,
+  campaign,
 }: {
   // Newest first.
   sponsorships: Sponsorship[]
@@ -29,6 +30,8 @@ export function AnalyticsPage({
   exporting: boolean
   // Saves the analysis with each sponsorship's report as a PDF.
   onDownload: () => void
+  // On-site measurement of the brand's own campaigns, at the end.
+  campaign?: ReactNode
 }) {
   const { totals, rows, best, furthestBelow, cheapest, metCount, visitRate, roasScale } =
     analyzeSponsorships(sponsorships)
@@ -232,6 +235,7 @@ export function AnalyticsPage({
           </div>
         </>
       )}
+      {campaign}
     </section>
   )
 }

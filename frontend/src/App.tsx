@@ -10,6 +10,7 @@ import {
   type ProposalState,
 } from "./api"
 import { Loader } from "./components/Loader"
+import { CampaignMeasurement } from "./components/CampaignMeasurement"
 import { Presence } from "./components/Presence"
 import { Toast } from "./components/Toast"
 import type { LegalKind } from "./data/legal"
@@ -308,16 +309,13 @@ function App() {
     }
   }, [accountId])
 
-  // The student group's events with their measurements, again whenever its
-  // calendar changes. Brands measure nothing of their own.
+  // The account's events (a group's events, a brand's campaigns) with their
+  // measurements, again whenever its calendar changes.
   useEffect(() => {
-    if (!authReady || role !== "학생단체") {
-      setMeasurements([])
-      return
-    }
+    if (!authReady) return
     let cancelled = false
     api
-      .measurements()
+      .measurements(role)
       .then((result) => {
         if (!cancelled) setMeasurements(result.measurements)
       })
@@ -833,6 +831,20 @@ function App() {
             exporting={exportingAnalytics}
             onDownload={() => setExportingAnalytics(true)}
             sponsorships={sponsorships}
+            campaign={
+              <CampaignMeasurement
+                measurements={measurements}
+                metrics={metrics}
+                report={report}
+                onSelect={setMeasuredId}
+                onUpdate={updateMeasurement}
+                onOpenQr={() => setActiveModal("qr")}
+                onOpenGoals={() =>
+                  account ? setActiveModal("measure-goals") : requireLogin("로그인하면 캠페인 목표를 정할 수 있어요.")
+                }
+                onShowLog={openLog}
+              />
+            }
           />
         )
       default:
@@ -1016,6 +1028,7 @@ function App() {
         <Presence show={activeModal === "metric-log"}>
           <MetricLogModal
             eventId={report.eventId}
+            role={role}
             kind={logKind === "all" ? undefined : logKind}
             total={
               logKind === "all" ? metrics.scans + metrics.coupons + metrics.visits : metrics[logKind]
