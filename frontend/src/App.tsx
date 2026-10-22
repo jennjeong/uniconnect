@@ -37,6 +37,7 @@ import { MetricLogModal } from "./modals/MetricLogModal"
 import { QrModal } from "./modals/QrModal"
 import { ReportModal } from "./modals/ReportModal"
 import { SignupModal } from "./modals/SignupModal"
+import { AdminPage } from "./pages/AdminPage"
 import { AnalyticsPage } from "./pages/AnalyticsPage"
 import { BrandDashboardPage } from "./pages/BrandDashboardPage"
 import { DashboardPage } from "./pages/DashboardPage"
@@ -702,6 +703,7 @@ function App() {
   const renderPage = (): ReactNode => {
     if (view.missing) return <NotFoundPage onNavigate={navigate} role={role} />
     if (view.faq) return <FaqPage account={account} onLogin={() => openAuth("login")} />
+    if (view.admin) return <AdminPage onNotice={showNotice} />
     if (view.legal) return <LegalPage kind={view.legal} onSwitch={(legal) => openLegal(legal)} />
     if (creating !== null) {
       return (
@@ -933,6 +935,8 @@ function App() {
                 ? "faq"
                 : view.legal
                   ? `legal-${view.legal}`
+                  : view.admin
+                    ? "admin"
                   : creating !== null
               ? "create"
               : profileOpen

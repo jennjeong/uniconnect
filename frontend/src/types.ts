@@ -165,6 +165,11 @@ export type Inquiry = {
   answeredAt?: string
 }
 
+// A question as the operators see it, with who sent it.
+export type AdminInquiry = Inquiry & {
+  from: { name: string; role: Role; email: string } | null
+}
+
 export type Conversation = {
   id: string
   partner: {

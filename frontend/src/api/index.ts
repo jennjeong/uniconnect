@@ -1,5 +1,6 @@
 import type {
   Account,
+  AdminInquiry,
   CheckInInfo,
   Conversation,
   EventItem,
@@ -113,6 +114,14 @@ export const api = {
     request<{ profile: Match }>("/profile", { method: "PUT", body }),
 
   inquiries: () => request<{ inquiries: Inquiry[] }>("/inquiries"),
+  adminInquiries: (token: string) =>
+    request<{ inquiries: AdminInquiry[] }>("/admin/inquiries", { headers: { "X-Admin-Token": token } }),
+  answerInquiry: (token: string, id: string, answer: string) =>
+    request<{ inquiry: Inquiry }>(`/admin/inquiries/${encodeURIComponent(id)}/answer`, {
+      method: "POST",
+      body: { answer },
+      headers: { "X-Admin-Token": token },
+    }),
   askInquiry: (body: { category: string; question: string }) =>
     request<{ inquiry: Inquiry }>("/inquiries", { method: "POST", body }),
 

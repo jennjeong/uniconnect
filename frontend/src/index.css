@@ -6007,6 +6007,134 @@ button.nav-pill:hover {
   }
 }
 
+/* The operators' screen (pages/AdminPage.tsx): the token form, then each
+   question as a card with who sent it and the answer or a box for one. */
+.admin-login {
+  display: flex;
+  max-width: 420px;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.admin-login label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.admin-login input,
+.admin-answer-form textarea {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--fill);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+}
+
+.admin-login .primary-button {
+  align-self: flex-start;
+}
+
+.admin-page .match-tabs {
+  margin-top: 28px;
+}
+
+.admin-list {
+  display: flex;
+  max-width: 860px;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.admin-card {
+  padding: 20px 22px;
+  border-radius: var(--radius-md);
+  background: var(--silver-gradient);
+  box-shadow: var(--silver-ring);
+}
+
+.admin-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.admin-category {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--point-strong);
+  font-weight: var(--weight-label);
+}
+
+.admin-from {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.admin-question {
+  margin: 8px 0 0;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.admin-answer {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: #fff;
+}
+
+.admin-answer strong {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  color: var(--point-strong);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.admin-answer small {
+  color: var(--muted);
+  font-weight: var(--weight-body);
+}
+
+.admin-answer p {
+  margin: 6px 0 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.admin-answer-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.admin-answer-form textarea {
+  resize: vertical;
+}
+
+.admin-answer-form .primary-button {
+  align-self: flex-end;
+}
+
 /* Under the login password, the way to a new one (modals/ResetPasswordModal.tsx). */
 .forgot-row {
   margin: 10px 0 0;

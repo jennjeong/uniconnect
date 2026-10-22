@@ -23,4 +23,5 @@ export const sampleViews: View[] = [
   { page: "대시보드", faq: true },
   { page: "대시보드", legal: "terms" },
   { page: "대시보드", legal: "privacy" },
+  { page: "대시보드", admin: true },
 ]
