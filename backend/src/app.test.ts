@@ -500,6 +500,59 @@ test("brand analytics follow the live measurement", async () => {
   assert.deepEqual((await call("GET", "/analytics", undefined, student)).data.sponsorships, [])
 })
 
+test("proposals are about an upcoming event, and a sponsor can be asked again for the next one", async () => {
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const today = todayInKorea()
+  const student = await signUpMember("proposer@syu.ac.kr", "proposer-pass-123")
+  const brand = await login("브랜드")
+
+  // Without an upcoming event a proposal to a brand with an account would
+  // never reach the analytics, so it waits for one; others just keep the interest.
+  const none = await call("POST", "/proposals", { matchId: "afternoon-coffee" }, student)
+  assert.equal(none.status, 409)
+  assert.match(none.data.error, /행사를 먼저/)
+  assert.equal((await call("GET", "/proposals", undefined, student)).data.proposals.includes("afternoon-coffee"), false)
+  assert.equal((await call("POST", "/proposals", { matchId: "studymate" }, student)).status, 201)
+
+  const first = (await call("POST", "/events", { name: "첫 공연", date: addDays(today, 5), types: ["현금"] }, student)).data.event
+  const second = (await call("POST", "/events", { name: "둘째 공연", date: addDays(today, 30), types: ["현금"] }, student)).data.event
+  assert.equal((await call("POST", "/proposals", { matchId: "afternoon-coffee" }, student)).status, 201)
+  const mine = () => getDatabase().requests.filter((item) => item.groupName === "proposer 동아리")
+  assert.deepEqual(mine().map((item) => item.eventId), [first.id])
+  // Sending again while it waits changes nothing.
+  assert.equal((await call("POST", "/proposals", { matchId: "afternoon-coffee" }, student)).status, 201)
+  assert.equal(mine().length, 1)
+  await call("POST", `/requests/${mine()[0].id}/accept`, undefined, brand)
+  const again = await call("POST", "/proposals", { matchId: "afternoon-coffee" }, student)
+  assert.equal(again.status, 409)
+  assert.match(again.data.error, /이미 협찬이 확정/)
+
+  // Once the first event is over, the next one can be proposed.
+  Object.values(getDatabase().events).flat().find((item) => item.id === first.id)!.date = addDays(today, -2)
+  const next = await call("POST", "/proposals", { matchId: "afternoon-coffee" }, student)
+  assert.equal(next.status, 201)
+  assert.deepEqual(mine().map((item) => item.eventId), [first.id, second.id])
+  assert.equal(next.data.statuses["afternoon-coffee"], "검토 중")
+  // Withdrawing it leaves the accepted one and the brand among the proposals.
+  const withdrawn = await call("DELETE", "/proposals/afternoon-coffee", undefined, student)
+  assert.equal(withdrawn.status, 200)
+  assert.ok(withdrawn.data.proposals.includes("afternoon-coffee"))
+  assert.equal(withdrawn.data.statuses["afternoon-coffee"], "수락")
+  assert.equal((await call("DELETE", "/proposals/afternoon-coffee", undefined, student)).status, 409)
+
+  // A brand needs an upcoming campaign the same way.
+  const brandId = (await call("GET", "/auth/me", undefined, brand)).data.account.id as string
+  const campaigns = getDatabase().events[brandId]
+  getDatabase().events[brandId] = []
+  try {
+    const offer = await call("POST", "/proposals", { matchId: "syu-muse" }, brand)
+    assert.equal(offer.status, 409)
+    assert.match(offer.data.error, /캠페인을 먼저/)
+  } finally {
+    getDatabase().events[brandId] = campaigns
+  }
+})
+
 test("check-ins count only on the event's days, and records go once they are not needed", async () => {
   const { addDays, todayInKorea } = await import("./lib/dates.js")
   const { prunePasses } = await import("./lib/measurements.js")
