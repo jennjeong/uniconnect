@@ -2971,6 +2971,30 @@ button.nav-pill:hover {
   box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.14);
 }
 
+/* Why the partner is recommended, under its name on the deep blue banner. */
+.banner-reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 14px 0 0;
+}
+
+.banner-reasons span {
+  padding: 5px 12px;
+  border-radius: 999px;
+  /* Frosted navy glass, so the words stay readable over the light waves. */
+  background: rgba(14, 34, 82, 0.62);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.banner-reasons span:first-child {
+  background: #fff;
+  color: var(--point-strong);
+}
+
 .banner-meta {
   display: block;
   margin-bottom: 10px;
