@@ -43,6 +43,33 @@ export function createApp() {
     })
   }
 
+  // Security headers on every answer. The page may only run this site's own
+  // scripts (and Google Analytics once it is turned on), and no other site
+  // may frame it.
+  app.use((_req, res, next) => {
+    res.set({
+      "Content-Security-Policy": [
+        "default-src 'self'",
+        "script-src 'self' https://www.googletagmanager.com",
+        "style-src 'self' 'unsafe-inline'",
+        "img-src 'self' data: blob: https:",
+        "font-src 'self' data:",
+        "connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com",
+        "worker-src 'self' blob:",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "frame-ancestors 'none'",
+      ].join("; "),
+      "X-Content-Type-Options": "nosniff",
+      "X-Frame-Options": "DENY",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+      "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+      ...(config.isProduction ? { "Strict-Transport-Security": "max-age=31536000; includeSubDomains" } : {}),
+    })
+    next()
+  })
+
   app.use(express.json({ limit: "100kb" }))
   app.use(readSession)
 

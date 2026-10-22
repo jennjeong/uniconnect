@@ -85,7 +85,9 @@ export type Account = {
 export type PublicAccount = Omit<Account, "passwordHash" | "termsAgreedAt">
 
 export type Session = {
-  token: string
+  // sha256 of the token the browser holds, so the data file alone cannot
+  // log anyone in.
+  tokenHash: string
   accountId: string
   expiresAt: number
 }

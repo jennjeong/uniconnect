@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto"
 import type { NextFunction, Request, Response } from "express"
 
 import { HttpError } from "../lib/errors.js"
@@ -13,14 +14,17 @@ declare global {
   }
 }
 
+export const hashToken = (token: string) => createHash("sha256").update(token).digest("hex")
+
 // Attaches the logged-in account (if any) from the "Authorization: Bearer" header.
 export function readSession(req: Request, _res: Response, next: NextFunction) {
   const header = req.get("authorization")
   const token = header?.startsWith("Bearer ") ? header.slice(7) : undefined
   if (token) {
     const database = getDatabase()
+    const tokenHash = hashToken(token)
     const session = database.sessions.find(
-      (entry) => entry.token === token && entry.expiresAt > Date.now(),
+      (entry) => entry.tokenHash === tokenHash && entry.expiresAt > Date.now(),
     )
     if (session) {
       req.sessionToken = token
