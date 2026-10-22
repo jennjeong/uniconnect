@@ -9,3 +9,10 @@ export function toIsoDate(value: string) {
   if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== iso) return undefined
   return iso
 }
+
+// Today's "YYYY-MM-DD" in Korea, where the events take place, whatever the
+// server's own time zone (hosting usually runs on UTC, nine hours behind,
+// which would keep yesterday until 9 a.m.).
+export function todayInKorea(now = new Date()) {
+  return new Date(now.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
+}
