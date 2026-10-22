@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto"
 import { Router } from "express"
 
 import { HttpError } from "../lib/errors.js"
-import { eventOf, parseKind, recordMetric } from "../lib/measurements.js"
+import { assertOpen, eventOf, parseKind, passLimit, recordMetric } from "../lib/measurements.js"
 import { text } from "../lib/validation.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -89,10 +89,14 @@ function newCouponNumber(passes: Measurement["passes"]) {
 // one), each with a number of its own. Store visits are not recorded here.
 checkInRouter.post("/:code/:kind", async (req, res) => {
   recordsPerClient.take(clientKey(req))
-  const { measurement } = measurementFor(req.params.code)
+  const { measurement, event } = measurementFor(req.params.code)
   const kind = parseKind(req.params.kind)
+  if (kind !== "visits") assertOpen(getDatabase(), measurement, event, kind)
 
   if (kind === "scans") {
+    if (Object.keys(measurement.passes).length >= passLimit) {
+      throw new HttpError(409, "이 행사의 참여 기록이 가득 찼어요. 행사 주최 측에 알려 주세요.")
+    }
     const entry = recordMetric(measurement, kind)
     const pass = randomBytes(16).toString("hex")
     measurement.passes[pass] = {}
@@ -146,7 +150,8 @@ checkInRouter.get("/:code/passes/:pass", (req, res) => {
 // The PIN is never typed on, or sent from, a participant's phone.
 checkInRouter.post("/:code/staff/visits", async (req, res) => {
   recordsPerClient.take(clientKey(req))
-  const { measurement } = measurementFor(req.params.code)
+  const { measurement, event } = measurementFor(req.params.code)
+  assertOpen(getDatabase(), measurement, event, "visits")
   const addressKey = `${clientKey(req)} ${req.params.code}`
   pinFailures.check(addressKey)
   pinFailuresPerEvent.check(req.params.code)

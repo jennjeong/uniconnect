@@ -10,9 +10,22 @@ export function toIsoDate(value: string) {
   return iso
 }
 
+// The "YYYY-MM-DD" a number of days after (or before) another.
+export function addDays(date: string, days: number) {
+  const next = new Date(`${date}T00:00:00Z`)
+  next.setUTCDate(next.getUTCDate() + days)
+  return next.toISOString().slice(0, 10)
+}
+
 // Today's "YYYY-MM-DD" in Korea, where the events take place, whatever the
 // server's own time zone (hosting usually runs on UTC, nine hours behind,
 // which would keep yesterday until 9 a.m.).
 export function todayInKorea(now = new Date()) {
   return new Date(now.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
+}
+
+// The date and hour on the clock in Korea.
+export function hourInKorea(now = new Date()) {
+  const korea = new Date(now.getTime() + 9 * 60 * 60 * 1000)
+  return { date: korea.toISOString().slice(0, 10), hour: korea.getUTCHours() }
 }

@@ -9,7 +9,7 @@ export type Kpi = {
   unit: "명" | "%"
   current: number
   target: number
-  // Short line under the value, such as "128명 참여".
+  // Short line under the value, such as "QR 스캔 128건".
   note: string
   // How the value is calculated, shown in the goal details.
   formula: string
@@ -39,8 +39,8 @@ export function reportKpis(report: Report, metrics: Metrics): Kpi[] {
       unit: "%",
       current: percent(metrics.scans, report.expectedAudience),
       target: report.targets.qrRate,
-      note: `${metrics.scans}명 참여`,
-      formula: `QR 스캔 ${metrics.scans}명 ÷ 예상 관객 ${report.expectedAudience}명`,
+      note: `QR 스캔 ${metrics.scans}건`,
+      formula: `QR 스캔 ${metrics.scans}건 ÷ 예상 관객 ${report.expectedAudience}명`,
     },
     {
       key: "visitRate",
@@ -49,7 +49,7 @@ export function reportKpis(report: Report, metrics: Metrics): Kpi[] {
       current: percent(metrics.visits, metrics.scans),
       target: report.targets.visitRate,
       note: `${metrics.visits}명 방문`,
-      formula: `매장 방문 ${metrics.visits}명 ÷ QR 스캔 ${metrics.scans}명`,
+      formula: `매장 방문 ${metrics.visits}건 ÷ QR 스캔 ${metrics.scans}건`,
     },
     {
       key: "roas",

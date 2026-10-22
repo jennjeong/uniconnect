@@ -66,7 +66,7 @@ export function ReportDocument({
     {
       label: "쿠폰 수령",
       value: metrics.coupons,
-      note: `스캔한 사람의 ${percent(metrics.coupons, metrics.scans)}%`,
+      note: `QR 스캔의 ${percent(metrics.coupons, metrics.scans)}%`,
     },
     {
       label: "매장 방문",
@@ -78,15 +78,19 @@ export function ReportDocument({
   const hourScale = Math.max(...report.hourlyScans.map((hour) => hour.scans), 1)
   const peak = report.hourlyScans.reduce(
     (best, hour) => (hour.scans > best.scans ? hour : best),
-    report.hourlyScans[0] ?? { hour: 0, scans: 0 },
+    report.hourlyScans[0] ?? { date: report.eventDate, hour: 0, scans: 0 },
   )
+  // An event over several days labels each hour with its day.
+  const severalDays = new Set(report.hourlyScans.map((hour) => hour.date)).size > 1
+  const hourLabel = (hour: { date: string; hour: number }) =>
+    severalDays ? `${Number(hour.date.slice(5, 7))}/${Number(hour.date.slice(8, 10))} ${hour.hour}시` : `${hour.hour}시`
   const valueTotal = report.valueBreakdown.reduce((sum, part) => sum + part.value, 0)
 
   const insights = [
     `추정 ROAS ${roas.current}%로 목표 ${roas.target}%보다 ${roasSummary(report)}`,
     `QR 참여율은 ${qrRate.current}%로 목표(${qrRate.target}%) 대비 ${kpiGap(qrRate)}예요.`,
-    `QR을 스캔한 ${metrics.scans}명 중 ${metrics.visits}명(${visitRate.current}%)이 실제로 매장을 찾았어요.`,
-    `${peak.hour}시에 스캔이 ${peak.scans}건으로 가장 많았어요. 다음 행사에서는 이 시간대에 부스 인력을 모아 보세요.`,
+    `QR 스캔 ${metrics.scans}건에 매장 방문이 ${metrics.visits}건(${visitRate.current}%) 이어졌어요.`,
+    `${hourLabel(peak)}에 스캔이 ${peak.scans}건으로 가장 많았어요. 다음 행사에서는 이 시간대에 부스 인력을 모아 보세요.`,
   ]
 
   return (
@@ -188,10 +192,10 @@ export function ReportDocument({
         </div>
 
         <section className="pdf-section pdf-card">
-          <h2>행사 당일 시간대별 QR 스캔</h2>
+          <h2>{severalDays ? "날짜·시간대별 QR 스캔" : "행사 당일 시간대별 QR 스캔"}</h2>
           <div className="pdf-hourly">
             {report.hourlyScans.map((hour) => (
-              <div className={hour === peak ? "pdf-hour peak" : "pdf-hour"} key={hour.hour}>
+              <div className={hour === peak ? "pdf-hour peak" : "pdf-hour"} key={`${hour.date} ${hour.hour}`}>
                 <span>{hour.scans}</span>
                 <i style={{ height: `${(hour.scans / hourScale) * 100}%` }} />
               </div>
@@ -199,7 +203,7 @@ export function ReportDocument({
           </div>
           <div className="pdf-axis">
             {report.hourlyScans.map((hour) => (
-              <span key={hour.hour}>{hour.hour}시</span>
+              <span key={`${hour.date} ${hour.hour}`}>{hourLabel(hour)}</span>
             ))}
           </div>
         </section>

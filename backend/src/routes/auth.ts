@@ -183,6 +183,13 @@ authRouter.post("/signup", async (req, res) => {
     throw new HttpError(409, "이미 가입된 이메일이에요. 로그인해 주세요.")
   }
 
+  // The verification is used up before the slow password hash, so the same
+  // one sent several times at once makes one account, not several.
+  database.emailCodes = database.emailCodes.filter((entry) => entry.email !== email)
+  const passwordHash = await hashPassword(password)
+  if (database.accounts.some((account) => account.email === email)) {
+    throw new HttpError(409, "이미 가입된 이메일이에요. 로그인해 주세요.")
+  }
   const now = new Date().toISOString()
   const account: Account = {
     id: randomUUID(),
@@ -191,12 +198,11 @@ authRouter.post("/signup", async (req, res) => {
     type,
     school: role === "학생단체" ? school : "",
     email,
-    passwordHash: await hashPassword(password),
+    passwordHash,
     termsAgreedAt: now,
     createdAt: now,
   }
   database.accounts.push(account)
-  database.emailCodes = database.emailCodes.filter((entry) => entry.email !== email)
   database.events[account.id] = []
   database.proposals[account.id] = []
   const token = startSession(account.id)
@@ -230,11 +236,14 @@ authRouter.post("/password-reset", async (req, res) => {
   const entry = await checkCode(email, text(req.body?.code), "reset")
 
   const database = getDatabase()
+  // Another request with the same code may have used it meanwhile.
+  if (!database.emailCodes.includes(entry)) throw new HttpError(400, "인증번호를 먼저 받아 주세요.")
   const account = database.accounts.find((item) => item.email === email)
   if (!account) throw new HttpError(404, "가입된 이메일이 아니에요.")
   if (isDemo(account)) throw new HttpError(403, demoLocked)
-  account.passwordHash = await hashPassword(password)
+  // Used up before the slow hash, so the code sets one password only.
   database.emailCodes = database.emailCodes.filter((item) => item !== entry)
+  account.passwordHash = await hashPassword(password)
   database.sessions = database.sessions.filter((session) => session.accountId !== account.id)
   loginFailures.reset(`${clientKey(req)} ${email}`)
   const token = startSession(account.id)

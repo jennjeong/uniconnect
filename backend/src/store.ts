@@ -13,7 +13,8 @@ import {
   seedSponsorships,
 } from "./data/seed.js"
 import { toIsoDate } from "./lib/dates.js"
-import { newStaffPin, syncSponsors } from "./lib/measurements.js"
+import { HttpError } from "./lib/errors.js"
+import { newStaffPin, prunePasses, syncSponsors } from "./lib/measurements.js"
 import { hashToken } from "./middleware/session.js"
 import type { Database, Metrics, MetricEntry, Report } from "./types.js"
 
@@ -22,19 +23,27 @@ import type { Database, Metrics, MetricEntry, Report } from "./types.js"
 // which is the seam to replace when moving to a real database.
 let database: Database | undefined
 let pendingWrite = Promise.resolve()
+// The data as last written, to go back to when a write fails, and a count
+// that moves on each time one does.
+let durable = ""
+let generation = 0
 
 export async function loadDatabase() {
   try {
     const stored = JSON.parse(await readFile(config.dataFile, "utf8")) as Database
     database = upgradeDatabase(stored)
+    durable = JSON.stringify(database, null, 2)
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error
     database = await createSeed()
     for (const measurement of database.measurements) syncSponsors(database, measurement)
+    durable = JSON.stringify(database, null, 2)
     await saveDatabase()
   }
   return database
 }
+
+const notSaved = "저장하지 못해서 방금 한 작업을 되돌렸어요. 잠시 후 다시 시도해 주세요."
 
 // Fills in data added after a db.json was created, so existing accounts,
 // sessions and events survive an update.
@@ -116,6 +125,11 @@ export function upgradeDatabase(stored: Database) {
     // takes over what the event had.
     measurement.sponsors ??= []
     syncSponsors(stored, measurement)
+    // Scans by hour gained their day; older ones were on the event's first.
+    const event = stored.events[measurement.accountId]?.find((item) => item.id === measurement.eventId)
+    for (const slot of measurement.hourlyScans) slot.date ??= event?.date ?? ""
+    // Participation records an event no longer needs go on each start.
+    if (event) prunePasses(stored, measurement, event)
   }
   return stored
 }
@@ -126,16 +140,37 @@ export function getDatabase() {
 }
 
 // Writes are queued and go through a temp file, so a crash mid-write cannot
-// leave a half-written db.json behind. A failed write rejects only its own
-// caller; the queue carries on, so the next save tries again.
+// leave a half-written db.json behind. When a write fails, the data in
+// memory goes back to what was last written, so a request answered with an
+// error leaves nothing behind and can simply be tried again: its caller,
+// and the callers of writes queued behind it (whose changes went back too),
+// get a 503. The queue carries on, so the next save tries again.
 export function saveDatabase() {
   const snapshot = JSON.stringify(getDatabase(), null, 2)
+  const at = generation
   const write = pendingWrite.then(async () => {
-    await mkdir(path.dirname(config.dataFile), { recursive: true })
-    const tempFile = `${config.dataFile}.tmp`
-    await writeFile(tempFile, snapshot)
-    await rename(tempFile, config.dataFile)
+    if (at !== generation) throw new HttpError(503, notSaved)
+    try {
+      await mkdir(path.dirname(config.dataFile), { recursive: true })
+      const tempFile = `${config.dataFile}.tmp`
+      await writeFile(tempFile, snapshot)
+      await rename(tempFile, config.dataFile)
+    } catch (error) {
+      console.error(error)
+      generation += 1
+      rollBack()
+      throw new HttpError(503, notSaved)
+    }
+    durable = snapshot
   })
   pendingWrite = write.catch(() => {})
   return write
+}
+
+// Puts the last written data back in place, in the same object, so code
+// holding the database sees it.
+function rollBack() {
+  const current = getDatabase() as unknown as Record<string, unknown>
+  for (const key of Object.keys(current)) delete current[key]
+  Object.assign(current, JSON.parse(durable))
 }

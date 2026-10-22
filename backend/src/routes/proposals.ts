@@ -7,7 +7,7 @@ import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
-import type { Account, RequestStatus, SponsorOffer, SponsorRequest } from "../types.js"
+import type { Account, EventItem, RequestStatus, SponsorOffer, SponsorRequest } from "../types.js"
 
 export const proposalsRouter = Router()
 
@@ -35,31 +35,56 @@ function proposalState(account: Account) {
   return { proposals, statuses }
 }
 
-// A brand's offer about its next campaign, for a group with an account.
-function brandOffer(account: Account, groupId: string): SponsorOffer {
-  const database = getDatabase()
+// The account's next event (a group's) or campaign (a brand's) that has
+// not ended, which a proposal is about.
+function nextEvent(account: Account) {
   const today = todayInKorea()
-  const campaign = (database.events[account.id] ?? [])
+  return (getDatabase().events[account.id] ?? [])
     .filter((item) => (item.endDate ?? item.date) >= today)
     .sort((a, b) => a.date.localeCompare(b.date))[0]
-  const listing = database.brands.find((brand) => brand.id === account.brandId)
+}
+
+// A brand's offer about its next campaign, for a group with an account.
+function brandOffer(account: Account, groupId: string, campaign: EventItem): SponsorOffer {
+  const listing = getDatabase().brands.find((brand) => brand.id === account.brandId)
   return {
     id: randomUUID(),
     groupId,
     fromAccountId: account.id,
-    ...(campaign ? { campaignId: campaign.id } : {}),
+    campaignId: campaign.id,
     ...(listing ? { brandId: listing.id } : {}),
     brandName: account.name,
     industry: listing?.industry ?? brandIndustries[account.type] ?? "cafe",
-    campaignName: campaign?.name ?? "캠페인 일정 협의",
-    campaignDate: campaign?.date ?? "",
+    campaignName: campaign.name,
+    campaignDate: campaign.date,
     offer: listing?.offer || "협찬 내용 협의",
-    message: campaign
-      ? `${campaign.name}을 함께 열고 싶어요. 단체의 행사와 SNS에서 함께 알려 주세요.`
-      : "함께할 캠페인을 같이 기획하고 싶어요.",
+    message: `${campaign.name}을 함께 열고 싶어요. 단체의 행사와 SNS에서 함께 알려 주세요.`,
     status: "검토 중",
     createdAt: new Date().toISOString(),
   }
+}
+
+// Whether a proposal can go to a partner with an account about this event:
+// not while one waits for an answer (sending again changes nothing), and
+// not about an event the partner already accepted. A sponsorship needs an
+// event, so its results reach the brand's analytics.
+function canPropose(sent: { status: RequestStatus; eventId?: string }[], event: EventItem | undefined, students: boolean) {
+  if (!event) {
+    throw new HttpError(
+      409,
+      students
+        ? "협찬받을 행사를 먼저 내 행사에 등록해 주세요. 제안은 다가오는 행사로 보내져요."
+        : "제안할 캠페인을 먼저 행사 일정에 등록해 주세요. 제안은 다가오는 캠페인으로 보내져요.",
+    )
+  }
+  if (sent.some((item) => item.status === "검토 중")) return false
+  if (sent.some((item) => item.status === "수락" && item.eventId === event.id)) {
+    throw new HttpError(
+      409,
+      `${event.name}은 이미 협찬이 확정됐어요. 다음 ${students ? "행사" : "캠페인"}를 등록하면 다시 제안할 수 있어요.`,
+    )
+  }
+  return true
 }
 
 proposalsRouter.get("/", (req, res) => {
@@ -74,65 +99,63 @@ proposalsRouter.post("/", async (req, res) => {
   const partners = account.role === "학생단체" ? database.brands : database.groups
   const partner = partners.find((match) => match.id === matchId)
   if (!partner) throw new HttpError(404, "목록에 없는 상대예요.")
+  const students = account.role === "학생단체"
+  const event = nextEvent(account)
+
+  // A group with an account gets a brand's offer in its inbox, about the
+  // brand's next campaign; a brand with an account gets a group's proposal,
+  // about the group's next event. A declined one can be sent again, and an
+  // accepted one again about a later event.
+  const partnerHasInbox = database.accounts.some((item) =>
+    students ? item.brandId === matchId : item.groupId === matchId,
+  )
+  const send =
+    partnerHasInbox &&
+    canPropose(
+      students
+        ? database.requests.filter((item) => item.fromAccountId === account.id && item.brandId === matchId)
+        : database.offers
+            .filter((item) => item.fromAccountId === account.id && item.groupId === matchId)
+            .map((item) => ({ status: item.status, eventId: item.campaignId })),
+      event,
+      students,
+    )
 
   const current = database.proposals[account.id] ?? []
   if (!current.includes(matchId)) database.proposals[account.id] = [...current, matchId]
 
-  // A group with an account gets a brand's offer in its inbox, about the
-  // brand's next campaign. A declined offer can be sent again.
-  if (account.role === "브랜드") {
-    const groupHasInbox = database.accounts.some((item) => item.groupId === matchId)
-    const openOffer = database.offers.some(
-      (offer) => offer.fromAccountId === account.id && offer.groupId === matchId && offer.status !== "거절",
+  if (!students && send && event) {
+    const offer = brandOffer(account, matchId, event)
+    database.offers.push(offer)
+    void notify(
+      database.accounts.find((item) => item.groupId === matchId),
+      "새 협찬 제안이 왔어요",
+      [`${account.name}에서 '${offer.campaignName}' 협찬을 제안했어요.`, `제공 협찬: ${offer.offer}`],
+      "/offers",
     )
-    if (groupHasInbox && !openOffer) {
-      const offer = brandOffer(account, matchId)
-      database.offers.push(offer)
-      void notify(
-        database.accounts.find((item) => item.groupId === matchId),
-        "새 협찬 제안이 왔어요",
-        [`${account.name}에서 '${offer.campaignName}' 협찬을 제안했어요.`, `제공 협찬: ${offer.offer}`],
-        "/offers",
-      )
-    }
   }
 
-  // A brand with an account gets the proposal in its inbox, about the
-  // group's next event. A declined proposal can be sent again.
-  const hasInbox = database.accounts.some((item) => item.brandId === matchId)
-  const open = database.requests.some(
-    (request) =>
-      request.fromAccountId === account.id &&
-      request.brandId === matchId &&
-      request.status !== "거절",
-  )
-  if (account.role === "학생단체" && hasInbox && !open) {
-    const today = todayInKorea()
-    const event = (database.events[account.id] ?? [])
-      .filter((item) => (item.endDate ?? item.date) >= today)
-      .sort((a, b) => a.date.localeCompare(b.date))[0]
+  if (students && send && event) {
     database.requests.push({
       id: randomUUID(),
       brandId: matchId,
       fromAccountId: account.id,
-      ...(event ? { eventId: event.id } : {}),
+      eventId: event.id,
       groupName: account.name,
       school: account.school,
       industry: groupIndustries[account.type] ?? "performance",
-      eventName: event?.name ?? "행사 일정 협의",
-      eventDate: event?.date ?? "",
-      people: event?.people ? `예상 인원 ${event.people}` : "인원 협의",
+      eventName: event.name,
+      eventDate: event.date,
+      people: event.people ? `예상 인원 ${event.people}` : "인원 협의",
       ask: partner.offer,
-      message: event
-        ? `${event.name}에 함께해 주세요! 현장과 SNS에서 브랜드를 알릴게요.`
-        : "함께할 행사를 같이 기획하고 싶어요.",
+      message: `${event.name}에 함께해 주세요! 현장과 SNS에서 브랜드를 알릴게요.`,
       status: "검토 중",
       createdAt: new Date().toISOString(),
     })
     void notify(
       database.accounts.find((item) => item.brandId === matchId),
       "새 협찬 제안이 왔어요",
-      [`${account.name}에서 '${event?.name ?? "행사 일정 협의"}' 협찬을 제안했어요.`],
+      [`${account.name}에서 '${event.name}' 협찬을 제안했어요.`],
       "/inbox",
     )
   }
@@ -148,12 +171,17 @@ proposalsRouter.delete("/:matchId", async (req, res) => {
     account.role === "학생단체"
       ? database.requests.filter((request) => request.fromAccountId === account.id && request.brandId === matchId)
       : database.offers.filter((offer) => offer.fromAccountId === account.id && offer.groupId === matchId)
-  if (sent.some((item) => item.status === "수락")) throw new HttpError(409, "이미 수락된 제안이에요.")
-  // A withdrawn proposal leaves the other side's inbox; answered ones stay in its history.
+  // A withdrawn proposal leaves the other side's inbox; answered ones stay in
+  // its history. With an accepted one, only a waiting one about a later
+  // event can be withdrawn, and the partner stays among the proposals.
   const withdrawn = new Set(sent.filter((item) => item.status === "검토 중"))
+  const accepted = sent.some((item) => item.status === "수락")
+  if (accepted && withdrawn.size === 0) throw new HttpError(409, "이미 수락된 제안이에요.")
   database.requests = database.requests.filter((request) => !withdrawn.has(request))
   database.offers = database.offers.filter((offer) => !withdrawn.has(offer))
-  database.proposals[account.id] = (database.proposals[account.id] ?? []).filter((id) => id !== matchId)
+  if (!accepted) {
+    database.proposals[account.id] = (database.proposals[account.id] ?? []).filter((id) => id !== matchId)
+  }
   await saveDatabase()
   res.json(proposalState(account))
 })

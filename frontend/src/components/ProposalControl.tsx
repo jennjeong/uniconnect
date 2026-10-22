@@ -24,12 +24,17 @@ export function ProposalControl({
       </button>
     )
   }
+  // A confirmed partner can be asked again about the next event; the server
+  // answers when there is none yet.
   if (status === "수락") {
     return (
       <div className="proposal-actions">
         <span className="proposal-button confirmed">
           <Icon name="check" size={16} /> 협찬 확정
         </span>
+        <button className="proposal-cancel" onClick={onPropose} type="button">
+          다음 일정으로 다시 제안
+        </button>
       </div>
     )
   }

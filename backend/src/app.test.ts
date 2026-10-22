@@ -500,6 +500,109 @@ test("brand analytics follow the live measurement", async () => {
   assert.deepEqual((await call("GET", "/analytics", undefined, student)).data.sponsorships, [])
 })
 
+test("proposals are about an upcoming event, and a sponsor can be asked again for the next one", async () => {
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const today = todayInKorea()
+  const student = await signUpMember("proposer@syu.ac.kr", "proposer-pass-123")
+  const brand = await login("브랜드")
+
+  // Without an upcoming event a proposal to a brand with an account would
+  // never reach the analytics, so it waits for one; others just keep the interest.
+  const none = await call("POST", "/proposals", { matchId: "afternoon-coffee" }, student)
+  assert.equal(none.status, 409)
+  assert.match(none.data.error, /행사를 먼저/)
+  assert.equal((await call("GET", "/proposals", undefined, student)).data.proposals.includes("afternoon-coffee"), false)
+  assert.equal((await call("POST", "/proposals", { matchId: "studymate" }, student)).status, 201)
+
+  const first = (await call("POST", "/events", { name: "첫 공연", date: addDays(today, 5), types: ["현금"] }, student)).data.event
+  const second = (await call("POST", "/events", { name: "둘째 공연", date: addDays(today, 30), types: ["현금"] }, student)).data.event
+  assert.equal((await call("POST", "/proposals", { matchId: "afternoon-coffee" }, student)).status, 201)
+  const mine = () => getDatabase().requests.filter((item) => item.groupName === "proposer 동아리")
+  assert.deepEqual(mine().map((item) => item.eventId), [first.id])
+  // Sending again while it waits changes nothing.
+  assert.equal((await call("POST", "/proposals", { matchId: "afternoon-coffee" }, student)).status, 201)
+  assert.equal(mine().length, 1)
+  await call("POST", `/requests/${mine()[0].id}/accept`, undefined, brand)
+  const again = await call("POST", "/proposals", { matchId: "afternoon-coffee" }, student)
+  assert.equal(again.status, 409)
+  assert.match(again.data.error, /이미 협찬이 확정/)
+
+  // Once the first event is over, the next one can be proposed.
+  Object.values(getDatabase().events).flat().find((item) => item.id === first.id)!.date = addDays(today, -2)
+  const next = await call("POST", "/proposals", { matchId: "afternoon-coffee" }, student)
+  assert.equal(next.status, 201)
+  assert.deepEqual(mine().map((item) => item.eventId), [first.id, second.id])
+  assert.equal(next.data.statuses["afternoon-coffee"], "검토 중")
+  // Withdrawing it leaves the accepted one and the brand among the proposals.
+  const withdrawn = await call("DELETE", "/proposals/afternoon-coffee", undefined, student)
+  assert.equal(withdrawn.status, 200)
+  assert.ok(withdrawn.data.proposals.includes("afternoon-coffee"))
+  assert.equal(withdrawn.data.statuses["afternoon-coffee"], "수락")
+  assert.equal((await call("DELETE", "/proposals/afternoon-coffee", undefined, student)).status, 409)
+
+  // A brand needs an upcoming campaign the same way.
+  const brandId = (await call("GET", "/auth/me", undefined, brand)).data.account.id as string
+  const campaigns = getDatabase().events[brandId]
+  getDatabase().events[brandId] = []
+  try {
+    const offer = await call("POST", "/proposals", { matchId: "syu-muse" }, brand)
+    assert.equal(offer.status, 409)
+    assert.match(offer.data.error, /캠페인을 먼저/)
+  } finally {
+    getDatabase().events[brandId] = campaigns
+  }
+})
+
+test("check-ins count only on the event's days, and records go once they are not needed", async () => {
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const { prunePasses } = await import("./lib/measurements.js")
+  const today = todayInKorea()
+  const student = await signUpMember("window@syu.ac.kr", "window-pass-123")
+  const create = async (date: string) => {
+    const { event } = (await call("POST", "/events", { name: `${date} 행사`, date, types: ["현금"] }, student)).data
+    const { report } = (await call("GET", `/measurements/${event.id}`, undefined, student)).data
+    return { event, report }
+  }
+
+  // Not yet: tests before the day do not count.
+  const later = await create(addDays(today, 3))
+  const early = await call("POST", `/check-in/${later.report.code}/scans`)
+  assert.equal(early.status, 409)
+  assert.match(early.data.error, /아직 참여를 받지 않는/)
+
+  // On the day: a scan by the day and hour, and a coupon.
+  const now = await create(today)
+  const code = now.report.code
+  const { pass } = (await call("POST", `/check-in/${code}/scans`)).data
+  const { coupon } = (await call("POST", `/check-in/${code}/coupons`, { pass })).data
+  await call("POST", `/check-in/${code}/scans`)
+  const measured = (await call("GET", `/measurements/${now.event.id}`, undefined, student)).data.report
+  assert.equal(measured.hourlyScans.length, 1)
+  assert.equal(measured.hourlyScans[0].date, today)
+  assert.equal(measured.hourlyScans[0].scans, 2)
+
+  // Three days on, no more scans, but the coupon still brings a visit.
+  const event = Object.values(getDatabase().events).flat().find((item) => item.id === now.event.id)!
+  event.date = addDays(today, -3)
+  const over = await call("POST", `/check-in/${code}/scans`)
+  assert.equal(over.status, 409)
+  assert.match(over.data.error, /참여 기간이 끝난/)
+  assert.equal((await call("POST", `/check-in/${code}/coupons`, { pass })).status, 409)
+  const measurement = getDatabase().measurements.find((item) => item.eventId === now.event.id)!
+  assert.equal(Object.keys(measurement.passes).length, 2)
+  // Records without a coupon are no longer needed.
+  assert.equal(prunePasses(getDatabase(), measurement, event), true)
+  assert.deepEqual(Object.keys(measurement.passes), [pass])
+  const visit = await call("POST", `/check-in/${code}/staff/visits`, { pin: now.report.staffPin, coupon })
+  assert.equal(visit.status, 200)
+
+  // Once the coupons ran out, no visits and no records.
+  event.date = addDays(today, -10)
+  assert.equal((await call("POST", `/check-in/${code}/staff/visits`, { pin: now.report.staffPin, coupon })).status, 409)
+  assert.equal(prunePasses(getDatabase(), measurement, event), true)
+  assert.deepEqual(measurement.passes, {})
+})
+
 test("an event's first sponsor takes over the coupons handed out before it", async () => {
   const { syncSponsors } = await import("./lib/measurements.js")
   const database = structuredClone(getDatabase())
@@ -902,12 +1005,33 @@ test("older data files gain the new collections and calendar dates", async () =>
 })
 
 test("a failed save does not stop later saves", async () => {
+  await saveDatabase()
   const dataFile = config.dataFile
   // Renaming onto a folder that has files fails, as a full disk would.
   config.dataFile = process.env.FRONTEND_DIST!
   await assert.rejects(saveDatabase())
   config.dataFile = dataFile
   await saveDatabase()
+})
+
+test("a request whose save fails leaves nothing behind", async () => {
+  const student = await login("학생단체")
+  await saveDatabase()
+  const count = () => (getDatabase().events[getDatabase().demoAccountIds.학생단체] ?? []).length
+  const before = count()
+  const event = { name: "저장 안 될 행사", date: "2026-12-01", types: ["현금"] }
+  const dataFile = config.dataFile
+  config.dataFile = process.env.FRONTEND_DIST!
+  const failed = await call("POST", "/events", event, student)
+  config.dataFile = dataFile
+  assert.equal(failed.status, 503)
+  assert.match(failed.data.error, /되돌렸어요/)
+  // Nothing stayed in memory, so trying again makes one event, not two.
+  assert.equal(count(), before)
+  const again = await call("POST", "/events", event, student)
+  assert.equal(again.status, 201)
+  assert.equal(count(), before + 1)
+  await call("DELETE", `/events/${again.data.event.id}`, undefined, student)
 })
 
 test("proposal answers only take accept or decline", async () => {
@@ -1047,6 +1171,33 @@ async function signUpMember(email: string, password: string) {
   assert.equal(signup.status, 201)
   return signup.data.token as string
 }
+
+test("one verification makes one account, and one reset code sets one password", async () => {
+  const email = "twice@syu.ac.kr"
+  const sent = await call("POST", "/auth/email-code", { role: "학생단체", email })
+  const verified = await call("POST", "/auth/email-code/verify", { email, code: sent.data.devCode })
+  const form = {
+    role: "학생단체",
+    name: "동시 가입 동아리",
+    type: "공연 동아리",
+    school: "삼육대학교",
+    email,
+    password: "twice-pass-123",
+    verificationToken: verified.data.verificationToken,
+    agreedToTerms: true,
+    over14: true,
+  }
+  const signups = await Promise.all(Array.from({ length: 5 }, () => call("POST", "/auth/signup", form)))
+  assert.deepEqual(signups.map((item) => item.status).sort(), [201, 400, 400, 400, 400])
+  assert.equal(getDatabase().accounts.filter((account) => account.email === email).length, 1)
+
+  await call("POST", "/auth/password-reset/code", { email })
+  const code = getDatabase().emailCodes.find((item) => item.email === email && item.purpose === "reset")!.code
+  const resets = await Promise.all(
+    ["reset-one-123", "reset-two-123"].map((password) => call("POST", "/auth/password-reset", { email, code, password })),
+  )
+  assert.deepEqual(resets.map((item) => item.status).sort(), [200, 400])
+})
 
 test("a forgotten password is reset with a code sent to the account's email", async () => {
   const email = "forgetful@syu.ac.kr"
