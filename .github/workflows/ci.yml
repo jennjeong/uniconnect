@@ -1,6 +1,7 @@
 # Checks every push to main and every pull request the same way as on a
-# laptop: install from the lockfile, typecheck, run the API tests and build
-# both packages. pnpm's version comes from packageManager in package.json.
+# laptop: install from the lockfile, typecheck, run the API and unit tests,
+# build both packages, then click through the built app in Chrome.
+# pnpm's version comes from packageManager in package.json.
 name: CI
 
 on:
@@ -30,3 +31,6 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      # Browser flows and accessibility checks on the built app, in the
+      # runner's installed Chrome.
+      - run: npm run e2e

@@ -10,7 +10,8 @@ Run these from the repo root:
 - `npm run dev` starts the API on http://localhost:4000 and Vite on http://localhost:8443. Vite proxies `/api` to the API.
 - `npm run typecheck` runs tsc for the backend and the frontend.
 - `npm test` runs the backend API tests (`node:test` through tsx), then the frontend unit tests (vitest, `frontend/src/**/*.test.ts`, configured in `frontend/vitest.config.ts` without the app's Vite plugins). `frontend/src/lib/appPaths.sync.test.ts` checks `backend/src/lib/appPaths.ts` against `route.ts`.
-- GitHub Actions (`.github/workflows/ci.yml`) runs install, typecheck, test and build on every push to main and every pull request.
+- `npm run e2e` (after `npm run build`) runs the Playwright browser tests in `e2e/` against the built app on port 4300 with a fresh temp data file, in the installed Chrome (`channel: "chrome"`, no browser download): the main flows and axe accessibility checks (WCAG 2.1 A/AA; critical and serious problems fail).
+- GitHub Actions (`.github/workflows/ci.yml`) runs install, typecheck, test, build and e2e on every push to main and every pull request.
 - `npm run build`, then `npm start`, builds both packages and serves the API plus the built frontend from Express.
 
 ## Project Structure
