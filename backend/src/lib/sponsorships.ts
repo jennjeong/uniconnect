@@ -31,13 +31,25 @@ function withLiveFigures(database: Database, sponsorship: Sponsorship): Sponsors
   }
 }
 
+// How many other brands sponsor the same event. Its measurement counts the
+// whole event, so their figures are the same and not split between them.
+function otherSponsors(database: Database, brandAccountId: string, eventId: string) {
+  return Object.entries(database.sponsorships).filter(
+    ([accountId, list]) => accountId !== brandAccountId && list.some((item) => item.eventId === eventId),
+  ).length
+}
+
 // The brand's sponsorships whose day has come, newest first, measured ones
-// with their live figures.
+// with their live figures and the number of brands they share the event with.
 export function finishedSponsorships(database: Database, brandAccountId: string) {
   const today = todayInKorea()
   return (database.sponsorships[brandAccountId] ?? [])
     .filter((sponsorship) => sponsorship.date && sponsorship.date <= today)
-    .map((sponsorship) => withLiveFigures(database, sponsorship))
+    .map((sponsorship) => {
+      const live = withLiveFigures(database, sponsorship)
+      const shared = sponsorship.eventId ? otherSponsors(database, brandAccountId, sponsorship.eventId) : 0
+      return shared ? { ...live, sharedWith: shared } : live
+    })
     .sort((a, b) => b.date.localeCompare(a.date))
 }
 

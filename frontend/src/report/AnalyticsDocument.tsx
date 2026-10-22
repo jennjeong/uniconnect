@@ -173,6 +173,12 @@ export function AnalyticsDocument({
                 집행액 {formatWon(row.spend)} · 추정 매출 {formatWon(row.sales)} · 방문당 비용{" "}
                 {row.visits > 0 ? formatWon(row.perVisit) : "-"}
               </p>
+              {row.sharedWith ? (
+                <p>
+                  협찬사 {row.sharedWith + 1}곳이 함께한 행사라 수치는 행사 전체 기준이에요. 협찬사끼리 나눈 값이
+                  아니에요.
+                </p>
+              ) : null}
             </div>
 
             <section className="pdf-section">

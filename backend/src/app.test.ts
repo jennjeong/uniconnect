@@ -6,6 +6,8 @@ import { tmpdir } from "node:os"
 import path from "node:path"
 import { after, before, beforeEach, test } from "node:test"
 
+import type { Sponsorship } from "./types.js"
+
 // Each run starts from a fresh seed in a temp file, never the real data/db.json.
 const dataDir = await mkdtemp(path.join(tmpdir(), "uniconnect-api-"))
 process.env.DATA_FILE = path.join(dataDir, "db.json")
@@ -495,6 +497,23 @@ test("brand analytics follow the live measurement", async () => {
 
   const student = await login("학생단체")
   assert.deepEqual((await call("GET", "/analytics", undefined, student)).data.sponsorships, [])
+})
+
+test("analytics mark an event another brand sponsors too", async () => {
+  const shown = async () => (await call("GET", "/analytics")).data.sponsorships as { eventId?: string; sharedWith?: number }[]
+  assert.ok((await shown()).every((item) => item.sharedWith === undefined))
+
+  // A second sponsor of the busking day: its counts are the whole event's.
+  const database = getDatabase()
+  const [busking] = (await shown()).filter((item) => item.eventId === "event-busking-day")
+  database.sponsorships["another-brand"] = [{ ...busking, id: "sp-another" } as Sponsorship]
+  try {
+    const rows = await shown()
+    assert.equal(rows.find((item) => item.eventId === "event-busking-day")?.sharedWith, 1)
+    assert.ok(rows.filter((item) => item.eventId !== "event-busking-day").every((item) => item.sharedWith === undefined))
+  } finally {
+    delete database.sponsorships["another-brand"]
+  }
 })
 
 test("brand campaigns take an optional budget", async () => {

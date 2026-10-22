@@ -6965,6 +6965,18 @@ button.nav-pill:hover {
   font-weight: var(--weight-body);
 }
 
+.analytics-event .analytics-shared {
+  color: var(--point-strong);
+  font-weight: var(--weight-label);
+}
+
+.analytics-note {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
 .analytics-roas {
   color: var(--ink-soft);
   font-weight: var(--weight-strong);

@@ -187,6 +187,9 @@ export type Sponsorship = {
   eventId?: string
   // ROAS goal in percent, set before the sponsorship.
   targetRoas: number
+  // Other brands sponsoring the same event, worked out when it is shown:
+  // its counts and value are the whole event's, not split between them.
+  sharedWith?: number
 }
 
 // What a student group sets before an event to measure it against.
