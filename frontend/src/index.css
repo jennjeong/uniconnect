@@ -6216,6 +6216,35 @@ button.nav-pill:hover {
   align-self: flex-end;
 }
 
+/* The logo in 소개 편집: the mark as it will show, then the picker. */
+.logo-field {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px;
+}
+
+.logo-field-actions {
+  display: flex;
+  flex: 1 1 220px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo-field-actions .field-hint {
+  flex-basis: 100%;
+}
+
+.logo-pick {
+  cursor: pointer;
+}
+
+.logo-pick:focus-within {
+  outline: 2px solid var(--point);
+  outline-offset: 2px;
+}
+
 /* Under the login password, the way to a new one (modals/ResetPasswordModal.tsx). */
 .forgot-row {
   margin: 10px 0 0;

@@ -70,7 +70,8 @@ export function createApp() {
     next()
   })
 
-  app.use(express.json({ limit: "100kb" }))
+  // Room for a resized logo (routes/profile.ts caps one at about 100KB).
+  app.use(express.json({ limit: "300kb" }))
   app.use(readSession)
 
   app.get("/api/health", (_req, res) => {
