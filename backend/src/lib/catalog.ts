@@ -1,4 +1,5 @@
 import { todayInKorea } from "./dates.js"
+import { scoreMatch, type Viewer } from "./matchScore.js"
 import type { Account, Database, Industry, Match, Role } from "../types.js"
 
 // How an account's type is filed among the industries.
@@ -67,11 +68,27 @@ export function withLiveEvent(database: Database, group: Match): Match {
   return { ...group, eventName: next.name, eventDate: next.date, audience }
 }
 
-// A catalog as the other side sees it, best match first.
-export function browse(database: Database, catalog: "brands" | "groups") {
+// Who a catalog is matched for: the logged-in account when it browses the
+// other side, otherwise the demo account of that side (visitors preview it).
+function viewerFor(database: Database, account: Account | undefined, catalog: "brands" | "groups"): Viewer | undefined {
+  const role: Role = catalog === "brands" ? "학생단체" : "브랜드"
+  const viewer =
+    account?.role === role
+      ? account
+      : database.accounts.find((item) => item.id === database.demoAccountIds[role])
+  return viewer && { account: viewer, listing: findListing(database, viewer) }
+}
+
+// A catalog as the other side sees it, best match first, each with its
+// match for the viewer and why (lib/matchScore.ts).
+export function browse(database: Database, catalog: "brands" | "groups", account?: Account) {
   const listings =
     catalog === "brands"
       ? database.brands
       : database.groups.map((group) => withLiveEvent(database, group))
-  return [...listings].sort((a, b) => b.score - a.score)
+  const viewer = viewerFor(database, account, catalog)
+  const maxPopularity = Math.max(1, ...database.brands.map((brand) => brand.popularity ?? 0))
+  return listings
+    .map((listing) => (viewer ? { ...listing, ...scoreMatch(database, viewer, listing, maxPopularity) } : listing))
+    .sort((a, b) => b.score - a.score)
 }

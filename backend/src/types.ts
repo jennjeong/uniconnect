@@ -26,7 +26,10 @@ export type Match = {
   // Logo image URL; the frontend shows an industry graphic when it is missing.
   logo?: string
   offer: string
+  // Match for the account browsing, worked out when the catalog is served
+  // (lib/matchScore.ts), with the reasons that count most.
   score: number
+  reasons?: string[]
   tags: string[]
   // Sponsorships with student groups this semester (brand catalog only).
   popularity?: number

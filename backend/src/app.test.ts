@@ -996,3 +996,21 @@ test("the server's today is Korea's, whatever its own time zone", async () => {
   assert.equal(todayInKorea(new Date("2026-10-21T16:00:00Z")), "2026-10-22")
   assert.equal(todayInKorea(new Date("2026-10-21T14:59:00Z")), "2026-10-21")
 })
+
+test("matches are worked out for the account browsing, with reasons", async () => {
+  const forVisitors = (await call("GET", "/brands")).data.brands
+  assert.ok(forVisitors.every((brand: { score: number }) => brand.score >= 55 && brand.score <= 98))
+  const scores = forVisitors.map((brand: { score: number }) => brand.score)
+  assert.deepEqual(scores, [...scores].sort((a: number, b: number) => b - a))
+  // The demo group has sponsored with 오후의 커피 before, which leads its reasons.
+  const coffee = forVisitors.find((brand: { id: string }) => brand.id === "afternoon-coffee")
+  assert.equal(coffee.reasons[0], "함께한 협찬이 있어요")
+
+  // A new brand's listing is scored like any other, not left at its first 70.
+  const groups = (await call("GET", "/groups")).data.groups
+  const muse = groups.find((group: { id: string }) => group.id === "syu-muse")
+  assert.ok(muse.reasons.length > 0)
+  const brand = await login("브랜드")
+  const forBrand = (await call("GET", "/groups", undefined, brand)).data.groups
+  assert.equal(forBrand[0].id, "syu-muse")
+})
