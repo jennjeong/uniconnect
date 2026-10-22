@@ -33,8 +33,9 @@ const decisions: Record<string, RequestStatus> = { accept: "수락", decline: "�
 requestsRouter.post("/:id/:decision", async (req, res) => {
   const account = requireAccount(req)
   if (account.role !== "브랜드") throw new HttpError(403, "브랜드 회원만 제안에 답할 수 있어요.")
+  // hasOwn keeps names every object has, such as constructor, out.
+  if (!Object.hasOwn(decisions, req.params.decision)) throw new HttpError(404, "없는 API 경로예요.")
   const decision = decisions[req.params.decision]
-  if (!decision) throw new HttpError(404, "없는 API 경로예요.")
 
   const database = getDatabase()
   const request = database.requests.find(

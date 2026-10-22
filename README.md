@@ -105,8 +105,23 @@ npm run dev
 
 ### 이메일 인증
 
-아직 메일 발송 서비스가 연결되지 않았습니다. 개발 중에는 인증번호를 API 응답(`devCode`)에 담아 회원가입 화면에 보여 주고, 서버 로그에도 `[mail]`로 출력합니다.
-실제 메일을 보낼 때는 `backend/src/lib/mailer.ts`의 `sendVerificationCode`를 구현하고 `EXPOSE_EMAIL_CODES=false`로 설정하세요.
+아직 메일 발송 서비스가 연결되지 않았습니다. 인증번호는 서버 로그에 `[mail]`로 출력됩니다.
+`EXPOSE_EMAIL_CODES=true`일 때만 인증번호를 API 응답(`devCode`)에 담아 회원가입 화면에 보여 줍니다. `npm run dev`는 `backend/dev.env`로 이 값을 켜고, `npm start`나 배포 환경에서는 직접 켜지 않는 한 꺼져 있습니다.
+켜 두면 누구나 아무 이메일로 가입할 수 있으니, 메일 없이 시연용으로 배포할 때만 켜고 서버 로그의 경고를 확인하세요. 실제 메일을 보낼 때는 `backend/src/lib/mailer.ts`의 `sendVerificationCode`를 구현하세요.
+
+### 요청 제한
+
+서버 메모리에서 주소(IP)별로 요청 수를 세고, 넘으면 `429`와 안내 문구를 돌려줍니다. 서버를 다시 켜면 초기화됩니다.
+
+| 대상 | 제한 |
+| --- | --- |
+| 로그인 | 같은 주소·이메일로 실패 10회 / 15분 (성공하면 초기화) |
+| 인증번호 받기 | 주소당 20회 / 15분, 이메일당 5회 / 30분 |
+| 인증번호 확인 | 주소당 30회 / 15분. 틀린 횟수(5회)는 30분 동안 새 인증번호에도 이어짐 |
+| 관리자 API | 주소당 실패 10회 / 15분 |
+| 현장 측정 기록 | 주소당 120회 / 1분 |
+
+프록시나 호스팅 플랫폼 뒤에서 실행하면 `TRUST_PROXY`를 설정해야 실제 사용자 주소로 셉니다.
 
 ### 현장 QR 참여
 
@@ -131,7 +146,9 @@ NODE_ENV=production npm start
 | `PORT` | 백엔드 | 없음 | `NODE_ENV=production`일 때 사용할 포트 |
 | `DATA_FILE` | 백엔드 | `backend/data/db.json` | 데이터 파일 경로 |
 | `CORS_ORIGIN` | 백엔드 | 없음 | 웹을 다른 주소에서 호스팅할 때 허용할 origin |
-| `EXPOSE_EMAIL_CODES` | 백엔드 | 개발 `true`, production `false` | 인증번호를 응답에 포함할지 여부 (메일 서비스 없이 시연할 때 `true`) |
+| `EXPOSE_EMAIL_CODES` | 백엔드 | `false` (`npm run dev`는 `backend/dev.env`에서 `true`) | 인증번호를 응답에 포함할지 여부 (메일 서비스 없이 시연할 때만 `true`) |
+| `ADMIN_TOKEN` | 백엔드 | 없음 | 관리자 API 토큰. 없으면 관리자 API가 닫혀 있음 |
+| `TRUST_PROXY` | 백엔드 | 없음 | 프록시 뒤에서 사용자 주소를 읽는 방법 (`true`, 프록시 수 `1`, 또는 주소) |
 | `VITE_API_URL` | 프론트엔드 | 비어 있음 | 백엔드를 다른 주소에 둘 때 API origin (예: `https://api.example.com`) |
 
 ## API

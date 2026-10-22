@@ -4,7 +4,7 @@ import type { Server } from "node:http"
 import type { AddressInfo } from "node:net"
 import { tmpdir } from "node:os"
 import path from "node:path"
-import { after, before, test } from "node:test"
+import { after, before, beforeEach, test } from "node:test"
 
 // Each run starts from a fresh seed in a temp file, never the real data/db.json.
 const dataDir = await mkdtemp(path.join(tmpdir(), "uniconnect-api-"))
@@ -17,7 +17,9 @@ process.env.EXPOSE_EMAIL_CODES = "true"
 process.env.ADMIN_TOKEN = "test-admin-token"
 
 const { createApp } = await import("./app.js")
-const { loadDatabase } = await import("./store.js")
+const { config, emailCodesExposed } = await import("./config.js")
+const { clearRateLimits } = await import("./lib/rateLimit.js")
+const { loadDatabase, saveDatabase } = await import("./store.js")
 const { DEMO_PASSWORD } = await import("./data/seed.js")
 
 let server: Server
@@ -29,6 +31,9 @@ before(async () => {
   await new Promise((resolve) => server.once("listening", resolve))
   baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api`
 })
+
+// Every request comes from 127.0.0.1, so each case starts with fresh limits.
+beforeEach(() => clearRateLimits())
 
 after(async () => {
   await new Promise((resolve) => server.close(resolve))
@@ -680,4 +685,80 @@ test("older data files gain the new collections and calendar dates", async () =>
     upgraded.events.someone.map((event) => event.date),
     ["2026-11-27", "미정"],
   )
+})
+
+test("a failed save does not stop later saves", async () => {
+  const dataFile = config.dataFile
+  // Renaming onto a folder that has files fails, as a full disk would.
+  config.dataFile = process.env.FRONTEND_DIST!
+  await assert.rejects(saveDatabase())
+  config.dataFile = dataFile
+  await saveDatabase()
+})
+
+test("proposal answers only take accept or decline", async () => {
+  const brand = await login("브랜드")
+  for (const decision of ["constructor", "toString", "__proto__"]) {
+    const answer = await call("POST", `/requests/req-unknown/${decision}`, undefined, brand)
+    assert.equal(answer.status, 404, decision)
+  }
+})
+
+test("asking for a new code keeps the wrong guesses", async () => {
+  const email = "guess@syu.ac.kr"
+  const first = await call("POST", "/auth/email-code", { role: "학생단체", email })
+  const wrong = first.data.devCode === "000000" ? "111111" : "000000"
+  for (let i = 0; i < config.emailCodeMaxAttempts; i += 1) {
+    assert.equal((await call("POST", "/auth/email-code/verify", { email, code: wrong })).status, 400)
+  }
+  const again = await call("POST", "/auth/email-code", { role: "학생단체", email })
+  assert.equal(again.status, 200)
+  const verify = await call("POST", "/auth/email-code/verify", { email, code: again.data.devCode })
+  assert.equal(verify.status, 429)
+})
+
+test("codes can be asked for only so often", async () => {
+  const email = "often@syu.ac.kr"
+  for (let i = 0; i < 5; i += 1) {
+    assert.equal((await call("POST", "/auth/email-code", { role: "학생단체", email })).status, 200)
+  }
+  const limited = await call("POST", "/auth/email-code", { role: "학생단체", email })
+  assert.equal(limited.status, 429)
+  assert.match(limited.data.error, /30분/)
+  // Another address from the same place still gets one.
+  const other = await call("POST", "/auth/email-code", { role: "학생단체", email: "other@syu.ac.kr" })
+  assert.equal(other.status, 200)
+})
+
+test("repeated wrong passwords lock that login for a while", async () => {
+  const attempt = (password: string) =>
+    call("POST", "/auth/login", { role: "학생단체", email: "muse@syu.ac.kr", password })
+  for (let i = 0; i < 10; i += 1) assert.equal((await attempt("wrong-password")).status, 401)
+  assert.equal((await attempt(DEMO_PASSWORD)).status, 429)
+  // Other accounts still log in.
+  assert.ok(await login("브랜드"))
+})
+
+test("the admin token check fails safely and slows guessing", async () => {
+  const admin = (token: string) =>
+    fetch(`${baseUrl}/admin/inquiries`, { headers: { "X-Admin-Token": token } }).then(
+      (response) => response.status,
+    )
+  // Same length as the real token, with a letter outside ASCII.
+  assert.equal(await admin("tést-admin-token"), 403)
+  assert.equal(await admin("test-admin-token"), 200)
+  for (let i = 0; i < 9; i += 1) assert.equal(await admin("wrong"), 403)
+  assert.equal(await admin("test-admin-token"), 429)
+})
+
+test("check-in records are limited per address", async () => {
+  for (let i = 0; i < 120; i += 1) assert.equal((await call("POST", "/metrics/visits")).status, 200)
+  assert.equal((await call("POST", "/metrics/visits")).status, 429)
+})
+
+test("sign-up codes stay off the response unless turned on", () => {
+  assert.equal(emailCodesExposed({}), false)
+  assert.equal(emailCodesExposed({ NODE_ENV: "development" }), false)
+  assert.equal(emailCodesExposed({ EXPOSE_EMAIL_CODES: "false" }), false)
+  assert.equal(emailCodesExposed({ EXPOSE_EMAIL_CODES: "true" }), true)
 })

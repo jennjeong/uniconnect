@@ -24,6 +24,7 @@ import { requestsRouter } from "./routes/requests.js"
 export function createApp() {
   const app = express()
   app.disable("x-powered-by")
+  if (config.trustProxy !== undefined) app.set("trust proxy", config.trustProxy)
 
   if (config.corsOrigin) {
     const origin = config.corsOrigin

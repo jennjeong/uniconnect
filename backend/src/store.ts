@@ -91,14 +91,16 @@ export function getDatabase() {
 }
 
 // Writes are queued and go through a temp file, so a crash mid-write cannot
-// leave a half-written db.json behind.
+// leave a half-written db.json behind. A failed write rejects only its own
+// caller; the queue carries on, so the next save tries again.
 export function saveDatabase() {
   const snapshot = JSON.stringify(getDatabase(), null, 2)
-  pendingWrite = pendingWrite.then(async () => {
+  const write = pendingWrite.then(async () => {
     await mkdir(path.dirname(config.dataFile), { recursive: true })
     const tempFile = `${config.dataFile}.tmp`
     await writeFile(tempFile, snapshot)
     await rename(tempFile, config.dataFile)
   })
-  return pendingWrite
+  pendingWrite = write.catch(() => {})
+  return write
 }
