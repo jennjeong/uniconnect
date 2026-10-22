@@ -1,6 +1,5 @@
-import { useEffect, useState, type CSSProperties } from "react"
+import type { CSSProperties } from "react"
 
-import { api } from "../api"
 import { AnimatedNumber } from "../components/AnimatedNumber"
 import { EventPicker } from "../components/EventPicker"
 import { Icon } from "../components/Icon"
@@ -8,15 +7,13 @@ import { PageIntro } from "../components/PageIntro"
 import { Pill } from "../components/Pill"
 import { RevealTitle } from "../components/RevealText"
 import { metricInfo, metricKinds } from "../data/metrics"
+import { useLiveMeasurement } from "../hooks/useLiveMeasurement"
 import { formatDateTime } from "../lib/date"
 import { measureState } from "../lib/measurements"
 import { percent } from "../lib/format"
 import { LayersGradient } from "../scenes/LayersGradient"
 import { INTERFERENCE } from "../scenes/shaders"
-import type { EventMeasurement, MetricEntry, MetricKind, Metrics, Report } from "../types"
-
-// How often the counts and the activity feed refresh while this page is open.
-const refreshMs = 10_000
+import type { EventMeasurement, MetricKind, Metrics, Report } from "../types"
 
 const delay = (seconds: number) => ({ "--reveal-delay": `${seconds}s` }) as CSSProperties
 
@@ -45,30 +42,7 @@ export function MeasurementPage({
   // Opens the participation history; without a kind, all of it.
   onShowLog: (kind?: MetricKind) => void
 }) {
-  const [entries, setEntries] = useState<MetricEntry[]>([])
-  const eventId = report?.eventId
-
-  useEffect(() => {
-    if (!eventId) return
-    let cancelled = false
-    setEntries([])
-    const load = () =>
-      Promise.all([api.measurementLog(eventId), api.measurement(eventId)])
-        .then(([log, latest]) => {
-          if (cancelled) return
-          setEntries(log.entries)
-          onUpdate({ eventId, ...latest })
-        })
-        .catch(() => {
-          // Keep showing the last data; the next refresh tries again.
-        })
-    load()
-    const timer = window.setInterval(load, refreshMs)
-    return () => {
-      cancelled = true
-      window.clearInterval(timer)
-    }
-  }, [eventId, onUpdate])
+  const entries = useLiveMeasurement(report?.eventId, "학생단체", onUpdate)
 
   const funnel: { kind: MetricKind; note: string }[] = [
     { kind: "scans", note: "현장에서 QR을 스캔했어요" },

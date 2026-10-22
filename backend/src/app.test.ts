@@ -317,10 +317,15 @@ test("each event counts its own QR scans, coupons and visits", async () => {
   assert.equal((await call("POST", "/check-in/20261012/likes")).status, 404)
   assert.equal((await call("GET", `${busking}/log?kind=likes`)).status, 404)
   assert.equal((await call("GET", "/measurements/event-unknown")).status, 404)
-  // Brands measure nothing of their own.
+  // Brands measure their own campaigns, not the groups' events.
   const brand = await login("브랜드")
-  assert.deepEqual((await call("GET", "/measurements", undefined, brand)).data.measurements, [])
+  const campaigns = (await call("GET", "/measurements", undefined, brand)).data.measurements
+  assert.deepEqual(campaigns.map((item: { eventId: string }) => item.eventId), ["event-coffee-tasting"])
   assert.equal((await call("GET", busking, undefined, brand)).status, 404)
+  const preview = (await call("GET", "/measurements?role=브랜드")).data.measurements
+  assert.equal(preview[0].report.eventName, "가을 신메뉴 캠퍼스 시음회")
+  const tasting = await call("POST", `/check-in/${campaigns[0].report.code}/scans`)
+  assert.equal(tasting.status, 200)
 })
 
 test("student groups browse the brand catalog and propose to any brand", async () => {
@@ -1024,6 +1029,7 @@ test("a student group sets its event's goals, and the report follows", async () 
   const route = "/measurements/event-muse-concert/goals"
   assert.equal((await call("PUT", route, goals)).status, 401)
   const brand = await login("브랜드")
+  // A brand cannot set a group's event goals.
   assert.equal((await call("PUT", route, goals, brand)).status, 404)
 
   const student = await login("학생단체")
