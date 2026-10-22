@@ -244,6 +244,8 @@ npm test
 npm run typecheck
 ```
 
+`npm run build` 뒤에 `npm run e2e`를 실행하면 설치된 Chrome으로 빌드된 앱을 열어 실제 화면을 눌러 보는 브라우저 테스트(둘러보기, 제안과 수락, 현장 참여와 직원 PIN, 회원가입)와 접근성 검사(WCAG 2.1 A·AA, 심각한 문제가 있으면 실패)를 합니다. 테스트용 데이터 파일을 따로 만들어 개발 데이터는 건드리지 않습니다.
+
 `npm test`는 백엔드 API 테스트(`backend/src/app.test.ts`)와 화면 쪽 단위 테스트(`frontend/src/lib/*.test.ts`, vitest)를 차례로 실행합니다. 화면 테스트는 주소 읽기(`route.ts`), 날짜 계산(`date.ts`), 성과 분석 계산(`sponsorships.ts`)을 확인하고, 서버의 페이지 주소 목록(`backend/src/lib/appPaths.ts`)이 화면 주소와 맞는지도 확인합니다.
 GitHub에 push하거나 PR을 열면 GitHub Actions가 설치, 타입 검사, 테스트, 빌드를 자동으로 실행합니다(`.github/workflows/ci.yml`).
 
