@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto"
 import { Router } from "express"
 
 import { brandIndustries, groupIndustries } from "../lib/catalog.js"
+import { todayInKorea } from "../lib/dates.js"
 import { HttpError } from "../lib/errors.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -36,7 +37,7 @@ function proposalState(account: Account) {
 // A brand's offer about its next campaign, for a group with an account.
 function brandOffer(account: Account, groupId: string): SponsorOffer {
   const database = getDatabase()
-  const today = new Date().toISOString().slice(0, 10)
+  const today = todayInKorea()
   const campaign = (database.events[account.id] ?? [])
     .filter((item) => (item.endDate ?? item.date) >= today)
     .sort((a, b) => a.date.localeCompare(b.date))[0]
@@ -96,7 +97,7 @@ proposalsRouter.post("/", async (req, res) => {
       request.status !== "거절",
   )
   if (account.role === "학생단체" && hasInbox && !open) {
-    const today = new Date().toISOString().slice(0, 10)
+    const today = todayInKorea()
     const event = (database.events[account.id] ?? [])
       .filter((item) => (item.endDate ?? item.date) >= today)
       .sort((a, b) => a.date.localeCompare(b.date))[0]

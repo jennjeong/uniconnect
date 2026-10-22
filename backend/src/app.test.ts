@@ -989,3 +989,10 @@ test("a student group sets its event's goals, and the report follows", async () 
   const code = report.code as string
   assert.equal((await call("GET", `/check-in/${code}`)).data.coupon.title, "음료 1잔 무료")
 })
+
+test("the server's today is Korea's, whatever its own time zone", async () => {
+  const { todayInKorea } = await import("./lib/dates.js")
+  // 01:00 on the 22nd in Korea is still the 21st in UTC.
+  assert.equal(todayInKorea(new Date("2026-10-21T16:00:00Z")), "2026-10-22")
+  assert.equal(todayInKorea(new Date("2026-10-21T14:59:00Z")), "2026-10-21")
+})

@@ -1,3 +1,4 @@
+import { todayInKorea } from "./dates.js"
 import type { Account, Database, Industry, Match, Role } from "../types.js"
 
 // How an account's type is filed among the industries.
@@ -56,7 +57,7 @@ export function createListing(database: Database, account: Account): Match {
 export function withLiveEvent(database: Database, group: Match): Match {
   const account = database.accounts.find((item) => item.groupId === group.id)
   if (!account) return group
-  const today = new Date().toISOString().slice(0, 10)
+  const today = todayInKorea()
   const next = (database.events[account.id] ?? [])
     // An event over several days stays next until its last day.
     .filter((event) => (event.endDate ?? event.date) >= today)
