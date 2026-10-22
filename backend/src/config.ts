@@ -13,6 +13,9 @@ export const config = {
   ),
   dataFile: process.env.DATA_FILE ?? path.join(backendRoot, "data", "db.json"),
   frontendDist: process.env.FRONTEND_DIST ?? path.resolve(backendRoot, "..", "frontend", "dist"),
+  // Lets operators read and answer questions through /api/admin (sent as
+  // the X-Admin-Token header). Those routes stay closed while it is unset.
+  adminToken: process.env.ADMIN_TOKEN,
   // Only needed when the frontend is hosted on another origin.
   corsOrigin: process.env.CORS_ORIGIN,
   emailCodeTtlMs: 3 * 60 * 1000,

@@ -29,6 +29,7 @@ export function Header({
   notificationsOpen,
   menuOpen,
   unreadMessages,
+  showCreate,
   onNavigate,
   onSwitchRole,
   onCreate,
@@ -56,6 +57,8 @@ export function Header({
   menuOpen: boolean
   // Messages not yet read, shown on the chat button.
   unreadMessages: number
+  // Whether the register button shows; the dashboards leave it out.
+  showCreate: boolean
   onNavigate: (label: NavLabel) => void
   onSwitchRole: (role: Role) => void
   onCreate: () => void
@@ -225,10 +228,12 @@ export function Header({
           <span>Menu</span>
         </button>
 
-        <button aria-label={createLabel(role)} className="cta-pill" onClick={onCreate} type="button">
-          <Icon name="plus" size={16} />
-          <span>{createLabel(role)}</span>
-        </button>
+        {showCreate && (
+          <button aria-label={createLabel(role)} className="cta-pill" onClick={onCreate} type="button">
+            <Icon name="plus" size={16} />
+            <span>{createLabel(role)}</span>
+          </button>
+        )}
       </div>
 
       <Presence show={notificationsOpen && account !== null}>

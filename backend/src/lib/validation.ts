@@ -18,6 +18,10 @@ export const snsPlatforms = ["인스타그램", "유튜브", "틱톡", "블로�
 // "기타" comes with a free-text typeNote on the event.
 export const sponsorTypes = ["현금", "제품", "서비스", "기타"]
 
+// Kinds of question for the operators. Keep in sync with
+// frontend/src/data/inquiries.ts.
+export const inquiryCategories = ["이용 방법", "계정 · 가입", "제안 · 매칭", "오류 신고", "기타"]
+
 export function parseRole(value: unknown): Role {
   if (value === "학생단체" || value === "브랜드") return value
   throw new HttpError(400, "회원 유형을 선택해 주세요.")

@@ -15,6 +15,8 @@ export type View = {
   chat?: string
   // Brand or group whose detail page is open.
   detail?: string
+  // The FAQ page, where questions also go to the operators.
+  faq?: true
   // An address no screen has, kept as it was typed (the 404 page).
   missing?: string
 }
@@ -57,6 +59,7 @@ export function viewPath(view: View) {
   if (view.profile) return `${base}/me${view.profile === "edit" ? "/edit" : ""}`
   if (view.chat) return `${base}/messages/${encodeURIComponent(view.chat)}`
   if (view.messages) return `${base}/messages`
+  if (view.faq) return `${base}/faq`
   const path = pagePaths[view.page]
   return `${base}/${view.detail ? `${path}/${encodeURIComponent(view.detail)}` : path}`
 }
@@ -78,6 +81,7 @@ export function readView(location: Location = window.location): View {
     if (second && second !== "edit") return missing
     return { page: "대시보드", profile: second === "edit" ? "edit" : "page" }
   }
+  if (first === "faq") return second ? missing : { page: "대시보드", faq: true }
   if (first === "messages") {
     return second ? { page: "대시보드", chat: decodeURIComponent(second) } : { page: "대시보드", messages: true }
   }

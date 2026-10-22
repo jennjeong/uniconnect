@@ -200,6 +200,18 @@ export type Conversation = {
   readAt: Partial<Record<ChatSide, string>>
 }
 
+// A question an account sent the operators from the FAQ page, and their
+// answer once given (through the admin routes).
+export type Inquiry = {
+  id: string
+  accountId: string
+  category: string
+  question: string
+  createdAt: string
+  answer?: string
+  answeredAt?: string
+}
+
 export type Database = {
   accounts: Account[]
   sessions: Session[]
@@ -211,6 +223,7 @@ export type Database = {
   // 2 once the catalogs carry SNS and portfolios (store.ts upgrades older files).
   catalogVersion?: number
   conversations: Conversation[]
+  inquiries: Inquiry[]
   // Proposals from student groups to brands, answered by the brand.
   requests: SponsorRequest[]
   // Finished sponsorships, keyed by brand account id.

@@ -815,6 +815,7 @@ export async function createSeed(): Promise<Database> {
     groups: structuredClone(seedGroups),
     catalogVersion: 2,
     conversations: seedConversations(),
+    inquiries: [],
     requests: seedRequests(),
     sponsorships: { [coffee.id]: seedSponsorships() },
     events: {

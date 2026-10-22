@@ -6690,7 +6690,7 @@ button.nav-pill:hover {
     padding-bottom: 72px;
   }
 
-  /* The header keeps the logo, the account buttons, Menu and register. */
+  /* The header keeps the logo, the account buttons, register and Menu. */
   .site-header,
   .nav-group {
     gap: 6px;
@@ -6729,6 +6729,12 @@ button.nav-pill:hover {
     width: 42px;
     justify-content: center;
     padding: 0;
+  }
+
+  /* Menu takes the far right, where a phone's menu button usually sits;
+     register moves in beside it. */
+  .menu-pill {
+    order: 1;
   }
 
   .notify-panel {
@@ -7518,6 +7524,430 @@ button.nav-pill:hover {
   color: var(--ink-soft);
   font-size: 14px;
   line-height: 1.7;
+}
+
+.faq-more {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 20px 0 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+/* The help center (pages/FaqPage.tsx): a deep blue mesh banner asking how
+   it can help, with the search in a white pill and a link to ask the
+   operators; the topics as white cards; then the questions, and beside
+   them on wide screens the box for asking the operators, which stays in
+   view. */
+.help-hero {
+  --surface-tone: dark;
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  overflow: hidden;
+  margin-top: 24px;
+  padding: 28px 32px 60px;
+  border-radius: var(--radius-lg);
+  background: #1d3f99;
+  color: #fff;
+  text-align: center;
+}
+
+.help-hero-top {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.help-contact {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 15px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.32);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+  backdrop-filter: blur(10px);
+}
+
+.help-contact:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.help-title {
+  margin: 24px 0 0;
+  font-size: clamp(32px, 4vw, 52px);
+  font-weight: var(--weight-display);
+  letter-spacing: -0.035em;
+  line-height: 1.15;
+}
+
+.help-search {
+  display: flex;
+  width: min(640px, 100%);
+  align-items: center;
+  gap: 10px;
+  padding: 6px 6px 6px 18px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--muted);
+  box-shadow: 0 18px 40px -18px rgba(8, 20, 52, 0.6);
+}
+
+.help-search:focus-within {
+  box-shadow:
+    0 0 0 3px var(--point-glow),
+    0 18px 40px -18px rgba(8, 20, 52, 0.6);
+}
+
+.help-search input {
+  min-width: 0;
+  height: 44px;
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 15px;
+  outline: none;
+}
+
+.help-search button {
+  height: 44px;
+  flex: 0 0 auto;
+  padding: 0 24px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--point);
+  color: var(--on-point);
+  font-size: 14px;
+  font-weight: var(--weight-label);
+}
+
+.help-search button:hover {
+  background: var(--point-hover);
+}
+
+.help-topics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 28px 0 44px;
+  padding: 0;
+  list-style: none;
+}
+
+.help-topic {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 28px 22px 24px;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow:
+    var(--ring),
+    0 14px 32px -24px rgba(19, 48, 111, 0.35);
+  text-align: center;
+}
+
+.help-topic:hover,
+.help-topic.active {
+  box-shadow:
+    inset 0 0 0 1.5px var(--point),
+    0 14px 32px -20px rgba(19, 48, 111, 0.4);
+}
+
+.help-topic-icon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  margin-bottom: 4px;
+  border-radius: 16px;
+  background: var(--point-tint);
+  color: var(--point);
+}
+
+.help-topic.active .help-topic-icon {
+  background: var(--point);
+  color: var(--on-point);
+}
+
+.help-topic strong {
+  font-size: 18px;
+  font-weight: var(--weight-strong);
+}
+
+.help-topic > span:not(.help-topic-icon) {
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.help-topic small {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.help-results,
+.ask-card {
+  scroll-margin-top: calc(var(--header-h) + 16px);
+}
+
+.help-results-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.help-results-head h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: var(--weight-strong);
+}
+
+.help-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 22px;
+  border-radius: var(--radius-md);
+  background: var(--fill);
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.help-empty p {
+  margin: 0;
+}
+
+.faq-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(300px, 1fr);
+  align-items: start;
+  gap: 24px;
+  padding-bottom: 48px;
+}
+
+.faq-layout .faq-list {
+  max-width: none;
+}
+
+.ask-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+@media (min-width: 1101px) {
+  .ask-card {
+    position: sticky;
+    top: calc(var(--header-h) + 16px);
+  }
+}
+
+.ask-card .form-card-caption {
+  margin: -6px 0 0;
+}
+
+.ask-login {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 14px;
+  background: var(--point-soft);
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.ask-login p {
+  margin: 0;
+}
+
+.ask-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ask-category {
+  height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.ask-category.active {
+  background: var(--point);
+  color: var(--on-point);
+}
+
+.ask-sent {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--green-soft);
+  color: var(--green);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.ask-history {
+  margin-top: 6px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.ask-history-title {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: var(--weight-strong);
+}
+
+.ask-history ol {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ask-history li {
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--fill);
+}
+
+.ask-history-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.ask-history-head time {
+  margin-left: auto;
+}
+
+.ask-chip,
+.ask-state {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink-soft);
+  font-weight: var(--weight-label);
+}
+
+.ask-state {
+  background: var(--fill-strong);
+}
+
+.ask-state.answered {
+  background: var(--point);
+  color: var(--on-point);
+}
+
+.ask-question {
+  margin: 10px 0 0;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.ask-answer {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: inset 3px 0 0 var(--point);
+  font-size: 13px;
+}
+
+.ask-answer strong {
+  color: var(--point-strong);
+}
+
+.ask-answer p {
+  margin: 4px 0 0;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 1100px) {
+  .faq-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .help-topics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .help-hero {
+    gap: 18px;
+    padding: 18px 16px 28px;
+  }
+
+  .help-title {
+    margin-top: 12px;
+  }
+
+  .help-search {
+    padding-left: 14px;
+  }
+
+  .help-search button {
+    padding: 0 16px;
+  }
+
+  .help-topics {
+    gap: 10px;
+    margin: 20px 0 32px;
+  }
+
+  .help-topic {
+    padding: 18px 12px 16px;
+  }
+
+  .help-topic strong {
+    font-size: 16px;
+  }
+
+  .help-topic > span:not(.help-topic-icon) {
+    font-size: 12px;
+  }
 }
 
 /* The 404 page (pages/NotFoundPage.tsx): the role's pages as silver rows

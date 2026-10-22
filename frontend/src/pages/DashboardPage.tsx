@@ -41,6 +41,7 @@ export function DashboardPage({
   onPropose,
   onCancelProposal,
   onOpenReport,
+  onOpenFaq,
 }: {
   // The logged-in group's name for the greeting.
   accountName?: string
@@ -60,6 +61,7 @@ export function DashboardPage({
   onPropose: (match: Match) => void
   onCancelProposal: (match: Match) => void
   onOpenReport: () => void
+  onOpenFaq: () => void
 }) {
   const next = nextEvent(events)
   const nextDay = next ? fromIsoDate(next.date) : undefined
@@ -284,7 +286,7 @@ export function DashboardPage({
         </div>
       </section>
 
-      <FaqSection />
+      <FaqSection onOpenFaq={onOpenFaq} />
     </div>
   )
 }

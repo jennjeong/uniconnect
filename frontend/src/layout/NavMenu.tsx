@@ -9,8 +9,8 @@ import type { Account, NavLabel, Role } from "../types"
 
 // The full-screen menu behind Menu: a silver panel with the role's pages in
 // large type, numbered and arriving one after another, the account links
-// under them in line with the page names, and the register action at the
-// bottom.
+// (and the FAQ) under them in line with the page names, and the register
+// action at the bottom.
 // Escape or 닫기 closes it; the page behind doesn't scroll while it is open.
 export function NavMenu({
   role,
@@ -23,6 +23,7 @@ export function NavMenu({
   onCreate,
   onOpenMessages,
   onOpenProfile,
+  onOpenFaq,
   onLogin,
   onSignup,
   onClose,
@@ -37,6 +38,7 @@ export function NavMenu({
   onCreate: () => void
   onOpenMessages: () => void
   onOpenProfile: () => void
+  onOpenFaq: () => void
   onLogin: () => void
   onSignup: () => void
   onClose: () => void
@@ -115,6 +117,9 @@ export function NavMenu({
               <button onClick={pick(onOpenProfile)} type="button">
                 내 정보
               </button>
+              <button onClick={pick(onOpenFaq)} type="button">
+                FAQ
+              </button>
             </>
           ) : (
             <>
@@ -123,6 +128,9 @@ export function NavMenu({
               </button>
               <button onClick={pick(onSignup)} type="button">
                 회원가입
+              </button>
+              <button onClick={pick(onOpenFaq)} type="button">
+                FAQ
               </button>
               <span className="nav-menu-roles" aria-label="둘러볼 화면">
                 {roles.map((item) => (

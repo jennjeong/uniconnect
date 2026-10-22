@@ -37,6 +37,7 @@ import { BrandDashboardPage } from "./pages/BrandDashboardPage"
 import { DashboardPage } from "./pages/DashboardPage"
 import { EventCreatePage } from "./pages/EventCreatePage"
 import { EventsPage } from "./pages/EventsPage"
+import { FaqPage } from "./pages/FaqPage"
 import { GroupsPage } from "./pages/GroupsPage"
 import { InboxPage } from "./pages/InboxPage"
 import { ChatPage } from "./pages/ChatPage"
@@ -328,6 +329,8 @@ function App() {
   const openProfile = () => go({ page, profile: "page" })
 
   const openMessages = () => go({ page, messages: true })
+
+  const openFaq = () => go({ page, faq: true })
 
   // Keeps the conversation list (latest message first) in step with an open
   // conversation.
@@ -637,6 +640,7 @@ function App() {
 
   const renderPage = (): ReactNode => {
     if (view.missing) return <NotFoundPage onNavigate={navigate} role={role} />
+    if (view.faq) return <FaqPage account={account} onLogin={() => openAuth("login")} />
     if (creating !== null) {
       return (
         <EventCreatePage
@@ -771,6 +775,7 @@ function App() {
             onPropose={propose}
             onCancelProposal={cancelProposal}
             onOpenReport={() => setActiveModal("report")}
+            onOpenFaq={openFaq}
           />
         ) : (
           <BrandDashboardPage
@@ -786,6 +791,7 @@ function App() {
             onAccept={(request) => answerRequest(request, "accept")}
             onPropose={propose}
             onCancelProposal={cancelProposal}
+            onOpenFaq={openFaq}
           />
         )
     }
@@ -822,6 +828,7 @@ function App() {
         notificationsOpen={notificationsOpen}
         menuOpen={menuOpen}
         unreadMessages={unreadMessages}
+        showCreate={viewPath(view) !== viewPath({ page: "대시보드" })}
         onNavigate={navigate}
         onSwitchRole={switchRole}
         onCreate={() => openCreate()}
@@ -850,7 +857,9 @@ function App() {
           key={`${role}:${
             view.missing
               ? "missing"
-              : creating !== null
+              : view.faq
+                ? "faq"
+                : creating !== null
               ? "create"
               : profileOpen
                 ? `profile-${view.profile}`
@@ -894,6 +903,7 @@ function App() {
           onCreate={() => openCreate()}
           onOpenMessages={openMessages}
           onOpenProfile={openProfile}
+          onOpenFaq={openFaq}
           onEditProfile={() => go({ page, profile: "edit" })}
           onLogin={() => openAuth("login")}
           onSignup={() => openAuth("signup")}
@@ -913,6 +923,7 @@ function App() {
           onCreate={() => openCreate()}
           onOpenMessages={openMessages}
           onOpenProfile={openProfile}
+          onOpenFaq={openFaq}
           onLogin={() => openAuth("login")}
           onSignup={() => openAuth("signup")}
           onClose={closeMenu}

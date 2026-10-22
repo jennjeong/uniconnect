@@ -14,6 +14,7 @@ process.env.FRONTEND_DIST = path.join(dataDir, "dist")
 await mkdir(process.env.FRONTEND_DIST)
 await writeFile(path.join(process.env.FRONTEND_DIST, "index.html"), "<!doctype html><title>uniconnect</title>")
 process.env.EXPOSE_EMAIL_CODES = "true"
+process.env.ADMIN_TOKEN = "test-admin-token"
 
 const { createApp } = await import("./app.js")
 const { loadDatabase } = await import("./store.js")
@@ -431,6 +432,49 @@ test("events and campaigns can run over a period", async () => {
   const oneDay = await call("POST", "/events", { ...campaign, endDate: "2026-12-07" }, brand)
   assert.equal(oneDay.data.event.endDate, undefined)
   await call("DELETE", `/events/${oneDay.data.event.id}`, undefined, brand)
+})
+
+test("accounts ask the operators questions, and see the answers", async () => {
+  assert.equal((await call("POST", "/inquiries", { category: "기타", question: "질문이 있어요" })).status, 401)
+  const student = await login("학생단체")
+  const noCategory = await call("POST", "/inquiries", { category: "아무거나", question: "질문이 있어요" }, student)
+  assert.equal(noCategory.status, 400)
+  assert.equal((await call("POST", "/inquiries", { category: "기타", question: "짧" }, student)).status, 400)
+
+  const asked = await call(
+    "POST",
+    "/inquiries",
+    { category: "제안 · 매칭", question: "제안을 보낸 뒤 취소하면 브랜드에도 알려지나요?" },
+    student,
+  )
+  assert.equal(asked.status, 201)
+  assert.equal(asked.data.inquiry.accountId, undefined)
+  const id = asked.data.inquiry.id
+
+  // Only the asker sees the question.
+  const brand = await login("브랜드")
+  assert.equal((await call("GET", "/inquiries", undefined, brand)).data.inquiries.length, 0)
+
+  // Operators need the admin token.
+  const admin = async (method: string, route: string, body?: unknown, token = "test-admin-token") => {
+    const response = await fetch(baseUrl + route, {
+      method,
+      headers: { "Content-Type": "application/json", "X-Admin-Token": token },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    })
+    const reply = await response.text()
+    return { status: response.status, data: reply ? JSON.parse(reply) : null }
+  }
+  assert.equal((await admin("GET", "/admin/inquiries", undefined, "wrong-token-value")).status, 403)
+  assert.equal((await call("GET", "/admin/inquiries")).status, 403)
+  const listed = await admin("GET", "/admin/inquiries")
+  assert.equal(listed.data.inquiries[0].from.name, "삼육대 뮤즈")
+  const answer = "네, 취소하면 브랜드의 받은 제안에서도 사라져요."
+  assert.equal((await admin("POST", `/admin/inquiries/${id}/answer`, { answer })).status, 200)
+
+  const mine = await call("GET", "/inquiries", undefined, student)
+  assert.equal(mine.data.inquiries[0].answer, answer)
+  assert.ok(mine.data.inquiries[0].answeredAt)
 })
 
 test("accounts write the listing the other side sees", async () => {

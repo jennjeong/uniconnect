@@ -23,6 +23,7 @@ export function Footer({
   onCreate,
   onOpenMessages,
   onOpenProfile,
+  onOpenFaq,
   onEditProfile,
   onLogin,
   onSignup,
@@ -37,6 +38,7 @@ export function Footer({
   onCreate: () => void
   onOpenMessages: () => void
   onOpenProfile: () => void
+  onOpenFaq: () => void
   onEditProfile: () => void
   onLogin: () => void
   onSignup: () => void
@@ -55,11 +57,13 @@ export function Footer({
         ? [
             { label: "내 정보", onClick: onOpenProfile },
             { label: "메시지", onClick: onOpenMessages },
+            { label: "FAQ · 질문하기", onClick: onOpenFaq },
             { label: "로그아웃", onClick: onLogout },
           ]
         : [
             { label: "로그인", onClick: onLogin },
             { label: "회원가입", onClick: onSignup },
+            { label: "FAQ · 질문하기", onClick: onOpenFaq },
           ],
     },
     {

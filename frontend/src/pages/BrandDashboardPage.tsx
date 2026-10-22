@@ -37,6 +37,7 @@ export function BrandDashboardPage({
   onAccept,
   onPropose,
   onCancelProposal,
+  onOpenFaq,
 }: {
   // The logged-in brand's name for the greeting.
   accountName?: string
@@ -56,6 +57,7 @@ export function BrandDashboardPage({
   onAccept: (request: SponsorRequest) => void
   onPropose: (match: Match) => void
   onCancelProposal: (match: Match) => void
+  onOpenFaq: () => void
 }) {
   const pending = requests.filter((request) => request.status === "검토 중")
   const confirmed = requests.filter((request) => request.status === "수락")
@@ -317,7 +319,7 @@ export function BrandDashboardPage({
         </div>
       </section>
 
-      <FaqSection />
+      <FaqSection onOpenFaq={onOpenFaq} />
     </div>
   )
 }

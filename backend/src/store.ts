@@ -47,6 +47,7 @@ export function upgradeDatabase(stored: Database) {
   // Recommended matches are worked out from the catalogs now.
   delete (stored as { matches?: unknown }).matches
   stored.conversations ??= seedConversations()
+  stored.inquiries ??= []
   const demoStudent = stored.accounts?.find(
     (account) => account.id === stored.demoAccountIds?.학생단체,
   )

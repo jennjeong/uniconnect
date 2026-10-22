@@ -136,6 +136,16 @@ export type ChatMessage = {
 }
 
 // A conversation with a brand (for student groups) or a group (for brands).
+// A question this account sent the operators, with their answer once given.
+export type Inquiry = {
+  id: string
+  category: string
+  question: string
+  createdAt: string
+  answer?: string
+  answeredAt?: string
+}
+
 export type Conversation = {
   id: string
   partner: {

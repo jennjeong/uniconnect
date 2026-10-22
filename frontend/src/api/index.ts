@@ -2,6 +2,7 @@ import type {
   Account,
   Conversation,
   EventItem,
+  Inquiry,
   Match,
   MetricEntry,
   MetricKind,
@@ -93,6 +94,10 @@ export const api = {
   profile: () => request<{ profile: Match | null }>("/profile"),
   saveProfile: (body: ProfileDraft) =>
     request<{ profile: Match }>("/profile", { method: "PUT", body }),
+
+  inquiries: () => request<{ inquiries: Inquiry[] }>("/inquiries"),
+  askInquiry: (body: { category: string; question: string }) =>
+    request<{ inquiry: Inquiry }>("/inquiries", { method: "POST", body }),
 
   conversations: () => request<{ conversations: Conversation[] }>("/conversations"),
   startConversation: (partnerId: string) =>

@@ -50,7 +50,8 @@ Figma Make 프로젝트 [Create Web/App Service](https://www.figma.com/make/mhCa
 
 - 화면마다 브라우저 탭 제목과 검색용 설명이 따로 있어요(`frontend/src/lib/pageMeta.ts`).
 - 없는 주소는 홈과 주요 메뉴로 안내하는 404 화면을 보여 주고, 빌드한 서버(`npm start`)는 실제 404 상태로 응답해요.
-- 대시보드 맨 아래에 자주 묻는 질문 5개가 있어요. 실제 기능만 설명하고, 이용 요금·환불처럼 정해지지 않은 내용은 넣지 않았어요.
+- 대시보드 맨 아래와 FAQ 페이지(`/faq`, 메뉴의 내 정보 옆)에 자주 묻는 질문 5개가 있어요. 실제 기능만 설명하고, 이용 요금·환불처럼 정해지지 않은 내용은 넣지 않았어요.
+- FAQ 페이지에서 로그인한 사용자는 관리자에게 질문을 보내고, 답변을 '내 질문'에서 볼 수 있어요. 관리자 화면은 아직 없고, 서버에 `ADMIN_TOKEN`을 설정한 뒤 아래 관리자 API로 질문을 보고 답해요.
 - 아래 값은 실제 정보가 정해지면 `frontend/.figma/make/site.json`에 넣어요.
   - GA4 측정 ID(`analytics.googleAnalyticsId`): 넣으면 제안·문의 클릭과 실제 제안 접수, 가입이 이벤트로 기록돼요.
   - 공유 이미지(`openGraph.image`): `https://<실제 도메인>/og-image.png` 처럼 절대 주소로 넣어요(1200×630, `frontend/public/og-image.png`).
@@ -157,6 +158,10 @@ NODE_ENV=production npm start
 | POST | `/api/requests/:id/accept` · `/decline` | 받은 제안 수락·거절 (브랜드만, 이미 답한 제안은 409) | 필요 |
 | GET | `/api/profile` | 내 소개(상대가 보는 목록 항목), 아직 없으면 `null` | 필요 |
 | PUT | `/api/profile` | 소개 저장 `{ intro, offer, tags, facts, sns, portfolio }` (처음 저장하면 목록에 등록) | 필요 |
+| GET | `/api/inquiries` | 내가 관리자에게 보낸 질문과 답변 | 필요 |
+| POST | `/api/inquiries` | 관리자에게 질문 `{ category, question }` (종류는 이용 방법 · 계정 · 가입 · 제안 · 매칭 · 오류 신고 · 기타, 5~1,000자) | 필요 |
+| GET | `/api/admin/inquiries` | 모든 질문 (답변 대기 먼저, 보낸 계정 포함) | `X-Admin-Token` |
+| POST | `/api/admin/inquiries/:id/answer` | 질문에 답변 `{ answer }` | `X-Admin-Token` |
 | GET | `/api/conversations` | 내 대화 목록 (상대, 마지막 메시지, 읽지 않은 수) | |
 | POST | `/api/conversations` | 대화 시작 `{ partnerId }` (이미 있으면 그 대화, 소개가 없으면 409) | 필요 |
 | GET | `/api/conversations/:id` | 대화의 모든 메시지 (읽음 처리, 내 메시지에는 상대가 읽었는지 `read`, 고치거나 지운 메시지에는 `editedAt` · `deletedAt`) | 필요 |
