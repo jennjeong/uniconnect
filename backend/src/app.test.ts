@@ -1306,3 +1306,57 @@ test("listings take a small PNG, JPEG or WebP logo, and drop it on request", asy
   const removed = await call("PUT", "/profile", { ...draft, logo: null }, student)
   assert.equal(removed.data.profile.logo, undefined)
 })
+
+test("deleting an event withdraws its waiting proposals, and a sponsored one stays", async () => {
+  const student = await signUpMember("deleter@syu.ac.kr", "deleter-pass-123")
+  const brand = await login("브랜드")
+  const event = { name: "취소될 공연", date: "2026-12-20", types: ["현금"] }
+  const first = (await call("POST", "/events", event, student)).data.event
+  await call("POST", "/proposals", { matchId: "afternoon-coffee" }, student)
+  const pending = getDatabase().requests.find((item) => item.eventId === first.id)
+  assert.equal(pending?.status, "검토 중")
+
+  // Deleted while waiting: the proposal goes from the brand's inbox and the
+  // group's sent list.
+  assert.equal((await call("DELETE", `/events/${first.id}`, undefined, student)).status, 204)
+  assert.equal(getDatabase().requests.some((item) => item.id === pending!.id), false)
+  const sent = (await call("GET", "/proposals", undefined, student)).data
+  assert.equal(sent.proposals.includes("afternoon-coffee"), false)
+  assert.equal((await call("POST", `/requests/${pending!.id}/accept`, undefined, brand)).status, 404)
+
+  // Once the brand accepts, the event cannot be deleted.
+  const second = (await call("POST", "/events", { ...event, name: "확정될 공연" }, student)).data.event
+  await call("POST", "/proposals", { matchId: "afternoon-coffee" }, student)
+  const request = getDatabase().requests.find((item) => item.eventId === second.id)!
+  assert.equal((await call("POST", `/requests/${request.id}/accept`, undefined, brand)).status, 200)
+  const refused = await call("DELETE", `/events/${second.id}`, undefined, student)
+  assert.equal(refused.status, 409)
+  assert.match(refused.data.error, /협찬이 확정된 행사/)
+})
+
+test("a leaving group's sponsors keep the results of its events", async () => {
+  const student = await signUpMember("sponsored@syu.ac.kr", "sponsored-pass-123")
+  const brand = await login("브랜드")
+  const brandId = (await call("GET", "/auth/me", undefined, brand)).data.account.id as string
+  const event = (await call("POST", "/events", { name: "결과가 남을 공연", date: "2026-12-21", types: ["현금"] }, student)).data.event
+  await call("POST", "/proposals", { matchId: "afternoon-coffee" }, student)
+  const request = getDatabase().requests.find((item) => item.eventId === event.id)!
+  await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+  const { report } = (await call("GET", `/measurements/${event.id}`, undefined, student)).data
+  const goals = {
+    expectedAudience: 100,
+    averageSpend: 10000,
+    snsReach: 0,
+    valueBreakdown: [{ type: "현금", value: 250000 }],
+    targets: report.targets,
+    coupon: report.coupon,
+  }
+  await call("PUT", `/measurements/${event.id}/goals`, goals, student)
+  await call("POST", `/check-in/${report.code}/scans`)
+
+  assert.equal((await call("DELETE", "/auth/account", { password: "sponsored-pass-123" }, student)).status, 204)
+  const kept = getDatabase().sponsorships[brandId].find((item) => item.id === `sp-${request.id}`)!
+  assert.equal(kept.eventId, undefined)
+  assert.equal(kept.spend, 250000)
+  assert.equal(kept.targetRoas, report.targets.roas)
+})

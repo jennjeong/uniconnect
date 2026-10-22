@@ -45,6 +45,15 @@ offersRouter.post("/:id/:decision", async (req, res) => {
   )
   if (!offer) throw new HttpError(404, "제안을 찾을 수 없어요.")
   if (offer.status !== "검토 중") throw new HttpError(409, "이미 답한 제안이에요.")
+  // A campaign deleted since the offer cannot be sponsored.
+  if (
+    decision === "수락" &&
+    offer.campaignId &&
+    offer.fromAccountId &&
+    !database.events[offer.fromAccountId]?.some((item) => item.id === offer.campaignId)
+  ) {
+    throw new HttpError(409, "삭제된 캠페인에 대한 제안이에요.")
+  }
 
   offer.status = decision
   offer.respondedAt = new Date().toISOString()

@@ -7,6 +7,7 @@ import { HttpError } from "../lib/errors.js"
 import { sendVerificationCode } from "../lib/mailer.js"
 import { hashPassword, verifyPassword } from "../lib/password.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
+import { freezeSponsorships } from "../lib/sponsorships.js"
 import { accountTypes, parseRole, text } from "../lib/validation.js"
 import { hashToken, requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -286,6 +287,11 @@ function removeAccount(database: Database, account: Account) {
   database.offers = database.offers.filter(
     (offer) =>
       offer.fromAccountId !== account.id && (!account.groupId || offer.groupId !== account.groupId),
+  )
+  // Sponsors keep the results of this account's events as they stand.
+  freezeSponsorships(
+    database,
+    new Set(database.measurements.filter((item) => item.accountId === account.id).map((item) => item.eventId)),
   )
   database.measurements = database.measurements.filter((measurement) => measurement.accountId !== account.id)
   delete database.events[account.id]
