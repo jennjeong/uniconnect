@@ -39,6 +39,8 @@ type RequestOptions = {
   method?: "GET" | "POST" | "PUT" | "DELETE"
   body?: unknown
   query?: Record<string, string>
+  // Extra headers, such as the operators' X-Admin-Token.
+  headers?: Record<string, string>
 }
 
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
@@ -55,6 +57,7 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
       headers: {
         ...(options.body === undefined ? {} : { "Content-Type": "application/json" }),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...options.headers,
       },
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
     })

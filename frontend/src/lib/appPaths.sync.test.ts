@@ -24,6 +24,8 @@ describe("the server's page list matches the screens", () => {
     "/terms",
     "/privacy/",
     "/privacy/x",
+    "/admin",
+    "/admin/x",
     "/nope",
     "/events/x",
     "/matches/a/b",

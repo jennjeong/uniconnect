@@ -20,6 +20,8 @@ export type View = {
   faq?: true
   // The terms of service or the privacy policy.
   legal?: LegalKind
+  // The operators' screen for answering questions (/admin).
+  admin?: true
   // An address no screen has, kept as it was typed (the 404 page).
   missing?: string
 }
@@ -65,6 +67,7 @@ export function viewPath(view: View) {
   if (view.messages) return `${base}/messages`
   if (view.faq) return `${base}/faq`
   if (view.legal) return `${base}/${view.legal}`
+  if (view.admin) return `${base}/admin`
   const path = pagePaths[view.page]
   return `${base}/${view.detail ? `${path}/${encodeURIComponent(view.detail)}` : path}`
 }
@@ -98,6 +101,7 @@ export function readView(location: Location = window.location): View {
   }
   if (first === "faq") return second ? missing : { page: "대시보드", faq: true }
   if (first === "terms" || first === "privacy") return second ? missing : { page: "대시보드", legal: first }
+  if (first === "admin") return second ? missing : { page: "대시보드", admin: true }
   const named = second === undefined ? undefined : decodeSegment(second)
   if (second !== undefined && named === undefined) return missing
   if (first === "messages") {

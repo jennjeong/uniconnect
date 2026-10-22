@@ -81,6 +81,7 @@ test("pages load for every screen's address, and others answer 404", async () =>
     "/check-in/20261012",
     "/terms",
     "/privacy",
+    "/admin",
   ]
   for (const route of screens) {
     assert.deepEqual(await page(route), { status: 200, html: true }, route)
