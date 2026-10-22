@@ -1,3 +1,4 @@
+import type { LegalKind } from "../data/legal"
 import type { NavLabel, Role } from "../types"
 import { fromIsoDate, todayIso } from "./date"
 
@@ -17,6 +18,8 @@ export type View = {
   detail?: string
   // The FAQ page, where questions also go to the operators.
   faq?: true
+  // The terms of service or the privacy policy.
+  legal?: LegalKind
   // An address no screen has, kept as it was typed (the 404 page).
   missing?: string
 }
@@ -60,6 +63,7 @@ export function viewPath(view: View) {
   if (view.chat) return `${base}/messages/${encodeURIComponent(view.chat)}`
   if (view.messages) return `${base}/messages`
   if (view.faq) return `${base}/faq`
+  if (view.legal) return `${base}/${view.legal}`
   const path = pagePaths[view.page]
   return `${base}/${view.detail ? `${path}/${encodeURIComponent(view.detail)}` : path}`
 }
@@ -92,6 +96,7 @@ export function readView(location: Location = window.location): View {
     return { page: "대시보드", profile: second === "edit" ? "edit" : "page" }
   }
   if (first === "faq") return second ? missing : { page: "대시보드", faq: true }
+  if (first === "terms" || first === "privacy") return second ? missing : { page: "대시보드", legal: first }
   const named = second === undefined ? undefined : decodeSegment(second)
   if (second !== undefined && named === undefined) return missing
   if (first === "messages") {

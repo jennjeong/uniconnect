@@ -10,11 +10,13 @@ export function LoginModal({
   onClose,
   onLoggedIn,
   onSignup,
+  onForgot,
 }: {
   initialRole: Role
   onClose: () => void
   onLoggedIn: (session: Session) => void
   onSignup: (role: Role) => void
+  onForgot: (email: string) => void
 }) {
   const [draft, setDraft] = useState({ role: initialRole, email: "", password: "" })
   const [error, setError] = useState("")
@@ -76,6 +78,11 @@ export function LoginModal({
             }
           />
         </label>
+        <p className="forgot-row">
+          <button onClick={() => onForgot(draft.email)} type="button">
+            비밀번호를 잊으셨나요?
+          </button>
+        </p>
         {error && (
           <p className="form-error" role="alert">
             {error}

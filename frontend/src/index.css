@@ -5814,6 +5814,32 @@ button.nav-pill:hover {
   text-underline-offset: 2px;
 }
 
+/* Under the login password, the way to a new one (modals/ResetPasswordModal.tsx). */
+.forgot-row {
+  margin: 10px 0 0;
+  text-align: right;
+}
+
+.forgot-row button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.forgot-row button:hover {
+  color: var(--point-strong);
+}
+
+.auth-lead {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
 .qr-content {
   display: flex;
   flex-direction: column;
@@ -7983,6 +8009,220 @@ button.nav-pill:hover {
 .not-found-link .icon:last-child {
   margin-left: auto;
   color: var(--muted);
+}
+
+/* The terms of service and privacy policy (pages/LegalPage.tsx): a draft
+   note and the effective date, then numbered sections in a reading column.
+   The data table stacks into one card per row on a phone. */
+.legal-page .match-tabs {
+  margin-top: 28px;
+}
+
+.legal-meta {
+  display: flex;
+  max-width: 860px;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.legal-note {
+  margin: 0;
+  padding: 16px 20px;
+  border-radius: var(--radius-md);
+  background: var(--fill);
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.legal-date {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.legal-sections {
+  display: flex;
+  max-width: 860px;
+  flex-direction: column;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.legal-section {
+  padding: 28px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.legal-section h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0 0 14px;
+  font-size: 20px;
+  font-weight: var(--weight-display);
+}
+
+.legal-section h2 span {
+  color: var(--point-bright);
+  font-size: 14px;
+  font-weight: var(--weight-badge);
+}
+
+.legal-section p,
+.legal-section li {
+  color: var(--ink-soft);
+  font-size: 15px;
+  line-height: 1.75;
+}
+
+.legal-section p {
+  margin: 0;
+}
+
+.legal-section ul {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.legal-section li::marker {
+  color: var(--point);
+}
+
+.legal-table-wrap {
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.legal-table {
+  width: 100%;
+  min-width: 600px;
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: left;
+}
+
+.legal-table th,
+.legal-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+.legal-table tr:last-child th,
+.legal-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.legal-table thead th {
+  background: var(--fill);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.legal-table tbody th {
+  width: 40%;
+  color: var(--ink);
+  font-weight: var(--weight-label);
+}
+
+.legal-table td {
+  color: var(--ink-soft);
+}
+
+@media (max-width: 720px) {
+  .legal-table-wrap {
+    overflow: visible;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .legal-table,
+  .legal-table tbody,
+  .legal-table tr,
+  .legal-table th,
+  .legal-table td {
+    display: block;
+    width: auto;
+    min-width: 0;
+  }
+
+  .legal-table thead {
+    display: none;
+  }
+
+  .legal-table tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .legal-table tr {
+    padding: 16px 18px;
+    border-radius: var(--radius-md);
+    background: var(--silver-gradient);
+    box-shadow: var(--silver-ring);
+  }
+
+  .legal-table th,
+  .legal-table td,
+  .legal-table tr:last-child th,
+  .legal-table tr:last-child td {
+    padding: 0;
+    border: 0;
+  }
+
+  .legal-table tbody th {
+    width: auto;
+    margin-bottom: 10px;
+    font-size: 15px;
+  }
+
+  .legal-table td {
+    display: grid;
+    grid-template-columns: 4.5em 1fr;
+    align-items: baseline;
+    gap: 10px;
+    padding-top: 6px;
+  }
+
+  .legal-table td::before {
+    color: var(--muted);
+    content: attr(data-label);
+    font-size: 12px;
+    font-weight: var(--weight-label);
+  }
+}
+
+/* The two documents in the footer's last line; the privacy policy stands
+   out, as Korean sites show it. */
+.footer-policies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-right: auto;
+}
+
+.footer-policies button:last-child {
+  color: var(--ink);
+  font-weight: var(--weight-label);
+}
+
+/* The documents linked from the sign-up agreement. */
+.terms-check a {
+  color: var(--point-strong);
+  font-weight: var(--weight-label);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 /* Swiping between screens (lib/swipe.ts): a round arrow follows the swipe

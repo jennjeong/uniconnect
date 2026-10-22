@@ -59,6 +59,13 @@ export const api = {
     }),
   signup: (body: SignupPayload) =>
     request<Session>("/auth/signup", { method: "POST", body }),
+  requestPasswordResetCode: (body: { email: string }) =>
+    request<{ email: string; expiresAt: number; devCode?: string }>(
+      "/auth/password-reset/code",
+      { method: "POST", body },
+    ),
+  resetPassword: (body: { email: string; code: string; password: string }) =>
+    request<Session>("/auth/password-reset", { method: "POST", body }),
 
   matches: (role: Role) =>
     request<{ matches: Match[] }>("/matches", { query: { role } }),

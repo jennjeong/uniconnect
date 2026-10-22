@@ -1,3 +1,4 @@
+import { legalDocs } from "../data/legal"
 import type { Match, NavLabel, Role } from "../types"
 import type { View } from "./route"
 
@@ -105,6 +106,10 @@ export function pageMeta(
       title: titled("자주 묻는 질문"),
       description: "가입, 협찬 제안, 일정 등록, 성과 확인에 대해 자주 묻는 질문을 보고, 더 궁금한 점은 관리자에게 물어봐요.",
     }
+  }
+  if (view.legal) {
+    const doc = legalDocs[view.legal]
+    return { title: titled(doc.title), description: doc.summary }
   }
   if (view.messages) {
     return { title: titled("메시지"), description: "학생단체와 브랜드가 주고받은 대화 목록이에요." }

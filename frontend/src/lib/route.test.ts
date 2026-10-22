@@ -18,6 +18,7 @@ describe("addresses", () => {
     "/matches/a/b",
     "/me/other",
     "/faq/x",
+    "/terms/x",
     "/new/x",
     "/matches/%E0",
     "/messages/%E0%A4%A",

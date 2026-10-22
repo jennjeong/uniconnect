@@ -9,6 +9,7 @@ const appPaths = [
   /^\/me(\/edit)?\/?$/,
   /^\/messages(\/[^/]+)?\/?$/,
   /^\/faq\/?$/,
+  /^\/(terms|privacy)\/?$/,
   /^\/check-in\/[\w-]+\/?$/,
 ]
 

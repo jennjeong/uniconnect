@@ -2,6 +2,7 @@ import { useRef } from "react"
 
 import logo from "../assets/brand/uniconnect_horizontal.svg"
 import { Pill } from "../components/Pill"
+import { legalDocs, type LegalKind } from "../data/legal"
 import { RevealTitle } from "../components/RevealText"
 import { navItems } from "../data/navigation"
 import { createLabel, roles } from "../data/roles"
@@ -24,6 +25,7 @@ export function Footer({
   onOpenMessages,
   onOpenProfile,
   onOpenFaq,
+  onOpenLegal,
   onEditProfile,
   onLogin,
   onSignup,
@@ -39,6 +41,7 @@ export function Footer({
   onOpenMessages: () => void
   onOpenProfile: () => void
   onOpenFaq: () => void
+  onOpenLegal: (kind: LegalKind) => void
   onEditProfile: () => void
   onLogin: () => void
   onSignup: () => void
@@ -131,6 +134,13 @@ export function Footer({
 
         <div className="footer-legal">
           <span>© {new Date().getFullYear()} uniconnect. All rights reserved.</span>
+          <nav aria-label="약관과 방침" className="footer-policies">
+            {(Object.keys(legalDocs) as LegalKind[]).map((kind) => (
+              <button key={kind} onClick={() => onOpenLegal(kind)} type="button">
+                {legalDocs[kind].title}
+              </button>
+            ))}
+          </nav>
           <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} type="button">
             맨 위로 ↑
           </button>
