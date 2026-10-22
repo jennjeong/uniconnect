@@ -3,6 +3,7 @@ import path from "node:path"
 import express, { type ErrorRequestHandler } from "express"
 
 import { config } from "./config.js"
+import { isAppPath } from "./lib/appPaths.js"
 import { HttpError } from "./lib/errors.js"
 import { readSession } from "./middleware/session.js"
 import { analyticsRouter } from "./routes/analytics.js"
@@ -63,9 +64,11 @@ export function createApp() {
   // After `npm run build`, the same server also serves the built frontend.
   if (existsSync(config.frontendDist)) {
     app.use(express.static(config.frontendDist))
+    // Every screen loads the same page; addresses with no screen answer 404
+    // (the page then shows its 404 screen).
     app.use((req, res, next) => {
       if (req.method !== "GET") return next()
-      res.sendFile(path.join(config.frontendDist, "index.html"))
+      res.status(isAppPath(req.path) ? 200 : 404).sendFile(path.join(config.frontendDist, "index.html"))
     })
   }
 

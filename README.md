@@ -46,6 +46,16 @@ Figma Make 프로젝트 [Create Web/App Service](https://www.figma.com/make/mhCa
 - three.js는 3D 장면이 있는 화면을 처음 열 때 따로 내려받습니다. 기기에서 동작 줄이기를 켜면 로딩 화면을 생략하고 움직임을 멈춥니다. WebGL을 쓸 수 없으면 같은 색의 정지 배경이 보입니다.
 - PDF 리포트는 인쇄하기 좋은 밝은 색에 같은 남색 포인트로 만듭니다.
 
+## 출시 준비
+
+- 화면마다 브라우저 탭 제목과 검색용 설명이 따로 있어요(`frontend/src/lib/pageMeta.ts`).
+- 없는 주소는 홈과 주요 메뉴로 안내하는 404 화면을 보여 주고, 빌드한 서버(`npm start`)는 실제 404 상태로 응답해요.
+- 대시보드 맨 아래에 자주 묻는 질문 5개가 있어요. 실제 기능만 설명하고, 이용 요금·환불처럼 정해지지 않은 내용은 넣지 않았어요.
+- 아래 값은 실제 정보가 정해지면 `frontend/.figma/make/site.json`에 넣어요.
+  - GA4 측정 ID(`analytics.googleAnalyticsId`): 넣으면 제안·문의 클릭과 실제 제안 접수, 가입이 이벤트로 기록돼요.
+  - 공유 이미지(`openGraph.image`): `https://<실제 도메인>/og-image.png` 처럼 절대 주소로 넣어요(1200×630, `frontend/public/og-image.png`).
+  - 검색 노출(`robots.index`): 지금은 `false`라 검색엔진 수집을 막아 두었어요. 공개할 때 `true`로 바꿔요.
+
 ## 로컬 실행
 
 Node.js 22 이상이 필요합니다. pnpm이 없다면 Node.js에 포함된 corepack으로 같은 버전을 실행할 수 있습니다.

@@ -15,6 +15,8 @@ export type View = {
   chat?: string
   // Brand or group whose detail page is open.
   detail?: string
+  // An address no screen has, kept as it was typed (the 404 page).
+  missing?: string
 }
 
 // What App keeps in history.state for each entry.
@@ -50,6 +52,7 @@ export function roleOfPage(page: NavLabel): Role | undefined {
 const base = import.meta.env.BASE_URL.replace(/\/$/, "")
 
 export function viewPath(view: View) {
+  if (view.missing) return `${base}${view.missing}`
   if (view.create) return `${base}/new?date=${view.create}`
   if (view.profile) return `${base}/me${view.profile === "edit" ? "/edit" : ""}`
   if (view.chat) return `${base}/messages/${encodeURIComponent(view.chat)}`
@@ -58,18 +61,27 @@ export function viewPath(view: View) {
   return `${base}/${view.detail ? `${path}/${encodeURIComponent(view.detail)}` : path}`
 }
 
+// Pages whose address can name a brand or group after them.
+const detailPaths = [pagePaths["추천 매칭"], pagePaths["단체 찾기"]]
+
 export function readView(location: Location = window.location): View {
-  const [first = "", second] = location.pathname.slice(base.length).split("/").filter(Boolean)
+  const pathname = location.pathname.slice(base.length)
+  const [first = "", second, ...rest] = pathname.split("/").filter(Boolean)
+  const missing: View = { page: "대시보드", missing: pathname }
+  if (rest.length > 0) return missing
   if (first === "new") {
+    if (second) return missing
     const date = new URLSearchParams(location.search).get("date") ?? ""
     return { page: "대시보드", create: fromIsoDate(date) ? date : todayIso() }
   }
-  if (first === "me") return { page: "대시보드", profile: second === "edit" ? "edit" : "page" }
+  if (first === "me") {
+    if (second && second !== "edit") return missing
+    return { page: "대시보드", profile: second === "edit" ? "edit" : "page" }
+  }
   if (first === "messages") {
     return second ? { page: "대시보드", chat: decodeURIComponent(second) } : { page: "대시보드", messages: true }
   }
-  const page =
-    (Object.keys(pagePaths) as NavLabel[]).find((label) => pagePaths[label] === first) ??
-    "대시보드"
+  const page = (Object.keys(pagePaths) as NavLabel[]).find((label) => pagePaths[label] === first)
+  if (!page || (second && !detailPaths.includes(first))) return missing
   return second ? { page, detail: decodeURIComponent(second) } : { page }
 }

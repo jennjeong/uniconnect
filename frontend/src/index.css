@@ -7462,6 +7462,104 @@ button.nav-pill:hover {
   }
 }
 
+/* The dashboards' FAQ (components/FaqSection.tsx): questions as silver
+   rows; a plus turns to a cross as the answer opens under it. */
+.faq-section {
+  padding: 24px 0 72px;
+}
+
+.faq-list {
+  display: flex;
+  max-width: 860px;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.faq-item {
+  border-radius: var(--radius-md);
+  background: var(--silver-gradient);
+  box-shadow: var(--silver-ring);
+}
+
+.faq-item summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 22px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: var(--weight-label);
+  list-style: none;
+}
+
+.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq-item summary::after {
+  flex: 0 0 auto;
+  color: var(--point);
+  content: "+";
+  font-size: 22px;
+  font-weight: var(--weight-body);
+  line-height: 1;
+  transition: transform 0.25s var(--ease-out);
+}
+
+.faq-item[open] summary::after {
+  transform: rotate(45deg);
+}
+
+.faq-item p {
+  margin: 0;
+  padding: 0 22px 20px;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+/* The 404 page (pages/NotFoundPage.tsx): the role's pages as silver rows
+   under the way home. */
+.not-found-links {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0 0 48px;
+  list-style: none;
+}
+
+.not-found-link {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 22px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--silver-gradient);
+  color: var(--ink);
+  box-shadow: var(--silver-ring);
+  font-size: 16px;
+  font-weight: var(--weight-label);
+  text-align: left;
+}
+
+.not-found-link:hover {
+  box-shadow: inset 0 0 0 1.5px var(--point);
+}
+
+.not-found-link .icon:first-child {
+  color: var(--point);
+}
+
+.not-found-link .icon:last-child {
+  margin-left: auto;
+  color: var(--muted);
+}
+
 /* Swiping between screens (lib/swipe.ts): a round arrow follows the swipe
    in from the left for back and from the right for forward, and fills deep
    blue once letting go will move. */

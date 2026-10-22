@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { mkdtemp, rm } from "node:fs/promises"
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
 import type { Server } from "node:http"
 import type { AddressInfo } from "node:net"
 import { tmpdir } from "node:os"
@@ -9,6 +9,10 @@ import { after, before, test } from "node:test"
 // Each run starts from a fresh seed in a temp file, never the real data/db.json.
 const dataDir = await mkdtemp(path.join(tmpdir(), "uniconnect-api-"))
 process.env.DATA_FILE = path.join(dataDir, "db.json")
+// A stand-in built frontend, so the server serves pages as in production.
+process.env.FRONTEND_DIST = path.join(dataDir, "dist")
+await mkdir(process.env.FRONTEND_DIST)
+await writeFile(path.join(process.env.FRONTEND_DIST, "index.html"), "<!doctype html><title>uniconnect</title>")
 process.env.EXPOSE_EMAIL_CODES = "true"
 
 const { createApp } = await import("./app.js")
@@ -51,6 +55,30 @@ async function call(method: string, route: string, body?: unknown, token?: strin
 
 test("health check and unknown routes", async () => {
   assert.deepEqual((await call("GET", "/health")).data, { ok: true })
+  assert.equal((await call("GET", "/nope")).status, 404)
+})
+
+test("pages load for every screen's address, and others answer 404", async () => {
+  const page = async (route: string) => {
+    const response = await fetch(baseUrl.replace(/\/api$/, "") + route)
+    return { status: response.status, html: (await response.text()).includes("<title>uniconnect") }
+  }
+  const screens = [
+    "/",
+    "/matches",
+    "/matches/cafe-1",
+    "/campaigns",
+    "/new?date=2026-12-01",
+    "/me/edit",
+    "/messages/abc",
+    "/check-in/20261012",
+  ]
+  for (const route of screens) {
+    assert.deepEqual(await page(route), { status: 200, html: true }, route)
+  }
+  for (const route of ["/nope", "/events/x", "/matches/a/b", "/me/other"]) {
+    assert.deepEqual(await page(route), { status: 404, html: true }, route)
+  }
   assert.equal((await call("GET", "/nope")).status, 404)
 })
 

@@ -12,7 +12,7 @@ export const config = {
     process.env.API_PORT ?? (isProduction ? process.env.PORT : undefined) ?? 4000,
   ),
   dataFile: process.env.DATA_FILE ?? path.join(backendRoot, "data", "db.json"),
-  frontendDist: path.resolve(backendRoot, "..", "frontend", "dist"),
+  frontendDist: process.env.FRONTEND_DIST ?? path.resolve(backendRoot, "..", "frontend", "dist"),
   // Only needed when the frontend is hosted on another origin.
   corsOrigin: process.env.CORS_ORIGIN,
   emailCodeTtlMs: 3 * 60 * 1000,

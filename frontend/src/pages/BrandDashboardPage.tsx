@@ -2,6 +2,7 @@ import type { CSSProperties } from "react"
 
 import { BrandMark } from "../components/BrandMark"
 import { DateLine } from "../components/DateLine"
+import { FaqSection } from "../components/FaqSection"
 import { Icon } from "../components/Icon"
 import { JourneyChain, type JourneyStep } from "../components/JourneyChain"
 import { LogoMarquee } from "../components/LogoMarquee"
@@ -315,6 +316,8 @@ export function BrandDashboardPage({
           </div>
         </div>
       </section>
+
+      <FaqSection />
     </div>
   )
 }

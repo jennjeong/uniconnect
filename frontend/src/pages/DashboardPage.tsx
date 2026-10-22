@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react"
 
 import { BrandMark } from "../components/BrandMark"
+import { FaqSection } from "../components/FaqSection"
 import { Icon } from "../components/Icon"
 import { JourneyChain, type JourneyStep } from "../components/JourneyChain"
 import { LogoMarquee } from "../components/LogoMarquee"
@@ -282,6 +283,8 @@ export function DashboardPage({
           </div>
         </div>
       </section>
+
+      <FaqSection />
     </div>
   )
 }

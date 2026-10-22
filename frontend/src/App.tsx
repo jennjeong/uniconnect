@@ -20,6 +20,8 @@ import { NavMenu } from "./layout/NavMenu"
 import { todayIso } from "./lib/date"
 import { reportKpis, type KpiKey } from "./lib/kpis"
 import { brandNotifications, studentNotifications } from "./lib/notifications"
+import { track } from "./lib/analytics"
+import { applyPageMeta, pageMeta } from "./lib/pageMeta"
 import { installReveal } from "./lib/reveal"
 import { installRipple } from "./lib/ripple"
 import { readView, roleOfPage, viewPath, type HistoryEntry, type View } from "./lib/route"
@@ -40,6 +42,7 @@ import { InboxPage } from "./pages/InboxPage"
 import { ChatPage } from "./pages/ChatPage"
 import { MatchDetailPage } from "./pages/MatchDetailPage"
 import { MatchesPage } from "./pages/MatchesPage"
+import { NotFoundPage } from "./pages/NotFoundPage"
 import { MeasurementPage } from "./pages/MeasurementPage"
 import { MessagesPage } from "./pages/MessagesPage"
 import { ProfileEditPage } from "./pages/ProfileEditPage"
@@ -133,6 +136,12 @@ function App() {
     ? catalog.find((match) => match.id === view.detail)
     : undefined
   const calendarPage: NavLabel = students ? "내 행사" : "행사 일정"
+
+  // The tab title and search description follow the screen (lib/pageMeta.ts).
+  const partnerName = conversations.find((item) => item.id === view.chat)?.partner.name
+  useEffect(() => {
+    applyPageMeta(pageMeta(view, { role, page, detail: detailMatch, partnerName }))
+  }, [view, role, page, detailMatch, partnerName])
   const pendingRequests = requests.filter((request) => request.status === "검토 중")
   const confirmedRequests = requests.filter((request) => request.status === "수락")
 
@@ -450,13 +459,16 @@ function App() {
     setStatuses(result.statuses)
   }
 
+  // The click and the server's acceptance are tracked apart (lib/analytics.ts).
   const propose = async (match: Match) => {
+    track("contact_click", { method: "proposal", role })
     if (!account) {
       requireLogin("로그인하면 협찬 제안을 보낼 수 있어요.")
       return
     }
     try {
       applyProposals(await api.propose(match.id))
+      track("generate_lead", { method: "proposal", role })
       showNotice(`${match.name}에 협찬 제안을 보냈어요.`)
     } catch (error) {
       handleError(error)
@@ -474,6 +486,7 @@ function App() {
 
   // 문의하기 on a detail page: opens (or starts) the conversation with it.
   const openChat = async (match: Match) => {
+    track("contact_click", { method: "message", role })
     if (!account) {
       requireLogin("로그인하면 문의를 보낼 수 있어요.")
       return
@@ -623,6 +636,7 @@ function App() {
   )
 
   const renderPage = (): ReactNode => {
+    if (view.missing) return <NotFoundPage onNavigate={navigate} role={role} />
     if (creating !== null) {
       return (
         <EventCreatePage
@@ -834,7 +848,9 @@ function App() {
           className={fromHistory ? "page-enter from-history" : "page-enter"}
           hidden={detailMatch !== undefined}
           key={`${role}:${
-            creating !== null
+            view.missing
+              ? "missing"
+              : creating !== null
               ? "create"
               : profileOpen
                 ? `profile-${view.profile}`
@@ -947,9 +963,10 @@ function App() {
         <SignupModal
           initialRole={authRole}
           onClose={closeModal}
-          onSignedUp={(session) =>
+          onSignedUp={(session) => {
+            track("sign_up", { method: "email", role: session.account.role })
             startSession(session, `${session.account.name} 계정으로 가입했어요. 환영해요!`)
-          }
+          }}
           onLogin={(next) => openAuth("login", next)}
           onNotice={showNotice}
         />
