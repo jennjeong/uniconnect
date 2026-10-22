@@ -4,6 +4,20 @@ import { fileURLToPath } from "node:url"
 const backendRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const isProduction = process.env.NODE_ENV === "production"
 
+// No mail service is connected yet, so sign-up can hand the code back to the
+// client (devCode) for a demo. That lets anyone sign up with any address, so
+// it is off unless EXPOSE_EMAIL_CODES=true; `npm run dev` turns it on through
+// backend/dev.env.
+export const emailCodesExposed = (env: NodeJS.ProcessEnv) => env.EXPOSE_EMAIL_CODES === "true"
+
+// Behind a proxy or a hosting platform's load balancer, req.ip is the proxy
+// unless Express trusts X-Forwarded-For: "true", a hop count, or addresses.
+function trustProxy(value: string | undefined) {
+  if (!value) return undefined
+  if (value === "true") return true
+  return /^\d+$/.test(value) ? Number(value) : value
+}
+
 export const config = {
   isProduction,
   // Vite reads PORT while developing, so the API listens on API_PORT instead.
@@ -16,15 +30,14 @@ export const config = {
   // Lets operators read and answer questions through /api/admin (sent as
   // the X-Admin-Token header). Those routes stay closed while it is unset.
   adminToken: process.env.ADMIN_TOKEN,
+  trustProxy: trustProxy(process.env.TRUST_PROXY),
   // Only needed when the frontend is hosted on another origin.
   corsOrigin: process.env.CORS_ORIGIN,
   emailCodeTtlMs: 3 * 60 * 1000,
   emailCodeMaxAttempts: 5,
+  // Wrong guesses keep counting across new codes for this long.
+  emailCodeAttemptWindowMs: 30 * 60 * 1000,
   verificationTtlMs: 30 * 60 * 1000,
   sessionTtlMs: 7 * 24 * 60 * 60 * 1000,
-  // No mail service is connected yet, so codes are returned to the client for
-  // the demo. Set EXPOSE_EMAIL_CODES=false once real emails are sent.
-  exposeEmailCodes: process.env.EXPOSE_EMAIL_CODES
-    ? process.env.EXPOSE_EMAIL_CODES === "true"
-    : !isProduction,
+  exposeEmailCodes: emailCodesExposed(process.env),
 }

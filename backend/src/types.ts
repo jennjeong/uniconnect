@@ -93,6 +93,8 @@ export type EmailCode = {
   code: string
   expiresAt: number
   attempts: number
+  // When this run of codes began; wrong guesses carry over within it.
+  firstSentAt?: number
   verificationToken?: string
   verifiedUntil?: number
 }

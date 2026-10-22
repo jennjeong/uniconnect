@@ -10,6 +10,7 @@ Run these from the repo root:
 - `npm run dev` starts the API on http://localhost:4000 and Vite on http://localhost:8443. Vite proxies `/api` to the API.
 - `npm run typecheck` runs tsc for the backend and the frontend.
 - `npm test` runs the backend API tests (`node:test` through tsx).
+- GitHub Actions (`.github/workflows/ci.yml`) runs install, typecheck, test and build on every push to main and every pull request.
 - `npm run build`, then `npm start`, builds both packages and serves the API plus the built frontend from Express.
 
 ## Project Structure
@@ -41,4 +42,6 @@ Run these from the repo root:
 - Motion lives in the "Motion" section of `index.css`: a `stagger` class on a list makes its items arrive one after another, `data-reveal` makes a block rise out of a blur when it scrolls into view (`lib/reveal.ts`, delay with `--reveal-delay`), `components/AnimatedNumber.tsx` counts numbers up on arrival, and `lib/ripple.ts` adds the press ripple. Keep the reduced-motion rule at the end of that section. Tailwind v4 is available, but the UI is styled through the classes in `index.css`.
 - Analytics go through `lib/analytics.ts` (`contact_click` on a press of 제안하기 or 문의하기, `generate_lead` once the server accepts a proposal, `sign_up`); they do nothing until a GA4 ID is set in `.figma/make/site.json`. Never put names, emails or message text in an event.
 - Questions for the operators come from the FAQ page (`/api/inquiries`). There is no admin screen yet: operators read and answer them through `/api/admin` with the `ADMIN_TOKEN` environment value in the `X-Admin-Token` header, and those routes stay closed while it is unset. Question kinds are listed in both `backend/src/lib/validation.ts` and `frontend/src/data/inquiries.ts`.
-- No mail service is connected yet. Email verification codes come back as `devCode` while `EXPOSE_EMAIL_CODES` is on, which is the default outside production. A real sender belongs in `backend/src/lib/mailer.ts`.
+- No mail service is connected yet. Email verification codes come back as `devCode` only while `EXPOSE_EMAIL_CODES=true`, which `npm run dev` sets through `backend/dev.env` and nothing else does. A real sender belongs in `backend/src/lib/mailer.ts`.
+- Requests that can be guessed or flooded (login failures, email codes, admin token failures, check-in records) are counted per address with `createRateLimit` from `backend/src/lib/rateLimit.ts` and answer 429 past their limit. The counts live in memory; set `TRUST_PROXY` behind a proxy so `req.ip` is the visitor. Tests clear them before each case with `clearRateLimits`.
+- `saveDatabase()` rejects only the caller whose write failed; later saves still run. Look up request input in plain lookup objects with `Object.hasOwn`, so names like `constructor` are not found.

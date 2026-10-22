@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto"
 import { Router } from "express"
 
 import { HttpError } from "../lib/errors.js"
+import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { MetricEntry, MetricKind } from "../types.js"
 
@@ -39,8 +40,17 @@ metricsRouter.get("/log", (req, res) => {
   res.json({ entries })
 })
 
+// The check-in page needs no login, so each address may record only so
+// many a minute; a busy booth on one Wi-Fi stays well under it.
+const recordsPerClient = createRateLimit({
+  limit: 120,
+  windowMs: 60 * 1000,
+  message: "기록 요청이 너무 많아요. 잠시 후 다시 시도해 주세요.",
+})
+
 // Records one QR scan, coupon or store visit (called by the check-in page).
 metricsRouter.post("/:kind", async (req, res) => {
+  recordsPerClient.take(clientKey(req))
   const kind = parseKind(req.params.kind)
   const database = getDatabase()
   database.metrics[kind] += 1

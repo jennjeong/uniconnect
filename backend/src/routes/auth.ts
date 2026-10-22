@@ -6,12 +6,42 @@ import { emailRuleError, normalizeEmail } from "../lib/email.js"
 import { HttpError } from "../lib/errors.js"
 import { sendVerificationCode } from "../lib/mailer.js"
 import { hashPassword, verifyPassword } from "../lib/password.js"
+import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { accountTypes, parseRole, text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
-import type { Account, PublicAccount } from "../types.js"
+import type { Account, EmailCode, PublicAccount } from "../types.js"
 
 export const authRouter = Router()
+
+const minute = 60 * 1000
+const codesPerClient = createRateLimit({
+  limit: 20,
+  windowMs: 15 * minute,
+  message: "인증번호 요청이 너무 많아요. 15분 뒤에 다시 시도해 주세요.",
+})
+const codesPerEmail = createRateLimit({
+  limit: 5,
+  windowMs: 30 * minute,
+  message: "이 이메일로 인증번호를 너무 자주 받았어요. 30분 뒤에 다시 시도해 주세요.",
+})
+const verifyPerClient = createRateLimit({
+  limit: 30,
+  windowMs: 15 * minute,
+  message: "인증 시도가 너무 많아요. 15분 뒤에 다시 시도해 주세요.",
+})
+// Only failed logins count, per address and email, so one person's typos
+// neither lock out others nor block the right password from elsewhere.
+const loginFailures = createRateLimit({
+  limit: 10,
+  windowMs: 15 * minute,
+  message: "로그인 시도가 너무 많아요. 15분 뒤에 다시 시도해 주세요.",
+})
+
+// An expired code is kept as long as its wrong guesses still count.
+const keepUntil = (entry: EmailCode) =>
+  entry.verifiedUntil ??
+  Math.max(entry.expiresAt, (entry.firstSentAt ?? 0) + config.emailCodeAttemptWindowMs)
 
 const toPublic = ({ passwordHash, termsAgreedAt, ...account }: Account): PublicAccount =>
   account
@@ -27,6 +57,7 @@ function startSession(accountId: string) {
 // Step 1 of sign-up: send a 6-digit code to a school (student group) or
 // company (sponsor) address.
 authRouter.post("/email-code", async (req, res) => {
+  codesPerClient.take(clientKey(req))
   const role = parseRole(req.body?.role)
   const email = normalizeEmail(req.body?.email)
   const ruleError = emailRuleError(role, email)
@@ -37,12 +68,28 @@ authRouter.post("/email-code", async (req, res) => {
     throw new HttpError(409, "이미 가입된 이메일이에요. 로그인해 주세요.")
   }
 
+  codesPerEmail.take(email)
+
   const code = String(randomInt(100000, 1000000))
   const expiresAt = Date.now() + config.emailCodeTtlMs
+  // Wrong guesses carry over to the new code for a while, so asking again
+  // does not buy another round of guesses.
+  const previous = database.emailCodes.find((entry) => entry.email === email && !entry.verifiedUntil)
+  const carried =
+    previous && (previous.firstSentAt ?? 0) + config.emailCodeAttemptWindowMs > Date.now()
+      ? previous
+      : undefined
   database.emailCodes = database.emailCodes.filter(
-    (entry) => entry.email !== email && (entry.verifiedUntil ?? entry.expiresAt) > Date.now(),
+    (entry) => entry.email !== email && keepUntil(entry) > Date.now(),
   )
-  database.emailCodes.push({ email, role, code, expiresAt, attempts: 0 })
+  database.emailCodes.push({
+    email,
+    role,
+    code,
+    expiresAt,
+    attempts: carried?.attempts ?? 0,
+    firstSentAt: carried?.firstSentAt ?? Date.now(),
+  })
   await saveDatabase()
   await sendVerificationCode(email, code)
 
@@ -51,6 +98,7 @@ authRouter.post("/email-code", async (req, res) => {
 
 // Step 2: check the code and hand back a token that proves the email is verified.
 authRouter.post("/email-code/verify", async (req, res) => {
+  verifyPerClient.take(clientKey(req))
   const email = normalizeEmail(req.body?.email)
   const code = text(req.body?.code)
   const database = getDatabase()
@@ -61,7 +109,7 @@ authRouter.post("/email-code/verify", async (req, res) => {
     throw new HttpError(400, "인증 시간이 지났어요. 인증번호를 다시 받아 주세요.")
   }
   if (entry.attempts >= config.emailCodeMaxAttempts) {
-    throw new HttpError(429, "인증 시도가 너무 많아요. 인증번호를 다시 받아 주세요.")
+    throw new HttpError(429, "인증 시도가 너무 많아요. 30분 뒤에 인증번호를 다시 받아 주세요.")
   }
   if (entry.code !== code) {
     entry.attempts += 1
@@ -136,12 +184,16 @@ authRouter.post("/login", async (req, res) => {
   const role = parseRole(req.body?.role)
   const email = normalizeEmail(req.body?.email)
   const password = String(req.body?.password ?? "")
+  const limitKey = `${clientKey(req)} ${email}`
+  loginFailures.check(limitKey)
   const database = getDatabase()
   const account = database.accounts.find((item) => item.email === email)
 
   if (!account || !(await verifyPassword(password, account.passwordHash))) {
+    loginFailures.hit(limitKey)
     throw new HttpError(401, "이메일 또는 비밀번호가 올바르지 않아요.")
   }
+  loginFailures.reset(limitKey)
   if (account.role !== role) {
     const label = account.role === "학생단체" ? "협찬 받기" : "협찬 하기"
     throw new HttpError(403, `'${label}' 회원으로 가입된 계정이에요. 유형을 바꿔 로그인해 주세요.`)

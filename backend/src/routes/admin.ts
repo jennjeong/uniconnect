@@ -1,8 +1,9 @@
-import { timingSafeEqual } from "node:crypto"
+import { createHash, timingSafeEqual } from "node:crypto"
 import { Router, type Request } from "express"
 
 import { config } from "../config.js"
 import { HttpError } from "../lib/errors.js"
+import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { text } from "../lib/validation.js"
 import { getDatabase, saveDatabase } from "../store.js"
 
@@ -11,15 +12,26 @@ import { getDatabase, saveDatabase } from "../store.js"
 // There is no admin screen yet; these routes are its seam.
 export const adminRouter = Router()
 
+const adminFailures = createRateLimit({
+  limit: 10,
+  windowMs: 15 * 60 * 1000,
+  message: "관리자 인증 실패가 너무 많아요. 15분 뒤에 다시 시도해 주세요.",
+})
+
+// Hashing both sides gives equal lengths for timingSafeEqual whatever was
+// sent, Korean included.
+const digest = (value: string) => createHash("sha256").update(value).digest()
+
 function requireAdmin(req: Request) {
+  const key = clientKey(req)
+  adminFailures.check(key)
   const expected = config.adminToken
   const given = req.get("x-admin-token") ?? ""
-  const match =
-    expected !== undefined &&
-    expected.length > 0 &&
-    given.length === expected.length &&
-    timingSafeEqual(Buffer.from(given), Buffer.from(expected))
-  if (!match) throw new HttpError(403, "관리자만 쓸 수 있어요.")
+  const match = Boolean(expected) && timingSafeEqual(digest(given), digest(expected ?? ""))
+  if (!match) {
+    adminFailures.hit(key)
+    throw new HttpError(403, "관리자만 쓸 수 있어요.")
+  }
 }
 
 // Every question, unanswered first, then newest, with who sent it.
