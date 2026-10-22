@@ -108,6 +108,23 @@ export type SponsorRequest = {
   respondedAt?: string
 }
 
+// A sponsorship proposal a brand sent to a student group.
+export type SponsorOffer = {
+  id: string
+  groupId: string
+  brandId?: string
+  brandName: string
+  industry: Industry
+  campaignName: string
+  // "YYYY-MM-DD", or "" while the brand has no campaign scheduled.
+  campaignDate: string
+  offer: string
+  message: string
+  status: RequestStatus
+  createdAt: string
+  respondedAt?: string
+}
+
 // One finished sponsorship of a brand, for its analytics.
 export type Sponsorship = {
   id: string
@@ -186,6 +203,7 @@ export type Report = {
 export type NavLabel =
   | "대시보드"
   | "추천 매칭"
+  | "받은 협찬"
   | "내 행사"
   | "성과 측정"
   | "리포트"

@@ -9,7 +9,7 @@ export const groupIndustries: Record<string, Industry> = {
   "연합 동아리": "content",
 }
 
-const brandIndustries: Record<string, Industry> = {
+export const brandIndustries: Record<string, Industry> = {
   "카페 · 식음료": "cafe",
   "뷰티 · 패션": "beauty",
   "콘텐츠 · 미디어": "content",

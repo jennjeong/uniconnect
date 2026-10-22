@@ -48,6 +48,7 @@ import { ChatPage } from "./pages/ChatPage"
 import { MatchDetailPage } from "./pages/MatchDetailPage"
 import { MatchesPage } from "./pages/MatchesPage"
 import { NotFoundPage } from "./pages/NotFoundPage"
+import { OffersPage } from "./pages/OffersPage"
 import { MeasurementPage } from "./pages/MeasurementPage"
 import { MessagesPage } from "./pages/MessagesPage"
 import { ProfileEditPage } from "./pages/ProfileEditPage"
@@ -68,6 +69,7 @@ import type {
   Report,
   Role,
   Session,
+  SponsorOffer,
   SponsorRequest,
   Sponsorship,
 } from "./types"
@@ -103,6 +105,7 @@ function App() {
   // Brand side: the student group catalog, proposals received and results.
   const [groups, setGroups] = useState<Match[]>([])
   const [requests, setRequests] = useState<SponsorRequest[]>([])
+  const [offers, setOffers] = useState<SponsorOffer[]>([])
   const [sponsorships, setSponsorships] = useState<Sponsorship[]>([])
   // The account's own listing (null until written) and its conversations.
   const [listing, setListing] = useState<Match | null>(null)
@@ -150,6 +153,7 @@ function App() {
     applyPageMeta(pageMeta(view, { role, page, detail: detailMatch, partnerName }))
   }, [view, role, page, detailMatch, partnerName])
   const pendingRequests = requests.filter((request) => request.status === "검토 중")
+  const pendingOffers = offers.filter((offer) => offer.status === "검토 중")
   const confirmedRequests = requests.filter((request) => request.status === "수락")
 
   // Buttons ripple from where they are pressed, marked blocks rise into view
@@ -220,14 +224,15 @@ function App() {
   useEffect(() => {
     if (!authReady) return
     let cancelled = false
-    // Student groups browse brands; brands browse groups, answer proposals
-    // and follow their results.
+    // Student groups browse brands and answer their offers; brands browse
+    // groups, answer proposals and follow their results.
     const roleData =
       role === "학생단체"
-        ? api.brands().then(({ brands }) => ({
-            brands,
+        ? Promise.all([api.brands(), api.offers()]).then(([brandResult, offerResult]) => ({
+            brands: brandResult.brands,
             groups: [],
             requests: [],
+            offers: offerResult.offers,
             sponsorships: [],
           }))
         : Promise.all([api.groups(), api.requests(), api.analytics()]).then(
@@ -235,6 +240,7 @@ function App() {
               brands: [],
               groups: groupResult.groups,
               requests: requestResult.requests,
+              offers: [],
               sponsorships: analyticsResult.sponsorships,
             }),
           )
@@ -249,6 +255,7 @@ function App() {
         setBrands(data.brands)
         setGroups(data.groups)
         setRequests(data.requests)
+        setOffers(data.offers)
         setSponsorships(data.sponsorships)
       })
       .catch((error) => {
@@ -555,6 +562,32 @@ function App() {
     }
   }
 
+  // A student group accepts or declines a brand's offer.
+  const answerOffer = async (offer: SponsorOffer, decision: "accept" | "decline") => {
+    if (!account) {
+      requireLogin("로그인하면 받은 협찬 제안에 답할 수 있어요.")
+      return
+    }
+    try {
+      const result = await api.answerOffer(offer.id, decision)
+      setOffers((current) => current.map((item) => (item.id === result.offer.id ? result.offer : item)))
+      showNotice(
+        decision === "accept"
+          ? `${offer.brandName}의 협찬을 확정했어요.`
+          : `${offer.brandName}의 제안을 거절했어요.`,
+      )
+    } catch (error) {
+      handleError(error)
+      // Answered elsewhere in the meantime: show the current state.
+      if (error instanceof ApiError && error.status === 409) {
+        api
+          .offers()
+          .then((result) => setOffers(result.offers))
+          .catch(() => {})
+      }
+    }
+  }
+
   // Without a kind, the history of every measurement.
   const openLog = (kind?: MetricKind) => {
     setLogKind(kind ?? "all")
@@ -611,7 +644,7 @@ function App() {
       ]
 
   const notifications = students
-    ? studentNotifications({ matches, brands, statuses, report })
+    ? studentNotifications({ matches, brands, statuses, report, offers })
     : brandNotifications({ matches, requests, sponsorships })
 
   const activity: ActivityItem[] = students
@@ -753,6 +786,7 @@ function App() {
             matches={matches}
             groups={groups}
             proposals={proposals}
+            statuses={statuses}
             onOpenDetail={openDetail}
             onPropose={propose}
             onCancelProposal={cancelProposal}
@@ -760,6 +794,8 @@ function App() {
         )
       case "받은 제안":
         return <InboxPage requests={requests} onAnswer={answerRequest} />
+      case "받은 협찬":
+        return <OffersPage brands={brands} offers={offers} onAnswer={answerOffer} />
       case "성과 분석":
         return (
           <AnalyticsPage
@@ -808,7 +844,7 @@ function App() {
   }
 
   const badges: Partial<Record<NavLabel, number>> = students
-    ? { "추천 매칭": matches.length }
+    ? { "추천 매칭": matches.length, "받은 협찬": pendingOffers.length }
     : { "받은 제안": pendingRequests.length }
 
   return (

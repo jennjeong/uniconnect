@@ -14,6 +14,7 @@ export const navItems: Record<Role, NavItem[]> = {
   학생단체: [
     { label: "대시보드", icon: "home" },
     { label: "추천 매칭", icon: "spark", short: "매칭" },
+    { label: "받은 협찬", icon: "inbox" },
     { label: "내 행사", icon: "calendar" },
     { label: "성과 측정", icon: "chart" },
     { label: "리포트", icon: "file" },

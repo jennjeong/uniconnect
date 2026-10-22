@@ -21,6 +21,10 @@ const pages: Record<Exclude<NavLabel, "대시보드">, PageMeta> = {
     title: titled("추천 매칭"),
     description: "행사와 잘 맞는 브랜드를 일치율 순으로 보고, 마음에 드는 브랜드에 협찬을 제안해요.",
   },
+  "받은 협찬": {
+    title: titled("받은 협찬 제안"),
+    description: "브랜드가 보낸 협찬 제안을 수락하거나 거절하고, 수락한 협찬의 진행 단계를 날짜별로 봐요.",
+  },
   "내 행사": {
     title: titled("내 행사 일정"),
     description: "등록한 행사를 달력과 그달 일정 목록으로 보고, 새 행사를 하루나 기간으로 등록해요.",

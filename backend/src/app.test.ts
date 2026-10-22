@@ -73,6 +73,7 @@ test("pages load for every screen's address, and others answer 404", async () =>
     "/",
     "/matches",
     "/matches/cafe-1",
+    "/offers",
     "/campaigns",
     "/new?date=2026-12-01",
     "/me/edit",
@@ -852,4 +853,42 @@ test("an account can leave, taking what it made with it", async () => {
   assert.equal(database.conversations.some((conversation) => conversation.groupId === listingId), false)
   // The same email can sign up again.
   assert.equal((await call("POST", "/auth/email-code", { role: "학생단체", email })).status, 200)
+})
+
+test("a brand's offer reaches the student group, and the answer comes back", async () => {
+  const preview = (await call("GET", "/offers")).data.offers
+  assert.deepEqual(
+    preview.map((offer: { id: string }) => offer.id),
+    ["offer-glowlab", "offer-freshon", "offer-studymate"],
+  )
+
+  const brand = await login("브랜드")
+  assert.equal((await call("POST", "/proposals", { matchId: "syu-muse" }, brand)).status, 201)
+  assert.equal((await call("GET", "/proposals", undefined, brand)).data.statuses["syu-muse"], "검토 중")
+  // Proposing again sends no second offer.
+  await call("POST", "/proposals", { matchId: "syu-muse" }, brand)
+
+  const student = await login("학생단체")
+  const offers = (await call("GET", "/offers", undefined, student)).data.offers
+  const sent = offers.filter((offer: { brandName: string }) => offer.brandName === "오후의 커피")
+  assert.equal(sent.length, 1)
+  assert.equal(sent[0].campaignName, "가을 신메뉴 캠퍼스 시음회")
+  assert.equal(sent[0].status, "검토 중")
+  assert.deepEqual((await call("GET", "/offers", undefined, brand)).data.offers, [])
+
+  const answer = (decision: string, token = student, id = sent[0].id) =>
+    call("POST", `/offers/${id}/${decision}`, undefined, token)
+  assert.equal((await answer("accept", brand)).status, 403)
+  assert.equal((await answer("constructor")).status, 404)
+  assert.equal((await answer("accept", student, "offer-unknown")).status, 404)
+  const accepted = await answer("accept")
+  assert.equal(accepted.status, 200)
+  assert.equal(accepted.data.offer.status, "수락")
+  assert.ok(accepted.data.offer.respondedAt)
+  assert.equal((await answer("decline")).status, 409)
+
+  assert.equal((await call("GET", "/proposals", undefined, brand)).data.statuses["syu-muse"], "수락")
+  assert.equal((await call("DELETE", "/proposals/syu-muse", undefined, brand)).status, 409)
+  const declined = await answer("decline", student, "offer-freshon")
+  assert.equal(declined.data.offer.status, "거절")
 })

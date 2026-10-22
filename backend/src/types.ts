@@ -142,6 +142,30 @@ export type SponsorRequest = {
   respondedAt?: string
 }
 
+// A sponsorship proposal a brand sent to a student group.
+export type SponsorOffer = {
+  id: string
+  // The group's listing it was sent to.
+  groupId: string
+  // Brand account that sent it; seeded examples have none.
+  fromAccountId?: string
+  // That account's campaign the offer is about; accepting it confirms the campaign.
+  campaignId?: string
+  // The brand's listing, when it has one.
+  brandId?: string
+  brandName: string
+  industry: Industry
+  campaignName: string
+  // "YYYY-MM-DD", or "" while the brand has no campaign scheduled.
+  campaignDate: string
+  // What the brand offers.
+  offer: string
+  message: string
+  status: RequestStatus
+  createdAt: string
+  respondedAt?: string
+}
+
 // One finished sponsorship of a brand, for its analytics.
 export type Sponsorship = {
   id: string
@@ -230,6 +254,8 @@ export type Database = {
   inquiries: Inquiry[]
   // Proposals from student groups to brands, answered by the brand.
   requests: SponsorRequest[]
+  // Proposals brands sent to student groups.
+  offers: SponsorOffer[]
   // Finished sponsorships, keyed by brand account id.
   sponsorships: Record<string, Sponsorship[]>
   // Keyed by account id.

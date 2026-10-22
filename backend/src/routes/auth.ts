@@ -255,7 +255,7 @@ authRouter.post("/login", async (req, res) => {
 })
 
 // Everything an account made goes with it: its listing and the
-// conversations with it, its events, the proposals it sent or (a brand)
+// conversations with it, its events, the proposals and offers it sent or
 // received, its questions to the operators, its sessions and codes.
 function removeAccount(database: Database, account: Account) {
   const listingId = account.groupId ?? account.brandId
@@ -266,6 +266,10 @@ function removeAccount(database: Database, account: Account) {
   database.requests = database.requests.filter(
     (request) =>
       request.fromAccountId !== account.id && (!account.brandId || request.brandId !== account.brandId),
+  )
+  database.offers = database.offers.filter(
+    (offer) =>
+      offer.fromAccountId !== account.id && (!account.groupId || offer.groupId !== account.groupId),
   )
   delete database.events[account.id]
   delete database.proposals[account.id]

@@ -12,6 +12,7 @@ import type {
   RequestStatus,
   Role,
   Session,
+  SponsorOffer,
   SponsorRequest,
   Sponsorship,
 } from "../types"
@@ -92,6 +93,11 @@ export const api = {
       method: "DELETE",
     }),
 
+  offers: () => request<{ offers: SponsorOffer[] }>("/offers"),
+  answerOffer: (id: string, decision: "accept" | "decline") =>
+    request<{ offer: SponsorOffer }>(`/offers/${encodeURIComponent(id)}/${decision}`, {
+      method: "POST",
+    }),
   requests: () => request<{ requests: SponsorRequest[] }>("/requests"),
   answerRequest: (id: string, decision: "accept" | "decline") =>
     request<{ request: SponsorRequest }>(

@@ -7,6 +7,7 @@ import type {
   MetricEntry,
   MetricKind,
   Report,
+  SponsorOffer,
   SponsorRequest,
   Sponsorship,
 } from "../types.js"
@@ -675,6 +676,55 @@ export function seedRequests(): SponsorRequest[] {
   }))
 }
 
+// Proposals brands sent the demo student group (KST).
+export function seedOffers(): SponsorOffer[] {
+  const offers: Omit<SponsorOffer, "groupId">[] = [
+    {
+      id: "offer-glowlab",
+      brandId: "glowlab",
+      brandName: "글로우랩",
+      industry: "beauty",
+      campaignName: "겨울 립케어 캠퍼스 체험존",
+      campaignDate: "2026-12-03",
+      offer: "립밤 샘플 300개 + 부스 운영",
+      message: "종강 공연 관객에게 립밤 샘플을 나눠 드리고, 공연장 앞에 체험 부스를 열고 싶어요.",
+      status: "검토 중",
+      createdAt: "2026-10-21T14:10:00+09:00",
+    },
+    {
+      id: "offer-freshon",
+      brandId: "freshon",
+      brandName: "프레시온",
+      industry: "wellness",
+      campaignName: "시험 기간 에너지 충전 부스",
+      campaignDate: "2026-12-10",
+      offer: "에너지 드링크 200개",
+      message: "공연 리허설 기간에 단원들과 관객에게 에너지 드링크를 지원할게요.",
+      status: "검토 중",
+      createdAt: "2026-10-19T10:30:00+09:00",
+    },
+    {
+      id: "offer-studymate",
+      brandId: "studymate",
+      brandName: "스터디메이트",
+      industry: "education",
+      campaignName: "신학기 플래너 나눔",
+      campaignDate: "2026-10-15",
+      offer: "스터디 플래너 150권",
+      message: "가을 버스킹 데이 관객에게 플래너를 나눠 드리고 싶어요.",
+      status: "거절",
+      createdAt: "2026-10-02T09:00:00+09:00",
+      respondedAt: "2026-10-03T18:40:00+09:00",
+    },
+  ]
+  return offers.map((offer) => ({
+    ...offer,
+    groupId: "syu-muse",
+    createdAt: new Date(offer.createdAt).toISOString(),
+    ...(offer.respondedAt ? { respondedAt: new Date(offer.respondedAt).toISOString() } : {}),
+  }))
+}
+
 // The demo brand's finished sponsorships (the busking day's counts follow
 // the live metrics in /api/analytics).
 export const seedSponsorships = (): Sponsorship[] => [
@@ -817,6 +867,7 @@ export async function createSeed(): Promise<Database> {
     conversations: seedConversations(),
     inquiries: [],
     requests: seedRequests(),
+    offers: seedOffers(),
     sponsorships: { [coffee.id]: seedSponsorships() },
     events: {
       [muse.id]: [
