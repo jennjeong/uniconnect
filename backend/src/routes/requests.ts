@@ -2,6 +2,7 @@ import type { Request } from "express"
 import { Router } from "express"
 
 import { HttpError } from "../lib/errors.js"
+import { recordSponsorship } from "../lib/sponsorships.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { RequestStatus } from "../types.js"
@@ -49,6 +50,15 @@ requestsRouter.post("/:id/:decision", async (req, res) => {
   if (decision === "수락" && request.fromAccountId) {
     const event = database.events[request.fromAccountId]?.find((item) => item.id === request.eventId)
     if (event?.status === "매칭 중") event.status = "집행 예정"
+  }
+  if (decision === "수락") {
+    recordSponsorship(database, account.id, {
+      id: `sp-${request.id}`,
+      groupName: request.groupName,
+      eventName: request.eventName,
+      date: request.eventDate,
+      ...(request.eventId ? { eventId: request.eventId } : {}),
+    })
   }
   await saveDatabase()
   res.json({ request })

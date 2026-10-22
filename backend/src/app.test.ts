@@ -416,6 +416,26 @@ test("a student group's proposal reaches the brand, and the answer comes back", 
   }
   assert.equal((await call("DELETE", "/proposals/afternoon-coffee", undefined, student)).status, 409)
 
+  // The accepted proposal becomes one of the brand's sponsorships, linked to
+  // the event; it shows in the analytics once the event's day has come.
+  const brandId = (await call("GET", "/auth/me", undefined, brand)).data.account.id
+  const record = getDatabase().sponsorships[brandId].find((item) => item.id === `sp-${request.id}`)
+  assert.ok(record)
+  assert.equal(record.groupName, "삼육대 뮤즈")
+  assert.equal(record.eventId, next?.id)
+  const analytics = async () => (await call("GET", "/analytics", undefined, brand)).data.sponsorships
+  // Its day has not come yet.
+  assert.equal((await analytics()).some((item: { id: string }) => item.id === record.id), false)
+  if (next) {
+    const day = record.date
+    record.date = "2026-10-01"
+    const shown = (await analytics()).find((item: { id: string }) => item.id === record.id)
+    const { metrics, report } = (await call("GET", `/measurements/${next.id}`, undefined, student)).data
+    assert.equal(shown.visits, metrics.visits)
+    assert.equal(shown.targetRoas, report.targets.roas)
+    record.date = day
+  }
+
   // Proposals to brands without an account have no answer to show.
   const other = await call("POST", "/proposals", { matchId: "studymate" }, student)
   assert.equal(other.data.statuses.studymate, undefined)
@@ -946,6 +966,10 @@ test("a brand's offer reaches the student group, and the answer comes back", asy
   assert.equal((await answer("decline")).status, 409)
 
   assert.equal((await call("GET", "/proposals", undefined, brand)).data.statuses["syu-muse"], "수락")
+  const brandId = (await call("GET", "/auth/me", undefined, brand)).data.account.id
+  const record = getDatabase().sponsorships[brandId].find((item) => item.id === `sp-${sent[0].id}`)
+  assert.equal(record?.groupName, "삼육대 뮤즈")
+  assert.equal(record?.eventName, "가을 신메뉴 캠퍼스 시음회")
   assert.equal((await call("DELETE", "/proposals/syu-muse", undefined, brand)).status, 409)
   const declined = await answer("decline", student, "offer-freshon")
   assert.equal(declined.data.offer.status, "거절")
