@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react"
 
+import { liteScenes } from "../lib/lite"
 import type { GradientConfig } from "./shaders"
 
 const VERT = `#version 300 es
@@ -35,7 +36,8 @@ export function LayersGradient({
 
   useEffect(() => {
     const host = hostRef.current
-    if (!host) return
+    // Lite mode (lib/lite.ts) keeps the parent's CSS background.
+    if (!host || liteScenes()) return
     // A fresh canvas on every mount: a canvas keeps one context for life,
     // and cleanup loses this one (React mounts twice in development).
     const canvas = document.createElement("canvas")

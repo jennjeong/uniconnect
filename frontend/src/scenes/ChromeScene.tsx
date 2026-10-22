@@ -1,5 +1,6 @@
 import { useEffect, useRef, type RefObject } from "react"
 
+import { liteScenes, whenNearView } from "../lib/lite"
 import type { ChromeKind } from "./chromeModels"
 
 // Where the model is in its fall through the frame (0 above, 0.5 centred,
@@ -20,7 +21,8 @@ function fallOf(mode: "pinned" | "enter", anchor: HTMLElement) {
 }
 
 // A Stride chrome model (scenes/chromeModels.ts) filling its parent; three.js
-// loads only where one is shown. Without WebGL the parent shows on its own.
+// loads only once one comes near view, and not at all in lite mode
+// (lib/lite.ts). Without WebGL the parent shows on its own.
 export function ChromeScene({
   kind,
   mode,
@@ -48,20 +50,24 @@ export function ChromeScene({
       fall += (fallOf(mode, element) - fall) * 0.12
       return fall
     }
-    import("./chromeModels")
-      .then(({ createChrome }) => {
-        const container = containerRef.current
-        const canvas = canvasRef.current
-        if (cancelled || !container || !canvas) return
-        try {
-          dispose = createChrome(container, canvas, { kind, progress, scrollSpin, spinDirection })
-        } catch {
-          // No WebGL: the panel stays as it is.
-        }
-      })
-      .catch(() => {})
+    const container = containerRef.current
+    if (!container || liteScenes()) return
+    const stopWatching = whenNearView(container, () => {
+      import("./chromeModels")
+        .then(({ createChrome }) => {
+          const canvas = canvasRef.current
+          if (cancelled || !canvas) return
+          try {
+            dispose = createChrome(container, canvas, { kind, progress, scrollSpin, spinDirection })
+          } catch {
+            // No WebGL: the panel stays as it is.
+          }
+        })
+        .catch(() => {})
+    })
     return () => {
       cancelled = true
+      stopWatching()
       dispose?.()
     }
   }, [kind, mode, anchor, scrollSpin, spinDirection])

@@ -1,5 +1,7 @@
 import { Component, lazy, Suspense, type ReactNode } from "react"
 
+import { liteScenes } from "../lib/lite"
+
 // three.js and the shader download only when a page shows a backdrop.
 const GradientScene = lazy(() => import("./GradientScene"))
 
@@ -7,6 +9,8 @@ const GradientScene = lazy(() => import("./GradientScene"))
 // with the has-gradient class. The banner keeps its CSS background, which
 // shows until the canvas fades in and stays when the browser has no WebGL.
 export function GradientBackdrop() {
+  // Lite mode (lib/lite.ts) keeps the banner's CSS background.
+  if (liteScenes()) return null
   return (
     <div aria-hidden="true" className="gradient-backdrop">
       <SceneBoundary>
