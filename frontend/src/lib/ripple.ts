@@ -11,7 +11,6 @@ const rippleTargets = [
   ".header-link",
   ".role-button",
   "button.nav-pill",
-  ".cta-pill",
   ".calendar-today",
   ".bento-card",
   ".activity-tile",

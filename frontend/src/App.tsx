@@ -828,7 +828,6 @@ function App() {
         notificationsOpen={notificationsOpen}
         menuOpen={menuOpen}
         unreadMessages={unreadMessages}
-        showCreate={viewPath(view) !== viewPath({ page: "대시보드" })}
         onNavigate={navigate}
         onSwitchRole={switchRole}
         onCreate={() => openCreate()}

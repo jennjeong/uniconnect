@@ -225,10 +225,9 @@ strong {
 }
 
 /* Stride's floating navigation from getlayers.ai (layout/Header.tsx):
-   separate pills of silver glass over whatever is behind them, the
-   register action in deep blue. Clicks pass through the gaps between the
-   pills; the pills gain a shadow once the page scrolls, and the bar
-   slides in after the intro. */
+   separate pills of silver glass over whatever is behind them. Clicks
+   pass through the gaps between the pills; the pills gain a shadow once
+   the page scrolls, and the bar slides in after the intro. */
 .site-header {
   position: fixed;
   z-index: 40;
@@ -502,34 +501,6 @@ button.nav-pill:hover {
   padding: 0 18px 0 16px;
   font-size: 13px;
   letter-spacing: 0.04em;
-}
-
-/* Stride's call to action: deep blue with a lit top edge. */
-.cta-pill {
-  display: inline-flex;
-  height: 44px;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: 8px;
-  padding: 0 20px 0 16px;
-  border: 0;
-  border-radius: 999px;
-  background: var(--point);
-  color: #fff;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    0 12px 28px -12px rgba(19, 48, 111, 0.7);
-  font-size: 14px;
-  font-weight: var(--weight-label);
-  white-space: nowrap;
-}
-
-.cta-pill:hover {
-  background: var(--point-hover);
-}
-
-.cta-pill .icon {
-  stroke-width: 2.2;
 }
 
 /* The full-screen menu (layout/NavMenu.tsx): brushed silver with a blue
@@ -6556,8 +6527,8 @@ button.nav-pill:hover {
 /* Narrower screens. Under 1360px the next-event pill and the role switch
    leave the header (both stay in Menu and the footer); under 1100px the
    page links move into Menu and side-by-side layouts stack; under 720px
-   (phones) the gutters shrink, cards go one to a row, Menu and register
-   shrink to round icons and popups rise from the bottom. */
+   (phones) the gutters shrink, cards go one to a row, Menu shrinks to a
+   round icon and popups rise from the bottom. */
 @media (max-width: 1360px) {
   .event-pill,
   .role-switch {
@@ -6690,14 +6661,13 @@ button.nav-pill:hover {
     padding-bottom: 72px;
   }
 
-  /* The header keeps the logo, the account buttons, register and Menu. */
+  /* The header keeps the logo, the account buttons and Menu. */
   .site-header,
   .nav-group {
     gap: 6px;
   }
 
-  .nav-pill,
-  .cta-pill {
+  .nav-pill {
     height: 42px;
   }
 
@@ -6719,22 +6689,14 @@ button.nav-pill:hover {
     padding: 0 16px;
   }
 
-  .menu-pill span,
-  .cta-pill span {
+  .menu-pill span {
     display: none;
   }
 
-  .menu-pill,
-  .cta-pill {
+  .menu-pill {
     width: 42px;
     justify-content: center;
     padding: 0;
-  }
-
-  /* Menu takes the far right, where a phone's menu button usually sits;
-     register moves in beside it. */
-  .menu-pill {
-    order: 1;
   }
 
   .notify-panel {
@@ -7443,12 +7405,8 @@ button.nav-pill:hover {
   }
 }
 
-/* Small phones: the header still fits in one row; register lives in Menu. */
+/* Small phones. */
 @media (max-width: 380px) {
-  .cta-pill {
-    display: none;
-  }
-
   .match-logo.large {
     width: 64px;
     height: 64px;
@@ -7537,19 +7495,20 @@ button.nav-pill:hover {
 }
 
 /* The help center (pages/FaqPage.tsx): a deep blue mesh banner asking how
-   it can help, with the search in a white pill and a link to ask the
-   operators; the topics as white cards; then the questions, and beside
-   them on wide screens the box for asking the operators, which stays in
-   view. */
+   it can help, with the search in a white pill and the link that opens
+   the box for asking the operators; the topics as white cards; then the
+   questions. */
+/* Not clipped, so the search suggestions can drop past its edge; the mesh
+   keeps to the rounded corners on its own. */
 .help-hero {
   --surface-tone: dark;
   position: relative;
+  z-index: 2;
   isolation: isolate;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 24px;
-  overflow: hidden;
   margin-top: 24px;
   padding: 28px 32px 60px;
   border-radius: var(--radius-lg);
@@ -7594,6 +7553,7 @@ button.nav-pill:hover {
 }
 
 .help-search {
+  position: relative;
   display: flex;
   width: min(640px, 100%);
   align-items: center;
@@ -7636,6 +7596,59 @@ button.nav-pill:hover {
 
 .help-search button:hover {
   background: var(--point-hover);
+}
+
+/* Questions the search matches, dropping down under it to pick from. */
+.help-suggestions {
+  position: absolute;
+  z-index: 3;
+  top: calc(100% + 8px);
+  right: 0;
+  left: 0;
+  margin: 0;
+  padding: 6px;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow:
+    var(--ring),
+    0 24px 48px -20px rgba(8, 20, 52, 0.55);
+  list-style: none;
+  text-align: left;
+}
+
+.help-suggestions li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border-radius: 14px;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: var(--weight-label);
+}
+
+.help-suggestions li.active {
+  background: var(--point-soft);
+}
+
+.help-suggestions li .icon {
+  flex: 0 0 auto;
+  color: var(--muted);
+}
+
+.help-suggestions li span {
+  min-width: 0;
+  flex: 1;
+}
+
+.help-suggestions li small {
+  flex: 0 0 auto;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--muted);
+  font-size: 11px;
 }
 
 .help-topics {
@@ -7705,11 +7718,6 @@ button.nav-pill:hover {
   font-size: 12px;
 }
 
-.help-results,
-.ask-card {
-  scroll-margin-top: calc(var(--header-h) + 16px);
-}
-
 .help-results-head {
   display: flex;
   flex-wrap: wrap;
@@ -7741,33 +7749,24 @@ button.nav-pill:hover {
   margin: 0;
 }
 
-.faq-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(300px, 1fr);
-  align-items: start;
-  gap: 24px;
+.help-results {
   padding-bottom: 48px;
+  scroll-margin-top: calc(var(--header-h) + 16px);
 }
 
-.faq-layout .faq-list {
+.help-results .faq-list {
   max-width: none;
 }
 
+/* Asking the operators (modals/AskModal.tsx). */
 .ask-card {
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
 
-@media (min-width: 1101px) {
-  .ask-card {
-    position: sticky;
-    top: calc(var(--header-h) + 16px);
-  }
-}
-
 .ask-card .form-card-caption {
-  margin: -6px 0 0;
+  margin: 0;
 }
 
 .ask-login {
@@ -7905,10 +7904,6 @@ button.nav-pill:hover {
 }
 
 @media (max-width: 1100px) {
-  .faq-layout {
-    grid-template-columns: 1fr;
-  }
-
   .help-topics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

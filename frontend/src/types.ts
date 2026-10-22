@@ -201,3 +201,4 @@ export type ModalName =
   | "signup"
   | "metric-log"
   | "goal"
+  | "ask"

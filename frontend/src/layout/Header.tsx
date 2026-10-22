@@ -5,7 +5,7 @@ import logoReversed from "../assets/brand/uniconnect_horizontal_reversed.svg"
 import { Icon } from "../components/Icon"
 import { Presence } from "../components/Presence"
 import { navItems } from "../data/navigation"
-import { createLabel, roles } from "../data/roles"
+import { roles } from "../data/roles"
 import { daysUntil, formatDay, nextEvent } from "../lib/date"
 import { initialOf } from "../lib/format"
 import type { NotificationItem } from "../lib/notifications"
@@ -14,9 +14,9 @@ import { NotificationsPanel } from "./NotificationsPanel"
 
 // Stride's floating navigation from getlayers.ai: the logo on its own and
 // the role's menu as a silver glass pill on the left; the next event (or,
-// for visitors, the side to preview), the account buttons, Menu and the
-// register action in deep blue on the right. The pills gain a soft shadow
-// once the page scrolls, and slide in after the intro loader.
+// for visitors, the side to preview), the account buttons and Menu on the
+// right. The pills gain a soft shadow once the page scrolls, and slide in
+// after the intro loader.
 export function Header({
   role,
   activeNav,
@@ -29,7 +29,6 @@ export function Header({
   notificationsOpen,
   menuOpen,
   unreadMessages,
-  showCreate,
   onNavigate,
   onSwitchRole,
   onCreate,
@@ -57,8 +56,6 @@ export function Header({
   menuOpen: boolean
   // Messages not yet read, shown on the chat button.
   unreadMessages: number
-  // Whether the register button shows; the dashboards leave it out.
-  showCreate: boolean
   onNavigate: (label: NavLabel) => void
   onSwitchRole: (role: Role) => void
   onCreate: () => void
@@ -228,12 +225,6 @@ export function Header({
           <span>Menu</span>
         </button>
 
-        {showCreate && (
-          <button aria-label={createLabel(role)} className="cta-pill" onClick={onCreate} type="button">
-            <Icon name="plus" size={16} />
-            <span>{createLabel(role)}</span>
-          </button>
-        )}
       </div>
 
       <Presence show={notificationsOpen && account !== null}>

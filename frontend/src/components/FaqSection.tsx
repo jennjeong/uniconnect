@@ -2,12 +2,24 @@ import { faqs } from "../data/faq"
 import { RevealTitle } from "./RevealText"
 
 // Questions with their answers opening under them; <details> keeps them
-// usable with Tab and Enter.
-export function FaqList({ items }: { items: { question: string; answer: string }[] }) {
+// usable with Tab and Enter. `openQuestion` starts one open (a search pick).
+export function FaqList({
+  items,
+  openQuestion,
+}: {
+  items: { question: string; answer: string }[]
+  openQuestion?: string
+}) {
   return (
     <div className="faq-list">
       {items.map((item) => (
-        <details className="faq-item" data-reveal key={item.question}>
+        <details
+          className="faq-item"
+          data-question={item.question}
+          data-reveal
+          key={item.question}
+          open={item.question === openQuestion}
+        >
           <summary>{item.question}</summary>
           <p>{item.answer}</p>
         </details>
