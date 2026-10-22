@@ -1167,6 +1167,7 @@ test("proposals, answers and new messages are emailed to the other side", async 
     config.mailFrom = undefined
     config.siteUrl = undefined
   }
+})
 
 test("sessions are stored as hashes, and answers carry security headers", async () => {
   const token = await login("학생단체")
