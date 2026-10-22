@@ -108,7 +108,7 @@ npm run dev
 
 ### 이메일 인증
 
-아직 메일 발송 서비스가 연결되지 않았습니다. 인증번호는 서버 로그에 `[mail]`로 출력됩니다.
+메일은 [Resend](https://resend.com)로 보냅니다. 서버에 `RESEND_API_KEY`와 `MAIL_FROM`(예: `uniconnect <no-reply@보낸-도메인>`)을 설정하면 회원가입과 비밀번호 재설정 인증번호가 메일로 가고, 설정하지 않으면 서버 로그에 `[mail]`로만 출력됩니다. production에서 메일도 인증번호 노출도 켜져 있지 않으면 서버가 시작할 때 경고합니다. 메일을 보내려면 Resend에서 보낼 도메인을 인증해야 합니다.
 `EXPOSE_EMAIL_CODES=true`일 때만 인증번호를 API 응답(`devCode`)에 담아 회원가입 화면에 보여 줍니다. `npm run dev`는 `backend/dev.env`로 이 값을 켜고, `npm start`나 배포 환경에서는 직접 켜지 않는 한 꺼져 있습니다.
 켜 두면 누구나 아무 이메일로 가입할 수 있으니, 메일 없이 시연용으로 배포할 때만 켜고 서버 로그의 경고를 확인하세요. 실제 메일을 보낼 때는 `backend/src/lib/mailer.ts`의 `sendVerificationCode`를 구현하세요.
 
@@ -160,6 +160,8 @@ NODE_ENV=production npm start
 | `DATA_FILE` | 백엔드 | `backend/data/db.json` | 데이터 파일 경로 |
 | `CORS_ORIGIN` | 백엔드 | 없음 | 웹을 다른 주소에서 호스팅할 때 허용할 origin |
 | `EXPOSE_EMAIL_CODES` | 백엔드 | `false` (`npm run dev`는 `backend/dev.env`에서 `true`) | 인증번호를 응답에 포함할지 여부 (메일 서비스 없이 시연할 때만 `true`) |
+| `RESEND_API_KEY` | 백엔드 | 없음 | Resend API 키. `MAIL_FROM`과 함께 있으면 인증번호를 메일로 보냄 |
+| `MAIL_FROM` | 백엔드 | 없음 | 보내는 사람 (예: `uniconnect <no-reply@example.com>`) |
 | `ADMIN_TOKEN` | 백엔드 | 없음 | 관리자 API 토큰. 없으면 관리자 API가 닫혀 있음 |
 | `TRUST_PROXY` | 백엔드 | 없음 | 프록시 뒤에서 사용자 주소를 읽는 방법 (`true`, 프록시 수 `1`, 또는 주소) |
 | `VITE_API_URL` | 프론트엔드 | 비어 있음 | 백엔드를 다른 주소에 둘 때 API origin (예: `https://api.example.com`) |

@@ -85,7 +85,7 @@ async function issueCode(email: string, role: Role, purpose: CodePurpose) {
     ...(purpose ? { purpose } : {}),
   })
   await saveDatabase()
-  await sendVerificationCode(email, code)
+  await sendVerificationCode(email, code, purpose ?? "signup")
   return { email, expiresAt, ...(config.exposeEmailCodes ? { devCode: code } : {}) }
 }
 

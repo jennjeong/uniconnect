@@ -1039,3 +1039,35 @@ test("matches are worked out for the account browsing, with reasons", async () =
   const forBrand = (await call("GET", "/groups", undefined, brand)).data.groups
   assert.equal(forBrand[0].id, "syu-muse")
 })
+
+test("codes go out by email once a mail service is set, and only to the log before", async () => {
+  const { sendVerificationCode } = await import("./lib/mailer.js")
+  const realFetch = globalThis.fetch
+  const sent: { url: string; init: RequestInit }[] = []
+  const reply = { ok: true, status: 200 }
+  globalThis.fetch = (async (url: string, init: RequestInit) => {
+    sent.push({ url, init })
+    return reply
+  }) as unknown as typeof fetch
+  try {
+    await sendVerificationCode("club@syu.ac.kr", "123456")
+    assert.equal(sent.length, 0)
+
+    config.resendApiKey = "test-key"
+    config.mailFrom = "uniconnect <no-reply@example.com>"
+    await sendVerificationCode("club@syu.ac.kr", "123456", "reset")
+    assert.equal(sent[0].url, "https://api.resend.com/emails")
+    const body = JSON.parse(String(sent[0].init.body))
+    assert.deepEqual(body.to, ["club@syu.ac.kr"])
+    assert.equal(body.subject, "[uniconnect] 비밀번호 재설정 인증번호")
+    assert.match(body.text, /123456/)
+
+    reply.ok = false
+    reply.status = 500
+    await assert.rejects(sendVerificationCode("club@syu.ac.kr", "123456"), /인증 메일을 보내지 못했어요/)
+  } finally {
+    globalThis.fetch = realFetch
+    config.resendApiKey = undefined
+    config.mailFrom = undefined
+  }
+})
