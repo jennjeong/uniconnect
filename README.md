@@ -112,6 +112,13 @@ npm run dev
 `EXPOSE_EMAIL_CODES=true`일 때만 인증번호를 API 응답(`devCode`)에 담아 회원가입 화면에 보여 줍니다. `npm run dev`는 `backend/dev.env`로 이 값을 켜고, `npm start`나 배포 환경에서는 직접 켜지 않는 한 꺼져 있습니다.
 켜 두면 누구나 아무 이메일로 가입할 수 있으니, 메일 없이 시연용으로 배포할 때만 켜고 서버 로그의 경고를 확인하세요. 실제 메일을 보낼 때는 `backend/src/lib/mailer.ts`의 `sendVerificationCode`를 구현하세요.
 
+### 계정과 보안
+
+- 가입할 때 약관 동의와 함께 '만 14세 이상'을 확인합니다.
+- 내 정보의 `비밀번호 변경`에서 지금 비밀번호를 넣고 바꿀 수 있고, 바꾸면 다른 기기는 로그아웃됩니다.
+- 로그인 토큰은 서버 데이터 파일에 해시(sha256)로만 저장해서, 파일만으로는 아무도 로그인할 수 없습니다. 예전 데이터 파일의 로그인도 그대로 유지됩니다.
+- 모든 응답에 보안 헤더를 붙입니다(Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, production에서는 HSTS). 페이지는 이 사이트의 스크립트(와 켜면 Google Analytics)만 실행하고, 다른 사이트 안에 넣을 수 없습니다.
+
 ### 요청 제한
 
 서버 메모리에서 주소(IP)별로 요청 수를 세고, 넘으면 `429`와 안내 문구를 돌려줍니다. 서버를 다시 켜면 초기화됩니다.

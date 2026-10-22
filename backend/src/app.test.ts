@@ -160,6 +160,7 @@ test("sign-up requires a verified school or company email", async () => {
     email: "club@syu.ac.kr",
     password: "club-pass-123",
     agreedToTerms: true,
+    over14: true,
   }
   const unverified = await call("POST", "/auth/signup", { ...form, verificationToken: "x" })
   assert.equal(unverified.status, 400)
@@ -607,6 +608,7 @@ test("accounts write the listing the other side sees", async () => {
     password: "brand-pass-123",
     verificationToken: verified.data.verificationToken,
     agreedToTerms: true,
+    over14: true,
   })
   const newBrand = signup.data.token as string
   assert.equal((await call("GET", "/profile", undefined, newBrand)).data.profile, null)
@@ -930,6 +932,7 @@ test("an account can leave, taking what it made with it", async () => {
     password: "leave-pass-123",
     verificationToken: verified.data.verificationToken,
     agreedToTerms: true,
+    over14: true,
   })
   const token = signup.data.token as string
   const accountId = signup.data.account.id as string
@@ -1101,4 +1104,60 @@ test("codes go out by email once a mail service is set, and only to the log befo
     config.resendApiKey = undefined
     config.mailFrom = undefined
   }
+})
+
+test("sessions are stored as hashes, and answers carry security headers", async () => {
+  const token = await login("학생단체")
+  const sessions = getDatabase().sessions
+  assert.ok(sessions.every((session) => /^[0-9a-f]{64}$/.test(session.tokenHash)))
+  assert.ok(sessions.every((session) => !("token" in session)))
+  assert.ok(!JSON.stringify(sessions).includes(token))
+
+  const response = await fetch(`${baseUrl}/health`)
+  assert.match(response.headers.get("content-security-policy") ?? "", /frame-ancestors 'none'/)
+  assert.equal(response.headers.get("x-content-type-options"), "nosniff")
+  assert.equal(response.headers.get("x-frame-options"), "DENY")
+})
+
+test("members change their password from 내 정보, keeping this device logged in", async () => {
+  const email = "changer@syu.ac.kr"
+  const sent = await call("POST", "/auth/email-code", { role: "학생단체", email })
+  const verified = await call("POST", "/auth/email-code/verify", { email, code: sent.data.devCode })
+  const form = {
+    role: "학생단체",
+    name: "비밀번호 바꾸는 동아리",
+    type: "공연 동아리",
+    school: "삼육대학교",
+    email,
+    password: "first-pass-123",
+    verificationToken: verified.data.verificationToken,
+    agreedToTerms: true,
+  }
+  // Under 14s cannot sign up.
+  assert.equal((await call("POST", "/auth/signup", form)).status, 400)
+  const signup = await call("POST", "/auth/signup", { ...form, over14: true })
+  assert.equal(signup.status, 201)
+  const here = signup.data.token as string
+  const other = (await call("POST", "/auth/login", { role: "학생단체", email, password: "first-pass-123" })).data.token
+
+  assert.equal((await call("POST", "/auth/password", { current: "first-pass-123", next: "new" }, here)).status, 400)
+  assert.equal((await call("POST", "/auth/password", { current: "wrong", next: "second-pass-123" }, here)).status, 400)
+  assert.equal((await call("POST", "/auth/password", { current: "first-pass-123", next: "second-pass-123" })).status, 401)
+  const changed = await call("POST", "/auth/password", { current: "first-pass-123", next: "second-pass-123" }, here)
+  assert.equal(changed.status, 204)
+  assert.equal((await call("GET", "/auth/me", undefined, here)).status, 200)
+  assert.equal((await call("GET", "/auth/me", undefined, other)).status, 401)
+  const relogin = (password: string) => call("POST", "/auth/login", { role: "학생단체", email, password })
+  assert.equal((await relogin("first-pass-123")).status, 401)
+  assert.equal((await relogin("second-pass-123")).status, 200)
+})
+
+test("older sessions with a plain token keep working, stored as its hash", async () => {
+  const { upgradeDatabase } = await import("./store.js")
+  const { hashToken } = await import("./middleware/session.js")
+  const upgraded = upgradeDatabase({
+    events: {},
+    sessions: [{ token: "plain-token", accountId: "a", expiresAt: 1 }],
+  } as unknown as Parameters<typeof upgradeDatabase>[0])
+  assert.deepEqual(upgraded.sessions, [{ tokenHash: hashToken("plain-token"), accountId: "a", expiresAt: 1 }])
 })

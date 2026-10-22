@@ -8,7 +8,7 @@ import { sendVerificationCode } from "../lib/mailer.js"
 import { hashPassword, verifyPassword } from "../lib/password.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { accountTypes, parseRole, text } from "../lib/validation.js"
-import { requireAccount } from "../middleware/session.js"
+import { hashToken, requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { Account, Database, EmailCode, PublicAccount, Role } from "../types.js"
 
@@ -50,7 +50,7 @@ function startSession(accountId: string) {
   const database = getDatabase()
   const token = randomBytes(32).toString("hex")
   database.sessions = database.sessions.filter((session) => session.expiresAt > Date.now())
-  database.sessions.push({ token, accountId, expiresAt: Date.now() + config.sessionTtlMs })
+  database.sessions.push({ tokenHash: hashToken(token), accountId, expiresAt: Date.now() + config.sessionTtlMs })
   return token
 }
 
@@ -169,6 +169,8 @@ authRouter.post("/signup", async (req, res) => {
   if (!verified) throw new HttpError(400, "이메일 인증을 완료해 주세요.")
   if (password.length < 8) throw new HttpError(400, "비밀번호는 8자 이상이어야 해요.")
   if (body.agreedToTerms !== true) throw new HttpError(400, "이용약관에 동의해 주세요.")
+  // The terms take members from 14; younger ones would need a guardian's consent.
+  if (body.over14 !== true) throw new HttpError(400, "만 14세 이상만 가입할 수 있어요.")
   if (database.accounts.some((account) => account.email === email)) {
     throw new HttpError(409, "이미 가입된 이메일이에요. 로그인해 주세요.")
   }
@@ -307,13 +309,36 @@ authRouter.delete("/account", async (req, res) => {
   res.status(204).end()
 })
 
+// Changing the password from 내 정보: the current one first. Other devices
+// are logged out; this one stays logged in.
+authRouter.post("/password", async (req, res) => {
+  const account = requireAccount(req)
+  const limitKey = `${clientKey(req)} ${account.email}`
+  loginFailures.check(limitKey)
+  const next = String(req.body?.next ?? "")
+  if (next.length < 8) throw new HttpError(400, "새 비밀번호는 8자 이상이어야 해요.")
+  if (!(await verifyPassword(String(req.body?.current ?? ""), account.passwordHash))) {
+    loginFailures.hit(limitKey)
+    // Not 401, which the app reads as a session that has run out.
+    throw new HttpError(400, "지금 비밀번호가 올바르지 않아요.")
+  }
+  account.passwordHash = await hashPassword(next)
+  const keep = req.sessionToken ? hashToken(req.sessionToken) : ""
+  getDatabase().sessions = getDatabase().sessions.filter(
+    (session) => session.accountId !== account.id || session.tokenHash === keep,
+  )
+  await saveDatabase()
+  res.status(204).end()
+})
+
 authRouter.get("/me", (req, res) => {
   res.json({ account: toPublic(requireAccount(req)) })
 })
 
 authRouter.post("/logout", async (req, res) => {
   const database = getDatabase()
-  database.sessions = database.sessions.filter((session) => session.token !== req.sessionToken)
+  const tokenHash = req.sessionToken ? hashToken(req.sessionToken) : ""
+  database.sessions = database.sessions.filter((session) => session.tokenHash !== tokenHash)
   await saveDatabase()
   res.status(204).end()
 })
