@@ -16,6 +16,7 @@ import { groupsRouter } from "./routes/groups.js"
 import { inquiriesRouter } from "./routes/inquiries.js"
 import { matchesRouter } from "./routes/matches.js"
 import { metricsRouter } from "./routes/metrics.js"
+import { offersRouter } from "./routes/offers.js"
 import { profileRouter } from "./routes/profile.js"
 import { proposalsRouter } from "./routes/proposals.js"
 import { reportRouter } from "./routes/report.js"
@@ -55,6 +56,7 @@ export function createApp() {
   app.use("/api/events", eventsRouter)
   app.use("/api/proposals", proposalsRouter)
   app.use("/api/requests", requestsRouter)
+  app.use("/api/offers", offersRouter)
   app.use("/api/metrics", metricsRouter)
   app.use("/api/report", reportRouter)
   app.use("/api/analytics", analyticsRouter)

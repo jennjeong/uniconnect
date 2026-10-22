@@ -6,7 +6,7 @@ import { ProposalControl } from "../components/ProposalControl"
 import { TabBar } from "../components/TabBar"
 import { WorkCard } from "../components/WorkCard"
 import { todayIso } from "../lib/date"
-import type { Industry, Match } from "../types"
+import type { Industry, Match, RequestStatus } from "../types"
 
 type Tab = "추천" | "행사 임박" | "전체" | "분야별"
 
@@ -45,6 +45,7 @@ export function GroupsPage({
   matches,
   groups,
   proposals,
+  statuses,
   onOpenDetail,
   onPropose,
   onCancelProposal,
@@ -54,6 +55,8 @@ export function GroupsPage({
   // Every student group in the catalog.
   groups: Match[]
   proposals: string[]
+  // Each group's answer to the brand's offer, once it has one.
+  statuses: Partial<Record<string, RequestStatus>>
   onOpenDetail: (match: Match) => void
   onPropose: (match: Match) => void
   onCancelProposal: (match: Match) => void
@@ -150,6 +153,7 @@ export function GroupsPage({
                 </button>
                 <ProposalControl
                   done={proposals.includes(group.id)}
+                  status={statuses[group.id]}
                   label="협찬 제안하기"
                   className="primary-button"
                   onPropose={() => onPropose(group)}

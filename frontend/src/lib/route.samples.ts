@@ -7,6 +7,7 @@ export const sampleViews: View[] = [
   { page: "추천 매칭" },
   { page: "추천 매칭", detail: "afternoon-coffee" },
   { page: "단체 찾기", detail: "삼육대 뮤즈/2026" },
+  { page: "받은 협찬" },
   { page: "내 행사" },
   { page: "성과 측정" },
   { page: "리포트" },

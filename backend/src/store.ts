@@ -9,6 +9,7 @@ import {
   seedGroups,
   seedMetricLog,
   seedReport,
+  seedOffers,
   seedRequests,
   seedSponsorships,
 } from "./data/seed.js"
@@ -55,6 +56,7 @@ export function upgradeDatabase(stored: Database) {
   stored.metricLog ??= seedMetricLog()
   stored.report ??= structuredClone(seedReport)
   stored.requests ??= seedRequests()
+  stored.offers ??= seedOffers()
   const demoBrandId = stored.demoAccountIds?.브랜드
   stored.sponsorships ??= demoBrandId ? { [demoBrandId]: seedSponsorships() } : {}
   const demoBrand = stored.accounts?.find((account) => account.id === demoBrandId)

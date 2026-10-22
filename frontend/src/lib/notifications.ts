@@ -1,5 +1,13 @@
 import type { IconName } from "../components/Icon"
-import type { Match, NavLabel, Report, RequestStatus, SponsorRequest, Sponsorship } from "../types"
+import type {
+  Match,
+  NavLabel,
+  Report,
+  RequestStatus,
+  SponsorOffer,
+  SponsorRequest,
+  Sponsorship,
+} from "../types"
 import { roasOf } from "./sponsorships"
 
 export type NotificationItem = {
@@ -24,11 +32,14 @@ export function studentNotifications({
   brands,
   statuses,
   report,
+  offers,
 }: {
   matches: Match[]
   brands: Match[]
   statuses: Partial<Record<string, RequestStatus>>
   report: Report | null
+  // Proposals brands sent the group.
+  offers: SponsorOffer[]
 }): NotificationItem[] {
   const answered = (status: RequestStatus) =>
     Object.keys(statuses)
@@ -37,6 +48,16 @@ export function studentNotifications({
   const accepted = answered("수락")
   const declined = answered("거절")
   const items: NotificationItem[] = []
+  const waiting = offers.filter((offer) => offer.status === "검토 중")
+  if (waiting.length > 0) {
+    items.push({
+      key: "offers",
+      icon: "inbox",
+      title: `새 협찬 제안 ${waiting.length}건`,
+      caption: `${nameList(waiting.map((offer) => offer.brandName))} · 답을 기다리고 있어요`,
+      target: "받은 협찬",
+    })
+  }
   if (accepted.length > 0) {
     items.push({
       key: "accepted",

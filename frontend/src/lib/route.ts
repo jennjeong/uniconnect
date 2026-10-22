@@ -36,6 +36,7 @@ export type HistoryEntry = {
 const pagePaths: Record<NavLabel, string> = {
   대시보드: "",
   "추천 매칭": "matches",
+  "받은 협찬": "offers",
   "내 행사": "events",
   "성과 측정": "measurement",
   리포트: "reports",
