@@ -166,26 +166,29 @@ export const api = {
     }),
   saveGoals: (
     eventId: string,
-    goals: Pick<Report, "expectedAudience" | "averageSpend" | "snsReach" | "valueBreakdown" | "targets" | "coupon" | "staffPin">,
+    goals: Pick<Report, "expectedAudience" | "averageSpend" | "snsReach" | "valueBreakdown" | "targets" | "coupon" | "staffPin"> & {
+      sponsors?: { id: string; store: string; title: string; value?: number; staffPin?: string }[]
+    },
   ) =>
     request<{ metrics: Metrics; report: Report }>(`/measurements/${encodeURIComponent(eventId)}/goals`, {
       method: "PUT",
       body: goals,
     }),
   checkIn: (code: string) => request<CheckInInfo>(`/check-in/${encodeURIComponent(code)}`),
-  // A scan answers a pass; the coupon sends it and answers its number.
-  recordCheckIn: (code: string, kind: "scans" | "coupons", body?: { pass: string }) =>
+  // A scan answers a pass; a coupon sends it with the coupon's id and
+  // answers its number.
+  recordCheckIn: (code: string, kind: "scans" | "coupons", body?: { pass: string; couponId?: string }) =>
     request<{ entry: MetricEntry; pass?: string; coupon?: string }>(
       `/check-in/${encodeURIComponent(code)}/${kind}`,
       { method: "POST", body },
     ),
   checkInPass: (code: string, pass: string) =>
-    request<{ coupon: string | null; visited: boolean }>(
+    request<{ coupons: Record<string, { number: string | null; visited: boolean }> }>(
       `/check-in/${encodeURIComponent(code)}/passes/${encodeURIComponent(pass)}`,
     ),
   // The store staff's device: the participant's coupon number and the PIN.
   confirmVisit: (code: string, body: { pin: string; coupon: string }) =>
-    request<{ entry: MetricEntry }>(`/check-in/${encodeURIComponent(code)}/staff/visits`, {
+    request<{ entry: MetricEntry; store: string }>(`/check-in/${encodeURIComponent(code)}/staff/visits`, {
       method: "POST",
       body,
     }),

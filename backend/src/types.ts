@@ -187,9 +187,6 @@ export type Sponsorship = {
   eventId?: string
   // ROAS goal in percent, set before the sponsorship.
   targetRoas: number
-  // Other brands sponsoring the same event, worked out when it is shown:
-  // its counts and value are the whole event's, not split between them.
-  sharedWith?: number
 }
 
 // What a student group sets before an event to measure it against.
@@ -206,6 +203,25 @@ export type MeasurementGoals = {
   coupon: { store: string; title: string }
 }
 
+// A coupon participants take at the check-in page, by its number.
+// `coupon` is true on passes from before numbers were issued.
+export type PassCoupon = { coupon?: string | true; visit?: true }
+
+// One brand sponsoring a student event, on that event's measurement: its own
+// coupon, the PIN its store staff confirm visits with, its counts and the
+// value it gave, so its analytics hold only its share.
+export type EventSponsor = {
+  // The brand's sponsorship (Sponsorship.id).
+  id: string
+  brandName: string
+  coupon: { store: string; title: string }
+  // Won this sponsor gave. Unset splits the event's value evenly; with one
+  // sponsor it is always the whole value.
+  value?: number
+  staffPin: string
+  metrics: { coupons: number; visits: number }
+}
+
 // One event's live measurement: its counts, the scans by hour, the latest
 // records and the goals. `code` is in the event's check-in address.
 export type Measurement = {
@@ -217,12 +233,17 @@ export type Measurement = {
   // Most recent records, oldest first.
   log: MetricEntry[]
   goals: MeasurementGoals
-  // 4 digits the sponsor's store staff enter to confirm a visit.
+  // 4 digits the store staff enter to confirm a visit, while the event has
+  // no sponsors; each sponsor has its own after that.
   staffPin: string
-  // One pass per scan, so each participant gets one coupon and one visit.
-  // `coupon` is the number the store staff enter (true on passes from
-  // before numbers were issued).
-  passes: Record<string, { coupon?: string | true; visit?: true }>
+  // `metrics` counts the whole event. Once brands sponsor it, participants
+  // take each sponsor's coupon instead of the event's, and the sponsor's
+  // own counts grow with the totals.
+  sponsors: EventSponsor[]
+  // One pass per scan, so each participant gets each coupon once and each
+  // visit once: the event's coupon on the pass itself, sponsors' coupons
+  // under their ids. The number is what the store staff enter.
+  passes: Record<string, PassCoupon & { sponsors?: Record<string, PassCoupon> }>
 }
 
 // Performance report of one event, worked out from its measurement and
@@ -255,6 +276,22 @@ export type Report = {
   averageSpend: number
   snsReach: number
   coupon: MeasurementGoals["coupon"]
+  // Only for the group that owns the event.
+  staffPin?: string
+  // The event's sponsors with their own share, once brands sponsor it.
+  sponsors?: SponsorReport[]
+}
+
+// One sponsor's share of an event in its report.
+export type SponsorReport = {
+  id: string
+  brandName: string
+  coupon: EventSponsor["coupon"]
+  // Won this sponsor gave (the even split when the group has set none).
+  value: number
+  coupons: number
+  visits: number
+  roas: number
   // Only for the group that owns the event.
   staffPin?: string
 }

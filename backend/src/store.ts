@@ -13,7 +13,7 @@ import {
   seedSponsorships,
 } from "./data/seed.js"
 import { toIsoDate } from "./lib/dates.js"
-import { newStaffPin } from "./lib/measurements.js"
+import { newStaffPin, syncSponsors } from "./lib/measurements.js"
 import { hashToken } from "./middleware/session.js"
 import type { Database, Metrics, MetricEntry, Report } from "./types.js"
 
@@ -30,6 +30,7 @@ export async function loadDatabase() {
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error
     database = await createSeed()
+    for (const measurement of database.measurements) syncSponsors(database, measurement)
     await saveDatabase()
   }
   return database
@@ -111,6 +112,10 @@ export function upgradeDatabase(stored: Database) {
     // Visits need the staff PIN and a scan's pass now.
     measurement.staffPin ??= measurement.eventId === "event-busking-day" ? "1012" : newStaffPin()
     measurement.passes ??= {}
+    // Each sponsor gets its own coupon and counts; an event's only sponsor
+    // takes over what the event had.
+    measurement.sponsors ??= []
+    syncSponsors(stored, measurement)
   }
   return stored
 }

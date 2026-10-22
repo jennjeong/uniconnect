@@ -5,6 +5,7 @@ import { sponsorTypes, text } from "./validation.js"
 import type {
   Database,
   EventItem,
+  EventSponsor,
   Measurement,
   MeasurementGoals,
   MetricEntry,
@@ -103,6 +104,49 @@ export function parseGoals(body: unknown): MeasurementGoals {
   }
 }
 
+// Each sponsor's coupon, value and staff PIN from the goals form, checked
+// and applied to the measurement. Values, when there are several sponsors,
+// must add up to the event's value; PINs must differ between sponsors.
+export function applySponsorGoals(measurement: Measurement, goals: MeasurementGoals, body: unknown) {
+  const total = goals.valueBreakdown.reduce((sum, part) => sum + part.value, 0)
+  const several = measurement.sponsors.length > 1
+  if (Array.isArray(body)) {
+    const rows = body as Record<string, unknown>[]
+    const updates = measurement.sponsors.map((sponsor) => {
+      const row = rows.find((item) => item?.id === sponsor.id)
+      if (!row) throw new HttpError(400, `${sponsor.brandName}의 쿠폰을 적어 주세요.`)
+      const store = text(row.store)
+      const title = text(row.title)
+      if (!store || store.length > 30 || !title || title.length > 30) {
+        throw new HttpError(400, "쿠폰의 매장과 혜택을 30자 이하로 적어 주세요.")
+      }
+      return {
+        sponsor,
+        coupon: { store, title },
+        value: several ? wholeNumber(row.value, `${sponsor.brandName}의 협찬 가치`, 1_000_000_000) : undefined,
+        staffPin: parseStaffPin(row.staffPin) ?? sponsor.staffPin,
+      }
+    })
+    if (new Set(updates.map((update) => update.staffPin)).size !== updates.length) {
+      throw new HttpError(400, "직원 확인 PIN은 협찬사마다 다르게 정해 주세요.")
+    }
+    if (several && updates.reduce((sum, update) => sum + (update.value ?? 0), 0) !== total) {
+      throw new HttpError(400, `협찬사별 가치를 더하면 협찬 가치 합계(${total.toLocaleString("ko-KR")}원)와 같아야 해요.`)
+    }
+    for (const update of updates) {
+      update.sponsor.coupon = update.coupon
+      update.sponsor.staffPin = update.staffPin
+      if (update.value !== undefined) update.sponsor.value = update.value
+    }
+    return
+  }
+  // Without them, the event's value must still add up with what was set.
+  const set = measurement.sponsors.filter((sponsor) => sponsor.value !== undefined)
+  if (several && set.length === measurement.sponsors.length && set.reduce((sum, item) => sum + item.value!, 0) !== total) {
+    throw new HttpError(400, `협찬사별 가치를 더하면 협찬 가치 합계(${total.toLocaleString("ko-KR")}원)와 같아야 해요.`)
+  }
+}
+
 // The staff PIN, when the goals form sends one: 4 digits.
 export function parseStaffPin(value: unknown) {
   if (value === undefined) return undefined
@@ -121,11 +165,78 @@ function newCode(database: Database) {
 
 export const newStaffPin = () => String(randomInt(0, 10000)).padStart(4, "0")
 
-// The event's measurement, created with default goals the first time.
-// Returns whether it was created, so the caller knows to save.
+// A PIN none of the event's sponsors has, so a PIN tells whose store it is.
+function newSponsorPin(measurement: Measurement) {
+  let pin: string
+  do pin = newStaffPin()
+  while (measurement.sponsors.some((sponsor) => sponsor.staffPin === pin))
+  return pin
+}
+
+// Gives each brand sponsoring the event its own coupon, staff PIN and counts
+// on the event's measurement. The event's first sponsor takes over what the
+// event had so far, when it is the only one: the coupon, the PIN, the counts
+// and the coupon numbers already handed out. A later sponsor starts from
+// zero with a coupon named after the brand, and the event's value goes back
+// to an even split until the group sets each share again. Returns whether
+// any was added.
+export function syncSponsors(database: Database, measurement: Measurement) {
+  const sponsorships = Object.entries(database.sponsorships).flatMap(([brandAccountId, list]) =>
+    list
+      .filter((sponsorship) => sponsorship.eventId === measurement.eventId)
+      .map((sponsorship) => ({ brandAccountId, sponsorship })),
+  )
+  const missing = sponsorships.filter(
+    ({ sponsorship }) => !measurement.sponsors.some((sponsor) => sponsor.id === sponsorship.id),
+  )
+  if (missing.length === 0) return false
+  const takesOver = measurement.sponsors.length === 0 && sponsorships.length === 1
+  for (const { brandAccountId, sponsorship } of missing) {
+    const brandName =
+      database.accounts.find((account) => account.id === brandAccountId)?.name ?? "협찬사"
+    const sponsor: EventSponsor = takesOver
+      ? {
+          id: sponsorship.id,
+          brandName,
+          coupon: { ...measurement.goals.coupon },
+          staffPin: measurement.staffPin,
+          metrics: { coupons: measurement.metrics.coupons, visits: measurement.metrics.visits },
+        }
+      : {
+          id: sponsorship.id,
+          brandName,
+          coupon: { store: brandName, title: "참여자 전용 혜택" },
+          staffPin: newSponsorPin(measurement),
+          metrics: { coupons: 0, visits: 0 },
+        }
+    if (takesOver) {
+      for (const pass of Object.values(measurement.passes)) {
+        if (!pass.coupon) continue
+        pass.sponsors = { [sponsor.id]: { coupon: pass.coupon, ...(pass.visit ? { visit: true as const } : {}) } }
+        delete pass.coupon
+        delete pass.visit
+      }
+    }
+    measurement.sponsors.push(sponsor)
+  }
+  for (const sponsor of measurement.sponsors) delete sponsor.value
+  return true
+}
+
+// Won a sponsor gave: the whole value when it is the only one, else what the
+// group set for it, or an even split until it has.
+export function shareValue(measurement: Measurement, sponsor: EventSponsor) {
+  const total = measurement.goals.valueBreakdown.reduce((sum, part) => sum + part.value, 0)
+  if (measurement.sponsors.length <= 1) return total
+  return sponsor.value ?? Math.round(total / measurement.sponsors.length)
+}
+
+// The event's measurement, created with default goals the first time, with
+// a share for each sponsor. Returns whether anything changed, so the caller
+// knows to save.
 export function ensureMeasurement(database: Database, accountId: string, event: EventItem) {
   const found = database.measurements.find((measurement) => measurement.eventId === event.id)
-  if (found) return { measurement: found, created: false }
+  if (found) return { measurement: found, created: syncSponsors(database, found) }
   const measurement: Measurement = {
     eventId: event.id,
     accountId,
@@ -135,9 +246,11 @@ export function ensureMeasurement(database: Database, accountId: string, event: 
     log: [],
     goals: defaultGoals(event),
     staffPin: newStaffPin(),
+    sponsors: [],
     passes: {},
   }
   database.measurements.push(measurement)
+  syncSponsors(database, measurement)
   return { measurement, created: true }
 }
 
@@ -170,12 +283,31 @@ export function buildReport(measurement: Measurement, event: EventItem, { withPi
     snsReach: goals.snsReach,
     coupon: goals.coupon,
     ...(withPin ? { staffPin: measurement.staffPin } : {}),
+    ...(measurement.sponsors.length
+      ? {
+          sponsors: measurement.sponsors.map((sponsor) => {
+            const value = shareValue(measurement, sponsor)
+            return {
+              id: sponsor.id,
+              brandName: sponsor.brandName,
+              coupon: sponsor.coupon,
+              value,
+              coupons: sponsor.metrics.coupons,
+              visits: sponsor.metrics.visits,
+              roas: percent(sponsor.metrics.visits * goals.averageSpend, value),
+              ...(withPin ? { staffPin: sponsor.staffPin } : {}),
+            }
+          }),
+        }
+      : {}),
   }
 }
 
-// Counts one QR scan, coupon or store visit, and its record.
-export function recordMetric(measurement: Measurement, kind: MetricKind): MetricEntry {
+// Counts one QR scan, coupon or store visit, and its record; a sponsor's
+// coupon or visit counts for that sponsor too.
+export function recordMetric(measurement: Measurement, kind: MetricKind, sponsor?: EventSponsor): MetricEntry {
   measurement.metrics[kind] += 1
+  if (sponsor && kind !== "scans") sponsor.metrics[kind] += 1
   const now = new Date()
   if (kind === "scans") {
     // Hours on the clock in Korea, where the events take place.
@@ -184,7 +316,7 @@ export function recordMetric(measurement: Measurement, kind: MetricKind): Metric
     if (slot) slot.scans += 1
     else measurement.hourlyScans = [...measurement.hourlyScans, { hour, scans: 1 }].sort((a, b) => a.hour - b.hour)
   }
-  const { coupon } = measurement.goals
+  const coupon = sponsor?.coupon ?? measurement.goals.coupon
   const entry: MetricEntry = {
     id: randomUUID(),
     kind,

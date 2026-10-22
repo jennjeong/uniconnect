@@ -840,6 +840,7 @@ export function seedMeasurements(accountId: string): Measurement[] {
       },
       // The demo's staff PIN, given to the store before the event.
       staffPin: "1012",
+      sponsors: [],
       passes: {},
     },
   ]

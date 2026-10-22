@@ -39,11 +39,22 @@ export function QrModal({
           <div className="qr-pin">
             매장 직원용 방문 확인
             <code className="qr-link">{staffCheckInLink(report)}</code>
-            <span>
-              직원 PIN <strong>{report.staffPin}</strong>
-            </span>
+            {report.sponsors?.length ? (
+              <ul className="qr-pins">
+                {report.sponsors.map((sponsor) => (
+                  <li key={sponsor.id}>
+                    {sponsor.brandName} · {sponsor.coupon.store} 직원 PIN <strong>{sponsor.staffPin}</strong>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <span>
+                직원 PIN <strong>{report.staffPin}</strong>
+              </span>
+            )}
             <small>
               이 주소와 PIN은 협찬 매장 직원에게만 알려 주세요. 직원이 자기 기기에서 참여자의 쿠폰 번호를 넣으면 방문이 기록돼요.
+              {report.sponsors && report.sponsors.length > 1 && " 매장마다 PIN이 달라서, 각 매장은 자기 쿠폰만 확인할 수 있어요."}
             </small>
           </div>
         )}
