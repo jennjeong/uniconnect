@@ -12,6 +12,7 @@ import { StatsBento } from "../components/StatsBento"
 import { WorkCard } from "../components/WorkCard"
 import { formatFullDate, fromIsoDate, nextEvent, semesterLabel } from "../lib/date"
 import { percent } from "../lib/format"
+import { measureState } from "../lib/measurements"
 import { fullWon } from "../lib/sponsorships"
 import type { EventItem, Match, Metrics, NavLabel, Report, RequestStatus } from "../types"
 
@@ -242,7 +243,7 @@ export function DashboardPage({
                 <strong>{report?.eventName ?? "최근 행사"}</strong>
                 <span>{report ? formatFullDate(report.eventDate) : ""}</span>
               </div>
-              <span className="complete-badge">측정 완료</span>
+              {report && <span className="complete-badge">{measureState(report)}</span>}
             </div>
             <div className="chart-area">
               <div className="chart-y" aria-hidden="true">

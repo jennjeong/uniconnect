@@ -178,14 +178,49 @@ export type Sponsorship = {
   visits: number
   // Estimated store sales the sponsorship brought, in won.
   sales: number
+  // The student event it sponsored, whose measurement updates the counts.
+  eventId?: string
   // ROAS goal in percent, set before the sponsorship.
   targetRoas: number
 }
 
-// Performance report of the measured event, with the goals set before it.
+// What a student group sets before an event to measure it against.
+export type MeasurementGoals = {
+  expectedAudience: number
+  // Won a participant spends at the sponsor's store, for estimated sales.
+  averageSpend: number
+  // Reach beyond the venue (SNS and the like), added to the QR scans.
+  snsReach: number
+  // The sponsorship's value by kind, in won.
+  valueBreakdown: { type: string; value: number }[]
+  targets: Report["targets"]
+  // The sponsor's coupon participants get on the check-in page.
+  coupon: { store: string; title: string }
+}
+
+// One event's live measurement: its counts, the scans by hour, the latest
+// records and the goals. `code` is in the event's check-in address.
+export type Measurement = {
+  eventId: string
+  accountId: string
+  code: string
+  metrics: Metrics
+  hourlyScans: { hour: number; scans: number }[]
+  // Most recent records, oldest first.
+  log: MetricEntry[]
+  goals: MeasurementGoals
+}
+
+// Performance report of one event, worked out from its measurement and
+// the goals set before it.
 export type Report = {
+  eventId: string
+  // In the event's check-in address.
+  code: string
   eventName: string
   eventDate: string
+  // Last day of an event over several days.
+  eventEndDate?: string
   expectedAudience: number
   // Total sponsorship value in won, cash and in-kind.
   sponsorValue: number
@@ -202,6 +237,10 @@ export type Report = {
   }
   hourlyScans: { hour: number; scans: number }[]
   valueBreakdown: { type: string; value: number }[]
+  // Inputs the figures above come from.
+  averageSpend: number
+  snsReach: number
+  coupon: MeasurementGoals["coupon"]
 }
 
 // One side of a conversation: the student group or the brand.
@@ -263,8 +302,6 @@ export type Database = {
   proposals: Record<string, string[]>
   // Accounts whose events are shown to visitors who are not logged in.
   demoAccountIds: Record<Role, string>
-  metrics: Metrics
-  // Most recent measurement records, oldest first.
-  metricLog: MetricEntry[]
-  report: Report
+  // One per event that has been measured or opened for measuring.
+  measurements: Measurement[]
 }

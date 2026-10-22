@@ -2,16 +2,18 @@ import { useEffect, useState, type CSSProperties } from "react"
 
 import { api } from "../api"
 import { AnimatedNumber } from "../components/AnimatedNumber"
+import { EventPicker } from "../components/EventPicker"
 import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { Pill } from "../components/Pill"
 import { RevealTitle } from "../components/RevealText"
 import { metricInfo, metricKinds } from "../data/metrics"
-import { formatDateTime, formatFullDate } from "../lib/date"
+import { formatDateTime } from "../lib/date"
+import { measureState } from "../lib/measurements"
 import { percent } from "../lib/format"
 import { LayersGradient } from "../scenes/LayersGradient"
 import { INTERFERENCE } from "../scenes/shaders"
-import type { MetricEntry, MetricKind, Metrics, Report } from "../types"
+import type { EventMeasurement, MetricEntry, MetricKind, Metrics, Report } from "../types"
 
 // How often the counts and the activity feed refresh while this page is open.
 const refreshMs = 10_000
@@ -22,30 +24,38 @@ const delay = (seconds: number) => ({ "--reveal-delay": `${seconds}s` }) as CSSP
 // coupon and visit adding to the wave), then the funnel and the latest
 // participation as cards.
 export function MeasurementPage({
+  measurements,
   metrics,
   report,
-  onMetrics,
+  onSelect,
+  onUpdate,
   onOpenQr,
   onShowLog,
 }: {
+  // Every event of the group, to pick the one to measure.
+  measurements: EventMeasurement[]
   metrics: Metrics
   report: Report | null
-  // Receives fresh counts from each refresh.
-  onMetrics: (metrics: Metrics) => void
+  onSelect: (eventId: string) => void
+  // Receives fresh counts and report from each refresh.
+  onUpdate: (measurement: EventMeasurement) => void
   onOpenQr: () => void
   // Opens the participation history; without a kind, all of it.
   onShowLog: (kind?: MetricKind) => void
 }) {
   const [entries, setEntries] = useState<MetricEntry[]>([])
+  const eventId = report?.eventId
 
   useEffect(() => {
+    if (!eventId) return
     let cancelled = false
+    setEntries([])
     const load = () =>
-      Promise.all([api.metricLog(), api.metrics()])
+      Promise.all([api.measurementLog(eventId), api.measurement(eventId)])
         .then(([log, latest]) => {
           if (cancelled) return
           setEntries(log.entries)
-          onMetrics(latest.metrics)
+          onUpdate({ eventId, ...latest })
         })
         .catch(() => {
           // Keep showing the last data; the next refresh tries again.
@@ -56,7 +66,7 @@ export function MeasurementPage({
       cancelled = true
       window.clearInterval(timer)
     }
-  }, [onMetrics])
+  }, [eventId, onUpdate])
 
   const funnel: { kind: MetricKind; note: string }[] = [
     { kind: "scans", note: "현장에서 QR을 스캔했어요" },
@@ -78,15 +88,19 @@ export function MeasurementPage({
       />
 
       <div className="measure-bar">
-        {report && (
-          <span className="measure-event">
-            <Icon name="calendar" size={15} />
-            {report.eventName} · {formatFullDate(report.eventDate)}
-          </span>
+        {report ? (
+          <EventPicker measurements={measurements} onSelect={onSelect} value={report.eventId} />
+        ) : (
+          <span className="measure-event">행사를 등록하면 행사마다 현장 QR과 측정이 생겨요.</span>
         )}
-        <span className="live-badge">
-          <i aria-hidden="true" /> 실시간 집계 중
-        </span>
+        {report &&
+          (measureState(report) === "측정 중" ? (
+            <span className="live-badge">
+              <i aria-hidden="true" /> 실시간 집계 중
+            </span>
+          ) : (
+            <span className="measure-state">{measureState(report)}</span>
+          ))}
         {entries[0] && (
           <span className="measure-updated">마지막 참여 {formatDateTime(entries[0].at)}</span>
         )}

@@ -271,6 +271,7 @@ function removeAccount(database: Database, account: Account) {
     (offer) =>
       offer.fromAccountId !== account.id && (!account.groupId || offer.groupId !== account.groupId),
   )
+  database.measurements = database.measurements.filter((measurement) => measurement.accountId !== account.id)
   delete database.events[account.id]
   delete database.proposals[account.id]
   delete database.sponsorships[account.id]

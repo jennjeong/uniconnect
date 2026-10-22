@@ -20,6 +20,7 @@ import { Header } from "./layout/Header"
 import { NavMenu } from "./layout/NavMenu"
 import { todayIso } from "./lib/date"
 import { reportKpis, type KpiKey } from "./lib/kpis"
+import { defaultMeasurement } from "./lib/measurements"
 import { brandNotifications, studentNotifications } from "./lib/notifications"
 import { track } from "./lib/analytics"
 import { applyPageMeta, pageMeta } from "./lib/pageMeta"
@@ -60,13 +61,13 @@ import type {
   Account,
   Conversation,
   EventItem,
+  EventMeasurement,
   Match,
   MetricKind,
   Metrics,
   ModalName,
   NavLabel,
   ProfileDraft,
-  Report,
   Role,
   Session,
   SponsorOffer,
@@ -76,6 +77,8 @@ import type {
 
 // The screen to open with: the history entry's on a reload, else the address.
 const initialView = (history.state as HistoryEntry | null)?.view ?? readView()
+
+const noMetrics: Metrics = { scans: 0, coupons: 0, visits: 0 }
 
 function App() {
   const [view, setView] = useState<View>(initialView)
@@ -99,7 +102,10 @@ function App() {
   const [proposals, setProposals] = useState<string[]>([])
   // Answers from brands that replied to the student group's proposals.
   const [statuses, setStatuses] = useState<ProposalState["statuses"]>({})
-  const [metrics, setMetrics] = useState<Metrics>({ scans: 0, coupons: 0, visits: 0 })
+  // Each of the student group's events with its live counts and report, and
+  // the one the measurement pages show (the default one until picked).
+  const [measurements, setMeasurements] = useState<EventMeasurement[]>([])
+  const [measuredId, setMeasuredId] = useState<string | null>(null)
   // Brand catalog that student groups browse on the matches page.
   const [brands, setBrands] = useState<Match[]>([])
   // Brand side: the student group catalog, proposals received and results.
@@ -110,7 +116,6 @@ function App() {
   // The account's own listing (null until written) and its conversations.
   const [listing, setListing] = useState<Match | null>(null)
   const [conversations, setConversations] = useState<Conversation[]>([])
-  const [report, setReport] = useState<Report | null>(null)
   // Day the 내 행사 calendar opens on, such as a just-registered event's.
   const [eventsFocus, setEventsFocus] = useState<string | undefined>(undefined)
   // Which history or goal the open modal shows.
@@ -153,6 +158,10 @@ function App() {
     applyPageMeta(pageMeta(view, { role, page, detail: detailMatch, partnerName }))
   }, [view, role, page, detailMatch, partnerName])
   const pendingRequests = requests.filter((request) => request.status === "검토 중")
+  const measured =
+    measurements.find((item) => item.eventId === measuredId) ?? defaultMeasurement(measurements)
+  const metrics = measured?.metrics ?? noMetrics
+  const report = measured?.report ?? null
   const pendingOffers = offers.filter((offer) => offer.status === "검토 중")
   const confirmedRequests = requests.filter((request) => request.status === "수락")
 
@@ -296,20 +305,30 @@ function App() {
     }
   }, [accountId])
 
+  // The student group's events with their measurements, again whenever its
+  // calendar changes. Brands measure nothing of their own.
   useEffect(() => {
+    if (!authReady || role !== "학생단체") {
+      setMeasurements([])
+      return
+    }
     let cancelled = false
-    Promise.all([api.metrics(), api.report()])
-      .then(([metricResult, reportResult]) => {
-        if (cancelled) return
-        setMetrics(metricResult.metrics)
-        setReport(reportResult.report)
+    api
+      .measurements()
+      .then((result) => {
+        if (!cancelled) setMeasurements(result.measurements)
       })
       .catch(() => {
-        // Connection problems are already reported by the request above.
+        // Connection problems are already reported by the requests above.
       })
     return () => {
       cancelled = true
     }
+  }, [authReady, role, accountId, events])
+
+  // Fresh counts and report for one event, from the measurement page.
+  const updateMeasurement = useCallback((next: EventMeasurement) => {
+    setMeasurements((current) => current.map((item) => (item.eventId === next.eventId ? next : item)))
   }, [])
 
   // Shows a view as a new history entry (or in place of the current one),
@@ -762,9 +781,11 @@ function App() {
       case "성과 측정":
         return (
           <MeasurementPage
+            measurements={measurements}
             metrics={metrics}
             report={report}
-            onMetrics={setMetrics}
+            onSelect={setMeasuredId}
+            onUpdate={updateMeasurement}
             onOpenQr={() => setActiveModal("qr")}
             onShowLog={openLog}
           />
@@ -772,7 +793,9 @@ function App() {
       case "리포트":
         return (
           <ReportsPage
+            measurements={measurements}
             report={report}
+            onSelect={setMeasuredId}
             metrics={metrics}
             exporting={exporting}
             onDownload={saveReport}
@@ -979,15 +1002,18 @@ function App() {
       </Presence>
 
       {/* Each popup stays on screen for its closing animation. */}
-      <Presence show={activeModal === "metric-log"}>
-        <MetricLogModal
-          kind={logKind === "all" ? undefined : logKind}
-          total={
-            logKind === "all" ? metrics.scans + metrics.coupons + metrics.visits : metrics[logKind]
-          }
-          onClose={closeModal}
-        />
-      </Presence>
+      {report && (
+        <Presence show={activeModal === "metric-log"}>
+          <MetricLogModal
+            eventId={report.eventId}
+            kind={logKind === "all" ? undefined : logKind}
+            total={
+              logKind === "all" ? metrics.scans + metrics.coupons + metrics.visits : metrics[logKind]
+            }
+            onClose={closeModal}
+          />
+        </Presence>
+      )}
       {goal && (
         <Presence show={activeModal === "goal"}>
           <GoalModal kpi={goal} onClose={closeModal} />

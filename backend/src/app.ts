@@ -10,16 +10,16 @@ import { adminRouter } from "./routes/admin.js"
 import { analyticsRouter } from "./routes/analytics.js"
 import { authRouter } from "./routes/auth.js"
 import { brandsRouter } from "./routes/brands.js"
+import { checkInRouter } from "./routes/checkin.js"
 import { conversationsRouter } from "./routes/conversations.js"
 import { eventsRouter } from "./routes/events.js"
 import { groupsRouter } from "./routes/groups.js"
 import { inquiriesRouter } from "./routes/inquiries.js"
 import { matchesRouter } from "./routes/matches.js"
-import { metricsRouter } from "./routes/metrics.js"
+import { measurementsRouter } from "./routes/measurements.js"
 import { offersRouter } from "./routes/offers.js"
 import { profileRouter } from "./routes/profile.js"
 import { proposalsRouter } from "./routes/proposals.js"
-import { reportRouter } from "./routes/report.js"
 import { requestsRouter } from "./routes/requests.js"
 
 export function createApp() {
@@ -57,8 +57,8 @@ export function createApp() {
   app.use("/api/proposals", proposalsRouter)
   app.use("/api/requests", requestsRouter)
   app.use("/api/offers", offersRouter)
-  app.use("/api/metrics", metricsRouter)
-  app.use("/api/report", reportRouter)
+  app.use("/api/measurements", measurementsRouter)
+  app.use("/api/check-in", checkInRouter)
   app.use("/api/analytics", analyticsRouter)
   app.use("/api/profile", profileRouter)
   app.use("/api/conversations", conversationsRouter)
