@@ -4755,6 +4755,77 @@ button.nav-pill:hover {
   stroke-width: 2;
 }
 
+/* A brand's own campaign measured on site, at the end of 성과 분석
+   (components/CampaignMeasurement.tsx): three silver count tiles that open
+   their records, then the goals and the QR. */
+.campaign-measure {
+  padding: 56px 0 24px;
+}
+
+.campaign-measure-lead {
+  margin: 10px 0 0;
+  color: var(--ink-soft);
+  font-size: 15px;
+}
+
+.campaign-measure-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.campaign-measure-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px 22px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--silver-gradient);
+  box-shadow: var(--silver-ring);
+  color: var(--ink);
+  text-align: left;
+}
+
+.campaign-measure-tile:hover {
+  box-shadow: inset 0 0 0 1.5px var(--point);
+}
+
+.campaign-measure-tile span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.campaign-measure-tile strong {
+  color: var(--point-strong);
+  font-size: 32px;
+  font-weight: var(--weight-display);
+  line-height: 1.1;
+}
+
+.campaign-measure-tile small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.campaign-measure-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+@media (max-width: 720px) {
+  .campaign-measure-tiles {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Where a finished or coming event's measurement stands, beside the picker. */
 .measure-state {
   display: inline-flex;

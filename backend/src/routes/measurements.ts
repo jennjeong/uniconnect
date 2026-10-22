@@ -8,12 +8,14 @@ import { getDatabase, saveDatabase } from "../store.js"
 
 export const measurementsRouter = Router()
 
-// Group whose events to show: the logged-in student group, or the demo
-// group for visitors previewing the student side. Brands measure nothing.
+// Whose events to show: the logged-in account (a group's events, a brand's
+// campaigns), or for visitors the demo account of the side they preview
+// (?role=, the student side by default).
 function measurementOwner(req: Request) {
   const database = getDatabase()
-  if (req.account) return req.account.role === "학생단체" ? req.account : undefined
-  return database.accounts.find((account) => account.id === database.demoAccountIds.학생단체)
+  if (req.account) return req.account
+  const role = req.query.role === "브랜드" ? "브랜드" : "학생단체"
+  return database.accounts.find((account) => account.id === database.demoAccountIds[role])
 }
 
 // The owner's event with its measurement, created the first time it is opened.

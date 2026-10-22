@@ -152,12 +152,17 @@ export const api = {
       { method: "DELETE" },
     ),
 
-  measurements: () => request<{ measurements: EventMeasurement[] }>("/measurements"),
-  measurement: (eventId: string) =>
-    request<{ metrics: Metrics; report: Report }>(`/measurements/${encodeURIComponent(eventId)}`),
-  measurementLog: (eventId: string, kind?: MetricKind) =>
+  // `role` picks the demo side for visitors; the server ignores it once
+  // logged in.
+  measurements: (role: Role) =>
+    request<{ measurements: EventMeasurement[] }>("/measurements", { query: { role } }),
+  measurement: (eventId: string, role: Role = "학생단체") =>
+    request<{ metrics: Metrics; report: Report }>(`/measurements/${encodeURIComponent(eventId)}`, {
+      query: { role },
+    }),
+  measurementLog: (eventId: string, kind?: MetricKind, role: Role = "학생단체") =>
     request<{ entries: MetricEntry[] }>(`/measurements/${encodeURIComponent(eventId)}/log`, {
-      query: kind ? { kind } : {},
+      query: { role, ...(kind ? { kind } : {}) },
     }),
   saveGoals: (
     eventId: string,

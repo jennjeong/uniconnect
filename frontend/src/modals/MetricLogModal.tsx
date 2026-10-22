@@ -4,16 +4,18 @@ import { api, errorMessage } from "../api"
 import { Modal } from "../components/Modal"
 import { metricInfo } from "../data/metrics"
 import { formatDateTime } from "../lib/date"
-import type { MetricEntry, MetricKind } from "../types"
+import type { MetricEntry, MetricKind, Role } from "../types"
 
 // Recent participation records behind one measurement count, or all of them.
 export function MetricLogModal({
   eventId,
+  role,
   kind,
   total,
   onClose,
 }: {
   eventId: string
+  role: Role
   kind?: MetricKind
   total: number
   onClose: () => void
@@ -24,7 +26,7 @@ export function MetricLogModal({
   useEffect(() => {
     let cancelled = false
     api
-      .measurementLog(eventId, kind)
+      .measurementLog(eventId, kind, role)
       .then((result) => {
         if (!cancelled) setEntries(result.entries)
       })
@@ -34,7 +36,7 @@ export function MetricLogModal({
     return () => {
       cancelled = true
     }
-  }, [eventId, kind])
+  }, [eventId, kind, role])
 
   return (
     <Modal
