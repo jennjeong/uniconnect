@@ -78,6 +78,8 @@ test("pages load for every screen's address, and others answer 404", async () =>
     "/me/edit",
     "/messages/abc",
     "/check-in/20261012",
+    "/terms",
+    "/privacy",
   ]
   for (const route of screens) {
     assert.deepEqual(await page(route), { status: 200, html: true }, route)
@@ -761,4 +763,48 @@ test("sign-up codes stay off the response unless turned on", () => {
   assert.equal(emailCodesExposed({ NODE_ENV: "development" }), false)
   assert.equal(emailCodesExposed({ EXPOSE_EMAIL_CODES: "false" }), false)
   assert.equal(emailCodesExposed({ EXPOSE_EMAIL_CODES: "true" }), true)
+})
+
+test("a forgotten password is reset with a code sent to the account's email", async () => {
+  const email = "hello@afternoon-coffee.kr"
+  const sendCode = async () => {
+    const sent = await call("POST", "/auth/password-reset/code", { email })
+    assert.equal(sent.status, 200)
+    assert.match(sent.data.devCode, /^\d{6}$/)
+    return sent.data.devCode as string
+  }
+
+  const unknown = await call("POST", "/auth/password-reset/code", { email: "nobody@nowhere.co.kr" })
+  assert.equal(unknown.status, 404)
+
+  const before = await login("브랜드")
+  const code = await sendCode()
+  const wrong = code === "000000" ? "111111" : "000000"
+  // A sign-up check cannot use a reset code.
+  assert.equal((await call("POST", "/auth/email-code/verify", { email, code })).status, 400)
+  const short = await call("POST", "/auth/password-reset", { email, code, password: "short" })
+  assert.equal(short.status, 400)
+  const wrongCode = await call("POST", "/auth/password-reset", { email, code: wrong, password: "new-pass-123" })
+  assert.equal(wrongCode.status, 400)
+
+  const done = await call("POST", "/auth/password-reset", { email, code, password: "new-pass-123" })
+  assert.equal(done.status, 200)
+  assert.equal(done.data.account.email, email)
+  assert.equal(done.data.account.passwordHash, undefined)
+  // Sessions from before the reset end; the new one works.
+  assert.equal((await call("GET", "/auth/me", undefined, before)).status, 401)
+  assert.equal((await call("GET", "/auth/me", undefined, done.data.token)).status, 200)
+  // The code is used up.
+  assert.equal(
+    (await call("POST", "/auth/password-reset", { email, code, password: "other-pass-123" })).status,
+    400,
+  )
+  const logIn = (password: string) => call("POST", "/auth/login", { role: "브랜드", email, password })
+  assert.equal((await logIn(DEMO_PASSWORD)).status, 401)
+  assert.equal((await logIn("new-pass-123")).status, 200)
+
+  // Back to the demo password for anything that runs later.
+  const again = await sendCode()
+  const restored = await call("POST", "/auth/password-reset", { email, code: again, password: DEMO_PASSWORD })
+  assert.equal(restored.status, 200)
 })

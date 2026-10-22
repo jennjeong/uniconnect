@@ -12,6 +12,7 @@ import {
 import { Loader } from "./components/Loader"
 import { Presence } from "./components/Presence"
 import { Toast } from "./components/Toast"
+import type { LegalKind } from "./data/legal"
 import { pageFor } from "./data/navigation"
 import { useNotice } from "./hooks/useNotice"
 import { Footer } from "./layout/Footer"
@@ -28,6 +29,7 @@ import { readView, roleOfPage, viewPath, type HistoryEntry, type View } from "./
 import { installSwipeNavigation, noteHistoryEnd } from "./lib/swipe"
 import { GoalModal } from "./modals/GoalModal"
 import { LoginModal } from "./modals/LoginModal"
+import { ResetPasswordModal } from "./modals/ResetPasswordModal"
 import { MetricLogModal } from "./modals/MetricLogModal"
 import { QrModal } from "./modals/QrModal"
 import { ReportModal } from "./modals/ReportModal"
@@ -38,6 +40,7 @@ import { DashboardPage } from "./pages/DashboardPage"
 import { EventCreatePage } from "./pages/EventCreatePage"
 import { EventsPage } from "./pages/EventsPage"
 import { FaqPage } from "./pages/FaqPage"
+import { LegalPage } from "./pages/LegalPage"
 import { GroupsPage } from "./pages/GroupsPage"
 import { InboxPage } from "./pages/InboxPage"
 import { ChatPage } from "./pages/ChatPage"
@@ -86,6 +89,8 @@ function App() {
   )
   // Role pre-selected when the login or sign-up form opens.
   const [authRole, setAuthRole] = useState<Role>("학생단체")
+  // The email the login form had when 비밀번호 찾기 opened.
+  const [resetEmail, setResetEmail] = useState("")
   const [matches, setMatches] = useState<Match[]>([])
   const [events, setEvents] = useState<EventItem[]>([])
   const [proposals, setProposals] = useState<string[]>([])
@@ -331,6 +336,8 @@ function App() {
   const openMessages = () => go({ page, messages: true })
 
   const openFaq = () => go({ page, faq: true })
+
+  const openLegal = (legal: LegalKind) => go({ page, legal })
 
   // Keeps the conversation list (latest message first) in step with an open
   // conversation.
@@ -641,6 +648,7 @@ function App() {
   const renderPage = (): ReactNode => {
     if (view.missing) return <NotFoundPage onNavigate={navigate} role={role} />
     if (view.faq) return <FaqPage account={account} onLogin={() => openAuth("login")} />
+    if (view.legal) return <LegalPage kind={view.legal} onSwitch={(legal) => openLegal(legal)} />
     if (creating !== null) {
       return (
         <EventCreatePage
@@ -858,7 +866,9 @@ function App() {
               ? "missing"
               : view.faq
                 ? "faq"
-                : creating !== null
+                : view.legal
+                  ? `legal-${view.legal}`
+                  : creating !== null
               ? "create"
               : profileOpen
                 ? `profile-${view.profile}`
@@ -903,6 +913,7 @@ function App() {
           onOpenMessages={openMessages}
           onOpenProfile={openProfile}
           onOpenFaq={openFaq}
+          onOpenLegal={openLegal}
           onEditProfile={() => go({ page, profile: "edit" })}
           onLogin={() => openAuth("login")}
           onSignup={() => openAuth("signup")}
@@ -967,6 +978,21 @@ function App() {
             startSession(session, `${session.account.name} 계정으로 로그인했어요.`)
           }
           onSignup={(next) => openAuth("signup", next)}
+          onForgot={(email) => {
+            setResetEmail(email)
+            setActiveModal("reset")
+          }}
+        />
+      </Presence>
+      <Presence show={activeModal === "reset"}>
+        <ResetPasswordModal
+          initialEmail={resetEmail}
+          onClose={closeModal}
+          onReset={(session) =>
+            startSession(session, "새 비밀번호로 바꾸고 로그인했어요.")
+          }
+          onLogin={() => openAuth("login")}
+          onNotice={showNotice}
         />
       </Presence>
       <Presence show={activeModal === "signup"}>

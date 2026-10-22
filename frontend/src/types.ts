@@ -199,6 +199,7 @@ export type ModalName =
   | "qr"
   | "login"
   | "signup"
+  | "reset"
   | "metric-log"
   | "goal"
   | "ask"

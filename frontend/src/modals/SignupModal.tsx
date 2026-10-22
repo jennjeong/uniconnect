@@ -5,6 +5,7 @@ import { Modal } from "../components/Modal"
 import { RolePicker } from "../components/RolePicker"
 import { accountTypes } from "../data/roles"
 import { formatRemaining } from "../lib/format"
+import { viewPath } from "../lib/route"
 import type { Role, Session } from "../types"
 
 const emptyDraft = (role: Role) => ({
@@ -289,7 +290,17 @@ export function SignupModal({
             type="checkbox"
             onChange={(event) => update({ agreed: event.target.checked })}
           />
-          <span>서비스 이용약관과 개인정보 처리방침에 동의합니다.</span>
+          {/* The documents open in a new tab, so the form keeps what was typed. */}
+          <span>
+            <a href={viewPath({ page: "대시보드", legal: "terms" })} rel="noopener" target="_blank">
+              서비스 이용약관
+            </a>
+            과{" "}
+            <a href={viewPath({ page: "대시보드", legal: "privacy" })} rel="noopener" target="_blank">
+              개인정보 처리방침
+            </a>
+            에 동의합니다.
+          </span>
         </label>
         {error && (
           <p className="form-error" role="alert">

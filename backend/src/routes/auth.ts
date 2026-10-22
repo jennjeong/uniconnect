@@ -10,7 +10,7 @@ import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { accountTypes, parseRole, text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
-import type { Account, EmailCode, PublicAccount } from "../types.js"
+import type { Account, EmailCode, PublicAccount, Role } from "../types.js"
 
 export const authRouter = Router()
 
@@ -54,27 +54,20 @@ function startSession(accountId: string) {
   return token
 }
 
-// Step 1 of sign-up: send a 6-digit code to a school (student group) or
-// company (sponsor) address.
-authRouter.post("/email-code", async (req, res) => {
-  codesPerClient.take(clientKey(req))
-  const role = parseRole(req.body?.role)
-  const email = normalizeEmail(req.body?.email)
-  const ruleError = emailRuleError(role, email)
-  if (ruleError) throw new HttpError(400, ruleError)
+type CodePurpose = EmailCode["purpose"]
 
-  const database = getDatabase()
-  if (database.accounts.some((account) => account.email === email)) {
-    throw new HttpError(409, "이미 가입된 이메일이에요. 로그인해 주세요.")
-  }
-
+// Sends a new 6-digit code to the address, for signing up or (with
+// "reset") for a new password, and answers with when it expires.
+async function issueCode(email: string, role: Role, purpose: CodePurpose) {
   codesPerEmail.take(email)
-
+  const database = getDatabase()
   const code = String(randomInt(100000, 1000000))
   const expiresAt = Date.now() + config.emailCodeTtlMs
   // Wrong guesses carry over to the new code for a while, so asking again
   // does not buy another round of guesses.
-  const previous = database.emailCodes.find((entry) => entry.email === email && !entry.verifiedUntil)
+  const previous = database.emailCodes.find(
+    (entry) => entry.email === email && entry.purpose === purpose && !entry.verifiedUntil,
+  )
   const carried =
     previous && (previous.firstSentAt ?? 0) + config.emailCodeAttemptWindowMs > Date.now()
       ? previous
@@ -89,21 +82,18 @@ authRouter.post("/email-code", async (req, res) => {
     expiresAt,
     attempts: carried?.attempts ?? 0,
     firstSentAt: carried?.firstSentAt ?? Date.now(),
+    ...(purpose ? { purpose } : {}),
   })
   await saveDatabase()
   await sendVerificationCode(email, code)
+  return { email, expiresAt, ...(config.exposeEmailCodes ? { devCode: code } : {}) }
+}
 
-  res.json({ email, expiresAt, ...(config.exposeEmailCodes ? { devCode: code } : {}) })
-})
-
-// Step 2: check the code and hand back a token that proves the email is verified.
-authRouter.post("/email-code/verify", async (req, res) => {
-  verifyPerClient.take(clientKey(req))
-  const email = normalizeEmail(req.body?.email)
-  const code = text(req.body?.code)
-  const database = getDatabase()
-  const entry = database.emailCodes.find((item) => item.email === email)
-
+// The code entry when `code` is right; otherwise counts the guess and throws.
+async function checkCode(email: string, code: string, purpose: CodePurpose) {
+  const entry = getDatabase().emailCodes.find(
+    (item) => item.email === email && item.purpose === purpose,
+  )
   if (!entry) throw new HttpError(400, "인증번호를 먼저 받아 주세요.")
   if (entry.expiresAt < Date.now()) {
     throw new HttpError(400, "인증 시간이 지났어요. 인증번호를 다시 받아 주세요.")
@@ -116,6 +106,31 @@ authRouter.post("/email-code/verify", async (req, res) => {
     await saveDatabase()
     throw new HttpError(400, "인증번호가 일치하지 않아요.")
   }
+  return entry
+}
+
+// Step 1 of sign-up: send a 6-digit code to a school (student group) or
+// company (sponsor) address.
+authRouter.post("/email-code", async (req, res) => {
+  codesPerClient.take(clientKey(req))
+  const role = parseRole(req.body?.role)
+  const email = normalizeEmail(req.body?.email)
+  const ruleError = emailRuleError(role, email)
+  if (ruleError) throw new HttpError(400, ruleError)
+
+  const database = getDatabase()
+  if (database.accounts.some((account) => account.email === email)) {
+    throw new HttpError(409, "이미 가입된 이메일이에요. 로그인해 주세요.")
+  }
+
+  res.json(await issueCode(email, role, undefined))
+})
+
+// Step 2: check the code and hand back a token that proves the email is verified.
+authRouter.post("/email-code/verify", async (req, res) => {
+  verifyPerClient.take(clientKey(req))
+  const email = normalizeEmail(req.body?.email)
+  const entry = await checkCode(email, text(req.body?.code), undefined)
 
   entry.verificationToken = randomBytes(24).toString("hex")
   entry.verifiedUntil = Date.now() + config.verificationTtlMs
@@ -178,6 +193,41 @@ authRouter.post("/signup", async (req, res) => {
   await saveDatabase()
 
   res.status(201).json({ token, account: toPublic(account) })
+})
+
+// Forgotten password, step 1: a code to the address the account signed up
+// with.
+authRouter.post("/password-reset/code", async (req, res) => {
+  codesPerClient.take(clientKey(req))
+  const email = normalizeEmail(req.body?.email)
+  if (!email) throw new HttpError(400, "가입한 이메일을 입력해 주세요.")
+  const account = getDatabase().accounts.find((item) => item.email === email)
+  // Sign-up already says whether an address is taken, so saying it here
+  // gives nothing new away.
+  if (!account) throw new HttpError(404, "가입된 이메일이 아니에요. 이메일을 확인하거나 회원가입해 주세요.")
+  res.json(await issueCode(email, account.role, "reset"))
+})
+
+// Step 2: the right code sets the new password, ends every session the
+// account had and logs it in here.
+authRouter.post("/password-reset", async (req, res) => {
+  verifyPerClient.take(clientKey(req))
+  const email = normalizeEmail(req.body?.email)
+  const password = String(req.body?.password ?? "")
+  // Checked before the code, so a short password costs no guess.
+  if (password.length < 8) throw new HttpError(400, "비밀번호는 8자 이상이어야 해요.")
+  const entry = await checkCode(email, text(req.body?.code), "reset")
+
+  const database = getDatabase()
+  const account = database.accounts.find((item) => item.email === email)
+  if (!account) throw new HttpError(404, "가입된 이메일이 아니에요.")
+  account.passwordHash = await hashPassword(password)
+  database.emailCodes = database.emailCodes.filter((item) => item !== entry)
+  database.sessions = database.sessions.filter((session) => session.accountId !== account.id)
+  loginFailures.reset(`${clientKey(req)} ${email}`)
+  const token = startSession(account.id)
+  await saveDatabase()
+  res.json({ token, account: toPublic(account) })
 })
 
 authRouter.post("/login", async (req, res) => {
