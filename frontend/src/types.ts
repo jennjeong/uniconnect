@@ -23,7 +23,9 @@ export type Match = {
   industry: Industry
   logo?: string
   offer: string
+  // Match for the account browsing, with the reasons that count most.
   score: number
+  reasons?: string[]
   tags: string[]
   // Sponsorships with student groups this semester (brand catalog only).
   popularity?: number

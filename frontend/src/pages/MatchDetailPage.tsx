@@ -87,6 +87,14 @@ export function MatchDetailPage({
                 {group && match.school ? `${match.school} · ${match.category}` : match.category}
               </span>
               <RevealTitle className="banner-title">{match.name}</RevealTitle>
+              {match.reasons && match.reasons.length > 0 && (
+                <p className="banner-reasons">
+                  <span>일치율 {match.score}%</span>
+                  {match.reasons.map((reason) => (
+                    <span key={reason}>{reason}</span>
+                  ))}
+                </p>
+              )}
             </div>
           </div>
           <div className="banner-bottom">
