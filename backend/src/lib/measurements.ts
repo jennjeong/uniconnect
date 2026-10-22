@@ -1,6 +1,7 @@
 import { randomBytes, randomUUID } from "node:crypto"
 
 import { HttpError } from "./errors.js"
+import { sponsorTypes, text } from "./validation.js"
 import type {
   Database,
   EventItem,
@@ -47,6 +48,58 @@ export function defaultGoals(event: EventItem): MeasurementGoals {
       roas: 150,
     },
     coupon: { store: "협찬 매장", title: "참여자 전용 혜택" },
+  }
+}
+
+// "예상 인원은", "협찬 가치는": 은 after a final consonant.
+function topic(label: string) {
+  const syllable = label.charCodeAt(label.length - 1) - 0xac00
+  return `${label}${syllable >= 0 && syllable < 11172 && syllable % 28 !== 0 ? "은" : "는"}`
+}
+
+// A whole number from `min` to `max`, or a Korean error naming the field.
+function wholeNumber(value: unknown, label: string, max: number, min = 0) {
+  const number = typeof value === "number" ? value : Number(String(value ?? "").replace(/,/g, ""))
+  if (!Number.isInteger(number) || number < min || number > max) {
+    const range = `${min.toLocaleString("ko-KR")}부터 ${max.toLocaleString("ko-KR")}까지`
+    throw new HttpError(400, `${topic(label)} ${range}의 숫자로 적어 주세요.`)
+  }
+  return number
+}
+
+// Goals the group sets from the measurement page, checked field by field.
+export function parseGoals(body: unknown): MeasurementGoals {
+  const input = (body ?? {}) as Record<string, unknown>
+  const targets = (input.targets ?? {}) as Record<string, unknown>
+  const coupon = (input.coupon ?? {}) as Record<string, unknown>
+  const rows = (Array.isArray(input.valueBreakdown) ? input.valueBreakdown : []) as Record<string, unknown>[]
+  const valueBreakdown = rows
+    .map((row) => ({ type: text(row?.type), value: wholeNumber(row?.value, "협찬 가치", 1_000_000_000) }))
+    .filter((row) => row.value > 0)
+  if (valueBreakdown.length > 6) throw new HttpError(400, "협찬 가치는 6개까지 적을 수 있어요.")
+  if (valueBreakdown.some((row) => !sponsorTypes.includes(row.type))) {
+    throw new HttpError(400, "협찬 종류를 골라 주세요.")
+  }
+  const store = text(coupon.store)
+  const title = text(coupon.title)
+  if (!store || store.length > 30 || !title || title.length > 30) {
+    throw new HttpError(400, "쿠폰의 매장과 혜택을 30자 이하로 적어 주세요.")
+  }
+  return {
+    expectedAudience: wholeNumber(input.expectedAudience, "예상 인원", 100_000, 1),
+    averageSpend: wholeNumber(input.averageSpend, "1인 예상 지출", 10_000_000),
+    snsReach: wholeNumber(input.snsReach, "현장 밖 도달", 10_000_000),
+    valueBreakdown,
+    targets: {
+      reach: wholeNumber(targets.reach, "목표 도달", 10_000_000),
+      scans: wholeNumber(targets.scans, "목표 QR 스캔", 1_000_000),
+      coupons: wholeNumber(targets.coupons, "목표 쿠폰 수령", 1_000_000),
+      visits: wholeNumber(targets.visits, "목표 매장 방문", 1_000_000),
+      qrRate: wholeNumber(targets.qrRate, "목표 QR 참여율", 100),
+      visitRate: wholeNumber(targets.visitRate, "목표 방문 전환율", 100),
+      roas: wholeNumber(targets.roas, "목표 ROAS", 10_000),
+    },
+    coupon: { store, title },
   }
 }
 

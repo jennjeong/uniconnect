@@ -2,7 +2,8 @@ import type { Request } from "express"
 import { Router } from "express"
 
 import { HttpError } from "../lib/errors.js"
-import { buildReport, ensureMeasurement, parseKind } from "../lib/measurements.js"
+import { buildReport, ensureMeasurement, parseGoals, parseKind } from "../lib/measurements.js"
+import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 
 export const measurementsRouter = Router()
@@ -57,4 +58,16 @@ measurementsRouter.get("/:eventId/log", async (req, res) => {
     .slice(-50)
     .reverse()
   res.json({ entries })
+})
+
+// The group sets the event's goals: expected audience, average spend, reach
+// beyond the venue, the sponsorship's value, targets and the coupon. Only
+// the logged-in group that owns the event can.
+measurementsRouter.put("/:eventId/goals", async (req, res) => {
+  requireAccount(req)
+  const goals = parseGoals(req.body)
+  const { measurement, event } = await ownedMeasurement(req)
+  measurement.goals = goals
+  await saveDatabase()
+  res.json({ metrics: measurement.metrics, report: buildReport(measurement, event) })
 })

@@ -30,6 +30,7 @@ export function MeasurementPage({
   onSelect,
   onUpdate,
   onOpenQr,
+  onOpenGoals,
   onShowLog,
 }: {
   // Every event of the group, to pick the one to measure.
@@ -40,6 +41,7 @@ export function MeasurementPage({
   // Receives fresh counts and report from each refresh.
   onUpdate: (measurement: EventMeasurement) => void
   onOpenQr: () => void
+  onOpenGoals: () => void
   // Opens the participation history; without a kind, all of it.
   onShowLog: (kind?: MetricKind) => void
 }) {
@@ -81,9 +83,14 @@ export function MeasurementPage({
         title="현장 반응을 실시간으로 측정해요"
         description="고유 QR과 쿠폰 데이터를 행사 성과로 안전하게 집계합니다."
         actions={
-          <Pill arrow="up-right" disabled={!report} onClick={onOpenQr}>
-            현장 QR 열기
-          </Pill>
+          <>
+            <Pill disabled={!report} onClick={onOpenGoals} variant="outline">
+              목표 설정
+            </Pill>
+            <Pill arrow="up-right" disabled={!report} onClick={onOpenQr}>
+              현장 QR 열기
+            </Pill>
+          </>
         }
       />
 

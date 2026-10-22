@@ -950,3 +950,42 @@ test("a brand's offer reaches the student group, and the answer comes back", asy
   const declined = await answer("decline", student, "offer-freshon")
   assert.equal(declined.data.offer.status, "거절")
 })
+
+test("a student group sets its event's goals, and the report follows", async () => {
+  const goals = {
+    expectedAudience: 200,
+    averageSpend: 12000,
+    snsReach: 500,
+    valueBreakdown: [
+      { type: "현금", value: 300000 },
+      { type: "제품", value: "100,000" },
+      { type: "서비스", value: 0 },
+    ],
+    targets: { reach: 900, scans: 150, coupons: 100, visits: 40, qrRate: 70, visitRate: 30, roas: 160 },
+    coupon: { store: "공연장 매점", title: "음료 1잔 무료" },
+  }
+  const route = "/measurements/event-muse-concert/goals"
+  assert.equal((await call("PUT", route, goals)).status, 401)
+  const brand = await login("브랜드")
+  assert.equal((await call("PUT", route, goals, brand)).status, 404)
+
+  const student = await login("학생단체")
+  const bad = await call("PUT", route, { ...goals, expectedAudience: 0 }, student)
+  assert.equal(bad.status, 400)
+  assert.match(bad.data.error, /예상 인원은/)
+  const badType = { ...goals, valueBreakdown: [{ type: "주식", value: 1000 }] }
+  assert.equal((await call("PUT", route, badType, student)).status, 400)
+  assert.equal((await call("PUT", route, { ...goals, coupon: { store: "", title: "x" } }, student)).status, 400)
+
+  const saved = await call("PUT", route, goals, student)
+  assert.equal(saved.status, 200)
+  const { metrics, report } = saved.data
+  assert.equal(report.expectedAudience, 200)
+  assert.equal(report.sponsorValue, 400000)
+  assert.deepEqual(report.valueBreakdown.map((part: { type: string }) => part.type), ["현금", "제품"])
+  assert.equal(report.reach, metrics.scans + 500)
+  assert.equal(report.roas, Math.round(((metrics.visits * 12000) / 400000) * 100))
+  assert.equal(report.targets.roas, 160)
+  const code = report.code as string
+  assert.equal((await call("GET", `/check-in/${code}`)).data.coupon.title, "음료 1잔 무료")
+})

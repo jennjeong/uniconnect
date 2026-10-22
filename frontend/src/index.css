@@ -5920,6 +5920,69 @@ button.nav-pill:hover {
   text-underline-offset: 2px;
 }
 
+/* An event's goals (modals/GoalsModal.tsx): groups of fields under small
+   headings, the sponsorship's value as rows of kind, amount and remove. */
+.goals-form fieldset {
+  margin: 0;
+  padding: 0 0 18px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.goals-form fieldset + fieldset {
+  padding-top: 18px;
+}
+
+.goals-form legend {
+  padding: 0;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: var(--weight-label);
+}
+
+.goals-form .field-hint {
+  display: block;
+  margin-top: 8px;
+}
+
+.goals-value-row {
+  display: grid;
+  grid-template-columns: 96px 1fr 40px;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.goals-remove,
+.goals-add {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-weight: var(--weight-label);
+}
+
+.goals-remove {
+  border-radius: var(--radius-sm);
+  font-size: 20px;
+}
+
+.goals-remove:hover {
+  background: var(--fill);
+  color: var(--red);
+}
+
+.goals-add {
+  margin-top: 12px;
+  padding: 0;
+  color: var(--point-strong);
+  font-size: 13px;
+}
+
+@media (max-width: 480px) {
+  .goals-targets {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Under the login password, the way to a new one (modals/ResetPasswordModal.tsx). */
 .forgot-row {
   margin: 10px 0 0;
