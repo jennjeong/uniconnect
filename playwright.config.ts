@@ -12,6 +12,10 @@ const dataFile = path.join(mkdtempSync(path.join(tmpdir(), "uniconnect-e2e-")), 
 export default defineConfig({
   testDir: "e2e",
   workers: 1,
+  // GitHub's runners draw the 3D scenes without a graphics card, several
+  // times slower than a laptop.
+  timeout: process.env.CI ? 120_000 : 30_000,
+  expect: { timeout: process.env.CI ? 20_000 : 5_000 },
   reporter: process.env.CI ? "github" : "list",
   use: {
     baseURL: `http://localhost:${port}`,
