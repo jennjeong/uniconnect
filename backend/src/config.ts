@@ -31,6 +31,10 @@ export const config = {
   // the X-Admin-Token header). Those routes stay closed while it is unset.
   adminToken: process.env.ADMIN_TOKEN,
   trustProxy: trustProxy(process.env.TRUST_PROXY),
+  // Sends verification codes by email through Resend once both are set
+  // (lib/mailer.ts); MAIL_FROM is like "uniconnect <no-reply@example.com>".
+  resendApiKey: process.env.RESEND_API_KEY,
+  mailFrom: process.env.MAIL_FROM,
   // Only needed when the frontend is hosted on another origin.
   corsOrigin: process.env.CORS_ORIGIN,
   emailCodeTtlMs: 3 * 60 * 1000,
