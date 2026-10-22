@@ -142,6 +142,9 @@ export type Sponsorship = {
   sales: number
   // ROAS goal in percent.
   targetRoas: number
+  // Other brands sponsoring the same event, whose counts are the whole
+  // event's rather than this brand's share.
+  sharedWith?: number
 }
 
 export type ChatMessage = {

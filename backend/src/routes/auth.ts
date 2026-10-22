@@ -7,6 +7,7 @@ import { HttpError } from "../lib/errors.js"
 import { sendVerificationCode } from "../lib/mailer.js"
 import { hashPassword, verifyPassword } from "../lib/password.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
+import { freezeSponsorships } from "../lib/sponsorships.js"
 import { accountTypes, parseRole, text } from "../lib/validation.js"
 import { hashToken, requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -42,6 +43,11 @@ const loginFailures = createRateLimit({
 const keepUntil = (entry: EmailCode) =>
   entry.verifiedUntil ??
   Math.max(entry.expiresAt, (entry.firstSentAt ?? 0) + config.emailCodeAttemptWindowMs)
+
+// The demo accounts' password is published for everyone trying the demo,
+// so nobody may change it, delete them or reset it.
+const isDemo = (account: Account) => Object.values(getDatabase().demoAccountIds).includes(account.id)
+const demoLocked = "데모 계정은 비밀번호를 바꾸거나 탈퇴할 수 없어요."
 
 const toPublic = ({ passwordHash, termsAgreedAt, ...account }: Account): PublicAccount =>
   account
@@ -86,7 +92,9 @@ async function issueCode(email: string, role: Role, purpose: CodePurpose) {
   })
   await saveDatabase()
   await sendVerificationCode(email, code, purpose ?? "signup")
-  return { email, expiresAt, ...(config.exposeEmailCodes ? { devCode: code } : {}) }
+  // Only sign-up codes are shown for the demo. A reset code on screen would
+  // let anyone take over any account by its email.
+  return { email, expiresAt, ...(config.exposeEmailCodes && !purpose ? { devCode: code } : {}) }
 }
 
 // The code entry when `code` is right; otherwise counts the guess and throws.
@@ -207,6 +215,7 @@ authRouter.post("/password-reset/code", async (req, res) => {
   // Sign-up already says whether an address is taken, so saying it here
   // gives nothing new away.
   if (!account) throw new HttpError(404, "가입된 이메일이 아니에요. 이메일을 확인하거나 회원가입해 주세요.")
+  if (isDemo(account)) throw new HttpError(403, demoLocked)
   res.json(await issueCode(email, account.role, "reset"))
 })
 
@@ -223,6 +232,7 @@ authRouter.post("/password-reset", async (req, res) => {
   const database = getDatabase()
   const account = database.accounts.find((item) => item.email === email)
   if (!account) throw new HttpError(404, "가입된 이메일이 아니에요.")
+  if (isDemo(account)) throw new HttpError(403, demoLocked)
   account.passwordHash = await hashPassword(password)
   database.emailCodes = database.emailCodes.filter((item) => item !== entry)
   database.sessions = database.sessions.filter((session) => session.accountId !== account.id)
@@ -237,12 +247,17 @@ authRouter.post("/login", async (req, res) => {
   const email = normalizeEmail(req.body?.email)
   const password = String(req.body?.password ?? "")
   const limitKey = `${clientKey(req)} ${email}`
-  loginFailures.check(limitKey)
+  // Counted before the slow password check, so attempts sent all at once
+  // cannot slip past the limit; a success clears the count.
+  loginFailures.take(limitKey)
   const database = getDatabase()
   const account = database.accounts.find((item) => item.email === email)
+  const hashBefore = account?.passwordHash
 
-  if (!account || !(await verifyPassword(password, account.passwordHash))) {
-    loginFailures.hit(limitKey)
+  const matches = account && hashBefore ? await verifyPassword(password, hashBefore) : false
+  // A reset, change or deletion during the check wins: the old password no
+  // longer opens a session.
+  if (!account || !matches || account.passwordHash !== hashBefore || !database.accounts.includes(account)) {
     throw new HttpError(401, "이메일 또는 비밀번호가 올바르지 않아요.")
   }
   loginFailures.reset(limitKey)
@@ -273,6 +288,11 @@ function removeAccount(database: Database, account: Account) {
     (offer) =>
       offer.fromAccountId !== account.id && (!account.groupId || offer.groupId !== account.groupId),
   )
+  // Sponsors keep the results of this account's events as they stand.
+  freezeSponsorships(
+    database,
+    new Set(database.measurements.filter((item) => item.accountId === account.id).map((item) => item.eventId)),
+  )
   database.measurements = database.measurements.filter((measurement) => measurement.accountId !== account.id)
   delete database.events[account.id]
   delete database.proposals[account.id]
@@ -294,16 +314,14 @@ function removeAccount(database: Database, account: Account) {
 authRouter.delete("/account", async (req, res) => {
   const account = requireAccount(req)
   const database = getDatabase()
-  if (Object.values(database.demoAccountIds).includes(account.id)) {
-    throw new HttpError(403, "데모 계정은 탈퇴할 수 없어요.")
-  }
+  if (isDemo(account)) throw new HttpError(403, "데모 계정은 탈퇴할 수 없어요.")
   const limitKey = `${clientKey(req)} ${account.email}`
-  loginFailures.check(limitKey)
+  loginFailures.take(limitKey)
   if (!(await verifyPassword(String(req.body?.password ?? ""), account.passwordHash))) {
-    loginFailures.hit(limitKey)
     // Not 401, which the app reads as a session that has run out.
     throw new HttpError(400, "비밀번호가 올바르지 않아요.")
   }
+  loginFailures.reset(limitKey)
   removeAccount(database, account)
   await saveDatabase()
   res.status(204).end()
@@ -313,15 +331,16 @@ authRouter.delete("/account", async (req, res) => {
 // are logged out; this one stays logged in.
 authRouter.post("/password", async (req, res) => {
   const account = requireAccount(req)
-  const limitKey = `${clientKey(req)} ${account.email}`
-  loginFailures.check(limitKey)
+  if (isDemo(account)) throw new HttpError(403, demoLocked)
   const next = String(req.body?.next ?? "")
   if (next.length < 8) throw new HttpError(400, "새 비밀번호는 8자 이상이어야 해요.")
+  const limitKey = `${clientKey(req)} ${account.email}`
+  loginFailures.take(limitKey)
   if (!(await verifyPassword(String(req.body?.current ?? ""), account.passwordHash))) {
-    loginFailures.hit(limitKey)
     // Not 401, which the app reads as a session that has run out.
     throw new HttpError(400, "지금 비밀번호가 올바르지 않아요.")
   }
+  loginFailures.reset(limitKey)
   account.passwordHash = await hashPassword(next)
   const keep = req.sessionToken ? hashToken(req.sessionToken) : ""
   getDatabase().sessions = getDatabase().sessions.filter(

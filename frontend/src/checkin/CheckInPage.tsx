@@ -7,10 +7,14 @@ import { formatFullDate } from "../lib/date"
 import type { CheckInInfo } from "../types"
 
 // What this phone has done at the event, kept so a refresh doesn't count
-// twice; `pass` lets the server count its coupon and visit once each.
+// twice; `pass` lets the server count its coupon once, and `coupon` is the
+// number the store staff confirm the visit with on their own device.
 type CheckIn = { participant: string; pass?: string; coupon?: string; visited?: boolean }
 
 const couponTerms = "발급일부터 7일 동안 쓸 수 있어요"
+
+// How often the phone asks whether the store has confirmed the visit.
+const visitCheckMs = 3_000
 
 const storageKey = (code: string) => `uniconnect-checkin-${code}`
 
@@ -31,26 +35,27 @@ function writeCheckIn(code: string, checkIn: CheckIn | null) {
   }
 }
 
-// "참여자 #96" → "UC-1012-0096"
-const couponCode = (code: string, participant: string) =>
-  `UC-${code.slice(4)}-${(participant.match(/\d+/)?.[0] ?? "0").padStart(4, "0")}`
-
 // Page participants reach by scanning the event QR: records the scan for
-// that event, hands out the sponsor's coupon, and lets store staff confirm
-// the visit.
+// that event and hands out the sponsor's coupon with its number. Store
+// staff confirm the visit on their own device (StaffCheckInPage) with that
+// number; this page then shows it as confirmed.
 export function CheckInPage({ code }: { code: string }) {
   const [info, setInfo] = useState<CheckInInfo | null>(null)
   const [checkIn, setCheckIn] = useState<CheckIn | null>(() => readCheckIn(code))
   const [busy, setBusy] = useState(false)
-  // The staff PIN, typed by the store's staff when the coupon is used.
-  const [pin, setPin] = useState("")
   const [error, setError] = useState("")
   // StrictMode runs effects twice while developing; record the scan once.
   const scanned = useRef(false)
 
-  const save = (next: CheckIn) => {
+  const save = (next: CheckIn | null) => {
     setCheckIn(next)
     writeCheckIn(code, next)
+  }
+
+  // A check-in kept from before coupon numbers existed scans again.
+  const restart = () => {
+    scanned.current = false
+    save(null)
   }
 
   useEffect(() => {
@@ -70,14 +75,31 @@ export function CheckInPage({ code }: { code: string }) {
       .catch((caught) => setError(errorMessage(caught)))
   }, [checkIn, code])
 
-  // A check-in kept from before passes existed scans again for one.
-  const restart = () => {
-    writeCheckIn(code, null)
-    scanned.current = false
-    setCheckIn(null)
-  }
+  // Until the store confirms the visit, check every few seconds.
+  const waiting = checkIn?.pass && checkIn.coupon && !checkIn.visited ? checkIn : null
+  useEffect(() => {
+    if (!waiting?.pass) return
+    let cancelled = false
+    const check = () =>
+      api
+        .checkInPass(code, waiting.pass!)
+        .then((state) => {
+          if (cancelled) return
+          if (state.coupon !== waiting.coupon) restart()
+          else if (state.visited) save({ ...waiting, visited: true })
+        })
+        .catch((caught) => {
+          if (!cancelled && caught instanceof ApiError && caught.status === 404) restart()
+        })
+    check()
+    const timer = window.setInterval(check, visitCheckMs)
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+    }
+  }, [code, waiting?.pass, waiting?.coupon])
 
-  const record = async (kind: "coupons" | "visits") => {
+  const takeCoupon = async () => {
     if (!checkIn) return
     if (!checkIn.pass) {
       restart()
@@ -86,17 +108,10 @@ export function CheckInPage({ code }: { code: string }) {
     setBusy(true)
     setError("")
     try {
-      const { entry } = await api.recordCheckIn(code, kind, {
-        pass: checkIn.pass,
-        ...(kind === "visits" ? { pin } : {}),
-      })
-      save(
-        kind === "coupons"
-          ? { ...checkIn, coupon: couponCode(code, entry.participant) }
-          : { ...checkIn, visited: true },
-      )
+      const { coupon } = await api.recordCheckIn(code, "coupons", { pass: checkIn.pass })
+      save({ ...checkIn, coupon })
     } catch (caught) {
-      if (caught instanceof ApiError && caught.status === 403 && kind === "coupons") restart()
+      if (caught instanceof ApiError && caught.status === 403) restart()
       else setError(errorMessage(caught))
     } finally {
       setBusy(false)
@@ -143,12 +158,7 @@ export function CheckInPage({ code }: { code: string }) {
                   <strong>{checkIn.coupon}</strong>
                 </div>
               ) : (
-                <button
-                  className="primary-button wide"
-                  disabled={busy}
-                  onClick={() => record("coupons")}
-                  type="button"
-                >
+                <button className="primary-button wide" disabled={busy} onClick={takeCoupon} type="button">
                   쿠폰 받기
                 </button>
               )}
@@ -160,29 +170,9 @@ export function CheckInPage({ code }: { code: string }) {
                   <Icon name="check" size={16} /> 방문이 확인됐어요. 맛있게 드세요!
                 </p>
               ) : (
-                <form
-                  className="checkin-staff"
-                  onSubmit={(event) => {
-                    event.preventDefault()
-                    void record("visits")
-                  }}
-                >
-                  <p>매장에서 이 화면을 직원에게 보여 주세요. 직원이 PIN을 넣으면 방문이 확인돼요.</p>
-                  <input
-                    aria-label="직원 확인 PIN"
-                    autoComplete="off"
-                    className="checkin-pin"
-                    inputMode="numeric"
-                    maxLength={4}
-                    placeholder="직원 PIN 4자리"
-                    type="password"
-                    value={pin}
-                    onChange={(event) => setPin(event.target.value.replace(/\D/g, "").slice(0, 4))}
-                  />
-                  <button className="cancel-button wide" disabled={busy || pin.length !== 4} type="submit">
-                    직원 확인 완료
-                  </button>
-                </form>
+                <p className="checkin-staff" role="status">
+                  매장에서 이 쿠폰 번호를 직원에게 보여 주세요. 직원이 확인하면 여기에 바로 표시돼요.
+                </p>
               ))}
           </>
         )}

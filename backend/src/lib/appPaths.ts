@@ -11,7 +11,7 @@ const appPaths = [
   /^\/faq\/?$/,
   /^\/(terms|privacy)\/?$/,
   /^\/admin\/?$/,
-  /^\/check-in\/[\w-]+\/?$/,
+  /^\/check-in\/[\w-]+(\/staff)?\/?$/,
 ]
 
 export const isAppPath = (pathname: string) => appPaths.some((pattern) => pattern.test(pathname))

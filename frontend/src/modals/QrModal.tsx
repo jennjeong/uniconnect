@@ -1,7 +1,7 @@
 import { Icon } from "../components/Icon"
 import { Modal } from "../components/Modal"
 import { QrCode } from "../components/QrCode"
-import { checkInLink } from "../lib/checkin"
+import { checkInLink, staffCheckInLink } from "../lib/checkin"
 import { formatFullDate } from "../lib/date"
 import type { Report } from "../types"
 
@@ -36,10 +36,16 @@ export function QrModal({
         <span>{formatFullDate(report.eventDate)} · 행사장 입구와 부스에 띄워 주세요</span>
         <code className="qr-link">{link}</code>
         {report.staffPin && (
-          <p className="qr-pin">
-            매장 직원 확인 PIN <strong>{report.staffPin}</strong>
-            <small>협찬 매장 직원에게만 알려 주세요. 방문은 이 PIN을 넣어야 기록돼요.</small>
-          </p>
+          <div className="qr-pin">
+            매장 직원용 방문 확인
+            <code className="qr-link">{staffCheckInLink(report)}</code>
+            <span>
+              직원 PIN <strong>{report.staffPin}</strong>
+            </span>
+            <small>
+              이 주소와 PIN은 협찬 매장 직원에게만 알려 주세요. 직원이 자기 기기에서 참여자의 쿠폰 번호를 넣으면 방문이 기록돼요.
+            </small>
+          </div>
         )}
         <div className="qr-actions">
           <button className="cancel-button" onClick={copy} type="button">

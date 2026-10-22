@@ -45,6 +45,15 @@ requestsRouter.post("/:id/:decision", async (req, res) => {
   )
   if (!request) throw new HttpError(404, "제안을 찾을 수 없어요.")
   if (request.status !== "검토 중") throw new HttpError(409, "이미 답한 제안이에요.")
+  // An event deleted since the proposal cannot be sponsored.
+  if (
+    decision === "수락" &&
+    request.eventId &&
+    request.fromAccountId &&
+    !database.events[request.fromAccountId]?.some((item) => item.id === request.eventId)
+  ) {
+    throw new HttpError(409, "삭제된 행사에 대한 제안이에요.")
+  }
 
   request.status = decision
   request.respondedAt = new Date().toISOString()
