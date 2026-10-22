@@ -19,7 +19,7 @@ process.env.ADMIN_TOKEN = "test-admin-token"
 const { createApp } = await import("./app.js")
 const { config, emailCodesExposed } = await import("./config.js")
 const { clearRateLimits } = await import("./lib/rateLimit.js")
-const { loadDatabase, saveDatabase } = await import("./store.js")
+const { getDatabase, loadDatabase, saveDatabase } = await import("./store.js")
 const { DEMO_PASSWORD } = await import("./data/seed.js")
 
 let server: Server
@@ -807,4 +807,49 @@ test("a forgotten password is reset with a code sent to the account's email", as
   const again = await sendCode()
   const restored = await call("POST", "/auth/password-reset", { email, code: again, password: DEMO_PASSWORD })
   assert.equal(restored.status, 200)
+})
+
+test("an account can leave, taking what it made with it", async () => {
+  const email = "leaving@syu.ac.kr"
+  const sent = await call("POST", "/auth/email-code", { role: "학생단체", email })
+  const verified = await call("POST", "/auth/email-code/verify", { email, code: sent.data.devCode })
+  const signup = await call("POST", "/auth/signup", {
+    role: "학생단체",
+    name: "떠나는 동아리",
+    type: "공연 동아리",
+    school: "삼육대학교",
+    email,
+    password: "leave-pass-123",
+    verificationToken: verified.data.verificationToken,
+    agreedToTerms: true,
+  })
+  const token = signup.data.token as string
+  const accountId = signup.data.account.id as string
+  const profile = { intro: "곧 떠나는 공연 동아리예요. 반가웠어요.", offer: "관객 50명" }
+  const listingId = (await call("PUT", "/profile", profile, token)).data.profile.id as string
+  const event = { name: "마지막 공연", date: "2026-12-05", types: ["현금"] }
+  assert.equal((await call("POST", "/events", event, token)).status, 201)
+  const question = { category: "기타", question: "탈퇴하면 무엇이 지워지나요?" }
+  assert.equal((await call("POST", "/inquiries", question, token)).status, 201)
+  assert.equal((await call("POST", "/conversations", { partnerId: "afternoon-coffee" }, token)).status, 201)
+
+  // The demo accounts stay for everyone.
+  const demo = await login("학생단체")
+  assert.equal((await call("DELETE", "/auth/account", { password: DEMO_PASSWORD }, demo)).status, 403)
+
+  const wrong = await call("DELETE", "/auth/account", { password: "wrong-password" }, token)
+  assert.equal(wrong.status, 400)
+  assert.equal((await call("DELETE", "/auth/account", { password: "leave-pass-123" }, token)).status, 204)
+
+  assert.equal((await call("GET", "/auth/me", undefined, token)).status, 401)
+  const relogin = await call("POST", "/auth/login", { role: "학생단체", email, password: "leave-pass-123" })
+  assert.equal(relogin.status, 401)
+  const database = getDatabase()
+  assert.equal(database.accounts.some((account) => account.id === accountId), false)
+  assert.equal(database.groups.some((listing) => listing.id === listingId), false)
+  assert.equal(database.events[accountId], undefined)
+  assert.equal(database.inquiries.some((inquiry) => inquiry.accountId === accountId), false)
+  assert.equal(database.conversations.some((conversation) => conversation.groupId === listingId), false)
+  // The same email can sign up again.
+  assert.equal((await call("POST", "/auth/email-code", { role: "학생단체", email })).status, 200)
 })

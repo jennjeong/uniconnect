@@ -28,6 +28,7 @@ import { installRipple } from "./lib/ripple"
 import { readView, roleOfPage, viewPath, type HistoryEntry, type View } from "./lib/route"
 import { installSwipeNavigation, noteHistoryEnd } from "./lib/swipe"
 import { GoalModal } from "./modals/GoalModal"
+import { LeaveModal } from "./modals/LeaveModal"
 import { LoginModal } from "./modals/LoginModal"
 import { ResetPasswordModal } from "./modals/ResetPasswordModal"
 import { MetricLogModal } from "./modals/MetricLogModal"
@@ -679,6 +680,7 @@ function App() {
           onEdit={() => go({ page, profile: "edit" })}
           onNavigate={navigate}
           onLogout={logout}
+          onLeave={() => setActiveModal("leave")}
         />
       )
     }
@@ -984,6 +986,19 @@ function App() {
           }}
         />
       </Presence>
+      {account && (
+        <Presence show={activeModal === "leave"}>
+          <LeaveModal
+            account={account}
+            onClose={closeModal}
+            onLeft={() => {
+              endSession()
+              setActiveModal(null)
+              showNotice("탈퇴했어요. 그동안 함께해 주셔서 고마워요.")
+            }}
+          />
+        </Presence>
+      )}
       <Presence show={activeModal === "reset"}>
         <ResetPasswordModal
           initialEmail={resetEmail}

@@ -26,7 +26,8 @@ const tileLooks = ["blue", "silver", "slate"]
 
 // The account's own page: a banner on Stride's deep blue mesh with who it
 // is, what it has done so far as three tiles, the introduction the other
-// side sees, the account's details as rows, and logout.
+// side sees, the account's details as rows, logout and, quietly under it,
+// leaving.
 export function ProfilePage({
   account,
   listing,
@@ -35,6 +36,7 @@ export function ProfilePage({
   onEdit,
   onNavigate,
   onLogout,
+  onLeave,
 }: {
   account: Account
   // The listing brands (or student groups) see; null until written.
@@ -45,6 +47,7 @@ export function ProfilePage({
   onEdit: () => void
   onNavigate: (label: NavLabel) => void
   onLogout: () => void
+  onLeave: () => void
 }) {
   const students = account.role === "학생단체"
   const viewers = students ? "브랜드" : "학생단체"
@@ -177,6 +180,9 @@ export function ProfilePage({
           <Pill onClick={onLogout} variant="outline">
             로그아웃
           </Pill>
+          <button className="leave-link" onClick={onLeave} type="button">
+            회원 탈퇴
+          </button>
         </div>
       </section>
     </section>
