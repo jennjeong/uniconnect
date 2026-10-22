@@ -64,6 +64,16 @@ export function viewPath(view: View) {
   return `${base}/${view.detail ? `${path}/${encodeURIComponent(view.detail)}` : path}`
 }
 
+// A segment as typed, or undefined when it holds a broken escape such as
+// "%E0", which decodeURIComponent cannot read.
+function decodeSegment(segment: string) {
+  try {
+    return decodeURIComponent(segment)
+  } catch {
+    return undefined
+  }
+}
+
 // Pages whose address can name a brand or group after them.
 const detailPaths = [pagePaths["추천 매칭"], pagePaths["단체 찾기"]]
 
@@ -82,10 +92,12 @@ export function readView(location: Location = window.location): View {
     return { page: "대시보드", profile: second === "edit" ? "edit" : "page" }
   }
   if (first === "faq") return second ? missing : { page: "대시보드", faq: true }
+  const named = second === undefined ? undefined : decodeSegment(second)
+  if (second !== undefined && named === undefined) return missing
   if (first === "messages") {
-    return second ? { page: "대시보드", chat: decodeURIComponent(second) } : { page: "대시보드", messages: true }
+    return named ? { page: "대시보드", chat: named } : { page: "대시보드", messages: true }
   }
   const page = (Object.keys(pagePaths) as NavLabel[]).find((label) => pagePaths[label] === first)
   if (!page || (second && !detailPaths.includes(first))) return missing
-  return second ? { page, detail: decodeURIComponent(second) } : { page }
+  return named ? { page, detail: named } : { page }
 }

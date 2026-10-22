@@ -9,7 +9,7 @@ Run these from the repo root:
 - `corepack pnpm@10.34.3 install` installs every workspace package.
 - `npm run dev` starts the API on http://localhost:4000 and Vite on http://localhost:8443. Vite proxies `/api` to the API.
 - `npm run typecheck` runs tsc for the backend and the frontend.
-- `npm test` runs the backend API tests (`node:test` through tsx).
+- `npm test` runs the backend API tests (`node:test` through tsx), then the frontend unit tests (vitest, `frontend/src/**/*.test.ts`, configured in `frontend/vitest.config.ts` without the app's Vite plugins). `frontend/src/lib/appPaths.sync.test.ts` checks `backend/src/lib/appPaths.ts` against `route.ts`.
 - GitHub Actions (`.github/workflows/ci.yml`) runs install, typecheck, test and build on every push to main and every pull request.
 - `npm run build`, then `npm start`, builds both packages and serves the API plus the built frontend from Express.
 
