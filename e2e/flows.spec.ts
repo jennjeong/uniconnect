@@ -49,17 +49,28 @@ test("a student group proposes and the brand accepts", async ({ browser }) => {
   await expect(accepted.getByRole("list", { name: "협찬 진행 상황" })).toBeVisible()
 })
 
-test("a participant checks in, takes the coupon and staff confirm the visit", async ({ page }) => {
-  await page.goto("/check-in/20261012")
-  await expect(page.getByRole("heading", { name: "가을 버스킹 데이" })).toBeVisible()
-  await page.getByRole("button", { name: "쿠폰 받기" }).click()
-  await expect(page.getByText(/UC-1012-/)).toBeVisible()
-  await page.getByLabel("직원 확인 PIN").fill("0000")
-  await page.getByRole("button", { name: "직원 확인 완료" }).click()
-  await expect(page.getByText(/직원 PIN이 맞지 않아요/)).toBeVisible()
-  await page.getByLabel("직원 확인 PIN").fill("1012")
-  await page.getByRole("button", { name: "직원 확인 완료" }).click()
-  await expect(page.getByText("방문이 확인됐어요", { exact: false })).toBeVisible()
+test("a participant takes the coupon and the store's staff confirm the visit on their own page", async ({ browser }) => {
+  const participant = await (await browser.newContext()).newPage()
+  await participant.goto("/check-in/20261012")
+  await expect(participant.getByRole("heading", { name: "가을 버스킹 데이" })).toBeVisible()
+  await participant.getByRole("button", { name: "쿠폰 받기" }).click()
+  const number = (await participant.locator(".coupon-code strong").textContent()) ?? ""
+  expect(number).toMatch(/^UC-[A-Z2-9]{6}$/)
+  // Nothing on the participant's phone asks for the staff PIN.
+  await expect(participant.getByLabel("직원 PIN")).toHaveCount(0)
+
+  const staff = await (await browser.newContext()).newPage()
+  await staff.goto("/check-in/20261012/staff")
+  await staff.getByLabel("직원 PIN").fill("0000")
+  await staff.getByLabel("쿠폰 번호").fill(number)
+  await staff.getByRole("button", { name: "방문 확인" }).click()
+  await expect(staff.getByText(/직원 PIN이 맞지 않아요/)).toBeVisible()
+  await staff.getByLabel("직원 PIN").fill("1012")
+  await staff.getByRole("button", { name: "방문 확인" }).click()
+  await expect(staff.getByRole("status").getByText(`${number}`, { exact: false })).toBeVisible()
+
+  // The participant's page shows the confirmation on its next check.
+  await expect(participant.getByText("방문이 확인됐어요", { exact: false })).toBeVisible({ timeout: 10_000 })
 })
 
 test("a new group signs up with the code shown on screen", async ({ page }) => {

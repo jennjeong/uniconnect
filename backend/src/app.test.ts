@@ -79,6 +79,7 @@ test("pages load for every screen's address, and others answer 404", async () =>
     "/me/edit",
     "/messages/abc",
     "/check-in/20261012",
+    "/check-in/20261012/staff",
     "/terms",
     "/privacy",
     "/admin",
@@ -273,21 +274,28 @@ test("each event counts its own QR scans, coupons and visits", async () => {
   assert.match(recorded.pass, /^[0-9a-f]{32}$/)
   assert.equal((await call("GET", busking)).data.metrics.scans, initial.scans + 1)
 
-  // A coupon needs the scan's pass, once; a visit needs the coupon first,
-  // once, and the staff PIN.
+  // A coupon needs the scan's pass and comes once, with a number; the visit
+  // is confirmed on the store staff's device with that number and the PIN,
+  // never from the participant's phone.
   const { pass } = recorded
   const record = (kind: string, body?: unknown) => call("POST", `/check-in/20261012/${kind}`, body)
   assert.equal((await record("coupons")).status, 403)
   assert.equal((await record("coupons", { pass: "constructor" })).status, 403)
-  assert.equal((await record("visits", { pass, pin: "1012" })).status, 409)
+  assert.equal((await record("visits", { pass, pin: "1012" })).status, 403)
   const coupon = (await record("coupons", { pass })).data
   assert.equal(coupon.entry.detail, "아메리카노 1+1")
+  assert.match(coupon.coupon, /^UC-[A-HJ-NP-Z2-9]{6}$/)
   assert.equal((await record("coupons", { pass })).status, 409)
-  const wrongPin = await record("visits", { pass, pin: "0000" })
+  const passState = () => call("GET", `/check-in/20261012/passes/${pass}`)
+  assert.deepEqual((await passState()).data, { coupon: coupon.coupon, visited: false })
+  const staff = (body: unknown) => call("POST", "/check-in/20261012/staff/visits", body)
+  const wrongPin = await staff({ pin: "0000", coupon: coupon.coupon })
   assert.equal(wrongPin.status, 403)
   assert.match(wrongPin.data.error, /직원 PIN/)
-  assert.equal((await record("visits", { pass, pin: "1012" })).status, 200)
-  assert.equal((await record("visits", { pass, pin: "1012" })).status, 409)
+  assert.equal((await staff({ pin: "1012", coupon: "UC-ZZZZZZ" })).status, 404)
+  assert.equal((await staff({ pin: "1012", coupon: coupon.coupon.toLowerCase() })).status, 200)
+  assert.equal((await staff({ pin: "1012", coupon: coupon.coupon })).status, 409)
+  assert.deepEqual((await passState()).data, { coupon: coupon.coupon, visited: true })
   // The PIN is for the group that owns the event, not for visitors.
   assert.equal((await call("GET", busking)).data.report.staffPin, undefined)
   const owner = await login("학생단체")
@@ -847,13 +855,37 @@ test("check-in records are limited per address", async () => {
   assert.equal((await call("POST", "/check-in/20261012/scans")).status, 429)
 })
 
-test("wrong staff PINs are limited per address", async () => {
+test("wrong staff PINs are limited per address and per event", async () => {
   const { pass } = (await call("POST", "/check-in/20261012/scans")).data
-  await call("POST", "/check-in/20261012/coupons", { pass })
-  for (let i = 0; i < 10; i += 1) {
-    assert.equal((await call("POST", "/check-in/20261012/visits", { pass, pin: "9999" })).status, 403)
-  }
-  assert.equal((await call("POST", "/check-in/20261012/visits", { pass, pin: "1012" })).status, 429)
+  const { coupon } = (await call("POST", "/check-in/20261012/coupons", { pass })).data
+  const staff = (pin: string, headers?: Record<string, string>) =>
+    fetch(`${baseUrl}/check-in/20261012/staff/visits`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify({ pin, coupon }),
+    }).then((response) => response.status)
+  for (let i = 0; i < 10; i += 1) assert.equal(await staff("9999"), 403)
+  assert.equal(await staff("1012"), 429)
+
+  // From many addresses (a proxy that is trusted), the event itself locks
+  // after 30 wrong PINs.
+  clearRateLimits()
+  const app = createApp()
+  app.set("trust proxy", true)
+  const other = app.listen(0)
+  await new Promise((resolve) => other.once("listening", resolve))
+  const port = (other.address() as AddressInfo).port
+  const fromAddress = (index: number, pin: string) =>
+    fetch(`http://127.0.0.1:${port}/api/check-in/20261012/staff/visits`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Forwarded-For": `10.0.${Math.floor(index / 250)}.${index % 250}` },
+      body: JSON.stringify({ pin, coupon }),
+    }).then((response) => response.status)
+  const statuses = []
+  for (let i = 0; i < 31; i += 1) statuses.push(await fromAddress(i, "9999"))
+  assert.equal(statuses.filter((status) => status === 403).length, 30)
+  assert.equal(statuses.at(-1), 429)
+  await new Promise((resolve) => other.close(resolve))
 })
 
 test("the old global measurement moves to the busking day's own", async () => {

@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test"
 
 // Automatic accessibility checks (WCAG 2.1 A and AA) on the main screens.
 // Critical and serious problems fail the run; the rest are printed.
-const pages = ["/", "/matches", "/groups", "/faq", "/terms", "/privacy", "/admin", "/check-in/20261012", "/no-such-page"]
+const pages = ["/", "/matches", "/groups", "/faq", "/terms", "/privacy", "/admin", "/check-in/20261012", "/check-in/20261012/staff", "/no-such-page"]
 
 for (const path of pages) {
   test(`${path} has no critical or serious accessibility problems`, async ({ page }) => {

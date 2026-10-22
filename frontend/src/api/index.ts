@@ -173,10 +173,19 @@ export const api = {
       body: goals,
     }),
   checkIn: (code: string) => request<CheckInInfo>(`/check-in/${encodeURIComponent(code)}`),
-  // A scan answers a pass; the coupon sends it, and the visit sends it with
-  // the staff PIN.
-  recordCheckIn: (code: string, kind: MetricKind, body?: { pass: string; pin?: string }) =>
-    request<{ entry: MetricEntry; pass?: string }>(`/check-in/${encodeURIComponent(code)}/${kind}`, {
+  // A scan answers a pass; the coupon sends it and answers its number.
+  recordCheckIn: (code: string, kind: "scans" | "coupons", body?: { pass: string }) =>
+    request<{ entry: MetricEntry; pass?: string; coupon?: string }>(
+      `/check-in/${encodeURIComponent(code)}/${kind}`,
+      { method: "POST", body },
+    ),
+  checkInPass: (code: string, pass: string) =>
+    request<{ coupon: string | null; visited: boolean }>(
+      `/check-in/${encodeURIComponent(code)}/passes/${encodeURIComponent(pass)}`,
+    ),
+  // The store staff's device: the participant's coupon number and the PIN.
+  confirmVisit: (code: string, body: { pin: string; coupon: string }) =>
+    request<{ entry: MetricEntry }>(`/check-in/${encodeURIComponent(code)}/staff/visits`, {
       method: "POST",
       body,
     }),

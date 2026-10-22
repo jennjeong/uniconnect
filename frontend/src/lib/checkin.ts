@@ -4,7 +4,12 @@ import type { Report } from "../types"
 // each event has a code of its own.
 export const checkInLink = (report: Report) => `${window.location.origin}/check-in/${report.code}`
 
-// The code in the current address when this is the check-in page.
-export function currentCheckInCode() {
-  return /^\/check-in\/([\w-]+)\/?$/.exec(window.location.pathname)?.[1]
+// The store staff's page for the same event, where visits are confirmed.
+export const staffCheckInLink = (report: Report) => `${checkInLink(report)}/staff`
+
+// The check-in page in the current address, for participants or (with
+// /staff) for the store's staff.
+export function currentCheckIn() {
+  const match = /^\/check-in\/([\w-]+)(\/staff)?\/?$/.exec(window.location.pathname)
+  return match ? { code: match[1], staff: Boolean(match[2]) } : undefined
 }

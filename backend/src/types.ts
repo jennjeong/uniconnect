@@ -217,7 +217,9 @@ export type Measurement = {
   // 4 digits the sponsor's store staff enter to confirm a visit.
   staffPin: string
   // One pass per scan, so each participant gets one coupon and one visit.
-  passes: Record<string, { coupon?: true; visit?: true }>
+  // `coupon` is the number the store staff enter (true on passes from
+  // before numbers were issued).
+  passes: Record<string, { coupon?: string | true; visit?: true }>
 }
 
 // Performance report of one event, worked out from its measurement and
