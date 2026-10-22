@@ -35,3 +35,7 @@ logs/
 /.swarm/
 /.mcp.json
 /ruvector.db
+
+# Playwright test output
+/test-results/
+/playwright-report/
