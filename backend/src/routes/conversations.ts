@@ -3,6 +3,7 @@ import { Router } from "express"
 
 import { findListing } from "../lib/catalog.js"
 import { HttpError } from "../lib/errors.js"
+import { notify } from "../lib/notices.js"
 import { text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -149,9 +150,21 @@ conversationsRouter.post("/:id/messages", async (req, res) => {
   const message = messageText(req.body?.text)
   const side = sideOf(account)
   const at = new Date().toISOString()
+  // One email per run of unread messages: only when the other side had
+  // read everything this side sent before.
+  const other: ChatSide = side === "group" ? "brand" : "group"
+  const waiting = conversation.messages.some(
+    (item) => item.from === side && !item.deletedAt && item.at > (conversation.readAt[other] ?? ""),
+  )
   conversation.messages.push({ id: randomUUID(), from: side, text: message, at })
   conversation.readAt[side] = at
   await saveDatabase()
+  if (!waiting) {
+    const partner = getDatabase().accounts.find((item) =>
+      other === "brand" ? item.brandId === conversation.brandId : item.groupId === conversation.groupId,
+    )
+    void notify(partner, "새 메시지가 왔어요", [`${account.name}: ${message.slice(0, 80)}`], `/messages/${conversation.id}`)
+  }
   res.status(201).json({ conversation: view(conversation, side, true) })
 })
 
