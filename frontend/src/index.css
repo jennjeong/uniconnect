@@ -5854,6 +5854,16 @@ button.nav-pill:hover {
   cursor: pointer;
 }
 
+.modal .terms-check + .terms-check {
+  margin-top: 10px;
+}
+
+.profile-account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .terms-check input {
   width: 16px;
   height: 16px;

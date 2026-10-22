@@ -32,6 +32,7 @@ export type SignupPayload = {
   password: string
   verificationToken: string
   agreedToTerms: boolean
+  over14: boolean
 }
 
 export type EventDraft = Pick<
@@ -70,6 +71,8 @@ export const api = {
     ),
   resetPassword: (body: { email: string; code: string; password: string }) =>
     request<Session>("/auth/password-reset", { method: "POST", body }),
+  changePassword: (body: { current: string; next: string }) =>
+    request<void>("/auth/password", { method: "POST", body }),
   deleteAccount: (body: { password: string }) =>
     request<void>("/auth/account", { method: "DELETE", body }),
 

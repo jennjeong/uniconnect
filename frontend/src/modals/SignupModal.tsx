@@ -17,6 +17,7 @@ const emptyDraft = (role: Role) => ({
   password: "",
   confirm: "",
   agreed: false,
+  over14: false,
 })
 
 type Draft = ReturnType<typeof emptyDraft>
@@ -40,6 +41,7 @@ function draftError(draft: Draft, verified: boolean) {
   if (draft.password.length < 8) return "비밀번호는 8자 이상이어야 해요."
   if (draft.password !== draft.confirm) return "비밀번호가 일치하지 않아요."
   if (!draft.agreed) return "이용약관에 동의해 주세요."
+  if (!draft.over14) return "만 14세 이상만 가입할 수 있어요."
   return ""
 }
 
@@ -128,6 +130,7 @@ export function SignupModal({
           password: draft.password,
           verificationToken,
           agreedToTerms: draft.agreed,
+          over14: draft.over14,
         }),
       )
     })
@@ -301,6 +304,15 @@ export function SignupModal({
             </a>
             에 동의합니다.
           </span>
+        </label>
+        {/* The terms take members from 14 (younger ones need a guardian). */}
+        <label className="terms-check">
+          <input
+            checked={draft.over14}
+            type="checkbox"
+            onChange={(event) => update({ over14: event.target.checked })}
+          />
+          <span>만 14세 이상이에요.</span>
         </label>
         {error && (
           <p className="form-error" role="alert">

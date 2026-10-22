@@ -36,6 +36,7 @@ export function ProfilePage({
   onEdit,
   onNavigate,
   onLogout,
+  onChangePassword,
   onLeave,
 }: {
   account: Account
@@ -47,6 +48,7 @@ export function ProfilePage({
   onEdit: () => void
   onNavigate: (label: NavLabel) => void
   onLogout: () => void
+  onChangePassword: () => void
   onLeave: () => void
 }) {
   const students = account.role === "학생단체"
@@ -177,9 +179,14 @@ export function ProfilePage({
           ))}
         </dl>
         <div className="profile-logout">
-          <Pill onClick={onLogout} variant="outline">
-            로그아웃
-          </Pill>
+          <div className="profile-account-actions">
+            <Pill onClick={onLogout} variant="outline">
+              로그아웃
+            </Pill>
+            <Pill onClick={onChangePassword} variant="silver">
+              비밀번호 변경
+            </Pill>
+          </div>
           <button className="leave-link" onClick={onLeave} type="button">
             회원 탈퇴
           </button>

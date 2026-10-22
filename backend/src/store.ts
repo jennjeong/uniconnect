@@ -13,6 +13,7 @@ import {
   seedSponsorships,
 } from "./data/seed.js"
 import { toIsoDate } from "./lib/dates.js"
+import { hashToken } from "./middleware/session.js"
 import type { Database, Metrics, MetricEntry, Report } from "./types.js"
 
 // A JSON file stands in for a database so the prototype runs without any
@@ -48,6 +49,13 @@ export function upgradeDatabase(stored: Database) {
   delete (stored as { matches?: unknown }).matches
   stored.conversations ??= seedConversations()
   stored.inquiries ??= []
+  // Sessions saved with their plain token keep working, stored as its hash.
+  stored.sessions = (stored.sessions ?? []).map((session) => {
+    const legacy = session as typeof session & { token?: string }
+    if (!legacy.token) return session
+    const { token, ...rest } = legacy
+    return { ...rest, tokenHash: hashToken(token) }
+  })
   const demoStudent = stored.accounts?.find(
     (account) => account.id === stored.demoAccountIds?.학생단체,
   )

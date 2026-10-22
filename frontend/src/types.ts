@@ -252,6 +252,7 @@ export type ModalName =
   | "reset"
   | "leave"
   | "measure-goals"
+  | "password"
   | "metric-log"
   | "goal"
   | "ask"

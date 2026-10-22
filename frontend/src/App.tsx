@@ -32,6 +32,7 @@ import { GoalModal } from "./modals/GoalModal"
 import { GoalsModal } from "./modals/GoalsModal"
 import { LeaveModal } from "./modals/LeaveModal"
 import { LoginModal } from "./modals/LoginModal"
+import { PasswordModal } from "./modals/PasswordModal"
 import { ResetPasswordModal } from "./modals/ResetPasswordModal"
 import { MetricLogModal } from "./modals/MetricLogModal"
 import { QrModal } from "./modals/QrModal"
@@ -735,6 +736,7 @@ function App() {
           onEdit={() => go({ page, profile: "edit" })}
           onNavigate={navigate}
           onLogout={logout}
+          onChangePassword={() => setActiveModal("password")}
           onLeave={() => setActiveModal("leave")}
         />
       )
@@ -1082,6 +1084,15 @@ function App() {
           />
         </Presence>
       )}
+      <Presence show={activeModal === "password"}>
+        <PasswordModal
+          onClose={closeModal}
+          onChanged={() => {
+            setActiveModal(null)
+            showNotice("비밀번호를 바꿨어요. 다른 기기에서는 로그아웃됐어요.")
+          }}
+        />
+      </Presence>
       <Presence show={activeModal === "reset"}>
         <ResetPasswordModal
           initialEmail={resetEmail}
