@@ -880,19 +880,41 @@ test("sign-up codes stay off the response unless turned on", () => {
   assert.equal(emailCodesExposed({ EXPOSE_EMAIL_CODES: "true" }), true)
 })
 
+// A member signed up for a test, logged in, with their token.
+async function signUpMember(email: string, password: string) {
+  const sent = await call("POST", "/auth/email-code", { role: "학생단체", email })
+  const verified = await call("POST", "/auth/email-code/verify", { email, code: sent.data.devCode })
+  const signup = await call("POST", "/auth/signup", {
+    role: "학생단체",
+    name: `${email.split("@")[0]} 동아리`,
+    type: "공연 동아리",
+    school: "삼육대학교",
+    email,
+    password,
+    verificationToken: verified.data.verificationToken,
+    agreedToTerms: true,
+    over14: true,
+  })
+  assert.equal(signup.status, 201)
+  return signup.data.token as string
+}
+
 test("a forgotten password is reset with a code sent to the account's email", async () => {
-  const email = "hello@afternoon-coffee.kr"
+  const email = "forgetful@syu.ac.kr"
+  const before = await signUpMember(email, "first-pass-123")
+  // The code goes only by email (the log without a mail service), never in
+  // the answer, even with EXPOSE_EMAIL_CODES on; tests read it from the data.
   const sendCode = async () => {
     const sent = await call("POST", "/auth/password-reset/code", { email })
     assert.equal(sent.status, 200)
-    assert.match(sent.data.devCode, /^\d{6}$/)
-    return sent.data.devCode as string
+    assert.equal(sent.data.devCode, undefined)
+    const entry = getDatabase().emailCodes.find((item) => item.email === email && item.purpose === "reset")
+    return entry!.code
   }
 
   const unknown = await call("POST", "/auth/password-reset/code", { email: "nobody@nowhere.co.kr" })
   assert.equal(unknown.status, 404)
 
-  const before = await login("브랜드")
   const code = await sendCode()
   const wrong = code === "000000" ? "111111" : "000000"
   // A sign-up check cannot use a reset code.
@@ -914,14 +936,46 @@ test("a forgotten password is reset with a code sent to the account's email", as
     (await call("POST", "/auth/password-reset", { email, code, password: "other-pass-123" })).status,
     400,
   )
-  const logIn = (password: string) => call("POST", "/auth/login", { role: "브랜드", email, password })
-  assert.equal((await logIn(DEMO_PASSWORD)).status, 401)
+  const logIn = (password: string) => call("POST", "/auth/login", { role: "학생단체", email, password })
+  assert.equal((await logIn("first-pass-123")).status, 401)
   assert.equal((await logIn("new-pass-123")).status, 200)
+})
 
-  // Back to the demo password for anything that runs later.
-  const again = await sendCode()
-  const restored = await call("POST", "/auth/password-reset", { email, code: again, password: DEMO_PASSWORD })
-  assert.equal(restored.status, 200)
+test("the demo accounts keep their published password", async () => {
+  const brand = await login("브랜드")
+  const email = "hello@afternoon-coffee.kr"
+  assert.equal((await call("POST", "/auth/password-reset/code", { email })).status, 403)
+  const change = await call("POST", "/auth/password", { current: DEMO_PASSWORD, next: "taken-over-123" }, brand)
+  assert.equal(change.status, 403)
+  assert.equal((await call("GET", "/auth/me", undefined, brand)).status, 200)
+})
+
+test("wrong passwords sent all at once still meet the login limit", async () => {
+  const attempt = () =>
+    call("POST", "/auth/login", { role: "학생단체", email: "muse@syu.ac.kr", password: "wrong-password" })
+  const statuses = (await Promise.all(Array.from({ length: 30 }, attempt))).map((reply) => reply.status)
+  assert.equal(statuses.filter((status) => status === 401).length, 10)
+  assert.equal(statuses.filter((status) => status === 429).length, 20)
+})
+
+test("a login still checking the old password gets no session after a reset", async () => {
+  const email = "racing@syu.ac.kr"
+  await signUpMember(email, "old-pass-123")
+  for (let round = 0; round < 5; round += 1) {
+    const oldPassword = round === 0 ? "old-pass-123" : `new-pass-${round - 1}`
+    await call("POST", "/auth/password-reset/code", { email })
+    const code = getDatabase().emailCodes.find((item) => item.email === email && item.purpose === "reset")!.code
+    // Started together: whichever finishes first, the old password must not
+    // leave a working session behind.
+    const [login] = await Promise.all([
+      call("POST", "/auth/login", { role: "학생단체", email, password: oldPassword }),
+      call("POST", "/auth/password-reset", { email, code, password: `new-pass-${round}` }),
+    ])
+    if (login.status === 200) {
+      assert.equal((await call("GET", "/auth/me", undefined, login.data.token)).status, 401)
+    }
+    clearRateLimits()
+  }
 })
 
 test("an account can leave, taking what it made with it", async () => {
