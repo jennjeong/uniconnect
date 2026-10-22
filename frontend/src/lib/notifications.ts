@@ -8,6 +8,7 @@ import type {
   SponsorRequest,
   Sponsorship,
 } from "../types"
+import { measureState } from "./measurements"
 import { roasOf } from "./sponsorships"
 
 export type NotificationItem = {
@@ -84,7 +85,8 @@ export function studentNotifications({
     caption: "다가오는 일정과 잘 맞는 파트너를 찾았어요.",
     target: "추천 매칭",
   })
-  if (report) {
+  // Once the event shown on the report pages is over.
+  if (report && measureState(report) === "측정 완료") {
     items.push({
       key: "report",
       icon: "chart",

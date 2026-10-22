@@ -4,17 +4,12 @@ import { api, errorMessage } from "../api"
 import logo from "../assets/brand/uniconnect_horizontal.svg"
 import { Icon } from "../components/Icon"
 import { formatFullDate } from "../lib/date"
-import type { Report } from "../types"
+import type { CheckInInfo } from "../types"
 
 // What this phone has done at the event, kept so a refresh doesn't count twice.
 type CheckIn = { participant: string; coupon?: string; visited?: boolean }
 
-// The sponsor's offer for participants of the measured event.
-const offer = {
-  store: "오후의 커피 공릉점",
-  title: "아메리카노 1+1",
-  terms: "발급일부터 7일 동안 쓸 수 있어요",
-}
+const couponTerms = "발급일부터 7일 동안 쓸 수 있어요"
 
 const storageKey = (code: string) => `uniconnect-checkin-${code}`
 
@@ -38,10 +33,11 @@ function writeCheckIn(code: string, checkIn: CheckIn) {
 const couponCode = (code: string, participant: string) =>
   `UC-${code.slice(4)}-${(participant.match(/\d+/)?.[0] ?? "0").padStart(4, "0")}`
 
-// Page participants reach by scanning the event QR: records the scan, hands
-// out the sponsor's coupon, and lets store staff confirm the visit.
+// Page participants reach by scanning the event QR: records the scan for
+// that event, hands out the sponsor's coupon, and lets store staff confirm
+// the visit.
 export function CheckInPage({ code }: { code: string }) {
-  const [report, setReport] = useState<Report | null>(null)
+  const [info, setInfo] = useState<CheckInInfo | null>(null)
   const [checkIn, setCheckIn] = useState<CheckIn | null>(() => readCheckIn(code))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
@@ -55,29 +51,27 @@ export function CheckInPage({ code }: { code: string }) {
 
   useEffect(() => {
     api
-      .report()
-      .then((result) => setReport(result.report))
-      .catch(() => {
-        // The event name is a nicety; check-in works without it.
-      })
-  }, [])
+      .checkIn(code)
+      .then(setInfo)
+      .catch((caught) => setError(errorMessage(caught)))
+  }, [code])
 
   // The first visit from this phone counts as one QR scan.
   useEffect(() => {
     if (checkIn || scanned.current) return
     scanned.current = true
     api
-      .recordMetric("scans")
+      .recordCheckIn(code, "scans")
       .then(({ entry }) => save({ participant: entry.participant }))
       .catch((caught) => setError(errorMessage(caught)))
-  }, [checkIn])
+  }, [checkIn, code])
 
   const record = async (kind: "coupons" | "visits") => {
     if (!checkIn) return
     setBusy(true)
     setError("")
     try {
-      const { entry } = await api.recordMetric(kind)
+      const { entry } = await api.recordCheckIn(code, kind)
       save(
         kind === "coupons"
           ? { ...checkIn, coupon: couponCode(code, entry.participant) }
@@ -98,8 +92,13 @@ export function CheckInPage({ code }: { code: string }) {
 
       <main className="checkin-card">
         <span className="checkin-kicker">현장 참여</span>
-        <h1>{report?.eventName ?? "행사 참여"}</h1>
-        {report && <p className="checkin-date">{formatFullDate(report.eventDate)}</p>}
+        <h1>{info?.eventName ?? "행사 참여"}</h1>
+        {info && (
+          <p className="checkin-date">
+            {info.groupName && `${info.groupName} · `}
+            {formatFullDate(info.eventDate)}
+          </p>
+        )}
 
         {!checkIn ? (
           !error && <p className="checkin-loading">참여를 기록하고 있어요…</p>
@@ -116,9 +115,9 @@ export function CheckInPage({ code }: { code: string }) {
             </div>
 
             <div className="coupon">
-              <span className="coupon-store">{offer.store}</span>
-              <strong className="coupon-title">{offer.title}</strong>
-              <small>행사 참여자 전용 쿠폰 · {offer.terms}</small>
+              <span className="coupon-store">{info?.coupon.store ?? "협찬 매장"}</span>
+              <strong className="coupon-title">{info?.coupon.title ?? "참여자 전용 혜택"}</strong>
+              <small>행사 참여자 전용 쿠폰 · {couponTerms}</small>
               {checkIn.coupon ? (
                 <div className="coupon-code">
                   <span>쿠폰 번호</span>

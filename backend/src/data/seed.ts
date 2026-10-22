@@ -4,9 +4,9 @@ import type {
   Conversation,
   Database,
   Match,
+  Measurement,
   MetricEntry,
   MetricKind,
-  Report,
   SponsorOffer,
   SponsorRequest,
   Sponsorship,
@@ -725,8 +725,8 @@ export function seedOffers(): SponsorOffer[] {
   }))
 }
 
-// The demo brand's finished sponsorships (the busking day's counts follow
-// the live metrics in /api/analytics).
+// The demo brand's finished sponsorships (the busking day's counts and
+// sales follow its live measurement in /api/analytics).
 export const seedSponsorships = (): Sponsorship[] => [
   {
     id: "sp-busking",
@@ -736,7 +736,8 @@ export const seedSponsorships = (): Sponsorship[] => [
     spend: 680000,
     coupons: 94,
     visits: 41,
-    sales: 1652400,
+    sales: 1652300,
+    eventId: "event-busking-day",
     // Same goal as the busking day's report.
     targetRoas: 170,
   },
@@ -797,35 +798,48 @@ export function seedMetricLog(): MetricEntry[] {
     .sort((a, b) => a.at.localeCompare(b.at))
 }
 
-export const seedReport: Report = {
-  eventName: "가을 버스킹 데이",
-  eventDate: "2026-10-12",
-  expectedAudience: 350,
-  sponsorValue: 680000,
-  reach: 1240,
-  roas: 243,
-  targets: {
-    reach: 1100,
-    scans: 105,
-    coupons: 75,
-    visits: 26,
-    qrRate: 30,
-    visitRate: 25,
-    roas: 170,
-  },
-  hourlyScans: [
-    { hour: 17, scans: 12 },
-    { hour: 18, scans: 26 },
-    { hour: 19, scans: 38 },
-    { hour: 20, scans: 29 },
-    { hour: 21, scans: 15 },
-    { hour: 22, scans: 8 },
-  ],
-  valueBreakdown: [
-    { type: "현금", value: 200000 },
-    { type: "제품", value: 330000 },
-    { type: "서비스", value: 150000 },
-  ],
+// The busking day's measurement (KST): its counts and scans by hour, the
+// last few records, and the goals set before it. Its estimated sales,
+// 41 visits × 40,300원, make the report's ROAS of 243%.
+export function seedMeasurements(accountId: string): Measurement[] {
+  return [
+    {
+      eventId: "event-busking-day",
+      accountId,
+      code: "20261012",
+      metrics: { scans: 128, coupons: 94, visits: 41 },
+      hourlyScans: [
+        { hour: 17, scans: 12 },
+        { hour: 18, scans: 26 },
+        { hour: 19, scans: 38 },
+        { hour: 20, scans: 29 },
+        { hour: 21, scans: 15 },
+        { hour: 22, scans: 8 },
+      ],
+      log: seedMetricLog(),
+      goals: {
+        expectedAudience: 350,
+        averageSpend: 40300,
+        // With the 128 scans, a reach of 1,240.
+        snsReach: 1112,
+        valueBreakdown: [
+          { type: "현금", value: 200000 },
+          { type: "제품", value: 330000 },
+          { type: "서비스", value: 150000 },
+        ],
+        targets: {
+          reach: 1100,
+          scans: 105,
+          coupons: 75,
+          visits: 26,
+          qrRate: 30,
+          visitRate: 25,
+          roas: 170,
+        },
+        coupon: { store: "오후의 커피 공릉점", title: "아메리카노 1+1" },
+      },
+    },
+  ]
 }
 
 export async function createSeed(): Promise<Database> {
@@ -908,8 +922,6 @@ export async function createSeed(): Promise<Database> {
       [coffee.id]: [],
     },
     demoAccountIds: { 학생단체: muse.id, 브랜드: coffee.id },
-    metrics: { scans: 128, coupons: 94, visits: 41 },
-    metricLog: seedMetricLog(),
-    report: structuredClone(seedReport),
+    measurements: seedMeasurements(muse.id),
   }
 }

@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react"
 
 import { AnimatedNumber } from "../components/AnimatedNumber"
+import { EventPicker } from "../components/EventPicker"
 import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { Pill } from "../components/Pill"
@@ -14,25 +15,32 @@ import {
   roasSummary,
   type KpiKey,
 } from "../lib/kpis"
+import { measureState } from "../lib/measurements"
 import { LayersGradient } from "../scenes/LayersGradient"
 import { INTERFERENCE } from "../scenes/shaders"
-import type { Metrics, Report } from "../types"
+import type { EventMeasurement, Metrics, Report } from "../types"
 
 const delay = (seconds: number) => ({ "--reveal-delay": `${seconds}s` }) as CSSProperties
 
-// The last event's results: the ROAS on a deep blue panel over getlayers.ai's
+// One event's results (the latest one that has started, or the one picked):
+// the ROAS on a deep blue panel over getlayers.ai's
 // Interference gradient (waves from two sources adding up where they meet,
 // the way a sponsorship does), then each goal as a card that opens its
 // details.
 export function ReportsPage({
+  measurements,
   report,
+  onSelect,
   metrics,
   exporting,
   onDownload,
   onOpenReport,
   onOpenGoal,
 }: {
+  // Every event of the group, to pick the one to report on.
+  measurements: EventMeasurement[]
   report: Report | null
+  onSelect: (eventId: string) => void
   metrics: Metrics
   // True while the PDF is being made.
   exporting: boolean
@@ -56,9 +64,12 @@ export function ReportsPage({
         }
       />
       {!report ? (
-        <p className="day-empty">리포트를 불러오고 있어요.</p>
+        <p className="day-empty">행사를 등록하면 행사마다 리포트가 생겨요.</p>
       ) : (
         <>
+          <div className="measure-bar">
+            <EventPicker measurements={measurements} onSelect={onSelect} value={report.eventId} />
+          </div>
           <article className="power-panel" data-reveal>
             <LayersGradient shader={INTERFERENCE} />
             <div className="power-content">
@@ -66,7 +77,7 @@ export function ReportsPage({
                 <span className="eyebrow light">
                   {report.eventName} · {formatFullDate(report.eventDate)}
                 </span>
-                <span className="power-status">측정 완료</span>
+                <span className="power-status">{measureState(report)}</span>
               </div>
               <RevealTitle as="h2" className="power-title">
                 {`협찬 성과가 목표보다 ${roasSummary(report)}`}

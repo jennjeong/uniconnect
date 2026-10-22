@@ -1,7 +1,9 @@
 import type {
   Account,
+  CheckInInfo,
   Conversation,
   EventItem,
+  EventMeasurement,
   Inquiry,
   Match,
   MetricEntry,
@@ -138,11 +140,16 @@ export const api = {
       { method: "DELETE" },
     ),
 
-  metrics: () => request<{ metrics: Metrics }>("/metrics"),
-  metricLog: (kind?: MetricKind) =>
-    request<{ entries: MetricEntry[] }>("/metrics/log", { query: kind ? { kind } : {} }),
-  recordMetric: (kind: MetricKind) =>
-    request<{ metrics: Metrics; entry: MetricEntry }>(`/metrics/${kind}`, { method: "POST" }),
-
-  report: () => request<{ report: Report }>("/report"),
+  measurements: () => request<{ measurements: EventMeasurement[] }>("/measurements"),
+  measurement: (eventId: string) =>
+    request<{ metrics: Metrics; report: Report }>(`/measurements/${encodeURIComponent(eventId)}`),
+  measurementLog: (eventId: string, kind?: MetricKind) =>
+    request<{ entries: MetricEntry[] }>(`/measurements/${encodeURIComponent(eventId)}/log`, {
+      query: kind ? { kind } : {},
+    }),
+  checkIn: (code: string) => request<CheckInInfo>(`/check-in/${encodeURIComponent(code)}`),
+  recordCheckIn: (code: string, kind: MetricKind) =>
+    request<{ entry: MetricEntry }>(`/check-in/${encodeURIComponent(code)}/${kind}`, {
+      method: "POST",
+    }),
 }

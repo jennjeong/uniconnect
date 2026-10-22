@@ -26,10 +26,10 @@ export function ReportExport({
 
   useEffect(() => {
     api
-      .metricLog()
+      .measurementLog(report.eventId)
       .then((result) => setEntries(result.entries))
       .catch(() => setEntries([]))
-  }, [])
+  }, [report.eventId])
 
   useEffect(() => {
     if (!entries || started.current || !container.current) return

@@ -258,19 +258,48 @@ test("events and proposals belong to the logged-in account", async () => {
   assert.deepEqual(cancelled.data.proposals, [])
 })
 
-test("metrics count QR scans, coupons and visits with a history", async () => {
-  const initial = (await call("GET", "/metrics")).data.metrics
-  const recorded = (await call("POST", "/metrics/scans")).data
-  assert.equal(recorded.metrics.scans, initial.scans + 1)
-  assert.equal(recorded.entry.participant, `참여자 #${initial.scans + 1}`)
+test("each event counts its own QR scans, coupons and visits", async () => {
+  const busking = "/measurements/event-busking-day"
+  const initial = (await call("GET", busking)).data.metrics
+  const page = (await call("GET", "/check-in/20261012")).data
+  assert.equal(page.eventName, "가을 버스킹 데이")
+  assert.equal(page.groupName, "삼육대 뮤즈")
+  assert.equal(page.coupon.title, "아메리카노 1+1")
 
-  const scans = (await call("GET", "/metrics/log?kind=scans")).data.entries
+  const recorded = (await call("POST", "/check-in/20261012/scans")).data
+  assert.equal(recorded.entry.participant, `참여자 #${initial.scans + 1}`)
+  assert.equal((await call("GET", busking)).data.metrics.scans, initial.scans + 1)
+  const coupon = (await call("POST", "/check-in/20261012/coupons")).data
+  assert.equal(coupon.entry.detail, "아메리카노 1+1")
+
+  const scans = (await call("GET", `${busking}/log?kind=scans`)).data.entries
   assert.equal(scans[0].id, recorded.entry.id)
   assert.ok(scans.every((entry: { kind: string }) => entry.kind === "scans"))
-  assert.ok((await call("GET", "/metrics/log")).data.entries.length > scans.length)
+  assert.ok((await call("GET", `${busking}/log`)).data.entries.length > scans.length)
 
-  assert.equal((await call("POST", "/metrics/likes")).status, 404)
-  assert.equal((await call("GET", "/metrics/log?kind=likes")).status, 404)
+  // Another event of the group starts from zero with a code of its own.
+  const list = (await call("GET", "/measurements")).data.measurements
+  assert.deepEqual(
+    list.map((item: { eventId: string }) => item.eventId),
+    ["event-muse-concert", "event-busking-day"],
+  )
+  const concert = list[0]
+  assert.deepEqual(concert.metrics, { scans: 0, coupons: 0, visits: 0 })
+  assert.match(concert.report.code, /^[0-9a-f]{8}$/)
+  assert.equal(concert.report.expectedAudience, 120)
+  await call("POST", `/check-in/${concert.report.code}/scans`)
+  assert.equal((await call("GET", "/measurements/event-muse-concert")).data.metrics.scans, 1)
+  assert.equal((await call("GET", busking)).data.metrics.scans, initial.scans + 1)
+
+  assert.equal((await call("GET", "/check-in/nope")).status, 404)
+  assert.equal((await call("POST", "/check-in/nope/scans")).status, 404)
+  assert.equal((await call("POST", "/check-in/20261012/likes")).status, 404)
+  assert.equal((await call("GET", `${busking}/log?kind=likes`)).status, 404)
+  assert.equal((await call("GET", "/measurements/event-unknown")).status, 404)
+  // Brands measure nothing of their own.
+  const brand = await login("브랜드")
+  assert.deepEqual((await call("GET", "/measurements", undefined, brand)).data.measurements, [])
+  assert.equal((await call("GET", busking, undefined, brand)).status, 404)
 })
 
 test("student groups browse the brand catalog and propose to any brand", async () => {
@@ -297,13 +326,22 @@ test("student groups browse the brand catalog and propose to any brand", async (
   assert.ok(proposed.data.proposals.includes("glowlab"))
 })
 
-test("the report has the event's goals", async () => {
-  const { report } = (await call("GET", "/report")).data
+test("an event's report follows its goals and live counts", async () => {
+  const { metrics, report } = (await call("GET", "/measurements/event-busking-day")).data
   assert.equal(report.eventName, "가을 버스킹 데이")
+  assert.equal(report.code, "20261012")
   assert.equal(report.targets.roas, 170)
   assert.equal(
     report.valueBreakdown.reduce((sum: number, part: { value: number }) => sum + part.value, 0),
     report.sponsorValue,
+  )
+  // Reach is the QR scans plus the reach beyond the venue; ROAS is the
+  // estimated sales (visits × average spend) over the sponsorship's value.
+  assert.equal(report.reach, metrics.scans + report.snsReach)
+  assert.equal(report.roas, Math.round(((metrics.visits * report.averageSpend) / report.sponsorValue) * 100))
+  assert.equal(
+    report.hourlyScans.reduce((sum: number, slot: { scans: number }) => sum + slot.scans, 0),
+    metrics.scans,
   )
 })
 
@@ -396,9 +434,10 @@ test("brand analytics follow the live measurement", async () => {
     sponsorships.map((sponsorship: { targetRoas: number }) => sponsorship.targetRoas),
     [170, 200, 200],
   )
-  const { metrics } = (await call("GET", "/metrics")).data
+  const { metrics, report } = (await call("GET", "/measurements/event-busking-day")).data
   assert.equal(sponsorships[0].coupons, metrics.coupons)
   assert.equal(sponsorships[0].visits, metrics.visits)
+  assert.equal(sponsorships[0].sales, metrics.visits * report.averageSpend)
 
   const student = await login("학생단체")
   assert.deepEqual((await call("GET", "/analytics", undefined, student)).data.sponsorships, [])
@@ -657,8 +696,8 @@ test("older data files gain the new collections and calendar dates", async () =>
   } as unknown as Parameters<typeof upgradeDatabase>[0]
   const upgraded = upgradeDatabase(old)
   assert.equal(upgraded.brands.length, 12)
-  assert.ok(upgraded.metricLog.length > 0)
-  assert.equal(upgraded.report.targets.reach, 1100)
+  // Without the demo group there is no busking day to measure.
+  assert.deepEqual(upgraded.measurements, [])
   assert.equal(upgraded.groups.length, 8)
   assert.equal(upgraded.catalogVersion, 2)
   assert.ok(upgraded.brands.every((brand) => brand.intro && brand.sns && brand.portfolio))
@@ -755,8 +794,27 @@ test("the admin token check fails safely and slows guessing", async () => {
 })
 
 test("check-in records are limited per address", async () => {
-  for (let i = 0; i < 120; i += 1) assert.equal((await call("POST", "/metrics/visits")).status, 200)
-  assert.equal((await call("POST", "/metrics/visits")).status, 429)
+  for (let i = 0; i < 120; i += 1) {
+    assert.equal((await call("POST", "/check-in/20261012/visits")).status, 200)
+  }
+  assert.equal((await call("POST", "/check-in/20261012/visits")).status, 429)
+})
+
+test("the old global measurement moves to the busking day's own", async () => {
+  const { upgradeDatabase } = await import("./store.js")
+  const upgraded = upgradeDatabase({
+    accounts: [{ id: "muse" }],
+    demoAccountIds: { 학생단체: "muse" },
+    events: { muse: [] },
+    metrics: { scans: 200, coupons: 120, visits: 60 },
+    metricLog: [{ id: "old", kind: "scans", at: "2026-10-12T10:00:00.000Z", participant: "참여자 #200", detail: "QR 스캔 테스트" }],
+    report: { eventName: "가을 버스킹 데이" },
+  } as unknown as Parameters<typeof upgradeDatabase>[0])
+  const [busking] = upgraded.measurements
+  assert.equal(busking.eventId, "event-busking-day")
+  assert.deepEqual(busking.metrics, { scans: 200, coupons: 120, visits: 60 })
+  assert.equal(busking.log[0].detail, "현장 QR 스캔")
+  assert.equal("metrics" in upgraded || "report" in upgraded || "metricLog" in upgraded, false)
 })
 
 test("sign-up codes stay off the response unless turned on", () => {

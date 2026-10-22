@@ -180,8 +180,13 @@ export type Conversation = {
 }
 
 export type Report = {
+  eventId: string
+  // In the event's check-in address.
+  code: string
   eventName: string
   eventDate: string
+  // Last day of an event over several days.
+  eventEndDate?: string
   expectedAudience: number
   sponsorValue: number
   reach: number
@@ -197,6 +202,26 @@ export type Report = {
   }
   hourlyScans: { hour: number; scans: number }[]
   valueBreakdown: { type: string; value: number }[]
+  // Inputs the figures above come from: won a participant spends at the
+  // sponsor's store, and reach beyond the venue.
+  averageSpend: number
+  snsReach: number
+  coupon: { store: string; title: string }
+}
+
+// One event of the group with its live counts and report.
+export type EventMeasurement = {
+  eventId: string
+  metrics: Metrics
+  report: Report
+}
+
+// What a participant sees after scanning an event's QR.
+export type CheckInInfo = {
+  eventName: string
+  eventDate: string
+  groupName: string
+  coupon: Report["coupon"]
 }
 
 // Student groups and brands each have their own menu (data/navigation.ts).

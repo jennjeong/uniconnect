@@ -91,6 +91,7 @@ eventsRouter.delete("/:id", async (req, res) => {
     throw new HttpError(404, "행사를 찾을 수 없어요.")
   }
   database.events[account.id] = events.filter((event) => event.id !== req.params.id)
+  database.measurements = database.measurements.filter((measurement) => measurement.eventId !== req.params.id)
   await saveDatabase()
   res.status(204).end()
 })

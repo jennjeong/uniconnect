@@ -7,14 +7,13 @@ import {
   seedBrands,
   seedConversations,
   seedGroups,
-  seedMetricLog,
-  seedReport,
+  seedMeasurements,
   seedOffers,
   seedRequests,
   seedSponsorships,
 } from "./data/seed.js"
 import { toIsoDate } from "./lib/dates.js"
-import type { Database } from "./types.js"
+import type { Database, Metrics, MetricEntry, Report } from "./types.js"
 
 // A JSON file stands in for a database so the prototype runs without any
 // extra installs. Routes only touch data through getDatabase/saveDatabase,
@@ -53,8 +52,18 @@ export function upgradeDatabase(stored: Database) {
     (account) => account.id === stored.demoAccountIds?.학생단체,
   )
   if (demoStudent) demoStudent.groupId ??= "syu-muse"
-  stored.metricLog ??= seedMetricLog()
-  stored.report ??= structuredClone(seedReport)
+  // Measurement used to be one global set for the busking day; it moves to
+  // that event's own measurement, keeping the counts and records so far.
+  if (!stored.measurements) {
+    const legacy = stored as Database & { metrics?: Metrics; metricLog?: MetricEntry[]; report?: Report }
+    stored.measurements = demoStudent ? seedMeasurements(demoStudent.id) : []
+    const busking = stored.measurements[0]
+    if (busking && legacy.metrics) busking.metrics = legacy.metrics
+    if (busking && legacy.metricLog) busking.log = legacy.metricLog
+    delete legacy.metrics
+    delete legacy.metricLog
+    delete legacy.report
+  }
   stored.requests ??= seedRequests()
   stored.offers ??= seedOffers()
   const demoBrandId = stored.demoAccountIds?.브랜드
@@ -74,6 +83,11 @@ export function upgradeDatabase(stored: Database) {
     ? stored.events?.[demoBrandId]?.find((event) => event.id === "event-coffee-tasting")
     : undefined
   if (tasting) tasting.budget ??= 800000
+  // The busking day's sponsorship follows that event's measurement.
+  const busking = demoBrandId
+    ? stored.sponsorships[demoBrandId]?.find((sponsorship) => sponsorship.id === "sp-busking")
+    : undefined
+  if (busking) busking.eventId ??= "event-busking-day"
   for (const events of Object.values(stored.events)) {
     for (const event of events) event.date = toIsoDate(event.date) ?? event.date
   }
@@ -83,7 +97,9 @@ export function upgradeDatabase(stored: Database) {
     "쿠폰 수령 테스트": "아메리카노 1+1 쿠폰",
     "방문 확인 테스트": "매장 방문 확인",
   }
-  for (const entry of stored.metricLog) entry.detail = testDetails[entry.detail] ?? entry.detail
+  for (const measurement of stored.measurements) {
+    for (const entry of measurement.log) entry.detail = testDetails[entry.detail] ?? entry.detail
+  }
   return stored
 }
 
