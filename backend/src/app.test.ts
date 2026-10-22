@@ -1112,6 +1112,69 @@ test("codes go out by email once a mail service is set, and only to the log befo
   }
 })
 
+test("proposals, answers and new messages are emailed to the other side", async () => {
+  const { mailTransport } = await import("./lib/mailer.js")
+  const realPost = mailTransport.post
+  const sent: { to: string[]; subject: string; text: string }[] = []
+  mailTransport.post = async (body) => {
+    sent.push(body)
+    return new Response(null, { status: 200 })
+  }
+  config.resendApiKey = "test-key"
+  config.mailFrom = "uniconnect <no-reply@example.com>"
+  config.siteUrl = "https://uniconnect.example"
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 20))
+  try {
+    // A new group with a listing, so a brand's offer reaches it.
+    const email = "notice@syu.ac.kr"
+    const code = await call("POST", "/auth/email-code", { role: "학생단체", email })
+    const verified = await call("POST", "/auth/email-code/verify", { email, code: code.data.devCode })
+    const signup = await call("POST", "/auth/signup", {
+      role: "학생단체",
+      name: "알림 받는 동아리",
+      type: "공연 동아리",
+      school: "삼육대학교",
+      email,
+      password: "notice-pass-123",
+      verificationToken: verified.data.verificationToken,
+      agreedToTerms: true,
+      over14: true,
+    })
+    const group = signup.data.token as string
+    const listing = (await call("PUT", "/profile", { intro: "알림을 기다리는 공연 동아리예요.", offer: "관객 80명" }, group)).data.profile
+    sent.length = 0
+
+    const brand = await login("브랜드")
+    await call("POST", "/proposals", { matchId: listing.id }, brand)
+    await settle()
+    const offerMail = sent.find((mail) => mail.to[0] === email)
+    assert.equal(offerMail?.subject, "[uniconnect] 새 협찬 제안이 왔어요")
+    assert.match(offerMail?.text ?? "", /오후의 커피에서/)
+    assert.match(offerMail?.text ?? "", /https:\/\/uniconnect\.example\/offers/)
+
+    const [offer] = (await call("GET", "/offers", undefined, group)).data.offers
+    await call("POST", `/offers/${offer.id}/accept`, undefined, brand) // a brand cannot answer
+    await call("POST", `/offers/${offer.id}/accept`, undefined, group)
+    await settle()
+    assert.ok(sent.some((mail) => mail.to[0] === "hello@afternoon-coffee.kr" && mail.subject.includes("확정")))
+
+    // Messages: one email for a run of unread ones.
+    sent.length = 0
+    const chat = (await call("POST", "/conversations", { partnerId: "afternoon-coffee" }, group)).data.conversation
+    await call("POST", `/conversations/${chat.id}/messages`, { text: "안녕하세요! 일정 이야기해요." }, group)
+    await call("POST", `/conversations/${chat.id}/messages`, { text: "편하실 때 답 주세요." }, group)
+    await settle()
+    const toBrand = sent.filter((mail) => mail.to[0] === "hello@afternoon-coffee.kr")
+    assert.equal(toBrand.length, 1)
+    assert.match(toBrand[0].text, /알림 받는 동아리: 안녕하세요/)
+  } finally {
+    mailTransport.post = realPost
+    config.resendApiKey = undefined
+    config.mailFrom = undefined
+    config.siteUrl = undefined
+  }
+})
+
 test("sessions are stored as hashes, and answers carry security headers", async () => {
   const token = await login("학생단체")
   const sessions = getDatabase().sessions

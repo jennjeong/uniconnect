@@ -2,6 +2,7 @@ import type { Request } from "express"
 import { Router } from "express"
 
 import { HttpError } from "../lib/errors.js"
+import { notify } from "../lib/notices.js"
 import { recordSponsorship } from "../lib/sponsorships.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -61,5 +62,11 @@ requestsRouter.post("/:id/:decision", async (req, res) => {
     })
   }
   await saveDatabase()
+  void notify(
+    database.accounts.find((item) => item.id === request.fromAccountId),
+    decision === "수락" ? "협찬이 확정됐어요" : "협찬 제안에 답이 왔어요",
+    [`${account.name}에서 '${request.eventName}' 제안을 ${decision === "수락" ? "수락했어요" : "거절했어요"}.`],
+    "/matches",
+  )
   res.json({ request })
 })
