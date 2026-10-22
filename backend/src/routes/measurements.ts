@@ -2,7 +2,7 @@ import type { Request } from "express"
 import { Router } from "express"
 
 import { HttpError } from "../lib/errors.js"
-import { buildReport, ensureMeasurement, parseGoals, parseKind } from "../lib/measurements.js"
+import { buildReport, ensureMeasurement, parseGoals, parseKind, parseStaffPin } from "../lib/measurements.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 
@@ -38,7 +38,7 @@ measurementsRouter.get("/", async (req, res) => {
     .map((event) => {
       const { measurement, created } = ensureMeasurement(database, owner!.id, event)
       changed ||= created
-      return { eventId: event.id, metrics: measurement.metrics, report: buildReport(measurement, event) }
+      return { eventId: event.id, metrics: measurement.metrics, report: buildReport(measurement, event, { withPin: Boolean(req.account) }) }
     })
   if (changed) await saveDatabase()
   res.json({ measurements })
@@ -46,7 +46,7 @@ measurementsRouter.get("/", async (req, res) => {
 
 measurementsRouter.get("/:eventId", async (req, res) => {
   const { measurement, event } = await ownedMeasurement(req)
-  res.json({ metrics: measurement.metrics, report: buildReport(measurement, event) })
+  res.json({ metrics: measurement.metrics, report: buildReport(measurement, event, { withPin: Boolean(req.account) }) })
 })
 
 // Participation history, newest first; ?kind= narrows it to one measurement.
@@ -66,8 +66,10 @@ measurementsRouter.get("/:eventId/log", async (req, res) => {
 measurementsRouter.put("/:eventId/goals", async (req, res) => {
   requireAccount(req)
   const goals = parseGoals(req.body)
+  const staffPin = parseStaffPin(req.body?.staffPin)
   const { measurement, event } = await ownedMeasurement(req)
   measurement.goals = goals
+  if (staffPin) measurement.staffPin = staffPin
   await saveDatabase()
-  res.json({ metrics: measurement.metrics, report: buildReport(measurement, event) })
+  res.json({ metrics: measurement.metrics, report: buildReport(measurement, event, { withPin: Boolean(req.account) }) })
 })

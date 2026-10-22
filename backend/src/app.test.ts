@@ -270,9 +270,28 @@ test("each event counts its own QR scans, coupons and visits", async () => {
 
   const recorded = (await call("POST", "/check-in/20261012/scans")).data
   assert.equal(recorded.entry.participant, `참여자 #${initial.scans + 1}`)
+  assert.match(recorded.pass, /^[0-9a-f]{32}$/)
   assert.equal((await call("GET", busking)).data.metrics.scans, initial.scans + 1)
-  const coupon = (await call("POST", "/check-in/20261012/coupons")).data
+
+  // A coupon needs the scan's pass, once; a visit needs the coupon first,
+  // once, and the staff PIN.
+  const { pass } = recorded
+  const record = (kind: string, body?: unknown) => call("POST", `/check-in/20261012/${kind}`, body)
+  assert.equal((await record("coupons")).status, 403)
+  assert.equal((await record("coupons", { pass: "constructor" })).status, 403)
+  assert.equal((await record("visits", { pass, pin: "1012" })).status, 409)
+  const coupon = (await record("coupons", { pass })).data
   assert.equal(coupon.entry.detail, "아메리카노 1+1")
+  assert.equal((await record("coupons", { pass })).status, 409)
+  const wrongPin = await record("visits", { pass, pin: "0000" })
+  assert.equal(wrongPin.status, 403)
+  assert.match(wrongPin.data.error, /직원 PIN/)
+  assert.equal((await record("visits", { pass, pin: "1012" })).status, 200)
+  assert.equal((await record("visits", { pass, pin: "1012" })).status, 409)
+  // The PIN is for the group that owns the event, not for visitors.
+  assert.equal((await call("GET", busking)).data.report.staffPin, undefined)
+  const owner = await login("학생단체")
+  assert.equal((await call("GET", busking, undefined, owner)).data.report.staffPin, "1012")
 
   const scans = (await call("GET", `${busking}/log?kind=scans`)).data.entries
   assert.equal(scans[0].id, recorded.entry.id)
@@ -818,9 +837,18 @@ test("the admin token check fails safely and slows guessing", async () => {
 
 test("check-in records are limited per address", async () => {
   for (let i = 0; i < 120; i += 1) {
-    assert.equal((await call("POST", "/check-in/20261012/visits")).status, 200)
+    assert.equal((await call("POST", "/check-in/20261012/scans")).status, 200)
   }
-  assert.equal((await call("POST", "/check-in/20261012/visits")).status, 429)
+  assert.equal((await call("POST", "/check-in/20261012/scans")).status, 429)
+})
+
+test("wrong staff PINs are limited per address", async () => {
+  const { pass } = (await call("POST", "/check-in/20261012/scans")).data
+  await call("POST", "/check-in/20261012/coupons", { pass })
+  for (let i = 0; i < 10; i += 1) {
+    assert.equal((await call("POST", "/check-in/20261012/visits", { pass, pin: "9999" })).status, 403)
+  }
+  assert.equal((await call("POST", "/check-in/20261012/visits", { pass, pin: "1012" })).status, 429)
 })
 
 test("the old global measurement moves to the busking day's own", async () => {
@@ -991,6 +1019,7 @@ test("a student group sets its event's goals, and the report follows", async () 
     ],
     targets: { reach: 900, scans: 150, coupons: 100, visits: 40, qrRate: 70, visitRate: 30, roas: 160 },
     coupon: { store: "공연장 매점", title: "음료 1잔 무료" },
+    staffPin: "4321",
   }
   const route = "/measurements/event-muse-concert/goals"
   assert.equal((await call("PUT", route, goals)).status, 401)
@@ -1004,6 +1033,7 @@ test("a student group sets its event's goals, and the report follows", async () 
   const badType = { ...goals, valueBreakdown: [{ type: "주식", value: 1000 }] }
   assert.equal((await call("PUT", route, badType, student)).status, 400)
   assert.equal((await call("PUT", route, { ...goals, coupon: { store: "", title: "x" } }, student)).status, 400)
+  assert.equal((await call("PUT", route, { ...goals, staffPin: "12a4" }, student)).status, 400)
 
   const saved = await call("PUT", route, goals, student)
   assert.equal(saved.status, 200)
@@ -1014,6 +1044,7 @@ test("a student group sets its event's goals, and the report follows", async () 
   assert.equal(report.reach, metrics.scans + 500)
   assert.equal(report.roas, Math.round(((metrics.visits * 12000) / 400000) * 100))
   assert.equal(report.targets.roas, 160)
+  assert.equal(report.staffPin, "4321")
   const code = report.code as string
   assert.equal((await call("GET", `/check-in/${code}`)).data.coupon.title, "음료 1잔 무료")
 })

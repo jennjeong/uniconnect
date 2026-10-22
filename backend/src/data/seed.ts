@@ -838,6 +838,9 @@ export function seedMeasurements(accountId: string): Measurement[] {
         },
         coupon: { store: "오후의 커피 공릉점", title: "아메리카노 1+1" },
       },
+      // The demo's staff PIN, given to the store before the event.
+      staffPin: "1012",
+      passes: {},
     },
   ]
 }

@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react"
 
-import { api, errorMessage } from "../api"
+import { ApiError, api, errorMessage } from "../api"
 import logo from "../assets/brand/uniconnect_horizontal.svg"
 import { Icon } from "../components/Icon"
 import { formatFullDate } from "../lib/date"
 import type { CheckInInfo } from "../types"
 
-// What this phone has done at the event, kept so a refresh doesn't count twice.
-type CheckIn = { participant: string; coupon?: string; visited?: boolean }
+// What this phone has done at the event, kept so a refresh doesn't count
+// twice; `pass` lets the server count its coupon and visit once each.
+type CheckIn = { participant: string; pass?: string; coupon?: string; visited?: boolean }
 
 const couponTerms = "발급일부터 7일 동안 쓸 수 있어요"
 
@@ -21,9 +22,10 @@ function readCheckIn(code: string): CheckIn | null {
   }
 }
 
-function writeCheckIn(code: string, checkIn: CheckIn) {
+function writeCheckIn(code: string, checkIn: CheckIn | null) {
   try {
-    localStorage.setItem(storageKey(code), JSON.stringify(checkIn))
+    if (checkIn) localStorage.setItem(storageKey(code), JSON.stringify(checkIn))
+    else localStorage.removeItem(storageKey(code))
   } catch {
     // Without storage a refresh may count again; the visit still works.
   }
@@ -40,6 +42,8 @@ export function CheckInPage({ code }: { code: string }) {
   const [info, setInfo] = useState<CheckInInfo | null>(null)
   const [checkIn, setCheckIn] = useState<CheckIn | null>(() => readCheckIn(code))
   const [busy, setBusy] = useState(false)
+  // The staff PIN, typed by the store's staff when the coupon is used.
+  const [pin, setPin] = useState("")
   const [error, setError] = useState("")
   // StrictMode runs effects twice while developing; record the scan once.
   const scanned = useRef(false)
@@ -62,23 +66,38 @@ export function CheckInPage({ code }: { code: string }) {
     scanned.current = true
     api
       .recordCheckIn(code, "scans")
-      .then(({ entry }) => save({ participant: entry.participant }))
+      .then(({ entry, pass }) => save({ participant: entry.participant, pass }))
       .catch((caught) => setError(errorMessage(caught)))
   }, [checkIn, code])
 
+  // A check-in kept from before passes existed scans again for one.
+  const restart = () => {
+    writeCheckIn(code, null)
+    scanned.current = false
+    setCheckIn(null)
+  }
+
   const record = async (kind: "coupons" | "visits") => {
     if (!checkIn) return
+    if (!checkIn.pass) {
+      restart()
+      return
+    }
     setBusy(true)
     setError("")
     try {
-      const { entry } = await api.recordCheckIn(code, kind)
+      const { entry } = await api.recordCheckIn(code, kind, {
+        pass: checkIn.pass,
+        ...(kind === "visits" ? { pin } : {}),
+      })
       save(
         kind === "coupons"
           ? { ...checkIn, coupon: couponCode(code, entry.participant) }
           : { ...checkIn, visited: true },
       )
     } catch (caught) {
-      setError(errorMessage(caught))
+      if (caught instanceof ApiError && caught.status === 403 && kind === "coupons") restart()
+      else setError(errorMessage(caught))
     } finally {
       setBusy(false)
     }
@@ -141,17 +160,29 @@ export function CheckInPage({ code }: { code: string }) {
                   <Icon name="check" size={16} /> 방문이 확인됐어요. 맛있게 드세요!
                 </p>
               ) : (
-                <div className="checkin-staff">
-                  <p>매장에서 이 화면을 직원에게 보여 주세요.</p>
-                  <button
-                    className="cancel-button wide"
-                    disabled={busy}
-                    onClick={() => record("visits")}
-                    type="button"
-                  >
+                <form
+                  className="checkin-staff"
+                  onSubmit={(event) => {
+                    event.preventDefault()
+                    void record("visits")
+                  }}
+                >
+                  <p>매장에서 이 화면을 직원에게 보여 주세요. 직원이 PIN을 넣으면 방문이 확인돼요.</p>
+                  <input
+                    aria-label="직원 확인 PIN"
+                    autoComplete="off"
+                    className="checkin-pin"
+                    inputMode="numeric"
+                    maxLength={4}
+                    placeholder="직원 PIN 4자리"
+                    type="password"
+                    value={pin}
+                    onChange={(event) => setPin(event.target.value.replace(/\D/g, "").slice(0, 4))}
+                  />
+                  <button className="cancel-button wide" disabled={busy || pin.length !== 4} type="submit">
                     직원 확인 완료
                   </button>
-                </div>
+                </form>
               ))}
           </>
         )}

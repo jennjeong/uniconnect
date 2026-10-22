@@ -214,6 +214,8 @@ export type Report = {
   averageSpend: number
   snsReach: number
   coupon: { store: string; title: string }
+  // 4 digits store staff enter to confirm a visit; only for the owner.
+  staffPin?: string
 }
 
 // One event of the group with its live counts and report.
