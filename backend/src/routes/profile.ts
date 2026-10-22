@@ -12,6 +12,20 @@ export const profileRouter = Router()
 const rows = (value: unknown) =>
   (Array.isArray(value) ? value : []) as (Record<string, unknown> | undefined)[]
 
+// A logo the browser resized: a PNG, JPEG or WebP data URL of about 100KB
+// at most. SVG and the like are refused, since they can carry scripts.
+const logoPattern = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/
+const logoMaxLength = 140_000
+
+function parseLogo(value: unknown) {
+  if (value === undefined) return undefined
+  if (value === null || value === "") return null
+  if (typeof value !== "string" || value.length > logoMaxLength || !logoPattern.test(value)) {
+    throw new HttpError(400, "로고는 PNG, JPG, WebP 이미지를 100KB 이하로 올려 주세요.")
+  }
+  return value
+}
+
 // The parts of a listing an account writes itself.
 function parseProfile(body: unknown, role: Role) {
   const input = (body ?? {}) as Record<string, unknown>
@@ -57,6 +71,7 @@ function parseProfile(body: unknown, role: Role) {
     throw new HttpError(400, "포트폴리오 제목은 40자, 내용은 100자 이하로 적어 주세요.")
   }
   return {
+    logo: parseLogo(input.logo),
     intro,
     offer,
     tags,
@@ -78,7 +93,11 @@ profileRouter.put("/", async (req, res) => {
   const profile = parseProfile(req.body, account.role)
   const database = getDatabase()
   const listing = findListing(database, account) ?? createListing(database, account)
-  Object.assign(listing, profile)
+  // A logo left out stays as it was; null removes it.
+  const { logo, ...rest } = profile
+  Object.assign(listing, rest)
+  if (logo === null) delete listing.logo
+  else if (logo) listing.logo = logo
   await saveDatabase()
   res.json({ profile: listing })
 })

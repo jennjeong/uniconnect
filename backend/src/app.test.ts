@@ -1230,3 +1230,25 @@ test("older sessions with a plain token keep working, stored as its hash", async
   } as unknown as Parameters<typeof upgradeDatabase>[0])
   assert.deepEqual(upgraded.sessions, [{ tokenHash: hashToken("plain-token"), accountId: "a", expiresAt: 1 }])
 })
+
+test("listings take a small PNG, JPEG or WebP logo, and drop it on request", async () => {
+  const student = await login("학생단체")
+  const draft = { intro: "삼육대학교 밴드 동아리예요. 정기 공연을 열어요.", offer: "관객 150명 · SNS 홍보" }
+  const png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+  const saved = await call("PUT", "/profile", { ...draft, logo: png }, student)
+  assert.equal(saved.status, 200)
+  assert.equal(saved.data.profile.logo, png)
+  const listed = (await call("GET", "/groups")).data.groups.find((group: { id: string }) => group.id === "syu-muse")
+  assert.equal(listed.logo, png)
+
+  // Left out, it stays; SVG, other kinds and big ones are refused.
+  assert.equal((await call("PUT", "/profile", draft, student)).data.profile.logo, png)
+  const svg = "data:image/svg+xml;base64,PHN2Zz48L3N2Zz4="
+  assert.equal((await call("PUT", "/profile", { ...draft, logo: svg }, student)).status, 400)
+  assert.equal((await call("PUT", "/profile", { ...draft, logo: "https://example.com/a.png" }, student)).status, 400)
+  const big = `data:image/png;base64,${"A".repeat(150_000)}`
+  assert.equal((await call("PUT", "/profile", { ...draft, logo: big }, student)).status, 400)
+
+  const removed = await call("PUT", "/profile", { ...draft, logo: null }, student)
+  assert.equal(removed.data.profile.logo, undefined)
+})

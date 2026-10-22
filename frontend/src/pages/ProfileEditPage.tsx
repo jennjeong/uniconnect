@@ -1,8 +1,10 @@
 import { useState } from "react"
 
+import { BrandMark } from "../components/BrandMark"
 import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { factFields, profileLabels, snsPlatforms } from "../data/profile"
+import { logoFromFile } from "../lib/image"
 import type { Match, PortfolioItem, ProfileDraft, Role, SnsAccount } from "../types"
 
 const maxSns = 4
@@ -32,6 +34,8 @@ export function ProfileEditPage({
   )
   const [sns, setSns] = useState<SnsAccount[]>(listing?.sns ?? [])
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>(listing?.portfolio ?? [])
+  // The logo as it will be saved: a data URL, or "" for none.
+  const [logo, setLogo] = useState(listing?.logo ?? "")
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
 
@@ -61,6 +65,7 @@ export function ProfileEditPage({
       facts: factFields[role].map((field) => ({ label: field.label, value: facts[field.label] ?? "" })),
       sns,
       portfolio,
+      ...(logo !== (listing?.logo ?? "") ? { logo: logo || null } : {}),
     })
     setBusy(false)
     if (problem) setError(problem)
@@ -74,6 +79,40 @@ export function ProfileEditPage({
         title="소개 편집"
         description={`${viewers}가 찾기와 상세 정보에서 보는 내용이에요. 자세할수록 알맞은 상대를 만나기 쉬워요.`}
       />
+
+      <div className="form-card">
+        <h3 className="form-card-title">로고</h3>
+        <div className="logo-field">
+          <BrandMark large match={{ industry: listing?.industry ?? (role === "학생단체" ? "performance" : "cafe"), logo }} />
+          <div className="logo-field-actions">
+            <label className="detail-button logo-pick">
+              {logo ? "다른 이미지로 바꾸기" : "로고 올리기"}
+              <input
+                accept="image/png,image/jpeg,image/webp"
+                className="sr-only"
+                type="file"
+                onChange={(event) => {
+                  const file = event.target.files?.[0]
+                  event.target.value = ""
+                  if (!file) return
+                  logoFromFile(file)
+                    .then((url) => {
+                      setLogo(url)
+                      setError("")
+                    })
+                    .catch((caught: Error) => setError(caught.message))
+                }}
+              />
+            </label>
+            {logo && (
+              <button className="cancel-button" onClick={() => setLogo("")} type="button">
+                지우기
+              </button>
+            )}
+            <small className="field-hint">정사각형으로 줄여 저장돼요. 없으면 업종 그림이 보여요.</small>
+          </div>
+        </div>
+      </div>
 
       <div className="form-card">
         <h3 className="form-card-title">소개</h3>
