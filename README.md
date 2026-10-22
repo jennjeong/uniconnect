@@ -200,7 +200,8 @@ npm test
 npm run typecheck
 ```
 
-`npm test`는 백엔드 API 테스트(`backend/src/app.test.ts`)를 실행합니다.
+`npm test`는 백엔드 API 테스트(`backend/src/app.test.ts`)와 화면 쪽 단위 테스트(`frontend/src/lib/*.test.ts`, vitest)를 차례로 실행합니다. 화면 테스트는 주소 읽기(`route.ts`), 날짜 계산(`date.ts`), 성과 분석 계산(`sponsorships.ts`)을 확인하고, 서버의 페이지 주소 목록(`backend/src/lib/appPaths.ts`)이 화면 주소와 맞는지도 확인합니다.
+GitHub에 push하거나 PR을 열면 GitHub Actions가 설치, 타입 검사, 테스트, 빌드를 자동으로 실행합니다(`.github/workflows/ci.yml`).
 
 ## 구조
 
