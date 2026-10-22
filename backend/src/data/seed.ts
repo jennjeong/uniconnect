@@ -809,12 +809,12 @@ export function seedMeasurements(accountId: string): Measurement[] {
       code: "20261012",
       metrics: { scans: 128, coupons: 94, visits: 41 },
       hourlyScans: [
-        { hour: 17, scans: 12 },
-        { hour: 18, scans: 26 },
-        { hour: 19, scans: 38 },
-        { hour: 20, scans: 29 },
-        { hour: 21, scans: 15 },
-        { hour: 22, scans: 8 },
+        { date: "2026-10-12", hour: 17, scans: 12 },
+        { date: "2026-10-12", hour: 18, scans: 26 },
+        { date: "2026-10-12", hour: 19, scans: 38 },
+        { date: "2026-10-12", hour: 20, scans: 29 },
+        { date: "2026-10-12", hour: 21, scans: 15 },
+        { date: "2026-10-12", hour: 22, scans: 8 },
       ],
       log: seedMetricLog(),
       goals: {

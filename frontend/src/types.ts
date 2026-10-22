@@ -210,7 +210,8 @@ export type Report = {
     visitRate: number
     roas: number
   }
-  hourlyScans: { hour: number; scans: number }[]
+  // QR scans by day (YYYY-MM-DD, Korea) and hour.
+  hourlyScans: { date: string; hour: number; scans: number }[]
   valueBreakdown: { type: string; value: number }[]
   // Inputs the figures above come from: won a participant spends at the
   // sponsor's store, and reach beyond the venue.

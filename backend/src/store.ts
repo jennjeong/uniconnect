@@ -14,7 +14,7 @@ import {
 } from "./data/seed.js"
 import { toIsoDate } from "./lib/dates.js"
 import { HttpError } from "./lib/errors.js"
-import { newStaffPin, syncSponsors } from "./lib/measurements.js"
+import { newStaffPin, prunePasses, syncSponsors } from "./lib/measurements.js"
 import { hashToken } from "./middleware/session.js"
 import type { Database, Metrics, MetricEntry, Report } from "./types.js"
 
@@ -125,6 +125,11 @@ export function upgradeDatabase(stored: Database) {
     // takes over what the event had.
     measurement.sponsors ??= []
     syncSponsors(stored, measurement)
+    // Scans by hour gained their day; older ones were on the event's first.
+    const event = stored.events[measurement.accountId]?.find((item) => item.id === measurement.eventId)
+    for (const slot of measurement.hourlyScans) slot.date ??= event?.date ?? ""
+    // Participation records an event no longer needs go on each start.
+    if (event) prunePasses(stored, measurement, event)
   }
   return stored
 }

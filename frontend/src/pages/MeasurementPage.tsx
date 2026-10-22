@@ -46,7 +46,7 @@ export function MeasurementPage({
 
   const funnel: { kind: MetricKind; note: string }[] = [
     { kind: "scans", note: "현장에서 QR을 스캔했어요" },
-    { kind: "coupons", note: `스캔한 사람의 ${percent(metrics.coupons, metrics.scans)}%가 받았어요` },
+    { kind: "coupons", note: `QR 스캔의 ${percent(metrics.coupons, metrics.scans)}%가 받았어요` },
     { kind: "visits", note: `쿠폰 받은 사람의 ${percent(metrics.visits, metrics.coupons)}%가 왔어요` },
   ]
 

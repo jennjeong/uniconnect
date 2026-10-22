@@ -229,7 +229,8 @@ export type Measurement = {
   accountId: string
   code: string
   metrics: Metrics
-  hourlyScans: { hour: number; scans: number }[]
+  // QR scans by day and hour in Korea.
+  hourlyScans: { date: string; hour: number; scans: number }[]
   // Most recent records, oldest first.
   log: MetricEntry[]
   goals: MeasurementGoals
@@ -270,7 +271,7 @@ export type Report = {
     visitRate: number
     roas: number
   }
-  hourlyScans: { hour: number; scans: number }[]
+  hourlyScans: Measurement["hourlyScans"]
   valueBreakdown: { type: string; value: number }[]
   // Inputs the figures above come from.
   averageSpend: number

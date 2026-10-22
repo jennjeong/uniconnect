@@ -1,5 +1,6 @@
 import { randomBytes, randomInt, randomUUID } from "node:crypto"
 
+import { addDays, hourInKorea, todayInKorea } from "./dates.js"
 import { HttpError } from "./errors.js"
 import { sponsorTypes, text } from "./validation.js"
 import type {
@@ -303,6 +304,61 @@ export function buildReport(measurement: Measurement, event: EventItem, { withPi
   }
 }
 
+// When an event takes check-ins, in days in Korea: scans and coupons on its
+// own days and the day after (for events running past midnight), store
+// visits until the coupons run out, 7 days after the last coupon. The demo
+// accounts' events are always open, so visitors can try the flow.
+export const couponDays = 7
+
+export function checkInWindow(event: EventItem) {
+  const end = addDays(event.endDate ?? event.date, 1)
+  return { start: event.date, end, visitsEnd: addDays(end, couponDays) }
+}
+
+const isDemoEvent = (database: Database, measurement: Measurement) =>
+  Object.values(database.demoAccountIds).includes(measurement.accountId)
+
+// Refuses a scan or coupon outside the event's days, or a visit after its
+// coupons ran out.
+export function assertOpen(database: Database, measurement: Measurement, event: EventItem, kind: MetricKind) {
+  if (isDemoEvent(database, measurement)) return
+  const today = todayInKorea()
+  const { start, end, visitsEnd } = checkInWindow(event)
+  if (kind === "visits") {
+    if (today > visitsEnd) throw new HttpError(409, "쿠폰 사용 기간이 지났어요.")
+    return
+  }
+  if (today < start) {
+    throw new HttpError(409, `아직 참여를 받지 않는 행사예요. 행사 당일(${start})에 다시 스캔해 주세요.`)
+  }
+  if (today > end) throw new HttpError(409, "참여 기간이 끝난 행사예요.")
+}
+
+// Participation records a measurement keeps at most: far above any campus
+// event, low enough to keep the data file small.
+export const passLimit = 20_000
+
+// Drops the participation records an event no longer needs: those without
+// a coupon once its days are over, and all of them once its coupons ran
+// out. Returns whether any went.
+export function prunePasses(database: Database, measurement: Measurement, event: EventItem) {
+  if (isDemoEvent(database, measurement)) return false
+  const today = todayInKorea()
+  const { end, visitsEnd } = checkInWindow(event)
+  if (today <= end) return false
+  const before = Object.keys(measurement.passes).length
+  if (today > visitsEnd) {
+    measurement.passes = {}
+  } else {
+    measurement.passes = Object.fromEntries(
+      Object.entries(measurement.passes).filter(
+        ([, pass]) => pass.coupon || Object.keys(pass.sponsors ?? {}).length > 0,
+      ),
+    )
+  }
+  return Object.keys(measurement.passes).length !== before
+}
+
 // Counts one QR scan, coupon or store visit, and its record; a sponsor's
 // coupon or visit counts for that sponsor too.
 export function recordMetric(measurement: Measurement, kind: MetricKind, sponsor?: EventSponsor): MetricEntry {
@@ -310,11 +366,15 @@ export function recordMetric(measurement: Measurement, kind: MetricKind, sponsor
   if (sponsor && kind !== "scans") sponsor.metrics[kind] += 1
   const now = new Date()
   if (kind === "scans") {
-    // Hours on the clock in Korea, where the events take place.
-    const hour = new Date(now.getTime() + 9 * 60 * 60 * 1000).getUTCHours()
-    const slot = measurement.hourlyScans.find((item) => item.hour === hour)
+    // Hours on the clock in Korea, where the events take place, by day.
+    const { date, hour } = hourInKorea(now)
+    const slot = measurement.hourlyScans.find((item) => item.date === date && item.hour === hour)
     if (slot) slot.scans += 1
-    else measurement.hourlyScans = [...measurement.hourlyScans, { hour, scans: 1 }].sort((a, b) => a.hour - b.hour)
+    else {
+      measurement.hourlyScans = [...measurement.hourlyScans, { date, hour, scans: 1 }].sort(
+        (a, b) => a.date.localeCompare(b.date) || a.hour - b.hour,
+      )
+    }
   }
   const coupon = sponsor?.coupon ?? measurement.goals.coupon
   const entry: MetricEntry = {

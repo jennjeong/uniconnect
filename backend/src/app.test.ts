@@ -500,6 +500,56 @@ test("brand analytics follow the live measurement", async () => {
   assert.deepEqual((await call("GET", "/analytics", undefined, student)).data.sponsorships, [])
 })
 
+test("check-ins count only on the event's days, and records go once they are not needed", async () => {
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const { prunePasses } = await import("./lib/measurements.js")
+  const today = todayInKorea()
+  const student = await signUpMember("window@syu.ac.kr", "window-pass-123")
+  const create = async (date: string) => {
+    const { event } = (await call("POST", "/events", { name: `${date} 행사`, date, types: ["현금"] }, student)).data
+    const { report } = (await call("GET", `/measurements/${event.id}`, undefined, student)).data
+    return { event, report }
+  }
+
+  // Not yet: tests before the day do not count.
+  const later = await create(addDays(today, 3))
+  const early = await call("POST", `/check-in/${later.report.code}/scans`)
+  assert.equal(early.status, 409)
+  assert.match(early.data.error, /아직 참여를 받지 않는/)
+
+  // On the day: a scan by the day and hour, and a coupon.
+  const now = await create(today)
+  const code = now.report.code
+  const { pass } = (await call("POST", `/check-in/${code}/scans`)).data
+  const { coupon } = (await call("POST", `/check-in/${code}/coupons`, { pass })).data
+  await call("POST", `/check-in/${code}/scans`)
+  const measured = (await call("GET", `/measurements/${now.event.id}`, undefined, student)).data.report
+  assert.equal(measured.hourlyScans.length, 1)
+  assert.equal(measured.hourlyScans[0].date, today)
+  assert.equal(measured.hourlyScans[0].scans, 2)
+
+  // Three days on, no more scans, but the coupon still brings a visit.
+  const event = Object.values(getDatabase().events).flat().find((item) => item.id === now.event.id)!
+  event.date = addDays(today, -3)
+  const over = await call("POST", `/check-in/${code}/scans`)
+  assert.equal(over.status, 409)
+  assert.match(over.data.error, /참여 기간이 끝난/)
+  assert.equal((await call("POST", `/check-in/${code}/coupons`, { pass })).status, 409)
+  const measurement = getDatabase().measurements.find((item) => item.eventId === now.event.id)!
+  assert.equal(Object.keys(measurement.passes).length, 2)
+  // Records without a coupon are no longer needed.
+  assert.equal(prunePasses(getDatabase(), measurement, event), true)
+  assert.deepEqual(Object.keys(measurement.passes), [pass])
+  const visit = await call("POST", `/check-in/${code}/staff/visits`, { pin: now.report.staffPin, coupon })
+  assert.equal(visit.status, 200)
+
+  // Once the coupons ran out, no visits and no records.
+  event.date = addDays(today, -10)
+  assert.equal((await call("POST", `/check-in/${code}/staff/visits`, { pin: now.report.staffPin, coupon })).status, 409)
+  assert.equal(prunePasses(getDatabase(), measurement, event), true)
+  assert.deepEqual(measurement.passes, {})
+})
+
 test("an event's first sponsor takes over the coupons handed out before it", async () => {
   const { syncSponsors } = await import("./lib/measurements.js")
   const database = structuredClone(getDatabase())
