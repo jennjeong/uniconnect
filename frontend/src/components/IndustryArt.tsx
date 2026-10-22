@@ -94,23 +94,18 @@ const art: Record<Industry, ReactNode> = {
       <rect x="19" y="35.5" width="10" height="2" rx="1" fill={silver} />
     </>
   ),
-  // Silver trophy with a white star on a navy stand.
+  // Basketball mid-bounce over a silver shadow, with two speed lines.
   sports: (
     <>
+      <ellipse cx="34" cy="49" rx="10" ry="2.2" fill={silver} />
+      <circle cx="34" cy="29" r="13.5" fill={blue} />
       <path
-        d="M24 21.7h-3.5a1.6 1.6 0 0 0-1.6 1.8c.3 4 2.8 6.6 6.6 7.2M40 21.7h3.5a1.6 1.6 0 0 1 1.6 1.8c-.3 4-2.8 6.6-6.6 7.2"
+        d="M20.5 29h27M34 15.5v27M24.4 19.5c3.6 2.6 5.6 6 5.6 9.5s-2 6.9-5.6 9.5M43.6 19.5c-3.6 2.6-5.6 6-5.6 9.5s2 6.9 5.6 9.5"
         {...line}
-        stroke={silverDeep}
-        strokeWidth={3}
+        stroke={deep}
+        strokeWidth={1.8}
       />
-      <rect x="30" y="33.7" width="4" height="5.6" fill={silverDeep} />
-      <path d="M23.5 16.7h17v9a8.5 8.5 0 0 1-17 0Z" fill={silver} />
-      <path
-        d="M32 20.4 33.06 23.14 35.99 23.3 33.71 25.16 34.47 28 32 26.4 29.53 28 30.29 25.16 28.01 23.3 30.94 23.14Z"
-        fill="#fff"
-      />
-      <rect x="24.5" y="39.2" width="15" height="8" rx="2.4" fill={deep} />
-      <rect x="28.5" y="42.1" width="7" height="2.2" rx="1.1" fill="#fff" />
+      <path d="M12.5 24h4.5M10.5 30h5" {...line} stroke={silverDeep} strokeWidth={2.4} />
     </>
   ),
   // Lipstick in a silver case.
