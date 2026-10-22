@@ -1,4 +1,4 @@
-import { randomBytes, randomUUID } from "node:crypto"
+import { randomBytes, randomInt, randomUUID } from "node:crypto"
 
 import { HttpError } from "./errors.js"
 import { sponsorTypes, text } from "./validation.js"
@@ -103,6 +103,14 @@ export function parseGoals(body: unknown): MeasurementGoals {
   }
 }
 
+// The staff PIN, when the goals form sends one: 4 digits.
+export function parseStaffPin(value: unknown) {
+  if (value === undefined) return undefined
+  const pin = text(value)
+  if (!/^\d{4}$/.test(pin)) throw new HttpError(400, "직원 확인 PIN은 숫자 4자리로 적어 주세요.")
+  return pin
+}
+
 // A check-in code no other event has.
 function newCode(database: Database) {
   let code: string
@@ -110,6 +118,8 @@ function newCode(database: Database) {
   while (database.measurements.some((measurement) => measurement.code === code))
   return code
 }
+
+export const newStaffPin = () => String(randomInt(0, 10000)).padStart(4, "0")
 
 // The event's measurement, created with default goals the first time.
 // Returns whether it was created, so the caller knows to save.
@@ -124,6 +134,8 @@ export function ensureMeasurement(database: Database, accountId: string, event: 
     hourlyScans: [],
     log: [],
     goals: defaultGoals(event),
+    staffPin: newStaffPin(),
+    passes: {},
   }
   database.measurements.push(measurement)
   return { measurement, created: true }
@@ -138,7 +150,7 @@ export const estimatedSales = (measurement: Measurement) =>
 // The event's report: its goals, with reach and ROAS worked out from the
 // live counts (reach: QR scans plus the reach beyond the venue; ROAS:
 // estimated sales over the sponsorship's value).
-export function buildReport(measurement: Measurement, event: EventItem): Report {
+export function buildReport(measurement: Measurement, event: EventItem, { withPin = false } = {}): Report {
   const { goals, metrics } = measurement
   const sponsorValue = goals.valueBreakdown.reduce((sum, part) => sum + part.value, 0)
   return {
@@ -157,6 +169,7 @@ export function buildReport(measurement: Measurement, event: EventItem): Report 
     averageSpend: goals.averageSpend,
     snsReach: goals.snsReach,
     coupon: goals.coupon,
+    ...(withPin ? { staffPin: measurement.staffPin } : {}),
   }
 }
 

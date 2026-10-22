@@ -35,6 +35,12 @@ export function QrModal({
         <strong>{report.eventName}</strong>
         <span>{formatFullDate(report.eventDate)} · 행사장 입구와 부스에 띄워 주세요</span>
         <code className="qr-link">{link}</code>
+        {report.staffPin && (
+          <p className="qr-pin">
+            매장 직원 확인 PIN <strong>{report.staffPin}</strong>
+            <small>협찬 매장 직원에게만 알려 주세요. 방문은 이 PIN을 넣어야 기록돼요.</small>
+          </p>
+        )}
         <div className="qr-actions">
           <button className="cancel-button" onClick={copy} type="button">
             링크 복사

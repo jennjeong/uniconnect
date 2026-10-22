@@ -158,15 +158,18 @@ export const api = {
     }),
   saveGoals: (
     eventId: string,
-    goals: Pick<Report, "expectedAudience" | "averageSpend" | "snsReach" | "valueBreakdown" | "targets" | "coupon">,
+    goals: Pick<Report, "expectedAudience" | "averageSpend" | "snsReach" | "valueBreakdown" | "targets" | "coupon" | "staffPin">,
   ) =>
     request<{ metrics: Metrics; report: Report }>(`/measurements/${encodeURIComponent(eventId)}/goals`, {
       method: "PUT",
       body: goals,
     }),
   checkIn: (code: string) => request<CheckInInfo>(`/check-in/${encodeURIComponent(code)}`),
-  recordCheckIn: (code: string, kind: MetricKind) =>
-    request<{ entry: MetricEntry }>(`/check-in/${encodeURIComponent(code)}/${kind}`, {
+  // A scan answers a pass; the coupon sends it, and the visit sends it with
+  // the staff PIN.
+  recordCheckIn: (code: string, kind: MetricKind, body?: { pass: string; pin?: string }) =>
+    request<{ entry: MetricEntry; pass?: string }>(`/check-in/${encodeURIComponent(code)}/${kind}`, {
       method: "POST",
+      body,
     }),
 }
