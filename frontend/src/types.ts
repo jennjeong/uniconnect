@@ -244,6 +244,7 @@ export type ModalName =
   | "signup"
   | "reset"
   | "leave"
+  | "measure-goals"
   | "metric-log"
   | "goal"
   | "ask"

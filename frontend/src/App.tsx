@@ -29,6 +29,7 @@ import { installRipple } from "./lib/ripple"
 import { readView, roleOfPage, viewPath, type HistoryEntry, type View } from "./lib/route"
 import { installSwipeNavigation, noteHistoryEnd } from "./lib/swipe"
 import { GoalModal } from "./modals/GoalModal"
+import { GoalsModal } from "./modals/GoalsModal"
 import { LeaveModal } from "./modals/LeaveModal"
 import { LoginModal } from "./modals/LoginModal"
 import { ResetPasswordModal } from "./modals/ResetPasswordModal"
@@ -787,6 +788,9 @@ function App() {
             onSelect={setMeasuredId}
             onUpdate={updateMeasurement}
             onOpenQr={() => setActiveModal("qr")}
+            onOpenGoals={() =>
+              account ? setActiveModal("measure-goals") : requireLogin("로그인하면 행사 목표를 정할 수 있어요.")
+            }
             onShowLog={openLog}
           />
         )
@@ -1026,6 +1030,19 @@ function App() {
             metrics={metrics}
             onClose={closeModal}
             onDownload={saveReport}
+          />
+        </Presence>
+      )}
+      {report && (
+        <Presence show={activeModal === "measure-goals"}>
+          <GoalsModal
+            report={report}
+            onClose={closeModal}
+            onSaved={(next) => {
+              updateMeasurement(next)
+              setActiveModal(null)
+              showNotice("목표를 저장했어요. 리포트에 바로 반영돼요.")
+            }}
           />
         </Presence>
       )}

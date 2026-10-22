@@ -147,6 +147,14 @@ export const api = {
     request<{ entries: MetricEntry[] }>(`/measurements/${encodeURIComponent(eventId)}/log`, {
       query: kind ? { kind } : {},
     }),
+  saveGoals: (
+    eventId: string,
+    goals: Pick<Report, "expectedAudience" | "averageSpend" | "snsReach" | "valueBreakdown" | "targets" | "coupon">,
+  ) =>
+    request<{ metrics: Metrics; report: Report }>(`/measurements/${encodeURIComponent(eventId)}/goals`, {
+      method: "PUT",
+      body: goals,
+    }),
   checkIn: (code: string) => request<CheckInInfo>(`/check-in/${encodeURIComponent(code)}`),
   recordCheckIn: (code: string, kind: MetricKind) =>
     request<{ entry: MetricEntry }>(`/check-in/${encodeURIComponent(code)}/${kind}`, {
