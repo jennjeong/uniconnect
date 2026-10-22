@@ -4,6 +4,7 @@ import { Router } from "express"
 import { brandIndustries, groupIndustries } from "../lib/catalog.js"
 import { todayInKorea } from "../lib/dates.js"
 import { HttpError } from "../lib/errors.js"
+import { notify } from "../lib/notices.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { Account, RequestStatus, SponsorOffer, SponsorRequest } from "../types.js"
@@ -84,7 +85,16 @@ proposalsRouter.post("/", async (req, res) => {
     const openOffer = database.offers.some(
       (offer) => offer.fromAccountId === account.id && offer.groupId === matchId && offer.status !== "거절",
     )
-    if (groupHasInbox && !openOffer) database.offers.push(brandOffer(account, matchId))
+    if (groupHasInbox && !openOffer) {
+      const offer = brandOffer(account, matchId)
+      database.offers.push(offer)
+      void notify(
+        database.accounts.find((item) => item.groupId === matchId),
+        "새 협찬 제안이 왔어요",
+        [`${account.name}에서 '${offer.campaignName}' 협찬을 제안했어요.`, `제공 협찬: ${offer.offer}`],
+        "/offers",
+      )
+    }
   }
 
   // A brand with an account gets the proposal in its inbox, about the
@@ -119,6 +129,12 @@ proposalsRouter.post("/", async (req, res) => {
       status: "검토 중",
       createdAt: new Date().toISOString(),
     })
+    void notify(
+      database.accounts.find((item) => item.brandId === matchId),
+      "새 협찬 제안이 왔어요",
+      [`${account.name}에서 '${event?.name ?? "행사 일정 협의"}' 협찬을 제안했어요.`],
+      "/inbox",
+    )
   }
   await saveDatabase()
   res.status(201).json(proposalState(account))

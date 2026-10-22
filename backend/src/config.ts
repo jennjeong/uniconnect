@@ -34,6 +34,8 @@ export const config = {
   // Sends verification codes by email through Resend once both are set
   // (lib/mailer.ts); MAIL_FROM is like "uniconnect <no-reply@example.com>".
   resendApiKey: process.env.RESEND_API_KEY,
+  // The site's address, for links in notice emails (like https://uniconnect.kr).
+  siteUrl: process.env.SITE_URL,
   mailFrom: process.env.MAIL_FROM,
   // Only needed when the frontend is hosted on another origin.
   corsOrigin: process.env.CORS_ORIGIN,
