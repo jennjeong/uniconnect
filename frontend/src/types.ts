@@ -42,7 +42,10 @@ export type Match = {
 }
 
 // The parts of its listing an account writes itself in 내 정보.
-export type ProfileDraft = Pick<Match, "intro" | "offer" | "tags" | "facts" | "sns" | "portfolio">
+// `logo`: a data URL to set, null to remove, left out to keep.
+export type ProfileDraft = Pick<Match, "intro" | "offer" | "tags" | "facts" | "sns" | "portfolio"> & {
+  logo?: string | null
+}
 
 export type EventStatus = "매칭 중" | "집행 예정" | "측정 완료"
 

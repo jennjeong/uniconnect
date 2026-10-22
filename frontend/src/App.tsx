@@ -719,6 +719,9 @@ function App() {
     if (profileOpen && account && view.profile === "edit") {
       return (
         <ProfileEditPage
+          // The form takes the listing once; opened straight from its
+          // address, it starts again when the listing arrives.
+          key={listing?.id ?? "new"}
           role={role}
           listing={listing}
           onCancel={() => goBack({ page, profile: "page" })}
