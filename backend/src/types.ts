@@ -33,6 +33,13 @@ export type Match = {
   tags: string[]
   // Sponsorships with student groups this semester (brand catalog only).
   popularity?: number
+  // Brand catalog only: the store, as its address and, once a map service
+  // has placed it (lib/geocode.ts), its coordinates.
+  location?: { address: string; lat?: number; lng?: number }
+  // Km from the account browsing (its campus or store) to this listing,
+  // worked out when the catalog is served (lib/geo.ts); absent when either
+  // place is unknown.
+  distanceKm?: number
   // Student group catalog only: school, next event and its expected audience.
   school?: string
   eventName?: string

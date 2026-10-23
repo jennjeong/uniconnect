@@ -94,3 +94,33 @@ test("a new group signs up with the code shown on screen", async ({ page }) => {
   await expect(dialog).toBeHidden()
   await expect(page.getByText(/가입했어요/)).toBeVisible()
 })
+
+test("brands line up by distance from the school, and a brand keeps its store address", async ({ browser }) => {
+  // Visitors see the demo group's campus and the demo stores.
+  const student = await (await browser.newContext()).newPage()
+  await student.goto("/matches")
+  await student.getByRole("tab", { name: "가까운 순" }).click()
+  const first = student.locator(".work-card").first()
+  await expect(first.getByRole("heading", { name: "그린데이 샐러드" })).toBeVisible()
+  await expect(first.locator(".tag-distance")).toHaveText(/3\.3km/)
+  // Online brands have no store, so they come last with no distance.
+  await expect(student.locator(".work-card").last().locator(".tag-distance")).toHaveCount(0)
+
+  const brand = await (await browser.newContext()).newPage()
+  await brand.goto("/")
+  await logIn(brand, "브랜드", "hello@afternoon-coffee.kr")
+  await brand.goto("/me/edit")
+  await expect(brand.getByLabel("매장 주소")).toHaveValue("서울 노원구 공릉역 2번 출구 앞")
+  await brand.getByLabel("매장 주소").fill("서울 노원구 화랑로 815")
+  await brand.getByRole("button", { name: "저장하기" }).click()
+  await expect(brand.getByText(/소개를 저장했어요/)).toBeVisible()
+  // The server has no map key here, so the new address has no place yet
+  // and the groups show no distance.
+  await brand.goto("/groups")
+  await brand.getByRole("tab", { name: "가까운 순" }).click()
+  await expect(brand.locator(".work-card").first()).toBeVisible()
+  await expect(brand.locator(".tag-distance")).toHaveCount(0)
+  await brand.goto("/me/edit")
+  await expect(brand.getByLabel("매장 주소")).toHaveValue("서울 노원구 화랑로 815")
+  await expect(brand.getByText(/지도 서비스가 연결되면/)).toBeVisible()
+})

@@ -1,22 +1,26 @@
 import { useState, type CSSProperties } from "react"
 
-import { DateLine } from "../components/DateLine"
 import { PageIntro } from "../components/PageIntro"
 import { ProposalControl } from "../components/ProposalControl"
 import { TabBar } from "../components/TabBar"
 import { WorkCard } from "../components/WorkCard"
 import { t } from "../i18n"
 import { todayIso } from "../lib/date"
+import { nearestFirst } from "../lib/distance"
 import type { Industry, Match, RequestStatus } from "../types"
 
-type Tab = "추천" | "행사 임박" | "전체" | "분야별"
+type Tab = "추천" | "가까운 순" | "행사 임박" | "전체" | "분야별"
 
-const tabs: Tab[] = ["추천", "행사 임박", "전체", "분야별"]
+const tabs: Tab[] = ["추천", "가까운 순", "행사 임박", "전체", "분야별"]
 
 const tabIntro: Record<Tab, { title: string; caption: string }> = {
   추천: {
     title: "캠페인에 맞는 학생단체를 찾았어요",
     caption: "타깃, 행사 규모, 지난 협찬 성과를 함께 분석한 결과예요.",
+  },
+  "가까운 순": {
+    title: "매장에서 가까운 학생단체예요",
+    caption: "우리 매장에서 학교까지 가까운 순서예요. 매장 주소는 내 정보에서 적을 수 있어요.",
   },
   "행사 임박": {
     title: "곧 행사를 여는 학생단체예요",
@@ -76,7 +80,9 @@ export function GroupsPage({
   const list =
     tab === "추천"
       ? matches
-      : tab === "행사 임박"
+      : tab === "가까운 순"
+        ? nearestFirst(groups)
+        : tab === "행사 임박"
         ? groups
             .filter((group) => group.eventDate && group.eventDate >= today)
             .sort((a, b) => (a.eventDate ?? "").localeCompare(b.eventDate ?? ""))
@@ -138,10 +144,9 @@ export function GroupsPage({
                 match={group}
                 meta={`${group.school} · ${t(group.category)}`}
                 onOpenDetail={() => onOpenDetail(group)}
+                date={group.eventDate}
                 tags={
                   <>
-                    {/* The date and the event's features each take their own line. */}
-                    {group.eventDate && <DateLine date={group.eventDate} />}
                     {group.eventName && <span className="tag-event">{group.eventName}</span>}
                     {group.tags.map((tag) => (
                       <span key={tag}>{tag}</span>

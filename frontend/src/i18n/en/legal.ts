@@ -74,9 +74,10 @@ const en: Record<string, string> = {
     "Group or brand name, category (industry), school, email address, password (encrypted so that it cannot be recovered), time of agreement to the terms",
   "회원 가입과 로그인, 회원 유형 확인": "Sign-up and login, verification of member type",
   "탈퇴할 때까지": "Until account deletion",
-  "소개, SNS 주소, 포트폴리오, 행사·캠페인 정보, 협찬 제안":
-    "Profile, social media addresses, portfolio, event and campaign information, sponsorship proposals",
-  "다른 회원에게 소개를 보여 주고 협찬을 연결": "Showing profiles to other members and connecting sponsorships",
+  "소개, 브랜드의 매장 주소, SNS 주소, 포트폴리오, 행사·캠페인 정보, 협찬 제안":
+    "Profile, a brand's store address, social media addresses, portfolio, event and campaign information, sponsorship proposals",
+  "다른 회원에게 소개를 보여 주고, 학교와 매장 사이의 거리를 알려 협찬을 연결":
+    "Showing profiles to other members, telling them the distance between schools and stores, and connecting sponsorships",
   "탈퇴하거나 직접 지울 때까지": "Until account deletion or until deleted by the member",
   "주고받은 메시지": "Messages sent and received",
   "회원 사이의 대화": "Conversations between members",
@@ -110,8 +111,8 @@ const en: Record<string, string> = {
   "서버 호스팅처럼 새로 맡기는 일이 생기면 받는 곳과 맡기는 일을 이곳에 먼저 적고 알려 드려요.":
     "If any processing is newly outsourced, such as server hosting, the recipient and the outsourced task will first be listed here and members will be notified.",
   "다른 회원에게 보이는 정보": "Information Visible to Other Members",
-  "단체명·브랜드명, 분류, 학교, 소개, SNS, 포트폴리오와 다가오는 행사는 상대 유형의 회원에게 보여요. 이메일과 비밀번호는 보이지 않아요. 협찬 제안과 메시지는 주고받은 두 회원만 볼 수 있어요.":
-    "The group or brand name, category, school, profile, social media, portfolio and upcoming events are visible to members of the other type. Email addresses and passwords are not visible. Sponsorship proposals and messages can be seen only by the two members who exchanged them.",
+  "단체명·브랜드명, 분류, 학교, 소개, SNS, 포트폴리오, 다가오는 행사와 브랜드의 매장 주소(그리고 학교와의 거리)는 상대 유형의 회원에게 보여요. 이메일과 비밀번호는 보이지 않아요. 협찬 제안과 메시지는 주고받은 두 회원만 볼 수 있어요.":
+    "The group or brand name, category, school, profile, social media, portfolio, upcoming events and a brand's store address (with its distance from a school) are visible to members of the other type. Email addresses and passwords are not visible. Sponsorship proposals and messages can be seen only by the two members who exchanged them.",
   "지우기와 회원의 권리": "Deletion and Members' Rights",
   "회원은 자기 개인정보를 보거나 고치거나 지우거나 처리를 멈춰 달라고 요청할 수 있어요.":
     "Members may request to access, correct or delete their personal information, or to suspend its processing.",
@@ -133,6 +134,8 @@ const en: Record<string, string> = {
   "문의": "Contact",
   "개인정보에 관한 문의와 요청은 도움말 센터의 '관리자에게 질문하기'로 보내 주세요. 개인정보 침해에 대한 상담은 개인정보침해신고센터(국번 없이 118)에서도 받을 수 있어요.":
     "Please send inquiries and requests about personal information through 'Ask the Administrators' in the Help Center. Counseling on privacy infringement is also available from the Personal Information Infringement Report Center (dial 118 without an area code).",
+  "지도 서비스를 연결하면, 학교와의 거리를 계산하기 위해 브랜드가 적은 매장 주소를 카카오(대한민국)의 주소 검색에 보내 좌표로 바꿔요. 지금은 연결되어 있지 않아요.":
+    "If a map service is connected, the store address a brand enters is sent to Kakao's address search (Korea) to turn it into coordinates, so the distance from schools can be calculated. It is not connected at present.",
 }
 
 export default en

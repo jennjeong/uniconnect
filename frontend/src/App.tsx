@@ -595,6 +595,8 @@ function App() {
     try {
       const { profile } = await api.saveProfile(draft)
       setListing(profile)
+      // The catalogs' scores and distances are worked out from the listing.
+      setRefreshTick((tick) => tick + 1)
       goBack({ page, profile: "page" })
       showNotice(
         students

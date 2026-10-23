@@ -36,6 +36,8 @@ export function ProfileEditPage({
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>(listing?.portfolio ?? [])
   // The logo as it will be saved: a data URL, or "" for none.
   const [logo, setLogo] = useState(listing?.logo ?? "")
+  // A brand's store, for how far it is from each school.
+  const [address, setAddress] = useState(listing?.location?.address ?? "")
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
 
@@ -66,6 +68,7 @@ export function ProfileEditPage({
       sns,
       portfolio,
       ...(logo !== (listing?.logo ?? "") ? { logo: logo || null } : {}),
+      ...(role === "브랜드" ? { address: address.trim() } : {}),
     })
     setBusy(false)
     if (problem) setError(problem)
@@ -172,6 +175,22 @@ export function ProfileEditPage({
             </label>
           ))}
         </div>
+        {role === "브랜드" && (
+          <label className="field">
+            <span>{t("매장 주소")}</span>
+            <input
+              maxLength={100}
+              onChange={(event) => setAddress(event.target.value)}
+              placeholder={t("예) 서울 노원구 공릉로 232")}
+              value={address}
+            />
+            <small className="field-hint">
+              {listing?.location && listing.location.lat === undefined && listing.location.address === address.trim()
+                ? t("지도 서비스가 연결되면 이 주소로 학교까지의 거리를 보여 드려요.")
+                : t("학생단체에게 학교에서 매장까지의 거리를 보여 드려요. 온라인 브랜드는 비워 두세요.")}
+            </small>
+          </label>
+        )}
       </div>
 
       <div className="form-card">

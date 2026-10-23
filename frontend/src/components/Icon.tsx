@@ -29,8 +29,15 @@ export type IconName =
   | "more"
   | "trash"
   | "search"
+  | "pin"
 
 const icons: Record<IconName, ReactNode> = {
+  pin: (
+    <>
+      <path d="M12 21s-7-6.1-7-11.2A7 7 0 0 1 19 9.8C19 14.9 12 21 12 21Z" />
+      <circle cx="12" cy="9.8" r="2.4" />
+    </>
+  ),
   home: (
     <>
       <path d="m3 10 9-7 9 7" />

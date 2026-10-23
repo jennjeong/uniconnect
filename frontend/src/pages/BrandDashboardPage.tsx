@@ -246,9 +246,9 @@ export function BrandDashboardPage({
                 match={match}
                 meta={match.school ?? t(match.category)}
                 onOpenDetail={() => onOpenDetail(match)}
+                date={match.eventDate}
                 tags={
                   <>
-                    {match.eventDate && <DateLine date={match.eventDate} />}
                     {match.eventName && <span className="tag-event">{match.eventName}</span>}
                     {match.tags.slice(0, 1).map((tag) => (
                       <span key={tag}>{tag}</span>

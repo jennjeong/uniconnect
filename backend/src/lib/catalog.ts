@@ -1,4 +1,5 @@
 import { todayInKorea } from "./dates.js"
+import { distanceKm, placeOf } from "./geo.js"
 import { scoreMatch, type Viewer } from "./matchScore.js"
 import type { Account, Database, Industry, Match, Role } from "../types.js"
 
@@ -80,7 +81,9 @@ function viewerFor(database: Database, account: Account | undefined, catalog: "b
 }
 
 // A catalog as the other side sees it, best match first, each with its
-// match for the viewer and why (lib/matchScore.ts).
+// match for the viewer and why (lib/matchScore.ts), and how far it is from
+// the viewer: a student's campus to a brand's store, a brand's store to a
+// group's campus (lib/geo.ts).
 export function browse(database: Database, catalog: "brands" | "groups", account?: Account) {
   const listings =
     catalog === "brands"
@@ -88,7 +91,14 @@ export function browse(database: Database, catalog: "brands" | "groups", account
       : database.groups.map((group) => withLiveEvent(database, group))
   const viewer = viewerFor(database, account, catalog)
   const maxPopularity = Math.max(1, ...database.brands.map((brand) => brand.popularity ?? 0))
+  const here = viewer && placeOf(viewer.listing, viewer.account)
+  const accountOf = (listing: Match) =>
+    database.accounts.find((item) => (catalog === "brands" ? item.brandId : item.groupId) === listing.id)
   return listings
-    .map((listing) => (viewer ? { ...listing, ...scoreMatch(database, viewer, listing, maxPopularity) } : listing))
+    .map((listing) => {
+      const scored = viewer ? { ...listing, ...scoreMatch(database, viewer, listing, maxPopularity) } : listing
+      const there = placeOf(listing, accountOf(listing))
+      return here && there ? { ...scored, distanceKm: distanceKm(here, there) } : scored
+    })
     .sort((a, b) => b.score - a.score)
 }
