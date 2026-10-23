@@ -1,10 +1,12 @@
+import { lang, t } from "../i18n"
+
 const TOKEN_KEY = "uniconnect-token"
 
 // Empty in development (Vite proxies /api to the backend). Set VITE_API_URL
 // when the frontend and backend are deployed on different origins.
 const API_BASE = (import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "")
 
-const unreachable = "서버에 연결할 수 없어요. 백엔드가 실행 중인지 확인해 주세요."
+const unreachable = t("서버에 연결할 수 없어요. 백엔드가 실행 중인지 확인해 주세요.")
 
 export class ApiError extends Error {
   status: number
@@ -16,7 +18,7 @@ export class ApiError extends Error {
 }
 
 export const errorMessage = (error: unknown) =>
-  error instanceof ApiError ? error.message : "요청을 처리하지 못했어요."
+  error instanceof ApiError ? error.message : t("요청을 처리하지 못했어요.")
 
 export function getToken() {
   try {
@@ -57,6 +59,8 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
       headers: {
         ...(options.body === undefined ? {} : { "Content-Type": "application/json" }),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        // The server answers its messages in the language shown.
+        "Accept-Language": lang,
         ...options.headers,
       },
       body: options.body === undefined ? undefined : JSON.stringify(options.body),

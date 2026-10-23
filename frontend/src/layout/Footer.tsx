@@ -6,6 +6,7 @@ import { legalDocs, type LegalKind } from "../data/legal"
 import { RevealTitle } from "../components/RevealText"
 import { navItems } from "../data/navigation"
 import { createLabel, roles } from "../data/roles"
+import { lang, setLang } from "../i18n"
 import { ChromeScene } from "../scenes/ChromeScene"
 import { MeshBackdrop } from "../scenes/MeshBackdrop"
 import type { Account, NavLabel, Role } from "../types"
@@ -141,6 +142,10 @@ export function Footer({
               </button>
             ))}
           </nav>
+          {/* The other language, named in itself; the choice is remembered. */}
+          <button lang={lang === "ko" ? "en" : "ko"} onClick={() => setLang(lang === "ko" ? "en" : "ko")} type="button">
+            {lang === "ko" ? "English" : "한국어"}
+          </button>
           <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} type="button">
             맨 위로 ↑
           </button>

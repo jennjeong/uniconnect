@@ -1,3 +1,4 @@
+import { lang } from "../i18n"
 import type { Metrics, Report } from "../types"
 import { percent } from "./format"
 
@@ -17,10 +18,13 @@ export type Kpi = {
   missing?: boolean
 }
 
+// "68만원", "40,300원"; in English "₩680,000".
 export const formatWon = (value: number) =>
-  value >= 10000 && value % 10000 === 0
-    ? `${(value / 10000).toLocaleString("ko-KR")}만원`
-    : `${value.toLocaleString("ko-KR")}원`
+  lang === "en"
+    ? `₩${value.toLocaleString("en-US")}`
+    : value >= 10000 && value % 10000 === 0
+      ? `${(value / 10000).toLocaleString("ko-KR")}만원`
+      : `${value.toLocaleString("ko-KR")}원`
 
 // The report's four headline numbers with their goals. QR and visit rates
 // follow the live counts; reach and ROAS come from the report itself.

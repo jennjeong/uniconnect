@@ -5,6 +5,7 @@ import express, { type ErrorRequestHandler } from "express"
 import { config } from "./config.js"
 import { isAppPath } from "./lib/appPaths.js"
 import { HttpError } from "./lib/errors.js"
+import { langOf, translate } from "./lib/i18n.js"
 import { readSession } from "./middleware/session.js"
 import { adminRouter } from "./routes/admin.js"
 import { analyticsRouter } from "./routes/analytics.js"
@@ -108,13 +109,17 @@ export function createApp() {
     })
   }
 
-  const handleError: ErrorRequestHandler = (error, _req, res, _next) => {
+  // Messages are written in Korean and answered in the request's language
+  // (lib/i18n.ts).
+  const handleError: ErrorRequestHandler = (error, req, res, _next) => {
+    const say = (status: number, message: string) =>
+      res.status(status).json({ error: translate(message, langOf(req)) })
     if (error instanceof HttpError) {
-      res.status(error.status).json({ error: error.message })
+      say(error.status, error.message)
       return
     }
     if (error?.type === "entity.parse.failed") {
-      res.status(400).json({ error: "요청 형식이 올바르지 않아요." })
+      say(400, "요청 형식이 올바르지 않아요.")
       return
     }
     // The request's own fault, as Express and the body parser mark it: a
@@ -122,13 +127,11 @@ export function createApp() {
     // like. Answered as such, not logged as a server error.
     const status = typeof error?.status === "number" ? error.status : typeof error?.statusCode === "number" ? error.statusCode : 0
     if (status >= 400 && status < 500) {
-      res.status(status).json({
-        error: status === 413 ? "보낸 내용이 너무 커요. 내용을 줄여서 다시 보내 주세요." : "요청 형식이 올바르지 않아요.",
-      })
+      say(status, status === 413 ? "보낸 내용이 너무 커요. 내용을 줄여서 다시 보내 주세요." : "요청 형식이 올바르지 않아요.")
       return
     }
     console.error(error)
-    res.status(500).json({ error: "서버 오류가 발생했어요. 잠시 후 다시 시도해 주세요." })
+    say(500, "서버 오류가 발생했어요. 잠시 후 다시 시도해 주세요.")
   }
   app.use(handleError)
 

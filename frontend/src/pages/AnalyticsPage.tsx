@@ -7,7 +7,7 @@ import { Pill } from "../components/Pill"
 import { RevealTitle } from "../components/RevealText"
 import { formatFullDate } from "../lib/date"
 import { formatWon } from "../lib/kpis"
-import { analyzeSponsorships, manWon } from "../lib/sponsorships"
+import { analyzeSponsorships, manWon, wonUnit } from "../lib/sponsorships"
 import { LayersGradient } from "../scenes/LayersGradient"
 import { INTERFERENCE } from "../scenes/shaders"
 import type { Sponsorship } from "../types"
@@ -41,7 +41,7 @@ export function AnalyticsPage({
     {
       label: "누적 집행액",
       value: manWon(totals.spend),
-      unit: "만원",
+      unit: wonUnit(),
       note: `협찬 ${sponsorships.length}건 · 현금과 현물 포함`,
     },
     {
