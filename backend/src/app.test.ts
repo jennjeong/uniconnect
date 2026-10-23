@@ -1034,6 +1034,16 @@ test("a request whose save fails leaves nothing behind", async () => {
   await call("DELETE", `/events/${again.data.event.id}`, undefined, student)
 })
 
+test("a request too big or with a broken address is answered as such, not as a server error", async () => {
+  const student = await login("학생단체")
+  const big = await call("POST", "/events", { name: "x".repeat(400_000), date: "2026-12-01", types: ["현금"] }, student)
+  assert.equal(big.status, 413)
+  assert.match(big.data.error, /너무 커요/)
+  const broken = await call("GET", "/conversations/%E0%A4%A", undefined, student)
+  assert.equal(broken.status, 400)
+  assert.match(broken.data.error, /요청 형식/)
+})
+
 test("proposal answers only take accept or decline", async () => {
   const brand = await login("브랜드")
   for (const decision of ["constructor", "toString", "__proto__"]) {

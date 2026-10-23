@@ -116,6 +116,16 @@ export function createApp() {
       res.status(400).json({ error: "요청 형식이 올바르지 않아요." })
       return
     }
+    // The request's own fault, as Express and the body parser mark it: a
+    // body over the size limit, an address that cannot be decoded and the
+    // like. Answered as such, not logged as a server error.
+    const status = typeof error?.status === "number" ? error.status : typeof error?.statusCode === "number" ? error.statusCode : 0
+    if (status >= 400 && status < 500) {
+      res.status(status).json({
+        error: status === 413 ? "보낸 내용이 너무 커요. 내용을 줄여서 다시 보내 주세요." : "요청 형식이 올바르지 않아요.",
+      })
+      return
+    }
     console.error(error)
     res.status(500).json({ error: "서버 오류가 발생했어요. 잠시 후 다시 시도해 주세요." })
   }
