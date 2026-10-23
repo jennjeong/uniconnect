@@ -1439,6 +1439,10 @@ test("a student group sets its event's goals, and the report follows", async () 
   assert.equal((await call("PUT", route, badType, student)).status, 400)
   assert.equal((await call("PUT", route, { ...goals, coupon: { store: "", title: "x" } }, student)).status, 400)
   assert.equal((await call("PUT", route, { ...goals, staffPin: "12a4" }, student)).status, 400)
+  // A ROAS goal of 0 would be divided by.
+  const noGoal = await call("PUT", route, { ...goals, targets: { ...goals.targets, roas: 0 } }, student)
+  assert.equal(noGoal.status, 400)
+  assert.match(noGoal.data.error, /목표 ROAS는 1부터/)
 
   // Once brands sponsor the event, each sponsor's coupon comes with the goals.
   const current = (await call("GET", "/measurements/event-muse-concert", undefined, student)).data.report

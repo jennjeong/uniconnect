@@ -8,6 +8,7 @@ import type {
   SponsorRequest,
   Sponsorship,
 } from "../types"
+import { roasText } from "./kpis"
 import { measureState } from "./measurements"
 import { roasOf } from "./sponsorships"
 
@@ -92,7 +93,7 @@ export function studentNotifications({
       icon: "chart",
       good: true,
       title: "성과 리포트가 완성됐어요",
-      caption: `${report.eventName} · ROAS ${report.roas}%`,
+      caption: `${report.eventName} · ROAS ${roasText(report)}`,
       target: "리포트",
     })
   }

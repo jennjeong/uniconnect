@@ -100,7 +100,7 @@ export function parseGoals(body: unknown): MeasurementGoals {
       visits: wholeNumber(targets.visits, "목표 매장 방문", 1_000_000),
       qrRate: wholeNumber(targets.qrRate, "목표 QR 참여율", 100),
       visitRate: wholeNumber(targets.visitRate, "목표 방문 전환율", 100),
-      roas: wholeNumber(targets.roas, "목표 ROAS", 10_000),
+      roas: wholeNumber(targets.roas, "목표 ROAS", 10_000, 1),
     },
     coupon: { store, title },
   }

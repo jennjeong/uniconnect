@@ -2,7 +2,7 @@ import logo from "../assets/brand/uniconnect_horizontal.svg"
 import { metricInfo, metricKinds } from "../data/metrics"
 import { formatDateTime, formatFullDate, todayIso } from "../lib/date"
 import { percent } from "../lib/format"
-import { achievement, formatKpi, formatWon, kpiGap, reportKpis, roasSummary } from "../lib/kpis"
+import { achievement, formatKpi, formatWon, hasRoas, kpiGap, kpiValue, reportKpis, roasSummary, roasText } from "../lib/kpis"
 import type { MetricEntry, Metrics, Report } from "../types"
 
 // Colors of the sponsorship value parts (cash, products, services): deep
@@ -87,7 +87,9 @@ export function ReportDocument({
   const valueTotal = report.valueBreakdown.reduce((sum, part) => sum + part.value, 0)
 
   const insights = [
-    `추정 ROAS ${roas.current}%로 목표 ${roas.target}%보다 ${roasSummary(report)}`,
+    hasRoas(report)
+      ? `추정 ROAS ${roas.current}%로 목표 ${roas.target}%보다 ${roasSummary(report)}`
+      : "협찬 가치를 정하지 않아 ROAS는 계산하지 않았어요.",
     `QR 참여율은 ${qrRate.current}%로 목표(${qrRate.target}%) 대비 ${kpiGap(qrRate)}예요.`,
     `QR 스캔 ${metrics.scans}건에 매장 방문이 ${metrics.visits}건(${visitRate.current}%) 이어졌어요.`,
     `${hourLabel(peak)}에 스캔이 ${peak.scans}건으로 가장 많았어요. 다음 행사에서는 이 시간대에 부스 인력을 모아 보세요.`,
@@ -109,10 +111,16 @@ export function ReportDocument({
 
         <div className="pdf-summary">
           <strong>
-            협찬 성과가 목표보다 <em>{roasSummary(report)}</em>
+            {hasRoas(report) ? (
+              <>
+                협찬 성과가 목표보다 <em>{roasSummary(report)}</em>
+              </>
+            ) : (
+              "협찬 가치를 정하면 ROAS가 계산돼요"
+            )}
           </strong>
           <p>
-            추정 ROAS {roas.current}% (목표 {roas.target}%) · 협찬 가치{" "}
+            추정 ROAS {roasText(report)} (목표 {roas.target}%) · 협찬 가치{" "}
             {formatWon(report.sponsorValue)} · 도달 {report.reach.toLocaleString("ko-KR")}명
           </p>
         </div>
@@ -125,7 +133,7 @@ export function ReportDocument({
               return (
                 <div className="pdf-kpi" key={kpi.key}>
                   <span>{kpi.label}</span>
-                  <strong>{formatKpi(kpi.current, kpi.unit)}</strong>
+                  <strong>{kpiValue(kpi)}</strong>
                   <small className={rate >= 100 ? "good" : ""}>
                     목표 {formatKpi(kpi.target, kpi.unit)} · {rate}% 달성
                   </small>

@@ -12,6 +12,7 @@ import { StatsBento } from "../components/StatsBento"
 import { WorkCard } from "../components/WorkCard"
 import { formatFullDate, fromIsoDate, nextEvent, semesterLabel } from "../lib/date"
 import { percent } from "../lib/format"
+import { hasRoas, roasText } from "../lib/kpis"
 import { measureState } from "../lib/measurements"
 import { fullWon } from "../lib/sponsorships"
 import type { EventItem, Match, Metrics, NavLabel, Report, RequestStatus } from "../types"
@@ -268,9 +269,9 @@ export function DashboardPage({
           <div className="report-highlight" data-reveal style={delay(0.12)}>
             <div>
               <span>추정 ROAS</span>
-              <strong>{report ? `${report.roas}%` : "-"}</strong>
+              <strong>{report ? roasText(report) : "-"}</strong>
               <small>
-                {report && report.roas >= 100
+                {report && hasRoas(report) && report.roas >= 100
                   ? "함께한 브랜드가 쓴 금액보다 더 많이 돌아왔어요."
                   : "목표까지 남은 만큼은 리포트에서 볼 수 있어요."}
               </small>

@@ -13,6 +13,8 @@ export type Kpi = {
   note: string
   // How the value is calculated, shown in the goal details.
   formula: string
+  // No value yet: a ROAS before the sponsorship's value is set.
+  missing?: boolean
 }
 
 export const formatWon = (value: number) =>
@@ -30,8 +32,8 @@ export function reportKpis(report: Report, metrics: Metrics): Kpi[] {
       unit: "명",
       current: report.reach,
       target: report.targets.reach,
-      note: "현장 방문 + SNS 도달",
-      formula: "행사 현장 방문자와 SNS 게시물 도달 수를 더한 값이에요.",
+      note: "QR 스캔 + 현장 밖 도달",
+      formula: `QR 스캔 ${metrics.scans.toLocaleString("ko-KR")}건에 목표 설정에서 적은 현장 밖 도달(SNS 등) ${report.snsReach.toLocaleString("ko-KR")}명을 더한 값이에요.`,
     },
     {
       key: "qrRate",
@@ -57,11 +59,21 @@ export function reportKpis(report: Report, metrics: Metrics): Kpi[] {
       unit: "%",
       current: report.roas,
       target: report.targets.roas,
-      note: `협찬 가치 ${formatWon(report.sponsorValue)}`,
-      formula: `협찬 뒤 늘어난 매장 매출 추정치 ÷ 협찬 가치 ${formatWon(report.sponsorValue)}`,
+      note: hasRoas(report) ? `협찬 가치 ${formatWon(report.sponsorValue)}` : "협찬 가치를 정하면 계산돼요",
+      formula: `추정 매출(매장 방문 ${metrics.visits.toLocaleString("ko-KR")}건 × 1인 예상 지출 ${formatWon(report.averageSpend)}) ÷ 협찬 가치 ${formatWon(report.sponsorValue)}. 실제 매출이 아니라 목표 설정에서 적은 1인 예상 지출로 셈한 추정치예요.`,
+      missing: !hasRoas(report),
     },
   ]
 }
+
+// A report has a ROAS once the sponsorship's value is set.
+export const hasRoas = (report: Report) => report.sponsorValue > 0
+
+// "243%", or "—" until the sponsorship's value is set.
+export const roasText = (report: Report) => (hasRoas(report) ? `${report.roas}%` : "—")
+
+// A KPI's value as shown, "—" when it has none yet.
+export const kpiValue = (kpi: Kpi) => (kpi.missing ? "—" : formatKpi(kpi.current, kpi.unit))
 
 export const achievement = (kpi: Kpi) =>
   kpi.target > 0 ? Math.round((kpi.current / kpi.target) * 100) : 0
@@ -79,6 +91,7 @@ export function kpiGap(kpi: Kpi) {
 
 // "목표보다 43% 높았어요" from the ROAS against its goal.
 export function roasSummary(report: Report) {
-  const gain = Math.round((report.roas / report.targets.roas - 1) * 100)
+  // Goals start at 1%; an older one of 0 counts as 1 rather than dividing by it.
+  const gain = Math.round((report.roas / Math.max(1, report.targets.roas) - 1) * 100)
   return gain >= 0 ? `${gain}% 높았어요.` : `${-gain}% 낮았어요.`
 }

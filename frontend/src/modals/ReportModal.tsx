@@ -1,6 +1,6 @@
 import { Modal } from "../components/Modal"
 import { metricInfo, metricKinds } from "../data/metrics"
-import { formatWon, roasSummary } from "../lib/kpis"
+import { formatWon, hasRoas, roasSummary, roasText } from "../lib/kpis"
 import type { Metrics, Report } from "../types"
 
 export function ReportModal({
@@ -19,9 +19,11 @@ export function ReportModal({
       <div className="report-detail">
         <div className="report-detail-score">
           <span>추정 ROAS</span>
-          <strong>{report.roas}%</strong>
+          <strong>{roasText(report)}</strong>
           <small>
-            목표 {report.targets.roas}%보다 {roasSummary(report)}
+            {hasRoas(report)
+              ? `목표 ${report.targets.roas}%보다 ${roasSummary(report)}`
+              : "협찬 가치를 정하면 ROAS가 계산돼요."}
           </small>
         </div>
         <div className="report-detail-rows">

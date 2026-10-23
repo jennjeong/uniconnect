@@ -11,8 +11,11 @@ import {
   achievement,
   formatKpi,
   formatWon,
+  hasRoas,
+  kpiValue,
   reportKpis,
   roasSummary,
+  roasText,
   type KpiKey,
 } from "../lib/kpis"
 import { measureState } from "../lib/measurements"
@@ -49,7 +52,7 @@ export function ReportsPage({
   onOpenGoal: (key: KpiKey) => void
 }) {
   // ROAS bar scale, with room past the larger of the result and the goal.
-  const roasScale = report ? Math.max(report.roas, report.targets.roas) * 1.15 : 1
+  const roasScale = report ? Math.max(1, report.roas, report.targets.roas) * 1.15 : 1
 
   return (
     <section className="page-view">
@@ -80,13 +83,13 @@ export function ReportsPage({
                 <span className="power-status">{measureState(report)}</span>
               </div>
               <RevealTitle as="h2" className="power-title">
-                {`협찬 성과가 목표보다 ${roasSummary(report)}`}
+                {hasRoas(report) ? `협찬 성과가 목표보다 ${roasSummary(report)}` : "협찬 가치를 정하면 ROAS가 계산돼요"}
               </RevealTitle>
               <div className="power-roas">
                 <div className="power-roas-head">
                   <span>추정 ROAS</span>
                   <strong>
-                    <AnimatedNumber value={`${report.roas}%`} />
+                    <AnimatedNumber value={roasText(report)} />
                   </strong>
                 </div>
                 <div className="power-track">
@@ -123,7 +126,7 @@ export function ReportsPage({
                       <Icon name="arrowUpRight" size={16} />
                     </span>
                     <strong>
-                      <AnimatedNumber value={formatKpi(kpi.current, kpi.unit)} />
+                      <AnimatedNumber value={kpiValue(kpi)} />
                     </strong>
                     <span className="kpi-meter" aria-hidden="true">
                       <i style={{ width: `${Math.min(100, rate)}%` }} />
