@@ -1,7 +1,11 @@
 import { useEffect, useRef, type RefObject } from "react"
 
-import { liteScenes, whenNearView } from "../lib/lite"
+import { liteScenes, whenIdle, whenNearView } from "../lib/lite"
 import type { ChromeKind } from "./chromeModels"
+
+// three.js and the models, fetched once for every scene on the page.
+let models: Promise<typeof import("./chromeModels")> | undefined
+const loadModels = () => (models ??= import("./chromeModels"))
 
 // Where the model is in its fall through the frame (0 above, 0.5 centred,
 // 1 below), from Stride:
@@ -20,9 +24,12 @@ function fallOf(mode: "pinned" | "enter", anchor: HTMLElement) {
   return top > 0 ? 0.5 * (1 - Math.min(top / vh, 1)) : 0.5 + 0.5 * Math.min(-top / pinDistance, 1)
 }
 
-// A Stride chrome model (scenes/chromeModels.ts) filling its parent; three.js
-// loads only once one comes near view, and not at all in lite mode
-// (lib/lite.ts). Without WebGL the parent shows on its own.
+// A Stride chrome model (scenes/chromeModels.ts) filling its parent. three.js
+// downloads once the page is idle after its first view, so it is ready by
+// the time someone scrolls to a scene (fetched only near view, it came too
+// late and the chain and rings were scrolled past before they showed); the
+// scene itself starts near view. Neither happens in lite mode (lib/lite.ts).
+// Without WebGL the parent shows on its own.
 export function ChromeScene({
   kind,
   mode,
@@ -52,8 +59,9 @@ export function ChromeScene({
     }
     const container = containerRef.current
     if (!container || liteScenes()) return
+    const stopPrefetch = whenIdle(() => void loadModels().catch(() => {}))
     const stopWatching = whenNearView(container, () => {
-      import("./chromeModels")
+      loadModels()
         .then(({ createChrome }) => {
           const canvas = canvasRef.current
           if (cancelled || !canvas) return
@@ -67,6 +75,7 @@ export function ChromeScene({
     })
     return () => {
       cancelled = true
+      stopPrefetch()
       stopWatching()
       dispose?.()
     }

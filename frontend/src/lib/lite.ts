@@ -9,6 +9,18 @@ export function liteScenes() {
   return window.matchMedia?.("(prefers-reduced-data: reduce)").matches ?? false
 }
 
+// Runs `task` once the browser is idle after the page's first work (or after
+// a moment where idle callbacks are missing), so it never holds up the first
+// view. Returns a function that cancels it.
+export function whenIdle(task: () => void) {
+  if (typeof window.requestIdleCallback === "function") {
+    const handle = window.requestIdleCallback(task, { timeout: 4000 })
+    return () => window.cancelIdleCallback(handle)
+  }
+  const handle = setTimeout(task, 1500)
+  return () => clearTimeout(handle)
+}
+
 // Calls `load` once the element comes within a screen's height of view, so a
 // scene further down the page downloads only when someone scrolls toward it.
 export function whenNearView(element: Element, load: () => void) {
