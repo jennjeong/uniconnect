@@ -3830,6 +3830,12 @@ button.nav-pill:hover {
     0 40px 100px rgba(19, 48, 111, 0.2);
 }
 
+/* The dialog takes focus itself when it opens (useDialogFocus); its own
+   controls show the focus ring, not the whole panel. */
+.modal:focus {
+  outline: none;
+}
+
 .modal-header {
   display: flex;
   flex-direction: column;
