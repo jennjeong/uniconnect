@@ -65,7 +65,7 @@ export function AskModal({
   }
 
   return (
-    <Modal name="ask" kicker="Ask us" title="관리자에게 질문하기" onClose={onClose}>
+    <Modal name="ask" kicker="Ask Us" title="관리자에게 질문하기" onClose={onClose}>
       <div className="ask-card">
         <p className="form-card-caption">
           질문은 관리자가 확인한 뒤 답해요. 답변은 아래 ‘내 질문’에 표시돼요.

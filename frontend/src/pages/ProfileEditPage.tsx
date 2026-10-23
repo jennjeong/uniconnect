@@ -75,7 +75,7 @@ export function ProfileEditPage({
     <section className="page-view create-view profile-edit">
       <PageIntro
         onBack={onCancel}
-        eyebrow="Edit profile"
+        eyebrow="Edit Profile"
         title="소개 편집"
         description={`${viewers}가 찾기와 상세 정보에서 보는 내용이에요. 자세할수록 알맞은 상대를 만나기 쉬워요.`}
       />

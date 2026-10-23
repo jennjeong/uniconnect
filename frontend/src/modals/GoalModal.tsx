@@ -11,7 +11,7 @@ export function GoalModal({ kpi, onClose }: { kpi: Kpi; onClose: () => void }) {
   const scale = Math.max(kpi.current, kpi.target) * 1.15 || 1
 
   return (
-    <Modal name="goal" kicker="Goal tracking" title={kpi.label} onClose={onClose}>
+    <Modal name="goal" kicker="Goal Tracking" title={kpi.label} onClose={onClose}>
       <div className={achieved ? "goal-body achieved" : "goal-body"}>
         <div className="goal-compare">
           <div>

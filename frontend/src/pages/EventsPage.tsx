@@ -176,7 +176,7 @@ export function EventsPage({
   return (
     <section className="page-view">
       <PageIntro
-        eyebrow={role === "학생단체" ? "My events" : "Event calendar"}
+        eyebrow={role === "학생단체" ? "My Events" : "Event Calendar"}
         title="행사 일정"
         description="날짜를 고르면 그날의 일정이 함께 보여요. 두 번 누르면 그 날짜로 바로 등록해요."
         actions={
@@ -304,7 +304,7 @@ export function EventsPage({
 
         <aside className="day-panel">
           <div className="day-panel-head">
-            <span className="eyebrow">Selected day</span>
+            <span className="eyebrow">Selected Day</span>
             <p className="day-title" key={selected}>
               {formatDay(selected)}
             </p>

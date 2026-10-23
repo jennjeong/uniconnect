@@ -83,7 +83,7 @@ export function ResetPasswordModal({
   }
 
   return (
-    <Modal banner name="reset" kicker="Forgot password" title="비밀번호 찾기" onClose={onClose}>
+    <Modal banner name="reset" kicker="Forgot Password" title="비밀번호 찾기" onClose={onClose}>
       <form
         className="auth-form"
         noValidate

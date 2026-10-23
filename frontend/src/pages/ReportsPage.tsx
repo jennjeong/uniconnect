@@ -57,7 +57,7 @@ export function ReportsPage({
   return (
     <section className="page-view">
       <PageIntro
-        eyebrow="Performance reports"
+        eyebrow="Performance Reports"
         title="성과 리포트"
         description="행사가 끝나면 현장 참여와 협찬 효과를 한 장으로 정리해 드려요."
         actions={

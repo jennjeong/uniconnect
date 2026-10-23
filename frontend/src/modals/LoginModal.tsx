@@ -39,7 +39,7 @@ export function LoginModal({
   }
 
   return (
-    <Modal banner name="login" kicker="Welcome back" title="로그인" onClose={onClose}>
+    <Modal banner name="login" kicker="Welcome Back" title="로그인" onClose={onClose}>
       <form
         className="auth-form"
         noValidate

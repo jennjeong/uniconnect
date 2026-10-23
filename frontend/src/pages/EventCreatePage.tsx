@@ -76,7 +76,7 @@ export function EventCreatePage({
     <section className="page-view create-view">
       <PageIntro
         onBack={onCancel}
-        eyebrow={students ? "New event" : "New campaign"}
+        eyebrow={students ? "New Event" : "New Campaign"}
         title={`새 ${noun} 등록`}
         description={`${noun} 정보를 알려 주시면 잘 맞는 ${students ? "브랜드" : "학생단체"}를 찾아 드려요.`}
       />

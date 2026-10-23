@@ -86,7 +86,7 @@ export function GroupsPage({
   return (
     <section className="page-view">
       <PageIntro
-        eyebrow="Find student groups"
+        eyebrow="Find Student Groups"
         title={tabIntro[tab].title}
         description={tabIntro[tab].caption}
       />

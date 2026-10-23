@@ -28,7 +28,7 @@ export const legalDraftNote =
 export const legalDocs: Record<LegalKind, LegalDoc> = {
   terms: {
     title: "서비스 이용약관",
-    eyebrow: "Terms of service",
+    eyebrow: "Terms of Service",
     summary: "uniconnect를 쓰는 학생단체와 브랜드가 지킬 약속과, 서비스가 맡는 일과 맡지 않는 일을 적었어요.",
     sections: [
       {
@@ -103,7 +103,7 @@ export const legalDocs: Record<LegalKind, LegalDoc> = {
   },
   privacy: {
     title: "개인정보 처리방침",
-    eyebrow: "Privacy policy",
+    eyebrow: "Privacy Policy",
     summary: "uniconnect가 어떤 개인정보를 왜 받고, 얼마나 보관하며, 어떻게 지우는지 적었어요.",
     sections: [
       {

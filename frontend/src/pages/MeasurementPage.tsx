@@ -53,7 +53,7 @@ export function MeasurementPage({
   return (
     <section className="page-view measurement-view">
       <PageIntro
-        eyebrow="Live attribution"
+        eyebrow="Live Attribution"
         title="현장 반응을 실시간으로 측정해요"
         description="고유 QR과 쿠폰 데이터를 행사 성과로 안전하게 집계합니다."
         actions={
@@ -90,7 +90,7 @@ export function MeasurementPage({
       <section className="power-panel live-panel" data-reveal>
         <LayersGradient shader={INTERFERENCE} />
         <div className="power-content">
-          <span className="eyebrow light">Live now</span>
+          <span className="eyebrow light">Live Now</span>
           <RevealTitle as="h2" className="power-title">
             지금 이 순간의 현장 반응
           </RevealTitle>

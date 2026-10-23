@@ -146,7 +146,7 @@ export function BrandDashboardPage({
       <section className="inbox-section">
         <div className="section-head">
           <span className="eyebrow" data-reveal>
-            Proposal inbox
+            Proposal Inbox
           </span>
           <RevealTitle as="h2" className="section-display">
             {pending.length > 0 ? "답을 기다리는 제안" : "새 제안을 기다리고 있어요"}
@@ -223,7 +223,7 @@ export function BrandDashboardPage({
       <section className="works-section">
         <div className="section-head centered">
           <span className="eyebrow" data-reveal>
-            Smart match
+            Smart Match
           </span>
           <RevealTitle as="h2" className="section-display">
             추천 학생단체
