@@ -1,5 +1,6 @@
 import { useState, type CSSProperties } from "react"
 
+import { NearbyPlaces } from "../components/NearbyPlaces"
 import { PageIntro } from "../components/PageIntro"
 import { ProposalControl } from "../components/ProposalControl"
 import { TabBar } from "../components/TabBar"
@@ -8,9 +9,9 @@ import { t } from "../i18n"
 import { nearestFirst } from "../lib/distance"
 import type { Industry, Match, RequestStatus } from "../types"
 
-type Tab = "추천" | "가까운 순" | "인기" | "전체" | "업종별"
+type Tab = "추천" | "가까운 순" | "주변 가게" | "인기" | "전체" | "업종별"
 
-const tabs: Tab[] = ["추천", "가까운 순", "인기", "전체", "업종별"]
+const tabs: Tab[] = ["추천", "가까운 순", "주변 가게", "인기", "전체", "업종별"]
 
 const tabIntro: Record<Tab, { title: string; caption: string }> = {
   추천: {
@@ -20,6 +21,10 @@ const tabIntro: Record<Tab, { title: string; caption: string }> = {
   "가까운 순": {
     title: "학교에서 가까운 브랜드예요",
     caption: "가입한 학교에서 매장까지 가까운 순서예요. 매장이 없는 온라인 브랜드는 뒤에 있어요.",
+  },
+  "주변 가게": {
+    title: "학교 근처 실제 가게예요",
+    caption: "카카오 지도에서 지금 찾은 학교 주변 가게예요. 아직 uniconnect에 없는 곳이라, 지도나 전화로 직접 연락해 보세요.",
   },
   인기: {
     title: "학생단체가 많이 찾는 브랜드예요",
@@ -83,6 +88,8 @@ export function MatchesPage({
       ? matches
       : tab === "가까운 순"
         ? nearestFirst(brands)
+        : tab === "주변 가게"
+        ? []
         : tab === "인기"
         ? [...brands].sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0))
         : tab === "전체"
@@ -129,47 +136,52 @@ export function MatchesPage({
         )}
       </div>
 
-      <ul
-        className="work-grid stagger slide"
-        data-direction={direction}
-        key={tab === "업종별" ? `${tab}-${industry}` : tab}
-      >
-        {list.map((match, index) => {
-          const rank = tab === "인기" ? index + 1 : undefined
-          return (
-            <li key={match.id} style={{ "--i": index } as CSSProperties}>
-              <WorkCard
-                match={match}
-                meta={t(match.category)}
-                rank={rank}
-                onOpenDetail={() => onOpenDetail(match)}
-                tags={
-                  <>
-                    {rank !== undefined && match.popularity !== undefined && (
-                      <span className="tag-hot">{t("협찬 {count}회", { count: match.popularity })}</span>
-                    )}
-                    {match.tags.map((tag) => (
-                      <span key={tag}>{tag}</span>
-                    ))}
-                  </>
-                }
-              >
-                <button className="cancel-button" onClick={() => onOpenDetail(match)} type="button">
-                  {t("상세 정보")}
-                </button>
-                <ProposalControl
-                  done={proposals.includes(match.id)}
-                  status={statuses[match.id]}
-                  label={t("협찬 제안 보내기")}
-                  className="primary-button"
-                  onPropose={() => onPropose(match)}
-                  onCancel={() => onCancelProposal(match)}
-                />
-              </WorkCard>
-            </li>
-          )
-        })}
-      </ul>
+      {/* Real shops from Kakao, which aren't on uniconnect, have their own list. */}
+      {tab === "주변 가게" ? (
+        <NearbyPlaces />
+      ) : (
+        <ul
+          className="work-grid stagger slide"
+          data-direction={direction}
+          key={tab === "업종별" ? `${tab}-${industry}` : tab}
+        >
+          {list.map((match, index) => {
+            const rank = tab === "인기" ? index + 1 : undefined
+            return (
+              <li key={match.id} style={{ "--i": index } as CSSProperties}>
+                <WorkCard
+                  match={match}
+                  meta={t(match.category)}
+                  rank={rank}
+                  onOpenDetail={() => onOpenDetail(match)}
+                  tags={
+                    <>
+                      {rank !== undefined && match.popularity !== undefined && (
+                        <span className="tag-hot">{t("협찬 {count}회", { count: match.popularity })}</span>
+                      )}
+                      {match.tags.map((tag) => (
+                        <span key={tag}>{tag}</span>
+                      ))}
+                    </>
+                  }
+                >
+                  <button className="cancel-button" onClick={() => onOpenDetail(match)} type="button">
+                    {t("상세 정보")}
+                  </button>
+                  <ProposalControl
+                    done={proposals.includes(match.id)}
+                    status={statuses[match.id]}
+                    label={t("협찬 제안 보내기")}
+                    className="primary-button"
+                    onPropose={() => onPropose(match)}
+                    onCancel={() => onCancelProposal(match)}
+                  />
+                </WorkCard>
+              </li>
+            )
+          })}
+        </ul>
+      )}
     </section>
   )
 }

@@ -1662,6 +1662,117 @@ button.nav-pill:hover {
   color: #fff;
 }
 
+/* Real shops around the campus (components/NearbyPlaces.tsx): the kinds as
+   chips, a line saying where, then cards with each shop's kind, name,
+   address, distance and phone, and its page on Kakao Map. */
+.nearby-places {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.nearby-note {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 15px;
+}
+
+.nearby-note.error {
+  color: var(--red);
+}
+
+.place-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.place-card {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  gap: 6px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.place-kind {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.place-card h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: var(--weight-label);
+  line-height: 1.35;
+}
+
+.place-address {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.place-facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin-top: 4px;
+  font-size: 13px;
+}
+
+.place-distance {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--point-strong);
+  font-weight: var(--weight-label);
+}
+
+.place-distance .icon {
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.place-facts a {
+  color: var(--ink-soft);
+}
+
+/* The way to the shop: its Kakao Map page, at the bottom of the card. */
+.place-link {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 12px;
+  color: var(--point-strong);
+  font-size: 14px;
+  font-weight: var(--weight-label);
+  text-decoration: none;
+}
+
+.place-link:hover {
+  text-decoration: underline;
+}
+
+.nearby-source {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .industry-chips {
   position: relative;
   display: flex;

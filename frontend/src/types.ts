@@ -49,6 +49,22 @@ export type Match = {
 
 // The parts of its listing an account writes itself in 내 정보.
 // `logo`: a data URL to set, null to remove, left out to keep.
+// A real shop near the campus, live from Kakao Local (GET /api/places).
+export type NearbyPlace = {
+  id: string
+  name: string
+  category: string
+  address: string
+  phone?: string
+  distanceM: number
+  // Its page on Kakao Map.
+  url: string
+}
+
+// map is false while the server has no map key; campus is null for a school
+// not on the map.
+export type NearbyPlaces = { map: boolean; campus: string | null; places: NearbyPlace[] }
+
 export type ProfileDraft = Pick<Match, "intro" | "offer" | "tags" | "facts" | "sns" | "portfolio"> & {
   logo?: string | null
   // A brand's store address; empty removes it.
