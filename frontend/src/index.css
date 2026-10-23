@@ -1711,10 +1711,28 @@ button.nav-pill:hover {
   background: var(--surface);
 }
 
+.place-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 10px;
+}
+
 .place-kind {
   color: var(--muted);
   font-size: 13px;
   font-weight: var(--weight-label);
+}
+
+/* Not on uniconnect yet: a quiet silver tag, so nobody mistakes it for a partner. */
+.place-status {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: var(--weight-badge);
 }
 
 .place-card h3 {

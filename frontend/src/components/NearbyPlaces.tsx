@@ -8,13 +8,16 @@ import type { NearbyPlaces as Answer } from "../types"
 import { Icon } from "./Icon"
 import { TabBar } from "./TabBar"
 
+// Every kind at once, then each kind on its own.
+const kinds = [{ code: "all", label: "전체" }, ...placeCategories]
+
 // Real shops around the student group's campus, live from Kakao Local: the
-// kinds as chips, a line saying where, then the shops nearest first with
-// their Kakao Map page and phone, since they aren't on uniconnect. Kakao
-// doesn't allow keeping its results, so each pick asks the server afresh and
-// the answer lives only on screen.
+// kinds as chips (every kind at first), a line saying where, then the shops
+// nearest first, marked as not partnered yet, with their Kakao Map page and
+// phone. Kakao doesn't allow keeping its results, so each pick asks the
+// server afresh and the answer lives only on screen.
 export function NearbyPlaces() {
-  const [category, setCategory] = useState(placeCategories[0].code)
+  const [category, setCategory] = useState(kinds[0].code)
   const [answer, setAnswer] = useState<{ category: string; result?: Answer; error?: string }>()
 
   useEffect(() => {
@@ -52,7 +55,7 @@ export function NearbyPlaces() {
     <div className="nearby-places">
       <TabBar
         chips
-        items={placeCategories.map((item) => ({ value: item.code, label: t(item.label) }))}
+        items={kinds.map((item) => ({ value: item.code, label: t(item.label) }))}
         label={t("가게 종류")}
         onChange={(value, event) => {
           setCategory(value)
@@ -70,7 +73,10 @@ export function NearbyPlaces() {
             {places.map((place, index) => (
               <li key={place.id} style={{ "--i": index } as CSSProperties}>
                 <article className="place-card">
-                  <span className="place-kind">{place.category}</span>
+                  <div className="place-head">
+                    <span className="place-kind">{place.category}</span>
+                    <span className="place-status">{t("협약 전")}</span>
+                  </div>
                   <h3>{place.name}</h3>
                   <p className="place-address">{place.address}</p>
                   <div className="place-facts">
