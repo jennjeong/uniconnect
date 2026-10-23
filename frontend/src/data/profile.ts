@@ -1,6 +1,7 @@
 import type { Role } from "../types"
 
-// Keep in sync with factLabels and snsPlatforms in backend/src/lib/validation.ts.
+// Keep in sync with factLabels and snsPlatforms in backend/src/lib/validation.ts
+// (lib/lists.sync.test.ts checks).
 export const factFields: Record<Role, { label: string; placeholder: string }[]> = {
   학생단체: [
     { label: "회원 수", placeholder: "예) 42명" },

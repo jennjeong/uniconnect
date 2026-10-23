@@ -13,7 +13,8 @@ export const roleOptions: {
   { value: "브랜드", title: "협찬 하기", caption: "스폰서 · 브랜드", icon: "store" },
 ]
 
-// Keep in sync with accountTypes in backend/src/lib/validation.ts.
+// Keep in sync with accountTypes in backend/src/lib/validation.ts
+// (lib/lists.sync.test.ts checks).
 export const accountTypes: Record<Role, string[]> = {
   학생단체: ["공연 동아리", "학술 동아리", "봉사 동아리", "학생회", "연합 동아리", "기타"],
   브랜드: ["카페 · 식음료", "뷰티 · 패션", "콘텐츠 · 미디어", "스포츠 · 웰니스", "교육", "기타"],

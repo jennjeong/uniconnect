@@ -2,10 +2,9 @@ import { useState } from "react"
 
 import { api, errorMessage } from "../api"
 import { Modal } from "../components/Modal"
+import { valueTypes } from "../data/sponsorTypes"
 import type { EventMeasurement, Report } from "../types"
 
-// Keep in sync with sponsorTypes in backend/src/lib/validation.ts.
-const valueTypes = ["현금", "제품", "서비스", "기타"]
 
 // Numbers are typed as text so a field can be empty while editing.
 const draftOf = (report: Report) => ({
