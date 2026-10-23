@@ -22,6 +22,11 @@ export const sponsorTypes = ["현금", "제품", "서비스", "기타"]
 // frontend/src/data/inquiries.ts.
 export const inquiryCategories = ["이용 방법", "계정 · 가입", "제안 · 매칭", "오류 신고", "기타"]
 
+// Kinds of shop students can look for around their campus: Kakao Local's
+// category group codes (카페, 음식점, 편의점, 학원, 문화시설). Keep in sync
+// with frontend/src/data/places.ts.
+export const placeCategories = ["CE7", "FD6", "CS2", "AC5", "CT1"]
+
 export function parseRole(value: unknown): Role {
   if (value === "학생단체" || value === "브랜드") return value
   throw new HttpError(400, "회원 유형을 선택해 주세요.")

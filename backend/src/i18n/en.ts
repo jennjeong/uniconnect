@@ -187,6 +187,9 @@ const en: Record<string, string> = {
   // "{label}과 일정을 입력해 주세요." (routes/auth.ts sign-up names).
   "{label}을 입력해 주세요.": "Please enter the {label}.",
   "매장 주소는 100자 이하로 적어 주세요.": "Please keep the store address to 100 characters or fewer.",
+  "찾을 가게 종류를 골라 주세요.": "Please choose a kind of shop to look for.",
+  "가게 검색이 너무 많아요. 잠시 후 다시 시도해 주세요.": "Too many shop searches. Please try again in a moment.",
+  "주변 가게를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.": "We couldn't load the shops nearby. Please try again in a moment.",
 }
 
 export default en

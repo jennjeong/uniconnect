@@ -10,6 +10,7 @@ import type {
   MetricEntry,
   MetricKind,
   Metrics,
+  NearbyPlaces,
   ProfileDraft,
   Report,
   RequestStatus,
@@ -118,6 +119,9 @@ export const api = {
   profile: () => request<{ profile: Match | null }>("/profile"),
   saveProfile: (body: ProfileDraft) =>
     request<{ profile: Match }>("/profile", { method: "PUT", body }),
+
+  nearbyPlaces: (category: string) =>
+    request<NearbyPlaces>(`/places?category=${encodeURIComponent(category)}`),
 
   inquiries: () => request<{ inquiries: Inquiry[] }>("/inquiries"),
   adminInquiries: (token: string) =>

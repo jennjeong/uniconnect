@@ -245,6 +245,25 @@ const en: Record<string, string> = {
   "가입한 학교에서 매장까지 가까운 순서예요. 매장이 없는 온라인 브랜드는 뒤에 있어요.":
     "Nearest first, from your school to each store. Online brands without a store come last.",
   "매장에서 가까운 학생단체예요": "Student groups near your store",
+  "주변 가게": "Local shops",
+  "학교 근처 실제 가게예요": "Real shops near your school",
+  "카카오 지도에서 지금 찾은 학교 주변 가게예요. 아직 uniconnect에 없는 곳이라, 지도나 전화로 직접 연락해 보세요.":
+    "Shops around your school, found on Kakao Map just now. They aren't on uniconnect yet, so reach them through the map or by phone.",
+  "가게 종류": "Kind of shop",
+  카페: "Cafés",
+  음식점: "Restaurants",
+  편의점: "Convenience stores",
+  학원: "Academies",
+  문화시설: "Culture",
+  "학교 근처 가게를 찾고 있어요…": "Looking for shops near your school…",
+  "지도 서비스가 연결되면 학교 근처 가게를 보여 드려요.": "Once a map service is connected, we'll show shops near your school.",
+  "가입한 학교의 위치를 아직 몰라서 근처 가게를 찾을 수 없어요.":
+    "We don't know where your school is yet, so we can't look for shops near it.",
+  "{campus} 근처에서 찾은 가게가 없어요.": "No shops found near {campus}.",
+  "{campus} 근처, 가까운 순서예요.": "Near {campus}, nearest first.",
+  "카카오맵에서 보기": "View on Kakao Map",
+  "(새 창)": "(opens in a new tab)",
+  "정보 제공: 카카오": "Data from Kakao",
   "우리 매장에서 학교까지 가까운 순서예요. 매장 주소는 내 정보에서 적을 수 있어요.":
     "Nearest first, from your store to each school. Add your store's address under My Account.",
   거리: "Distance",

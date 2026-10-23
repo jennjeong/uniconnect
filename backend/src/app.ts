@@ -19,6 +19,7 @@ import { inquiriesRouter } from "./routes/inquiries.js"
 import { matchesRouter } from "./routes/matches.js"
 import { measurementsRouter } from "./routes/measurements.js"
 import { offersRouter } from "./routes/offers.js"
+import { placesRouter } from "./routes/places.js"
 import { profileRouter } from "./routes/profile.js"
 import { proposalsRouter } from "./routes/proposals.js"
 import { requestsRouter } from "./routes/requests.js"
@@ -91,6 +92,7 @@ export function createApp() {
   app.use("/api/check-in", checkInRouter)
   app.use("/api/analytics", analyticsRouter)
   app.use("/api/profile", profileRouter)
+  app.use("/api/places", placesRouter)
   app.use("/api/conversations", conversationsRouter)
   app.use("/api/inquiries", inquiriesRouter)
   app.use("/api/admin", adminRouter)

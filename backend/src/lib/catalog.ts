@@ -71,7 +71,7 @@ export function withLiveEvent(database: Database, group: Match): Match {
 
 // Who a catalog is matched for: the logged-in account when it browses the
 // other side, otherwise the demo account of that side (visitors preview it).
-function viewerFor(database: Database, account: Account | undefined, catalog: "brands" | "groups"): Viewer | undefined {
+export function viewerFor(database: Database, account: Account | undefined, catalog: "brands" | "groups"): Viewer | undefined {
   const role: Role = catalog === "brands" ? "학생단체" : "브랜드"
   const viewer =
     account?.role === role

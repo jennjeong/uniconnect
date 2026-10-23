@@ -138,3 +138,15 @@ test("the language is set in 내 정보, and the page stays where it was", async
   await page.getByRole("group", { name: "Language" }).getByRole("button", { name: "한국어" }).click()
   await expect(page.locator("html")).toHaveAttribute("lang", "ko")
 })
+
+test("the 주변 가게 tab looks around the school, and says so while the map isn't connected", async ({ page }) => {
+  await page.goto("/matches")
+  await page.getByRole("tab", { name: "주변 가게" }).click()
+  await expect(page.getByRole("button", { name: "카페", exact: true })).toHaveAttribute("aria-pressed", "true")
+  // The test server has no map key.
+  await expect(page.getByText("지도 서비스가 연결되면 학교 근처 가게를 보여 드려요.")).toBeVisible()
+  await page.getByRole("button", { name: "학원", exact: true }).click()
+  await expect(page.getByRole("button", { name: "학원", exact: true })).toHaveAttribute("aria-pressed", "true")
+  await expect(page.getByText("지도 서비스가 연결되면 학교 근처 가게를 보여 드려요.")).toBeVisible()
+})
+

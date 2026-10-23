@@ -1903,3 +1903,89 @@ test("a brand's store address is placed on the map once a key is set", async () 
   }
 })
 
+test("the shops around a campus come live from Kakao, are asked for again each time and are never kept", async () => {
+  const { placeSearch } = await import("./lib/places.js")
+  const { campuses } = await import("./data/campuses.js")
+  const search = placeSearch.search
+  const key = config.kakaoRestApiKey
+  config.kakaoRestApiKey = undefined
+  const demo = getDatabase().accounts.find((account) => account.email === "muse@syu.ac.kr")!
+  const group = getDatabase().groups.find((item) => item.id === demo.groupId)!
+  const saved = { email: demo.email, school: demo.school, groupSchool: group.school }
+  try {
+    // Without the key there is nothing to show, and Kakao isn't asked.
+    assert.deepEqual((await call("GET", "/places?category=CE7")).data, { map: false, campus: "삼육대학교", places: [] })
+
+    config.kakaoRestApiKey = "test-key"
+    const asked: { category: string; lat: number; lng: number }[] = []
+    placeSearch.search = async (category: string, point: { lat: number; lng: number }) => {
+      asked.push({ category, lat: point.lat, lng: point.lng })
+      return {
+        documents: [
+          {
+            id: "2",
+            place_name: "이디야커피 삼육대점",
+            category_name: "음식점 > 카페 > 커피전문점 > 이디야커피",
+            road_address_name: "서울 노원구 화랑로 1",
+            phone: "02-000-0000",
+            distance: "411",
+            place_url: "http://place.map.kakao.com/2",
+          },
+          { id: "1", place_name: "스마일하우스", category_name: "음식점 > 카페", address_name: "서울 노원구 공릉동 1", distance: "147", place_url: "http://place.map.kakao.com/1" },
+          // Not a Kakao Map page, so it is left out.
+          { id: "3", place_name: "어딘가", distance: "50", place_url: "https://example.com/3" },
+        ],
+      }
+    }
+    // Visitors see the demo group's campus, nearest first.
+    const visitor = (await call("GET", "/places?category=CE7")).data
+    assert.equal(visitor.campus, "삼육대학교")
+    assert.deepEqual(visitor.places, [
+      { id: "1", name: "스마일하우스", category: "카페", address: "서울 노원구 공릉동 1", distanceM: 147, url: "https://place.map.kakao.com/1" },
+      {
+        id: "2",
+        name: "이디야커피 삼육대점",
+        category: "커피전문점",
+        address: "서울 노원구 화랑로 1",
+        phone: "02-000-0000",
+        distanceM: 411,
+        url: "https://place.map.kakao.com/2",
+      },
+    ])
+    const campus = campuses.find((item) => item.name === "삼육대학교")!
+    assert.deepEqual(asked[0], { category: "CE7", lat: campus.lat, lng: campus.lng })
+    // The same look asks Kakao again: nothing was kept.
+    await call("GET", "/places?category=CE7")
+    assert.equal(asked.length, 2)
+
+    assert.equal((await call("GET", "/places?category=constructor")).status, 400)
+    assert.equal((await call("GET", "/places")).status, 400)
+
+    // A school not in the campus table has no shops to show.
+    demo.email = "muse@unknown.ac.kr"
+    demo.school = "어느대학교"
+    group.school = "어느대학교"
+    assert.deepEqual((await call("GET", "/places?category=CE7")).data, { map: true, campus: null, places: [] })
+    Object.assign(demo, { email: saved.email, school: saved.school })
+    group.school = saved.groupSchool
+
+    // When Kakao fails, the screen gets a message it can show.
+    placeSearch.search = async () => {
+      throw new Error("403 disabled")
+    }
+    const failed = await call("GET", "/places?category=FD6")
+    assert.equal(failed.status, 502)
+    assert.match(failed.data.error, /주변 가게/)
+
+    // Each address may ask 30 times a minute.
+    placeSearch.search = async () => ({ documents: [] })
+    for (let count = 3; count < 30; count += 1) assert.equal((await call("GET", "/places?category=CS2")).status, 200)
+    assert.equal((await call("GET", "/places?category=CS2")).status, 429)
+  } finally {
+    placeSearch.search = search
+    config.kakaoRestApiKey = key
+    Object.assign(demo, { email: saved.email, school: saved.school })
+    group.school = saved.groupSchool
+  }
+})
+
