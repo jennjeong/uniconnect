@@ -217,26 +217,40 @@ function App() {
     if (!usable) go({ page }, true)
   })
 
-  // Restore the saved session.
+  // Restore the saved session. An expired one is dropped. While the server
+  // cannot be reached the token stays and the page waits, trying again a
+  // little later each time: going on as a visitor would show a visitor's
+  // screens while the server, still sent the token, answers as the account.
   useEffect(() => {
     if (!getToken()) return
     let cancelled = false
-    api
-      .me()
-      .then((result) => {
-        if (!cancelled) setAccount(result.account)
-      })
-      .catch((error) => {
-        // Drop an expired session; keep the token if the server was just unreachable.
-        if (error instanceof ApiError && error.status === 401) setToken(null)
-      })
-      .finally(() => {
-        if (!cancelled) setAuthReady(true)
-      })
+    let timer: number | undefined
+    let tries = 0
+    const check = () =>
+      api
+        .me()
+        .then((result) => {
+          if (cancelled) return
+          setAccount(result.account)
+          setAuthReady(true)
+        })
+        .catch((error) => {
+          if (cancelled) return
+          if (error instanceof ApiError && error.status === 401) {
+            setToken(null)
+            setAuthReady(true)
+            return
+          }
+          tries += 1
+          if (tries === 1) showNotice("서버에 연결하지 못했어요. 다시 연결하고 있어요…")
+          timer = window.setTimeout(check, Math.min(30_000, 2_000 * 2 ** (tries - 1)))
+        })
+    check()
     return () => {
       cancelled = true
+      window.clearTimeout(timer)
     }
-  }, [])
+  }, [showNotice])
 
   useEffect(() => {
     if (!authReady) return
