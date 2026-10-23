@@ -238,6 +238,20 @@ const en: Record<string, string> = {
     "Review proposals from student groups and decide whether to sponsor.",
   "브랜드가 보낸 협찬 제안을 확인하고 함께할지 정해 주세요.": "Review offers from brands and decide whether to team up.",
   "제안 상태": "Proposal status",
+  "가까운 순": "Nearby",
+  "학교에서 가까운 브랜드예요": "Brands near your school",
+  "가입한 학교에서 매장까지 가까운 순서예요. 매장이 없는 온라인 브랜드는 뒤에 있어요.":
+    "Nearest first, from your school to each store. Online brands without a store come last.",
+  "매장에서 가까운 학생단체예요": "Student groups near your store",
+  "우리 매장에서 학교까지 가까운 순서예요. 매장 주소는 내 정보에서 적을 수 있어요.":
+    "Nearest first, from your store to each school. Add your store's address under My Account.",
+  거리: "Distance",
+  "매장 주소": "Store address",
+  "예) 서울 노원구 공릉로 232": "e.g. 232 Gongneung-ro, Nowon-gu, Seoul",
+  "지도 서비스가 연결되면 이 주소로 학교까지의 거리를 보여 드려요.":
+    "Once a map service is connected, we'll show the distance to each school from this address.",
+  "학생단체에게 학교에서 매장까지의 거리를 보여 드려요. 온라인 브랜드는 비워 두세요.":
+    "Student groups see how far your store is from their school. Leave it empty if you're online only.",
 }
 
 export default en

@@ -2,6 +2,7 @@ import { Router } from "express"
 
 import { createListing, findListing } from "../lib/catalog.js"
 import { HttpError } from "../lib/errors.js"
+import { geocode } from "../lib/geocode.js"
 import { factLabels, snsPlatforms, text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -70,8 +71,15 @@ function parseProfile(body: unknown, role: Role) {
   if (portfolio.some((row) => row.title.length > 40 || row.detail.length > 100)) {
     throw new HttpError(400, "포트폴리오 제목은 40자, 내용은 100자 이하로 적어 주세요.")
   }
+  // A brand's store address, for the distance to campuses: left out keeps
+  // it, empty removes it.
+  const address = role === "브랜드" && input.address !== undefined ? text(input.address) : undefined
+  if (address !== undefined && address.length > 100) {
+    throw new HttpError(400, "매장 주소는 100자 이하로 적어 주세요.")
+  }
   return {
     logo: parseLogo(input.logo),
+    address,
     intro,
     offer,
     tags,
@@ -87,17 +95,24 @@ profileRouter.get("/", (req, res) => {
   res.json({ profile: findListing(getDatabase(), account) ?? null })
 })
 
-// Saves the listing the other side sees, creating it the first time.
+// Saves the listing the other side sees, creating it the first time. A store
+// address that is new, or still has no place (saved before the map key was
+// set), is placed on the map first (lib/geocode.ts), before anything changes.
 profileRouter.put("/", async (req, res) => {
   const account = requireAccount(req)
   const profile = parseProfile(req.body, account.role)
+  const { logo, address, ...rest } = profile
+  const before = findListing(getDatabase(), account)?.location
+  const placed = address === before?.address && before?.lat !== undefined
+  const place = address && !placed ? await geocode(address) : undefined
   const database = getDatabase()
   const listing = findListing(database, account) ?? createListing(database, account)
-  // A logo left out stays as it was; null removes it.
-  const { logo, ...rest } = profile
   Object.assign(listing, rest)
+  // A logo left out stays as it was; null removes it.
   if (logo === null) delete listing.logo
   else if (logo) listing.logo = logo
+  if (address === "") delete listing.location
+  else if (address && (address !== listing.location?.address || place)) listing.location = { address, ...place }
   await saveDatabase()
   res.json({ profile: listing })
 })

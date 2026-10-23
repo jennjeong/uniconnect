@@ -56,6 +56,15 @@ export function upgradeDatabase(stored: Database) {
     stored.groups = structuredClone(seedGroups)
     stored.catalogVersion = 2
   }
+  // Version 3 gave the seeded brands a demo store location, for distances to
+  // campuses, once: a brand that clears its address keeps it cleared.
+  if ((stored.catalogVersion ?? 1) < 3) {
+    for (const brand of stored.brands) {
+      const seeded = seedBrands.find((item) => item.id === brand.id)
+      if (seeded?.location && !brand.location) brand.location = { ...seeded.location }
+    }
+    stored.catalogVersion = 3
+  }
   // Recommended matches are worked out from the catalogs now.
   delete (stored as { matches?: unknown }).matches
   stored.conversations ??= seedConversations()

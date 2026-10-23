@@ -5,16 +5,21 @@ import { ProposalControl } from "../components/ProposalControl"
 import { TabBar } from "../components/TabBar"
 import { WorkCard } from "../components/WorkCard"
 import { t } from "../i18n"
+import { nearestFirst } from "../lib/distance"
 import type { Industry, Match, RequestStatus } from "../types"
 
-type Tab = "추천" | "인기" | "전체" | "업종별"
+type Tab = "추천" | "가까운 순" | "인기" | "전체" | "업종별"
 
-const tabs: Tab[] = ["추천", "인기", "전체", "업종별"]
+const tabs: Tab[] = ["추천", "가까운 순", "인기", "전체", "업종별"]
 
 const tabIntro: Record<Tab, { title: string; caption: string }> = {
   추천: {
     title: "내 행사에 맞는 브랜드를 찾았어요",
     caption: "행사 정보, 타깃, 거리와 지난 성과를 함께 분석한 결과예요.",
+  },
+  "가까운 순": {
+    title: "학교에서 가까운 브랜드예요",
+    caption: "가입한 학교에서 매장까지 가까운 순서예요. 매장이 없는 온라인 브랜드는 뒤에 있어요.",
   },
   인기: {
     title: "학생단체가 많이 찾는 브랜드예요",
@@ -76,7 +81,9 @@ export function MatchesPage({
   const list =
     tab === "추천"
       ? matches
-      : tab === "인기"
+      : tab === "가까운 순"
+        ? nearestFirst(brands)
+        : tab === "인기"
         ? [...brands].sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0))
         : tab === "전체"
           ? brands

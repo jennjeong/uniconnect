@@ -21,6 +21,8 @@ export const seedBrands: Match[] = [
   {
     id: "afternoon-coffee",
     name: "오후의 커피",
+    // Demo store location (approximate), for distances to campuses.
+    location: { address: "서울 노원구 공릉역 2번 출구 앞", lat: 37.6256, lng: 127.0731 },
     category: "카페 · 식음료",
     industry: "cafe",
     offer: "쿠폰 150장 + 현금 20만원",
@@ -45,6 +47,8 @@ export const seedBrands: Match[] = [
   {
     id: "moment-studio",
     name: "모먼트 스튜디오",
+    // Demo store location (approximate), for distances to campuses.
+    location: { address: "서울 노원구 노원역 인근", lat: 37.6551, lng: 127.0613 },
     category: "사진 · 콘텐츠",
     industry: "photo",
     offer: "행사 스냅 촬영 전체",
@@ -95,6 +99,8 @@ export const seedBrands: Match[] = [
   {
     id: "glowlab",
     name: "글로우랩",
+    // Demo store location (approximate), for distances to campuses.
+    location: { address: "서울 성동구 성수동 팝업 매장", lat: 37.5446, lng: 127.0557 },
     category: "뷰티 · 화장품",
     industry: "beauty",
     offer: "립밤 샘플 300개 + 부스 운영",
@@ -120,6 +126,8 @@ export const seedBrands: Match[] = [
   {
     id: "brewing-lab",
     name: "브루잉랩",
+    // Demo store location (approximate), for distances to campuses.
+    location: { address: "서울 노원구 석계역 인근", lat: 37.6148, lng: 127.0657 },
     category: "카페 · 디저트",
     industry: "cafe",
     offer: "음료 쿠폰 100장",
@@ -218,6 +226,8 @@ export const seedBrands: Match[] = [
   {
     id: "greenday",
     name: "그린데이 샐러드",
+    // Demo store location (approximate), for distances to campuses.
+    location: { address: "서울 노원구 공릉역 인근", lat: 37.6262, lng: 127.0745 },
     category: "샐러드 · 건강식",
     industry: "wellness",
     offer: "샐러드 쿠폰 80장",
@@ -242,6 +252,8 @@ export const seedBrands: Match[] = [
   {
     id: "mood-salon",
     name: "무드살롱",
+    // Demo store location (approximate), for distances to campuses.
+    location: { address: "서울 노원구 태릉입구역 인근", lat: 37.6178, lng: 127.075 },
     category: "헤어 · 뷰티",
     industry: "beauty",
     offer: "공연 헤어 스타일링 20명",
@@ -881,7 +893,7 @@ export async function createSeed(): Promise<Database> {
     emailCodes: [],
     brands: structuredClone(seedBrands),
     groups: structuredClone(seedGroups),
-    catalogVersion: 2,
+    catalogVersion: 3,
     conversations: seedConversations(),
     inquiries: [],
     requests: seedRequests(),

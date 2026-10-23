@@ -2420,6 +2420,20 @@ button.nav-pill:hover {
   box-shadow: none;
 }
 
+/* How far it is, first among the tags, with a pin. */
+.work-tags .tag-distance {
+  gap: 4px;
+  color: var(--point-strong);
+  font-weight: var(--weight-label);
+}
+
+.tag-distance .icon {
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
 .work-actions {
   display: flex;
   flex-wrap: wrap;
@@ -7499,18 +7513,23 @@ button.nav-pill:hover {
     font-size: 34px;
   }
 
-  /* Tabs stretch across the screen; filter chips scroll sideways. */
+  /* Tabs stretch across the screen, sitting closer so five labels fit at
+     360px, and scroll sideways on narrower screens; filter chips scroll
+     sideways. */
   .match-filters {
     margin-bottom: 24px;
   }
 
   .match-tabs {
     width: 100%;
+    gap: 2px;
+    overflow-x: auto;
+    scrollbar-width: none;
   }
 
   .match-tab {
     flex: 1;
-    padding: 0 8px;
+    padding: 0 6px;
   }
 
   .industry-chips {

@@ -29,6 +29,12 @@ export type Match = {
   tags: string[]
   // Sponsorships with student groups this semester (brand catalog only).
   popularity?: number
+  // Brand catalog only: the store's address, and its coordinates once a map
+  // service has placed it.
+  location?: { address: string; lat?: number; lng?: number }
+  // Km from the account browsing (its campus or store); absent when either
+  // place is unknown.
+  distanceKm?: number
   // Student group catalog only: school, next event and its expected audience.
   school?: string
   eventName?: string
@@ -45,6 +51,8 @@ export type Match = {
 // `logo`: a data URL to set, null to remove, left out to keep.
 export type ProfileDraft = Pick<Match, "intro" | "offer" | "tags" | "facts" | "sns" | "portfolio"> & {
   logo?: string | null
+  // A brand's store address; empty removes it.
+  address?: string
 }
 
 export type EventStatus = "매칭 중" | "집행 예정" | "측정 완료"

@@ -1,20 +1,24 @@
 import type { ReactNode } from "react"
 
 import { t } from "../i18n"
+import { formatDistance } from "../lib/distance"
 import type { Match } from "../types"
 import { BrandMark } from "./BrandMark"
+import { DateLine } from "./DateLine"
 import { Icon } from "./Icon"
 import { ScoreRing } from "./ScoreRing"
 
 // A brand or student group as one of Stride's silver cards from
 // getlayers.ai: what it is at the top with a round badge that opens its
 // page, its mark large on a white glow in the middle, then the name and the
-// offer with the score ring centered beside them, tags and the card's
-// actions along the bottom. The card lifts a little on hover.
+// offer with the score ring centered beside them, a group's event date, how
+// far it is (when both places are known), tags and the card's actions along
+// the bottom. The card lifts a little on hover.
 export function WorkCard({
   match,
   meta,
   rank,
+  date,
   tags,
   onOpenDetail,
   children,
@@ -24,6 +28,8 @@ export function WorkCard({
   meta: ReactNode
   // Ranking on the 인기 tab.
   rank?: number
+  // A group's next event, on its own line above the tags.
+  date?: string
   // Tags under the offer; the match's own tags when left out.
   tags?: ReactNode
   onOpenDetail: () => void
@@ -64,6 +70,14 @@ export function WorkCard({
           <ScoreRing score={match.score} />
         </div>
         <div className="work-tags">
+          {date && <DateLine date={date} />}
+          {match.distanceKm !== undefined && (
+            <span className="tag-distance">
+              <Icon name="pin" size={13} />
+              <span className="sr-only">{t("거리")}</span>
+              {formatDistance(match.distanceKm)}
+            </span>
+          )}
           {tags ??
             match.tags.map((tag) => (
               <span key={tag}>{tag}</span>

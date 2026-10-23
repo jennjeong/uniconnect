@@ -186,6 +186,7 @@ const en: Record<string, string> = {
   // Last, as patterns are tried in order and this one would also take
   // "{label}과 일정을 입력해 주세요." (routes/auth.ts sign-up names).
   "{label}을 입력해 주세요.": "Please enter the {label}.",
+  "매장 주소는 100자 이하로 적어 주세요.": "Please keep the store address to 100 characters or fewer.",
 }
 
 export default en

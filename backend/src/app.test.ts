@@ -989,11 +989,12 @@ test("older data files gain the new collections and calendar dates", async () =>
   // Without the demo group there is no busking day to measure.
   assert.deepEqual(upgraded.measurements, [])
   assert.equal(upgraded.groups.length, 8)
-  assert.equal(upgraded.catalogVersion, 2)
+  assert.equal(upgraded.catalogVersion, 3)
   assert.ok(upgraded.brands.every((brand) => brand.intro && brand.sns && brand.portfolio))
   assert.equal(upgraded.conversations.length, 3)
 
-  // Version 2 catalogs keep their edits.
+  // Version 2 catalogs keep their edits and gain the demo store locations
+  // once; a brand that clears its address afterwards keeps it cleared.
   const edited = upgradeDatabase({
     events: {},
     catalogVersion: 2,
@@ -1001,6 +1002,9 @@ test("older data files gain the new collections and calendar dates", async () =>
     groups: [],
   } as unknown as Parameters<typeof upgradeDatabase>[0])
   assert.equal(edited.brands[0].intro, "직접 고친 소개")
+  assert.equal(edited.brands[0].location?.address, "서울 노원구 공릉역 2번 출구 앞")
+  delete edited.brands[0].location
+  assert.equal(upgradeDatabase(edited).brands[0].location, undefined)
   assert.equal(upgraded.requests.length, 4)
   assert.deepEqual(upgraded.sponsorships, {})
 
@@ -1809,3 +1813,80 @@ test("every Korean error message the server writes has English", async () => {
   assert.equal(translate("캠페인명과 일정을 입력해 주세요.", "en"), "Please enter the campaign name and dates.")
   assert.equal(translate("브랜드명을 입력해 주세요.", "en"), "Please enter the brand name.")
 })
+
+test("catalogs say how far each listing is from the viewer's campus or store", async () => {
+  const { campusOf, distanceKm } = await import("./lib/geo.js")
+  // Campuses by email domain (subdomains too), else by the school's name.
+  assert.equal(campusOf({ email: "muse@syu.ac.kr" })?.name, "삼육대학교")
+  assert.equal(campusOf({ email: "lab@cs.kw.ac.kr" })?.name, "광운대학교")
+  assert.equal(campusOf({ email: "who@unknown.ac.kr", school: "서울여자대학교" })?.name, "서울여자대학교")
+  assert.equal(campusOf({ email: "who@unknown.ac.kr", school: "어느대학교" }), undefined)
+  assert.equal(distanceKm({ lat: 37.5, lng: 127 }, { lat: 37.5, lng: 127 }), 0)
+
+  // The demo group (삼육대) sees each brand's store distance; online brands have none.
+  const brands = (await call("GET", "/brands")).data.brands as { id: string; distanceKm?: number }[]
+  const coffee = brands.find((brand) => brand.id === "afternoon-coffee")!
+  assert.ok(coffee.distanceKm! > 3 && coffee.distanceKm! < 4.5, String(coffee.distanceKm))
+  assert.equal(brands.find((brand) => brand.id === "freshon")!.distanceKm, undefined)
+
+  // The demo brand (공릉역) sees each group's campus distance; a union of schools has none.
+  const groups = (await call("GET", "/groups")).data.groups as { id: string; distanceKm?: number }[]
+  assert.ok(groups.find((group) => group.id === "seoultech-band")!.distanceKm! < 1.5)
+  assert.equal(groups.find((group) => group.id === "nowon-creators")!.distanceKm, undefined)
+})
+
+test("a brand's store address is placed on the map once a key is set", async () => {
+  const { geocoder } = await import("./lib/geocode.js")
+  const brand = await login("브랜드")
+  const listing = getDatabase().brands.find((item) => item.id === "afternoon-coffee")!
+  const saved = structuredClone(listing)
+  const form = (address?: string) => ({
+    intro: listing.intro,
+    offer: listing.offer,
+    tags: listing.tags,
+    facts: listing.facts,
+    sns: listing.sns,
+    portfolio: listing.portfolio,
+    ...(address === undefined ? {} : { address }),
+  })
+  const search = geocoder.search
+  try {
+    // Left out, the address and its place stay.
+    assert.equal((await call("PUT", "/profile", form(), brand)).data.profile.location.lat, saved.location!.lat)
+    // Without a key a new address is kept with no place, so no distance.
+    const unplaced = (await call("PUT", "/profile", form("서울 노원구 화랑로 815"), brand)).data.profile
+    assert.deepEqual(unplaced.location, { address: "서울 노원구 화랑로 815" })
+    const far = (await call("GET", "/groups", undefined, brand)).data.groups
+    assert.ok(far.every((group: { distanceKm?: number }) => group.distanceKm === undefined))
+
+    // With a key, Kakao's answer places it, and an address saved before the
+    // key is looked up when it is saved again.
+    config.kakaoRestApiKey = "test-key"
+    const asked: string[] = []
+    geocoder.search = async (address: string) => {
+      asked.push(address)
+      return { documents: [{ x: "127.0775", y: "37.632" }] }
+    }
+    const later = (await call("PUT", "/profile", form("서울 노원구 화랑로 815"), brand)).data.profile
+    assert.deepEqual(later.location, { address: "서울 노원구 화랑로 815", lat: 37.632, lng: 127.0775 })
+    const placed = (await call("PUT", "/profile", form("서울 노원구 공릉로 232"), brand)).data.profile
+    assert.deepEqual(placed.location, { address: "서울 노원구 공릉로 232", lat: 37.632, lng: 127.0775 })
+    assert.deepEqual(asked, ["서울 노원구 화랑로 815", "서울 노원구 공릉로 232"])
+    const near = (await call("GET", "/groups", undefined, brand)).data.groups
+    assert.equal(near.find((group: { id: string }) => group.id === "seoultech-band").distanceKm, 0)
+    // A placed address isn't looked up again.
+    await call("PUT", "/profile", form("서울 노원구 공릉로 232"), brand)
+    assert.equal(asked.length, 2)
+
+    const long = await call("PUT", "/profile", form("가".repeat(101)), brand)
+    assert.equal(long.status, 400)
+    assert.match(long.data.error, /100자/)
+    assert.equal((await call("PUT", "/profile", form(""), brand)).data.profile.location, undefined)
+  } finally {
+    geocoder.search = search
+    config.kakaoRestApiKey = undefined
+    Object.assign(listing, saved)
+    if (!saved.location) delete listing.location
+  }
+})
+
