@@ -69,7 +69,9 @@ export function JourneyChain({
             </Pill>
           </div>
         </div>
-        <ol className="journey-bento">
+        {/* Focusable, so the row can be scrolled with the keyboard where it
+            scrolls sideways (narrow screens). */}
+        <ol aria-label="협찬 단계" className="journey-bento" tabIndex={0}>
           {steps.map((step, index) => (
             <li
               aria-current={index === current ? "step" : undefined}
