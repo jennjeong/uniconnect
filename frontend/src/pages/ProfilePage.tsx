@@ -74,7 +74,7 @@ export function ProfilePage({
         <MeshBackdrop seed={5.1} />
         <div className="banner-content">
           <div className="banner-top">
-            <span className="eyebrow light">My page</span>
+            <span className="eyebrow light">My Page</span>
             <span className="banner-role">
               {students ? "협찬 받기 · 학생단체" : "협찬 하기 · 브랜드"}
             </span>

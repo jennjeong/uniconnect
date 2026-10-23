@@ -77,7 +77,7 @@ export function MatchDetailPage({
         <LayersGradient shader={ANTIPODE} />
         <div className="banner-content">
           <div className="banner-top">
-            <span className="eyebrow light">{group ? "Group profile" : "Brand profile"}</span>
+            <span className="eyebrow light">{group ? "Group Profile" : "Brand Profile"}</span>
             <ScoreRing score={match.score} />
           </div>
           <div className="banner-identity">

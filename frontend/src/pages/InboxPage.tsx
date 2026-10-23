@@ -129,7 +129,7 @@ export function InboxPage({
   return (
     <section className="page-view">
       <PageIntro
-        eyebrow="Proposal inbox"
+        eyebrow="Proposal Inbox"
         title="받은 협찬 제안"
         description="학생단체가 보낸 제안을 확인하고 협찬 여부를 정해 주세요."
       />

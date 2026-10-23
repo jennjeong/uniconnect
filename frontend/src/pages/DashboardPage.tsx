@@ -188,7 +188,7 @@ export function DashboardPage({
       <section className="works-section" id="matches">
         <div className="section-head centered">
           <span className="eyebrow" data-reveal>
-            Smart match
+            Smart Match
           </span>
           <RevealTitle as="h2" className="section-display">
             맞춤 추천 매칭
@@ -233,7 +233,7 @@ export function DashboardPage({
       <section className="results-section">
         <div className="section-head">
           <span className="eyebrow" data-reveal>
-            Last event
+            Last Event
           </span>
           <RevealTitle as="h2" className="section-display">
             함께 만든 지난 행사의 결과

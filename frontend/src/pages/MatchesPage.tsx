@@ -85,7 +85,7 @@ export function MatchesPage({
   return (
     <section className="page-view">
       <PageIntro
-        eyebrow="Smart match"
+        eyebrow="Smart Match"
         title={intro.title}
         description={intro.caption}
       />

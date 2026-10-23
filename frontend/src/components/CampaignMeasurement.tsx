@@ -39,7 +39,7 @@ export function CampaignMeasurement({
     <section aria-label="캠페인 현장 측정" className="campaign-measure">
       <div className="section-head">
         <span className="eyebrow" data-reveal>
-          Campaign check-in
+          Campaign Check-In
         </span>
         <RevealTitle as="h2" className="section-display">
           캠페인 현장 측정

@@ -6047,7 +6047,7 @@ button.nav-pill:hover {
 .modal .role-option {
   position: relative;
   display: grid;
-  grid-template-columns: 22px 1fr;
+  grid-template-columns: 28px 1fr;
   align-items: center;
   gap: 2px 10px;
   margin: 0;
@@ -6075,17 +6075,15 @@ button.nav-pill:hover {
   pointer-events: none;
 }
 
-.role-option .icon {
+/* The logo's school and company symbols, faded until chosen. */
+.role-option .role-mark {
   grid-row: span 2;
-  color: var(--muted);
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.7;
+  opacity: 0.55;
+  transition: opacity 0.2s ease;
 }
 
-.role-option.active .icon {
-  color: var(--point-strong);
+.role-option.active .role-mark {
+  opacity: 1;
 }
 
 .role-option strong {
@@ -7623,39 +7621,85 @@ button.nav-pill:hover {
     gap: 16px;
   }
 
-  /* On a phone the logo sits small beside the category, so about two
-     cards show on a screen instead of one. */
+  /* On a phone a card is a compact row: the logo with the category and
+     name beside it and the score at the end, then the tags and actions,
+     so three or so fit a screen. The name opens the details, so the arrow
+     button stays off. */
   .work-card {
     display: grid;
     min-height: 0;
-    grid-template-columns: 64px minmax(0, 1fr);
+    grid-template-areas:
+      "mark meta ring"
+      "mark name ring"
+      "tags tags tags"
+      "actions actions actions";
+    grid-template-columns: 56px minmax(0, 1fr) auto;
     align-items: center;
-    gap: 14px 14px;
-    padding: 20px;
+    gap: 4px 12px;
+    padding: 18px;
+  }
+
+  .work-meta,
+  .work-bottom,
+  .work-title {
+    display: contents;
+  }
+
+  .work-meta > span {
+    grid-area: meta;
+    align-self: end;
+  }
+
+  .work-badge {
+    display: none;
   }
 
   .work-mark {
-    grid-row: 1;
-    grid-column: 1;
+    grid-area: mark;
     min-height: 0;
   }
 
-  .work-meta {
-    grid-row: 1;
-    grid-column: 2;
+  .work-name {
+    grid-area: name;
+    align-self: start;
+    gap: 2px;
   }
 
-  .work-bottom {
-    grid-column: 1 / -1;
+  .work-title h3 {
+    font-size: 18px;
+  }
+
+  .work-name p {
+    font-size: 13px;
+  }
+
+  .work-card .match-score-ring {
+    grid-area: ring;
+    width: 54px;
+    height: 54px;
+  }
+
+  .work-card .match-score-ring strong {
+    font-size: 14px;
+  }
+
+  .work-tags {
+    grid-area: tags;
+    margin-top: 10px;
+  }
+
+  .work-actions {
+    grid-area: actions;
+    padding-top: 10px;
   }
 
   .work-mark .match-logo.large {
-    width: 64px;
-    height: 64px;
-    border-radius: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 18px;
     box-shadow:
       0 0 0 4px rgba(255, 255, 255, 0.7),
-      0 14px 28px -14px rgba(19, 48, 111, 0.4);
+      0 12px 24px -12px rgba(19, 48, 111, 0.4);
   }
 
   .match-score-ring {

@@ -92,7 +92,7 @@ export function FaqPage({ account, onLogin }: { account: Account | null; onLogin
       <header className="help-hero">
         <MeshBackdrop seed={5.3} />
         <div className="help-hero-top">
-          <span className="eyebrow light">Help center</span>
+          <span className="eyebrow light">Help Center</span>
           <button className="help-contact" onClick={goAsk} type="button">
             관리자에게 질문하기 <Icon name="arrowUpRight" size={15} />
           </button>

@@ -87,7 +87,7 @@ export function Footer({
           <MeshBackdrop seed={7.2} />
           <ChromeScene anchor={stageRef} kind="rings" mode="enter" spinDirection={-1} />
           <div className="footer-cta">
-            <span className="eyebrow light">Let&apos;s connect</span>
+            <span className="eyebrow light">Let&apos;s Connect</span>
             <RevealTitle
               accent={1}
               as="h2"

@@ -67,7 +67,7 @@ export function AnalyticsPage({
   return (
     <section className="page-view">
       <PageIntro
-        eyebrow="Sponsorship analytics"
+        eyebrow="Sponsorship Analytics"
         title="협찬 성과 분석"
         description="협찬마다 쓴 금액과 돌아온 쿠폰, 방문, 추정 매출을 함께 비교해요."
         actions={
@@ -84,7 +84,7 @@ export function AnalyticsPage({
           <section className="power-panel" data-reveal>
             <LayersGradient shader={INTERFERENCE} />
             <div className="power-content">
-              <span className="eyebrow light">By the numbers</span>
+              <span className="eyebrow light">By the Numbers</span>
               <RevealTitle as="h2" className="power-title">
                 지금까지의 협찬을 모아 보면
               </RevealTitle>

@@ -1,6 +1,6 @@
 import { roleOptions } from "../data/roles"
 import type { Role } from "../types"
-import { Icon } from "./Icon"
+import { RoleMark } from "./RoleMark"
 
 export function RolePicker({
   name,
@@ -25,7 +25,7 @@ export function RolePicker({
             type="radio"
             value={option.value}
           />
-          <Icon name={option.icon} size={20} />
+          <RoleMark role={option.value} />
           <strong>{option.title}</strong>
           <span>{option.caption}</span>
         </label>

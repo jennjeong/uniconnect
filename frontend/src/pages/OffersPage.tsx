@@ -126,7 +126,7 @@ export function OffersPage({
   return (
     <section className="page-view">
       <PageIntro
-        eyebrow="Offer inbox"
+        eyebrow="Offer Inbox"
         title="받은 협찬 제안"
         description="브랜드가 보낸 협찬 제안을 확인하고 함께할지 정해 주세요."
       />

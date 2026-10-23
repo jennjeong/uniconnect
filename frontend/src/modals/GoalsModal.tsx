@@ -102,7 +102,7 @@ export function GoalsModal({
   }
 
   return (
-    <Modal name="measure-goals" kicker="Measurement goals" title={`${report.eventName} 목표`} onClose={onClose}>
+    <Modal name="measure-goals" kicker="Measurement Goals" title={`${report.eventName} 목표`} onClose={onClose}>
       <form
         className="auth-form goals-form"
         noValidate

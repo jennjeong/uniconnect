@@ -1,4 +1,3 @@
-import type { IconName } from "../components/Icon"
 import type { Role } from "../types"
 
 export const roles: Role[] = ["학생단체", "브랜드"]
@@ -7,10 +6,10 @@ export const roleOptions: {
   value: Role
   title: string
   caption: string
-  icon: IconName
 }[] = [
-  { value: "학생단체", title: "협찬 받기", caption: "학생단체 · 동아리", icon: "users" },
-  { value: "브랜드", title: "협찬 하기", caption: "스폰서 · 브랜드", icon: "store" },
+  // Each shows with its symbol from the logo (components/RoleMark.tsx).
+  { value: "학생단체", title: "협찬 받기", caption: "학생단체 · 동아리" },
+  { value: "브랜드", title: "협찬 하기", caption: "스폰서 · 브랜드" },
 ]
 
 // Keep in sync with accountTypes in backend/src/lib/validation.ts
