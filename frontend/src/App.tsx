@@ -453,6 +453,11 @@ function App() {
     }
     showNotice(errorMessage(error))
   }
+  // The same handling for the chat page, kept as one function so the page's
+  // checking does not restart on every render.
+  const latestHandleError = useRef(handleError)
+  latestHandleError.current = handleError
+  const handleSessionEnd = useCallback((error: unknown) => latestHandleError.current(error), [])
 
   const logout = async () => {
     try {
@@ -777,6 +782,7 @@ function App() {
           id={view.chat}
           onBack={() => goBack({ page, messages: true })}
           onChange={updateConversation}
+          onSessionEnd={handleSessionEnd}
           onOpenPartner={(partnerId) =>
             catalog.some((match) => match.id === partnerId)
               ? go({ page: browsePage, detail: partnerId })
