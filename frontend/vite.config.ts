@@ -105,6 +105,15 @@ function figmaSiteConfiguration(config: FigmaSiteConfiguration): Plugin {
   const bodyStart = config.customScripts?.bodyStart ?? ''
   const bodyEnd = config.customScripts?.bodyEnd ?? ''
   const robotsTxt = config.robots?.index === false ? 'User-agent: *\nDisallow: /\n' : ''
+  // Google's gtag set-up, as a file of its own (/ga-init.js) rather than an
+  // inline script, which the server's Content-Security-Policy blocks.
+  const gaInit = googleAnalyticsId
+    ? `window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', ${JSON.stringify(googleAnalyticsId)});
+`
+    : ''
 
   return {
     name: 'figma-site-configuration',
@@ -115,15 +124,28 @@ function figmaSiteConfiguration(config: FigmaSiteConfiguration): Plugin {
         res.setHeader('Content-Type', 'text/plain; charset=utf-8')
         res.end(robotsTxt)
       })
+      server.middlewares.use((req, res, next) => {
+        if (!gaInit || req.url?.split('?')[0] !== '/ga-init.js') return next()
+
+        res.setHeader('Content-Type', 'text/javascript; charset=utf-8')
+        res.end(gaInit)
+      })
     },
     generateBundle() {
-      if (!robotsTxt) return
-
-      this.emitFile({
-        type: 'asset',
-        fileName: 'robots.txt',
-        source: robotsTxt,
-      })
+      if (robotsTxt) {
+        this.emitFile({
+          type: 'asset',
+          fileName: 'robots.txt',
+          source: robotsTxt,
+        })
+      }
+      if (gaInit) {
+        this.emitFile({
+          type: 'asset',
+          fileName: 'ga-init.js',
+          source: gaInit,
+        })
+      }
     },
     transformIndexHtml: {
       order: 'pre',
@@ -172,12 +194,7 @@ function figmaSiteConfiguration(config: FigmaSiteConfiguration): Plugin {
             },
             {
               tag: 'script',
-              children: `
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', ${JSON.stringify(googleAnalyticsId)});
-`,
+              attrs: { src: '/ga-init.js' },
               injectTo: 'head',
             },
           )
