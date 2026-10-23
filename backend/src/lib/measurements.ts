@@ -25,10 +25,11 @@ export function parseKind(value: unknown) {
 // Only the most recent records are kept; the counts stay exact.
 const logLimit = 300
 
-// "120명" → 120; a guess of 100 when the event gives no number.
+// "120명" → 120; a guess of 100 when the event gives no number. Kept within
+// what the goals form takes, so the default goals save as they are.
 function audienceOf(event: EventItem) {
   const people = Number(event.people?.replace(/[^\d]/g, ""))
-  return people > 0 ? people : 100
+  return people > 0 ? Math.min(people, 100_000) : 100
 }
 
 // Goals a new event starts from, scaled to its expected audience; the group

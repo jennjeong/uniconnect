@@ -1034,6 +1034,41 @@ test("a request whose save fails leaves nothing behind", async () => {
   await call("DELETE", `/events/${again.data.event.id}`, undefined, student)
 })
 
+test("event names and people are checked, and default goals save as they are", async () => {
+  const student = await signUpMember("sizes@syu.ac.kr", "sizes-pass-123")
+  const event = (fields: Record<string, unknown>) =>
+    call("POST", "/events", { name: "규모 확인 공연", date: "2026-12-05", types: ["현금"], ...fields }, student)
+  const long = await event({ name: "가".repeat(41) })
+  assert.equal(long.status, 400)
+  assert.match(long.data.error, /40자/)
+  for (const people of ["0", "100001", "많이", "12.5"]) {
+    const wrong = await event({ people })
+    assert.equal(wrong.status, 400, people)
+    assert.match(wrong.data.error, /예상 참여 인원/)
+  }
+  assert.equal((await event({ people: "" })).data.event.people, "")
+  const largest = (await event({ people: "100,000명" })).data.event
+  assert.equal(largest.people, "100,000명")
+
+  // An event as large as allowed gets goals the goals form takes back as they are.
+  const { report } = (await call("GET", `/measurements/${largest.id}`, undefined, student)).data
+  assert.equal(report.expectedAudience, 100000)
+  const goals = {
+    expectedAudience: report.expectedAudience,
+    averageSpend: report.averageSpend,
+    snsReach: report.snsReach,
+    valueBreakdown: report.valueBreakdown,
+    targets: report.targets,
+    coupon: report.coupon,
+  }
+  assert.equal((await call("PUT", `/measurements/${largest.id}/goals`, goals, student)).status, 200)
+  // A huge number kept from before the check still gives goals in range.
+  Object.values(getDatabase().events).flat().find((item) => item.id === largest.id)!.people = "250,000명"
+  getDatabase().measurements = getDatabase().measurements.filter((item) => item.eventId !== largest.id)
+  const again = (await call("GET", `/measurements/${largest.id}`, undefined, student)).data.report
+  assert.equal(again.expectedAudience, 100000)
+})
+
 test("a request too big or with a broken address is answered as such, not as a server error", async () => {
   const student = await login("학생단체")
   const big = await call("POST", "/events", { name: "x".repeat(400_000), date: "2026-12-01", types: ["현금"] }, student)
