@@ -1094,6 +1094,26 @@ test("a request too big or with a broken address is answered as such, not as a s
   assert.match(broken.data.error, /요청 형식/)
 })
 
+test("a separate frontend origin may send the operators' token", async () => {
+  const before = config.corsOrigin
+  config.corsOrigin = "https://app.example.com"
+  const other = createApp().listen(0)
+  try {
+    await new Promise((resolve) => other.once("listening", resolve))
+    const port = (other.address() as AddressInfo).port
+    const preflight = await fetch(`http://127.0.0.1:${port}/api/admin/inquiries`, {
+      method: "OPTIONS",
+      headers: { Origin: "https://app.example.com", "Access-Control-Request-Headers": "x-admin-token" },
+    })
+    assert.equal(preflight.status, 204)
+    assert.equal(preflight.headers.get("access-control-allow-origin"), "https://app.example.com")
+    assert.match(preflight.headers.get("access-control-allow-headers") ?? "", /X-Admin-Token/)
+  } finally {
+    await new Promise((resolve) => other.close(resolve))
+    config.corsOrigin = before
+  }
+})
+
 test("proposal answers only take accept or decline", async () => {
   const brand = await login("브랜드")
   for (const decision of ["constructor", "toString", "__proto__"]) {

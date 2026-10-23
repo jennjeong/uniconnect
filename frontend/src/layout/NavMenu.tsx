@@ -5,6 +5,7 @@ import { Icon } from "../components/Icon"
 import { ClosingContext } from "../components/Presence"
 import { navItems } from "../data/navigation"
 import { createLabel, roles } from "../data/roles"
+import { useDialogFocus } from "../hooks/useDialogFocus"
 import type { Account, NavLabel, Role } from "../types"
 
 // The full-screen menu behind Menu: a silver panel with the role's pages in
@@ -45,18 +46,17 @@ export function NavMenu({
 }) {
   const closing = useContext(ClosingContext)
   const closeRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
 
-  // Focus moves into the menu and back to where it was when the menu goes,
-  // unless a link opened something that took the focus (a login form).
+  // Focus moves into the menu (its close button), stays there while it is
+  // open and goes back to where it was when the menu goes, unless a link
+  // opened something that took the focus (a login form).
+  useDialogFocus(menuRef, !closing, closeRef)
+
   useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null
-    closeRef.current?.focus()
     const root = document.documentElement
     root.classList.add("scroll-locked")
-    return () => {
-      root.classList.remove("scroll-locked")
-      if (!document.activeElement || document.activeElement === document.body) previous?.focus()
-    }
+    return () => root.classList.remove("scroll-locked")
   }, [])
 
   useEffect(() => {
@@ -80,6 +80,7 @@ export function NavMenu({
       aria-modal="true"
       className={closing ? "nav-menu closing" : "nav-menu"}
       id="site-menu"
+      ref={menuRef}
       role="dialog"
     >
       <div className="nav-menu-top">

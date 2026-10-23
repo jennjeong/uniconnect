@@ -1,5 +1,6 @@
-import { useContext, useEffect, type ReactNode } from "react"
+import { useContext, useEffect, useId, useRef, type ReactNode } from "react"
 
+import { useDialogFocus } from "../hooks/useDialogFocus"
 import type { ModalName } from "../types"
 import { GradientBackdrop } from "./GradientBackdrop"
 import { Icon } from "./Icon"
@@ -8,7 +9,9 @@ import { ClosingContext } from "./Presence"
 // Shared dialog frame: a white panel over a blurred backdrop, an eyebrow
 // over the title and a round close button. With `banner`, the heading sits
 // on a moving navy ShaderGradient strip (login and sign-up). Backdrop click, the close button and Escape all close it; inside
-// a Presence it slides down while closing.
+// a Presence it slides down while closing. While open it holds the
+// keyboard (useDialogFocus), and its title has an id of its own, so one
+// closing while another opens never share one.
 export function Modal({
   name,
   kicker,
@@ -25,6 +28,9 @@ export function Modal({
   children: ReactNode
 }) {
   const closing = useContext(ClosingContext)
+  const dialog = useRef<HTMLDivElement>(null)
+  const titleId = useId()
+  useDialogFocus(dialog, !closing)
 
   useEffect(() => {
     if (closing) return
@@ -38,7 +44,7 @@ export function Modal({
   const heading = (
     <div className="modal-header">
       <span className={banner ? "eyebrow light" : "eyebrow"}>{kicker}</span>
-      <h2 id="modal-title">{title}</h2>
+      <h2 id={titleId}>{title}</h2>
     </div>
   )
 
@@ -52,8 +58,10 @@ export function Modal({
         className={`modal modal-${name}${banner ? " has-banner" : ""}${closing ? " closing" : ""}`}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="modal-title"
+        aria-labelledby={titleId}
         onMouseDown={(event) => event.stopPropagation()}
+        ref={dialog}
+        tabIndex={-1}
       >
         {banner ? (
           <div className="modal-banner has-gradient">
