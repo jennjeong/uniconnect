@@ -1,4 +1,4 @@
-import { useRef, type CSSProperties } from "react"
+import { useId, useRef, useState, type CSSProperties } from "react"
 
 import { ChromeScene } from "../scenes/ChromeScene"
 import { MeshBackdrop } from "../scenes/MeshBackdrop"
@@ -69,25 +69,65 @@ export function JourneyChain({
             </Pill>
           </div>
         </div>
-        {/* Focusable, so the row can be scrolled with the keyboard where it
-            scrolls sideways (narrow screens). */}
-        <ol aria-label="협찬 단계" className="journey-bento" tabIndex={0}>
-          {steps.map((step, index) => (
-            <li
-              aria-current={index === current ? "step" : undefined}
-              className={index === current ? "journey-card current" : index < current ? "journey-card done" : "journey-card"}
-              data-reveal
-              key={step.label}
-              style={delay(index * 0.08)}
-            >
-              <span className="journey-index">{pad(index + 1)}</span>
-              <strong>{step.label}</strong>
-              <p>{step.detail}</p>
-              <small>{step.status}</small>
-            </li>
-          ))}
-        </ol>
+        <Stepper current={current} steps={steps} />
       </section>
+    </div>
+  )
+}
+
+const phase = (index: number, current: number) =>
+  index < current ? "done" : index === current ? "current" : "next"
+
+const phaseLabel = { done: "지난 단계", current: "지금 단계", next: "다음 단계" }
+
+// The steps as a stepper: numbered dots on one line, filled in deep blue up
+// to the step under way, whose dot glows with a turning gradient (getlayers'
+// Interference blues) while a light runs along the line toward it. A press
+// on a dot shows that step's details below; the current one shows first.
+function Stepper({ steps, current }: { steps: JourneyStep[]; current: number }) {
+  // The step whose details show: the current one until a dot is pressed
+  // (the current step can move once the account's data arrives).
+  const [picked, setPicked] = useState<number | null>(null)
+  const open = picked ?? current
+  const panelId = useId()
+  const shown = steps[open] ?? steps[current]
+  const progress = steps.length > 1 ? Math.min(current, steps.length - 1) / (steps.length - 1) : 0
+
+  return (
+    <div className="stepper" data-reveal style={{ "--progress": progress, "--steps": steps.length } as CSSProperties}>
+      <ol aria-label="협찬 단계" className="stepper-track">
+        {steps.map((step, index) => {
+          const state = phase(index, current)
+          return (
+            <li className={`stepper-step ${state}`} key={step.label}>
+              <button
+                aria-controls={panelId}
+                aria-current={index === current ? "step" : undefined}
+                aria-pressed={index === open}
+                className={index === open ? "stepper-dot open" : "stepper-dot"}
+                onClick={() => setPicked(index)}
+                type="button"
+              >
+                <span aria-hidden="true">{state === "done" ? "✓" : index + 1}</span>
+                <span className="sr-only">
+                  {index + 1}단계 {step.label}, {phaseLabel[state]}
+                </span>
+              </button>
+              <strong aria-hidden="true">{step.label}</strong>
+              <small aria-hidden="true">{step.status}</small>
+            </li>
+          )
+        })}
+      </ol>
+
+      <div aria-live="polite" className={`stepper-detail ${phase(open, current)}`} id={panelId} key={open}>
+        <span className="stepper-detail-index">
+          {pad(open + 1)} · {phaseLabel[phase(open, current)]}
+        </span>
+        <strong>{shown.label}</strong>
+        <p>{shown.detail}</p>
+        <small>{shown.status}</small>
+      </div>
     </div>
   )
 }
