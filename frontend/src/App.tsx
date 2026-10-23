@@ -106,6 +106,10 @@ function App() {
   const [proposals, setProposals] = useState<string[]>([])
   // Answers from brands that replied to the student group's proposals.
   const [statuses, setStatuses] = useState<ProposalState["statuses"]>({})
+  const [confirmedCount, setConfirmedCount] = useState(0)
+  // Moves on every minute and when the window comes back into view, so
+  // answers from the other side show without reloading.
+  const [refreshTick, setRefreshTick] = useState(0)
   // Each of the student group's events with its live counts and report, and
   // the one the measurement pages show (the default one until picked).
   const [measurements, setMeasurements] = useState<EventMeasurement[]>([])
@@ -213,71 +217,110 @@ function App() {
     if (!usable) go({ page }, true)
   })
 
-  // Restore the saved session.
+  // Restore the saved session. An expired one is dropped. While the server
+  // cannot be reached the token stays and the page waits, trying again a
+  // little later each time: going on as a visitor would show a visitor's
+  // screens while the server, still sent the token, answers as the account.
   useEffect(() => {
     if (!getToken()) return
     let cancelled = false
-    api
-      .me()
-      .then((result) => {
-        if (!cancelled) setAccount(result.account)
-      })
-      .catch((error) => {
-        // Drop an expired session; keep the token if the server was just unreachable.
-        if (error instanceof ApiError && error.status === 401) setToken(null)
-      })
-      .finally(() => {
-        if (!cancelled) setAuthReady(true)
-      })
+    let timer: number | undefined
+    let tries = 0
+    const check = () =>
+      api
+        .me()
+        .then((result) => {
+          if (cancelled) return
+          setAccount(result.account)
+          setAuthReady(true)
+        })
+        .catch((error) => {
+          if (cancelled) return
+          if (error instanceof ApiError && error.status === 401) {
+            setToken(null)
+            setAuthReady(true)
+            return
+          }
+          tries += 1
+          if (tries === 1) showNotice("서버에 연결하지 못했어요. 다시 연결하고 있어요…")
+          timer = window.setTimeout(check, Math.min(30_000, 2_000 * 2 ** (tries - 1)))
+        })
+    check()
     return () => {
       cancelled = true
+      window.clearTimeout(timer)
     }
-  }, [])
+  }, [showNotice])
 
   useEffect(() => {
     if (!authReady) return
+    const refresh = () => {
+      if (document.visibilityState === "visible") setRefreshTick((tick) => tick + 1)
+    }
+    const timer = window.setInterval(refresh, 60_000)
+    window.addEventListener("focus", refresh)
+    document.addEventListener("visibilitychange", refresh)
+    return () => {
+      window.clearInterval(timer)
+      window.removeEventListener("focus", refresh)
+      document.removeEventListener("visibilitychange", refresh)
+    }
+  }, [authReady])
+
+  // What the role and account see, loaded when they change and refreshed in
+  // the background. Each request applies on its own, so one failing leaves
+  // the rest current; only a first load says so.
+  const loadedFor = useRef("")
+  useEffect(() => {
+    if (!authReady) return
     let cancelled = false
+    const key = `${role} ${accountId ?? ""}`
+    const background = loadedFor.current === key
+    const students = role === "학생단체"
+    const settle = <T,>(request: Promise<T>, apply: (result: T) => void) =>
+      request.then((result) => {
+        if (!cancelled) apply(result)
+      })
     // Student groups browse brands and answer their offers; brands browse
     // groups, answer proposals and follow their results.
-    const roleData =
-      role === "학생단체"
-        ? Promise.all([api.brands(), api.offers()]).then(([brandResult, offerResult]) => ({
-            brands: brandResult.brands,
-            groups: [],
-            requests: [],
-            offers: offerResult.offers,
-            sponsorships: [],
-          }))
-        : Promise.all([api.groups(), api.requests(), api.analytics()]).then(
-            ([groupResult, requestResult, analyticsResult]) => ({
-              brands: [],
-              groups: groupResult.groups,
-              requests: requestResult.requests,
-              offers: [],
-              sponsorships: analyticsResult.sponsorships,
-            }),
-          )
-    Promise.all([api.matches(role), api.events(role), api.proposals(), roleData])
-      .then(([matchResult, eventResult, proposalResult, data]) => {
-        if (cancelled) return
-        setMatches(matchResult.matches)
+    const requests = [
+      settle(api.matches(role), (result) => {
+        setMatches(result.matches)
         setUpdatedAt(new Date())
-        setEvents(eventResult.events)
-        setProposals(proposalResult.proposals)
-        setStatuses(proposalResult.statuses)
-        setBrands(data.brands)
-        setGroups(data.groups)
-        setRequests(data.requests)
-        setOffers(data.offers)
-        setSponsorships(data.sponsorships)
-      })
-      .catch((error) => {
-        if (!cancelled) showNotice(errorMessage(error))
-      })
+      }),
+      settle(api.events(role), (result) => setEvents(result.events)),
+      settle(api.proposals(), applyProposals),
+      ...(students
+        ? [
+            settle(api.brands(), (result) => setBrands(result.brands)),
+            settle(api.offers(), (result) => setOffers(result.offers)),
+          ]
+        : [
+            settle(api.groups(), (result) => setGroups(result.groups)),
+            settle(api.requests(), (result) => setRequests(result.requests)),
+            settle(api.analytics(), (result) => setSponsorships(result.sponsorships)),
+          ]),
+    ]
+    if (!background) {
+      if (students) {
+        setGroups([])
+        setRequests([])
+        setSponsorships([])
+      } else {
+        setBrands([])
+        setOffers([])
+      }
+    }
+    Promise.allSettled(requests).then((results) => {
+      if (cancelled) return
+      loadedFor.current = key
+      const failed = results.find((result) => result.status === "rejected")
+      if (failed && !background) showNotice(errorMessage((failed as PromiseRejectedResult).reason))
+    })
     return () => {
       cancelled = true
     }
-  }, [authReady, role, accountId, showNotice])
+  }, [authReady, role, accountId, showNotice, refreshTick])
 
   // The account's own listing and conversations; the list refreshes every
   // 20 seconds so the chat button shows new messages.
@@ -424,6 +467,11 @@ function App() {
     }
     showNotice(errorMessage(error))
   }
+  // The same handling for the chat page, kept as one function so the page's
+  // checking does not restart on every render.
+  const latestHandleError = useRef(handleError)
+  latestHandleError.current = handleError
+  const handleSessionEnd = useCallback((error: unknown) => latestHandleError.current(error), [])
 
   const logout = async () => {
     try {
@@ -492,9 +540,10 @@ function App() {
     showNotice(`${event.name} 상세 흐름을 열었어요.`)
   }
 
-  const applyProposals = (result: ProposalState) => {
+  function applyProposals(result: ProposalState) {
     setProposals(result.proposals)
     setStatuses(result.statuses)
+    setConfirmedCount(result.confirmed)
   }
 
   // The click and the server's acceptance are tracked apart (lib/analytics.ts).
@@ -565,6 +614,7 @@ function App() {
       setRequests((current) =>
         current.map((item) => (item.id === result.request.id ? result.request : item)),
       )
+      api.proposals().then(applyProposals).catch(() => {})
       showNotice(
         decision === "accept"
           ? `${request.eventName} 협찬을 확정했어요.`
@@ -572,8 +622,8 @@ function App() {
       )
     } catch (error) {
       handleError(error)
-      // Answered elsewhere in the meantime: show the current state.
-      if (error instanceof ApiError && error.status === 409) {
+      // Answered or withdrawn elsewhere in the meantime: show the current state.
+      if (error instanceof ApiError && (error.status === 409 || error.status === 404)) {
         api
           .requests()
           .then((result) => setRequests(result.requests))
@@ -591,6 +641,7 @@ function App() {
     try {
       const result = await api.answerOffer(offer.id, decision)
       setOffers((current) => current.map((item) => (item.id === result.offer.id ? result.offer : item)))
+      api.proposals().then(applyProposals).catch(() => {})
       showNotice(
         decision === "accept"
           ? `${offer.brandName}의 협찬을 확정했어요.`
@@ -598,8 +649,8 @@ function App() {
       )
     } catch (error) {
       handleError(error)
-      // Answered elsewhere in the meantime: show the current state.
-      if (error instanceof ApiError && error.status === 409) {
+      // Answered or withdrawn elsewhere in the meantime: show the current state.
+      if (error instanceof ApiError && (error.status === 409 || error.status === 404)) {
         api
           .offers()
           .then((result) => setOffers(result.offers))
@@ -671,16 +722,12 @@ function App() {
     ? [
         { label: "등록한 행사", value: `${events.length}개`, target: "내 행사" },
         { label: "보낸 협찬 제안", value: `${proposals.length}건`, target: "추천 매칭" },
-        {
-          label: "확정된 협찬",
-          value: `${proposals.filter((id) => statuses[id] === "수락").length}건`,
-          target: "추천 매칭",
-        },
+        { label: "확정된 협찬", value: `${confirmedCount}건`, target: "추천 매칭" },
       ]
     : [
         { label: "등록한 캠페인", value: `${events.length}개`, target: "행사 일정" },
         { label: "받은 협찬 제안", value: `${requests.length}건`, target: "받은 제안" },
-        { label: "확정한 협찬", value: `${confirmedRequests.length}건`, target: "행사 일정" },
+        { label: "확정한 협찬", value: `${confirmedCount}건`, target: "행사 일정" },
       ]
 
   const eventsPage = (
@@ -749,6 +796,7 @@ function App() {
           id={view.chat}
           onBack={() => goBack({ page, messages: true })}
           onChange={updateConversation}
+          onSessionEnd={handleSessionEnd}
           onOpenPartner={(partnerId) =>
             catalog.some((match) => match.id === partnerId)
               ? go({ page: browsePage, detail: partnerId })
@@ -859,6 +907,7 @@ function App() {
             events={events}
             proposals={proposals}
             statuses={statuses}
+            confirmedCount={confirmedCount}
             metrics={metrics}
             report={report}
             updatedAt={updatedAt}
@@ -877,6 +926,7 @@ function App() {
             requests={requests}
             sponsorships={sponsorships}
             proposals={proposals}
+            statuses={statuses}
             updatedAt={updatedAt}
             onNavigate={navigate}
             onOpenDetail={openCatalogDetail}

@@ -50,8 +50,10 @@ function view(conversation: Conversation, side: ChatSide, withMessages = false) 
     lastMessage: last
       ? { text: last.text, at: last.at, mine: last.from === side, ...(last.deletedAt ? { deleted: true } : {}) }
       : null,
-    unread: conversation.messages.filter((message) => message.from !== side && message.at > readAt)
-      .length,
+    // A message the sender deleted is not waiting to be read.
+    unread: conversation.messages.filter(
+      (message) => message.from !== side && message.at > readAt && !message.deletedAt,
+    ).length,
     ...(withMessages
       ? {
           messages: conversation.messages.map((message) => ({

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react"
 
-import { api, errorMessage } from "../api"
+import { ApiError, api, errorMessage } from "../api"
 import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { formatDay, toIsoDate } from "../lib/date"
@@ -16,12 +16,15 @@ const timeOf = (at: string) =>
 // It checks for replies every few seconds while open, which also brings in
 // the partner's read marks, edits and deletions. Own messages say whether
 // they were read and can be edited or deleted from their ⋯ button; both
-// sides then see "수정됨" or a deleted message in its place.
+// sides then see "수정됨" or a deleted message in its place. It stops
+// checking once the conversation is gone, and hands an expired login to
+// the app.
 export function ChatPage({
   id,
   onBack,
   onOpenPartner,
   onChange,
+  onSessionEnd,
 }: {
   id: string
   onBack: () => void
@@ -29,6 +32,8 @@ export function ChatPage({
   onOpenPartner?: (partnerId: string) => void
   // Receives the conversation after each load or send (for unread counts).
   onChange: (conversation: Conversation) => void
+  // Called with a 401: the login ran out.
+  onSessionEnd: (error: unknown) => void
 }) {
   const [conversation, setConversation] = useState<Conversation | null>(null)
   const [draft, setDraft] = useState("")
@@ -42,27 +47,46 @@ export function ChatPage({
   const keptDraft = useRef("")
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const lastCount = useRef(0)
+  // Moves on with every send, edit or delete, so a check that started
+  // before one cannot put the older messages back.
+  const changes = useRef(0)
 
   useEffect(() => {
     let cancelled = false
-    const load = () =>
+    let timer: number | undefined
+    // Only the newest check applies, whatever order the answers come in.
+    let latest = 0
+    const stop = () => window.clearInterval(timer)
+    const load = () => {
+      const check = ++latest
+      const startedAt = changes.current
       api
         .conversation(id)
         .then(({ conversation: loaded }) => {
-          if (cancelled) return
+          if (cancelled || check !== latest || startedAt !== changes.current) return
           setConversation(loaded)
           onChange(loaded)
+          setError("")
         })
         .catch((problem) => {
-          if (!cancelled) setError(errorMessage(problem))
+          if (cancelled) return
+          if (problem instanceof ApiError && problem.status === 401) {
+            stop()
+            onSessionEnd(problem)
+            return
+          }
+          // The partner left or the conversation is gone: nothing more to check.
+          if (problem instanceof ApiError && problem.status === 404) stop()
+          setError(errorMessage(problem))
         })
+    }
     load()
-    const timer = window.setInterval(load, refreshMs)
+    timer = window.setInterval(load, refreshMs)
     return () => {
       cancelled = true
-      window.clearInterval(timer)
+      stop()
     }
-  }, [id, onChange])
+  }, [id, onChange, onSessionEnd])
 
   // New messages scroll into view.
   const count = conversation?.messages?.length ?? 0
@@ -101,9 +125,15 @@ export function ChatPage({
   }, [menuFor])
 
   const update = (updated: Conversation) => {
+    changes.current += 1
     setConversation(updated)
     onChange(updated)
     setError("")
+  }
+
+  const fail = (problem: unknown) => {
+    if (problem instanceof ApiError && problem.status === 401) onSessionEnd(problem)
+    else setError(errorMessage(problem))
   }
 
   const send = async () => {
@@ -118,7 +148,7 @@ export function ChatPage({
       setDraft(editing ? keptDraft.current : "")
       setEditing(null)
     } catch (problem) {
-      setError(errorMessage(problem))
+      fail(problem)
     } finally {
       setSending(false)
     }
@@ -150,7 +180,7 @@ export function ChatPage({
       update(updated)
       if (editing?.id === message.id) cancelEdit()
     } catch (problem) {
-      setError(errorMessage(problem))
+      fail(problem)
     }
   }
 

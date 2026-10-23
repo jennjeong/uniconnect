@@ -522,7 +522,15 @@ test("proposals are about an upcoming event, and a sponsor can be asked again fo
   // Sending again while it waits changes nothing.
   assert.equal((await call("POST", "/proposals", { matchId: "afternoon-coffee" }, student)).status, 201)
   assert.equal(mine().length, 1)
+  assert.equal((await call("GET", "/proposals", undefined, student)).data.confirmed, 0)
   await call("POST", `/requests/${mine()[0].id}/accept`, undefined, brand)
+  // Confirmed sponsorships count either way round: the brand's are all its records.
+  assert.equal((await call("GET", "/proposals", undefined, student)).data.confirmed, 1)
+  const brandAccount = (await call("GET", "/auth/me", undefined, brand)).data.account.id as string
+  assert.equal(
+    (await call("GET", "/proposals", undefined, brand)).data.confirmed,
+    getDatabase().sponsorships[brandAccount].length,
+  )
   const again = await call("POST", "/proposals", { matchId: "afternoon-coffee" }, student)
   assert.equal(again.status, 409)
   assert.match(again.data.error, /이미 협찬이 확정/)
@@ -962,6 +970,13 @@ test("senders see when messages are read, and both sides see edits and deletions
   const brandThread = (await call("GET", `/conversations/${id}`, undefined, brand)).data.conversation
   assert.ok(brandThread.messages.at(-1).deletedAt)
   assert.equal((await call("DELETE", `/conversations/${id}/messages/nope`, undefined, student)).status, 404)
+  // A message deleted before it was read is not waiting to be read.
+  const slip = await call("POST", `/conversations/${id}/messages`, { text: "잘못 보냈어요" }, student)
+  await call("DELETE", `/conversations/${id}/messages/${slip.data.conversation.messages.at(-1).id}`, undefined, student)
+  const unread = (await call("GET", "/conversations", undefined, brand)).data.conversations.find(
+    (item: { id: string }) => item.id === id,
+  ).unread
+  assert.equal(unread, 0)
 })
 
 test("older data files gain the new collections and calendar dates", async () => {
