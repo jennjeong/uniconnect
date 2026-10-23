@@ -32,7 +32,8 @@ export function createApp() {
     app.use((req, res, next) => {
       res.set({
         "Access-Control-Allow-Origin": origin,
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        // X-Admin-Token: the operators' screen (/admin) from that origin too.
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Admin-Token",
         "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
       })
       if (req.method === "OPTIONS") {
