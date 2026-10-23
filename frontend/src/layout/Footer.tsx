@@ -6,7 +6,7 @@ import { legalDocs, type LegalKind } from "../data/legal"
 import { RevealTitle } from "../components/RevealText"
 import { navItems } from "../data/navigation"
 import { createLabel, roles } from "../data/roles"
-import { lang, setLang } from "../i18n"
+import { lang, setLang, t } from "../i18n"
 import { ChromeScene } from "../scenes/ChromeScene"
 import { MeshBackdrop } from "../scenes/MeshBackdrop"
 import type { Account, NavLabel, Role } from "../types"
@@ -52,31 +52,31 @@ export function Footer({
   const students = role === "학생단체"
   const columns: { title: string; links: { label: string; onClick: () => void }[] }[] = [
     {
-      title: "메뉴",
-      links: navItems[role].map((item) => ({ label: item.label, onClick: () => onNavigate(item.label) })),
+      title: t("메뉴"),
+      links: navItems[role].map((item) => ({ label: t(item.label), onClick: () => onNavigate(item.label) })),
     },
     {
-      title: "계정",
+      title: t("계정"),
       links: account
         ? [
-            { label: "내 정보", onClick: onOpenProfile },
-            { label: "메시지", onClick: onOpenMessages },
-            { label: "FAQ · 질문하기", onClick: onOpenFaq },
-            { label: "로그아웃", onClick: onLogout },
+            { label: t("내 정보"), onClick: onOpenProfile },
+            { label: t("메시지"), onClick: onOpenMessages },
+            { label: t("FAQ · 질문하기"), onClick: onOpenFaq },
+            { label: t("로그아웃"), onClick: onLogout },
           ]
         : [
-            { label: "로그인", onClick: onLogin },
-            { label: "회원가입", onClick: onSignup },
-            { label: "FAQ · 질문하기", onClick: onOpenFaq },
+            { label: t("로그인"), onClick: onLogin },
+            { label: t("회원가입"), onClick: onSignup },
+            { label: t("FAQ · 질문하기"), onClick: onOpenFaq },
           ],
     },
     {
-      title: "시작하기",
+      title: t("시작하기"),
       links: [
         { label: createLabel(role), onClick: onCreate },
         ...(account
-          ? [{ label: "소개 편집", onClick: onEditProfile }]
-          : roles.map((item) => ({ label: `${item} 화면 보기`, onClick: () => onSwitchRole(item) }))),
+          ? [{ label: t("소개 편집"), onClick: onEditProfile }]
+          : roles.map((item) => ({ label: t("{role} 화면 보기", { role: t(item) }), onClick: () => onSwitchRole(item) }))),
       ],
     },
   ]
@@ -84,7 +84,7 @@ export function Footer({
   return (
     <footer className="site-footer">
       {invite && (
-        <section aria-label="함께 시작하기" className="footer-stage" ref={stageRef}>
+        <section aria-label={t("함께 시작하기")} className="footer-stage" ref={stageRef}>
           <MeshBackdrop seed={7.2} />
           <ChromeScene anchor={stageRef} kind="rings" mode="enter" spinDirection={-1} />
           <div className="footer-cta">
@@ -93,12 +93,12 @@ export function Footer({
               accent={1}
               as="h2"
               className="footer-title"
-              lines={students ? ["함께 만들", "협찬이 있나요?"] : ["학생들의 현장과", "이어 볼까요?"]}
+              lines={students ? [t("함께 만들"), t("협찬이 있나요?")] : [t("학생들의 현장과"), t("이어 볼까요?")]}
             />
             <p className="footer-lead">
               {students
-                ? "행사를 등록하면 잘 맞는 브랜드를 찾아 드리고, 끝난 뒤에는 성과를 리포트로 정리해 드려요."
-                : "캠페인을 등록하면 잘 맞는 학생단체를 찾아 드리고, 협찬의 효과를 ROAS로 보여 드려요."}
+                ? t("행사를 등록하면 잘 맞는 브랜드를 찾아 드리고, 끝난 뒤에는 성과를 리포트로 정리해 드려요.")
+                : t("캠페인을 등록하면 잘 맞는 학생단체를 찾아 드리고, 협찬의 효과를 ROAS로 보여 드려요.")}
             </p>
             <Pill arrow="up-right" onClick={onCreate} variant="white">
               {createLabel(role)}
@@ -111,7 +111,7 @@ export function Footer({
         <div className="footer-columns">
           <div className="footer-brand">
             <img alt="uniconnect" height={27} src={logo} width={116} />
-            <p>학생단체와 브랜드 사이의 협찬을 잇고, 그 성과를 숫자로 증명하는 성과 측정형 캠퍼스 스폰서십 플랫폼이에요.</p>
+            <p>{t("학생단체와 브랜드 사이의 협찬을 잇고, 그 성과를 숫자로 증명하는 성과 측정형 캠퍼스 스폰서십 플랫폼이에요.")}</p>
           </div>
           {columns.map((column) => (
             <div className="footer-column" key={column.title}>
@@ -135,7 +135,7 @@ export function Footer({
 
         <div className="footer-legal">
           <span>© {new Date().getFullYear()} uniconnect. All rights reserved.</span>
-          <nav aria-label="약관과 방침" className="footer-policies">
+          <nav aria-label={t("약관과 방침")} className="footer-policies">
             {(Object.keys(legalDocs) as LegalKind[]).map((kind) => (
               <button key={kind} onClick={() => onOpenLegal(kind)} type="button">
                 {legalDocs[kind].title}
@@ -147,7 +147,7 @@ export function Footer({
             {lang === "ko" ? "English" : "한국어"}
           </button>
           <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} type="button">
-            맨 위로 ↑
+            {t("맨 위로 ↑")}
           </button>
         </div>
       </div>

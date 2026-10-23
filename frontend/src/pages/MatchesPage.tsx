@@ -4,6 +4,7 @@ import { PageIntro } from "../components/PageIntro"
 import { ProposalControl } from "../components/ProposalControl"
 import { TabBar } from "../components/TabBar"
 import { WorkCard } from "../components/WorkCard"
+import { t } from "../i18n"
 import type { Industry, Match, RequestStatus } from "../types"
 
 type Tab = "추천" | "인기" | "전체" | "업종별"
@@ -86,14 +87,14 @@ export function MatchesPage({
     <section className="page-view">
       <PageIntro
         eyebrow="Smart Match"
-        title={intro.title}
-        description={intro.caption}
+        title={t(intro.title)}
+        description={t(intro.caption)}
       />
 
       <div className="match-filters">
         <TabBar
-          items={tabs.map((item) => ({ value: item, label: item }))}
-          label="브랜드 보기"
+          items={tabs.map((item) => ({ value: item, label: t(item) }))}
+          label={t("브랜드 보기")}
           onChange={pickTab}
           value={tab}
         />
@@ -104,11 +105,11 @@ export function MatchesPage({
               value,
               label: (
                 <>
-                  {label} <em className="chip-count">{brands.filter((brand) => brand.industry === value).length}</em>
+                  {t(label)} <em className="chip-count">{brands.filter((brand) => brand.industry === value).length}</em>
                 </>
               ),
             }))}
-            label="업종"
+            label={t("업종")}
             onChange={(value, event) => {
               const order = industries.map(([item]) => item)
               setDirection(order.indexOf(value) >= order.indexOf(industry) ? "forward" : "back")
@@ -132,13 +133,13 @@ export function MatchesPage({
             <li key={match.id} style={{ "--i": index } as CSSProperties}>
               <WorkCard
                 match={match}
-                meta={match.category}
+                meta={t(match.category)}
                 rank={rank}
                 onOpenDetail={() => onOpenDetail(match)}
                 tags={
                   <>
                     {rank !== undefined && match.popularity !== undefined && (
-                      <span className="tag-hot">협찬 {match.popularity}회</span>
+                      <span className="tag-hot">{t("협찬 {count}회", { count: match.popularity })}</span>
                     )}
                     {match.tags.map((tag) => (
                       <span key={tag}>{tag}</span>
@@ -147,12 +148,12 @@ export function MatchesPage({
                 }
               >
                 <button className="cancel-button" onClick={() => onOpenDetail(match)} type="button">
-                  상세 정보
+                  {t("상세 정보")}
                 </button>
                 <ProposalControl
                   done={proposals.includes(match.id)}
                   status={statuses[match.id]}
-                  label="협찬 제안 보내기"
+                  label={t("협찬 제안 보내기")}
                   className="primary-button"
                   onPropose={() => onPropose(match)}
                   onCancel={() => onCancelProposal(match)}

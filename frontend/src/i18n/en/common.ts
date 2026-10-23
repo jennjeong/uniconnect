@@ -10,7 +10,7 @@ const en: Record<string, string> = {
   금: "Fri",
   토: "Sat",
   종료: "Ended",
-  "{days}일": "{days} days",
+  "{days}일": "{days:day|days}",
   // Roles (types.ts Role), shown with t(role)
   학생단체: "Student group",
   브랜드: "Brand",

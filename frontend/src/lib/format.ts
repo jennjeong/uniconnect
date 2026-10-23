@@ -1,8 +1,9 @@
+import { t } from "../i18n"
 import type { EventItem } from "../types"
 
 // Sponsor types for display, with what "기타" means spelled out.
 export const sponsorTypeLabels = (event: EventItem) =>
-  event.types.map((type) => (type === "기타" && event.typeNote ? `기타(${event.typeNote})` : type))
+  event.types.map((type) => (type === "기타" && event.typeNote ? `${t("기타")}(${event.typeNote})` : t(type)))
 
 export function formatRemaining(ms: number) {
   const seconds = Math.ceil(ms / 1000)

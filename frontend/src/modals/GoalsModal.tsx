@@ -3,6 +3,7 @@ import { useState } from "react"
 import { api, errorMessage } from "../api"
 import { Modal } from "../components/Modal"
 import { valueTypes } from "../data/sponsorTypes"
+import { t } from "../i18n"
 import type { EventMeasurement, Report } from "../types"
 
 
@@ -102,7 +103,7 @@ export function GoalsModal({
   }
 
   return (
-    <Modal name="measure-goals" kicker="Measurement Goals" title={`${report.eventName} 목표`} onClose={onClose}>
+    <Modal name="measure-goals" kicker="Measurement Goals" title={t("{name} 목표", { name: report.eventName })} onClose={onClose}>
       <form
         className="auth-form goals-form"
         noValidate
@@ -112,10 +113,10 @@ export function GoalsModal({
         }}
       >
         <fieldset>
-          <legend>행사 규모</legend>
+          <legend>{t("행사 규모")}</legend>
           <div className="form-row">
             <label>
-              예상 인원 (명)
+              {t("예상 인원 (명)")}
               <input
                 inputMode="numeric"
                 value={draft.expectedAudience}
@@ -123,7 +124,7 @@ export function GoalsModal({
               />
             </label>
             <label>
-              1인 예상 지출 (원)
+              {t("1인 예상 지출 (원)")}
               <input
                 inputMode="numeric"
                 value={draft.averageSpend}
@@ -132,7 +133,7 @@ export function GoalsModal({
             </label>
           </div>
           <label>
-            현장 밖 도달 (SNS 등, 명)
+            {t("현장 밖 도달 (SNS 등, 명)")}
             <input
               inputMode="numeric"
               value={draft.snsReach}
@@ -140,16 +141,16 @@ export function GoalsModal({
             />
           </label>
           <small className="field-hint">
-            도달은 QR 스캔 수에 현장 밖 도달을 더하고, ROAS는 매장 방문 × 1인 예상 지출을 협찬 가치로 나눠 계산해요.
+            {t("도달은 QR 스캔 수에 현장 밖 도달을 더하고, ROAS는 매장 방문 × 1인 예상 지출을 협찬 가치로 나눠 계산해요.")}
           </small>
         </fieldset>
 
         <fieldset>
-          <legend>협찬 가치</legend>
+          <legend>{t("협찬 가치")}</legend>
           {draft.valueBreakdown.map((part, index) => (
             <div className="goals-value-row" key={index}>
               <select
-                aria-label="협찬 종류"
+                aria-label={t("협찬 종류")}
                 value={part.type}
                 onChange={(event) =>
                   update({
@@ -160,13 +161,15 @@ export function GoalsModal({
                 }
               >
                 {valueTypes.map((type) => (
-                  <option key={type}>{type}</option>
+                  <option key={type} value={type}>
+                    {t(type)}
+                  </option>
                 ))}
               </select>
               <input
-                aria-label="금액 (원)"
+                aria-label={t("금액 (원)")}
                 inputMode="numeric"
-                placeholder="금액 (원)"
+                placeholder={t("금액 (원)")}
                 value={part.value}
                 onChange={(event) =>
                   update({
@@ -177,7 +180,7 @@ export function GoalsModal({
                 }
               />
               <button
-                aria-label="이 항목 지우기"
+                aria-label={t("이 항목 지우기")}
                 className="goals-remove"
                 onClick={() => update({ valueBreakdown: draft.valueBreakdown.filter((_, at) => at !== index) })}
                 type="button"
@@ -192,17 +195,17 @@ export function GoalsModal({
               onClick={() => update({ valueBreakdown: [...draft.valueBreakdown, { type: "현금", value: "" }] })}
               type="button"
             >
-              + 협찬 가치 추가
+              + {t("협찬 가치 추가")}
             </button>
           )}
         </fieldset>
 
         <fieldset>
-          <legend>목표</legend>
+          <legend>{t("목표")}</legend>
           <div className="form-row goals-targets">
             {targetFields.map((field) => (
               <label key={field.key}>
-                {field.label}
+                {t(field.label)}
                 <input
                   inputMode="numeric"
                   value={draft.targets[field.key]}
@@ -217,17 +220,18 @@ export function GoalsModal({
 
         {draft.sponsors.length > 0 ? (
           <fieldset>
-            <legend>협찬사별 쿠폰</legend>
+            <legend>{t("협찬사별 쿠폰")}</legend>
             <small className="field-hint">
-              참여자는 협찬사마다 쿠폰을 따로 받고, 각 매장은 자기 PIN으로 자기 쿠폰만 확인해요. 그래서 협찬사마다 성과가
-              따로 집계돼요.
+              {t(
+                "참여자는 협찬사마다 쿠폰을 따로 받고, 각 매장은 자기 PIN으로 자기 쿠폰만 확인해요. 그래서 협찬사마다 성과가 따로 집계돼요.",
+              )}
             </small>
             {draft.sponsors.map((sponsor) => (
               <div className="goals-sponsor" key={sponsor.id}>
                 <strong>{sponsor.brandName}</strong>
                 <div className="form-row">
                   <label>
-                    매장
+                    {t("매장")}
                     <input
                       maxLength={30}
                       value={sponsor.store}
@@ -235,7 +239,7 @@ export function GoalsModal({
                     />
                   </label>
                   <label>
-                    혜택
+                    {t("혜택")}
                     <input
                       maxLength={30}
                       value={sponsor.title}
@@ -246,7 +250,7 @@ export function GoalsModal({
                 <div className="form-row">
                   {several && (
                     <label>
-                      협찬 가치 (원)
+                      {t("협찬 가치 (원)")}
                       <input
                         inputMode="numeric"
                         value={sponsor.value}
@@ -256,7 +260,7 @@ export function GoalsModal({
                   )}
                   {report.staffPin !== undefined && (
                     <label>
-                      매장 직원 확인 PIN (숫자 4자리)
+                      {t("매장 직원 확인 PIN (숫자 4자리)")}
                       <input
                         inputMode="numeric"
                         maxLength={4}
@@ -270,27 +274,30 @@ export function GoalsModal({
             ))}
             {several && (
               <small className={shared === total ? "field-hint" : "field-hint goals-mismatch"}>
-                협찬사별 가치 합계 {shared.toLocaleString("ko-KR")}원 / 협찬 가치 합계 {total.toLocaleString("ko-KR")}원
-                {shared === total ? "" : " · 두 합계가 같아야 저장돼요"}
+                {t("협찬사별 가치 합계 {shared}원 / 협찬 가치 합계 {total}원", {
+                  shared: shared.toLocaleString("ko-KR"),
+                  total: total.toLocaleString("ko-KR"),
+                })}
+                {shared === total ? "" : ` · ${t("두 합계가 같아야 저장돼요")}`}
               </small>
             )}
           </fieldset>
         ) : (
         <fieldset>
-          <legend>참여 쿠폰</legend>
+          <legend>{t("참여 쿠폰")}</legend>
           <div className="form-row">
             <label>
-              매장
+              {t("매장")}
               <input maxLength={30} value={draft.store} onChange={(event) => update({ store: event.target.value })} />
             </label>
             <label>
-              혜택
+              {t("혜택")}
               <input maxLength={30} value={draft.title} onChange={(event) => update({ title: event.target.value })} />
             </label>
           </div>
           {report.staffPin !== undefined && (
             <label>
-              매장 직원 확인 PIN (숫자 4자리)
+              {t("매장 직원 확인 PIN (숫자 4자리)")}
               <input
                 inputMode="numeric"
                 maxLength={4}
@@ -308,7 +315,7 @@ export function GoalsModal({
           </p>
         )}
         <button className="primary-button wide" disabled={busy} type="submit">
-          목표 저장하기
+          {t("목표 저장하기")}
         </button>
       </form>
     </Modal>

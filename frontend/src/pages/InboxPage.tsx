@@ -5,6 +5,7 @@ import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { RequestProgress } from "../components/RequestProgress"
 import { TabBar } from "../components/TabBar"
+import { t } from "../i18n"
 import { dDayLabel, formatDateTime, formatDay } from "../lib/date"
 import type { RequestStatus, SponsorRequest } from "../types"
 
@@ -39,29 +40,29 @@ function RequestCard({
           <strong>{request.groupName}</strong>
           <span>{request.school}</span>
         </div>
-        <time dateTime={request.createdAt}>{formatDateTime(request.createdAt)} 받음</time>
+        <time dateTime={request.createdAt}>{t("{date} 받음", { date: formatDateTime(request.createdAt) })}</time>
       </div>
 
       <dl className="request-facts">
         <div>
-          <dt>행사</dt>
+          <dt>{t("행사")}</dt>
           <dd>{request.eventName}</dd>
         </div>
         <div>
-          <dt>일정</dt>
+          <dt>{t("일정")}</dt>
           <dd>
-            {request.eventDate ? formatDay(request.eventDate) : "협의 중"}
+            {request.eventDate ? formatDay(request.eventDate) : t("협의 중")}
             {request.eventDate && <em>{dDayLabel(request.eventDate)}</em>}
           </dd>
         </div>
         <div>
-          <dt>규모</dt>
+          <dt>{t("규모")}</dt>
           <dd>{request.people}</dd>
         </div>
       </dl>
 
       <div className="request-ask">
-        <span>요청 협찬</span>
+        <span>{t("요청 협찬")}</span>
         <strong>{request.ask}</strong>
       </div>
       <p className="request-message">{request.message}</p>
@@ -70,9 +71,9 @@ function RequestCard({
         {request.status === "검토 중" ? (
           confirming ? (
             <>
-              <span className="request-confirm">이 제안을 거절할까요?</span>
+              <span className="request-confirm">{t("이 제안을 거절할까요?")}</span>
               <button className="cancel-button" onClick={() => setConfirming(false)} type="button">
-                아니요
+                {t("아니요")}
               </button>
               <button
                 className="decline-button"
@@ -82,27 +83,27 @@ function RequestCard({
                 }}
                 type="button"
               >
-                거절하기
+                {t("거절하기")}
               </button>
             </>
           ) : (
             <>
               <button className="cancel-button" onClick={() => setConfirming(true)} type="button">
-                거절
+                {t("거절하기")}
               </button>
               <button
                 className="primary-button"
                 onClick={() => onAnswer(request, "accept")}
                 type="button"
               >
-                <Icon name="check" size={16} /> 수락하기
+                <Icon name="check" size={16} /> {t("수락하기")}
               </button>
             </>
           )
         ) : (
           <span className={request.status === "수락" ? "request-result confirmed" : "request-result"}>
             {request.status === "수락" && <Icon name="check" size={15} />}
-            {request.status === "수락" ? "협찬 확정" : "거절한 제안"}
+            {request.status === "수락" ? t("협찬 확정") : t("거절한 제안")}
             {request.respondedAt && <small>{formatDateTime(request.respondedAt)}</small>}
           </span>
         )}
@@ -130,8 +131,8 @@ export function InboxPage({
     <section className="page-view">
       <PageIntro
         eyebrow="Proposal Inbox"
-        title="받은 협찬 제안"
-        description="학생단체가 보낸 제안을 확인하고 협찬 여부를 정해 주세요."
+        title={t("받은 협찬 제안")}
+        description={t("학생단체가 보낸 제안을 확인하고 협찬 여부를 정해 주세요.")}
       />
 
       <TabBar
@@ -139,19 +140,19 @@ export function InboxPage({
           value: item.status,
           label: (
             <>
-              {item.label}
+              {t(item.label)}
               <em>{requests.filter((request) => request.status === item.status).length}</em>
             </>
           ),
         }))}
-        label="제안 상태"
+        label={t("제안 상태")}
         onChange={setTab}
         value={tab}
       />
 
       {list.length === 0 ? (
         <p className="day-empty inbox-empty" key={tab}>
-          {current.empty}
+          {t(current.empty)}
         </p>
       ) : (
         <div className="request-grid stagger" key={tab}>

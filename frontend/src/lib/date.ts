@@ -56,10 +56,11 @@ export function daysUntil(iso: string, from = todayIso()) {
   return Math.round((end.getTime() - start.getTime()) / 86_400_000)
 }
 
-// "11.15"
+// "11.15", "Nov 15"
 export function shortDay(iso: string) {
   const date = fromIsoDate(iso)
-  return date ? `${date.getMonth() + 1}.${date.getDate()}` : iso
+  if (!date) return iso
+  return lang === "en" ? `${monthNames[date.getMonth()]}${nbsp}${date.getDate()}` : `${date.getMonth() + 1}.${date.getDate()}`
 }
 
 // "D-25", "D-DAY", or "종료" once the day has passed.
@@ -93,11 +94,13 @@ export function formatPeriod(start: string, end?: string) {
   return `${formatDay(start)} ~ ${formatDay(end)} · ${t("{days}일", { days: daysOf(start, end).length })}`
 }
 
-// "10.12 19:41" in local time, for an ISO timestamp.
+// "10.12 19:41" ("Oct 12 19:41") in local time, for an ISO timestamp.
 export function formatDateTime(timestamp: string) {
   const date = new Date(timestamp)
   if (Number.isNaN(date.getTime())) return timestamp
-  return `${date.getMonth() + 1}.${date.getDate()}${nbsp}${pad(date.getHours())}:${pad(date.getMinutes())}`
+  const time = `${pad(date.getHours())}:${pad(date.getMinutes())}`
+  if (lang === "en") return [monthNames[date.getMonth()], date.getDate(), time].join(nbsp)
+  return `${date.getMonth() + 1}.${date.getDate()}${nbsp}${time}`
 }
 
 // Whole weeks (Sunday first) covering the month of `month`.

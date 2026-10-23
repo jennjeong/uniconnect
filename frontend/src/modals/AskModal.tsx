@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import { api, errorMessage } from "../api"
 import { Modal } from "../components/Modal"
 import { inquiryCategories } from "../data/inquiries"
+import { t } from "../i18n"
 import { formatDateTime } from "../lib/date"
 import type { Account, Inquiry } from "../types"
 
@@ -47,7 +48,7 @@ export function AskModal({
   const ask = async () => {
     if (busy) return
     if (question.trim().length < 5) {
-      setError("질문을 5자 이상 적어 주세요.")
+      setError(t("질문을 5자 이상 적어 주세요."))
       return
     }
     setBusy(true)
@@ -65,21 +66,21 @@ export function AskModal({
   }
 
   return (
-    <Modal name="ask" kicker="Ask Us" title="관리자에게 질문하기" onClose={onClose}>
+    <Modal name="ask" kicker="Ask Us" title={t("관리자에게 질문하기")} onClose={onClose}>
       <div className="ask-card">
         <p className="form-card-caption">
-          질문은 관리자가 확인한 뒤 답해요. 답변은 아래 ‘내 질문’에 표시돼요.
+          {t("질문은 관리자가 확인한 뒤 답해요. 답변은 아래 ‘내 질문’에 표시돼요.")}
         </p>
         {!account ? (
           <div className="ask-login">
-            <p>로그인하면 관리자에게 질문하고 답변을 받아볼 수 있어요.</p>
+            <p>{t("로그인하면 관리자에게 질문하고 답변을 받아볼 수 있어요.")}</p>
             <button className="primary-button" onClick={onLogin} type="button">
-              로그인
+              {t("로그인")}
             </button>
           </div>
         ) : (
           <>
-            <div aria-label="질문 종류" className="ask-categories" role="radiogroup">
+            <div aria-label={t("질문 종류")} className="ask-categories" role="radiogroup">
               {inquiryCategories.map((item) => (
                 <button
                   aria-checked={category === item}
@@ -89,13 +90,13 @@ export function AskModal({
                   role="radio"
                   type="button"
                 >
-                  {item}
+                  {t(item)}
                 </button>
               ))}
             </div>
             <label className="field">
               <span>
-                질문 내용
+                {t("질문 내용")}
                 <em className="field-count">
                   {question.length}/{maxLength}
                 </em>
@@ -106,7 +107,7 @@ export function AskModal({
                   setQuestion(event.target.value)
                   setSent(false)
                 }}
-                placeholder="궁금한 점을 적어 주세요. 오류라면 어느 화면에서 무엇을 눌렀는지 함께 적어 주시면 좋아요."
+                placeholder={t("궁금한 점을 적어 주세요. 오류라면 어느 화면에서 무엇을 눌렀는지 함께 적어 주시면 좋아요.")}
                 rows={5}
                 value={question}
               />
@@ -118,32 +119,32 @@ export function AskModal({
             )}
             {sent && (
               <p className="ask-sent" role="status">
-                질문을 보냈어요. 관리자가 답하면 아래 ‘내 질문’에서 볼 수 있어요.
+                {t("질문을 보냈어요. 관리자가 답하면 아래 ‘내 질문’에서 볼 수 있어요.")}
               </p>
             )}
             <button className="primary-button wide" disabled={busy} onClick={ask} type="button">
-              {busy ? "보내는 중…" : "질문 보내기"}
+              {busy ? t("보내는 중…") : t("질문 보내기")}
             </button>
 
             <div className="ask-history">
-              <p className="ask-history-title">내 질문</p>
+              <p className="ask-history-title">{t("내 질문")}</p>
               {inquiries.length === 0 ? (
-                <p className="day-empty">아직 보낸 질문이 없어요.</p>
+                <p className="day-empty">{t("아직 보낸 질문이 없어요.")}</p>
               ) : (
                 <ol>
                   {inquiries.map((inquiry) => (
                     <li key={inquiry.id}>
                       <div className="ask-history-head">
-                        <span className="ask-chip">{inquiry.category}</span>
+                        <span className="ask-chip">{t(inquiry.category)}</span>
                         <span className={inquiry.answer ? "ask-state answered" : "ask-state"}>
-                          {inquiry.answer ? "답변 완료" : "답변 대기"}
+                          {inquiry.answer ? t("답변 완료") : t("답변 대기")}
                         </span>
                         <time dateTime={inquiry.createdAt}>{formatDateTime(inquiry.createdAt)}</time>
                       </div>
                       <p className="ask-question">{inquiry.question}</p>
                       {inquiry.answer && (
                         <div className="ask-answer">
-                          <strong>관리자 답변</strong>
+                          <strong>{t("관리자 답변")}</strong>
                           <p>{inquiry.answer}</p>
                         </div>
                       )}

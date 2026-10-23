@@ -19,6 +19,7 @@ import { useNotice } from "./hooks/useNotice"
 import { Footer } from "./layout/Footer"
 import { Header } from "./layout/Header"
 import { NavMenu } from "./layout/NavMenu"
+import { t, tc } from "./i18n"
 import { todayIso } from "./lib/date"
 import { reportKpis, type KpiKey } from "./lib/kpis"
 import { defaultMeasurement } from "./lib/measurements"
@@ -242,7 +243,7 @@ function App() {
             return
           }
           tries += 1
-          if (tries === 1) showNotice("서버에 연결하지 못했어요. 다시 연결하고 있어요…")
+          if (tries === 1) showNotice(t("서버에 연결하지 못했어요. 다시 연결하고 있어요…"))
           timer = window.setTimeout(check, Math.min(30_000, 2_000 * 2 ** (tries - 1)))
         })
     check()
@@ -462,7 +463,7 @@ function App() {
     if (error instanceof ApiError && error.status === 401 && account) {
       endSession()
       openAuth("login", account.role)
-      showNotice("로그인이 만료됐어요. 다시 로그인해 주세요.")
+      showNotice(t("로그인이 만료됐어요. 다시 로그인해 주세요."))
       return
     }
     showNotice(errorMessage(error))
@@ -481,22 +482,22 @@ function App() {
     }
     endSession()
     setActiveModal(null)
-    showNotice("로그아웃했어요.")
+    showNotice(t("로그아웃했어요."))
   }
 
   const switchRole = (next: Role) => {
     if (account || next === previewRole) return
     setPreviewRole(next)
     go({ page: "대시보드" }, true)
-    showNotice(`${next} 전용 데이터로 전환했어요.`)
+    showNotice(t("{role} 전용 데이터로 전환했어요.", { role: t(next) }))
   }
 
   const openCreate = (date = todayIso()) => {
     if (!account) {
       requireLogin(
         role === "학생단체"
-          ? "로그인하면 행사를 등록할 수 있어요."
-          : "로그인하면 캠페인을 등록할 수 있어요.",
+          ? t("로그인하면 행사를 등록할 수 있어요.")
+          : t("로그인하면 캠페인을 등록할 수 있어요."),
       )
       return
     }
@@ -512,8 +513,8 @@ function App() {
       go({ page: calendarPage }, true)
       showNotice(
         role === "학생단체"
-          ? "행사가 등록되었어요. 추천 매칭을 시작합니다."
-          : "캠페인이 등록되었어요. 적합한 단체를 찾습니다.",
+          ? t("행사가 등록되었어요. 추천 매칭을 시작합니다.")
+          : t("캠페인이 등록되었어요. 적합한 단체를 찾습니다."),
       )
     } catch (error) {
       handleError(error)
@@ -522,13 +523,13 @@ function App() {
 
   const deleteEvent = async (event: EventItem) => {
     if (!account) {
-      requireLogin("로그인하면 등록한 행사를 관리할 수 있어요.")
+      requireLogin(t("로그인하면 등록한 행사를 관리할 수 있어요."))
       return
     }
     try {
       await api.deleteEvent(event.id)
       setEvents((current) => current.filter((item) => item.id !== event.id))
-      showNotice("목록에서 삭제했어요.")
+      showNotice(t("목록에서 삭제했어요."))
     } catch (error) {
       handleError(error)
     }
@@ -537,7 +538,7 @@ function App() {
   const showEventDetail = (event: EventItem) => {
     const done = event.status === "측정 완료"
     navigate(students ? (done ? "리포트" : "추천 매칭") : done ? "성과 분석" : "단체 찾기")
-    showNotice(`${event.name} 상세 흐름을 열었어요.`)
+    showNotice(t("{name} 상세 흐름을 열었어요.", { name: event.name }))
   }
 
   function applyProposals(result: ProposalState) {
@@ -550,13 +551,13 @@ function App() {
   const propose = async (match: Match) => {
     track("contact_click", { method: "proposal", role })
     if (!account) {
-      requireLogin("로그인하면 협찬 제안을 보낼 수 있어요.")
+      requireLogin(t("로그인하면 협찬 제안을 보낼 수 있어요."))
       return
     }
     try {
       applyProposals(await api.propose(match.id))
       track("generate_lead", { method: "proposal", role })
-      showNotice(`${match.name}에 협찬 제안을 보냈어요.`)
+      showNotice(t("{name}에 협찬 제안을 보냈어요.", { name: match.name }))
     } catch (error) {
       handleError(error)
     }
@@ -565,7 +566,7 @@ function App() {
   const cancelProposal = async (match: Match) => {
     try {
       applyProposals(await api.cancelProposal(match.id))
-      showNotice(`${match.name}에 보낸 제안을 취소했어요.`)
+      showNotice(t("{name}에 보낸 제안을 취소했어요.", { name: match.name }))
     } catch (error) {
       handleError(error)
     }
@@ -575,7 +576,7 @@ function App() {
   const openChat = async (match: Match) => {
     track("contact_click", { method: "message", role })
     if (!account) {
-      requireLogin("로그인하면 문의를 보낼 수 있어요.")
+      requireLogin(t("로그인하면 문의를 보낼 수 있어요."))
       return
     }
     try {
@@ -595,7 +596,11 @@ function App() {
       const { profile } = await api.saveProfile(draft)
       setListing(profile)
       goBack({ page, profile: "page" })
-      showNotice(`소개를 저장했어요. ${students ? "브랜드" : "학생단체"}가 바로 볼 수 있어요.`)
+      showNotice(
+        students
+          ? t("소개를 저장했어요. 브랜드가 바로 볼 수 있어요.")
+          : t("소개를 저장했어요. 학생단체가 바로 볼 수 있어요."),
+      )
       return null
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) handleError(error)
@@ -606,7 +611,7 @@ function App() {
   // A brand accepts or declines a student group's proposal.
   const answerRequest = async (request: SponsorRequest, decision: "accept" | "decline") => {
     if (!account) {
-      requireLogin("로그인하면 받은 제안에 답할 수 있어요.")
+      requireLogin(t("로그인하면 받은 제안에 답할 수 있어요."))
       return
     }
     try {
@@ -617,8 +622,8 @@ function App() {
       api.proposals().then(applyProposals).catch(() => {})
       showNotice(
         decision === "accept"
-          ? `${request.eventName} 협찬을 확정했어요.`
-          : `${request.groupName}의 제안을 거절했어요.`,
+          ? t("{name} 협찬을 확정했어요.", { name: request.eventName })
+          : t("{name}의 제안을 거절했어요.", { name: request.groupName }),
       )
     } catch (error) {
       handleError(error)
@@ -635,7 +640,7 @@ function App() {
   // A student group accepts or declines a brand's offer.
   const answerOffer = async (offer: SponsorOffer, decision: "accept" | "decline") => {
     if (!account) {
-      requireLogin("로그인하면 받은 협찬 제안에 답할 수 있어요.")
+      requireLogin(t("로그인하면 받은 협찬 제안에 답할 수 있어요."))
       return
     }
     try {
@@ -644,8 +649,8 @@ function App() {
       api.proposals().then(applyProposals).catch(() => {})
       showNotice(
         decision === "accept"
-          ? `${offer.brandName}의 협찬을 확정했어요.`
-          : `${offer.brandName}의 제안을 거절했어요.`,
+          ? t("{name}의 협찬을 확정했어요.", { name: offer.brandName })
+          : t("{name}의 제안을 거절했어요.", { name: offer.brandName }),
       )
     } catch (error) {
       handleError(error)
@@ -684,7 +689,7 @@ function App() {
     (failed: boolean) => {
       setExporting(false)
       showNotice(
-        failed ? "PDF를 만들지 못했어요. 다시 시도해 주세요." : "PDF 리포트를 다운로드했어요.",
+        failed ? t("PDF를 만들지 못했어요. 다시 시도해 주세요.") : t("PDF 리포트를 다운로드했어요."),
       )
     },
     [showNotice],
@@ -694,7 +699,7 @@ function App() {
     (failed: boolean) => {
       setExportingAnalytics(false)
       showNotice(
-        failed ? "PDF를 만들지 못했어요. 다시 시도해 주세요." : "분석 보고서를 다운로드했어요.",
+        failed ? t("PDF를 만들지 못했어요. 다시 시도해 주세요.") : t("분석 보고서를 다운로드했어요."),
       )
     },
     [showNotice],
@@ -720,14 +725,14 @@ function App() {
 
   const activity: ActivityItem[] = students
     ? [
-        { label: "등록한 행사", value: `${events.length}개`, target: "내 행사" },
-        { label: "보낸 협찬 제안", value: `${proposals.length}건`, target: "추천 매칭" },
-        { label: "확정된 협찬", value: `${confirmedCount}건`, target: "추천 매칭" },
+        { label: t("등록한 행사"), value: t("{count}개", { count: events.length }), target: "내 행사" },
+        { label: t("보낸 협찬 제안"), value: t("{count}건", { count: proposals.length }), target: "추천 매칭" },
+        { label: t("확정된 협찬"), value: t("{count}건", { count: confirmedCount }), target: "추천 매칭" },
       ]
     : [
-        { label: "등록한 캠페인", value: `${events.length}개`, target: "행사 일정" },
-        { label: "받은 협찬 제안", value: `${requests.length}건`, target: "받은 제안" },
-        { label: "확정한 협찬", value: `${confirmedCount}건`, target: "행사 일정" },
+        { label: t("등록한 캠페인"), value: t("{count}개", { count: events.length }), target: "행사 일정" },
+        { label: tc("tile", "받은 협찬 제안"), value: t("{count}건", { count: requests.length }), target: "받은 제안" },
+        { label: t("확정한 협찬"), value: t("{count}건", { count: confirmedCount }), target: "행사 일정" },
       ]
 
   const eventsPage = (
@@ -800,7 +805,7 @@ function App() {
           onOpenPartner={(partnerId) =>
             catalog.some((match) => match.id === partnerId)
               ? go({ page: browsePage, detail: partnerId })
-              : showNotice("상세 정보를 열 수 없는 상대예요.")
+              : showNotice(t("상세 정보를 열 수 없는 상대예요."))
           }
         />
       )
@@ -842,7 +847,7 @@ function App() {
             onUpdate={updateMeasurement}
             onOpenQr={() => setActiveModal("qr")}
             onOpenGoals={() =>
-              account ? setActiveModal("measure-goals") : requireLogin("로그인하면 행사 목표를 정할 수 있어요.")
+              account ? setActiveModal("measure-goals") : requireLogin(t("로그인하면 행사 목표를 정할 수 있어요."))
             }
             onShowLog={openLog}
           />
@@ -891,7 +896,7 @@ function App() {
                 onUpdate={updateMeasurement}
                 onOpenQr={() => setActiveModal("qr")}
                 onOpenGoals={() =>
-                  account ? setActiveModal("measure-goals") : requireLogin("로그인하면 캠페인 목표를 정할 수 있어요.")
+                  account ? setActiveModal("measure-goals") : requireLogin(t("로그인하면 캠페인 목표를 정할 수 있어요."))
                 }
                 onShowLog={openLog}
               />
@@ -954,7 +959,7 @@ function App() {
           document.getElementById("main")?.focus()
         }}
       >
-        본문으로 건너뛰기
+        {t("본문으로 건너뛰기")}
       </a>
       <Loader />
 
@@ -1113,7 +1118,7 @@ function App() {
             onSaved={(next) => {
               updateMeasurement(next)
               setActiveModal(null)
-              showNotice("목표를 저장했어요. 리포트에 바로 반영돼요.")
+              showNotice(t("목표를 저장했어요. 리포트에 바로 반영돼요."))
             }}
           />
         </Presence>
@@ -1128,7 +1133,7 @@ function App() {
           initialRole={authRole}
           onClose={closeModal}
           onLoggedIn={(session) =>
-            startSession(session, `${session.account.name} 계정으로 로그인했어요.`)
+            startSession(session, t("{name} 계정으로 로그인했어요.", { name: session.account.name }))
           }
           onSignup={(next) => openAuth("signup", next)}
           onForgot={(email) => {
@@ -1145,7 +1150,7 @@ function App() {
             onLeft={() => {
               endSession()
               setActiveModal(null)
-              showNotice("탈퇴했어요. 그동안 함께해 주셔서 고마워요.")
+              showNotice(t("탈퇴했어요. 그동안 함께해 주셔서 고마워요."))
             }}
           />
         </Presence>
@@ -1155,7 +1160,7 @@ function App() {
           onClose={closeModal}
           onChanged={() => {
             setActiveModal(null)
-            showNotice("비밀번호를 바꿨어요. 다른 기기에서는 로그아웃됐어요.")
+            showNotice(t("비밀번호를 바꿨어요. 다른 기기에서는 로그아웃됐어요."))
           }}
         />
       </Presence>
@@ -1164,7 +1169,7 @@ function App() {
           initialEmail={resetEmail}
           onClose={closeModal}
           onReset={(session) =>
-            startSession(session, "새 비밀번호로 바꾸고 로그인했어요.")
+            startSession(session, t("새 비밀번호로 바꾸고 로그인했어요."))
           }
           onLogin={() => openAuth("login")}
           onNotice={showNotice}
@@ -1176,7 +1181,7 @@ function App() {
           onClose={closeModal}
           onSignedUp={(session) => {
             track("sign_up", { method: "email", role: session.account.role })
-            startSession(session, `${session.account.name} 계정으로 가입했어요. 환영해요!`)
+            startSession(session, t("{name} 계정으로 가입했어요. 환영해요!", { name: session.account.name }))
           }}
           onLogin={(next) => openAuth("login", next)}
           onNotice={showNotice}

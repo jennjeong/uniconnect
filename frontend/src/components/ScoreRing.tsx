@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react"
 
+import { t } from "../i18n"
 import { scoreColors } from "../lib/score"
 
 const radius = 15.5
@@ -16,7 +17,7 @@ export function ScoreRing({ score }: { score: number }) {
     <div
       className="match-score-ring"
       role="img"
-      aria-label={`매칭 일치율 ${score}%`}
+      aria-label={t("매칭 일치율 {score}%", { score })}
       style={{ "--ring-color": colors.ring, "--ring-text": colors.text } as CSSProperties}
     >
       <svg aria-hidden="true" viewBox="0 0 36 36">
@@ -35,7 +36,7 @@ export function ScoreRing({ score }: { score: number }) {
         {score}
         <small>%</small>
       </strong>
-      <span>일치율</span>
+      <span>{t("일치율")}</span>
     </div>
   )
 }

@@ -5,6 +5,7 @@ import { Icon } from "../components/Icon"
 import { Pill } from "../components/Pill"
 import { RevealTitle, RevealWords } from "../components/RevealText"
 import { profileLabels } from "../data/profile"
+import { t } from "../i18n"
 import { formatFullDate, toIsoDate } from "../lib/date"
 import { initialOf } from "../lib/format"
 import { MeshBackdrop } from "../scenes/MeshBackdrop"
@@ -52,21 +53,20 @@ export function ProfilePage({
   onLeave: () => void
 }) {
   const students = account.role === "학생단체"
-  const viewers = students ? "브랜드" : "학생단체"
   const labels = profileLabels[account.role]
   const details = [
-    { label: "회원 유형", value: `${account.role} · ${account.type}` },
-    ...(account.school ? [{ label: "학교", value: account.school }] : []),
-    { label: "이메일", value: account.email },
-    { label: "가입일", value: formatFullDate(toIsoDate(new Date(account.createdAt))) },
+    { label: t("회원 유형"), value: `${t(account.role)} · ${t(account.type)}` },
+    ...(account.school ? [{ label: t("학교"), value: account.school }] : []),
+    { label: t("이메일"), value: account.email },
+    { label: t("가입일"), value: formatFullDate(toIsoDate(new Date(account.createdAt))) },
   ]
 
   return (
     <section className="page-view profile-view">
       <div className="detail-top">
-        <button aria-label="뒤로" className="back-pill" onClick={onBack} type="button">
+        <button aria-label={t("뒤로")} className="back-pill" onClick={onBack} type="button">
           <Icon name="chevron" size={16} />
-          <span>뒤로</span>
+          <span>{t("뒤로")}</span>
         </button>
       </div>
 
@@ -76,7 +76,7 @@ export function ProfilePage({
           <div className="banner-top">
             <span className="eyebrow light">My Page</span>
             <span className="banner-role">
-              {students ? "협찬 받기 · 학생단체" : "협찬 하기 · 브랜드"}
+              {students ? t("협찬 받기 · 학생단체") : t("협찬 하기 · 브랜드")}
             </span>
           </div>
           <div className="banner-identity">
@@ -85,16 +85,16 @@ export function ProfilePage({
             </div>
             <div>
               <span className="banner-meta">
-                {account.school ? `${account.school} · ${account.type}` : account.type}
+                {account.school ? `${account.school} · ${t(account.type)}` : t(account.type)}
               </span>
               <RevealTitle className="banner-title">{account.name}</RevealTitle>
             </div>
           </div>
           <div className="banner-bottom">
-            <span className="banner-note">내 정보 · 공개 소개 · 활동</span>
+            <span className="banner-note">{t("내 정보 · 공개 소개 · 활동")}</span>
             <div className="banner-actions">
               <Pill arrow="up-right" onClick={onEdit} variant="white">
-                {listing ? "소개 편집하기" : "소개 등록하기"}
+                {listing ? t("소개 편집하기") : t("소개 등록하기")}
               </Pill>
             </div>
           </div>
@@ -116,12 +116,14 @@ export function ProfilePage({
 
       <section className="about-block">
         <div className="about-side">
-          <span className="eyebrow">공개 소개</span>
+          <span className="eyebrow">{t("공개 소개")}</span>
           <Icon name="link" size={220} />
           <p className="about-note" data-reveal>
             <Icon name="users" size={20} />
             <span>
-              {viewers}가 {students ? "단체 찾기" : "추천 매칭"}에서 보는 정보예요.
+              {students
+                ? t("브랜드가 단체 찾기에서 보는 정보예요.")
+                : t("학생단체가 추천 매칭에서 보는 정보예요.")}
             </span>
           </p>
         </div>
@@ -131,7 +133,7 @@ export function ProfilePage({
               {listing.intro ? (
                 <RevealWords className="about-statement">{listing.intro}</RevealWords>
               ) : (
-                <p className="about-statement muted">소개 문장이 아직 없어요.</p>
+                <p className="about-statement muted">{t("소개 문장이 아직 없어요.")}</p>
               )}
               <div className="about-offer" data-reveal style={delay(0.15)}>
                 <span>{labels.offer}</span>
@@ -140,23 +142,25 @@ export function ProfilePage({
             </>
           ) : (
             <p className="about-statement muted">
-              아직 소개가 없어요. 소개를 등록하면 {viewers}가 찾기에서 보고 문의할 수 있어요.
+              {students
+                ? t("아직 소개가 없어요. 소개를 등록하면 브랜드가 찾기에서 보고 문의할 수 있어요.")
+                : t("아직 소개가 없어요. 소개를 등록하면 학생단체가 찾기에서 보고 문의할 수 있어요.")}
             </p>
           )}
           <div className="about-foot" data-reveal style={delay(0.2)}>
             {listing ? (
               <ul className="summary-chips">
-                <li>기본 정보 {listing.facts?.length ?? 0}개</li>
-                <li>SNS {listing.sns?.length ?? 0}개</li>
+                <li>{t("기본 정보 {count}개", { count: listing.facts?.length ?? 0 })}</li>
+                <li>{t("SNS {count}개", { count: listing.sns?.length ?? 0 })}</li>
                 <li>
-                  {labels.portfolio} {listing.portfolio?.length ?? 0}개
+                  {t("{label} {count}개", { label: labels.portfolio, count: listing.portfolio?.length ?? 0 })}
                 </li>
               </ul>
             ) : (
-              <span>소개 · 협찬 내용 · SNS · {labels.portfolio}</span>
+              <span>{t("소개 · 협찬 내용 · SNS · {portfolio}", { portfolio: labels.portfolio })}</span>
             )}
             <Pill arrow="up-right" onClick={onEdit} variant="outline">
-              {listing ? "편집하기" : "소개 등록하기"}
+              {listing ? t("편집하기") : t("소개 등록하기")}
             </Pill>
           </div>
         </div>
@@ -167,7 +171,7 @@ export function ProfilePage({
           Account
         </span>
         <RevealTitle as="h2" className="section-display">
-          계정 정보
+          {t("계정 정보")}
         </RevealTitle>
         <dl className="service-list">
           {details.map((detail, index) => (
@@ -181,14 +185,14 @@ export function ProfilePage({
         <div className="profile-logout">
           <div className="profile-account-actions">
             <Pill onClick={onLogout} variant="outline">
-              로그아웃
+              {t("로그아웃")}
             </Pill>
             <Pill onClick={onChangePassword} variant="silver">
-              비밀번호 변경
+              {t("비밀번호 변경")}
             </Pill>
           </div>
           <button className="leave-link" onClick={onLeave} type="button">
-            회원 탈퇴
+            {t("회원 탈퇴")}
           </button>
         </div>
       </section>

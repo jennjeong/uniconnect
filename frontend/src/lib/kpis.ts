@@ -1,4 +1,4 @@
-import { lang } from "../i18n"
+import { lang, t } from "../i18n"
 import type { Metrics, Report } from "../types"
 import { percent } from "./format"
 
@@ -32,39 +32,54 @@ export function reportKpis(report: Report, metrics: Metrics): Kpi[] {
   return [
     {
       key: "reach",
-      label: "도달 인원",
+      label: t("도달 인원"),
       unit: "명",
       current: report.reach,
       target: report.targets.reach,
-      note: "QR 스캔 + 현장 밖 도달",
-      formula: `QR 스캔 ${metrics.scans.toLocaleString("ko-KR")}건에 목표 설정에서 적은 현장 밖 도달(SNS 등) ${report.snsReach.toLocaleString("ko-KR")}명을 더한 값이에요.`,
+      note: t("QR 스캔 + 현장 밖 도달"),
+      formula: t("QR 스캔 {scans}건에 목표 설정에서 적은 현장 밖 도달(SNS 등) {snsReach}명을 더한 값이에요.", {
+        scans: metrics.scans.toLocaleString("ko-KR"),
+        snsReach: report.snsReach.toLocaleString("ko-KR"),
+      }),
     },
     {
       key: "qrRate",
-      label: "QR 참여율",
+      label: t("QR 참여율"),
       unit: "%",
       current: percent(metrics.scans, report.expectedAudience),
       target: report.targets.qrRate,
-      note: `QR 스캔 ${metrics.scans}건`,
-      formula: `QR 스캔 ${metrics.scans}건 ÷ 예상 관객 ${report.expectedAudience}명`,
+      note: t("QR 스캔 {scans}건", { scans: metrics.scans }),
+      formula: t("QR 스캔 {scans}건 ÷ 예상 관객 {audience}명", {
+        scans: metrics.scans,
+        audience: report.expectedAudience,
+      }),
     },
     {
       key: "visitRate",
-      label: "방문 전환율",
+      label: t("방문 전환율"),
       unit: "%",
       current: percent(metrics.visits, metrics.scans),
       target: report.targets.visitRate,
-      note: `${metrics.visits}명 방문`,
-      formula: `매장 방문 ${metrics.visits}건 ÷ QR 스캔 ${metrics.scans}건`,
+      note: t("{visits}명 방문", { visits: metrics.visits }),
+      formula: t("매장 방문 {visits}건 ÷ QR 스캔 {scans}건", { visits: metrics.visits, scans: metrics.scans }),
     },
     {
       key: "roas",
-      label: "추정 ROAS",
+      label: t("추정 ROAS"),
       unit: "%",
       current: report.roas,
       target: report.targets.roas,
-      note: hasRoas(report) ? `협찬 가치 ${formatWon(report.sponsorValue)}` : "협찬 가치를 정하면 계산돼요",
-      formula: `추정 매출(매장 방문 ${metrics.visits.toLocaleString("ko-KR")}건 × 1인 예상 지출 ${formatWon(report.averageSpend)}) ÷ 협찬 가치 ${formatWon(report.sponsorValue)}. 실제 매출이 아니라 목표 설정에서 적은 1인 예상 지출로 셈한 추정치예요.`,
+      note: hasRoas(report)
+        ? t("협찬 가치 {value}", { value: formatWon(report.sponsorValue) })
+        : t("협찬 가치를 정하면 계산돼요"),
+      formula: t(
+        "추정 매출(매장 방문 {visits}건 × 1인 예상 지출 {spend}) ÷ 협찬 가치 {value}. 실제 매출이 아니라 목표 설정에서 적은 1인 예상 지출로 셈한 추정치예요.",
+        {
+          visits: metrics.visits.toLocaleString("ko-KR"),
+          spend: formatWon(report.averageSpend),
+          value: formatWon(report.sponsorValue),
+        },
+      ),
       missing: !hasRoas(report),
     },
   ]
@@ -83,19 +98,20 @@ export const achievement = (kpi: Kpi) =>
   kpi.target > 0 ? Math.round((kpi.current / kpi.target) * 100) : 0
 
 export const formatKpi = (value: number, unit: Kpi["unit"]) =>
-  unit === "%" ? `${value}%` : `${value.toLocaleString("ko-KR")}명`
+  unit === "%" ? `${value}%` : t("{reach}명", { reach: value.toLocaleString("ko-KR") })
 
-// Distance from the goal: "+7%p", "+140명", "−3%p".
+// Distance from the goal: "+7%p", "+140명", "−3%p" ("+7 pts" in English).
 export function kpiGap(kpi: Kpi) {
   const gap = kpi.current - kpi.target
   const sign = gap > 0 ? "+" : gap < 0 ? "−" : "±"
   const amount = Math.abs(gap).toLocaleString("ko-KR")
-  return kpi.unit === "%" ? `${sign}${amount}%p` : `${sign}${amount}명`
+  const gapText = `${sign}${amount}`
+  return kpi.unit === "%" ? t("{gap}%p", { gap: gapText }) : t("{gap}명", { gap: gapText })
 }
 
 // "목표보다 43% 높았어요" from the ROAS against its goal.
 export function roasSummary(report: Report) {
   // Goals start at 1%; an older one of 0 counts as 1 rather than dividing by it.
   const gain = Math.round((report.roas / Math.max(1, report.targets.roas) - 1) * 100)
-  return gain >= 0 ? `${gain}% 높았어요.` : `${-gain}% 낮았어요.`
+  return gain >= 0 ? t("{gain}% 높았어요.", { gain }) : t("{gain}% 낮았어요.", { gain: -gain })
 }

@@ -1,5 +1,6 @@
 import { useState } from "react"
 
+import { lang, t } from "../i18n"
 import {
   calendarDays,
   formatDay,
@@ -52,7 +53,7 @@ export function DatePicker({
     <div className="date-picker">
       <div className="date-picker-head">
         <button
-          aria-label="이전 달"
+          aria-label={t("이전 달")}
           className="calendar-nav previous"
           onClick={() => shiftMonth(-1)}
           type="button"
@@ -60,10 +61,12 @@ export function DatePicker({
           <Icon name="chevron" size={16} />
         </button>
         <strong>
-          {month.getFullYear()}년 {month.getMonth() + 1}월
+          {lang === "en"
+            ? month.toLocaleDateString("en-US", { month: "long", year: "numeric" })
+            : `${month.getFullYear()}년 ${month.getMonth() + 1}월`}
         </strong>
         <button
-          aria-label="다음 달"
+          aria-label={t("다음 달")}
           className="calendar-nav"
           onClick={() => shiftMonth(1)}
           type="button"

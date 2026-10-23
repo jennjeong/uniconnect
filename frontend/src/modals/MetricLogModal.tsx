@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import { api, errorMessage } from "../api"
 import { Modal } from "../components/Modal"
 import { metricInfo } from "../data/metrics"
+import { t } from "../i18n"
 import { formatDateTime } from "../lib/date"
 import type { MetricEntry, MetricKind, Role } from "../types"
 
@@ -42,19 +43,19 @@ export function MetricLogModal({
     <Modal
       name="metric-log"
       kicker="Participation Log"
-      title={kind ? `${metricInfo[kind].label} 참여 내역` : "전체 참여 내역"}
+      title={kind ? t("{metric} 참여 내역", { metric: t(metricInfo[kind].label) }) : t("전체 참여 내역")}
       onClose={onClose}
     >
       <p className="log-summary">
-        누적 <strong>{total}건</strong>
-        {entries && ` · 최근 ${entries.length}건을 보여드려요`}
+        {t("누적")} <strong>{t("{count}건", { count: total })}</strong>
+        {entries && ` · ${t("최근 {count}건을 보여드려요", { count: entries.length })}`}
       </p>
       {error && (
         <p className="form-error" role="alert">
           {error}
         </p>
       )}
-      {entries && entries.length === 0 && <p className="day-empty">아직 기록이 없어요.</p>}
+      {entries && entries.length === 0 && <p className="day-empty">{t("아직 기록이 없어요.")}</p>}
       <ol className="log-list">
         {entries?.map((entry) => (
           <li key={entry.id}>
@@ -62,9 +63,9 @@ export function MetricLogModal({
             <div>
               <strong>
                 {entry.participant}
-                {!kind && <em className={`activity-kind kind-${entry.kind}`}>{metricInfo[entry.kind].label}</em>}
+                {!kind && <em className={`activity-kind kind-${entry.kind}`}>{t(metricInfo[entry.kind].label)}</em>}
               </strong>
-              <span>{entry.detail}</span>
+              <span>{t(entry.detail)}</span>
             </div>
           </li>
         ))}

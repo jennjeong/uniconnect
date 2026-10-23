@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import { api, errorMessage } from "../api"
 import { Modal } from "../components/Modal"
 import { RolePicker } from "../components/RolePicker"
+import { t } from "../i18n"
 import { accountTypes } from "../data/roles"
 import { formatRemaining } from "../lib/format"
 import { viewPath } from "../lib/route"
@@ -34,14 +35,14 @@ type Verification = {
 // again, including the school/company email rules.
 function draftError(draft: Draft, verified: boolean) {
   if (!draft.name.trim()) {
-    return `${draft.role === "학생단체" ? "단체명" : "브랜드명"}을 입력해 주세요.`
+    return draft.role === "학생단체" ? t("단체명을 입력해 주세요.") : t("브랜드명을 입력해 주세요.")
   }
-  if (draft.role === "학생단체" && !draft.school.trim()) return "학교를 입력해 주세요."
-  if (!verified) return "이메일 인증을 완료해 주세요."
-  if (draft.password.length < 8) return "비밀번호는 8자 이상이어야 해요."
-  if (draft.password !== draft.confirm) return "비밀번호가 일치하지 않아요."
-  if (!draft.agreed) return "이용약관에 동의해 주세요."
-  if (!draft.over14) return "만 14세 이상만 가입할 수 있어요."
+  if (draft.role === "학생단체" && !draft.school.trim()) return t("학교를 입력해 주세요.")
+  if (!verified) return t("이메일 인증을 완료해 주세요.")
+  if (draft.password.length < 8) return t("비밀번호는 8자 이상이어야 해요.")
+  if (draft.password !== draft.confirm) return t("비밀번호가 일치하지 않아요.")
+  if (!draft.agreed) return t("이용약관에 동의해 주세요.")
+  if (!draft.over14) return t("만 14세 이상만 가입할 수 있어요.")
   return ""
 }
 
@@ -65,6 +66,10 @@ export function SignupModal({
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
   const verified = verification?.token !== undefined
+  // The agreement sentence around its two links, in the language shown.
+  const [termsBefore, termsBetween, termsAfter] = t("{terms}과 {privacy}에 동의합니다.").split(
+    /\{terms\}|\{privacy\}/,
+  )
 
   useEffect(() => {
     if (!verification || verification.token) return
@@ -99,7 +104,7 @@ export function SignupModal({
       setVerification({ expiresAt: result.expiresAt, devCode: result.devCode })
       setCodeInput("")
       setNow(Date.now())
-      onNotice(`${result.email}로 인증번호를 보냈어요.`)
+      onNotice(t("{email}로 인증번호를 보냈어요.", { email: result.email }))
     })
 
   const confirmCode = () =>
@@ -137,7 +142,7 @@ export function SignupModal({
   }
 
   return (
-    <Modal banner name="signup" kicker="Join uniconnect" title="회원가입" onClose={onClose}>
+    <Modal banner name="signup" kicker="Join uniconnect" title={t("회원가입")} onClose={onClose}>
       <form
         className="auth-form"
         noValidate
@@ -156,31 +161,33 @@ export function SignupModal({
         />
         <div className="form-row">
           <label>
-            {draft.role === "학생단체" ? "단체명" : "브랜드명"}
+            {draft.role === "학생단체" ? t("단체명") : t("브랜드명")}
             <input
               autoComplete="organization"
-              placeholder={draft.role === "학생단체" ? "예) 삼육대 뮤즈" : "예) 오후의 커피"}
+              placeholder={draft.role === "학생단체" ? t("예) 삼육대 뮤즈") : t("예) 오후의 커피")}
               value={draft.name}
               onChange={(event) => update({ name: event.target.value })}
             />
           </label>
           <label>
-            {draft.role === "학생단체" ? "단체 분류" : "업종"}
+            {draft.role === "학생단체" ? t("단체 분류") : t("업종")}
             <select
               value={draft.type}
               onChange={(event) => update({ type: event.target.value })}
             >
               {accountTypes[draft.role].map((type) => (
-                <option key={type}>{type}</option>
+                <option key={type} value={type}>
+                  {t(type)}
+                </option>
               ))}
             </select>
           </label>
         </div>
         {draft.role === "학생단체" && (
           <label>
-            학교
+            {t("학교")}
             <input
-              placeholder="예) 삼육대학교"
+              placeholder={t("예) 삼육대학교")}
               value={draft.school}
               onChange={(event) => update({ school: event.target.value })}
             />
@@ -188,7 +195,7 @@ export function SignupModal({
         )}
         <div className="field-group">
           <label htmlFor="signup-email">
-            {draft.role === "학생단체" ? "학교 이메일" : "회사 이메일"}
+            {draft.role === "학생단체" ? t("학교 이메일") : t("회사 이메일")}
           </label>
           <div className="field-with-action">
             <input
@@ -209,7 +216,7 @@ export function SignupModal({
                 onClick={resetVerification}
                 type="button"
               >
-                변경
+                {t("변경")}
               </button>
             ) : (
               <button
@@ -218,21 +225,21 @@ export function SignupModal({
                 onClick={sendCode}
                 type="button"
               >
-                {verification ? "재전송" : "인증번호 받기"}
+                {verification ? t("재전송") : t("인증번호 받기")}
               </button>
             )}
           </div>
           {verified ? (
-            <small className="field-hint success">이메일 인증이 완료됐어요.</small>
+            <small className="field-hint success">{t("이메일 인증이 완료됐어요.")}</small>
           ) : verification ? (
             <>
               <div className="field-with-action">
                 <input
-                  aria-label="인증번호"
+                  aria-label={t("인증번호")}
                   autoComplete="one-time-code"
                   inputMode="numeric"
                   maxLength={6}
-                  placeholder="6자리 인증번호"
+                  placeholder={t("6자리 인증번호")}
                   value={codeInput}
                   onChange={(event) => setCodeInput(event.target.value.replace(/\D/g, ""))}
                 />
@@ -242,17 +249,17 @@ export function SignupModal({
                   onClick={confirmCode}
                   type="button"
                 >
-                  확인
+                  {t("확인")}
                 </button>
               </div>
               <small className="field-hint">
                 {now < verification.expiresAt
-                  ? `남은 시간 ${formatRemaining(verification.expiresAt - now)}`
-                  : "인증 시간이 지났어요. 재전송을 눌러 주세요."}
+                  ? t("남은 시간 {time}", { time: formatRemaining(verification.expiresAt - now) })
+                  : t("인증 시간이 지났어요. 재전송을 눌러 주세요.")}
                 {verification.devCode && (
                   <>
                     {" · "}
-                    개발 모드라서 메일 대신 인증번호를 여기에 보여드려요:{" "}
+                    {t("개발 모드라서 메일 대신 인증번호를 여기에 보여드려요:")}{" "}
                     <strong>{verification.devCode}</strong>
                   </>
                 )}
@@ -261,24 +268,24 @@ export function SignupModal({
           ) : (
             <small className="field-hint">
               {draft.role === "학생단체"
-                ? "학교 이메일(ac.kr)로 인증해야 가입할 수 있어요."
-                : "회사 이메일로 인증해야 가입할 수 있어요. 개인 메일(gmail, naver 등)은 사용할 수 없어요."}
+                ? t("학교 이메일(ac.kr)로 인증해야 가입할 수 있어요.")
+                : t("회사 이메일로 인증해야 가입할 수 있어요. 개인 메일(gmail, naver 등)은 사용할 수 없어요.")}
             </small>
           )}
         </div>
         <div className="form-row">
           <label>
-            비밀번호
+            {t("비밀번호")}
             <input
               autoComplete="new-password"
-              placeholder="8자 이상"
+              placeholder={t("8자 이상")}
               type="password"
               value={draft.password}
               onChange={(event) => update({ password: event.target.value })}
             />
           </label>
           <label>
-            비밀번호 확인
+            {t("비밀번호 확인")}
             <input
               autoComplete="new-password"
               type="password"
@@ -295,14 +302,15 @@ export function SignupModal({
           />
           {/* The documents open in a new tab, so the form keeps what was typed. */}
           <span>
+            {termsBefore}
             <a href={viewPath({ page: "대시보드", legal: "terms" })} rel="noopener" target="_blank">
-              서비스 이용약관
+              {t("서비스 이용약관")}
             </a>
-            과{" "}
+            {termsBetween}
             <a href={viewPath({ page: "대시보드", legal: "privacy" })} rel="noopener" target="_blank">
-              개인정보 처리방침
+              {t("개인정보 처리방침")}
             </a>
-            에 동의합니다.
+            {termsAfter}
           </span>
         </label>
         {/* The terms take members from 14 (younger ones need a guardian). */}
@@ -312,7 +320,7 @@ export function SignupModal({
             type="checkbox"
             onChange={(event) => update({ over14: event.target.checked })}
           />
-          <span>만 14세 이상이에요.</span>
+          <span>{t("만 14세 이상이에요.")}</span>
         </label>
         {error && (
           <p className="form-error" role="alert">
@@ -320,12 +328,12 @@ export function SignupModal({
           </p>
         )}
         <button className="primary-button wide" disabled={busy} type="submit">
-          가입하고 시작하기
+          {t("가입하고 시작하기")}
         </button>
         <p className="auth-switch">
-          이미 계정이 있나요?{" "}
+          {t("이미 계정이 있나요?")}{" "}
           <button onClick={() => onLogin(draft.role)} type="button">
-            로그인
+            {t("로그인")}
           </button>
         </p>
       </form>

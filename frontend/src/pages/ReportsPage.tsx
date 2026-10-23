@@ -6,6 +6,7 @@ import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { Pill } from "../components/Pill"
 import { RevealTitle } from "../components/RevealText"
+import { t } from "../i18n"
 import { formatFullDate } from "../lib/date"
 import {
   achievement,
@@ -14,7 +15,6 @@ import {
   hasRoas,
   kpiValue,
   reportKpis,
-  roasSummary,
   roasText,
   type KpiKey,
 } from "../lib/kpis"
@@ -24,6 +24,15 @@ import { INTERFERENCE } from "../scenes/shaders"
 import type { EventMeasurement, Metrics, Report } from "../types"
 
 const delay = (seconds: number) => ({ "--reveal-delay": `${seconds}s` }) as CSSProperties
+
+// "협찬 성과가 목표보다 43% 높았어요." from the ROAS against its goal (as
+// roasSummary in lib/kpis.ts works it out), in the language shown.
+function roasHeadline(report: Report) {
+  const gain = Math.round((report.roas / Math.max(1, report.targets.roas) - 1) * 100)
+  return gain >= 0
+    ? t("협찬 성과가 목표보다 {gain}% 높았어요.", { gain })
+    : t("협찬 성과가 목표보다 {gain}% 낮았어요.", { gain: -gain })
+}
 
 // One event's results (the latest one that has started, or the one picked):
 // the ROAS on a deep blue panel over getlayers.ai's
@@ -58,16 +67,16 @@ export function ReportsPage({
     <section className="page-view">
       <PageIntro
         eyebrow="Performance Reports"
-        title="성과 리포트"
-        description="행사가 끝나면 현장 참여와 협찬 효과를 한 장으로 정리해 드려요."
+        title={t("성과 리포트")}
+        description={t("행사가 끝나면 현장 참여와 협찬 효과를 한 장으로 정리해 드려요.")}
         actions={
           <Pill arrow="up-right" disabled={!report || exporting} onClick={onDownload}>
-            {exporting ? "PDF 만드는 중…" : "PDF 리포트 다운로드"}
+            {exporting ? t("PDF 만드는 중…") : t("PDF 리포트 다운로드")}
           </Pill>
         }
       />
       {!report ? (
-        <p className="day-empty">행사를 등록하면 행사마다 리포트가 생겨요.</p>
+        <p className="day-empty">{t("행사를 등록하면 행사마다 리포트가 생겨요.")}</p>
       ) : (
         <>
           <div className="measure-bar">
@@ -80,14 +89,14 @@ export function ReportsPage({
                 <span className="eyebrow light">
                   {report.eventName} · {formatFullDate(report.eventDate)}
                 </span>
-                <span className="power-status">{measureState(report)}</span>
+                <span className="power-status">{t(measureState(report))}</span>
               </div>
               <RevealTitle as="h2" className="power-title">
-                {hasRoas(report) ? `협찬 성과가 목표보다 ${roasSummary(report)}` : "협찬 가치를 정하면 ROAS가 계산돼요"}
+                {hasRoas(report) ? roasHeadline(report) : t("협찬 가치를 정하면 ROAS가 계산돼요")}
               </RevealTitle>
               <div className="power-roas">
                 <div className="power-roas-head">
-                  <span>추정 ROAS</span>
+                  <span>{t("추정 ROAS")}</span>
                   <strong>
                     <AnimatedNumber value={roasText(report)} />
                   </strong>
@@ -97,11 +106,14 @@ export function ReportsPage({
                   <b style={{ left: `${(report.targets.roas / roasScale) * 100}%` }} />
                 </div>
                 <small>
-                  목표 {report.targets.roas}% · 협찬 가치 {formatWon(report.sponsorValue)}
+                  {t("목표 {roas}% · 협찬 가치 {value}", {
+                    roas: report.targets.roas,
+                    value: formatWon(report.sponsorValue),
+                  })}
                 </small>
               </div>
               <Pill arrow="right" onClick={onOpenReport} variant="white">
-                상세 데이터 보기
+                {t("상세 데이터 보기")}
               </Pill>
             </div>
           </article>
@@ -111,7 +123,7 @@ export function ReportsPage({
               Goals
             </span>
             <RevealTitle as="h2" className="section-display">
-              목표마다 얼마나 왔을까요
+              {t("목표마다 얼마나 왔을까요")}
             </RevealTitle>
           </div>
           <ul className="kpi-grid">
@@ -122,7 +134,7 @@ export function ReportsPage({
                   <button className="kpi-card" onClick={() => onOpenGoal(kpi.key)} type="button">
                     <span className="kpi-label">
                       <span className="service-index">{String(index + 1).padStart(2, "0")}</span>
-                      {kpi.label}
+                      {t(kpi.label)}
                       <Icon name="arrowUpRight" size={16} />
                     </span>
                     <strong>
@@ -132,8 +144,8 @@ export function ReportsPage({
                       <i style={{ width: `${Math.min(100, rate)}%` }} />
                     </span>
                     <span className={rate >= 100 ? "kpi-status good" : "kpi-status"}>
-                      목표 {formatKpi(kpi.target, kpi.unit)}
-                      <b>{rate}% 달성</b>
+                      {t("목표 {target}", { target: formatKpi(kpi.target, kpi.unit) })}
+                      <b>{t("{rate}% 달성", { rate })}</b>
                     </span>
                     <span className="kpi-note">{kpi.note}</span>
                   </button>
@@ -144,13 +156,13 @@ export function ReportsPage({
 
           {report.sponsors && report.sponsors.length > 1 && (
             <div className="analytics-card sponsor-card" data-reveal>
-              <p className="section-title">협찬사별 성과</p>
-              <div className="analytics-table sponsor-table stagger" role="table" aria-label="협찬사별 성과">
+              <p className="section-title">{t("협찬사별 성과")}</p>
+              <div className="analytics-table sponsor-table stagger" role="table" aria-label={t("협찬사별 성과")}>
                 <div className="analytics-row head" role="row">
-                  <span role="columnheader">협찬사</span>
-                  <span role="columnheader">협찬 가치</span>
-                  <span role="columnheader">쿠폰 수령</span>
-                  <span role="columnheader">매장 방문</span>
+                  <span role="columnheader">{t("협찬사")}</span>
+                  <span role="columnheader">{t("협찬 가치")}</span>
+                  <span role="columnheader">{t("쿠폰 수령")}</span>
+                  <span role="columnheader">{t("매장 방문")}</span>
                   <span role="columnheader">ROAS</span>
                 </div>
                 {report.sponsors.map((sponsor) => (
@@ -161,14 +173,14 @@ export function ReportsPage({
                         {sponsor.coupon.store} · {sponsor.coupon.title}
                       </small>
                     </span>
-                    <span role="cell" data-label="협찬 가치">
+                    <span role="cell" data-label={t("협찬 가치")}>
                       {formatWon(sponsor.value)}
                     </span>
-                    <span role="cell" data-label="쿠폰 수령">
-                      {sponsor.coupons.toLocaleString("ko-KR")}장
+                    <span role="cell" data-label={t("쿠폰 수령")}>
+                      {t("{count}장", { count: sponsor.coupons.toLocaleString("ko-KR") })}
                     </span>
-                    <span role="cell" data-label="매장 방문">
-                      {sponsor.visits.toLocaleString("ko-KR")}명
+                    <span role="cell" data-label={t("매장 방문")}>
+                      {t("{count}명", { count: sponsor.visits.toLocaleString("ko-KR") })}
                     </span>
                     <span
                       role="cell"
@@ -181,7 +193,7 @@ export function ReportsPage({
                 ))}
               </div>
               <small className="field-hint">
-                참여자는 협찬사마다 쿠폰을 따로 받고, 각 매장이 자기 쿠폰의 방문만 확인해요. 위 목표는 행사 전체 기준이에요.
+                {t("참여자는 협찬사마다 쿠폰을 따로 받고, 각 매장이 자기 쿠폰의 방문만 확인해요. 위 목표는 행사 전체 기준이에요.")}
               </small>
             </div>
           )}

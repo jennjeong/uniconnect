@@ -37,9 +37,28 @@ export function setLang(next: Lang) {
 
 // The copy is written in Korean, which is also its key: in English the
 // dictionary's sentence (i18n/en) shows instead, and the Korean where there
-// is none. {name} in a sentence is filled from `values`, in either language.
+// is none. {name} in a sentence is filled from `values`, in either language;
+// {count:proposal|proposals} also picks the word for one or more ("1
+// proposal", "3 proposals").
 export function t(ko: string, values?: Record<string, string | number>) {
   const text = lang === "en" ? (en[ko] ?? ko) : ko
+  return fill(text, values)
+}
+
+// The same, for one of the few sentences whose English depends on where it
+// shows: its English for that place is keyed "korean@place" ("목표@marker"),
+// and the sentence's plain English stands in where there is none.
+export function tc(place: string, ko: string, values?: Record<string, string | number>) {
+  const text = lang === "en" ? (en[`${ko}@${place}`] ?? en[ko] ?? ko) : ko
+  return fill(text, values)
+}
+
+function fill(text: string, values?: Record<string, string | number>) {
   if (!values) return text
-  return text.replace(/\{(\w+)\}/g, (whole, key: string) => (key in values ? String(values[key]) : whole))
+  return text.replace(/\{(\w+)(?::([^|{}]*)\|([^{}]*))?\}/g, (whole, key: string, one?: string, many?: string) => {
+    if (!(key in values)) return whole
+    const value = String(values[key])
+    if (one === undefined || many === undefined) return value
+    return `${value} ${Number(value.replace(/,/g, "")) === 1 ? one : many}`
+  })
 }

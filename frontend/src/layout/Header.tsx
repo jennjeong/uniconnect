@@ -6,6 +6,7 @@ import { Icon } from "../components/Icon"
 import { Presence } from "../components/Presence"
 import { navItems } from "../data/navigation"
 import { roles } from "../data/roles"
+import { t } from "../i18n"
 import { daysUntil, formatDay, nextEvent } from "../lib/date"
 import { initialOf } from "../lib/format"
 import type { NotificationItem } from "../lib/notifications"
@@ -117,7 +118,7 @@ export function Header({
     <header className={["site-header", scrolled && "scrolled", onDark && "on-dark"].filter(Boolean).join(" ")}>
       <div className="nav-group">
         <button
-          aria-label="uniconnect 홈으로"
+          aria-label={t("uniconnect 홈으로")}
           className="brand-link"
           onClick={() => onNavigate("대시보드")}
           ref={brandRef}
@@ -126,7 +127,7 @@ export function Header({
           <img alt="" className="logo-dark" height={27} src={logo} width={116} />
           <img alt="" className="logo-light" height={27} src={logoReversed} width={116} />
         </button>
-        <nav className="nav-pill links-pill" aria-label="주요 메뉴">
+        <nav className="nav-pill links-pill" aria-label={t("주요 메뉴")}>
           {navItems[role].map((item) => (
             <button
               aria-current={activeNav === item.label ? "page" : undefined}
@@ -135,7 +136,7 @@ export function Header({
               onClick={() => onNavigate(item.label)}
               type="button"
             >
-              {item.label}
+              {t(item.label)}
               {(badges[item.label] ?? 0) > 0 && <span className="nav-count">{badges[item.label]}</span>}
             </button>
           ))}
@@ -147,8 +148,12 @@ export function Header({
           <button
             aria-label={
               next
-                ? `다가오는 일정 ${next.name}, ${formatDay(next.date)}, ${next.status}`
-                : "다가오는 일정 없음, 새로 등록하기"
+                ? t("다가오는 일정 {name}, {date}, {status}", {
+                    name: next.name,
+                    date: formatDay(next.date),
+                    status: t(next.status),
+                  })
+                : t("다가오는 일정 없음, 새로 등록하기")
             }
             className="nav-pill event-pill"
             onClick={() => (next ? onOpenEvent(next.date) : onCreate())}
@@ -160,12 +165,12 @@ export function Header({
                 <span className="chip-value">{next.name}</span>
               </>
             ) : (
-              <span className="chip-value">다가오는 일정 없음</span>
+              <span className="chip-value">{t("다가오는 일정 없음")}</span>
             )}
           </button>
         ) : (
           // Visitors can preview either side; a logged-in account stays on its own role.
-          <div className="nav-pill role-switch" aria-label="사용자 유형">
+          <div className="nav-pill role-switch" aria-label={t("사용자 유형")}>
             {roles.map((item) => (
               <button
                 className={role === item ? "role-button active" : "role-button"}
@@ -173,7 +178,7 @@ export function Header({
                 onClick={() => onSwitchRole(item)}
                 type="button"
               >
-                {item}
+                {t(item)}
               </button>
             ))}
           </div>
@@ -184,7 +189,7 @@ export function Header({
             <div className="nav-pill icons-pill">
               <button
                 className="nav-icon"
-                aria-label={unreadMessages > 0 ? `메시지, 읽지 않은 ${unreadMessages}개` : "메시지"}
+                aria-label={unreadMessages > 0 ? t("메시지, 읽지 않은 {count}개", { count: unreadMessages }) : t("메시지")}
                 onClick={onOpenMessages}
                 type="button"
               >
@@ -195,7 +200,7 @@ export function Header({
                 className={notificationsOpen ? "nav-icon active" : "nav-icon"}
                 aria-controls="notifications-panel"
                 aria-expanded={notificationsOpen}
-                aria-label="알림"
+                aria-label={t("알림")}
                 onClick={onToggleNotifications}
                 ref={bellRef}
                 type="button"
@@ -203,20 +208,20 @@ export function Header({
                 <Icon name="bell" size={17} />
                 {hasUnread && <span className="notification-dot" />}
               </button>
-              <button className="account-button" aria-label="내 정보" onClick={onOpenProfile} type="button">
+              <button className="account-button" aria-label={t("내 정보")} onClick={onOpenProfile} type="button">
                 {initialOf(account.name)}
               </button>
             </div>
           ) : (
             <button className="nav-pill login-pill" onClick={onLogin} type="button">
-              로그인
+              {t("로그인")}
             </button>
           ))}
 
         <button
           aria-controls="site-menu"
           aria-expanded={menuOpen}
-          aria-label="전체 메뉴"
+          aria-label={t("전체 메뉴")}
           className="nav-pill menu-pill"
           onClick={onOpenMenu}
           type="button"

@@ -6,6 +6,7 @@ import { ClosingContext } from "../components/Presence"
 import { navItems } from "../data/navigation"
 import { createLabel, roles } from "../data/roles"
 import { useDialogFocus } from "../hooks/useDialogFocus"
+import { t } from "../i18n"
 import type { Account, NavLabel, Role } from "../types"
 
 // The full-screen menu behind Menu: a silver panel with the role's pages in
@@ -76,7 +77,7 @@ export function NavMenu({
 
   return (
     <div
-      aria-label="전체 메뉴"
+      aria-label={t("전체 메뉴")}
       aria-modal="true"
       className={closing ? "nav-menu closing" : "nav-menu"}
       id="site-menu"
@@ -87,11 +88,11 @@ export function NavMenu({
         <img alt="uniconnect" height={29} src={logo} width={124} />
         <button className="nav-menu-close" onClick={onClose} ref={closeRef} type="button">
           <Icon name="close" size={14} />
-          닫기
+          {t("닫기")}
         </button>
       </div>
 
-      <nav aria-label="전체 메뉴 목록" className="nav-menu-body">
+      <nav aria-label={t("전체 메뉴 목록")} className="nav-menu-body">
         <ul className="nav-menu-list">
           {navItems[role].map((item, index) => (
             <li key={item.label} style={{ "--i": index } as CSSProperties}>
@@ -102,7 +103,7 @@ export function NavMenu({
                 type="button"
               >
                 <small>{String(index + 1).padStart(2, "0")}</small>
-                <span>{item.label}</span>
+                <span>{t(item.label)}</span>
                 {(badges[item.label] ?? 0) > 0 && <em>{badges[item.label]}</em>}
               </button>
             </li>
@@ -113,10 +114,10 @@ export function NavMenu({
           {account ? (
             <>
               <button onClick={pick(onOpenMessages)} type="button">
-                메시지{unreadMessages > 0 && <em>{unreadMessages}</em>}
+                {t("메시지")}{unreadMessages > 0 && <em>{unreadMessages}</em>}
               </button>
               <button onClick={pick(onOpenProfile)} type="button">
-                내 정보
+                {t("내 정보")}
               </button>
               <button onClick={pick(onOpenFaq)} type="button">
                 FAQ
@@ -125,15 +126,15 @@ export function NavMenu({
           ) : (
             <>
               <button onClick={pick(onLogin)} type="button">
-                로그인
+                {t("로그인")}
               </button>
               <button onClick={pick(onSignup)} type="button">
-                회원가입
+                {t("회원가입")}
               </button>
               <button onClick={pick(onOpenFaq)} type="button">
                 FAQ
               </button>
-              <span className="nav-menu-roles" aria-label="둘러볼 화면">
+              <span className="nav-menu-roles" aria-label={t("둘러볼 화면")}>
                 {roles.map((item) => (
                   <button
                     aria-pressed={role === item}
@@ -142,7 +143,7 @@ export function NavMenu({
                     onClick={pick(() => onSwitchRole(item))}
                     type="button"
                   >
-                    {item} 화면
+                    {t("{role} 화면", { role: t(item) })}
                   </button>
                 ))}
               </span>

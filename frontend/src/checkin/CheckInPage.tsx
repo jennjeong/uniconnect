@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react"
 import { ApiError, api, errorMessage } from "../api"
 import logo from "../assets/brand/uniconnect_horizontal.svg"
 import { Icon } from "../components/Icon"
+import { t } from "../i18n"
 import { formatFullDate } from "../lib/date"
 import type { CheckInInfo } from "../types"
 
@@ -142,8 +143,8 @@ export function CheckInPage({ code }: { code: string }) {
       </header>
 
       <main className="checkin-card">
-        <span className="checkin-kicker">현장 참여</span>
-        <h1>{info?.eventName ?? "행사 참여"}</h1>
+        <span className="checkin-kicker">{t("현장 참여")}</span>
+        <h1>{info?.eventName ?? t("행사 참여")}</h1>
         {info && (
           <p className="checkin-date">
             {info.groupName && `${info.groupName} · `}
@@ -152,7 +153,7 @@ export function CheckInPage({ code }: { code: string }) {
         )}
 
         {!checkIn ? (
-          !error && <p className="checkin-loading">참여를 기록하고 있어요…</p>
+          !error && <p className="checkin-loading">{t("참여를 기록하고 있어요…")}</p>
         ) : (
           <>
             <div className="checkin-welcome">
@@ -160,8 +161,8 @@ export function CheckInPage({ code }: { code: string }) {
                 <Icon name="check" size={18} />
               </span>
               <div>
-                <strong>참여해 주셔서 감사해요!</strong>
-                <span>{checkIn.participant}로 기록됐어요.</span>
+                <strong>{t("참여해 주셔서 감사해요!")}</strong>
+                <span>{t("{participant}로 기록됐어요.", { participant: checkIn.participant })}</span>
               </div>
             </div>
 
@@ -172,26 +173,28 @@ export function CheckInPage({ code }: { code: string }) {
                   <li className="coupon" key={coupon.id}>
                     <span className="coupon-store">{coupon.store}</span>
                     <strong className="coupon-title">{coupon.title}</strong>
-                    <small>행사 참여자 전용 쿠폰 · {couponTerms}</small>
+                    <small>
+                      {t("행사 참여자 전용 쿠폰")} · {t(couponTerms)}
+                    </small>
                     {mine ? (
                       <div className="coupon-code">
-                        <span>쿠폰 번호</span>
+                        <span>{t("쿠폰 번호")}</span>
                         <strong>{mine.number}</strong>
                       </div>
                     ) : (
                       <button
-                        aria-label={`${coupon.store} 쿠폰 받기`}
+                        aria-label={t("{store} 쿠폰 받기", { store: coupon.store })}
                         className="primary-button wide"
                         disabled={busy === coupon.id}
                         onClick={() => void takeCoupon(coupon.id)}
                         type="button"
                       >
-                        쿠폰 받기
+                        {t("쿠폰 받기")}
                       </button>
                     )}
                     {mine?.visited && (
                       <p className="checkin-done">
-                        <Icon name="check" size={16} /> 방문이 확인됐어요. 맛있게 드세요!
+                        <Icon name="check" size={16} /> {t("방문이 확인됐어요. 맛있게 드세요!")}
                       </p>
                     )}
                   </li>
@@ -201,7 +204,7 @@ export function CheckInPage({ code }: { code: string }) {
 
             {anyWaiting && (
               <p className="checkin-staff" role="status">
-                매장에서 쿠폰 번호를 직원에게 보여 주세요. 직원이 확인하면 여기에 바로 표시돼요.
+                {t("매장에서 쿠폰 번호를 직원에게 보여 주세요. 직원이 확인하면 여기에 바로 표시돼요.")}
               </p>
             )}
           </>
@@ -214,7 +217,7 @@ export function CheckInPage({ code }: { code: string }) {
         )}
       </main>
 
-      <footer className="checkin-footer">uniconnect · 학생단체와 브랜드를 잇는 협찬 플랫폼</footer>
+      <footer className="checkin-footer">uniconnect · {t("학생단체와 브랜드를 잇는 협찬 플랫폼")}</footer>
     </div>
   )
 }

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type KeyboardEvent } from "react"
 import { ApiError, api, errorMessage } from "../api"
 import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
+import { locale, t } from "../i18n"
 import { formatDay, toIsoDate } from "../lib/date"
 import type { ChatMessage, Conversation } from "../types"
 
@@ -10,7 +11,7 @@ import type { ChatMessage, Conversation } from "../types"
 const refreshMs = 4000
 
 const timeOf = (at: string) =>
-  new Date(at).toLocaleTimeString("ko-KR", { hour: "numeric", minute: "2-digit" })
+  new Date(at).toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" })
 
 // One conversation: messages (own on the right), and a box to write more.
 // It checks for replies every few seconds while open, which also brings in
@@ -205,13 +206,13 @@ export function ChatPage({
     <section className="page-view chat-view">
       <PageIntro
         onBack={onBack}
-        eyebrow={partner?.school ?? partner?.category ?? "Chat"}
-        title={partner?.name ?? "대화"}
+        eyebrow={partner?.school ?? (partner?.category ? t(partner.category) : "Chat")}
+        title={partner?.name ?? t("대화")}
         actions={
           partner &&
           onOpenPartner && (
             <button className="detail-button" onClick={() => onOpenPartner(partner.id)} type="button">
-              상세 정보 <Icon name="arrowUpRight" size={15} />
+              {t("상세 정보")} <Icon name="arrowUpRight" size={15} />
             </button>
           )
         }
@@ -219,8 +220,7 @@ export function ChatPage({
 
       {partner && !partner.hasAccount && (
         <p className="chat-note">
-          아직 uniconnect 계정이 없는 상대예요. 메시지는 남겨 두고, 계정이 연결되면 바로 볼 수
-          있어요.
+          {t("아직 uniconnect 계정이 없는 상대예요. 메시지는 남겨 두고, 계정이 연결되면 바로 볼 수 있어요.")}
         </p>
       )}
 
@@ -242,20 +242,20 @@ export function ChatPage({
             <li className={classes} key={message.id}>
               {newDay && <span className="chat-day">{formatDay(day)}</span>}
               <div className="chat-bubble">
-                {deleted ? (message.mine ? "메시지를 삭제했어요." : "삭제된 메시지예요.") : message.text}
+                {deleted ? (message.mine ? t("메시지를 삭제했어요.") : t("삭제된 메시지예요.")) : message.text}
               </div>
               <span className="chat-meta">
-                {message.editedAt && !deleted && <span className="chat-edited">수정됨</span>}
+                {message.editedAt && !deleted && <span className="chat-edited">{t("수정됨")}</span>}
                 {message.mine && !deleted && (
                   <span className={message.read ? "chat-read read" : "chat-read"}>
-                    {message.read ? "읽음" : "안 읽음"}
+                    {message.read ? t("읽음") : t("안 읽음")}
                   </span>
                 )}
                 <time dateTime={message.at}>{timeOf(message.at)}</time>
                 {message.mine && !deleted && (
                   <button
                     aria-expanded={menuFor === message.id}
-                    aria-label="메시지 수정 또는 삭제"
+                    aria-label={t("메시지 수정 또는 삭제")}
                     className="chat-more"
                     onClick={() => toggleMenu(message)}
                     type="button"
@@ -268,23 +268,23 @@ export function ChatPage({
                 <div className="chat-actions">
                   {confirming ? (
                     <>
-                      <span>삭제하면 상대에게도 삭제된 메시지로 보여요.</span>
+                      <span>{t("삭제하면 상대에게도 삭제된 메시지로 보여요.")}</span>
                       <button className="chat-action danger" onClick={() => remove(message)} type="button">
-                        삭제
+                        {t("삭제")}
                       </button>
                       <button className="chat-action" onClick={() => setConfirming(false)} type="button">
-                        취소
+                        {t("취소")}
                       </button>
                     </>
                   ) : (
                     <>
                       <button className="chat-action" onClick={() => startEdit(message)} type="button">
                         <Icon name="edit" size={15} />
-                        수정
+                        {t("수정")}
                       </button>
                       <button className="chat-action danger" onClick={() => setConfirming(true)} type="button">
                         <Icon name="trash" size={15} />
-                        삭제
+                        {t("삭제")}
                       </button>
                     </>
                   )}
@@ -294,7 +294,7 @@ export function ChatPage({
           )
         })}
         {conversation && count === 0 && (
-          <li className="chat-start">첫 메시지로 궁금한 점을 물어보세요.</li>
+          <li className="chat-start">{t("첫 메시지로 궁금한 점을 물어보세요.")}</li>
         )}
       </ol>
 
@@ -307,25 +307,25 @@ export function ChatPage({
         {editing && (
           <div className="chat-editing">
             <Icon name="edit" size={15} />
-            <span>메시지 수정 중 · 고치면 상대에게도 수정됨으로 보여요.</span>
+            <span>{t("메시지 수정 중 · 고치면 상대에게도 수정됨으로 보여요.")}</span>
             <button className="subtle-link" onClick={cancelEdit} type="button">
-              취소
+              {t("취소")}
             </button>
           </div>
         )}
         <div className="chat-input">
           <textarea
-            aria-label={editing ? "고칠 메시지" : "메시지"}
+            aria-label={editing ? t("고칠 메시지") : t("보낼 메시지")}
             maxLength={1000}
             onChange={(event) => setDraft(event.target.value)}
             onKeyDown={sendOnEnter}
-            placeholder={editing ? "고칠 내용을 입력하세요" : "메시지를 입력하세요"}
+            placeholder={editing ? t("고칠 내용을 입력하세요") : t("메시지를 입력하세요")}
             ref={inputRef}
             rows={1}
             value={draft}
           />
           <button
-            aria-label={editing ? "수정 완료" : "보내기"}
+            aria-label={editing ? t("수정 완료") : t("보내기")}
             className="primary-button"
             disabled={!draft.trim() || sending || unchanged}
             onClick={send}
