@@ -1853,15 +1853,16 @@ button.nav-pill:hover {
 }
 
 .hero-stats strong {
-  /* Bold figures sit right of their box's centre (the tight spacing trims
-     after the last one too); this padding moves them back, so the label is
-     centred on the figures you see (measured within 1px). */
-  padding-right: 0.12em;
+  /* The tight spacing trims after the last figure too; this padding gives
+     it back, so the label is centred on the figures you see. */
+  padding-right: 0.03em;
   font-size: clamp(38px, 3.8vw, 60px);
   font-weight: var(--weight-display);
   letter-spacing: -0.03em;
   line-height: 1;
-  font-variant-numeric: tabular-nums;
+  /* Proportional figures: with even-width ones a "1" keeps a wide gap on
+     its right, so "1건" looked looser than "12곳". */
+  font-variant-numeric: proportional-nums;
 }
 
 /* "곳", "건": small beside the figure, so the label below reads as centred
@@ -1870,6 +1871,12 @@ button.nav-pill:hover {
   margin-left: 0.08em;
   font-size: 0.5em;
   letter-spacing: 0;
+}
+
+/* A "1" carries its own room on the right; pulled in this much, "1건" is
+   spaced like "12곳" (measured 6px each at 1440px wide). */
+.hero-stats .number-unit[data-after="1"] {
+  margin-left: -0.04em;
 }
 
 .hero-stats span {
@@ -2028,7 +2035,7 @@ button.nav-pill:hover {
   isolation: isolate;
   display: flex;
   width: 100%;
-  min-height: 192px;
+  min-height: 142px;
   flex-direction: column;
   align-items: flex-start;
   gap: 10px;
@@ -2051,11 +2058,11 @@ button.nav-pill:hover {
 }
 
 .bento-card strong {
-  font-size: min(clamp(44px, 4.4vw, 72px), 16cqi);
+  font-size: min(clamp(38px, 3.6vw, 60px), 16cqi);
   font-weight: var(--weight-display);
   letter-spacing: -0.03em;
   line-height: 1;
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: proportional-nums;
 }
 
 .bento-label {
@@ -2074,7 +2081,7 @@ button.nav-pill:hover {
 }
 
 .bento-blue {
-  min-height: 400px;
+  min-height: 300px;
   justify-content: space-between;
   background: #1d3f99;
   color: #fff;
@@ -2105,8 +2112,8 @@ button.nav-pill:hover {
   display: flex;
   width: 100%;
   flex-direction: column;
-  gap: 10px;
-  padding: 22px;
+  gap: 8px;
+  padding: 20px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.96);
   color: var(--ink);
@@ -2124,7 +2131,7 @@ button.nav-pill:hover {
 }
 
 .bento-silver {
-  min-height: 400px;
+  min-height: 300px;
   background:
     radial-gradient(80% 50% at 50% 0%, #ffffff 0%, rgba(255, 255, 255, 0) 70%),
     linear-gradient(180deg, #f6f7f9 0%, #e4e8ef 100%);
@@ -2154,7 +2161,7 @@ button.nav-pill:hover {
 
 .bento-quote {
   color: var(--ink-soft);
-  font-size: 17px;
+  font-size: 16px;
   line-height: 1.55;
 }
 
@@ -2167,6 +2174,8 @@ button.nav-pill:hover {
 .bento-column .bento-card {
   min-height: 0;
   justify-content: space-between;
+  gap: 6px;
+  padding: 22px 26px;
   color: #fff;
 }
 
@@ -2224,9 +2233,9 @@ button.nav-pill:hover {
   display: flex;
   height: 100%;
   flex-direction: column;
-  gap: 18px;
+  gap: 14px;
   overflow: hidden;
-  padding: 24px;
+  padding: 22px;
   border-radius: var(--radius-lg);
   background:
     radial-gradient(70% 46% at 50% 30%, #ffffff 0%, rgba(255, 255, 255, 0) 72%),
@@ -2294,16 +2303,16 @@ button.nav-pill:hover {
 /* Kept modest, so a row of cards fits the screen with room to compare. */
 .work-mark {
   display: grid;
-  min-height: 104px;
+  min-height: 92px;
   flex: 0 0 auto;
   place-items: center;
   pointer-events: none;
 }
 
 .work-mark .match-logo.large {
-  width: 88px;
-  height: 88px;
-  border-radius: 26px;
+  width: 80px;
+  height: 80px;
+  border-radius: 24px;
   box-shadow:
     0 0 0 6px rgba(255, 255, 255, 0.7),
     0 22px 40px -18px rgba(19, 48, 111, 0.4);
@@ -2315,7 +2324,17 @@ button.nav-pill:hover {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
+}
+
+/* The score ring a little smaller in a card, in step with the name. */
+.work-card .match-score-ring {
+  width: 62px;
+  height: 62px;
+}
+
+.work-card .match-score-ring strong {
+  font-size: 15px;
 }
 
 /* The score ring sits level with the name and offer beside it. */
@@ -2330,13 +2349,13 @@ button.nav-pill:hover {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
 }
 
 .work-title h3 {
   min-width: 0;
   margin: 0;
-  font-size: clamp(22px, 2vw, 28px);
+  font-size: clamp(20px, 1.6vw, 24px);
   font-weight: var(--weight-label);
   letter-spacing: -0.02em;
   line-height: 1.25;
@@ -2361,26 +2380,27 @@ button.nav-pill:hover {
   margin: 0;
   color: var(--ink-soft);
   font-size: 14px;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
+/* Small tag chips right under the name, so they read as its summary. */
 .work-tags {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  margin-top: 6px;
+  gap: 6px;
+  margin-top: 2px;
 }
 
 .work-tags > span:not(.date-line) {
   display: inline-flex;
   align-items: center;
-  padding: 6px 14px;
+  padding: 4px 10px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.72);
   color: var(--ink-soft);
   box-shadow: inset 0 0 0 1px var(--line-strong);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .work-tags .date-line {
@@ -2406,7 +2426,12 @@ button.nav-pill:hover {
   align-items: center;
   gap: 8px;
   margin-top: auto;
-  padding-top: 14px;
+  padding-top: 6px;
+}
+
+.work-actions .proposal-button {
+  height: 40px;
+  padding: 0 18px;
 }
 
 .work-actions .proposal-actions {

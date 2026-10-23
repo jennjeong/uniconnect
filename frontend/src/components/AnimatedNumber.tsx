@@ -5,7 +5,8 @@ const durationMs = 700
 // Counts the number in a value such as "1,480,000원", "219%" or "1,240명" up
 // from 0 when it appears, and from the old number when it changes. Text
 // without a number shows as is. What follows the number ("원", "곳") is its
-// own span (.number-unit), so a layout can size it apart.
+// own span (.number-unit), so a layout can size it apart; it says which
+// figure it follows (data-after), for spacing after a narrow "1".
 export function AnimatedNumber({ value }: { value: string }) {
   const parts = /^(\D*?)(\d[\d,]*(?:\.\d+)?)(.*)$/.exec(value)
   const target = parts ? Number(parts[2].replace(/,/g, "")) : Number.NaN
@@ -41,7 +42,11 @@ export function AnimatedNumber({ value }: { value: string }) {
     <>
       {parts[1]}
       {number}
-      {parts[3] && <span className="number-unit">{parts[3]}</span>}
+      {parts[3] && (
+        <span className="number-unit" data-after={number.slice(-1)}>
+          {parts[3]}
+        </span>
+      )}
     </>
   )
 }
