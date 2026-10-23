@@ -65,6 +65,19 @@ export function upgradeDatabase(stored: Database) {
     }
     stored.catalogVersion = 3
   }
+  // Version 4 drops the coordinates Kakao's address search gave, which may not
+  // be kept: the address stays and is placed again through OpenStreetMap when
+  // it is next saved. The demo stores keep theirs, which never came from Kakao.
+  if ((stored.catalogVersion ?? 1) < 4) {
+    for (const brand of stored.brands) {
+      const seeded = seedBrands.find((item) => item.id === brand.id)?.location
+      const location = brand.location
+      if (location?.lat === undefined) continue
+      if (seeded && seeded.lat === location.lat && seeded.lng === location.lng) continue
+      brand.location = { address: location.address }
+    }
+    stored.catalogVersion = 4
+  }
   // Recommended matches are worked out from the catalogs now.
   delete (stored as { matches?: unknown }).matches
   stored.conversations ??= seedConversations()

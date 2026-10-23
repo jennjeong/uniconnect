@@ -893,7 +893,7 @@ export async function createSeed(): Promise<Database> {
     emailCodes: [],
     brands: structuredClone(seedBrands),
     groups: structuredClone(seedGroups),
-    catalogVersion: 3,
+    catalogVersion: 4,
     conversations: seedConversations(),
     inquiries: [],
     requests: seedRequests(),
