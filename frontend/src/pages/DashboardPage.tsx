@@ -35,6 +35,7 @@ export function DashboardPage({
   events,
   proposals,
   statuses,
+  confirmedCount,
   metrics,
   report,
   updatedAt,
@@ -54,6 +55,8 @@ export function DashboardPage({
   proposals: string[]
   // Answers from brands that replied to a proposal.
   statuses: Partial<Record<string, RequestStatus>>
+  // Sponsorships confirmed either way round.
+  confirmedCount: number
   metrics: Metrics
   report: Report | null
   // When the matches were last loaded.
@@ -70,7 +73,6 @@ export function DashboardPage({
   const candidates = brands.length > 0 ? brands : matches
   const strongCut = 80
   const strong = candidates.filter((match) => match.score >= strongCut).length
-  const confirmedCount = proposals.filter((id) => statuses[id] === "수락").length
   const running = events.filter((event) => event.status !== "측정 완료").length
   const proposed = candidates.filter((match) => proposals.includes(match.id))
 

@@ -14,7 +14,7 @@ import { WorkCard } from "../components/WorkCard"
 import { dDayLabel, nextEvent, semesterLabel, shortDay } from "../lib/date"
 import { formatWon } from "../lib/kpis"
 import { fullWon, roasMet, roasOf, sponsorshipTotals } from "../lib/sponsorships"
-import type { Match, NavLabel, SponsorRequest, Sponsorship } from "../types"
+import type { Match, NavLabel, RequestStatus, SponsorRequest, Sponsorship } from "../types"
 
 const pad = (value: number) => String(value).padStart(2, "0")
 
@@ -31,6 +31,7 @@ export function BrandDashboardPage({
   requests,
   sponsorships,
   proposals,
+  statuses,
   updatedAt,
   onNavigate,
   onOpenDetail,
@@ -50,6 +51,8 @@ export function BrandDashboardPage({
   sponsorships: Sponsorship[]
   // Groups this brand has proposed to.
   proposals: string[]
+  // The groups' answers to this brand's offers.
+  statuses: Partial<Record<string, RequestStatus>>
   // When the recommendations were last loaded.
   updatedAt: Date | null
   onNavigate: (label: NavLabel) => void
@@ -250,6 +253,7 @@ export function BrandDashboardPage({
               >
                 <ProposalControl
                   done={proposals.includes(match.id)}
+                  status={statuses[match.id]}
                   label="제안하기"
                   className="proposal-button"
                   onPropose={() => onPropose(match)}
