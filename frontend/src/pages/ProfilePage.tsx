@@ -5,7 +5,7 @@ import { Icon } from "../components/Icon"
 import { Pill } from "../components/Pill"
 import { RevealTitle, RevealWords } from "../components/RevealText"
 import { profileLabels } from "../data/profile"
-import { t } from "../i18n"
+import { lang, setLang, t, type Lang } from "../i18n"
 import { formatFullDate, toIsoDate } from "../lib/date"
 import { initialOf } from "../lib/format"
 import { MeshBackdrop } from "../scenes/MeshBackdrop"
@@ -25,10 +25,16 @@ const delay = (seconds: number) => ({ "--reveal-delay": `${seconds}s` }) as CSSP
 // Blue, silver and slate, as in Stride's stats bento.
 const tileLooks = ["blue", "silver", "slate"]
 
+// The languages the app is in, each named in itself.
+const languages: { code: Lang; name: string }[] = [
+  { code: "ko", name: "한국어" },
+  { code: "en", name: "English" },
+]
+
 // The account's own page: a banner on Stride's deep blue mesh with who it
 // is, what it has done so far as three tiles, the introduction the other
-// side sees, the account's details as rows, logout and, quietly under it,
-// leaving.
+// side sees, the account's details and its language as rows, logout and,
+// quietly under it, leaving.
 export function ProfilePage({
   account,
   listing,
@@ -181,6 +187,30 @@ export function ProfilePage({
               <dd>{detail.value}</dd>
             </div>
           ))}
+          {/* Picking the other language reloads the page in it, remembered
+              for the next visit, as the footer's switch does. */}
+          <div className="service-row" data-reveal style={delay(details.length * 0.08)}>
+            <span className="service-index">{pad(details.length + 1)}</span>
+            <dt id="language-label">{t("언어")}</dt>
+            <dd>
+              <span aria-labelledby="language-label" className="lang-choice" role="group">
+                {languages.map((item) => (
+                  <button
+                    aria-pressed={lang === item.code}
+                    className={lang === item.code ? "active" : undefined}
+                    key={item.code}
+                    lang={item.code}
+                    onClick={() => {
+                      if (lang !== item.code) setLang(item.code)
+                    }}
+                    type="button"
+                  >
+                    {item.name}
+                  </button>
+                ))}
+              </span>
+            </dd>
+          </div>
         </dl>
         <div className="profile-logout">
           <div className="profile-account-actions">

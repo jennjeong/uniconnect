@@ -136,6 +136,7 @@ const en: Record<string, string> = {
   "소개 · 협찬 내용 · SNS · {portfolio}": "Intro · Offer · SNS · {portfolio}",
   편집하기: "Edit",
   "계정 정보": "Account Details",
+  언어: "Language",
   로그아웃: "Log out",
   "비밀번호 변경": "Change Password",
   "회원 탈퇴": "Delete Account",

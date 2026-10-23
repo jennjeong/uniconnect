@@ -3648,6 +3648,37 @@ button.nav-pill:hover {
   text-align: right;
 }
 
+/* The language row in 내 정보 (ProfilePage.tsx): both languages, each
+   named in itself, as a silver pill with the one on screen in deep blue. */
+.lang-choice {
+  display: inline-flex;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--silver-gradient);
+  box-shadow: var(--silver-ring);
+}
+
+.lang-choice button {
+  height: 36px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 14px;
+  font-weight: var(--weight-label);
+}
+
+.lang-choice button:hover {
+  color: var(--ink);
+}
+
+.lang-choice button.active {
+  background: var(--point);
+  color: var(--on-point);
+}
+
 .service-badge {
   display: grid;
   width: 44px;
