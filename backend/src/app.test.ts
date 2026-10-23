@@ -1034,6 +1034,51 @@ test("a request whose save fails leaves nothing behind", async () => {
   await call("DELETE", `/events/${again.data.event.id}`, undefined, student)
 })
 
+test("event names and people are checked, and default goals save as they are", async () => {
+  const student = await signUpMember("sizes@syu.ac.kr", "sizes-pass-123")
+  const event = (fields: Record<string, unknown>) =>
+    call("POST", "/events", { name: "규모 확인 공연", date: "2026-12-05", types: ["현금"], ...fields }, student)
+  const long = await event({ name: "가".repeat(41) })
+  assert.equal(long.status, 400)
+  assert.match(long.data.error, /40자/)
+  for (const people of ["0", "100001", "많이", "12.5"]) {
+    const wrong = await event({ people })
+    assert.equal(wrong.status, 400, people)
+    assert.match(wrong.data.error, /예상 참여 인원/)
+  }
+  assert.equal((await event({ people: "" })).data.event.people, "")
+  const largest = (await event({ people: "100,000명" })).data.event
+  assert.equal(largest.people, "100,000명")
+
+  // An event as large as allowed gets goals the goals form takes back as they are.
+  const { report } = (await call("GET", `/measurements/${largest.id}`, undefined, student)).data
+  assert.equal(report.expectedAudience, 100000)
+  const goals = {
+    expectedAudience: report.expectedAudience,
+    averageSpend: report.averageSpend,
+    snsReach: report.snsReach,
+    valueBreakdown: report.valueBreakdown,
+    targets: report.targets,
+    coupon: report.coupon,
+  }
+  assert.equal((await call("PUT", `/measurements/${largest.id}/goals`, goals, student)).status, 200)
+  // A huge number kept from before the check still gives goals in range.
+  Object.values(getDatabase().events).flat().find((item) => item.id === largest.id)!.people = "250,000명"
+  getDatabase().measurements = getDatabase().measurements.filter((item) => item.eventId !== largest.id)
+  const again = (await call("GET", `/measurements/${largest.id}`, undefined, student)).data.report
+  assert.equal(again.expectedAudience, 100000)
+})
+
+test("a request too big or with a broken address is answered as such, not as a server error", async () => {
+  const student = await login("학생단체")
+  const big = await call("POST", "/events", { name: "x".repeat(400_000), date: "2026-12-01", types: ["현금"] }, student)
+  assert.equal(big.status, 413)
+  assert.match(big.data.error, /너무 커요/)
+  const broken = await call("GET", "/conversations/%E0%A4%A", undefined, student)
+  assert.equal(broken.status, 400)
+  assert.match(broken.data.error, /요청 형식/)
+})
+
 test("proposal answers only take accept or decline", async () => {
   const brand = await login("브랜드")
   for (const decision of ["constructor", "toString", "__proto__"]) {
@@ -1394,6 +1439,10 @@ test("a student group sets its event's goals, and the report follows", async () 
   assert.equal((await call("PUT", route, badType, student)).status, 400)
   assert.equal((await call("PUT", route, { ...goals, coupon: { store: "", title: "x" } }, student)).status, 400)
   assert.equal((await call("PUT", route, { ...goals, staffPin: "12a4" }, student)).status, 400)
+  // A ROAS goal of 0 would be divided by.
+  const noGoal = await call("PUT", route, { ...goals, targets: { ...goals.targets, roas: 0 } }, student)
+  assert.equal(noGoal.status, 400)
+  assert.match(noGoal.data.error, /목표 ROAS는 1부터/)
 
   // Once brands sponsor the event, each sponsor's coupon comes with the goals.
   const current = (await call("GET", "/measurements/event-muse-concert", undefined, student)).data.report

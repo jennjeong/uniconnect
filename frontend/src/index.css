@@ -6982,6 +6982,11 @@ button.nav-pill:hover {
   font-weight: var(--weight-label);
 }
 
+/* Where the analytics' value and sales come from, under the table. */
+.analytics-hint {
+  margin: 14px 0 0;
+}
+
 /* The group's report: each sponsor's share of the event, one column fewer. */
 .sponsor-card {
   margin-top: 28px;

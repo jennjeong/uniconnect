@@ -25,10 +25,11 @@ export function parseKind(value: unknown) {
 // Only the most recent records are kept; the counts stay exact.
 const logLimit = 300
 
-// "120명" → 120; a guess of 100 when the event gives no number.
+// "120명" → 120; a guess of 100 when the event gives no number. Kept within
+// what the goals form takes, so the default goals save as they are.
 function audienceOf(event: EventItem) {
   const people = Number(event.people?.replace(/[^\d]/g, ""))
-  return people > 0 ? people : 100
+  return people > 0 ? Math.min(people, 100_000) : 100
 }
 
 // Goals a new event starts from, scaled to its expected audience; the group
@@ -99,7 +100,7 @@ export function parseGoals(body: unknown): MeasurementGoals {
       visits: wholeNumber(targets.visits, "목표 매장 방문", 1_000_000),
       qrRate: wholeNumber(targets.qrRate, "목표 QR 참여율", 100),
       visitRate: wholeNumber(targets.visitRate, "목표 방문 전환율", 100),
-      roas: wholeNumber(targets.roas, "목표 ROAS", 10_000),
+      roas: wholeNumber(targets.roas, "목표 ROAS", 10_000, 1),
     },
     coupon: { store, title },
   }

@@ -123,6 +123,8 @@ export function upgradeDatabase(stored: Database) {
     measurement.passes ??= {}
     // Each sponsor gets its own coupon and counts; an event's only sponsor
     // takes over what the event had.
+    // A ROAS goal starts at 1%; 0 was once taken and cannot be divided by.
+    if (measurement.goals.targets.roas < 1) measurement.goals.targets.roas = 100
     measurement.sponsors ??= []
     syncSponsors(stored, measurement)
     // Scans by hour gained their day; older ones were on the event's first.

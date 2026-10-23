@@ -1,6 +1,6 @@
 import { Icon } from "../components/Icon"
 import { Modal } from "../components/Modal"
-import { achievement, formatKpi, kpiGap, type Kpi } from "../lib/kpis"
+import { achievement, formatKpi, kpiGap, kpiValue, type Kpi } from "../lib/kpis"
 
 // Goal set before the event against the current value of one report number;
 // everything turns green once the goal is met.
@@ -23,7 +23,7 @@ export function GoalModal({ kpi, onClose }: { kpi: Kpi; onClose: () => void }) {
               현재
               <em className="goal-badge">{achieved ? "달성" : "진행 중"}</em>
             </span>
-            <strong>{formatKpi(kpi.current, kpi.unit)}</strong>
+            <strong>{kpiValue(kpi)}</strong>
           </div>
         </div>
 
