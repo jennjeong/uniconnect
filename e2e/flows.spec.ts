@@ -95,16 +95,14 @@ test("a new group signs up with the code shown on screen", async ({ page }) => {
   await expect(page.getByText(/가입했어요/)).toBeVisible()
 })
 
-test("brands line up by distance from the school, and a brand keeps its store address", async ({ browser }) => {
+test("brands show how far their store is from the school, and a brand keeps its store address", async ({ browser }) => {
   // Visitors see the demo group's campus and the demo stores.
   const student = await (await browser.newContext()).newPage()
   await student.goto("/matches")
-  await student.getByRole("tab", { name: "가까운 순" }).click()
-  const first = student.locator(".work-card").first()
-  await expect(first.getByRole("heading", { name: "그린데이 샐러드" })).toBeVisible()
-  await expect(first.locator(".tag-distance")).toHaveText(/3\.3km/)
-  // Online brands have no store, so they come last with no distance.
-  await expect(student.locator(".work-card").last().locator(".tag-distance")).toHaveCount(0)
+  await student.getByRole("tab", { name: "전체" }).click()
+  await expect(student.locator(".work-card", { hasText: "그린데이 샐러드" }).locator(".tag-distance")).toHaveText(/3\.3km/)
+  // Online brands have no store, so no distance.
+  await expect(student.locator(".work-card", { hasText: "프레시온" }).locator(".tag-distance")).toHaveCount(0)
 
   const brand = await (await browser.newContext()).newPage()
   await brand.goto("/")
@@ -139,10 +137,11 @@ test("the language is set in 내 정보, and the page stays where it was", async
   await expect(page.locator("html")).toHaveAttribute("lang", "ko")
 })
 
-test("the 주변 가게 tab looks around the school, and says so while the map isn't connected", async ({ page }) => {
+test("가까운 순 looks around the school for real shops, and says so while the map isn't connected", async ({ page }) => {
   await page.goto("/matches")
-  await page.getByRole("tab", { name: "주변 가게" }).click()
-  await expect(page.getByRole("button", { name: "카페", exact: true })).toHaveAttribute("aria-pressed", "true")
+  await page.getByRole("tab", { name: "가까운 순" }).click()
+  // Every kind at first.
+  await expect(page.getByRole("button", { name: "전체", exact: true })).toHaveAttribute("aria-pressed", "true")
   // The test server has no map key.
   await expect(page.getByText("지도 서비스가 연결되면 학교 근처 가게를 보여 드려요.")).toBeVisible()
   await page.getByRole("button", { name: "학원", exact: true }).click()

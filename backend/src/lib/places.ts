@@ -15,6 +15,9 @@ export type NearbyPlace = {
 // How far around a campus to look, in metres: about a 20-minute walk.
 export const placeRadius = 1500
 
+// The most one look shows; every kind together finds up to 75.
+export const placeLimit = 30
+
 // Kakao Local's category search, kept apart so tests can answer it themselves.
 export const placeSearch = {
   async search(category: string, point: Point, key: string): Promise<unknown> {
@@ -88,4 +91,10 @@ export async function nearbyPlaces(point: Point, category: string, key: string):
       ]
     })
     .sort((a, b) => a.distanceM - b.distanceM)
+}
+
+// Places found under several kinds, each once, the nearest first.
+export function nearestPlaces(places: NearbyPlace[]) {
+  const byId = new Map(places.map((place) => [place.id, place]))
+  return [...byId.values()].sort((a, b) => a.distanceM - b.distanceM).slice(0, placeLimit)
 }

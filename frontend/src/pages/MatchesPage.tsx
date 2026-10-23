@@ -6,12 +6,11 @@ import { ProposalControl } from "../components/ProposalControl"
 import { TabBar } from "../components/TabBar"
 import { WorkCard } from "../components/WorkCard"
 import { t } from "../i18n"
-import { nearestFirst } from "../lib/distance"
 import type { Industry, Match, RequestStatus } from "../types"
 
-type Tab = "추천" | "가까운 순" | "주변 가게" | "인기" | "전체" | "업종별"
+type Tab = "추천" | "가까운 순" | "인기" | "전체" | "업종별"
 
-const tabs: Tab[] = ["추천", "가까운 순", "주변 가게", "인기", "전체", "업종별"]
+const tabs: Tab[] = ["추천", "가까운 순", "인기", "전체", "업종별"]
 
 const tabIntro: Record<Tab, { title: string; caption: string }> = {
   추천: {
@@ -19,12 +18,8 @@ const tabIntro: Record<Tab, { title: string; caption: string }> = {
     caption: "행사 정보, 타깃과 지난 성과를 함께 분석한 결과예요.",
   },
   "가까운 순": {
-    title: "학교에서 가까운 브랜드예요",
-    caption: "가입한 학교에서 매장까지 가까운 순서예요. 매장이 없는 온라인 브랜드는 뒤에 있어요.",
-  },
-  "주변 가게": {
-    title: "학교 근처 실제 가게예요",
-    caption: "카카오 지도에서 지금 찾은 학교 주변 가게예요. 아직 uniconnect에 없는 곳이라, 지도나 전화로 직접 연락해 보세요.",
+    title: "학교에서 가까운 가게예요",
+    caption: "카카오 지도에서 지금 찾은 학교 주변의 실제 가게예요. 아직 uniconnect와 협약하지 않은 곳이라, 지도나 전화로 먼저 연락해 보세요.",
   },
   인기: {
     title: "학생단체가 많이 찾는 브랜드예요",
@@ -87,8 +82,6 @@ export function MatchesPage({
     tab === "추천"
       ? matches
       : tab === "가까운 순"
-        ? nearestFirst(brands)
-        : tab === "주변 가게"
         ? []
         : tab === "인기"
         ? [...brands].sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0))
@@ -136,8 +129,8 @@ export function MatchesPage({
         )}
       </div>
 
-      {/* Real shops from Kakao, which aren't on uniconnect, have their own list. */}
-      {tab === "주변 가게" ? (
+      {/* The nearest are real shops from Kakao, not yet on uniconnect, in their own list. */}
+      {tab === "가까운 순" ? (
         <NearbyPlaces />
       ) : (
         <ul

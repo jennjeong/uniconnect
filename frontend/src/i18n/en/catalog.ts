@@ -241,15 +241,12 @@ const en: Record<string, string> = {
   "브랜드가 보낸 협찬 제안을 확인하고 함께할지 정해 주세요.": "Review offers from brands and decide whether to team up.",
   "제안 상태": "Proposal status",
   "가까운 순": "Nearby",
-  "학교에서 가까운 브랜드예요": "Brands near your school",
-  "가입한 학교에서 매장까지 가까운 순서예요. 매장이 없는 온라인 브랜드는 뒤에 있어요.":
-    "Nearest first, from your school to each store. Online brands without a store come last.",
   "매장에서 가까운 학생단체예요": "Student groups near your store",
-  "주변 가게": "Local shops",
-  "학교 근처 실제 가게예요": "Real shops near your school",
-  "카카오 지도에서 지금 찾은 학교 주변 가게예요. 아직 uniconnect에 없는 곳이라, 지도나 전화로 직접 연락해 보세요.":
-    "Shops around your school, found on Kakao Map just now. They aren't on uniconnect yet, so reach them through the map or by phone.",
   "가게 종류": "Kind of shop",
+  "학교에서 가까운 가게예요": "Shops near your school",
+  "카카오 지도에서 지금 찾은 학교 주변의 실제 가게예요. 아직 uniconnect와 협약하지 않은 곳이라, 지도나 전화로 먼저 연락해 보세요.":
+    "Real shops around your school, found on Kakao Map just now. They haven't partnered with uniconnect yet, so reach out through the map or by phone first.",
+  "협약 전": "Not partnered yet",
   카페: "Cafés",
   음식점: "Restaurants",
   편의점: "Convenience stores",
@@ -263,7 +260,9 @@ const en: Record<string, string> = {
   "{campus} 근처, 가까운 순서예요.": "Near {campus}, nearest first.",
   "카카오맵에서 보기": "View on Kakao Map",
   "(새 창)": "(opens in a new tab)",
-  "정보 제공: 카카오": "Data from Kakao",
+  "정보 제공: 카카오 · 가게 로고는 각 회사의 상표이고, 표시가 제휴를 뜻하지는 않아요.":
+    "Data from Kakao · Shop logos are their companies' trademarks and don't mean a partnership.",
+  "{name} 카카오맵에서 보기": "View {name} on Kakao Map",
   "우리 매장에서 학교까지 가까운 순서예요. 매장 주소는 내 정보에서 적을 수 있어요.":
     "Nearest first, from your store to each school. Add your store's address under My Account.",
   거리: "Distance",

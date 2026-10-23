@@ -1982,6 +1982,13 @@ test("the shops around a campus come live from Kakao, are asked for again each t
     // The same look asks Kakao again: nothing was kept.
     await call("GET", "/places?category=CE7")
     assert.equal(asked.length, 2)
+    // Every kind together: each kind asked once, each place once, nearest first.
+    const all = (await call("GET", "/places?category=all")).data
+    assert.deepEqual(asked.slice(2).map((item) => item.category), ["CE7", "FD6", "CS2", "AC5", "CT1"])
+    assert.deepEqual(
+      all.places.map((place: { name: string }) => place.name),
+      ["스마일하우스", "이디야커피 삼육대점"],
+    )
 
     assert.equal((await call("GET", "/places?category=constructor")).status, 400)
     assert.equal((await call("GET", "/places")).status, 400)
@@ -2002,9 +2009,11 @@ test("the shops around a campus come live from Kakao, are asked for again each t
     assert.equal(failed.status, 502)
     assert.match(failed.data.error, /주변 가게/)
 
-    // Each address may ask 30 times a minute.
+    // Each address may ask Kakao 30 times a minute, a look at every kind
+    // counting five: 8 asked so far (two single looks, one of every kind,
+    // the failed one).
     placeSearch.search = async () => ({ documents: [] })
-    for (let count = 3; count < 30; count += 1) assert.equal((await call("GET", "/places?category=CS2")).status, 200)
+    for (let count = 8; count < 30; count += 1) assert.equal((await call("GET", "/places?category=CS2")).status, 200)
     assert.equal((await call("GET", "/places?category=CS2")).status, 429)
   } finally {
     placeSearch.search = search
