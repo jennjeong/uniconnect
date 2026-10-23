@@ -6,13 +6,13 @@ import { ClosingContext } from "../components/Presence"
 import { navItems } from "../data/navigation"
 import { createLabel, roles } from "../data/roles"
 import { useDialogFocus } from "../hooks/useDialogFocus"
-import { lang, setLang, t } from "../i18n"
+import { t } from "../i18n"
 import type { Account, NavLabel, Role } from "../types"
 
 // The full-screen menu behind Menu: a silver panel with the role's pages in
 // large type, numbered and arriving one after another, the account links
-// (and the FAQ and the language switch) under them in line with the page
-// names, and the register action at the bottom.
+// (and the FAQ) under them in line with the page names, and the register
+// action at the bottom.
 // Escape or 닫기 closes it; the page behind doesn't scroll while it is open.
 export function NavMenu({
   role,
@@ -75,15 +75,6 @@ export function NavMenu({
     action()
   }
 
-  // The other language, named in itself; the page reloads in it.
-  const other = lang === "ko" ? "en" : "ko"
-  const switchLanguage = (
-    <button className="nav-menu-lang" lang={other} onClick={() => setLang(other)} type="button">
-      <Icon name="globe" size={18} />
-      {other === "en" ? "English" : "한국어"}
-    </button>
-  )
-
   return (
     <div
       aria-label={t("전체 메뉴")}
@@ -131,7 +122,6 @@ export function NavMenu({
               <button onClick={pick(onOpenFaq)} type="button">
                 FAQ
               </button>
-              {switchLanguage}
             </>
           ) : (
             <>
@@ -144,7 +134,6 @@ export function NavMenu({
               <button onClick={pick(onOpenFaq)} type="button">
                 FAQ
               </button>
-              {switchLanguage}
               <span className="nav-menu-roles" aria-label={t("둘러볼 화면")}>
                 {roles.map((item) => (
                   <button

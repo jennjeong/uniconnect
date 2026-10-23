@@ -503,14 +503,6 @@ button.nav-pill:hover {
   letter-spacing: 0.04em;
 }
 
-/* The language switch beside Menu: a globe in a round pill, named for the
-   other language (Header.tsx); Menu and the footer have it in words. */
-.lang-pill {
-  width: 44px;
-  justify-content: center;
-  padding: 0;
-}
-
 /* The full-screen menu (layout/NavMenu.tsx): brushed silver with a blue
    haze, the pages in large SemiBold type arriving one after another,
    the account links under them, and register at the bottom. */
@@ -680,10 +672,6 @@ button.nav-pill:hover {
 
 .nav-menu-extra > button:hover {
   color: var(--point);
-}
-
-.nav-menu-extra > .nav-menu-lang {
-  gap: 8px;
 }
 
 .nav-menu-roles {
@@ -3658,6 +3646,37 @@ button.nav-pill:hover {
   font-size: 15px;
   line-height: 1.55;
   text-align: right;
+}
+
+/* The language row in 내 정보 (ProfilePage.tsx): both languages, each
+   named in itself, as a silver pill with the one on screen in deep blue. */
+.lang-choice {
+  display: inline-flex;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--silver-gradient);
+  box-shadow: var(--silver-ring);
+}
+
+.lang-choice button {
+  height: 36px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 14px;
+  font-weight: var(--weight-label);
+}
+
+.lang-choice button:hover {
+  color: var(--ink);
+}
+
+.lang-choice button.active {
+  background: var(--point);
+  color: var(--on-point);
 }
 
 .service-badge {
@@ -7471,8 +7490,7 @@ button.nav-pill:hover {
     display: none;
   }
 
-  .menu-pill,
-  .lang-pill {
+  .menu-pill {
     width: 42px;
     justify-content: center;
     padding: 0;
@@ -8278,14 +8296,6 @@ button.nav-pill:hover {
 
   .match-score-ring span {
     font-size: 9px;
-  }
-}
-
-/* Under 360px the language switch leaves the header so the account buttons
-   still fit beside the logo; Menu and the footer keep it. */
-@media (max-width: 359px) {
-  .lang-pill {
-    display: none;
   }
 }
 

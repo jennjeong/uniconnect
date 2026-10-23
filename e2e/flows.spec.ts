@@ -124,3 +124,17 @@ test("brands line up by distance from the school, and a brand keeps its store ad
   await expect(brand.getByLabel("매장 주소")).toHaveValue("서울 노원구 화랑로 815")
   await expect(brand.getByText(/지도 서비스가 연결되면/)).toBeVisible()
 })
+
+test("the language is set in 내 정보, and the page stays where it was", async ({ page }) => {
+  await page.goto("/")
+  await logIn(page, "학생단체", "muse@syu.ac.kr")
+  await page.goto("/me")
+  const language = page.getByRole("group", { name: "언어" })
+  await expect(language.getByRole("button", { name: "한국어" })).toHaveAttribute("aria-pressed", "true")
+  await language.getByRole("button", { name: "English" }).click()
+  await expect(page.locator("html")).toHaveAttribute("lang", "en")
+  await expect(page).toHaveURL(/\/me$/)
+  // In English the row is Language, and Korean brings the app back.
+  await page.getByRole("group", { name: "Language" }).getByRole("button", { name: "한국어" }).click()
+  await expect(page.locator("html")).toHaveAttribute("lang", "ko")
+})

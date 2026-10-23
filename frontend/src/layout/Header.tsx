@@ -6,7 +6,7 @@ import { Icon } from "../components/Icon"
 import { Presence } from "../components/Presence"
 import { navItems } from "../data/navigation"
 import { roles } from "../data/roles"
-import { lang, setLang, t } from "../i18n"
+import { t } from "../i18n"
 import { daysUntil, formatDay, nextEvent } from "../lib/date"
 import { initialOf } from "../lib/format"
 import type { NotificationItem } from "../lib/notifications"
@@ -15,9 +15,9 @@ import { NotificationsPanel } from "./NotificationsPanel"
 
 // Stride's floating navigation from getlayers.ai: the logo on its own and
 // the role's menu as a silver glass pill on the left; the next event (or,
-// for visitors, the side to preview), the account buttons, the language
-// switch and Menu on the right. The pills gain a soft shadow once the page
-// scrolls, and slide in after the intro loader.
+// for visitors, the side to preview), the account buttons and Menu on the
+// right. The pills gain a soft shadow once the page scrolls, and slide in
+// after the intro loader.
 export function Header({
   role,
   activeNav,
@@ -75,9 +75,6 @@ export function Header({
   const [onDark, setOnDark] = useState(false)
   const next = nextEvent(events)
   const dDay = next ? daysUntil(next.date) : 0
-  // The switch offers the language not on screen, named in itself.
-  const other = lang === "ko" ? "en" : "ko"
-  const otherName = other === "en" ? "English" : "한국어"
 
   useEffect(() => {
     const update = () => setScrolled(window.scrollY > 8)
@@ -220,19 +217,6 @@ export function Header({
               {t("로그인")}
             </button>
           ))}
-
-        {/* A globe named for the other language; the choice is remembered,
-            and the page reloads in that language. */}
-        <button
-          aria-label={otherName}
-          className="nav-pill lang-pill"
-          lang={other}
-          onClick={() => setLang(other)}
-          title={otherName}
-          type="button"
-        >
-          <Icon name="globe" size={17} />
-        </button>
 
         <button
           aria-controls="site-menu"
