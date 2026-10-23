@@ -601,7 +601,9 @@ function App() {
       showNotice(
         students
           ? t("소개를 저장했어요. 브랜드가 바로 볼 수 있어요.")
-          : t("소개를 저장했어요. 학생단체가 바로 볼 수 있어요."),
+          : profile.location && profile.location.lat === undefined
+            ? t("소개를 저장했어요. 매장 주소는 지도에서 찾지 못해 거리가 보이지 않아요.")
+            : t("소개를 저장했어요. 학생단체가 바로 볼 수 있어요."),
       )
       return null
     } catch (error) {

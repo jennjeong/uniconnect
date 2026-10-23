@@ -186,7 +186,7 @@ export function ProfileEditPage({
             />
             <small className="field-hint">
               {listing?.location && listing.location.lat === undefined && listing.location.address === address.trim()
-                ? t("지도 서비스가 연결되면 이 주소로 학교까지의 거리를 보여 드려요.")
+                ? t("아직 이 주소를 지도에서 찾지 못해 거리가 보이지 않아요. 도로명 주소로 적고 다시 저장해 주세요.")
                 : t("학생단체에게 학교에서 매장까지의 거리를 보여 드려요. 온라인 브랜드는 비워 두세요.")}
             </small>
           </label>

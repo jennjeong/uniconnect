@@ -18,6 +18,8 @@ const en: Record<string, string> = {
   "로그인하면 문의를 보낼 수 있어요.": "Log in to send a message.",
   "소개를 저장했어요. 브랜드가 바로 볼 수 있어요.": "Profile saved. Brands can see it right away.",
   "소개를 저장했어요. 학생단체가 바로 볼 수 있어요.": "Profile saved. Student groups can see it right away.",
+  "소개를 저장했어요. 매장 주소는 지도에서 찾지 못해 거리가 보이지 않아요.":
+    "Profile saved. We couldn't find the store address on the map, so no distance shows.",
   "로그인하면 받은 제안에 답할 수 있어요.": "Log in to answer your proposals.",
   "{name} 협찬을 확정했어요.": "Sponsorship for {name} confirmed.",
   "{name}의 제안을 거절했어요.": "Declined the proposal from {name}.",

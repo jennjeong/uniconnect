@@ -248,8 +248,8 @@ const en: Record<string, string> = {
   거리: "Distance",
   "매장 주소": "Store address",
   "예) 서울 노원구 공릉로 232": "e.g. 232 Gongneung-ro, Nowon-gu, Seoul",
-  "지도 서비스가 연결되면 이 주소로 학교까지의 거리를 보여 드려요.":
-    "Once a map service is connected, we'll show the distance to each school from this address.",
+  "아직 이 주소를 지도에서 찾지 못해 거리가 보이지 않아요. 도로명 주소로 적고 다시 저장해 주세요.":
+    "We haven't found this address on the map yet, so no distance shows. Enter a street address and save again.",
   "학생단체에게 학교에서 매장까지의 거리를 보여 드려요. 온라인 브랜드는 비워 두세요.":
     "Student groups see how far your store is from their school. Leave it empty if you're online only.",
 }

@@ -29,7 +29,8 @@ export default defineConfig({
   webServer: {
     command: "node backend/dist/index.js",
     url: `http://localhost:${port}/api/health`,
-    env: { API_PORT: String(port), DATA_FILE: dataFile, EXPOSE_EMAIL_CODES: "true" },
+    // No map key, even when this computer has one, so no address reaches Kakao.
+    env: { API_PORT: String(port), DATA_FILE: dataFile, EXPOSE_EMAIL_CODES: "true", KAKAO_REST_API_KEY: "" },
     timeout: 60_000,
   },
 })

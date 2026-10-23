@@ -134,8 +134,8 @@ const en: Record<string, string> = {
   "문의": "Contact",
   "개인정보에 관한 문의와 요청은 도움말 센터의 '관리자에게 질문하기'로 보내 주세요. 개인정보 침해에 대한 상담은 개인정보침해신고센터(국번 없이 118)에서도 받을 수 있어요.":
     "Please send inquiries and requests about personal information through 'Ask the Administrators' in the Help Center. Counseling on privacy infringement is also available from the Personal Information Infringement Report Center (dial 118 without an area code).",
-  "지도 서비스를 연결하면, 학교와의 거리를 계산하기 위해 브랜드가 적은 매장 주소를 카카오(대한민국)의 주소 검색에 보내 좌표로 바꿔요. 지금은 연결되어 있지 않아요.":
-    "If a map service is connected, the store address a brand enters is sent to Kakao's address search (Korea) to turn it into coordinates, so the distance from schools can be calculated. It is not connected at present.",
+  "학교와의 거리를 계산하기 위해, 브랜드가 적은 매장 주소를 카카오(대한민국)의 주소 검색에 보내 좌표로 바꿔요.":
+    "The store address a brand enters is sent to Kakao's address search (Korea) to turn it into coordinates, so the distance from schools can be calculated.",
 }
 
 export default en
