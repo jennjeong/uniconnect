@@ -13,7 +13,9 @@ export const proposalsRouter = Router()
 
 // Ids the account proposed to, with each answer so far: brands answer
 // student groups' requests, groups answer brands' offers. Only partners
-// with an account answer; the rest stay "sent".
+// with an account answer; the rest stay "sent". `confirmed` counts the
+// account's sponsorships either way round: proposals it sent that were
+// accepted and ones it received and accepted, each event once.
 function proposalState(account: Account) {
   const database = getDatabase()
   const proposals = database.proposals[account.id] ?? []
@@ -32,7 +34,12 @@ function proposalState(account: Account) {
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt))) {
     statuses[item.partnerId] = item.status
   }
-  return { proposals, statuses }
+  const confirmed =
+    account.role === "학생단체"
+      ? database.requests.filter((item) => item.fromAccountId === account.id && item.status === "수락").length +
+        database.offers.filter((item) => item.groupId === account.groupId && item.status === "수락").length
+      : (database.sponsorships[account.id] ?? []).length
+  return { proposals, statuses, confirmed }
 }
 
 // The account's next event (a group's) or campaign (a brand's) that has
@@ -88,7 +95,7 @@ function canPropose(sent: { status: RequestStatus; eventId?: string }[], event: 
 }
 
 proposalsRouter.get("/", (req, res) => {
-  res.json(req.account ? proposalState(req.account) : { proposals: [], statuses: {} })
+  res.json(req.account ? proposalState(req.account) : { proposals: [], statuses: {}, confirmed: 0 })
 })
 
 proposalsRouter.post("/", async (req, res) => {

@@ -44,6 +44,9 @@ export type EventDraft = Pick<
 export type ProposalState = {
   proposals: string[]
   statuses: Partial<Record<string, RequestStatus>>
+  // Sponsorships confirmed either way round (sent and accepted, or received
+  // and accepted).
+  confirmed: number
 }
 
 // One function per backend endpoint (see backend/src/routes).
