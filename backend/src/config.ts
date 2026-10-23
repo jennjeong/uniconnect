@@ -39,10 +39,14 @@ export const config = {
   mailFrom: process.env.MAIL_FROM,
   // Only needed when the frontend is hosted on another origin.
   corsOrigin: process.env.CORS_ORIGIN,
-  // Kakao Local's REST key (developers.kakao.com), for turning a brand's store
-  // address into coordinates (lib/geocode.ts). Without it addresses are kept
-  // but have no distance.
+  // Kakao Local's REST key (developers.kakao.com), for the live shops around a
+  // campus (lib/places.ts). Kakao allows its results only as live answers, so
+  // nothing from it is kept.
   kakaoRestApiKey: process.env.KAKAO_REST_API_KEY,
+  // An OpenStreetMap Nominatim server (like https://nominatim.openstreetmap.org)
+  // for placing a brand's store address on the map (lib/geocode.ts). Without
+  // it addresses are kept but have no distance.
+  nominatimUrl: process.env.NOMINATIM_URL,
   emailCodeTtlMs: 3 * 60 * 1000,
   emailCodeMaxAttempts: 5,
   // Wrong guesses keep counting across new codes for this long.

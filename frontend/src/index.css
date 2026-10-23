@@ -878,6 +878,16 @@ button.nav-pill:hover {
   font-size: 12px;
 }
 
+.footer-credit {
+  color: inherit;
+  text-decoration: none;
+}
+
+.footer-credit:hover {
+  color: var(--point);
+  text-decoration: underline;
+}
+
 /* Start screen (components/Loader.tsx): the logo's mark drawn as a link.
    The school and the shop pop up (0–0.45s), their halves of the U draw down
    to meet at the bottom (0.25–0.85s) and click shut with a bounce and two

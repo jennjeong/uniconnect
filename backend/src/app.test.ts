@@ -989,7 +989,7 @@ test("older data files gain the new collections and calendar dates", async () =>
   // Without the demo group there is no busking day to measure.
   assert.deepEqual(upgraded.measurements, [])
   assert.equal(upgraded.groups.length, 8)
-  assert.equal(upgraded.catalogVersion, 3)
+  assert.equal(upgraded.catalogVersion, 4)
   assert.ok(upgraded.brands.every((brand) => brand.intro && brand.sns && brand.portfolio))
   assert.equal(upgraded.conversations.length, 3)
 
@@ -1005,6 +1005,27 @@ test("older data files gain the new collections and calendar dates", async () =>
   assert.equal(edited.brands[0].location?.address, "서울 노원구 공릉역 2번 출구 앞")
   delete edited.brands[0].location
   assert.equal(upgradeDatabase(edited).brands[0].location, undefined)
+
+  // Version 3 data loses the coordinates Kakao's address search gave (they
+  // may not be kept), keeping the address; the demo stores keep theirs.
+  const kakaoPlaced = upgradeDatabase({
+    events: {},
+    catalogVersion: 3,
+    brands: [
+      { id: "afternoon-coffee", location: { address: "서울 노원구 노해로 437", lat: 37.65452, lng: 127.05627 } },
+      { id: "greenday", location: { address: "서울 노원구 공릉역 인근", lat: 37.6262, lng: 127.0745 } },
+      { id: "new-brand", location: { address: "서울 노원구 동일로 1000", lat: 37.6, lng: 127.06 } },
+    ],
+    groups: [],
+  } as unknown as Parameters<typeof upgradeDatabase>[0])
+  assert.deepEqual(
+    kakaoPlaced.brands.map((brand) => brand.location),
+    [
+      { address: "서울 노원구 노해로 437" },
+      { address: "서울 노원구 공릉역 인근", lat: 37.6262, lng: 127.0745 },
+      { address: "서울 노원구 동일로 1000" },
+    ],
+  )
   assert.equal(upgraded.requests.length, 4)
   assert.deepEqual(upgraded.sponsorships, {})
 
@@ -1835,7 +1856,7 @@ test("catalogs say how far each listing is from the viewer's campus or store", a
   assert.equal(groups.find((group) => group.id === "nowon-creators")!.distanceKm, undefined)
 })
 
-test("a brand's store address is placed on the map once a key is set", async () => {
+test("a brand's store address is placed on the map through OpenStreetMap once a geocoder is set", async () => {
   const { geocoder } = await import("./lib/geocode.js")
   const brand = await login("브랜드")
   const listing = getDatabase().brands.find((item) => item.id === "afternoon-coffee")!
@@ -1850,27 +1871,28 @@ test("a brand's store address is placed on the map once a key is set", async () 
     ...(address === undefined ? {} : { address }),
   })
   const search = geocoder.search
-  // A key in this computer's environment must not reach Kakao from a test.
-  const key = config.kakaoRestApiKey
-  config.kakaoRestApiKey = undefined
+  // A geocoder in this computer's environment must not be reached from a test.
+  const nominatim = config.nominatimUrl
+  config.nominatimUrl = undefined
   try {
     // Left out, the address and its place stay.
     assert.equal((await call("PUT", "/profile", form(), brand)).data.profile.location.lat, saved.location!.lat)
-    // Without a key a new address is kept with no place, so no distance.
+    // Without a geocoder a new address is kept with no place, so no distance.
     const unplaced = (await call("PUT", "/profile", form("서울 노원구 화랑로 815"), brand)).data.profile
     assert.deepEqual(unplaced.location, { address: "서울 노원구 화랑로 815" })
     const far = (await call("GET", "/groups", undefined, brand)).data.groups
     assert.ok(far.every((group: { distanceKm?: number }) => group.distanceKm === undefined))
 
-    // With a key, Kakao's answer places it (here, on 서울과기대's campus), and
-    // an address saved before the key is looked up when it is saved again.
-    config.kakaoRestApiKey = "test-key"
+    // With a geocoder, OpenStreetMap's answer places it (here, on 서울과기대's
+    // campus), and an address saved before it is looked up when saved again.
+    config.nominatimUrl = "https://nominatim.example"
     const { campuses } = await import("./data/campuses.js")
     const { lat, lng } = campuses.find((campus) => campus.name === "서울과학기술대학교")!
     const asked: string[] = []
-    geocoder.search = async (address: string) => {
+    geocoder.search = async (address: string, base: string) => {
       asked.push(address)
-      return { documents: [{ x: String(lng), y: String(lat) }] }
+      assert.equal(base, "https://nominatim.example")
+      return [{ lat: String(lat), lon: String(lng), display_name: "서울과학기술대학교" }]
     }
     const later = (await call("PUT", "/profile", form("서울 노원구 화랑로 815"), brand)).data.profile
     assert.deepEqual(later.location, { address: "서울 노원구 화랑로 815", lat, lng })
@@ -1882,10 +1904,13 @@ test("a brand's store address is placed on the map once a key is set", async () 
     // A placed address isn't looked up again.
     await call("PUT", "/profile", form("서울 노원구 공릉로 232"), brand)
     assert.equal(asked.length, 2)
-    // When Kakao refuses (such as Kakao Map switched off), the address is
-    // still saved, with no place.
+    // An address it can't find, or a geocoder that fails, still saves the
+    // address, with no place.
+    geocoder.search = async () => []
+    const unknown = await call("PUT", "/profile", form("서울 어딘가 없는길 99999"), brand)
+    assert.deepEqual(unknown.data.profile.location, { address: "서울 어딘가 없는길 99999" })
     geocoder.search = async () => {
-      throw new Error('403 {"errorType":"NotAuthorizedError"}')
+      throw new Error("503 Service Unavailable")
     }
     const refused = await call("PUT", "/profile", form("서울 노원구 동일로 1000"), brand)
     assert.equal(refused.status, 200)
@@ -1897,7 +1922,7 @@ test("a brand's store address is placed on the map once a key is set", async () 
     assert.equal((await call("PUT", "/profile", form(""), brand)).data.profile.location, undefined)
   } finally {
     geocoder.search = search
-    config.kakaoRestApiKey = key
+    config.nominatimUrl = nominatim
     Object.assign(listing, saved)
     if (!saved.location) delete listing.location
   }

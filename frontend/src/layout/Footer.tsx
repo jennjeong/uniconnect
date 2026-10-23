@@ -135,6 +135,10 @@ export function Footer({
 
         <div className="footer-legal">
           <span>© {new Date().getFullYear()} uniconnect. All rights reserved.</span>
+          {/* Campuses and stores are placed with OpenStreetMap data (ODbL), which asks for this credit. */}
+          <a className="footer-credit" href="https://www.openstreetmap.org/copyright" rel="noopener noreferrer" target="_blank">
+            Map data © OpenStreetMap contributors
+          </a>
           <nav aria-label={t("약관과 방침")} className="footer-policies">
             {(Object.keys(legalDocs) as LegalKind[]).map((kind) => (
               <button key={kind} onClick={() => onOpenLegal(kind)} type="button">
