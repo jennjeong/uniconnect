@@ -14,8 +14,8 @@ const en: Record<string, string> = {
   인기: "Popular",
   업종별: "By industry",
   "내 행사에 맞는 브랜드를 찾았어요": "Brands that fit your events",
-  "행사 정보, 타깃, 거리와 지난 성과를 함께 분석한 결과예요.":
-    "Picked from your event details, audience, distance and past results.",
+  "행사 정보, 타깃과 지난 성과를 함께 분석한 결과예요.":
+    "Picked from your event details, audience and past results.",
   "학생단체가 많이 찾는 브랜드예요": "Brands student groups love",
   "이번 학기 협찬을 많이 한 순서로 보여드려요.": "Sorted by the most sponsorships this term.",
   "협찬할 수 있는 브랜드 전체예요": "Every brand you can pitch",
@@ -62,7 +62,8 @@ const en: Record<string, string> = {
   "예상 인원 {count}명": "{count} expected",
   "캠퍼스 현장에서 브랜드를 직접 소개할 수 있는 학생단체예요.":
     "A student group that can introduce your brand in person on campus.",
-  "학생들이 실제로 찾아가는 캠퍼스 가까운 브랜드예요.": "A brand near campus that students actually visit.",
+  "학교에서 {distance} 떨어진 곳에 매장이 있는 브랜드예요.": "A brand with a store {distance} from your school.",
+  "캠퍼스 행사에 협찬할 수 있는 브랜드예요.": "A brand that can sponsor campus events.",
   "아직 소개를 쓰지 않았어요.": "No introduction yet.",
   "단체 정보": "Group info",
   "브랜드 정보": "Brand info",
