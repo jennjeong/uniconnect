@@ -1,11 +1,16 @@
+import { lang, t } from "../i18n"
+
 // Calendar helpers. Days travel as "YYYY-MM-DD" strings (the API's format)
 // and become local Dates only for display, so time zones never shift a day.
 // Displayed dates join their parts with no-break spaces, so a long line
-// moves a date to the next line whole instead of splitting it.
+// moves a date to the next line whole instead of splitting it. In English
+// they read "Oct 12 (Mon)" and "Oct 12, 2026 (Mon)".
 
 const nbsp = "\u00a0"
 
-export const weekdayNames = ["일", "월", "화", "수", "목", "금", "토"]
+export const weekdayNames = ["일", "월", "화", "수", "목", "금", "토"].map((day) => t(day))
+
+const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
 const pad = (value: number) => String(value).padStart(2, "0")
 
@@ -24,19 +29,23 @@ export const todayIso = () => toIsoDate(new Date())
 
 export const startOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1)
 
-// "10월 12일 (월)"
+// "10월 12일 (월)", "Oct 12 (Mon)"
 export function formatDay(iso: string) {
   const date = fromIsoDate(iso)
   if (!date) return iso
-  return `${date.getMonth() + 1}월${nbsp}${date.getDate()}일${nbsp}(${weekdayNames[date.getDay()]})`
+  const weekday = `(${weekdayNames[date.getDay()]})`
+  if (lang === "en") return [monthNames[date.getMonth()], date.getDate(), weekday].join(nbsp)
+  return `${date.getMonth() + 1}월${nbsp}${date.getDate()}일${nbsp}${weekday}`
 }
 
-// "2026. 10. 12. (월)"
+// "2026. 10. 12. (월)", "Oct 12, 2026 (Mon)"
 export function formatFullDate(iso: string) {
   const date = fromIsoDate(iso)
   if (!date) return iso
+  const weekday = `(${weekdayNames[date.getDay()]})`
+  if (lang === "en") return [monthNames[date.getMonth()], `${date.getDate()},`, date.getFullYear(), weekday].join(nbsp)
   const parts = [`${date.getFullYear()}.`, `${date.getMonth() + 1}.`, `${date.getDate()}.`]
-  return `${parts.join(nbsp)}${nbsp}(${weekdayNames[date.getDay()]})`
+  return `${parts.join(nbsp)}${nbsp}${weekday}`
 }
 
 // Whole days from today (or `from`) until an "YYYY-MM-DD" day.
@@ -47,16 +56,17 @@ export function daysUntil(iso: string, from = todayIso()) {
   return Math.round((end.getTime() - start.getTime()) / 86_400_000)
 }
 
-// "11.15"
+// "11.15", "Nov 15"
 export function shortDay(iso: string) {
   const date = fromIsoDate(iso)
-  return date ? `${date.getMonth() + 1}.${date.getDate()}` : iso
+  if (!date) return iso
+  return lang === "en" ? `${monthNames[date.getMonth()]}${nbsp}${date.getDate()}` : `${date.getMonth() + 1}.${date.getDate()}`
 }
 
 // "D-25", "D-DAY", or "종료" once the day has passed.
 export function dDayLabel(iso: string) {
   const days = daysUntil(iso)
-  return days > 0 ? `D-${days}` : days === 0 ? "D-DAY" : "종료"
+  return days > 0 ? `D-${days}` : days === 0 ? "D-DAY" : t("종료")
 }
 
 // The earliest event from today on; one over several days counts until
@@ -81,14 +91,16 @@ export function daysOf(start: string, end = start) {
 // "11월 27일 (금) ~ 11월 29일 (일) · 3일", or one day as formatDay.
 export function formatPeriod(start: string, end?: string) {
   if (!end || end === start) return formatDay(start)
-  return `${formatDay(start)} ~ ${formatDay(end)} · ${daysOf(start, end).length}일`
+  return `${formatDay(start)} ~ ${formatDay(end)} · ${t("{days}일", { days: daysOf(start, end).length })}`
 }
 
-// "10.12 19:41" in local time, for an ISO timestamp.
+// "10.12 19:41" ("Oct 12 19:41") in local time, for an ISO timestamp.
 export function formatDateTime(timestamp: string) {
   const date = new Date(timestamp)
   if (Number.isNaN(date.getTime())) return timestamp
-  return `${date.getMonth() + 1}.${date.getDate()}${nbsp}${pad(date.getHours())}:${pad(date.getMinutes())}`
+  const time = `${pad(date.getHours())}:${pad(date.getMinutes())}`
+  if (lang === "en") return [monthNames[date.getMonth()], date.getDate(), time].join(nbsp)
+  return `${date.getMonth() + 1}.${date.getDate()}${nbsp}${time}`
 }
 
 // Whole weeks (Sunday first) covering the month of `month`.

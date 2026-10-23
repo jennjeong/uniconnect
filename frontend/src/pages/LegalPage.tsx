@@ -1,5 +1,6 @@
 import { PageIntro } from "../components/PageIntro"
 import { TabBar } from "../components/TabBar"
+import { t } from "../i18n"
 import { legalDocs, legalDraftNote, legalEffectiveDate, type LegalKind } from "../data/legal"
 import { formatFullDate } from "../lib/date"
 
@@ -21,13 +22,14 @@ export function LegalPage({
           value,
           label: legalDocs[value].title,
         }))}
-        label="약관과 방침"
+        label={t("약관과 방침")}
         value={kind}
         onChange={onSwitch}
       />
       <div className="legal-meta" data-reveal>
+        {doc.notice && <p className="legal-note">{doc.notice}</p>}
         <p className="legal-note">{legalDraftNote}</p>
-        <p className="legal-date">시행일 {formatFullDate(legalEffectiveDate)}</p>
+        <p className="legal-date">{t("시행일 {date}", { date: formatFullDate(legalEffectiveDate) })}</p>
       </div>
       <ol className="legal-sections">
         {doc.sections.map((section, index) => (

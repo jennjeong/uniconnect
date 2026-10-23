@@ -8,6 +8,7 @@ import type {
   SponsorRequest,
   Sponsorship,
 } from "../types"
+import { t } from "../i18n"
 import { roasText } from "./kpis"
 import { measureState } from "./measurements"
 import { roasOf } from "./sponsorships"
@@ -26,7 +27,7 @@ export type NotificationItem = {
 // "노원 크리에이터스, 광운대 무브먼트 외 1곳"
 function nameList(names: string[]) {
   const shown = names.slice(0, 2).join(", ")
-  return names.length > 2 ? `${shown} 외 ${names.length - 2}곳` : shown
+  return names.length > 2 ? t("{names} 외 {count}곳", { names: shown, count: names.length - 2 }) : shown
 }
 
 export function studentNotifications({
@@ -55,8 +56,8 @@ export function studentNotifications({
     items.push({
       key: "offers",
       icon: "inbox",
-      title: `새 협찬 제안 ${waiting.length}건`,
-      caption: `${nameList(waiting.map((offer) => offer.brandName))} · 답을 기다리고 있어요`,
+      title: t("새 협찬 제안 {count}건", { count: waiting.length }),
+      caption: t("{names} · 답을 기다리고 있어요", { names: nameList(waiting.map((offer) => offer.brandName)) }),
       target: "받은 협찬",
     })
   }
@@ -65,8 +66,8 @@ export function studentNotifications({
       key: "accepted",
       icon: "check",
       good: true,
-      title: "협찬이 확정됐어요",
-      caption: `${nameList(accepted)} · 제안 수락`,
+      title: t("협찬이 확정됐어요"),
+      caption: t("{names} · 제안 수락", { names: nameList(accepted) }),
       target: "추천 매칭",
     })
   }
@@ -74,16 +75,16 @@ export function studentNotifications({
     items.push({
       key: "declined",
       icon: "inbox",
-      title: `거절된 제안 ${declined.length}건`,
-      caption: "다른 브랜드에도 제안해 보세요.",
+      title: t("거절된 제안 {count}건", { count: declined.length }),
+      caption: t("다른 브랜드에도 제안해 보세요."),
       target: "추천 매칭",
     })
   }
   items.push({
     key: "matches",
     icon: "spark",
-    title: `새 추천 매칭 ${matches.length}건`,
-    caption: "다가오는 일정과 잘 맞는 파트너를 찾았어요.",
+    title: t("새 추천 매칭 {count}건", { count: matches.length }),
+    caption: t("다가오는 일정과 잘 맞는 파트너를 찾았어요."),
     target: "추천 매칭",
   })
   // Once the event shown on the report pages is over.
@@ -92,7 +93,7 @@ export function studentNotifications({
       key: "report",
       icon: "chart",
       good: true,
-      title: "성과 리포트가 완성됐어요",
+      title: t("성과 리포트가 완성됐어요"),
       caption: `${report.eventName} · ROAS ${roasText(report)}`,
       target: "리포트",
     })
@@ -116,16 +117,16 @@ export function brandNotifications({
     items.push({
       key: "requests",
       icon: "inbox",
-      title: `새 협찬 제안 ${pending.length}건`,
-      caption: `${nameList(pending.map((request) => request.groupName))} · 답을 기다리고 있어요`,
+      title: t("새 협찬 제안 {count}건", { count: pending.length }),
+      caption: t("{names} · 답을 기다리고 있어요", { names: nameList(pending.map((request) => request.groupName)) }),
       target: "받은 제안",
     })
   }
   items.push({
     key: "groups",
     icon: "users",
-    title: `추천 학생단체 ${matches.length}곳`,
-    caption: "캠페인과 잘 맞는 단체를 찾았어요.",
+    title: t("추천 학생단체 {count}곳", { count: matches.length }),
+    caption: t("캠페인과 잘 맞는 단체를 찾았어요."),
     target: "단체 찾기",
   })
   if (latest) {
@@ -133,7 +134,7 @@ export function brandNotifications({
       key: "analytics",
       icon: "chart",
       good: true,
-      title: "협찬 성과가 집계됐어요",
+      title: t("협찬 성과가 집계됐어요"),
       caption: `${latest.eventName} · ROAS ${roasOf(latest)}%`,
       target: "성과 분석",
     })

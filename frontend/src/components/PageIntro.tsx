@@ -1,5 +1,6 @@
 import type { ReactNode } from "react"
 
+import { t } from "../i18n"
 import { Icon } from "./Icon"
 import { RevealTitle } from "./RevealText"
 
@@ -24,9 +25,9 @@ export function PageIntro({
     <header className="page-intro">
       <div className="intro-top">
         {onBack && (
-          <button aria-label="뒤로" className="back-pill" onClick={onBack} type="button">
+          <button aria-label={t("뒤로")} className="back-pill" onClick={onBack} type="button">
             <Icon name="chevron" size={16} />
-            <span>뒤로</span>
+            <span>{t("뒤로")}</span>
           </button>
         )}
         <span className="eyebrow">{eyebrow}</span>

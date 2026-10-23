@@ -1,5 +1,6 @@
 import { BrandMark } from "../components/BrandMark"
 import { PageIntro } from "../components/PageIntro"
+import { t } from "../i18n"
 import { formatDateTime } from "../lib/date"
 import type { Conversation } from "../types"
 
@@ -23,20 +24,20 @@ export function MessagesPage({
       <PageIntro
         onBack={onBack}
         eyebrow="Messages"
-        title="메시지"
-        description="협찬 상대와 나눈 대화를 최근 순서로 모았어요."
+        title={t("메시지")}
+        description={t("협찬 상대와 나눈 대화를 최근 순서로 모았어요.")}
       />
 
       {!loggedIn ? (
         <div className="day-empty messages-empty">
-          <p>로그인하면 브랜드와 학생단체가 서로 메시지를 주고받을 수 있어요.</p>
+          <p>{t("로그인하면 브랜드와 학생단체가 서로 메시지를 주고받을 수 있어요.")}</p>
           <button className="primary-button" onClick={onLogin} type="button">
-            로그인
+            {t("로그인")}
           </button>
         </div>
       ) : conversations.length === 0 ? (
         <p className="day-empty messages-empty">
-          아직 대화가 없어요. 상세 정보에서 문의하기를 눌러 대화를 시작해 보세요.
+          {t("아직 대화가 없어요. 상세 정보에서 문의하기를 눌러 대화를 시작해 보세요.")}
         </p>
       ) : (
         <div className="chat-list stagger">
@@ -51,16 +52,18 @@ export function MessagesPage({
               <span className="chat-row-copy">
                 <span className="chat-row-head">
                   <strong>{conversation.partner.name}</strong>
-                  <small>{conversation.partner.school ?? conversation.partner.category}</small>
+                  <small>{conversation.partner.school ?? t(conversation.partner.category)}</small>
                 </span>
                 <span className="chat-row-preview">
                   {!conversation.lastMessage
-                    ? "아직 메시지가 없어요."
+                    ? t("아직 메시지가 없어요.")
                     : conversation.lastMessage.deleted
                       ? conversation.lastMessage.mine
-                        ? "메시지를 삭제했어요."
-                        : "삭제된 메시지예요."
-                      : `${conversation.lastMessage.mine ? "나: " : ""}${conversation.lastMessage.text}`}
+                        ? t("메시지를 삭제했어요.")
+                        : t("삭제된 메시지예요.")
+                      : conversation.lastMessage.mine
+                        ? t("나: {text}", { text: conversation.lastMessage.text })
+                        : conversation.lastMessage.text}
                 </span>
               </span>
               <span className="chat-row-meta">

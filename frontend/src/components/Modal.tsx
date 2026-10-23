@@ -1,6 +1,7 @@
 import { useContext, useEffect, useId, useRef, type ReactNode } from "react"
 
 import { useDialogFocus } from "../hooks/useDialogFocus"
+import { t } from "../i18n"
 import type { ModalName } from "../types"
 import { GradientBackdrop } from "./GradientBackdrop"
 import { Icon } from "./Icon"
@@ -71,7 +72,7 @@ export function Modal({
         ) : (
           heading
         )}
-        <button className="modal-close" aria-label="닫기" onClick={onClose} type="button">
+        <button className="modal-close" aria-label={t("닫기")} onClick={onClose} type="button">
           <Icon name="close" size={16} />
         </button>
         {children}

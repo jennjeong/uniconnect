@@ -1,3 +1,5 @@
+import { t } from "../i18n"
+
 // A picked image as a small square logo for the listing: drawn centered on
 // white at `size` pixels, as WebP (JPEG where the browser cannot write
 // WebP), stepping down until it fits the server's limit of about 100KB.
@@ -5,7 +7,7 @@ const maxLength = 140_000
 
 export async function logoFromFile(file: File) {
   if (!/^image\/(png|jpeg|webp|gif)$/.test(file.type)) {
-    throw new Error("PNG, JPG, WebP 이미지를 골라 주세요.")
+    throw new Error(t("PNG, JPG, WebP 이미지를 골라 주세요."))
   }
   const bitmap = await createImageBitmap(file)
   for (const size of [256, 192, 128]) {
@@ -25,5 +27,5 @@ export async function logoFromFile(file: File) {
       if (url.startsWith(`data:${type}`) && url.length <= maxLength) return url
     }
   }
-  throw new Error("이미지가 너무 커요. 더 작은 이미지를 골라 주세요.")
+  throw new Error(t("이미지가 너무 커요. 더 작은 이미지를 골라 주세요."))
 }

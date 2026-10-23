@@ -10,6 +10,7 @@ import { ProposalControl } from "../components/ProposalControl"
 import { RevealStatement, RevealTitle } from "../components/RevealText"
 import { StatsBento } from "../components/StatsBento"
 import { WorkCard } from "../components/WorkCard"
+import { locale, t } from "../i18n"
 import { formatFullDate, fromIsoDate, nextEvent, semesterLabel } from "../lib/date"
 import { percent } from "../lib/format"
 import { hasRoas, roasText } from "../lib/kpis"
@@ -80,54 +81,54 @@ export function DashboardPage({
   const currentStep = !next ? 0 : next.status === "매칭 중" ? 1 : next.status === "집행 예정" ? 2 : 3
   const journey: JourneyStep[] = [
     {
-      label: "행사 등록",
-      status: next ? "완료" : "등록 전",
-      detail: "인원 · 일정 · 학과 구성과 노출할 자리를 알려 주세요.",
+      label: t("행사 등록"),
+      status: next ? t("완료") : t("등록 전"),
+      detail: t("인원 · 일정 · 학과 구성과 노출할 자리를 알려 주세요."),
     },
     {
-      label: "매칭 · 제안",
+      label: t("매칭 · 제안"),
       status:
         confirmedCount > 0
-          ? `확정 ${confirmedCount}건`
+          ? t("확정 {count}건", { count: confirmedCount })
           : proposals.length > 0
-            ? `제안 ${proposals.length}건`
+            ? t("제안 {count}건", { count: proposals.length })
             : next
-              ? "진행 중"
-              : "대기",
-      detail: "일치율 높은 브랜드에 제안하고 답을 받아요.",
+              ? t("진행 중")
+              : t("대기"),
+      detail: t("일치율 높은 브랜드에 제안하고 답을 받아요."),
     },
     {
-      label: "집행 관리",
-      status: nextDay ? `${nextDay.getMonth() + 1}.${nextDay.getDate()} 예정` : "대기",
-      detail: "협찬 조건과 받은 물품을 행사 전에 함께 확인해요.",
+      label: t("집행 관리"),
+      status: nextDay ? t("{date} 예정", { date: `${nextDay.getMonth() + 1}.${nextDay.getDate()}` }) : t("대기"),
+      detail: t("협찬 조건과 받은 물품을 행사 전에 함께 확인해요."),
     },
-    { label: "성과 측정", status: "대기", detail: "행사 QR과 쿠폰으로 참여와 방문을 집계해요." },
-    { label: "재협찬", status: "대기", detail: "쌓인 성과가 신뢰가 되어 다음 협찬으로 이어져요." },
+    { label: t("성과 측정"), status: t("대기"), detail: t("행사 QR과 쿠폰으로 참여와 방문을 집계해요.") },
+    { label: t("재협찬"), status: t("대기"), detail: t("쌓인 성과가 신뢰가 되어 다음 협찬으로 이어져요.") },
   ]
 
   const bars = [
-    { label: "QR 스캔", value: metrics.scans },
-    { label: "쿠폰 수령", value: metrics.coupons },
-    { label: "매장 방문", value: metrics.visits },
+    { label: t("QR 스캔"), value: metrics.scans },
+    { label: t("쿠폰 수령"), value: metrics.coupons },
+    { label: t("매장 방문"), value: metrics.visits },
   ]
 
   return (
     <div className="dashboard">
       <MeetingHero
-        eyebrow={accountName ? `반가워요, ${accountName}` : semesterLabel()}
-        lines={["좋은 행사는,", "좋은 파트너를", "만날 때 커져요."]}
+        eyebrow={accountName ? t("반가워요, {name}", { name: accountName }) : semesterLabel()}
+        lines={[t("좋은 행사는,"), t("좋은 파트너를"), t("만날 때 커져요.")]}
         stats={[
-          { value: `${candidates.length}곳`, label: "추천 브랜드" },
-          { value: `${running}건`, label: "진행 중 협찬" },
-          { value: metrics.scans.toLocaleString("ko-KR"), label: "누적 QR 참여" },
+          { value: t("{count}곳", { count: candidates.length }), label: t("추천 브랜드") },
+          { value: t("{count}건", { count: running }), label: t("진행 중 협찬") },
+          { value: metrics.scans.toLocaleString(locale), label: t("누적 QR 참여") },
         ]}
-        insight={`다가오는 행사와 잘 맞는 브랜드 ${matches.length}곳을 찾았어요.`}
-        detail="학생단체와 브랜드가 맞닿는 곳에서 협찬이 시작돼요. 일치율이 높은 브랜드부터 제안해 보세요."
-        primary={{ label: "추천 매칭 확인하기", onClick: () => onNavigate("추천 매칭") }}
+        insight={t("다가오는 행사와 잘 맞는 브랜드 {count}곳을 찾았어요.", { count: matches.length })}
+        detail={t("학생단체와 브랜드가 맞닿는 곳에서 협찬이 시작돼요. 일치율이 높은 브랜드부터 제안해 보세요.")}
+        primary={{ label: t("추천 매칭 확인하기"), onClick: () => onNavigate("추천 매칭") }}
       />
 
       <LogoMarquee
-        label="함께할 수 있는 브랜드"
+        label={t("함께할 수 있는 브랜드")}
         rows={[
           candidates.map((match) => ({ key: match.id, mark: <BrandMark match={match} />, label: match.name })),
           candidates.map((match) => ({
@@ -143,9 +144,9 @@ export function DashboardPage({
           About uniconnect
         </span>
         <RevealStatement
-          lead="학생단체와 브랜드를 잇고,"
+          lead={t("학생단체와 브랜드를 잇고,")}
           firstChip={<Icon name="link" size={18} />}
-          muted="협찬의 성과를 숫자로 증명해요"
+          muted={t("협찬의 성과를 숫자로 증명해요")}
           secondChip={<Icon name="chart" size={18} />}
         />
       </section>
@@ -153,30 +154,33 @@ export function DashboardPage({
       <StatsBento
         stats={[
           {
-            label: "추천 브랜드",
-            value: `${candidates.length}곳`,
-            note: `일치율 ${strongCut}% 이상 브랜드가 ${strong}곳이에요.`,
+            label: t("추천 브랜드"),
+            value: t("{count}곳", { count: candidates.length }),
+            note: t("일치율 {cut}% 이상 브랜드가 {count}곳이에요.", { cut: strongCut, count: strong }),
             onClick: () => onNavigate("추천 매칭"),
           },
           {
-            label: "진행 중 협찬",
-            value: `${running}건`,
+            label: t("진행 중 협찬"),
+            value: t("{count}건", { count: running }),
             note:
               confirmedCount > 0
-                ? `“협찬 확정 ${confirmedCount}건, 보낸 제안 ${proposals.length}건이에요.”`
-                : `“보낸 제안 ${proposals.length}건이 답을 기다리고 있어요.”`,
+                ? t("“협찬 확정 {confirmed}건, 보낸 제안 {sent}건이에요.”", {
+                    confirmed: confirmedCount,
+                    sent: proposals.length,
+                  })
+                : t("“보낸 제안 {sent}건이 답을 기다리고 있어요.”", { sent: proposals.length }),
             onClick: () => onNavigate("내 행사"),
           },
           {
-            label: "예상 협찬 가치",
+            label: t("예상 협찬 가치"),
             value: report ? fullWon(report.sponsorValue) : "-",
-            note: "현물 환산을 포함한 금액이에요.",
+            note: t("현물 환산을 포함한 금액이에요."),
             onClick: () => onNavigate("리포트"),
           },
           {
-            label: "누적 QR 참여",
-            value: metrics.scans.toLocaleString("ko-KR"),
-            note: `참여율 ${report ? percent(metrics.scans, report.expectedAudience) : 0}%`,
+            label: t("누적 QR 참여"),
+            value: metrics.scans.toLocaleString(locale),
+            note: t("참여율 {rate}%", { rate: report ? percent(metrics.scans, report.expectedAudience) : 0 }),
             onClick: () => onNavigate("성과 측정"),
           },
         ]}
@@ -191,22 +195,22 @@ export function DashboardPage({
             Smart Match
           </span>
           <RevealTitle as="h2" className="section-display">
-            맞춤 추천 매칭
+            {t("맞춤 추천 매칭")}
           </RevealTitle>
           {updatedAt && (
             <small className="section-note" data-reveal>
-              오늘 {pad(updatedAt.getHours())}:{pad(updatedAt.getMinutes())} 업데이트
+              {t("오늘 {time} 업데이트", { time: `${pad(updatedAt.getHours())}:${pad(updatedAt.getMinutes())}` })}
             </small>
           )}
         </div>
         <ul className="work-grid three">
           {matches.map((match, index) => (
             <li data-reveal key={match.id} style={delay(index * 0.09)}>
-              <WorkCard match={match} meta={match.category} onOpenDetail={() => onOpenDetail(match)}>
+              <WorkCard match={match} meta={t(match.category)} onOpenDetail={() => onOpenDetail(match)}>
                 <ProposalControl
                   done={proposals.includes(match.id)}
                   status={statuses[match.id]}
-                  label="제안하기"
+                  label={t("제안하기")}
                   className="proposal-button"
                   onPropose={() => onPropose(match)}
                   onCancel={() => onCancelProposal(match)}
@@ -220,13 +224,17 @@ export function DashboardPage({
       <JourneyChain
         intro={
           next
-            ? `다음 행사 ‘${next.name}’은 ${formatFullDate(next.date)}이에요. 지금은 ‘${journey[currentStep].label}’ 단계예요.`
-            : "행사 등록부터 재협찬까지, 한 번의 협찬이 다음 협찬으로 이어지도록 모든 단계를 한곳에서 관리해요."
+            ? t("다음 행사 ‘{name}’은 {date}이에요. 지금은 ‘{step}’ 단계예요.", {
+                name: next.name,
+                date: formatFullDate(next.date),
+                step: journey[currentStep].label,
+              })
+            : t("행사 등록부터 재협찬까지, 한 번의 협찬이 다음 협찬으로 이어지도록 모든 단계를 한곳에서 관리해요.")
         }
-        heading="내 협찬, 지금 여기까지 왔어요"
+        heading={t("내 협찬, 지금 여기까지 왔어요")}
         steps={journey}
         current={currentStep}
-        scheduleLabel="전체 일정 보기"
+        scheduleLabel={t("전체 일정 보기")}
         onOpenSchedule={() => onNavigate("내 행사")}
       />
 
@@ -236,17 +244,17 @@ export function DashboardPage({
             Last Event
           </span>
           <RevealTitle as="h2" className="section-display">
-            함께 만든 지난 행사의 결과
+            {t("함께 만든 지난 행사의 결과")}
           </RevealTitle>
         </div>
         <div className="results-grid">
           <div className="silver-panel results-chart" data-reveal>
             <div className="event-summary">
               <div>
-                <strong>{report?.eventName ?? "최근 행사"}</strong>
+                <strong>{report?.eventName ?? t("최근 행사")}</strong>
                 <span>{report ? formatFullDate(report.eventDate) : ""}</span>
               </div>
-              {report && <span className="complete-badge">{measureState(report)}</span>}
+              {report && <span className="complete-badge">{t(measureState(report))}</span>}
             </div>
             <div className="chart-area">
               <div className="chart-y" aria-hidden="true">
@@ -270,20 +278,20 @@ export function DashboardPage({
           </div>
           <div className="report-highlight" data-reveal style={delay(0.12)}>
             <div>
-              <span>추정 ROAS</span>
+              <span>{t("추정 ROAS")}</span>
               <strong>{report ? roasText(report) : "-"}</strong>
               <small>
                 {report && hasRoas(report) && report.roas >= 100
-                  ? "함께한 브랜드가 쓴 금액보다 더 많이 돌아왔어요."
-                  : "목표까지 남은 만큼은 리포트에서 볼 수 있어요."}
+                  ? t("함께한 브랜드가 쓴 금액보다 더 많이 돌아왔어요.")
+                  : t("목표까지 남은 만큼은 리포트에서 볼 수 있어요.")}
               </small>
             </div>
             <div className="report-highlight-actions">
               <button className="pill white" onClick={onOpenReport} type="button">
-                <span>상세 데이터</span>
+                <span>{t("상세 데이터")}</span>
               </button>
               <button className="underline-link light" onClick={() => onNavigate("리포트")} type="button">
-                리포트 페이지로
+                {t("리포트 페이지로")}
               </button>
             </div>
           </div>

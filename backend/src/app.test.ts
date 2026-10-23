@@ -1748,3 +1748,64 @@ test("a leaving group's sponsors keep the results of its events", async () => {
   assert.equal(kept.spend, 250000)
   assert.equal(kept.targetRoas, report.targets.roas)
 })
+
+test("errors answer in English when the request asks for it", async () => {
+  const send = async (route: string, body: unknown, headers: Record<string, string> = {}) => {
+    const response = await fetch(baseUrl + route, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify(body),
+    })
+    return { status: response.status, data: (await response.json()) as { error?: string; token?: string } }
+  }
+  const wrongLogin = { role: "학생단체", email: "muse@syu.ac.kr", password: "wrong-password" }
+
+  const english = await send("/auth/login", wrongLogin, { "Accept-Language": "en-US,en;q=0.9" })
+  assert.equal(english.status, 401)
+  assert.equal(english.data.error, "The email or password is incorrect.")
+
+  const korean = await send("/auth/login", wrongLogin)
+  assert.equal(korean.status, 401)
+  assert.equal(korean.data.error, "이메일 또는 비밀번호가 올바르지 않아요.")
+  const koreanFirst = await send("/auth/login", wrongLogin, { "Accept-Language": "ko-KR,en;q=0.8" })
+  assert.equal(koreanFirst.data.error, "이메일 또는 비밀번호가 올바르지 않아요.")
+
+  // A message built from parts: the field's name is translated inside it.
+  const student = await login("학생단체")
+  const longName = { name: "가".repeat(41), date: "2026-12-05", types: ["현금"] }
+  const tooLong = await send("/events", longName, { "Accept-Language": "en", Authorization: `Bearer ${student}` })
+  assert.equal(tooLong.status, 400)
+  assert.equal(tooLong.data.error, "Please keep the event name to 40 characters or fewer.")
+  const tooLongKorean = await send("/events", longName, { Authorization: `Bearer ${student}` })
+  assert.equal(tooLongKorean.data.error, "행사명은 40자 이하로 적어 주세요.")
+})
+
+test("every Korean error message the server writes has English", async () => {
+  const { readdir, readFile } = await import("node:fs/promises")
+  const { fileURLToPath } = await import("node:url")
+  const { translate } = await import("./lib/i18n.js")
+  const root = path.dirname(fileURLToPath(import.meta.url))
+  const files = (await readdir(root, { recursive: true })).filter(
+    (name) => name.endsWith(".ts") && !name.endsWith(".test.ts"),
+  )
+  const messages = new Set<string>()
+  for (const name of files) {
+    const source = await readFile(path.join(root, name), "utf8")
+    for (const match of source.matchAll(/new HttpError\(\s*\d+,\s*"((?:[^"\\]|\\.)*)"/g)) messages.add(match[1])
+    for (const match of source.matchAll(/createRateLimit\(\{[^}]*?message:\s*"((?:[^"\\]|\\.)*)"/g)) messages.add(match[1])
+  }
+  assert.ok(messages.size > 50)
+  const missing = [...messages].filter((message) => /[가-힣]/.test(message) && translate(message, "en") === message)
+  assert.deepEqual(missing, [])
+  // Messages built from parts take English for each form the code writes.
+  assert.equal(
+    translate("목표 ROAS는 1부터 10,000까지의 숫자로 적어 주세요.", "en"),
+    "Target ROAS must be a number from 1 to 10,000.",
+  )
+  assert.equal(
+    translate("예상 인원은 1부터 100,000까지의 숫자로 적어 주세요.", "en"),
+    "Expected audience must be a number from 1 to 100,000.",
+  )
+  assert.equal(translate("캠페인명과 일정을 입력해 주세요.", "en"), "Please enter the campaign name and dates.")
+  assert.equal(translate("브랜드명을 입력해 주세요.", "en"), "Please enter the brand name.")
+})

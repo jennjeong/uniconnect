@@ -2,6 +2,7 @@ import { useState } from "react"
 
 import { api, errorMessage } from "../api"
 import { Modal } from "../components/Modal"
+import { t } from "../i18n"
 import type { Account } from "../types"
 
 // Leaving uniconnect from 내 정보: what goes with the account, then the
@@ -22,8 +23,8 @@ export function LeaveModal({
   const students = account.role === "학생단체"
 
   const submit = async () => {
-    if (!password) return setError("비밀번호를 입력해 주세요.")
-    if (!understood) return setError("지워지는 내용을 확인했다고 체크해 주세요.")
+    if (!password) return setError(t("비밀번호를 입력해 주세요."))
+    if (!understood) return setError(t("지워지는 내용을 확인했다고 체크해 주세요."))
     setBusy(true)
     setError("")
     try {
@@ -37,7 +38,7 @@ export function LeaveModal({
   }
 
   return (
-    <Modal name="leave" kicker="Leave uniconnect" title="회원 탈퇴" onClose={onClose}>
+    <Modal name="leave" kicker="Leave uniconnect" title={t("회원 탈퇴")} onClose={onClose}>
       <form
         className="auth-form leave-form"
         noValidate
@@ -47,16 +48,16 @@ export function LeaveModal({
         }}
       >
         <p className="auth-lead">
-          탈퇴하면 {account.name} 계정과 아래 내용이 바로 지워지고, 되살릴 수 없어요.
+          {t("탈퇴하면 {name} 계정과 아래 내용이 바로 지워지고, 되살릴 수 없어요.", { name: account.name })}
         </p>
         <ul className="leave-list">
-          <li>계정 정보와 {students ? "단체" : "브랜드"} 소개</li>
-          <li>{students ? "등록한 행사와 보낸 협찬 제안" : "등록한 캠페인과 받은 협찬 제안"}</li>
-          <li>주고받은 메시지 (상대방 쪽 대화도 함께 사라져요)</li>
-          <li>관리자에게 보낸 질문과 답변</li>
+          <li>{students ? t("계정 정보와 단체 소개") : t("계정 정보와 브랜드 소개")}</li>
+          <li>{students ? t("등록한 행사와 보낸 협찬 제안") : t("등록한 캠페인과 받은 협찬 제안")}</li>
+          <li>{t("주고받은 메시지 (상대방 쪽 대화도 함께 사라져요)")}</li>
+          <li>{t("관리자에게 보낸 질문과 답변")}</li>
         </ul>
         <label>
-          비밀번호 확인
+          {t("비밀번호 확인")}
           <input
             autoComplete="current-password"
             type="password"
@@ -70,7 +71,7 @@ export function LeaveModal({
             type="checkbox"
             onChange={(event) => setUnderstood(event.target.checked)}
           />
-          <span>지워지는 내용을 확인했고, 되살릴 수 없다는 것을 이해했어요.</span>
+          <span>{t("지워지는 내용을 확인했고, 되살릴 수 없다는 것을 이해했어요.")}</span>
         </label>
         {error && (
           <p className="form-error" role="alert">
@@ -78,11 +79,11 @@ export function LeaveModal({
           </p>
         )}
         <button className="primary-button wide leave-confirm" disabled={busy} type="submit">
-          탈퇴하기
+          {t("탈퇴하기")}
         </button>
         <p className="auth-switch">
           <button onClick={onClose} type="button">
-            계속 이용할게요
+            {t("계속 이용할게요")}
           </button>
         </p>
       </form>

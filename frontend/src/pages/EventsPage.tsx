@@ -3,7 +3,7 @@ import { useState } from "react"
 import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { Pill } from "../components/Pill"
-import { sponsorTypeLabels } from "../lib/format"
+import { locale, t } from "../i18n"
 import { formatWon } from "../lib/kpis"
 import {
   calendarDays,
@@ -29,7 +29,20 @@ type Entry =
 const statusClass = (entry: Entry) =>
   entry.kind === "event" ? `status-${entry.event.status.replace(" ", "")}` : "status-협찬확정"
 
-const statusLabel = (entry: Entry) => (entry.kind === "event" ? entry.event.status : "협찬 확정")
+const statusLabel = (entry: Entry) => (entry.kind === "event" ? t(entry.event.status) : t("협찬 확정"))
+
+// Head counts are stored as written, such as "120명"; in English they read
+// "120 people".
+const peopleLabel = (people: string) => {
+  const match = /^([\d,]+)명$/.exec(people)
+  return match ? t("{count}명", { count: match[1] }) : people
+}
+
+// "현금 · 기타(음향 장비)" in the language shown.
+const typeLabels = (event: EventItem) =>
+  event.types
+    .map((type) => (type === "기타" && event.typeNote ? `${t("기타")}(${event.typeNote})` : t(type)))
+    .join(" · ")
 
 function EventRow({
   role,
@@ -42,30 +55,32 @@ function EventRow({
   onShowDetail: (event: EventItem) => void
   onDelete: (event: EventItem) => void
 }) {
-  const types = event.types.length > 0 ? ` · ${sponsorTypeLabels(event).join(" · ")} 협찬` : ""
+  const types = event.types.length > 0 ? ` · ${t("{types} 협찬", { types: typeLabels(event) })}` : ""
+  const people = event.people ? peopleLabel(event.people) : t("미정")
   return (
     <article className="day-event-card">
       <div className="day-event-copy">
-        <span className={`status-chip status-${event.status.replace(" ", "")}`}>{event.status}</span>
+        <span className={`status-chip status-${event.status.replace(" ", "")}`}>{t(event.status)}</span>
         <strong>{event.name}</strong>
         {event.endDate && (
           <span className="day-event-period">{formatPeriod(event.date, event.endDate)}</span>
         )}
         <p>
           {role === "학생단체"
-            ? `예상 참여 ${event.people || "미정"}${types}`
-            : `목표 도달 ${event.people || "미정"} · 예산 ${
-                event.budget === undefined ? "미정" : formatWon(event.budget)
-              }${types}`}
+            ? `${t("예상 참여 {people}", { people })}${types}`
+            : `${t("목표 도달 {people} · 예산 {budget}", {
+                people,
+                budget: event.budget === undefined ? t("미정") : formatWon(event.budget),
+              })}${types}`}
         </p>
       </div>
       <div className="event-card-actions">
         <button className="cancel-button" onClick={() => onShowDetail(event)} type="button">
-          상세 보기
+          {t("상세 보기")}
         </button>
         <button
           className="delete-button"
-          aria-label={`${event.name} 삭제`}
+          aria-label={t("{name} 삭제", { name: event.name })}
           onClick={() => onDelete(event)}
           type="button"
         >
@@ -87,15 +102,15 @@ function SponsorshipRow({
   return (
     <article className="day-event-card">
       <div className="day-event-copy">
-        <span className="status-chip status-협찬확정">협찬 확정</span>
+        <span className="status-chip status-협찬확정">{t("협찬 확정")}</span>
         <strong>{request.eventName}</strong>
         <p>
-          {request.groupName} · {request.people} · {request.ask}
+          {request.groupName} · {peopleLabel(request.people)} · {request.ask}
         </p>
       </div>
       <div className="event-card-actions">
         <button className="cancel-button" onClick={onOpen} type="button">
-          제안 보기
+          {t("제안 보기")}
         </button>
       </div>
     </article>
@@ -123,7 +138,6 @@ export function EventsPage({
   onDelete: (event: EventItem) => void
   onOpenSponsorship?: () => void
 }) {
-  const noun = role === "학생단체" ? "행사" : "캠페인"
   const today = todayIso()
   const [selected, setSelected] = useState(() =>
     initialDate && fromIsoDate(initialDate) ? initialDate : today,
@@ -177,11 +191,11 @@ export function EventsPage({
     <section className="page-view">
       <PageIntro
         eyebrow={role === "학생단체" ? "My Events" : "Event Calendar"}
-        title="행사 일정"
-        description="날짜를 고르면 그날의 일정이 함께 보여요. 두 번 누르면 그 날짜로 바로 등록해요."
+        title={t("행사 일정")}
+        description={t("날짜를 고르면 그날의 일정이 함께 보여요. 두 번 누르면 그 날짜로 바로 등록해요.")}
         actions={
           <Pill arrow="right" onClick={() => onCreate(selected)}>
-            새로 등록
+            {t("새로 등록")}
           </Pill>
         }
       />
@@ -190,18 +204,16 @@ export function EventsPage({
         <div className="calendar-card">
           <div className="calendar-head">
             <button
-              aria-label="이전 달"
+              aria-label={t("이전 달")}
               className="calendar-nav previous"
               onClick={() => shiftMonth(-1)}
               type="button"
             >
               <Icon name="chevron" size={18} />
             </button>
-            <strong>
-              {month.getFullYear()}년 {month.getMonth() + 1}월
-            </strong>
+            <strong>{month.toLocaleDateString(locale, { year: "numeric", month: "long" })}</strong>
             <button
-              aria-label="다음 달"
+              aria-label={t("다음 달")}
               className="calendar-nav"
               onClick={() => shiftMonth(1)}
               type="button"
@@ -209,7 +221,7 @@ export function EventsPage({
               <Icon name="chevron" size={18} />
             </button>
             <button className="calendar-today" onClick={() => jumpTo(today)} type="button">
-              오늘
+              {t("오늘")}
             </button>
           </div>
 
@@ -236,7 +248,11 @@ export function EventsPage({
                 .join(" ")
               return (
                 <button
-                  aria-label={`${formatDay(iso)}${dayEntries.length ? `, 일정 ${dayEntries.length}개` : ""}`}
+                  aria-label={
+                    dayEntries.length
+                      ? t("{day}, 일정 {count}개", { day: formatDay(iso), count: dayEntries.length })
+                      : formatDay(iso)
+                  }
                   aria-pressed={iso === selected}
                   className={className}
                   key={iso}
@@ -261,18 +277,19 @@ export function EventsPage({
           </div>
 
           <div className="calendar-legend">
-            <span className="legend-matching">매칭 중</span>
-            <span className="legend-scheduled">집행 예정</span>
-            <span className="legend-done">측정 완료</span>
-            {role === "브랜드" && <span className="legend-confirmed">협찬 확정</span>}
+            <span className="legend-matching">{t("매칭 중")}</span>
+            <span className="legend-scheduled">{t("집행 예정")}</span>
+            <span className="legend-done">{t("측정 완료")}</span>
+            {role === "브랜드" && <span className="legend-confirmed">{t("협찬 확정")}</span>}
           </div>
 
           <div className="month-agenda">
             <p className="month-agenda-title">
-              {month.getMonth() + 1}월 일정 <em>{monthEntries.length}</em>
+              {t("{month} 일정", { month: month.toLocaleDateString(locale, { month: "long" }) })}{" "}
+              <em>{monthEntries.length}</em>
             </p>
             {monthEntries.length === 0 ? (
-              <p className="day-empty">이 달에는 일정이 없어요.</p>
+              <p className="day-empty">{t("이 달에는 일정이 없어요.")}</p>
             ) : (
               <ol className="stagger" key={toIsoDate(month)}>
                 {monthEntries.map((entry) => {
@@ -313,7 +330,7 @@ export function EventsPage({
           <div className="day-event-list stagger" key={selected}>
             {selectedEntries.length === 0 ? (
               <p className="day-empty">
-                {role === "학생단체" ? "등록된 행사가 없어요." : "등록된 캠페인이 없어요."}
+                {role === "학생단체" ? t("등록된 행사가 없어요.") : t("등록된 캠페인이 없어요.")}
               </p>
             ) : (
               selectedEntries.map((entry) =>
@@ -337,13 +354,14 @@ export function EventsPage({
           </div>
 
           <button className="primary-button wide" onClick={() => onCreate(selected)} type="button">
-            <Icon name="plus" size={17} /> 이 날짜에 {noun} 등록
+            <Icon name="plus" size={17} />{" "}
+            {role === "학생단체" ? t("이 날짜에 행사 등록") : t("이 날짜에 캠페인 등록")}
           </button>
 
           <div className="upcoming stagger">
-            <span className="upcoming-title">다가오는 일정</span>
+            <span className="upcoming-title">{t("다가오는 일정")}</span>
             {upcoming.length === 0 ? (
-              <p className="day-empty">예정된 일정이 없어요.</p>
+              <p className="day-empty">{t("예정된 일정이 없어요.")}</p>
             ) : (
               upcoming.map((entry) => (
                 <button

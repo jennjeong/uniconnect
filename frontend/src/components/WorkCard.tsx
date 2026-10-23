@@ -1,5 +1,6 @@
 import type { ReactNode } from "react"
 
+import { t } from "../i18n"
 import type { Match } from "../types"
 import { BrandMark } from "./BrandMark"
 import { Icon } from "./Icon"
@@ -37,7 +38,7 @@ export function WorkCard({
           {meta}
         </span>
         <button
-          aria-label={`${match.name} 상세 정보`}
+          aria-label={t("{name} 상세 정보", { name: match.name })}
           className="work-badge"
           onClick={onOpenDetail}
           type="button"

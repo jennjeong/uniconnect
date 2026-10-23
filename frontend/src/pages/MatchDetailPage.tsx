@@ -8,6 +8,7 @@ import { ProposalControl } from "../components/ProposalControl"
 import { RevealTitle, RevealWords } from "../components/RevealText"
 import { ScoreRing } from "../components/ScoreRing"
 import { profileLabels } from "../data/profile"
+import { locale, t } from "../i18n"
 import { LayersGradient } from "../scenes/LayersGradient"
 import { MeshBackdrop } from "../scenes/MeshBackdrop"
 import { ANTIPODE } from "../scenes/shaders"
@@ -48,7 +49,7 @@ export function MatchDetailPage({
   const facts = [
     ...(match.facts ?? []),
     ...(match.popularity !== undefined
-      ? [{ label: "이번 학기 협찬", value: `${match.popularity}회` }]
+      ? [{ label: "이번 학기 협찬", value: t("{count}회", { count: match.popularity }) }]
       : []),
   ]
   const sns = match.sns ?? []
@@ -57,7 +58,7 @@ export function MatchDetailPage({
     <ProposalControl
       done={done}
       status={status}
-      label={group ? "협찬 제안하기" : "협찬 제안 보내기"}
+      label={group ? t("협찬 제안하기") : t("협찬 제안 보내기")}
       className="primary-button"
       onPropose={onPropose}
       onCancel={onCancel}
@@ -67,9 +68,9 @@ export function MatchDetailPage({
   return (
     <section className="page-view detail-view">
       <div className="detail-top">
-        <button aria-label="뒤로" className="back-pill" onClick={onBack} type="button">
+        <button aria-label={t("뒤로")} className="back-pill" onClick={onBack} type="button">
           <Icon name="chevron" size={16} />
-          <span>뒤로</span>
+          <span>{t("뒤로")}</span>
         </button>
       </div>
 
@@ -84,14 +85,14 @@ export function MatchDetailPage({
             <BrandMark match={match} large />
             <div>
               <span className="banner-meta">
-                {group && match.school ? `${match.school} · ${match.category}` : match.category}
+                {group && match.school ? `${match.school} · ${t(match.category)}` : t(match.category)}
               </span>
               <RevealTitle className="banner-title">{match.name}</RevealTitle>
               {match.reasons && match.reasons.length > 0 && (
                 <p className="banner-reasons">
-                  <span>일치율 {match.score}%</span>
+                  <span>{t("일치율 {score}%", { score: match.score })}</span>
                   {match.reasons.map((reason) => (
-                    <span key={reason}>{reason}</span>
+                    <span key={reason}>{t(reason)}</span>
                   ))}
                 </p>
               )}
@@ -105,7 +106,7 @@ export function MatchDetailPage({
             </div>
             <div className="banner-actions">
               <button className="cancel-button" onClick={onChat} type="button">
-                <Icon name="chat" size={16} /> 문의하기
+                <Icon name="chat" size={16} /> {t("문의하기")}
               </button>
               {proposal}
             </div>
@@ -115,17 +116,17 @@ export function MatchDetailPage({
 
       <section className="about-block">
         <div className="about-side">
-          <span className="eyebrow">{group ? "단체 소개" : "브랜드 소개"}</span>
+          <span className="eyebrow">{group ? t("단체 소개") : t("브랜드 소개")}</span>
           <Icon name="link" size={220} />
           {group && match.eventName && match.eventDate ? (
             <div className="about-event" data-reveal>
-              <small>다음 행사</small>
+              <small>{t("다음 행사")}</small>
               <strong>{match.eventName}</strong>
               <DateLine date={match.eventDate} />
               {match.audience !== undefined && (
                 <span className="detail-audience">
                   <Icon name="users" size={15} />
-                  예상 인원 {match.audience.toLocaleString("ko-KR")}명
+                  {t("예상 인원 {count}명", { count: match.audience.toLocaleString(locale) })}
                 </span>
               )}
             </div>
@@ -134,8 +135,8 @@ export function MatchDetailPage({
               <Icon name="spark" size={20} />
               <span>
                 {group
-                  ? "캠퍼스 현장에서 브랜드를 직접 소개할 수 있는 학생단체예요."
-                  : "학생들이 실제로 찾아가는 캠퍼스 가까운 브랜드예요."}
+                  ? t("캠퍼스 현장에서 브랜드를 직접 소개할 수 있는 학생단체예요.")
+                  : t("학생들이 실제로 찾아가는 캠퍼스 가까운 브랜드예요.")}
               </span>
             </p>
           )}
@@ -144,7 +145,7 @@ export function MatchDetailPage({
           {match.intro ? (
             <RevealWords className="about-statement">{match.intro}</RevealWords>
           ) : (
-            <p className="about-statement">아직 소개를 쓰지 않았어요.</p>
+            <p className="about-statement">{t("아직 소개를 쓰지 않았어요.")}</p>
           )}
           <div className="about-offer" data-reveal style={delay(0.15)}>
             <span>{labels.offer}</span>
@@ -160,7 +161,7 @@ export function MatchDetailPage({
                       <Icon name="at" size={14} />
                     </span>
                     <span>
-                      <small>{account.platform}</small>
+                      <small>{t(account.platform)}</small>
                       <strong>{account.handle}</strong>
                     </span>
                     {account.followers && <em>{account.followers}</em>}
@@ -175,16 +176,16 @@ export function MatchDetailPage({
       {facts.length > 0 && (
         <section className="service-section">
           <span className="eyebrow" data-reveal>
-            {group ? "단체 정보" : "브랜드 정보"}
+            {group ? t("단체 정보") : t("브랜드 정보")}
           </span>
           <RevealTitle as="h2" className="section-display">
-            한눈에 보는 정보
+            {t("한눈에 보는 정보")}
           </RevealTitle>
           <dl className="service-list">
             {facts.map((fact, index) => (
               <div className="service-row" data-reveal key={fact.label} style={delay(index * 0.08)}>
                 <span className="service-index">{pad(index + 1)}</span>
-                <dt>{fact.label}</dt>
+                <dt>{t(fact.label)}</dt>
                 <dd>{fact.value}</dd>
               </div>
             ))}
@@ -198,7 +199,7 @@ export function MatchDetailPage({
             {labels.portfolio}
           </span>
           <RevealTitle as="h2" className="section-display">
-            {group ? "지난 활동" : "함께한 협찬"}
+            {group ? t("지난 활동") : t("함께한 협찬")}
           </RevealTitle>
           <ul className="service-list">
             {portfolio.map((item, index) => (
@@ -218,11 +219,13 @@ export function MatchDetailPage({
       <section className="cta-panel" data-reveal>
         <MeshBackdrop seed={1.3} />
         <RevealTitle as="h2" className="cta-title">
-          {group ? `${match.name}의 다음 행사에 함께해 볼까요?` : `${match.name}에 협찬을 제안해 볼까요?`}
+          {group
+            ? t("{name}의 다음 행사에 함께해 볼까요?", { name: match.name })
+            : t("{name}에 협찬을 제안해 볼까요?", { name: match.name })}
         </RevealTitle>
         <div className="detail-actions">
           <Pill arrow="up-right" onClick={onChat} variant="white">
-            문의하기
+            {t("문의하기")}
           </Pill>
           {proposal}
         </div>

@@ -5,6 +5,7 @@ import { PageIntro } from "../components/PageIntro"
 import { ProposalControl } from "../components/ProposalControl"
 import { TabBar } from "../components/TabBar"
 import { WorkCard } from "../components/WorkCard"
+import { t } from "../i18n"
 import { todayIso } from "../lib/date"
 import type { Industry, Match, RequestStatus } from "../types"
 
@@ -87,14 +88,14 @@ export function GroupsPage({
     <section className="page-view">
       <PageIntro
         eyebrow="Find Student Groups"
-        title={tabIntro[tab].title}
-        description={tabIntro[tab].caption}
+        title={t(tabIntro[tab].title)}
+        description={t(tabIntro[tab].caption)}
       />
 
       <div className="match-filters">
         <TabBar
-          items={tabs.map((item) => ({ value: item, label: item }))}
-          label="학생단체 보기"
+          items={tabs.map((item) => ({ value: item, label: t(item) }))}
+          label={t("학생단체 보기")}
           onChange={pickTab}
           value={tab}
         />
@@ -105,11 +106,11 @@ export function GroupsPage({
               value,
               label: (
                 <>
-                  {label} <em className="chip-count">{groups.filter((group) => group.industry === value).length}</em>
+                  {t(label)} <em className="chip-count">{groups.filter((group) => group.industry === value).length}</em>
                 </>
               ),
             }))}
-            label="분야"
+            label={t("분야")}
             onChange={(value, event) => {
               const order = fields.map(([item]) => item)
               setDirection(order.indexOf(value) >= order.indexOf(field) ? "forward" : "back")
@@ -123,7 +124,7 @@ export function GroupsPage({
 
       {list.length === 0 ? (
         <p className="day-empty" key={tab}>
-          조건에 맞는 학생단체가 없어요.
+          {t("조건에 맞는 학생단체가 없어요.")}
         </p>
       ) : (
         <ul
@@ -135,7 +136,7 @@ export function GroupsPage({
             <li key={group.id} style={{ "--i": index } as CSSProperties}>
               <WorkCard
                 match={group}
-                meta={`${group.school} · ${group.category}`}
+                meta={`${group.school} · ${t(group.category)}`}
                 onOpenDetail={() => onOpenDetail(group)}
                 tags={
                   <>
@@ -149,12 +150,12 @@ export function GroupsPage({
                 }
               >
                 <button className="cancel-button" onClick={() => onOpenDetail(group)} type="button">
-                  상세 정보
+                  {t("상세 정보")}
                 </button>
                 <ProposalControl
                   done={proposals.includes(group.id)}
                   status={statuses[group.id]}
-                  label="협찬 제안하기"
+                  label={t("협찬 제안하기")}
                   className="primary-button"
                   onPropose={() => onPropose(group)}
                   onCancel={() => onCancelProposal(group)}

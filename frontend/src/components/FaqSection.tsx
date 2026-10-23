@@ -1,4 +1,5 @@
 import { faqs } from "../data/faq"
+import { t } from "../i18n"
 import { RevealTitle } from "./RevealText"
 
 // Questions with their answers opening under them; <details> keeps them
@@ -33,20 +34,20 @@ export function FaqList({
 // operators.
 export function FaqSection({ onOpenFaq }: { onOpenFaq: () => void }) {
   return (
-    <section aria-label="자주 묻는 질문" className="faq-section">
+    <section aria-label={t("자주 묻는 질문")} className="faq-section">
       <div className="section-head">
         <span className="eyebrow" data-reveal>
           FAQ
         </span>
         <RevealTitle as="h2" className="section-display">
-          자주 묻는 질문
+          {t("자주 묻는 질문")}
         </RevealTitle>
       </div>
       <FaqList items={faqs.filter((item) => item.featured)} />
       <p className="faq-more" data-reveal>
-        찾는 답이 없나요?
+        {t("찾는 답이 없나요?")}
         <button className="underline-link" onClick={onOpenFaq} type="button">
-          관리자에게 질문하기
+          {t("관리자에게 질문하기")}
         </button>
       </p>
     </section>

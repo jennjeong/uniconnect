@@ -1,3 +1,4 @@
+import { lang } from "../i18n"
 import type { Sponsorship } from "../types"
 import { percent } from "./format"
 
@@ -20,12 +21,21 @@ export function sponsorshipTotals(sponsorships: Sponsorship[]) {
   return { spend, sales, coupons: sum("coupons"), visits: sum("visits"), roas: percent(sales, spend) }
 }
 
-// The whole amount, "1,480,000원", for the large numbers on dashboard cards.
-export const fullWon = (value: number) => `${value.toLocaleString("ko-KR")}원`
+// The whole amount, "1,480,000원" ("₩1,480,000"), for the large numbers on
+// dashboard cards.
+export const fullWon = (value: number) =>
+  lang === "en" ? `₩${value.toLocaleString("en-US")}` : `${value.toLocaleString("ko-KR")}원`
 
 // Amounts in 만원 for large numbers: "300", or "12.5" when it isn't whole.
+// In English, thousands of won ("3,000"), shown with the unit "K won"
+// (wonUnit).
 export const manWon = (value: number) =>
-  (value / 10000).toLocaleString("ko-KR", { maximumFractionDigits: 1 })
+  lang === "en"
+    ? (value / 1000).toLocaleString("en-US", { maximumFractionDigits: 1 })
+    : (value / 10000).toLocaleString("ko-KR", { maximumFractionDigits: 1 })
+
+// The unit after manWon's number.
+export const wonUnit = () => (lang === "en" ? "K won" : "만원")
 
 // Everything the analytics page and its PDF report say about the brand's
 // sponsorships: each one's ROAS against its goal and cost per visit, the

@@ -2,6 +2,7 @@ import { useContext, useEffect, useRef, type RefObject } from "react"
 
 import { Icon } from "../components/Icon"
 import { ClosingContext } from "../components/Presence"
+import { t } from "../i18n"
 import type { NotificationItem } from "../lib/notifications"
 import type { NavLabel } from "../types"
 
@@ -41,18 +42,18 @@ export function NotificationsPanel({
 
   return (
     <section
-      aria-label="알림"
+      aria-label={t("알림")}
       className={closing ? "notify-panel closing" : "notify-panel"}
       id="notifications-panel"
       ref={panelRef}
     >
       <div className="notify-head">
         <span className="eyebrow">Notifications</span>
-        <p className="notify-title">새로운 소식</p>
+        <p className="notify-title">{t("새로운 소식")}</p>
       </div>
       <div className="notification-list stagger">
         {items.length === 0 ? (
-          <p className="day-empty">새로운 소식이 없어요.</p>
+          <p className="day-empty">{t("새로운 소식이 없어요.")}</p>
         ) : (
           items.map((item) => (
             <button key={item.key} onClick={() => onOpen(item.target)} type="button">

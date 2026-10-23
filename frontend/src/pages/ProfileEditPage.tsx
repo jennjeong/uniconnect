@@ -4,6 +4,7 @@ import { BrandMark } from "../components/BrandMark"
 import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { factFields, profileLabels, snsPlatforms } from "../data/profile"
+import { t } from "../i18n"
 import { logoFromFile } from "../lib/image"
 import type { Match, PortfolioItem, ProfileDraft, Role, SnsAccount } from "../types"
 
@@ -25,7 +26,6 @@ export function ProfileEditPage({
   onSave: (draft: ProfileDraft) => Promise<string | null>
 }) {
   const labels = profileLabels[role]
-  const viewers = role === "학생단체" ? "브랜드" : "학생단체"
   const [intro, setIntro] = useState(listing?.intro ?? "")
   const [offer, setOffer] = useState(listing?.offer ?? "")
   const [tags, setTags] = useState((listing?.tags ?? []).join(", "))
@@ -46,11 +46,11 @@ export function ProfileEditPage({
 
   const save = async () => {
     if (intro.trim().length < 10) {
-      setError("소개는 10자 이상 적어 주세요.")
+      setError(t("소개는 10자 이상 적어 주세요."))
       return
     }
     if (!offer.trim()) {
-      setError(`${labels.offer}을 적어 주세요.`)
+      setError(t("{label}을 적어 주세요.", { label: labels.offer }))
       return
     }
     setError("")
@@ -76,17 +76,21 @@ export function ProfileEditPage({
       <PageIntro
         onBack={onCancel}
         eyebrow="Edit Profile"
-        title="소개 편집"
-        description={`${viewers}가 찾기와 상세 정보에서 보는 내용이에요. 자세할수록 알맞은 상대를 만나기 쉬워요.`}
+        title={t("소개 편집")}
+        description={
+          role === "학생단체"
+            ? t("브랜드가 찾기와 상세 정보에서 보는 내용이에요. 자세할수록 알맞은 상대를 만나기 쉬워요.")
+            : t("학생단체가 찾기와 상세 정보에서 보는 내용이에요. 자세할수록 알맞은 상대를 만나기 쉬워요.")
+        }
       />
 
       <div className="form-card">
-        <h3 className="form-card-title">로고</h3>
+        <h3 className="form-card-title">{t("로고")}</h3>
         <div className="logo-field">
           <BrandMark large match={{ industry: listing?.industry ?? (role === "학생단체" ? "performance" : "cafe"), logo }} />
           <div className="logo-field-actions">
             <label className="detail-button logo-pick">
-              {logo ? "다른 이미지로 바꾸기" : "로고 올리기"}
+              {logo ? t("다른 이미지로 바꾸기") : t("로고 올리기")}
               <input
                 accept="image/png,image/jpeg,image/webp"
                 className="sr-only"
@@ -106,27 +110,27 @@ export function ProfileEditPage({
             </label>
             {logo && (
               <button className="cancel-button" onClick={() => setLogo("")} type="button">
-                지우기
+                {t("지우기")}
               </button>
             )}
-            <small className="field-hint">정사각형으로 줄여 저장돼요. 없으면 업종 그림이 보여요.</small>
+            <small className="field-hint">{t("정사각형으로 줄여 저장돼요. 없으면 업종 그림이 보여요.")}</small>
           </div>
         </div>
       </div>
 
       <div className="form-card">
-        <h3 className="form-card-title">소개</h3>
+        <h3 className="form-card-title">{t("소개")}</h3>
         <label className="field">
           <span>
-            한 줄 소개 <em className="field-count">{intro.length}/300</em>
+            {t("한 줄 소개")} <em className="field-count">{intro.length}/300</em>
           </span>
           <textarea
             maxLength={300}
             onChange={(event) => setIntro(event.target.value)}
             placeholder={
               role === "학생단체"
-                ? "예) 삼육대학교 대표 밴드 동아리예요. 학기마다 정기 공연을 열어요."
-                : "예) 캠퍼스 앞 스페셜티 카페예요. 학생 행사에 음료 쿠폰을 지원해요."
+                ? t("예) 삼육대학교 대표 밴드 동아리예요. 학기마다 정기 공연을 열어요.")
+                : t("예) 캠퍼스 앞 스페셜티 카페예요. 학생 행사에 음료 쿠폰을 지원해요.")
             }
             rows={3}
             value={intro}
@@ -137,26 +141,26 @@ export function ProfileEditPage({
           <input
             maxLength={60}
             onChange={(event) => setOffer(event.target.value)}
-            placeholder={role === "학생단체" ? "예) 관객 120명 · 교내 SNS 3개 채널" : "예) 쿠폰 150장 + 현금 20만원"}
+            placeholder={role === "학생단체" ? t("예) 관객 120명 · 교내 SNS 3개 채널") : t("예) 쿠폰 150장 + 현금 20만원")}
             value={offer}
           />
         </label>
         <label className="field">
-          <span>태그</span>
+          <span>{t("태그")}</span>
           <input
             onChange={(event) => setTags(event.target.value)}
-            placeholder="쉼표로 구분해 4개까지, 예) 공연 특화, 정기 공연"
+            placeholder={t("쉼표로 구분해 4개까지, 예) 공연 특화, 정기 공연")}
             value={tags}
           />
         </label>
       </div>
 
       <div className="form-card">
-        <h3 className="form-card-title">기본 정보</h3>
+        <h3 className="form-card-title">{t("기본 정보")}</h3>
         <div className="edit-facts">
           {factFields[role].map((field) => (
             <label className="field" key={field.label}>
-              <span>{field.label}</span>
+              <span>{t(field.label)}</span>
               <input
                 maxLength={40}
                 onChange={(event) =>
@@ -172,36 +176,38 @@ export function ProfileEditPage({
 
       <div className="form-card">
         <h3 className="form-card-title">SNS</h3>
-        <p className="form-card-caption">홍보에 쓸 수 있는 채널과 팔로워 수를 알려 주세요.</p>
+        <p className="form-card-caption">{t("홍보에 쓸 수 있는 채널과 팔로워 수를 알려 주세요.")}</p>
         <div className="edit-rows">
           {sns.map((row, index) => (
             <div className="edit-row sns" key={index}>
               <select
-                aria-label="SNS 종류"
+                aria-label={t("SNS 종류")}
                 onChange={(event) => updateSns(index, { platform: event.target.value })}
                 value={row.platform}
               >
                 {snsPlatforms.map((platform) => (
-                  <option key={platform}>{platform}</option>
+                  <option key={platform} value={platform}>
+                    {t(platform)}
+                  </option>
                 ))}
               </select>
               <input
-                aria-label="계정 또는 주소"
+                aria-label={t("계정 또는 주소")}
                 maxLength={60}
                 onChange={(event) => updateSns(index, { handle: event.target.value })}
-                placeholder="@계정 또는 주소"
+                placeholder={t("@계정 또는 주소")}
                 value={row.handle}
               />
               <input
-                aria-label="팔로워"
+                aria-label={t("팔로워")}
                 className="followers"
                 maxLength={20}
                 onChange={(event) => updateSns(index, { followers: event.target.value })}
-                placeholder="팔로워 예) 3,100명"
+                placeholder={t("팔로워 예) 3,100명")}
                 value={row.followers ?? ""}
               />
               <button
-                aria-label="이 SNS 지우기"
+                aria-label={t("이 SNS 지우기")}
                 className="delete-button"
                 onClick={() => setSns((rows) => rows.filter((_, at) => at !== index))}
                 type="button"
@@ -217,7 +223,7 @@ export function ProfileEditPage({
             onClick={() => setSns((rows) => [...rows, { platform: snsPlatforms[0], handle: "" }])}
             type="button"
           >
-            <Icon name="plus" size={15} /> SNS 추가
+            <Icon name="plus" size={15} /> {t("SNS 추가")}
           </button>
         )}
       </div>
@@ -229,22 +235,22 @@ export function ProfileEditPage({
           {portfolio.map((row, index) => (
             <div className="edit-row portfolio" key={index}>
               <input
-                aria-label="제목"
+                aria-label={t("제목")}
                 maxLength={40}
                 onChange={(event) => updatePortfolio(index, { title: event.target.value })}
-                placeholder="제목"
+                placeholder={t("제목")}
                 value={row.title}
               />
               <input
-                aria-label="내용"
+                aria-label={t("내용")}
                 className="detail"
                 maxLength={100}
                 onChange={(event) => updatePortfolio(index, { detail: event.target.value })}
-                placeholder="규모, 성과 등"
+                placeholder={t("규모, 성과 등")}
                 value={row.detail}
               />
               <button
-                aria-label="이 항목 지우기"
+                aria-label={t("이 항목 지우기")}
                 className="delete-button"
                 onClick={() => setPortfolio((rows) => rows.filter((_, at) => at !== index))}
                 type="button"
@@ -260,7 +266,7 @@ export function ProfileEditPage({
             onClick={() => setPortfolio((rows) => [...rows, { title: "", detail: "" }])}
             type="button"
           >
-            <Icon name="plus" size={15} /> 항목 추가
+            <Icon name="plus" size={15} /> {t("항목 추가")}
           </button>
         )}
       </div>
@@ -272,10 +278,10 @@ export function ProfileEditPage({
       )}
       <div className="create-actions">
         <button className="cancel-button" onClick={onCancel} type="button">
-          취소
+          {t("취소")}
         </button>
         <button className="primary-button" disabled={busy} onClick={save} type="button">
-          저장하기
+          {t("저장하기")}
         </button>
       </div>
     </section>

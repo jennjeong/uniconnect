@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from "react"
 
+import { t } from "../i18n"
 import { MeshBackdrop } from "../scenes/MeshBackdrop"
 import { AnimatedNumber } from "./AnimatedNumber"
 import { Icon } from "./Icon"
@@ -27,7 +28,7 @@ export function StatsBento({
 }) {
   const [lead, second, third, fourth] = stats
   return (
-    <section aria-label="숫자로 보는 협찬" className="stats-bento">
+    <section aria-label={t("숫자로 보는 협찬")} className="stats-bento">
       <button className="bento-card bento-blue" data-reveal onClick={lead.onClick} type="button">
         <MeshBackdrop seed={2.4} />
         <span className="bento-brand">UNICONNECT</span>

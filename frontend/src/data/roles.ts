@@ -1,3 +1,4 @@
+import { t } from "../i18n"
 import type { Role } from "../types"
 
 export const roles: Role[] = ["학생단체", "브랜드"]
@@ -8,8 +9,8 @@ export const roleOptions: {
   caption: string
 }[] = [
   // Each shows with its symbol from the logo (components/RoleMark.tsx).
-  { value: "학생단체", title: "협찬 받기", caption: "학생단체 · 동아리" },
-  { value: "브랜드", title: "협찬 하기", caption: "스폰서 · 브랜드" },
+  { value: "학생단체", title: t("협찬 받기"), caption: t("학생단체 · 동아리") },
+  { value: "브랜드", title: t("협찬 하기"), caption: t("스폰서 · 브랜드") },
 ]
 
 // Keep in sync with accountTypes in backend/src/lib/validation.ts
@@ -20,4 +21,4 @@ export const accountTypes: Record<Role, string[]> = {
 }
 
 export const createLabel = (role: Role) =>
-  role === "학생단체" ? "새 행사 등록" : "새 캠페인 등록"
+  role === "학생단체" ? t("새 행사 등록") : t("새 캠페인 등록")

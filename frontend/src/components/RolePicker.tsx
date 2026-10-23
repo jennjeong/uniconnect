@@ -1,4 +1,5 @@
 import { roleOptions } from "../data/roles"
+import { t } from "../i18n"
 import type { Role } from "../types"
 import { RoleMark } from "./RoleMark"
 
@@ -12,7 +13,7 @@ export function RolePicker({
   onChange: (role: Role) => void
 }) {
   return (
-    <div className="role-picker" role="radiogroup" aria-label="회원 유형">
+    <div className="role-picker" role="radiogroup" aria-label={t("회원 유형")}>
       {roleOptions.map((option) => (
         <label
           className={value === option.value ? "role-option active" : "role-option"}

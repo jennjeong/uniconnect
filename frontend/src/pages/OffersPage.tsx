@@ -5,6 +5,7 @@ import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { RequestProgress } from "../components/RequestProgress"
 import { TabBar } from "../components/TabBar"
+import { t } from "../i18n"
 import { dDayLabel, formatDateTime, formatDay } from "../lib/date"
 import type { Match, RequestStatus, SponsorOffer } from "../types"
 
@@ -40,27 +41,27 @@ function OfferCard({
         <BrandMark match={brand ?? offer} />
         <div className="request-from">
           <strong>{offer.brandName}</strong>
-          <span>브랜드</span>
+          <span>{t("브랜드")}</span>
         </div>
-        <time dateTime={offer.createdAt}>{formatDateTime(offer.createdAt)} 받음</time>
+        <time dateTime={offer.createdAt}>{t("{date} 받음", { date: formatDateTime(offer.createdAt) })}</time>
       </div>
 
       <dl className="request-facts">
         <div>
-          <dt>캠페인</dt>
+          <dt>{t("캠페인")}</dt>
           <dd>{offer.campaignName}</dd>
         </div>
         <div>
-          <dt>일정</dt>
+          <dt>{t("일정")}</dt>
           <dd>
-            {offer.campaignDate ? formatDay(offer.campaignDate) : "협의 중"}
+            {offer.campaignDate ? formatDay(offer.campaignDate) : t("협의 중")}
             {offer.campaignDate && <em>{dDayLabel(offer.campaignDate)}</em>}
           </dd>
         </div>
       </dl>
 
       <div className="request-ask">
-        <span>제공 협찬</span>
+        <span>{t("제공 협찬")}</span>
         <strong>{offer.offer}</strong>
       </div>
       <p className="request-message">{offer.message}</p>
@@ -69,9 +70,9 @@ function OfferCard({
         {offer.status === "검토 중" ? (
           confirming ? (
             <>
-              <span className="request-confirm">이 제안을 거절할까요?</span>
+              <span className="request-confirm">{t("이 제안을 거절할까요?")}</span>
               <button className="cancel-button" onClick={() => setConfirming(false)} type="button">
-                아니요
+                {t("아니요")}
               </button>
               <button
                 className="decline-button"
@@ -81,23 +82,23 @@ function OfferCard({
                 }}
                 type="button"
               >
-                거절하기
+                {t("거절하기")}
               </button>
             </>
           ) : (
             <>
               <button className="cancel-button" onClick={() => setConfirming(true)} type="button">
-                거절
+                {t("거절하기")}
               </button>
               <button className="primary-button" onClick={() => onAnswer(offer, "accept")} type="button">
-                <Icon name="check" size={16} /> 수락하기
+                <Icon name="check" size={16} /> {t("수락하기")}
               </button>
             </>
           )
         ) : (
           <span className={offer.status === "수락" ? "request-result confirmed" : "request-result"}>
             {offer.status === "수락" && <Icon name="check" size={15} />}
-            {offer.status === "수락" ? "협찬 확정" : "거절한 제안"}
+            {offer.status === "수락" ? t("협찬 확정") : t("거절한 제안")}
             {offer.respondedAt && <small>{formatDateTime(offer.respondedAt)}</small>}
           </span>
         )}
@@ -127,8 +128,8 @@ export function OffersPage({
     <section className="page-view">
       <PageIntro
         eyebrow="Offer Inbox"
-        title="받은 협찬 제안"
-        description="브랜드가 보낸 협찬 제안을 확인하고 함께할지 정해 주세요."
+        title={t("받은 협찬 제안")}
+        description={t("브랜드가 보낸 협찬 제안을 확인하고 함께할지 정해 주세요.")}
       />
 
       <TabBar
@@ -136,19 +137,19 @@ export function OffersPage({
           value: item.status,
           label: (
             <>
-              {item.label}
+              {t(item.label)}
               <em>{offers.filter((offer) => offer.status === item.status).length}</em>
             </>
           ),
         }))}
-        label="제안 상태"
+        label={t("제안 상태")}
         onChange={setTab}
         value={tab}
       />
 
       {list.length === 0 ? (
         <p className="day-empty inbox-empty" key={tab}>
-          {current.empty}
+          {t(current.empty)}
         </p>
       ) : (
         <div className="request-grid stagger" key={tab}>

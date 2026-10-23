@@ -4,6 +4,7 @@ import { ApiError, api, errorMessage } from "../api"
 import { PageIntro } from "../components/PageIntro"
 import { Pill } from "../components/Pill"
 import { TabBar } from "../components/TabBar"
+import { t } from "../i18n"
 import { formatDateTime } from "../lib/date"
 import type { AdminInquiry } from "../types"
 
@@ -42,16 +43,16 @@ function InquiryCard({
   return (
     <article className="admin-card">
       <div className="admin-card-head">
-        <span className="admin-category">{inquiry.category}</span>
+        <span className="admin-category">{t(inquiry.category)}</span>
         <time dateTime={inquiry.createdAt}>{formatDateTime(inquiry.createdAt)}</time>
       </div>
       <p className="admin-from">
-        {inquiry.from ? `${inquiry.from.name} · ${inquiry.from.role} · ${inquiry.from.email}` : "탈퇴한 회원"}
+        {inquiry.from ? `${inquiry.from.name} · ${t(inquiry.from.role)} · ${inquiry.from.email}` : t("탈퇴한 회원")}
       </p>
       <p className="admin-question">{inquiry.question}</p>
       {inquiry.answer ? (
         <div className="admin-answer">
-          <strong>답변 {inquiry.answeredAt && <small>{formatDateTime(inquiry.answeredAt)}</small>}</strong>
+          <strong>{t("답변")} {inquiry.answeredAt && <small>{formatDateTime(inquiry.answeredAt)}</small>}</strong>
           <p>{inquiry.answer}</p>
         </div>
       ) : (
@@ -65,15 +66,15 @@ function InquiryCard({
           }}
         >
           <textarea
-            aria-label="답변"
+            aria-label={t("답변")}
             maxLength={2000}
-            placeholder="회원이 '내 질문'에서 보게 될 답변을 적어 주세요."
+            placeholder={t("회원이 '내 질문'에서 보게 될 답변을 적어 주세요.")}
             rows={4}
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
           />
           <button className="primary-button" disabled={busy || !draft.trim()} type="submit">
-            답변 보내기
+            {t("답변 보내기")}
           </button>
         </form>
       )}
@@ -111,7 +112,7 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
       })
       .catch((caught) => {
         if (cancelled) return
-        if (caught instanceof ApiError && caught.status === 403) signOut("관리자 토큰이 맞지 않아요.")
+        if (caught instanceof ApiError && caught.status === 403) signOut(t("관리자 토큰이 맞지 않아요."))
         else setError(errorMessage(caught))
       })
     return () => {
@@ -125,7 +126,7 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
       setInquiries((current) =>
         (current ?? []).map((item) => (item.id === inquiry.id ? { ...item, ...result.inquiry } : item)),
       )
-      onNotice("답변을 보냈어요.")
+      onNotice(t("답변을 보냈어요."))
     } catch (caught) {
       onNotice(errorMessage(caught))
     }
@@ -139,12 +140,12 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
     <section className="page-view admin-page">
       <PageIntro
         eyebrow="Operators"
-        title="운영자 화면"
-        description="도움말 센터의 '관리자에게 질문하기'로 들어온 질문을 확인하고 답해요."
+        title={t("운영자 화면")}
+        description={t("도움말 센터의 '관리자에게 질문하기'로 들어온 질문을 확인하고 답해요.")}
         actions={
           inquiries && (
             <Pill onClick={() => signOut()} variant="outline">
-              나가기
+              {t("나가기")}
             </Pill>
           )
         }
@@ -159,10 +160,10 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
           }}
         >
           <label>
-            관리자 토큰
+            {t("관리자 토큰")}
             <input
               autoComplete="off"
-              placeholder="서버의 ADMIN_TOKEN"
+              placeholder={t("서버의 ADMIN_TOKEN")}
               type="password"
               value={tokenDraft}
               onChange={(event) => setTokenDraft(event.target.value)}
@@ -174,23 +175,23 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
             </p>
           )}
           <button className="primary-button" disabled={!tokenDraft.trim()} type="submit">
-            확인
+            {t("확인")}
           </button>
-          <small className="field-hint">토큰은 이 탭에만 기억되고, 탭을 닫으면 지워져요.</small>
+          <small className="field-hint">{t("토큰은 이 탭에만 기억되고, 탭을 닫으면 지워져요.")}</small>
         </form>
       ) : (
         <>
           <TabBar
             items={[
-              { value: "waiting", label: <>답변 대기<em>{waiting.length}</em></> },
-              { value: "answered", label: <>답변 완료<em>{answered.length}</em></> },
+              { value: "waiting", label: <>{t("답변 대기")}<em>{waiting.length}</em></> },
+              { value: "answered", label: <>{t("답변 완료")}<em>{answered.length}</em></> },
             ]}
-            label="질문 상태"
+            label={t("질문 상태")}
             onChange={setTab}
             value={tab}
           />
           {list.length === 0 ? (
-            <p className="day-empty">{tab === "waiting" ? "답을 기다리는 질문이 없어요." : "아직 답한 질문이 없어요."}</p>
+            <p className="day-empty">{tab === "waiting" ? t("답을 기다리는 질문이 없어요.") : t("아직 답한 질문이 없어요.")}</p>
           ) : (
             <div className="admin-list" key={tab}>
               {list.map((inquiry) => (

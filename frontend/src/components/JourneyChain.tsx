@@ -1,5 +1,6 @@
 import { useId, useRef, useState, type CSSProperties } from "react"
 
+import { t } from "../i18n"
 import { ChromeScene } from "../scenes/ChromeScene"
 import { MeshBackdrop } from "../scenes/MeshBackdrop"
 import { Pill } from "./Pill"
@@ -45,11 +46,11 @@ export function JourneyChain({
         <ChromeScene anchor={wrapRef} kind="chain" mode="pinned" scrollSpin />
         <div className="chain-overlay">
           <span className="eyebrow light">Sponsorship Flow</span>
-          <RevealTitle accent={1} as="h2" className="chain-title" lines={["끊기지 않는", "협찬의 고리"]} />
+          <RevealTitle accent={1} as="h2" className="chain-title" lines={[t("끊기지 않는"), t("협찬의 고리")]} />
           <div className="chain-bottom">
             <p>{intro}</p>
             <p aria-hidden="true" className="chain-aside">
-              함께라서 더 단단하게
+              {t("함께라서 더 단단하게")}
             </p>
           </div>
         </div>
@@ -78,7 +79,7 @@ export function JourneyChain({
 const phase = (index: number, current: number) =>
   index < current ? "done" : index === current ? "current" : "next"
 
-const phaseLabel = { done: "지난 단계", current: "지금 단계", next: "다음 단계" }
+const phaseLabel = { done: t("지난 단계"), current: t("지금 단계"), next: t("다음 단계") }
 
 // The steps as a stepper: numbered dots on one line, filled in deep blue up
 // to the step under way, whose dot glows with a turning gradient (getlayers'
@@ -95,7 +96,7 @@ function Stepper({ steps, current }: { steps: JourneyStep[]; current: number }) 
 
   return (
     <div className="stepper" data-reveal style={{ "--progress": progress, "--steps": steps.length } as CSSProperties}>
-      <ol aria-label="협찬 단계" className="stepper-track">
+      <ol aria-label={t("협찬 단계")} className="stepper-track">
         {steps.map((step, index) => {
           const state = phase(index, current)
           return (
@@ -110,7 +111,7 @@ function Stepper({ steps, current }: { steps: JourneyStep[]; current: number }) 
               >
                 <span aria-hidden="true">{state === "done" ? "✓" : index + 1}</span>
                 <span className="sr-only">
-                  {index + 1}단계 {step.label}, {phaseLabel[state]}
+                  {t("{step}단계 {label}, {phase}", { step: index + 1, label: step.label, phase: phaseLabel[state] })}
                 </span>
               </button>
               <strong aria-hidden="true">{step.label}</strong>

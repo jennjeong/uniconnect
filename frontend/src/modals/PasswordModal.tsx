@@ -2,6 +2,7 @@ import { useState } from "react"
 
 import { api, errorMessage } from "../api"
 import { Modal } from "../components/Modal"
+import { t } from "../i18n"
 
 // Changing the password from 내 정보: the current one, then the new one
 // twice. Other devices are logged out; this one stays logged in.
@@ -11,9 +12,9 @@ export function PasswordModal({ onClose, onChanged }: { onClose: () => void; onC
   const [busy, setBusy] = useState(false)
 
   const submit = async () => {
-    if (!draft.current) return setError("지금 비밀번호를 입력해 주세요.")
-    if (draft.next.length < 8) return setError("새 비밀번호는 8자 이상이어야 해요.")
-    if (draft.next !== draft.confirm) return setError("새 비밀번호가 일치하지 않아요.")
+    if (!draft.current) return setError(t("지금 비밀번호를 입력해 주세요."))
+    if (draft.next.length < 8) return setError(t("새 비밀번호는 8자 이상이어야 해요."))
+    if (draft.next !== draft.confirm) return setError(t("새 비밀번호가 일치하지 않아요."))
     setBusy(true)
     setError("")
     try {
@@ -39,7 +40,7 @@ export function PasswordModal({ onClose, onChanged }: { onClose: () => void; onC
   )
 
   return (
-    <Modal name="password" kicker="Account" title="비밀번호 변경" onClose={onClose}>
+    <Modal name="password" kicker="Account" title={t("비밀번호 변경")} onClose={onClose}>
       <form
         className="auth-form"
         noValidate
@@ -48,17 +49,17 @@ export function PasswordModal({ onClose, onChanged }: { onClose: () => void; onC
           void submit()
         }}
       >
-        <p className="auth-lead">비밀번호를 바꾸면 다른 기기에서는 로그아웃돼요.</p>
-        {field("current", "지금 비밀번호", "current-password")}
-        {field("next", "새 비밀번호 (8자 이상)", "new-password")}
-        {field("confirm", "새 비밀번호 확인", "new-password")}
+        <p className="auth-lead">{t("비밀번호를 바꾸면 다른 기기에서는 로그아웃돼요.")}</p>
+        {field("current", t("지금 비밀번호"), "current-password")}
+        {field("next", t("새 비밀번호 (8자 이상)"), "new-password")}
+        {field("confirm", t("새 비밀번호 확인"), "new-password")}
         {error && (
           <p className="form-error" role="alert">
             {error}
           </p>
         )}
         <button className="primary-button wide" disabled={busy} type="submit">
-          비밀번호 바꾸기
+          {t("비밀번호 바꾸기")}
         </button>
       </form>
     </Modal>

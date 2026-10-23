@@ -5,6 +5,7 @@ import { Icon } from "../components/Icon"
 import { Presence } from "../components/Presence"
 import { RevealTitle } from "../components/RevealText"
 import { faqs, faqTopics, type FaqTopic } from "../data/faq"
+import { t } from "../i18n"
 import { AskModal } from "../modals/AskModal"
 import { MeshBackdrop } from "../scenes/MeshBackdrop"
 import type { Account } from "../types"
@@ -94,10 +95,10 @@ export function FaqPage({ account, onLogin }: { account: Account | null; onLogin
         <div className="help-hero-top">
           <span className="eyebrow light">Help Center</span>
           <button className="help-contact" onClick={goAsk} type="button">
-            관리자에게 질문하기 <Icon name="arrowUpRight" size={15} />
+            {t("관리자에게 질문하기")} <Icon name="arrowUpRight" size={15} />
           </button>
         </div>
-        <RevealTitle className="help-title">무엇을 도와드릴까요?</RevealTitle>
+        <RevealTitle className="help-title">{t("무엇을 도와드릴까요?")}</RevealTitle>
         <form className="help-search" onSubmit={search} role="search">
           <Icon name="search" size={18} />
           <input
@@ -105,7 +106,7 @@ export function FaqPage({ account, onLogin }: { account: Account | null; onLogin
             aria-autocomplete="list"
             aria-controls="help-suggestions"
             aria-expanded={listOpen}
-            aria-label="자주 묻는 질문 검색"
+            aria-label={t("자주 묻는 질문 검색")}
             onBlur={() => setSuggesting(false)}
             onChange={(event) => {
               setQuery(event.target.value)
@@ -116,12 +117,12 @@ export function FaqPage({ account, onLogin }: { account: Account | null; onLogin
             }}
             onFocus={() => setSuggesting(true)}
             onKeyDown={moveThroughSuggestions}
-            placeholder="궁금한 내용 검색 (예: 제안 취소)"
+            placeholder={t("궁금한 내용 검색 (예: 제안 취소)")}
             role="combobox"
             type="search"
             value={query}
           />
-          <button type="submit">검색</button>
+          <button type="submit">{t("검색")}</button>
           {listOpen && (
             <ul className="help-suggestions" id="help-suggestions" role="listbox">
               {suggestions.map((item, index) => (
@@ -148,7 +149,7 @@ export function FaqPage({ account, onLogin }: { account: Account | null; onLogin
         </form>
       </header>
 
-      <ul aria-label="도움말 주제" className="help-topics stagger">
+      <ul aria-label={t("도움말 주제")} className="help-topics stagger">
         {faqTopics.map((item) => {
           const count = faqs.filter((faq) => faq.topic === item.key).length
           return (
@@ -164,7 +165,7 @@ export function FaqPage({ account, onLogin }: { account: Account | null; onLogin
                 </span>
                 <strong>{item.title}</strong>
                 <span>{item.description}</span>
-                <small>질문 {count}개</small>
+                <small>{count === 1 ? t("질문 1개") : t("질문 {count}개", { count })}</small>
               </button>
             </li>
           )
@@ -173,7 +174,7 @@ export function FaqPage({ account, onLogin }: { account: Account | null; onLogin
 
       <div className="help-results" ref={listRef}>
         <div className="help-results-head">
-          <h2>{words ? `‘${query.trim()}’ 검색 결과` : (topicTitle ?? "자주 묻는 질문")}</h2>
+          <h2>{words ? t("‘{query}’ 검색 결과", { query: query.trim() }) : (topicTitle ?? t("자주 묻는 질문"))}</h2>
           {(words || topic) && (
             <button
               className="underline-link"
@@ -183,15 +184,15 @@ export function FaqPage({ account, onLogin }: { account: Account | null; onLogin
               }}
               type="button"
             >
-              자주 묻는 질문 전체 보기
+              {t("자주 묻는 질문 전체 보기")}
             </button>
           )}
         </div>
         {shown.length === 0 ? (
           <div className="help-empty">
-            <p>찾는 답이 없어요. 관리자에게 직접 물어보세요.</p>
+            <p>{t("찾는 답이 없어요. 관리자에게 직접 물어보세요.")}</p>
             <button className="primary-button" onClick={goAsk} type="button">
-              관리자에게 질문하기
+              {t("관리자에게 질문하기")}
             </button>
           </div>
         ) : (

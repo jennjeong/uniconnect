@@ -3,6 +3,7 @@ import { useState } from "react"
 import { api, errorMessage } from "../api"
 import { Modal } from "../components/Modal"
 import { RolePicker } from "../components/RolePicker"
+import { t } from "../i18n"
 import type { Role, Session } from "../types"
 
 export function LoginModal({
@@ -24,7 +25,7 @@ export function LoginModal({
 
   const submit = async () => {
     if (!draft.email.trim() || !draft.password) {
-      setError("이메일과 비밀번호를 입력해 주세요.")
+      setError(t("이메일과 비밀번호를 입력해 주세요."))
       return
     }
     setBusy(true)
@@ -39,7 +40,7 @@ export function LoginModal({
   }
 
   return (
-    <Modal banner name="login" kicker="Welcome Back" title="로그인" onClose={onClose}>
+    <Modal banner name="login" kicker="Welcome Back" title={t("로그인")} onClose={onClose}>
       <form
         className="auth-form"
         noValidate
@@ -54,7 +55,7 @@ export function LoginModal({
           onChange={(role) => setDraft((current) => ({ ...current, role }))}
         />
         <label>
-          이메일
+          {t("이메일")}
           <input
             autoComplete="email"
             placeholder={
@@ -68,7 +69,7 @@ export function LoginModal({
           />
         </label>
         <label>
-          비밀번호
+          {t("비밀번호")}
           <input
             autoComplete="current-password"
             type="password"
@@ -80,7 +81,7 @@ export function LoginModal({
         </label>
         <p className="forgot-row">
           <button onClick={() => onForgot(draft.email)} type="button">
-            비밀번호를 잊으셨나요?
+            {t("비밀번호를 잊으셨나요?")}
           </button>
         </p>
         {error && (
@@ -89,12 +90,12 @@ export function LoginModal({
           </p>
         )}
         <button className="primary-button wide" disabled={busy} type="submit">
-          {draft.role === "학생단체" ? "학생단체로 로그인" : "스폰서로 로그인"}
+          {draft.role === "학생단체" ? t("학생단체로 로그인") : t("스폰서로 로그인")}
         </button>
         <p className="auth-switch">
-          아직 계정이 없나요?{" "}
+          {t("아직 계정이 없나요?")}{" "}
           <button onClick={() => onSignup(draft.role)} type="button">
-            회원가입
+            {t("회원가입")}
           </button>
         </p>
       </form>

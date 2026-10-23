@@ -1,0 +1,151 @@
+// English for this area's Korean copy (see i18n/index.ts).
+const en: Record<string, string> = {
+  // Report KPIs (lib/kpis.ts)
+  "도달 인원": "Reach",
+  "QR 스캔 + 현장 밖 도달": "QR scans + off-site reach",
+  "QR 스캔 {scans}건에 목표 설정에서 적은 현장 밖 도달(SNS 등) {snsReach}명을 더한 값이에요.":
+    "{scans} QR scans plus the {snsReach} off-site reach (social media, etc.) entered in the goals.",
+  "QR 참여율": "QR rate",
+  "QR 스캔 {scans}건": "{scans} QR scans",
+  "QR 스캔 {scans}건 ÷ 예상 관객 {audience}명": "{scans} QR scans ÷ {audience} expected audience",
+  "방문 전환율": "Visit rate",
+  "{visits}명 방문": "{visits:visit|visits}",
+  "매장 방문 {visits}건 ÷ QR 스캔 {scans}건": "{visits} store visits ÷ {scans} QR scans",
+  "추정 ROAS": "Est. ROAS",
+  "협찬 가치 {value}": "Sponsorship value {value}",
+  "협찬 가치를 정하면 계산돼요": "Calculated once the sponsorship value is set",
+  "추정 매출(매장 방문 {visits}건 × 1인 예상 지출 {spend}) ÷ 협찬 가치 {value}. 실제 매출이 아니라 목표 설정에서 적은 1인 예상 지출로 셈한 추정치예요.":
+    "Est. sales ({visits} store visits × {spend} expected spend per person) ÷ sponsorship value {value}. An estimate from the expected spend per person in the goals, not actual sales.",
+  "{reach}명": "{reach}",
+  "{gap}%p": "{gap:pt|pts}",
+  "{gap}명": "{gap}",
+  "{gain}% 높았어요.": "{gain}% above goal.",
+  "{gain}% 낮았어요.": "{gain}% below goal.",
+
+  // Analytics page (pages/AnalyticsPage.tsx)
+  "누적 집행액": "Total spend",
+  "협찬 {count}건 · 현금과 현물 포함": "{count:sponsorship|sponsorships} · cash and in-kind",
+  "협찬당 평균 {count}장": "Avg. {count} per sponsorship",
+  "쿠폰 받은 학생의 {rate}%가 방문": "{rate}% of coupon takers visited",
+  "평균 ROAS": "Average ROAS",
+  "추정 매출 {sales}": "Est. sales {sales}",
+  "협찬 성과 분석": "Sponsorship Analytics",
+  "협찬마다 쓴 금액과 돌아온 쿠폰, 방문, 추정 매출을 함께 비교해요.":
+    "Compare what each sponsorship cost with the coupons, visits and estimated sales it brought back.",
+  "PDF 만드는 중…": "Creating PDF…",
+  "분석 보고서 다운로드": "Download report",
+  "아직 집계된 협찬이 없어요. 협찬이 끝나면 성과를 여기서 볼 수 있어요.":
+    "No sponsorships recorded yet. Their results show here once they end.",
+  "지금까지의 협찬을 모아 보면": "Your Sponsorships So Far",
+  "협찬별 ROAS": "ROAS by Sponsorship",
+  "목표 ROAS": "ROAS goal",
+  "목표 달성": "Goal met",
+  "목표 {target}% 달성": "Goal {target}% met",
+  "목표 {target}% · {gap}%p 부족": "Goal {target}% · {gap} pts short",
+  인사이트: "Insights",
+  "목표 ROAS를 달성한 협찬은 {total}건 중 {met}이에요.": "{met} of {total:sponsorship|sponsorships} met their ROAS goal.",
+  "{met}건": "{met}",
+  "{event} 협찬은 목표보다 {gap}%p 낮았어요.": "{event} fell {gap} points short of its goal.",
+  "모든 협찬이 목표를 넘었어요.": "Every sponsorship beat its goal.",
+  "{event} 협찬의 효율이 가장 좋았어요. 추정 매출이 집행액의 {times}예요.":
+    "{event} was the most efficient: estimated sales came to {times} the spend.",
+  "{times}배": "{times}×",
+  "방문 한 명을 데려오는 데 {group} 협찬이 {cost}으로 가장 적게 들었어요.":
+    "{group} brought in store visits for the least, {cost} per visit.",
+  "쿠폰을 받은 학생의 {rate}가 매장에 왔어요.": "{rate} of students who took a coupon visited the store.",
+  "현장 쿠폰이 방문으로 잘 이어지고 있어요.": "On-site coupons are turning into visits well.",
+  "쿠폰 혜택을 키우면 방문이 더 늘 수 있어요.": "A bigger coupon offer could bring more visits.",
+  "협찬별 상세": "Details by Sponsorship",
+  행사: "Event",
+  집행액: "Spend",
+  "방문당 비용": "Cost per visit",
+  "{coupons}장": "{coupons}",
+  "{visits}명": "{visits}",
+  "목표 {target}%": "Goal {target}%",
+  "집행액은 학생단체가 목표 설정에서 적은 협찬 가치이고, 추정 매출은 매장 방문 수 × 학생단체가 적은 1인 예상 지출이에요. 실제 매출과 다를 수 있어요.":
+    "Spend is the sponsorship value the student group set in its goals; estimated sales are store visits × the group's expected spend per person. Actual sales may differ.",
+
+  // Analytics PDF (report/AnalyticsDocument.tsx)
+  "uniconnect · 협찬 성과 분석 보고서 · 집계된 협찬 데이터로 자동 생성했어요.":
+    "uniconnect · Sponsorship Analytics Report · Generated from recorded sponsorship data.",
+  "목표 ROAS를 달성한 협찬은 {total}건 중 {met}건이에요.": "{met} of {total:sponsorship|sponsorships} met their ROAS goal.",
+  "{event}은 목표보다 {gap}%p 낮았어요.": "{event} fell {gap} points short of its goal.",
+  "{event} 협찬의 효율이 가장 좋았어요. 추정 매출이 집행액의 {times}배예요.":
+    "{event} was the most efficient: estimated sales came to {times}× the spend.",
+  "쿠폰을 받은 학생의 {rate}%가 매장에 왔어요.": "{rate}% of students who took a coupon visited the store.",
+  "협찬 성과 분석 보고서": "Sponsorship Analytics Report",
+  "협찬 {count}건": "{count:sponsorship|sponsorships}",
+  "{from} ~ {to}": "{from} – {to}",
+  "협찬 {total}건 중 {met}했어요": "Of {total:sponsorship|sponsorships}, {met}",
+  "{met}건이 목표 ROAS를 달성": "{met} met the ROAS goal",
+  "평균 ROAS {roas}% · 누적 집행액 {spend} · 추정 매출 {sales}":
+    "Avg. ROAS {roas}% · Total spend {spend} · Est. sales {sales}",
+  "핵심 지표": "Key Metrics",
+  "현금과 현물 포함": "Cash and in-kind",
+  "협찬 {count}건 합계": "Across {count:sponsorship|sponsorships}",
+  "쿠폰 받은 학생의 {rate}%": "{rate}% of coupon takers",
+  "달성한 ROAS": "ROAS achieved",
+  "목표 ROAS {target}%를 {gap}%p 넘겼어요.": "Beat the {target}% ROAS goal by {gap} points.",
+  "목표 ROAS {target}%까지 {gap}%p 남았어요.": "{gap} points short of the {target}% ROAS goal.",
+  "{spend}을 집행해 추정 매출 {sales}을 만들었어요. {verdict}":
+    "Spent {spend} for an estimated {sales} in sales. {verdict}",
+  "쿠폰을 받은 {coupons}명 중 {visits}명({rate}%)이 매장을 찾았어요. 전체 평균은 {average}%예요.":
+    "{visits} of {coupons} coupon takers ({rate}%) visited the store, against an overall average of {average}%.",
+  "방문 한 명당 {cost}이 들었어요. 전체 평균 {average}보다 적게 들었어요.":
+    "Each visit cost {cost}, less than the overall average of {average}.",
+  "방문 한 명당 {cost}이 들었어요. 전체 평균 {average}보다 많이 들었어요.":
+    "Each visit cost {cost}, more than the overall average of {average}.",
+  "아직 매장 방문이 집계되지 않았어요.": "No store visits recorded yet.",
+  "목표까지 {gap}%p": "{gap:pt|pts} to goal",
+  "집행액 {spend} · 추정 매출 {sales} · 방문당 비용 {cost}":
+    "Spend {spend} · Est. sales {sales} · Cost per visit {cost}",
+  "행사 현장 QR": "On-site QR",
+  "목표 {target} · {rate}% 달성": "Goal {target} · {rate}% achieved",
+  "집행액과 추정 매출": "Spend and Est. Sales",
+  "추정 매출": "Est. sales",
+  "집행액의 {times}배": "{times}× spend",
+  "쿠폰에서 방문까지": "From Coupon to Visit",
+  "{people}명": "{people}",
+  평가: "Assessment",
+
+  // Event report PDF (report/ReportDocument.tsx)
+  "발행 {date}": "Issued {date}",
+  "작성 {author}": "Prepared by {author}",
+  "uniconnect · 협찬 성과 리포트 · 행사 측정 데이터로 자동 생성했어요.":
+    "uniconnect · Sponsorship Performance Report · Generated from the event's measurement data.",
+  "참여 시작": "Start",
+  "QR 스캔의 {rate}%": "{rate}% of QR scans",
+  "쿠폰 받은 사람의 {rate}%": "{rate}% of coupon takers",
+  "{month}/{day} {hour}시": "{month}/{day} {hour}:00",
+  "{hour}시": "{hour}:00",
+  "추정 ROAS {roas}%로 목표 {target}%보다 {summary}": "Est. ROAS was {roas}% against a {target}% goal: {summary}",
+  "협찬 가치를 정하지 않아 ROAS는 계산하지 않았어요.": "ROAS wasn't calculated because no sponsorship value was set.",
+  "QR 참여율은 {rate}%로 목표({target}%) 대비 {gap}예요.": "QR rate was {rate}%, {gap} against the {target}% goal.",
+  "QR 스캔 {scans}건에 매장 방문이 {visits}건({rate}%) 이어졌어요.":
+    "{scans} QR scans led to {visits} store visits ({rate}%).",
+  "{hour}에 스캔이 {scans}건으로 가장 많았어요. 다음 행사에서는 이 시간대에 부스 인력을 모아 보세요.":
+    "Scans peaked at {hour} with {scans}. Put more booth staff on at that time at your next event.",
+  "협찬 성과 리포트": "Sponsorship Performance Report",
+  "예상 관객 {audience}명": "Expected audience {audience}",
+  "협찬 성과가 목표보다 {summary}": "Sponsorship results came in {summary}",
+  "협찬 가치를 정하면 ROAS가 계산돼요": "Set the sponsorship value to see ROAS",
+  "추정 ROAS {roas} (목표 {target}%) · 협찬 가치 {value} · 도달 {reach}명":
+    "Est. ROAS {roas} (goal {target}%) · Sponsorship value {value} · Reach {reach}",
+  "목표 대비 실적": "Results vs. Goals",
+  목표: "Goals",
+  실적: "Actual",
+  "참여 전환 단계": "Participation Funnel",
+  "날짜·시간대별 QR 스캔": "QR scans by day and hour",
+  "행사 당일 시간대별 QR 스캔": "QR scans by hour on event day",
+  "협찬 가치 구성 · 총 {total}": "Sponsorship Value Breakdown · Total {total}",
+  "최근 참여 기록": "Recent Activity",
+  시각: "Time",
+  항목: "Item",
+  참여자: "Participant",
+  내용: "Details",
+  "인사이트와 다음 행사 제안": "Insights and Ideas for the Next Event",
+  "목표@marker": "Goal",
+  "항목@log": "Type",
+}
+
+export default en

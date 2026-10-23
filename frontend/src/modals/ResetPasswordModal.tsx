@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 
 import { api, errorMessage } from "../api"
 import { Modal } from "../components/Modal"
+import { t } from "../i18n"
 import { formatRemaining } from "../lib/format"
 import type { Session } from "../types"
 
@@ -57,7 +58,7 @@ export function ResetPasswordModal({
 
   const sendCode = () => {
     if (!email.trim()) {
-      setError("가입한 이메일을 입력해 주세요.")
+      setError(t("가입한 이메일을 입력해 주세요."))
       return
     }
     void run(async () => {
@@ -65,7 +66,7 @@ export function ResetPasswordModal({
       setSent({ expiresAt: result.expiresAt, devCode: result.devCode })
       setCode("")
       setNow(Date.now())
-      onNotice(`${result.email}로 인증번호를 보냈어요.`)
+      onNotice(t("{email}로 인증번호를 보냈어요.", { email: result.email }))
     })
   }
 
@@ -74,16 +75,16 @@ export function ResetPasswordModal({
       sendCode()
       return
     }
-    if (code.length !== 6) return setError("6자리 인증번호를 입력해 주세요.")
-    if (password.length < 8) return setError("비밀번호는 8자 이상이어야 해요.")
-    if (password !== confirm) return setError("비밀번호가 일치하지 않아요.")
+    if (code.length !== 6) return setError(t("6자리 인증번호를 입력해 주세요."))
+    if (password.length < 8) return setError(t("비밀번호는 8자 이상이어야 해요."))
+    if (password !== confirm) return setError(t("비밀번호가 일치하지 않아요."))
     void run(async () => {
       onReset(await api.resetPassword({ email, code, password }))
     })
   }
 
   return (
-    <Modal banner name="reset" kicker="Forgot Password" title="비밀번호 찾기" onClose={onClose}>
+    <Modal banner name="reset" kicker="Forgot Password" title={t("비밀번호 찾기")} onClose={onClose}>
       <form
         className="auth-form"
         noValidate
@@ -93,10 +94,10 @@ export function ResetPasswordModal({
         }}
       >
         <p className="auth-lead">
-          가입한 이메일로 인증번호를 보내 드려요. 새 비밀번호를 정하면 다른 기기에서는 로그아웃돼요.
+          {t("가입한 이메일로 인증번호를 보내 드려요. 새 비밀번호를 정하면 다른 기기에서는 로그아웃돼요.")}
         </p>
         <div className="field-group">
-          <label htmlFor="reset-email">가입한 이메일</label>
+          <label htmlFor="reset-email">{t("가입한 이메일")}</label>
           <div className="field-with-action">
             <input
               autoComplete="email"
@@ -111,29 +112,29 @@ export function ResetPasswordModal({
             />
             {sent && (
               <button className="field-action" disabled={busy} onClick={sendCode} type="button">
-                재전송
+                {t("재전송")}
               </button>
             )}
           </div>
           {sent && (
             <>
               <input
-                aria-label="인증번호"
+                aria-label={t("인증번호")}
                 autoComplete="one-time-code"
                 inputMode="numeric"
                 maxLength={6}
-                placeholder="6자리 인증번호"
+                placeholder={t("6자리 인증번호")}
                 value={code}
                 onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))}
               />
               <small className="field-hint">
                 {now < sent.expiresAt
-                  ? `남은 시간 ${formatRemaining(sent.expiresAt - now)}`
-                  : "인증 시간이 지났어요. 재전송을 눌러 주세요."}
+                  ? t("남은 시간 {time}", { time: formatRemaining(sent.expiresAt - now) })
+                  : t("인증 시간이 지났어요. 재전송을 눌러 주세요.")}
                 {sent.devCode && (
                   <>
                     {" · "}
-                    개발 모드라서 메일 대신 인증번호를 여기에 보여드려요:{" "}
+                    {t("개발 모드라서 메일 대신 인증번호를 여기에 보여드려요:")}{" "}
                     <strong>{sent.devCode}</strong>
                   </>
                 )}
@@ -144,17 +145,17 @@ export function ResetPasswordModal({
         {sent && (
           <div className="form-row">
             <label>
-              새 비밀번호
+              {t("새 비밀번호")}
               <input
                 autoComplete="new-password"
-                placeholder="8자 이상"
+                placeholder={t("8자 이상")}
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
               />
             </label>
             <label>
-              새 비밀번호 확인
+              {t("새 비밀번호 확인")}
               <input
                 autoComplete="new-password"
                 type="password"
@@ -170,12 +171,12 @@ export function ResetPasswordModal({
           </p>
         )}
         <button className="primary-button wide" disabled={busy} type="submit">
-          {sent ? "새 비밀번호로 로그인" : "인증번호 받기"}
+          {sent ? t("새 비밀번호로 로그인") : t("인증번호 받기")}
         </button>
         <p className="auth-switch">
-          비밀번호가 기억났나요?{" "}
+          {t("비밀번호가 기억났나요?")}{" "}
           <button onClick={onLogin} type="button">
-            로그인
+            {t("로그인")}
           </button>
         </p>
       </form>
