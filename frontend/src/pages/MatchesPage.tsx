@@ -15,7 +15,7 @@ const tabs: Tab[] = ["추천", "가까운 순", "인기", "전체", "업종별"]
 const tabIntro: Record<Tab, { title: string; caption: string }> = {
   추천: {
     title: "내 행사에 맞는 브랜드를 찾았어요",
-    caption: "행사 정보, 타깃, 거리와 지난 성과를 함께 분석한 결과예요.",
+    caption: "행사 정보, 타깃과 지난 성과를 함께 분석한 결과예요.",
   },
   "가까운 순": {
     title: "학교에서 가까운 브랜드예요",

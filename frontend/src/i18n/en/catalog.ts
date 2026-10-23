@@ -14,8 +14,8 @@ const en: Record<string, string> = {
   인기: "Popular",
   업종별: "By industry",
   "내 행사에 맞는 브랜드를 찾았어요": "Brands that fit your events",
-  "행사 정보, 타깃, 거리와 지난 성과를 함께 분석한 결과예요.":
-    "Picked from your event details, audience, distance and past results.",
+  "행사 정보, 타깃과 지난 성과를 함께 분석한 결과예요.":
+    "Picked from your event details, audience and past results.",
   "학생단체가 많이 찾는 브랜드예요": "Brands student groups love",
   "이번 학기 협찬을 많이 한 순서로 보여드려요.": "Sorted by the most sponsorships this term.",
   "협찬할 수 있는 브랜드 전체예요": "Every brand you can pitch",
@@ -62,7 +62,8 @@ const en: Record<string, string> = {
   "예상 인원 {count}명": "{count} expected",
   "캠퍼스 현장에서 브랜드를 직접 소개할 수 있는 학생단체예요.":
     "A student group that can introduce your brand in person on campus.",
-  "학생들이 실제로 찾아가는 캠퍼스 가까운 브랜드예요.": "A brand near campus that students actually visit.",
+  "학교에서 {distance} 떨어진 곳에 매장이 있는 브랜드예요.": "A brand with a store {distance} from your school.",
+  "캠퍼스 행사에 협찬할 수 있는 브랜드예요.": "A brand that can sponsor campus events.",
   "아직 소개를 쓰지 않았어요.": "No introduction yet.",
   "단체 정보": "Group info",
   "브랜드 정보": "Brand info",
@@ -248,8 +249,8 @@ const en: Record<string, string> = {
   거리: "Distance",
   "매장 주소": "Store address",
   "예) 서울 노원구 공릉로 232": "e.g. 232 Gongneung-ro, Nowon-gu, Seoul",
-  "지도 서비스가 연결되면 이 주소로 학교까지의 거리를 보여 드려요.":
-    "Once a map service is connected, we'll show the distance to each school from this address.",
+  "아직 이 주소를 지도에서 찾지 못해 거리가 보이지 않아요. 도로명 주소로 적고 다시 저장해 주세요.":
+    "We haven't found this address on the map yet, so no distance shows. Enter a street address and save again.",
   "학생단체에게 학교에서 매장까지의 거리를 보여 드려요. 온라인 브랜드는 비워 두세요.":
     "Student groups see how far your store is from their school. Leave it empty if you're online only.",
 }

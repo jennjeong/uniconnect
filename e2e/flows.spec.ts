@@ -122,5 +122,5 @@ test("brands line up by distance from the school, and a brand keeps its store ad
   await expect(brand.locator(".tag-distance")).toHaveCount(0)
   await brand.goto("/me/edit")
   await expect(brand.getByLabel("매장 주소")).toHaveValue("서울 노원구 화랑로 815")
-  await expect(brand.getByText(/지도 서비스가 연결되면/)).toBeVisible()
+  await expect(brand.getByText(/아직 이 주소를 지도에서 찾지 못해/)).toBeVisible()
 })

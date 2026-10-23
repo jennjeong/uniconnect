@@ -9,6 +9,7 @@ import { RevealTitle, RevealWords } from "../components/RevealText"
 import { ScoreRing } from "../components/ScoreRing"
 import { profileLabels } from "../data/profile"
 import { locale, t } from "../i18n"
+import { formatDistance } from "../lib/distance"
 import { LayersGradient } from "../scenes/LayersGradient"
 import { MeshBackdrop } from "../scenes/MeshBackdrop"
 import { ANTIPODE } from "../scenes/shaders"
@@ -136,7 +137,11 @@ export function MatchDetailPage({
               <span>
                 {group
                   ? t("캠퍼스 현장에서 브랜드를 직접 소개할 수 있는 학생단체예요.")
-                  : t("학생들이 실제로 찾아가는 캠퍼스 가까운 브랜드예요.")}
+                  : match.distanceKm !== undefined
+                    ? t("학교에서 {distance} 떨어진 곳에 매장이 있는 브랜드예요.", {
+                        distance: formatDistance(match.distanceKm),
+                      })
+                    : t("캠퍼스 행사에 협찬할 수 있는 브랜드예요.")}
               </span>
             </p>
           )}

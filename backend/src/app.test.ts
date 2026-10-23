@@ -1850,6 +1850,9 @@ test("a brand's store address is placed on the map once a key is set", async () 
     ...(address === undefined ? {} : { address }),
   })
   const search = geocoder.search
+  // A key in this computer's environment must not reach Kakao from a test.
+  const key = config.kakaoRestApiKey
+  config.kakaoRestApiKey = undefined
   try {
     // Left out, the address and its place stay.
     assert.equal((await call("PUT", "/profile", form(), brand)).data.profile.location.lat, saved.location!.lat)
@@ -1859,24 +1862,34 @@ test("a brand's store address is placed on the map once a key is set", async () 
     const far = (await call("GET", "/groups", undefined, brand)).data.groups
     assert.ok(far.every((group: { distanceKm?: number }) => group.distanceKm === undefined))
 
-    // With a key, Kakao's answer places it, and an address saved before the
-    // key is looked up when it is saved again.
+    // With a key, Kakao's answer places it (here, on 서울과기대's campus), and
+    // an address saved before the key is looked up when it is saved again.
     config.kakaoRestApiKey = "test-key"
+    const { campuses } = await import("./data/campuses.js")
+    const { lat, lng } = campuses.find((campus) => campus.name === "서울과학기술대학교")!
     const asked: string[] = []
     geocoder.search = async (address: string) => {
       asked.push(address)
-      return { documents: [{ x: "127.0775", y: "37.632" }] }
+      return { documents: [{ x: String(lng), y: String(lat) }] }
     }
     const later = (await call("PUT", "/profile", form("서울 노원구 화랑로 815"), brand)).data.profile
-    assert.deepEqual(later.location, { address: "서울 노원구 화랑로 815", lat: 37.632, lng: 127.0775 })
+    assert.deepEqual(later.location, { address: "서울 노원구 화랑로 815", lat, lng })
     const placed = (await call("PUT", "/profile", form("서울 노원구 공릉로 232"), brand)).data.profile
-    assert.deepEqual(placed.location, { address: "서울 노원구 공릉로 232", lat: 37.632, lng: 127.0775 })
+    assert.deepEqual(placed.location, { address: "서울 노원구 공릉로 232", lat, lng })
     assert.deepEqual(asked, ["서울 노원구 화랑로 815", "서울 노원구 공릉로 232"])
     const near = (await call("GET", "/groups", undefined, brand)).data.groups
     assert.equal(near.find((group: { id: string }) => group.id === "seoultech-band").distanceKm, 0)
     // A placed address isn't looked up again.
     await call("PUT", "/profile", form("서울 노원구 공릉로 232"), brand)
     assert.equal(asked.length, 2)
+    // When Kakao refuses (such as Kakao Map switched off), the address is
+    // still saved, with no place.
+    geocoder.search = async () => {
+      throw new Error('403 {"errorType":"NotAuthorizedError"}')
+    }
+    const refused = await call("PUT", "/profile", form("서울 노원구 동일로 1000"), brand)
+    assert.equal(refused.status, 200)
+    assert.deepEqual(refused.data.profile.location, { address: "서울 노원구 동일로 1000" })
 
     const long = await call("PUT", "/profile", form("가".repeat(101)), brand)
     assert.equal(long.status, 400)
@@ -1884,7 +1897,7 @@ test("a brand's store address is placed on the map once a key is set", async () 
     assert.equal((await call("PUT", "/profile", form(""), brand)).data.profile.location, undefined)
   } finally {
     geocoder.search = search
-    config.kakaoRestApiKey = undefined
+    config.kakaoRestApiKey = key
     Object.assign(listing, saved)
     if (!saved.location) delete listing.location
   }

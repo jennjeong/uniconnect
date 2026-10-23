@@ -11,7 +11,8 @@ export const geocoder = {
       headers: { Authorization: `KakaoAK ${key}` },
       signal: AbortSignal.timeout(5000),
     })
-    if (!response.ok) throw new Error(`Kakao address search answered ${response.status}`)
+    // Kakao's answer says why, such as Kakao Map not being switched on for the app.
+    if (!response.ok) throw new Error(`${response.status} ${(await response.text()).slice(0, 200)}`)
     return response.json()
   },
 }
@@ -30,7 +31,7 @@ export async function geocode(address: string): Promise<Point | undefined> {
     const lng = Number(first?.x)
     return Number.isFinite(lat) && Number.isFinite(lng) && first?.x && first?.y ? { lat, lng } : undefined
   } catch (error) {
-    console.error(error)
+    console.error(`[geocode] Kakao address search: ${(error as Error).message}`)
     return undefined
   }
 }
