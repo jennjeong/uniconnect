@@ -116,6 +116,12 @@ export function pageMeta(
   if (view.admin) {
     return { title: titled(t("운영자 화면")), description: t("도움말 센터로 들어온 질문을 확인하고 답해요.") }
   }
+  if (view.invite) {
+    return {
+      title: titled(t("uniconnect 초대장")),
+      description: t("학생단체가 보낸 초대예요. 가게로 가입하면 근처 학생단체의 협찬 제안을 받고, 행사 날 쿠폰과 방문 성과를 확인할 수 있어요."),
+    }
+  }
   if (view.legal) {
     const doc = legalDocs[view.legal]
     return { title: titled(doc.title), description: doc.summary }

@@ -10,6 +10,15 @@ export type NearbyPlace = {
   distanceM: number
   // The place's page on Kakao Map.
   url: string
+  // Where it is, for the schematic map on screen only (never kept), and the
+  // kind it was found under (validation.ts placeCategories).
+  lat: number
+  lng: number
+  kind: string
+  // For the student group looking: it invited this shop (routes/invites.ts).
+  invited?: true
+  // The brand listing this shop joined as, from an invitation.
+  brandId?: string
 }
 
 // How far around a campus to look, in metres: about a 20-minute walk.
@@ -47,6 +56,8 @@ type KakaoPlace = {
   phone?: string
   distance?: string
   place_url?: string
+  x?: string
+  y?: string
 }
 
 // A place's Kakao Map page over https; anything else is left out.
@@ -77,7 +88,9 @@ export async function nearbyPlaces(point: Point, category: string, key: string):
   return (answer.documents ?? [])
     .flatMap((place) => {
       const url = kakaoMapPage(place.place_url)
-      if (!place.id || !place.place_name || !url) return []
+      const lat = Number(place.y)
+      const lng = Number(place.x)
+      if (!place.id || !place.place_name || !url || !Number.isFinite(lat) || !Number.isFinite(lng)) return []
       return [
         {
           id: place.id,
@@ -87,6 +100,9 @@ export async function nearbyPlaces(point: Point, category: string, key: string):
           ...(place.phone ? { phone: place.phone } : {}),
           distanceM: Number(place.distance) || 0,
           url,
+          lat,
+          lng,
+          kind: category,
         },
       ]
     })

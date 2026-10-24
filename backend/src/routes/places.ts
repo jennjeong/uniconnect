@@ -23,7 +23,9 @@ const asksPerClient = createRateLimit({
 // Real shops around the student group's campus (the demo group's for
 // visitors), nearest first, straight from Kakao Local: of one kind, or of
 // every kind together ("all"). Without the map key, or for a school not in
-// the campus table, there are none.
+// the campus table, there are none. Each shop says whether the group looking
+// invited it and which brand it joined as; the campus comes with its point
+// for the schematic map.
 placesRouter.get("/", async (req, res) => {
   const category = String(req.query.category ?? "")
   const kinds = category === "all" ? placeCategories : placeCategories.filter((kind) => kind === category)
@@ -40,7 +42,21 @@ placesRouter.get("/", async (req, res) => {
   kinds.forEach(() => asksPerClient.take(clientKey(req)))
   try {
     const found = await Promise.all(kinds.map((kind) => nearbyPlaces(campus, kind, key)))
-    res.json({ map: true, campus: campus.name, places: nearestPlaces(found.flat()) })
+    const database = getDatabase()
+    const invited = new Set(
+      req.account?.role === "학생단체"
+        ? database.invites.filter((invite) => invite.accountId === req.account!.id).map((invite) => invite.placeId)
+        : [],
+    )
+    const places = nearestPlaces(found.flat()).map((place) => {
+      const brand = database.brands.find((item) => item.kakaoPlaceId === place.id)
+      return {
+        ...place,
+        ...(invited.has(place.id) ? { invited: true as const } : {}),
+        ...(brand ? { brandId: brand.id } : {}),
+      }
+    })
+    res.json({ map: true, campus: campus.name, center: { lat: campus.lat, lng: campus.lng }, places })
   } catch (error) {
     console.error(`[places] Kakao category search: ${(error as Error).message}`)
     throw new HttpError(502, "주변 가게를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.")

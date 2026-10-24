@@ -1696,6 +1696,215 @@ button.nav-pill:hover {
   font-size: 12px;
 }
 
+/* The line saying where, with the switch between the list and the map at
+   its right (wrapping under it on phones). */
+.nearby-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+}
+
+.nearby-layout {
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--fill);
+}
+
+.nearby-layout button {
+  height: 32px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.nearby-layout button[aria-pressed='true'] {
+  background: #fff;
+  color: var(--point-strong);
+  box-shadow: 0 2px 8px rgba(19, 48, 111, 0.12);
+}
+
+/* The sketch map (components/PlaceMap.tsx) beside the card of the shop
+   pressed on it; one above the other on phones. */
+.nearby-map {
+  display: grid;
+  grid-template-columns: minmax(0, 520px) minmax(0, 360px);
+  align-items: start;
+  gap: 24px;
+}
+
+.place-map-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* A silver disc with rings every 500 m, the campus in the middle. */
+.place-map {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, #fff 0%, #f3f5f9 70%, #e9ecf2 100%);
+  box-shadow: var(--silver-ring), 0 18px 44px rgba(19, 48, 111, 0.1);
+}
+
+.place-map-rings {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 0.3;
+}
+
+.place-map-rings line {
+  stroke: var(--line);
+  stroke-dasharray: 1 1.4;
+}
+
+/* Each ring's distance just inside it, under the east line; N at the top. */
+.place-map-ring,
+.place-map-north {
+  position: absolute;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: var(--weight-label);
+  line-height: 1;
+}
+
+/* Over the dots, with a white halo, and never in the way of a press. */
+.place-map-ring {
+  top: 50%;
+  z-index: 2;
+  pointer-events: none;
+  text-shadow:
+    0 0 2px #fff,
+    0 0 4px #fff;
+  transform: translate(calc(-100% - 5px), 5px);
+}
+
+.place-map-north {
+  top: 10px;
+  left: 50%;
+  color: var(--point-strong);
+  transform: translateX(-50%);
+}
+
+.place-map-campus {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 18px;
+  height: 18px;
+  border: 4px solid #fff;
+  border-radius: 50%;
+  background: var(--point);
+  box-shadow: 0 0 0 6px rgba(27, 63, 143, 0.14);
+  transform: translate(-50%, -50%);
+}
+
+.place-map-campus span {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--point);
+  color: var(--on-point);
+  font-size: 11px;
+  font-weight: var(--weight-label);
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+/* Each shop: a 28px target around a small dot, silver before it is on
+   uniconnect, ringed in blue once invited, deep blue once it joined. */
+.place-dot {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  transform: translate(-50%, -50%);
+}
+
+.place-dot::before,
+.place-dot-key {
+  content: '';
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--silver);
+  box-shadow: 0 0 0 2px #fff;
+  transition: transform 0.2s var(--ease-pop);
+}
+
+.place-dot::before {
+  margin: auto;
+}
+
+.place-dot.invited::before,
+.place-dot-key.invited {
+  background: #fff;
+  box-shadow: inset 0 0 0 3px var(--point-bright), 0 0 0 2px #fff;
+}
+
+.place-dot.joined::before,
+.place-dot-key.joined {
+  background: var(--point);
+}
+
+.place-dot:hover::before {
+  transform: scale(1.25);
+}
+
+.place-dot[aria-pressed='true'] {
+  z-index: 1;
+}
+
+.place-dot[aria-pressed='true']::before {
+  transform: scale(1.5);
+  box-shadow: 0 0 0 2px #fff, 0 0 0 5px var(--point-bright);
+}
+
+.place-dot.invited[aria-pressed='true']::before {
+  box-shadow: inset 0 0 0 3px var(--point-bright), 0 0 0 2px #fff, 0 0 0 5px var(--point-bright);
+}
+
+.place-map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 16px;
+  margin: 0;
+  padding: 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+  list-style: none;
+}
+
+.place-map-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@media (max-width: 720px) {
+  .nearby-map {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* Search and filters above a catalog (CatalogSearch.tsx; GroupsPage.tsx adds
    the selects): a white search pill with a magnifier, then silver select
    pills, wrapping onto new lines on phones. */
@@ -2576,11 +2785,26 @@ button.nav-pill:hover {
 }
 
 /* Where a partner's card offers a proposal, a shop not on uniconnect yet
-   says so in a quiet silver pill. */
+   says so in a quiet silver pill; one invited says so in blue on white. */
 .proposal-button.unpartnered {
   background: var(--fill);
   color: var(--ink-soft);
   cursor: default;
+}
+
+.proposal-button.unpartnered.invited {
+  background: #fff;
+  color: var(--point-strong);
+  box-shadow: inset 0 0 0 1px var(--point-line);
+}
+
+/* A shop that joined from an invitation, first among its tags (as specific
+   as the plain tags' rule above, so it wins by coming later). */
+.work-tags > span.tag-joined {
+  background: var(--point);
+  color: var(--on-point);
+  box-shadow: none;
+  font-weight: var(--weight-label);
 }
 
 /* A shop's card links to Kakao Map where a partner's card has buttons. */
@@ -6867,6 +7091,184 @@ button.nav-pill:hover {
 .qr-actions > * {
   height: 44px;
   text-decoration: none;
+}
+
+/* Inviting a shop (modals/InviteShopModal.tsx): the invitation's QR, the
+   message to send, then copy and share. */
+.invite-content .qr-frame {
+  width: 176px;
+  margin: 0;
+}
+
+.invite-qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0 0;
+}
+
+.invite-qr figcaption {
+  color: var(--ink-soft);
+  font-size: 13px;
+  text-align: center;
+}
+
+.invite-message textarea {
+  min-height: 200px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: rgba(238, 240, 244, 0.6);
+  color: var(--ink);
+  font-size: 14px;
+  letter-spacing: 0;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.invite-message textarea:focus {
+  border-color: rgba(27, 63, 143, 0.45);
+  background: #fff;
+}
+
+.invite-content .qr-actions {
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+}
+
+/* The invitation's page (pages/InvitePage.tsx): the group's card at the
+   left, what the shop gets and the way in at the right. */
+.invite-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+}
+
+.invite-group {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 28px;
+  border-radius: var(--radius-lg);
+  background: var(--silver-gradient);
+  box-shadow: var(--silver-ring);
+}
+
+.invite-group-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.invite-group-head h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 22px;
+  font-weight: var(--weight-display);
+}
+
+.invite-group-head p,
+.invite-intro {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.invite-event {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--ink);
+  box-shadow: var(--ring);
+}
+
+.invite-event .icon {
+  color: var(--point-strong);
+}
+
+.invite-place {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 4px;
+  color: var(--point-strong);
+  font-weight: var(--weight-label);
+  text-decoration: none;
+}
+
+.invite-place:hover {
+  text-decoration: underline;
+}
+
+.invite-side {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.invite-benefits {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.invite-benefits li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--point-soft);
+  color: var(--ink);
+}
+
+.invite-benefits .icon {
+  margin-top: 3px;
+  color: var(--point-strong);
+}
+
+.invite-cta {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.invite-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.invite-note {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.invite-done {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--point-strong);
+  font-weight: var(--weight-label);
+}
+
+@media (max-width: 720px) {
+  .invite-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .invite-group {
+    padding: 22px;
+  }
 }
 
 .roas-list {

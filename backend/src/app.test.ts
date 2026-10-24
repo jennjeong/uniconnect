@@ -1258,15 +1258,17 @@ test("sign-up codes stay off the response unless turned on", () => {
   assert.equal(emailCodesExposed({ EXPOSE_EMAIL_CODES: "true" }), true)
 })
 
-// A member signed up for a test, logged in, with their token.
-async function signUpMember(email: string, password: string) {
-  const sent = await call("POST", "/auth/email-code", { role: "학생단체", email })
+// A member signed up for a test, logged in, with their token: a student
+// group unless a brand is asked for.
+async function signUpMember(email: string, password: string, role: "학생단체" | "브랜드" = "학생단체") {
+  const students = role === "학생단체"
+  const sent = await call("POST", "/auth/email-code", { role, email })
   const verified = await call("POST", "/auth/email-code/verify", { email, code: sent.data.devCode })
   const signup = await call("POST", "/auth/signup", {
-    role: "학생단체",
-    name: `${email.split("@")[0]} 동아리`,
-    type: "공연 동아리",
-    school: "삼육대학교",
+    role,
+    name: `${email.split("@")[0]} ${students ? "동아리" : "카페"}`,
+    type: students ? "공연 동아리" : "카페 · 식음료",
+    school: students ? "삼육대학교" : "",
     email,
     password,
     verificationToken: verified.data.verificationToken,
@@ -1957,10 +1959,22 @@ test("the shops around a campus come live from Kakao, are asked for again each t
             phone: "02-000-0000",
             distance: "411",
             place_url: "http://place.map.kakao.com/2",
+            x: "127.1093",
+            y: "37.6431",
           },
-          { id: "1", place_name: "스마일하우스", category_name: "음식점 > 카페", address_name: "서울 노원구 공릉동 1", distance: "147", place_url: "http://place.map.kakao.com/1" },
-          // Not a Kakao Map page, so it is left out.
-          { id: "3", place_name: "어딘가", distance: "50", place_url: "https://example.com/3" },
+          {
+            id: "1",
+            place_name: "스마일하우스",
+            category_name: "음식점 > 카페",
+            address_name: "서울 노원구 공릉동 1",
+            distance: "147",
+            place_url: "http://place.map.kakao.com/1",
+            x: "127.1041",
+            y: "37.6428",
+          },
+          // Not a Kakao Map page, so it is left out, and so is one without a place.
+          { id: "3", place_name: "어딘가", distance: "50", place_url: "https://example.com/3", x: "127.1", y: "37.6" },
+          { id: "4", place_name: "위치 없음", distance: "60", place_url: "http://place.map.kakao.com/4" },
         ],
       }
     }
@@ -1968,7 +1982,17 @@ test("the shops around a campus come live from Kakao, are asked for again each t
     const visitor = (await call("GET", "/places?category=CE7")).data
     assert.equal(visitor.campus, "삼육대학교")
     assert.deepEqual(visitor.places, [
-      { id: "1", name: "스마일하우스", category: "카페", address: "서울 노원구 공릉동 1", distanceM: 147, url: "https://place.map.kakao.com/1" },
+      {
+        id: "1",
+        name: "스마일하우스",
+        category: "카페",
+        address: "서울 노원구 공릉동 1",
+        distanceM: 147,
+        url: "https://place.map.kakao.com/1",
+        lat: 37.6428,
+        lng: 127.1041,
+        kind: "CE7",
+      },
       {
         id: "2",
         name: "이디야커피 삼육대점",
@@ -1977,9 +2001,14 @@ test("the shops around a campus come live from Kakao, are asked for again each t
         phone: "02-000-0000",
         distanceM: 411,
         url: "https://place.map.kakao.com/2",
+        lat: 37.6431,
+        lng: 127.1093,
+        kind: "CE7",
       },
     ])
     const campus = campuses.find((item) => item.name === "삼육대학교")!
+    // The campus comes with its point, for the map drawn on screen.
+    assert.deepEqual(visitor.center, { lat: campus.lat, lng: campus.lng })
     assert.deepEqual(asked[0], { category: "CE7", lat: campus.lat, lng: campus.lng })
     // The same look asks Kakao again: nothing was kept.
     await call("GET", "/places?category=CE7")
@@ -2022,6 +2051,151 @@ test("the shops around a campus come live from Kakao, are asked for again each t
     config.kakaoRestApiKey = key
     Object.assign(demo, { email: saved.email, school: saved.school })
     group.school = saved.groupSchool
+  }
+})
+
+test("a student group invites a shop it found nearby, and the shop joins as a brand", async () => {
+  const { placeSearch } = await import("./lib/places.js")
+  const { mailTransport } = await import("./lib/mailer.js")
+  const search = placeSearch.search
+  const key = config.kakaoRestApiKey
+  const post = mailTransport.post
+  const sent: { to: string[]; subject: string; text: string }[] = []
+  mailTransport.post = async (message) => {
+    sent.push(message)
+    return new Response(null, { status: 200 })
+  }
+  const mail = { apiKey: config.resendApiKey, from: config.mailFrom }
+  config.resendApiKey = "test-resend-key"
+  config.mailFrom = "uniconnect <no-reply@example.com>"
+  try {
+    const group = await login("학생단체")
+    const brand = await login("브랜드")
+
+    // Only a logged-in student group invites, a shop by its Kakao place ID.
+    assert.equal((await call("POST", "/invites", { placeId: "26338954" })).status, 401)
+    assert.equal((await call("POST", "/invites", { placeId: "26338954" }, brand)).status, 403)
+    for (const placeId of ["", "abc", "1/2", "1".repeat(16), undefined]) {
+      assert.equal((await call("POST", "/invites", { placeId }, group)).status, 400, String(placeId))
+    }
+    const made = await call("POST", "/invites", { placeId: "26338954" }, group)
+    assert.equal(made.status, 201)
+    const { code } = made.data.invite
+    assert.match(code, /^[\w-]{8}$/)
+    // All it keeps of the shop is what Kakao allows: the ID and its map page.
+    const stored = getDatabase().invites.find((invite) => invite.code === code)!
+    assert.deepEqual(Object.keys(stored).sort(), ["accountId", "code", "createdAt", "placeId", "placeUrl"])
+    assert.equal(stored.placeUrl, "https://place.map.kakao.com/26338954")
+    // Asked again for the same shop, the same invitation comes back.
+    const again = await call("POST", "/invites", { placeId: "26338954" }, group)
+    assert.equal(again.status, 200)
+    assert.equal(again.data.invite.code, code)
+
+    // Anyone with the link sees who invited, and not who they are.
+    const page = await call("GET", `/invites/${code}`)
+    assert.equal(page.status, 200)
+    assert.equal(page.data.group.name, "삼육대 뮤즈")
+    assert.equal(page.data.group.school, "삼육대학교")
+    assert.equal(page.data.group.score, undefined)
+    assert.equal(page.data.invite.joined, null)
+    assert.equal(page.data.invite.placeUrl, "https://place.map.kakao.com/26338954")
+    assert.ok(!JSON.stringify(page.data).includes("muse@syu.ac.kr"))
+    assert.equal((await call("GET", "/invites/nope")).status, 404)
+
+    // On 가까운 순 the group sees the shop as invited.
+    config.kakaoRestApiKey = "test-key"
+    placeSearch.search = async () => ({
+      documents: [
+        { id: "26338954", place_name: "골목 카페", category_name: "음식점 > 카페", address_name: "서울 노원구 공릉동 2", distance: "200", place_url: "http://place.map.kakao.com/26338954", x: "127.1052", y: "37.6438" },
+        { id: "777", place_name: "옆집 분식", category_name: "음식점 > 분식", address_name: "서울 노원구 공릉동 3", distance: "300", place_url: "http://place.map.kakao.com/777", x: "127.1071", y: "37.6411" },
+      ],
+    })
+    const shops = async (token?: string) =>
+      (await call("GET", "/places?category=CE7", undefined, token)).data.places as { id: string; invited?: true; brandId?: string }[]
+    assert.deepEqual(
+      (await shops(group)).map(({ id, invited, brandId }) => ({ id, invited, brandId })),
+      [
+        { id: "26338954", invited: true, brandId: undefined },
+        { id: "777", invited: undefined, brandId: undefined },
+      ],
+    )
+    // Visitors, who see the demo group's campus, aren't shown its invitations.
+    assert.equal((await shops())[0].invited, undefined)
+
+    // Only a brand takes it, and not the shared demo brand.
+    assert.equal((await call("POST", `/invites/${code}/accept`)).status, 401)
+    assert.equal((await call("POST", `/invites/${code}/accept`, undefined, group)).status, 403)
+    assert.equal((await call("POST", `/invites/${code}/accept`, undefined, brand)).status, 403)
+    assert.equal((await call("POST", "/invites/nope/accept", undefined, await signUpMember("nobody@nope-cafe.kr", "nope-pass-123", "브랜드"))).status, 404)
+
+    // The shop's owner signs up as a brand and takes it: the new brand is
+    // listed at once, as that shop.
+    const owner = await signUpMember("owner@golmok-cafe.kr", "golmok-pass-123", "브랜드")
+    const accepted = await call("POST", `/invites/${code}/accept`, undefined, owner)
+    assert.equal(accepted.status, 200)
+    assert.equal(accepted.data.invite.joined, "you")
+    const listing = accepted.data.listing
+    assert.equal(listing.name, "owner 카페")
+    assert.equal(listing.kakaoPlaceId, "26338954")
+    assert.ok(getDatabase().brands.some((item) => item.id === listing.id))
+    assert.equal((await call("GET", `/invites/${code}`, undefined, owner)).data.invite.joined, "you")
+    assert.equal((await call("GET", `/invites/${code}`)).data.invite.joined, "other")
+    // Taking it twice changes nothing.
+    assert.equal((await call("POST", `/invites/${code}/accept`, undefined, owner)).status, 200)
+    // The group hears about it, with the brand's page on 추천 매칭.
+    const notice = sent.find((message) => message.to.includes("muse@syu.ac.kr") && message.subject.includes("초대"))!
+    assert.match(notice.subject, /초대한 가게가 uniconnect에 가입했어요/)
+    assert.match(notice.text, /owner 카페에서 초대를 받고/)
+
+    // 가까운 순 now shows the shop joined, to everyone nearby.
+    assert.equal((await shops(group))[0].brandId, listing.id)
+    assert.equal((await shops())[0].brandId, listing.id)
+
+    // Another group's invitation to the same shop can't hand it to a second brand.
+    const otherGroup = await signUpMember("invite-two@syu.ac.kr", "invite-two-123")
+    const second = (await call("POST", "/invites", { placeId: "26338954" }, otherGroup)).data.invite.code
+    const rival = await signUpMember("rival@rival-cafe.kr", "rival-pass-123", "브랜드")
+    const taken = await call("POST", `/invites/${second}/accept`, undefined, rival)
+    assert.equal(taken.status, 409)
+    assert.match(taken.data.error, /이미 다른 브랜드와 연결된 가게/)
+    // And a brand that is one shop already can't become another.
+    const elsewhere = (await call("POST", "/invites", { placeId: "777" }, otherGroup)).data.invite.code
+    const twice = await call("POST", `/invites/${elsewhere}/accept`, undefined, owner)
+    assert.equal(twice.status, 409)
+    assert.match(twice.data.error, /이미 다른 가게와 연결된 브랜드/)
+
+    // The data download holds the invitations on both sides.
+    const groupExport = (await call("GET", "/auth/export", undefined, otherGroup)).data
+    assert.deepEqual(groupExport.invites.map((item: { placeId: string }) => item.placeId).sort(), ["26338954", "777"])
+    const ownerExport = (await call("GET", "/auth/export", undefined, owner)).data
+    assert.deepEqual(ownerExport.invites.map((item: { code: string }) => item.code), [code])
+
+    // When the brand leaves, the shop is open again; when a group leaves, its invitations go.
+    assert.equal((await call("DELETE", "/auth/account", { password: "golmok-pass-123" }, owner)).status, 204)
+    const reopened = getDatabase().invites.find((invite) => invite.code === code)!
+    assert.equal(reopened.brandId, undefined)
+    assert.equal(reopened.acceptedAt, undefined)
+    assert.equal((await shops(group))[0].brandId, undefined)
+    assert.equal((await call("DELETE", "/auth/account", { password: "invite-two-123" }, otherGroup)).status, 204)
+    assert.equal(getDatabase().invites.some((invite) => invite.code === second || invite.code === elsewhere), false)
+
+    // A group may have invited at most 100 shops.
+    const { inviteLimit } = await import("./routes/invites.js")
+    const crowd = await signUpMember("invite-many@syu.ac.kr", "invite-many-123")
+    const crowdId = getDatabase().accounts.find((account) => account.email === "invite-many@syu.ac.kr")!.id
+    for (let index = 0; index < inviteLimit; index += 1) {
+      getDatabase().invites.push({ code: `many-${index}`, accountId: crowdId, placeId: String(index), placeUrl: "", createdAt: "" })
+    }
+    const over = await call("POST", "/invites", { placeId: "99999" }, crowd)
+    assert.equal(over.status, 409)
+    assert.match(over.data.error, /100곳/)
+  } finally {
+    placeSearch.search = search
+    config.kakaoRestApiKey = key
+    mailTransport.post = post
+    config.resendApiKey = mail.apiKey
+    config.mailFrom = mail.from
+    getDatabase().invites = getDatabase().invites.filter((invite) => !invite.code.startsWith("many-"))
   }
 })
 

@@ -201,3 +201,38 @@ test("a member downloads their data and hands the account over to a new email", 
   await expect(page.getByText("e2e-next-officer@syu.ac.kr")).toBeVisible()
 })
 
+test("a shop a student group invited joins as a brand from the invitation", async ({ page, request }) => {
+  // Kakao isn't connected here, so the group invites a shop by its place ID through the API.
+  const login = await request.post("/api/auth/login", {
+    data: { role: "학생단체", email: "muse@syu.ac.kr", password: demoPassword },
+  })
+  const { token } = (await login.json()) as { token: string }
+  const made = await request.post("/api/invites", {
+    data: { placeId: "12345678" },
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  const { invite } = (await made.json()) as { invite: { code: string } }
+
+  // The owner opens the link, reads who invited, and signs up as a brand.
+  await page.goto(`/invite/${invite.code}`)
+  await expect(page.getByRole("heading", { name: "삼육대 뮤즈에서 초대했어요" })).toBeVisible()
+  await page.getByRole("button", { name: "가게로 가입하기" }).click()
+  const signup = page.getByRole("dialog")
+  await signup.getByLabel("브랜드명").fill("골목 카페")
+  await signup.getByLabel("회사 이메일").fill("owner@golmok-cafe.kr")
+  await signup.getByRole("button", { name: "인증번호 받기" }).click()
+  await signup.getByLabel("인증번호").fill((await signup.locator(".field-hint strong").textContent()) ?? "")
+  await signup.getByRole("button", { name: "확인" }).click()
+  await signup.getByLabel("비밀번호", { exact: true }).fill("e2e-pass-123")
+  await signup.getByLabel("비밀번호 확인").fill("e2e-pass-123")
+  await signup.getByRole("checkbox").nth(0).check()
+  await signup.getByRole("checkbox").nth(1).check()
+  await signup.getByRole("button", { name: "가입하고 시작하기" }).click()
+  await expect(signup).toBeHidden()
+
+  // Back on the invitation, one press links the shop, and the brand is listed for groups to find.
+  await page.getByRole("button", { name: "우리 가게로 연결하기" }).click()
+  await expect(page.getByText("연결됐어요. 이제 삼육대 뮤즈의 협찬 제안을 받을 수 있어요.")).toBeVisible()
+  const { brands } = (await (await request.get("/api/brands")).json()) as { brands: { name: string; kakaoPlaceId?: string }[] }
+  expect(brands.some((brand) => brand.name === "골목 카페" && brand.kakaoPlaceId === "12345678")).toBe(true)
+})

@@ -6,21 +6,39 @@ import { placeCategories } from "../data/places"
 import { t } from "../i18n"
 import { formatDistance } from "../lib/distance"
 import { franchiseOf } from "../lib/franchises"
-import type { NearbyPlaces as Answer, NearbyPlace } from "../types"
+import type { Match, NearbyPlaces as Answer, NearbyPlace, RequestStatus } from "../types"
 import { Icon } from "./Icon"
+import { PlaceMap, placeState, placeStateLabels } from "./PlaceMap"
+import { ProposalControl } from "./ProposalControl"
 import { TabBar } from "./TabBar"
 
 // Every kind at once, then each kind on its own.
 const kinds = [{ code: "all", label: "전체" }, ...placeCategories]
 
+type Partnering = {
+  // The brand catalog, where a shop that joined is found as its brand.
+  brands: Match[]
+  proposals: string[]
+  statuses: Partial<Record<string, RequestStatus>>
+  onOpenDetail: (match: Match) => void
+  onPropose: (match: Match) => void
+  onCancelProposal: (match: Match) => void
+  // Opens the invitation for a shop (InviteShopModal); true once it is sent.
+  onInvite: (place: NearbyPlace) => Promise<boolean>
+}
+
 // One shop as the other tabs' silver card (WorkCard.tsx): its kind and its
-// Kakao Map page at the top, its chain's logo (or its name's first letter) in
-// the middle, then its name, address, distance and phone, and 협약 전 where a
-// partner's card offers a proposal.
-function PlaceCard({ place }: { place: NearbyPlace }) {
+// Kakao Map page at the top, its brand's or chain's logo (or its name's first
+// letter) in the middle, then its name, address, distance and phone. A shop
+// not on uniconnect says 협약 전 where a partner's card offers a proposal and
+// can be invited (초대함 once it is); one that joined from an invitation is
+// that brand, with its detail page and a proposal.
+function PlaceCard({ place, partnering }: { place: NearbyPlace; partnering: Partnering }) {
+  const brand = place.brandId ? partnering.brands.find((item) => item.id === place.brandId) : undefined
   const franchise = franchiseOf(place.name)
   const logo = franchise && franchiseLogos[franchise]
   const map = { href: place.url, rel: "noopener noreferrer", target: "_blank" }
+  const state = placeState(place)
   return (
     <article className="work-card">
       <div className="work-meta">
@@ -31,7 +49,11 @@ function PlaceCard({ place }: { place: NearbyPlace }) {
       </div>
 
       <div aria-hidden="true" className="work-mark">
-        {logo ? (
+        {brand?.logo ? (
+          <div className="match-logo large has-logo">
+            <img alt="" src={brand.logo} />
+          </div>
+        ) : logo ? (
           <div className={logo.wide ? "match-logo large has-logo wordmark" : "match-logo large has-logo"}>
             <img alt="" src={logo.src} />
           </div>
@@ -50,6 +72,7 @@ function PlaceCard({ place }: { place: NearbyPlace }) {
           </div>
         </div>
         <div className="work-tags">
+          {state === "joined" && <span className="tag-joined">{t("uniconnect 가입")}</span>}
           <span className="tag-distance">
             <Icon name="pin" size={13} />
             <span className="sr-only">{t("거리")}</span>
@@ -62,11 +85,43 @@ function PlaceCard({ place }: { place: NearbyPlace }) {
           )}
         </div>
         <div className="work-actions">
-          <a className="cancel-button" {...map}>
-            {t("카카오맵에서 보기")}
-            <span className="sr-only">{t("(새 창)")}</span>
-          </a>
-          <span className="proposal-button unpartnered">{t("협약 전")}</span>
+          {brand ? (
+            <>
+              <button className="cancel-button" onClick={() => partnering.onOpenDetail(brand)} type="button">
+                {t("상세 정보")}
+              </button>
+              <ProposalControl
+                className="primary-button"
+                done={partnering.proposals.includes(brand.id)}
+                label={t("협찬 제안하기")}
+                onCancel={() => partnering.onCancelProposal(brand)}
+                onPropose={() => partnering.onPropose(brand)}
+                status={partnering.statuses[brand.id]}
+              />
+            </>
+          ) : state === "joined" ? (
+            <>
+              <a className="cancel-button" {...map}>
+                {t("카카오맵에서 보기")}
+                <span className="sr-only">{t("(새 창)")}</span>
+              </a>
+              <span className="proposal-button unpartnered">{t("uniconnect 가입")}</span>
+            </>
+          ) : (
+            <>
+              <button
+                aria-label={t(state === "invited" ? "{name} 초대장 다시 보기" : "{name} 초대하기", { name: place.name })}
+                className="cancel-button"
+                onClick={() => void partnering.onInvite(place)}
+                type="button"
+              >
+                {t(state === "invited" ? "초대장 다시 보기" : "초대하기")}
+              </button>
+              <span className={state === "invited" ? "proposal-button unpartnered invited" : "proposal-button unpartnered"}>
+                {t(placeStateLabels[state])}
+              </span>
+            </>
+          )}
         </div>
       </div>
     </article>
@@ -74,13 +129,16 @@ function PlaceCard({ place }: { place: NearbyPlace }) {
 }
 
 // Real shops around the student group's campus, live from Kakao Local: the
-// kinds as chips (every kind at first), a line saying where, then the shops
-// nearest first as cards like the other tabs', marked as not partnered yet.
-// Kakao doesn't allow keeping its results, so each pick asks the server
-// afresh and the answer lives only on screen.
-export function NearbyPlaces() {
+// kinds as chips (every kind at first), a line saying where with a switch
+// between the list and a sketch map, then the shops nearest first as cards
+// like the other tabs'. Kakao doesn't allow keeping its results, so each pick
+// asks the server afresh and the answer lives only on screen.
+export function NearbyPlaces(partnering: Partnering) {
   const [category, setCategory] = useState(kinds[0].code)
   const [answer, setAnswer] = useState<{ category: string; result?: Answer; error?: string }>()
+  const [layout, setLayout] = useState<"list" | "map">("list")
+  // The shop shown under the map; the nearest until another is pressed.
+  const [selected, setSelected] = useState<string>()
 
   useEffect(() => {
     let cancelled = false
@@ -112,6 +170,18 @@ export function NearbyPlaces() {
           : places.length === 0
             ? t("{campus} 근처에서 찾은 가게가 없어요.", { campus: result.campus })
             : t("{campus} 근처, 가까운 순서예요.", { campus: result.campus })
+  const shown = places.find((place) => place.id === selected) ?? places[0]
+
+  // An invitation sent marks its shop at once, without asking Kakao again.
+  const invite = async (place: NearbyPlace) => {
+    if (!(await partnering.onInvite(place)) || !result) return false
+    setAnswer({
+      category,
+      result: { ...result, places: places.map((item) => (item.id === place.id ? { ...item, invited: true } : item)) },
+    })
+    return true
+  }
+  const cards = { ...partnering, onInvite: invite }
 
   return (
     <div className="nearby-places">
@@ -121,23 +191,50 @@ export function NearbyPlaces() {
         label={t("가게 종류")}
         onChange={(value, event) => {
           setCategory(value)
+          setSelected(undefined)
           // The chip row scrolls sideways on phones; keep the pick in view.
           event.currentTarget.scrollIntoView({ block: "nearest", inline: "center" })
         }}
         value={category}
       />
-      <p aria-live="polite" className={current?.error ? "nearby-note error" : "nearby-note"}>
-        {note}
-      </p>
+      <div className="nearby-head">
+        <p aria-live="polite" className={current?.error ? "nearby-note error" : "nearby-note"}>
+          {note}
+        </p>
+        {places.length > 0 && result?.center && (
+          <div aria-label={t("보기 방식")} className="nearby-layout" role="group">
+            {(["list", "map"] as const).map((item) => (
+              <button aria-pressed={layout === item} key={item} onClick={() => setLayout(item)} type="button">
+                {t(item === "list" ? "목록" : "지도")}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
       {places.length > 0 && (
         <>
-          <ul className="work-grid stagger" key={category}>
-            {places.map((place, index) => (
-              <li key={place.id} style={{ "--i": index } as CSSProperties}>
-                <PlaceCard place={place} />
-              </li>
-            ))}
-          </ul>
+          {layout === "map" && result?.center && result.campus && shown ? (
+            <div className="nearby-map">
+              <PlaceMap
+                campus={result.campus}
+                center={result.center}
+                onSelect={(place) => setSelected(place.id)}
+                places={places}
+                selected={shown.id}
+              />
+              <div aria-live="polite" className="nearby-map-card">
+                <PlaceCard key={shown.id} partnering={cards} place={shown} />
+              </div>
+            </div>
+          ) : (
+            <ul className="work-grid stagger" key={category}>
+              {places.map((place, index) => (
+                <li key={place.id} style={{ "--i": index } as CSSProperties}>
+                  <PlaceCard partnering={cards} place={place} />
+                </li>
+              ))}
+            </ul>
+          )}
           <p className="nearby-source">
             {t("정보 제공: 카카오 · 가게 로고는 각 회사의 상표이고, 표시가 제휴를 뜻하지는 않아요.")}
           </p>

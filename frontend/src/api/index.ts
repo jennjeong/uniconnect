@@ -6,6 +6,7 @@ import type {
   EventItem,
   EventMeasurement,
   Inquiry,
+  InvitePageData,
   Match,
   MetricEntry,
   MetricKind,
@@ -17,6 +18,7 @@ import type {
   RequestStatus,
   Role,
   Session,
+  ShopInvite,
   SponsorOffer,
   SponsorRequest,
   Sponsorship,
@@ -128,6 +130,13 @@ export const api = {
 
   nearbyPlaces: (category: string) =>
     request<NearbyPlaces>(`/places?category=${encodeURIComponent(category)}`),
+  inviteShop: (placeId: string) =>
+    request<{ invite: ShopInvite }>("/invites", { method: "POST", body: { placeId } }),
+  invite: (code: string) => request<InvitePageData>(`/invites/${encodeURIComponent(code)}`),
+  acceptInvite: (code: string) =>
+    request<InvitePageData & { listing: Match }>(`/invites/${encodeURIComponent(code)}/accept`, {
+      method: "POST",
+    }),
 
   inquiries: () => request<{ inquiries: Inquiry[] }>("/inquiries"),
   adminInquiries: (token: string) =>
