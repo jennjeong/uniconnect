@@ -15,17 +15,20 @@ import { Presence } from "./components/Presence"
 import { Toast } from "./components/Toast"
 import type { LegalKind } from "./data/legal"
 import { pageFor } from "./data/navigation"
+import { useInstallState } from "./hooks/useInstallState"
 import { useNotice } from "./hooks/useNotice"
 import { Footer } from "./layout/Footer"
 import { Header } from "./layout/Header"
 import { NavMenu } from "./layout/NavMenu"
 import { t, tc } from "./i18n"
 import { nextEvent, todayIso } from "./lib/date"
+import { saveFile } from "./lib/download"
 import { reportKpis, type KpiKey } from "./lib/kpis"
 import { defaultMeasurement } from "./lib/measurements"
 import { brandNotifications, studentNotifications } from "./lib/notifications"
 import { track } from "./lib/analytics"
 import { applyPageMeta, pageMeta } from "./lib/pageMeta"
+import { install } from "./lib/install"
 import { installReveal } from "./lib/reveal"
 import { installRipple } from "./lib/ripple"
 import { readView, roleOfPage, viewPath, type HistoryEntry, type View } from "./lib/route"
@@ -151,6 +154,8 @@ function App() {
   // When matches and events were last loaded, shown on the dashboard.
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null)
   const { notice, showNotice } = useNotice()
+  // Whether the browser can install the app (the menu's 앱 설치).
+  const installable = useInstallState()
 
   const role = account?.role ?? previewRole
   const accountId = account?.id
@@ -624,12 +629,7 @@ function App() {
   const downloadData = async () => {
     try {
       const data = await api.exportData()
-      const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }))
-      const link = document.createElement("a")
-      link.href = url
-      link.download = `uniconnect-${todayIso()}.json`
-      link.click()
-      URL.revokeObjectURL(url)
+      saveFile(`uniconnect-${todayIso()}.json`, JSON.stringify(data, null, 2), "application/json")
       showNotice(t("내 데이터를 내려받았어요."))
     } catch (error) {
       showNotice(errorMessage(error))
@@ -770,8 +770,8 @@ function App() {
       ]
 
   const notifications = students
-    ? studentNotifications({ matches, brands, statuses, report, offers })
-    : brandNotifications({ matches, requests, sponsorships })
+    ? studentNotifications({ matches, brands, statuses, report, offers, events })
+    : brandNotifications({ matches, requests, sponsorships, events })
 
   const activity: ActivityItem[] = students
     ? [
@@ -798,6 +798,7 @@ function App() {
       onShowDetail={showEventDetail}
       onDelete={deleteEvent}
       onOpenSponsorship={() => navigate("받은 제안")}
+      onNotice={showNotice}
     />
   )
 
@@ -1176,6 +1177,14 @@ function App() {
           onOpenFaq={openFaq}
           onLogin={() => openAuth("login")}
           onSignup={() => openAuth("signup")}
+          installable={installable !== "none"}
+          onInstall={() => {
+            if (installable === "ios") {
+              showNotice(t("Safari의 공유 버튼에서 ‘홈 화면에 추가’를 누르면 앱처럼 쓸 수 있어요."))
+              return
+            }
+            void install().then((done) => done && showNotice(t("uniconnect를 앱으로 설치했어요.")))
+          }}
           onClose={closeMenu}
         />
       </Presence>

@@ -122,8 +122,8 @@ const en: Record<string, string> = {
   "제3자 제공과 처리 위탁": "Provision to Third Parties and Outsourcing of Processing",
   "회원의 개인정보를 다른 회사에 제공하지 않아요.":
     "Members' personal information is not provided to other companies.",
-  "메일 발송 서비스를 연결하면, 인증 메일을 보내기 위해 이메일 주소와 인증번호를 메일 발송 업체 Resend(미국)에 맡겨요. 메일을 보낸 뒤에는 그 업체의 보관 정책을 따르고, 지금은 연결되어 있지 않아요.":
-    "If an email delivery service is connected, email addresses and verification codes are entrusted to the email delivery provider Resend (United States) in order to send verification emails. After an email is sent, that provider's retention policy applies. This is currently not connected.",
+  "메일 발송 서비스를 연결하면, 인증 메일과 알림 메일(새 협찬 제안과 답, 새 메시지, 다가오는 일정, 협찬 약속서와 후기)을 보내기 위해 이메일 주소와 메일 내용을 메일 발송 업체 Resend(미국)에 맡겨요. 메일을 보낸 뒤에는 그 업체의 보관 정책을 따르고, 지금은 연결되어 있지 않아요.":
+    "Once a mail service is connected, email addresses and the content of the emails are entrusted to the mail delivery company Resend (United States) to send verification emails and notices (new sponsorship proposals and answers, new messages, upcoming dates, sponsorship agreements and reviews). After sending, that company's retention policy applies. It is not connected at the moment.",
   "서버 호스팅처럼 새로 맡기는 일이 생기면 받는 곳과 맡기는 일을 이곳에 먼저 적고 알려 드려요.":
     "If any processing is newly outsourced, such as server hosting, the recipient and the outsourced task will first be listed here and members will be notified.",
   "다른 회원에게 보이는 정보": "Information Visible to Other Members",

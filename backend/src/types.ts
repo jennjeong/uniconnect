@@ -78,6 +78,8 @@ export type EventItem = {
   budget?: number
   status: EventStatus
   createdAt: string
+  // When its owner was emailed that the day is near (lib/reminders.ts).
+  remindedAt?: string
 }
 
 export type Account = {
@@ -204,6 +206,8 @@ export type Sponsorship = {
   eventId?: string
   // ROAS goal in percent, set before the sponsorship.
   targetRoas: number
+  // When the brand was emailed that the day is near (lib/reminders.ts).
+  remindedAt?: string
 }
 
 // What a student group sets before an event to measure it against.

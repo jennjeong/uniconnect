@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises"
+
 import { expect, test, type Page } from "@playwright/test"
 
 // The demo accounts' password (DEMO_PASSWORD in backend/src/data/seed.ts).
@@ -323,4 +325,61 @@ test("visitors see a partner's reviews, and a group reviews the brand after its 
   await page.goto("/matches/afternoon-coffee")
   await expect(page.locator(".reviews-section .review-card")).toHaveCount(3)
   await expect(page.locator(".reviews-section").getByText("커피가 공연 전에 딱 맞춰 왔어요.")).toBeVisible()
+})
+
+test("the app can be installed, and the calendar gives its dates to calendar apps", async ({ page, request }) => {
+  // The manifest, its icons and the service worker are served.
+  const manifest = (await (await request.get("/manifest.webmanifest")).json()) as {
+    name: string
+    display: string
+    icons: { src: string; sizes: string }[]
+  }
+  expect([manifest.name, manifest.display]).toEqual(["uniconnect", "standalone"])
+  expect(manifest.icons.map((icon) => icon.sizes)).toEqual(["192x192", "512x512", "512x512"])
+  for (const icon of manifest.icons) {
+    expect((await request.get(`/${icon.src}`)).headers()["content-type"]).toBe("image/png")
+  }
+  expect(await (await request.get("/sw.js")).text()).toContain("/api/")
+  await page.goto("/")
+  await expect(page.locator('link[rel="manifest"]')).toHaveAttribute("href", "/manifest.webmanifest")
+  // The built app registers the service worker.
+  const worker = await page.evaluate(async () => (await navigator.serviceWorker.ready).active?.scriptURL ?? "")
+  expect(worker).toMatch(/\/sw\.js$/)
+
+  // A group's coming event, as a calendar file from 내 행사.
+  const email = "e2e-calendar@syu.ac.kr"
+  const code = (await (await request.post("/api/auth/email-code", { data: { role: "학생단체", email } })).json()) as { devCode: string }
+  const verified = (await (
+    await request.post("/api/auth/email-code/verify", { data: { email, code: code.devCode } })
+  ).json()) as { verificationToken: string }
+  const signup = await request.post("/api/auth/signup", {
+    data: {
+      role: "학생단체",
+      name: "캘린더 동아리",
+      type: "공연 동아리",
+      school: "삼육대학교",
+      email,
+      password: "e2e-pass-123",
+      verificationToken: verified.verificationToken,
+      agreedToTerms: true,
+      over14: true,
+    },
+  })
+  const { token } = (await signup.json()) as { token: string }
+  const month = new Date(Date.now() + 30 * 86_400_000)
+  const date = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(month)
+  await request.post("/api/events", {
+    data: { name: "겨울 정기 공연", date, people: "200명", types: ["제품"] },
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), token)
+  await page.goto("/events")
+  const download = page.waitForEvent("download")
+  await page.getByRole("button", { name: "캘린더에 추가" }).click()
+  const file = await download
+  expect(file.suggestedFilename()).toMatch(/^uniconnect-\d{4}-\d{2}-\d{2}\.ics$/)
+  const calendar = await readFile(await file.path(), "utf8")
+  expect(calendar).toContain("BEGIN:VCALENDAR")
+  expect(calendar).toContain("SUMMARY:겨울 정기 공연")
+  expect(calendar).toContain(`DTSTART;VALUE=DATE:${date.replace(/-/g, "")}`)
 })
