@@ -78,6 +78,11 @@ export const api = {
     request<Session>("/auth/password-reset", { method: "POST", body }),
   changePassword: (body: { current: string; next: string }) =>
     request<void>("/auth/password", { method: "POST", body }),
+  emailChangeCode: (body: { email: string; password: string }) =>
+    request<{ email: string; expiresAt: number; devCode?: string }>("/auth/email/code", { method: "POST", body }),
+  changeEmail: (body: { email: string; code: string }) =>
+    request<{ account: Account }>("/auth/email", { method: "POST", body }),
+  exportData: () => request<unknown>("/auth/export"),
   deleteAccount: (body: { password: string }) =>
     request<void>("/auth/account", { method: "DELETE", body }),
 

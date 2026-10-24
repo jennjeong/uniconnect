@@ -136,6 +136,10 @@ const en: Record<string, string> = {
     "Please send inquiries and requests about personal information through 'Ask the Administrators' in the Help Center. Counseling on privacy infringement is also available from the Personal Information Infringement Report Center (dial 118 without an area code).",
   "학교와의 거리를 계산하기 위해, 브랜드가 적은 매장 주소를 오픈스트리트맵 재단(영국)의 주소 검색(Nominatim)에 보내 좌표로 바꿔요. 학생단체에게 학교 근처 가게를 보여 줄 때는 학교 위치만 카카오(대한민국)에 보내고, 받은 가게 정보는 저장하지 않아요.":
     "To calculate the distance from schools, the store address a brand enters is sent to the OpenStreetMap Foundation's address search (Nominatim, United Kingdom) to turn it into coordinates. To show student groups the shops near their school, only the school's location is sent to Kakao (Korea), and the shop details that come back are not stored.",
+  "내 정보의 '내 데이터 내려받기'로 계정 정보, 소개, 행사, 협찬 제안, 메시지, 질문을 파일 하나로 내려받을 수 있어요.":
+    "With 'Download my data' under My Account, you can download your account details, introduction, events, proposals, messages and questions as one file.",
+  "서버 장애에 대비한 백업에는 지운 내용이 최대 24시간 남아 있다가 새 백업으로 바뀌며 사라져요.":
+    "Backups kept against server failures may hold deleted data for up to 24 hours, until newer backups replace them.",
 }
 
 export default en

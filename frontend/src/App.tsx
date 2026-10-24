@@ -34,6 +34,7 @@ import { GoalModal } from "./modals/GoalModal"
 import { GoalsModal } from "./modals/GoalsModal"
 import { LeaveModal } from "./modals/LeaveModal"
 import { LoginModal } from "./modals/LoginModal"
+import { EmailChangeModal } from "./modals/EmailChangeModal"
 import { PasswordModal } from "./modals/PasswordModal"
 import { ResetPasswordModal } from "./modals/ResetPasswordModal"
 import { MetricLogModal } from "./modals/MetricLogModal"
@@ -590,6 +591,22 @@ function App() {
     }
   }
 
+  // Everything the account made, saved as one JSON file (GET /api/auth/export).
+  const downloadData = async () => {
+    try {
+      const data = await api.exportData()
+      const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }))
+      const link = document.createElement("a")
+      link.href = url
+      link.download = `uniconnect-${todayIso()}.json`
+      link.click()
+      URL.revokeObjectURL(url)
+      showNotice(t("내 데이터를 내려받았어요."))
+    } catch (error) {
+      showNotice(errorMessage(error))
+    }
+  }
+
   // Returns the problem to show on the form, or null once saved.
   const saveProfile = async (draft: ProfileDraft) => {
     try {
@@ -794,6 +811,8 @@ function App() {
           onNavigate={navigate}
           onLogout={logout}
           onChangePassword={() => setActiveModal("password")}
+          onChangeEmail={() => setActiveModal("email")}
+          onDownloadData={downloadData}
           onLeave={() => setActiveModal("leave")}
         />
       )
@@ -1165,6 +1184,16 @@ function App() {
           onChanged={() => {
             setActiveModal(null)
             showNotice(t("비밀번호를 바꿨어요. 다른 기기에서는 로그아웃됐어요."))
+          }}
+        />
+      </Presence>
+      <Presence show={activeModal === "email"}>
+        <EmailChangeModal
+          onClose={closeModal}
+          onChanged={(next) => {
+            setAccount(next)
+            setActiveModal(null)
+            showNotice(t("로그인 이메일을 바꿨어요. 다른 기기에서는 로그아웃됐어요."))
           }}
         />
       </Presence>

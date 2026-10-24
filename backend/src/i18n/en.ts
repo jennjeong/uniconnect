@@ -43,6 +43,7 @@ const en: Record<string, string> = {
     "Too many verification attempts. Please get a new verification code in 30 minutes.",
   "인증번호가 일치하지 않아요.": "The verification code doesn't match.",
   "이미 가입된 이메일이에요. 로그인해 주세요.": "This email is already registered. Please log in.",
+  "이미 가입된 이메일이에요. 다른 이메일을 입력해 주세요.": "This email is already registered. Please enter another one.",
   "이름은 40자 이하로 입력해 주세요.": "Please keep the name to 40 characters or fewer.",
   "분류를 다시 선택해 주세요.": "Please choose the category again.",
   "학교를 입력해 주세요.": "Please enter your school.",
@@ -188,6 +189,8 @@ const en: Record<string, string> = {
   "{label}을 입력해 주세요.": "Please enter the {label}.",
   "매장 주소는 100자 이하로 적어 주세요.": "Please keep the store address to 100 characters or fewer.",
   "찾을 가게 종류를 골라 주세요.": "Please choose a kind of shop to look for.",
+  "데모 계정은 로그인 이메일을 바꿀 수 없어요.": "The demo accounts can't change their login email.",
+  "지금 쓰는 이메일과 같아요.": "That's the email you already use.",
   "가게 검색이 너무 많아요. 잠시 후 다시 시도해 주세요.": "Too many shop searches. Please try again in a moment.",
   "주변 가게를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.": "We couldn't load the shops nearby. Please try again in a moment.",
 }
