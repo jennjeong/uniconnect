@@ -11,7 +11,6 @@ const en: Record<string, string> = {
   달성: "Met",
   "진행 중": "In progress",
   목표: "Goals",
-  "목표 설정": "Set goals",
   "현장 QR 열기": "Open event QR",
   "마지막 참여 {time}": "Last check-in {time}",
   "추정 ROAS": "Est. ROAS",
@@ -19,7 +18,7 @@ const en: Record<string, string> = {
   "도달 인원": "Reach",
   "PDF 리포트 다운로드": "Download PDF report",
   // Measurement states (lib/measurements.ts measureState)
-  "측정 예정": "Upcoming",
+  "진행 전": "Not started",
   "측정 중": "Measuring",
   // A scan's record from the server
   "현장 QR 스캔": "QR scan at the event",
@@ -114,6 +113,17 @@ const en: Record<string, string> = {
   "실시간 참여 기록": "Live Activity",
   "전체 보기": "See all",
   "아직 참여 기록이 없어요.": "No check-ins yet.",
+  // Before the event (진행 전)
+  "목표는 협찬 약속서에서 정해요": "Goals are set on the sponsorship agreement",
+  "행사가 시작되면 현장 반응이 여기에 떠요": "The Crowd Shows Here Once It Starts",
+  "{date}부터 QR 스캔 · 쿠폰 · 매장 방문을 실시간으로 집계해요.":
+    "From {date}, QR scans, coupons and store visits are counted live.",
+  "행사가 진행되면 QR 스캔에서 쿠폰, 매장 방문으로 이어진 비율이 여기에 그려져요.":
+    "Once the event takes place, how QR scans led to coupons and store visits is drawn here.",
+  "행사가 진행되면 참여 기록이 여기에 떠요. QR 스캔 · 쿠폰 · 매장 방문이 들어오는 대로 보여요.":
+    "Once the event takes place, check-ins show here as QR scans, coupons and store visits come in.",
+  "캠페인이 시작되면 참여 기록이 여기에 쌓여요. 목표는 협찬 약속서에서 행사 전까지 정해요.":
+    "Check-ins gather here once the campaign starts. Its goals are set on the sponsorship agreement before then.",
   "캠페인 현장 측정": "Campaign Measurement on Site",
   "캠페인 현장에 QR을 띄우면 참여, 쿠폰, 매장 방문이 실시간으로 쌓여요.":
     "Show a QR at your campaign and watch check-ins, coupons and store visits add up live.",
@@ -196,6 +206,9 @@ const en: Record<string, string> = {
   누적: "Total",
   "최근 {count}건을 보여드려요": "showing the latest {count}",
   "아직 기록이 없어요.": "No records yet.",
+  "행사가 진행되면 참여 내역이 여기에 떠요": "Check-ins show here once the event takes place",
+  "{date}부터 QR 스캔 · 쿠폰 · 매장 방문이 들어오는 대로 쌓여요.":
+    "From {date}, QR scans, coupons and store visits gather here as they come in.",
 
   // Participants' check-in (checkin/CheckInPage.tsx)
   "발급일부터 7일 동안 쓸 수 있어요": "Valid for 7 days",

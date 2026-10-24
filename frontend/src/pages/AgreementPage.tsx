@@ -7,7 +7,7 @@ import { Pill } from "../components/Pill"
 import { ReviewCard } from "../components/ReviewCard"
 import { starPath } from "../components/Stars"
 import { reviewTags } from "../data/reviews"
-import { t } from "../i18n"
+import { locale, t } from "../i18n"
 import { formatDateTime, formatFullDate } from "../lib/date"
 import { photoFromFile } from "../lib/image"
 import type { Agreement, AgreementItem, ChatSide, Review } from "../types"
@@ -249,6 +249,58 @@ function ItemsEditor({
   )
 }
 
+// The event's goals (행사 목표): the side whose event it is sets them here,
+// through the app's goals form, until the event begins; the other side
+// reads them. Measurement then counts toward them.
+function GoalsPanel({ agreement, onEdit }: { agreement: Agreement; onEdit?: (eventId: string) => void }) {
+  const { event, goals } = agreement
+  if (!event) return null
+  const mine = event.owner === agreement.side
+  const count = (value: number) => value.toLocaleString(locale)
+  const rows = goals
+    ? [
+        { label: t("예상 인원"), value: t("{count}명", { count: count(goals.expectedAudience) }) },
+        { label: t("도달"), value: t("{count}명", { count: count(goals.targets.reach) }) },
+        { label: t("QR 스캔"), value: t("{count}건", { count: count(goals.targets.scans) }) },
+        { label: t("쿠폰 수령"), value: t("{count}건", { count: count(goals.targets.coupons) }) },
+        { label: t("매장 방문"), value: t("{count}건", { count: count(goals.targets.visits) }) },
+        { label: t("추정 ROAS"), value: `${count(goals.targets.roas)}%` },
+      ]
+    : []
+  return (
+    <section className="agreement-section goals-panel">
+      <h2>
+        {t("행사 목표")}
+        <small>
+          {event.started
+            ? t("행사가 시작돼 목표를 더 바꿀 수 없어요")
+            : mine
+              ? t("행사 전까지 여기서 정하고 고칠 수 있어요")
+              : t("{name}에서 행사 전까지 정해요", { name: agreement[event.owner].name })}
+        </small>
+      </h2>
+      {rows.length > 0 && (
+        <dl className="goals-list">
+          {rows.map((row) => (
+            <div key={row.label}>
+              <dt>{row.label}</dt>
+              <dd>{row.value}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+      {mine && !event.started && onEdit && (
+        <div className="goals-actions">
+          <Pill onClick={() => onEdit(event.id)} variant="outline">
+            {t("목표 정하기")}
+          </Pill>
+          <p className="field-hint">{t("정한 목표는 성과 측정과 리포트에 바로 반영돼요.")}</p>
+        </div>
+      )}
+    </section>
+  )
+}
+
 // After the event, this side's review of the other (stars, up to three of
 // the listed tags, a short comment) as a form or as written, and the review
 // the other side left.
@@ -362,23 +414,30 @@ function ReviewPanel({
 }
 
 // A sponsorship's agreement (협찬 약속서): the two sides, the event and what
-// the brand gives; each side's items to tick off with links and photos as
-// proof; each side's confirmation of the items as they stand; and printing
-// it (or saving it as a PDF from the print dialog).
+// the brand gives; the event's goals, set here before it begins; each
+// side's items to tick off with links and photos as proof; each side's
+// confirmation of the items as they stand; and printing it (or saving it
+// as a PDF from the print dialog).
 export function AgreementPage({
   id,
   loggedIn,
+  goalsSaved = 0,
   onBack,
   onLogin,
   onError,
   onNotice,
+  onEditGoals,
 }: {
   id: string
   loggedIn: boolean
+  // Counts the goals saved from here, so the page reads them again.
+  goalsSaved?: number
   onBack: () => void
   onLogin: () => void
   onError: (error: unknown) => void
   onNotice: (message: string) => void
+  // Opens the goals form for one of the account's own events.
+  onEditGoals?: (eventId: string) => void
 }) {
   const [agreement, setAgreement] = useState<Agreement>()
   const [failed, setFailed] = useState("")
@@ -399,7 +458,7 @@ export function AgreementPage({
     return () => {
       cancelled = true
     }
-  }, [id, loggedIn])
+  }, [id, loggedIn, goalsSaved])
 
   // Runs one change; the answer is the agreement as it now stands.
   const run = async (change: () => Promise<{ agreement: Agreement }>, done?: string) => {
@@ -538,6 +597,8 @@ export function AgreementPage({
           )}
         </div>
       </article>
+
+      <GoalsPanel agreement={agreement} onEdit={onEditGoals} />
 
       {editing ? (
         <ItemsEditor

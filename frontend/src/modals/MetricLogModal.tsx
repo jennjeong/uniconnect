@@ -1,30 +1,36 @@
 import { useEffect, useState } from "react"
 
 import { api, errorMessage } from "../api"
+import { Icon } from "../components/Icon"
 import { Modal } from "../components/Modal"
 import { metricInfo } from "../data/metrics"
 import { t } from "../i18n"
-import { formatDateTime } from "../lib/date"
+import { formatDateTime, formatFullDate } from "../lib/date"
 import type { MetricEntry, MetricKind, Role } from "../types"
 
-// Recent participation records behind one measurement count, or all of them.
+// Recent participation records behind one measurement count, or all of
+// them; before the event, what will show here once it takes place.
 export function MetricLogModal({
   eventId,
   role,
   kind,
   total,
+  startsOn,
   onClose,
 }: {
   eventId: string
   role: Role
   kind?: MetricKind
   total: number
+  // The event's first day while it is still to come (진행 전).
+  startsOn?: string
   onClose: () => void
 }) {
   const [entries, setEntries] = useState<MetricEntry[] | null>(null)
   const [error, setError] = useState("")
 
   useEffect(() => {
+    if (startsOn) return
     let cancelled = false
     api
       .measurementLog(eventId, kind, role)
@@ -37,7 +43,7 @@ export function MetricLogModal({
     return () => {
       cancelled = true
     }
-  }, [eventId, kind, role])
+  }, [eventId, kind, role, startsOn])
 
   return (
     <Modal
@@ -46,30 +52,42 @@ export function MetricLogModal({
       title={kind ? t("{metric} 참여 내역", { metric: t(metricInfo[kind].label) }) : t("전체 참여 내역")}
       onClose={onClose}
     >
-      <p className="log-summary">
-        {t("누적")} <strong>{t("{count}건", { count: total })}</strong>
-        {entries && ` · ${t("최근 {count}건을 보여드려요", { count: entries.length })}`}
-      </p>
-      {error && (
-        <p className="form-error" role="alert">
-          {error}
-        </p>
+      {startsOn ? (
+        <div className="log-wait">
+          <Icon name="calendar" size={22} />
+          <strong>{t("행사가 진행되면 참여 내역이 여기에 떠요")}</strong>
+          <span>
+            {t("{date}부터 QR 스캔 · 쿠폰 · 매장 방문이 들어오는 대로 쌓여요.", { date: formatFullDate(startsOn) })}
+          </span>
+        </div>
+      ) : (
+        <>
+          <p className="log-summary">
+            {t("누적")} <strong>{t("{count}건", { count: total })}</strong>
+            {entries && ` · ${t("최근 {count}건을 보여드려요", { count: entries.length })}`}
+          </p>
+          {error && (
+            <p className="form-error" role="alert">
+              {error}
+            </p>
+          )}
+          {entries && entries.length === 0 && <p className="day-empty">{t("아직 기록이 없어요.")}</p>}
+          <ol className="log-list">
+            {entries?.map((entry) => (
+              <li key={entry.id}>
+                <span className="log-time">{formatDateTime(entry.at)}</span>
+                <div>
+                  <strong>
+                    {entry.participant}
+                    {!kind && <em className={`activity-kind kind-${entry.kind}`}>{t(metricInfo[entry.kind].label)}</em>}
+                  </strong>
+                  <span>{t(entry.detail)}</span>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </>
       )}
-      {entries && entries.length === 0 && <p className="day-empty">{t("아직 기록이 없어요.")}</p>}
-      <ol className="log-list">
-        {entries?.map((entry) => (
-          <li key={entry.id}>
-            <span className="log-time">{formatDateTime(entry.at)}</span>
-            <div>
-              <strong>
-                {entry.participant}
-                {!kind && <em className={`activity-kind kind-${entry.kind}`}>{t(metricInfo[entry.kind].label)}</em>}
-              </strong>
-              <span>{t(entry.detail)}</span>
-            </div>
-          </li>
-        ))}
-      </ol>
     </Modal>
   )
 }

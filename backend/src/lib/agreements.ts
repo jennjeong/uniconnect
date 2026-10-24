@@ -3,6 +3,7 @@ import { rm } from "node:fs/promises"
 import path from "node:path"
 
 import { config } from "../config.js"
+import { todayInKorea } from "./dates.js"
 import { canReview, publicReview, reviewOpen } from "./reviews.js"
 import type { Account, Agreement, AgreementItem, ChatSide, Database } from "../types.js"
 
@@ -21,6 +22,10 @@ export type AcceptedProposal = {
   eventName: string
   // "YYYY-MM-DD", or "" while there is none.
   eventDate: string
+  // The event itself and whose it is: a group's event for a request, a
+  // brand's campaign for an offer.
+  eventId?: string
+  eventOwner: ChatSide
   gives: string
   respondedAt?: string
 }
@@ -40,6 +45,8 @@ export function acceptedProposal(database: Database, id: string): AcceptedPropos
       },
       eventName: request.eventName,
       eventDate: request.eventDate,
+      eventId: request.eventId,
+      eventOwner: "group",
       gives: request.ask,
       respondedAt: request.respondedAt,
     }
@@ -58,9 +65,20 @@ export function acceptedProposal(database: Database, id: string): AcceptedPropos
     brand: { name: offer.brandName, account: brandAccount, listingId: offer.brandId ?? brandAccount?.brandId },
     eventName: offer.campaignName,
     eventDate: offer.campaignDate,
+    eventId: offer.campaignId,
+    eventOwner: "brand",
     gives: offer.offer,
     respondedAt: offer.respondedAt,
   }
+}
+
+// The event a sponsorship is for, while the side whose event it is still
+// has it (an account and the event on its calendar).
+export function sponsoredEvent(database: Database, proposal: AcceptedProposal) {
+  const owner = proposal[proposal.eventOwner].account
+  const event =
+    owner && proposal.eventId ? (database.events[owner.id] ?? []).find((item) => item.id === proposal.eventId) : undefined
+  return owner && event ? { owner, event } : undefined
 }
 
 // The side an account takes in an accepted proposal, if any.
@@ -118,12 +136,19 @@ export function agreementFor(database: Database, proposal: AcceptedProposal) {
 }
 
 // An agreement with its proposal, as the side looking sees it, with the
-// reviews: whether this side may write one now, its own and the other's.
+// event (whose it is, and whether it has begun: its goals are set on the
+// agreement until then) and the goals both sides read, without the staff
+// PINs and coupons only the owner keeps, and the reviews: whether this side
+// may write one now, its own and the other's.
 export function agreementView(database: Database, agreement: Agreement, proposal: AcceptedProposal, side: ChatSide) {
   const other: ChatSide = side === "group" ? "brand" : "group"
   const review = (by: ChatSide) => database.reviews.find((item) => item.id === `${proposal.id}:${by}`)
   const mine = review(side)
   const theirs = review(other)
+  const sponsored = sponsoredEvent(database, proposal)
+  const measurement =
+    sponsored &&
+    database.measurements.find((item) => item.accountId === sponsored.owner.id && item.eventId === sponsored.event.id)
   return {
     ...agreement,
     side,
@@ -131,6 +156,12 @@ export function agreementView(database: Database, agreement: Agreement, proposal
     brand: { name: proposal.brand.name, member: Boolean(proposal.brand.account) },
     eventName: proposal.eventName,
     eventDate: proposal.eventDate,
+    ...(sponsored
+      ? { event: { id: sponsored.event.id, owner: proposal.eventOwner, started: sponsored.event.date <= todayInKorea() } }
+      : {}),
+    ...(measurement
+      ? { goals: { expectedAudience: measurement.goals.expectedAudience, targets: measurement.goals.targets } }
+      : {}),
     gives: proposal.gives,
     review: {
       open: reviewOpen(proposal),

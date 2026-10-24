@@ -12,8 +12,10 @@ import { Pill } from "./Pill"
 import { RevealTitle } from "./RevealText"
 
 // A brand's own campaign measured on site, at the end of 성과 분석: pick
-// the campaign, open its check-in QR, set its goals, and watch its QR scans,
-// coupons and store visits as they come in.
+// the campaign, open its check-in QR, and watch its QR scans, coupons and
+// store visits as they come in. Before the campaign (진행 전) the counts
+// wait as dashes beside their goals, which are set on the agreement with
+// the group that took the brand's offer.
 export function CampaignMeasurement({
   measurements,
   metrics,
@@ -21,7 +23,7 @@ export function CampaignMeasurement({
   onSelect,
   onUpdate,
   onOpenQr,
-  onOpenGoals,
+  onOpenAgreements,
   onShowLog,
 }: {
   // Every campaign of the brand, to pick the one to measure.
@@ -31,10 +33,12 @@ export function CampaignMeasurement({
   onSelect: (eventId: string) => void
   onUpdate: (measurement: EventMeasurement) => void
   onOpenQr: () => void
-  onOpenGoals: () => void
+  // Opens the agreements, where a campaign's goals are set.
+  onOpenAgreements: () => void
   onShowLog: (kind?: MetricKind) => void
 }) {
   const entries = useLiveMeasurement(report?.eventId, "브랜드", onUpdate)
+  const upcoming = report !== null && measureState(report) === "진행 전"
 
   return (
     <section aria-label={t("캠페인 현장 측정")} className="campaign-measure">
@@ -55,7 +59,7 @@ export function CampaignMeasurement({
         <>
           <div className="measure-bar">
             <EventPicker measurements={measurements} onSelect={onSelect} value={report.eventId} />
-            <span className="measure-state">{t(measureState(report))}</span>
+            <span className={upcoming ? "measure-state upcoming" : "measure-state"}>{t(measureState(report))}</span>
             {entries[0] && (
               <span className="measure-updated">{t("마지막 참여 {time}", { time: formatDateTime(entries[0].at) })}</span>
             )}
@@ -66,20 +70,26 @@ export function CampaignMeasurement({
                 <span>
                   <Icon name={metricInfo[kind].icon} size={16} /> {t(metricInfo[kind].label)}
                 </span>
-                <strong>
-                  <AnimatedNumber value={metrics[kind].toLocaleString("ko-KR")} />
-                </strong>
+                <strong>{upcoming ? "—" : <AnimatedNumber value={metrics[kind].toLocaleString("ko-KR")} />}</strong>
                 <small>
-                  {t("목표 {target}", { target: report.targets[kind].toLocaleString("ko-KR") })} ·{" "}
-                  {percent(metrics[kind], report.targets[kind])}%
+                  {t("목표 {target}", { target: report.targets[kind].toLocaleString("ko-KR") })}
+                  {!upcoming && ` · ${percent(metrics[kind], report.targets[kind])}%`}
                 </small>
               </button>
             ))}
           </div>
+          {upcoming && (
+            <p className="measure-wait">
+              <Icon name="scan" size={20} />
+              {t("캠페인이 시작되면 참여 기록이 여기에 쌓여요. 목표는 협찬 약속서에서 행사 전까지 정해요.")}
+            </p>
+          )}
           <div className="campaign-measure-actions">
-            <Pill onClick={onOpenGoals} variant="outline">
-              {t("목표 설정")}
-            </Pill>
+            {upcoming && (
+              <Pill onClick={onOpenAgreements} variant="outline">
+                {t("협찬 약속서")}
+              </Pill>
+            )}
             <Pill arrow="up-right" onClick={onOpenQr}>
               {t("현장 QR 열기")}
             </Pill>
