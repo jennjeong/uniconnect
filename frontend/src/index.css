@@ -6445,6 +6445,54 @@ button.nav-pill:hover {
   align-self: flex-start;
 }
 
+/* The operators' figures (AdminPage.tsx): tiles with real members' numbers,
+   the totals with the demo data under each. */
+.admin-section-title {
+  margin: 36px 0 4px;
+  font-size: 20px;
+  font-weight: var(--weight-label);
+}
+
+.admin-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 12px;
+  margin: 16px 0 0;
+}
+
+.admin-stat {
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.admin-stat dt {
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.admin-stat dd {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 8px 0 0;
+}
+
+.admin-stat strong {
+  color: var(--point-strong);
+  font-size: 28px;
+  font-weight: var(--weight-display);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.admin-stat small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .admin-page .match-tabs {
   margin-top: 28px;
 }

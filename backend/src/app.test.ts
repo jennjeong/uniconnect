@@ -2023,3 +2023,29 @@ test("the shops around a campus come live from Kakao, are asked for again each t
   }
 })
 
+test("operators see the platform's figures, real members' apart from the demo data", async () => {
+  type Figures = Record<string, { real: number; total: number }>
+  const stats = async (token = "test-admin-token") => {
+    const response = await fetch(`${baseUrl}/admin/stats`, { headers: { "X-Admin-Token": token } })
+    return { status: response.status, data: (await response.json()) as { stats: Figures } }
+  }
+  assert.equal((await stats("wrong-token-value")).status, 403)
+  assert.equal((await call("GET", "/admin/stats")).status, 403)
+
+  const before = (await stats()).data.stats
+  // The demo accounts and the seed's data count only in the totals.
+  assert.ok(before.proposals.total > before.proposals.real)
+  assert.ok(before.scans.total > before.scans.real)
+  for (const figure of Object.values(before)) {
+    assert.ok(figure.real >= 0 && figure.real <= figure.total)
+  }
+
+  // A new member counts as real, and as new this week.
+  await signUpMember("stats@syu.ac.kr", "stats-pass-123")
+  const after = (await stats()).data.stats
+  assert.equal(after.students.real, before.students.real + 1)
+  assert.equal(after.students.total, before.students.total + 1)
+  assert.equal(after.newThisWeek.real, before.newThisWeek.real + 1)
+  assert.equal(after.brands.real, before.brands.real)
+})
+

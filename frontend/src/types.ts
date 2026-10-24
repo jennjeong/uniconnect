@@ -197,6 +197,28 @@ export type AdminInquiry = Inquiry & {
   from: { name: string; role: Role; email: string } | null
 }
 
+// One figure two ways: real members' only, and with the demo data.
+export type Figure = { real: number; total: number }
+
+// The platform's figures for the operators (GET /api/admin/stats).
+export type PlatformStats = Record<
+  | "students"
+  | "brands"
+  | "newThisWeek"
+  | "events"
+  | "upcomingEvents"
+  | "proposals"
+  | "accepted"
+  | "declined"
+  | "sponsorships"
+  | "scans"
+  | "coupons"
+  | "visits"
+  | "messages"
+  | "questionsWaiting",
+  Figure
+>
+
 export type Conversation = {
   id: string
   partner: {
