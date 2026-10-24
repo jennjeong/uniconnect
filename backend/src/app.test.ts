@@ -2408,6 +2408,71 @@ test("after the event each side reviews the other, and the reviews show on the l
   assert.equal((await about("afternoon-coffee")).summary.count, 2)
 })
 
+test("members are emailed once when an event or a sponsored event is three days away or nearer", async () => {
+  const { sendReminders } = await import("./lib/reminders.js")
+  const { mailTransport } = await import("./lib/mailer.js")
+  const database = getDatabase()
+  await signUpMember("remind-club@syu.ac.kr", "remind-pass-123")
+  await signUpMember("remind@remind-cafe.kr", "remind-pass-123", "브랜드")
+  const group = database.accounts.find((account) => account.email === "remind-club@syu.ac.kr")!
+  const brand = database.accounts.find((account) => account.email === "remind@remind-cafe.kr")!
+  const event = (id: string, name: string, date: string) => ({
+    id,
+    name,
+    date,
+    people: "100명",
+    types: ["제품"],
+    status: "매칭 중" as const,
+    createdAt: "2026-11-01T00:00:00.000Z",
+  })
+  database.events[group.id] = [
+    event("in-three", "사흘 뒤 공연", "2026-11-28"),
+    event("in-five", "닷새 뒤 공연", "2026-11-30"),
+    event("today", "오늘 공연", "2026-11-25"),
+    event("past", "어제 공연", "2026-11-24"),
+  ]
+  database.sponsorships[brand.id] = [
+    { id: "sp-remind", groupName: "삼육대 뮤즈", eventName: "종강 공연", date: "2026-11-26", spend: 0, coupons: 0, visits: 0, sales: 0, targetRoas: 150 },
+  ]
+
+  const post = mailTransport.post
+  const sent: { to: string[]; subject: string; text: string }[] = []
+  mailTransport.post = async (message) => {
+    sent.push(message)
+    return new Response(null, { status: 200 })
+  }
+  const mail = { apiKey: config.resendApiKey, from: config.mailFrom }
+  config.resendApiKey = "test-resend-key"
+  config.mailFrom = "uniconnect <no-reply@example.com>"
+  try {
+    // Noon on 25 November in Korea: the demo group's 27 November concert is
+    // near too, but the demo accounts are never emailed.
+    const now = new Date("2026-11-25T03:00:00Z")
+    assert.equal(await sendReminders(database, now), 3)
+    const subjects = sent.map((message) => `${message.to[0]} ${message.subject}`).sort()
+    assert.deepEqual(subjects, [
+      "remind-club@syu.ac.kr [uniconnect] '사흘 뒤 공연'까지 3일 남았어요",
+      "remind-club@syu.ac.kr [uniconnect] 오늘은 '오늘 공연' 날이에요",
+      "remind@remind-cafe.kr [uniconnect] 내일은 협찬하는 '종강 공연' 날이에요",
+    ])
+    assert.ok(sent.every((message) => !message.to.includes("muse@syu.ac.kr") && !message.to.includes("hello@afternoon-coffee.kr")))
+    assert.match(sent.find((message) => message.to.includes("remind@remind-cafe.kr"))!.text, /협찬 약속서/)
+    // Once each: the next hour sends nothing, and two days later only the
+    // event that has come near since.
+    assert.equal(await sendReminders(database, new Date("2026-11-25T04:00:00Z")), 0)
+    sent.length = 0
+    assert.equal(await sendReminders(database, new Date("2026-11-27T03:00:00Z")), 1)
+    assert.match(sent[0].subject, /'닷새 뒤 공연'까지 3일 남았어요/)
+    assert.equal(database.events[group.id].find((item) => item.id === "past")!.remindedAt, undefined)
+  } finally {
+    mailTransport.post = post
+    config.resendApiKey = mail.apiKey
+    config.mailFrom = mail.from
+    delete database.events[group.id]
+    delete database.sponsorships[brand.id]
+  }
+})
+
 test("operators see the platform's figures, real members' apart from the demo data", async () => {
   type Figures = Record<string, { real: number; total: number }>
   const stats = async (token = "test-admin-token") => {

@@ -17,6 +17,8 @@ import {
   todayIso,
   weekdayNames,
 } from "../lib/date"
+import { saveFile } from "../lib/download"
+import { calendarFile, type CalendarEntry } from "../lib/ics"
 import type { EventItem, Role, SponsorRequest } from "../types"
 
 // A day on the calendar holds the account's own events or campaigns and,
@@ -126,6 +128,7 @@ export function EventsPage({
   onShowDetail,
   onDelete,
   onOpenSponsorship,
+  onNotice,
 }: {
   role: Role
   events: EventItem[]
@@ -137,8 +140,39 @@ export function EventsPage({
   onShowDetail: (event: EventItem) => void
   onDelete: (event: EventItem) => void
   onOpenSponsorship?: () => void
+  onNotice?: (message: string) => void
 }) {
   const today = todayIso()
+
+  // The events from today on, and for brands the days they sponsor, as a
+  // calendar file for Google, Apple or Outlook calendars.
+  const exportCalendar = () => {
+    const entries: CalendarEntry[] = [
+      ...events
+        .filter((event) => (event.endDate ?? event.date) >= today)
+        .map((event) => ({
+          id: event.id,
+          title: event.name,
+          date: event.date,
+          endDate: event.endDate,
+          description: [event.people, event.types.map((type) => t(type)).join(", ")].filter(Boolean).join(" · "),
+        })),
+      ...sponsorships
+        .filter((request) => request.eventDate >= today)
+        .map((request) => ({
+          id: request.id,
+          title: t("협찬 · {name}", { name: `${request.groupName} ${request.eventName}` }),
+          date: request.eventDate,
+          description: request.ask,
+        })),
+    ]
+    if (entries.length === 0) {
+      onNotice?.(t("캘린더에 넣을 다가오는 일정이 없어요."))
+      return
+    }
+    saveFile(`uniconnect-${today}.ics`, calendarFile(entries, t("uniconnect 행사 일정")), "text/calendar;charset=utf-8")
+    onNotice?.(t("캘린더 파일을 내려받았어요. 캘린더 앱에서 열면 일정이 추가돼요."))
+  }
   const [selected, setSelected] = useState(() =>
     initialDate && fromIsoDate(initialDate) ? initialDate : today,
   )
@@ -194,9 +228,14 @@ export function EventsPage({
         title={t("행사 일정")}
         description={t("날짜를 고르면 그날의 일정이 함께 보여요. 두 번 누르면 그 날짜로 바로 등록해요.")}
         actions={
-          <Pill arrow="right" onClick={() => onCreate(selected)}>
-            {t("새로 등록")}
-          </Pill>
+          <>
+            <Pill onClick={exportCalendar} variant="outline">
+              {t("캘린더에 추가")}
+            </Pill>
+            <Pill arrow="right" onClick={() => onCreate(selected)}>
+              {t("새로 등록")}
+            </Pill>
+          </>
         }
       />
 

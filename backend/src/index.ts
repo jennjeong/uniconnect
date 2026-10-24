@@ -1,9 +1,16 @@
 import { createApp } from "./app.js"
 import { config } from "./config.js"
 import { mailConfigured } from "./lib/mailer.js"
+import { sendReminders } from "./lib/reminders.js"
 import { loadDatabase } from "./store.js"
 
 await loadDatabase()
+
+// Reminders of events three days away or nearer, now and every hour after.
+const remind = () =>
+  sendReminders().catch((error: Error) => console.error(`[reminders] ${error.message}`))
+void remind()
+setInterval(remind, 60 * 60 * 1000).unref()
 
 if (config.isProduction && !config.exposeEmailCodes && !mailConfigured()) {
   console.warn(
