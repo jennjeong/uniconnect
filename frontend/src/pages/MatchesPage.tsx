@@ -1,11 +1,13 @@
 import { useState, type CSSProperties } from "react"
 
+import { CatalogSearch } from "../components/CatalogSearch"
 import { NearbyPlaces } from "../components/NearbyPlaces"
 import { PageIntro } from "../components/PageIntro"
 import { ProposalControl } from "../components/ProposalControl"
 import { TabBar } from "../components/TabBar"
 import { WorkCard } from "../components/WorkCard"
 import { t } from "../i18n"
+import { matchesQuery } from "../lib/search"
 import type { Industry, Match, RequestStatus } from "../types"
 
 type Tab = "추천" | "가까운 순" | "인기" | "전체" | "업종별"
@@ -77,6 +79,8 @@ export function MatchesPage({
     brands.some((brand) => brand.industry === industry),
   )
   const [industry, setIndustry] = useState<Industry>("cafe")
+  // Words to find, kept across the brand tabs.
+  const [query, setQuery] = useState("")
 
   const list =
     tab === "추천"
@@ -88,6 +92,7 @@ export function MatchesPage({
         : tab === "전체"
           ? brands
           : brands.filter((brand) => brand.industry === industry)
+  const shown = list.filter((match) => matchesQuery(match, query))
   const intro = tabIntro[tab]
 
   return (
@@ -127,18 +132,28 @@ export function MatchesPage({
             value={industry}
           />
         )}
+        {tab !== "가까운 순" && (
+          <CatalogSearch
+            label={t("브랜드 검색")}
+            onChange={setQuery}
+            placeholder={t("브랜드 이름, 업종, 태그로 찾기")}
+            value={query}
+          />
+        )}
       </div>
 
       {/* The nearest are real shops from Kakao, not yet on uniconnect, in their own list. */}
       {tab === "가까운 순" ? (
         <NearbyPlaces />
+      ) : shown.length === 0 && query.trim() ? (
+        <p className="day-empty">{t("찾는 브랜드가 없어요. 다른 낱말로 찾아보세요.")}</p>
       ) : (
         <ul
           className="work-grid stagger slide"
           data-direction={direction}
           key={tab === "업종별" ? `${tab}-${industry}` : tab}
         >
-          {list.map((match, index) => {
+          {shown.map((match, index) => {
             const rank = tab === "인기" ? index + 1 : undefined
             return (
               <li key={match.id} style={{ "--i": index } as CSSProperties}>

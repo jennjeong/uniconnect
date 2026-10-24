@@ -1,5 +1,6 @@
 import { useState, type CSSProperties } from "react"
 
+import { CatalogSearch } from "../components/CatalogSearch"
 import { PageIntro } from "../components/PageIntro"
 import { ProposalControl } from "../components/ProposalControl"
 import { TabBar } from "../components/TabBar"
@@ -7,6 +8,7 @@ import { WorkCard } from "../components/WorkCard"
 import { t } from "../i18n"
 import { todayIso } from "../lib/date"
 import { nearestFirst } from "../lib/distance"
+import { matchesGroupFilters, matchesQuery, noGroupFilters, type GroupFilters } from "../lib/search"
 import type { Industry, Match, RequestStatus } from "../types"
 
 type Tab = "추천" | "가까운 순" | "행사 임박" | "전체" | "분야별"
@@ -76,6 +78,15 @@ export function GroupsPage({
   }
   const fields = fieldLabels.filter(([value]) => groups.some((group) => group.industry === value))
   const today = todayIso()
+  // Words to find and the filters, kept across the tabs.
+  const [query, setQuery] = useState("")
+  const [filters, setFilters] = useState<GroupFilters>(noGroupFilters)
+  const schools = [...new Set(groups.flatMap((group) => (group.school ? [group.school] : [])))].sort()
+  const filtering = query.trim() !== "" || JSON.stringify(filters) !== JSON.stringify(noGroupFilters)
+  const clear = () => {
+    setQuery("")
+    setFilters(noGroupFilters)
+  }
 
   const list =
     tab === "추천"
@@ -89,6 +100,7 @@ export function GroupsPage({
         : tab === "전체"
           ? groups
           : groups.filter((group) => group.industry === field)
+  const shown = list.filter((group) => matchesQuery(group, query) && matchesGroupFilters(group, filters, today))
 
   return (
     <section className="page-view">
@@ -126,9 +138,62 @@ export function GroupsPage({
             value={field}
           />
         )}
+        <div className="catalog-tools">
+          <CatalogSearch
+            label={t("학생단체 검색")}
+            onChange={setQuery}
+            placeholder={t("단체 이름, 학교, 행사, 태그로 찾기")}
+            value={query}
+          />
+          <span className="catalog-select">
+            <select
+              aria-label={t("행사 규모")}
+              onChange={(event) => setFilters({ ...filters, size: event.target.value as GroupFilters["size"] })}
+              value={filters.size}
+            >
+              <option value="all">{t("모든 규모")}</option>
+              <option value="small">{t("100명 미만")}</option>
+              <option value="medium">{t("100~299명")}</option>
+              <option value="large">{t("300명 이상")}</option>
+              <option value="unknown">{t("인원 미정")}</option>
+            </select>
+          </span>
+          <span className="catalog-select">
+            <select
+              aria-label={t("행사 시기")}
+              onChange={(event) => setFilters({ ...filters, when: event.target.value as GroupFilters["when"] })}
+              value={filters.when}
+            >
+              <option value="all">{t("모든 시기")}</option>
+              <option value="thisMonth">{t("이번 달")}</option>
+              <option value="nextMonth">{t("다음 달")}</option>
+              <option value="later">{t("그 뒤")}</option>
+              <option value="unknown">{t("날짜 미정")}</option>
+            </select>
+          </span>
+          <span className="catalog-select">
+            <select
+              aria-label={t("학교")}
+              onChange={(event) => setFilters({ ...filters, school: event.target.value })}
+              value={filters.school}
+            >
+              <option value="">{t("모든 학교")}</option>
+              {schools.map((school) => (
+                <option key={school} value={school}>
+                  {school}
+                </option>
+              ))}
+            </select>
+          </span>
+          {filtering && (
+            <button className="catalog-clear" onClick={clear} type="button">
+              {t("조건 지우기")}
+            </button>
+          )}
+        </div>
       </div>
 
-      {list.length === 0 ? (
+      {shown.length === 0 ? (
         <p className="day-empty" key={tab}>
           {t("조건에 맞는 학생단체가 없어요.")}
         </p>
@@ -138,7 +203,7 @@ export function GroupsPage({
           data-direction={direction}
           key={tab === "분야별" ? `${tab}-${field}` : tab}
         >
-          {list.map((group, index) => (
+          {shown.map((group, index) => (
             <li key={group.id} style={{ "--i": index } as CSSProperties}>
               <WorkCard
                 match={group}
