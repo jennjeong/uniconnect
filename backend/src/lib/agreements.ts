@@ -1,16 +1,11 @@
 import { randomUUID } from "node:crypto"
-import { rm } from "node:fs/promises"
-import path from "node:path"
 
-import { config } from "../config.js"
 import { todayInKorea } from "./dates.js"
+import { photos } from "./photos.js"
 import { canReview, publicReview, reviewOpen } from "./reviews.js"
 import type { Account, Agreement, AgreementItem, ChatSide, Database } from "../types.js"
 
-// Where an agreement's photos are kept: beside the data file, one folder
-// per agreement, so a test's or a demo's data keeps its own.
-export const uploadsFolder = (agreementId: string) =>
-  path.join(path.dirname(config.dataFile), "uploads", agreementId.replace(/[^\w-]/g, "_"))
+export { uploadsFolder } from "./photos.js"
 
 // An accepted proposal as both sides see it: who is in it (their accounts
 // and listings when they have them), the event and what the brand gives.
@@ -181,5 +176,5 @@ export function dropOrphanAgreements(database: Database) {
 }
 
 export async function removeUploads(agreementIds: string[]) {
-  await Promise.all(agreementIds.map((id) => rm(uploadsFolder(id), { recursive: true, force: true })))
+  await photos().removeAll(agreementIds)
 }

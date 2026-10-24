@@ -1,6 +1,4 @@
 import { randomUUID } from "node:crypto"
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises"
-import path from "node:path"
 import { Router, type Request } from "express"
 
 import {
@@ -12,11 +10,11 @@ import {
   defaultItems,
   sideIn,
   sponsoredEvent,
-  uploadsFolder,
 } from "../lib/agreements.js"
 import { HttpError } from "../lib/errors.js"
 import { ensureMeasurement } from "../lib/measurements.js"
 import { notify } from "../lib/notices.js"
+import { photos } from "../lib/photos.js"
 import { text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -141,9 +139,7 @@ agreementsRouter.put("/:id/items", async (req, res) => {
     agreement.updatedAt = new Date().toISOString()
   }
   await saveDatabase()
-  await Promise.all(
-    removed.flatMap((item) => item.photos.map((photo) => rm(path.join(uploadsFolder(agreement.id), photo), { force: true }))),
-  )
+  await photos().remove(agreement.id, removed.flatMap((item) => item.photos))
   if (changed) {
     void notify(
       side === "group" ? proposal.brand.account : proposal.group.account,
@@ -186,30 +182,31 @@ agreementsRouter.patch("/:id/items/:itemId", async (req, res) => {
   res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 
-// A photo as proof, kept on disk; three per item.
+// A photo as proof (lib/photos.ts: on disk, or in Postgres on Vercel);
+// three per item.
 agreementsRouter.post("/:id/items/:itemId/photos", async (req, res) => {
   const { database, proposal, side } = opened(req)
-  const { agreement, item } = ownItem(database, proposal, req.params.itemId, side)
+  const { item } = ownItem(database, proposal, req.params.itemId, side)
   if (item.photos.length >= agreementLimits.photos) throw new HttpError(409, "사진은 할 일마다 3장까지 올릴 수 있어요.")
   const image = req.body?.image
   const match = typeof image === "string" && image.length <= photoMaxLength ? photoPattern.exec(image) : null
   const bytes = match ? Buffer.from(match[2], "base64") : undefined
   if (!match || !bytes || !looksLike(match[1], bytes)) throw new HttpError(400, "사진은 PNG, JPG, WebP로 올려 주세요.")
   const photo = `${randomUUID()}.${match[1] === "jpeg" ? "jpg" : match[1]}`
-  const folder = uploadsFolder(proposal.id)
-  const file = path.join(folder, photo)
-  await mkdir(folder, { recursive: true })
-  await writeFile(file, bytes)
-  item.photos.push(photo)
-  agreement.updatedAt = new Date().toISOString()
+  const store = photos()
+  await store.put(proposal.id, photo, bytes)
   try {
+    // Looked up again: the data may have been read anew while the photo went in.
+    const fresh = ownItem(getDatabase(), proposal, req.params.itemId, side)
+    fresh.item.photos.push(photo)
+    fresh.agreement.updatedAt = new Date().toISOString()
     await saveDatabase()
+    res.status(201).json({ agreement: agreementView(getDatabase(), fresh.agreement, proposal, side) })
   } catch (error) {
-    // The data went back to before the photo; so does the disk.
-    await rm(file, { force: true })
+    // The data went back to before the photo; so does the photo store.
+    await store.remove(proposal.id, [photo])
     throw error
   }
-  res.status(201).json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 
 agreementsRouter.delete("/:id/items/:itemId/photos/:photo", async (req, res) => {
@@ -220,7 +217,7 @@ agreementsRouter.delete("/:id/items/:itemId/photos/:photo", async (req, res) => 
   item.photos = item.photos.filter((entry) => entry !== photo)
   agreement.updatedAt = new Date().toISOString()
   await saveDatabase()
-  await rm(path.join(uploadsFolder(proposal.id), photo), { force: true })
+  await photos().remove(proposal.id, [photo])
   res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 
@@ -232,7 +229,7 @@ agreementsRouter.get("/:id/photos/:photo", async (req, res) => {
   if (!photoName.test(photo) || !agreement?.items.some((item) => item.photos.includes(photo))) {
     throw new HttpError(404, "사진을 찾을 수 없어요.")
   }
-  const bytes = await readFile(path.join(uploadsFolder(proposal.id), photo)).catch(() => undefined)
+  const bytes = await photos().get(proposal.id, photo)
   if (!bytes) throw new HttpError(404, "사진을 찾을 수 없어요.")
   res.type(photo.endsWith(".png") ? "image/png" : photo.endsWith(".webp") ? "image/webp" : "image/jpeg")
   res.set("Cache-Control", "private, max-age=3600")

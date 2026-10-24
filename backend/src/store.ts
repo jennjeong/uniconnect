@@ -1,7 +1,3 @@
-import { mkdir, readdir, readFile, rename, unlink, writeFile } from "node:fs/promises"
-import path from "node:path"
-
-import { config } from "./config.js"
 import {
   createSeed,
   seedBrands,
@@ -16,32 +12,86 @@ import {
 import { toIsoDate } from "./lib/dates.js"
 import { HttpError } from "./lib/errors.js"
 import { newStaffPin, prunePasses, syncSponsors } from "./lib/measurements.js"
+import { currentStorage, StaleWrite } from "./lib/storage.js"
 import { hashToken } from "./middleware/session.js"
 import type { Database, Metrics, MetricEntry, Report } from "./types.js"
 
-// A JSON file stands in for a database so the prototype runs without any
-// extra installs. Routes only touch data through getDatabase/saveDatabase,
-// which is the seam to replace when moving to a real database.
+export { backupFolder, backups } from "./lib/storage.js"
+
+// The data lives in memory as one document. Routes only touch it through
+// getDatabase/saveDatabase, which writes it where it is kept
+// (lib/storage.ts): a JSON file on one machine, Postgres on Vercel.
 let database: Database | undefined
 let pendingWrite = Promise.resolve()
 // The data as last written, to go back to when a write fails, and a count
-// that moves on each time one does.
+// that moves on each time one does or the data is read anew.
 let durable = ""
 let generation = 0
+// The stored version this copy last read or wrote, and when it last looked
+// for other copies' writes.
+let version = 0
+let checkedAt = 0
+
+// How often a copy of the API on shared storage looks for others' writes.
+export const freshness = { everyMs: 2000 }
 
 export async function loadDatabase() {
+  if (await reload()) return getDatabase()
+  const seed = await createSeed()
+  for (const measurement of seed.measurements) syncSponsors(seed, measurement)
+  replace(seed)
+  durable = JSON.stringify(seed)
+  version = 0
   try {
-    const stored = JSON.parse(await readFile(config.dataFile, "utf8")) as Database
-    database = upgradeDatabase(stored)
-    durable = JSON.stringify(database, null, 2)
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error
-    database = await createSeed()
-    for (const measurement of database.measurements) syncSponsors(database, measurement)
-    durable = JSON.stringify(database, null, 2)
     await saveDatabase()
+  } catch (error) {
+    // Another copy of the API seeded the database first: its data stands.
+    if (!(await reload())) throw error
   }
-  return database
+  return getDatabase()
+}
+
+// Puts data in place of what is in memory, in the same object, so code
+// holding the database sees it.
+function replace(next: Database) {
+  if (!database) {
+    database = next
+    return
+  }
+  const current = database as unknown as Record<string, unknown>
+  for (const key of Object.keys(current)) delete current[key]
+  Object.assign(current, next)
+}
+
+// Reads the stored data again (upgraded like a fresh start); false when
+// nothing is stored yet. Writes queued from before it are turned away, as
+// their changes were made to the data it replaces.
+async function reload() {
+  const stored = await currentStorage().read()
+  if (!stored) return false
+  replace(upgradeDatabase(JSON.parse(stored.data) as Database))
+  durable = JSON.stringify(getDatabase())
+  version = stored.version
+  generation += 1
+  return true
+}
+
+// Another copy of the API (Vercel starts more than one when busy) may have
+// saved since this one last read or wrote. With shared storage each request
+// first looks at the stored version, at most every freshness.everyMs, and
+// reads the data again when it has moved on, once this copy's own queued
+// writes are in. A database out of reach leaves the data as it is.
+export async function refreshDatabase() {
+  const storage = currentStorage()
+  if (!storage.shared || !database || Date.now() - checkedAt < freshness.everyMs) return
+  checkedAt = Date.now()
+  try {
+    await pendingWrite
+    const latest = await storage.version()
+    if (latest !== undefined && latest !== version) await reload()
+  } catch (error) {
+    console.error(`[store] ${(error as Error).message}`)
+  }
 }
 
 const notSaved = "저장하지 못해서 방금 한 작업을 되돌렸어요. 잠시 후 다시 시도해 주세요."
@@ -167,62 +217,38 @@ export function getDatabase() {
   return database
 }
 
-// A copy of the data at most once an hour, in a backups folder beside the
-// data file, keeping the latest 24, so a bad change or a broken disk can be
-// undone (README says how). A failed backup never fails the save. Tests
-// reset lastAt to take one at once.
-export const backups = { lastAt: 0, everyMs: 60 * 60 * 1000, kept: 24 }
-
-export const backupFolder = () => path.join(path.dirname(config.dataFile), "backups")
-
-async function backUp(snapshot: string) {
-  if (Date.now() - backups.lastAt < backups.everyMs) return
-  backups.lastAt = Date.now()
-  try {
-    const folder = backupFolder()
-    await mkdir(folder, { recursive: true })
-    // db-2026-10-24-13.json: the hour it was taken, in UTC.
-    await writeFile(path.join(folder, `db-${new Date().toISOString().slice(0, 13).replace("T", "-")}.json`), snapshot)
-    const files = (await readdir(folder)).filter((file) => /^db-.+\.json$/.test(file)).sort()
-    await Promise.all(files.slice(0, -backups.kept).map((file) => unlink(path.join(folder, file))))
-  } catch (error) {
-    console.error(`[backup] ${(error as Error).message}`)
-  }
-}
-
-// Writes are queued and go through a temp file, so a crash mid-write cannot
-// leave a half-written db.json behind. When a write fails, the data in
-// memory goes back to what was last written, so a request answered with an
-// error leaves nothing behind and can simply be tried again: its caller,
-// and the callers of writes queued behind it (whose changes went back too),
-// get a 503. The queue carries on, so the next save tries again.
+// Writes are queued, each over the version this copy last read or wrote
+// (lib/storage.ts makes a file write crash-safe and turns away a database
+// write another copy beat). When a write fails, the data in memory goes back
+// to what was last written, so a request answered with an error leaves
+// nothing behind and can simply be tried again: its caller, and the callers
+// of writes queued behind it (whose changes went back too), get a 503. When
+// another copy wrote first, its data comes in for the next request. The
+// queue carries on, so the next save tries again.
 export function saveDatabase() {
-  const snapshot = JSON.stringify(getDatabase(), null, 2)
+  const storage = currentStorage()
+  const snapshot = JSON.stringify(getDatabase(), null, storage.indent)
   const at = generation
   const write = pendingWrite.then(async () => {
     if (at !== generation) throw new HttpError(503, notSaved)
     try {
-      await mkdir(path.dirname(config.dataFile), { recursive: true })
-      const tempFile = `${config.dataFile}.tmp`
-      await writeFile(tempFile, snapshot)
-      await rename(tempFile, config.dataFile)
-      await backUp(snapshot)
+      version = await storage.write(snapshot, version)
+      checkedAt = Date.now()
     } catch (error) {
-      console.error(error)
       generation += 1
       rollBack()
+      if (error instanceof StaleWrite) await reload().catch((caught: Error) => console.error(caught))
+      else console.error(error)
       throw new HttpError(503, notSaved)
     }
     durable = snapshot
+    await storage.backUp(snapshot)
   })
   pendingWrite = write.catch(() => {})
   return write
 }
 
-// Puts the last written data back in place, in the same object, so code
-// holding the database sees it.
+// Puts the last written data back in place.
 function rollBack() {
-  const current = getDatabase() as unknown as Record<string, unknown>
-  for (const key of Object.keys(current)) delete current[key]
-  Object.assign(current, JSON.parse(durable))
+  replace(JSON.parse(durable) as Database)
 }

@@ -9,6 +9,7 @@ const en: Record<string, string> = {
   "없는 API 경로예요.": "There is no such API route.",
   "저장하지 못해서 방금 한 작업을 되돌렸어요. 잠시 후 다시 시도해 주세요.":
     "We couldn't save, so what you just did was undone. Please try again in a moment.",
+  "데이터를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.": "We couldn't load the data. Please try again in a moment.",
   "로그인이 필요해요.": "Please log in.",
   "회원 유형을 선택해 주세요.": "Please choose a member type.",
 
