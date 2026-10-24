@@ -13,6 +13,7 @@ import { StatsBento } from "../components/StatsBento"
 import { WorkCard } from "../components/WorkCard"
 import { t } from "../i18n"
 import { dDayLabel, nextEvent, semesterLabel, shortDay } from "../lib/date"
+import { shownTags } from "../lib/distance"
 import { formatWon } from "../lib/kpis"
 import { fullWon, roasMet, roasOf, sponsorshipTotals } from "../lib/sponsorships"
 import type { Match, NavLabel, RequestStatus, SponsorRequest, Sponsorship } from "../types"
@@ -250,7 +251,7 @@ export function BrandDashboardPage({
                 tags={
                   <>
                     {match.eventName && <span className="tag-event">{match.eventName}</span>}
-                    {match.tags.slice(0, 1).map((tag) => (
+                    {shownTags(match).slice(0, 1).map((tag) => (
                       <span key={tag}>{tag}</span>
                     ))}
                   </>

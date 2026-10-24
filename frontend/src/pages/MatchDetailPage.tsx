@@ -10,7 +10,7 @@ import { ReviewsSection } from "../components/ReviewsSection"
 import { ScoreRing } from "../components/ScoreRing"
 import { profileLabels } from "../data/profile"
 import { locale, t } from "../i18n"
-import { formatDistance } from "../lib/distance"
+import { formatDistance, shownTags } from "../lib/distance"
 import { LayersGradient } from "../scenes/LayersGradient"
 import { MeshBackdrop } from "../scenes/MeshBackdrop"
 import { ANTIPODE } from "../scenes/shaders"
@@ -102,7 +102,7 @@ export function MatchDetailPage({
           </div>
           <div className="banner-bottom">
             <div className="work-tags">
-              {match.tags.map((tag) => (
+              {shownTags(match).map((tag) => (
                 <span key={tag}>{tag}</span>
               ))}
             </div>

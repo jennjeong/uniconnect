@@ -614,8 +614,7 @@ button.nav-pill:hover {
   text-align: left;
 }
 
-/* The number takes a fixed width, so the account links below (indented by
-   that width and the gap) line up with the page names. */
+/* The number takes a fixed width, so the page names line up. */
 .nav-menu-item small {
   min-width: 20px;
   color: var(--muted);
@@ -650,12 +649,15 @@ button.nav-pill:hover {
   letter-spacing: 0;
 }
 
+/* The account links (메시지 · 협찬 약속서 · 내 정보 · FAQ), centred under the
+   rule; a visitor's picker of screens wraps centred with them. */
 .nav-menu-extra {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 10px 28px;
-  padding: 24px 0 0 36px;
+  padding: 24px 0 0;
   border-top: 1px solid var(--line-strong);
 }
 
@@ -677,7 +679,6 @@ button.nav-pill:hover {
 .nav-menu-roles {
   display: inline-flex;
   gap: 2px;
-  margin-left: auto;
   padding: 4px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.75);
@@ -1915,19 +1916,27 @@ button.nav-pill:hover {
   gap: 8px;
 }
 
+/* Sized to its words: 40px high and as wide as its placeholder needs, in a
+   row of tabs or tools alike (a flex size here once stretched it 260px
+   tall in 추천 매칭's column of tabs); the whole width on phones. */
 .catalog-search {
   display: flex;
-  min-width: 0;
-  max-width: 420px;
-  flex: 1 1 260px;
-  height: 44px;
+  width: min(100%, 340px);
+  height: 40px;
+  flex: 0 1 auto;
   align-items: center;
   gap: 8px;
-  padding: 0 16px;
+  padding: 0 16px 0 14px;
   border-radius: 999px;
   background: var(--surface);
   box-shadow: inset 0 0 0 1px var(--line-strong);
   color: var(--muted);
+}
+
+@media (max-width: 720px) {
+  .catalog-search {
+    width: 100%;
+  }
 }
 
 .catalog-search:focus-within {
@@ -1947,7 +1956,7 @@ button.nav-pill:hover {
 
 .catalog-select select {
   max-width: 100%;
-  height: 44px;
+  height: 40px;
   padding: 0 36px 0 16px;
   border: 0;
   border-radius: 999px;
@@ -2132,12 +2141,14 @@ button.nav-pill:hover {
   content: "";
 }
 
+/* Room between the letters and the lines: Hangul fills more of its square
+   than Latin, so tighter spacing crowded "좋은 행사는," into its next line. */
 .hero-title {
   margin: 48px 0 40px;
   font-size: clamp(48px, 6vw, 96px);
   font-weight: var(--weight-display);
-  letter-spacing: -0.035em;
-  line-height: 1.04;
+  letter-spacing: -0.02em;
+  line-height: 1.16;
 }
 
 .hero-band {
@@ -2182,17 +2193,21 @@ button.nav-pill:hover {
 }
 
 /* "곳", "건": small beside the figure, so the label below reads as centred
-   on the number rather than on a wide Korean unit. */
+   on the number rather than on a wide Korean unit. Hangul reaches below
+   the baseline the figures stand on (곳 by 0.085em, 건 by 0.075em), so the
+   unit is raised 0.08em to end level with the figures' foot. */
 .hero-stats .number-unit {
-  margin-left: 0.08em;
+  position: relative;
+  bottom: 0.08em;
+  margin-left: 0.16em;
   font-size: 0.5em;
   letter-spacing: 0;
 }
 
 /* A "1" carries its own room on the right; pulled in this much, "1건" is
-   spaced like "12곳" (measured 6px each at 1440px wide). */
+   spaced like "12곳". */
 .hero-stats .number-unit[data-after="1"] {
-  margin-left: -0.04em;
+  margin-left: 0.04em;
 }
 
 .hero-stats span {
@@ -6273,8 +6288,8 @@ button.nav-pill:hover {
   color: #fff;
 }
 
-/* Under each bubble: edited, read and the time, and on own messages a ⋯
-   button that opens edit and delete. */
+/* Under each bubble: edited, read and the time, and on own messages the ⋯
+   button the keyboard opens edit and delete with (below). */
 .chat-meta {
   display: flex;
   align-items: center;
@@ -6306,11 +6321,41 @@ button.nav-pill:hover {
   color: var(--ink);
 }
 
-/* With a mouse, the ⋯ shows on the message being pointed at. */
-@media (hover: hover) {
-  .chat-message:not(:hover) .chat-more:not(:focus-visible, [aria-expanded="true"]) {
-    opacity: 0;
+/* An own message's menu opens with a press and hold on touch screens or a
+   right click with a mouse, so the ⋯ shows only once the keyboard reaches
+   it; screen readers still find it. */
+.chat-more:not(:focus-visible) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+/* The held bubble gives a little under the finger, and the hold doesn't also
+   select its text or open the system's own callout. */
+@media (hover: none) {
+  .chat-message.mine:not(.deleted) .chat-bubble {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    transition: transform 0.25s var(--ease-out);
   }
+
+  .chat-message.mine:not(.deleted) .chat-bubble:active {
+    transform: scale(0.97);
+  }
+}
+
+/* Over the box until a menu has been opened once: how to open one. */
+.chat-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+  padding: 0 4px;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 /* A deleted message keeps its place, outlined and emptied, on both sides. */
@@ -8908,10 +8953,6 @@ button.nav-pill:hover {
     max-height: min(65vh, 480px);
     border-radius: 22px;
     transform-origin: top center;
-  }
-
-  .nav-menu-roles {
-    margin-left: 0;
   }
 
   .nav-menu-extra > button {

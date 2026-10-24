@@ -7,6 +7,7 @@ import { ProposalControl } from "../components/ProposalControl"
 import { TabBar } from "../components/TabBar"
 import { WorkCard } from "../components/WorkCard"
 import { t } from "../i18n"
+import { shownTags } from "../lib/distance"
 import { matchesQuery } from "../lib/search"
 import type { Industry, Match, NearbyPlace, RequestStatus } from "../types"
 
@@ -178,7 +179,7 @@ export function MatchesPage({
                       {rank !== undefined && match.popularity !== undefined && (
                         <span className="tag-hot">{t("협찬 {count}회", { count: match.popularity })}</span>
                       )}
-                      {match.tags.map((tag) => (
+                      {shownTags(match).map((tag) => (
                         <span key={tag}>{tag}</span>
                       ))}
                     </>

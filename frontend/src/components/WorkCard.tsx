@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
 
 import { t } from "../i18n"
-import { formatDistance } from "../lib/distance"
+import { formatDistance, shownTags } from "../lib/distance"
 import type { Match } from "../types"
 import { BrandMark } from "./BrandMark"
 import { DateLine } from "./DateLine"
@@ -88,7 +88,7 @@ export function WorkCard({
             </span>
           ) : null}
           {tags ??
-            match.tags.map((tag) => (
+            shownTags(match).map((tag) => (
               <span key={tag}>{tag}</span>
             ))}
         </div>
