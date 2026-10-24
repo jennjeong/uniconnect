@@ -4,12 +4,13 @@ import { Router, type Request } from "express"
 import { config } from "../config.js"
 import { HttpError } from "../lib/errors.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
+import { platformStats } from "../lib/stats.js"
 import { text } from "../lib/validation.js"
 import { getDatabase, saveDatabase } from "../store.js"
 
-// Operators read the questions sent from the FAQ page and answer them,
-// with the ADMIN_TOKEN from the environment in the X-Admin-Token header.
-// There is no admin screen yet; these routes are its seam.
+// Operators read the questions sent from the FAQ page and answer them, and
+// watch the platform's figures, with the ADMIN_TOKEN from the environment in
+// the X-Admin-Token header (pages/AdminPage.tsx).
 export const adminRouter = Router()
 
 const adminFailures = createRateLimit({
@@ -33,6 +34,12 @@ function requireAdmin(req: Request) {
     throw new HttpError(403, "관리자만 쓸 수 있어요.")
   }
 }
+
+// The platform's figures, real members' and with the demo data (lib/stats.ts).
+adminRouter.get("/stats", (req, res) => {
+  requireAdmin(req)
+  res.json({ stats: platformStats(getDatabase()) })
+})
 
 // Every question, unanswered first, then newest, with who sent it.
 adminRouter.get("/inquiries", (req, res) => {

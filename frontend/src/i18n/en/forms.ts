@@ -123,8 +123,21 @@ const en: Record<string, string> = {
   "관리자 토큰이 맞지 않아요.": "That admin token doesn't match.",
   "답변을 보냈어요.": "Answer sent.",
   "운영자 화면": "Operator Console",
-  "도움말 센터의 '관리자에게 질문하기'로 들어온 질문을 확인하고 답해요.":
-    "Read and answer the questions sent through ‘Ask Our Team’ in the Help Center.",
+  "서비스 지표를 보고, 도움말 센터의 '관리자에게 질문하기'로 들어온 질문을 확인하고 답해요.":
+    "Watch the service's figures, and read and answer the questions sent through 'Ask the Administrators' in the Help Center.",
+  지표: "Figures",
+  질문: "Questions",
+  "큰 숫자는 실제 회원의 것이고, 작은 글씨는 데모 계정과 시드 데이터를 더한 값이에요.":
+    "Large numbers are real members'; the small print adds the demo accounts and seed data.",
+  "데모 포함 {count}": "{count} with demo data",
+  "가입한 학생단체": "Student groups signed up",
+  "가입한 브랜드": "Brands signed up",
+  "이번 주 새 가입": "New this week",
+  "등록된 행사": "Events registered",
+  "다가오는 행사": "Upcoming events",
+  "보낸 제안": "Proposals sent",
+  "답변 대기 질문": "Questions waiting",
+  "제안 수락률": "Proposal acceptance",
   나가기: "Sign out",
   "관리자 토큰": "Admin token",
   "서버의 ADMIN_TOKEN": "The server's ADMIN_TOKEN",

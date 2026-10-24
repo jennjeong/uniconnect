@@ -11,6 +11,7 @@ import type {
   MetricKind,
   Metrics,
   NearbyPlaces,
+  PlatformStats,
   ProfileDraft,
   Report,
   RequestStatus,
@@ -126,6 +127,8 @@ export const api = {
   inquiries: () => request<{ inquiries: Inquiry[] }>("/inquiries"),
   adminInquiries: (token: string) =>
     request<{ inquiries: AdminInquiry[] }>("/admin/inquiries", { headers: { "X-Admin-Token": token } }),
+  adminStats: (token: string) =>
+    request<{ stats: PlatformStats }>("/admin/stats", { headers: { "X-Admin-Token": token } }),
   answerInquiry: (token: string, id: string, answer: string) =>
     request<{ inquiry: Inquiry }>(`/admin/inquiries/${encodeURIComponent(id)}/answer`, {
       method: "POST",
