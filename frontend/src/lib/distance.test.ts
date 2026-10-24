@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 
-import { formatDistance, nearestFirst } from "./distance"
+import { formatDistance, nearestFirst, shownTags } from "./distance"
 
 describe("distances", () => {
   test("read in metres under a kilometre, else in kilometres", () => {
@@ -19,5 +19,11 @@ describe("distances", () => {
       { id: "near", distanceKm: 0.8 },
     ]
     expect(nearestFirst(list).map((item) => item.id)).toEqual(["near", "far", "online", "anywhere"])
+  })
+
+  test("leave out a tag giving a radius once the real distance shows", () => {
+    const tags = ["대학생 선호", "반경 1.2km", "반경500m", "반경 안내 가능"]
+    expect(shownTags({ tags, distanceKm: 3.4 })).toEqual(["대학생 선호", "반경 안내 가능"])
+    expect(shownTags({ tags, distanceKm: undefined })).toEqual(tags)
   })
 })

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from "react"
+import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react"
 
 import { ApiError, api, errorMessage } from "../api"
 import { Icon } from "../components/Icon"
@@ -10,16 +10,32 @@ import type { ChatMessage, Conversation } from "../types"
 // How often an open conversation checks for new messages.
 const refreshMs = 4000
 
+// How long a finger rests on an own message before its menu opens.
+const holdMs = 450
+
+// Kept once this viewer has opened a message's menu, so the line saying how
+// to open it stops showing.
+const menuKnownKey = "uniconnect:chat-menu-known"
+
+const menuKnown = () => {
+  try {
+    return localStorage.getItem(menuKnownKey) === "1"
+  } catch {
+    return false
+  }
+}
+
 const timeOf = (at: string) =>
   new Date(at).toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" })
 
 // One conversation: messages (own on the right), and a box to write more.
 // It checks for replies every few seconds while open, which also brings in
 // the partner's read marks, edits and deletions. Own messages say whether
-// they were read and can be edited or deleted from their ⋯ button; both
-// sides then see "수정됨" or a deleted message in its place. It stops
-// checking once the conversation is gone, and hands an expired login to
-// the app.
+// they were read and can be edited or deleted from a menu: pressed and held
+// on a touch screen, right-clicked with a mouse, or opened from a ⋯ button
+// the keyboard reaches. Both sides then see "수정됨" or a deleted message in
+// its place. It stops checking once the conversation is gone, and hands an
+// expired login to the app.
 export function ChatPage({
   id,
   onBack,
@@ -45,6 +61,12 @@ export function ChatPage({
   const [confirming, setConfirming] = useState(false)
   // The message being edited in the box; what was typed before waits for after.
   const [editing, setEditing] = useState<ChatMessage | null>(null)
+  // A finger resting on an own message: where it went down, and the timer
+  // that opens the menu unless it moves (to scroll) or lifts first.
+  const hold = useRef<{ timer: number; x: number; y: number } | null>(null)
+  // Until a menu has been opened once, a line over the box says how.
+  const [hintShown, setHintShown] = useState(() => !menuKnown())
+  const [touch] = useState(() => window.matchMedia("(hover: none)").matches)
   const keptDraft = useRef("")
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const lastCount = useRef(0)
@@ -110,7 +132,7 @@ export function ChatPage({
       setMenuFor(null)
       setConfirming(false)
     }
-    const closeOutside = (event: PointerEvent) => {
+    const closeOutside = (event: globalThis.PointerEvent) => {
       if (event.target instanceof Element && event.target.closest(".chat-actions, .chat-more")) return
       close()
     }
@@ -124,6 +146,14 @@ export function ChatPage({
       document.removeEventListener("keydown", closeOnEscape)
     }
   }, [menuFor])
+
+  // A hold still timing when the page goes opens nothing.
+  useEffect(
+    () => () => {
+      if (hold.current) window.clearTimeout(hold.current.timer)
+    },
+    [],
+  )
 
   const update = (updated: Conversation) => {
     changes.current += 1
@@ -155,9 +185,52 @@ export function ChatPage({
     }
   }
 
-  const toggleMenu = (message: ChatMessage) => {
+  // Opens an own message's actions; once it has, the hint has done its job.
+  const openMenu = (message: ChatMessage) => {
     setConfirming(false)
-    setMenuFor((open) => (open === message.id ? null : message.id))
+    setMenuFor(message.id)
+    if (!hintShown) return
+    setHintShown(false)
+    try {
+      localStorage.setItem(menuKnownKey, "1")
+    } catch {
+      // Private browsing: the hint simply shows again next time.
+    }
+  }
+
+  const toggleMenu = (message: ChatMessage) => {
+    if (menuFor !== message.id) return openMenu(message)
+    setMenuFor(null)
+    setConfirming(false)
+  }
+
+  const endHold = () => {
+    if (hold.current) window.clearTimeout(hold.current.timer)
+    hold.current = null
+  }
+
+  // A press and hold opens the menu on touch screens (Safari sends no
+  // contextmenu event for it); a mouse opens it with the right button.
+  const startHold = (event: PointerEvent<HTMLDivElement>, message: ChatMessage) => {
+    if (event.pointerType === "mouse") return
+    endHold()
+    const timer = window.setTimeout(() => {
+      hold.current = null
+      navigator.vibrate?.(10)
+      openMenu(message)
+    }, holdMs)
+    hold.current = { timer, x: event.clientX, y: event.clientY }
+  }
+
+  // A finger that moves is scrolling, not holding.
+  const moveHold = (event: PointerEvent<HTMLDivElement>) => {
+    if (hold.current && Math.hypot(event.clientX - hold.current.x, event.clientY - hold.current.y) > 10) endHold()
+  }
+
+  const openOnRightClick = (event: MouseEvent<HTMLDivElement>, message: ChatMessage) => {
+    event.preventDefault()
+    endHold()
+    openMenu(message)
   }
 
   const startEdit = (message: ChatMessage) => {
@@ -200,6 +273,7 @@ export function ChatPage({
 
   const partner = conversation?.partner
   const unchanged = editing !== null && draft.trim() === editing.text
+  const ownSent = (conversation?.messages ?? []).some((message) => message.mine && !message.deletedAt)
   let lastDay = ""
 
   return (
@@ -230,6 +304,7 @@ export function ChatPage({
           const newDay = day !== lastDay
           lastDay = day
           const deleted = Boolean(message.deletedAt)
+          const actionable = message.mine && !deleted
           const classes = [
             "chat-message",
             message.mine && "mine",
@@ -241,18 +316,25 @@ export function ChatPage({
           return (
             <li className={classes} key={message.id}>
               {newDay && <span className="chat-day">{formatDay(day)}</span>}
-              <div className="chat-bubble">
+              <div
+                className="chat-bubble"
+                onContextMenu={actionable ? (event) => openOnRightClick(event, message) : undefined}
+                onPointerCancel={actionable ? endHold : undefined}
+                onPointerDown={actionable ? (event) => startHold(event, message) : undefined}
+                onPointerMove={actionable ? moveHold : undefined}
+                onPointerUp={actionable ? endHold : undefined}
+              >
                 {deleted ? (message.mine ? t("메시지를 삭제했어요.") : t("삭제된 메시지예요.")) : message.text}
               </div>
               <span className="chat-meta">
                 {message.editedAt && !deleted && <span className="chat-edited">{t("수정됨")}</span>}
-                {message.mine && !deleted && (
+                {actionable && (
                   <span className={message.read ? "chat-read read" : "chat-read"}>
                     {message.read ? t("읽음") : t("안 읽음")}
                   </span>
                 )}
                 <time dateTime={message.at}>{timeOf(message.at)}</time>
-                {message.mine && !deleted && (
+                {actionable && (
                   <button
                     aria-expanded={menuFor === message.id}
                     aria-label={t("메시지 수정 또는 삭제")}
@@ -312,6 +394,14 @@ export function ChatPage({
               {t("취소")}
             </button>
           </div>
+        )}
+        {hintShown && ownSent && !editing && (
+          <p className="chat-hint">
+            <Icon name="edit" size={14} />
+            {touch
+              ? t("내 메시지를 꾹 누르면 수정하거나 삭제할 수 있어요.")
+              : t("내 메시지를 우클릭하면 수정하거나 삭제할 수 있어요.")}
+          </p>
         )}
         <div className="chat-input">
           <textarea

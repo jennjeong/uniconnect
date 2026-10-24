@@ -200,6 +200,8 @@ const en: Record<string, string> = {
   읽음: "Read",
   "안 읽음": "Unread",
   "메시지 수정 또는 삭제": "Edit or delete message",
+  "내 메시지를 꾹 누르면 수정하거나 삭제할 수 있어요.": "Press and hold your message to edit or delete it.",
+  "내 메시지를 우클릭하면 수정하거나 삭제할 수 있어요.": "Right-click your message to edit or delete it.",
   "삭제하면 상대에게도 삭제된 메시지로 보여요.": "They'll see it as a deleted message too.",
   삭제: "Delete",
   수정: "Edit",

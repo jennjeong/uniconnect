@@ -7,7 +7,7 @@ import { TabBar } from "../components/TabBar"
 import { WorkCard } from "../components/WorkCard"
 import { t } from "../i18n"
 import { todayIso } from "../lib/date"
-import { nearestFirst } from "../lib/distance"
+import { nearestFirst, shownTags } from "../lib/distance"
 import { matchesGroupFilters, matchesQuery, noGroupFilters, type GroupFilters } from "../lib/search"
 import type { Industry, Match, RequestStatus } from "../types"
 
@@ -213,7 +213,7 @@ export function GroupsPage({
                 tags={
                   <>
                     {group.eventName && <span className="tag-event">{group.eventName}</span>}
-                    {group.tags.map((tag) => (
+                    {shownTags(group).map((tag) => (
                       <span key={tag}>{tag}</span>
                     ))}
                   </>
