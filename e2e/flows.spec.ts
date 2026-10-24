@@ -34,8 +34,8 @@ test("a student group proposes and the brand accepts", async ({ browser }) => {
   await logIn(student, "학생단체", "muse@syu.ac.kr")
   // Logging in opens the dashboard; the brand's page is one step away.
   await student.goto("/matches/afternoon-coffee")
-  await student.locator(".banner-actions").getByRole("button", { name: /협찬 제안 보내기/ }).click()
-  await expect(student.locator(".banner-actions").getByText("제안 완료")).toBeVisible()
+  await student.locator(".profile-actions").getByRole("button", { name: /협찬 제안 보내기/ }).click()
+  await expect(student.locator(".profile-actions").getByText("제안 완료")).toBeVisible()
 
   const brand = await (await browser.newContext()).newPage()
   await brand.goto("/")
@@ -272,10 +272,12 @@ test("visitors see a partner's reviews, and a group reviews the brand after its 
   await page.goto("/matches")
   await expect(page.locator(".work-card", { hasText: "오후의 커피" }).first().locator(".tag-rating")).toContainText("후기 2")
   await page.goto("/matches/afternoon-coffee")
-  const reviews = page.locator(".reviews-section")
-  await expect(reviews.getByRole("heading", { name: "함께한 파트너의 후기" })).toBeVisible()
-  await expect(reviews.locator(".reviews-summary strong")).toHaveText("4.5")
-  await expect(reviews.locator(".review-card")).toHaveCount(2)
+  await page.getByRole("tab", { name: /파트너 후기/ }).click()
+  const reviews = page.locator(".profile-panel")
+  await expect(reviews.locator(".profile-figures strong").first()).toHaveText("4.5")
+  await expect(reviews.getByRole("heading", { name: "최근 후기" })).toBeVisible()
+  await reviews.getByRole("button", { name: "후기 모두 보기 (2)" }).click()
+  await expect(reviews.locator(".profile-review, .review-card")).toHaveCount(2)
 
   // A new group's event today, proposed to the demo brand and accepted (through the API).
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date())
@@ -323,8 +325,11 @@ test("visitors see a partner's reviews, and a group reviews the brand after its 
 
   // It shows on the brand's page.
   await page.goto("/matches/afternoon-coffee")
-  await expect(page.locator(".reviews-section .review-card")).toHaveCount(3)
-  await expect(page.locator(".reviews-section").getByText("커피가 공연 전에 딱 맞춰 왔어요.")).toBeVisible()
+  await page.getByRole("tab", { name: /파트너 후기/ }).click()
+  // The newest comes first, the others on request.
+  await expect(page.locator(".profile-review")).toContainText("커피가 공연 전에 딱 맞춰 왔어요.")
+  await page.getByRole("button", { name: "후기 모두 보기 (3)" }).click()
+  await expect(page.locator(".profile-panel").locator(".profile-review, .review-card")).toHaveCount(3)
 })
 
 test("the app can be installed, and the calendar gives its dates to calendar apps", async ({ page, request }) => {

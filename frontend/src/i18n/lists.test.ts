@@ -28,6 +28,14 @@ describe("English for listed values", () => {
       "검토 중",
       "수락",
       "거절",
+      // The parts of a match the detail page shows as bars (matchScore.ts).
+      "업종 궁합",
+      "관심사",
+      "협찬 경험",
+      "행사 규모",
+      "함께한 이력",
+      "응답 준비",
+      "가까운 행사",
     ]
     expect(values.filter((value) => !(value in en))).toEqual([])
   })

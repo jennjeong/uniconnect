@@ -30,8 +30,18 @@ export type IconName =
   | "trash"
   | "search"
   | "pin"
+  | "share"
 
 const icons: Record<IconName, ReactNode> = {
+  // Three joined dots, for passing a page on.
+  share: (
+    <>
+      <circle cx="18" cy="5" r="2.6" />
+      <circle cx="6" cy="12" r="2.6" />
+      <circle cx="18" cy="19" r="2.6" />
+      <path d="m8.3 10.7 7.4-4.4M8.3 13.3l7.4 4.4" />
+    </>
+  ),
   pin: (
     <>
       <path d="M12 21s-7-6.1-7-11.2A7 7 0 0 1 19 9.8C19 14.9 12 21 12 21Z" />

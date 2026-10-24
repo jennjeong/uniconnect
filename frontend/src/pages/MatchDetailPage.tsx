@@ -1,13 +1,14 @@
-import type { CSSProperties } from "react"
+import { useState } from "react"
 
 import { BrandMark } from "../components/BrandMark"
 import { DateLine } from "../components/DateLine"
 import { Icon } from "../components/Icon"
 import { Pill } from "../components/Pill"
+import { ProfileBars, ProfileFigures, type ProfileFigure } from "../components/ProfileStats"
 import { ProposalControl } from "../components/ProposalControl"
-import { RevealTitle, RevealWords } from "../components/RevealText"
+import { RevealTitle } from "../components/RevealText"
 import { ReviewsSection } from "../components/ReviewsSection"
-import { ScoreRing } from "../components/ScoreRing"
+import { TabBar } from "../components/TabBar"
 import { profileLabels } from "../data/profile"
 import { locale, t } from "../i18n"
 import { formatDistance, shownTags } from "../lib/distance"
@@ -16,15 +17,43 @@ import { MeshBackdrop } from "../scenes/MeshBackdrop"
 import { ANTIPODE } from "../scenes/shaders"
 import type { Match, RequestStatus } from "../types"
 
-const pad = (value: number) => String(value).padStart(2, "0")
+type Tab = "match" | "reviews"
 
-const delay = (seconds: number) => ({ "--reveal-delay": `${seconds}s` }) as CSSProperties
+// Passes the page on: the phone's share sheet where there is one, else a
+// copy of its address, saying so for a moment.
+function ShareButton({ name }: { name: string }) {
+  const [copied, setCopied] = useState(false)
+  const share = async () => {
+    const url = window.location.href
+    if (navigator.share) {
+      // Closing the sheet rejects; nothing to tell.
+      await navigator.share({ title: name, url }).catch(() => undefined)
+      return
+    }
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // No clipboard either: the address bar still has the link.
+    }
+  }
+  return (
+    <button className="back-pill share-pill" onClick={share} type="button">
+      <Icon name="share" size={15} />
+      <span aria-live="polite">{copied ? t("링크를 복사했어요") : t("공유하기")}</span>
+    </button>
+  )
+}
 
-// One brand (for student groups) or student group (for brands): a banner on
-// getlayers.ai's Antipode gradient (two masses of light meeting — the two
-// sides of a sponsorship) with who they are, their introduction as a
-// statement, their facts, SNS and portfolio as rows, and ways to get in
-// touch at the top and the bottom.
+// One brand (for student groups) or student group (for brands) as a
+// profile: a card with a cover on getlayers.ai's Antipode gradient (two
+// masses of light meeting — the two sides of a sponsorship), its mark over
+// the cover's edge, who they are, where, and the ways to get in touch; then
+// two tabs. 매칭 정보 has the match and the other figure that says most on a
+// tinted card, each part of the match as a bar, then the introduction, SNS,
+// facts and portfolio; 파트너 후기 has the reviews (ReviewsSection). On wide
+// screens the card stays beside the tabs as they scroll.
 export function MatchDetailPage({
   match,
   kind,
@@ -46,6 +75,7 @@ export function MatchDetailPage({
   onPropose: () => void
   onCancel: () => void
 }) {
+  const [tab, setTab] = useState<Tab>("match")
   const group = kind === "group"
   const labels = profileLabels[group ? "학생단체" : "브랜드"]
   const facts = [
@@ -56,6 +86,9 @@ export function MatchDetailPage({
   ]
   const sns = match.sns ?? []
   const portfolio = match.portfolio ?? []
+  const tags = shownTags(match)
+  const distance = match.distanceKm !== undefined ? formatDistance(match.distanceKm) : undefined
+  const place = [group ? match.school : match.location?.address, distance].filter(Boolean).join(" · ")
   const proposal = (
     <ProposalControl
       done={done}
@@ -67,6 +100,27 @@ export function MatchDetailPage({
     />
   )
 
+  // Beside the match: a group's expected audience or a brand's
+  // sponsorships this semester, else how far it is.
+  const nearby: ProfileFigure | undefined = distance
+    ? { value: distance, label: t("거리"), note: group ? t("매장에서 학교까지") : t("학교에서 매장까지") }
+    : undefined
+  const beside: ProfileFigure | undefined = group
+    ? match.audience !== undefined
+      ? { value: t("{count}명", { count: match.audience.toLocaleString(locale) }), label: t("예상 인원"), note: match.eventName }
+      : nearby
+    : match.popularity !== undefined
+      ? { value: t("{count}회", { count: match.popularity }), label: t("이번 학기 협찬"), note: t("학생단체와 함께한 협찬") }
+      : nearby
+  const figures: ProfileFigure[] = [
+    {
+      value: `${match.score}%`,
+      label: t("일치율"),
+      note: match.reasons?.length ? match.reasons.map((reason) => t(reason)).join(" · ") : undefined,
+    },
+    ...(beside ? [beside] : []),
+  ]
+
   return (
     <section className="page-view detail-view">
       <div className="detail-top">
@@ -74,155 +128,138 @@ export function MatchDetailPage({
           <Icon name="chevron" size={16} />
           <span>{t("뒤로")}</span>
         </button>
+        <ShareButton name={match.name} />
       </div>
 
-      <header className="banner-hero">
-        <LayersGradient shader={ANTIPODE} />
-        <div className="banner-content">
-          <div className="banner-top">
+      <div className="profile-layout">
+        <aside className="profile-card">
+          <div className="profile-cover">
+            <LayersGradient shader={ANTIPODE} />
             <span className="eyebrow light">{group ? "Group Profile" : "Brand Profile"}</span>
-            <ScoreRing score={match.score} />
           </div>
-          <div className="banner-identity">
+          <div className="profile-avatar">
             <BrandMark match={match} large />
-            <div>
-              <span className="banner-meta">
-                {group && match.school ? `${match.school} · ${t(match.category)}` : t(match.category)}
-              </span>
-              <RevealTitle className="banner-title">{match.name}</RevealTitle>
-              {match.reasons && match.reasons.length > 0 && (
-                <p className="banner-reasons">
-                  <span>{t("일치율 {score}%", { score: match.score })}</span>
-                  {match.reasons.map((reason) => (
-                    <span key={reason}>{t(reason)}</span>
-                  ))}
-                </p>
-              )}
-            </div>
           </div>
-          <div className="banner-bottom">
-            <div className="work-tags">
-              {shownTags(match).map((tag) => (
-                <span key={tag}>{tag}</span>
-              ))}
-            </div>
-            <div className="banner-actions">
+          <div className="profile-body">
+            <span className="profile-meta">
+              {group && match.school ? `${match.school} · ${t(match.category)}` : t(match.category)}
+            </span>
+            <RevealTitle className="profile-name">{match.name}</RevealTitle>
+            <p className="profile-offer">
+              <small>{labels.offer}</small>
+              {match.offer}
+            </p>
+            {place && (
+              <p className="profile-place">
+                <Icon name="pin" size={16} />
+                {place}
+              </p>
+            )}
+            {group && match.eventName && match.eventDate && (
+              <div className="profile-event">
+                <small>{t("다음 행사")}</small>
+                <strong>{match.eventName}</strong>
+                <DateLine date={match.eventDate} />
+              </div>
+            )}
+            {tags.length > 0 && (
+              <div className="work-tags">
+                {tags.map((tag) => (
+                  <span key={tag}>{tag}</span>
+                ))}
+              </div>
+            )}
+            <div className="profile-actions">
+              {proposal}
               <button className="cancel-button" onClick={onChat} type="button">
                 <Icon name="chat" size={16} /> {t("문의하기")}
               </button>
-              {proposal}
             </div>
           </div>
-        </div>
-      </header>
+        </aside>
 
-      <section className="about-block">
-        <div className="about-side">
-          <span className="eyebrow">{group ? t("단체 소개") : t("브랜드 소개")}</span>
-          <Icon name="link" size={220} />
-          {group && match.eventName && match.eventDate ? (
-            <div className="about-event" data-reveal>
-              <small>{t("다음 행사")}</small>
-              <strong>{match.eventName}</strong>
-              <DateLine date={match.eventDate} />
-              {match.audience !== undefined && (
-                <span className="detail-audience">
-                  <Icon name="users" size={15} />
-                  {t("예상 인원 {count}명", { count: match.audience.toLocaleString(locale) })}
-                </span>
+        <div className="profile-main">
+          <TabBar
+            items={[
+              { value: "match", label: t("매칭 정보") },
+              {
+                value: "reviews",
+                label: (
+                  <>
+                    {t("파트너 후기")} {match.reviewCount ? <em>{match.reviewCount}</em> : null}
+                  </>
+                ),
+              },
+            ]}
+            label={t("{name} 정보 보기", { name: match.name })}
+            onChange={(value: Tab) => setTab(value)}
+            value={tab}
+          />
+
+          {tab === "match" ? (
+            <div className="profile-panel">
+              <ProfileFigures figures={figures} />
+              {match.scoreParts && match.scoreParts.length > 0 && (
+                <ProfileBars rows={match.scoreParts.map((part) => ({ label: t(part.label), share: part.value }))} />
+              )}
+
+              <h3 className="profile-heading">{group ? t("단체 소개") : t("브랜드 소개")}</h3>
+              <p className="profile-intro">{match.intro || t("아직 소개를 쓰지 않았어요.")}</p>
+              {sns.length > 0 && (
+                <ul aria-label="SNS" className="sns-chips">
+                  {sns.map((account) => (
+                    <li key={`${account.platform}-${account.handle}`}>
+                      <span className="sns-dot">
+                        <Icon name="at" size={14} />
+                      </span>
+                      <span>
+                        <small>{t(account.platform)}</small>
+                        <strong>{account.handle}</strong>
+                      </span>
+                      {account.followers && <em>{account.followers}</em>}
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {facts.length > 0 && (
+                <>
+                  <h3 className="profile-heading">{t("한눈에 보는 정보")}</h3>
+                  <dl className="profile-facts">
+                    {facts.map((fact) => (
+                      <div key={fact.label}>
+                        <dt>{t(fact.label)}</dt>
+                        <dd>{fact.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </>
+              )}
+
+              {portfolio.length > 0 && (
+                <>
+                  <h3 className="profile-heading">{group ? t("지난 활동") : t("함께한 협찬")}</h3>
+                  <ul className="profile-portfolio">
+                    {portfolio.map((item) => (
+                      <li key={item.title}>
+                        <i aria-hidden="true">
+                          <Icon name="briefcase" size={16} />
+                        </i>
+                        <span>
+                          <strong>{item.title}</strong>
+                          {item.detail && <small>{item.detail}</small>}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
               )}
             </div>
           ) : (
-            <p className="about-note" data-reveal>
-              <Icon name="spark" size={20} />
-              <span>
-                {group
-                  ? t("캠퍼스 현장에서 브랜드를 직접 소개할 수 있는 학생단체예요.")
-                  : match.distanceKm !== undefined
-                    ? t("학교에서 {distance} 떨어진 곳에 매장이 있는 브랜드예요.", {
-                        distance: formatDistance(match.distanceKm),
-                      })
-                    : t("캠퍼스 행사에 협찬할 수 있는 브랜드예요.")}
-              </span>
-            </p>
+            <ReviewsSection id={match.id} role={group ? "학생단체" : "브랜드"} />
           )}
         </div>
-        <div className="about-copy">
-          {match.intro ? (
-            <RevealWords className="about-statement">{match.intro}</RevealWords>
-          ) : (
-            <p className="about-statement">{t("아직 소개를 쓰지 않았어요.")}</p>
-          )}
-          <div className="about-offer" data-reveal style={delay(0.15)}>
-            <span>{labels.offer}</span>
-            <strong>{match.offer}</strong>
-          </div>
-          {sns.length > 0 && (
-            <div className="about-foot" data-reveal style={delay(0.2)}>
-              <span>SNS</span>
-              <ul className="sns-chips">
-                {sns.map((account) => (
-                  <li key={`${account.platform}-${account.handle}`}>
-                    <span className="sns-dot">
-                      <Icon name="at" size={14} />
-                    </span>
-                    <span>
-                      <small>{t(account.platform)}</small>
-                      <strong>{account.handle}</strong>
-                    </span>
-                    {account.followers && <em>{account.followers}</em>}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {facts.length > 0 && (
-        <section className="service-section">
-          <span className="eyebrow" data-reveal>
-            {group ? t("단체 정보") : t("브랜드 정보")}
-          </span>
-          <RevealTitle as="h2" className="section-display">
-            {t("한눈에 보는 정보")}
-          </RevealTitle>
-          <dl className="service-list">
-            {facts.map((fact, index) => (
-              <div className="service-row" data-reveal key={fact.label} style={delay(index * 0.08)}>
-                <span className="service-index">{pad(index + 1)}</span>
-                <dt>{t(fact.label)}</dt>
-                <dd>{fact.value}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-      )}
-
-      {portfolio.length > 0 && (
-        <section className="service-section">
-          <span className="eyebrow" data-reveal>
-            {labels.portfolio}
-          </span>
-          <RevealTitle as="h2" className="section-display">
-            {group ? t("지난 활동") : t("함께한 협찬")}
-          </RevealTitle>
-          <ul className="service-list">
-            {portfolio.map((item, index) => (
-              <li className="service-row" data-reveal key={item.title} style={delay(index * 0.08)}>
-                <span className="service-index">{pad(index + 1)}</span>
-                <strong>{item.title}</strong>
-                {item.detail && <span className="service-detail">{item.detail}</span>}
-                <i aria-hidden="true" className="service-badge">
-                  <Icon name="briefcase" size={16} />
-                </i>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      <ReviewsSection id={match.id} />
+      </div>
 
       <section className="cta-panel" data-reveal>
         <MeshBackdrop seed={1.3} />

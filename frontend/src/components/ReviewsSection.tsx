@@ -1,17 +1,27 @@
 import { useEffect, useState } from "react"
 
 import { api } from "../api"
+import { reviewTags } from "../data/reviews"
 import { t } from "../i18n"
-import type { Review, ReviewSummary } from "../types"
-import { RevealTitle } from "./RevealText"
+import { formatFullDate } from "../lib/date"
+import type { Review, ReviewSummary, Role } from "../types"
+import { Icon } from "./Icon"
+import { ProfileBars, ProfileFigures } from "./ProfileStats"
 import { ReviewCard } from "./ReviewCard"
 import { Stars } from "./Stars"
 
-// A brand's or group's reviews on its detail page: the average and how
-// many, the tags picked most as badges, then the latest reviews. Partners
-// write them on a sponsorship's agreement after the event.
-export function ReviewsSection({ id }: { id: string }) {
+// The tag that says a partner would sponsor together again, shown as its
+// own figure rather than one of the bars.
+const againTag = "다시 함께하고 싶어요"
+
+// A brand's or group's reviews, the detail page's 파트너 후기 tab: the
+// average and how many would sponsor together again on the tinted card,
+// how many picked each other tag as bars, the latest review, and the rest
+// on request. Partners write them on a sponsorship's agreement after the
+// event.
+export function ReviewsSection({ id, role }: { id: string; role: Role }) {
   const [data, setData] = useState<{ summary: ReviewSummary; reviews: Review[] }>()
+  const [all, setAll] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -28,37 +38,70 @@ export function ReviewsSection({ id }: { id: string }) {
 
   if (!data) return null
   const { summary, reviews } = data
+  if (summary.count === 0) {
+    return (
+      <div className="profile-panel">
+        <p className="profile-empty">
+          <Icon name="chat" size={22} />
+          {t("아직 후기가 없어요. 협찬을 마친 학생단체와 브랜드가 서로 남겨요.")}
+        </p>
+      </div>
+    )
+  }
+
+  const picked = (tag: string) => summary.tags.find((item) => item.tag === tag)?.count ?? 0
+  const again = picked(againTag)
+  const [latest, ...rest] = reviews
   return (
-    <section className="service-section reviews-section">
-      <span className="eyebrow">{t("협찬 후기")}</span>
-      <RevealTitle as="h2" className="section-display">
-        {t("함께한 파트너의 후기")}
-      </RevealTitle>
-      {summary.count === 0 ? (
-        <p className="field-hint">{t("아직 후기가 없어요. 협찬을 마친 학생단체와 브랜드가 서로 남겨요.")}</p>
-      ) : (
-        <>
-          <div className="reviews-summary">
-            <strong>{summary.average.toFixed(1)}</strong>
-            <Stars rating={summary.average} size={20} />
-            <span>{t("후기 {count}", { count: summary.count })}</span>
-            {summary.tags.length > 0 && (
-              <ul aria-label={t("많이 고른 태그")} className="review-badges">
-                {summary.tags.map((item) => (
-                  <li key={item.tag}>
-                    {t(item.tag)} <em>{item.count}</em>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-          <div className="reviews-list">
-            {reviews.map((review) => (
-              <ReviewCard key={`${review.authorName}-${review.createdAt}`} review={review} />
-            ))}
-          </div>
-        </>
+    <div className="profile-panel">
+      <ProfileFigures
+        figures={[
+          {
+            value: summary.average.toFixed(1),
+            star: true,
+            label: t("전체 평점"),
+            note: t("후기 {count}", { count: summary.count }),
+          },
+          {
+            value: `${Math.round((again / summary.count) * 100)}%`,
+            label: t("재협찬 의향"),
+            note: t("후기 {count}개 중 {picked}개", { count: summary.count, picked: again }),
+          },
+        ]}
+      />
+      <ProfileBars
+        rows={reviewTags[role]
+          .filter((tag) => tag !== againTag)
+          .map((tag) => ({ label: t(tag), share: picked(tag) / summary.count }))}
+      />
+
+      <h3 className="profile-heading">{t("최근 후기")}</h3>
+      <article className="profile-review">
+        <span aria-hidden="true" className="profile-review-mark">
+          {latest.authorName.slice(0, 1)}
+        </span>
+        <div>
+          <h4>{latest.eventName}</h4>
+          <Stars rating={latest.rating} size={14} />
+          {latest.comment && <p>“{latest.comment}”</p>}
+          <small>
+            {latest.authorName} · {formatFullDate(latest.createdAt.slice(0, 10))}
+          </small>
+        </div>
+      </article>
+
+      {rest.length > 0 && all && (
+        <div className="reviews-list">
+          {rest.map((review) => (
+            <ReviewCard key={`${review.authorName}-${review.createdAt}`} review={review} />
+          ))}
+        </div>
       )}
-    </section>
+      {rest.length > 0 && (
+        <button aria-expanded={all} className="profile-more" onClick={() => setAll(!all)} type="button">
+          {all ? t("후기 접기") : t("후기 모두 보기 ({count})", { count: summary.count })}
+        </button>
+      )}
+    </div>
   )
 }

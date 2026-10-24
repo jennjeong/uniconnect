@@ -287,11 +287,15 @@ const en: Record<string, string> = {
   "사진에 다른 사람의 얼굴이 나오면 동의를 받고 올려 주세요.": "If other people's faces show in a photo, get their consent before adding it.",
   // Sponsorship reviews (pages/AgreementPage.tsx, components/ReviewsSection.tsx)
   "협찬 후기": "Sponsorship reviews",
-  "함께한 파트너의 후기": "Reviews from partners",
   "아직 후기가 없어요. 협찬을 마친 학생단체와 브랜드가 서로 남겨요.":
     "No reviews yet. Student groups and brands leave them for each other after a sponsorship.",
   "후기 {count}": "{count:review|reviews}",
-  "많이 고른 태그": "Tags picked most",
+  "전체 평점": "Overall rating",
+  "재협찬 의향": "Would sponsor again",
+  "후기 {count}개 중 {picked}개": "{picked} of {count:review|reviews}",
+  "최근 후기": "Latest review",
+  "후기 모두 보기 ({count})": "Read all reviews ({count})",
+  "후기 접기": "Show fewer reviews",
   "별점 {rating}점": "{rating} out of 5 stars",
   "행사 날부터 서로 후기를 남길 수 있어요. 남긴 후기는 상대의 상세 정보에 보여요.":
     "From the day of the event, you can review each other. A review shows on the other side's profile.",
