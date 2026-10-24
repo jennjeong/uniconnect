@@ -30,17 +30,25 @@ export async function sendMail(to: string, subject: string, text: string) {
 const subjects = {
   signup: "[uniconnect] 회원가입 인증번호",
   reset: "[uniconnect] 비밀번호 재설정 인증번호",
+  change: "[uniconnect] 로그인 이메일 변경 인증번호",
 }
 
-// A 6-digit code for signing up or resetting a password. Without a mail
-// service it goes to the server log, code included, for the demo.
-export async function sendVerificationCode(email: string, code: string, purpose: "signup" | "reset" = "signup") {
+const actions = { signup: "회원가입", reset: "비밀번호 재설정", change: "로그인 이메일 변경" }
+
+// A 6-digit code for signing up, resetting a password or moving to a new
+// login email. Without a mail service it goes to the server log, code
+// included, for the demo.
+export async function sendVerificationCode(
+  email: string,
+  code: string,
+  purpose: "signup" | "reset" | "change" = "signup",
+) {
   if (!mailConfigured()) {
     console.log(`[mail] ${email} 인증번호 ${code}`)
     return
   }
   const lines = [
-    `uniconnect ${purpose === "signup" ? "회원가입" : "비밀번호 재설정"} 인증번호는 ${code} 입니다.`,
+    `uniconnect ${actions[purpose]} 인증번호는 ${code} 입니다.`,
     "3분 안에 입력해 주세요. 요청한 적이 없다면 이 메일은 무시해 주세요.",
   ]
   try {

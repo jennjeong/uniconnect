@@ -1,4 +1,4 @@
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises"
+import { mkdir, readdir, readFile, rename, unlink, writeFile } from "node:fs/promises"
 import path from "node:path"
 
 import { config } from "./config.js"
@@ -163,6 +163,29 @@ export function getDatabase() {
   return database
 }
 
+// A copy of the data at most once an hour, in a backups folder beside the
+// data file, keeping the latest 24, so a bad change or a broken disk can be
+// undone (README says how). A failed backup never fails the save. Tests
+// reset lastAt to take one at once.
+export const backups = { lastAt: 0, everyMs: 60 * 60 * 1000, kept: 24 }
+
+export const backupFolder = () => path.join(path.dirname(config.dataFile), "backups")
+
+async function backUp(snapshot: string) {
+  if (Date.now() - backups.lastAt < backups.everyMs) return
+  backups.lastAt = Date.now()
+  try {
+    const folder = backupFolder()
+    await mkdir(folder, { recursive: true })
+    // db-2026-10-24-13.json: the hour it was taken, in UTC.
+    await writeFile(path.join(folder, `db-${new Date().toISOString().slice(0, 13).replace("T", "-")}.json`), snapshot)
+    const files = (await readdir(folder)).filter((file) => /^db-.+\.json$/.test(file)).sort()
+    await Promise.all(files.slice(0, -backups.kept).map((file) => unlink(path.join(folder, file))))
+  } catch (error) {
+    console.error(`[backup] ${(error as Error).message}`)
+  }
+}
+
 // Writes are queued and go through a temp file, so a crash mid-write cannot
 // leave a half-written db.json behind. When a write fails, the data in
 // memory goes back to what was last written, so a request answered with an
@@ -179,6 +202,7 @@ export function saveDatabase() {
       const tempFile = `${config.dataFile}.tmp`
       await writeFile(tempFile, snapshot)
       await rename(tempFile, config.dataFile)
+      await backUp(snapshot)
     } catch (error) {
       console.error(error)
       generation += 1

@@ -2,9 +2,11 @@ import { randomBytes, randomInt, randomUUID } from "node:crypto"
 import { Router } from "express"
 
 import { config } from "../config.js"
+import { findListing } from "../lib/catalog.js"
 import { emailRuleError, normalizeEmail } from "../lib/email.js"
 import { HttpError } from "../lib/errors.js"
 import { sendVerificationCode } from "../lib/mailer.js"
+import { notify } from "../lib/notices.js"
 import { hashPassword, verifyPassword } from "../lib/password.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { freezeSponsorships } from "../lib/sponsorships.js"
@@ -62,9 +64,10 @@ function startSession(accountId: string) {
 
 type CodePurpose = EmailCode["purpose"]
 
-// Sends a new 6-digit code to the address, for signing up or (with
-// "reset") for a new password, and answers with when it expires.
-async function issueCode(email: string, role: Role, purpose: CodePurpose) {
+// Sends a new 6-digit code to the address, for signing up, for a new
+// password ("reset") or for moving an account to it ("change", tied to the
+// account asking), and answers with when it expires.
+async function issueCode(email: string, role: Role, purpose: CodePurpose, accountId?: string) {
   codesPerEmail.take(email)
   const database = getDatabase()
   const code = String(randomInt(100000, 1000000))
@@ -89,12 +92,14 @@ async function issueCode(email: string, role: Role, purpose: CodePurpose) {
     attempts: carried?.attempts ?? 0,
     firstSentAt: carried?.firstSentAt ?? Date.now(),
     ...(purpose ? { purpose } : {}),
+    ...(accountId ? { accountId } : {}),
   })
   await saveDatabase()
   await sendVerificationCode(email, code, purpose ?? "signup")
-  // Only sign-up codes are shown for the demo. A reset code on screen would
-  // let anyone take over any account by its email.
-  return { email, expiresAt, ...(config.exposeEmailCodes && !purpose ? { devCode: code } : {}) }
+  // Only codes that prove an address (signing up, moving to it) are shown
+  // for the demo. A reset code on screen would let anyone take over any
+  // account by its email.
+  return { email, expiresAt, ...(config.exposeEmailCodes && purpose !== "reset" ? { devCode: code } : {}) }
 }
 
 // The code entry when `code` is right; otherwise counts the guess and throws.
@@ -362,6 +367,93 @@ authRouter.post("/password", async (req, res) => {
   )
   await saveDatabase()
   res.status(204).end()
+})
+
+// Handing an account over (a group's new officers, say), step 1: with the
+// password, a code to the new login email.
+authRouter.post("/email/code", async (req, res) => {
+  const account = requireAccount(req)
+  if (isDemo(account)) throw new HttpError(403, "데모 계정은 로그인 이메일을 바꿀 수 없어요.")
+  codesPerClient.take(clientKey(req))
+  const email = normalizeEmail(req.body?.email)
+  const ruleError = emailRuleError(account.role, email)
+  if (ruleError) throw new HttpError(400, ruleError)
+  if (email === account.email) throw new HttpError(400, "지금 쓰는 이메일과 같아요.")
+  if (getDatabase().accounts.some((item) => item.email === email)) {
+    throw new HttpError(409, "이미 가입된 이메일이에요. 다른 이메일을 입력해 주세요.")
+  }
+  const limitKey = `${clientKey(req)} ${account.email}`
+  loginFailures.take(limitKey)
+  if (!(await verifyPassword(String(req.body?.password ?? ""), account.passwordHash))) {
+    // Not 401, which the app reads as a session that has run out.
+    throw new HttpError(400, "지금 비밀번호가 올바르지 않아요.")
+  }
+  loginFailures.reset(limitKey)
+  res.json(await issueCode(email, account.role, "change", account.id))
+})
+
+// Step 2: the code from the new address moves the account there. Other
+// devices are logged out, and the old address hears of it.
+authRouter.post("/email", async (req, res) => {
+  const account = requireAccount(req)
+  verifyPerClient.take(clientKey(req))
+  const email = normalizeEmail(req.body?.email)
+  const entry = await checkCode(email, text(req.body?.code), "change")
+  const database = getDatabase()
+  if (entry.accountId !== account.id || !database.emailCodes.includes(entry)) {
+    throw new HttpError(400, "인증번호를 먼저 받아 주세요.")
+  }
+  if (database.accounts.some((item) => item.email === email)) {
+    throw new HttpError(409, "이미 가입된 이메일이에요. 다른 이메일을 입력해 주세요.")
+  }
+  const previous = account.email
+  database.emailCodes = database.emailCodes.filter((item) => item !== entry)
+  account.email = email
+  const keep = req.sessionToken ? hashToken(req.sessionToken) : ""
+  database.sessions = database.sessions.filter((session) => session.accountId !== account.id || session.tokenHash === keep)
+  await saveDatabase()
+  void notify(
+    { ...account, email: previous },
+    "로그인 이메일이 바뀌었어요",
+    [
+      `uniconnect 계정의 로그인 이메일이 바뀌었어요: ${email}`,
+      "직접 바꾸지 않았다면 도움말 센터로 바로 알려 주세요.",
+    ],
+    "/faq",
+  )
+  res.json({ account: toPublic(account) })
+})
+
+// Everything the account made or was sent, to keep or move elsewhere (the
+// right to see one's own data): its details without the password, its
+// listing, events, proposals both ways, sponsorships, measurement (without
+// participants' passes or records), conversations and questions.
+authRouter.get("/export", (req, res) => {
+  const account = requireAccount(req)
+  const database = getDatabase()
+  const listing = findListing(database, account)
+  res.json({
+    exportedAt: new Date().toISOString(),
+    account: toPublic(account),
+    listing: listing ?? null,
+    events: database.events[account.id] ?? [],
+    proposalsSent: [
+      ...database.requests.filter((item) => item.fromAccountId === account.id),
+      ...database.offers.filter((item) => item.fromAccountId === account.id),
+    ],
+    proposalsReceived: [
+      ...(account.brandId ? database.requests.filter((item) => item.brandId === account.brandId) : []),
+      ...(account.groupId ? database.offers.filter((item) => item.groupId === account.groupId) : []),
+    ],
+    sponsorships: database.sponsorships[account.id] ?? [],
+    measurements: database.measurements
+      .filter((item) => item.accountId === account.id)
+      .map(({ passes: _passes, log: _log, ...measurement }) => measurement),
+    conversations: listing
+      ? database.conversations.filter((item) => item.groupId === listing.id || item.brandId === listing.id)
+      : [],
+    inquiries: database.inquiries.filter((item) => item.accountId === account.id),
+  })
 })
 
 authRouter.get("/me", (req, res) => {

@@ -33,8 +33,9 @@ const languages: { code: Lang; name: string }[] = [
 
 // The account's own page: a banner on Stride's deep blue mesh with who it
 // is, what it has done so far as three tiles, the introduction the other
-// side sees, the account's details and its language as rows, logout and,
-// quietly under it, leaving.
+// side sees, the account's details and its language as rows, the account's
+// actions (logout, password, login email for a handover, downloading its
+// data) and, quietly under them, leaving.
 export function ProfilePage({
   account,
   listing,
@@ -44,6 +45,8 @@ export function ProfilePage({
   onNavigate,
   onLogout,
   onChangePassword,
+  onChangeEmail,
+  onDownloadData,
   onLeave,
 }: {
   account: Account
@@ -56,6 +59,8 @@ export function ProfilePage({
   onNavigate: (label: NavLabel) => void
   onLogout: () => void
   onChangePassword: () => void
+  onChangeEmail: () => void
+  onDownloadData: () => void
   onLeave: () => void
 }) {
   const students = account.role === "학생단체"
@@ -219,6 +224,12 @@ export function ProfilePage({
             </Pill>
             <Pill onClick={onChangePassword} variant="silver">
               {t("비밀번호 변경")}
+            </Pill>
+            <Pill onClick={onChangeEmail} variant="silver">
+              {t("로그인 이메일 바꾸기")}
+            </Pill>
+            <Pill onClick={onDownloadData} variant="outline">
+              {t("내 데이터 내려받기")}
             </Pill>
           </div>
           <button className="leave-link" onClick={onLeave} type="button">

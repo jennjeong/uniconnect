@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises"
 import type { Server } from "node:http"
 import type { AddressInfo } from "node:net"
 import { tmpdir } from "node:os"
@@ -1820,7 +1820,9 @@ test("every Korean error message the server writes has English", async () => {
     for (const match of source.matchAll(/createRateLimit\(\{[^}]*?message:\s*"((?:[^"\\]|\\.)*)"/g)) messages.add(match[1])
   }
   assert.ok(messages.size > 50)
-  const missing = [...messages].filter((message) => /[가-힣]/.test(message) && translate(message, "en") === message)
+  // Korean left anywhere in the English means no translation, or a pattern
+  // that caught a message it wasn't meant for.
+  const missing = [...messages].filter((message) => /[가-힣]/.test(message) && /[가-힣]/.test(translate(message, "en")))
   assert.deepEqual(missing, [])
   // Messages built from parts take English for each form the code writes.
   assert.equal(
@@ -2047,5 +2049,77 @@ test("operators see the platform's figures, real members' apart from the demo da
   assert.equal(after.students.total, before.students.total + 1)
   assert.equal(after.newThisWeek.real, before.newThisWeek.real + 1)
   assert.equal(after.brands.real, before.brands.real)
+})
+
+test("a group hands its account over by moving the login email, checked with a code to the new address", async () => {
+  const token = await signUpMember("handover-old@syu.ac.kr", "handover-pass-123")
+  const other = (
+    await call("POST", "/auth/login", { role: "학생단체", email: "handover-old@syu.ac.kr", password: "handover-pass-123" })
+  ).data.token
+  const ask = (body: object, as = token) => call("POST", "/auth/email/code", body, as)
+
+  assert.equal((await ask({ email: "handover-new@syu.ac.kr", password: "wrong-pass-123" })).status, 400)
+  assert.equal((await ask({ email: "muse@syu.ac.kr", password: "handover-pass-123" })).status, 409)
+  assert.equal((await ask({ email: "handover-old@syu.ac.kr", password: "handover-pass-123" })).status, 400)
+  const sent = await ask({ email: "handover-new@syu.ac.kr", password: "handover-pass-123" })
+  assert.equal(sent.status, 200)
+
+  // Another account can't use the code; a wrong code is refused.
+  const stranger = await signUpMember("handover-other@syu.ac.kr", "handover-pass-123")
+  assert.equal((await call("POST", "/auth/email", { email: "handover-new@syu.ac.kr", code: sent.data.devCode }, stranger)).status, 400)
+  assert.equal((await call("POST", "/auth/email", { email: "handover-new@syu.ac.kr", code: "000000" }, token)).status, 400)
+  const moved = await call("POST", "/auth/email", { email: "handover-new@syu.ac.kr", code: sent.data.devCode }, token)
+  assert.equal(moved.status, 200)
+  assert.equal(moved.data.account.email, "handover-new@syu.ac.kr")
+
+  // This device stays logged in, the others are logged out, and the new email logs in.
+  assert.equal((await call("GET", "/auth/me", undefined, token)).status, 200)
+  assert.equal((await call("GET", "/auth/me", undefined, other)).status, 401)
+  const login = (email: string) => call("POST", "/auth/login", { role: "학생단체", email, password: "handover-pass-123" })
+  assert.equal((await login("handover-new@syu.ac.kr")).status, 200)
+  assert.equal((await login("handover-old@syu.ac.kr")).status, 401)
+
+  // The demo accounts stay as they are.
+  const demo = await call("POST", "/auth/login", { role: "학생단체", email: "muse@syu.ac.kr", password: DEMO_PASSWORD })
+  assert.equal((await ask({ email: "elsewhere@syu.ac.kr", password: DEMO_PASSWORD }, demo.data.token)).status, 403)
+})
+
+test("an account downloads everything it made, without its password or participants' passes", async () => {
+  const token = await signUpMember("export@syu.ac.kr", "export-pass-123")
+  await call("POST", "/inquiries", { category: "이용 방법", question: "내 데이터를 내려받을 수 있나요?" }, token)
+  const exported = await call("GET", "/auth/export", undefined, token)
+  assert.equal(exported.status, 200)
+  assert.equal(exported.data.account.email, "export@syu.ac.kr")
+  assert.equal(exported.data.account.passwordHash, undefined)
+  assert.equal(exported.data.inquiries[0].question, "내 데이터를 내려받을 수 있나요?")
+  for (const key of ["listing", "events", "proposalsSent", "proposalsReceived", "sponsorships", "measurements", "conversations"]) {
+    assert.ok(key in exported.data, key)
+  }
+  assert.equal((await call("GET", "/auth/export")).status, 401)
+
+  // A measured event comes without the participants' passes and records.
+  const demo = await login("학생단체")
+  const measured = (await call("GET", "/auth/export", undefined, demo)).data.measurements
+  assert.ok(measured.length > 0)
+  assert.ok(measured.every((item: object) => !("passes" in item) && !("log" in item)))
+})
+
+test("the data is backed up at most hourly beside the data file, keeping the latest 24", async () => {
+  const { backups, backupFolder } = await import("./store.js")
+  const folder = backupFolder()
+  await mkdir(folder, { recursive: true })
+  for (let hour = 0; hour < 25; hour += 1) {
+    await writeFile(path.join(folder, `db-2000-01-01-${String(hour).padStart(2, "0")}.json`), "{}")
+  }
+  backups.lastAt = 0
+  await saveDatabase()
+  const copies = async () => (await readdir(folder)).filter((file) => file.startsWith("db-")).sort()
+  const kept = await copies()
+  assert.equal(kept.length, 24)
+  assert.ok(!kept.includes("db-2000-01-01-00.json"))
+  assert.ok(JSON.parse(await readFile(path.join(folder, kept.at(-1)!), "utf8")).accounts.length > 0)
+  // Within the hour, no new copy.
+  await saveDatabase()
+  assert.deepEqual(await copies(), kept)
 })
 

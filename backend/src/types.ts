@@ -107,8 +107,10 @@ export type EmailCode = {
   attempts: number
   // When this run of codes began; wrong guesses carry over within it.
   firstSentAt?: number
-  // A code for resetting a password rather than signing up.
-  purpose?: "reset"
+  // A code for resetting a password, or for moving an account to a new login
+  // email ("change", with the account asking), rather than for signing up.
+  purpose?: "reset" | "change"
+  accountId?: string
   verificationToken?: string
   verifiedUntil?: number
 }

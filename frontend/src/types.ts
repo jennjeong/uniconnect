@@ -323,6 +323,7 @@ export type ModalName =
   | "leave"
   | "measure-goals"
   | "password"
+  | "email"
   | "metric-log"
   | "goal"
   | "ask"
