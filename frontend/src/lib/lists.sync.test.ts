@@ -4,6 +4,7 @@ import * as server from "../../../backend/src/lib/validation"
 import { factFields, snsPlatforms } from "../data/profile"
 import { inquiryCategories } from "../data/inquiries"
 import { placeCategories } from "../data/places"
+import { reviewTags } from "../data/reviews"
 import { accountTypes, roles } from "../data/roles"
 import { sponsorOptions, valueTypes } from "../data/sponsorTypes"
 
@@ -31,5 +32,9 @@ describe("the screens offer the choices the server takes", () => {
 
   test("kinds of shop to look for around the campus", () => {
     expect(placeCategories.map((category) => category.code)).toEqual(server.placeCategories)
+  })
+
+  test.each(roles)("review tags about a %s", (role) => {
+    expect(reviewTags[role]).toEqual(server.reviewTags[role])
   })
 })

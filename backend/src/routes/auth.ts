@@ -312,6 +312,10 @@ function removeAccount(database: Database, account: Account) {
   )
   // The agreements about those proposals go too; their photos once saved.
   const droppedAgreements = dropOrphanAgreements(database)
+  // Reviews it wrote, and those about it.
+  database.reviews = database.reviews.filter(
+    (review) => review.authorAccountId !== account.id && (!listingId || review.aboutId !== listingId),
+  )
   // Sponsors keep the results of this account's events as they stand.
   freezeSponsorships(
     database,
@@ -440,8 +444,8 @@ authRouter.post("/email", async (req, res) => {
 // right to see one's own data): its details without the password, its
 // listing, events, proposals both ways, sponsorships, measurement (without
 // participants' passes or records), conversations, questions, the
-// invitations it sent or joined from, and its sponsorships' agreements (the
-// photos by name).
+// invitations it sent or joined from, its sponsorships' agreements (the
+// photos by name), and the reviews it wrote and got.
 authRouter.get("/export", (req, res) => {
   const account = requireAccount(req)
   const database = getDatabase()
@@ -472,6 +476,9 @@ authRouter.get("/export", (req, res) => {
     ),
     agreements: acceptedProposalsOf(database, account).flatMap(
       (proposal) => database.agreements.find((item) => item.id === proposal.id) ?? [],
+    ),
+    reviews: database.reviews.filter(
+      (item) => item.authorAccountId === account.id || (listing !== undefined && item.aboutId === listing.id),
     ),
   })
 })

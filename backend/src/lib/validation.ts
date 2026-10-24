@@ -27,6 +27,13 @@ export const inquiryCategories = ["이용 방법", "계정 · 가입", "제안 �
 // with frontend/src/data/places.ts.
 export const placeCategories = ["CE7", "FD6", "CS2", "AC5", "CT1"]
 
+// Tags a sponsorship review may pick, by the side it is about (frontend
+// data/reviews.ts shows the same).
+export const reviewTags: Record<Role, string[]> = {
+  브랜드: ["약속을 잘 지켜요", "응답이 빨라요", "협찬 물품이 좋아요", "매장 응대가 친절해요", "다시 함께하고 싶어요"],
+  학생단체: ["약속을 잘 지켜요", "응답이 빨라요", "홍보를 잘해요", "성과 공유가 꼼꼼해요", "다시 함께하고 싶어요"],
+}
+
 export function parseRole(value: unknown): Role {
   if (value === "학생단체" || value === "브랜드") return value
   throw new HttpError(400, "회원 유형을 선택해 주세요.")

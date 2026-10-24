@@ -285,6 +285,29 @@ const en: Record<string, string> = {
   "할 일 더하기": "Add item",
   저장: "Save",
   "사진에 다른 사람의 얼굴이 나오면 동의를 받고 올려 주세요.": "If other people's faces show in a photo, get their consent before adding it.",
+  // Sponsorship reviews (pages/AgreementPage.tsx, components/ReviewsSection.tsx)
+  "협찬 후기": "Sponsorship reviews",
+  "함께한 파트너의 후기": "Reviews from partners",
+  "아직 후기가 없어요. 협찬을 마친 학생단체와 브랜드가 서로 남겨요.":
+    "No reviews yet. Student groups and brands leave them for each other after a sponsorship.",
+  "후기 {count}": "{count:review|reviews}",
+  "많이 고른 태그": "Tags picked most",
+  "별점 {rating}점": "{rating} out of 5 stars",
+  "행사 날부터 서로 후기를 남길 수 있어요. 남긴 후기는 상대의 상세 정보에 보여요.":
+    "From the day of the event, you can review each other. A review shows on the other side's profile.",
+  "이 협찬에는 후기를 남길 수 없어요. 데모 계정이거나 상대의 소개가 아직 없어요.":
+    "A review can't be left for this sponsorship: it's a demo account, or the other side has no profile yet.",
+  고치기: "Edit",
+  "내가 남긴 후기": "Your review",
+  "이번 협찬은 어땠나요? 남긴 후기는 {name}의 상세 정보에 보여요.": "How was this sponsorship? Your review shows on {name}'s profile.",
+  별점: "Stars",
+  "{count}점": "{count:star|stars}",
+  "어떤 점이 좋았나요? (3개까지)": "What went well? (up to 3)",
+  "한 줄 후기": "A line about it",
+  "후기 남기기": "Leave a review",
+  "{name}에서 남긴 후기": "Review from {name}",
+  "후기를 남겼어요. {name}의 상세 정보에 보여요.": "Review posted. It shows on {name}'s profile.",
+  "후기를 지웠어요.": "Review deleted.",
 }
 
 export default en

@@ -4,10 +4,13 @@ import { api, ApiError, errorMessage } from "../api"
 import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { Pill } from "../components/Pill"
+import { ReviewCard } from "../components/ReviewCard"
+import { starPath } from "../components/Stars"
+import { reviewTags } from "../data/reviews"
 import { t } from "../i18n"
 import { formatDateTime, formatFullDate } from "../lib/date"
 import { photoFromFile } from "../lib/image"
-import type { Agreement, AgreementItem, ChatSide } from "../types"
+import type { Agreement, AgreementItem, ChatSide, Review } from "../types"
 import { agreementState } from "./AgreementsPage"
 
 // A proof photo, fetched with the login token (an <img> can't send it) and
@@ -246,6 +249,118 @@ function ItemsEditor({
   )
 }
 
+// After the event, this side's review of the other (stars, up to three of
+// the listed tags, a short comment) as a form or as written, and the review
+// the other side left.
+function ReviewPanel({
+  agreement,
+  busy,
+  onSave,
+  onDelete,
+}: {
+  agreement: Agreement
+  busy: boolean
+  onSave: (body: { rating: number; tags: string[]; comment: string }) => Promise<boolean>
+  onDelete: () => void
+}) {
+  const { review } = agreement
+  const partner = agreement.side === "group" ? agreement.brand : agreement.group
+  const choices = reviewTags[agreement.side === "group" ? "브랜드" : "학생단체"]
+  const [writing, setWriting] = useState(!review.mine)
+  const [rating, setRating] = useState(review.mine?.rating ?? 0)
+  const [tags, setTags] = useState<string[]>(review.mine?.tags ?? [])
+  const [comment, setComment] = useState(review.mine?.comment ?? "")
+  const toggle = (tag: string) =>
+    setTags(tags.includes(tag) ? tags.filter((item) => item !== tag) : tags.length < 3 ? [...tags, tag] : tags)
+
+  return (
+    <section className="agreement-section review-panel">
+      <h2>{t("협찬 후기")}</h2>
+      {!review.open ? (
+        <p className="field-hint">{t("행사 날부터 서로 후기를 남길 수 있어요. 남긴 후기는 상대의 상세 정보에 보여요.")}</p>
+      ) : !review.canWrite ? (
+        <p className="field-hint">{t("이 협찬에는 후기를 남길 수 없어요. 데모 계정이거나 상대의 소개가 아직 없어요.")}</p>
+      ) : review.mine && !writing ? (
+        <ReviewCard
+          actions={
+            <>
+              <button className="cancel-button" onClick={() => setWriting(true)} type="button">
+                {t("고치기")}
+              </button>
+              <button className="cancel-button" disabled={busy} onClick={onDelete} type="button">
+                {t("지우기")}
+              </button>
+            </>
+          }
+          review={review.mine}
+          title={t("내가 남긴 후기")}
+        />
+      ) : (
+        <form
+          className="review-form"
+          onSubmit={(event) => {
+            event.preventDefault()
+            void onSave({ rating, tags, comment }).then((saved) => saved && setWriting(false))
+          }}
+        >
+          <p className="field-hint">
+            {t("이번 협찬은 어땠나요? 남긴 후기는 {name}의 상세 정보에 보여요.", { name: partner.name })}
+          </p>
+          <fieldset className="star-input">
+            <legend>{t("별점")}</legend>
+            {[1, 2, 3, 4, 5].map((value) => (
+              <label className={value <= rating ? "on" : undefined} key={value}>
+                <input
+                  checked={rating === value}
+                  name="rating"
+                  onChange={() => setRating(value)}
+                  type="radio"
+                  value={value}
+                />
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                  <path d={starPath} />
+                </svg>
+                <span className="sr-only">{t("{count}점", { count: value })}</span>
+              </label>
+            ))}
+          </fieldset>
+          <fieldset className="review-tag-input">
+            <legend>{t("어떤 점이 좋았나요? (3개까지)")}</legend>
+            {choices.map((tag) => (
+              <label className={tags.includes(tag) ? "on" : undefined} key={tag}>
+                <input
+                  checked={tags.includes(tag)}
+                  disabled={!tags.includes(tag) && tags.length >= 3}
+                  onChange={() => toggle(tag)}
+                  type="checkbox"
+                />
+                {t(tag)}
+              </label>
+            ))}
+          </fieldset>
+          <label className="review-comment">
+            {t("한 줄 후기")}
+            <textarea maxLength={300} onChange={(event) => setComment(event.target.value)} rows={3} value={comment} />
+          </label>
+          <div className="review-form-actions">
+            {review.mine && (
+              <button className="cancel-button" onClick={() => setWriting(false)} type="button">
+                {t("취소")}
+              </button>
+            )}
+            <button className="primary-button" disabled={busy || rating === 0} type="submit">
+              {review.mine ? t("저장") : t("후기 남기기")}
+            </button>
+          </div>
+        </form>
+      )}
+      {review.theirs && (
+        <ReviewCard review={review.theirs} title={t("{name}에서 남긴 후기", { name: partner.name })} />
+      )}
+    </section>
+  )
+}
+
 // A sponsorship's agreement (협찬 약속서): the two sides, the event and what
 // the brand gives; each side's items to tick off with links and photos as
 // proof; each side's confirmation of the items as they stand; and printing
@@ -297,6 +412,26 @@ export function AgreementPage({
       // A photo the browser couldn't read says why in its own words.
       if (error instanceof ApiError || !(error instanceof Error)) onError(error)
       else onNotice(error.message)
+      return false
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  // Writes this side's review (null deletes it) and shows it as it now stands.
+  const saveReview = async (body: { rating: number; tags: string[]; comment: string } | null) => {
+    if (!agreement) return false
+    const partner = agreement.side === "group" ? agreement.brand : agreement.group
+    setBusy(true)
+    try {
+      let mine: Review | undefined
+      if (body) mine = (await api.saveReview(agreement.id, body)).review
+      else await api.deleteReview(agreement.id)
+      setAgreement({ ...agreement, review: { ...agreement.review, mine } })
+      onNotice(body ? t("후기를 남겼어요. {name}의 상세 정보에 보여요.", { name: partner.name }) : t("후기를 지웠어요."))
+      return true
+    } catch (error) {
+      onError(error)
       return false
     } finally {
       setBusy(false)
@@ -454,6 +589,12 @@ export function AgreementPage({
             </button>
             <p className="field-hint">{t("사진에 다른 사람의 얼굴이 나오면 동의를 받고 올려 주세요.")}</p>
           </div>
+          <ReviewPanel
+            agreement={agreement}
+            busy={busy}
+            onDelete={() => void saveReview(null)}
+            onSave={(body) => saveReview(body)}
+          />
         </>
       )}
     </section>

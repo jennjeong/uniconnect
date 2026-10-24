@@ -7,6 +7,7 @@ import type {
   Measurement,
   MetricEntry,
   MetricKind,
+  Review,
   SponsorOffer,
   SponsorRequest,
   Sponsorship,
@@ -622,6 +623,49 @@ export function seedConversations(): Conversation[] {
   ]
 }
 
+// Reviews from past sponsorships, for the detail pages to show (KST). They
+// come from before the agreements, so they have no proposal or account.
+export function seedReviews(): Review[] {
+  const reviews: Omit<Review, "id" | "createdAt">[] = [
+    {
+      proposalId: "seed-busking",
+      side: "group",
+      aboutId: "afternoon-coffee",
+      authorName: "삼육대 뮤즈",
+      eventName: "가을 버스킹 데이",
+      rating: 5,
+      tags: ["약속을 잘 지켜요", "매장 응대가 친절해요"],
+      comment: "버스킹 날 커피를 제때 보내 주셨고, 쿠폰을 들고 간 관객도 친절하게 맞아 주셨어요.",
+    },
+    {
+      proposalId: "seed-hackathon",
+      side: "group",
+      aboutId: "afternoon-coffee",
+      authorName: "광운대 코드랩",
+      eventName: "코드랩 가을 해커톤",
+      rating: 4,
+      tags: ["응답이 빨라요", "다시 함께하고 싶어요"],
+      comment: "제안에 하루 만에 답해 주셔서 준비가 수월했어요.",
+    },
+    {
+      proposalId: "seed-spring-snap",
+      side: "brand",
+      aboutId: "syu-muse",
+      authorName: "모먼트 스튜디오",
+      eventName: "봄 정기 공연 스냅",
+      rating: 5,
+      tags: ["홍보를 잘해요", "성과 공유가 꼼꼼해요"],
+      comment: "공연 전후로 SNS에 꾸준히 올려 주셔서 스튜디오 예약 문의가 늘었어요.",
+    },
+  ]
+  const days = ["2026-10-14T19:20:00+09:00", "2026-09-28T11:05:00+09:00", "2026-06-02T16:40:00+09:00"]
+  return reviews.map((review, index) => ({
+    ...review,
+    id: `${review.proposalId}:${review.side}`,
+    createdAt: new Date(days[index]).toISOString(),
+  }))
+}
+
 // Proposals the demo brand has received from student groups (KST).
 export function seedRequests(): SponsorRequest[] {
   const requests: Omit<SponsorRequest, "brandId">[] = [
@@ -898,6 +942,7 @@ export async function createSeed(): Promise<Database> {
     inquiries: [],
     invites: [],
     agreements: [],
+    reviews: seedReviews(),
     requests: seedRequests(),
     offers: seedOffers(),
     sponsorships: { [coffee.id]: seedSponsorships() },

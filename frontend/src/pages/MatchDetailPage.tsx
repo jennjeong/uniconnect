@@ -6,6 +6,7 @@ import { Icon } from "../components/Icon"
 import { Pill } from "../components/Pill"
 import { ProposalControl } from "../components/ProposalControl"
 import { RevealTitle, RevealWords } from "../components/RevealText"
+import { ReviewsSection } from "../components/ReviewsSection"
 import { ScoreRing } from "../components/ScoreRing"
 import { profileLabels } from "../data/profile"
 import { locale, t } from "../i18n"
@@ -220,6 +221,8 @@ export function MatchDetailPage({
           </ul>
         </section>
       )}
+
+      <ReviewsSection id={match.id} />
 
       <section className="cta-panel" data-reveal>
         <MeshBackdrop seed={1.3} />

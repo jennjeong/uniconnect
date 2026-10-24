@@ -6,6 +6,7 @@ import {
   createSeed,
   seedBrands,
   seedConversations,
+  seedReviews,
   seedGroups,
   seedMeasurements,
   seedOffers,
@@ -84,6 +85,7 @@ export function upgradeDatabase(stored: Database) {
   stored.inquiries ??= []
   stored.invites ??= []
   stored.agreements ??= []
+  stored.reviews ??= seedReviews()
   // Sessions saved with their plain token keep working, stored as its hash.
   stored.sessions = (stored.sessions ?? []).map((session) => {
     const legacy = session as typeof session & { token?: string }

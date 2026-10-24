@@ -8115,6 +8115,289 @@ button.nav-pill:hover {
   }
 }
 
+/* Stars for a review or an average (components/Stars.tsx): silver stars
+   with deep blue ones over them, cut at the rating. */
+.stars {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  vertical-align: middle;
+}
+
+.stars-base,
+.stars-fill {
+  display: inline-flex;
+  gap: 1px;
+}
+
+.stars-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--filled);
+  overflow: hidden;
+}
+
+.stars svg {
+  flex: 0 0 auto;
+  width: var(--star);
+  height: var(--star);
+  fill: var(--silver);
+}
+
+.stars-fill svg {
+  fill: var(--point);
+}
+
+/* A card's stars among its tags (WorkCard.tsx). */
+.work-tags > span.tag-rating {
+  gap: 4px;
+  color: var(--ink);
+  font-weight: var(--weight-label);
+}
+
+.tag-rating small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: var(--weight-body);
+}
+
+/* A review (components/ReviewCard.tsx), on the agreement and the detail page. */
+.review-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 20px;
+  border-radius: var(--radius-md);
+  background: #fff;
+  box-shadow: var(--ring);
+}
+
+.review-card-title {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: var(--weight-label);
+}
+
+.review-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+}
+
+.review-card-head strong {
+  color: var(--ink);
+  font-weight: var(--weight-label);
+}
+
+.review-card-head span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.review-card p {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.review-tags,
+.review-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.review-tags li,
+.review-badges li {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--point-tint);
+  color: var(--point-strong);
+  font-size: 12px;
+  font-weight: var(--weight-label);
+}
+
+.review-badges em {
+  margin-left: 2px;
+  color: var(--point);
+  font-style: normal;
+  font-weight: var(--weight-badge);
+}
+
+.review-card-actions,
+.review-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.review-card-actions button,
+.review-form-actions button {
+  height: 40px;
+  padding: 0 18px;
+}
+
+/* Writing a review on the agreement: stars to press, tags to pick, a line. */
+.review-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.review-panel h2 {
+  margin-bottom: 0;
+}
+
+.review-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  border-radius: var(--radius-md);
+  background: var(--silver-gradient);
+  box-shadow: var(--silver-ring);
+}
+
+.review-form fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.review-form legend {
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: var(--weight-label);
+}
+
+.star-input label {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+}
+
+/* Each input invisible over its whole star or tag, so a press anywhere on
+   it picks it. */
+.star-input input,
+.review-tag-input input {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+
+.star-input svg {
+  width: 32px;
+  height: 32px;
+  pointer-events: none;
+  fill: var(--silver);
+  transition:
+    fill 0.15s ease,
+    transform 0.2s var(--ease-pop);
+}
+
+.star-input label.on svg {
+  fill: var(--point);
+}
+
+.star-input label:hover svg {
+  transform: scale(1.12);
+}
+
+.star-input label:has(input:focus-visible),
+.review-tag-input label:has(input:focus-visible) {
+  outline: 2px solid var(--point-bright);
+  outline-offset: 2px;
+  border-radius: 999px;
+}
+
+.review-tag-input label {
+  position: relative;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink-soft);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+  cursor: pointer;
+}
+
+.review-tag-input label.on {
+  background: var(--point);
+  color: var(--on-point);
+  box-shadow: none;
+}
+
+.review-tag-input label:has(input:disabled) {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.review-comment {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: var(--weight-label);
+}
+
+.review-comment textarea {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+/* The reviews on a detail page (components/ReviewsSection.tsx). */
+.reviews-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin-bottom: 20px;
+}
+
+.reviews-summary > strong {
+  color: var(--ink);
+  font-size: 40px;
+  font-weight: var(--weight-display);
+  line-height: 1;
+}
+
+.reviews-summary > span {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.reviews-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: 12px;
+}
+
 /* Printing an agreement (인쇄 · PDF 저장): the sheet and the items, without
    the site around them or the buttons. */
 @media print {
@@ -8125,7 +8408,8 @@ button.nav-pill:hover {
   .agreement-view .agreement-add,
   .agreement-view .agreement-footer,
   .agreement-view .agreement-confirm .pill,
-  .agreement-view .agreement-remove {
+  .agreement-view .agreement-remove,
+  .agreement-view .review-panel {
     display: none !important;
   }
 

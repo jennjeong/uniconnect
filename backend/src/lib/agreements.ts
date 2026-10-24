@@ -3,6 +3,7 @@ import { rm } from "node:fs/promises"
 import path from "node:path"
 
 import { config } from "../config.js"
+import { canReview, publicReview, reviewOpen } from "./reviews.js"
 import type { Account, Agreement, AgreementItem, ChatSide, Database } from "../types.js"
 
 // Where an agreement's photos are kept: beside the data file, one folder
@@ -11,12 +12,12 @@ export const uploadsFolder = (agreementId: string) =>
   path.join(path.dirname(config.dataFile), "uploads", agreementId.replace(/[^\w-]/g, "_"))
 
 // An accepted proposal as both sides see it: who is in it (their accounts
-// when they have one), the event and what the brand gives.
+// and listings when they have them), the event and what the brand gives.
 export type AcceptedProposal = {
   id: string
   kind: Agreement["kind"]
-  group: { name: string; account?: Account }
-  brand: { name: string; account?: Account }
+  group: { name: string; account?: Account; listingId?: string }
+  brand: { name: string; account?: Account; listingId?: string }
   eventName: string
   // "YYYY-MM-DD", or "" while there is none.
   eventDate: string
@@ -27,16 +28,15 @@ export type AcceptedProposal = {
 export function acceptedProposal(database: Database, id: string): AcceptedProposal | undefined {
   const request = database.requests.find((item) => item.id === id && item.status === "수락")
   if (request) {
+    const groupAccount = database.accounts.find((account) => account.id === request.fromAccountId)
     return {
       id,
       kind: "request",
-      group: {
-        name: request.groupName,
-        account: database.accounts.find((account) => account.id === request.fromAccountId),
-      },
+      group: { name: request.groupName, account: groupAccount, listingId: groupAccount?.groupId },
       brand: {
         name: database.brands.find((brand) => brand.id === request.brandId)?.name ?? "",
         account: database.accounts.find((account) => account.brandId === request.brandId),
+        listingId: request.brandId,
       },
       eventName: request.eventName,
       eventDate: request.eventDate,
@@ -46,17 +46,16 @@ export function acceptedProposal(database: Database, id: string): AcceptedPropos
   }
   const offer = database.offers.find((item) => item.id === id && item.status === "수락")
   if (!offer) return undefined
+  const brandAccount = database.accounts.find((account) => account.id === offer.fromAccountId)
   return {
     id,
     kind: "offer",
     group: {
       name: database.groups.find((group) => group.id === offer.groupId)?.name ?? "",
       account: database.accounts.find((account) => account.groupId === offer.groupId),
+      listingId: offer.groupId,
     },
-    brand: {
-      name: offer.brandName,
-      account: database.accounts.find((account) => account.id === offer.fromAccountId),
-    },
+    brand: { name: offer.brandName, account: brandAccount, listingId: offer.brandId ?? brandAccount?.brandId },
     eventName: offer.campaignName,
     eventDate: offer.campaignDate,
     gives: offer.offer,
@@ -118,8 +117,13 @@ export function agreementFor(database: Database, proposal: AcceptedProposal) {
   return { agreement, created: true }
 }
 
-// An agreement with its proposal, as the side looking sees it.
-export function agreementView(agreement: Agreement, proposal: AcceptedProposal, side: ChatSide) {
+// An agreement with its proposal, as the side looking sees it, with the
+// reviews: whether this side may write one now, its own and the other's.
+export function agreementView(database: Database, agreement: Agreement, proposal: AcceptedProposal, side: ChatSide) {
+  const other: ChatSide = side === "group" ? "brand" : "group"
+  const review = (by: ChatSide) => database.reviews.find((item) => item.id === `${proposal.id}:${by}`)
+  const mine = review(side)
+  const theirs = review(other)
   return {
     ...agreement,
     side,
@@ -128,6 +132,12 @@ export function agreementView(agreement: Agreement, proposal: AcceptedProposal, 
     eventName: proposal.eventName,
     eventDate: proposal.eventDate,
     gives: proposal.gives,
+    review: {
+      open: reviewOpen(proposal),
+      canWrite: canReview(database, proposal, side),
+      ...(mine ? { mine: publicReview(mine) } : {}),
+      ...(theirs ? { theirs: publicReview(theirs) } : {}),
+    },
   }
 }
 

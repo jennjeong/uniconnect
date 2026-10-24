@@ -1,6 +1,7 @@
 import { todayInKorea } from "./dates.js"
 import { distanceKm, placeOf } from "./geo.js"
 import { scoreMatch, type Viewer } from "./matchScore.js"
+import { reviewSummary, reviewsAbout } from "./reviews.js"
 import type { Account, Database, Industry, Match, Role } from "../types.js"
 
 // How an account's type is filed among the industries.
@@ -83,7 +84,7 @@ export function viewerFor(database: Database, account: Account | undefined, cata
 // A catalog as the other side sees it, best match first, each with its
 // match for the viewer and why (lib/matchScore.ts), and how far it is from
 // the viewer: a student's campus to a brand's store, a brand's store to a
-// group's campus (lib/geo.ts).
+// group's campus (lib/geo.ts); and its reviews' stars and count.
 export function browse(database: Database, catalog: "brands" | "groups", account?: Account) {
   const listings =
     catalog === "brands"
@@ -97,8 +98,10 @@ export function browse(database: Database, catalog: "brands" | "groups", account
   return listings
     .map((listing) => {
       const scored = viewer ? { ...listing, ...scoreMatch(database, viewer, listing, maxPopularity) } : listing
+      const reviews = reviewSummary(reviewsAbout(database, listing.id))
+      const rated = reviews.count ? { ...scored, rating: reviews.average, reviewCount: reviews.count } : scored
       const there = placeOf(listing, accountOf(listing))
-      return here && there ? { ...scored, distanceKm: distanceKm(here, there) } : scored
+      return here && there ? { ...rated, distanceKm: distanceKm(here, there) } : rated
     })
     .sort((a, b) => b.score - a.score)
 }

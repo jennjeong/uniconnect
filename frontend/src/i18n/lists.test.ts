@@ -4,6 +4,7 @@ import { inquiryCategories } from "../data/inquiries"
 import { metricInfo } from "../data/metrics"
 import { navItems } from "../data/navigation"
 import { placeCategories } from "../data/places"
+import { reviewTags } from "../data/reviews"
 import { accountTypes, roles } from "../data/roles"
 import { valueTypes } from "../data/sponsorTypes"
 import { en } from "./en"
@@ -20,6 +21,7 @@ describe("English for listed values", () => {
       ...Object.values(metricInfo).map((info) => info.label),
       ...inquiryCategories,
       ...placeCategories.map((category) => category.label),
+      ...roles.flatMap((role) => reviewTags[role]),
       "매칭 중",
       "집행 예정",
       "측정 완료",
