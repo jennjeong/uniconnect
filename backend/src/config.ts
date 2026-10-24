@@ -26,11 +26,19 @@ export const config = {
     process.env.API_PORT ?? (isProduction ? process.env.PORT : undefined) ?? 4000,
   ),
   dataFile: process.env.DATA_FILE ?? path.join(backendRoot, "data", "db.json"),
+  // A Postgres database to keep the data and agreement photos in, for hosts
+  // where files don't last, such as Vercel (its Neon integration sets
+  // DATABASE_URL). Without it they stay in dataFile and beside it.
+  databaseUrl: process.env.DATABASE_URL ?? process.env.POSTGRES_URL,
+  // Vercel Cron sends it as a bearer token to the daily reminders
+  // (vercel.json, routes/cron.ts), which stay closed while it is unset.
+  cronSecret: process.env.CRON_SECRET,
   frontendDist: process.env.FRONTEND_DIST ?? path.resolve(backendRoot, "..", "frontend", "dist"),
   // Lets operators read and answer questions through /api/admin (sent as
   // the X-Admin-Token header). Those routes stay closed while it is unset.
   adminToken: process.env.ADMIN_TOKEN,
-  trustProxy: trustProxy(process.env.TRUST_PROXY),
+  // On Vercel its edge, one hop in front, sets X-Forwarded-For itself.
+  trustProxy: trustProxy(process.env.TRUST_PROXY ?? (process.env.VERCEL ? "1" : undefined)),
   // Sends verification codes by email through Resend once both are set
   // (lib/mailer.ts); MAIL_FROM is like "uniconnect <no-reply@example.com>".
   resendApiKey: process.env.RESEND_API_KEY,

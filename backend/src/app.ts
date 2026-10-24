@@ -14,6 +14,7 @@ import { authRouter } from "./routes/auth.js"
 import { brandsRouter } from "./routes/brands.js"
 import { checkInRouter } from "./routes/checkin.js"
 import { conversationsRouter } from "./routes/conversations.js"
+import { cronRouter } from "./routes/cron.js"
 import { eventsRouter } from "./routes/events.js"
 import { groupsRouter } from "./routes/groups.js"
 import { inquiriesRouter } from "./routes/inquiries.js"
@@ -26,8 +27,11 @@ import { profileRouter } from "./routes/profile.js"
 import { proposalsRouter } from "./routes/proposals.js"
 import { requestsRouter } from "./routes/requests.js"
 import { reviewsRouter } from "./routes/reviews.js"
+import { refreshDatabase } from "./store.js"
 
-export function createApp() {
+// `loaded`: on Vercel (vercel.ts), each copy of the API reads the data on
+// its first request rather than at start.
+export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   const app = express()
   app.disable("x-powered-by")
   if (config.trustProxy !== undefined) app.set("trust proxy", config.trustProxy)
@@ -78,6 +82,13 @@ export function createApp() {
 
   // Room for a resized logo (routes/profile.ts caps one at about 100KB).
   app.use(express.json({ limit: "300kb" }))
+  // The data is in, and as other copies of the API left it (store.ts), before
+  // the session or anything else is read.
+  app.use("/api", async (_req, _res, next) => {
+    await loaded?.()
+    await refreshDatabase()
+    next()
+  })
   app.use(readSession)
 
   app.get("/api/health", (_req, res) => {
@@ -102,6 +113,7 @@ export function createApp() {
   app.use("/api/conversations", conversationsRouter)
   app.use("/api/inquiries", inquiriesRouter)
   app.use("/api/admin", adminRouter)
+  app.use("/api/cron", cronRouter)
   app.use("/api", () => {
     throw new HttpError(404, "없는 API 경로예요.")
   })

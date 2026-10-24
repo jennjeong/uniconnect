@@ -124,8 +124,10 @@ const en: Record<string, string> = {
     "Members' personal information is not provided to other companies.",
   "메일 발송 서비스를 연결하면, 인증 메일과 알림 메일(새 협찬 제안과 답, 새 메시지, 다가오는 일정, 협찬 약속서와 후기)을 보내기 위해 이메일 주소와 메일 내용을 메일 발송 업체 Resend(미국)에 맡겨요. 메일을 보낸 뒤에는 그 업체의 보관 정책을 따르고, 지금은 연결되어 있지 않아요.":
     "Once a mail service is connected, email addresses and the content of the emails are entrusted to the mail delivery company Resend (United States) to send verification emails and notices (new sponsorship proposals and answers, new messages, upcoming dates, sponsorship agreements and reviews). After sending, that company's retention policy applies. It is not connected at the moment.",
-  "서버 호스팅처럼 새로 맡기는 일이 생기면 받는 곳과 맡기는 일을 이곳에 먼저 적고 알려 드려요.":
-    "If any processing is newly outsourced, such as server hosting, the recipient and the outsourced task will first be listed here and members will be notified.",
+  "서비스를 운영하기 위해 회원 정보와 서비스의 모든 데이터(계정, 소개, 행사, 협찬 제안, 메시지, 협찬 약속서와 증빙 사진, 후기)를 서버 호스팅 업체 Vercel(미국, 서버는 싱가포르)과 데이터베이스 업체 Neon(미국, 저장 위치는 싱가포르)에 맡겨요. 회원이 탈퇴하거나 서비스를 마칠 때까지 맡기고, 백업은 아래처럼 최대 24시간 남아요.":
+    "To run the service, member information and all of the service's data (accounts, introductions, events, sponsorship proposals, messages, sponsorship agreements and proof photos, reviews) are entrusted to the hosting provider Vercel (USA; servers in Singapore) and the database provider Neon (USA; stored in Singapore). They are entrusted until a member leaves or the service ends, and backups remain for up to 24 hours as described below.",
+  "그 밖에 새로 맡기는 일이 생기면 받는 곳과 맡기는 일을 이곳에 먼저 적고 알려 드려요.":
+    "If any other processing is newly outsourced, the recipient and the outsourced task will first be listed here and members will be notified.",
   "다른 회원에게 보이는 정보": "Information Visible to Other Members",
   "단체명·브랜드명, 분류, 학교, 소개, SNS, 포트폴리오, 다가오는 행사와 브랜드의 매장 주소(그리고 학교와의 거리)는 상대 유형의 회원에게 보여요. 이메일과 비밀번호는 보이지 않아요. 협찬 제안과 메시지는 주고받은 두 회원만 볼 수 있어요.":
     "The group or brand name, category, school, profile, social media, portfolio, upcoming events and a brand's store address (with its distance from a school) are visible to members of the other type. Email addresses and passwords are not visible. Sponsorship proposals and messages can be seen only by the two members who exchanged them.",

@@ -114,7 +114,7 @@ npm run dev
 - 처음 실행할 때 데모 데이터로 `backend/data/db.json`을 만들고, 이후 변경 사항을 여기에 저장합니다. (git에는 포함되지 않음)
 - 브랜드·학생단체 목록은 각 계정이 내 정보에서 고친 소개를 저장합니다. 그 전 버전의 데이터 파일은 처음 한 번만 `seed.ts`의 최신 목록(SNS, 포트폴리오 포함)으로 바뀝니다.
 - 처음 상태로 되돌리려면 서버를 끄고 `backend/data/db.json`을 지운 뒤 다시 실행하세요.
-- JSON 파일 저장소는 프로토타입용입니다. 실제 서비스 전에는 데이터베이스로 바꿔야 합니다.
+- `DATABASE_URL`이 있으면 파일 대신 Postgres에 저장합니다(Vercel 배포, 아래 'Vercel에 배포'). 데이터는 문서 하나(`uniconnect_store`)로, 약속서 사진은 `uniconnect_photos`에, 1시간마다의 백업은 최근 24개까지 `uniconnect_backups`에 들어갑니다. 저장할 때마다 버전이 올라가고, 다른 서버 인스턴스가 먼저 저장했으면 지금 저장은 되돌리고 "다시 시도해 주세요"로 답한 뒤 새 데이터를 읽어 옵니다. 각 인스턴스는 요청을 받을 때 2초에 한 번씩 버전을 확인해 다른 인스턴스가 바꾼 내용을 가져옵니다.
 
 ### 이메일 인증
 
@@ -205,7 +205,30 @@ npm run build
 NODE_ENV=production npm start
 ```
 
-`npm run build`는 `backend/dist/`와 `frontend/dist/`를 만듭니다. `npm start`로 실행한 Express 서버가 API와 빌드된 웹을 한 주소에서 함께 제공합니다. production에서는 호스팅 환경이 주는 `PORT`를 사용합니다.
+`npm run build`는 `backend/dist/`와 `frontend/dist/`를 만듭니다. `npm start`로 실행한 Express 서버가 API와 빌드된 웹을 한 주소에서 함께 제공합니다. production에서는 호스팅 환경이 주는 `PORT`를 사용합니다. 이렇게 서버 한 대로 운영하면 데이터는 `DATA_FILE`의 파일에 저장되므로, 디스크가 유지되는 곳에서 실행하세요.
+
+### Vercel에 배포
+
+Vercel에서는 화면(`frontend/dist`)을 Vercel이 직접 내보내고, API는 함수 하나(`api/index.mjs` → `backend/src/vercel.ts`)로 실행됩니다. 함수는 요청이 올 때만 켜져 파일이 남지 않으므로 데이터와 사진은 Postgres(Neon)에 저장하고, 일정 알림 메일은 Vercel Cron이 매일 오전 9시(한국 시간)에 보냅니다. 빌드 방법·주소 규칙·보안 헤더·Cron은 저장소의 `vercel.json`에 들어 있습니다.
+
+1. PR을 main에 합칩니다. Vercel은 main에 올라온 코드를 배포합니다.
+2. [Vercel](https://vercel.com)에서 `Add New… → Project`로 GitHub의 `jennjeong/uniconnect`를 가져옵니다. Framework Preset은 `Other`, Root Directory는 저장소 맨 위(`./`) 그대로 두고, 빌드·설치 명령과 출력 폴더는 비워 둡니다(`vercel.json`을 씁니다). Node.js 버전은 22.x입니다.
+3. 프로젝트의 `Storage → Create Database`에서 **Neon (Postgres)** 를 고르고 지역은 **Singapore (ap-southeast-1)** 로 만든 뒤 이 프로젝트에 연결합니다. 연결하면 `DATABASE_URL`이 자동으로 들어갑니다. API 함수도 같은 싱가포르(`sin1`)에서 돌아서 둘 사이가 빠릅니다.
+4. `Settings → Environment Variables`에 아래 값을 넣습니다(Production). 비밀값은 직접 만들어 넣고, 다른 곳에 적지 마세요.
+   - `CRON_SECRET`: 길고 무작위인 문자열. Vercel Cron이 일정 알림을 부를 때 씁니다.
+   - `ADMIN_TOKEN`: 운영자 화면(`/admin`)에 넣을 길고 무작위인 문자열
+   - `SITE_URL`: 배포된 주소(예: `https://uniconnect.vercel.app`). 알림 메일의 링크에 씁니다.
+   - `KAKAO_REST_API_KEY`: 카카오 REST API 키(`backend/.env.local`에 있는 값)
+   - `NOMINATIM_URL`: `https://nominatim.openstreetmap.org`
+   - 메일: `RESEND_API_KEY`와 `MAIL_FROM`을 넣거나, 메일 없이 시연만 할 때는 `EXPOSE_EMAIL_CODES=true`(누구나 아무 이메일로 가입할 수 있게 되므로 시연용으로만)
+5. `Deploy`를 누릅니다. 첫 요청 때 데이터베이스에 데모 데이터가 만들어집니다. 데모 계정으로 로그인해 보고, 회원가입·제안·메시지가 다시 열어도 남아 있는지 확인하세요.
+
+Vercel에서 달라지는 점:
+
+- 화면이 없는 주소도 Vercel이 앱의 404 화면을 보여 주지만 HTTP 상태는 200입니다(서버 한 대로 운영할 때는 404).
+- 요청 제한(로그인 실패, 인증번호 등)과 OpenStreetMap 주소 검색 간격은 서버 인스턴스마다 따로 셉니다. 사용자가 적을 때는 인스턴스가 하나라 그대로지만, 붐벼서 인스턴스가 늘면 제한이 느슨해질 수 있습니다.
+- 사용자의 주소는 Vercel이 앞단에서 넣어 주는 값으로 읽습니다(`TRUST_PROXY`를 따로 두지 않으면 1).
+- 데이터를 되돌릴 때는 Neon의 복원 기능이나 `uniconnect_backups` 표의 백업을 씁니다.
 
 **앱 설치.** 빌드된 웹은 앱처럼 설치할 수 있습니다(`frontend/public/manifest.webmanifest`, 아이콘 `frontend/public/icons/`, 서비스 워커 `frontend/public/sw.js`). 크롬·엣지에서는 메뉴에 `앱 설치`가 나타나고, 아이폰·아이패드의 Safari에서는 같은 버튼이 공유 버튼의 `홈 화면에 추가`를 안내합니다. 서비스 워커는 API 응답을 저장하지 않고(개인 정보이고, 카카오 결과는 저장할 수 없음), 페이지는 늘 새로 받으며, 이름에 내용의 해시가 붙은 빌드 파일만 최근 80개까지 저장합니다. 마지막으로 받은 화면 틀을 남겨 두어 오프라인에서도 앱이 열리고, 서버에 닿지 못한다는 안내가 나옵니다. 개발 서버(`npm run dev`)에서는 등록하지 않습니다. 아이콘은 `favicon.svg`를 그대로(192 · 512px), 그리고 가장자리까지 채운 마스커블 아이콘(512px)과 Apple 터치 아이콘(180px)으로 그린 것입니다.
 
@@ -215,14 +238,16 @@ NODE_ENV=production npm start
 | --- | --- | --- | --- |
 | `API_PORT` | 백엔드 | `4000` | API 포트 (Vite가 `PORT`를 쓰기 때문에 따로 둠) |
 | `PORT` | 백엔드 | 없음 | `NODE_ENV=production`일 때 사용할 포트 |
-| `DATA_FILE` | 백엔드 | `backend/data/db.json` | 데이터 파일 경로 |
+| `DATA_FILE` | 백엔드 | `backend/data/db.json` | 데이터 파일 경로 (`DATABASE_URL`이 없을 때) |
+| `DATABASE_URL` | 백엔드 | 없음 (Vercel의 Neon 연결이 넣어 줌) | Postgres 주소. 있으면 데이터·사진·백업을 파일 대신 이 데이터베이스에 저장 (`POSTGRES_URL`도 읽음) |
+| `CRON_SECRET` | 백엔드 | 없음 | Vercel Cron이 매일 일정 알림을 부를 때 보내는 비밀값. 없으면 그 경로(`/api/cron/reminders`)가 닫혀 있음 |
 | `CORS_ORIGIN` | 백엔드 | 없음 | 웹을 다른 주소에서 호스팅할 때 허용할 origin |
 | `EXPOSE_EMAIL_CODES` | 백엔드 | `false` (`npm run dev`는 `backend/dev.env`에서 `true`) | 인증번호를 응답에 포함할지 여부 (메일 서비스 없이 시연할 때만 `true`) |
 | `RESEND_API_KEY` | 백엔드 | 없음 | Resend API 키. `MAIL_FROM`과 함께 있으면 인증번호를 메일로 보냄 |
 | `SITE_URL` | 백엔드 | 없음 | 사이트 주소. 알림 메일에 페이지 링크를 넣을 때 사용 (예: `https://uniconnect.kr`) |
 | `MAIL_FROM` | 백엔드 | 없음 | 보내는 사람 (예: `uniconnect <no-reply@example.com>`) |
 | `ADMIN_TOKEN` | 백엔드 | 없음 | 관리자 API 토큰. 없으면 관리자 API가 닫혀 있음 |
-| `TRUST_PROXY` | 백엔드 | 없음 | 프록시 뒤에서 사용자 주소를 읽는 방법: 프록시 수(보통 `1`) 또는 프록시 주소. `true`는 주소 위조를 허용하므로 쓰지 않음 |
+| `TRUST_PROXY` | 백엔드 | 없음 (Vercel에서는 `1`) | 프록시 뒤에서 사용자 주소를 읽는 방법: 프록시 수(보통 `1`) 또는 프록시 주소. `true`는 주소 위조를 허용하므로 쓰지 않음 |
 | `KAKAO_REST_API_KEY` | 백엔드 | 없음 (개발 중에는 `backend/.env.local`) | 카카오 REST API 키. 있으면 추천 매칭의 `가까운 순`에서 학교 근처 실제 가게를 실시간으로 보여 줌. 앱의 카카오맵 사용 설정이 켜져 있어야 함 |
 | `NOMINATIM_URL` | 백엔드 | 없음 (`npm run dev`는 `backend/dev.env`에서 켬) | OpenStreetMap 주소 검색 서버 (예: `https://nominatim.openstreetmap.org`). 있으면 브랜드의 매장 주소를 좌표로 바꿔 학교와의 거리를 보여 줌 |
 | `VITE_API_URL` | 프론트엔드 | 비어 있음 | 백엔드를 다른 주소에 둘 때 API origin (예: `https://api.example.com`) |
@@ -303,7 +328,7 @@ npm run typecheck
 
 `npm run build` 뒤에 `npm run e2e`를 실행하면 설치된 Chrome으로 빌드된 앱을 열어 실제 화면을 눌러 보는 브라우저 테스트(둘러보기, 제안과 수락, 현장 참여와 직원 PIN, 회원가입)와 접근성 검사(WCAG 2.1 A·AA, 심각한 문제가 있으면 실패)를 합니다. 테스트용 데이터 파일을 따로 만들어 개발 데이터는 건드리지 않습니다.
 
-`npm test`는 백엔드 API 테스트(`backend/src/app.test.ts`)와 화면 쪽 단위 테스트(`frontend/src/lib/*.test.ts`, vitest)를 차례로 실행합니다. 화면 테스트는 주소 읽기(`route.ts`), 날짜 계산(`date.ts`), 성과 분석 계산(`sponsorships.ts`)을 확인하고, 서버의 페이지 주소 목록(`backend/src/lib/appPaths.ts`)이 화면 주소와 맞는지도 확인합니다.
+`npm test`는 백엔드 API 테스트(`backend/src/app.test.ts`), Postgres 저장 테스트(`backend/src/store.postgres.test.ts`: 실제 서버 대신 같은 프로세스 안의 Postgres인 PGlite로 시드, 버전 충돌, 다른 인스턴스의 변경, 백업, 사진을 확인)와 화면 쪽 단위 테스트(`frontend/src/lib/*.test.ts`, vitest)를 차례로 실행합니다. 화면 테스트는 주소 읽기(`route.ts`), 날짜 계산(`date.ts`), 성과 분석 계산(`sponsorships.ts`)을 확인하고, 서버의 페이지 주소 목록(`backend/src/lib/appPaths.ts`)이 화면 주소와 맞는지도 확인합니다.
 GitHub에 push하거나 PR을 열면 GitHub Actions가 설치, 타입 검사, 테스트, 빌드를 자동으로 실행합니다(`.github/workflows/ci.yml`).
 
 ## 구조
@@ -328,14 +353,18 @@ GitHub에 push하거나 PR을 열면 GitHub Actions가 설치, 타입 검사, �
 │   └── .figma/make/           Figma Make 실행 환경 스크립트 (site.json은 빌드에서도 사용)
 ├── backend/                   Express API
 │   └── src/
-│       ├── index.ts           서버 시작
+│       ├── index.ts           서버 시작 (서버 한 대로 운영할 때)
+│       ├── vercel.ts          Vercel 함수로 운영할 때의 시작점
 │       ├── app.ts             라우터 연결, 오류 처리, 빌드된 웹 제공
-│       ├── routes/            auth · matches · brands · groups · events · proposals · requests · offers · measurements · checkin · analytics · profile · conversations
+│       ├── routes/            auth · matches · brands · groups · events · proposals · requests · offers · measurements · checkin · analytics · profile · conversations · cron(Vercel 일정 알림)
 │       ├── middleware/        Bearer 토큰 세션
-│       ├── lib/               비밀번호 해시, 이메일 규칙, 메일 발송 자리, 입력 검증
+│       ├── lib/               비밀번호 해시, 이메일 규칙, 메일 발송, 입력 검증, 저장 위치(storage.ts: 파일 또는 Postgres), 약속서 사진(photos.ts)
 │       ├── data/seed.ts       데모 데이터와 데모 계정
-│       ├── store.ts           JSON 파일 저장소
-│       └── app.test.ts        API 테스트
+│       ├── store.ts           메모리의 데이터와 저장·되돌리기
+│       ├── app.test.ts        API 테스트
+│       └── store.postgres.test.ts  Postgres 저장 테스트 (PGlite)
+├── api/index.mjs              Vercel이 실행하는 API 함수 (빌드된 backend/src/vercel.ts)
+├── vercel.json                Vercel 빌드 · 주소 규칙 · 보안 헤더 · 지역 · Cron
 ├── package.json               루트 스크립트 (dev, build, start, test, typecheck)
 └── pnpm-workspace.yaml
 ```

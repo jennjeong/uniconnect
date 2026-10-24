@@ -2624,3 +2624,52 @@ test("the data is backed up at most hourly beside the data file, keeping the lat
   assert.deepEqual(await copies(), kept)
 })
 
+
+test("Vercel serves the pages with the same security headers the API sends", async () => {
+  const { fileURLToPath } = await import("node:url")
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..")
+  const vercel = JSON.parse(await readFile(path.join(root, "vercel.json"), "utf8")) as {
+    headers: { source: string; headers: { key: string; value: string }[] }[]
+  }
+  const pages = vercel.headers.find((entry) => entry.source === "/(.*)")!.headers
+  const answer = await fetch(`${baseUrl}/health`)
+  for (const { key, value } of pages) assert.equal(answer.headers.get(key), value, key)
+  // All of them, but HSTS, which Vercel adds on its own.
+  const sent = [...answer.headers.keys()].filter((key) =>
+    ["content-security-policy", "x-content-type-options", "x-frame-options", "referrer-policy", "permissions-policy"].includes(key),
+  )
+  assert.deepEqual(sent.sort(), pages.map(({ key }) => key.toLowerCase()).sort())
+})
+
+test("the Vercel entry reads the data on its first request and serves the API", async () => {
+  const { createServer } = await import("node:http")
+  const { default: handler } = await import("./vercel.js")
+  const vercelServer = createServer(handler).listen(0)
+  await new Promise((resolve) => vercelServer.once("listening", resolve))
+  try {
+    const port = (vercelServer.address() as AddressInfo).port
+    const brands = await fetch(`http://127.0.0.1:${port}/api/brands`)
+    assert.equal(brands.status, 200)
+    assert.ok(((await brands.json()) as { brands: unknown[] }).brands.length > 0)
+  } finally {
+    await new Promise((resolve) => vercelServer.close(resolve))
+  }
+})
+
+// Last, as it marks the events near today as reminded.
+test("Vercel Cron sends the reminders with its secret, and nobody else can", async () => {
+  const reminders = (authorization?: string) =>
+    fetch(`${baseUrl}/cron/reminders`, authorization ? { headers: { Authorization: authorization } } : undefined)
+  assert.equal((await reminders()).status, 404)
+  assert.equal((await reminders("Bearer test-cron-secret")).status, 404)
+  config.cronSecret = "test-cron-secret"
+  try {
+    assert.equal((await reminders()).status, 404)
+    assert.equal((await reminders("Bearer wrong")).status, 404)
+    const ran = await reminders("Bearer test-cron-secret")
+    assert.equal(ran.status, 200)
+    assert.equal(typeof ((await ran.json()) as { sent: unknown }).sent, "number")
+  } finally {
+    config.cronSecret = undefined
+  }
+})
