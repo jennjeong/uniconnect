@@ -1,12 +1,18 @@
 import { config } from "../config.js"
 import { sendMail } from "./mailer.js"
+import { getDatabase } from "../store.js"
 import type { Account } from "../types.js"
+
+// The shared demo accounts are never emailed: everyone trying the demo uses
+// them, so their addresses stand for no one, and one is on a real
+// university's domain.
+const isDemo = (account: Account) => Object.values(getDatabase().demoAccountIds).includes(account.id)
 
 // Tells an account by email that something waits for it: a proposal, an
 // answer or a message, with a link to the page when SITE_URL is set. It
 // never holds up or fails the request that caused it.
 export function notify(account: Account | undefined, subject: string, lines: string[], path: string) {
-  if (!account) return Promise.resolve()
+  if (!account || isDemo(account)) return Promise.resolve()
   const link = config.siteUrl ? `${config.siteUrl.replace(/\/$/, "")}${path}` : undefined
   const text = [...lines, ...(link ? ["", `바로 가기: ${link}`] : []), "", "uniconnect"].join("\n")
   return sendMail(account.email, `[uniconnect] ${subject}`, text).catch((error: Error) => {

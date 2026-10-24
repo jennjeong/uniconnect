@@ -1581,8 +1581,9 @@ test("codes go out by email once a mail service is set, and only to the log befo
   }
 })
 
-test("proposals, answers and new messages are emailed to the other side", async () => {
+test("proposals, answers and new messages are emailed to the other side, never to the demo accounts", async () => {
   const { mailTransport } = await import("./lib/mailer.js")
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
   const realPost = mailTransport.post
   const sent: { to: string[]; subject: string; text: string }[] = []
   mailTransport.post = async (body) => {
@@ -1593,6 +1594,8 @@ test("proposals, answers and new messages are emailed to the other side", async 
   config.mailFrom = "uniconnect <no-reply@example.com>"
   config.siteUrl = "https://uniconnect.example"
   const settle = () => new Promise((resolve) => setTimeout(resolve, 20))
+  // Everyone trying the demo uses its accounts, so their addresses stand for no one.
+  const toDemo = () => sent.filter((mail) => ["muse@syu.ac.kr", "hello@afternoon-coffee.kr"].includes(mail.to[0]))
   try {
     // A new group with a listing, so a brand's offer reaches it.
     const email = "notice@syu.ac.kr"
@@ -1613,7 +1616,22 @@ test("proposals, answers and new messages are emailed to the other side", async 
     const listing = (await call("PUT", "/profile", { intro: "알림을 기다리는 공연 동아리예요.", offer: "관객 80명" }, group)).data.profile
     sent.length = 0
 
+    // Its proposal reaches the demo brand's inbox but no one's mail; the
+    // brand's answer comes back to the group by email.
+    await call("POST", "/events", { name: "알림 공연", date: addDays(todayInKorea(), 10), types: ["현금"] }, group)
+    assert.equal((await call("POST", "/proposals", { matchId: "afternoon-coffee" }, group)).status, 201)
     const brand = await login("브랜드")
+    const request = (await call("GET", "/requests", undefined, brand)).data.requests.find(
+      (item: { groupName: string }) => item.groupName === "알림 받는 동아리",
+    )
+    await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+    await settle()
+    assert.deepEqual(toDemo(), [])
+    const answerMail = sent.find((mail) => mail.to[0] === email)
+    assert.equal(answerMail?.subject, "[uniconnect] 협찬이 확정됐어요")
+    assert.match(answerMail?.text ?? "", /오후의 커피에서 '알림 공연' 제안을 수락했어요/)
+
+    sent.length = 0
     await call("POST", "/proposals", { matchId: listing.id }, brand)
     await settle()
     const offerMail = sent.find((mail) => mail.to[0] === email)
@@ -1625,17 +1643,20 @@ test("proposals, answers and new messages are emailed to the other side", async 
     await call("POST", `/offers/${offer.id}/accept`, undefined, brand) // a brand cannot answer
     await call("POST", `/offers/${offer.id}/accept`, undefined, group)
     await settle()
-    assert.ok(sent.some((mail) => mail.to[0] === "hello@afternoon-coffee.kr" && mail.subject.includes("확정")))
+    assert.deepEqual(toDemo(), [])
 
-    // Messages: one email for a run of unread ones.
+    // Messages: one email for a run of unread ones, and none to the demo brand.
     sent.length = 0
     const chat = (await call("POST", "/conversations", { partnerId: "afternoon-coffee" }, group)).data.conversation
     await call("POST", `/conversations/${chat.id}/messages`, { text: "안녕하세요! 일정 이야기해요." }, group)
     await call("POST", `/conversations/${chat.id}/messages`, { text: "편하실 때 답 주세요." }, group)
+    await call("POST", `/conversations/${chat.id}/messages`, { text: "네, 좋아요!" }, brand)
+    await call("POST", `/conversations/${chat.id}/messages`, { text: "내일 연락드릴게요." }, brand)
     await settle()
-    const toBrand = sent.filter((mail) => mail.to[0] === "hello@afternoon-coffee.kr")
-    assert.equal(toBrand.length, 1)
-    assert.match(toBrand[0].text, /알림 받는 동아리: 안녕하세요/)
+    assert.deepEqual(toDemo(), [])
+    const toGroup = sent.filter((mail) => mail.to[0] === email)
+    assert.equal(toGroup.length, 1)
+    assert.match(toGroup[0].text, /오후의 커피: 네, 좋아요/)
   } finally {
     mailTransport.post = realPost
     config.resendApiKey = undefined
@@ -2128,6 +2149,10 @@ test("a student group invites a shop it found nearby, and the shop joins as a br
     assert.equal((await call("POST", `/invites/${code}/accept`, undefined, brand)).status, 403)
     assert.equal((await call("POST", "/invites/nope/accept", undefined, await signUpMember("nobody@nope-cafe.kr", "nope-pass-123", "브랜드"))).status, 404)
 
+    // Another group nearby invited the same shop.
+    const neighbour = await signUpMember("invite-one@syu.ac.kr", "invite-one-123")
+    const neighbourCode = (await call("POST", "/invites", { placeId: "26338954" }, neighbour)).data.invite.code
+
     // The shop's owner signs up as a brand and takes it: the new brand is
     // listed at once, as that shop.
     const owner = await signUpMember("owner@golmok-cafe.kr", "golmok-pass-123", "브랜드")
@@ -2142,10 +2167,12 @@ test("a student group invites a shop it found nearby, and the shop joins as a br
     assert.equal((await call("GET", `/invites/${code}`)).data.invite.joined, "other")
     // Taking it twice changes nothing.
     assert.equal((await call("POST", `/invites/${code}/accept`, undefined, owner)).status, 200)
-    // The group hears about it, with the brand's page on 추천 매칭.
-    const notice = sent.find((message) => message.to.includes("muse@syu.ac.kr") && message.subject.includes("초대"))!
+    // The groups that invited it hear about it, with the brand's page on
+    // 추천 매칭, except the shared demo group, whose address stands for no one.
+    const notice = sent.find((message) => message.to.includes("invite-one@syu.ac.kr") && message.subject.includes("초대"))!
     assert.match(notice.subject, /초대한 가게가 uniconnect에 가입했어요/)
     assert.match(notice.text, /owner 카페에서 초대를 받고/)
+    assert.ok(!sent.some((message) => message.to.includes("muse@syu.ac.kr")))
 
     // 가까운 순 now shows the shop joined, to everyone nearby.
     assert.equal((await shops(group))[0].brandId, listing.id)
@@ -2168,7 +2195,7 @@ test("a student group invites a shop it found nearby, and the shop joins as a br
     const groupExport = (await call("GET", "/auth/export", undefined, otherGroup)).data
     assert.deepEqual(groupExport.invites.map((item: { placeId: string }) => item.placeId).sort(), ["26338954", "777"])
     const ownerExport = (await call("GET", "/auth/export", undefined, owner)).data
-    assert.deepEqual(ownerExport.invites.map((item: { code: string }) => item.code), [code])
+    assert.deepEqual(ownerExport.invites.map((item: { code: string }) => item.code), [code, neighbourCode])
 
     // When the brand leaves, the shop is open again; when a group leaves, its invitations go.
     assert.equal((await call("DELETE", "/auth/account", { password: "golmok-pass-123" }, owner)).status, 204)
@@ -2235,7 +2262,8 @@ test("both sides of an accepted proposal keep an agreement, confirm it and prove
   const brandItem = forGroup.items.find((item: { side: string }) => item.side === "brand")
   const groupItem = forGroup.items.find((item: { side: string }) => item.side === "group")
 
-  // Each side confirms; the other hears about it.
+  // Each side confirms; the other hears about it, unless it is the shared
+  // demo brand, whose address stands for no one.
   const { mailTransport } = await import("./lib/mailer.js")
   const post = mailTransport.post
   const sent: { to: string[]; subject: string }[] = []
@@ -2250,7 +2278,7 @@ test("both sides of an accepted proposal keep an agreement, confirm it and prove
     const confirmed = (await call("POST", `/agreements/${request.id}/confirm`, undefined, group)).data.agreement
     assert.ok(confirmed.confirmed.group)
     assert.equal(confirmed.confirmed.brand, undefined)
-    assert.ok(sent.some((message) => message.to.includes("hello@afternoon-coffee.kr") && /확인해 주세요/.test(message.subject)))
+    assert.ok(!sent.some((message) => message.to.includes("hello@afternoon-coffee.kr")))
     const both = (await call("POST", `/agreements/${request.id}/confirm`, undefined, brand)).data.agreement
     assert.ok(both.confirmed.group && both.confirmed.brand)
     assert.ok(sent.some((message) => message.to.includes("agreement-club@syu.ac.kr") && /양쪽 모두/.test(message.subject)))
