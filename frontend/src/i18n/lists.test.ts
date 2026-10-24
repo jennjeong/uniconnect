@@ -25,6 +25,9 @@ describe("English for listed values", () => {
       "매칭 중",
       "집행 예정",
       "측정 완료",
+      // Where an event's measurement stands (lib/measurements.ts).
+      "진행 전",
+      "측정 중",
       "검토 중",
       "수락",
       "거절",

@@ -239,6 +239,14 @@ const en: Record<string, string> = {
   "공유하지 못했어요. 메시지를 복사해서 보내 주세요.": "Couldn't share. Please copy the message and send it.",
   // Sponsorship agreements (pages/AgreementsPage.tsx, AgreementPage.tsx)
   "협찬 약속서": "Sponsorship agreements",
+  // The event's goals on an agreement (GoalsPanel in pages/AgreementPage.tsx)
+  "행사 목표": "Event goals",
+  도달: "Reach",
+  "행사가 시작돼 목표를 더 바꿀 수 없어요": "The event has begun, so its goals are fixed",
+  "행사 전까지 여기서 정하고 고칠 수 있어요": "Set and change them here until the event",
+  "{name}에서 행사 전까지 정해요": "{name} sets them before the event",
+  "목표 정하기": "Set goals",
+  "정한 목표는 성과 측정과 리포트에 바로 반영돼요.": "Goals show in the measurement and the report right away.",
   "학생단체와 브랜드가 협찬으로 할 일을 함께 정하고 확인하고, 한 일을 링크와 사진으로 남겨요.":
     "A student group and a brand agree on what each will do for a sponsorship, confirm it, and keep links and photos of what was done.",
   "확정된 협찬마다 약속서를 확인하고, 할 일이 얼마나 끝났는지 봐요.":

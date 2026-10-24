@@ -2273,6 +2273,14 @@ test("both sides of an accepted proposal keep an agreement, confirm it and prove
   assert.equal(forGroup.brand.name, "오후의 커피")
   const brandItem = forGroup.items.find((item: { side: string }) => item.side === "brand")
   const groupItem = forGroup.items.find((item: { side: string }) => item.side === "group")
+  // The event is the group's, its goals set from here until it begins; the
+  // brand reads them, without the PINs and coupons. A group without an
+  // account has no event here.
+  assert.deepEqual(forGroup.event, { id: request.eventId, owner: "group", started: false })
+  assert.deepEqual(Object.keys(forGroup.goals).sort(), ["expectedAudience", "targets"])
+  const forBrand = (await call("GET", `/agreements/${request.id}`, undefined, brand)).data.agreement
+  assert.deepEqual([forBrand.event.owner, forBrand.goals.targets], ["group", forGroup.goals.targets])
+  assert.equal(opened.event, undefined)
 
   // Each side confirms; the other hears about it, unless it is the shared
   // demo brand, whose address stands for no one.

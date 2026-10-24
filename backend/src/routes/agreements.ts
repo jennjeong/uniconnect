@@ -11,9 +11,11 @@ import {
   agreementView,
   defaultItems,
   sideIn,
+  sponsoredEvent,
   uploadsFolder,
 } from "../lib/agreements.js"
 import { HttpError } from "../lib/errors.js"
+import { ensureMeasurement } from "../lib/measurements.js"
 import { notify } from "../lib/notices.js"
 import { text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
@@ -101,7 +103,11 @@ agreementsRouter.get("/", (req, res) => {
 agreementsRouter.get("/:id", async (req, res) => {
   const { database, proposal, side } = opened(req)
   const { agreement, created } = agreementFor(database, proposal)
-  if (created) await saveDatabase()
+  // The event's goals show here, so its measurement is made the first time,
+  // as opening the event would.
+  const sponsored = sponsoredEvent(database, proposal)
+  const measured = sponsored ? ensureMeasurement(database, sponsored.owner.id, sponsored.event).created : false
+  if (created || measured) await saveDatabase()
   res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 

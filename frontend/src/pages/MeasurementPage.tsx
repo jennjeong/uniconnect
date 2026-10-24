@@ -9,7 +9,7 @@ import { RevealTitle } from "../components/RevealText"
 import { metricInfo, metricKinds } from "../data/metrics"
 import { useLiveMeasurement } from "../hooks/useLiveMeasurement"
 import { t } from "../i18n"
-import { formatDateTime } from "../lib/date"
+import { formatDateTime, formatFullDate } from "../lib/date"
 import { measureState } from "../lib/measurements"
 import { percent } from "../lib/format"
 import { LayersGradient } from "../scenes/LayersGradient"
@@ -20,7 +20,9 @@ const delay = (seconds: number) => ({ "--reveal-delay": `${seconds}s` }) as CSSP
 
 // The event's live counts on getlayers.ai's Interference gradient (each scan,
 // coupon and visit adding to the wave), then the funnel and the latest
-// participation as cards.
+// participation as cards. Before the event (진행 전) the counts wait as
+// dashes beside their goals, the cards say what will show once it takes
+// place, and the goals are set on the sponsorship's agreement.
 export function MeasurementPage({
   measurements,
   metrics,
@@ -28,7 +30,7 @@ export function MeasurementPage({
   onSelect,
   onUpdate,
   onOpenQr,
-  onOpenGoals,
+  onOpenAgreements,
   onShowLog,
 }: {
   // Every event of the group, to pick the one to measure.
@@ -39,11 +41,13 @@ export function MeasurementPage({
   // Receives fresh counts and report from each refresh.
   onUpdate: (measurement: EventMeasurement) => void
   onOpenQr: () => void
-  onOpenGoals: () => void
+  // Opens the agreements, where an event's goals are set.
+  onOpenAgreements: () => void
   // Opens the participation history; without a kind, all of it.
   onShowLog: (kind?: MetricKind) => void
 }) {
   const entries = useLiveMeasurement(report?.eventId, "학생단체", onUpdate)
+  const upcoming = report !== null && measureState(report) === "진행 전"
 
   const funnel: { kind: MetricKind; note: string }[] = [
     { kind: "scans", note: t("현장에서 QR을 스캔했어요") },
@@ -58,14 +62,9 @@ export function MeasurementPage({
         title={t("현장 반응을 실시간으로 측정해요")}
         description={t("고유 QR과 쿠폰 데이터를 행사 성과로 안전하게 집계합니다.")}
         actions={
-          <>
-            <Pill disabled={!report} onClick={onOpenGoals} variant="outline">
-              {t("목표 설정")}
-            </Pill>
-            <Pill arrow="up-right" disabled={!report} onClick={onOpenQr}>
-              {t("현장 QR 열기")}
-            </Pill>
-          </>
+          <Pill arrow="up-right" disabled={!report} onClick={onOpenQr}>
+            {t("현장 QR 열기")}
+          </Pill>
         }
       />
 
@@ -81,8 +80,13 @@ export function MeasurementPage({
               <i aria-hidden="true" /> {t("실시간 집계 중")}
             </span>
           ) : (
-            <span className="measure-state">{t(measureState(report))}</span>
+            <span className={upcoming ? "measure-state upcoming" : "measure-state"}>{t(measureState(report))}</span>
           ))}
+        {upcoming && (
+          <button className="subtle-link" onClick={onOpenAgreements} type="button">
+            {t("목표는 협찬 약속서에서 정해요")} <Icon name="chevron" size={15} />
+          </button>
+        )}
         {entries[0] && (
           <span className="measure-updated">{t("마지막 참여 {time}", { time: formatDateTime(entries[0].at) })}</span>
         )}
@@ -91,10 +95,17 @@ export function MeasurementPage({
       <section className="power-panel live-panel" data-reveal>
         <LayersGradient shader={INTERFERENCE} />
         <div className="power-content">
-          <span className="eyebrow light">Live Now</span>
+          <span className="eyebrow light">{upcoming ? "Before the Event" : "Live Now"}</span>
           <RevealTitle as="h2" className="power-title">
-            {t("지금 이 순간의 현장 반응")}
+            {upcoming ? t("행사가 시작되면 현장 반응이 여기에 떠요") : t("지금 이 순간의 현장 반응")}
           </RevealTitle>
+          {upcoming && report && (
+            <p className="power-lead">
+              {t("{date}부터 QR 스캔 · 쿠폰 · 매장 방문을 실시간으로 집계해요.", {
+                date: formatFullDate(report.eventDate),
+              })}
+            </p>
+          )}
           <ul className="power-stats three">
             {metricKinds.map((kind, index) => {
               const target = report?.targets[kind]
@@ -102,18 +113,21 @@ export function MeasurementPage({
                 <li data-reveal key={kind} style={delay(index * 0.09)}>
                   <button onClick={() => onShowLog(kind)} type="button">
                     <strong>
-                      <AnimatedNumber value={metrics[kind].toLocaleString("ko-KR")} />
+                      {upcoming ? "—" : <AnimatedNumber value={metrics[kind].toLocaleString("ko-KR")} />}
                     </strong>
                     <span>
                       <Icon name={metricInfo[kind].icon} size={16} />
                       {t(metricInfo[kind].label)}
                     </span>
-                    {target !== undefined && (
-                      <small className={metrics[kind] >= target ? "good" : ""}>
-                        {t("목표 {target}", { target })} ·{" "}
-                        {metrics[kind] >= target ? t("달성") : t("{count} 남음", { count: target - metrics[kind] })}
-                      </small>
-                    )}
+                    {target !== undefined &&
+                      (upcoming ? (
+                        <small>{t("목표 {target}", { target })}</small>
+                      ) : (
+                        <small className={metrics[kind] >= target ? "good" : ""}>
+                          {t("목표 {target}", { target })} ·{" "}
+                          {metrics[kind] >= target ? t("달성") : t("{count} 남음", { count: target - metrics[kind] })}
+                        </small>
+                      ))}
                   </button>
                 </li>
               )
@@ -125,30 +139,44 @@ export function MeasurementPage({
       <div className="measure-grid">
         <div className="measure-card" data-reveal>
           <p className="section-title">{t("참여 전환")}</p>
-          <div className="measure-funnel">
-            {funnel.map((step) => (
-              <div className="measure-step" key={step.kind}>
-                <div className="measure-step-head">
-                  <strong>{t(metricInfo[step.kind].label)}</strong>
-                  <span>{t("{count}명", { count: metrics[step.kind].toLocaleString("ko-KR") })}</span>
+          {upcoming ? (
+            <p className="measure-wait">
+              <Icon name="chart" size={20} />
+              {t("행사가 진행되면 QR 스캔에서 쿠폰, 매장 방문으로 이어진 비율이 여기에 그려져요.")}
+            </p>
+          ) : (
+            <div className="measure-funnel">
+              {funnel.map((step) => (
+                <div className="measure-step" key={step.kind}>
+                  <div className="measure-step-head">
+                    <strong>{t(metricInfo[step.kind].label)}</strong>
+                    <span>{t("{count}명", { count: metrics[step.kind].toLocaleString("ko-KR") })}</span>
+                  </div>
+                  <div className="measure-track">
+                    <i style={{ width: `${percent(metrics[step.kind], metrics.scans)}%` }} />
+                  </div>
+                  <small>{step.note}</small>
                 </div>
-                <div className="measure-track">
-                  <i style={{ width: `${percent(metrics[step.kind], metrics.scans)}%` }} />
-                </div>
-                <small>{step.note}</small>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="measure-card" data-reveal style={delay(0.1)}>
           <div className="measure-card-head">
             <p className="section-title">{t("실시간 참여 기록")}</p>
-            <button className="subtle-link" onClick={() => onShowLog()} type="button">
-              {t("전체 보기")} <Icon name="chevron" size={15} />
-            </button>
+            {!upcoming && (
+              <button className="subtle-link" onClick={() => onShowLog()} type="button">
+                {t("전체 보기")} <Icon name="chevron" size={15} />
+              </button>
+            )}
           </div>
-          {entries.length === 0 ? (
+          {upcoming ? (
+            <p className="measure-wait">
+              <Icon name="scan" size={20} />
+              {t("행사가 진행되면 참여 기록이 여기에 떠요. QR 스캔 · 쿠폰 · 매장 방문이 들어오는 대로 보여요.")}
+            </p>
+          ) : entries.length === 0 ? (
             <p className="day-empty">{t("아직 참여 기록이 없어요.")}</p>
           ) : (
             <ol className="activity-feed stagger">

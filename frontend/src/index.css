@@ -4123,6 +4123,20 @@ button.nav-pill:hover {
   line-height: 1.1;
 }
 
+/* Before the event: when counting starts, on frosted navy glass over the
+   moving wave. */
+.power-lead {
+  max-width: 36rem;
+  margin: -8px 0 0;
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: rgba(8, 20, 52, 0.55);
+  backdrop-filter: blur(12px);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
 .power-roas {
   display: flex;
   width: min(460px, 100%);
@@ -5406,6 +5420,37 @@ button.nav-pill:hover {
   font-weight: var(--weight-label);
 }
 
+/* An event still to come (진행 전) in deep blue, as what comes next. */
+.measure-state.upcoming {
+  background: var(--point-tint);
+  color: var(--point-strong);
+}
+
+/* Before the event, in place of the funnel and the records: what will show
+   there once it takes place. */
+.measure-wait {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0;
+  padding: 20px;
+  border-radius: var(--radius-sm);
+  background: var(--point-tint);
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.campaign-measure .measure-wait {
+  margin-top: 16px;
+}
+
+.measure-wait .icon {
+  flex: none;
+  margin-top: 1px;
+  color: var(--point-strong);
+}
+
 /* Which event the measurement and report pages show
    (components/EventPicker.tsx): a pill-shaped select. */
 .event-picker {
@@ -5615,6 +5660,34 @@ button.nav-pill:hover {
 }
 
 /* Participation history modal. */
+/* Before the event: what the history will hold once it takes place. */
+.log-wait {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 36px 20px;
+  border-radius: var(--radius-md);
+  background: var(--point-tint);
+  text-align: center;
+}
+
+.log-wait .icon {
+  color: var(--point-strong);
+}
+
+.log-wait strong {
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: var(--weight-label);
+}
+
+.log-wait span {
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
 .log-summary {
   margin: 0 0 12px;
   color: var(--ink-soft);
@@ -7787,6 +7860,47 @@ button.nav-pill:hover {
   font-weight: var(--weight-label);
 }
 
+/* The event's goals (행사 목표): each figure on a white tile, then the way to
+   set them while the event is still to come. */
+.goals-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.goals-list > div {
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: #fff;
+  box-shadow: var(--ring);
+}
+
+.goals-list dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: var(--weight-label);
+}
+
+.goals-list dd {
+  margin: 4px 0 0;
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: var(--weight-display);
+}
+
+.goals-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin-top: 14px;
+}
+
+.goals-actions .field-hint {
+  margin: 0;
+}
+
 .agreement-items {
   display: flex;
   flex-direction: column;
@@ -8819,6 +8933,7 @@ button.nav-pill:hover {
   .agreement-view .agreement-add,
   .agreement-view .agreement-footer,
   .agreement-view .agreement-confirm .pill,
+  .agreement-view .goals-actions,
   .agreement-view .agreement-remove,
   .agreement-view .review-panel {
     display: none !important;

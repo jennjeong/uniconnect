@@ -112,6 +112,11 @@ export type Agreement = {
   brand: { name: string; member: boolean }
   eventName: string
   eventDate: string
+  // The event, while the side whose it is has it (a group's event for a
+  // request, a brand's campaign for an offer), and its goals: set on the
+  // agreement until the event begins, read by both sides.
+  event?: { id: string; owner: ChatSide; started: boolean }
+  goals?: { expectedAudience: number; targets: Report["targets"] }
   gives: string
   items: AgreementItem[]
   confirmed: Partial<Record<ChatSide, string>>

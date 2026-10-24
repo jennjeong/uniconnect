@@ -24,7 +24,7 @@ import { t, tc } from "./i18n"
 import { nextEvent, todayIso } from "./lib/date"
 import { saveFile } from "./lib/download"
 import { reportKpis, type KpiKey } from "./lib/kpis"
-import { defaultMeasurement } from "./lib/measurements"
+import { defaultMeasurement, measureState } from "./lib/measurements"
 import { brandNotifications, studentNotifications } from "./lib/notifications"
 import { track } from "./lib/analytics"
 import { applyPageMeta, pageMeta } from "./lib/pageMeta"
@@ -126,6 +126,8 @@ function App() {
   // the one the measurement pages show (the default one until picked).
   const [measurements, setMeasurements] = useState<EventMeasurement[]>([])
   const [measuredId, setMeasuredId] = useState<string | null>(null)
+  // Counts goals saved from an agreement, so the agreement reads them again.
+  const [goalsSaved, setGoalsSaved] = useState(0)
   // Brand catalog that student groups browse on the matches page.
   const [brands, setBrands] = useState<Match[]>([])
   // Brand side: the student group catalog, proposals received and results.
@@ -425,6 +427,13 @@ function App() {
   const openLegal = (legal: LegalKind) => go({ page, legal })
 
   const openAgreements = () => go({ page, agreements: true })
+
+  // The goals form for one of the account's own events, from its agreement.
+  const editGoals = (eventId: string) => {
+    if (!measurements.some((item) => item.eventId === eventId)) return
+    setMeasuredId(eventId)
+    setActiveModal("measure-goals")
+  }
 
   const openAgreement = (id: string) => go({ page, agreement: id })
 
@@ -812,7 +821,9 @@ function App() {
         <AgreementPage
           id={view.agreement}
           loggedIn={account !== null}
+          goalsSaved={goalsSaved}
           onBack={() => goBack({ page, agreements: true })}
+          onEditGoals={account ? editGoals : undefined}
           onError={handleError}
           onLogin={() => openAuth("login")}
           onNotice={showNotice}
@@ -939,9 +950,7 @@ function App() {
             onSelect={setMeasuredId}
             onUpdate={updateMeasurement}
             onOpenQr={() => setActiveModal("qr")}
-            onOpenGoals={() =>
-              account ? setActiveModal("measure-goals") : requireLogin(t("로그인하면 행사 목표를 정할 수 있어요."))
-            }
+            onOpenAgreements={openAgreements}
             onShowLog={openLog}
           />
         )
@@ -988,9 +997,7 @@ function App() {
                 onSelect={setMeasuredId}
                 onUpdate={updateMeasurement}
                 onOpenQr={() => setActiveModal("qr")}
-                onOpenGoals={() =>
-                  account ? setActiveModal("measure-goals") : requireLogin(t("로그인하면 캠페인 목표를 정할 수 있어요."))
-                }
+                onOpenAgreements={openAgreements}
                 onShowLog={openLog}
               />
             }
@@ -1199,6 +1206,7 @@ function App() {
             total={
               logKind === "all" ? metrics.scans + metrics.coupons + metrics.visits : metrics[logKind]
             }
+            startsOn={measureState(report) === "진행 전" ? report.eventDate : undefined}
             onClose={closeModal}
           />
         </Presence>
@@ -1225,6 +1233,7 @@ function App() {
             onClose={closeModal}
             onSaved={(next) => {
               updateMeasurement(next)
+              setGoalsSaved((count) => count + 1)
               setActiveModal(null)
               showNotice(t("목표를 저장했어요. 리포트에 바로 반영돼요."))
             }}

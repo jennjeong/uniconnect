@@ -13,7 +13,7 @@ const en: Record<string, string> = {
   "확정된 협찬": "Confirmed sponsorships",
   "행사 일정 보기": "See calendar",
   // A measurement's state (lib/measurements.ts measureState)
-  "측정 예정": "Upcoming",
+  "진행 전": "Not started",
   "측정 중": "Measuring",
 
   // Student group dashboard (pages/DashboardPage.tsx)

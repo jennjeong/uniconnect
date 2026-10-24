@@ -1,9 +1,10 @@
 import type { EventMeasurement, Report } from "../types"
 import { todayIso } from "./date"
 
-// Where an event's measurement stands today.
+// Where an event's measurement stands today: before the event (진행 전),
+// on its days, or after.
 export function measureState(report: Report, today = todayIso()) {
-  if (report.eventDate > today) return "측정 예정"
+  if (report.eventDate > today) return "진행 전"
   return (report.eventEndDate ?? report.eventDate) >= today ? "측정 중" : "측정 완료"
 }
 
