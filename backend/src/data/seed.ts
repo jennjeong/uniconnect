@@ -897,6 +897,7 @@ export async function createSeed(): Promise<Database> {
     conversations: seedConversations(),
     inquiries: [],
     invites: [],
+    agreements: [],
     requests: seedRequests(),
     offers: seedOffers(),
     sponsorships: { [coffee.id]: seedSponsorships() },

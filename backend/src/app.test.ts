@@ -2199,6 +2199,134 @@ test("a student group invites a shop it found nearby, and the shop joins as a br
   }
 })
 
+test("both sides of an accepted proposal keep an agreement, confirm it and prove what they did", async () => {
+  const { existsSync } = await import("node:fs")
+  const { uploadsFolder } = await import("./lib/agreements.js")
+  const brand = await login("브랜드")
+
+  // The demo brand's accepted proposal from a group without an account.
+  const listed = (await call("GET", "/agreements", undefined, brand)).data.agreements as { id: string; side: string; partner: string; total: number }[]
+  const runners = listed.find((item) => item.id === "req-runners")!
+  assert.deepEqual([runners.side, runners.partner, runners.total], ["brand", "서울여대 러너스", 6])
+  const opened = (await call("GET", "/agreements/req-runners", undefined, brand)).data.agreement
+  assert.equal(opened.items[0].label, "협찬 전달: 완주 기념 음료 80잔")
+  assert.deepEqual(
+    opened.items.map((item: { side: string }) => item.side),
+    ["brand", "brand", "group", "group", "group", "group"],
+  )
+  assert.deepEqual([opened.group.member, opened.brand.member, opened.side], [false, true, "brand"])
+  // Only the two sides see it, and only for an accepted proposal.
+  assert.equal((await call("GET", "/agreements/req-runners")).status, 401)
+  assert.equal((await call("GET", "/agreements/req-runners", undefined, await login("학생단체"))).status, 404)
+  assert.equal((await call("GET", "/agreements/req-movement", undefined, brand)).status, 404)
+  assert.equal((await call("GET", "/agreements/constructor", undefined, brand)).status, 404)
+
+  // A group with an account proposes, and the brand accepts.
+  const group = await signUpMember("agreement-club@syu.ac.kr", "agreement-pass-123")
+  const groupId = getDatabase().accounts.find((account) => account.email === "agreement-club@syu.ac.kr")!.id
+  await call("POST", "/events", { name: "약속 공연", date: "2026-12-12", people: "200명", types: ["제품"] }, group)
+  assert.equal((await call("POST", "/proposals", { matchId: "afternoon-coffee" }, group)).status, 201)
+  const request = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
+  assert.equal((await call("GET", `/agreements/${request.id}`, undefined, group)).status, 404)
+  await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+  const forGroup = (await call("GET", `/agreements/${request.id}`, undefined, group)).data.agreement
+  assert.deepEqual([forGroup.side, forGroup.group.member, forGroup.brand.member], ["group", true, true])
+  assert.equal(forGroup.brand.name, "오후의 커피")
+  const brandItem = forGroup.items.find((item: { side: string }) => item.side === "brand")
+  const groupItem = forGroup.items.find((item: { side: string }) => item.side === "group")
+
+  // Each side confirms; the other hears about it.
+  const { mailTransport } = await import("./lib/mailer.js")
+  const post = mailTransport.post
+  const sent: { to: string[]; subject: string }[] = []
+  mailTransport.post = async (message) => {
+    sent.push(message)
+    return new Response(null, { status: 200 })
+  }
+  const mail = { apiKey: config.resendApiKey, from: config.mailFrom }
+  config.resendApiKey = "test-resend-key"
+  config.mailFrom = "uniconnect <no-reply@example.com>"
+  try {
+    const confirmed = (await call("POST", `/agreements/${request.id}/confirm`, undefined, group)).data.agreement
+    assert.ok(confirmed.confirmed.group)
+    assert.equal(confirmed.confirmed.brand, undefined)
+    assert.ok(sent.some((message) => message.to.includes("hello@afternoon-coffee.kr") && /확인해 주세요/.test(message.subject)))
+    const both = (await call("POST", `/agreements/${request.id}/confirm`, undefined, brand)).data.agreement
+    assert.ok(both.confirmed.group && both.confirmed.brand)
+    assert.ok(sent.some((message) => message.to.includes("agreement-club@syu.ac.kr") && /양쪽 모두/.test(message.subject)))
+  } finally {
+    mailTransport.post = post
+    config.resendApiKey = mail.apiKey
+    config.mailFrom = mail.from
+  }
+
+  // The group marks its own item done with a link; never the brand's.
+  const link = "https://instagram.com/p/agreement"
+  assert.equal((await call("PATCH", `/agreements/${request.id}/items/${brandItem.id}`, { done: true }, group)).status, 403)
+  assert.equal((await call("PATCH", `/agreements/${request.id}/items/${groupItem.id}`, { links: ["javascript:alert(1)"] }, group)).status, 400)
+  assert.equal(
+    (await call("PATCH", `/agreements/${request.id}/items/${groupItem.id}`, { links: Array.from({ length: 6 }, (_, index) => `${link}/${index}`) }, group)).status,
+    400,
+  )
+  const done = (await call("PATCH", `/agreements/${request.id}/items/${groupItem.id}`, { done: true, links: [link] }, group)).data.agreement
+  const marked = done.items.find((item: { id: string }) => item.id === groupItem.id)
+  assert.ok(marked.doneAt)
+  assert.deepEqual(marked.links, [link])
+  assert.equal((await call("PATCH", `/agreements/${request.id}/items/nope`, { done: true }, group)).status, 404)
+
+  // A photo as proof is kept on disk, and the other side can see it.
+  const png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+  const photos = `/agreements/${request.id}/items/${groupItem.id}/photos`
+  assert.equal((await call("POST", photos, { image: "data:image/png;base64,aGVsbG8=" }, group)).status, 400)
+  assert.equal((await call("POST", photos, { image: png.replace("image/png", "image/gif") }, group)).status, 400)
+  assert.equal((await call("POST", `/agreements/${request.id}/items/${brandItem.id}/photos`, { image: png }, group)).status, 403)
+  const uploaded = await call("POST", photos, { image: png }, group)
+  assert.equal(uploaded.status, 201)
+  const photo = uploaded.data.agreement.items.find((item: { id: string }) => item.id === groupItem.id).photos[0] as string
+  assert.match(photo, /^[\w-]+\.png$/)
+  assert.ok(existsSync(path.join(uploadsFolder(request.id), photo)))
+  const seen = await fetch(`${baseUrl}/agreements/${request.id}/photos/${photo}`, { headers: { Authorization: `Bearer ${brand}` } })
+  assert.equal(seen.status, 200)
+  assert.equal(seen.headers.get("content-type"), "image/png")
+  assert.equal(Buffer.from(await seen.arrayBuffer()).toString("base64"), png.split(",")[1])
+  assert.equal((await fetch(`${baseUrl}/agreements/${request.id}/photos/${photo}`)).status, 401)
+  assert.equal((await call("GET", `/agreements/${request.id}/photos/..%2Fdb.json`, undefined, brand)).status, 404)
+  await call("POST", photos, { image: png }, group)
+  await call("POST", photos, { image: png }, group)
+  assert.equal((await call("POST", photos, { image: png }, group)).status, 409)
+  const removed = await call("DELETE", `${photos}/${photo}`, undefined, group)
+  assert.equal(removed.status, 200)
+  assert.ok(!existsSync(path.join(uploadsFolder(request.id), photo)))
+
+  // Changing the items asks both sides again; the items kept keep their proof.
+  const items = done.items.map(({ id, side, label }: { id: string; side: string; label: string }) => ({ id, side, label }))
+  assert.equal((await call("PUT", `/agreements/${request.id}/items`, { items: [] }, brand)).status, 400)
+  assert.equal((await call("PUT", `/agreements/${request.id}/items`, { items: [{ side: "nobody", label: "x" }] }, brand)).status, 400)
+  assert.equal((await call("PUT", `/agreements/${request.id}/items`, { items: [{ side: "brand", label: "가".repeat(81) }] }, brand)).status, 400)
+  const edited = (
+    await call("PUT", `/agreements/${request.id}/items`, { items: [...items, { side: "brand", label: "공연 당일 커피 트럭 보내기" }] }, brand)
+  ).data.agreement
+  assert.deepEqual(edited.confirmed, {})
+  assert.equal(edited.items.length, 7)
+  assert.deepEqual(edited.items.find((item: { id: string }) => item.id === groupItem.id).links, [link])
+  // Writing the same items again changes nothing.
+  const reconfirmed = (await call("POST", `/agreements/${request.id}/confirm`, undefined, group)).data.agreement
+  const same = edited.items.map(({ id, side, label }: { id: string; side: string; label: string }) => ({ id, side, label }))
+  assert.ok((await call("PUT", `/agreements/${request.id}/items`, { items: same }, brand)).data.agreement.confirmed.group)
+  assert.ok(reconfirmed.confirmed.group)
+
+  // The list shows how far it is, and the data download holds it.
+  const summary = (await call("GET", "/agreements", undefined, group)).data.agreements[0]
+  assert.deepEqual([summary.id, summary.partner, summary.done, summary.total, summary.proof], [request.id, "오후의 커피", 1, 7, 3])
+  const exported = (await call("GET", "/auth/export", undefined, group)).data
+  assert.deepEqual(exported.agreements.map((item: { id: string }) => item.id), [request.id])
+
+  // When the group leaves, the agreement and its photos go.
+  assert.equal((await call("DELETE", "/auth/account", { password: "agreement-pass-123" }, group)).status, 204)
+  assert.equal(getDatabase().agreements.some((item) => item.id === request.id), false)
+  assert.ok(!existsSync(uploadsFolder(request.id)))
+})
+
 test("operators see the platform's figures, real members' apart from the demo data", async () => {
   type Figures = Record<string, { real: number; total: number }>
   const stats = async (token = "test-admin-token") => {

@@ -43,6 +43,8 @@ import { QrModal } from "./modals/QrModal"
 import { ReportModal } from "./modals/ReportModal"
 import { SignupModal } from "./modals/SignupModal"
 import { AdminPage } from "./pages/AdminPage"
+import { AgreementPage } from "./pages/AgreementPage"
+import { AgreementsPage } from "./pages/AgreementsPage"
 import { AnalyticsPage } from "./pages/AnalyticsPage"
 import { BrandDashboardPage } from "./pages/BrandDashboardPage"
 import { DashboardPage } from "./pages/DashboardPage"
@@ -417,6 +419,10 @@ function App() {
 
   const openLegal = (legal: LegalKind) => go({ page, legal })
 
+  const openAgreements = () => go({ page, agreements: true })
+
+  const openAgreement = (id: string) => go({ page, agreement: id })
+
   // Keeps the conversation list (latest message first) in step with an open
   // conversation.
   const updateConversation = useCallback((updated: Conversation) => {
@@ -451,7 +457,7 @@ function App() {
   const startSession = (session: Session, message: string) => {
     setToken(session.token)
     setAccount(session.account)
-    go(view.invite ? view : { page: "대시보드" }, true)
+    go(view.invite || view.agreement || view.agreements ? view : { page: "대시보드" }, true)
     setActiveModal(null)
     showNotice(message)
   }
@@ -800,6 +806,28 @@ function App() {
     if (view.faq) return <FaqPage account={account} onLogin={() => openAuth("login")} />
     if (view.admin) return <AdminPage onNotice={showNotice} />
     if (view.legal) return <LegalPage kind={view.legal} onSwitch={(legal) => openLegal(legal)} />
+    if (view.agreement) {
+      return (
+        <AgreementPage
+          id={view.agreement}
+          loggedIn={account !== null}
+          onBack={() => goBack({ page, agreements: true })}
+          onError={handleError}
+          onLogin={() => openAuth("login")}
+          onNotice={showNotice}
+        />
+      )
+    }
+    if (view.agreements) {
+      return (
+        <AgreementsPage
+          loggedIn={account !== null}
+          onBack={() => goBack({ page })}
+          onLogin={() => openAuth("login")}
+          onOpen={openAgreement}
+        />
+      )
+    }
     if (view.invite) {
       return (
         <InvitePage
@@ -942,9 +970,9 @@ function App() {
           />
         )
       case "받은 제안":
-        return <InboxPage requests={requests} onAnswer={answerRequest} />
+        return <InboxPage requests={requests} onAnswer={answerRequest} onOpenAgreement={openAgreement} />
       case "받은 협찬":
-        return <OffersPage brands={brands} offers={offers} onAnswer={answerOffer} />
+        return <OffersPage brands={brands} offers={offers} onAnswer={answerOffer} onOpenAgreement={openAgreement} />
       case "성과 분석":
         return (
           <AnalyticsPage
@@ -1075,6 +1103,10 @@ function App() {
                     ? "admin"
                   : view.invite
                     ? `invite-${view.invite}`
+                  : view.agreement
+                    ? `agreement-${view.agreement}`
+                  : view.agreements
+                    ? "agreements"
                   : creating !== null
               ? "create"
               : profileOpen
@@ -1139,6 +1171,7 @@ function App() {
           onSwitchRole={switchRole}
           onCreate={() => openCreate()}
           onOpenMessages={openMessages}
+          onOpenAgreements={openAgreements}
           onOpenProfile={openProfile}
           onOpenFaq={openFaq}
           onLogin={() => openAuth("login")}

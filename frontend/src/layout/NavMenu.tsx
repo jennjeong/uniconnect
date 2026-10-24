@@ -24,6 +24,7 @@ export function NavMenu({
   onSwitchRole,
   onCreate,
   onOpenMessages,
+  onOpenAgreements,
   onOpenProfile,
   onOpenFaq,
   onLogin,
@@ -39,6 +40,7 @@ export function NavMenu({
   onSwitchRole: (role: Role) => void
   onCreate: () => void
   onOpenMessages: () => void
+  onOpenAgreements: () => void
   onOpenProfile: () => void
   onOpenFaq: () => void
   onLogin: () => void
@@ -115,6 +117,9 @@ export function NavMenu({
             <>
               <button onClick={pick(onOpenMessages)} type="button">
                 {t("메시지")}{unreadMessages > 0 && <em>{unreadMessages}</em>}
+              </button>
+              <button onClick={pick(onOpenAgreements)} type="button">
+                {t("협찬 약속서")}
               </button>
               <button onClick={pick(onOpenProfile)} type="button">
                 {t("내 정보")}

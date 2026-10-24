@@ -1,5 +1,34 @@
 import { t } from "../i18n"
 
+// A picked photo as proof for an agreement: at most 1280 pixels on its long
+// side, as WebP (or JPEG), stepping down until it fits the server's limit.
+const photoMaxLength = 280_000
+
+export async function photoFromFile(file: File) {
+  if (!/^image\/(png|jpeg|webp|heic|heif|gif)$/.test(file.type) && file.type !== "") {
+    throw new Error(t("PNG, JPG, WebP 이미지를 골라 주세요."))
+  }
+  const bitmap = await createImageBitmap(file).catch(() => {
+    throw new Error(t("PNG, JPG, WebP 이미지를 골라 주세요."))
+  })
+  for (const edge of [1280, 960, 720, 540]) {
+    const scale = Math.min(1, edge / Math.max(bitmap.width, bitmap.height))
+    const canvas = document.createElement("canvas")
+    canvas.width = Math.round(bitmap.width * scale)
+    canvas.height = Math.round(bitmap.height * scale)
+    const context = canvas.getContext("2d")
+    if (!context) break
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+    for (const quality of [0.82, 0.68]) {
+      for (const type of ["image/webp", "image/jpeg"]) {
+        const url = canvas.toDataURL(type, quality)
+        if (url.startsWith(`data:${type}`) && url.length <= photoMaxLength) return url
+      }
+    }
+  }
+  throw new Error(t("이미지가 너무 커요. 더 작은 이미지를 골라 주세요."))
+}
+
 // A picked image as a small square logo for the listing: drawn centered on
 // white at `size` pixels, as WebP (JPEG where the browser cannot write
 // WebP), stepping down until it fits the server's limit of about 100KB.

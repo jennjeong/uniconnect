@@ -1,0 +1,461 @@
+import { useEffect, useState } from "react"
+
+import { api, ApiError, errorMessage } from "../api"
+import { Icon } from "../components/Icon"
+import { PageIntro } from "../components/PageIntro"
+import { Pill } from "../components/Pill"
+import { t } from "../i18n"
+import { formatDateTime, formatFullDate } from "../lib/date"
+import { photoFromFile } from "../lib/image"
+import type { Agreement, AgreementItem, ChatSide } from "../types"
+import { agreementState } from "./AgreementsPage"
+
+// A proof photo, fetched with the login token (an <img> can't send it) and
+// shown from an object URL; pressing it opens it full size.
+function ProofPhoto({ agreementId, photo, onRemove }: { agreementId: string; photo: string; onRemove?: () => void }) {
+  const [url, setUrl] = useState<string>()
+  useEffect(() => {
+    let objectUrl: string | undefined
+    let cancelled = false
+    api.agreementPhoto(agreementId, photo).then(
+      (blob) => {
+        if (cancelled) return
+        objectUrl = URL.createObjectURL(blob)
+        setUrl(objectUrl)
+      },
+      () => undefined,
+    )
+    return () => {
+      cancelled = true
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+  }, [agreementId, photo])
+  return (
+    <li className="agreement-photo">
+      {url ? (
+        <a href={url} rel="noreferrer" target="_blank">
+          <img alt={t("증빙 사진")} src={url} />
+        </a>
+      ) : (
+        <span aria-hidden="true" className="agreement-photo-wait" />
+      )}
+      {onRemove && (
+        <button aria-label={t("사진 지우기")} className="agreement-remove" onClick={onRemove} type="button">
+          <Icon name="close" size={12} />
+        </button>
+      )}
+    </li>
+  )
+}
+
+// One item: done or not (its own side presses it), then its links and
+// photos, which its own side adds and removes.
+function ItemRow({
+  agreementId,
+  item,
+  mine,
+  busy,
+  onUpdate,
+  onAddPhoto,
+  onRemovePhoto,
+}: {
+  agreementId: string
+  item: AgreementItem
+  mine: boolean
+  busy: boolean
+  onUpdate: (body: { done?: boolean; links?: string[] }) => Promise<boolean>
+  onAddPhoto: (file: File) => void
+  onRemovePhoto: (photo: string) => void
+}) {
+  const [link, setLink] = useState("")
+  // The box ticks at once and goes back if saving fails.
+  const [ticking, setTicking] = useState<boolean>()
+  const tick = async (done: boolean) => {
+    setTicking(done)
+    await onUpdate({ done })
+    setTicking(undefined)
+  }
+  const addLink = async () => {
+    if (!link.trim()) return
+    if (await onUpdate({ links: [...item.links, link.trim()] })) setLink("")
+  }
+  return (
+    <li className={item.doneAt ? "agreement-item done" : "agreement-item"}>
+      <label className="agreement-check">
+        <input
+          checked={ticking ?? Boolean(item.doneAt)}
+          disabled={!mine || busy}
+          onChange={(event) => void tick(event.target.checked)}
+          type="checkbox"
+        />
+        <span>{item.label}</span>
+        {item.doneAt && <small>{t("{date} 완료", { date: formatDateTime(item.doneAt) })}</small>}
+      </label>
+      {(item.links.length > 0 || item.photos.length > 0) && (
+        <div className="agreement-proof">
+          {item.links.length > 0 && (
+            <ul className="agreement-links">
+              {item.links.map((href) => (
+                <li key={href}>
+                  <a href={href} rel="noopener noreferrer" target="_blank">
+                    <Icon name="link" size={14} />
+                    <span>{href.replace(/^https?:\/\//, "")}</span>
+                    <span className="sr-only">{t("(새 창)")}</span>
+                  </a>
+                  {mine && (
+                    <button
+                      aria-label={t("링크 지우기")}
+                      className="agreement-remove"
+                      disabled={busy}
+                      onClick={() => void onUpdate({ links: item.links.filter((entry) => entry !== href) })}
+                      type="button"
+                    >
+                      <Icon name="close" size={12} />
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+          {item.photos.length > 0 && (
+            <ul className="agreement-photos">
+              {item.photos.map((photo) => (
+                <ProofPhoto
+                  agreementId={agreementId}
+                  key={photo}
+                  onRemove={mine ? () => onRemovePhoto(photo) : undefined}
+                  photo={photo}
+                />
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+      {mine && (
+        <div className="agreement-add">
+          <input
+            aria-label={t("{label} 증빙 링크", { label: item.label })}
+            inputMode="url"
+            onChange={(event) => setLink(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault()
+                void addLink()
+              }
+            }}
+            placeholder={t("SNS 게시물이나 사진첩 링크")}
+            type="url"
+            value={link}
+          />
+          <button className="cancel-button" disabled={busy || !link.trim()} onClick={() => void addLink()} type="button">
+            {t("링크 추가")}
+          </button>
+          {item.photos.length < 3 && (
+            <label className="cancel-button agreement-upload">
+              {t("사진 추가")}
+              <input
+                accept="image/*"
+                disabled={busy}
+                onChange={(event) => {
+                  const file = event.target.files?.[0]
+                  event.target.value = ""
+                  if (file) onAddPhoto(file)
+                }}
+                type="file"
+              />
+            </label>
+          )}
+        </div>
+      )}
+    </li>
+  )
+}
+
+type Draft = { id?: string; side: ChatSide; label: string }
+
+// The items being written: each side's list, an item's words, adding and
+// removing. Saving asks both sides to confirm again.
+function ItemsEditor({
+  agreement,
+  busy,
+  onCancel,
+  onSave,
+}: {
+  agreement: Agreement
+  busy: boolean
+  onCancel: () => void
+  onSave: (items: Draft[]) => void
+}) {
+  const [drafts, setDrafts] = useState<Draft[]>(() =>
+    agreement.items.map(({ id, side, label }) => ({ id, side, label })),
+  )
+  const names: Record<ChatSide, string> = { group: agreement.group.name, brand: agreement.brand.name }
+  const update = (index: number, next: Partial<Draft>) =>
+    setDrafts(drafts.map((draft, at) => (at === index ? { ...draft, ...next } : draft)))
+  return (
+    <div className="agreement-editor">
+      <p className="field-hint">{t("고치고 저장하면 두 쪽 모두 다시 확인해야 해요. 그대로 둔 할 일의 링크와 사진은 남아요.")}</p>
+      <ul>
+        {drafts.map((draft, index) => (
+          <li key={draft.id ?? `new-${index}`}>
+            <select
+              aria-label={t("할 사람")}
+              onChange={(event) => update(index, { side: event.target.value as ChatSide })}
+              value={draft.side}
+            >
+              <option value="brand">{names.brand}</option>
+              <option value="group">{names.group}</option>
+            </select>
+            <input
+              aria-label={t("할 일")}
+              maxLength={80}
+              onChange={(event) => update(index, { label: event.target.value })}
+              value={draft.label}
+            />
+            <button
+              aria-label={t("할 일 지우기")}
+              className="agreement-remove"
+              disabled={drafts.length <= 1}
+              onClick={() => setDrafts(drafts.filter((_, at) => at !== index))}
+              type="button"
+            >
+              <Icon name="close" size={12} />
+            </button>
+          </li>
+        ))}
+      </ul>
+      <div className="agreement-editor-actions">
+        {drafts.length < 12 && (
+          <button
+            className="cancel-button"
+            onClick={() => setDrafts([...drafts, { side: agreement.side, label: "" }])}
+            type="button"
+          >
+            <Icon name="plus" size={14} /> {t("할 일 더하기")}
+          </button>
+        )}
+        <span />
+        <button className="cancel-button" onClick={onCancel} type="button">
+          {t("취소")}
+        </button>
+        <button className="primary-button" disabled={busy} onClick={() => onSave(drafts)} type="button">
+          {t("저장")}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// A sponsorship's agreement (협찬 약속서): the two sides, the event and what
+// the brand gives; each side's items to tick off with links and photos as
+// proof; each side's confirmation of the items as they stand; and printing
+// it (or saving it as a PDF from the print dialog).
+export function AgreementPage({
+  id,
+  loggedIn,
+  onBack,
+  onLogin,
+  onError,
+  onNotice,
+}: {
+  id: string
+  loggedIn: boolean
+  onBack: () => void
+  onLogin: () => void
+  onError: (error: unknown) => void
+  onNotice: (message: string) => void
+}) {
+  const [agreement, setAgreement] = useState<Agreement>()
+  const [failed, setFailed] = useState("")
+  const [busy, setBusy] = useState(false)
+  const [editing, setEditing] = useState(false)
+
+  useEffect(() => {
+    if (!loggedIn) return
+    let cancelled = false
+    api.agreement(id).then(
+      (result) => {
+        if (!cancelled) setAgreement(result.agreement)
+      },
+      (error) => {
+        if (!cancelled) setFailed(errorMessage(error))
+      },
+    )
+    return () => {
+      cancelled = true
+    }
+  }, [id, loggedIn])
+
+  // Runs one change; the answer is the agreement as it now stands.
+  const run = async (change: () => Promise<{ agreement: Agreement }>, done?: string) => {
+    setBusy(true)
+    try {
+      setAgreement((await change()).agreement)
+      if (done) onNotice(done)
+      return true
+    } catch (error) {
+      // A photo the browser couldn't read says why in its own words.
+      if (error instanceof ApiError || !(error instanceof Error)) onError(error)
+      else onNotice(error.message)
+      return false
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (!loggedIn || !agreement) {
+    return (
+      <section className="page-view agreement-view">
+        <PageIntro
+          onBack={onBack}
+          eyebrow="Agreement"
+          title={t("협찬 약속서")}
+          description={!loggedIn ? undefined : failed || t("약속서를 불러오고 있어요…")}
+        />
+        {!loggedIn && (
+          <div className="day-empty messages-empty">
+            <p>{t("로그인하면 확정된 협찬의 약속서를 볼 수 있어요.")}</p>
+            <button className="primary-button" onClick={onLogin} type="button">
+              {t("로그인")}
+            </button>
+          </div>
+        )}
+      </section>
+    )
+  }
+
+  const side = agreement.side
+  const other: ChatSide = side === "group" ? "brand" : "group"
+  const state = agreementState(agreement.confirmed, side)
+  const parties = [
+    { side: "brand" as const, role: t("브랜드"), ...agreement.brand },
+    { side: "group" as const, role: t("학생단체"), ...agreement.group },
+  ]
+  // My side's items first.
+  const sections = side === "group" ? [parties[1], parties[0]] : parties
+
+  return (
+    <section className="page-view agreement-view">
+      <PageIntro
+        onBack={onBack}
+        eyebrow="Agreement"
+        title={t("{name} 협찬 약속서", { name: agreement.eventName })}
+        description={`${agreement.group.name} × ${agreement.brand.name}`}
+        actions={
+          <Pill onClick={() => window.print()} variant="outline">
+            {t("인쇄 · PDF 저장")}
+          </Pill>
+        }
+      />
+
+      <article className="agreement-sheet">
+        <dl className="agreement-facts">
+          {parties.map((party) => (
+            <div key={party.side}>
+              <dt>{party.role}</dt>
+              <dd>
+                {party.name}
+                {!party.member && <small>{t("아직 uniconnect 계정이 없어요")}</small>}
+              </dd>
+            </div>
+          ))}
+          <div>
+            <dt>{t("행사")}</dt>
+            <dd>
+              {agreement.eventName}
+              {agreement.eventDate && <small>{formatFullDate(agreement.eventDate)}</small>}
+            </dd>
+          </div>
+          <div>
+            <dt>{t("협찬 내용")}</dt>
+            <dd>{agreement.gives}</dd>
+          </div>
+        </dl>
+
+        <div className="agreement-confirm">
+          <span className={`agreement-state ${state.className}`}>{t(state.label)}</span>
+          <ul>
+            {parties.map((party) => (
+              <li key={party.side}>
+                {party.name}{" "}
+                {agreement.confirmed[party.side] ? (
+                  <strong>{t("{date} 확인", { date: formatDateTime(agreement.confirmed[party.side]!) })}</strong>
+                ) : (
+                  <em>{t("확인 전")}</em>
+                )}
+              </li>
+            ))}
+          </ul>
+          {!agreement.confirmed[side] && !editing && (
+            <Pill
+              disabled={busy}
+              onClick={() =>
+                void run(
+                  () => api.confirmAgreement(agreement.id),
+                  agreement.confirmed[other]
+                    ? t("양쪽 모두 확인했어요.")
+                    : t("확인했어요. {name}에 알렸어요.", { name: agreement[other].name }),
+                )
+              }
+            >
+              {t("이 내용으로 확인하기")}
+            </Pill>
+          )}
+        </div>
+      </article>
+
+      {editing ? (
+        <ItemsEditor
+          agreement={agreement}
+          busy={busy}
+          onCancel={() => setEditing(false)}
+          onSave={(items) =>
+            void run(() => api.saveAgreementItems(agreement.id, items), t("할 일을 고쳤어요. 두 쪽 모두 다시 확인해 주세요.")).then(
+              (saved) => saved && setEditing(false),
+            )
+          }
+        />
+      ) : (
+        <>
+          {sections.map((party) => {
+            const items = agreement.items.filter((item) => item.side === party.side)
+            return (
+              <section className="agreement-section" key={party.side}>
+                <h2>
+                  {t("{name} 할 일", { name: party.name })}
+                  <small>{t("{done}/{total} 완료", { done: items.filter((item) => item.doneAt).length, total: items.length })}</small>
+                </h2>
+                {items.length === 0 ? (
+                  <p className="field-hint">{t("정한 할 일이 없어요.")}</p>
+                ) : (
+                  <ul className="agreement-items">
+                    {items.map((item) => (
+                      <ItemRow
+                        agreementId={agreement.id}
+                        busy={busy}
+                        item={item}
+                        key={item.id}
+                        mine={item.side === side}
+                        onAddPhoto={(file) =>
+                          void run(async () => api.addAgreementPhoto(agreement.id, item.id, await photoFromFile(file)), t("사진을 올렸어요."))
+                        }
+                        onRemovePhoto={(photo) => void run(() => api.removeAgreementPhoto(agreement.id, item.id, photo))}
+                        onUpdate={(body) => run(() => api.updateAgreementItem(agreement.id, item.id, body))}
+                      />
+                    ))}
+                  </ul>
+                )}
+              </section>
+            )
+          })}
+          <div className="agreement-footer">
+            <button className="cancel-button" onClick={() => setEditing(true)} type="button">
+              <Icon name="edit" size={14} /> {t("할 일 고치기")}
+            </button>
+            <p className="field-hint">{t("사진에 다른 사람의 얼굴이 나오면 동의를 받고 올려 주세요.")}</p>
+          </div>
+        </>
+      )}
+    </section>
+  )
+}

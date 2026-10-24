@@ -2,6 +2,7 @@ import { randomBytes, randomInt, randomUUID } from "node:crypto"
 import { Router } from "express"
 
 import { config } from "../config.js"
+import { acceptedProposalsOf, dropOrphanAgreements, removeUploads } from "../lib/agreements.js"
 import { findListing } from "../lib/catalog.js"
 import { emailRuleError, normalizeEmail } from "../lib/email.js"
 import { HttpError } from "../lib/errors.js"
@@ -309,6 +310,8 @@ function removeAccount(database: Database, account: Account) {
     (offer) =>
       offer.fromAccountId !== account.id && (!account.groupId || offer.groupId !== account.groupId),
   )
+  // The agreements about those proposals go too; their photos once saved.
+  const droppedAgreements = dropOrphanAgreements(database)
   // Sponsors keep the results of this account's events as they stand.
   freezeSponsorships(
     database,
@@ -323,7 +326,7 @@ function removeAccount(database: Database, account: Account) {
   delete database.events[account.id]
   delete database.proposals[account.id]
   delete database.sponsorships[account.id]
-  if (!listingId) return
+  if (!listingId) return droppedAgreements
   database.brands = database.brands.filter((listing) => listing.id !== listingId)
   database.groups = database.groups.filter((listing) => listing.id !== listingId)
   database.conversations = database.conversations.filter(
@@ -332,6 +335,7 @@ function removeAccount(database: Database, account: Account) {
   for (const [owner, brandIds] of Object.entries(database.proposals)) {
     database.proposals[owner] = brandIds.filter((brandId) => brandId !== listingId)
   }
+  return droppedAgreements
 }
 
 // Leaving: with the password typed again, the account and everything it
@@ -348,8 +352,9 @@ authRouter.delete("/account", async (req, res) => {
     throw new HttpError(400, "비밀번호가 올바르지 않아요.")
   }
   loginFailures.reset(limitKey)
-  removeAccount(database, account)
+  const droppedAgreements = removeAccount(database, account)
   await saveDatabase()
+  await removeUploads(droppedAgreements)
   res.status(204).end()
 })
 
@@ -434,8 +439,9 @@ authRouter.post("/email", async (req, res) => {
 // Everything the account made or was sent, to keep or move elsewhere (the
 // right to see one's own data): its details without the password, its
 // listing, events, proposals both ways, sponsorships, measurement (without
-// participants' passes or records), conversations, questions and the
-// invitations it sent or joined from.
+// participants' passes or records), conversations, questions, the
+// invitations it sent or joined from, and its sponsorships' agreements (the
+// photos by name).
 authRouter.get("/export", (req, res) => {
   const account = requireAccount(req)
   const database = getDatabase()
@@ -463,6 +469,9 @@ authRouter.get("/export", (req, res) => {
     inquiries: database.inquiries.filter((item) => item.accountId === account.id),
     invites: database.invites.filter(
       (item) => item.accountId === account.id || (account.brandId !== undefined && item.brandId === account.brandId),
+    ),
+    agreements: acceptedProposalsOf(database, account).flatMap(
+      (proposal) => database.agreements.find((item) => item.id === proposal.id) ?? [],
     ),
   })
 })

@@ -194,6 +194,21 @@ const en: Record<string, string> = {
   "이미 다른 브랜드와 연결된 가게예요.": "This shop is already linked to another brand.",
   "이미 다른 가게와 연결된 브랜드예요.": "Your brand is already linked to another shop.",
 
+  // Sponsorship agreements (routes/agreements.ts)
+  "협찬 약속서를 찾을 수 없어요.": "We couldn't find this sponsorship agreement.",
+  "약속한 일을 찾을 수 없어요.": "We couldn't find that item.",
+  "상대가 할 일은 상대만 표시할 수 있어요.": "Only the other side can mark what they do.",
+  "약속할 일을 1개부터 12개까지 적어 주세요.": "Please list from 1 to 12 things to do.",
+  "누가 할 일인지 골라 주세요.": "Please choose who does it.",
+  "할 일을 적어 주세요.": "Please write what is to be done.",
+  "할 일은 80자 이하로 적어 주세요.": "Please keep each item to 80 characters or fewer.",
+  "링크 목록을 다시 확인해 주세요.": "Please check the links again.",
+  "링크는 5개까지 붙일 수 있어요.": "You can add up to 5 links.",
+  "링크는 http:// 또는 https://로 시작하는 주소로 적어 주세요.": "Please enter links that start with http:// or https://.",
+  "사진은 할 일마다 3장까지 올릴 수 있어요.": "You can add up to 3 photos to each item.",
+  "사진은 PNG, JPG, WebP로 올려 주세요.": "Please upload photos as PNG, JPG or WebP.",
+  "사진을 찾을 수 없어요.": "We couldn't find that photo.",
+
   // Last, as patterns are tried in order and this one would also take
   // "{label}과 일정을 입력해 주세요." (routes/auth.ts sign-up names).
   "{label}을 입력해 주세요.": "Please enter the {label}.",

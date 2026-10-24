@@ -24,6 +24,9 @@ export type View = {
   admin?: true
   // A student group's invitation to a shop, by its code (/invite/<code>).
   invite?: string
+  // The account's sponsorship agreements, or one of them by its proposal.
+  agreements?: true
+  agreement?: string
   // An address no screen has, kept as it was typed (the 404 page).
   missing?: string
 }
@@ -71,6 +74,8 @@ export function viewPath(view: View) {
   if (view.legal) return `${base}/${view.legal}`
   if (view.admin) return `${base}/admin`
   if (view.invite) return `${base}/invite/${encodeURIComponent(view.invite)}`
+  if (view.agreement) return `${base}/agreements/${encodeURIComponent(view.agreement)}`
+  if (view.agreements) return `${base}/agreements`
   const path = pagePaths[view.page]
   return `${base}/${view.detail ? `${path}/${encodeURIComponent(view.detail)}` : path}`
 }
@@ -111,6 +116,9 @@ export function readView(location: Location = window.location): View {
     return named ? { page: "대시보드", chat: named } : { page: "대시보드", messages: true }
   }
   if (first === "invite") return named && /^[\w-]+$/.test(named) ? { page: "대시보드", invite: named } : missing
+  if (first === "agreements") {
+    return named ? { page: "대시보드", agreement: named } : { page: "대시보드", agreements: true }
+  }
   const page = (Object.keys(pagePaths) as NavLabel[]).find((label) => pagePaths[label] === first)
   if (!page || (second && !detailPaths.includes(first))) return missing
   return named ? { page, detail: named } : { page }

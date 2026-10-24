@@ -7624,6 +7624,525 @@ button.nav-pill:hover {
   color: var(--green);
 }
 
+/* An accepted proposal's agreement, beside its result. */
+.request-actions .detail-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 16px;
+}
+
+/* Sponsorship agreements (pages/AgreementsPage.tsx and AgreementPage.tsx):
+   a list of silver rows, then one agreement as a silver sheet of facts with
+   the confirmations in a white card, each side's items as white rows with
+   their proof, and an editor for the items. */
+.agreement-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.agreement-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto 18px;
+  align-items: center;
+  gap: 8px 16px;
+  width: 100%;
+  padding: 18px 22px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--silver-gradient);
+  box-shadow: var(--silver-ring);
+  color: var(--ink);
+  text-align: left;
+  transition: box-shadow 0.2s ease;
+}
+
+.agreement-row:hover {
+  box-shadow: var(--silver-ring), 0 10px 26px rgba(19, 48, 111, 0.1);
+}
+
+.agreement-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.agreement-row-main strong {
+  font-size: 17px;
+  font-weight: var(--weight-label);
+}
+
+.agreement-row-main span {
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.agreement-row-counts {
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.agreement-row > .icon {
+  color: var(--muted);
+}
+
+.agreement-state {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: var(--weight-label);
+  white-space: nowrap;
+}
+
+.agreement-state.done {
+  background: var(--point);
+  color: var(--on-point);
+}
+
+.agreement-state.waiting {
+  background: var(--point-tint);
+  color: var(--point-strong);
+}
+
+.agreement-state.todo {
+  background: var(--orange-soft);
+  color: var(--orange);
+}
+
+.agreement-sheet {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+  padding: 28px;
+  border-radius: var(--radius-lg);
+  background: var(--silver-gradient);
+  box-shadow: var(--silver-ring);
+}
+
+.agreement-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 24px;
+  margin: 0;
+}
+
+.agreement-facts dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: var(--weight-label);
+}
+
+.agreement-facts dd {
+  margin: 4px 0 0;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: var(--weight-label);
+}
+
+.agreement-facts dd small {
+  display: block;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: var(--weight-body);
+}
+
+.agreement-confirm {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 20px;
+  border-radius: var(--radius-md);
+  background: #fff;
+  box-shadow: var(--ring);
+}
+
+.agreement-confirm ul {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+  list-style: none;
+}
+
+.agreement-confirm strong {
+  color: var(--point-strong);
+  font-weight: var(--weight-label);
+}
+
+.agreement-confirm em {
+  color: var(--muted);
+  font-style: normal;
+}
+
+.agreement-section {
+  margin-top: 32px;
+}
+
+.agreement-section h2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin: 0 0 12px;
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: var(--weight-display);
+}
+
+.agreement-section h2 small {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.agreement-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.agreement-item {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 18px;
+  border-radius: var(--radius-md);
+  background: #fff;
+  box-shadow: var(--ring);
+}
+
+.agreement-item.done {
+  background: var(--point-soft);
+}
+
+/* The box in its own column, so a long item wraps beside it, and the day
+   it was done under the words. */
+.agreement-check {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: start;
+  gap: 2px 12px;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: var(--weight-label);
+  cursor: pointer;
+}
+
+.agreement-check input {
+  width: 20px;
+  height: 20px;
+  margin: 2px 0 0;
+  accent-color: var(--point);
+}
+
+.agreement-check small {
+  grid-column: 2;
+}
+
+.agreement-check:has(input:disabled) {
+  cursor: default;
+}
+
+.agreement-item.done .agreement-check span {
+  color: var(--point-strong);
+}
+
+.agreement-check small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: var(--weight-body);
+}
+
+.agreement-proof,
+.agreement-add {
+  padding-left: 32px;
+}
+
+.agreement-proof {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.agreement-links {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.agreement-links li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.agreement-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--point-strong);
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.agreement-links a:hover {
+  text-decoration: underline;
+}
+
+.agreement-links a span:not(.sr-only) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agreement-photos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.agreement-photo {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--fill);
+}
+
+.agreement-photo a,
+.agreement-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.agreement-photo img {
+  object-fit: cover;
+}
+
+.agreement-photo .agreement-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+}
+
+.agreement-remove {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(43, 51, 67, 0.72);
+  color: #fff;
+}
+
+.agreement-links .agreement-remove,
+.agreement-editor .agreement-remove {
+  background: var(--fill);
+  color: var(--ink-soft);
+}
+
+.agreement-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.agreement-add input[type='url'] {
+  flex: 1 1 220px;
+  min-width: 0;
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.agreement-add .cancel-button {
+  height: 40px;
+  padding: 0 16px;
+  font-size: 13px;
+}
+
+/* The file picker is the whole button, invisible over it. */
+.agreement-upload {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.agreement-upload input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.agreement-upload:focus-within {
+  outline: 2px solid var(--point-bright);
+  outline-offset: 2px;
+}
+
+.agreement-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.agreement-footer .cancel-button,
+.agreement-editor-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 42px;
+  padding: 0 18px;
+}
+
+.agreement-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.agreement-editor ul {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.agreement-editor li {
+  display: grid;
+  grid-template-columns: minmax(120px, 200px) minmax(0, 1fr) 24px;
+  align-items: center;
+  gap: 8px;
+}
+
+.agreement-editor select,
+.agreement-editor input {
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.agreement-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.agreement-editor-actions span {
+  flex: 1;
+}
+
+@media (max-width: 720px) {
+  .agreement-row {
+    grid-template-columns: minmax(0, 1fr) 18px;
+  }
+
+  .agreement-row > .icon {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+  }
+
+  .agreement-sheet {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 20px;
+  }
+
+  .agreement-facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .agreement-proof,
+  .agreement-add {
+    padding-left: 0;
+  }
+
+  .agreement-editor li {
+    grid-template-columns: minmax(0, 1fr) 24px;
+  }
+
+  .agreement-editor li select {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Printing an agreement (인쇄 · PDF 저장): the sheet and the items, without
+   the site around them or the buttons. */
+@media print {
+  body:has(.agreement-view) .site-header,
+  body:has(.agreement-view) .site-footer,
+  .agreement-view .intro-actions,
+  .agreement-view .back-pill,
+  .agreement-view .agreement-add,
+  .agreement-view .agreement-footer,
+  .agreement-view .agreement-confirm .pill,
+  .agreement-view .agreement-remove {
+    display: none !important;
+  }
+
+  .agreement-view .agreement-sheet,
+  .agreement-view .agreement-item,
+  .agreement-view .agreement-confirm {
+    border: 1px solid var(--line-strong);
+    box-shadow: none;
+    break-inside: avoid;
+  }
+
+  .agreement-view .agreement-photo {
+    width: 72px;
+    height: 72px;
+  }
+}
+
 .request-result .icon {
   stroke: currentColor;
   stroke-linecap: round;

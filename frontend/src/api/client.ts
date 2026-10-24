@@ -38,11 +38,22 @@ export function setToken(token: string | null) {
 }
 
 type RequestOptions = {
-  method?: "GET" | "POST" | "PUT" | "DELETE"
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
   body?: unknown
   query?: Record<string, string>
   // Extra headers, such as the operators' X-Admin-Token.
   headers?: Record<string, string>
+}
+
+// A file the API serves only to a logged-in account (an agreement's photo),
+// as a blob for an object URL, since an <img> can't send the token.
+export async function requestBlob(path: string): Promise<Blob> {
+  const token = getToken()
+  const response = await fetch(`${API_BASE}/api${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  }).catch(() => undefined)
+  if (!response?.ok) throw new ApiError(response?.status ?? 0, unreachable)
+  return response.blob()
 }
 
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {

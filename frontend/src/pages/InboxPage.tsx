@@ -25,9 +25,11 @@ const tabs: { status: RequestStatus; label: string; empty: string }[] = [
 function RequestCard({
   request,
   onAnswer,
+  onOpenAgreement,
 }: {
   request: SponsorRequest
   onAnswer: (request: SponsorRequest, decision: "accept" | "decline") => void
+  onOpenAgreement: (id: string) => void
 }) {
   // Declining can't be undone, so it asks once more.
   const [confirming, setConfirming] = useState(false)
@@ -101,11 +103,18 @@ function RequestCard({
             </>
           )
         ) : (
-          <span className={request.status === "수락" ? "request-result confirmed" : "request-result"}>
-            {request.status === "수락" && <Icon name="check" size={15} />}
-            {request.status === "수락" ? t("협찬 확정") : t("거절한 제안")}
-            {request.respondedAt && <small>{formatDateTime(request.respondedAt)}</small>}
-          </span>
+          <>
+            <span className={request.status === "수락" ? "request-result confirmed" : "request-result"}>
+              {request.status === "수락" && <Icon name="check" size={15} />}
+              {request.status === "수락" ? t("협찬 확정") : t("거절한 제안")}
+              {request.respondedAt && <small>{formatDateTime(request.respondedAt)}</small>}
+            </span>
+            {request.status === "수락" && (
+              <button className="detail-button" onClick={() => onOpenAgreement(request.id)} type="button">
+                <Icon name="file" size={15} /> {t("약속서")}
+              </button>
+            )}
+          </>
         )}
       </div>
       {request.status === "수락" && (
@@ -119,9 +128,12 @@ function RequestCard({
 export function InboxPage({
   requests,
   onAnswer,
+  onOpenAgreement,
 }: {
   requests: SponsorRequest[]
   onAnswer: (request: SponsorRequest, decision: "accept" | "decline") => void
+  // An accepted proposal's agreement (pages/AgreementPage.tsx).
+  onOpenAgreement: (id: string) => void
 }) {
   const [tab, setTab] = useState<RequestStatus>("검토 중")
   const current = tabs.find((item) => item.status === tab) ?? tabs[0]
@@ -157,7 +169,7 @@ export function InboxPage({
       ) : (
         <div className="request-grid stagger" key={tab}>
           {list.map((request) => (
-            <RequestCard key={request.id} onAnswer={onAnswer} request={request} />
+            <RequestCard key={request.id} onAnswer={onAnswer} onOpenAgreement={onOpenAgreement} request={request} />
           ))}
         </div>
       )}
