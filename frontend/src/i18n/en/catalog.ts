@@ -289,6 +289,41 @@ const en: Record<string, string> = {
     "We haven't found this address on the map yet, so no distance shows. Enter a street address and save again.",
   "학생단체에게 학교에서 매장까지의 거리를 보여 드려요. 온라인 브랜드는 비워 두세요.":
     "Student groups see how far your store is from their school. Leave it empty if you're online only.",
+  // Inviting the shops on 가까운 순, the map of them, and the invitation page
+  "uniconnect 가입": "On uniconnect",
+  초대함: "Invited",
+  초대하기: "Invite",
+  "초대장 다시 보기": "See invitation",
+  "{name} 초대하기": "Invite {name}",
+  "{name} 초대장 다시 보기": "See the invitation to {name}",
+  "보기 방식": "View",
+  목록: "List",
+  지도: "Map",
+  "{campus} 주변 가게 지도": "Map of shops around {campus}",
+  "{name}, {distance}, {state}": "{name}, {distance}, {state}",
+  "uniconnect 초대장": "uniconnect invitation",
+  "학생단체가 보낸 초대예요. 가게로 가입하면 근처 학생단체의 협찬 제안을 받고, 행사 날 쿠폰과 방문 성과를 확인할 수 있어요.":
+    "An invitation from a student group. Join as a shop to get sponsorship proposals from groups nearby and see the coupons and visits from their events.",
+  "초대장을 불러오고 있어요…": "Loading the invitation…",
+  홈으로: "Go home",
+  "{name}에서 초대했어요": "{name} invited you",
+  "학교 근처 가게와 협찬을 함께하고 싶어 해요. uniconnect에 가게로 가입하면 이 단체의 협찬 제안을 받을 수 있어요.":
+    "They'd like to team up with a shop near their school. Join uniconnect as a shop to get their sponsorship proposals.",
+  "초대받은 가게를 카카오맵에서 확인하기": "Check the invited shop on Kakao Map",
+  "근처 학생단체의 협찬 제안을 받고, 수락하거나 거절해요.": "Get sponsorship proposals from student groups nearby, and accept or decline them.",
+  "행사 날 참여자가 받은 쿠폰을 매장에서 확인하고 손님을 맞아요.": "On the event day, check the coupons participants got and welcome them at your store.",
+  "쿠폰, 방문, 예상 매출을 성과 분석에서 확인해요.": "See coupons, visits and estimated sales in Analytics.",
+  "연결됐어요. 이제 {name}의 협찬 제안을 받을 수 있어요.": "Linked. You can now get sponsorship proposals from {name}.",
+  "받은 제안 보기": "See proposals",
+  "가게 소개 쓰기": "Write your shop's profile",
+  "이 가게는 이미 uniconnect에 가입했어요.": "This shop is already on uniconnect.",
+  "가게로 가입하기": "Join as a shop",
+  "이미 계정이 있어요": "I have an account",
+  "가입은 회사나 가게 이메일로 해요. 네이버, 지메일 같은 개인 메일은 받지 않아요.":
+    "Sign up with a company or shop email. Personal addresses such as Naver or Gmail aren't accepted.",
+  "우리 가게로 연결하기": "Link to my shop",
+  "가게 사장님께 이 링크를 보내 주세요. 사장님이 가게로 가입하면 연결돼요.":
+    "Send this link to the shop's owner. The shop is linked once they join.",
 }
 
 export default en

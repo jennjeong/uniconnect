@@ -294,6 +294,13 @@ function removeAccount(database: Database, account: Account) {
   database.sessions = database.sessions.filter((session) => session.accountId !== account.id)
   database.emailCodes = database.emailCodes.filter((entry) => entry.email !== account.email)
   database.inquiries = database.inquiries.filter((inquiry) => inquiry.accountId !== account.id)
+  // A group's invitations go; shops a leaving brand had joined from are open again.
+  database.invites = database.invites.filter((invite) => invite.accountId !== account.id)
+  for (const invite of database.invites) {
+    if (!account.brandId || invite.brandId !== account.brandId) continue
+    delete invite.brandId
+    delete invite.acceptedAt
+  }
   database.requests = database.requests.filter(
     (request) =>
       request.fromAccountId !== account.id && (!account.brandId || request.brandId !== account.brandId),
@@ -427,7 +434,8 @@ authRouter.post("/email", async (req, res) => {
 // Everything the account made or was sent, to keep or move elsewhere (the
 // right to see one's own data): its details without the password, its
 // listing, events, proposals both ways, sponsorships, measurement (without
-// participants' passes or records), conversations and questions.
+// participants' passes or records), conversations, questions and the
+// invitations it sent or joined from.
 authRouter.get("/export", (req, res) => {
   const account = requireAccount(req)
   const database = getDatabase()
@@ -453,6 +461,9 @@ authRouter.get("/export", (req, res) => {
       ? database.conversations.filter((item) => item.groupId === listing.id || item.brandId === listing.id)
       : [],
     inquiries: database.inquiries.filter((item) => item.accountId === account.id),
+    invites: database.invites.filter(
+      (item) => item.accountId === account.id || (account.brandId !== undefined && item.brandId === account.brandId),
+    ),
   })
 })
 

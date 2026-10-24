@@ -32,6 +32,9 @@ export type Match = {
   // Brand catalog only: the store's address, and its coordinates once a map
   // service has placed it.
   location?: { address: string; lat?: number; lng?: number }
+  // Brand catalog only: the shop on Kakao Map this brand is, once it joined
+  // from a student group's invitation.
+  kakaoPlaceId?: string
   // Km from the account browsing (its campus or store); absent when either
   // place is unknown.
   distanceKm?: number
@@ -59,11 +62,43 @@ export type NearbyPlace = {
   distanceM: number
   // Its page on Kakao Map.
   url: string
+  // Where it is, for the map on screen only, and the kind it was found
+  // under (data/places.ts).
+  lat: number
+  lng: number
+  kind: string
+  // The student group looking invited it.
+  invited?: true
+  // The brand it joined as, from an invitation.
+  brandId?: string
 }
 
 // map is false while the server has no map key; campus is null for a school
-// not on the map.
-export type NearbyPlaces = { map: boolean; campus: string | null; places: NearbyPlace[] }
+// not on the map. center is the campus's point, with the shops.
+export type NearbyPlaces = {
+  map: boolean
+  campus: string | null
+  center?: { lat: number; lng: number }
+  places: NearbyPlace[]
+}
+
+// A student group's invitation to a shop (/invite/<code>).
+export type ShopInvite = {
+  code: string
+  placeId: string
+  placeUrl: string
+  createdAt: string
+  acceptedAt?: string
+  brandId?: string
+}
+
+// The invitation page: who invited (their listing, or only a name and
+// school before they wrote one) and whether the shop joined, as the brand
+// looking ("you") or another.
+export type InvitePageData = {
+  invite: { code: string; placeUrl: string; createdAt: string; joined: "you" | "other" | null }
+  group?: Partial<Match> & { name: string; category: string }
+}
 
 export type ProfileDraft = Pick<Match, "intro" | "offer" | "tags" | "facts" | "sns" | "portfolio"> & {
   logo?: string | null
@@ -324,6 +359,7 @@ export type ModalName =
   | "measure-goals"
   | "password"
   | "email"
+  | "invite"
   | "metric-log"
   | "goal"
   | "ask"

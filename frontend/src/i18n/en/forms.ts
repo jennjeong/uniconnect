@@ -224,6 +224,19 @@ const en: Record<string, string> = {
   "리포트를 PDF로 받을 수 있나요?": "Can I get a report as a PDF?",
   "네. 학생단체는 리포트 페이지의 ‘PDF 리포트 다운로드’, 브랜드는 성과 분석의 ‘분석 보고서 다운로드’로 받아요. 브랜드 보고서에는 전체 요약과 협찬마다의 성과 페이지가 담겨요.":
     "Yes. Student groups use ‘Download PDF report’ on Reports; brands use ‘Download report’ in Analytics. The brand report has an overall summary plus a page for each sponsorship.",
+  // Inviting a shop (modals/InviteShopModal.tsx)
+  "사장님이 이 초대장으로 가입하면 가게가 uniconnect 브랜드가 되고, 바로 협찬 제안을 보낼 수 있어요.":
+    "Once the owner joins with this invitation, the shop becomes a brand on uniconnect and you can send it a proposal right away.",
+  "{name} 초대장 QR 코드": "QR code of the invitation to {name}",
+  "가게에서 직접 보여 드리면 사장님이 휴대폰 카메라로 바로 열 수 있어요.":
+    "Show it at the shop and the owner can open it with their phone's camera.",
+  "받는 분을 위해 한국어로 적었어요. 고쳐서 보내도 돼요.": "It's written in Korean for the owner. Feel free to edit it.",
+  "초대 링크를 복사했어요.": "Invitation link copied.",
+  공유하기: "Share",
+  "메시지 복사": "Copy message",
+  "메시지를 복사했어요. 카카오톡이나 문자로 보내 주세요.": "Message copied. Send it by KakaoTalk or text.",
+  "복사하지 못했어요. 직접 선택해서 복사해 주세요.": "Couldn't copy. Please select it and copy it yourself.",
+  "공유하지 못했어요. 메시지를 복사해서 보내 주세요.": "Couldn't share. Please copy the message and send it.",
 }
 
 export default en

@@ -8,7 +8,7 @@ import { TabBar } from "../components/TabBar"
 import { WorkCard } from "../components/WorkCard"
 import { t } from "../i18n"
 import { matchesQuery } from "../lib/search"
-import type { Industry, Match, RequestStatus } from "../types"
+import type { Industry, Match, NearbyPlace, RequestStatus } from "../types"
 
 type Tab = "추천" | "가까운 순" | "인기" | "전체" | "업종별"
 
@@ -21,7 +21,7 @@ const tabIntro: Record<Tab, { title: string; caption: string }> = {
   },
   "가까운 순": {
     title: "학교에서 가까운 가게예요",
-    caption: "카카오 지도에서 지금 찾은 학교 주변의 실제 가게예요. 아직 uniconnect와 협약하지 않은 곳이라, 지도나 전화로 먼저 연락해 보세요.",
+    caption: "카카오 지도에서 지금 찾은 학교 주변의 실제 가게예요. 아직 uniconnect와 협약하지 않은 곳은 초대장을 보내 가입을 권해 보세요.",
   },
   인기: {
     title: "학생단체가 많이 찾는 브랜드예요",
@@ -57,6 +57,7 @@ export function MatchesPage({
   onOpenDetail,
   onPropose,
   onCancelProposal,
+  onInvite,
 }: {
   // Top picks for the group's events.
   matches: Match[]
@@ -67,6 +68,8 @@ export function MatchesPage({
   onOpenDetail: (match: Match) => void
   onPropose: (match: Match) => void
   onCancelProposal: (match: Match) => void
+  // Invites a shop from 가까운 순 (true once the invitation exists).
+  onInvite: (place: NearbyPlace) => Promise<boolean>
 }) {
   const [tab, setTab] = useState<Tab>("추천")
   // Cards slide in from the side the picked tab or chip lies on.
@@ -142,9 +145,17 @@ export function MatchesPage({
         )}
       </div>
 
-      {/* The nearest are real shops from Kakao, not yet on uniconnect, in their own list. */}
+      {/* The nearest are real shops from Kakao, mostly not on uniconnect yet, in their own list. */}
       {tab === "가까운 순" ? (
-        <NearbyPlaces />
+        <NearbyPlaces
+          brands={brands}
+          onCancelProposal={onCancelProposal}
+          onInvite={onInvite}
+          onOpenDetail={onOpenDetail}
+          onPropose={onPropose}
+          proposals={proposals}
+          statuses={statuses}
+        />
       ) : shown.length === 0 && query.trim() ? (
         <p className="day-empty">{t("찾는 브랜드가 없어요. 다른 낱말로 찾아보세요.")}</p>
       ) : (

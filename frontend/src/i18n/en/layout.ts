@@ -12,6 +12,8 @@ const en: Record<string, string> = {
   "로그인하면 등록한 행사를 관리할 수 있어요.": "Log in to manage your events.",
   "목록에서 삭제했어요.": "Removed from the list.",
   "{name} 상세 흐름을 열었어요.": "Opened the details for {name}.",
+  "로그인하면 가게를 초대할 수 있어요.": "Log in to invite shops.",
+  "가게를 연결했어요. {name}에 알렸어요.": "Your shop is linked. We let {name} know.",
   "로그인하면 협찬 제안을 보낼 수 있어요.": "Log in to send a sponsorship proposal.",
   "{name}에 협찬 제안을 보냈어요.": "Proposal sent to {name}.",
   "{name}에 보낸 제안을 취소했어요.": "Withdrew your proposal to {name}.",

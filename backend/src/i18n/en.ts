@@ -184,6 +184,16 @@ const en: Record<string, string> = {
   "쿠폰 번호를 찾을 수 없어요. 다시 확인해 주세요.": "We couldn't find the coupon number. Please check it again.",
   "이미 방문이 확인된 쿠폰이에요.": "A visit has already been confirmed for this coupon.",
 
+  // Invitations to shops (routes/invites.ts)
+  "학생단체 계정으로 가게를 초대할 수 있어요.": "Only student group accounts can invite shops.",
+  "초대할 가게를 다시 골라 주세요.": "Please pick the shop to invite again.",
+  "가게는 100곳까지 초대할 수 있어요.": "You can invite up to 100 shops.",
+  "초대 링크를 찾을 수 없어요. 링크를 다시 확인해 주세요.": "We couldn't find this invitation. Please check the link.",
+  "브랜드 계정으로 가게를 연결할 수 있어요.": "Only brand accounts can link a shop.",
+  "데모 계정은 가게를 연결할 수 없어요.": "The demo accounts can't link a shop.",
+  "이미 다른 브랜드와 연결된 가게예요.": "This shop is already linked to another brand.",
+  "이미 다른 가게와 연결된 브랜드예요.": "Your brand is already linked to another shop.",
+
   // Last, as patterns are tried in order and this one would also take
   // "{label}과 일정을 입력해 주세요." (routes/auth.ts sign-up names).
   "{label}을 입력해 주세요.": "Please enter the {label}.",

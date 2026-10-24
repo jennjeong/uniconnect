@@ -36,6 +36,10 @@ export type Match = {
   // Brand catalog only: the store, as its address and, once a map service
   // has placed it (lib/geocode.ts), its coordinates.
   location?: { address: string; lat?: number; lng?: number }
+  // Brand catalog only: the shop on Kakao Map this brand is, once it joined
+  // from a student group's invitation (ShopInvite). Kakao allows keeping a
+  // place's ID, not what its search says about the place.
+  kakaoPlaceId?: string
   // Km from the account browsing (its campus or store) to this listing,
   // worked out when the catalog is served (lib/geo.ts); absent when either
   // place is unknown.
@@ -342,6 +346,21 @@ export type Inquiry = {
   answeredAt?: string
 }
 
+// A student group's invitation to a shop it found on 추천 매칭's 가까운 순,
+// sent as a link (/invite/<code>). Kakao allows keeping only a place's ID
+// and its Kakao Map page, so that is all it holds about the shop.
+export type ShopInvite = {
+  code: string
+  // The student group account that invited.
+  accountId: string
+  placeId: string
+  placeUrl: string
+  createdAt: string
+  // Once a brand account took it: when, and that brand's listing.
+  acceptedAt?: string
+  brandId?: string
+}
+
 export type Database = {
   accounts: Account[]
   sessions: Session[]
@@ -367,4 +386,6 @@ export type Database = {
   demoAccountIds: Record<Role, string>
   // One per event that has been measured or opened for measuring.
   measurements: Measurement[]
+  // Shops student groups invited from 가까운 순.
+  invites: ShopInvite[]
 }

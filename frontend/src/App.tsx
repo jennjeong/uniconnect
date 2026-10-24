@@ -20,7 +20,7 @@ import { Footer } from "./layout/Footer"
 import { Header } from "./layout/Header"
 import { NavMenu } from "./layout/NavMenu"
 import { t, tc } from "./i18n"
-import { todayIso } from "./lib/date"
+import { nextEvent, todayIso } from "./lib/date"
 import { reportKpis, type KpiKey } from "./lib/kpis"
 import { defaultMeasurement } from "./lib/measurements"
 import { brandNotifications, studentNotifications } from "./lib/notifications"
@@ -35,6 +35,7 @@ import { GoalsModal } from "./modals/GoalsModal"
 import { LeaveModal } from "./modals/LeaveModal"
 import { LoginModal } from "./modals/LoginModal"
 import { EmailChangeModal } from "./modals/EmailChangeModal"
+import { InviteShopModal } from "./modals/InviteShopModal"
 import { PasswordModal } from "./modals/PasswordModal"
 import { ResetPasswordModal } from "./modals/ResetPasswordModal"
 import { MetricLogModal } from "./modals/MetricLogModal"
@@ -51,6 +52,7 @@ import { FaqPage } from "./pages/FaqPage"
 import { LegalPage } from "./pages/LegalPage"
 import { GroupsPage } from "./pages/GroupsPage"
 import { InboxPage } from "./pages/InboxPage"
+import { InvitePage } from "./pages/InvitePage"
 import { ChatPage } from "./pages/ChatPage"
 import { MatchDetailPage } from "./pages/MatchDetailPage"
 import { MatchesPage } from "./pages/MatchesPage"
@@ -73,6 +75,7 @@ import type {
   Metrics,
   ModalName,
   NavLabel,
+  NearbyPlace,
   ProfileDraft,
   Role,
   Session,
@@ -97,12 +100,14 @@ function App() {
   // Visitors preview either role (the one the address belongs to, at first);
   // a logged-in account always uses its own.
   const [previewRole, setPreviewRole] = useState<Role>(
-    () => roleOfPage(initialView.page) ?? "학생단체",
+    () => (initialView.invite ? "브랜드" : roleOfPage(initialView.page) ?? "학생단체"),
   )
   // Role pre-selected when the login or sign-up form opens.
   const [authRole, setAuthRole] = useState<Role>("학생단체")
   // The email the login form had when 비밀번호 찾기 opened.
   const [resetEmail, setResetEmail] = useState("")
+  // The shop a student group is inviting and its invitation's code.
+  const [inviting, setInviting] = useState<{ place: NearbyPlace; code: string } | null>(null)
   const [matches, setMatches] = useState<Match[]>([])
   const [events, setEvents] = useState<EventItem[]>([])
   const [proposals, setProposals] = useState<string[]>([])
@@ -446,7 +451,7 @@ function App() {
   const startSession = (session: Session, message: string) => {
     setToken(session.token)
     setAccount(session.account)
-    go({ page: "대시보드" }, true)
+    go(view.invite ? view : { page: "대시보드" }, true)
     setActiveModal(null)
     showNotice(message)
   }
@@ -561,6 +566,24 @@ function App() {
       showNotice(t("{name}에 협찬 제안을 보냈어요.", { name: match.name }))
     } catch (error) {
       handleError(error)
+    }
+  }
+
+  // A student group invites a shop from 가까운 순; true once the invitation
+  // exists, so its card says 초대함.
+  const inviteShop = async (place: NearbyPlace) => {
+    if (!account) {
+      requireLogin(t("로그인하면 가게를 초대할 수 있어요."))
+      return false
+    }
+    try {
+      const { invite } = await api.inviteShop(place.id)
+      setInviting({ place, code: invite.code })
+      setActiveModal("invite")
+      return true
+    } catch (error) {
+      handleError(error)
+      return false
     }
   }
 
@@ -777,6 +800,23 @@ function App() {
     if (view.faq) return <FaqPage account={account} onLogin={() => openAuth("login")} />
     if (view.admin) return <AdminPage onNotice={showNotice} />
     if (view.legal) return <LegalPage kind={view.legal} onSwitch={(legal) => openLegal(legal)} />
+    if (view.invite) {
+      return (
+        <InvitePage
+          account={account}
+          code={view.invite}
+          onAccepted={(next, group) => {
+            setListing(next)
+            showNotice(t("가게를 연결했어요. {name}에 알렸어요.", { name: group }))
+          }}
+          onEditProfile={() => go({ page, profile: "edit" })}
+          onError={handleError}
+          onLogin={() => openAuth("login", "브랜드")}
+          onNavigate={navigate}
+          onSignup={() => openAuth("signup", "브랜드")}
+        />
+      )
+    }
     if (creating !== null) {
       return (
         <EventCreatePage
@@ -855,6 +895,7 @@ function App() {
             onOpenDetail={openDetail}
             onPropose={propose}
             onCancelProposal={cancelProposal}
+            onInvite={inviteShop}
           />
         )
       case "내 행사":
@@ -1032,6 +1073,8 @@ function App() {
                   ? `legal-${view.legal}`
                   : view.admin
                     ? "admin"
+                  : view.invite
+                    ? `invite-${view.invite}`
                   : creating !== null
               ? "create"
               : profileOpen
@@ -1197,6 +1240,19 @@ function App() {
           }}
         />
       </Presence>
+      {account && inviting && (
+        <Presence show={activeModal === "invite"}>
+          <InviteShopModal
+            code={inviting.code}
+            event={nextEvent(events)}
+            group={listing?.name ?? account.name}
+            onClose={closeModal}
+            onNotice={showNotice}
+            place={inviting.place}
+            school={listing?.school ?? account.school}
+          />
+        </Presence>
+      )}
       <Presence show={activeModal === "reset"}>
         <ResetPasswordModal
           initialEmail={resetEmail}

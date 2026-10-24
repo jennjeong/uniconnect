@@ -16,6 +16,7 @@ import { conversationsRouter } from "./routes/conversations.js"
 import { eventsRouter } from "./routes/events.js"
 import { groupsRouter } from "./routes/groups.js"
 import { inquiriesRouter } from "./routes/inquiries.js"
+import { invitesRouter } from "./routes/invites.js"
 import { matchesRouter } from "./routes/matches.js"
 import { measurementsRouter } from "./routes/measurements.js"
 import { offersRouter } from "./routes/offers.js"
@@ -93,6 +94,7 @@ export function createApp() {
   app.use("/api/analytics", analyticsRouter)
   app.use("/api/profile", profileRouter)
   app.use("/api/places", placesRouter)
+  app.use("/api/invites", invitesRouter)
   app.use("/api/conversations", conversationsRouter)
   app.use("/api/inquiries", inquiriesRouter)
   app.use("/api/admin", adminRouter)
