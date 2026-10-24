@@ -1,6 +1,8 @@
 import type {
   Account,
   AdminInquiry,
+  Agreement,
+  AgreementSummary,
   CheckInInfo,
   Conversation,
   EventItem,
@@ -23,7 +25,7 @@ import type {
   SponsorRequest,
   Sponsorship,
 } from "../types"
-import { request } from "./client"
+import { request, requestBlob } from "./client"
 
 export { ApiError, errorMessage, getToken, setToken } from "./client"
 
@@ -130,6 +132,29 @@ export const api = {
 
   nearbyPlaces: (category: string) =>
     request<NearbyPlaces>(`/places?category=${encodeURIComponent(category)}`),
+  agreements: () => request<{ agreements: AgreementSummary[] }>("/agreements"),
+  agreement: (id: string) => request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}`),
+  saveAgreementItems: (id: string, items: { id?: string; side: Agreement["side"]; label: string }[]) =>
+    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/items`, { method: "PUT", body: { items } }),
+  confirmAgreement: (id: string) =>
+    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/confirm`, { method: "POST" }),
+  updateAgreementItem: (id: string, itemId: string, body: { done?: boolean; links?: string[] }) =>
+    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/items/${encodeURIComponent(itemId)}`, {
+      method: "PATCH",
+      body,
+    }),
+  addAgreementPhoto: (id: string, itemId: string, image: string) =>
+    request<{ agreement: Agreement }>(
+      `/agreements/${encodeURIComponent(id)}/items/${encodeURIComponent(itemId)}/photos`,
+      { method: "POST", body: { image } },
+    ),
+  removeAgreementPhoto: (id: string, itemId: string, photo: string) =>
+    request<{ agreement: Agreement }>(
+      `/agreements/${encodeURIComponent(id)}/items/${encodeURIComponent(itemId)}/photos/${encodeURIComponent(photo)}`,
+      { method: "DELETE" },
+    ),
+  agreementPhoto: (id: string, photo: string) =>
+    requestBlob(`/agreements/${encodeURIComponent(id)}/photos/${encodeURIComponent(photo)}`),
   inviteShop: (placeId: string) =>
     request<{ invite: ShopInvite }>("/invites", { method: "POST", body: { placeId } }),
   invite: (code: string) => request<InvitePageData>(`/invites/${encodeURIComponent(code)}`),

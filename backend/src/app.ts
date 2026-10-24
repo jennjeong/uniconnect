@@ -8,6 +8,7 @@ import { HttpError } from "./lib/errors.js"
 import { langOf, translate } from "./lib/i18n.js"
 import { readSession } from "./middleware/session.js"
 import { adminRouter } from "./routes/admin.js"
+import { agreementsRouter } from "./routes/agreements.js"
 import { analyticsRouter } from "./routes/analytics.js"
 import { authRouter } from "./routes/auth.js"
 import { brandsRouter } from "./routes/brands.js"
@@ -95,6 +96,7 @@ export function createApp() {
   app.use("/api/profile", profileRouter)
   app.use("/api/places", placesRouter)
   app.use("/api/invites", invitesRouter)
+  app.use("/api/agreements", agreementsRouter)
   app.use("/api/conversations", conversationsRouter)
   app.use("/api/inquiries", inquiriesRouter)
   app.use("/api/admin", adminRouter)

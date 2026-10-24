@@ -37,6 +37,9 @@ describe("the server's page list matches the screens", () => {
     "/invite/a/b",
     "/invite/%E0",
     "/invite/a.b",
+    "/agreements",
+    "/agreements/req-runners",
+    "/agreements/a/b",
   ])("%s gets the same answer from both", (path) => {
     expect(isAppPath(path)).toBe(readView(at(path)).missing === undefined)
   })

@@ -346,6 +346,33 @@ export type Inquiry = {
   answeredAt?: string
 }
 
+// One thing a side of an accepted proposal promised, and the proof that it
+// was done: links (an SNS post, say) and photos kept on disk beside the
+// data file (uploads/<agreement id>/<photo id>).
+export type AgreementItem = {
+  id: string
+  // Who does it.
+  side: ChatSide
+  label: string
+  doneAt?: string
+  links: string[]
+  photos: string[]
+}
+
+// The terms of an accepted proposal (협찬 약속서), with the proposal's id:
+// what each side does, when each side confirmed the terms as they stand,
+// and the proof as it is done. Made the first time either side opens it.
+export type Agreement = {
+  id: string
+  // A student group's proposal answered by the brand, or a brand's offer.
+  kind: "request" | "offer"
+  items: AgreementItem[]
+  // Changing the items clears both.
+  confirmed: Partial<Record<ChatSide, string>>
+  createdAt: string
+  updatedAt: string
+}
+
 // A student group's invitation to a shop it found on 추천 매칭's 가까운 순,
 // sent as a link (/invite/<code>). Kakao allows keeping only a place's ID
 // and its Kakao Map page, so that is all it holds about the shop.
@@ -388,4 +415,6 @@ export type Database = {
   measurements: Measurement[]
   // Shops student groups invited from 가까운 순.
   invites: ShopInvite[]
+  // The terms and proof of accepted proposals, by the proposal's id.
+  agreements: Agreement[]
 }

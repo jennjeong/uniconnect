@@ -26,11 +26,13 @@ function OfferCard({
   offer,
   brand,
   onAnswer,
+  onOpenAgreement,
 }: {
   offer: SponsorOffer
   // The brand's listing, for its logo.
   brand?: Match
   onAnswer: (offer: SponsorOffer, decision: "accept" | "decline") => void
+  onOpenAgreement: (id: string) => void
 }) {
   // Declining can't be undone, so it asks once more.
   const [confirming, setConfirming] = useState(false)
@@ -96,11 +98,18 @@ function OfferCard({
             </>
           )
         ) : (
-          <span className={offer.status === "수락" ? "request-result confirmed" : "request-result"}>
-            {offer.status === "수락" && <Icon name="check" size={15} />}
-            {offer.status === "수락" ? t("협찬 확정") : t("거절한 제안")}
-            {offer.respondedAt && <small>{formatDateTime(offer.respondedAt)}</small>}
-          </span>
+          <>
+            <span className={offer.status === "수락" ? "request-result confirmed" : "request-result"}>
+              {offer.status === "수락" && <Icon name="check" size={15} />}
+              {offer.status === "수락" ? t("협찬 확정") : t("거절한 제안")}
+              {offer.respondedAt && <small>{formatDateTime(offer.respondedAt)}</small>}
+            </span>
+            {offer.status === "수락" && (
+              <button className="detail-button" onClick={() => onOpenAgreement(offer.id)} type="button">
+                <Icon name="file" size={15} /> {t("약속서")}
+              </button>
+            )}
+          </>
         )}
       </div>
       {offer.status === "수락" && (
@@ -115,10 +124,13 @@ export function OffersPage({
   offers,
   brands,
   onAnswer,
+  onOpenAgreement,
 }: {
   offers: SponsorOffer[]
   brands: Match[]
   onAnswer: (offer: SponsorOffer, decision: "accept" | "decline") => void
+  // An accepted offer's agreement (pages/AgreementPage.tsx).
+  onOpenAgreement: (id: string) => void
 }) {
   const [tab, setTab] = useState<RequestStatus>("검토 중")
   const current = tabs.find((item) => item.status === tab) ?? tabs[0]
@@ -159,6 +171,7 @@ export function OffersPage({
               key={offer.id}
               offer={offer}
               onAnswer={onAnswer}
+              onOpenAgreement={onOpenAgreement}
             />
           ))}
         </div>

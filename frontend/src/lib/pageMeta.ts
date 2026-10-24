@@ -116,6 +116,18 @@ export function pageMeta(
   if (view.admin) {
     return { title: titled(t("운영자 화면")), description: t("도움말 센터로 들어온 질문을 확인하고 답해요.") }
   }
+  if (view.agreement) {
+    return {
+      title: titled(t("협찬 약속서")),
+      description: t("학생단체와 브랜드가 협찬으로 할 일을 함께 정하고 확인하고, 한 일을 링크와 사진으로 남겨요."),
+    }
+  }
+  if (view.agreements) {
+    return {
+      title: titled(t("협찬 약속서")),
+      description: t("확정된 협찬마다 약속서를 확인하고, 할 일이 얼마나 끝났는지 봐요."),
+    }
+  }
   if (view.invite) {
     return {
       title: titled(t("uniconnect 초대장")),

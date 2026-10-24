@@ -25,4 +25,6 @@ export const sampleViews: View[] = [
   { page: "대시보드", legal: "privacy" },
   { page: "대시보드", admin: true },
   { page: "대시보드", invite: "Ab3_x-9Z" },
+  { page: "대시보드", agreements: true },
+  { page: "대시보드", agreement: "req-runners" },
 ]

@@ -236,3 +236,31 @@ test("a shop a student group invited joins as a brand from the invitation", asyn
   const { brands } = (await (await request.get("/api/brands")).json()) as { brands: { name: string; kakaoPlaceId?: string }[] }
   expect(brands.some((brand) => brand.name === "골목 카페" && brand.kakaoPlaceId === "12345678")).toBe(true)
 })
+
+test("a brand opens an accepted proposal's agreement, confirms it and proves what it did", async ({ page }) => {
+  await page.goto("/")
+  await logIn(page, "브랜드", "hello@afternoon-coffee.kr")
+  await page.goto("/inbox")
+  await page.getByRole("tab", { name: /수락함/ }).click()
+  await page.locator(".request-card", { hasText: "서울여대 러너스" }).getByRole("button", { name: "약속서" }).click()
+  await expect(page.getByRole("heading", { name: "가을 캠퍼스 런 5K 협찬 약속서" })).toBeVisible()
+  await expect(page.getByText("아직 uniconnect 계정이 없어요")).toBeVisible()
+
+  await page.getByRole("button", { name: "이 내용으로 확인하기" }).click()
+  await expect(page.locator(".agreement-confirm .agreement-state")).toHaveText("상대 확인 기다리는 중")
+
+  // The brand ticks its first item and proves it with a link and a photo.
+  const item = page.locator(".agreement-item").first()
+  await item.getByRole("checkbox").check()
+  await expect(item.getByRole("checkbox")).toBeChecked()
+  await item.getByRole("textbox").fill("https://instagram.com/p/e2e-proof")
+  await item.getByRole("button", { name: "링크 추가" }).click()
+  await expect(item.getByRole("link", { name: /instagram\.com\/p\/e2e-proof/ })).toBeVisible()
+  const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64")
+  await item.getByLabel("사진 추가").setInputFiles({ name: "proof.png", mimeType: "image/png", buffer: png })
+  await expect(item.getByRole("img", { name: "증빙 사진" })).toBeVisible()
+
+  // The list shows how far it is.
+  await page.goto("/agreements")
+  await expect(page.locator(".agreement-row", { hasText: "서울여대 러너스" })).toContainText("증빙 2개")
+})

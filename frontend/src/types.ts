@@ -82,6 +82,51 @@ export type NearbyPlaces = {
   places: NearbyPlace[]
 }
 
+// The two sides of a sponsorship (backend ChatSide).
+export type ChatSide = "group" | "brand"
+
+// One thing a side of an accepted proposal promised, with its proof: links
+// and photos (fetched with the login token, api.agreementPhoto).
+export type AgreementItem = {
+  id: string
+  side: ChatSide
+  label: string
+  doneAt?: string
+  links: string[]
+  photos: string[]
+}
+
+// A sponsorship's agreement (협찬 약속서) as one side sees it: the two sides
+// (member when they have an account), the event, what the brand gives, the
+// items, and when each side confirmed them as they stand.
+export type Agreement = {
+  id: string
+  kind: "request" | "offer"
+  side: ChatSide
+  group: { name: string; member: boolean }
+  brand: { name: string; member: boolean }
+  eventName: string
+  eventDate: string
+  gives: string
+  items: AgreementItem[]
+  confirmed: Partial<Record<ChatSide, string>>
+  createdAt: string
+  updatedAt: string
+}
+
+// One line of the agreements list.
+export type AgreementSummary = {
+  id: string
+  side: ChatSide
+  partner: string
+  eventName: string
+  eventDate: string
+  confirmed: Partial<Record<ChatSide, string>>
+  done: number
+  total: number
+  proof: number
+}
+
 // A student group's invitation to a shop (/invite/<code>).
 export type ShopInvite = {
   code: string
