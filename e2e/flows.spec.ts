@@ -149,3 +149,21 @@ test("가까운 순 looks around the school for real shops, and says so while th
   await expect(page.getByText("지도 서비스가 연결되면 학교 근처 가게를 보여 드려요.")).toBeVisible()
 })
 
+test("brands and student groups can be searched and filtered", async ({ page }) => {
+  await page.goto("/matches")
+  await page.getByRole("tab", { name: "전체" }).click()
+  const brandSearch = page.getByRole("searchbox", { name: "브랜드 검색" })
+  await brandSearch.fill("커피")
+  await expect(page.locator(".work-card", { hasText: "오후의 커피" })).toBeVisible()
+  await expect(page.locator(".work-card", { hasText: "그린데이 샐러드" })).toHaveCount(0)
+  await brandSearch.fill("없는낱말")
+  await expect(page.getByText("찾는 브랜드가 없어요.", { exact: false })).toBeVisible()
+
+  await page.goto("/groups")
+  await page.getByRole("tab", { name: "전체" }).click()
+  await page.getByLabel("학교", { exact: true }).selectOption("광운대학교")
+  await expect(page.locator(".work-card")).toHaveCount(2)
+  await page.getByRole("button", { name: "조건 지우기" }).click()
+  await expect(page.locator(".work-card")).toHaveCount(8)
+})
+
