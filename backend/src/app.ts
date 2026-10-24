@@ -25,6 +25,7 @@ import { placesRouter } from "./routes/places.js"
 import { profileRouter } from "./routes/profile.js"
 import { proposalsRouter } from "./routes/proposals.js"
 import { requestsRouter } from "./routes/requests.js"
+import { reviewsRouter } from "./routes/reviews.js"
 
 export function createApp() {
   const app = express()
@@ -97,6 +98,7 @@ export function createApp() {
   app.use("/api/places", placesRouter)
   app.use("/api/invites", invitesRouter)
   app.use("/api/agreements", agreementsRouter)
+  app.use("/api/reviews", reviewsRouter)
   app.use("/api/conversations", conversationsRouter)
   app.use("/api/inquiries", inquiriesRouter)
   app.use("/api/admin", adminRouter)

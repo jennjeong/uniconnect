@@ -264,3 +264,63 @@ test("a brand opens an accepted proposal's agreement, confirms it and proves wha
   await page.goto("/agreements")
   await expect(page.locator(".agreement-row", { hasText: "서울여대 러너스" })).toContainText("증빙 2개")
 })
+
+test("visitors see a partner's reviews, and a group reviews the brand after its event", async ({ page, request }) => {
+  // The seeded reviews, on the card and the detail page.
+  await page.goto("/matches")
+  await expect(page.locator(".work-card", { hasText: "오후의 커피" }).first().locator(".tag-rating")).toContainText("후기 2")
+  await page.goto("/matches/afternoon-coffee")
+  const reviews = page.locator(".reviews-section")
+  await expect(reviews.getByRole("heading", { name: "함께한 파트너의 후기" })).toBeVisible()
+  await expect(reviews.locator(".reviews-summary strong")).toHaveText("4.5")
+  await expect(reviews.locator(".review-card")).toHaveCount(2)
+
+  // A new group's event today, proposed to the demo brand and accepted (through the API).
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date())
+  const email = "e2e-reviewer@syu.ac.kr"
+  const code = (await (await request.post("/api/auth/email-code", { data: { role: "학생단체", email } })).json()) as { devCode: string }
+  const verified = (await (
+    await request.post("/api/auth/email-code/verify", { data: { email, code: code.devCode } })
+  ).json()) as { verificationToken: string }
+  const signup = await request.post("/api/auth/signup", {
+    data: {
+      role: "학생단체",
+      name: "후기 동아리",
+      type: "공연 동아리",
+      school: "삼육대학교",
+      email,
+      password: "e2e-pass-123",
+      verificationToken: verified.verificationToken,
+      agreedToTerms: true,
+      over14: true,
+    },
+  })
+  const { token } = (await signup.json()) as { token: string }
+  const asGroup = { Authorization: `Bearer ${token}` }
+  await request.post("/api/events", { data: { name: "후기 공연", date: today, people: "100명", types: ["제품"] }, headers: asGroup })
+  await request.post("/api/proposals", { data: { matchId: "afternoon-coffee" }, headers: asGroup })
+  const brandLogin = await request.post("/api/auth/login", {
+    data: { role: "브랜드", email: "hello@afternoon-coffee.kr", password: demoPassword },
+  })
+  const asBrand = { Authorization: `Bearer ${((await brandLogin.json()) as { token: string }).token}` }
+  const inbox = (await (await request.get("/api/requests", { headers: asBrand })).json()) as {
+    requests: { id: string; groupName: string }[]
+  }
+  const proposal = inbox.requests.find((item) => item.groupName === "후기 동아리")!
+  await request.post(`/api/requests/${proposal.id}/accept`, { headers: asBrand })
+
+  // On the agreement, the group leaves its review.
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), token)
+  await page.goto(`/agreements/${proposal.id}`)
+  const panel = page.locator(".review-panel")
+  await panel.getByRole("radio", { name: "5점" }).check()
+  await panel.getByRole("checkbox", { name: "약속을 잘 지켜요" }).check()
+  await panel.getByLabel("한 줄 후기").fill("커피가 공연 전에 딱 맞춰 왔어요.")
+  await panel.getByRole("button", { name: "후기 남기기" }).click()
+  await expect(panel.getByText("내가 남긴 후기")).toBeVisible()
+
+  // It shows on the brand's page.
+  await page.goto("/matches/afternoon-coffee")
+  await expect(page.locator(".reviews-section .review-card")).toHaveCount(3)
+  await expect(page.locator(".reviews-section").getByText("커피가 공연 전에 딱 맞춰 왔어요.")).toBeVisible()
+})

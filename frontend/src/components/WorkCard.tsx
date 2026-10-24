@@ -7,13 +7,15 @@ import { BrandMark } from "./BrandMark"
 import { DateLine } from "./DateLine"
 import { Icon } from "./Icon"
 import { ScoreRing } from "./ScoreRing"
+import { Stars } from "./Stars"
 
 // A brand or student group as one of Stride's silver cards from
 // getlayers.ai: what it is at the top with a round badge that opens its
 // page, its mark large on a white glow in the middle, then the name and the
 // offer with the score ring centered beside them, a group's event date, how
-// far it is (when both places are known), tags and the card's actions along
-// the bottom. The card lifts a little on hover.
+// far it is (when both places are known), its reviews' stars (when it has
+// any), tags and the card's actions along the bottom. The card lifts a
+// little on hover.
 export function WorkCard({
   match,
   meta,
@@ -78,6 +80,13 @@ export function WorkCard({
               {formatDistance(match.distanceKm)}
             </span>
           )}
+          {match.reviewCount ? (
+            <span className="tag-rating">
+              <Stars rating={match.rating ?? 0} size={12} />
+              {match.rating?.toFixed(1)}
+              <small>{t("후기 {count}", { count: match.reviewCount })}</small>
+            </span>
+          ) : null}
           {tags ??
             match.tags.map((tag) => (
               <span key={tag}>{tag}</span>

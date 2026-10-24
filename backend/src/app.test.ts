@@ -2327,6 +2327,87 @@ test("both sides of an accepted proposal keep an agreement, confirm it and prove
   assert.ok(!existsSync(uploadsFolder(request.id)))
 })
 
+test("after the event each side reviews the other, and the reviews show on the listing", async () => {
+  const { todayInKorea } = await import("./lib/dates.js")
+  type Summary = { count: number; average: number; tags: { tag: string; count: number }[] }
+  const about = async (id: string) =>
+    (await call("GET", `/reviews?about=${id}`)).data as { summary: Summary; reviews: Record<string, unknown>[] }
+
+  // The seeded reviews, for anyone, without who wrote them behind the name.
+  const seeded = await about("afternoon-coffee")
+  assert.deepEqual([seeded.summary.count, seeded.summary.average], [2, 4.5])
+  assert.equal(seeded.reviews[0].authorName, "삼육대 뮤즈")
+  assert.equal(seeded.reviews[0].proposalId, undefined)
+  assert.equal(seeded.reviews[0].authorAccountId, undefined)
+  const brands = (await call("GET", "/brands")).data.brands as { id: string; rating?: number; reviewCount?: number }[]
+  const coffee = brands.find((brand) => brand.id === "afternoon-coffee")!
+  assert.deepEqual([coffee.rating, coffee.reviewCount], [4.5, 2])
+  assert.equal(brands.find((brand) => brand.id === "freshon")!.reviewCount, undefined)
+
+  // A group's event today, proposed to the demo brand and accepted.
+  const group = await signUpMember("review-club@syu.ac.kr", "review-pass-123")
+  const groupId = getDatabase().accounts.find((account) => account.email === "review-club@syu.ac.kr")!.id
+  await call("POST", "/events", { name: "후기 공연", date: todayInKorea(), people: "100명", types: ["제품"] }, group)
+  assert.equal((await call("POST", "/proposals", { matchId: "afternoon-coffee" }, group)).status, 201)
+  const request = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
+  const brand = await login("브랜드")
+  await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+  const route = `/reviews/${request.id}`
+
+  assert.equal((await call("PUT", route, { rating: 5 })).status, 401)
+  assert.equal((await call("PUT", "/reviews/req-movement", { rating: 5 }, group)).status, 404)
+  // Not before the event's day.
+  const day = request.eventDate
+  request.eventDate = "2099-01-01"
+  assert.equal((await call("PUT", route, { rating: 5 }, group)).status, 409)
+  assert.equal((await call("GET", `/agreements/${request.id}`, undefined, group)).data.agreement.review.canWrite, false)
+  request.eventDate = day
+  for (const body of [
+    { rating: 0 },
+    { rating: 4.5 },
+    { rating: 5, tags: ["약속을 잘 지켜요", "응답이 빨라요", "협찬 물품이 좋아요", "다시 함께하고 싶어요"] },
+    // A tag for reviewing a group, not a brand.
+    { rating: 5, tags: ["홍보를 잘해요"] },
+    { rating: 5, tags: "약속을 잘 지켜요" },
+    { rating: 5, comment: "가".repeat(301) },
+  ]) {
+    assert.equal((await call("PUT", route, body, group)).status, 400, JSON.stringify(body).slice(0, 60))
+  }
+  const written = await call("PUT", route, { rating: 5, tags: ["약속을 잘 지켜요", "약속을 잘 지켜요"], comment: "  커피가 맛있었어요.  " }, group)
+  assert.equal(written.status, 201)
+  assert.deepEqual(written.data.review.tags, ["약속을 잘 지켜요"])
+  assert.equal(written.data.review.comment, "커피가 맛있었어요.")
+  assert.equal(written.data.review.authorName, "review-club 동아리")
+  // The shared demo accounts can't write reviews anyone would see.
+  assert.equal((await call("PUT", route, { rating: 1 }, brand)).status, 403)
+
+  // Each side sees its own review and the other's on the agreement.
+  const forGroup = (await call("GET", `/agreements/${request.id}`, undefined, group)).data.agreement.review
+  assert.deepEqual([forGroup.open, forGroup.canWrite, forGroup.mine.rating, forGroup.theirs], [true, true, 5, undefined])
+  const forBrand = (await call("GET", `/agreements/${request.id}`, undefined, brand)).data.agreement.review
+  assert.deepEqual([forBrand.canWrite, forBrand.theirs.comment], [false, "커피가 맛있었어요."])
+
+  // Writing again changes the one review.
+  const rewritten = await call("PUT", route, { rating: 4, tags: [], comment: "" }, group)
+  assert.equal(rewritten.status, 200)
+  assert.ok(rewritten.data.review.updatedAt)
+  const after = await about("afternoon-coffee")
+  assert.deepEqual([after.summary.count, after.summary.average], [3, 4.3])
+  assert.equal(after.reviews[0].authorName, "review-club 동아리")
+
+  // The data download holds it; deleting it takes it off the listing.
+  assert.equal((await call("GET", "/auth/export", undefined, group)).data.reviews.length, 1)
+  assert.equal((await call("DELETE", route, undefined, group)).status, 204)
+  assert.equal((await call("DELETE", route, undefined, group)).status, 404)
+  assert.equal((await about("afternoon-coffee")).summary.count, 2)
+
+  // Leaving takes the reviews it wrote with it.
+  await call("PUT", route, { rating: 5 }, group)
+  assert.equal((await about("afternoon-coffee")).summary.count, 3)
+  assert.equal((await call("DELETE", "/auth/account", { password: "review-pass-123" }, group)).status, 204)
+  assert.equal((await about("afternoon-coffee")).summary.count, 2)
+})
+
 test("operators see the platform's figures, real members' apart from the demo data", async () => {
   type Figures = Record<string, { real: number; total: number }>
   const stats = async (token = "test-admin-token") => {

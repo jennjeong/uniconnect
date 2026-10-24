@@ -18,6 +18,8 @@ import type {
   ProfileDraft,
   Report,
   RequestStatus,
+  Review,
+  ReviewSummary,
   Role,
   Session,
   ShopInvite,
@@ -155,6 +157,12 @@ export const api = {
     ),
   agreementPhoto: (id: string, photo: string) =>
     requestBlob(`/agreements/${encodeURIComponent(id)}/photos/${encodeURIComponent(photo)}`),
+  reviews: (about: string) =>
+    request<{ summary: ReviewSummary; reviews: Review[] }>("/reviews", { query: { about } }),
+  saveReview: (proposalId: string, body: { rating: number; tags: string[]; comment: string }) =>
+    request<{ review: Review }>(`/reviews/${encodeURIComponent(proposalId)}`, { method: "PUT", body }),
+  deleteReview: (proposalId: string) =>
+    request<void>(`/reviews/${encodeURIComponent(proposalId)}`, { method: "DELETE" }),
   inviteShop: (placeId: string) =>
     request<{ invite: ShopInvite }>("/invites", { method: "POST", body: { placeId } }),
   invite: (code: string) => request<InvitePageData>(`/invites/${encodeURIComponent(code)}`),

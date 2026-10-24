@@ -102,7 +102,7 @@ agreementsRouter.get("/:id", async (req, res) => {
   const { database, proposal, side } = opened(req)
   const { agreement, created } = agreementFor(database, proposal)
   if (created) await saveDatabase()
-  res.json({ agreement: agreementView(agreement, proposal, side) })
+  res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 
 // Either side writes what each will do. An item kept keeps its proof; a
@@ -146,7 +146,7 @@ agreementsRouter.put("/:id/items", async (req, res) => {
       `/agreements/${encodeURIComponent(agreement.id)}`,
     )
   }
-  res.json({ agreement: agreementView(agreement, proposal, side) })
+  res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 
 // A side confirms the items as they stand; the other side hears about it.
@@ -164,7 +164,7 @@ agreementsRouter.post("/:id/confirm", async (req, res) => {
     [`${account.name}에서 '${proposal.eventName}' 협찬 약속서를 확인했어요.`],
     `/agreements/${encodeURIComponent(agreement.id)}`,
   )
-  res.json({ agreement: agreementView(agreement, proposal, side) })
+  res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 
 // The side an item belongs to marks it done (or not yet) and keeps its links.
@@ -177,7 +177,7 @@ agreementsRouter.patch("/:id/items/:itemId", async (req, res) => {
   if (req.body?.done === false) delete item.doneAt
   agreement.updatedAt = new Date().toISOString()
   await saveDatabase()
-  res.json({ agreement: agreementView(agreement, proposal, side) })
+  res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 
 // A photo as proof, kept on disk; three per item.
@@ -203,7 +203,7 @@ agreementsRouter.post("/:id/items/:itemId/photos", async (req, res) => {
     await rm(file, { force: true })
     throw error
   }
-  res.status(201).json({ agreement: agreementView(agreement, proposal, side) })
+  res.status(201).json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 
 agreementsRouter.delete("/:id/items/:itemId/photos/:photo", async (req, res) => {
@@ -215,7 +215,7 @@ agreementsRouter.delete("/:id/items/:itemId/photos/:photo", async (req, res) => 
   agreement.updatedAt = new Date().toISOString()
   await saveDatabase()
   await rm(path.join(uploadsFolder(proposal.id), photo), { force: true })
-  res.json({ agreement: agreementView(agreement, proposal, side) })
+  res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 
 // A photo, for the two sides only; the page fetches it with the login token.

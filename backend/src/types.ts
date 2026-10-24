@@ -40,6 +40,10 @@ export type Match = {
   // from a student group's invitation (ShopInvite). Kakao allows keeping a
   // place's ID, not what its search says about the place.
   kakaoPlaceId?: string
+  // Its sponsorship reviews, worked out when the catalog is served: the
+  // average stars (one decimal) and how many.
+  rating?: number
+  reviewCount?: number
   // Km from the account browsing (its campus or store) to this listing,
   // worked out when the catalog is served (lib/geo.ts); absent when either
   // place is unknown.
@@ -373,6 +377,28 @@ export type Agreement = {
   updatedAt: string
 }
 
+// One side's review of the other after a sponsorship's event: stars, up to
+// three of the listed tags (validation.ts reviewTags) and a short comment,
+// shown on the reviewed listing's detail page. One per side per accepted
+// proposal; seeded ones have no proposal or author account.
+export type Review = {
+  // `${proposalId}:${side}`.
+  id: string
+  proposalId: string
+  // The side writing it.
+  side: ChatSide
+  // The listing it is about.
+  aboutId: string
+  authorAccountId?: string
+  authorName: string
+  eventName: string
+  rating: number
+  tags: string[]
+  comment: string
+  createdAt: string
+  updatedAt?: string
+}
+
 // A student group's invitation to a shop it found on 추천 매칭's 가까운 순,
 // sent as a link (/invite/<code>). Kakao allows keeping only a place's ID
 // and its Kakao Map page, so that is all it holds about the shop.
@@ -417,4 +443,5 @@ export type Database = {
   invites: ShopInvite[]
   // The terms and proof of accepted proposals, by the proposal's id.
   agreements: Agreement[]
+  reviews: Review[]
 }

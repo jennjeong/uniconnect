@@ -209,6 +209,17 @@ const en: Record<string, string> = {
   "사진은 PNG, JPG, WebP로 올려 주세요.": "Please upload photos as PNG, JPG or WebP.",
   "사진을 찾을 수 없어요.": "We couldn't find that photo.",
 
+  // Sponsorship reviews (routes/reviews.ts)
+  "후기를 쓸 협찬을 찾을 수 없어요.": "We couldn't find the sponsorship to review.",
+  "데모 계정은 후기를 쓸 수 없어요.": "The demo accounts can't write reviews.",
+  "행사 날부터 후기를 쓸 수 있어요.": "You can write a review from the day of the event.",
+  "상대의 소개가 아직 없어서 후기를 남길 수 없어요.": "The other side has no profile yet, so a review can't be left.",
+  "별점을 1부터 5까지 골라 주세요.": "Please choose from 1 to 5 stars.",
+  "고를 수 없는 태그예요.": "That tag can't be chosen.",
+  "태그는 3개까지 고를 수 있어요.": "You can choose up to 3 tags.",
+  "후기는 300자 이하로 적어 주세요.": "Please keep the review to 300 characters or fewer.",
+  "지울 후기가 없어요.": "There's no review to delete.",
+
   // Last, as patterns are tried in order and this one would also take
   // "{label}과 일정을 입력해 주세요." (routes/auth.ts sign-up names).
   "{label}을 입력해 주세요.": "Please enter the {label}.",

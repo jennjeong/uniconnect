@@ -35,6 +35,9 @@ export type Match = {
   // Brand catalog only: the shop on Kakao Map this brand is, once it joined
   // from a student group's invitation.
   kakaoPlaceId?: string
+  // Its sponsorship reviews: the average stars and how many, when it has any.
+  rating?: number
+  reviewCount?: number
   // Km from the account browsing (its campus or store); absent when either
   // place is unknown.
   distanceKm?: number
@@ -112,7 +115,25 @@ export type Agreement = {
   confirmed: Partial<Record<ChatSide, string>>
   createdAt: string
   updatedAt: string
+  // Reviews open from the event's day; canWrite is false for the demo
+  // accounts and when the other side has no listing to show it on.
+  review: { open: boolean; canWrite: boolean; mine?: Review; theirs?: Review }
 }
+
+// A review one side of a sponsorship wrote about the other after the event.
+export type Review = {
+  authorName: string
+  side: ChatSide
+  eventName: string
+  rating: number
+  tags: string[]
+  comment: string
+  createdAt: string
+  updatedAt?: string
+}
+
+// A listing's reviews in short.
+export type ReviewSummary = { count: number; average: number; tags: { tag: string; count: number }[] }
 
 // One line of the agreements list.
 export type AgreementSummary = {
