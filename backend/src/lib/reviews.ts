@@ -33,7 +33,7 @@ export const reviewsAbout = (database: Database, listingId: string) =>
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 
 // A listing's reviews in short: how many, the average stars to one decimal
-// and the three tags picked most.
+// and how many picked each tag, the most picked first.
 export function reviewSummary(reviews: Review[]) {
   const count = reviews.length
   const average = count ? Math.round((reviews.reduce((sum, review) => sum + review.rating, 0) / count) * 10) / 10 : 0
@@ -41,7 +41,6 @@ export function reviewSummary(reviews: Review[]) {
   for (const review of reviews) for (const tag of review.tags) picked.set(tag, (picked.get(tag) ?? 0) + 1)
   const tags = [...picked]
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-    .slice(0, 3)
     .map(([tag, times]) => ({ tag, count: times }))
   return { count, average, tags }
 }

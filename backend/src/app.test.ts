@@ -1539,11 +1539,23 @@ test("matches are worked out for the account browsing, with reasons", async () =
   // The demo group has sponsored with 오후의 커피 before, which leads its reasons.
   const coffee = forVisitors.find((brand: { id: string }) => brand.id === "afternoon-coffee")
   assert.equal(coffee.reasons[0], "함께한 협찬이 있어요")
+  // Each part of the score as a share of its best, for the detail page's bars.
+  type Part = { label: string; value: number }
+  assert.deepEqual(
+    coffee.scoreParts.map((part: Part) => part.label),
+    ["업종 궁합", "관심사", "협찬 경험", "함께한 이력", "응답 준비"],
+  )
+  assert.ok(coffee.scoreParts.every((part: Part) => part.value >= 0 && part.value <= 1))
+  assert.equal(coffee.scoreParts[3].value, 1)
 
   // A new brand's listing is scored like any other, not left at its first 70.
   const groups = (await call("GET", "/groups")).data.groups
   const muse = groups.find((group: { id: string }) => group.id === "syu-muse")
   assert.ok(muse.reasons.length > 0)
+  assert.deepEqual(
+    muse.scoreParts.map((part: Part) => part.label),
+    ["업종 궁합", "관심사", "행사 규모", "함께한 이력", "가까운 행사"],
+  )
   const brand = await login("브랜드")
   const forBrand = (await call("GET", "/groups", undefined, brand)).data.groups
   assert.equal(forBrand[0].id, "syu-muse")
@@ -2364,6 +2376,11 @@ test("after the event each side reviews the other, and the reviews show on the l
   // The seeded reviews, for anyone, without who wrote them behind the name.
   const seeded = await about("afternoon-coffee")
   assert.deepEqual([seeded.summary.count, seeded.summary.average], [2, 4.5])
+  // How many picked each tag, the most picked first, for the page's bars.
+  assert.deepEqual(
+    seeded.summary.tags.map((item) => item.tag),
+    ["다시 함께하고 싶어요", "매장 응대가 친절해요", "약속을 잘 지켜요", "응답이 빨라요"],
+  )
   assert.equal(seeded.reviews[0].authorName, "삼육대 뮤즈")
   assert.equal(seeded.reviews[0].proposalId, undefined)
   assert.equal(seeded.reviews[0].authorAccountId, undefined)

@@ -68,7 +68,8 @@ function viewerListing({ account, listing }: Viewer): Match {
 }
 
 // One partner's match for the viewer, 55 to 98, with the reasons that
-// count most. Weights: industry fit 35, shared tags 15, track record 20,
+// count most and each part as a share of its best (0 to 1, the detail
+// page's bars). Weights: industry fit 35, shared tags 15, track record 20,
 // sponsored together before 15, ready to answer 15.
 export function scoreMatch(database: Database, viewer: Viewer, partner: Match, maxPopularity: number) {
   const mine = viewerListing(viewer)
@@ -93,13 +94,19 @@ export function scoreMatch(database: Database, viewer: Viewer, partner: Match, m
   const together = mine.id ? workedTogether(database, brand, group) : false
 
   const parts = [
-    { weight: 35, value: industryFit(group.industry, brand.industry), reason: "업종 궁합이 좋아요" },
-    { weight: 15, value: Math.min(1, shared / 2), reason: "관심사가 겹쳐요" },
-    { weight: 20, value: record, reason: students ? "협찬 경험이 많아요" : "행사 규모가 커요" },
-    { weight: 15, value: together ? 1 : 0, reason: "함께한 협찬이 있어요" },
+    { weight: 35, value: industryFit(group.industry, brand.industry), label: "업종 궁합", reason: "업종 궁합이 좋아요" },
+    { weight: 15, value: Math.min(1, shared / 2), label: "관심사", reason: "관심사가 겹쳐요" },
+    {
+      weight: 20,
+      value: record,
+      label: students ? "협찬 경험" : "행사 규모",
+      reason: students ? "협찬 경험이 많아요" : "행사 규모가 커요",
+    },
+    { weight: 15, value: together ? 1 : 0, label: "함께한 이력", reason: "함께한 협찬이 있어요" },
     {
       weight: 15,
       value: 0.5 * ready + 0.5 * (partnerHasAccount ? 1 : 0),
+      label: students ? "응답 준비" : "가까운 행사",
       reason: students ? "제안에 바로 답할 수 있어요" : "가까운 행사가 있어요",
     },
   ]
@@ -111,5 +118,6 @@ export function scoreMatch(database: Database, viewer: Viewer, partner: Match, m
     .sort((a, b) => rank(b) - rank(a))
     .slice(0, 2)
     .map((part) => part.reason)
-  return { score: Math.round(55 + 43 * total), reasons }
+  const scoreParts = parts.map((part) => ({ label: part.label, value: Math.round(part.value * 100) / 100 }))
+  return { score: Math.round(55 + 43 * total), reasons, scoreParts }
 }
