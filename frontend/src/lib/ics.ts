@@ -15,9 +15,10 @@ export type CalendarEntry = {
 const escapeText = (text: string) =>
   text.replace(/\\/g, "\\\\").replace(/;/g, "\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n")
 
-const compact = (date: string) => date.replace(/-/g, "")
+export const compact = (date: string) => date.replace(/-/g, "")
 
-function nextDay(date: string) {
+// The day after a "YYYY-MM-DD" date: where an all-day entry ends.
+export function nextDay(date: string) {
   const day = new Date(`${date}T00:00:00Z`)
   day.setUTCDate(day.getUTCDate() + 1)
   return day.toISOString().slice(0, 10)

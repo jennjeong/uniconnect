@@ -45,9 +45,30 @@ const en: Record<string, string> = {
   "협찬 · {name}": "Sponsoring · {name}",
   "캘린더에 넣을 다가오는 일정이 없어요.": "There are no upcoming dates to add to a calendar.",
   "uniconnect 행사 일정": "uniconnect events",
-  "캘린더 파일을 내려받았어요. 캘린더 앱에서 열면 일정이 추가돼요.":
-    "Calendar file downloaded. Open it in your calendar app to add the dates.",
   "캘린더에 추가": "Add to calendar",
+  // modals/CalendarModal.tsx, lib/calendarApps.ts
+  "어떤 캘린더 앱을 쓰세요? 고른 앱이 열리고, 거기서 일정을 추가할 수 있어요.":
+    "Which calendar app do you use? It opens, and you add the dates there.",
+  "캘린더 앱": "Calendar app",
+  "Google 캘린더": "Google Calendar",
+  "Apple 캘린더": "Apple Calendar",
+  Outlook: "Outlook",
+  "다른 캘린더 앱": "Another calendar app",
+  "안드로이드 · 웹": "Android · Web",
+  "iPhone · iPad · Mac": "iPhone · iPad · Mac",
+  "웹 · 앱": "Web · App",
+  "삼성 캘린더 · 네이버 캘린더 등": "Samsung Calendar, Naver Calendar and others",
+  "일정을 하나씩 열어요. {app}의 일정 추가 화면이 새 창이나 앱으로 열려요.":
+    "Open the dates one by one. {app}'s add-event page opens in a new tab or its app.",
+  "{title} {app}에서 열기": "Open {title} in {app}",
+  열기: "Open",
+  "일정 {count}개를 한 번에 넣어요. 캘린더 파일이 열리면 앱에서 추가를 눌러 주세요.":
+    "All {count} dates go in at once. When the calendar file opens, press Add in the app.",
+  "캘린더 앱 열기": "Open the calendar app",
+  "캘린더 파일을 열면 Apple 캘린더가 열리고, 거기서 일정을 추가할 수 있어요.":
+    "Open the calendar file and Apple Calendar opens to add the dates.",
+  "캘린더 파일을 열면 쓰는 캘린더 앱이 열리고, 거기서 일정을 추가할 수 있어요.":
+    "Open the calendar file and your calendar app opens to add the dates.",
   "가게를 연결했어요. {name}에 알렸어요.": "Your shop is linked. We let {name} know.",
   "로그인하면 협찬 제안을 보낼 수 있어요.": "Log in to send a sponsorship proposal.",
   "{name}에 협찬 제안을 보냈어요.": "Proposal sent to {name}.",

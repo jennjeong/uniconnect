@@ -583,8 +583,20 @@ test("the app can be installed, and the calendar gives its dates to calendar app
   })
   await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), token)
   await page.goto("/events")
-  const download = page.waitForEvent("download")
   await page.getByRole("button", { name: "캘린더에 추가" }).click()
+  const picker = page.getByRole("dialog", { name: "캘린더에 추가" })
+  // The calendar app comes first: Google Calendar opens each date's add page.
+  await picker.getByText("Google 캘린더").click()
+  const google = picker.getByRole("link", { name: "겨울 정기 공연 Google 캘린더에서 열기" })
+  const added = new URL((await google.getAttribute("href")) ?? "")
+  expect(added.origin + added.pathname).toBe("https://calendar.google.com/calendar/render")
+  expect([added.searchParams.get("action"), added.searchParams.get("text")]).toEqual(["TEMPLATE", "겨울 정기 공연"])
+  expect(added.searchParams.get("dates")).toMatch(new RegExp(`^${date.replace(/-/g, "")}/\\d{8}$`))
+  await expect(google).toHaveAttribute("target", "_blank")
+  // Apple Calendar takes the calendar file with every date.
+  await picker.getByText("Apple 캘린더").click()
+  const download = page.waitForEvent("download")
+  await picker.getByRole("button", { name: "캘린더 앱 열기" }).click()
   const file = await download
   expect(file.suggestedFilename()).toMatch(/^uniconnect-\d{4}-\d{2}-\d{2}\.ics$/)
   const calendar = await readFile(await file.path(), "utf8")

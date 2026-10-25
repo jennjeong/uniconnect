@@ -3,6 +3,7 @@ import { useState } from "react"
 import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { Pill } from "../components/Pill"
+import { Presence } from "../components/Presence"
 import { locale, t } from "../i18n"
 import { formatWon } from "../lib/kpis"
 import {
@@ -17,8 +18,8 @@ import {
   todayIso,
   weekdayNames,
 } from "../lib/date"
-import { saveFile } from "../lib/download"
-import { calendarFile, type CalendarEntry } from "../lib/ics"
+import type { CalendarEntry } from "../lib/ics"
+import { CalendarModal } from "../modals/CalendarModal"
 import type { EventItem, Role, SponsorRequest } from "../types"
 
 // A day on the calendar holds the account's own events or campaigns and,
@@ -144,8 +145,9 @@ export function EventsPage({
 }) {
   const today = todayIso()
 
-  // The events from today on, and for brands the days they sponsor, as a
-  // calendar file for Google, Apple or Outlook calendars.
+  // The events from today on, and for brands the days they sponsor, to add
+  // to the calendar app picked in CalendarModal.
+  const [calendar, setCalendar] = useState<CalendarEntry[] | null>(null)
   const exportCalendar = () => {
     const entries: CalendarEntry[] = [
       ...events
@@ -170,8 +172,7 @@ export function EventsPage({
       onNotice?.(t("캘린더에 넣을 다가오는 일정이 없어요."))
       return
     }
-    saveFile(`uniconnect-${today}.ics`, calendarFile(entries, t("uniconnect 행사 일정")), "text/calendar;charset=utf-8")
-    onNotice?.(t("캘린더 파일을 내려받았어요. 캘린더 앱에서 열면 일정이 추가돼요."))
+    setCalendar(entries)
   }
   const [selected, setSelected] = useState(() =>
     initialDate && fromIsoDate(initialDate) ? initialDate : today,
@@ -421,6 +422,10 @@ export function EventsPage({
           </div>
         </aside>
       </div>
+
+      <Presence show={calendar !== null}>
+        {calendar && <CalendarModal entries={calendar} onClose={() => setCalendar(null)} onNotice={onNotice} />}
+      </Presence>
     </section>
   )
 }

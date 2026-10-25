@@ -6996,6 +6996,78 @@ button.nav-pill:hover {
   font-weight: var(--weight-body);
 }
 
+/* 캘린더에 추가 (modals/CalendarModal.tsx): the calendar apps as the role
+   picker's cards, two by two, then each coming entry with its button, or
+   the one button that opens the calendar file. */
+.calendar-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.calendar-app-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.modal .calendar-app-list .role-option {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.calendar-modal .field-hint {
+  margin: 0;
+}
+
+.calendar-entries {
+  display: flex;
+  max-height: 280px;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.calendar-entries li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--fill);
+}
+
+.calendar-entries li > span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.calendar-entries strong {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: var(--weight-label);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-entries small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.calendar-entries .primary-button {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 0 16px;
+  font-size: 13px;
+}
+
 .modal .terms-check {
   flex-direction: row;
   align-items: center;
