@@ -15,6 +15,7 @@ const en: Record<string, string> = {
   // A measurement's state (lib/measurements.ts measureState)
   "진행 전": "Not started",
   "측정 중": "Measuring",
+  "진행 완료": "Finished",
 
   // Student group dashboard (pages/DashboardPage.tsx)
   "행사 등록": "Register event",

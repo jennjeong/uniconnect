@@ -1,5 +1,6 @@
 import { todayInKorea } from "./dates.js"
 import { estimatedSales, shareValue, syncSponsors } from "./measurements.js"
+import { venueCountsOf } from "./methods.js"
 import type { Database, Sponsorship } from "../types.js"
 
 // An accepted proposal becomes one of the brand's sponsorships: the event
@@ -34,9 +35,7 @@ function withLiveFigures(database: Database, sponsorship: Sponsorship): Sponsors
       coupons: sponsor.metrics.coupons,
       visits: sponsor.metrics.visits,
       sales: sponsor.metrics.visits * measurement.goals.averageSpend,
-      samples: sponsor.metrics.samples,
-      stamps: sponsor.metrics.stamps,
-      posts: sponsor.metrics.posts,
+      ...venueCountsOf(sponsor.metrics),
       targetRoas: measurement.goals.targets.roas,
     }
   }
@@ -47,9 +46,7 @@ function withLiveFigures(database: Database, sponsorship: Sponsorship): Sponsors
     coupons: measurement.metrics.coupons,
     visits: measurement.metrics.visits,
     sales: estimatedSales(measurement),
-    samples: measurement.metrics.samples,
-    stamps: measurement.metrics.stamps,
-    posts: measurement.metrics.posts,
+    ...venueCountsOf(measurement.metrics),
     targetRoas: measurement.goals.targets.roas,
   }
 }

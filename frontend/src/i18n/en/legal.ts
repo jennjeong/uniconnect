@@ -85,8 +85,8 @@ const en: Record<string, string> = {
   "주고받은 메시지": "Messages sent and received",
   "회원 사이의 대화": "Conversations between members",
   "관리자에게 보낸 질문과 답변": "Questions sent to our team and their answers",
-  "협찬 약속서(할 일, 확인한 시각, 완료 표시, 증빙 링크와 사진)":
-    "Sponsorship agreements (items, when they were confirmed, items marked done, proof links and photos)",
+  "임시 전자 계약서(할 일, 확인한 시각, 완료 표시, 증빙 링크와 사진)":
+    "Provisional e-contracts (items, when they were confirmed, items marked done, proof links and photos)",
   "확정된 협찬의 할 일을 두 회원이 함께 정하고 결과를 남김":
     "Letting the two members of a confirmed sponsorship agree on what each will do and keep the results",
   "약속한 두 회원 중 한쪽이 탈퇴할 때까지": "Until either of the two members leaves",
@@ -125,22 +125,22 @@ const en: Record<string, string> = {
   "제3자 제공과 처리 위탁": "Provision to Third Parties and Outsourcing of Processing",
   "회원의 개인정보를 다른 회사에 제공하지 않아요.":
     "Members' personal information is not provided to other companies.",
-  "메일 발송 서비스를 연결하면, 인증 메일과 알림 메일(새 협찬 제안과 답, 새 메시지, 다가오는 일정, 협찬 약속서와 후기)을 보내기 위해 이메일 주소와 메일 내용을 메일 발송 업체 Resend(미국)에 맡겨요. 메일을 보낸 뒤에는 그 업체의 보관 정책을 따르고, 지금은 연결되어 있지 않아요.":
-    "Once a mail service is connected, email addresses and the content of the emails are entrusted to the mail delivery company Resend (United States) to send verification emails and notices (new sponsorship proposals and answers, new messages, upcoming dates, sponsorship agreements and reviews). After sending, that company's retention policy applies. It is not connected at the moment.",
-  "서비스를 운영하기 위해 회원 정보와 서비스의 모든 데이터(계정, 소개, 행사, 협찬 제안, 메시지, 협찬 약속서와 증빙 사진, 후기)를 서버 호스팅 업체 Vercel(미국, 서버는 싱가포르)과 데이터베이스 업체 Neon(미국, 저장 위치는 싱가포르)에 맡겨요. 회원이 탈퇴하거나 서비스를 마칠 때까지 맡기고, 백업은 아래처럼 최대 24시간 남아요.":
-    "To run the service, member information and all of the service's data (accounts, introductions, events, sponsorship proposals, messages, sponsorship agreements and proof photos, reviews) are entrusted to the hosting provider Vercel (USA; servers in Singapore) and the database provider Neon (USA; stored in Singapore). They are entrusted until a member leaves or the service ends, and backups remain for up to 24 hours as described below.",
+  "메일 발송 서비스를 연결하면, 인증 메일과 알림 메일(새 협찬 제안과 답, 새 메시지, 다가오는 일정, 임시 전자 계약서와 후기)을 보내기 위해 이메일 주소와 메일 내용을 메일 발송 업체 Resend(미국)에 맡겨요. 메일을 보낸 뒤에는 그 업체의 보관 정책을 따르고, 지금은 연결되어 있지 않아요.":
+    "Once a mail service is connected, email addresses and the content of the emails are entrusted to the mail delivery company Resend (United States) to send verification emails and notices (new sponsorship proposals and answers, new messages, upcoming dates, provisional e-contracts and reviews). After sending, that company's retention policy applies. It is not connected at the moment.",
+  "서비스를 운영하기 위해 회원 정보와 서비스의 모든 데이터(계정, 소개, 행사, 협찬 제안, 메시지, 임시 전자 계약서와 증빙 사진, 후기)를 서버 호스팅 업체 Vercel(미국, 서버는 싱가포르)과 데이터베이스 업체 Neon(미국, 저장 위치는 싱가포르)에 맡겨요. 회원이 탈퇴하거나 서비스를 마칠 때까지 맡기고, 백업은 아래처럼 최대 24시간 남아요.":
+    "To run the service, member information and all of the service's data (accounts, introductions, events, sponsorship proposals, messages, provisional e-contracts and proof photos, reviews) are entrusted to the hosting provider Vercel (USA; servers in Singapore) and the database provider Neon (USA; stored in Singapore). They are entrusted until a member leaves or the service ends, and backups remain for up to 24 hours as described below.",
   "그 밖에 새로 맡기는 일이 생기면 받는 곳과 맡기는 일을 이곳에 먼저 적고 알려 드려요.":
     "If any other processing is newly outsourced, the recipient and the outsourced task will first be listed here and members will be notified.",
   "다른 회원에게 보이는 정보": "Information Visible to Other Members",
-  "단체명·브랜드명, 분류, 학교, 소개, SNS, 포트폴리오, 다가오는 행사와 브랜드의 매장 주소(그리고 학교와의 거리)는 상대 유형의 회원에게 보여요. 이메일과 비밀번호는 보이지 않아요. 협찬 제안과 메시지는 주고받은 두 회원만 볼 수 있어요. 담당자 이름·직책·휴대폰 번호는 협찬이 확정된 두 회원만 그 협찬 약속서에서 볼 수 있어요.":
-    "The group or brand name, category, school, profile, social media, portfolio, upcoming events and a brand's store address (with its distance from a school) are visible to members of the other type. Email addresses and passwords are not visible. Sponsorship proposals and messages can be seen only by the two members who exchanged them. The contact name, position and mobile number show only to the two members of a confirmed sponsorship, on its agreement.",
+  "단체명·브랜드명, 분류, 학교, 소개, SNS, 포트폴리오, 다가오는 행사와 브랜드의 매장 주소(그리고 학교와의 거리)는 상대 유형의 회원에게 보여요. 이메일과 비밀번호는 보이지 않아요. 협찬 제안과 메시지는 주고받은 두 회원만 볼 수 있어요. 담당자 이름·직책·휴대폰 번호는 협찬이 확정된 두 회원만 그 임시 전자 계약서에서 볼 수 있어요.":
+    "The group or brand name, category, school, profile, social media, portfolio, upcoming events and a brand's store address (with its distance from a school) are visible to members of the other type. Email addresses and passwords are not visible. Sponsorship proposals and messages can be seen only by the two members who exchanged them. The contact name, position and mobile number show only to the two members of a confirmed sponsorship, on its e-contract.",
   "지우기와 회원의 권리": "Deletion and Members' Rights",
   "회원은 자기 개인정보를 보거나 고치거나 지우거나 처리를 멈춰 달라고 요청할 수 있어요.":
     "Members may request to access, correct or delete their personal information, or to suspend its processing.",
   "소개는 내 정보에서 고칠 수 있고, 행사는 내 행사에서 고치거나 지울 수 있어요.":
     "Profiles can be edited in My Info, and events can be edited or deleted in My Events.",
-  "내 정보의 '회원 탈퇴'에서 탈퇴하면 계정 정보, 소개, 행사·캠페인, 협찬 제안, 메시지(상대방 쪽 대화 포함), 관리자에게 보낸 질문, 보낸 가게 초대, 협찬 약속서와 증빙 사진(상대방 쪽 포함), 남기고 받은 후기가 바로 지워지고 되살릴 수 없어요. 초대로 가입한 브랜드가 탈퇴하면 그 가게는 다시 초대할 수 있는 상태가 돼요.":
-    "When a member deletes their account from 'Delete Account' in My Info, their account information, profile, events and campaigns, sponsorship proposals, messages (including the other party's side of the conversation), questions sent to the administrators, shop invitations they sent, sponsorship agreements with their proof photos (including the other party's), and the reviews they wrote and got are deleted immediately and cannot be restored. When a brand that joined from an invitation leaves, that shop can be invited again.",
+  "내 정보의 '회원 탈퇴'에서 탈퇴하면 계정 정보, 소개, 행사·캠페인, 협찬 제안, 메시지(상대방 쪽 대화 포함), 관리자에게 보낸 질문, 보낸 가게 초대, 임시 전자 계약서와 증빙 사진(상대방 쪽 포함), 남기고 받은 후기가 바로 지워지고 되살릴 수 없어요. 초대로 가입한 브랜드가 탈퇴하면 그 가게는 다시 초대할 수 있는 상태가 돼요.":
+    "When a member deletes their account from 'Delete Account' in My Info, their account information, profile, events and campaigns, sponsorship proposals, messages (including the other party's side of the conversation), questions sent to the administrators, shop invitations they sent, provisional e-contracts with their proof photos (including the other party's), and the reviews they wrote and got are deleted immediately and cannot be restored. When a brand that joined from an invitation leaves, that shop can be invited again.",
   "그 밖의 요청은 도움말 센터의 '관리자에게 질문하기'로 보내 주세요. 확인한 뒤 지체 없이 처리해요.":
     "Please send any other requests through 'Ask the Administrators' in the Help Center. They will be processed without delay after review.",
   "법령에 따라 보관해야 하는 정보가 생기면 그 기간 동안만 따로 보관해요.":
@@ -157,8 +157,8 @@ const en: Record<string, string> = {
     "Please send inquiries and requests about personal information through 'Ask the Administrators' in the Help Center. Counseling on privacy infringement is also available from the Personal Information Infringement Report Center (dial 118 without an area code).",
   "학교와의 거리를 계산하기 위해, 브랜드가 적은 매장 주소를 오픈스트리트맵 재단(영국)의 주소 검색(Nominatim)에 보내 좌표로 바꿔요. 학생단체에게 학교 근처 가게를 보여 줄 때는 학교 위치만 카카오(대한민국)에 보내고, 받은 가게 정보는 저장하지 않아요. 가게를 초대하면 카카오가 허락한 가게 번호와 카카오맵 주소만 남겨요.":
     "To calculate the distance from schools, the store address a brand enters is sent to the OpenStreetMap Foundation's address search (Nominatim, United Kingdom) to turn it into coordinates. To show student groups the shops near their school, only the school's location is sent to Kakao (Korea), and the shop details that come back are not stored. When a group invites a shop, only the shop's number and Kakao Map address, which Kakao allows, are kept.",
-  "내 정보의 '내 데이터 내려받기'로 계정 정보, 소개, 행사, 협찬 제안, 메시지, 질문, 가게 초대, 협찬 약속서, 남기고 받은 후기를 파일 하나로 내려받을 수 있어요.":
-    "With 'Download my data' under My Account, you can download your account details, introduction, events, proposals, messages, questions, shop invitations, sponsorship agreements and the reviews you wrote and got as one file.",
+  "내 정보의 '내 데이터 내려받기'로 계정 정보, 소개, 행사, 협찬 제안, 메시지, 질문, 가게 초대, 임시 전자 계약서, 남기고 받은 후기를 파일 하나로 내려받을 수 있어요.":
+    "With 'Download my data' under My Account, you can download your account details, introduction, events, proposals, messages, questions, shop invitations, provisional e-contracts and the reviews you wrote and got as one file.",
   "서버 장애에 대비한 백업에는 지운 내용이 최대 24시간 남아 있다가 새 백업으로 바뀌며 사라져요.":
     "Backups kept against server failures may hold deleted data for up to 24 hours, until newer backups replace them.",
 }

@@ -52,12 +52,12 @@ export function AgreementsPage({
       <PageIntro
         onBack={onBack}
         eyebrow="Agreements"
-        title={t("협찬 약속서")}
+        title={t("임시 전자 계약서")}
         description={t("확정된 협찬마다 두 쪽이 할 일을 정하고 확인해요. 한 일은 링크와 사진으로 남겨 두면 결과를 바로 보여 줄 수 있어요.")}
       />
       {!loggedIn ? (
         <div className="day-empty messages-empty">
-          <p>{t("로그인하면 확정된 협찬의 약속서를 볼 수 있어요.")}</p>
+          <p>{t("로그인하면 확정된 협찬의 계약서를 볼 수 있어요.")}</p>
           <button className="primary-button" onClick={onLogin} type="button">
             {t("로그인")}
           </button>
@@ -65,9 +65,9 @@ export function AgreementsPage({
       ) : failed ? (
         <p className="day-empty">{failed}</p>
       ) : !list ? (
-        <p className="day-empty">{t("약속서를 불러오고 있어요…")}</p>
+        <p className="day-empty">{t("계약서를 불러오고 있어요…")}</p>
       ) : list.length === 0 ? (
-        <p className="day-empty">{t("확정된 협찬이 생기면 여기에서 약속서를 확인할 수 있어요.")}</p>
+        <p className="day-empty">{t("확정된 협찬이 생기면 여기에서 계약서를 확인할 수 있어요.")}</p>
       ) : (
         <ul className="agreement-list stagger">
           {list.map((item, index) => {

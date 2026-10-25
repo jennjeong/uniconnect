@@ -1,14 +1,15 @@
 import { useState } from "react"
 
-import { methodInfo } from "../data/methods"
+import { isVenueMethod, methodInfo } from "../data/methods"
 import { t } from "../i18n"
 import type { MethodKind, VenueShare } from "../types"
 import { Icon } from "./Icon"
 
 // What one side confirms at the venue for one share, a card per method:
-// its count, then a number of samples to add (or take back), or one person
-// at a time with a way to take back a mistake. Store visits have their own
-// form on the staff page, so the coupon has no card here.
+// its count, then a number to add (or take back) for what is counted by
+// the box, or one person at a time with a way to take back a mistake. The
+// QR and its coupon count themselves, and store visits have their own form
+// on the staff page, so they have no card here.
 export function VenueCounters({
   share,
   busy,
@@ -18,12 +19,18 @@ export function VenueCounters({
   busy: boolean
   onCount: (method: MethodKind, amount: number) => Promise<boolean>
 }) {
-  const kinds = share.kinds.filter((kind) => kind !== "coupon")
+  const kinds = share.kinds.filter(isVenueMethod)
   if (kinds.length === 0) return null
   return (
     <ul className="venue-counters">
       {kinds.map((kind) => (
-        <VenueCounter busy={busy} count={share.counts[methodInfo[kind].metric as keyof VenueShare["counts"]]} key={kind} kind={kind} onCount={onCount} />
+        <VenueCounter
+          busy={busy}
+          count={share.counts[methodInfo[kind].metric as keyof VenueShare["counts"]] ?? 0}
+          key={kind}
+          kind={kind}
+          onCount={onCount}
+        />
       ))}
     </ul>
   )
@@ -53,7 +60,7 @@ function VenueCounter({
         <strong aria-live="polite">{count.toLocaleString("ko-KR")}</strong>
       </div>
       <p>{t(info.detail)}</p>
-      {kind === "sampling" ? (
+      {info.bulk ? (
         <div className="venue-counter-actions">
           <label className="venue-amount">
             {t("수량")}

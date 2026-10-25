@@ -1,9 +1,9 @@
-import { isCheckInKind, metricInfo, metricKinds } from "../data/metrics"
+import { isCheckInKind, metricInfo } from "../data/metrics"
 import { useLiveMeasurement } from "../hooks/useLiveMeasurement"
 import { t } from "../i18n"
 import { formatDateTime } from "../lib/date"
 import { percent } from "../lib/format"
-import { measureState, venueKindsOf } from "../lib/measurements"
+import { measureState, shownKindsOf } from "../lib/measurements"
 import type { EventMeasurement, MetricKind, Metrics, Report } from "../types"
 import { AnimatedNumber } from "./AnimatedNumber"
 import { EventPicker } from "./EventPicker"
@@ -13,8 +13,8 @@ import { RevealTitle } from "./RevealText"
 
 // A brand's own campaign measured on site, at the end of 성과 분석: pick
 // the campaign, open its check-in QR, and watch its QR scans, coupons and
-// store visits as they come in, with what the venue confirmed by the
-// methods set on its agreement. Before the campaign (진행 전) the counts
+// store visits as they come in, or whatever confirmation methods both
+// sides confirmed on its e-contract. Before the campaign (진행 전) the counts
 // wait as dashes beside their goals, which are set on the agreement with
 // the group that took the brand's offer.
 export function CampaignMeasurement({
@@ -66,7 +66,7 @@ export function CampaignMeasurement({
             )}
           </div>
           <div className="campaign-measure-tiles">
-            {[...metricKinds, ...venueKindsOf(report)].map((kind) => (
+            {shownKindsOf(report).map((kind) => (
               <button className="campaign-measure-tile" key={kind} onClick={() => onShowLog(kind)} type="button">
                 <span>
                   <Icon name={metricInfo[kind].icon} size={16} /> {t(metricInfo[kind].label)}
@@ -88,13 +88,13 @@ export function CampaignMeasurement({
           {upcoming && (
             <p className="measure-wait">
               <Icon name="scan" size={20} />
-              {t("캠페인이 시작되면 참여 기록이 여기에 쌓여요. 목표는 협찬 약속서에서 행사 전까지 정해요.")}
+              {t("캠페인이 시작되면 참여 기록이 여기에 쌓여요. 목표는 임시 전자 계약서에서 행사 전까지 정해요.")}
             </p>
           )}
           <div className="campaign-measure-actions">
             {upcoming && (
               <Pill onClick={onOpenAgreements} variant="outline">
-                {t("협찬 약속서")}
+                {t("임시 전자 계약서")}
               </Pill>
             )}
             <Pill arrow="up-right" onClick={onOpenQr}>

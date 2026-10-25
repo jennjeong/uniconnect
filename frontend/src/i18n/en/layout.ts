@@ -41,7 +41,7 @@ const en: Record<string, string> = {
   "오늘은 ‘{name}’ 날이에요": "‘{name}’ is today",
   "내일은 ‘{name}’ 날이에요": "‘{name}’ is tomorrow",
   "‘{name}’까지 {days}일 남았어요": "{days:day|days} until ‘{name}’",
-  "협찬 약속서에서 두 쪽이 할 일을 확인해 보세요.": "Check what each side will do in the sponsorship agreement.",
+  "임시 전자 계약서에서 두 쪽이 할 일을 확인해 보세요.": "Check what each side will do in the provisional e-contract.",
   "협찬 · {name}": "Sponsoring · {name}",
   "캘린더에 넣을 다가오는 일정이 없어요.": "There are no upcoming dates to add to a calendar.",
   "uniconnect 행사 일정": "uniconnect events",
@@ -193,6 +193,7 @@ const en: Record<string, string> = {
   "행사 고르기": "Choose an event",
   "진행 전": "Not started",
   "측정 중": "Measuring",
+  "진행 완료": "Finished",
   "숫자로 보는 협찬": "Sponsorship in numbers",
   "{name} 상세 정보": "{name} details",
 

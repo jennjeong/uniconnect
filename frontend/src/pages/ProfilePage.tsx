@@ -75,7 +75,7 @@ export function ProfilePage({
     {
       label: t("담당자 정보"),
       value: account.contact
-        ? `${account.contact.name} · ${account.contact.position} · ${account.contact.phone}`
+        ? `${account.contact.name} · ${t(account.contact.position)} · ${account.contact.phone}`
         : t("아직 없어요"),
     },
     { label: t("가입일"), value: formatFullDate(toIsoDate(new Date(account.createdAt))) },

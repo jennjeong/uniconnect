@@ -127,7 +127,7 @@ export function NavMenu({
                 {t("메시지")}{unreadMessages > 0 && <em>{unreadMessages}</em>}
               </button>
               <button onClick={pick(onOpenAgreements)} type="button">
-                {t("협찬 약속서")}
+                {t("임시 전자 계약서")}
               </button>
               <button onClick={pick(onOpenProfile)} type="button">
                 {t("내 정보")}

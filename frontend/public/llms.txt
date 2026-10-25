@@ -1,6 +1,6 @@
 # uniconnect
 
-> uniconnect (유니커넥트) matches Korean university student groups (학생단체) with brands and local shops for event sponsorships. Groups find brands that fit their events and propose a sponsorship; brands find campus events and send offers. Once both sides agree, a sponsorship agreement (협찬 약속서) lists what each side does, and the event's QR scans, coupons and store visits measure the results. The site is in Korean, with English for browsers that are not Korean.
+> uniconnect (유니커넥트) matches Korean university student groups (학생단체) with brands and local shops for event sponsorships. Groups find brands that fit their events and propose a sponsorship; brands find campus events and send offers. Once both sides agree, a sponsorship agreement (임시 전자 계약서) lists what each side does and how the sponsorship is confirmed at the event; once both sides confirm it, the methods they chose (QR check-ins, coupons, store visits, samples, booth stamps, SNS posts and more) measure the results. The site is in Korean, with English for browsers that are not Korean.
 
 The home page introduces the service. Visitors can also browse every member screen with example data before signing up; screens that differ by school or store, such as nearby shops, are blurred until you log in. Joining needs a school email for student groups and a company email for brands.
 

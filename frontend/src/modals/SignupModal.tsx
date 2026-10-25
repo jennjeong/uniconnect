@@ -3,10 +3,13 @@ import { useEffect, useState } from "react"
 import { api, errorMessage } from "../api"
 import { Modal } from "../components/Modal"
 import { PasswordField } from "../components/PasswordField"
+import { PasswordRules } from "../components/PasswordRules"
+import { PositionField } from "../components/PositionField"
 import { RolePicker } from "../components/RolePicker"
 import { t } from "../i18n"
-import { accountTypeGroups, accountTypes, positionHints } from "../data/roles"
+import { accountTypeGroups, accountTypes } from "../data/roles"
 import { formatRemaining } from "../lib/format"
+import { passwordProblem } from "../lib/password"
 import { viewPath } from "../lib/route"
 import type { Role, Session } from "../types"
 
@@ -46,7 +49,7 @@ function draftError(draft: Draft, verified: boolean) {
   if (!draft.position.trim()) return t("직책을 입력해 주세요.")
   if (!/^01[016789]\d{7,8}$/.test(draft.phone.replace(/\D/g, ""))) return t("휴대폰 번호를 010-1234-5678처럼 입력해 주세요.")
   if (!verified) return t("이메일 인증을 완료해 주세요.")
-  if (draft.password.length < 8) return t("비밀번호는 8자 이상이어야 해요.")
+  if (passwordProblem(draft.password)) return passwordProblem(draft.password)
   if (draft.password !== draft.confirm) return t("비밀번호가 일치하지 않아요.")
   if (!draft.agreed) return t("이용약관에 동의해 주세요.")
   if (!draft.over14) return t("만 14세 이상만 가입할 수 있어요.")
@@ -163,7 +166,7 @@ export function SignupModal({
           name="signup-role"
           value={draft.role}
           onChange={(role) => {
-            update({ role, type: accountTypes[role][0] })
+            update({ role, type: accountTypes[role][0], position: "" })
             resetVerification()
           }}
         />
@@ -215,20 +218,12 @@ export function SignupModal({
               onChange={(event) => update({ contactName: event.target.value })}
             />
           </label>
-          <label>
-            {t("직책")}
-            <input
-              list="signup-positions"
-              placeholder={t(positionHints[draft.role][0])}
-              value={draft.position}
-              onChange={(event) => update({ position: event.target.value })}
-            />
-            <datalist id="signup-positions">
-              {positionHints[draft.role].map((hint) => (
-                <option key={hint} value={t(hint)} />
-              ))}
-            </datalist>
-          </label>
+          <PositionField
+            key={draft.role}
+            onChange={(position) => update({ position })}
+            role={draft.role}
+            value={draft.position}
+          />
         </div>
         <label>
           {t("휴대폰 번호")}
@@ -243,7 +238,7 @@ export function SignupModal({
           />
         </label>
         <small className="field-hint" id="signup-phone-hint">
-          {t("협찬이 확정된 상대에게만 협찬 약속서에서 보여요.")}
+          {t("협찬이 확정된 상대에게만 임시 전자 계약서에서 보여요.")}
         </small>
         <div className="field-group">
           <label htmlFor="signup-email">
@@ -327,9 +322,10 @@ export function SignupModal({
         </div>
         <div className="form-row">
           <PasswordField
+            aria-describedby="signup-password-rules"
             autoComplete="new-password"
             label={t("비밀번호")}
-            placeholder={t("8자 이상")}
+            placeholder={t("영문·숫자·특수문자 8자 이상")}
             value={draft.password}
             onChange={(event) => update({ password: event.target.value })}
           />
@@ -340,6 +336,7 @@ export function SignupModal({
             onChange={(event) => update({ confirm: event.target.value })}
           />
         </div>
+        <PasswordRules id="signup-password-rules" password={draft.password} />
         <label className="terms-check">
           <input
             checked={draft.agreed}

@@ -2,7 +2,7 @@ import { useState } from "react"
 
 import { api, errorMessage } from "../api"
 import { Modal } from "../components/Modal"
-import { positionHints } from "../data/roles"
+import { PositionField } from "../components/PositionField"
 import { t } from "../i18n"
 import type { Account } from "../types"
 
@@ -52,7 +52,7 @@ export function ContactModal({
           void submit()
         }}
       >
-        <p className="auth-lead">{t("협찬이 확정된 상대에게만 협찬 약속서에서 보여요.")}</p>
+        <p className="auth-lead">{t("협찬이 확정된 상대에게만 임시 전자 계약서에서 보여요.")}</p>
         <label>
           {t("담당자 이름")}
           <input
@@ -62,20 +62,11 @@ export function ContactModal({
             onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
           />
         </label>
-        <label>
-          {t("직책")}
-          <input
-            list="contact-positions"
-            placeholder={t(positionHints[account.role][0])}
-            value={draft.position}
-            onChange={(event) => setDraft((current) => ({ ...current, position: event.target.value }))}
-          />
-          <datalist id="contact-positions">
-            {positionHints[account.role].map((hint) => (
-              <option key={hint} value={t(hint)} />
-            ))}
-          </datalist>
-        </label>
+        <PositionField
+          onChange={(position) => setDraft((current) => ({ ...current, position }))}
+          role={account.role}
+          value={draft.position}
+        />
         <label>
           {t("휴대폰 번호")}
           <input

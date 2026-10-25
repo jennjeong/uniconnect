@@ -10,7 +10,7 @@ import { isCheckInKind, metricInfo, metricKinds } from "../data/metrics"
 import { useLiveMeasurement } from "../hooks/useLiveMeasurement"
 import { t } from "../i18n"
 import { formatDateTime, formatFullDate } from "../lib/date"
-import { measureState, venueKindsOf } from "../lib/measurements"
+import { measureState, shownKindsOf } from "../lib/measurements"
 import { percent } from "../lib/format"
 import { LayersGradient } from "../scenes/LayersGradient"
 import { INTERFERENCE } from "../scenes/shaders"
@@ -18,10 +18,11 @@ import type { EventMeasurement, MetricKind, Metrics, Report } from "../types"
 
 const delay = (seconds: number) => ({ "--reveal-delay": `${seconds}s` }) as CSSProperties
 
-// The event's live counts on getlayers.ai's Interference gradient (each scan,
-// coupon and visit adding to the wave, and what the venue confirmed by the
-// sponsorships' measurement methods), then the funnel and the latest
-// participation as cards. Before the event (진행 전) the counts wait as
+// The event's live counts on getlayers.ai's Interference gradient, only
+// those of the confirmation methods both sides confirmed on the e-contracts
+// (the QR, coupon and store visits until then), then the funnel when the
+// QR is among them, and the latest participation as cards. Once the event is
+// over (진행 완료) the panel says so. Before the event (진행 전) the counts wait as
 // dashes beside their goals, the cards say what will show once it takes
 // place, and the goals are set on the sponsorship's agreement.
 export function MeasurementPage({
@@ -48,14 +49,18 @@ export function MeasurementPage({
   onShowLog: (kind?: MetricKind) => void
 }) {
   const entries = useLiveMeasurement(report?.eventId, "학생단체", onUpdate)
-  const upcoming = report !== null && measureState(report) === "진행 전"
-  const tiles: MetricKind[] = [...metricKinds, ...(report ? venueKindsOf(report) : [])]
+  const state = report ? measureState(report) : null
+  const upcoming = state === "진행 전"
+  const ended = state === "진행 완료"
+  const tiles: MetricKind[] = report ? shownKindsOf(report) : metricKinds
+  // A column per tile up to four, then rows of four or three.
+  const columns = tiles.length <= 4 ? tiles.length : tiles.length % 4 === 0 ? 4 : 3
 
   const funnel: { kind: MetricKind; note: string }[] = [
-    { kind: "scans", note: t("현장에서 QR을 스캔했어요") },
-    { kind: "coupons", note: t("QR 스캔의 {rate}%가 받았어요", { rate: percent(metrics.coupons, metrics.scans) }) },
-    { kind: "visits", note: t("쿠폰 받은 사람의 {rate}%가 왔어요", { rate: percent(metrics.visits, metrics.coupons) }) },
-  ]
+    { kind: "scans" as const, note: t("현장에서 QR을 스캔했어요") },
+    { kind: "coupons" as const, note: t("QR 스캔의 {rate}%가 받았어요", { rate: percent(metrics.coupons, metrics.scans) }) },
+    { kind: "visits" as const, note: t("쿠폰 받은 사람의 {rate}%가 왔어요", { rate: percent(metrics.visits, metrics.coupons) }) },
+  ].filter((step) => tiles.includes(step.kind))
 
   return (
     <section className="page-view measurement-view">
@@ -86,7 +91,7 @@ export function MeasurementPage({
           ))}
         {upcoming && (
           <button className="subtle-link" onClick={onOpenAgreements} type="button">
-            {t("목표는 협찬 약속서에서 정해요")} <Icon name="chevron" size={15} />
+            {t("목표는 임시 전자 계약서에서 정해요")} <Icon name="chevron" size={15} />
           </button>
         )}
         {entries[0] && (
@@ -97,18 +102,25 @@ export function MeasurementPage({
       <section className="power-panel live-panel" data-reveal>
         <LayersGradient shader={INTERFERENCE} />
         <div className="power-content">
-          <span className="eyebrow light">{upcoming ? "Before the Event" : "Live Now"}</span>
+          <span className="eyebrow light">{upcoming ? "Before the Event" : ended ? "Event Ended" : "Live Now"}</span>
           <RevealTitle as="h2" className="power-title">
-            {upcoming ? t("행사가 시작되면 현장 반응이 여기에 떠요") : t("지금 이 순간의 현장 반응")}
+            {upcoming
+              ? t("행사가 시작되면 현장 반응이 여기에 떠요")
+              : ended
+                ? t("행사가 끝났어요. 모인 현장 반응이에요")
+                : t("지금 이 순간의 현장 반응")}
           </RevealTitle>
           {upcoming && report && (
             <p className="power-lead">
-              {t("{date}부터 QR 스캔 · 쿠폰 · 매장 방문을 실시간으로 집계해요.", {
+              {t("{date}부터 임시 전자 계약서에서 확정한 협찬 확인 방식으로 실시간 집계해요.", {
                 date: formatFullDate(report.eventDate),
               })}
             </p>
           )}
-          <ul className={tiles.length === 4 ? "power-stats" : "power-stats three"}>
+          <ul
+            className={tiles.length % 2 ? "power-stats odd" : "power-stats"}
+            style={{ "--columns": columns } as CSSProperties}
+          >
             {tiles.map((kind, index) => {
               const target = isCheckInKind(kind) ? report?.targets[kind] : undefined
               return (
@@ -149,6 +161,11 @@ export function MeasurementPage({
               <Icon name="chart" size={20} />
               {t("행사가 진행되면 QR 스캔에서 쿠폰, 매장 방문으로 이어진 비율이 여기에 그려져요.")}
             </p>
+          ) : !tiles.includes("scans") ? (
+            <p className="measure-wait">
+              <Icon name="chart" size={20} />
+              {t("참여 전환은 임시 전자 계약서에서 QR 체크인을 고른 행사에 그려져요.")}
+            </p>
           ) : (
             <div className="measure-funnel">
               {funnel.map((step) => (
@@ -179,7 +196,7 @@ export function MeasurementPage({
           {upcoming ? (
             <p className="measure-wait">
               <Icon name="scan" size={20} />
-              {t("행사가 진행되면 참여 기록이 여기에 떠요. QR 스캔 · 쿠폰 · 매장 방문이 들어오는 대로 보여요.")}
+              {t("행사가 진행되면 참여 기록이 여기에 떠요. 확정한 협찬 확인 방식으로 기록되는 대로 보여요.")}
             </p>
           ) : entries.length === 0 ? (
             <p className="day-empty">{t("아직 참여 기록이 없어요.")}</p>

@@ -91,7 +91,7 @@ export function pageMeta(
   if (view.home) {
     return {
       title: t("{site} · 학생단체와 브랜드를 잇는 협찬 매칭", { site }),
-      description: t("학생단체와 브랜드를 잇는 캠퍼스 협찬 매칭 서비스예요. 추천 매칭부터 제안, 협찬 약속서, 현장 QR 측정과 성과 리포트까지 한곳에서 해요."),
+      description: t("학생단체와 브랜드를 잇는 캠퍼스 협찬 매칭 서비스예요. 추천 매칭부터 제안, 임시 전자 계약서, 현장 QR 측정과 성과 리포트까지 한곳에서 해요."),
     }
   }
   if (view.create) {
@@ -140,15 +140,15 @@ export function pageMeta(
   }
   if (view.agreement) {
     return {
-      title: titled(t("협찬 약속서")),
+      title: titled(t("임시 전자 계약서")),
       description: t("학생단체와 브랜드가 협찬으로 할 일을 함께 정하고 확인하고, 한 일을 링크와 사진으로 남겨요."),
       noindex: true,
     }
   }
   if (view.agreements) {
     return {
-      title: titled(t("협찬 약속서")),
-      description: t("확정된 협찬마다 약속서를 확인하고, 할 일이 얼마나 끝났는지 봐요."),
+      title: titled(t("임시 전자 계약서")),
+      description: t("확정된 협찬마다 계약서를 확인하고, 할 일이 얼마나 끝났는지 봐요."),
       noindex: true,
     }
   }

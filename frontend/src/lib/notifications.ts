@@ -52,7 +52,7 @@ export function soonNotices(
           : days === 1
             ? t("내일은 ‘{name}’ 날이에요", { name: entry.name })
             : t("‘{name}’까지 {days}일 남았어요", { name: entry.name, days }),
-      caption: t("협찬 약속서에서 두 쪽이 할 일을 확인해 보세요."),
+      caption: t("임시 전자 계약서에서 두 쪽이 할 일을 확인해 보세요."),
       target,
     }))
 }
@@ -121,7 +121,7 @@ export function studentNotifications({
     })
   }
   // Once the event shown on the report pages is over.
-  if (report && measureState(report) === "측정 완료") {
+  if (report && measureState(report) === "진행 완료") {
     items.push({
       key: "report",
       icon: "chart",

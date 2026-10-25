@@ -3,7 +3,9 @@ import { useState } from "react"
 import { api, errorMessage } from "../api"
 import { Modal } from "../components/Modal"
 import { PasswordField } from "../components/PasswordField"
+import { PasswordRules } from "../components/PasswordRules"
 import { t } from "../i18n"
+import { passwordProblem } from "../lib/password"
 
 // Changing the password from 내 정보: the current one, then the new one
 // twice. Other devices are logged out; this one stays logged in.
@@ -14,7 +16,7 @@ export function PasswordModal({ onClose, onChanged }: { onClose: () => void; onC
 
   const submit = async () => {
     if (!draft.current) return setError(t("지금 비밀번호를 입력해 주세요."))
-    if (draft.next.length < 8) return setError(t("새 비밀번호는 8자 이상이어야 해요."))
+    if (passwordProblem(draft.next)) return setError(passwordProblem(draft.next))
     if (draft.next !== draft.confirm) return setError(t("새 비밀번호가 일치하지 않아요."))
     setBusy(true)
     setError("")
@@ -28,8 +30,9 @@ export function PasswordModal({ onClose, onChanged }: { onClose: () => void; onC
     }
   }
 
-  const field = (key: keyof typeof draft, label: string, autoComplete: string) => (
+  const field = (key: keyof typeof draft, label: string, autoComplete: string, describedBy?: string) => (
     <PasswordField
+      aria-describedby={describedBy}
       autoComplete={autoComplete}
       label={label}
       value={draft[key]}
@@ -49,8 +52,9 @@ export function PasswordModal({ onClose, onChanged }: { onClose: () => void; onC
       >
         <p className="auth-lead">{t("비밀번호를 바꾸면 다른 기기에서는 로그아웃돼요.")}</p>
         {field("current", t("지금 비밀번호"), "current-password")}
-        {field("next", t("새 비밀번호 (8자 이상)"), "new-password")}
+        {field("next", t("새 비밀번호"), "new-password", "password-rules")}
         {field("confirm", t("새 비밀번호 확인"), "new-password")}
+        <PasswordRules id="password-rules" password={draft.next} />
         {error && (
           <p className="form-error" role="alert">
             {error}

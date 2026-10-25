@@ -168,28 +168,49 @@ test("a student group proposes and the brand accepts", async ({ browser }) => {
   await expect(accepted.getByRole("list", { name: "협찬 진행 상황" })).toBeVisible()
 })
 
-test("the agreement sets how the event is measured, and each side confirms its own methods at the venue", async ({ browser }) => {
+test("the e-contract sets how the sponsorship is confirmed, and once both sides confirm, each side records its own methods at the venue", async ({ browser }) => {
   // The concert the group proposed above, which the brand accepted.
   const student = await (await browser.newContext()).newPage()
   await student.goto("/")
   await logIn(student, "학생단체", "muse@syu.ac.kr")
   await student.goto("/agreements")
   await student.locator(".agreement-row", { hasText: "2026 뮤즈 종강 공연" }).click()
+  await expect(student.getByRole("heading", { name: "2026 뮤즈 종강 공연 임시 전자 계약서" })).toBeVisible()
   const methods = student.locator(".methods-panel")
-  // At first the coupon, whose store visits the brand confirms.
-  await expect(methods.locator(".method-list")).toContainText("QR 체크인 · 쿠폰 · 매장 방문")
+  const status = methods.getByRole("heading", { name: /협찬 확인 방식/ })
+  // At first the QR, its coupon and the store's visits, not yet settled.
+  await expect(methods.locator(".method-list li")).toHaveCount(3)
+  await expect(methods.locator(".method-list")).toContainText("QR 체크인")
+  await expect(methods.locator(".method-list")).toContainText("매장 방문")
+  await expect(status).toContainText("두 쪽이 계약서를 모두 확인하면 성과에 반영돼요")
   await expect(methods.locator(".venue-access")).toHaveCount(0)
 
   // The group adds booth stamps for itself and sampling for the brand.
-  await methods.getByRole("button", { name: "측정 방식 고치기" }).click()
+  await methods.getByRole("button", { name: "협찬 확인 방식 고르기" }).click()
   await methods.getByRole("checkbox", { name: /부스 방문 · 스탬프/ }).check()
-  await methods.getByRole("checkbox", { name: /샘플링 · 시음 수량/ }).check()
-  await expect(methods.getByRole("group", { name: "QR 체크인 · 쿠폰 · 매장 방문 확인하는 쪽" }).getByRole("radio", { name: "삼육대 뮤즈" })).toBeDisabled()
+  await methods.getByRole("checkbox", { name: /샘플링 · 시음/ }).check()
+  await expect(methods.getByRole("group", { name: "샘플링 · 시음 확인하는 쪽" }).getByRole("radio", { name: "오후의 커피" })).toBeChecked()
+  await expect(methods.getByRole("group", { name: "매장 방문 확인하는 쪽" }).getByRole("radio", { name: "삼육대 뮤즈" })).toBeDisabled()
   await methods.getByRole("button", { name: "저장" }).click()
-  await expect(methods.locator(".method-list li")).toHaveCount(3)
+  await expect(methods.locator(".method-list li")).toHaveCount(5)
   await expect(methods.locator(".method-list")).toContainText("삼육대 뮤즈에서 현장 확인")
+  // They count once both sides confirm the e-contract.
+  await expect(methods.locator(".venue-access")).toHaveCount(0)
+  await student.getByRole("button", { name: "이 내용으로 확인하기" }).click()
+  await expect(student.getByText("확인했어요. 오후의 커피에 알렸어요.")).toBeVisible()
 
-  // Its own venue page opens with its PIN, which only it sees, and takes the stamps.
+  const brand = await (await browser.newContext()).newPage()
+  await brand.goto("/")
+  await logIn(brand, "브랜드", "hello@afternoon-coffee.kr")
+  await brand.goto("/agreements")
+  await brand.locator(".agreement-row", { hasText: "2026 뮤즈 종강 공연" }).click()
+  await brand.getByRole("button", { name: "이 내용으로 확인하기" }).click()
+  const brandMethods = brand.locator(".methods-panel")
+  await expect(brandMethods.getByRole("heading", { name: /협찬 확인 방식/ })).toContainText("확정됐어요")
+
+  // The group's own venue page opens with its PIN, which only it sees, and takes the stamps.
+  await student.reload()
+  await expect(status).toContainText("확정됐어요")
   const link = await methods.locator(".venue-access a").getAttribute("href")
   const pin = (await methods.locator(".venue-access span strong").textContent())!
   expect(link).toMatch(/\/check-in\/[\w-]+\/group$/)
@@ -210,12 +231,6 @@ test("the agreement sets how the event is measured, and each side confirms its o
   await expect(venue.locator(".venue-counter-head strong")).toHaveText("1")
 
   // The brand's store staff count the samples on the staff page with the brand's PIN.
-  const brand = await (await browser.newContext()).newPage()
-  await brand.goto("/")
-  await logIn(brand, "브랜드", "hello@afternoon-coffee.kr")
-  await brand.goto("/agreements")
-  await brand.locator(".agreement-row", { hasText: "2026 뮤즈 종강 공연" }).click()
-  const brandMethods = brand.locator(".methods-panel")
   const staffLink = await brandMethods.locator(".venue-access a").getAttribute("href")
   const staffPin = (await brandMethods.locator(".venue-access span strong").textContent())!
   expect(staffLink).toMatch(/\/staff$/)
@@ -223,13 +238,23 @@ test("the agreement sets how the event is measured, and each side confirms its o
   await staff.goto(staffLink!)
   await staff.getByLabel("직원 PIN").fill(staffPin)
   await staff.getByLabel("수량", { exact: true }).fill("12")
-  await staff.getByRole("button", { name: "샘플링 · 시음 수량 12개 더하기" }).click()
+  await staff.getByRole("button", { name: "샘플링 · 시음 12개 더하기" }).click()
   await expect(staff.locator(".venue-counter-head strong")).toHaveText("12")
 
-  // Both sides read the counts on the agreement.
+  // Both sides read the counts on the e-contract, and 성과 shows only the methods chosen.
   await student.reload()
   await expect(methods.locator(".method-list")).toContainText("12개")
   await expect(methods.locator(".method-list")).toContainText("1명")
+  await student.goto("/measurement")
+  await student.getByLabel("행사 고르기").selectOption("event-muse-concert")
+  const tiles = student.locator(".power-stats li")
+  await expect(tiles).toHaveCount(5)
+  await expect(tiles.filter({ hasText: "부스 스탬프" })).toHaveCount(1)
+  await expect(tiles.filter({ hasText: "SNS 인증" })).toHaveCount(0)
+  // An event that has ended says so.
+  await student.getByLabel("행사 고르기").selectOption("event-busking-day")
+  await expect(student.locator(".measure-bar .measure-state")).toHaveText("진행 완료")
+  await expect(student.locator(".live-panel .eyebrow")).toHaveText("Event Ended")
 })
 
 test("a participant takes the coupon and the store's staff confirm the visit on their own page", async ({ browser }) => {
@@ -263,7 +288,7 @@ test("a new group signs up with the code shown on screen", async ({ page }) => {
   await dialog.getByLabel("단체명").fill("테스트 동아리")
   await dialog.getByLabel("학교", { exact: true }).fill("삼육대학교")
   await dialog.getByLabel("담당자 이름").fill("테스트 담당자")
-  await dialog.getByLabel("직책").fill("회장")
+  await dialog.getByLabel("직책").selectOption("회장")
   await dialog.getByLabel("휴대폰 번호").fill("010-1234-5678")
   await dialog.getByLabel("학교 이메일").fill("e2e-club@syu.ac.kr")
   await dialog.getByRole("button", { name: "인증번호 받기" }).click()
@@ -385,7 +410,7 @@ test("a member downloads their data and hands the account over to a new email", 
   await signup.getByLabel("단체명").fill("인수인계 동아리")
   await signup.getByLabel("학교", { exact: true }).fill("삼육대학교")
   await signup.getByLabel("담당자 이름").fill("테스트 담당자")
-  await signup.getByLabel("직책").fill("회장")
+  await signup.getByLabel("직책").selectOption("회장")
   await signup.getByLabel("휴대폰 번호").fill("010-1234-5678")
   await signup.getByLabel("학교 이메일").fill("e2e-handover@syu.ac.kr")
   await signup.getByRole("button", { name: "인증번호 받기" }).click()
@@ -418,7 +443,7 @@ test("a member downloads their data and hands the account over to a new email", 
   await page.getByRole("button", { name: "담당자 정보 수정" }).click()
   const contact = page.getByRole("dialog")
   await contact.getByLabel("담당자 이름").fill("새 임원")
-  await contact.getByLabel("직책").fill("부회장")
+  await contact.getByLabel("직책").selectOption("부회장")
   await contact.getByLabel("휴대폰 번호").fill("01098765432")
   await contact.getByRole("button", { name: "저장하기" }).click()
   await expect(contact).toBeHidden()
@@ -439,7 +464,7 @@ test("a shop a student group invited joins as a brand from the invitation", asyn
   const signup = page.getByRole("dialog")
   await signup.getByLabel("브랜드명").fill("골목 카페")
   await signup.getByLabel("담당자 이름").fill("테스트 담당자")
-  await signup.getByLabel("직책").fill("회장")
+  await signup.getByLabel("직책").selectOption("대표")
   await signup.getByLabel("휴대폰 번호").fill("010-1234-5678")
   await signup.getByLabel("회사 이메일").fill("owner@golmok-cafe.kr")
   await signup.getByRole("button", { name: "인증번호 받기" }).click()
@@ -467,8 +492,8 @@ test("a brand opens an accepted proposal's agreement, confirms it and proves wha
   await logIn(page, "브랜드", "hello@afternoon-coffee.kr")
   await page.goto("/inbox")
   await page.getByRole("tab", { name: /수락함/ }).click()
-  await page.locator(".request-card", { hasText: "서울여대 러너스" }).getByRole("button", { name: "약속서" }).click()
-  await expect(page.getByRole("heading", { name: "가을 캠퍼스 런 5K 협찬 약속서" })).toBeVisible()
+  await page.locator(".request-card", { hasText: "서울여대 러너스" }).getByRole("button", { name: "계약서" }).click()
+  await expect(page.getByRole("heading", { name: "가을 캠퍼스 런 5K 임시 전자 계약서" })).toBeVisible()
   await expect(page.getByText("아직 uniconnect 계정이 없어요")).toBeVisible()
   // Its own side shows the person running it, with a number to call.
   await expect(page.locator(".agreement-contact")).toContainText("이오후 · 점장")

@@ -20,8 +20,10 @@ const en: Record<string, string> = {
   // Measurement states (lib/measurements.ts measureState)
   "진행 전": "Not started",
   "측정 중": "Measuring",
-  // A scan's record from the server
+  "진행 완료": "Finished",
+  // Records from the server: a scan's, and a visit's from the old demo buttons (store.ts)
   "현장 QR 스캔": "QR scan at the event",
+  "매장 방문 확인": "Store visit confirmed",
   // KPI names (lib/kpis.ts reportKpis)
   "QR 참여율": "QR rate",
   "방문 전환율": "Visit rate",
@@ -114,7 +116,7 @@ const en: Record<string, string> = {
   "전체 보기": "See all",
   "아직 참여 기록이 없어요.": "No check-ins yet.",
   // Before the event (진행 전)
-  "목표는 협찬 약속서에서 정해요": "Goals are set on the sponsorship agreement",
+  "목표는 임시 전자 계약서에서 정해요": "Goals are set on the provisional e-contract",
   "행사가 시작되면 현장 반응이 여기에 떠요": "The Crowd Shows Here Once It Starts",
   "{date}부터 QR 스캔 · 쿠폰 · 매장 방문을 실시간으로 집계해요.":
     "From {date}, QR scans, coupons and store visits are counted live.",
@@ -122,8 +124,8 @@ const en: Record<string, string> = {
     "Once the event takes place, how QR scans led to coupons and store visits is drawn here.",
   "행사가 진행되면 참여 기록이 여기에 떠요. QR 스캔 · 쿠폰 · 매장 방문이 들어오는 대로 보여요.":
     "Once the event takes place, check-ins show here as QR scans, coupons and store visits come in.",
-  "캠페인이 시작되면 참여 기록이 여기에 쌓여요. 목표는 협찬 약속서에서 행사 전까지 정해요.":
-    "Check-ins gather here once the campaign starts. Its goals are set on the sponsorship agreement before then.",
+  "캠페인이 시작되면 참여 기록이 여기에 쌓여요. 목표는 임시 전자 계약서에서 행사 전까지 정해요.":
+    "Check-ins gather here once the campaign starts. Its goals are set on the provisional e-contract before then.",
   "캠페인 현장 측정": "Campaign Measurement on Site",
   "캠페인 현장에 QR을 띄우면 참여, 쿠폰, 매장 방문이 실시간으로 쌓여요.":
     "Show a QR at your campaign and watch check-ins, coupons and store visits add up live.",
@@ -238,16 +240,66 @@ const en: Record<string, string> = {
   "{line} 방문 확인": "{line} · confirmed",
   "일정@heading": "Dates",
 
-  // Measurement methods (data/methods.ts) and the venue counts (data/metrics.ts)
-  "QR 체크인 · 쿠폰 · 매장 방문": "QR check-in · Coupons · Store visits",
-  "참여자가 현장 QR을 찍고 쿠폰을 받으면, 매장 직원이 쿠폰 번호로 방문을 확인해요.":
-    "Participants scan the event QR and take a coupon; store staff confirm visits by its number.",
-  "샘플링 · 시음 수량": "Samples · Tastings handed out",
-  "부스에서 나눠 준 샘플이나 시음 수량을 현장 담당자가 세요.": "Staff at the booth count the samples or tastings handed out.",
+  // Confirmation methods (data/methods.ts) and their counts (data/metrics.ts)
+  "QR 체크인": "QR check-in",
+  "참여자가 행사장 QR을 휴대폰으로 찍으면 자동으로 세요.": "Counted automatically when participants scan the event QR.",
+  "쿠폰 발급": "Coupon",
+  "QR을 찍은 참여자가 휴대폰으로 쿠폰을 받으면 자동으로 세요.": "Counted automatically when participants who scanned take the coupon.",
+  "매장 직원이 참여자의 쿠폰 번호로 방문을 확인해요.": "Store staff confirm the visit by the participant's coupon number.",
+  "부스에서 나눠 준 샘플이나 시음 수량을 세요.": "Count the samples or tastings handed out at the booth.",
+  "부스나 체험존에 들른 참여자를 한 명씩 확인해요.": "Confirm each participant who stops by the booth or experience zone.",
+  "SNS 인증": "SNS posts",
+  "참여자가 올린 인증 게시물을 확인해요.": "Check the posts participants share.",
+  "설문 응답": "Survey answers",
+  "참여자의 설문 응답을 확인해요.": "Check participants' survey answers.",
+  "현장 구매 · 영수증": "Purchases · Receipts",
+  "부스나 매장에서 산 참여자를 영수증으로 확인해요.": "Confirm participants who bought at the booth or store by their receipts.",
+  "현장 구매": "Purchases",
+  "굿즈 · 사은품 지급": "Goods · Gifts given",
+  "나눠 준 굿즈나 사은품 수량을 세요.": "Count the goods or gifts handed out.",
+  "굿즈 · 사은품": "Goods · Gifts",
+  "경품 응모 · 추첨": "Raffle entries",
+  "경품 이벤트에 응모한 참여자를 확인해요.": "Confirm participants who entered the raffle.",
+  "경품 응모": "Raffle entries",
+  "회원 가입 · 앱 설치": "Sign-ups · App installs",
+  "브랜드 회원으로 가입하거나 앱을 설치한 참여자를 확인해요.": "Confirm participants who joined the brand or installed its app.",
+  "체험 · 시연 참여": "Try-outs · Demos",
+  "제품 체험이나 시연에 참여한 사람을 확인해요.": "Confirm people who tried the product or joined a demo.",
+  "체험 참여": "Try-outs",
+  "설문 {count}건": "{count} surveys",
+  "구매 {count}건": "{count} purchases",
+  "사은품 {count}개": "{count} gifts",
+  "응모 {count}건": "{count} raffle entries",
+  "가입 {count}명": "{count} sign-ups",
+  "체험 {count}명": "{count} try-outs",
+
+  // The e-contract's confirmation methods (pages/AgreementPage.tsx)
+  "협찬 확인 방식": "Confirmation methods",
+  "여러 개를 고를 수 있어요. 방식마다 현장에서 확인할 쪽도 골라 주세요": "Choose as many as you like, and who confirms each at the venue",
+  "{method} 맡는 쪽": "Who runs {method}",
+  "두 쪽 모두": "Both sides",
+  "두 쪽 모두 현장에서 확인": "Both sides confirm at the venue",
+  "{name}에서 운영": "Run by {name}",
+  "협찬 확인 방식을 하나 이상 골라 주세요.": "Please choose at least one confirmation method.",
+  "협찬 확인 방식 고르기": "Choose methods",
+  "협찬 확인 방식을 고쳤어요. 두 쪽 모두 다시 확인해 주세요.": "The methods changed. Both sides, please confirm again.",
+  "확정됐어요. 이 방식으로 성과에 반영돼요": "Confirmed. Results count these methods",
+  "바뀐 방식은 두 쪽이 다시 확인하면 반영돼요. 그때까지는 먼저 확정한 방식으로 집계해요":
+    "The changes count once both sides confirm again. Until then the methods confirmed before count",
+  "두 쪽이 계약서를 모두 확인하면 성과에 반영돼요": "They count in the results once both sides confirm the e-contract",
+
+  // 성과 (pages/MeasurementPage.tsx)
+  "행사가 끝났어요. 모인 현장 반응이에요": "The event is over. Here's what it gathered",
+  "{date}부터 임시 전자 계약서에서 확정한 협찬 확인 방식으로 실시간 집계해요.":
+    "From {date}, counted live by the methods confirmed on the provisional e-contract.",
+  "참여 전환은 임시 전자 계약서에서 QR 체크인을 고른 행사에 그려져요.":
+    "The funnel shows for events that chose QR check-in on the provisional e-contract.",
+  "행사가 진행되면 참여 기록이 여기에 떠요. 확정한 협찬 확인 방식으로 기록되는 대로 보여요.":
+    "Participation shows here once the event begins, as the confirmed methods record it.",
+
+  // Earlier method names, still in records kept from before, and the venue counts
   "부스 방문 · 스탬프": "Booth visits · Stamps",
-  "부스나 체험존에 들른 참여자를 담당자가 한 명씩 확인해요.": "Staff confirm each participant who stops by the booth or experience zone.",
   "SNS 인증 · 설문": "SNS posts · Surveys",
-  "참여자가 올린 인증 게시물이나 설문 응답을 담당자가 확인해요.": "Staff check the posts participants share or their survey answers.",
   "샘플 · 시음": "Samples · Tastings",
   "샘플링 · 시음": "Sampling · Tasting",
   "부스 스탬프": "Booth stamps",
@@ -258,35 +310,27 @@ const en: Record<string, string> = {
   "현장에서 확인한 성과": "Confirmed at the venue",
   "행사장에서 담당자가 확인한 성과도 함께 집계됐어요: {counts}.": "What staff confirmed at the venues is counted too: {counts}.",
 
-  // The agreement's measurement methods (pages/AgreementPage.tsx)
-  "측정 방식": "Measurement",
-  "쓸 방식과 현장에서 확인할 쪽을 골라 주세요": "Choose the methods to use and which side confirms each at the venue",
+  // The e-contract's methods and venue page (pages/AgreementPage.tsx)
   "{method} 확인하는 쪽": "Who confirms {method}",
-  "측정 방식을 하나 이상 골라 주세요.": "Please choose at least one measurement method.",
-  "행사가 시작돼 측정 방식을 더 바꿀 수 없어요": "The event has begun, so the methods can't change",
-  "행사 전까지 두 쪽 모두 고칠 수 있어요": "Either side can change them until the event",
   "{name}에서 현장 확인": "Confirmed at the venue by {name}",
-  "쿠폰 {coupons}장 · 방문 {visits}명": "{coupons} coupons · {visits} visits",
   "우리 쪽 현장 확인": "Our venue page",
   "행사 날 담당 직원이 자기 기기에서 이 주소를 열고 PIN을 넣으면, 우리 브랜드가 맡은 방식을 기록할 수 있어요.":
     "On the event day, your staff open this address on their own device and enter the PIN to record the methods your brand confirms.",
   "행사 날 담당자가 자기 기기에서 이 주소를 열고 PIN을 넣으면, 우리 단체가 맡은 방식을 기록할 수 있어요.":
     "On the event day, your staff open this address on their own device and enter the PIN to record the methods your group confirms.",
   PIN: "PIN",
-  "측정 방식 고치기": "Change methods",
-  "고치면 두 쪽 모두 약속서를 다시 확인해야 해요.": "After a change, both sides confirm the agreement again.",
-  "측정 방식을 고쳤어요. 두 쪽 모두 다시 확인해 주세요.": "The methods changed. Both sides, please confirm again.",
+  "고치면 두 쪽 모두 계약서를 다시 확인해야 해요.": "After a change, both sides confirm the e-contract again.",
 
   // The venue pages (checkin/GroupCheckInPage.tsx, checkin/StaffCheckInPage.tsx, components/VenueCounters.tsx)
   "학생단체 현장 확인": "Student group venue page",
   "현장 확인": "Venue check",
-  "협찬 약속서에서 우리 단체가 확인하기로 한 측정 방식을 여기서 기록해요. 단체 확인 PIN은 협찬 약속서와 성과의 현장 QR에서 볼 수 있어요.":
-    "Record here the methods your group agreed to confirm. The group PIN is on the sponsorship agreement and in Performance's event QR.",
+  "임시 전자 계약서에서 우리 단체가 확인하기로 한 협찬 확인 방식을 여기서 기록해요. 단체 확인 PIN은 임시 전자 계약서와 성과의 현장 QR에서 볼 수 있어요.":
+    "Record here the methods your group agreed to confirm. The group PIN is on the provisional e-contract and in Performance's event QR.",
   "단체 확인 PIN": "Group PIN",
-  "우리 단체가 현장에서 확인할 측정 방식이 아직 없어요. 협찬 약속서에서 정해 주세요.":
-    "Your group has no methods to confirm at the venue yet. Set them on the sponsorship agreement.",
-  "협찬 약속서에서 우리 브랜드가 확인하기로 한 측정 방식을 여기서 기록해요. 직원 PIN은 협찬 약속서에서 볼 수 있어요.":
-    "Record here the methods your brand agreed to confirm. The staff PIN is on the sponsorship agreement.",
+  "우리 단체가 현장에서 확인할 협찬 확인 방식이 아직 없어요. 임시 전자 계약서에서 고르고 두 쪽이 확인하면 여기에 떠요.":
+    "Your group has no methods to confirm at the venue yet. They show here once chosen on the provisional e-contract and confirmed by both sides.",
+  "임시 전자 계약서에서 우리 브랜드가 확인하기로 한 협찬 확인 방식을 여기서 기록해요. 직원 PIN은 임시 전자 계약서에서 볼 수 있어요.":
+    "Record here the methods your brand agreed to confirm. The staff PIN is on the provisional e-contract.",
   "현장 집계": "Venue counts",
   수량: "Quantity",
   "{method} {count}개 더하기": "Add {count} to {method}",
@@ -298,7 +342,7 @@ const en: Record<string, string> = {
   "{method} 하나 되돌리기": "Undo one for {method}",
   되돌리기: "Undo",
   "우리 단체 현장 확인": "Our group's venue page",
-  "협찬 약속서에서 우리 단체가 확인하기로 한 측정 방식(부스 스탬프, SNS 인증 등)을 행사 날 이 주소에서 기록해요. 우리 단체 담당자에게만 알려 주세요.":
+  "임시 전자 계약서에서 우리 단체가 확인하기로 한 협찬 확인 방식(부스 스탬프, SNS 인증 등)을 행사 날 이 주소에서 기록해요. 우리 단체 담당자에게만 알려 주세요.":
     "On the event day, record the methods your group agreed to confirm (booth stamps, SNS posts and so on) at this address. Share it only with your group's staff.",
 }
 

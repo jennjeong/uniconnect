@@ -8,7 +8,6 @@ const en: Record<string, string> = {
   "비밀번호 확인": "Confirm password",
   "새 비밀번호": "New password",
   "새 비밀번호 확인": "Confirm new password",
-  "8자 이상": "At least 8 characters",
   확인: "Confirm",
   재전송: "Resend",
   "인증번호 받기": "Get code",
@@ -18,7 +17,6 @@ const en: Record<string, string> = {
   "남은 시간 {time}": "{time} left",
   "인증 시간이 지났어요. 재전송을 눌러 주세요.": "The code has expired. Tap Resend for a new one.",
   "개발 모드라서 메일 대신 인증번호를 여기에 보여드려요:": "Dev mode, so here's your code instead of an email:",
-  "비밀번호는 8자 이상이어야 해요.": "Your password needs at least 8 characters.",
   "비밀번호가 일치하지 않아요.": "The passwords don't match.",
 
   // Log in (modals/LoginModal.tsx)
@@ -34,7 +32,7 @@ const en: Record<string, string> = {
   직책: "Position",
   "휴대폰 번호": "Mobile number",
   "예) 홍길동": "e.g. Gildong Hong",
-  "협찬이 확정된 상대에게만 협찬 약속서에서 보여요.": "Only partners of a confirmed sponsorship see it, on the agreement.",
+  "협찬이 확정된 상대에게만 임시 전자 계약서에서 보여요.": "Only partners of a confirmed sponsorship see it, on the e-contract.",
   "담당자 이름을 입력해 주세요.": "Please enter the contact person's name.",
   "직책을 입력해 주세요.": "Please enter your position.",
   "휴대폰 번호를 010-1234-5678처럼 입력해 주세요.": "Please enter a mobile number like 010-1234-5678.",
@@ -52,6 +50,35 @@ const en: Record<string, string> = {
   매니저: "Manager",
   "마케팅 담당": "Marketing",
   "홍보 담당": "PR",
+  대외협력부장: "Head of partnerships",
+  부원: "Member",
+  이사: "Director",
+  본부장: "Division head",
+  팀장: "Team leader",
+  부장: "General manager",
+  차장: "Deputy general manager",
+  과장: "Manager",
+  대리: "Assistant manager",
+  주임: "Senior staff",
+  사원: "Staff",
+  "직책을 골라 주세요": "Choose a position",
+  "직접 입력": "Type my own",
+  "목록에서 고르기": "Pick from the list",
+  "예) 마케팅 매니저": "e.g. Marketing manager",
+
+  // New passwords (lib/password.ts, components/PasswordRules.tsx)
+  "비밀번호 조건": "Password rules",
+  "8~64자": "8–64 characters",
+  영문: "A letter",
+  숫자: "A number",
+  특수문자: "A symbol",
+  "공백 없음": "No spaces",
+  충족: "met",
+  아직: "not yet",
+  "영문·숫자·특수문자 8자 이상": "8+ characters with letters, numbers and symbols",
+  "비밀번호는 8자에서 64자 사이로 정해 주세요.": "Please choose a password of 8 to 64 characters.",
+  "비밀번호에는 공백을 넣을 수 없어요.": "The password can't contain spaces.",
+  "비밀번호에 영문, 숫자, 특수문자를 모두 넣어 주세요.": "Please use English letters, numbers and symbols in the password.",
   "데모 계정으로 체험하기": "Try a demo account",
   "여러 사람이 함께 쓰는 체험용 계정이라, 예시 데이터 안에서만 제안하고 수락해 볼 수 있어요.":
     "These shared accounts are for trying uniconnect: you can propose and accept within the example data only.",
@@ -115,7 +142,6 @@ const en: Record<string, string> = {
 
   // Change password (modals/PasswordModal.tsx)
   "지금 비밀번호를 입력해 주세요.": "Enter your current password.",
-  "새 비밀번호는 8자 이상이어야 해요.": "Your new password needs at least 8 characters.",
   "새 비밀번호가 일치하지 않아요.": "The new passwords don't match.",
   "비밀번호 변경": "Change Password",
   "로그인 이메일 바꾸기": "Change login email",
@@ -131,7 +157,6 @@ const en: Record<string, string> = {
   "내 데이터를 내려받았어요.": "Your data was downloaded.",
   "비밀번호를 바꾸면 다른 기기에서는 로그아웃돼요.": "Changing your password logs you out on other devices.",
   "지금 비밀번호": "Current password",
-  "새 비밀번호 (8자 이상)": "New password (8+ characters)",
   "비밀번호 바꾸기": "Change password",
 
   // Ask the operators (modals/AskModal.tsx)
@@ -251,8 +276,8 @@ const en: Record<string, string> = {
   "내가 보낸 메시지의 ⋯ 버튼에서 수정하거나 삭제할 수 있어요. 고친 메시지에는 ‘수정됨’, 지운 메시지는 삭제된 메시지로 양쪽 모두에게 보여요. 상대가 읽었는지도 메시지 옆에 표시돼요.":
     "Use the ⋯ button on a message you sent. Both sides see ‘Edited’ on a changed message and a placeholder for a deleted one. You can also see beside each message whether it's been read.",
   "협찬 성과는 어떻게 확인하나요?": "How do I track sponsorship results?",
-  "행사 현장의 QR로 참여(스캔), 쿠폰 수령, 매장 방문을 집계해 목표와 비교해요. 협찬 약속서에서 샘플링 · 시음, 부스 스탬프, SNS 인증 · 설문도 고를 수 있고, 방식마다 학생단체나 브랜드가 행사장에서 자기 PIN으로 확인해요. 학생단체는 성과와 리포트에서, 브랜드는 성과 분석에서 확인해요.":
-    "A QR code at the event counts scans, coupons taken and store visits, then compares them with your goals. On the sponsorship agreement you can also choose sampling and tastings, booth stamps, and SNS posts or surveys, each confirmed at the venue by the student group or the brand with its own PIN. Student groups see the results in Performance and Reports; brands in Analytics.",
+  "임시 전자 계약서 아래의 협찬 확인 방식에서 QR 체크인, 쿠폰 발급, 매장 방문, 샘플링 · 시음, 부스 스탬프, SNS 인증, 설문, 현장 구매, 사은품, 경품 응모, 회원 가입, 체험 가운데 여러 개를 고르고, 방식마다 학생단체 · 브랜드 · 두 쪽 모두 가운데 확인할 쪽을 정해요. 두 쪽이 계약서를 확인하면 확정되고, 행사장에서 각자 자기 PIN으로 확인한 숫자가 목표와 함께 모여요. 학생단체는 성과와 리포트에서, 브랜드는 성과 분석에서 확인해요.":
+    "Below the provisional e-contract, choose as many confirmation methods as you like (QR check-in, coupons, store visits, sampling, booth stamps, SNS posts, surveys, purchases, gifts, raffles, sign-ups, try-outs) and who confirms each: the student group, the brand or both. Once both sides confirm the e-contract they're settled, and what each side confirms at the venue with its own PIN is counted against your goals. Student groups see the results in Performance and Reports; brands in Analytics.",
   "리포트를 PDF로 받을 수 있나요?": "Can I get a report as a PDF?",
   "네. 학생단체는 리포트 페이지의 ‘PDF 리포트 다운로드’, 브랜드는 성과 분석의 ‘분석 보고서 다운로드’로 받아요. 브랜드 보고서에는 전체 요약과 협찬마다의 성과 페이지가 담겨요.":
     "Yes. Student groups use ‘Download PDF report’ on Reports; brands use ‘Download report’ in Analytics. The brand report has an overall summary plus a page for each sponsorship.",
@@ -270,7 +295,7 @@ const en: Record<string, string> = {
   "복사하지 못했어요. 직접 선택해서 복사해 주세요.": "Couldn't copy. Please select it and copy it yourself.",
   "공유하지 못했어요. 메시지를 복사해서 보내 주세요.": "Couldn't share. Please copy the message and send it.",
   // Sponsorship agreements (pages/AgreementsPage.tsx, AgreementPage.tsx)
-  "협찬 약속서": "Sponsorship agreements",
+  "임시 전자 계약서": "Provisional e-contracts",
   // The event's goals on an agreement (GoalsPanel in pages/AgreementPage.tsx)
   "행사 목표": "Event goals",
   도달: "Reach",
@@ -281,20 +306,20 @@ const en: Record<string, string> = {
   "정한 목표는 성과와 리포트에 바로 반영돼요.": "Goals show in Performance and the report right away.",
   "학생단체와 브랜드가 협찬으로 할 일을 함께 정하고 확인하고, 한 일을 링크와 사진으로 남겨요.":
     "A student group and a brand agree on what each will do for a sponsorship, confirm it, and keep links and photos of what was done.",
-  "확정된 협찬마다 약속서를 확인하고, 할 일이 얼마나 끝났는지 봐요.":
-    "See the agreement for each confirmed sponsorship and how much has been done.",
+  "확정된 협찬마다 계약서를 확인하고, 할 일이 얼마나 끝났는지 봐요.":
+    "See the e-contract for each confirmed sponsorship and how much has been done.",
   "확정된 협찬마다 두 쪽이 할 일을 정하고 확인해요. 한 일은 링크와 사진으로 남겨 두면 결과를 바로 보여 줄 수 있어요.":
     "For each confirmed sponsorship, both sides agree on what each will do. Keep links and photos of what's done to show the results right away.",
-  "약속서를 불러오고 있어요…": "Loading agreements…",
-  "로그인하면 확정된 협찬의 약속서를 볼 수 있어요.": "Log in to see the agreements of your confirmed sponsorships.",
-  "확정된 협찬이 생기면 여기에서 약속서를 확인할 수 있어요.": "Once a sponsorship is confirmed, its agreement shows here.",
+  "계약서를 불러오고 있어요…": "Loading e-contracts…",
+  "로그인하면 확정된 협찬의 계약서를 볼 수 있어요.": "Log in to see the e-contracts of your confirmed sponsorships.",
+  "확정된 협찬이 생기면 여기에서 계약서를 확인할 수 있어요.": "Once a sponsorship is confirmed, its e-contract shows here.",
   "할 일 {done}/{total}": "{done}/{total} done",
   "증빙 {count}개": "{count} proof",
   "양쪽 확인": "Confirmed by both",
   "상대 확인 기다리는 중": "Waiting for the other side",
   "내 확인 필요": "Needs your confirmation",
-  약속서: "Agreement",
-  "{name} 협찬 약속서": "Sponsorship agreement for {name}",
+  계약서: "E-contract",
+  "{name} 임시 전자 계약서": "Provisional e-contract for {name}",
   "인쇄 · PDF 저장": "Print · Save as PDF",
   "아직 uniconnect 계정이 없어요": "Not on uniconnect yet",
   "협찬 내용": "Sponsorship",

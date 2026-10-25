@@ -1,5 +1,6 @@
+import { venueKinds } from "../data/metrics"
 import { lang } from "../i18n"
-import type { Sponsorship } from "../types"
+import type { Sponsorship, VenueCounts } from "../types"
 import { percent } from "./format"
 
 // Estimated sales the sponsorship brought per won spent, in percent.
@@ -14,7 +15,7 @@ export const costPerVisit = (sponsorship: Pick<Sponsorship, "spend" | "visits">)
   sponsorship.visits > 0 ? Math.round(sponsorship.spend / sponsorship.visits) : 0
 
 export function sponsorshipTotals(sponsorships: Sponsorship[]) {
-  const sum = (key: "spend" | "sales" | "coupons" | "visits" | "samples" | "stamps" | "posts") =>
+  const sum = (key: "spend" | "sales" | "coupons" | "visits" | keyof VenueCounts) =>
     sponsorships.reduce((total, sponsorship) => total + (sponsorship[key] ?? 0), 0)
   const spend = sum("spend")
   const sales = sum("sales")
@@ -23,10 +24,8 @@ export function sponsorshipTotals(sponsorships: Sponsorship[]) {
     sales,
     coupons: sum("coupons"),
     visits: sum("visits"),
-    // What the venue confirmed by the sponsorships' measurement methods.
-    samples: sum("samples"),
-    stamps: sum("stamps"),
-    posts: sum("posts"),
+    // What the venue confirmed by the sponsorships' confirmation methods.
+    ...(Object.fromEntries(venueKinds.map((kind) => [kind, sum(kind as keyof VenueCounts)])) as VenueCounts),
     roas: percent(sales, spend),
   }
 }

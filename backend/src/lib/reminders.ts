@@ -42,7 +42,7 @@ export async function sendReminders(database: Database = getDatabase(), now = ne
         subject: subjectFor(event.name, days, false),
         lines: [
           `${event.name} 일정이 다가왔어요.`,
-          "확정된 협찬이 있다면 협찬 약속서에서 두 쪽이 할 일을 확인해 주세요.",
+          "확정된 협찬이 있다면 임시 전자 계약서에서 두 쪽이 할 일을 확인해 주세요.",
         ],
         path: students ? "/events" : "/campaigns",
       })
@@ -57,7 +57,7 @@ export async function sendReminders(database: Database = getDatabase(), now = ne
         subject: subjectFor(sponsorship.eventName, days, true),
         lines: [
           `${sponsorship.groupName}의 '${sponsorship.eventName}' 협찬 일정이 다가왔어요.`,
-          "협찬 약속서에서 브랜드가 할 일을 확인해 주세요.",
+          "임시 전자 계약서에서 브랜드가 할 일을 확인해 주세요.",
         ],
         path: "/agreements",
       })
