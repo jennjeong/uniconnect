@@ -1,12 +1,14 @@
 import { Fragment, type ReactNode } from "react"
 
+import { venueSummary } from "../data/methods"
+import { venueKinds } from "../data/metrics"
 import { t } from "../i18n"
 import { formatFullDate } from "../lib/date"
 import { percent } from "../lib/format"
 import { formatWon } from "../lib/kpis"
 import { analyzeSponsorships } from "../lib/sponsorships"
-import type { Sponsorship } from "../types"
-import { PageFooter, PageHeader } from "./ReportDocument"
+import type { MetricKind, Sponsorship } from "../types"
+import { PageFooter, PageHeader, VenueCounts } from "./ReportDocument"
 
 const footerNote = t("uniconnect · 협찬 성과 분석 보고서 · 집계된 협찬 데이터로 자동 생성했어요.")
 
@@ -82,6 +84,10 @@ export function AnalyticsDocument({
     `${t("쿠폰을 받은 학생의 {rate}%가 매장에 왔어요.", { rate: visitRate })} ${
       visitRate >= 40 ? t("현장 쿠폰이 방문으로 잘 이어지고 있어요.") : t("쿠폰 혜택을 키우면 방문이 더 늘 수 있어요.")
     }`,
+    // What the venue confirmed by the measurement methods, across them all.
+    ...(venueSummary(totals)
+      ? [t("행사장에서 담당자가 확인한 성과도 함께 집계됐어요: {counts}.", { counts: venueSummary(totals) })]
+      : []),
   ]
 
   return (
@@ -177,6 +183,8 @@ export function AnalyticsDocument({
           ? t("목표 ROAS {target}%를 {gap}%p 넘겼어요.", { target: row.targetRoas, gap: row.roas - row.targetRoas })
           : t("목표 ROAS {target}%까지 {gap}%p 남았어요.", { target: row.targetRoas, gap: row.targetRoas - row.roas })
         const perVisit = { cost: formatWon(row.perVisit), average: formatWon(averagePerVisit) }
+        // The venue counts it has, shown only when some method counted any.
+        const counted: Partial<Record<MetricKind, number>> = { samples: row.samples, stamps: row.stamps, posts: row.posts }
         const notes = [
           t("{spend}을 집행해 추정 매출 {sales}을 만들었어요. {verdict}", {
             spend: formatWon(row.spend),
@@ -307,6 +315,8 @@ export function AnalyticsDocument({
                 </div>
               </section>
             </div>
+
+            <VenueCounts counts={counted} kinds={venueKinds.filter((kind) => (counted[kind] ?? 0) > 0)} />
 
             <section className="pdf-section">
               <h2>{t("평가")}</h2>

@@ -12647,6 +12647,24 @@ button:active:not(:disabled) {
   color: #2f8a52;
 }
 
+/* Each sponsor's venue counts under their tiles, when there are several. */
+.pdf-venue-sponsors {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ink-soft);
+  font-size: 11.5px;
+}
+
+.pdf-venue-sponsors b {
+  margin-right: 6px;
+  color: var(--ink);
+  font-weight: var(--weight-strong);
+}
+
 .pdf-kpi-track {
   height: 6px;
   margin-top: 4px;

@@ -256,6 +256,7 @@ const en: Record<string, string> = {
   "SNS 인증 {count}건": "{count} SNS posts",
   "현장에서 확인": "Confirmed at the venue",
   "현장에서 확인한 성과": "Confirmed at the venue",
+  "행사장에서 담당자가 확인한 성과도 함께 집계됐어요: {counts}.": "What staff confirmed at the venues is counted too: {counts}.",
 
   // The agreement's measurement methods (pages/AgreementPage.tsx)
   "측정 방식": "Measurement",

@@ -14,11 +14,21 @@ export const costPerVisit = (sponsorship: Pick<Sponsorship, "spend" | "visits">)
   sponsorship.visits > 0 ? Math.round(sponsorship.spend / sponsorship.visits) : 0
 
 export function sponsorshipTotals(sponsorships: Sponsorship[]) {
-  const sum = (key: "spend" | "sales" | "coupons" | "visits") =>
-    sponsorships.reduce((total, sponsorship) => total + sponsorship[key], 0)
+  const sum = (key: "spend" | "sales" | "coupons" | "visits" | "samples" | "stamps" | "posts") =>
+    sponsorships.reduce((total, sponsorship) => total + (sponsorship[key] ?? 0), 0)
   const spend = sum("spend")
   const sales = sum("sales")
-  return { spend, sales, coupons: sum("coupons"), visits: sum("visits"), roas: percent(sales, spend) }
+  return {
+    spend,
+    sales,
+    coupons: sum("coupons"),
+    visits: sum("visits"),
+    // What the venue confirmed by the sponsorships' measurement methods.
+    samples: sum("samples"),
+    stamps: sum("stamps"),
+    posts: sum("posts"),
+    roas: percent(sales, spend),
+  }
 }
 
 // The whole amount, "1,480,000원" ("₩1,480,000"), for the large numbers on
