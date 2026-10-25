@@ -93,6 +93,28 @@ test("the login popup logs into a demo account with one press, with nothing to t
   await expect(page.locator(".hero-eyebrow")).toContainText("반가워요, 오후의 커피")
 })
 
+test("a proposal sent waits under 검토 중 beside those received, and is taken back there", async ({ page, request }) => {
+  const group = await signUpMember(request, "학생단체", "e2e-sender@syu.ac.kr", "보내는 동아리")
+  const brand = await signUpMember(request, "브랜드", "e2e-receiver@receiver-cafe.kr", "받는 카페")
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date())
+  await request.post("/api/events", { data: { name: "보내는 공연", date: today, people: "80명", types: ["현금"] }, headers: group.headers })
+  await request.post("/api/proposals", { data: { matchId: brand.listingId }, headers: group.headers })
+
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
+  await page.goto("/offers")
+  const sentPart = page.locator(".inbox-part", { has: page.getByRole("heading", { name: /보낸 제안/ }) })
+  const card = sentPart.locator(".request-card", { hasText: "받는 카페" })
+  await expect(card).toContainText("보내는 공연")
+  // Asked once more, then gone.
+  await card.getByRole("button", { name: "제안 취소" }).click()
+  await card.getByRole("button", { name: "제안 취소" }).click()
+  await expect(sentPart.locator(".request-card")).toHaveCount(0)
+  await expect(page.getByText("받는 카페에 보낸 제안을 취소했어요.")).toBeVisible()
+  // The brand leaves, so later cases see no member brand from this one.
+  const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: brand.headers })
+  expect(left.status()).toBe(204)
+})
+
 test("a student group proposes and the brand accepts", async ({ browser }) => {
   const student = await (await browser.newContext()).newPage()
   await student.goto("/")

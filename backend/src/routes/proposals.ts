@@ -47,7 +47,31 @@ function proposalState(account: Account) {
       ? database.requests.filter((item) => item.fromAccountId === account.id && item.status === "수락").length +
         database.offers.filter((item) => item.groupId === account.groupId && item.status === "수락").length
       : (database.sponsorships[account.id] ?? []).length
-  return { proposals, statuses, confirmed }
+  // What the account sent, newest first, as its inbox lists them beside what
+  // it received: to whom, about which of its events, offering what, and the
+  // answer so far.
+  const sentList = sent
+    .filter((item) => proposals.includes(item.partnerId))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .map((item) => {
+      const partner = listings.find((listing) => listing.id === item.partnerId)
+      const date = "eventDate" in item ? item.eventDate : item.campaignDate
+      return {
+        id: item.id,
+        partnerId: item.partnerId,
+        partnerName: partner?.name ?? "알 수 없는 상대",
+        industry: partner?.industry ?? item.industry,
+        ...(partner?.logo ? { logo: partner.logo } : {}),
+        ...(partner?.school ? { school: partner.school } : {}),
+        eventName: "eventName" in item ? item.eventName : item.campaignName,
+        ...(date ? { eventDate: date } : {}),
+        offer: "ask" in item ? item.ask : item.offer,
+        status: item.status,
+        createdAt: item.createdAt,
+        ...(item.respondedAt ? { respondedAt: item.respondedAt } : {}),
+      }
+    })
+  return { proposals, statuses, confirmed, sent: sentList }
 }
 
 // The account's next event (a group's) or campaign (a brand's) that has
@@ -103,7 +127,7 @@ function canPropose(sent: { status: RequestStatus; eventId?: string }[], event: 
 }
 
 proposalsRouter.get("/", (req, res) => {
-  res.json(req.account ? proposalState(req.account) : { proposals: [], statuses: {}, confirmed: 0 })
+  res.json(req.account ? proposalState(req.account) : { proposals: [], statuses: {}, confirmed: 0, sent: [] })
 })
 
 proposalsRouter.post("/", async (req, res) => {
