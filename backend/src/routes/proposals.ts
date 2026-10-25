@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto"
 import { Router } from "express"
 
-import { brandIndustries, groupIndustries } from "../lib/catalog.js"
+import { brandIndustries, groupIndustries, shownCatalog, shownTo } from "../lib/catalog.js"
 import { todayInKorea } from "../lib/dates.js"
 import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
@@ -18,7 +18,15 @@ export const proposalsRouter = Router()
 // accepted and ones it received and accepted, each event once.
 function proposalState(account: Account) {
   const database = getDatabase()
-  const proposals = database.proposals[account.id] ?? []
+  // Proposals to listings the account no longer sees (a member's to the
+  // examples, sent before they were set apart) drop out; ones to a partner
+  // that left stay.
+  const catalog = account.role === "학생단체" ? "brands" : "groups"
+  const listings = catalog === "brands" ? database.brands : database.groups
+  const proposals = (database.proposals[account.id] ?? []).filter((id) => {
+    const listing = listings.find((item) => item.id === id)
+    return !listing || shownTo(database, catalog, listing, account)
+  })
   const statuses: Record<string, RequestStatus> = {}
   const sent =
     account.role === "학생단체"
@@ -102,9 +110,11 @@ proposalsRouter.post("/", async (req, res) => {
   const account = requireAccount(req)
   const matchId = String(req.body?.matchId ?? "")
   const database = getDatabase()
-  // Student groups propose to any brand in the catalog, brands to any group.
-  const partners = account.role === "학생단체" ? database.brands : database.groups
-  const partner = partners.find((match) => match.id === matchId)
+  // Student groups propose to any brand they see, brands to any group: a
+  // member to members, a demo account within the examples.
+  const partner = shownCatalog(database, account.role === "학생단체" ? "brands" : "groups", account).find(
+    (match) => match.id === matchId,
+  )
   if (!partner) throw new HttpError(404, "목록에 없는 상대예요.")
   const students = account.role === "학생단체"
   const event = nextEvent(account)

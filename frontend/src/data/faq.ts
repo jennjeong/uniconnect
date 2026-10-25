@@ -29,7 +29,7 @@ export const faqs: { topic: FaqTopic; question: string; answer: string; featured
     featured: true,
     question: t("가입하지 않고도 둘러볼 수 있나요?"),
     answer:
-      t("네. 로그인하지 않으면 학생단체 화면과 브랜드 화면을 데모 데이터로 둘러볼 수 있어요. 협찬 제안, 제안 수락, 일정 등록은 로그인한 뒤에 할 수 있어요."),
+      t("네. 로그인하지 않으면 학생단체 화면과 브랜드 화면을 데모 데이터로 둘러볼 수 있어요. 협찬 제안, 제안 수락, 일정 등록은 로그인한 뒤에 할 수 있어요. 가입하면 데모 데이터 대신 실제로 가입한 브랜드와 학생단체만 보여요."),
   },
   {
     topic: "start",

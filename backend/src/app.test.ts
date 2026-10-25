@@ -504,24 +504,23 @@ test("brand analytics follow the live measurement", async () => {
 test("proposals are about an upcoming event, and a sponsor can be asked again for the next one", async () => {
   const { addDays, todayInKorea } = await import("./lib/dates.js")
   const today = todayInKorea()
-  const student = await signUpMember("proposer@syu.ac.kr", "proposer-pass-123")
-  const brand = await login("브랜드")
+  const { token: student, listingId: groupId } = await listedMember("proposer@syu.ac.kr", "proposer-pass-123")
+  const { token: brand, listingId: brandId } = await listedMember("proposer@proposer-cafe.kr", "proposer-pass-123", "브랜드")
 
-  // Without an upcoming event a proposal to a brand with an account would
-  // never reach the analytics, so it waits for one; others just keep the interest.
-  const none = await call("POST", "/proposals", { matchId: "afternoon-coffee" }, student)
+  // Without an upcoming event a proposal would never reach the analytics,
+  // so it waits for one.
+  const none = await call("POST", "/proposals", { matchId: brandId }, student)
   assert.equal(none.status, 409)
   assert.match(none.data.error, /행사를 먼저/)
-  assert.equal((await call("GET", "/proposals", undefined, student)).data.proposals.includes("afternoon-coffee"), false)
-  assert.equal((await call("POST", "/proposals", { matchId: "studymate" }, student)).status, 201)
+  assert.equal((await call("GET", "/proposals", undefined, student)).data.proposals.includes(brandId), false)
 
   const first = (await call("POST", "/events", { name: "첫 공연", date: addDays(today, 5), types: ["현금"] }, student)).data.event
   const second = (await call("POST", "/events", { name: "둘째 공연", date: addDays(today, 30), types: ["현금"] }, student)).data.event
-  assert.equal((await call("POST", "/proposals", { matchId: "afternoon-coffee" }, student)).status, 201)
+  assert.equal((await call("POST", "/proposals", { matchId: brandId }, student)).status, 201)
   const mine = () => getDatabase().requests.filter((item) => item.groupName === "proposer 동아리")
   assert.deepEqual(mine().map((item) => item.eventId), [first.id])
   // Sending again while it waits changes nothing.
-  assert.equal((await call("POST", "/proposals", { matchId: "afternoon-coffee" }, student)).status, 201)
+  assert.equal((await call("POST", "/proposals", { matchId: brandId }, student)).status, 201)
   assert.equal(mine().length, 1)
   assert.equal((await call("GET", "/proposals", undefined, student)).data.confirmed, 0)
   await call("POST", `/requests/${mine()[0].id}/accept`, undefined, brand)
@@ -532,34 +531,27 @@ test("proposals are about an upcoming event, and a sponsor can be asked again fo
     (await call("GET", "/proposals", undefined, brand)).data.confirmed,
     getDatabase().sponsorships[brandAccount].length,
   )
-  const again = await call("POST", "/proposals", { matchId: "afternoon-coffee" }, student)
+  const again = await call("POST", "/proposals", { matchId: brandId }, student)
   assert.equal(again.status, 409)
   assert.match(again.data.error, /이미 협찬이 확정/)
 
   // Once the first event is over, the next one can be proposed.
   Object.values(getDatabase().events).flat().find((item) => item.id === first.id)!.date = addDays(today, -2)
-  const next = await call("POST", "/proposals", { matchId: "afternoon-coffee" }, student)
+  const next = await call("POST", "/proposals", { matchId: brandId }, student)
   assert.equal(next.status, 201)
   assert.deepEqual(mine().map((item) => item.eventId), [first.id, second.id])
-  assert.equal(next.data.statuses["afternoon-coffee"], "검토 중")
+  assert.equal(next.data.statuses[brandId], "검토 중")
   // Withdrawing it leaves the accepted one and the brand among the proposals.
-  const withdrawn = await call("DELETE", "/proposals/afternoon-coffee", undefined, student)
+  const withdrawn = await call("DELETE", `/proposals/${brandId}`, undefined, student)
   assert.equal(withdrawn.status, 200)
-  assert.ok(withdrawn.data.proposals.includes("afternoon-coffee"))
-  assert.equal(withdrawn.data.statuses["afternoon-coffee"], "수락")
-  assert.equal((await call("DELETE", "/proposals/afternoon-coffee", undefined, student)).status, 409)
+  assert.ok(withdrawn.data.proposals.includes(brandId))
+  assert.equal(withdrawn.data.statuses[brandId], "수락")
+  assert.equal((await call("DELETE", `/proposals/${brandId}`, undefined, student)).status, 409)
 
   // A brand needs an upcoming campaign the same way.
-  const brandId = (await call("GET", "/auth/me", undefined, brand)).data.account.id as string
-  const campaigns = getDatabase().events[brandId]
-  getDatabase().events[brandId] = []
-  try {
-    const offer = await call("POST", "/proposals", { matchId: "syu-muse" }, brand)
-    assert.equal(offer.status, 409)
-    assert.match(offer.data.error, /캠페인을 먼저/)
-  } finally {
-    getDatabase().events[brandId] = campaigns
-  }
+  const offer = await call("POST", "/proposals", { matchId: groupId }, brand)
+  assert.equal(offer.status, 409)
+  assert.match(offer.data.error, /캠페인을 먼저/)
 })
 
 test("check-ins count only on the event's days, and records go once they are not needed", async () => {
@@ -864,8 +856,59 @@ test("accounts write the listing the other side sees", async () => {
     newBrand,
   )
   assert.equal(created.data.profile.industry, "education")
-  const { brands } = (await call("GET", "/brands")).data
-  assert.ok(brands.some((brand: { name: string }) => brand.name === "새로운 브랜드"))
+  // Members of the other side find it; the examples that visitors and the
+  // demo accounts see don't show it.
+  const named = async (token?: string) =>
+    ((await call("GET", "/brands", undefined, token)).data.brands as { name: string }[]).map((brand) => brand.name)
+  assert.ok((await named(await signUpMember("finder@syu.ac.kr", "finder-pass-123"))).includes("새로운 브랜드"))
+  assert.ok(!(await named()).includes("새로운 브랜드"))
+  assert.ok(!(await named(student)).includes("새로운 브랜드"))
+})
+
+test("members see only members, and the examples stay with visitors and the demo accounts", async () => {
+  const { token: group, listingId: groupListing } = await listedMember("apart@syu.ac.kr", "apart-pass-123")
+  const { token: brand, listingId: brandListing } = await listedMember("apart@apart-cafe.kr", "apart-pass-123", "브랜드")
+  const demoGroup = await login("학생단체")
+  const demoBrand = await login("브랜드")
+  const database = getDatabase()
+  const demoIds = Object.values(database.demoAccountIds)
+  const byMember = (catalog: "brandId" | "groupId", id: string) =>
+    database.accounts.some((account) => account[catalog] === id && !demoIds.includes(account.id))
+  const ids = async (route: string, key: string, token?: string) =>
+    ((await call("GET", route, undefined, token)).data[key] as { id: string }[]).map((listing) => listing.id)
+
+  // A member's catalogs and matches hold members' listings only.
+  const forGroup = await ids("/brands", "brands", group)
+  assert.ok(forGroup.includes(brandListing))
+  assert.ok(forGroup.every((id) => byMember("brandId", id)))
+  assert.ok((await ids("/matches", "matches", group)).every((id) => forGroup.includes(id)))
+  const forBrand = await ids("/groups", "groups", brand)
+  assert.ok(forBrand.includes(groupListing))
+  assert.ok(forBrand.every((id) => byMember("groupId", id)))
+
+  // Visitors and the demo accounts see the examples, and no member.
+  for (const token of [undefined, demoGroup]) {
+    const shown = await ids("/brands", "brands", token)
+    assert.ok(shown.includes("afternoon-coffee") && shown.includes("studymate"))
+    assert.ok(!shown.some((id) => byMember("brandId", id)))
+  }
+  assert.ok(!(await ids("/groups", "groups", demoBrand)).some((id) => byMember("groupId", id)))
+
+  // Neither reaches the other with a proposal or a message.
+  await call("POST", "/events", { name: "따로 공연", date: "2026-12-19", types: ["현금"] }, group)
+  for (const matchId of ["studymate", "afternoon-coffee"]) {
+    assert.equal((await call("POST", "/proposals", { matchId }, group)).status, 404, matchId)
+  }
+  assert.equal((await call("POST", "/proposals", { matchId: groupListing }, demoBrand)).status, 404)
+  assert.equal((await call("POST", "/proposals", { matchId: brandListing }, demoGroup)).status, 404)
+  assert.equal((await call("POST", "/conversations", { partnerId: "afternoon-coffee" }, group)).status, 404)
+  assert.equal((await call("POST", "/conversations", { partnerId: brandListing }, demoGroup)).status, 404)
+
+  // A proposal to the examples sent before they were set apart no longer counts.
+  const memberId = database.accounts.find((account) => account.email === "apart@syu.ac.kr")!.id
+  database.proposals[memberId] = ["studymate"]
+  assert.deepEqual((await call("GET", "/proposals", undefined, group)).data.proposals, [])
+  delete database.proposals[memberId]
 })
 
 test("a group's next event comes from its own calendar", async () => {
@@ -1280,6 +1323,19 @@ async function signUpMember(email: string, password: string, role: "학생단체
   return signup.data.token as string
 }
 
+// A member with its listing written, so members of the other side find it:
+// its token and its listing's id.
+async function listedMember(email: string, password: string, role: "학생단체" | "브랜드" = "학생단체") {
+  const token = await signUpMember(email, password, role)
+  const students = role === "학생단체"
+  const profile = students
+    ? { intro: "캠퍼스에서 정기 공연을 여는 동아리예요.", offer: "관객 100명" }
+    : { intro: "대학가에서 학생 행사를 돕는 카페예요.", offer: "음료 쿠폰 100장" }
+  const written = await call("PUT", "/profile", profile, token)
+  assert.equal(written.status, 200)
+  return { token, listingId: written.data.profile.id as string }
+}
+
 test("one verification makes one account, and one reset code sets one password", async () => {
   const email = "twice@syu.ac.kr"
   const sent = await call("POST", "/auth/email-code", { role: "학생단체", email })
@@ -1409,7 +1465,8 @@ test("an account can leave, taking what it made with it", async () => {
   assert.equal((await call("POST", "/events", event, token)).status, 201)
   const question = { category: "기타", question: "탈퇴하면 무엇이 지워지나요?" }
   assert.equal((await call("POST", "/inquiries", question, token)).status, 201)
-  assert.equal((await call("POST", "/conversations", { partnerId: "afternoon-coffee" }, token)).status, 201)
+  const { listingId: partnerId } = await listedMember("leaving@leaving-cafe.kr", "leave-pass-123", "브랜드")
+  assert.equal((await call("POST", "/conversations", { partnerId }, token)).status, 201)
 
   // The demo accounts stay for everyone.
   const demo = await login("학생단체")
@@ -1610,66 +1667,63 @@ test("proposals, answers and new messages are emailed to the other side, never t
   // Everyone trying the demo uses its accounts, so their addresses stand for no one.
   const toDemo = () => sent.filter((mail) => ["muse@syu.ac.kr", "hello@afternoon-coffee.kr"].includes(mail.to[0]))
   try {
-    // A new group with a listing, so a brand's offer reaches it.
+    // A group and a brand, each with a listing.
     const email = "notice@syu.ac.kr"
-    const code = await call("POST", "/auth/email-code", { role: "학생단체", email })
-    const verified = await call("POST", "/auth/email-code/verify", { email, code: code.data.devCode })
-    const signup = await call("POST", "/auth/signup", {
-      role: "학생단체",
-      name: "알림 받는 동아리",
-      type: "공연 동아리",
-      school: "삼육대학교",
-      email,
-      password: "notice-pass-123",
-      verificationToken: verified.data.verificationToken,
-      agreedToTerms: true,
-      over14: true,
-    })
-    const group = signup.data.token as string
-    const listing = (await call("PUT", "/profile", { intro: "알림을 기다리는 공연 동아리예요.", offer: "관객 80명" }, group)).data.profile
+    const brandEmail = "notice@notice-cafe.kr"
+    const { token: group, listingId: groupListing } = await listedMember(email, "notice-pass-123")
+    const { token: brand, listingId: brandListing } = await listedMember(brandEmail, "notice-pass-123", "브랜드")
     sent.length = 0
 
-    // Its proposal reaches the demo brand's inbox but no one's mail; the
-    // brand's answer comes back to the group by email.
-    await call("POST", "/events", { name: "알림 공연", date: addDays(todayInKorea(), 10), types: ["현금"] }, group)
-    assert.equal((await call("POST", "/proposals", { matchId: "afternoon-coffee" }, group)).status, 201)
-    const brand = await login("브랜드")
-    const request = (await call("GET", "/requests", undefined, brand)).data.requests.find(
-      (item: { groupName: string }) => item.groupName === "알림 받는 동아리",
-    )
+    // The group's proposal reaches the brand by email, and the brand's
+    // answer comes back to the group.
+    const today = todayInKorea()
+    await call("POST", "/events", { name: "알림 공연", date: addDays(today, 10), types: ["현금"] }, group)
+    assert.equal((await call("POST", "/proposals", { matchId: brandListing }, group)).status, 201)
+    await settle()
+    assert.equal(sent.find((mail) => mail.to[0] === brandEmail)?.subject, "[uniconnect] 새 협찬 제안이 왔어요")
+    const [request] = (await call("GET", "/requests", undefined, brand)).data.requests
     await call("POST", `/requests/${request.id}/accept`, undefined, brand)
     await settle()
-    assert.deepEqual(toDemo(), [])
     const answerMail = sent.find((mail) => mail.to[0] === email)
     assert.equal(answerMail?.subject, "[uniconnect] 협찬이 확정됐어요")
-    assert.match(answerMail?.text ?? "", /오후의 커피에서 '알림 공연' 제안을 수락했어요/)
+    assert.match(answerMail?.text ?? "", /notice 카페에서 '알림 공연' 제안을 수락했어요/)
 
+    // The brand's offer about its campaign reaches the group the same way.
     sent.length = 0
-    await call("POST", "/proposals", { matchId: listing.id }, brand)
+    await call("POST", "/events", { name: "알림 캠페인", date: addDays(today, 12), types: ["제품"] }, brand)
+    await call("POST", "/proposals", { matchId: groupListing }, brand)
     await settle()
     const offerMail = sent.find((mail) => mail.to[0] === email)
     assert.equal(offerMail?.subject, "[uniconnect] 새 협찬 제안이 왔어요")
-    assert.match(offerMail?.text ?? "", /오후의 커피에서/)
+    assert.match(offerMail?.text ?? "", /notice 카페에서/)
     assert.match(offerMail?.text ?? "", /https:\/\/uniconnect\.example\/offers/)
 
     const [offer] = (await call("GET", "/offers", undefined, group)).data.offers
     await call("POST", `/offers/${offer.id}/accept`, undefined, brand) // a brand cannot answer
     await call("POST", `/offers/${offer.id}/accept`, undefined, group)
     await settle()
-    assert.deepEqual(toDemo(), [])
+    assert.ok(sent.some((mail) => mail.to[0] === brandEmail && mail.subject === "[uniconnect] 협찬이 확정됐어요"))
 
-    // Messages: one email for a run of unread ones, and none to the demo brand.
+    // Messages: one email for a run of unread ones.
     sent.length = 0
-    const chat = (await call("POST", "/conversations", { partnerId: "afternoon-coffee" }, group)).data.conversation
+    const chat = (await call("POST", "/conversations", { partnerId: brandListing }, group)).data.conversation
     await call("POST", `/conversations/${chat.id}/messages`, { text: "안녕하세요! 일정 이야기해요." }, group)
     await call("POST", `/conversations/${chat.id}/messages`, { text: "편하실 때 답 주세요." }, group)
     await call("POST", `/conversations/${chat.id}/messages`, { text: "네, 좋아요!" }, brand)
     await call("POST", `/conversations/${chat.id}/messages`, { text: "내일 연락드릴게요." }, brand)
     await settle()
-    assert.deepEqual(toDemo(), [])
+    assert.equal(sent.filter((mail) => mail.to[0] === brandEmail).length, 1)
     const toGroup = sent.filter((mail) => mail.to[0] === email)
     assert.equal(toGroup.length, 1)
-    assert.match(toGroup[0].text, /오후의 커피: 네, 좋아요/)
+    assert.match(toGroup[0].text, /notice 카페: 네, 좋아요/)
+
+    // Between the demo accounts, which only meet each other, no mail goes.
+    sent.length = 0
+    const demoGroup = await login("학생단체")
+    const demoChat = (await call("POST", "/conversations", { partnerId: "afternoon-coffee" }, demoGroup)).data.conversation
+    await call("POST", `/conversations/${demoChat.id}/messages`, { text: "데모로 보내 보는 메시지예요." }, demoGroup)
+    await settle()
+    assert.deepEqual(toDemo(), [])
   } finally {
     mailTransport.post = realPost
     config.resendApiKey = undefined
@@ -1758,10 +1812,10 @@ test("listings take a small PNG, JPEG or WebP logo, and drop it on request", asy
 
 test("deleting an event withdraws its waiting proposals, and a sponsored one stays", async () => {
   const student = await signUpMember("deleter@syu.ac.kr", "deleter-pass-123")
-  const brand = await login("브랜드")
+  const { token: brand, listingId: brandId } = await listedMember("deleter@deleter-cafe.kr", "deleter-pass-123", "브랜드")
   const event = { name: "취소될 공연", date: "2026-12-20", types: ["현금"] }
   const first = (await call("POST", "/events", event, student)).data.event
-  await call("POST", "/proposals", { matchId: "afternoon-coffee" }, student)
+  await call("POST", "/proposals", { matchId: brandId }, student)
   const pending = getDatabase().requests.find((item) => item.eventId === first.id)
   assert.equal(pending?.status, "검토 중")
 
@@ -1770,12 +1824,12 @@ test("deleting an event withdraws its waiting proposals, and a sponsored one sta
   assert.equal((await call("DELETE", `/events/${first.id}`, undefined, student)).status, 204)
   assert.equal(getDatabase().requests.some((item) => item.id === pending!.id), false)
   const sent = (await call("GET", "/proposals", undefined, student)).data
-  assert.equal(sent.proposals.includes("afternoon-coffee"), false)
+  assert.equal(sent.proposals.includes(brandId), false)
   assert.equal((await call("POST", `/requests/${pending!.id}/accept`, undefined, brand)).status, 404)
 
   // Once the brand accepts, the event cannot be deleted.
   const second = (await call("POST", "/events", { ...event, name: "확정될 공연" }, student)).data.event
-  await call("POST", "/proposals", { matchId: "afternoon-coffee" }, student)
+  await call("POST", "/proposals", { matchId: brandId }, student)
   const request = getDatabase().requests.find((item) => item.eventId === second.id)!
   assert.equal((await call("POST", `/requests/${request.id}/accept`, undefined, brand)).status, 200)
   const refused = await call("DELETE", `/events/${second.id}`, undefined, student)
@@ -1785,10 +1839,10 @@ test("deleting an event withdraws its waiting proposals, and a sponsored one sta
 
 test("a leaving group's sponsors keep the results of its events", async () => {
   const student = await signUpMember("sponsored@syu.ac.kr", "sponsored-pass-123")
-  const brand = await login("브랜드")
+  const { token: brand, listingId } = await listedMember("sponsored@sponsored-cafe.kr", "sponsored-pass-123", "브랜드")
   const brandId = (await call("GET", "/auth/me", undefined, brand)).data.account.id as string
   const event = (await call("POST", "/events", { name: "결과가 남을 공연", date: "2026-12-21", types: ["현금"] }, student)).data.event
-  await call("POST", "/proposals", { matchId: "afternoon-coffee" }, student)
+  await call("POST", "/proposals", { matchId: listingId }, student)
   const request = getDatabase().requests.find((item) => item.eventId === event.id)!
   await call("POST", `/requests/${request.id}/accept`, undefined, brand)
   const { report } = (await call("GET", `/measurements/${event.id}`, undefined, student)).data
@@ -2103,12 +2157,14 @@ test("a student group invites a shop it found nearby, and the shop joins as a br
   config.resendApiKey = "test-resend-key"
   config.mailFrom = "uniconnect <no-reply@example.com>"
   try {
-    const group = await login("학생단체")
+    const group = await signUpMember("inviter@syu.ac.kr", "inviter-pass-123")
     const brand = await login("브랜드")
 
-    // Only a logged-in student group invites, a shop by its Kakao place ID.
+    // Only a logged-in student group invites, a shop by its Kakao place ID,
+    // and not the shared demo group: an invitation reaches a real shop.
     assert.equal((await call("POST", "/invites", { placeId: "26338954" })).status, 401)
     assert.equal((await call("POST", "/invites", { placeId: "26338954" }, brand)).status, 403)
+    assert.equal((await call("POST", "/invites", { placeId: "26338954" }, await login("학생단체"))).status, 403)
     for (const placeId of ["", "abc", "1/2", "1".repeat(16), undefined]) {
       assert.equal((await call("POST", "/invites", { placeId }, group)).status, 400, String(placeId))
     }
@@ -2128,12 +2184,12 @@ test("a student group invites a shop it found nearby, and the shop joins as a br
     // Anyone with the link sees who invited, and not who they are.
     const page = await call("GET", `/invites/${code}`)
     assert.equal(page.status, 200)
-    assert.equal(page.data.group.name, "삼육대 뮤즈")
+    assert.equal(page.data.group.name, "inviter 동아리")
     assert.equal(page.data.group.school, "삼육대학교")
     assert.equal(page.data.group.score, undefined)
     assert.equal(page.data.invite.joined, null)
     assert.equal(page.data.invite.placeUrl, "https://place.map.kakao.com/26338954")
-    assert.ok(!JSON.stringify(page.data).includes("muse@syu.ac.kr"))
+    assert.ok(!JSON.stringify(page.data).includes("inviter@syu.ac.kr"))
     assert.equal((await call("GET", "/invites/nope")).status, 404)
 
     // On 가까운 순 the group sees the shop as invited.
@@ -2180,16 +2236,17 @@ test("a student group invites a shop it found nearby, and the shop joins as a br
     assert.equal((await call("GET", `/invites/${code}`)).data.invite.joined, "other")
     // Taking it twice changes nothing.
     assert.equal((await call("POST", `/invites/${code}/accept`, undefined, owner)).status, 200)
-    // The groups that invited it hear about it, with the brand's page on
-    // 추천 매칭, except the shared demo group, whose address stands for no one.
-    const notice = sent.find((message) => message.to.includes("invite-one@syu.ac.kr") && message.subject.includes("초대"))!
-    assert.match(notice.subject, /초대한 가게가 uniconnect에 가입했어요/)
-    assert.match(notice.text, /owner 카페에서 초대를 받고/)
-    assert.ok(!sent.some((message) => message.to.includes("muse@syu.ac.kr")))
+    // The groups that invited it hear about it, with the brand's page on 추천 매칭.
+    for (const address of ["inviter@syu.ac.kr", "invite-one@syu.ac.kr"]) {
+      const notice = sent.find((message) => message.to.includes(address) && message.subject.includes("초대"))!
+      assert.match(notice.subject, /초대한 가게가 uniconnect에 가입했어요/)
+      assert.match(notice.text, /owner 카페에서 초대를 받고/)
+    }
 
-    // 가까운 순 now shows the shop joined, to everyone nearby.
+    // 가까운 순 now shows the shop joined to members nearby. Visitors, who
+    // see the examples, still see only the shop.
     assert.equal((await shops(group))[0].brandId, listing.id)
-    assert.equal((await shops())[0].brandId, listing.id)
+    assert.equal((await shops())[0].brandId, undefined)
 
     // Another group's invitation to the same shop can't hand it to a second brand.
     const otherGroup = await signUpMember("invite-two@syu.ac.kr", "invite-two-123")
@@ -2261,17 +2318,18 @@ test("both sides of an accepted proposal keep an agreement, confirm it and prove
   assert.equal((await call("GET", "/agreements/req-movement", undefined, brand)).status, 404)
   assert.equal((await call("GET", "/agreements/constructor", undefined, brand)).status, 404)
 
-  // A group with an account proposes, and the brand accepts.
+  // Two members: a group proposes, and the brand accepts.
   const group = await signUpMember("agreement-club@syu.ac.kr", "agreement-pass-123")
   const groupId = getDatabase().accounts.find((account) => account.email === "agreement-club@syu.ac.kr")!.id
+  const { token: partner, listingId: partnerListing } = await listedMember("agreement@agreement-cafe.kr", "agreement-pass-123", "브랜드")
   await call("POST", "/events", { name: "약속 공연", date: "2026-12-12", people: "200명", types: ["제품"] }, group)
-  assert.equal((await call("POST", "/proposals", { matchId: "afternoon-coffee" }, group)).status, 201)
+  assert.equal((await call("POST", "/proposals", { matchId: partnerListing }, group)).status, 201)
   const request = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
   assert.equal((await call("GET", `/agreements/${request.id}`, undefined, group)).status, 404)
-  await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+  await call("POST", `/requests/${request.id}/accept`, undefined, partner)
   const forGroup = (await call("GET", `/agreements/${request.id}`, undefined, group)).data.agreement
   assert.deepEqual([forGroup.side, forGroup.group.member, forGroup.brand.member], ["group", true, true])
-  assert.equal(forGroup.brand.name, "오후의 커피")
+  assert.equal(forGroup.brand.name, "agreement 카페")
   const brandItem = forGroup.items.find((item: { side: string }) => item.side === "brand")
   const groupItem = forGroup.items.find((item: { side: string }) => item.side === "group")
   // The event is the group's, its goals set from here until it begins; the
@@ -2279,12 +2337,11 @@ test("both sides of an accepted proposal keep an agreement, confirm it and prove
   // account has no event here.
   assert.deepEqual(forGroup.event, { id: request.eventId, owner: "group", started: false })
   assert.deepEqual(Object.keys(forGroup.goals).sort(), ["expectedAudience", "targets"])
-  const forBrand = (await call("GET", `/agreements/${request.id}`, undefined, brand)).data.agreement
+  const forBrand = (await call("GET", `/agreements/${request.id}`, undefined, partner)).data.agreement
   assert.deepEqual([forBrand.event.owner, forBrand.goals.targets], ["group", forGroup.goals.targets])
   assert.equal(opened.event, undefined)
 
-  // Each side confirms; the other hears about it, unless it is the shared
-  // demo brand, whose address stands for no one.
+  // Each side confirms, and the other hears about it.
   const { mailTransport } = await import("./lib/mailer.js")
   const post = mailTransport.post
   const sent: { to: string[]; subject: string }[] = []
@@ -2299,8 +2356,8 @@ test("both sides of an accepted proposal keep an agreement, confirm it and prove
     const confirmed = (await call("POST", `/agreements/${request.id}/confirm`, undefined, group)).data.agreement
     assert.ok(confirmed.confirmed.group)
     assert.equal(confirmed.confirmed.brand, undefined)
-    assert.ok(!sent.some((message) => message.to.includes("hello@afternoon-coffee.kr")))
-    const both = (await call("POST", `/agreements/${request.id}/confirm`, undefined, brand)).data.agreement
+    assert.ok(sent.some((message) => message.to.includes("agreement@agreement-cafe.kr")))
+    const both = (await call("POST", `/agreements/${request.id}/confirm`, undefined, partner)).data.agreement
     assert.ok(both.confirmed.group && both.confirmed.brand)
     assert.ok(sent.some((message) => message.to.includes("agreement-club@syu.ac.kr") && /양쪽 모두/.test(message.subject)))
   } finally {
@@ -2334,12 +2391,12 @@ test("both sides of an accepted proposal keep an agreement, confirm it and prove
   const photo = uploaded.data.agreement.items.find((item: { id: string }) => item.id === groupItem.id).photos[0] as string
   assert.match(photo, /^[\w-]+\.png$/)
   assert.ok(existsSync(path.join(uploadsFolder(request.id), photo)))
-  const seen = await fetch(`${baseUrl}/agreements/${request.id}/photos/${photo}`, { headers: { Authorization: `Bearer ${brand}` } })
+  const seen = await fetch(`${baseUrl}/agreements/${request.id}/photos/${photo}`, { headers: { Authorization: `Bearer ${partner}` } })
   assert.equal(seen.status, 200)
   assert.equal(seen.headers.get("content-type"), "image/png")
   assert.equal(Buffer.from(await seen.arrayBuffer()).toString("base64"), png.split(",")[1])
   assert.equal((await fetch(`${baseUrl}/agreements/${request.id}/photos/${photo}`)).status, 401)
-  assert.equal((await call("GET", `/agreements/${request.id}/photos/..%2Fdb.json`, undefined, brand)).status, 404)
+  assert.equal((await call("GET", `/agreements/${request.id}/photos/..%2Fdb.json`, undefined, partner)).status, 404)
   await call("POST", photos, { image: png }, group)
   await call("POST", photos, { image: png }, group)
   assert.equal((await call("POST", photos, { image: png }, group)).status, 409)
@@ -2349,11 +2406,11 @@ test("both sides of an accepted proposal keep an agreement, confirm it and prove
 
   // Changing the items asks both sides again; the items kept keep their proof.
   const items = done.items.map(({ id, side, label }: { id: string; side: string; label: string }) => ({ id, side, label }))
-  assert.equal((await call("PUT", `/agreements/${request.id}/items`, { items: [] }, brand)).status, 400)
-  assert.equal((await call("PUT", `/agreements/${request.id}/items`, { items: [{ side: "nobody", label: "x" }] }, brand)).status, 400)
-  assert.equal((await call("PUT", `/agreements/${request.id}/items`, { items: [{ side: "brand", label: "가".repeat(81) }] }, brand)).status, 400)
+  assert.equal((await call("PUT", `/agreements/${request.id}/items`, { items: [] }, partner)).status, 400)
+  assert.equal((await call("PUT", `/agreements/${request.id}/items`, { items: [{ side: "nobody", label: "x" }] }, partner)).status, 400)
+  assert.equal((await call("PUT", `/agreements/${request.id}/items`, { items: [{ side: "brand", label: "가".repeat(81) }] }, partner)).status, 400)
   const edited = (
-    await call("PUT", `/agreements/${request.id}/items`, { items: [...items, { side: "brand", label: "공연 당일 커피 트럭 보내기" }] }, brand)
+    await call("PUT", `/agreements/${request.id}/items`, { items: [...items, { side: "brand", label: "공연 당일 커피 트럭 보내기" }] }, partner)
   ).data.agreement
   assert.deepEqual(edited.confirmed, {})
   assert.equal(edited.items.length, 7)
@@ -2361,12 +2418,12 @@ test("both sides of an accepted proposal keep an agreement, confirm it and prove
   // Writing the same items again changes nothing.
   const reconfirmed = (await call("POST", `/agreements/${request.id}/confirm`, undefined, group)).data.agreement
   const same = edited.items.map(({ id, side, label }: { id: string; side: string; label: string }) => ({ id, side, label }))
-  assert.ok((await call("PUT", `/agreements/${request.id}/items`, { items: same }, brand)).data.agreement.confirmed.group)
+  assert.ok((await call("PUT", `/agreements/${request.id}/items`, { items: same }, partner)).data.agreement.confirmed.group)
   assert.ok(reconfirmed.confirmed.group)
 
   // The list shows how far it is, and the data download holds it.
   const summary = (await call("GET", "/agreements", undefined, group)).data.agreements[0]
-  assert.deepEqual([summary.id, summary.partner, summary.done, summary.total, summary.proof], [request.id, "오후의 커피", 1, 7, 3])
+  assert.deepEqual([summary.id, summary.partner, summary.done, summary.total, summary.proof], [request.id, "agreement 카페", 1, 7, 3])
   const exported = (await call("GET", "/auth/export", undefined, group)).data
   assert.deepEqual(exported.agreements.map((item: { id: string }) => item.id), [request.id])
 
@@ -2398,13 +2455,13 @@ test("after the event each side reviews the other, and the reviews show on the l
   assert.deepEqual([coffee.rating, coffee.reviewCount], [4.5, 2])
   assert.equal(brands.find((brand) => brand.id === "freshon")!.reviewCount, undefined)
 
-  // A group's event today, proposed to the demo brand and accepted.
+  // Two members: a group's event today, proposed to a brand and accepted.
   const group = await signUpMember("review-club@syu.ac.kr", "review-pass-123")
   const groupId = getDatabase().accounts.find((account) => account.email === "review-club@syu.ac.kr")!.id
+  const { token: brand, listingId: brandListing } = await listedMember("review@review-cafe.kr", "review-pass-123", "브랜드")
   await call("POST", "/events", { name: "후기 공연", date: todayInKorea(), people: "100명", types: ["제품"] }, group)
-  assert.equal((await call("POST", "/proposals", { matchId: "afternoon-coffee" }, group)).status, 201)
+  assert.equal((await call("POST", "/proposals", { matchId: brandListing }, group)).status, 201)
   const request = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
-  const brand = await login("브랜드")
   await call("POST", `/requests/${request.id}/accept`, undefined, brand)
   const route = `/reviews/${request.id}`
 
@@ -2433,9 +2490,10 @@ test("after the event each side reviews the other, and the reviews show on the l
   assert.equal(written.data.review.comment, "커피가 맛있었어요.")
   assert.equal(written.data.review.authorName, "review-club 동아리")
   // The shared demo accounts can't write reviews anyone would see.
-  assert.equal((await call("PUT", route, { rating: 1 }, brand)).status, 403)
+  assert.equal((await call("PUT", "/reviews/req-runners", { rating: 1 }, await login("브랜드"))).status, 403)
 
-  // Each side sees its own review and the other's on the agreement.
+  // Each side sees its own review and the other's on the agreement (the
+  // group has no listing yet, so the brand has nowhere to review it).
   const forGroup = (await call("GET", `/agreements/${request.id}`, undefined, group)).data.agreement.review
   assert.deepEqual([forGroup.open, forGroup.canWrite, forGroup.mine.rating, forGroup.theirs], [true, true, 5, undefined])
   const forBrand = (await call("GET", `/agreements/${request.id}`, undefined, brand)).data.agreement.review
@@ -2445,21 +2503,21 @@ test("after the event each side reviews the other, and the reviews show on the l
   const rewritten = await call("PUT", route, { rating: 4, tags: [], comment: "" }, group)
   assert.equal(rewritten.status, 200)
   assert.ok(rewritten.data.review.updatedAt)
-  const after = await about("afternoon-coffee")
-  assert.deepEqual([after.summary.count, after.summary.average], [3, 4.3])
+  const after = await about(brandListing)
+  assert.deepEqual([after.summary.count, after.summary.average], [1, 4])
   assert.equal(after.reviews[0].authorName, "review-club 동아리")
 
   // The data download holds it; deleting it takes it off the listing.
   assert.equal((await call("GET", "/auth/export", undefined, group)).data.reviews.length, 1)
   assert.equal((await call("DELETE", route, undefined, group)).status, 204)
   assert.equal((await call("DELETE", route, undefined, group)).status, 404)
-  assert.equal((await about("afternoon-coffee")).summary.count, 2)
+  assert.equal((await about(brandListing)).summary.count, 0)
 
   // Leaving takes the reviews it wrote with it.
   await call("PUT", route, { rating: 5 }, group)
-  assert.equal((await about("afternoon-coffee")).summary.count, 3)
+  assert.equal((await about(brandListing)).summary.count, 1)
   assert.equal((await call("DELETE", "/auth/account", { password: "review-pass-123" }, group)).status, 204)
-  assert.equal((await about("afternoon-coffee")).summary.count, 2)
+  assert.equal((await about(brandListing)).summary.count, 0)
 })
 
 test("members are emailed once when an event or a sponsored event is three days away or nearer", async () => {

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto"
 import { Router } from "express"
 
-import { findListing } from "../lib/catalog.js"
+import { findListing, shownCatalog, shownTo } from "../lib/catalog.js"
 import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
 import { text } from "../lib/validation.js"
@@ -89,17 +89,24 @@ function findOwnMessage(conversation: Conversation, side: ChatSide, id: string) 
   return message
 }
 
-// The account's conversations, latest first. Visitors have none.
+// The account's conversations, latest first. Visitors have none, and a
+// member keeps none with the examples (from before they were set apart).
 conversationsRouter.get("/", (req, res) => {
   const account = req.account
-  const listing = account ? findListing(getDatabase(), account) : undefined
+  const database = getDatabase()
+  const listing = account ? findListing(database, account) : undefined
   if (!account || !listing) {
     res.json({ conversations: [] })
     return
   }
   const side = sideOf(account)
-  const conversations = getDatabase()
-    .conversations.filter((conversation) => conversation[`${side}Id`] === listing.id)
+  const catalog = side === "group" ? "brands" : "groups"
+  const partnerShown = (conversation: Conversation) => {
+    const partner = database[catalog].find((item) => item.id === conversation[side === "group" ? "brandId" : "groupId"])
+    return !partner || shownTo(database, catalog, partner, account)
+  }
+  const conversations = database.conversations
+    .filter((conversation) => conversation[`${side}Id`] === listing.id && partnerShown(conversation))
     .map((conversation) => view(conversation, side))
     .sort((a, b) => (b.lastMessage?.at ?? "").localeCompare(a.lastMessage?.at ?? ""))
   res.json({ conversations })
@@ -115,7 +122,8 @@ conversationsRouter.post("/", async (req, res) => {
   if (!listing) throw new HttpError(409, "먼저 내 정보에서 소개를 등록해 주세요.")
   const partnerId = text(req.body?.partnerId)
   const side = sideOf(account)
-  const partners = side === "group" ? database.brands : database.groups
+  // Only a partner the account sees: members talk to members.
+  const partners = shownCatalog(database, side === "group" ? "brands" : "groups", account)
   if (!partners.some((partner) => partner.id === partnerId)) {
     throw new HttpError(404, "대화할 상대를 찾을 수 없어요.")
   }

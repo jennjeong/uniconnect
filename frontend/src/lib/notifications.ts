@@ -110,13 +110,16 @@ export function studentNotifications({
       target: "추천 매칭",
     })
   }
-  items.push({
-    key: "matches",
-    icon: "spark",
-    title: t("새 추천 매칭 {count}건", { count: matches.length }),
-    caption: t("다가오는 일정과 잘 맞는 파트너를 찾았어요."),
-    target: "추천 매칭",
-  })
+  // Only once there is a match to see (a member's partners are members).
+  if (matches.length > 0) {
+    items.push({
+      key: "matches",
+      icon: "spark",
+      title: t("새 추천 매칭 {count}건", { count: matches.length }),
+      caption: t("다가오는 일정과 잘 맞는 파트너를 찾았어요."),
+      target: "추천 매칭",
+    })
+  }
   // Once the event shown on the report pages is over.
   if (report && measureState(report) === "측정 완료") {
     items.push({
@@ -158,13 +161,15 @@ export function brandNotifications({
       target: "받은 제안",
     })
   }
-  items.push({
-    key: "groups",
-    icon: "users",
-    title: t("추천 학생단체 {count}곳", { count: matches.length }),
-    caption: t("캠페인과 잘 맞는 단체를 찾았어요."),
-    target: "단체 찾기",
-  })
+  if (matches.length > 0) {
+    items.push({
+      key: "groups",
+      icon: "users",
+      title: t("추천 학생단체 {count}곳", { count: matches.length }),
+      caption: t("캠페인과 잘 맞는 단체를 찾았어요."),
+      target: "단체 찾기",
+    })
+  }
   if (latest) {
     items.push({
       key: "analytics",

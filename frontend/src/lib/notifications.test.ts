@@ -1,6 +1,23 @@
 import { describe, expect, test } from "vitest"
 
-import { soonNotices } from "./notifications"
+import { brandNotifications, soonNotices, studentNotifications } from "./notifications"
+import type { Match } from "../types"
+
+describe("notices for a member with nothing yet", () => {
+  const match: Match = { id: "brand-1", name: "첫 카페", category: "카페 · 식음료", industry: "cafe", offer: "", score: 70, tags: [] }
+
+  test("a group or a brand that just joined has none, so the bell has nothing to point at", () => {
+    expect(studentNotifications({ matches: [], brands: [], statuses: {}, report: null, offers: [], events: [] })).toEqual([])
+    expect(brandNotifications({ matches: [], requests: [], sponsorships: [], events: [] })).toEqual([])
+  })
+
+  test("the matches are a notice once there are some", () => {
+    const student = studentNotifications({ matches: [match], brands: [match], statuses: {}, report: null, offers: [], events: [] })
+    expect(student.map((notice) => notice.title)).toEqual(["새 추천 매칭 1건"])
+    const brand = brandNotifications({ matches: [match], requests: [], sponsorships: [], events: [] })
+    expect(brand.map((notice) => notice.title)).toEqual(["추천 학생단체 1곳"])
+  })
+})
 
 describe("notices of the days that are near", () => {
   const entries = [

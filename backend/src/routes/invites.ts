@@ -60,9 +60,13 @@ function inviteView(database: Database, invite: ShopInvite, req: Request) {
 invitesRouter.post("/", async (req, res) => {
   const account = requireAccount(req)
   if (account.role !== "학생단체") throw new HttpError(403, "학생단체 계정으로 가게를 초대할 수 있어요.")
+  const database = getDatabase()
+  // An invitation reaches a real shop's owner, so it comes from a member.
+  if (isDemo(database, account)) {
+    throw new HttpError(403, "데모 계정으로는 실제 가게를 초대할 수 없어요. 가입하면 우리 단체 이름으로 초대할 수 있어요.")
+  }
   const placeId = String(req.body?.placeId ?? "")
   if (!/^\d{1,15}$/.test(placeId)) throw new HttpError(400, "초대할 가게를 다시 골라 주세요.")
-  const database = getDatabase()
   const own = database.invites.filter((invite) => invite.accountId === account.id)
   const existing = own.find((invite) => invite.placeId === placeId)
   if (existing) {
