@@ -4,9 +4,9 @@ import { t } from "../i18n"
 import { Pill } from "./Pill"
 
 // A part of an example screen that would be different for the visitor, such
-// as the shops near a campus: blurred and out of reach (inert, hidden from
-// screen readers), under a note saying it is an example and how to see
-// their own. A logged-in account sees it as it is.
+// as the shops near a campus: shown in full with made-up shops or the demo
+// account's examples, under a note saying it is an example and how to see
+// their own. A logged-in account sees it without the note.
 export function DemoPreview({
   active,
   title,
@@ -25,13 +25,12 @@ export function DemoPreview({
   if (!active) return children
   return (
     <div className="demo-preview">
-      <div aria-hidden="true" className="demo-preview-content" inert>
-        {children}
-      </div>
-      <div className="demo-preview-note">
+      <div className="demo-preview-note" role="note">
         <span className="demo-badge">{t("예시 화면")}</span>
-        <strong>{title}</strong>
-        <p>{text}</p>
+        <div className="demo-preview-copy">
+          <strong>{title}</strong>
+          <p>{text}</p>
+        </div>
         <div className="demo-preview-actions">
           <Pill onClick={onLogin}>{t("로그인")}</Pill>
           <Pill onClick={onSignup} variant="outline">
@@ -39,6 +38,7 @@ export function DemoPreview({
           </Pill>
         </div>
       </div>
+      {children}
     </div>
   )
 }

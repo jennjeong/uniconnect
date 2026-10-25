@@ -7,8 +7,9 @@ import { signUpMember } from "./members"
 // Critical and serious problems fail the run; the rest are printed.
 const pages = ["/", "/dashboard", "/matches", "/groups", "/faq", "/terms", "/privacy", "/admin", "/check-in/20261012", "/check-in/20261012/staff", "/no-such-page"]
 
-async function expectNoBlockingProblems(page: Page, path: string) {
+async function expectNoBlockingProblems(page: Page, path: string, open?: () => Promise<void>) {
   await page.goto(path)
+  await open?.()
   await page.waitForLoadState("networkidle")
   const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze()
   const blocking = results.violations.filter((item) => item.impact === "critical" || item.impact === "serious")
@@ -21,6 +22,21 @@ async function expectNoBlockingProblems(page: Page, path: string) {
 for (const path of pages) {
   test(`${path} has no critical or serious accessibility problems`, async ({ page }) => {
     await expectNoBlockingProblems(page, path)
+  })
+}
+
+// What differs per account (the 가까운 순 tabs) shows a visitor examples in
+// full, under a note, once its cards have arrived.
+for (const path of ["/matches", "/groups"]) {
+  test(`${path}'s 가까운 순 shows a visitor examples without critical or serious accessibility problems`, async ({ page }) => {
+    await expectNoBlockingProblems(page, path, async () => {
+      await page.getByRole("tab", { name: "가까운 순" }).click()
+      await expect(page.getByRole("note")).toBeVisible()
+      await expect(page.locator(".work-card").first()).toBeVisible()
+      await page.waitForFunction(() =>
+        document.getAnimations().every((item) => item.playState !== "running" || item.effect?.getTiming().iterations === Infinity),
+      )
+    })
   })
 }
 

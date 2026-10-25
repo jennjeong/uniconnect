@@ -71,7 +71,7 @@ const steps: { title: string; detail: string }[] = [
 ]
 
 // Member screens to look around with the demo accounts' data; the pictures
-// are those screens, blurred, so they read as examples.
+// are those screens, marked as examples.
 const examples: { page: NavLabel; role: Role; image: string; description: string }[] = [
   {
     page: "추천 매칭",
@@ -101,8 +101,8 @@ const examples: { page: NavLabel; role: Role; image: string; description: string
 
 // The page visitors land on: what uniconnect is and does, built from the
 // members' dashboard pieces (Stride's hero, marquee and statement), then
-// who it is for, how a sponsorship runs, the member screens as blurred
-// examples to open, and the FAQ; the footer's call to sign up closes it.
+// who it is for, how a sponsorship runs, pictures of the member screens
+// as examples to open, and the FAQ; the footer's call to sign up closes it.
 // It shows no live data, so nothing waits on the API.
 export function LandingPage({
   onSignup,

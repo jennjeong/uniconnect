@@ -39,16 +39,30 @@ test("visitors browse the site, its help and its 404 page", async ({ page }) => 
   await expect(page.getByText("페이지를 찾을 수 없어요").first()).toBeVisible()
 })
 
-test("a visitor sees the nearby tabs as blurred examples", async ({ page }) => {
-  // Nearby shops and groups depend on the account's campus or store.
+test("a visitor sees made-up shops and the example groups on the nearby tabs", async ({ page }) => {
+  // Nearby shops and groups depend on the account's campus or store, so a
+  // visitor sees examples in full, under a note that says so. The test
+  // server has no map key, and the made-up shops need none.
   await page.goto("/matches")
   await page.getByRole("tab", { name: "가까운 순" }).click()
-  await expect(page.getByText("학교마다 근처 가게가 달라요")).toBeVisible()
-  await expect(page.locator(".demo-preview-content")).toHaveAttribute("inert", "")
+  await expect(page.getByRole("note")).toContainText("학교마다 근처 가게가 달라요")
+  await expect(page.getByText("삼육대학교 근처에 있다고 가정해 만든 예시 가게예요. 가까운 순서예요.")).toBeVisible()
+  await expect(page.getByText("예시로 만든 가게예요. 실제 가게나 카카오의 정보가 아니에요.")).toBeVisible()
+  // The nearest made-up shop has no Kakao Map page, and inviting it asks to log in.
+  const shop = page.locator(".work-card").first()
+  await expect(shop).toContainText("정문분식")
+  await expect(shop.getByRole("link")).toHaveCount(0)
+  await page.getByRole("button", { name: "학원", exact: true }).click()
+  await expect(page.locator(".work-card").first()).toContainText("토익스퀘어 어학원")
+  await page.getByRole("button", { name: "토익스퀘어 어학원 초대하기" }).click()
+  await expect(page.getByRole("dialog")).toBeVisible()
+
   await page.goto("/groups")
   await page.getByRole("tab", { name: "가까운 순" }).click()
-  await expect(page.getByText("매장마다 가까운 학생단체가 달라요")).toBeVisible()
-  await page.locator(".demo-preview-note").getByRole("button", { name: "회원가입" }).click()
+  await expect(page.getByRole("note")).toContainText("매장마다 가까운 학생단체가 달라요")
+  // The example groups, nearest the demo brand's store first.
+  await expect(page.locator(".work-card").first()).toContainText("과기대 소리샘")
+  await page.getByRole("note").getByRole("button", { name: "회원가입" }).click()
   await expect(page.getByRole("dialog")).toBeVisible()
 })
 

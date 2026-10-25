@@ -69,7 +69,8 @@ export function MatchesPage({
   onCancelProposal: (match: Match) => void
   // Invites a shop from 가까운 순 (true once the invitation exists).
   onInvite: (place: NearbyPlace) => Promise<boolean>
-  // Logged out: 가까운 순 shows the demo group's campus, so it reads as an example.
+  // Logged out: 가까운 순 shows made-up shops around the demo group's campus,
+  // marked as an example.
   visitor: boolean
   onLogin: () => void
   onSignup: () => void
@@ -109,7 +110,11 @@ export function MatchesPage({
         eyebrow="Smart Match"
         title={waiting ? t("브랜드가 가입하면 여기에 추천해 드려요") : t(intro.title)}
         description={
-          waiting ? t("행사 정보, 타깃과 지난 성과를 함께 분석해 잘 맞는 브랜드부터 보여 드려요.") : t(intro.caption)
+          waiting
+            ? t("행사 정보, 타깃과 지난 성과를 함께 분석해 잘 맞는 브랜드부터 보여 드려요.")
+            : visitor && tab === "가까운 순"
+              ? t("학교 주변 가게를 가까운 순서로 보여 드려요. 아직 uniconnect와 협약하지 않은 곳은 초대장을 보내 가입을 권해 보세요.")
+              : t(intro.caption)
         }
       />
 
@@ -152,12 +157,12 @@ export function MatchesPage({
         )}
       </div>
 
-      {/* The nearest are real shops from Kakao, mostly not on uniconnect yet, in their own list. */}
+      {/* The nearest are real shops from Kakao, mostly not on uniconnect yet, in their own list (made-up ones for visitors). */}
       {tab === "가까운 순" ? (
         <DemoPreview
           active={visitor}
           title={t("학교마다 근처 가게가 달라요")}
-          text={t("지금은 데모 단체의 학교 근처 가게를 예시로 보여 드려요. 로그인하면 우리 학교 근처 가게를 볼 수 있어요.")}
+          text={t("지금 보이는 가게는 데모 단체의 학교 근처에 있다고 가정해 만든 예시예요. 로그인하면 카카오 지도에서 찾은 우리 학교 근처의 실제 가게를 볼 수 있어요.")}
           onLogin={onLogin}
           onSignup={onSignup}
         >

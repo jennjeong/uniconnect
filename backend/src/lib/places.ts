@@ -1,3 +1,5 @@
+import type { Campus } from "../data/campuses.js"
+import { exampleShops } from "../data/exampleShops.js"
 import type { Point } from "./geo.js"
 
 export type NearbyPlace = {
@@ -8,8 +10,8 @@ export type NearbyPlace = {
   address: string
   phone?: string
   distanceM: number
-  // The place's page on Kakao Map.
-  url: string
+  // The place's page on Kakao Map; the made-up shops visitors see have none.
+  url?: string
   // Where it is, for the schematic map on screen only (never kept), and the
   // kind it was found under (validation.ts placeCategories).
   lat: number
@@ -113,4 +115,26 @@ export async function nearbyPlaces(point: Point, category: string, key: string):
 export function nearestPlaces(places: NearbyPlace[]) {
   const byId = new Map(places.map((place) => [place.id, place]))
   return [...byId.values()].sort((a, b) => a.distanceM - b.distanceM).slice(0, placeLimit)
+}
+
+// The made-up shops visitors see (data/exampleShops.ts), placed around a
+// campus as Kakao's would come: of the kinds asked, nearest first, without a
+// map page or a phone number.
+export function exampleNearby(campus: Campus, kinds: readonly string[]): NearbyPlace[] {
+  const metresPerDegree = 111_320
+  const round = (degrees: number) => Math.round(degrees * 1e6) / 1e6
+  return nearestPlaces(
+    exampleShops
+      .filter((shop) => kinds.includes(shop.kind))
+      .map(({ id, name, category, kind, address, east, north }) => ({
+        id,
+        name,
+        category,
+        address: `${campus.name} ${address}`,
+        distanceM: Math.round(Math.hypot(east, north)),
+        lat: round(campus.lat + north / metresPerDegree),
+        lng: round(campus.lng + east / (metresPerDegree * Math.cos((campus.lat * Math.PI) / 180))),
+        kind,
+      })),
+  )
 }

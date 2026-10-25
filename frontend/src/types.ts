@@ -65,8 +65,8 @@ export type NearbyPlace = {
   address: string
   phone?: string
   distanceM: number
-  // Its page on Kakao Map.
-  url: string
+  // Its page on Kakao Map; the made-up shops visitors see have none.
+  url?: string
   // Where it is, for the map on screen only, and the kind it was found
   // under (data/places.ts).
   lat: number
@@ -79,9 +79,11 @@ export type NearbyPlace = {
 }
 
 // map is false while the server has no map key; campus is null for a school
-// not on the map. center is the campus's point, with the shops.
+// not on the map. center is the campus's point, with the shops. Visitors get
+// made-up shops around the demo group's campus (example), not Kakao's.
 export type NearbyPlaces = {
   map: boolean
+  example?: true
   campus: string | null
   center?: { lat: number; lng: number }
   places: NearbyPlace[]

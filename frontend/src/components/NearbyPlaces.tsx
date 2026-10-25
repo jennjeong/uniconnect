@@ -32,20 +32,23 @@ type Partnering = {
 // letter) in the middle, then its name, address, distance and phone. A shop
 // not on uniconnect says 협약 전 where a partner's card offers a proposal and
 // can be invited (초대함 once it is); one that joined from an invitation is
-// that brand, with its detail page and a proposal.
+// that brand, with its detail page and a proposal. The made-up shops visitors
+// see have no map page to link.
 function PlaceCard({ place, partnering }: { place: NearbyPlace; partnering: Partnering }) {
   const brand = place.brandId ? partnering.brands.find((item) => item.id === place.brandId) : undefined
   const franchise = franchiseOf(place.name)
   const logo = franchise && franchiseLogos[franchise]
-  const map = { href: place.url, rel: "noopener noreferrer", target: "_blank" }
+  const map = place.url ? { href: place.url, rel: "noopener noreferrer", target: "_blank" } : undefined
   const state = placeState(place)
   return (
     <article className="work-card">
       <div className="work-meta">
         <span>{place.category}</span>
-        <a aria-label={t("{name} 카카오맵에서 보기", { name: place.name })} className="work-badge" {...map}>
-          <Icon name="arrowUpRight" size={18} />
-        </a>
+        {map && (
+          <a aria-label={t("{name} 카카오맵에서 보기", { name: place.name })} className="work-badge" {...map}>
+            <Icon name="arrowUpRight" size={18} />
+          </a>
+        )}
       </div>
 
       <div aria-hidden="true" className="work-mark">
@@ -65,9 +68,7 @@ function PlaceCard({ place, partnering }: { place: NearbyPlace; partnering: Part
       <div className="work-bottom">
         <div className="work-title">
           <div className="work-name">
-            <h3>
-              <a {...map}>{place.name}</a>
-            </h3>
+            <h3>{map ? <a {...map}>{place.name}</a> : place.name}</h3>
             <p>{place.address}</p>
           </div>
         </div>
@@ -101,10 +102,12 @@ function PlaceCard({ place, partnering }: { place: NearbyPlace; partnering: Part
             </>
           ) : state === "joined" ? (
             <>
-              <a className="cancel-button" {...map}>
-                {t("카카오맵에서 보기")}
-                <span className="sr-only">{t("(새 창)")}</span>
-              </a>
+              {map && (
+                <a className="cancel-button" {...map}>
+                  {t("카카오맵에서 보기")}
+                  <span className="sr-only">{t("(새 창)")}</span>
+                </a>
+              )}
               <span className="proposal-button unpartnered">{t("uniconnect 가입")}</span>
             </>
           ) : (
@@ -132,7 +135,8 @@ function PlaceCard({ place, partnering }: { place: NearbyPlace; partnering: Part
 // kinds as chips (every kind at first), a line saying where with a switch
 // between the list and a sketch map, then the shops nearest first as cards
 // like the other tabs'. Kakao doesn't allow keeping its results, so each pick
-// asks the server afresh and the answer lives only on screen.
+// asks the server afresh and the answer lives only on screen. Visitors get
+// made-up shops around the demo group's campus, and the lines say so.
 export function NearbyPlaces(partnering: Partnering) {
   const [category, setCategory] = useState(kinds[0].code)
   const [answer, setAnswer] = useState<{ category: string; result?: Answer; error?: string }>()
@@ -163,7 +167,9 @@ export function NearbyPlaces(partnering: Partnering) {
     ? t("학교 근처 가게를 찾고 있어요…")
     : current.error
       ? current.error
-      : !result?.map
+      : result?.example && result.campus
+        ? t("{campus} 근처에 있다고 가정해 만든 예시 가게예요. 가까운 순서예요.", { campus: result.campus })
+        : !result?.map
         ? t("지도 서비스가 연결되면 학교 근처 가게를 보여 드려요.")
         : !result.campus
           ? t("가입한 학교의 위치를 아직 몰라서 근처 가게를 찾을 수 없어요.")
@@ -236,7 +242,9 @@ export function NearbyPlaces(partnering: Partnering) {
             </ul>
           )}
           <p className="nearby-source">
-            {t("정보 제공: 카카오 · 가게 로고는 각 회사의 상표이고, 표시가 제휴를 뜻하지는 않아요.")}
+            {result?.example
+              ? t("예시로 만든 가게예요. 실제 가게나 카카오의 정보가 아니에요.")
+              : t("정보 제공: 카카오 · 가게 로고는 각 회사의 상표이고, 표시가 제휴를 뜻하지는 않아요.")}
           </p>
         </>
       )}
