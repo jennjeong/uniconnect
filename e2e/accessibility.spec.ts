@@ -56,6 +56,25 @@ test("an open popup holds the keyboard and passes the checks", async ({ page }) 
   await expect(opener).toBeFocused()
 })
 
+// The menu is taller than a phone held sideways or a screen zoomed to 400%
+// (1280×1024 shows 320×256, as WCAG's reflow asks): it starts at its first
+// page and scrolls to the rest.
+for (const [width, height] of [
+  [844, 390],
+  [320, 256],
+]) {
+  test(`the menu reaches every page on a ${width}×${height} screen`, async ({ page }) => {
+    await page.setViewportSize({ width, height })
+    await page.goto("/dashboard")
+    await page.getByRole("button", { name: "전체 메뉴" }).click()
+    const menu = page.getByRole("dialog", { name: "전체 메뉴" })
+    await expect(menu.getByRole("button", { name: /대시보드/ })).toBeInViewport()
+    const last = menu.getByRole("button", { name: "브랜드 화면" })
+    await last.scrollIntoViewIfNeeded()
+    await expect(last).toBeInViewport()
+  })
+}
+
 // 앱 다운로드 on the introduction opens the guide where the browser offers no
 // install dialog of its own (here the page never hears of one).
 test("the app download guide opens from the introduction and passes the checks", async ({ page }) => {

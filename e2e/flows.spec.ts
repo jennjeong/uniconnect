@@ -52,6 +52,27 @@ test("a visitor sees the nearby tabs as blurred examples", async ({ page }) => {
   await expect(page.getByRole("dialog")).toBeVisible()
 })
 
+test("the menu counts what waits for a member, and nothing for a visitor", async ({ page }) => {
+  const menu = page.locator("#site-menu")
+  const openMenu = () => page.getByRole("button", { name: "전체 메뉴" }).click()
+  // A visitor sees the demo accounts' inboxes as examples; their counts
+  // would read as the visitor's own notifications.
+  for (const path of ["/offers", "/inbox"]) {
+    await page.goto(path)
+    await expect(page.locator(".request-card").first()).toBeVisible()
+    await openMenu()
+    await expect(menu.locator(".nav-menu-item").first()).toBeVisible()
+    await expect(menu.locator("em")).toHaveCount(0)
+    await expect(page.locator(".site-header .nav-count")).toHaveCount(0)
+    await page.keyboard.press("Escape")
+    await expect(menu).toBeHidden()
+  }
+  // Logged in, the brand sees its own unanswered proposals counted.
+  await logIn(page, "브랜드", "hello@afternoon-coffee.kr")
+  await openMenu()
+  await expect(menu.getByRole("button", { name: /받은 제안/ }).locator("em")).toBeVisible()
+})
+
 test("a member who opens the introduction goes on to the dashboard", async ({ page }) => {
   await page.goto("/")
   await logIn(page, "학생단체", "muse@syu.ac.kr")

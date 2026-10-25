@@ -1129,9 +1129,13 @@ function App() {
     }
   }
 
-  const badges: Partial<Record<NavLabel, number>> = students
-    ? { "추천 매칭": matches.length, "받은 협찬": pendingOffers.length }
-    : { "받은 제안": pendingRequests.length }
+  // Counts beside the menu's pages, of what waits for the account. A visitor
+  // gets none: the demo data's counts would read as their own notifications.
+  const badges: Partial<Record<NavLabel, number>> = !account
+    ? {}
+    : students
+      ? { "추천 매칭": matches.length, "받은 협찬": pendingOffers.length }
+      : { "받은 제안": pendingRequests.length }
   // A visitor on the introduction, and a visitor on a member screen shown
   // with the demo data (marked as an example in the header).
   const landing = view.home === true && visitor
