@@ -7,6 +7,7 @@ import { demoAccounts, demoPassword } from "../data/demo"
 import { factFields, snsPlatforms } from "../data/profile"
 import { inquiryCategories } from "../data/inquiries"
 import { methodInfo, methodKinds } from "../data/methods"
+import { passwordProblem } from "./password"
 import { placeCategories } from "../data/places"
 import { reviewTags } from "../data/reviews"
 import { accountTypes, roles } from "../data/roles"
@@ -40,6 +41,20 @@ describe("the screens offer the choices the server takes", () => {
 
   test.each(roles)("review tags about a %s", (role) => {
     expect(reviewTags[role]).toEqual(server.reviewTags[role])
+  })
+
+  // The password rules the forms list say what the server says.
+  test("password rules", () => {
+    const samples = ["", "sh-1!", "club pass-123", "clubpass123", "12345678-!", "Club-pass-1", "a".repeat(62) + "1!", "a".repeat(63) + "1!"]
+    for (const password of samples) {
+      let refused = ""
+      try {
+        server.checkPassword(password)
+      } catch (error) {
+        refused = (error as Error).message
+      }
+      expect(passwordProblem(password), password).toBe(refused)
+    }
   })
 
   // The agreement offers the methods the server takes, the coupon fixed to

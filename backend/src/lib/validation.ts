@@ -59,6 +59,21 @@ export const renamedAccountTypes: Record<string, string> = {
   교육: "교육 · 학원",
 }
 
+// A new password (sign-up, a reset, a change): 8 to 64 characters with an
+// English letter, a number and a symbol, and no spaces. The forms list the
+// same rules as the password is typed (frontend lib/password.ts;
+// lists.sync.test.ts checks they agree).
+export function checkPassword(password: string) {
+  if (password.length < 8 || password.length > 64) {
+    throw new HttpError(400, "비밀번호는 8자에서 64자 사이로 정해 주세요.")
+  }
+  if (/\s/.test(password)) throw new HttpError(400, "비밀번호에는 공백을 넣을 수 없어요.")
+  if (!/[A-Za-z]/.test(password) || !/\d/.test(password) || !/[!-/:-@[-`{-~]/.test(password)) {
+    throw new HttpError(400, "비밀번호에 영문, 숫자, 특수문자를 모두 넣어 주세요.")
+  }
+  return password
+}
+
 // The person running an account: name, position and a mobile number,
 // stored as 010-1234-5678.
 export function parseContact(input: unknown): AccountContact {

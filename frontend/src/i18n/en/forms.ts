@@ -8,7 +8,6 @@ const en: Record<string, string> = {
   "비밀번호 확인": "Confirm password",
   "새 비밀번호": "New password",
   "새 비밀번호 확인": "Confirm new password",
-  "8자 이상": "At least 8 characters",
   확인: "Confirm",
   재전송: "Resend",
   "인증번호 받기": "Get code",
@@ -18,7 +17,6 @@ const en: Record<string, string> = {
   "남은 시간 {time}": "{time} left",
   "인증 시간이 지났어요. 재전송을 눌러 주세요.": "The code has expired. Tap Resend for a new one.",
   "개발 모드라서 메일 대신 인증번호를 여기에 보여드려요:": "Dev mode, so here's your code instead of an email:",
-  "비밀번호는 8자 이상이어야 해요.": "Your password needs at least 8 characters.",
   "비밀번호가 일치하지 않아요.": "The passwords don't match.",
 
   // Log in (modals/LoginModal.tsx)
@@ -52,6 +50,35 @@ const en: Record<string, string> = {
   매니저: "Manager",
   "마케팅 담당": "Marketing",
   "홍보 담당": "PR",
+  대외협력부장: "Head of partnerships",
+  부원: "Member",
+  이사: "Director",
+  본부장: "Division head",
+  팀장: "Team leader",
+  부장: "General manager",
+  차장: "Deputy general manager",
+  과장: "Manager",
+  대리: "Assistant manager",
+  주임: "Senior staff",
+  사원: "Staff",
+  "직책을 골라 주세요": "Choose a position",
+  "직접 입력": "Type my own",
+  "목록에서 고르기": "Pick from the list",
+  "예) 마케팅 매니저": "e.g. Marketing manager",
+
+  // New passwords (lib/password.ts, components/PasswordRules.tsx)
+  "비밀번호 조건": "Password rules",
+  "8~64자": "8–64 characters",
+  영문: "A letter",
+  숫자: "A number",
+  특수문자: "A symbol",
+  "공백 없음": "No spaces",
+  충족: "met",
+  아직: "not yet",
+  "영문·숫자·특수문자 8자 이상": "8+ characters with letters, numbers and symbols",
+  "비밀번호는 8자에서 64자 사이로 정해 주세요.": "Please choose a password of 8 to 64 characters.",
+  "비밀번호에는 공백을 넣을 수 없어요.": "The password can't contain spaces.",
+  "비밀번호에 영문, 숫자, 특수문자를 모두 넣어 주세요.": "Please use English letters, numbers and symbols in the password.",
   "데모 계정으로 체험하기": "Try a demo account",
   "여러 사람이 함께 쓰는 체험용 계정이라, 예시 데이터 안에서만 제안하고 수락해 볼 수 있어요.":
     "These shared accounts are for trying uniconnect: you can propose and accept within the example data only.",
@@ -115,7 +142,6 @@ const en: Record<string, string> = {
 
   // Change password (modals/PasswordModal.tsx)
   "지금 비밀번호를 입력해 주세요.": "Enter your current password.",
-  "새 비밀번호는 8자 이상이어야 해요.": "Your new password needs at least 8 characters.",
   "새 비밀번호가 일치하지 않아요.": "The new passwords don't match.",
   "비밀번호 변경": "Change Password",
   "로그인 이메일 바꾸기": "Change login email",
@@ -131,7 +157,6 @@ const en: Record<string, string> = {
   "내 데이터를 내려받았어요.": "Your data was downloaded.",
   "비밀번호를 바꾸면 다른 기기에서는 로그아웃돼요.": "Changing your password logs you out on other devices.",
   "지금 비밀번호": "Current password",
-  "새 비밀번호 (8자 이상)": "New password (8+ characters)",
   "비밀번호 바꾸기": "Change password",
 
   // Ask the operators (modals/AskModal.tsx)

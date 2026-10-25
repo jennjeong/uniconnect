@@ -715,7 +715,7 @@ export function AgreementPage({
                 {!party.member && <small>{t("아직 uniconnect 계정이 없어요")}</small>}
                 {party.contact && (
                   <small className="agreement-contact">
-                    {t("담당자 {name} · {position}", { name: party.contact.name, position: party.contact.position })}{" "}
+                    {t("담당자 {name} · {position}", { name: party.contact.name, position: t(party.contact.position) })}{" "}
                     <a href={`tel:${party.contact.phone.replace(/-/g, "")}`}>{party.contact.phone}</a>
                   </small>
                 )}

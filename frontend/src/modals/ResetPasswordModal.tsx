@@ -3,8 +3,10 @@ import { useEffect, useState } from "react"
 import { api, errorMessage } from "../api"
 import { Modal } from "../components/Modal"
 import { PasswordField } from "../components/PasswordField"
+import { PasswordRules } from "../components/PasswordRules"
 import { t } from "../i18n"
 import { formatRemaining } from "../lib/format"
+import { passwordProblem } from "../lib/password"
 import type { Session } from "../types"
 
 type Sent = {
@@ -77,7 +79,7 @@ export function ResetPasswordModal({
       return
     }
     if (code.length !== 6) return setError(t("6자리 인증번호를 입력해 주세요."))
-    if (password.length < 8) return setError(t("비밀번호는 8자 이상이어야 해요."))
+    if (passwordProblem(password)) return setError(passwordProblem(password))
     if (password !== confirm) return setError(t("비밀번호가 일치하지 않아요."))
     void run(async () => {
       onReset(await api.resetPassword({ email, code, password }))
@@ -146,9 +148,10 @@ export function ResetPasswordModal({
         {sent && (
           <div className="form-row">
             <PasswordField
+              aria-describedby="reset-password-rules"
               autoComplete="new-password"
               label={t("새 비밀번호")}
-              placeholder={t("8자 이상")}
+              placeholder={t("영문·숫자·특수문자 8자 이상")}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
             />
@@ -160,6 +163,7 @@ export function ResetPasswordModal({
             />
           </div>
         )}
+        {sent && <PasswordRules id="reset-password-rules" password={password} />}
         {error && (
           <p className="form-error" role="alert">
             {error}

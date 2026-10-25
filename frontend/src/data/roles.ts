@@ -47,10 +47,12 @@ export const accountTypes: Record<Role, string[]> = {
   브랜드: accountTypeGroups.브랜드.flatMap((group) => group.types),
 }
 
-// Common positions, offered as suggestions in the contact fields.
+// The usual positions the contact fields list (components/PositionField.tsx),
+// with 직접 입력 for any other: a student group's officers, and the common
+// titles at a company or a store.
 export const positionHints: Record<Role, string[]> = {
-  학생단체: ["회장", "부회장", "총무", "기획부장", "홍보부장"],
-  브랜드: ["대표", "점장", "매니저", "마케팅 담당", "홍보 담당"],
+  학생단체: ["회장", "부회장", "총무", "기획부장", "홍보부장", "대외협력부장", "부원"],
+  브랜드: ["대표", "이사", "본부장", "팀장", "부장", "차장", "과장", "대리", "주임", "사원", "점장"],
 }
 
 export const createLabel = (role: Role) =>

@@ -187,6 +187,17 @@ test("sign-up requires a verified school or company email", async () => {
   })
   assert.equal(verified.status, 200)
 
+  // The password needs 8 to 64 characters with a letter, a number and a symbol.
+  for (const [password, error] of [
+    ["club-1!", /8자에서 64자/],
+    ["club pass-123", /공백/],
+    ["clubpass123", /영문, 숫자, 특수문자/],
+  ] as const) {
+    const weak = await call("POST", "/auth/signup", { ...form, password, verificationToken: verified.data.verificationToken })
+    assert.equal(weak.status, 400, password)
+    assert.match(weak.data.error, error)
+  }
+
   const signup = await call("POST", "/auth/signup", {
     ...form,
     verificationToken: verified.data.verificationToken,
@@ -1415,8 +1426,11 @@ test("a forgotten password is reset with a code sent to the account's email", as
   const wrong = code === "000000" ? "111111" : "000000"
   // A sign-up check cannot use a reset code.
   assert.equal((await call("POST", "/auth/email-code/verify", { email, code })).status, 400)
-  const short = await call("POST", "/auth/password-reset", { email, code, password: "short" })
-  assert.equal(short.status, 400)
+  // A new password follows the same rules as at sign-up, checked before the code.
+  for (const password of ["sh-1!", "no-digits-here", "nosymbols123", "12345678-!", "has space-1", "x".repeat(60) + "-1234"]) {
+    const weak = await call("POST", "/auth/password-reset", { email, code, password })
+    assert.equal(weak.status, 400, password)
+  }
   const wrongCode = await call("POST", "/auth/password-reset", { email, code: wrong, password: "new-pass-123" })
   assert.equal(wrongCode.status, 400)
 
@@ -1869,6 +1883,7 @@ test("members change their password from 내 정보, keeping this device logged 
   const other = (await call("POST", "/auth/login", { role: "학생단체", email, password: "first-pass-123" })).data.token
 
   assert.equal((await call("POST", "/auth/password", { current: "first-pass-123", next: "new" }, here)).status, 400)
+  assert.equal((await call("POST", "/auth/password", { current: "first-pass-123", next: "secondpass123" }, here)).status, 400)
   assert.equal((await call("POST", "/auth/password", { current: "wrong", next: "second-pass-123" }, here)).status, 400)
   assert.equal((await call("POST", "/auth/password", { current: "first-pass-123", next: "second-pass-123" })).status, 401)
   const changed = await call("POST", "/auth/password", { current: "first-pass-123", next: "second-pass-123" }, here)
