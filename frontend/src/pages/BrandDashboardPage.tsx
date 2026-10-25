@@ -41,6 +41,7 @@ export function BrandDashboardPage({
   onPropose,
   onCancelProposal,
   onOpenFaq,
+  onInstall,
 }: {
   // The logged-in brand's name for the greeting.
   accountName?: string
@@ -63,6 +64,8 @@ export function BrandDashboardPage({
   onPropose: (match: Match) => void
   onCancelProposal: (match: Match) => void
   onOpenFaq: () => void
+  // 앱 다운로드 on the hero; absent inside the installed app.
+  onInstall?: () => void
 }) {
   const pending = requests.filter((request) => request.status === "검토 중")
   const confirmed = requests.filter((request) => request.status === "수락")
@@ -125,6 +128,7 @@ export function BrandDashboardPage({
           onClick: () => onNavigate(pending.length > 0 ? "받은 제안" : "단체 찾기"),
         }}
         secondary={{ label: t("행사 일정 보기"), onClick: () => onNavigate("행사 일정") }}
+        onInstall={onInstall}
       />
 
       <LogoMarquee

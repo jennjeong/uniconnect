@@ -15,6 +15,7 @@ import { Presence } from "./components/Presence"
 import { Toast } from "./components/Toast"
 import type { LegalKind } from "./data/legal"
 import { pageFor } from "./data/navigation"
+import { useInstallState } from "./hooks/useInstallState"
 import { useNotice } from "./hooks/useNotice"
 import { Footer } from "./layout/Footer"
 import { Header } from "./layout/Header"
@@ -27,12 +28,14 @@ import { defaultMeasurement, measureState } from "./lib/measurements"
 import { brandNotifications, studentNotifications } from "./lib/notifications"
 import { track } from "./lib/analytics"
 import { applyPageMeta, pageMeta } from "./lib/pageMeta"
+import { install } from "./lib/install"
 import { installReveal } from "./lib/reveal"
 import { installRipple } from "./lib/ripple"
 import { readView, roleOfPage, viewPath, type HistoryEntry, type View } from "./lib/route"
 import { installSwipeNavigation, noteHistoryEnd } from "./lib/swipe"
 import { GoalModal } from "./modals/GoalModal"
 import { GoalsModal } from "./modals/GoalsModal"
+import { InstallGuideModal } from "./modals/InstallGuideModal"
 import { LeaveModal } from "./modals/LeaveModal"
 import { LoginModal } from "./modals/LoginModal"
 import { EmailChangeModal } from "./modals/EmailChangeModal"
@@ -154,6 +157,9 @@ function App() {
   // When matches and events were last loaded, shown on the dashboard.
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null)
   const { notice, showNotice } = useNotice()
+  // How 앱 다운로드 works in this browser (lib/install.ts); "app" inside the
+  // installed app, which shows no button.
+  const installKind = useInstallState()
 
   const role = account?.role ?? previewRole
   const accountId = account?.id
@@ -457,6 +463,16 @@ function App() {
   const openAuth = (modal: "login" | "signup", nextRole: Role = role) => {
     setAuthRole(nextRole)
     setActiveModal(modal)
+  }
+
+  // 앱 다운로드: the browser's own install dialog where it has one, else how
+  // to install in this browser.
+  const startInstall = () => {
+    if (installKind !== "prompt") {
+      setActiveModal("install")
+      return
+    }
+    void install().then((done) => done && showNotice(t("uniconnect를 앱으로 설치했어요.")))
   }
 
   const requireLogin = (message: string) => {
@@ -1018,6 +1034,7 @@ function App() {
             onCancelProposal={cancelProposal}
             onOpenReport={() => setActiveModal("report")}
             onOpenFaq={openFaq}
+            onInstall={installKind === "app" ? undefined : startInstall}
           />
         ) : (
           <BrandDashboardPage
@@ -1035,6 +1052,7 @@ function App() {
             onPropose={propose}
             onCancelProposal={cancelProposal}
             onOpenFaq={openFaq}
+            onInstall={installKind === "app" ? undefined : startInstall}
           />
         )
     }
@@ -1180,6 +1198,8 @@ function App() {
           onOpenFaq={openFaq}
           onLogin={() => openAuth("login")}
           onSignup={() => openAuth("signup")}
+          installable={installKind !== "app"}
+          onInstall={startInstall}
           onClose={closeMenu}
         />
       </Presence>
@@ -1204,6 +1224,9 @@ function App() {
           <GoalModal kpi={goal} onClose={closeModal} />
         </Presence>
       )}
+      <Presence show={activeModal === "install"}>
+        <InstallGuideModal kind={installKind} onClose={closeModal} />
+      </Presence>
       {report && (
         <Presence show={activeModal === "report"}>
           <ReportModal

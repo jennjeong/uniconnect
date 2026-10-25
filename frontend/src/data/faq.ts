@@ -32,6 +32,12 @@ export const faqs: { topic: FaqTopic; question: string; answer: string; featured
       t("네. 로그인하지 않으면 학생단체 화면과 브랜드 화면을 데모 데이터로 둘러볼 수 있어요. 협찬 제안, 제안 수락, 일정 등록은 로그인한 뒤에 할 수 있어요."),
   },
   {
+    topic: "start",
+    question: t("앱으로 설치할 수 있나요?"),
+    answer:
+      t("네. 첫 화면이나 메뉴의 ‘앱 다운로드’로 설치해요. 컴퓨터의 Chrome에서는 설치한 뒤로 사이트 링크가 앱 창에서 열려요. 브라우저 탭에서 열고 싶다면 앱 창 ⋮ 메뉴의 ‘앱 정보’에서 링크 설정을 바꾸거나, 주소창에 chrome://apps를 입력하고 uniconnect를 오른쪽 클릭해 ‘Chrome에서 삭제’를 눌러요. Finder나 휴지통에서 바로가기만 지우면 다시 생겨요."),
+  },
+  {
     topic: "account",
     question: t("다른 쪽에 보이는 우리 소개는 어디서 고치나요?"),
     answer:

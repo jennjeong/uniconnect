@@ -200,6 +200,9 @@ const en: Record<string, string> = {
   "가입하지 않고도 둘러볼 수 있나요?": "Can I look around without signing up?",
   "네. 로그인하지 않으면 학생단체 화면과 브랜드 화면을 데모 데이터로 둘러볼 수 있어요. 협찬 제안, 제안 수락, 일정 등록은 로그인한 뒤에 할 수 있어요.":
     "Yes. Without logging in, you can explore both the student group and brand screens with demo data. Sending or accepting proposals and adding events need an account.",
+  "앱으로 설치할 수 있나요?": "Can I install it as an app?",
+  "네. 첫 화면이나 메뉴의 ‘앱 다운로드’로 설치해요. 컴퓨터의 Chrome에서는 설치한 뒤로 사이트 링크가 앱 창에서 열려요. 브라우저 탭에서 열고 싶다면 앱 창 ⋮ 메뉴의 ‘앱 정보’에서 링크 설정을 바꾸거나, 주소창에 chrome://apps를 입력하고 uniconnect를 오른쪽 클릭해 ‘Chrome에서 삭제’를 눌러요. Finder나 휴지통에서 바로가기만 지우면 다시 생겨요.":
+    "Yes. Install it with ‘Get the app’ on the first screen or in the menu. In Chrome on a computer, links to the site then open in the app's window. To open them in a browser tab instead, change the link setting under ‘App info’ in the app window's ⋮ menu, or type chrome://apps in the address bar, right-click uniconnect and choose ‘Remove from Chrome’. Deleting only its shortcut in Finder or the Trash brings it back.",
   "다른 쪽에 보이는 우리 소개는 어디서 고치나요?": "Where do I edit the profile others see?",
   "내 정보의 ‘소개 편집’에서 고쳐요. 여기서 쓴 소개가 브랜드·학생단체 목록과 상세 페이지에 그대로 보여요.":
     "Under ‘Edit Profile’ in My Account. What you write there appears as-is in the brand and student group listings and on your detail page.",

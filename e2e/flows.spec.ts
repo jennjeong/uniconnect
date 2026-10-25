@@ -332,34 +332,27 @@ test("visitors see a partner's reviews, and a group reviews the brand after its 
   await expect(page.locator(".profile-panel").locator(".profile-review, .review-card")).toHaveCount(3)
 })
 
-test("the site opens as a web page with nothing to install, and an old service worker goes", async ({ page, request }) => {
-  // No manifest, so browsers offer no install; sw.js only removes the worker
-  // earlier versions registered.
-  expect((await request.get("/manifest.webmanifest")).status()).toBe(404)
-  expect(await (await request.get("/sw.js")).text()).toContain("unregister")
+test("the app can be installed, and the calendar gives its dates to calendar apps", async ({ page, request }) => {
+  // The manifest, its icons and the service worker are served; links to the
+  // site ask to open in the browser, not the installed app.
+  const manifest = (await (await request.get("/manifest.webmanifest")).json()) as {
+    name: string
+    display: string
+    handle_links: string
+    icons: { src: string; sizes: string }[]
+  }
+  expect([manifest.name, manifest.display, manifest.handle_links]).toEqual(["uniconnect", "standalone", "not-preferred"])
+  expect(manifest.icons.map((icon) => icon.sizes)).toEqual(["192x192", "512x512", "512x512"])
+  for (const icon of manifest.icons) {
+    expect((await request.get(`/${icon.src}`)).headers()["content-type"]).toBe("image/png")
+  }
+  expect(await (await request.get("/sw.js")).text()).toContain("/api/")
   await page.goto("/")
-  await expect(page.locator('link[rel="manifest"]')).toHaveCount(0)
-  await expect(page.getByRole("button", { name: "앱 다운로드" })).toHaveCount(0)
-  expect(await page.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length)).toBe(0)
+  await expect(page.locator('link[rel="manifest"]')).toHaveAttribute("href", "/manifest.webmanifest")
+  // The built app registers the service worker.
+  const worker = await page.evaluate(async () => (await navigator.serviceWorker.ready).active?.scriptURL ?? "")
+  expect(worker).toMatch(/\/sw\.js$/)
 
-  // A visitor from when the site was installable: the old worker and the
-  // copies it kept are gone after the next visit.
-  await page.evaluate(async () => {
-    await navigator.serviceWorker.register("/sw.js")
-    await caches.open("uniconnect-shell-v1")
-  })
-  await page.reload()
-  await expect
-    .poll(() =>
-      page.evaluate(async () => ({
-        workers: (await navigator.serviceWorker.getRegistrations()).length,
-        caches: (await caches.keys()).filter((key) => key.startsWith("uniconnect-")).length,
-      })),
-    )
-    .toEqual({ workers: 0, caches: 0 })
-})
-
-test("the calendar gives its dates to calendar apps", async ({ page, request }) => {
   // A group's coming event, as a calendar file from 내 행사.
   const email = "e2e-calendar@syu.ac.kr"
   const code = (await (await request.post("/api/auth/email-code", { data: { role: "학생단체", email } })).json()) as { devCode: string }

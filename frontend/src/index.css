@@ -2261,6 +2261,13 @@ button.nav-pill:hover {
   margin-top: 22px;
 }
 
+/* 앱 다운로드 on the hero: the outlined pill with its icon beside the words. */
+.hero-install span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* Stride's logo marquee (components/LogoMarquee.tsx): two full-width rows
    of silver chips passing each other as the page scrolls, fading out at
    both edges. Items carry their own spacing, so each repeated set is
@@ -7156,6 +7163,90 @@ button.nav-pill:hover {
 
 .qr-actions > * {
   height: 44px;
+  text-decoration: none;
+}
+
+/* Getting the app where the browser has no install dialog of its own
+   (modals/InstallGuideModal.tsx): numbered steps on silver, or one line per
+   kind of device, then OK. */
+.install-guide {
+  display: grid;
+  gap: 14px;
+}
+
+.install-guide p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.install-steps,
+.install-devices {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.install-steps {
+  counter-reset: install-step;
+}
+
+.install-steps li,
+.install-devices li {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--fill);
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.install-steps li {
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  gap: 12px;
+  align-items: start;
+  counter-increment: install-step;
+}
+
+.install-steps li::before {
+  content: counter(install-step);
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--point);
+  color: var(--on-point);
+  font-size: 13px;
+  font-weight: var(--weight-badge);
+}
+
+.install-devices li {
+  display: grid;
+  gap: 2px;
+}
+
+.install-devices strong {
+  font-weight: var(--weight-label);
+}
+
+.install-devices span {
+  color: var(--ink-soft);
+}
+
+.install-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.install-actions > * {
   text-decoration: none;
 }
 
