@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test, vi } from "vitest"
 
 import {
   calendarDays,
+  calendarPage,
   dDayLabel,
   daysOf,
   daysUntil,
@@ -19,6 +20,11 @@ const spaced = (text: string) => text.replace(/ /g, " ")
 
 describe("days", () => {
   afterEach(() => vi.useRealTimers())
+
+  test("a day as a calendar page has its month, day and weekday", () => {
+    expect(calendarPage("2026-11-27")).toEqual({ month: "11월", day: 27, weekday: "금" })
+    expect(calendarPage("2027-01-03")).toEqual({ month: "1월", day: 3, weekday: "일" })
+  })
 
   test("an ISO day is local midnight and comes back the same", () => {
     expect(fromIsoDate("2026-11-27")).toEqual(new Date(2026, 10, 27))

@@ -145,8 +145,8 @@ export function EventsPage({
 }) {
   const today = todayIso()
 
-  // The events from today on, and for brands the days they sponsor, to add
-  // to the calendar app picked in CalendarModal.
+  // The events from today on, and for brands the days they sponsor, by
+  // date, to add to the calendar app picked in CalendarModal.
   const [calendar, setCalendar] = useState<CalendarEntry[] | null>(null)
   const exportCalendar = () => {
     const entries: CalendarEntry[] = [
@@ -172,7 +172,7 @@ export function EventsPage({
       onNotice?.(t("캘린더에 넣을 다가오는 일정이 없어요."))
       return
     }
-    setCalendar(entries)
+    setCalendar(entries.sort((a, b) => a.date.localeCompare(b.date)))
   }
   const [selected, setSelected] = useState(() =>
     initialDate && fromIsoDate(initialDate) ? initialDate : today,

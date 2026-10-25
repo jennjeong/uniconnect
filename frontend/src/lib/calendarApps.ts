@@ -4,13 +4,13 @@ export type CalendarApp = "google" | "apple" | "outlook" | "other"
 
 // The calendar apps 캘린더에 추가 offers, in order: Google Calendar and
 // Outlook open each entry's own add page (in their app where it takes the
-// link), Apple Calendar and the rest open the calendar file (lib/ics.ts)
-// with every entry at once.
-export const calendarApps: { id: CalendarApp; label: string; detail: string }[] = [
-  { id: "google", label: "Google 캘린더", detail: "안드로이드 · 웹" },
-  { id: "apple", label: "Apple 캘린더", detail: "iPhone · iPad · Mac" },
-  { id: "outlook", label: "Outlook", detail: "웹 · 앱" },
-  { id: "other", label: "다른 캘린더 앱", detail: "삼성 캘린더 · 네이버 캘린더 등" },
+// link), Apple Calendar and the rest (Samsung's, Naver's) open the calendar
+// file (lib/ics.ts) with the picked entries at once.
+export const calendarApps: { id: CalendarApp; label: string }[] = [
+  { id: "google", label: "Google 캘린더" },
+  { id: "apple", label: "Apple 캘린더" },
+  { id: "outlook", label: "Outlook" },
+  { id: "other", label: "다른 앱" },
 ]
 
 export const opensEach = (app: CalendarApp) => app === "google" || app === "outlook"

@@ -602,30 +602,44 @@ test("the app can be installed, and the calendar gives its dates to calendar app
   const { token } = (await signup.json()) as { token: string }
   const month = new Date(Date.now() + 30 * 86_400_000)
   const date = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(month)
-  await request.post("/api/events", {
-    data: { name: "겨울 정기 공연", date, people: "200명", types: ["제품"] },
-    headers: { Authorization: `Bearer ${token}` },
-  })
+  const later = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date(Date.now() + 37 * 86_400_000))
+  for (const event of [
+    { name: "겨울 정기 공연", date, people: "200명", types: ["제품"] },
+    { name: "신년 버스킹", date: later, people: "50명", types: ["현금"] },
+  ]) {
+    await request.post("/api/events", { data: event, headers: { Authorization: `Bearer ${token}` } })
+  }
   await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), token)
   await page.goto("/events")
   await page.getByRole("button", { name: "캘린더에 추가" }).click()
-  const picker = page.getByRole("dialog", { name: "캘린더에 추가" })
-  // The calendar app comes first: Google Calendar opens each date's add page.
-  await picker.getByText("Google 캘린더").click()
-  const google = picker.getByRole("link", { name: "겨울 정기 공연 Google 캘린더에서 열기" })
+  // Laid out like the phone's share sheet: the coming dates, all picked, then the calendar apps.
+  const sheet = page.getByRole("dialog", { name: "캘린더에 추가" })
+  await expect(sheet.getByText("일정 2개 선택됨")).toBeVisible()
+  await expect(sheet.getByRole("button", { name: /겨울 정기 공연/ })).toHaveAttribute("aria-pressed", "true")
+  // With several dates, Google Calendar opens each one's add page in turn.
+  await sheet.getByRole("button", { name: "Google 캘린더" }).click()
+  const google = sheet.getByRole("link", { name: "겨울 정기 공연 Google 캘린더에서 열기" })
   const added = new URL((await google.getAttribute("href")) ?? "")
   expect(added.origin + added.pathname).toBe("https://calendar.google.com/calendar/render")
   expect([added.searchParams.get("action"), added.searchParams.get("text")]).toEqual(["TEMPLATE", "겨울 정기 공연"])
   expect(added.searchParams.get("dates")).toMatch(new RegExp(`^${date.replace(/-/g, "")}/\\d{8}$`))
   await expect(google).toHaveAttribute("target", "_blank")
-  // Apple Calendar takes the calendar file with every date.
-  await picker.getByText("Apple 캘린더").click()
+  await expect(sheet.getByRole("link", { name: "신년 버스킹 Google 캘린더에서 열기" })).toBeVisible()
+  // With none picked no app opens; with one, its add page opens straight from the icon.
+  await sheet.getByRole("button", { name: /겨울 정기 공연/ }).click()
+  await sheet.getByRole("button", { name: /신년 버스킹/ }).click()
+  await expect(sheet.getByRole("button", { name: "Apple 캘린더" })).toBeDisabled()
+  await sheet.getByRole("button", { name: /겨울 정기 공연/ }).click()
+  await expect(sheet.getByText("일정 1개 선택됨")).toBeVisible()
+  await expect(sheet.getByRole("link", { name: "Outlook" })).toHaveAttribute("href", /^https:\/\/outlook\.live\.com\//)
+  // Apple Calendar takes the calendar file with the picked date.
   const download = page.waitForEvent("download")
-  await picker.getByRole("button", { name: "캘린더 앱 열기" }).click()
+  await sheet.getByRole("button", { name: "Apple 캘린더" }).click()
   const file = await download
   expect(file.suggestedFilename()).toMatch(/^uniconnect-\d{4}-\d{2}-\d{2}\.ics$/)
   const calendar = await readFile(await file.path(), "utf8")
   expect(calendar).toContain("BEGIN:VCALENDAR")
   expect(calendar).toContain("SUMMARY:겨울 정기 공연")
+  expect(calendar).not.toContain("SUMMARY:신년 버스킹")
   expect(calendar).toContain(`DTSTART;VALUE=DATE:${date.replace(/-/g, "")}`)
 })

@@ -6996,27 +6996,325 @@ button.nav-pill:hover {
   font-weight: var(--weight-body);
 }
 
-/* 캘린더에 추가 (modals/CalendarModal.tsx): the calendar apps as the role
-   picker's cards, two by two, then each coming entry with its button, or
-   the one button that opens the calendar file. */
-.calendar-modal {
+/* 캘린더에 추가 (modals/CalendarModal.tsx), laid out like the phone's
+   share sheet: a silver sheet whose title stays for screen readers only,
+   the picked dates' count by a calendar page, the dates as cards to pick,
+   a row of calendar app icons, then the actions as one white group (or,
+   for Google Calendar and Outlook with several dates, each date with its
+   button). The rows scroll sideways to the sheet's edges (--sheet-pad, the
+   panel's padding). */
+.modal-calendar {
+  --sheet-pad: 32px;
+  width: min(500px, 100%);
+  background: var(--fill);
+}
+
+.modal-calendar .modal-header {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.modal-calendar .modal-close {
+  background: var(--surface);
+}
+
+.share-sheet {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
 }
 
-.calendar-app-list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.modal .calendar-app-list .role-option {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.calendar-modal .field-hint {
+.share-sheet .field-hint {
   margin: 0;
+}
+
+.share-head {
+  display: flex;
+  min-height: 56px;
+  align-items: center;
+  gap: 14px;
+  margin-right: 52px;
+}
+
+.share-head > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.share-head > div > strong {
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: var(--weight-label);
+}
+
+.share-pill {
+  min-height: 30px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: var(--ring);
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+/* A day as a page torn off a calendar: the month in the accent blue over
+   the day. */
+.share-page {
+  display: flex;
+  width: 56px;
+  height: 56px;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--ring);
+  line-height: 1.1;
+}
+
+.share-page small {
+  color: var(--point-bright);
+  font-size: 11px;
+  font-weight: var(--weight-label);
+}
+
+.share-page strong {
+  color: var(--ink);
+  font-size: 22px;
+  font-weight: var(--weight-display);
+}
+
+.share-dates,
+.share-apps {
+  display: flex;
+  margin: 0 calc(var(--sheet-pad) * -1);
+  padding: 2px var(--sheet-pad) 4px;
+  overflow-x: auto;
+  list-style: none;
+  scrollbar-width: none;
+}
+
+.share-dates > li,
+.share-apps > li {
+  flex: 0 0 auto;
+}
+
+.share-dates {
+  gap: 10px;
+  scroll-padding-inline: var(--sheet-pad);
+  scroll-snap-type: x proximity;
+}
+
+.share-date {
+  position: relative;
+  display: flex;
+  width: 156px;
+  height: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 12px 12px 14px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--ring);
+  color: var(--ink);
+  text-align: left;
+  scroll-snap-align: start;
+}
+
+.share-date.picked {
+  box-shadow: inset 0 0 0 2px var(--point);
+}
+
+.share-date .share-page {
+  width: 44px;
+  height: 44px;
+  margin-bottom: 4px;
+  border-radius: 12px;
+  background: var(--fill);
+  box-shadow: none;
+}
+
+.share-date .share-page strong {
+  font-size: 18px;
+}
+
+.share-date > strong {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 14px;
+  font-weight: var(--weight-label);
+  line-height: 1.35;
+}
+
+.share-date > small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: var(--weight-body);
+}
+
+.share-check {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1.5px var(--line-strong);
+  color: var(--on-point);
+}
+
+.share-date.picked .share-check {
+  background: var(--point);
+  box-shadow: none;
+}
+
+/* The apps under a hairline that stays put while the row scrolls. */
+.share-apps {
+  gap: 4px;
+  padding-top: 18px;
+  background: linear-gradient(var(--line-strong), var(--line-strong)) center top / calc(100% - 2 * var(--sheet-pad)) 1px
+    no-repeat;
+}
+
+.share-app {
+  display: flex;
+  width: 84px;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: var(--weight-body);
+  line-height: 1.3;
+  text-align: center;
+  text-decoration: none;
+}
+
+.share-app:disabled {
+  opacity: 0.45;
+}
+
+/* Each app as a calendar icon showing today, told apart by its colors;
+   the other apps as three dots. */
+.share-app-icon {
+  display: flex;
+  width: 64px;
+  height: 64px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--ring);
+  line-height: 1.05;
+}
+
+.share-app-icon small {
+  font-size: 11px;
+  font-weight: var(--weight-label);
+}
+
+.share-app-icon strong {
+  color: var(--ink);
+  font-size: 28px;
+  font-weight: var(--weight-display);
+}
+
+.app-google small {
+  color: var(--blue);
+}
+
+.app-apple small {
+  color: var(--red);
+}
+
+.app-outlook {
+  background: var(--point-gradient);
+  box-shadow: none;
+}
+
+.app-outlook small,
+.app-outlook strong {
+  color: var(--on-point);
+}
+
+.app-other {
+  background: var(--fill-strong);
+  box-shadow: none;
+  color: var(--ink-soft);
+}
+
+.share-app.active .share-app-icon {
+  box-shadow:
+    0 0 0 2px var(--fill),
+    0 0 0 4px var(--point);
+}
+
+.share-actions {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 18px;
+  background: var(--surface);
+  list-style: none;
+}
+
+.share-actions li + li {
+  border-top: 1px solid var(--line);
+}
+
+.share-actions button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: var(--weight-body);
+  text-align: left;
+}
+
+.share-actions button:hover:not(:disabled) {
+  background: var(--point-soft);
+}
+
+.share-actions button:disabled {
+  color: var(--faint);
+}
+
+.share-actions svg {
+  color: var(--ink-soft);
+}
+
+.share-each {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .calendar-entries {
@@ -7037,7 +7335,7 @@ button.nav-pill:hover {
   gap: 12px;
   padding: 12px 14px;
   border-radius: var(--radius-sm);
-  background: var(--fill);
+  background: var(--surface);
 }
 
 .calendar-entries li > span {
@@ -10976,6 +11274,10 @@ button.nav-pill:hover {
     max-height: 92vh;
     padding: 28px 20px calc(28px + env(safe-area-inset-bottom));
     border-radius: 28px 28px 0 0;
+  }
+
+  .modal-calendar {
+    --sheet-pad: 20px;
   }
 
   .modal-banner {

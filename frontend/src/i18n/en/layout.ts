@@ -47,24 +47,27 @@ const en: Record<string, string> = {
   "uniconnect 행사 일정": "uniconnect events",
   "캘린더에 추가": "Add to calendar",
   // modals/CalendarModal.tsx, lib/calendarApps.ts
-  "어떤 캘린더 앱을 쓰세요? 고른 앱이 열리고, 거기서 일정을 추가할 수 있어요.":
-    "Which calendar app do you use? It opens, and you add the dates there.",
+  "일정 {count}개 선택됨": "{count} selected",
+  "모두 고르기": "Select all",
+  "넣을 일정": "Dates to add",
   "캘린더 앱": "Calendar app",
   "Google 캘린더": "Google Calendar",
   "Apple 캘린더": "Apple Calendar",
   Outlook: "Outlook",
-  "다른 캘린더 앱": "Another calendar app",
-  "안드로이드 · 웹": "Android · Web",
-  "iPhone · iPad · Mac": "iPhone · iPad · Mac",
-  "웹 · 앱": "Web · App",
-  "삼성 캘린더 · 네이버 캘린더 등": "Samsung Calendar, Naver Calendar and others",
+  "다른 앱": "Other apps",
+  "넣을 일정을 하나 이상 골라 주세요.": "Pick at least one date to add.",
+  "Google 캘린더와 Outlook은 일정 추가 화면이, Apple 캘린더와 다른 앱은 캘린더 파일이 열려요.":
+    "Google Calendar and Outlook open their add-event page; Apple Calendar and other apps open the calendar file.",
   "일정을 하나씩 열어요. {app}의 일정 추가 화면이 새 창이나 앱으로 열려요.":
     "Open the dates one by one. {app}'s add-event page opens in a new tab or its app.",
   "{title} {app}에서 열기": "Open {title} in {app}",
   열기: "Open",
-  "일정 {count}개를 한 번에 넣어요. 캘린더 파일이 열리면 앱에서 추가를 눌러 주세요.":
-    "All {count} dates go in at once. When the calendar file opens, press Add in the app.",
-  "캘린더 앱 열기": "Open the calendar app",
+  "일정 복사": "Copy dates",
+  "캘린더 파일로 저장": "Save calendar file",
+  "일정을 복사했어요.": "Dates copied.",
+  "일정을 복사하지 못했어요.": "Couldn't copy the dates.",
+  "캘린더 파일을 저장했어요. 쓰는 캘린더 앱에서 가져올 수 있어요.":
+    "Calendar file saved. You can import it into your calendar app.",
   "캘린더 파일을 열면 Apple 캘린더가 열리고, 거기서 일정을 추가할 수 있어요.":
     "Open the calendar file and Apple Calendar opens to add the dates.",
   "캘린더 파일을 열면 쓰는 캘린더 앱이 열리고, 거기서 일정을 추가할 수 있어요.":
