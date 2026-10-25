@@ -147,8 +147,17 @@ export function agreementView(database: Database, agreement: Agreement, proposal
   return {
     ...agreement,
     side,
-    group: { name: proposal.group.name, member: Boolean(proposal.group.account) },
-    brand: { name: proposal.brand.name, member: Boolean(proposal.brand.account) },
+    // Each side's contact, which only the two sides of an accepted proposal see.
+    group: {
+      name: proposal.group.name,
+      member: Boolean(proposal.group.account),
+      ...(proposal.group.account?.contact ? { contact: proposal.group.account.contact } : {}),
+    },
+    brand: {
+      name: proposal.brand.name,
+      member: Boolean(proposal.brand.account),
+      ...(proposal.brand.account?.contact ? { contact: proposal.brand.account.contact } : {}),
+    },
     eventName: proposal.eventName,
     eventDate: proposal.eventDate,
     ...(sponsored

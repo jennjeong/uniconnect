@@ -1,6 +1,7 @@
 import { hashPassword } from "../lib/password.js"
 import type {
   Account,
+  AccountContact,
   Conversation,
   Database,
   Match,
@@ -15,6 +16,13 @@ import type {
 
 // Demo accounts for trying the app. Both use DEMO_PASSWORD (see README).
 export const DEMO_PASSWORD = "uniconnect2026"
+
+// The demo accounts' contacts, on their agreements; 010-0000 numbers are
+// given to no one.
+export const demoContacts: Record<"학생단체" | "브랜드", AccountContact> = {
+  학생단체: { name: "김뮤즈", position: "회장", phone: "010-0000-0000" },
+  브랜드: { name: "이오후", position: "점장", phone: "010-0000-0001" },
+}
 
 // Brands student groups can browse. score is the match for the demo group's
 // event; popularity counts sponsorships this semester.
@@ -913,6 +921,7 @@ export async function createSeed(): Promise<Database> {
     type: "공연 동아리",
     school: "삼육대학교",
     email: "muse@syu.ac.kr",
+    contact: demoContacts.학생단체,
     groupId: "syu-muse",
     passwordHash,
     termsAgreedAt: createdAt,
@@ -925,6 +934,7 @@ export async function createSeed(): Promise<Database> {
     type: "카페 · 식음료",
     school: "",
     email: "hello@afternoon-coffee.kr",
+    contact: demoContacts.브랜드,
     brandId: "afternoon-coffee",
     passwordHash,
     termsAgreedAt: createdAt,

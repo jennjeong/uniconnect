@@ -1,5 +1,6 @@
 import {
   createSeed,
+  demoContacts,
   seedBrands,
   seedConversations,
   seedReviews,
@@ -13,6 +14,7 @@ import { toIsoDate } from "./lib/dates.js"
 import { HttpError } from "./lib/errors.js"
 import { newStaffPin, prunePasses, syncSponsors } from "./lib/measurements.js"
 import { currentStorage, StaleWrite } from "./lib/storage.js"
+import { renamedAccountTypes } from "./lib/validation.js"
 import { hashToken } from "./middleware/session.js"
 import type { Database, Metrics, MetricEntry, Report } from "./types.js"
 
@@ -147,6 +149,17 @@ export function upgradeDatabase(stored: Database) {
     (account) => account.id === stored.demoAccountIds?.학생단체,
   )
   if (demoStudent) demoStudent.groupId ??= "syu-muse"
+  // Account types from before the lists grew take their new names, on the
+  // account and on its listing where it was named after the type.
+  for (const account of stored.accounts ?? []) {
+    const renamed = renamedAccountTypes[account.type]
+    if (!renamed) continue
+    const listingId = account.groupId ?? account.brandId
+    const listing = (account.role === "학생단체" ? stored.groups : stored.brands)?.find((item) => item.id === listingId)
+    if (listing?.category === account.type) listing.category = renamed
+    account.type = renamed
+  }
+  if (demoStudent) demoStudent.contact ??= demoContacts.학생단체
   // Measurement used to be one global set for the busking day; it moves to
   // that event's own measurement, keeping the counts and records so far.
   if (!stored.measurements) {
@@ -165,6 +178,7 @@ export function upgradeDatabase(stored: Database) {
   stored.sponsorships ??= demoBrandId ? { [demoBrandId]: seedSponsorships() } : {}
   const demoBrand = stored.accounts?.find((account) => account.id === demoBrandId)
   if (demoBrand) demoBrand.brandId ??= "afternoon-coffee"
+  if (demoBrand) demoBrand.contact ??= demoContacts.브랜드
   // Sponsorships saved before goals existed take the seeded goal, or
   // break-even for any other.
   const seededGoals = new Map(seedSponsorships().map((item) => [item.id, item.targetRoas]))

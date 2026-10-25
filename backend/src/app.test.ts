@@ -40,6 +40,9 @@ after(async () => {
   await rm(dataDir, { recursive: true, force: true })
 })
 
+// Who runs an account made in a test, as sign-up asks for it.
+const testContact = { name: "테스트 담당자", position: "회장", phone: "010-1234-5678" }
+
 async function login(role: "학생단체" | "브랜드") {
   const email = role === "학생단체" ? "muse@syu.ac.kr" : "hello@afternoon-coffee.kr"
   const { data } = await call("POST", "/auth/login", { role, email, password: DEMO_PASSWORD })
@@ -162,6 +165,7 @@ test("sign-up requires a verified school or company email", async () => {
     email: "club@syu.ac.kr",
     password: "club-pass-123",
     agreedToTerms: true,
+    contact: testContact,
     over14: true,
   }
   const unverified = await call("POST", "/auth/signup", { ...form, verificationToken: "x" })
@@ -836,12 +840,13 @@ test("accounts write the listing the other side sees", async () => {
   const signup = await call("POST", "/auth/signup", {
     role: "브랜드",
     name: "새로운 브랜드",
-    type: "교육",
+    type: "교육 · 학원",
     school: "",
     email: "hi@newbrand.co.kr",
     password: "brand-pass-123",
     verificationToken: verified.data.verificationToken,
     agreedToTerms: true,
+    contact: testContact,
     over14: true,
   })
   const newBrand = signup.data.token as string
@@ -1340,6 +1345,7 @@ async function signUpMember(email: string, password: string, role: "학생단체
     password,
     verificationToken: verified.data.verificationToken,
     agreedToTerms: true,
+    contact: testContact,
     over14: true,
   })
   assert.equal(signup.status, 201)
@@ -1372,6 +1378,7 @@ test("one verification makes one account, and one reset code sets one password",
     password: "twice-pass-123",
     verificationToken: verified.data.verificationToken,
     agreedToTerms: true,
+    contact: testContact,
     over14: true,
   }
   const signups = await Promise.all(Array.from({ length: 5 }, () => call("POST", "/auth/signup", form)))
@@ -1478,6 +1485,7 @@ test("an account can leave, taking what it made with it", async () => {
     password: "leave-pass-123",
     verificationToken: verified.data.verificationToken,
     agreedToTerms: true,
+    contact: testContact,
     over14: true,
   })
   const token = signup.data.token as string
@@ -1768,6 +1776,74 @@ test("sessions are stored as hashes, and answers carry security headers", async 
   assert.equal(response.headers.get("x-frame-options"), "DENY")
 })
 
+test("sign-up asks who runs the account, which only the two sides of an agreement see", async () => {
+  const email = "contact@syu.ac.kr"
+  const sent = await call("POST", "/auth/email-code", { role: "학생단체", email })
+  const verified = await call("POST", "/auth/email-code/verify", { email, code: sent.data.devCode })
+  const form = {
+    role: "학생단체",
+    name: "연락 동아리",
+    type: "밴드 · 음악 동아리",
+    school: "삼육대학교",
+    email,
+    password: "contact-pass-123",
+    verificationToken: verified.data.verificationToken,
+    agreedToTerms: true,
+    over14: true,
+  }
+  for (const [contact, error] of [
+    [undefined, /담당자 이름/],
+    [{ name: "김담당", phone: "010-1234-5678" }, /직책/],
+    [{ name: "김담당", position: "회장", phone: "02-123-4567" }, /휴대폰 번호/],
+  ] as const) {
+    const refused = await call("POST", "/auth/signup", { ...form, contact })
+    assert.equal(refused.status, 400)
+    assert.match(refused.data.error, error)
+  }
+  // The old, broader types are gone from the list.
+  assert.equal((await call("POST", "/auth/signup", { ...form, type: "학생회", contact: testContact })).status, 400)
+  const signup = await call("POST", "/auth/signup", {
+    ...form,
+    contact: { name: " 김담당 ", position: "회장", phone: "01098765432" },
+  })
+  assert.equal(signup.status, 201)
+  assert.deepEqual(signup.data.account.contact, { name: "김담당", position: "회장", phone: "010-9876-5432" })
+
+  // 내 정보 changes it, after a handover say; the shared demo accounts can't.
+  const token = signup.data.token as string
+  const changed = await call("PUT", "/auth/contact", { name: "박새임원", position: "부회장", phone: "010 2222 3333" }, token)
+  assert.deepEqual(changed.data.account.contact, { name: "박새임원", position: "부회장", phone: "010-2222-3333" })
+  assert.equal((await call("PUT", "/auth/contact", { name: "누군가", position: "회장", phone: "010-1111-2222" }, await login("학생단체"))).status, 403)
+
+  // An accepted proposal's agreement shows both sides' contacts to the two sides.
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const { token: brand, listingId: brandListing } = await listedMember("contact@contact-cafe.kr", "contact-pass-123", "브랜드")
+  await call("POST", "/events", { name: "연락 공연", date: addDays(todayInKorea(), 6), types: ["현금"] }, token)
+  await call("POST", "/proposals", { matchId: brandListing }, token)
+  const memberId = signup.data.account.id as string
+  const request = getDatabase().requests.find((item) => item.fromAccountId === memberId)!
+  await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+  const agreement = (await call("GET", `/agreements/${request.id}`, undefined, brand)).data.agreement
+  assert.deepEqual(agreement.group.contact, { name: "박새임원", position: "부회장", phone: "010-2222-3333" })
+  assert.deepEqual(agreement.brand.contact, testContact)
+})
+
+test("account types from before the lists grew take their new names", async () => {
+  const { upgradeDatabase } = await import("./store.js")
+  const { createSeed, demoContacts } = await import("./data/seed.js")
+  const stored = await createSeed()
+  const brand = stored.accounts.find((account) => account.role === "브랜드")!
+  const listing = stored.brands.find((item) => item.id === brand.brandId)!
+  brand.type = "뷰티 · 패션"
+  listing.category = "뷰티 · 패션"
+  delete brand.contact
+  upgradeDatabase(stored)
+  assert.equal(brand.type, "뷰티 · 화장품")
+  assert.equal(listing.category, "뷰티 · 화장품")
+  // The demo accounts from before contacts were asked get theirs.
+  assert.deepEqual(brand.contact, demoContacts.브랜드)
+})
+
 test("members change their password from 내 정보, keeping this device logged in", async () => {
   const email = "changer@syu.ac.kr"
   const sent = await call("POST", "/auth/email-code", { role: "학생단체", email })
@@ -1781,6 +1857,7 @@ test("members change their password from 내 정보, keeping this device logged 
     password: "first-pass-123",
     verificationToken: verified.data.verificationToken,
     agreedToTerms: true,
+    contact: testContact,
   }
   // Under 14s cannot sign up.
   assert.equal((await call("POST", "/auth/signup", form)).status, 400)

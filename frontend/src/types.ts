@@ -108,8 +108,9 @@ export type Agreement = {
   id: string
   kind: "request" | "offer"
   side: ChatSide
-  group: { name: string; member: boolean }
-  brand: { name: string; member: boolean }
+  // Each side, with the person running it (only the two sides see this).
+  group: { name: string; member: boolean; contact?: AccountContact }
+  brand: { name: string; member: boolean; contact?: AccountContact }
   eventName: string
   eventDate: string
   // The event, while the side whose it is has it (a group's event for a
@@ -197,6 +198,10 @@ export type EventItem = {
   status: EventStatus
 }
 
+// The person who runs an account; partners see it only on a confirmed
+// sponsorship's agreement.
+export type AccountContact = { name: string; position: string; phone: string }
+
 export type Account = {
   id: string
   role: Role
@@ -204,6 +209,8 @@ export type Account = {
   type: string
   school: string
   email: string
+  // Asked at sign-up; accounts from before have none.
+  contact?: AccountContact
   // The account's own listing: brands in the brand catalog, student
   // groups in the group catalog.
   brandId?: string
@@ -451,6 +458,7 @@ export type ModalName =
   | "leave"
   | "measure-goals"
   | "password"
+  | "contact"
   | "email"
   | "invite"
   | "metric-log"

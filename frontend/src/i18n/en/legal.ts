@@ -73,6 +73,9 @@ const en: Record<string, string> = {
   "단체명·브랜드명, 분류(업종), 학교, 이메일, 비밀번호(복원할 수 없게 암호화), 약관 동의 시각":
     "Group or brand name, category (industry), school, email address, password (encrypted so that it cannot be recovered), time of agreement to the terms",
   "회원 가입과 로그인, 회원 유형 확인": "Sign-up and login, verification of member type",
+  "담당자 이름, 직책, 휴대폰 번호": "Contact name, position and mobile number",
+  "협찬이 확정된 상대와 연락하고, 운영 문의에 답하기": "Contact between the partners of a confirmed sponsorship, and replies to questions to the operators",
+  "탈퇴하거나 내 정보에서 바꿀 때까지": "Until you leave or change it in My Account",
   "탈퇴할 때까지": "Until account deletion",
   "소개, 브랜드의 매장 주소, SNS 주소, 포트폴리오, 행사·캠페인 정보, 협찬 제안":
     "Profile, a brand's store address, social media addresses, portfolio, event and campaign information, sponsorship proposals",
@@ -129,8 +132,8 @@ const en: Record<string, string> = {
   "그 밖에 새로 맡기는 일이 생기면 받는 곳과 맡기는 일을 이곳에 먼저 적고 알려 드려요.":
     "If any other processing is newly outsourced, the recipient and the outsourced task will first be listed here and members will be notified.",
   "다른 회원에게 보이는 정보": "Information Visible to Other Members",
-  "단체명·브랜드명, 분류, 학교, 소개, SNS, 포트폴리오, 다가오는 행사와 브랜드의 매장 주소(그리고 학교와의 거리)는 상대 유형의 회원에게 보여요. 이메일과 비밀번호는 보이지 않아요. 협찬 제안과 메시지는 주고받은 두 회원만 볼 수 있어요.":
-    "The group or brand name, category, school, profile, social media, portfolio, upcoming events and a brand's store address (with its distance from a school) are visible to members of the other type. Email addresses and passwords are not visible. Sponsorship proposals and messages can be seen only by the two members who exchanged them.",
+  "단체명·브랜드명, 분류, 학교, 소개, SNS, 포트폴리오, 다가오는 행사와 브랜드의 매장 주소(그리고 학교와의 거리)는 상대 유형의 회원에게 보여요. 이메일과 비밀번호는 보이지 않아요. 협찬 제안과 메시지는 주고받은 두 회원만 볼 수 있어요. 담당자 이름·직책·휴대폰 번호는 협찬이 확정된 두 회원만 그 협찬 약속서에서 볼 수 있어요.":
+    "The group or brand name, category, school, profile, social media, portfolio, upcoming events and a brand's store address (with its distance from a school) are visible to members of the other type. Email addresses and passwords are not visible. Sponsorship proposals and messages can be seen only by the two members who exchanged them. The contact name, position and mobile number show only to the two members of a confirmed sponsorship, on its agreement.",
   "지우기와 회원의 권리": "Deletion and Members' Rights",
   "회원은 자기 개인정보를 보거나 고치거나 지우거나 처리를 멈춰 달라고 요청할 수 있어요.":
     "Members may request to access, correct or delete their personal information, or to suspend its processing.",

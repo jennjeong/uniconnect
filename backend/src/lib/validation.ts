@@ -1,9 +1,80 @@
-import type { Role } from "../types.js"
+import type { AccountContact, Role } from "../types.js"
 import { HttpError } from "./errors.js"
 
+// Keep in sync with accountTypeGroups in frontend/src/data/roles.ts, which
+// shows them in groups in this order.
 export const accountTypes: Record<Role, string[]> = {
-  학생단체: ["공연 동아리", "학술 동아리", "봉사 동아리", "학생회", "연합 동아리", "기타"],
-  브랜드: ["카페 · 식음료", "뷰티 · 패션", "콘텐츠 · 미디어", "스포츠 · 웰니스", "교육", "기타"],
+  학생단체: [
+    "총학생회",
+    "단과대 학생회",
+    "학과 학생회",
+    "축제 · 행사 기획단",
+    "공연 동아리",
+    "밴드 · 음악 동아리",
+    "댄스 동아리",
+    "연극 · 뮤지컬 동아리",
+    "사진 · 영상 동아리",
+    "학술 동아리",
+    "창업 · 경영 동아리",
+    "국제교류 · 어학 동아리",
+    "언론 · 방송 동아리",
+    "봉사 동아리",
+    "스포츠 동아리",
+    "게임 · e스포츠 동아리",
+    "종교 동아리",
+    "연합 동아리",
+    "서포터즈 · 홍보대사",
+    "기타",
+  ],
+  브랜드: [
+    "카페 · 식음료",
+    "베이커리 · 디저트",
+    "음식점",
+    "주점 · 펍",
+    "편의점 · 마트",
+    "뷰티 · 화장품",
+    "헤어 · 네일",
+    "패션 · 의류",
+    "사진 · 스튜디오",
+    "콘텐츠 · 미디어",
+    "게임 · 엔터테인먼트",
+    "IT · 앱 서비스",
+    "교육 · 학원",
+    "출판 · 문구",
+    "문화 · 공연",
+    "스포츠 · 피트니스",
+    "헬스케어 · 웰니스",
+    "여행 · 숙박",
+    "금융 · 보험",
+    "생활용품 · 리빙",
+    "기타",
+  ],
+}
+
+// Account types from before the lists grew, and what they became.
+export const renamedAccountTypes: Record<string, string> = {
+  학생회: "총학생회",
+  "뷰티 · 패션": "뷰티 · 화장품",
+  "스포츠 · 웰니스": "스포츠 · 피트니스",
+  교육: "교육 · 학원",
+}
+
+// The person running an account: name, position and a mobile number,
+// stored as 010-1234-5678.
+export function parseContact(input: unknown): AccountContact {
+  const value = (input && typeof input === "object" ? input : {}) as Record<string, unknown>
+  const name = text(value.name)
+  const position = text(value.position)
+  const digits = text(value.phone).replace(/\D/g, "")
+  if (!name) throw new HttpError(400, "담당자 이름을 입력해 주세요.")
+  if (name.length > 20) throw new HttpError(400, "담당자 이름은 20자 이하로 입력해 주세요.")
+  if (!position) throw new HttpError(400, "직책을 입력해 주세요.")
+  if (position.length > 20) throw new HttpError(400, "직책은 20자 이하로 입력해 주세요.")
+  if (!/^01[016789]\d{7,8}$/.test(digits)) {
+    throw new HttpError(400, "휴대폰 번호를 010-1234-5678처럼 입력해 주세요.")
+  }
+  const middle = digits.length === 11 ? 7 : 6
+  return { name, position, phone: `${digits.slice(0, 3)}-${digits.slice(3, middle)}-${digits.slice(middle)}` }
 }
 
 // Fixed facts each side's listing can fill in from 내 정보.

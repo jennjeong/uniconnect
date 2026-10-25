@@ -8416,6 +8416,12 @@ button.nav-pill:hover {
   font-weight: var(--weight-body);
 }
 
+/* Each side's contact person, with a number to call. */
+.agreement-contact a {
+  color: var(--point-strong);
+  font-weight: var(--weight-label);
+}
+
 .agreement-confirm {
   display: flex;
   flex-direction: column;

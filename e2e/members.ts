@@ -21,6 +21,7 @@ export async function signUpMember(request: APIRequestContext, role: "학생단�
       verificationToken: verified.verificationToken,
       agreedToTerms: true,
       over14: true,
+      contact: { name: "테스트 담당자", position: "회장", phone: "010-1234-5678" },
     },
   })
   const { token } = (await signup.json()) as { token: string }
