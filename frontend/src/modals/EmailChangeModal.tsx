@@ -2,6 +2,7 @@ import { useState } from "react"
 
 import { api, errorMessage } from "../api"
 import { Modal } from "../components/Modal"
+import { PasswordField } from "../components/PasswordField"
 import { t } from "../i18n"
 import type { Account } from "../types"
 
@@ -94,15 +95,12 @@ export function EmailChangeModal({
                 onChange={(event) => setEmail(event.target.value)}
               />
             </label>
-            <label>
-              {t("지금 비밀번호")}
-              <input
-                autoComplete="current-password"
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-              />
-            </label>
+            <PasswordField
+              autoComplete="current-password"
+              label={t("지금 비밀번호")}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
           </>
         )}
         {error && (

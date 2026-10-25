@@ -2,6 +2,7 @@ import { useState } from "react"
 
 import { api, errorMessage } from "../api"
 import { Modal } from "../components/Modal"
+import { PasswordField } from "../components/PasswordField"
 import { RoleMark } from "../components/RoleMark"
 import { RolePicker } from "../components/RolePicker"
 import { demoAccounts, demoPassword } from "../data/demo"
@@ -72,17 +73,14 @@ export function LoginModal({
             }
           />
         </label>
-        <label>
-          {t("비밀번호")}
-          <input
-            autoComplete="current-password"
-            type="password"
-            value={draft.password}
-            onChange={(event) =>
-              setDraft((current) => ({ ...current, password: event.target.value }))
-            }
-          />
-        </label>
+        <PasswordField
+          autoComplete="current-password"
+          label={t("비밀번호")}
+          value={draft.password}
+          onChange={(event) =>
+            setDraft((current) => ({ ...current, password: event.target.value }))
+          }
+        />
         <p className="forgot-row">
           <button onClick={() => onForgot(draft.email)} type="button">
             {t("비밀번호를 잊으셨나요?")}

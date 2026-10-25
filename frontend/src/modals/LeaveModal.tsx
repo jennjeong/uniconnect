@@ -2,6 +2,7 @@ import { useState } from "react"
 
 import { api, errorMessage } from "../api"
 import { Modal } from "../components/Modal"
+import { PasswordField } from "../components/PasswordField"
 import { t } from "../i18n"
 import type { Account } from "../types"
 
@@ -56,15 +57,12 @@ export function LeaveModal({
           <li>{t("주고받은 메시지 (상대방 쪽 대화도 함께 사라져요)")}</li>
           <li>{t("관리자에게 보낸 질문과 답변")}</li>
         </ul>
-        <label>
-          {t("비밀번호 확인")}
-          <input
-            autoComplete="current-password"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-          />
-        </label>
+        <PasswordField
+          autoComplete="current-password"
+          label={t("비밀번호 확인")}
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+        />
         <label className="terms-check">
           <input
             checked={understood}

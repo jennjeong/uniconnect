@@ -169,6 +169,7 @@ npm run dev
 
 - 가입할 때 약관 동의와 함께 '만 14세 이상'을 확인합니다.
 - 내 정보의 `비밀번호 변경`에서 지금 비밀번호를 넣고 바꿀 수 있고, 바꾸면 다른 기기는 로그아웃됩니다.
+- 비밀번호 칸 오른쪽의 눈 모양 버튼을 누르면 쓴 비밀번호가 보이고, 다시 누르면 가려집니다(`components/PasswordField.tsx`). 로그인 · 회원가입 · 비밀번호 찾기와 변경 · 로그인 이메일 바꾸기 · 탈퇴의 비밀번호 칸과 직원 PIN, 관리자 토큰 칸에 있어서, 틀리게 쓴 글자를 보내기 전에 확인할 수 있습니다.
 - 로그인 토큰은 서버 데이터 파일에 해시(sha256)로만 저장해서, 파일만으로는 아무도 로그인할 수 없습니다. 예전 데이터 파일의 로그인도 그대로 유지됩니다.
 - 모든 응답에 보안 헤더를 붙입니다(Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, production에서는 HSTS). 페이지는 이 사이트의 스크립트(와 켜면 Google Analytics)만 실행하고, 다른 사이트 안에 넣을 수 없습니다.
 

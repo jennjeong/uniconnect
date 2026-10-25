@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 
 import { api, errorMessage } from "../api"
 import { Modal } from "../components/Modal"
+import { PasswordField } from "../components/PasswordField"
 import { t } from "../i18n"
 import { formatRemaining } from "../lib/format"
 import type { Session } from "../types"
@@ -144,25 +145,19 @@ export function ResetPasswordModal({
         </div>
         {sent && (
           <div className="form-row">
-            <label>
-              {t("새 비밀번호")}
-              <input
-                autoComplete="new-password"
-                placeholder={t("8자 이상")}
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-              />
-            </label>
-            <label>
-              {t("새 비밀번호 확인")}
-              <input
-                autoComplete="new-password"
-                type="password"
-                value={confirm}
-                onChange={(event) => setConfirm(event.target.value)}
-              />
-            </label>
+            <PasswordField
+              autoComplete="new-password"
+              label={t("새 비밀번호")}
+              placeholder={t("8자 이상")}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
+            <PasswordField
+              autoComplete="new-password"
+              label={t("새 비밀번호 확인")}
+              value={confirm}
+              onChange={(event) => setConfirm(event.target.value)}
+            />
           </div>
         )}
         {error && (

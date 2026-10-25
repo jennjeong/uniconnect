@@ -195,6 +195,7 @@ const en: Record<string, string> = {
   "행사장 입구와 부스에 띄워 주세요": "Show it at the entrance and booths",
   "매장 직원용 방문 확인": "Visit check for store staff",
   "직원 PIN": "Staff PIN",
+  "PIN 보기": "Show PIN",
   "이 주소와 PIN은 협찬 매장 직원에게만 알려 주세요. 직원이 자기 기기에서 참여자의 쿠폰 번호를 넣으면 방문이 기록돼요.":
     "Share this link and PIN only with the sponsor's store staff. Staff enter a guest's coupon number on their own device to record the visit.",
   "매장마다 PIN이 달라서, 각 매장은 자기 쿠폰만 확인할 수 있어요.":

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react"
 
 import { ApiError, api, errorMessage } from "../api"
 import { PageIntro } from "../components/PageIntro"
+import { PasswordField } from "../components/PasswordField"
 import { Pill } from "../components/Pill"
 import { TabBar } from "../components/TabBar"
 import { locale, t } from "../i18n"
@@ -212,16 +213,14 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
             if (tokenDraft.trim()) setToken(tokenDraft.trim())
           }}
         >
-          <label>
-            {t("관리자 토큰")}
-            <input
-              autoComplete="off"
-              placeholder={t("서버의 ADMIN_TOKEN")}
-              type="password"
-              value={tokenDraft}
-              onChange={(event) => setTokenDraft(event.target.value)}
-            />
-          </label>
+          <PasswordField
+            autoComplete="off"
+            label={t("관리자 토큰")}
+            placeholder={t("서버의 ADMIN_TOKEN")}
+            toggleLabel={t("토큰 보기")}
+            value={tokenDraft}
+            onChange={(event) => setTokenDraft(event.target.value)}
+          />
           {error && (
             <p className="form-error" role="alert">
               {error}

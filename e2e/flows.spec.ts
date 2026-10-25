@@ -93,6 +93,22 @@ test("the login popup logs into a demo account with one press, with nothing to t
   await expect(page.locator(".hero-eyebrow")).toContainText("반가워요, 오후의 커피")
 })
 
+test("a password can be shown while it is typed, and hidden again", async ({ page }) => {
+  await page.goto("/")
+  await page.getByRole("button", { name: "로그인", exact: true }).first().click()
+  const dialog = page.getByRole("dialog")
+  const password = dialog.getByLabel("비밀번호", { exact: true })
+  await password.fill("my-pass-123")
+  await expect(password).toHaveAttribute("type", "password")
+  const toggle = dialog.getByRole("button", { name: "비밀번호 보기" })
+  await toggle.click()
+  await expect(password).toHaveAttribute("type", "text")
+  await expect(password).toHaveValue("my-pass-123")
+  await expect(toggle).toHaveAttribute("aria-pressed", "true")
+  await toggle.click()
+  await expect(password).toHaveAttribute("type", "password")
+})
+
 test("a student group proposes and the brand accepts", async ({ browser }) => {
   const student = await (await browser.newContext()).newPage()
   await student.goto("/")
