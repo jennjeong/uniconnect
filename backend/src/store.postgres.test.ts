@@ -10,7 +10,8 @@ import { PGlite } from "@electric-sql/pglite"
 
 // The data store on Postgres, as on Vercel, with an in-process database
 // standing in for Neon: seeding once, writes that build on the version they
-// read, another copy's writes coming in, hourly copies, and photos as rows.
+// read, another copy's writes coming in, hourly copies, photos as rows, and
+// copies starting at once that all make the tables.
 const dataDir = await mkdtemp(path.join(tmpdir(), "uniconnect-pg-"))
 // Where the JSON file would go; with a database it is never written.
 process.env.DATA_FILE = path.join(dataDir, "db.json")
@@ -147,5 +148,43 @@ test("through the API, an agreement photo goes into the database, is served to i
     assert.equal(await count(), 0)
   } finally {
     await new Promise((resolve) => server.close(resolve))
+  }
+})
+
+// Copies of the API starting at once all make the tables. Postgres answers
+// the ones that lose with a duplicate key in its catalog (23505) or an
+// existing table (42P07), though the table is there by then.
+test("a copy that loses the race to make the tables still loads the data", async () => {
+  const lost = new Set<string>()
+  const racing = async (text: string, params: unknown[] = []) => {
+    if (text.startsWith("create table") && !lost.has(text)) {
+      lost.add(text)
+      throw Object.assign(new Error("another copy made the table at the same moment"), {
+        code: lost.size % 2 ? "23505" : "42P07",
+      })
+    }
+    return sql(text, params)
+  }
+  useSql(racing)
+  try {
+    assert.ok((await store.loadDatabase()).accounts.length > 0)
+    assert.equal(lost.size, 3)
+  } finally {
+    useSql(sql)
+  }
+})
+
+test("any other error while making the tables still fails the load", async () => {
+  const denied = async (text: string, params: unknown[] = []) => {
+    if (text.startsWith("create table")) {
+      throw Object.assign(new Error("permission denied for schema public"), { code: "42501" })
+    }
+    return sql(text, params)
+  }
+  useSql(denied)
+  try {
+    await assert.rejects(store.loadDatabase(), { code: "42501" })
+  } finally {
+    useSql(sql)
   }
 })
