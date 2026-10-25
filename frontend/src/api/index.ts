@@ -21,6 +21,7 @@ import type {
   Review,
   ReviewSummary,
   Role,
+  SentProposal,
   Session,
   ShopInvite,
   SponsorOffer,
@@ -55,6 +56,8 @@ export type ProposalState = {
   // Sponsorships confirmed either way round (sent and accepted, or received
   // and accepted).
   confirmed: number
+  // What the account sent, newest first, for its inbox.
+  sent: SentProposal[]
 }
 
 // One function per backend endpoint (see backend/src/routes).

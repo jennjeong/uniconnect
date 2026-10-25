@@ -865,6 +865,29 @@ test("accounts write the listing the other side sees", async () => {
   assert.ok(!(await named(student)).includes("새로운 브랜드"))
 })
 
+test("the proposal state lists what an account sent, until it is taken back", async () => {
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const today = todayInKorea()
+  const { token: group, listingId: groupListing } = await listedMember("sender@syu.ac.kr", "sender-pass-123")
+  const { token: brand, listingId: brandListing } = await listedMember("sender@sender-cafe.kr", "sender-pass-123", "브랜드")
+  await call("POST", "/events", { name: "보낸 공연", date: addDays(today, 9), types: ["현금"] }, group)
+  await call("POST", "/events", { name: "보낸 캠페인", date: addDays(today, 11), types: ["제품"] }, brand)
+
+  // A group's request: to which brand, about which event, asking for what.
+  const sent = (await call("POST", "/proposals", { matchId: brandListing }, group)).data.sent
+  assert.equal(sent.length, 1)
+  assert.deepEqual(
+    [sent[0].partnerId, sent[0].partnerName, sent[0].eventName, sent[0].offer, sent[0].status],
+    [brandListing, "sender 카페", "보낸 공연", "음료 쿠폰 100장", "검토 중"],
+  )
+  // A brand's offer, to a group with its school.
+  const offered = (await call("POST", "/proposals", { matchId: groupListing }, brand)).data.sent
+  assert.deepEqual([offered[0].partnerName, offered[0].school, offered[0].eventName], ["sender 동아리", "삼육대학교", "보낸 캠페인"])
+  // Visitors have sent nothing, and taking one back empties the list.
+  assert.deepEqual((await call("GET", "/proposals")).data.sent, [])
+  assert.deepEqual((await call("DELETE", `/proposals/${brandListing}`, undefined, group)).data.sent, [])
+})
+
 test("members see only members, and the examples stay with visitors and the demo accounts", async () => {
   const { token: group, listingId: groupListing } = await listedMember("apart@syu.ac.kr", "apart-pass-123")
   const { token: brand, listingId: brandListing } = await listedMember("apart@apart-cafe.kr", "apart-pass-123", "브랜드")

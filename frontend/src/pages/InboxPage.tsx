@@ -4,10 +4,11 @@ import { BrandMark } from "../components/BrandMark"
 import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { RequestProgress } from "../components/RequestProgress"
+import { PendingBothWays } from "../components/SentProposals"
 import { TabBar } from "../components/TabBar"
 import { t } from "../i18n"
 import { dDayLabel, formatDateTime, formatDay } from "../lib/date"
-import type { RequestStatus, SponsorRequest } from "../types"
+import type { RequestStatus, SentProposal, SponsorRequest } from "../types"
 
 // Card class for each status.
 const cardState: Record<RequestStatus, string> = {
@@ -124,27 +125,44 @@ function RequestCard({
   )
 }
 
-// Proposals student groups sent to the brand, to accept or decline.
+// Proposals student groups sent to the brand, to accept or decline, and
+// under 검토 중 the offers it sent that wait for an answer, to take back.
 export function InboxPage({
   requests,
+  sent,
   onAnswer,
+  onWithdraw,
   onOpenAgreement,
 }: {
   requests: SponsorRequest[]
+  sent: SentProposal[]
   onAnswer: (request: SponsorRequest, decision: "accept" | "decline") => void
+  onWithdraw: (proposal: SentProposal) => void
   // An accepted proposal's agreement (pages/AgreementPage.tsx).
   onOpenAgreement: (id: string) => void
 }) {
   const [tab, setTab] = useState<RequestStatus>("검토 중")
   const current = tabs.find((item) => item.status === tab) ?? tabs[0]
   const list = requests.filter((request) => request.status === tab)
+  const waitingSent = sent.filter((item) => item.status === "검토 중").length
+
+  const received =
+    list.length === 0 ? (
+      <p className="day-empty inbox-empty">{t(current.empty)}</p>
+    ) : (
+      <div className="request-grid stagger">
+        {list.map((request) => (
+          <RequestCard key={request.id} onAnswer={onAnswer} onOpenAgreement={onOpenAgreement} request={request} />
+        ))}
+      </div>
+    )
 
   return (
     <section className="page-view">
       <PageIntro
         eyebrow="Proposal Inbox"
         title={t("받은 협찬 제안")}
-        description={t("학생단체가 보낸 제안을 확인하고 협찬 여부를 정해 주세요.")}
+        description={t("학생단체가 보낸 제안을 확인하고 협찬 여부를 정해 주세요. 우리 브랜드가 보낸 제안도 검토 중에서 보고 취소할 수 있어요.")}
       />
 
       <TabBar
@@ -153,7 +171,10 @@ export function InboxPage({
           label: (
             <>
               {t(item.label)}
-              <em>{requests.filter((request) => request.status === item.status).length}</em>
+              <em>
+                {requests.filter((request) => request.status === item.status).length +
+                  (item.status === "검토 중" ? waitingSent : 0)}
+              </em>
             </>
           ),
         }))}
@@ -162,16 +183,16 @@ export function InboxPage({
         value={tab}
       />
 
-      {list.length === 0 ? (
-        <p className="day-empty inbox-empty" key={tab}>
-          {t(current.empty)}
-        </p>
+      {tab === "검토 중" ? (
+        <PendingBothWays
+          key={tab}
+          received={received}
+          receivedCount={list.length}
+          sent={sent}
+          onWithdraw={onWithdraw}
+        />
       ) : (
-        <div className="request-grid stagger" key={tab}>
-          {list.map((request) => (
-            <RequestCard key={request.id} onAnswer={onAnswer} onOpenAgreement={onOpenAgreement} request={request} />
-          ))}
-        </div>
+        <div key={tab}>{received}</div>
       )}
     </section>
   )

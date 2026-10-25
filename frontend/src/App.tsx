@@ -85,6 +85,7 @@ import type {
   NearbyPlace,
   ProfileDraft,
   Role,
+  SentProposal,
   Session,
   SponsorOffer,
   SponsorRequest,
@@ -122,6 +123,8 @@ function App() {
   // Answers from brands that replied to the student group's proposals.
   const [statuses, setStatuses] = useState<ProposalState["statuses"]>({})
   const [confirmedCount, setConfirmedCount] = useState(0)
+  // Proposals the account sent, for the inbox's 검토 중 beside those it received.
+  const [sent, setSent] = useState<SentProposal[]>([])
   // Moves on every minute and when the window comes back into view, so
   // answers from the other side show without reloading.
   const [refreshTick, setRefreshTick] = useState(0)
@@ -197,6 +200,7 @@ function App() {
     setProposals([])
     setStatuses({})
     setConfirmedCount(0)
+    setSent([])
     setUpdatedAt(null)
   }
   // Brands for student groups, student groups for brands, and whether it
@@ -626,6 +630,7 @@ function App() {
     setProposals(result.proposals)
     setStatuses(result.statuses)
     setConfirmedCount(result.confirmed)
+    setSent(result.sent ?? [])
   }
 
   // The click and the server's acceptance are tracked apart (lib/analytics.ts).
@@ -662,7 +667,7 @@ function App() {
     }
   }
 
-  const cancelProposal = async (match: Match) => {
+  const cancelProposal = async (match: Pick<Match, "id" | "name">) => {
     try {
       applyProposals(await api.cancelProposal(match.id))
       showNotice(t("{name}에 보낸 제안을 취소했어요.", { name: match.name }))
@@ -670,6 +675,10 @@ function App() {
       handleError(error)
     }
   }
+
+  // 제안 취소 on a sent proposal in the inbox.
+  const withdrawProposal = (proposal: SentProposal) =>
+    cancelProposal({ id: proposal.partnerId, name: proposal.partnerName })
 
   // 문의하기 on a detail page: opens (or starts) the conversation with it.
   const openChat = async (match: Match) => {
@@ -1059,9 +1068,26 @@ function App() {
           />
         )
       case "받은 제안":
-        return <InboxPage requests={requests} onAnswer={answerRequest} onOpenAgreement={openAgreement} />
+        return (
+          <InboxPage
+            requests={requests}
+            sent={sent}
+            onAnswer={answerRequest}
+            onWithdraw={withdrawProposal}
+            onOpenAgreement={openAgreement}
+          />
+        )
       case "받은 협찬":
-        return <OffersPage brands={brands} offers={offers} onAnswer={answerOffer} onOpenAgreement={openAgreement} />
+        return (
+          <OffersPage
+            brands={brands}
+            offers={offers}
+            sent={sent}
+            onAnswer={answerOffer}
+            onWithdraw={withdrawProposal}
+            onOpenAgreement={openAgreement}
+          />
+        )
       case "성과 분석":
         return (
           <AnalyticsPage

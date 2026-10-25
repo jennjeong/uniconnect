@@ -262,6 +262,26 @@ export type SponsorOffer = {
   respondedAt?: string
 }
 
+// A proposal the account sent (a group's request, a brand's offer), as its
+// inbox lists it beside the ones it received.
+export type SentProposal = {
+  id: string
+  // The partner's listing, which DELETE /api/proposals/:matchId takes back.
+  partnerId: string
+  partnerName: string
+  industry: Industry
+  logo?: string
+  school?: string
+  // The sender's own event or campaign it is about.
+  eventName: string
+  eventDate?: string
+  // What the group asked for, or what the brand offered.
+  offer: string
+  status: RequestStatus
+  createdAt: string
+  respondedAt?: string
+}
+
 // One finished sponsorship of a brand, for its analytics.
 export type Sponsorship = {
   id: string
