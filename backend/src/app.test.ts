@@ -2129,9 +2129,14 @@ test("the shops around a campus come live from Kakao, are asked for again each t
   const demo = getDatabase().accounts.find((account) => account.email === "muse@syu.ac.kr")!
   const group = getDatabase().groups.find((item) => item.id === demo.groupId)!
   const saved = { email: demo.email, school: demo.school, groupSchool: group.school }
+  const muse = await login("학생단체")
   try {
     // Without the key there is nothing to show, and Kakao isn't asked.
-    assert.deepEqual((await call("GET", "/places?category=CE7")).data, { map: false, campus: "삼육대학교", places: [] })
+    assert.deepEqual((await call("GET", "/places?category=CE7", undefined, muse)).data, {
+      map: false,
+      campus: "삼육대학교",
+      places: [],
+    })
 
     config.kakaoRestApiKey = "test-key"
     const asked: { category: string; lat: number; lng: number }[] = []
@@ -2166,10 +2171,11 @@ test("the shops around a campus come live from Kakao, are asked for again each t
         ],
       }
     }
-    // Visitors see the demo group's campus, nearest first.
-    const visitor = (await call("GET", "/places?category=CE7")).data
-    assert.equal(visitor.campus, "삼육대학교")
-    assert.deepEqual(visitor.places, [
+    // The group sees the shops around its campus, nearest first.
+    const found = (await call("GET", "/places?category=CE7", undefined, muse)).data
+    assert.equal(found.campus, "삼육대학교")
+    assert.equal(found.example, undefined)
+    assert.deepEqual(found.places, [
       {
         id: "1",
         name: "스마일하우스",
@@ -2196,13 +2202,13 @@ test("the shops around a campus come live from Kakao, are asked for again each t
     ])
     const campus = campuses.find((item) => item.name === "삼육대학교")!
     // The campus comes with its point, for the map drawn on screen.
-    assert.deepEqual(visitor.center, { lat: campus.lat, lng: campus.lng })
+    assert.deepEqual(found.center, { lat: campus.lat, lng: campus.lng })
     assert.deepEqual(asked[0], { category: "CE7", lat: campus.lat, lng: campus.lng })
     // The same look asks Kakao again: nothing was kept.
-    await call("GET", "/places?category=CE7")
+    await call("GET", "/places?category=CE7", undefined, muse)
     assert.equal(asked.length, 2)
     // Every kind together: each kind asked once, each place once, nearest first.
-    const all = (await call("GET", "/places?category=all")).data
+    const all = (await call("GET", "/places?category=all", undefined, muse)).data
     assert.deepEqual(asked.slice(2).map((item) => item.category), ["CE7", "FD6", "CS2", "AC5", "CT1"])
     assert.deepEqual(
       all.places.map((place: { name: string }) => place.name),
@@ -2216,7 +2222,11 @@ test("the shops around a campus come live from Kakao, are asked for again each t
     demo.email = "muse@unknown.ac.kr"
     demo.school = "어느대학교"
     group.school = "어느대학교"
-    assert.deepEqual((await call("GET", "/places?category=CE7")).data, { map: true, campus: null, places: [] })
+    assert.deepEqual((await call("GET", "/places?category=CE7", undefined, muse)).data, {
+      map: true,
+      campus: null,
+      places: [],
+    })
     Object.assign(demo, { email: saved.email, school: saved.school })
     group.school = saved.groupSchool
 
@@ -2224,21 +2234,76 @@ test("the shops around a campus come live from Kakao, are asked for again each t
     placeSearch.search = async () => {
       throw new Error("403 disabled")
     }
-    const failed = await call("GET", "/places?category=FD6")
+    const failed = await call("GET", "/places?category=FD6", undefined, muse)
     assert.equal(failed.status, 502)
     assert.match(failed.data.error, /주변 가게/)
 
     // Each address may ask Kakao 30 times a minute, a look at every kind
     // counting five: 8 asked so far (two single looks, one of every kind,
-    // the failed one).
+    // the failed one). A visitor's look at the examples asks nothing.
     placeSearch.search = async () => ({ documents: [] })
-    for (let count = 8; count < 30; count += 1) assert.equal((await call("GET", "/places?category=CS2")).status, 200)
-    assert.equal((await call("GET", "/places?category=CS2")).status, 429)
+    for (let count = 8; count < 30; count += 1) {
+      assert.equal((await call("GET", "/places?category=CS2", undefined, muse)).status, 200)
+    }
+    assert.equal((await call("GET", "/places?category=CS2", undefined, muse)).status, 429)
+    assert.equal((await call("GET", "/places?category=CS2")).status, 200)
   } finally {
     placeSearch.search = search
     config.kakaoRestApiKey = key
     Object.assign(demo, { email: saved.email, school: saved.school })
     group.school = saved.groupSchool
+  }
+})
+
+test("visitors see made-up shops around the demo group's campus, and Kakao isn't asked", async () => {
+  const { placeSearch, placeRadius } = await import("./lib/places.js")
+  const { campuses } = await import("./data/campuses.js")
+  const { exampleShops } = await import("./data/exampleShops.js")
+  const { distanceKm } = await import("./lib/geo.js")
+  const { placeCategories } = await import("./lib/validation.js")
+  const search = placeSearch.search
+  const key = config.kakaoRestApiKey
+  let asked = 0
+  placeSearch.search = async () => {
+    asked += 1
+    return { documents: [] }
+  }
+  try {
+    const campus = campuses.find((item) => item.name === "삼육대학교")!
+    // Every kind the chips offer has some.
+    for (const kind of placeCategories) assert.ok(exampleShops.some((shop) => shop.kind === kind), kind)
+    // The same examples with the map key or without it.
+    for (const value of [undefined, "test-key"]) {
+      config.kakaoRestApiKey = value
+      const all = (await call("GET", "/places?category=all")).data
+      assert.equal(all.example, true)
+      assert.equal(all.campus, "삼육대학교")
+      assert.deepEqual(all.center, { lat: campus.lat, lng: campus.lng })
+      assert.equal(all.places.length, exampleShops.length)
+      const distances = all.places.map((place: { distanceM: number }) => place.distanceM)
+      assert.deepEqual(distances, [...distances].sort((a, b) => a - b))
+      for (const place of all.places) {
+        // Near the campus and placed where they say, with an address read
+        // from it and no map page or phone number.
+        assert.ok(place.distanceM <= placeRadius, place.name)
+        assert.ok(Math.abs(distanceKm(campus, place) * 1000 - place.distanceM) < 100, place.name)
+        assert.ok(place.address.startsWith("삼육대학교 "), place.name)
+        assert.equal(place.url, undefined)
+        assert.equal(place.phone, undefined)
+      }
+    }
+    // One kind at a time, as the chips pick.
+    const cafes = (await call("GET", "/places?category=CE7")).data.places
+    assert.ok(cafes.length > 0)
+    assert.ok(cafes.every((place: { kind: string }) => place.kind === "CE7"))
+    assert.equal(asked, 0)
+    // A logged-in group still gets the real shops around its campus.
+    const found = (await call("GET", "/places?category=CE7", undefined, await login("학생단체"))).data
+    assert.equal(found.example, undefined)
+    assert.equal(asked, 1)
+  } finally {
+    placeSearch.search = search
+    config.kakaoRestApiKey = key
   }
 })
 
@@ -2309,8 +2374,9 @@ test("a student group invites a shop it found nearby, and the shop joins as a br
         { id: "777", invited: undefined, brandId: undefined },
       ],
     )
-    // Visitors, who see the demo group's campus, aren't shown its invitations.
-    assert.equal((await shops())[0].invited, undefined)
+    // Visitors see only the made-up examples, never the shops groups found.
+    const examplesOnly = async () => (await shops()).every((place) => place.id.startsWith("example-") && !place.invited && !place.brandId)
+    assert.ok(await examplesOnly())
 
     // Only a brand takes it, and not the shared demo brand.
     assert.equal((await call("POST", `/invites/${code}/accept`)).status, 401)
@@ -2343,10 +2409,10 @@ test("a student group invites a shop it found nearby, and the shop joins as a br
       assert.match(notice.text, /owner 카페에서 초대를 받고/)
     }
 
-    // 가까운 순 now shows the shop joined to members nearby. Visitors, who
-    // see the examples, still see only the shop.
+    // 가까운 순 now shows the shop joined to members nearby. Visitors still
+    // see only the examples.
     assert.equal((await shops(group))[0].brandId, listing.id)
-    assert.equal((await shops())[0].brandId, undefined)
+    assert.ok(await examplesOnly())
 
     // Another group's invitation to the same shop can't hand it to a second brand.
     const otherGroup = await signUpMember("invite-two@syu.ac.kr", "invite-two-123")

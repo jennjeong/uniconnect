@@ -4,7 +4,7 @@ import { config } from "../config.js"
 import { shownTo, viewerFor } from "../lib/catalog.js"
 import { HttpError } from "../lib/errors.js"
 import { campusOf } from "../lib/geo.js"
-import { nearbyPlaces, nearestPlaces } from "../lib/places.js"
+import { exampleNearby, nearbyPlaces, nearestPlaces } from "../lib/places.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { placeCategories } from "../lib/validation.js"
 import { getDatabase } from "../store.js"
@@ -20,12 +20,13 @@ const asksPerClient = createRateLimit({
   message: "가게 검색이 너무 많아요. 잠시 후 다시 시도해 주세요.",
 })
 
-// Real shops around the student group's campus (the demo group's for
-// visitors), nearest first, straight from Kakao Local: of one kind, or of
-// every kind together ("all"). Without the map key, or for a school not in
-// the campus table, there are none. Each shop says whether the group looking
-// invited it and which brand it joined as; the campus comes with its point
-// for the schematic map.
+// Real shops around the student group's campus, nearest first, straight
+// from Kakao Local: of one kind, or of every kind together ("all"). Without
+// the map key, or for a school not in the campus table, there are none. Each
+// shop says whether the group looking invited it and which brand it joined
+// as; the campus comes with its point for the schematic map. Visitors see
+// made-up shops around the demo group's campus instead (example: true), and
+// Kakao isn't asked.
 placesRouter.get("/", async (req, res) => {
   const category = String(req.query.category ?? "")
   const kinds = category === "all" ? placeCategories : placeCategories.filter((kind) => kind === category)
@@ -34,6 +35,20 @@ placesRouter.get("/", async (req, res) => {
   const campus =
     viewer && campusOf({ email: viewer.account.email, school: viewer.listing?.school ?? viewer.account.school })
   const key = config.kakaoRestApiKey
+  if (!req.account) {
+    res.json(
+      campus
+        ? {
+            map: Boolean(key),
+            example: true,
+            campus: campus.name,
+            center: { lat: campus.lat, lng: campus.lng },
+            places: exampleNearby(campus, kinds),
+          }
+        : { map: Boolean(key), example: true, campus: null, places: [] },
+    )
+    return
+  }
   if (!key || !campus) {
     res.json({ map: Boolean(key), campus: campus?.name ?? null, places: [] })
     return

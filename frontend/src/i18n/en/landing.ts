@@ -53,8 +53,14 @@ export default {
   "예시 화면 · {semester}": "Example · {semester}",
   "로그인하지 않아 예시 데이터로 보여요": "You're seeing example data because you're not logged in",
   "학교마다 근처 가게가 달라요": "Nearby shops differ by school",
-  "지금은 데모 단체의 학교 근처 가게를 예시로 보여 드려요. 로그인하면 우리 학교 근처 가게를 볼 수 있어요.":
-    "This shows the shops near the demo group's school as an example. Log in to see the shops near your school.",
+  "지금 보이는 가게는 데모 단체의 학교 근처에 있다고 가정해 만든 예시예요. 로그인하면 카카오 지도에서 찾은 우리 학교 근처의 실제 가게를 볼 수 있어요.":
+    "These shops are made up, as if they were near the demo group's school. Log in to see real shops near your school, found on Kakao Map.",
+  "학교 주변 가게를 가까운 순서로 보여 드려요. 아직 uniconnect와 협약하지 않은 곳은 초대장을 보내 가입을 권해 보세요.":
+    "Shops around the school, nearest first. Send an invitation to those not yet partnered with uniconnect to suggest they join.",
+  "{campus} 근처에 있다고 가정해 만든 예시 가게예요. 가까운 순서예요.":
+    "Made-up example shops, as if near {campus}, nearest first.",
+  "예시로 만든 가게예요. 실제 가게나 카카오의 정보가 아니에요.":
+    "These shops are made up as examples. They aren't real shops or Kakao's information.",
   "매장마다 가까운 학생단체가 달라요": "Nearby groups differ by store",
   "지금은 데모 브랜드 매장에서 가까운 순서를 예시로 보여 드려요. 로그인하면 우리 매장 기준으로 볼 수 있어요.":
     "This orders groups by distance from the demo brand's store as an example. Log in to see them from your store.",
