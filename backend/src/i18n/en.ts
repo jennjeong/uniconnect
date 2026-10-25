@@ -192,6 +192,12 @@ const en: Record<string, string> = {
   "초대 링크를 찾을 수 없어요. 링크를 다시 확인해 주세요.": "We couldn't find this invitation. Please check the link.",
   "브랜드 계정으로 가게를 연결할 수 있어요.": "Only brand accounts can link a shop.",
   "데모 계정은 가게를 연결할 수 없어요.": "The demo accounts can't link a shop.",
+  "데모 계정은 담당자 정보를 바꿀 수 없어요.": "The demo accounts can't change their contact details.",
+  "담당자 이름을 입력해 주세요.": "Please enter the contact person's name.",
+  "담당자 이름은 20자 이하로 입력해 주세요.": "Please keep the contact person's name to 20 characters or fewer.",
+  "직책을 입력해 주세요.": "Please enter your position.",
+  "직책은 20자 이하로 입력해 주세요.": "Please keep the position to 20 characters or fewer.",
+  "휴대폰 번호를 010-1234-5678처럼 입력해 주세요.": "Please enter a mobile number like 010-1234-5678.",
   "데모 계정으로는 실제 가게를 초대할 수 없어요. 가입하면 우리 단체 이름으로 초대할 수 있어요.":
     "The demo accounts can't invite real shops. Sign up to invite them in your group's name.",
   "이미 다른 브랜드와 연결된 가게예요.": "This shop is already linked to another brand.",

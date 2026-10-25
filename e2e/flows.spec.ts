@@ -146,6 +146,9 @@ test("a new group signs up with the code shown on screen", async ({ page }) => {
   const dialog = page.getByRole("dialog")
   await dialog.getByLabel("단체명").fill("테스트 동아리")
   await dialog.getByLabel("학교", { exact: true }).fill("삼육대학교")
+  await dialog.getByLabel("담당자 이름").fill("테스트 담당자")
+  await dialog.getByLabel("직책").fill("회장")
+  await dialog.getByLabel("휴대폰 번호").fill("010-1234-5678")
   await dialog.getByLabel("학교 이메일").fill("e2e-club@syu.ac.kr")
   await dialog.getByRole("button", { name: "인증번호 받기" }).click()
   const code = await dialog.locator(".field-hint strong").textContent()
@@ -265,6 +268,9 @@ test("a member downloads their data and hands the account over to a new email", 
   const signup = page.getByRole("dialog")
   await signup.getByLabel("단체명").fill("인수인계 동아리")
   await signup.getByLabel("학교", { exact: true }).fill("삼육대학교")
+  await signup.getByLabel("담당자 이름").fill("테스트 담당자")
+  await signup.getByLabel("직책").fill("회장")
+  await signup.getByLabel("휴대폰 번호").fill("010-1234-5678")
   await signup.getByLabel("학교 이메일").fill("e2e-handover@syu.ac.kr")
   await signup.getByRole("button", { name: "인증번호 받기" }).click()
   await signup.getByLabel("인증번호").fill((await signup.locator(".field-hint strong").textContent()) ?? "")
@@ -291,6 +297,16 @@ test("a member downloads their data and hands the account over to a new email", 
   await change.getByRole("button", { name: "이메일 바꾸기" }).click()
   await expect(change).toBeHidden()
   await expect(page.getByText("e2e-next-officer@syu.ac.kr")).toBeVisible()
+
+  // The new officer puts in their own name, position and number.
+  await page.getByRole("button", { name: "담당자 정보 수정" }).click()
+  const contact = page.getByRole("dialog")
+  await contact.getByLabel("담당자 이름").fill("새 임원")
+  await contact.getByLabel("직책").fill("부회장")
+  await contact.getByLabel("휴대폰 번호").fill("01098765432")
+  await contact.getByRole("button", { name: "저장하기" }).click()
+  await expect(contact).toBeHidden()
+  await expect(page.getByText("새 임원 · 부회장 · 010-9876-5432")).toBeVisible()
 })
 
 test("a shop a student group invited joins as a brand from the invitation", async ({ page, request }) => {
@@ -306,6 +322,9 @@ test("a shop a student group invited joins as a brand from the invitation", asyn
   await page.getByRole("button", { name: "가게로 가입하기" }).click()
   const signup = page.getByRole("dialog")
   await signup.getByLabel("브랜드명").fill("골목 카페")
+  await signup.getByLabel("담당자 이름").fill("테스트 담당자")
+  await signup.getByLabel("직책").fill("회장")
+  await signup.getByLabel("휴대폰 번호").fill("010-1234-5678")
   await signup.getByLabel("회사 이메일").fill("owner@golmok-cafe.kr")
   await signup.getByRole("button", { name: "인증번호 받기" }).click()
   await signup.getByLabel("인증번호").fill((await signup.locator(".field-hint strong").textContent()) ?? "")
@@ -335,6 +354,9 @@ test("a brand opens an accepted proposal's agreement, confirms it and proves wha
   await page.locator(".request-card", { hasText: "서울여대 러너스" }).getByRole("button", { name: "약속서" }).click()
   await expect(page.getByRole("heading", { name: "가을 캠퍼스 런 5K 협찬 약속서" })).toBeVisible()
   await expect(page.getByText("아직 uniconnect 계정이 없어요")).toBeVisible()
+  // Its own side shows the person running it, with a number to call.
+  await expect(page.locator(".agreement-contact")).toContainText("이오후 · 점장")
+  await expect(page.locator(".agreement-contact a")).toHaveAttribute("href", "tel:01000000001")
 
   await page.getByRole("button", { name: "이 내용으로 확인하기" }).click()
   await expect(page.locator(".agreement-confirm .agreement-state")).toHaveText("상대 확인 기다리는 중")
@@ -433,6 +455,7 @@ test("the app can be installed, and the calendar gives its dates to calendar app
       verificationToken: verified.verificationToken,
       agreedToTerms: true,
       over14: true,
+      contact: { name: "테스트 담당자", position: "회장", phone: "010-1234-5678" },
     },
   })
   const { token } = (await signup.json()) as { token: string }

@@ -4,7 +4,7 @@ import { api, errorMessage } from "../api"
 import { Modal } from "../components/Modal"
 import { RolePicker } from "../components/RolePicker"
 import { t } from "../i18n"
-import { accountTypes } from "../data/roles"
+import { accountTypeGroups, accountTypes, positionHints } from "../data/roles"
 import { formatRemaining } from "../lib/format"
 import { viewPath } from "../lib/route"
 import type { Role, Session } from "../types"
@@ -14,6 +14,9 @@ const emptyDraft = (role: Role) => ({
   name: "",
   type: accountTypes[role][0],
   school: "",
+  contactName: "",
+  position: "",
+  phone: "",
   email: "",
   password: "",
   confirm: "",
@@ -38,6 +41,9 @@ function draftError(draft: Draft, verified: boolean) {
     return draft.role === "학생단체" ? t("단체명을 입력해 주세요.") : t("브랜드명을 입력해 주세요.")
   }
   if (draft.role === "학생단체" && !draft.school.trim()) return t("학교를 입력해 주세요.")
+  if (!draft.contactName.trim()) return t("담당자 이름을 입력해 주세요.")
+  if (!draft.position.trim()) return t("직책을 입력해 주세요.")
+  if (!/^01[016789]\d{7,8}$/.test(draft.phone.replace(/\D/g, ""))) return t("휴대폰 번호를 010-1234-5678처럼 입력해 주세요.")
   if (!verified) return t("이메일 인증을 완료해 주세요.")
   if (draft.password.length < 8) return t("비밀번호는 8자 이상이어야 해요.")
   if (draft.password !== draft.confirm) return t("비밀번호가 일치하지 않아요.")
@@ -136,6 +142,7 @@ export function SignupModal({
           verificationToken,
           agreedToTerms: draft.agreed,
           over14: draft.over14,
+          contact: { name: draft.contactName.trim(), position: draft.position.trim(), phone: draft.phone },
         }),
       )
     })
@@ -175,10 +182,14 @@ export function SignupModal({
               value={draft.type}
               onChange={(event) => update({ type: event.target.value })}
             >
-              {accountTypes[draft.role].map((type) => (
-                <option key={type} value={type}>
-                  {t(type)}
-                </option>
+              {accountTypeGroups[draft.role].map((group) => (
+                <optgroup key={group.label} label={t(group.label)}>
+                  {group.types.map((type) => (
+                    <option key={type} value={type}>
+                      {t(type)}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           </label>
@@ -193,6 +204,46 @@ export function SignupModal({
             />
           </label>
         )}
+        <div className="form-row">
+          <label>
+            {t("담당자 이름")}
+            <input
+              autoComplete="name"
+              placeholder={t("예) 홍길동")}
+              value={draft.contactName}
+              onChange={(event) => update({ contactName: event.target.value })}
+            />
+          </label>
+          <label>
+            {t("직책")}
+            <input
+              list="signup-positions"
+              placeholder={t(positionHints[draft.role][0])}
+              value={draft.position}
+              onChange={(event) => update({ position: event.target.value })}
+            />
+            <datalist id="signup-positions">
+              {positionHints[draft.role].map((hint) => (
+                <option key={hint} value={t(hint)} />
+              ))}
+            </datalist>
+          </label>
+        </div>
+        <label>
+          {t("휴대폰 번호")}
+          <input
+            aria-describedby="signup-phone-hint"
+            autoComplete="tel"
+            inputMode="tel"
+            placeholder="010-1234-5678"
+            type="tel"
+            value={draft.phone}
+            onChange={(event) => update({ phone: event.target.value })}
+          />
+        </label>
+        <small className="field-hint" id="signup-phone-hint">
+          {t("협찬이 확정된 상대에게만 협찬 약속서에서 보여요.")}
+        </small>
         <div className="field-group">
           <label htmlFor="signup-email">
             {draft.role === "학생단체" ? t("학교 이메일") : t("회사 이메일")}

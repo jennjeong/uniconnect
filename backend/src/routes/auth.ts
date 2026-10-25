@@ -11,7 +11,7 @@ import { notify } from "../lib/notices.js"
 import { hashPassword, verifyPassword } from "../lib/password.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { freezeSponsorships } from "../lib/sponsorships.js"
-import { accountTypes, parseRole, text } from "../lib/validation.js"
+import { accountTypes, parseContact, parseRole, text } from "../lib/validation.js"
 import { hashToken, requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { Account, Database, EmailCode, PublicAccount, Role } from "../types.js"
@@ -168,6 +168,7 @@ authRouter.post("/signup", async (req, res) => {
   if (name.length > 40) throw new HttpError(400, "이름은 40자 이하로 입력해 주세요.")
   if (!accountTypes[role].includes(type)) throw new HttpError(400, "분류를 다시 선택해 주세요.")
   if (role === "학생단체" && !school) throw new HttpError(400, "학교를 입력해 주세요.")
+  const contact = parseContact(body.contact)
   const ruleError = emailRuleError(role, email)
   if (ruleError) throw new HttpError(400, ruleError)
 
@@ -204,6 +205,7 @@ authRouter.post("/signup", async (req, res) => {
     type,
     school: role === "학생단체" ? school : "",
     email,
+    contact,
     passwordHash,
     termsAgreedAt: now,
     createdAt: now,
@@ -360,6 +362,16 @@ authRouter.delete("/account", async (req, res) => {
   await saveDatabase()
   await removeUploads(droppedAgreements)
   res.status(204).end()
+})
+
+// The person running the account, from 내 정보: name, position and phone,
+// as sign-up asks for them (a new officer after a handover, say).
+authRouter.put("/contact", async (req, res) => {
+  const account = requireAccount(req)
+  if (isDemo(account)) throw new HttpError(403, "데모 계정은 담당자 정보를 바꿀 수 없어요.")
+  account.contact = parseContact(req.body)
+  await saveDatabase()
+  res.json({ account: toPublic(account) })
 })
 
 // Changing the password from 내 정보: the current one first. Other devices

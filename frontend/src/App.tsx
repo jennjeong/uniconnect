@@ -38,6 +38,7 @@ import { GoalsModal } from "./modals/GoalsModal"
 import { InstallGuideModal } from "./modals/InstallGuideModal"
 import { LeaveModal } from "./modals/LeaveModal"
 import { LoginModal } from "./modals/LoginModal"
+import { ContactModal } from "./modals/ContactModal"
 import { EmailChangeModal } from "./modals/EmailChangeModal"
 import { InviteShopModal } from "./modals/InviteShopModal"
 import { PasswordModal } from "./modals/PasswordModal"
@@ -961,6 +962,7 @@ function App() {
           onNavigate={navigate}
           onLogout={logout}
           onChangePassword={() => setActiveModal("password")}
+          onChangeContact={() => setActiveModal("contact")}
           onChangeEmail={() => setActiveModal("email")}
           onDownloadData={downloadData}
           onLeave={() => setActiveModal("leave")}
@@ -1379,6 +1381,19 @@ function App() {
           }}
         />
       </Presence>
+      {account && (
+        <Presence show={activeModal === "contact"}>
+          <ContactModal
+            account={account}
+            onClose={closeModal}
+            onSaved={(next) => {
+              setAccount(next)
+              setActiveModal(null)
+              showNotice(t("담당자 정보를 바꿨어요."))
+            }}
+          />
+        </Presence>
+      )}
       <Presence show={activeModal === "email"}>
         <EmailChangeModal
           onClose={closeModal}

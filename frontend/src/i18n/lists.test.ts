@@ -5,7 +5,7 @@ import { metricInfo } from "../data/metrics"
 import { navItems } from "../data/navigation"
 import { placeCategories } from "../data/places"
 import { reviewTags } from "../data/reviews"
-import { accountTypes, roles } from "../data/roles"
+import { accountTypeGroups, accountTypes, positionHints, roles } from "../data/roles"
 import { valueTypes } from "../data/sponsorTypes"
 import { en } from "./en"
 
@@ -17,6 +17,8 @@ describe("English for listed values", () => {
       ...roles,
       ...roles.flatMap((role) => navItems[role].flatMap((item) => [item.label, ...(item.short ? [item.short] : [])])),
       ...roles.flatMap((role) => accountTypes[role]),
+      ...roles.flatMap((role) => accountTypeGroups[role].map((group) => group.label)),
+      ...roles.flatMap((role) => positionHints[role]),
       ...valueTypes,
       ...Object.values(metricInfo).map((info) => info.label),
       ...inquiryCategories,

@@ -45,6 +45,7 @@ export function ProfilePage({
   onNavigate,
   onLogout,
   onChangePassword,
+  onChangeContact,
   onChangeEmail,
   onDownloadData,
   onLeave,
@@ -59,6 +60,8 @@ export function ProfilePage({
   onNavigate: (label: NavLabel) => void
   onLogout: () => void
   onChangePassword: () => void
+  // The person running the account (modals/ContactModal.tsx).
+  onChangeContact: () => void
   onChangeEmail: () => void
   onDownloadData: () => void
   onLeave: () => void
@@ -69,6 +72,12 @@ export function ProfilePage({
     { label: t("회원 유형"), value: `${t(account.role)} · ${t(account.type)}` },
     ...(account.school ? [{ label: t("학교"), value: account.school }] : []),
     { label: t("이메일"), value: account.email },
+    {
+      label: t("담당자 정보"),
+      value: account.contact
+        ? `${account.contact.name} · ${account.contact.position} · ${account.contact.phone}`
+        : t("아직 없어요"),
+    },
     { label: t("가입일"), value: formatFullDate(toIsoDate(new Date(account.createdAt))) },
   ]
 
@@ -224,6 +233,9 @@ export function ProfilePage({
             </Pill>
             <Pill onClick={onChangePassword} variant="silver">
               {t("비밀번호 변경")}
+            </Pill>
+            <Pill onClick={onChangeContact} variant="silver">
+              {t("담당자 정보 수정")}
             </Pill>
             <Pill onClick={onChangeEmail} variant="silver">
               {t("로그인 이메일 바꾸기")}

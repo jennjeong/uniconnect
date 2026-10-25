@@ -84,6 +84,10 @@ export type EventItem = {
   remindedAt?: string
 }
 
+// The person who runs an account. The phone shows only to the two sides of
+// a confirmed sponsorship, on its agreement.
+export type AccountContact = { name: string; position: string; phone: string }
+
 export type Account = {
   id: string
   role: Role
@@ -91,6 +95,8 @@ export type Account = {
   type: string
   school: string
   email: string
+  // Asked at sign-up; accounts from before have none.
+  contact?: AccountContact
   // The account's own listing: brands in the brand catalog (which also
   // receives the proposals student groups send), student groups in the
   // group catalog.

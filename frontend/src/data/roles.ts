@@ -13,11 +13,44 @@ export const roleOptions: {
   { value: "브랜드", title: t("협찬 하기"), caption: t("스폰서 · 브랜드") },
 ]
 
-// Keep in sync with accountTypes in backend/src/lib/validation.ts
+// Account types, in the groups the sign-up and profile forms show them in.
+// In order they must equal accountTypes in backend/src/lib/validation.ts
 // (lib/lists.sync.test.ts checks).
+export const accountTypeGroups: Record<Role, { label: string; types: string[] }[]> = {
+  학생단체: [
+    { label: "학생회 · 기획단", types: ["총학생회", "단과대 학생회", "학과 학생회", "축제 · 행사 기획단"] },
+    {
+      label: "공연 · 예술",
+      types: ["공연 동아리", "밴드 · 음악 동아리", "댄스 동아리", "연극 · 뮤지컬 동아리", "사진 · 영상 동아리"],
+    },
+    {
+      label: "학술 · 활동",
+      types: ["학술 동아리", "창업 · 경영 동아리", "국제교류 · 어학 동아리", "언론 · 방송 동아리"],
+    },
+    { label: "봉사 · 생활", types: ["봉사 동아리", "스포츠 동아리", "게임 · e스포츠 동아리", "종교 동아리"] },
+    { label: "연합 · 기타", types: ["연합 동아리", "서포터즈 · 홍보대사", "기타"] },
+  ],
+  브랜드: [
+    { label: "식음료", types: ["카페 · 식음료", "베이커리 · 디저트", "음식점", "주점 · 펍", "편의점 · 마트"] },
+    { label: "뷰티 · 패션", types: ["뷰티 · 화장품", "헤어 · 네일", "패션 · 의류"] },
+    { label: "콘텐츠 · IT", types: ["사진 · 스튜디오", "콘텐츠 · 미디어", "게임 · 엔터테인먼트", "IT · 앱 서비스"] },
+    { label: "교육 · 문화", types: ["교육 · 학원", "출판 · 문구", "문화 · 공연"] },
+    {
+      label: "생활 · 서비스",
+      types: ["스포츠 · 피트니스", "헬스케어 · 웰니스", "여행 · 숙박", "금융 · 보험", "생활용품 · 리빙", "기타"],
+    },
+  ],
+}
+
 export const accountTypes: Record<Role, string[]> = {
-  학생단체: ["공연 동아리", "학술 동아리", "봉사 동아리", "학생회", "연합 동아리", "기타"],
-  브랜드: ["카페 · 식음료", "뷰티 · 패션", "콘텐츠 · 미디어", "스포츠 · 웰니스", "교육", "기타"],
+  학생단체: accountTypeGroups.학생단체.flatMap((group) => group.types),
+  브랜드: accountTypeGroups.브랜드.flatMap((group) => group.types),
+}
+
+// Common positions, offered as suggestions in the contact fields.
+export const positionHints: Record<Role, string[]> = {
+  학생단체: ["회장", "부회장", "총무", "기획부장", "홍보부장"],
+  브랜드: ["대표", "점장", "매니저", "마케팅 담당", "홍보 담당"],
 }
 
 export const createLabel = (role: Role) =>
