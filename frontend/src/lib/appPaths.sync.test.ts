@@ -12,7 +12,8 @@ const at = (path: string) => new URL(path, "http://localhost") as unknown as Loc
 
 // The forms vercel.json's rewrites use, in path-to-regexp's syntax as
 // Vercel reads them: fixed parts, and :name, :name?, :name(pattern) and
-// :name(pattern)? segments.
+// :name(pattern)? segments. Vercel matches them strictly, so a trailing
+// slash is not part of any.
 function rewritePattern(source: string) {
   const parts = source.split(/(?=\/)/).map((segment) => {
     const param = /^\/:\w+(?:\((.+)\))?(\?)?$/.exec(segment)
@@ -20,14 +21,19 @@ function rewritePattern(source: string) {
     const part = `/(?:${param[1] ?? "[^/]+"})`
     return param[2] ? `(?:${part})?` : part
   })
-  return new RegExp(`^${parts.join("")}/?$`)
+  return new RegExp(`^${parts.join("")}$`)
 }
 
 const appRewrites = vercel.rewrites
   .filter((rewrite) => rewrite.destination === "/index.html")
   .map((rewrite) => rewritePattern(rewrite.source))
-// Vercel serves index.html for / by itself.
-const vercelServesApp = (path: string) => path === "/" || appRewrites.some((pattern) => pattern.test(path))
+// With trailingSlash false, Vercel first sends an address ending in a slash
+// to the same address without it (308), and serves index.html for / by
+// itself.
+const vercelServesApp = (path: string) => {
+  const target = vercel.trailingSlash === false && path !== "/" ? path.replace(/\/$/, "") : path
+  return target === "/" || appRewrites.some((pattern) => pattern.test(target))
+}
 
 describe("the server's page list matches the screens", () => {
   test.each(sampleViews)("%o is a page the server serves", (view) => {
@@ -88,6 +94,7 @@ describe("Vercel's rewrites match the server's page list", () => {
     "/messages",
     "/messages/abc",
     "/faq",
+    "/faq/",
     "/terms",
     "/privacy/",
     "/admin",
@@ -96,7 +103,9 @@ describe("Vercel's rewrites match the server's page list", () => {
     "/agreements/req-runners",
     "/check-in/20261012",
     "/check-in/20261012/staff",
+    "/check-in/20261012/staff/",
     "/nope",
+    "/nope/",
     "/matches/a/b",
     "/me/other",
     "/faq/x",
@@ -109,5 +118,13 @@ describe("Vercel's rewrites match the server's page list", () => {
     "/.well-known/ai-catalog.json",
   ])("%s gets the same answer from both", (path) => {
     expect(vercelServesApp(path)).toBe(isAppPath(path))
+  })
+
+  // Express serves an app address ending in a slash as well. Vercel's
+  // rewrites never match one, so Vercel has to drop the slash first.
+  test("an address ending in a slash reaches the app through Vercel's redirect", () => {
+    expect(vercel.trailingSlash).toBe(false)
+    expect(appRewrites.some((pattern) => pattern.test("/faq/"))).toBe(false)
+    expect(vercelServesApp("/faq/")).toBe(true)
   })
 })

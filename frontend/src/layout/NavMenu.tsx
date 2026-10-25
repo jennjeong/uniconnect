@@ -29,8 +29,6 @@ export function NavMenu({
   onOpenFaq,
   onLogin,
   onSignup,
-  onInstall,
-  installable,
   onClose,
 }: {
   role: Role
@@ -47,9 +45,6 @@ export function NavMenu({
   onOpenFaq: () => void
   onLogin: () => void
   onSignup: () => void
-  // 앱 다운로드, whenever the site is open in a browser (lib/install.ts).
-  onInstall: () => void
-  installable: boolean
   onClose: () => void
 }) {
   const closing = useContext(ClosingContext)
@@ -132,11 +127,6 @@ export function NavMenu({
               <button onClick={pick(onOpenFaq)} type="button">
                 FAQ
               </button>
-              {installable && (
-                <button onClick={pick(onInstall)} type="button">
-                  {t("앱 다운로드")}
-                </button>
-              )}
             </>
           ) : (
             <>
@@ -149,11 +139,6 @@ export function NavMenu({
               <button onClick={pick(onOpenFaq)} type="button">
                 FAQ
               </button>
-              {installable && (
-                <button onClick={pick(onInstall)} type="button">
-                  {t("앱 다운로드")}
-                </button>
-              )}
               <span className="nav-menu-roles" aria-label={t("둘러볼 화면")}>
                 {roles.map((item) => (
                   <button

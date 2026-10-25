@@ -436,4 +436,3 @@ export type ModalName =
   | "metric-log"
   | "goal"
   | "ask"
-  | "install"
