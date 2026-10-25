@@ -1,6 +1,8 @@
 import AxeBuilder from "@axe-core/playwright"
 import { expect, test, type Page } from "@playwright/test"
 
+import { signUpMember } from "./members"
+
 // Automatic accessibility checks (WCAG 2.1 A and AA) on the main screens.
 // Critical and serious problems fail the run; the rest are printed.
 const pages = ["/", "/dashboard", "/matches", "/groups", "/faq", "/terms", "/privacy", "/admin", "/check-in/20261012", "/check-in/20261012/staff", "/no-such-page"]
@@ -22,17 +24,11 @@ for (const path of pages) {
   })
 }
 
-// An invitation's page needs a code, which the demo group makes first (its
-// password is DEMO_PASSWORD in backend/src/data/seed.ts).
+// An invitation's page needs a code, which a group that signed up makes
+// first (the demo group can't invite real shops).
 test("an invitation's page has no critical or serious accessibility problems", async ({ page, request }) => {
-  const login = await request.post("/api/auth/login", {
-    data: { role: "학생단체", email: "muse@syu.ac.kr", password: "uniconnect2026" },
-  })
-  const { token } = (await login.json()) as { token: string }
-  const made = await request.post("/api/invites", {
-    data: { placeId: "87654321" },
-    headers: { Authorization: `Bearer ${token}` },
-  })
+  const { headers } = await signUpMember(request, "학생단체", "e2e-a11y-inviter@syu.ac.kr", "접근성 동아리")
+  const made = await request.post("/api/invites", { data: { placeId: "87654321" }, headers })
   const { invite } = (await made.json()) as { invite: { code: string } }
   await expectNoBlockingProblems(page, `/invite/${invite.code}`)
 })

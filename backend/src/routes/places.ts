@@ -1,7 +1,7 @@
 import { Router } from "express"
 
 import { config } from "../config.js"
-import { viewerFor } from "../lib/catalog.js"
+import { shownTo, viewerFor } from "../lib/catalog.js"
 import { HttpError } from "../lib/errors.js"
 import { campusOf } from "../lib/geo.js"
 import { nearbyPlaces, nearestPlaces } from "../lib/places.js"
@@ -49,7 +49,10 @@ placesRouter.get("/", async (req, res) => {
         : [],
     )
     const places = nearestPlaces(found.flat()).map((place) => {
-      const brand = database.brands.find((item) => item.kakaoPlaceId === place.id)
+      // A shop shows as the brand it joined as only to those who see that brand.
+      const brand = database.brands.find(
+        (item) => item.kakaoPlaceId === place.id && shownTo(database, "brands", item, req.account),
+      )
       return {
         ...place,
         ...(invited.has(place.id) ? { invited: true as const } : {}),

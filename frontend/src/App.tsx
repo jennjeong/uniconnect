@@ -135,6 +135,9 @@ function App() {
   const [brands, setBrands] = useState<Match[]>([])
   // Brand side: the student group catalog, proposals received and results.
   const [groups, setGroups] = useState<Match[]>([])
+  // Whose catalog has arrived ("role accountId"), so an empty one says it
+  // is empty only once it has loaded.
+  const [catalogFor, setCatalogFor] = useState<string | null>(null)
   const [requests, setRequests] = useState<SponsorRequest[]>([])
   const [offers, setOffers] = useState<SponsorOffer[]>([])
   const [sponsorships, setSponsorships] = useState<Sponsorship[]>([])
@@ -175,8 +178,31 @@ function App() {
   const profileOpen = view.profile !== undefined && account !== null
   const chatOpen = view.chat !== undefined && account !== null
   const unreadMessages = conversations.reduce((sum, item) => sum + item.unread, 0)
-  // Brands for student groups, student groups for brands.
+  // Someone new is looking (a login, a logout or the other side): their
+  // lists start empty in this same render, before anything is drawn, so the
+  // last viewer's data (the examples, just before logging in) never shows
+  // as theirs. The effects below then load the new viewer's.
+  const viewer = `${role} ${accountId ?? ""}`
+  const [listsFor, setListsFor] = useState(viewer)
+  if (listsFor !== viewer) {
+    setListsFor(viewer)
+    setMatches([])
+    setEvents([])
+    setBrands([])
+    setGroups([])
+    setOffers([])
+    setRequests([])
+    setSponsorships([])
+    setMeasurements([])
+    setProposals([])
+    setStatuses({})
+    setConfirmedCount(0)
+    setUpdatedAt(null)
+  }
+  // Brands for student groups, student groups for brands, and whether it
+  // has arrived for whoever is looking now.
   const catalog = students ? brands : groups
+  const catalogReady = catalogFor === viewer
   const detailMatch = view.detail
     ? catalog.find((match) => match.id === view.detail)
     : undefined
@@ -315,25 +341,21 @@ function App() {
       settle(api.proposals(), applyProposals),
       ...(students
         ? [
-            settle(api.brands(), (result) => setBrands(result.brands)),
+            settle(api.brands(), (result) => {
+              setBrands(result.brands)
+              setCatalogFor(key)
+            }),
             settle(api.offers(), (result) => setOffers(result.offers)),
           ]
         : [
-            settle(api.groups(), (result) => setGroups(result.groups)),
+            settle(api.groups(), (result) => {
+              setGroups(result.groups)
+              setCatalogFor(key)
+            }),
             settle(api.requests(), (result) => setRequests(result.requests)),
             settle(api.analytics(), (result) => setSponsorships(result.sponsorships)),
           ]),
     ]
-    if (!background) {
-      if (students) {
-        setGroups([])
-        setRequests([])
-        setSponsorships([])
-      } else {
-        setBrands([])
-        setOffers([])
-      }
-    }
     Promise.allSettled(requests).then((results) => {
       if (cancelled) return
       loadedFor.current = key
@@ -978,6 +1000,7 @@ function App() {
           <MatchesPage
             matches={matches}
             brands={brands}
+            loaded={catalogReady}
             proposals={proposals}
             statuses={statuses}
             onOpenDetail={openDetail}
@@ -1023,6 +1046,8 @@ function App() {
           <GroupsPage
             matches={matches}
             groups={groups}
+            loaded={catalogReady}
+            onEditProfile={() => go({ page, profile: "edit" })}
             proposals={proposals}
             statuses={statuses}
             onOpenDetail={openDetail}
@@ -1063,6 +1088,7 @@ function App() {
             accountName={account?.name}
             matches={matches}
             brands={brands}
+            loaded={catalogReady}
             events={events}
             proposals={proposals}
             statuses={statuses}
@@ -1085,6 +1111,7 @@ function App() {
             demo={visitor}
             matches={matches}
             groups={groups}
+            loaded={catalogReady}
             requests={requests}
             sponsorships={sponsorships}
             proposals={proposals}
@@ -1136,7 +1163,7 @@ function App() {
         authReady={authReady}
         badges={badges}
         events={schedule}
-        hasUnread={!notificationsRead}
+        hasUnread={!notificationsRead && notifications.length > 0}
         notifications={notifications}
         notificationsOpen={notificationsOpen}
         menuOpen={menuOpen}

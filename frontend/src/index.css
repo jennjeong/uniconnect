@@ -5566,6 +5566,34 @@ button.nav-pill:hover {
   text-align: center;
 }
 
+/* A catalog no one has joined yet (components/CatalogEmpty.tsx): the same
+   dashed outline, with a title and what to do meanwhile. */
+.catalog-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 24px;
+  padding: 36px 20px;
+  border: 1px dashed var(--line);
+  border-radius: 20px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.catalog-empty strong {
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: var(--weight-label);
+}
+
+.catalog-empty p {
+  max-width: 460px;
+  margin: 0 0 6px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
 .upcoming {
   display: flex;
   flex-direction: column;

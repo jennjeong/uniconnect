@@ -40,6 +40,13 @@ const en: Record<string, string> = {
   "진행 중 협찬": "Active sponsorships",
   "누적 QR 참여": "Total QR check-ins",
   "다가오는 행사와 잘 맞는 브랜드 {count}곳을 찾았어요.": "We found {count:brand|brands} that fit your next event.",
+  "아직 가입한 브랜드가 없어요.": "No brands have joined yet.",
+  "학교 근처 가게에 초대장을 보내 첫 파트너를 만들어 보세요. 브랜드가 가입하면 행사와 잘 맞는 순서로 추천해 드려요.":
+    "Invite shops near your school to find your first partner. Once brands join, we'll recommend them by how well they fit your event.",
+  "아직 추천할 브랜드가 없어요": "No brands to recommend yet",
+  "추천 매칭의 가까운 순에서 학교 근처 가게를 찾아 초대장을 보내 보세요. 가게가 가입하면 여기에 추천해 드려요.":
+    "Find shops near your school under Nearby in Matches and send them an invitation. Once a shop joins, we'll recommend it here.",
+  "추천 매칭 열기": "Open Matches",
   "학생단체와 브랜드가 맞닿는 곳에서 협찬이 시작돼요. 일치율이 높은 브랜드부터 제안해 보세요.":
     "Sponsorships start where student groups and brands meet. Begin with the brands that match you best.",
   "추천 매칭 확인하기": "See your matches",
@@ -89,6 +96,13 @@ const en: Record<string, string> = {
   "검토할 제안": "To review",
   "새로 받은 협찬 제안 {count}건이 답을 기다리고 있어요.": "{count} new proposals are waiting for your answer.",
   "캠페인과 잘 맞는 학생단체 {count}곳을 찾았어요.": "We found {count} student groups that fit your campaign.",
+  "아직 가입한 학생단체가 없어요.": "No student groups have joined yet.",
+  "브랜드 소개를 써 두고 캠페인을 행사 일정에 등록해 두세요. 학생단체가 가입하면 캠페인과 잘 맞는 순서로 추천해 드려요.":
+    "Write your introduction and add your campaigns to the calendar. Once student groups join, we'll recommend them by how well they fit your campaign.",
+  "아직 추천할 학생단체가 없어요": "No student groups to recommend yet",
+  "학생단체가 가입하면 캠페인과 잘 맞는 순서로 여기에 추천해 드려요. 제안은 다가오는 캠페인으로 보내지니, 행사 일정에 캠페인을 먼저 등록해 두세요.":
+    "Once student groups join, we'll recommend them here by how well they fit your campaign. Proposals are about your next campaign, so add it to the calendar first.",
+  "협찬이 끝나면 협찬마다 돌아온 만큼이 여기에 보여요.": "When a sponsorship ends, what it brought back shows here.",
   "브랜드와 학생단체가 맞닿는 캠퍼스 현장에서, 성과가 숫자로 남는 협찬을 시작해 보세요.":
     "Start sponsorships on campus, where brands meet student groups and every result shows up in numbers.",
   "받은 제안 확인하기": "Review proposals",

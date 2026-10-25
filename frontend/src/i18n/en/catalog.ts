@@ -53,6 +53,22 @@ const en: Record<string, string> = {
   분야: "Field",
   "조건에 맞는 학생단체가 없어요.": "No student groups match yet.",
 
+  // A member's catalog before the other side joins (components/CatalogEmpty.tsx)
+  "아직 가입한 브랜드가 없어요": "No brands have joined yet",
+  "가까운 순에서 학교 근처 가게를 찾아 초대장을 보내 보세요. 가게가 브랜드로 가입하면 여기에서 협찬을 제안할 수 있어요.":
+    "Find shops near your school under Nearby and send them an invitation. Once a shop joins as a brand, you can propose a sponsorship here.",
+  "가까운 가게 보기": "See nearby shops",
+  "아직 가입한 학생단체가 없어요": "No student groups have joined yet",
+  "학생단체가 가입하면 여기에서 찾아 협찬을 제안할 수 있어요. 그 전에 내 정보에서 브랜드 소개를 써 두면, 가입한 학생단체가 먼저 찾아 제안할 수도 있어요.":
+    "Once student groups join, you can find them here and propose. Write your brand's introduction in My Account first, so groups that join can find you and propose too.",
+  "브랜드 소개 쓰기": "Write your introduction",
+  "브랜드가 가입하면 여기에 추천해 드려요": "We'll recommend brands here once they join",
+  "행사 정보, 타깃과 지난 성과를 함께 분석해 잘 맞는 브랜드부터 보여 드려요.":
+    "We'll weigh your event, audience and past results to show the best fits first.",
+  "학생단체가 가입하면 여기에 추천해 드려요": "We'll recommend student groups here once they join",
+  "타깃, 행사 규모, 지난 협찬 성과를 함께 분석해 잘 맞는 단체부터 보여 드려요.":
+    "We'll weigh audience, event size and past sponsorships to show the best fits first.",
+
   // One brand or group (pages/MatchDetailPage.tsx)
   "이번 학기 협찬": "Sponsorships this term",
   "단체 소개": "About the group",

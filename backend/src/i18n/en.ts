@@ -192,6 +192,8 @@ const en: Record<string, string> = {
   "초대 링크를 찾을 수 없어요. 링크를 다시 확인해 주세요.": "We couldn't find this invitation. Please check the link.",
   "브랜드 계정으로 가게를 연결할 수 있어요.": "Only brand accounts can link a shop.",
   "데모 계정은 가게를 연결할 수 없어요.": "The demo accounts can't link a shop.",
+  "데모 계정으로는 실제 가게를 초대할 수 없어요. 가입하면 우리 단체 이름으로 초대할 수 있어요.":
+    "The demo accounts can't invite real shops. Sign up to invite them in your group's name.",
   "이미 다른 브랜드와 연결된 가게예요.": "This shop is already linked to another brand.",
   "이미 다른 가게와 연결된 브랜드예요.": "Your brand is already linked to another shop.",
 

@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react"
 
 import { BrandMark } from "../components/BrandMark"
+import { CatalogEmpty } from "../components/CatalogEmpty"
 import { FaqSection } from "../components/FaqSection"
 import { Icon } from "../components/Icon"
 import { JourneyChain, type JourneyStep } from "../components/JourneyChain"
@@ -33,6 +34,7 @@ export function DashboardPage({
   accountName,
   matches,
   brands,
+  loaded,
   events,
   proposals,
   statuses,
@@ -52,8 +54,10 @@ export function DashboardPage({
   // The logged-in group's name for the greeting.
   accountName?: string
   matches: Match[]
-  // Every brand in the catalog.
+  // Every brand in the catalog: brands that signed up, for a member.
   brands: Match[]
+  // The catalog has arrived, so an empty one is empty.
+  loaded: boolean
   events: EventItem[]
   proposals: string[]
   // Answers from brands that replied to a proposal.
@@ -78,6 +82,8 @@ export function DashboardPage({
   const next = nextEvent(events)
   const nextDay = next ? fromIsoDate(next.date) : undefined
   const candidates = brands.length > 0 ? brands : matches
+  // No brand has signed up yet (a member sees only those that have).
+  const noBrands = loaded && candidates.length === 0
   const strongCut = 80
   const strong = candidates.filter((match) => match.score >= strongCut).length
   const running = events.filter((event) => event.status !== "측정 완료").length
@@ -134,23 +140,33 @@ export function DashboardPage({
           { value: t("{count}건", { count: running }), label: t("진행 중 협찬") },
           { value: metrics.scans.toLocaleString(locale), label: t("누적 QR 참여") },
         ]}
-        insight={t("다가오는 행사와 잘 맞는 브랜드 {count}곳을 찾았어요.", { count: matches.length })}
-        detail={t("학생단체와 브랜드가 맞닿는 곳에서 협찬이 시작돼요. 일치율이 높은 브랜드부터 제안해 보세요.")}
+        insight={
+          noBrands
+            ? t("아직 가입한 브랜드가 없어요.")
+            : t("다가오는 행사와 잘 맞는 브랜드 {count}곳을 찾았어요.", { count: matches.length })
+        }
+        detail={
+          noBrands
+            ? t("학교 근처 가게에 초대장을 보내 첫 파트너를 만들어 보세요. 브랜드가 가입하면 행사와 잘 맞는 순서로 추천해 드려요.")
+            : t("학생단체와 브랜드가 맞닿는 곳에서 협찬이 시작돼요. 일치율이 높은 브랜드부터 제안해 보세요.")
+        }
         primary={{ label: t("추천 매칭 확인하기"), onClick: () => onNavigate("추천 매칭") }}
         onInstall={onInstall}
       />
 
-      <LogoMarquee
-        label={t("함께할 수 있는 브랜드")}
-        rows={[
-          candidates.map((match) => ({ key: match.id, mark: <BrandMark match={match} />, label: match.name })),
-          candidates.map((match) => ({
-            key: match.id,
-            mark: <Icon name="link" size={22} />,
-            label: match.offer,
-          })),
-        ]}
-      />
+      {candidates.length > 0 && (
+        <LogoMarquee
+          label={t("함께할 수 있는 브랜드")}
+          rows={[
+            candidates.map((match) => ({ key: match.id, mark: <BrandMark match={match} />, label: match.name })),
+            candidates.map((match) => ({
+              key: match.id,
+              mark: <Icon name="link" size={22} />,
+              label: match.offer,
+            })),
+          ]}
+        />
+      )}
 
       <section className="about-statement-section">
         <span className="eyebrow" data-reveal>
@@ -216,6 +232,13 @@ export function DashboardPage({
             </small>
           )}
         </div>
+        {noBrands && (
+          <CatalogEmpty
+            title={t("아직 추천할 브랜드가 없어요")}
+            text={t("추천 매칭의 가까운 순에서 학교 근처 가게를 찾아 초대장을 보내 보세요. 가게가 가입하면 여기에 추천해 드려요.")}
+            action={{ label: t("추천 매칭 열기"), onClick: () => onNavigate("추천 매칭") }}
+          />
+        )}
         <ul className="work-grid three">
           {matches.map((match, index) => (
             <li data-reveal key={match.id} style={delay(index * 0.09)}>

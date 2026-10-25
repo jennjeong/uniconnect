@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react"
 
 import { BrandMark } from "../components/BrandMark"
+import { CatalogEmpty } from "../components/CatalogEmpty"
 import { DateLine } from "../components/DateLine"
 import { FaqSection } from "../components/FaqSection"
 import { Icon } from "../components/Icon"
@@ -30,6 +31,7 @@ export function BrandDashboardPage({
   accountName,
   matches,
   groups,
+  loaded,
   requests,
   sponsorships,
   proposals,
@@ -48,8 +50,10 @@ export function BrandDashboardPage({
   accountName?: string
   // Recommended student groups.
   matches: Match[]
-  // Every student group in the catalog.
+  // Every student group in the catalog: groups that signed up, for a member.
   groups: Match[]
+  // The catalog has arrived, so an empty one is empty.
+  loaded: boolean
   // Proposals student groups sent to this brand.
   requests: SponsorRequest[]
   sponsorships: Sponsorship[]
@@ -84,6 +88,8 @@ export function BrandDashboardPage({
   const roasScale =
     Math.max(100, bestRoas, ...results.map((result) => result.targetRoas)) * 1.1
   const catalog = groups.length > 0 ? groups : matches
+  // No student group has signed up yet (a member sees only those that have).
+  const noGroups = loaded && catalog.length === 0
 
   const currentStep = pending.length > 0 ? 1 : confirmed.length > 0 ? 2 : sponsorships.length > 0 ? 3 : 0
   const journey: JourneyStep[] = [
@@ -129,9 +135,15 @@ export function BrandDashboardPage({
         insight={
           pending.length > 0
             ? t("새로 받은 협찬 제안 {count}건이 답을 기다리고 있어요.", { count: pending.length })
-            : t("캠페인과 잘 맞는 학생단체 {count}곳을 찾았어요.", { count: matches.length })
+            : noGroups
+              ? t("아직 가입한 학생단체가 없어요.")
+              : t("캠페인과 잘 맞는 학생단체 {count}곳을 찾았어요.", { count: matches.length })
         }
-        detail={t("브랜드와 학생단체가 맞닿는 캠퍼스 현장에서, 성과가 숫자로 남는 협찬을 시작해 보세요.")}
+        detail={
+          noGroups && pending.length === 0
+            ? t("브랜드 소개를 써 두고 캠페인을 행사 일정에 등록해 두세요. 학생단체가 가입하면 캠페인과 잘 맞는 순서로 추천해 드려요.")
+            : t("브랜드와 학생단체가 맞닿는 캠퍼스 현장에서, 성과가 숫자로 남는 협찬을 시작해 보세요.")
+        }
         primary={{
           label: pending.length > 0 ? t("받은 제안 확인하기") : t("학생단체 찾아보기"),
           onClick: () => onNavigate(pending.length > 0 ? "받은 제안" : "단체 찾기"),
@@ -140,15 +152,17 @@ export function BrandDashboardPage({
         onInstall={onInstall}
       />
 
-      <LogoMarquee
-        label={t("함께할 수 있는 학생단체")}
-        rows={[
-          catalog.map((group) => ({ key: group.id, mark: <BrandMark match={group} />, label: group.name })),
-          catalog
-            .filter((group) => group.eventName)
-            .map((group) => ({ key: group.id, mark: <Icon name="link" size={22} />, label: group.eventName ?? "" })),
-        ]}
-      />
+      {catalog.length > 0 && (
+        <LogoMarquee
+          label={t("함께할 수 있는 학생단체")}
+          rows={[
+            catalog.map((group) => ({ key: group.id, mark: <BrandMark match={group} />, label: group.name })),
+            catalog
+              .filter((group) => group.eventName)
+              .map((group) => ({ key: group.id, mark: <Icon name="link" size={22} />, label: group.eventName ?? "" })),
+          ]}
+        />
+      )}
 
       <section className="about-statement-section">
         <span className="eyebrow" data-reveal>
@@ -253,6 +267,13 @@ export function BrandDashboardPage({
             </small>
           )}
         </div>
+        {noGroups && (
+          <CatalogEmpty
+            title={t("아직 추천할 학생단체가 없어요")}
+            text={t("학생단체가 가입하면 캠페인과 잘 맞는 순서로 여기에 추천해 드려요. 제안은 다가오는 캠페인으로 보내지니, 행사 일정에 캠페인을 먼저 등록해 두세요.")}
+            action={{ label: t("행사 일정 보기"), onClick: () => onNavigate("행사 일정") }}
+          />
+        )}
         <ul className="work-grid three">
           {matches.map((match, index) => (
             <li data-reveal key={match.id} style={delay(index * 0.09)}>
@@ -304,6 +325,9 @@ export function BrandDashboardPage({
         </div>
         <div className="results-grid">
           <div className="silver-panel" data-reveal>
+            {results.length === 0 && (
+              <p className="day-empty">{t("협찬이 끝나면 협찬마다 돌아온 만큼이 여기에 보여요.")}</p>
+            )}
             <div className="roas-list stagger">
               {results.map((result) => (
                 <div className={result.met ? "roas-row met" : "roas-row"} key={result.id}>
@@ -326,10 +350,12 @@ export function BrandDashboardPage({
                 </div>
               ))}
             </div>
-            <p className="roas-legend">
-              <b aria-hidden="true" /> {t("목표 ROAS")}
-              <i aria-hidden="true" /> {t("목표 달성")}
-            </p>
+            {results.length > 0 && (
+              <p className="roas-legend">
+                <b aria-hidden="true" /> {t("목표 ROAS")}
+                <i aria-hidden="true" /> {t("목표 달성")}
+              </p>
+            )}
           </div>
           <div className="report-highlight" data-reveal style={delay(0.12)}>
             <div>

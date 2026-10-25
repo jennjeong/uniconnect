@@ -1,5 +1,6 @@
 import { useState, type CSSProperties } from "react"
 
+import { CatalogEmpty } from "../components/CatalogEmpty"
 import { CatalogSearch } from "../components/CatalogSearch"
 import { DemoPreview } from "../components/DemoPreview"
 import { PageIntro } from "../components/PageIntro"
@@ -44,6 +45,8 @@ const tabIntro: Record<Tab, { title: string; caption: string }> = {
 export function GroupsPage({
   matches,
   groups,
+  loaded,
+  onEditProfile,
   proposals,
   statuses,
   onOpenDetail,
@@ -55,8 +58,12 @@ export function GroupsPage({
 }: {
   // Top picks for this brand.
   matches: Match[]
-  // Every student group in the catalog.
+  // Every student group in the catalog: groups that signed up, for a member.
   groups: Match[]
+  // The catalog has arrived, so an empty one is empty.
+  loaded: boolean
+  // 내 정보's form, where the brand writes what groups will find.
+  onEditProfile: () => void
   proposals: string[]
   // Each group's answer to the brand's offer, once it has one.
   statuses: Partial<Record<string, RequestStatus>>
@@ -104,10 +111,19 @@ export function GroupsPage({
 
   return (
     <section className="page-view">
+      {/* With no group signed up yet, 추천 can't say it found some. */}
       <PageIntro
         eyebrow="Find Student Groups"
-        title={t(tabIntro[tab].title)}
-        description={t(tabIntro[tab].caption)}
+        title={
+          loaded && groups.length === 0 && tab === "추천"
+            ? t("학생단체가 가입하면 여기에 추천해 드려요")
+            : t(tabIntro[tab].title)
+        }
+        description={
+          loaded && groups.length === 0 && tab === "추천"
+            ? t("타깃, 행사 규모, 지난 협찬 성과를 함께 분석해 잘 맞는 단체부터 보여 드려요.")
+            : t(tabIntro[tab].caption)
+        }
       />
 
       <div className="match-filters">
@@ -200,7 +216,13 @@ export function GroupsPage({
         onLogin={onLogin}
         onSignup={onSignup}
       >
-        {shown.length === 0 ? (
+        {loaded && groups.length === 0 ? (
+          <CatalogEmpty
+            title={t("아직 가입한 학생단체가 없어요")}
+            text={t("학생단체가 가입하면 여기에서 찾아 협찬을 제안할 수 있어요. 그 전에 내 정보에서 브랜드 소개를 써 두면, 가입한 학생단체가 먼저 찾아 제안할 수도 있어요.")}
+            action={{ label: t("브랜드 소개 쓰기"), onClick: onEditProfile }}
+          />
+        ) : shown.length === 0 ? (
           <p className="day-empty" key={tab}>
             {t("조건에 맞는 학생단체가 없어요.")}
           </p>

@@ -1,5 +1,6 @@
 import { useState, type CSSProperties } from "react"
 
+import { CatalogEmpty } from "../components/CatalogEmpty"
 import { CatalogSearch } from "../components/CatalogSearch"
 import { DemoPreview } from "../components/DemoPreview"
 import { NearbyPlaces } from "../components/NearbyPlaces"
@@ -44,6 +45,7 @@ const tabIntro: Record<Tab, { title: string; caption: string }> = {
 export function MatchesPage({
   matches,
   brands,
+  loaded,
   proposals,
   statuses,
   onOpenDetail,
@@ -56,8 +58,10 @@ export function MatchesPage({
 }: {
   // Top picks for the group's events.
   matches: Match[]
-  // Every brand in the catalog.
+  // Every brand in the catalog: brands that signed up, for a member.
   brands: Match[]
+  // The catalog has arrived, so an empty one is empty.
+  loaded: boolean
   proposals: string[]
   statuses: Partial<Record<string, RequestStatus>>
   onOpenDetail: (match: Match) => void
@@ -96,13 +100,17 @@ export function MatchesPage({
           : brands.filter((brand) => brand.industry === industry)
   const shown = list.filter((match) => matchesQuery(match, query))
   const intro = tabIntro[tab]
+  // With no brand signed up yet, 추천 can't say it found some.
+  const waiting = loaded && brands.length === 0 && tab === "추천"
 
   return (
     <section className="page-view">
       <PageIntro
         eyebrow="Smart Match"
-        title={t(intro.title)}
-        description={t(intro.caption)}
+        title={waiting ? t("브랜드가 가입하면 여기에 추천해 드려요") : t(intro.title)}
+        description={
+          waiting ? t("행사 정보, 타깃과 지난 성과를 함께 분석해 잘 맞는 브랜드부터 보여 드려요.") : t(intro.caption)
+        }
       />
 
       <div className="match-filters">
@@ -163,6 +171,12 @@ export function MatchesPage({
             statuses={statuses}
           />
         </DemoPreview>
+      ) : loaded && brands.length === 0 ? (
+        <CatalogEmpty
+          title={t("아직 가입한 브랜드가 없어요")}
+          text={t("가까운 순에서 학교 근처 가게를 찾아 초대장을 보내 보세요. 가게가 브랜드로 가입하면 여기에서 협찬을 제안할 수 있어요.")}
+          action={{ label: t("가까운 가게 보기"), onClick: () => pickTab("가까운 순") }}
+        />
       ) : shown.length === 0 && query.trim() ? (
         <p className="day-empty">{t("찾는 브랜드가 없어요. 다른 낱말로 찾아보세요.")}</p>
       ) : (
