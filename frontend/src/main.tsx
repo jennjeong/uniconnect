@@ -6,13 +6,14 @@ import { StaffCheckInPage } from './checkin/StaffCheckInPage'
 import { lang } from './i18n'
 import { currentCheckIn } from './lib/checkin'
 import { watchInstall } from './lib/install'
+import { keepOutOfSearch } from './lib/pageMeta'
 import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css'
 import './index.css'
 
 // Screen readers and the browser's own features read the page's language.
 document.documentElement.lang = lang
 
-// Installing as an app (the menu's 앱 설치) and the service worker that
+// Installing as an app (앱 다운로드) and the service worker that
 // allows it (public/sw.js): only in the built app, as it would get in the way
 // of the development server.
 watchInstall()
@@ -24,8 +25,12 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
 
 // Participants who scan an event QR get the check-in page instead of the
 // app, and the sponsor's store staff their own page (/check-in/<code>/staff).
+// Neither belongs in search results.
 const checkIn = currentCheckIn()
-if (checkIn) document.body.classList.add('checkin-body')
+if (checkIn) {
+  document.body.classList.add('checkin-body')
+  keepOutOfSearch()
+}
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

@@ -15,6 +15,9 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="theme-color" content="#1b3f8f" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <!-- The start screen's name (components/Loader.tsx) is the first large
+         paint, so it loads with the page rather than after the script. -->
+    <link rel="preload" as="image" href="/src/assets/brand/uniconnect_wordmark.svg" fetchpriority="high" />
     <title><!-- figma:title --></title>
     <!-- figma:head-end -->
   </head>

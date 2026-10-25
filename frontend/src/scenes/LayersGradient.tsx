@@ -49,6 +49,7 @@ export function LayersGradient({
       depth: false,
       stencil: false,
       powerPreference: "high-performance",
+      failIfMajorPerformanceCaveat: true,
     })
     if (!gl) return remove
 
