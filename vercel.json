@@ -8,6 +8,7 @@
   "functions": {
     "api/index.mjs": { "maxDuration": 30 }
   },
+  "trailingSlash": false,
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api" },
     { "source": "/:section(matches|groups)/:id?", "destination": "/index.html" },

@@ -3,9 +3,7 @@ import { useRef } from "react"
 import { useHeroInset } from "../hooks/useHeroInset"
 import { LayersGradient } from "../scenes/LayersGradient"
 import { ANTIPODE } from "../scenes/shaders"
-import { t } from "../i18n"
 import { AnimatedNumber } from "./AnimatedNumber"
-import { Icon } from "./Icon"
 import { Pill } from "./Pill"
 import { RevealTitle } from "./RevealText"
 
@@ -23,7 +21,6 @@ export function MeetingHero({
   detail,
   primary,
   secondary,
-  onInstall,
 }: {
   eyebrow: string
   // The headline's lines, short enough to stay on the dark side; the
@@ -35,8 +32,6 @@ export function MeetingHero({
   primary: { label: string; onClick: () => void }
   // A text link beside the main action, when the page has one.
   secondary?: { label: string; onClick: () => void }
-  // 앱 다운로드, for the site opened in a browser (none inside the app).
-  onInstall?: () => void
 }) {
   const sectionRef = useRef<HTMLElement>(null)
   const clipRef = useRef<HTMLDivElement>(null)
@@ -72,12 +67,6 @@ export function MeetingHero({
                   <button className="underline-link" onClick={secondary.onClick} type="button">
                     {secondary.label}
                   </button>
-                )}
-                {onInstall && (
-                  <Pill className="hero-install" onClick={onInstall} variant="outline-light">
-                    <Icon name="download" size={16} />
-                    {t("앱 다운로드")}
-                  </Pill>
                 )}
               </div>
             </div>

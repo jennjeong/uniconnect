@@ -46,7 +46,6 @@ export function DashboardPage({
   onCancelProposal,
   onOpenReport,
   onOpenFaq,
-  onInstall,
 }: {
   // The logged-in group's name for the greeting.
   accountName?: string
@@ -69,8 +68,6 @@ export function DashboardPage({
   onCancelProposal: (match: Match) => void
   onOpenReport: () => void
   onOpenFaq: () => void
-  // 앱 다운로드 on the hero; absent inside the installed app.
-  onInstall?: () => void
 }) {
   const next = nextEvent(events)
   const nextDay = next ? fromIsoDate(next.date) : undefined
@@ -128,7 +125,6 @@ export function DashboardPage({
         insight={t("다가오는 행사와 잘 맞는 브랜드 {count}곳을 찾았어요.", { count: matches.length })}
         detail={t("학생단체와 브랜드가 맞닿는 곳에서 협찬이 시작돼요. 일치율이 높은 브랜드부터 제안해 보세요.")}
         primary={{ label: t("추천 매칭 확인하기"), onClick: () => onNavigate("추천 매칭") }}
-        onInstall={onInstall}
       />
 
       <LogoMarquee

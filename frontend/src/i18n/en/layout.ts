@@ -13,31 +13,6 @@ const en: Record<string, string> = {
   "목록에서 삭제했어요.": "Removed from the list.",
   "{name} 상세 흐름을 열었어요.": "Opened the details for {name}.",
   "로그인하면 가게를 초대할 수 있어요.": "Log in to invite shops.",
-  "앱 다운로드": "Get the app",
-  "uniconnect를 앱으로 설치했어요.": "uniconnect is installed as an app.",
-  // Getting the app where the browser has no install dialog (modals/InstallGuideModal.tsx)
-  "uniconnect는 스토어를 거치지 않고 이 사이트에서 바로 설치하는 앱이에요.":
-    "uniconnect installs straight from this site, with no app store.",
-  "공유 버튼을 눌러요. 보이지 않으면 ⋯ 버튼을 먼저 눌러요.": "Tap the Share button. If you can't see it, tap ⋯ first.",
-  "목록에서 ‘홈 화면에 추가’를 눌러요.": "Tap ‘Add to Home Screen’ in the list.",
-  "‘추가’를 누르면 홈 화면에 uniconnect가 생겨요.": "Tap ‘Add’, and uniconnect appears on your Home Screen.",
-  "카카오톡처럼 다른 앱 안에서 연 페이지는 설치할 수 없어요.":
-    "A page opened inside another app, such as KakaoTalk, can't be installed.",
-  "메뉴에서 ‘다른 브라우저로 열기’나 ‘Safari로 열기’를 눌러요.":
-    "In that app's menu, tap ‘Open in another browser’ or ‘Open in Safari’.",
-  "열린 브라우저에서 ‘앱 다운로드’를 다시 눌러요.": "In the browser that opens, tap ‘Get the app’ again.",
-  "이 브라우저에서는 설치 창을 바로 띄울 수 없어요. 쓰는 기기에 맞춰 설치해 주세요.":
-    "This browser can't open the install window itself. Install it the way your device does:",
-  "컴퓨터의 크롬 · 엣지": "Chrome · Edge on a computer",
-  "주소창 오른쪽의 설치 아이콘을 눌러요.": "Click the install icon at the right of the address bar.",
-  "휴대폰": "On a phone",
-  "브라우저 메뉴에서 ‘앱 설치’나 ‘홈 화면에 추가’를 눌러요.": "Tap ‘Install app’ or ‘Add to Home screen’ in the browser menu.",
-  "Mac의 Safari": "Safari on a Mac",
-  "메뉴 막대에서 파일 → ‘Dock에 추가’를 눌러요.": "In the menu bar, choose File → ‘Add to Dock’.",
-  "이미 설치했다면 홈 화면이나 앱 목록에서 uniconnect를 열어요.":
-    "Already installed? Open uniconnect from your Home Screen or app list.",
-  "다른 브라우저로 열기": "Open in another browser",
-  "알겠어요": "Got it",
   "오늘은 ‘{name}’ 날이에요": "‘{name}’ is today",
   "내일은 ‘{name}’ 날이에요": "‘{name}’ is tomorrow",
   "‘{name}’까지 {days}일 남았어요": "{days:day|days} until ‘{name}’",
