@@ -333,13 +333,15 @@ test("visitors see a partner's reviews, and a group reviews the brand after its 
 })
 
 test("the app can be installed, and the calendar gives its dates to calendar apps", async ({ page, request }) => {
-  // The manifest, its icons and the service worker are served.
+  // The manifest, its icons and the service worker are served; links to the
+  // site ask to open in the browser, not the installed app.
   const manifest = (await (await request.get("/manifest.webmanifest")).json()) as {
     name: string
     display: string
+    handle_links: string
     icons: { src: string; sizes: string }[]
   }
-  expect([manifest.name, manifest.display]).toEqual(["uniconnect", "standalone"])
+  expect([manifest.name, manifest.display, manifest.handle_links]).toEqual(["uniconnect", "standalone", "not-preferred"])
   expect(manifest.icons.map((icon) => icon.sizes)).toEqual(["192x192", "512x512", "512x512"])
   for (const icon of manifest.icons) {
     expect((await request.get(`/${icon.src}`)).headers()["content-type"]).toBe("image/png")

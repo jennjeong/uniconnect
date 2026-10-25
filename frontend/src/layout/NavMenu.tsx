@@ -47,7 +47,7 @@ export function NavMenu({
   onOpenFaq: () => void
   onLogin: () => void
   onSignup: () => void
-  // Installing as an app, when the browser allows it (lib/install.ts).
+  // 앱 다운로드, whenever the site is open in a browser (lib/install.ts).
   onInstall: () => void
   installable: boolean
   onClose: () => void
@@ -134,7 +134,7 @@ export function NavMenu({
               </button>
               {installable && (
                 <button onClick={pick(onInstall)} type="button">
-                  {t("앱 설치")}
+                  {t("앱 다운로드")}
                 </button>
               )}
             </>
@@ -151,7 +151,7 @@ export function NavMenu({
               </button>
               {installable && (
                 <button onClick={pick(onInstall)} type="button">
-                  {t("앱 설치")}
+                  {t("앱 다운로드")}
                 </button>
               )}
               <span className="nav-menu-roles" aria-label={t("둘러볼 화면")}>

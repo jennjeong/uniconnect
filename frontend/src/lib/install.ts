@@ -1,6 +1,7 @@
-// Installing uniconnect as an app. Chrome and Edge offer it through the
-// beforeinstallprompt event, kept here to show 앱 설치 in the menu; Safari on
-// iPhone and iPad has no such event, so the menu tells how to add it there.
+// Installing uniconnect as an app, from the site: it opens in the browser
+// first, and 앱 다운로드 (on the dashboard's hero and in the menu) installs
+// it. Chrome and Edge offer that through the beforeinstallprompt event, kept
+// here; everywhere else a guide tells how (modals/InstallGuideModal.tsx).
 
 type InstallPrompt = Event & {
   prompt: () => Promise<void>
@@ -31,17 +32,46 @@ export function onInstallChange(listener: () => void) {
   }
 }
 
+// How 앱 다운로드 works here: "app" inside the installed app, which shows no
+// button; "prompt" where the browser offers installing; "inapp" in another
+// app's own browser, such as KakaoTalk's, which can't install, so the page
+// goes to a browser first; "ios" on iPhone and iPad (the share sheet's 홈 화면에
+// 추가); and "guide" in any other browser, or where the app is installed
+// already.
+export type InstallKind = "app" | "prompt" | "inapp" | "ios" | "guide"
+
+export function installKind(here: {
+  standalone: boolean
+  offered: boolean
+  userAgent: string
+  touchPoints: number
+}): InstallKind {
+  if (here.standalone) return "app"
+  if (here.offered) return "prompt"
+  if (/KAKAOTALK|NAVER\(inapp|DaumApps|Instagram|FBAN|FBAV|\bLine\//i.test(here.userAgent)) return "inapp"
+  // iPadOS asks for pages as a Mac would, but Macs have no touch screen.
+  if (/iphone|ipad|ipod/i.test(here.userAgent) || (/macintosh/i.test(here.userAgent) && here.touchPoints > 1)) {
+    return "ios"
+  }
+  return "guide"
+}
+
 const standalone = () =>
   window.matchMedia?.("(display-mode: standalone)").matches ||
   (navigator as Navigator & { standalone?: boolean }).standalone === true
 
-// "prompt" when the browser offers installing, "ios" in Safari on iPhone and
-// iPad (added from the share sheet), "none" once installed or elsewhere.
-export function installState(): "prompt" | "ios" | "none" {
-  if (offered) return "prompt"
-  if (/iphone|ipad|ipod/i.test(navigator.userAgent) && !standalone()) return "ios"
-  return "none"
+export function installState(): InstallKind {
+  return installKind({
+    standalone: standalone(),
+    offered: offered !== null,
+    userAgent: navigator.userAgent,
+    touchPoints: navigator.maxTouchPoints ?? 0,
+  })
 }
+
+// KakaoTalk's browser hands an address on to the phone's own browser.
+export const inKakaoTalk = () => /KAKAOTALK/i.test(navigator.userAgent)
+export const kakaoTalkExternal = (url: string) => `kakaotalk://web/openExternal?url=${encodeURIComponent(url)}`
 
 // Shows the browser's own install dialog; true when the app was installed.
 export async function install() {
