@@ -1,12 +1,14 @@
 import { Fragment, type ReactNode } from "react"
 
 import logo from "../assets/brand/uniconnect_horizontal.svg"
+import { venueSummary } from "../data/methods"
 import { metricInfo, metricKinds } from "../data/metrics"
 import { t, tc } from "../i18n"
 import { formatDateTime, formatFullDate, todayIso } from "../lib/date"
 import { percent } from "../lib/format"
 import { achievement, formatKpi, formatWon, hasRoas, kpiGap, kpiValue, reportKpis, roasSummary, roasText } from "../lib/kpis"
-import type { MetricEntry, Metrics, Report } from "../types"
+import { venueKindsOf } from "../lib/measurements"
+import type { MetricEntry, Metrics, MetricKind, Report } from "../types"
 
 // Colors of the sponsorship value parts (cash, products, services): deep
 // blue, a lighter blue and silver.
@@ -17,6 +19,45 @@ const valueColors = ["#1b3f8f", "#5b86e0", "#b9c2d2"]
 function rich(text: string, nodes: Record<string, ReactNode>) {
   return text.split(/\{(\w+)\}/).map((part, index) =>
     index % 2 ? <Fragment key={index}>{nodes[part]}</Fragment> : part,
+  )
+}
+
+// What the venue's staff confirmed by the measurement methods, a tile per
+// count with a line for each sponsor when there are several. Nothing when
+// no method counts any.
+export function VenueCounts({
+  kinds,
+  counts,
+  sponsors,
+}: {
+  kinds: MetricKind[]
+  counts: Partial<Record<MetricKind, number>>
+  sponsors?: { id: string; brandName: string; samples: number; stamps: number; posts: number }[]
+}) {
+  if (kinds.length === 0) return null
+  const lines = (sponsors ?? []).map((sponsor) => ({ ...sponsor, summary: venueSummary(sponsor) })).filter((sponsor) => sponsor.summary)
+  return (
+    <section className="pdf-section pdf-card">
+      <h2>{t("현장에서 확인한 성과")}</h2>
+      <div className="pdf-kpis">
+        {kinds.map((kind) => (
+          <div className="pdf-kpi" key={kind}>
+            <span>{t(metricInfo[kind].label)}</span>
+            <strong>{(counts[kind] ?? 0).toLocaleString("ko-KR")}</strong>
+            <small className="good">{t("현장에서 확인")}</small>
+          </div>
+        ))}
+      </div>
+      {lines.length > 1 && (
+        <ul className="pdf-venue-sponsors">
+          {lines.map((sponsor) => (
+            <li key={sponsor.id}>
+              <b>{sponsor.brandName}</b> {sponsor.summary}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   )
 }
 
@@ -278,6 +319,8 @@ export function ReportDocument({
             ))}
           </ul>
         </section>
+
+        <VenueCounts counts={metrics} kinds={venueKindsOf(report)} sponsors={report.sponsors} />
 
         <section className="pdf-section">
           <h2>{t("최근 참여 기록")}</h2>

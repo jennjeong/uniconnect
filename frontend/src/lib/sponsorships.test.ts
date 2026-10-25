@@ -24,8 +24,8 @@ const sponsorship = (fields: Partial<Sponsorship> & Pick<Sponsorship, "id">): Sp
 })
 
 const list = [
-  sponsorship({ id: "a", spend: 500000, sales: 900000, coupons: 200, visits: 50, targetRoas: 150 }),
-  sponsorship({ id: "b", spend: 300000, sales: 240000, coupons: 100, visits: 60, targetRoas: 120 }),
+  sponsorship({ id: "a", spend: 500000, sales: 900000, coupons: 200, visits: 50, targetRoas: 150, samples: 40, posts: 3 }),
+  sponsorship({ id: "b", spend: 300000, sales: 240000, coupons: 100, visits: 60, targetRoas: 120, posts: 2 }),
   sponsorship({ id: "c", spend: 200000, sales: 160000, coupons: 100, visits: 0, targetRoas: 100 }),
 ]
 
@@ -44,11 +44,15 @@ describe("sponsorship results", () => {
   })
 
   test("totals add every sponsorship up", () => {
+    // Venue counts only some sponsorships have add up as zero for the rest.
     expect(sponsorshipTotals(list)).toEqual({
       spend: 1000000,
       sales: 1300000,
       coupons: 400,
       visits: 110,
+      samples: 40,
+      stamps: 0,
+      posts: 5,
       roas: 130,
     })
   })
