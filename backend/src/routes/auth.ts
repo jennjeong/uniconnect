@@ -11,7 +11,7 @@ import { notify } from "../lib/notices.js"
 import { hashPassword, verifyPassword } from "../lib/password.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { freezeSponsorships } from "../lib/sponsorships.js"
-import { accountTypes, parseContact, parseRole, text } from "../lib/validation.js"
+import { accountTypes, checkPassword, parseContact, parseRole, text } from "../lib/validation.js"
 import { hashToken, requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { Account, Database, EmailCode, PublicAccount, Role } from "../types.js"
@@ -182,7 +182,7 @@ authRouter.post("/signup", async (req, res) => {
       (entry.verifiedUntil ?? 0) > Date.now(),
   )
   if (!verified) throw new HttpError(400, "이메일 인증을 완료해 주세요.")
-  if (password.length < 8) throw new HttpError(400, "비밀번호는 8자 이상이어야 해요.")
+  checkPassword(password)
   if (body.agreedToTerms !== true) throw new HttpError(400, "이용약관에 동의해 주세요.")
   // The terms take members from 14; younger ones would need a guardian's consent.
   if (body.over14 !== true) throw new HttpError(400, "만 14세 이상만 가입할 수 있어요.")
@@ -239,8 +239,8 @@ authRouter.post("/password-reset", async (req, res) => {
   verifyPerClient.take(clientKey(req))
   const email = normalizeEmail(req.body?.email)
   const password = String(req.body?.password ?? "")
-  // Checked before the code, so a short password costs no guess.
-  if (password.length < 8) throw new HttpError(400, "비밀번호는 8자 이상이어야 해요.")
+  // Checked before the code, so a weak password costs no guess.
+  checkPassword(password)
   const entry = await checkCode(email, text(req.body?.code), "reset")
 
   const database = getDatabase()
@@ -379,8 +379,7 @@ authRouter.put("/contact", async (req, res) => {
 authRouter.post("/password", async (req, res) => {
   const account = requireAccount(req)
   if (isDemo(account)) throw new HttpError(403, demoLocked)
-  const next = String(req.body?.next ?? "")
-  if (next.length < 8) throw new HttpError(400, "새 비밀번호는 8자 이상이어야 해요.")
+  const next = checkPassword(String(req.body?.next ?? ""))
   const limitKey = `${clientKey(req)} ${account.email}`
   loginFailures.take(limitKey)
   if (!(await verifyPassword(String(req.body?.current ?? ""), account.passwordHash))) {

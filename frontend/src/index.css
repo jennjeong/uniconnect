@@ -4884,9 +4884,11 @@ button.nav-pill:hover {
   color: var(--point-strong);
 }
 
+/* Two fields side by side, always half each, even when one holds a box
+   with a button (the position typed in). */
 .form-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 12px;
 }
 
@@ -7061,6 +7063,51 @@ button.nav-pill:hover {
   font-size: 12px;
   font-weight: var(--weight-body);
   line-height: 1.5;
+}
+
+/* The rules a new password follows, each turning green with a check as
+   the password typed meets it (components/PasswordRules.tsx). */
+.password-rules {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-top: -2px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: var(--weight-label);
+}
+
+.password-rules ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.password-rules li {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--ink-soft);
+}
+
+.password-rules li.met {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.rule-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.6;
 }
 
 .field-hint strong {
