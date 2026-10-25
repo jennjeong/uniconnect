@@ -2537,6 +2537,15 @@ test("members are emailed once when an event or a sponsored event is three days 
     status: "매칭 중" as const,
     createdAt: "2026-11-01T00:00:00.000Z",
   })
+  // Only these two members and the demo accounts are looked at: other
+  // tests leave members' events at dates counted from today, which some
+  // days fall in this test's week (a 30-day-away event did, on 26 October).
+  const kept = { events: database.events, sponsorships: database.sponsorships }
+  const demoIds = Object.values(database.demoAccountIds)
+  const demoOnly = <T,>(byAccount: Record<string, T>) =>
+    Object.fromEntries(Object.entries(byAccount).filter(([id]) => demoIds.includes(id)))
+  database.events = demoOnly(kept.events)
+  database.sponsorships = demoOnly(kept.sponsorships)
   database.events[group.id] = [
     event("in-three", "사흘 뒤 공연", "2026-11-28"),
     event("in-five", "닷새 뒤 공연", "2026-11-30"),
@@ -2580,8 +2589,8 @@ test("members are emailed once when an event or a sponsored event is three days 
     mailTransport.post = post
     config.resendApiKey = mail.apiKey
     config.mailFrom = mail.from
-    delete database.events[group.id]
-    delete database.sponsorships[brand.id]
+    database.events = kept.events
+    database.sponsorships = kept.sponsorships
   }
 })
 
