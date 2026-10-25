@@ -128,7 +128,22 @@ npm run dev
 
 ### 가벼운 첫 화면
 
-3D 장면(크롬 사슬과 고리)은 화면 가까이 스크롤했을 때 three.js(압축 약 180KB)를 내려받습니다. 데이터 절약 모드를 켰거나 느린 연결(3G 이하)이거나 '데이터 줄이기' 설정을 한 방문자에게는 3D 장면과 움직이는 배경 대신 같은 색의 정적인 배경을 보여 줍니다.
+3D 장면(크롬 사슬과 고리)은 화면 가까이 스크롤했을 때 three.js(압축 약 180KB)를 내려받습니다. 아래 방문자에게는 3D 장면과 움직이는 배경 대신 같은 색의 정적인 배경을 보여 주고, three.js도 내려받지 않습니다.
+
+- 데이터 절약 모드를 켰거나 '데이터 줄이기' 설정을 한 방문자
+- 느린 연결(3G 이하)
+- 그래픽 처리 장치(GPU) 없이 WebGL을 CPU로 그리는 브라우저
+
+마지막 경우는 GPU가 없는 기기나 그래픽 드라이버가 막힌 기기이고, PageSpeed Insights의 테스트 서버도 여기에 해당합니다. 이런 환경에서는 셰이더가 페이지를 몇 초씩 멈추게 해서, `failIfMajorPerformanceCaveat`로 WebGL을 한 번 요청해 보고 거절되면 정적 배경을 씁니다(`lib/lite.ts`).
+
+첫 화면의 시작 로고 이미지는 `index.html`에서 높은 우선순위로 미리 내려받습니다. 첫 큰 그림(LCP)이기 때문입니다.
+
+### 검색 노출
+
+- 공개 화면(대시보드, 추천 매칭, 단체 찾기, 상세 프로필, FAQ, 약관)은 검색엔진에 나옵니다(`frontend/.figma/make/site.json`의 `robots.index`).
+- 한 계정이나 한 링크를 위한 화면에는 `noindex`를 붙입니다(`lib/pageMeta.ts`의 `noindex`). 내 정보, 메시지, 내 행사·성과 화면, 운영자 화면, 협찬 약속서, 초대장, 체크인, 404 화면이 여기에 해당합니다.
+- `frontend/public/robots.txt`는 `/api/`, `/check-in/`, `/invite/`를 빼고 크롤링을 허용합니다.
+- `frontend/public/llms.txt`는 AI 에이전트에게 서비스와 주요 화면을 소개합니다.
 
 ### 로고
 
@@ -225,7 +240,9 @@ Vercel에서는 화면(`frontend/dist`)을 Vercel이 직접 내보내고, API는
 
 Vercel에서 달라지는 점:
 
-- 화면이 없는 주소도 Vercel이 앱의 404 화면을 보여 주지만 HTTP 상태는 200입니다(서버 한 대로 운영할 때는 404).
+- 화면이 없는 주소는 서버 한 대로 운영할 때처럼 HTTP 404로 앱의 404 화면을 보여 줍니다. 빌드가 만드는 `404.html`을 Vercel이 보내 줍니다.
+  - `vercel.json`의 주소 규칙(`rewrites`)은 `backend/src/lib/appPaths.ts`와 같아야 해요. `frontend/src/lib/appPaths.sync.test.ts`가 확인합니다.
+  - 그래서 `/.well-known/ai-catalog.json`처럼 없는 파일도 앱 화면이 아니라 404로 답합니다.
 - 요청 제한(로그인 실패, 인증번호 등)과 OpenStreetMap 주소 검색 간격은 서버 인스턴스마다 따로 셉니다. 사용자가 적을 때는 인스턴스가 하나라 그대로지만, 붐벼서 인스턴스가 늘면 제한이 느슨해질 수 있습니다.
 - 사용자의 주소는 Vercel이 앞단에서 넣어 주는 값으로 읽습니다(`TRUST_PROXY`를 따로 두지 않으면 1).
 - 데이터를 되돌릴 때는 Neon의 복원 기능이나 `uniconnect_backups` 표의 백업을 씁니다.

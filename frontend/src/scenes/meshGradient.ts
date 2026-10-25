@@ -22,7 +22,12 @@ const hexToVec3 = (hex: string) => {
 function setup() {
   if (context !== undefined) return context
   const canvas = document.createElement("canvas")
-  const gl = canvas.getContext("webgl", { preserveDrawingBuffer: true, antialias: false })
+  // Drawn on the CPU (lib/lite.ts), even one image holds the page up.
+  const gl = canvas.getContext("webgl", {
+    preserveDrawingBuffer: true,
+    antialias: false,
+    failIfMajorPerformanceCaveat: true,
+  })
   if (!gl) return (context = null)
   const compile = (type: number, source: string) => {
     const shader = gl.createShader(type)!

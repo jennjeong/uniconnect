@@ -1,12 +1,36 @@
 // Whether to leave out the WebGL scenes and keep their CSS backgrounds:
 // for visitors who asked to save data, or on a slow connection, where the
-// 3D library (about 180KB) and the drawing cost more than they give.
+// 3D library (about 180KB) and the drawing cost more than they give, and
+// where the browser would draw WebGL without a graphics processor.
 export function liteScenes() {
   const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } })
     .connection
   if (connection?.saveData) return true
   if (connection?.effectiveType && ["slow-2g", "2g", "3g"].includes(connection.effectiveType)) return true
-  return window.matchMedia?.("(prefers-reduced-data: reduce)").matches ?? false
+  if (window.matchMedia?.("(prefers-reduced-data: reduce)").matches) return true
+  return !hardwareWebGL()
+}
+
+// Without a graphics processor (or with a blocked driver, as on PageSpeed's
+// test machines) browsers draw WebGL on the CPU, where the shaders hold the
+// page for seconds at a time. They refuse a context asked for with
+// failIfMajorPerformanceCaveat there, so one is asked for once, on a canvas
+// let go straight away.
+let hardware: boolean | undefined
+
+export function hardwareWebGL() {
+  if (hardware !== undefined) return hardware
+  try {
+    const canvas = document.createElement("canvas")
+    const gl: WebGLRenderingContext | WebGL2RenderingContext | null =
+      canvas.getContext("webgl2", { failIfMajorPerformanceCaveat: true }) ??
+      canvas.getContext("webgl", { failIfMajorPerformanceCaveat: true })
+    gl?.getExtension("WEBGL_lose_context")?.loseContext()
+    hardware = gl !== null
+  } catch {
+    hardware = false
+  }
+  return hardware
 }
 
 // Runs `task` once the browser is idle after the page's first work (or after

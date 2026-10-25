@@ -10,7 +10,15 @@
   },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/:section(matches|groups)/:id?", "destination": "/index.html" },
+    {
+      "source": "/:page(offers|events|measurement|reports|inbox|campaigns|analytics|new|faq|terms|privacy|admin)",
+      "destination": "/index.html"
+    },
+    { "source": "/me/:part(edit)?", "destination": "/index.html" },
+    { "source": "/:list(messages|agreements)/:id?", "destination": "/index.html" },
+    { "source": "/invite/:code([\\w-]+)", "destination": "/index.html" },
+    { "source": "/check-in/:code([\\w-]+)/:part(staff)?", "destination": "/index.html" }
   ],
   "headers": [
     {
