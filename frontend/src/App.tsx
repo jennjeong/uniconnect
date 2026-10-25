@@ -31,7 +31,7 @@ import { applyPageMeta, pageMeta } from "./lib/pageMeta"
 import { install } from "./lib/install"
 import { installReveal } from "./lib/reveal"
 import { installRipple } from "./lib/ripple"
-import { readView, roleOfPage, viewPath, type HistoryEntry, type View } from "./lib/route"
+import { entryView, roleOfPage, viewPath, type HistoryEntry, type View } from "./lib/route"
 import { installSwipeNavigation, noteHistoryEnd } from "./lib/swipe"
 import { GoalModal } from "./modals/GoalModal"
 import { GoalsModal } from "./modals/GoalsModal"
@@ -59,6 +59,7 @@ import { LegalPage } from "./pages/LegalPage"
 import { GroupsPage } from "./pages/GroupsPage"
 import { InboxPage } from "./pages/InboxPage"
 import { InvitePage } from "./pages/InvitePage"
+import { LandingPage } from "./pages/LandingPage"
 import { ChatPage } from "./pages/ChatPage"
 import { MatchDetailPage } from "./pages/MatchDetailPage"
 import { MatchesPage } from "./pages/MatchesPage"
@@ -90,8 +91,9 @@ import type {
   Sponsorship,
 } from "./types"
 
-// The screen to open with: the history entry's on a reload, else the address.
-const initialView = (history.state as HistoryEntry | null)?.view ?? readView()
+// The screen to open with: the history entry's on a reload while it still
+// fits the address, else the address.
+const initialView = entryView(history.state as HistoryEntry | null)
 
 const noMetrics: Metrics = { scans: 0, coupons: 0, visits: 0 }
 
@@ -163,6 +165,8 @@ function App() {
 
   const role = account?.role ?? previewRole
   const accountId = account?.id
+  // Known to be logged out: not while a saved session is still checked.
+  const visitor = authReady && account === null
   const students = role === "학생단체"
   // The picked page, or the dashboard when this role has no such page.
   const page = pageFor(role, view.page)
@@ -207,7 +211,7 @@ function App() {
     }
     const showEntry = (event: PopStateEvent) => {
       const entry = event.state as HistoryEntry | null
-      const next = entry?.view ?? readView()
+      const next = entryView(entry)
       setView(next)
       setFromHistory(true)
       // Visitors follow the entry to the side it belongs to.
@@ -227,11 +231,12 @@ function App() {
 
   // Once the account is known, an address it can't use (the other side's
   // page, or 내 정보 and registration while logged out) is corrected to the
-  // page on screen.
+  // page on screen, and a member opening the introduction goes on to the
+  // dashboard.
   useEffect(() => {
     if (!authReady) return
     const usable =
-      view.page === page && (account !== null || (!view.profile && !view.create && !view.chat))
+      view.page === page && (account !== null ? !view.home : !view.profile && !view.create && !view.chat)
     if (!usable) go({ page }, true)
   })
 
@@ -420,6 +425,16 @@ function App() {
 
   const navigate = (label: NavLabel) => go({ page: label })
 
+  // Home: the introduction for visitors, the dashboard for a member.
+  const goHome = () => go(account ? { page: "대시보드" } : { page: "대시보드", home: true })
+
+  // A member screen with the demo data of the side it belongs to, opened
+  // from the introduction as a new page.
+  const openExample = (side: Role, next: NavLabel = "대시보드") => {
+    if (!account) setPreviewRole(side)
+    go({ page: next })
+  }
+
   const openProfile = () => go({ page, profile: "page" })
 
   const openMessages = () => go({ page, messages: true })
@@ -524,7 +539,13 @@ function App() {
   }
 
   const switchRole = (next: Role) => {
-    if (account || next === previewRole) return
+    if (account) return
+    // From the introduction, either side's example dashboard opens.
+    if (view.home) {
+      openExample(next)
+      return
+    }
+    if (next === previewRole) return
     setPreviewRole(next)
     go({ page: "대시보드" }, true)
     showNotice(t("{role} 전용 데이터로 전환했어요.", { role: t(next) }))
@@ -824,7 +845,21 @@ function App() {
   )
 
   const renderPage = (): ReactNode => {
-    if (view.missing) return <NotFoundPage onNavigate={navigate} role={role} />
+    if (view.missing) return <NotFoundPage onHome={goHome} onNavigate={navigate} role={role} />
+    if (view.home) {
+      // Nothing while a saved session is checked, or while a member is sent
+      // on to the dashboard.
+      if (!authReady || account) return null
+      return (
+        <LandingPage
+          onSignup={(side) => openAuth("signup", side)}
+          onBrowse={(side) => openExample(side)}
+          onOpenExample={openExample}
+          onOpenFaq={openFaq}
+          onInstall={installKind === "app" ? undefined : startInstall}
+        />
+      )
+    }
     if (view.faq) return <FaqPage account={account} onLogin={() => openAuth("login")} />
     if (view.admin) return <AdminPage onNotice={showNotice} />
     if (view.legal) return <LegalPage kind={view.legal} onSwitch={(legal) => openLegal(legal)} />
@@ -864,6 +899,7 @@ function App() {
           onEditProfile={() => go({ page, profile: "edit" })}
           onError={handleError}
           onLogin={() => openAuth("login", "브랜드")}
+          onHome={goHome}
           onNavigate={navigate}
           onSignup={() => openAuth("signup", "브랜드")}
         />
@@ -948,6 +984,9 @@ function App() {
             onPropose={propose}
             onCancelProposal={cancelProposal}
             onInvite={inviteShop}
+            visitor={visitor}
+            onLogin={() => openAuth("login")}
+            onSignup={() => openAuth("signup")}
           />
         )
       case "내 행사":
@@ -989,6 +1028,9 @@ function App() {
             onOpenDetail={openDetail}
             onPropose={propose}
             onCancelProposal={cancelProposal}
+            visitor={visitor}
+            onLogin={() => openAuth("login")}
+            onSignup={() => openAuth("signup")}
           />
         )
       case "받은 제안":
@@ -1035,10 +1077,12 @@ function App() {
             onOpenReport={() => setActiveModal("report")}
             onOpenFaq={openFaq}
             onInstall={installKind === "app" ? undefined : startInstall}
+            demo={visitor}
           />
         ) : (
           <BrandDashboardPage
             accountName={account?.name}
+            demo={visitor}
             matches={matches}
             groups={groups}
             requests={requests}
@@ -1061,6 +1105,10 @@ function App() {
   const badges: Partial<Record<NavLabel, number>> = students
     ? { "추천 매칭": matches.length, "받은 협찬": pendingOffers.length }
     : { "받은 제안": pendingRequests.length }
+  // A visitor on the introduction, and a visitor on a member screen shown
+  // with the demo data (marked as an example in the header).
+  const landing = view.home === true && visitor
+  const demoScreen = visitor && !view.home && !view.faq && !view.legal && !view.admin && !view.invite && !view.missing
 
   return (
     <div className="app-shell">
@@ -1089,6 +1137,9 @@ function App() {
         notificationsOpen={notificationsOpen}
         menuOpen={menuOpen}
         unreadMessages={unreadMessages}
+        landing={landing}
+        demo={demoScreen}
+        onHome={goHome}
         onNavigate={navigate}
         onSwitchRole={switchRole}
         onCreate={() => openCreate()}
@@ -1101,6 +1152,7 @@ function App() {
         onCloseNotifications={closeNotifications}
         onOpenProfile={openProfile}
         onLogin={() => openAuth("login")}
+        onSignup={() => openAuth("signup")}
         onOpenMenu={() => {
           setNotificationsOpen(false)
           setMenuOpen(true)
@@ -1162,12 +1214,15 @@ function App() {
       </main>
 
       {/* A conversation keeps its message box at the bottom of the screen; the
-          call to register heads the footer on the dashboard only. */}
+          call to register heads the footer on the introduction and the
+          dashboard only. */}
       {!chatOpen && (
         <Footer
           role={role}
           account={account}
-          invite={viewPath(view) === viewPath({ page: "대시보드" })}
+          invite={landing || viewPath(view) === viewPath({ page: "대시보드" })}
+          landing={landing}
+          onInstall={installKind === "app" ? undefined : startInstall}
           onNavigate={navigate}
           onSwitchRole={switchRole}
           onCreate={() => openCreate()}
@@ -1189,6 +1244,7 @@ function App() {
           account={account}
           badges={badges}
           unreadMessages={unreadMessages}
+          onHome={goHome}
           onNavigate={navigate}
           onSwitchRole={switchRole}
           onCreate={() => openCreate()}

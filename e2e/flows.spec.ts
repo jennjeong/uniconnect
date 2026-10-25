@@ -18,6 +18,15 @@ async function logIn(page: Page, role: "학생단체" | "브랜드", email: stri
 test("visitors browse the site, its help and its 404 page", async ({ page }) => {
   await page.goto("/")
   await expect(page).toHaveTitle(/uniconnect/)
+  // The introduction leads to the example dashboard, marked as an example,
+  // and back.
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("좋은 행사와")
+  await page.getByRole("button", { name: "예시 화면 둘러보기" }).click()
+  await expect(page).toHaveURL(/\/dashboard$/)
+  await expect(page.locator(".demo-chip")).toHaveText("예시 화면")
+  await page.goBack()
+  await expect(page).toHaveURL(/\/$/)
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("좋은 행사와")
   await page.goto("/matches")
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
   await page.goto("/terms")
@@ -26,6 +35,29 @@ test("visitors browse the site, its help and its 404 page", async ({ page }) => 
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
   await page.goto("/no-such-page")
   await expect(page.getByText("페이지를 찾을 수 없어요").first()).toBeVisible()
+})
+
+test("a visitor sees the nearby tabs as blurred examples", async ({ page }) => {
+  // Nearby shops and groups depend on the account's campus or store.
+  await page.goto("/matches")
+  await page.getByRole("tab", { name: "가까운 순" }).click()
+  await expect(page.getByText("학교마다 근처 가게가 달라요")).toBeVisible()
+  await expect(page.locator(".demo-preview-content")).toHaveAttribute("inert", "")
+  await page.goto("/groups")
+  await page.getByRole("tab", { name: "가까운 순" }).click()
+  await expect(page.getByText("매장마다 가까운 학생단체가 달라요")).toBeVisible()
+  await page.locator(".demo-preview-note").getByRole("button", { name: "회원가입" }).click()
+  await expect(page.getByRole("dialog")).toBeVisible()
+})
+
+test("a member who opens the introduction goes on to the dashboard", async ({ page }) => {
+  await page.goto("/")
+  await logIn(page, "학생단체", "muse@syu.ac.kr")
+  await expect(page).toHaveURL(/\/dashboard$/)
+  await page.goto("/")
+  await expect(page).toHaveURL(/\/dashboard$/)
+  await expect(page.locator(".hero-eyebrow")).toContainText("반가워요")
+  await expect(page.locator(".demo-chip")).toHaveCount(0)
 })
 
 test("a student group proposes and the brand accepts", async ({ browser }) => {
@@ -139,7 +171,10 @@ test("the language is set in 내 정보, and the page stays where it was", async
   await expect(page.locator("html")).toHaveAttribute("lang", "ko")
 })
 
-test("가까운 순 looks around the school for real shops, and says so while the map isn't connected", async ({ page }) => {
+test("가까운 순 looks around the group's school for real shops, and says so while the map isn't connected", async ({ page }) => {
+  // A member's own campus; visitors see this tab blurred, as an example.
+  await page.goto("/")
+  await logIn(page, "학생단체", "muse@syu.ac.kr")
   await page.goto("/matches")
   await page.getByRole("tab", { name: "가까운 순" }).click()
   // Every kind at first.

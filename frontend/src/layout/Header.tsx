@@ -13,11 +13,21 @@ import type { NotificationItem } from "../lib/notifications"
 import type { Account, NavLabel, Role } from "../types"
 import { NotificationsPanel } from "./NotificationsPanel"
 
+// The introduction's sections, for the header's links there.
+const sections: { id: string; label: string }[] = [
+  { id: "sides", label: t("서비스 소개") },
+  { id: "how", label: t("이용 방법") },
+  { id: "examples", label: t("예시 화면") },
+  { id: "faq", label: "FAQ" },
+]
+
 // Stride's floating navigation from getlayers.ai: the logo on its own and
 // the role's menu as a silver glass pill on the left; the next event (or,
 // for visitors, the side to preview), the account buttons and Menu on the
-// right. The pills gain a soft shadow once the page scrolls, and slide in
-// after the intro loader.
+// right. On the introduction the menu gives way to its sections and sign-up
+// stands beside login; on a member screen shown to a visitor, a chip by the
+// logo says it is an example. The pills gain a soft shadow once the page
+// scrolls, and slide in after the intro loader.
 export function Header({
   role,
   activeNav,
@@ -30,6 +40,9 @@ export function Header({
   notificationsOpen,
   menuOpen,
   unreadMessages,
+  landing,
+  demo,
+  onHome,
   onNavigate,
   onSwitchRole,
   onCreate,
@@ -39,6 +52,7 @@ export function Header({
   onCloseNotifications,
   onOpenProfile,
   onLogin,
+  onSignup,
   onOpenMenu,
 }: {
   role: Role
@@ -57,6 +71,12 @@ export function Header({
   menuOpen: boolean
   // Messages not yet read, shown on the chat button.
   unreadMessages: number
+  // A visitor on the introduction.
+  landing: boolean
+  // A visitor on a member screen, shown with the demo data.
+  demo: boolean
+  // The logo: the introduction for visitors, the dashboard for a member.
+  onHome: () => void
   onNavigate: (label: NavLabel) => void
   onSwitchRole: (role: Role) => void
   onCreate: () => void
@@ -67,6 +87,7 @@ export function Header({
   onCloseNotifications: () => void
   onOpenProfile: () => void
   onLogin: () => void
+  onSignup: () => void
   onOpenMenu: () => void
 }) {
   const bellRef = useRef<HTMLButtonElement>(null)
@@ -114,33 +135,47 @@ export function Header({
     }
   }, [])
 
+  const showSection = (id: string) => {
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    document.getElementById(id)?.scrollIntoView({ behavior: still ? "auto" : "smooth", block: "start" })
+  }
+
   return (
     <header className={["site-header", scrolled && "scrolled", onDark && "on-dark"].filter(Boolean).join(" ")}>
       <div className="nav-group">
-        <button
-          aria-label={t("uniconnect 홈으로")}
-          className="brand-link"
-          onClick={() => onNavigate("대시보드")}
-          ref={brandRef}
-          type="button"
-        >
+        <button aria-label={t("uniconnect 홈으로")} className="brand-link" onClick={onHome} ref={brandRef} type="button">
           <img alt="" className="logo-dark" height={27} src={logo} width={116} />
           <img alt="" className="logo-light" height={27} src={logoReversed} width={116} />
         </button>
-        <nav className="nav-pill links-pill" aria-label={t("주요 메뉴")}>
-          {navItems[role].map((item) => (
-            <button
-              aria-current={activeNav === item.label ? "page" : undefined}
-              className={activeNav === item.label ? "header-link active" : "header-link"}
-              key={item.label}
-              onClick={() => onNavigate(item.label)}
-              type="button"
-            >
-              {t(item.label)}
-              {(badges[item.label] ?? 0) > 0 && <span className="nav-count">{badges[item.label]}</span>}
-            </button>
-          ))}
-        </nav>
+        {demo && (
+          <span className="nav-pill demo-chip" title={t("로그인하지 않아 예시 데이터로 보여요")}>
+            {t("예시 화면")}
+          </span>
+        )}
+        {landing ? (
+          <nav className="nav-pill links-pill" aria-label={t("소개 페이지 구역")}>
+            {sections.map((section) => (
+              <button className="header-link" key={section.id} onClick={() => showSection(section.id)} type="button">
+                {section.label}
+              </button>
+            ))}
+          </nav>
+        ) : (
+          <nav className="nav-pill links-pill" aria-label={t("주요 메뉴")}>
+            {navItems[role].map((item) => (
+              <button
+                aria-current={activeNav === item.label ? "page" : undefined}
+                className={activeNav === item.label ? "header-link active" : "header-link"}
+                key={item.label}
+                onClick={() => onNavigate(item.label)}
+                type="button"
+              >
+                {t(item.label)}
+                {(badges[item.label] ?? 0) > 0 && <span className="nav-count">{badges[item.label]}</span>}
+              </button>
+            ))}
+          </nav>
+        )}
       </div>
 
       <div className="nav-group">
@@ -168,7 +203,7 @@ export function Header({
               <span className="chip-value">{t("다가오는 일정 없음")}</span>
             )}
           </button>
-        ) : (
+        ) : landing ? null : (
           // Visitors can preview either side; a logged-in account stays on its own role.
           <div className="nav-pill role-switch" aria-label={t("사용자 유형")}>
             {roles.map((item) => (
@@ -213,9 +248,16 @@ export function Header({
               </button>
             </div>
           ) : (
-            <button className="nav-pill login-pill" onClick={onLogin} type="button">
-              {t("로그인")}
-            </button>
+            <>
+              <button className="nav-pill login-pill" onClick={onLogin} type="button">
+                {t("로그인")}
+              </button>
+              {landing && (
+                <button className="nav-pill signup-pill" onClick={onSignup} type="button">
+                  {t("회원가입")}
+                </button>
+              )}
+            </>
           ))}
 
         <button

@@ -7,6 +7,8 @@ import { fromIsoDate, todayIso } from "./date"
 // and a refresh all work.
 export type View = {
   page: NavLabel
+  // The introduction visitors land on (/); the dashboard is at /dashboard.
+  home?: true
   // Day the registration page opens on, while it is open.
   create?: string
   // The 내 정보 page, or its profile editor.
@@ -41,7 +43,7 @@ export type HistoryEntry = {
 }
 
 const pagePaths: Record<NavLabel, string> = {
-  대시보드: "",
+  대시보드: "dashboard",
   "추천 매칭": "matches",
   "받은 협찬": "offers",
   "내 행사": "events",
@@ -66,6 +68,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "")
 
 export function viewPath(view: View) {
   if (view.missing) return `${base}${view.missing}`
+  if (view.home) return `${base}/`
   if (view.create) return `${base}/new?date=${view.create}`
   if (view.profile) return `${base}/me${view.profile === "edit" ? "/edit" : ""}`
   if (view.chat) return `${base}/messages/${encodeURIComponent(view.chat)}`
@@ -78,6 +81,14 @@ export function viewPath(view: View) {
   if (view.agreements) return `${base}/agreements`
   const path = pagePaths[view.page]
   return `${base}/${view.detail ? `${path}/${encodeURIComponent(view.detail)}` : path}`
+}
+
+// The view a history entry kept, unless it no longer fits the address the
+// entry is at (one kept before an address changed, as when the dashboard
+// moved from / to /dashboard); then the address decides.
+export function entryView(entry: HistoryEntry | null, location: Location = window.location): View {
+  const kept = entry?.view
+  return kept && viewPath(kept) === location.pathname + location.search ? kept : readView(location)
 }
 
 // A segment as typed, or undefined when it holds a broken escape such as
@@ -98,6 +109,7 @@ export function readView(location: Location = window.location): View {
   const [first = "", second, ...rest] = pathname.split("/").filter(Boolean)
   const missing: View = { page: "대시보드", missing: pathname }
   if (rest.length > 0) return missing
+  if (!first) return { page: "대시보드", home: true }
   if (first === "new") {
     if (second) return missing
     const date = new URLSearchParams(location.search).get("date") ?? ""

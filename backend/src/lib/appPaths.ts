@@ -4,7 +4,7 @@
 const appPaths = [
   /^\/$/,
   /^\/(matches|groups)(\/[^/]+)?\/?$/,
-  /^\/(offers|events|measurement|reports|inbox|campaigns|analytics)\/?$/,
+  /^\/(dashboard|offers|events|measurement|reports|inbox|campaigns|analytics)\/?$/,
   /^\/new\/?$/,
   /^\/me(\/edit)?\/?$/,
   /^\/messages(\/[^/]+)?\/?$/,

@@ -3,7 +3,7 @@ import { expect, test, type Page } from "@playwright/test"
 
 // Automatic accessibility checks (WCAG 2.1 A and AA) on the main screens.
 // Critical and serious problems fail the run; the rest are printed.
-const pages = ["/", "/matches", "/groups", "/faq", "/terms", "/privacy", "/admin", "/check-in/20261012", "/check-in/20261012/staff", "/no-such-page"]
+const pages = ["/", "/dashboard", "/matches", "/groups", "/faq", "/terms", "/privacy", "/admin", "/check-in/20261012", "/check-in/20261012/staff", "/no-such-page"]
 
 async function expectNoBlockingProblems(page: Page, path: string) {
   await page.goto(path)
@@ -60,9 +60,9 @@ test("an open popup holds the keyboard and passes the checks", async ({ page }) 
   await expect(opener).toBeFocused()
 })
 
-// 앱 다운로드 on the dashboard opens the guide where the browser offers no
+// 앱 다운로드 on the introduction opens the guide where the browser offers no
 // install dialog of its own (here the page never hears of one).
-test("the app download guide opens from the dashboard and passes the checks", async ({ page }) => {
+test("the app download guide opens from the introduction and passes the checks", async ({ page }) => {
   await page.addInitScript(() => {
     window.addEventListener("beforeinstallprompt", (event) => event.stopImmediatePropagation(), true)
   })

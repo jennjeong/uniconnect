@@ -20,6 +20,7 @@ export function NavMenu({
   account,
   badges,
   unreadMessages,
+  onHome,
   onNavigate,
   onSwitchRole,
   onCreate,
@@ -38,6 +39,8 @@ export function NavMenu({
   account: Account | null
   badges: Partial<Record<NavLabel, number>>
   unreadMessages: number
+  // The introduction, for visitors.
+  onHome: () => void
   onNavigate: (label: NavLabel) => void
   onSwitchRole: (role: Role) => void
   onCreate: () => void
@@ -140,6 +143,9 @@ export function NavMenu({
             </>
           ) : (
             <>
+              <button onClick={pick(onHome)} type="button">
+                {t("서비스 소개")}
+              </button>
               <button onClick={pick(onLogin)} type="button">
                 {t("로그인")}
               </button>

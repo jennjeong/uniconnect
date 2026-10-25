@@ -26,6 +26,7 @@ export function InvitePage({
   onSignup,
   onLogin,
   onAccepted,
+  onHome,
   onNavigate,
   onEditProfile,
   onError,
@@ -35,6 +36,7 @@ export function InvitePage({
   onSignup: () => void
   onLogin: () => void
   onAccepted: (listing: Match, group: string) => void
+  onHome: () => void
   onNavigate: (label: NavLabel) => void
   onEditProfile: () => void
   onError: (error: unknown) => void
@@ -81,7 +83,7 @@ export function InvitePage({
         <PageIntro eyebrow="Invitation" title={t("uniconnect 초대장")} description={failed || t("초대장을 불러오고 있어요…")} />
         {failed && (
           <div className="invite-actions">
-            <Pill onClick={() => onNavigate("대시보드")} variant="outline">
+            <Pill onClick={onHome} variant="outline">
               {t("홈으로")}
             </Pill>
           </div>

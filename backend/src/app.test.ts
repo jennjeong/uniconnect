@@ -71,6 +71,7 @@ test("pages load for every screen's address, and others answer 404", async () =>
   }
   const screens = [
     "/",
+    "/dashboard",
     "/matches",
     "/matches/cafe-1",
     "/offers",
@@ -87,7 +88,7 @@ test("pages load for every screen's address, and others answer 404", async () =>
   for (const route of screens) {
     assert.deepEqual(await page(route), { status: 200, html: true }, route)
   }
-  for (const route of ["/nope", "/events/x", "/matches/a/b", "/me/other"]) {
+  for (const route of ["/nope", "/dashboard/x", "/events/x", "/matches/a/b", "/me/other"]) {
     assert.deepEqual(await page(route), { status: 404, html: true }, route)
   }
   assert.equal((await call("GET", "/nope")).status, 404)

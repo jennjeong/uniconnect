@@ -9,11 +9,12 @@ import catalog from "./en/catalog"
 import common from "./en/common"
 import dashboard from "./en/dashboard"
 import forms from "./en/forms"
+import landing from "./en/landing"
 import layout from "./en/layout"
 import legal from "./en/legal"
 import measurement from "./en/measurement"
 
-const areas = { common, layout, dashboard, catalog, measurement, analytics, forms, legal }
+const areas = { common, layout, dashboard, catalog, measurement, analytics, forms, landing, legal }
 
 // Every sentence the code passes to t() as written has English in i18n/en,
 // so an English screen shows no Korean by mistake. (Sentences picked from

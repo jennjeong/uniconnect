@@ -10,10 +10,10 @@ const meta = (view: Partial<View>, detail?: Match) => {
 }
 
 describe("which screens search engines may list", () => {
-  it("lists the dashboard, the catalogs, profiles, the FAQ and the policies", () => {
+  it("lists the introduction, the catalogs, profiles, the FAQ and the policies", () => {
     const brand = { name: "애프터눈 커피", category: "카페", score: 92 } as Match
     for (const listed of [
-      meta({}),
+      meta({ home: true }),
       meta({ page: "추천 매칭" }),
       meta({ page: "단체 찾기" }),
       meta({ page: "추천 매칭", detail: "afternoon-coffee" }, brand),
@@ -25,8 +25,9 @@ describe("which screens search engines may list", () => {
     }
   })
 
-  it("keeps out the screens for one account or one link, and the 404 page", () => {
+  it("keeps out the dashboard, the screens for one account or one link, and the 404 page", () => {
     for (const view of [
+      {},
       { page: "성과 측정" },
       { page: "받은 제안" },
       { page: "내 행사" },
