@@ -184,7 +184,7 @@ export function AnalyticsDocument({
           : t("목표 ROAS {target}%까지 {gap}%p 남았어요.", { target: row.targetRoas, gap: row.targetRoas - row.roas })
         const perVisit = { cost: formatWon(row.perVisit), average: formatWon(averagePerVisit) }
         // The venue counts it has, shown only when some method counted any.
-        const counted: Partial<Record<MetricKind, number>> = { samples: row.samples, stamps: row.stamps, posts: row.posts }
+        const counted: Partial<Record<MetricKind, number>> = Object.fromEntries(venueKinds.map((kind) => [kind, row[kind as keyof typeof row] ?? 0]))
         const notes = [
           t("{spend}을 집행해 추정 매출 {sales}을 만들었어요. {verdict}", {
             spend: formatWon(row.spend),

@@ -112,7 +112,7 @@ function RequestCard({
             </span>
             {request.status === "수락" && (
               <button className="detail-button" onClick={() => onOpenAgreement(request.id)} type="button">
-                <Icon name="file" size={15} /> {t("약속서")}
+                <Icon name="file" size={15} /> {t("계약서")}
               </button>
             )}
           </>

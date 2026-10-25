@@ -133,28 +133,49 @@ export type EmailCode = {
   verifiedUntil?: number
 }
 
-// The event's counts: QR scans, coupons and store visits, then what the
-// venue's staff confirm by the measurement methods (MethodKind): samples
-// handed out, booth visits stamped, and SNS posts or survey answers checked.
-export type Metrics = {
-  scans: number
-  coupons: number
-  visits: number
+// What the venue's staff count by the confirmation methods (lib/methods.ts):
+// samples or tastings handed out, booth visits stamped, SNS posts, survey
+// answers, purchases on the spot, goods given away, raffle entries, sign-ups
+// or app installs, and people who tried the brand's experience.
+export type VenueCounts = {
   samples: number
   stamps: number
   posts: number
+  surveys: number
+  purchases: number
+  giveaways: number
+  raffles: number
+  signups: number
+  experiences: number
 }
+
+// The event's counts: QR scans, coupons and store visits, then the venue's.
+export type Metrics = { scans: number; coupons: number; visits: number } & VenueCounts
 
 export type MetricKind = keyof Metrics
 
-// How a sponsorship is measured at the event (lib/methods.ts): the check-in
-// QR's coupons and store visits, samples or tastings handed out, booth
-// visits stamped, and SNS posts or surveys. Each is confirmed by one side at
-// the venue, from its own page with its own PIN; store visits always by the
+// How a sponsorship is confirmed at the event (협찬 확인 방식, lib/methods.ts):
+// the check-in QR, its coupon and the store's visits, then what the venue's
+// staff count (VenueCounts). Each is confirmed by one side or both, from
+// their own venue page with their own PIN; store visits always by the
 // brand's store.
-export type MethodKind = "coupon" | "sampling" | "booth" | "sns"
+export type MethodKind =
+  | "qr"
+  | "coupon"
+  | "visit"
+  | "sampling"
+  | "booth"
+  | "sns"
+  | "survey"
+  | "purchase"
+  | "giveaway"
+  | "raffle"
+  | "signup"
+  | "experience"
 
-export type MeasureMethod = { kind: MethodKind; side: ChatSide }
+export type MethodSide = ChatSide | "both"
+
+export type MeasureMethod = { kind: MethodKind; side: MethodSide }
 
 // One recorded QR scan, coupon, store visit or venue confirmation.
 export type MetricEntry = {
@@ -225,10 +246,16 @@ export type Sponsorship = {
   visits: number
   // Estimated store sales the sponsorship brought, in won.
   sales: number
-  // What the venue confirmed for it by its measurement methods.
+  // What the venue confirmed for it by its confirmation methods.
   samples?: number
   stamps?: number
   posts?: number
+  surveys?: number
+  purchases?: number
+  giveaways?: number
+  raffles?: number
+  signups?: number
+  experiences?: number
   // The student event it sponsored, whose measurement updates the counts.
   eventId?: string
   // ROAS goal in percent, set before the sponsorship.
@@ -267,10 +294,12 @@ export type EventSponsor = {
   // sponsor it is always the whole value.
   value?: number
   staffPin: string
-  metrics: { coupons: number; visits: number; samples: number; stamps: number; posts: number }
-  // How this sponsorship is measured, set on its agreement; the coupon and
-  // store visits until then.
+  metrics: { coupons: number; visits: number } & VenueCounts
+  // How this sponsorship is confirmed, as its e-contract sets it, and as
+  // both sides last confirmed it, which is what counts (the QR, coupon and
+  // store visits until then).
   methods?: MeasureMethod[]
+  confirmedMethods?: MeasureMethod[]
 }
 
 // One event's live measurement: its counts, the scans by hour, the latest
@@ -291,9 +320,11 @@ export type Measurement = {
   // 4 digits the student group's staff enter on its own venue page
   // (/check-in/<code>/group) to confirm what its methods assign to it.
   groupPin: string
-  // How the event is measured while it has no sponsors (a brand's campaign,
-  // set on its agreement with the group); each sponsor has its own after.
+  // How the event is confirmed while it has no sponsors (a brand's campaign,
+  // set on its e-contract with the group), as set and as both sides last
+  // confirmed it; each sponsor has its own after.
   methods?: MeasureMethod[]
+  confirmedMethods?: MeasureMethod[]
   // `metrics` counts the whole event. Once brands sponsor it, participants
   // take each sponsor's coupon instead of the event's, and the sponsor's
   // own counts grow with the totals.
@@ -338,10 +369,11 @@ export type Report = {
   staffPin?: string
   // The student group's venue PIN, only for the group that owns the event.
   groupPin?: string
-  // How the event is measured, before any sponsor (each sponsor's below).
+  // How the event is confirmed (as both sides confirmed it), before any
+  // sponsor (each sponsor's below).
   methods: MeasureMethod[]
   // What the venue's staff confirmed so far, for the whole event.
-  venue: { samples: number; stamps: number; posts: number }
+  venue: VenueCounts
   // The event's sponsors with their own share, once brands sponsor it.
   sponsors?: SponsorReport[]
 }
@@ -356,14 +388,11 @@ export type SponsorReport = {
   coupons: number
   visits: number
   roas: number
-  // How this sponsorship is measured and what the venue confirmed for it.
+  // How this sponsorship is confirmed (as both sides confirmed it).
   methods: MeasureMethod[]
-  samples: number
-  stamps: number
-  posts: number
   // Only for the group that owns the event.
   staffPin?: string
-}
+} & VenueCounts
 
 // One side of a conversation: the student group or the brand.
 export type ChatSide = "group" | "brand"
@@ -414,7 +443,7 @@ export type AgreementItem = {
   photos: string[]
 }
 
-// The terms of an accepted proposal (협찬 약속서), with the proposal's id:
+// The terms of an accepted proposal (임시 전자 계약서), with the proposal's id:
 // what each side does, when each side confirmed the terms as they stand,
 // and the proof as it is done. Made the first time either side opens it.
 export type Agreement = {

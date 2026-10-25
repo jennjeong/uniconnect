@@ -243,7 +243,7 @@ export function SignupModal({
           />
         </label>
         <small className="field-hint" id="signup-phone-hint">
-          {t("협찬이 확정된 상대에게만 협찬 약속서에서 보여요.")}
+          {t("협찬이 확정된 상대에게만 임시 전자 계약서에서 보여요.")}
         </small>
         <div className="field-group">
           <label htmlFor="signup-email">

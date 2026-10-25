@@ -696,7 +696,7 @@ button.nav-pill:hover {
   letter-spacing: 0;
 }
 
-/* The account links (메시지 · 협찬 약속서 · 내 정보 · FAQ), centred under the
+/* The account links (메시지 · 임시 전자 계약서 · 내 정보 · FAQ), centred under the
    rule; a visitor's picker of screens wraps centred with them. */
 .nav-menu-extra {
   display: flex;
@@ -4535,18 +4535,16 @@ button.nav-pill:hover {
   font-size: 13px;
 }
 
+/* Four tiles a row, or as many as 성과's page sets (--columns, one per
+   method the e-contract confirmed). */
 .power-stats {
   display: grid;
   width: 100%;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--columns, 4), minmax(0, 1fr));
   gap: 12px;
   margin: 16px 0 0;
   padding: 0;
   list-style: none;
-}
-
-.power-stats.three {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .power-stats > li {
@@ -8604,9 +8602,14 @@ button.nav-pill:hover {
   margin: 0;
 }
 
-/* How the sponsorship is measured (측정 방식): each method with the side
-   that confirms it and its count, this side's venue page and PIN, and, while
-   editing, a card per method with the sides to choose from. */
+/* How the sponsorship is confirmed (협찬 확인 방식): whether both sides
+   have settled it, each method with the side that confirms it and its
+   count, this side's venue page and PIN, and, while choosing, a card per
+   method (as many as wanted) with the sides to choose from. */
+.methods-panel h2 small.settled {
+  color: var(--point-strong);
+}
+
 .method-list,
 .method-options {
   display: flex;
@@ -8615,6 +8618,12 @@ button.nav-pill:hover {
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.method-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  align-items: start;
 }
 
 .method-list li {
@@ -8718,6 +8727,11 @@ button.nav-pill:hover {
 
 .method-side input {
   accent-color: var(--point);
+}
+
+/* A store visit is the brand's to confirm, so the other sides stay greyed. */
+.method-side label:has(input:disabled) {
+  color: var(--muted);
 }
 
 .venue-access {
@@ -10199,6 +10213,11 @@ button.nav-pill:hover {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  /* Two a row, so an odd number of tiles starts with a wide one. */
+  .power-stats.odd > li:first-child {
+    grid-column: 1 / -1;
+  }
+
   .power-content,
   .cta-panel {
     padding: 48px 40px;
@@ -10646,14 +10665,8 @@ button.nav-pill:hover {
     background: linear-gradient(180deg, rgba(8, 20, 52, 0.78) 0%, rgba(8, 20, 52, 0.5) 55%, rgba(8, 20, 52, 0.3) 100%);
   }
 
-  .power-stats,
-  .power-stats.three {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .power-stats {
     gap: 10px;
-  }
-
-  .power-stats.three > li:first-child {
-    grid-column: 1 / -1;
   }
 
   .power-stats button,

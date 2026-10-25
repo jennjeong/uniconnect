@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto"
 
 import { todayInKorea } from "./dates.js"
-import { methodsOf } from "./methods.js"
+import { activeMethodsOf, confirmsAt, isVenueKind, methodsOf, venueCountsOf } from "./methods.js"
 import { photos } from "./photos.js"
 import { canReview, publicReview, reviewOpen } from "./reviews.js"
 import type { Account, Agreement, AgreementItem, ChatSide, Database } from "../types.js"
@@ -92,29 +92,29 @@ export function agreementShare(database: Database, proposal: AcceptedProposal) {
   return sponsor ? { event: sponsored.event, measurement, sponsor } : undefined
 }
 
-// How the agreement's share is measured, what the venue counted for it, and,
-// when this side confirms any of the methods, its own venue page and PIN:
-// the brand's store PIN on the staff page, the group's PIN on its page.
+// How the e-contract's share is confirmed at the event: the methods as set
+// here, the methods both sides last confirmed (which count, and only once
+// there are such), what the venue counted for it, and, once the confirmed
+// methods give this side something to record at the event (a count by hand,
+// or the store's visits), its own venue page and PIN: the brand's store PIN
+// on the staff page, the group's PIN on its page.
 function measureView(database: Database, proposal: AcceptedProposal, side: ChatSide) {
   const share = agreementShare(database, proposal)
   if (!share) return undefined
   const { measurement, sponsor } = share
   const methods = methodsOf(measurement, sponsor)
+  const confirmed = sponsor ? sponsor.confirmedMethods : measurement.confirmedMethods
   const counts = sponsor?.metrics ?? measurement.metrics
   const pin = side === "brand" ? (sponsor?.staffPin ?? measurement.staffPin) : measurement.groupPin
+  const mine = activeMethodsOf(measurement, sponsor).some(
+    (method) => confirmsAt(method, side) && (isVenueKind(method.kind) || method.kind === "visit"),
+  )
   return {
     code: measurement.code,
     methods,
-    counts: {
-      coupons: counts.coupons,
-      visits: counts.visits,
-      samples: counts.samples,
-      stamps: counts.stamps,
-      posts: counts.posts,
-    },
-    ...(methods.some((method) => method.side === side)
-      ? { venue: { page: side === "brand" ? ("staff" as const) : ("group" as const), pin } }
-      : {}),
+    ...(confirmed ? { confirmedMethods: confirmed } : {}),
+    counts: { scans: measurement.metrics.scans, coupons: counts.coupons, visits: counts.visits, ...venueCountsOf(counts) },
+    ...(mine ? { venue: { page: side === "brand" ? ("staff" as const) : ("group" as const), pin } } : {}),
   }
 }
 

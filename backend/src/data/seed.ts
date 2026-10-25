@@ -1,3 +1,4 @@
+import { emptyVenueCounts } from "../lib/methods.js"
 import { hashPassword } from "../lib/password.js"
 import type {
   Account,
@@ -871,7 +872,7 @@ export function seedMeasurements(accountId: string): Measurement[] {
       eventId: "event-busking-day",
       accountId,
       code: "20261012",
-      metrics: { scans: 128, coupons: 94, visits: 41, samples: 0, stamps: 0, posts: 0 },
+      metrics: { scans: 128, coupons: 94, visits: 41, ...emptyVenueCounts() },
       hourlyScans: [
         { date: "2026-10-12", hour: 17, scans: 12 },
         { date: "2026-10-12", hour: 18, scans: 26 },

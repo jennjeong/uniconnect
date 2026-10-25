@@ -10,9 +10,11 @@ import {
   seedRequests,
   seedSponsorships,
 } from "./data/seed.js"
+import { acceptedProposal, agreementShare } from "./lib/agreements.js"
 import { toIsoDate } from "./lib/dates.js"
 import { HttpError } from "./lib/errors.js"
 import { emptyMetrics, newStaffPin, prunePasses, syncSponsors } from "./lib/measurements.js"
+import { upgradeMethods } from "./lib/methods.js"
 import { currentStorage, StaleWrite } from "./lib/storage.js"
 import { renamedAccountTypes } from "./lib/validation.js"
 import { hashToken } from "./middleware/session.js"
@@ -222,11 +224,26 @@ export function upgradeDatabase(stored: Database) {
     syncSponsors(stored, measurement)
     const { scans: _, ...noCounts } = emptyMetrics()
     for (const sponsor of measurement.sponsors) sponsor.metrics = { ...noCounts, ...sponsor.metrics }
+    // Methods saved before they were split (the coupon then stood for the
+    // QR, the coupon and the store's visits).
+    for (const holder of [measurement, ...measurement.sponsors]) {
+      if (holder.methods) holder.methods = upgradeMethods(holder.methods)
+      if (holder.confirmedMethods) holder.confirmedMethods = upgradeMethods(holder.confirmedMethods)
+    }
     // Scans by hour gained their day; older ones were on the event's first.
     const event = stored.events[measurement.accountId]?.find((item) => item.id === measurement.eventId)
     for (const slot of measurement.hourlyScans) slot.date ??= event?.date ?? ""
     // Participation records an event no longer needs go on each start.
     if (event) prunePasses(stored, measurement, event)
+  }
+  // E-contracts both sides confirmed before confirmed methods were kept
+  // count the methods they hold as confirmed.
+  for (const agreement of stored.agreements) {
+    if (!agreement.confirmed?.group || !agreement.confirmed?.brand) continue
+    const proposal = acceptedProposal(stored, agreement.id)
+    const share = proposal && agreementShare(stored, proposal)
+    const holder = share && (share.sponsor ?? share.measurement)
+    if (holder?.methods && !holder.confirmedMethods) holder.confirmedMethods = holder.methods
   }
   return stored
 }

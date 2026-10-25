@@ -28,7 +28,7 @@ const sides: { role: Role; eyebrow: string; title: string; points: string[]; sig
     title: t("행사에 꼭 맞는 브랜드를 만나요"),
     points: [
       t("업종 적합도와 실적으로 잘 맞는 브랜드를 추천해요"),
-      t("제안부터 협찬 약속서까지 한곳에서 주고받아요"),
+      t("제안부터 임시 전자 계약서까지 한곳에서 주고받아요"),
       t("현장 QR로 모은 성과를 리포트로 정리해요"),
     ],
     signup: t("학생단체로 가입하기"),
@@ -39,7 +39,7 @@ const sides: { role: Role; eyebrow: string; title: string; points: string[]; sig
     title: t("캠퍼스 현장에서 브랜드 팬을 만나요"),
     points: [
       t("학교 · 거리 · 행사 규모로 학생단체를 찾아요"),
-      t("받은 제안을 수락하고 약속서로 할 일을 정해요"),
+      t("받은 제안을 수락하고 계약서로 할 일을 정해요"),
       t("쿠폰과 매장 방문으로 협찬마다 ROAS를 확인해요"),
     ],
     signup: t("브랜드로 가입하기"),
@@ -61,8 +61,8 @@ const steps: { title: string; detail: string }[] = [
     detail: t("학생단체도 브랜드도 먼저 제안할 수 있어요. 수락하면 날짜가 정해진 협찬이 돼요."),
   },
   {
-    title: t("협찬 약속서로 정리하기"),
-    detail: t("두 쪽이 할 일을 약속서에 적고 함께 확인해요. 끝낸 일은 링크와 사진으로 남겨요."),
+    title: t("임시 전자 계약서로 정리하기"),
+    detail: t("두 쪽이 할 일을 계약서에 적고 함께 확인해요. 끝낸 일은 링크와 사진으로 남겨요."),
   },
   {
     title: t("현장에서 재고 리포트로 보기"),
@@ -125,7 +125,7 @@ export function LandingPage({
       <MeetingHero
         eyebrow="Campus Sponsorship Matching"
         lines={[t("좋은 행사와"), t("좋은 브랜드가"), t("만나는 곳")]}
-        lead={t("행사에 맞는 브랜드 추천부터 제안, 협찬 약속서, 현장 QR 측정과 성과 리포트까지 한곳에서 해요.")}
+        lead={t("행사에 맞는 브랜드 추천부터 제안, 임시 전자 계약서, 현장 QR 측정과 성과 리포트까지 한곳에서 해요.")}
         insight={t("가입은 이메일 인증 한 번이면 돼요.")}
         detail={t("학생단체는 학교 이메일, 브랜드는 회사 이메일로 가입해요. 가입하기 전에 예시 화면으로 먼저 둘러볼 수 있어요.")}
         primary={{ label: t("지금 시작하기"), onClick: () => onSignup() }}

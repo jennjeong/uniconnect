@@ -97,7 +97,20 @@ import type {
 // fits the address, else the address.
 const initialView = entryView(history.state as HistoryEntry | null)
 
-const noMetrics: Metrics = { scans: 0, coupons: 0, visits: 0, samples: 0, stamps: 0, posts: 0 }
+const noMetrics: Metrics = {
+  scans: 0,
+  coupons: 0,
+  visits: 0,
+  samples: 0,
+  stamps: 0,
+  posts: 0,
+  surveys: 0,
+  purchases: 0,
+  giveaways: 0,
+  raffles: 0,
+  signups: 0,
+  experiences: 0,
+}
 
 function App() {
   const [view, setView] = useState<View>(initialView)

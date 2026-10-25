@@ -204,7 +204,7 @@ const en: Record<string, string> = {
   "이미 다른 가게와 연결된 브랜드예요.": "Your brand is already linked to another shop.",
 
   // Sponsorship agreements (routes/agreements.ts)
-  "협찬 약속서를 찾을 수 없어요.": "We couldn't find this sponsorship agreement.",
+  "임시 전자 계약서를 찾을 수 없어요.": "We couldn't find this provisional e-contract.",
   "약속한 일을 찾을 수 없어요.": "We couldn't find that item.",
   "상대가 할 일은 상대만 표시할 수 있어요.": "Only the other side can mark what they do.",
   "약속할 일을 1개부터 12개까지 적어 주세요.": "Please list from 1 to 12 things to do.",
@@ -239,21 +239,25 @@ const en: Record<string, string> = {
   "가게 검색이 너무 많아요. 잠시 후 다시 시도해 주세요.": "Too many shop searches. Please try again in a moment.",
   "주변 가게를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.": "We couldn't load the shops nearby. Please try again in a moment.",
 
-  // Measurement methods (lib/methods.ts, routes/agreements.ts, routes/checkin.ts)
-  "측정 방식을 다시 확인해 주세요.": "Please check the measurement methods again.",
+  // Confirmation methods (lib/methods.ts, routes/agreements.ts, routes/checkin.ts)
+  "협찬 확인 방식을 다시 확인해 주세요.": "Please check the confirmation methods again.",
   "방식마다 현장에서 확인할 쪽을 골라 주세요.": "Please choose which side confirms each method at the venue.",
   "매장 방문은 브랜드 매장에서만 확인할 수 있어요.": "Store visits can only be confirmed at the brand's store.",
-  "측정 방식을 하나 이상 골라 주세요.": "Please choose at least one measurement method.",
-  "같은 측정 방식을 두 번 고를 수 없어요.": "You can't choose the same measurement method twice.",
+  "협찬 확인 방식을 하나 이상 골라 주세요.": "Please choose at least one confirmation method.",
+  "같은 협찬 확인 방식을 두 번 고를 수 없어요.": "You can't choose the same confirmation method twice.",
+  "쿠폰 발급은 QR 체크인과 함께 골라 주세요.": "Please choose the coupon together with the QR check-in.",
+  "매장 방문은 쿠폰 발급과 함께 골라 주세요.": "Please choose store visits together with the coupon.",
+  "이 협찬은 매장 방문을 확인하지 않아요.": "This sponsorship doesn't confirm store visits.",
   "수량은 1부터 500까지 적어 주세요.": "Please enter a quantity from 1 to 500.",
   "한 번에 하나씩 기록해 주세요.": "Please record one at a time.",
-  "행사가 정해진 협찬만 측정 방식을 정할 수 있어요.": "Only a sponsorship with a scheduled event can set measurement methods.",
-  "행사가 시작돼 측정 방식을 더 바꿀 수 없어요.": "The event has begun, so the measurement methods can't change.",
-  "단체 확인 PIN이 맞지 않아요. 협찬 약속서에서 확인해 주세요.":
-    "The group PIN is incorrect. Please check it on the sponsorship agreement.",
+  "행사가 정해진 협찬만 협찬 확인 방식을 정할 수 있어요.": "Only a sponsorship with a scheduled event can set confirmation methods.",
+  "행사가 시작돼 협찬 확인 방식을 더 바꿀 수 없어요.": "The event has begun, so the confirmation methods can't change.",
+  "단체 확인 PIN이 맞지 않아요. 임시 전자 계약서에서 확인해 주세요.":
+    "The group PIN is incorrect. Please check it on the provisional e-contract.",
   "협찬을 찾을 수 없어요. 화면을 새로 고쳐 주세요.": "We couldn't find the sponsorship. Please refresh the page.",
-  "알 수 없는 측정 방식이에요.": "That's not a measurement method we know.",
-  "이 협찬은 이 방식으로 측정하지 않아요.": "This sponsorship isn't measured this way.",
+  "알 수 없는 협찬 확인 방식이에요.": "That's not a confirmation method we know.",
+  "이 협찬은 이 방식으로 확인하지 않아요. 임시 전자 계약서가 확정됐는지 확인해 주세요.":
+    "This sponsorship isn't confirmed this way. Please check that its provisional e-contract is confirmed.",
   "이 방식은 상대 쪽 현장 화면에서 확인해요.": "The other side confirms this method on its own venue page.",
   "되돌릴 기록이 없어요.": "There's nothing to take back.",
 }
