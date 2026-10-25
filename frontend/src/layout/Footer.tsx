@@ -1,6 +1,7 @@
 import { useRef } from "react"
 
 import logo from "../assets/brand/uniconnect_horizontal.svg"
+import { Icon } from "../components/Icon"
 import { Pill } from "../components/Pill"
 import { legalDocs, type LegalKind } from "../data/legal"
 import { RevealTitle } from "../components/RevealText"
@@ -14,12 +15,15 @@ import type { Account, NavLabel, Role } from "../types"
 // Stride's footer from getlayers.ai: a deep blue mesh card where a chrome
 // object settles into the open side as the card scrolls in — here two
 // linked rings, the two sides holding on to each other — with the call to
-// register over it (on the dashboard only); then the site's links and the
-// name as a large silver wordmark on white.
+// register over it (on the introduction, to sign up or get the app, and on
+// the dashboard); then the site's links and the name as a large silver
+// wordmark on white.
 export function Footer({
   role,
   account,
   invite = true,
+  landing = false,
+  onInstall,
   onNavigate,
   onSwitchRole,
   onCreate,
@@ -36,6 +40,10 @@ export function Footer({
   account: Account | null
   // Whether the deep blue card with the call to register comes first.
   invite?: boolean
+  // The card on the introduction: for both sides, to sign up or get the app.
+  landing?: boolean
+  // 앱 다운로드, for the site opened in a browser (none inside the app).
+  onInstall?: () => void
   onNavigate: (label: NavLabel) => void
   onSwitchRole: (role: Role) => void
   onCreate: () => void
@@ -93,16 +101,38 @@ export function Footer({
               accent={1}
               as="h2"
               className="footer-title"
-              lines={students ? [t("함께 만들"), t("협찬이 있나요?")] : [t("학생들의 현장과"), t("이어 볼까요?")]}
+              lines={
+                landing
+                  ? [t("캠퍼스 협찬,"), t("지금 시작해 볼까요?")]
+                  : students
+                    ? [t("함께 만들"), t("협찬이 있나요?")]
+                    : [t("학생들의 현장과"), t("이어 볼까요?")]
+              }
             />
             <p className="footer-lead">
-              {students
-                ? t("행사를 등록하면 잘 맞는 브랜드를 찾아 드리고, 끝난 뒤에는 성과를 리포트로 정리해 드려요.")
-                : t("캠페인을 등록하면 잘 맞는 학생단체를 찾아 드리고, 협찬의 효과를 ROAS로 보여 드려요.")}
+              {landing
+                ? t("학생단체도 브랜드도 이메일 인증 한 번으로 가입해요. 웹에서 바로 쓰고, 원하면 앱으로 설치할 수 있어요.")
+                : students
+                  ? t("행사를 등록하면 잘 맞는 브랜드를 찾아 드리고, 끝난 뒤에는 성과를 리포트로 정리해 드려요.")
+                  : t("캠페인을 등록하면 잘 맞는 학생단체를 찾아 드리고, 협찬의 효과를 ROAS로 보여 드려요.")}
             </p>
-            <Pill arrow="up-right" onClick={onCreate} variant="white">
-              {createLabel(role)}
-            </Pill>
+            {landing ? (
+              <div className="footer-actions">
+                <Pill arrow="up-right" onClick={onSignup} variant="white">
+                  {t("회원가입")}
+                </Pill>
+                {onInstall && (
+                  <Pill className="hero-install" onClick={onInstall} variant="outline-light">
+                    <Icon name="download" size={16} />
+                    {t("앱 다운로드")}
+                  </Pill>
+                )}
+              </div>
+            ) : (
+              <Pill arrow="up-right" onClick={onCreate} variant="white">
+                {createLabel(role)}
+              </Pill>
+            )}
           </div>
         </section>
       )}

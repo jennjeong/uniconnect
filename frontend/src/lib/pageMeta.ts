@@ -6,12 +6,14 @@ import type { View } from "./route"
 // The browser tab title and search description of each screen, so no two
 // screens share them. Descriptions say only what the screen really shows.
 // Screens for one account or one link are kept out of search results
-// (noindex); the catalogs, profiles, FAQ and policies stay findable.
+// (noindex), and so is the dashboard, an app screen that visitors see with
+// example data; the introduction, catalogs, profiles, FAQ and policies stay
+// findable.
 
 export type PageMeta = { title: string; description: string; noindex?: true }
 
 // The pages of the menus that search engines may list.
-const searchable = new Set<NavLabel>(["대시보드", "추천 매칭", "단체 찾기"])
+const searchable = new Set<NavLabel>(["추천 매칭", "단체 찾기"])
 
 const site = "uniconnect"
 const titled = (name: string) => `${name} · ${site}`
@@ -84,6 +86,12 @@ export function pageMeta(
       title: titled(t("페이지를 찾을 수 없어요")),
       description: t("요청한 주소의 페이지가 없어요. 홈이나 주요 메뉴로 이동해 주세요."),
       noindex: true,
+    }
+  }
+  if (view.home) {
+    return {
+      title: t("{site} · 학생단체와 브랜드를 잇는 협찬 매칭", { site }),
+      description: t("학생단체와 브랜드를 잇는 캠퍼스 협찬 매칭 서비스예요. 추천 매칭부터 제안, 협찬 약속서, 현장 QR 측정과 성과 리포트까지 한곳에서 해요."),
     }
   }
   if (view.create) {
@@ -170,10 +178,11 @@ export function pageMeta(
   }
   if (page !== "대시보드") return searchable.has(page) ? pages[page] : { ...pages[page], noindex: true }
   return {
-    title: t("{site} · 학생단체와 브랜드를 잇는 협찬 매칭", { site }),
+    title: titled(t("대시보드")),
     description: students
       ? t("학생단체가 행사와 잘 맞는 브랜드를 찾고, 협찬 제안부터 성과 리포트까지 한곳에서 관리해요.")
       : t("브랜드가 캠페인에 맞는 학생단체를 찾고, 받은 제안과 협찬 성과(ROAS)를 한곳에서 봐요."),
+    noindex: true,
   }
 }
 

@@ -20,6 +20,7 @@ export function NavMenu({
   account,
   badges,
   unreadMessages,
+  onHome,
   onNavigate,
   onSwitchRole,
   onCreate,
@@ -29,6 +30,8 @@ export function NavMenu({
   onOpenFaq,
   onLogin,
   onSignup,
+  onInstall,
+  installable,
   onClose,
 }: {
   role: Role
@@ -36,6 +39,8 @@ export function NavMenu({
   account: Account | null
   badges: Partial<Record<NavLabel, number>>
   unreadMessages: number
+  // The introduction, for visitors.
+  onHome: () => void
   onNavigate: (label: NavLabel) => void
   onSwitchRole: (role: Role) => void
   onCreate: () => void
@@ -45,6 +50,9 @@ export function NavMenu({
   onOpenFaq: () => void
   onLogin: () => void
   onSignup: () => void
+  // 앱 다운로드, whenever the site is open in a browser (lib/install.ts).
+  onInstall: () => void
+  installable: boolean
   onClose: () => void
 }) {
   const closing = useContext(ClosingContext)
@@ -127,9 +135,17 @@ export function NavMenu({
               <button onClick={pick(onOpenFaq)} type="button">
                 FAQ
               </button>
+              {installable && (
+                <button onClick={pick(onInstall)} type="button">
+                  {t("앱 다운로드")}
+                </button>
+              )}
             </>
           ) : (
             <>
+              <button onClick={pick(onHome)} type="button">
+                {t("서비스 소개")}
+              </button>
               <button onClick={pick(onLogin)} type="button">
                 {t("로그인")}
               </button>
@@ -139,6 +155,11 @@ export function NavMenu({
               <button onClick={pick(onOpenFaq)} type="button">
                 FAQ
               </button>
+              {installable && (
+                <button onClick={pick(onInstall)} type="button">
+                  {t("앱 다운로드")}
+                </button>
+              )}
               <span className="nav-menu-roles" aria-label={t("둘러볼 화면")}>
                 {roles.map((item) => (
                   <button

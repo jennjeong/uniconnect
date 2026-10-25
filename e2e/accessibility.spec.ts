@@ -3,7 +3,7 @@ import { expect, test, type Page } from "@playwright/test"
 
 // Automatic accessibility checks (WCAG 2.1 A and AA) on the main screens.
 // Critical and serious problems fail the run; the rest are printed.
-const pages = ["/", "/matches", "/groups", "/faq", "/terms", "/privacy", "/admin", "/check-in/20261012", "/check-in/20261012/staff", "/no-such-page"]
+const pages = ["/", "/dashboard", "/matches", "/groups", "/faq", "/terms", "/privacy", "/admin", "/check-in/20261012", "/check-in/20261012/staff", "/no-such-page"]
 
 async function expectNoBlockingProblems(page: Page, path: string) {
   await page.goto(path)
@@ -58,4 +58,24 @@ test("an open popup holds the keyboard and passes the checks", async ({ page }) 
   await page.keyboard.press("Escape")
   await expect(dialog).toBeHidden()
   await expect(opener).toBeFocused()
+})
+
+// 앱 다운로드 on the introduction opens the guide where the browser offers no
+// install dialog of its own (here the page never hears of one).
+test("the app download guide opens from the introduction and passes the checks", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.addEventListener("beforeinstallprompt", (event) => event.stopImmediatePropagation(), true)
+  })
+  await page.goto("/")
+  await page.getByRole("button", { name: "앱 다운로드" }).first().click()
+  const dialog = page.getByRole("dialog", { name: "앱 다운로드" })
+  await expect(dialog).toBeVisible()
+  await expect(dialog).toContainText("주소창 오른쪽의 설치 아이콘을 눌러요.")
+
+  const results = await new AxeBuilder({ page }).include("[role=dialog]").withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze()
+  const blocking = results.violations.filter((item) => item.impact === "critical" || item.impact === "serious")
+  expect(blocking.map((item) => `${item.id} (${item.nodes.length})`)).toEqual([])
+
+  await dialog.getByRole("button", { name: "알겠어요" }).click()
+  await expect(dialog).toBeHidden()
 })

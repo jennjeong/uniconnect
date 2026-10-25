@@ -3,6 +3,7 @@ import type { View } from "./route"
 // One view of every kind, for the address tests (route.test.ts and
 // appPaths.sync.test.ts).
 export const sampleViews: View[] = [
+  { page: "대시보드", home: true },
   { page: "대시보드" },
   { page: "추천 매칭" },
   { page: "추천 매칭", detail: "afternoon-coffee" },

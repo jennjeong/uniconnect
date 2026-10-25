@@ -18,6 +18,15 @@ async function logIn(page: Page, role: "학생단체" | "브랜드", email: stri
 test("visitors browse the site, its help and its 404 page", async ({ page }) => {
   await page.goto("/")
   await expect(page).toHaveTitle(/uniconnect/)
+  // The introduction leads to the example dashboard, marked as an example,
+  // and back.
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("좋은 행사와")
+  await page.getByRole("button", { name: "예시 화면 둘러보기" }).click()
+  await expect(page).toHaveURL(/\/dashboard$/)
+  await expect(page.locator(".demo-chip")).toHaveText("예시 화면")
+  await page.goBack()
+  await expect(page).toHaveURL(/\/$/)
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("좋은 행사와")
   await page.goto("/matches")
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
   await page.goto("/terms")
@@ -26,6 +35,29 @@ test("visitors browse the site, its help and its 404 page", async ({ page }) => 
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
   await page.goto("/no-such-page")
   await expect(page.getByText("페이지를 찾을 수 없어요").first()).toBeVisible()
+})
+
+test("a visitor sees the nearby tabs as blurred examples", async ({ page }) => {
+  // Nearby shops and groups depend on the account's campus or store.
+  await page.goto("/matches")
+  await page.getByRole("tab", { name: "가까운 순" }).click()
+  await expect(page.getByText("학교마다 근처 가게가 달라요")).toBeVisible()
+  await expect(page.locator(".demo-preview-content")).toHaveAttribute("inert", "")
+  await page.goto("/groups")
+  await page.getByRole("tab", { name: "가까운 순" }).click()
+  await expect(page.getByText("매장마다 가까운 학생단체가 달라요")).toBeVisible()
+  await page.locator(".demo-preview-note").getByRole("button", { name: "회원가입" }).click()
+  await expect(page.getByRole("dialog")).toBeVisible()
+})
+
+test("a member who opens the introduction goes on to the dashboard", async ({ page }) => {
+  await page.goto("/")
+  await logIn(page, "학생단체", "muse@syu.ac.kr")
+  await expect(page).toHaveURL(/\/dashboard$/)
+  await page.goto("/")
+  await expect(page).toHaveURL(/\/dashboard$/)
+  await expect(page.locator(".hero-eyebrow")).toContainText("반가워요")
+  await expect(page.locator(".demo-chip")).toHaveCount(0)
 })
 
 test("a student group proposes and the brand accepts", async ({ browser }) => {
@@ -139,7 +171,10 @@ test("the language is set in 내 정보, and the page stays where it was", async
   await expect(page.locator("html")).toHaveAttribute("lang", "ko")
 })
 
-test("가까운 순 looks around the school for real shops, and says so while the map isn't connected", async ({ page }) => {
+test("가까운 순 looks around the group's school for real shops, and says so while the map isn't connected", async ({ page }) => {
+  // A member's own campus; visitors see this tab blurred, as an example.
+  await page.goto("/")
+  await logIn(page, "학생단체", "muse@syu.ac.kr")
   await page.goto("/matches")
   await page.getByRole("tab", { name: "가까운 순" }).click()
   // Every kind at first.
@@ -332,34 +367,27 @@ test("visitors see a partner's reviews, and a group reviews the brand after its 
   await expect(page.locator(".profile-panel").locator(".profile-review, .review-card")).toHaveCount(3)
 })
 
-test("the site opens as a web page with nothing to install, and an old service worker goes", async ({ page, request }) => {
-  // No manifest, so browsers offer no install; sw.js only removes the worker
-  // earlier versions registered.
-  expect((await request.get("/manifest.webmanifest")).status()).toBe(404)
-  expect(await (await request.get("/sw.js")).text()).toContain("unregister")
+test("the app can be installed, and the calendar gives its dates to calendar apps", async ({ page, request }) => {
+  // The manifest, its icons and the service worker are served; links to the
+  // site ask to open in the browser, not the installed app.
+  const manifest = (await (await request.get("/manifest.webmanifest")).json()) as {
+    name: string
+    display: string
+    handle_links: string
+    icons: { src: string; sizes: string }[]
+  }
+  expect([manifest.name, manifest.display, manifest.handle_links]).toEqual(["uniconnect", "standalone", "not-preferred"])
+  expect(manifest.icons.map((icon) => icon.sizes)).toEqual(["192x192", "512x512", "512x512"])
+  for (const icon of manifest.icons) {
+    expect((await request.get(`/${icon.src}`)).headers()["content-type"]).toBe("image/png")
+  }
+  expect(await (await request.get("/sw.js")).text()).toContain("/api/")
   await page.goto("/")
-  await expect(page.locator('link[rel="manifest"]')).toHaveCount(0)
-  await expect(page.getByRole("button", { name: "앱 다운로드" })).toHaveCount(0)
-  expect(await page.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length)).toBe(0)
+  await expect(page.locator('link[rel="manifest"]')).toHaveAttribute("href", "/manifest.webmanifest")
+  // The built app registers the service worker.
+  const worker = await page.evaluate(async () => (await navigator.serviceWorker.ready).active?.scriptURL ?? "")
+  expect(worker).toMatch(/\/sw\.js$/)
 
-  // A visitor from when the site was installable: the old worker and the
-  // copies it kept are gone after the next visit.
-  await page.evaluate(async () => {
-    await navigator.serviceWorker.register("/sw.js")
-    await caches.open("uniconnect-shell-v1")
-  })
-  await page.reload()
-  await expect
-    .poll(() =>
-      page.evaluate(async () => ({
-        workers: (await navigator.serviceWorker.getRegistrations()).length,
-        caches: (await caches.keys()).filter((key) => key.startsWith("uniconnect-")).length,
-      })),
-    )
-    .toEqual({ workers: 0, caches: 0 })
-})
-
-test("the calendar gives its dates to calendar apps", async ({ page, request }) => {
   // A group's coming event, as a calendar file from 내 행사.
   const email = "e2e-calendar@syu.ac.kr"
   const code = (await (await request.post("/api/auth/email-code", { data: { role: "학생단체", email } })).json()) as { devCode: string }

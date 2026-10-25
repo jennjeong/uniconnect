@@ -46,6 +46,8 @@ export function DashboardPage({
   onCancelProposal,
   onOpenReport,
   onOpenFaq,
+  onInstall,
+  demo = false,
 }: {
   // The logged-in group's name for the greeting.
   accountName?: string
@@ -68,6 +70,10 @@ export function DashboardPage({
   onCancelProposal: (match: Match) => void
   onOpenReport: () => void
   onOpenFaq: () => void
+  // 앱 다운로드 on the hero; absent inside the installed app.
+  onInstall?: () => void
+  // A visitor, shown the demo account's data: the hero says it is an example.
+  demo?: boolean
 }) {
   const next = nextEvent(events)
   const nextDay = next ? fromIsoDate(next.date) : undefined
@@ -115,7 +121,13 @@ export function DashboardPage({
   return (
     <div className="dashboard">
       <MeetingHero
-        eyebrow={accountName ? t("반가워요, {name}", { name: accountName }) : semesterLabel()}
+        eyebrow={
+          accountName
+            ? t("반가워요, {name}", { name: accountName })
+            : demo
+              ? t("예시 화면 · {semester}", { semester: semesterLabel() })
+              : semesterLabel()
+        }
         lines={[t("좋은 행사는,"), t("좋은 파트너를"), t("만날 때 커져요.")]}
         stats={[
           { value: t("{count}곳", { count: candidates.length }), label: t("추천 브랜드") },
@@ -125,6 +137,7 @@ export function DashboardPage({
         insight={t("다가오는 행사와 잘 맞는 브랜드 {count}곳을 찾았어요.", { count: matches.length })}
         detail={t("학생단체와 브랜드가 맞닿는 곳에서 협찬이 시작돼요. 일치율이 높은 브랜드부터 제안해 보세요.")}
         primary={{ label: t("추천 매칭 확인하기"), onClick: () => onNavigate("추천 매칭") }}
+        onInstall={onInstall}
       />
 
       <LogoMarquee

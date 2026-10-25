@@ -9,9 +9,11 @@ import type { NavLabel, Role } from "../types"
 // the way home and the role's own pages.
 export function NotFoundPage({
   role,
+  onHome,
   onNavigate,
 }: {
   role: Role
+  onHome: () => void
   onNavigate: (label: NavLabel) => void
 }) {
   return (
@@ -21,7 +23,7 @@ export function NotFoundPage({
         title={t("페이지를 찾을 수 없어요")}
         description={t("주소가 바뀌었거나 없는 페이지예요. 홈이나 아래 메뉴에서 이어서 둘러보세요.")}
         actions={
-          <Pill arrow="right" onClick={() => onNavigate("대시보드")}>
+          <Pill arrow="right" onClick={onHome}>
             {t("홈으로 가기")}
           </Pill>
         }

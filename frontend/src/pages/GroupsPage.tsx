@@ -1,10 +1,12 @@
 import { useState, type CSSProperties } from "react"
 
 import { CatalogSearch } from "../components/CatalogSearch"
+import { DemoPreview } from "../components/DemoPreview"
 import { PageIntro } from "../components/PageIntro"
 import { ProposalControl } from "../components/ProposalControl"
 import { TabBar } from "../components/TabBar"
 import { WorkCard } from "../components/WorkCard"
+import { groupFields } from "../data/industries"
 import { t } from "../i18n"
 import { todayIso } from "../lib/date"
 import { nearestFirst, shownTags } from "../lib/distance"
@@ -38,15 +40,6 @@ const tabIntro: Record<Tab, { title: string; caption: string }> = {
   },
 }
 
-// Order and names of the field filters.
-const fieldLabels: [Industry, string][] = [
-  ["performance", "공연·행사"],
-  ["content", "콘텐츠"],
-  ["sports", "스포츠"],
-  ["wellness", "봉사"],
-  ["education", "학술"],
-]
-
 // Student groups brands can sponsor, by tab.
 export function GroupsPage({
   matches,
@@ -56,6 +49,9 @@ export function GroupsPage({
   onOpenDetail,
   onPropose,
   onCancelProposal,
+  visitor,
+  onLogin,
+  onSignup,
 }: {
   // Top picks for this brand.
   matches: Match[]
@@ -67,6 +63,10 @@ export function GroupsPage({
   onOpenDetail: (match: Match) => void
   onPropose: (match: Match) => void
   onCancelProposal: (match: Match) => void
+  // Logged out: 가까운 순 measures from the demo brand's store, so it reads as an example.
+  visitor: boolean
+  onLogin: () => void
+  onSignup: () => void
 }) {
   const [tab, setTab] = useState<Tab>("추천")
   const [field, setField] = useState<Industry>("performance")
@@ -76,7 +76,7 @@ export function GroupsPage({
     setDirection(tabs.indexOf(next) >= tabs.indexOf(tab) ? "forward" : "back")
     setTab(next)
   }
-  const fields = fieldLabels.filter(([value]) => groups.some((group) => group.industry === value))
+  const fields = groupFields.filter(([value]) => groups.some((group) => group.industry === value))
   const today = todayIso()
   // Words to find and the filters, kept across the tabs.
   const [query, setQuery] = useState("")
@@ -193,48 +193,56 @@ export function GroupsPage({
         </div>
       </div>
 
-      {shown.length === 0 ? (
-        <p className="day-empty" key={tab}>
-          {t("조건에 맞는 학생단체가 없어요.")}
-        </p>
-      ) : (
-        <ul
-          className="work-grid stagger slide"
-          data-direction={direction}
-          key={tab === "분야별" ? `${tab}-${field}` : tab}
-        >
-          {shown.map((group, index) => (
-            <li key={group.id} style={{ "--i": index } as CSSProperties}>
-              <WorkCard
-                match={group}
-                meta={`${group.school} · ${t(group.category)}`}
-                onOpenDetail={() => onOpenDetail(group)}
-                date={group.eventDate}
-                tags={
-                  <>
-                    {group.eventName && <span className="tag-event">{group.eventName}</span>}
-                    {shownTags(group).map((tag) => (
-                      <span key={tag}>{tag}</span>
-                    ))}
-                  </>
-                }
-              >
-                <button className="cancel-button" onClick={() => onOpenDetail(group)} type="button">
-                  {t("상세 정보")}
-                </button>
-                <ProposalControl
-                  done={proposals.includes(group.id)}
-                  status={statuses[group.id]}
-                  label={t("협찬 제안하기")}
-                  className="primary-button"
-                  onPropose={() => onPropose(group)}
-                  onCancel={() => onCancelProposal(group)}
-                />
-              </WorkCard>
-            </li>
-          ))}
-        </ul>
-      )}
+      <DemoPreview
+        active={visitor && tab === "가까운 순"}
+        title={t("매장마다 가까운 학생단체가 달라요")}
+        text={t("지금은 데모 브랜드 매장에서 가까운 순서를 예시로 보여 드려요. 로그인하면 우리 매장 기준으로 볼 수 있어요.")}
+        onLogin={onLogin}
+        onSignup={onSignup}
+      >
+        {shown.length === 0 ? (
+          <p className="day-empty" key={tab}>
+            {t("조건에 맞는 학생단체가 없어요.")}
+          </p>
+        ) : (
+          <ul
+            className="work-grid stagger slide"
+            data-direction={direction}
+            key={tab === "분야별" ? `${tab}-${field}` : tab}
+          >
+            {shown.map((group, index) => (
+              <li key={group.id} style={{ "--i": index } as CSSProperties}>
+                <WorkCard
+                  match={group}
+                  meta={`${group.school} · ${t(group.category)}`}
+                  onOpenDetail={() => onOpenDetail(group)}
+                  date={group.eventDate}
+                  tags={
+                    <>
+                      {group.eventName && <span className="tag-event">{group.eventName}</span>}
+                      {shownTags(group).map((tag) => (
+                        <span key={tag}>{tag}</span>
+                      ))}
+                    </>
+                  }
+                >
+                  <button className="cancel-button" onClick={() => onOpenDetail(group)} type="button">
+                    {t("상세 정보")}
+                  </button>
+                  <ProposalControl
+                    done={proposals.includes(group.id)}
+                    status={statuses[group.id]}
+                    label={t("협찬 제안하기")}
+                    className="primary-button"
+                    onPropose={() => onPropose(group)}
+                    onCancel={() => onCancelProposal(group)}
+                  />
+                </WorkCard>
+              </li>
+            ))}
+          </ul>
+        )}
+      </DemoPreview>
     </section>
   )
 }

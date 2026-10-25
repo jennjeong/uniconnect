@@ -31,8 +31,17 @@ export type IconName =
   | "search"
   | "pin"
   | "share"
+  | "download"
 
 const icons: Record<IconName, ReactNode> = {
+  // An arrow down into a tray, for getting the app.
+  download: (
+    <>
+      <path d="M12 4v11" />
+      <path d="m7 10 5 5 5-5" />
+      <path d="M5 20h14" />
+    </>
+  ),
   // Three joined dots, for passing a page on.
   share: (
     <>

@@ -42,6 +42,8 @@ describe("the server's page list matches the screens", () => {
 
   test.each([
     "/",
+    "/dashboard",
+    "/dashboard/x",
     "/matches",
     "/groups/abc/",
     "/new",
@@ -83,6 +85,9 @@ describe("Vercel's rewrites match the server's page list", () => {
 
   test.each([
     "/",
+    "/dashboard",
+    "/dashboard/",
+    "/dashboard/x",
     "/matches",
     "/matches/abc",
     "/groups/abc/",

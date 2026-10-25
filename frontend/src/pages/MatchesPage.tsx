@@ -1,11 +1,13 @@
 import { useState, type CSSProperties } from "react"
 
 import { CatalogSearch } from "../components/CatalogSearch"
+import { DemoPreview } from "../components/DemoPreview"
 import { NearbyPlaces } from "../components/NearbyPlaces"
 import { PageIntro } from "../components/PageIntro"
 import { ProposalControl } from "../components/ProposalControl"
 import { TabBar } from "../components/TabBar"
 import { WorkCard } from "../components/WorkCard"
+import { brandIndustries } from "../data/industries"
 import { t } from "../i18n"
 import { shownTags } from "../lib/distance"
 import { matchesQuery } from "../lib/search"
@@ -38,17 +40,6 @@ const tabIntro: Record<Tab, { title: string; caption: string }> = {
   },
 }
 
-// Order and names of the industry filters.
-const industryLabels: [Industry, string][] = [
-  ["cafe", "카페·식음료"],
-  ["beauty", "뷰티"],
-  ["photo", "사진"],
-  ["content", "영상·콘텐츠"],
-  ["wellness", "웰니스·F&B"],
-  ["education", "교육"],
-  ["sports", "스포츠"],
-]
-
 // Brands for student groups to propose to, by tab.
 export function MatchesPage({
   matches,
@@ -59,6 +50,9 @@ export function MatchesPage({
   onPropose,
   onCancelProposal,
   onInvite,
+  visitor,
+  onLogin,
+  onSignup,
 }: {
   // Top picks for the group's events.
   matches: Match[]
@@ -71,6 +65,10 @@ export function MatchesPage({
   onCancelProposal: (match: Match) => void
   // Invites a shop from 가까운 순 (true once the invitation exists).
   onInvite: (place: NearbyPlace) => Promise<boolean>
+  // Logged out: 가까운 순 shows the demo group's campus, so it reads as an example.
+  visitor: boolean
+  onLogin: () => void
+  onSignup: () => void
 }) {
   const [tab, setTab] = useState<Tab>("추천")
   // Cards slide in from the side the picked tab or chip lies on.
@@ -79,7 +77,7 @@ export function MatchesPage({
     setDirection(tabs.indexOf(next) >= tabs.indexOf(tab) ? "forward" : "back")
     setTab(next)
   }
-  const industries = industryLabels.filter(([industry]) =>
+  const industries = brandIndustries.filter(([industry]) =>
     brands.some((brand) => brand.industry === industry),
   )
   const [industry, setIndustry] = useState<Industry>("cafe")
@@ -148,15 +146,23 @@ export function MatchesPage({
 
       {/* The nearest are real shops from Kakao, mostly not on uniconnect yet, in their own list. */}
       {tab === "가까운 순" ? (
-        <NearbyPlaces
-          brands={brands}
-          onCancelProposal={onCancelProposal}
-          onInvite={onInvite}
-          onOpenDetail={onOpenDetail}
-          onPropose={onPropose}
-          proposals={proposals}
-          statuses={statuses}
-        />
+        <DemoPreview
+          active={visitor}
+          title={t("학교마다 근처 가게가 달라요")}
+          text={t("지금은 데모 단체의 학교 근처 가게를 예시로 보여 드려요. 로그인하면 우리 학교 근처 가게를 볼 수 있어요.")}
+          onLogin={onLogin}
+          onSignup={onSignup}
+        >
+          <NearbyPlaces
+            brands={brands}
+            onCancelProposal={onCancelProposal}
+            onInvite={onInvite}
+            onOpenDetail={onOpenDetail}
+            onPropose={onPropose}
+            proposals={proposals}
+            statuses={statuses}
+          />
+        </DemoPreview>
       ) : shown.length === 0 && query.trim() ? (
         <p className="day-empty">{t("찾는 브랜드가 없어요. 다른 낱말로 찾아보세요.")}</p>
       ) : (
