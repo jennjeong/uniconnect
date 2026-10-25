@@ -1,17 +1,31 @@
+import { useEffect, useState } from "react"
+
+import { api, errorMessage } from "../api"
 import logo from "../assets/brand/uniconnect_horizontal.svg"
 import { PasswordField } from "../components/PasswordField"
 import { VenueCounters } from "../components/VenueCounters"
 import { useVenueSession } from "../hooks/useVenueSession"
 import { t } from "../i18n"
 import { formatFullDate } from "../lib/date"
+import type { CheckInInfo } from "../types"
 
 // The student group's staff open /check-in/<code>/group on their own device:
-// with the group's venue PIN (on its agreements), they confirm what the
-// sponsorships' measurement methods give the group to confirm, such as booth
-// stamps or SNS posts, for each sponsor.
+// the event shows at once, as on the staff page, so they know it is the
+// right one; with the group's venue PIN (on its agreements) they confirm
+// what the sponsorships' measurement methods give the group to confirm, such
+// as booth stamps or SNS posts, for each sponsor.
 export function GroupCheckInPage({ code }: { code: string }) {
+  const [info, setInfo] = useState<CheckInInfo | null>(null)
+  const [infoError, setInfoError] = useState("")
   const venue = useVenueSession(code, "group")
   const shares = venue.session?.shares.filter((share) => share.kinds.length > 0) ?? []
+
+  useEffect(() => {
+    api
+      .checkIn(code)
+      .then(setInfo)
+      .catch((caught) => setInfoError(errorMessage(caught)))
+  }, [code])
 
   return (
     <div className="checkin">
@@ -21,8 +35,13 @@ export function GroupCheckInPage({ code }: { code: string }) {
 
       <main className="checkin-card">
         <span className="checkin-kicker">{t("학생단체 현장 확인")}</span>
-        <h1>{venue.session?.eventName ?? t("현장 확인")}</h1>
-        {venue.session && <p className="checkin-date">{formatFullDate(venue.session.eventDate)}</p>}
+        <h1>{info?.eventName ?? t("현장 확인")}</h1>
+        {info && (
+          <p className="checkin-date">
+            {info.groupName && `${info.groupName} · `}
+            {formatFullDate(info.eventDate)}
+          </p>
+        )}
         <p className="checkin-staff">
           {t("협찬 약속서에서 우리 단체가 확인하기로 한 측정 방식을 여기서 기록해요. 단체 확인 PIN은 협찬 약속서와 성과의 현장 QR에서 볼 수 있어요.")}
         </p>
@@ -50,9 +69,9 @@ export function GroupCheckInPage({ code }: { code: string }) {
           </section>
         ))}
 
-        {venue.error && (
+        {(infoError || venue.error) && (
           <p className="form-error" role="alert">
-            {venue.error}
+            {infoError || venue.error}
           </p>
         )}
       </main>
