@@ -606,10 +606,21 @@ button.nav-pill:hover {
   min-height: 0;
   flex: 1;
   flex-direction: column;
-  justify-content: center;
   gap: 32px;
   padding: 24px 0;
   overflow-y: auto;
+}
+
+/* Centred while it fits. Unlike justify-content: center, which pushes the
+   first pages above the top where scrolling can't reach, auto margins
+   shrink to nothing on a short screen (a phone held sideways, a page
+   zoomed in), so the menu starts at its first page and scrolls. */
+.nav-menu-body > :first-child {
+  margin-top: auto;
+}
+
+.nav-menu-body > :last-child {
+  margin-bottom: auto;
 }
 
 .nav-menu-list {
