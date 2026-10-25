@@ -63,7 +63,7 @@ function opened(req: Request) {
   const database = getDatabase()
   const proposal = acceptedProposal(database, String(req.params.id))
   const side = proposal && sideIn(proposal, account)
-  if (!proposal || !side) throw new HttpError(404, "협찬 약속서를 찾을 수 없어요.")
+  if (!proposal || !side) throw new HttpError(404, "임시 전자 계약서를 찾을 수 없어요.")
   return { account, database, proposal, side }
 }
 
@@ -146,25 +146,26 @@ agreementsRouter.put("/:id/items", async (req, res) => {
   if (changed) {
     void notify(
       side === "group" ? proposal.brand.account : proposal.group.account,
-      "협찬 약속서가 바뀌었어요",
-      [`${account.name}에서 '${proposal.eventName}' 협찬 약속서를 고쳤어요. 바뀐 내용을 보고 다시 확인해 주세요.`],
+      "임시 전자 계약서가 바뀌었어요",
+      [`${account.name}에서 '${proposal.eventName}' 임시 전자 계약서를 고쳤어요. 바뀐 내용을 보고 다시 확인해 주세요.`],
       `/agreements/${encodeURIComponent(agreement.id)}`,
     )
   }
   res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 
-// Either side sets how the sponsorship is measured at the event and which
-// side confirms each method there, until the event begins (lib/methods.ts).
-// Like the items, a change asks both sides to confirm again.
+// Either side sets how the sponsorship is confirmed at the event (협찬 확인
+// 방식) and which side confirms each method there, either or both, until the
+// event begins (lib/methods.ts). Like the items, a change asks both sides to
+// confirm again; the methods count once both have.
 agreementsRouter.put("/:id/methods", async (req, res) => {
   const { account, database, proposal, side } = opened(req)
   const methods = parseMethods(req.body?.methods)
   const sponsored = sponsoredEvent(database, proposal)
   if (sponsored) ensureMeasurement(database, sponsored.owner.id, sponsored.event)
   const share = agreementShare(database, proposal)
-  if (!share) throw new HttpError(409, "행사가 정해진 협찬만 측정 방식을 정할 수 있어요.")
-  if (share.event.date <= todayInKorea()) throw new HttpError(409, "행사가 시작돼 측정 방식을 더 바꿀 수 없어요.")
+  if (!share) throw new HttpError(409, "행사가 정해진 협찬만 협찬 확인 방식을 정할 수 있어요.")
+  if (share.event.date <= todayInKorea()) throw new HttpError(409, "행사가 시작돼 협찬 확인 방식을 더 바꿀 수 없어요.")
   const { agreement } = agreementFor(database, proposal)
   const changed = JSON.stringify(methods) !== JSON.stringify(methodsOf(share.measurement, share.sponsor))
   if (share.sponsor) share.sponsor.methods = methods
@@ -177,27 +178,39 @@ agreementsRouter.put("/:id/methods", async (req, res) => {
   if (changed) {
     void notify(
       side === "group" ? proposal.brand.account : proposal.group.account,
-      "협찬 약속서가 바뀌었어요",
-      [`${account.name}에서 '${proposal.eventName}' 협찬의 측정 방식을 바꿨어요. 바뀐 내용을 보고 다시 확인해 주세요.`],
+      "임시 전자 계약서가 바뀌었어요",
+      [`${account.name}에서 '${proposal.eventName}' 협찬의 협찬 확인 방식을 바꿨어요. 바뀐 내용을 보고 다시 확인해 주세요.`],
       `/agreements/${encodeURIComponent(agreement.id)}`,
     )
   }
   res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 
-// A side confirms the items as they stand; the other side hears about it.
+// A side confirms the items and methods as they stand; the other side hears
+// about it. Once both have, the methods as they stand are the ones that
+// count at the event and in the results (`confirmedMethods`).
 agreementsRouter.post("/:id/confirm", async (req, res) => {
   const { account, database, proposal, side } = opened(req)
   const { agreement } = agreementFor(database, proposal)
   const now = new Date().toISOString()
   agreement.confirmed[side] = now
   agreement.updatedAt = now
-  await saveDatabase()
   const both = Boolean(agreement.confirmed.group && agreement.confirmed.brand)
+  const sponsored = sponsoredEvent(database, proposal)
+  if (both && sponsored) {
+    ensureMeasurement(database, sponsored.owner.id, sponsored.event)
+    const share = agreementShare(database, proposal)
+    if (share) {
+      const methods = methodsOf(share.measurement, share.sponsor)
+      if (share.sponsor) share.sponsor.confirmedMethods = methods
+      else share.measurement.confirmedMethods = methods
+    }
+  }
+  await saveDatabase()
   void notify(
     side === "group" ? proposal.brand.account : proposal.group.account,
-    both ? "협찬 약속서를 양쪽 모두 확인했어요" : "협찬 약속서를 확인해 주세요",
-    [`${account.name}에서 '${proposal.eventName}' 협찬 약속서를 확인했어요.`],
+    both ? "임시 전자 계약서를 양쪽 모두 확인했어요" : "임시 전자 계약서를 확인해 주세요",
+    [`${account.name}에서 '${proposal.eventName}' 임시 전자 계약서를 확인했어요.`],
     `/agreements/${encodeURIComponent(agreement.id)}`,
   )
   res.json({ agreement: agreementView(database, agreement, proposal, side) })

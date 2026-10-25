@@ -53,6 +53,12 @@ describe("sponsorship results", () => {
       samples: 40,
       stamps: 0,
       posts: 5,
+      surveys: 0,
+      purchases: 0,
+      giveaways: 0,
+      raffles: 0,
+      signups: 0,
+      experiences: 0,
       roas: 130,
     })
   })

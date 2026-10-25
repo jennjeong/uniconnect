@@ -5,7 +5,16 @@ import type { Request } from "express"
 
 import { HttpError } from "../lib/errors.js"
 import { assertOpen, checkInKinds, eventOf, parseKind, passLimit, recordMetric } from "../lib/measurements.js"
-import { isVenueKind, methodKinds, methodsOf, parseAmount, usesCoupon, venueMetrics } from "../lib/methods.js"
+import {
+  activeMethodsOf,
+  confirmsAt,
+  isVenueKind,
+  methodKinds,
+  parseAmount,
+  usesMethod,
+  venueCountsOf,
+  venueMetrics,
+} from "../lib/methods.js"
 import { text } from "../lib/validation.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -25,16 +34,16 @@ function measurementFor(code: string) {
 
 // The coupons participants can take: one per sponsor once brands sponsor
 // the event (by the sponsorship's id), else the event's own ("event"); only
-// those measured by the coupon (lib/methods.ts).
+// those whose confirmed methods include the coupon (lib/methods.ts).
 const eventCoupon = "event"
 
 function couponsOf(measurement: Measurement) {
   if (measurement.sponsors.length) {
     return measurement.sponsors
-      .filter((sponsor) => usesCoupon(methodsOf(measurement, sponsor)))
+      .filter((sponsor) => usesMethod(activeMethodsOf(measurement, sponsor), "coupon"))
       .map((sponsor) => ({ id: sponsor.id, ...sponsor.coupon }))
   }
-  return usesCoupon(methodsOf(measurement)) ? [{ id: eventCoupon, ...measurement.goals.coupon }] : []
+  return usesMethod(activeMethodsOf(measurement), "coupon") ? [{ id: eventCoupon, ...measurement.goals.coupon }] : []
 }
 
 // A pass's coupon by its id: the event's on the pass itself, a sponsor's
@@ -160,6 +169,9 @@ checkInRouter.post("/:code/staff/visits", async (req, res) => {
   const { measurement, event } = measurementFor(req.params.code)
   assertOpen(getDatabase(), measurement, event, "visits")
   const sponsor = staffShare(req, measurement)
+  if (!usesMethod(activeMethodsOf(measurement, sponsor), "visit")) {
+    throw new HttpError(409, "이 협찬은 매장 방문을 확인하지 않아요.")
+  }
   const couponId = sponsor?.id ?? eventCoupon
   const number = text(req.body?.coupon).toUpperCase()
   const taken = number
@@ -215,28 +227,23 @@ function staffShare(req: Request, measurement: Measurement): EventSponsor | unde
 function checkGroupPin(req: Request, measurement: Measurement) {
   checkPinLimits(req)
   if (text(req.body?.pin) !== measurement.groupPin) {
-    refusePin(req, "단체 확인 PIN이 맞지 않아요. 협찬 약속서에서 확인해 주세요.")
+    refusePin(req, "단체 확인 PIN이 맞지 않아요. 임시 전자 계약서에서 확인해 주세요.")
   }
 }
 
-// One share as a venue page shows it: whose it is, the methods this side
-// confirms there, and the counts so far.
+// One share as a venue page shows it: whose it is, the confirmed methods
+// this side confirms there (alone or with the other side), and the counts
+// so far.
 function venueShare(measurement: Measurement, sponsor: EventSponsor | undefined, side: ChatSide) {
   const counts = sponsor?.metrics ?? measurement.metrics
   return {
     id: sponsor?.id ?? eventCoupon,
     brandName: sponsor?.brandName ?? null,
     store: (sponsor?.coupon ?? measurement.goals.coupon).store,
-    kinds: methodsOf(measurement, sponsor)
-      .filter((method) => method.side === side)
+    kinds: activeMethodsOf(measurement, sponsor)
+      .filter((method) => confirmsAt(method, side))
       .map((method) => method.kind),
-    counts: {
-      coupons: counts.coupons,
-      visits: counts.visits,
-      samples: counts.samples,
-      stamps: counts.stamps,
-      posts: counts.posts,
-    },
+    counts: { coupons: counts.coupons, visits: counts.visits, ...venueCountsOf(counts) },
   }
 }
 
@@ -262,8 +269,9 @@ checkInRouter.post("/:code/group/session", (req, res) => {
 })
 
 // A venue page records what its side confirms by one of the share's
-// methods: samples handed out, a booth visit stamped, an SNS post or survey
-// checked, or takes back a mistake (a negative amount, never below zero).
+// confirmed methods (samples handed out, a booth visit stamped, a post or a
+// survey checked, a purchase, goods given, a raffle entry, a sign-up, a
+// try-out), or takes back a mistake (a negative amount, never below zero).
 // Only on the event's days and the day after, except the demo accounts'.
 async function recordAtVenue(req: Request, side: ChatSide) {
   recordsPerClient.take(clientKey(req))
@@ -279,10 +287,12 @@ async function recordAtVenue(req: Request, side: ChatSide) {
     }
   }
   const kind = methodKinds.find((item) => item === req.body?.method)
-  if (!kind || !isVenueKind(kind)) throw new HttpError(404, "알 수 없는 측정 방식이에요.")
-  const method = methodsOf(measurement, sponsor).find((item) => item.kind === kind)
-  if (!method) throw new HttpError(409, "이 협찬은 이 방식으로 측정하지 않아요.")
-  if (method.side !== side) throw new HttpError(403, "이 방식은 상대 쪽 현장 화면에서 확인해요.")
+  if (!kind || !isVenueKind(kind)) throw new HttpError(404, "알 수 없는 협찬 확인 방식이에요.")
+  const method = activeMethodsOf(measurement, sponsor).find((item) => item.kind === kind)
+  if (!method) {
+    throw new HttpError(409, "이 협찬은 이 방식으로 확인하지 않아요. 임시 전자 계약서가 확정됐는지 확인해 주세요.")
+  }
+  if (!confirmsAt(method, side)) throw new HttpError(403, "이 방식은 상대 쪽 현장 화면에서 확인해요.")
   const metric = venueMetrics[kind]
   assertOpen(getDatabase(), measurement, event, metric)
   const amount = parseAmount(kind, req.body?.amount)

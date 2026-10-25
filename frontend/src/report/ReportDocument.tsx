@@ -32,7 +32,7 @@ export function VenueCounts({
 }: {
   kinds: MetricKind[]
   counts: Partial<Record<MetricKind, number>>
-  sponsors?: { id: string; brandName: string; samples: number; stamps: number; posts: number }[]
+  sponsors?: ({ id: string; brandName: string } & Partial<Record<MetricKind, number>>)[]
 }) {
   if (kinds.length === 0) return null
   const lines = (sponsors ?? []).map((sponsor) => ({ ...sponsor, summary: venueSummary(sponsor) })).filter((sponsor) => sponsor.summary)

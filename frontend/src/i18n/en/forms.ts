@@ -32,7 +32,7 @@ const en: Record<string, string> = {
   직책: "Position",
   "휴대폰 번호": "Mobile number",
   "예) 홍길동": "e.g. Gildong Hong",
-  "협찬이 확정된 상대에게만 협찬 약속서에서 보여요.": "Only partners of a confirmed sponsorship see it, on the agreement.",
+  "협찬이 확정된 상대에게만 임시 전자 계약서에서 보여요.": "Only partners of a confirmed sponsorship see it, on the e-contract.",
   "담당자 이름을 입력해 주세요.": "Please enter the contact person's name.",
   "직책을 입력해 주세요.": "Please enter your position.",
   "휴대폰 번호를 010-1234-5678처럼 입력해 주세요.": "Please enter a mobile number like 010-1234-5678.",
@@ -276,8 +276,8 @@ const en: Record<string, string> = {
   "내가 보낸 메시지의 ⋯ 버튼에서 수정하거나 삭제할 수 있어요. 고친 메시지에는 ‘수정됨’, 지운 메시지는 삭제된 메시지로 양쪽 모두에게 보여요. 상대가 읽었는지도 메시지 옆에 표시돼요.":
     "Use the ⋯ button on a message you sent. Both sides see ‘Edited’ on a changed message and a placeholder for a deleted one. You can also see beside each message whether it's been read.",
   "협찬 성과는 어떻게 확인하나요?": "How do I track sponsorship results?",
-  "행사 현장의 QR로 참여(스캔), 쿠폰 수령, 매장 방문을 집계해 목표와 비교해요. 협찬 약속서에서 샘플링 · 시음, 부스 스탬프, SNS 인증 · 설문도 고를 수 있고, 방식마다 학생단체나 브랜드가 행사장에서 자기 PIN으로 확인해요. 학생단체는 성과와 리포트에서, 브랜드는 성과 분석에서 확인해요.":
-    "A QR code at the event counts scans, coupons taken and store visits, then compares them with your goals. On the sponsorship agreement you can also choose sampling and tastings, booth stamps, and SNS posts or surveys, each confirmed at the venue by the student group or the brand with its own PIN. Student groups see the results in Performance and Reports; brands in Analytics.",
+  "임시 전자 계약서 아래의 협찬 확인 방식에서 QR 체크인, 쿠폰 발급, 매장 방문, 샘플링 · 시음, 부스 스탬프, SNS 인증, 설문, 현장 구매, 사은품, 경품 응모, 회원 가입, 체험 가운데 여러 개를 고르고, 방식마다 학생단체 · 브랜드 · 두 쪽 모두 가운데 확인할 쪽을 정해요. 두 쪽이 계약서를 확인하면 확정되고, 행사장에서 각자 자기 PIN으로 확인한 숫자가 목표와 함께 모여요. 학생단체는 성과와 리포트에서, 브랜드는 성과 분석에서 확인해요.":
+    "Below the provisional e-contract, choose as many confirmation methods as you like (QR check-in, coupons, store visits, sampling, booth stamps, SNS posts, surveys, purchases, gifts, raffles, sign-ups, try-outs) and who confirms each: the student group, the brand or both. Once both sides confirm the e-contract they're settled, and what each side confirms at the venue with its own PIN is counted against your goals. Student groups see the results in Performance and Reports; brands in Analytics.",
   "리포트를 PDF로 받을 수 있나요?": "Can I get a report as a PDF?",
   "네. 학생단체는 리포트 페이지의 ‘PDF 리포트 다운로드’, 브랜드는 성과 분석의 ‘분석 보고서 다운로드’로 받아요. 브랜드 보고서에는 전체 요약과 협찬마다의 성과 페이지가 담겨요.":
     "Yes. Student groups use ‘Download PDF report’ on Reports; brands use ‘Download report’ in Analytics. The brand report has an overall summary plus a page for each sponsorship.",
@@ -295,7 +295,7 @@ const en: Record<string, string> = {
   "복사하지 못했어요. 직접 선택해서 복사해 주세요.": "Couldn't copy. Please select it and copy it yourself.",
   "공유하지 못했어요. 메시지를 복사해서 보내 주세요.": "Couldn't share. Please copy the message and send it.",
   // Sponsorship agreements (pages/AgreementsPage.tsx, AgreementPage.tsx)
-  "협찬 약속서": "Sponsorship agreements",
+  "임시 전자 계약서": "Provisional e-contracts",
   // The event's goals on an agreement (GoalsPanel in pages/AgreementPage.tsx)
   "행사 목표": "Event goals",
   도달: "Reach",
@@ -306,20 +306,20 @@ const en: Record<string, string> = {
   "정한 목표는 성과와 리포트에 바로 반영돼요.": "Goals show in Performance and the report right away.",
   "학생단체와 브랜드가 협찬으로 할 일을 함께 정하고 확인하고, 한 일을 링크와 사진으로 남겨요.":
     "A student group and a brand agree on what each will do for a sponsorship, confirm it, and keep links and photos of what was done.",
-  "확정된 협찬마다 약속서를 확인하고, 할 일이 얼마나 끝났는지 봐요.":
-    "See the agreement for each confirmed sponsorship and how much has been done.",
+  "확정된 협찬마다 계약서를 확인하고, 할 일이 얼마나 끝났는지 봐요.":
+    "See the e-contract for each confirmed sponsorship and how much has been done.",
   "확정된 협찬마다 두 쪽이 할 일을 정하고 확인해요. 한 일은 링크와 사진으로 남겨 두면 결과를 바로 보여 줄 수 있어요.":
     "For each confirmed sponsorship, both sides agree on what each will do. Keep links and photos of what's done to show the results right away.",
-  "약속서를 불러오고 있어요…": "Loading agreements…",
-  "로그인하면 확정된 협찬의 약속서를 볼 수 있어요.": "Log in to see the agreements of your confirmed sponsorships.",
-  "확정된 협찬이 생기면 여기에서 약속서를 확인할 수 있어요.": "Once a sponsorship is confirmed, its agreement shows here.",
+  "계약서를 불러오고 있어요…": "Loading e-contracts…",
+  "로그인하면 확정된 협찬의 계약서를 볼 수 있어요.": "Log in to see the e-contracts of your confirmed sponsorships.",
+  "확정된 협찬이 생기면 여기에서 계약서를 확인할 수 있어요.": "Once a sponsorship is confirmed, its e-contract shows here.",
   "할 일 {done}/{total}": "{done}/{total} done",
   "증빙 {count}개": "{count} proof",
   "양쪽 확인": "Confirmed by both",
   "상대 확인 기다리는 중": "Waiting for the other side",
   "내 확인 필요": "Needs your confirmation",
-  약속서: "Agreement",
-  "{name} 협찬 약속서": "Sponsorship agreement for {name}",
+  계약서: "E-contract",
+  "{name} 임시 전자 계약서": "Provisional e-contract for {name}",
   "인쇄 · PDF 저장": "Print · Save as PDF",
   "아직 uniconnect 계정이 없어요": "Not on uniconnect yet",
   "협찬 내용": "Sponsorship",

@@ -4,6 +4,7 @@ import { api, errorMessage } from "../api"
 import logo from "../assets/brand/uniconnect_horizontal.svg"
 import { PasswordField } from "../components/PasswordField"
 import { VenueCounters } from "../components/VenueCounters"
+import { isVenueMethod } from "../data/methods"
 import { useVenueSession } from "../hooks/useVenueSession"
 import { t } from "../i18n"
 import { formatFullDate } from "../lib/date"
@@ -23,9 +24,9 @@ export function StaffCheckInPage({ code }: { code: string }) {
   const [error, setError] = useState("")
   const [confirmed, setConfirmed] = useState<string[]>([])
   const share = venue.session?.shares[0]
-  // Visits are confirmed while the sponsorship uses the coupon (and before
-  // the PIN has said which share it opens).
-  const visits = !share || share.kinds.includes("coupon")
+  // Visits are confirmed while the sponsorship confirms store visits (and
+  // before the PIN has said which share it opens).
+  const visits = !share || share.kinds.includes("visit")
 
   useEffect(() => {
     api
@@ -69,7 +70,7 @@ export function StaffCheckInPage({ code }: { code: string }) {
         <p className="checkin-staff">
           {visits
             ? t("참여자가 보여 주는 우리 매장 쿠폰 번호를 입력하면 매장 방문이 기록돼요. 직원 PIN은 행사 주최 측에서 매장마다 받아 주세요.")
-            : t("협찬 약속서에서 우리 브랜드가 확인하기로 한 측정 방식을 여기서 기록해요. 직원 PIN은 협찬 약속서에서 볼 수 있어요.")}
+            : t("임시 전자 계약서에서 우리 브랜드가 확인하기로 한 협찬 확인 방식을 여기서 기록해요. 직원 PIN은 임시 전자 계약서에서 볼 수 있어요.")}
         </p>
 
         <form
@@ -122,7 +123,7 @@ export function StaffCheckInPage({ code }: { code: string }) {
           </ul>
         )}
 
-        {share?.kinds.some((kind) => kind !== "coupon") && (
+        {share?.kinds.some(isVenueMethod) && (
           <section aria-label={t("현장 집계")} className="venue-share">
             <VenueCounters busy={venue.busy} onCount={(method, amount) => venue.count(share.id, method, amount)} share={share} />
           </section>

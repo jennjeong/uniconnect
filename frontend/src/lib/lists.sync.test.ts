@@ -6,12 +6,12 @@ import * as server from "../../../backend/src/lib/validation"
 import { demoAccounts, demoPassword } from "../data/demo"
 import { factFields, snsPlatforms } from "../data/profile"
 import { inquiryCategories } from "../data/inquiries"
-import { methodInfo, methodKinds } from "../data/methods"
-import { passwordProblem } from "./password"
+import { defaultMethods, isVenueMethod, methodInfo, methodKinds } from "../data/methods"
 import { placeCategories } from "../data/places"
 import { reviewTags } from "../data/reviews"
 import { accountTypes, roles } from "../data/roles"
 import { sponsorOptions, valueTypes } from "../data/sponsorTypes"
+import { passwordProblem } from "./password"
 
 // Lists the server checks input against (backend/src/lib/validation.ts) and
 // the screens offer as choices have to be the same, or a choice on screen
@@ -57,14 +57,19 @@ describe("the screens offer the choices the server takes", () => {
     }
   })
 
-  // The agreement offers the methods the server takes, the coupon fixed to
-  // the brand as the server holds it, each counting what the server counts.
-  test("measurement methods", () => {
+  // The e-contract offers the methods the server takes, store visits fixed
+  // to the brand, each needing what the server needs, counted by the box
+  // where the server takes a box, each counting what the server counts.
+  test("confirmation methods", () => {
     expect(methodKinds).toEqual(serverMethods.methodKinds)
+    expect(defaultMethods).toEqual(serverMethods.defaultMethods)
     for (const kind of methodKinds) {
-      expect(methodInfo[kind].fixed ? methodInfo[kind].side : undefined).toBe(serverMethods.fixedSides[kind])
-      const counted = kind === "coupon" ? undefined : serverMethods.venueMetrics[kind]
-      expect(methodInfo[kind].metric).toBe(counted)
+      const info = methodInfo[kind]
+      expect(info.fixed ? info.side : undefined, kind).toBe(serverMethods.fixedSides[kind])
+      expect(info.needs, kind).toBe(serverMethods.methodNeeds[kind])
+      expect(Boolean(info.bulk), kind).toBe((serverMethods.bulkKinds as string[]).includes(kind))
+      if (serverMethods.isVenueKind(kind)) expect(info.metric, kind).toBe(serverMethods.venueMetrics[kind])
+      expect(isVenueMethod(kind), kind).toBe(serverMethods.isVenueKind(kind))
     }
   })
 })

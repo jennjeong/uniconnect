@@ -2,7 +2,7 @@ import { randomBytes, randomInt, randomUUID } from "node:crypto"
 
 import { addDays, hourInKorea, todayInKorea } from "./dates.js"
 import { HttpError } from "./errors.js"
-import { methodsOf } from "./methods.js"
+import { activeMethodsOf, emptyVenueCounts, venueCountsOf } from "./methods.js"
 import { sponsorTypes, text } from "./validation.js"
 import type {
   Database,
@@ -15,19 +15,25 @@ import type {
   Report,
 } from "../types.js"
 
-export const metricKinds: MetricKind[] = ["scans", "coupons", "visits", "samples", "stamps", "posts"]
+export const metricKinds: MetricKind[] = [
+  "scans",
+  "coupons",
+  "visits",
+  "samples",
+  "stamps",
+  "posts",
+  "surveys",
+  "purchases",
+  "giveaways",
+  "raffles",
+  "signups",
+  "experiences",
+]
 
 // What a participant's phone records on the check-in page.
 export const checkInKinds: MetricKind[] = ["scans", "coupons", "visits"]
 
-export const emptyMetrics = (): Measurement["metrics"] => ({
-  scans: 0,
-  coupons: 0,
-  visits: 0,
-  samples: 0,
-  stamps: 0,
-  posts: 0,
-})
+export const emptyMetrics = (): Measurement["metrics"] => ({ scans: 0, coupons: 0, visits: 0, ...emptyVenueCounts() })
 
 export function parseKind(value: unknown, kinds = metricKinds) {
   const kind = kinds.find((item) => item === value)
@@ -218,13 +224,14 @@ export function syncSponsors(database: Database, measurement: Measurement) {
           staffPin: measurement.staffPin,
           metrics: counts,
           ...(measurement.methods ? { methods: measurement.methods } : {}),
+          ...(measurement.confirmedMethods ? { confirmedMethods: measurement.confirmedMethods } : {}),
         }
       : {
           id: sponsorship.id,
           brandName,
           coupon: { store: brandName, title: "참여자 전용 혜택" },
           staffPin: newSponsorPin(measurement),
-          metrics: { coupons: 0, visits: 0, samples: 0, stamps: 0, posts: 0 },
+          metrics: { coupons: 0, visits: 0, ...emptyVenueCounts() },
         }
     if (takesOver) {
       for (const pass of Object.values(measurement.passes)) {
@@ -280,8 +287,8 @@ export const estimatedSales = (measurement: Measurement) =>
 
 // The event's report: its goals, with reach and ROAS worked out from the
 // live counts (reach: QR scans plus the reach beyond the venue; ROAS:
-// estimated sales over the sponsorship's value), how it is measured and
-// what the venue confirmed. The PINs go only to the event's owner, the
+// estimated sales over the sponsorship's value), how it is confirmed (as
+// both sides confirmed it) and what the venue confirmed. The PINs go only to the event's owner, the
 // group's venue PIN only when the owner is the group.
 export function buildReport(
   measurement: Measurement,
@@ -308,8 +315,8 @@ export function buildReport(
     coupon: goals.coupon,
     ...(withPin ? { staffPin: measurement.staffPin } : {}),
     ...(withGroupPin ? { groupPin: measurement.groupPin } : {}),
-    methods: methodsOf(measurement),
-    venue: { samples: metrics.samples, stamps: metrics.stamps, posts: metrics.posts },
+    methods: activeMethodsOf(measurement),
+    venue: venueCountsOf(metrics),
     ...(measurement.sponsors.length
       ? {
           sponsors: measurement.sponsors.map((sponsor) => {
@@ -322,10 +329,8 @@ export function buildReport(
               coupons: sponsor.metrics.coupons,
               visits: sponsor.metrics.visits,
               roas: percent(sponsor.metrics.visits * goals.averageSpend, value),
-              methods: methodsOf(measurement, sponsor),
-              samples: sponsor.metrics.samples,
-              stamps: sponsor.metrics.stamps,
-              posts: sponsor.metrics.posts,
+              methods: activeMethodsOf(measurement, sponsor),
+              ...venueCountsOf(sponsor.metrics),
               ...(withPin ? { staffPin: sponsor.staffPin } : {}),
             }
           }),
@@ -393,8 +398,17 @@ export function prunePasses(database: Database, measurement: Measurement, event:
 const venueDetails: Partial<Record<MetricKind, string>> = {
   samples: "샘플링 · 시음",
   stamps: "부스 방문 · 스탬프",
-  posts: "SNS 인증 · 설문",
+  posts: "SNS 인증",
+  surveys: "설문 응답",
+  purchases: "현장 구매 · 영수증",
+  giveaways: "굿즈 · 사은품 지급",
+  raffles: "경품 응모 · 추첨",
+  signups: "회원 가입 · 앱 설치",
+  experiences: "체험 · 시연 참여",
 }
+
+// Counted by the box rather than by the person.
+const countedByBox: MetricKind[] = ["samples", "giveaways"]
 
 // Counts one QR scan, coupon or store visit, or what the venue confirmed
 // (`amount` samples, one stamp or post, or fewer to correct a mistake), and
@@ -425,7 +439,7 @@ export function recordMetric(
     kind,
     at: now.toISOString(),
     participant:
-      amount < 0 ? `정정 ${amount}` : kind === "samples" ? `${amount}개` : `참여자 #${measurement.metrics[kind]}`,
+      amount < 0 ? `정정 ${amount}` : countedByBox.includes(kind) ? `${amount}개` : `참여자 #${measurement.metrics[kind]}`,
     detail:
       venueDetails[kind] ?? (kind === "scans" ? "현장 QR 스캔" : kind === "coupons" ? coupon.title : coupon.store),
   }
