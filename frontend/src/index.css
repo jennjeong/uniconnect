@@ -6061,6 +6061,12 @@ button.nav-pill:hover {
   color: var(--green);
 }
 
+/* What the venue's staff confirmed by a measurement method, in silver. */
+.activity-kind:is(.kind-samples, .kind-stamps, .kind-posts) {
+  background: var(--fill-strong);
+  color: var(--ink-soft);
+}
+
 .log-list .activity-kind {
   margin-left: 6px;
   vertical-align: 1px;
@@ -7568,6 +7574,106 @@ button.nav-pill:hover {
   text-align: center;
 }
 
+/* The venue pages' counters (VenueCounters.tsx): a white card per method
+   with its count, then the buttons that add to it or take back a mistake,
+   under each sponsor's name on the group's page. */
+.venue-share {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.venue-share h2 {
+  margin: 6px 0 0;
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: var(--weight-label);
+}
+
+.venue-counters {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.venue-counter {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  background: #fff;
+  box-shadow: var(--ring);
+}
+
+.venue-counter-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.venue-counter-head span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: var(--weight-label);
+}
+
+.venue-counter-head strong {
+  color: var(--point-strong);
+  font-size: 28px;
+  font-weight: var(--weight-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.venue-counter p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.venue-counter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.venue-counter-actions button {
+  flex: 1 1 88px;
+}
+
+.venue-amount {
+  display: flex;
+  flex: 0 0 76px;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: var(--weight-label);
+}
+
+.venue-amount input {
+  width: 100%;
+  height: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--fill);
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+  text-align: center;
+}
+
 .qr-content {
   display: flex;
   flex-direction: column;
@@ -8496,6 +8602,160 @@ button.nav-pill:hover {
 
 .goals-actions .field-hint {
   margin: 0;
+}
+
+/* How the sponsorship is measured (측정 방식): each method with the side
+   that confirms it and its count, this side's venue page and PIN, and, while
+   editing, a card per method with the sides to choose from. */
+.method-list,
+.method-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.method-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: #fff;
+  box-shadow: var(--ring);
+  color: var(--point-strong);
+}
+
+.method-list li > span,
+.method-use > span {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.method-list strong,
+.method-use strong {
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: var(--weight-label);
+}
+
+.method-list small,
+.method-use small {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: var(--weight-body);
+  line-height: 1.5;
+}
+
+.method-list em {
+  color: var(--ink);
+  font-size: 14px;
+  font-style: normal;
+  font-weight: var(--weight-label);
+  white-space: nowrap;
+}
+
+.method-option {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--fill);
+  box-shadow: var(--ring);
+}
+
+.method-option.chosen {
+  background: #fff;
+  box-shadow: inset 0 0 0 1.5px var(--point);
+}
+
+.method-use {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--point-strong);
+  cursor: pointer;
+}
+
+.method-use input {
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  accent-color: var(--point);
+}
+
+.method-side {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0 0 0 28px;
+  padding: 0;
+  border: 0;
+}
+
+.method-side legend {
+  margin-bottom: 4px;
+  padding: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: var(--weight-label);
+}
+
+.method-side label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: var(--weight-label);
+}
+
+.method-side input {
+  accent-color: var(--point);
+}
+
+.venue-access {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--fill);
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.venue-access > strong {
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: var(--weight-label);
+}
+
+.venue-access .field-hint {
+  margin: 0;
+}
+
+.venue-access .qr-link {
+  background: #fff;
+}
+
+.venue-access span strong {
+  color: var(--point-strong);
+  font-size: 20px;
+  font-weight: var(--weight-badge);
+  letter-spacing: 0.2em;
+}
+
+.venue-summary {
+  color: var(--point-strong);
 }
 
 .agreement-items {

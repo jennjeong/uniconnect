@@ -119,7 +119,7 @@ const en: Record<string, string> = {
     "Register an event and we'll find brands that fit, then sum up the results in a report once it's over.",
   "캠페인을 등록하면 잘 맞는 학생단체를 찾아 드리고, 협찬의 효과를 ROAS로 보여 드려요.":
     "Register a campaign and we'll find student groups that fit, then show what your sponsorship earned in ROAS.",
-  "학생단체와 브랜드 사이의 협찬을 잇고, 그 성과를 숫자로 증명하는 성과 측정형 캠퍼스 스폰서십 플랫폼이에요.":
+  "학생단체와 브랜드 사이의 협찬을 잇고, 그 성과를 숫자로 증명하는 캠퍼스 스폰서십 플랫폼이에요.":
     "A campus sponsorship platform that connects student groups and brands, and proves the results in numbers.",
   "약관과 방침": "Terms and policies",
   "맨 위로 ↑": "Back to top ↑",

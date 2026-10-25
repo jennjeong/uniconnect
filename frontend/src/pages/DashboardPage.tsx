@@ -114,7 +114,7 @@ export function DashboardPage({
       status: nextDay ? t("{date} 예정", { date: `${nextDay.getMonth() + 1}.${nextDay.getDate()}` }) : t("대기"),
       detail: t("협찬 조건과 받은 물품을 행사 전에 함께 확인해요."),
     },
-    { label: t("성과 측정"), status: t("대기"), detail: t("행사 QR과 쿠폰으로 참여와 방문을 집계해요.") },
+    { label: t("성과"), status: t("대기"), detail: t("행사 QR과 쿠폰으로 참여와 방문을 집계해요.") },
     { label: t("재협찬"), status: t("대기"), detail: t("쌓인 성과가 신뢰가 되어 다음 협찬으로 이어져요.") },
   ]
 
@@ -210,7 +210,7 @@ export function DashboardPage({
             label: t("누적 QR 참여"),
             value: metrics.scans.toLocaleString(locale),
             note: t("참여율 {rate}%", { rate: report ? percent(metrics.scans, report.expectedAudience) : 0 }),
-            onClick: () => onNavigate("성과 측정"),
+            onClick: () => onNavigate("성과"),
           },
         ]}
         marks={proposed.slice(0, 4).map((match) => (

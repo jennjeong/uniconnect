@@ -19,7 +19,7 @@
     { "source": "/me/:part(edit)?", "destination": "/index.html" },
     { "source": "/:list(messages|agreements)/:id?", "destination": "/index.html" },
     { "source": "/invite/:code([\\w-]+)", "destination": "/index.html" },
-    { "source": "/check-in/:code([\\w-]+)/:part(staff)?", "destination": "/index.html" }
+    { "source": "/check-in/:code([\\w-]+)/:part(staff|group)?", "destination": "/index.html" }
   ],
   "headers": [
     {

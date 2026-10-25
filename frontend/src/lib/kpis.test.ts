@@ -3,7 +3,7 @@ import { describe, expect, test } from "vitest"
 import type { Metrics, Report } from "../types"
 import { hasRoas, kpiValue, reportKpis, roasSummary, roasText } from "./kpis"
 
-const metrics: Metrics = { scans: 128, coupons: 94, visits: 41 }
+const metrics: Metrics = { scans: 128, coupons: 94, visits: 41, samples: 0, stamps: 0, posts: 0 }
 
 const report = (sponsorValue: number, roas: number, targetRoas: number) =>
   ({

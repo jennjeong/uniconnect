@@ -6,11 +6,11 @@ import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { Pill } from "../components/Pill"
 import { RevealTitle } from "../components/RevealText"
-import { metricInfo, metricKinds } from "../data/metrics"
+import { isCheckInKind, metricInfo, metricKinds } from "../data/metrics"
 import { useLiveMeasurement } from "../hooks/useLiveMeasurement"
 import { t } from "../i18n"
 import { formatDateTime, formatFullDate } from "../lib/date"
-import { measureState } from "../lib/measurements"
+import { measureState, venueKindsOf } from "../lib/measurements"
 import { percent } from "../lib/format"
 import { LayersGradient } from "../scenes/LayersGradient"
 import { INTERFERENCE } from "../scenes/shaders"
@@ -19,7 +19,8 @@ import type { EventMeasurement, MetricKind, Metrics, Report } from "../types"
 const delay = (seconds: number) => ({ "--reveal-delay": `${seconds}s` }) as CSSProperties
 
 // The event's live counts on getlayers.ai's Interference gradient (each scan,
-// coupon and visit adding to the wave), then the funnel and the latest
+// coupon and visit adding to the wave, and what the venue confirmed by the
+// sponsorships' measurement methods), then the funnel and the latest
 // participation as cards. Before the event (진행 전) the counts wait as
 // dashes beside their goals, the cards say what will show once it takes
 // place, and the goals are set on the sponsorship's agreement.
@@ -48,6 +49,7 @@ export function MeasurementPage({
 }) {
   const entries = useLiveMeasurement(report?.eventId, "학생단체", onUpdate)
   const upcoming = report !== null && measureState(report) === "진행 전"
+  const tiles: MetricKind[] = [...metricKinds, ...(report ? venueKindsOf(report) : [])]
 
   const funnel: { kind: MetricKind; note: string }[] = [
     { kind: "scans", note: t("현장에서 QR을 스캔했어요") },
@@ -106,9 +108,9 @@ export function MeasurementPage({
               })}
             </p>
           )}
-          <ul className="power-stats three">
-            {metricKinds.map((kind, index) => {
-              const target = report?.targets[kind]
+          <ul className={tiles.length === 4 ? "power-stats" : "power-stats three"}>
+            {tiles.map((kind, index) => {
+              const target = isCheckInKind(kind) ? report?.targets[kind] : undefined
               return (
                 <li data-reveal key={kind} style={delay(index * 0.09)}>
                   <button onClick={() => onShowLog(kind)} type="button">
@@ -119,7 +121,9 @@ export function MeasurementPage({
                       <Icon name={metricInfo[kind].icon} size={16} />
                       {t(metricInfo[kind].label)}
                     </span>
-                    {target !== undefined &&
+                    {target === undefined ? (
+                      <small>{t("현장에서 확인")}</small>
+                    ) : (
                       (upcoming ? (
                         <small>{t("목표 {target}", { target })}</small>
                       ) : (
@@ -127,7 +131,8 @@ export function MeasurementPage({
                           {t("목표 {target}", { target })} ·{" "}
                           {metrics[kind] >= target ? t("달성") : t("{count} 남음", { count: target - metrics[kind] })}
                         </small>
-                      ))}
+                      ))
+                    )}
                   </button>
                 </li>
               )

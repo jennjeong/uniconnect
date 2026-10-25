@@ -73,8 +73,10 @@ describe("the server's page list matches the screens", () => {
     expect(isAppPath(path)).toBe(readView(at(path)).missing === undefined)
   })
 
-  test("the check-in page, which main.tsx opens before the app, is served too", () => {
+  test("the check-in page and its venue pages, which main.tsx opens before the app, are served too", () => {
     expect(isAppPath("/check-in/20261012")).toBe(true)
+    expect(isAppPath("/check-in/20261012/staff")).toBe(true)
+    expect(isAppPath("/check-in/20261012/group")).toBe(true)
   })
 })
 
@@ -109,6 +111,7 @@ describe("Vercel's rewrites match the server's page list", () => {
     "/check-in/20261012",
     "/check-in/20261012/staff",
     "/check-in/20261012/staff/",
+    "/check-in/20261012/group",
     "/nope",
     "/nope/",
     "/matches/a/b",

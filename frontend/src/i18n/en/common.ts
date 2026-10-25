@@ -35,7 +35,7 @@ const en: Record<string, string> = {
   매칭: "Matches",
   "받은 협찬": "Offers",
   "내 행사": "My Events",
-  "성과 측정": "Measurement",
+  성과: "Performance",
   리포트: "Reports",
   "단체 찾기": "Find Groups",
   "받은 제안": "Proposals",

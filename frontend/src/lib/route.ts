@@ -47,7 +47,7 @@ const pagePaths: Record<NavLabel, string> = {
   "추천 매칭": "matches",
   "받은 협찬": "offers",
   "내 행사": "events",
-  "성과 측정": "measurement",
+  성과: "measurement",
   리포트: "reports",
   "단체 찾기": "groups",
   "받은 제안": "inbox",

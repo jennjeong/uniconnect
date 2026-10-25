@@ -3,40 +3,29 @@ import { useEffect, useState } from "react"
 import { api, errorMessage } from "../api"
 import logo from "../assets/brand/uniconnect_horizontal.svg"
 import { PasswordField } from "../components/PasswordField"
+import { VenueCounters } from "../components/VenueCounters"
+import { useVenueSession } from "../hooks/useVenueSession"
 import { t } from "../i18n"
 import { formatFullDate } from "../lib/date"
 import type { CheckInInfo } from "../types"
 
-// The PIN stays in this tab for the next coupons, never in a participant's
-// browser.
-const pinKey = (code: string) => `uniconnect-staff-pin-${code}`
-
-function readPin(code: string) {
-  try {
-    return sessionStorage.getItem(pinKey(code)) ?? ""
-  } catch {
-    return ""
-  }
-}
-
-function writePin(code: string, pin: string) {
-  try {
-    sessionStorage.setItem(pinKey(code), pin)
-  } catch {
-    // Without storage the PIN is typed again for each coupon.
-  }
-}
-
 // The sponsor's store staff open /check-in/<code>/staff on their own device:
-// with their store's staff PIN, each participant's coupon number for that
-// store confirms one store visit.
+// with their store's staff PIN (kept in this tab for the next coupons, never
+// in a participant's browser), each participant's coupon number for that
+// store confirms one store visit, and what the sponsorship's measurement
+// methods give the brand to confirm at the venue, such as samples handed
+// out, is counted below.
 export function StaffCheckInPage({ code }: { code: string }) {
   const [info, setInfo] = useState<CheckInInfo | null>(null)
-  const [pin, setPin] = useState(() => readPin(code))
+  const venue = useVenueSession(code, "staff")
   const [coupon, setCoupon] = useState("")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
   const [confirmed, setConfirmed] = useState<string[]>([])
+  const share = venue.session?.shares[0]
+  // Visits are confirmed while the sponsorship uses the coupon (and before
+  // the PIN has said which share it opens).
+  const visits = !share || share.kinds.includes("coupon")
 
   useEffect(() => {
     api
@@ -47,13 +36,12 @@ export function StaffCheckInPage({ code }: { code: string }) {
 
   const confirm = async () => {
     const number = coupon.trim().toUpperCase()
-    if (pin.length !== 4) return setError(t("직원 PIN 4자리를 입력해 주세요."))
+    if (venue.pin.length !== 4) return setError(t("직원 PIN 4자리를 입력해 주세요."))
     if (!number) return setError(t("참여자의 쿠폰 번호를 입력해 주세요."))
     setBusy(true)
     setError("")
     try {
-      const { entry, store } = await api.confirmVisit(code, { pin, coupon: number })
-      writePin(code, pin)
+      const { entry, store } = await api.confirmVisit(code, { pin: venue.pin, coupon: number })
       setConfirmed((current) => [`${number} · ${store} · ${entry.participant}`, ...current].slice(0, 5))
       setCoupon("")
     } catch (caught) {
@@ -79,14 +67,16 @@ export function StaffCheckInPage({ code }: { code: string }) {
           </p>
         )}
         <p className="checkin-staff">
-          {t("참여자가 보여 주는 우리 매장 쿠폰 번호를 입력하면 매장 방문이 기록돼요. 직원 PIN은 행사 주최 측에서 매장마다 받아 주세요.")}
+          {visits
+            ? t("참여자가 보여 주는 우리 매장 쿠폰 번호를 입력하면 매장 방문이 기록돼요. 직원 PIN은 행사 주최 측에서 매장마다 받아 주세요.")
+            : t("협찬 약속서에서 우리 브랜드가 확인하기로 한 측정 방식을 여기서 기록해요. 직원 PIN은 협찬 약속서에서 볼 수 있어요.")}
         </p>
 
         <form
           className="staff-form"
           onSubmit={(event) => {
             event.preventDefault()
-            void confirm()
+            if (visits) void confirm()
           }}
         >
           <PasswordField
@@ -96,28 +86,32 @@ export function StaffCheckInPage({ code }: { code: string }) {
             label={t("직원 PIN")}
             maxLength={4}
             toggleLabel={t("PIN 보기")}
-            value={pin}
-            onChange={(event) => setPin(event.target.value.replace(/\D/g, "").slice(0, 4))}
+            value={venue.pin}
+            onChange={(event) => venue.setPin(event.target.value)}
           />
-          <label>
-            {t("쿠폰 번호")}
-            <input
-              autoCapitalize="characters"
-              autoComplete="off"
-              className="checkin-pin"
-              placeholder="UC-XXXXXX"
-              value={coupon}
-              onChange={(event) => setCoupon(event.target.value.toUpperCase())}
-            />
-          </label>
-          <button className="primary-button wide" disabled={busy} type="submit">
-            {t("방문 확인")}
-          </button>
+          {visits && (
+            <>
+              <label>
+                {t("쿠폰 번호")}
+                <input
+                  autoCapitalize="characters"
+                  autoComplete="off"
+                  className="checkin-pin"
+                  placeholder="UC-XXXXXX"
+                  value={coupon}
+                  onChange={(event) => setCoupon(event.target.value.toUpperCase())}
+                />
+              </label>
+              <button className="primary-button wide" disabled={busy} type="submit">
+                {t("방문 확인")}
+              </button>
+            </>
+          )}
         </form>
 
-        {error && (
+        {(error || venue.error) && (
           <p className="form-error" role="alert">
-            {error}
+            {error || venue.error}
           </p>
         )}
         {confirmed.length > 0 && (
@@ -126,6 +120,12 @@ export function StaffCheckInPage({ code }: { code: string }) {
               <li key={line}>{t("{line} 방문 확인", { line })}</li>
             ))}
           </ul>
+        )}
+
+        {share?.kinds.some((kind) => kind !== "coupon") && (
+          <section aria-label={t("현장 집계")} className="venue-share">
+            <VenueCounters busy={venue.busy} onCount={(method, amount) => venue.count(share.id, method, amount)} share={share} />
+          </section>
         )}
       </main>
 

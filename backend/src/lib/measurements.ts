@@ -2,6 +2,7 @@ import { randomBytes, randomInt, randomUUID } from "node:crypto"
 
 import { addDays, hourInKorea, todayInKorea } from "./dates.js"
 import { HttpError } from "./errors.js"
+import { methodsOf } from "./methods.js"
 import { sponsorTypes, text } from "./validation.js"
 import type {
   Database,
@@ -14,10 +15,22 @@ import type {
   Report,
 } from "../types.js"
 
-export const metricKinds: MetricKind[] = ["scans", "coupons", "visits"]
+export const metricKinds: MetricKind[] = ["scans", "coupons", "visits", "samples", "stamps", "posts"]
 
-export function parseKind(value: unknown) {
-  const kind = metricKinds.find((item) => item === value)
+// What a participant's phone records on the check-in page.
+export const checkInKinds: MetricKind[] = ["scans", "coupons", "visits"]
+
+export const emptyMetrics = (): Measurement["metrics"] => ({
+  scans: 0,
+  coupons: 0,
+  visits: 0,
+  samples: 0,
+  stamps: 0,
+  posts: 0,
+})
+
+export function parseKind(value: unknown, kinds = metricKinds) {
+  const kind = kinds.find((item) => item === value)
   if (!kind) throw new HttpError(404, "알 수 없는 측정 항목이에요.")
   return kind
 }
@@ -196,20 +209,22 @@ export function syncSponsors(database: Database, measurement: Measurement) {
   for (const { brandAccountId, sponsorship } of missing) {
     const brandName =
       database.accounts.find((account) => account.id === brandAccountId)?.name ?? "협찬사"
+    const { scans: _, ...counts } = measurement.metrics
     const sponsor: EventSponsor = takesOver
       ? {
           id: sponsorship.id,
           brandName,
           coupon: { ...measurement.goals.coupon },
           staffPin: measurement.staffPin,
-          metrics: { coupons: measurement.metrics.coupons, visits: measurement.metrics.visits },
+          metrics: counts,
+          ...(measurement.methods ? { methods: measurement.methods } : {}),
         }
       : {
           id: sponsorship.id,
           brandName,
           coupon: { store: brandName, title: "참여자 전용 혜택" },
           staffPin: newSponsorPin(measurement),
-          metrics: { coupons: 0, visits: 0 },
+          metrics: { coupons: 0, visits: 0, samples: 0, stamps: 0, posts: 0 },
         }
     if (takesOver) {
       for (const pass of Object.values(measurement.passes)) {
@@ -243,11 +258,12 @@ export function ensureMeasurement(database: Database, accountId: string, event: 
     eventId: event.id,
     accountId,
     code: newCode(database),
-    metrics: { scans: 0, coupons: 0, visits: 0 },
+    metrics: emptyMetrics(),
     hourlyScans: [],
     log: [],
     goals: defaultGoals(event),
     staffPin: newStaffPin(),
+    groupPin: newStaffPin(),
     sponsors: [],
     passes: {},
   }
@@ -264,8 +280,14 @@ export const estimatedSales = (measurement: Measurement) =>
 
 // The event's report: its goals, with reach and ROAS worked out from the
 // live counts (reach: QR scans plus the reach beyond the venue; ROAS:
-// estimated sales over the sponsorship's value).
-export function buildReport(measurement: Measurement, event: EventItem, { withPin = false } = {}): Report {
+// estimated sales over the sponsorship's value), how it is measured and
+// what the venue confirmed. The PINs go only to the event's owner, the
+// group's venue PIN only when the owner is the group.
+export function buildReport(
+  measurement: Measurement,
+  event: EventItem,
+  { withPin = false, withGroupPin = false } = {},
+): Report {
   const { goals, metrics } = measurement
   const sponsorValue = goals.valueBreakdown.reduce((sum, part) => sum + part.value, 0)
   return {
@@ -285,6 +307,9 @@ export function buildReport(measurement: Measurement, event: EventItem, { withPi
     snsReach: goals.snsReach,
     coupon: goals.coupon,
     ...(withPin ? { staffPin: measurement.staffPin } : {}),
+    ...(withGroupPin ? { groupPin: measurement.groupPin } : {}),
+    methods: methodsOf(measurement),
+    venue: { samples: metrics.samples, stamps: metrics.stamps, posts: metrics.posts },
     ...(measurement.sponsors.length
       ? {
           sponsors: measurement.sponsors.map((sponsor) => {
@@ -297,6 +322,10 @@ export function buildReport(measurement: Measurement, event: EventItem, { withPi
               coupons: sponsor.metrics.coupons,
               visits: sponsor.metrics.visits,
               roas: percent(sponsor.metrics.visits * goals.averageSpend, value),
+              methods: methodsOf(measurement, sponsor),
+              samples: sponsor.metrics.samples,
+              stamps: sponsor.metrics.stamps,
+              posts: sponsor.metrics.posts,
               ...(withPin ? { staffPin: sponsor.staffPin } : {}),
             }
           }),
@@ -360,11 +389,24 @@ export function prunePasses(database: Database, measurement: Measurement, event:
   return Object.keys(measurement.passes).length !== before
 }
 
-// Counts one QR scan, coupon or store visit, and its record; a sponsor's
-// coupon or visit counts for that sponsor too.
-export function recordMetric(measurement: Measurement, kind: MetricKind, sponsor?: EventSponsor): MetricEntry {
-  measurement.metrics[kind] += 1
-  if (sponsor && kind !== "scans") sponsor.metrics[kind] += 1
+// What the venue's staff confirm, as the records name it.
+const venueDetails: Partial<Record<MetricKind, string>> = {
+  samples: "샘플링 · 시음",
+  stamps: "부스 방문 · 스탬프",
+  posts: "SNS 인증 · 설문",
+}
+
+// Counts one QR scan, coupon or store visit, or what the venue confirmed
+// (`amount` samples, one stamp or post, or fewer to correct a mistake), and
+// its record; a sponsor's count grows with the event's.
+export function recordMetric(
+  measurement: Measurement,
+  kind: MetricKind,
+  sponsor?: EventSponsor,
+  amount = 1,
+): MetricEntry {
+  measurement.metrics[kind] += amount
+  if (sponsor && kind !== "scans") sponsor.metrics[kind] += amount
   const now = new Date()
   if (kind === "scans") {
     // Hours on the clock in Korea, where the events take place, by day.
@@ -382,8 +424,10 @@ export function recordMetric(measurement: Measurement, kind: MetricKind, sponsor
     id: randomUUID(),
     kind,
     at: now.toISOString(),
-    participant: `참여자 #${measurement.metrics[kind]}`,
-    detail: kind === "scans" ? "현장 QR 스캔" : kind === "coupons" ? coupon.title : coupon.store,
+    participant:
+      amount < 0 ? `정정 ${amount}` : kind === "samples" ? `${amount}개` : `참여자 #${measurement.metrics[kind]}`,
+    detail:
+      venueDetails[kind] ?? (kind === "scans" ? "현장 QR 스캔" : kind === "coupons" ? coupon.title : coupon.store),
   }
   measurement.log = [...measurement.log, entry].slice(-logLimit)
   return entry

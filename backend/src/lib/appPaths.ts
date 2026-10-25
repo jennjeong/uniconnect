@@ -1,6 +1,7 @@
 // Addresses the frontend has a screen for (frontend/src/lib/route.ts, and
-// the event check-in page). Anything else gets the frontend's 404 page with
-// a real 404 status. Keep this in step with readView.
+// the event check-in page with its two venue pages). Anything else gets the
+// frontend's 404 page with a real 404 status. Keep this in step with
+// readView.
 const appPaths = [
   /^\/$/,
   /^\/(matches|groups)(\/[^/]+)?\/?$/,
@@ -13,7 +14,7 @@ const appPaths = [
   /^\/admin\/?$/,
   /^\/invite\/[\w-]+\/?$/,
   /^\/agreements(\/[^/]+)?\/?$/,
-  /^\/check-in\/[\w-]+(\/staff)?\/?$/,
+  /^\/check-in\/[\w-]+(\/(staff|group))?\/?$/,
 ]
 
 export const isAppPath = (pathname: string) => appPaths.some((pattern) => pattern.test(pathname))

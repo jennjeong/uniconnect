@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto"
 
 import { todayInKorea } from "./dates.js"
+import { methodsOf } from "./methods.js"
 import { photos } from "./photos.js"
 import { canReview, publicReview, reviewOpen } from "./reviews.js"
 import type { Account, Agreement, AgreementItem, ChatSide, Database } from "../types.js"
@@ -76,6 +77,47 @@ export function sponsoredEvent(database: Database, proposal: AcceptedProposal) {
   return owner && event ? { owner, event } : undefined
 }
 
+// The part of the sponsored event's measurement an agreement measures: the
+// brand's own share of a student event (its sponsorship), or a brand's
+// campaign itself, which has no sponsors. Undefined until the event has a
+// measurement.
+export function agreementShare(database: Database, proposal: AcceptedProposal) {
+  const sponsored = sponsoredEvent(database, proposal)
+  const measurement =
+    sponsored &&
+    database.measurements.find((item) => item.accountId === sponsored.owner.id && item.eventId === sponsored.event.id)
+  if (!sponsored || !measurement) return undefined
+  if (proposal.kind === "offer") return { event: sponsored.event, measurement, sponsor: undefined }
+  const sponsor = measurement.sponsors.find((item) => item.id === `sp-${proposal.id}`)
+  return sponsor ? { event: sponsored.event, measurement, sponsor } : undefined
+}
+
+// How the agreement's share is measured, what the venue counted for it, and,
+// when this side confirms any of the methods, its own venue page and PIN:
+// the brand's store PIN on the staff page, the group's PIN on its page.
+function measureView(database: Database, proposal: AcceptedProposal, side: ChatSide) {
+  const share = agreementShare(database, proposal)
+  if (!share) return undefined
+  const { measurement, sponsor } = share
+  const methods = methodsOf(measurement, sponsor)
+  const counts = sponsor?.metrics ?? measurement.metrics
+  const pin = side === "brand" ? (sponsor?.staffPin ?? measurement.staffPin) : measurement.groupPin
+  return {
+    code: measurement.code,
+    methods,
+    counts: {
+      coupons: counts.coupons,
+      visits: counts.visits,
+      samples: counts.samples,
+      stamps: counts.stamps,
+      posts: counts.posts,
+    },
+    ...(methods.some((method) => method.side === side)
+      ? { venue: { page: side === "brand" ? ("staff" as const) : ("group" as const), pin } }
+      : {}),
+  }
+}
+
 // The side an account takes in an accepted proposal, if any.
 export function sideIn(proposal: AcceptedProposal, account: Account): ChatSide | undefined {
   if (proposal.group.account?.id === account.id) return "group"
@@ -131,10 +173,11 @@ export function agreementFor(database: Database, proposal: AcceptedProposal) {
 }
 
 // An agreement with its proposal, as the side looking sees it, with the
-// event (whose it is, and whether it has begun: its goals are set on the
-// agreement until then) and the goals both sides read, without the staff
-// PINs and coupons only the owner keeps, and the reviews: whether this side
-// may write one now, its own and the other's.
+// event (whose it is, and whether it has begun: its goals and measurement
+// methods are set on the agreement until then), the goals both sides read,
+// without the PINs and coupons only the owner keeps, how it is measured with
+// this side's own venue PIN, and the reviews: whether this side may write
+// one now, its own and the other's.
 export function agreementView(database: Database, agreement: Agreement, proposal: AcceptedProposal, side: ChatSide) {
   const other: ChatSide = side === "group" ? "brand" : "group"
   const review = (by: ChatSide) => database.reviews.find((item) => item.id === `${proposal.id}:${by}`)
@@ -144,6 +187,7 @@ export function agreementView(database: Database, agreement: Agreement, proposal
   const measurement =
     sponsored &&
     database.measurements.find((item) => item.accountId === sponsored.owner.id && item.eventId === sponsored.event.id)
+  const measure = measureView(database, proposal, side)
   return {
     ...agreement,
     side,
@@ -166,6 +210,7 @@ export function agreementView(database: Database, agreement: Agreement, proposal
     ...(measurement
       ? { goals: { expectedAudience: measurement.goals.expectedAudience, targets: measurement.goals.targets } }
       : {}),
+    ...(measure ? { measure } : {}),
     gives: proposal.gives,
     review: {
       open: reviewOpen(proposal),

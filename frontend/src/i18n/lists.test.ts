@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest"
 
 import { inquiryCategories } from "../data/inquiries"
+import { methodInfo } from "../data/methods"
 import { metricInfo } from "../data/metrics"
 import { navItems } from "../data/navigation"
 import { placeCategories } from "../data/places"
@@ -21,6 +22,9 @@ describe("English for listed values", () => {
       ...roles.flatMap((role) => positionHints[role]),
       ...valueTypes,
       ...Object.values(metricInfo).map((info) => info.label),
+      ...Object.values(methodInfo).flatMap((info) => [info.label, info.detail]),
+      // What the venue's records say (backend lib/measurements.ts recordMetric).
+      "샘플링 · 시음",
       ...inquiryCategories,
       ...placeCategories.map((category) => category.label),
       ...roles.flatMap((role) => reviewTags[role]),

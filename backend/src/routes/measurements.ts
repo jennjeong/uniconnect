@@ -25,6 +25,13 @@ function measurementOwner(req: Request) {
   return database.accounts.find((account) => account.id === database.demoAccountIds[role])
 }
 
+// The PINs go to the logged-in owner only: the store PINs, and the group's
+// venue PIN when the owner is the student group.
+const pinsFor = (req: Request) => ({
+  withPin: Boolean(req.account),
+  withGroupPin: req.account?.role === "학생단체",
+})
+
 // The owner's event with its measurement, created the first time it is opened.
 async function ownedMeasurement(req: Request) {
   const database = getDatabase()
@@ -47,7 +54,7 @@ measurementsRouter.get("/", async (req, res) => {
     .map((event) => {
       const { measurement, created } = ensureMeasurement(database, owner!.id, event)
       changed ||= created
-      return { eventId: event.id, metrics: measurement.metrics, report: buildReport(measurement, event, { withPin: Boolean(req.account) }) }
+      return { eventId: event.id, metrics: measurement.metrics, report: buildReport(measurement, event, pinsFor(req)) }
     })
   if (changed) await saveDatabase()
   res.json({ measurements })
@@ -55,7 +62,7 @@ measurementsRouter.get("/", async (req, res) => {
 
 measurementsRouter.get("/:eventId", async (req, res) => {
   const { measurement, event } = await ownedMeasurement(req)
-  res.json({ metrics: measurement.metrics, report: buildReport(measurement, event, { withPin: Boolean(req.account) }) })
+  res.json({ metrics: measurement.metrics, report: buildReport(measurement, event, pinsFor(req)) })
 })
 
 // Participation history, newest first; ?kind= narrows it to one measurement.
@@ -82,5 +89,5 @@ measurementsRouter.put("/:eventId/goals", async (req, res) => {
   measurement.goals = goals
   if (staffPin) measurement.staffPin = staffPin
   await saveDatabase()
-  res.json({ metrics: measurement.metrics, report: buildReport(measurement, event, { withPin: Boolean(req.account) }) })
+  res.json({ metrics: measurement.metrics, report: buildReport(measurement, event, pinsFor(req)) })
 })

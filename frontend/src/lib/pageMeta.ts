@@ -37,8 +37,8 @@ const pages: Record<Exclude<NavLabel, "대시보드">, PageMeta> = {
     title: titled(t("내 행사 일정")),
     description: t("등록한 행사를 달력과 그달 일정 목록으로 보고, 새 행사를 하루나 기간으로 등록해요."),
   },
-  "성과 측정": {
-    title: titled(t("성과 측정")),
+  성과: {
+    title: titled(t("성과")),
     description: t("행사 QR 스캔, 쿠폰 수령, 매장 방문을 실시간으로 집계하고 목표와 비교해요."),
   },
   리포트: {

@@ -141,7 +141,7 @@ export function Footer({
         <div className="footer-columns">
           <div className="footer-brand">
             <img alt="uniconnect" height={27} src={logo} width={116} />
-            <p>{t("학생단체와 브랜드 사이의 협찬을 잇고, 그 성과를 숫자로 증명하는 성과 측정형 캠퍼스 스폰서십 플랫폼이에요.")}</p>
+            <p>{t("학생단체와 브랜드 사이의 협찬을 잇고, 그 성과를 숫자로 증명하는 캠퍼스 스폰서십 플랫폼이에요.")}</p>
           </div>
           {columns.map((column) => (
             <div className="footer-column" key={column.title}>

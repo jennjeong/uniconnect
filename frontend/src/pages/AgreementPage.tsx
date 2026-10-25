@@ -6,11 +6,13 @@ import { PageIntro } from "../components/PageIntro"
 import { Pill } from "../components/Pill"
 import { ReviewCard } from "../components/ReviewCard"
 import { starPath } from "../components/Stars"
+import { methodInfo, methodKinds, sortedMethods } from "../data/methods"
 import { reviewTags } from "../data/reviews"
 import { locale, t } from "../i18n"
+import { venueLink } from "../lib/checkin"
 import { formatDateTime, formatFullDate } from "../lib/date"
 import { photoFromFile } from "../lib/image"
-import type { Agreement, AgreementItem, ChatSide, Review } from "../types"
+import type { Agreement, AgreementItem, ChatSide, MeasureMethod, Review, ShareCounts } from "../types"
 import { agreementState } from "./AgreementsPage"
 
 // A proof photo, fetched with the login token (an <img> can't send it) and
@@ -294,7 +296,168 @@ function GoalsPanel({ agreement, onEdit }: { agreement: Agreement; onEdit?: (eve
           <Pill onClick={() => onEdit(event.id)} variant="outline">
             {t("목표 정하기")}
           </Pill>
-          <p className="field-hint">{t("정한 목표는 성과 측정과 리포트에 바로 반영돼요.")}</p>
+          <p className="field-hint">{t("정한 목표는 성과와 리포트에 바로 반영돼요.")}</p>
+        </div>
+      )}
+    </section>
+  )
+}
+
+// What one method has counted for this sponsorship so far.
+function methodCount(method: MeasureMethod, counts: ShareCounts) {
+  const count = (value: number) => value.toLocaleString(locale)
+  if (method.kind === "coupon") {
+    return t("쿠폰 {coupons}장 · 방문 {visits}명", { coupons: count(counts.coupons), visits: count(counts.visits) })
+  }
+  const value = counts[methodInfo[method.kind].metric as keyof ShareCounts]
+  return method.kind === "sampling"
+    ? t("{count}개", { count: count(value) })
+    : method.kind === "booth"
+      ? t("{count}명", { count: count(value) })
+      : t("{count}건", { count: count(value) })
+}
+
+// How the sponsorship is measured at the event (측정 방식): the methods it
+// uses, the side that confirms each at the venue and what each has counted,
+// then this side's own venue page and PIN. Either side changes the methods
+// until the event begins, and a change asks both sides to confirm again.
+function MethodsPanel({
+  agreement,
+  busy,
+  onSave,
+}: {
+  agreement: Agreement
+  busy: boolean
+  onSave: (methods: MeasureMethod[]) => Promise<boolean>
+}) {
+  const { measure, event } = agreement
+  const [draft, setDraft] = useState<MeasureMethod[] | null>(null)
+  const [error, setError] = useState("")
+  if (!measure || !event) return null
+  const sideName = (side: ChatSide) => agreement[side].name
+  const venue = measure.venue
+
+  if (draft) {
+    const toggle = (kind: MeasureMethod["kind"]) =>
+      setDraft(
+        draft.some((method) => method.kind === kind)
+          ? draft.filter((method) => method.kind !== kind)
+          : sortedMethods([...draft, { kind, side: methodInfo[kind].side }]),
+      )
+    const choose = (kind: MeasureMethod["kind"], side: ChatSide) =>
+      setDraft(draft.map((method) => (method.kind === kind ? { ...method, side } : method)))
+    return (
+      <section className="agreement-section methods-panel">
+        <h2>
+          {t("측정 방식")}
+          <small>{t("쓸 방식과 현장에서 확인할 쪽을 골라 주세요")}</small>
+        </h2>
+        <ul className="method-options">
+          {methodKinds.map((kind) => {
+            const info = methodInfo[kind]
+            const chosen = draft.find((method) => method.kind === kind)
+            return (
+              <li className={chosen ? "method-option chosen" : "method-option"} key={kind}>
+                <label className="method-use">
+                  <input checked={Boolean(chosen)} onChange={() => toggle(kind)} type="checkbox" />
+                  <Icon name={info.icon} size={16} />
+                  <span>
+                    <strong>{t(info.label)}</strong>
+                    <small>{t(info.detail)}</small>
+                  </span>
+                </label>
+                {chosen && (
+                  <fieldset className="method-side">
+                    <legend>{t("{method} 확인하는 쪽", { method: t(info.label) })}</legend>
+                    {(["group", "brand"] as const).map((side) => (
+                      <label key={side}>
+                        <input
+                          checked={chosen.side === side}
+                          disabled={info.fixed && side !== info.side}
+                          name={`method-side-${kind}`}
+                          onChange={() => choose(kind, side)}
+                          type="radio"
+                        />
+                        {sideName(side)}
+                      </label>
+                    ))}
+                  </fieldset>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+        {error && (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        )}
+        <div className="goals-actions">
+          <button className="cancel-button" onClick={() => setDraft(null)} type="button">
+            {t("취소")}
+          </button>
+          <button
+            className="primary-button"
+            disabled={busy}
+            onClick={() => {
+              if (draft.length === 0) return setError(t("측정 방식을 하나 이상 골라 주세요."))
+              setError("")
+              void onSave(draft).then((saved) => saved && setDraft(null))
+            }}
+            type="button"
+          >
+            {t("저장")}
+          </button>
+        </div>
+      </section>
+    )
+  }
+
+  return (
+    <section className="agreement-section methods-panel">
+      <h2>
+        {t("측정 방식")}
+        <small>
+          {event.started ? t("행사가 시작돼 측정 방식을 더 바꿀 수 없어요") : t("행사 전까지 두 쪽 모두 고칠 수 있어요")}
+        </small>
+      </h2>
+      <ul className="method-list">
+        {measure.methods.map((method) => {
+          const info = methodInfo[method.kind]
+          return (
+            <li key={method.kind}>
+              <Icon name={info.icon} size={16} />
+              <span>
+                <strong>{t(info.label)}</strong>
+                <small>{t("{name}에서 현장 확인", { name: sideName(method.side) })}</small>
+              </span>
+              <em>{methodCount(method, measure.counts)}</em>
+            </li>
+          )
+        })}
+      </ul>
+      {venue && (
+        <div className="venue-access">
+          <strong>{t("우리 쪽 현장 확인")}</strong>
+          <p className="field-hint">
+            {venue.page === "staff"
+              ? t("행사 날 담당 직원이 자기 기기에서 이 주소를 열고 PIN을 넣으면, 우리 브랜드가 맡은 방식을 기록할 수 있어요.")
+              : t("행사 날 담당자가 자기 기기에서 이 주소를 열고 PIN을 넣으면, 우리 단체가 맡은 방식을 기록할 수 있어요.")}
+          </p>
+          <a className="qr-link" href={venueLink(measure.code, venue.page)} rel="noreferrer" target="_blank">
+            {venueLink(measure.code, venue.page)}
+          </a>
+          <span>
+            {t("PIN")} <strong>{venue.pin}</strong>
+          </span>
+        </div>
+      )}
+      {!event.started && (
+        <div className="goals-actions">
+          <Pill onClick={() => setDraft(measure.methods)} variant="outline">
+            {t("측정 방식 고치기")}
+          </Pill>
+          <p className="field-hint">{t("고치면 두 쪽 모두 약속서를 다시 확인해야 해요.")}</p>
         </div>
       )}
     </section>
@@ -605,6 +768,14 @@ export function AgreementPage({
       </article>
 
       <GoalsPanel agreement={agreement} onEdit={onEditGoals} />
+
+      <MethodsPanel
+        agreement={agreement}
+        busy={busy}
+        onSave={(methods) =>
+          run(() => api.saveMeasureMethods(agreement.id, methods), t("측정 방식을 고쳤어요. 두 쪽 모두 다시 확인해 주세요."))
+        }
+      />
 
       {editing ? (
         <ItemsEditor

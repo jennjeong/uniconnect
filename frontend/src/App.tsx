@@ -97,7 +97,7 @@ import type {
 // fits the address, else the address.
 const initialView = entryView(history.state as HistoryEntry | null)
 
-const noMetrics: Metrics = { scans: 0, coupons: 0, visits: 0 }
+const noMetrics: Metrics = { scans: 0, coupons: 0, visits: 0, samples: 0, stamps: 0, posts: 0 }
 
 function App() {
   const [view, setView] = useState<View>(initialView)
@@ -1026,7 +1026,7 @@ function App() {
       case "내 행사":
       case "행사 일정":
         return eventsPage
-      case "성과 측정":
+      case "성과":
         return (
           <MeasurementPage
             measurements={measurements}

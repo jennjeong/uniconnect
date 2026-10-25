@@ -28,7 +28,7 @@ describe("which screens search engines may list", () => {
   it("keeps out the dashboard, the screens for one account or one link, and the 404 page", () => {
     for (const view of [
       {},
-      { page: "성과 측정" },
+      { page: "성과" },
       { page: "받은 제안" },
       { page: "내 행사" },
       { create: "2026-11-01" },
