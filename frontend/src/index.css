@@ -7067,6 +7067,67 @@ button.nav-pill:hover {
   text-underline-offset: 2px;
 }
 
+/* One press logs into a shared demo account (data/demo.ts), so no one has
+   to type its published password; silver pills under a hairline. */
+.demo-login {
+  display: grid;
+  gap: 10px;
+  margin: 20px 0 0;
+  padding: 18px 0 0;
+  border-top: 1px solid var(--line);
+  text-align: center;
+}
+
+.demo-login > p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.demo-login-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.demo-login-buttons button {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--fill);
+  box-shadow: var(--silver-ring);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+  text-align: left;
+}
+
+.demo-login-buttons button:hover {
+  background: var(--fill-strong);
+}
+
+.demo-login-buttons button span {
+  display: grid;
+  line-height: 1.25;
+}
+
+.demo-login-buttons button small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.demo-login > small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 /* An event's goals (modals/GoalsModal.tsx): groups of fields under small
    headings, the sponsorship's value as rows of kind, amount and remove. */
 .goals-form fieldset {

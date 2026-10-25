@@ -83,6 +83,16 @@ test("a member who opens the introduction goes on to the dashboard", async ({ pa
   await expect(page.locator(".demo-chip")).toHaveCount(0)
 })
 
+test("the login popup logs into a demo account with one press, with nothing to type", async ({ page }) => {
+  await page.goto("/")
+  await page.getByRole("button", { name: "로그인", exact: true }).first().click()
+  const dialog = page.getByRole("dialog")
+  await dialog.getByRole("button", { name: /오후의 커피/ }).click()
+  await expect(dialog).toBeHidden()
+  await expect(page).toHaveURL(/\/dashboard$/)
+  await expect(page.locator(".hero-eyebrow")).toContainText("반가워요, 오후의 커피")
+})
+
 test("a student group proposes and the brand accepts", async ({ browser }) => {
   const student = await (await browser.newContext()).newPage()
   await student.goto("/")

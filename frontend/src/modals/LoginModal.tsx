@@ -2,7 +2,10 @@ import { useState } from "react"
 
 import { api, errorMessage } from "../api"
 import { Modal } from "../components/Modal"
+import { RoleMark } from "../components/RoleMark"
 import { RolePicker } from "../components/RolePicker"
+import { demoAccounts, demoPassword } from "../data/demo"
+import { roles } from "../data/roles"
 import { t } from "../i18n"
 import type { Role, Session } from "../types"
 
@@ -23,15 +26,16 @@ export function LoginModal({
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
 
-  const submit = async () => {
-    if (!draft.email.trim() || !draft.password) {
+  // The form as typed, or a demo account's published login.
+  const submit = async (form = draft) => {
+    if (!form.email.trim() || !form.password) {
       setError(t("이메일과 비밀번호를 입력해 주세요."))
       return
     }
     setBusy(true)
     setError("")
     try {
-      onLoggedIn(await api.login(draft))
+      onLoggedIn(await api.login(form))
     } catch (caught) {
       setError(errorMessage(caught))
     } finally {
@@ -98,6 +102,26 @@ export function LoginModal({
             {t("회원가입")}
           </button>
         </p>
+        <div className="demo-login">
+          <p>{t("데모 계정으로 체험하기")}</p>
+          <div className="demo-login-buttons">
+            {roles.map((role) => (
+              <button
+                disabled={busy}
+                key={role}
+                onClick={() => void submit({ role, email: demoAccounts[role].email, password: demoPassword })}
+                type="button"
+              >
+                <RoleMark role={role} size={22} />
+                <span>
+                  {demoAccounts[role].name}
+                  <small>{t(role)}</small>
+                </span>
+              </button>
+            ))}
+          </div>
+          <small>{t("여러 사람이 함께 쓰는 체험용 계정이라, 예시 데이터 안에서만 제안하고 수락해 볼 수 있어요.")}</small>
+        </div>
       </form>
     </Modal>
   )

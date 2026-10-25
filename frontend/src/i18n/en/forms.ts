@@ -27,6 +27,9 @@ const en: Record<string, string> = {
   "학생단체로 로그인": "Log in as a student group",
   "스폰서로 로그인": "Log in as a brand",
   "아직 계정이 없나요?": "New to uniconnect?",
+  "데모 계정으로 체험하기": "Try a demo account",
+  "여러 사람이 함께 쓰는 체험용 계정이라, 예시 데이터 안에서만 제안하고 수락해 볼 수 있어요.":
+    "These shared accounts are for trying uniconnect: you can propose and accept within the example data only.",
 
   // Sign up (modals/SignupModal.tsx)
   "단체명을 입력해 주세요.": "Enter your group's name.",
