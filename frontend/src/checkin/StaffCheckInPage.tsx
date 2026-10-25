@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 
 import { api, errorMessage } from "../api"
 import logo from "../assets/brand/uniconnect_horizontal.svg"
+import { PasswordField } from "../components/PasswordField"
 import { t } from "../i18n"
 import { formatFullDate } from "../lib/date"
 import type { CheckInInfo } from "../types"
@@ -88,18 +89,16 @@ export function StaffCheckInPage({ code }: { code: string }) {
             void confirm()
           }}
         >
-          <label>
-            {t("직원 PIN")}
-            <input
-              autoComplete="off"
-              className="checkin-pin"
-              inputMode="numeric"
-              maxLength={4}
-              type="password"
-              value={pin}
-              onChange={(event) => setPin(event.target.value.replace(/\D/g, "").slice(0, 4))}
-            />
-          </label>
+          <PasswordField
+            autoComplete="off"
+            className="checkin-pin"
+            inputMode="numeric"
+            label={t("직원 PIN")}
+            maxLength={4}
+            toggleLabel={t("PIN 보기")}
+            value={pin}
+            onChange={(event) => setPin(event.target.value.replace(/\D/g, "").slice(0, 4))}
+          />
           <label>
             {t("쿠폰 번호")}
             <input

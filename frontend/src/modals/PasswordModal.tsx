@@ -2,6 +2,7 @@ import { useState } from "react"
 
 import { api, errorMessage } from "../api"
 import { Modal } from "../components/Modal"
+import { PasswordField } from "../components/PasswordField"
 import { t } from "../i18n"
 
 // Changing the password from 내 정보: the current one, then the new one
@@ -28,15 +29,12 @@ export function PasswordModal({ onClose, onChanged }: { onClose: () => void; onC
   }
 
   const field = (key: keyof typeof draft, label: string, autoComplete: string) => (
-    <label>
-      {label}
-      <input
-        autoComplete={autoComplete}
-        type="password"
-        value={draft[key]}
-        onChange={(event) => setDraft((current) => ({ ...current, [key]: event.target.value }))}
-      />
-    </label>
+    <PasswordField
+      autoComplete={autoComplete}
+      label={label}
+      value={draft[key]}
+      onChange={(event) => setDraft((current) => ({ ...current, [key]: event.target.value }))}
+    />
   )
 
   return (

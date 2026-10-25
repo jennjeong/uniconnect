@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 
 import { api, errorMessage } from "../api"
 import { Modal } from "../components/Modal"
+import { PasswordField } from "../components/PasswordField"
 import { RolePicker } from "../components/RolePicker"
 import { t } from "../i18n"
 import { accountTypes } from "../data/roles"
@@ -274,25 +275,19 @@ export function SignupModal({
           )}
         </div>
         <div className="form-row">
-          <label>
-            {t("비밀번호")}
-            <input
-              autoComplete="new-password"
-              placeholder={t("8자 이상")}
-              type="password"
-              value={draft.password}
-              onChange={(event) => update({ password: event.target.value })}
-            />
-          </label>
-          <label>
-            {t("비밀번호 확인")}
-            <input
-              autoComplete="new-password"
-              type="password"
-              value={draft.confirm}
-              onChange={(event) => update({ confirm: event.target.value })}
-            />
-          </label>
+          <PasswordField
+            autoComplete="new-password"
+            label={t("비밀번호")}
+            placeholder={t("8자 이상")}
+            value={draft.password}
+            onChange={(event) => update({ password: event.target.value })}
+          />
+          <PasswordField
+            autoComplete="new-password"
+            label={t("비밀번호 확인")}
+            value={draft.confirm}
+            onChange={(event) => update({ confirm: event.target.value })}
+          />
         </div>
         <label className="terms-check">
           <input

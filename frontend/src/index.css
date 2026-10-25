@@ -4851,6 +4851,50 @@ button.nav-pill:hover {
   background: #fff;
 }
 
+/* A password box with the eye button that shows what was typed
+   (components/PasswordField.tsx), inside the box on its right. */
+.password-input {
+  position: relative;
+  display: block;
+}
+
+.password-input > input.password-box {
+  display: block;
+  width: 100%;
+  margin-bottom: 0;
+  padding-right: 48px;
+}
+
+/* The staff PIN stays centred between the two sides. */
+.password-input > input.checkin-pin.password-box {
+  padding-left: 48px;
+}
+
+.staff-form .password-input {
+  margin-bottom: 10px;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  transform: translateY(-50%);
+}
+
+.password-toggle:hover,
+.password-toggle[aria-pressed='true'] {
+  color: var(--point-strong);
+}
+
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;

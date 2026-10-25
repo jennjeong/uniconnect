@@ -27,6 +27,7 @@ const en: Record<string, string> = {
   "학생단체로 로그인": "Log in as a student group",
   "스폰서로 로그인": "Log in as a brand",
   "아직 계정이 없나요?": "New to uniconnect?",
+  "비밀번호 보기": "Show password",
   "데모 계정으로 체험하기": "Try a demo account",
   "여러 사람이 함께 쓰는 체험용 계정이라, 예시 데이터 안에서만 제안하고 수락해 볼 수 있어요.":
     "These shared accounts are for trying uniconnect: you can propose and accept within the example data only.",
@@ -154,6 +155,7 @@ const en: Record<string, string> = {
   "제안 수락률": "Proposal acceptance",
   나가기: "Sign out",
   "관리자 토큰": "Admin token",
+  "토큰 보기": "Show token",
   "서버의 ADMIN_TOKEN": "The server's ADMIN_TOKEN",
   "토큰은 이 탭에만 기억되고, 탭을 닫으면 지워져요.": "The token is kept in this tab only and cleared when you close it.",
   "질문 상태": "Question status",
