@@ -45,9 +45,33 @@ const en: Record<string, string> = {
   "협찬 · {name}": "Sponsoring · {name}",
   "캘린더에 넣을 다가오는 일정이 없어요.": "There are no upcoming dates to add to a calendar.",
   "uniconnect 행사 일정": "uniconnect events",
-  "캘린더 파일을 내려받았어요. 캘린더 앱에서 열면 일정이 추가돼요.":
-    "Calendar file downloaded. Open it in your calendar app to add the dates.",
   "캘린더에 추가": "Add to calendar",
+  // modals/CalendarModal.tsx, lib/calendarApps.ts
+  "일정 {count}개 선택됨": "{count} selected",
+  "모두 고르기": "Select all",
+  "넣을 일정": "Dates to add",
+  "캘린더 앱": "Calendar app",
+  "Google 캘린더": "Google Calendar",
+  "Apple 캘린더": "Apple Calendar",
+  Outlook: "Outlook",
+  "다른 앱": "Other apps",
+  "넣을 일정을 하나 이상 골라 주세요.": "Pick at least one date to add.",
+  "Google 캘린더와 Outlook은 일정 추가 화면이, Apple 캘린더와 다른 앱은 캘린더 파일이 열려요.":
+    "Google Calendar and Outlook open their add-event page; Apple Calendar and other apps open the calendar file.",
+  "일정을 하나씩 열어요. {app}의 일정 추가 화면이 새 창이나 앱으로 열려요.":
+    "Open the dates one by one. {app}'s add-event page opens in a new tab or its app.",
+  "{title} {app}에서 열기": "Open {title} in {app}",
+  열기: "Open",
+  "일정 복사": "Copy dates",
+  "캘린더 파일로 저장": "Save calendar file",
+  "일정을 복사했어요.": "Dates copied.",
+  "일정을 복사하지 못했어요.": "Couldn't copy the dates.",
+  "캘린더 파일을 저장했어요. 쓰는 캘린더 앱에서 가져올 수 있어요.":
+    "Calendar file saved. You can import it into your calendar app.",
+  "캘린더 파일을 열면 Apple 캘린더가 열리고, 거기서 일정을 추가할 수 있어요.":
+    "Open the calendar file and Apple Calendar opens to add the dates.",
+  "캘린더 파일을 열면 쓰는 캘린더 앱이 열리고, 거기서 일정을 추가할 수 있어요.":
+    "Open the calendar file and your calendar app opens to add the dates.",
   "가게를 연결했어요. {name}에 알렸어요.": "Your shop is linked. We let {name} know.",
   "로그인하면 협찬 제안을 보낼 수 있어요.": "Log in to send a sponsorship proposal.",
   "{name}에 협찬 제안을 보냈어요.": "Proposal sent to {name}.",

@@ -38,6 +38,17 @@ export function formatDay(iso: string) {
   return `${date.getMonth() + 1}월${nbsp}${date.getDate()}일${nbsp}${weekday}`
 }
 
+// A day as a page torn off a calendar: its month ("11월", "Nov"), day and
+// weekday ("금", "Fri").
+export function calendarPage(iso: string) {
+  const date = fromIsoDate(iso) ?? new Date()
+  return {
+    month: lang === "en" ? monthNames[date.getMonth()] : `${date.getMonth() + 1}월`,
+    day: date.getDate(),
+    weekday: weekdayNames[date.getDay()],
+  }
+}
+
 // "2026. 10. 12. (월)", "Oct 12, 2026 (Mon)"
 export function formatFullDate(iso: string) {
   const date = fromIsoDate(iso)
