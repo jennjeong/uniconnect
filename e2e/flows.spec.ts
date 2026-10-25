@@ -116,6 +116,66 @@ test("a student group proposes and the brand accepts", async ({ browser }) => {
   await expect(accepted.getByRole("list", { name: "협찬 진행 상황" })).toBeVisible()
 })
 
+test("the agreement sets how the event is measured, and each side confirms its own methods at the venue", async ({ browser }) => {
+  // The concert the group proposed above, which the brand accepted.
+  const student = await (await browser.newContext()).newPage()
+  await student.goto("/")
+  await logIn(student, "학생단체", "muse@syu.ac.kr")
+  await student.goto("/agreements")
+  await student.locator(".agreement-row", { hasText: "2026 뮤즈 종강 공연" }).click()
+  const methods = student.locator(".methods-panel")
+  // At first the coupon, whose store visits the brand confirms.
+  await expect(methods.locator(".method-list")).toContainText("QR 체크인 · 쿠폰 · 매장 방문")
+  await expect(methods.locator(".venue-access")).toHaveCount(0)
+
+  // The group adds booth stamps for itself and sampling for the brand.
+  await methods.getByRole("button", { name: "측정 방식 고치기" }).click()
+  await methods.getByRole("checkbox", { name: /부스 방문 · 스탬프/ }).check()
+  await methods.getByRole("checkbox", { name: /샘플링 · 시음 수량/ }).check()
+  await expect(methods.getByRole("group", { name: "QR 체크인 · 쿠폰 · 매장 방문 확인하는 쪽" }).getByRole("radio", { name: "삼육대 뮤즈" })).toBeDisabled()
+  await methods.getByRole("button", { name: "저장" }).click()
+  await expect(methods.locator(".method-list li")).toHaveCount(3)
+  await expect(methods.locator(".method-list")).toContainText("삼육대 뮤즈에서 현장 확인")
+
+  // Its own venue page opens with its PIN, which only it sees, and takes the stamps.
+  const link = await methods.locator(".venue-access a").getAttribute("href")
+  const pin = (await methods.locator(".venue-access span strong").textContent())!
+  expect(link).toMatch(/\/check-in\/[\w-]+\/group$/)
+  const venue = await (await browser.newContext()).newPage()
+  await venue.goto(link!)
+  await venue.getByLabel("단체 확인 PIN").fill(pin === "0000" ? "0001" : "0000")
+  await expect(venue.getByText(/단체 확인 PIN이 맞지 않아요/)).toBeVisible()
+  await venue.getByLabel("단체 확인 PIN").fill(pin)
+  await expect(venue.getByRole("heading", { level: 1 })).toHaveText("2026 뮤즈 종강 공연")
+  await expect(venue.getByRole("button", { name: /샘플링/ })).toHaveCount(0)
+  await venue.getByRole("button", { name: "부스 방문 · 스탬프 한 명 확인" }).click()
+  await venue.getByRole("button", { name: "부스 방문 · 스탬프 한 명 확인" }).click()
+  await venue.getByRole("button", { name: "부스 방문 · 스탬프 하나 되돌리기" }).click()
+  await expect(venue.locator(".venue-counter-head strong")).toHaveText("1")
+
+  // The brand's store staff count the samples on the staff page with the brand's PIN.
+  const brand = await (await browser.newContext()).newPage()
+  await brand.goto("/")
+  await logIn(brand, "브랜드", "hello@afternoon-coffee.kr")
+  await brand.goto("/agreements")
+  await brand.locator(".agreement-row", { hasText: "2026 뮤즈 종강 공연" }).click()
+  const brandMethods = brand.locator(".methods-panel")
+  const staffLink = await brandMethods.locator(".venue-access a").getAttribute("href")
+  const staffPin = (await brandMethods.locator(".venue-access span strong").textContent())!
+  expect(staffLink).toMatch(/\/staff$/)
+  const staff = await (await browser.newContext()).newPage()
+  await staff.goto(staffLink!)
+  await staff.getByLabel("직원 PIN").fill(staffPin)
+  await staff.getByLabel("수량", { exact: true }).fill("12")
+  await staff.getByRole("button", { name: "샘플링 · 시음 수량 12개 더하기" }).click()
+  await expect(staff.locator(".venue-counter-head strong")).toHaveText("12")
+
+  // Both sides read the counts on the agreement.
+  await student.reload()
+  await expect(methods.locator(".method-list")).toContainText("12개")
+  await expect(methods.locator(".method-list")).toContainText("1명")
+})
+
 test("a participant takes the coupon and the store's staff confirm the visit on their own page", async ({ browser }) => {
   const participant = await (await browser.newContext()).newPage()
   await participant.goto("/check-in/20261012")

@@ -1,9 +1,9 @@
-import { metricInfo, metricKinds } from "../data/metrics"
+import { isCheckInKind, metricInfo, metricKinds } from "../data/metrics"
 import { useLiveMeasurement } from "../hooks/useLiveMeasurement"
 import { t } from "../i18n"
 import { formatDateTime } from "../lib/date"
 import { percent } from "../lib/format"
-import { measureState } from "../lib/measurements"
+import { measureState, venueKindsOf } from "../lib/measurements"
 import type { EventMeasurement, MetricKind, Metrics, Report } from "../types"
 import { AnimatedNumber } from "./AnimatedNumber"
 import { EventPicker } from "./EventPicker"
@@ -13,7 +13,8 @@ import { RevealTitle } from "./RevealText"
 
 // A brand's own campaign measured on site, at the end of 성과 분석: pick
 // the campaign, open its check-in QR, and watch its QR scans, coupons and
-// store visits as they come in. Before the campaign (진행 전) the counts
+// store visits as they come in, with what the venue confirmed by the
+// methods set on its agreement. Before the campaign (진행 전) the counts
 // wait as dashes beside their goals, which are set on the agreement with
 // the group that took the brand's offer.
 export function CampaignMeasurement({
@@ -65,15 +66,21 @@ export function CampaignMeasurement({
             )}
           </div>
           <div className="campaign-measure-tiles">
-            {metricKinds.map((kind) => (
+            {[...metricKinds, ...venueKindsOf(report)].map((kind) => (
               <button className="campaign-measure-tile" key={kind} onClick={() => onShowLog(kind)} type="button">
                 <span>
                   <Icon name={metricInfo[kind].icon} size={16} /> {t(metricInfo[kind].label)}
                 </span>
                 <strong>{upcoming ? "—" : <AnimatedNumber value={metrics[kind].toLocaleString("ko-KR")} />}</strong>
                 <small>
-                  {t("목표 {target}", { target: report.targets[kind].toLocaleString("ko-KR") })}
-                  {!upcoming && ` · ${percent(metrics[kind], report.targets[kind])}%`}
+                  {isCheckInKind(kind) ? (
+                    <>
+                      {t("목표 {target}", { target: report.targets[kind].toLocaleString("ko-KR") })}
+                      {!upcoming && ` · ${percent(metrics[kind], report.targets[kind])}%`}
+                    </>
+                  ) : (
+                    t("현장에서 확인")
+                  )}
                 </small>
               </button>
             ))}

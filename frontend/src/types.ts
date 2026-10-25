@@ -122,6 +122,15 @@ export type Agreement = {
   confirmed: Partial<Record<ChatSide, string>>
   createdAt: string
   updatedAt: string
+  // How the sponsorship is measured at the event (data/methods.ts), what the
+  // venue counted for it, and this side's own venue page and PIN when it
+  // confirms any of the methods; once the event has a measurement.
+  measure?: {
+    code: string
+    methods: MeasureMethod[]
+    counts: ShareCounts
+    venue?: { page: VenuePage; pin: string }
+  }
   // Reviews open from the event's day; canWrite is false for the demo
   // accounts and when the other side has no listing to show it on.
   review: { open: boolean; canWrite: boolean; mine?: Review; theirs?: Review }
@@ -213,9 +222,31 @@ export type Account = {
 
 export type Session = { token: string; account: Account }
 
-export type Metrics = { scans: number; coupons: number; visits: number }
+// QR scans, coupons and store visits, then what the venue's staff confirm by
+// the measurement methods: samples handed out, booth visits stamped, SNS
+// posts or surveys checked.
+export type Metrics = { scans: number; coupons: number; visits: number; samples: number; stamps: number; posts: number }
 
 export type MetricKind = keyof Metrics
+
+// How a sponsorship is measured at the event, and the side that confirms
+// each method there (backend lib/methods.ts).
+export type MethodKind = "coupon" | "sampling" | "booth" | "sns"
+
+export type MeasureMethod = { kind: MethodKind; side: ChatSide }
+
+// One share's counts (a sponsor's, or a whole event's before any).
+export type ShareCounts = Omit<Metrics, "scans">
+
+// The two venue pages: the brand's (its store staff, /check-in/<code>/staff)
+// and the student group's (/check-in/<code>/group).
+export type VenuePage = "staff" | "group"
+
+// A venue page once its PIN is right: the event and each share it confirms
+// for, with the methods this side confirms there and the counts so far.
+export type VenueShare = { id: string; brandName: string | null; store: string; kinds: MethodKind[]; counts: ShareCounts }
+
+export type VenueSession = { eventName: string; eventDate: string; shares: VenueShare[] }
 
 export type MetricEntry = {
   id: string
@@ -272,6 +303,10 @@ export type Sponsorship = {
   coupons: number
   visits: number
   sales: number
+  // What the venue confirmed for it by its measurement methods.
+  samples?: number
+  stamps?: number
+  posts?: number
   // ROAS goal in percent.
   targetRoas: number
 }
@@ -374,6 +409,12 @@ export type Report = {
   coupon: { store: string; title: string }
   // 4 digits store staff enter to confirm a visit; only for the owner.
   staffPin?: string
+  // The student group's venue PIN; only for the group that owns the event.
+  groupPin?: string
+  // How the event is measured before any sponsor (each sponsor's below), and
+  // what the venue confirmed for the whole event.
+  methods: MeasureMethod[]
+  venue: { samples: number; stamps: number; posts: number }
   // Once brands sponsor the event, each one's own coupon, counts and value;
   // participants then take these coupons instead of the event's.
   sponsors?: SponsorReport[]
@@ -389,6 +430,11 @@ export type SponsorReport = {
   coupons: number
   visits: number
   roas: number
+  // How this sponsorship is measured, and what the venue confirmed for it.
+  methods: MeasureMethod[]
+  samples: number
+  stamps: number
+  posts: number
   // Its store staff's PIN; only for the owner.
   staffPin?: string
 }
@@ -415,7 +461,7 @@ export type NavLabel =
   | "추천 매칭"
   | "받은 협찬"
   | "내 행사"
-  | "성과 측정"
+  | "성과"
   | "리포트"
   | "단체 찾기"
   | "받은 제안"

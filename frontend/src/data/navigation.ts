@@ -16,7 +16,7 @@ export const navItems: Record<Role, NavItem[]> = {
     { label: "추천 매칭", icon: "spark", short: "매칭" },
     { label: "받은 협찬", icon: "inbox" },
     { label: "내 행사", icon: "calendar" },
-    { label: "성과 측정", icon: "chart" },
+    { label: "성과", icon: "chart" },
     { label: "리포트", icon: "file" },
   ],
   브랜드: [

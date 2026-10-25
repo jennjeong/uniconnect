@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import { CheckInPage } from './checkin/CheckInPage'
+import { GroupCheckInPage } from './checkin/GroupCheckInPage'
 import { StaffCheckInPage } from './checkin/StaffCheckInPage'
 import { lang } from './i18n'
 import { currentCheckIn } from './lib/checkin'
@@ -24,8 +25,9 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
 }
 
 // Participants who scan an event QR get the check-in page instead of the
-// app, and the sponsor's store staff their own page (/check-in/<code>/staff).
-// Neither belongs in search results.
+// app, the sponsor's store staff their own page (/check-in/<code>/staff) and
+// the student group's staff theirs (/check-in/<code>/group). None belongs in
+// search results.
 const checkIn = currentCheckIn()
 if (checkIn) {
   document.body.classList.add('checkin-body')
@@ -35,7 +37,13 @@ if (checkIn) {
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     {checkIn ? (
-      checkIn.staff ? <StaffCheckInPage code={checkIn.code} /> : <CheckInPage code={checkIn.code} />
+      checkIn.page === 'staff' ? (
+        <StaffCheckInPage code={checkIn.code} />
+      ) : checkIn.page === 'group' ? (
+        <GroupCheckInPage code={checkIn.code} />
+      ) : (
+        <CheckInPage code={checkIn.code} />
+      )
     ) : (
       <App />
     )}

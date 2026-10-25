@@ -6,13 +6,16 @@ import {
   acceptedProposalsOf,
   type AcceptedProposal,
   agreementFor,
+  agreementShare,
   agreementView,
   defaultItems,
   sideIn,
   sponsoredEvent,
 } from "../lib/agreements.js"
+import { todayInKorea } from "../lib/dates.js"
 import { HttpError } from "../lib/errors.js"
 import { ensureMeasurement } from "../lib/measurements.js"
+import { methodsOf, parseMethods } from "../lib/methods.js"
 import { notify } from "../lib/notices.js"
 import { photos } from "../lib/photos.js"
 import { text } from "../lib/validation.js"
@@ -145,6 +148,37 @@ agreementsRouter.put("/:id/items", async (req, res) => {
       side === "group" ? proposal.brand.account : proposal.group.account,
       "협찬 약속서가 바뀌었어요",
       [`${account.name}에서 '${proposal.eventName}' 협찬 약속서를 고쳤어요. 바뀐 내용을 보고 다시 확인해 주세요.`],
+      `/agreements/${encodeURIComponent(agreement.id)}`,
+    )
+  }
+  res.json({ agreement: agreementView(database, agreement, proposal, side) })
+})
+
+// Either side sets how the sponsorship is measured at the event and which
+// side confirms each method there, until the event begins (lib/methods.ts).
+// Like the items, a change asks both sides to confirm again.
+agreementsRouter.put("/:id/methods", async (req, res) => {
+  const { account, database, proposal, side } = opened(req)
+  const methods = parseMethods(req.body?.methods)
+  const sponsored = sponsoredEvent(database, proposal)
+  if (sponsored) ensureMeasurement(database, sponsored.owner.id, sponsored.event)
+  const share = agreementShare(database, proposal)
+  if (!share) throw new HttpError(409, "행사가 정해진 협찬만 측정 방식을 정할 수 있어요.")
+  if (share.event.date <= todayInKorea()) throw new HttpError(409, "행사가 시작돼 측정 방식을 더 바꿀 수 없어요.")
+  const { agreement } = agreementFor(database, proposal)
+  const changed = JSON.stringify(methods) !== JSON.stringify(methodsOf(share.measurement, share.sponsor))
+  if (share.sponsor) share.sponsor.methods = methods
+  else share.measurement.methods = methods
+  if (changed) {
+    agreement.confirmed = {}
+    agreement.updatedAt = new Date().toISOString()
+  }
+  await saveDatabase()
+  if (changed) {
+    void notify(
+      side === "group" ? proposal.brand.account : proposal.group.account,
+      "협찬 약속서가 바뀌었어요",
+      [`${account.name}에서 '${proposal.eventName}' 협찬의 측정 방식을 바꿨어요. 바뀐 내용을 보고 다시 확인해 주세요.`],
       `/agreements/${encodeURIComponent(agreement.id)}`,
     )
   }

@@ -317,7 +317,7 @@ test("each event counts its own QR scans, coupons and visits", async () => {
     ["event-muse-concert", "event-busking-day"],
   )
   const concert = list[0]
-  assert.deepEqual(concert.metrics, { scans: 0, coupons: 0, visits: 0 })
+  assert.deepEqual(concert.metrics, { scans: 0, coupons: 0, visits: 0, samples: 0, stamps: 0, posts: 0 })
   assert.match(concert.report.code, /^[0-9a-f]{8}$/)
   assert.equal(concert.report.expectedAudience, 120)
   await call("POST", `/check-in/${concert.report.code}/scans`)
@@ -609,7 +609,7 @@ test("an event's first sponsor takes over the coupons handed out before it", asy
   const database = structuredClone(getDatabase())
   const measurement = database.measurements.find((item) => item.eventId === "event-busking-day")!
   measurement.sponsors = []
-  measurement.metrics = { scans: 3, coupons: 2, visits: 1 }
+  measurement.metrics = { scans: 3, coupons: 2, visits: 1, samples: 0, stamps: 4, posts: 0 }
   measurement.passes = { a: { coupon: "UC-AAAAAA", visit: true }, b: { coupon: "UC-BBBBBB" }, c: {} }
   assert.equal(syncSponsors(database, measurement), true)
   assert.equal(syncSponsors(database, measurement), false)
@@ -617,7 +617,7 @@ test("an event's first sponsor takes over the coupons handed out before it", asy
   assert.equal(sponsor.id, "sp-busking")
   assert.equal(sponsor.staffPin, measurement.staffPin)
   assert.deepEqual(sponsor.coupon, measurement.goals.coupon)
-  assert.deepEqual(sponsor.metrics, { coupons: 2, visits: 1 })
+  assert.deepEqual(sponsor.metrics, { coupons: 2, visits: 1, samples: 0, stamps: 4, posts: 0 })
   assert.deepEqual(measurement.passes, {
     a: { sponsors: { "sp-busking": { coupon: "UC-AAAAAA", visit: true } } },
     b: { sponsors: { "sp-busking": { coupon: "UC-BBBBBB" } } },
@@ -1290,7 +1290,9 @@ test("the old global measurement moves to the busking day's own", async () => {
   } as unknown as Parameters<typeof upgradeDatabase>[0])
   const [busking] = upgraded.measurements
   assert.equal(busking.eventId, "event-busking-day")
-  assert.deepEqual(busking.metrics, { scans: 200, coupons: 120, visits: 60 })
+  // The venue counts that came later start at zero, with the group's venue PIN.
+  assert.deepEqual(busking.metrics, { scans: 200, coupons: 120, visits: 60, samples: 0, stamps: 0, posts: 0 })
+  assert.equal(busking.groupPin, "1013")
   assert.equal(busking.log[0].detail, "현장 QR 스캔")
   assert.equal("metrics" in upgraded || "report" in upgraded || "metricLog" in upgraded, false)
 })
@@ -2294,6 +2296,156 @@ test("a student group invites a shop it found nearby, and the shop joins as a br
     config.mailFrom = mail.from
     getDatabase().invites = getDatabase().invites.filter((invite) => !invite.code.startsWith("many-"))
   }
+})
+
+test("an agreement sets how its sponsorship is measured, and each side confirms its own methods at the venue", async () => {
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const day = addDays(todayInKorea(), 7)
+  const group = await signUpMember("methods-club@syu.ac.kr", "methods-pass-123")
+  const groupId = getDatabase().accounts.find((account) => account.email === "methods-club@syu.ac.kr")!.id
+  const { token: brand, listingId } = await listedMember("methods@methods-cafe.kr", "methods-pass-123", "브랜드")
+  const brandId = getDatabase().accounts.find((account) => account.email === "methods@methods-cafe.kr")!.id
+  await call("POST", "/events", { name: "측정 축제", date: day, people: "300명", types: ["제품"] }, group)
+  assert.equal((await call("POST", "/proposals", { matchId: listingId }, group)).status, 201)
+  const request = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
+  await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+  const agreementPath = `/agreements/${request.id}`
+
+  // Until the agreement says otherwise: the coupon and the store's visits,
+  // which the brand confirms with its store PIN on the staff page.
+  const before = (await call("GET", agreementPath, undefined, group)).data.agreement
+  assert.deepEqual(before.measure.methods, [{ kind: "coupon", side: "brand" }])
+  assert.equal(before.measure.venue, undefined)
+  const code = before.measure.code
+  const brandBefore = (await call("GET", agreementPath, undefined, brand)).data.agreement
+  assert.equal(brandBefore.measure.venue.page, "staff")
+  assert.match(brandBefore.measure.venue.pin, /^\d{4}$/)
+
+  // Either side sets them; unknown, repeated or empty ones are turned away,
+  // and store visits stay the brand's.
+  for (const methods of [
+    [],
+    "booth",
+    [{ kind: "drone", side: "group" }],
+    [{ kind: "booth", side: "both" }],
+    [{ kind: "coupon", side: "group" }],
+    [{ kind: "booth", side: "group" }, { kind: "booth", side: "brand" }],
+  ]) {
+    assert.equal((await call("PUT", `${agreementPath}/methods`, { methods }, group)).status, 400, JSON.stringify(methods))
+  }
+  await call("POST", `${agreementPath}/confirm`, undefined, brand)
+  const methods = [
+    { kind: "sns", side: "group" },
+    { kind: "sampling", side: "brand" },
+    { kind: "booth", side: "group" },
+  ]
+  const set = await call("PUT", `${agreementPath}/methods`, { methods }, group)
+  assert.equal(set.status, 200)
+  // In the listed order; like the items, a change takes back the confirmations.
+  const measure = set.data.agreement.measure
+  assert.deepEqual(measure.methods.map((method: { kind: string }) => method.kind), ["sampling", "booth", "sns"])
+  assert.deepEqual(set.data.agreement.confirmed, {})
+  assert.equal(measure.venue.page, "group")
+  const groupPin = measure.venue.pin
+  // The brand gets its store PIN, never the group's.
+  const forBrand = (await call("GET", agreementPath, undefined, brand)).data.agreement
+  assert.equal(forBrand.measure.venue.page, "staff")
+  const staffPin = forBrand.measure.venue.pin
+  assert.equal(staffPin, getDatabase().measurements.find((item) => item.code === code)!.sponsors[0].staffPin)
+  assert.equal(JSON.stringify(forBrand).includes("groupPin"), false)
+
+  // Without the coupon, participants are offered none.
+  assert.deepEqual((await call("GET", `/check-in/${code}`)).data.coupons, [])
+
+  // Each venue page opens with its own PIN, showing what that side confirms.
+  assert.equal((await call("POST", `/check-in/${code}/group/session`, { pin: groupPin === "0000" ? "0001" : "0000" })).status, 403)
+  const groupSession = (await call("POST", `/check-in/${code}/group/session`, { pin: groupPin })).data
+  assert.equal(groupSession.eventName, "측정 축제")
+  assert.deepEqual(
+    groupSession.shares.map((share: { brandName: string; kinds: string[] }) => [share.brandName, share.kinds]),
+    [["methods 카페", ["booth", "sns"]]],
+  )
+  const share = groupSession.shares[0].id
+  assert.deepEqual((await call("POST", `/check-in/${code}/staff/session`, { pin: staffPin })).data.shares[0].kinds, ["sampling"])
+
+  // Nothing counts before the event's days.
+  const count = (page: "group" | "staff", body: Record<string, unknown>) =>
+    call("POST", `/check-in/${code}/${page}/count`, { pin: page === "group" ? groupPin : staffPin, share, ...body })
+  assert.equal((await count("group", { method: "booth" })).status, 409)
+
+  const event = getDatabase().events[groupId].find((item) => item.id === request.eventId)!
+  const sponsorship = getDatabase().sponsorships[brandId].find((item) => item.id === `sp-${request.id}`)!
+  event.date = todayInKorea()
+  sponsorship.date = todayInKorea()
+  try {
+    // On the day, each side counts what is its own.
+    const stamped = await count("group", { method: "booth" })
+    assert.equal(stamped.status, 200)
+    assert.equal(stamped.data.share.counts.stamps, 1)
+    assert.equal(stamped.data.entry.detail, "부스 방문 · 스탬프")
+    assert.equal((await count("group", { method: "sns" })).data.share.counts.posts, 1)
+    assert.equal((await count("group", { method: "sampling", amount: 3 })).status, 403)
+    assert.equal((await count("staff", { method: "booth" })).status, 403)
+    assert.equal((await count("staff", { method: "coupon" })).status, 404)
+    assert.equal((await count("group", { method: "booth", share: "elsewhere" })).status, 404)
+    // A box of samples at once, one stamp at a time, and a mistake taken
+    // back, never below zero.
+    assert.equal((await count("staff", { method: "sampling", amount: 501 })).status, 400)
+    assert.equal((await count("staff", { method: "sampling", amount: 40 })).data.share.counts.samples, 40)
+    assert.equal((await count("staff", { method: "sampling", amount: -5 })).data.share.counts.samples, 35)
+    assert.equal((await count("group", { method: "booth", amount: 2 })).status, 400)
+    assert.equal((await count("group", { method: "booth", amount: -1 })).data.share.counts.stamps, 0)
+    assert.equal((await count("group", { method: "booth", amount: -1 })).status, 409)
+
+    // Both sides read the counts on the agreement, the group in its report
+    // with its venue PIN, and the brand in its analytics.
+    assert.deepEqual((await call("GET", agreementPath, undefined, brand)).data.agreement.measure.counts, {
+      coupons: 0,
+      visits: 0,
+      samples: 35,
+      stamps: 0,
+      posts: 1,
+    })
+    const { metrics, report } = (await call("GET", `/measurements/${request.eventId}`, undefined, group)).data
+    assert.deepEqual([metrics.samples, metrics.stamps, metrics.posts], [35, 0, 1])
+    assert.deepEqual(report.venue, { samples: 35, stamps: 0, posts: 1 })
+    assert.equal(report.groupPin, groupPin)
+    assert.deepEqual(report.sponsors[0].methods.map((method: { kind: string }) => method.kind), ["sampling", "booth", "sns"])
+    assert.deepEqual([report.sponsors[0].samples, report.sponsors[0].posts], [35, 1])
+    const analytics = (await call("GET", "/analytics", undefined, brand)).data.sponsorships
+    const row = analytics.find((item: { id: string }) => item.id === sponsorship.id)
+    assert.deepEqual([row.samples, row.stamps, row.posts], [35, 0, 1])
+
+    // Once the event has begun, the methods stay as they are.
+    assert.equal((await call("PUT", `${agreementPath}/methods`, { methods }, brand)).status, 409)
+  } finally {
+    event.date = day
+    sponsorship.date = day
+  }
+
+  // A brand's campaign is measured as a whole: an offer's agreement sets the
+  // campaign's own methods, and the group's page opens it as one share.
+  const { token: campaignGroup, listingId: campaignListing } = await listedMember("campaign-club@syu.ac.kr", "campaign-pass-123")
+  await call("POST", "/events", { name: "측정 캠페인", date: day, types: ["제품"] }, brand)
+  assert.equal((await call("POST", "/proposals", { matchId: campaignListing }, brand)).status, 201)
+  const [offer] = (await call("GET", "/offers", undefined, campaignGroup)).data.offers
+  await call("POST", `/offers/${offer.id}/accept`, undefined, campaignGroup)
+  const offerPath = `/agreements/${offer.id}`
+  const offered = await call("PUT", `${offerPath}/methods`, { methods: [{ kind: "coupon", side: "brand" }, { kind: "booth", side: "group" }] }, campaignGroup)
+  assert.equal(offered.status, 200)
+  const campaign = offered.data.agreement.measure
+  const campaignSession = (await call("POST", `/check-in/${campaign.code}/group/session`, { pin: campaign.venue.pin })).data
+  assert.deepEqual(
+    campaignSession.shares.map((item: { id: string; brandName: string | null; kinds: string[] }) => [item.id, item.brandName, item.kinds]),
+    [["event", null, ["booth"]]],
+  )
+  // Its coupon is still offered, and the brand's own report has no group PIN.
+  assert.equal((await call("GET", `/check-in/${campaign.code}`)).data.coupons.length, 1)
+  const campaignId = getDatabase().offers.find((item) => item.id === offer.id)!.campaignId!
+  const brandReport = (await call("GET", `/measurements/${campaignId}`, undefined, brand)).data.report
+  assert.deepEqual(brandReport.methods, [{ kind: "coupon", side: "brand" }, { kind: "booth", side: "group" }])
+  assert.equal(brandReport.groupPin, undefined)
+  assert.match(brandReport.staffPin, /^\d{4}$/)
 })
 
 test("both sides of an accepted proposal keep an agreement, confirm it and prove what they did", async () => {

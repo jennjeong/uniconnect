@@ -10,6 +10,8 @@ import type {
   Inquiry,
   InvitePageData,
   Match,
+  MeasureMethod,
+  MethodKind,
   MetricEntry,
   MetricKind,
   Metrics,
@@ -26,6 +28,9 @@ import type {
   SponsorOffer,
   SponsorRequest,
   Sponsorship,
+  VenuePage,
+  VenueSession,
+  VenueShare,
 } from "../types"
 import { request, requestBlob } from "./client"
 
@@ -136,6 +141,8 @@ export const api = {
     request<NearbyPlaces>(`/places?category=${encodeURIComponent(category)}`),
   agreements: () => request<{ agreements: AgreementSummary[] }>("/agreements"),
   agreement: (id: string) => request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}`),
+  saveMeasureMethods: (id: string, methods: MeasureMethod[]) =>
+    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/methods`, { method: "PUT", body: { methods } }),
   saveAgreementItems: (id: string, items: { id?: string; side: Agreement["side"]; label: string }[]) =>
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/items`, { method: "PUT", body: { items } }),
   confirmAgreement: (id: string) =>
@@ -246,6 +253,16 @@ export const api = {
   // The store staff's device: the participant's coupon number and the PIN.
   confirmVisit: (code: string, body: { pin: string; coupon: string }) =>
     request<{ entry: MetricEntry; store: string }>(`/check-in/${encodeURIComponent(code)}/staff/visits`, {
+      method: "POST",
+      body,
+    }),
+  // A venue page (the brand's /staff, the group's /group): its PIN opens what
+  // its side confirms, and each confirmation (or correction, a negative
+  // amount) answers the share's counts as they now stand.
+  venueSession: (code: string, page: VenuePage, pin: string) =>
+    request<VenueSession>(`/check-in/${encodeURIComponent(code)}/${page}/session`, { method: "POST", body: { pin } }),
+  venueCount: (code: string, page: VenuePage, body: { pin: string; share: string; method: MethodKind; amount: number }) =>
+    request<{ entry: MetricEntry; share: VenueShare }>(`/check-in/${encodeURIComponent(code)}/${page}/count`, {
       method: "POST",
       body,
     }),

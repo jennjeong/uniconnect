@@ -86,7 +86,7 @@ const examples: { page: NavLabel; role: Role; image: string; description: string
     description: t("캠페인과 잘 맞는 학생단체를 추천, 행사 임박, 분야별로 찾아 협찬을 제안해요."),
   },
   {
-    page: "성과 측정",
+    page: "성과",
     role: "학생단체",
     image: measurementExample,
     description: t("행사 QR 스캔, 쿠폰 수령, 매장 방문을 실시간으로 집계하고 목표와 비교해요."),

@@ -1,10 +1,12 @@
 import { describe, expect, test } from "vitest"
 
 import { createSeed, DEMO_PASSWORD } from "../../../backend/src/data/seed"
+import * as serverMethods from "../../../backend/src/lib/methods"
 import * as server from "../../../backend/src/lib/validation"
 import { demoAccounts, demoPassword } from "../data/demo"
 import { factFields, snsPlatforms } from "../data/profile"
 import { inquiryCategories } from "../data/inquiries"
+import { methodInfo, methodKinds } from "../data/methods"
 import { placeCategories } from "../data/places"
 import { reviewTags } from "../data/reviews"
 import { accountTypes, roles } from "../data/roles"
@@ -38,6 +40,17 @@ describe("the screens offer the choices the server takes", () => {
 
   test.each(roles)("review tags about a %s", (role) => {
     expect(reviewTags[role]).toEqual(server.reviewTags[role])
+  })
+
+  // The agreement offers the methods the server takes, the coupon fixed to
+  // the brand as the server holds it, each counting what the server counts.
+  test("measurement methods", () => {
+    expect(methodKinds).toEqual(serverMethods.methodKinds)
+    for (const kind of methodKinds) {
+      expect(methodInfo[kind].fixed ? methodInfo[kind].side : undefined).toBe(serverMethods.fixedSides[kind])
+      const counted = kind === "coupon" ? undefined : serverMethods.venueMetrics[kind]
+      expect(methodInfo[kind].metric).toBe(counted)
+    }
   })
 })
 

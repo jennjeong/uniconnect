@@ -19,8 +19,9 @@ export function recordSponsorship(
 }
 
 // A sponsorship of a measured event with its own share of the event: the
-// coupons and visits of its coupon, their estimated sales and the value it
-// gave, with the ROAS goal the group set. (Without a share, which the
+// coupons and visits of its coupon, their estimated sales, what the venue
+// confirmed by its methods and the value it gave, with the ROAS goal the
+// group set. (Without a share, which the
 // measurement gives every sponsor when it loads, the event's own figures.)
 function withLiveFigures(database: Database, sponsorship: Sponsorship): Sponsorship {
   const measurement = database.measurements.find((item) => item.eventId === sponsorship.eventId)
@@ -33,6 +34,9 @@ function withLiveFigures(database: Database, sponsorship: Sponsorship): Sponsors
       coupons: sponsor.metrics.coupons,
       visits: sponsor.metrics.visits,
       sales: sponsor.metrics.visits * measurement.goals.averageSpend,
+      samples: sponsor.metrics.samples,
+      stamps: sponsor.metrics.stamps,
+      posts: sponsor.metrics.posts,
       targetRoas: measurement.goals.targets.roas,
     }
   }
@@ -43,6 +47,9 @@ function withLiveFigures(database: Database, sponsorship: Sponsorship): Sponsors
     coupons: measurement.metrics.coupons,
     visits: measurement.metrics.visits,
     sales: estimatedSales(measurement),
+    samples: measurement.metrics.samples,
+    stamps: measurement.metrics.stamps,
+    posts: measurement.metrics.posts,
     targetRoas: measurement.goals.targets.roas,
   }
 }

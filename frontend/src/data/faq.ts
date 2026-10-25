@@ -80,7 +80,7 @@ export const faqs: { topic: FaqTopic; question: string; answer: string; featured
     featured: true,
     question: t("협찬 성과는 어떻게 확인하나요?"),
     answer:
-      t("행사 현장의 QR로 참여(스캔), 쿠폰 수령, 매장 방문을 집계해 목표와 비교해요. 학생단체는 성과 측정과 리포트에서, 브랜드는 성과 분석에서 협찬별 ROAS로 확인해요."),
+      t("행사 현장의 QR로 참여(스캔), 쿠폰 수령, 매장 방문을 집계해 목표와 비교해요. 협찬 약속서에서 샘플링 · 시음, 부스 스탬프, SNS 인증 · 설문도 고를 수 있고, 방식마다 학생단체나 브랜드가 행사장에서 자기 PIN으로 확인해요. 학생단체는 성과와 리포트에서, 브랜드는 성과 분석에서 확인해요."),
   },
   {
     topic: "results",

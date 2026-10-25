@@ -11,7 +11,7 @@ import {
 } from "./data/seed.js"
 import { toIsoDate } from "./lib/dates.js"
 import { HttpError } from "./lib/errors.js"
-import { newStaffPin, prunePasses, syncSponsors } from "./lib/measurements.js"
+import { emptyMetrics, newStaffPin, prunePasses, syncSponsors } from "./lib/measurements.js"
 import { currentStorage, StaleWrite } from "./lib/storage.js"
 import { hashToken } from "./middleware/session.js"
 import type { Database, Metrics, MetricEntry, Report } from "./types.js"
@@ -197,12 +197,17 @@ export function upgradeDatabase(stored: Database) {
     // Visits need the staff PIN and a scan's pass now.
     measurement.staffPin ??= measurement.eventId === "event-busking-day" ? "1012" : newStaffPin()
     measurement.passes ??= {}
+    // Venue counts and the group's venue PIN came with measurement methods.
+    measurement.metrics = { ...emptyMetrics(), ...measurement.metrics }
+    measurement.groupPin ??= measurement.eventId === "event-busking-day" ? "1013" : newStaffPin()
     // Each sponsor gets its own coupon and counts; an event's only sponsor
     // takes over what the event had.
     // A ROAS goal starts at 1%; 0 was once taken and cannot be divided by.
     if (measurement.goals.targets.roas < 1) measurement.goals.targets.roas = 100
     measurement.sponsors ??= []
     syncSponsors(stored, measurement)
+    const { scans: _, ...noCounts } = emptyMetrics()
+    for (const sponsor of measurement.sponsors) sponsor.metrics = { ...noCounts, ...sponsor.metrics }
     // Scans by hour gained their day; older ones were on the event's first.
     const event = stored.events[measurement.accountId]?.find((item) => item.id === measurement.eventId)
     for (const slot of measurement.hourlyScans) slot.date ??= event?.date ?? ""

@@ -1,12 +1,15 @@
 import { randomBytes } from "node:crypto"
 import { Router } from "express"
 
+import type { Request } from "express"
+
 import { HttpError } from "../lib/errors.js"
-import { assertOpen, eventOf, parseKind, passLimit, recordMetric } from "../lib/measurements.js"
+import { assertOpen, checkInKinds, eventOf, parseKind, passLimit, recordMetric } from "../lib/measurements.js"
+import { isVenueKind, methodKinds, methodsOf, parseAmount, usesCoupon, venueMetrics } from "../lib/methods.js"
 import { text } from "../lib/validation.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { getDatabase, saveDatabase } from "../store.js"
-import type { EventSponsor, Measurement, PassCoupon } from "../types.js"
+import type { ChatSide, EventSponsor, Measurement, PassCoupon } from "../types.js"
 
 // The page participants reach by scanning an event's QR. It needs no login,
 // so the event is found by the code in its address alone.
@@ -21,13 +24,17 @@ function measurementFor(code: string) {
 }
 
 // The coupons participants can take: one per sponsor once brands sponsor
-// the event (by the sponsorship's id), else the event's own ("event").
+// the event (by the sponsorship's id), else the event's own ("event"); only
+// those measured by the coupon (lib/methods.ts).
 const eventCoupon = "event"
 
 function couponsOf(measurement: Measurement) {
-  return measurement.sponsors.length
-    ? measurement.sponsors.map((sponsor) => ({ id: sponsor.id, ...sponsor.coupon }))
-    : [{ id: eventCoupon, ...measurement.goals.coupon }]
+  if (measurement.sponsors.length) {
+    return measurement.sponsors
+      .filter((sponsor) => usesCoupon(methodsOf(measurement, sponsor)))
+      .map((sponsor) => ({ id: sponsor.id, ...sponsor.coupon }))
+  }
+  return usesCoupon(methodsOf(measurement)) ? [{ id: eventCoupon, ...measurement.goals.coupon }] : []
 }
 
 // A pass's coupon by its id: the event's on the pass itself, a sponsor's
@@ -90,7 +97,7 @@ function newCouponNumber(passes: Measurement["passes"]) {
 checkInRouter.post("/:code/:kind", async (req, res) => {
   recordsPerClient.take(clientKey(req))
   const { measurement, event } = measurementFor(req.params.code)
-  const kind = parseKind(req.params.kind)
+  const kind = parseKind(req.params.kind, checkInKinds)
   if (kind !== "visits") assertOpen(getDatabase(), measurement, event, kind)
 
   if (kind === "scans") {
@@ -152,16 +159,7 @@ checkInRouter.post("/:code/staff/visits", async (req, res) => {
   recordsPerClient.take(clientKey(req))
   const { measurement, event } = measurementFor(req.params.code)
   assertOpen(getDatabase(), measurement, event, "visits")
-  const addressKey = `${clientKey(req)} ${req.params.code}`
-  pinFailures.check(addressKey)
-  pinFailuresPerEvent.check(req.params.code)
-  const pin = text(req.body?.pin)
-  const sponsor: EventSponsor | undefined = measurement.sponsors.find((item) => item.staffPin === pin)
-  if (measurement.sponsors.length ? !sponsor : pin !== measurement.staffPin) {
-    pinFailures.hit(addressKey)
-    pinFailuresPerEvent.hit(req.params.code)
-    throw new HttpError(403, "직원 PIN이 맞지 않아요. 행사 주최 측에 확인해 주세요.")
-  }
+  const sponsor = staffShare(req, measurement)
   const couponId = sponsor?.id ?? eventCoupon
   const number = text(req.body?.coupon).toUpperCase()
   const taken = number
@@ -185,4 +183,119 @@ checkInRouter.post("/:code/staff/visits", async (req, res) => {
   const entry = recordMetric(measurement, "visits", sponsor)
   await saveDatabase()
   res.json({ entry, store: (sponsor?.coupon ?? measurement.goals.coupon).store })
+})
+
+// A wrong PIN counts against the address (for this event) and the event.
+function refusePin(req: Request, message: string): never {
+  const addressKey = `${clientKey(req)} ${req.params.code}`
+  pinFailures.hit(addressKey)
+  pinFailuresPerEvent.hit(String(req.params.code))
+  throw new HttpError(403, message)
+}
+
+function checkPinLimits(req: Request) {
+  pinFailures.check(`${clientKey(req)} ${req.params.code}`)
+  pinFailuresPerEvent.check(String(req.params.code))
+}
+
+// The brand's page (/staff) opens the share whose store PIN it is given: a
+// sponsor's, or the event's own while it has no sponsors.
+function staffShare(req: Request, measurement: Measurement): EventSponsor | undefined {
+  checkPinLimits(req)
+  const pin = text(req.body?.pin)
+  const sponsor = measurement.sponsors.find((item) => item.staffPin === pin)
+  if (measurement.sponsors.length ? !sponsor : pin !== measurement.staffPin) {
+    refusePin(req, "직원 PIN이 맞지 않아요. 행사 주최 측에 확인해 주세요.")
+  }
+  return sponsor
+}
+
+// The student group's page (/group) takes the group's own PIN, and opens
+// every share of the event.
+function checkGroupPin(req: Request, measurement: Measurement) {
+  checkPinLimits(req)
+  if (text(req.body?.pin) !== measurement.groupPin) {
+    refusePin(req, "단체 확인 PIN이 맞지 않아요. 협찬 약속서에서 확인해 주세요.")
+  }
+}
+
+// One share as a venue page shows it: whose it is, the methods this side
+// confirms there, and the counts so far.
+function venueShare(measurement: Measurement, sponsor: EventSponsor | undefined, side: ChatSide) {
+  const counts = sponsor?.metrics ?? measurement.metrics
+  return {
+    id: sponsor?.id ?? eventCoupon,
+    brandName: sponsor?.brandName ?? null,
+    store: (sponsor?.coupon ?? measurement.goals.coupon).store,
+    kinds: methodsOf(measurement, sponsor)
+      .filter((method) => method.side === side)
+      .map((method) => method.kind),
+    counts: {
+      coupons: counts.coupons,
+      visits: counts.visits,
+      samples: counts.samples,
+      stamps: counts.stamps,
+      posts: counts.posts,
+    },
+  }
+}
+
+// What a venue page shows once its PIN is right, with the event: the
+// brand's page its own share, the group's page every share.
+checkInRouter.post("/:code/staff/session", (req, res) => {
+  recordsPerClient.take(clientKey(req))
+  const { measurement, event } = measurementFor(req.params.code)
+  const sponsor = staffShare(req, measurement)
+  res.json({ eventName: event.name, eventDate: event.date, shares: [venueShare(measurement, sponsor, "brand")] })
+})
+
+checkInRouter.post("/:code/group/session", (req, res) => {
+  recordsPerClient.take(clientKey(req))
+  const { measurement, event } = measurementFor(req.params.code)
+  checkGroupPin(req, measurement)
+  const sponsors = measurement.sponsors.length ? measurement.sponsors : [undefined]
+  res.json({
+    eventName: event.name,
+    eventDate: event.date,
+    shares: sponsors.map((sponsor) => venueShare(measurement, sponsor, "group")),
+  })
+})
+
+// A venue page records what its side confirms by one of the share's
+// methods: samples handed out, a booth visit stamped, an SNS post or survey
+// checked, or takes back a mistake (a negative amount, never below zero).
+// Only on the event's days and the day after, except the demo accounts'.
+async function recordAtVenue(req: Request, side: ChatSide) {
+  recordsPerClient.take(clientKey(req))
+  const { measurement, event } = measurementFor(String(req.params.code))
+  let sponsor: EventSponsor | undefined
+  if (side === "brand") sponsor = staffShare(req, measurement)
+  else {
+    checkGroupPin(req, measurement)
+    const share = text(req.body?.share) || eventCoupon
+    sponsor = measurement.sponsors.find((item) => item.id === share)
+    if (measurement.sponsors.length ? !sponsor : share !== eventCoupon) {
+      throw new HttpError(404, "협찬을 찾을 수 없어요. 화면을 새로 고쳐 주세요.")
+    }
+  }
+  const kind = methodKinds.find((item) => item === req.body?.method)
+  if (!kind || !isVenueKind(kind)) throw new HttpError(404, "알 수 없는 측정 방식이에요.")
+  const method = methodsOf(measurement, sponsor).find((item) => item.kind === kind)
+  if (!method) throw new HttpError(409, "이 협찬은 이 방식으로 측정하지 않아요.")
+  if (method.side !== side) throw new HttpError(403, "이 방식은 상대 쪽 현장 화면에서 확인해요.")
+  const metric = venueMetrics[kind]
+  assertOpen(getDatabase(), measurement, event, metric)
+  const amount = parseAmount(kind, req.body?.amount)
+  if ((sponsor ?? measurement).metrics[metric] + amount < 0) throw new HttpError(409, "되돌릴 기록이 없어요.")
+  const entry = recordMetric(measurement, metric, sponsor, amount)
+  await saveDatabase()
+  return { entry, share: venueShare(measurement, sponsor, side) }
+}
+
+checkInRouter.post("/:code/staff/count", async (req, res) => {
+  res.json(await recordAtVenue(req, "brand"))
+})
+
+checkInRouter.post("/:code/group/count", async (req, res) => {
+  res.json(await recordAtVenue(req, "group"))
 })

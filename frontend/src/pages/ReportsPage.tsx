@@ -6,6 +6,8 @@ import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { Pill } from "../components/Pill"
 import { RevealTitle } from "../components/RevealText"
+import { metricInfo } from "../data/metrics"
+import { venueSummary } from "../data/methods"
 import { t } from "../i18n"
 import { formatFullDate } from "../lib/date"
 import {
@@ -18,7 +20,7 @@ import {
   roasText,
   type KpiKey,
 } from "../lib/kpis"
-import { measureState } from "../lib/measurements"
+import { measureState, venueKindsOf } from "../lib/measurements"
 import { LayersGradient } from "../scenes/LayersGradient"
 import { INTERFERENCE } from "../scenes/shaders"
 import type { EventMeasurement, Metrics, Report } from "../types"
@@ -154,6 +156,20 @@ export function ReportsPage({
             })}
           </ul>
 
+          {venueKindsOf(report).length > 0 && (
+            <div className="analytics-card venue-card" data-reveal>
+              <p className="section-title">{t("현장에서 확인한 성과")}</p>
+              <dl className="goals-list">
+                {venueKindsOf(report).map((kind) => (
+                  <div key={kind}>
+                    <dt>{t(metricInfo[kind].label)}</dt>
+                    <dd>{metrics[kind].toLocaleString("ko-KR")}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          )}
+
           {report.sponsors && report.sponsors.length > 1 && (
             <div className="analytics-card sponsor-card" data-reveal>
               <p className="section-title">{t("협찬사별 성과")}</p>
@@ -172,6 +188,7 @@ export function ReportsPage({
                       <small>
                         {sponsor.coupon.store} · {sponsor.coupon.title}
                       </small>
+                      {venueSummary(sponsor) && <small className="venue-summary">{venueSummary(sponsor)}</small>}
                     </span>
                     <span role="cell" data-label={t("협찬 가치")}>
                       {formatWon(sponsor.value)}

@@ -5,6 +5,7 @@ import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { Pill } from "../components/Pill"
 import { RevealTitle } from "../components/RevealText"
+import { venueSummary } from "../data/methods"
 import { lang, t } from "../i18n"
 import { formatFullDate } from "../lib/date"
 import { formatWon } from "../lib/kpis"
@@ -229,6 +230,7 @@ export function AnalyticsPage({
                     <strong>{row.eventName}</strong>
                     <small>{row.groupName}</small>
                     <small>{formatFullDate(row.date)}</small>
+                    {venueSummary(row) && <small className="venue-summary">{venueSummary(row)}</small>}
                   </span>
                   <span role="cell" data-label={t("집행액")}>
                     {formatWon(row.spend)}

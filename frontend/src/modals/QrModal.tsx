@@ -2,7 +2,7 @@ import { Icon } from "../components/Icon"
 import { Modal } from "../components/Modal"
 import { QrCode } from "../components/QrCode"
 import { t } from "../i18n"
-import { checkInLink, staffCheckInLink } from "../lib/checkin"
+import { checkInLink, staffCheckInLink, venueLink } from "../lib/checkin"
 import { formatFullDate } from "../lib/date"
 import type { Report } from "../types"
 
@@ -60,6 +60,18 @@ export function QrModal({
               {report.sponsors &&
                 report.sponsors.length > 1 &&
                 ` ${t("매장마다 PIN이 달라서, 각 매장은 자기 쿠폰만 확인할 수 있어요.")}`}
+            </small>
+          </div>
+        )}
+        {report.groupPin && (
+          <div className="qr-pin">
+            {t("우리 단체 현장 확인")}
+            <code className="qr-link">{venueLink(report.code, "group")}</code>
+            <span>
+              {t("단체 확인 PIN")} <strong>{report.groupPin}</strong>
+            </span>
+            <small>
+              {t("협찬 약속서에서 우리 단체가 확인하기로 한 측정 방식(부스 스탬프, SNS 인증 등)을 행사 날 이 주소에서 기록해요. 우리 단체 담당자에게만 알려 주세요.")}
             </small>
           </div>
         )}

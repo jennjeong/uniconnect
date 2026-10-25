@@ -236,6 +236,68 @@ const en: Record<string, string> = {
   "방금 확인한 방문": "Just confirmed",
   "{line} 방문 확인": "{line} · confirmed",
   "일정@heading": "Dates",
+
+  // Measurement methods (data/methods.ts) and the venue counts (data/metrics.ts)
+  "QR 체크인 · 쿠폰 · 매장 방문": "QR check-in · Coupons · Store visits",
+  "참여자가 현장 QR을 찍고 쿠폰을 받으면, 매장 직원이 쿠폰 번호로 방문을 확인해요.":
+    "Participants scan the event QR and take a coupon; store staff confirm visits by its number.",
+  "샘플링 · 시음 수량": "Samples · Tastings handed out",
+  "부스에서 나눠 준 샘플이나 시음 수량을 현장 담당자가 세요.": "Staff at the booth count the samples or tastings handed out.",
+  "부스 방문 · 스탬프": "Booth visits · Stamps",
+  "부스나 체험존에 들른 참여자를 담당자가 한 명씩 확인해요.": "Staff confirm each participant who stops by the booth or experience zone.",
+  "SNS 인증 · 설문": "SNS posts · Surveys",
+  "참여자가 올린 인증 게시물이나 설문 응답을 담당자가 확인해요.": "Staff check the posts participants share or their survey answers.",
+  "샘플 · 시음": "Samples · Tastings",
+  "샘플링 · 시음": "Sampling · Tasting",
+  "부스 스탬프": "Booth stamps",
+  "샘플 {count}개": "{count} samples",
+  "스탬프 {count}명": "{count} stamps",
+  "SNS 인증 {count}건": "{count} SNS posts",
+  "현장에서 확인": "Confirmed at the venue",
+  "현장에서 확인한 성과": "Confirmed at the venue",
+
+  // The agreement's measurement methods (pages/AgreementPage.tsx)
+  "측정 방식": "Measurement",
+  "쓸 방식과 현장에서 확인할 쪽을 골라 주세요": "Choose the methods to use and which side confirms each at the venue",
+  "{method} 확인하는 쪽": "Who confirms {method}",
+  "측정 방식을 하나 이상 골라 주세요.": "Please choose at least one measurement method.",
+  "행사가 시작돼 측정 방식을 더 바꿀 수 없어요": "The event has begun, so the methods can't change",
+  "행사 전까지 두 쪽 모두 고칠 수 있어요": "Either side can change them until the event",
+  "{name}에서 현장 확인": "Confirmed at the venue by {name}",
+  "쿠폰 {coupons}장 · 방문 {visits}명": "{coupons} coupons · {visits} visits",
+  "우리 쪽 현장 확인": "Our venue page",
+  "행사 날 담당 직원이 자기 기기에서 이 주소를 열고 PIN을 넣으면, 우리 브랜드가 맡은 방식을 기록할 수 있어요.":
+    "On the event day, your staff open this address on their own device and enter the PIN to record the methods your brand confirms.",
+  "행사 날 담당자가 자기 기기에서 이 주소를 열고 PIN을 넣으면, 우리 단체가 맡은 방식을 기록할 수 있어요.":
+    "On the event day, your staff open this address on their own device and enter the PIN to record the methods your group confirms.",
+  PIN: "PIN",
+  "측정 방식 고치기": "Change methods",
+  "고치면 두 쪽 모두 약속서를 다시 확인해야 해요.": "After a change, both sides confirm the agreement again.",
+  "측정 방식을 고쳤어요. 두 쪽 모두 다시 확인해 주세요.": "The methods changed. Both sides, please confirm again.",
+
+  // The venue pages (checkin/GroupCheckInPage.tsx, checkin/StaffCheckInPage.tsx, components/VenueCounters.tsx)
+  "학생단체 현장 확인": "Student group venue page",
+  "현장 확인": "Venue check",
+  "협찬 약속서에서 우리 단체가 확인하기로 한 측정 방식을 여기서 기록해요. 단체 확인 PIN은 협찬 약속서와 성과의 현장 QR에서 볼 수 있어요.":
+    "Record here the methods your group agreed to confirm. The group PIN is on the sponsorship agreement and in Performance's event QR.",
+  "단체 확인 PIN": "Group PIN",
+  "우리 단체가 현장에서 확인할 측정 방식이 아직 없어요. 협찬 약속서에서 정해 주세요.":
+    "Your group has no methods to confirm at the venue yet. Set them on the sponsorship agreement.",
+  "협찬 약속서에서 우리 브랜드가 확인하기로 한 측정 방식을 여기서 기록해요. 직원 PIN은 협찬 약속서에서 볼 수 있어요.":
+    "Record here the methods your brand agreed to confirm. The staff PIN is on the sponsorship agreement.",
+  "현장 집계": "Venue counts",
+  수량: "Quantity",
+  "{method} {count}개 더하기": "Add {count} to {method}",
+  더하기: "Add",
+  "{method} {count}개 빼기": "Take {count} from {method}",
+  빼기: "Take back",
+  "{method} 한 명 확인": "Confirm one for {method}",
+  "한 명 확인": "Confirm one",
+  "{method} 하나 되돌리기": "Undo one for {method}",
+  되돌리기: "Undo",
+  "우리 단체 현장 확인": "Our group's venue page",
+  "협찬 약속서에서 우리 단체가 확인하기로 한 측정 방식(부스 스탬프, SNS 인증 등)을 행사 날 이 주소에서 기록해요. 우리 단체 담당자에게만 알려 주세요.":
+    "On the event day, record the methods your group agreed to confirm (booth stamps, SNS posts and so on) at this address. Share it only with your group's staff.",
 }
 
 export default en

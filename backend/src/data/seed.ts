@@ -863,7 +863,7 @@ export function seedMeasurements(accountId: string): Measurement[] {
       eventId: "event-busking-day",
       accountId,
       code: "20261012",
-      metrics: { scans: 128, coupons: 94, visits: 41 },
+      metrics: { scans: 128, coupons: 94, visits: 41, samples: 0, stamps: 0, posts: 0 },
       hourlyScans: [
         { date: "2026-10-12", hour: 17, scans: 12 },
         { date: "2026-10-12", hour: 18, scans: 26 },
@@ -894,8 +894,10 @@ export function seedMeasurements(accountId: string): Measurement[] {
         },
         coupon: { store: "오후의 커피 공릉점", title: "아메리카노 1+1" },
       },
-      // The demo's staff PIN, given to the store before the event.
+      // The demo's staff PIN, given to the store before the event, and the
+      // group's own venue PIN.
       staffPin: "1012",
+      groupPin: "1013",
       sponsors: [],
       passes: {},
     },

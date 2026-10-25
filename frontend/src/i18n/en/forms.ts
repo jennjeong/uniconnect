@@ -225,8 +225,8 @@ const en: Record<string, string> = {
   "내가 보낸 메시지의 ⋯ 버튼에서 수정하거나 삭제할 수 있어요. 고친 메시지에는 ‘수정됨’, 지운 메시지는 삭제된 메시지로 양쪽 모두에게 보여요. 상대가 읽었는지도 메시지 옆에 표시돼요.":
     "Use the ⋯ button on a message you sent. Both sides see ‘Edited’ on a changed message and a placeholder for a deleted one. You can also see beside each message whether it's been read.",
   "협찬 성과는 어떻게 확인하나요?": "How do I track sponsorship results?",
-  "행사 현장의 QR로 참여(스캔), 쿠폰 수령, 매장 방문을 집계해 목표와 비교해요. 학생단체는 성과 측정과 리포트에서, 브랜드는 성과 분석에서 협찬별 ROAS로 확인해요.":
-    "A QR code at the event counts scans, coupons taken and store visits, then compares them with your goals. Student groups see this in Measurement and Reports; brands see ROAS per sponsorship in Analytics.",
+  "행사 현장의 QR로 참여(스캔), 쿠폰 수령, 매장 방문을 집계해 목표와 비교해요. 협찬 약속서에서 샘플링 · 시음, 부스 스탬프, SNS 인증 · 설문도 고를 수 있고, 방식마다 학생단체나 브랜드가 행사장에서 자기 PIN으로 확인해요. 학생단체는 성과와 리포트에서, 브랜드는 성과 분석에서 확인해요.":
+    "A QR code at the event counts scans, coupons taken and store visits, then compares them with your goals. On the sponsorship agreement you can also choose sampling and tastings, booth stamps, and SNS posts or surveys, each confirmed at the venue by the student group or the brand with its own PIN. Student groups see the results in Performance and Reports; brands in Analytics.",
   "리포트를 PDF로 받을 수 있나요?": "Can I get a report as a PDF?",
   "네. 학생단체는 리포트 페이지의 ‘PDF 리포트 다운로드’, 브랜드는 성과 분석의 ‘분석 보고서 다운로드’로 받아요. 브랜드 보고서에는 전체 요약과 협찬마다의 성과 페이지가 담겨요.":
     "Yes. Student groups use ‘Download PDF report’ on Reports; brands use ‘Download report’ in Analytics. The brand report has an overall summary plus a page for each sponsorship.",
@@ -252,7 +252,7 @@ const en: Record<string, string> = {
   "행사 전까지 여기서 정하고 고칠 수 있어요": "Set and change them here until the event",
   "{name}에서 행사 전까지 정해요": "{name} sets them before the event",
   "목표 정하기": "Set goals",
-  "정한 목표는 성과 측정과 리포트에 바로 반영돼요.": "Goals show in the measurement and the report right away.",
+  "정한 목표는 성과와 리포트에 바로 반영돼요.": "Goals show in Performance and the report right away.",
   "학생단체와 브랜드가 협찬으로 할 일을 함께 정하고 확인하고, 한 일을 링크와 사진으로 남겨요.":
     "A student group and a brand agree on what each will do for a sponsorship, confirm it, and keep links and photos of what was done.",
   "확정된 협찬마다 약속서를 확인하고, 할 일이 얼마나 끝났는지 봐요.":
