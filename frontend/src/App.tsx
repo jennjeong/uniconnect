@@ -25,7 +25,7 @@ import { nextEvent, todayIso } from "./lib/date"
 import { saveFile } from "./lib/download"
 import { reportKpis, type KpiKey } from "./lib/kpis"
 import { defaultMeasurement, measureState } from "./lib/measurements"
-import { brandNotifications, studentNotifications } from "./lib/notifications"
+import { answerNotices, brandNotifications, studentNotifications } from "./lib/notifications"
 import { track } from "./lib/analytics"
 import { applyPageMeta, pageMeta } from "./lib/pageMeta"
 import { install } from "./lib/install"
@@ -79,6 +79,7 @@ import type {
   Conversation,
   EventItem,
   EventMeasurement,
+  Inquiry,
   Match,
   MetricKind,
   Metrics,
@@ -166,6 +167,10 @@ function App() {
   // The account's own listing (null until written) and its conversations.
   const [listing, setListing] = useState<Match | null>(null)
   const [conversations, setConversations] = useState<Conversation[]>([])
+  // The account's questions to the operators, for the bell's answer notice.
+  const [inquiries, setInquiries] = useState<Inquiry[]>([])
+  // The bell's answer notice opens the help center's questions at once.
+  const [askOnFaq, setAskOnFaq] = useState(false)
   // Day the 내 행사 calendar opens on, such as a just-registered event's.
   const [eventsFocus, setEventsFocus] = useState<string | undefined>(undefined)
   // Which history or goal the open modal shows.
@@ -223,6 +228,7 @@ function App() {
     setConfirmedCount(0)
     setSent([])
     setUpdatedAt(null)
+    setInquiries([])
   }
   // Brands for student groups, student groups for brands, and whether it
   // has arrived for whoever is looking now.
@@ -368,6 +374,7 @@ function App() {
         setEventsFor(key)
       }),
       settle(api.proposals(), applyProposals),
+      ...(accountId ? [settle(api.inquiries(), (result) => setInquiries(result.inquiries))] : []),
       ...(students
         ? [
             settle(api.brands(), (result) => {
@@ -902,9 +909,12 @@ function App() {
         })),
       ]
 
-  const notifications = students
-    ? studentNotifications({ matches, brands, statuses, report, offers, events })
-    : brandNotifications({ matches, requests, sponsorships, events })
+  const notifications = [
+    ...answerNotices(inquiries),
+    ...(students
+      ? studentNotifications({ matches, brands, statuses, report, offers, events })
+      : brandNotifications({ matches, requests, sponsorships, events })),
+  ]
 
   const activity: ActivityItem[] = students
     ? [
@@ -952,7 +962,17 @@ function App() {
         />
       )
     }
-    if (view.faq) return <FaqPage account={account} onLogin={() => openAuth("login")} />
+    if (view.faq) {
+      return (
+        <FaqPage
+          account={account}
+          askNow={askOnFaq}
+          onAnswersRead={setInquiries}
+          onAsked={() => setAskOnFaq(false)}
+          onLogin={() => openAuth("login")}
+        />
+      )
+    }
     if (view.admin) return <AdminPage onNotice={showNotice} />
     if (view.legal) return <LegalPage kind={view.legal} onSwitch={(legal) => openLegal(legal)} />
     if (view.agreement) {
@@ -1279,6 +1299,10 @@ function App() {
         onCreate={() => openCreate()}
         onOpenEvent={openEventsOn}
         onOpenMessages={openMessages}
+        onOpenAnswers={() => {
+          setAskOnFaq(true)
+          openFaq()
+        }}
         onToggleNotifications={() => {
           setNotificationsOpen((open) => !open)
           setNotificationsRead(true)

@@ -1,7 +1,26 @@
 import { describe, expect, test } from "vitest"
 
-import { brandNotifications, soonNotices, studentNotifications } from "./notifications"
-import type { Match } from "../types"
+import { answerNotices, brandNotifications, soonNotices, studentNotifications } from "./notifications"
+import type { Inquiry, Match } from "../types"
+
+describe("the notice of the operators' answers", () => {
+  const asked = (id: string, extra: Partial<Inquiry> = {}): Inquiry => ({
+    id,
+    category: "계정 · 가입",
+    question: "로그인 이메일을 바꿀 수 있나요?",
+    createdAt: "2026-11-01T00:00:00.000Z",
+    ...extra,
+  })
+  const answered = { answer: "내 정보에서 바꿀 수 있어요.", answeredAt: "2026-11-02T00:00:00.000Z" }
+
+  test("shows only answers not yet seen, and opens the help center", () => {
+    expect(answerNotices([asked("waiting"), asked("seen", { ...answered, answerReadAt: "2026-11-03T00:00:00.000Z" })])).toEqual([])
+    const [notice] = answerNotices([asked("new", answered)])
+    expect(notice).toMatchObject({ key: "answers", title: "문의에 답변이 왔어요", faq: true })
+    expect(notice.caption).toBe("‘계정 · 가입’ 질문의 답을 확인해 보세요.")
+    expect(answerNotices([asked("a", answered), asked("b", answered)])[0].caption).toBe("답변 2개를 확인해 보세요.")
+  })
+})
 
 describe("notices for a member with nothing yet", () => {
   const match: Match = { id: "brand-1", name: "첫 카페", category: "카페 · 식음료", industry: "cafe", offer: "", score: 70, tags: [] }

@@ -435,6 +435,8 @@ export type Inquiry = {
   createdAt: string
   answer?: string
   answeredAt?: string
+  // When the asker saw the answer as it stands; a new answer is unread again.
+  answerReadAt?: string
 }
 
 // One thing a side of an accepted proposal promised, and the proof that it

@@ -8,7 +8,7 @@ import { faqs, faqTopics, type FaqTopic } from "../data/faq"
 import { t } from "../i18n"
 import { AskModal } from "../modals/AskModal"
 import { MeshBackdrop } from "../scenes/MeshBackdrop"
-import type { Account } from "../types"
+import type { Account, Inquiry } from "../types"
 
 // Spaces and case don't matter to the search.
 const normalize = (value: string) => value.replace(/\s+/g, "").toLowerCase()
@@ -19,11 +19,31 @@ const normalize = (value: string) => value.replace(/\s+/g, "").toLowerCase()
 // questions to one; then the questions. While a search is typed, the
 // questions it matches drop down under the box to pick from (arrow keys
 // and Enter work too); a pick opens that question in the list.
-export function FaqPage({ account, onLogin }: { account: Account | null; onLogin: () => void }) {
+export function FaqPage({
+  account,
+  askNow = false,
+  onAsked,
+  onAnswersRead,
+  onLogin,
+}: {
+  account: Account | null
+  // Opens the questions at once, as the bell's notice of an answer does.
+  askNow?: boolean
+  onAsked?: () => void
+  onAnswersRead?: (inquiries: Inquiry[]) => void
+  onLogin: () => void
+}) {
   const [query, setQuery] = useState("")
   const [topic, setTopic] = useState<FaqTopic | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
-  const [asking, setAsking] = useState(false)
+  const [asking, setAsking] = useState(askNow)
+  // Opened from the bell's notice of an answer, even while already here;
+  // once, not again on the next visit.
+  useEffect(() => {
+    if (!askNow) return
+    setAsking(true)
+    onAsked?.()
+  }, [askNow, onAsked])
   // The suggestion list under the search box, and the one the arrows are on.
   const [suggesting, setSuggesting] = useState(false)
   const [active, setActive] = useState(-1)
@@ -203,6 +223,7 @@ export function FaqPage({ account, onLogin }: { account: Account | null; onLogin
       <Presence show={asking}>
         <AskModal
           account={account}
+          onAnswersRead={onAnswersRead}
           onClose={() => setAsking(false)}
           onLogin={() => {
             setAsking(false)

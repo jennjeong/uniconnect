@@ -48,6 +48,7 @@ export function Header({
   onCreate,
   onOpenEvent,
   onOpenMessages,
+  onOpenAnswers,
   onToggleNotifications,
   onCloseNotifications,
   onOpenProfile,
@@ -83,6 +84,8 @@ export function Header({
   // Opens the 내 행사 (or 캠페인) calendar on this day.
   onOpenEvent: (date: string) => void
   onOpenMessages: () => void
+  // The help center's questions, where the operators' answers are.
+  onOpenAnswers: () => void
   onToggleNotifications: () => void
   onCloseNotifications: () => void
   onOpenProfile: () => void
@@ -279,9 +282,10 @@ export function Header({
           items={notifications}
           toggleRef={bellRef}
           onClose={onCloseNotifications}
-          onOpen={(label) => {
+          onOpen={(item) => {
             onCloseNotifications()
-            onNavigate(label)
+            if (item.faq) onOpenAnswers()
+            else onNavigate(item.target)
           }}
         />
       </Presence>

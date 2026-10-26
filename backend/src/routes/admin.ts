@@ -3,6 +3,7 @@ import { Router, type Request } from "express"
 
 import { config } from "../config.js"
 import { HttpError } from "../lib/errors.js"
+import { notify } from "../lib/notices.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { platformStats } from "../lib/stats.js"
 import { text } from "../lib/validation.js"
@@ -63,10 +64,27 @@ adminRouter.post("/inquiries/:id/answer", async (req, res) => {
   const answer = text(req.body?.answer)
   if (!answer) throw new HttpError(400, "답변을 적어 주세요.")
   if (answer.length > 2000) throw new HttpError(400, "답변은 2,000자 이하로 적어 주세요.")
-  const inquiry = getDatabase().inquiries.find((item) => item.id === req.params.id)
+  const database = getDatabase()
+  const inquiry = database.inquiries.find((item) => item.id === req.params.id)
   if (!inquiry) throw new HttpError(404, "질문을 찾을 수 없어요.")
+  const changed = inquiry.answer !== answer
   inquiry.answer = answer
   inquiry.answeredAt = new Date().toISOString()
+  // A new or changed answer is news to the asker, by email and on the bell.
+  if (changed) delete inquiry.answerReadAt
   await saveDatabase()
+  if (changed) {
+    const brief = (value: string, length: number) => (value.length > length ? `${value.slice(0, length)}…` : value)
+    void notify(
+      database.accounts.find((account) => account.id === inquiry.accountId),
+      "문의에 답변이 왔어요",
+      [
+        `도움말 센터에 남긴 '${inquiry.category}' 질문에 운영자가 답했어요.`,
+        `질문: ${brief(inquiry.question, 80)}`,
+        `답변: ${brief(answer, 500)}`,
+      ],
+      "/faq",
+    )
+  }
   res.json({ inquiry })
 })
