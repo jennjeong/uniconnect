@@ -12,6 +12,9 @@ Run these from the repo root:
 - `npm test` runs the backend tests (`node:test` through tsx: the API in `app.test.ts`, and the Postgres store in `store.postgres.test.ts` on PGlite, an in-process Postgres, in its own process), then the frontend unit tests (vitest, `frontend/src/**/*.test.ts`, configured in `frontend/vitest.config.ts` without the app's Vite plugins). `frontend/src/lib/appPaths.sync.test.ts` checks `backend/src/lib/appPaths.ts` against `route.ts`.
 - `npm run e2e` (after `npm run build`) runs the Playwright browser tests in `e2e/` against the built app on port 4300 with a fresh temp data file, in the installed Chrome (`channel: "chrome"`, no browser download): the main flows and axe accessibility checks (WCAG 2.1 A/AA; critical and serious problems fail).
 - GitHub Actions (`.github/workflows/ci.yml`) runs install, typecheck, test, build and e2e on every push to main and every pull request.
+- `.github/workflows/neon-preview-cleanup.yml` runs when a pull request closes. It deletes that PR's Neon preview database branch, `preview/<branch>`, through the Neon API with the `NEON_API_KEY` secret. It skips the default and protected branches, and passes with a notice when there is no key or no such branch.
+  - Why it exists: Vercel's Neon integration (`neon-lime-lever`) makes one such branch per previewed Git branch, and keeps it until that branch's last preview deployment is deleted.
+  - Neon's free plan holds 10 branches. Once they are used up, every preview fails at "Provisioning Integrations" with "Branch limit reached".
 - `npm run build`, then `npm start`, builds both packages and serves the API plus the built frontend from Express.
 
 ## Project Structure
