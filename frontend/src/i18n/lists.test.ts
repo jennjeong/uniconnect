@@ -38,6 +38,7 @@ describe("English for listed values", () => {
       "검토 중",
       "수락",
       "거절",
+      "취소됨",
       "마감",
       // The parts of a match the detail page shows as bars (matchScore.ts).
       "업종 궁합",

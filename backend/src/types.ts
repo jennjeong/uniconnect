@@ -186,9 +186,10 @@ export type MetricEntry = {
   detail: string
 }
 
+// "취소됨": accepted, then called off by both sides from its agreement.
 // "마감" is never stored: a proposal waiting for an answer shows it once
 // its event has ended (lib/proposals.ts).
-export type RequestStatus = "검토 중" | "수락" | "거절" | "마감"
+export type RequestStatus = "검토 중" | "수락" | "거절" | "취소됨" | "마감"
 
 // A sponsorship proposal a student group sent to a brand.
 export type SponsorRequest = {
@@ -210,6 +211,8 @@ export type SponsorRequest = {
   status: RequestStatus
   createdAt: string
   respondedAt?: string
+  // When both sides called the sponsorship off (취소).
+  canceledAt?: string
 }
 
 // A sponsorship proposal a brand sent to a student group.
@@ -234,6 +237,8 @@ export type SponsorOffer = {
   status: RequestStatus
   createdAt: string
   respondedAt?: string
+  // When both sides called the sponsorship off (취소).
+  canceledAt?: string
 }
 
 // One finished sponsorship of a brand, for its analytics.
@@ -455,6 +460,9 @@ export type Agreement = {
   items: AgreementItem[]
   // Changing the items clears both.
   confirmed: Partial<Record<ChatSide, string>>
+  // One side's request to call the sponsorship off, with why, and when the
+  // other side agreed to it (its proposal is 취소 from then on).
+  cancel?: { by: ChatSide; reason: string; requestedAt: string; canceledAt?: string }
   createdAt: string
   updatedAt: string
 }

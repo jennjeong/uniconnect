@@ -9,7 +9,7 @@ import { isSponsored } from "../lib/sponsorships.js"
 import { parseRole, sponsorTypes, text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
-import type { Account, Database, EventItem, Role } from "../types.js"
+import type { Account, Database, EventItem, RequestStatus, Role } from "../types.js"
 
 export const eventsRouter = Router()
 
@@ -122,8 +122,11 @@ const periodLabel = (date: string, endDate?: string) =>
   endDate ? `${dayLabel(date)} ~ ${dayLabel(endDate)}` : dayLabel(date)
 
 // Proposals about an event and the sponsorships recorded for it carry its
-// name and dates, so after an edit they take the new ones; declined
-// proposals stay as they were sent. Answers the other side of each
+// name and dates, so after an edit they take the new ones; declined and
+// called-off proposals stay as they were.
+const followed = (status: RequestStatus) => status === "검토 중" || status === "수락"
+
+// Carries an edit into those copies. Answers the other side of each
 // proposal still waiting or accepted, with the page to look at.
 function followEvent(database: Database, account: Account, event: EventItem, datesChanged: boolean) {
   const partners = new Map<string, string>()
@@ -135,7 +138,7 @@ function followEvent(database: Database, account: Account, event: EventItem, dat
   }
   if (account.role === "학생단체") {
     for (const request of database.requests) {
-      if (request.fromAccountId !== account.id || request.eventId !== event.id || request.status === "거절") continue
+      if (request.fromAccountId !== account.id || request.eventId !== event.id || !followed(request.status)) continue
       request.eventName = event.name
       request.eventDate = event.date
       request.people = event.people ? `예상 인원 ${event.people}` : "인원 협의"
@@ -147,7 +150,7 @@ function followEvent(database: Database, account: Account, event: EventItem, dat
     }
   } else {
     for (const offer of database.offers) {
-      if (offer.fromAccountId !== account.id || offer.campaignId !== event.id || offer.status === "거절") continue
+      if (offer.fromAccountId !== account.id || offer.campaignId !== event.id || !followed(offer.status)) continue
       offer.campaignName = event.name
       offer.campaignDate = event.date
       const sponsorship = (database.sponsorships[account.id] ?? []).find((item) => item.id === `sp-${offer.id}`)

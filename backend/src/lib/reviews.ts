@@ -2,8 +2,10 @@ import { todayInKorea } from "./dates.js"
 import type { AcceptedProposal } from "./agreements.js"
 import type { Account, ChatSide, Database, Review } from "../types.js"
 
-// Reviews open on the event's own day (at once for one without a day).
-export const reviewOpen = (proposal: AcceptedProposal) => !proposal.eventDate || proposal.eventDate <= todayInKorea()
+// Reviews open on the event's own day (at once for one without a day), for
+// a sponsorship that wasn't called off.
+export const reviewOpen = (proposal: AcceptedProposal) =>
+  !proposal.canceled && (!proposal.eventDate || proposal.eventDate <= todayInKorea())
 
 // The listing a side's review is about: the other side's.
 export const reviewTarget = (proposal: AcceptedProposal, side: ChatSide) =>

@@ -15,8 +15,12 @@ const cardState: Record<RequestStatus, string> = {
   "검토 중": "pending",
   수락: "accepted",
   거절: "declined",
+  취소됨: "canceled",
   마감: "closed",
 }
+
+// Accepted ones stay under 수락함 once called off, as a record.
+const inTab = (status: RequestStatus, tab: RequestStatus) => status === tab || (tab === "수락" && status === "취소됨")
 
 const tabs: { status: RequestStatus; label: string; empty: string }[] = [
   { status: "검토 중", label: "검토 중", empty: "답을 기다리는 제안이 없어요." },
@@ -109,14 +113,22 @@ function RequestCard({
           <>
             <span className={request.status === "수락" ? "request-result confirmed" : "request-result"}>
               {request.status === "수락" && <Icon name="check" size={15} />}
-              {request.status === "수락" ? t("협찬 확정") : request.status === "마감" ? t("마감된 제안") : t("거절한 제안")}
-              {request.status === "마감" ? (
+              {request.status === "수락"
+                ? t("협찬 확정")
+                : request.status === "취소됨"
+                  ? t("취소된 협찬")
+                  : request.status === "마감"
+                    ? t("마감된 제안")
+                    : t("거절한 제안")}
+              {request.status === "취소됨" && request.canceledAt ? (
+                <small>{formatDateTime(request.canceledAt)}</small>
+              ) : request.status === "마감" ? (
                 <small>{t("행사가 끝나 마감됐어요.")}</small>
               ) : (
                 request.respondedAt && <small>{formatDateTime(request.respondedAt)}</small>
               )}
             </span>
-            {request.status === "수락" && (
+            {(request.status === "수락" || request.status === "취소됨") && (
               <button className="detail-button" onClick={() => onOpenAgreement(request.id)} type="button">
                 <Icon name="file" size={15} /> {t("계약서")}
               </button>
@@ -149,7 +161,7 @@ export function InboxPage({
 }) {
   const [tab, setTab] = useState<RequestStatus>("검토 중")
   const current = tabs.find((item) => item.status === tab) ?? tabs[0]
-  const list = requests.filter((request) => request.status === tab)
+  const list = requests.filter((request) => inTab(request.status, tab))
   const waitingSent = sent.filter((item) => item.status === "검토 중").length
 
   const received =
@@ -178,7 +190,7 @@ export function InboxPage({
             <>
               {t(item.label)}
               <em>
-                {requests.filter((request) => request.status === item.status).length +
+                {requests.filter((request) => inTab(request.status, item.status)).length +
                   (item.status === "검토 중" ? waitingSent : 0)}
               </em>
             </>

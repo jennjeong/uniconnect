@@ -40,6 +40,7 @@ reviewsRouter.get("/", (req, res) => {
 reviewsRouter.put("/:proposalId", async (req, res) => {
   const { account, database, proposal, side, id } = sponsorship(req)
   if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 후기를 쓸 수 없어요.")
+  if (proposal.canceled) throw new HttpError(409, "취소된 협찬에는 후기를 남길 수 없어요.")
   if (!reviewOpen(proposal)) throw new HttpError(409, "행사 날부터 후기를 쓸 수 있어요.")
   const aboutId = reviewTarget(proposal, side)
   const listings = side === "group" ? database.brands : database.groups

@@ -722,6 +722,104 @@ test("a proposal still waiting when its event ends is closed: it can't be answer
   assert.match(answer.data.error, /캠페인이 끝나/)
 })
 
+test("a sponsorship is called off only when both sides agree, and leaves the brand's results and the event", async () => {
+  const { mailTransport } = await import("./lib/mailer.js")
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const today = todayInKorea()
+  const realPost = mailTransport.post
+  const sent: { to: string[]; subject: string; text: string }[] = []
+  mailTransport.post = async (body) => {
+    sent.push(body)
+    return new Response(null, { status: 200 })
+  }
+  config.resendApiKey = "test-key"
+  config.mailFrom = "uniconnect <no-reply@example.com>"
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 20))
+  try {
+    const groupEmail = "calloff@syu.ac.kr"
+    const brandEmail = "calloff@calloff-cafe.kr"
+    const { token: group } = await listedMember(groupEmail, "calloff-pass-123")
+    const { token: brand, listingId: brandListing } = await listedMember(brandEmail, "calloff-pass-123", "브랜드")
+    const brandId = (await call("GET", "/auth/me", undefined, brand)).data.account.id as string
+    const event = (await call("POST", "/events", { name: "취소될 공연", date: addDays(today, 7), types: ["현금"] }, group)).data.event
+    await call("POST", "/proposals", { matchId: brandListing }, group)
+    const [request] = (await call("GET", "/requests", undefined, brand)).data.requests
+    await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+    // Opening the agreement makes the event's measurement, with the brand's share.
+    assert.equal((await call("GET", `/agreements/${request.id}`, undefined, group)).data.agreement.cancelable, true)
+    const measurement = () => getDatabase().measurements.find((item) => item.eventId === event.id)!
+    assert.equal(measurement().sponsors.length, 1)
+    sent.length = 0
+
+    // One side asks, saying why; only the other side can agree.
+    assert.equal((await call("POST", `/agreements/${request.id}/cancel`, { reason: " " }, brand)).status, 400)
+    const reason = "매장 공사로 협찬이 어려워요."
+    const asked = await call("POST", `/agreements/${request.id}/cancel`, { reason }, brand)
+    assert.equal(asked.status, 200)
+    assert.deepEqual([asked.data.agreement.cancel.by, asked.data.agreement.cancel.reason], ["brand", reason])
+    assert.equal(asked.data.agreement.cancelable, false)
+    assert.equal((await call("POST", `/agreements/${request.id}/cancel`, { reason: "저도요" }, group)).status, 409)
+    assert.equal((await call("POST", `/agreements/${request.id}/cancel/accept`, undefined, brand)).status, 409)
+    await settle()
+    const askMail = sent.find((mail) => mail.to[0] === groupEmail)
+    assert.equal(askMail?.subject, "[uniconnect] 협찬 취소 요청이 왔어요")
+    assert.match(askMail?.text ?? "", /이유: 매장 공사로/)
+
+    // Declined, the sponsorship stays, and it can be asked about again.
+    const declined = await call("DELETE", `/agreements/${request.id}/cancel`, undefined, group)
+    assert.equal(declined.data.agreement.cancel, undefined)
+    assert.equal(getDatabase().requests.find((item) => item.id === request.id)?.status, "수락")
+    await call("POST", `/agreements/${request.id}/cancel`, { reason }, brand)
+
+    // Agreed, it is called off: the proposal, the brand's record and share go,
+    // and the event is matching again.
+    sent.length = 0
+    const agreed = await call("POST", `/agreements/${request.id}/cancel/accept`, undefined, group)
+    assert.equal(agreed.status, 200)
+    assert.ok(agreed.data.agreement.cancel.canceledAt)
+    assert.equal(agreed.data.agreement.measure, undefined)
+    assert.equal((await call("GET", "/requests", undefined, brand)).data.requests[0].status, "취소됨")
+    assert.equal((getDatabase().sponsorships[brandId] ?? []).some((item) => item.id === `sp-${request.id}`), false)
+    assert.equal(measurement().sponsors.length, 0)
+    const events = (await call("GET", "/events", undefined, group)).data.events as { id: string; status: string }[]
+    assert.equal(events.find((item) => item.id === event.id)?.status, "매칭 중")
+    await settle()
+    assert.equal(sent.find((mail) => mail.to[0] === brandEmail)?.subject, "[uniconnect] 협찬이 취소됐어요")
+
+    // The agreement stays as a record: it reads, but nothing changes it, and
+    // the list marks it.
+    assert.equal((await call("GET", `/agreements/${request.id}`, undefined, brand)).status, 200)
+    assert.equal((await call("POST", `/agreements/${request.id}/confirm`, undefined, brand)).status, 409)
+    assert.equal((await call("PUT", `/reviews/${request.id}`, { rating: 5, tags: [], comment: "" }, group)).status, 409)
+    const list = (await call("GET", "/agreements", undefined, group)).data.agreements as { id: string; canceled?: boolean }[]
+    assert.equal(list.find((item) => item.id === request.id)?.canceled, true)
+    // Nothing sponsors the event now, so it can go.
+    assert.equal((await call("DELETE", `/events/${event.id}`, undefined, group)).status, 204)
+
+    // The brand can be asked again; once an event is over, its sponsorship
+    // can't be called off.
+    const later = (await call("POST", "/events", { name: "다음 공연", date: addDays(today, 3), types: ["현금"] }, group)).data.event
+    assert.equal((await call("POST", "/proposals", { matchId: brandListing }, group)).status, 201)
+    const next = (await call("GET", "/requests", undefined, brand)).data.requests.find(
+      (item: { eventName: string }) => item.eventName === "다음 공연",
+    )
+    await call("POST", `/requests/${next.id}/accept`, undefined, brand)
+    Object.values(getDatabase().events).flat().find((item) => item.id === later.id)!.date = addDays(today, -2)
+    const over = await call("POST", `/agreements/${next.id}/cancel`, { reason }, group)
+    assert.equal(over.status, 409)
+    assert.match(over.data.error, /끝난 행사/)
+
+    // The shared demo accounts can't call theirs off.
+    const demoBrand = await login("브랜드")
+    const [demoAgreement] = (await call("GET", "/agreements", undefined, demoBrand)).data.agreements
+    assert.equal((await call("POST", `/agreements/${demoAgreement.id}/cancel`, { reason }, demoBrand)).status, 403)
+  } finally {
+    mailTransport.post = realPost
+    config.resendApiKey = undefined
+    config.mailFrom = undefined
+  }
+})
+
 test("check-ins count only on the event's days, and records go once they are not needed", async () => {
   const { addDays, todayInKorea } = await import("./lib/dates.js")
   const { prunePasses } = await import("./lib/measurements.js")

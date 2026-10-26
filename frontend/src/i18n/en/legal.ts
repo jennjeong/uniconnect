@@ -85,8 +85,8 @@ const en: Record<string, string> = {
   "주고받은 메시지": "Messages sent and received",
   "회원 사이의 대화": "Conversations between members",
   "관리자에게 보낸 질문과 답변": "Questions sent to our team and their answers",
-  "임시 전자 계약서(할 일, 확인한 시각, 완료 표시, 증빙 링크와 사진)":
-    "Provisional e-contracts (items, when they were confirmed, items marked done, proof links and photos)",
+  "임시 전자 계약서(할 일, 확인한 시각, 완료 표시, 증빙 링크와 사진, 협찬 취소 요청과 그 이유)":
+    "Provisional e-contracts (items, when they were confirmed, items marked done, proof links and photos, requests to call the sponsorship off and why)",
   "확정된 협찬의 할 일을 두 회원이 함께 정하고 결과를 남김":
     "Letting the two members of a confirmed sponsorship agree on what each will do and keep the results",
   "약속한 두 회원 중 한쪽이 탈퇴할 때까지": "Until either of the two members leaves",

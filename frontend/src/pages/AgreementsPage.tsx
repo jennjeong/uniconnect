@@ -82,7 +82,11 @@ export function AgreementsPage({
                       {item.eventDate && ` · ${formatFullDate(item.eventDate)}`}
                     </span>
                   </span>
-                  <span className={`agreement-state ${state.className}`}>{t(state.label)}</span>
+                  {item.canceled ? (
+                    <span className="agreement-state canceled">{t("취소된 협찬")}</span>
+                  ) : (
+                    <span className={`agreement-state ${state.className}`}>{t(state.label)}</span>
+                  )}
                   <span className="agreement-row-counts">
                     {t("할 일 {done}/{total}", { done: item.done, total: item.total })}
                     <span aria-hidden="true"> · </span>
