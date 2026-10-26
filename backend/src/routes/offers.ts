@@ -4,6 +4,7 @@ import { Router } from "express"
 import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
 import { statusOf } from "../lib/proposals.js"
+import { blockedBetween } from "../lib/safety.js"
 import { recordSponsorship } from "../lib/sponsorships.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -26,7 +27,12 @@ offersRouter.get("/", (req, res) => {
   const database = getDatabase()
   const offers = owner?.groupId
     ? database.offers
-        .filter((offer) => offer.groupId === owner.groupId)
+        // Not from a brand either side blocked.
+        .filter(
+          (offer) =>
+            offer.groupId === owner.groupId &&
+            !(offer.fromAccountId && blockedBetween(database, owner.id, offer.fromAccountId)),
+        )
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
         .map((offer) => ({ ...offer, status: statusOf(database, offer) }))
     : []
@@ -47,7 +53,9 @@ offersRouter.post("/:id/:decision", async (req, res) => {
   const offer = database.offers.find(
     (item) => item.id === req.params.id && item.groupId === account.groupId,
   )
-  if (!offer) throw new HttpError(404, "제안을 찾을 수 없어요.")
+  if (!offer || (offer.fromAccountId && blockedBetween(database, account.id, offer.fromAccountId))) {
+    throw new HttpError(404, "제안을 찾을 수 없어요.")
+  }
   const status = statusOf(database, offer)
   if (status === "마감") throw new HttpError(409, "캠페인이 끝나 마감된 제안이에요.")
   if (status !== "검토 중") throw new HttpError(409, "이미 답한 제안이에요.")

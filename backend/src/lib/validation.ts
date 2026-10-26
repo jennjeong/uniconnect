@@ -106,6 +106,9 @@ export const sponsorTypes = ["현금", "제품", "서비스", "기타"]
 
 // Kinds of question for the operators. Keep in sync with
 // frontend/src/data/inquiries.ts.
+// Why a member reports another (routes/reports.ts); frontend/src/data/reports.ts.
+export const reportReasons = ["스팸 · 광고", "욕설 · 괴롭힘", "사기 의심", "기타"]
+
 export const inquiryCategories = ["이용 방법", "계정 · 가입", "제안 · 매칭", "오류 신고", "기타"]
 
 // Kinds of shop students can look for around their campus: Kakao Local's

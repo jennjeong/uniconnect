@@ -7,7 +7,7 @@ import type { Account } from "../types.js"
 
 // The shared demo accounts are never emailed: everyone trying the demo uses
 // them, so their addresses stand for no one, and one is on a real
-// university's domain.
+// university's domain. Nor are accounts the operators suspended.
 const isDemo = (account: Account) => Object.values(getDatabase().demoAccountIds).includes(account.id)
 
 // Tells an account by email that something waits for it: a proposal, an
@@ -16,7 +16,7 @@ const isDemo = (account: Account) => Object.values(getDatabase().demoAccountIds)
 // may stop once its answer is sent, so waitUntil keeps it running until the
 // mail has gone; elsewhere that does nothing.
 export function notify(account: Account | undefined, subject: string, lines: string[], path: string) {
-  if (!account || isDemo(account)) return Promise.resolve()
+  if (!account || isDemo(account) || account.suspendedAt) return Promise.resolve()
   const link = config.siteUrl ? `${config.siteUrl.replace(/\/$/, "")}${path}` : undefined
   const text = [...lines, ...(link ? ["", `바로 가기: ${link}`] : []), "", "uniconnect"].join("\n")
   const sending = sendMail(account.email, `[uniconnect] ${subject}`, text).catch((error: Error) => {

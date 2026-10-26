@@ -1200,6 +1200,97 @@ test("an operator's answer is emailed to the asker, and stays news until the ask
   }
 })
 
+test("members report and block one another, and operators act on the reports", async () => {
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const admin = async (method: string, route: string, body?: unknown) => {
+    const response = await fetch(baseUrl + route, {
+      method,
+      headers: { "Content-Type": "application/json", "X-Admin-Token": "test-admin-token" },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    })
+    const reply = await response.text()
+    return { status: response.status, data: reply ? JSON.parse(reply) : null }
+  }
+  const brandEmail = "safety@safety-cafe.kr"
+  const { token: group, listingId: groupListing } = await listedMember("safety@syu.ac.kr", "safety-pass-123")
+  const { token: brand, listingId: brandListing } = await listedMember(brandEmail, "safety-pass-123", "브랜드")
+  const brandId = (await call("GET", "/auth/me", undefined, brand)).data.account.id as string
+  const chat = (await call("POST", "/conversations", { partnerId: brandListing }, group)).data.conversation
+  const said = await call("POST", `/conversations/${chat.id}/messages`, { text: "광고 문자를 보내 드려요" }, brand)
+  const message = said.data.conversation.messages.at(-1)
+  const report = (body: object, token = group) => call("POST", "/reports", body, token)
+  const aboutMessage = { kind: "message", conversationId: chat.id, messageId: message.id }
+
+  // A report needs a listed reason, and words for 기타; it goes once while it waits.
+  assert.equal((await report({ ...aboutMessage, reason: "그냥" })).status, 400)
+  assert.equal((await report({ ...aboutMessage, reason: "기타", detail: "" })).status, 400)
+  assert.equal((await report({ ...aboutMessage, reason: "스팸 · 광고" }, brand)).status, 404)
+  assert.equal((await report({ ...aboutMessage, reason: "스팸 · 광고" })).status, 201)
+  assert.equal((await report({ ...aboutMessage, reason: "스팸 · 광고" })).status, 409)
+  const aboutBrand = { kind: "account", listingId: brandListing, reason: "사기 의심", detail: "선입금을 요구했어요." }
+  assert.equal((await report(aboutBrand)).status, 201)
+  assert.equal((await report(aboutBrand, await login("학생단체"))).status, 403)
+
+  // A review taken down leaves the listing's reviews.
+  getDatabase().reviews.push({
+    id: "safety-review:brand",
+    proposalId: "safety-review",
+    side: "brand",
+    aboutId: groupListing,
+    authorAccountId: brandId,
+    authorName: "safety 카페",
+    eventName: "신고할 공연",
+    rating: 1,
+    tags: [],
+    comment: "거친 말이 담긴 후기",
+    createdAt: new Date().toISOString(),
+  })
+  const [shown] = (await call("GET", `/reviews?about=${groupListing}`)).data.reviews
+  assert.equal((await report({ kind: "review", reviewKey: shown.key, reason: "욕설 · 괴롭힘" })).status, 201)
+
+  // Operators see what was reported, with the text as it was, waiting ones first.
+  assert.equal((await call("GET", "/admin/reports")).status, 403)
+  const listed = (await admin("GET", "/admin/reports")).data.reports as {
+    id: string
+    target: { kind: string }
+    excerpt?: string
+    about: { name: string }
+  }[]
+  const find = (kind: string) => listed.find((item) => item.target.kind === kind)!
+  assert.equal(find("message").excerpt, "광고 문자를 보내 드려요")
+  assert.equal(find("account").about.name, "safety 카페")
+  assert.equal((await admin("POST", `/admin/reports/${find("review").id}/resolve`, { action: "hide-review" })).status, 200)
+  assert.equal((await call("GET", `/reviews?about=${groupListing}`)).data.reviews.length, 0)
+  assert.equal((await admin("POST", `/admin/reports/${find("account").id}/resolve`, { action: "dismiss" })).status, 200)
+
+  // Blocking hides the two from each other: listings, proposals, conversations.
+  assert.equal((await call("POST", "/blocks", { listingId: brandListing }, group)).status, 201)
+  const ids = async (route: string, key: string, token: string) =>
+    ((await call("GET", route, undefined, token)).data[key] as { id: string }[]).map((item) => item.id)
+  assert.equal((await ids("/brands", "brands", group)).includes(brandListing), false)
+  assert.equal((await ids("/groups", "groups", brand)).includes(groupListing), false)
+  await call("POST", "/events", { name: "막힌 공연", date: addDays(todayInKorea(), 10), types: ["현금"] }, group)
+  assert.equal((await call("POST", "/proposals", { matchId: brandListing }, group)).status, 404)
+  assert.deepEqual((await call("GET", "/conversations", undefined, brand)).data.conversations, [])
+  assert.equal((await call("POST", `/conversations/${chat.id}/messages`, { text: "왜요?" }, brand)).status, 404)
+  assert.deepEqual((await call("GET", "/blocks", undefined, group)).data.blocked, [{ listingId: brandListing, name: "safety 카페" }])
+  assert.equal((await call("DELETE", `/blocks/${brandListing}`, undefined, group)).status, 204)
+  assert.equal((await ids("/brands", "brands", group)).includes(brandListing), true)
+
+  // Suspended, the account can't log in or stay logged in, and shows to no one.
+  assert.equal((await admin("POST", `/admin/reports/${find("message").id}/resolve`, { action: "suspend" })).status, 200)
+  assert.equal((await call("GET", "/auth/me", undefined, brand)).status, 401)
+  const credentials = { role: "브랜드", email: brandEmail, password: "safety-pass-123" }
+  const refused = await call("POST", "/auth/login", credentials)
+  assert.equal(refused.status, 403)
+  assert.match(refused.data.error, /정지된 계정/)
+  assert.equal((await ids("/brands", "brands", group)).includes(brandListing), false)
+  const { suspended } = (await admin("GET", "/admin/reports")).data
+  assert.deepEqual(suspended.map((item: { id: string }) => item.id), [brandId])
+  assert.equal((await admin("POST", `/admin/accounts/${brandId}/unsuspend`)).status, 204)
+  assert.equal((await call("POST", "/auth/login", credentials)).status, 200)
+})
+
 test("accounts write the listing the other side sees", async () => {
   const student = await login("학생단체")
   const mine = (await call("GET", "/profile", undefined, student)).data.profile

@@ -15,7 +15,7 @@ import { formatDistance, shownTags } from "../lib/distance"
 import { LayersGradient } from "../scenes/LayersGradient"
 import { MeshBackdrop } from "../scenes/MeshBackdrop"
 import { ANTIPODE } from "../scenes/shaders"
-import type { Match, RequestStatus } from "../types"
+import type { Match, RequestStatus, Review } from "../types"
 
 type Tab = "match" | "reviews"
 
@@ -63,6 +63,9 @@ export function MatchDetailPage({
   onChat,
   onPropose,
   onCancel,
+  onReport,
+  onBlock,
+  onReportReview,
 }: {
   match: Match
   kind: "brand" | "group"
@@ -74,6 +77,11 @@ export function MatchDetailPage({
   onChat: () => void
   onPropose: () => void
   onCancel: () => void
+  // Members (not the shared demo accounts) can report or block the account
+  // behind the listing, and report its reviews.
+  onReport?: () => void
+  onBlock?: () => void
+  onReportReview?: (review: Review) => void
 }) {
   const [tab, setTab] = useState<Tab>("match")
   const group = kind === "group"
@@ -175,6 +183,20 @@ export function MatchDetailPage({
                 <Icon name="chat" size={16} /> {t("문의하기")}
               </button>
             </div>
+            {(onReport || onBlock) && (
+              <div className="profile-safety">
+                {onReport && (
+                  <button className="subtle-link" onClick={onReport} type="button">
+                    {t("신고하기")}
+                  </button>
+                )}
+                {onBlock && (
+                  <button className="subtle-link" onClick={onBlock} type="button">
+                    {t("차단하기")}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </aside>
 
@@ -256,7 +278,7 @@ export function MatchDetailPage({
               )}
             </div>
           ) : (
-            <ReviewsSection id={match.id} role={group ? "학생단체" : "브랜드"} />
+            <ReviewsSection id={match.id} onReport={onReportReview} role={group ? "학생단체" : "브랜드"} />
           )}
         </div>
       </div>

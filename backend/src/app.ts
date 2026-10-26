@@ -26,6 +26,7 @@ import { placesRouter } from "./routes/places.js"
 import { profileRouter } from "./routes/profile.js"
 import { proposalsRouter } from "./routes/proposals.js"
 import { requestsRouter } from "./routes/requests.js"
+import { blocksRouter, reportsRouter } from "./routes/reports.js"
 import { reviewsRouter } from "./routes/reviews.js"
 import { refreshDatabase } from "./store.js"
 
@@ -112,6 +113,8 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   app.use("/api/reviews", reviewsRouter)
   app.use("/api/conversations", conversationsRouter)
   app.use("/api/inquiries", inquiriesRouter)
+  app.use("/api/reports", reportsRouter)
+  app.use("/api/blocks", blocksRouter)
   app.use("/api/admin", adminRouter)
   app.use("/api/cron", cronRouter)
   app.use("/api", () => {

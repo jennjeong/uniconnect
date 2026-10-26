@@ -196,6 +196,37 @@ test("a sponsorship is called off from its agreement once the other side agrees"
   }
 })
 
+test("a member reports and blocks a partner from its profile, and unblocks it in 내 정보", async ({ page, request }) => {
+  const group = await signUpMember(request, "학생단체", "e2e-safety@syu.ac.kr", "신고하는 동아리")
+  const brand = await signUpMember(request, "브랜드", "e2e-safety@safety-cafe.kr", "신고된 카페")
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
+  await page.goto(`/matches/${brand.listingId}`)
+
+  await page.locator(".profile-safety").getByRole("button", { name: "신고하기" }).click()
+  const report = page.getByRole("dialog")
+  await report.getByRole("radio", { name: "사기 의심" }).click()
+  await report.getByLabel("덧붙일 말 (선택)").fill("선입금을 요구했어요.")
+  await report.getByRole("button", { name: "신고 보내기" }).click()
+  await expect(page.getByText("신고했어요. 운영자가 확인할게요.")).toBeVisible()
+
+  await page.locator(".profile-safety").getByRole("button", { name: "차단하기" }).click()
+  await page.getByRole("dialog").getByRole("button", { name: "차단하기" }).click()
+  await expect(page.getByText("차단했어요. 내 정보에서 풀 수 있어요.")).toBeVisible()
+  // The blocked brand is gone from the catalog.
+  await page.goto("/matches")
+  await page.waitForLoadState("networkidle")
+  await expect(page.locator(".work-card", { hasText: "신고된 카페" })).toHaveCount(0)
+
+  await page.goto("/me")
+  await page.locator(".blocked-list li", { hasText: "신고된 카페" }).getByRole("button", { name: "차단 풀기" }).click()
+  await expect(page.getByText("신고된 카페의 차단을 풀었어요.")).toBeVisible()
+  // Both leave, so later cases see no member from this one.
+  for (const member of [group, brand]) {
+    const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: member.headers })
+    expect(left.status()).toBe(204)
+  }
+})
+
 test("a student group proposes and the brand accepts", async ({ browser }) => {
   const student = await (await browser.newContext()).newPage()
   await student.goto("/")

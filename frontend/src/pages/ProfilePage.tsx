@@ -9,7 +9,7 @@ import { lang, setLang, t, type Lang } from "../i18n"
 import { formatFullDate, toIsoDate } from "../lib/date"
 import { initialOf } from "../lib/format"
 import { MeshBackdrop } from "../scenes/MeshBackdrop"
-import type { Account, Match, NavLabel } from "../types"
+import type { Account, BlockedListing, Match, NavLabel } from "../types"
 
 export type ActivityItem = {
   label: string
@@ -49,6 +49,8 @@ export function ProfilePage({
   onChangeEmail,
   onDownloadData,
   onLeave,
+  blocked,
+  onUnblock,
 }: {
   account: Account
   // The listing brands (or student groups) see; null until written.
@@ -65,6 +67,9 @@ export function ProfilePage({
   onChangeEmail: () => void
   onDownloadData: () => void
   onLeave: () => void
+  // The accounts this one blocked, to unblock; absent for the demo accounts.
+  blocked?: BlockedListing[]
+  onUnblock?: (item: BlockedListing) => void
 }) {
   const students = account.role === "학생단체"
   const labels = profileLabels[account.role]
@@ -225,6 +230,28 @@ export function ProfilePage({
               </span>
             </dd>
           </div>
+          {blocked && (
+            <div className="service-row" data-reveal style={delay((details.length + 1) * 0.08)}>
+              <span className="service-index">{pad(details.length + 2)}</span>
+              <dt>{t("차단한 상대")}</dt>
+              <dd>
+                {blocked.length === 0 ? (
+                  t("없어요")
+                ) : (
+                  <ul className="blocked-list">
+                    {blocked.map((item) => (
+                      <li key={item.listingId}>
+                        <span>{item.name}</span>
+                        <button className="subtle-link" onClick={() => onUnblock?.(item)} type="button">
+                          {t("차단 풀기")}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </dd>
+            </div>
+          )}
         </dl>
         <div className="profile-logout">
           <div className="profile-account-actions">

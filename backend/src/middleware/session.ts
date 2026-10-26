@@ -26,9 +26,11 @@ export function readSession(req: Request, _res: Response, next: NextFunction) {
     const session = database.sessions.find(
       (entry) => entry.tokenHash === tokenHash && entry.expiresAt > Date.now(),
     )
-    if (session) {
+    // A suspended account is as good as logged out.
+    const account = session && database.accounts.find((item) => item.id === session.accountId && !item.suspendedAt)
+    if (session && account) {
       req.sessionToken = token
-      req.account = database.accounts.find((account) => account.id === session.accountId)
+      req.account = account
     }
   }
   next()

@@ -42,6 +42,7 @@ export function ChatPage({
   onOpenPartner,
   onChange,
   onSessionEnd,
+  onReport,
 }: {
   id: string
   onBack: () => void
@@ -51,6 +52,8 @@ export function ChatPage({
   onChange: (conversation: Conversation) => void
   // Called with a 401: the login ran out.
   onSessionEnd: (error: unknown) => void
+  // Reports one of the partner's messages; absent for the demo accounts.
+  onReport?: (message: ChatMessage) => void
 }) {
   const [conversation, setConversation] = useState<Conversation | null>(null)
   const [draft, setDraft] = useState("")
@@ -304,7 +307,10 @@ export function ChatPage({
           const newDay = day !== lastDay
           lastDay = day
           const deleted = Boolean(message.deletedAt)
-          const actionable = message.mine && !deleted
+          // Own messages are edited or deleted, a partner with an account's reported.
+          const own = message.mine && !deleted
+          const reportable = !message.mine && !deleted && onReport !== undefined && partner?.hasAccount === true
+          const actionable = own || reportable
           const classes = [
             "chat-message",
             message.mine && "mine",
@@ -328,7 +334,7 @@ export function ChatPage({
               </div>
               <span className="chat-meta">
                 {message.editedAt && !deleted && <span className="chat-edited">{t("수정됨")}</span>}
-                {actionable && (
+                {own && (
                   <span className={message.read ? "chat-read read" : "chat-read"}>
                     {message.read ? t("읽음") : t("안 읽음")}
                   </span>
@@ -337,7 +343,7 @@ export function ChatPage({
                 {actionable && (
                   <button
                     aria-expanded={menuFor === message.id}
-                    aria-label={t("메시지 수정 또는 삭제")}
+                    aria-label={own ? t("메시지 수정 또는 삭제") : t("메시지 신고")}
                     className="chat-more"
                     onClick={() => toggleMenu(message)}
                     type="button"
@@ -358,6 +364,17 @@ export function ChatPage({
                         {t("취소")}
                       </button>
                     </>
+                  ) : reportable ? (
+                    <button
+                      className="chat-action danger"
+                      onClick={() => {
+                        setMenuFor(null)
+                        onReport?.(message)
+                      }}
+                      type="button"
+                    >
+                      {t("신고하기")}
+                    </button>
                   ) : (
                     <>
                       <button className="chat-action" onClick={() => startEdit(message)} type="button">

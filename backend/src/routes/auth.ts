@@ -51,6 +51,8 @@ const keepUntil = (entry: EmailCode) =>
 // so nobody may change it, delete them or reset it.
 const isDemo = (account: Account) => Object.values(getDatabase().demoAccountIds).includes(account.id)
 const demoLocked = "데모 계정은 비밀번호를 바꾸거나 탈퇴할 수 없어요."
+// An account the operators stopped over a report.
+const suspendedMessage = "운영 정책에 따라 이용이 정지된 계정이에요."
 
 const toPublic = ({ passwordHash, termsAgreedAt, ...account }: Account): PublicAccount =>
   account
@@ -230,6 +232,7 @@ authRouter.post("/password-reset/code", async (req, res) => {
   // gives nothing new away.
   if (!account) throw new HttpError(404, "가입된 이메일이 아니에요. 이메일을 확인하거나 회원가입해 주세요.")
   if (isDemo(account)) throw new HttpError(403, demoLocked)
+  if (account.suspendedAt) throw new HttpError(403, suspendedMessage)
   res.json(await issueCode(email, account.role, "reset"))
 })
 
@@ -249,6 +252,7 @@ authRouter.post("/password-reset", async (req, res) => {
   const account = database.accounts.find((item) => item.email === email)
   if (!account) throw new HttpError(404, "가입된 이메일이 아니에요.")
   if (isDemo(account)) throw new HttpError(403, demoLocked)
+  if (account.suspendedAt) throw new HttpError(403, suspendedMessage)
   // Used up before the slow hash, so the code sets one password only.
   database.emailCodes = database.emailCodes.filter((item) => item !== entry)
   account.passwordHash = await hashPassword(password)
@@ -278,6 +282,7 @@ authRouter.post("/login", async (req, res) => {
     throw new HttpError(401, "이메일 또는 비밀번호가 올바르지 않아요.")
   }
   loginFailures.reset(limitKey)
+  if (account.suspendedAt) throw new HttpError(403, suspendedMessage)
   if (account.role !== role) {
     const label = account.role === "학생단체" ? "협찬 받기" : "협찬 하기"
     throw new HttpError(403, `'${label}' 회원으로 가입된 계정이에요. 유형을 바꿔 로그인해 주세요.`)
@@ -318,6 +323,15 @@ function removeAccount(database: Database, account: Account) {
   database.reviews = database.reviews.filter(
     (review) => review.authorAccountId !== account.id && (!listingId || review.aboutId !== listingId),
   )
+  // Reports it made and those about it, and blocks either way.
+  database.reports = database.reports.filter(
+    (report) => report.reporterId !== account.id && report.accountId !== account.id,
+  )
+  delete database.blocks[account.id]
+  for (const [blocker, blocked] of Object.entries(database.blocks)) {
+    database.blocks[blocker] = blocked.filter((id) => id !== account.id)
+    if (database.blocks[blocker].length === 0) delete database.blocks[blocker]
+  }
   // Sponsors keep the results of this account's events as they stand.
   freezeSponsorships(
     database,
@@ -490,6 +504,10 @@ authRouter.get("/export", (req, res) => {
     ),
     reviews: database.reviews.filter(
       (item) => item.authorAccountId === account.id || (listing !== undefined && item.aboutId === listing.id),
+    ),
+    reports: database.reports.filter((item) => item.reporterId === account.id),
+    blocked: (database.blocks[account.id] ?? []).map(
+      (id) => database.accounts.find((item) => item.id === id)?.name ?? id,
     ),
   })
 })

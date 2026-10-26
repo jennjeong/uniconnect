@@ -13,6 +13,7 @@ import { Loader } from "./components/Loader"
 import { CampaignMeasurement } from "./components/CampaignMeasurement"
 import { Presence } from "./components/Presence"
 import { Toast } from "./components/Toast"
+import { demoAccounts } from "./data/demo"
 import type { LegalKind } from "./data/legal"
 import { pageFor } from "./data/navigation"
 import { useInstallState } from "./hooks/useInstallState"
@@ -43,6 +44,7 @@ import { EmailChangeModal } from "./modals/EmailChangeModal"
 import { InviteShopModal } from "./modals/InviteShopModal"
 import { PasswordModal } from "./modals/PasswordModal"
 import { ProposeModal } from "./modals/ProposeModal"
+import { SafetyModal, type SafetyTarget } from "./modals/SafetyModal"
 import { ResetPasswordModal } from "./modals/ResetPasswordModal"
 import { MetricLogModal } from "./modals/MetricLogModal"
 import { QrModal } from "./modals/QrModal"
@@ -76,6 +78,7 @@ import { AnalyticsExport } from "./report/AnalyticsExport"
 import { ReportExport } from "./report/ReportExport"
 import type {
   Account,
+  BlockedListing,
   Conversation,
   EventItem,
   EventMeasurement,
@@ -121,6 +124,10 @@ function App() {
   const [activeModal, setActiveModal] = useState<ModalName | null>(null)
   // The partner 제안하기 was pressed for, while its form is open.
   const [proposing, setProposing] = useState<Match | null>(null)
+  // What 신고하기 or 차단하기 was pressed for, while its form is open.
+  const [safety, setSafety] = useState<{ mode: "report" | "block"; target: SafetyTarget } | null>(null)
+  // The accounts this one blocked, for 내 정보.
+  const [blocked, setBlocked] = useState<BlockedListing[]>([])
   const [account, setAccount] = useState<Account | null>(null)
   // With a saved token, role-specific data waits until /auth/me answers.
   const [authReady, setAuthReady] = useState(() => getToken() === null)
@@ -229,6 +236,7 @@ function App() {
     setSent([])
     setUpdatedAt(null)
     setInquiries([])
+    setBlocked([])
   }
   // Brands for student groups, student groups for brands, and whether it
   // has arrived for whoever is looking now.
@@ -374,7 +382,12 @@ function App() {
         setEventsFor(key)
       }),
       settle(api.proposals(), applyProposals),
-      ...(accountId ? [settle(api.inquiries(), (result) => setInquiries(result.inquiries))] : []),
+      ...(accountId
+        ? [
+            settle(api.inquiries(), (result) => setInquiries(result.inquiries)),
+            settle(api.blocks(), (result) => setBlocked(result.blocked)),
+          ]
+        : []),
       ...(students
         ? [
             settle(api.brands(), (result) => {
@@ -714,6 +727,40 @@ function App() {
     track("generate_lead", { method: "proposal", role })
     showNotice(t("{name}에 협찬 제안을 보냈어요.", { name: proposing.name }))
     closeModal()
+  }
+
+  // Members report and block; the shared demo accounts can't, as everyone
+  // trying the demo uses them.
+  const member = account !== null && !Object.values(demoAccounts).some((demo) => demo.email === account.email)
+
+  const openSafety = (mode: "report" | "block", target: SafetyTarget) => {
+    setSafety({ mode, target })
+    setActiveModal("safety")
+  }
+
+  // A block takes the listing out of the lists and closes its page.
+  const safetyDone = (notice: string) => {
+    const blocking = safety?.mode === "block"
+    closeModal()
+    showNotice(notice)
+    if (!blocking) return
+    setRefreshTick((tick) => tick + 1)
+    api
+      .blocks()
+      .then((result) => setBlocked(result.blocked))
+      .catch(() => {})
+    if (view.detail) goBack({ page })
+  }
+
+  const unblock = async (item: BlockedListing) => {
+    try {
+      await api.unblock(item.listingId)
+      setBlocked((current) => current.filter((entry) => entry.listingId !== item.listingId))
+      setRefreshTick((tick) => tick + 1)
+      showNotice(t("{name}의 차단을 풀었어요.", { name: item.name }))
+    } catch (error) {
+      handleError(error)
+    }
   }
 
   // A student group invites a shop from 가까운 순; true once the invitation
@@ -1070,6 +1117,8 @@ function App() {
           onChangeEmail={() => setActiveModal("email")}
           onDownloadData={downloadData}
           onLeave={() => setActiveModal("leave")}
+          blocked={member ? blocked : undefined}
+          onUnblock={unblock}
         />
       )
     }
@@ -1081,6 +1130,18 @@ function App() {
           onBack={() => goBack({ page, messages: true })}
           onChange={updateConversation}
           onSessionEnd={handleSessionEnd}
+          onReport={
+            member
+              ? (message) =>
+                  openSafety("report", {
+                    kind: "message",
+                    conversationId: view.chat!,
+                    messageId: message.id,
+                    name: partnerName ?? t("상대"),
+                    text: message.text,
+                  })
+              : undefined
+          }
           onOpenPartner={(partnerId) =>
             catalog.some((match) => match.id === partnerId)
               ? go({ page: browsePage, detail: partnerId })
@@ -1368,6 +1429,22 @@ function App() {
               onChat={() => openChat(detailMatch)}
               onPropose={() => propose(detailMatch)}
               onCancel={() => cancelProposal(detailMatch)}
+              onReport={
+                member
+                  ? () => openSafety("report", { kind: "account", listingId: detailMatch.id, name: detailMatch.name })
+                  : undefined
+              }
+              onBlock={
+                member
+                  ? () => openSafety("block", { kind: "account", listingId: detailMatch.id, name: detailMatch.name })
+                  : undefined
+              }
+              onReportReview={
+                member
+                  ? (review) =>
+                      openSafety("report", { kind: "review", reviewKey: review.key, name: review.authorName, text: review.comment })
+                  : undefined
+              }
             />
           </div>
         )}
@@ -1531,6 +1608,11 @@ function App() {
           }}
         />
       </Presence>
+      {account && safety && (
+        <Presence show={activeModal === "safety"}>
+          <SafetyModal mode={safety.mode} onClose={closeModal} onDone={safetyDone} target={safety.target} />
+        </Presence>
+      )}
       {account && proposing && (
         <Presence show={activeModal === "propose"}>
           <ProposeModal

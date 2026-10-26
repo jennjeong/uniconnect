@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto"
+
 import { todayInKorea } from "./dates.js"
 import type { AcceptedProposal } from "./agreements.js"
 import type { Account, ChatSide, Database, Review } from "../types.js"
@@ -28,10 +30,10 @@ export function canReview(database: Database, proposal: AcceptedProposal, side: 
   )
 }
 
-// A listing's reviews, newest first.
+// A listing's reviews, newest first, without those the operators took down.
 export const reviewsAbout = (database: Database, listingId: string) =>
   database.reviews
-    .filter((review) => review.aboutId === listingId)
+    .filter((review) => review.aboutId === listingId && !review.hiddenAt)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 
 // A listing's reviews in short: how many, the average stars to one decimal
@@ -47,14 +49,21 @@ export function reviewSummary(reviews: Review[]) {
   return { count, average, tags }
 }
 
+// A review's name in public, standing for it without giving its proposal
+// away, so a reader can report it.
+export const reviewKey = (review: Review) => createHash("sha256").update(review.id).digest("hex").slice(0, 16)
+
 // What anyone sees of a review: not its proposal or the author's account.
-export const publicReview = ({ authorName, side, eventName, rating, tags, comment, createdAt, updatedAt }: Review) => ({
-  authorName,
-  side,
-  eventName,
-  rating,
-  tags,
-  comment,
-  createdAt,
-  ...(updatedAt ? { updatedAt } : {}),
+// Its author also sees whether the operators took it down.
+export const publicReview = (review: Review) => ({
+  key: reviewKey(review),
+  authorName: review.authorName,
+  side: review.side,
+  eventName: review.eventName,
+  rating: review.rating,
+  tags: review.tags,
+  comment: review.comment,
+  createdAt: review.createdAt,
+  ...(review.updatedAt ? { updatedAt: review.updatedAt } : {}),
+  ...(review.hiddenAt ? { hidden: true } : {}),
 })
