@@ -9,6 +9,7 @@ import type {
   BusinessStatus,
   CheckInInfo,
   Conversation,
+  ErrorEntry,
   EventItem,
   EventMeasurement,
   Inquiry,
@@ -234,6 +235,8 @@ export const api = {
       body: { action },
       headers: { "X-Admin-Token": token },
     }),
+  adminErrors: (token: string) =>
+    request<{ errors: ErrorEntry[] }>("/admin/errors", { headers: { "X-Admin-Token": token } }),
   unsuspendAccount: (token: string, id: string) =>
     request<void>(`/admin/accounts/${encodeURIComponent(id)}/unsuspend`, {
       method: "POST",

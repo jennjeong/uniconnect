@@ -85,6 +85,11 @@ const en: Record<string, string> = {
   "주고받은 메시지": "Messages sent and received",
   "회원 사이의 대화": "Conversations between members",
   "관리자에게 보낸 질문과 답변": "Questions sent to our team and their answers",
+  "오류 기록(서버나 화면에서 난 오류의 내용, 위치, 페이지 주소, 시각)":
+    "Error records (what went wrong on the server or a page, where, the page's address and when)",
+  "서비스 오류를 찾아 고치기. 이름, 이메일, 입력한 내용은 넣지 않아요":
+    "Finding and fixing errors in the service. Names, emails and what was typed are left out",
+  "최근 200개까지, 그보다 오래된 것은 지워요": "The latest 200; older ones are deleted",
   "브랜드의 사업자등록번호와 확인한 시각": "A brand's business registration number and when it was verified",
   "국세청에서 사업자를 확인하고 소개에 '사업자 확인'을 표시":
     "Checking the business with the National Tax Service and marking the profile 'Business verified'",

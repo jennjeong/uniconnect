@@ -4,6 +4,7 @@ import express, { type ErrorRequestHandler } from "express"
 
 import { config } from "./config.js"
 import { isAppPath } from "./lib/appPaths.js"
+import { recordError } from "./lib/errorLog.js"
 import { HttpError } from "./lib/errors.js"
 import { langOf, translate } from "./lib/i18n.js"
 import { readSession } from "./middleware/session.js"
@@ -15,6 +16,7 @@ import { brandsRouter } from "./routes/brands.js"
 import { checkInRouter } from "./routes/checkin.js"
 import { conversationsRouter } from "./routes/conversations.js"
 import { cronRouter } from "./routes/cron.js"
+import { errorsRouter } from "./routes/errors.js"
 import { eventsRouter } from "./routes/events.js"
 import { groupsRouter } from "./routes/groups.js"
 import { inquiriesRouter } from "./routes/inquiries.js"
@@ -115,6 +117,7 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   app.use("/api/inquiries", inquiriesRouter)
   app.use("/api/reports", reportsRouter)
   app.use("/api/blocks", blocksRouter)
+  app.use("/api/errors", errorsRouter)
   app.use("/api/admin", adminRouter)
   app.use("/api/cron", cronRouter)
   app.use("/api", () => {
@@ -137,7 +140,19 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   const handleError: ErrorRequestHandler = (error, req, res, _next) => {
     const say = (status: number, message: string) =>
       res.status(status).json({ error: translate(message, langOf(req)) })
+    // A failure on the server's side is kept for the operators (lib/errorLog.ts):
+    // the request's method and path, the message, and for an unexpected
+    // error the first frames of its stack.
+    const keep = (message: string, stack?: string) =>
+      void recordError({
+        source: "server",
+        message,
+        where: `${req.method} ${req.originalUrl.split("?")[0]}`,
+        path: req.originalUrl,
+        ...(stack ? { stack: stack.split("\n").slice(1, 4).map((line) => line.trim()).join("\n") } : {}),
+      })
     if (error instanceof HttpError) {
+      if (error.status >= 500) keep(error.message)
       say(error.status, error.message)
       return
     }
@@ -154,6 +169,7 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
       return
     }
     console.error(error)
+    keep(error instanceof Error ? error.message : String(error), error instanceof Error ? error.stack : undefined)
     say(500, "서버 오류가 발생했어요. 잠시 후 다시 시도해 주세요.")
   }
   app.use(handleError)
