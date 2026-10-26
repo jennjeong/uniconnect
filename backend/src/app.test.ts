@@ -671,6 +671,57 @@ test("an event is edited with the same checks, and its proposals, sponsorships a
   }
 })
 
+test("a proposal still waiting when its event ends is closed: it can't be answered and holds nothing back", async () => {
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const today = todayInKorea()
+  const { token: group, listingId: groupListing } = await listedMember("closing@syu.ac.kr", "closing-pass-123")
+  const { token: brand, listingId: brandListing } = await listedMember("closing@closing-cafe.kr", "closing-pass-123", "브랜드")
+  const event = (await call("POST", "/events", { name: "끝날 공연", date: addDays(today, 3), types: ["현금"] }, group)).data.event
+  await call("POST", "/proposals", { matchId: brandListing }, group)
+  const stored = (id: string) => Object.values(getDatabase().events).flat().find((item) => item.id === id)!
+
+  // It waits while its event runs, and is closed from the day after its last day.
+  stored(event.id).date = addDays(today, -3)
+  stored(event.id).endDate = today
+  assert.equal((await call("GET", "/requests", undefined, brand)).data.requests[0].status, "검토 중")
+  stored(event.id).endDate = addDays(today, -1)
+  const [closed] = (await call("GET", "/requests", undefined, brand)).data.requests
+  assert.equal(closed.status, "마감")
+  const accepted = await call("POST", `/requests/${closed.id}/accept`, undefined, brand)
+  assert.equal(accepted.status, 409)
+  assert.match(accepted.data.error, /마감된 제안/)
+  assert.equal((await call("POST", `/requests/${closed.id}/decline`, undefined, brand)).status, 409)
+  // It stays as it was sent.
+  assert.equal(getDatabase().requests.find((item) => item.id === closed.id)?.status, "검토 중")
+
+  // The group sees it closed, and can propose again about its next event.
+  const state = (await call("GET", "/proposals", undefined, group)).data
+  assert.equal(state.statuses[brandListing], "마감")
+  assert.equal(state.sent[0].status, "마감")
+  await call("POST", "/events", { name: "다음 공연", date: addDays(today, 20), types: ["현금"] }, group)
+  const again = await call("POST", "/proposals", { matchId: brandListing }, group)
+  assert.equal(again.status, 201)
+  assert.equal(again.data.statuses[brandListing], "검토 중")
+  const inbox = (await call("GET", "/requests", undefined, brand)).data.requests as { eventName: string; status: string }[]
+  assert.deepEqual(
+    inbox.map((item) => [item.eventName, item.status]),
+    [
+      ["다음 공연", "검토 중"],
+      ["끝날 공연", "마감"],
+    ],
+  )
+
+  // A brand's offer about a campaign that has ended closes the same way.
+  const campaign = (await call("POST", "/events", { name: "끝날 캠페인", date: addDays(today, 5), types: ["제품"] }, brand)).data.event
+  await call("POST", "/proposals", { matchId: groupListing }, brand)
+  stored(campaign.id).date = addDays(today, -1)
+  const [offer] = (await call("GET", "/offers", undefined, group)).data.offers
+  assert.equal(offer.status, "마감")
+  const answer = await call("POST", `/offers/${offer.id}/accept`, undefined, group)
+  assert.equal(answer.status, 409)
+  assert.match(answer.data.error, /캠페인이 끝나/)
+})
+
 test("check-ins count only on the event's days, and records go once they are not needed", async () => {
   const { addDays, todayInKorea } = await import("./lib/dates.js")
   const { prunePasses } = await import("./lib/measurements.js")

@@ -3,6 +3,7 @@ import { Router } from "express"
 
 import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
+import { statusOf } from "../lib/proposals.js"
 import { recordSponsorship } from "../lib/sponsorships.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -18,13 +19,16 @@ function groupOwner(req: Request) {
   return database.accounts.find((account) => account.id === database.demoAccountIds.학생단체)
 }
 
-// Proposals brands sent to this student group, newest first.
+// Proposals brands sent to this student group, newest first, closed ones
+// as such.
 offersRouter.get("/", (req, res) => {
   const owner = groupOwner(req)
+  const database = getDatabase()
   const offers = owner?.groupId
-    ? getDatabase()
-        .offers.filter((offer) => offer.groupId === owner.groupId)
+    ? database.offers
+        .filter((offer) => offer.groupId === owner.groupId)
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+        .map((offer) => ({ ...offer, status: statusOf(database, offer) }))
     : []
   res.json({ offers })
 })
@@ -44,7 +48,9 @@ offersRouter.post("/:id/:decision", async (req, res) => {
     (item) => item.id === req.params.id && item.groupId === account.groupId,
   )
   if (!offer) throw new HttpError(404, "제안을 찾을 수 없어요.")
-  if (offer.status !== "검토 중") throw new HttpError(409, "이미 답한 제안이에요.")
+  const status = statusOf(database, offer)
+  if (status === "마감") throw new HttpError(409, "캠페인이 끝나 마감된 제안이에요.")
+  if (status !== "검토 중") throw new HttpError(409, "이미 답한 제안이에요.")
   // A campaign deleted since the offer cannot be sponsored.
   if (
     decision === "수락" &&

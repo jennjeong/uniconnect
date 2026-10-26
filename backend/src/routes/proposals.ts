@@ -5,6 +5,7 @@ import { brandIndustries, groupIndustries, shownCatalog, shownTo } from "../lib/
 import { todayInKorea } from "../lib/dates.js"
 import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
+import { statusOf } from "../lib/proposals.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { Account, EventItem, RequestStatus, SponsorOffer, SponsorRequest } from "../types.js"
@@ -32,10 +33,10 @@ function proposalState(account: Account) {
     account.role === "학생단체"
       ? database.requests
           .filter((request) => request.fromAccountId === account.id)
-          .map((request) => ({ partnerId: request.brandId, ...request }))
+          .map((request) => ({ partnerId: request.brandId, ...request, status: statusOf(database, request) }))
       : database.offers
           .filter((offer) => offer.fromAccountId === account.id)
-          .map((offer) => ({ partnerId: offer.groupId, ...offer }))
+          .map((offer) => ({ partnerId: offer.groupId, ...offer, status: statusOf(database, offer) }))
   // Oldest first, so a partner's newest answer wins.
   for (const item of sent
     .filter((item) => proposals.includes(item.partnerId))
@@ -104,8 +105,9 @@ function brandOffer(account: Account, groupId: string, campaign: EventItem): Spo
 }
 
 // Whether a proposal can go to a partner with an account about this event:
-// not while one waits for an answer (sending again changes nothing), and
-// not about an event the partner already accepted. A sponsorship needs an
+// not while one waits for an answer (sending again changes nothing; one
+// whose event has ended is closed and doesn't count), and not about an
+// event the partner already accepted. A sponsorship needs an
 // event, so its results reach the brand's analytics.
 function canPropose(sent: { status: RequestStatus; eventId?: string }[], event: EventItem | undefined, students: boolean) {
   if (!event) {
@@ -154,10 +156,12 @@ proposalsRouter.post("/", async (req, res) => {
     partnerHasInbox &&
     canPropose(
       students
-        ? database.requests.filter((item) => item.fromAccountId === account.id && item.brandId === matchId)
+        ? database.requests
+            .filter((item) => item.fromAccountId === account.id && item.brandId === matchId)
+            .map((item) => ({ status: statusOf(database, item), eventId: item.eventId }))
         : database.offers
             .filter((item) => item.fromAccountId === account.id && item.groupId === matchId)
-            .map((item) => ({ status: item.status, eventId: item.campaignId })),
+            .map((item) => ({ status: statusOf(database, item), eventId: item.campaignId })),
       event,
       students,
     )

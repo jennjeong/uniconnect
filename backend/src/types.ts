@@ -186,7 +186,9 @@ export type MetricEntry = {
   detail: string
 }
 
-export type RequestStatus = "검토 중" | "수락" | "거절"
+// "마감" is never stored: a proposal waiting for an answer shows it once
+// its event has ended (lib/proposals.ts).
+export type RequestStatus = "검토 중" | "수락" | "거절" | "마감"
 
 // A sponsorship proposal a student group sent to a brand.
 export type SponsorRequest = {

@@ -240,6 +240,10 @@ const en: Record<string, string> = {
   // Proposal inboxes (pages/InboxPage.tsx, pages/OffersPage.tsx)
   수락함: "Accepted",
   거절함: "Declined",
+  "마감된 제안이 없어요.": "No closed proposals.",
+  "마감된 협찬 제안이 없어요.": "No closed sponsorship offers.",
+  "행사가 끝나 마감됐어요.": "Closed, as the event is over",
+  "캠페인이 끝나 마감됐어요.": "Closed, as the campaign is over",
   "답을 기다리는 제안이 없어요.": "No proposals waiting for an answer.",
   "아직 수락한 제안이 없어요.": "You haven't accepted any proposals yet.",
   "거절한 제안이 없어요.": "No declined proposals.",
