@@ -155,6 +155,8 @@ function App() {
   // Whose catalog has arrived ("role accountId"), so an empty one says it
   // is empty only once it has loaded.
   const [catalogFor, setCatalogFor] = useState<string | null>(null)
+  // Whose events have arrived, as catalogFor is for the catalog.
+  const [eventsFor, setEventsFor] = useState<string | null>(null)
   const [requests, setRequests] = useState<SponsorRequest[]>([])
   const [offers, setOffers] = useState<SponsorOffer[]>([])
   const [sponsorships, setSponsorships] = useState<Sponsorship[]>([])
@@ -192,6 +194,8 @@ function App() {
   const page = pageFor(role, view.page)
   // Day the registration page opens on; null while that page is closed.
   const creating = view.create ?? null
+  // The event or campaign being edited; null while that page is closed.
+  const editing = view.edit ?? null
   const profileOpen = view.profile !== undefined && account !== null
   const chatOpen = view.chat !== undefined && account !== null
   const unreadMessages = conversations.reduce((sum, item) => sum + item.unread, 0)
@@ -280,7 +284,8 @@ function App() {
   useEffect(() => {
     if (!authReady) return
     const usable =
-      view.page === page && (account !== null ? !view.home : !view.profile && !view.create && !view.chat)
+      view.page === page &&
+      (account !== null ? !view.home : !view.profile && !view.create && !view.edit && !view.chat)
     if (!usable) go({ page }, true)
   })
 
@@ -355,7 +360,10 @@ function App() {
         setMatches(result.matches)
         setUpdatedAt(new Date())
       }),
-      settle(api.events(role), (result) => setEvents(result.events)),
+      settle(api.events(role), (result) => {
+        setEvents(result.events)
+        setEventsFor(key)
+      }),
       settle(api.proposals(), applyProposals),
       ...(students
         ? [
@@ -548,7 +556,7 @@ function App() {
     // Keep showing the same side after logging out.
     if (account) setPreviewRole(account.role)
     setAccount(null)
-    if (view.profile || view.create || view.chat) go({ page: view.page }, true)
+    if (view.profile || view.create || view.edit || view.chat) go({ page: view.page }, true)
     setNotificationsOpen(false)
   }
 
@@ -629,6 +637,29 @@ function App() {
       await api.deleteEvent(event.id)
       setEvents((current) => current.filter((item) => item.id !== event.id))
       showNotice(t("목록에서 삭제했어요."))
+    } catch (error) {
+      handleError(error)
+    }
+  }
+
+  const openEdit = (event: EventItem) => {
+    if (!account) {
+      requireLogin(t("로그인하면 등록한 행사를 관리할 수 있어요."))
+      return
+    }
+    go({ page, edit: event.id })
+  }
+
+  const updateEvent = async (draft: EventDraft) => {
+    if (editing === null) return
+    try {
+      const { event } = await api.updateEvent(editing, draft)
+      setEvents((current) => current.map((item) => (item.id === event.id ? event : item)))
+      setEventsFocus(event.date)
+      // Proposals and sponsorships about it took its new name and dates.
+      setRefreshTick((tick) => tick + 1)
+      goBack({ page: calendarPage })
+      showNotice(students ? t("행사 정보를 고쳤어요.") : t("캠페인 정보를 고쳤어요."))
     } catch (error) {
       handleError(error)
     }
@@ -883,6 +914,7 @@ function App() {
         openCreate(date)
       }}
       onShowDetail={showEventDetail}
+      onEdit={openEdit}
       onDelete={deleteEvent}
       onOpenSponsorship={() => navigate("받은 제안")}
       onNotice={showNotice}
@@ -947,6 +979,21 @@ function App() {
           onHome={goHome}
           onNavigate={navigate}
           onSignup={() => openAuth("signup", "브랜드")}
+        />
+      )
+    }
+    if (editing !== null) {
+      const event = events.find((item) => item.id === editing)
+      // Nothing while the events load; one that isn't there gets the 404 page.
+      if (!event) return eventsFor === viewer ? <NotFoundPage onHome={goHome} onNavigate={navigate} role={role} /> : null
+      return (
+        <EventCreatePage
+          key={event.id}
+          role={role}
+          event={event}
+          initialDate={event.date}
+          onCancel={() => goBack({ page })}
+          onSubmit={updateEvent}
         />
       )
     }
@@ -1253,6 +1300,8 @@ function App() {
                     ? `agreement-${view.agreement}`
                   : view.agreements
                     ? "agreements"
+                  : editing !== null
+                    ? `edit-${editing}`
                   : creating !== null
               ? "create"
               : profileOpen

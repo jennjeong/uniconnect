@@ -55,6 +55,7 @@ Figma Make 프로젝트 [Create Web/App Service](https://www.figma.com/make/mhCa
 ## 출시 준비
 
 - 행사·캠페인 등록은 내 행사·행사 일정 달력과 전체 메뉴에서 해요. 헤더에는 등록 버튼을 두지 않았어요.
+- 등록한 행사·캠페인은 달력에서 고른 날의 카드에 있는 연필 버튼으로 고쳐요(`/edit/<행사 id>`, 등록과 같은 화면). 이미 시작한 행사는 성과가 그 날짜에 맞춰 모였기 때문에 날짜는 그대로 두고 나머지만 고칠 수 있어요. 바꾼 이름·날짜·인원은 이 행사에 대한 제안과 브랜드의 협찬 기록에도 반영되고, 답을 기다리거나 협찬이 확정된 상대에게 메일로 알려요. 날짜가 바뀌면 사흘 전 일정 알림도 새 날짜에 맞춰 다시 가요.
 - 도움말 센터(`/faq`) 검색창에 입력하면 관련 질문이 아래에 떠서 바로 고를 수 있어요(방향키와 Enter도 돼요).
 - 화면마다 브라우저 탭 제목과 검색용 설명이 따로 있어요(`frontend/src/lib/pageMeta.ts`).
 - 없는 주소는 홈과 주요 메뉴로 안내하는 404 화면을 보여 주고, 빌드한 서버(`npm start`)는 실제 404 상태로 응답해요.
@@ -124,7 +125,7 @@ npm run dev
 
 | 학생단체 | 브랜드 | 공통 |
 | --- | --- | --- |
-| `/matches`, `/matches/<브랜드 id>`, `/events`, `/measurement`, `/reports` | `/groups`, `/groups/<단체 id>`, `/inbox`, `/campaigns`, `/analytics` | `/` 소개 페이지(회원은 대시보드로), `/dashboard` 대시보드, `/new` 등록, `/me` 내 정보, `/me/edit` 소개 편집, `/messages`, `/messages/<대화 id>` |
+| `/matches`, `/matches/<브랜드 id>`, `/events`, `/measurement`, `/reports` | `/groups`, `/groups/<단체 id>`, `/inbox`, `/campaigns`, `/analytics` | `/` 소개 페이지(회원은 대시보드로), `/dashboard` 대시보드, `/new` 등록, `/edit/<행사 id>` 수정, `/me` 내 정보, `/me/edit` 소개 편집, `/messages`, `/messages/<대화 id>` |
 
 로그인하지 않았을 때는 주소에 맞는 유형의 화면을 보여 줍니다. 대시보드가 `/`에서 `/dashboard`로 옮겨 왔기 때문에, 예전에 열어 둔 탭의 방문 기록이 지금 주소와 맞지 않으면 기록 대신 주소를 따릅니다(`entryView`).
 
@@ -406,6 +407,7 @@ Vercel에서 달라지는 점:
 | POST | `/api/invites/:code/accept` | 브랜드가 초대장을 받아 그 가게가 되기 → `{ invite, group, listing }`, 초대한 단체에 알림 (다른 브랜드의 가게거나 이미 다른 가게인 브랜드는 409, 데모 브랜드는 403) | 필요 |
 | GET | `/api/events?role=` | 행사·캠페인 목록 (로그인 전에는 데모 계정 것) | |
 | POST | `/api/events` | 행사·캠페인 등록 (`date`는 `YYYY-MM-DD`, 여러 날이면 마지막 날 `endDate`(최대 90일), 협찬 유형 1개 이상, `기타`는 `typeNote` 함께, 브랜드는 `budget`(원) 선택) | 필요 |
+| PUT | `/api/events/:id` | 행사·캠페인 수정 (등록과 같은 규칙, 시작한 행사는 날짜를 바꿀 수 없음 `409`, 이 행사의 제안·협찬 기록에 반영하고 상대에게 메일) | 필요 |
 | DELETE | `/api/events/:id` | 행사·캠페인 삭제 | 필요 |
 | GET | `/api/proposals` | 보낸 협찬 제안 `{ proposals, statuses }` (`statuses`는 브랜드가 답한 결과) | |
 | POST | `/api/proposals` | 협찬 제안 보내기 `{ matchId }` (학생단체→브랜드, 브랜드→학생단체). 계정이 있는 브랜드에는 다음 행사 정보와 함께 받은 제안으로, 계정이 있는 학생단체에는 다음 캠페인 정보와 함께 받은 협찬으로 전달. 보이는 상대에게만 보냄(가입한 계정↔예시 상대는 404) | 필요 |

@@ -145,6 +145,28 @@ test("a proposal sent waits under 검토 중 beside those received, and is taken
   expect(left.status()).toBe(204)
 })
 
+test("an event is edited from 내 행사, and one that has begun keeps its dates", async ({ page, request }) => {
+  const group = await signUpMember(request, "학생단체", "e2e-editor@syu.ac.kr", "고치는 동아리")
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date())
+  await request.post("/api/events", { data: { name: "고칠 공연", date: today, people: "80명", types: ["현금"] }, headers: group.headers })
+
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
+  await page.goto("/events")
+  await page.getByRole("button", { name: "고칠 공연 수정" }).click()
+  await expect(page).toHaveURL(/\/edit\//)
+  await expect(page.getByRole("heading", { name: "행사 수정" })).toBeVisible()
+  // It began today, so its dates stay as they are.
+  await expect(page.getByText("이미 시작한 행사라 일정은 바꿀 수 없어요.")).toBeVisible()
+  await expect(page.getByLabel("행사명")).toHaveValue("고칠 공연")
+  await page.getByLabel("행사명").fill("고친 공연")
+  await page.getByRole("button", { name: "저장하기" }).click()
+  await expect(page.getByText("행사 정보를 고쳤어요.")).toBeVisible()
+  await expect(page.locator(".day-event-card", { hasText: "고친 공연" })).toBeVisible()
+  // The group leaves, so later cases see no member group from this one.
+  const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: group.headers })
+  expect(left.status()).toBe(204)
+})
+
 test("a student group proposes and the brand accepts", async ({ browser }) => {
   const student = await (await browser.newContext()).newPage()
   await student.goto("/")

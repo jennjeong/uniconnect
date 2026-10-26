@@ -6,32 +6,39 @@ import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { sponsorOptions } from "../data/sponsorTypes"
 import { t, tc } from "../i18n"
-import { formatPeriod } from "../lib/date"
-import type { Role } from "../types"
+import { formatPeriod, todayIso } from "../lib/date"
+import type { EventItem, Role } from "../types"
 
-// Full page for registering an event or campaign.
+// Full page for registering an event or campaign, or editing one.
 export function EventCreatePage({
   role,
+  event,
   initialDate,
   onCancel,
   onSubmit,
 }: {
   role: Role
+  // The event or campaign being edited; a new one when absent.
+  event?: EventItem
   // "YYYY-MM-DD", usually the day picked on the calendar.
   initialDate: string
   onCancel: () => void
   onSubmit: (draft: EventDraft) => Promise<void>
 }) {
   const students = role === "학생단체"
-  const [name, setName] = useState("")
-  const [people, setPeople] = useState("")
+  const editing = event !== undefined
+  // Its dates stay once it has begun, as its results were counted on them.
+  const datesLocked = editing && event.date <= todayIso()
+  const [name, setName] = useState(event?.name ?? "")
+  // Digits only, from "1,234명".
+  const [people, setPeople] = useState(event?.people.replace(/\D/g, "") ?? "")
   // Digits only; brands plan a budget in won.
-  const [budget, setBudget] = useState("")
+  const [budget, setBudget] = useState(event?.budget === undefined ? "" : String(event.budget))
   // The first day, and the last when it runs over several days.
-  const [date, setDate] = useState(initialDate)
-  const [endDate, setEndDate] = useState<string | undefined>()
-  const [types, setTypes] = useState<string[]>([])
-  const [typeNote, setTypeNote] = useState("")
+  const [date, setDate] = useState(event?.date ?? initialDate)
+  const [endDate, setEndDate] = useState<string | undefined>(event?.endDate)
+  const [types, setTypes] = useState<string[]>(event?.types ?? [])
+  const [typeNote, setTypeNote] = useState(event?.typeNote ?? "")
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
 
@@ -78,12 +85,16 @@ export function EventCreatePage({
     <section className="page-view create-view">
       <PageIntro
         onBack={onCancel}
-        eyebrow={students ? "New Event" : "New Campaign"}
-        title={students ? t("새 행사 등록") : t("새 캠페인 등록")}
+        eyebrow={editing ? (students ? "Edit Event" : "Edit Campaign") : students ? "New Event" : "New Campaign"}
+        title={
+          editing ? (students ? t("행사 수정") : t("캠페인 수정")) : students ? t("새 행사 등록") : t("새 캠페인 등록")
+        }
         description={
-          students
-            ? t("행사 정보를 알려 주시면 잘 맞는 브랜드를 찾아 드려요.")
-            : t("캠페인 정보를 알려 주시면 잘 맞는 학생단체를 찾아 드려요.")
+          editing
+            ? t("바꾼 내용은 이 일정에 대한 제안과 협찬에도 반영되고, 상대에게 메일로 알려요.")
+            : students
+              ? t("행사 정보를 알려 주시면 잘 맞는 브랜드를 찾아 드려요.")
+              : t("캠페인 정보를 알려 주시면 잘 맞는 학생단체를 찾아 드려요.")
         }
       />
 
@@ -173,16 +184,22 @@ export function EventCreatePage({
         <div className="form-card date-card">
           <h3 className="form-card-title">{tc("heading", "일정")}</h3>
           <p className="form-card-caption">
-            {t("첫날과 마지막 날을 차례로 누르면 기간으로 잡혀요. 하루 일정은 한 번만 누르세요.")}
+            {datesLocked
+              ? students
+                ? t("이미 시작한 행사라 일정은 바꿀 수 없어요.")
+                : t("이미 시작한 캠페인이라 일정은 바꿀 수 없어요.")
+              : t("첫날과 마지막 날을 차례로 누르면 기간으로 잡혀요. 하루 일정은 한 번만 누르세요.")}
           </p>
-          <DatePicker
-            end={endDate}
-            onChange={(start, end) => {
-              setDate(start)
-              setEndDate(end)
-            }}
-            start={date}
-          />
+          {!datesLocked && (
+            <DatePicker
+              end={endDate}
+              onChange={(start, end) => {
+                setDate(start)
+                setEndDate(end)
+              }}
+              start={date}
+            />
+          )}
           <p className="date-picked">
             <Icon name="calendar" size={16} />
             {formatPeriod(date, endDate)}
@@ -200,7 +217,7 @@ export function EventCreatePage({
           {t("취소")}
         </button>
         <button className="primary-button" disabled={busy} onClick={submit} type="button">
-          {students ? t("등록하고 매칭 받기") : t("등록하고 단체 추천 받기")}
+          {editing ? t("저장하기") : students ? t("등록하고 매칭 받기") : t("등록하고 단체 추천 받기")}
         </button>
       </div>
     </section>

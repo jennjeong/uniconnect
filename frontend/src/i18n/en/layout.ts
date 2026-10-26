@@ -11,6 +11,12 @@ const en: Record<string, string> = {
   "캠페인이 등록되었어요. 적합한 단체를 찾습니다.": "Your campaign is registered. We're finding groups that fit.",
   "로그인하면 등록한 행사를 관리할 수 있어요.": "Log in to manage your events.",
   "목록에서 삭제했어요.": "Removed from the list.",
+  "행사 정보를 고쳤어요.": "The event is updated.",
+  "캠페인 정보를 고쳤어요.": "The campaign is updated.",
+  "등록한 행사의 이름과 일정, 인원, 원하는 협찬 유형을 고쳐요.":
+    "Change your event's name, dates, head count and the sponsorship types you want.",
+  "등록한 캠페인의 이름과 일정, 목표 인원, 제공할 협찬 형태를 고쳐요.":
+    "Change your campaign's name, dates, target reach and the sponsorship you offer.",
   "{name} 상세 흐름을 열었어요.": "Opened the details for {name}.",
   "로그인하면 가게를 초대할 수 있어요.": "Log in to invite shops.",
   "앱 다운로드": "Get the app",

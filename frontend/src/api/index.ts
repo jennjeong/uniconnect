@@ -112,6 +112,8 @@ export const api = {
     request<{ events: EventItem[] }>("/events", { query: { role } }),
   createEvent: (body: EventDraft) =>
     request<{ event: EventItem }>("/events", { method: "POST", body }),
+  updateEvent: (id: string, body: EventDraft) =>
+    request<{ event: EventItem }>(`/events/${encodeURIComponent(id)}`, { method: "PUT", body }),
   deleteEvent: (id: string) =>
     request<void>(`/events/${encodeURIComponent(id)}`, { method: "DELETE" }),
 

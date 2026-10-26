@@ -82,6 +82,7 @@ test("pages load for every screen's address, and others answer 404", async () =>
     "/offers",
     "/campaigns",
     "/new?date=2026-12-01",
+    "/edit/event-1",
     "/me/edit",
     "/messages/abc",
     "/check-in/20261012",
@@ -93,7 +94,7 @@ test("pages load for every screen's address, and others answer 404", async () =>
   for (const route of screens) {
     assert.deepEqual(await page(route), { status: 200, html: true }, route)
   }
-  for (const route of ["/nope", "/dashboard/x", "/events/x", "/matches/a/b", "/me/other"]) {
+  for (const route of ["/nope", "/dashboard/x", "/events/x", "/matches/a/b", "/me/other", "/edit"]) {
     assert.deepEqual(await page(route), { status: 404, html: true }, route)
   }
   assert.equal((await call("GET", "/nope")).status, 404)
@@ -569,6 +570,105 @@ test("proposals are about an upcoming event, and a sponsor can be asked again fo
   const offer = await call("POST", "/proposals", { matchId: groupId }, brand)
   assert.equal(offer.status, 409)
   assert.match(offer.data.error, /캠페인을 먼저/)
+})
+
+test("an event is edited with the same checks, and its proposals, sponsorships and partners follow", async () => {
+  const { mailTransport } = await import("./lib/mailer.js")
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const today = todayInKorea()
+  const realPost = mailTransport.post
+  const sent: { to: string[]; subject: string; text: string }[] = []
+  mailTransport.post = async (body) => {
+    sent.push(body)
+    return new Response(null, { status: 200 })
+  }
+  config.resendApiKey = "test-key"
+  config.mailFrom = "uniconnect <no-reply@example.com>"
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 20))
+  try {
+    const groupEmail = "editor@syu.ac.kr"
+    const brandEmail = "editor@editor-cafe.kr"
+    const { token: group, listingId: groupListing } = await listedMember(groupEmail, "editor-pass-123")
+    const { token: brand, listingId: brandListing } = await listedMember(brandEmail, "editor-pass-123", "브랜드")
+    const brandId = (await call("GET", "/auth/me", undefined, brand)).data.account.id as string
+    const event = (
+      await call("POST", "/events", { name: "고칠 공연", date: addDays(today, 10), people: "80", types: ["현금"] }, group)
+    ).data.event
+    await call("POST", "/proposals", { matchId: brandListing }, group)
+    const [request] = (await call("GET", "/requests", undefined, brand)).data.requests
+    await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+    sent.length = 0
+
+    // Only its owner edits it, with the checks it was registered with.
+    const edit = {
+      name: "고친 공연",
+      date: addDays(today, 12),
+      endDate: addDays(today, 13),
+      people: "120",
+      types: ["현금", "기타"],
+      typeNote: "음향 장비",
+    }
+    assert.equal((await call("PUT", `/events/${event.id}`, edit, brand)).status, 404)
+    assert.equal((await call("PUT", `/events/${event.id}`, { ...edit, types: [] }, group)).status, 400)
+    const edited = await call("PUT", `/events/${event.id}`, edit, group)
+    assert.equal(edited.status, 200)
+    const { name, date, endDate, people, typeNote, status } = edited.data.event
+    assert.deepEqual(
+      { name, date, endDate, people, typeNote, status },
+      { name: edit.name, date: edit.date, endDate: edit.endDate, people: "120명", typeNote: edit.typeNote, status: "집행 예정" },
+    )
+
+    // The brand's proposal and sponsorship take the new name and day, and
+    // the brand hears what changed.
+    const [followed] = (await call("GET", "/requests", undefined, brand)).data.requests
+    assert.deepEqual([followed.eventName, followed.eventDate, followed.people], ["고친 공연", addDays(today, 12), "예상 인원 120명"])
+    const sponsorship = getDatabase().sponsorships[brandId].find((item) => item.eventId === event.id)!
+    assert.deepEqual([sponsorship.eventName, sponsorship.date], ["고친 공연", addDays(today, 12)])
+    await settle()
+    const mail = sent.find((item) => item.to[0] === brandEmail)
+    assert.equal(mail?.subject, "[uniconnect] 행사 정보가 바뀌었어요")
+    assert.match(mail?.text ?? "", /이름: 고칠 공연 → 고친 공연/)
+    assert.match(mail?.text ?? "", /일정: \S+ \S+ → \S+ \S+ ~ \S+ \S+/)
+    assert.match(mail?.text ?? "", /예상 참여 인원: 80명 → 120명/)
+
+    // Back to one day without 기타: the period and the note go.
+    const oneDay = await call("PUT", `/events/${event.id}`, { ...edit, endDate: "", types: ["현금"] }, group)
+    assert.equal(oneDay.data.event.endDate, undefined)
+    assert.equal(oneDay.data.event.typeNote, undefined)
+    // A change no partner reads about (the types) sends nothing.
+    sent.length = 0
+    await call("PUT", `/events/${event.id}`, { ...edit, endDate: "", types: ["현금", "제품"] }, group)
+    await settle()
+    assert.equal(sent.length, 0)
+
+    // A brand's campaign works the same way round.
+    const campaign = (
+      await call("POST", "/events", { name: "고칠 캠페인", date: addDays(today, 15), types: ["제품"] }, brand)
+    ).data.event
+    await call("POST", "/proposals", { matchId: groupListing }, brand)
+    const [offer] = (await call("GET", "/offers", undefined, group)).data.offers
+    await call("POST", `/offers/${offer.id}/accept`, undefined, group)
+    sent.length = 0
+    const renamedCampaign = { name: "고친 캠페인", date: addDays(today, 15), types: ["제품"] }
+    assert.equal((await call("PUT", `/events/${campaign.id}`, renamedCampaign, brand)).status, 200)
+    assert.equal((await call("GET", "/offers", undefined, group)).data.offers[0].campaignName, "고친 캠페인")
+    assert.equal(getDatabase().sponsorships[brandId].find((item) => item.id === `sp-${offer.id}`)?.eventName, "고친 캠페인")
+    await settle()
+    assert.equal(sent.find((item) => item.to[0] === groupEmail)?.subject, "[uniconnect] 캠페인 정보가 바뀌었어요")
+
+    // Once it has begun its dates stay, as its results were counted on them;
+    // the rest can still change.
+    Object.values(getDatabase().events).flat().find((item) => item.id === event.id)!.date = today
+    const moved = await call("PUT", `/events/${event.id}`, { ...edit, date: addDays(today, 20), endDate: "" }, group)
+    assert.equal(moved.status, 409)
+    assert.match(moved.data.error, /이미 시작한 행사는/)
+    const renamed = await call("PUT", `/events/${event.id}`, { ...edit, name: "다시 고친 공연", date: today, endDate: "" }, group)
+    assert.equal(renamed.status, 200)
+  } finally {
+    mailTransport.post = realPost
+    config.resendApiKey = undefined
+    config.mailFrom = undefined
+  }
 })
 
 test("check-ins count only on the event's days, and records go once they are not needed", async () => {
