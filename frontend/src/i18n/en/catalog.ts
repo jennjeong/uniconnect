@@ -244,6 +244,19 @@ const en: Record<string, string> = {
   "마감된 협찬 제안이 없어요.": "No closed sponsorship offers.",
   "행사가 끝나 마감됐어요.": "Closed, as the event is over",
   "협찬 취소": "Calling it off",
+  "{name}에 협찬 제안": "Propose a sponsorship to {name}",
+  "제안할 행사": "Event to propose",
+  "제안할 캠페인": "Campaign to propose",
+  "다가오는 행사가 없어요. 가입한 브랜드에 제안하려면 먼저 행사를 등록해 주세요.":
+    "You have no upcoming event. Register one first to propose to a brand with an account.",
+  "다가오는 캠페인이 없어요. 가입한 학생단체에 제안하려면 먼저 캠페인을 등록해 주세요.":
+    "You have no upcoming campaign. Register one first to propose to a student group with an account.",
+  "행사 등록하기": "Register an event",
+  "캠페인 등록하기": "Register a campaign",
+  "전할 메시지": "Message",
+  "어떤 협찬을 바라는지, 함께하면 좋은 점을 적어 주세요.": "Say what sponsorship you hope for, and what you'd gain together.",
+  "{count}/{max}자 · 비워 두면 기본 인사말이 가요.": "{count}/{max} characters · Left empty, a standard greeting goes.",
+  "제안 보내기": "Send proposal",
   "{name}에 협찬 취소를 요청했어요. 상대가 동의하면 취소돼요.":
     "You asked {name} to call off the sponsorship. It's called off once they agree.",
   "{name}에서 협찬 취소를 요청했어요.": "{name} asked to call off the sponsorship.",

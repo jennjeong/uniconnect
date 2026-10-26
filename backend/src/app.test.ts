@@ -820,6 +820,59 @@ test("a sponsorship is called off only when both sides agree, and leaves the bra
   }
 })
 
+test("a proposal names the sender's event and carries its note to the partner", async () => {
+  const { mailTransport } = await import("./lib/mailer.js")
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const today = todayInKorea()
+  const realPost = mailTransport.post
+  const sent: { to: string[]; subject: string; text: string }[] = []
+  mailTransport.post = async (body) => {
+    sent.push(body)
+    return new Response(null, { status: 200 })
+  }
+  config.resendApiKey = "test-key"
+  config.mailFrom = "uniconnect <no-reply@example.com>"
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 20))
+  try {
+    const { token: group } = await listedMember("noting@syu.ac.kr", "noting-pass-123")
+    const brandEmail = "noting@noting-cafe.kr"
+    const { token: brand, listingId: brandListing } = await listedMember(brandEmail, "noting-pass-123", "브랜드")
+    const event = async (name: string, days: number) =>
+      (await call("POST", "/events", { name, date: addDays(today, days), types: ["현금"] }, group)).data.event
+    const near = await event("가까운 공연", 5)
+    const far = await event("먼 공연", 30)
+    const past = await event("지난 공연", -3)
+    const note = "공연이 끝나면 SNS 후기까지 함께 올릴게요."
+
+    // Someone else's event, one that has ended, or a note too long: refused.
+    const propose = (body: object) => call("POST", "/proposals", { matchId: brandListing, ...body }, group)
+    assert.equal((await propose({ eventId: "not-mine" })).status, 404)
+    assert.equal((await propose({ eventId: past.id })).status, 409)
+    assert.equal((await propose({ message: "가".repeat(301) })).status, 400)
+
+    // It names the later event and takes the note to the brand's inbox and email.
+    sent.length = 0
+    assert.equal((await propose({ eventId: far.id, message: note })).status, 201)
+    const [request] = (await call("GET", "/requests", undefined, brand)).data.requests
+    assert.deepEqual([request.eventName, request.message], ["먼 공연", note])
+    await settle()
+    assert.match(sent.find((mail) => mail.to[0] === brandEmail)?.text ?? "", /메시지: 공연이 끝나면/)
+    // The group sees its note under 보낸 제안.
+    assert.equal((await call("GET", "/proposals", undefined, group)).data.sent[0].message, note)
+
+    // Without either, it is about the nearest event, with the usual greeting.
+    await call("DELETE", `/proposals/${brandListing}`, undefined, group)
+    assert.equal((await propose({})).status, 201)
+    const [usual] = (await call("GET", "/requests", undefined, brand)).data.requests
+    assert.equal(usual.eventName, near.name)
+    assert.match(usual.message, /^가까운 공연에 함께해 주세요!/)
+  } finally {
+    mailTransport.post = realPost
+    config.resendApiKey = undefined
+    config.mailFrom = undefined
+  }
+})
+
 test("check-ins count only on the event's days, and records go once they are not needed", async () => {
   const { addDays, todayInKorea } = await import("./lib/dates.js")
   const { prunePasses } = await import("./lib/measurements.js")

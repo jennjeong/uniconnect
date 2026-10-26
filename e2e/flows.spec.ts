@@ -203,6 +203,12 @@ test("a student group proposes and the brand accepts", async ({ browser }) => {
   // Logging in opens the dashboard; the brand's page is one step away.
   await student.goto("/matches/afternoon-coffee")
   await student.locator(".profile-actions").getByRole("button", { name: /협찬 제안 보내기/ }).click()
+  // The form picks the event (the nearest at first) and takes a note.
+  const form = student.getByRole("dialog")
+  await expect(form.getByLabel("제안할 행사")).toBeVisible()
+  await form.getByLabel("전할 메시지").fill("현장 부스와 SNS로 브랜드를 알릴게요.")
+  await form.getByRole("button", { name: "제안 보내기" }).click()
+  await expect(form).toBeHidden()
   await expect(student.locator(".profile-actions").getByText("제안 완료")).toBeVisible()
 
   const brand = await (await browser.newContext()).newPage()
@@ -210,6 +216,7 @@ test("a student group proposes and the brand accepts", async ({ browser }) => {
   await logIn(brand, "브랜드", "hello@afternoon-coffee.kr")
   await brand.goto("/inbox")
   const card = brand.locator(".request-card", { hasText: "삼육대 뮤즈" }).first()
+  await expect(card).toContainText("현장 부스와 SNS로 브랜드를 알릴게요.")
   await card.getByRole("button", { name: /수락하기/ }).click()
   await expect(brand.locator(".request-card", { hasText: "삼육대 뮤즈" }).first()).toBeHidden()
   await brand.getByRole("tab", { name: /수락함/ }).click()
