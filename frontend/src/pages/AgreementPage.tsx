@@ -601,6 +601,113 @@ function ReviewPanel({
   )
 }
 
+// Calling the sponsorship off: one side asks, saying why, and the other
+// agrees or declines; the side that asked can take it back. Gone once it
+// is called off, and while this side may not ask (after the event, or from
+// a demo account) with nothing asked.
+function CancelPanel({
+  agreement,
+  busy,
+  onAsk,
+  onAgree,
+  onDrop,
+}: {
+  agreement: Agreement
+  busy: boolean
+  onAsk: (reason: string) => Promise<boolean>
+  onAgree: () => void
+  onDrop: () => void
+}) {
+  const { cancel } = agreement
+  const partner = agreement.side === "group" ? agreement.brand : agreement.group
+  const [writing, setWriting] = useState(false)
+  const [reason, setReason] = useState("")
+  const [agreeing, setAgreeing] = useState(false)
+  if (cancel?.canceledAt || (!cancel && !agreement.cancelable)) return null
+
+  return (
+    <section aria-labelledby="agreement-cancel-title" className="agreement-section agreement-cancel">
+      <h2 id="agreement-cancel-title">{t("협찬 취소")}</h2>
+      {cancel ? (
+        <>
+          <p>
+            {cancel.by === agreement.side
+              ? t("{name}에 협찬 취소를 요청했어요. 상대가 동의하면 취소돼요.", { name: partner.name })
+              : t("{name}에서 협찬 취소를 요청했어요.", { name: partner.name })}
+          </p>
+          <p className="field-hint">{t("이유: {reason}", { reason: cancel.reason })}</p>
+          <div className="agreement-cancel-actions">
+            {cancel.by === agreement.side ? (
+              <button className="cancel-button" disabled={busy} onClick={onDrop} type="button">
+                {t("요청 거두기")}
+              </button>
+            ) : agreeing ? (
+              <>
+                <span className="request-confirm">{t("협찬을 취소할까요? 되돌릴 수 없어요.")}</span>
+                <button className="cancel-button" onClick={() => setAgreeing(false)} type="button">
+                  {t("아니요")}
+                </button>
+                <button className="decline-button" disabled={busy} onClick={onAgree} type="button">
+                  {t("취소에 동의")}
+                </button>
+              </>
+            ) : (
+              <>
+                <button className="cancel-button" disabled={busy} onClick={onDrop} type="button">
+                  {t("거절하기")}
+                </button>
+                <button className="decline-button" onClick={() => setAgreeing(true)} type="button">
+                  {t("취소에 동의")}
+                </button>
+              </>
+            )}
+          </div>
+        </>
+      ) : writing ? (
+        <form
+          onSubmit={(event) => {
+            event.preventDefault()
+            void onAsk(reason.trim()).then((sent) => sent && setWriting(false))
+          }}
+        >
+          <label className="field">
+            <span>{t("취소하려는 이유")}</span>
+            <textarea
+              maxLength={200}
+              onChange={(event) => setReason(event.target.value)}
+              placeholder={t("예) 기상 악화로 행사가 취소됐어요")}
+              rows={3}
+              value={reason}
+            />
+          </label>
+          <p className="field-hint">
+            {t("상대가 동의하면 협찬이 취소되고, 성과와 일정에서도 빠져요. 되돌릴 수 없어요.")}
+          </p>
+          <div className="agreement-cancel-actions">
+            <button className="cancel-button" onClick={() => setWriting(false)} type="button">
+              {t("닫기")}
+            </button>
+            <button className="decline-button" disabled={busy || !reason.trim()} type="submit">
+              {t("취소 요청 보내기")}
+            </button>
+          </div>
+        </form>
+      ) : (
+        <>
+          <p className="field-hint">
+            {t("행사가 취소되는 등 협찬을 이어 갈 수 없게 되면, 상대의 동의를 받아 협찬을 취소할 수 있어요.")}
+          </p>
+          <div className="agreement-cancel-actions">
+            <button className="cancel-button" onClick={() => setWriting(true)} type="button">
+              {t("협찬 취소 요청")}
+            </button>
+          </div>
+        </>
+      )}
+    </section>
+  )
+}
+
 // A sponsorship's agreement (임시 전자 계약서): the two sides, the event and what
 // the brand gives; the event's goals, set here before it begins; each
 // side's items to tick off with links and photos as proof; each side's
@@ -709,6 +816,8 @@ export function AgreementPage({
   const side = agreement.side
   const other: ChatSide = side === "group" ? "brand" : "group"
   const state = agreementState(agreement.confirmed, side)
+  // Called off: kept only as a record.
+  const canceledAt = agreement.cancel?.canceledAt
   const parties = [
     { side: "brand" as const, role: t("브랜드"), ...agreement.brand },
     { side: "group" as const, role: t("학생단체"), ...agreement.group },
@@ -760,6 +869,13 @@ export function AgreementPage({
           </div>
         </dl>
 
+        {canceledAt ? (
+          <div className="agreement-confirm">
+            <span className="agreement-state canceled">{t("취소된 협찬")}</span>
+            <p className="field-hint">{t("{date}에 협찬을 취소했어요.", { date: formatDateTime(canceledAt) })}</p>
+            <p className="field-hint">{t("이유: {reason}", { reason: agreement.cancel!.reason })}</p>
+          </div>
+        ) : (
         <div className="agreement-confirm">
           <span className={`agreement-state ${state.className}`}>{t(state.label)}</span>
           <ul>
@@ -790,6 +906,7 @@ export function AgreementPage({
             </Pill>
           )}
         </div>
+        )}
       </article>
 
       <MethodsPanel
@@ -833,7 +950,7 @@ export function AgreementPage({
                         busy={busy}
                         item={item}
                         key={item.id}
-                        mine={item.side === side}
+                        mine={item.side === side && !canceledAt}
                         onAddPhoto={(file) =>
                           void run(async () => api.addAgreementPhoto(agreement.id, item.id, await photoFromFile(file)), t("사진을 올렸어요."))
                         }
@@ -846,17 +963,38 @@ export function AgreementPage({
               </section>
             )
           })}
-          <div className="agreement-footer">
-            <button className="cancel-button" onClick={() => setEditing(true)} type="button">
-              <Icon name="edit" size={14} /> {t("할 일 고치기")}
-            </button>
-            <p className="field-hint">{t("사진에 다른 사람의 얼굴이 나오면 동의를 받고 올려 주세요.")}</p>
-          </div>
-          <ReviewPanel
+          {!canceledAt && (
+            <>
+              <div className="agreement-footer">
+                <button className="cancel-button" onClick={() => setEditing(true)} type="button">
+                  <Icon name="edit" size={14} /> {t("할 일 고치기")}
+                </button>
+                <p className="field-hint">{t("사진에 다른 사람의 얼굴이 나오면 동의를 받고 올려 주세요.")}</p>
+              </div>
+              <ReviewPanel
+                agreement={agreement}
+                busy={busy}
+                onDelete={() => void saveReview(null)}
+                onSave={(body) => saveReview(body)}
+              />
+            </>
+          )}
+          <CancelPanel
             agreement={agreement}
             busy={busy}
-            onDelete={() => void saveReview(null)}
-            onSave={(body) => saveReview(body)}
+            onAsk={(reason) =>
+              run(
+                () => api.askToCancelAgreement(agreement.id, reason),
+                t("협찬 취소를 요청했어요. {name}에 알렸어요.", { name: agreement[other].name }),
+              )
+            }
+            onAgree={() => void run(() => api.agreeToCancelAgreement(agreement.id), t("협찬을 취소했어요."))}
+            onDrop={() =>
+              void run(
+                () => api.dropCancelRequest(agreement.id),
+                agreement.cancel?.by === side ? t("취소 요청을 거뒀어요.") : t("취소 요청을 거절했어요. 협찬은 그대로예요."),
+              )
+            }
           />
         </>
       )}

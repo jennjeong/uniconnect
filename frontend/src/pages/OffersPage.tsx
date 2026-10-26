@@ -15,8 +15,12 @@ const cardState: Record<RequestStatus, string> = {
   "검토 중": "pending",
   수락: "accepted",
   거절: "declined",
+  취소됨: "canceled",
   마감: "closed",
 }
+
+// Accepted ones stay under 수락함 once called off, as a record.
+const inTab = (status: RequestStatus, tab: RequestStatus) => status === tab || (tab === "수락" && status === "취소됨")
 
 const tabs: { status: RequestStatus; label: string; empty: string }[] = [
   { status: "검토 중", label: "검토 중", empty: "답을 기다리는 협찬 제안이 없어요." },
@@ -104,14 +108,22 @@ function OfferCard({
           <>
             <span className={offer.status === "수락" ? "request-result confirmed" : "request-result"}>
               {offer.status === "수락" && <Icon name="check" size={15} />}
-              {offer.status === "수락" ? t("협찬 확정") : offer.status === "마감" ? t("마감된 제안") : t("거절한 제안")}
-              {offer.status === "마감" ? (
+              {offer.status === "수락"
+                ? t("협찬 확정")
+                : offer.status === "취소됨"
+                  ? t("취소된 협찬")
+                  : offer.status === "마감"
+                    ? t("마감된 제안")
+                    : t("거절한 제안")}
+              {offer.status === "취소됨" && offer.canceledAt ? (
+                <small>{formatDateTime(offer.canceledAt)}</small>
+              ) : offer.status === "마감" ? (
                 <small>{t("캠페인이 끝나 마감됐어요.")}</small>
               ) : (
                 offer.respondedAt && <small>{formatDateTime(offer.respondedAt)}</small>
               )}
             </span>
-            {offer.status === "수락" && (
+            {(offer.status === "수락" || offer.status === "취소됨") && (
               <button className="detail-button" onClick={() => onOpenAgreement(offer.id)} type="button">
                 <Icon name="file" size={15} /> {t("계약서")}
               </button>
@@ -146,7 +158,7 @@ export function OffersPage({
 }) {
   const [tab, setTab] = useState<RequestStatus>("검토 중")
   const current = tabs.find((item) => item.status === tab) ?? tabs[0]
-  const list = offers.filter((offer) => offer.status === tab)
+  const list = offers.filter((offer) => inTab(offer.status, tab))
   const waitingSent = sent.filter((item) => item.status === "검토 중").length
   const received =
     list.length === 0 ? (
@@ -180,7 +192,7 @@ export function OffersPage({
             <>
               {t(item.label)}
               <em>
-                {offers.filter((offer) => offer.status === item.status).length +
+                {offers.filter((offer) => inTab(offer.status, item.status)).length +
                   (item.status === "검토 중" ? waitingSent : 0)}
               </em>
             </>

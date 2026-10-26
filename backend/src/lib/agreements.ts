@@ -3,16 +3,19 @@ import { randomUUID } from "node:crypto"
 import { todayInKorea } from "./dates.js"
 import { activeMethodsOf, confirmsAt, isVenueKind, methodsOf, venueCountsOf } from "./methods.js"
 import { photos } from "./photos.js"
-import { canReview, publicReview, reviewOpen } from "./reviews.js"
+import { canReview, isDemoAccount, publicReview, reviewOpen } from "./reviews.js"
+import { isSponsored } from "./sponsorships.js"
 import type { Account, Agreement, AgreementItem, ChatSide, Database } from "../types.js"
 
 export { uploadsFolder } from "./photos.js"
 
 // An accepted proposal as both sides see it: who is in it (their accounts
 // and listings when they have them), the event and what the brand gives.
+// One both sides called off stays, as canceled, for its agreement's record.
 export type AcceptedProposal = {
   id: string
   kind: Agreement["kind"]
+  canceled: boolean
   group: { name: string; account?: Account; listingId?: string }
   brand: { name: string; account?: Account; listingId?: string }
   eventName: string
@@ -26,13 +29,16 @@ export type AcceptedProposal = {
   respondedAt?: string
 }
 
+const accepted = (status: string) => status === "수락" || status === "취소됨"
+
 export function acceptedProposal(database: Database, id: string): AcceptedProposal | undefined {
-  const request = database.requests.find((item) => item.id === id && item.status === "수락")
+  const request = database.requests.find((item) => item.id === id && accepted(item.status))
   if (request) {
     const groupAccount = database.accounts.find((account) => account.id === request.fromAccountId)
     return {
       id,
       kind: "request",
+      canceled: request.status === "취소됨",
       group: { name: request.groupName, account: groupAccount, listingId: groupAccount?.groupId },
       brand: {
         name: database.brands.find((brand) => brand.id === request.brandId)?.name ?? "",
@@ -47,12 +53,13 @@ export function acceptedProposal(database: Database, id: string): AcceptedPropos
       respondedAt: request.respondedAt,
     }
   }
-  const offer = database.offers.find((item) => item.id === id && item.status === "수락")
+  const offer = database.offers.find((item) => item.id === id && accepted(item.status))
   if (!offer) return undefined
   const brandAccount = database.accounts.find((account) => account.id === offer.fromAccountId)
   return {
     id,
     kind: "offer",
+    canceled: offer.status === "취소됨",
     group: {
       name: database.groups.find((group) => group.id === offer.groupId)?.name ?? "",
       account: database.accounts.find((account) => account.groupId === offer.groupId),
@@ -75,6 +82,39 @@ export function sponsoredEvent(database: Database, proposal: AcceptedProposal) {
   const event =
     owner && proposal.eventId ? (database.events[owner.id] ?? []).find((item) => item.id === proposal.eventId) : undefined
   return owner && event ? { owner, event } : undefined
+}
+
+// Whether the sponsored event is over: its last day has gone.
+export function eventOver(database: Database, proposal: AcceptedProposal) {
+  const event = sponsoredEvent(database, proposal)?.event
+  const lastDay = event ? (event.endDate ?? event.date) : proposal.eventDate
+  return Boolean(lastDay) && lastDay < todayInKorea()
+}
+
+// Both sides called the sponsorship off. Its proposal is 취소, and the
+// brand's record of it and its share of the event's measurement go, so its
+// results, reminders and calendar day go with them, as does any review of
+// it. The event is matching again when nothing else sponsors it.
+export function cancelSponsorship(database: Database, proposal: AcceptedProposal, now: string) {
+  const stored =
+    proposal.kind === "request"
+      ? database.requests.find((item) => item.id === proposal.id)
+      : database.offers.find((item) => item.id === proposal.id)
+  if (!stored) return
+  stored.status = "취소됨"
+  stored.canceledAt = now
+  const sponsorshipId = `sp-${proposal.id}`
+  for (const [brandAccountId, list] of Object.entries(database.sponsorships)) {
+    database.sponsorships[brandAccountId] = list.filter((item) => item.id !== sponsorshipId)
+  }
+  for (const measurement of database.measurements) {
+    measurement.sponsors = measurement.sponsors.filter((sponsor) => sponsor.id !== sponsorshipId)
+  }
+  database.reviews = database.reviews.filter((review) => review.proposalId !== proposal.id)
+  const sponsored = sponsoredEvent(database, proposal)
+  if (sponsored && sponsored.event.status === "집행 예정" && !isSponsored(database, sponsored.event.id)) {
+    sponsored.event.status = "매칭 중"
+  }
 }
 
 // The part of the sponsored event's measurement an agreement measures: the
@@ -128,8 +168,8 @@ export function sideIn(proposal: AcceptedProposal, account: Account): ChatSide |
 // The accepted proposals an account is in, newest answer first.
 export function acceptedProposalsOf(database: Database, account: Account) {
   const ids = [
-    ...database.requests.filter((item) => item.status === "수락").map((item) => item.id),
-    ...database.offers.filter((item) => item.status === "수락").map((item) => item.id),
+    ...database.requests.filter((item) => accepted(item.status)).map((item) => item.id),
+    ...database.offers.filter((item) => accepted(item.status)).map((item) => item.id),
   ]
   return ids
     .flatMap((id) => {
@@ -176,14 +216,15 @@ export function agreementFor(database: Database, proposal: AcceptedProposal) {
 // event (whose it is, and whether it has begun: its goals and measurement
 // methods are set on the agreement until then), the goals both sides read,
 // without the PINs and coupons only the owner keeps, how it is measured with
-// this side's own venue PIN, and the reviews: whether this side may write
-// one now, its own and the other's.
+// this side's own venue PIN, the reviews (whether this side may write one
+// now, its own and the other's), any request to call it off and whether this
+// side may ask. A canceled one is only a record: its items and the request.
 export function agreementView(database: Database, agreement: Agreement, proposal: AcceptedProposal, side: ChatSide) {
   const other: ChatSide = side === "group" ? "brand" : "group"
   const review = (by: ChatSide) => database.reviews.find((item) => item.id === `${proposal.id}:${by}`)
   const mine = review(side)
   const theirs = review(other)
-  const sponsored = sponsoredEvent(database, proposal)
+  const sponsored = proposal.canceled ? undefined : sponsoredEvent(database, proposal)
   const measurement =
     sponsored &&
     database.measurements.find((item) => item.accountId === sponsored.owner.id && item.eventId === sponsored.event.id)
@@ -210,7 +251,7 @@ export function agreementView(database: Database, agreement: Agreement, proposal
     ...(measurement
       ? { goals: { expectedAudience: measurement.goals.expectedAudience, targets: measurement.goals.targets } }
       : {}),
-    ...(measure ? { measure } : {}),
+    ...(measure && !proposal.canceled ? { measure } : {}),
     gives: proposal.gives,
     review: {
       open: reviewOpen(proposal),
@@ -218,6 +259,11 @@ export function agreementView(database: Database, agreement: Agreement, proposal
       ...(mine ? { mine: publicReview(mine) } : {}),
       ...(theirs ? { theirs: publicReview(theirs) } : {}),
     },
+    cancelable:
+      !proposal.canceled &&
+      !agreement.cancel &&
+      !eventOver(database, proposal) &&
+      !isDemoAccount(database, proposal[side].account),
   }
 }
 

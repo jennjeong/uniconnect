@@ -28,6 +28,7 @@ const en: Record<string, string> = {
   "측정 완료": "Measured",
   "검토 중": "Under review",
   마감: "Closed",
+  취소됨: "Called off",
   수락: "Accepted",
   거절: "Declined",
   // Pages in the menus (types.ts NavLabel)

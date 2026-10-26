@@ -191,6 +191,7 @@ const en: Record<string, string> = {
   "다음 일정으로 다시 제안": "Propose for the next event",
   "거절된 제안": "Declined",
   "마감된 제안": "Closed",
+  "취소된 협찬": "Called off",
   "다시 제안하기": "Propose again",
   "제안 완료": "Proposed",
   "제안 취소": "Withdraw",

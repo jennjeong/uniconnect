@@ -167,6 +167,35 @@ test("an event is edited from 내 행사, and one that has begun keeps its dates
   expect(left.status()).toBe(204)
 })
 
+test("a sponsorship is called off from its agreement once the other side agrees", async ({ page, request }) => {
+  const group = await signUpMember(request, "학생단체", "e2e-calloff@syu.ac.kr", "취소하는 동아리")
+  const brand = await signUpMember(request, "브랜드", "e2e-calloff@calloff-cafe.kr", "취소하는 카페")
+  const date = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date(Date.now() + 7 * 86_400_000))
+  await request.post("/api/events", { data: { name: "취소될 공연", date, types: ["현금"] }, headers: group.headers })
+  await request.post("/api/proposals", { data: { matchId: brand.listingId }, headers: group.headers })
+  const { requests } = (await (await request.get("/api/requests", { headers: brand.headers })).json()) as { requests: { id: string }[] }
+  const id = requests[0].id
+  await request.post(`/api/requests/${id}/accept`, { headers: brand.headers })
+  await request.post(`/api/agreements/${id}/cancel`, { data: { reason: "매장 공사로 협찬이 어려워요." }, headers: brand.headers })
+
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
+  await page.goto(`/agreements/${id}`)
+  const panel = page.getByRole("region", { name: "협찬 취소" })
+  await expect(panel).toContainText("취소하는 카페에서 협찬 취소를 요청했어요.")
+  await expect(panel).toContainText("이유: 매장 공사로 협찬이 어려워요.")
+  // Agreeing asks once more, as it can't be undone.
+  await panel.getByRole("button", { name: "취소에 동의" }).click()
+  await panel.getByRole("button", { name: "취소에 동의" }).click()
+  await expect(page.getByRole("status").getByText("협찬을 취소했어요.", { exact: true })).toBeVisible()
+  await expect(page.locator(".agreement-state.canceled")).toHaveText("취소된 협찬")
+  await expect(page.getByRole("button", { name: "이 내용으로 확인하기" })).toHaveCount(0)
+  // Both leave, so later cases see no member from this one.
+  for (const member of [group, brand]) {
+    const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: member.headers })
+    expect(left.status()).toBe(204)
+  }
+})
+
 test("a student group proposes and the brand accepts", async ({ browser }) => {
   const student = await (await browser.newContext()).newPage()
   await student.goto("/")

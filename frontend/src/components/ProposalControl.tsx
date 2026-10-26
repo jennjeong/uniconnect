@@ -39,11 +39,12 @@ export function ProposalControl({
       </div>
     )
   }
-  // Declined, or closed as its event ended: it can be sent again.
-  if (status === "거절" || status === "마감") {
+  // Declined, called off, or closed as its event ended: it can be sent again.
+  if (status === "거절" || status === "취소됨" || status === "마감") {
+    const label = status === "거절" ? t("거절된 제안") : status === "취소됨" ? t("취소된 협찬") : t("마감된 제안")
     return (
       <div className="proposal-actions">
-        <span className="proposal-button declined">{status === "거절" ? t("거절된 제안") : t("마감된 제안")}</span>
+        <span className="proposal-button declined">{label}</span>
         <button className="proposal-cancel" onClick={onPropose} type="button">
           {t("다시 제안하기")}
         </button>

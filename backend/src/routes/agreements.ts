@@ -8,7 +8,9 @@ import {
   agreementFor,
   agreementShare,
   agreementView,
+  cancelSponsorship,
   defaultItems,
+  eventOver,
   sideIn,
   sponsoredEvent,
 } from "../lib/agreements.js"
@@ -18,6 +20,7 @@ import { ensureMeasurement } from "../lib/measurements.js"
 import { methodsOf, parseMethods } from "../lib/methods.js"
 import { notify } from "../lib/notices.js"
 import { photos } from "../lib/photos.js"
+import { isDemoAccount } from "../lib/reviews.js"
 import { text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -67,6 +70,13 @@ function opened(req: Request) {
   return { account, database, proposal, side }
 }
 
+// The same, to change: a sponsorship called off is only a record.
+function openedToChange(req: Request) {
+  const opening = opened(req)
+  if (opening.proposal.canceled) throw new HttpError(409, "취소된 협찬은 고칠 수 없어요.")
+  return opening
+}
+
 // One of the items of an agreement already opened, which only its own side
 // marks done or proves.
 function ownItem(database: Database, proposal: AcceptedProposal, itemId: unknown, side: AgreementItem["side"]) {
@@ -92,6 +102,7 @@ agreementsRouter.get("/", (req, res) => {
       partner: side === "group" ? proposal.brand.name : proposal.group.name,
       eventName: proposal.eventName,
       eventDate: proposal.eventDate,
+      ...(proposal.canceled ? { canceled: true } : {}),
       confirmed: stored?.confirmed ?? {},
       done: items.filter((item) => item.doneAt).length,
       total: items.length,
@@ -115,7 +126,7 @@ agreementsRouter.get("/:id", async (req, res) => {
 // Either side writes what each will do. An item kept keeps its proof; a
 // change of any kind asks both sides to confirm again.
 agreementsRouter.put("/:id/items", async (req, res) => {
-  const { account, database, proposal, side } = opened(req)
+  const { account, database, proposal, side } = openedToChange(req)
   const input = req.body?.items
   if (!Array.isArray(input) || input.length === 0 || input.length > agreementLimits.items) {
     throw new HttpError(400, "약속할 일을 1개부터 12개까지 적어 주세요.")
@@ -159,7 +170,7 @@ agreementsRouter.put("/:id/items", async (req, res) => {
 // event begins (lib/methods.ts). Like the items, a change asks both sides to
 // confirm again; the methods count once both have.
 agreementsRouter.put("/:id/methods", async (req, res) => {
-  const { account, database, proposal, side } = opened(req)
+  const { account, database, proposal, side } = openedToChange(req)
   const methods = parseMethods(req.body?.methods)
   const sponsored = sponsoredEvent(database, proposal)
   if (sponsored) ensureMeasurement(database, sponsored.owner.id, sponsored.event)
@@ -190,7 +201,7 @@ agreementsRouter.put("/:id/methods", async (req, res) => {
 // about it. Once both have, the methods as they stand are the ones that
 // count at the event and in the results (`confirmedMethods`).
 agreementsRouter.post("/:id/confirm", async (req, res) => {
-  const { account, database, proposal, side } = opened(req)
+  const { account, database, proposal, side } = openedToChange(req)
   const { agreement } = agreementFor(database, proposal)
   const now = new Date().toISOString()
   agreement.confirmed[side] = now
@@ -216,9 +227,88 @@ agreementsRouter.post("/:id/confirm", async (req, res) => {
   res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 
+// Calling a sponsorship off takes both sides: one asks, saying why, until
+// the event is over, and the other agrees or declines. A partner without
+// an account can't answer, so then asking is enough. The shared demo
+// accounts can't ask, as everyone trying the demo shares their
+// sponsorships.
+agreementsRouter.post("/:id/cancel", async (req, res) => {
+  const { account, database, proposal, side } = openedToChange(req)
+  if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 협찬을 취소할 수 없어요.")
+  if (eventOver(database, proposal)) throw new HttpError(409, "끝난 행사의 협찬은 취소할 수 없어요.")
+  const reason = text(req.body?.reason)
+  if (!reason) throw new HttpError(400, "협찬을 취소하려는 이유를 적어 주세요.")
+  if (reason.length > 200) throw new HttpError(400, "이유는 200자 이하로 적어 주세요.")
+  const { agreement } = agreementFor(database, proposal)
+  if (agreement.cancel) throw new HttpError(409, "이미 협찬 취소 요청이 있어요.")
+  const now = new Date().toISOString()
+  agreement.cancel = { by: side, reason, requestedAt: now }
+  agreement.updatedAt = now
+  const partner = side === "group" ? proposal.brand.account : proposal.group.account
+  if (!partner) {
+    agreement.cancel.canceledAt = now
+    cancelSponsorship(database, proposal, now)
+  }
+  await saveDatabase()
+  void notify(
+    partner,
+    "협찬 취소 요청이 왔어요",
+    [
+      `${account.name}에서 '${proposal.eventName}' 협찬을 취소하자고 요청했어요.`,
+      `이유: ${reason}`,
+      "임시 전자 계약서에서 동의하거나 거절할 수 있어요.",
+    ],
+    `/agreements/${encodeURIComponent(agreement.id)}`,
+  )
+  res.json({ agreement: agreementView(database, agreement, proposal, side) })
+})
+
+// The other side agrees, and the sponsorship is called off for both.
+agreementsRouter.post("/:id/cancel/accept", async (req, res) => {
+  const { account, database, proposal, side } = openedToChange(req)
+  const { agreement } = agreementFor(database, proposal)
+  if (!agreement.cancel) throw new HttpError(409, "협찬 취소 요청이 없어요.")
+  if (agreement.cancel.by === side) throw new HttpError(409, "상대가 동의해야 협찬이 취소돼요.")
+  const now = new Date().toISOString()
+  agreement.cancel.canceledAt = now
+  agreement.updatedAt = now
+  cancelSponsorship(database, proposal, now)
+  await saveDatabase()
+  void notify(
+    side === "group" ? proposal.brand.account : proposal.group.account,
+    "협찬이 취소됐어요",
+    [`${account.name}에서 '${proposal.eventName}' 협찬 취소에 동의했어요.`],
+    `/agreements/${encodeURIComponent(agreement.id)}`,
+  )
+  res.json({ agreement: agreementView(database, agreement, proposal, side) })
+})
+
+// The side that asked takes the request back, or the other side declines
+// it; the sponsorship stays either way.
+agreementsRouter.delete("/:id/cancel", async (req, res) => {
+  const { account, database, proposal, side } = openedToChange(req)
+  const { agreement } = agreementFor(database, proposal)
+  if (!agreement.cancel) throw new HttpError(409, "협찬 취소 요청이 없어요.")
+  const asked = agreement.cancel.by === side
+  delete agreement.cancel
+  agreement.updatedAt = new Date().toISOString()
+  await saveDatabase()
+  void notify(
+    side === "group" ? proposal.brand.account : proposal.group.account,
+    asked ? "협찬 취소 요청을 거뒀어요" : "협찬 취소 요청이 거절됐어요",
+    [
+      asked
+        ? `${account.name}에서 '${proposal.eventName}' 협찬 취소 요청을 거뒀어요. 협찬은 그대로예요.`
+        : `${account.name}에서 '${proposal.eventName}' 협찬 취소 요청을 거절했어요. 협찬은 그대로예요.`,
+    ],
+    `/agreements/${encodeURIComponent(agreement.id)}`,
+  )
+  res.json({ agreement: agreementView(database, agreement, proposal, side) })
+})
+
 // The side an item belongs to marks it done (or not yet) and keeps its links.
 agreementsRouter.patch("/:id/items/:itemId", async (req, res) => {
-  const { database, proposal, side } = opened(req)
+  const { database, proposal, side } = openedToChange(req)
   const { agreement, item } = ownItem(database, proposal, req.params.itemId, side)
   const links = req.body?.links === undefined ? undefined : parseLinks(req.body.links)
   if (links) item.links = links
@@ -232,7 +322,7 @@ agreementsRouter.patch("/:id/items/:itemId", async (req, res) => {
 // A photo as proof (lib/photos.ts: on disk, or in Postgres on Vercel);
 // three per item.
 agreementsRouter.post("/:id/items/:itemId/photos", async (req, res) => {
-  const { database, proposal, side } = opened(req)
+  const { database, proposal, side } = openedToChange(req)
   const { item } = ownItem(database, proposal, req.params.itemId, side)
   if (item.photos.length >= agreementLimits.photos) throw new HttpError(409, "사진은 할 일마다 3장까지 올릴 수 있어요.")
   const image = req.body?.image
@@ -257,7 +347,7 @@ agreementsRouter.post("/:id/items/:itemId/photos", async (req, res) => {
 })
 
 agreementsRouter.delete("/:id/items/:itemId/photos/:photo", async (req, res) => {
-  const { database, proposal, side } = opened(req)
+  const { database, proposal, side } = openedToChange(req)
   const { agreement, item } = ownItem(database, proposal, req.params.itemId, side)
   const photo = String(req.params.photo)
   if (!item.photos.includes(photo)) throw new HttpError(404, "사진을 찾을 수 없어요.")

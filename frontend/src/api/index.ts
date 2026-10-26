@@ -170,6 +170,13 @@ export const api = {
       `/agreements/${encodeURIComponent(id)}/items/${encodeURIComponent(itemId)}/photos/${encodeURIComponent(photo)}`,
       { method: "DELETE" },
     ),
+  askToCancelAgreement: (id: string, reason: string) =>
+    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/cancel`, { method: "POST", body: { reason } }),
+  agreeToCancelAgreement: (id: string) =>
+    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/cancel/accept`, { method: "POST" }),
+  // Takes back this side's request, or declines the other side's.
+  dropCancelRequest: (id: string) =>
+    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/cancel`, { method: "DELETE" }),
   agreementPhoto: (id: string, photo: string) =>
     requestBlob(`/agreements/${encodeURIComponent(id)}/photos/${encodeURIComponent(photo)}`),
   reviews: (about: string) =>

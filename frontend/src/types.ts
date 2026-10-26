@@ -140,6 +140,11 @@ export type Agreement = {
   // Reviews open from the event's day; canWrite is false for the demo
   // accounts and when the other side has no listing to show it on.
   review: { open: boolean; canWrite: boolean; mine?: Review; theirs?: Review }
+  // A side's request to call the sponsorship off, with why, and when the
+  // other side agreed (then the agreement is only a record), and whether
+  // this side may ask now: not after the event or from a demo account.
+  cancel?: { by: ChatSide; reason: string; requestedAt: string; canceledAt?: string }
+  cancelable: boolean
 }
 
 // A review one side of a sponsorship wrote about the other after the event.
@@ -164,6 +169,8 @@ export type AgreementSummary = {
   partner: string
   eventName: string
   eventDate: string
+  // Both sides called it off.
+  canceled?: true
   confirmed: Partial<Record<ChatSide, string>>
   done: number
   total: number
@@ -295,8 +302,9 @@ export type MetricEntry = {
   detail: string
 }
 
+// "취소됨": accepted, then called off by both sides from its agreement.
 // "마감": a proposal that waited for an answer until its event ended.
-export type RequestStatus = "검토 중" | "수락" | "거절" | "마감"
+export type RequestStatus = "검토 중" | "수락" | "거절" | "취소됨" | "마감"
 
 // A sponsorship proposal a student group sent to a brand.
 export type SponsorRequest = {
@@ -314,6 +322,8 @@ export type SponsorRequest = {
   status: RequestStatus
   createdAt: string
   respondedAt?: string
+  // When both sides called it off (취소).
+  canceledAt?: string
 }
 
 // A sponsorship proposal a brand sent to a student group.
@@ -331,6 +341,8 @@ export type SponsorOffer = {
   status: RequestStatus
   createdAt: string
   respondedAt?: string
+  // When both sides called it off (취소).
+  canceledAt?: string
 }
 
 // A proposal the account sent (a group's request, a brand's offer), as its
