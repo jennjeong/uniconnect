@@ -19,7 +19,16 @@ const againTag = "다시 함께하고 싶어요"
 // how many picked each other tag as bars, the latest review, and the rest
 // on request. Partners write them on a sponsorship's agreement after the
 // event.
-export function ReviewsSection({ id, role }: { id: string; role: Role }) {
+export function ReviewsSection({
+  id,
+  role,
+  onReport,
+}: {
+  id: string
+  role: Role
+  // Members can report a review to the operators.
+  onReport?: (review: Review) => void
+}) {
   const [data, setData] = useState<{ summary: ReviewSummary; reviews: Review[] }>()
   const [all, setAll] = useState(false)
 
@@ -87,13 +96,28 @@ export function ReviewsSection({ id, role }: { id: string; role: Role }) {
           <small>
             {latest.authorName} · {formatFullDate(latest.createdAt.slice(0, 10))}
           </small>
+          {onReport && (
+            <button className="subtle-link" onClick={() => onReport(latest)} type="button">
+              {t("후기 신고")}
+            </button>
+          )}
         </div>
       </article>
 
       {rest.length > 0 && all && (
         <div className="reviews-list">
           {rest.map((review) => (
-            <ReviewCard key={`${review.authorName}-${review.createdAt}`} review={review} />
+            <ReviewCard
+              actions={
+                onReport && (
+                  <button className="subtle-link" onClick={() => onReport(review)} type="button">
+                    {t("후기 신고")}
+                  </button>
+                )
+              }
+              key={review.key}
+              review={review}
+            />
           ))}
         </div>
       )}

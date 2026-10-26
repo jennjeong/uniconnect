@@ -105,6 +105,9 @@ export type Account = {
   passwordHash: string
   termsAgreedAt: string
   createdAt: string
+  // When the operators stopped it over a report: it can't log in, gets no
+  // email, and its listing shows to no one.
+  suspendedAt?: string
 }
 
 export type PublicAccount = Omit<Account, "passwordHash" | "termsAgreedAt">
@@ -489,6 +492,32 @@ export type Review = {
   comment: string
   createdAt: string
   updatedAt?: string
+  // When the operators took it down over a report.
+  hiddenAt?: string
+}
+
+// What the operators did about a report: nothing, took the review down, or
+// stopped the account.
+export type ReportAction = "dismiss" | "hide-review" | "suspend"
+
+// A member's report of another account, one of the messages it sent or its
+// review, for the operators (/admin), and what they did about it.
+export type AbuseReport = {
+  id: string
+  reporterId: string
+  // The account it is about.
+  accountId: string
+  target:
+    | { kind: "account" }
+    | { kind: "message"; conversationId: string; messageId: string }
+    | { kind: "review"; reviewId: string }
+  // One of reportReasons (lib/validation.ts), and in the reporter's words.
+  reason: string
+  detail: string
+  // The reported text as it was, so it reads the same after an edit.
+  excerpt?: string
+  createdAt: string
+  resolution?: { action: ReportAction; at: string }
 }
 
 // A student group's invitation to a shop it found on 추천 매칭's 가까운 순,
@@ -535,5 +564,10 @@ export type Database = {
   invites: ShopInvite[]
   // The terms and proof of accepted proposals, by the proposal's id.
   agreements: Agreement[]
+  // Members' reports for the operators.
+  reports: AbuseReport[]
+  // The accounts each account blocked, by account id: the two no longer see
+  // each other's listings, proposals or conversations.
+  blocks: Record<string, string[]>
   reviews: Review[]
 }

@@ -71,12 +71,22 @@ function view(conversation: Conversation, side: ChatSide, withMessages = false) 
   }
 }
 
-// The conversation `id` the account takes part in.
+// The conversation `id` the account takes part in, with a partner it still
+// sees (not one either side blocked).
 function findOwn(account: Account, id: string) {
-  const listing = findListing(getDatabase(), account)
-  const conversation = getDatabase().conversations.find((item) => item.id === id)
+  const database = getDatabase()
+  const listing = findListing(database, account)
+  const conversation = database.conversations.find((item) => item.id === id)
   const side = sideOf(account)
-  if (!listing || !conversation || conversation[`${side}Id`] !== listing.id) {
+  const catalog = side === "group" ? "brands" : "groups"
+  const partner =
+    conversation && database[catalog].find((item) => item.id === conversation[side === "group" ? "brandId" : "groupId"])
+  if (
+    !listing ||
+    !conversation ||
+    conversation[`${side}Id`] !== listing.id ||
+    (partner && !shownTo(database, catalog, partner, account))
+  ) {
     throw new HttpError(404, "대화를 찾을 수 없어요.")
   }
   return conversation

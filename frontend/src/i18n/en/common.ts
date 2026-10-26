@@ -28,6 +28,10 @@ const en: Record<string, string> = {
   "측정 완료": "Measured",
   "검토 중": "Under review",
   마감: "Closed",
+  // Why a member reports another (data/reports.ts)
+  "스팸 · 광고": "Spam · Ads",
+  "욕설 · 괴롭힘": "Abuse · Harassment",
+  "사기 의심": "Suspected fraud",
   취소됨: "Called off",
   수락: "Accepted",
   거절: "Declined",

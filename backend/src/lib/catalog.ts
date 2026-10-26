@@ -2,6 +2,7 @@ import { todayInKorea } from "./dates.js"
 import { distanceKm, placeOf } from "./geo.js"
 import { scoreMatch, type Viewer } from "./matchScore.js"
 import { isDemoAccount, reviewSummary, reviewsAbout } from "./reviews.js"
+import { blockedBetween } from "./safety.js"
 import type { Account, Database, Industry, Match, Role } from "../types.js"
 
 // How an account's type (validation.ts) is filed among the industries the
@@ -80,6 +81,10 @@ export const ownerOf = (database: Database, catalog: "brands" | "groups", listin
 // made up reaches a member, and a demo account reaches no member.
 export function shownTo(database: Database, catalog: "brands" | "groups", listing: Match, account?: Account) {
   const owner = ownerOf(database, catalog, listing)
+  // A suspended account shows to no one, and two accounts where one blocked
+  // the other don't see each other.
+  if (owner?.suspendedAt) return false
+  if (owner && account && blockedBetween(database, owner.id, account.id)) return false
   const memberListing = owner !== undefined && !isDemoAccount(database, owner)
   const member = account !== undefined && !isDemoAccount(database, account)
   return memberListing === member

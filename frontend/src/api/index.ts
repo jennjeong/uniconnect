@@ -2,8 +2,10 @@ import type {
   Account,
   AccountContact,
   AdminInquiry,
+  AdminReport,
   Agreement,
   AgreementSummary,
+  BlockedListing,
   CheckInInfo,
   Conversation,
   EventItem,
@@ -20,6 +22,7 @@ import type {
   PlatformStats,
   ProfileDraft,
   Report,
+  ReportAction,
   RequestStatus,
   Review,
   ReviewSummary,
@@ -30,6 +33,7 @@ import type {
   SponsorOffer,
   SponsorRequest,
   Sponsorship,
+  SuspendedAccount,
   VenuePage,
   VenueSession,
   VenueShare,
@@ -203,6 +207,32 @@ export const api = {
     request<{ inquiry: Inquiry }>(`/admin/inquiries/${encodeURIComponent(id)}/answer`, {
       method: "POST",
       body: { answer },
+      headers: { "X-Admin-Token": token },
+    }),
+  // Reports another account (by its listing), a message it sent, or a review.
+  report: (
+    body: (
+      | { kind: "account"; listingId: string }
+      | { kind: "message"; conversationId: string; messageId: string }
+      | { kind: "review"; reviewKey: string }
+    ) & { reason: string; detail: string },
+  ) => request<{ ok: true }>("/reports", { method: "POST", body }),
+  blocks: () => request<{ blocked: BlockedListing[] }>("/blocks"),
+  block: (listingId: string) => request<{ ok: true }>("/blocks", { method: "POST", body: { listingId } }),
+  unblock: (listingId: string) => request<void>(`/blocks/${encodeURIComponent(listingId)}`, { method: "DELETE" }),
+  adminReports: (token: string) =>
+    request<{ reports: AdminReport[]; suspended: SuspendedAccount[] }>("/admin/reports", {
+      headers: { "X-Admin-Token": token },
+    }),
+  resolveReport: (token: string, id: string, action: ReportAction) =>
+    request<{ ok: true }>(`/admin/reports/${encodeURIComponent(id)}/resolve`, {
+      method: "POST",
+      body: { action },
+      headers: { "X-Admin-Token": token },
+    }),
+  unsuspendAccount: (token: string, id: string) =>
+    request<void>(`/admin/accounts/${encodeURIComponent(id)}/unsuspend`, {
+      method: "POST",
       headers: { "X-Admin-Token": token },
     }),
   // The account has seen its answers, so the bell lets them go.

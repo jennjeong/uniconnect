@@ -1426,7 +1426,8 @@ button.nav-pill:hover {
 }
 
 .primary-button.wide,
-.cancel-button.wide {
+.cancel-button.wide,
+.decline-button.wide {
   width: 100%;
 }
 
@@ -8897,6 +8898,85 @@ button.nav-pill:hover {
 
 .agreement-cancel textarea {
   resize: vertical;
+}
+
+/* Reporting and blocking (modals/SafetyModal.tsx), and where they start:
+   quiet links under a profile's actions, a review, a chat message. */
+.profile-safety {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: 12px;
+}
+
+.safety-quote {
+  margin: 12px 0 0;
+  padding: 10px 14px;
+  border-left: 3px solid var(--line);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--fill);
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.modal .ask-categories {
+  margin-top: 16px;
+}
+
+.blocked-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.blocked-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+}
+
+.admin-report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.admin-report-actions .decline-button {
+  height: 40px;
+}
+
+.admin-suspended {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 24px;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-suspended li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: #fff;
+  box-shadow: var(--ring);
+}
+
+.admin-suspended small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
 }
 
 /* 제안하기's form (modals/ProposeModal.tsx). */

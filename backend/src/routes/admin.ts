@@ -5,9 +5,11 @@ import { config } from "../config.js"
 import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
+import { isDemoAccount } from "../lib/reviews.js"
 import { platformStats } from "../lib/stats.js"
 import { text } from "../lib/validation.js"
 import { getDatabase, saveDatabase } from "../store.js"
+import type { ReportAction } from "../types.js"
 
 // Operators read the questions sent from the FAQ page and answer them, and
 // watch the platform's figures, with the ADMIN_TOKEN from the environment in
@@ -57,6 +59,68 @@ adminRouter.get("/inquiries", (req, res) => {
       }
     })
   res.json({ inquiries })
+})
+
+// Members' reports, the ones waiting first, then the newest: who reported
+// whom over what, with the reported text as it was; and the accounts
+// stopped so far, to restore.
+adminRouter.get("/reports", (req, res) => {
+  requireAdmin(req)
+  const database = getDatabase()
+  const person = (id: string) => {
+    const account = database.accounts.find((item) => item.id === id)
+    return account ? { id, name: account.name, role: account.role, email: account.email } : null
+  }
+  const settled = (report: { resolution?: unknown }) => (report.resolution ? 1 : 0)
+  const reports = [...database.reports]
+    .sort((a, b) => settled(a) - settled(b) || b.createdAt.localeCompare(a.createdAt))
+    .map(({ reporterId, accountId, ...report }) => ({ ...report, reporter: person(reporterId), about: person(accountId) }))
+  const suspended = database.accounts
+    .filter((account) => account.suspendedAt)
+    .map((account) => ({ id: account.id, name: account.name, role: account.role, email: account.email, suspendedAt: account.suspendedAt }))
+  res.json({ reports, suspended })
+})
+
+const reportActions: ReportAction[] = ["dismiss", "hide-review", "suspend"]
+
+// The operators settle a report: leave things as they are, take the
+// reported review down, or stop the reported account (it can't log in,
+// gets no email and shows to no one; its sessions end). The shared demo
+// accounts can't be stopped.
+adminRouter.post("/reports/:id/resolve", async (req, res) => {
+  requireAdmin(req)
+  const database = getDatabase()
+  const report = database.reports.find((item) => item.id === req.params.id)
+  if (!report) throw new HttpError(404, "신고를 찾을 수 없어요.")
+  const action = text(req.body?.action) as ReportAction
+  if (!reportActions.includes(action)) throw new HttpError(400, "처리 방법을 골라 주세요.")
+  const now = new Date().toISOString()
+  if (action === "hide-review") {
+    const { target } = report
+    const review = target.kind === "review" ? database.reviews.find((item) => item.id === target.reviewId) : undefined
+    if (!review) throw new HttpError(409, "내릴 후기가 없어요.")
+    review.hiddenAt = now
+  }
+  if (action === "suspend") {
+    const account = database.accounts.find((item) => item.id === report.accountId)
+    if (!account) throw new HttpError(409, "이미 탈퇴한 회원이에요.")
+    if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 정지할 수 없어요.")
+    account.suspendedAt = now
+    database.sessions = database.sessions.filter((session) => session.accountId !== account.id)
+  }
+  report.resolution = { action, at: now }
+  await saveDatabase()
+  res.json({ ok: true })
+})
+
+// Lets a stopped account back in.
+adminRouter.post("/accounts/:id/unsuspend", async (req, res) => {
+  requireAdmin(req)
+  const account = getDatabase().accounts.find((item) => item.id === req.params.id)
+  if (!account?.suspendedAt) throw new HttpError(404, "정지된 계정을 찾을 수 없어요.")
+  delete account.suspendedAt
+  await saveDatabase()
+  res.status(204).end()
 })
 
 adminRouter.post("/inquiries/:id/answer", async (req, res) => {

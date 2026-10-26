@@ -7,7 +7,7 @@ import { Pill } from "../components/Pill"
 import { TabBar } from "../components/TabBar"
 import { locale, t } from "../i18n"
 import { formatDateTime } from "../lib/date"
-import type { AdminInquiry, PlatformStats } from "../types"
+import type { AdminInquiry, AdminReport, PlatformStats, ReportAction, SuspendedAccount } from "../types"
 
 // The operators' token lives in this tab only, and goes when it closes.
 const storageKey = "uniconnect-admin-token"
@@ -30,6 +30,69 @@ function writeToken(token: string) {
 }
 
 type Tab = "waiting" | "answered"
+
+// What was done about a report, in the past tense.
+const doneLabels: Record<ReportAction, string> = {
+  dismiss: "그대로 둠",
+  "hide-review": "후기 내림",
+  suspend: "계정 정지함",
+}
+
+const kindLabels: Record<AdminReport["target"]["kind"], string> = { account: "계정", message: "채팅 메시지", review: "후기" }
+
+// A member's report: what kind of thing over which reason, who reported
+// whom, the reported text as it was, and either what was done or the ways
+// to settle it.
+function ReportCard({
+  report,
+  onResolve,
+}: {
+  report: AdminReport
+  onResolve: (report: AdminReport, action: ReportAction) => Promise<void>
+}) {
+  const [busy, setBusy] = useState(false)
+  const person = (who: AdminReport["about"]) => (who ? `${who.name} · ${t(who.role)} · ${who.email}` : t("탈퇴한 회원"))
+  const act = (action: ReportAction) => {
+    setBusy(true)
+    void onResolve(report, action).finally(() => setBusy(false))
+  }
+
+  return (
+    <article className="admin-card">
+      <div className="admin-card-head">
+        <span className="admin-category">
+          {t(kindLabels[report.target.kind])} · {t(report.reason)}
+        </span>
+        <time dateTime={report.createdAt}>{formatDateTime(report.createdAt)}</time>
+      </div>
+      <p className="admin-from">{t("신고한 회원: {name}", { name: person(report.reporter) })}</p>
+      <p className="admin-from">{t("신고된 회원: {name}", { name: person(report.about) })}</p>
+      {report.excerpt && <blockquote className="safety-quote">{report.excerpt}</blockquote>}
+      {report.detail && <p className="admin-question">{report.detail}</p>}
+      {report.resolution ? (
+        <div className="admin-answer">
+          <strong>
+            {t(doneLabels[report.resolution.action])} <small>{formatDateTime(report.resolution.at)}</small>
+          </strong>
+        </div>
+      ) : (
+        <div className="admin-report-actions">
+          <button className="cancel-button" disabled={busy} onClick={() => act("dismiss")} type="button">
+            {t("그대로 두기")}
+          </button>
+          {report.target.kind === "review" && (
+            <button className="cancel-button" disabled={busy} onClick={() => act("hide-review")} type="button">
+              {t("후기 내리기")}
+            </button>
+          )}
+          <button className="decline-button" disabled={busy || !report.about} onClick={() => act("suspend")} type="button">
+            {t("계정 정지")}
+          </button>
+        </div>
+      )}
+    </article>
+  )
+}
 
 function InquiryCard({
   inquiry,
@@ -142,7 +205,10 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
   const [tokenDraft, setTokenDraft] = useState("")
   const [inquiries, setInquiries] = useState<AdminInquiry[] | null>(null)
   const [stats, setStats] = useState<PlatformStats | null>(null)
+  const [reports, setReports] = useState<AdminReport[]>([])
+  const [suspended, setSuspended] = useState<SuspendedAccount[]>([])
   const [tab, setTab] = useState<Tab>("waiting")
+  const [reportTab, setReportTab] = useState<"open" | "done">("open")
   const [error, setError] = useState("")
 
   const signOut = useCallback((message = "") => {
@@ -150,18 +216,22 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
     setToken("")
     setInquiries(null)
     setStats(null)
+    setReports([])
+    setSuspended([])
     setError(message)
   }, [])
 
   useEffect(() => {
     if (!token) return
     let cancelled = false
-    Promise.all([api.adminInquiries(token), api.adminStats(token)])
-      .then(([listed, counted]) => {
+    Promise.all([api.adminInquiries(token), api.adminStats(token), api.adminReports(token)])
+      .then(([listed, counted, reported]) => {
         if (cancelled) return
         writeToken(token)
         setInquiries(listed.inquiries)
         setStats(counted.stats)
+        setReports(reported.reports)
+        setSuspended(reported.suspended)
         setError("")
       })
       .catch((caught) => {
@@ -186,6 +256,33 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
     }
   }
 
+  // Settles a report, then reads the reports and suspended accounts again.
+  const resolve = async (report: AdminReport, action: ReportAction) => {
+    try {
+      await api.resolveReport(token, report.id, action)
+      const reported = await api.adminReports(token)
+      setReports(reported.reports)
+      setSuspended(reported.suspended)
+      onNotice(t("신고를 처리했어요."))
+    } catch (caught) {
+      onNotice(errorMessage(caught))
+    }
+  }
+
+  const unsuspend = async (account: SuspendedAccount) => {
+    try {
+      await api.unsuspendAccount(token, account.id)
+      setSuspended((current) => current.filter((item) => item.id !== account.id))
+      onNotice(t("{name}의 정지를 풀었어요.", { name: account.name }))
+    } catch (caught) {
+      onNotice(errorMessage(caught))
+    }
+  }
+
+  const openReports = reports.filter((report) => !report.resolution)
+  const doneReports = reports.filter((report) => report.resolution)
+  const shownReports = reportTab === "open" ? openReports : doneReports
+
   const waiting = (inquiries ?? []).filter((inquiry) => !inquiry.answer)
   const answered = (inquiries ?? []).filter((inquiry) => inquiry.answer)
   const list = tab === "waiting" ? waiting : answered
@@ -195,7 +292,7 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
       <PageIntro
         eyebrow="Operators"
         title={t("운영자 화면")}
-        description={t("서비스 지표를 보고, 도움말 센터의 '관리자에게 질문하기'로 들어온 질문을 확인하고 답해요.")}
+        description={t("서비스 지표를 보고, 도움말 센터의 '관리자에게 질문하기'로 들어온 질문에 답하고, 회원의 신고를 처리해요.")}
         actions={
           inquiries && (
             <Pill onClick={() => signOut()} variant="outline">
@@ -252,6 +349,47 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
                 <InquiryCard inquiry={inquiry} key={inquiry.id} onAnswer={answer} />
               ))}
             </div>
+          )}
+
+          <h2 className="admin-section-title">{t("신고")}</h2>
+          <TabBar
+            items={[
+              { value: "open", label: <>{t("처리 대기")}<em>{openReports.length}</em></> },
+              { value: "done", label: <>{t("처리 완료")}<em>{doneReports.length}</em></> },
+            ]}
+            label={t("신고 상태")}
+            onChange={setReportTab}
+            value={reportTab}
+          />
+          {shownReports.length === 0 ? (
+            <p className="day-empty">
+              {reportTab === "open" ? t("처리를 기다리는 신고가 없어요.") : t("아직 처리한 신고가 없어요.")}
+            </p>
+          ) : (
+            <div className="admin-list" key={reportTab}>
+              {shownReports.map((report) => (
+                <ReportCard key={report.id} onResolve={resolve} report={report} />
+              ))}
+            </div>
+          )}
+
+          <h2 className="admin-section-title">{t("정지된 계정")}</h2>
+          {suspended.length === 0 ? (
+            <p className="day-empty">{t("정지된 계정이 없어요.")}</p>
+          ) : (
+            <ul className="admin-suspended">
+              {suspended.map((account) => (
+                <li key={account.id}>
+                  <span>
+                    {account.name} · {t(account.role)} · {account.email}
+                    <small>{formatDateTime(account.suspendedAt)}</small>
+                  </span>
+                  <button className="cancel-button" onClick={() => void unsuspend(account)} type="button">
+                    {t("정지 풀기")}
+                  </button>
+                </li>
+              ))}
+            </ul>
           )}
         </>
       )}

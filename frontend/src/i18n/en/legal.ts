@@ -85,6 +85,11 @@ const en: Record<string, string> = {
   "주고받은 메시지": "Messages sent and received",
   "회원 사이의 대화": "Conversations between members",
   "관리자에게 보낸 질문과 답변": "Questions sent to our team and their answers",
+  "신고(신고한 회원, 신고된 회원, 사유와 설명, 신고한 메시지나 후기의 글, 운영자의 처리)와 차단한 상대, 운영자가 이용을 정지한 시각":
+    "Reports (who reported, who was reported, the reason and description, the text of the reported message or review, and what the operators did), the accounts a member blocked, and when the operators suspended an account",
+  "스팸·괴롭힘·사기를 막고 운영자가 확인해 처리": "Stopping spam, harassment and fraud, checked and settled by the operators",
+  "신고한 회원이나 신고된 회원이 탈퇴할 때까지, 차단은 풀 때까지":
+    "Until the member who reported or the reported member leaves; blocks until lifted",
   "임시 전자 계약서(할 일, 확인한 시각, 완료 표시, 증빙 링크와 사진, 협찬 취소 요청과 그 이유)":
     "Provisional e-contracts (items, when they were confirmed, items marked done, proof links and photos, requests to call the sponsorship off and why)",
   "확정된 협찬의 할 일을 두 회원이 함께 정하고 결과를 남김":
@@ -139,8 +144,8 @@ const en: Record<string, string> = {
     "Members may request to access, correct or delete their personal information, or to suspend its processing.",
   "소개는 내 정보에서 고칠 수 있고, 행사는 내 행사에서 고치거나 지울 수 있어요.":
     "Profiles can be edited in My Info, and events can be edited or deleted in My Events.",
-  "내 정보의 '회원 탈퇴'에서 탈퇴하면 계정 정보, 소개, 행사·캠페인, 협찬 제안, 메시지(상대방 쪽 대화 포함), 관리자에게 보낸 질문, 보낸 가게 초대, 임시 전자 계약서와 증빙 사진(상대방 쪽 포함), 남기고 받은 후기가 바로 지워지고 되살릴 수 없어요. 초대로 가입한 브랜드가 탈퇴하면 그 가게는 다시 초대할 수 있는 상태가 돼요.":
-    "When a member deletes their account from 'Delete Account' in My Info, their account information, profile, events and campaigns, sponsorship proposals, messages (including the other party's side of the conversation), questions sent to the administrators, shop invitations they sent, provisional e-contracts with their proof photos (including the other party's), and the reviews they wrote and got are deleted immediately and cannot be restored. When a brand that joined from an invitation leaves, that shop can be invited again.",
+  "내 정보의 '회원 탈퇴'에서 탈퇴하면 계정 정보, 소개, 행사·캠페인, 협찬 제안, 메시지(상대방 쪽 대화 포함), 관리자에게 보낸 질문, 보낸 가게 초대, 임시 전자 계약서와 증빙 사진(상대방 쪽 포함), 남기고 받은 후기, 보내거나 받은 신고와 차단 기록이 바로 지워지고 되살릴 수 없어요. 초대로 가입한 브랜드가 탈퇴하면 그 가게는 다시 초대할 수 있는 상태가 돼요.":
+    "When a member deletes their account from 'Delete Account' in My Info, their account information, profile, events and campaigns, sponsorship proposals, messages (including the other party's side of the conversation), questions sent to the administrators, shop invitations they sent, provisional e-contracts with their proof photos (including the other party's), the reviews they wrote and got, and the reports and blocks they made or were the subject of are deleted immediately and cannot be restored. When a brand that joined from an invitation leaves, that shop can be invited again.",
   "그 밖의 요청은 도움말 센터의 '관리자에게 질문하기'로 보내 주세요. 확인한 뒤 지체 없이 처리해요.":
     "Please send any other requests through 'Ask the Administrators' in the Help Center. They will be processed without delay after review.",
   "법령에 따라 보관해야 하는 정보가 생기면 그 기간 동안만 따로 보관해요.":
@@ -157,8 +162,8 @@ const en: Record<string, string> = {
     "Please send inquiries and requests about personal information through 'Ask the Administrators' in the Help Center. Counseling on privacy infringement is also available from the Personal Information Infringement Report Center (dial 118 without an area code).",
   "학교와의 거리를 계산하기 위해, 브랜드가 적은 매장 주소를 오픈스트리트맵 재단(영국)의 주소 검색(Nominatim)에 보내 좌표로 바꿔요. 학생단체에게 학교 근처 가게를 보여 줄 때는 학교 위치만 카카오(대한민국)에 보내고, 받은 가게 정보는 저장하지 않아요. 가게를 초대하면 카카오가 허락한 가게 번호와 카카오맵 주소만 남겨요.":
     "To calculate the distance from schools, the store address a brand enters is sent to the OpenStreetMap Foundation's address search (Nominatim, United Kingdom) to turn it into coordinates. To show student groups the shops near their school, only the school's location is sent to Kakao (Korea), and the shop details that come back are not stored. When a group invites a shop, only the shop's number and Kakao Map address, which Kakao allows, are kept.",
-  "내 정보의 '내 데이터 내려받기'로 계정 정보, 소개, 행사, 협찬 제안, 메시지, 질문, 가게 초대, 임시 전자 계약서, 남기고 받은 후기를 파일 하나로 내려받을 수 있어요.":
-    "With 'Download my data' under My Account, you can download your account details, introduction, events, proposals, messages, questions, shop invitations, provisional e-contracts and the reviews you wrote and got as one file.",
+  "내 정보의 '내 데이터 내려받기'로 계정 정보, 소개, 행사, 협찬 제안, 메시지, 질문, 가게 초대, 임시 전자 계약서, 남기고 받은 후기, 보낸 신고와 차단한 상대를 파일 하나로 내려받을 수 있어요.":
+    "With 'Download my data' under My Account, you can download your account details, introduction, events, proposals, messages, questions, shop invitations, provisional e-contracts and the reviews you wrote and got, the reports you sent and the accounts you blocked as one file.",
   "서버 장애에 대비한 백업에는 지운 내용이 최대 24시간 남아 있다가 새 백업으로 바뀌며 사라져요.":
     "Backups kept against server failures may hold deleted data for up to 24 hours, until newer backups replace them.",
 }

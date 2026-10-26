@@ -5,6 +5,7 @@ import { methodInfo } from "../data/methods"
 import { metricInfo } from "../data/metrics"
 import { navItems } from "../data/navigation"
 import { placeCategories } from "../data/places"
+import { reportReasons } from "../data/reports"
 import { reviewTags } from "../data/reviews"
 import { accountTypeGroups, accountTypes, positionHints, roles } from "../data/roles"
 import { valueTypes } from "../data/sponsorTypes"
@@ -26,6 +27,7 @@ describe("English for listed values", () => {
       // What the venue's records say (backend lib/measurements.ts recordMetric).
       "샘플링 · 시음",
       ...inquiryCategories,
+      ...reportReasons,
       ...placeCategories.map((category) => category.label),
       ...roles.flatMap((role) => reviewTags[role]),
       "매칭 중",

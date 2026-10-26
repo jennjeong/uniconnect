@@ -73,6 +73,8 @@ reviewsRouter.put("/:proposalId", async (req, res) => {
     comment,
     createdAt: existing?.createdAt ?? now,
     ...(existing ? { updatedAt: now } : {}),
+    // Taken down by the operators, it stays down when rewritten.
+    ...(existing?.hiddenAt ? { hiddenAt: existing.hiddenAt } : {}),
   }
   database.reviews = [...database.reviews.filter((item) => item.id !== id), review]
   await saveDatabase()

@@ -149,6 +149,8 @@ export type Agreement = {
 
 // A review one side of a sponsorship wrote about the other after the event.
 export type Review = {
+  // Stands for the review without giving its proposal away, to report it.
+  key: string
   authorName: string
   side: ChatSide
   eventName: string
@@ -157,6 +159,8 @@ export type Review = {
   comment: string
   createdAt: string
   updatedAt?: string
+  // Taken down by the operators; only its author still sees it.
+  hidden?: true
 }
 
 // A listing's reviews in short.
@@ -422,6 +426,29 @@ export type AdminInquiry = Inquiry & {
   from: { name: string; role: Role; email: string } | null
 }
 
+// What the operators can do about a report.
+export type ReportAction = "dismiss" | "hide-review" | "suspend"
+
+// A member's report as the operators see it: who reported whom over what,
+// with the reported text as it was, and what was done.
+export type AdminReport = {
+  id: string
+  target: { kind: "account" } | { kind: "message"; conversationId: string; messageId: string } | { kind: "review"; reviewId: string }
+  reason: string
+  detail: string
+  excerpt?: string
+  createdAt: string
+  resolution?: { action: ReportAction; at: string }
+  reporter: { id: string; name: string; role: Role; email: string } | null
+  about: { id: string; name: string; role: Role; email: string } | null
+}
+
+// An account the operators suspended.
+export type SuspendedAccount = { id: string; name: string; role: Role; email: string; suspendedAt: string }
+
+// An account this one blocked, by its listing.
+export type BlockedListing = { listingId: string; name: string }
+
 // One figure two ways: real members' only, and with the demo data.
 export type Figure = { real: number; total: number }
 
@@ -566,3 +593,4 @@ export type ModalName =
   | "calendar"
   | "install"
   | "propose"
+  | "safety"

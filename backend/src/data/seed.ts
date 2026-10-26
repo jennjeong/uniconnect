@@ -999,5 +999,7 @@ export async function createSeed(): Promise<Database> {
     },
     demoAccountIds: { 학생단체: muse.id, 브랜드: coffee.id },
     measurements: seedMeasurements(muse.id),
+    reports: [],
+    blocks: {},
   }
 }
