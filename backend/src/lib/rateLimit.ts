@@ -1,6 +1,7 @@
 import type { Request } from "express"
 
 import { HttpError } from "./errors.js"
+import type { Account, Database } from "../types.js"
 
 // Counts requests per key (an IP, or an IP and an email) in fixed windows,
 // in memory. That is enough for the single server this prototype runs as;
@@ -59,6 +60,14 @@ export function createRateLimit({
 // The caller's address. Behind a proxy it is only right once TRUST_PROXY
 // says how far to trust X-Forwarded-For (see config.ts).
 export const clientKey = (req: Request) => req.ip ?? req.socket.remoteAddress ?? "unknown"
+
+// What an account sends is counted by the account, from any address. The
+// shared demo accounts are counted per address too, so one visitor can't
+// use up everyone's.
+export function senderKey(req: Request, database: Database, account: Account) {
+  const demo = Object.values(database.demoAccountIds).includes(account.id)
+  return demo ? `${account.id} ${clientKey(req)}` : account.id
+}
 
 // Tests start each case with fresh counts.
 export function clearRateLimits() {

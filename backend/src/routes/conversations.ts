@@ -4,6 +4,7 @@ import { Router } from "express"
 import { findListing, shownCatalog, shownTo } from "../lib/catalog.js"
 import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
+import { createRateLimit, senderKey } from "../lib/rateLimit.js"
 import { text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -154,10 +155,27 @@ conversationsRouter.get("/:id", async (req, res) => {
   res.json({ conversation: view(conversation, side, true) })
 })
 
+// Faster than anyone types, and more than a day's talk: a flood, each of
+// which may email the other side.
+const messagesPerMinute = createRateLimit({
+  limit: 20,
+  windowMs: 60 * 1000,
+  message: "메시지를 너무 빨리 보내고 있어요. 1분 뒤에 다시 보내 주세요.",
+})
+const messagesPerHour = createRateLimit({
+  limit: 300,
+  windowMs: 60 * 60 * 1000,
+  message: "메시지를 너무 많이 보냈어요. 1시간 뒤에 다시 보내 주세요.",
+})
+
 conversationsRouter.post("/:id/messages", async (req, res) => {
   const account = requireAccount(req)
   const conversation = findOwn(account, req.params.id)
   const message = messageText(req.body?.text)
+  const key = senderKey(req, getDatabase(), account)
+  messagesPerMinute.check(key)
+  messagesPerHour.take(key)
+  messagesPerMinute.hit(key)
   const side = sideOf(account)
   const at = new Date().toISOString()
   // One email per run of unread messages: only when the other side had

@@ -16,6 +16,10 @@ const en: Record<string, string> = {
   // Rate limits
   "관리자 인증 실패가 너무 많아요. 15분 뒤에 다시 시도해 주세요.":
     "Too many failed admin sign-ins. Please try again in 15 minutes.",
+  "메시지를 너무 빨리 보내고 있어요. 1분 뒤에 다시 보내 주세요.":
+    "You're sending messages too fast. Please send again in a minute.",
+  "메시지를 너무 많이 보냈어요. 1시간 뒤에 다시 보내 주세요.": "You've sent too many messages. Please send again in an hour.",
+  "제안을 너무 많이 보냈어요. 1시간 뒤에 다시 보내 주세요.": "You've sent too many proposals. Please send again in an hour.",
   "인증번호 요청이 너무 많아요. 15분 뒤에 다시 시도해 주세요.":
     "Too many verification code requests. Please try again in 15 minutes.",
   "이 이메일로 인증번호를 너무 자주 받았어요. 30분 뒤에 다시 시도해 주세요.":
