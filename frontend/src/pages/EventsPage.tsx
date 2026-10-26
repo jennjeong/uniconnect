@@ -51,11 +51,13 @@ function EventRow({
   role,
   event,
   onShowDetail,
+  onEdit,
   onDelete,
 }: {
   role: Role
   event: EventItem
   onShowDetail: (event: EventItem) => void
+  onEdit: (event: EventItem) => void
   onDelete: (event: EventItem) => void
 }) {
   const types = event.types.length > 0 ? ` · ${t("{types} 협찬", { types: typeLabels(event) })}` : ""
@@ -80,6 +82,14 @@ function EventRow({
       <div className="event-card-actions">
         <button className="cancel-button" onClick={() => onShowDetail(event)} type="button">
           {t("상세 보기")}
+        </button>
+        <button
+          className="delete-button"
+          aria-label={t("{name} 수정", { name: event.name })}
+          onClick={() => onEdit(event)}
+          type="button"
+        >
+          <Icon name="edit" size={16} />
         </button>
         <button
           className="delete-button"
@@ -127,6 +137,7 @@ export function EventsPage({
   initialDate,
   onCreate,
   onShowDetail,
+  onEdit,
   onDelete,
   onOpenSponsorship,
   onNotice,
@@ -139,6 +150,7 @@ export function EventsPage({
   initialDate?: string
   onCreate: (date: string) => void
   onShowDetail: (event: EventItem) => void
+  onEdit: (event: EventItem) => void
   onDelete: (event: EventItem) => void
   onOpenSponsorship?: () => void
   onNotice?: (message: string) => void
@@ -378,6 +390,7 @@ export function EventsPage({
                   <EventRow
                     event={entry.event}
                     key={entry.id}
+                    onEdit={onEdit}
                     onDelete={onDelete}
                     onShowDetail={onShowDetail}
                     role={role}

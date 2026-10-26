@@ -36,6 +36,13 @@ const en: Record<string, string> = {
   "목표 도달 {people} · 예산 {budget}": "Reach goal {people} · Budget {budget}",
   "상세 보기": "Details",
   "{name} 삭제": "Delete {name}",
+  "{name} 수정": "Edit {name}",
+  "행사 수정": "Edit Event",
+  "캠페인 수정": "Edit Campaign",
+  "바꾼 내용은 이 일정에 대한 제안과 협찬에도 반영되고, 상대에게 메일로 알려요.":
+    "Your changes reach the proposals and sponsorships for it too, and the other side hears of them by email.",
+  "이미 시작한 행사라 일정은 바꿀 수 없어요.": "The event has begun, so its dates can't change.",
+  "이미 시작한 캠페인이라 일정은 바꿀 수 없어요.": "The campaign has begun, so its dates can't change.",
   "제안 보기": "View proposal",
   "날짜를 고르면 그날의 일정이 함께 보여요. 두 번 누르면 그 날짜로 바로 등록해요.":
     "Pick a day to see what's on. Double-tap a day to add something to it.",

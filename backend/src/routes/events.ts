@@ -1,13 +1,15 @@
 import { randomUUID } from "node:crypto"
+import type { Request } from "express"
 import { Router } from "express"
 
-import { toIsoDate } from "../lib/dates.js"
+import { todayInKorea, toIsoDate } from "../lib/dates.js"
 import { HttpError } from "../lib/errors.js"
+import { notify } from "../lib/notices.js"
 import { isSponsored } from "../lib/sponsorships.js"
 import { parseRole, sponsorTypes, text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
-import type { EventItem } from "../types.js"
+import type { Account, Database, EventItem, Role } from "../types.js"
 
 export const eventsRouter = Router()
 
@@ -33,31 +35,34 @@ eventsRouter.get("/", (req, res) => {
   res.json({ events: database.events[ownerId] ?? [] })
 })
 
-eventsRouter.post("/", async (req, res) => {
-  const account = requireAccount(req)
-  const name = text(req.body?.name)
-  const rawDate = text(req.body?.date)
+type EventFields = Pick<EventItem, "name" | "date" | "endDate" | "people" | "types" | "typeNote" | "budget">
+
+// An event's or campaign's fields as they are registered or edited, checked
+// the same way both times.
+function parseEventFields(role: Role, body: Request["body"]): EventFields {
+  const students = role === "학생단체"
+  const name = text(body?.name)
+  const rawDate = text(body?.date)
   // The last day, for an event over several days.
-  const rawEndDate = text(req.body?.endDate)
-  const people = parsePeople(text(req.body?.people))
-  const types: string[] = Array.isArray(req.body?.types)
-    ? sponsorTypes.filter((type) => req.body.types.map(String).includes(type))
+  const rawEndDate = text(body?.endDate)
+  const people = parsePeople(text(body?.people))
+  const types: string[] = Array.isArray(body?.types)
+    ? sponsorTypes.filter((type) => body.types.map(String).includes(type))
     : []
   // Free text describing the "기타" type.
-  const typeNote = text(req.body?.typeNote)
+  const typeNote = text(body?.typeNote)
   // Brands plan an optional campaign budget in won.
-  const rawBudget = account.role === "브랜드" ? text(req.body?.budget) : ""
+  const rawBudget = students ? "" : text(body?.budget)
   const budget = rawBudget ? Number(rawBudget) : undefined
 
   if (!name || !rawDate) {
-    const label = account.role === "학생단체" ? "행사명" : "캠페인명"
-    throw new HttpError(400, `${label}과 일정을 입력해 주세요.`)
+    throw new HttpError(400, `${students ? "행사명" : "캠페인명"}과 일정을 입력해 주세요.`)
   }
   if (name.length > 40) {
-    throw new HttpError(400, `${account.role === "학생단체" ? "행사명" : "캠페인명"}은 40자 이하로 적어 주세요.`)
+    throw new HttpError(400, `${students ? "행사명" : "캠페인명"}은 40자 이하로 적어 주세요.`)
   }
   if (people === undefined) {
-    const label = account.role === "학생단체" ? "예상 참여 인원" : "목표 도달 인원"
+    const label = students ? "예상 참여 인원" : "목표 도달 인원"
     throw new HttpError(400, `${label}은 1명부터 ${maxPeople.toLocaleString("ko-KR")}명까지 숫자로 적어 주세요.`)
   }
   const date = toIsoDate(rawDate)
@@ -72,9 +77,7 @@ eventsRouter.post("/", async (req, res) => {
   if (types.length === 0) {
     throw new HttpError(
       400,
-      account.role === "학생단체"
-        ? "원하는 협찬 유형을 하나 이상 골라 주세요."
-        : "제공할 협찬 형태를 하나 이상 골라 주세요.",
+      students ? "원하는 협찬 유형을 하나 이상 골라 주세요." : "제공할 협찬 형태를 하나 이상 골라 주세요.",
     )
   }
   if (types.includes("기타") && !typeNote) {
@@ -85,8 +88,7 @@ eventsRouter.post("/", async (req, res) => {
     throw new HttpError(400, "예산은 0원 이상 숫자로 입력해 주세요.")
   }
 
-  const event: EventItem = {
-    id: randomUUID(),
+  return {
     name,
     date,
     ...(endDate && endDate !== date ? { endDate } : {}),
@@ -94,6 +96,14 @@ eventsRouter.post("/", async (req, res) => {
     types,
     ...(types.includes("기타") ? { typeNote } : {}),
     ...(budget === undefined ? {} : { budget }),
+  }
+}
+
+eventsRouter.post("/", async (req, res) => {
+  const account = requireAccount(req)
+  const event: EventItem = {
+    id: randomUUID(),
+    ...parseEventFields(account.role, req.body),
     status: "매칭 중",
     createdAt: new Date().toISOString(),
   }
@@ -101,6 +111,99 @@ eventsRouter.post("/", async (req, res) => {
   database.events[account.id] = [event, ...(database.events[account.id] ?? [])]
   await saveDatabase()
   res.status(201).json({ event })
+})
+
+// "11월 3일", or "11월 3일 ~ 11월 5일" for a period, in the emails.
+const dayLabel = (iso: string) => {
+  const [, month, day] = iso.split("-")
+  return `${Number(month)}월 ${Number(day)}일`
+}
+const periodLabel = (date: string, endDate?: string) =>
+  endDate ? `${dayLabel(date)} ~ ${dayLabel(endDate)}` : dayLabel(date)
+
+// Proposals about an event and the sponsorships recorded for it carry its
+// name and dates, so after an edit they take the new ones; declined
+// proposals stay as they were sent. Answers the other side of each
+// proposal still waiting or accepted, with the page to look at.
+function followEvent(database: Database, account: Account, event: EventItem, datesChanged: boolean) {
+  const partners = new Map<string, string>()
+  const follow = (sponsorship: { eventName: string; date: string; remindedAt?: string }) => {
+    sponsorship.eventName = event.name
+    sponsorship.date = event.date
+    // The reminder goes again for the new day.
+    if (datesChanged) delete sponsorship.remindedAt
+  }
+  if (account.role === "학생단체") {
+    for (const request of database.requests) {
+      if (request.fromAccountId !== account.id || request.eventId !== event.id || request.status === "거절") continue
+      request.eventName = event.name
+      request.eventDate = event.date
+      request.people = event.people ? `예상 인원 ${event.people}` : "인원 협의"
+      const brand = database.accounts.find((item) => item.brandId === request.brandId)
+      if (brand) partners.set(brand.id, request.status === "수락" ? `/agreements/${request.id}` : "/inbox")
+    }
+    for (const list of Object.values(database.sponsorships)) {
+      for (const sponsorship of list) if (sponsorship.eventId === event.id) follow(sponsorship)
+    }
+  } else {
+    for (const offer of database.offers) {
+      if (offer.fromAccountId !== account.id || offer.campaignId !== event.id || offer.status === "거절") continue
+      offer.campaignName = event.name
+      offer.campaignDate = event.date
+      const sponsorship = (database.sponsorships[account.id] ?? []).find((item) => item.id === `sp-${offer.id}`)
+      if (sponsorship) follow(sponsorship)
+      const group = database.accounts.find((item) => item.groupId === offer.groupId)
+      if (group) partners.set(group.id, offer.status === "수락" ? `/agreements/${offer.id}` : "/offers")
+    }
+  }
+  return [...partners].map(([id, path]) => ({ account: database.accounts.find((item) => item.id === id), path }))
+}
+
+// The owner changes an event or campaign, with the same checks as when it
+// was registered. Its dates stay once it has begun, as its results were
+// counted on them. Proposals about it and its sponsorships follow, and the
+// partners hear of a new name, day or head count.
+eventsRouter.put("/:id", async (req, res) => {
+  const account = requireAccount(req)
+  const students = account.role === "학생단체"
+  const database = getDatabase()
+  const event = (database.events[account.id] ?? []).find((item) => item.id === req.params.id)
+  if (!event) throw new HttpError(404, "행사를 찾을 수 없어요.")
+  const fields = parseEventFields(account.role, req.body)
+  const datesChanged = fields.date !== event.date || fields.endDate !== event.endDate
+  if (datesChanged && event.date <= todayInKorea()) {
+    throw new HttpError(409, `이미 시작한 ${students ? "행사는" : "캠페인은"} 날짜를 바꿀 수 없어요.`)
+  }
+
+  const before = { ...event }
+  // Fields the edit leaves out (one day now, no 기타, no budget) go.
+  delete event.endDate
+  delete event.typeNote
+  delete event.budget
+  Object.assign(event, fields)
+  if (datesChanged) delete event.remindedAt
+  const partners = followEvent(database, account, event, datesChanged)
+  await saveDatabase()
+
+  const what = students ? "행사" : "캠페인"
+  const lines = [
+    before.name !== event.name ? `이름: ${before.name} → ${event.name}` : "",
+    datesChanged ? `일정: ${periodLabel(before.date, before.endDate)} → ${periodLabel(event.date, event.endDate)}` : "",
+    before.people !== event.people
+      ? `${students ? "예상 참여 인원" : "목표 도달 인원"}: ${before.people || "미정"} → ${event.people || "미정"}`
+      : "",
+  ].filter(Boolean)
+  if (lines.length > 0) {
+    for (const partner of partners) {
+      void notify(
+        partner.account,
+        `${what} 정보가 바뀌었어요`,
+        [`${account.name}에서 '${before.name}' ${what} 정보를 바꿨어요.`, ...lines],
+        partner.path,
+      )
+    }
+  }
+  res.json({ event })
 })
 
 eventsRouter.delete("/:id", async (req, res) => {

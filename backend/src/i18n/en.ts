@@ -104,6 +104,8 @@ const en: Record<string, string> = {
   "기타 협찬 유형은 30자 이하로 적어 주세요.": "Please keep the other sponsorship type to 30 characters or fewer.",
   "예산은 0원 이상 숫자로 입력해 주세요.": "Please enter the budget as a number of 0 won or more.",
   "행사를 찾을 수 없어요.": "We couldn't find the event.",
+  "이미 시작한 행사는 날짜를 바꿀 수 없어요.": "The event has already begun, so its dates can't change.",
+  "이미 시작한 캠페인은 날짜를 바꿀 수 없어요.": "The campaign has already begun, so its dates can't change.",
   "협찬이 확정된 행사는 지울 수 없어요. 협찬사와 먼저 이야기해 주세요.":
     "An event with a confirmed sponsorship can't be deleted. Please talk to the sponsor first.",
 

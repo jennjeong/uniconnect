@@ -107,6 +107,19 @@ export function pageMeta(
           noindex: true,
         }
   }
+  if (view.edit) {
+    return students
+      ? {
+          title: titled(t("행사 수정")),
+          description: t("등록한 행사의 이름과 일정, 인원, 원하는 협찬 유형을 고쳐요."),
+          noindex: true,
+        }
+      : {
+          title: titled(t("캠페인 수정")),
+          description: t("등록한 캠페인의 이름과 일정, 목표 인원, 제공할 협찬 형태를 고쳐요."),
+          noindex: true,
+        }
+  }
   if (view.profile) {
     return view.profile === "edit"
       ? {
