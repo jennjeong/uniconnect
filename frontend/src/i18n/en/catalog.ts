@@ -244,6 +244,20 @@ const en: Record<string, string> = {
   "마감된 협찬 제안이 없어요.": "No closed sponsorship offers.",
   "행사가 끝나 마감됐어요.": "Closed, as the event is over",
   "협찬 취소": "Calling it off",
+  // A brand's business check (modals/BusinessModal.tsx)
+  "사업자 확인": "Business verified",
+  "사업자등록번호 10자리를 적어 주세요.": "Please enter the 10-digit business registration number.",
+  "개업일자와 대표자 성명을 적어 주세요.": "Please enter the opening date and the representative's name.",
+  "사업자등록증의 내용으로 국세청에서 확인해요. 확인되면 소개에 '사업자 확인'이 붙어요. 대표자 성명과 개업일자는 저장하지 않아요.":
+    "We check the details on your business registration certificate with the National Tax Service. Once confirmed, your profile shows 'Business verified'. The representative's name and opening date aren't kept.",
+  사업자등록번호: "Business registration number",
+  개업일자: "Opening date",
+  "대표자 성명": "Representative's name",
+  "국세청에서 확인하기": "Check with the National Tax Service",
+  "확인됨 · {number} · {date}": "Verified · {number} · {date}",
+  "사업자 확인하기": "Verify the business",
+  "아직 준비 중이에요": "Not available yet",
+  "사업자 확인을 마쳤어요. 소개에 '사업자 확인'이 붙어요.": "Business verified. Your profile now shows it.",
   // Reporting and blocking (modals/SafetyModal.tsx)
   신고하기: "Report",
   차단하기: "Block",

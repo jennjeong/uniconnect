@@ -39,6 +39,7 @@ import { GoalsModal } from "./modals/GoalsModal"
 import { InstallGuideModal } from "./modals/InstallGuideModal"
 import { LeaveModal } from "./modals/LeaveModal"
 import { LoginModal } from "./modals/LoginModal"
+import { BusinessModal } from "./modals/BusinessModal"
 import { ContactModal } from "./modals/ContactModal"
 import { EmailChangeModal } from "./modals/EmailChangeModal"
 import { InviteShopModal } from "./modals/InviteShopModal"
@@ -79,6 +80,7 @@ import { ReportExport } from "./report/ReportExport"
 import type {
   Account,
   BlockedListing,
+  BusinessStatus,
   Conversation,
   EventItem,
   EventMeasurement,
@@ -128,6 +130,8 @@ function App() {
   const [safety, setSafety] = useState<{ mode: "report" | "block"; target: SafetyTarget } | null>(null)
   // The accounts this one blocked, for 내 정보.
   const [blocked, setBlocked] = useState<BlockedListing[]>([])
+  // A brand's business check, read when 내 정보 opens.
+  const [business, setBusiness] = useState<BusinessStatus | null>(null)
   const [account, setAccount] = useState<Account | null>(null)
   // With a saved token, role-specific data waits until /auth/me answers.
   const [authReady, setAuthReady] = useState(() => getToken() === null)
@@ -752,6 +756,22 @@ function App() {
     if (view.detail) goBack({ page })
   }
 
+  // A member brand's business check, for its 내 정보.
+  const checksBusiness = member && account?.role === "브랜드"
+  useEffect(() => {
+    if (!profileOpen || !checksBusiness) return
+    let cancelled = false
+    api
+      .business()
+      .then((result) => {
+        if (!cancelled) setBusiness(result)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [profileOpen, checksBusiness, accountId])
+
   const unblock = async (item: BlockedListing) => {
     try {
       await api.unblock(item.listingId)
@@ -1119,6 +1139,8 @@ function App() {
           onLeave={() => setActiveModal("leave")}
           blocked={member ? blocked : undefined}
           onUnblock={unblock}
+          business={checksBusiness && business ? business : undefined}
+          onVerifyBusiness={() => setActiveModal("business")}
         />
       )
     }
@@ -1608,6 +1630,18 @@ function App() {
           }}
         />
       </Presence>
+      {account && (
+        <Presence show={activeModal === "business"}>
+          <BusinessModal
+            onClose={closeModal}
+            onVerified={(verified) => {
+              setBusiness({ ready: true, business: verified })
+              closeModal()
+              showNotice(t("사업자 확인을 마쳤어요. 소개에 '사업자 확인'이 붙어요."))
+            }}
+          />
+        </Presence>
+      )}
       {account && safety && (
         <Presence show={activeModal === "safety"}>
           <SafetyModal mode={safety.mode} onClose={closeModal} onDone={safetyDone} target={safety.target} />

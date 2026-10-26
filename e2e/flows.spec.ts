@@ -227,6 +227,17 @@ test("a member reports and blocks a partner from its profile, and unblocks it in
   }
 })
 
+test("a brand's 내 정보 offers the business check once the server has its key", async ({ page, request }) => {
+  const brand = await signUpMember(request, "브랜드", "e2e-business@business-cafe.kr", "확인할 카페")
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
+  await page.goto("/me")
+  // The test server has no NTS_SERVICE_KEY, so it isn't offered yet.
+  const row = page.locator(".service-row", { has: page.getByText("사업자 확인", { exact: true }) })
+  await expect(row).toContainText("아직 준비 중이에요")
+  const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: brand.headers })
+  expect(left.status()).toBe(204)
+})
+
 test("a student group proposes and the brand accepts", async ({ browser }) => {
   const student = await (await browser.newContext()).newPage()
   await student.goto("/")

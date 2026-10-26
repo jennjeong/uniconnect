@@ -1,8 +1,11 @@
 import { Router } from "express"
 
+import { businessCheck } from "../lib/business.js"
 import { createListing, findListing } from "../lib/catalog.js"
 import { HttpError } from "../lib/errors.js"
 import { geocode } from "../lib/geocode.js"
+import { createRateLimit } from "../lib/rateLimit.js"
+import { isDemoAccount } from "../lib/reviews.js"
 import { factLabels, snsPlatforms, text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -88,6 +91,65 @@ function parseProfile(body: unknown, role: Role) {
     portfolio,
   }
 }
+
+// Each check asks a government service, so a brand gets a few an hour.
+const businessChecksPerHour = createRateLimit({
+  limit: 10,
+  windowMs: 60 * 60 * 1000,
+  message: "사업자 확인을 너무 많이 했어요. 1시간 뒤에 다시 시도해 주세요.",
+})
+
+// "123-45-67890" as it shows on 내 정보.
+const shownNumber = (number: string) => `${number.slice(0, 3)}-${number.slice(3, 5)}-${number.slice(5)}`
+
+// Whether brands can verify their business here (the key is set), and this
+// brand's confirmed registration.
+profileRouter.get("/business", (req, res) => {
+  const account = requireAccount(req)
+  res.json({
+    ready: businessCheck.ready(),
+    business: account.business ? { number: shownNumber(account.business.number), verifiedAt: account.business.verifiedAt } : null,
+  })
+})
+
+// A brand confirms its business registration with the National Tax
+// Service: the number, the opening date and the representative's name, as
+// on the registration certificate. Only the number is kept, once it
+// matches; one business verifies one account. Its listing then shows
+// 사업자 확인. The shared demo brand can't.
+profileRouter.post("/business", async (req, res) => {
+  const account = requireAccount(req)
+  const database = getDatabase()
+  if (account.role !== "브랜드") throw new HttpError(403, "브랜드 계정만 사업자를 확인할 수 있어요.")
+  if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 사업자를 확인할 수 없어요.")
+  if (!businessCheck.ready()) throw new HttpError(503, "사업자 확인은 아직 준비 중이에요.")
+  const number = text(req.body?.number).replace(/[-\s]/g, "")
+  const startDate = text(req.body?.startDate).replace(/[-.\s]/g, "")
+  const owner = text(req.body?.owner)
+  if (!/^\d{10}$/.test(number)) throw new HttpError(400, "사업자등록번호 10자리를 적어 주세요.")
+  if (!/^\d{8}$/.test(startDate)) throw new HttpError(400, "개업일자를 골라 주세요.")
+  if (!owner || owner.length > 30) throw new HttpError(400, "대표자 성명을 적어 주세요.")
+  const taken = database.accounts.some((item) => item.id !== account.id && item.business?.number === number)
+  if (taken) throw new HttpError(409, "이미 다른 계정에서 확인한 사업자등록번호예요.")
+  businessChecksPerHour.take(account.id)
+  let result
+  try {
+    result = await businessCheck.validate({ number, startDate, owner })
+  } catch (error) {
+    console.error(`[business] ${(error as Error).message}`)
+    throw new HttpError(502, "국세청 확인을 지금 할 수 없어요. 잠시 뒤 다시 시도해 주세요.")
+  }
+  if (result === "invalid") {
+    throw new HttpError(400, "입력한 정보로 확인되지 않았어요. 사업자등록증의 번호, 개업일자, 대표자 성명을 확인해 주세요.")
+  }
+  if (result === "closed") throw new HttpError(400, "폐업한 사업자로 확인돼요.")
+  // Looked up again: the data may have been read anew during the check.
+  const fresh = getDatabase().accounts.find((item) => item.id === account.id)
+  if (!fresh) throw new HttpError(404, "계정을 찾을 수 없어요.")
+  fresh.business = { number, verifiedAt: new Date().toISOString() }
+  await saveDatabase()
+  res.json({ business: { number: shownNumber(number), verifiedAt: fresh.business.verifiedAt } })
+})
 
 // The logged-in account's own listing, or null before it has written one.
 profileRouter.get("/", (req, res) => {

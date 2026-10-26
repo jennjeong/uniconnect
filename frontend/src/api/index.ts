@@ -6,6 +6,7 @@ import type {
   Agreement,
   AgreementSummary,
   BlockedListing,
+  BusinessStatus,
   CheckInInfo,
   Conversation,
   EventItem,
@@ -217,6 +218,9 @@ export const api = {
       | { kind: "review"; reviewKey: string }
     ) & { reason: string; detail: string },
   ) => request<{ ok: true }>("/reports", { method: "POST", body }),
+  business: () => request<BusinessStatus>("/profile/business"),
+  verifyBusiness: (body: { number: string; startDate: string; owner: string }) =>
+    request<{ business: NonNullable<BusinessStatus["business"]> }>("/profile/business", { method: "POST", body }),
   blocks: () => request<{ blocked: BlockedListing[] }>("/blocks"),
   block: (listingId: string) => request<{ ok: true }>("/blocks", { method: "POST", body: { listingId } }),
   unblock: (listingId: string) => request<void>(`/blocks/${encodeURIComponent(listingId)}`, { method: "DELETE" }),

@@ -134,6 +134,21 @@ const en: Record<string, string> = {
   "이미 탈퇴한 회원이에요.": "This member has already left.",
   "데모 계정은 정지할 수 없어요.": "The demo accounts can't be suspended.",
   "정지된 계정을 찾을 수 없어요.": "We couldn't find the suspended account.",
+  "사업자 확인을 너무 많이 했어요. 1시간 뒤에 다시 시도해 주세요.":
+    "Too many business checks. Please try again in an hour.",
+  "브랜드 계정만 사업자를 확인할 수 있어요.": "Only brand accounts can verify a business.",
+  "데모 계정은 사업자를 확인할 수 없어요.": "The demo account can't verify a business.",
+  "사업자 확인은 아직 준비 중이에요.": "Business verification isn't available yet.",
+  "사업자등록번호 10자리를 적어 주세요.": "Please enter the 10-digit business registration number.",
+  "개업일자를 골라 주세요.": "Please pick the opening date.",
+  "대표자 성명을 적어 주세요.": "Please enter the representative's name.",
+  "이미 다른 계정에서 확인한 사업자등록번호예요.": "Another account has already verified this business registration number.",
+  "국세청 확인을 지금 할 수 없어요. 잠시 뒤 다시 시도해 주세요.":
+    "The National Tax Service check isn't available right now. Please try again shortly.",
+  "입력한 정보로 확인되지 않았어요. 사업자등록증의 번호, 개업일자, 대표자 성명을 확인해 주세요.":
+    "These details couldn't be confirmed. Please check the number, opening date and representative's name on the registration certificate.",
+  "폐업한 사업자로 확인돼요.": "This business is registered as closed.",
+  "계정을 찾을 수 없어요.": "We couldn't find the account.",
   "운영 정책에 따라 이용이 정지된 계정이에요.": "This account is suspended under the service's policy.",
   "취소된 협찬은 고칠 수 없어요.": "A sponsorship that was called off can't be changed.",
   "데모 계정은 협찬을 취소할 수 없어요.": "The demo accounts can't call off a sponsorship.",

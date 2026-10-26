@@ -9,7 +9,7 @@ import { lang, setLang, t, type Lang } from "../i18n"
 import { formatFullDate, toIsoDate } from "../lib/date"
 import { initialOf } from "../lib/format"
 import { MeshBackdrop } from "../scenes/MeshBackdrop"
-import type { Account, BlockedListing, Match, NavLabel } from "../types"
+import type { Account, BlockedListing, BusinessStatus, Match, NavLabel } from "../types"
 
 export type ActivityItem = {
   label: string
@@ -51,6 +51,8 @@ export function ProfilePage({
   onLeave,
   blocked,
   onUnblock,
+  business,
+  onVerifyBusiness,
 }: {
   account: Account
   // The listing brands (or student groups) see; null until written.
@@ -70,6 +72,9 @@ export function ProfilePage({
   // The accounts this one blocked, to unblock; absent for the demo accounts.
   blocked?: BlockedListing[]
   onUnblock?: (item: BlockedListing) => void
+  // A brand's business check; absent for groups and the demo brand.
+  business?: BusinessStatus
+  onVerifyBusiness?: () => void
 }) {
   const students = account.role === "학생단체"
   const labels = profileLabels[account.role]
@@ -85,6 +90,7 @@ export function ProfilePage({
     },
     { label: t("가입일"), value: formatFullDate(toIsoDate(new Date(account.createdAt))) },
   ]
+  const verified = business?.business
 
   return (
     <section className="page-view profile-view">
@@ -230,9 +236,29 @@ export function ProfilePage({
               </span>
             </dd>
           </div>
-          {blocked && (
+          {business && (
             <div className="service-row" data-reveal style={delay((details.length + 1) * 0.08)}>
               <span className="service-index">{pad(details.length + 2)}</span>
+              <dt>{t("사업자 확인")}</dt>
+              <dd>
+                {verified ? (
+                  t("확인됨 · {number} · {date}", {
+                    number: verified.number,
+                    date: formatFullDate(toIsoDate(new Date(verified.verifiedAt))),
+                  })
+                ) : business.ready ? (
+                  <button className="subtle-link" onClick={onVerifyBusiness} type="button">
+                    {t("사업자 확인하기")}
+                  </button>
+                ) : (
+                  t("아직 준비 중이에요")
+                )}
+              </dd>
+            </div>
+          )}
+          {blocked && (
+            <div className="service-row" data-reveal style={delay((details.length + (business ? 2 : 1)) * 0.08)}>
+              <span className="service-index">{pad(details.length + (business ? 3 : 2))}</span>
               <dt>{t("차단한 상대")}</dt>
               <dd>
                 {blocked.length === 0 ? (

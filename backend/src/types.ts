@@ -46,6 +46,9 @@ export type Match = {
   // average stars (one decimal) and how many.
   rating?: number
   reviewCount?: number
+  // Brand catalog only: its account's business registration was confirmed
+  // (Account.business), worked out when the catalog is served.
+  businessVerified?: true
   // Km from the account browsing (its campus or store) to this listing,
   // worked out when the catalog is served (lib/geo.ts); absent when either
   // place is unknown.
@@ -108,6 +111,10 @@ export type Account = {
   // When the operators stopped it over a report: it can't log in, gets no
   // email, and its listing shows to no one.
   suspendedAt?: string
+  // A brand's business registration, once the National Tax Service confirmed
+  // it (lib/business.ts): the number alone, so one business verifies one
+  // account; the representative's name and opening date are not kept.
+  business?: { number: string; verifiedAt: string }
 }
 
 export type PublicAccount = Omit<Account, "passwordHash" | "termsAgreedAt">

@@ -316,6 +316,7 @@ Vercel에서는 화면(`frontend/dist`)을 Vercel이 직접 내보내고, API는
    - `SITE_URL`: 배포된 주소(예: `https://uniconnect.vercel.app`). 알림 메일의 링크에 씁니다.
    - `KAKAO_REST_API_KEY`: 카카오 REST API 키(`backend/.env.local`에 있는 값)
    - `NOMINATIM_URL`: `https://nominatim.openstreetmap.org`
+   - `NTS_SERVICE_KEY`(선택): 공공데이터포털에서 '국세청_사업자등록정보 진위확인 및 상태조회 서비스'를 활용신청해 받은 일반 인증키. 있으면 브랜드가 내 정보에서 사업자를 확인할 수 있습니다.
    - 메일: `RESEND_API_KEY`와 `MAIL_FROM`을 넣거나, 메일 없이 시연만 할 때는 `EXPOSE_EMAIL_CODES=true`(누구나 아무 이메일로 가입할 수 있게 되므로 시연용으로만)
 5. `Deploy`를 누릅니다. 첫 요청 때 데이터베이스에 데모 데이터가 만들어집니다. 데모 계정으로 로그인해 보고, 회원가입·제안·메시지가 다시 열어도 남아 있는지 확인하세요.
 
@@ -381,6 +382,7 @@ Vercel에서 달라지는 점:
 | `MAIL_FROM` | 백엔드 | 없음 | 보내는 사람 (예: `uniconnect <no-reply@example.com>`) |
 | `ADMIN_TOKEN` | 백엔드 | 없음 | 관리자 API 토큰. 없으면 관리자 API가 닫혀 있음 |
 | `TRUST_PROXY` | 백엔드 | 없음 (Vercel에서는 `1`) | 프록시 뒤에서 사용자 주소를 읽는 방법: 프록시 수(보통 `1`) 또는 프록시 주소. `true`는 주소 위조를 허용하므로 쓰지 않음 |
+| `NTS_SERVICE_KEY` | 백엔드 | 없음 | 공공데이터포털의 국세청 사업자등록정보 진위확인 서비스 인증키. 있으면 브랜드가 내 정보의 `사업자 확인`에서 사업자등록번호 · 개업일자 · 대표자 성명으로 확인하고, 확인되면 카드와 상세 정보에 `사업자 확인`이 붙음 |
 | `KAKAO_REST_API_KEY` | 백엔드 | 없음 (개발 중에는 `backend/.env.local`) | 카카오 REST API 키. 있으면 추천 매칭의 `가까운 순`에서 학교 근처 실제 가게를 실시간으로 보여 줌. 앱의 카카오맵 사용 설정이 켜져 있어야 함 |
 | `NOMINATIM_URL` | 백엔드 | 없음 (`npm run dev`는 `backend/dev.env`에서 켬) | OpenStreetMap 주소 검색 서버 (예: `https://nominatim.openstreetmap.org`). 있으면 브랜드의 매장 주소를 좌표로 바꿔 학교와의 거리를 보여 줌 |
 | `VITE_API_URL` | 프론트엔드 | 비어 있음 | 백엔드를 다른 주소에 둘 때 API origin (예: `https://api.example.com`) |
@@ -437,6 +439,8 @@ Vercel에서 달라지는 점:
 | GET | `/api/offers` | 학생단체가 받은 협찬 제안 (최신순, 로그인 전에는 데모 단체 것) | |
 | POST | `/api/offers/:id/accept` · `/decline` | 받은 협찬 수락·거절 (학생단체만, 이미 답한 제안과 캠페인이 끝나 마감된 제안은 409) | 필요 |
 | GET | `/api/profile` | 내 소개(상대가 보는 목록 항목), 아직 없으면 `null` | 필요 |
+| GET | `/api/profile/business` | 사업자 확인을 쓸 수 있는지(`ready`, 서버에 `NTS_SERVICE_KEY`가 있을 때)와 확인한 사업자등록번호 | 필요 |
+| POST | `/api/profile/business` | 브랜드의 사업자 확인 `{ number, startDate, owner }` (국세청 진위확인, 번호만 저장, 한 번호는 한 계정만, 1시간에 10번, 키가 없으면 503, 학생단체 · 데모 계정 403) | 필요 |
 | PUT | `/api/profile` | 소개 저장 `{ intro, offer, tags, facts, sns, portfolio }` (처음 저장하면 목록에 등록). 브랜드는 `address`(매장 주소, 100자까지, 빈 값이면 삭제)도 보냄 | 필요 |
 | GET | `/api/inquiries` | 내가 관리자에게 보낸 질문과 답변 | 필요 |
 | POST | `/api/inquiries` | 관리자에게 질문 `{ category, question }` (종류는 이용 방법 · 계정 · 가입 · 제안 · 매칭 · 오류 신고 · 기타, 5~1,000자) | 필요 |
