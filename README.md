@@ -321,6 +321,17 @@ Vercel에서 달라지는 점:
 - 요청 제한(로그인 실패, 인증번호 등)과 OpenStreetMap 주소 검색 간격은 서버 인스턴스마다 따로 셉니다. 사용자가 적을 때는 인스턴스가 하나라 그대로지만, 붐벼서 인스턴스가 늘면 제한이 느슨해질 수 있습니다.
 - 사용자의 주소는 Vercel이 앞단에서 넣어 주는 값으로 읽습니다(`TRUST_PROXY`를 따로 두지 않으면 1).
 - 데이터를 되돌릴 때는 Neon의 복원 기능이나 `uniconnect_backups` 표의 백업을 씁니다.
+- PR마다 미리보기 배포가 생기고, Neon 연결이 미리보기마다 데이터베이스 브랜치(`preview/<PR 브랜치>`, 운영 DB의 복사본)를 만듭니다.
+  - Neon 무료 플랜은 운영 브랜치를 포함해 브랜치를 10개까지만 둘 수 있습니다.
+  - Vercel 쪽 연결은 그 브랜치의 마지막 미리보기 배포가 지워질 때만 브랜치를 지우고, 미리보기 배포는 기본 180일 보관됩니다.
+  - 그래서 PR 9개쯤 지나면 미리보기가 빌드 전 '연동 준비(Provisioning Integrations)' 단계에서 `Branch limit reached`로 실패합니다(#133부터 그랬습니다).
+  - 이를 막으려고 PR이 닫히면(합쳤든 아니든) GitHub Actions(`.github/workflows/neon-preview-cleanup.yml`)가 Neon API로 그 PR의 `preview/…` 브랜치를 지웁니다.
+    - 운영(기본) 브랜치와 보호된 브랜치는 건드리지 않습니다.
+    - 그 이름의 브랜치가 없으면 안내만 남깁니다.
+  - 설정: Neon 콘솔(Vercel의 `Storage → neon-lime-lever → Open in Neon`)에서 API 키를 만들어, GitHub 저장소의 `Settings → Secrets and variables → Actions → New repository secret`에 `NEON_API_KEY`로 넣습니다.
+    - 비밀값이 없으면 워크플로는 안내만 남기고 넘어갑니다.
+    - Neon 프로젝트 ID(`falling-surf-44679163`)는 워크플로 파일에 들어 있습니다.
+  - 이미 쌓인 브랜치는 Neon 콘솔의 Branches에서 `preview/…`만 지우면 됩니다(운영 브랜치는 남깁니다).
 
 **앱 다운로드.** 사이트는 먼저 웹페이지로 열리고, 원하는 사람은 그 안에서 앱으로 설치할 수 있습니다(`frontend/public/manifest.webmanifest`, 아이콘 `frontend/public/icons/`, 서비스 워커 `frontend/public/sw.js`). 소개 페이지(첫 화면과 마지막 카드), 대시보드 첫 화면, 메뉴의 `앱 다운로드`를 누르면 다음처럼 동작합니다.
 
@@ -448,7 +459,7 @@ npm run typecheck
 `npm run build` 뒤에 `npm run e2e`를 실행하면 설치된 Chrome으로 빌드된 앱을 열어 실제 화면을 눌러 보는 브라우저 테스트(둘러보기, 제안과 수락, 현장 참여와 직원 PIN, 회원가입과 가입 직후의 빈 화면 안내, 메뉴 배지와 짧은 화면의 메뉴)와 접근성 검사(WCAG 2.1 A·AA, 심각한 문제가 있으면 실패)를 합니다. 테스트용 데이터 파일을 따로 만들어 개발 데이터는 건드리지 않습니다.
 
 `npm test`는 백엔드 API 테스트(`backend/src/app.test.ts`), Postgres 저장 테스트(`backend/src/store.postgres.test.ts`: 실제 서버 대신 같은 프로세스 안의 Postgres인 PGlite로 시드, 버전 충돌, 다른 인스턴스의 변경, 백업, 사진을 확인)와 화면 쪽 단위 테스트(`frontend/src/lib/*.test.ts`, vitest)를 차례로 실행합니다. 화면 테스트는 주소 읽기(`route.ts`), 날짜 계산(`date.ts`), 성과 분석 계산(`sponsorships.ts`), 알림 목록(`notifications.ts`)을 확인하고, 서버의 페이지 주소 목록(`backend/src/lib/appPaths.ts`)이 화면 주소와 맞는지도 확인합니다.
-GitHub에 push하거나 PR을 열면 GitHub Actions가 설치, 타입 검사, 테스트, 빌드, 브라우저 테스트(e2e)를 자동으로 실행합니다(`.github/workflows/ci.yml`).
+GitHub에 push하거나 PR을 열면 GitHub Actions가 설치, 타입 검사, 테스트, 빌드, 브라우저 테스트(e2e)를 자동으로 실행합니다(`.github/workflows/ci.yml`). PR이 닫히면 그 PR의 미리보기 데이터베이스 브랜치를 지우는 워크플로(`.github/workflows/neon-preview-cleanup.yml`)도 돕니다(위의 'Vercel에 배포' 참고).
 
 ## 구조
 

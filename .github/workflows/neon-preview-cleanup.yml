@@ -1,0 +1,48 @@
+# When a pull request closes, merged or not, deletes the Neon database
+# branch that Vercel's Neon integration made for its previews,
+# preview/<the PR's branch>. The integration keeps that branch until the
+# Git branch's last preview deployment is deleted (Vercel keeps previews
+# for months), and Neon's free plan holds 10 branches, so without this the
+# previews stop deploying once 9 PRs have had one.
+# Needs the NEON_API_KEY repository secret; without it, or when there is no
+# such branch, the job says so and passes. It never deletes the default
+# (production) branch or a protected one. The PR's branch name reaches the
+# script only as an environment variable, so it can't become a command.
+name: Neon preview cleanup
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions: {}
+
+jobs:
+  delete-preview-branch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      # The Neon project behind Vercel's neon-lime-lever database.
+      NEON_PROJECT_ID: falling-surf-44679163
+      BRANCH: preview/${{ github.event.pull_request.head.ref }}
+    steps:
+      - name: Delete the PR's preview database branch
+        run: |
+          set -euo pipefail
+          if [ -z "${NEON_API_KEY:-}" ]; then
+            echo "::notice::The NEON_API_KEY secret isn't set, so no Neon branch was deleted."
+            exit 0
+          fi
+          api="https://console.neon.tech/api/v2/projects/$NEON_PROJECT_ID/branches"
+          auth=(-H "Authorization: Bearer $NEON_API_KEY" -H "Accept: application/json")
+          ids=$(curl -fsS --get "${auth[@]}" --data-urlencode "search=$BRANCH" "$api" |
+            jq -r --arg name "$BRANCH" \
+              '.branches[] | select(.name == $name and (.default | not) and (.protected | not)) | .id')
+          if [ -z "$ids" ]; then
+            echo "::notice::There is no Neon branch named $BRANCH to delete."
+            exit 0
+          fi
+          for id in $ids; do
+            curl -fsS -X DELETE "${auth[@]}" "$api/$id" > /dev/null
+            echo "Deleted the Neon branch $BRANCH ($id)."
+          done
