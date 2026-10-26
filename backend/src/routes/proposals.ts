@@ -4,6 +4,7 @@ import { Router } from "express"
 import { brandIndustries, groupIndustries, shownCatalog, shownTo } from "../lib/catalog.js"
 import { todayInKorea } from "../lib/dates.js"
 import { HttpError } from "../lib/errors.js"
+import { text } from "../lib/validation.js"
 import { notify } from "../lib/notices.js"
 import { statusOf } from "../lib/proposals.js"
 import { requireAccount } from "../middleware/session.js"
@@ -67,6 +68,7 @@ function proposalState(account: Account) {
         eventName: "eventName" in item ? item.eventName : item.campaignName,
         ...(date ? { eventDate: date } : {}),
         offer: "ask" in item ? item.ask : item.offer,
+        message: item.message,
         status: item.status,
         createdAt: item.createdAt,
         ...(item.respondedAt ? { respondedAt: item.respondedAt } : {}),
@@ -75,17 +77,31 @@ function proposalState(account: Account) {
   return { proposals, statuses, confirmed, sent: sentList }
 }
 
-// The account's next event (a group's) or campaign (a brand's) that has
-// not ended, which a proposal is about.
-function nextEvent(account: Account) {
+// The longest note a proposal carries to its partner.
+const maxMessage = 300
+
+// The account's event (a group's) or campaign (a brand's) a proposal is
+// about: the one it picked, which must not have ended, or else its next.
+function proposedEvent(account: Account, eventId: string) {
   const today = todayInKorea()
-  return (getDatabase().events[account.id] ?? [])
-    .filter((item) => (item.endDate ?? item.date) >= today)
-    .sort((a, b) => a.date.localeCompare(b.date))[0]
+  const events = getDatabase().events[account.id] ?? []
+  if (!eventId) {
+    return events
+      .filter((item) => (item.endDate ?? item.date) >= today)
+      .sort((a, b) => a.date.localeCompare(b.date))[0]
+  }
+  const students = account.role === "학생단체"
+  const picked = events.find((item) => item.id === eventId)
+  if (!picked) throw new HttpError(404, students ? "제안할 행사를 찾을 수 없어요." : "제안할 캠페인을 찾을 수 없어요.")
+  if ((picked.endDate ?? picked.date) < today) {
+    throw new HttpError(409, students ? "끝난 행사로는 제안할 수 없어요." : "끝난 캠페인으로는 제안할 수 없어요.")
+  }
+  return picked
 }
 
-// A brand's offer about its next campaign, for a group with an account.
-function brandOffer(account: Account, groupId: string, campaign: EventItem): SponsorOffer {
+// A brand's offer about its campaign, for a group with an account, with the
+// brand's note or the usual line.
+function brandOffer(account: Account, groupId: string, campaign: EventItem, note: string): SponsorOffer {
   const listing = getDatabase().brands.find((brand) => brand.id === account.brandId)
   return {
     id: randomUUID(),
@@ -98,7 +114,7 @@ function brandOffer(account: Account, groupId: string, campaign: EventItem): Spo
     campaignName: campaign.name,
     campaignDate: campaign.date,
     offer: listing?.offer || "협찬 내용 협의",
-    message: `${campaign.name}을 함께 열고 싶어요. 단체의 행사와 SNS에서 함께 알려 주세요.`,
+    message: note || `${campaign.name}을 함께 열고 싶어요. 단체의 행사와 SNS에서 함께 알려 주세요.`,
     status: "검토 중",
     createdAt: new Date().toISOString(),
   }
@@ -143,7 +159,9 @@ proposalsRouter.post("/", async (req, res) => {
   )
   if (!partner) throw new HttpError(404, "목록에 없는 상대예요.")
   const students = account.role === "학생단체"
-  const event = nextEvent(account)
+  const note = text(req.body?.message)
+  if (note.length > maxMessage) throw new HttpError(400, `메시지는 ${maxMessage}자 이하로 적어 주세요.`)
+  const event = proposedEvent(account, text(req.body?.eventId))
 
   // A group with an account gets a brand's offer in its inbox, about the
   // brand's next campaign; a brand with an account gets a group's proposal,
@@ -170,12 +188,16 @@ proposalsRouter.post("/", async (req, res) => {
   if (!current.includes(matchId)) database.proposals[account.id] = [...current, matchId]
 
   if (!students && send && event) {
-    const offer = brandOffer(account, matchId, event)
+    const offer = brandOffer(account, matchId, event, note)
     database.offers.push(offer)
     void notify(
       database.accounts.find((item) => item.groupId === matchId),
       "새 협찬 제안이 왔어요",
-      [`${account.name}에서 '${offer.campaignName}' 협찬을 제안했어요.`, `제공 협찬: ${offer.offer}`],
+      [
+        `${account.name}에서 '${offer.campaignName}' 협찬을 제안했어요.`,
+        `제공 협찬: ${offer.offer}`,
+        ...(note ? [`메시지: ${note}`] : []),
+      ],
       "/offers",
     )
   }
@@ -193,14 +215,14 @@ proposalsRouter.post("/", async (req, res) => {
       eventDate: event.date,
       people: event.people ? `예상 인원 ${event.people}` : "인원 협의",
       ask: partner.offer,
-      message: `${event.name}에 함께해 주세요! 현장과 SNS에서 브랜드를 알릴게요.`,
+      message: note || `${event.name}에 함께해 주세요! 현장과 SNS에서 브랜드를 알릴게요.`,
       status: "검토 중",
       createdAt: new Date().toISOString(),
     })
     void notify(
       database.accounts.find((item) => item.brandId === matchId),
       "새 협찬 제안이 왔어요",
-      [`${account.name}에서 '${event.name}' 협찬을 제안했어요.`],
+      [`${account.name}에서 '${event.name}' 협찬을 제안했어요.`, ...(note ? [`메시지: ${note}`] : [])],
       "/inbox",
     )
   }

@@ -118,10 +118,11 @@ export const api = {
     request<void>(`/events/${encodeURIComponent(id)}`, { method: "DELETE" }),
 
   proposals: () => request<ProposalState>("/proposals"),
-  propose: (matchId: string) =>
+  // About the account's next event unless it names one, with its note.
+  propose: (matchId: string, draft: { eventId?: string; message?: string } = {}) =>
     request<ProposalState>("/proposals", {
       method: "POST",
-      body: { matchId },
+      body: { matchId, ...draft },
     }),
   cancelProposal: (matchId: string) =>
     request<ProposalState>(`/proposals/${encodeURIComponent(matchId)}`, {

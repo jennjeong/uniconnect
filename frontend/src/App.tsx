@@ -42,6 +42,7 @@ import { ContactModal } from "./modals/ContactModal"
 import { EmailChangeModal } from "./modals/EmailChangeModal"
 import { InviteShopModal } from "./modals/InviteShopModal"
 import { PasswordModal } from "./modals/PasswordModal"
+import { ProposeModal } from "./modals/ProposeModal"
 import { ResetPasswordModal } from "./modals/ResetPasswordModal"
 import { MetricLogModal } from "./modals/MetricLogModal"
 import { QrModal } from "./modals/QrModal"
@@ -117,6 +118,8 @@ function App() {
   // True when the view came from the back or forward button (or a swipe).
   const [fromHistory, setFromHistory] = useState(false)
   const [activeModal, setActiveModal] = useState<ModalName | null>(null)
+  // The partner 제안하기 was pressed for, while its form is open.
+  const [proposing, setProposing] = useState<Match | null>(null)
   const [account, setAccount] = useState<Account | null>(null)
   // With a saved token, role-specific data waits until /auth/me answers.
   const [authReady, setAuthReady] = useState(() => getToken() === null)
@@ -679,19 +682,31 @@ function App() {
   }
 
   // The click and the server's acceptance are tracked apart (lib/analytics.ts).
-  const propose = async (match: Match) => {
+  // The click opens the form, where the event and a note are picked.
+  const propose = (match: Match) => {
     track("contact_click", { method: "proposal", role })
     if (!account) {
       requireLogin(t("로그인하면 협찬 제안을 보낼 수 있어요."))
       return
     }
+    setProposing(match)
+    setActiveModal("propose")
+  }
+
+  // Sends it; a problem other than an ended session stays on the form.
+  const sendProposal = async (draft: { eventId?: string; message: string }) => {
+    if (!proposing) return
     try {
-      applyProposals(await api.propose(match.id))
-      track("generate_lead", { method: "proposal", role })
-      showNotice(t("{name}에 협찬 제안을 보냈어요.", { name: match.name }))
+      applyProposals(await api.propose(proposing.id, draft))
     } catch (error) {
+      if (!(error instanceof ApiError && error.status === 401)) throw error
+      closeModal()
       handleError(error)
+      return
     }
+    track("generate_lead", { method: "proposal", role })
+    showNotice(t("{name}에 협찬 제안을 보냈어요.", { name: proposing.name }))
+    closeModal()
   }
 
   // A student group invites a shop from 가까운 순; true once the invitation
@@ -1492,6 +1507,21 @@ function App() {
           }}
         />
       </Presence>
+      {account && proposing && (
+        <Presence show={activeModal === "propose"}>
+          <ProposeModal
+            events={events}
+            match={proposing}
+            onClose={closeModal}
+            onCreate={() => {
+              closeModal()
+              openCreate()
+            }}
+            onSend={sendProposal}
+            role={role}
+          />
+        </Presence>
+      )}
       {account && inviting && (
         <Presence show={activeModal === "invite"}>
           <InviteShopModal

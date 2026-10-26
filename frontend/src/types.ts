@@ -360,6 +360,8 @@ export type SentProposal = {
   eventDate?: string
   // What the group asked for, or what the brand offered.
   offer: string
+  // The note that went with it.
+  message?: string
   status: RequestStatus
   createdAt: string
   respondedAt?: string
@@ -561,3 +563,4 @@ export type ModalName =
   | "ask"
   | "calendar"
   | "install"
+  | "propose"

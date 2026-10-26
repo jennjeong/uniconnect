@@ -40,6 +40,7 @@ function SentCard({ item, onWithdraw }: { item: SentProposal; onWithdraw: (item:
         <span>{t("제안한 협찬")}</span>
         <strong>{item.offer}</strong>
       </div>
+      {item.message && <p className="request-message">{item.message}</p>}
 
       <div className="request-actions">
         {confirming ? (
