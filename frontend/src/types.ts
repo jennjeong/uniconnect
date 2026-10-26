@@ -295,7 +295,8 @@ export type MetricEntry = {
   detail: string
 }
 
-export type RequestStatus = "검토 중" | "수락" | "거절"
+// "마감": a proposal that waited for an answer until its event ended.
+export type RequestStatus = "검토 중" | "수락" | "거절" | "마감"
 
 // A sponsorship proposal a student group sent to a brand.
 export type SponsorRequest = {

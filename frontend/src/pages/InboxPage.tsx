@@ -15,12 +15,14 @@ const cardState: Record<RequestStatus, string> = {
   "검토 중": "pending",
   수락: "accepted",
   거절: "declined",
+  마감: "closed",
 }
 
 const tabs: { status: RequestStatus; label: string; empty: string }[] = [
   { status: "검토 중", label: "검토 중", empty: "답을 기다리는 제안이 없어요." },
   { status: "수락", label: "수락함", empty: "아직 수락한 제안이 없어요." },
   { status: "거절", label: "거절함", empty: "거절한 제안이 없어요." },
+  { status: "마감", label: "마감", empty: "마감된 제안이 없어요." },
 ]
 
 function RequestCard({
@@ -107,8 +109,12 @@ function RequestCard({
           <>
             <span className={request.status === "수락" ? "request-result confirmed" : "request-result"}>
               {request.status === "수락" && <Icon name="check" size={15} />}
-              {request.status === "수락" ? t("협찬 확정") : t("거절한 제안")}
-              {request.respondedAt && <small>{formatDateTime(request.respondedAt)}</small>}
+              {request.status === "수락" ? t("협찬 확정") : request.status === "마감" ? t("마감된 제안") : t("거절한 제안")}
+              {request.status === "마감" ? (
+                <small>{t("행사가 끝나 마감됐어요.")}</small>
+              ) : (
+                request.respondedAt && <small>{formatDateTime(request.respondedAt)}</small>
+              )}
             </span>
             {request.status === "수락" && (
               <button className="detail-button" onClick={() => onOpenAgreement(request.id)} type="button">
