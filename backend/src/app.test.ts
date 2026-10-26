@@ -873,6 +873,31 @@ test("a proposal names the sender's event and carries its note to the partner", 
   }
 })
 
+test("an account sending messages or proposals in a flood is held back, and others aren't", async () => {
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const { token: group } = await listedMember("flood@syu.ac.kr", "flood-pass-123")
+  const { token: brand, listingId: brandListing } = await listedMember("flood@flood-cafe.kr", "flood-pass-123", "브랜드")
+  const chat = (await call("POST", "/conversations", { partnerId: brandListing }, group)).data.conversation
+  const say = (token: string, text: string) => call("POST", `/conversations/${chat.id}/messages`, { text }, token)
+
+  // Twenty in a minute go; the next waits, with a reason to show.
+  for (let count = 1; count <= 20; count += 1) assert.equal((await say(group, `메시지 ${count}`)).status, 201)
+  const held = await say(group, "하나 더")
+  assert.equal(held.status, 429)
+  assert.match(held.data.error, /1분 뒤에/)
+  // The other side, counted apart, still answers.
+  assert.equal((await say(brand, "천천히 보내 주세요.")).status, 201)
+
+  // Thirty proposals an hour go, even ones that change nothing; then they wait.
+  await call("POST", "/events", { name: "많이 보내는 공연", date: addDays(todayInKorea(), 10), types: ["현금"] }, group)
+  for (let count = 1; count <= 30; count += 1) {
+    assert.equal((await call("POST", "/proposals", { matchId: brandListing }, group)).status, 201)
+  }
+  const tooMany = await call("POST", "/proposals", { matchId: brandListing }, group)
+  assert.equal(tooMany.status, 429)
+  assert.match(tooMany.data.error, /제안을 너무 많이/)
+})
+
 test("check-ins count only on the event's days, and records go once they are not needed", async () => {
   const { addDays, todayInKorea } = await import("./lib/dates.js")
   const { prunePasses } = await import("./lib/measurements.js")

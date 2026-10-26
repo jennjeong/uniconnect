@@ -6,6 +6,7 @@ import { todayInKorea } from "../lib/dates.js"
 import { HttpError } from "../lib/errors.js"
 import { text } from "../lib/validation.js"
 import { notify } from "../lib/notices.js"
+import { createRateLimit, senderKey } from "../lib/rateLimit.js"
 import { statusOf } from "../lib/proposals.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -148,6 +149,13 @@ proposalsRouter.get("/", (req, res) => {
   res.json(req.account ? proposalState(req.account) : { proposals: [], statuses: {}, confirmed: 0, sent: [] })
 })
 
+// More than any group or brand proposes in an hour, each emailing a partner.
+const proposalsPerHour = createRateLimit({
+  limit: 30,
+  windowMs: 60 * 60 * 1000,
+  message: "제안을 너무 많이 보냈어요. 1시간 뒤에 다시 보내 주세요.",
+})
+
 proposalsRouter.post("/", async (req, res) => {
   const account = requireAccount(req)
   const matchId = String(req.body?.matchId ?? "")
@@ -162,6 +170,7 @@ proposalsRouter.post("/", async (req, res) => {
   const note = text(req.body?.message)
   if (note.length > maxMessage) throw new HttpError(400, `메시지는 ${maxMessage}자 이하로 적어 주세요.`)
   const event = proposedEvent(account, text(req.body?.eventId))
+  proposalsPerHour.take(senderKey(req, database, account))
 
   // A group with an account gets a brand's offer in its inbox, about the
   // brand's next campaign; a brand with an account gets a group's proposal,
