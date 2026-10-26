@@ -9667,6 +9667,24 @@ button.nav-pill:hover {
   font-weight: var(--weight-body);
 }
 
+/* A brand whose business registration the National Tax Service confirmed. */
+.work-tags > span.tag-verified,
+.tag-verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--point-strong);
+  font-weight: var(--weight-label);
+}
+
+.profile-verified {
+  margin-top: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--point-tint);
+  font-size: 12px;
+}
+
 /* A review (components/ReviewCard.tsx), on the agreement and the detail page. */
 .review-card {
   display: flex;

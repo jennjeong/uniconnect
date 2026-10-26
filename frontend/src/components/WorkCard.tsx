@@ -80,6 +80,12 @@ export function WorkCard({
               {formatDistance(match.distanceKm)}
             </span>
           )}
+          {match.businessVerified && (
+            <span className="tag-verified">
+              <Icon name="check" size={12} />
+              {t("사업자 확인")}
+            </span>
+          )}
           {match.reviewCount ? (
             <span className="tag-rating">
               <Stars rating={match.rating ?? 0} size={12} />

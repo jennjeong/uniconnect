@@ -145,7 +145,8 @@ export function viewerFor(database: Database, account: Account | undefined, cata
 // examples otherwise, as shownTo says), best match first, each with its
 // match for the viewer and why (lib/matchScore.ts), and how far it is from
 // the viewer: a student's campus to a brand's store, a brand's store to a
-// group's campus (lib/geo.ts); and its reviews' stars and count.
+// group's campus (lib/geo.ts); its reviews' stars and count; and, for a
+// brand, whether its business registration was confirmed.
 export function browse(database: Database, catalog: "brands" | "groups", account?: Account) {
   const shown = shownCatalog(database, catalog, account)
   const listings = catalog === "brands" ? shown : shown.map((group) => withLiveEvent(database, group))
@@ -158,8 +159,10 @@ export function browse(database: Database, catalog: "brands" | "groups", account
       const scored = viewer ? { ...listing, ...scoreMatch(database, viewer, listing, maxPopularity) } : listing
       const reviews = reviewSummary(reviewsAbout(database, listing.id))
       const rated = reviews.count ? { ...scored, rating: reviews.average, reviewCount: reviews.count } : scored
-      const there = placeOf(listing, ownerOf(database, catalog, listing))
-      return here && there ? { ...rated, distanceKm: distanceKm(here, there) } : rated
+      const owner = ownerOf(database, catalog, listing)
+      const checked = owner?.business ? { ...rated, businessVerified: true as const } : rated
+      const there = placeOf(listing, owner)
+      return here && there ? { ...checked, distanceKm: distanceKm(here, there) } : checked
     })
     .sort((a, b) => b.score - a.score)
 }

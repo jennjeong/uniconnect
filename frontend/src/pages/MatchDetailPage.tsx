@@ -153,6 +153,12 @@ export function MatchDetailPage({
               {group && match.school ? `${match.school} · ${t(match.category)}` : t(match.category)}
             </span>
             <RevealTitle className="profile-name">{match.name}</RevealTitle>
+            {match.businessVerified && (
+              <span className="tag-verified profile-verified">
+                <Icon name="check" size={13} />
+                {t("사업자 확인")}
+              </span>
+            )}
             <p className="profile-offer">
               <small>{labels.offer}</small>
               {match.offer}

@@ -85,6 +85,11 @@ const en: Record<string, string> = {
   "주고받은 메시지": "Messages sent and received",
   "회원 사이의 대화": "Conversations between members",
   "관리자에게 보낸 질문과 답변": "Questions sent to our team and their answers",
+  "브랜드의 사업자등록번호와 확인한 시각": "A brand's business registration number and when it was verified",
+  "국세청에서 사업자를 확인하고 소개에 '사업자 확인'을 표시":
+    "Checking the business with the National Tax Service and marking the profile 'Business verified'",
+  "브랜드가 사업자 확인을 하면, 적은 사업자등록번호, 개업일자, 대표자 성명을 공공데이터포털을 거쳐 국세청의 사업자등록정보 진위확인 서비스에 보내 확인해요. 대표자 성명과 개업일자는 저장하지 않아요.":
+    "When a brand verifies its business, the business registration number, opening date and representative's name it enters are sent through the Public Data Portal to the National Tax Service's business registration check. The representative's name and opening date aren't kept.",
   "신고(신고한 회원, 신고된 회원, 사유와 설명, 신고한 메시지나 후기의 글, 운영자의 처리)와 차단한 상대, 운영자가 이용을 정지한 시각":
     "Reports (who reported, who was reported, the reason and description, the text of the reported message or review, and what the operators did), the accounts a member blocked, and when the operators suspended an account",
   "스팸·괴롭힘·사기를 막고 운영자가 확인해 처리": "Stopping spam, harassment and fraud, checked and settled by the operators",

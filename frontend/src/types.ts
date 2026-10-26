@@ -40,6 +40,8 @@ export type Match = {
   // Its sponsorship reviews: the average stars and how many, when it has any.
   rating?: number
   reviewCount?: number
+  // Brand catalog only: its business registration was confirmed.
+  businessVerified?: true
   // Km from the account browsing (its campus or store); absent when either
   // place is unknown.
   distanceKm?: number
@@ -242,6 +244,10 @@ export type Account = {
   groupId?: string
   createdAt: string
 }
+
+// Whether brands can verify their business here (the server has the key),
+// and this brand's confirmed registration.
+export type BusinessStatus = { ready: boolean; business: { number: string; verifiedAt: string } | null }
 
 export type Session = { token: string; account: Account }
 
@@ -594,3 +600,4 @@ export type ModalName =
   | "install"
   | "propose"
   | "safety"
+  | "business"

@@ -1291,6 +1291,62 @@ test("members report and block one another, and operators act on the reports", a
   assert.equal((await call("POST", "/auth/login", credentials)).status, 200)
 })
 
+test("a brand verifies its business with the National Tax Service, and its listing says so", async () => {
+  const { businessCheck } = await import("./lib/business.js")
+  const realValidate = businessCheck.validate
+  const asked: { number: string; startDate: string; owner: string }[] = []
+  let answer: "valid" | "closed" | "invalid" | "down" = "valid"
+  businessCheck.validate = async (input) => {
+    asked.push(input)
+    if (answer === "down") throw new Error("unreachable")
+    return answer
+  }
+  try {
+    const brandEmail = "owner@owner-cafe.kr"
+    const { token: brand, listingId } = await listedMember(brandEmail, "owner-pass-123", "브랜드")
+    const { token: group } = await listedMember("owner@syu.ac.kr", "owner-pass-123")
+    const form = { number: "123-45-67890", startDate: "2020-03-02", owner: "김대표" }
+    const verify = (body: object, token = brand) => call("POST", "/profile/business", body, token)
+
+    // Without the key it isn't offered yet.
+    assert.deepEqual((await call("GET", "/profile/business", undefined, brand)).data, { ready: false, business: null })
+    assert.equal((await verify(form)).status, 503)
+    config.ntsServiceKey = "test-key"
+    assert.equal((await verify(form, group)).status, 403)
+    assert.equal((await verify(form, await login("브랜드"))).status, 403)
+    assert.equal((await verify({ ...form, number: "123" })).status, 400)
+
+    // Details that don't match, a closed business, or the service down.
+    answer = "invalid"
+    const unmatched = await verify(form)
+    assert.equal(unmatched.status, 400)
+    assert.match(unmatched.data.error, /확인되지 않았어요/)
+    answer = "closed"
+    assert.match((await verify(form)).data.error, /폐업/)
+    answer = "down"
+    assert.equal((await verify(form)).status, 502)
+
+    // Confirmed: the number alone is kept, and groups see the listing as checked.
+    answer = "valid"
+    const verified = await verify(form)
+    assert.equal(verified.status, 200)
+    assert.equal(verified.data.business.number, "123-45-67890")
+    assert.deepEqual(asked.at(-1), { number: "1234567890", startDate: "20200302", owner: "김대표" })
+    const account = getDatabase().accounts.find((item) => item.email === brandEmail)!
+    assert.deepEqual(Object.keys(account.business ?? {}), ["number", "verifiedAt"])
+    const brands = (await call("GET", "/brands", undefined, group)).data.brands as { id: string; businessVerified?: boolean }[]
+    assert.equal(brands.find((item) => item.id === listingId)?.businessVerified, true)
+    assert.equal((await call("GET", "/profile/business", undefined, brand)).data.business.number, "123-45-67890")
+
+    // One business verifies one account.
+    const { token: other } = await listedMember("other@other-cafe.kr", "other-pass-123", "브랜드")
+    assert.equal((await verify(form, other)).status, 409)
+  } finally {
+    businessCheck.validate = realValidate
+    config.ntsServiceKey = undefined
+  }
+})
+
 test("accounts write the listing the other side sees", async () => {
   const student = await login("학생단체")
   const mine = (await call("GET", "/profile", undefined, student)).data.profile
