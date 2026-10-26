@@ -55,6 +55,9 @@ export const config = {
   // for placing a brand's store address on the map (lib/geocode.ts). Without
   // it addresses are kept but have no distance.
   nominatimUrl: process.env.NOMINATIM_URL,
+  // Where the operators hear of a new error after a quiet hour
+  // (lib/errorLog.ts), once mail is set up.
+  operatorEmail: process.env.OPERATOR_EMAIL,
   // The data.go.kr key for the National Tax Service's business registration
   // check (lib/business.ts); without it brands can't verify their business.
   ntsServiceKey: process.env.NTS_SERVICE_KEY,

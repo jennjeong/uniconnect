@@ -7,7 +7,7 @@ import { Pill } from "../components/Pill"
 import { TabBar } from "../components/TabBar"
 import { locale, t } from "../i18n"
 import { formatDateTime } from "../lib/date"
-import type { AdminInquiry, AdminReport, PlatformStats, ReportAction, SuspendedAccount } from "../types"
+import type { AdminInquiry, AdminReport, ErrorEntry, PlatformStats, ReportAction, SuspendedAccount } from "../types"
 
 // The operators' token lives in this tab only, and goes when it closes.
 const storageKey = "uniconnect-admin-token"
@@ -207,6 +207,7 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
   const [stats, setStats] = useState<PlatformStats | null>(null)
   const [reports, setReports] = useState<AdminReport[]>([])
   const [suspended, setSuspended] = useState<SuspendedAccount[]>([])
+  const [errors, setErrors] = useState<ErrorEntry[]>([])
   const [tab, setTab] = useState<Tab>("waiting")
   const [reportTab, setReportTab] = useState<"open" | "done">("open")
   const [error, setError] = useState("")
@@ -218,20 +219,22 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
     setStats(null)
     setReports([])
     setSuspended([])
+    setErrors([])
     setError(message)
   }, [])
 
   useEffect(() => {
     if (!token) return
     let cancelled = false
-    Promise.all([api.adminInquiries(token), api.adminStats(token), api.adminReports(token)])
-      .then(([listed, counted, reported]) => {
+    Promise.all([api.adminInquiries(token), api.adminStats(token), api.adminReports(token), api.adminErrors(token)])
+      .then(([listed, counted, reported, failed]) => {
         if (cancelled) return
         writeToken(token)
         setInquiries(listed.inquiries)
         setStats(counted.stats)
         setReports(reported.reports)
         setSuspended(reported.suspended)
+        setErrors(failed.errors)
         setError("")
       })
       .catch((caught) => {
@@ -369,6 +372,27 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
             <div className="admin-list" key={reportTab}>
               {shownReports.map((report) => (
                 <ReportCard key={report.id} onResolve={resolve} report={report} />
+              ))}
+            </div>
+          )}
+
+          <h2 className="admin-section-title">{t("최근 오류")}</h2>
+          {errors.length === 0 ? (
+            <p className="day-empty">{t("기록된 오류가 없어요.")}</p>
+          ) : (
+            <div className="admin-list">
+              {errors.slice(0, 50).map((entry) => (
+                <article className="admin-card admin-error" key={entry.id}>
+                  <div className="admin-card-head">
+                    <span className="admin-category">{entry.source === "server" ? t("서버") : t("화면")}</span>
+                    <time dateTime={entry.at}>{formatDateTime(entry.at)}</time>
+                  </div>
+                  <p className="admin-question">{entry.message}</p>
+                  <p className="admin-from">
+                    {entry.where} · {entry.path}
+                  </p>
+                  {entry.stack && <pre className="admin-stack">{entry.stack}</pre>}
+                </article>
               ))}
             </div>
           )}

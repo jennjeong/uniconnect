@@ -8953,6 +8953,18 @@ button.nav-pill:hover {
   height: 40px;
 }
 
+.admin-stack {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  overflow-x: auto;
+  border-radius: var(--radius-sm);
+  background: var(--fill);
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: pre;
+}
+
 .admin-suspended {
   display: grid;
   gap: 10px;

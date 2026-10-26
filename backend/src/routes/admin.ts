@@ -2,6 +2,7 @@ import { createHash, timingSafeEqual } from "node:crypto"
 import { Router, type Request } from "express"
 
 import { config } from "../config.js"
+import { recentErrors } from "../lib/errorLog.js"
 import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
@@ -111,6 +112,12 @@ adminRouter.post("/reports/:id/resolve", async (req, res) => {
   report.resolution = { action, at: now }
   await saveDatabase()
   res.json({ ok: true })
+})
+
+// The latest server and browser errors, newest first.
+adminRouter.get("/errors", async (req, res) => {
+  requireAdmin(req)
+  res.json({ errors: await recentErrors() })
 })
 
 // Lets a stopped account back in.

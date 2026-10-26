@@ -6,6 +6,7 @@ import { GroupCheckInPage } from './checkin/GroupCheckInPage'
 import { StaffCheckInPage } from './checkin/StaffCheckInPage'
 import { lang } from './i18n'
 import { currentCheckIn } from './lib/checkin'
+import { installErrorReports } from './lib/errorReports'
 import { watchInstall } from './lib/install'
 import { keepOutOfSearch } from './lib/pageMeta'
 import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css'
@@ -23,6 +24,10 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
     navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => undefined)
   })
 }
+
+// Errors the page didn't catch reach the operators' log, from the built app
+// only, as the development server shows them anyway.
+if (import.meta.env.PROD) installErrorReports()
 
 // Participants who scan an event QR get the check-in page instead of the
 // app, the sponsor's store staff their own page (/check-in/<code>/staff) and

@@ -149,6 +149,8 @@ const en: Record<string, string> = {
     "These details couldn't be confirmed. Please check the number, opening date and representative's name on the registration certificate.",
   "폐업한 사업자로 확인돼요.": "This business is registered as closed.",
   "계정을 찾을 수 없어요.": "We couldn't find the account.",
+  "오류 보고가 너무 많아요. 잠시 후 다시 시도해 주세요.": "Too many error reports. Please try again in a moment.",
+  "오류 내용을 다시 확인해 주세요.": "Please check the error report.",
   "운영 정책에 따라 이용이 정지된 계정이에요.": "This account is suspended under the service's policy.",
   "취소된 협찬은 고칠 수 없어요.": "A sponsorship that was called off can't be changed.",
   "데모 계정은 협찬을 취소할 수 없어요.": "The demo accounts can't call off a sponsorship.",

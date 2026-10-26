@@ -1690,6 +1690,64 @@ test("a request whose save fails leaves nothing behind", async () => {
   await call("DELETE", `/events/${again.data.event.id}`, undefined, student)
 })
 
+test("server and browser errors are kept for the operators, and the first after a quiet hour is emailed", async () => {
+  const { mailTransport } = await import("./lib/mailer.js")
+  const { clearErrorLog } = await import("./lib/errorLog.js")
+  await clearErrorLog()
+  const realPost = mailTransport.post
+  const sent: { to: string[]; subject: string; text: string }[] = []
+  mailTransport.post = async (body) => {
+    sent.push(body)
+    return new Response(null, { status: 200 })
+  }
+  config.resendApiKey = "test-key"
+  config.mailFrom = "uniconnect <no-reply@example.com>"
+  config.operatorEmail = "ops@example.com"
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 40))
+  const errors = async () => {
+    const response = await fetch(`${baseUrl}/admin/errors`, { headers: { "X-Admin-Token": "test-admin-token" } })
+    return ((await response.json()) as { errors: { source: string; where: string; path: string; message: string }[] }).errors
+  }
+  const alerts = () => sent.filter((mail) => mail.to[0] === "ops@example.com")
+  try {
+    // A request whose save fails is kept with its method and path.
+    const student = await login("학생단체")
+    const dataFile = config.dataFile
+    config.dataFile = process.env.FRONTEND_DIST!
+    const failed = await call("POST", "/events", { name: "오류 공연", date: "2026-12-01", types: ["현금"] }, student)
+    config.dataFile = dataFile
+    assert.equal(failed.status, 503)
+    await settle()
+    const [server] = await errors()
+    assert.deepEqual([server.source, server.where], ["server", "POST /api/events"])
+    assert.match(server.message, /되돌렸어요/)
+    // The operators hear of it by email.
+    assert.equal(alerts().length, 1)
+    assert.equal(alerts()[0].subject, "[uniconnect] 오류가 생겼어요")
+
+    // A browser's error is kept too, its page's path without the query;
+    // following close behind, it emails no one.
+    const reported = await call("POST", "/errors", {
+      message: "TypeError: x is undefined",
+      where: "index-abc.js:1:200",
+      path: "/matches?from=bell",
+    })
+    assert.equal(reported.status, 204)
+    await settle()
+    const [browser] = await errors()
+    assert.deepEqual([browser.source, browser.path, browser.where], ["browser", "/matches", "index-abc.js:1:200"])
+    assert.equal(alerts().length, 1)
+    assert.equal((await call("POST", "/errors", { message: "", path: "/" })).status, 400)
+    // Only the operators read them.
+    assert.equal((await call("GET", "/admin/errors")).status, 403)
+  } finally {
+    mailTransport.post = realPost
+    config.resendApiKey = undefined
+    config.mailFrom = undefined
+    config.operatorEmail = undefined
+  }
+})
+
 test("event names and people are checked, and default goals save as they are", async () => {
   const student = await signUpMember("sizes@syu.ac.kr", "sizes-pass-123")
   const event = (fields: Record<string, unknown>) =>

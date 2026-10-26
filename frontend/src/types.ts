@@ -452,6 +452,18 @@ export type AdminReport = {
 // An account the operators suspended.
 export type SuspendedAccount = { id: string; name: string; role: Role; email: string; suspendedAt: string }
 
+// A request the server failed or an error a browser caught, as the
+// operators read it (backend lib/errorLog.ts).
+export type ErrorEntry = {
+  id: string
+  at: string
+  source: "server" | "browser"
+  message: string
+  where: string
+  path: string
+  stack?: string
+}
+
 // An account this one blocked, by its listing.
 export type BlockedListing = { listingId: string; name: string }
 

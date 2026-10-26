@@ -154,6 +154,18 @@ test("through the API, an agreement photo goes into the database, is served to i
 // Copies of the API starting at once all make the tables. Postgres answers
 // the ones that lose with a duplicate key in its catalog (23505) or an
 // existing table (42P07), though the table is there by then.
+test("errors for the operators are rows of their own, never written beside the data", async () => {
+  const { clearErrorLog, recentErrors, recordError } = await import("./lib/errorLog.js")
+  await clearErrorLog()
+  for (const message of ["첫 오류", "둘째 오류"]) {
+    await recordError({ source: "server", message, where: "GET /api/test", path: "/api/test?token=1" })
+  }
+  const errors = await recentErrors()
+  assert.deepEqual(errors.map((entry) => entry.message).sort(), ["둘째 오류", "첫 오류"])
+  assert.ok(errors.every((entry) => entry.path === "/api/test"))
+  assert.equal(existsSync(path.join(dataDir, "errors.json")), false)
+})
+
 test("a copy that loses the race to make the tables still loads the data", async () => {
   const lost = new Set<string>()
   const racing = async (text: string, params: unknown[] = []) => {
@@ -168,7 +180,8 @@ test("a copy that loses the race to make the tables still loads the data", async
   useSql(racing)
   try {
     assert.ok((await store.loadDatabase()).accounts.length > 0)
-    assert.equal(lost.size, 3)
+    // The data, backups, photos and errors tables each lost once.
+    assert.equal(lost.size, 4)
   } finally {
     useSql(sql)
   }
