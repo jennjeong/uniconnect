@@ -17,10 +17,13 @@ export function AskModal({
   account,
   onLogin,
   onClose,
+  onAnswersRead,
 }: {
   account: Account | null
   onLogin: () => void
   onClose: () => void
+  // The questions once their answers are marked seen.
+  onAnswersRead?: (inquiries: Inquiry[]) => void
 }) {
   const [inquiries, setInquiries] = useState<Inquiry[]>([])
   const [category, setCategory] = useState(inquiryCategories[0])
@@ -35,7 +38,18 @@ export function AskModal({
     api
       .inquiries()
       .then((result) => {
-        if (!cancelled) setInquiries(result.inquiries)
+        if (cancelled) return
+        setInquiries(result.inquiries)
+        // Seen here, so the bell lets the answers go.
+        if (!result.inquiries.some((inquiry) => inquiry.answeredAt && !inquiry.answerReadAt)) return
+        api
+          .readInquiryAnswers()
+          .then((read) => {
+            if (cancelled) return
+            setInquiries(read.inquiries)
+            onAnswersRead?.(read.inquiries)
+          })
+          .catch(() => {})
       })
       .catch((problem) => {
         if (!cancelled) setError(errorMessage(problem))

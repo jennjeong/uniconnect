@@ -21,6 +21,24 @@ inquiriesRouter.get("/", (req, res) => {
   res.json({ inquiries: inquiries.map(inquiryView) })
 })
 
+// The asker has seen the answers as they stand, so the bell lets them go.
+inquiriesRouter.post("/read", async (req, res) => {
+  const account = requireAccount(req)
+  const database = getDatabase()
+  const now = new Date().toISOString()
+  let changed = false
+  for (const inquiry of database.inquiries) {
+    if (inquiry.accountId !== account.id || !inquiry.answeredAt || inquiry.answerReadAt) continue
+    inquiry.answerReadAt = now
+    changed = true
+  }
+  if (changed) await saveDatabase()
+  const inquiries = database.inquiries
+    .filter((inquiry) => inquiry.accountId === account.id)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  res.json({ inquiries: inquiries.map(inquiryView) })
+})
+
 inquiriesRouter.post("/", async (req, res) => {
   const account = requireAccount(req)
   const category = text(req.body?.category)

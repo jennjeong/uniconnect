@@ -4,7 +4,6 @@ import { Icon } from "../components/Icon"
 import { ClosingContext } from "../components/Presence"
 import { t } from "../i18n"
 import type { NotificationItem } from "../lib/notifications"
-import type { NavLabel } from "../types"
 
 // Drops down under the bell in the top bar and slides back up when closed.
 // Escape or a press anywhere outside the panel and its bell closes it.
@@ -18,7 +17,7 @@ export function NotificationsPanel({
   // The bell, which toggles the panel itself.
   toggleRef: RefObject<HTMLButtonElement | null>
   onClose: () => void
-  onOpen: (label: NavLabel) => void
+  onOpen: (item: NotificationItem) => void
 }) {
   const panelRef = useRef<HTMLElement>(null)
   const closing = useContext(ClosingContext)
@@ -56,7 +55,7 @@ export function NotificationsPanel({
           <p className="day-empty">{t("새로운 소식이 없어요.")}</p>
         ) : (
           items.map((item) => (
-            <button key={item.key} onClick={() => onOpen(item.target)} type="button">
+            <button key={item.key} onClick={() => onOpen(item)} type="button">
               <span className={item.good ? "notification-icon green" : "notification-icon"}>
                 <Icon name={item.icon} size={18} />
               </span>

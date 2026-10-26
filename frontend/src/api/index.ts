@@ -205,6 +205,8 @@ export const api = {
       body: { answer },
       headers: { "X-Admin-Token": token },
     }),
+  // The account has seen its answers, so the bell lets them go.
+  readInquiryAnswers: () => request<{ inquiries: Inquiry[] }>("/inquiries/read", { method: "POST" }),
   askInquiry: (body: { category: string; question: string }) =>
     request<{ inquiry: Inquiry }>("/inquiries", { method: "POST", body }),
 

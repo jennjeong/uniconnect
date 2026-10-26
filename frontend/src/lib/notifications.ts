@@ -1,6 +1,7 @@
 import type { IconName } from "../components/Icon"
 import type {
   EventItem,
+  Inquiry,
   Match,
   NavLabel,
   Report,
@@ -24,6 +25,29 @@ export type NotificationItem = {
   caption: string
   // Page that has the details.
   target: NavLabel
+  // Opens the help center's questions instead, where the answers are.
+  faq?: true
+}
+
+// The operators' answers the asker hasn't seen yet, as one notice that
+// opens them.
+export function answerNotices(inquiries: Inquiry[]): NotificationItem[] {
+  const unread = inquiries.filter((inquiry) => inquiry.answeredAt && !inquiry.answerReadAt)
+  if (unread.length === 0) return []
+  return [
+    {
+      key: "answers",
+      icon: "chat",
+      good: true,
+      title: t("문의에 답변이 왔어요"),
+      caption:
+        unread.length === 1
+          ? t("‘{category}’ 질문의 답을 확인해 보세요.", { category: t(unread[0].category) })
+          : t("답변 {count}개를 확인해 보세요.", { count: unread.length }),
+      target: "대시보드",
+      faq: true,
+    },
+  ]
 }
 
 // "노원 크리에이터스, 광운대 무브먼트 외 1곳"

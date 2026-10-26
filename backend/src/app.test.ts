@@ -1143,6 +1143,63 @@ test("accounts ask the operators questions, and see the answers", async () => {
   assert.ok(mine.data.inquiries[0].answeredAt)
 })
 
+test("an operator's answer is emailed to the asker, and stays news until the asker has seen it", async () => {
+  const { mailTransport } = await import("./lib/mailer.js")
+  const realPost = mailTransport.post
+  const sent: { to: string[]; subject: string; text: string }[] = []
+  mailTransport.post = async (body) => {
+    sent.push(body)
+    return new Response(null, { status: 200 })
+  }
+  config.resendApiKey = "test-key"
+  config.mailFrom = "uniconnect <no-reply@example.com>"
+  config.siteUrl = "https://uniconnect.example"
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 20))
+  const answer = (id: string, text: string) =>
+    fetch(`${baseUrl}/admin/inquiries/${id}/answer`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Admin-Token": "test-admin-token" },
+      body: JSON.stringify({ answer: text }),
+    })
+  try {
+    const email = "asker@syu.ac.kr"
+    const member = await signUpMember(email, "asker-pass-123")
+    const asked = await call("POST", "/inquiries", { category: "계정 · 가입", question: "로그인 이메일을 바꿀 수 있나요?" }, member)
+    const id = asked.data.inquiry.id as string
+    // Only what the answer sends, not the sign-up code.
+    sent.length = 0
+
+    assert.equal((await answer(id, "내 정보의 '로그인 이메일 바꾸기'에서 바꿀 수 있어요.")).status, 200)
+    await settle()
+    const mail = sent.find((item) => item.to[0] === email)
+    assert.equal(mail?.subject, "[uniconnect] 문의에 답변이 왔어요")
+    assert.match(mail?.text ?? "", /답변: 내 정보의 '로그인 이메일 바꾸기'/)
+    assert.match(mail?.text ?? "", /https:\/\/uniconnect\.example\/faq/)
+    const [unread] = (await call("GET", "/inquiries", undefined, member)).data.inquiries
+    assert.equal(unread.answerReadAt, undefined)
+
+    // Seen, it is no longer news; the same answer again changes nothing.
+    const [read] = (await call("POST", "/inquiries/read", undefined, member)).data.inquiries
+    assert.ok(read.answerReadAt)
+    sent.length = 0
+    await answer(id, "내 정보의 '로그인 이메일 바꾸기'에서 바꿀 수 있어요.")
+    await settle()
+    assert.equal(sent.length, 0)
+    assert.ok((await call("GET", "/inquiries", undefined, member)).data.inquiries[0].answerReadAt)
+
+    // A changed answer is news again.
+    await answer(id, "내 정보에서 바꿀 수 있고, 새 이메일로 인증번호가 가요.")
+    await settle()
+    assert.equal(sent.filter((item) => item.to[0] === email).length, 1)
+    assert.equal((await call("GET", "/inquiries", undefined, member)).data.inquiries[0].answerReadAt, undefined)
+  } finally {
+    mailTransport.post = realPost
+    config.resendApiKey = undefined
+    config.mailFrom = undefined
+    config.siteUrl = undefined
+  }
+})
+
 test("accounts write the listing the other side sees", async () => {
   const student = await login("학생단체")
   const mine = (await call("GET", "/profile", undefined, student)).data.profile

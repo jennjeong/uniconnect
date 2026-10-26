@@ -413,6 +413,8 @@ export type Inquiry = {
   createdAt: string
   answer?: string
   answeredAt?: string
+  // When the asker saw the answer as it stands.
+  answerReadAt?: string
 }
 
 // A question as the operators see it, with who sent it.
