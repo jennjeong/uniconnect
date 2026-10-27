@@ -728,3 +728,26 @@ export type ModalName =
   | "devices"
   | "team"
   | "join"
+  | "council-link"
+
+// What a student council sees of one club that linked to it (backend
+// lib/council.ts): its coming events, open proposals, sponsorships and
+// results so far, never its messages, contacts or agreements.
+export type CouncilClub = {
+  id: string
+  name: string
+  type: string
+  school: string
+  listingId?: string
+  industry?: Industry
+  logo?: string
+  linkedAt: string
+  events: { id: string; name: string; date: string; endDate?: string; people?: string }[]
+  eventCount: number
+  openProposals: number
+  sponsorships: number
+  results: { scans: number; coupons: number; visits: number }
+}
+
+// A council a club linked to (내 정보's 학생회 연결).
+export type CouncilLink = { id: string; name: string; type: string; school: string; linkedAt: string }

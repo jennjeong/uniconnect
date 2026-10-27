@@ -11,6 +11,8 @@ import type {
   CheckInInfo,
   CodeTicket,
   Conversation,
+  CouncilClub,
+  CouncilLink,
   DeviceSession,
   ErrorEntry,
   EventItem,
@@ -107,6 +109,14 @@ export const api = {
     request<Session | (CodeTicket & { email: string })>("/auth/social/complete", { method: "POST" }),
   socialUnlink: (provider: SocialProvider) =>
     request<{ account: Account }>(`/auth/social/${provider}`, { method: "DELETE" }),
+  // A student council's clubs and code, and a club's links to councils.
+  councilClubs: () => request<{ code: string; clubs: CouncilClub[] }>("/council/clubs"),
+  newCouncilCode: () => request<{ code: string }>("/council/code", { method: "POST" }),
+  removeClub: (id: string) => request<void>(`/council/clubs/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  councilLinks: () => request<{ councils: CouncilLink[] }>("/council/links"),
+  linkCouncil: (code: string) => request<{ councils: CouncilLink[] }>("/council/links", { method: "POST", body: { code } }),
+  unlinkCouncil: (id: string) =>
+    request<{ councils: CouncilLink[] }>(`/council/links/${encodeURIComponent(id)}`, { method: "DELETE" }),
   team: () => request<{ team: Team }>("/team"),
   inviteMember: (body: { name: string; email: string }) =>
     request<{ team: Team; devCode?: string }>("/team/invites", { method: "POST", body }),

@@ -987,6 +987,63 @@ test("with two-step login on, a password alone doesn't log in, and recovery code
   assert.ok((await call("POST", "/auth/login", { role: "학생단체", email, password: newPassword })).data.token)
 })
 
+test("a student council sees the clubs that linked with its code, read-only, until either unlinks", async () => {
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const council = await signUpMember("council@syu.ac.kr", "council-pass-123")
+  getDatabase().accounts.find((item) => item.email === "council@syu.ac.kr")!.type = "총학생회"
+  const { token: club } = await listedMember("council-club@syu.ac.kr", "council-pass-123")
+  const other = await signUpMember("council-other@syu.ac.kr", "council-pass-123")
+
+  // Only councils have the page; the code is made the first time.
+  assert.equal((await call("GET", "/council/clubs", undefined, club)).status, 403)
+  const first = (await call("GET", "/council/clubs", undefined, council)).data
+  assert.match(first.code, /^[A-Z2-9]{4}-[A-Z2-9]{4}$/)
+  assert.deepEqual(first.clubs, [])
+
+  // A club links with the code, typed any way; wrong codes and the demo accounts don't.
+  assert.equal((await call("POST", "/council/links", { code: "AAAA-AAAA" }, club)).status, 400)
+  assert.equal((await call("POST", "/council/links", { code: first.code }, await login("학생단체"))).status, 403)
+  assert.equal((await call("POST", "/council/links", { code: first.code }, council)).status, 400)
+  const linked = await call("POST", "/council/links", { code: first.code.toLowerCase().replace("-", "") }, club)
+  assert.equal(linked.status, 201)
+  assert.equal(linked.data.councils[0].type, "총학생회")
+  assert.equal((await call("POST", "/council/links", { code: first.code }, club)).status, 409)
+
+  // The council reads the club's coming events, proposals and results, and nothing private.
+  await call("POST", "/events", { name: "소속 공연", date: addDays(todayInKorea(), 12), types: ["현금"] }, club)
+  const { clubs } = (await call("GET", "/council/clubs", undefined, council)).data
+  assert.equal(clubs.length, 1)
+  assert.deepEqual(clubs[0].events.map((event: { name: string }) => event.name), ["소속 공연"])
+  assert.deepEqual(clubs[0].results, { scans: 0, coupons: 0, visits: 0 })
+  assert.equal(typeof clubs[0].openProposals, "number")
+  for (const secret of ["010-1234-5678", "council-club@syu.ac.kr", "passwordHash", "contact"]) {
+    assert.equal(JSON.stringify(clubs).includes(secret), false, secret)
+  }
+  // Clubs that didn't link don't show.
+  assert.equal(clubs.some((item: { id: string }) => item.id === getDatabase().accounts.find((a) => a.email === "council-other@syu.ac.kr")!.id), false)
+  void other
+
+  // A new code links no more clubs; those linked stay.
+  const renewed = (await call("POST", "/council/code", undefined, council)).data.code
+  assert.notEqual(renewed, first.code)
+  assert.equal((await call("POST", "/council/links", { code: first.code }, other)).status, 400)
+  assert.equal((await call("GET", "/council/clubs", undefined, council)).data.clubs.length, 1)
+
+  // The club unlinks, and the council no longer sees it; or the council takes it off.
+  const councilId = linked.data.councils[0].id
+  assert.deepEqual((await call("DELETE", `/council/links/${councilId}`, undefined, club)).data.councils, [])
+  assert.deepEqual((await call("GET", "/council/clubs", undefined, council)).data.clubs, [])
+  await call("POST", "/council/links", { code: renewed }, club)
+  const clubId = (await call("GET", "/council/clubs", undefined, council)).data.clubs[0].id
+  assert.equal((await call("DELETE", `/council/clubs/${clubId}`, undefined, council)).status, 204)
+  assert.deepEqual((await call("GET", "/council/links", undefined, club)).data.councils, [])
+
+  // When the council leaves, its clubs are unlinked.
+  await call("POST", "/council/links", { code: renewed }, club)
+  assert.equal((await call("DELETE", "/auth/account", { password: "council-pass-123" }, council)).status, 204)
+  assert.deepEqual((await call("GET", "/council/links", undefined, club)).data.councils, [])
+})
+
 test("a linked Kakao account logs in, with the state bound to the browser and no token in an address", async () => {
   const { socialAuth } = await import("./routes/social.js")
   const realExchange = socialAuth.exchange

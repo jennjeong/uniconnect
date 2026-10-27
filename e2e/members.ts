@@ -3,8 +3,15 @@ import type { APIRequestContext } from "@playwright/test"
 // A member signed up through the API with the code the test server shows
 // (EXPOSE_EMAIL_CODES), as the demo accounts meet only the examples: its
 // token and the header that sends it. A brand also writes its introduction,
-// so student groups find it.
-export async function signUpMember(request: APIRequestContext, role: "학생단체" | "브랜드", email: string, name: string) {
+// so student groups find it. `type` picks another account type (a student
+// council's, say).
+export async function signUpMember(
+  request: APIRequestContext,
+  role: "학생단체" | "브랜드",
+  email: string,
+  name: string,
+  type?: string,
+) {
   const students = role === "학생단체"
   const code = (await (await request.post("/api/auth/email-code", { data: { role, email } })).json()) as { devCode: string }
   const verified = (await (
@@ -14,7 +21,7 @@ export async function signUpMember(request: APIRequestContext, role: "학생단�
     data: {
       role,
       name,
-      type: students ? "공연 동아리" : "카페 · 식음료",
+      type: type ?? (students ? "공연 동아리" : "카페 · 식음료"),
       school: students ? "삼육대학교" : "",
       email,
       password: "e2e-pass-123",

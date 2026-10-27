@@ -489,6 +489,18 @@ const en: Record<string, string> = {
   "지원하지 않는 로그인 방법이에요.": "That login method isn't available.",
   "데모 계정은 카카오 · 네이버 계정을 연결할 수 없어요.": "Demo accounts can't link Kakao or Naver.",
   "로그인 시간이 지났어요. 다시 시도해 주세요.": "The login timed out. Please try again.",
+
+  // Student councils and their clubs (routes/council.ts)
+  "코드를 너무 많이 틀렸어요. 15분 뒤에 다시 시도해 주세요.": "Too many wrong codes. Please try again in 15 minutes.",
+  "학생회 계정만 볼 수 있어요.": "Only student council accounts can see this.",
+  "연결된 단체를 찾을 수 없어요.": "We couldn't find that club.",
+  "학생단체만 학생회에 연결할 수 있어요.": "Only student groups can link to a council.",
+  "데모 계정은 학생회에 연결할 수 없어요.": "Demo accounts can't link to a council.",
+  "학생회 코드가 맞지 않아요. 학생회에 다시 확인해 주세요.": "That council code isn't right. Please check it with your council.",
+  "우리 학생회의 코드예요. 소속 단체가 이 코드를 입력해요.": "That's your own council's code. Your clubs enter it.",
+  "이미 연결한 학생회예요.": "You're already linked to that council.",
+  "학생회는 {count}곳까지 연결할 수 있어요.": "You can link up to {count} councils.",
+  "연결된 학생회를 찾을 수 없어요.": "We couldn't find that council.",
   "이미 uniconnect에서 쓰는 이메일이에요.": "That email is already used on uniconnect.",
   "{name}: 사진을 보냈어요.": "{name}: Sent a photo.",
   "{name}: 파일을 보냈어요: {file}": "{name}: Sent a file: {file}",

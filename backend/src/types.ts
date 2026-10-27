@@ -175,6 +175,10 @@ export type Account = {
   // Kakao or Naver accounts linked from 내 정보, by the provider's member
   // number, to log in with (routes/social.ts).
   social?: Partial<Record<SocialProvider, { id: string; linkedAt: string }>>
+  // A student council's code its clubs link with (routes/council.ts), and,
+  // on a club, the councils it linked to; either side can unlink.
+  councilCode?: { code: string; createdAt: string }
+  councils?: { accountId: string; linkedAt: string }[]
 }
 
 export type SocialProvider = "kakao" | "naver"
@@ -184,7 +188,7 @@ export type MemberInvite = { id: string; name: string; email: string; codeHash: 
 
 export type PublicAccount = Omit<
   Account,
-  "passwordHash" | "termsAgreedAt" | "calendarFeed" | "twoFactor" | "pendingTwoFactor" | "loginTicket" | "members" | "memberInvites" | "social"
+  "passwordHash" | "termsAgreedAt" | "calendarFeed" | "twoFactor" | "pendingTwoFactor" | "loginTicket" | "members" | "memberInvites" | "social" | "councilCode" | "councils"
 > & {
   twoFactorOn?: true
   // The providers linked to log in with, never their member numbers.

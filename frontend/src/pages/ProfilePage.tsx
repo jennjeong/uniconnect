@@ -52,6 +52,8 @@ export function ProfilePage({
   onTeam,
   socialProviders,
   onSocialLink,
+  onCouncil,
+  onCouncilLink,
   onSocialUnlink,
   onChangeContact,
   onChangeEmail,
@@ -82,6 +84,10 @@ export function ProfilePage({
   // Kakao or Naver to link for logging in (the owner's; none for the demo accounts).
   socialProviders: SocialProvider[]
   onSocialLink: (provider: SocialProvider) => void
+  // A council's clubs page, and a club's links to its councils; absent
+  // where they don't apply (brands, the demo accounts).
+  onCouncil?: () => void
+  onCouncilLink?: () => void
   onSocialUnlink: (provider: SocialProvider) => void
   // The person running the account (modals/ContactModal.tsx).
   onChangeContact: () => void
@@ -397,6 +403,16 @@ export function ProfilePage({
                   </Pill>
                 ),
               )}
+            {onCouncil && (
+              <Pill onClick={onCouncil} variant="silver">
+                {t("소속 단체 보기")}
+              </Pill>
+            )}
+            {onCouncilLink && (
+              <Pill onClick={onCouncilLink} variant="silver">
+                {t("학생회 연결")}
+              </Pill>
+            )}
             {onTeam && (
               <Pill onClick={onTeam} variant="silver">
                 {t("함께 관리하는 사람")}

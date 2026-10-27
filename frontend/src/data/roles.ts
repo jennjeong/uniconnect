@@ -42,6 +42,10 @@ export const accountTypeGroups: Record<Role, { label: string; types: string[] }[
   ],
 }
 
+// Account types that are student councils, which see the clubs that link
+// to them (backend lib/council.ts; lists.sync.test.ts checks).
+export const councilTypes = ["총학생회", "단과대 학생회", "학과 학생회"]
+
 export const accountTypes: Record<Role, string[]> = {
   학생단체: accountTypeGroups.학생단체.flatMap((group) => group.types),
   브랜드: accountTypeGroups.브랜드.flatMap((group) => group.types),
