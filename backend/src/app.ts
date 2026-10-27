@@ -29,6 +29,7 @@ import { placesRouter } from "./routes/places.js"
 import { profileRouter } from "./routes/profile.js"
 import { proposalsRouter } from "./routes/proposals.js"
 import { requestsRouter } from "./routes/requests.js"
+import { boardRouter } from "./routes/board.js"
 import { blocksRouter, reportsRouter } from "./routes/reports.js"
 import { reviewsRouter } from "./routes/reviews.js"
 import { savedRouter } from "./routes/saved.js"
@@ -121,6 +122,7 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   app.use("/api/blocks", blocksRouter)
   app.use("/api/saved", savedRouter)
   app.use("/api/calendar", calendarRouter)
+  app.use("/api/board", boardRouter)
   app.use("/api/errors", errorsRouter)
   app.use("/api/admin", adminRouter)
   app.use("/api/cron", cronRouter)

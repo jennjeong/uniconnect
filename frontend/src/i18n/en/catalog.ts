@@ -301,6 +301,68 @@ const en: Record<string, string> = {
   "신고 보내기": "Send report",
   "차단한 상대": "Blocked",
   "목록에서 숨기기": "Hide from the lists",
+  // The recruitment board (pages/BoardPage.tsx, PostPage.tsx, modals/PostFormModal.tsx)
+  "모집 게시판": "Recruit board",
+  "모집 글": "Post",
+  "브랜드는 함께할 행사를, 학생단체는 협찬사를 모집하고, 상대 쪽 글에 지원해요.":
+    "Brands look for events and student groups for sponsors, and each applies to the other's posts.",
+  "브랜드가 찾는 행사에 지원하거나, 우리 행사에 함께할 협찬사를 모집해요.":
+    "Apply to the events brands are looking for, or look for sponsors for your own event.",
+  "학생단체의 협찬사 모집에 지원하거나, 캠페인과 함께할 행사를 모집해요.":
+    "Apply to student groups looking for sponsors, or look for events for your campaign.",
+  "모집 글 쓰기": "Write a post",
+  "모집 글 고치기": "Edit the post",
+  "모집 글 올리기": "Post it",
+  "브랜드 모집 글": "Brands' posts",
+  "학생단체 모집 글": "Student groups' posts",
+  "내 글": "My posts",
+  "모집 글 보기": "Posts",
+  "모집 글을 불러오고 있어요…": "Loading posts…",
+  "지원함 · {status}": "Applied · {status}",
+  "{date}까지": "Until {date}",
+  "열려 있는 모집 글이 없어요": "No open posts",
+  "브랜드가 함께할 행사를 모집하면 여기에 보여요. 그 전에 우리 행사의 협찬사를 먼저 모집해 보세요.":
+    "When brands look for events, their posts show here. Meanwhile, look for sponsors for your own event.",
+  "학생단체가 협찬사를 모집하면 여기에 보여요. 그 전에 캠페인과 함께할 행사를 먼저 모집해 보세요.":
+    "When student groups look for sponsors, their posts show here. Meanwhile, look for events for your campaign.",
+  "로그인하면 모집 글을 쓸 수 있어요": "Log in to post",
+  "아직 쓴 모집 글이 없어요": "No posts yet",
+  "행사 하나를 골라 원하는 협찬과 마감일을 적으면 브랜드가 지원해요.":
+    "Pick one of your events, say what you need and by when, and brands apply.",
+  "함께하고 싶은 행사와 줄 수 있는 협찬, 마감일을 적으면 학생단체가 지원해요.":
+    "Say what events you want to join, what you can give and by when, and student groups apply.",
+  "{name} · {date}까지 지원": "{name} · applications until {date}",
+  "{name} · 마감된 글": "{name} · closed",
+  "마감일": "Deadline",
+  "지원한 곳 {count}": "Applications {count}",
+  "아직 지원한 곳이 없어요. 지원이 오면 메일과 받은 제안으로도 알려 드려요.":
+    "No applications yet. When one comes in, you hear by email and in your proposals.",
+  "받은 협찬에서 답하기": "Answer in Offers",
+  "받은 제안에서 답하기": "Answer in Proposals",
+  "모집을 마감했어요. 받은 지원은 그대로 남아요.": "Post closed. The applications already in stay.",
+  "마감하기": "Close",
+  "모집 글을 지웠어요.": "Post deleted.",
+  "정말 지우기": "Delete for good",
+  "지원했어요 · {status}": "Applied · {status}",
+  "지원하기": "Apply",
+  "브랜드 프로필 보기": "See the brand's profile",
+  "지원하면 고른 행사로 이 브랜드에 협찬 제안이 가요.": "Applying sends this brand a proposal for the event you pick.",
+  "지원하면 고른 캠페인으로 이 단체에 협찬 제안이 가요.": "Applying sends this group a proposal for the campaign you pick.",
+  "협찬사를 찾을 행사": "The event you want sponsors for",
+  "다가오는 행사가 없어요. 협찬사를 모집하려면 먼저 행사를 등록해 주세요.": "No upcoming events. Register one first to look for sponsors.",
+  "예) 종강 공연을 함께할 협찬사를 찾아요": "e.g. Looking for sponsors for our end-of-term concert",
+  "예) 캠퍼스 시음회와 함께할 공연을 찾아요": "e.g. Looking for a show to join our campus tasting",
+  "행사에서 브랜드가 할 수 있는 것과 원하는 협찬을 적어 주세요.": "What a brand can do at your event, and the sponsorship you need.",
+  "찾는 행사의 규모와 분위기, 브랜드가 지원할 수 있는 것을 적어 주세요.": "The size and feel of the event you want, and what your brand can give.",
+  "제목과 내용을 적어 주세요.": "Write a title and the post.",
+  "협찬 종류를 하나 이상 골라 주세요.": "Pick at least one kind of sponsorship.",
+  "협찬을 찾을 다가오는 행사를 골라 주세요.": "Pick the upcoming event you're looking for sponsors for.",
+  "모집 글을 올렸어요.": "Post published.",
+  "모집 글을 고쳤어요.": "Post updated.",
+  "로그인하면 모집 글을 쓸 수 있어요.": "Log in to post on the board.",
+  "로그인하면 모집 글에 지원할 수 있어요.": "Log in to apply to posts.",
+  "{name}의 모집 글에 지원했어요. 상대가 받은 제안에서 답해요.": "You applied to {name}'s post. They answer in their proposals.",
+
   // A group's event page (pages/EventDetailPage.tsx)
   "행사 상세": "Event",
   "학생단체의 행사 장소와 소개, 사진, 브랜드에 드리는 협찬 혜택 묶음을 봐요.":

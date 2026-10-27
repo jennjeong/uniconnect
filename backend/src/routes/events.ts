@@ -278,6 +278,10 @@ eventsRouter.delete("/:id", async (req, res) => {
     (partnerId) => !withdrawn.has(partnerId) || stillOpen(partnerId),
   )
   database.events[account.id] = events.filter((event) => event.id !== eventId)
+  // Its board posts take no more applications.
+  for (const post of database.posts) {
+    if (post.accountId === account.id && post.eventId === eventId) post.closedAt ??= new Date().toISOString()
+  }
   database.measurements = database.measurements.filter(
     (measurement) => !(measurement.eventId === eventId && measurement.accountId === account.id),
   )

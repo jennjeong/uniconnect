@@ -67,6 +67,9 @@ import { BrandDashboardPage } from "./pages/BrandDashboardPage"
 import { DashboardPage } from "./pages/DashboardPage"
 import { EventCreatePage } from "./pages/EventCreatePage"
 import { EventDetailPage } from "./pages/EventDetailPage"
+import { BoardPage } from "./pages/BoardPage"
+import { PostPage } from "./pages/PostPage"
+import { PostFormModal } from "./modals/PostFormModal"
 import { EventsPage } from "./pages/EventsPage"
 import { FaqPage } from "./pages/FaqPage"
 import { LegalPage } from "./pages/LegalPage"
@@ -89,6 +92,7 @@ import { ReportExport } from "./report/ReportExport"
 import type {
   Account,
   BlockedListing,
+  BoardPost,
   BusinessStatus,
   Conversation,
   EventItem,
@@ -101,6 +105,7 @@ import type {
   ModalName,
   NavLabel,
   NearbyPlace,
+  PostDraft,
   ProfileDraft,
   Role,
   SentProposal,
@@ -142,6 +147,11 @@ function App() {
   const [blocked, setBlocked] = useState<BlockedListing[]>([])
   // The listings it saved (찜), newest first, for the catalogs' 찜 tab.
   const [saved, setSaved] = useState<string[]>([])
+  // The recruitment board: the post being written or edited, the post an
+  // application goes to, and a count that moves on to load the board again.
+  const [postForm, setPostForm] = useState<BoardPost | "new" | null>(null)
+  const [applyingPost, setApplyingPost] = useState<string | null>(null)
+  const [boardTick, setBoardTick] = useState(0)
   // A brand's business check, read when 내 정보 opens.
   const [business, setBusiness] = useState<BusinessStatus | null>(null)
   const [account, setAccount] = useState<Account | null>(null)
@@ -739,6 +749,7 @@ function App() {
       requireLogin(t("로그인하면 협찬 제안을 보낼 수 있어요."))
       return
     }
+    setApplyingPost(null)
     setProposing(match)
     setActiveModal("propose")
   }
@@ -747,7 +758,7 @@ function App() {
   const sendProposal = async (draft: { eventId?: string; message: string }) => {
     if (!proposing) return
     try {
-      applyProposals(await api.propose(proposing.id, draft))
+      applyProposals(await api.propose(proposing.id, { ...draft, ...(applyingPost ? { postId: applyingPost } : {}) }))
     } catch (error) {
       if (!(error instanceof ApiError && error.status === 401)) throw error
       closeModal()
@@ -755,8 +766,54 @@ function App() {
       return
     }
     track("generate_lead", { method: "proposal", role })
-    showNotice(t("{name}에 협찬 제안을 보냈어요.", { name: proposing.name }))
+    if (applyingPost) {
+      setBoardTick((tick) => tick + 1)
+      showNotice(t("{name}의 모집 글에 지원했어요. 상대가 받은 제안에서 답해요.", { name: proposing.name }))
+    } else {
+      showNotice(t("{name}에 협찬 제안을 보냈어요.", { name: proposing.name }))
+    }
     closeModal()
+  }
+
+  // The recruitment board (/board) and its posts (/board/<id>).
+  const openBoard = () => go({ page, board: true })
+  const openPost = (id: string) => go({ page, post: id })
+  const writePost = (post?: BoardPost) => {
+    if (!account) {
+      requireLogin(t("로그인하면 모집 글을 쓸 수 있어요."))
+      return
+    }
+    setPostForm(post ?? "new")
+    setActiveModal("post")
+  }
+  // A problem from the server stays on the form (the modal shows it).
+  const savePost = async (draft: PostDraft) => {
+    const editing = postForm !== "new" ? postForm : null
+    const { post } = editing ? await api.updatePost(editing.id, draft) : await api.createPost(draft)
+    closeModal()
+    setBoardTick((tick) => tick + 1)
+    showNotice(editing ? t("모집 글을 고쳤어요.") : t("모집 글을 올렸어요."))
+    if (!editing) openPost(post.id)
+  }
+  // Applying sends a proposal to the poster with one of this account's events
+  // or campaigns, through the same form as 제안하기.
+  const applyToPost = (post: BoardPost) => {
+    track("contact_click", { method: "proposal", role })
+    if (!account) {
+      requireLogin(t("로그인하면 모집 글에 지원할 수 있어요."))
+      return
+    }
+    setApplyingPost(post.id)
+    setProposing({
+      id: post.listingId,
+      name: post.poster.name,
+      category: post.poster.category,
+      industry: post.poster.industry,
+      offer: "",
+      score: 0,
+      tags: [],
+    })
+    setActiveModal("propose")
   }
 
   // Members report and block; the shared demo accounts can't, as everyone
@@ -1147,6 +1204,30 @@ function App() {
           onAnswersRead={setInquiries}
           onAsked={() => setAskOnFaq(false)}
           onLogin={() => openAuth("login")}
+        />
+      )
+    }
+    if (view.board) {
+      return <BoardPage onOpen={openPost} onWrite={() => writePost()} reload={boardTick} role={role} visitor={visitor} />
+    }
+    if (view.post) {
+      return (
+        <PostPage
+          id={view.post}
+          role={role}
+          visitor={visitor}
+          reload={boardTick}
+          onBack={() => goBack({ page, board: true })}
+          onApply={applyToPost}
+          onEdit={(post) => writePost(post)}
+          onDeleted={() => {
+            setBoardTick((tick) => tick + 1)
+            go({ page, board: true }, true)
+          }}
+          onOpenProfile={(listingId) => go({ page: students ? "추천 매칭" : "단체 찾기", detail: listingId })}
+          onOpenEvent={openEventPage}
+          onOpenInbox={() => navigate(students ? "받은 협찬" : "받은 제안")}
+          onNotice={showNotice}
         />
       )
     }
@@ -1655,6 +1736,7 @@ function App() {
           onCreate={() => openCreate()}
           onOpenMessages={openMessages}
           onOpenAgreements={openAgreements}
+          onOpenBoard={openBoard}
           onOpenProfile={openProfile}
           onOpenFaq={openFaq}
           onLogin={() => openAuth("login")}
@@ -1804,6 +1886,21 @@ function App() {
               openCreate()
             }}
             onSend={sendProposal}
+            role={role}
+          />
+        </Presence>
+      )}
+      {account && postForm && (
+        <Presence show={activeModal === "post"}>
+          <PostFormModal
+            events={events}
+            onClose={closeModal}
+            onCreateEvent={() => {
+              closeModal()
+              openCreate()
+            }}
+            onSave={savePost}
+            post={postForm === "new" ? undefined : postForm}
             role={role}
           />
         </Presence>

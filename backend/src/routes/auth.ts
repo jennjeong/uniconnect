@@ -337,6 +337,8 @@ function removeAccount(database: Database, account: Account) {
     database.blocks[blocker] = blocked.filter((id) => id !== account.id)
     if (database.blocks[blocker].length === 0) delete database.blocks[blocker]
   }
+  // Its board posts.
+  database.posts = database.posts.filter((post) => post.accountId !== account.id)
   // Its 찜 list, and its listing in everyone else's.
   delete database.saved[account.id]
   for (const [saver, saved] of Object.entries(database.saved)) {
@@ -531,8 +533,8 @@ authRouter.post("/email", async (req, res) => {
 // listing, events, proposals both ways, sponsorships, measurement (without
 // participants' passes or records), conversations, questions, the
 // invitations it sent or joined from, its sponsorships' agreements (the
-// photos by name), the reviews it wrote and got, its reports and blocks, and
-// the listings it saved.
+// photos by name), the reviews it wrote and got, its reports and blocks, the
+// listings it saved and its board posts.
 authRouter.get("/export", (req, res) => {
   const account = requireAccount(req)
   const database = getDatabase()
@@ -568,6 +570,7 @@ authRouter.get("/export", (req, res) => {
       (item) => item.authorAccountId === account.id || (listing !== undefined && item.aboutId === listing.id),
     ),
     reports: database.reports.filter((item) => item.reporterId === account.id),
+    posts: database.posts.filter((post) => post.accountId === account.id),
     saved: (database.saved[account.id] ?? []).map((id) => ({
       id,
       name: [...database.brands, ...database.groups].find((item) => item.id === id)?.name ?? null,

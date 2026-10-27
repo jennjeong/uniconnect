@@ -3938,6 +3938,77 @@ test("a group's event page shows its venue, introduction, photos and packages to
   assert.ok(!existsSync(uploadsFolder(eventPhotos(again.id))))
 })
 
+test("members post on the recruitment board, and the other side applies with a proposal", async () => {
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  type Post = { id: string; own: boolean; open: boolean; applied?: string; event?: { name: string }; applications?: { name: string; about: string; status: string }[] }
+  const { token: group, listingId: groupListing } = await listedMember("board-club@syu.ac.kr", "board-pass-123")
+  const { token: brand, listingId: brandListing } = await listedMember("board@board-cafe.kr", "board-pass-123", "브랜드")
+  const today = todayInKorea()
+  const groupEvent = (await call("POST", "/events", { name: "게시판 공연", date: addDays(today, 20), types: ["현금"] }, group)).data.event
+  const campaign = (await call("POST", "/events", { name: "게시판 시음회", date: addDays(today, 15), types: ["제품"] }, brand)).data.event
+  const brandPost = { title: "공연을 찾아요", body: "시음 부스를 열 공연을 찾아요.", types: ["제품"], deadline: addDays(today, 14) }
+  for (const bad of [
+    { title: "" },
+    { title: "가".repeat(61) },
+    { body: "가".repeat(1001) },
+    { types: [] },
+    { deadline: addDays(today, -1) },
+    { deadline: addDays(today, 61) },
+  ]) {
+    assert.equal((await call("POST", "/board", { ...brandPost, ...bad }, brand)).status, 400)
+  }
+  const made = await call("POST", "/board", brandPost, brand)
+  assert.equal(made.status, 201)
+  const post = made.data.post as Post
+  assert.deepEqual([post.own, post.open, post.applications], [true, true, []])
+  // A group's post is about one of its coming events.
+  const groupFields = { ...brandPost, title: "협찬사를 찾아요", types: ["현금"] }
+  assert.equal((await call("POST", "/board", groupFields, group)).status, 400)
+  const groupMade = await call("POST", "/board", { ...groupFields, eventId: groupEvent.id }, group)
+  assert.equal(groupMade.status, 201)
+  const groupPost = groupMade.data.post as Post
+  assert.equal(groupPost.event?.name, "게시판 공연")
+  assert.equal((await call("POST", "/board", brandPost, await login("브랜드"))).status, 403)
+
+  // Each finds the other side's posts it sees; its own are under mine. Visitors
+  // and the demo accounts read the examples, members read members'.
+  const groupBoard = (await call("GET", "/board", undefined, group)).data as { posts: Post[]; mine: Post[] }
+  assert.ok(groupBoard.posts.some((item) => item.id === post.id))
+  assert.equal(groupBoard.posts.some((item) => item.id === groupPost.id || item.id === "post-coffee-tasting"), false)
+  assert.deepEqual(groupBoard.mine.map((item) => item.id), [groupPost.id])
+  const visitor = (await call("GET", "/board?role=학생단체")).data as { posts: Post[] }
+  assert.ok(visitor.posts.some((item) => item.id === "post-coffee-tasting"))
+  assert.equal(visitor.posts.some((item) => item.id === post.id), false)
+
+  // The group applies with its event: a proposal in the brand's inbox, once.
+  const apply = { matchId: brandListing, eventId: groupEvent.id, message: "로비 부스 자리를 드릴게요.", postId: post.id }
+  assert.equal((await call("POST", "/proposals", apply, group)).status, 201)
+  const request = getDatabase().requests.find((item) => item.postId === post.id)!
+  assert.equal(request.eventId, groupEvent.id)
+  assert.equal((await call("POST", "/proposals", apply, group)).status, 409)
+  // Its own post is no post of the brand's.
+  assert.equal((await call("POST", "/proposals", { ...apply, postId: groupPost.id }, group)).status, 409)
+  const seen = (await call("GET", `/board/${post.id}`, undefined, brand)).data.post as Post
+  assert.deepEqual(seen.applications?.map((item) => [item.name, item.about, item.status]), [["board-club 동아리", "게시판 공연", "검토 중"]])
+  assert.equal(((await call("GET", `/board/${post.id}`, undefined, group)).data.post as Post).applied, "검토 중")
+  // The brand applies to the group's post with its campaign.
+  assert.equal((await call("POST", "/proposals", { matchId: groupListing, eventId: campaign.id, postId: groupPost.id }, brand)).status, 201)
+  assert.ok(getDatabase().offers.some((item) => item.postId === groupPost.id && item.campaignId === campaign.id))
+
+  // Closed, it leaves the board and takes no more applications; its poster still edits it.
+  assert.equal((await call("POST", `/board/${post.id}/close`, undefined, brand)).data.post.open, false)
+  assert.equal(((await call("GET", "/board", undefined, group)).data.posts as Post[]).some((item) => item.id === post.id), false)
+  assert.equal((await call("GET", `/board/${post.id}`, undefined, group)).status, 404)
+  assert.equal((await call("PUT", `/board/${post.id}`, brandPost, group)).status, 404)
+  assert.equal((await call("PUT", `/board/${post.id}`, { ...brandPost, title: "고친 제목" }, brand)).data.post.title, "고친 제목")
+  assert.equal((await call("DELETE", `/board/${post.id}`, undefined, brand)).status, 204)
+  // Deleting the group's event closes its post; leaving takes the post away.
+  assert.equal((await call("DELETE", `/events/${groupEvent.id}`, undefined, group)).status, 204)
+  assert.ok(getDatabase().posts.find((item) => item.id === groupPost.id)?.closedAt)
+  assert.equal((await call("DELETE", "/auth/account", { password: "board-pass-123" }, group)).status, 204)
+  assert.equal(getDatabase().posts.some((item) => item.id === groupPost.id), false)
+})
+
 test("members are emailed once when an event or a sponsored event is three days away or nearer", async () => {
   const { sendReminders } = await import("./lib/reminders.js")
   const { mailTransport } = await import("./lib/mailer.js")

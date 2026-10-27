@@ -8,6 +8,8 @@ import {
   seedGroups,
   seedMeasurements,
   seedOffers,
+  seedPosts,
+  freshenExamplePosts,
   seedRequests,
   seedSponsorships,
 } from "./data/seed.js"
@@ -143,6 +145,9 @@ export function upgradeDatabase(stored: Database) {
   stored.reports ??= []
   stored.blocks ??= {}
   stored.saved ??= {}
+  // Older data may have no demo accounts named yet.
+  stored.posts ??= seedPosts(stored.demoAccountIds ?? {})
+  freshenExamplePosts(stored)
   stored.reviews ??= seedReviews()
   // Sessions saved with their plain token keep working, stored as its hash.
   stored.sessions = (stored.sessions ?? []).map((session) => {

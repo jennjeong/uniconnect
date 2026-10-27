@@ -6,6 +6,7 @@ import type {
   Agreement,
   AgreementSummary,
   BlockedListing,
+  BoardPost,
   BusinessStatus,
   CheckInInfo,
   Conversation,
@@ -24,6 +25,7 @@ import type {
   Metrics,
   NearbyPlaces,
   PlatformStats,
+  PostDraft,
   ProfileDraft,
   Report,
   ReportAction,
@@ -131,7 +133,16 @@ export const api = {
 
   proposals: () => request<ProposalState>("/proposals"),
   // About the account's next event unless it names one, with its note.
-  propose: (matchId: string, draft: { eventId?: string; message?: string } = {}) =>
+  board: (role?: Role) =>
+    request<{ posts: BoardPost[]; mine: BoardPost[] }>("/board", { query: role ? { role } : undefined }),
+  boardPost: (id: string, role?: Role) =>
+    request<{ post: BoardPost }>(`/board/${encodeURIComponent(id)}`, { query: role ? { role } : undefined }),
+  createPost: (draft: PostDraft) => request<{ post: BoardPost }>("/board", { method: "POST", body: draft }),
+  updatePost: (id: string, draft: PostDraft) =>
+    request<{ post: BoardPost }>(`/board/${encodeURIComponent(id)}`, { method: "PUT", body: draft }),
+  closePost: (id: string) => request<{ post: BoardPost }>(`/board/${encodeURIComponent(id)}/close`, { method: "POST" }),
+  deletePost: (id: string) => request<void>(`/board/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  propose: (matchId: string, draft: { eventId?: string; message?: string; postId?: string } = {}) =>
     request<ProposalState>("/proposals", {
       method: "POST",
       body: { matchId, ...draft },

@@ -430,6 +430,22 @@ const en: Record<string, string> = {
   "장소는 60자 이하로 적어 주세요.": "Keep the venue to 60 characters.",
   "행사 소개는 1000자 이하로 적어 주세요.": "Keep the event introduction to 1,000 characters.",
   "행사 사진은 {count}장까지 올릴 수 있어요.": "You can add up to {count} photos to an event.",
+
+  // The recruitment board (routes/board.ts)
+  "모집 글을 너무 많이 올렸어요. 내일 다시 올려 주세요.": "You've posted a lot today. Post again tomorrow.",
+  "모집 글을 찾을 수 없어요.": "We couldn't find that post.",
+  "제목과 내용을 적어 주세요.": "Write a title and the post.",
+  "제목은 {count}자 이하로 적어 주세요.": "Keep the title to {count} characters.",
+  "내용은 {count}자 이하로 적어 주세요.": "Keep the post to {count} characters.",
+  "협찬 종류를 하나 이상 골라 주세요.": "Pick at least one kind of sponsorship.",
+  "마감일은 오늘부터 {count}일 안으로 골라 주세요.": "Pick a deadline within {count} days from today.",
+  "협찬을 찾을 다가오는 행사를 골라 주세요.": "Pick the upcoming event you're looking for sponsors for.",
+  "데모 계정은 모집 글을 올릴 수 없어요.": "The demo accounts can't post on the board.",
+  "내 정보에서 소개를 먼저 써 주세요. 모집 글은 소개와 함께 보여요.": "Write your listing in My account first. Posts show with it.",
+  "열려 있는 모집 글은 {count}개까지예요. 다 된 글을 먼저 닫아 주세요.": "You can keep up to {count} posts open. Close one that's done first.",
+  "마감됐거나 찾을 수 없는 모집 글이에요.": "That post has closed or can't be found.",
+  "이 상대에게 보낸 제안이 이미 있어요. 받은 제안 · 보낸 제안에서 확인해 주세요.": "You've already sent them a proposal. Check your proposals.",
+  "모집 글: {title}": "Post: {title}",
 }
 
 export default en
