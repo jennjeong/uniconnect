@@ -453,6 +453,36 @@ test("a group writes its event page on the form, adds a photo, and a brand reads
   }
 })
 
+test("an open conversation shows replies and reads as they happen", async ({ page, request, browser }) => {
+  const group = await signUpMember(request, "학생단체", "e2e-live@syu.ac.kr", "실시간 동아리")
+  const brand = await signUpMember(request, "브랜드", "e2e-live@live-cafe.kr", "실시간 카페")
+  await request.put("/api/profile", { data: { intro: "캠퍼스 공연 동아리예요.", offer: "관객 100명" }, headers: group.headers })
+  const started = await request.post("/api/conversations", { data: { partnerId: brand.listingId }, headers: group.headers })
+  const { conversation } = (await started.json()) as { conversation: { id: string } }
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
+  await page.goto(`/messages/${conversation.id}`)
+  const brandPage = await (await browser.newContext()).newPage()
+  await brandPage.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
+  await brandPage.goto(`/messages/${conversation.id}`)
+  await expect(brandPage.getByText("첫 메시지로 궁금한 점을 물어보세요.")).toBeVisible()
+
+  // The group's message reaches the brand's open page within moments, and
+  // the group sees it read as the brand's page shows it.
+  await page.getByLabel("보낼 메시지").fill("협찬 이야기 나눠요!")
+  await page.keyboard.press("Enter")
+  await expect(brandPage.getByText("협찬 이야기 나눠요!")).toBeVisible({ timeout: 2500 })
+  await expect(page.locator(".chat-read")).toHaveText("읽음", { timeout: 2500 })
+
+  // And the brand's reply comes back the same way.
+  await brandPage.getByLabel("보낼 메시지").fill("좋아요, 언제 통화할까요?")
+  await brandPage.keyboard.press("Enter")
+  await expect(page.getByText("좋아요, 언제 통화할까요?")).toBeVisible({ timeout: 2500 })
+  for (const member of [group, brand]) {
+    const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: member.headers })
+    expect(left.status()).toBe(204)
+  }
+})
+
 test("members send each other a photo and a PDF in a conversation", async ({ page, request, browser }) => {
   const group = await signUpMember(request, "학생단체", "e2e-files@syu.ac.kr", "파일 동아리")
   const brand = await signUpMember(request, "브랜드", "e2e-files@files-cafe.kr", "파일 카페")

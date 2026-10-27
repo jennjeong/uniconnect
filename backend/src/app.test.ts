@@ -898,6 +898,56 @@ test("an account sending messages or proposals in a flood is held back, and othe
   assert.match(tooMany.data.error, /제안을 너무 많이/)
 })
 
+test("an open conversation hears of new messages and reads as they happen", async () => {
+  const { chatWait } = await import("./routes/conversations.js")
+  const { token: group } = await listedMember("live@syu.ac.kr", "live-pass-123")
+  const { token: brand, listingId: brandListing } = await listedMember("live@live-cafe.kr", "live-pass-123", "브랜드")
+  const chat = (await call("POST", "/conversations", { partnerId: brandListing }, group)).data.conversation
+  const read = (token: string, since?: string) =>
+    call("GET", `/conversations/${chat.id}${since ? `?since=${since}` : ""}`, undefined, token)
+  const saved = { ...chatWait }
+  try {
+    chatWait.holdMs = 3000
+    chatWait.tickMs = 50
+
+    // A page showing the latest waits, and hears of a reply at once.
+    const { stamp } = (await read(group)).data
+    assert.match(stamp, /^[\w-]{16}$/)
+    const started = Date.now()
+    const waiting = read(group, stamp)
+    await new Promise((resolve) => setTimeout(resolve, 150))
+    await call("POST", `/conversations/${chat.id}/messages`, { text: "지금 볼게요" }, brand)
+    const heard = (await waiting).data
+    assert.ok(Date.now() - started < 1500)
+    assert.equal(heard.conversation.messages.at(-1).text, "지금 볼게요")
+    assert.notEqual(heard.stamp, stamp)
+
+    // An older stamp answers at once.
+    const begun = Date.now()
+    assert.equal((await read(group, stamp)).data.conversation.messages.length, 1)
+    assert.ok(Date.now() - begun < 500)
+
+    // The sender hears when its message is read.
+    await call("POST", `/conversations/${chat.id}/messages`, { text: "고마워요" }, group)
+    const mine = (await read(group)).data
+    assert.equal(mine.conversation.messages.at(-1).read, false)
+    const waitingRead = read(group, mine.stamp)
+    await new Promise((resolve) => setTimeout(resolve, 150))
+    await read(brand)
+    assert.equal((await waitingRead).data.conversation.messages.at(-1).read, true)
+
+    // With nothing new, it answers the same when the hold runs out.
+    chatWait.holdMs = 300
+    const quiet = (await read(group)).data.stamp
+    const from = Date.now()
+    const after = (await read(group, quiet)).data
+    assert.ok(Date.now() - from >= 280)
+    assert.equal(after.stamp, quiet)
+  } finally {
+    Object.assign(chatWait, saved)
+  }
+})
+
 test("photos and PDFs go in a conversation, only its two sides open them, and they go with their message", async () => {
   const { existsSync } = await import("node:fs")
   const { chatFiles, uploadsFolder } = await import("./lib/photos.js")

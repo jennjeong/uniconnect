@@ -1,5 +1,6 @@
-import { randomUUID } from "node:crypto"
-import { Router } from "express"
+import { createHash, randomUUID } from "node:crypto"
+import { EventEmitter } from "node:events"
+import { Router, type Response } from "express"
 
 import { findListing, shownCatalog, shownTo } from "../lib/catalog.js"
 import { HttpError } from "../lib/errors.js"
@@ -9,7 +10,7 @@ import { createRateLimit, senderKey } from "../lib/rateLimit.js"
 import { isDemoAccount } from "../lib/reviews.js"
 import { text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
-import { getDatabase, saveDatabase } from "../store.js"
+import { getDatabase, refreshDatabase, saveDatabase } from "../store.js"
 import type { Account, ChatAttachment, ChatSide, Conversation, Database } from "../types.js"
 
 export const conversationsRouter = Router()
@@ -162,16 +163,63 @@ conversationsRouter.post("/", async (req, res) => {
 })
 
 // Every message; reading marks the conversation read for this side.
+// How long an open conversation's request waits for something new, and how
+// often it looks meanwhile (tests shorten both). Within Vercel's 30 seconds
+// for the function (vercel.json).
+export const chatWait = { holdMs: 20_000, tickMs: 1000 }
+
+// Wakes the requests waiting on a conversation when this copy of the API
+// changes it; changes from other copies are found as each tick reads the
+// data anew (refreshDatabase).
+const changes = new EventEmitter().setMaxListeners(0)
+const changed = (conversationId: string) => changes.emit(conversationId)
+
+// What one side sees of a conversation, in a few characters, so the page
+// can ask to hear only of a change.
+const stampOf = (conversation: Conversation, side: ChatSide) =>
+  createHash("sha256").update(JSON.stringify(view(conversation, side, true))).digest("base64url").slice(0, 16)
+
+// Waits until the conversation looks different to this side than `since`
+// (or the hold runs out, or the page goes away), and answers its messages.
+async function waitForChange(res: Response, account: Account, id: string, since: string) {
+  const side = sideOf(account)
+  const until = Date.now() + chatWait.holdMs
+  let gone = false
+  // The answer's connection closes early when the page goes away.
+  res.on("close", () => {
+    gone = true
+  })
+  while (!gone && Date.now() < until && stampOf(findOwn(account, id), side) === since) {
+    await new Promise<void>((resolve) => {
+      const wake = () => {
+        clearTimeout(timer)
+        changes.off(id, wake)
+        resolve()
+      }
+      const timer = setTimeout(wake, Math.min(chatWait.tickMs, Math.max(0, until - Date.now())))
+      changes.once(id, wake)
+    })
+    await refreshDatabase()
+  }
+}
+
+// The conversation with every message, read up to its last one. With
+// ?since= (the stamp of what the page shows) the answer waits for a change,
+// so the page hears of new messages, reads, edits and deletions at once.
 conversationsRouter.get("/:id", async (req, res) => {
   const account = requireAccount(req)
+  findOwn(account, req.params.id)
+  if (typeof req.query.since === "string" && req.query.since) await waitForChange(res, account, req.params.id, req.query.since)
+  // Looked up again: the data may have been read anew while it waited.
   const conversation = findOwn(account, req.params.id)
   const side = sideOf(account)
   const last = conversation.messages.at(-1)
   if (last && (conversation.readAt[side] ?? "") < last.at) {
     conversation.readAt[side] = last.at
     await saveDatabase()
+    changed(conversation.id)
   }
-  res.json({ conversation: view(conversation, side, true) })
+  res.json({ conversation: view(conversation, side, true), stamp: stampOf(conversation, side) })
 })
 
 // Faster than anyone types, and more than a day's talk: a flood, each of
@@ -213,6 +261,7 @@ async function addMessage(
   conversation.messages.push({ id: randomUUID(), from: side, at, ...entry })
   conversation.readAt[side] = at
   await saveDatabase()
+  changed(conversation.id)
   if (!waiting) {
     const partner = getDatabase().accounts.find((item) =>
       other === "brand" ? item.brandId === conversation.brandId : item.groupId === conversation.groupId,
@@ -311,6 +360,7 @@ conversationsRouter.put("/:id/messages/:messageId", async (req, res) => {
     message.text = edited
     message.editedAt = new Date().toISOString()
     await saveDatabase()
+    changed(conversation.id)
   }
   res.json({ conversation: view(conversation, side, true) })
 })
@@ -329,6 +379,7 @@ conversationsRouter.delete("/:id/messages/:messageId", async (req, res) => {
     delete message.editedAt
     delete message.attachment
     await saveDatabase()
+    changed(conversation.id)
     // Its file goes once the deletion is kept.
     if (attachment) await photos().remove(chatFiles(conversation.id), [attachment.file])
   }
