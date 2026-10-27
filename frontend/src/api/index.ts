@@ -14,6 +14,7 @@ import type {
   EventMeasurement,
   Inquiry,
   InvitePageData,
+  MailKind,
   Match,
   MeasureMethod,
   MethodKind,
@@ -99,6 +100,8 @@ export const api = {
   resetPassword: (body: { email: string; code: string; password: string }) =>
     request<Session>("/auth/password-reset", { method: "POST", body }),
   updateContact: (body: AccountContact) => request<{ account: Account }>("/auth/contact", { method: "PUT", body }),
+  savePreferences: (body: { language?: "ko" | "en"; mailOff?: MailKind[] }) =>
+    request<{ account: Account }>("/auth/preferences", { method: "PUT", body }),
   readNotices: (read: string[]) =>
     request<{ readNotices: string[] }>("/auth/notices", { method: "PUT", body: { read } }),
   changePassword: (body: { current: string; next: string }) =>

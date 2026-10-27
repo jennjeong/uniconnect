@@ -251,7 +251,13 @@ export type Account = {
   createdAt: string
   // The parts of the bell's notices the account has read (lib/notifications.ts).
   readNotices?: string[]
+  // The language its emails are in, and the kinds of notice email it turned off.
+  language?: "ko" | "en"
+  mailOff?: MailKind[]
 }
+
+// The kinds of notice email (data/mail.ts).
+export type MailKind = "proposals" | "sponsorships" | "messages" | "reminders"
 
 // Whether brands can verify their business here (the server has the key),
 // and this brand's confirmed registration.

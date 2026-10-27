@@ -8,19 +8,20 @@ import { emailRuleError, normalizeEmail } from "../lib/email.js"
 import { HttpError } from "../lib/errors.js"
 import { sendVerificationCode } from "../lib/mailer.js"
 import { notify } from "../lib/notices.js"
+import { langOf, type Lang } from "../lib/i18n.js"
 import { hashPassword, verifyPassword } from "../lib/password.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { freezeSponsorships } from "../lib/sponsorships.js"
-import { accountTypes, checkPassword, parseContact, parseRole, text } from "../lib/validation.js"
+import { accountTypes, checkPassword, mailKinds, parseContact, parseRole, text } from "../lib/validation.js"
 import { hashToken, requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
-import type { Account, Database, EmailCode, PublicAccount, Role } from "../types.js"
+import type { Account, Database, EmailCode, MailKind, PublicAccount, Role } from "../types.js"
 
 export const authRouter = Router()
 
 const minute = 60 * 1000
 const codesPerClient = createRateLimit({
-  limit: 20,
+  limit: config.codesPerClient,
   windowMs: 15 * minute,
   message: "인증번호 요청이 너무 많아요. 15분 뒤에 다시 시도해 주세요.",
 })
@@ -30,7 +31,7 @@ const codesPerEmail = createRateLimit({
   message: "이 이메일로 인증번호를 너무 자주 받았어요. 30분 뒤에 다시 시도해 주세요.",
 })
 const verifyPerClient = createRateLimit({
-  limit: 30,
+  limit: config.codesPerClient + 10,
   windowMs: 15 * minute,
   message: "인증 시도가 너무 많아요. 15분 뒤에 다시 시도해 주세요.",
 })
@@ -69,8 +70,9 @@ type CodePurpose = EmailCode["purpose"]
 
 // Sends a new 6-digit code to the address, for signing up, for a new
 // password ("reset") or for moving an account to it ("change", tied to the
-// account asking), and answers with when it expires.
-async function issueCode(email: string, role: Role, purpose: CodePurpose, accountId?: string) {
+// account asking), and answers with when it expires. The email is in the
+// language the app was shown in.
+async function issueCode(email: string, role: Role, purpose: CodePurpose, lang: Lang, accountId?: string) {
   codesPerEmail.take(email)
   const database = getDatabase()
   const code = String(randomInt(100000, 1000000))
@@ -98,7 +100,7 @@ async function issueCode(email: string, role: Role, purpose: CodePurpose, accoun
     ...(accountId ? { accountId } : {}),
   })
   await saveDatabase()
-  await sendVerificationCode(email, code, purpose ?? "signup")
+  await sendVerificationCode(email, code, purpose ?? "signup", lang)
   // Only codes that prove an address (signing up, moving to it) are shown
   // for the demo. A reset code on screen would let anyone take over any
   // account by its email.
@@ -139,7 +141,7 @@ authRouter.post("/email-code", async (req, res) => {
     throw new HttpError(409, "이미 가입된 이메일이에요. 로그인해 주세요.")
   }
 
-  res.json(await issueCode(email, role, undefined))
+  res.json(await issueCode(email, role, undefined, langOf(req)))
 })
 
 // Step 2: check the code and hand back a token that proves the email is verified.
@@ -211,6 +213,8 @@ authRouter.post("/signup", async (req, res) => {
     passwordHash,
     termsAgreedAt: now,
     createdAt: now,
+    // Its emails follow the language it signed up in until the app says otherwise.
+    language: langOf(req),
   }
   database.accounts.push(account)
   database.events[account.id] = []
@@ -233,7 +237,7 @@ authRouter.post("/password-reset/code", async (req, res) => {
   if (!account) throw new HttpError(404, "가입된 이메일이 아니에요. 이메일을 확인하거나 회원가입해 주세요.")
   if (isDemo(account)) throw new HttpError(403, demoLocked)
   if (account.suspendedAt) throw new HttpError(403, suspendedMessage)
-  res.json(await issueCode(email, account.role, "reset"))
+  res.json(await issueCode(email, account.role, "reset", langOf(req)))
 })
 
 // Step 2: the right code sets the new password, ends every session the
@@ -394,6 +398,29 @@ authRouter.put("/contact", async (req, res) => {
   res.json({ account: toPublic(account) })
 })
 
+// 내 정보's choices for email: the kinds of notice to leave out, and the
+// language the emails are in, which the app sends whenever the one it shows
+// differs. Codes and notices about the account itself always go.
+authRouter.put("/preferences", async (req, res) => {
+  const account = requireAccount(req)
+  const language: unknown = req.body?.language
+  const mailOff: unknown = req.body?.mailOff
+  if (language !== undefined && language !== "ko" && language !== "en") {
+    throw new HttpError(400, "고를 수 없는 언어예요.")
+  }
+  if (mailOff !== undefined && (!Array.isArray(mailOff) || mailOff.some((kind) => !mailKinds.includes(kind as MailKind)))) {
+    throw new HttpError(400, "고를 수 없는 메일 종류예요.")
+  }
+  if (language) account.language = language
+  if (Array.isArray(mailOff)) {
+    const off = mailKinds.filter((kind) => mailOff.includes(kind))
+    if (off.length > 0) account.mailOff = off
+    else delete account.mailOff
+  }
+  await saveDatabase()
+  res.json({ account: toPublic(account) })
+})
+
 // Most parts of the bell's notices one save may hold, as many as the app
 // tracks (lib/notifications.ts).
 const maxReadNotices = 300
@@ -460,7 +487,7 @@ authRouter.post("/email/code", async (req, res) => {
     throw new HttpError(400, "지금 비밀번호가 올바르지 않아요.")
   }
   loginFailures.reset(limitKey)
-  res.json(await issueCode(email, account.role, "change", account.id))
+  res.json(await issueCode(email, account.role, "change", langOf(req), account.id))
 })
 
 // Step 2: the code from the new address moves the account there. Other
@@ -485,6 +512,7 @@ authRouter.post("/email", async (req, res) => {
   await saveDatabase()
   void notify(
     { ...account, email: previous },
+    "account",
     "로그인 이메일이 바뀌었어요",
     [
       `uniconnect 계정의 로그인 이메일이 바뀌었어요: ${email}`,

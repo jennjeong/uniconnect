@@ -157,6 +157,7 @@ agreementsRouter.put("/:id/items", async (req, res) => {
   if (changed) {
     void notify(
       side === "group" ? proposal.brand.account : proposal.group.account,
+      "sponsorships",
       "임시 전자 계약서가 바뀌었어요",
       [`${account.name}에서 '${proposal.eventName}' 임시 전자 계약서를 고쳤어요. 바뀐 내용을 보고 다시 확인해 주세요.`],
       `/agreements/${encodeURIComponent(agreement.id)}`,
@@ -189,6 +190,7 @@ agreementsRouter.put("/:id/methods", async (req, res) => {
   if (changed) {
     void notify(
       side === "group" ? proposal.brand.account : proposal.group.account,
+      "sponsorships",
       "임시 전자 계약서가 바뀌었어요",
       [`${account.name}에서 '${proposal.eventName}' 협찬의 협찬 확인 방식을 바꿨어요. 바뀐 내용을 보고 다시 확인해 주세요.`],
       `/agreements/${encodeURIComponent(agreement.id)}`,
@@ -220,6 +222,7 @@ agreementsRouter.post("/:id/confirm", async (req, res) => {
   await saveDatabase()
   void notify(
     side === "group" ? proposal.brand.account : proposal.group.account,
+    "sponsorships",
     both ? "임시 전자 계약서를 양쪽 모두 확인했어요" : "임시 전자 계약서를 확인해 주세요",
     [`${account.name}에서 '${proposal.eventName}' 임시 전자 계약서를 확인했어요.`],
     `/agreements/${encodeURIComponent(agreement.id)}`,
@@ -252,6 +255,7 @@ agreementsRouter.post("/:id/cancel", async (req, res) => {
   await saveDatabase()
   void notify(
     partner,
+    "sponsorships",
     "협찬 취소 요청이 왔어요",
     [
       `${account.name}에서 '${proposal.eventName}' 협찬을 취소하자고 요청했어요.`,
@@ -276,6 +280,7 @@ agreementsRouter.post("/:id/cancel/accept", async (req, res) => {
   await saveDatabase()
   void notify(
     side === "group" ? proposal.brand.account : proposal.group.account,
+    "sponsorships",
     "협찬이 취소됐어요",
     [`${account.name}에서 '${proposal.eventName}' 협찬 취소에 동의했어요.`],
     `/agreements/${encodeURIComponent(agreement.id)}`,
@@ -295,6 +300,7 @@ agreementsRouter.delete("/:id/cancel", async (req, res) => {
   await saveDatabase()
   void notify(
     side === "group" ? proposal.brand.account : proposal.group.account,
+    "sponsorships",
     asked ? "협찬 취소 요청을 거뒀어요" : "협찬 취소 요청이 거절됐어요",
     [
       asked

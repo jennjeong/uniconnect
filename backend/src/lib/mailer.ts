@@ -1,5 +1,6 @@
 import { config } from "../config.js"
 import { HttpError } from "./errors.js"
+import { translate, type Lang } from "./i18n.js"
 
 // Posts one email to Resend (https://resend.com). Tests swap `post` to see
 // what would go out without sending it.
@@ -36,23 +37,26 @@ const subjects = {
 const actions = { signup: "회원가입", reset: "비밀번호 재설정", change: "로그인 이메일 변경" }
 
 // A 6-digit code for signing up, resetting a password or moving to a new
-// login email. Without a mail service it goes to the server log, code
-// included, for the demo.
+// login email, in the language the app was shown in when it was asked for.
+// Without a mail service it goes to the server log, code included, for the
+// demo.
 export async function sendVerificationCode(
   email: string,
   code: string,
   purpose: "signup" | "reset" | "change" = "signup",
+  lang: Lang = "ko",
 ) {
   if (!mailConfigured()) {
     console.log(`[mail] ${email} 인증번호 ${code}`)
     return
   }
+  const say = (text: string) => translate(text, lang)
   const lines = [
-    `uniconnect ${actions[purpose]} 인증번호는 ${code} 입니다.`,
-    "3분 안에 입력해 주세요. 요청한 적이 없다면 이 메일은 무시해 주세요.",
+    say(`uniconnect ${actions[purpose]} 인증번호는 ${code} 입니다.`),
+    say("3분 안에 입력해 주세요. 요청한 적이 없다면 이 메일은 무시해 주세요."),
   ]
   try {
-    await sendMail(email, subjects[purpose], lines.join("\n"))
+    await sendMail(email, say(subjects[purpose]), lines.join("\n"))
   } catch (error) {
     console.error(`[mail] ${purpose} code: ${(error as Error).message}`)
     throw new HttpError(502, "인증 메일을 보내지 못했어요. 잠시 후 다시 시도해 주세요.")

@@ -3716,6 +3716,96 @@ test("a member's calendar link gives calendar apps its events and sponsorship da
   assert.equal((await call("GET", "/calendar/not-a-link.ics")).status, 404)
 })
 
+test("members choose which notice emails they get, in the language they use the app in", async () => {
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const { mailTransport } = await import("./lib/mailer.js")
+  const realPost = mailTransport.post
+  const sent: { to: string[]; subject: string; text: string }[] = []
+  mailTransport.post = async (body) => {
+    sent.push(body)
+    return new Response(null, { status: 200 })
+  }
+  config.resendApiKey = "test-key"
+  config.mailFrom = "uniconnect <no-reply@example.com>"
+  config.siteUrl = "https://uniconnect.example"
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 20))
+  const english = { "Content-Type": "application/json", "Accept-Language": "en-US,en;q=0.9" }
+  try {
+    // Signing up from an English page: the code comes in English, and the
+    // account's emails follow.
+    const email = "mail-en@syu.ac.kr"
+    sent.length = 0
+    const asked = await fetch(`${baseUrl}/auth/email-code`, {
+      method: "POST",
+      headers: english,
+      body: JSON.stringify({ role: "학생단체", email }),
+    })
+    const code = (await asked.json()) as { devCode: string }
+    assert.equal(sent[0].subject, "[uniconnect] Your sign-up code")
+    assert.match(sent[0].text, /^Your uniconnect sign-up code is \d{6}\.\nEnter it within 3 minutes/)
+    const check = await fetch(`${baseUrl}/auth/email-code/verify`, {
+      method: "POST",
+      headers: english,
+      body: JSON.stringify({ email, code: code.devCode }),
+    })
+    const verified = (await check.json()) as { verificationToken: string }
+    const signup = await fetch(`${baseUrl}/auth/signup`, {
+      method: "POST",
+      headers: english,
+      body: JSON.stringify({
+        role: "학생단체",
+        name: "메일 동아리",
+        type: "공연 동아리",
+        school: "삼육대학교",
+        email,
+        password: "mail-pass-123",
+        verificationToken: verified.verificationToken,
+        agreedToTerms: true,
+        contact: testContact,
+        over14: true,
+      }),
+    })
+    const { token: group, account } = (await signup.json()) as { token: string; account: { language?: string } }
+    assert.equal(account.language, "en")
+    await call("PUT", "/profile", { intro: "캠퍼스에서 정기 공연을 여는 동아리예요.", offer: "관객 100명" }, group)
+
+    const { token: brand, listingId: brandListing } = await listedMember("mail@mail-cafe.kr", "mail-pass-123", "브랜드")
+    const preferences = (body: unknown, token = brand) => call("PUT", "/auth/preferences", body, token)
+    for (const body of [{ language: "fr" }, { mailOff: "messages" }, { mailOff: ["spam"] }]) {
+      assert.equal((await preferences(body)).status, 400)
+    }
+    // The brand turns message emails off: a message sends none, a proposal still goes.
+    const saved = await preferences({ mailOff: ["messages", "messages"] })
+    assert.deepEqual(saved.data.account.mailOff, ["messages"])
+    sent.length = 0
+    const chat = (await call("POST", "/conversations", { partnerId: brandListing }, group)).data.conversation
+    await call("POST", `/conversations/${chat.id}/messages`, { text: "안녕하세요" }, group)
+    await call("POST", "/events", { name: "메일 공연", date: addDays(todayInKorea(), 10), types: ["현금"] }, group)
+    await call("POST", "/proposals", { matchId: brandListing }, group)
+    await settle()
+    assert.deepEqual(sent.map((mail) => mail.subject), ["[uniconnect] 새 협찬 제안이 왔어요"])
+    assert.match(sent[0].text, /받을 메일 바꾸기: https:\/\/uniconnect\.example\/me/)
+
+    // The group uses the app in English: the brand's answer reaches it in English.
+    sent.length = 0
+    const request = (await call("GET", "/requests", undefined, brand)).data.requests[0]
+    await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+    await settle()
+    assert.equal(sent[0].subject, "[uniconnect] Your sponsorship is confirmed")
+    assert.match(sent[0].text, /accepted the proposal for '메일 공연'\./)
+    assert.match(sent[0].text, /Open: https:\/\/uniconnect\.example\/matches/)
+    assert.match(sent[0].text, /Choose which emails you get: https:\/\/uniconnect\.example\/me/)
+    // Back to Korean, and every kind on again.
+    assert.equal((await preferences({ language: "ko", mailOff: [] }, group)).data.account.language, "ko")
+    assert.equal((await preferences({ mailOff: [] })).data.account.mailOff, undefined)
+  } finally {
+    mailTransport.post = realPost
+    config.resendApiKey = undefined
+    config.mailFrom = undefined
+    config.siteUrl = undefined
+  }
+})
+
 test("members are emailed once when an event or a sponsored event is three days away or nearer", async () => {
   const { sendReminders } = await import("./lib/reminders.js")
   const { mailTransport } = await import("./lib/mailer.js")

@@ -96,6 +96,11 @@ export type EventItem = {
 // a confirmed sponsorship, on its agreement.
 export type AccountContact = { name: string; position: string; phone: string }
 
+// The kinds of notice email an account can turn off in 내 정보 (mailKinds in
+// lib/validation.ts): proposals and their answers, news of confirmed
+// sponsorships, messages, and days that are near.
+export type MailKind = "proposals" | "sponsorships" | "messages" | "reminders"
+
 export type Account = {
   id: string
   role: Role
@@ -124,6 +129,12 @@ export type Account = {
   // in the app), as it last sent them: only parts still shown, so the list
   // stays as short as the bell.
   readNotices?: string[]
+  // The language the account last used the app in, for its emails; Korean
+  // until the app says.
+  language?: "ko" | "en"
+  // The kinds of notice email the account turned off; codes and notices
+  // about the account itself always go.
+  mailOff?: MailKind[]
   // The secret link calendar apps subscribe to (routes/calendar.ts); kept
   // as made, so 내 정보 can show it again, and never in the account's data
   // the app gets.

@@ -201,7 +201,13 @@ conversationsRouter.post("/:id/messages", async (req, res) => {
     const partner = getDatabase().accounts.find((item) =>
       other === "brand" ? item.brandId === conversation.brandId : item.groupId === conversation.groupId,
     )
-    void notify(partner, "새 메시지가 왔어요", [`${account.name}: ${message.slice(0, 80)}`], `/messages/${conversation.id}`)
+    void notify(
+      partner,
+      "messages",
+      "새 메시지가 왔어요",
+      [`${account.name}: ${message.slice(0, 80)}`],
+      `/messages/${conversation.id}`,
+    )
   }
   res.status(201).json({ conversation: view(conversation, side, true) })
 })

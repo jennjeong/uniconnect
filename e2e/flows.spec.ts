@@ -392,6 +392,24 @@ test("a member subscribes calendar apps to a link, and a new link stops the old 
   expect(left.status()).toBe(204)
 })
 
+test("a member chooses which notice emails come, and the choice stays", async ({ page, request }) => {
+  const group = await signUpMember(request, "학생단체", "e2e-mail@syu.ac.kr", "메일 고르는 동아리")
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
+  await page.goto("/me")
+  const choices = page.getByRole("group", { name: "받을 메일" })
+  const messages = choices.getByRole("checkbox", { name: /새 메시지/ })
+  await expect(messages).toBeChecked()
+  await messages.uncheck()
+  await expect(page.getByText("받을 메일을 바꿨어요.")).toBeVisible()
+  await page.reload()
+  await expect(messages).not.toBeChecked()
+  await expect(choices.getByRole("checkbox", { name: /협찬 제안과 답/ })).toBeChecked()
+  const me = (await (await request.get("/api/auth/me", { headers: group.headers })).json()) as { account: { mailOff?: string[] } }
+  expect(me.account.mailOff).toEqual(["messages"])
+  const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: group.headers })
+  expect(left.status()).toBe(204)
+})
+
 test("a student group proposes and the brand accepts", async ({ browser }) => {
   const student = await (await browser.newContext()).newPage()
   await student.goto("/")

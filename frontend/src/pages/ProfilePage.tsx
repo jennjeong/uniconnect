@@ -4,12 +4,13 @@ import { AnimatedNumber } from "../components/AnimatedNumber"
 import { Icon } from "../components/Icon"
 import { Pill } from "../components/Pill"
 import { RevealTitle, RevealWords } from "../components/RevealText"
+import { mailKinds } from "../data/mail"
 import { profileLabels } from "../data/profile"
 import { lang, setLang, t, type Lang } from "../i18n"
 import { formatFullDate, toIsoDate } from "../lib/date"
 import { initialOf } from "../lib/format"
 import { MeshBackdrop } from "../scenes/MeshBackdrop"
-import type { Account, BlockedListing, BusinessStatus, Match, NavLabel } from "../types"
+import type { Account, BlockedListing, BusinessStatus, MailKind, Match, NavLabel } from "../types"
 
 export type ActivityItem = {
   label: string
@@ -54,6 +55,7 @@ export function ProfilePage({
   business,
   onVerifyBusiness,
   onPause,
+  onMail,
 }: {
   account: Account
   // The listing brands (or student groups) see; null until written.
@@ -79,6 +81,8 @@ export function ProfilePage({
   // 목록에서 숨기기: takes the listing out of the other side's lists for now,
   // or shows it again; absent for the demo accounts.
   onPause?: (paused: boolean) => void
+  // 받을 메일: the kinds of notice email to turn off; absent for the demo accounts.
+  onMail?: (mailOff: MailKind[]) => void
 }) {
   const students = account.role === "학생단체"
   const labels = profileLabels[account.role]
@@ -98,6 +102,8 @@ export function ProfilePage({
   const paused = listing?.pausedAt !== undefined
   // The rows after 언어 are numbered on from it.
   const pauseIndex = details.length + 2 + (business ? 1 : 0) + (blocked ? 1 : 0)
+  const mailIndex = pauseIndex + (onPause && listing ? 1 : 0)
+  const mailOff = account.mailOff ?? []
 
   return (
     <section className="page-view profile-view">
@@ -305,6 +311,34 @@ export function ProfilePage({
                       : t("협찬을 받지 않는 동안 상대 목록에서 잠시 빼 둘 수 있어요.")}
                   </small>
                 </span>
+              </dd>
+            </div>
+          )}
+          {onMail && (
+            <div className="service-row" data-reveal style={delay((mailIndex - 1) * 0.08)}>
+              <span className="service-index">{pad(mailIndex)}</span>
+              <dt id="mail-label">{t("받을 메일")}</dt>
+              <dd>
+                <fieldset aria-labelledby="mail-label" className="mail-choices">
+                  {mailKinds.map((item) => (
+                    <label key={item.kind}>
+                      <input
+                        checked={!mailOff.includes(item.kind)}
+                        onChange={(event) =>
+                          onMail(
+                            event.target.checked ? mailOff.filter((kind) => kind !== item.kind) : [...mailOff, item.kind],
+                          )
+                        }
+                        type="checkbox"
+                      />
+                      <span>
+                        <strong>{item.label}</strong>
+                        <small>{item.caption}</small>
+                      </span>
+                    </label>
+                  ))}
+                  <small className="mail-note">{t("인증번호와 계정 안내 메일은 언제나 보내요. 메일은 지금 쓰는 언어로 가요.")}</small>
+                </fieldset>
               </dd>
             </div>
           )}
