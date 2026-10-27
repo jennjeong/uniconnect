@@ -3,3 +3,5 @@ Allow: /
 Disallow: /api/
 Disallow: /check-in/
 Disallow: /invite/
+
+Sitemap: https://uniconnect-pied.vercel.app/sitemap.xml
