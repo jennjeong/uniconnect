@@ -1987,6 +1987,50 @@ button.nav-pill:hover {
   }
 }
 
+/* 목록 · 지도 over a catalog keeps its own width. */
+.match-filters > .nearby-layout {
+  align-self: flex-start;
+}
+
+/* The catalog map (components/CatalogMap.tsx): the listings it couldn't
+   place, as pills under the map and card. */
+.catalog-map-unplaced {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 8px;
+}
+
+.catalog-map-unplaced p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.catalog-map-unplaced ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.catalog-map-unplaced button {
+  height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.catalog-map-unplaced button[aria-pressed='true'] {
+  background: var(--point);
+  color: var(--on-point);
+}
+
 /* Search and filters above a catalog (CatalogSearch.tsx; GroupsPage.tsx adds
    the selects): a white search pill with a magnifier, then silver select
    pills, wrapping onto new lines on phones. */

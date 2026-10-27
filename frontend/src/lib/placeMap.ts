@@ -16,7 +16,12 @@ export function offsetMetres(from: Point, to: Point) {
 // The point as left and top percentages of a square map whose edge is
 // `radiusM` from the middle; a point past the edge sits on it.
 export function mapPosition(center: Point, point: Point, radiusM: number) {
-  const { east, north } = offsetMetres(center, point)
+  return offsetPosition(offsetMetres(center, point), radiusM)
+}
+
+// The same for a point already given as metres east and north of the
+// middle (a catalog listing's mapOffset).
+export function offsetPosition({ east, north }: { east: number; north: number }, radiusM: number) {
   const distance = Math.hypot(east, north)
   const scale = distance > radiusM ? radiusM / distance : 1
   return {
@@ -67,4 +72,23 @@ export function spreadPositions(positions: { left: number; top: number }[], gap 
     placed.push(next)
     return next
   })
+}
+
+// The catalog map's scales (CatalogMap.tsx): partners sit kilometres away,
+// not a street apart.
+const wideScales = [
+  { radius: 1000, step: 250 },
+  { radius: 2000, step: 500 },
+  { radius: 3000, step: 1000 },
+  { radius: 5000, step: 1000 },
+  { radius: 10000, step: 2500 },
+  { radius: 20000, step: 5000 },
+  { radius: 50000, step: 10000 },
+]
+
+// The smallest of them that holds the farthest offset with a little room;
+// anything farther sits on the edge.
+export function catalogScale(offsets: { east: number; north: number }[]) {
+  const farthest = Math.max(0, ...offsets.map(({ east, north }) => Math.hypot(east, north)))
+  return wideScales.find((scale) => scale.radius >= farthest * 1.1) ?? wideScales[wideScales.length - 1]
 }

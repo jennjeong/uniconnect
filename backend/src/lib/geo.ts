@@ -12,6 +12,15 @@ export function distanceKm(a: Point, b: Point) {
   return Math.round(6371 * 2 * Math.asin(Math.sqrt(h)) * 10) / 10
 }
 
+// Where `to` is from `from` in metres east and north, flat-earth (close
+// enough for a sketch), to 10 m: the catalog map's dots (CatalogMap.tsx).
+export function offsetMetres(from: Point, to: Point) {
+  const metresPerDegree = 111_320
+  const east = (to.lng - from.lng) * metresPerDegree * Math.cos((from.lat * Math.PI) / 180)
+  const north = (to.lat - from.lat) * metresPerDegree
+  return { east: Math.round(east / 10) * 10, north: Math.round(north / 10) * 10 }
+}
+
 // A school's campus: by the email domain it verified with (or a subdomain of
 // it), else by the school's name. Undefined for schools not in the table.
 export function campusOf({ email, school }: { email?: string; school?: string }): Campus | undefined {

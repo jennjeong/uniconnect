@@ -2992,10 +2992,16 @@ test("catalogs say how far each listing is from the viewer's campus or store", a
   assert.equal(distanceKm({ lat: 37.5, lng: 127 }, { lat: 37.5, lng: 127 }), 0)
 
   // The demo group (삼육대) sees each brand's store distance; online brands have none.
-  const brands = (await call("GET", "/brands")).data.brands as { id: string; distanceKm?: number }[]
+  type Placed = { id: string; distanceKm?: number; mapOffset?: { east: number; north: number } }
+  const brands = (await call("GET", "/brands")).data.brands as Placed[]
   const coffee = brands.find((brand) => brand.id === "afternoon-coffee")!
   assert.ok(coffee.distanceKm! > 3 && coffee.distanceKm! < 4.5, String(coffee.distanceKm))
   assert.equal(brands.find((brand) => brand.id === "freshon")!.distanceKm, undefined)
+  // The catalog map's offset agrees with the distance, to 10 m.
+  const { east, north } = coffee.mapOffset!
+  assert.ok(east % 10 === 0 && north % 10 === 0)
+  assert.ok(Math.abs(Math.hypot(east, north) / 1000 - coffee.distanceKm!) < 0.1)
+  assert.equal(brands.find((brand) => brand.id === "freshon")!.mapOffset, undefined)
 
   // The demo brand (공릉역) sees each group's campus distance; a union of schools has none.
   const groups = (await call("GET", "/groups")).data.groups as { id: string; distanceKm?: number }[]

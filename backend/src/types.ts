@@ -53,6 +53,9 @@ export type Match = {
   // worked out when the catalog is served (lib/geo.ts); absent when either
   // place is unknown.
   distanceKm?: number
+  // Which way, in metres east and north of the account browsing, for the
+  // catalog map; served with distanceKm.
+  mapOffset?: { east: number; north: number }
   // Student group catalog only: school, next event (its id for its page) and
   // its expected audience.
   school?: string

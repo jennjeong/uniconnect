@@ -239,6 +239,15 @@ const en: Record<string, string> = {
   수정됨: "Edited",
   읽음: "Read",
   "안 읽음": "Unread",
+  // The catalog map (components/CatalogMap.tsx)
+  "{center} 기준 지도": "Map around {center}",
+  "{name}, {distance}": "{name}, {distance}",
+  "위치를 몰라 지도에 없는 곳 {count}": "{count} not on the map, with no known place",
+  "내 매장": "My store",
+  "내 정보에 매장 주소를 적으면 학생단체의 캠퍼스를 지도에서 볼 수 있어요. 지금은 목록으로 보세요.":
+    "Add your store's address in My Info to see student groups' campuses on the map. Use the list for now.",
+  "우리 학교": "Our campus",
+  "학교 위치를 알 수 없어 지도에 그릴 수 없어요. 목록으로 보세요.": "We don't know where your school is, so there's no map. Use the list.",
   "메시지 수정 또는 삭제": "Edit or delete message",
   "메시지 삭제": "Delete message",
   "사진이나 PDF 보내기": "Send a photo or PDF",

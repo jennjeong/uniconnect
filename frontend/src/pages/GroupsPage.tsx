@@ -1,6 +1,7 @@
 import { useState, type CSSProperties } from "react"
 
 import { CatalogEmpty } from "../components/CatalogEmpty"
+import { CatalogMap, LayoutSwitch, type Layout } from "../components/CatalogMap"
 import { CatalogSearch } from "../components/CatalogSearch"
 import { DemoPreview } from "../components/DemoPreview"
 import { PageIntro } from "../components/PageIntro"
@@ -97,6 +98,8 @@ export function GroupsPage({
   // Words to find and the filters, kept across the tabs.
   const [query, setQuery] = useState("")
   const [filters, setFilters] = useState<GroupFilters>(noGroupFilters)
+  // The cards as a list, or as dots on a map around the store.
+  const [layout, setLayout] = useState<Layout>("list")
   const schools = [...new Set(groups.flatMap((group) => (group.school ? [group.school] : [])))].sort()
   const filtering = query.trim() !== "" || JSON.stringify(filters) !== JSON.stringify(noGroupFilters)
   const clear = () => {
@@ -119,6 +122,38 @@ export function GroupsPage({
             ? saved.flatMap((id) => groups.filter((group) => group.id === id))
             : groups.filter((group) => group.industry === field)
   const shown = list.filter((group) => matchesQuery(group, query) && matchesGroupFilters(group, filters, today))
+
+  // A group's card, as the list and the map show it.
+  const card = (group: Match) => (
+    <WorkCard
+      match={group}
+      meta={`${group.school} · ${t(group.category)}`}
+      onOpenDetail={() => onOpenDetail(group)}
+      saved={saved.includes(group.id)}
+      onToggleSave={() => onToggleSave(group)}
+      date={group.eventDate}
+      tags={
+        <>
+          {group.eventName && <span className="tag-event">{group.eventName}</span>}
+          {shownTags(group).map((tag) => (
+            <span key={tag}>{tag}</span>
+          ))}
+        </>
+      }
+    >
+      <button className="cancel-button" onClick={() => onOpenDetail(group)} type="button">
+        {t("상세 정보")}
+      </button>
+      <ProposalControl
+        done={proposals.includes(group.id)}
+        status={statuses[group.id]}
+        label={t("협찬 제안하기")}
+        className="primary-button"
+        onPropose={() => onPropose(group)}
+        onCancel={() => onCancelProposal(group)}
+      />
+    </WorkCard>
+  )
 
   return (
     <section className="page-view">
@@ -218,6 +253,7 @@ export function GroupsPage({
             </button>
           )}
         </div>
+        <LayoutSwitch onChange={setLayout} value={layout} />
       </div>
 
       <DemoPreview
@@ -251,6 +287,14 @@ export function GroupsPage({
           <p className="day-empty" key={tab}>
             {t("조건에 맞는 학생단체가 없어요.")}
           </p>
+        ) : layout === "map" ? (
+          <CatalogMap
+            center={t("내 매장")}
+            key={tab === "분야별" ? `${tab}-${field}` : tab}
+            matches={shown}
+            noPlace={t("내 정보에 매장 주소를 적으면 학생단체의 캠퍼스를 지도에서 볼 수 있어요. 지금은 목록으로 보세요.")}
+            renderCard={card}
+          />
         ) : (
           <ul
             className="work-grid stagger slide"
@@ -259,34 +303,7 @@ export function GroupsPage({
           >
             {shown.map((group, index) => (
               <li key={group.id} style={{ "--i": index } as CSSProperties}>
-                <WorkCard
-                  match={group}
-                  meta={`${group.school} · ${t(group.category)}`}
-                  onOpenDetail={() => onOpenDetail(group)}
-                  saved={saved.includes(group.id)}
-                  onToggleSave={() => onToggleSave(group)}
-                  date={group.eventDate}
-                  tags={
-                    <>
-                      {group.eventName && <span className="tag-event">{group.eventName}</span>}
-                      {shownTags(group).map((tag) => (
-                        <span key={tag}>{tag}</span>
-                      ))}
-                    </>
-                  }
-                >
-                  <button className="cancel-button" onClick={() => onOpenDetail(group)} type="button">
-                    {t("상세 정보")}
-                  </button>
-                  <ProposalControl
-                    done={proposals.includes(group.id)}
-                    status={statuses[group.id]}
-                    label={t("협찬 제안하기")}
-                    className="primary-button"
-                    onPropose={() => onPropose(group)}
-                    onCancel={() => onCancelProposal(group)}
-                  />
-                </WorkCard>
+                {card(group)}
               </li>
             ))}
           </ul>
