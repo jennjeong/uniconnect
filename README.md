@@ -408,6 +408,7 @@ Vercel에서 달라지는 점:
 | POST | `/api/auth/email/code` | 로그인 이메일을 바꿀 인증번호를 새 이메일로 보내기 `{ email, password }` (데모 계정은 403) | 필요 |
 | POST | `/api/auth/email` | 새 이메일의 인증번호로 로그인 이메일 바꾸기 `{ email, code }` → `{ account }`, 다른 기기 로그아웃, 예전 이메일로 알림 | 필요 |
 | GET | `/api/auth/export` | 내 데이터 전부(비밀번호와 참여자 기록 제외)를 JSON으로 | 필요 |
+| PUT | `/api/auth/notices` | 종에서 읽은 알림 `{ read: [part] }`로 저장한 목록을 바꿈(지금 보이는 알림의 것만, 300개까지) | 필요 |
 | POST | `/api/auth/logout` | 로그아웃 | |
 | GET | `/api/matches?role=` | 추천 매칭 상위 3곳 (로그인하면 내 유형 기준, 가입한 계정에는 가입한 상대만) | |
 | GET | `/api/brands` | 학생단체가 둘러보는 브랜드 전체 (일치율과 항목별 `scoreParts`·협찬 횟수, 학교에서 매장까지 `distanceKm` 포함). 가입한 계정에는 가입한 브랜드만, 방문자와 데모 계정에는 예시 브랜드만 | |
