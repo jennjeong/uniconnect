@@ -336,6 +336,24 @@ test("a new member's dashboard lists what to fill in, and folds it for later", a
   expect(left.status()).toBe(204)
 })
 
+test("the report and the analytics download as CSV files that Excel opens", async ({ page }) => {
+  // A visitor sees the demo group's report and the demo brand's analytics.
+  for (const [path, name, first] of [
+    ["/reports", /^uniconnect-report-\d{4}-\d{2}-\d{2}\.csv$/, "행사,"],
+    ["/analytics", /^uniconnect-analytics-\d{4}-\d{2}-\d{2}\.csv$/, "단체,행사,날짜,"],
+  ] as const) {
+    await page.goto(path)
+    const download = page.waitForEvent("download")
+    await page.getByRole("button", { name: "CSV로 내보내기" }).click()
+    const file = await download
+    expect(file.suggestedFilename()).toMatch(name)
+    const text = await readFile(await file.path(), "utf8")
+    // A byte order mark first, so Excel reads it as UTF-8.
+    expect(text.startsWith(`\uFEFF${first}`)).toBe(true)
+    expect(text).toContain("\r\n")
+  }
+})
+
 test("a student group proposes and the brand accepts", async ({ browser }) => {
   const student = await (await browser.newContext()).newPage()
   await student.goto("/")

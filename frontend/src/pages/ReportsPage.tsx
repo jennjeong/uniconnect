@@ -9,7 +9,9 @@ import { RevealTitle } from "../components/RevealText"
 import { metricInfo } from "../data/metrics"
 import { venueSummary } from "../data/methods"
 import { t } from "../i18n"
+import { reportCsv } from "../lib/csv"
 import { formatFullDate } from "../lib/date"
+import { saveFile } from "../lib/download"
 import {
   achievement,
   formatKpi,
@@ -72,9 +74,22 @@ export function ReportsPage({
         title={t("성과 리포트")}
         description={t("행사가 끝나면 현장 참여와 협찬 효과를 한 장으로 정리해 드려요.")}
         actions={
-          <Pill arrow="up-right" disabled={!report || exporting} onClick={onDownload}>
-            {exporting ? t("PDF 만드는 중…") : t("PDF 리포트 다운로드")}
-          </Pill>
+          <>
+            <Pill arrow="up-right" disabled={!report || exporting} onClick={onDownload}>
+              {exporting ? t("PDF 만드는 중…") : t("PDF 리포트 다운로드")}
+            </Pill>
+            {/* The same figures as a spreadsheet (lib/csv.ts), made on the page. */}
+            <Pill
+              disabled={!report}
+              onClick={() =>
+                report &&
+                saveFile(`uniconnect-report-${report.eventDate}.csv`, reportCsv(report, metrics), "text/csv;charset=utf-8")
+              }
+              variant="outline"
+            >
+              {t("CSV로 내보내기")}
+            </Pill>
+          </>
         }
       />
       {!report ? (
