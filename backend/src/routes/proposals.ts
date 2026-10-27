@@ -166,6 +166,7 @@ proposalsRouter.post("/", async (req, res) => {
     (match) => match.id === matchId,
   )
   if (!partner) throw new HttpError(404, "목록에 없는 상대예요.")
+  if (partner.pausedAt) throw new HttpError(409, "지금은 제안을 받지 않는 상대예요.")
   const students = account.role === "학생단체"
   const note = text(req.body?.message)
   if (note.length > maxMessage) throw new HttpError(400, `메시지는 ${maxMessage}자 이하로 적어 주세요.`)

@@ -291,6 +291,25 @@ test("a brand's 내 정보 offers the business check once the server has its key
   expect(left.status()).toBe(204)
 })
 
+test("a member hides its listing from 내 정보 and shows it again from the dashboard", async ({ page, request }) => {
+  const brand = await signUpMember(request, "브랜드", "e2e-pause@pause-cafe.kr", "쉬는 카페")
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
+  await page.goto("/me")
+  const toggle = page.getByRole("switch", { name: "목록에서 숨기기" })
+  await expect(toggle).toHaveAttribute("aria-checked", "false")
+  await toggle.click()
+  await expect(page.getByText("내 소개를 숨겼어요. 상대 목록에 보이지 않고 새 제안을 받지 않아요.")).toBeVisible()
+  await expect(toggle).toHaveAttribute("aria-checked", "true")
+  // The dashboard's hero says so, and brings it back with one press.
+  await page.goto("/dashboard")
+  await expect(page.getByText("내 소개를 숨기는 중이에요.")).toBeVisible()
+  await page.getByRole("button", { name: "다시 보이게 하기" }).click()
+  await expect(page.getByText("내 소개가 다시 상대 목록에 보여요.")).toBeVisible()
+  await expect(page.getByText("내 소개를 숨기는 중이에요.")).toHaveCount(0)
+  const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: brand.headers })
+  expect(left.status()).toBe(204)
+})
+
 test("a student group proposes and the brand accepts", async ({ browser }) => {
   const student = await (await browser.newContext()).newPage()
   await student.goto("/")

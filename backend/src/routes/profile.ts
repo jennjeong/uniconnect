@@ -151,6 +151,24 @@ profileRouter.post("/business", async (req, res) => {
   res.json({ business: { number: shownNumber(number), verifiedAt: fresh.business.verifiedAt } })
 })
 
+// 목록에서 잠시 숨기기 from 내 정보: while paused, the listing leaves the other
+// side's lists (listedTo in lib/catalog.ts) and new proposals to it are
+// refused; what is under way carries on. The shared demo accounts can't, as
+// visitors see their listings as the examples.
+profileRouter.put("/pause", async (req, res) => {
+  const account = requireAccount(req)
+  const database = getDatabase()
+  if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 소개를 숨길 수 없어요.")
+  const paused: unknown = req.body?.paused
+  if (typeof paused !== "boolean") throw new HttpError(400, "숨길지 다시 보일지 알 수 없어요.")
+  const listing = findListing(database, account)
+  if (!listing) throw new HttpError(404, "숨길 소개가 아직 없어요. 내 정보에서 먼저 소개를 써 주세요.")
+  if (paused) listing.pausedAt ??= new Date().toISOString()
+  else delete listing.pausedAt
+  await saveDatabase()
+  res.json({ profile: listing })
+})
+
 // The logged-in account's own listing, or null before it has written one.
 profileRouter.get("/", (req, res) => {
   const account = requireAccount(req)

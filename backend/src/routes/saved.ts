@@ -1,6 +1,6 @@
 import { Router } from "express"
 
-import { shownTo } from "../lib/catalog.js"
+import { listedTo } from "../lib/catalog.js"
 import { HttpError } from "../lib/errors.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -14,15 +14,16 @@ const maxSaved = 200
 // The catalog of the side an account meets: brands for student groups.
 const partnerCatalog = (account: Account) => (account.role === "학생단체" ? "brands" : "groups")
 
-// A listing of the other side this account sees, by id.
+// A listing of the other side this account finds in the lists, by id.
 function seenListing(database: Database, account: Account, id: string) {
   const catalog = partnerCatalog(account)
   const listing = database[catalog].find((item) => item.id === id)
-  return listing && shownTo(database, catalog, listing, account) ? listing : undefined
+  return listing && listedTo(database, catalog, listing, account) ? listing : undefined
 }
 
-// The listings this account saved (찜) that it still sees, newest first: one
-// that left, was blocked or went out of view drops out.
+// The listings this account saved (찜) that it still finds, newest first: one
+// that left, was blocked or is paused for now drops out (and a paused one
+// comes back once its owner shows it again).
 savedRouter.get("/", (req, res) => {
   const account = requireAccount(req)
   const database = getDatabase()

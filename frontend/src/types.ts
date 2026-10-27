@@ -55,6 +55,8 @@ export type Match = {
   facts?: { label: string; value: string }[]
   sns?: SnsAccount[]
   portfolio?: PortfolioItem[]
+  // The owner's own listing only: taken out of the lists for now (내 정보).
+  pausedAt?: string
 }
 
 // The parts of its listing an account writes itself in 내 정보.

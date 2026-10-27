@@ -1321,6 +1321,45 @@ test("members save listings they see to their 찜 list, which follows blocks and
   assert.equal(Object.values(getDatabase().saved).some((ids) => ids.includes(cafe)), false)
 })
 
+test("a member takes its listing out of the lists for a while, and what is under way carries on", async () => {
+  const { token: group } = await listedMember("pause@syu.ac.kr", "pause-pass-123")
+  const { token: brand, listingId: cafe } = await listedMember("pause@pause-cafe.kr", "pause-pass-123", "브랜드")
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  await call("POST", "/events", { name: "숨김 공연", date: addDays(todayInKorea(), 9), types: ["현금"] }, group)
+  await call("POST", "/events", { name: "숨김 뒤 공연", date: addDays(todayInKorea(), 20), types: ["현금"] }, group)
+  // A proposal sent and a 찜 made before the pause.
+  assert.equal((await call("POST", "/proposals", { matchId: cafe }, group)).status, 201)
+  await call("PUT", `/saved/${cafe}`, undefined, group)
+
+  const paused = await call("PUT", "/profile/pause", { paused: true }, brand)
+  assert.equal(paused.status, 200)
+  assert.ok(paused.data.profile.pausedAt)
+  assert.ok((await call("GET", "/profile", undefined, brand)).data.profile.pausedAt)
+  // The group no longer finds it: not in the catalog, its matches or its 찜 list.
+  const listed = async () => ((await call("GET", "/brands", undefined, group)).data.brands as { id: string }[]).map((item) => item.id)
+  assert.equal((await listed()).includes(cafe), false)
+  assert.equal(((await call("GET", "/matches", undefined, group)).data.matches as { id: string }[]).some((item) => item.id === cafe), false)
+  assert.deepEqual((await call("GET", "/saved", undefined, group)).data.saved, [])
+  // A new proposal is refused, while the one under way can still be accepted.
+  const request = (await call("GET", "/requests", undefined, brand)).data.requests[0] as { id: string; eventName: string }
+  assert.equal(request.eventName, "숨김 공연")
+  assert.equal((await call("POST", `/requests/${request.id}/accept`, undefined, brand)).status, 200)
+  const again = await call("POST", "/proposals", { matchId: cafe }, group)
+  assert.equal(again.status, 409)
+  assert.match(again.data.error, /제안을 받지 않는/)
+
+  // Shown again, it is back everywhere, the 찜 list too.
+  const shown = await call("PUT", "/profile/pause", { paused: false }, brand)
+  assert.equal(shown.data.profile.pausedAt, undefined)
+  assert.equal((await listed()).includes(cafe), true)
+  assert.deepEqual((await call("GET", "/saved", undefined, group)).data.saved, [cafe])
+  // Bad input, the demo accounts and an account with no listing are refused.
+  assert.equal((await call("PUT", "/profile/pause", { paused: "yes" }, brand)).status, 400)
+  assert.equal((await call("PUT", "/profile/pause", { paused: true }, await login("브랜드"))).status, 403)
+  const fresh = await signUpMember("nolisting@syu.ac.kr", "nolisting-pass-123")
+  assert.equal((await call("PUT", "/profile/pause", { paused: true }, fresh)).status, 404)
+})
+
 test("a brand verifies its business with the National Tax Service, and its listing says so", async () => {
   const { businessCheck } = await import("./lib/business.js")
   const realValidate = businessCheck.validate

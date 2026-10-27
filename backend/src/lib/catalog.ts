@@ -96,6 +96,16 @@ export const shownCatalog = (database: Database, catalog: "brands" | "groups", a
     shownTo(database, catalog, listing, account),
   )
 
+// Whether `account` finds a listing in the lists: shown to it, and not taken
+// out of them for now by its owner (pausedAt). What is under way with a
+// paused listing still goes through shownTo.
+export const listedTo = (database: Database, catalog: "brands" | "groups", listing: Match, account?: Account) =>
+  !listing.pausedAt && shownTo(database, catalog, listing, account)
+
+// The listings of a catalog that `account` (or a visitor) finds in the lists.
+export const listedCatalog = (database: Database, catalog: "brands" | "groups", account?: Account) =>
+  shownCatalog(database, catalog, account).filter((listing) => !listing.pausedAt)
+
 // Lists a new account so the other side can find it, once it has written
 // its introduction. Its score starts at 70 until there is matching data.
 export function createListing(database: Database, account: Account): Match {
@@ -141,18 +151,18 @@ export function viewerFor(database: Database, account: Account | undefined, cata
   return viewer && { account: viewer, listing: findListing(database, viewer) }
 }
 
-// A catalog as the other side sees it (members' listings for a member, the
-// examples otherwise, as shownTo says), best match first, each with its
+// A catalog as the other side finds it (members' listings for a member, the
+// examples otherwise, as shownTo says, without the paused), best match first, each with its
 // match for the viewer and why (lib/matchScore.ts), and how far it is from
 // the viewer: a student's campus to a brand's store, a brand's store to a
 // group's campus (lib/geo.ts); its reviews' stars and count; and, for a
 // brand, whether its business registration was confirmed.
 export function browse(database: Database, catalog: "brands" | "groups", account?: Account) {
-  const shown = shownCatalog(database, catalog, account)
+  const shown = listedCatalog(database, catalog, account)
   const listings = catalog === "brands" ? shown : shown.map((group) => withLiveEvent(database, group))
   const viewer = viewerFor(database, account, catalog)
   // A brand's track record counts against the brands seen beside it.
-  const maxPopularity = Math.max(1, ...shownCatalog(database, "brands", account).map((brand) => brand.popularity ?? 0))
+  const maxPopularity = Math.max(1, ...listedCatalog(database, "brands", account).map((brand) => brand.popularity ?? 0))
   const here = viewer && placeOf(viewer.listing, viewer.account)
   return listings
     .map((listing) => {

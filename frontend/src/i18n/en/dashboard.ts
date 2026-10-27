@@ -51,6 +51,10 @@ const en: Record<string, string> = {
   "학생단체와 브랜드가 맞닿는 곳에서 협찬이 시작돼요. 일치율이 높은 브랜드부터 제안해 보세요.":
     "Sponsorships start where student groups and brands meet. Begin with the brands that match you best.",
   "추천 매칭 확인하기": "See your matches",
+  "내 소개를 숨기는 중이에요.": "Your listing is hidden for now.",
+  "브랜드의 목록에 보이지 않고 새 협찬 제안을 받지 않아요. 진행 중인 대화와 협찬은 그대로예요.": "Brands don't see you in their lists, and no new proposals come in. Conversations and sponsorships under way carry on.",
+  "학생단체의 목록에 보이지 않고 새 협찬 제안을 받지 않아요. 진행 중인 대화와 협찬은 그대로예요.": "Student groups don't see you in their lists, and no new proposals come in. Conversations and sponsorships under way carry on.",
+  "다시 보이게 하기": "Show it again",
   "함께할 수 있는 브랜드": "Brands you can team up with",
   "학생단체와 브랜드를 잇고,": "We connect student groups and brands,",
   "협찬의 성과를 숫자로 증명해요": "and prove what sponsorships deliver in numbers",

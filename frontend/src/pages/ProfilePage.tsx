@@ -53,6 +53,7 @@ export function ProfilePage({
   onUnblock,
   business,
   onVerifyBusiness,
+  onPause,
 }: {
   account: Account
   // The listing brands (or student groups) see; null until written.
@@ -75,6 +76,9 @@ export function ProfilePage({
   // A brand's business check; absent for groups and the demo brand.
   business?: BusinessStatus
   onVerifyBusiness?: () => void
+  // 목록에서 숨기기: takes the listing out of the other side's lists for now,
+  // or shows it again; absent for the demo accounts.
+  onPause?: (paused: boolean) => void
 }) {
   const students = account.role === "학생단체"
   const labels = profileLabels[account.role]
@@ -91,6 +95,9 @@ export function ProfilePage({
     { label: t("가입일"), value: formatFullDate(toIsoDate(new Date(account.createdAt))) },
   ]
   const verified = business?.business
+  const paused = listing?.pausedAt !== undefined
+  // The rows after 언어 are numbered on from it.
+  const pauseIndex = details.length + 2 + (business ? 1 : 0) + (blocked ? 1 : 0)
 
   return (
     <section className="page-view profile-view">
@@ -275,6 +282,29 @@ export function ProfilePage({
                     ))}
                   </ul>
                 )}
+              </dd>
+            </div>
+          )}
+          {onPause && listing && (
+            <div className="service-row" data-reveal style={delay((pauseIndex - 1) * 0.08)}>
+              <span className="service-index">{pad(pauseIndex)}</span>
+              <dt id="pause-label">{t("목록에서 숨기기")}</dt>
+              <dd>
+                <span className="pause-choice">
+                  <button
+                    aria-checked={paused}
+                    aria-labelledby="pause-label"
+                    className="toggle-switch"
+                    onClick={() => onPause(!paused)}
+                    role="switch"
+                    type="button"
+                  />
+                  <small>
+                    {paused
+                      ? t("숨기는 중이에요. 상대 목록에 보이지 않고 새 제안을 받지 않아요.")
+                      : t("협찬을 받지 않는 동안 상대 목록에서 잠시 빼 둘 수 있어요.")}
+                  </small>
+                </span>
               </dd>
             </div>
           )}

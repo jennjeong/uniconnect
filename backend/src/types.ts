@@ -64,6 +64,11 @@ export type Match = {
   facts?: { label: string; value: string }[]
   sns?: SnsAccount[]
   portfolio?: PortfolioItem[]
+  // While set, its owner took it out of the lists for now (내 정보): the
+  // other side's catalogs, matches, nearby shops and saved lists leave it out
+  // (listedTo in lib/catalog.ts) and new proposals to it are refused, while
+  // conversations, proposals and agreements under way carry on.
+  pausedAt?: string
 }
 
 export type EventStatus = "매칭 중" | "집행 예정" | "측정 완료"
