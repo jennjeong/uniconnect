@@ -86,6 +86,9 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
     next()
   })
 
+  // A file sent in a conversation (a PDF up to 2 MB, as base64) needs a
+  // larger body than the rest; it is parsed here first.
+  app.use("/api/conversations/:id/attachments", express.json({ limit: "3mb" }))
   // Room for a resized logo (routes/profile.ts caps one at about 100KB).
   app.use(express.json({ limit: "300kb" }))
   // The data is in, and as other copies of the API left it (store.ts), before

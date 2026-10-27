@@ -19,6 +19,7 @@ export type IconName =
   | "won"
   | "chat"
   | "send"
+  | "clip"
   | "edit"
   | "at"
   | "briefcase"
@@ -166,6 +167,8 @@ const icons: Record<IconName, ReactNode> = {
       <path d="M22 2 11 13" />
     </>
   ),
+  // A paper clip, for a file sent with a message.
+  clip: <path d="m20 11.5-8 8a5 5 0 0 1-7-7l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7l-8.5 8.5a1.7 1.7 0 0 1-2.4-2.4l7.7-7.7" />,
   edit: (
     <>
       <path d="M12 20h9" />

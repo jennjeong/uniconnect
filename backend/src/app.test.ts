@@ -898,6 +898,78 @@ test("an account sending messages or proposals in a flood is held back, and othe
   assert.match(tooMany.data.error, /제안을 너무 많이/)
 })
 
+test("photos and PDFs go in a conversation, only its two sides open them, and they go with their message", async () => {
+  const { existsSync } = await import("node:fs")
+  const { chatFiles, uploadsFolder } = await import("./lib/photos.js")
+  const { token: group } = await listedMember("files@syu.ac.kr", "files-pass-123")
+  const { token: brand, listingId: brandListing } = await listedMember("files@files-cafe.kr", "files-pass-123", "브랜드")
+  const { token: stranger } = await listedMember("files@other-cafe.kr", "files-pass-123", "브랜드")
+  const chat = (await call("POST", "/conversations", { partnerId: brandListing }, group)).data.conversation
+  const files = `/conversations/${chat.id}/attachments`
+  const png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+  const pdfOf = (bytes: number) =>
+    `data:application/pdf;base64,${Buffer.concat([Buffer.from("%PDF-1.4\n"), Buffer.alloc(bytes - 9, 32)]).toString("base64")}`
+  const open = (token: string | undefined, file: string) =>
+    fetch(`${baseUrl}${files}/${file}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+
+  // Only photos and real PDFs of 2 MB at most, and none from the shared demo accounts.
+  assert.equal((await call("POST", files, { file: "data:application/pdf;base64,aGVsbG8=", name: "a.pdf" }, group)).status, 400)
+  assert.equal((await call("POST", files, { file: png.replace("image/png", "image/gif") }, group)).status, 400)
+  assert.equal((await call("POST", files, { file: pdfOf(2 * 1024 * 1024 + 1), name: "big.pdf" }, group)).status, 400)
+  const demoBrand = await login("브랜드")
+  const [demoChat] = (await call("GET", "/conversations", undefined, demoBrand)).data.conversations
+  assert.equal((await call("POST", `/conversations/${demoChat.id}/attachments`, { file: png }, demoBrand)).status, 403)
+
+  // A photo goes as a message of its own, by the name it was picked with.
+  const sent = await call("POST", files, { file: png, name: "C:\\fakepath\\poster.png" }, group)
+  assert.equal(sent.status, 201)
+  const [photo] = sent.data.conversation.messages
+  assert.equal(photo.text, "")
+  assert.match(photo.attachment.file, /^[\w-]+\.png$/)
+  assert.deepEqual(
+    [photo.attachment.name, photo.attachment.type, photo.attachment.size],
+    ["poster.png", "image", Buffer.from(png.split(",")[1], "base64").length],
+  )
+  const listed = (await call("GET", "/conversations", undefined, brand)).data.conversations
+  assert.equal(listed.find((item: { id: string }) => item.id === chat.id).lastMessage.attachment, "image")
+
+  // Both sides open it, and no one else.
+  const seen = await open(brand, photo.attachment.file)
+  assert.equal(seen.status, 200)
+  assert.equal(seen.headers.get("content-type"), "image/png")
+  assert.equal(Buffer.from(await seen.arrayBuffer()).toString("base64"), png.split(",")[1])
+  assert.equal((await open(group, photo.attachment.file)).status, 200)
+  assert.equal((await open(stranger, photo.attachment.file)).status, 404)
+  assert.equal((await open(undefined, photo.attachment.file)).status, 401)
+  assert.equal((await open(brand, "..%2Fdb.json")).status, 404)
+
+  // A PDF comes named to be saved.
+  const pdf = (await call("POST", files, { file: pdfOf(1000), name: "제안서.pdf" }, brand)).data.conversation.messages.at(-1)
+  assert.equal(pdf.attachment.type, "pdf")
+  const saved = await open(group, pdf.attachment.file)
+  assert.equal(saved.headers.get("content-type"), "application/pdf")
+  assert.match(saved.headers.get("content-disposition") ?? "", /^attachment;.*filename\*=UTF-8''%EC%A0%9C%EC%95%88%EC%84%9C\.pdf/)
+
+  // A file isn't edited; deleting its message takes the file away too.
+  assert.equal((await call("PUT", `/conversations/${chat.id}/messages/${photo.id}`, { text: "고친 글" }, group)).status, 409)
+  const removed = (await call("DELETE", `/conversations/${chat.id}/messages/${photo.id}`, undefined, group)).data
+  assert.equal(removed.conversation.messages[0].attachment, undefined)
+  assert.equal((await open(brand, photo.attachment.file)).status, 404)
+  assert.ok(!existsSync(path.join(uploadsFolder(chatFiles(chat.id)), photo.attachment.file)))
+
+  // Each account keeps 10 MB of files at most.
+  for (let count = 1; count <= 5; count += 1) {
+    assert.equal((await call("POST", files, { file: pdfOf(2 * 1024 * 1024), name: `${count}.pdf` }, group)).status, 201)
+  }
+  const full = await call("POST", files, { file: png }, group)
+  assert.equal(full.status, 409)
+  assert.match(full.data.error, /10MB/)
+
+  // When the group leaves, the conversation's files go with it.
+  assert.equal((await call("DELETE", "/auth/account", { password: "files-pass-123" }, group)).status, 204)
+  assert.ok(!existsSync(uploadsFolder(chatFiles(chat.id))))
+})
+
 test("check-ins count only on the event's days, and records go once they are not needed", async () => {
   const { addDays, todayInKorea } = await import("./lib/dates.js")
   const { prunePasses } = await import("./lib/measurements.js")

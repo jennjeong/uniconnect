@@ -4,6 +4,10 @@ import { t } from "../i18n"
 import { formatDateTime } from "../lib/date"
 import type { Conversation } from "../types"
 
+// The last message in a line: its text, or the kind of file it sent.
+const previewOf = (last: NonNullable<Conversation["lastMessage"]>) =>
+  last.attachment === "image" ? t("사진") : last.attachment === "pdf" ? t("PDF 파일") : last.text
+
 // Conversations with brands (for student groups) or groups (for brands),
 // latest first.
 export function MessagesPage({
@@ -62,8 +66,8 @@ export function MessagesPage({
                         ? t("메시지를 삭제했어요.")
                         : t("삭제된 메시지예요.")
                       : conversation.lastMessage.mine
-                        ? t("나: {text}", { text: conversation.lastMessage.text })
-                        : conversation.lastMessage.text}
+                        ? t("나: {text}", { text: previewOf(conversation.lastMessage) })
+                        : previewOf(conversation.lastMessage)}
                 </span>
               </span>
               <span className="chat-row-meta">

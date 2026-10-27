@@ -1352,6 +1352,7 @@ function App() {
       const browsePage: NavLabel = students ? "추천 매칭" : "단체 찾기"
       return (
         <ChatPage
+          canSendFiles={member}
           id={view.chat}
           onBack={() => goBack({ page, messages: true })}
           onChange={updateConversation}
@@ -1364,7 +1365,8 @@ function App() {
                     conversationId: view.chat!,
                     messageId: message.id,
                     name: partnerName ?? t("상대"),
-                    text: message.text,
+                    // A file shows by the name it was sent with.
+                    text: message.text || (message.attachment?.name ?? ""),
                   })
               : undefined
           }

@@ -7594,6 +7594,106 @@ button.nav-pill:hover {
   border-radius: 50%;
 }
 
+/* The clip beside the box picks a photo or a PDF to send. */
+.chat-input:has(.chat-attach) {
+  padding-left: 7px;
+}
+
+.chat-attach {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: background 0.2s var(--ease-out), color 0.2s var(--ease-out);
+}
+
+.chat-attach:hover {
+  background: var(--fill);
+  color: var(--ink);
+}
+
+.chat-attach:has(input:focus-visible) {
+  outline: 2px solid var(--point);
+  outline-offset: 2px;
+}
+
+.chat-attach[aria-disabled="true"] {
+  cursor: progress;
+  opacity: 0.5;
+}
+
+/* A photo stands without the bubble's fill, in its shape; it opens full size. */
+.chat-message.has-photo .chat-bubble {
+  padding: 0;
+  overflow: hidden;
+  background: none;
+  box-shadow: var(--ring);
+}
+
+.chat-photo,
+.chat-photo img {
+  display: block;
+}
+
+/* Sized by the screen, not the bubble, so the bubble hugs the photo. */
+.chat-photo img {
+  max-width: min(260px, 62vw);
+  max-height: 320px;
+}
+
+.chat-photo-wait {
+  display: grid;
+  width: 200px;
+  height: 150px;
+  max-width: 100%;
+  place-items: center;
+  padding: 12px;
+  background: var(--fill);
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* A PDF in its bubble: the file's name and size, saved when pressed. */
+.chat-file {
+  display: flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 4px 2px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  white-space: normal;
+}
+
+.chat-file svg {
+  flex: 0 0 auto;
+}
+
+.chat-file > span {
+  display: grid;
+  min-width: 0;
+}
+
+.chat-file strong {
+  overflow: hidden;
+  font-weight: var(--weight-label);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-file small {
+  font-size: 12px;
+  opacity: 0.78;
+}
+
 .auth-form .primary-button {
   margin-top: 22px;
 }

@@ -476,7 +476,13 @@ export type ChatMessage = {
   // When the sender edited or deleted it; both sides are shown which.
   editedAt?: string
   deletedAt?: string
+  // A photo or PDF sent as the message; gone once it is deleted.
+  attachment?: ChatAttachment
 }
+
+// A file sent in a conversation: the name it is kept by, the name it was
+// sent with, its kind and its size in bytes.
+export type ChatAttachment = { file: string; name: string; type: "image" | "pdf"; size: number }
 
 // A conversation with a brand (for student groups) or a group (for brands).
 // A question this account sent the operators, with their answer once given.
@@ -568,7 +574,7 @@ export type Conversation = {
     // Messages only reach partners who have an account.
     hasAccount: boolean
   }
-  lastMessage: { text: string; at: string; mine: boolean; deleted?: boolean } | null
+  lastMessage: { text: string; at: string; mine: boolean; deleted?: boolean; attachment?: ChatAttachment["type"] } | null
   unread: number
   messages?: ChatMessage[]
 }
