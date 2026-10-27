@@ -13,6 +13,7 @@ import { agreementsRouter } from "./routes/agreements.js"
 import { analyticsRouter } from "./routes/analytics.js"
 import { authRouter } from "./routes/auth.js"
 import { teamRouter } from "./routes/team.js"
+import { socialRouter } from "./routes/social.js"
 import { brandsRouter } from "./routes/brands.js"
 import { calendarRouter } from "./routes/calendar.js"
 import { checkInRouter } from "./routes/checkin.js"
@@ -104,6 +105,7 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true })
   })
+  app.use("/api/auth/social", socialRouter)
   app.use("/api/auth", authRouter)
   app.use("/api/team", teamRouter)
   app.use("/api/matches", matchesRouter)

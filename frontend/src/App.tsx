@@ -22,6 +22,7 @@ import { useNotice } from "./hooks/useNotice"
 import { Footer } from "./layout/Footer"
 import { Header } from "./layout/Header"
 import { NavMenu } from "./layout/NavMenu"
+import { socialNames } from "./data/social"
 import { lang, t, tc } from "./i18n"
 import { nextEvent, todayIso } from "./lib/date"
 import { saveFile } from "./lib/download"
@@ -98,6 +99,7 @@ import type {
   BlockedListing,
   BoardPost,
   BusinessStatus,
+  CodeTicket,
   Conversation,
   EventItem,
   EventMeasurement,
@@ -114,6 +116,7 @@ import type {
   Role,
   SentProposal,
   Session,
+  SocialProvider,
   SponsorOffer,
   SponsorRequest,
   Sponsorship,
@@ -338,6 +341,17 @@ function App() {
       (account !== null ? !view.home : !view.profile && !view.create && !view.edit && !view.chat)
     if (!usable) go({ page }, true)
   })
+
+  // The login providers the server offers (routes/social.ts).
+  const [socialProviders, setSocialProviders] = useState<SocialProvider[]>([])
+  useEffect(() => {
+    api.socialProviders().then(
+      (result) => setSocialProviders(result.providers),
+      () => undefined,
+    )
+  }, [])
+  // A login back from Kakao or Naver that still asks for the two-step code.
+  const [socialTicket, setSocialTicket] = useState<{ email: string; ticket: CodeTicket } | null>(null)
 
   // Restore the saved session. An expired one is dropped. While the server
   // cannot be reached the token stays and the page waits, trying again a
@@ -616,6 +630,41 @@ function App() {
         : message,
     )
   }
+
+  // Back from Kakao or Naver (routes/social.ts): the outcome rides in
+  // ?social=, which goes from the address at once; a login finishes here
+  // with the one-time code the server left in a cookie.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const outcome = params.get("social")
+    if (!outcome) return
+    params.delete("social")
+    const rest = params.toString()
+    window.history.replaceState(window.history.state, "", `${window.location.pathname}${rest ? `?${rest}` : ""}${window.location.hash}`)
+    if (outcome === "login") {
+      api.socialComplete().then(
+        (answer) => {
+          if ("ticket" in answer) {
+            setSocialTicket({ email: answer.email, ticket: answer })
+            setActiveModal("login")
+          } else startSession(answer, t("{name} 계정으로 로그인했어요.", { name: answer.account.name }))
+        },
+        (error: unknown) => showNotice(errorMessage(error)),
+      )
+      return
+    }
+    const provider = outcome.endsWith("naver") ? t("네이버") : t("카카오")
+    const notices: Record<string, string> = {
+      "linked-kakao": t("{provider} 계정을 연결했어요. 다음부터 {provider}로 로그인할 수 있어요.", { provider }),
+      "linked-naver": t("{provider} 계정을 연결했어요. 다음부터 {provider}로 로그인할 수 있어요.", { provider }),
+      "link-taken": t("이미 다른 uniconnect 계정에 연결된 계정이에요."),
+      unlinked: t("연결된 uniconnect 계정이 없어요. 이메일로 로그인한 뒤 내 정보에서 연결해 주세요."),
+      error: t("카카오 · 네이버 로그인을 마치지 못했어요. 다시 시도해 주세요."),
+      "link-error": t("카카오 · 네이버 로그인을 마치지 못했어요. 다시 시도해 주세요."),
+    }
+    if (Object.prototype.hasOwnProperty.call(notices, outcome)) showNotice(notices[outcome])
+    // Once, as the page opens.
+  }, [])
 
   const endSession = () => {
     setToken(null)
@@ -1349,6 +1398,22 @@ function App() {
           onTwoFactor={member ? () => setActiveModal("two-factor") : undefined}
           onDevices={member ? () => setActiveModal("devices") : undefined}
           onTeam={member ? () => setActiveModal("team") : undefined}
+          socialProviders={member ? socialProviders : []}
+          onSocialLink={(provider) =>
+            api.socialStart(provider, "link").then(
+              ({ url }) => window.location.assign(url),
+              (error: unknown) => showNotice(errorMessage(error)),
+            )
+          }
+          onSocialUnlink={(provider) =>
+            api.socialUnlink(provider).then(
+              (result) => {
+                setAccount(result.account)
+                showNotice(t("{provider} 연결을 끊었어요. 이메일로는 그대로 로그인할 수 있어요.", { provider: t(socialNames[provider]) }))
+              },
+              (error: unknown) => showNotice(errorMessage(error)),
+            )
+          }
           onChangeContact={() => setActiveModal("contact")}
           onChangeEmail={() => setActiveModal("email")}
           onDownloadData={downloadData}
@@ -1828,6 +1893,8 @@ function App() {
             setActiveModal("reset")
           }}
           onJoin={() => setActiveModal("join")}
+          providers={socialProviders}
+          initialTicket={socialTicket ?? undefined}
         />
       </Presence>
       {account && (

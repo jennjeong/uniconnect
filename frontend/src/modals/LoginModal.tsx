@@ -9,7 +9,8 @@ import { RolePicker } from "../components/RolePicker"
 import { demoAccounts, demoPassword } from "../data/demo"
 import { roles } from "../data/roles"
 import { t } from "../i18n"
-import type { CodeTicket, Role, Session } from "../types"
+import { socialNames } from "../data/social"
+import type { CodeTicket, Role, Session, SocialProvider } from "../types"
 
 export function LoginModal({
   initialRole,
@@ -18,6 +19,8 @@ export function LoginModal({
   onSignup,
   onForgot,
   onJoin,
+  providers,
+  initialTicket,
 }: {
   initialRole: Role
   onClose: () => void
@@ -28,12 +31,29 @@ export function LoginModal({
   onForgot: (email: string) => void
   // An invited co-admin's first visit (modals/JoinTeamModal.tsx).
   onJoin: () => void
+  // Kakao or Naver, when the server offers them; a login back from one that
+  // still asks for the two-step code comes in as `initialTicket`.
+  providers: SocialProvider[]
+  initialTicket?: { email: string; ticket: CodeTicket }
 }) {
   const [draft, setDraft] = useState({ role: initialRole, email: "", password: "" })
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
   // The password was right and the account asks for its code next.
-  const [ticket, setTicket] = useState<{ email: string; ticket: CodeTicket } | null>(null)
+  const [ticket, setTicket] = useState<{ email: string; ticket: CodeTicket } | null>(initialTicket ?? null)
+
+  // Off to the provider; it sends the browser back to the server, which
+  // finishes the login (App reads ?social=).
+  const socialLogin = async (provider: SocialProvider) => {
+    setBusy(true)
+    setError("")
+    try {
+      window.location.assign((await api.socialStart(provider, "login")).url)
+    } catch (caught) {
+      setError(errorMessage(caught))
+      setBusy(false)
+    }
+  }
 
   // The form as typed, or a demo account's published login.
   const submit = async (form = draft) => {
@@ -115,6 +135,22 @@ export function LoginModal({
           <button className="primary-button wide" disabled={busy} type="submit">
             {draft.role === "학생단체" ? t("학생단체로 로그인") : t("스폰서로 로그인")}
           </button>
+          {providers.length > 0 && (
+            <div className="social-login">
+              {providers.map((provider) => (
+                <button
+                  className={`social-button ${provider}`}
+                  disabled={busy}
+                  key={provider}
+                  onClick={() => void socialLogin(provider)}
+                  type="button"
+                >
+                  {t("{provider}로 로그인", { provider: t(socialNames[provider]) })}
+                </button>
+              ))}
+              <small>{t("내 정보에서 연결해 둔 계정으로 로그인해요. 가입은 이메일로 해요.")}</small>
+            </div>
+          )}
           <p className="auth-switch">
             {t("아직 계정이 없나요?")}{" "}
             <button onClick={() => onSignup(draft.role)} type="button">

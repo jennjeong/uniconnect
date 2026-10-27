@@ -503,6 +503,19 @@ const en: Record<string, string> = {
   "초대 코드 보내기": "Send invitation code",
   "{name}님은 공동 관리자로 로그인했어요. 탈퇴, 로그인 이메일 바꾸기, 2단계 인증은 대표만 할 수 있어요.":
     "{name}, you're logged in as a co-admin. Only the owner can delete the account, change its login email or set up two-step login.",
+  // Kakao and Naver login (modals/LoginModal.tsx, data/social.ts)
+  네이버: "Naver",
+  카카오: "Kakao",
+  "{provider} 계정을 연결했어요. 다음부터 {provider}로 로그인할 수 있어요.": "Linked your {provider} account. You can log in with {provider} from now on.",
+  "이미 다른 uniconnect 계정에 연결된 계정이에요.": "That account is already linked to another uniconnect account.",
+  "연결된 uniconnect 계정이 없어요. 이메일로 로그인한 뒤 내 정보에서 연결해 주세요.":
+    "No uniconnect account is linked to it. Log in with your email, then link it in My Info.",
+  "카카오 · 네이버 로그인을 마치지 못했어요. 다시 시도해 주세요.": "Couldn't finish logging in with Kakao or Naver. Please try again.",
+  "{provider} 연결을 끊었어요. 이메일로는 그대로 로그인할 수 있어요.": "Unlinked {provider}. You can still log in with your email.",
+  "{provider}로 로그인": "Log in with {provider}",
+  "내 정보에서 연결해 둔 계정으로 로그인해요. 가입은 이메일로 해요.": "Logs in with the account you linked in My Info. Sign up with your email.",
+  "{provider} 연결 끊기": "Unlink {provider}",
+  "{provider} 계정 연결": "Link {provider}",
 }
 
 export default en

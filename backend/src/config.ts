@@ -51,6 +51,14 @@ export const config = {
   // campus (lib/places.ts). Kakao allows its results only as live answers, so
   // nothing from it is kept.
   kakaoRestApiKey: process.env.KAKAO_REST_API_KEY,
+  // Logging in with Kakao or Naver (routes/social.ts): each provider shows
+  // once its client ID is set (Kakao's is the app's REST API key, its secret
+  // optional; Naver's needs both). The redirect address to register with the
+  // provider is SITE_URL + /api/auth/social/<provider>/callback.
+  kakaoClientId: process.env.KAKAO_LOGIN_CLIENT_ID,
+  kakaoClientSecret: process.env.KAKAO_LOGIN_CLIENT_SECRET,
+  naverClientId: process.env.NAVER_CLIENT_ID,
+  naverClientSecret: process.env.NAVER_CLIENT_SECRET,
   // An OpenStreetMap Nominatim server (like https://nominatim.openstreetmap.org)
   // for placing a brand's store address on the map (lib/geocode.ts). Without
   // it addresses are kept but have no distance.

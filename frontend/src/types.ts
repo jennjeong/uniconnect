@@ -292,6 +292,8 @@ export type Account = {
   twoFactorOn?: true
   // Set when a co-admin is the one logged in (not the account's owner).
   asMember?: { id: string; name: string; email: string }
+  // Kakao or Naver accounts linked to log in with.
+  socialLinks?: SocialProvider[]
   role: Role
   name: string
   type: string
@@ -323,6 +325,9 @@ export type Session = { token: string; account: Account }
 // A password that was right for an account with two-step login on: the
 // ticket to send back with the app's code (components/CodeStep.tsx).
 export type CodeTicket = { twoFactor: true; ticket: string }
+
+// The providers one can log in with once linked (routes/social.ts).
+export type SocialProvider = "kakao" | "naver"
 
 // One device logged in to the account (내 정보's 로그인한 기기).
 export type DeviceSession = {

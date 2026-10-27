@@ -77,6 +77,10 @@ const en: Record<string, string> = {
     "Co-admins (name, email, password stored irreversibly, when they joined) and invitations sent (name, email, invitation code stored irreversibly, when sent)",
   "한 계정을 임원 여러 명이 각자의 이메일과 비밀번호로 함께 쓰기": "Letting several officers use one account, each with their own email and password",
   "대표가 빼거나 탈퇴할 때까지, 초대는 받을 때까지(최대 7일)": "Until the owner removes them or the account is deleted; invitations until taken (7 days at most)",
+  "카카오 · 네이버 계정을 연결한 경우 그 서비스의 회원 번호와 연결한 시각":
+    "If a Kakao or Naver account is linked, its member number with that service and when it was linked",
+  "연결한 카카오 · 네이버 계정으로 로그인": "Logging in with the linked Kakao or Naver account",
+  "연결을 끊거나 탈퇴할 때까지": "Until it is unlinked or the member leaves",
   "로그인한 기기(브라우저와 운영체제 종류, 로그인한 시각, 마지막 사용 시각)":
     "Logged-in devices (browser and operating system, when they logged in and were last used)",
   "내 정보의 '로그인한 기기'에서 어디서 로그인돼 있는지 보고 로그아웃시키기":

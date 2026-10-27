@@ -484,6 +484,11 @@ const en: Record<string, string> = {
   "이 이메일로 온 초대가 없거나 기간이 지났어요. 대표에게 다시 초대해 달라고 해 주세요.":
     "There's no open invitation for this email. Ask the account's owner to invite you again.",
   "초대 코드가 올바르지 않아요.": "That invitation code isn't right.",
+
+  // Kakao and Naver login (routes/social.ts)
+  "지원하지 않는 로그인 방법이에요.": "That login method isn't available.",
+  "데모 계정은 카카오 · 네이버 계정을 연결할 수 없어요.": "Demo accounts can't link Kakao or Naver.",
+  "로그인 시간이 지났어요. 다시 시도해 주세요.": "The login timed out. Please try again.",
   "이미 uniconnect에서 쓰는 이메일이에요.": "That email is already used on uniconnect.",
   "{name}: 사진을 보냈어요.": "{name}: Sent a photo.",
   "{name}: 파일을 보냈어요: {file}": "{name}: Sent a file: {file}",

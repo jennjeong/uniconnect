@@ -19,7 +19,7 @@ import { hashRecovery, matchStep, newRecoveryCodes, newSecret, otpauthUrl } from
 import { accountTypes, checkPassword, mailKinds, parseContact, parseRole, text } from "../lib/validation.js"
 import { hashToken, requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
-import type { Account, Database, EmailCode, MailKind, PublicAccount, Role, Session } from "../types.js"
+import type { Account, Database, EmailCode, MailKind, PublicAccount, Role, Session, SocialProvider } from "../types.js"
 
 export const authRouter = Router()
 
@@ -62,13 +62,14 @@ const suspendedMessage = "운영 정책에 따라 이용이 정지된 계정이�
 // The account as its own people see it, without its secrets; `memberId`
 // says which co-admin is logged in, if one is.
 export function toPublic(
-  { passwordHash, termsAgreedAt, calendarFeed, twoFactor, pendingTwoFactor, loginTicket, members, memberInvites, ...account }: Account,
+  { passwordHash, termsAgreedAt, calendarFeed, twoFactor, pendingTwoFactor, loginTicket, members, memberInvites, social, ...account }: Account,
   memberId?: string,
 ): PublicAccount {
   const member = memberId ? members?.find((item) => item.id === memberId) : undefined
   return {
     ...account,
     ...(twoFactor ? { twoFactorOn: true as const } : {}),
+    ...(social && Object.keys(social).length ? { socialLinks: Object.keys(social) as SocialProvider[] } : {}),
     ...(member ? { asMember: { id: member.id, name: member.name, email: member.email } } : {}),
   }
 }
@@ -116,7 +117,7 @@ const ticketTries = 5
 // The password was right, and the account asks for a code too: a ticket
 // the browser sends back with the code (POST /login/code) instead of a
 // session.
-function startTicket(account: Account, req: Request) {
+export function startTicket(account: Account, req: Request) {
   const ticket = randomBytes(24).toString("base64url")
   account.loginTicket = {
     hash: hashToken(ticket),

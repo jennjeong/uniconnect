@@ -37,6 +37,7 @@ import type {
   Role,
   SentProposal,
   Session,
+  SocialProvider,
   ShopInvite,
   SponsorOffer,
   SponsorRequest,
@@ -97,6 +98,15 @@ export const api = {
   sessions: () => request<{ sessions: DeviceSession[] }>("/auth/sessions"),
   endSession: (id: string) => request<void>(`/auth/sessions/${encodeURIComponent(id)}`, { method: "DELETE" }),
   endOtherSessions: () => request<void>("/auth/sessions", { method: "DELETE" }),
+  // Kakao and Naver: the providers offered, the address to send the browser
+  // to, the login the server handed back in a cookie, and unlinking.
+  socialProviders: () => request<{ providers: SocialProvider[] }>("/auth/social"),
+  socialStart: (provider: SocialProvider, intent: "login" | "link") =>
+    request<{ url: string }>(`/auth/social/${provider}/start`, { method: "POST", body: { intent } }),
+  socialComplete: () =>
+    request<Session | (CodeTicket & { email: string })>("/auth/social/complete", { method: "POST" }),
+  socialUnlink: (provider: SocialProvider) =>
+    request<{ account: Account }>(`/auth/social/${provider}`, { method: "DELETE" }),
   team: () => request<{ team: Team }>("/team"),
   inviteMember: (body: { name: string; email: string }) =>
     request<{ team: Team; devCode?: string }>("/team/invites", { method: "POST", body }),
