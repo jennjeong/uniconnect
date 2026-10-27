@@ -416,6 +416,11 @@ const en: Record<string, string> = {
     "If a sponsorship is confirmed, check what each side does on its agreement.",
   "{group}의 '{event}' 협찬 일정이 다가왔어요.": "{group}'s '{event}', which you sponsor, is coming up.",
   "임시 전자 계약서에서 브랜드가 할 일을 확인해 주세요.": "Check what the brand does on the agreement.",
+  "이번 주 새로 가입한 잘 맞는 브랜드 {count}곳": "{count} brands that fit you joined this week",
+  "이번 주 새로 가입한 잘 맞는 학생단체 {count}곳": "{count} student groups that fit you joined this week",
+  "지난 일주일 동안 가입한 브랜드 가운데 잘 맞는 곳이에요.": "Brands that joined in the past week and fit you best.",
+  "지난 일주일 동안 가입한 학생단체 가운데 잘 맞는 곳이에요.": "Student groups that joined in the past week and fit you best.",
+  "· {name} (일치율 {score}%)": "· {name} ({score}% match)",
 }
 
 export default en

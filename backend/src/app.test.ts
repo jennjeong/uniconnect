@@ -3806,6 +3806,61 @@ test("members choose which notice emails they get, in the language they use the 
   }
 })
 
+test("each Monday a member hears once of the best-fitting partners that joined in the past week", async () => {
+  const { sendDigests } = await import("./lib/digest.js")
+  const { mailTransport } = await import("./lib/mailer.js")
+  const realPost = mailTransport.post
+  const sent: { to: string[]; subject: string; text: string }[] = []
+  mailTransport.post = async (body) => {
+    sent.push(body)
+    return new Response(null, { status: 200 })
+  }
+  config.resendApiKey = "test-key"
+  config.mailFrom = "uniconnect <no-reply@example.com>"
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 20))
+  const database = getDatabase()
+  const to = (email: string) => sent.filter((mail) => mail.to.includes(email))
+  try {
+    await listedMember("digest-club@syu.ac.kr", "digest-pass-123")
+    await listedMember("digest@digest-cafe.kr", "digest-pass-123", "브랜드")
+    await listedMember("digest-old@digest-old.kr", "digest-pass-123", "브랜드")
+    const account = (email: string) => database.accounts.find((item) => item.email === email)!
+    // Seen from a Monday in 2030: one brand joined that Saturday, one a month before.
+    account("digest@digest-cafe.kr").createdAt = "2030-01-05T00:00:00.000Z"
+    account("digest-old@digest-old.kr").createdAt = "2029-12-01T00:00:00.000Z"
+    const monday = new Date("2030-01-07T01:00:00Z")
+    // The sign-up codes went out above.
+    sent.length = 0
+
+    assert.ok((await sendDigests(database, monday)) >= 1)
+    await settle()
+    const [digest, ...more] = to("digest-club@syu.ac.kr")
+    assert.equal(more.length, 0)
+    assert.equal(digest.subject, "[uniconnect] 이번 주 새로 가입한 잘 맞는 브랜드 1곳")
+    assert.match(digest.text, /^지난 일주일 동안 가입한 브랜드 가운데 잘 맞는 곳이에요\.\n· digest 카페 \(일치율 \d+%\)\n/)
+    assert.doesNotMatch(digest.text, /digest-old/)
+    // Once a Monday, however often the timer runs; not on other days.
+    sent.length = 0
+    assert.equal(await sendDigests(database, new Date("2030-01-07T05:00:00Z")), 0)
+    assert.equal(await sendDigests(database, new Date("2030-01-08T01:00:00Z")), 0)
+    await settle()
+    assert.equal(sent.length, 0)
+    // The next Monday the brand is no longer new; a member who turned the
+    // digest off hears nothing, and the demo accounts never do.
+    account("digest-old@digest-old.kr").createdAt = "2030-01-12T00:00:00.000Z"
+    account("digest-club@syu.ac.kr").mailOff = ["digest"]
+    await sendDigests(database, new Date("2030-01-14T01:00:00Z"))
+    await settle()
+    assert.equal(to("digest-club@syu.ac.kr").length, 0)
+    assert.equal(to("muse@syu.ac.kr").length, 0)
+    assert.equal(to("hello@afternoon-coffee.kr").length, 0)
+  } finally {
+    mailTransport.post = realPost
+    config.resendApiKey = undefined
+    config.mailFrom = undefined
+  }
+})
+
 test("members are emailed once when an event or a sponsored event is three days away or nearer", async () => {
   const { sendReminders } = await import("./lib/reminders.js")
   const { mailTransport } = await import("./lib/mailer.js")

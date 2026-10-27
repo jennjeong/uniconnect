@@ -111,7 +111,7 @@ export const reportReasons = ["스팸 · 광고", "욕설 · 괴롭힘", "사기
 
 // The kinds of notice email, in the order 내 정보 lists them
 // (frontend/src/data/mail.ts; lib/lists.sync.test.ts checks).
-export const mailKinds: MailKind[] = ["proposals", "sponsorships", "messages", "reminders"]
+export const mailKinds: MailKind[] = ["proposals", "sponsorships", "messages", "reminders", "digest"]
 
 export const inquiryCategories = ["이용 방법", "계정 · 가입", "제안 · 매칭", "오류 신고", "기타"]
 
