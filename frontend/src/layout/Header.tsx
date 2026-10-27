@@ -35,8 +35,8 @@ export function Header({
   authReady,
   badges,
   events,
-  hasUnread,
   notifications,
+  isUnread,
   notificationsOpen,
   menuOpen,
   unreadMessages,
@@ -51,6 +51,7 @@ export function Header({
   onOpenAnswers,
   onToggleNotifications,
   onCloseNotifications,
+  onReadNotices,
   onOpenProfile,
   onLogin,
   onSignup,
@@ -65,8 +66,9 @@ export function Header({
   badges: Partial<Record<NavLabel, number>>
   // Upcoming schedule for the next event pill.
   events: { name: string; date: string; status: string }[]
-  hasUnread: boolean
   notifications: NotificationItem[]
+  // Whether the account has yet to read a notice; the bell's dot shows while one is.
+  isUnread: (item: NotificationItem) => boolean
   // The notifications panel hangs under the bell while this is true.
   notificationsOpen: boolean
   menuOpen: boolean
@@ -88,12 +90,15 @@ export function Header({
   onOpenAnswers: () => void
   onToggleNotifications: () => void
   onCloseNotifications: () => void
+  // Marks notices read: one opened, or all with 모두 읽음.
+  onReadNotices: (items: NotificationItem[]) => void
   onOpenProfile: () => void
   onLogin: () => void
   onSignup: () => void
   onOpenMenu: () => void
 }) {
   const bellRef = useRef<HTMLButtonElement>(null)
+  const unread = notifications.filter(isUnread).length
   const brandRef = useRef<HTMLButtonElement>(null)
   const [scrolled, setScrolled] = useState(false)
   const [onDark, setOnDark] = useState(false)
@@ -238,13 +243,13 @@ export function Header({
                 className={notificationsOpen ? "nav-icon active" : "nav-icon"}
                 aria-controls="notifications-panel"
                 aria-expanded={notificationsOpen}
-                aria-label={t("알림")}
+                aria-label={unread > 0 ? t("알림, 읽지 않은 {count}개", { count: unread }) : t("알림")}
                 onClick={onToggleNotifications}
                 ref={bellRef}
                 type="button"
               >
                 <Icon name="bell" size={17} />
-                {hasUnread && <span className="notification-dot" />}
+                {unread > 0 && <span className="notification-dot" />}
               </button>
               <button className="account-button" aria-label={t("내 정보")} onClick={onOpenProfile} type="button">
                 {initialOf(account.name)}
@@ -280,10 +285,13 @@ export function Header({
       <Presence show={notificationsOpen && account !== null}>
         <NotificationsPanel
           items={notifications}
+          unread={isUnread}
           toggleRef={bellRef}
           onClose={onCloseNotifications}
+          onReadAll={() => onReadNotices(notifications)}
           onOpen={(item) => {
             onCloseNotifications()
+            onReadNotices([item])
             if (item.faq) onOpenAnswers()
             else onNavigate(item.target)
           }}

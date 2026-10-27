@@ -243,6 +243,8 @@ export type Account = {
   brandId?: string
   groupId?: string
   createdAt: string
+  // The parts of the bell's notices the account has read (lib/notifications.ts).
+  readNotices?: string[]
 }
 
 // Whether brands can verify their business here (the server has the key),
