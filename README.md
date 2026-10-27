@@ -221,6 +221,8 @@ npm run dev
 
 - 가입할 때 약관 동의와 함께 '만 14세 이상'을 확인합니다.
 - 내 정보의 `비밀번호 변경`에서 지금 비밀번호를 넣고 바꿀 수 있고, 바꾸면 다른 기기는 로그아웃됩니다.
+- 내 정보의 `2단계 인증 켜기`에서 비밀번호를 넣고, Google Authenticator 같은 인증 앱으로 QR 코드를 찍은 뒤(또는 키를 직접 입력) 앱의 6자리 코드를 입력하면 켜집니다. 켜는 순간 복구 코드 10개를 한 번만 보여 줍니다. 그 뒤로는 로그인할 때(비밀번호를 찾아 새로 정한 뒤에도) 비밀번호 다음에 앱의 코드나 복구 코드를 입력합니다. 코드는 30초마다 바뀌고 한 번만 쓸 수 있으며, 복구 코드도 하나씩 한 번만 쓸 수 있습니다. 코드를 다섯 번 틀리면 비밀번호부터 다시 입력해야 하고, 틀린 횟수는 로그인 실패 횟수 제한에도 들어갑니다. 끄려면 비밀번호와 코드를 함께 넣습니다.
+- 내 정보의 `로그인한 기기`에서 로그인돼 있는 기기를 브라우저 · 운영체제, 로그인한 시각, 마지막 사용 시각(1시간 단위)과 함께 보고, 기기별로 또는 `다른 기기 모두 로그아웃`으로 로그아웃시킬 수 있습니다. 공유 데모 계정은 2단계 인증과 기기 목록을 쓸 수 없습니다.
 - 비밀번호 칸 오른쪽의 눈 모양 버튼을 누르면 쓴 비밀번호가 보이고, 다시 누르면 가려집니다(`components/PasswordField.tsx`). 로그인 · 회원가입 · 비밀번호 찾기와 변경 · 로그인 이메일 바꾸기 · 탈퇴의 비밀번호 칸과 직원 PIN · 단체 확인 PIN, 관리자 토큰 칸에 있어서, 틀리게 쓴 글자를 보내기 전에 확인할 수 있습니다.
 - 로그인 토큰은 서버 데이터 파일에 해시(sha256)로만 저장해서, 파일만으로는 아무도 로그인할 수 없습니다. 예전 데이터 파일의 로그인도 그대로 유지됩니다.
 - 모든 응답에 보안 헤더를 붙입니다(Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, production에서는 HSTS). 페이지는 이 사이트의 스크립트(와 켜면 Google Analytics)만 실행하고, 다른 사이트 안에 넣을 수 없습니다.
@@ -430,6 +432,13 @@ Vercel에서 달라지는 점:
 | PUT | `/api/auth/preferences` | 받을 메일과 메일 언어 `{ mailOff?: [종류], language?: "ko" \| "en" }` → `{ account }` | 필요 |
 | PUT | `/api/auth/notices` | 종에서 읽은 알림 `{ read: [part] }`로 저장한 목록을 바꿈(지금 보이는 알림의 것만, 300개까지) | 필요 |
 | POST | `/api/auth/logout` | 로그아웃 | |
+| POST | `/api/auth/login/code` | 2단계 인증이 켜진 계정의 두 번째 단계 `{ email, ticket, code }` (로그인 · 비밀번호 재설정이 `{ twoFactor: true, ticket }`으로 답한 뒤, 인증 앱 코드나 복구 코드) → `{ token, account, recoveryLeft }` | |
+| POST | `/api/auth/two-factor/setup` | 2단계 인증 준비 `{ password }` → `{ secret, url }` (`otpauth://` 주소, 데모 계정은 403) | 필요 |
+| POST | `/api/auth/two-factor/enable` | 앱의 첫 코드로 켜기 `{ code }` → `{ account, recoveryCodes }` (복구 코드는 이때만) | 필요 |
+| POST | `/api/auth/two-factor/disable` | 끄기 `{ password, code }` | 필요 |
+| GET | `/api/auth/sessions` | 로그인한 기기 목록 (`id`, `device`, `createdAt`, `lastUsedAt`, `current`; 데모 계정은 403) | 필요 |
+| DELETE | `/api/auth/sessions/:id` | 그 기기 로그아웃 | 필요 |
+| DELETE | `/api/auth/sessions` | 이 기기 말고 모두 로그아웃 | 필요 |
 | GET | `/api/matches?role=` | 추천 매칭 상위 3곳 (로그인하면 내 유형 기준, 가입한 계정에는 가입한 상대만) | |
 | GET | `/api/brands` | 학생단체가 둘러보는 브랜드 전체 (일치율과 항목별 `scoreParts`·협찬 횟수, 학교에서 매장까지 `distanceKm` 포함). 가입한 계정에는 가입한 브랜드만, 방문자와 데모 계정에는 예시 브랜드만 | |
 | GET | `/api/groups` | 브랜드가 둘러보는 학생단체 전체 (학교·다음 행사·예상 인원, 매장에서 학교까지 `distanceKm` 포함). 가입한 계정에는 가입한 학생단체만, 방문자와 데모 계정에는 예시 학생단체만 | |

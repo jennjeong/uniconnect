@@ -52,6 +52,8 @@ import { ContactModal } from "./modals/ContactModal"
 import { EmailChangeModal } from "./modals/EmailChangeModal"
 import { InviteShopModal } from "./modals/InviteShopModal"
 import { PasswordModal } from "./modals/PasswordModal"
+import { DevicesModal } from "./modals/DevicesModal"
+import { TwoFactorModal } from "./modals/TwoFactorModal"
 import { ProposeModal } from "./modals/ProposeModal"
 import { SafetyModal, type SafetyTarget } from "./modals/SafetyModal"
 import { ResetPasswordModal } from "./modals/ResetPasswordModal"
@@ -598,12 +600,19 @@ function App() {
     openAuth("login")
   }
 
-  const startSession = (session: Session, message: string) => {
+  // `recoveryLeft` comes with a login by two-step login: few recovery codes
+  // left are worth a word.
+  const startSession = (session: Session & { recoveryLeft?: number }, message: string) => {
     setToken(session.token)
     setAccount(session.account)
     go(view.invite || view.agreement || view.agreements ? view : { page: "대시보드" }, true)
     setActiveModal(null)
-    showNotice(message)
+    const left = session.recoveryLeft
+    showNotice(
+      left !== undefined && left <= 3
+        ? `${message} ${t("남은 복구 코드가 {count}개예요. 2단계 인증을 껐다 다시 켜면 새 코드를 받아요.", { count: left })}`
+        : message,
+    )
   }
 
   const endSession = () => {
@@ -1335,6 +1344,8 @@ function App() {
           onNavigate={navigate}
           onLogout={logout}
           onChangePassword={() => setActiveModal("password")}
+          onTwoFactor={member ? () => setActiveModal("two-factor") : undefined}
+          onDevices={member ? () => setActiveModal("devices") : undefined}
           onChangeContact={() => setActiveModal("contact")}
           onChangeEmail={() => setActiveModal("email")}
           onDownloadData={downloadData}
@@ -1828,6 +1839,23 @@ function App() {
           />
         </Presence>
       )}
+      {account && (
+        <Presence show={activeModal === "two-factor"}>
+          <TwoFactorModal
+            account={account}
+            onClose={closeModal}
+            onSaved={(next, on) => {
+              setAccount(next)
+              if (on) return
+              setActiveModal(null)
+              showNotice(t("2단계 인증을 껐어요."))
+            }}
+          />
+        </Presence>
+      )}
+      <Presence show={activeModal === "devices"}>
+        <DevicesModal onClose={closeModal} onNotice={showNotice} />
+      </Presence>
       <Presence show={activeModal === "password"}>
         <PasswordModal
           onClose={closeModal}
