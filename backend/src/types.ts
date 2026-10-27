@@ -124,9 +124,13 @@ export type Account = {
   // in the app), as it last sent them: only parts still shown, so the list
   // stays as short as the bell.
   readNotices?: string[]
+  // The secret link calendar apps subscribe to (routes/calendar.ts); kept
+  // as made, so 내 정보 can show it again, and never in the account's data
+  // the app gets.
+  calendarFeed?: { token: string; createdAt: string }
 }
 
-export type PublicAccount = Omit<Account, "passwordHash" | "termsAgreedAt">
+export type PublicAccount = Omit<Account, "passwordHash" | "termsAgreedAt" | "calendarFeed">
 
 export type Session = {
   // sha256 of the token the browser holds, so the data file alone cannot

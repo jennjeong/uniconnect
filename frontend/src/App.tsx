@@ -1071,6 +1071,7 @@ function App() {
       onDelete={deleteEvent}
       onOpenSponsorship={() => navigate("받은 제안")}
       onNotice={showNotice}
+      canSubscribe={member}
     />
   )
 

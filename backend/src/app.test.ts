@@ -3670,6 +3670,52 @@ test("the reviewed side answers a review once, shown under it, and a report can 
   }
 })
 
+test("a member's calendar link gives calendar apps its events and sponsorship days, until it is replaced", async () => {
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const { token: group } = await listedMember("feed@syu.ac.kr", "feed-pass-123")
+  const groupId = getDatabase().accounts.find((account) => account.email === "feed@syu.ac.kr")!.id
+  const { token: brand, listingId: brandListing } = await listedMember("feed@feed-cafe.kr", "feed-pass-123", "브랜드")
+  const day = addDays(todayInKorea(), 12)
+  await call("POST", "/events", { name: "구독; 공연, 가을", date: day, endDate: addDays(day, 1), types: ["현금"] }, group)
+  await call("POST", "/proposals", { matchId: brandListing }, group)
+  const request = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
+  await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+
+  assert.deepEqual((await call("GET", "/calendar/feed", undefined, brand)).data, { url: null })
+  const made = await call("POST", "/calendar/feed", undefined, brand)
+  assert.equal(made.status, 201)
+  const url = made.data.url as string
+  assert.match(url, /\/api\/calendar\/[\w-]{32}\.ics$/)
+  // The calendar itself needs no login: the link is the key.
+  const feed = await fetch(url)
+  assert.equal(feed.status, 200)
+  assert.match(feed.headers.get("content-type") ?? "", /^text\/calendar/)
+  const text = await feed.text()
+  assert.ok(text.startsWith("BEGIN:VCALENDAR\r\n"))
+  // The brand's calendar has the day it sponsors, escaped as RFC 5545 asks.
+  assert.match(text, /SUMMARY:협찬 · feed 동아리 구독\; 공연\\, 가을\r\n/)
+  // Never in the account the app gets; the same link again from 내 정보.
+  assert.equal((await call("GET", "/auth/me", undefined, brand)).data.account.calendarFeed, undefined)
+  assert.equal((await call("GET", "/calendar/feed", undefined, brand)).data.url, url)
+  // A new link stops the old one at once.
+  const next = (await call("POST", "/calendar/feed", undefined, brand)).data.url as string
+  assert.notEqual(next, url)
+  assert.equal((await fetch(url)).status, 404)
+  assert.equal((await fetch(next)).status, 200)
+  // The group's own calendar has its event over its two days.
+  const groupUrl = (await call("POST", "/calendar/feed", undefined, group)).data.url as string
+  const groupText = await (await fetch(groupUrl)).text()
+  assert.match(groupText, /SUMMARY:구독\; 공연\\, 가을\r\n/)
+  assert.ok(groupText.includes(`DTSTART;VALUE=DATE:${day.replace(/-/g, "")}\r\n`))
+  assert.ok(groupText.includes(`DTEND;VALUE=DATE:${addDays(day, 2).replace(/-/g, "")}\r\n`))
+  // Deleting it stops it; the demo accounts can't make one, nor can a visitor.
+  assert.equal((await call("DELETE", "/calendar/feed", undefined, brand)).status, 204)
+  assert.equal((await fetch(next)).status, 404)
+  assert.equal((await call("POST", "/calendar/feed", undefined, await login("학생단체"))).status, 403)
+  assert.equal((await call("GET", "/calendar/feed")).status, 401)
+  assert.equal((await call("GET", "/calendar/not-a-link.ics")).status, 404)
+})
+
 test("members are emailed once when an event or a sponsored event is three days away or nearer", async () => {
   const { sendReminders } = await import("./lib/reminders.js")
   const { mailTransport } = await import("./lib/mailer.js")

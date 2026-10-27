@@ -13,6 +13,7 @@ import { agreementsRouter } from "./routes/agreements.js"
 import { analyticsRouter } from "./routes/analytics.js"
 import { authRouter } from "./routes/auth.js"
 import { brandsRouter } from "./routes/brands.js"
+import { calendarRouter } from "./routes/calendar.js"
 import { checkInRouter } from "./routes/checkin.js"
 import { conversationsRouter } from "./routes/conversations.js"
 import { cronRouter } from "./routes/cron.js"
@@ -119,6 +120,7 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   app.use("/api/reports", reportsRouter)
   app.use("/api/blocks", blocksRouter)
   app.use("/api/saved", savedRouter)
+  app.use("/api/calendar", calendarRouter)
   app.use("/api/errors", errorsRouter)
   app.use("/api/admin", adminRouter)
   app.use("/api/cron", cronRouter)
