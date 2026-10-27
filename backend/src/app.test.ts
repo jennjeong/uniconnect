@@ -987,6 +987,72 @@ test("with two-step login on, a password alone doesn't log in, and recovery code
   assert.ok((await call("POST", "/auth/login", { role: "학생단체", email, password: newPassword })).data.token)
 })
 
+test("an owner invites co-admins, who log in with their own password and can't do the owner's part", async () => {
+  const ownerPassword = "team-pass-123"
+  const owner = await signUpMember("team@syu.ac.kr", ownerPassword)
+  const join = (body: object) => call("POST", "/team/join", body)
+
+  // The owner invites by email; the code comes back only in development.
+  assert.equal((await call("POST", "/team/invites", { name: "부회장", email: "team@syu.ac.kr" }, owner)).status, 409)
+  assert.equal((await call("POST", "/team/invites", { name: "부회장", email: "vice@gmail.com" }, owner)).status, 400)
+  const invited = await call("POST", "/team/invites", { name: "부회장", email: "vice@syu.ac.kr" }, owner)
+  assert.equal(invited.status, 201)
+  assert.match(invited.data.devCode, /^\d{6}$/)
+  assert.deepEqual(invited.data.team.invites.map((item: { email: string }) => item.email), ["vice@syu.ac.kr"])
+  assert.equal(JSON.stringify(invited.data.team).includes("codeHash"), false)
+  assert.equal((await call("POST", "/team/invites", { name: "x", email: "x@syu.ac.kr" }, await login("학생단체"))).status, 403)
+
+  // A wrong code doesn't join; the right one does, with the person's own password.
+  assert.equal((await join({ email: "vice@syu.ac.kr", code: "000000", password: "vice-pass-123" })).status, 400)
+  const joined = await join({ email: "vice@syu.ac.kr", code: invited.data.devCode, password: "vice-pass-123" })
+  assert.equal(joined.status, 201)
+  assert.equal(joined.data.account.email, "team@syu.ac.kr")
+  assert.deepEqual(joined.data.account.asMember, { id: joined.data.account.asMember.id, name: "부회장", email: "vice@syu.ac.kr" })
+  assert.equal((await join({ email: "vice@syu.ac.kr", code: invited.data.devCode, password: "vice-pass-123" })).status, 400)
+  // The email is taken for sign-up now.
+  assert.equal((await call("POST", "/auth/email-code", { role: "학생단체", email: "vice@syu.ac.kr" })).status, 409)
+
+  // The co-admin logs in to the same account, and works in it.
+  const vice = (await call("POST", "/auth/login", { role: "학생단체", email: "vice@syu.ac.kr", password: "vice-pass-123" })).data
+  assert.equal(vice.account.id, joined.data.account.id)
+  assert.equal(vice.account.asMember.name, "부회장")
+  assert.equal((await call("POST", "/events", { name: "함께 여는 공연", date: "2099-05-01", types: ["현금"] }, vice.token)).status, 201)
+  const ownersEvents = (await call("GET", "/events", undefined, owner)).data.events as { name: string }[]
+  assert.ok(ownersEvents.some((event) => event.name === "함께 여는 공연"))
+  assert.equal((await call("GET", "/auth/me", undefined, owner)).data.account.asMember, undefined)
+
+  // The owner's part stays the owner's.
+  for (const [method, route, body] of [
+    ["DELETE", "/auth/account", { password: "vice-pass-123" }],
+    ["POST", "/auth/email/code", { email: "new@syu.ac.kr", password: "vice-pass-123" }],
+    ["POST", "/auth/two-factor/setup", { password: "vice-pass-123" }],
+    ["POST", "/team/invites", { name: "총무", email: "treasurer@syu.ac.kr" }],
+  ] as const) {
+    assert.equal((await call(method, route, body, vice.token)).status, 403, route)
+  }
+  // Each changes its own password.
+  assert.equal((await call("POST", "/auth/password", { current: "vice-pass-123", next: "vice-pass-456!" }, vice.token)).status, 204)
+  assert.equal((await call("POST", "/auth/login", { role: "학생단체", email: "team@syu.ac.kr", password: ownerPassword })).status, 200)
+  assert.equal((await call("POST", "/auth/login", { role: "학생단체", email: "vice@syu.ac.kr", password: "vice-pass-123" })).status, 401)
+
+  // The owner's device list names the co-admin's logins; the co-admin sees its own.
+  const ownerSessions = (await call("GET", "/auth/sessions", undefined, owner)).data.sessions as { member?: string }[]
+  assert.ok(ownerSessions.some((session) => session.member === "부회장"))
+  const viceSessions = (await call("GET", "/auth/sessions", undefined, vice.token)).data.sessions as { member?: string }[]
+  assert.ok(viceSessions.length >= 1 && viceSessions.every((session) => session.member === undefined))
+
+  // The data download lists the team without passwords.
+  const exported = (await call("GET", "/auth/export", undefined, owner)).data
+  assert.deepEqual(exported.team.map((item: { name: string }) => item.name), ["부회장"])
+  assert.equal(JSON.stringify(exported).includes("passwordHash"), false)
+
+  // Taking the co-admin off ends its logins at once.
+  const memberId = vice.account.asMember.id
+  assert.equal((await call("DELETE", `/team/members/${memberId}`, undefined, owner)).status, 200)
+  assert.equal((await call("GET", "/auth/me", undefined, vice.token)).status, 401)
+  assert.equal((await call("POST", "/auth/login", { role: "학생단체", email: "vice@syu.ac.kr", password: "vice-pass-456!" })).status, 401)
+})
+
 test("the device list shows each login, and logs out one or all the others", async () => {
   const email = "devices@syu.ac.kr"
   const password = "devices-pass-123"

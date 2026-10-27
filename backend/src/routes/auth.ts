@@ -14,6 +14,7 @@ import { langOf, type Lang } from "../lib/i18n.js"
 import { hashPassword, verifyPassword } from "../lib/password.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { freezeSponsorships } from "../lib/sponsorships.js"
+import { emailTaken, memberByEmail, memberOf, requireOwner } from "../lib/team.js"
 import { hashRecovery, matchStep, newRecoveryCodes, newSecret, otpauthUrl } from "../lib/totp.js"
 import { accountTypes, checkPassword, mailKinds, parseContact, parseRole, text } from "../lib/validation.js"
 import { hashToken, requireAccount } from "../middleware/session.js"
@@ -58,19 +59,27 @@ const demoLocked = "데모 계정은 비밀번호를 바꾸거나 탈퇴할 수 
 // An account the operators stopped over a report.
 const suspendedMessage = "운영 정책에 따라 이용이 정지된 계정이에요."
 
-const toPublic = ({
-  passwordHash,
-  termsAgreedAt,
-  calendarFeed,
-  twoFactor,
-  pendingTwoFactor,
-  loginTicket,
-  ...account
-}: Account): PublicAccount => ({ ...account, ...(twoFactor ? { twoFactorOn: true as const } : {}) })
+// The account as its own people see it, without its secrets; `memberId`
+// says which co-admin is logged in, if one is.
+export function toPublic(
+  { passwordHash, termsAgreedAt, calendarFeed, twoFactor, pendingTwoFactor, loginTicket, members, memberInvites, ...account }: Account,
+  memberId?: string,
+): PublicAccount {
+  const member = memberId ? members?.find((item) => item.id === memberId) : undefined
+  return {
+    ...account,
+    ...(twoFactor ? { twoFactorOn: true as const } : {}),
+    ...(member ? { asMember: { id: member.id, name: member.name, email: member.email } } : {}),
+  }
+}
 
 // A new login on the device the request came from (its browser and system
-// for the device list).
-function startSession(accountId: string, req: Request, userAgent = req.get("user-agent")) {
+// for the device list), the owner's or a co-admin's.
+export function startSession(
+  accountId: string,
+  req: Request,
+  { userAgent = req.get("user-agent"), memberId }: { userAgent?: string; memberId?: string } = {},
+) {
   const database = getDatabase()
   const token = randomBytes(32).toString("hex")
   const now = Date.now()
@@ -82,6 +91,7 @@ function startSession(accountId: string, req: Request, userAgent = req.get("user
     device: deviceLabel(userAgent),
     createdAt: now,
     lastUsedAt: now,
+    ...(memberId ? { memberId } : {}),
   })
   return token
 }
@@ -204,7 +214,7 @@ authRouter.post("/email-code", async (req, res) => {
   if (ruleError) throw new HttpError(400, ruleError)
 
   const database = getDatabase()
-  if (database.accounts.some((account) => account.email === email)) {
+  if (emailTaken(database, email)) {
     throw new HttpError(409, "이미 가입된 이메일이에요. 로그인해 주세요.")
   }
 
@@ -257,7 +267,7 @@ authRouter.post("/signup", async (req, res) => {
   if (body.agreedToTerms !== true) throw new HttpError(400, "이용약관에 동의해 주세요.")
   // The terms take members from 14; younger ones would need a guardian's consent.
   if (body.over14 !== true) throw new HttpError(400, "만 14세 이상만 가입할 수 있어요.")
-  if (database.accounts.some((account) => account.email === email)) {
+  if (emailTaken(database, email)) {
     throw new HttpError(409, "이미 가입된 이메일이에요. 로그인해 주세요.")
   }
 
@@ -265,7 +275,7 @@ authRouter.post("/signup", async (req, res) => {
   // one sent several times at once makes one account, not several.
   database.emailCodes = database.emailCodes.filter((entry) => entry.email !== email)
   const passwordHash = await hashPassword(password)
-  if (database.accounts.some((account) => account.email === email)) {
+  if (emailTaken(database, email)) {
     throw new HttpError(409, "이미 가입된 이메일이에요. 로그인해 주세요.")
   }
   const now = new Date().toISOString()
@@ -289,7 +299,7 @@ authRouter.post("/signup", async (req, res) => {
   const token = startSession(account.id, req)
   await saveDatabase()
 
-  res.status(201).json({ token, account: toPublic(account) })
+  res.status(201).json({ token, account: toPublic(account, req.memberId) })
 })
 
 // Forgotten password, step 1: a code to the address the account signed up
@@ -327,7 +337,8 @@ authRouter.post("/password-reset", async (req, res) => {
   // Used up before the slow hash, so the code sets one password only.
   database.emailCodes = database.emailCodes.filter((item) => item !== entry)
   account.passwordHash = await hashPassword(password)
-  database.sessions = database.sessions.filter((session) => session.accountId !== account.id)
+  // The owner's logins end; the co-admins' own stay.
+  database.sessions = database.sessions.filter((session) => session.accountId !== account.id || session.memberId)
   await loginFailures.reset(`${clientKey(req)} ${email}`)
   // The email alone doesn't pass two-step login: the code is asked next.
   if (account.twoFactor) {
@@ -338,7 +349,7 @@ authRouter.post("/password-reset", async (req, res) => {
   }
   const token = startSession(account.id, req)
   await saveDatabase()
-  res.json({ token, account: toPublic(account) })
+  res.json({ token, account: toPublic(account, req.memberId) })
 })
 
 authRouter.post("/login", async (req, res) => {
@@ -350,13 +361,17 @@ authRouter.post("/login", async (req, res) => {
   // cannot slip past the limit; a success clears the count.
   await loginFailures.take(limitKey)
   const database = getDatabase()
-  const account = database.accounts.find((item) => item.email === email)
-  const hashBefore = account?.passwordHash
+  const owner = database.accounts.find((item) => item.email === email)
+  // A co-admin logs in to the account it helps run, with its own password.
+  const team = owner ? undefined : memberByEmail(database, email)
+  const account = owner ?? team?.account
+  const hashBefore = team ? team.member.passwordHash : account?.passwordHash
 
   const matches = account && hashBefore ? await verifyPassword(password, hashBefore) : false
   // A reset, change or deletion during the check wins: the old password no
   // longer opens a session.
-  if (!account || !matches || account.passwordHash !== hashBefore || !database.accounts.includes(account)) {
+  const hashAfter = team ? memberOf(account!, team.member.id)?.passwordHash : account?.passwordHash
+  if (!account || !matches || hashAfter !== hashBefore || !database.accounts.includes(account)) {
     throw new HttpError(401, "이메일 또는 비밀번호가 올바르지 않아요.")
   }
   await loginFailures.reset(limitKey)
@@ -364,6 +379,12 @@ authRouter.post("/login", async (req, res) => {
   if (account.role !== role) {
     const label = account.role === "학생단체" ? "협찬 받기" : "협찬 하기"
     throw new HttpError(403, `'${label}' 회원으로 가입된 계정이에요. 유형을 바꿔 로그인해 주세요.`)
+  }
+  if (team) {
+    const token = startSession(account.id, req, { memberId: team.member.id })
+    await saveDatabase()
+    res.json({ token, account: toPublic(account, team.member.id) })
+    return
   }
   if (account.twoFactor) {
     const ticket = startTicket(account, req)
@@ -374,7 +395,7 @@ authRouter.post("/login", async (req, res) => {
 
   const token = startSession(account.id, req)
   await saveDatabase()
-  res.json({ token, account: toPublic(account) })
+  res.json({ token, account: toPublic(account, req.memberId) })
 })
 
 // The second step of a login with two-step login on: the ticket from the
@@ -399,9 +420,9 @@ authRouter.post("/login/code", async (req, res) => {
   }
   await loginFailures.reset(limitKey)
   delete account.loginTicket
-  const token = startSession(account.id, req, ticket.userAgent)
+  const token = startSession(account.id, req, { userAgent: ticket.userAgent })
   await saveDatabase()
-  res.json({ token, account: toPublic(account), recoveryLeft: account.twoFactor?.recoveryHashes.length })
+  res.json({ token, account: toPublic(account, req.memberId), recoveryLeft: account.twoFactor?.recoveryHashes.length })
 })
 
 // Everything an account made goes with it: its listing and the
@@ -489,7 +510,7 @@ function removeAccount(database: Database, account: Account) {
 // made are deleted for good. The demo accounts stay, so the demo keeps
 // working for everyone.
 authRouter.delete("/account", async (req, res) => {
-  const account = requireAccount(req)
+  const account = requireOwner(req, requireAccount(req))
   const database = getDatabase()
   if (isDemo(account)) throw new HttpError(403, "데모 계정은 탈퇴할 수 없어요.")
   const limitKey = `${clientKey(req)} ${account.email}`
@@ -512,7 +533,7 @@ authRouter.put("/contact", async (req, res) => {
   if (isDemo(account)) throw new HttpError(403, "데모 계정은 담당자 정보를 바꿀 수 없어요.")
   account.contact = parseContact(req.body)
   await saveDatabase()
-  res.json({ account: toPublic(account) })
+  res.json({ account: toPublic(account, req.memberId) })
 })
 
 // 내 정보's choices for email: the kinds of notice to leave out, and the
@@ -535,7 +556,7 @@ authRouter.put("/preferences", async (req, res) => {
     else delete account.mailOff
   }
   await saveDatabase()
-  res.json({ account: toPublic(account) })
+  res.json({ account: toPublic(account, req.memberId) })
 })
 
 // Most parts of the bell's notices one save may hold, as many as the app
@@ -563,22 +584,26 @@ authRouter.put("/notices", async (req, res) => {
 })
 
 // Changing the password from 내 정보: the current one first. Other devices
-// are logged out; this one stays logged in.
+// of the same person are logged out; this one stays logged in. A co-admin
+// changes its own.
 authRouter.post("/password", async (req, res) => {
   const account = requireAccount(req)
   if (isDemo(account)) throw new HttpError(403, demoLocked)
+  const member = memberOf(account, req.memberId)
   const next = checkPassword(String(req.body?.next ?? ""))
-  const limitKey = `${clientKey(req)} ${account.email}`
+  const limitKey = `${clientKey(req)} ${member?.email ?? account.email}`
   await loginFailures.take(limitKey)
-  if (!(await verifyPassword(String(req.body?.current ?? ""), account.passwordHash))) {
+  if (!(await verifyPassword(String(req.body?.current ?? ""), member?.passwordHash ?? account.passwordHash))) {
     // Not 401, which the app reads as a session that has run out.
     throw new HttpError(400, "지금 비밀번호가 올바르지 않아요.")
   }
   await loginFailures.reset(limitKey)
-  account.passwordHash = await hashPassword(next)
+  const passwordHash = await hashPassword(next)
+  if (member) member.passwordHash = passwordHash
+  else account.passwordHash = passwordHash
   const keep = req.sessionToken ? hashToken(req.sessionToken) : ""
   getDatabase().sessions = getDatabase().sessions.filter(
-    (session) => session.accountId !== account.id || session.tokenHash === keep,
+    (session) => session.accountId !== account.id || session.memberId !== req.memberId || session.tokenHash === keep,
   )
   await saveDatabase()
   res.status(204).end()
@@ -587,14 +612,14 @@ authRouter.post("/password", async (req, res) => {
 // Handing an account over (a group's new officers, say), step 1: with the
 // password, a code to the new login email.
 authRouter.post("/email/code", async (req, res) => {
-  const account = requireAccount(req)
+  const account = requireOwner(req, requireAccount(req))
   if (isDemo(account)) throw new HttpError(403, "데모 계정은 로그인 이메일을 바꿀 수 없어요.")
   await codesPerClient.take(clientKey(req))
   const email = normalizeEmail(req.body?.email)
   const ruleError = emailRuleError(account.role, email)
   if (ruleError) throw new HttpError(400, ruleError)
   if (email === account.email) throw new HttpError(400, "지금 쓰는 이메일과 같아요.")
-  if (getDatabase().accounts.some((item) => item.email === email)) {
+  if (emailTaken(getDatabase(), email)) {
     throw new HttpError(409, "이미 가입된 이메일이에요. 다른 이메일을 입력해 주세요.")
   }
   const limitKey = `${clientKey(req)} ${account.email}`
@@ -610,7 +635,7 @@ authRouter.post("/email/code", async (req, res) => {
 // Step 2: the code from the new address moves the account there. Other
 // devices are logged out, and the old address hears of it.
 authRouter.post("/email", async (req, res) => {
-  const account = requireAccount(req)
+  const account = requireOwner(req, requireAccount(req))
   await verifyPerClient.take(clientKey(req))
   const email = normalizeEmail(req.body?.email)
   const entry = await checkCode(email, text(req.body?.code), "change")
@@ -618,14 +643,17 @@ authRouter.post("/email", async (req, res) => {
   if (entry.accountId !== account.id || !database.emailCodes.includes(entry)) {
     throw new HttpError(400, "인증번호를 먼저 받아 주세요.")
   }
-  if (database.accounts.some((item) => item.email === email)) {
+  if (emailTaken(database, email)) {
     throw new HttpError(409, "이미 가입된 이메일이에요. 다른 이메일을 입력해 주세요.")
   }
   const previous = account.email
   database.emailCodes = database.emailCodes.filter((item) => item !== entry)
   account.email = email
+  // The owner's other logins end; the co-admins' own stay.
   const keep = req.sessionToken ? hashToken(req.sessionToken) : ""
-  database.sessions = database.sessions.filter((session) => session.accountId !== account.id || session.tokenHash === keep)
+  database.sessions = database.sessions.filter(
+    (session) => session.accountId !== account.id || session.memberId || session.tokenHash === keep,
+  )
   await saveDatabase()
   void notify(
     { ...account, email: previous },
@@ -637,7 +665,7 @@ authRouter.post("/email", async (req, res) => {
     ],
     "/faq",
   )
-  res.json({ account: toPublic(account) })
+  res.json({ account: toPublic(account, req.memberId) })
 })
 
 // Everything the account made or was sent, to keep or move elsewhere (the
@@ -653,7 +681,9 @@ authRouter.get("/export", (req, res) => {
   const listing = findListing(database, account)
   res.json({
     exportedAt: new Date().toISOString(),
-    account: toPublic(account),
+    account: toPublic(account, req.memberId),
+    // The people running it with the owner, without their passwords.
+    team: (account.members ?? []).map(({ id, name, email, addedAt }) => ({ id, name, email, addedAt })),
     listing: listing ?? null,
     events: database.events[account.id] ?? [],
     proposalsSent: [
@@ -694,13 +724,13 @@ authRouter.get("/export", (req, res) => {
 })
 
 authRouter.get("/me", (req, res) => {
-  res.json({ account: toPublic(requireAccount(req)) })
+  res.json({ account: toPublic(requireAccount(req), req.memberId) })
 })
 
 // Turning on two-step login from 내 정보, with the password first: a new
 // secret for the app (its QR address), confirmed with a code before it counts.
 authRouter.post("/two-factor/setup", async (req, res) => {
-  const account = requireAccount(req)
+  const account = requireOwner(req, requireAccount(req))
   if (isDemo(account)) throw new HttpError(403, "데모 계정은 2단계 인증을 켤 수 없어요.")
   if (account.twoFactor) throw new HttpError(409, "2단계 인증이 이미 켜져 있어요.")
   await checkCurrentPassword(req, account)
@@ -712,7 +742,7 @@ authRouter.post("/two-factor/setup", async (req, res) => {
 
 // The app's first code turns it on, and the recovery codes show this once.
 authRouter.post("/two-factor/enable", async (req, res) => {
-  const account = requireAccount(req)
+  const account = requireOwner(req, requireAccount(req))
   const pending = account.pendingTwoFactor
   if (!pending || pending.createdAt + 30 * minute < Date.now()) {
     throw new HttpError(409, "설정 시간이 지났어요. 처음부터 다시 켜 주세요.")
@@ -731,12 +761,12 @@ authRouter.post("/two-factor/enable", async (req, res) => {
   }
   delete account.pendingTwoFactor
   await saveDatabase()
-  res.json({ account: toPublic(account), recoveryCodes })
+  res.json({ account: toPublic(account, req.memberId), recoveryCodes })
 })
 
 // Turning it off takes the password and a code (or a recovery code).
 authRouter.post("/two-factor/disable", async (req, res) => {
-  const account = requireAccount(req)
+  const account = requireOwner(req, requireAccount(req))
   if (!account.twoFactor) throw new HttpError(409, "2단계 인증이 꺼져 있어요.")
   await checkCurrentPassword(req, account)
   if (!useCode(account, String(req.body?.code ?? ""))) {
@@ -745,7 +775,7 @@ authRouter.post("/two-factor/disable", async (req, res) => {
   delete account.twoFactor
   delete account.loginTicket
   await saveDatabase()
-  res.json({ account: toPublic(account) })
+  res.json({ account: toPublic(account, req.memberId) })
 })
 
 // The devices logged in to this account, the one asking first, then by
@@ -756,14 +786,23 @@ const ownDevices = (req: Request) => {
   if (isDemo(account)) throw new HttpError(403, "데모 계정은 로그인한 기기를 볼 수 없어요.")
   return account
 }
+// The owner sees every login to the account, its co-admins' by their names;
+// a co-admin sees its own.
+const sessionsOf = (req: Request, account: Account) =>
+  getDatabase().sessions.filter(
+    (session) =>
+      session.accountId === account.id &&
+      session.expiresAt > Date.now() &&
+      (!req.memberId || session.memberId === req.memberId),
+  )
 authRouter.get("/sessions", (req, res) => {
   const account = ownDevices(req)
   const current = req.sessionToken ? hashToken(req.sessionToken) : ""
-  const sessions = getDatabase()
-    .sessions.filter((session) => session.accountId === account.id && session.expiresAt > Date.now())
+  const sessions = sessionsOf(req, account)
     .map((session) => ({
       id: sessionId(session),
       device: session.device ?? "알 수 없는 기기",
+      ...(session.memberId && !req.memberId ? { member: memberOf(account, session.memberId)?.name ?? "" } : {}),
       ...(session.createdAt ? { createdAt: new Date(session.createdAt).toISOString() } : {}),
       ...(session.lastUsedAt ? { lastUsedAt: new Date(session.lastUsedAt).toISOString() } : {}),
       current: session.tokenHash === current,
@@ -772,12 +811,13 @@ authRouter.get("/sessions", (req, res) => {
   res.json({ sessions })
 })
 
-// Logs out every other device; this one stays.
+// Logs out every other device (the owner's: its co-admins' too); this one stays.
 authRouter.delete("/sessions", async (req, res) => {
   const account = ownDevices(req)
   const keep = req.sessionToken ? hashToken(req.sessionToken) : ""
   const database = getDatabase()
-  database.sessions = database.sessions.filter((session) => session.accountId !== account.id || session.tokenHash === keep)
+  const others = new Set(sessionsOf(req, account).filter((session) => session.tokenHash !== keep))
+  database.sessions = database.sessions.filter((session) => !others.has(session))
   await saveDatabase()
   res.status(204).end()
 })
@@ -786,7 +826,7 @@ authRouter.delete("/sessions", async (req, res) => {
 authRouter.delete("/sessions/:id", async (req, res) => {
   const account = ownDevices(req)
   const database = getDatabase()
-  const session = database.sessions.find((item) => item.accountId === account.id && sessionId(item) === req.params.id)
+  const session = sessionsOf(req, account).find((item) => sessionId(item) === req.params.id)
   if (!session) throw new HttpError(404, "로그인한 기기를 찾을 수 없어요.")
   database.sessions = database.sessions.filter((item) => item !== session)
   await saveDatabase()

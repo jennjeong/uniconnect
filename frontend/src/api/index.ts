@@ -42,6 +42,7 @@ import type {
   SponsorRequest,
   Sponsorship,
   SuspendedAccount,
+  Team,
   VenuePage,
   VenueSession,
   VenueShare,
@@ -96,6 +97,14 @@ export const api = {
   sessions: () => request<{ sessions: DeviceSession[] }>("/auth/sessions"),
   endSession: (id: string) => request<void>(`/auth/sessions/${encodeURIComponent(id)}`, { method: "DELETE" }),
   endOtherSessions: () => request<void>("/auth/sessions", { method: "DELETE" }),
+  team: () => request<{ team: Team }>("/team"),
+  inviteMember: (body: { name: string; email: string }) =>
+    request<{ team: Team; devCode?: string }>("/team/invites", { method: "POST", body }),
+  cancelInvite: (id: string) => request<{ team: Team }>(`/team/invites/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  removeMember: (id: string) => request<{ team: Team }>(`/team/members/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  // The invited person's own login to the account, from the emailed code.
+  joinTeam: (body: { email: string; code: string; password: string }) =>
+    request<Session>("/team/join", { method: "POST", body }),
   logout: () => request<void>("/auth/logout", { method: "POST" }),
   requestEmailCode: (body: { role: Role; email: string }) =>
     request<{ email: string; expiresAt: number; devCode?: string }>(

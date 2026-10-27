@@ -290,6 +290,8 @@ export type Account = {
   id: string
   // Two-step login with an authenticator app is on.
   twoFactorOn?: true
+  // Set when a co-admin is the one logged in (not the account's owner).
+  asMember?: { id: string; name: string; email: string }
   role: Role
   name: string
   type: string
@@ -323,7 +325,24 @@ export type Session = { token: string; account: Account }
 export type CodeTicket = { twoFactor: true; ticket: string }
 
 // One device logged in to the account (내 정보's 로그인한 기기).
-export type DeviceSession = { id: string; device: string; createdAt?: string; lastUsedAt?: string; current: boolean }
+export type DeviceSession = {
+  id: string
+  device: string
+  createdAt?: string
+  lastUsedAt?: string
+  current: boolean
+  // A co-admin's login, by its name, in the owner's list.
+  member?: string
+}
+
+// The people running one account (내 정보's 함께 관리하는 사람): the owner,
+// co-admins and invitations still open; `you` is "owner" or a member's id.
+export type Team = {
+  owner: { name: string; email: string }
+  members: { id: string; name: string; email: string; addedAt: string }[]
+  invites: { id: string; name: string; email: string; invitedAt: string; expiresAt: string }[]
+  you: string
+}
 
 // What the venue's staff count by the confirmation methods: samples or
 // tastings, booth stamps, SNS posts, survey answers, purchases, goods given
@@ -702,3 +721,5 @@ export type ModalName =
   | "business"
   | "two-factor"
   | "devices"
+  | "team"
+  | "join"

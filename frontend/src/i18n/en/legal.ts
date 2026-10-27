@@ -73,6 +73,10 @@ const en: Record<string, string> = {
   "단체명·브랜드명, 분류(업종), 학교, 이메일, 비밀번호(복원할 수 없게 암호화), 약관 동의 시각":
     "Group or brand name, category (industry), school, email address, password (encrypted so that it cannot be recovered), time of agreement to the terms",
   "회원 가입과 로그인, 회원 유형 확인": "Sign-up and login, verification of member type",
+  "함께 관리하는 사람(이름, 이메일, 비밀번호(복원할 수 없게 암호화), 합류한 시각)과 보낸 초대(이름, 이메일, 초대 코드(암호화), 보낸 시각)":
+    "Co-admins (name, email, password stored irreversibly, when they joined) and invitations sent (name, email, invitation code stored irreversibly, when sent)",
+  "한 계정을 임원 여러 명이 각자의 이메일과 비밀번호로 함께 쓰기": "Letting several officers use one account, each with their own email and password",
+  "대표가 빼거나 탈퇴할 때까지, 초대는 받을 때까지(최대 7일)": "Until the owner removes them or the account is deleted; invitations until taken (7 days at most)",
   "로그인한 기기(브라우저와 운영체제 종류, 로그인한 시각, 마지막 사용 시각)":
     "Logged-in devices (browser and operating system, when they logged in and were last used)",
   "내 정보의 '로그인한 기기'에서 어디서 로그인돼 있는지 보고 로그아웃시키기":
@@ -182,8 +186,8 @@ const en: Record<string, string> = {
     "Members may request to access, correct or delete their personal information, or to suspend its processing.",
   "소개는 내 정보에서 고칠 수 있고, 행사는 내 행사에서 고치거나 지울 수 있어요.":
     "Profiles can be edited in My Info, and events can be edited or deleted in My Events.",
-  "내 정보의 '회원 탈퇴'에서 탈퇴하면 계정 정보, 소개, 행사·캠페인, 협찬 제안, 메시지와 채팅으로 주고받은 사진·PDF(상대방 쪽 대화 포함), 관리자에게 보낸 질문, 보낸 가게 초대, 임시 전자 계약서와 증빙 사진(상대방 쪽 포함), 남기고 받은 후기, 보내거나 받은 신고와 차단 기록이 바로 지워지고 되살릴 수 없어요. 초대로 가입한 브랜드가 탈퇴하면 그 가게는 다시 초대할 수 있는 상태가 돼요.":
-    "When a member deletes their account from 'Delete Account' in My Info, their account information, profile, events and campaigns, sponsorship proposals, messages and the photos and PDFs sent in chat (including the other party's side of the conversation), questions sent to the administrators, shop invitations they sent, provisional e-contracts with their proof photos (including the other party's), the reviews they wrote and got, and the reports and blocks they made or were the subject of are deleted immediately and cannot be restored. When a brand that joined from an invitation leaves, that shop can be invited again.",
+  "내 정보의 '회원 탈퇴'에서 탈퇴하면 계정 정보, 소개, 행사·캠페인, 협찬 제안, 메시지와 채팅으로 주고받은 사진·PDF(상대방 쪽 대화 포함), 함께 관리하는 사람과 보낸 초대, 관리자에게 보낸 질문, 보낸 가게 초대, 임시 전자 계약서와 증빙 사진(상대방 쪽 포함), 남기고 받은 후기, 보내거나 받은 신고와 차단 기록이 바로 지워지고 되살릴 수 없어요. 초대로 가입한 브랜드가 탈퇴하면 그 가게는 다시 초대할 수 있는 상태가 돼요.":
+    "When a member deletes their account from 'Delete Account' in My Info, their account information, profile, events and campaigns, sponsorship proposals, messages and the photos and PDFs sent in chat (including the other party's side of the conversation), co-admins and the invitations sent, questions sent to the administrators, shop invitations they sent, provisional e-contracts with their proof photos (including the other party's), the reviews they wrote and got, and the reports and blocks they made or were the subject of are deleted immediately and cannot be restored. When a brand that joined from an invitation leaves, that shop can be invited again.",
   "그 밖의 요청은 도움말 센터의 '관리자에게 질문하기'로 보내 주세요. 확인한 뒤 지체 없이 처리해요.":
     "Please send any other requests through 'Ask the Administrators' in the Help Center. They will be processed without delay after review.",
   "법령에 따라 보관해야 하는 정보가 생기면 그 기간 동안만 따로 보관해요.":

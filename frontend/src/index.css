@@ -7784,7 +7784,8 @@ button.nav-pill:hover {
   font-size: 15px;
 }
 
-/* The devices logged in (modals/DevicesModal.tsx). */
+/* The devices logged in (modals/DevicesModal.tsx). The team (modals/TeamModal.tsx)
+   shares its rows; an invitation not yet taken is outlined. */
 .device-list {
   display: grid;
   gap: 10px;
@@ -14887,4 +14888,28 @@ body.checkin-body {
 .checkin-footer {
   color: var(--muted);
   font-size: 11px;
+}
+
+/* An invitation not taken yet (modals/TeamModal.tsx), and the form to send one. */
+.team-list li.pending {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+
+.team-invite {
+  display: grid;
+  gap: 14px;
+}
+
+.device-member {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: var(--weight-body);
+}
+
+/* 내 정보 for a co-admin: what stays the owner's. */
+.profile-member-note {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 13px;
 }

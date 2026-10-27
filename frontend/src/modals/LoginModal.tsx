@@ -17,6 +17,7 @@ export function LoginModal({
   onLoggedIn,
   onSignup,
   onForgot,
+  onJoin,
 }: {
   initialRole: Role
   onClose: () => void
@@ -25,6 +26,8 @@ export function LoginModal({
   onLoggedIn: (session: Session & { recoveryLeft?: number }) => void
   onSignup: (role: Role) => void
   onForgot: (email: string) => void
+  // An invited co-admin's first visit (modals/JoinTeamModal.tsx).
+  onJoin: () => void
 }) {
   const [draft, setDraft] = useState({ role: initialRole, email: "", password: "" })
   const [error, setError] = useState("")
@@ -116,6 +119,12 @@ export function LoginModal({
             {t("아직 계정이 없나요?")}{" "}
             <button onClick={() => onSignup(draft.role)} type="button">
               {t("회원가입")}
+            </button>
+          </p>
+          <p className="auth-switch">
+            {t("함께 관리하자는 초대를 받았나요?")}{" "}
+            <button onClick={onJoin} type="button">
+              {t("초대받았나요?")}
             </button>
           </p>
           <div className="demo-login">
