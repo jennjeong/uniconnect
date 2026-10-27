@@ -202,9 +202,12 @@ const en: Record<string, string> = {
   "신고된 회원: {name}": "Reported: {name}",
   "그대로 두기": "Leave it",
   "후기 내리기": "Take the review down",
+  "답글 내리기": "Take the reply down",
+  "후기 답글": "Review reply",
   "계정 정지": "Suspend the account",
   "그대로 둠": "Left as it was",
   "후기 내림": "Review taken down",
+  "답글 내림": "Reply taken down",
   "계정 정지함": "Account suspended",
   "신고를 처리했어요.": "Report settled.",
   "정지된 계정": "Suspended accounts",
@@ -403,6 +406,12 @@ const en: Record<string, string> = {
   "{name}에서 남긴 후기": "Review from {name}",
   "후기를 남겼어요. {name}의 상세 정보에 보여요.": "Review posted. It shows on {name}'s profile.",
   "후기를 지웠어요.": "Review deleted.",
+  답글: "Reply",
+  "답글 달기": "Write a reply",
+  "답글 저장": "Save reply",
+  "운영자가 이 답글을 내렸어요. 다른 사람에게는 보이지 않아요.": "The operators took this reply down. Others no longer see it.",
+  "답글을 남겼어요. 후기 아래에 함께 보여요.": "Reply posted. It shows under the review.",
+  "답글을 지웠어요.": "Reply deleted.",
 }
 
 export default en

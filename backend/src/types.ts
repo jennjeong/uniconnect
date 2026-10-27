@@ -510,11 +510,14 @@ export type Review = {
   updatedAt?: string
   // When the operators took it down over a report.
   hiddenAt?: string
+  // The reviewed side's answer, one per review, written on the agreement and
+  // shown under the review; hiddenAt once the operators took it down.
+  reply?: { text: string; createdAt: string; updatedAt?: string; hiddenAt?: string }
 }
 
-// What the operators did about a report: nothing, took the review down, or
-// stopped the account.
-export type ReportAction = "dismiss" | "hide-review" | "suspend"
+// What the operators did about a report: nothing, took the review or the
+// reply to it down, or stopped the account.
+export type ReportAction = "dismiss" | "hide-review" | "hide-reply" | "suspend"
 
 // A member's report of another account, one of the messages it sent or its
 // review, for the operators (/admin), and what they did about it.
@@ -527,6 +530,7 @@ export type AbuseReport = {
     | { kind: "account" }
     | { kind: "message"; conversationId: string; messageId: string }
     | { kind: "review"; reviewId: string }
+    | { kind: "reply"; reviewId: string }
   // One of reportReasons (lib/validation.ts), and in the reporter's words.
   reason: string
   detail: string

@@ -54,7 +54,8 @@ export function reviewSummary(reviews: Review[]) {
 export const reviewKey = (review: Review) => createHash("sha256").update(review.id).digest("hex").slice(0, 16)
 
 // What anyone sees of a review: not its proposal or the author's account.
-// Its author also sees whether the operators took it down.
+// Its author also sees whether the operators took it down, and the reply's
+// author whether they took the reply down (its text is left out then).
 export const publicReview = (review: Review) => ({
   key: reviewKey(review),
   authorName: review.authorName,
@@ -66,4 +67,15 @@ export const publicReview = (review: Review) => ({
   createdAt: review.createdAt,
   ...(review.updatedAt ? { updatedAt: review.updatedAt } : {}),
   ...(review.hiddenAt ? { hidden: true } : {}),
+  ...(review.reply
+    ? {
+        reply: review.reply.hiddenAt
+          ? { hidden: true as const, createdAt: review.reply.createdAt }
+          : {
+              text: review.reply.text,
+              createdAt: review.reply.createdAt,
+              ...(review.reply.updatedAt ? { updatedAt: review.reply.updatedAt } : {}),
+            },
+      }
+    : {}),
 })

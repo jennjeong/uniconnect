@@ -68,6 +68,7 @@ export function MatchDetailPage({
   onReport,
   onBlock,
   onReportReview,
+  onReportReply,
 }: {
   match: Match
   kind: "brand" | "group"
@@ -87,6 +88,7 @@ export function MatchDetailPage({
   onReport?: () => void
   onBlock?: () => void
   onReportReview?: (review: Review) => void
+  onReportReply?: (review: Review) => void
 }) {
   const [tab, setTab] = useState<Tab>("match")
   const group = kind === "group"
@@ -292,7 +294,13 @@ export function MatchDetailPage({
               )}
             </div>
           ) : (
-            <ReviewsSection id={match.id} onReport={onReportReview} role={group ? "학생단체" : "브랜드"} />
+            <ReviewsSection
+              id={match.id}
+              name={match.name}
+              onReport={onReportReview}
+              onReportReply={onReportReply}
+              role={group ? "학생단체" : "브랜드"}
+            />
           )}
         </div>
       </div>

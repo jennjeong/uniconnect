@@ -111,8 +111,8 @@ const en: Record<string, string> = {
   "확정된 협찬의 할 일을 두 회원이 함께 정하고 결과를 남김":
     "Letting the two members of a confirmed sponsorship agree on what each will do and keep the results",
   "약속한 두 회원 중 한쪽이 탈퇴할 때까지": "Until either of the two members leaves",
-  "협찬 후기(별점, 고른 태그, 한 줄 후기, 쓴 단체·브랜드와 행사 이름)":
-    "Sponsorship reviews (stars, tags picked, the line written, the names of the group or brand that wrote it and of the event)",
+  "협찬 후기(별점, 고른 태그, 한 줄 후기, 쓴 단체·브랜드와 행사 이름)와 받은 쪽의 답글":
+    "Sponsorship reviews (stars, tags picked, the line written, the names of the group or brand that wrote it and of the event) and the reviewed side's replies",
   "협찬 상대를 고를 때 참고하도록 받은 쪽의 상세 정보에 누구나 볼 수 있게 보여 줌":
     "Shown to everyone on the reviewed side's profile, to help others choose a partner",
   "쓴 회원이 지우거나, 쓴 회원이나 받은 회원이 탈퇴할 때까지":

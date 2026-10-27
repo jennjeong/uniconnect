@@ -35,10 +35,16 @@ type Tab = "waiting" | "answered"
 const doneLabels: Record<ReportAction, string> = {
   dismiss: "그대로 둠",
   "hide-review": "후기 내림",
+  "hide-reply": "답글 내림",
   suspend: "계정 정지함",
 }
 
-const kindLabels: Record<AdminReport["target"]["kind"], string> = { account: "계정", message: "채팅 메시지", review: "후기" }
+const kindLabels: Record<AdminReport["target"]["kind"], string> = {
+  account: "계정",
+  message: "채팅 메시지",
+  review: "후기",
+  reply: "후기 답글",
+}
 
 // A member's report: what kind of thing over which reason, who reported
 // whom, the reported text as it was, and either what was done or the ways
@@ -83,6 +89,11 @@ function ReportCard({
           {report.target.kind === "review" && (
             <button className="cancel-button" disabled={busy} onClick={() => act("hide-review")} type="button">
               {t("후기 내리기")}
+            </button>
+          )}
+          {report.target.kind === "reply" && (
+            <button className="cancel-button" disabled={busy} onClick={() => act("hide-reply")} type="button">
+              {t("답글 내리기")}
             </button>
           )}
           <button className="decline-button" disabled={busy || !report.about} onClick={() => act("suspend")} type="button">

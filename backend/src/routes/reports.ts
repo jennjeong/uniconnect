@@ -29,7 +29,7 @@ const reportsPerHour = createRateLimit({
 
 // What a report is about, from the request: an account by its listing (one
 // the reporter sees), a message the other side of the reporter's own
-// conversation sent, or a review by its public key. Answers the account it
+// conversation sent, or a review or the reply to it by the review's public key. Answers the account it
 // is about and the reported text as it is now.
 function reportedThing(database: Database, account: Account, body: Record<string, unknown> | undefined) {
   const kind = text(body?.kind)
@@ -60,6 +60,18 @@ function reportedThing(database: Database, account: Account, body: Record<string
       accountId: review.authorAccountId,
       target: { kind, reviewId: review.id } as AbuseReport["target"],
       excerpt: review.comment || undefined,
+    }
+  }
+  if (kind === "reply") {
+    const review = database.reviews.find(
+      (item) => !item.hiddenAt && item.reply && !item.reply.hiddenAt && reviewKey(item) === text(body?.reviewKey),
+    )
+    if (!review?.reply) throw new HttpError(404, "신고할 답글을 찾을 수 없어요.")
+    return {
+      // The reply's author: the account behind the listing the review is about.
+      accountId: ownerOfListing(database, review.aboutId)?.id,
+      target: { kind, reviewId: review.id } as AbuseReport["target"],
+      excerpt: review.reply.text,
     }
   }
   throw new HttpError(400, "무엇을 신고하는지 알 수 없어요.")

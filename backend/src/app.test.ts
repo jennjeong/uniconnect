@@ -3588,6 +3588,88 @@ test("after the event each side reviews the other, and the reviews show on the l
   assert.equal((await about(brandListing)).summary.count, 0)
 })
 
+test("the reviewed side answers a review once, shown under it, and a report can take the answer down", async () => {
+  const { todayInKorea } = await import("./lib/dates.js")
+  const { mailTransport } = await import("./lib/mailer.js")
+  const realPost = mailTransport.post
+  const sent: { to: string[]; subject: string; text: string }[] = []
+  mailTransport.post = async (body) => {
+    sent.push(body)
+    return new Response(null, { status: 200 })
+  }
+  config.resendApiKey = "test-key"
+  config.mailFrom = "uniconnect <no-reply@example.com>"
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 20))
+  const admin = async (route: string, body: unknown) =>
+    (
+      await fetch(baseUrl + route, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Admin-Token": "test-admin-token" },
+        body: JSON.stringify(body),
+      })
+    ).status
+  try {
+    const group = await signUpMember("reply-club@syu.ac.kr", "reply-pass-123")
+    const groupId = getDatabase().accounts.find((account) => account.email === "reply-club@syu.ac.kr")!.id
+    const { token: brand, listingId: brandListing } = await listedMember("reply@reply-cafe.kr", "reply-pass-123", "브랜드")
+    await call("POST", "/events", { name: "답글 공연", date: todayInKorea(), people: "100명", types: ["제품"] }, group)
+    await call("POST", "/proposals", { matchId: brandListing }, group)
+    const request = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
+    await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+    const reply = `/reviews/${request.id}/reply`
+    // Nothing to answer before the group's review.
+    assert.equal((await call("PUT", reply, { text: "감사해요" }, brand)).status, 404)
+    await call("PUT", `/reviews/${request.id}`, { rating: 5, tags: [], comment: "커피가 맛있었어요." }, group)
+    assert.equal((await call("GET", `/agreements/${request.id}`, undefined, brand)).data.agreement.review.canReply, true)
+    assert.equal((await call("GET", `/agreements/${request.id}`, undefined, group)).data.agreement.review.canReply, false)
+
+    for (const body of [{}, { text: "  " }, { text: "가".repeat(301) }]) {
+      assert.equal((await call("PUT", reply, body, brand)).status, 400)
+    }
+    sent.length = 0
+    const answered = await call("PUT", reply, { text: "  함께해서 즐거웠어요.  " }, brand)
+    assert.equal(answered.status, 201)
+    assert.equal(answered.data.review.reply.text, "함께해서 즐거웠어요.")
+    await settle()
+    // The reviewer hears about it once.
+    assert.equal(sent.length, 1)
+    assert.match(sent[0].subject, /답글/)
+    assert.equal((await call("PUT", reply, { text: "다음에도 함께해요." }, brand)).status, 200)
+    await settle()
+    assert.equal(sent.length, 1)
+    // Under the review for anyone, and kept when the group rewrites its review.
+    await call("PUT", `/reviews/${request.id}`, { rating: 4, tags: [], comment: "고친 후기" }, group)
+    const listed = (await call("GET", `/reviews?about=${brandListing}`)).data.reviews[0]
+    assert.equal(listed.comment, "고친 후기")
+    assert.equal(listed.reply.text, "다음에도 함께해요.")
+    assert.ok(listed.reply.updatedAt)
+    // The group has no review of its own part to answer, and the demo accounts can't answer.
+    assert.equal((await call("PUT", reply, { text: "저도요" }, group)).status, 404)
+
+    // A third member reports the answer; the operators take it down.
+    const third = await signUpMember("reply-reader@syu.ac.kr", "reply-pass-123")
+    const reported = await call("POST", "/reports", { kind: "reply", reviewKey: listed.key, reason: "욕설 · 괴롭힘" }, third)
+    assert.equal(reported.status, 201)
+    const brandId = getDatabase().accounts.find((account) => account.email === "reply@reply-cafe.kr")!.id
+    const report = getDatabase().reports.find((item) => item.target.kind === "reply")!
+    assert.equal(report.accountId, brandId)
+    assert.equal(report.excerpt, "다음에도 함께해요.")
+    assert.equal(await admin(`/admin/reports/${report.id}/resolve`, { action: "hide-reply" }), 200)
+    // Gone for readers, the review stays; its author sees it was taken down.
+    const after = (await call("GET", `/reviews?about=${brandListing}`)).data.reviews[0]
+    assert.equal(after.comment, "고친 후기")
+    assert.deepEqual(Object.keys(after.reply).sort(), ["createdAt", "hidden"])
+    assert.equal((await call("POST", "/reports", { kind: "reply", reviewKey: listed.key, reason: "욕설 · 괴롭힘" }, third)).status, 404)
+    assert.equal((await call("DELETE", reply, undefined, brand)).status, 204)
+    assert.equal((await call("DELETE", reply, undefined, brand)).status, 404)
+    assert.equal((await call("GET", `/reviews?about=${brandListing}`)).data.reviews[0].reply, undefined)
+  } finally {
+    mailTransport.post = realPost
+    config.resendApiKey = undefined
+    config.mailFrom = undefined
+  }
+})
+
 test("members are emailed once when an event or a sponsored event is three days away or nearer", async () => {
   const { sendReminders } = await import("./lib/reminders.js")
   const { mailTransport } = await import("./lib/mailer.js")

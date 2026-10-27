@@ -256,6 +256,8 @@ export function agreementView(database: Database, agreement: Agreement, proposal
     review: {
       open: reviewOpen(proposal),
       canWrite: canReview(database, proposal, side),
+      // This side may answer the other's review of it (not from a demo account).
+      canReply: Boolean(theirs && !theirs.hiddenAt) && !isDemoAccount(database, proposal[side].account),
       ...(mine ? { mine: publicReview(mine) } : {}),
       ...(theirs ? { theirs: publicReview(theirs) } : {}),
     },
