@@ -50,6 +50,8 @@ describe("English for listed values", () => {
       "함께한 이력",
       "응답 준비",
       "가까운 행사",
+      // The catalogs' 찜 tab (MatchesPage, GroupsPage).
+      "찜",
     ]
     expect(values.filter((value) => !(value in en))).toEqual([])
   })

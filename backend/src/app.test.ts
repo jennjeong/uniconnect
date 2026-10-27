@@ -1291,6 +1291,36 @@ test("members report and block one another, and operators act on the reports", a
   assert.equal((await call("POST", "/auth/login", credentials)).status, 200)
 })
 
+test("members save listings they see to their 찜 list, which follows blocks and leaving", async () => {
+  const { token: group } = await listedMember("saver@syu.ac.kr", "saver-pass-123")
+  const { token: brand, listingId: cafe } = await listedMember("saved@saved-cafe.kr", "saved-pass-123", "브랜드")
+  const { listingId: bakery } = await listedMember("saved2@saved-bakery.kr", "saved2-pass-123", "브랜드")
+  assert.equal((await call("PUT", `/saved/${cafe}`, undefined, group)).status, 204)
+  assert.equal((await call("PUT", `/saved/${bakery}`, undefined, group)).status, 204)
+  // Saving again keeps one, and the newest comes first.
+  assert.equal((await call("PUT", `/saved/${cafe}`, undefined, group)).status, 204)
+  assert.deepEqual((await call("GET", "/saved", undefined, group)).data.saved, [bakery, cafe])
+  // Only listings of the other side the member sees: not the examples, nor
+  // anything unknown, and never for a visitor.
+  const database = getDatabase()
+  const example = database.brands.find((item) => !database.accounts.some((account) => account.brandId === item.id))!
+  assert.equal((await call("PUT", `/saved/${example.id}`, undefined, group)).status, 404)
+  assert.equal((await call("PUT", "/saved/nope", undefined, group)).status, 404)
+  assert.equal((await call("PUT", `/saved/${cafe}`)).status, 401)
+  assert.equal((await call("DELETE", `/saved/${bakery}`, undefined, group)).status, 204)
+  assert.deepEqual((await call("GET", "/saved", undefined, group)).data.saved, [cafe])
+  assert.deepEqual((await call("GET", "/auth/export", undefined, group)).data.saved, [{ id: cafe, name: "saved 카페" }])
+  // A blocked partner drops out of the list until it is unblocked.
+  await call("POST", "/blocks", { listingId: cafe }, group)
+  assert.deepEqual((await call("GET", "/saved", undefined, group)).data.saved, [])
+  await call("DELETE", `/blocks/${cafe}`, undefined, group)
+  assert.deepEqual((await call("GET", "/saved", undefined, group)).data.saved, [cafe])
+  // A brand that leaves goes from every list.
+  assert.equal((await call("DELETE", "/auth/account", { password: "saved-pass-123" }, brand)).status, 204)
+  assert.deepEqual((await call("GET", "/saved", undefined, group)).data.saved, [])
+  assert.equal(Object.values(getDatabase().saved).some((ids) => ids.includes(cafe)), false)
+})
+
 test("a brand verifies its business with the National Tax Service, and its listing says so", async () => {
   const { businessCheck } = await import("./lib/business.js")
   const realValidate = businessCheck.validate

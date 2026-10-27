@@ -227,6 +227,9 @@ export const api = {
   blocks: () => request<{ blocked: BlockedListing[] }>("/blocks"),
   block: (listingId: string) => request<{ ok: true }>("/blocks", { method: "POST", body: { listingId } }),
   unblock: (listingId: string) => request<void>(`/blocks/${encodeURIComponent(listingId)}`, { method: "DELETE" }),
+  saved: () => request<{ saved: string[] }>("/saved"),
+  save: (listingId: string) => request<void>(`/saved/${encodeURIComponent(listingId)}`, { method: "PUT" }),
+  unsave: (listingId: string) => request<void>(`/saved/${encodeURIComponent(listingId)}`, { method: "DELETE" }),
   adminReports: (token: string) =>
     request<{ reports: AdminReport[]; suspended: SuspendedAccount[] }>("/admin/reports", {
       headers: { "X-Admin-Token": token },

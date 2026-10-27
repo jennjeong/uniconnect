@@ -2972,6 +2972,43 @@ button.nav-pill:hover {
   box-shadow: none;
 }
 
+.work-meta-actions {
+  flex: none;
+}
+
+.work-meta > .work-meta-actions {
+  gap: 8px;
+}
+
+/* 찜: a heart beside the badge, filled in deep blue once saved. */
+.save-toggle {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--muted);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+
+.save-toggle:hover,
+.save-toggle[aria-pressed="true"] {
+  color: var(--point);
+}
+
+.save-toggle[aria-pressed="true"] .icon,
+.save-button[aria-pressed="true"] .icon {
+  fill: currentColor;
+}
+
+.save-button[aria-pressed="true"] {
+  color: var(--point-strong);
+  box-shadow: inset 0 0 0 1.5px var(--point);
+}
+
 /* Kept modest, so a row of cards fits the screen with room to compare. */
 .work-mark {
   display: grid;
@@ -11113,6 +11150,22 @@ button.nav-pill:hover {
 
   .work-badge {
     display: none;
+  }
+
+  /* The heart takes the end of the actions row, under the ring. */
+  .work-card:has(.save-toggle) {
+    grid-template-areas:
+      "mark meta ring"
+      "mark name ring"
+      "tags tags tags"
+      "actions actions save";
+  }
+
+  .work-meta > .work-meta-actions {
+    grid-area: save;
+    align-self: center;
+    justify-self: center;
+    padding-top: 10px;
   }
 
   .work-mark {

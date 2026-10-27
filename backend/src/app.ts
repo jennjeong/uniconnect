@@ -30,6 +30,7 @@ import { proposalsRouter } from "./routes/proposals.js"
 import { requestsRouter } from "./routes/requests.js"
 import { blocksRouter, reportsRouter } from "./routes/reports.js"
 import { reviewsRouter } from "./routes/reviews.js"
+import { savedRouter } from "./routes/saved.js"
 import { refreshDatabase } from "./store.js"
 
 // `loaded`: on Vercel (vercel.ts), each copy of the API reads the data on
@@ -117,6 +118,7 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   app.use("/api/inquiries", inquiriesRouter)
   app.use("/api/reports", reportsRouter)
   app.use("/api/blocks", blocksRouter)
+  app.use("/api/saved", savedRouter)
   app.use("/api/errors", errorsRouter)
   app.use("/api/admin", adminRouter)
   app.use("/api/cron", cronRouter)
