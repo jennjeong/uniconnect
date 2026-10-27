@@ -27,27 +27,27 @@ const adminFailures = createRateLimit({
 // sent, Korean included.
 const digest = (value: string) => createHash("sha256").update(value).digest()
 
-function requireAdmin(req: Request) {
+async function requireAdmin(req: Request) {
   const key = clientKey(req)
-  adminFailures.check(key)
+  await adminFailures.check(key)
   const expected = config.adminToken
   const given = req.get("x-admin-token") ?? ""
   const match = Boolean(expected) && timingSafeEqual(digest(given), digest(expected ?? ""))
   if (!match) {
-    adminFailures.hit(key)
+    await adminFailures.hit(key)
     throw new HttpError(403, "관리자만 쓸 수 있어요.")
   }
 }
 
 // The platform's figures, real members' and with the demo data (lib/stats.ts).
-adminRouter.get("/stats", (req, res) => {
-  requireAdmin(req)
+adminRouter.get("/stats", async (req, res) => {
+  await requireAdmin(req)
   res.json({ stats: platformStats(getDatabase()) })
 })
 
 // Every question, unanswered first, then newest, with who sent it.
-adminRouter.get("/inquiries", (req, res) => {
-  requireAdmin(req)
+adminRouter.get("/inquiries", async (req, res) => {
+  await requireAdmin(req)
   const database = getDatabase()
   const unanswered = (inquiry: { answer?: string }) => (inquiry.answer ? 1 : 0)
   const inquiries = [...database.inquiries]
@@ -65,8 +65,8 @@ adminRouter.get("/inquiries", (req, res) => {
 // Members' reports, the ones waiting first, then the newest: who reported
 // whom over what, with the reported text as it was; and the accounts
 // stopped so far, to restore.
-adminRouter.get("/reports", (req, res) => {
-  requireAdmin(req)
+adminRouter.get("/reports", async (req, res) => {
+  await requireAdmin(req)
   const database = getDatabase()
   const person = (id: string) => {
     const account = database.accounts.find((item) => item.id === id)
@@ -90,7 +90,7 @@ const reportActions: ReportAction[] = ["dismiss", "hide-review", "hide-reply", "
 // gets no email and shows to no one; its sessions end). The shared demo
 // accounts can't be stopped.
 adminRouter.post("/reports/:id/resolve", async (req, res) => {
-  requireAdmin(req)
+  await requireAdmin(req)
   const database = getDatabase()
   const report = database.reports.find((item) => item.id === req.params.id)
   if (!report) throw new HttpError(404, "신고를 찾을 수 없어요.")
@@ -123,13 +123,13 @@ adminRouter.post("/reports/:id/resolve", async (req, res) => {
 
 // The latest server and browser errors, newest first.
 adminRouter.get("/errors", async (req, res) => {
-  requireAdmin(req)
+  await requireAdmin(req)
   res.json({ errors: await recentErrors() })
 })
 
 // Lets a stopped account back in.
 adminRouter.post("/accounts/:id/unsuspend", async (req, res) => {
-  requireAdmin(req)
+  await requireAdmin(req)
   const account = getDatabase().accounts.find((item) => item.id === req.params.id)
   if (!account?.suspendedAt) throw new HttpError(404, "정지된 계정을 찾을 수 없어요.")
   delete account.suspendedAt
@@ -138,7 +138,7 @@ adminRouter.post("/accounts/:id/unsuspend", async (req, res) => {
 })
 
 adminRouter.post("/inquiries/:id/answer", async (req, res) => {
-  requireAdmin(req)
+  await requireAdmin(req)
   const answer = text(req.body?.answer)
   if (!answer) throw new HttpError(400, "답변을 적어 주세요.")
   if (answer.length > 2000) throw new HttpError(400, "답변은 2,000자 이하로 적어 주세요.")

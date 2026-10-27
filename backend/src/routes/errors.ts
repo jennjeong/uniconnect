@@ -18,7 +18,7 @@ const reportsPerClient = createRateLimit({
 // on the frontend): its message, where in the scripts, and the page's path.
 // Anyone may send one, as visitors meet errors too.
 errorsRouter.post("/", async (req, res) => {
-  reportsPerClient.take(clientKey(req))
+  await reportsPerClient.take(clientKey(req))
   const message = text(req.body?.message)
   const where = text(req.body?.where)
   const path = text(req.body?.path)

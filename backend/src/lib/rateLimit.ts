@@ -1,14 +1,40 @@
+import { createHash } from "node:crypto"
 import type { Request } from "express"
 
 import { HttpError } from "./errors.js"
+import { databaseSql, ensureTables, type Sql } from "./sql.js"
 import type { Account, Database } from "../types.js"
 
-// Counts requests per key (an IP, or an IP and an email) in fixed windows,
-// in memory. That is enough for the single server this prototype runs as;
-// several servers would share the counts through something like Redis.
+// Counts requests per key (an IP, or an IP and an email) in fixed windows.
+// With a database (DATABASE_URL) the counts live in its uniconnect_limits
+// table, so every copy of the API on Vercel shares them; a key is kept
+// there only as a hash, as it holds addresses and emails. Without one, or
+// when it doesn't answer within a moment, they are counted in this copy's
+// memory, as before.
 type Bucket = { count: number; resetAt: number }
 
 const limiters = new Set<Map<string, Bucket>>()
+
+// How long a count may wait for the database before memory counts it.
+export const sharedLimits = { waitMs: 1500 }
+
+// Rows of windows that ended are swept now and then, by one hit in this many.
+const sweepEvery = 200
+
+function withinWait<T>(work: Promise<T>) {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const late = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error("rate limit store timed out")), sharedLimits.waitMs)
+  })
+  return Promise.race([work, late]).finally(() => clearTimeout(timer))
+}
+
+let warned = false
+function fallBack(error: unknown) {
+  if (warned) return
+  warned = true
+  console.warn("[rateLimit] counting in memory: the database didn't answer", error)
+}
 
 export function createRateLimit({
   limit,
@@ -21,6 +47,9 @@ export function createRateLimit({
 }) {
   const buckets = new Map<string, Bucket>()
   limiters.add(buckets)
+  // The limit's name in the table: what tells it from the others.
+  const name = createHash("sha256").update(`${limit} ${windowMs} ${message}`).digest("hex").slice(0, 16)
+  const keyHash = (key: string) => createHash("sha256").update(key).digest("hex")
 
   const live = (key: string) => {
     const bucket = buckets.get(key)
@@ -29,31 +58,91 @@ export function createRateLimit({
     return undefined
   }
 
-  // Throws 429 once the key has used up its window.
-  const check = (key: string) => {
-    if ((live(key)?.count ?? 0) >= limit) throw new HttpError(429, message)
+  const memory = {
+    count: (key: string) => live(key)?.count ?? 0,
+    hit: (key: string) => {
+      if (buckets.size > 10000) {
+        for (const [stale, bucket] of buckets) if (bucket.resetAt <= Date.now()) buckets.delete(stale)
+      }
+      const bucket = live(key) ?? { count: 0, resetAt: Date.now() + windowMs }
+      bucket.count += 1
+      buckets.set(key, bucket)
+      return bucket.count
+    },
+    reset: (key: string) => void buckets.delete(key),
   }
 
-  const hit = (key: string) => {
-    if (buckets.size > 10000) {
-      for (const [stale, bucket] of buckets) if (bucket.resetAt <= Date.now()) buckets.delete(stale)
+  // The count in the shared table, or in memory without one.
+  const shared = async <T>(run: (sql: Sql) => Promise<T>, local: () => T) => {
+    const sql = databaseSql()
+    if (!sql) return local()
+    try {
+      return await withinWait((async () => {
+        await ensureTables(sql)
+        return run(sql)
+      })())
+    } catch (error) {
+      fallBack(error)
+      return local()
     }
-    const bucket = live(key) ?? { count: 0, resetAt: Date.now() + windowMs }
-    bucket.count += 1
-    buckets.set(key, bucket)
+  }
+
+  const count = (key: string) =>
+    shared(
+      async (sql) => {
+        const [row] = await sql("select count from uniconnect_limits where name = $1 and key = $2 and reset_at > $3", [
+          name,
+          keyHash(key),
+          Date.now(),
+        ])
+        return row ? Number(row.count) : 0
+      },
+      () => memory.count(key),
+    )
+
+  // Counts one more in the key's window (a new one once it ended), and
+  // answers the count.
+  const hit = (key: string) =>
+    shared(
+      async (sql) => {
+        const now = Date.now()
+        const [row] = await sql(
+          `insert into uniconnect_limits (name, key, count, reset_at) values ($1, $2, 1, $3)
+           on conflict (name, key) do update set
+             count = case when uniconnect_limits.reset_at <= $4 then 1 else uniconnect_limits.count + 1 end,
+             reset_at = case when uniconnect_limits.reset_at <= $4 then excluded.reset_at else uniconnect_limits.reset_at end
+           returning count`,
+          [name, keyHash(key), now + windowMs, now],
+        )
+        if (Math.floor(Math.random() * sweepEvery) === 0) await sql("delete from uniconnect_limits where reset_at <= $1", [now])
+        return Number(row.count)
+      },
+      () => memory.hit(key),
+    )
+
+  // Throws 429 once the key has used up its window.
+  const check = async (key: string) => {
+    if ((await count(key)) >= limit) throw new HttpError(429, message)
   }
 
   return {
     check,
-    hit,
-    // For limits on every request: check, then count this one.
-    take: (key: string) => {
-      check(key)
-      hit(key)
+    hit: async (key: string) => {
+      await hit(key)
     },
-    reset: (key: string) => {
-      buckets.delete(key)
+    // For limits on every request: counts this one, and throws 429 when it
+    // goes past the limit. One step, so requests sent at once can't all
+    // pass a check before any is counted.
+    take: async (key: string) => {
+      if ((await hit(key)) > limit) throw new HttpError(429, message)
     },
+    reset: (key: string) =>
+      shared(
+        async (sql) => {
+          await sql("delete from uniconnect_limits where name = $1 and key = $2", [name, keyHash(key)])
+        },
+        () => memory.reset(key),
+      ),
   }
 }
 
@@ -69,7 +158,12 @@ export function senderKey(req: Request, database: Database, account: Account) {
   return demo ? `${account.id} ${clientKey(req)}` : account.id
 }
 
-// Tests start each case with fresh counts.
-export function clearRateLimits() {
+// Tests start each case with fresh counts, in memory and in the table.
+export async function clearRateLimits() {
   for (const buckets of limiters) buckets.clear()
+  const sql = databaseSql()
+  if (sql) {
+    await ensureTables(sql)
+    await sql("delete from uniconnect_limits")
+  }
 }

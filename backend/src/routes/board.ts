@@ -157,7 +157,7 @@ boardRouter.post("/", async (req, res) => {
   const fields = parsePost(account, req.body)
   const open = database.posts.filter((post) => post.accountId === account.id && isOpen(post))
   if (open.length >= maxOpenPosts) throw new HttpError(409, `열려 있는 모집 글은 ${maxOpenPosts}개까지예요. 다 된 글을 먼저 닫아 주세요.`)
-  postsPerDay.take(account.id)
+  await postsPerDay.take(account.id)
   const post: BoardPost = {
     id: randomUUID(),
     accountId: account.id,

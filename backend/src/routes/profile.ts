@@ -131,7 +131,7 @@ profileRouter.post("/business", async (req, res) => {
   if (!owner || owner.length > 30) throw new HttpError(400, "대표자 성명을 적어 주세요.")
   const taken = database.accounts.some((item) => item.id !== account.id && item.business?.number === number)
   if (taken) throw new HttpError(409, "이미 다른 계정에서 확인한 사업자등록번호예요.")
-  businessChecksPerHour.take(account.id)
+  await businessChecksPerHour.take(account.id)
   let result
   try {
     result = await businessCheck.validate({ number, startDate, owner })

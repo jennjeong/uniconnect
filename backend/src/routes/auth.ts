@@ -91,11 +91,11 @@ function startSession(accountId: string, req: Request, userAgent = req.get("user
 // reads as a session that has run out.
 async function checkCurrentPassword(req: Request, account: Account) {
   const limitKey = `${clientKey(req)} ${account.email}`
-  loginFailures.take(limitKey)
+  await loginFailures.take(limitKey)
   if (!(await verifyPassword(String(req.body?.password ?? ""), account.passwordHash))) {
     throw new HttpError(400, "비밀번호가 올바르지 않아요.")
   }
-  loginFailures.reset(limitKey)
+  await loginFailures.reset(limitKey)
 }
 
 // How long a login waits for its code after the password, and how many
@@ -140,7 +140,7 @@ type CodePurpose = EmailCode["purpose"]
 // account asking), and answers with when it expires. The email is in the
 // language the app was shown in.
 async function issueCode(email: string, role: Role, purpose: CodePurpose, lang: Lang, accountId?: string) {
-  codesPerEmail.take(email)
+  await codesPerEmail.take(email)
   const database = getDatabase()
   const code = String(randomInt(100000, 1000000))
   const expiresAt = Date.now() + config.emailCodeTtlMs
@@ -197,7 +197,7 @@ async function checkCode(email: string, code: string, purpose: CodePurpose) {
 // Step 1 of sign-up: send a 6-digit code to a school (student group) or
 // company (sponsor) address.
 authRouter.post("/email-code", async (req, res) => {
-  codesPerClient.take(clientKey(req))
+  await codesPerClient.take(clientKey(req))
   const role = parseRole(req.body?.role)
   const email = normalizeEmail(req.body?.email)
   const ruleError = emailRuleError(role, email)
@@ -213,7 +213,7 @@ authRouter.post("/email-code", async (req, res) => {
 
 // Step 2: check the code and hand back a token that proves the email is verified.
 authRouter.post("/email-code/verify", async (req, res) => {
-  verifyPerClient.take(clientKey(req))
+  await verifyPerClient.take(clientKey(req))
   const email = normalizeEmail(req.body?.email)
   const entry = await checkCode(email, text(req.body?.code), undefined)
 
@@ -295,7 +295,7 @@ authRouter.post("/signup", async (req, res) => {
 // Forgotten password, step 1: a code to the address the account signed up
 // with.
 authRouter.post("/password-reset/code", async (req, res) => {
-  codesPerClient.take(clientKey(req))
+  await codesPerClient.take(clientKey(req))
   const email = normalizeEmail(req.body?.email)
   if (!email) throw new HttpError(400, "가입한 이메일을 입력해 주세요.")
   const account = getDatabase().accounts.find((item) => item.email === email)
@@ -310,7 +310,7 @@ authRouter.post("/password-reset/code", async (req, res) => {
 // Step 2: the right code sets the new password, ends every session the
 // account had and logs it in here.
 authRouter.post("/password-reset", async (req, res) => {
-  verifyPerClient.take(clientKey(req))
+  await verifyPerClient.take(clientKey(req))
   const email = normalizeEmail(req.body?.email)
   const password = String(req.body?.password ?? "")
   // Checked before the code, so a weak password costs no guess.
@@ -328,7 +328,7 @@ authRouter.post("/password-reset", async (req, res) => {
   database.emailCodes = database.emailCodes.filter((item) => item !== entry)
   account.passwordHash = await hashPassword(password)
   database.sessions = database.sessions.filter((session) => session.accountId !== account.id)
-  loginFailures.reset(`${clientKey(req)} ${email}`)
+  await loginFailures.reset(`${clientKey(req)} ${email}`)
   // The email alone doesn't pass two-step login: the code is asked next.
   if (account.twoFactor) {
     const ticket = startTicket(account, req)
@@ -348,7 +348,7 @@ authRouter.post("/login", async (req, res) => {
   const limitKey = `${clientKey(req)} ${email}`
   // Counted before the slow password check, so attempts sent all at once
   // cannot slip past the limit; a success clears the count.
-  loginFailures.take(limitKey)
+  await loginFailures.take(limitKey)
   const database = getDatabase()
   const account = database.accounts.find((item) => item.email === email)
   const hashBefore = account?.passwordHash
@@ -359,7 +359,7 @@ authRouter.post("/login", async (req, res) => {
   if (!account || !matches || account.passwordHash !== hashBefore || !database.accounts.includes(account)) {
     throw new HttpError(401, "이메일 또는 비밀번호가 올바르지 않아요.")
   }
-  loginFailures.reset(limitKey)
+  await loginFailures.reset(limitKey)
   if (account.suspendedAt) throw new HttpError(403, suspendedMessage)
   if (account.role !== role) {
     const label = account.role === "학생단체" ? "협찬 받기" : "협찬 하기"
@@ -383,7 +383,7 @@ authRouter.post("/login", async (req, res) => {
 authRouter.post("/login/code", async (req, res) => {
   const email = normalizeEmail(req.body?.email)
   const limitKey = `${clientKey(req)} ${email}`
-  loginFailures.take(limitKey)
+  await loginFailures.take(limitKey)
   const database = getDatabase()
   const account = database.accounts.find((item) => item.email === email)
   const ticket = account?.loginTicket
@@ -397,7 +397,7 @@ authRouter.post("/login/code", async (req, res) => {
     await saveDatabase()
     throw new HttpError(401, ticket.tries >= ticketTries ? "코드를 너무 많이 틀렸어요. 비밀번호부터 다시 입력해 주세요." : "코드가 올바르지 않아요. 인증 앱의 6자리 코드나 복구 코드를 입력해 주세요.")
   }
-  loginFailures.reset(limitKey)
+  await loginFailures.reset(limitKey)
   delete account.loginTicket
   const token = startSession(account.id, req, ticket.userAgent)
   await saveDatabase()
@@ -493,12 +493,12 @@ authRouter.delete("/account", async (req, res) => {
   const database = getDatabase()
   if (isDemo(account)) throw new HttpError(403, "데모 계정은 탈퇴할 수 없어요.")
   const limitKey = `${clientKey(req)} ${account.email}`
-  loginFailures.take(limitKey)
+  await loginFailures.take(limitKey)
   if (!(await verifyPassword(String(req.body?.password ?? ""), account.passwordHash))) {
     // Not 401, which the app reads as a session that has run out.
     throw new HttpError(400, "비밀번호가 올바르지 않아요.")
   }
-  loginFailures.reset(limitKey)
+  await loginFailures.reset(limitKey)
   const droppedAgreements = removeAccount(database, account)
   await saveDatabase()
   await removeUploads(droppedAgreements)
@@ -569,12 +569,12 @@ authRouter.post("/password", async (req, res) => {
   if (isDemo(account)) throw new HttpError(403, demoLocked)
   const next = checkPassword(String(req.body?.next ?? ""))
   const limitKey = `${clientKey(req)} ${account.email}`
-  loginFailures.take(limitKey)
+  await loginFailures.take(limitKey)
   if (!(await verifyPassword(String(req.body?.current ?? ""), account.passwordHash))) {
     // Not 401, which the app reads as a session that has run out.
     throw new HttpError(400, "지금 비밀번호가 올바르지 않아요.")
   }
-  loginFailures.reset(limitKey)
+  await loginFailures.reset(limitKey)
   account.passwordHash = await hashPassword(next)
   const keep = req.sessionToken ? hashToken(req.sessionToken) : ""
   getDatabase().sessions = getDatabase().sessions.filter(
@@ -589,7 +589,7 @@ authRouter.post("/password", async (req, res) => {
 authRouter.post("/email/code", async (req, res) => {
   const account = requireAccount(req)
   if (isDemo(account)) throw new HttpError(403, "데모 계정은 로그인 이메일을 바꿀 수 없어요.")
-  codesPerClient.take(clientKey(req))
+  await codesPerClient.take(clientKey(req))
   const email = normalizeEmail(req.body?.email)
   const ruleError = emailRuleError(account.role, email)
   if (ruleError) throw new HttpError(400, ruleError)
@@ -598,12 +598,12 @@ authRouter.post("/email/code", async (req, res) => {
     throw new HttpError(409, "이미 가입된 이메일이에요. 다른 이메일을 입력해 주세요.")
   }
   const limitKey = `${clientKey(req)} ${account.email}`
-  loginFailures.take(limitKey)
+  await loginFailures.take(limitKey)
   if (!(await verifyPassword(String(req.body?.password ?? ""), account.passwordHash))) {
     // Not 401, which the app reads as a session that has run out.
     throw new HttpError(400, "지금 비밀번호가 올바르지 않아요.")
   }
-  loginFailures.reset(limitKey)
+  await loginFailures.reset(limitKey)
   res.json(await issueCode(email, account.role, "change", langOf(req), account.id))
 })
 
@@ -611,7 +611,7 @@ authRouter.post("/email/code", async (req, res) => {
 // devices are logged out, and the old address hears of it.
 authRouter.post("/email", async (req, res) => {
   const account = requireAccount(req)
-  verifyPerClient.take(clientKey(req))
+  await verifyPerClient.take(clientKey(req))
   const email = normalizeEmail(req.body?.email)
   const entry = await checkCode(email, text(req.body?.code), "change")
   const database = getDatabase()
@@ -718,10 +718,10 @@ authRouter.post("/two-factor/enable", async (req, res) => {
     throw new HttpError(409, "설정 시간이 지났어요. 처음부터 다시 켜 주세요.")
   }
   const limitKey = `${clientKey(req)} ${account.email}`
-  loginFailures.take(limitKey)
+  await loginFailures.take(limitKey)
   const step = matchStep(pending.secret, String(req.body?.code ?? ""))
   if (step === undefined) throw new HttpError(400, "코드가 올바르지 않아요. 인증 앱에 보이는 6자리 코드를 입력해 주세요.")
-  loginFailures.reset(limitKey)
+  await loginFailures.reset(limitKey)
   const recoveryCodes = newRecoveryCodes()
   account.twoFactor = {
     secret: pending.secret,
