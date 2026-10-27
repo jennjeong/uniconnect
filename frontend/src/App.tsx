@@ -66,6 +66,7 @@ import { AnalyticsPage } from "./pages/AnalyticsPage"
 import { BrandDashboardPage } from "./pages/BrandDashboardPage"
 import { DashboardPage } from "./pages/DashboardPage"
 import { EventCreatePage } from "./pages/EventCreatePage"
+import { EventDetailPage } from "./pages/EventDetailPage"
 import { EventsPage } from "./pages/EventsPage"
 import { FaqPage } from "./pages/FaqPage"
 import { LegalPage } from "./pages/LegalPage"
@@ -709,9 +710,17 @@ function App() {
     }
   }
 
+  // A student group's event page (/event/<id>).
+  const openEventPage = (eventId: string) => go({ page, eventPage: eventId })
+
+  // 상세 보기 on a calendar card: a group's event opens its page; a brand's
+  // campaign goes on to finding groups, or its results once measured.
   const showEventDetail = (event: EventItem) => {
-    const done = event.status === "측정 완료"
-    navigate(students ? (done ? "리포트" : "추천 매칭") : done ? "성과 분석" : "단체 찾기")
+    if (students) {
+      openEventPage(event.id)
+      return
+    }
+    navigate(event.status === "측정 완료" ? "성과 분석" : "단체 찾기")
     showNotice(t("{name} 상세 흐름을 열었어요.", { name: event.name }))
   }
 
@@ -1141,6 +1150,17 @@ function App() {
         />
       )
     }
+    if (view.eventPage) {
+      return (
+        <EventDetailPage
+          id={view.eventPage}
+          onBack={() => goBack({ page })}
+          onEdit={(eventId) => go({ page, edit: eventId })}
+          onOpenGroup={students ? undefined : (listingId) => go({ page: "단체 찾기", detail: listingId })}
+          onNotice={showNotice}
+        />
+      )
+    }
     if (view.admin) return <AdminPage onNotice={showNotice} />
     if (view.legal) return <LegalPage kind={view.legal} onSwitch={(legal) => openLegal(legal)} />
     if (view.agreement) {
@@ -1362,6 +1382,7 @@ function App() {
             onAnswer={answerRequest}
             onWithdraw={withdrawProposal}
             onOpenAgreement={openAgreement}
+            onOpenEvent={openEventPage}
           />
         )
       case "받은 협찬":
@@ -1564,6 +1585,7 @@ function App() {
               onCancel={() => cancelProposal(detailMatch)}
               saved={saved.includes(detailMatch.id)}
               onToggleSave={() => toggleSaved(detailMatch)}
+              onOpenEvent={openEventPage}
               onReport={
                 member
                   ? () => openSafety("report", { kind: "account", listingId: detailMatch.id, name: detailMatch.name })

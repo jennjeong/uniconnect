@@ -53,8 +53,10 @@ export type Match = {
   // worked out when the catalog is served (lib/geo.ts); absent when either
   // place is unknown.
   distanceKm?: number
-  // Student group catalog only: school, next event and its expected audience.
+  // Student group catalog only: school, next event (its id for its page) and
+  // its expected audience.
   school?: string
+  eventId?: string
   eventName?: string
   eventDate?: string
   audience?: number
@@ -73,6 +75,10 @@ export type Match = {
 
 export type EventStatus = "매칭 중" | "집행 예정" | "측정 완료"
 
+// A sponsorship package a student group offers brands on its event page:
+// its name, what the brand gets, and the support it asks for.
+export type SponsorPackage = { name: string; gives: string; asks: string }
+
 export type EventItem = {
   id: string
   name: string
@@ -90,6 +96,13 @@ export type EventItem = {
   createdAt: string
   // When its owner was emailed that the day is near (lib/reminders.ts).
   remindedAt?: string
+  // A student group's event page (routes/events.ts): where, what it is, up
+  // to four photos (lib/photos.ts, under eventPhotos) and the packages it
+  // offers brands.
+  venue?: string
+  intro?: string
+  photos?: string[]
+  packages?: SponsorPackage[]
 }
 
 // The person who runs an account. The phone shows only to the two sides of

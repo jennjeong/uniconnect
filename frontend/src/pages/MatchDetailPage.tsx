@@ -69,6 +69,7 @@ export function MatchDetailPage({
   onBlock,
   onReportReview,
   onReportReply,
+  onOpenEvent,
 }: {
   match: Match
   kind: "brand" | "group"
@@ -89,6 +90,8 @@ export function MatchDetailPage({
   onBlock?: () => void
   onReportReview?: (review: Review) => void
   onReportReply?: (review: Review) => void
+  // A group's next event page.
+  onOpenEvent?: (eventId: string) => void
 }) {
   const [tab, setTab] = useState<Tab>("match")
   const group = kind === "group"
@@ -181,6 +184,11 @@ export function MatchDetailPage({
                 <small>{t("다음 행사")}</small>
                 <strong>{match.eventName}</strong>
                 <DateLine date={match.eventDate} />
+                {match.eventId && onOpenEvent && (
+                  <button className="text-link" onClick={() => onOpenEvent(match.eventId!)} type="button">
+                    {t("행사 상세 보기")}
+                  </button>
+                )}
               </div>
             )}
             {tags.length > 0 && (

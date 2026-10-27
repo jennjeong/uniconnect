@@ -3861,6 +3861,83 @@ test("each Monday a member hears once of the best-fitting partners that joined i
   }
 })
 
+test("a group's event page shows its venue, introduction, photos and packages to those who see the group", async () => {
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const { eventPhotos, uploadsFolder } = await import("./lib/photos.js")
+  const { existsSync } = await import("node:fs")
+  const { token: group, listingId: groupListing } = await listedMember("page-club@syu.ac.kr", "page-pass-123")
+  const { token: brand } = await listedMember("page@page-cafe.kr", "page-pass-123", "브랜드")
+  const packages = [{ name: "메인 스폰서", gives: "현수막 로고, SNS 게시물 2회", asks: "현금 30만원" }]
+  const body = {
+    name: "페이지 공연",
+    date: addDays(todayInKorea(), 20),
+    types: ["현금"],
+    venue: " 대강당 ",
+    intro: "첫 줄\n둘째 줄",
+    packages,
+  }
+  const made = await call("POST", "/events", body, group)
+  assert.equal(made.status, 201)
+  const event = made.data.event
+  assert.deepEqual([event.venue, event.intro, event.packages], ["대강당", "첫 줄\n둘째 줄", packages])
+  for (const extra of [
+    { venue: "가".repeat(61) },
+    { intro: "가".repeat(1001) },
+    { packages: "메인" },
+    { packages: [{ name: "", gives: "로고" }] },
+    { packages: [{ name: "메인", gives: "가".repeat(201) }] },
+    { packages: Array.from({ length: 5 }, () => ({ name: "메인", gives: "로고" })) },
+  ]) {
+    assert.equal((await call("POST", "/events", { ...body, ...extra }, group)).status, 400)
+  }
+  // A brand's campaign has no event page.
+  const campaign = (await call("POST", "/events", { ...body, budget: "1000" }, brand)).data.event
+  assert.deepEqual([campaign.venue, campaign.intro, campaign.packages], [undefined, undefined, undefined])
+
+  // Members who see the group read the page; visitors and the demo accounts
+  // (who meet the examples) don't, but they read the demo group's.
+  const page = await call("GET", `/events/${event.id}/page`, undefined, brand)
+  assert.equal(page.status, 200)
+  assert.deepEqual([page.data.group.id, page.data.group.name, page.data.own], [groupListing, "page-club 동아리", false])
+  assert.equal(page.data.event.remindedAt, undefined)
+  assert.equal((await call("GET", `/events/${event.id}/page`, undefined, group)).data.own, true)
+  assert.equal((await call("GET", `/events/${event.id}/page`)).status, 404)
+  assert.equal((await call("GET", `/events/${event.id}/page`, undefined, await login("브랜드"))).status, 404)
+  const demo = await call("GET", "/events/event-muse-concert/page")
+  assert.equal(demo.data.event.venue, "삼육대학교 대강당")
+  assert.equal(demo.data.event.packages.length, 2)
+
+  // Up to four photos, from the group only, served to those who see the page.
+  const png =
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+  const photoRoute = `/events/${event.id}/photos`
+  assert.equal((await call("POST", photoRoute, { image: "data:text/plain;base64,aGk=" }, group)).status, 400)
+  assert.equal((await call("POST", photoRoute, { image: png }, brand)).status, 404)
+  for (let i = 0; i < 4; i += 1) assert.equal((await call("POST", photoRoute, { image: png }, group)).status, 201)
+  assert.equal((await call("POST", photoRoute, { image: png }, group)).status, 409)
+  const photos = (await call("GET", `/events/${event.id}/page`, undefined, brand)).data.event.photos as string[]
+  assert.equal(photos.length, 4)
+  const image = await fetch(`${baseUrl}${photoRoute}/${photos[0]}`, { headers: { Authorization: `Bearer ${brand}` } })
+  assert.equal(image.status, 200)
+  assert.equal(image.headers.get("content-type"), "image/png")
+  assert.equal((await fetch(`${baseUrl}${photoRoute}/${photos[0]}`)).status, 404)
+  assert.equal((await call("DELETE", `${photoRoute}/${photos[0]}`, undefined, group)).status, 200)
+  assert.ok(!existsSync(path.join(uploadsFolder(eventPhotos(event.id)), photos[0])))
+
+  // An edit replaces the page's words and keeps its photos.
+  const edited = await call("PUT", `/events/${event.id}`, { ...body, venue: "", intro: "", packages: [] }, group)
+  assert.deepEqual([edited.data.event.venue, edited.data.event.intro, edited.data.event.packages], [undefined, undefined, undefined])
+  assert.equal(edited.data.event.photos.length, 3)
+  // Deleting the event takes its photos with it, and so does leaving.
+  assert.equal((await call("DELETE", `/events/${event.id}`, undefined, group)).status, 204)
+  assert.ok(!existsSync(uploadsFolder(eventPhotos(event.id))))
+  const again = (await call("POST", "/events", body, group)).data.event
+  await call("POST", `/events/${again.id}/photos`, { image: png }, group)
+  assert.ok(existsSync(uploadsFolder(eventPhotos(again.id))))
+  assert.equal((await call("DELETE", "/auth/account", { password: "page-pass-123" }, group)).status, 204)
+  assert.ok(!existsSync(uploadsFolder(eventPhotos(again.id))))
+})
+
 test("members are emailed once when an event or a sponsored event is three days away or nearer", async () => {
   const { sendReminders } = await import("./lib/reminders.js")
   const { mailTransport } = await import("./lib/mailer.js")

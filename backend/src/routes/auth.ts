@@ -8,6 +8,7 @@ import { emailRuleError, normalizeEmail } from "../lib/email.js"
 import { HttpError } from "../lib/errors.js"
 import { sendVerificationCode } from "../lib/mailer.js"
 import { notify } from "../lib/notices.js"
+import { eventPhotos } from "../lib/photos.js"
 import { langOf, type Lang } from "../lib/i18n.js"
 import { hashPassword, verifyPassword } from "../lib/password.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
@@ -353,6 +354,8 @@ function removeAccount(database: Database, account: Account) {
   for (const measurement of database.measurements) {
     measurement.sponsors = measurement.sponsors.filter((sponsor) => !leaving.has(sponsor.id))
   }
+  // Its events' photos go with the dropped agreements' once the data is saved.
+  droppedAgreements.push(...(database.events[account.id] ?? []).map((event) => eventPhotos(event.id)))
   delete database.events[account.id]
   delete database.proposals[account.id]
   delete database.sponsorships[account.id]

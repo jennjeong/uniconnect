@@ -301,6 +301,25 @@ const en: Record<string, string> = {
   "신고 보내기": "Send report",
   "차단한 상대": "Blocked",
   "목록에서 숨기기": "Hide from the lists",
+  // A group's event page (pages/EventDetailPage.tsx)
+  "행사 상세": "Event",
+  "학생단체의 행사 장소와 소개, 사진, 브랜드에 드리는 협찬 혜택 묶음을 봐요.":
+    "See a student group's event: its venue, introduction, photos and the sponsorship packages it offers brands.",
+  "행사 상세 보기": "See the event",
+  "행사를 불러오고 있어요…": "Loading the event…",
+  "{name} 사진": "Photo of {name}",
+  "이 사진 지우기": "Delete this photo",
+  "예상 {count}명": "Expecting {count}",
+  "행사 수정에서 소개를 쓰면 브랜드가 행사를 더 잘 알 수 있어요.": "Write an introduction in Edit Event so brands know the event better.",
+  "아직 소개가 없어요.": "No introduction yet.",
+  "행사 사진": "Event photos",
+  "사진 올리기": "Add a photo",
+  "사진은 {count}장까지 올릴 수 있어요. 다른 사람의 얼굴이 나오면 동의를 받고 올려 주세요.":
+    "Up to {count} photos. Ask before posting anyone's face.",
+  "행사 수정에서 브랜드가 받는 것과 원하는 협찬을 묶어 두면 제안을 받기 쉬워요.":
+    "Bundle what a brand gets and what you ask for in Edit Event, and proposals come more easily.",
+  "아직 정해 둔 혜택 묶음이 없어요. 원하는 협찬은 단체와 이야기해 보세요.": "No packages yet. Talk to the group about what it needs.",
+  "단체 프로필 보기": "See the group's profile",
   "받을 메일": "Emails",
   "협찬 제안과 답": "Proposals and answers",
   "새 제안, 보낸 제안의 답, 초대한 가게의 가입": "New proposals, answers to yours, invited shops joining",

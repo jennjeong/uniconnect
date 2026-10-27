@@ -135,9 +135,9 @@ export function withLiveEvent(database: Database, group: Match): Match {
     // An event over several days stays next until its last day.
     .filter((event) => (event.endDate ?? event.date) >= today)
     .sort((a, b) => a.date.localeCompare(b.date))[0]
-  if (!next) return { ...group, eventName: undefined, eventDate: undefined, audience: undefined }
+  if (!next) return { ...group, eventId: undefined, eventName: undefined, eventDate: undefined, audience: undefined }
   const audience = Number(next.people.replace(/\D/g, "")) || undefined
-  return { ...group, eventName: next.name, eventDate: next.date, audience }
+  return { ...group, eventId: next.id, eventName: next.name, eventDate: next.date, audience }
 }
 
 // Who a catalog is matched for: the logged-in account when it browses the

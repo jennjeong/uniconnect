@@ -1,6 +1,7 @@
 import {
   createSeed,
   demoContacts,
+  museConcertPage,
   seedBrands,
   seedConversations,
   seedReviews,
@@ -197,6 +198,12 @@ export function upgradeDatabase(stored: Database) {
     ? stored.events?.[demoBrandId]?.find((event) => event.id === "event-coffee-tasting")
     : undefined
   if (tasting) tasting.budget ??= 800000
+  // The demo group's concert gained its event page.
+  const demoGroupId = stored.demoAccountIds?.학생단체
+  const concert = demoGroupId
+    ? stored.events?.[demoGroupId]?.find((event) => event.id === "event-muse-concert")
+    : undefined
+  if (concert && !concert.packages) Object.assign(concert, museConcertPage)
   // The busking day's sponsorship follows that event's measurement.
   const busking = demoBrandId
     ? stored.sponsorships[demoBrandId]?.find((sponsorship) => sponsorship.id === "sp-busking")

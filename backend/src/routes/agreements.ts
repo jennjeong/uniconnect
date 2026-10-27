@@ -19,7 +19,7 @@ import { HttpError } from "../lib/errors.js"
 import { ensureMeasurement } from "../lib/measurements.js"
 import { methodsOf, parseMethods } from "../lib/methods.js"
 import { notify } from "../lib/notices.js"
-import { photos } from "../lib/photos.js"
+import { parsePhoto, photoName, photoType, photos } from "../lib/photos.js"
 import { isDemoAccount } from "../lib/reviews.js"
 import { text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
@@ -30,19 +30,6 @@ export const agreementsRouter = Router()
 
 // How much one agreement holds.
 export const agreementLimits = { items: 12, links: 5, photos: 3 }
-
-// A photo the browser resized (lib/image.ts), small enough for the request
-// size limit.
-const photoPattern = /^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/]+=*)$/
-const photoMaxLength = 280_000
-const photoName = /^[\w-]+\.(png|jpg|webp)$/
-
-// The file really is the kind it says, by its first bytes.
-function looksLike(kind: string, bytes: Buffer) {
-  if (kind === "png") return bytes.subarray(0, 4).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47]))
-  if (kind === "jpeg") return bytes.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff]))
-  return bytes.subarray(0, 4).toString("latin1") === "RIFF" && bytes.subarray(8, 12).toString("latin1") === "WEBP"
-}
 
 // Links as proof: http or https addresses only.
 function parseLinks(value: unknown) {
@@ -331,13 +318,11 @@ agreementsRouter.post("/:id/items/:itemId/photos", async (req, res) => {
   const { database, proposal, side } = openedToChange(req)
   const { item } = ownItem(database, proposal, req.params.itemId, side)
   if (item.photos.length >= agreementLimits.photos) throw new HttpError(409, "사진은 할 일마다 3장까지 올릴 수 있어요.")
-  const image = req.body?.image
-  const match = typeof image === "string" && image.length <= photoMaxLength ? photoPattern.exec(image) : null
-  const bytes = match ? Buffer.from(match[2], "base64") : undefined
-  if (!match || !bytes || !looksLike(match[1], bytes)) throw new HttpError(400, "사진은 PNG, JPG, WebP로 올려 주세요.")
-  const photo = `${randomUUID()}.${match[1] === "jpeg" ? "jpg" : match[1]}`
+  const parsed = parsePhoto(req.body?.image)
+  if (!parsed) throw new HttpError(400, "사진은 PNG, JPG, WebP로 올려 주세요.")
+  const photo = parsed.name
   const store = photos()
-  await store.put(proposal.id, photo, bytes)
+  await store.put(proposal.id, photo, parsed.bytes)
   try {
     // Looked up again: the data may have been read anew while the photo went in.
     const fresh = ownItem(getDatabase(), proposal, req.params.itemId, side)
@@ -374,7 +359,7 @@ agreementsRouter.get("/:id/photos/:photo", async (req, res) => {
   }
   const bytes = await photos().get(proposal.id, photo)
   if (!bytes) throw new HttpError(404, "사진을 찾을 수 없어요.")
-  res.type(photo.endsWith(".png") ? "image/png" : photo.endsWith(".webp") ? "image/webp" : "image/jpeg")
+  res.type(photoType(photo))
   res.set("Cache-Control", "private, max-age=3600")
   res.send(bytes)
 })

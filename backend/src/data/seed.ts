@@ -913,6 +913,18 @@ export function seedMeasurements(accountId: string): Measurement[] {
   ]
 }
 
+// The demo group's concert as its event page shows it, for visitors to see
+// what a group writes there (photos are left to members).
+export const museConcertPage = {
+  venue: "삼육대학교 대강당",
+  intro:
+    "뮤즈가 한 학기를 마무리하는 종강 공연이에요. 밴드 다섯 팀이 두 시간 동안 무대에 서고, 공연 전후 로비에서 부스를 열 수 있어요. 지난 공연에는 학생과 지역 주민 120명이 찾았어요.",
+  packages: [
+    { name: "메인 스폰서", gives: "무대 현수막 로고, 공연 중 소개 멘트, SNS 게시물 2회", asks: "현금 30만원" },
+    { name: "로비 부스", gives: "공연 전후 로비 부스 운영, 관객 대상 시음 · 쿠폰 배포", asks: "제품 100개" },
+  ],
+}
+
 export async function createSeed(): Promise<Database> {
   const createdAt = new Date().toISOString()
   const passwordHash = await hashPassword(DEMO_PASSWORD)
@@ -969,6 +981,7 @@ export async function createSeed(): Promise<Database> {
           types: ["현금", "제품"],
           status: "매칭 중",
           createdAt,
+          ...museConcertPage,
         },
         {
           id: "event-busking-day",
