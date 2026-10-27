@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react"
+import type { CSSProperties, ReactNode } from "react"
 
 import { BrandMark } from "../components/BrandMark"
 import { CatalogEmpty } from "../components/CatalogEmpty"
@@ -47,6 +47,7 @@ export function BrandDashboardPage({
   demo = false,
   paused = false,
   onResume,
+  checklist,
 }: {
   // The logged-in brand's name for the greeting.
   accountName?: string
@@ -79,6 +80,8 @@ export function BrandDashboardPage({
   // says so and shows it again with one press.
   paused?: boolean
   onResume?: () => void
+  // A new member's checklist (components/ProfileChecklist.tsx), under the hero.
+  checklist?: ReactNode
 }) {
   const pending = requests.filter((request) => request.status === "검토 중")
   const confirmed = requests.filter((request) => request.status === "수락")
@@ -165,6 +168,8 @@ export function BrandDashboardPage({
         secondary={{ label: t("행사 일정 보기"), onClick: () => onNavigate("행사 일정") }}
         onInstall={onInstall}
       />
+
+      {checklist}
 
       {catalog.length > 0 && (
         <LogoMarquee

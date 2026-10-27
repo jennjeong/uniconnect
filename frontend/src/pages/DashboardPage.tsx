@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react"
+import type { CSSProperties, ReactNode } from "react"
 
 import { BrandMark } from "../components/BrandMark"
 import { CatalogEmpty } from "../components/CatalogEmpty"
@@ -52,6 +52,7 @@ export function DashboardPage({
   demo = false,
   paused = false,
   onResume,
+  checklist,
 }: {
   // The logged-in group's name for the greeting.
   accountName?: string
@@ -84,6 +85,8 @@ export function DashboardPage({
   // says so and shows it again with one press.
   paused?: boolean
   onResume?: () => void
+  // A new member's checklist (components/ProfileChecklist.tsx), under the hero.
+  checklist?: ReactNode
 }) {
   const next = nextEvent(events)
   const nextDay = next ? fromIsoDate(next.date) : undefined
@@ -167,6 +170,8 @@ export function DashboardPage({
         }
         onInstall={onInstall}
       />
+
+      {checklist}
 
       {candidates.length > 0 && (
         <LogoMarquee
