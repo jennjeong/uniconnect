@@ -30,8 +30,16 @@ export default defineConfig({
     command: "node backend/dist/index.js",
     url: `http://localhost:${port}/api/health`,
     // No map key or geocoder, even when this computer has them, so nothing
-    // reaches Kakao or OpenStreetMap.
-    env: { API_PORT: String(port), DATA_FILE: dataFile, EXPOSE_EMAIL_CODES: "true", KAKAO_REST_API_KEY: "", NOMINATIM_URL: "" },
+    // reaches Kakao or OpenStreetMap. Every test signs up from this one
+    // address, more often than a person would, so it may ask for more codes.
+    env: {
+      API_PORT: String(port),
+      DATA_FILE: dataFile,
+      EXPOSE_EMAIL_CODES: "true",
+      KAKAO_REST_API_KEY: "",
+      NOMINATIM_URL: "",
+      CODES_PER_CLIENT: "200",
+    },
     timeout: 60_000,
   },
 })

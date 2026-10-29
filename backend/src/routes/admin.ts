@@ -155,6 +155,7 @@ adminRouter.post("/inquiries/:id/answer", async (req, res) => {
     const brief = (value: string, length: number) => (value.length > length ? `${value.slice(0, length)}…` : value)
     void notify(
       database.accounts.find((account) => account.id === inquiry.accountId),
+      "account",
       "문의에 답변이 왔어요",
       [
         `도움말 센터에 남긴 '${inquiry.category}' 질문에 운영자가 답했어요.`,

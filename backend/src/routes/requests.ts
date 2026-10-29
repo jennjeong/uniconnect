@@ -87,6 +87,7 @@ requestsRouter.post("/:id/:decision", async (req, res) => {
   await saveDatabase()
   void notify(
     database.accounts.find((item) => item.id === request.fromAccountId),
+    "proposals",
     decision === "수락" ? "협찬이 확정됐어요" : "협찬 제안에 답이 왔어요",
     [`${account.name}에서 '${request.eventName}' 제안을 ${decision === "수락" ? "수락했어요" : "거절했어요"}.`],
     "/matches",

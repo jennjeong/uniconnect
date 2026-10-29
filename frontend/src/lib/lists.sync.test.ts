@@ -8,6 +8,7 @@ import { factFields, snsPlatforms } from "../data/profile"
 import { inquiryCategories } from "../data/inquiries"
 import { defaultMethods, isVenueMethod, methodInfo, methodKinds } from "../data/methods"
 import { placeCategories } from "../data/places"
+import { mailKinds } from "../data/mail"
 import { reportReasons } from "../data/reports"
 import { reviewTags } from "../data/reviews"
 import { accountTypes, roles } from "../data/roles"
@@ -35,6 +36,7 @@ describe("the screens offer the choices the server takes", () => {
     expect(snsPlatforms).toEqual(server.snsPlatforms)
     expect(inquiryCategories).toEqual(server.inquiryCategories)
     expect(reportReasons).toEqual(server.reportReasons)
+    expect(mailKinds.map((item) => item.kind)).toEqual(server.mailKinds)
   })
 
   test("kinds of shop to look for around the campus", () => {

@@ -63,6 +63,9 @@ export const config = {
   ntsServiceKey: process.env.NTS_SERVICE_KEY,
   emailCodeTtlMs: 3 * 60 * 1000,
   emailCodeMaxAttempts: 5,
+  // Codes one address may ask for in 15 minutes (and check, 10 more). The
+  // browser tests raise it, as each of them signs up from the same address.
+  codesPerClient: Number(process.env.CODES_PER_CLIENT) || 20,
   // Wrong guesses keep counting across new codes for this long.
   emailCodeAttemptWindowMs: 30 * 60 * 1000,
   verificationTtlMs: 30 * 60 * 1000,

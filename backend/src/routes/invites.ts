@@ -120,6 +120,7 @@ invitesRouter.post("/:code/accept", async (req, res) => {
   for (const item of answered) {
     void notify(
       database.accounts.find((other) => other.id === item.accountId),
+      "proposals",
       "초대한 가게가 uniconnect에 가입했어요",
       [`${brand.name}에서 초대를 받고 uniconnect에 가입했어요.`, "추천 매칭의 가까운 순에서 바로 협찬을 제안할 수 있어요."],
       `/matches/${encodeURIComponent(brand.id)}`,

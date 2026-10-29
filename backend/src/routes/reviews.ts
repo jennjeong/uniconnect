@@ -83,6 +83,7 @@ reviewsRouter.put("/:proposalId", async (req, res) => {
   if (!existing) {
     void notify(
       (side === "group" ? proposal.brand : proposal.group).account,
+      "sponsorships",
       "새 협찬 후기가 올라왔어요",
       [`${review.authorName}에서 '${proposal.eventName}' 협찬 후기를 남겼어요.`],
       `/agreements/${encodeURIComponent(proposal.id)}`,
@@ -131,6 +132,7 @@ reviewsRouter.put("/:proposalId/reply", async (req, res) => {
   if (!before) {
     void notify(
       proposal[other].account,
+      "sponsorships",
       "후기에 답글이 달렸어요",
       [`${proposal[side].name}에서 '${proposal.eventName}' 협찬 후기에 답글을 남겼어요.`],
       `/agreements/${encodeURIComponent(proposal.id)}`,

@@ -200,6 +200,7 @@ eventsRouter.put("/:id", async (req, res) => {
     for (const partner of partners) {
       void notify(
         partner.account,
+        "sponsorships",
         `${what} 정보가 바뀌었어요`,
         [`${account.name}에서 '${before.name}' ${what} 정보를 바꿨어요.`, ...lines],
         partner.path,

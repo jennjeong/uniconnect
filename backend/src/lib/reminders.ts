@@ -65,6 +65,8 @@ export async function sendReminders(database: Database = getDatabase(), now = ne
   }
   if (due.length === 0) return 0
   await saveDatabase()
-  for (const reminder of due) void notify(reminder.account, reminder.subject, reminder.lines, reminder.path)
+  for (const reminder of due) {
+    void notify(reminder.account, "reminders", reminder.subject, reminder.lines, reminder.path)
+  }
   return due.length
 }

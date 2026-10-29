@@ -202,6 +202,7 @@ proposalsRouter.post("/", async (req, res) => {
     database.offers.push(offer)
     void notify(
       database.accounts.find((item) => item.groupId === matchId),
+      "proposals",
       "새 협찬 제안이 왔어요",
       [
         `${account.name}에서 '${offer.campaignName}' 협찬을 제안했어요.`,
@@ -231,6 +232,7 @@ proposalsRouter.post("/", async (req, res) => {
     })
     void notify(
       database.accounts.find((item) => item.brandId === matchId),
+      "proposals",
       "새 협찬 제안이 왔어요",
       [`${account.name}에서 '${event.name}' 협찬을 제안했어요.`, ...(note ? [`메시지: ${note}`] : [])],
       "/inbox",

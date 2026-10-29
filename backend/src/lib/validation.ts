@@ -1,4 +1,4 @@
-import type { AccountContact, Role } from "../types.js"
+import type { AccountContact, MailKind, Role } from "../types.js"
 import { HttpError } from "./errors.js"
 
 // Keep in sync with accountTypeGroups in frontend/src/data/roles.ts, which
@@ -108,6 +108,10 @@ export const sponsorTypes = ["현금", "제품", "서비스", "기타"]
 // frontend/src/data/inquiries.ts.
 // Why a member reports another (routes/reports.ts); frontend/src/data/reports.ts.
 export const reportReasons = ["스팸 · 광고", "욕설 · 괴롭힘", "사기 의심", "기타"]
+
+// The kinds of notice email, in the order 내 정보 lists them
+// (frontend/src/data/mail.ts; lib/lists.sync.test.ts checks).
+export const mailKinds: MailKind[] = ["proposals", "sponsorships", "messages", "reminders"]
 
 export const inquiryCategories = ["이용 방법", "계정 · 가입", "제안 · 매칭", "오류 신고", "기타"]
 

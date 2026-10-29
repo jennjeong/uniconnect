@@ -22,7 +22,7 @@ import { useNotice } from "./hooks/useNotice"
 import { Footer } from "./layout/Footer"
 import { Header } from "./layout/Header"
 import { NavMenu } from "./layout/NavMenu"
-import { t, tc } from "./i18n"
+import { lang, t, tc } from "./i18n"
 import { nextEvent, todayIso } from "./lib/date"
 import { saveFile } from "./lib/download"
 import { reportKpis, type KpiKey } from "./lib/kpis"
@@ -93,6 +93,7 @@ import type {
   EventItem,
   EventMeasurement,
   Inquiry,
+  MailKind,
   Match,
   MetricKind,
   Metrics,
@@ -753,6 +754,30 @@ function App() {
   // trying the demo uses them.
   const member = account !== null && !Object.values(demoAccounts).some((demo) => demo.email === account.email)
 
+  // 받을 메일 from 내 정보: shown at once, then saved.
+  const saveMailOff = (mailOff: MailKind[]) => {
+    if (!account) return
+    setAccount({ ...account, mailOff })
+    api
+      .savePreferences({ mailOff })
+      .then((result) => {
+        setAccount(result.account)
+        showNotice(t("받을 메일을 바꿨어요."))
+      })
+      .catch(handleError)
+  }
+
+  // The emails follow the language the app is shown in: whenever a member's
+  // differs (a new choice in 내 정보 or the footer reloads the page in it),
+  // the server hears of it. The shared demo accounts keep theirs.
+  useEffect(() => {
+    if (!member || !account || (account.language ?? "ko") === lang) return
+    api
+      .savePreferences({ language: lang })
+      .then((result) => setAccount(result.account))
+      .catch(() => undefined)
+  }, [member, account])
+
   // 목록에서 숨기기 (내 정보) and 다시 보이게 하기 (the dashboard's hero).
   const pauseListing = (paused: boolean) => {
     api
@@ -1218,6 +1243,7 @@ function App() {
           business={checksBusiness && business ? business : undefined}
           onVerifyBusiness={() => setActiveModal("business")}
           onPause={member ? pauseListing : undefined}
+          onMail={member ? saveMailOff : undefined}
         />
       )
     }
