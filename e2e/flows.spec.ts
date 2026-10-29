@@ -1297,3 +1297,53 @@ test("the account button opens a small panel with 내 정보 and 로그아웃", 
   await expect(page.getByText("로그아웃했어요.")).toBeVisible()
   await expect(page.getByRole("button", { name: "로그인", exact: true }).first()).toBeVisible()
 })
+
+test("a brand writes the value, pays the 15% fee to confirm, and finds it under 결제 내역", async ({ page, request, browser }) => {
+  const group = await signUpMember(request, "학생단체", "e2e-fee@syu.ac.kr", "수수료 동아리")
+  const brand = await signUpMember(request, "브랜드", "e2e-fee@fee-cafe.kr", "수수료 카페")
+  const date = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date(Date.now() + 10 * 86_400_000))
+  await request.post("/api/events", { data: { name: "수수료 공연", date, types: ["현금"] }, headers: group.headers })
+  await request.post("/api/proposals", { data: { matchId: brand.listingId }, headers: group.headers })
+  const { requests } = (await (await request.get("/api/requests", { headers: brand.headers })).json()) as { requests: { id: string }[] }
+  const id = requests[0].id
+  await request.post(`/api/requests/${id}/accept`, { headers: brand.headers })
+
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
+  await page.goto(`/agreements/${id}`)
+  const panel = page.getByRole("region", { name: "협찬액과 수수료" })
+  await expect(panel).toContainText("아직 적지 않았어요")
+  await expect(page.getByText("협찬액을 적으면 수수료를 결제하고 확인할 수 있어요.")).toBeVisible()
+  await panel.getByRole("button", { name: "적기" }).click()
+  await panel.getByLabel("현금").fill("200000")
+  await panel.getByLabel("현물 환산").fill("133,333")
+  await panel.getByRole("button", { name: "저장하기" }).click()
+  await expect(panel).toContainText("333,333원")
+  await expect(panel).toContainText("50,000원")
+
+  // Without Toss keys, the transfer is the way to pay; the terms come first.
+  await page.getByRole("button", { name: "수수료 50,000원 결제하고 확인하기" }).click()
+  const pay = page.getByRole("dialog", { name: "플랫폼 수수료 결제" })
+  await expect(pay).toContainText("카드 결제는 준비 중이에요")
+  await pay.getByRole("button", { name: "계좌 입금으로 요청하기" }).click()
+  await expect(pay.getByRole("alert")).toHaveText("결제 내용과 환불 규정에 동의해 주세요.")
+  await pay.getByText("결제 내용을 확인했고,").click()
+  await expect(pay.getByRole("checkbox")).toBeChecked()
+  await pay.getByRole("button", { name: "계좌 입금으로 요청하기" }).click()
+  await expect(page.getByText("계좌 입금을 요청했어요. 입금이 확인되면 계약서가 확인돼요.")).toBeVisible()
+  await expect(pay).toBeHidden()
+
+  await page.goto("/me")
+  await page.getByRole("button", { name: "결제 내역" }).click()
+  const history = page.getByRole("dialog", { name: "결제 내역" })
+  await expect(history).toContainText("수수료 공연 협찬 수수료")
+  await expect(history).toContainText("입금 확인 중")
+
+  // The group sees it pays nothing.
+  const groupPage = await (await browser.newContext()).newPage()
+  await groupPage.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
+  await groupPage.goto(`/agreements/${id}`)
+  await expect(groupPage.getByRole("region", { name: "협찬액과 수수료" })).toContainText("학생단체는 무료예요")
+  for (const member of [group, brand]) {
+    expect((await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: member.headers })).status()).toBe(204)
+  }
+})

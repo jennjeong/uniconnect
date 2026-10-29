@@ -69,6 +69,11 @@ export const config = {
   // The data.go.kr key for the National Tax Service's business registration
   // check (lib/business.ts); without it brands can't verify their business.
   ntsServiceKey: process.env.NTS_SERVICE_KEY,
+  // Toss Payments' API keys (개별 연동 키: test_ck/test_sk, then live_ck/live_sk
+  // once the PG contract is signed) for card payments (lib/billing.ts). The
+  // client key goes to the payment window; the secret key stays here.
+  tossClientKey: process.env.TOSS_CLIENT_KEY,
+  tossSecretKey: process.env.TOSS_SECRET_KEY,
   emailCodeTtlMs: 3 * 60 * 1000,
   emailCodeMaxAttempts: 5,
   // Codes one address may ask for in 15 minutes (and check, 10 more). The

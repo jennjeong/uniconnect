@@ -2,6 +2,7 @@ import { createHash, timingSafeEqual } from "node:crypto"
 import { Router, type Request } from "express"
 
 import { config } from "../config.js"
+import { markCancelled, markPaid, paymentsOf, toss } from "../lib/billing.js"
 import { recentErrors } from "../lib/errorLog.js"
 import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
@@ -38,6 +39,46 @@ async function requireAdmin(req: Request) {
     throw new HttpError(403, "관리자만 쓸 수 있어요.")
   }
 }
+
+// Every payment, newest first: bank transfers waiting to be confirmed, what
+// was paid and refunded.
+adminRouter.get("/payments", async (req, res) => {
+  await requireAdmin(req)
+  const payments = [...paymentsOf(getDatabase())]
+    .reverse()
+    .map(({ paymentKey, ...payment }) => ({ ...payment, card: Boolean(paymentKey) }))
+  res.json({ payments })
+})
+
+function paymentFor(id: string) {
+  const payment = paymentsOf(getDatabase()).find((item) => item.id === id)
+  if (!payment) throw new HttpError(404, "결제를 찾을 수 없어요.")
+  return payment
+}
+
+// A bank transfer arrived: the order is paid, and gives what it bought.
+adminRouter.post("/payments/:id/paid", async (req, res) => {
+  await requireAdmin(req)
+  const payment = paymentFor(String(req.params.id))
+  if (payment.status !== "pending") throw new HttpError(409, "기다리는 주문만 입금 확인할 수 있어요.")
+  markPaid(getDatabase(), payment, { method: "transfer" })
+  await saveDatabase()
+  res.json({ payment })
+})
+
+// Cancels a waiting order, or refunds a paid one: a card payment through
+// Toss Payments, a transfer by the operators themselves (this only
+// records it). What it bought is taken back.
+adminRouter.post("/payments/:id/cancel", async (req, res) => {
+  await requireAdmin(req)
+  const payment = paymentFor(String(req.params.id))
+  if (payment.status === "cancelled") throw new HttpError(409, "이미 취소된 결제예요.")
+  const reason = text(req.body?.reason) || (payment.status === "paid" ? "운영자 환불" : "운영자 취소")
+  if (payment.status === "paid" && payment.paymentKey) await toss.cancel(payment.paymentKey, reason)
+  markCancelled(getDatabase(), paymentFor(payment.id), reason)
+  await saveDatabase()
+  res.json({ payment })
+})
 
 // The platform's figures, real members' and with the demo data (lib/stats.ts).
 adminRouter.get("/stats", async (req, res) => {

@@ -10450,6 +10450,243 @@ button.nav-pill:hover {
   font-weight: var(--weight-label);
 }
 
+/* 협찬액과 수수료 on the agreement: the value, cash and in-kind, and the
+   platform fee as two white tiles, or the form to write the value. */
+.value-panel h2 .subtle-link {
+  margin-left: auto;
+}
+
+.value-figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.value-figures > div {
+  display: grid;
+  gap: 4px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--ring);
+}
+
+.value-figures dt {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.value-figures dd {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: var(--weight-strong);
+}
+
+.value-figures dd small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: var(--weight-body);
+}
+
+.value-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 18px;
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--ring);
+}
+
+.value-form label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.value-form input {
+  height: 46px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--fill);
+  font-size: 15px;
+}
+
+.value-form .field-hint,
+.value-form-actions {
+  grid-column: 1 / -1;
+}
+
+.value-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* Paying (modals/PaymentModal.tsx) and the payment history
+   (modals/PaymentsModal.tsx). */
+.payment-sheet {
+  display: grid;
+  gap: 16px;
+}
+
+.payment-lines {
+  display: grid;
+  margin: 0;
+  padding: 4px 18px;
+  border-radius: 18px;
+  background: var(--fill);
+}
+
+.payment-lines > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+}
+
+.payment-lines dt {
+  color: var(--muted);
+}
+
+.payment-lines dd {
+  margin: 0;
+  color: var(--ink);
+  font-weight: var(--weight-label);
+  text-align: right;
+}
+
+.payment-lines > .payment-total {
+  align-items: baseline;
+  border-bottom: 0;
+}
+
+.payment-total dt {
+  color: var(--ink);
+  font-weight: var(--weight-label);
+}
+
+.payment-total dd {
+  display: grid;
+  color: var(--point-strong);
+  font-size: 22px;
+  font-weight: var(--weight-strong);
+}
+
+.payment-total dd small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: var(--weight-body);
+}
+
+.payment-agree {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.payment-agree a {
+  color: var(--point-strong);
+  text-decoration: underline;
+}
+
+.payment-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.payment-note {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--point-tint);
+  color: var(--point-strong);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.payment-history {
+  display: grid;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.payment-history li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 6px 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.payment-history li > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.payment-history strong {
+  font-size: 14px;
+}
+
+.payment-history small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.payment-amount {
+  font-weight: var(--weight-strong);
+}
+
+.payment-status {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: var(--weight-badge);
+}
+
+.payment-status.paid {
+  background: var(--point-tint);
+  color: var(--point-strong);
+}
+
+.payment-status.cancelled {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+.payment-links {
+  display: flex;
+  grid-column: 1 / -1;
+  gap: 12px;
+  font-size: 12px;
+}
+
+.payment-links:empty {
+  display: none;
+}
+
+.payment-links a {
+  color: var(--point-strong);
+}
+
 /* The event's goals (행사 목표): each figure on a white tile, then the way to
    set them while the event is still to come. */
 .goals-list {

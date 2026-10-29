@@ -38,6 +38,8 @@ export default defineConfig({
       EXPOSE_EMAIL_CODES: "true",
       KAKAO_REST_API_KEY: "",
       NOMINATIM_URL: "",
+      // Fees from any day, so today's sponsorships owe one.
+      FEES_SINCE: "2000-01-01",
       CODES_PER_CLIENT: "200",
     },
     timeout: 60_000,

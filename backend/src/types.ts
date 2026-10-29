@@ -132,6 +132,9 @@ export type Account = {
   // group catalog.
   brandId?: string
   groupId?: string
+  // Toss Payments' customer key for this account: random, made at its
+  // first order, never shown in the account's public shape.
+  customerKey?: string
   passwordHash: string
   termsAgreedAt: string
   createdAt: string
@@ -568,6 +571,10 @@ export type Agreement = {
   items: AgreementItem[]
   // Changing the items clears both.
   confirmed: Partial<Record<ChatSide, string>>
+  // What the sponsorship is worth in won, cash and in-kind (현물 환산), which
+  // the 15% fee is worked out from (lib/fees.ts); changing it clears both
+  // confirmations too.
+  value?: { cash: number; inKind: number }
   // One side's request to call the sponsorship off, with why, and when the
   // other side agreed to it (its proposal is 취소 from then on).
   cancel?: { by: ChatSide; reason: string; requestedAt: string; canceledAt?: string }
@@ -642,6 +649,39 @@ export type ShopInvite = {
   brandId?: string
 }
 
+// What a brand pays the platform (lib/billing.ts): the 15% fee when a
+// sponsorship is confirmed, a detailed report, or a month of Pro.
+export type PaymentKind = "fee" | "report" | "pro"
+
+export type Payment = {
+  // Also the order id Toss Payments sees.
+  id: string
+  // The paying account; kept as its name only once it leaves, as payment
+  // records must be kept for five years.
+  accountId: string
+  accountName: string
+  kind: PaymentKind
+  // The agreement a fee is for, the sponsorship a report is for; empty for Pro.
+  targetId: string
+  orderName: string
+  // Won, VAT included.
+  amount: number
+  status: "pending" | "paid" | "cancelled"
+  // How it was paid: by card through Toss Payments, or by bank transfer an
+  // operator confirmed.
+  method?: "card" | "transfer"
+  paymentKey?: string
+  receiptUrl?: string
+  requestedAt: string
+  // The brand asked to pay by bank transfer instead.
+  transferRequestedAt?: string
+  paidAt?: string
+  cancelledAt?: string
+  cancelReason?: string
+  // Pro: the day the month paid for ends (Korean date).
+  periodEnd?: string
+}
+
 export type Database = {
   accounts: Account[]
   sessions: Session[]
@@ -681,6 +721,8 @@ export type Database = {
   saved: Record<string, string[]>
   // The recruitment board (routes/board.ts).
   posts: BoardPost[]
+  // What brands paid or were asked to pay (lib/billing.ts).
+  payments?: Payment[]
   // Logins with Kakao or Naver under way (routes/social.ts): each started
   // flow's state, and the one-time code that hands a finished login to the
   // page, both by hash and for minutes only.

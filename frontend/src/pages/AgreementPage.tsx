@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import { api, ApiError, errorMessage } from "../api"
 import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
+import { Presence } from "../components/Presence"
 import { Pill } from "../components/Pill"
 import { ReviewCard, ReviewReply } from "../components/ReviewCard"
 import { starPath } from "../components/Stars"
@@ -12,6 +13,8 @@ import { locale, t } from "../i18n"
 import { venueLink } from "../lib/checkin"
 import { formatDateTime, formatFullDate } from "../lib/date"
 import { photoFromFile } from "../lib/image"
+import { fullWon } from "../lib/sponsorships"
+import { PaymentModal } from "../modals/PaymentModal"
 import type { Agreement, AgreementItem, ChatSide, MeasureMethod, MethodKind, MethodSide, Metrics, Review } from "../types"
 import { agreementState } from "./AgreementsPage"
 
@@ -806,8 +809,108 @@ function CancelPanel({
   )
 }
 
+// What the sponsorship is worth, cash and in-kind (현물 환산), which either
+// side writes until the event is over, and the platform fee it sets: the
+// brand pays 15% of it to confirm; the student group pays nothing.
+function ValuePanel({
+  agreement,
+  busy,
+  onSave,
+}: {
+  agreement: Agreement
+  busy: boolean
+  onSave: (value: { cash: number; inKind: number }) => Promise<boolean>
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState({ cash: "", inKind: "" })
+  const value = agreement.value
+  const fee = agreement.fee
+  const canceled = Boolean(agreement.cancel?.canceledAt)
+  const open = () => {
+    setDraft({ cash: String(value?.cash ?? ""), inKind: String(value?.inKind ?? "") })
+    setEditing(true)
+  }
+  const won = (input: string) => Number(input.replace(/[^0-9]/g, "") || 0)
+  const total = (value?.cash ?? 0) + (value?.inKind ?? 0)
+  return (
+    <section aria-labelledby="value-title" className="agreement-section value-panel">
+      <h2 id="value-title">
+        {t("협찬액과 수수료")}
+        {!editing && !canceled && (
+          <button className="subtle-link" onClick={open} type="button">
+            <Icon name="edit" size={14} /> {value ? t("고치기") : t("적기")}
+          </button>
+        )}
+      </h2>
+      {editing ? (
+        <form
+          className="value-form"
+          onSubmit={(event) => {
+            event.preventDefault()
+            void onSave({ cash: won(draft.cash), inKind: won(draft.inKind) }).then((saved) => saved && setEditing(false))
+          }}
+        >
+          <label>
+            {t("현금")}
+            <input inputMode="numeric" onChange={(event) => setDraft({ ...draft, cash: event.target.value })} placeholder="200000" value={draft.cash} />
+          </label>
+          <label>
+            {t("현물 환산")}
+            <input inputMode="numeric" onChange={(event) => setDraft({ ...draft, inKind: event.target.value })} placeholder="100000" value={draft.inKind} />
+          </label>
+          <p className="field-hint">{t("제품, 쿠폰, 장소처럼 현물로 주는 것은 판매가로 환산해 적어 주세요. 바꾸면 두 쪽 모두 다시 확인해요.")}</p>
+          <div className="value-form-actions">
+            <button className="cancel-button" onClick={() => setEditing(false)} type="button">
+              {t("취소")}
+            </button>
+            <button className="primary-button" disabled={busy} type="submit">
+              {t("저장하기")}
+            </button>
+          </div>
+        </form>
+      ) : (
+        <dl className="value-figures">
+          <div>
+            <dt>{t("협찬액")}</dt>
+            <dd>
+              {value ? fullWon(total) : t("아직 적지 않았어요")}
+              {value && <small>{t("현금 {cash} · 현물 {inKind}", { cash: fullWon(value.cash), inKind: fullWon(value.inKind) })}</small>}
+            </dd>
+          </div>
+          <div>
+            <dt>{t("플랫폼 수수료")}</dt>
+            <dd>
+              {fee.exempt ? (
+                t("없어요")
+              ) : agreement.side === "brand" ? (
+                <>
+                  {value ? fullWon(fee.amount) : t("협찬액의 {rate}%", { rate: Math.round(fee.rate * 100) })}
+                  <small>
+                    {!value
+                      ? t("협찬액을 적으면 정해져요")
+                      : fee.due === 0
+                        ? t("결제했어요")
+                        : fee.paid > 0
+                          ? t("{paid} 결제 · {due} 남음", { paid: fullWon(fee.paid), due: fullWon(fee.due) })
+                          : t("협찬액의 {rate}% · 부가세 포함", { rate: Math.round(fee.rate * 100) })}
+                  </small>
+                </>
+              ) : (
+                <>
+                  {t("학생단체는 무료예요")}
+                  <small>{t("브랜드가 협찬액의 {rate}%를 플랫폼 수수료로 내요", { rate: Math.round(fee.rate * 100) })}</small>
+                </>
+              )}
+            </dd>
+          </div>
+        </dl>
+      )}
+    </section>
+  )
+}
+
 // A sponsorship's agreement (임시 전자 계약서): the two sides, the event and what
-// the brand gives; the event's goals, set here before it begins; each
+// the brand gives, its value and fee; the event's goals, set here before it begins; each
 // side's items to tick off with links and photos as proof; each side's
 // confirmation of the items as they stand; and printing it (or saving it
 // as a PDF from the print dialog).
@@ -815,6 +918,7 @@ export function AgreementPage({
   id,
   loggedIn,
   goalsSaved = 0,
+  paid = 0,
   onBack,
   onLogin,
   onError,
@@ -825,6 +929,8 @@ export function AgreementPage({
   loggedIn: boolean
   // Counts the goals saved from here, so the page reads them again.
   goalsSaved?: number
+  // Counts payments finished in the payment window, likewise.
+  paid?: number
   onBack: () => void
   onLogin: () => void
   onError: (error: unknown) => void
@@ -836,6 +942,7 @@ export function AgreementPage({
   const [failed, setFailed] = useState("")
   const [busy, setBusy] = useState(false)
   const [editing, setEditing] = useState(false)
+  const [paying, setPaying] = useState(false)
 
   useEffect(() => {
     if (!loggedIn) return
@@ -851,7 +958,7 @@ export function AgreementPage({
     return () => {
       cancelled = true
     }
-  }, [id, loggedIn, goalsSaved])
+  }, [id, loggedIn, goalsSaved, paid])
 
   // Runs one change; the answer is the agreement as it now stands.
   const run = async (change: () => Promise<{ agreement: Agreement }>, done?: string) => {
@@ -1012,24 +1119,59 @@ export function AgreementPage({
               </li>
             ))}
           </ul>
-          {!agreement.confirmed[side] && !editing && (
-            <Pill
-              disabled={busy}
-              onClick={() =>
-                void run(
-                  () => api.confirmAgreement(agreement.id),
-                  agreement.confirmed[other]
-                    ? t("양쪽 모두 확인했어요.")
-                    : t("확인했어요. {name}에 알렸어요.", { name: agreement[other].name }),
-                )
-              }
-            >
-              {t("이 내용으로 확인하기")}
+          {!agreement.confirmed[side] && !editing && side === "brand" && agreement.fee.needsValue ? (
+            <p className="field-hint">{t("협찬액을 적으면 수수료를 결제하고 확인할 수 있어요.")}</p>
+          ) : !agreement.confirmed[side] && !editing && side === "brand" && agreement.fee.due > 0 ? (
+            <Pill disabled={busy} onClick={() => setPaying(true)}>
+              {t("수수료 {amount} 결제하고 확인하기", { amount: fullWon(agreement.fee.due) })}
             </Pill>
+          ) : (
+            !agreement.confirmed[side] &&
+            !editing && (
+              <Pill
+                disabled={busy}
+                onClick={() =>
+                  void run(
+                    () => api.confirmAgreement(agreement.id),
+                    agreement.confirmed[other]
+                      ? t("양쪽 모두 확인했어요.")
+                      : t("확인했어요. {name}에 알렸어요.", { name: agreement[other].name }),
+                  )
+                }
+              >
+                {t("이 내용으로 확인하기")}
+              </Pill>
+            )
           )}
         </div>
         )}
       </article>
+
+      <ValuePanel
+        agreement={agreement}
+        busy={busy}
+        onSave={(value) => run(() => api.saveAgreementValue(agreement.id, value), t("협찬액을 적었어요. 두 쪽 모두 다시 확인해 주세요."))}
+      />
+
+      <Presence show={paying}>
+        <PaymentModal
+          amount={agreement.fee.due}
+          kind="fee"
+          lines={[
+            { label: t("협찬"), value: `${agreement.eventName} · ${agreement.group.name}` },
+            { label: t("협찬액"), value: fullWon((agreement.value?.cash ?? 0) + (agreement.value?.inKind ?? 0)) },
+            { label: t("수수료율"), value: `${Math.round(agreement.fee.rate * 100)}%` },
+            ...(agreement.fee.paid > 0 ? [{ label: t("이미 낸 수수료"), value: fullWon(agreement.fee.paid) }] : []),
+          ]}
+          onClose={() => setPaying(false)}
+          onTransferAsked={() => {
+            setPaying(false)
+            onNotice(t("계좌 입금을 요청했어요. 입금이 확인되면 계약서가 확인돼요."))
+          }}
+          targetId={agreement.id}
+          title={t("플랫폼 수수료 결제")}
+        />
+      </Presence>
 
       <MethodsPanel
         agreement={agreement}

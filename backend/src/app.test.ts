@@ -937,7 +937,9 @@ test("with two-step login on, a password alone doesn't log in, and recovery code
   assert.match(url, /^otpauth:\/\/totp\/uniconnect%3Atwostep%40syu\.ac\.kr\?secret=[A-Z2-7]+&issuer=uniconnect/)
   assert.equal((await call("POST", "/auth/two-factor/enable", { code: "000000" }, token)).status, 400)
   const code = () => codeAt(secret, stepAt(Date.now()))
-  const enabled = (await call("POST", "/auth/two-factor/enable", { code: code() }, token)).data
+  // Kept, as the clock may move on to the next 30 seconds' code meanwhile.
+  const used = code()
+  const enabled = (await call("POST", "/auth/two-factor/enable", { code: used }, token)).data
   assert.equal(enabled.account.twoFactorOn, true)
   assert.equal(enabled.account.twoFactor, undefined)
   assert.equal(enabled.recoveryCodes.length, 10)
@@ -950,7 +952,7 @@ test("with two-step login on, a password alone doesn't log in, and recovery code
   const withCode = (body: object) => call("POST", "/auth/login/code", { email, ticket: first.ticket, ...body })
   assert.equal((await call("POST", "/auth/login/code", { email, ticket: "nope", code: code() })).status, 401)
   // The code used to turn it on doesn't work twice; a recovery code does, once.
-  assert.equal((await withCode({ code: code() })).status, 401)
+  assert.equal((await withCode({ code: used })).status, 401)
   const recovered = await withCode({ code: enabled.recoveryCodes[0].toLowerCase() })
   assert.equal(recovered.status, 200)
   assert.equal(recovered.data.recoveryLeft, 9)
@@ -4706,5 +4708,95 @@ test("Vercel Cron sends the reminders with its secret, and nobody else can", asy
     assert.equal(typeof ((await ran.json()) as { sent: unknown }).sent, "number")
   } finally {
     config.cronSecret = undefined
+  }
+})
+
+test("a brand confirms an e-contract by paying the 15% fee, by card or by transfer, and a refund takes it back", async () => {
+  const { feeStart } = await import("./lib/fees.js")
+  const { toss } = await import("./lib/billing.js")
+  const saved = { since: feeStart.since, client: config.tossClientKey, secret: config.tossSecretKey, admin: config.adminToken }
+  const realToss = { confirm: toss.confirm, cancel: toss.cancel }
+  feeStart.since = "2000-01-01"
+  config.adminToken = "test-admin-token"
+  const admin = (route: string, body?: unknown) =>
+    fetch(`${baseUrl}/admin${route}`, {
+      method: body === undefined ? "GET" : "POST",
+      headers: { "Content-Type": "application/json", "X-Admin-Token": "test-admin-token" },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    }).then(async (response) => ({ status: response.status, data: (await response.json()) as { payments: { id: string }[] } }))
+  try {
+    const group = await signUpMember("fee-club@syu.ac.kr", "fee-pass-123")
+    const groupId = getDatabase().accounts.find((account) => account.email === "fee-club@syu.ac.kr")!.id
+    const { token: brand, listingId } = await listedMember("fee@fee-cafe.kr", "fee-pass-123", "브랜드")
+    await call("POST", "/events", { name: "수수료 공연", date: "2026-12-20", people: "150명", types: ["현금"] }, group)
+    assert.equal((await call("POST", "/proposals", { matchId: listingId }, group)).status, 201)
+    const request = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
+    await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+
+    // The value comes first; the group confirms without paying anything.
+    assert.equal((await call("POST", `/agreements/${request.id}/confirm`, undefined, brand)).status, 409)
+    assert.equal((await call("PUT", `/agreements/${request.id}/value`, { value: { cash: 0, inKind: 0 } }, group)).status, 400)
+    const valued = (await call("PUT", `/agreements/${request.id}/value`, { value: { cash: 200000, inKind: 133333 } }, group)).data.agreement
+    assert.deepEqual([valued.fee.amount, valued.fee.due, valued.fee.rate], [50000, 50000, 0.15])
+    assert.equal((await call("POST", `/agreements/${request.id}/confirm`, undefined, brand)).status, 402)
+    assert.ok((await call("POST", `/agreements/${request.id}/confirm`, undefined, group)).data.agreement.confirmed.group)
+
+    // Only the brand orders, at the fee due.
+    assert.equal((await call("POST", "/billing/orders", { kind: "fee", targetId: request.id }, group)).status, 403)
+    assert.equal((await call("POST", "/billing/orders", { kind: "fee", targetId: request.id }, await login("브랜드"))).status, 403)
+    assert.equal((await call("POST", "/billing/orders", { kind: "nope", targetId: request.id }, brand)).status, 404)
+    const { order } = (await call("POST", "/billing/orders", { kind: "fee", targetId: request.id }, brand)).data
+    assert.deepEqual([order.amount, order.status, order.orderName], [50000, "pending", "수수료 공연 협찬 수수료"])
+    assert.equal(order.paymentKey, undefined)
+    // The same order comes back while it waits.
+    assert.equal((await call("POST", "/billing/orders", { kind: "fee", targetId: request.id }, brand)).data.order.id, order.id)
+
+    // By card: off without Toss keys; then the amount must be the order's.
+    const confirm = (amount: number) => call("POST", "/billing/confirm", { orderId: order.id, paymentKey: "pk-test", amount }, brand)
+    assert.equal((await confirm(50000)).status, 409)
+    config.tossClientKey = "test_ck_example"
+    config.tossSecretKey = "test_sk_example"
+    toss.confirm = async (_key, orderId, amount) => ({ status: "DONE", totalAmount: amount, orderId, receipt: { url: "https://receipt.example/1" }, approvedAt: "2026-10-29T12:00:00+09:00" })
+    assert.equal((await confirm(1000)).status, 400)
+    const paid = (await confirm(50000)).data.order
+    assert.deepEqual([paid.status, paid.method, paid.receiptUrl], ["paid", "card", "https://receipt.example/1"])
+    const after = (await call("GET", `/agreements/${request.id}`, undefined, brand)).data.agreement
+    assert.ok(after.confirmed.group && after.confirmed.brand)
+    assert.deepEqual([after.fee.paid, after.fee.due], [50000, 0])
+    const listed = (await call("GET", "/billing", undefined, brand)).data
+    assert.deepEqual([listed.card.clientKey, listed.payments.length, listed.prices.report], ["test_ck_example", 1, 50000])
+    assert.equal((await call("GET", "/billing", undefined, group)).data.payments.length, 0)
+
+    // A higher value leaves the difference, paid here by bank transfer.
+    const raised = (await call("PUT", `/agreements/${request.id}/value`, { value: { cash: 300000, inKind: 100000 } }, brand)).data.agreement
+    assert.deepEqual([raised.fee.amount, raised.fee.due, raised.confirmed], [60000, 10000, {}])
+    const top = (await call("POST", "/billing/orders", { kind: "fee", targetId: request.id }, brand)).data.order
+    assert.equal(top.amount, 10000)
+    assert.ok((await call("POST", `/billing/orders/${top.id}/transfer`, undefined, brand)).data.order.transferRequestedAt)
+    assert.equal((await admin("/payments")).data.payments[0].id, top.id)
+    assert.equal((await admin(`/payments/${top.id}/paid`, {})).status, 200)
+    assert.equal((await admin(`/payments/${top.id}/paid`, {})).status, 409)
+    assert.ok((await call("GET", `/agreements/${request.id}`, undefined, brand)).data.agreement.confirmed.brand)
+
+    // A refund of the card payment takes the brand's confirmation back.
+    const refunded: string[] = []
+    toss.cancel = async (key) => {
+      refunded.push(key)
+    }
+    assert.equal((await admin(`/payments/${order.id}/cancel`, { reason: "테스트 환불" })).status, 200)
+    assert.deepEqual(refunded, ["pk-test"])
+    const back = (await call("GET", `/agreements/${request.id}`, undefined, brand)).data.agreement
+    assert.deepEqual([back.confirmed.brand, back.fee.due], [undefined, 50000])
+    // The account's export holds its payments, without Toss's key.
+    const exported = (await call("GET", "/auth/export", undefined, brand)).data
+    assert.equal(exported.payments.length, 2)
+    assert.ok(exported.payments.every((payment: { paymentKey?: string }) => payment.paymentKey === undefined))
+  } finally {
+    feeStart.since = saved.since
+    config.tossClientKey = saved.client
+    config.tossSecretKey = saved.secret
+    config.adminToken = saved.admin
+    toss.confirm = realToss.confirm
+    toss.cancel = realToss.cancel
   }
 })

@@ -7,6 +7,7 @@ import {
   type AcceptedProposal,
   agreementFor,
   agreementShare,
+  confirmAgreement,
   agreementView,
   cancelSponsorship,
   defaultItems,
@@ -15,6 +16,7 @@ import {
   sponsoredEvent,
 } from "../lib/agreements.js"
 import { todayInKorea } from "../lib/dates.js"
+import { feeState, parseValue } from "../lib/fees.js"
 import { HttpError } from "../lib/errors.js"
 import { ensureMeasurement } from "../lib/measurements.js"
 import { methodsOf, parseMethods } from "../lib/methods.js"
@@ -186,26 +188,46 @@ agreementsRouter.put("/:id/methods", async (req, res) => {
   res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 
-// A side confirms the items and methods as they stand; the other side hears
-// about it. Once both have, the methods as they stand are the ones that
-// count at the event and in the results (`confirmedMethods`).
+// What the sponsorship is worth, cash and in-kind, which either side writes
+// until the event begins; a change asks both sides to confirm again, and a
+// higher value leaves the difference of the fee to pay.
+agreementsRouter.put("/:id/value", async (req, res) => {
+  const { account, database, proposal, side } = openedToChange(req)
+  const value = parseValue(req.body?.value)
+  if (eventOver(database, proposal)) throw new HttpError(409, "끝난 행사의 협찬액은 바꿀 수 없어요.")
+  const { agreement } = agreementFor(database, proposal)
+  const changed = JSON.stringify(value) !== JSON.stringify(agreement.value ?? null)
+  agreement.value = value
+  if (changed) {
+    agreement.confirmed = {}
+    agreement.updatedAt = new Date().toISOString()
+  }
+  await saveDatabase()
+  if (changed) {
+    void notify(
+      side === "group" ? proposal.brand.account : proposal.group.account,
+      "sponsorships",
+      "임시 전자 계약서가 바뀌었어요",
+      [`${account.name}에서 '${proposal.eventName}' 협찬의 협찬액을 바꿨어요. 바뀐 내용을 보고 다시 확인해 주세요.`],
+      `/agreements/${encodeURIComponent(agreement.id)}`,
+    )
+  }
+  res.json({ agreement: agreementView(database, agreement, proposal, side) })
+})
+
+// A side confirms the items, methods and value as they stand; the other
+// side hears about it.
+// The brand confirms by paying the fee still due (lib/fees.ts), which
+// confirms for it once paid; with nothing due it confirms here.
 agreementsRouter.post("/:id/confirm", async (req, res) => {
   const { account, database, proposal, side } = openedToChange(req)
   const { agreement } = agreementFor(database, proposal)
-  const now = new Date().toISOString()
-  agreement.confirmed[side] = now
-  agreement.updatedAt = now
-  const both = Boolean(agreement.confirmed.group && agreement.confirmed.brand)
-  const sponsored = sponsoredEvent(database, proposal)
-  if (both && sponsored) {
-    ensureMeasurement(database, sponsored.owner.id, sponsored.event)
-    const share = agreementShare(database, proposal)
-    if (share) {
-      const methods = methodsOf(share.measurement, share.sponsor)
-      if (share.sponsor) share.sponsor.confirmedMethods = methods
-      else share.measurement.confirmedMethods = methods
-    }
+  if (side === "brand") {
+    const fee = feeState(database, agreement, proposal)
+    if (fee.needsValue) throw new HttpError(409, "협찬액(현금과 현물 환산)을 먼저 적어 주세요. 수수료는 그 금액으로 정해져요.")
+    if (fee.due > 0) throw new HttpError(402, "플랫폼 수수료를 결제하면 확인돼요.")
   }
+  const both = confirmAgreement(database, agreement, proposal, side)
   await saveDatabase()
   void notify(
     side === "group" ? proposal.brand.account : proposal.group.account,

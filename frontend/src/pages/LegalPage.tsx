@@ -33,7 +33,7 @@ export function LegalPage({
       </div>
       <ol className="legal-sections">
         {doc.sections.map((section, index) => (
-          <li className="legal-section" data-reveal key={section.title}>
+          <li className="legal-section" data-reveal id={section.id} key={section.title}>
             <h2>
               <span>{String(index + 1).padStart(2, "0")}</span>
               {section.title}

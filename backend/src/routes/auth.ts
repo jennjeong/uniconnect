@@ -2,6 +2,7 @@ import { randomBytes, randomInt, randomUUID } from "node:crypto"
 import { Router, type Request } from "express"
 
 import { config } from "../config.js"
+import { paymentView } from "../lib/billing.js"
 import { acceptedProposalsOf, dropOrphanAgreements, removeUploads } from "../lib/agreements.js"
 import { findListing } from "../lib/catalog.js"
 import { deviceLabel } from "../lib/devices.js"
@@ -62,7 +63,7 @@ const suspendedMessage = "운영 정책에 따라 이용이 정지된 계정이�
 // The account as its own people see it, without its secrets; `memberId`
 // says which co-admin is logged in, if one is.
 export function toPublic(
-  { passwordHash, termsAgreedAt, calendarFeed, twoFactor, pendingTwoFactor, loginTicket, members, memberInvites, social, councilCode, councils, ...account }: Account,
+  { passwordHash, termsAgreedAt, calendarFeed, customerKey, twoFactor, pendingTwoFactor, loginTicket, members, memberInvites, social, councilCode, councils, ...account }: Account,
   memberId?: string,
 ): PublicAccount {
   const member = memberId ? members?.find((item) => item.id === memberId) : undefined
@@ -722,6 +723,7 @@ authRouter.get("/export", (req, res) => {
     ),
     reports: database.reports.filter((item) => item.reporterId === account.id),
     posts: database.posts.filter((post) => post.accountId === account.id),
+    payments: (database.payments ?? []).filter((payment) => payment.accountId === account.id).map(paymentView),
     saved: (database.saved[account.id] ?? []).map((id) => ({
       id,
       name: [...database.brands, ...database.groups].find((item) => item.id === id)?.name ?? null,
