@@ -4921,7 +4921,7 @@ test("with Toss test keys the demo brand shows the whole payment flow; with none
     const on = (await call("GET", "/billing", undefined, demo)).data
     assert.deepEqual([on.testMode, on.canPay], [true, true])
     const { order } = (await call("POST", "/billing/orders", { kind: "pro", targetId: "" }, demo)).data
-    assert.equal(order.amount, 200000)
+    assert.equal(order.amount, 300000)
     await call("DELETE", `/billing/orders/${order.id}`, undefined, demo)
 
     // Live keys: the shared demo accounts never pay for real.
