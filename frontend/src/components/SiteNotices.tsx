@@ -46,6 +46,7 @@ export function SiteNotices({ viewer }: { viewer: string }) {
             onClick={() => {
               const next = [...dismissed, notice.id]
               setDismissed(next)
+              void api.dismissAnnouncement(notice.id).catch(() => undefined)
               try {
                 localStorage.setItem(dismissedKey, JSON.stringify(next.slice(-50)))
               } catch {

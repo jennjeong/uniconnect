@@ -137,8 +137,8 @@ const en: Record<string, string> = {
   "스팸·괴롭힘·사기를 막고 운영자가 확인해 처리": "Stopping spam, harassment and fraud, checked and settled by the operators",
   "신고한 회원이나 신고된 회원이 탈퇴할 때까지, 차단은 풀 때까지":
     "Until the member who reported or the reported member leaves; blocks until lifted",
-  "운영자 메모(운영자가 회원에 대해 남긴 메모와 시각)와 운영자의 처리 기록(입금 확인, 신고 처리, 정지, 답변 같은 일의 종류, 대상 번호, 시각)":
-    "Operators' notes on a member (the note and when it was written) and the operators' log (the kind of action, such as confirming a transfer, handling a report, a suspension or an answer, the target's number and the time)",
+  "운영자 메모(운영자가 회원에 대해 남긴 메모와 시각, 태그, 질문의 담당자와 보류 여부)와 운영자의 처리 기록(입금 확인, 신고 처리, 정지, 답변 같은 일의 종류, 대상 번호, 시각)":
+    "Operators' notes on a member (the note and when it was written, tags, and who handles its questions and whether they are on hold) and the operators' log (the kind of action, such as confirming a transfer, handling a report, a suspension or an answer, the target's number and the time)",
   "신고·문의·결제를 이어서 처리하고, 누가 언제 무엇을 했는지 확인":
     "Following up on reports, questions and payments, and seeing who did what and when",
   "탈퇴할 때까지, 처리 기록은 최근 500건까지":

@@ -238,6 +238,7 @@ authRouter.post("/email-code/verify", async (req, res) => {
 
 // Step 3: create the account with the verified email and log it in.
 authRouter.post("/signup", async (req, res) => {
+  if (getDatabase().settings?.maintenance?.blockSignups) throw new HttpError(503, "지금은 새 가입을 잠시 막아 두었어요. 잠시 뒤에 다시 시도해 주세요.")
   const body = req.body ?? {}
   const role = parseRole(body.role)
   const name = text(body.name)

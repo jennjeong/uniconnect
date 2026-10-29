@@ -1,3 +1,4 @@
+import { noteCronRun } from "./adminTools.js"
 import { addDays, todayInKorea } from "./dates.js"
 import { notify } from "./notices.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -63,7 +64,7 @@ export async function sendReminders(database: Database = getDatabase(), now = ne
       })
     }
   }
-  if (due.length === 0) return 0
+  noteCronRun(database, due.length, now)
   await saveDatabase()
   for (const reminder of due) {
     void notify(reminder.account, "reminders", reminder.subject, reminder.lines, reminder.path)

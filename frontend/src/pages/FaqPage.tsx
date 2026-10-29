@@ -4,7 +4,8 @@ import { FaqList } from "../components/FaqSection"
 import { Icon } from "../components/Icon"
 import { Presence } from "../components/Presence"
 import { RevealTitle } from "../components/RevealText"
-import { faqs, faqTopics, type FaqTopic } from "../data/faq"
+import { faqTopics, type FaqTopic } from "../data/faq"
+import { useFaqs } from "../hooks/useSiteState"
 import { t } from "../i18n"
 import { AskModal } from "../modals/AskModal"
 import { MeshBackdrop } from "../scenes/MeshBackdrop"
@@ -33,6 +34,7 @@ export function FaqPage({
   onAnswersRead?: (inquiries: Inquiry[]) => void
   onLogin: () => void
 }) {
+  const faqs = useFaqs()
   const [query, setQuery] = useState("")
   const [topic, setTopic] = useState<FaqTopic | null>(null)
   const listRef = useRef<HTMLDivElement>(null)

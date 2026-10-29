@@ -176,7 +176,7 @@ export type Payment = {
   orderName: string
   amount: number
   status: "pending" | "paid" | "cancelled"
-  method?: "card" | "transfer"
+  method?: "card" | "transfer" | "grant"
   receiptUrl?: string
   requestedAt: string
   transferRequestedAt?: string
@@ -590,6 +590,8 @@ export type Inquiry = {
 // A question as the operators see it, with who sent it.
 export type AdminInquiry = Inquiry & {
   from: { name: string; role: Role; email: string } | null
+  // Who on the team handles it and whether it is on hold.
+  handling: { assignee?: string; heldAt?: string } | null
 }
 
 // What the operators can do about a report.
@@ -958,6 +960,10 @@ export type AdminMember = {
   sent: number
   sponsorships: number
   business: boolean
+  // The operators' own tags, and whether another account shares its phone
+  // or business number.
+  tags: string[]
+  duplicate: boolean
 }
 
 export type AdminProposalRow = {
@@ -984,23 +990,138 @@ export type AdminMemberDetail = AdminMember & {
   sessions: number
   // The operators' own note on the member.
   note: { text: string; at: string } | null
+  businessNumber: string | null
+  timeline: { at: string; kind: string; text: string }[]
+  duplicates: { id: string; name: string; by: "phone" | "business" }[]
+}
+
+export type AgreementState = "draft" | "one" | "both" | "done" | "cancel"
+
+export type AdminAgreementRow = {
+  id: string
+  from: string
+  to: string
+  event: string
+  date: string
+  state: AgreementState
+  done: number
+  items: number
+  cancel: { by: ChatSide; reason: string; at: string } | null
+  updatedAt: string
+  example: boolean
+}
+
+export type AdminProposalDetail = {
+  id: string
+  kind: "request" | "offer"
+  from: string
+  to: string
+  event: string
+  date: string
+  terms: string
+  status: string
+  createdAt: string
+  respondedAt: string | null
+  canceledAt: string | null
+  fromPost: boolean
+  agreement: AdminAgreementRow | null
+  metrics: { scans: number; coupons: number; visits: number } | null
+}
+
+export type AdminStaleProposal = {
+  id: string
+  from: string
+  to: string
+  event: string
+  createdAt: string
+  waitingDays: number
+  canNudge: boolean
+}
+
+export type AdminEventRow = {
+  id: string
+  name: string
+  date: string
+  endDate: string | null
+  owner: string
+  role: Role | null
+  example: boolean
+  sponsors: number
+  scans: number
+}
+
+export type AdminLive = {
+  events: (AdminEventRow & {
+    coupons: number
+    visits: number
+    hourly: { hour: number; scans: number }[]
+    lastAt: string | null
+    pinMisses: number
+  })[]
+  alerts: { eventId: string; event: string; kind: "pin" | "visits-over-coupons" | "visit-burst"; detail: string }[]
+}
+
+export type AdminPostRow = {
+  id: string
+  title: string
+  poster: string
+  deadline: string
+  createdAt: string
+  closedAt: string | null
+  hiddenAt: string | null
+}
+
+export type AdminReviewRow = {
+  id: string
+  author: string
+  about: string
+  event: string
+  rating: number
+  comment: string
+  createdAt: string
+  hiddenAt: string | null
+  pinnedAt: string | null
+}
+
+export type AdminInvites = {
+  sent: number
+  joined: number
+  rate: number | null
+  byInviter: { name: string; sent: number; joined: number }[]
+}
+
+export type FaqTopicKey = "start" | "account" | "proposal" | "schedule" | "message" | "results"
+
+// Help center questions the operators added (Korean only), and built-in
+// ones they hid, by their Korean wording.
+export type SiteFaq = {
+  added: { id: string; topic: FaqTopicKey; question: string; answer: string; featured?: boolean; createdAt: string }[]
+  hidden: string[]
+}
+
+export type SiteState = { maintenance: { message: string } | null; signupsClosed: boolean; faq: SiteFaq }
+
+export type AdminInsights = {
+  funnel: { step: string; count: number }[]
+  cohorts: { week: string; size: number; active: (number | null)[] }[]
+  distribution: { schools: { label: string; count: number }[]; industries: { label: string; count: number }[]; types: { label: string; count: number }[] }
+  kpi: { key: "signups" | "proposals" | "revenue"; actual: number; target: number | null }[]
+  searches: { term: string; count: number }[]
+}
+
+export type AdminSystem = {
+  limits: { message: string; limit: number; minutes: number; counting: number; blocked: number }[]
+  backups: { hour: string; bytes: number }[]
+  cronRuns: { at: string; sent: number }[]
+  maintenance: { on: boolean; message?: string; blockSignups?: boolean }
 }
 
 // What an operator did in the console, with its target's name as it is now.
 export type AdminLogRow = {
   id: string
   at: string
-  action:
-    | "payment-paid"
-    | "payment-cancelled"
-    | "report-resolved"
-    | "account-suspended"
-    | "account-unsuspended"
-    | "inquiry-answered"
-    | "note-saved"
-    | "announcement-posted"
-    | "announcement-ended"
-  target: { kind: "account" | "payment" | "inquiry" | "report" | "announcement"; id: string }
+  action: string
+  target: { kind: string; id: string }
   detail?: string
   label: string | null
 }
@@ -1021,7 +1142,9 @@ export type SiteNotice = { id: string; text: string; tone: "info" | "warning" }
 
 export type AdminAnnouncement = SiteNotice & {
   audience: "all" | Role
+  from?: string
   until?: string
+  dismissals?: number
   createdAt: string
   endedAt?: string
   live: boolean

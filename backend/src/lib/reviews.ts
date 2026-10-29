@@ -30,11 +30,12 @@ export function canReview(database: Database, proposal: AcceptedProposal, side: 
   )
 }
 
-// A listing's reviews, newest first, without those the operators took down.
+// A listing's reviews, those the operators pinned first, then newest first,
+// without those they took down.
 export const reviewsAbout = (database: Database, listingId: string) =>
   database.reviews
     .filter((review) => review.aboutId === listingId && !review.hiddenAt)
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .sort((a, b) => Number(Boolean(b.pinnedAt)) - Number(Boolean(a.pinnedAt)) || b.createdAt.localeCompare(a.createdAt))
 
 // A listing's reviews in short: how many, the average stars to one decimal
 // and how many picked each tag, the most picked first.

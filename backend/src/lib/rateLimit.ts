@@ -15,6 +15,9 @@ type Bucket = { count: number; resetAt: number }
 
 const limiters = new Set<Map<string, Bucket>>()
 
+// Every limit by its name in the table, for the operators' status.
+const registry = new Map<string, { limit: number; windowMs: number; message: string; buckets: Map<string, Bucket> }>()
+
 // How long a count may wait for the database before memory counts it.
 export const sharedLimits = { waitMs: 1500 }
 
@@ -49,6 +52,7 @@ export function createRateLimit({
   limiters.add(buckets)
   // The limit's name in the table: what tells it from the others.
   const name = createHash("sha256").update(`${limit} ${windowMs} ${message}`).digest("hex").slice(0, 16)
+  registry.set(name, { limit, windowMs, message, buckets })
   const keyHash = (key: string) => createHash("sha256").update(key).digest("hex")
 
   const live = (key: string) => {
@@ -144,6 +148,38 @@ export function createRateLimit({
         () => memory.reset(key),
       ),
   }
+}
+
+// How many keys each limit is counting now and how many it is turning
+// away, never the keys themselves: from the shared table with a database,
+// else this copy's memory.
+export async function limitStatus() {
+  const now = Date.now()
+  const sql = databaseSql()
+  let rows: { name: string; count: number }[] | undefined
+  if (sql) {
+    try {
+      await ensureTables(sql)
+      rows = (await sql("select name, count from uniconnect_limits where reset_at > $1", [now])).map((row) => ({
+        name: String(row.name),
+        count: Number(row.count),
+      }))
+    } catch {
+      rows = undefined
+    }
+  }
+  return [...registry.entries()].map(([name, entry]) => {
+    const counts = rows
+      ? rows.filter((row) => row.name === name).map((row) => row.count)
+      : [...entry.buckets.values()].filter((bucket) => bucket.resetAt > now).map((bucket) => bucket.count)
+    return {
+      message: entry.message,
+      limit: entry.limit,
+      minutes: Math.round(entry.windowMs / 60000),
+      counting: counts.length,
+      blocked: counts.filter((count) => count >= entry.limit).length,
+    }
+  })
 }
 
 // The caller's address. Behind a proxy it is only right once TRUST_PROXY

@@ -31,7 +31,7 @@ const adminFailures = createRateLimit({
 // sent, Korean included.
 const digest = (value: string) => createHash("sha256").update(value).digest()
 
-async function requireAdmin(req: Request) {
+export async function requireAdmin(req: Request) {
   const key = clientKey(req)
   await adminFailures.check(key)
   const expected = config.adminToken
@@ -103,6 +103,7 @@ adminRouter.get("/inquiries", async (req, res) => {
       return {
         ...inquiry,
         from: account ? { name: account.name, role: account.role, email: account.email } : null,
+        handling: database.inquiryHandling?.[inquiry.id] ?? null,
       }
     })
   res.json({ inquiries })
@@ -232,13 +233,21 @@ adminRouter.get("/accounts", async (req, res) => {
   const query = text(req.query.q).toLowerCase()
   const role = text(req.query.role)
   const state = text(req.query.state)
+  const tag = text(req.query.tag)
   const rows = database.accounts
     .map((account) => memberRow(database, account))
     .filter((row) => !query || [row.name, row.email, row.school].some((value) => value.toLowerCase().includes(query)))
     .filter((row) => !role || row.role === role)
-    .filter((row) =>
-      state === "suspended" ? Boolean(row.suspendedAt) : state === "partners" ? row.partnersUntil !== null : state === "demo" ? row.demo : true,
-    )
+    .filter((row) => {
+      if (state === "suspended") return Boolean(row.suspendedAt)
+      if (state === "partners") return row.partnersUntil !== null
+      if (state === "demo") return row.demo
+      if (state === "duplicates") return row.duplicate
+      const dormant = /^dormant(\d+)$/.exec(state)
+      if (dormant) return Date.now() - Number(row.lastSeen ?? Date.parse(row.createdAt)) > Number(dormant[1]) * 24 * 60 * 60 * 1000
+      return true
+    })
+    .filter((row) => !tag || row.tags.includes(tag))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
   res.json({ accounts: rows })
 })
@@ -331,7 +340,10 @@ adminRouter.post("/announcements", async (req, res) => {
   const tone = text(req.body?.tone) as Announcement["tone"]
   const audience = text(req.body?.audience) as Announcement["audience"]
   if (!tones.includes(tone) || !audiences.includes(audience)) throw new HttpError(400, "공지 종류와 대상을 골라 주세요.")
+  const from = text(req.body?.from)
+  if (from && !/^\d{4}-\d{2}-\d{2}$/.test(from)) throw new HttpError(400, "시작하는 날을 골라 주세요.")
   const until = text(req.body?.until)
+  if (from && until && until < from) throw new HttpError(400, "끝나는 날을 시작하는 날 이후로 골라 주세요.")
   if (until && (!/^\d{4}-\d{2}-\d{2}$/.test(until) || until < todayInKorea())) throw new HttpError(400, "끝나는 날을 오늘 이후로 골라 주세요.")
   const database = getDatabase()
   const item: Announcement = {
@@ -339,6 +351,7 @@ adminRouter.post("/announcements", async (req, res) => {
     text: message,
     tone,
     audience,
+    ...(from ? { from } : {}),
     ...(until ? { until } : {}),
     createdAt: new Date().toISOString(),
   }

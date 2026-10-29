@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 import { api, errorMessage } from "../api"
 import { t } from "../i18n"
@@ -11,6 +11,103 @@ import type { AdminAnnouncement, AdminHealth, AdminLogRow, AdminMemberDetail, Er
 // operators did and which services are set up.
 
 const dayMs = 24 * 60 * 60 * 1000
+
+// A convenience kept in this browser (views, columns, templates), or the
+// fallback when storage is missing or unreadable.
+export function readStored<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key)
+    return raw ? (JSON.parse(raw) as T) : fallback
+  } catch {
+    return fallback
+  }
+}
+
+export function writeStored(key: string, value: unknown) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value))
+  } catch {
+    // Kept until the page closes.
+  }
+}
+
+// A console table's sort and pages: the rows sorted by the picked key
+// (pressing it again turns the order), twenty to a page.
+export function useTable<T>(rows: T[], keys: Record<string, (row: T) => string | number>, pageSize = 20) {
+  const [sort, setSort] = useState<{ key: string; desc: boolean } | null>(null)
+  const [pageIndex, setPage] = useState(0)
+  const sorted = useMemo(() => {
+    if (!sort || !Object.prototype.hasOwnProperty.call(keys, sort.key)) return rows
+    const value = keys[sort.key]
+    return [...rows].sort((a, b) => {
+      const x = value(a)
+      const y = value(b)
+      const order = typeof x === "number" && typeof y === "number" ? x - y : String(x).localeCompare(String(y))
+      return sort.desc ? -order : order
+    })
+    // keys is written inline by each table, so only the rows and sort count.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, sort])
+  const pages = Math.max(1, Math.ceil(sorted.length / pageSize))
+  const current = Math.min(pageIndex, pages - 1)
+  return {
+    sort,
+    sortBy: (key: string) => {
+      setSort((before) => (before?.key === key ? { key, desc: !before.desc } : { key, desc: false }))
+      setPage(0)
+    },
+    sorted,
+    page: sorted.slice(current * pageSize, (current + 1) * pageSize),
+    pageIndex: current,
+    pages,
+    total: sorted.length,
+    setPage,
+  }
+}
+
+type Table = ReturnType<typeof useTable<never>>
+
+// A column header that sorts by its key, with the order shown.
+export function SortHeader({ label, sortKey, table }: { label: string; sortKey: string; table: Pick<Table, "sort" | "sortBy"> }) {
+  const active = table.sort?.key === sortKey
+  return (
+    <th aria-sort={active ? (table.sort!.desc ? "descending" : "ascending") : "none"} scope="col">
+      <button className="console-sort" onClick={() => table.sortBy(sortKey)} type="button">
+        {label}
+        <span aria-hidden="true">{active ? (table.sort!.desc ? "▼" : "▲") : "↕"}</span>
+      </button>
+    </th>
+  )
+}
+
+// The count and the pages under a table.
+export function Pager({ table, unit }: { table: Pick<Table, "pageIndex" | "pages" | "total" | "setPage">; unit: string }) {
+  return (
+    <div className="console-pager">
+      <span>
+        {table.total.toLocaleString()}
+        {unit}
+      </span>
+      {table.pages > 1 && (
+        <span>
+          <button aria-label={t("앞 쪽")} className="console-inline" disabled={table.pageIndex === 0} onClick={() => table.setPage(table.pageIndex - 1)} type="button">
+            ‹
+          </button>
+          {t("{page} / {pages}쪽", { page: table.pageIndex + 1, pages: table.pages })}
+          <button
+            aria-label={t("다음 쪽")}
+            className="console-inline"
+            disabled={table.pageIndex >= table.pages - 1}
+            onClick={() => table.setPage(table.pageIndex + 1)}
+            type="button"
+          >
+            ›
+          </button>
+        </span>
+      )}
+    </div>
+  )
+}
 
 // Whole days since a moment, 0 on the day itself.
 export const daysSince = (at: string, now = Date.now()) => Math.max(0, Math.floor((now - Date.parse(at)) / dayMs))
@@ -201,7 +298,7 @@ const audienceLabels: Record<AdminAnnouncement["audience"], string> = { all: "�
 // to take each down, then those that ended.
 export function Notices({ token, onNotice }: { token: string; onNotice: (message: string) => void }) {
   const [items, setItems] = useState<AdminAnnouncement[]>()
-  const [form, setForm] = useState({ text: "", tone: "info" as AdminAnnouncement["tone"], audience: "all" as AdminAnnouncement["audience"], until: "" })
+  const [form, setForm] = useState({ text: "", tone: "info" as AdminAnnouncement["tone"], audience: "all" as AdminAnnouncement["audience"], from: "", until: "" })
   const [busy, setBusy] = useState(false)
   const load = () =>
     api.adminAnnouncements(token).then(
@@ -224,10 +321,10 @@ export function Notices({ token, onNotice }: { token: string; onNotice: (message
             event.preventDefault()
             setBusy(true)
             api
-              .adminPostAnnouncement(token, { ...form, text: form.text.trim(), until: form.until || undefined })
+              .adminPostAnnouncement(token, { ...form, text: form.text.trim(), from: form.from || undefined, until: form.until || undefined })
               .then(
                 () => {
-                  setForm({ ...form, text: "", until: "" })
+                  setForm({ ...form, text: "", from: "", until: "" })
                   onNotice(t("공지를 올렸어요."))
                   return load()
                 },
@@ -268,6 +365,10 @@ export function Notices({ token, onNotice }: { token: string; onNotice: (message
               </select>
             </label>
             <label>
+              {t("시작하는 날")}
+              <input onChange={(event) => setForm({ ...form, from: event.target.value })} type="date" value={form.from} />
+            </label>
+            <label>
               {t("마지막 날")}
               <input onChange={(event) => setForm({ ...form, until: event.target.value })} type="date" value={form.until} />
             </label>
@@ -291,7 +392,9 @@ export function Notices({ token, onNotice }: { token: string; onNotice: (message
                   <p>{item.text}</p>
                   <small>
                     {t(audienceLabels[item.audience])} · {formatDateTime(item.createdAt)}
+                    {item.from && ` · ${t("{date}부터", { date: item.from })}`}
                     {item.until && ` · ${t("{date}까지", { date: item.until })}`}
+                    {` · ${t("닫은 사람 {count}", { count: item.dismissals ?? 0 })}`}
                   </small>
                 </div>
                 {item.live ? (
@@ -322,7 +425,23 @@ export function Notices({ token, onNotice }: { token: string; onNotice: (message
   )
 }
 
-const actionLabels: Record<AdminLogRow["action"], string> = {
+const actionLabels: Record<string, string> = {
+  "account-logged-out": "강제 로그아웃",
+  "account-tagged": "태그 변경",
+  "business-set": "사업자 확인 변경",
+  "partners-granted": "파트너스 부여",
+  "demo-reset": "예시 데이터 초기화",
+  "proposal-nudged": "답 부탁 알림",
+  "post-hidden": "모집 글 숨김",
+  "post-shown": "모집 글 다시 보임",
+  "post-closed": "모집 글 마감",
+  "review-hidden": "후기 숨김",
+  "review-shown": "후기 다시 보임",
+  "review-pinned": "후기 고정",
+  "review-unpinned": "후기 고정 풂",
+  "inquiry-handled": "문의 담당 · 보류",
+  "faq-changed": "FAQ 변경",
+  "settings-changed": "설정 변경",
   "payment-paid": "입금 확인",
   "payment-cancelled": "결제 취소 · 환불",
   "report-resolved": "신고 처리",
@@ -334,7 +453,11 @@ const actionLabels: Record<AdminLogRow["action"], string> = {
   "announcement-ended": "공지 내림",
 }
 
-const kindLabels: Record<AdminLogRow["target"]["kind"], string> = {
+const kindLabels: Record<string, string> = {
+  proposal: "제안",
+  post: "모집 글",
+  review: "후기",
+  site: "사이트",
   account: "회원",
   payment: "결제",
   inquiry: "문의",
@@ -368,7 +491,7 @@ export function ActivityLog({ token, onNotice }: { token: string; onNotice: (mes
           name="activity-log"
           rows={() => [
             [t("시각"), t("한 일"), t("대상"), t("이름"), t("내용")],
-            ...shown.map((entry) => [entry.at, t(actionLabels[entry.action]), t(kindLabels[entry.target.kind]), entry.label, entry.detail]),
+            ...shown.map((entry) => [entry.at, t(actionLabels[entry.action] ?? entry.action), t(kindLabels[entry.target.kind] ?? entry.target.kind), entry.label, entry.detail]),
           ]}
         />
       </div>
@@ -390,11 +513,11 @@ export function ActivityLog({ token, onNotice }: { token: string; onNotice: (mes
               <tr key={entry.id}>
                 <td>{formatDateTime(entry.at)}</td>
                 <td>
-                  {t(actionLabels[entry.action])}
+                  {t(actionLabels[entry.action] ?? entry.action)}
                   {entry.detail && <small>{entry.detail}</small>}
                 </td>
                 <td>
-                  <em className="console-tag">{t(kindLabels[entry.target.kind])}</em> {entry.label ?? t("지워진 항목")}
+                  <em className="console-tag">{t(kindLabels[entry.target.kind] ?? entry.target.kind)}</em> {entry.label ?? t("지워진 항목")}
                 </td>
               </tr>
             ))}

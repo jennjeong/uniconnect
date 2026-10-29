@@ -48,6 +48,7 @@ function finds(database: Database, post: BoardPost, viewer: Account | undefined,
   const poster = posterOf(database, post)
   if (!poster) return false
   if (viewer?.id === post.accountId) return true
+  if (post.hiddenAt) return false
   return poster.account.role !== role && isOpen(post) && listedTo(database, catalogOf(poster.account.role), poster.listing, viewer)
 }
 

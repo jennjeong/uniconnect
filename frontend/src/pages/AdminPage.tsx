@@ -12,7 +12,22 @@ import { locale, t } from "../i18n"
 import { formatDateTime } from "../lib/date"
 import { fullWon } from "../lib/sponsorships"
 import { useNotice } from "../hooks/useNotice"
-import { ActivityLog, CsvButton, groupErrors, NoteEditor, Notices, ServiceHealth, TemplatePicker, WaitBadge } from "./AdminTools"
+import { Members } from "./AdminMembers"
+import { Content, Insights, Live, Operations, ProposalDrawer, RevenuePanel, SystemPanel } from "./AdminMore"
+import {
+  ActivityLog,
+  CsvButton,
+  groupErrors,
+  Notices,
+  Pager,
+  readStored,
+  ServiceHealth,
+  SortHeader,
+  TemplatePicker,
+  useTable,
+  WaitBadge,
+  writeStored,
+} from "./AdminTools"
 import type {
   AdminInquiry,
   AdminMember,
@@ -47,7 +62,7 @@ function writeToken(token: string) {
   }
 }
 
-type Tab = "waiting" | "answered"
+type Tab = "waiting" | "held" | "answered"
 
 // What was done about a report, in the past tense.
 const doneLabels: Record<ReportAction, string> = {
@@ -126,12 +141,17 @@ function ReportCard({
 function InquiryCard({
   inquiry,
   onAnswer,
+  onHandle,
 }: {
   inquiry: AdminInquiry
   onAnswer: (inquiry: AdminInquiry, answer: string) => Promise<void>
+  // Who on the team takes it, and whether it waits on something.
+  onHandle: (inquiry: AdminInquiry, handling: { assignee: string; held: boolean }) => void
 }) {
   const [draft, setDraft] = useState("")
   const [busy, setBusy] = useState(false)
+  const [assignee, setAssignee] = useState(inquiry.handling?.assignee ?? "")
+  const held = Boolean(inquiry.handling?.heldAt)
 
   return (
     <article className="admin-card">
@@ -146,6 +166,27 @@ function InquiryCard({
         {inquiry.from ? `${inquiry.from.name} · ${t(inquiry.from.role)} · ${inquiry.from.email}` : t("탈퇴한 회원")}
       </p>
       <p className="admin-question">{inquiry.question}</p>
+      {!inquiry.answer && (
+        <form
+          className="console-handling"
+          onSubmit={(event) => {
+            event.preventDefault()
+            onHandle(inquiry, { assignee: assignee.trim(), held })
+          }}
+        >
+          <input
+            aria-label={t("담당자")}
+            maxLength={20}
+            onBlur={() => assignee.trim() !== (inquiry.handling?.assignee ?? "") && onHandle(inquiry, { assignee: assignee.trim(), held })}
+            onChange={(event) => setAssignee(event.target.value)}
+            placeholder={t("담당자")}
+            value={assignee}
+          />
+          <button className="console-text-button" onClick={() => onHandle(inquiry, { assignee: assignee.trim(), held: !held })} type="button">
+            {held ? t("보류 풀기") : t("보류")}
+          </button>
+        </form>
+      )}
       {inquiry.answer ? (
         <div className="admin-answer">
           <strong>{t("답변")} {inquiry.answeredAt && <small>{formatDateTime(inquiry.answeredAt)}</small>}</strong>
@@ -294,9 +335,40 @@ function PaymentCard({
 // server's environment, it shows the platform's figures, then lists the
 // questions sent from the help center, waiting ones first, and sends answers
 // members read under 내 질문.
-type Section = "overview" | "members" | "proposals" | "payments" | "inquiries" | "reports" | "errors" | "notices" | "log" | "health"
+type Section =
+  | "overview"
+  | "insights"
+  | "members"
+  | "proposals"
+  | "operations"
+  | "live"
+  | "payments"
+  | "inquiries"
+  | "reports"
+  | "content"
+  | "errors"
+  | "notices"
+  | "log"
+  | "health"
+  | "system"
 
-const sections: Section[] = ["overview", "members", "proposals", "payments", "inquiries", "reports", "errors", "notices", "log", "health"]
+const sections: Section[] = [
+  "overview",
+  "insights",
+  "members",
+  "proposals",
+  "operations",
+  "live",
+  "payments",
+  "inquiries",
+  "reports",
+  "content",
+  "errors",
+  "notices",
+  "log",
+  "health",
+  "system",
+]
 
 type Place = { section: Section; member?: string; q?: string }
 
@@ -324,15 +396,20 @@ const menuGroups = ["메뉴", "지원", "설정"] as const
 
 const sectionInfo: { key: Section; label: string; icon: IconName; group: (typeof menuGroups)[number] }[] = [
   { key: "overview", label: "개요", icon: "home", group: "메뉴" },
+  { key: "insights", label: "분석", icon: "chart", group: "메뉴" },
   { key: "members", label: "회원", icon: "users", group: "메뉴" },
   { key: "proposals", label: "제안 · 협찬", icon: "send", group: "메뉴" },
+  { key: "operations", label: "협찬 운영", icon: "link", group: "메뉴" },
+  { key: "live", label: "현장", icon: "scan", group: "메뉴" },
   { key: "payments", label: "결제 · 매출", icon: "won", group: "메뉴" },
   { key: "inquiries", label: "문의 · 섭외 요청", icon: "chat", group: "지원" },
   { key: "reports", label: "신고 · 정지", icon: "close", group: "지원" },
+  { key: "content", label: "콘텐츠", icon: "edit", group: "지원" },
   { key: "errors", label: "오류", icon: "search", group: "지원" },
   { key: "notices", label: "공지", icon: "bell", group: "설정" },
   { key: "log", label: "활동 기록", icon: "file", group: "설정" },
   { key: "health", label: "서비스 상태", icon: "check", group: "설정" },
+  { key: "system", label: "시스템", icon: "lock", group: "설정" },
 ]
 
 // A week's Monday (2026-10-26) as 10/26.
@@ -598,292 +675,12 @@ function Overview({ data, onGo }: { data: AdminOverview; onGo: (section: Section
   )
 }
 
-const dateOf = (at: string) => formatDateTime(at)
-
-// The members: searched and filtered, newest first; one opens beside the
-// list with what it did, and can be stopped or let back in. Which one is
-// open is in the address (`memberId`), so back and forward move between them.
-function Members({
-  token,
-  memberId,
-  query = "",
-  onOpenMember,
-  onNotice,
-}: {
-  token: string
-  memberId?: string
-  // A search typed in the top bar.
-  query?: string
-  onOpenMember: (id?: string) => void
-  onNotice: (message: string) => void
-}) {
-  const [filters, setFilters] = useState({ q: query, role: "", state: "" })
-  const [rows, setRows] = useState<AdminMember[]>()
-  const [open, setOpen] = useState<AdminMemberDetail>()
-
-  useEffect(() => {
-    let cancelled = false
-    const timer = window.setTimeout(() => {
-      api.adminAccounts(token, filters).then(
-        (result) => {
-          if (!cancelled) setRows(result.accounts)
-        },
-        (error: unknown) => onNotice(errorMessage(error)),
-      )
-    }, 250)
-    return () => {
-      cancelled = true
-      window.clearTimeout(timer)
-    }
-  }, [token, filters, onNotice])
-
-  const load = useCallback(
-    (id: string) =>
-      api.adminAccount(token, id).then(
-        (result) => setOpen(result.account),
-        (error: unknown) => onNotice(errorMessage(error)),
-      ),
-    [token, onNotice],
-  )
-
-  // The member in the address, read again when it changes.
-  useEffect(() => {
-    if (memberId) void load(memberId)
-    else setOpen(undefined)
-  }, [memberId, load])
-
-  const show = (id: string) => (id === memberId ? load(id) : Promise.resolve(onOpenMember(id)))
-
-  return (
-    <div className={open ? "console-split open" : "console-split"}>
-      <section className="console-card">
-        <div className="console-filters">
-          <input
-            aria-label={t("이름 · 이메일 · 학교로 찾기")}
-            onChange={(event) => setFilters({ ...filters, q: event.target.value })}
-            placeholder={t("이름 · 이메일 · 학교로 찾기")}
-            value={filters.q}
-          />
-          <select aria-label={t("회원 유형")} onChange={(event) => setFilters({ ...filters, role: event.target.value })} value={filters.role}>
-            <option value="">{t("모든 유형")}</option>
-            <option value="학생단체">{t("학생단체")}</option>
-            <option value="브랜드">{t("브랜드")}</option>
-          </select>
-          <select aria-label={t("상태")} onChange={(event) => setFilters({ ...filters, state: event.target.value })} value={filters.state}>
-            <option value="">{t("모든 상태")}</option>
-            <option value="partners">{t("캠퍼스 파트너스")}</option>
-            <option value="suspended">{t("정지됨")}</option>
-            <option value="demo">{t("데모 계정")}</option>
-          </select>
-          <CsvButton
-            name="members"
-            rows={() => [
-              [t("이름"), t("이메일"), t("유형"), t("종류"), t("학교"), t("가입"), t("마지막 접속"), t("행사"), t("보낸 제안"), t("협찬"), t("상태")],
-              ...(rows ?? []).map((row) => [
-                row.name,
-                row.email,
-                t(row.role),
-                t(row.type),
-                row.school,
-                row.createdAt,
-                row.lastSeen ?? "",
-                row.events,
-                row.sent,
-                row.sponsorships,
-                row.suspendedAt ? t("정지됨") : row.demo ? t("데모") : row.partnersUntil ? "PARTNERS" : t("활동"),
-              ]),
-            ]}
-          />
-        </div>
-        {!rows ? (
-          <p className="field-hint">{t("불러오고 있어요…")}</p>
-        ) : (
-          <table className="console-table">
-            <thead>
-              <tr>
-                <th scope="col">{t("회원")}</th>
-                <th scope="col">{t("유형")}</th>
-                <th scope="col">{t("가입")}</th>
-                <th scope="col">{t("행사")}</th>
-                <th scope="col">{t("보낸 제안")}</th>
-                <th scope="col">{t("상태")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr className={open?.id === row.id ? "selected" : undefined} key={row.id} onClick={() => void show(row.id)}>
-                  <th scope="row">
-                    <button className="console-link" onClick={() => void show(row.id)} type="button">
-                      {row.name}
-                    </button>
-                    <small>{row.email}</small>
-                  </th>
-                  <td>
-                    {t(row.role)}
-                    <small>{t(row.type)}</small>
-                  </td>
-                  <td>{row.createdAt.slice(0, 10)}</td>
-                  <td>{row.events}</td>
-                  <td>{row.sent}</td>
-                  <td>
-                    {row.suspendedAt ? (
-                      <em className="console-tag red">{t("정지됨")}</em>
-                    ) : row.demo ? (
-                      <em className="console-tag">{t("데모")}</em>
-                    ) : row.partnersUntil ? (
-                      <em className="console-tag blue">PARTNERS</em>
-                    ) : (
-                      <em className="console-tag">{t("활동")}</em>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-        {rows && <p className="field-hint">{t("{count}명", { count: rows.length })}</p>}
-      </section>
-      {open && (
-        <aside aria-label={open.name} className="console-card console-detail">
-          <header>
-            <div>
-              <strong>{open.name}</strong>
-              <small>
-                {t(open.role)} · {t(open.type)} {open.school && `· ${open.school}`}
-              </small>
-            </div>
-            <button aria-label={t("닫기")} className="console-icon" onClick={() => onOpenMember(undefined)} type="button">
-              <Icon name="close" size={16} />
-            </button>
-          </header>
-          <dl className="console-facts">
-            <div>
-              <dt>{t("이메일")}</dt>
-              <dd>
-                {open.email}{" "}
-                <button
-                  className="console-inline"
-                  onClick={() =>
-                    void navigator.clipboard.writeText(open.email).then(
-                      () => onNotice(t("이메일을 복사했어요.")),
-                      () => onNotice(open.email),
-                    )
-                  }
-                  type="button"
-                >
-                  {t("복사")}
-                </button>
-              </dd>
-            </div>
-            {open.contact && (
-              <div>
-                <dt>{t("담당자")}</dt>
-                <dd>
-                  {open.contact.name} · {t(open.contact.position)} · {open.contact.phone}
-                </dd>
-              </div>
-            )}
-            <div>
-              <dt>{t("가입")}</dt>
-              <dd>{dateOf(open.createdAt)}</dd>
-            </div>
-            <div>
-              <dt>{t("마지막 접속")}</dt>
-              <dd>{open.lastSeen ? dateOf(open.lastSeen) : "—"}</dd>
-            </div>
-            <div>
-              <dt>{t("로그인한 기기")}</dt>
-              <dd>{open.sessions}</dd>
-            </div>
-            <div>
-              <dt>{t("소개")}</dt>
-              <dd>{open.listed ? (open.paused ? t("숨기는 중") : t("공개 중")) : t("아직 없음")}</dd>
-            </div>
-            <div>
-              <dt>{t("사업자 확인")}</dt>
-              <dd>{open.business ? t("확인됨") : "—"}</dd>
-            </div>
-            <div>
-              <dt>{t("캠퍼스 파트너스")}</dt>
-              <dd>{open.partnersUntil ? t("{date}까지", { date: open.partnersUntil }) : "—"}</dd>
-            </div>
-            <div>
-              <dt>{t("문의 · 받은 신고")}</dt>
-              <dd>
-                {open.inquiries} · {open.reportsAbout}
-              </dd>
-            </div>
-          </dl>
-          <NoteEditor member={open} onNotice={onNotice} onSaved={setOpen} token={token} />
-          <h3>{t("행사 · 캠페인 {count}", { count: open.eventList.length })}</h3>
-          <ul className="console-list">
-            {open.eventList.map((event) => (
-              <li key={event.id}>
-                {event.name} <small>{event.date}</small>
-              </li>
-            ))}
-          </ul>
-          <h3>{t("보낸 제안 {count} · 받은 제안 {received}", { count: open.sentList.length, received: open.receivedList.length })}</h3>
-          <ul className="console-list">
-            {[...open.sentList, ...open.receivedList].slice(0, 12).map((item) => (
-              <li key={item.id}>
-                {item.partner} · {item.event} <em>{t(item.status)}</em>
-              </li>
-            ))}
-          </ul>
-          <h3>{t("결제 {count}", { count: open.payments.length })}</h3>
-          <ul className="console-list">
-            {open.payments.map((payment) => (
-              <li key={payment.id}>
-                {payment.orderName} · {fullWon(payment.amount)} <em>{t(payment.status === "paid" ? "결제 완료" : payment.status === "pending" ? "결제 대기" : "취소 · 환불")}</em>
-              </li>
-            ))}
-          </ul>
-          {!open.demo &&
-            (open.suspendedAt ? (
-              <button
-                className="cancel-button"
-                onClick={() =>
-                  void api.unsuspendAccount(token, open.id).then(
-                    () => {
-                      onNotice(t("{name}의 정지를 풀었어요.", { name: open.name }))
-                      void show(open.id)
-                    },
-                    (error: unknown) => onNotice(errorMessage(error)),
-                  )
-                }
-                type="button"
-              >
-                {t("정지 풀기")}
-              </button>
-            ) : (
-              <button
-                className="decline-button"
-                onClick={() =>
-                  void api.adminSuspend(token, open.id).then(
-                    (result) => {
-                      setOpen(result.account)
-                      onNotice(t("{name}을 정지했어요. 로그인한 기기도 모두 로그아웃됐어요.", { name: open.name }))
-                    },
-                    (error: unknown) => onNotice(errorMessage(error)),
-                  )
-                }
-                type="button"
-              >
-                {t("계정 정지")}
-              </button>
-            ))}
-        </aside>
-      )}
-    </div>
-  )
-}
-
 // Every proposal, filtered by its state, newest first.
 function Proposals({ token, onNotice }: { token: string; onNotice: (message: string) => void }) {
   const [rows, setRows] = useState<AdminProposalRow[]>()
   const [status, setStatus] = useState("")
   const [examples, setExamples] = useState(false)
+  const [open, setOpen] = useState<string>()
   useEffect(() => {
     api.adminProposals(token).then(
       (result) => setRows(result.proposals),
@@ -892,7 +689,16 @@ function Proposals({ token, onNotice }: { token: string; onNotice: (message: str
   }, [token, onNotice])
   const shown = (rows ?? []).filter((row) => (examples || !row.example) && (!status || row.status === status))
   const statuses = [...new Set((rows ?? []).map((row) => row.status))]
+  const table = useTable(shown, {
+    from: (row) => row.from,
+    to: (row) => row.to,
+    event: (row) => row.event,
+    date: (row) => row.date,
+    status: (row) => row.status,
+    createdAt: (row) => row.createdAt,
+  })
   return (
+    <div className={open ? "console-split open" : "console-split"}>
     <section className="console-card">
       <div className="console-filters">
         <select aria-label={t("상태")} onChange={(event) => setStatus(event.target.value)} value={status}>
@@ -930,17 +736,17 @@ function Proposals({ token, onNotice }: { token: string; onNotice: (message: str
         <table className="console-table">
           <thead>
             <tr>
-              <th scope="col">{t("보낸 쪽")}</th>
-              <th scope="col">{t("받은 쪽")}</th>
-              <th scope="col">{t("행사")}</th>
-              <th scope="col">{t("날짜")}</th>
-              <th scope="col">{t("상태")}</th>
+              <SortHeader label={t("보낸 쪽")} sortKey="from" table={table} />
+              <SortHeader label={t("받은 쪽")} sortKey="to" table={table} />
+              <SortHeader label={t("행사")} sortKey="event" table={table} />
+              <SortHeader label={t("날짜")} sortKey="date" table={table} />
+              <SortHeader label={t("상태")} sortKey="status" table={table} />
               <th scope="col">{t("계약서")}</th>
             </tr>
           </thead>
           <tbody>
-            {shown.map((row) => (
-              <tr key={row.id}>
+            {table.page.map((row) => (
+              <tr className={open === row.id ? "selected" : undefined} key={row.id} onClick={() => setOpen(row.id)}>
                 <th scope="row">
                   {row.from}
                   <small>{row.kind === "request" ? t("학생단체 → 브랜드") : t("브랜드 → 학생단체")}</small>
@@ -957,10 +763,133 @@ function Proposals({ token, onNotice }: { token: string; onNotice: (message: str
           </tbody>
         </table>
       )}
-      {rows && <p className="field-hint">{t("{count}건", { count: shown.length })}</p>}
+      {rows && <Pager table={table} unit={t("건")} />}
     </section>
+      {open && <ProposalDrawer id={open} key={open} onClose={() => setOpen(undefined)} onNotice={onNotice} token={token} />}
+    </div>
   )
 }
+
+// ⌘K (Ctrl+K): jump to a screen, run an action, or open a member by name,
+// email or school, with the arrows and Enter.
+type PaletteItem = { id: string; label: string; hint: string; run: () => void }
+
+function CommandPalette({
+  token,
+  items,
+  onMember,
+  onClose,
+}: {
+  token: string
+  items: PaletteItem[]
+  onMember: (id: string) => void
+  onClose: () => void
+}) {
+  const [query, setQuery] = useState("")
+  const [members, setMembers] = useState<AdminMember[]>([])
+  const [active, setActive] = useState(0)
+  useEffect(() => {
+    const q = query.trim()
+    if (q.length < 2) {
+      setMembers([])
+      return
+    }
+    const timer = window.setTimeout(() => {
+      api.adminAccounts(token, { q }).then(
+        (result) => setMembers(result.accounts.slice(0, 6)),
+        () => setMembers([]),
+      )
+    }, 200)
+    return () => window.clearTimeout(timer)
+  }, [query, token])
+  const words = query.trim().toLowerCase()
+  const shown: PaletteItem[] = [
+    ...items.filter((item) => !words || `${item.label} ${item.hint}`.toLowerCase().includes(words)),
+    ...members.map((member) => ({
+      id: `member-${member.id}`,
+      label: member.name,
+      hint: `${t("회원")} · ${member.email}`,
+      run: () => onMember(member.id),
+    })),
+  ]
+  const pick = (item: PaletteItem | undefined) => {
+    if (!item) return
+    onClose()
+    item.run()
+  }
+  return (
+    <div className="console-palette-scrim" onClick={onClose} role="presentation">
+      <div aria-label={t("명령 팔레트")} aria-modal="true" className="console-palette" onClick={(event) => event.stopPropagation()} role="dialog">
+        <input
+          aria-activedescendant={shown[active] ? `palette-${shown[active].id}` : undefined}
+          aria-controls="palette-list"
+          aria-label={t("화면 · 기능 · 회원 찾기")}
+          autoFocus
+          onChange={(event) => {
+            setQuery(event.target.value)
+            setActive(0)
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") onClose()
+            if (event.key === "ArrowDown") {
+              event.preventDefault()
+              setActive((index) => Math.min(shown.length - 1, index + 1))
+            }
+            if (event.key === "ArrowUp") {
+              event.preventDefault()
+              setActive((index) => Math.max(0, index - 1))
+            }
+            if (event.key === "Enter") pick(shown[active])
+          }}
+          placeholder={t("화면, 기능, 회원 이름을 입력하세요")}
+          role="combobox"
+          aria-expanded="true"
+          value={query}
+        />
+        <ul id="palette-list" role="listbox">
+          {shown.map((item, index) => (
+            <li
+              aria-selected={index === active}
+              className={index === active ? "active" : undefined}
+              id={`palette-${item.id}`}
+              key={item.id}
+              onClick={() => pick(item)}
+              onMouseEnter={() => setActive(index)}
+              role="option"
+            >
+              <strong>{item.label}</strong>
+              <small>{item.hint}</small>
+            </li>
+          ))}
+          {shown.length === 0 && <li className="empty">{t("맞는 항목이 없어요.")}</li>}
+        </ul>
+      </div>
+    </div>
+  )
+}
+
+// A short two-note chime for new work, through Web Audio (no file).
+function chime() {
+  try {
+    const context = new AudioContext()
+    for (const [index, frequency] of [880, 1320].entries()) {
+      const oscillator = context.createOscillator()
+      const gain = context.createGain()
+      oscillator.frequency.value = frequency
+      gain.gain.setValueAtTime(0.0001, context.currentTime + index * 0.12)
+      gain.gain.exponentialRampToValueAtTime(0.15, context.currentTime + index * 0.12 + 0.02)
+      gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + index * 0.12 + 0.25)
+      oscillator.connect(gain).connect(context.destination)
+      oscillator.start(context.currentTime + index * 0.12)
+      oscillator.stop(context.currentTime + index * 0.12 + 0.3)
+    }
+  } catch {
+    // No sound where Web Audio is missing.
+  }
+}
+
+const themeKey = "uniconnect-admin-theme"
+const soundKey = "uniconnect-admin-sound"
 
 // The operators' console (/admin, mounted on its own by main.tsx, with no
 // member screens around it): the ADMIN_TOKEN from the server's environment
@@ -989,6 +918,24 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
   const [search, setSearch] = useState("")
   const searchRef = useRef<HTMLInputElement>(null)
   const [groupSame, setGroupSame] = useState(true)
+  const [paletteOpen, setPaletteOpen] = useState(false)
+  const [sound, setSound] = useState(() => readStored(soundKey, true))
+  const [dark, setDark] = useState(() => readStored(themeKey, false))
+  useEffect(() => {
+    if (dark) document.body.dataset.consoleTheme = "dark"
+    else delete document.body.dataset.consoleTheme
+  }, [dark])
+  // ⌘K or Ctrl+K opens the command palette from anywhere.
+  useEffect(() => {
+    const open = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault()
+        setPaletteOpen((value) => !value)
+      }
+    }
+    document.addEventListener("keydown", open)
+    return () => document.removeEventListener("keydown", open)
+  }, [])
   // Reads everything again each minute while the operators watch.
   const [autoRefresh, setAutoRefresh] = useState(false)
   useEffect(() => {
@@ -1087,6 +1034,15 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
     }
   }
 
+  const handle = (inquiry: AdminInquiry, handling: { assignee: string; held: boolean }) =>
+    void api.adminHandling(token, inquiry.id, handling).then(
+      (result) => {
+        setInquiries((current) => (current ?? []).map((item) => (item.id === inquiry.id ? { ...item, handling: result.handling } : item)))
+        onNotice(handling.held && !inquiry.handling?.heldAt ? t("보류로 옮겼어요.") : t("담당을 저장했어요."))
+      },
+      (error: unknown) => onNotice(errorMessage(error)),
+    )
+
   // Settles a report, then reads the reports and suspended accounts again.
   const resolve = async (report: AdminReport, action: ReportAction) => {
     try {
@@ -1120,6 +1076,19 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
       onNotice(errorMessage(caught))
     }
   }
+
+  // What waits for the operators, in the tab's title, with a chime when it
+  // grows while the console is open.
+  const pendingCount =
+    (inquiries ?? []).filter((inquiry) => !inquiry.answer && !inquiry.handling?.heldAt).length +
+    reports.filter((report) => !report.resolution).length +
+    payments.filter((payment) => payment.status === "pending").length
+  const lastCount = useRef<number | null>(null)
+  useEffect(() => {
+    document.title = pendingCount > 0 ? `(${pendingCount}) uniconnect Admin` : "uniconnect Admin"
+    if (inquiries && lastCount.current !== null && pendingCount > lastCount.current && sound) chime()
+    if (inquiries) lastCount.current = pendingCount
+  }, [pendingCount, inquiries, sound])
 
   if (!token || !overview) {
     return (
@@ -1155,10 +1124,12 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
     )
   }
 
-  const waiting = (inquiries ?? []).filter((inquiry) => !inquiry.answer)
+  const unanswered = (inquiries ?? []).filter((inquiry) => !inquiry.answer)
+  const waiting = unanswered.filter((inquiry) => !inquiry.handling?.heldAt)
+  const heldList = unanswered.filter((inquiry) => inquiry.handling?.heldAt)
   const answered = (inquiries ?? []).filter((inquiry) => inquiry.answer)
   const kinds = [...new Set((inquiries ?? []).map((inquiry) => inquiry.category))]
-  const list = (tab === "waiting" ? waiting : answered).filter((inquiry) => !kind || inquiry.category === kind)
+  const list = (tab === "waiting" ? waiting : tab === "held" ? heldList : answered).filter((inquiry) => !kind || inquiry.category === kind)
   const openReports = reports.filter((report) => !report.resolution)
   const doneReports = reports.filter((report) => report.resolution)
   const shownReports = reportTab === "open" ? openReports : doneReports
@@ -1242,6 +1213,9 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
             <kbd aria-hidden="true">/</kbd>
           </form>
           <div className="console-bar-end">
+            <button aria-keyshortcuts="Meta+K Control+K" aria-label={t("명령 팔레트 열기")} className="console-round wide" onClick={() => setPaletteOpen(true)} type="button">
+              <kbd>⌘K</kbd>
+            </button>
             <button aria-label={t("처리할 일 {count}건", { count: todoCount })} className="console-round" onClick={() => pick("overview")} type="button">
               <Icon name="bell" size={18} />
               {todoCount > 0 && <i className="console-dot" />}
@@ -1254,6 +1228,26 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
               </button>
               {profileOpen && (
                 <div className="console-profile-menu">
+                  <button
+                    aria-pressed={dark}
+                    onClick={() => {
+                      setDark(!dark)
+                      writeStored(themeKey, !dark)
+                    }}
+                    type="button"
+                  >
+                    {dark ? t("밝은 모드") : t("다크 모드")}
+                  </button>
+                  <button
+                    aria-pressed={sound}
+                    onClick={() => {
+                      setSound(!sound)
+                      writeStored(soundKey, !sound)
+                    }}
+                    type="button"
+                  >
+                    {sound ? t("알림 소리 끄기") : t("알림 소리 켜기")}
+                  </button>
                   <a href="/">{t("사이트로 가기")}</a>
                   <button onClick={() => signOut()} type="button">
                     {t("나가기")}
@@ -1296,9 +1290,21 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
 
         {section === "proposals" && <Proposals onNotice={onNotice} token={token} />}
 
+        {section === "payments" && <RevenuePanel payments={payments} />}
+
         {section === "payments" && (
           <section className="console-card">
-            <div className="console-filters end">
+            <div className="console-filters">
+              <TabBar
+                items={[
+                  { value: "pending", label: <>{t("결제 대기")}<em>{payments.filter((item) => item.status === "pending").length}</em></> },
+                  { value: "paid", label: <>{t("결제 완료")}<em>{payments.filter((item) => item.status === "paid").length}</em></> },
+                  { value: "cancelled", label: <>{t("취소 · 환불")}<em>{payments.filter((item) => item.status === "cancelled").length}</em></> },
+                ]}
+                label={t("결제 상태")}
+                onChange={setPaymentTab}
+                value={paymentTab}
+              />
               <CsvButton
                 name="payments"
                 rows={() => [
@@ -1318,16 +1324,6 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
                 ]}
               />
             </div>
-            <TabBar
-              items={[
-                { value: "pending", label: <>{t("결제 대기")}<em>{payments.filter((item) => item.status === "pending").length}</em></> },
-                { value: "paid", label: <>{t("결제 완료")}<em>{payments.filter((item) => item.status === "paid").length}</em></> },
-                { value: "cancelled", label: <>{t("취소 · 환불")}<em>{payments.filter((item) => item.status === "cancelled").length}</em></> },
-              ]}
-              label={t("결제 상태")}
-              onChange={setPaymentTab}
-              value={paymentTab}
-            />
             {shownPayments.length === 0 ? (
               <p className="day-empty">{t("해당하는 결제가 없어요.")}</p>
             ) : (
@@ -1356,6 +1352,7 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
               <TabBar
                 items={[
                   { value: "waiting", label: <>{t("답변 대기")}<em>{waiting.length}</em></> },
+                  { value: "held", label: <>{t("보류")}<em>{heldList.length}</em></> },
                   { value: "answered", label: <>{t("답변 완료")}<em>{answered.length}</em></> },
                 ]}
                 label={t("질문 상태")}
@@ -1372,11 +1369,11 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
               </select>
             </div>
             {list.length === 0 ? (
-              <p className="day-empty">{tab === "waiting" ? t("답을 기다리는 질문이 없어요.") : t("아직 답한 질문이 없어요.")}</p>
+              <p className="day-empty">{tab === "waiting" ? t("답을 기다리는 질문이 없어요.") : tab === "held" ? t("보류한 질문이 없어요.") : t("아직 답한 질문이 없어요.")}</p>
             ) : (
               <div className="admin-list" key={tab}>
                 {list.map((inquiry) => (
-                  <InquiryCard inquiry={inquiry} key={inquiry.id} onAnswer={answer} />
+                  <InquiryCard inquiry={inquiry} key={inquiry.id} onAnswer={answer} onHandle={handle} />
                 ))}
               </div>
             )}
@@ -1428,6 +1425,16 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
           </>
         )}
 
+        {section === "insights" && <Insights onNotice={onNotice} token={token} />}
+
+        {section === "operations" && <Operations onNotice={onNotice} token={token} />}
+
+        {section === "live" && <Live onNotice={onNotice} token={token} />}
+
+        {section === "content" && <Content onNotice={onNotice} token={token} />}
+
+        {section === "system" && <SystemPanel onNotice={onNotice} token={token} />}
+
         {section === "notices" && <Notices onNotice={onNotice} token={token} />}
 
         {section === "log" && <ActivityLog onNotice={onNotice} token={token} />}
@@ -1468,6 +1475,28 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
         )}
       </main>
       </div>
+      {paletteOpen && (
+        <CommandPalette
+          items={[
+            ...sectionInfo.map((item) => ({ id: `go-${item.key}`, label: t(item.label), hint: t("화면"), run: () => pick(item.key) })),
+            { id: "reload", label: t("새로고침"), hint: t("기능"), run: () => setReload((count) => count + 1) },
+            {
+              id: "theme",
+              label: dark ? t("밝은 모드") : t("다크 모드"),
+              hint: t("기능"),
+              run: () => {
+                setDark(!dark)
+                writeStored(themeKey, !dark)
+              },
+            },
+            { id: "site", label: t("사이트로 가기"), hint: t("기능"), run: () => window.location.assign("/") },
+            { id: "out", label: t("나가기"), hint: t("기능"), run: () => signOut() },
+          ]}
+          onClose={() => setPaletteOpen(false)}
+          onMember={(member) => go({ section: "members", member })}
+          token={token}
+        />
+      )}
     </div>
   )
 }

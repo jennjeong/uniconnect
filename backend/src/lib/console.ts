@@ -1,3 +1,5 @@
+import { duplicateIds, duplicatesOf, timeline } from "./adminInsights.js"
+import { tagsOf } from "./adminTools.js"
 import { paymentsOf } from "./billing.js"
 import { addDays, todayInKorea } from "./dates.js"
 import { proUntil } from "./plan.js"
@@ -84,6 +86,8 @@ export function memberRow(database: Database, account: Account) {
     sent: [...database.requests, ...database.offers].filter((item) => item.fromAccountId === account.id).length,
     sponsorships: (database.sponsorships[account.id] ?? []).length,
     business: Boolean(account.business),
+    tags: tagsOf(database, account.id),
+    duplicate: duplicateIds(database).has(account.id),
   }
 }
 
@@ -113,6 +117,9 @@ export function memberDetail(database: Database, account: Account) {
     reportsAbout: database.reports.filter((item) => item.accountId === account.id).length,
     sessions: database.sessions.filter((session) => session.accountId === account.id).length,
     note: database.adminNotes?.[account.id] ?? null,
+    businessNumber: account.business?.number ?? null,
+    timeline: timeline(database, account),
+    duplicates: duplicatesOf(database, account),
   }
 }
 

@@ -10,6 +10,8 @@ import { langOf, translate } from "./lib/i18n.js"
 import { readSession } from "./middleware/session.js"
 import { adminRouter } from "./routes/admin.js"
 import { announcementsRouter } from "./routes/announcements.js"
+import { adminMoreRouter } from "./routes/adminMore.js"
+import { siteRouter } from "./routes/site.js"
 import { agreementsRouter } from "./routes/agreements.js"
 import { analyticsRouter } from "./routes/analytics.js"
 import { authRouter } from "./routes/auth.js"
@@ -39,7 +41,7 @@ import { boardRouter } from "./routes/board.js"
 import { blocksRouter, reportsRouter } from "./routes/reports.js"
 import { reviewsRouter } from "./routes/reviews.js"
 import { savedRouter } from "./routes/saved.js"
-import { refreshDatabase } from "./store.js"
+import { getDatabase, refreshDatabase } from "./store.js"
 
 // `loaded`: on Vercel (vercel.ts), each copy of the API reads the data on
 // its first request rather than at start.
@@ -106,6 +108,14 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
     next()
   })
   app.use(readSession)
+  // Maintenance (set from the console): the site keeps answering reads,
+  // and turns writes away, except the operators' and logging in.
+  app.use("/api", (req, _res, next) => {
+    const maintenance = getDatabase().settings?.maintenance
+    const open = req.method === "GET" || req.path.startsWith("/admin") || req.path.startsWith("/auth/login") || req.path.startsWith("/errors")
+    if (maintenance?.on && !open) throw new HttpError(503, "지금은 점검 중이에요. 점검이 끝나면 다시 시도해 주세요.")
+    next()
+  })
 
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true })
@@ -140,7 +150,9 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   app.use("/api/errors", errorsRouter)
   app.use("/api/billing", billingRouter)
   app.use("/api/admin", adminRouter)
+  app.use("/api/admin", adminMoreRouter)
   app.use("/api/announcements", announcementsRouter)
+  app.use("/api/site", siteRouter)
   app.use("/api/cron", cronRouter)
   app.use("/api", () => {
     throw new HttpError(404, "없는 API 경로예요.")

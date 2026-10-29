@@ -461,6 +461,8 @@ export type Measurement = {
   passes: Record<string, PassCoupon & { sponsors?: Record<string, PassCoupon> }>
   // The optional survey's answers, counted (lib/validation.ts surveyOptions).
   survey?: SurveyCounts
+  // Wrong venue PINs today (Korean day), for the operators' alerts.
+  pinMisses?: { day: string; count: number }
 }
 
 // Performance report of one event, worked out from its measurement and
@@ -623,6 +625,8 @@ export type Review = {
   updatedAt?: string
   // When the operators took it down over a report.
   hiddenAt?: string
+  // Shown first on its listing, by the operators.
+  pinnedAt?: string
   // The reviewed side's answer, one per review, written on the agreement and
   // shown under the review; hiddenAt once the operators took it down.
   reply?: { text: string; createdAt: string; updatedAt?: string; hiddenAt?: string }
@@ -688,7 +692,7 @@ export type Payment = {
   status: "pending" | "paid" | "cancelled"
   // How it was paid: by card through Toss Payments, or by bank transfer an
   // operator confirmed.
-  method?: "card" | "transfer"
+  method?: "card" | "transfer" | "grant"
   paymentKey?: string
   receiptUrl?: string
   requestedAt: string
@@ -757,6 +761,37 @@ export type Database = {
   adminNotes?: Record<string, AdminNote>
   // Notices the operators show across the site.
   announcements?: Announcement[]
+  // The operators' own tags on members, by account id.
+  adminTags?: Record<string, string[]>
+  // Who on the team handles a question and whether it is on hold, by
+  // question id; never shown to the member.
+  inquiryHandling?: Record<string, { assignee?: string; heldAt?: string }>
+  // The operators' switches and targets (lib/adminTools.ts).
+  settings?: SiteSettings
+  // Help center questions the operators added, and built-in ones they hid.
+  faq?: { added: FaqEntry[]; hidden: string[] }
+  // What visitors type into the catalogs' search, counted without who typed it.
+  searchTerms?: Record<string, number>
+  // The latest runs of the date reminders (lib/reminders.ts).
+  cronRuns?: { at: string; sent: number }[]
+}
+
+export type SiteSettings = {
+  // Maintenance: the site shows a notice in place of its screens and turns
+  // writes away; new sign-ups can be stopped on their own.
+  maintenance?: { on: boolean; message?: string; blockSignups?: boolean }
+  // Monthly targets the console measures against.
+  kpi?: { signups?: number; proposals?: number; revenue?: number }
+}
+
+// A help center question the operators wrote (Korean only).
+export type FaqEntry = {
+  id: string
+  topic: "start" | "account" | "proposal" | "schedule" | "message" | "results"
+  question: string
+  answer: string
+  featured?: boolean
+  createdAt: string
 }
 
 // One thing an operator did in the console. It names its target by id only;
@@ -765,12 +800,31 @@ export type AdminLogEntry = {
   id: string
   at: string
   action: AdminAction
-  target: { kind: "account" | "payment" | "inquiry" | "report" | "announcement"; id: string }
+  target: {
+    kind: "account" | "payment" | "inquiry" | "report" | "announcement" | "proposal" | "post" | "review" | "site"
+    id: string
+  }
   // A short word on how, such as a report's resolution.
   detail?: string
 }
 
 export type AdminAction =
+  | "account-logged-out"
+  | "account-tagged"
+  | "business-set"
+  | "partners-granted"
+  | "demo-reset"
+  | "proposal-nudged"
+  | "post-hidden"
+  | "post-shown"
+  | "post-closed"
+  | "review-hidden"
+  | "review-shown"
+  | "review-pinned"
+  | "review-unpinned"
+  | "inquiry-handled"
+  | "faq-changed"
+  | "settings-changed"
   | "payment-paid"
   | "payment-cancelled"
   | "report-resolved"
@@ -791,8 +845,12 @@ export type Announcement = {
   text: string
   tone: "info" | "warning"
   audience: "all" | Role
+  // The first day it shows, "YYYY-MM-DD", or at once.
+  from?: string
   // The last day it shows, "YYYY-MM-DD", or open-ended.
   until?: string
+  // How many visitors closed it.
+  dismissals?: number
   createdAt: string
   endedAt?: string
 }
@@ -816,6 +874,8 @@ export type BoardPost = {
   deadline: string
   // When its poster closed it before the deadline.
   closedAt?: string
+  // Taken off the board by the operators; its poster still sees it.
+  hiddenAt?: string
   createdAt: string
   updatedAt?: string
 }
