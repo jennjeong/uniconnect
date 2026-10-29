@@ -13,7 +13,8 @@ const rippleTargets = [
   "button.nav-pill",
   ".calendar-today",
   ".bento-card",
-  ".activity-tile",
+  ".profile-hero-stats button",
+  ".row-button",
   ".kpi-card",
 ].join(", ")
 

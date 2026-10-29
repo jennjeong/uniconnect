@@ -1566,36 +1566,36 @@ button.nav-pill:hover {
 }
 
 /* Buttons on deep blue banners turn white. */
-:is(.banner-hero, .cta-panel) :is(.primary-button, .proposal-button:not(.done, .confirmed, .declined)) {
+.cta-panel :is(.primary-button, .proposal-button:not(.done, .confirmed, .declined)) {
   background: #fff;
   color: var(--point);
 }
 
-:is(.banner-hero, .cta-panel) :is(.primary-button, .proposal-button):hover:not(:disabled, .done, .confirmed, .declined) {
+.cta-panel :is(.primary-button, .proposal-button):hover:not(:disabled, .done, .confirmed, .declined) {
   background: var(--point-soft);
 }
 
 /* Frosted navy, so it reads wherever the light falls. */
-:is(.banner-hero, .cta-panel) .cancel-button {
+.cta-panel .cancel-button {
   background: rgba(8, 20, 52, 0.5);
   color: #fff;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
   backdrop-filter: blur(12px);
 }
 
-:is(.banner-hero, .cta-panel) .cancel-button:hover {
+.cta-panel .cancel-button:hover {
   background: rgba(8, 20, 52, 0.66);
 }
 
-:is(.banner-hero, .cta-panel) .proposal-cancel {
+.cta-panel .proposal-cancel {
   color: rgba(255, 255, 255, 0.78);
 }
 
-:is(.banner-hero, .cta-panel) .proposal-cancel:hover {
+.cta-panel .proposal-cancel:hover {
   color: #fff;
 }
 
-:is(.meeting-hero, .chain-stage, .footer-stage, .banner-hero, .cta-panel, .power-panel, .report-highlight, .bento-blue, .bento-deep, .bento-slate) :focus-visible {
+:is(.meeting-hero, .chain-stage, .footer-stage, .profile-hero, .cta-panel, .power-panel, .report-highlight, .bento-blue, .bento-deep, .bento-slate) :focus-visible {
   outline-color: #fff;
 }
 
@@ -2992,7 +2992,7 @@ button.nav-pill:hover {
 }
 
 /* Numbers on white and silver read in the point blue. */
-:is(.bento-inner, .bento-silver, .activity-tile.silver, .kpi-card) strong {
+:is(.bento-inner, .bento-silver, .kpi-card) strong {
   color: var(--point);
 }
 
@@ -4071,228 +4071,17 @@ button.nav-pill:hover {
    partner's page (the two sides meeting) and Stride's mesh on the
    account's own. As on the hero, the copy keeps to a deep navy left side
    and the light plays on the right. */
-.banner-hero {
-  --surface-tone: dark;
-  position: relative;
-  isolation: isolate;
-  min-height: 460px;
-  overflow: hidden;
-  border-radius: var(--radius-lg);
-  background: radial-gradient(110% 90% at 70% 30%, #1f4cb3 0%, #0b1a3e 72%);
-  color: #fff;
-}
-
-.banner-hero::after {
-  position: absolute;
-  z-index: -1;
-  inset: 0;
-  background:
-    linear-gradient(90deg, rgba(8, 20, 52, 0.88) 0%, rgba(8, 20, 52, 0.78) 35%, rgba(8, 20, 52, 0.4) 56%, rgba(8, 20, 52, 0) 74%),
-    linear-gradient(180deg, rgba(8, 20, 52, 0) 50%, rgba(8, 20, 52, 0.5) 100%);
-  content: "";
-  pointer-events: none;
-}
 
 /* The mesh's bright glow sits bottom left; mirrored, it goes behind the
    buttons on the right instead of the name. */
-:is(.banner-hero, .cta-panel) .mesh-backdrop {
+.cta-panel .mesh-backdrop {
   transform: scaleX(-1);
 }
 
-.banner-content {
-  display: flex;
-  min-height: inherit;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 32px;
-  padding: 40px;
-}
-
-.banner-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.banner-identity {
-  display: flex;
-  align-items: flex-end;
-  gap: 24px;
-}
-
-.banner-identity > div:last-child {
-  min-width: 0;
-}
-
-.banner-identity .match-logo.large {
-  width: 96px;
-  height: 96px;
-  border-radius: 28px;
-  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.14);
-}
-
-.banner-meta {
-  display: block;
-  margin-bottom: 10px;
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 15px;
-  font-weight: var(--weight-label);
-}
-
-.banner-title {
-  margin: 0;
-  font-size: clamp(44px, 6vw, 88px);
-  font-weight: var(--weight-display);
-  letter-spacing: -0.045em;
-  line-height: 1.04;
-}
-
-.banner-bottom {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 20px;
-}
-
-.banner-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 10px;
-}
-
-.banner-role,
-.banner-note {
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 14px;
-  font-weight: var(--weight-label);
-}
-
 /* The score keeps its colors on a white disc. */
-.banner-hero .match-score-ring {
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 14px 32px -14px rgba(8, 20, 52, 0.6);
-}
-
-.banner-hero .work-tags {
-  margin: 0;
-}
-
-.banner-hero .work-tags > span:not(.date-line) {
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.32);
-}
 
 /* A partner's introduction: a large faint link mark beside a statement
    whose words rise in, the offer, and a footer row. */
-.about-block {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
-  align-items: center;
-  gap: 56px;
-  padding: 96px 0 64px;
-}
-
-.about-side {
-  position: relative;
-  display: flex;
-  min-height: 320px;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 24px;
-}
-
-.about-side > .icon {
-  position: absolute;
-  top: 50%;
-  left: -24px;
-  width: 300px;
-  height: 300px;
-  color: rgba(27, 63, 143, 0.08);
-  pointer-events: none;
-  stroke-width: 1.2;
-  transform: translateY(-50%);
-}
-
-.about-side > :not(.icon) {
-  position: relative;
-}
-
-.about-note {
-  display: flex;
-  max-width: 17rem;
-  align-items: center;
-  gap: 12px;
-  margin: 0;
-  color: var(--ink-soft);
-  font-size: 14px;
-  line-height: 1.55;
-}
-
-.about-note .icon {
-  color: var(--point);
-  stroke-width: 1.6;
-}
-
-.about-copy {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 32px;
-}
-
-.about-statement {
-  margin: 0;
-  font-size: clamp(24px, 2.5vw, 36px);
-  font-weight: var(--weight-body);
-  letter-spacing: -0.03em;
-  line-height: 1.45;
-}
-
-.about-statement.muted {
-  color: var(--muted);
-}
-
-.about-offer {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding-left: 18px;
-  border-left: 3px solid var(--point);
-}
-
-.about-offer span {
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: var(--weight-label);
-}
-
-.about-offer strong {
-  color: var(--ink-soft);
-  font-size: 18px;
-  font-weight: var(--weight-body);
-  line-height: 1.55;
-}
-
-.about-foot {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px 20px;
-  padding-top: 24px;
-  border-top: 1px solid var(--line);
-}
-
-.about-foot > span {
-  color: var(--muted);
-  font-size: 14px;
-}
 
 .sns-chips,
 .summary-chips {
@@ -4379,30 +4168,8 @@ button.nav-pill:hover {
   font-weight: var(--weight-strong);
 }
 
-.profile-logout {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-top: 32px;
-}
-
 /* Leaving sits quietly at the end of 내 정보 (modals/LeaveModal.tsx). */
-.leave-link {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: var(--weight-label);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
 
-.leave-link:hover {
-  color: var(--red);
-}
 
 .leave-list {
   display: flex;
@@ -4433,70 +4200,6 @@ button.nav-pill:hover {
 
 /* What the account has done so far, as Stride's bento tiles: deep blue,
    silver and slate, the label on top and the number below. */
-.activity-tiles {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-  margin: 0;
-  padding: 40px 0 8px;
-  list-style: none;
-}
-
-.activity-tiles > li {
-  min-width: 0;
-}
-
-.activity-tile {
-  display: flex;
-  width: 100%;
-  height: 100%;
-  min-height: 176px;
-  flex-direction: column-reverse;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 24px 26px;
-  border: 0;
-  border-radius: var(--radius-lg);
-  text-align: left;
-  transition:
-    transform 0.45s var(--ease-spring),
-    box-shadow 0.3s ease;
-}
-
-.activity-tile strong {
-  font-size: clamp(44px, 4.4vw, 64px);
-  font-weight: var(--weight-display);
-  letter-spacing: -0.03em;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-
-.activity-tile small {
-  font-size: 14px;
-  font-weight: var(--weight-label);
-}
-
-.activity-tile.blue,
-.activity-tile.slate {
-  --surface-tone: dark;
-}
-
-.activity-tile.blue {
-  background: var(--point-gradient);
-  color: #fff;
-}
-
-.activity-tile.silver {
-  background: var(--silver-gradient);
-  color: var(--ink);
-  box-shadow: var(--silver-ring);
-}
-
-.activity-tile.slate {
-  background: linear-gradient(160deg, #4b556a 0%, var(--slate) 100%);
-  color: #fff;
-}
 
 /* Numbered rows that fill with silver and shift sideways on hover. */
 .service-section {
@@ -8467,12 +8170,6 @@ button.nav-pill:hover {
   margin-top: 10px;
 }
 
-.profile-account-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
 .terms-check input {
   width: 16px;
   height: 16px;
@@ -10104,6 +9801,462 @@ button.nav-pill:hover {
 
 .toggle-switch[aria-checked="true"]::after {
   transform: translateX(20px);
+}
+
+/* 내 정보 (pages/ProfilePage.tsx) as a settings page: a compact deep blue
+   card with who the account is and its three counts, then cards of rows
+   (what it is, its value, a short action), with a list of the cards to jump
+   to beside them on wide screens. */
+.profile-hero {
+  --surface-tone: dark;
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  gap: 28px;
+  overflow: hidden;
+  padding: 34px 36px 28px;
+  border-radius: var(--radius-lg);
+  background: radial-gradient(110% 90% at 70% 30%, #1f4cb3 0%, #0b1a3e 72%);
+  color: #fff;
+}
+
+.profile-hero::after {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(8, 20, 52, 0.86) 0%, rgba(8, 20, 52, 0.62) 50%, rgba(8, 20, 52, 0.2) 100%);
+  content: "";
+  pointer-events: none;
+}
+
+.profile-hero-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.profile-hero-who {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 20px;
+}
+
+.profile-hero-who .avatar.large {
+  width: 76px;
+  height: 76px;
+  border-radius: 24px;
+  font-size: 32px;
+}
+
+.profile-hero-who > div:last-child {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+}
+
+.profile-hero-name {
+  margin: 0;
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: var(--weight-strong);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.profile-hero-meta {
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-hero-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.profile-hero-stats button {
+  display: grid;
+  width: 100%;
+  gap: 4px;
+  padding: 16px 18px;
+  border: 0;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+  color: #fff;
+  text-align: left;
+  backdrop-filter: blur(12px);
+}
+
+.profile-hero-stats button:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.profile-hero-stats strong {
+  font-size: 26px;
+  font-weight: var(--weight-strong);
+  line-height: 1.1;
+}
+
+.profile-hero-stats small {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 13px;
+}
+
+.settings-layout {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  align-items: start;
+  gap: 40px;
+  margin-top: 40px;
+}
+
+.settings-nav {
+  position: sticky;
+  top: 110px;
+  display: grid;
+  gap: 4px;
+}
+
+.settings-nav button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 14px;
+  font-weight: var(--weight-label);
+  text-align: left;
+}
+
+.settings-nav button:hover {
+  background: var(--fill);
+  color: var(--point-strong);
+}
+
+.settings-nav .icon {
+  stroke: currentColor;
+}
+
+.settings-cards {
+  display: grid;
+  min-width: 0;
+  gap: 20px;
+}
+
+.settings-card {
+  display: grid;
+  gap: 18px;
+  padding: 26px 28px;
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: var(--ring);
+  scroll-margin-top: 110px;
+}
+
+.settings-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.settings-card-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--point-tint);
+  color: var(--point-strong);
+}
+
+.settings-card-head h2 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: var(--weight-strong);
+  letter-spacing: -0.01em;
+}
+
+.settings-card-head p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.settings-rows {
+  display: grid;
+  margin: 0;
+}
+
+.settings-rows:empty {
+  display: none;
+}
+
+.settings-row {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px 20px;
+  min-height: 60px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+
+.settings-row dt {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: var(--weight-label);
+}
+
+.settings-row dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.settings-row dd small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.settings-action {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.row-button {
+  height: 36px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+  white-space: nowrap;
+}
+
+.row-button:hover {
+  background: var(--fill-strong);
+}
+
+.row-button.point {
+  background: var(--point);
+  color: var(--on-point);
+}
+
+.row-button.point:hover {
+  background: var(--point-strong);
+}
+
+.row-button.danger {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+.settings-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--point-strong);
+  font-weight: var(--weight-label);
+}
+
+.settings-ok .icon {
+  stroke-width: 2.4;
+}
+
+.settings-public {
+  display: grid;
+  gap: 14px;
+}
+
+.settings-intro {
+  margin: 0;
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.settings-intro.muted {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.settings-offer {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding-left: 12px;
+  border-left: 2px solid var(--point);
+}
+
+.settings-offer dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.settings-offer dd {
+  margin: 0;
+  font-size: 14px;
+  font-weight: var(--weight-label);
+}
+
+.settings-card-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.settings-card .profile-member-note {
+  margin: 0;
+}
+
+.settings-card .mail-choices {
+  gap: 0;
+  border-top: 1px solid var(--line);
+}
+
+.settings-subhead {
+  padding: 16px 0 6px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: var(--weight-label);
+}
+
+.settings-card .mail-choices label {
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+}
+
+.settings-card .mail-note {
+  padding-top: 8px;
+}
+
+/* 받을 메일's boxes as the on/off switch of 목록에서 숨기기. */
+.mail-choices input.toggle-check {
+  position: relative;
+  width: 44px;
+  height: 26px;
+  margin: 0;
+  border-radius: 999px;
+  background: var(--fill-strong);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  appearance: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.mail-choices input.toggle-check::after {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(19, 48, 111, 0.25);
+  content: "";
+  transition: transform 0.2s var(--ease-out);
+}
+
+.mail-choices input.toggle-check:checked {
+  background: var(--point);
+  box-shadow: none;
+}
+
+.mail-choices input.toggle-check:checked::after {
+  transform: translateX(18px);
+}
+
+.mail-choices input.toggle-check:focus-visible {
+  outline: 2px solid var(--point);
+  outline-offset: 2px;
+}
+
+@media (max-width: 960px) {
+  .settings-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    margin-top: 24px;
+  }
+
+  .settings-nav {
+    display: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .profile-hero {
+    gap: 22px;
+    padding: 24px 20px 20px;
+  }
+
+  .profile-hero-who {
+    gap: 14px;
+  }
+
+  .profile-hero-who .avatar.large {
+    width: 60px;
+    height: 60px;
+    border-radius: 18px;
+    font-size: 26px;
+  }
+
+  .profile-hero-meta {
+    white-space: normal;
+  }
+
+  .profile-hero-stats button {
+    padding: 12px;
+  }
+
+  .profile-hero-stats strong {
+    font-size: 20px;
+  }
+
+  .profile-hero-stats small {
+    font-size: 11px;
+  }
+
+  .settings-card {
+    padding: 22px 18px;
+    border-radius: 20px;
+  }
+
+  .settings-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .settings-row dd {
+    grid-column: 1;
+    grid-row: 2;
+    font-size: 13px;
+  }
+
+  .settings-action {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
 }
 
 .blocked-list {
@@ -11962,22 +12115,6 @@ button.nav-pill:hover {
     justify-self: start;
   }
 
-  .about-block {
-    grid-template-columns: 1fr;
-    gap: 40px;
-  }
-
-  .about-side {
-    min-height: 0;
-  }
-
-  .about-side > .icon {
-    left: auto;
-    right: -24px;
-    width: 220px;
-    height: 220px;
-  }
-
   .work-grid.three {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -12513,23 +12650,6 @@ button.nav-pill:hover {
     font-size: 36px;
   }
 
-  .activity-tiles {
-    grid-template-columns: 1fr;
-    gap: 10px;
-    padding-top: 28px;
-  }
-
-  .activity-tile {
-    min-height: 0;
-    flex-direction: row-reverse;
-    align-items: center;
-    padding: 20px 22px;
-  }
-
-  .activity-tile strong {
-    font-size: 40px;
-  }
-
   .service-section {
     padding: 40px 0;
   }
@@ -12551,53 +12671,11 @@ button.nav-pill:hover {
     text-align: left;
   }
 
-  .about-block {
-    gap: 28px;
-    padding: 56px 0 32px;
-  }
-
-  .about-side > .icon {
-    width: 160px;
-    height: 160px;
-  }
-
-  .banner-hero {
-    min-height: 420px;
-  }
-
-  .banner-hero::after {
-    background: linear-gradient(180deg, rgba(8, 20, 52, 0.35) 0%, rgba(8, 20, 52, 0.42) 45%, rgba(8, 20, 52, 0.8) 100%);
-  }
-
-  .banner-content {
-    gap: 24px;
-    padding: 24px;
-  }
-
-  .banner-identity {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
-  }
-
-  .banner-identity .match-logo.large,
   .avatar.large {
     width: 72px;
     height: 72px;
     border-radius: 22px;
     font-size: 30px;
-  }
-
-  .banner-title {
-    font-size: 42px;
-  }
-
-  .banner-actions {
-    width: 100%;
-  }
-
-  .banner-actions > * {
-    flex: 1;
   }
 
   .cta-panel {
@@ -13902,7 +13980,7 @@ button:active:not(:disabled) {
 }
 
 .notification-list > button:active,
-:is(.bento-card, .activity-tile, .kpi-card):active:not(:disabled) {
+:is(.bento-card, .profile-hero-stats button, .row-button, .kpi-card):active:not(:disabled) {
   transform: scale(0.98);
 }
 
@@ -14138,7 +14216,7 @@ button:active:not(:disabled) {
   color: var(--point-bright);
 }
 
-:is(.hero-clip, .chain-stage, .footer-stage, .banner-hero, .cta-panel, .power-panel) .reveal-line.accent {
+:is(.hero-clip, .chain-stage, .footer-stage, .profile-hero, .cta-panel, .power-panel) .reveal-line.accent {
   color: var(--point-glow);
 }
 
@@ -14276,14 +14354,12 @@ button:active:not(:disabled) {
     transform: rotate(45deg) scale(1.08);
   }
 
-  .bento-card:hover,
-  .activity-tile:hover {
+  .bento-card:hover {
     box-shadow: 0 28px 56px -30px rgba(19, 48, 111, 0.55);
     transform: translateY(-6px);
   }
 
-  .bento-silver:hover,
-  .activity-tile.silver:hover {
+  .bento-silver:hover {
     box-shadow:
       var(--silver-ring),
       0 28px 56px -30px rgba(19, 48, 111, 0.4);
