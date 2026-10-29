@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest"
 
 import { createSeed, DEMO_PASSWORD } from "../../../backend/src/data/seed"
+import * as serverCouncil from "../../../backend/src/lib/council"
 import * as serverMethods from "../../../backend/src/lib/methods"
 import * as server from "../../../backend/src/lib/validation"
 import { demoAccounts, demoPassword } from "../data/demo"
@@ -11,7 +12,7 @@ import { placeCategories } from "../data/places"
 import { mailKinds } from "../data/mail"
 import { reportReasons } from "../data/reports"
 import { reviewTags } from "../data/reviews"
-import { accountTypes, roles } from "../data/roles"
+import { accountTypes, councilTypes, roles } from "../data/roles"
 import { sponsorOptions, valueTypes } from "../data/sponsorTypes"
 import { passwordProblem } from "./password"
 
@@ -21,6 +22,10 @@ import { passwordProblem } from "./password"
 describe("the screens offer the choices the server takes", () => {
   test.each(roles)("account types for %s", (role) => {
     expect(accountTypes[role]).toEqual(server.accountTypes[role])
+  })
+
+  test("student council types", () => {
+    expect(councilTypes).toEqual(serverCouncil.councilTypes)
   })
 
   test.each(roles)("profile facts for %s", (role) => {

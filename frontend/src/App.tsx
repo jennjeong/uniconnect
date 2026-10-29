@@ -56,6 +56,9 @@ import { PasswordModal } from "./modals/PasswordModal"
 import { DevicesModal } from "./modals/DevicesModal"
 import { JoinTeamModal } from "./modals/JoinTeamModal"
 import { TeamModal } from "./modals/TeamModal"
+import { CouncilLinkModal } from "./modals/CouncilLinkModal"
+import { CouncilPage } from "./pages/CouncilPage"
+import { councilTypes } from "./data/roles"
 import { TwoFactorModal } from "./modals/TwoFactorModal"
 import { ProposeModal } from "./modals/ProposeModal"
 import { SafetyModal, type SafetyTarget } from "./modals/SafetyModal"
@@ -1318,6 +1321,9 @@ function App() {
         />
       )
     }
+    if (view.council) {
+      return <CouncilPage onBack={() => goBack({ page, profile: "page" })} onNotice={showNotice} />
+    }
     if (view.agreements) {
       return (
         <AgreementsPage
@@ -1398,6 +1404,8 @@ function App() {
           onTwoFactor={member ? () => setActiveModal("two-factor") : undefined}
           onDevices={member ? () => setActiveModal("devices") : undefined}
           onTeam={member ? () => setActiveModal("team") : undefined}
+          onCouncil={member && account && councilTypes.includes(account.type) ? () => go({ page, council: true }) : undefined}
+          onCouncilLink={member && account?.role === "학생단체" ? () => setActiveModal("council-link") : undefined}
           socialProviders={member ? socialProviders : []}
           onSocialLink={(provider) =>
             api.socialStart(provider, "link").then(
@@ -1716,6 +1724,8 @@ function App() {
                     ? `agreement-${view.agreement}`
                   : view.agreements
                     ? "agreements"
+                  : view.council
+                    ? "council"
                   : editing !== null
                     ? `edit-${editing}`
                   : creating !== null
@@ -1926,6 +1936,9 @@ function App() {
       )}
       <Presence show={activeModal === "devices"}>
         <DevicesModal onClose={closeModal} onNotice={showNotice} />
+      </Presence>
+      <Presence show={activeModal === "council-link"}>
+        <CouncilLinkModal onClose={closeModal} onNotice={showNotice} />
       </Presence>
       <Presence show={activeModal === "team"}>
         <TeamModal onClose={closeModal} onNotice={showNotice} />

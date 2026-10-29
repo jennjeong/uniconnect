@@ -14948,3 +14948,124 @@ body.checkin-body {
   color: var(--muted);
   font-size: 13px;
 }
+
+/* A student council's clubs (pages/CouncilPage.tsx): its code to share,
+   then a card per club with its figures and coming events. */
+.council-code {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  margin-bottom: 28px;
+  padding: 16px 20px;
+  border-radius: 22px;
+  background: var(--fill);
+  box-shadow: var(--ring);
+}
+
+.council-code > span {
+  display: grid;
+  flex: 1 1 160px;
+  gap: 2px;
+}
+
+.council-code small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.council-code strong {
+  color: var(--point-strong);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 22px;
+  letter-spacing: 0.08em;
+}
+
+.council-clubs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.council-club {
+  display: grid;
+  gap: 16px;
+  height: 100%;
+  padding: 20px;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: var(--ring), 0 14px 34px rgba(19, 48, 111, 0.08);
+}
+
+.council-club header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.council-club header > span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.council-club header strong {
+  font-size: 17px;
+  font-weight: var(--weight-label);
+}
+
+.council-club header small,
+.council-events span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.council-figures {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin: 0;
+}
+
+.council-figures div {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--fill);
+}
+
+.council-figures dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.council-figures dd {
+  margin: 2px 0 0;
+  font-size: 18px;
+  font-weight: var(--weight-display);
+}
+
+.council-events {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.council-events li {
+  display: grid;
+  gap: 2px;
+}
+
+.council-events strong {
+  font-size: 14px;
+  font-weight: var(--weight-label);
+}
+
+.council-actions {
+  display: flex;
+  justify-content: flex-end;
+}

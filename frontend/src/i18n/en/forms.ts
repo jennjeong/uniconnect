@@ -516,6 +516,33 @@ const en: Record<string, string> = {
   "내 정보에서 연결해 둔 계정으로 로그인해요. 가입은 이메일로 해요.": "Logs in with the account you linked in My Info. Sign up with your email.",
   "{provider} 연결 끊기": "Unlink {provider}",
   "{provider} 계정 연결": "Link {provider}",
+  // Student councils and their clubs (pages/CouncilPage.tsx, modals/CouncilLinkModal.tsx)
+  "소속 단체": "Member clubs",
+  "학생회에 연결한 소속 단체의 행사와 협찬 현황을 한곳에서 봐요.": "See the events and sponsorships of the clubs linked to your council in one place.",
+  "학생회 연결": "Link to council",
+  "학생회에서 받은 코드를 입력해 주세요.": "Enter the code your council gave you.",
+  "학생회에 연결했어요.": "Linked to the council.",
+  "소속 학생회가 알려 준 코드를 넣으면, 학생회가 우리 단체의 행사와 협찬 현황, 성과 숫자를 볼 수 있어요. 메시지, 연락처, 계약서 내용은 보이지 않고, 언제든 연결을 끊을 수 있어요.":
+    "Enter the code your student council gave you, and it can see your events, sponsorships and results. It never sees your messages, contacts or contracts, and you can unlink any time.",
+  "{name}과 연결을 끊었어요.": "Unlinked from {name}.",
+  "연결 끊기": "Unlink",
+  "학생회 코드": "Council code",
+  연결하기: "Link",
+  "소속 동아리가 학생회 코드로 연결하면 행사와 협찬 현황을 여기에서 함께 봐요. 메시지, 연락처, 계약서 내용은 보이지 않아요.":
+    "When your clubs link with the council code, their events and sponsorships show here. Their messages, contacts and contracts don't.",
+  "코드를 복사했어요. 소속 동아리에 알려 주세요.": "Code copied. Share it with your clubs.",
+  복사: "Copy",
+  "새 코드를 만들었어요. 지난 코드로는 더 연결할 수 없어요.": "Made a new code. The old one links no more clubs.",
+  "새 코드": "New code",
+  "아직 연결한 단체가 없어요": "No clubs linked yet",
+  "소속 동아리에 위 코드를 알려 주세요. 동아리가 내 정보의 학생회 연결에서 코드를 넣으면 여기에 보여요.":
+    "Share the code above with your clubs. Once a club enters it under Link to council in My Info, it shows here.",
+  "{date} 연결": "Linked {date}",
+  "QR 참여 · 쿠폰 · 방문": "QR check-ins · coupons · visits",
+  "다가오는 행사가 없어요.": "No events coming up.",
+  "{name}의 연결을 끊었어요.": "Unlinked {name}.",
+  "정말 연결 끊기": "Unlink for sure",
+  "소속 단체 보기": "Member clubs",
 }
 
 export default en

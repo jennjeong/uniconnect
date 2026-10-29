@@ -454,6 +454,46 @@ test("a group writes its event page on the form, adds a photo, and a brand reads
   }
 })
 
+test("a club links to its student council with the code, and the council sees it until it unlinks", async ({ page, request, browser }) => {
+  const council = await signUpMember(request, "학생단체", "e2e-council@syu.ac.kr", "총학생회 e2e", "총학생회")
+  const club = await signUpMember(request, "학생단체", "e2e-council-club@syu.ac.kr", "소속 밴드")
+  await request.put("/api/profile", { data: { intro: "캠퍼스 밴드예요.", offer: "관객 100명" }, headers: club.headers })
+  await request.post("/api/events", { data: { name: "소속 밴드 공연", date: "2099-05-01", types: ["현금"] }, headers: club.headers })
+
+  // The council finds its code from 내 정보.
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), council.token)
+  await page.goto("/me")
+  await page.getByRole("button", { name: "소속 단체 보기" }).click()
+  await expect(page).toHaveURL(/\/council$/)
+  await expect(page.getByText("아직 연결한 단체가 없어요")).toBeVisible()
+  const code = await page.locator(".council-code strong").innerText()
+
+  // The club links with it from its own 내 정보.
+  const clubPage = await (await browser.newContext()).newPage()
+  await clubPage.addInitScript((value) => localStorage.setItem("uniconnect-token", value), club.token)
+  await clubPage.goto("/me")
+  await clubPage.getByRole("button", { name: "학생회 연결" }).click()
+  const link = clubPage.getByRole("dialog", { name: "학생회 연결" })
+  await link.getByLabel("학생회 코드").fill(code)
+  await link.getByRole("button", { name: "연결하기" }).click()
+  await expect(link.locator(".device-list")).toContainText("총학생회 e2e")
+
+  // The council sees the club and its coming event, nothing private.
+  await page.reload()
+  const card = page.locator(".council-club")
+  await expect(card).toContainText("소속 밴드")
+  await expect(card.locator(".council-events")).toContainText("소속 밴드 공연")
+
+  // Unlinked, it is gone.
+  await link.getByRole("button", { name: "연결 끊기" }).click()
+  await expect(link.locator(".device-list")).toHaveCount(0)
+  await page.reload()
+  await expect(page.getByText("아직 연결한 단체가 없어요")).toBeVisible()
+  for (const member of [club, council]) {
+    expect((await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: member.headers })).status()).toBe(204)
+  }
+})
+
 test("Kakao and Naver stay hidden without keys, and a return from them says how it went", async ({ page }) => {
   await page.goto("/")
   await page.getByRole("button", { name: "로그인", exact: true }).first().click()

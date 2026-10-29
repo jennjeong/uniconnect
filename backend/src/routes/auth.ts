@@ -62,7 +62,7 @@ const suspendedMessage = "운영 정책에 따라 이용이 정지된 계정이�
 // The account as its own people see it, without its secrets; `memberId`
 // says which co-admin is logged in, if one is.
 export function toPublic(
-  { passwordHash, termsAgreedAt, calendarFeed, twoFactor, pendingTwoFactor, loginTicket, members, memberInvites, social, ...account }: Account,
+  { passwordHash, termsAgreedAt, calendarFeed, twoFactor, pendingTwoFactor, loginTicket, members, memberInvites, social, councilCode, councils, ...account }: Account,
   memberId?: string,
 ): PublicAccount {
   const member = memberId ? members?.find((item) => item.id === memberId) : undefined
@@ -432,6 +432,12 @@ authRouter.post("/login/code", async (req, res) => {
 function removeAccount(database: Database, account: Account) {
   const listingId = account.groupId ?? account.brandId
   database.accounts = database.accounts.filter((item) => item.id !== account.id)
+  // A council's clubs are unlinked from it.
+  for (const club of database.accounts) {
+    if (club.councils?.some((link) => link.accountId === account.id)) {
+      club.councils = club.councils.filter((link) => link.accountId !== account.id)
+    }
+  }
   database.sessions = database.sessions.filter((session) => session.accountId !== account.id)
   database.emailCodes = database.emailCodes.filter((entry) => entry.email !== account.email)
   database.inquiries = database.inquiries.filter((inquiry) => inquiry.accountId !== account.id)
@@ -685,6 +691,8 @@ authRouter.get("/export", (req, res) => {
     account: toPublic(account, req.memberId),
     // The people running it with the owner, without their passwords.
     team: (account.members ?? []).map(({ id, name, email, addedAt }) => ({ id, name, email, addedAt })),
+    // A council's code, and the councils a club linked to.
+    council: { code: account.councilCode?.code ?? null, links: account.councils ?? [] },
     listing: listing ?? null,
     events: database.events[account.id] ?? [],
     proposalsSent: [

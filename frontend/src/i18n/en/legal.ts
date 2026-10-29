@@ -77,6 +77,10 @@ const en: Record<string, string> = {
     "Co-admins (name, email, password stored irreversibly, when they joined) and invitations sent (name, email, invitation code stored irreversibly, when sent)",
   "한 계정을 임원 여러 명이 각자의 이메일과 비밀번호로 함께 쓰기": "Letting several officers use one account, each with their own email and password",
   "대표가 빼거나 탈퇴할 때까지, 초대는 받을 때까지(최대 7일)": "Until the owner removes them or the account is deleted; invitations until taken (7 days at most)",
+  "학생회 코드와, 소속 단체가 연결한 학생회와 연결한 시각": "Student council codes, and the councils a club linked to and when",
+  "연결한 학생회에 소속 단체의 다가오는 행사, 제안 수, 확정된 협찬 수, 성과 숫자를 보여 줌(메시지, 연락처, 계약서 내용은 보여 주지 않아요)":
+    "Showing the linked council a club's coming events, proposal and sponsorship counts and results (never its messages, contacts or contracts)",
+  "어느 쪽이든 연결을 끊거나 탈퇴할 때까지": "Until either side unlinks or leaves",
   "카카오 · 네이버 계정을 연결한 경우 그 서비스의 회원 번호와 연결한 시각":
     "If a Kakao or Naver account is linked, its member number with that service and when it was linked",
   "연결한 카카오 · 네이버 계정으로 로그인": "Logging in with the linked Kakao or Naver account",

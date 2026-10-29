@@ -172,6 +172,13 @@ export function pageMeta(
       noindex: true,
     }
   }
+  if (view.council) {
+    return {
+      title: titled(t("소속 단체")),
+      description: t("학생회에 연결한 소속 단체의 행사와 협찬 현황을 한곳에서 봐요."),
+      noindex: true,
+    }
+  }
   if (view.agreements) {
     return {
       title: titled(t("임시 전자 계약서")),

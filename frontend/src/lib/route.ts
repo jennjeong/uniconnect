@@ -36,6 +36,8 @@ export type View = {
   // The account's sponsorship agreements, or one of them by its proposal.
   agreements?: true
   agreement?: string
+  // A student council's clubs (/council).
+  council?: true
   // An address no screen has, kept as it was typed (the 404 page).
   missing?: string
 }
@@ -90,6 +92,7 @@ export function viewPath(view: View) {
   if (view.invite) return `${base}/invite/${encodeURIComponent(view.invite)}`
   if (view.agreement) return `${base}/agreements/${encodeURIComponent(view.agreement)}`
   if (view.agreements) return `${base}/agreements`
+  if (view.council) return `${base}/council`
   const path = pagePaths[view.page]
   return `${base}/${view.detail ? `${path}/${encodeURIComponent(view.detail)}` : path}`
 }
@@ -133,6 +136,7 @@ export function readView(location: Location = window.location): View {
   if (first === "faq") return second ? missing : { page: "대시보드", faq: true }
   if (first === "terms" || first === "privacy") return second ? missing : { page: "대시보드", legal: first }
   if (first === "admin") return second ? missing : { page: "대시보드", admin: true }
+  if (first === "council") return second ? missing : { page: "대시보드", council: true }
   const named = second === undefined ? undefined : decodeSegment(second)
   if (second !== undefined && named === undefined) return missing
   if (first === "messages") {
