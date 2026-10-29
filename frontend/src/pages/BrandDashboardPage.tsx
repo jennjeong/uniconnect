@@ -321,6 +321,7 @@ export function BrandDashboardPage({
         current={currentStep}
         scheduleLabel={t("행사 일정 보기")}
         onOpenSchedule={() => onNavigate("행사 일정")}
+        tour={demo}
       />
 
       <section className="results-section">

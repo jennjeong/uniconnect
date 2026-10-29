@@ -274,6 +274,7 @@ export function DashboardPage({
         current={currentStep}
         scheduleLabel={t("전체 일정 보기")}
         onOpenSchedule={() => onNavigate("내 행사")}
+        tour={demo}
       />
 
       <section className="results-section">
