@@ -52,6 +52,7 @@ export function DevicesModal({ onClose, onNotice }: { onClose: () => void; onNot
                 <span>
                   <strong>
                     {session.device === "알 수 없는 기기" ? t(session.device) : session.device}
+                    {session.member && <small className="device-member">{session.member}</small>}
                     {session.current && <em className="device-current">{t("이 기기")}</em>}
                   </strong>
                   <small>

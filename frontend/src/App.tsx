@@ -53,6 +53,8 @@ import { EmailChangeModal } from "./modals/EmailChangeModal"
 import { InviteShopModal } from "./modals/InviteShopModal"
 import { PasswordModal } from "./modals/PasswordModal"
 import { DevicesModal } from "./modals/DevicesModal"
+import { JoinTeamModal } from "./modals/JoinTeamModal"
+import { TeamModal } from "./modals/TeamModal"
 import { TwoFactorModal } from "./modals/TwoFactorModal"
 import { ProposeModal } from "./modals/ProposeModal"
 import { SafetyModal, type SafetyTarget } from "./modals/SafetyModal"
@@ -1346,6 +1348,7 @@ function App() {
           onChangePassword={() => setActiveModal("password")}
           onTwoFactor={member ? () => setActiveModal("two-factor") : undefined}
           onDevices={member ? () => setActiveModal("devices") : undefined}
+          onTeam={member ? () => setActiveModal("team") : undefined}
           onChangeContact={() => setActiveModal("contact")}
           onChangeEmail={() => setActiveModal("email")}
           onDownloadData={downloadData}
@@ -1824,6 +1827,7 @@ function App() {
             setResetEmail(email)
             setActiveModal("reset")
           }}
+          onJoin={() => setActiveModal("join")}
         />
       </Presence>
       {account && (
@@ -1855,6 +1859,18 @@ function App() {
       )}
       <Presence show={activeModal === "devices"}>
         <DevicesModal onClose={closeModal} onNotice={showNotice} />
+      </Presence>
+      <Presence show={activeModal === "team"}>
+        <TeamModal onClose={closeModal} onNotice={showNotice} />
+      </Presence>
+      <Presence show={activeModal === "join"}>
+        <JoinTeamModal
+          onClose={closeModal}
+          onJoined={(session) =>
+            startSession(session, t("{name} 계정을 함께 관리하기 시작했어요.", { name: session.account.name }))
+          }
+          onLogin={() => openAuth("login")}
+        />
       </Presence>
       <Presence show={activeModal === "password"}>
         <PasswordModal

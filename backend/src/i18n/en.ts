@@ -465,6 +465,26 @@ const en: Record<string, string> = {
   "2단계 인증이 꺼져 있어요.": "Two-step login is off.",
   "로그인한 기기를 찾을 수 없어요.": "We couldn't find that device.",
   "데모 계정은 로그인한 기기를 볼 수 없어요.": "Demo accounts can't see their devices.",
+
+  // One account, several people (routes/team.ts, lib/team.ts)
+  "계정 대표만 할 수 있어요.": "Only the account's owner can do this.",
+  "초대를 너무 많이 보냈어요. 내일 다시 보내 주세요.": "Too many invitations today. Please try again tomorrow.",
+  "초대 코드 입력이 너무 많아요. 15분 뒤에 다시 시도해 주세요.": "Too many tries. Please try again in 15 minutes.",
+  "데모 계정은 함께 관리할 사람을 초대할 수 없어요.": "Demo accounts can't invite co-admins.",
+  "초대할 사람의 이름을 30자 이하로 적어 주세요.": "Enter the person's name, 30 characters at most.",
+  "이미 uniconnect에서 쓰는 이메일이에요. 다른 이메일로 초대해 주세요.": "That email is already used on uniconnect. Please invite another one.",
+  "함께 관리하는 사람은 대표 말고 {count}명까지예요.": "Up to {count} people can help run an account besides its owner.",
+  "[uniconnect] {name}에서 함께 관리하자고 초대했어요": "[uniconnect] {name} invited you to help run their account",
+  "{name}의 uniconnect 계정을 함께 관리하도록 초대받았어요. 초대 코드는 {code} 입니다.":
+    "You've been invited to help run {name}'s uniconnect account. Your invitation code is {code}.",
+  "uniconnect 로그인 창의 '초대받았나요?'에서 이 이메일과 코드를 입력하고 비밀번호를 정해 주세요. 코드는 7일 동안 쓸 수 있어요.":
+    "In uniconnect's login window, choose 'Invited?', enter this email and the code, and set a password. The code works for 7 days.",
+  "초대 메일을 보내지 못했어요. 잠시 후 다시 시도해 주세요.": "We couldn't send the invitation. Please try again shortly.",
+  "함께 관리하는 사람을 찾을 수 없어요.": "We couldn't find that co-admin.",
+  "이 이메일로 온 초대가 없거나 기간이 지났어요. 대표에게 다시 초대해 달라고 해 주세요.":
+    "There's no open invitation for this email. Ask the account's owner to invite you again.",
+  "초대 코드가 올바르지 않아요.": "That invitation code isn't right.",
+  "이미 uniconnect에서 쓰는 이메일이에요.": "That email is already used on uniconnect.",
   "{name}: 사진을 보냈어요.": "{name}: Sent a photo.",
   "{name}: 파일을 보냈어요: {file}": "{name}: Sent a file: {file}",
 }

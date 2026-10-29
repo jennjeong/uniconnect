@@ -48,6 +48,7 @@ export function ProfilePage({
   onChangePassword,
   onTwoFactor,
   onDevices,
+  onTeam,
   onChangeContact,
   onChangeEmail,
   onDownloadData,
@@ -72,6 +73,8 @@ export function ProfilePage({
   // Two-step login and the device list; absent for the shared demo accounts.
   onTwoFactor?: () => void
   onDevices?: () => void
+  // The people running the account with its owner; absent for the demo accounts.
+  onTeam?: () => void
   // The person running the account (modals/ContactModal.tsx).
   onChangeContact: () => void
   onChangeEmail: () => void
@@ -349,6 +352,13 @@ export function ProfilePage({
           )}
         </dl>
         <div className="profile-logout">
+          {account.asMember && (
+            <p className="profile-member-note">
+              {t("{name}님은 공동 관리자로 로그인했어요. 탈퇴, 로그인 이메일 바꾸기, 2단계 인증은 대표만 할 수 있어요.", {
+                name: account.asMember.name,
+              })}
+            </p>
+          )}
           <div className="profile-account-actions">
             <Pill onClick={onLogout} variant="outline">
               {t("로그아웃")}
@@ -356,7 +366,7 @@ export function ProfilePage({
             <Pill onClick={onChangePassword} variant="silver">
               {t("비밀번호 변경")}
             </Pill>
-            {onTwoFactor && (
+            {onTwoFactor && !account.asMember && (
               <Pill onClick={onTwoFactor} variant="silver">
                 {account.twoFactorOn ? t("2단계 인증 · 켜짐") : t("2단계 인증 켜기")}
               </Pill>
@@ -366,19 +376,28 @@ export function ProfilePage({
                 {t("로그인한 기기")}
               </Pill>
             )}
+            {onTeam && (
+              <Pill onClick={onTeam} variant="silver">
+                {t("함께 관리하는 사람")}
+              </Pill>
+            )}
             <Pill onClick={onChangeContact} variant="silver">
               {t("담당자 정보 수정")}
             </Pill>
-            <Pill onClick={onChangeEmail} variant="silver">
-              {t("로그인 이메일 바꾸기")}
-            </Pill>
+            {!account.asMember && (
+              <Pill onClick={onChangeEmail} variant="silver">
+                {t("로그인 이메일 바꾸기")}
+              </Pill>
+            )}
             <Pill onClick={onDownloadData} variant="outline">
               {t("내 데이터 내려받기")}
             </Pill>
           </div>
-          <button className="leave-link" onClick={onLeave} type="button">
-            {t("회원 탈퇴")}
-          </button>
+          {!account.asMember && (
+            <button className="leave-link" onClick={onLeave} type="button">
+              {t("회원 탈퇴")}
+            </button>
+          )}
         </div>
       </section>
     </section>

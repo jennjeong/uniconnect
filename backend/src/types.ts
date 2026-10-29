@@ -167,12 +167,24 @@ export type Account = {
   // A login that passed the password and waits for its code: the hash of
   // the ticket the browser holds, until when, and wrong codes so far.
   loginTicket?: { hash: string; expiresAt: number; tries: number; userAgent?: string }
+  // Co-admins who log in to this account with their own email and password
+  // (routes/team.ts), and the invitations sent to others, by the hash of
+  // the code each was emailed.
+  members?: TeamMember[]
+  memberInvites?: MemberInvite[]
 }
+
+export type TeamMember = { id: string; name: string; email: string; passwordHash: string; addedAt: string }
+export type MemberInvite = { id: string; name: string; email: string; codeHash: string; invitedAt: string; expiresAt: number; tries: number }
 
 export type PublicAccount = Omit<
   Account,
-  "passwordHash" | "termsAgreedAt" | "calendarFeed" | "twoFactor" | "pendingTwoFactor" | "loginTicket"
-> & { twoFactorOn?: true }
+  "passwordHash" | "termsAgreedAt" | "calendarFeed" | "twoFactor" | "pendingTwoFactor" | "loginTicket" | "members" | "memberInvites"
+> & {
+  twoFactorOn?: true
+  // Set when a co-admin is the one logged in (not the account's owner).
+  asMember?: { id: string; name: string; email: string }
+}
 
 export type Session = {
   // sha256 of the token the browser holds, so the data file alone cannot
@@ -185,6 +197,8 @@ export type Session = {
   device?: string
   createdAt?: number
   lastUsedAt?: number
+  // A co-admin's login to the account (Account.members); the owner's has none.
+  memberId?: string
 }
 
 export type EmailCode = {

@@ -454,6 +454,53 @@ test("a group writes its event page on the form, adds a photo, and a brand reads
   }
 })
 
+test("an owner invites a co-admin, who joins with the code and can't do the owner's part", async ({ page, request, browser }) => {
+  const owner = await signUpMember(request, "학생단체", "e2e-team@syu.ac.kr", "함께 동아리")
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), owner.token)
+  await page.goto("/me")
+  await page.getByRole("button", { name: "함께 관리하는 사람" }).click()
+  const team = page.getByRole("dialog")
+  await expect(team.locator(".device-current")).toHaveText("대표")
+  await team.getByLabel("이름", { exact: true }).fill("부회장")
+  await team.getByLabel("초대할 이메일").fill("e2e-vice@syu.ac.kr")
+  await team.getByRole("button", { name: "초대 코드 보내기" }).click()
+  await expect(team.locator(".team-list li.pending")).toContainText("e2e-vice@syu.ac.kr")
+  const code = await team.locator(".field-hint strong").innerText()
+
+  // The invited person joins from the login popup in another browser.
+  const vice = await (await browser.newContext()).newPage()
+  await vice.goto("/")
+  await vice.getByRole("button", { name: "로그인", exact: true }).first().click()
+  await vice.getByRole("dialog").getByRole("button", { name: "초대받았나요?" }).click()
+  const join = vice.getByRole("dialog", { name: "초대받아 함께 관리하기" })
+  await join.getByLabel("초대받은 이메일").fill("e2e-vice@syu.ac.kr")
+  await join.getByLabel("초대 코드").fill(code)
+  await join.getByLabel("새 비밀번호", { exact: true }).fill("vice-pass-123")
+  await join.getByLabel("새 비밀번호 확인").fill("vice-pass-123")
+  await join.getByRole("button", { name: "함께 관리 시작하기" }).click()
+  await expect(join).toBeHidden()
+  await expect(vice.getByText("함께 동아리 계정을 함께 관리하기 시작했어요.")).toBeVisible()
+
+  // In 내 정보 the owner's part is gone for the co-admin.
+  await vice.goto("/me")
+  await expect(vice.locator(".profile-member-note")).toContainText("부회장님은 공동 관리자로 로그인했어요")
+  await expect(vice.getByRole("button", { name: "회원 탈퇴" })).toHaveCount(0)
+  await expect(vice.getByRole("button", { name: "로그인 이메일 바꾸기" })).toHaveCount(0)
+  await expect(vice.getByRole("button", { name: /2단계 인증/ })).toHaveCount(0)
+
+  // The owner sees the co-admin joined, and takes it off, which logs it out.
+  await page.goto("/me")
+  await page.getByRole("button", { name: "함께 관리하는 사람" }).click()
+  const joined = page.getByRole("dialog", { name: "함께 관리하는 사람" })
+  await expect(joined.locator(".team-list li")).toHaveCount(2)
+  await joined.getByRole("button", { name: "빼기" }).click()
+  await expect(joined.locator(".team-list li")).toHaveCount(1)
+  const token = await vice.evaluate(() => localStorage.getItem("uniconnect-token"))
+  expect((await request.get("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } })).status()).toBe(401)
+  const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: owner.headers })
+  expect(left.status()).toBe(204)
+})
+
 test("the catalogs show as a map around the campus or store, with search applied", async ({ page }) => {
   await page.goto("/matches")
   await page.getByRole("tab", { name: "전체" }).click()
