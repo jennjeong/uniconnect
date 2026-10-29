@@ -1,4 +1,4 @@
-import { faqs } from "../data/faq"
+import { useFaqs } from "../hooks/useSiteState"
 import { t } from "../i18n"
 import { RevealTitle } from "./RevealText"
 
@@ -33,6 +33,7 @@ export function FaqList({
 // the way to the help center where the rest are and questions go to the
 // operators.
 export function FaqSection({ onOpenFaq }: { onOpenFaq: () => void }) {
+  const faqs = useFaqs()
   return (
     <section aria-label={t("자주 묻는 질문")} className="faq-section">
       <div className="section-head">

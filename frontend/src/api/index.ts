@@ -1,16 +1,26 @@
 import type {
   Account,
   AccountContact,
+  AdminAgreementRow,
   AdminAnnouncement,
+  AdminEventRow,
   AdminHealth,
   AdminInquiry,
+  AdminInsights,
+  AdminInvites,
+  AdminLive,
   AdminLogRow,
   AdminMember,
   AdminMemberDetail,
   AdminOverview,
   AdminPayment,
+  AdminPostRow,
+  AdminProposalDetail,
   AdminProposalRow,
   AdminReport,
+  AdminReviewRow,
+  AdminStaleProposal,
+  AdminSystem,
   Agreement,
   AgreementSummary,
   BillingInfo,
@@ -27,6 +37,7 @@ import type {
   EventItem,
   EventMeasurement,
   EventPage,
+  FaqTopicKey,
   Inquiry,
   InsightAnswer,
   InvitePageData,
@@ -55,7 +66,9 @@ import type {
   SentProposal,
   Session,
   ShopInvite,
+  SiteFaq,
   SiteNotice,
+  SiteState,
   SocialProvider,
   SponsorOffer,
   SponsorRequest,
@@ -394,15 +407,60 @@ export const api = {
     request<{ announcements: AdminAnnouncement[] }>("/admin/announcements", { headers: { "X-Admin-Token": token } }),
   adminPostAnnouncement: (
     token: string,
-    body: { text: string; tone: SiteNotice["tone"]; audience: AdminAnnouncement["audience"]; until?: string },
+    body: { text: string; tone: SiteNotice["tone"]; audience: AdminAnnouncement["audience"]; from?: string; until?: string },
   ) => request<{ announcement: AdminAnnouncement }>("/admin/announcements", { method: "POST", body, headers: { "X-Admin-Token": token } }),
   adminEndAnnouncement: (token: string, id: string) =>
     request<{ announcement: AdminAnnouncement }>(`/admin/announcements/${encodeURIComponent(id)}/end`, {
       method: "POST",
       headers: { "X-Admin-Token": token },
     }),
-  // The operators' notices this viewer sees.
+  // The operators' notices this viewer sees, and closing one (counted).
   announcements: () => request<{ announcements: SiteNotice[] }>("/announcements"),
+  dismissAnnouncement: (id: string) => request<void>(`/announcements/${encodeURIComponent(id)}/dismiss`, { method: "POST" }),
+  // The operators' switches the whole site reads: maintenance, sign-up, FAQ.
+  siteState: () => request<SiteState>("/site"),
+  countSearch: (q: string) => request<void>("/site/searches", { method: "POST", body: { q } }),
+  adminLogout: (token: string, id: string) =>
+    request<{ account: AdminMemberDetail }>(`/admin/accounts/${encodeURIComponent(id)}/logout`, { method: "POST", headers: { "X-Admin-Token": token } }),
+  adminTags: (token: string, id: string, tags: string[]) =>
+    request<{ account: AdminMemberDetail }>(`/admin/accounts/${encodeURIComponent(id)}/tags`, { method: "PUT", body: { tags }, headers: { "X-Admin-Token": token } }),
+  adminBulk: (token: string, body: { ids: string[]; action: "suspend" | "logout" | "tag" | "untag"; tag?: string }) =>
+    request<{ done: number }>("/admin/accounts/bulk", { method: "POST", body, headers: { "X-Admin-Token": token } }),
+  adminBusiness: (token: string, id: string, body: { verified: boolean; number?: string }) =>
+    request<{ account: AdminMemberDetail }>(`/admin/accounts/${encodeURIComponent(id)}/business`, { method: "PUT", body, headers: { "X-Admin-Token": token } }),
+  adminGrantPartners: (token: string, id: string, days: number) =>
+    request<{ account: AdminMemberDetail }>(`/admin/accounts/${encodeURIComponent(id)}/partners`, { method: "POST", body: { days }, headers: { "X-Admin-Token": token } }),
+  adminResetDemo: (token: string) => request<{ ok: true }>("/admin/demo/reset", { method: "POST", headers: { "X-Admin-Token": token } }),
+  adminStale: (token: string) => request<{ proposals: AdminStaleProposal[] }>("/admin/proposals/stale", { headers: { "X-Admin-Token": token } }),
+  adminProposal: (token: string, id: string) =>
+    request<{ proposal: AdminProposalDetail }>(`/admin/proposals/${encodeURIComponent(id)}`, { headers: { "X-Admin-Token": token } }),
+  adminNudge: (token: string, id: string) =>
+    request<{ ok: true }>(`/admin/proposals/${encodeURIComponent(id)}/nudge`, { method: "POST", headers: { "X-Admin-Token": token } }),
+  adminAgreements: (token: string) => request<{ agreements: AdminAgreementRow[] }>("/admin/agreements", { headers: { "X-Admin-Token": token } }),
+  adminEvents: (token: string) => request<{ events: AdminEventRow[] }>("/admin/events", { headers: { "X-Admin-Token": token } }),
+  adminLive: (token: string) => request<AdminLive>("/admin/live", { headers: { "X-Admin-Token": token } }),
+  adminPosts: (token: string) => request<{ posts: AdminPostRow[] }>("/admin/posts", { headers: { "X-Admin-Token": token } }),
+  adminPostAction: (token: string, id: string, action: "hide" | "show" | "close") =>
+    request<void>(`/admin/posts/${encodeURIComponent(id)}/${action}`, { method: "POST", headers: { "X-Admin-Token": token } }),
+  adminReviews: (token: string) => request<{ reviews: AdminReviewRow[] }>("/admin/reviews", { headers: { "X-Admin-Token": token } }),
+  adminReviewAction: (token: string, id: string, action: "hide" | "show" | "pin" | "unpin") =>
+    request<void>(`/admin/reviews/${encodeURIComponent(id)}/${action}`, { method: "POST", headers: { "X-Admin-Token": token } }),
+  adminInvites: (token: string) => request<AdminInvites>("/admin/invites", { headers: { "X-Admin-Token": token } }),
+  adminHandling: (token: string, id: string, body: { assignee: string; held: boolean }) =>
+    request<{ handling: AdminInquiry["handling"] }>(`/admin/inquiries/${encodeURIComponent(id)}/handling`, { method: "PUT", body, headers: { "X-Admin-Token": token } }),
+  adminFaq: (token: string) => request<SiteFaq>("/admin/faq", { headers: { "X-Admin-Token": token } }),
+  adminAddFaq: (token: string, body: { topic: FaqTopicKey; question: string; answer: string; featured: boolean }) =>
+    request<SiteFaq>("/admin/faq", { method: "POST", body, headers: { "X-Admin-Token": token } }),
+  adminRemoveFaq: (token: string, id: string) =>
+    request<SiteFaq>(`/admin/faq/${encodeURIComponent(id)}`, { method: "DELETE", headers: { "X-Admin-Token": token } }),
+  adminHideFaq: (token: string, question: string, hidden: boolean) =>
+    request<SiteFaq>("/admin/faq/hidden", { method: "PUT", body: { question, hidden }, headers: { "X-Admin-Token": token } }),
+  adminInsights: (token: string) => request<AdminInsights>("/admin/insights", { headers: { "X-Admin-Token": token } }),
+  adminSetKpi: (token: string, body: { signups?: number | null; proposals?: number | null; revenue?: number | null }) =>
+    request<{ kpi: AdminInsights["kpi"] }>("/admin/settings/kpi", { method: "PUT", body, headers: { "X-Admin-Token": token } }),
+  adminSetMaintenance: (token: string, body: { on: boolean; message: string; blockSignups: boolean }) =>
+    request<{ maintenance: AdminSystem["maintenance"] }>("/admin/settings/maintenance", { method: "PUT", body, headers: { "X-Admin-Token": token } }),
+  adminSystem: (token: string) => request<AdminSystem>("/admin/system", { headers: { "X-Admin-Token": token } }),
   unsuspendAccount: (token: string, id: string) =>
     request<void>(`/admin/accounts/${encodeURIComponent(id)}/unsuspend`, {
       method: "POST",

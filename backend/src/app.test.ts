@@ -5041,3 +5041,118 @@ test("operators keep notes on members, post notices and read their own log and t
     config.adminToken = saved
   }
 })
+
+test("the console's member tools, operations, content, analysis and system screens", async () => {
+  const saved = config.adminToken
+  config.adminToken = "test-admin-token"
+  const admin = (method: string, route: string, body?: unknown) =>
+    fetch(`${baseUrl}/admin${route}`, {
+      method,
+      headers: { "Content-Type": "application/json", "X-Admin-Token": "test-admin-token" },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    }).then(async (response) => ({
+      status: response.status,
+      data: (response.status === 204 ? {} : await response.json().catch(() => ({}))) as Record<string, any>,
+    }))
+  try {
+    for (const route of ["/insights", "/system", "/agreements", "/live", "/posts", "/reviews", "/faq"]) {
+      assert.equal((await fetch(`${baseUrl}/admin${route}`)).status, 403)
+    }
+
+    // Members: logged out everywhere, tagged one by one and in bulk, checked
+    // as a business and given Campus Partners free.
+    const token = await signUpMember("tools@toolscafe.kr", "tools-pass-123", "브랜드")
+    const id = getDatabase().accounts.find((account) => account.email === "tools@toolscafe.kr")!.id
+    assert.equal((await admin("POST", `/accounts/${id}/logout`)).data.account.sessions, 0)
+    assert.equal((await call("GET", "/auth/me", undefined, token)).status, 401)
+    assert.deepEqual((await admin("PUT", `/accounts/${id}/tags`, { tags: [" 주의 ", "주의", "VIP"] })).data.account.tags, ["주의", "VIP"])
+    assert.equal((await admin("POST", "/accounts/bulk", { ids: [id], action: "tag", tag: "파트너 후보" })).data.done, 1)
+    const tagged = (await admin("GET", "/accounts?tag=파트너 후보")).data.accounts
+    assert.deepEqual(tagged.map((row: { id: string }) => row.id), [id])
+    assert.equal((await admin("PUT", `/accounts/${id}/business`, { verified: true, number: "123-45-6789" })).status, 400)
+    assert.equal((await admin("PUT", `/accounts/${id}/business`, { verified: true, number: "123-45-67890" })).data.account.businessNumber, "1234567890")
+    const granted = (await admin("POST", `/accounts/${id}/partners`, { days: 30 })).data.account
+    assert.ok(granted.partnersUntil)
+    assert.ok(granted.timeline.some((item: { kind: string }) => item.kind === "가입"))
+    assert.equal((await admin("POST", `/accounts/${id}/partners`, { days: 0 })).status, 400)
+
+    // Operations: every agreement, event, today's events, and one proposal in full.
+    assert.ok(Array.isArray((await admin("GET", "/agreements")).data.agreements))
+    assert.ok((await admin("GET", "/events")).data.events.length > 0)
+    const live = (await admin("GET", "/live")).data
+    assert.ok(Array.isArray(live.events) && Array.isArray(live.alerts))
+    const anyProposal = getDatabase().requests[0]
+    const detail = (await admin("GET", `/proposals/${anyProposal.id}`)).data.proposal
+    assert.equal(detail.id, anyProposal.id)
+    assert.equal(detail.message, undefined)
+    assert.ok(Array.isArray((await admin("GET", "/proposals/stale")).data.proposals))
+
+    // Content: a hidden post leaves the board, a pinned review goes first.
+    const post = getDatabase().posts[0]
+    assert.equal((await admin("POST", `/posts/${post.id}/hide`)).status, 204)
+    const board = (await call("GET", "/board?role=" + encodeURIComponent(post.accountId === getDatabase().demoAccountIds.브랜드 ? "학생단체" : "브랜드"))).data.posts
+    assert.ok(!board.some((item: { id: string }) => item.id === post.id))
+    await admin("POST", `/posts/${post.id}/show`)
+    const review = getDatabase().reviews.at(-1)!
+    assert.equal((await admin("POST", `/reviews/${review.id}/pin`)).status, 204)
+    assert.ok(getDatabase().reviews.find((item) => item.id === review.id)!.pinnedAt)
+    assert.equal((await admin("POST", `/reviews/${review.id}/nope`)).status, 400)
+    assert.equal(typeof (await admin("GET", "/invites")).data.sent, "number")
+
+    // A question's handling stays with the operators.
+    const student = await login("학생단체")
+    const asked = (await call("POST", "/inquiries", { category: "기타", question: "담당자 배정 테스트예요" }, student)).data.inquiry
+    assert.deepEqual((await admin("PUT", `/inquiries/${asked.id}/handling`, { assignee: "지은", held: true })).data.handling.assignee, "지은")
+    const mine = (await call("GET", "/inquiries", undefined, student)).data.inquiries
+    assert.equal(mine.find((item: { id: string }) => item.id === asked.id).handling, undefined)
+
+    // The help center: a question added, a built-in one hidden, both public.
+    assert.equal((await admin("POST", "/faq", { topic: "nope", question: "q", answer: "a" })).status, 400)
+    await admin("POST", "/faq", { topic: "start", question: "운영 시간은요?", answer: "평일 10시부터 6시까지 답해요." })
+    await admin("PUT", "/faq/hidden", { question: "누가 가입할 수 있나요?", hidden: true })
+    const site = (await call("GET", "/site")).data
+    assert.equal(site.faq.added.at(-1).question, "운영 시간은요?")
+    assert.deepEqual(site.faq.hidden, ["누가 가입할 수 있나요?"])
+
+    // Searches are counted without who; too short ones are let go.
+    await call("POST", "/site/searches", { q: "  카페   쿠폰 " })
+    await call("POST", "/site/searches", { q: "a" })
+    const insights = (await admin("GET", "/insights")).data
+    assert.deepEqual(insights.searches.find((item: { term: string }) => item.term === "카페 쿠폰"), { term: "카페 쿠폰", count: 1 })
+    assert.deepEqual(insights.funnel.map((step: { step: string }) => step.step), ["가입", "소개 작성", "첫 제안", "첫 수락", "첫 결제"])
+    assert.equal(insights.cohorts.length, 8)
+    assert.equal((await admin("PUT", "/settings/kpi", { signups: -1 })).status, 400)
+    const kpi = (await admin("PUT", "/settings/kpi", { signups: 20 })).data.kpi
+    assert.equal(kpi.find((item: { key: string }) => item.key === "signups").target, 20)
+
+    // Maintenance turns writes away but not reads, logins or the console;
+    // sign-up can stop on its own.
+    await admin("PUT", "/settings/maintenance", { on: true, message: "점검 중", blockSignups: true })
+    assert.deepEqual((await call("GET", "/site")).data.maintenance, { message: "점검 중" })
+    assert.equal((await call("POST", "/inquiries", { category: "기타", question: "점검 중 질문이에요" }, student)).status, 503)
+    assert.equal((await call("GET", "/inquiries", undefined, student)).status, 200)
+    assert.equal((await call("POST", "/auth/login", { role: "학생단체", email: "muse@syu.ac.kr", password: DEMO_PASSWORD })).status, 200)
+    await admin("PUT", "/settings/maintenance", { on: false, blockSignups: true })
+    assert.equal((await call("POST", "/auth/signup", { role: "학생단체" })).status, 503)
+    await admin("PUT", "/settings/maintenance", { on: false, blockSignups: false })
+
+    // The system screen counts limits without addresses.
+    const system = (await admin("GET", "/system")).data
+    assert.ok(system.limits.length > 0)
+    assert.ok(system.limits.every((limit: Record<string, unknown>) => Object.keys(limit).sort().join() === "blocked,counting,limit,message,minutes"))
+    assert.ok(Array.isArray(system.backups) && Array.isArray(system.cronRuns))
+    assert.equal((await admin("GET", "/backups/../../etc")).status, 404)
+
+    // Resetting the examples brings a renamed demo event back, members' data untouched.
+    const demoId = getDatabase().demoAccountIds.학생단체
+    getDatabase().events[demoId][0].name = "바뀐 이름"
+    assert.equal((await admin("POST", "/demo/reset")).status, 200)
+    assert.equal(getDatabase().events[demoId][0].name, "2026 뮤즈 종강 공연")
+    assert.ok(getDatabase().accounts.some((account) => account.id === id))
+    assert.equal((await call("POST", "/auth/login", { role: "학생단체", email: "muse@syu.ac.kr", password: DEMO_PASSWORD })).status, 200)
+  } finally {
+    config.adminToken = saved
+    const database = getDatabase()
+    database.settings = {}
+  }
+})

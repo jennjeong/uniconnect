@@ -1500,3 +1500,33 @@ test("the operators' console stands on its own: token, side menu, members and a 
   await page.reload()
   await expect(page.getByText("오늘 밤 점검이 있어요")).toHaveCount(0)
 })
+
+test("the console's command palette opens screens, and maintenance covers the site until it is switched off", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await page.goto("/admin")
+  await page.getByLabel("관리자 토큰").fill("e2e-admin-token")
+  await page.getByRole("button", { name: "들어가기" }).click()
+  await expect(page.getByRole("heading", { level: 2, name: "지금 처리할 일" })).toBeVisible()
+
+  await page.keyboard.press("Control+k")
+  const palette = page.getByRole("dialog", { name: "명령 팔레트" })
+  await palette.getByRole("combobox").fill("분석")
+  await page.keyboard.press("Enter")
+  await expect(page.getByRole("heading", { level: 1, name: "분석" })).toBeVisible()
+  await expect(page.getByRole("heading", { level: 2, name: "전환 퍼널" })).toBeVisible()
+
+  await page.getByRole("navigation", { name: "운영자 메뉴" }).getByRole("button", { name: "시스템" }).click()
+  await page.getByLabel("점검 중: 회원 화면 대신 안내를 보여 주고 저장을 막아요").check()
+  await page.getByLabel("안내 문구").fill("오늘 밤 점검이에요")
+  await page.getByRole("button", { name: "저장" }).first().click()
+  await expect(page.getByText("점검 모드를 켰어요.")).toBeVisible()
+  await page.goto("/faq")
+  await expect(page.getByRole("alert").filter({ hasText: "잠시 점검하고 있어요" })).toContainText("오늘 밤 점검이에요")
+
+  await page.goto("/admin?view=system")
+  await page.getByLabel("점검 중: 회원 화면 대신 안내를 보여 주고 저장을 막아요").uncheck()
+  await page.getByRole("button", { name: "저장" }).first().click()
+  await expect(page.getByText("점검 설정을 저장했어요.")).toBeVisible()
+  await page.goto("/faq")
+  await expect(page.getByText("잠시 점검하고 있어요")).toHaveCount(0)
+})

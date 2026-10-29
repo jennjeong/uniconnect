@@ -1,4 +1,4 @@
-import { mkdir, readdir, readFile, rename, unlink, writeFile } from "node:fs/promises"
+import { mkdir, readdir, readFile, rename, stat, unlink, writeFile } from "node:fs/promises"
 import path from "node:path"
 
 import { config } from "../config.js"
@@ -25,7 +25,13 @@ export type Storage = {
   // A copy at most once an hour, keeping the latest 24, so a bad change can
   // be undone (README says how). A failed backup never fails the save.
   backUp(data: string): Promise<void>
+  // The copies kept, newest first, by the hour they were taken (UTC,
+  // "2026-10-24T13"), and one of them in full, for the operators' console.
+  listBackups(): Promise<{ hour: string; bytes: number }[]>
+  readBackup(hour: string): Promise<string | undefined>
 }
+
+const backupHour = /^\d{4}-\d{2}-\d{2}T\d{2}$/
 
 // Tests reset lastAt to take a copy at once.
 export const backups = { lastAt: 0, everyMs: 60 * 60 * 1000, kept: 24 }
@@ -75,6 +81,28 @@ const fileStorage: Storage = {
       console.error(`[backup] ${(error as Error).message}`)
     }
   },
+  async listBackups() {
+    try {
+      const folder = backupFolder()
+      const files = (await readdir(folder)).filter((file) => /^db-.+\.json$/.test(file)).sort().reverse()
+      return await Promise.all(
+        files.map(async (file) => ({
+          hour: file.slice(3, 16).replace(/-(\d{2})$/, "T$1"),
+          bytes: (await stat(path.join(folder, file))).size,
+        })),
+      )
+    } catch {
+      return []
+    }
+  },
+  async readBackup(hour) {
+    if (!backupHour.test(hour)) return undefined
+    try {
+      return await readFile(path.join(backupFolder(), `db-${hour.replace("T", "-")}.json`), "utf8")
+    } catch {
+      return undefined
+    }
+  },
 }
 
 function postgresStorage(sql: Sql): Storage {
@@ -122,6 +150,17 @@ function postgresStorage(sql: Sql): Storage {
       } catch (error) {
         console.error(`[backup] ${(error as Error).message}`)
       }
+    },
+    async listBackups() {
+      await ensureTables(sql)
+      const rows = await sql("select to_char(taken_at at time zone 'UTC', 'YYYY-MM-DD\"T\"HH24') as hour, length(data) as bytes from uniconnect_backups order by taken_at desc")
+      return rows.map((row) => ({ hour: String(row.hour), bytes: Number(row.bytes) }))
+    },
+    async readBackup(hour) {
+      if (!backupHour.test(hour)) return undefined
+      await ensureTables(sql)
+      const [row] = await sql("select data from uniconnect_backups where taken_at = $1::timestamptz", [`${hour}:00:00Z`])
+      return row ? String(row.data) : undefined
     },
   }
 }

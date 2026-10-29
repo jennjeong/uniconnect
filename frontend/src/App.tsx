@@ -13,6 +13,7 @@ import { Loader } from "./components/Loader"
 import { CampaignMeasurement } from "./components/CampaignMeasurement"
 import { Presence } from "./components/Presence"
 import { SiteNotices } from "./components/SiteNotices"
+import { useSiteState } from "./hooks/useSiteState"
 import { ProfileChecklist } from "./components/ProfileChecklist"
 import { Toast } from "./components/Toast"
 import { demoAccounts } from "./data/demo"
@@ -155,6 +156,8 @@ const noMetrics: Metrics = {
 }
 
 function App() {
+  // The operators' switches (maintenance, sign-up, FAQ), read once.
+  const site = useSiteState()
   const [view, setView] = useState<View>(initialView)
   // True when the view came from the back or forward button (or a swipe).
   const [fromHistory, setFromHistory] = useState(false)
@@ -1722,6 +1725,15 @@ function App() {
         {t("본문으로 건너뛰기")}
       </a>
       <Loader />
+      {site?.maintenance && (
+        <div className="maintenance-screen" role="alert">
+          <div>
+            <span className="eyebrow">{t("점검 중")}</span>
+            <h1>{t("잠시 점검하고 있어요")}</h1>
+            <p>{site.maintenance.message || t("곧 다시 열게요. 조금 뒤에 다시 들러 주세요.")}</p>
+          </div>
+        </div>
+      )}
 
       <Header
         role={role}

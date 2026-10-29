@@ -3,6 +3,7 @@ import { Router } from "express"
 
 import type { Request } from "express"
 
+import { todayInKorea } from "../lib/dates.js"
 import { HttpError } from "../lib/errors.js"
 import { assertOpen, checkInKinds, eventOf, parseKind, passLimit, recordMetric } from "../lib/measurements.js"
 import {
@@ -225,11 +226,19 @@ checkInRouter.post("/:code/staff/visits", async (req, res) => {
   res.json({ entry, store: (sponsor?.coupon ?? measurement.goals.coupon).store })
 })
 
-// A wrong PIN counts against the address (for this event) and the event.
+// A wrong PIN counts against the address (for this event) and the event,
+// and toward today's count the operators' alerts read.
 async function refusePin(req: Request, message: string): Promise<never> {
   const addressKey = `${clientKey(req)} ${req.params.code}`
   await pinFailures.hit(addressKey)
   await pinFailuresPerEvent.hit(String(req.params.code))
+  const measurement = getDatabase().measurements.find((item) => item.code === req.params.code)
+  if (measurement) {
+    const today = todayInKorea()
+    measurement.pinMisses = { day: today, count: measurement.pinMisses?.day === today ? measurement.pinMisses.count + 1 : 1 }
+    // Only a note: a failed save doesn't change the answer.
+    await saveDatabase().catch(() => undefined)
+  }
   throw new HttpError(403, message)
 }
 
