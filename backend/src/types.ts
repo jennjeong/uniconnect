@@ -30,6 +30,8 @@ export type Match = {
   // (lib/matchScore.ts), with the reasons that count most and each part
   // of it as a share of its best (0 to 1).
   score: number
+  // The brand is on Pro (lib/plan.ts), worked out in browse().
+  pro?: true
   reasons?: string[]
   scoreParts?: { label: string; value: number }[]
   tags: string[]

@@ -3,7 +3,7 @@ import { Router } from "express"
 
 import { paidFor, prices } from "../lib/billing.js"
 import { HttpError } from "../lib/errors.js"
-import { premiumReport, reportOpen, sponsorshipFor } from "../lib/premiumReport.js"
+import { premiumReport, reportAccess, reportOpen, sponsorshipFor } from "../lib/premiumReport.js"
 import { isDemoAccount } from "../lib/reviews.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { Account, Database } from "../types.js"
@@ -14,13 +14,6 @@ import { brandOwner } from "./requests.js"
 // holds; a read-only link to share it; and the store's own counts the
 // report compares.
 export const insightsRouter = Router()
-
-// Whether the account may read the report: bought it, or is the demo brand.
-// (Pro includes every report: lib/pro.ts adds itself here.)
-export const reportAccess: ((database: Database, account: Account, sponsorshipId: string) => boolean)[] = [
-  (database, account) => isDemoAccount(database, account),
-  (database, account, id) => Boolean(paidFor(database, account.id, "report", id)),
-]
 
 const unlocked = (database: Database, account: Account, id: string) => reportAccess.some((allows) => allows(database, account, id))
 

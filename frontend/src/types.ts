@@ -42,6 +42,8 @@ export type Match = {
   reviewCount?: number
   // Brand catalog only: its business registration was confirmed.
   businessVerified?: true
+  // A brand on Pro (backend lib/plan.ts).
+  pro?: true
   // Km from the account browsing (its campus or store); absent when either
   // place is unknown.
   distanceKm?: number
@@ -190,6 +192,9 @@ export type BillingInfo = {
   prices: { feeRate: number; report: number; pro: number; proDays: number }
   card: { clientKey: string } | null
   payments: Payment[]
+  // The brand's plan (backend lib/pro.ts): Pro until a Korean day, and this
+  // month's proposals against the free plan's limit.
+  plan: { pro: boolean; until: string | null; offersThisMonth: number; freeOffers: number }
 }
 
 // An order to pay, with what the payment window needs.

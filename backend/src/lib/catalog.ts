@@ -3,6 +3,7 @@ import { distanceKm, offsetMetres, placeOf } from "./geo.js"
 import { scoreMatch, type Viewer } from "./matchScore.js"
 import { isDemoAccount, reviewSummary, reviewsAbout } from "./reviews.js"
 import { blockedBetween } from "./safety.js"
+import { isPro } from "./plan.js"
 import type { Account, Database, Industry, Match, Role } from "../types.js"
 
 // How an account's type (validation.ts) is filed among the industries the
@@ -170,7 +171,9 @@ export function browse(database: Database, catalog: "brands" | "groups", account
       const reviews = reviewSummary(reviewsAbout(database, listing.id))
       const rated = reviews.count ? { ...scored, rating: reviews.average, reviewCount: reviews.count } : scored
       const owner = ownerOf(database, catalog, listing)
-      const checked = owner?.business ? { ...rated, businessVerified: true as const } : rated
+      const verified = owner?.business ? { ...rated, businessVerified: true as const } : rated
+      // A brand on Pro (lib/plan.ts) shows a PRO mark.
+      const checked = catalog === "brands" && owner && isPro(database, owner.id) ? { ...verified, pro: true as const } : verified
       const there = placeOf(listing, owner)
       return here && there
         ? { ...checked, distanceKm: distanceKm(here, there), mapOffset: offsetMetres(here, there) }

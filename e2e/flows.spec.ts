@@ -1386,3 +1386,19 @@ test("the detailed report: the demo's open from 성과 분석, a member's locked
     expect((await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: account.headers })).status()).toBe(204)
   }
 })
+
+test("a brand sees its plan in 내 정보 and asks to start Pro", async ({ page, request }) => {
+  const brand = await signUpMember(request, "브랜드", "e2e-plan@plan-cafe.kr", "요금제 카페")
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
+  await page.goto("/me")
+  const card = page.getByRole("region", { name: "요금제" })
+  await expect(card).toContainText("무료 요금제 · 이번 달 협찬 제안 0/5건")
+  await expect(card).toContainText("상세 성과 리포트 모두 포함")
+  await card.getByRole("button", { name: "프로 시작하기" }).click()
+  const pay = page.getByRole("dialog", { name: "프로 결제" })
+  await expect(pay).toContainText("200,000원")
+  await pay.getByText("결제 내용을 확인했고,").click()
+  await pay.getByRole("button", { name: "계좌 입금으로 요청하기" }).click()
+  await expect(page.getByText("계좌 입금을 요청했어요. 입금이 확인되면 프로가 시작돼요.")).toBeVisible()
+  expect((await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: brand.headers })).status()).toBe(204)
+})
