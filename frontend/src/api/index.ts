@@ -195,6 +195,10 @@ export const api = {
     request<{ review: Review }>(`/reviews/${encodeURIComponent(proposalId)}`, { method: "PUT", body }),
   deleteReview: (proposalId: string) =>
     request<void>(`/reviews/${encodeURIComponent(proposalId)}`, { method: "DELETE" }),
+  replyReview: (proposalId: string, text: string) =>
+    request<{ review: Review }>(`/reviews/${encodeURIComponent(proposalId)}/reply`, { method: "PUT", body: { text } }),
+  deleteReply: (proposalId: string) =>
+    request<void>(`/reviews/${encodeURIComponent(proposalId)}/reply`, { method: "DELETE" }),
   inviteShop: (placeId: string) =>
     request<{ invite: ShopInvite }>("/invites", { method: "POST", body: { placeId } }),
   invite: (code: string) => request<InvitePageData>(`/invites/${encodeURIComponent(code)}`),
@@ -219,7 +223,7 @@ export const api = {
     body: (
       | { kind: "account"; listingId: string }
       | { kind: "message"; conversationId: string; messageId: string }
-      | { kind: "review"; reviewKey: string }
+      | { kind: "review" | "reply"; reviewKey: string }
     ) & { reason: string; detail: string },
   ) => request<{ ok: true }>("/reports", { method: "POST", body }),
   business: () => request<BusinessStatus>("/profile/business"),

@@ -82,10 +82,11 @@ adminRouter.get("/reports", (req, res) => {
   res.json({ reports, suspended })
 })
 
-const reportActions: ReportAction[] = ["dismiss", "hide-review", "suspend"]
+const reportActions: ReportAction[] = ["dismiss", "hide-review", "hide-reply", "suspend"]
 
 // The operators settle a report: leave things as they are, take the
-// reported review down, or stop the reported account (it can't log in,
+// reported review (with its reply) or the reported reply down, or stop the
+// reported account (it can't log in,
 // gets no email and shows to no one; its sessions end). The shared demo
 // accounts can't be stopped.
 adminRouter.post("/reports/:id/resolve", async (req, res) => {
@@ -101,6 +102,12 @@ adminRouter.post("/reports/:id/resolve", async (req, res) => {
     const review = target.kind === "review" ? database.reviews.find((item) => item.id === target.reviewId) : undefined
     if (!review) throw new HttpError(409, "내릴 후기가 없어요.")
     review.hiddenAt = now
+  }
+  if (action === "hide-reply") {
+    const { target } = report
+    const review = target.kind === "reply" ? database.reviews.find((item) => item.id === target.reviewId) : undefined
+    if (!review?.reply) throw new HttpError(409, "내릴 답글이 없어요.")
+    review.reply.hiddenAt = now
   }
   if (action === "suspend") {
     const account = database.accounts.find((item) => item.id === report.accountId)

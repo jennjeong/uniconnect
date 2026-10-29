@@ -142,8 +142,9 @@ export type Agreement = {
     venue?: { page: VenuePage; pin: string }
   }
   // Reviews open from the event's day; canWrite is false for the demo
-  // accounts and when the other side has no listing to show it on.
-  review: { open: boolean; canWrite: boolean; mine?: Review; theirs?: Review }
+  // accounts and when the other side has no listing to show it on; canReply
+  // says this side may answer the other's review of it.
+  review: { open: boolean; canWrite: boolean; canReply: boolean; mine?: Review; theirs?: Review }
   // A side's request to call the sponsorship off, with why, and when the
   // other side agreed (then the agreement is only a record), and whether
   // this side may ask now: not after the event or from a demo account.
@@ -165,6 +166,9 @@ export type Review = {
   updatedAt?: string
   // Taken down by the operators; only its author still sees it.
   hidden?: true
+  // The reviewed side's answer, under the review; once the operators took it
+  // down, only that it was (no text).
+  reply?: { text?: string; createdAt: string; updatedAt?: string; hidden?: true }
 }
 
 // A listing's reviews in short.
@@ -437,13 +441,17 @@ export type AdminInquiry = Inquiry & {
 }
 
 // What the operators can do about a report.
-export type ReportAction = "dismiss" | "hide-review" | "suspend"
+export type ReportAction = "dismiss" | "hide-review" | "hide-reply" | "suspend"
 
 // A member's report as the operators see it: who reported whom over what,
 // with the reported text as it was, and what was done.
 export type AdminReport = {
   id: string
-  target: { kind: "account" } | { kind: "message"; conversationId: string; messageId: string } | { kind: "review"; reviewId: string }
+  target:
+    | { kind: "account" }
+    | { kind: "message"; conversationId: string; messageId: string }
+    | { kind: "review"; reviewId: string }
+    | { kind: "reply"; reviewId: string }
   reason: string
   detail: string
   excerpt?: string

@@ -5,12 +5,14 @@ import { Modal } from "../components/Modal"
 import { reportReasons } from "../data/reports"
 import { t } from "../i18n"
 
-// What is reported: an account by its listing, a message it sent, or a
-// review, with the name it goes by and the text in question.
+// What is reported: an account by its listing, a message it sent, a review,
+// or a listing's reply to one, with the name it goes by and the text in
+// question.
 export type SafetyTarget =
   | { kind: "account"; listingId: string; name: string }
   | { kind: "message"; conversationId: string; messageId: string; name: string; text: string }
   | { kind: "review"; reviewKey: string; name: string; text: string }
+  | { kind: "reply"; reviewKey: string; name: string; text: string }
 
 // As the server takes it (routes/reports.ts).
 const maxDetail = 300
@@ -103,7 +105,9 @@ export function SafetyModal({
             ? t("이 상대의 소개나 행동에 문제가 있으면 알려 주세요. 운영자만 봐요.")
             : target.kind === "message"
               ? t("이 메시지를 운영자에게 알려요. 상대에게는 알리지 않아요.")
-              : t("이 후기를 운영자에게 알려요. 쓴 사람에게는 알리지 않아요.")}
+              : target.kind === "reply"
+                ? t("이 답글을 운영자에게 알려요. 쓴 쪽에는 알리지 않아요.")
+                : t("이 후기를 운영자에게 알려요. 쓴 사람에게는 알리지 않아요.")}
         </p>
         {target.kind !== "account" && target.text && <blockquote className="safety-quote">{target.text}</blockquote>}
         <div aria-label={t("신고 사유")} className="ask-categories" role="radiogroup">

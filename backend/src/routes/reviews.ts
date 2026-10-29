@@ -15,7 +15,7 @@ import {
 import { reviewTags, text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
-import type { Review } from "../types.js"
+import type { ChatSide, Review } from "../types.js"
 
 export const reviewsRouter = Router()
 
@@ -73,8 +73,10 @@ reviewsRouter.put("/:proposalId", async (req, res) => {
     comment,
     createdAt: existing?.createdAt ?? now,
     ...(existing ? { updatedAt: now } : {}),
-    // Taken down by the operators, it stays down when rewritten.
+    // Taken down by the operators, it stays down when rewritten; the other
+    // side's reply stays with it.
     ...(existing?.hiddenAt ? { hiddenAt: existing.hiddenAt } : {}),
+    ...(existing?.reply ? { reply: existing.reply } : {}),
   }
   database.reviews = [...database.reviews.filter((item) => item.id !== id), review]
   await saveDatabase()
@@ -93,6 +95,54 @@ reviewsRouter.delete("/:proposalId", async (req, res) => {
   const { database, id } = sponsorship(req)
   if (!database.reviews.some((review) => review.id === id)) throw new HttpError(404, "지울 후기가 없어요.")
   database.reviews = database.reviews.filter((review) => review.id !== id)
+  await saveDatabase()
+  res.status(204).end()
+})
+
+// The review the other side wrote about this side's part, which this side
+// may answer.
+function reviewOfMe(req: Request) {
+  const found = sponsorship(req)
+  const other: ChatSide = found.side === "group" ? "brand" : "group"
+  return { ...found, other, review: found.database.reviews.find((item) => item.id === `${found.proposal.id}:${other}`) }
+}
+
+// The reviewed side answers the review it got, once (writing again replaces
+// it), from the agreement; the reviewer hears about a new one. Not a review
+// the operators took down, and not from the shared demo accounts.
+reviewsRouter.put("/:proposalId/reply", async (req, res) => {
+  const { account, database, proposal, side, other, review } = reviewOfMe(req)
+  if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 답글을 달 수 없어요.")
+  if (!review) throw new HttpError(404, "답글을 달 후기가 없어요.")
+  if (review.hiddenAt) throw new HttpError(409, "운영자가 내린 후기에는 답글을 달 수 없어요.")
+  const reply = text(req.body?.text)
+  if (!reply) throw new HttpError(400, "답글을 적어 주세요.")
+  if (reply.length > 300) throw new HttpError(400, "답글은 300자 이하로 적어 주세요.")
+  const before = review.reply
+  const now = new Date().toISOString()
+  review.reply = {
+    text: reply,
+    createdAt: before?.createdAt ?? now,
+    ...(before ? { updatedAt: now } : {}),
+    // Taken down by the operators, it stays down when rewritten.
+    ...(before?.hiddenAt ? { hiddenAt: before.hiddenAt } : {}),
+  }
+  await saveDatabase()
+  if (!before) {
+    void notify(
+      proposal[other].account,
+      "후기에 답글이 달렸어요",
+      [`${proposal[side].name}에서 '${proposal.eventName}' 협찬 후기에 답글을 남겼어요.`],
+      `/agreements/${encodeURIComponent(proposal.id)}`,
+    )
+  }
+  res.status(before ? 200 : 201).json({ review: publicReview(review) })
+})
+
+reviewsRouter.delete("/:proposalId/reply", async (req, res) => {
+  const { database, review } = reviewOfMe(req)
+  if (!review?.reply) throw new HttpError(404, "지울 답글이 없어요.")
+  delete review.reply
   await saveDatabase()
   res.status(204).end()
 })

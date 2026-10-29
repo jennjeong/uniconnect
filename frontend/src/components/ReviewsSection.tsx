@@ -7,7 +7,7 @@ import { formatFullDate } from "../lib/date"
 import type { Review, ReviewSummary, Role } from "../types"
 import { Icon } from "./Icon"
 import { ProfileBars, ProfileFigures } from "./ProfileStats"
-import { ReviewCard } from "./ReviewCard"
+import { ReviewCard, ReviewReply } from "./ReviewCard"
 import { Stars } from "./Stars"
 
 // The tag that says a partner would sponsor together again, shown as its
@@ -17,17 +17,22 @@ const againTag = "다시 함께하고 싶어요"
 // A brand's or group's reviews, the detail page's 파트너 후기 tab: the
 // average and how many would sponsor together again on the tinted card,
 // how many picked each other tag as bars, the latest review, and the rest
-// on request. Partners write them on a sponsorship's agreement after the
-// event.
+// on request, each with the listing's reply under it. Partners write them on
+// a sponsorship's agreement after the event, where the listing answers.
 export function ReviewsSection({
   id,
+  name,
   role,
   onReport,
+  onReportReply,
 }: {
   id: string
+  // The listing's name, for its replies.
+  name: string
   role: Role
-  // Members can report a review to the operators.
+  // Members can report a review, or the reply to it, to the operators.
   onReport?: (review: Review) => void
+  onReportReply?: (review: Review) => void
 }) {
   const [data, setData] = useState<{ summary: ReviewSummary; reviews: Review[] }>()
   const [all, setAll] = useState(false)
@@ -101,6 +106,7 @@ export function ReviewsSection({
               {t("후기 신고")}
             </button>
           )}
+          <ReviewReply name={name} onReport={onReportReply && (() => onReportReply(latest))} review={latest} />
         </div>
       </article>
 
@@ -116,6 +122,7 @@ export function ReviewsSection({
                 )
               }
               key={review.key}
+              reply={<ReviewReply name={name} onReport={onReportReply && (() => onReportReply(review))} review={review} />}
               review={review}
             />
           ))}

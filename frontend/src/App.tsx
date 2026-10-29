@@ -1553,6 +1553,17 @@ function App() {
                       openSafety("report", { kind: "review", reviewKey: review.key, name: review.authorName, text: review.comment })
                   : undefined
               }
+              onReportReply={
+                member
+                  ? (review) =>
+                      openSafety("report", {
+                        kind: "reply",
+                        reviewKey: review.key,
+                        name: detailMatch.name,
+                        text: review.reply?.text ?? "",
+                      })
+                  : undefined
+              }
             />
           </div>
         )}

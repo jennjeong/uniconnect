@@ -10000,6 +10000,42 @@ button.nav-pill:hover {
   font-weight: var(--weight-label);
 }
 
+/* The reviewed side's reply, set in under its review. */
+.review-reply {
+  display: grid;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 12px 14px;
+  border-left: 3px solid var(--point);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--fill);
+}
+
+.review-reply-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: var(--weight-label);
+}
+
+.review-reply p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.review-reply .subtle-link {
+  justify-self: start;
+}
+
+.review-reply-form {
+  display: grid;
+  gap: 10px;
+  margin-top: 4px;
+}
+
 .review-card-actions,
 .review-form-actions {
   display: flex;

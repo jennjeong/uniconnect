@@ -734,7 +734,11 @@ test("a brand opens an accepted proposal's agreement, confirms it and proves wha
   await expect(page.locator(".agreement-row", { hasText: "서울여대 러너스" })).toContainText("증빙 2개")
 })
 
-test("visitors see a partner's reviews, and a group reviews the brand after its event", async ({ page, request }) => {
+test("visitors see a partner's reviews, a group reviews the brand after its event, and the brand answers", async ({
+  page,
+  request,
+  browser,
+}) => {
   // The seeded reviews, on the card and the detail page.
   await page.goto("/matches")
   await expect(page.locator(".work-card", { hasText: "오후의 커피" }).first().locator(".tag-rating")).toContainText("후기 2")
@@ -772,6 +776,20 @@ test("visitors see a partner's reviews, and a group reviews the brand after its 
   await page.goto(`/matches/${brand.listingId}`)
   await page.getByRole("tab", { name: /파트너 후기/ }).click()
   await expect(page.locator(".profile-review")).toContainText("커피가 공연 전에 딱 맞춰 왔어요.")
+
+  // The brand answers it on the agreement, and the answer shows under the review.
+  const brandPage = await (await browser.newContext()).newPage()
+  await brandPage.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
+  await brandPage.goto(`/agreements/${proposal.id}`)
+  const brandPanel = brandPage.locator(".review-panel")
+  await brandPanel.getByRole("button", { name: "답글 달기" }).click()
+  await brandPanel.getByLabel("답글", { exact: true }).fill("다음 공연도 함께해요!")
+  await brandPanel.getByRole("button", { name: "답글 저장" }).click()
+  await expect(brandPanel.locator(".review-reply")).toContainText("다음 공연도 함께해요!")
+  await page.reload()
+  await page.getByRole("tab", { name: /파트너 후기/ }).click()
+  await expect(page.locator(".profile-review .review-reply")).toContainText("후기 카페의 답글")
+  await expect(page.locator(".profile-review .review-reply")).toContainText("다음 공연도 함께해요!")
 })
 
 test("the app can be installed, and the calendar gives its dates to calendar apps", async ({ page, request }) => {

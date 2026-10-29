@@ -4,7 +4,7 @@ import { api, ApiError, errorMessage } from "../api"
 import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { Pill } from "../components/Pill"
-import { ReviewCard } from "../components/ReviewCard"
+import { ReviewCard, ReviewReply } from "../components/ReviewCard"
 import { starPath } from "../components/Stars"
 import { methodInfo, methodKinds, sortedMethods } from "../data/methods"
 import { reviewTags } from "../data/reviews"
@@ -492,19 +492,107 @@ function MethodsPanel({
 // After the event, this side's review of the other (stars, up to three of
 // the listed tags, a short comment) as a form or as written, and the review
 // the other side left.
+// The reply this side writes under the other side's review of it: written
+// once, then fixed or deleted, with a note once the operators took it down.
+function ReplyEditor({
+  review,
+  name,
+  busy,
+  onSave,
+  onDelete,
+}: {
+  review: Review
+  // This side's name, which the reply shows under.
+  name: string
+  busy: boolean
+  onSave: (text: string) => Promise<boolean>
+  onDelete: () => void
+}) {
+  const reply = review.reply
+  const [writing, setWriting] = useState(false)
+  const [text, setText] = useState("")
+  const write = (from: string) => {
+    setText(from)
+    setWriting(true)
+  }
+
+  if (writing) {
+    return (
+      <form
+        className="review-reply-form"
+        onSubmit={(event) => {
+          event.preventDefault()
+          void onSave(text).then((saved) => saved && setWriting(false))
+        }}
+      >
+        <label className="review-comment">
+          {t("답글")}
+          <textarea maxLength={300} onChange={(event) => setText(event.target.value)} rows={3} value={text} />
+        </label>
+        <div className="review-form-actions">
+          <button className="cancel-button" onClick={() => setWriting(false)} type="button">
+            {t("취소")}
+          </button>
+          <button className="primary-button" disabled={busy || !text.trim()} type="submit">
+            {t("답글 저장")}
+          </button>
+        </div>
+      </form>
+    )
+  }
+  if (!reply) {
+    return (
+      <div className="review-card-actions">
+        <button className="cancel-button" onClick={() => write("")} type="button">
+          <Icon name="chat" size={14} /> {t("답글 달기")}
+        </button>
+      </div>
+    )
+  }
+  return (
+    <div className="review-reply">
+      <span className="review-reply-head">
+        <Icon name="chat" size={13} />
+        {t("{name}의 답글", { name })} · {formatFullDate(reply.createdAt.slice(0, 10))}
+      </span>
+      {reply.hidden ? (
+        <p className="field-hint">{t("운영자가 이 답글을 내렸어요. 다른 사람에게는 보이지 않아요.")}</p>
+      ) : (
+        <p>{reply.text}</p>
+      )}
+      <div className="review-card-actions">
+        {!reply.hidden && (
+          <button className="cancel-button" onClick={() => write(reply.text ?? "")} type="button">
+            {t("고치기")}
+          </button>
+        )}
+        <button className="cancel-button" disabled={busy} onClick={onDelete} type="button">
+          {t("지우기")}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function ReviewPanel({
   agreement,
   busy,
   onSave,
   onDelete,
+  onReply,
+  onDeleteReply,
 }: {
   agreement: Agreement
   busy: boolean
   onSave: (body: { rating: number; tags: string[]; comment: string }) => Promise<boolean>
   onDelete: () => void
+  // Answers the other side's review of this side, or takes the answer back.
+  onReply: (text: string) => Promise<boolean>
+  onDeleteReply: () => void
 }) {
   const { review } = agreement
   const partner = agreement.side === "group" ? agreement.brand : agreement.group
+  const own = agreement.side === "group" ? agreement.group : agreement.brand
   const choices = reviewTags[agreement.side === "group" ? "브랜드" : "학생단체"]
   const [writing, setWriting] = useState(!review.mine)
   const [rating, setRating] = useState(review.mine?.rating ?? 0)
@@ -595,7 +683,17 @@ function ReviewPanel({
         </form>
       )}
       {review.theirs && (
-        <ReviewCard review={review.theirs} title={t("{name}에서 남긴 후기", { name: partner.name })} />
+        <ReviewCard
+          reply={
+            review.canReply ? (
+              <ReplyEditor busy={busy} name={own.name} onDelete={onDeleteReply} onSave={onReply} review={review.theirs} />
+            ) : (
+              <ReviewReply name={own.name} review={review.theirs} />
+            )
+          }
+          review={review.theirs}
+          title={t("{name}에서 남긴 후기", { name: partner.name })}
+        />
       )}
     </section>
   )
@@ -792,6 +890,30 @@ export function AgreementPage({
     }
   }
 
+  // This side's answer to the other's review of it; null takes it back.
+  const saveReply = async (text: string | null) => {
+    const theirs = agreement?.review.theirs
+    if (!agreement || !theirs) return false
+    setBusy(true)
+    try {
+      let next: Review
+      if (text !== null) next = (await api.replyReview(agreement.id, text)).review
+      else {
+        await api.deleteReply(agreement.id)
+        const { reply: _gone, ...rest } = theirs
+        next = rest
+      }
+      setAgreement({ ...agreement, review: { ...agreement.review, theirs: next } })
+      onNotice(text !== null ? t("답글을 남겼어요. 후기 아래에 함께 보여요.") : t("답글을 지웠어요."))
+      return true
+    } catch (error) {
+      onError(error)
+      return false
+    } finally {
+      setBusy(false)
+    }
+  }
+
   if (!loggedIn || !agreement) {
     return (
       <section className="page-view agreement-view">
@@ -976,6 +1098,8 @@ export function AgreementPage({
                 busy={busy}
                 onDelete={() => void saveReview(null)}
                 onSave={(body) => saveReview(body)}
+                onReply={(text) => saveReply(text)}
+                onDeleteReply={() => void saveReply(null)}
               />
             </>
           )}
