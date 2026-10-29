@@ -1354,7 +1354,20 @@ test("the detailed report: the demo's open from 성과 분석, a member's locked
   await page.getByRole("button", { name: "리포트 보기" }).first().click()
   await expect(page).toHaveURL(/\/insights\/sp-/)
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
-  for (const section of ["핵심 요약", "목표 대비 성과", "전환 퍼널과 비교", "비용 효율", "언제 왔나요", "평소 대비 효과", "다음 협찬 제안", "측정 방법과 가정"]) {
+  for (const section of [
+    "핵심 요약",
+    "행사 개요와 협찬 조건",
+    "목표 대비 성과",
+    "관객 구성",
+    "전환 퍼널과 이탈",
+    "시간 분석",
+    "매장 방문 분석",
+    "비용 효율과 투자 회수",
+    "평소 대비 효과",
+    "계약 이행 · 후기 · 파트너 이력",
+    "우리 브랜드 협찬 중 위치와 다음 제안",
+    "측정 방법과 부록",
+  ]) {
     await expect(page.getByRole("region", { name: section })).toBeVisible()
   }
   await expect(page.getByRole("img", { name: /종합 등급/ })).toBeVisible()
