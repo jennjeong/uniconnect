@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 import logo from "../assets/brand/uniconnect_horizontal.svg"
 import logoReversed from "../assets/brand/uniconnect_horizontal_reversed.svg"
@@ -11,6 +11,7 @@ import { daysUntil, formatDay, nextEvent } from "../lib/date"
 import { initialOf } from "../lib/format"
 import type { NotificationItem } from "../lib/notifications"
 import type { Account, NavLabel, Role } from "../types"
+import { AccountPanel } from "./AccountPanel"
 import { NotificationsPanel } from "./NotificationsPanel"
 
 // The introduction's sections, for the header's links there.
@@ -53,6 +54,7 @@ export function Header({
   onCloseNotifications,
   onReadNotices,
   onOpenProfile,
+  onLogout,
   onLogin,
   onSignup,
   onOpenMenu,
@@ -93,11 +95,16 @@ export function Header({
   // Marks notices read: one opened, or all with 모두 읽음.
   onReadNotices: (items: NotificationItem[]) => void
   onOpenProfile: () => void
+  onLogout: () => void
   onLogin: () => void
   onSignup: () => void
   onOpenMenu: () => void
 }) {
   const bellRef = useRef<HTMLButtonElement>(null)
+  const accountRef = useRef<HTMLButtonElement>(null)
+  // The account panel; it and the notifications never hang open together.
+  const [accountOpen, setAccountOpen] = useState(false)
+  const closeAccount = useCallback(() => setAccountOpen(false), [])
   const unread = notifications.filter(isUnread).length
   const brandRef = useRef<HTMLButtonElement>(null)
   const [scrolled, setScrolled] = useState(false)
@@ -244,14 +251,28 @@ export function Header({
                 aria-controls="notifications-panel"
                 aria-expanded={notificationsOpen}
                 aria-label={unread > 0 ? t("알림, 읽지 않은 {count}개", { count: unread }) : t("알림")}
-                onClick={onToggleNotifications}
+                onClick={() => {
+                  setAccountOpen(false)
+                  onToggleNotifications()
+                }}
                 ref={bellRef}
                 type="button"
               >
                 <Icon name="bell" size={17} />
                 {unread > 0 && <span className="notification-dot" />}
               </button>
-              <button className="account-button" aria-label={t("내 정보")} onClick={onOpenProfile} type="button">
+              <button
+                className={accountOpen ? "account-button active" : "account-button"}
+                aria-controls="account-panel"
+                aria-expanded={accountOpen}
+                aria-label={t("내 계정")}
+                onClick={() => {
+                  onCloseNotifications()
+                  setAccountOpen((open) => !open)
+                }}
+                ref={accountRef}
+                type="button"
+              >
                 {initialOf(account.name)}
               </button>
             </div>
@@ -273,7 +294,10 @@ export function Header({
           aria-expanded={menuOpen}
           aria-label={t("전체 메뉴")}
           className="nav-pill menu-pill"
-          onClick={onOpenMenu}
+          onClick={() => {
+            setAccountOpen(false)
+            onOpenMenu()
+          }}
           type="button"
         >
           <Icon name="menu" size={15} />
@@ -281,6 +305,24 @@ export function Header({
         </button>
 
       </div>
+
+      <Presence show={accountOpen && account !== null}>
+        {account && (
+          <AccountPanel
+            account={account}
+            toggleRef={accountRef}
+            onClose={closeAccount}
+            onOpenProfile={() => {
+              setAccountOpen(false)
+              onOpenProfile()
+            }}
+            onLogout={() => {
+              setAccountOpen(false)
+              onLogout()
+            }}
+          />
+        )}
+      </Presence>
 
       <Presence show={notificationsOpen && account !== null}>
         <NotificationsPanel
