@@ -175,8 +175,8 @@ const en: Record<string, string> = {
     "To remember the login status, the access token is kept in browser storage (localStorage). It is deleted upon logout.",
   "첫 화면 소개 애니메이션을 한 번만 보여 주고, 앞으로·뒤로 이동을 기억하려고 탭을 닫으면 사라지는 저장소(sessionStorage)를 써요.":
     "To show the opening animation only once and to remember forward and back navigation, storage that is cleared when the tab is closed (sessionStorage) is used.",
-  "방문 통계(Google Analytics)를 켜면 이름, 이메일, 메시지 내용은 보내지 않고 버튼 사용과 가입 같은 이벤트만 보내요. 지금은 꺼져 있어요.":
-    "If visit statistics (Google Analytics) are turned on, only events such as button use and sign-ups are sent, and no names, email addresses or message content. This is currently turned off.",
+  "방문 통계를 내려고 Google Analytics를 써요. Google이 브라우저에 쿠키(_ga로 시작, 최대 2년)를 두고 본 화면의 주소, 기기와 브라우저 종류, 대략적인 지역, 버튼 사용과 가입 같은 이벤트를 받아요. 이름, 이메일, 메시지 내용은 보내지 않아요. 쿠키는 브라우저 설정에서 지우거나 막을 수 있어요.":
+    "Google Analytics is used for visit statistics. Google places cookies in the browser (starting with _ga, for up to 2 years) and receives the address of the screens viewed, the device and browser type, the approximate region, and events such as button use and sign-ups. No names, email addresses or message content are sent. The cookies can be deleted or blocked in the browser settings.",
   "제3자 제공과 처리 위탁": "Provision to Third Parties and Outsourcing of Processing",
   "회원의 개인정보를 다른 회사에 제공하지 않아요.":
     "Members' personal information is not provided to other companies.",
@@ -184,6 +184,8 @@ const en: Record<string, string> = {
     "Once a mail service is connected, email addresses and the content of the emails are entrusted to the mail delivery company Resend (United States) to send verification emails and notices (new sponsorship proposals and answers, new messages, upcoming dates, provisional e-contracts and reviews, answers to questions, weekly picks). After sending, that company's retention policy applies. It is not connected at the moment.",
   "서비스를 운영하기 위해 회원 정보와 서비스의 모든 데이터(계정, 소개, 행사, 협찬 제안, 메시지, 임시 전자 계약서와 증빙 사진, 후기)를 서버 호스팅 업체 Vercel(미국, 서버는 싱가포르)과 데이터베이스 업체 Neon(미국, 저장 위치는 싱가포르)에 맡겨요. 회원이 탈퇴하거나 서비스를 마칠 때까지 맡기고, 백업은 아래처럼 최대 24시간 남아요.":
     "To run the service, member information and all of the service's data (accounts, introductions, events, sponsorship proposals, messages, provisional e-contracts and proof photos, reviews) are entrusted to the hosting provider Vercel (USA; servers in Singapore) and the database provider Neon (USA; stored in Singapore). They are entrusted until a member leaves or the service ends, and backups remain for up to 24 hours as described below.",
+  "방문 통계를 내기 위해 본 화면의 주소, 버튼 사용 같은 이용 기록, 쿠키 식별자와 기기 정보를 Google(미국)의 Google Analytics에 맡겨요. Google은 이 기록을 최대 14개월 보관하고, 이름, 이메일, 메시지 내용은 보내지 않아요.":
+    "To produce visit statistics, the addresses of the screens viewed, usage records such as button use, cookie identifiers and device information are entrusted to Google Analytics by Google (United States). Google keeps these records for up to 14 months, and no names, email addresses or message content are sent.",
   "그 밖에 새로 맡기는 일이 생기면 받는 곳과 맡기는 일을 이곳에 먼저 적고 알려 드려요.":
     "If any other processing is newly outsourced, the recipient and the outsourced task will first be listed here and members will be notified.",
   "다른 회원에게 보이는 정보": "Information Visible to Other Members",
