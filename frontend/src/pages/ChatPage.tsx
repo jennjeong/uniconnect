@@ -9,8 +9,8 @@ import { saveFile } from "../lib/download"
 import { photoFromFile } from "../lib/image"
 import type { ChatAttachment, ChatMessage, Conversation } from "../types"
 
-// How often an open conversation checks for new messages.
-const refreshMs = 4000
+// How long an open conversation waits to ask again after a failed request.
+const retryMs = 4000
 
 // As large a PDF as the server takes (routes/conversations.ts).
 const pdfMaxBytes = 2 * 1024 * 1024
@@ -109,8 +109,9 @@ function ChatFile({
 }
 
 // One conversation: messages (own on the right), and a box to write more.
-// It checks for replies every few seconds while open, which also brings in
-// the partner's read marks, edits and deletions. Own messages say whether
+// While open and in view it keeps one request waiting on the server, which
+// answers as soon as anything changes, so replies, the partner's read marks,
+// edits and deletions show at once. Own messages say whether
 // they were read and can be edited or deleted from a menu: pressed and held
 // on a touch screen, right-clicked with a mouse, or opened from a ⋯ button
 // the keyboard reaches. Both sides then see "수정됨" or a deleted message in
@@ -167,38 +168,57 @@ export function ChatPage({
 
   useEffect(() => {
     let cancelled = false
-    let timer: number | undefined
-    // Only the newest check applies, whatever order the answers come in.
-    let latest = 0
-    const stop = () => window.clearInterval(timer)
-    const load = () => {
-      const check = ++latest
-      const startedAt = changes.current
-      api
-        .conversation(id)
-        .then(({ conversation: loaded }) => {
-          if (cancelled || check !== latest || startedAt !== changes.current) return
+    const aborter = new AbortController()
+    const pause = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms))
+    // A hidden page keeps no request waiting, and asks again once seen.
+    const shown = () =>
+      document.hidden
+        ? new Promise<void>((resolve) => {
+            const seen = () => {
+              if (document.hidden) return
+              document.removeEventListener("visibilitychange", seen)
+              resolve()
+            }
+            document.addEventListener("visibilitychange", seen)
+          })
+        : Promise.resolve()
+    const listen = async () => {
+      // What the page shows, as the server stamped it; none asks at once.
+      let stamp: string | undefined
+      while (!cancelled) {
+        await shown()
+        if (cancelled) return
+        const startedAt = changes.current
+        try {
+          const { conversation: loaded, stamp: next } = await api.conversation(id, stamp, aborter.signal)
+          if (cancelled) return
+          // A send, edit or delete meanwhile shows newer messages: ask again at once.
+          if (startedAt !== changes.current) {
+            stamp = undefined
+            continue
+          }
+          stamp = next
           setConversation(loaded)
           onChange(loaded)
           setError("")
-        })
-        .catch((problem) => {
+        } catch (problem) {
           if (cancelled) return
           if (problem instanceof ApiError && problem.status === 401) {
-            stop()
             onSessionEnd(problem)
             return
           }
-          // The partner left or the conversation is gone: nothing more to check.
-          if (problem instanceof ApiError && problem.status === 404) stop()
           setError(errorMessage(problem))
-        })
+          // The partner left or the conversation is gone: nothing more to wait for.
+          if (problem instanceof ApiError && problem.status === 404) return
+          stamp = undefined
+          await pause(retryMs)
+        }
+      }
     }
-    load()
-    timer = window.setInterval(load, refreshMs)
+    void listen()
     return () => {
       cancelled = true
-      stop()
+      aborter.abort()
     }
   }, [id, onChange, onSessionEnd])
 

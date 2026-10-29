@@ -43,6 +43,8 @@ type RequestOptions = {
   query?: Record<string, string>
   // Extra headers, such as the operators' X-Admin-Token.
   headers?: Record<string, string>
+  // Stops a request the page no longer waits for (an open chat's).
+  signal?: AbortSignal
 }
 
 // A file the API serves only to a logged-in account (an agreement's photo),
@@ -75,6 +77,7 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
         ...options.headers,
       },
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      signal: options.signal,
     })
   } catch {
     throw new ApiError(0, unreachable)

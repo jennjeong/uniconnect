@@ -290,8 +290,13 @@ export const api = {
       method: "POST",
       body: { partnerId },
     }),
-  conversation: (id: string) =>
-    request<{ conversation: Conversation }>(`/conversations/${encodeURIComponent(id)}`),
+  // With `since` (the stamp of what the page shows) the answer waits, up to
+  // about 20 seconds, for something new.
+  conversation: (id: string, since?: string, signal?: AbortSignal) =>
+    request<{ conversation: Conversation; stamp: string }>(`/conversations/${encodeURIComponent(id)}`, {
+      ...(since ? { query: { since } } : {}),
+      signal,
+    }),
   sendMessage: (id: string, text: string) =>
     request<{ conversation: Conversation }>(
       `/conversations/${encodeURIComponent(id)}/messages`,
