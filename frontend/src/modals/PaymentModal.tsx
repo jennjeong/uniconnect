@@ -78,6 +78,9 @@ export function PaymentModal({
   return createPortal(
     <Modal kicker="Payment" name="payment" onClose={onClose} title={title}>
       <div className="payment-sheet">
+        {billing?.testMode && (
+          <p className="payment-test">{t("테스트 결제예요. 결제창을 끝까지 진행해도 실제로 돈이 빠져나가지 않아요.")}</p>
+        )}
         <dl className="payment-lines">
           {lines.map((line) => (
             <div key={line.label}>

@@ -11634,6 +11634,16 @@ button.nav-pill:hover {
   gap: 8px;
 }
 
+.payment-test {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--orange-soft);
+  color: var(--orange);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
 .payment-note {
   margin: 0;
   padding: 12px 14px;

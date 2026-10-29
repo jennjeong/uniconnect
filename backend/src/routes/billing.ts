@@ -1,7 +1,7 @@
 import { Router } from "express"
 
 import { config } from "../config.js"
-import { cardReady, markPaid, orderFor, paymentsOf, paymentView, prices, toss } from "../lib/billing.js"
+import { cardReady, markPaid, orderFor, paymentsOf, paymentView, prices, testMode, toss } from "../lib/billing.js"
 import { HttpError } from "../lib/errors.js"
 // What brands can buy, each registered with lib/billing.ts.
 import "../lib/feeSales.js"
@@ -25,6 +25,9 @@ billingRouter.get("/", (req, res) => {
   res.json({
     prices,
     card: cardReady() ? { clientKey: config.tossClientKey } : null,
+    // Test payments move no money; the demo accounts pay only then.
+    testMode: testMode(),
+    canPay: account.role === "브랜드" && (!isDemoAccount(database, account) || testMode()),
     plan: planOf(database, account),
     payments: paymentsOf(database)
       .filter((payment) => payment.accountId === account.id)
@@ -38,7 +41,7 @@ billingRouter.get("/", (req, res) => {
 billingRouter.post("/orders", async (req, res) => {
   const account = requireAccount(req)
   const database = getDatabase()
-  if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 결제할 수 없어요.")
+  if (isDemoAccount(database, account) && !testMode()) throw new HttpError(403, "데모 계정은 테스트 결제로만 시연할 수 있어요.")
   if (account.role !== "브랜드") throw new HttpError(403, "결제는 브랜드 계정만 해요.")
   const payment = orderFor(database, account, text(req.body?.kind), text(req.body?.targetId))
   await saveDatabase()

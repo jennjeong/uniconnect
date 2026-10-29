@@ -1,5 +1,5 @@
 import type { AcceptedProposal } from "./agreements.js"
-import { paymentsOf, prices } from "./billing.js"
+import { paymentsOf, prices, testMode } from "./billing.js"
 import { HttpError } from "./errors.js"
 import { isDemoAccount } from "./reviews.js"
 import type { Agreement, Database } from "../types.js"
@@ -9,8 +9,10 @@ import type { Agreement, Database } from "../types.js"
 // included; the student group pays nothing. The brand's confirmation of the
 // e-contract is that payment (sold in lib/feeSales.ts).
 
-// Proposals accepted before fees began (a Korean date) owe none, nor do the
-// shared demo accounts or a brand without an account (an example listing).
+// Proposals accepted before fees began (a Korean date) owe none, nor does a
+// brand without an account (an example listing); the shared demo brand owes
+// one only in test mode, to show it (lib/billing.ts testMode), whatever
+// the date.
 // The browser tests move it with FEES_SINCE, the server tests here.
 export const feeStart = { since: process.env.FEES_SINCE ?? "2026-11-01" }
 
@@ -39,10 +41,11 @@ export const feeOf = (value: { cash: number; inKind: number }) =>
 // written, what the brand paid for it and what is still due.
 export function feeState(database: Database, agreement: Agreement, proposal: AcceptedProposal) {
   const brand = proposal.brand.account
-  const exempt =
-    !brand ||
-    isDemoAccount(database, brand) ||
-    (proposal.respondedAt !== undefined && proposal.respondedAt.slice(0, 10) < feeStart.since)
+  const exempt = !brand
+    ? true
+    : isDemoAccount(database, brand)
+      ? !testMode()
+      : proposal.respondedAt !== undefined && proposal.respondedAt.slice(0, 10) < feeStart.since
   const amount = agreement.value ? feeOf(agreement.value) : 0
   const paid = paymentsOf(database)
     .filter((payment) => payment.kind === "fee" && payment.targetId === agreement.id && payment.status === "paid")

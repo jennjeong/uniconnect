@@ -1402,3 +1402,18 @@ test("a brand sees its plan in 내 정보 and asks to start Pro", async ({ page,
   await expect(page.getByText("계좌 입금을 요청했어요. 입금이 확인되면 프로가 시작돼요.")).toBeVisible()
   expect((await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: brand.headers })).status()).toBe(204)
 })
+
+test("the demo brand's 내 정보 shows its plan and payments; without test keys it can't pay", async ({ page }) => {
+  await page.goto("/")
+  await page.getByRole("button", { name: "로그인", exact: true }).first().click()
+  const dialog = page.getByRole("dialog", { name: "로그인" })
+  await dialog.getByRole("button", { name: /오후의 커피/ }).click()
+  await expect(dialog).toBeHidden()
+  await page.goto("/me")
+  const card = page.getByRole("region", { name: "요금제" })
+  await expect(card).toContainText("무료 요금제")
+  await expect(card.getByRole("button", { name: "프로 시작하기" })).toBeDisabled()
+  await expect(card).toContainText("데모 계정은 테스트 결제로만 시연할 수 있어요.")
+  await page.getByRole("button", { name: "결제 내역" }).click()
+  await expect(page.getByRole("dialog", { name: "결제 내역" })).toBeVisible()
+})

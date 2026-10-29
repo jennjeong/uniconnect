@@ -21,6 +21,10 @@ export const prices = {
 // brands can still ask to pay by bank transfer, which an operator confirms.
 export const cardReady = () => Boolean(config.tossClientKey && config.tossSecretKey)
 
+// Test keys (test_…): no money moves, so the shared demo accounts may pay
+// too, to show the whole flow in a demonstration. With live keys they can't.
+export const testMode = () => cardReady() && (config.tossSecretKey ?? "").startsWith("test_")
+
 const tossApi = "https://api.tosspayments.com/v1/payments"
 const tossAuth = () => `Basic ${Buffer.from(`${config.tossSecretKey ?? ""}:`).toString("base64")}`
 

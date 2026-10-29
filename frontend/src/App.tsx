@@ -1456,8 +1456,8 @@ function App() {
           onChangePassword={() => setActiveModal("password")}
           onTwoFactor={member ? () => setActiveModal("two-factor") : undefined}
           onDevices={member ? () => setActiveModal("devices") : undefined}
-          onPayments={member && account?.role === "브랜드" ? () => setActiveModal("payments") : undefined}
-          onPlan={member && account?.role === "브랜드" ? showNotice : undefined}
+          onPayments={account?.role === "브랜드" ? () => setActiveModal("payments") : undefined}
+          onPlan={account?.role === "브랜드" ? showNotice : undefined}
           onTeam={member ? () => setActiveModal("team") : undefined}
           onCouncil={member && account && councilTypes.includes(account.type) ? () => go({ page, council: true }) : undefined}
           onCouncilLink={member && account?.role === "학생단체" ? () => setActiveModal("council-link") : undefined}

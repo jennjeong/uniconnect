@@ -191,6 +191,9 @@ export type Payment = {
 export type BillingInfo = {
   prices: { feeRate: number; report: number; pro: number; proDays: number }
   card: { clientKey: string } | null
+  // Toss test keys: no money moves, and the demo accounts may pay to show it.
+  testMode: boolean
+  canPay: boolean
   payments: Payment[]
   // The brand's plan (backend lib/pro.ts): Pro until a Korean day, and this
   // month's proposals against the free plan's limit.
