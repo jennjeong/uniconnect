@@ -4953,3 +4953,43 @@ test("a participant answers the optional survey once, counted only per event", a
   // Nothing about the answer is kept with the pass but that it answered.
   assert.deepEqual(after.passes[scanned.pass], { surveyed: true })
 })
+
+test("the operators' console lists what needs them, members with their record, and every proposal", async () => {
+  const saved = config.adminToken
+  config.adminToken = "test-admin-token"
+  const admin = (route: string, body?: unknown) =>
+    fetch(`${baseUrl}/admin${route}`, {
+      method: body === undefined ? "GET" : "POST",
+      headers: { "Content-Type": "application/json", "X-Admin-Token": "test-admin-token" },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    }).then(async (response) => ({ status: response.status, data: (await response.json()) as Record<string, any> }))
+  try {
+    assert.equal((await fetch(`${baseUrl}/admin/overview`)).status, 403)
+    const seen = (await admin("/overview")).data
+    assert.equal(seen.weekly.length, 8)
+    assert.deepEqual(Object.keys(seen.attention).sort(), ["inquiries", "reports", "suspended", "transfers"])
+    assert.deepEqual(Object.keys(seen.revenue.byKind).sort(), ["fee", "pro", "report"])
+
+    await signUpMember("console@syu.ac.kr", "console-pass-123")
+    const found = (await admin("/accounts?q=console%40syu")).data.accounts
+    assert.equal(found.length, 1)
+    assert.equal(found[0].role, "학생단체")
+    assert.equal(found[0].passwordHash, undefined)
+    assert.ok((await admin("/accounts?role=브랜드")).data.accounts.every((row: { role: string }) => row.role === "브랜드"))
+    assert.ok((await admin("/accounts?state=demo")).data.accounts.every((row: { demo: boolean }) => row.demo))
+
+    const detail = (await admin(`/accounts/${found[0].id}`)).data.account
+    assert.deepEqual([detail.email, detail.sessions], ["console@syu.ac.kr", 1])
+    const stopped = (await admin(`/accounts/${found[0].id}/suspend`, {})).data.account
+    assert.ok(stopped.suspendedAt)
+    assert.equal(stopped.sessions, 0)
+    const demoId = getDatabase().demoAccountIds.학생단체
+    assert.equal((await admin(`/accounts/${demoId}/suspend`, {})).status, 403)
+
+    const proposals = (await admin("/proposals")).data.proposals
+    assert.ok(proposals.length > 0)
+    assert.ok(proposals.every((row: { from: string; status: string }) => row.from && row.status))
+  } finally {
+    config.adminToken = saved
+  }
+})

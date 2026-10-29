@@ -931,3 +931,55 @@ export type Portfolio = {
   weakest: PortfolioRow | null
   rows: PortfolioRow[]
 }
+
+// The operators' console (backend lib/console.ts).
+export type AdminOverview = {
+  stats: PlatformStats
+  weekly: { week: string; signups: number; proposals: number; accepted: number }[]
+  revenue: { total: number; thisMonth: number; byKind: Record<PaymentKind, number>; partners: number }
+  attention: { inquiries: number; reports: number; transfers: number; suspended: number }
+}
+
+export type AdminMember = {
+  id: string
+  name: string
+  role: Role
+  type: string
+  email: string
+  school: string
+  createdAt: string
+  lastSeen?: string
+  suspendedAt?: string
+  demo: boolean
+  partnersUntil: string | null
+  listed: boolean
+  paused: boolean
+  events: number
+  sent: number
+  sponsorships: number
+  business: boolean
+}
+
+export type AdminProposalRow = {
+  id: string
+  kind: "request" | "offer"
+  from: string
+  to: string
+  event: string
+  date: string
+  status: string
+  createdAt: string
+  example: boolean
+  confirmed: boolean
+}
+
+export type AdminMemberDetail = AdminMember & {
+  contact?: AccountContact
+  eventList: { id: string; name: string; date: string; endDate?: string; people?: string }[]
+  sentList: { id: string; partner: string; event: string; status: string; createdAt: string }[]
+  receivedList: { id: string; partner: string; event: string; status: string; createdAt: string }[]
+  payments: { id: string; orderName: string; amount: number; status: Payment["status"]; at: string }[]
+  inquiries: number
+  reportsAbout: number
+  sessions: number
+}

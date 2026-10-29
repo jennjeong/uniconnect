@@ -40,6 +40,8 @@ export default defineConfig({
       NOMINATIM_URL: "",
       // Fees from any day, so today's sponsorships owe one.
       FEES_SINCE: "2000-01-01",
+      // The operators' console opens with this in the browser tests only.
+      ADMIN_TOKEN: "e2e-admin-token",
       CODES_PER_CLIENT: "200",
     },
     timeout: 60_000,

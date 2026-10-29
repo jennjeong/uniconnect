@@ -3,6 +3,10 @@ import type {
   AccountContact,
   AdminInquiry,
   AdminPayment,
+  AdminMember,
+  AdminMemberDetail,
+  AdminOverview,
+  AdminProposalRow,
   InsightAnswer,
   PremiumReport,
   Portfolio,
@@ -343,6 +347,21 @@ export const api = {
       body: { action },
       headers: { "X-Admin-Token": token },
     }),
+  adminOverview: (token: string) => request<AdminOverview>("/admin/overview", { headers: { "X-Admin-Token": token } }),
+  adminAccounts: (token: string, filters: { q?: string; role?: string; state?: string }) => {
+    const query = new URLSearchParams(Object.entries(filters).filter(([, value]) => value) as [string, string][]).toString()
+    return request<{ accounts: AdminMember[] }>(`/admin/accounts${query ? `?${query}` : ""}`, { headers: { "X-Admin-Token": token } })
+  },
+  adminAccount: (token: string, id: string) =>
+    request<{ account: AdminMemberDetail }>(`/admin/accounts/${encodeURIComponent(id)}`, { headers: { "X-Admin-Token": token } }),
+  adminSuspend: (token: string, id: string) =>
+    request<{ account: AdminMemberDetail }>(`/admin/accounts/${encodeURIComponent(id)}/suspend`, {
+      method: "POST",
+      body: {},
+      headers: { "X-Admin-Token": token },
+    }),
+  adminProposals: (token: string) =>
+    request<{ proposals: AdminProposalRow[] }>("/admin/proposals", { headers: { "X-Admin-Token": token } }),
   adminPayments: (token: string) =>
     request<{ payments: AdminPayment[] }>("/admin/payments", { headers: { "X-Admin-Token": token } }),
   adminMarkPaid: (token: string, id: string) =>

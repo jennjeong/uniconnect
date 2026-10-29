@@ -39,6 +39,18 @@ if (checkIn) {
   keepOutOfSearch()
 }
 
+// The operators' console (/admin) stands on its own too, with no member
+// header, menu or footer around it.
+const adminConsole = window.location.pathname.replace(/\/$/, '') === '/admin'
+if (adminConsole) {
+  document.body.classList.add('console-body')
+  document.title = 'uniconnect Admin'
+  keepOutOfSearch()
+}
+
+// Loaded only there, so members never download it.
+const AdminConsole = React.lazy(() => import('./pages/AdminPage').then((module) => ({ default: module.AdminConsole })))
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     {checkIn ? (
@@ -49,6 +61,10 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       ) : (
         <CheckInPage code={checkIn.code} />
       )
+    ) : adminConsole ? (
+      <React.Suspense fallback={null}>
+        <AdminConsole />
+      </React.Suspense>
     ) : (
       <App />
     )}

@@ -343,6 +343,8 @@ const en: Record<string, string> = {
   "데모 계정은 리포트를 공유할 수 없어요.": "The demo accounts can't share reports.",
   "상세 리포트를 산 뒤에 공유할 수 있어요.": "Buy the detailed report to share it.",
   "공유가 끝났거나 없는 리포트예요.": "This report is no longer shared, or doesn't exist.",
+  // The operators' console (routes/admin.ts)
+  "회원을 찾을 수 없어요.": "We couldn't find that member.",
   // The participants' optional survey (routes/checkin.ts)
   "이미 설문에 답했어요.": "You've already answered the survey.",
   "답을 하나 이상 골라 주세요.": "Please choose at least one answer.",

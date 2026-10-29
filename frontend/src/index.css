@@ -11636,6 +11636,557 @@ button.nav-pill:hover {
   }
 }
 
+/* The operators' console (/admin, pages/AdminPage.tsx), on its own page:
+   a deep navy side menu with counts, a top bar, and white cards of tables
+   on the canvas; a member opens beside the list. */
+.console-body {
+  background: var(--canvas);
+}
+
+.console-login {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+  background: radial-gradient(110% 90% at 70% 20%, #1f4cb3 0%, #0b1a3e 72%);
+}
+
+.console-login-card {
+  display: grid;
+  gap: 14px;
+  width: min(420px, 100%);
+  padding: 32px;
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: 0 30px 80px rgba(8, 20, 52, 0.4);
+}
+
+.console-login-card img {
+  height: 26px;
+  justify-self: start;
+}
+
+.console-login-card h1 {
+  margin: 4px 0 0;
+  font-size: 24px;
+}
+
+.console-login-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.console-login-card label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.console {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.console-side {
+  --surface-tone: dark;
+  position: sticky;
+  top: 0;
+  display: flex;
+  height: 100vh;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px 16px;
+  background: #0b1a3e;
+  color: #fff;
+}
+
+.console-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px;
+}
+
+.console-brand img {
+  height: 22px;
+}
+
+.console-brand span {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  font-size: 11px;
+  font-weight: var(--weight-badge);
+  letter-spacing: 0.06em;
+}
+
+.console-side nav {
+  display: grid;
+  gap: 4px;
+}
+
+.console-side nav button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 14px;
+  font-weight: var(--weight-label);
+  text-align: left;
+}
+
+.console-side nav button:hover,
+.console-side nav button.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.console-side nav button .icon {
+  stroke: currentColor;
+}
+
+.console-side nav em {
+  margin-left: auto;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--goal-mark);
+  color: #fff;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: var(--weight-badge);
+}
+
+.console-side-foot {
+  display: grid;
+  gap: 8px;
+  margin-top: auto;
+  padding: 0 12px;
+}
+
+.console-side-foot a,
+.console-side-foot button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  text-align: left;
+  text-decoration: none;
+}
+
+.console-main {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  min-width: 0;
+  padding: 28px 32px 48px;
+}
+
+.console-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.console-top h1 {
+  margin: 0;
+  font-size: 26px;
+}
+
+.console-top > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.console-top small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.console-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.console-card {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  min-width: 0;
+  padding: 22px;
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: var(--ring);
+}
+
+.console-card.wide {
+  grid-column: 1 / -1;
+}
+
+.console-card h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.console-card h3 {
+  margin: 8px 0 0;
+  font-size: 14px;
+}
+
+.console-todo {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.console-todo button {
+  display: grid;
+  gap: 4px;
+  padding: 16px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--fill);
+  color: var(--ink-soft);
+  font-size: 13px;
+  text-align: left;
+}
+
+.console-todo button strong {
+  color: var(--ink);
+  font-size: 28px;
+}
+
+.console-todo button.hot {
+  background: var(--orange-soft);
+  color: var(--orange);
+}
+
+.console-todo button.hot strong {
+  color: var(--orange);
+}
+
+.console-revenue {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.console-revenue > div {
+  display: grid;
+  gap: 2px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--fill);
+}
+
+.console-revenue > div:first-child {
+  background: var(--point);
+  color: var(--on-point);
+}
+
+.console-revenue dt {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.console-revenue dd {
+  display: grid;
+  margin: 0;
+  font-size: 18px;
+  font-weight: var(--weight-strong);
+}
+
+.console-revenue dd small {
+  font-size: 11px;
+  font-weight: var(--weight-body);
+  opacity: 0.7;
+}
+
+.console-trends {
+  display: grid;
+  gap: 14px;
+}
+
+.console-trend {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.console-trend figcaption {
+  display: flex;
+  justify-content: space-between;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.console-trend > div {
+  display: flex;
+  height: 48px;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.console-trend span {
+  display: flex;
+  height: 100%;
+  flex: 1;
+  align-items: flex-end;
+}
+
+.console-trend i {
+  display: block;
+  width: 100%;
+  min-height: 2px;
+  border-radius: 4px 4px 0 0;
+  background: var(--goal-met);
+}
+
+.console-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.console-filters input,
+.console-filters select {
+  height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--fill);
+  font: inherit;
+  font-size: 14px;
+}
+
+.console-filters input {
+  min-width: 240px;
+  flex: 1;
+}
+
+.console-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.console-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.console-table th,
+.console-table td {
+  padding: 11px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.console-table thead th {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: var(--weight-label);
+}
+
+.console-table tbody tr {
+  cursor: pointer;
+}
+
+.console-table tbody tr:hover,
+.console-table tbody tr.selected {
+  background: var(--point-tint);
+}
+
+.console-table small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.console-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-weight: var(--weight-label);
+  text-align: left;
+}
+
+.console-tag {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: var(--weight-badge);
+  white-space: nowrap;
+}
+
+.console-tag.blue {
+  background: var(--point);
+  color: var(--on-point);
+}
+
+.console-tag.red {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+.console-split {
+  display: grid;
+  gap: 18px;
+}
+
+.console-split.open {
+  grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr);
+  align-items: start;
+}
+
+.console-detail {
+  position: sticky;
+  top: 20px;
+}
+
+.console-detail header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.console-detail header strong {
+  display: block;
+  font-size: 18px;
+}
+
+.console-detail header small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.console-icon {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--fill);
+}
+
+.console-facts {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.console-facts > div {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 8px;
+  font-size: 13px;
+}
+
+.console-facts dt {
+  color: var(--muted);
+}
+
+.console-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.console-list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+}
+
+.console-list li {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--fill);
+}
+
+.console-list em {
+  float: right;
+  color: var(--point-strong);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: var(--weight-label);
+}
+
+.console-list small {
+  margin-left: 6px;
+  color: var(--muted);
+}
+
+@media (max-width: 960px) {
+  .console {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .console-side {
+    position: static;
+    height: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .console-side nav {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .console-side-foot {
+    flex-direction: row;
+    margin: 0 0 0 auto;
+  }
+
+  .console-grid,
+  .console-split.open {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .console-todo {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .console-main {
+    padding: 20px 16px 40px;
+  }
+
+  .console-table {
+    display: block;
+    overflow-x: auto;
+  }
+}
+
 /* 캠퍼스 포트폴리오 on 성과 분석 (components/CampusPortfolio.tsx): totals,
    three groupings as ROAS bars, the best and weakest, and the budget planner. */
 .portfolio-card {

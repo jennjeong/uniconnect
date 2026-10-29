@@ -3,6 +3,7 @@ import { Router, type Request } from "express"
 
 import { config } from "../config.js"
 import { markCancelled, markPaid, paymentsOf, toss } from "../lib/billing.js"
+import { memberDetail, memberRow, overview, proposalRows } from "../lib/console.js"
 import { recentErrors } from "../lib/errorLog.js"
 import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
@@ -207,4 +208,58 @@ adminRouter.post("/inquiries/:id/answer", async (req, res) => {
     )
   }
   res.json({ inquiry })
+})
+
+// The console's overview: what needs the operators, the figures, eight
+// weeks of trend and the revenue (lib/console.ts).
+adminRouter.get("/overview", async (req, res) => {
+  await requireAdmin(req)
+  res.json(overview(getDatabase()))
+})
+
+// Every member, newest first, searched by name, email or school and
+// filtered by side and state.
+adminRouter.get("/accounts", async (req, res) => {
+  await requireAdmin(req)
+  const database = getDatabase()
+  const query = text(req.query.q).toLowerCase()
+  const role = text(req.query.role)
+  const state = text(req.query.state)
+  const rows = database.accounts
+    .map((account) => memberRow(database, account))
+    .filter((row) => !query || [row.name, row.email, row.school].some((value) => value.toLowerCase().includes(query)))
+    .filter((row) => !role || row.role === role)
+    .filter((row) =>
+      state === "suspended" ? Boolean(row.suspendedAt) : state === "partners" ? row.partnersUntil !== null : state === "demo" ? row.demo : true,
+    )
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  res.json({ accounts: rows })
+})
+
+adminRouter.get("/accounts/:id", async (req, res) => {
+  await requireAdmin(req)
+  const database = getDatabase()
+  const account = database.accounts.find((item) => item.id === req.params.id)
+  if (!account) throw new HttpError(404, "회원을 찾을 수 없어요.")
+  res.json({ account: memberDetail(database, account) })
+})
+
+// Stops a member directly (it can't log in, gets no email and shows to no
+// one; its sessions end), as a report's suspension does.
+adminRouter.post("/accounts/:id/suspend", async (req, res) => {
+  await requireAdmin(req)
+  const database = getDatabase()
+  const account = database.accounts.find((item) => item.id === req.params.id)
+  if (!account) throw new HttpError(404, "회원을 찾을 수 없어요.")
+  if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 정지할 수 없어요.")
+  account.suspendedAt ??= new Date().toISOString()
+  database.sessions = database.sessions.filter((session) => session.accountId !== account.id)
+  await saveDatabase()
+  res.json({ account: memberDetail(database, account) })
+})
+
+// Every proposal, newest first.
+adminRouter.get("/proposals", async (req, res) => {
+  await requireAdmin(req)
+  res.json({ proposals: proposalRows(getDatabase()) })
 })
