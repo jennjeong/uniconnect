@@ -155,9 +155,21 @@ export type Account = {
   // as made, so 내 정보 can show it again, and never in the account's data
   // the app gets.
   calendarFeed?: { token: string; createdAt: string }
+  // Two-step login with an authenticator app (lib/totp.ts): the secret,
+  // when it was turned on, the hashes of the recovery codes not yet used and
+  // the last code's step, so each code works once. `pendingTwoFactor` is a
+  // secret shown for setting up, not yet confirmed with a code.
+  twoFactor?: { secret: string; enabledAt: string; recoveryHashes: string[]; usedStep?: number }
+  pendingTwoFactor?: { secret: string; createdAt: number }
+  // A login that passed the password and waits for its code: the hash of
+  // the ticket the browser holds, until when, and wrong codes so far.
+  loginTicket?: { hash: string; expiresAt: number; tries: number; userAgent?: string }
 }
 
-export type PublicAccount = Omit<Account, "passwordHash" | "termsAgreedAt" | "calendarFeed">
+export type PublicAccount = Omit<
+  Account,
+  "passwordHash" | "termsAgreedAt" | "calendarFeed" | "twoFactor" | "pendingTwoFactor" | "loginTicket"
+> & { twoFactorOn?: true }
 
 export type Session = {
   // sha256 of the token the browser holds, so the data file alone cannot
@@ -165,6 +177,11 @@ export type Session = {
   tokenHash: string
   accountId: string
   expiresAt: number
+  // For the device list: the browser and system (lib/devices.ts), and when
+  // it logged in and was last used (updated at most hourly).
+  device?: string
+  createdAt?: number
+  lastUsedAt?: number
 }
 
 export type EmailCode = {

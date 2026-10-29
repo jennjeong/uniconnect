@@ -285,6 +285,8 @@ export type AccountContact = { name: string; position: string; phone: string }
 
 export type Account = {
   id: string
+  // Two-step login with an authenticator app is on.
+  twoFactorOn?: true
   role: Role
   name: string
   type: string
@@ -312,6 +314,13 @@ export type MailKind = "proposals" | "sponsorships" | "messages" | "reminders" |
 export type BusinessStatus = { ready: boolean; business: { number: string; verifiedAt: string } | null }
 
 export type Session = { token: string; account: Account }
+
+// A password that was right for an account with two-step login on: the
+// ticket to send back with the app's code (components/CodeStep.tsx).
+export type CodeTicket = { twoFactor: true; ticket: string }
+
+// One device logged in to the account (내 정보's 로그인한 기기).
+export type DeviceSession = { id: string; device: string; createdAt?: string; lastUsedAt?: string; current: boolean }
 
 // What the venue's staff count by the confirmation methods: samples or
 // tastings, booth stamps, SNS posts, survey answers, purchases, goods given
@@ -688,3 +697,5 @@ export type ModalName =
   | "post"
   | "safety"
   | "business"
+  | "two-factor"
+  | "devices"

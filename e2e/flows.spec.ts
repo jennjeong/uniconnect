@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises"
 
 import { expect, test, type Page } from "@playwright/test"
 
+import { codeAt, stepAt } from "../backend/src/lib/totp"
 import { signUpMember } from "./members"
 
 // The demo accounts' password (DEMO_PASSWORD in backend/src/data/seed.ts).
@@ -451,6 +452,55 @@ test("a group writes its event page on the form, adds a photo, and a brand reads
     const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: member.headers })
     expect(left.status()).toBe(204)
   }
+})
+
+test("a member turns on two-step login, logs in with the app's code, and sees its devices", async ({ page, request, browser }) => {
+  const member = await signUpMember(request, "학생단체", "e2e-2fa@syu.ac.kr", "보안 동아리")
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), member.token)
+  await page.goto("/me")
+
+  // On with the password, the app's key and its first code; the recovery codes show once.
+  await page.getByRole("button", { name: "2단계 인증 켜기" }).click()
+  const dialog = page.getByRole("dialog")
+  await dialog.getByLabel("지금 비밀번호").fill("e2e-pass-123")
+  await dialog.getByRole("button", { name: "다음" }).click()
+  await expect(dialog.getByRole("img", { name: "인증 앱으로 찍을 QR 코드" })).toBeVisible()
+  const secret = (await dialog.locator(".two-factor-key code").innerText()).replace(/\s/g, "")
+  await dialog.getByLabel("인증 코드").fill(codeAt(secret, stepAt(Date.now())))
+  await dialog.getByRole("button", { name: "확인하고 켜기" }).click()
+  await expect(dialog.locator(".recovery-codes li")).toHaveCount(10)
+  await dialog.getByRole("button", { name: "적어 뒀어요" }).click()
+  await expect(page.getByRole("button", { name: "2단계 인증 · 켜짐" })).toBeVisible()
+
+  // Logging in on another browser asks for the code after the password.
+  const other = await (await browser.newContext()).newPage()
+  await other.goto("/")
+  await other.getByRole("button", { name: "로그인", exact: true }).first().click()
+  const login = other.getByRole("dialog")
+  await login.getByLabel("이메일").fill("e2e-2fa@syu.ac.kr")
+  await login.getByLabel("비밀번호", { exact: true }).fill("e2e-pass-123")
+  await login.getByRole("button", { name: "학생단체로 로그인" }).click()
+  await login.getByLabel("인증 코드").fill("000000")
+  await login.getByRole("button", { name: "확인하고 로그인" }).click()
+  await expect(login.getByRole("alert")).toContainText("코드가 올바르지 않아요")
+  // The next step's code, as the first was used to turn it on.
+  await login.getByLabel("인증 코드").fill(codeAt(secret, stepAt(Date.now()) + 1))
+  await login.getByRole("button", { name: "확인하고 로그인" }).click()
+  await expect(login).toBeHidden()
+
+  // Its device list shows it and the first browser, which it can log out.
+  await other.goto("/me")
+  await other.getByRole("button", { name: "로그인한 기기" }).click()
+  const devices = other.getByRole("dialog")
+  await expect(devices.locator(".device-current")).toHaveText("이 기기")
+  await expect(devices.locator(".device-list li")).toHaveCount(2)
+  await devices.getByRole("button", { name: "다른 기기 모두 로그아웃" }).click()
+  await expect(devices.locator(".device-list li")).toHaveCount(1)
+  await expect(other.getByText("다른 기기에서 모두 로그아웃시켰어요.")).toBeVisible()
+  expect((await request.get("/api/auth/me", { headers: member.headers })).status()).toBe(401)
+  const token = await other.evaluate(() => localStorage.getItem("uniconnect-token"))
+  const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: { Authorization: `Bearer ${token}` } })
+  expect(left.status()).toBe(204)
 })
 
 test("an open conversation shows replies and reads as they happen", async ({ page, request, browser }) => {

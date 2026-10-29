@@ -46,6 +46,8 @@ export function ProfilePage({
   onNavigate,
   onLogout,
   onChangePassword,
+  onTwoFactor,
+  onDevices,
   onChangeContact,
   onChangeEmail,
   onDownloadData,
@@ -67,6 +69,9 @@ export function ProfilePage({
   onNavigate: (label: NavLabel) => void
   onLogout: () => void
   onChangePassword: () => void
+  // Two-step login and the device list; absent for the shared demo accounts.
+  onTwoFactor?: () => void
+  onDevices?: () => void
   // The person running the account (modals/ContactModal.tsx).
   onChangeContact: () => void
   onChangeEmail: () => void
@@ -351,6 +356,16 @@ export function ProfilePage({
             <Pill onClick={onChangePassword} variant="silver">
               {t("비밀번호 변경")}
             </Pill>
+            {onTwoFactor && (
+              <Pill onClick={onTwoFactor} variant="silver">
+                {account.twoFactorOn ? t("2단계 인증 · 켜짐") : t("2단계 인증 켜기")}
+              </Pill>
+            )}
+            {onDevices && (
+              <Pill onClick={onDevices} variant="silver">
+                {t("로그인한 기기")}
+              </Pill>
+            )}
             <Pill onClick={onChangeContact} variant="silver">
               {t("담당자 정보 수정")}
             </Pill>

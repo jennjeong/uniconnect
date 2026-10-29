@@ -1,9 +1,10 @@
 import { randomBytes, randomInt, randomUUID } from "node:crypto"
-import { Router } from "express"
+import { Router, type Request } from "express"
 
 import { config } from "../config.js"
 import { acceptedProposalsOf, dropOrphanAgreements, removeUploads } from "../lib/agreements.js"
 import { findListing } from "../lib/catalog.js"
+import { deviceLabel } from "../lib/devices.js"
 import { emailRuleError, normalizeEmail } from "../lib/email.js"
 import { HttpError } from "../lib/errors.js"
 import { sendVerificationCode } from "../lib/mailer.js"
@@ -13,10 +14,11 @@ import { langOf, type Lang } from "../lib/i18n.js"
 import { hashPassword, verifyPassword } from "../lib/password.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { freezeSponsorships } from "../lib/sponsorships.js"
+import { hashRecovery, matchStep, newRecoveryCodes, newSecret, otpauthUrl } from "../lib/totp.js"
 import { accountTypes, checkPassword, mailKinds, parseContact, parseRole, text } from "../lib/validation.js"
 import { hashToken, requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
-import type { Account, Database, EmailCode, MailKind, PublicAccount, Role } from "../types.js"
+import type { Account, Database, EmailCode, MailKind, PublicAccount, Role, Session } from "../types.js"
 
 export const authRouter = Router()
 
@@ -56,15 +58,79 @@ const demoLocked = "데모 계정은 비밀번호를 바꾸거나 탈퇴할 수 
 // An account the operators stopped over a report.
 const suspendedMessage = "운영 정책에 따라 이용이 정지된 계정이에요."
 
-const toPublic = ({ passwordHash, termsAgreedAt, calendarFeed, ...account }: Account): PublicAccount =>
-  account
+const toPublic = ({
+  passwordHash,
+  termsAgreedAt,
+  calendarFeed,
+  twoFactor,
+  pendingTwoFactor,
+  loginTicket,
+  ...account
+}: Account): PublicAccount => ({ ...account, ...(twoFactor ? { twoFactorOn: true as const } : {}) })
 
-function startSession(accountId: string) {
+// A new login on the device the request came from (its browser and system
+// for the device list).
+function startSession(accountId: string, req: Request, userAgent = req.get("user-agent")) {
   const database = getDatabase()
   const token = randomBytes(32).toString("hex")
-  database.sessions = database.sessions.filter((session) => session.expiresAt > Date.now())
-  database.sessions.push({ tokenHash: hashToken(token), accountId, expiresAt: Date.now() + config.sessionTtlMs })
+  const now = Date.now()
+  database.sessions = database.sessions.filter((session) => session.expiresAt > now)
+  database.sessions.push({
+    tokenHash: hashToken(token),
+    accountId,
+    expiresAt: now + config.sessionTtlMs,
+    device: deviceLabel(userAgent),
+    createdAt: now,
+    lastUsedAt: now,
+  })
   return token
+}
+
+// The account's current password, asked again before a change to how it
+// logs in; tries count with the login failures. Not 401, which the app
+// reads as a session that has run out.
+async function checkCurrentPassword(req: Request, account: Account) {
+  const limitKey = `${clientKey(req)} ${account.email}`
+  loginFailures.take(limitKey)
+  if (!(await verifyPassword(String(req.body?.password ?? ""), account.passwordHash))) {
+    throw new HttpError(400, "비밀번호가 올바르지 않아요.")
+  }
+  loginFailures.reset(limitKey)
+}
+
+// How long a login waits for its code after the password, and how many
+// wrong codes it takes.
+const ticketMs = 10 * minute
+const ticketTries = 5
+
+// The password was right, and the account asks for a code too: a ticket
+// the browser sends back with the code (POST /login/code) instead of a
+// session.
+function startTicket(account: Account, req: Request) {
+  const ticket = randomBytes(24).toString("base64url")
+  account.loginTicket = {
+    hash: hashToken(ticket),
+    expiresAt: Date.now() + ticketMs,
+    tries: 0,
+    userAgent: req.get("user-agent")?.slice(0, 300),
+  }
+  return ticket
+}
+
+// Whether a typed code opens the account: the app's code for now (each once)
+// or one of its recovery codes (used up). Marks what it used; the caller saves.
+function useCode(account: Account, typed: string) {
+  const twoFactor = account.twoFactor
+  if (!twoFactor) return false
+  const step = matchStep(twoFactor.secret, typed, Date.now(), twoFactor.usedStep)
+  if (step !== undefined) {
+    twoFactor.usedStep = step
+    return true
+  }
+  const hash = hashRecovery(typed)
+  if (typed.replace(/[^A-Za-z0-9]/g, "").length !== 8 || !twoFactor.recoveryHashes.includes(hash)) return false
+  twoFactor.recoveryHashes = twoFactor.recoveryHashes.filter((item) => item !== hash)
+  return true
 }
 
 type CodePurpose = EmailCode["purpose"]
@@ -220,7 +286,7 @@ authRouter.post("/signup", async (req, res) => {
   database.accounts.push(account)
   database.events[account.id] = []
   database.proposals[account.id] = []
-  const token = startSession(account.id)
+  const token = startSession(account.id, req)
   await saveDatabase()
 
   res.status(201).json({ token, account: toPublic(account) })
@@ -263,7 +329,14 @@ authRouter.post("/password-reset", async (req, res) => {
   account.passwordHash = await hashPassword(password)
   database.sessions = database.sessions.filter((session) => session.accountId !== account.id)
   loginFailures.reset(`${clientKey(req)} ${email}`)
-  const token = startSession(account.id)
+  // The email alone doesn't pass two-step login: the code is asked next.
+  if (account.twoFactor) {
+    const ticket = startTicket(account, req)
+    await saveDatabase()
+    res.json({ twoFactor: true, ticket })
+    return
+  }
+  const token = startSession(account.id, req)
   await saveDatabase()
   res.json({ token, account: toPublic(account) })
 })
@@ -292,10 +365,43 @@ authRouter.post("/login", async (req, res) => {
     const label = account.role === "학생단체" ? "협찬 받기" : "협찬 하기"
     throw new HttpError(403, `'${label}' 회원으로 가입된 계정이에요. 유형을 바꿔 로그인해 주세요.`)
   }
+  if (account.twoFactor) {
+    const ticket = startTicket(account, req)
+    await saveDatabase()
+    res.json({ twoFactor: true, ticket })
+    return
+  }
 
-  const token = startSession(account.id)
+  const token = startSession(account.id, req)
   await saveDatabase()
   res.json({ token, account: toPublic(account) })
+})
+
+// The second step of a login with two-step login on: the ticket from the
+// password step and a code from the app or a recovery code. Wrong codes
+// count with the password failures, and five end the ticket.
+authRouter.post("/login/code", async (req, res) => {
+  const email = normalizeEmail(req.body?.email)
+  const limitKey = `${clientKey(req)} ${email}`
+  loginFailures.take(limitKey)
+  const database = getDatabase()
+  const account = database.accounts.find((item) => item.email === email)
+  const ticket = account?.loginTicket
+  if (!account || !ticket || ticket.hash !== hashToken(String(req.body?.ticket ?? "")) || ticket.expiresAt < Date.now()) {
+    throw new HttpError(401, "로그인 시간이 지났어요. 비밀번호부터 다시 입력해 주세요.")
+  }
+  if (account.suspendedAt) throw new HttpError(403, suspendedMessage)
+  if (!useCode(account, String(req.body?.code ?? ""))) {
+    ticket.tries += 1
+    if (ticket.tries >= ticketTries) delete account.loginTicket
+    await saveDatabase()
+    throw new HttpError(401, ticket.tries >= ticketTries ? "코드를 너무 많이 틀렸어요. 비밀번호부터 다시 입력해 주세요." : "코드가 올바르지 않아요. 인증 앱의 6자리 코드나 복구 코드를 입력해 주세요.")
+  }
+  loginFailures.reset(limitKey)
+  delete account.loginTicket
+  const token = startSession(account.id, req, ticket.userAgent)
+  await saveDatabase()
+  res.json({ token, account: toPublic(account), recoveryLeft: account.twoFactor?.recoveryHashes.length })
 })
 
 // Everything an account made goes with it: its listing and the
@@ -589,6 +695,102 @@ authRouter.get("/export", (req, res) => {
 
 authRouter.get("/me", (req, res) => {
   res.json({ account: toPublic(requireAccount(req)) })
+})
+
+// Turning on two-step login from 내 정보, with the password first: a new
+// secret for the app (its QR address), confirmed with a code before it counts.
+authRouter.post("/two-factor/setup", async (req, res) => {
+  const account = requireAccount(req)
+  if (isDemo(account)) throw new HttpError(403, "데모 계정은 2단계 인증을 켤 수 없어요.")
+  if (account.twoFactor) throw new HttpError(409, "2단계 인증이 이미 켜져 있어요.")
+  await checkCurrentPassword(req, account)
+  const secret = newSecret()
+  account.pendingTwoFactor = { secret, createdAt: Date.now() }
+  await saveDatabase()
+  res.json({ secret, url: otpauthUrl(secret, account.email) })
+})
+
+// The app's first code turns it on, and the recovery codes show this once.
+authRouter.post("/two-factor/enable", async (req, res) => {
+  const account = requireAccount(req)
+  const pending = account.pendingTwoFactor
+  if (!pending || pending.createdAt + 30 * minute < Date.now()) {
+    throw new HttpError(409, "설정 시간이 지났어요. 처음부터 다시 켜 주세요.")
+  }
+  const limitKey = `${clientKey(req)} ${account.email}`
+  loginFailures.take(limitKey)
+  const step = matchStep(pending.secret, String(req.body?.code ?? ""))
+  if (step === undefined) throw new HttpError(400, "코드가 올바르지 않아요. 인증 앱에 보이는 6자리 코드를 입력해 주세요.")
+  loginFailures.reset(limitKey)
+  const recoveryCodes = newRecoveryCodes()
+  account.twoFactor = {
+    secret: pending.secret,
+    enabledAt: new Date().toISOString(),
+    recoveryHashes: recoveryCodes.map(hashRecovery),
+    usedStep: step,
+  }
+  delete account.pendingTwoFactor
+  await saveDatabase()
+  res.json({ account: toPublic(account), recoveryCodes })
+})
+
+// Turning it off takes the password and a code (or a recovery code).
+authRouter.post("/two-factor/disable", async (req, res) => {
+  const account = requireAccount(req)
+  if (!account.twoFactor) throw new HttpError(409, "2단계 인증이 꺼져 있어요.")
+  await checkCurrentPassword(req, account)
+  if (!useCode(account, String(req.body?.code ?? ""))) {
+    throw new HttpError(400, "코드가 올바르지 않아요. 인증 앱의 6자리 코드나 복구 코드를 입력해 주세요.")
+  }
+  delete account.twoFactor
+  delete account.loginTicket
+  await saveDatabase()
+  res.json({ account: toPublic(account) })
+})
+
+// The devices logged in to this account, the one asking first, then by
+// last use. The shared demo accounts' devices are everyone's trying them.
+const sessionId = (session: Session) => session.tokenHash.slice(0, 16)
+const ownDevices = (req: Request) => {
+  const account = requireAccount(req)
+  if (isDemo(account)) throw new HttpError(403, "데모 계정은 로그인한 기기를 볼 수 없어요.")
+  return account
+}
+authRouter.get("/sessions", (req, res) => {
+  const account = ownDevices(req)
+  const current = req.sessionToken ? hashToken(req.sessionToken) : ""
+  const sessions = getDatabase()
+    .sessions.filter((session) => session.accountId === account.id && session.expiresAt > Date.now())
+    .map((session) => ({
+      id: sessionId(session),
+      device: session.device ?? "알 수 없는 기기",
+      ...(session.createdAt ? { createdAt: new Date(session.createdAt).toISOString() } : {}),
+      ...(session.lastUsedAt ? { lastUsedAt: new Date(session.lastUsedAt).toISOString() } : {}),
+      current: session.tokenHash === current,
+    }))
+    .sort((a, b) => Number(b.current) - Number(a.current) || (b.lastUsedAt ?? "").localeCompare(a.lastUsedAt ?? ""))
+  res.json({ sessions })
+})
+
+// Logs out every other device; this one stays.
+authRouter.delete("/sessions", async (req, res) => {
+  const account = ownDevices(req)
+  const keep = req.sessionToken ? hashToken(req.sessionToken) : ""
+  const database = getDatabase()
+  database.sessions = database.sessions.filter((session) => session.accountId !== account.id || session.tokenHash === keep)
+  await saveDatabase()
+  res.status(204).end()
+})
+
+// Logs out one device of this account.
+authRouter.delete("/sessions/:id", async (req, res) => {
+  const account = ownDevices(req)
+  const database = getDatabase()
+  const session = database.sessions.find((item) => item.accountId === account.id && sessionId(item) === req.params.id)
+  if (!session) throw new HttpError(404, "로그인한 기기를 찾을 수 없어요.")
+  database.sessions = database.sessions.filter((item) => item !== session)
+  await saveDatabase()
+  res.status(204).end()
 })
 
 authRouter.post("/logout", async (req, res) => {

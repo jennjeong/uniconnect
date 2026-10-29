@@ -432,6 +432,47 @@ const en: Record<string, string> = {
   "운영자가 이 답글을 내렸어요. 다른 사람에게는 보이지 않아요.": "The operators took this reply down. Others no longer see it.",
   "답글을 남겼어요. 후기 아래에 함께 보여요.": "Reply posted. It shows under the review.",
   "답글을 지웠어요.": "Reply deleted.",
+  // Two-step login and devices (modals/TwoFactorModal.tsx, DevicesModal.tsx, components/CodeStep.tsx)
+  "남은 복구 코드가 {count}개예요. 2단계 인증을 껐다 다시 켜면 새 코드를 받아요.":
+    "{count} recovery codes left. Turn two-step login off and on again for new ones.",
+  "2단계 인증을 껐어요.": "Two-step login is off.",
+  "인증 앱의 6자리 코드를 입력해 주세요.": "Enter the 6-digit code from your authenticator app.",
+  "2단계 인증이 켜진 계정이에요. 인증 앱에 보이는 6자리 코드를 입력해 주세요. 휴대폰이 없으면 복구 코드를 입력해도 돼요.":
+    "This account uses two-step login. Enter the 6-digit code shown in your authenticator app, or a recovery code if you don't have your phone.",
+  "인증 코드": "Authentication code",
+  "확인하고 로그인": "Verify and log in",
+  "비밀번호부터 다시 입력하기": "Start again with the password",
+  "로그인한 기기": "Logged-in devices",
+  "모르는 기기가 있으면 로그아웃시키고 비밀번호를 바꿔 주세요.": "If you don't recognize a device, log it out and change your password.",
+  "기기 목록을 불러오고 있어요…": "Loading your devices…",
+  "이 기기": "This device",
+  "로그인 {date}": "Logged in {date}",
+  "마지막 사용 {date}": "Last used {date}",
+  "{device}에서 로그아웃시켰어요.": "Logged out {device}.",
+  "다른 기기에서 모두 로그아웃시켰어요.": "Logged out all other devices.",
+  "다른 기기 모두 로그아웃": "Log out all other devices",
+  "알 수 없는 기기": "Unknown device",
+  "비밀번호와 인증 코드를 입력해 주세요.": "Enter your password and a code.",
+  "복사하지 못했어요. 코드를 직접 적어 두세요.": "Couldn't copy. Please write the codes down.",
+  "2단계 인증": "Two-step login",
+  "2단계 인증을 켰어요. 휴대폰을 잃어버렸을 때 쓸 복구 코드예요. 지금만 보여 드리니 안전한 곳에 적어 두세요. 코드마다 한 번씩 쓸 수 있어요.":
+    "Two-step login is on. These recovery codes are for when you lose your phone. They're shown only now, so keep them somewhere safe. Each works once.",
+  복사했어요: "Copied",
+  "복구 코드 복사": "Copy recovery codes",
+  "적어 뒀어요": "I've saved them",
+  "2단계 인증이 켜져 있어요. 끄려면 비밀번호와 인증 앱의 코드(또는 복구 코드)를 입력해 주세요.":
+    "Two-step login is on. To turn it off, enter your password and a code from your app (or a recovery code).",
+  "Google Authenticator 같은 인증 앱으로 QR 코드를 찍거나 아래 키를 입력한 뒤, 앱에 보이는 6자리 코드를 입력해 주세요.":
+    "Scan the QR code with an authenticator app such as Google Authenticator, or enter the key below, then type the 6-digit code it shows.",
+  "인증 앱으로 찍을 QR 코드": "QR code for your authenticator app",
+  "직접 입력할 키": "Key to enter by hand",
+  "켜면 로그인할 때 비밀번호 다음에 인증 앱의 6자리 코드를 한 번 더 입력해요. 비밀번호가 새어도 계정을 지킬 수 있어요.":
+    "Once on, you'll enter a 6-digit code from an authenticator app after your password. It keeps your account safe even if your password leaks.",
+  "2단계 인증 끄기": "Turn off two-step login",
+  "확인하고 켜기": "Verify and turn on",
+  다음: "Next",
+  "2단계 인증 · 켜짐": "Two-step login · On",
+  "2단계 인증 켜기": "Turn on two-step login",
 }
 
 export default en

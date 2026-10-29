@@ -9,7 +9,9 @@ import type {
   BoardPost,
   BusinessStatus,
   CheckInInfo,
+  CodeTicket,
   Conversation,
+  DeviceSession,
   ErrorEntry,
   EventItem,
   EventMeasurement,
@@ -81,7 +83,19 @@ export type ProposalState = {
 export const api = {
   me: () => request<{ account: Account }>("/auth/me"),
   login: (body: { role: Role; email: string; password: string }) =>
-    request<Session>("/auth/login", { method: "POST", body }),
+    request<Session | CodeTicket>("/auth/login", { method: "POST", body }),
+  // The second step with two-step login on: the app's code or a recovery code.
+  loginCode: (body: { email: string; ticket: string; code: string }) =>
+    request<Session & { recoveryLeft?: number }>("/auth/login/code", { method: "POST", body }),
+  twoFactorSetup: (password: string) =>
+    request<{ secret: string; url: string }>("/auth/two-factor/setup", { method: "POST", body: { password } }),
+  twoFactorEnable: (code: string) =>
+    request<{ account: Account; recoveryCodes: string[] }>("/auth/two-factor/enable", { method: "POST", body: { code } }),
+  twoFactorDisable: (body: { password: string; code: string }) =>
+    request<{ account: Account }>("/auth/two-factor/disable", { method: "POST", body }),
+  sessions: () => request<{ sessions: DeviceSession[] }>("/auth/sessions"),
+  endSession: (id: string) => request<void>(`/auth/sessions/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  endOtherSessions: () => request<void>("/auth/sessions", { method: "DELETE" }),
   logout: () => request<void>("/auth/logout", { method: "POST" }),
   requestEmailCode: (body: { role: Role; email: string }) =>
     request<{ email: string; expiresAt: number; devCode?: string }>(
@@ -101,7 +115,7 @@ export const api = {
       { method: "POST", body },
     ),
   resetPassword: (body: { email: string; code: string; password: string }) =>
-    request<Session>("/auth/password-reset", { method: "POST", body }),
+    request<Session | CodeTicket>("/auth/password-reset", { method: "POST", body }),
   updateContact: (body: AccountContact) => request<{ account: Account }>("/auth/contact", { method: "PUT", body }),
   savePreferences: (body: { language?: "ko" | "en"; mailOff?: MailKind[] }) =>
     request<{ account: Account }>("/auth/preferences", { method: "PUT", body }),

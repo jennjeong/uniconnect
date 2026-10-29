@@ -453,6 +453,18 @@ const en: Record<string, string> = {
   "파일을 찾을 수 없어요.": "We couldn't find that file.",
   "보낸 파일은 고칠 수 없어요. 지우고 다시 보내 주세요.": "A file can't be edited. Delete it and send it again.",
   "데모 계정은 파일을 보낼 수 없어요.": "Demo accounts can't send files.",
+
+  // Two-step login and devices (routes/auth.ts)
+  "로그인 시간이 지났어요. 비밀번호부터 다시 입력해 주세요.": "The login timed out. Please enter your password again.",
+  "코드를 너무 많이 틀렸어요. 비밀번호부터 다시 입력해 주세요.": "Too many wrong codes. Please enter your password again.",
+  "코드가 올바르지 않아요. 인증 앱의 6자리 코드나 복구 코드를 입력해 주세요.": "That code isn't right. Enter the 6-digit code from your authenticator app or a recovery code.",
+  "데모 계정은 2단계 인증을 켤 수 없어요.": "Demo accounts can't turn on two-step login.",
+  "2단계 인증이 이미 켜져 있어요.": "Two-step login is already on.",
+  "설정 시간이 지났어요. 처음부터 다시 켜 주세요.": "Setup timed out. Please start again.",
+  "코드가 올바르지 않아요. 인증 앱에 보이는 6자리 코드를 입력해 주세요.": "That code isn't right. Enter the 6-digit code shown in your authenticator app.",
+  "2단계 인증이 꺼져 있어요.": "Two-step login is off.",
+  "로그인한 기기를 찾을 수 없어요.": "We couldn't find that device.",
+  "데모 계정은 로그인한 기기를 볼 수 없어요.": "Demo accounts can't see their devices.",
   "{name}: 사진을 보냈어요.": "{name}: Sent a photo.",
   "{name}: 파일을 보냈어요: {file}": "{name}: Sent a file: {file}",
 }

@@ -73,6 +73,15 @@ const en: Record<string, string> = {
   "단체명·브랜드명, 분류(업종), 학교, 이메일, 비밀번호(복원할 수 없게 암호화), 약관 동의 시각":
     "Group or brand name, category (industry), school, email address, password (encrypted so that it cannot be recovered), time of agreement to the terms",
   "회원 가입과 로그인, 회원 유형 확인": "Sign-up and login, verification of member type",
+  "로그인한 기기(브라우저와 운영체제 종류, 로그인한 시각, 마지막 사용 시각)":
+    "Logged-in devices (browser and operating system, when they logged in and were last used)",
+  "내 정보의 '로그인한 기기'에서 어디서 로그인돼 있는지 보고 로그아웃시키기":
+    "Showing where the account is logged in, under 'Logged-in devices' in My Info, and logging devices out",
+  "로그아웃하거나 로그인이 끝날 때까지(최대 7일)": "Until logout or the login expires (7 days at most)",
+  "2단계 인증을 켠 경우 인증 앱의 비밀 키와 복구 코드(복구 코드는 복원할 수 없게 암호화)":
+    "With two-step login on, the authenticator app's secret key and the recovery codes (the codes stored irreversibly)",
+  "로그인할 때 비밀번호 다음에 코드를 한 번 더 확인": "Checking a code after the password at login",
+  "2단계 인증을 끄거나 탈퇴할 때까지": "Until two-step login is turned off or the member leaves",
   "담당자 이름, 직책, 휴대폰 번호": "Contact name, position and mobile number",
   "협찬이 확정된 상대와 연락하고, 운영 문의에 답하기": "Contact between the partners of a confirmed sponsorship, and replies to questions to the operators",
   "탈퇴하거나 내 정보에서 바꿀 때까지": "Until you leave or change it in My Account",

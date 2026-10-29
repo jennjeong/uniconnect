@@ -898,6 +898,133 @@ test("an account sending messages or proposals in a flood is held back, and othe
   assert.match(tooMany.data.error, /제안을 너무 많이/)
 })
 
+test("authenticator codes follow RFC 6238, and devices are named by browser and system", async () => {
+  const { codeAt, matchStep, stepAt, toBase32 } = await import("./lib/totp.js")
+  const { deviceLabel } = await import("./lib/devices.js")
+  // RFC 6238's SHA-1 vectors, as six digits.
+  const secret = toBase32(Buffer.from("12345678901234567890"))
+  assert.equal(codeAt(secret, stepAt(59_000)), "287082")
+  assert.equal(codeAt(secret, stepAt(1_111_111_109_000)), "081804")
+  assert.equal(codeAt(secret, stepAt(2_000_000_000_000)), "279037")
+  // A step either side is taken, a code already used is not.
+  const now = 1_111_111_109_000
+  assert.equal(matchStep(secret, "081804", now + 30_000), stepAt(now))
+  assert.equal(matchStep(secret, "081 804", now), stepAt(now))
+  assert.equal(matchStep(secret, "081804", now + 90_000), undefined)
+  assert.equal(matchStep(secret, "081804", now, stepAt(now)), undefined)
+  assert.equal(
+    deviceLabel("Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1"),
+    "Safari · iPhone",
+  )
+  assert.equal(
+    deviceLabel("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"),
+    "Chrome · macOS",
+  )
+  assert.equal(deviceLabel(undefined), "알 수 없는 기기")
+})
+
+test("with two-step login on, a password alone doesn't log in, and recovery codes work once", async () => {
+  const { codeAt, stepAt } = await import("./lib/totp.js")
+  const email = "twostep@syu.ac.kr"
+  const password = "twostep-pass-123"
+  const token = await signUpMember(email, password)
+  const logIn = () => call("POST", "/auth/login", { role: "학생단체", email, password })
+
+  // Set up with the password, then the app's first code; the demo accounts can't.
+  assert.equal((await call("POST", "/auth/two-factor/setup", { password: DEMO_PASSWORD }, await login("학생단체"))).status, 403)
+  assert.equal((await call("POST", "/auth/two-factor/setup", { password: "wrong-pass-1!" }, token)).status, 400)
+  const { secret, url } = (await call("POST", "/auth/two-factor/setup", { password }, token)).data
+  assert.match(url, /^otpauth:\/\/totp\/uniconnect%3Atwostep%40syu\.ac\.kr\?secret=[A-Z2-7]+&issuer=uniconnect/)
+  assert.equal((await call("POST", "/auth/two-factor/enable", { code: "000000" }, token)).status, 400)
+  const code = () => codeAt(secret, stepAt(Date.now()))
+  const enabled = (await call("POST", "/auth/two-factor/enable", { code: code() }, token)).data
+  assert.equal(enabled.account.twoFactorOn, true)
+  assert.equal(enabled.account.twoFactor, undefined)
+  assert.equal(enabled.recoveryCodes.length, 10)
+  assert.match(enabled.recoveryCodes[0], /^[A-Z2-9]{4}-[A-Z2-9]{4}$/)
+
+  // The password now gives a ticket, not a session; the ticket wants a code.
+  const first = (await logIn()).data
+  assert.equal(first.twoFactor, true)
+  assert.equal(first.token, undefined)
+  const withCode = (body: object) => call("POST", "/auth/login/code", { email, ticket: first.ticket, ...body })
+  assert.equal((await call("POST", "/auth/login/code", { email, ticket: "nope", code: code() })).status, 401)
+  // The code used to turn it on doesn't work twice; a recovery code does, once.
+  assert.equal((await withCode({ code: code() })).status, 401)
+  const recovered = await withCode({ code: enabled.recoveryCodes[0].toLowerCase() })
+  assert.equal(recovered.status, 200)
+  assert.equal(recovered.data.recoveryLeft, 9)
+  assert.equal((await call("GET", "/auth/me", undefined, recovered.data.token)).status, 200)
+  const again = (await logIn()).data
+  assert.equal((await call("POST", "/auth/login/code", { email, ticket: again.ticket, code: enabled.recoveryCodes[0] })).status, 401)
+
+  // Five wrong codes end the ticket.
+  const third = (await logIn()).data
+  for (let count = 1; count <= 4; count += 1) {
+    assert.equal((await call("POST", "/auth/login/code", { email, ticket: third.ticket, code: "111111" })).status, 401)
+  }
+  const ended = await call("POST", "/auth/login/code", { email, ticket: third.ticket, code: "111111" })
+  assert.match(ended.data.error, /너무 많이/)
+  assert.equal((await call("POST", "/auth/login/code", { email, ticket: third.ticket, code: enabled.recoveryCodes[1] })).status, 401)
+
+  // A password reset by email still asks for the code, and ends the other logins.
+  const newPassword = "twostep-pass-456!"
+  await call("POST", "/auth/password-reset/code", { email })
+  const resetCode = getDatabase().emailCodes.find((item) => item.email === email && item.purpose === "reset")!.code
+  const reset = (await call("POST", "/auth/password-reset", { email, code: resetCode, password: newPassword })).data
+  assert.equal(reset.twoFactor, true)
+  assert.equal(reset.token, undefined)
+  assert.equal((await call("GET", "/auth/me", undefined, recovered.data.token)).status, 401)
+  const afterReset = await call("POST", "/auth/login/code", { email, ticket: reset.ticket, code: enabled.recoveryCodes[2] })
+  assert.equal(afterReset.status, 200)
+
+  // Turning it off takes the password and a code.
+  const session = afterReset.data.token
+  assert.equal((await call("POST", "/auth/two-factor/disable", { password: newPassword, code: "111111" }, session)).status, 400)
+  const off = await call("POST", "/auth/two-factor/disable", { password: newPassword, code: enabled.recoveryCodes[3] }, session)
+  assert.equal(off.status, 200)
+  assert.equal(off.data.account.twoFactorOn, undefined)
+  assert.ok((await call("POST", "/auth/login", { role: "학생단체", email, password: newPassword })).data.token)
+})
+
+test("the device list shows each login, and logs out one or all the others", async () => {
+  const email = "devices@syu.ac.kr"
+  const password = "devices-pass-123"
+  await signUpMember(email, password)
+  const logInWith = async (agent: string) => {
+    const response = await fetch(`${baseUrl}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "User-Agent": agent },
+      body: JSON.stringify({ role: "학생단체", email, password }),
+    })
+    return ((await response.json()) as { token: string }).token
+  }
+  const mac = await logInWith("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36")
+  const phone = await logInWith("Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/25.0 Chrome/121.0.0.0 Mobile Safari/537.36")
+  const tablet = await logInWith("Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1")
+  const listed = (await call("GET", "/auth/sessions", undefined, mac)).data.sessions
+  assert.deepEqual(listed[0], { ...listed[0], device: "Chrome · macOS", current: true })
+  assert.ok(listed[0].lastUsedAt && listed[0].createdAt)
+  const devices = listed.map((session: { device: string }) => session.device)
+  assert.ok(devices.includes("Samsung Internet · Android") && devices.includes("Safari · iPad"))
+  // Session ids stand for sessions, never their tokens.
+  assert.ok(listed.every((session: { id: string }) => /^[0-9a-f]{16}$/.test(session.id)))
+
+  // One device out: its login ends.
+  const phoneId = listed.find((session: { device: string }) => session.device.startsWith("Samsung")).id
+  assert.equal((await call("DELETE", `/auth/sessions/${phoneId}`, undefined, mac)).status, 204)
+  assert.equal((await call("GET", "/auth/me", undefined, phone)).status, 401)
+  assert.equal((await call("DELETE", `/auth/sessions/${phoneId}`, undefined, mac)).status, 404)
+  // All the others out: this one stays.
+  assert.equal((await call("DELETE", "/auth/sessions", undefined, mac)).status, 204)
+  assert.equal((await call("GET", "/auth/me", undefined, tablet)).status, 401)
+  assert.equal((await call("GET", "/auth/sessions", undefined, mac)).data.sessions.length, 1)
+  // Another account's sessions aren't found, and the shared demo accounts have no list.
+  const other = await signUpMember("devices-other@syu.ac.kr", password)
+  assert.equal((await call("DELETE", `/auth/sessions/${listed[0].id}`, undefined, other)).status, 404)
+  assert.equal((await call("GET", "/auth/sessions", undefined, await login("학생단체"))).status, 403)
+})
+
 test("an open conversation hears of new messages and reads as they happen", async () => {
   const { chatWait } = await import("./routes/conversations.js")
   const { token: group } = await listedMember("live@syu.ac.kr", "live-pass-123")
