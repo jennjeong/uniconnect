@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import { api, errorMessage } from "../api"
+import { DatePicker } from "../components/DatePicker"
+import { Icon } from "../components/Icon"
 import { t } from "../i18n"
-import { formatDateTime } from "../lib/date"
+import { formatDateTime, formatDay, formatPeriod } from "../lib/date"
 import { saveFile } from "../lib/download"
 import type { AdminAnnouncement, AdminHealth, AdminLogRow, AdminMemberDetail, ErrorEntry } from "../types"
 
@@ -294,6 +296,57 @@ export function groupErrors(errors: ErrorEntry[]) {
 
 const audienceLabels: Record<AdminAnnouncement["audience"], string> = { all: "모두", 학생단체: "학생단체", 브랜드: "브랜드" }
 
+// When a notice shows: a field that opens the site's month calendar under
+// it. One press is one day, a second on a later day closes the period, and
+// an empty period shows the notice from now until it is taken down.
+function PeriodField({ from, until, onChange }: { from: string; until: string; onChange: (from: string, until: string) => void }) {
+  const [open, setOpen] = useState(false)
+  const box = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const close = (event: Event) => {
+      if (event instanceof KeyboardEvent ? event.key === "Escape" : !box.current?.contains(event.target as Node)) setOpen(false)
+    }
+    document.addEventListener("pointerdown", close)
+    document.addEventListener("keydown", close)
+    return () => {
+      document.removeEventListener("pointerdown", close)
+      document.removeEventListener("keydown", close)
+    }
+  }, [open])
+  const shown = !from ? t("바로 올리고 내릴 때까지") : until ? formatPeriod(from, until) : t("{date}부터", { date: formatDay(from) })
+  return (
+    <div className="console-period" ref={box}>
+      <span id="console-period-label">{t("게시 기간")}</span>
+      <button
+        aria-expanded={open}
+        aria-haspopup="dialog"
+        aria-labelledby="console-period-label console-period-value"
+        className={from ? "console-period-button set" : "console-period-button"}
+        onClick={() => setOpen(!open)}
+        type="button"
+      >
+        <Icon name="calendar" size={16} />
+        <span id="console-period-value">{shown}</span>
+      </button>
+      {open && (
+        <div aria-label={t("게시 기간 고르기")} className="console-period-pop" role="dialog">
+          <DatePicker end={until || undefined} onChange={(start, end) => onChange(start, end ?? start)} start={from} />
+          <p>{t("첫날과 마지막 날을 차례로 누르면 기간으로 잡혀요. 하루 일정은 한 번만 누르세요.")}</p>
+          <div>
+            <button className="console-text-button" disabled={!from} onClick={() => onChange("", "")} type="button">
+              {t("기간 비우기")}
+            </button>
+            <button className="primary-button" onClick={() => setOpen(false)} type="button">
+              {t("완료")}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // The site's notices: a form for a new one, then the live ones with a press
 // to take each down, then those that ended.
 export function Notices({ token, onNotice }: { token: string; onNotice: (message: string) => void }) {
@@ -372,14 +425,11 @@ export function Notices({ token, onNotice }: { token: string; onNotice: (message
                 ))}
               </select>
             </label>
-            <label>
-              {t("시작하는 날")}
-              <input onChange={(event) => setForm({ ...form, from: event.target.value })} type="date" value={form.from} />
-            </label>
-            <label>
-              {t("마지막 날")}
-              <input onChange={(event) => setForm({ ...form, until: event.target.value })} type="date" value={form.until} />
-            </label>
+            <PeriodField
+              from={form.from}
+              onChange={(from, until) => setForm({ ...form, from, until })}
+              until={form.until}
+            />
           </div>
           <button className="primary-button" disabled={busy || !form.text.trim()} type="submit">
             {t("공지 올리기")}

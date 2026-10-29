@@ -1013,6 +1013,11 @@ const en: Record<string, string> = {
   "팔레트 · 도움말 닫기": "Close the palette or help",
   "브라우저 뒤로 · 앞으로 (화면 이동 기록)": "Browser back and forward (through screens)",
   "회원 보기": "View member",
+  "게시 기간": "Showing period",
+  "게시 기간 고르기": "Pick the showing period",
+  "바로 올리고 내릴 때까지": "From now until taken down",
+  "기간 비우기": "Clear the period",
+  "완료": "Done",
 }
 
 export default en
