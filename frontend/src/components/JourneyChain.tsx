@@ -82,31 +82,50 @@ const phase = (index: number, current: number) =>
 const phaseLabel = { done: t("지난 단계"), current: t("지금 단계"), next: t("다음 단계") }
 
 // The steps as a stepper: numbered dots on one line, filled in deep blue up
-// to the step under way, whose dot glows with a turning gradient (getlayers'
-// Interference blues) while a light runs along the line toward it. A press
-// on a dot shows that step's details below; the current one shows first.
+// to the step whose details show, the step under way glowing with a turning
+// gradient (getlayers' Interference blues) while a light runs along the line.
+// A press on a dot shows that step's details below and runs the line out to
+// it like a loading bar, each dot turning deep blue as the line reaches it;
+// the current step shows first.
 function Stepper({ steps, current }: { steps: JourneyStep[]; current: number }) {
   // The step whose details show: the current one until a dot is pressed
   // (the current step can move once the account's data arrives).
   const [picked, setPicked] = useState<number | null>(null)
-  const open = picked ?? current
+  // Counts presses; its parity swaps the animations' names so each press
+  // plays them again.
+  const [runs, setRuns] = useState(0)
+  const open = Math.min(picked ?? current, steps.length - 1)
   const panelId = useId()
   const shown = steps[open] ?? steps[current]
-  const progress = steps.length > 1 ? Math.min(current, steps.length - 1) / (steps.length - 1) : 0
+  const progress = steps.length > 1 ? open / (steps.length - 1) : 0
+  const style = {
+    "--progress": progress,
+    "--steps": steps.length,
+    "--fill-time": `${Math.max(0.35, open * 0.28)}s`,
+  } as CSSProperties
+  const run = runs === 0 ? "" : runs % 2 ? " run-a" : " run-b"
 
   return (
-    <div className="stepper" data-reveal style={{ "--progress": progress, "--steps": steps.length } as CSSProperties}>
-      <ol aria-label={t("협찬 단계")} className="stepper-track">
+    <div className="stepper" data-reveal style={style}>
+      <ol aria-label={t("협찬 단계")} className={`stepper-track${run}`}>
         {steps.map((step, index) => {
           const state = phase(index, current)
+          const reached = index <= open ? " reached" : ""
           return (
-            <li className={`stepper-step ${state}`} key={step.label}>
+            <li
+              className={`stepper-step ${state}${reached}`}
+              key={step.label}
+              style={{ "--at": open > 0 ? index / open : 0 } as CSSProperties}
+            >
               <button
                 aria-controls={panelId}
                 aria-current={index === current ? "step" : undefined}
                 aria-pressed={index === open}
                 className={index === open ? "stepper-dot open" : "stepper-dot"}
-                onClick={() => setPicked(index)}
+                onClick={() => {
+                  setPicked(index)
+                  setRuns((count) => count + 1)
+                }}
                 type="button"
               >
                 <span aria-hidden="true">{state === "done" ? "✓" : index + 1}</span>

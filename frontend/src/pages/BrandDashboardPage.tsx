@@ -100,24 +100,24 @@ export function BrandDashboardPage({
     {
       label: t("캠페인 등록"),
       status: t("브랜드 일정"),
-      detail: t("예산과 원하는 노출, 함께하고 싶은 행사를 정해요."),
+      detail: t("예산과 원하는 노출, 함께하고 싶은 시기를 행사 일정에 적어 두세요."),
     },
     {
       label: t("받은 제안 검토"),
       status: pending.length > 0 ? t("검토 중 {count}건", { count: pending.length }) : t("새 제안 없음"),
-      detail: t("학생단체가 보낸 제안을 보고 수락하거나 거절해요."),
+      detail: t("학생단체의 제안을 보고 수락하면 바로 계약서가 만들어져요."),
     },
     {
       label: t("협찬 확정"),
       status: confirmed.length > 0 ? t("확정 {count}건", { count: confirmed.length }) : t("대기"),
-      detail: t("확정한 협찬은 캠페인 달력에 행사 일정으로 들어가요."),
+      detail: t("확정한 협찬은 행사 일정에 들어가고, 할 일과 확인 방식은 계약서에서 정해요."),
     },
     {
       label: t("성과 분석"),
       status: sponsorships.length > 0 ? t("협찬 {count}건", { count: sponsorships.length }) : t("대기"),
-      detail: t("쿠폰과 방문으로 협찬마다 ROAS를 계산해요."),
+      detail: t("쿠폰 · 방문으로 협찬마다 ROAS와 방문당 비용을 계산해요."),
     },
-    { label: t("재집행"), status: t("대기"), detail: t("성과가 좋았던 단체와 다음 학기에도 이어가요.") },
+    { label: t("재집행"), status: t("대기"), detail: t("ROAS가 좋았던 단체에 다음 학기에도 먼저 제안해요.") },
   ]
 
   return (
@@ -130,7 +130,7 @@ export function BrandDashboardPage({
               ? t("예시 화면 · {semester}", { semester: semesterLabel() })
               : semesterLabel()
         }
-        lines={[t("학생들의 현장에서"), t("브랜드 팬을"), t("만나 보세요.")]}
+        lines={[t("감이 아닌 숫자로"), t("캠퍼스 협찬을"), t("집행하세요.")]}
         stats={[
           { value: t("{count}건", { count: pending.length }), label: t("검토할 제안") },
           { value: t("{count}건", { count: confirmed.length }), label: t("확정된 협찬") },
@@ -150,7 +150,7 @@ export function BrandDashboardPage({
             ? t("학생단체의 목록에 보이지 않고 새 협찬 제안을 받지 않아요. 진행 중인 대화와 협찬은 그대로예요.")
             : noGroups && pending.length === 0
               ? t("브랜드 소개를 써 두고 캠페인을 행사 일정에 등록해 두세요. 학생단체가 가입하면 캠페인과 잘 맞는 순서로 추천해 드려요.")
-              : t("브랜드와 학생단체가 맞닿는 캠퍼스 현장에서, 성과가 숫자로 남는 협찬을 시작해 보세요.")
+              : t("학생 행사에서 쿠폰을 나누고, 매장에 온 손님까지 세어 협찬마다 ROAS로 보여 드려요.")
         }
         primary={
           paused && onResume
@@ -171,9 +171,9 @@ export function BrandDashboardPage({
           About uniconnect
         </span>
         <RevealStatement
-          lead={t("학생들의 현장과 브랜드를 잇고,")}
+          lead={t("uniconnect는 브랜드와 대학 행사를 잇고,")}
           firstChip={<Icon name="link" size={18} />}
-          muted={t("협찬의 효과를 ROAS로 확인해요")}
+          muted={t("협찬 효과를 ROAS로 보여 주는 곳이에요")}
           secondChip={<Icon name="chart" size={18} />}
         />
       </section>
@@ -225,12 +225,12 @@ export function BrandDashboardPage({
 
       <ValuePoints
         eyebrow="What We Do"
-        heading={t("브랜드를 위한 세 가지")}
+        heading={t("브랜드가 여기서 하는 일")}
         points={[
           {
             icon: "users",
             need: t("대학생 접점"),
-            title: t("우리 상권의 대학 행사를 찾아 드려요"),
+            title: t("매장 가까운 캠퍼스 행사를 골라요"),
             text: t("행사 규모 · 시기 · 학교로 걸러 보고, 매장과 가까운 캠퍼스의 단체부터 일치율 순으로 만나요."),
             figure: t("{count}곳", { count: catalog.length }),
             figureLabel: t("함께할 수 있는 학생단체"),
@@ -240,8 +240,8 @@ export function BrandDashboardPage({
           {
             icon: "won",
             need: t("소액 · 측정형 협찬"),
-            title: t("작게 시작하고, 효과는 숫자로 확인해요"),
-            text: t("현금 · 현물 · 쿠폰으로 협찬하고, 행사 QR과 매장 직원 확인으로 쿠폰 · 방문을 정확히 세요."),
+            title: t("작게 시작해도 효과가 숫자로 남아요"),
+            text: t("현금 · 현물 · 쿠폰 중에 고르고, 행사 QR과 매장 직원 확인으로 쿠폰 · 방문을 정확히 세요."),
             figure: t("{count}건", { count: confirmed.length }),
             figureLabel: nextConfirmed
               ? t("확정된 협찬 · 다음 일정 {date}", { date: shortDay(nextConfirmed.date) })
@@ -252,7 +252,7 @@ export function BrandDashboardPage({
           {
             icon: "chart",
             need: t("다음 예산 결정"),
-            title: t("성과를 보고 다음 예산을 정해요"),
+            title: t("다시 쓸 곳을 데이터로 정해요"),
             text: t("협찬마다 ROAS와 방문당 비용을 보고, 상세 분석 리포트와 캠퍼스 포트폴리오로 어디에 다시 쓸지 정해요."),
             figure: `${totals.roas}%`,
             figureLabel: t("평균 ROAS · 누적 집행액 {spend}", { spend: fullWon(totals.spend) }),
@@ -315,8 +315,8 @@ export function BrandDashboardPage({
       </section>
 
       <JourneyChain
-        intro={t("캠페인 등록부터 재집행까지, 한 번의 협찬이 다음 학기의 협찬으로 이어지도록 모든 단계를 한곳에서 관리해요.")}
-        heading={t("우리 브랜드의 협찬, 지금 여기까지 왔어요")}
+        intro={t("캠페인 하나를 등록하면 제안 검토 · 확정 · 성과 분석이 차례로 이어져요.")}
+        heading={t("지금은 ‘{step}’ 차례예요", { step: journey[currentStep].label })}
         steps={journey}
         current={currentStep}
         scheduleLabel={t("행사 일정 보기")}
