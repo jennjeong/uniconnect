@@ -1430,3 +1430,28 @@ test("the demo brand's 내 정보 shows its plan and payments; without test keys
   await page.getByRole("button", { name: "결제 내역" }).click()
   await expect(page.getByRole("dialog", { name: "결제 내역" })).toBeVisible()
 })
+
+test("the operators' console stands on its own: token, side menu, members and a member's record", async ({ page }) => {
+  await page.goto("/admin")
+  // No member header or footer around it.
+  await expect(page.getByRole("button", { name: "전체 메뉴" })).toHaveCount(0)
+  await expect(page.getByRole("heading", { name: "운영자 콘솔" })).toBeVisible()
+  await page.getByLabel("관리자 토큰").fill("wrong-token")
+  await page.getByRole("button", { name: "들어가기" }).click()
+  await expect(page.getByRole("alert")).toHaveText("관리자 토큰이 맞지 않아요.")
+  await page.getByLabel("관리자 토큰").fill("e2e-admin-token")
+  await page.getByRole("button", { name: "들어가기" }).click()
+  const menu = page.getByRole("navigation", { name: "운영자 메뉴" })
+  await expect(menu).toBeVisible()
+  await expect(page.getByRole("heading", { level: 2, name: "지금 처리할 일" })).toBeVisible()
+  await menu.getByRole("button", { name: /회원/ }).click()
+  await page.getByLabel("이름 · 이메일 · 학교로 찾기").fill("afternoon")
+  await page.getByRole("button", { name: "오후의 커피" }).click()
+  const detail = page.getByRole("complementary", { name: "오후의 커피" })
+  await expect(detail).toContainText("hello@afternoon-coffee.kr")
+  // The demo accounts can't be stopped, so there is no button for it.
+  await expect(detail.getByRole("button", { name: "계정 정지" })).toHaveCount(0)
+  await menu.getByRole("button", { name: /제안 · 협찬/ }).click()
+  await page.getByText("예시 데이터도 보기").click()
+  await expect(page.locator(".console-table tbody tr").first()).toBeVisible()
+})

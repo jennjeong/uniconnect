@@ -1,14 +1,31 @@
 import { useCallback, useEffect, useState } from "react"
 
 import { ApiError, api, errorMessage } from "../api"
-import { PageIntro } from "../components/PageIntro"
+import logo from "../assets/brand/uniconnect_horizontal.svg"
+import logoReversed from "../assets/brand/uniconnect_horizontal_reversed.svg"
+import { Icon, type IconName } from "../components/Icon"
 import { PasswordField } from "../components/PasswordField"
 import { Pill } from "../components/Pill"
+import { Presence } from "../components/Presence"
+import { Toast } from "../components/Toast"
 import { TabBar } from "../components/TabBar"
 import { locale, t } from "../i18n"
 import { formatDateTime } from "../lib/date"
 import { fullWon } from "../lib/sponsorships"
-import type { AdminInquiry, AdminPayment, AdminReport, ErrorEntry, PlatformStats, ReportAction, SuspendedAccount } from "../types"
+import { useNotice } from "../hooks/useNotice"
+import type {
+  AdminInquiry,
+  AdminMember,
+  AdminMemberDetail,
+  AdminOverview,
+  AdminPayment,
+  AdminProposalRow,
+  AdminReport,
+  ErrorEntry,
+  PlatformStats,
+  ReportAction,
+  SuspendedAccount,
+} from "../types"
 
 // The operators' token lives in this tab only, and goes when it closes.
 const storageKey = "uniconnect-admin-token"
@@ -268,24 +285,422 @@ function PaymentCard({
 // server's environment, it shows the platform's figures, then lists the
 // questions sent from the help center, waiting ones first, and sends answers
 // members read under 내 질문.
+type Section = "overview" | "members" | "proposals" | "payments" | "inquiries" | "reports" | "errors"
+
+const sectionInfo: { key: Section; label: string; icon: IconName }[] = [
+  { key: "overview", label: "개요", icon: "chart" },
+  { key: "members", label: "회원", icon: "users" },
+  { key: "proposals", label: "제안 · 협찬", icon: "send" },
+  { key: "payments", label: "결제 · 매출", icon: "won" },
+  { key: "inquiries", label: "문의 · 섭외 요청", icon: "chat" },
+  { key: "reports", label: "신고 · 정지", icon: "close" },
+  { key: "errors", label: "오류", icon: "search" },
+]
+
+// Small bars for eight weeks of one figure.
+function Trend({ label, values, weeks }: { label: string; values: number[]; weeks: string[] }) {
+  const top = Math.max(1, ...values)
+  return (
+    <figure className="console-trend">
+      <figcaption>
+        {label}
+        <strong>{values.reduce((sum, value) => sum + value, 0)}</strong>
+      </figcaption>
+      <div>
+        {values.map((value, index) => (
+          <span key={weeks[index]} title={`${weeks[index]} · ${value}`}>
+            <i style={{ height: `${(value / top) * 100}%` }} />
+          </span>
+        ))}
+      </div>
+    </figure>
+  )
+}
+
+// The overview: what needs the operators now, the figures (members' own
+// beside the totals with the demo), eight weeks of trend and the revenue.
+function Overview({ data, onGo }: { data: AdminOverview; onGo: (section: Section) => void }) {
+  const { attention, revenue, weekly } = data
+  const todo = [
+    { label: t("답변을 기다리는 문의"), count: attention.inquiries, go: "inquiries" as Section },
+    { label: t("처리를 기다리는 신고"), count: attention.reports, go: "reports" as Section },
+    { label: t("확인할 계좌 입금"), count: attention.transfers, go: "payments" as Section },
+    { label: t("정지된 계정"), count: attention.suspended, go: "reports" as Section },
+  ]
+  const weeks = weekly.map((row) => row.week)
+  return (
+    <div className="console-grid">
+      <section className="console-card wide">
+        <h2>{t("지금 처리할 일")}</h2>
+        <div className="console-todo">
+          {todo.map((item) => (
+            <button className={item.count > 0 ? "hot" : undefined} key={item.label} onClick={() => onGo(item.go)} type="button">
+              <strong>{item.count}</strong>
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </div>
+      </section>
+      <section className="console-card">
+        <h2>{t("매출")}</h2>
+        <dl className="console-revenue">
+          <div>
+            <dt>{t("이번 달")}</dt>
+            <dd>{fullWon(revenue.thisMonth)}</dd>
+          </div>
+          <div>
+            <dt>{t("누적")}</dt>
+            <dd>{fullWon(revenue.total)}</dd>
+          </div>
+          <div>
+            <dt>{t("수수료")}</dt>
+            <dd>{fullWon(revenue.byKind.fee)}</dd>
+          </div>
+          <div>
+            <dt>{t("상세 리포트")}</dt>
+            <dd>{fullWon(revenue.byKind.report)}</dd>
+          </div>
+          <div>
+            <dt>{t("캠퍼스 파트너스")}</dt>
+            <dd>
+              {fullWon(revenue.byKind.pro)}
+              <small>{t("지금 {count}곳", { count: revenue.partners })}</small>
+            </dd>
+          </div>
+        </dl>
+      </section>
+      <section className="console-card">
+        <h2>{t("최근 8주")}</h2>
+        <div className="console-trends">
+          <Trend label={t("가입")} values={weekly.map((row) => row.signups)} weeks={weeks} />
+          <Trend label={t("제안")} values={weekly.map((row) => row.proposals)} weeks={weeks} />
+          <Trend label={t("수락")} values={weekly.map((row) => row.accepted)} weeks={weeks} />
+        </div>
+      </section>
+      <div className="console-card wide">
+        <StatsPanel stats={data.stats} />
+      </div>
+    </div>
+  )
+}
+
+const dateOf = (at: string) => formatDateTime(at)
+
+// The members: searched and filtered, newest first; one opens beside the
+// list with what it did, and can be stopped or let back in.
+function Members({ token, onNotice }: { token: string; onNotice: (message: string) => void }) {
+  const [filters, setFilters] = useState({ q: "", role: "", state: "" })
+  const [rows, setRows] = useState<AdminMember[]>()
+  const [open, setOpen] = useState<AdminMemberDetail>()
+
+  useEffect(() => {
+    let cancelled = false
+    const timer = window.setTimeout(() => {
+      api.adminAccounts(token, filters).then(
+        (result) => {
+          if (!cancelled) setRows(result.accounts)
+        },
+        (error: unknown) => onNotice(errorMessage(error)),
+      )
+    }, 250)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+    }
+  }, [token, filters, onNotice])
+
+  const show = (id: string) =>
+    api.adminAccount(token, id).then(
+      (result) => setOpen(result.account),
+      (error: unknown) => onNotice(errorMessage(error)),
+    )
+
+  return (
+    <div className={open ? "console-split open" : "console-split"}>
+      <section className="console-card">
+        <div className="console-filters">
+          <input
+            aria-label={t("이름 · 이메일 · 학교로 찾기")}
+            onChange={(event) => setFilters({ ...filters, q: event.target.value })}
+            placeholder={t("이름 · 이메일 · 학교로 찾기")}
+            value={filters.q}
+          />
+          <select aria-label={t("회원 유형")} onChange={(event) => setFilters({ ...filters, role: event.target.value })} value={filters.role}>
+            <option value="">{t("모든 유형")}</option>
+            <option value="학생단체">{t("학생단체")}</option>
+            <option value="브랜드">{t("브랜드")}</option>
+          </select>
+          <select aria-label={t("상태")} onChange={(event) => setFilters({ ...filters, state: event.target.value })} value={filters.state}>
+            <option value="">{t("모든 상태")}</option>
+            <option value="partners">{t("캠퍼스 파트너스")}</option>
+            <option value="suspended">{t("정지됨")}</option>
+            <option value="demo">{t("데모 계정")}</option>
+          </select>
+        </div>
+        {!rows ? (
+          <p className="field-hint">{t("불러오고 있어요…")}</p>
+        ) : (
+          <table className="console-table">
+            <thead>
+              <tr>
+                <th scope="col">{t("회원")}</th>
+                <th scope="col">{t("유형")}</th>
+                <th scope="col">{t("가입")}</th>
+                <th scope="col">{t("행사")}</th>
+                <th scope="col">{t("보낸 제안")}</th>
+                <th scope="col">{t("상태")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr className={open?.id === row.id ? "selected" : undefined} key={row.id} onClick={() => void show(row.id)}>
+                  <th scope="row">
+                    <button className="console-link" onClick={() => void show(row.id)} type="button">
+                      {row.name}
+                    </button>
+                    <small>{row.email}</small>
+                  </th>
+                  <td>
+                    {t(row.role)}
+                    <small>{t(row.type)}</small>
+                  </td>
+                  <td>{row.createdAt.slice(0, 10)}</td>
+                  <td>{row.events}</td>
+                  <td>{row.sent}</td>
+                  <td>
+                    {row.suspendedAt ? (
+                      <em className="console-tag red">{t("정지됨")}</em>
+                    ) : row.demo ? (
+                      <em className="console-tag">{t("데모")}</em>
+                    ) : row.partnersUntil ? (
+                      <em className="console-tag blue">PARTNERS</em>
+                    ) : (
+                      <em className="console-tag">{t("활동")}</em>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        {rows && <p className="field-hint">{t("{count}명", { count: rows.length })}</p>}
+      </section>
+      {open && (
+        <aside aria-label={open.name} className="console-card console-detail">
+          <header>
+            <div>
+              <strong>{open.name}</strong>
+              <small>
+                {t(open.role)} · {t(open.type)} {open.school && `· ${open.school}`}
+              </small>
+            </div>
+            <button aria-label={t("닫기")} className="console-icon" onClick={() => setOpen(undefined)} type="button">
+              <Icon name="close" size={16} />
+            </button>
+          </header>
+          <dl className="console-facts">
+            <div>
+              <dt>{t("이메일")}</dt>
+              <dd>{open.email}</dd>
+            </div>
+            {open.contact && (
+              <div>
+                <dt>{t("담당자")}</dt>
+                <dd>
+                  {open.contact.name} · {t(open.contact.position)} · {open.contact.phone}
+                </dd>
+              </div>
+            )}
+            <div>
+              <dt>{t("가입")}</dt>
+              <dd>{dateOf(open.createdAt)}</dd>
+            </div>
+            <div>
+              <dt>{t("마지막 접속")}</dt>
+              <dd>{open.lastSeen ? dateOf(open.lastSeen) : "—"}</dd>
+            </div>
+            <div>
+              <dt>{t("로그인한 기기")}</dt>
+              <dd>{open.sessions}</dd>
+            </div>
+            <div>
+              <dt>{t("소개")}</dt>
+              <dd>{open.listed ? (open.paused ? t("숨기는 중") : t("공개 중")) : t("아직 없음")}</dd>
+            </div>
+            <div>
+              <dt>{t("사업자 확인")}</dt>
+              <dd>{open.business ? t("확인됨") : "—"}</dd>
+            </div>
+            <div>
+              <dt>{t("캠퍼스 파트너스")}</dt>
+              <dd>{open.partnersUntil ? t("{date}까지", { date: open.partnersUntil }) : "—"}</dd>
+            </div>
+            <div>
+              <dt>{t("문의 · 받은 신고")}</dt>
+              <dd>
+                {open.inquiries} · {open.reportsAbout}
+              </dd>
+            </div>
+          </dl>
+          <h3>{t("행사 · 캠페인 {count}", { count: open.eventList.length })}</h3>
+          <ul className="console-list">
+            {open.eventList.map((event) => (
+              <li key={event.id}>
+                {event.name} <small>{event.date}</small>
+              </li>
+            ))}
+          </ul>
+          <h3>{t("보낸 제안 {count} · 받은 제안 {received}", { count: open.sentList.length, received: open.receivedList.length })}</h3>
+          <ul className="console-list">
+            {[...open.sentList, ...open.receivedList].slice(0, 12).map((item) => (
+              <li key={item.id}>
+                {item.partner} · {item.event} <em>{t(item.status)}</em>
+              </li>
+            ))}
+          </ul>
+          <h3>{t("결제 {count}", { count: open.payments.length })}</h3>
+          <ul className="console-list">
+            {open.payments.map((payment) => (
+              <li key={payment.id}>
+                {payment.orderName} · {fullWon(payment.amount)} <em>{t(payment.status === "paid" ? "결제 완료" : payment.status === "pending" ? "결제 대기" : "취소 · 환불")}</em>
+              </li>
+            ))}
+          </ul>
+          {!open.demo &&
+            (open.suspendedAt ? (
+              <button
+                className="cancel-button"
+                onClick={() =>
+                  void api.unsuspendAccount(token, open.id).then(
+                    () => {
+                      onNotice(t("{name}의 정지를 풀었어요.", { name: open.name }))
+                      void show(open.id)
+                    },
+                    (error: unknown) => onNotice(errorMessage(error)),
+                  )
+                }
+                type="button"
+              >
+                {t("정지 풀기")}
+              </button>
+            ) : (
+              <button
+                className="decline-button"
+                onClick={() =>
+                  void api.adminSuspend(token, open.id).then(
+                    (result) => {
+                      setOpen(result.account)
+                      onNotice(t("{name}을 정지했어요. 로그인한 기기도 모두 로그아웃됐어요.", { name: open.name }))
+                    },
+                    (error: unknown) => onNotice(errorMessage(error)),
+                  )
+                }
+                type="button"
+              >
+                {t("계정 정지")}
+              </button>
+            ))}
+        </aside>
+      )}
+    </div>
+  )
+}
+
+// Every proposal, filtered by its state, newest first.
+function Proposals({ token, onNotice }: { token: string; onNotice: (message: string) => void }) {
+  const [rows, setRows] = useState<AdminProposalRow[]>()
+  const [status, setStatus] = useState("")
+  const [examples, setExamples] = useState(false)
+  useEffect(() => {
+    api.adminProposals(token).then(
+      (result) => setRows(result.proposals),
+      (error: unknown) => onNotice(errorMessage(error)),
+    )
+  }, [token, onNotice])
+  const shown = (rows ?? []).filter((row) => (examples || !row.example) && (!status || row.status === status))
+  const statuses = [...new Set((rows ?? []).map((row) => row.status))]
+  return (
+    <section className="console-card">
+      <div className="console-filters">
+        <select aria-label={t("상태")} onChange={(event) => setStatus(event.target.value)} value={status}>
+          <option value="">{t("모든 상태")}</option>
+          {statuses.map((item) => (
+            <option key={item} value={item}>
+              {t(item)}
+            </option>
+          ))}
+        </select>
+        <label className="console-check">
+          <input checked={examples} onChange={(event) => setExamples(event.target.checked)} type="checkbox" />
+          {t("예시 데이터도 보기")}
+        </label>
+      </div>
+      {!rows ? (
+        <p className="field-hint">{t("불러오고 있어요…")}</p>
+      ) : (
+        <table className="console-table">
+          <thead>
+            <tr>
+              <th scope="col">{t("보낸 쪽")}</th>
+              <th scope="col">{t("받은 쪽")}</th>
+              <th scope="col">{t("행사")}</th>
+              <th scope="col">{t("날짜")}</th>
+              <th scope="col">{t("상태")}</th>
+              <th scope="col">{t("계약서")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {shown.map((row) => (
+              <tr key={row.id}>
+                <th scope="row">
+                  {row.from}
+                  <small>{row.kind === "request" ? t("학생단체 → 브랜드") : t("브랜드 → 학생단체")}</small>
+                </th>
+                <td>{row.to}</td>
+                <td>{row.event}</td>
+                <td>{row.date || "—"}</td>
+                <td>
+                  <em className="console-tag">{t(row.status)}</em>
+                </td>
+                <td>{row.confirmed ? t("양쪽 확인") : "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      {rows && <p className="field-hint">{t("{count}건", { count: shown.length })}</p>}
+    </section>
+  )
+}
+
+// The operators' console (/admin, mounted on its own by main.tsx, with no
+// member screens around it): the ADMIN_TOKEN from the server's environment
+// opens it; a side menu leads to the overview, members, proposals,
+// payments and revenue, questions and partner requests, reports and
+// suspensions, and errors.
 export function AdminPage({ onNotice }: { onNotice: (message: string) => void }) {
   const [token, setToken] = useState(readToken)
   const [tokenDraft, setTokenDraft] = useState("")
+  const [section, setSection] = useState<Section>("overview")
+  const [overview, setOverview] = useState<AdminOverview | null>(null)
   const [inquiries, setInquiries] = useState<AdminInquiry[] | null>(null)
-  const [stats, setStats] = useState<PlatformStats | null>(null)
   const [reports, setReports] = useState<AdminReport[]>([])
   const [suspended, setSuspended] = useState<SuspendedAccount[]>([])
   const [errors, setErrors] = useState<ErrorEntry[]>([])
   const [payments, setPayments] = useState<AdminPayment[]>([])
   const [tab, setTab] = useState<Tab>("waiting")
+  const [kind, setKind] = useState("")
   const [reportTab, setReportTab] = useState<"open" | "done">("open")
+  const [paymentTab, setPaymentTab] = useState<"pending" | "paid" | "cancelled">("pending")
   const [error, setError] = useState("")
+  const [loadedAt, setLoadedAt] = useState<string>()
+  const [reload, setReload] = useState(0)
 
   const signOut = useCallback((message = "") => {
     writeToken("")
     setToken("")
+    setOverview(null)
     setInquiries(null)
-    setStats(null)
     setReports([])
     setSuspended([])
     setErrors([])
@@ -297,21 +712,22 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
     if (!token) return
     let cancelled = false
     Promise.all([
+      api.adminOverview(token),
       api.adminInquiries(token),
-      api.adminStats(token),
       api.adminReports(token),
       api.adminErrors(token),
       api.adminPayments(token),
     ])
-      .then(([listed, counted, reported, failed, paid]) => {
+      .then(([seen, listed, reported, failed, paid]) => {
         if (cancelled) return
         writeToken(token)
+        setOverview(seen)
         setInquiries(listed.inquiries)
-        setStats(counted.stats)
         setReports(reported.reports)
         setSuspended(reported.suspended)
         setErrors(failed.errors)
         setPayments(paid.payments)
+        setLoadedAt(new Date().toISOString())
         setError("")
       })
       .catch((caught) => {
@@ -322,7 +738,7 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
     return () => {
       cancelled = true
     }
-  }, [token, signOut])
+  }, [token, signOut, reload])
 
   const answer = async (inquiry: AdminInquiry, text: string) => {
     try {
@@ -370,162 +786,251 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
     }
   }
 
-  const openReports = reports.filter((report) => !report.resolution)
-  const doneReports = reports.filter((report) => report.resolution)
-  const shownReports = reportTab === "open" ? openReports : doneReports
-
-  const waiting = (inquiries ?? []).filter((inquiry) => !inquiry.answer)
-  const answered = (inquiries ?? []).filter((inquiry) => inquiry.answer)
-  const list = tab === "waiting" ? waiting : answered
-
-  return (
-    <section className="page-view admin-page">
-      <PageIntro
-        eyebrow="Operators"
-        title={t("운영자 화면")}
-        description={t("서비스 지표를 보고, 도움말 센터의 '관리자에게 질문하기'로 들어온 질문에 답하고, 회원의 신고를 처리해요.")}
-        actions={
-          inquiries && (
-            <Pill onClick={() => signOut()} variant="outline">
-              {t("나가기")}
-            </Pill>
-          )
-        }
-      />
-
-      {!inquiries ? (
+  if (!token || !overview) {
+    return (
+      <div className="console-login">
         <form
-          className="admin-login"
+          className="console-login-card"
           onSubmit={(event) => {
             event.preventDefault()
             if (tokenDraft.trim()) setToken(tokenDraft.trim())
           }}
         >
+          <img alt="uniconnect" src={logo} />
+          <h1>{t("운영자 콘솔")}</h1>
+          <p>{t("서버의 ADMIN_TOKEN으로 들어와요. 토큰은 이 탭에만 기억되고, 탭을 닫으면 지워져요.")}</p>
           <PasswordField
             autoComplete="off"
             label={t("관리자 토큰")}
+            onChange={(event) => setTokenDraft(event.target.value)}
             placeholder={t("서버의 ADMIN_TOKEN")}
             toggleLabel={t("토큰 보기")}
             value={tokenDraft}
-            onChange={(event) => setTokenDraft(event.target.value)}
           />
           {error && (
             <p className="form-error" role="alert">
               {error}
             </p>
           )}
-          <button className="primary-button" disabled={!tokenDraft.trim()} type="submit">
-            {t("확인")}
+          <button className="primary-button wide" disabled={!tokenDraft.trim() || (Boolean(token) && !error)} type="submit">
+            {token && !error ? t("확인하고 있어요…") : t("들어가기")}
           </button>
-          <small className="field-hint">{t("토큰은 이 탭에만 기억되고, 탭을 닫으면 지워져요.")}</small>
         </form>
-      ) : (
-        <>
-          {stats && <StatsPanel stats={stats} />}
-          <h2 className="admin-section-title">{t("질문")}</h2>
-          <TabBar
-            items={[
-              { value: "waiting", label: <>{t("답변 대기")}<em>{waiting.length}</em></> },
-              { value: "answered", label: <>{t("답변 완료")}<em>{answered.length}</em></> },
-            ]}
-            label={t("질문 상태")}
-            onChange={setTab}
-            value={tab}
-          />
-          {list.length === 0 ? (
-            <p className="day-empty">{tab === "waiting" ? t("답을 기다리는 질문이 없어요.") : t("아직 답한 질문이 없어요.")}</p>
-          ) : (
-            <div className="admin-list" key={tab}>
-              {list.map((inquiry) => (
-                <InquiryCard inquiry={inquiry} key={inquiry.id} onAnswer={answer} />
-              ))}
-            </div>
-          )}
+      </div>
+    )
+  }
 
-          <h2 className="admin-section-title">{t("결제")}</h2>
-          {payments.length === 0 ? (
-            <p className="day-empty">{t("아직 결제가 없어요.")}</p>
-          ) : (
-            <div className="admin-list">
-              {payments.slice(0, 50).map((payment) => (
-                <PaymentCard
-                  key={payment.id}
-                  onCancel={(item) =>
-                    void settle(
-                      () => api.adminCancelPayment(token, item.id, item.status === "paid" ? t("운영자 환불") : t("운영자 취소")),
-                      item.status === "paid" ? t("환불했어요.") : t("주문을 취소했어요."),
-                    )
-                  }
-                  onPaid={(item) => void settle(() => api.adminMarkPaid(token, item.id), t("입금을 확인했어요."))}
-                  payment={payment}
-                />
-              ))}
-            </div>
-          )}
+  const waiting = (inquiries ?? []).filter((inquiry) => !inquiry.answer)
+  const answered = (inquiries ?? []).filter((inquiry) => inquiry.answer)
+  const kinds = [...new Set((inquiries ?? []).map((inquiry) => inquiry.category))]
+  const list = (tab === "waiting" ? waiting : answered).filter((inquiry) => !kind || inquiry.category === kind)
+  const openReports = reports.filter((report) => !report.resolution)
+  const doneReports = reports.filter((report) => report.resolution)
+  const shownReports = reportTab === "open" ? openReports : doneReports
+  const shownPayments = payments.filter((payment) => payment.status === paymentTab)
+  const badges: Partial<Record<Section, number>> = {
+    inquiries: waiting.length,
+    reports: openReports.length,
+    payments: payments.filter((payment) => payment.status === "pending").length,
+  }
+  const current = sectionInfo.find((item) => item.key === section)!
 
-          <h2 className="admin-section-title">{t("신고")}</h2>
-          <TabBar
-            items={[
-              { value: "open", label: <>{t("처리 대기")}<em>{openReports.length}</em></> },
-              { value: "done", label: <>{t("처리 완료")}<em>{doneReports.length}</em></> },
-            ]}
-            label={t("신고 상태")}
-            onChange={setReportTab}
-            value={reportTab}
-          />
-          {shownReports.length === 0 ? (
-            <p className="day-empty">
-              {reportTab === "open" ? t("처리를 기다리는 신고가 없어요.") : t("아직 처리한 신고가 없어요.")}
-            </p>
-          ) : (
-            <div className="admin-list" key={reportTab}>
-              {shownReports.map((report) => (
-                <ReportCard key={report.id} onResolve={resolve} report={report} />
-              ))}
-            </div>
-          )}
+  return (
+    <div className="console">
+      <aside className="console-side">
+        <div className="console-brand">
+          <img alt="uniconnect" src={logoReversed} />
+          <span>Admin</span>
+        </div>
+        <nav aria-label={t("운영자 메뉴")}>
+          {sectionInfo.map((item) => (
+            <button
+              aria-current={section === item.key ? "page" : undefined}
+              className={section === item.key ? "active" : undefined}
+              key={item.key}
+              onClick={() => setSection(item.key)}
+              type="button"
+            >
+              <Icon name={item.icon} size={17} />
+              <span>{t(item.label)}</span>
+              {badges[item.key] ? <em>{badges[item.key]}</em> : null}
+            </button>
+          ))}
+        </nav>
+        <div className="console-side-foot">
+          <a href="/">{t("사이트로 가기")}</a>
+          <button onClick={() => signOut()} type="button">
+            {t("나가기")}
+          </button>
+        </div>
+      </aside>
+      <main className="console-main">
+        <header className="console-top">
+          <h1>{t(current.label)}</h1>
+          <div>
+            {loadedAt && <small>{t("{time} 기준", { time: formatDateTime(loadedAt) })}</small>}
+            <button className="cancel-button" onClick={() => setReload((count) => count + 1)} type="button">
+              {t("새로 고침")}
+            </button>
+          </div>
+        </header>
 
-          <h2 className="admin-section-title">{t("최근 오류")}</h2>
-          {errors.length === 0 ? (
-            <p className="day-empty">{t("기록된 오류가 없어요.")}</p>
-          ) : (
-            <div className="admin-list">
-              {errors.slice(0, 50).map((entry) => (
-                <article className="admin-card admin-error" key={entry.id}>
-                  <div className="admin-card-head">
-                    <span className="admin-category">{entry.source === "server" ? t("서버") : t("화면")}</span>
-                    <time dateTime={entry.at}>{formatDateTime(entry.at)}</time>
-                  </div>
-                  <p className="admin-question">{entry.message}</p>
-                  <p className="admin-from">
-                    {entry.where} · {entry.path}
-                  </p>
-                  {entry.stack && <pre className="admin-stack">{entry.stack}</pre>}
-                </article>
-              ))}
-            </div>
-          )}
+        {section === "overview" && <Overview data={overview} onGo={setSection} />}
 
-          <h2 className="admin-section-title">{t("정지된 계정")}</h2>
-          {suspended.length === 0 ? (
-            <p className="day-empty">{t("정지된 계정이 없어요.")}</p>
-          ) : (
-            <ul className="admin-suspended">
-              {suspended.map((account) => (
-                <li key={account.id}>
-                  <span>
-                    {account.name} · {t(account.role)} · {account.email}
-                    <small>{formatDateTime(account.suspendedAt)}</small>
-                  </span>
-                  <button className="cancel-button" onClick={() => void unsuspend(account)} type="button">
-                    {t("정지 풀기")}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </>
-      )}
-    </section>
+        {section === "members" && <Members onNotice={onNotice} token={token} />}
+
+        {section === "proposals" && <Proposals onNotice={onNotice} token={token} />}
+
+        {section === "payments" && (
+          <section className="console-card">
+            <TabBar
+              items={[
+                { value: "pending", label: <>{t("결제 대기")}<em>{payments.filter((item) => item.status === "pending").length}</em></> },
+                { value: "paid", label: <>{t("결제 완료")}<em>{payments.filter((item) => item.status === "paid").length}</em></> },
+                { value: "cancelled", label: <>{t("취소 · 환불")}<em>{payments.filter((item) => item.status === "cancelled").length}</em></> },
+              ]}
+              label={t("결제 상태")}
+              onChange={setPaymentTab}
+              value={paymentTab}
+            />
+            {shownPayments.length === 0 ? (
+              <p className="day-empty">{t("해당하는 결제가 없어요.")}</p>
+            ) : (
+              <div className="admin-list">
+                {shownPayments.map((payment) => (
+                  <PaymentCard
+                    key={payment.id}
+                    onCancel={(item) =>
+                      void settle(
+                        () => api.adminCancelPayment(token, item.id, item.status === "paid" ? t("운영자 환불") : t("운영자 취소")),
+                        item.status === "paid" ? t("환불했어요.") : t("주문을 취소했어요."),
+                      )
+                    }
+                    onPaid={(item) => void settle(() => api.adminMarkPaid(token, item.id), t("입금을 확인했어요."))}
+                    payment={payment}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {section === "inquiries" && (
+          <section className="console-card">
+            <div className="console-filters">
+              <TabBar
+                items={[
+                  { value: "waiting", label: <>{t("답변 대기")}<em>{waiting.length}</em></> },
+                  { value: "answered", label: <>{t("답변 완료")}<em>{answered.length}</em></> },
+                ]}
+                label={t("질문 상태")}
+                onChange={setTab}
+                value={tab}
+              />
+              <select aria-label={t("질문 종류")} onChange={(event) => setKind(event.target.value)} value={kind}>
+                <option value="">{t("모든 종류")}</option>
+                {kinds.map((item) => (
+                  <option key={item} value={item}>
+                    {t(item)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {list.length === 0 ? (
+              <p className="day-empty">{tab === "waiting" ? t("답을 기다리는 질문이 없어요.") : t("아직 답한 질문이 없어요.")}</p>
+            ) : (
+              <div className="admin-list" key={tab}>
+                {list.map((inquiry) => (
+                  <InquiryCard inquiry={inquiry} key={inquiry.id} onAnswer={answer} />
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {section === "reports" && (
+          <>
+            <section className="console-card">
+              <TabBar
+                items={[
+                  { value: "open", label: <>{t("처리 대기")}<em>{openReports.length}</em></> },
+                  { value: "done", label: <>{t("처리 완료")}<em>{doneReports.length}</em></> },
+                ]}
+                label={t("신고 상태")}
+                onChange={setReportTab}
+                value={reportTab}
+              />
+              {shownReports.length === 0 ? (
+                <p className="day-empty">{reportTab === "open" ? t("처리를 기다리는 신고가 없어요.") : t("아직 처리한 신고가 없어요.")}</p>
+              ) : (
+                <div className="admin-list" key={reportTab}>
+                  {shownReports.map((report) => (
+                    <ReportCard key={report.id} onResolve={resolve} report={report} />
+                  ))}
+                </div>
+              )}
+            </section>
+            <section className="console-card">
+              <h2>{t("정지된 계정")}</h2>
+              {suspended.length === 0 ? (
+                <p className="day-empty">{t("정지된 계정이 없어요.")}</p>
+              ) : (
+                <ul className="admin-suspended">
+                  {suspended.map((account) => (
+                    <li key={account.id}>
+                      <span>
+                        {account.name} · {t(account.role)} · {account.email}
+                        <small>{formatDateTime(account.suspendedAt)}</small>
+                      </span>
+                      <button className="cancel-button" onClick={() => void unsuspend(account)} type="button">
+                        {t("정지 풀기")}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          </>
+        )}
+
+        {section === "errors" && (
+          <section className="console-card">
+            {errors.length === 0 ? (
+              <p className="day-empty">{t("기록된 오류가 없어요.")}</p>
+            ) : (
+              <div className="admin-list">
+                {errors.slice(0, 100).map((entry) => (
+                  <article className="admin-card admin-error" key={entry.id}>
+                    <div className="admin-card-head">
+                      <span className="admin-category">{entry.source === "server" ? t("서버") : t("화면")}</span>
+                      <time dateTime={entry.at}>{formatDateTime(entry.at)}</time>
+                    </div>
+                    <p className="admin-question">{entry.message}</p>
+                    <p className="admin-from">
+                      {entry.where} · {entry.path}
+                    </p>
+                    {entry.stack && <pre className="admin-stack">{entry.stack}</pre>}
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+      </main>
+    </div>
+  )
+}
+
+// /admin on its own (main.tsx): the console with its own notices, and no
+// member screens around it.
+export function AdminConsole() {
+  const { notice, showNotice } = useNotice()
+  return (
+    <>
+      <AdminPage onNotice={showNotice} />
+      <Presence show={notice !== ""}>
+        <Toast message={notice} />
+      </Presence>
+    </>
   )
 }
