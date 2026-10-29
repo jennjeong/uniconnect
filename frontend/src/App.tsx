@@ -1663,7 +1663,6 @@ function App() {
             onPropose={propose}
             onCancelProposal={cancelProposal}
             onOpenReport={() => setActiveModal("report")}
-            onOpenFaq={openFaq}
             onInstall={installKind === "app" ? undefined : startInstall}
             demo={visitor}
             paused={listing?.pausedAt !== undefined}
@@ -1687,7 +1686,6 @@ function App() {
             onAccept={(request) => answerRequest(request, "accept")}
             onPropose={propose}
             onCancelProposal={cancelProposal}
-            onOpenFaq={openFaq}
             onInstall={installKind === "app" ? undefined : startInstall}
             paused={listing?.pausedAt !== undefined}
             onResume={() => pauseListing(false)}

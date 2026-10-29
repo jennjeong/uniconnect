@@ -1595,7 +1595,7 @@ button.nav-pill:hover {
   color: #fff;
 }
 
-:is(.meeting-hero, .chain-stage, .footer-stage, .profile-hero, .cta-panel, .power-panel, .report-highlight, .bento-blue, .bento-deep, .bento-slate) :focus-visible {
+:is(.meeting-hero, .chain-stage, .footer-stage, .profile-hero, .cta-panel, .power-panel, .report-highlight) :focus-visible {
   outline-color: #fff;
 }
 
@@ -2886,183 +2886,12 @@ button.nav-pill:hover {
   box-shadow: var(--silver-ring);
 }
 
-/* Stride's stats bento (components/StatsBento.tsx): a tall deep blue mesh
-   card with its number on a white inset, a tall silver card with partner
-   marks and a quote, and a column of a blue card over a slate one. */
-.stats-bento {
-  display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(0, 1fr);
-  gap: 16px;
-  padding: 16px 0 88px;
-}
-
-.bento-card {
-  position: relative;
-  isolation: isolate;
-  display: flex;
-  width: 100%;
-  min-height: 142px;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 10px;
-  overflow: hidden;
-  padding: 26px;
-  border: 0;
-  border-radius: var(--radius-lg);
-  color: inherit;
-  text-align: left;
-  transition:
-    transform 0.45s var(--ease-spring),
-    box-shadow 0.3s ease;
-}
-
 /* Numbers shrink with their card (16cqi), so whole amounts such as
    "1,480,000원" stay on one line. */
-.bento-card,
-.bento-inner {
-  container-type: inline-size;
-}
-
-.bento-card strong {
-  font-size: min(clamp(38px, 3.6vw, 60px), 16cqi);
-  font-weight: var(--weight-display);
-  letter-spacing: -0.03em;
-  line-height: 1;
-  font-variant-numeric: proportional-nums;
-}
-
-.bento-label {
-  font-size: 14px;
-  font-weight: var(--weight-label);
-}
-
-.bento-note {
-  font-size: 13px;
-  line-height: 1.55;
-}
-
-.bento-blue,
-.bento-column .bento-card {
-  --surface-tone: dark;
-}
-
-.bento-blue {
-  min-height: 300px;
-  justify-content: space-between;
-  background: #1d3f99;
-  color: #fff;
-}
-
-.bento-brand {
-  font-size: 13px;
-  font-weight: var(--weight-black);
-  letter-spacing: 0.16em;
-}
-
-.bento-icon {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  display: grid;
-  width: 44px;
-  height: 44px;
-  place-items: center;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.14);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(10px);
-}
-
-.bento-inner {
-  --surface-tone: light;
-  display: flex;
-  width: 100%;
-  flex-direction: column;
-  gap: 8px;
-  padding: 20px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.96);
-  color: var(--ink);
-  box-shadow: 0 24px 48px -24px rgba(8, 20, 52, 0.55);
-}
-
-.bento-inner .bento-label,
-.bento-inner .bento-note {
-  color: var(--muted);
-}
 
 /* Numbers on white and silver read in the point blue. */
-:is(.bento-inner, .bento-silver, .kpi-card) strong {
+.kpi-card strong {
   color: var(--point);
-}
-
-.bento-silver {
-  min-height: 300px;
-  background:
-    radial-gradient(80% 50% at 50% 0%, #ffffff 0%, rgba(255, 255, 255, 0) 70%),
-    linear-gradient(180deg, #f6f7f9 0%, #e4e8ef 100%);
-  color: var(--ink);
-  box-shadow: var(--silver-ring);
-}
-
-.bento-silver .bento-label {
-  color: var(--ink-soft);
-}
-
-.bento-marks {
-  display: flex;
-  margin-top: auto;
-}
-
-.bento-marks .match-logo {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  box-shadow: 0 0 0 3px #eef0f4;
-}
-
-.bento-marks .match-logo + .match-logo {
-  margin-left: -12px;
-}
-
-.bento-quote {
-  color: var(--ink-soft);
-  font-size: 16px;
-  line-height: 1.55;
-}
-
-.bento-column {
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 16px;
-}
-
-.bento-column .bento-card {
-  min-height: 0;
-  justify-content: space-between;
-  gap: 6px;
-  padding: 22px 26px;
-  color: #fff;
-}
-
-.bento-deep {
-  background: var(--point-gradient);
-}
-
-.bento-deep .bento-note {
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.bento-slate {
-  background: linear-gradient(160deg, #4b556a 0%, var(--slate) 100%);
-}
-
-.bento-slate .bento-label small {
-  display: block;
-  margin-top: 4px;
-  color: rgba(255, 255, 255, 0.78);
-  font-size: 13px;
-  font-weight: var(--weight-body);
 }
 
 /* Recommended partners as Stride's silver cards (components/WorkCard.tsx):
@@ -4197,9 +4026,6 @@ button.nav-pill:hover {
 .auth-form .leave-confirm:hover:not(:disabled) {
   filter: brightness(0.92);
 }
-
-/* What the account has done so far, as Stride's bento tiles: deep blue,
-   silver and slate, the label on top and the number below. */
 
 /* Numbered rows that fill with silver and shift sideways on hover. */
 .service-section {
@@ -11659,6 +11485,157 @@ button.nav-pill:hover {
   font-size: 11px;
 }
 
+/* What uniconnect does for this side (components/ValuePoints.tsx): three
+   needs as cards, the first in deep blue, each with the account's own
+   figure and the way into the feature. */
+.value-points {
+  display: grid;
+  gap: 28px;
+  margin: 88px auto 0;
+}
+
+.value-point-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.value-point {
+  display: grid;
+  grid-template-rows: auto auto auto 1fr auto auto;
+  gap: 12px;
+  padding: 26px;
+  border-radius: 28px;
+  background: var(--silver-gradient);
+  box-shadow: var(--silver-ring);
+}
+
+.value-point.lead {
+  --surface-tone: dark;
+  background: radial-gradient(120% 90% at 80% 10%, #2a59c4 0%, #10275c 70%);
+  box-shadow: none;
+  color: #fff;
+}
+
+.value-point-need {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--point-strong);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.value-point-need span {
+  color: var(--muted);
+  font-weight: var(--weight-badge);
+}
+
+.value-point.lead .value-point-need,
+.value-point.lead .value-point-need span {
+  color: var(--point-glow);
+}
+
+.value-point-icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--point-strong);
+}
+
+.value-point.lead .value-point-icon {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+.value-point h3 {
+  margin: 0;
+  font-size: 21px;
+  font-weight: var(--weight-display);
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+
+.value-point p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.value-point.lead p {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.value-point-figure {
+  display: grid;
+  gap: 2px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.value-point.lead .value-point-figure {
+  border-top-color: rgba(255, 255, 255, 0.2);
+}
+
+.value-point-figure strong {
+  font-size: 30px;
+  font-weight: var(--weight-display);
+  line-height: 1.1;
+}
+
+.value-point-figure small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.value-point.lead .value-point-figure small {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.value-point-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: var(--weight-label);
+}
+
+.value-point.lead .value-point-action {
+  background: #fff;
+  color: var(--point);
+}
+
+.value-points-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+@media (max-width: 960px) {
+  .value-point-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .value-points {
+    margin-top: 56px;
+  }
+}
+
 /* 캠퍼스 포트폴리오 on 성과 분석 (components/CampusPortfolio.tsx): totals,
    three groupings as ROAS bars, the best and weakest, and the budget planner. */
 .portfolio-card {
@@ -13912,24 +13889,6 @@ button.nav-pill:hover {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .stats-bento {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .bento-blue,
-  .bento-silver {
-    min-height: 360px;
-  }
-
-  .bento-column {
-    grid-column: 1 / -1;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: none;
-  }
-
-  .bento-column .bento-card {
-    min-height: 220px;
-  }
 
   .results-grid {
     grid-template-columns: 1fr;
@@ -14162,39 +14121,6 @@ button.nav-pill:hover {
     font-size: 34px;
   }
 
-  .stats-bento {
-    grid-template-columns: 1fr;
-    padding-bottom: 56px;
-  }
-
-  .bento-card {
-    padding: 22px;
-  }
-
-  .bento-blue {
-    min-height: 280px;
-  }
-
-  .bento-silver {
-    min-height: 0;
-  }
-
-  .bento-marks {
-    margin-top: 12px;
-  }
-
-  .bento-column {
-    grid-template-columns: 1fr;
-  }
-
-  .bento-column .bento-card {
-    min-height: 0;
-    gap: 14px;
-  }
-
-  .bento-card strong {
-    font-size: min(44px, 16cqi);
-  }
 
   .works-section {
     padding: 24px 0 48px;
@@ -15778,7 +15704,7 @@ button:active:not(:disabled) {
 }
 
 .notification-list > button:active,
-:is(.bento-card, .profile-hero-stats button, .row-button, .kpi-card):active:not(:disabled) {
+:is(.profile-hero-stats button, .row-button, .value-point-action, .kpi-card):active:not(:disabled) {
   transform: scale(0.98);
 }
 
@@ -16150,17 +16076,6 @@ button:active:not(:disabled) {
 
   .work-card:hover .work-badge {
     transform: rotate(45deg) scale(1.08);
-  }
-
-  .bento-card:hover {
-    box-shadow: 0 28px 56px -30px rgba(19, 48, 111, 0.55);
-    transform: translateY(-6px);
-  }
-
-  .bento-silver:hover {
-    box-shadow:
-      var(--silver-ring),
-      0 28px 56px -30px rgba(19, 48, 111, 0.4);
   }
 
   .kpi-card:hover {

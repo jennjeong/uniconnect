@@ -12,7 +12,7 @@ const rippleTargets = [
   ".role-button",
   "button.nav-pill",
   ".calendar-today",
-  ".bento-card",
+  ".value-point-action",
   ".profile-hero-stats button",
   ".row-button",
   ".kpi-card",
