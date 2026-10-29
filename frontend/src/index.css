@@ -11712,11 +11712,42 @@ button.nav-pill:hover {
   }
 }
 
-/* The operators' console (/admin, pages/AdminPage.tsx), on its own page:
-   a deep navy side menu with counts, a top bar, and white cards of tables
-   on the canvas; a member opens beside the list. */
+/* The operators' console (/admin, pages/AdminPage.tsx), on its own page.
+   TailAdmin's layout (a white side menu in groups that narrows to icons, a
+   top bar with search, notices and the operator, figure cards with icon
+   tiles, paired weekly bars, a half-ring gauge and an area chart) in Toss's
+   look: a light gray canvas, white cards with soft corners, large bold
+   numbers, blue for action and gray for the rest. The console sets Toss's
+   palette over the app's tokens, so the shared buttons, tabs and cards
+   inside follow it. Blues and grays for text keep 4.5:1 on white; the
+   brighter blue is only for bars and lines. */
 .console-body {
+  --point: #1b64da;
+  --point-strong: #1b64da;
+  --point-tint: #e8f3ff;
+  --console-blue: #3182f6;
+  --console-blue-mid: #6aa8ff;
+  --console-blue-soft: #c9e2ff;
+  --on-point: #ffffff;
+  --canvas: #f2f4f6;
+  --surface: #ffffff;
+  --ink: #191f28;
+  --ink-soft: #4e5968;
+  --muted: #6b7684;
+  --line: #e5e8eb;
+  --line-strong: #d1d6db;
+  --fill: #f2f4f6;
+  --fill-strong: #e5e8eb;
+  --silver-gradient: #f9fafb;
+  --silver-ring: inset 0 0 0 1px #e5e8eb;
+  --red: #d22030;
+  --red-soft: #ffeeee;
+  --green: #037a4b;
+  --green-soft: #e5f8ef;
+  --orange: #b2560d;
+  --orange-soft: #fff3e6;
   background: var(--canvas);
+  color: var(--ink);
 }
 
 .console-login {
@@ -11724,33 +11755,34 @@ button.nav-pill:hover {
   min-height: 100vh;
   place-items: center;
   padding: 24px;
-  background: radial-gradient(110% 90% at 70% 20%, #1f4cb3 0%, #0b1a3e 72%);
+  background: var(--canvas);
 }
 
 .console-login-card {
   display: grid;
   gap: 14px;
   width: min(420px, 100%);
-  padding: 32px;
+  padding: 36px 32px;
   border-radius: 24px;
   background: var(--surface);
-  box-shadow: 0 30px 80px rgba(8, 20, 52, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 27, 55, 0.06);
 }
 
 .console-login-card img {
-  height: 26px;
+  height: 24px;
   justify-self: start;
 }
 
 .console-login-card h1 {
-  margin: 4px 0 0;
-  font-size: 24px;
+  margin: 8px 0 0;
+  font-size: 26px;
+  font-weight: var(--weight-strong);
 }
 
 .console-login-card p {
   margin: 0;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.6;
 }
 
@@ -11761,169 +11793,442 @@ button.nav-pill:hover {
   font-weight: var(--weight-label);
 }
 
-.console {
-  display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
-  min-height: 100vh;
+.console-login-card .password-input > input.password-box {
+  height: 52px;
+  padding: 0 48px 0 16px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--fill);
+  box-shadow: none;
+  font-size: 15px;
 }
 
+.console-login-card .password-input > input.password-box:focus {
+  box-shadow: 0 0 0 2px var(--console-blue);
+}
+
+.console-login-card .primary-button {
+  min-height: 52px;
+  border-radius: 16px;
+  font-size: 16px;
+}
+
+.console {
+  display: grid;
+  grid-template-columns: 264px minmax(0, 1fr);
+  min-height: 100vh;
+  transition: grid-template-columns 0.25s var(--ease-quart);
+}
+
+.console.narrow {
+  grid-template-columns: 84px minmax(0, 1fr);
+}
+
+/* The side menu: white, its groups headed in small gray capitals, the open
+   page in a tinted blue pill. */
 .console-side {
-  --surface-tone: dark;
   position: sticky;
   top: 0;
+  z-index: 30;
   display: flex;
   height: 100vh;
   flex-direction: column;
-  gap: 24px;
-  padding: 24px 16px;
-  background: #0b1a3e;
-  color: #fff;
+  gap: 28px;
+  padding: 26px 18px 22px;
+  overflow-y: auto;
+  border-right: 1px solid var(--line);
+  background: var(--surface);
 }
 
 .console-brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 4px 8px;
+  padding: 6px 10px;
   border: 0;
   border-radius: 12px;
   background: transparent;
-  color: #fff;
   cursor: pointer;
 }
 
 .console-brand:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--fill);
 }
 
 .console-brand img {
   height: 22px;
+  max-width: none;
+  flex: none;
 }
 
 .console-brand span {
   padding: 2px 8px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
+  background: var(--point-tint);
+  color: var(--point);
   font-size: 11px;
   font-weight: var(--weight-badge);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
 }
 
 .console-side nav {
   display: grid;
+  gap: 22px;
+}
+
+.console-nav-group {
+  display: grid;
   gap: 4px;
+}
+
+.console-nav-group h2 {
+  margin: 0 0 6px;
+  padding: 0 12px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: var(--weight-label);
+  letter-spacing: 0.04em;
 }
 
 .console-side nav button {
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-height: 42px;
+  gap: 12px;
+  min-height: 46px;
   padding: 0 12px;
   border: 0;
   border-radius: 12px;
   background: transparent;
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 14px;
+  color: var(--ink-soft);
+  font-size: 15px;
   font-weight: var(--weight-label);
   text-align: left;
+  white-space: nowrap;
 }
 
-.console-side nav button:hover,
+.console-side nav button:hover {
+  background: var(--fill);
+  color: var(--ink);
+}
+
 .console-side nav button.active {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background: var(--point-tint);
+  color: var(--point);
 }
 
 .console-side nav button .icon {
+  flex: none;
   stroke: currentColor;
 }
 
 .console-side nav em {
   margin-left: auto;
-  padding: 1px 8px;
+  min-width: 22px;
+  padding: 1px 7px;
   border-radius: 999px;
-  background: var(--goal-mark);
+  background: var(--red);
   color: #fff;
   font-size: 11px;
   font-style: normal;
   font-weight: var(--weight-badge);
+  text-align: center;
 }
 
 .console-side-foot {
-  display: grid;
-  gap: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin-top: auto;
-  padding: 0 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  color: var(--muted);
+  font-size: 14px;
+  text-decoration: none;
 }
 
-.console-side-foot a,
-.console-side-foot button {
-  padding: 0;
+.console-side-foot:hover {
+  background: var(--fill);
+  color: var(--ink);
+}
+
+/* Narrowed to icons, on wide screens only (narrow ones use a drawer). */
+@media (min-width: 961px) {
+  .console.narrow .console-side {
+    padding-inline: 14px;
+  }
+
+  .console.narrow :is(.console-brand span, .console-nav-group h2, .console-side nav button span, .console-side-foot span) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* Only the logo's mark shows. */
+  .console.narrow .console-brand {
+    overflow: hidden;
+    width: 40px;
+    margin-inline: auto;
+    padding: 6px 8px;
+  }
+
+  .console.narrow .console-side nav button,
+  .console.narrow .console-side-foot {
+    position: relative;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .console.narrow .console-side nav em {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    min-width: 0;
+    padding: 0 5px;
+    font-size: 10px;
+  }
+}
+
+.console-scrim {
+  display: none;
+}
+
+.console-frame {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+/* The top bar: the menu switch, member search, the notices bell and the
+   operator, on white under a hairline. */
+.console-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 32px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(12px);
+}
+
+.console-round {
+  position: relative;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink-soft);
+}
+
+.console-round:hover {
+  background: var(--fill);
+}
+
+.console-round .icon {
+  stroke: currentColor;
+}
+
+.console-dot {
+  position: absolute;
+  top: 9px;
+  right: 10px;
+  width: 8px;
+  height: 8px;
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+  background: var(--red);
+}
+
+.console-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(420px, 100%);
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 12px;
+  background: var(--fill);
+  color: var(--muted);
+}
+
+.console-search .icon {
+  flex: none;
+  stroke: currentColor;
+}
+
+.console-search input {
+  width: 100%;
+  min-width: 0;
   border: 0;
   background: transparent;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.console-search:focus-within {
+  box-shadow: 0 0 0 2px var(--console-blue);
+}
+
+.console-bar-end {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.console-profile {
+  position: relative;
+}
+
+.console-profile > button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 10px 0 6px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: var(--weight-label);
+}
+
+.console-profile > button:hover {
+  background: var(--fill);
+}
+
+.console-profile > button > span {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--point);
+  color: var(--on-point);
   font-size: 13px;
+}
+
+.console-profile > button .icon {
+  stroke: currentColor;
+  transform: rotate(90deg);
+}
+
+.console-profile-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  display: grid;
+  min-width: 160px;
+  padding: 6px;
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 12px 32px rgba(0, 27, 55, 0.14);
+}
+
+.console-profile-menu :is(a, button) {
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
   text-align: left;
   text-decoration: none;
+}
+
+.console-profile-menu :is(a, button):hover {
+  background: var(--fill);
 }
 
 .console-main {
   display: grid;
   align-content: start;
-  gap: 18px;
+  gap: 20px;
   min-width: 0;
-  padding: 28px 32px 48px;
+  padding: 28px 32px 56px;
 }
 
 .console-top {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: 12px;
-}
-
-.console-top h1 {
-  margin: 0;
-  font-size: 26px;
-}
-
-.console-top > div {
-  display: flex;
-  align-items: center;
   gap: 12px;
 }
 
 .console-top small {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13px;
+}
+
+.console-top h1 {
+  margin: 2px 0 0;
+  font-size: 26px;
+  font-weight: var(--weight-strong);
+}
+
+.console-top > div:last-child {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.console-text-button {
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--point-tint);
+  color: var(--point);
+  font-size: 14px;
+  font-weight: var(--weight-label);
+}
+
+.console-text-button:hover {
+  background: var(--console-blue-soft);
 }
 
 .console-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
 }
 
 .console-card {
   display: grid;
   align-content: start;
-  gap: 14px;
+  gap: 16px;
   min-width: 0;
-  padding: 22px;
+  padding: 24px;
   border-radius: 20px;
   background: var(--surface);
-  box-shadow: var(--ring);
+  box-shadow: 0 1px 2px rgba(0, 27, 55, 0.04);
 }
 
 .console-card.wide {
   grid-column: 1 / -1;
 }
 
+.console-card.span-2 {
+  grid-column: span 2;
+}
+
 .console-card h2 {
   margin: 0;
-  font-size: 16px;
+  font-size: 17px;
+  font-weight: var(--weight-strong);
 }
 
 .console-card h3 {
@@ -11931,115 +12236,392 @@ button.nav-pill:hover {
   font-size: 14px;
 }
 
-.console-todo {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+.console-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.console-todo button {
-  display: grid;
-  gap: 4px;
-  padding: 16px;
-  border: 0;
-  border-radius: 16px;
-  background: var(--fill);
-  color: var(--ink-soft);
+.console-card-head p {
+  margin: 4px 0 0;
+  color: var(--muted);
   font-size: 13px;
-  text-align: left;
 }
 
-.console-todo button strong {
-  color: var(--ink);
-  font-size: 28px;
+/* A figure card: an icon tile, the label and the number, a badge. */
+.console-stat {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
 }
 
-.console-todo button.hot {
-  background: var(--orange-soft);
-  color: var(--orange);
-}
-
-.console-todo button.hot strong {
-  color: var(--orange);
-}
-
-.console-revenue {
+.console-stat-icon {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin: 0;
-}
-
-.console-revenue > div {
-  display: grid;
-  gap: 2px;
-  padding: 12px 14px;
+  width: 48px;
+  height: 48px;
+  grid-column: 1 / -1;
+  place-items: center;
   border-radius: 14px;
   background: var(--fill);
+  color: var(--ink-soft);
 }
 
-.console-revenue > div:first-child {
-  background: var(--point);
-  color: var(--on-point);
+.console-stat-icon .icon {
+  stroke: currentColor;
 }
 
-.console-revenue dt {
+.console-stat h2 {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: var(--weight-label);
+}
+
+.console-stat strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 28px;
+  font-weight: var(--weight-strong);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.console-badge {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--ink-soft);
   font-size: 12px;
-  opacity: 0.8;
+  font-weight: var(--weight-label);
+  white-space: nowrap;
 }
 
-.console-revenue dd {
+.console-badge.up {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.console-badge.down {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+.console-legend {
+  display: flex;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  list-style: none;
+}
+
+.console-legend li::before {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--console-blue);
+  content: "";
+}
+
+.console-legend li.signups::before {
+  background: var(--console-blue-soft);
+}
+
+/* Paired weekly bars on grid lines. */
+.console-bars {
   display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+}
+
+.console-bars-axis {
+  display: flex;
+  height: 200px;
+  flex-direction: column;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 11px;
+  text-align: right;
+}
+
+.console-bars ol {
+  display: flex;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.console-bars li {
+  display: grid;
+  flex: 1;
+  gap: 8px;
+  justify-items: center;
+}
+
+.console-bars li > div {
+  display: flex;
+  width: 100%;
+  height: 200px;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 4px;
+  background: repeating-linear-gradient(to bottom, var(--line) 0 1px, transparent 1px 50px);
+  background-position: 0 -1px;
+}
+
+.console-bars i {
+  display: block;
+  width: min(14px, 40%);
+  min-height: 2px;
+  border-radius: 6px 6px 0 0;
+  background: var(--console-blue);
+  transition: height 0.5s var(--ease-quart);
+}
+
+.console-bars i.signups {
+  background: var(--console-blue-soft);
+}
+
+.console-bars small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+/* The acceptance rate as a half ring, three figures under it. */
+.console-rate {
+  align-content: space-between;
+}
+
+.console-gauge {
+  position: relative;
+  width: min(280px, 100%);
+  margin: 0 auto;
+}
+
+.console-gauge svg {
+  display: block;
+  width: 100%;
+}
+
+.console-gauge path {
+  fill: none;
+  stroke: var(--fill-strong);
+  stroke-linecap: round;
+  stroke-width: 16;
+}
+
+.console-gauge path.value {
+  stroke: var(--console-blue);
+  transition: stroke-dasharray 0.8s var(--ease-quart);
+}
+
+.console-gauge strong {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  font-size: 34px;
+  font-weight: var(--weight-strong);
+  text-align: center;
+}
+
+.console-rate dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  border-radius: 16px;
+  background: var(--fill);
+}
+
+.console-rate dl > div {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  text-align: center;
+}
+
+.console-rate dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.console-rate dd {
   margin: 0;
   font-size: 18px;
   font-weight: var(--weight-strong);
 }
 
-.console-revenue dd small {
-  font-size: 11px;
-  font-weight: var(--weight-body);
-  opacity: 0.7;
-}
-
-.console-trends {
+/* What needs the operators: Toss's list rows with an icon, a count and a
+   chevron; rows with something waiting count in red. */
+.console-todo {
   display: grid;
-  gap: 14px;
-}
-
-.console-trend {
-  display: grid;
-  gap: 8px;
+  gap: 2px;
   margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.console-trend figcaption {
-  display: flex;
-  justify-content: space-between;
+.console-todo button {
+  display: grid;
+  width: 100%;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 10px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 15px;
+  text-align: left;
+}
+
+.console-todo button:hover {
+  background: var(--fill);
+}
+
+.console-todo-icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--fill);
   color: var(--ink-soft);
+}
+
+.console-todo .icon {
+  stroke: currentColor;
+}
+
+.console-todo button > .icon {
+  color: var(--muted);
+}
+
+.console-todo strong {
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.console-todo button.hot strong {
+  color: var(--red);
+}
+
+.console-todo button.hot .console-todo-icon {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+.console-total {
+  font-size: 22px;
+  font-weight: var(--weight-strong);
+}
+
+.console-split-bars {
+  display: grid;
+  gap: 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.console-split-bars li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.console-split-bars span {
+  color: var(--ink-soft);
+}
+
+.console-split-bars i {
+  display: block;
+  height: 10px;
+  min-width: 4px;
+  grid-column: 1 / -1;
+  border-radius: 999px;
+  background: var(--console-blue);
+}
+
+.console-split-bars li:nth-child(2) i {
+  background: var(--console-blue-mid);
+}
+
+.console-split-bars li:nth-child(3) i {
+  background: var(--console-blue-soft);
+}
+
+/* Toss's segmented switch. */
+.console-segment {
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--fill);
+}
+
+.console-segment button {
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
   font-size: 13px;
   font-weight: var(--weight-label);
 }
 
-.console-trend > div {
-  display: flex;
-  height: 48px;
-  align-items: flex-end;
-  gap: 4px;
+.console-segment button[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 1px 3px rgba(0, 27, 55, 0.12);
 }
 
-.console-trend span {
-  display: flex;
-  height: 100%;
-  flex: 1;
-  align-items: flex-end;
+/* Eight weeks as a line over a soft area, with each week's count under. */
+.console-area {
+  display: grid;
+  gap: 10px;
+  margin: 0;
 }
 
-.console-trend i {
+.console-area svg {
   display: block;
   width: 100%;
-  min-height: 2px;
-  border-radius: 4px 4px 0 0;
-  background: var(--goal-met);
+  height: 180px;
+}
+
+.console-area .area {
+  fill: var(--point-tint);
+}
+
+.console-area .line {
+  fill: none;
+  stroke: var(--console-blue);
+  stroke-linejoin: round;
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.console-area figcaption {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.console-area figcaption span {
+  display: grid;
+  gap: 2px;
+  text-align: center;
+}
+
+.console-area figcaption b {
+  color: var(--ink);
+  font-size: 13px;
 }
 
 .console-filters {
@@ -12051,11 +12633,12 @@ button.nav-pill:hover {
 
 .console-filters input,
 .console-filters select {
-  height: 40px;
-  padding: 0 12px;
+  height: 44px;
+  padding: 0 14px;
   border: 0;
   border-radius: 12px;
   background: var(--fill);
+  color: var(--ink);
   font: inherit;
   font-size: 14px;
 }
@@ -12075,21 +12658,31 @@ button.nav-pill:hover {
 .console-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .console-table th,
 .console-table td {
-  padding: 11px 10px;
+  padding: 14px 12px;
   border-bottom: 1px solid var(--line);
   text-align: left;
   vertical-align: top;
 }
 
 .console-table thead th {
+  border-bottom: 0;
+  background: var(--fill);
   color: var(--muted);
   font-size: 12px;
   font-weight: var(--weight-label);
+}
+
+.console-table thead th:first-child {
+  border-radius: 10px 0 0 10px;
+}
+
+.console-table thead th:last-child {
+  border-radius: 0 10px 10px 0;
 }
 
 .console-table tbody tr {
@@ -12104,7 +12697,7 @@ button.nav-pill:hover {
 .console-table small {
   display: block;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .console-link {
@@ -12118,19 +12711,19 @@ button.nav-pill:hover {
 }
 
 .console-tag {
-  padding: 2px 8px;
-  border-radius: 999px;
+  padding: 3px 8px;
+  border-radius: 8px;
   background: var(--fill);
   color: var(--ink-soft);
-  font-size: 11px;
+  font-size: 12px;
   font-style: normal;
-  font-weight: var(--weight-badge);
+  font-weight: var(--weight-label);
   white-space: nowrap;
 }
 
 .console-tag.blue {
-  background: var(--point);
-  color: var(--on-point);
+  background: var(--point-tint);
+  color: var(--point);
 }
 
 .console-tag.red {
@@ -12140,7 +12733,7 @@ button.nav-pill:hover {
 
 .console-split {
   display: grid;
-  gap: 18px;
+  gap: 20px;
 }
 
 .console-split.open {
@@ -12150,7 +12743,7 @@ button.nav-pill:hover {
 
 .console-detail {
   position: sticky;
-  top: 20px;
+  top: 96px;
 }
 
 .console-detail header {
@@ -12161,18 +12754,18 @@ button.nav-pill:hover {
 
 .console-detail header strong {
   display: block;
-  font-size: 18px;
+  font-size: 20px;
 }
 
 .console-detail header small {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .console-icon {
   display: grid;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   place-items: center;
   border: 0;
   border-radius: 50%;
@@ -12181,7 +12774,7 @@ button.nav-pill:hover {
 
 .console-facts {
   display: grid;
-  gap: 6px;
+  gap: 8px;
   margin: 0;
 }
 
@@ -12189,7 +12782,7 @@ button.nav-pill:hover {
   display: grid;
   grid-template-columns: 110px minmax(0, 1fr);
   gap: 8px;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .console-facts dt {
@@ -12207,19 +12800,19 @@ button.nav-pill:hover {
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .console-list li {
-  padding: 8px 10px;
-  border-radius: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
   background: var(--fill);
 }
 
 .console-list em {
   float: right;
-  color: var(--point-strong);
-  font-size: 11px;
+  color: var(--point);
+  font-size: 12px;
   font-style: normal;
   font-weight: var(--weight-label);
 }
@@ -12229,37 +12822,60 @@ button.nav-pill:hover {
   color: var(--muted);
 }
 
+@media (max-width: 1200px) {
+  .console-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Narrow screens: the side menu becomes a drawer over a scrim. */
 @media (max-width: 960px) {
-  .console {
+  .console,
+  .console.narrow {
     grid-template-columns: minmax(0, 1fr);
   }
 
   .console-side {
-    position: static;
-    height: auto;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 12px;
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(280px, 84vw);
+    box-shadow: 0 0 40px rgba(0, 27, 55, 0.16);
+    visibility: hidden;
+    transform: translateX(-105%);
+    transition:
+      transform 0.28s var(--ease-quart),
+      visibility 0s linear 0.28s;
   }
 
-  .console-side nav {
-    display: flex;
-    flex-wrap: wrap;
+  .console-side.open {
+    visibility: visible;
+    transform: none;
+    transition: transform 0.28s var(--ease-quart);
   }
 
-  .console-side-foot {
-    flex-direction: row;
-    margin: 0 0 0 auto;
+  .console-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 25;
+    display: block;
+    border: 0;
+    background: rgba(0, 12, 30, 0.4);
   }
 
-  .console-grid,
+  .console-bar {
+    padding: 12px 16px;
+  }
+
+  .console-profile > button {
+    font-size: 0;
+  }
+
+  .console-profile > button .icon {
+    display: none;
+  }
+
   .console-split.open {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .console-todo {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .console-main {
@@ -12269,6 +12885,40 @@ button.nav-pill:hover {
   .console-table {
     display: block;
     overflow-x: auto;
+  }
+}
+
+/* Phones: the figure cards two to a row, the rest full width. */
+@media (max-width: 640px) {
+  .console-grid {
+    gap: 12px;
+  }
+
+  .console-card {
+    padding: 20px;
+  }
+
+  .console-card.span-2 {
+    grid-column: 1 / -1;
+  }
+
+  .console-stat {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    padding: 16px;
+  }
+
+  .console-stat-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .console-stat strong {
+    font-size: 22px;
+  }
+
+  .console-stat .console-badge {
+    justify-self: start;
   }
 }
 
