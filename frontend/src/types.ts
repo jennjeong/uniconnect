@@ -197,7 +197,7 @@ export type BillingInfo = {
   payments: Payment[]
   // The brand's plan (backend lib/pro.ts): Pro until a Korean day, and this
   // month's proposals against the free plan's limit.
-  plan: { pro: boolean; until: string | null; offersThisMonth: number; freeOffers: number }
+  plan: { pro: boolean; until: string | null; offersThisMonth: number; freeOffers: number; partnerRequestsLeft: number }
 }
 
 // An order to pay, with what the payment window needs.
@@ -880,3 +880,32 @@ export type InsightAnswer =
       sponsorship: { id: string; groupName: string; eventName: string; date: string }
     }
   | { locked: false; report: PremiumReport; editable: boolean; shared: boolean; shareToken?: string }
+
+// 캠퍼스 포트폴리오 (backend lib/portfolio.ts): a Campus Partners brand's
+// sponsorships together, grouped three ways.
+export type PortfolioGroup = { key: string; count: number; spend: number; visits: number; coupons: number; sales: number; roas: number }
+
+export type PortfolioRow = {
+  id: string
+  eventName: string
+  groupName: string
+  date: string
+  school: string
+  category: string
+  spend: number
+  coupons: number
+  visits: number
+  sales: number
+  roas: number
+}
+
+export type Portfolio = {
+  count: number
+  totals: { spend: number; visits: number; coupons: number; sales: number; roas: number; costPerVisit: number | null; salesPerVisit: number | null }
+  bySchool: PortfolioGroup[]
+  byMonth: PortfolioGroup[]
+  byCategory: PortfolioGroup[]
+  best: PortfolioRow | null
+  weakest: PortfolioRow | null
+  rows: PortfolioRow[]
+}

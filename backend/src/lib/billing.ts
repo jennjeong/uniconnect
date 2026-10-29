@@ -11,8 +11,8 @@ export const prices = {
   feeRate: 0.15,
   // A detailed report of one sponsorship.
   report: 50_000,
-  // Pro, for 30 days.
-  pro: 200_000,
+  // 캠퍼스 파트너스 (Pro inside), for 30 days.
+  pro: 300_000,
   proDays: 30,
 } as const
 

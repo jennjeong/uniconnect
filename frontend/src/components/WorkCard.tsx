@@ -98,7 +98,7 @@ export function WorkCard({
               {formatDistance(match.distanceKm)}
             </span>
           )}
-          {match.pro && <span className="tag-pro">PRO</span>}
+          {match.pro && <span className="tag-pro">PARTNERS</span>}
           {match.businessVerified && (
             <span className="tag-verified">
               <Icon name="check" size={12} />

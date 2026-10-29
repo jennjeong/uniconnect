@@ -243,10 +243,10 @@ const en: Record<string, string> = {
     "Detailed report: the detailed report of one sponsorship costs 50,000 KRW. It can be bought from the event's day; once bought it stays yours to view, save as a PDF and share by link.",
   "리포트 환불: 사고 나서 7일 안에 리포트를 열어 보지 않았으면 돌려드려요. 연 뒤에는 디지털 콘텐츠라 돌려드리지 않아요(전자상거래법 제17조 제2항 제5호). 이 점은 결제 화면에서 먼저 알려요.":
     "Report refunds: refunded if not opened within 7 days of buying. Once opened, as digital content, it is not refunded (E-Commerce Act, Article 17(2)5). This is stated on the payment screen first.",
-  "프로: 브랜드는 30일에 200,000원으로 프로를 쓸 수 있어요. 프로는 협찬 제안을 제한 없이 보내고(무료 요금제는 한 달에 5건), 상세 성과 리포트를 모두 보고, 브랜드 카드에 PRO 표시가 붙어요. 자동으로 결제되지 않고, 다시 결제하면 남은 날 뒤에 30일이 이어져요.":
-    "Pro: brands can use Pro at 200,000 KRW for 30 days. Pro sends proposals without a limit (the free plan sends 5 a month), opens every detailed report, and puts a PRO mark on the brand card. It doesn't renew by itself; paying again adds 30 days after the days left.",
-  "프로 환불: 결제하고 7일 안에는 모두 돌려드리고, 그 뒤에는 남은 날만큼 날짜로 나눠 돌려드려요.":
-    "Pro refunds: fully refunded within 7 days of paying, and after that for the days left, pro rata.",
+  "캠퍼스 파트너스: 브랜드는 30일에 300,000원으로 캠퍼스 파트너스를 쓸 수 있어요. 협찬 제안을 제한 없이 보내고(무료 요금제는 한 달에 5건), 상세 분석 리포트를 모두 보고, 캠퍼스 포트폴리오 분석을 쓰고, 운영자에게 1:1 섭외 요청을 한 달에 2건 보낼 수 있고, 브랜드 카드에 PARTNERS 표시가 붙어요. 자동으로 결제되지 않고, 다시 결제하면 남은 날 뒤에 30일이 이어져요.":
+    "Campus Partners: brands can use Campus Partners at 300,000 KRW for 30 days. It sends proposals without a limit (the free plan sends 5 a month), opens every detailed analysis report, adds the campus portfolio analysis, sends the operators 2 one-to-one partner requests a month, and puts a PARTNERS mark on the brand card. It doesn't renew by itself; paying again adds 30 days after the days left.",
+  "캠퍼스 파트너스 환불: 결제하고 7일 안에는 모두 돌려드리고, 그 뒤에는 남은 날만큼 날짜로 나눠 돌려드려요.":
+    "Campus Partners refunds: fully refunded within 7 days of paying, and after that for the days left, pro rata.",
 }
 
 export default en

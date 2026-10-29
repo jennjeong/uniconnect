@@ -1626,6 +1626,7 @@ function App() {
         return (
           <AnalyticsPage
             onOpenReport={(id) => go({ page: "성과 분석", insight: id })}
+            onOpenPlan={() => (account ? go({ page, profile: "page" }) : openAuth("signup", "브랜드"))}
             exporting={exportingAnalytics}
             onDownload={() => setExportingAnalytics(true)}
             sponsorships={sponsorships}

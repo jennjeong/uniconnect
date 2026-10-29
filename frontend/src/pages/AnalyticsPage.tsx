@@ -1,6 +1,7 @@
 import { Fragment, type CSSProperties, type ReactNode } from "react"
 
 import { AnimatedNumber } from "../components/AnimatedNumber"
+import { CampusPortfolio } from "../components/CampusPortfolio"
 import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { Pill } from "../components/Pill"
@@ -51,6 +52,7 @@ export function AnalyticsPage({
   exporting,
   onDownload,
   onOpenReport,
+  onOpenPlan,
   campaign,
 }: {
   // Newest first.
@@ -62,6 +64,8 @@ export function AnalyticsPage({
   // A sponsorship's detailed report (pages/InsightPage.tsx), for those of a
   // measured event.
   onOpenReport: (sponsorshipId: string) => void
+  // The plan card on 내 정보, from the locked portfolio.
+  onOpenPlan: () => void
   // On-site measurement of the brand's own campaigns, at the end.
   campaign?: ReactNode
 }) {
@@ -297,6 +301,7 @@ export function AnalyticsPage({
           </div>
         </>
       )}
+      <CampusPortfolio onOpenPlan={onOpenPlan} />
       {campaign}
     </section>
   )
