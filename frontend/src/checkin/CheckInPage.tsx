@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react"
 import { ApiError, api, errorMessage } from "../api"
 import logo from "../assets/brand/uniconnect_horizontal.svg"
 import { Icon } from "../components/Icon"
+import { surveyOptions, surveyQuestions, type SurveyKey } from "../data/survey"
 import { t } from "../i18n"
 import { formatFullDate } from "../lib/date"
 import type { CheckInInfo } from "../types"
@@ -12,7 +13,55 @@ import type { CheckInInfo } from "../types"
 // the numbers the store staff confirm visits with on their own device, by
 // coupon id (one per sponsor).
 type TakenCoupon = { number: string; visited?: boolean }
-type CheckIn = { participant: string; pass?: string; coupons?: Record<string, TakenCoupon> }
+// `surveyed` once the optional survey was sent or skipped on this phone.
+type CheckIn = { participant: string; pass?: string; coupons?: Record<string, TakenCoupon>; surveyed?: true }
+
+// The optional three questions, each a row of choices; sent once, or skipped.
+function Survey({ onSend, onSkip }: { onSend: (answers: Partial<Record<SurveyKey, string>>) => Promise<void>; onSkip: () => void }) {
+  const [answers, setAnswers] = useState<Partial<Record<SurveyKey, string>>>({})
+  const [sending, setSending] = useState(false)
+  const keys = Object.keys(surveyOptions) as SurveyKey[]
+  return (
+    <section aria-labelledby="survey-title" className="checkin-survey">
+      <h2 id="survey-title">{t("10초 설문 (선택)")}</h2>
+      <p>{t("이름이나 연락처는 묻지 않아요. 답은 행사별 숫자로만 모아 행사를 더 좋게 만드는 데 써요.")}</p>
+      {keys.map((key) => (
+        <fieldset key={key}>
+          <legend>{t(surveyQuestions[key])}</legend>
+          <div>
+            {surveyOptions[key].map((option) => (
+              <button
+                aria-pressed={answers[key] === option}
+                className={answers[key] === option ? "on" : undefined}
+                key={option}
+                onClick={() => setAnswers({ ...answers, [key]: answers[key] === option ? undefined : option })}
+                type="button"
+              >
+                {t(option)}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+      ))}
+      <div className="checkin-survey-actions">
+        <button className="cancel-button" onClick={onSkip} type="button">
+          {t("건너뛰기")}
+        </button>
+        <button
+          className="primary-button"
+          disabled={sending || Object.values(answers).every((value) => !value)}
+          onClick={() => {
+            setSending(true)
+            void onSend(answers).finally(() => setSending(false))
+          }}
+          type="button"
+        >
+          {t("보내기")}
+        </button>
+      </div>
+    </section>
+  )
+}
 
 const couponTerms = "발급일부터 7일 동안 쓸 수 있어요"
 
@@ -201,6 +250,23 @@ export function CheckInPage({ code }: { code: string }) {
                 )
               })}
             </ul>
+
+            {checkIn.pass && !checkIn.surveyed && (
+              <Survey
+                onSend={async (answers) => {
+                  try {
+                    await api.answerSurvey(code, { pass: checkIn.pass!, ...answers })
+                  } catch (caught) {
+                    if (!(caught instanceof ApiError && caught.status === 409)) {
+                      setError(errorMessage(caught))
+                      return
+                    }
+                  }
+                  save({ ...checkIn, surveyed: true })
+                }}
+                onSkip={() => save({ ...checkIn, surveyed: true })}
+              />
+            )}
 
             {anyWaiting && (
               <p className="checkin-staff" role="status">

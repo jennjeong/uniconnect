@@ -15,7 +15,7 @@ import {
   venueCountsOf,
   venueMetrics,
 } from "../lib/methods.js"
-import { text } from "../lib/validation.js"
+import { surveyOptions, text } from "../lib/validation.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { ChatSide, EventSponsor, Measurement, PassCoupon } from "../types.js"
@@ -99,6 +99,34 @@ function newCouponNumber(passes: Measurement["passes"]) {
   } while (taken.has(number))
   return number
 }
+
+// The participant's optional three questions, once a pass: only the counts
+// for the event are kept, and the pass remembers it answered.
+checkInRouter.post("/:code/survey", async (req, res) => {
+  await recordsPerClient.take(clientKey(req))
+  const { measurement } = measurementFor(req.params.code)
+  const passId = text(req.body?.pass)
+  if (!Object.hasOwn(measurement.passes, passId)) {
+    throw new HttpError(403, "참여 기록을 찾을 수 없어요. QR을 다시 스캔해 주세요.")
+  }
+  const pass = measurement.passes[passId]
+  if (pass.surveyed) throw new HttpError(409, "이미 설문에 답했어요.")
+  const pick = (key: keyof typeof surveyOptions) => {
+    const value = text(req.body?.[key])
+    return (surveyOptions[key] as readonly string[]).includes(value) ? value : undefined
+  }
+  const answers = { grade: pick("grade"), field: pick("field"), visited: pick("visited") }
+  if (!answers.grade && !answers.field && !answers.visited) throw new HttpError(400, "답을 하나 이상 골라 주세요.")
+  const survey = (measurement.survey ??= { responses: 0, grade: {}, field: {}, visited: {} })
+  survey.responses += 1
+  for (const key of ["grade", "field", "visited"] as const) {
+    const value = answers[key]
+    if (value) survey[key][value] = (survey[key][value] ?? 0) + 1
+  }
+  pass.surveyed = true
+  await saveDatabase()
+  res.status(201).json({ ok: true })
+})
 
 // The participant's phone: a scan hands back a pass, and the pass claims
 // each coupon once (`couponId`, which may be left out while there is only

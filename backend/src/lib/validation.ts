@@ -133,3 +133,12 @@ export function parseRole(value: unknown): Role {
 }
 
 export const text = (value: unknown) => String(value ?? "").trim()
+
+// The participants' optional three questions on the check-in page, counted
+// for the event's detailed report (frontend data/survey.ts must match;
+// lists.sync.test.ts checks).
+export const surveyOptions = {
+  grade: ["1학년", "2학년", "3학년", "4학년 이상", "대학원생", "졸업생 · 기타"],
+  field: ["인문 · 사회", "경영 · 경제", "자연 · 공학", "의약 · 보건", "예체능", "교육", "기타"],
+  visited: ["처음이에요", "가 본 적 있어요", "잘 모르겠어요"],
+} as const

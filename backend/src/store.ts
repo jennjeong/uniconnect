@@ -5,6 +5,7 @@ import {
   seedBrands,
   seedConversations,
   seedReviews,
+  seedSurvey,
   seedGroups,
   seedMeasurements,
   seedOffers,
@@ -149,6 +150,9 @@ export function upgradeDatabase(stored: Database) {
   stored.posts ??= seedPosts(stored.demoAccountIds ?? {})
   freshenExamplePosts(stored)
   stored.reviews ??= seedReviews()
+  // The demo busking day's survey, for data made before the survey.
+  const surveyed = stored.measurements?.find((item) => item.eventId === "event-busking-day")
+  if (surveyed) surveyed.survey ??= seedSurvey()
   // Sessions saved with their plain token keep working, stored as its hash.
   stored.sessions = (stored.sessions ?? []).map((session) => {
     const legacy = session as typeof session & { token?: string }

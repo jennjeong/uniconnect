@@ -16,6 +16,7 @@ import type {
   SponsorOffer,
   SponsorRequest,
   Sponsorship,
+  SurveyCounts,
 } from "../types.js"
 
 // Demo accounts for trying the app. Both use DEMO_PASSWORD (see README).
@@ -637,6 +638,15 @@ export function seedConversations(): Conversation[] {
 
 // Reviews from past sponsorships, for the detail pages to show (KST). They
 // come from before the agreements, so they have no proposal or account.
+// The demo busking day's survey answers, counted, so its sample report shows
+// an audience (lib/premiumReport.ts).
+export const seedSurvey = (): SurveyCounts => ({
+  responses: 86,
+  grade: { "1학년": 24, "2학년": 21, "3학년": 18, "4학년 이상": 14, "대학원생": 3, "졸업생 · 기타": 4 },
+  field: { "인문 · 사회": 19, "경영 · 경제": 17, "자연 · 공학": 22, "의약 · 보건": 9, "예체능": 12, "교육": 5, "기타": 2 },
+  visited: { "처음이에요": 51, "가 본 적 있어요": 29, "잘 모르겠어요": 6 },
+})
+
 export function seedReviews(): Review[] {
   const reviews: Omit<Review, "id" | "createdAt">[] = [
     {
@@ -908,6 +918,7 @@ export function seedMeasurements(accountId: string): Measurement[] {
       },
       // The demo's staff PIN, given to the store before the event, and the
       // group's own venue PIN.
+      survey: seedSurvey(),
       staffPin: "1012",
       groupPin: "1013",
       sponsors: [],
