@@ -1454,4 +1454,18 @@ test("the operators' console stands on its own: token, side menu, members and a 
   await menu.getByRole("button", { name: /제안 · 협찬/ }).click()
   await page.getByText("예시 데이터도 보기").click()
   await expect(page.locator(".console-table tbody tr").first()).toBeVisible()
+  await expect(page).toHaveURL(/\/admin\?view=proposals$/)
+
+  // Back and forward move through the console, the open member too.
+  await page.goBack()
+  await expect(page).toHaveURL(/view=members&member=/)
+  await expect(page.getByRole("complementary", { name: "오후의 커피" })).toBeVisible()
+  await page.goBack()
+  await expect(page.getByRole("complementary", { name: "오후의 커피" })).toHaveCount(0)
+  await page.goForward()
+  await expect(page.getByRole("complementary", { name: "오후의 커피" })).toBeVisible()
+  // The logo leads to the console's first screen.
+  await page.getByRole("button", { name: "운영자 콘솔 처음으로" }).click()
+  await expect(page).toHaveURL(/\/admin$/)
+  await expect(page.getByRole("heading", { level: 2, name: "지금 처리할 일" })).toBeVisible()
 })

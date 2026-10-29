@@ -287,6 +287,26 @@ function PaymentCard({
 // members read under 내 질문.
 type Section = "overview" | "members" | "proposals" | "payments" | "inquiries" | "reports" | "errors"
 
+const sections: Section[] = ["overview", "members", "proposals", "payments", "inquiries", "reports", "errors"]
+
+type Place = { section: Section; member?: string }
+
+function readPlace(): Place {
+  const params = new URLSearchParams(window.location.search)
+  const view = params.get("view") as Section | null
+  const section = view && sections.includes(view) ? view : "overview"
+  const member = section === "members" ? params.get("member") ?? undefined : undefined
+  return { section, ...(member ? { member } : {}) }
+}
+
+const placePath = ({ section, member }: Place) => {
+  const params = new URLSearchParams()
+  if (section !== "overview") params.set("view", section)
+  if (member) params.set("member", member)
+  const query = params.toString()
+  return `/admin${query ? `?${query}` : ""}`
+}
+
 const sectionInfo: { key: Section; label: string; icon: IconName }[] = [
   { key: "overview", label: "개요", icon: "chart" },
   { key: "members", label: "회원", icon: "users" },
@@ -387,8 +407,19 @@ function Overview({ data, onGo }: { data: AdminOverview; onGo: (section: Section
 const dateOf = (at: string) => formatDateTime(at)
 
 // The members: searched and filtered, newest first; one opens beside the
-// list with what it did, and can be stopped or let back in.
-function Members({ token, onNotice }: { token: string; onNotice: (message: string) => void }) {
+// list with what it did, and can be stopped or let back in. Which one is
+// open is in the address (`memberId`), so back and forward move between them.
+function Members({
+  token,
+  memberId,
+  onOpenMember,
+  onNotice,
+}: {
+  token: string
+  memberId?: string
+  onOpenMember: (id?: string) => void
+  onNotice: (message: string) => void
+}) {
   const [filters, setFilters] = useState({ q: "", role: "", state: "" })
   const [rows, setRows] = useState<AdminMember[]>()
   const [open, setOpen] = useState<AdminMemberDetail>()
@@ -409,11 +440,22 @@ function Members({ token, onNotice }: { token: string; onNotice: (message: strin
     }
   }, [token, filters, onNotice])
 
-  const show = (id: string) =>
-    api.adminAccount(token, id).then(
-      (result) => setOpen(result.account),
-      (error: unknown) => onNotice(errorMessage(error)),
-    )
+  const load = useCallback(
+    (id: string) =>
+      api.adminAccount(token, id).then(
+        (result) => setOpen(result.account),
+        (error: unknown) => onNotice(errorMessage(error)),
+      ),
+    [token, onNotice],
+  )
+
+  // The member in the address, read again when it changes.
+  useEffect(() => {
+    if (memberId) void load(memberId)
+    else setOpen(undefined)
+  }, [memberId, load])
+
+  const show = (id: string) => (id === memberId ? load(id) : Promise.resolve(onOpenMember(id)))
 
   return (
     <div className={open ? "console-split open" : "console-split"}>
@@ -494,7 +536,7 @@ function Members({ token, onNotice }: { token: string; onNotice: (message: strin
                 {t(open.role)} · {t(open.type)} {open.school && `· ${open.school}`}
               </small>
             </div>
-            <button aria-label={t("닫기")} className="console-icon" onClick={() => setOpen(undefined)} type="button">
+            <button aria-label={t("닫기")} className="console-icon" onClick={() => onOpenMember(undefined)} type="button">
               <Icon name="close" size={16} />
             </button>
           </header>
@@ -681,7 +723,23 @@ function Proposals({ token, onNotice }: { token: string; onNotice: (message: str
 export function AdminPage({ onNotice }: { onNotice: (message: string) => void }) {
   const [token, setToken] = useState(readToken)
   const [tokenDraft, setTokenDraft] = useState("")
-  const [section, setSection] = useState<Section>("overview")
+  // Where the console is, from the address (/admin?view=members&member=<id>),
+  // so the browser's back and forward buttons and swipes move through it.
+  const [place, setPlace] = useState(readPlace)
+  const section = place.section
+  const go = useCallback((next: Place) => {
+    const current = readPlace()
+    if (current.section === next.section && current.member === next.member) return
+    window.history.pushState(null, "", placePath(next))
+    setPlace(next)
+    window.scrollTo(0, 0)
+  }, [])
+  const setSection = useCallback((next: Section) => go({ section: next }), [go])
+  useEffect(() => {
+    const back = () => setPlace(readPlace())
+    window.addEventListener("popstate", back)
+    return () => window.removeEventListener("popstate", back)
+  }, [])
   const [overview, setOverview] = useState<AdminOverview | null>(null)
   const [inquiries, setInquiries] = useState<AdminInquiry[] | null>(null)
   const [reports, setReports] = useState<AdminReport[]>([])
@@ -838,10 +896,10 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
   return (
     <div className="console">
       <aside className="console-side">
-        <div className="console-brand">
-          <img alt="uniconnect" src={logoReversed} />
+        <button aria-label={t("운영자 콘솔 처음으로")} className="console-brand" onClick={() => setSection("overview")} type="button">
+          <img alt="" src={logoReversed} />
           <span>Admin</span>
-        </div>
+        </button>
         <nav aria-label={t("운영자 메뉴")}>
           {sectionInfo.map((item) => (
             <button
@@ -870,14 +928,21 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
           <div>
             {loadedAt && <small>{t("{time} 기준", { time: formatDateTime(loadedAt) })}</small>}
             <button className="cancel-button" onClick={() => setReload((count) => count + 1)} type="button">
-              {t("새로 고침")}
+              {t("새로고침")}
             </button>
           </div>
         </header>
 
         {section === "overview" && <Overview data={overview} onGo={setSection} />}
 
-        {section === "members" && <Members onNotice={onNotice} token={token} />}
+        {section === "members" && (
+          <Members
+            memberId={place.member}
+            onNotice={onNotice}
+            onOpenMember={(member) => go({ section: "members", member })}
+            token={token}
+          />
+        )}
 
         {section === "proposals" && <Proposals onNotice={onNotice} token={token} />}
 
