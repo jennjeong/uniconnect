@@ -37,6 +37,10 @@ export type IconName =
   | "eye"
   | "eyeOff"
   | "heart"
+  | "user"
+  | "logout"
+  | "lock"
+  | "globe"
 
 const icons: Record<IconName, ReactNode> = {
   // An open eye, and one struck through, for showing and hiding a password.
@@ -148,6 +152,25 @@ const icons: Record<IconName, ReactNode> = {
   check: <path d="m5 12 4 4L19 6" />,
   chevron: <path d="m9 18 6-6-6-6" />,
   close: <path d="M6 6l12 12M18 6 6 18" />,
+  user: (
+    <>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 20c1.5-3.6 4.4-5.4 8-5.4s6.5 1.8 8 5.4" />
+    </>
+  ),
+  logout: <path d="M10 5H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4M15 8l4 4-4 4M19 12H9" />,
+  lock: (
+    <>
+      <rect height="10" rx="2" width="16" x="4" y="10" />
+      <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+    </>
+  ),
+  globe: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3Z" />
+    </>
+  ),
   inbox: (
     <>
       <path d="M22 12h-6l-2 3h-4l-2-3H2" />

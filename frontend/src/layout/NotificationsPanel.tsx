@@ -1,7 +1,8 @@
-import { useContext, useEffect, useRef, type RefObject } from "react"
+import { useContext, useRef, type RefObject } from "react"
 
 import { Icon } from "../components/Icon"
 import { ClosingContext } from "../components/Presence"
+import { useDismiss } from "../hooks/useDismiss"
 import { t } from "../i18n"
 import type { NotificationItem } from "../lib/notifications"
 
@@ -27,22 +28,7 @@ export function NotificationsPanel({
   const panelRef = useRef<HTMLElement>(null)
   const closing = useContext(ClosingContext)
 
-  useEffect(() => {
-    if (closing) return
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose()
-    }
-    const closeOutside = (event: PointerEvent) => {
-      const target = event.target as Node
-      if (!panelRef.current?.contains(target) && !toggleRef.current?.contains(target)) onClose()
-    }
-    window.addEventListener("keydown", closeOnEscape)
-    document.addEventListener("pointerdown", closeOutside)
-    return () => {
-      window.removeEventListener("keydown", closeOnEscape)
-      document.removeEventListener("pointerdown", closeOutside)
-    }
-  }, [closing, onClose, toggleRef])
+  useDismiss(panelRef, toggleRef, onClose, closing)
 
   return (
     <section

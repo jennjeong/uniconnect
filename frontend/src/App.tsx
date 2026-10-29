@@ -1703,6 +1703,7 @@ function App() {
         onCloseNotifications={closeNotifications}
         onReadNotices={markNoticesRead}
         onOpenProfile={openProfile}
+        onLogout={logout}
         onLogin={() => openAuth("login")}
         onSignup={() => openAuth("signup")}
         onOpenMenu={() => {

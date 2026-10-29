@@ -1272,3 +1272,28 @@ test("the app can be installed, and the calendar gives its dates to calendar app
   expect(calendar).not.toContain("SUMMARY:신년 버스킹")
   expect(calendar).toContain(`DTSTART;VALUE=DATE:${date.replace(/-/g, "")}`)
 })
+
+test("the account button opens a small panel with 내 정보 and 로그아웃", async ({ page, request }) => {
+  const brand = await signUpMember(request, "브랜드", "e2e-account-menu@cafe.co.kr", "메뉴 카페")
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
+  await page.goto("/dashboard")
+  const toggle = page.getByRole("button", { name: "내 계정" })
+  await toggle.click()
+  const panel = page.getByRole("region", { name: "내 계정" })
+  await expect(panel.getByText("메뉴 카페")).toBeVisible()
+  await expect(panel.getByText("e2e-account-menu@cafe.co.kr")).toBeVisible()
+  // The bell closes it, as Escape does.
+  await page.getByRole("button", { name: /^알림/ }).click()
+  await expect(panel).toHaveCount(0)
+  await toggle.click()
+  await page.keyboard.press("Escape")
+  await expect(panel).toHaveCount(0)
+  // 내 정보 opens the page; 로그아웃 logs out.
+  await toggle.click()
+  await panel.getByRole("button", { name: "내 정보" }).click()
+  await expect(page).toHaveURL(/\/me$/)
+  await toggle.click()
+  await panel.getByRole("button", { name: "로그아웃" }).click()
+  await expect(page.getByText("로그아웃했어요.")).toBeVisible()
+  await expect(page.getByRole("button", { name: "로그인", exact: true }).first()).toBeVisible()
+})

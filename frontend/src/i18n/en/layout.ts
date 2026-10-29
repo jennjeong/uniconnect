@@ -298,6 +298,8 @@ const en: Record<string, string> = {
     "Brands find student groups that fit their campaigns and see proposals and results (ROAS) in one place.",
   "받은 협찬 제안@tile": "Proposals received",
   "성과 리포트@step": "Report",
+  // The account panel under the header's account button (layout/AccountPanel.tsx)
+  "내 계정": "Account menu",
 }
 
 export default en
