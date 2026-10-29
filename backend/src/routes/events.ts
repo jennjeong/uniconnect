@@ -2,14 +2,16 @@ import { randomUUID } from "node:crypto"
 import type { Request } from "express"
 import { Router } from "express"
 
+import { findListing, shownTo } from "../lib/catalog.js"
 import { todayInKorea, toIsoDate } from "../lib/dates.js"
 import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
+import { eventPhotos, parsePhoto, photoName, photoType, photos } from "../lib/photos.js"
 import { isSponsored } from "../lib/sponsorships.js"
 import { parseRole, sponsorTypes, text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
-import type { Account, Database, EventItem, RequestStatus, Role } from "../types.js"
+import type { Account, Database, EventItem, RequestStatus, Role, SponsorPackage } from "../types.js"
 
 export const eventsRouter = Router()
 
@@ -35,7 +37,33 @@ eventsRouter.get("/", (req, res) => {
   res.json({ events: database.events[ownerId] ?? [] })
 })
 
-type EventFields = Pick<EventItem, "name" | "date" | "endDate" | "people" | "types" | "typeNote" | "budget">
+type EventFields = Pick<
+  EventItem,
+  "name" | "date" | "endDate" | "people" | "types" | "typeNote" | "budget" | "venue" | "intro" | "packages"
+>
+
+// What an event page holds, at most: four packages and four photos.
+const maxPackages = 4
+const maxEventPhotos = 4
+
+// A group's sponsorship packages: each with a name and what the brand gets,
+// and the support it asks for when it says.
+function parsePackages(value: unknown): SponsorPackage[] {
+  if (value === undefined) return []
+  if (!Array.isArray(value) || value.length > maxPackages) {
+    throw new HttpError(400, `협찬 혜택 묶음은 ${maxPackages}개까지 넣을 수 있어요.`)
+  }
+  return value.map((item) => {
+    const name = text(item?.name)
+    const gives = text(item?.gives)
+    const asks = text(item?.asks)
+    if (!name || !gives) throw new HttpError(400, "혜택 묶음마다 이름과 브랜드가 받는 것을 적어 주세요.")
+    if (name.length > 30 || gives.length > 200 || asks.length > 100) {
+      throw new HttpError(400, "혜택 묶음은 이름 30자, 받는 것 200자, 원하는 협찬 100자까지 적을 수 있어요.")
+    }
+    return { name, gives, asks }
+  })
+}
 
 // An event's or campaign's fields as they are registered or edited, checked
 // the same way both times.
@@ -54,6 +82,10 @@ function parseEventFields(role: Role, body: Request["body"]): EventFields {
   // Brands plan an optional campaign budget in won.
   const rawBudget = students ? "" : text(body?.budget)
   const budget = rawBudget ? Number(rawBudget) : undefined
+  // A group's event page: where it is, what it is, and its packages.
+  const venue = students ? text(body?.venue) : ""
+  const intro = students ? text(body?.intro) : ""
+  const packages = students ? parsePackages(body?.packages) : []
 
   if (!name || !rawDate) {
     throw new HttpError(400, `${students ? "행사명" : "캠페인명"}과 일정을 입력해 주세요.`)
@@ -87,6 +119,8 @@ function parseEventFields(role: Role, body: Request["body"]): EventFields {
   if (budget !== undefined && !(Number.isInteger(budget) && budget >= 0 && budget <= 1e10)) {
     throw new HttpError(400, "예산은 0원 이상 숫자로 입력해 주세요.")
   }
+  if (venue.length > 60) throw new HttpError(400, "장소는 60자 이하로 적어 주세요.")
+  if (intro.length > 1000) throw new HttpError(400, "행사 소개는 1000자 이하로 적어 주세요.")
 
   return {
     name,
@@ -96,6 +130,9 @@ function parseEventFields(role: Role, body: Request["body"]): EventFields {
     types,
     ...(types.includes("기타") ? { typeNote } : {}),
     ...(budget === undefined ? {} : { budget }),
+    ...(venue ? { venue } : {}),
+    ...(intro ? { intro } : {}),
+    ...(packages.length > 0 ? { packages } : {}),
   }
 }
 
@@ -179,10 +216,14 @@ eventsRouter.put("/:id", async (req, res) => {
   }
 
   const before = { ...event }
-  // Fields the edit leaves out (one day now, no 기타, no budget) go.
+  // Fields the edit leaves out (one day now, no 기타, no budget, no venue,
+  // introduction or packages) go; the photos stay.
   delete event.endDate
   delete event.typeNote
   delete event.budget
+  delete event.venue
+  delete event.intro
+  delete event.packages
   Object.assign(event, fields)
   if (datesChanged) delete event.remindedAt
   const partners = followEvent(database, account, event, datesChanged)
@@ -241,5 +282,86 @@ eventsRouter.delete("/:id", async (req, res) => {
     (measurement) => !(measurement.eventId === eventId && measurement.accountId === account.id),
   )
   await saveDatabase()
+  await photos().removeAll([eventPhotos(eventId)])
   res.status(204).end()
+})
+
+// A student group's event as its page shows it, for the group itself and for
+// anyone who sees the group (shownTo, as its profile): the event, the group's
+// listing, and whether the one looking owns it.
+function eventPage(database: Database, eventId: string, viewer?: Account) {
+  for (const [ownerId, events] of Object.entries(database.events)) {
+    const event = events.find((item) => item.id === eventId)
+    if (!event) continue
+    const owner = database.accounts.find((item) => item.id === ownerId)
+    const listing = owner?.role === "학생단체" ? findListing(database, owner) : undefined
+    const own = viewer !== undefined && viewer.id === ownerId
+    if (!owner || !listing || (!own && !shownTo(database, "groups", listing, viewer))) return undefined
+    return { event, listing, own }
+  }
+  return undefined
+}
+
+eventsRouter.get("/:id/page", (req, res) => {
+  const found = eventPage(getDatabase(), String(req.params.id), req.account)
+  if (!found) throw new HttpError(404, "행사를 찾을 수 없어요.")
+  const { remindedAt: _reminded, ...event } = found.event
+  const { id, name, school, category, industry, logo } = found.listing
+  res.json({ event, group: { id, name, school, category, industry, ...(logo ? { logo } : {}) }, own: found.own })
+})
+
+// A photo of an event page, for those who may see the page; the page
+// fetches it with the login token.
+eventsRouter.get("/:id/photos/:photo", async (req, res) => {
+  const found = eventPage(getDatabase(), String(req.params.id), req.account)
+  const photo = String(req.params.photo)
+  if (!found || !photoName.test(photo) || !found.event.photos?.includes(photo)) {
+    throw new HttpError(404, "사진을 찾을 수 없어요.")
+  }
+  const bytes = await photos().get(eventPhotos(found.event.id), photo)
+  if (!bytes) throw new HttpError(404, "사진을 찾을 수 없어요.")
+  res.type(photoType(photo)).set("Cache-Control", "private, max-age=3600").send(bytes)
+})
+
+// The group's own event, by the address.
+function ownEvent(req: Request) {
+  const account = requireAccount(req)
+  const event = (getDatabase().events[account.id] ?? []).find((item) => item.id === req.params.id)
+  if (!event || account.role !== "학생단체") throw new HttpError(404, "행사를 찾을 수 없어요.")
+  return { account, event }
+}
+
+// The group adds a photo to its event page, four at most, kept with
+// lib/photos.ts (on disk, or in Postgres on Vercel).
+eventsRouter.post("/:id/photos", async (req, res) => {
+  const { event } = ownEvent(req)
+  if ((event.photos?.length ?? 0) >= maxEventPhotos) {
+    throw new HttpError(409, `행사 사진은 ${maxEventPhotos}장까지 올릴 수 있어요.`)
+  }
+  const parsed = parsePhoto(req.body?.image)
+  if (!parsed) throw new HttpError(400, "사진은 PNG, JPG, WebP로 올려 주세요.")
+  const store = photos()
+  await store.put(eventPhotos(event.id), parsed.name, parsed.bytes)
+  try {
+    // Looked up again: the data may have been read anew while the photo went in.
+    const fresh = ownEvent(req).event
+    fresh.photos = [...(fresh.photos ?? []), parsed.name]
+    await saveDatabase()
+    res.status(201).json({ event: fresh })
+  } catch (error) {
+    // The data went back to before the photo; so does the photo store.
+    await store.remove(eventPhotos(event.id), [parsed.name])
+    throw error
+  }
+})
+
+eventsRouter.delete("/:id/photos/:photo", async (req, res) => {
+  const { event } = ownEvent(req)
+  const photo = String(req.params.photo)
+  if (!event.photos?.includes(photo)) throw new HttpError(404, "사진을 찾을 수 없어요.")
+  event.photos = event.photos.filter((item) => item !== photo)
+  if (event.photos.length === 0) delete event.photos
+  await saveDatabase()
+  await photos().remove(eventPhotos(event.id), [photo])
+  res.json({ event })
 })

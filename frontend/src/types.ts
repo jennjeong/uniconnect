@@ -45,8 +45,10 @@ export type Match = {
   // Km from the account browsing (its campus or store); absent when either
   // place is unknown.
   distanceKm?: number
-  // Student group catalog only: school, next event and its expected audience.
+  // Student group catalog only: school, next event (its id for its page) and
+  // its expected audience.
   school?: string
+  eventId?: string
   eventName?: string
   eventDate?: string
   audience?: number
@@ -229,6 +231,24 @@ export type EventItem = {
   // Campaign budget in won (brand accounts only).
   budget?: number
   status: EventStatus
+  // A student group's event page (pages/EventDetailPage.tsx): where, what it
+  // is, its photos' names and the packages it offers brands.
+  venue?: string
+  intro?: string
+  photos?: string[]
+  packages?: SponsorPackage[]
+}
+
+// A sponsorship package on a group's event page: its name, what the brand
+// gets, and the support the group asks for.
+export type SponsorPackage = { name: string; gives: string; asks: string }
+
+// An event page as the API gives it: the event, the group behind it, and
+// whether the one looking owns it.
+export type EventPage = {
+  event: EventItem
+  group: Pick<Match, "id" | "name" | "school" | "category" | "industry" | "logo">
+  own: boolean
 }
 
 // The person who runs an account; partners see it only on a confirmed
@@ -334,6 +354,8 @@ export type RequestStatus = "검토 중" | "수락" | "거절" | "취소됨" | "
 export type SponsorRequest = {
   id: string
   brandId: string
+  // The group's event it is about, whose page it links to.
+  eventId?: string
   groupName: string
   school: string
   industry: Industry

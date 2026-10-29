@@ -410,6 +410,49 @@ test("a member chooses which notice emails come, and the choice stays", async ({
   expect(left.status()).toBe(204)
 })
 
+test("a group writes its event page on the form, adds a photo, and a brand reads it", async ({ page, request, browser }) => {
+  const group = await signUpMember(request, "학생단체", "e2e-page@syu.ac.kr", "페이지 동아리")
+  const brand = await signUpMember(request, "브랜드", "e2e-page@page-cafe.kr", "페이지 카페")
+  // Its page shows to brands once the group has a listing.
+  await request.put("/api/profile", { data: { intro: "캠퍼스 공연 동아리예요.", offer: "관객 100명" }, headers: group.headers })
+  const day = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date(Date.now() + 14 * 86_400_000))
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
+  await page.goto(`/new?date=${day}`)
+  await page.getByLabel("행사명").fill("페이지 공연")
+  await page.locator("label.check-row", { hasText: "행사 운영비 지원" }).click()
+  await page.getByLabel("장소", { exact: true }).fill("삼육대학교 대강당")
+  await page.getByLabel(/행사 소개/).fill("밴드 다섯 팀의 종강 공연이에요.")
+  await page.getByRole("button", { name: "묶음 추가" }).click()
+  await page.getByLabel("묶음 이름", { exact: true }).fill("메인 스폰서")
+  await page.getByLabel("브랜드가 받는 것", { exact: true }).fill("무대 현수막 로고")
+  await page.getByLabel("원하는 협찬", { exact: true }).fill("현금 30만원")
+  await page.getByRole("button", { name: "등록하고 매칭 받기" }).click()
+  // The calendar's 상세 보기 opens the event's page.
+  await page.locator(".day-event-card", { hasText: "페이지 공연" }).getByRole("button", { name: "상세 보기" }).click()
+  await expect(page).toHaveURL(/\/event\/[^/]+$/)
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("페이지 공연")
+  await expect(page.locator(".event-facts")).toContainText("삼육대학교 대강당")
+  await expect(page.locator(".event-intro")).toHaveText("밴드 다섯 팀의 종강 공연이에요.")
+  await expect(page.locator(".event-packages")).toContainText("무대 현수막 로고")
+  const png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+  await page.locator(".event-photo-add input").setInputFiles({ name: "stage.png", mimeType: "image/png", buffer: Buffer.from(png, "base64") })
+  await expect(page.getByRole("img", { name: "페이지 공연 사진" })).toBeVisible()
+
+  // A brand member reads the same page, and goes on to the group's profile.
+  const brandPage = await (await browser.newContext()).newPage()
+  await brandPage.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
+  await brandPage.goto(new URL(page.url()).pathname)
+  await expect(brandPage.locator(".event-packages")).toContainText("메인 스폰서")
+  await expect(brandPage.getByRole("img", { name: "페이지 공연 사진" })).toBeVisible()
+  await expect(brandPage.getByRole("button", { name: "행사 수정" })).toHaveCount(0)
+  await brandPage.getByRole("button", { name: "단체 프로필 보기" }).click()
+  await expect(brandPage).toHaveURL(/\/groups\//)
+  for (const member of [group, brand]) {
+    const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: member.headers })
+    expect(left.status()).toBe(204)
+  }
+})
+
 test("a student group proposes and the brand accepts", async ({ browser }) => {
   const student = await (await browser.newContext()).newPage()
   await student.goto("/")

@@ -7,7 +7,7 @@ import { PageIntro } from "../components/PageIntro"
 import { sponsorOptions } from "../data/sponsorTypes"
 import { t, tc } from "../i18n"
 import { formatPeriod, todayIso } from "../lib/date"
-import type { EventItem, Role } from "../types"
+import type { EventItem, Role, SponsorPackage } from "../types"
 
 // Full page for registering an event or campaign, or editing one.
 export function EventCreatePage({
@@ -39,6 +39,12 @@ export function EventCreatePage({
   const [endDate, setEndDate] = useState<string | undefined>(event?.endDate)
   const [types, setTypes] = useState<string[]>(event?.types ?? [])
   const [typeNote, setTypeNote] = useState(event?.typeNote ?? "")
+  // A group's event page: where, what it is, and the packages it offers.
+  const [venue, setVenue] = useState(event?.venue ?? "")
+  const [intro, setIntro] = useState(event?.intro ?? "")
+  const [packages, setPackages] = useState<SponsorPackage[]>(event?.packages ?? [])
+  const changePackage = (index: number, part: keyof SponsorPackage, value: string) =>
+    setPackages((current) => current.map((item, at) => (at === index ? { ...item, [part]: value } : item)))
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
 
@@ -49,6 +55,10 @@ export function EventCreatePage({
 
   const submit = async () => {
     const wantsOther = types.includes("기타")
+    // Rows left empty are dropped; one begun needs its name and what the brand gets.
+    const filled = packages
+      .map((item) => ({ name: item.name.trim(), gives: item.gives.trim(), asks: item.asks.trim() }))
+      .filter((item) => item.name || item.gives || item.asks)
     const problem = !name.trim()
       ? students
         ? t("행사명을 입력해 주세요.")
@@ -59,7 +69,9 @@ export function EventCreatePage({
           : t("제공할 협찬 형태를 하나 이상 골라 주세요.")
         : wantsOther && !typeNote.trim()
           ? t("기타 협찬 유형을 적어 주세요.")
-          : ""
+          : filled.some((item) => !item.name || !item.gives)
+            ? t("혜택 묶음마다 이름과 브랜드가 받는 것을 적어 주세요.")
+            : ""
     if (problem) {
       setError(problem)
       return
@@ -75,6 +87,7 @@ export function EventCreatePage({
         types,
         typeNote: wantsOther ? typeNote.trim() : undefined,
         budget: !students && budget ? Number(budget) : undefined,
+        ...(students ? { venue: venue.trim(), intro: intro.trim(), packages: filled } : {}),
       })
     } finally {
       setBusy(false)
@@ -179,6 +192,79 @@ export function EventCreatePage({
               />
             )}
           </div>
+          {students && (
+            <div className="form-card event-page-card">
+              <h3 className="form-card-title">{t("행사 페이지")}</h3>
+              <p className="form-card-caption">{t("브랜드가 행사를 판단하도록 장소와 소개, 협찬 혜택 묶음을 적어 주세요. 사진은 행사 상세에서 올려요.")}</p>
+              <label className="field">
+                <span>{t("장소")}</span>
+                <input
+                  maxLength={60}
+                  onChange={(changed) => setVenue(changed.target.value)}
+                  placeholder={t("예) 삼육대학교 대강당")}
+                  value={venue}
+                />
+              </label>
+              <label className="field">
+                <span>
+                  {t("행사 소개")} <em className="field-count">{intro.length}/1000</em>
+                </span>
+                <textarea
+                  maxLength={1000}
+                  onChange={(changed) => setIntro(changed.target.value)}
+                  placeholder={t("어떤 행사인지, 누가 오는지, 브랜드가 무엇을 할 수 있는지 적어 주세요.")}
+                  rows={5}
+                  value={intro}
+                />
+              </label>
+              <div className="package-editor">
+                <span className="field-label">{t("협찬 혜택 묶음")}</span>
+                {packages.map((item, index) => (
+                  <fieldset className="package-row" key={index}>
+                    <legend className="sr-only">{t("혜택 묶음 {count}", { count: index + 1 })}</legend>
+                    <input
+                      aria-label={t("묶음 이름")}
+                      maxLength={30}
+                      onChange={(changed) => changePackage(index, "name", changed.target.value)}
+                      placeholder={t("예) 메인 스폰서")}
+                      value={item.name}
+                    />
+                    <input
+                      aria-label={t("브랜드가 받는 것")}
+                      maxLength={200}
+                      onChange={(changed) => changePackage(index, "gives", changed.target.value)}
+                      placeholder={t("예) 무대 현수막 로고, SNS 게시물 2회")}
+                      value={item.gives}
+                    />
+                    <input
+                      aria-label={t("원하는 협찬")}
+                      maxLength={100}
+                      onChange={(changed) => changePackage(index, "asks", changed.target.value)}
+                      placeholder={t("예) 현금 30만원")}
+                      value={item.asks}
+                    />
+                    <button
+                      aria-label={t("혜택 묶음 {count} 빼기", { count: index + 1 })}
+                      className="delete-button"
+                      onClick={() => setPackages((current) => current.filter((_, at) => at !== index))}
+                      type="button"
+                    >
+                      <Icon name="close" size={16} />
+                    </button>
+                  </fieldset>
+                ))}
+                {packages.length < 4 && (
+                  <button
+                    className="cancel-button"
+                    onClick={() => setPackages((current) => [...current, { name: "", gives: "", asks: "" }])}
+                    type="button"
+                  >
+                    <Icon name="plus" size={15} /> {t("묶음 추가")}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="form-card date-card">

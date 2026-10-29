@@ -148,6 +148,13 @@ export function pageMeta(
       description: t("가입, 협찬 제안, 일정 등록, 성과 확인에 대해 자주 묻는 질문을 보고, 더 궁금한 점은 관리자에게 물어봐요."),
     }
   }
+  if (view.eventPage) {
+    return {
+      title: titled(t("행사 상세")),
+      description: t("학생단체의 행사 장소와 소개, 사진, 브랜드에 드리는 협찬 혜택 묶음을 봐요."),
+      noindex: true,
+    }
+  }
   if (view.admin) {
     return { title: titled(t("운영자 화면")), description: t("도움말 센터로 들어온 질문을 확인하고 답해요."), noindex: true }
   }

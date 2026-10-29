@@ -421,6 +421,15 @@ const en: Record<string, string> = {
   "지난 일주일 동안 가입한 브랜드 가운데 잘 맞는 곳이에요.": "Brands that joined in the past week and fit you best.",
   "지난 일주일 동안 가입한 학생단체 가운데 잘 맞는 곳이에요.": "Student groups that joined in the past week and fit you best.",
   "· {name} (일치율 {score}%)": "· {name} ({score}% match)",
+
+  // Event pages (routes/events.ts)
+  "협찬 혜택 묶음은 {count}개까지 넣을 수 있어요.": "You can add up to {count} packages.",
+  "혜택 묶음마다 이름과 브랜드가 받는 것을 적어 주세요.": "Give each package a name and what the brand gets.",
+  "혜택 묶음은 이름 30자, 받는 것 200자, 원하는 협찬 100자까지 적을 수 있어요.":
+    "A package takes a name of up to 30 characters, what the brand gets up to 200, and the support asked up to 100.",
+  "장소는 60자 이하로 적어 주세요.": "Keep the venue to 60 characters.",
+  "행사 소개는 1000자 이하로 적어 주세요.": "Keep the event introduction to 1,000 characters.",
+  "행사 사진은 {count}장까지 올릴 수 있어요.": "You can add up to {count} photos to an event.",
 }
 
 export default en

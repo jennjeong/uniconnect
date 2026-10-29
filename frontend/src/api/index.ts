@@ -12,6 +12,7 @@ import type {
   ErrorEntry,
   EventItem,
   EventMeasurement,
+  EventPage,
   Inquiry,
   InvitePageData,
   MailKind,
@@ -60,7 +61,7 @@ export type SignupPayload = {
 
 export type EventDraft = Pick<
   EventItem,
-  "name" | "people" | "date" | "endDate" | "types" | "typeNote" | "budget"
+  "name" | "people" | "date" | "endDate" | "types" | "typeNote" | "budget" | "venue" | "intro" | "packages"
 >
 
 // Proposals the account sent, with each brand's answer so far.
@@ -190,6 +191,15 @@ export const api = {
   // Takes back this side's request, or declines the other side's.
   dropCancelRequest: (id: string) =>
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/cancel`, { method: "DELETE" }),
+  eventPage: (id: string) => request<EventPage>(`/events/${encodeURIComponent(id)}/page`),
+  eventPhoto: (id: string, photo: string) =>
+    requestBlob(`/events/${encodeURIComponent(id)}/photos/${encodeURIComponent(photo)}`),
+  addEventPhoto: (id: string, image: string) =>
+    request<{ event: EventItem }>(`/events/${encodeURIComponent(id)}/photos`, { method: "POST", body: { image } }),
+  deleteEventPhoto: (id: string, photo: string) =>
+    request<{ event: EventItem }>(`/events/${encodeURIComponent(id)}/photos/${encodeURIComponent(photo)}`, {
+      method: "DELETE",
+    }),
   agreementPhoto: (id: string, photo: string) =>
     requestBlob(`/agreements/${encodeURIComponent(id)}/photos/${encodeURIComponent(photo)}`),
   reviews: (about: string) =>

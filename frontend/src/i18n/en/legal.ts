@@ -77,8 +77,8 @@ const en: Record<string, string> = {
   "협찬이 확정된 상대와 연락하고, 운영 문의에 답하기": "Contact between the partners of a confirmed sponsorship, and replies to questions to the operators",
   "탈퇴하거나 내 정보에서 바꿀 때까지": "Until you leave or change it in My Account",
   "탈퇴할 때까지": "Until account deletion",
-  "소개, 브랜드의 매장 주소, SNS 주소, 포트폴리오, 행사·캠페인 정보, 협찬 제안":
-    "Profile, a brand's store address, social media addresses, portfolio, event and campaign information, sponsorship proposals",
+  "소개, 브랜드의 매장 주소, SNS 주소, 포트폴리오, 행사·캠페인 정보와 행사 페이지(장소, 소개, 사진, 협찬 혜택 묶음), 협찬 제안":
+    "Profile, a brand's store address, social media addresses, portfolio, event and campaign information and event pages (venue, introduction, photos, sponsorship packages), sponsorship proposals",
   "다른 회원에게 소개를 보여 주고, 학교와 매장 사이의 거리를 알려 협찬을 연결":
     "Showing profiles to other members, telling them the distance between schools and stores, and connecting sponsorships",
   "탈퇴하거나 직접 지울 때까지": "Until account deletion or until deleted by the member",

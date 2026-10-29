@@ -13,6 +13,8 @@ export type View = {
   create?: string
   // The event or campaign being edited on the same form, by its id.
   edit?: string
+  // A student group's event page, by the event's id (/event/<id>).
+  eventPage?: string
   // The 내 정보 page, or its profile editor.
   profile?: "page" | "edit"
   // The message list, or one conversation.
@@ -73,6 +75,7 @@ export function viewPath(view: View) {
   if (view.home) return `${base}/`
   if (view.create) return `${base}/new?date=${view.create}`
   if (view.edit) return `${base}/edit/${encodeURIComponent(view.edit)}`
+  if (view.eventPage) return `${base}/event/${encodeURIComponent(view.eventPage)}`
   if (view.profile) return `${base}/me${view.profile === "edit" ? "/edit" : ""}`
   if (view.chat) return `${base}/messages/${encodeURIComponent(view.chat)}`
   if (view.messages) return `${base}/messages`
@@ -131,6 +134,7 @@ export function readView(location: Location = window.location): View {
     return named ? { page: "대시보드", chat: named } : { page: "대시보드", messages: true }
   }
   if (first === "edit") return named ? { page: "대시보드", edit: named } : missing
+  if (first === "event") return named ? { page: "대시보드", eventPage: named } : missing
   if (first === "invite") return named && /^[\w-]+$/.test(named) ? { page: "대시보드", invite: named } : missing
   if (first === "agreements") {
     return named ? { page: "대시보드", agreement: named } : { page: "대시보드", agreements: true }

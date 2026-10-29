@@ -33,10 +33,13 @@ function RequestCard({
   request,
   onAnswer,
   onOpenAgreement,
+  onOpenEvent,
 }: {
   request: SponsorRequest
   onAnswer: (request: SponsorRequest, decision: "accept" | "decline") => void
   onOpenAgreement: (id: string) => void
+  // The group's event page, for a proposal about one.
+  onOpenEvent?: (eventId: string) => void
 }) {
   // Declining can't be undone, so it asks once more.
   const [confirming, setConfirming] = useState(false)
@@ -55,7 +58,15 @@ function RequestCard({
       <dl className="request-facts">
         <div>
           <dt>{t("행사")}</dt>
-          <dd>{request.eventName}</dd>
+          <dd>
+            {request.eventId && onOpenEvent ? (
+              <button className="text-link" onClick={() => onOpenEvent(request.eventId!)} type="button">
+                {request.eventName}
+              </button>
+            ) : (
+              request.eventName
+            )}
+          </dd>
         </div>
         <div>
           <dt>{t("일정")}</dt>
@@ -151,6 +162,7 @@ export function InboxPage({
   onAnswer,
   onWithdraw,
   onOpenAgreement,
+  onOpenEvent,
 }: {
   requests: SponsorRequest[]
   sent: SentProposal[]
@@ -158,6 +170,7 @@ export function InboxPage({
   onWithdraw: (proposal: SentProposal) => void
   // An accepted proposal's agreement (pages/AgreementPage.tsx).
   onOpenAgreement: (id: string) => void
+  onOpenEvent?: (eventId: string) => void
 }) {
   const [tab, setTab] = useState<RequestStatus>("검토 중")
   const current = tabs.find((item) => item.status === tab) ?? tabs[0]
@@ -170,7 +183,13 @@ export function InboxPage({
     ) : (
       <div className="request-grid stagger">
         {list.map((request) => (
-          <RequestCard key={request.id} onAnswer={onAnswer} onOpenAgreement={onOpenAgreement} request={request} />
+          <RequestCard
+            key={request.id}
+            onAnswer={onAnswer}
+            onOpenAgreement={onOpenAgreement}
+            onOpenEvent={onOpenEvent}
+            request={request}
+          />
         ))}
       </div>
     )

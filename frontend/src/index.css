@@ -1452,6 +1452,19 @@ button.nav-pill:hover {
   color: #fff;
 }
 
+/* A button that reads as a link, in the line it sits in: an event's name
+   opening its page. */
+.text-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--point-strong);
+  font: inherit;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .subtle-link {
   display: inline-flex;
   align-items: center;
@@ -5178,7 +5191,8 @@ button.nav-pill:hover {
 }
 
 .field input,
-.other-input {
+.other-input,
+.package-row input {
   width: 100%;
   height: 46px;
   padding: 0 14px;
@@ -5191,7 +5205,8 @@ button.nav-pill:hover {
 }
 
 .field input:focus,
-.other-input:focus {
+.other-input:focus,
+.package-row input:focus {
   border-color: var(--point-line);
   background: var(--fill-strong);
 }
@@ -5287,6 +5302,221 @@ button.nav-pill:hover {
 
 .other-input {
   margin-top: 10px;
+}
+
+/* A group's event page on the registration form: its packages, one row
+   each (name, what the brand gets, what the group asks for). */
+.package-editor {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.package-editor .field-label {
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.package-row {
+  display: grid;
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+@media (max-width: 720px) {
+  .package-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .package-row input {
+    grid-column: 1;
+  }
+
+  .package-row .delete-button {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+
+/* A group's event page (pages/EventDetailPage.tsx): what, when and where,
+   then its words, photos and packages beside the group's card. */
+.event-facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+  margin: 18px 0 0;
+  padding: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+  font-weight: var(--weight-label);
+  list-style: none;
+}
+
+.event-facts li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.event-types span {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--fill);
+  font-size: 12px;
+}
+
+.event-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  align-items: start;
+  gap: 24px;
+  margin-top: 28px;
+}
+
+.event-main {
+  display: grid;
+  min-width: 0;
+  gap: 32px;
+}
+
+.event-section h2 {
+  margin: 0 0 12px;
+  font-size: 20px;
+  font-weight: var(--weight-display);
+  letter-spacing: -0.02em;
+}
+
+.event-intro {
+  margin: 0;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.75;
+  white-space: pre-line;
+}
+
+.event-photos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.event-photo {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--fill);
+  aspect-ratio: 4 / 3;
+}
+
+.event-photo img,
+.event-photo-wait {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.event-photo-remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--ink);
+}
+
+.event-photo-add {
+  cursor: pointer;
+}
+
+.event-packages {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.event-packages li {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: 18px;
+  border-radius: var(--radius-md);
+  background: var(--silver-gradient);
+  box-shadow: var(--silver-ring);
+}
+
+.event-packages strong {
+  font-size: 16px;
+  font-weight: var(--weight-label);
+}
+
+.event-packages p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.event-packages small {
+  color: var(--point-strong);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.event-group {
+  position: sticky;
+  top: calc(var(--header-h) + 16px);
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  padding: 22px;
+  border-radius: var(--radius-lg);
+  background: #fff;
+  box-shadow: var(--ring);
+}
+
+.event-group strong {
+  font-size: 18px;
+  font-weight: var(--weight-label);
+}
+
+.event-group > span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.event-group .primary-button {
+  width: 100%;
+  margin-top: 8px;
+}
+
+@media (max-width: 900px) {
+  .event-body {
+    grid-template-columns: 1fr;
+  }
+
+  .event-group {
+    position: static;
+  }
 }
 
 /* Date picker on the new event page, matching the 내 행사 calendar. */
