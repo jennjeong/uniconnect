@@ -151,6 +151,7 @@ export const api = {
   analytics: () => request<{ sponsorships: Sponsorship[] }>("/analytics"),
 
   profile: () => request<{ profile: Match | null }>("/profile"),
+  pauseProfile: (paused: boolean) => request<{ profile: Match }>("/profile/pause", { method: "PUT", body: { paused } }),
   saveProfile: (body: ProfileDraft) =>
     request<{ profile: Match }>("/profile", { method: "PUT", body }),
 

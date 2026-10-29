@@ -45,6 +45,8 @@ export function BrandDashboardPage({
   onOpenFaq,
   onInstall,
   demo = false,
+  paused = false,
+  onResume,
 }: {
   // The logged-in brand's name for the greeting.
   accountName?: string
@@ -73,6 +75,10 @@ export function BrandDashboardPage({
   onInstall?: () => void
   // A visitor, shown the demo account's data: the hero says it is an example.
   demo?: boolean
+  // The account's listing is out of the lists for now (내 정보): the hero
+  // says so and shows it again with one press.
+  paused?: boolean
+  onResume?: () => void
 }) {
   const pending = requests.filter((request) => request.status === "검토 중")
   const confirmed = requests.filter((request) => request.status === "수락")
@@ -133,21 +139,29 @@ export function BrandDashboardPage({
           { value: `${totals.roas}%`, label: t("평균 ROAS") },
         ]}
         insight={
-          pending.length > 0
+          paused
+            ? t("내 소개를 숨기는 중이에요.")
+            : pending.length > 0
             ? t("새로 받은 협찬 제안 {count}건이 답을 기다리고 있어요.", { count: pending.length })
             : noGroups
               ? t("아직 가입한 학생단체가 없어요.")
               : t("캠페인과 잘 맞는 학생단체 {count}곳을 찾았어요.", { count: matches.length })
         }
         detail={
-          noGroups && pending.length === 0
-            ? t("브랜드 소개를 써 두고 캠페인을 행사 일정에 등록해 두세요. 학생단체가 가입하면 캠페인과 잘 맞는 순서로 추천해 드려요.")
-            : t("브랜드와 학생단체가 맞닿는 캠퍼스 현장에서, 성과가 숫자로 남는 협찬을 시작해 보세요.")
+          paused
+            ? t("학생단체의 목록에 보이지 않고 새 협찬 제안을 받지 않아요. 진행 중인 대화와 협찬은 그대로예요.")
+            : noGroups && pending.length === 0
+              ? t("브랜드 소개를 써 두고 캠페인을 행사 일정에 등록해 두세요. 학생단체가 가입하면 캠페인과 잘 맞는 순서로 추천해 드려요.")
+              : t("브랜드와 학생단체가 맞닿는 캠퍼스 현장에서, 성과가 숫자로 남는 협찬을 시작해 보세요.")
         }
-        primary={{
-          label: pending.length > 0 ? t("받은 제안 확인하기") : t("학생단체 찾아보기"),
-          onClick: () => onNavigate(pending.length > 0 ? "받은 제안" : "단체 찾기"),
-        }}
+        primary={
+          paused && onResume
+            ? { label: t("다시 보이게 하기"), onClick: onResume }
+            : {
+                label: pending.length > 0 ? t("받은 제안 확인하기") : t("학생단체 찾아보기"),
+                onClick: () => onNavigate(pending.length > 0 ? "받은 제안" : "단체 찾기"),
+              }
+        }
         secondary={{ label: t("행사 일정 보기"), onClick: () => onNavigate("행사 일정") }}
         onInstall={onInstall}
       />

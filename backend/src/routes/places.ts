@@ -1,7 +1,7 @@
 import { Router } from "express"
 
 import { config } from "../config.js"
-import { shownTo, viewerFor } from "../lib/catalog.js"
+import { listedTo, viewerFor } from "../lib/catalog.js"
 import { HttpError } from "../lib/errors.js"
 import { campusOf } from "../lib/geo.js"
 import { exampleNearby, nearbyPlaces, nearestPlaces } from "../lib/places.js"
@@ -64,9 +64,10 @@ placesRouter.get("/", async (req, res) => {
         : [],
     )
     const places = nearestPlaces(found.flat()).map((place) => {
-      // A shop shows as the brand it joined as only to those who see that brand.
+      // A shop shows as the brand it joined as only to those who find that brand
+      // in the lists (not while it is paused).
       const brand = database.brands.find(
-        (item) => item.kakaoPlaceId === place.id && shownTo(database, "brands", item, req.account),
+        (item) => item.kakaoPlaceId === place.id && listedTo(database, "brands", item, req.account),
       )
       return {
         ...place,

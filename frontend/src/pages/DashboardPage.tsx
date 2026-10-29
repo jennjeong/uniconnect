@@ -50,6 +50,8 @@ export function DashboardPage({
   onOpenFaq,
   onInstall,
   demo = false,
+  paused = false,
+  onResume,
 }: {
   // The logged-in group's name for the greeting.
   accountName?: string
@@ -78,6 +80,10 @@ export function DashboardPage({
   onInstall?: () => void
   // A visitor, shown the demo account's data: the hero says it is an example.
   demo?: boolean
+  // The account's listing is out of the lists for now (내 정보): the hero
+  // says so and shows it again with one press.
+  paused?: boolean
+  onResume?: () => void
 }) {
   const next = nextEvent(events)
   const nextDay = next ? fromIsoDate(next.date) : undefined
@@ -141,16 +147,24 @@ export function DashboardPage({
           { value: metrics.scans.toLocaleString(locale), label: t("누적 QR 참여") },
         ]}
         insight={
-          noBrands
-            ? t("아직 가입한 브랜드가 없어요.")
-            : t("다가오는 행사와 잘 맞는 브랜드 {count}곳을 찾았어요.", { count: matches.length })
+          paused
+            ? t("내 소개를 숨기는 중이에요.")
+            : noBrands
+              ? t("아직 가입한 브랜드가 없어요.")
+              : t("다가오는 행사와 잘 맞는 브랜드 {count}곳을 찾았어요.", { count: matches.length })
         }
         detail={
-          noBrands
-            ? t("학교 근처 가게에 초대장을 보내 첫 파트너를 만들어 보세요. 브랜드가 가입하면 행사와 잘 맞는 순서로 추천해 드려요.")
-            : t("학생단체와 브랜드가 맞닿는 곳에서 협찬이 시작돼요. 일치율이 높은 브랜드부터 제안해 보세요.")
+          paused
+            ? t("브랜드의 목록에 보이지 않고 새 협찬 제안을 받지 않아요. 진행 중인 대화와 협찬은 그대로예요.")
+            : noBrands
+              ? t("학교 근처 가게에 초대장을 보내 첫 파트너를 만들어 보세요. 브랜드가 가입하면 행사와 잘 맞는 순서로 추천해 드려요.")
+              : t("학생단체와 브랜드가 맞닿는 곳에서 협찬이 시작돼요. 일치율이 높은 브랜드부터 제안해 보세요.")
         }
-        primary={{ label: t("추천 매칭 확인하기"), onClick: () => onNavigate("추천 매칭") }}
+        primary={
+          paused && onResume
+            ? { label: t("다시 보이게 하기"), onClick: onResume }
+            : { label: t("추천 매칭 확인하기"), onClick: () => onNavigate("추천 매칭") }
+        }
         onInstall={onInstall}
       />
 

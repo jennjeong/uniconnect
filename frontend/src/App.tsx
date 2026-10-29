@@ -747,6 +747,21 @@ function App() {
   // trying the demo uses them.
   const member = account !== null && !Object.values(demoAccounts).some((demo) => demo.email === account.email)
 
+  // 목록에서 숨기기 (내 정보) and 다시 보이게 하기 (the dashboard's hero).
+  const pauseListing = (paused: boolean) => {
+    api
+      .pauseProfile(paused)
+      .then((result) => {
+        setListing(result.profile)
+        showNotice(
+          paused
+            ? t("내 소개를 숨겼어요. 상대 목록에 보이지 않고 새 제안을 받지 않아요.")
+            : t("내 소개가 다시 상대 목록에 보여요."),
+        )
+      })
+      .catch(handleError)
+  }
+
   // 찜: the heart keeps a listing to come back to on the catalog's 찜 tab. It
   // shows at once and goes back if the server refuses.
   const toggleSaved = (match: Match) => {
@@ -1181,6 +1196,7 @@ function App() {
           onUnblock={unblock}
           business={checksBusiness && business ? business : undefined}
           onVerifyBusiness={() => setActiveModal("business")}
+          onPause={member ? pauseListing : undefined}
         />
       )
     }
@@ -1354,6 +1370,8 @@ function App() {
             onOpenFaq={openFaq}
             onInstall={installKind === "app" ? undefined : startInstall}
             demo={visitor}
+            paused={listing?.pausedAt !== undefined}
+            onResume={() => pauseListing(false)}
           />
         ) : (
           <BrandDashboardPage
@@ -1374,6 +1392,8 @@ function App() {
             onCancelProposal={cancelProposal}
             onOpenFaq={openFaq}
             onInstall={installKind === "app" ? undefined : startInstall}
+            paused={listing?.pausedAt !== undefined}
+            onResume={() => pauseListing(false)}
           />
         )
     }
