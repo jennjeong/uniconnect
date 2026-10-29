@@ -1387,19 +1387,19 @@ test("the detailed report: the demo's open from 성과 분석, a member's locked
   }
 })
 
-test("a brand sees its plan in 내 정보 and asks to start Pro", async ({ page, request }) => {
+test("a brand sees its plan in 내 정보 and asks to start Campus Partners", async ({ page, request }) => {
   const brand = await signUpMember(request, "브랜드", "e2e-plan@plan-cafe.kr", "요금제 카페")
   await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
   await page.goto("/me")
   const card = page.getByRole("region", { name: "요금제" })
   await expect(card).toContainText("무료 요금제 · 이번 달 협찬 제안 0/5건")
-  await expect(card).toContainText("상세 성과 리포트 모두 포함")
-  await card.getByRole("button", { name: "프로 시작하기" }).click()
-  const pay = page.getByRole("dialog", { name: "프로 결제" })
-  await expect(pay).toContainText("200,000원")
+  await expect(card).toContainText("상세 분석 리포트 모두 포함")
+  await card.getByRole("button", { name: "캠퍼스 파트너스 시작하기" }).click()
+  const pay = page.getByRole("dialog", { name: "캠퍼스 파트너스 결제" })
+  await expect(pay).toContainText("300,000원")
   await pay.getByText("결제 내용을 확인했고,").click()
   await pay.getByRole("button", { name: "계좌 입금으로 요청하기" }).click()
-  await expect(page.getByText("계좌 입금을 요청했어요. 입금이 확인되면 프로가 시작돼요.")).toBeVisible()
+  await expect(page.getByText("계좌 입금을 요청했어요. 입금이 확인되면 캠퍼스 파트너스가 시작돼요.")).toBeVisible()
   expect((await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: brand.headers })).status()).toBe(204)
 })
 
@@ -1412,7 +1412,7 @@ test("the demo brand's 내 정보 shows its plan and payments; without test keys
   await page.goto("/me")
   const card = page.getByRole("region", { name: "요금제" })
   await expect(card).toContainText("무료 요금제")
-  await expect(card.getByRole("button", { name: "프로 시작하기" })).toBeDisabled()
+  await expect(card.getByRole("button", { name: "캠퍼스 파트너스 시작하기" })).toBeDisabled()
   await expect(card).toContainText("데모 계정은 테스트 결제로만 시연할 수 있어요.")
   await page.getByRole("button", { name: "결제 내역" }).click()
   await expect(page.getByRole("dialog", { name: "결제 내역" })).toBeVisible()

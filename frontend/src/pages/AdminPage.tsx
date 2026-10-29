@@ -208,7 +208,7 @@ function StatsPanel({ stats }: { stats: PlatformStats }) {
   )
 }
 
-const paymentKinds: Record<AdminPayment["kind"], string> = { fee: "수수료", report: "상세 리포트", pro: "프로" }
+const paymentKinds: Record<AdminPayment["kind"], string> = { fee: "수수료", report: "상세 리포트", pro: "캠퍼스 파트너스" }
 
 // One payment for the operators: who paid what, how and when, with the
 // actions its state allows (confirming a transfer that arrived, cancelling

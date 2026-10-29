@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto"
 import { Router } from "express"
 
 import { config } from "../config.js"
@@ -6,7 +7,8 @@ import { HttpError } from "../lib/errors.js"
 // What brands can buy, each registered with lib/billing.ts.
 import "../lib/feeSales.js"
 import "../lib/reportSales.js"
-import { planOf } from "../lib/pro.js"
+import { isPro } from "../lib/plan.js"
+import { partnerRequestCategory, partnerRequestsPerMonth, partnerRequestsThisMonth, planOf } from "../lib/pro.js"
 import { isDemoAccount } from "../lib/reviews.js"
 import { text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
@@ -103,4 +105,27 @@ billingRouter.post("/confirm", async (req, res) => {
   })
   await saveDatabase()
   res.json({ order: paymentView(current) })
+})
+
+// A partner's 1:1 섭외 요청: what events it looks for, which the operators
+// answer like a question (twice a Korean month).
+billingRouter.post("/partner-requests", async (req, res) => {
+  const account = requireAccount(req)
+  const database = getDatabase()
+  if (!isPro(database, account.id)) throw new HttpError(403, "캠퍼스 파트너스만 쓸 수 있어요.")
+  const request = text(req.body?.request)
+  if (request.length < 10) throw new HttpError(400, "찾고 싶은 행사와 조건을 10자 이상 적어 주세요.")
+  if (request.length > 1000) throw new HttpError(400, "질문은 1,000자 이하로 적어 주세요.")
+  if (partnerRequestsThisMonth(database, account.id) >= partnerRequestsPerMonth) {
+    throw new HttpError(409, `섭외 요청은 한 달에 ${partnerRequestsPerMonth}건까지예요.`)
+  }
+  database.inquiries.push({
+    id: randomUUID(),
+    accountId: account.id,
+    category: partnerRequestCategory,
+    question: request,
+    createdAt: new Date().toISOString(),
+  })
+  await saveDatabase()
+  res.status(201).json({ plan: planOf(database, account) })
 })

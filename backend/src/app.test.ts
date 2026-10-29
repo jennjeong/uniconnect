@@ -4874,7 +4874,7 @@ test("a free brand sends five proposals a month; Pro lifts the limit for 30 days
 
   // Paid Pro: 30 days, then 30 more after them.
   const { order } = (await call("POST", "/billing/orders", { kind: "pro", targetId: "" }, brand)).data
-  assert.deepEqual([order.amount, order.orderName], [200000, "uniconnect 프로 30일"])
+  assert.deepEqual([order.amount, order.orderName], [300000, "캠퍼스 파트너스 30일"])
   const { markPaid, paymentsOf } = await import("./lib/billing.js")
   markPaid(getDatabase(), paymentsOf(getDatabase()).find((item) => item.id === order.id)!, { method: "transfer" })
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date())
@@ -4885,13 +4885,24 @@ test("a free brand sends five proposals a month; Pro lifts the limit for 30 days
   }
   assert.equal((await call("GET", "/billing", undefined, brand)).data.plan.until, after(29))
   assert.equal((await call("POST", "/proposals", { matchId: groups[5] }, brand)).status, 201)
+  const club = await signUpMember("pro-viewer@syu.ac.kr", "pro-pass-123")
+  assert.equal((await call("POST", "/billing/partner-requests", { request: "파트너스가 아닌 계정의 요청이에요." }, club)).status, 403)
   const renewal = (await call("POST", "/billing/orders", { kind: "pro", targetId: "" }, brand)).data.order
-  assert.equal(renewal.orderName, "uniconnect 프로 30일 연장")
+  assert.equal(renewal.orderName, "캠퍼스 파트너스 30일 연장")
   markPaid(getDatabase(), paymentsOf(getDatabase()).find((item) => item.id === renewal.id)!, { method: "transfer" })
   assert.equal((await call("GET", "/billing", undefined, brand)).data.plan.until, after(59))
 
-  // Its listing shows PRO to groups.
-  const club = await signUpMember("pro-viewer@syu.ac.kr", "pro-pass-123")
+  // Twice a month it asks the operators to find partners.
+  const ask = (request: string) => call("POST", "/billing/partner-requests", { request }, brand)
+  assert.equal((await ask("짧음")).status, 400)
+  assert.equal((await ask("12월 공릉동 대학 축제 중 관객 300명 이상인 행사를 찾아 주세요.")).status, 201)
+  assert.equal((await ask("1월 개강 행사 중 카페와 맞는 곳을 찾아 주세요.")).status, 201)
+  assert.equal((await ask("하나 더 부탁드려요. 2월 졸업식 행사요.")).status, 409)
+  // Its portfolio opens; a free brand's is locked.
+  assert.equal((await call("GET", "/analytics/portfolio", undefined, brand)).data.locked, false)
+  assert.equal((await call("GET", "/analytics/portfolio", undefined, club)).data.locked, true)
+
+  // Its listing shows PARTNERS to groups.
   const seen = (await call("GET", "/brands", undefined, club)).data
   const listing = (seen.brands ?? seen).find((item: { id: string }) => item.id === listingId)
   assert.equal(listing.pro, true)

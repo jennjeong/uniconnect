@@ -11393,6 +11393,218 @@ button.nav-pill:hover {
   font-size: 11px;
 }
 
+/* 캠퍼스 포트폴리오 on 성과 분석 (components/CampusPortfolio.tsx): totals,
+   three groupings as ROAS bars, the best and weakest, and the budget planner. */
+.portfolio-card {
+  display: grid;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.portfolio-locked {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  padding: 20px;
+  border-radius: 18px;
+  background: var(--fill);
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.portfolio-locked p {
+  margin: 0;
+}
+
+.portfolio-totals,
+.portfolio-simulator dl {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.portfolio-totals > div,
+.portfolio-simulator dl > div {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--fill);
+}
+
+.portfolio-totals dt,
+.portfolio-simulator dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: var(--weight-label);
+}
+
+.portfolio-totals dd,
+.portfolio-simulator dd {
+  margin: 0;
+  font-size: 20px;
+  font-weight: var(--weight-strong);
+}
+
+.portfolio-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.portfolio-groups {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  margin: 0;
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--ring);
+}
+
+.portfolio-groups figcaption {
+  font-size: 14px;
+  font-weight: var(--weight-label);
+}
+
+.portfolio-groups ul {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.portfolio-groups li {
+  display: grid;
+  gap: 4px;
+}
+
+.portfolio-key {
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.portfolio-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--fill);
+}
+
+.portfolio-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--goal-met);
+}
+
+.portfolio-figure {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 8px;
+  font-size: 12px;
+}
+
+.portfolio-figure small {
+  color: var(--muted);
+}
+
+.portfolio-picks p {
+  margin: 4px 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.portfolio-picks strong {
+  margin-right: 6px;
+  color: var(--point-strong);
+}
+
+.portfolio-simulator {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border-radius: 18px;
+  background: var(--point-tint);
+}
+
+.portfolio-simulator label {
+  display: grid;
+  gap: 6px;
+  max-width: 280px;
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.portfolio-simulator input {
+  height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--surface);
+  font-size: 15px;
+}
+
+.portfolio-simulator dl {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.portfolio-simulator dl > div {
+  background: var(--surface);
+}
+
+.portfolio-simulator small {
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.partner-request {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--fill);
+}
+
+.partner-request label {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.partner-request textarea {
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--surface);
+  font: inherit;
+  font-size: 14px;
+  resize: vertical;
+}
+
+.partner-request button {
+  width: fit-content;
+}
+
+@media (max-width: 960px) {
+  .portfolio-grid,
+  .portfolio-totals {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .portfolio-grid,
+  .portfolio-simulator dl {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* 요금제 on a brand's 내 정보 (components/PlanCard.tsx): the plan it is on,
    then the free plan and Pro side by side, the current one in deep blue. */
 .plan-status {

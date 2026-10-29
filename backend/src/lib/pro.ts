@@ -6,12 +6,19 @@ import { reportAccess } from "./premiumReport.js"
 import { isDemoAccount } from "./reviews.js"
 import type { Account, Database } from "../types.js"
 
-// 프로 (the business plan's brand subscription, 200,000 KRW a month,
-// freemium): 30 days paid at a time, added on after the days already paid.
-// Pro brands send proposals without a monthly limit, read every detailed
-// report, and show a PRO mark on their listing. The free plan sends up to
+// 캠퍼스 파트너스 (the business plan's brand subscription, 300,000 KRW a
+// month, freemium; `pro` in the data): 30 days paid at a time, added on
+// after the days already paid. Partners send proposals without a monthly
+// limit, read every detailed report and their 캠퍼스 포트폴리오
+// (lib/portfolio.ts), ask the operators to find partners for them twice a
+// month (1:1 섭외 요청), and show a PARTNERS mark on their listing. The free plan sends up to
 // `freeOffersPerMonth` proposals a calendar month (Korean).
 export const freeOffersPerMonth = 5
+
+// 1:1 섭외 요청s a partner may send a Korean month, kept as questions to
+// the operators under their own kind.
+export const partnerRequestsPerMonth = 2
+export const partnerRequestCategory = "파트너스 섭외 요청"
 
 const koreanMonth = (at: string) => new Date(new Date(at).getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 7)
 
@@ -25,9 +32,18 @@ export function offersThisMonth(database: Database, accountId: string) {
 export function assertCanOffer(database: Database, account: Account) {
   if (account.role !== "브랜드" || isDemoAccount(database, account) || isPro(database, account.id)) return
   if (offersThisMonth(database, account.id) >= freeOffersPerMonth) {
-    throw new HttpError(402, `무료 요금제는 한 달에 협찬 제안 ${freeOffersPerMonth}건까지예요. 프로로 바꾸면 제한 없이 보낼 수 있어요.`)
+    throw new HttpError(402, `무료 요금제는 한 달에 협찬 제안 ${freeOffersPerMonth}건까지예요. 캠퍼스 파트너스로 바꾸면 제한 없이 보낼 수 있어요.`)
   }
 }
+
+// The partner's 1:1 섭외 요청s this Korean month.
+export const partnerRequestsThisMonth = (database: Database, accountId: string) =>
+  database.inquiries.filter(
+    (inquiry) =>
+      inquiry.accountId === accountId &&
+      inquiry.category === partnerRequestCategory &&
+      koreanMonth(inquiry.createdAt) === todayInKorea().slice(0, 7),
+  ).length
 
 // The account's plan as its pages show it.
 export function planOf(database: Database, account: Account) {
@@ -37,16 +53,17 @@ export function planOf(database: Database, account: Account) {
     until,
     offersThisMonth: offersThisMonth(database, account.id),
     freeOffers: freeOffersPerMonth,
+    partnerRequestsLeft: until ? Math.max(0, partnerRequestsPerMonth - partnerRequestsThisMonth(database, account.id)) : 0,
   }
 }
 
 sell("pro", {
   quote(database, account) {
-    if (account.role !== "브랜드") throw new HttpError(403, "프로는 브랜드 계정만 쓸 수 있어요.")
+    if (account.role !== "브랜드") throw new HttpError(403, "캠퍼스 파트너스는 브랜드 계정만 쓸 수 있어요.")
     const until = proUntil(database, account.id)
     return {
       amount: prices.pro,
-      orderName: until ? `uniconnect 프로 ${prices.proDays}일 연장` : `uniconnect 프로 ${prices.proDays}일`,
+      orderName: until ? `캠퍼스 파트너스 ${prices.proDays}일 연장` : `캠퍼스 파트너스 ${prices.proDays}일`,
     }
   },
   // Paid: 30 more days, from tomorrow or after the days already paid.
@@ -58,3 +75,4 @@ sell("pro", {
 })
 
 reportAccess.push((database, account) => isPro(database, account.id))
+

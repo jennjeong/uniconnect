@@ -5,6 +5,7 @@ import type {
   AdminPayment,
   InsightAnswer,
   PremiumReport,
+  Portfolio,
   BillingInfo,
   Payment,
   PaymentKind,
@@ -239,6 +240,9 @@ export const api = {
   shareInsight: (id: string) => request<{ shareToken: string }>(`/insights/${encodeURIComponent(id)}/share`, { method: "POST" }),
   unshareInsight: (id: string) => request<void>(`/insights/${encodeURIComponent(id)}/share`, { method: "DELETE" }),
   billing: () => request<BillingInfo>("/billing"),
+  portfolio: () => request<{ locked: true } | { locked: false; portfolio: Portfolio }>("/analytics/portfolio"),
+  partnerRequest: (wanted: string) =>
+    request<{ plan: BillingInfo["plan"] }>("/billing/partner-requests", { method: "POST", body: { request: wanted } }),
   order: (kind: PaymentKind, targetId: string) =>
     request<PaymentOrder>("/billing/orders", { method: "POST", body: { kind, targetId } }),
   askTransfer: (orderId: string) =>

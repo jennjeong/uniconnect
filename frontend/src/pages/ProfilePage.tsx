@@ -566,7 +566,7 @@ export function ProfilePage({
           )}
 
           {onPlan && (
-            <SettingsCard caption={t("브랜드는 무료로 시작하고, 제안을 더 보내거나 리포트를 모두 보려면 프로를 써요.")} icon="won" id="profile-plan" title={t("요금제")}>
+            <SettingsCard caption={t("브랜드는 무료로 시작하고, 제안을 더 보내고 리포트와 포트폴리오 분석까지 보려면 캠퍼스 파트너스를 써요.")} icon="won" id="profile-plan" title={t("요금제")}>
               <PlanCard onNotice={onPlan} />
             </SettingsCard>
           )}
@@ -581,7 +581,7 @@ export function ProfilePage({
                     </RowButton>
                   }
                   label={t("결제 내역")}
-                  value={t("수수료, 상세 리포트, 프로 결제와 영수증이에요.")}
+                  value={t("수수료, 상세 리포트, 캠퍼스 파트너스 결제와 영수증이에요.")}
                 />
               )}
               <SettingsRow
