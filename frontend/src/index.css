@@ -8428,12 +8428,15 @@ button.nav-pill:hover {
 
 /* The rules a new password follows, each turning green with a check as
    the password typed meets it (components/PasswordRules.tsx). */
+/* Under the password boxes: a panel of its own, apart from the last box and
+   from what follows. */
 .password-rules {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 10px;
-  margin-top: -2px;
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 6px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--fill);
   color: var(--muted);
   font-size: 12px;
   font-weight: var(--weight-label);
@@ -8454,7 +8457,8 @@ button.nav-pill:hover {
   gap: 5px;
   padding: 4px 9px;
   border-radius: 999px;
-  background: var(--fill);
+  background: var(--surface);
+  box-shadow: var(--ring);
   color: var(--ink-soft);
 }
 
