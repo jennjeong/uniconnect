@@ -1,5 +1,6 @@
 import { paymentsOf } from "./billing.js"
 import { addDays, todayInKorea } from "./dates.js"
+import { campusOf, placeOf } from "./geo.js"
 import { statusOf } from "./proposals.js"
 import { isDemoAccount } from "./reviews.js"
 import type { Account, Agreement, Database, SponsorOffer, SponsorRequest } from "../types.js"
@@ -110,7 +111,31 @@ export function distribution(database: Database) {
         .map((account) => database.brands.find((brand) => brand.id === account.brandId)?.industry ?? "—"),
     ),
     types: count(members.map((account) => account.type)),
+    map: memberMap(database),
   }
+}
+
+// Where members are: groups at their campus, counted per campus, and
+// brands at their store, for the analysis screen's map. Members without a
+// known place are left off.
+function memberMap(database: Database) {
+  const members = realAccounts(database)
+  const groups = new Map<string, { name: string; lat: number; lng: number; count: number }>()
+  for (const account of members.filter((item) => item.role === "학생단체")) {
+    const campus = campusOf(account)
+    if (!campus) continue
+    const row = groups.get(campus.name) ?? { name: campus.name, lat: campus.lat, lng: campus.lng, count: 0 }
+    row.count += 1
+    groups.set(campus.name, row)
+  }
+  const brands = members
+    .filter((account) => account.role === "브랜드")
+    .map((account) => {
+      const point = placeOf(database.brands.find((brand) => brand.id === account.brandId), account)
+      return point ? { name: account.name, lat: point.lat, lng: point.lng } : undefined
+    })
+    .filter((item): item is { name: string; lat: number; lng: number } => Boolean(item))
+  return { groups: [...groups.values()], brands }
 }
 
 // This month's sign-ups, proposals and revenue beside the targets.

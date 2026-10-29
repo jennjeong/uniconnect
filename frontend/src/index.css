@@ -11821,7 +11821,7 @@ button.nav-pill:hover {
   --surface: #ffffff;
   --ink: #191f28;
   --ink-soft: #4e5968;
-  --muted: #6b7684;
+  --muted: #596372;
   --line: #e5e8eb;
   --line-strong: #d1d6db;
   --fill: #f2f4f6;
@@ -13100,7 +13100,7 @@ button.nav-pill:hover {
 
 .console-form-row {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 10px;
 }
 
@@ -13836,9 +13836,120 @@ th[aria-sort="descending"] .console-sort span {
   cursor: default;
 }
 
+.console-map {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.console-map svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 1px 1px, var(--line) 1px, transparent 0) 0 0 / 22px 22px,
+    var(--fill);
+}
+
+.console-map circle.campus {
+  fill: color-mix(in srgb, var(--console-blue) 35%, transparent);
+  stroke: var(--console-blue);
+  stroke-width: 2;
+}
+
+.console-map rect.brand {
+  fill: var(--orange);
+  rx: 2px;
+}
+
+.console-map text {
+  fill: var(--ink);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+  text-anchor: middle;
+}
+
+.console-map figcaption {
+  display: flex;
+  gap: 16px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.console-map figcaption span::before {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--console-blue);
+  content: "";
+}
+
+.console-map figcaption .brand::before {
+  border-radius: 2px;
+  background: var(--orange);
+}
+
+.console-preview {
+  display: grid;
+  gap: 6px;
+}
+
+.console-preview small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.console-help {
+  padding: 20px 22px;
+}
+
+.console-help header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.console-help h2 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.console-help dl {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.console-help dl > div {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.console-help kbd {
+  padding: 3px 8px;
+  border-radius: 8px;
+  background: var(--fill);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font: inherit;
+  font-size: 12px;
+  font-weight: var(--weight-label);
+}
+
+.console-help dd {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
 /* Dark mode for the console, from its top bar (kept in this browser). */
 .console-body[data-console-theme="dark"] {
-  --point: #4c8dff;
+  --point: #2a62d4;
   --point-strong: #7aa9ff;
   --point-tint: #1d2b45;
   --console-blue: #4c8dff;
@@ -13863,6 +13974,23 @@ th[aria-sort="descending"] .console-sort span {
   --orange: #ffb067;
   --orange-soft: #3a2a1a;
   color-scheme: dark;
+}
+
+/* Blue words on dark tints use the lighter blue; the deeper --point stays
+   for fills with white words on them. */
+.console-body[data-console-theme="dark"]
+  :is(
+    .console-text-button,
+    .console-side nav button.active,
+    .console-chip,
+    .console-tag.blue,
+    .console-list em,
+    .console-brand span,
+    .console-inline,
+    .console-sort,
+    .console-list li b
+  ) {
+  color: var(--point-strong);
 }
 
 .console-body[data-console-theme="dark"] .console-bar {

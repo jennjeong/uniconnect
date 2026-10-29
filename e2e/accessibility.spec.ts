@@ -110,3 +110,25 @@ test("the app download guide opens from the introduction and passes the checks",
   await dialog.getByRole("button", { name: "알겠어요" }).click()
   await expect(dialog).toBeHidden()
 })
+
+// Every screen of the operators' console, once the token opens it, on a
+// wide screen and a phone.
+const consoleViews = ["overview", "insights", "members", "proposals", "operations", "live", "payments", "inquiries", "reports", "content", "errors", "notices", "log", "health", "system"]
+
+for (const width of [1280, 390]) {
+  test(`the operators' console screens at ${width}px have no critical or serious accessibility problems`, async ({ page }) => {
+    // Fifteen screens, each checked.
+    test.setTimeout(240_000)
+    await page.setViewportSize({ width, height: 900 })
+    await page.goto("/admin")
+    await page.getByLabel("관리자 토큰").fill("e2e-admin-token")
+    await page.getByRole("button", { name: "들어가기" }).click()
+    await expect(page.getByRole("heading", { level: 2, name: "지금 처리할 일" })).toBeVisible()
+    for (const view of consoleViews) {
+      await expectNoBlockingProblems(page, view === "overview" ? "/admin" : `/admin?view=${view}`, async () => {
+        await expect(page.locator(".console-top h1")).toBeVisible()
+        await expect(page.getByText("불러오고 있어요…")).toHaveCount(0)
+      })
+    }
+  })
+}

@@ -343,6 +343,14 @@ export function Notices({ token, onNotice }: { token: string; onNotice: (message
               value={form.text}
             />
           </label>
+          {form.text.trim() && (
+            <div className="console-preview">
+              <small>{t("미리 보기")}</small>
+              <p className={`site-notice ${form.tone}`}>
+                <span>{form.text.trim()}</span>
+              </p>
+            </div>
+          )}
           <div className="console-form-row">
             <label>
               {t("종류")}

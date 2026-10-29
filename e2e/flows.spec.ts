@@ -1515,6 +1515,12 @@ test("the console's command palette opens screens, and maintenance covers the si
   await expect(page.getByRole("heading", { level: 1, name: "분석" })).toBeVisible()
   await expect(page.getByRole("heading", { level: 2, name: "전환 퍼널" })).toBeVisible()
 
+  // "?" shows the keyboard shortcuts, and Escape closes them.
+  await page.keyboard.press("?")
+  await expect(page.getByRole("dialog", { name: "키보드 단축키" })).toBeVisible()
+  await page.keyboard.press("Escape")
+  await expect(page.getByRole("dialog", { name: "키보드 단축키" })).toHaveCount(0)
+
   await page.getByRole("navigation", { name: "운영자 메뉴" }).getByRole("button", { name: "시스템" }).click()
   await page.getByLabel("점검 중: 회원 화면 대신 안내를 보여 주고 저장을 막아요").check()
   await page.getByLabel("안내 문구").fill("오늘 밤 점검이에요")

@@ -589,6 +589,8 @@ export type Inquiry = {
 
 // A question as the operators see it, with who sent it.
 export type AdminInquiry = Inquiry & {
+  // Who asked, for opening the member.
+  accountId: string
   from: { name: string; role: Role; email: string } | null
   // Who on the team handles it and whether it is on hold.
   handling: { assignee?: string; heldAt?: string } | null
@@ -939,7 +941,17 @@ export type AdminOverview = {
   stats: PlatformStats
   weekly: { week: string; signups: number; proposals: number; accepted: number }[]
   revenue: { total: number; thisMonth: number; byKind: Record<PaymentKind, number>; partners: number }
-  attention: { inquiries: number; reports: number; transfers: number; suspended: number }
+  attention: {
+    inquiries: number
+    reports: number
+    transfers: number
+    suspended: number
+    // Proposals waiting over a week, agreements with a cancel asked for,
+    // and field alerts (lib/adminInsights.ts).
+    stale: number
+    cancels: number
+    alerts: number
+  }
 }
 
 export type AdminMember = {
@@ -1104,7 +1116,12 @@ export type SiteState = { maintenance: { message: string } | null; signupsClosed
 export type AdminInsights = {
   funnel: { step: string; count: number }[]
   cohorts: { week: string; size: number; active: (number | null)[] }[]
-  distribution: { schools: { label: string; count: number }[]; industries: { label: string; count: number }[]; types: { label: string; count: number }[] }
+  distribution: {
+    schools: { label: string; count: number }[]
+    industries: { label: string; count: number }[]
+    types: { label: string; count: number }[]
+    map: { groups: { name: string; lat: number; lng: number; count: number }[]; brands: { name: string; lat: number; lng: number }[] }
+  }
   kpi: { key: "signups" | "proposals" | "revenue"; actual: number; target: number | null }[]
   searches: { term: string; count: number }[]
 }

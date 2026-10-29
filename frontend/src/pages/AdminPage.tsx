@@ -142,8 +142,10 @@ function InquiryCard({
   inquiry,
   onAnswer,
   onHandle,
+  onOpenMember,
 }: {
   inquiry: AdminInquiry
+  onOpenMember: (id: string) => void
   onAnswer: (inquiry: AdminInquiry, answer: string) => Promise<void>
   // Who on the team takes it, and whether it waits on something.
   onHandle: (inquiry: AdminInquiry, handling: { assignee: string; held: boolean }) => void
@@ -164,6 +166,14 @@ function InquiryCard({
       </div>
       <p className="admin-from">
         {inquiry.from ? `${inquiry.from.name} · ${t(inquiry.from.role)} · ${inquiry.from.email}` : t("탈퇴한 회원")}
+        {inquiry.from && (
+          <>
+            {" "}
+            <button className="console-inline" onClick={() => onOpenMember(inquiry.accountId)} type="button">
+              {t("회원 보기")}
+            </button>
+          </>
+        )}
       </p>
       <p className="admin-question">{inquiry.question}</p>
       {!inquiry.answer && (
@@ -279,10 +289,12 @@ function PaymentCard({
   payment,
   onPaid,
   onCancel,
+  onOpenMember,
 }: {
   payment: AdminPayment
   onPaid: (payment: AdminPayment) => void
   onCancel: (payment: AdminPayment) => void
+  onOpenMember: (id: string) => void
 }) {
   const [sure, setSure] = useState(false)
   return (
@@ -303,7 +315,10 @@ function PaymentCard({
         {payment.accountName} · {payment.id}
         {payment.status === "paid" && ` · ${payment.method === "card" ? t("카드") : t("계좌 입금")}`}
         {payment.status === "cancelled" && ` · ${payment.cancelReason ?? ""}`}
-        {payment.kind === "report" && payment.status === "paid" && ` · ${payment.openedAt ? t("열어 봄") : t("아직 안 열어 봄")}`}
+        {payment.kind === "report" && payment.status === "paid" && ` · ${payment.openedAt ? t("열어 봄") : t("아직 안 열어 봄")}`}{" "}
+        <button className="console-inline" onClick={() => onOpenMember(payment.accountId)} type="button">
+          {t("회원 보기")}
+        </button>
       </p>
       <div className="admin-report-actions">
         {payment.status === "pending" && (
@@ -550,6 +565,9 @@ function Overview({ data, onGo }: { data: AdminOverview; onGo: (section: Section
     { label: t("답변을 기다리는 문의"), count: attention.inquiries, go: "inquiries" as Section, icon: "chat" as IconName },
     { label: t("처리를 기다리는 신고"), count: attention.reports, go: "reports" as Section, icon: "close" as IconName },
     { label: t("확인할 계좌 입금"), count: attention.transfers, go: "payments" as Section, icon: "won" as IconName },
+    { label: t("7일 넘게 답 없는 제안"), count: attention.stale, go: "operations" as Section, icon: "send" as IconName },
+    { label: t("취소 요청된 계약서"), count: attention.cancels, go: "operations" as Section, icon: "file" as IconName },
+    { label: t("현장 이상 신호"), count: attention.alerts, go: "live" as Section, icon: "scan" as IconName },
     { label: t("정지된 계정"), count: attention.suspended, go: "reports" as Section, icon: "lock" as IconName },
   ]
   const thisWeek = weekly.at(-1)
@@ -889,6 +907,15 @@ function chime() {
 }
 
 const themeKey = "uniconnect-admin-theme"
+const idleMs = 30 * 60 * 1000
+
+const shortcuts = [
+  { keys: "⌘K · Ctrl+K", text: "명령 팔레트: 화면 · 기능 · 회원으로 바로 가기" },
+  { keys: "/", text: "회원 검색으로" },
+  { keys: "?", text: "이 도움말 열고 닫기" },
+  { keys: "Esc", text: "팔레트 · 도움말 닫기" },
+  { keys: "← →", text: "브라우저 뒤로 · 앞으로 (화면 이동 기록)" },
+]
 const soundKey = "uniconnect-admin-sound"
 
 // The operators' console (/admin, mounted on its own by main.tsx, with no
@@ -935,6 +962,19 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
     }
     document.addEventListener("keydown", open)
     return () => document.removeEventListener("keydown", open)
+  }, [])
+  // "?" anywhere but a text box shows the keyboard shortcuts.
+  const [helpOpen, setHelpOpen] = useState(false)
+  useEffect(() => {
+    const help = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      if (event.key === "Escape") setHelpOpen(false)
+      if (event.key !== "?" || target?.closest("input, textarea, select, [contenteditable]")) return
+      event.preventDefault()
+      setHelpOpen((value) => !value)
+    }
+    document.addEventListener("keydown", help)
+    return () => document.removeEventListener("keydown", help)
   }, [])
   // Reads everything again each minute while the operators watch.
   const [autoRefresh, setAutoRefresh] = useState(false)
@@ -1090,6 +1130,25 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
     if (inquiries) lastCount.current = pendingCount
   }, [pendingCount, inquiries, sound])
 
+  // Thirty minutes without a press or a key signs the console out, so an
+  // open tab on a shared computer doesn't stay in.
+  useEffect(() => {
+    if (!token) return
+    let last = Date.now()
+    const touch = () => {
+      last = Date.now()
+    }
+    const events = ["pointerdown", "keydown", "wheel"] as const
+    for (const name of events) document.addEventListener(name, touch, { passive: true })
+    const timer = window.setInterval(() => {
+      if (Date.now() - last > idleMs) signOut(t("30분 동안 쓰지 않아 나갔어요. 토큰을 다시 넣어 주세요."))
+    }, 60_000)
+    return () => {
+      for (const name of events) document.removeEventListener(name, touch)
+      window.clearInterval(timer)
+    }
+  }, [token, signOut])
+
   if (!token || !overview) {
     return (
       <div className="console-login">
@@ -1138,6 +1197,8 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
     inquiries: waiting.length,
     reports: openReports.length,
     payments: payments.filter((payment) => payment.status === "pending").length,
+    operations: overview.attention.stale + overview.attention.cancels,
+    live: overview.attention.alerts,
   }
   const current = sectionInfo.find((item) => item.key === section)!
   const todoCount = waiting.length + openReports.length + (badges.payments ?? 0)
@@ -1331,6 +1392,7 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
                 {shownPayments.map((payment) => (
                   <PaymentCard
                     key={payment.id}
+                    onOpenMember={(member) => go({ section: "members", member })}
                     onCancel={(item) =>
                       void settle(
                         () => api.adminCancelPayment(token, item.id, item.status === "paid" ? t("운영자 환불") : t("운영자 취소")),
@@ -1373,7 +1435,13 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
             ) : (
               <div className="admin-list" key={tab}>
                 {list.map((inquiry) => (
-                  <InquiryCard inquiry={inquiry} key={inquiry.id} onAnswer={answer} onHandle={handle} />
+                  <InquiryCard
+                    inquiry={inquiry}
+                    key={inquiry.id}
+                    onAnswer={answer}
+                    onHandle={handle}
+                    onOpenMember={(member) => go({ section: "members", member })}
+                  />
                 ))}
               </div>
             )}
@@ -1475,11 +1543,34 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
         )}
       </main>
       </div>
+      {helpOpen && (
+        <div className="console-palette-scrim" onClick={() => setHelpOpen(false)} role="presentation">
+          <div aria-label={t("키보드 단축키")} aria-modal="true" className="console-palette console-help" onClick={(event) => event.stopPropagation()} role="dialog">
+            <header>
+              <h2>{t("키보드 단축키")}</h2>
+              <button aria-label={t("닫기")} autoFocus className="console-icon" onClick={() => setHelpOpen(false)} type="button">
+                <Icon name="close" size={16} />
+              </button>
+            </header>
+            <dl>
+              {shortcuts.map((item) => (
+                <div key={item.keys}>
+                  <dt>
+                    <kbd>{item.keys}</kbd>
+                  </dt>
+                  <dd>{t(item.text)}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </div>
+      )}
       {paletteOpen && (
         <CommandPalette
           items={[
             ...sectionInfo.map((item) => ({ id: `go-${item.key}`, label: t(item.label), hint: t("화면"), run: () => pick(item.key) })),
             { id: "reload", label: t("새로고침"), hint: t("기능"), run: () => setReload((count) => count + 1) },
+            { id: "help", label: t("키보드 단축키"), hint: t("기능"), run: () => setHelpOpen(true) },
             {
               id: "theme",
               label: dark ? t("밝은 모드") : t("다크 모드"),

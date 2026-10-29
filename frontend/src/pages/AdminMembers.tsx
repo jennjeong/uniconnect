@@ -68,6 +68,8 @@ export function Members({
   const [views, setViews] = useState(() => readStored<{ name: string; filters: Filters }[]>(viewsKey, []))
   const [columns, setColumns] = useState(() => new Set(readStored<Column[]>(columnsKey, ["type", "createdAt", "lastSeen", "events", "sent", "tags"])))
   const [choosing, setChoosing] = useState(false)
+  // Stopping many members asks once more before it goes.
+  const [sureBulk, setSureBulk] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -251,9 +253,22 @@ export function Members({
             <button className="console-text-button" onClick={() => bulk("logout")} type="button">
               {t("로그아웃")}
             </button>
-            <button className="console-text-button danger" onClick={() => bulk("suspend")} type="button">
-              {t("정지")}
-            </button>
+            {sureBulk ? (
+              <button
+                className="console-text-button danger"
+                onClick={() => {
+                  setSureBulk(false)
+                  bulk("suspend")
+                }}
+                type="button"
+              >
+                {t("{count}명 정지 확인", { count: picked.size })}
+              </button>
+            ) : (
+              <button className="console-text-button danger" onClick={() => setSureBulk(true)} type="button">
+                {t("정지")}
+              </button>
+            )}
             <input aria-label={t("붙일 태그")} maxLength={20} onChange={(event) => setBulkTag(event.target.value)} placeholder={t("태그")} value={bulkTag} />
             <button className="console-text-button" disabled={!bulkTag.trim()} onClick={() => bulk("tag")} type="button">
               {t("태그 붙이기")}
@@ -377,6 +392,8 @@ function MemberDetail({
   const [number, setNumber] = useState(open.businessNumber ?? "")
   const [days, setDays] = useState(30)
   const [allTimeline, setAllTimeline] = useState(false)
+  const [sureStop, setSureStop] = useState(false)
+  useEffect(() => setSureStop(false), [open.id])
   useEffect(() => setNumber(open.businessNumber ?? ""), [open.id, open.businessNumber])
   const act = (work: Promise<{ account: AdminMemberDetail }>, message: string) =>
     void work.then(
@@ -564,13 +581,26 @@ function MemberDetail({
             {t("정지 풀기")}
           </button>
         ) : (
-          <button
-            className="decline-button"
-            onClick={() => act(api.adminSuspend(token, open.id), t("{name}을 정지했어요. 로그인한 기기도 모두 로그아웃됐어요.", { name: open.name }))}
-            type="button"
-          >
-            {t("계정 정지")}
-          </button>
+          <div className="admin-report-actions">
+            {sureStop ? (
+              <>
+                <button
+                  className="decline-button"
+                  onClick={() => act(api.adminSuspend(token, open.id), t("{name}을 정지했어요. 로그인한 기기도 모두 로그아웃됐어요.", { name: open.name }))}
+                  type="button"
+                >
+                  {t("정지할게요")}
+                </button>
+                <button className="cancel-button" onClick={() => setSureStop(false)} type="button">
+                  {t("취소")}
+                </button>
+              </>
+            ) : (
+              <button className="decline-button" onClick={() => setSureStop(true)} type="button">
+                {t("계정 정지")}
+              </button>
+            )}
+          </div>
         ))}
     </aside>
   )
