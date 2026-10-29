@@ -7,7 +7,9 @@ import { Pill } from "../components/Pill"
 import { RevealTitle } from "../components/RevealText"
 import { venueSummary } from "../data/methods"
 import { lang, t } from "../i18n"
-import { formatFullDate } from "../lib/date"
+import { analyticsCsv } from "../lib/csv"
+import { formatFullDate, todayIso } from "../lib/date"
+import { saveFile } from "../lib/download"
 import { formatWon } from "../lib/kpis"
 import { analyzeSponsorships, manWon, wonUnit } from "../lib/sponsorships"
 import { LayersGradient } from "../scenes/LayersGradient"
@@ -86,9 +88,21 @@ export function AnalyticsPage({
         title={t("협찬 성과 분석")}
         description={t("협찬마다 쓴 금액과 돌아온 쿠폰, 방문, 추정 매출을 함께 비교해요.")}
         actions={
-          <Pill arrow="up-right" disabled={rows.length === 0 || exporting} onClick={onDownload}>
-            {exporting ? t("PDF 만드는 중…") : t("분석 보고서 다운로드")}
-          </Pill>
+          <>
+            <Pill arrow="up-right" disabled={rows.length === 0 || exporting} onClick={onDownload}>
+              {exporting ? t("PDF 만드는 중…") : t("분석 보고서 다운로드")}
+            </Pill>
+            {/* The table as a spreadsheet (lib/csv.ts), made on the page. */}
+            <Pill
+              disabled={rows.length === 0}
+              onClick={() =>
+                saveFile(`uniconnect-analytics-${todayIso()}.csv`, analyticsCsv(sponsorships), "text/csv;charset=utf-8")
+              }
+              variant="outline"
+            >
+              {t("CSV로 내보내기")}
+            </Pill>
+          </>
         }
       />
 
