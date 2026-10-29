@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useState, type ReactNode } from "react"
 
 import { ApiError, api, errorMessage } from "../api"
 import logo from "../assets/brand/uniconnect_horizontal.svg"
-import logoReversed from "../assets/brand/uniconnect_horizontal_reversed.svg"
 import { Icon, type IconName } from "../components/Icon"
 import { PasswordField } from "../components/PasswordField"
 import { Pill } from "../components/Pill"
@@ -289,116 +288,298 @@ type Section = "overview" | "members" | "proposals" | "payments" | "inquiries" |
 
 const sections: Section[] = ["overview", "members", "proposals", "payments", "inquiries", "reports", "errors"]
 
-type Place = { section: Section; member?: string }
+type Place = { section: Section; member?: string; q?: string }
 
 function readPlace(): Place {
   const params = new URLSearchParams(window.location.search)
   const view = params.get("view") as Section | null
   const section = view && sections.includes(view) ? view : "overview"
   const member = section === "members" ? params.get("member") ?? undefined : undefined
-  return { section, ...(member ? { member } : {}) }
+  const q = section === "members" ? params.get("q") ?? undefined : undefined
+  return { section, ...(member ? { member } : {}), ...(q ? { q } : {}) }
 }
 
-const placePath = ({ section, member }: Place) => {
+const placePath = ({ section, member, q }: Place) => {
   const params = new URLSearchParams()
   if (section !== "overview") params.set("view", section)
+  if (q) params.set("q", q)
   if (member) params.set("member", member)
   const query = params.toString()
   return `/admin${query ? `?${query}` : ""}`
 }
 
-const sectionInfo: { key: Section; label: string; icon: IconName }[] = [
-  { key: "overview", label: "개요", icon: "chart" },
-  { key: "members", label: "회원", icon: "users" },
-  { key: "proposals", label: "제안 · 협찬", icon: "send" },
-  { key: "payments", label: "결제 · 매출", icon: "won" },
-  { key: "inquiries", label: "문의 · 섭외 요청", icon: "chat" },
-  { key: "reports", label: "신고 · 정지", icon: "close" },
-  { key: "errors", label: "오류", icon: "search" },
+// The side menu in two groups: running the service, then looking after
+// the people in it.
+const sectionInfo: { key: Section; label: string; icon: IconName; group: "메뉴" | "지원" }[] = [
+  { key: "overview", label: "개요", icon: "home", group: "메뉴" },
+  { key: "members", label: "회원", icon: "users", group: "메뉴" },
+  { key: "proposals", label: "제안 · 협찬", icon: "send", group: "메뉴" },
+  { key: "payments", label: "결제 · 매출", icon: "won", group: "메뉴" },
+  { key: "inquiries", label: "문의 · 섭외 요청", icon: "chat", group: "지원" },
+  { key: "reports", label: "신고 · 정지", icon: "close", group: "지원" },
+  { key: "errors", label: "오류", icon: "search", group: "지원" },
 ]
 
-// Small bars for eight weeks of one figure.
-function Trend({ label, values, weeks }: { label: string; values: number[]; weeks: string[] }) {
-  const top = Math.max(1, ...values)
+const menuGroups = ["메뉴", "지원"] as const
+
+// A week's Monday (2026-10-26) as 10/26.
+const weekLabel = (week: string) => `${Number(week.slice(5, 7))}/${Number(week.slice(8, 10))}`
+
+// Change from the week before as a percentage, or null without one.
+const change = (now: number, before: number) => (before === 0 ? null : Math.round(((now - before) / before) * 100))
+
+// Up or down from the week before; without a week to compare, the fallback.
+function ChangeBadge({ value, suffix, fallback }: { value: number | null; suffix?: string; fallback?: string }) {
+  if (value === null) return fallback ? <span className="console-badge">{fallback}</span> : null
   return (
-    <figure className="console-trend">
-      <figcaption>
-        {label}
-        <strong>{values.reduce((sum, value) => sum + value, 0)}</strong>
-      </figcaption>
-      <div>
-        {values.map((value, index) => (
-          <span key={weeks[index]} title={`${weeks[index]} · ${value}`}>
-            <i style={{ height: `${(value / top) * 100}%` }} />
-          </span>
-        ))}
-      </div>
-    </figure>
+    <span className={value >= 0 ? "console-badge up" : "console-badge down"}>
+      {value >= 0 ? "▲" : "▼"} {Math.abs(value)}%{suffix ? ` ${suffix}` : ""}
+    </span>
   )
 }
 
-// The overview: what needs the operators now, the figures (members' own
-// beside the totals with the demo), eight weeks of trend and the revenue.
-function Overview({ data, onGo }: { data: AdminOverview; onGo: (section: Section) => void }) {
-  const { attention, revenue, weekly } = data
-  const todo = [
-    { label: t("답변을 기다리는 문의"), count: attention.inquiries, go: "inquiries" as Section },
-    { label: t("처리를 기다리는 신고"), count: attention.reports, go: "reports" as Section },
-    { label: t("확인할 계좌 입금"), count: attention.transfers, go: "payments" as Section },
-    { label: t("정지된 계정"), count: attention.suspended, go: "reports" as Section },
-  ]
-  const weeks = weekly.map((row) => row.week)
+// One figure on a card, after TailAdmin: an icon tile, the label, the
+// number large in Toss's way, and a badge.
+function StatCard({ icon, label, value, badge }: { icon: IconName; label: string; value: string; badge?: ReactNode }) {
   return (
-    <div className="console-grid">
-      <section className="console-card wide">
-        <h2>{t("지금 처리할 일")}</h2>
-        <div className="console-todo">
-          {todo.map((item) => (
-            <button className={item.count > 0 ? "hot" : undefined} key={item.label} onClick={() => onGo(item.go)} type="button">
-              <strong>{item.count}</strong>
-              <span>{item.label}</span>
+    <section className="console-card console-stat">
+      <span aria-hidden="true" className="console-stat-icon">
+        <Icon name={icon} size={20} />
+      </span>
+      <div>
+        <h2>{label}</h2>
+        <strong>{value}</strong>
+      </div>
+      {badge}
+    </section>
+  )
+}
+
+// Two figures a week as paired bars, on four grid lines.
+function WeeklyBars({ weekly }: { weekly: AdminOverview["weekly"] }) {
+  const top = Math.max(4, ...weekly.flatMap((row) => [row.signups, row.proposals]))
+  const step = Math.ceil(top / 4)
+  const ticks = [4, 3, 2, 1, 0].map((index) => index * step)
+  return (
+    <div className="console-bars">
+      <div aria-hidden="true" className="console-bars-axis">
+        {ticks.map((tick) => (
+          <span key={tick}>{tick}</span>
+        ))}
+      </div>
+      <ol>
+        {weekly.map((row) => (
+          <li key={row.week}>
+            <div title={t("{week} 주 · 가입 {signups} · 제안 {proposals}", { week: weekLabel(row.week), signups: row.signups, proposals: row.proposals })}>
+              <i className="signups" style={{ height: `${(row.signups / (step * 4)) * 100}%` }} />
+              <i className="proposals" style={{ height: `${(row.proposals / (step * 4)) * 100}%` }} />
+            </div>
+            <small>{weekLabel(row.week)}</small>
+          </li>
+        ))}
+      </ol>
+    </div>
+  )
+}
+
+// The acceptance rate as a half ring (TailAdmin's target gauge).
+function Gauge({ value }: { value: number | null }) {
+  return (
+    <div className="console-gauge">
+      <svg aria-hidden="true" viewBox="0 0 200 110">
+        <path d="M 16 100 A 84 84 0 0 1 184 100" pathLength={100} />
+        {value ? <path className="value" d="M 16 100 A 84 84 0 0 1 184 100" pathLength={100} strokeDasharray={`${value} 200`} /> : null}
+      </svg>
+      <strong>{value === null ? "-" : `${value}%`}</strong>
+    </div>
+  )
+}
+
+const trendKeys = [
+  { key: "signups", label: "가입" },
+  { key: "proposals", label: "제안" },
+  { key: "accepted", label: "수락" },
+] as const
+
+// Eight weeks of one figure as a line over a soft area, picked with a
+// segmented switch (TailAdmin's statistics chart, Toss's switch).
+function TrendChart({ weekly }: { weekly: AdminOverview["weekly"] }) {
+  const [key, setKey] = useState<(typeof trendKeys)[number]["key"]>("proposals")
+  const values = weekly.map((row) => row[key])
+  const top = Math.max(1, ...values)
+  const width = 640
+  const height = 180
+  const x = (index: number) => (values.length > 1 ? (index / (values.length - 1)) * width : width / 2)
+  const y = (value: number) => height - (value / top) * (height - 16) - 4
+  const line = values.map((value, index) => `${index === 0 ? "M" : "L"} ${x(index)} ${y(value)}`).join(" ")
+  return (
+    <section className="console-card wide">
+      <div className="console-card-head">
+        <div>
+          <h2>{t("최근 8주 추이")}</h2>
+          <p>{t("주마다 새로 생긴 수예요.")}</p>
+        </div>
+        <div aria-label={t("추이 항목")} className="console-segment" role="group">
+          {trendKeys.map((item) => (
+            <button aria-pressed={key === item.key} key={item.key} onClick={() => setKey(item.key)} type="button">
+              {t(item.label)}
             </button>
           ))}
         </div>
+      </div>
+      <figure className="console-area">
+        <svg aria-hidden="true" preserveAspectRatio="none" viewBox={`0 0 ${width} ${height}`}>
+          <path className="area" d={`${line} L ${x(values.length - 1)} ${height} L ${x(0)} ${height} Z`} />
+          <path className="line" d={line} />
+        </svg>
+        <figcaption>
+          {weekly.map((row, index) => (
+            <span key={row.week}>
+              <b>{values[index]}</b>
+              {weekLabel(row.week)}
+            </span>
+          ))}
+        </figcaption>
+      </figure>
+    </section>
+  )
+}
+
+const revenueKinds = [
+  { key: "fee", label: "수수료" },
+  { key: "report", label: "상세 리포트" },
+  { key: "pro", label: "캠퍼스 파트너스" },
+] as const
+
+// The overview: the figures as cards, the weeks as bars beside the
+// acceptance gauge, what needs the operators now and the revenue, the
+// trend, then every figure (members' own beside the totals with the demo).
+function Overview({ data, onGo }: { data: AdminOverview; onGo: (section: Section) => void }) {
+  const { attention, revenue, weekly, stats } = data
+  const todo = [
+    { label: t("답변을 기다리는 문의"), count: attention.inquiries, go: "inquiries" as Section, icon: "chat" as IconName },
+    { label: t("처리를 기다리는 신고"), count: attention.reports, go: "reports" as Section, icon: "close" as IconName },
+    { label: t("확인할 계좌 입금"), count: attention.transfers, go: "payments" as Section, icon: "won" as IconName },
+    { label: t("정지된 계정"), count: attention.suspended, go: "reports" as Section, icon: "lock" as IconName },
+  ]
+  const thisWeek = weekly.at(-1)
+  const lastWeek = weekly.at(-2)
+  const answered = stats.accepted.real + stats.declined.real
+  const rate = answered === 0 ? null : Math.round((stats.accepted.real / answered) * 100)
+  const members = stats.students.real + stats.brands.real
+  const revenueTop = Math.max(1, ...revenueKinds.map((item) => revenue.byKind[item.key]))
+  return (
+    <div className="console-grid">
+      <StatCard
+        badge={<span className="console-badge up">{t("이번 주 +{count}", { count: stats.newThisWeek.real })}</span>}
+        icon="users"
+        label={t("회원")}
+        value={members.toLocaleString(locale)}
+      />
+      <StatCard
+        badge={<span className="console-badge">{t("누적 {amount}", { amount: fullWon(revenue.total) })}</span>}
+        icon="won"
+        label={t("이번 달 매출")}
+        value={fullWon(revenue.thisMonth)}
+      />
+      <StatCard
+        badge={
+          <ChangeBadge
+            fallback={t("지난주 {count}건", { count: lastWeek?.proposals ?? 0 })}
+            suffix={t("지난주 대비")}
+            value={thisWeek && lastWeek ? change(thisWeek.proposals, lastWeek.proposals) : null}
+          />
+        }
+        icon="send"
+        label={t("이번 주 제안")}
+        value={(thisWeek?.proposals ?? 0).toLocaleString(locale)}
+      />
+      <StatCard
+        badge={<span className="console-badge">{t("파트너스 {count}곳", { count: revenue.partners })}</span>}
+        icon="check"
+        label={t("확정된 협찬")}
+        value={stats.sponsorships.real.toLocaleString(locale)}
+      />
+
+      <section className="console-card span-2">
+        <div className="console-card-head">
+          <div>
+            <h2>{t("주간 가입 · 제안")}</h2>
+            <p>{t("실제 회원과 데모를 더한 수예요.")}</p>
+          </div>
+          <ul className="console-legend">
+            <li className="signups">{t("가입")}</li>
+            <li className="proposals">{t("제안")}</li>
+          </ul>
+        </div>
+        <WeeklyBars weekly={weekly} />
       </section>
-      <section className="console-card">
-        <h2>{t("매출")}</h2>
-        <dl className="console-revenue">
+
+      <section className="console-card span-2 console-rate">
+        <div className="console-card-head">
           <div>
-            <dt>{t("이번 달")}</dt>
-            <dd>{fullWon(revenue.thisMonth)}</dd>
+            <h2>{t("제안 수락률")}</h2>
+            <p>{t("실제 회원이 답한 제안 가운데 수락한 몫이에요.")}</p>
+          </div>
+        </div>
+        <Gauge value={rate} />
+        <dl>
+          <div>
+            <dt>{t("보낸 제안")}</dt>
+            <dd>{stats.proposals.real.toLocaleString(locale)}</dd>
           </div>
           <div>
-            <dt>{t("누적")}</dt>
-            <dd>{fullWon(revenue.total)}</dd>
+            <dt>{t("수락")}</dt>
+            <dd>{stats.accepted.real.toLocaleString(locale)}</dd>
           </div>
           <div>
-            <dt>{t("수수료")}</dt>
-            <dd>{fullWon(revenue.byKind.fee)}</dd>
-          </div>
-          <div>
-            <dt>{t("상세 리포트")}</dt>
-            <dd>{fullWon(revenue.byKind.report)}</dd>
-          </div>
-          <div>
-            <dt>{t("캠퍼스 파트너스")}</dt>
-            <dd>
-              {fullWon(revenue.byKind.pro)}
-              <small>{t("지금 {count}곳", { count: revenue.partners })}</small>
-            </dd>
+            <dt>{t("거절")}</dt>
+            <dd>{stats.declined.real.toLocaleString(locale)}</dd>
           </div>
         </dl>
       </section>
-      <section className="console-card">
-        <h2>{t("최근 8주")}</h2>
-        <div className="console-trends">
-          <Trend label={t("가입")} values={weekly.map((row) => row.signups)} weeks={weeks} />
-          <Trend label={t("제안")} values={weekly.map((row) => row.proposals)} weeks={weeks} />
-          <Trend label={t("수락")} values={weekly.map((row) => row.accepted)} weeks={weeks} />
-        </div>
+
+      <section className="console-card span-2">
+        <h2>{t("지금 처리할 일")}</h2>
+        <ul className="console-todo">
+          {todo.map((item) => (
+            <li key={item.label}>
+              <button className={item.count > 0 ? "hot" : undefined} onClick={() => onGo(item.go)} type="button">
+                <span aria-hidden="true" className="console-todo-icon">
+                  <Icon name={item.icon} size={18} />
+                </span>
+                <span>{item.label}</span>
+                <strong>{t("{count}건", { count: item.count })}</strong>
+                <Icon name="chevron" size={16} />
+              </button>
+            </li>
+          ))}
+        </ul>
       </section>
+
+      <section className="console-card span-2">
+        <div className="console-card-head">
+          <div>
+            <h2>{t("매출 구성")}</h2>
+            <p>{t("결제 완료된 금액이에요.")}</p>
+          </div>
+          <strong className="console-total">{fullWon(revenue.total)}</strong>
+        </div>
+        <ul className="console-split-bars">
+          {revenueKinds.map((item) => (
+            <li key={item.key}>
+              <span>{t(item.label)}</span>
+              <strong>{fullWon(revenue.byKind[item.key])}</strong>
+              <i style={{ width: `${(revenue.byKind[item.key] / revenueTop) * 100}%` }} />
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <TrendChart weekly={weekly} />
+
       <div className="console-card wide">
-        <StatsPanel stats={data.stats} />
+        <StatsPanel stats={stats} />
       </div>
     </div>
   )
@@ -412,15 +593,18 @@ const dateOf = (at: string) => formatDateTime(at)
 function Members({
   token,
   memberId,
+  query = "",
   onOpenMember,
   onNotice,
 }: {
   token: string
   memberId?: string
+  // A search typed in the top bar.
+  query?: string
   onOpenMember: (id?: string) => void
   onNotice: (message: string) => void
 }) {
-  const [filters, setFilters] = useState({ q: "", role: "", state: "" })
+  const [filters, setFilters] = useState({ q: query, role: "", state: "" })
   const [rows, setRows] = useState<AdminMember[]>()
   const [open, setOpen] = useState<AdminMemberDetail>()
 
@@ -735,6 +919,16 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
     window.scrollTo(0, 0)
   }, [])
   const setSection = useCallback((next: Section) => go({ section: next }), [go])
+  // The side menu: narrowed to icons on wide screens, a drawer on narrow ones.
+  const [narrow, setNarrow] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
+  const [search, setSearch] = useState("")
+  const pick = (next: Section) => {
+    setMenuOpen(false)
+    setProfileOpen(false)
+    setSection(next)
+  }
   useEffect(() => {
     const back = () => setPlace(readPlace())
     window.addEventListener("popstate", back)
@@ -892,42 +1086,106 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
     payments: payments.filter((payment) => payment.status === "pending").length,
   }
   const current = sectionInfo.find((item) => item.key === section)!
+  const todoCount = waiting.length + openReports.length + (badges.payments ?? 0)
 
   return (
-    <div className="console">
-      <aside className="console-side">
-        <button aria-label={t("운영자 콘솔 처음으로")} className="console-brand" onClick={() => setSection("overview")} type="button">
-          <img alt="" src={logoReversed} />
+    <div className={narrow ? "console narrow" : "console"}>
+      <aside className={menuOpen ? "console-side open" : "console-side"}>
+        <button aria-label={t("운영자 콘솔 처음으로")} className="console-brand" onClick={() => pick("overview")} type="button">
+          <img alt="" src={logo} />
           <span>Admin</span>
         </button>
         <nav aria-label={t("운영자 메뉴")}>
-          {sectionInfo.map((item) => (
-            <button
-              aria-current={section === item.key ? "page" : undefined}
-              className={section === item.key ? "active" : undefined}
-              key={item.key}
-              onClick={() => setSection(item.key)}
-              type="button"
-            >
-              <Icon name={item.icon} size={17} />
-              <span>{t(item.label)}</span>
-              {badges[item.key] ? <em>{badges[item.key]}</em> : null}
-            </button>
+          {menuGroups.map((group) => (
+            <div className="console-nav-group" key={group}>
+              <h2>{t(group)}</h2>
+              {sectionInfo
+                .filter((item) => item.group === group)
+                .map((item) => (
+                  <button
+                    aria-current={section === item.key ? "page" : undefined}
+                    className={section === item.key ? "active" : undefined}
+                    key={item.key}
+                    onClick={() => pick(item.key)}
+                    title={narrow ? t(item.label) : undefined}
+                    type="button"
+                  >
+                    <Icon name={item.icon} size={18} />
+                    <span>{t(item.label)}</span>
+                    {badges[item.key] ? <em>{badges[item.key]}</em> : null}
+                  </button>
+                ))}
+            </div>
           ))}
         </nav>
-        <div className="console-side-foot">
-          <a href="/">{t("사이트로 가기")}</a>
-          <button onClick={() => signOut()} type="button">
-            {t("나가기")}
-          </button>
-        </div>
+        <a className="console-side-foot" href="/">
+          <Icon name="globe" size={16} />
+          <span>{t("사이트로 가기")}</span>
+        </a>
       </aside>
+      {menuOpen && <button aria-label={t("메뉴 닫기")} className="console-scrim" onClick={() => setMenuOpen(false)} type="button" />}
+      <div className="console-frame">
+        <header className="console-bar">
+          <button
+            aria-expanded={menuOpen}
+            aria-label={t("메뉴 접기 · 펴기")}
+            className="console-round"
+            onClick={() => {
+              if (window.matchMedia("(max-width: 960px)").matches) setMenuOpen((open) => !open)
+              else setNarrow((value) => !value)
+            }}
+            type="button"
+          >
+            <Icon name="menu" size={18} />
+          </button>
+          <form
+            className="console-search"
+            onSubmit={(event) => {
+              event.preventDefault()
+              const q = search.trim()
+              if (q) go({ section: "members", q })
+            }}
+            role="search"
+          >
+            <Icon name="search" size={16} />
+            <input
+              aria-label={t("회원 찾기")}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={t("회원 이름 · 이메일 · 학교")}
+              value={search}
+            />
+          </form>
+          <div className="console-bar-end">
+            <button aria-label={t("처리할 일 {count}건", { count: todoCount })} className="console-round" onClick={() => pick("overview")} type="button">
+              <Icon name="bell" size={18} />
+              {todoCount > 0 && <i className="console-dot" />}
+            </button>
+            <div className="console-profile">
+              <button aria-expanded={profileOpen} onClick={() => setProfileOpen((open) => !open)} type="button">
+                <span aria-hidden="true">{t("운")}</span>
+                {t("운영자")}
+                <Icon name="chevron" size={14} />
+              </button>
+              {profileOpen && (
+                <div className="console-profile-menu">
+                  <a href="/">{t("사이트로 가기")}</a>
+                  <button onClick={() => signOut()} type="button">
+                    {t("나가기")}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </header>
       <main className="console-main">
         <header className="console-top">
-          <h1>{t(current.label)}</h1>
+          <div>
+            <small>{t("운영자 콘솔")}</small>
+            <h1>{t(current.label)}</h1>
+          </div>
           <div>
             {loadedAt && <small>{t("{time} 기준", { time: formatDateTime(loadedAt) })}</small>}
-            <button className="cancel-button" onClick={() => setReload((count) => count + 1)} type="button">
+            <button className="console-text-button" onClick={() => setReload((count) => count + 1)} type="button">
               {t("새로고침")}
             </button>
           </div>
@@ -937,8 +1195,10 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
 
         {section === "members" && (
           <Members
+            key={place.q ?? ""}
             memberId={place.member}
             onNotice={onNotice}
+            query={place.q}
             onOpenMember={(member) => go({ section: "members", member })}
             token={token}
           />
@@ -1082,6 +1342,7 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
           </section>
         )}
       </main>
+      </div>
     </div>
   )
 }
