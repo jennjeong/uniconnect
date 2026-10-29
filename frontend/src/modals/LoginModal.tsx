@@ -137,6 +137,7 @@ export function LoginModal({
           </button>
           {providers.length > 0 && (
             <div className="social-login">
+              <span className="social-divider">{t("연결한 계정으로 로그인")}</span>
               {providers.map((provider) => (
                 <button
                   className={`social-button ${provider}`}
@@ -148,7 +149,7 @@ export function LoginModal({
                   {t("{provider}로 로그인", { provider: t(socialNames[provider]) })}
                 </button>
               ))}
-              <small>{t("내 정보에서 연결해 둔 계정으로 로그인해요. 가입은 이메일로 해요.")}</small>
+              <small>{t("회원가입을 마치고 내 정보에서 계정을 연결한 회원만 쓸 수 있어요.")}</small>
             </div>
           )}
           <p className="auth-switch">

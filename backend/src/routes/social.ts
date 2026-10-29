@@ -13,7 +13,9 @@ import { startSession, startTicket, toPublic } from "./auth.js"
 // Logging in with Kakao or Naver (OAuth 2.0, the authorization code flow).
 // Signing up stays by email, as the school or company address is checked
 // then; a member links a provider from 내 정보 and logs in with its button
-// from then on. The flow's `state` is bound to the browser by a cookie, and
+// from then on. A provider account linked to no one logs no one in, and its
+// connection to this site's app is taken back at once, so trying the button
+// before linking leaves nothing behind at Kakao or Naver. The flow's `state` is bound to the browser by a cookie, and
 // the finished login reaches the page through a one-time code in another
 // cookie, so no token or code for this site rides in an address.
 export const socialRouter = Router()
@@ -55,9 +57,10 @@ const flowMs = 10 * 60 * 1000
 const handoffMs = 2 * 60 * 1000
 
 // The provider's member number for an authorization code: the code traded
-// for a token, the token for the profile. Tests swap `exchange`.
+// for a token, the token for the profile, with the token kept for `revoke`.
+// Tests swap both.
 export const socialAuth = {
-  async exchange(provider: SocialProvider, code: string, redirectUri: string, state: string): Promise<string> {
+  async exchange(provider: SocialProvider, code: string, redirectUri: string, state: string): Promise<{ id: string; token: string }> {
     const settings = providers[provider]
     const form = new URLSearchParams({
       grant_type: "authorization_code",
@@ -81,7 +84,32 @@ export const socialAuth = {
     })
     const id = settings.idOf(await profileResponse.json().catch(() => null))
     if (!profileResponse.ok || (typeof id !== "string" && typeof id !== "number")) throw new Error(`${provider} profile ${profileResponse.status}`)
-    return String(id)
+    return { id: String(id), token: token.access_token }
+  },
+
+  // Ends the connection the login just made: Kakao unlinks the member from
+  // the app, Naver deletes the token.
+  async revoke(provider: SocialProvider, token: string) {
+    const response =
+      provider === "kakao"
+        ? await fetch("https://kapi.kakao.com/v1/user/unlink", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+            signal: AbortSignal.timeout(8000),
+          })
+        : await fetch(providers.naver.token, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded;charset=utf-8" },
+            body: new URLSearchParams({
+              grant_type: "delete",
+              client_id: providers.naver.clientId()!,
+              client_secret: providers.naver.clientSecret()!,
+              access_token: token,
+              service_provider: "NAVER",
+            }),
+            signal: AbortSignal.timeout(8000),
+          })
+    if (!response.ok) throw new Error(`${provider} revoke ${response.status}`)
   },
 }
 
@@ -161,13 +189,14 @@ socialRouter.get("/:provider/callback", async (req, res) => {
   await saveDatabase()
   if (typeof req.query.code !== "string" || !req.query.code) return back(flow.intent === "link" ? "link-cancelled" : "cancelled")
 
-  let memberNumber: string
+  let exchanged: { id: string; token: string }
   try {
-    memberNumber = await socialAuth.exchange(provider, req.query.code, callbackUrl(req, provider), state)
+    exchanged = await socialAuth.exchange(provider, req.query.code, callbackUrl(req, provider), state)
   } catch (error) {
     console.error(`[social] ${provider}: ${(error as Error).message}`)
     return back(flow.intent === "link" ? "link-error" : "error")
   }
+  const memberNumber = exchanged.id
   const fresh = getDatabase()
   const owner = fresh.accounts.find((account) => account.social?.[provider]?.id === memberNumber)
 
@@ -181,7 +210,11 @@ socialRouter.get("/:provider/callback", async (req, res) => {
     return back(`linked-${provider}`)
   }
 
-  if (!owner || owner.suspendedAt) return back("unlinked")
+  if (!owner) {
+    await socialAuth.revoke(provider, exchanged.token).catch((error: unknown) => console.error(`[social] ${provider}: ${(error as Error).message}`))
+    return back(`unlinked-${provider}`)
+  }
+  if (owner.suspendedAt) return back(`unlinked-${provider}`)
   const handoff = randomBytes(24).toString("base64url")
   oauthOf(fresh).handoffs.push({
     hash: sha(handoff),

@@ -1047,6 +1047,11 @@ test("a student council sees the clubs that linked with its code, read-only, unt
 test("a linked Kakao account logs in, with the state bound to the browser and no token in an address", async () => {
   const { socialAuth } = await import("./routes/social.js")
   const realExchange = socialAuth.exchange
+  const realRevoke = socialAuth.revoke
+  const revoked: string[] = []
+  socialAuth.revoke = async (_provider, token) => {
+    revoked.push(token)
+  }
   const saved = { kakao: config.kakaoClientId, naverId: config.naverClientId, naverSecret: config.naverClientSecret }
   const origin = baseUrl.replace(/\/api$/, "")
   // Starts a flow, as the page does: the provider's address and the state cookie.
@@ -1081,7 +1086,7 @@ test("a linked Kakao account logs in, with the state bound to the browser and no
     config.naverClientId = "naver-id"
     config.naverClientSecret = undefined
     assert.deepEqual((await call("GET", "/auth/social")).data.providers, ["kakao"])
-    socialAuth.exchange = async (_provider, code) => (code === "other" ? "999" : "4242")
+    socialAuth.exchange = async (_provider, code) => (code === "other" ? { id: "999", token: "t-999" } : { id: "4242", token: "t-4242" })
 
     // The owner links its Kakao account from 내 정보.
     const owner = await signUpMember("social@syu.ac.kr", "social-pass-123")
@@ -1118,7 +1123,9 @@ test("a linked Kakao account logs in, with the state bound to the browser and no
 
     // A Kakao account linked to no one logs no one in, and links to one account only.
     const stranger = await start("login")
-    assert.equal((await back(stranger.url.searchParams.get("state")!, stranger.cookie, "other")).to, "/?social=unlinked")
+    assert.equal((await back(stranger.url.searchParams.get("state")!, stranger.cookie, "other")).to, "/?social=unlinked-kakao")
+    // Its connection to the app is taken back; a linked one's never is.
+    assert.deepEqual(revoked, ["t-999"])
     const second = await signUpMember("social-two@syu.ac.kr", "social-pass-123")
     const taken = await start("link", second)
     assert.equal((await back(taken.url.searchParams.get("state")!, taken.cookie)).to, "/me?social=link-taken")
@@ -1126,9 +1133,11 @@ test("a linked Kakao account logs in, with the state bound to the browser and no
     // Unlinked, it no longer logs in.
     assert.equal((await call("DELETE", "/auth/social/kakao", undefined, owner)).data.account.socialLinks, undefined)
     const after = await start("login")
-    assert.equal((await back(after.url.searchParams.get("state")!, after.cookie)).to, "/?social=unlinked")
+    assert.equal((await back(after.url.searchParams.get("state")!, after.cookie)).to, "/?social=unlinked-kakao")
+    assert.deepEqual(revoked, ["t-999", "t-4242"])
   } finally {
     socialAuth.exchange = realExchange
+    socialAuth.revoke = realRevoke
     config.kakaoClientId = saved.kakao
     config.naverClientId = saved.naverId
     config.naverClientSecret = saved.naverSecret
