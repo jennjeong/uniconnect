@@ -5,10 +5,15 @@ import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { locale, t } from "../i18n"
 import { formatDay, toIsoDate } from "../lib/date"
-import type { ChatMessage, Conversation } from "../types"
+import { saveFile } from "../lib/download"
+import { photoFromFile } from "../lib/image"
+import type { ChatAttachment, ChatMessage, Conversation } from "../types"
 
 // How often an open conversation checks for new messages.
 const refreshMs = 4000
+
+// As large a PDF as the server takes (routes/conversations.ts).
+const pdfMaxBytes = 2 * 1024 * 1024
 
 // How long a finger rests on an own message before its menu opens.
 const holdMs = 450
@@ -28,16 +33,93 @@ const menuKnown = () => {
 const timeOf = (at: string) =>
   new Date(at).toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" })
 
+const sizeOf = (bytes: number) =>
+  bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)}MB` : `${Math.max(1, Math.round(bytes / 1024))}KB`
+
+// A picked PDF as a data URL, typed as a PDF even when the system gave it no type.
+const pdfDataUrl = (file: File) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result).replace(/^data:[^;,]*;base64,/, "data:application/pdf;base64,"))
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(file)
+  })
+
+// A photo sent in the conversation, fetched with the login token (an <img>
+// can't send it) and shown from an object URL; it opens full size in a tab.
+function ChatPhoto({ conversationId, attachment, alt }: { conversationId: string; attachment: ChatAttachment; alt: string }) {
+  const [url, setUrl] = useState<string>()
+  const [failed, setFailed] = useState(false)
+  useEffect(() => {
+    let objectUrl: string | undefined
+    let cancelled = false
+    api.chatFile(conversationId, attachment.file).then(
+      (blob) => {
+        if (cancelled) return
+        objectUrl = URL.createObjectURL(blob)
+        setUrl(objectUrl)
+      },
+      () => {
+        if (!cancelled) setFailed(true)
+      },
+    )
+    return () => {
+      cancelled = true
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+  }, [conversationId, attachment.file])
+  if (failed) return <span className="chat-photo-wait">{t("사진을 불러오지 못했어요.")}</span>
+  return url ? (
+    <a className="chat-photo" href={url} rel="noreferrer" target="_blank">
+      <img alt={alt} src={url} />
+    </a>
+  ) : (
+    <span aria-hidden="true" className="chat-photo-wait" />
+  )
+}
+
+// A PDF sent in the conversation: its name and size, saved when pressed.
+function ChatFile({
+  conversationId,
+  attachment,
+  onError,
+}: {
+  conversationId: string
+  attachment: ChatAttachment
+  onError: (problem: unknown) => void
+}) {
+  const save = async () => {
+    try {
+      saveFile(attachment.name, await api.chatFile(conversationId, attachment.file), "application/pdf")
+    } catch (problem) {
+      onError(problem)
+    }
+  }
+  return (
+    <button className="chat-file" onClick={() => void save()} type="button">
+      <Icon name="file" size={20} />
+      <span>
+        <strong>{attachment.name}</strong>
+        <small>
+          PDF · {sizeOf(attachment.size)} · {t("저장")}
+        </small>
+      </span>
+    </button>
+  )
+}
+
 // One conversation: messages (own on the right), and a box to write more.
 // It checks for replies every few seconds while open, which also brings in
 // the partner's read marks, edits and deletions. Own messages say whether
 // they were read and can be edited or deleted from a menu: pressed and held
 // on a touch screen, right-clicked with a mouse, or opened from a ⋯ button
 // the keyboard reaches. Both sides then see "수정됨" or a deleted message in
-// its place. It stops checking once the conversation is gone, and hands an
-// expired login to the app.
+// its place. A photo or PDF goes from the clip beside the box as a message
+// of its own, which can be deleted but not edited. It stops checking once
+// the conversation is gone, and hands an expired login to the app.
 export function ChatPage({
   id,
+  canSendFiles,
   onBack,
   onOpenPartner,
   onChange,
@@ -45,6 +127,8 @@ export function ChatPage({
   onReport,
 }: {
   id: string
+  // Whether photos and PDFs can be sent: not from the shared demo accounts.
+  canSendFiles: boolean
   onBack: () => void
   // Opens the partner's detail page; absent when it can't be opened.
   onOpenPartner?: (partnerId: string) => void
@@ -59,6 +143,7 @@ export function ChatPage({
   const [draft, setDraft] = useState("")
   const [error, setError] = useState("")
   const [sending, setSending] = useState(false)
+  const [uploading, setUploading] = useState(false)
   // The own message whose actions are open, and whether they ask to confirm a delete.
   const [menuFor, setMenuFor] = useState<string | null>(null)
   const [confirming, setConfirming] = useState(false)
@@ -67,6 +152,9 @@ export function ChatPage({
   // A finger resting on an own message: where it went down, and the timer
   // that opens the menu unless it moves (to scroll) or lifts first.
   const hold = useRef<{ timer: number; x: number; y: number } | null>(null)
+  // Set when a hold opened the menu, so the click as the finger lifts
+  // doesn't also open a photo or save a file.
+  const heldOpen = useRef(false)
   // Until a menu has been opened once, a line over the box says how.
   const [hintShown, setHintShown] = useState(() => !menuKnown())
   const [touch] = useState(() => window.matchMedia("(hover: none)").matches)
@@ -170,6 +258,27 @@ export function ChatPage({
     else setError(errorMessage(problem))
   }
 
+  // A picked photo goes resized (lib/image.ts), a PDF as it is, up to 2 MB.
+  const sendFile = async (file: File) => {
+    if (uploading) return
+    const pdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name)
+    if (pdf && file.size > pdfMaxBytes) {
+      setError(t("PDF는 2MB까지 보낼 수 있어요."))
+      return
+    }
+    setUploading(true)
+    try {
+      const data = pdf ? await pdfDataUrl(file) : await photoFromFile(file)
+      update((await api.sendFile(id, data, file.name)).conversation)
+    } catch (problem) {
+      // A photo that can't be read says why (lib/image.ts).
+      if (problem instanceof Error && !(problem instanceof ApiError)) setError(problem.message)
+      else fail(problem)
+    } finally {
+      setUploading(false)
+    }
+  }
+
   const send = async () => {
     const text = draft.trim()
     if (!text || sending) return
@@ -215,10 +324,12 @@ export function ChatPage({
   // A press and hold opens the menu on touch screens (Safari sends no
   // contextmenu event for it); a mouse opens it with the right button.
   const startHold = (event: PointerEvent<HTMLDivElement>, message: ChatMessage) => {
+    heldOpen.current = false
     if (event.pointerType === "mouse") return
     endHold()
     const timer = window.setTimeout(() => {
       hold.current = null
+      heldOpen.current = true
       navigator.vibrate?.(10)
       openMenu(message)
     }, holdMs)
@@ -234,6 +345,13 @@ export function ChatPage({
     event.preventDefault()
     endHold()
     openMenu(message)
+  }
+
+  const swallowHeldClick = (event: MouseEvent<HTMLDivElement>) => {
+    if (!heldOpen.current) return
+    heldOpen.current = false
+    event.preventDefault()
+    event.stopPropagation()
   }
 
   const startEdit = (message: ChatMessage) => {
@@ -307,8 +425,9 @@ export function ChatPage({
           const newDay = day !== lastDay
           lastDay = day
           const deleted = Boolean(message.deletedAt)
-          // Own messages are edited or deleted, a partner with an account's reported.
+          // Own messages are edited (files only deleted), a partner with an account's reported.
           const own = message.mine && !deleted
+          const editable = own && !message.attachment
           const reportable = !message.mine && !deleted && onReport !== undefined && partner?.hasAccount === true
           const actionable = own || reportable
           const classes = [
@@ -316,6 +435,7 @@ export function ChatPage({
             message.mine && "mine",
             deleted && "deleted",
             editing?.id === message.id && "editing",
+            message.attachment && (message.attachment.type === "image" ? "has-photo" : "has-file"),
           ]
             .filter(Boolean)
             .join(" ")
@@ -324,13 +444,26 @@ export function ChatPage({
               {newDay && <span className="chat-day">{formatDay(day)}</span>}
               <div
                 className="chat-bubble"
+                onClickCapture={actionable ? swallowHeldClick : undefined}
                 onContextMenu={actionable ? (event) => openOnRightClick(event, message) : undefined}
                 onPointerCancel={actionable ? endHold : undefined}
                 onPointerDown={actionable ? (event) => startHold(event, message) : undefined}
                 onPointerMove={actionable ? moveHold : undefined}
                 onPointerUp={actionable ? endHold : undefined}
               >
-                {deleted ? (message.mine ? t("메시지를 삭제했어요.") : t("삭제된 메시지예요.")) : message.text}
+                {deleted ? (
+                  message.mine ? t("메시지를 삭제했어요.") : t("삭제된 메시지예요.")
+                ) : message.attachment?.type === "image" ? (
+                  <ChatPhoto
+                    alt={message.mine ? t("보낸 사진") : t("받은 사진")}
+                    attachment={message.attachment}
+                    conversationId={id}
+                  />
+                ) : message.attachment ? (
+                  <ChatFile attachment={message.attachment} conversationId={id} onError={fail} />
+                ) : (
+                  message.text
+                )}
               </div>
               <span className="chat-meta">
                 {message.editedAt && !deleted && <span className="chat-edited">{t("수정됨")}</span>}
@@ -343,7 +476,7 @@ export function ChatPage({
                 {actionable && (
                   <button
                     aria-expanded={menuFor === message.id}
-                    aria-label={own ? t("메시지 수정 또는 삭제") : t("메시지 신고")}
+                    aria-label={own ? (editable ? t("메시지 수정 또는 삭제") : t("메시지 삭제")) : t("메시지 신고")}
                     className="chat-more"
                     onClick={() => toggleMenu(message)}
                     type="button"
@@ -377,10 +510,12 @@ export function ChatPage({
                     </button>
                   ) : (
                     <>
-                      <button className="chat-action" onClick={() => startEdit(message)} type="button">
-                        <Icon name="edit" size={15} />
-                        {t("수정")}
-                      </button>
+                      {editable && (
+                        <button className="chat-action" onClick={() => startEdit(message)} type="button">
+                          <Icon name="edit" size={15} />
+                          {t("수정")}
+                        </button>
+                      )}
                       <button className="chat-action danger" onClick={() => setConfirming(true)} type="button">
                         <Icon name="trash" size={15} />
                         {t("삭제")}
@@ -412,7 +547,13 @@ export function ChatPage({
             </button>
           </div>
         )}
-        {hintShown && ownSent && !editing && (
+        {uploading && (
+          <p className="chat-hint" role="status">
+            <Icon name="clip" size={14} />
+            {t("파일을 보내고 있어요…")}
+          </p>
+        )}
+        {hintShown && ownSent && !editing && !uploading && (
           <p className="chat-hint">
             <Icon name="edit" size={14} />
             {touch
@@ -421,6 +562,23 @@ export function ChatPage({
           </p>
         )}
         <div className="chat-input">
+          {canSendFiles && !editing && (
+            <label className="chat-attach" aria-disabled={uploading || undefined}>
+              <Icon name="clip" size={19} />
+              <span className="sr-only">{t("사진이나 PDF 보내기")}</span>
+              <input
+                accept="image/*,application/pdf,.pdf"
+                className="sr-only"
+                disabled={uploading}
+                onChange={(changed) => {
+                  const file = changed.target.files?.[0]
+                  changed.target.value = ""
+                  if (file) void sendFile(file)
+                }}
+                type="file"
+              />
+            </label>
+          )}
           <textarea
             aria-label={editing ? t("고칠 메시지") : t("보낼 메시지")}
             maxLength={1000}

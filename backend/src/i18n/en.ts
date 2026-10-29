@@ -446,6 +446,15 @@ const en: Record<string, string> = {
   "마감됐거나 찾을 수 없는 모집 글이에요.": "That post has closed or can't be found.",
   "이 상대에게 보낸 제안이 이미 있어요. 받은 제안 · 보낸 제안에서 확인해 주세요.": "You've already sent them a proposal. Check your proposals.",
   "모집 글: {title}": "Post: {title}",
+
+  // Files in conversations (routes/conversations.ts)
+  "사진(PNG, JPG, WebP)이나 2MB 이하의 PDF를 보내 주세요.": "Send a photo (PNG, JPG, WebP) or a PDF of 2 MB or less.",
+  "보낸 파일이 10MB를 넘어요. 지난 파일 메시지를 지운 뒤 다시 보내 주세요.": "Your files are over 10 MB. Delete some earlier file messages and try again.",
+  "파일을 찾을 수 없어요.": "We couldn't find that file.",
+  "보낸 파일은 고칠 수 없어요. 지우고 다시 보내 주세요.": "A file can't be edited. Delete it and send it again.",
+  "데모 계정은 파일을 보낼 수 없어요.": "Demo accounts can't send files.",
+  "{name}: 사진을 보냈어요.": "{name}: Sent a photo.",
+  "{name}: 파일을 보냈어요: {file}": "{name}: Sent a file: {file}",
 }
 
 export default en

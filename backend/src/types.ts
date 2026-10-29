@@ -467,7 +467,14 @@ export type ChatMessage = {
   // When the sender edited or deleted it; both sides are shown which.
   editedAt?: string
   deletedAt?: string
+  // A photo or PDF sent with it; gone once the message is deleted.
+  attachment?: ChatAttachment
 }
+
+// A file sent in a conversation (routes/conversations.ts): a photo resized
+// in the browser or a PDF, kept with lib/photos.ts under chatFiles(id), by
+// the name it is kept as and the name it was sent with.
+export type ChatAttachment = { file: string; name: string; type: "image" | "pdf"; size: number }
 
 // Messages between a student group and a brand, by their listing ids.
 export type Conversation = {

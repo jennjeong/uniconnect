@@ -50,7 +50,8 @@ function reportedThing(database: Database, account: Account, body: Record<string
     return {
       accountId: ownerOfListing(database, side === "group" ? conversation.brandId : conversation.groupId)?.id,
       target: { kind, conversationId: conversation.id, messageId: message.id } as AbuseReport["target"],
-      excerpt: message.deletedAt ? undefined : message.text,
+      // A file shows by the name it was sent with.
+      excerpt: message.deletedAt ? undefined : message.text || message.attachment?.name,
     }
   }
   if (kind === "review") {

@@ -6,13 +6,13 @@ import { config } from "../config.js"
 import { databaseSql, ensureTables, type Sql } from "./sql.js"
 
 // Where photos are kept without a database: beside the data file, one folder
-// per agreement (its id) or event (`event-<id>`, eventPhotos), so a test's or
-// a demo's data keeps its own.
+// per agreement (its id), event (`event-<id>`, eventPhotos) or conversation
+// (`chat-<id>`, chatFiles), so a test's or a demo's data keeps its own.
 export const uploadsFolder = (agreementId: string) =>
   path.join(path.dirname(config.dataFile), "uploads", agreementId.replace(/[^\w-]/g, "_"))
 
-// An agreement's proof photos or an event's photos, by the names the
-// agreement or event keeps: files on disk, or rows in Postgres on Vercel,
+// An agreement's proof photos, an event's photos or a conversation's files,
+// by the names they keep: files on disk, or rows in Postgres on Vercel,
 // where files don't last (base64, so every driver hands them back alike).
 export type PhotoStore = {
   put(agreementId: string, name: string, bytes: Buffer): Promise<void>
@@ -98,6 +98,32 @@ export function parsePhoto(image: unknown) {
   return { bytes, name: `${randomUUID()}.${match[1] === "jpeg" ? "jpg" : match[1]}` }
 }
 
-// The type a kept photo is served as.
+// The folder a conversation's files go in (routes/conversations.ts).
+export const chatFiles = (conversationId: string) => `chat-${conversationId}`
+
+// A file kept for a conversation: a photo's name or a PDF's.
+export const fileName = /^[\w-]+\.(png|jpg|webp|pdf)$/
+
+// The largest PDF a conversation takes.
+export const pdfMaxBytes = 2 * 1024 * 1024
+const pdfPattern = /^data:application\/pdf;base64,([A-Za-z0-9+/]+=*)$/
+
+// A PDF from the page as a data URL, 2 MB at most and really a PDF by its
+// first bytes: its bytes and a new name.
+export function parsePdf(file: unknown) {
+  const fits = typeof file === "string" && file.length <= Math.ceil((pdfMaxBytes * 4) / 3) + 40
+  const match = fits ? pdfPattern.exec(file) : null
+  const bytes = match ? Buffer.from(match[1], "base64") : undefined
+  if (!bytes || bytes.length > pdfMaxBytes || bytes.subarray(0, 5).toString("latin1") !== "%PDF-") return undefined
+  return { bytes, name: `${randomUUID()}.pdf` }
+}
+
+// The type a kept photo or file is served as.
 export const photoType = (name: string) =>
-  name.endsWith(".png") ? "image/png" : name.endsWith(".webp") ? "image/webp" : "image/jpeg"
+  name.endsWith(".pdf")
+    ? "application/pdf"
+    : name.endsWith(".png")
+      ? "image/png"
+      : name.endsWith(".webp")
+        ? "image/webp"
+        : "image/jpeg"

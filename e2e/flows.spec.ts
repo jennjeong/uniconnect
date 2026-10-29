@@ -453,6 +453,48 @@ test("a group writes its event page on the form, adds a photo, and a brand reads
   }
 })
 
+test("members send each other a photo and a PDF in a conversation", async ({ page, request, browser }) => {
+  const group = await signUpMember(request, "학생단체", "e2e-files@syu.ac.kr", "파일 동아리")
+  const brand = await signUpMember(request, "브랜드", "e2e-files@files-cafe.kr", "파일 카페")
+  await request.put("/api/profile", { data: { intro: "캠퍼스 공연 동아리예요.", offer: "관객 100명" }, headers: group.headers })
+  const started = await request.post("/api/conversations", { data: { partnerId: brand.listingId }, headers: group.headers })
+  const { conversation } = (await started.json()) as { conversation: { id: string } }
+
+  // The group sends a photo from the clip beside the box, then a PDF.
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
+  await page.goto(`/messages/${conversation.id}`)
+  const clip = page.getByLabel("사진이나 PDF 보내기")
+  await clip.setInputFiles({ name: "poster.jpg", mimeType: "image/jpeg", buffer: await readFile("frontend/src/assets/examples/groups.jpg") })
+  await expect(page.getByRole("img", { name: "보낸 사진" })).toBeVisible()
+  await clip.setInputFiles({ name: "제안서.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4\n%%EOF\n") })
+  await expect(page.getByRole("button", { name: /제안서\.pdf/ })).toBeVisible()
+
+  // The brand sees both, its list says a PDF came last, and it saves the PDF by its name.
+  const brandPage = await (await browser.newContext()).newPage()
+  await brandPage.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
+  await brandPage.goto("/messages")
+  await expect(brandPage.locator(".chat-row-preview")).toHaveText("PDF 파일")
+  await brandPage.locator(".chat-row").click()
+  await expect(brandPage.getByRole("img", { name: "받은 사진" })).toBeVisible()
+  const download = brandPage.waitForEvent("download")
+  await brandPage.getByRole("button", { name: /제안서\.pdf/ }).click()
+  expect((await download).suggestedFilename()).toBe("제안서.pdf")
+
+  // A file is deleted, not edited.
+  await page.getByRole("button", { name: "메시지 삭제" }).first().focus()
+  await page.keyboard.press("Enter")
+  const actions = page.locator(".chat-actions")
+  await expect(actions.getByRole("button", { name: "수정" })).toHaveCount(0)
+  await actions.getByRole("button", { name: "삭제" }).click()
+  await actions.getByRole("button", { name: "삭제" }).click()
+  await expect(page.getByText("메시지를 삭제했어요.")).toBeVisible()
+  await expect(page.getByRole("img", { name: "보낸 사진" })).toHaveCount(0)
+  for (const member of [group, brand]) {
+    const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: member.headers })
+    expect(left.status()).toBe(204)
+  }
+})
+
 test("a group posts on the recruit board, and a brand applies with its campaign", async ({ page, request, browser }) => {
   const group = await signUpMember(request, "학생단체", "e2e-board@syu.ac.kr", "모집 동아리")
   const brand = await signUpMember(request, "브랜드", "e2e-board@board-cafe.kr", "모집 카페")

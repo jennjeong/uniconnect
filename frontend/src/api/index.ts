@@ -307,6 +307,14 @@ export const api = {
       `/conversations/${encodeURIComponent(id)}/messages/${encodeURIComponent(messageId)}`,
       { method: "DELETE" },
     ),
+  // A photo (resized by lib/image.ts) or a PDF, as data URLs, each a message.
+  sendFile: (id: string, file: string, name: string) =>
+    request<{ conversation: Conversation }>(
+      `/conversations/${encodeURIComponent(id)}/attachments`,
+      { method: "POST", body: { file, name } },
+    ),
+  chatFile: (id: string, file: string) =>
+    requestBlob(`/conversations/${encodeURIComponent(id)}/attachments/${encodeURIComponent(file)}`),
 
   // `role` picks the demo side for visitors; the server ignores it once
   // logged in.

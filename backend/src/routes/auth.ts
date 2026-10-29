@@ -8,7 +8,7 @@ import { emailRuleError, normalizeEmail } from "../lib/email.js"
 import { HttpError } from "../lib/errors.js"
 import { sendVerificationCode } from "../lib/mailer.js"
 import { notify } from "../lib/notices.js"
-import { eventPhotos } from "../lib/photos.js"
+import { chatFiles, eventPhotos } from "../lib/photos.js"
 import { langOf, type Lang } from "../lib/i18n.js"
 import { hashPassword, verifyPassword } from "../lib/password.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
@@ -364,6 +364,12 @@ function removeAccount(database: Database, account: Account) {
   if (!listingId) return droppedAgreements
   database.brands = database.brands.filter((listing) => listing.id !== listingId)
   database.groups = database.groups.filter((listing) => listing.id !== listingId)
+  // Its conversations go, and their files once the data is saved.
+  droppedAgreements.push(
+    ...database.conversations
+      .filter((conversation) => conversation.groupId === listingId || conversation.brandId === listingId)
+      .map((conversation) => chatFiles(conversation.id)),
+  )
   database.conversations = database.conversations.filter(
     (conversation) => conversation.groupId !== listingId && conversation.brandId !== listingId,
   )
