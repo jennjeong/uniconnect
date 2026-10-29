@@ -6,6 +6,7 @@ import { addDays, todayInKorea } from "./dates.js"
 import { checkInWindow, eventOf, shareValue } from "./measurements.js"
 import { activeMethodsOf, venueCountsOf } from "./methods.js"
 import { isDemoAccount } from "./reviews.js"
+import { finishedSponsorships } from "./sponsorships.js"
 import type { Account, Database, EventItem, Measurement, Sponsorship } from "../types.js"
 
 // 상세 성과 리포트: what a brand buys for one sponsorship (the business plan's
@@ -258,9 +259,9 @@ export function premiumReport(database: Database, account: Account, id: string) 
   if (!effect) advice.push({ code: "add-baseline" })
 
   const viewer = isDemoAccount(database, account) ? undefined : account
-  const groupListing = database.groups.find((group) => group.name === sponsorship.groupName)
+  const groupListing0 = database.groups.find((group) => group.name === sponsorship.groupName)
   const next = browse(database, "groups", viewer)
-    .filter((group) => group.id !== groupListing?.id)
+    .filter((group) => group.id !== groupListing0?.id)
     .sort((a, b) => b.score - a.score)
     .slice(0, 3)
     .map((group) => ({
@@ -271,6 +272,85 @@ export function premiumReport(database: Database, account: Account, id: string) 
       score: group.score,
       ...(group.eventName && group.eventDate ? { event: { name: group.eventName, date: group.eventDate } } : {}),
     }))
+
+  // The event and what was agreed: who, where, the value by kind, the
+  // coupon, the confirmation methods and the goals.
+  const groupAccount = database.accounts.find((item) => item.id === measurement.accountId)
+  const groupListing =
+    (groupAccount?.groupId && database.groups.find((item) => item.id === groupAccount.groupId)) || groupListing0
+  const overview = {
+    school: groupAccount?.school || groupListing?.school || "",
+    category: groupListing?.category ?? "",
+    expectedAudience: goals.expectedAudience,
+    valueBreakdown: sponsor ? [{ type: "협찬액", value: spend }] : goals.valueBreakdown,
+    coupon: sponsor?.coupon ?? goals.coupon,
+    targets: goals.targets,
+    agreedValue: agreement?.value ?? null,
+  }
+
+  // Who came, from the optional survey: counts, and how many of those who
+  // scanned answered.
+  const survey = measurement.survey
+  const audience = survey && survey.responses > 0
+    ? {
+        responses: survey.responses,
+        responseRate: percent(survey.responses, metrics.scans),
+        grade: survey.grade,
+        field: survey.field,
+        visited: survey.visited,
+        firstTimeShare: percent(survey.visited["처음이에요"] ?? 0, survey.responses),
+      }
+    : null
+
+  // The store visits: how many coupons became visits, on which weekday, how
+  // soon, and how many were likely new customers (by the survey's share).
+  const weekdays = Array.from({ length: 7 }, () => 0)
+  for (const entry of measurement.log) {
+    if (entry.kind !== "visits") continue
+    weekdays[new Date(`${koreanDate(entry.at)}T00:00:00Z`).getUTCDay()] += 1
+  }
+  const visitsAnalysis = {
+    redemption: percent(visits, coupons),
+    sameDayShare: time.lag.sample > 0 ? percent(time.lag.days[0], time.lag.sample) : null,
+    weekdays,
+    newCustomers: audience ? Math.round((visits * audience.firstTimeShare) / 100) : null,
+  }
+
+  // Return on the value: the visits that would have paid it back, and the
+  // ROAS if each visitor spent 20% less or more than the group's estimate.
+  const roi = {
+    breakEvenVisits: goals.averageSpend > 0 ? Math.ceil(spend / goals.averageSpend) : null,
+    sensitivity: [0.8, 1, 1.2].map((factor) => ({
+      factor,
+      spendPerVisit: Math.round(goals.averageSpend * factor),
+      roas: percent(visits * goals.averageSpend * factor, spend),
+    })),
+  }
+
+  // The group's record here: its other measured events and its reviews.
+  const groupEvents = database.measurements.filter((item) => item.accountId === measurement.accountId && item !== measurement && item.metrics.scans > 0)
+  const ratings = groupListing ? database.reviews.filter((review) => review.aboutId === groupListing.id && !review.hiddenAt) : []
+  const partner = {
+    otherEvents: groupEvents.length,
+    averageScanRate: groupEvents.length
+      ? Math.round(groupEvents.reduce((sum, item) => sum + percent(item.metrics.scans, item.goals.expectedAudience), 0) / groupEvents.length)
+      : null,
+    rating: ratings.length ? Math.round((ratings.reduce((sum, review) => sum + review.rating, 0) / ratings.length) * 10) / 10 : null,
+    reviewCount: ratings.length,
+  }
+
+  // This sponsorship among the brand's own others.
+  const own = finishedSponsorships(database, account.id).filter((item) => item.spend > 0)
+  const ownRoas = own.map((item) => ({ id: item.id, roas: percent(item.sales, item.spend), perVisit: item.visits ? item.spend / item.visits : null }))
+  const history = {
+    count: own.length,
+    averageRoas: own.length ? Math.round(ownRoas.reduce((sum, item) => sum + item.roas, 0) / own.length) : null,
+    averagePerVisit: (() => {
+      const known = ownRoas.flatMap((item) => (item.perVisit === null ? [] : [item.perVisit]))
+      return known.length ? Math.round(known.reduce((sum, item) => sum + item, 0) / known.length) : null
+    })(),
+    rank: own.length ? [...ownRoas].sort((a, b) => b.roas - a.roas).findIndex((item) => item.id === sponsorship.id) + 1 : null,
+  }
 
   const final = todayInKorea() > window.visitsEnd
   return {
@@ -298,6 +378,13 @@ export function premiumReport(database: Database, account: Account, id: string) 
     advice,
     next,
     benchmarkCount: others.length,
+    overview,
+    audience,
+    visitsAnalysis,
+    roi,
+    partner,
+    history,
+    groupName: groupListing?.name ?? sponsorship.groupName,
   }
 }
 

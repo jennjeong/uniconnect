@@ -11296,6 +11296,272 @@ button.nav-pill:hover {
   }
 }
 
+/* The deeper sections of the detailed report: shares as bars, the event's
+   facts, the drop-off between steps, tables, and two charts side by side. */
+.insight-overview {
+  display: grid;
+  gap: 18px;
+}
+
+.insight-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.insight-facts > div {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--fill);
+}
+
+.insight-facts dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: var(--weight-label);
+}
+
+.insight-facts dd {
+  margin: 0;
+  font-size: 14px;
+  font-weight: var(--weight-label);
+  line-height: 1.5;
+}
+
+.insight-shares {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.insight-shares li {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr) 48px 70px;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.insight-shares strong {
+  text-align: right;
+}
+
+.insight-shares small {
+  color: var(--muted);
+  font-size: 12px;
+  text-align: right;
+}
+
+.insight-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.insight-tags li {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--point-tint);
+  color: var(--point-strong);
+  font-size: 12px;
+  font-weight: var(--weight-label);
+}
+
+.insight-audience {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.insight-audience figure {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  margin: 0;
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--fill);
+}
+
+.insight-audience figcaption {
+  font-size: 14px;
+  font-weight: var(--weight-label);
+}
+
+.insight-audience .insight-shares li {
+  grid-template-columns: 90px minmax(0, 1fr) 40px;
+}
+
+.insight-audience .insight-shares small {
+  display: none;
+}
+
+.insight-drops {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.insight-drops li {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--fill);
+  font-size: 13px;
+}
+
+.insight-drops li.worst {
+  background: var(--orange-soft);
+  color: var(--orange);
+}
+
+.insight-drops strong {
+  font-size: 18px;
+}
+
+.insight-timing.two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.insight-lead {
+  margin: 0;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: var(--weight-label);
+  line-height: 1.6;
+}
+
+.insight-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.insight-table caption {
+  padding-bottom: 8px;
+  font-size: 14px;
+  font-weight: var(--weight-label);
+  text-align: left;
+}
+
+.insight-table th,
+.insight-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: right;
+}
+
+.insight-table th:first-child {
+  text-align: left;
+}
+
+.insight-table thead th {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: var(--weight-label);
+}
+
+.insight-table tr.current {
+  background: var(--point-tint);
+  font-weight: var(--weight-label);
+}
+
+.insight-appendix {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+
+.insight-reading {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+  border-left: 3px solid var(--point);
+  border-radius: 0 16px 16px 0;
+  background: var(--point-tint);
+}
+
+.insight-reading h3 {
+  margin: 0;
+  color: var(--point-strong);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.insight-reading ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 18px;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.insight-reading p {
+  margin: 4px 0 0;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.insight-reading strong {
+  margin-right: 6px;
+  color: var(--point-strong);
+}
+
+.insight-pdf-contents {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 14px 18px;
+  border-radius: 16px;
+  background: var(--fill);
+  list-style: none;
+}
+
+.insight-pdf-contents li {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+@media (max-width: 960px) {
+  .insight-facts,
+  .insight-audience,
+  .insight-appendix {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .insight-drops,
+  .insight-timing.two {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .insight-shares li {
+    grid-template-columns: 90px minmax(0, 1fr) 44px;
+  }
+
+  .insight-shares small {
+    display: none;
+  }
+}
+
 /* The PDF's four A4 pages: the same sections, tighter, and a deep blue
    cover band on the first. */
 .insight-pdf {

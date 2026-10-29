@@ -4815,7 +4815,12 @@ test("a brand buys a sponsorship's detailed report, adds its store's counts and 
   assert.ok(["S", "A", "B", "C", "D"].includes(sample.report.grade))
   assert.deepEqual(sample.report.scorecard.map((item: { key: string }) => item.key), ["reach", "scans", "coupons", "visits", "qrRate", "visitRate", "roas"])
   assert.equal(sample.report.time.daily[0].date, "2026-10-12")
-  assert.ok(sample.report.advice.some((item: { code: string }) => item.code === "add-baseline"))
+  // The sample is a whole one: the store's counts, the audience, the coupon
+  // takers who came back and the e-contract's tasks.
+  assert.equal(sample.report.effect.lift, 23.7)
+  assert.equal(sample.report.audience.responses, 86)
+  assert.ok(sample.report.time.lag.sample > 0)
+  assert.equal(sample.report.fulfillment.items.length, 6)
   assert.equal((await call("PUT", "/insights/sp-busking/lift", { before: 30, during: 40 }, demo)).status, 403)
 
   // A member's sponsorship of a measured event: a preview until bought.

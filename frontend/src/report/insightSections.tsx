@@ -6,6 +6,7 @@ import { t } from "../i18n"
 import { formatDateTime, formatFullDate, formatPeriod } from "../lib/date"
 import { fullWon } from "../lib/sponsorships"
 import type { Benchmark, PremiumReport, ScoreKey } from "../types"
+import { ReadingBox, readings } from "./insightReading"
 
 // The sections of 상세 성과 리포트, shared by its page (pages/InsightPage.tsx)
 // and its PDF (report/InsightDocument.tsx). They word what the server works
@@ -248,17 +249,16 @@ export function Costs({ report }: { report: PremiumReport }) {
   )
 }
 
-// When people came: scans by hour on the busiest day, each day of the
-// window, and the days between taking a coupon and visiting.
+// When people came: scans by hour on the busiest day, and each day of the
+// window.
 export function Timing({ report }: { report: PremiumReport }) {
-  const { hourly, peak, daily, lag } = report.time
+  const { hourly, peak, daily } = report.time
   const day = peak?.date ?? report.event.date
   const hours = hourly.filter((item) => item.date === day)
   const hourTop = Math.max(1, ...hours.map((item) => item.scans))
   const dayTop = Math.max(1, ...daily.map((item) => item.scans + item.coupons + item.visits))
-  const lagTop = Math.max(1, ...lag.days)
   return (
-    <div className="insight-timing">
+    <div className="insight-timing two">
       <figure>
         <figcaption>
           {t("시간대별 QR 스캔")}
@@ -285,24 +285,6 @@ export function Timing({ report }: { report: PremiumReport }) {
               <i className="coupons" style={{ height: `${(item.coupons / dayTop) * 100}%` }} />
               <i className="visits" style={{ height: `${(item.visits / dayTop) * 100}%` }} />
               <small>{item.date.slice(8)}</small>
-            </span>
-          ))}
-        </div>
-      </figure>
-      <figure>
-        <figcaption>
-          {t("쿠폰을 받고 방문하기까지")}
-          <small>
-            {lag.average === null
-              ? t("쿠폰과 방문이 이어진 기록이 아직 없어요")
-              : t("평균 {days}일 · 방문 {count}건 기준", { days: lag.average, count: lag.sample })}
-          </small>
-        </figcaption>
-        <div className="insight-columns">
-          {lag.days.map((count, index) => (
-            <span key={index}>
-              <i style={{ height: `${(count / lagTop) * 100}%` }} />
-              <small>{index === 0 ? t("당일") : t("{days}일", { days: index })}</small>
             </span>
           ))}
         </div>
@@ -561,4 +543,454 @@ export function Methodology({ report }: { report: PremiumReport }) {
       </p>
     </div>
   )
+}
+
+// A share of a whole as a labelled bar, for the survey's answers and the
+// value by kind.
+function ShareBars({ entries, unit = "명" }: { entries: [string, number][]; unit?: "명" | "원" }) {
+  const total = entries.reduce((sum, [, count]) => sum + count, 0)
+  return (
+    <ul className="insight-shares">
+      {entries.map(([label, count]) => (
+        <li key={label}>
+          <span>{t(label)}</span>
+          <span aria-hidden="true" className="insight-bar">
+            <span className="fill met" style={{ width: `${total ? (count / total) * 100 : 0}%` }} />
+          </span>
+          <strong>{total ? `${Math.round((count / total) * 100)}%` : "—"}</strong>
+          <small>{unit === "원" ? fullWon(count) : t("{count}명", { count: number(count) })}</small>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+// The event and what both sides agreed: who, when and where, the value by
+// kind, the coupon, how it was confirmed and the goals set before it.
+export function Overview({ report }: { report: PremiumReport }) {
+  const { overview, event } = report
+  const facts = [
+    { label: t("학생단체"), value: [report.groupName, overview.school, overview.category && t(overview.category)].filter(Boolean).join(" · ") },
+    { label: t("행사 기간"), value: formatPeriod(event.date, event.endDate) },
+    { label: t("장소"), value: event.venue || t("적지 않았어요") },
+    { label: t("예상 관객"), value: t("{count}명", { count: number(overview.expectedAudience) }) },
+    { label: t("쿠폰"), value: `${overview.coupon.store} · ${overview.coupon.title}` },
+    {
+      label: t("측정 기간"),
+      value: t("{start}부터 쿠폰 방문 {end}까지", {
+        start: formatFullDate(event.window.start),
+        end: formatFullDate(event.window.visitsEnd),
+      }),
+    },
+  ]
+  return (
+    <div className="insight-overview">
+      <dl className="insight-facts">
+        {facts.map((fact) => (
+          <div key={fact.label}>
+            <dt>{fact.label}</dt>
+            <dd>{fact.value}</dd>
+          </div>
+        ))}
+      </dl>
+      <div>
+        <h3>{t("협찬 가치 구성 {total}", { total: fullWon(report.spend) })}</h3>
+        <ShareBars entries={overview.valueBreakdown.map((part) => [part.type, part.value])} unit="원" />
+        {overview.agreedValue && (
+          <p className="insight-note">
+            {t("계약서 협찬액: 현금 {cash} · 현물 {inKind}", {
+              cash: fullWon(overview.agreedValue.cash),
+              inKind: fullWon(overview.agreedValue.inKind),
+            })}
+          </p>
+        )}
+      </div>
+      <div>
+        <h3>{t("확인 방식")}</h3>
+        <ul className="insight-tags">
+          {report.methods.map((kind) => (
+            <li key={kind}>{t(methodInfo[kind].label)}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  )
+}
+
+// Who came, from the participants' optional survey.
+export function Audience({ report }: { report: PremiumReport }) {
+  const audience = report.audience
+  if (!audience) {
+    return <p className="insight-note">{t("참여자 설문 답이 아직 없어요. QR 참여 화면의 선택 설문에 답이 모이면 관객 구성을 보여 드려요.")}</p>
+  }
+  const sorted = (counts: Record<string, number>) => Object.entries(counts).sort((a, b) => b[1] - a[1])
+  return (
+    <>
+      <dl className="insight-costs">
+        <div>
+          <dt>{t("설문 응답")}</dt>
+          <dd>
+            {t("{count}명", { count: number(audience.responses) })}
+            <small>{t("QR 참여자의 {rate}%", { rate: audience.responseRate })}</small>
+          </dd>
+        </div>
+        <div>
+          <dt>{t("처음 온 손님 비율")}</dt>
+          <dd>
+            {audience.firstTimeShare}%<small>{t("쿠폰 가게에 처음 가 본다는 응답")}</small>
+          </dd>
+        </div>
+        <div>
+          <dt>{t("가장 많은 학년")}</dt>
+          <dd>{t(sorted(audience.grade)[0]?.[0] ?? "—")}</dd>
+        </div>
+        <div>
+          <dt>{t("가장 많은 전공 계열")}</dt>
+          <dd>{t(sorted(audience.field)[0]?.[0] ?? "—")}</dd>
+        </div>
+      </dl>
+      <div className="insight-audience">
+        <figure>
+          <figcaption>{t("학년")}</figcaption>
+          <ShareBars entries={sorted(audience.grade)} />
+        </figure>
+        <figure>
+          <figcaption>{t("전공 계열")}</figcaption>
+          <ShareBars entries={sorted(audience.field)} />
+        </figure>
+        <figure>
+          <figcaption>{t("쿠폰 가게 방문 경험")}</figcaption>
+          <ShareBars entries={sorted(audience.visited)} />
+        </figure>
+      </div>
+    </>
+  )
+}
+
+// Where people dropped out between the steps.
+export function Dropoff({ report }: { report: PremiumReport }) {
+  const steps = report.funnel
+  const names = { audience: "예상 관객", scans: "QR 스캔", coupons: "쿠폰 수령", visits: "매장 방문" }
+  const drops = steps.slice(1).map((step, index) => ({
+    from: steps[index].key,
+    to: step.key,
+    lost: Math.max(0, steps[index].count - step.count),
+    share: steps[index].count ? Math.round(((steps[index].count - step.count) / steps[index].count) * 100) : 0,
+  }))
+  const worst = [...drops].sort((a, b) => b.share - a.share)[0]
+  return (
+    <>
+      <ul className="insight-drops">
+        {drops.map((drop) => (
+          <li className={drop === worst ? "worst" : undefined} key={drop.to}>
+            <span>
+              {t(names[drop.from])} → {t(names[drop.to])}
+            </span>
+            <strong>{t("{share}% 이탈", { share: drop.share })}</strong>
+            <small>{t("{count}명", { count: number(drop.lost) })}</small>
+          </li>
+        ))}
+      </ul>
+      {worst && (
+        <p className="insight-note">
+          {t("가장 많이 빠져나간 단계는 {from} → {to}예요. 다음 협찬에서 이 단계부터 손보면 효과가 커요.", {
+            from: t(names[worst.from]),
+            to: t(names[worst.to]),
+          })}
+        </p>
+      )}
+    </>
+  )
+}
+
+const weekdayNames = ["일", "월", "화", "수", "목", "금", "토"]
+
+// The store visits: how many coupons became visits, how soon, on which
+// weekday, and how many were likely new customers.
+export function Visits({ report }: { report: PremiumReport }) {
+  const { visitsAnalysis, time } = report
+  const top = Math.max(1, ...visitsAnalysis.weekdays)
+  const lagTop = Math.max(1, ...time.lag.days)
+  return (
+    <>
+      <dl className="insight-costs">
+        <div>
+          <dt>{t("쿠폰 사용률")}</dt>
+          <dd>
+            {visitsAnalysis.redemption}%<small>{t("받은 쿠폰 중 매장에서 쓴 비율")}</small>
+          </dd>
+        </div>
+        <div>
+          <dt>{t("당일 방문")}</dt>
+          <dd>
+            {visitsAnalysis.sameDayShare === null ? "—" : `${visitsAnalysis.sameDayShare}%`}
+            <small>{t("쿠폰을 받은 날 바로 온 비율")}</small>
+          </dd>
+        </div>
+        <div>
+          <dt>{t("평균 방문까지")}</dt>
+          <dd>
+            {time.lag.average === null ? "—" : t("{days}일", { days: time.lag.average })}
+            <small>{t("방문 {count}건 기준", { count: time.lag.sample })}</small>
+          </dd>
+        </div>
+        <div>
+          <dt>{t("새 손님 추정")}</dt>
+          <dd>
+            {visitsAnalysis.newCustomers === null ? "—" : t("{count}명", { count: visitsAnalysis.newCustomers })}
+            <small>{t("방문 × 처음 온 손님 비율")}</small>
+          </dd>
+        </div>
+      </dl>
+      <div className="insight-timing two">
+        <figure>
+          <figcaption>
+            {t("요일별 방문")}
+            <small>{t("최근 기록 기준")}</small>
+          </figcaption>
+          <div className="insight-columns">
+            {visitsAnalysis.weekdays.map((count, index) => (
+              <span key={weekdayNames[index]}>
+                <i style={{ height: `${(count / top) * 100}%` }} />
+                <small>{t(weekdayNames[index])}</small>
+              </span>
+            ))}
+          </div>
+        </figure>
+        <figure>
+          <figcaption>
+            {t("쿠폰을 받고 방문하기까지")}
+            <small>{t("당일부터 7일 뒤까지")}</small>
+          </figcaption>
+          <div className="insight-columns">
+            {time.lag.days.map((count, index) => (
+              <span key={index}>
+                <i style={{ height: `${(count / lagTop) * 100}%` }} />
+                <small>{index === 0 ? t("당일") : t("{days}일", { days: index })}</small>
+              </span>
+            ))}
+          </div>
+        </figure>
+      </div>
+    </>
+  )
+}
+
+// Paying the value back: the visits that would have, and the ROAS if each
+// visitor spent less or more than estimated.
+export function Roi({ report }: { report: PremiumReport }) {
+  const visits = report.scorecard.find((item) => item.key === "visits")!.actual
+  const breakEven = report.roi.breakEvenVisits
+  return (
+    <>
+      <p className="insight-lead">
+        {breakEven === null
+          ? t("1인 예상 지출이 없어 손익분기점을 계산하지 못했어요.")
+          : visits >= breakEven
+            ? t("협찬액을 되찾는 데 방문 {need}명이 필요했고, {visits}명이 와서 {over}명을 넘겼어요.", { need: breakEven, visits, over: visits - breakEven })
+            : t("협찬액을 되찾으려면 방문 {need}명이 필요해요. 지금 {visits}명으로 {left}명 남았어요.", { need: breakEven, visits, left: breakEven - visits })}
+      </p>
+      <table className="insight-table">
+        <caption>{t("1인 지출에 따른 ROAS")}</caption>
+        <thead>
+          <tr>
+            <th scope="col">{t("가정")}</th>
+            <th scope="col">{t("1인 지출")}</th>
+            <th scope="col">ROAS</th>
+          </tr>
+        </thead>
+        <tbody>
+          {report.roi.sensitivity.map((row) => (
+            <tr className={row.factor === 1 ? "current" : undefined} key={row.factor}>
+              <th scope="row">{row.factor === 1 ? t("학생단체 추정") : row.factor < 1 ? t("20% 적게") : t("20% 많이")}</th>
+              <td>{fullWon(row.spendPerVisit)}</td>
+              <td>{row.roas}%</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
+  )
+}
+
+// The group's record on uniconnect, and this sponsorship among the brand's own.
+export function Records({ report }: { report: PremiumReport }) {
+  const { partner, history } = report
+  return (
+    <dl className="insight-costs">
+      <div>
+        <dt>{t("단체의 다른 측정 행사")}</dt>
+        <dd>
+          {t("{count}건", { count: partner.otherEvents })}
+          <small>{partner.averageScanRate === null ? t("이번이 첫 측정이에요") : t("평균 QR 참여율 {rate}%", { rate: partner.averageScanRate })}</small>
+        </dd>
+      </div>
+      <div>
+        <dt>{t("단체가 받은 후기")}</dt>
+        <dd>
+          {partner.rating === null ? "—" : `★ ${partner.rating}`}
+          <small>{t("후기 {count}개", { count: partner.reviewCount })}</small>
+        </dd>
+      </div>
+      <div>
+        <dt>{t("우리 브랜드 협찬 중 순위")}</dt>
+        <dd>
+          {history.rank === null ? "—" : t("{rank}위 / {count}건", { rank: history.rank, count: history.count })}
+          <small>{t("ROAS 기준")}</small>
+        </dd>
+      </div>
+      <div>
+        <dt>{t("우리 브랜드 평균")}</dt>
+        <dd>
+          {history.averageRoas === null ? "—" : `ROAS ${history.averageRoas}%`}
+          <small>{history.averagePerVisit === null ? "" : t("방문 1명당 {cost}", { cost: fullWon(history.averagePerVisit) })}</small>
+        </dd>
+      </div>
+    </dl>
+  )
+}
+
+// The records behind the charts, as tables.
+export function Appendix({ report }: { report: PremiumReport }) {
+  return (
+    <div className="insight-appendix">
+      <table className="insight-table">
+        <caption>{t("날짜별 기록")}</caption>
+        <thead>
+          <tr>
+            <th scope="col">{t("날짜")}</th>
+            <th scope="col">{t("QR 스캔")}</th>
+            <th scope="col">{t("쿠폰 수령")}</th>
+            <th scope="col">{t("매장 방문")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {report.time.daily.map((day) => (
+            <tr key={day.date}>
+              <th scope="row">{formatFullDate(day.date)}</th>
+              <td>{day.scans}</td>
+              <td>{day.coupons}</td>
+              <td>{day.visits}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <table className="insight-table">
+        <caption>{t("시간대별 QR 스캔")}</caption>
+        <thead>
+          <tr>
+            <th scope="col">{t("날짜")}</th>
+            <th scope="col">{t("시간")}</th>
+            <th scope="col">{t("QR 스캔")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {report.time.hourly.map((item) => (
+            <tr key={`${item.date}-${item.hour}`}>
+              <th scope="row">{formatFullDate(item.date)}</th>
+              <td>{t("{hour}시", { hour: item.hour })}</td>
+              <td>{item.scans}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+// The report's sections in order, for the page (each a card) and the PDF
+// (laid out on pages by report/InsightDocument.tsx).
+export function sections(
+  report: PremiumReport,
+  {
+    owner = false,
+    onSaveLift,
+    onOpenGroup,
+  }: { owner?: boolean; onSaveLift?: (body: { before: number; during: number }) => Promise<boolean>; onOpenGroup?: (id: string) => void } = {},
+): { id: string; icon: IconName; title: string; lead?: string; body: ReactNode }[] {
+  const read = readings(report)
+  const list: { id: string; icon: IconName; title: string; lead?: string; body: ReactNode }[] = [
+    { id: "findings", icon: "spark", title: t("핵심 요약"), body: <KeyFindings report={report} /> },
+    { id: "overview", icon: "file", title: t("행사 개요와 협찬 조건"), lead: t("두 쪽이 정한 조건과 행사 정보예요."), body: <Overview report={report} /> },
+    { id: "score", icon: "check", title: t("목표 대비 성과"), lead: t("학생단체가 행사 전에 정한 목표와 실제 결과예요."), body: <Scorecard report={report} /> },
+    { id: "audience", icon: "users", title: t("관객 구성"), lead: t("QR 참여자가 고른 선택 설문으로 본 관객이에요."), body: <Audience report={report} /> },
+    {
+      id: "funnel",
+      icon: "chart",
+      title: t("전환 퍼널과 이탈"),
+      lead: t("단계마다 uniconnect의 다른 행사와 비교했어요."),
+      body: (
+        <>
+          <Funnel report={report} />
+          <Dropoff report={report} />
+        </>
+      ),
+    },
+    { id: "timing", icon: "calendar", title: t("시간 분석"), lead: t("다음 행사의 부스 시간과 쿠폰 기한을 정할 때 보세요."), body: <Timing report={report} /> },
+    { id: "visits", icon: "store", title: t("매장 방문 분석"), lead: t("쿠폰이 실제 방문으로 바뀐 과정이에요."), body: <Visits report={report} /> },
+    {
+      id: "costs",
+      icon: "won",
+      title: t("비용 효율과 투자 회수"),
+      lead: t("결과 하나를 얻는 데 든 협찬액과, 협찬액을 되찾는 데 필요한 방문이에요."),
+      body: (
+        <>
+          <Costs report={report} />
+          <Roi report={report} />
+        </>
+      ),
+    },
+    {
+      id: "effect",
+      icon: "arrow",
+      title: t("평소 대비 효과"),
+      lead: t("쿠폰을 쓰지 않은 손님까지, 매장이 적은 하루 방문객으로 평소와 비교해요."),
+      body: <Effect onSave={owner ? onSaveLift : undefined} report={report} />,
+    },
+    {
+      id: "fulfillment",
+      icon: "link",
+      title: t("계약 이행 · 후기 · 파트너 이력"),
+      lead: t("임시 전자 계약서에 적은 할 일과 증빙, 서로 남긴 후기예요."),
+      body: (
+        <>
+          <Fulfillment report={report} />
+          <VenueAndReviews report={report} />
+        </>
+      ),
+    },
+    {
+      id: "advice",
+      icon: "briefcase",
+      title: t("우리 브랜드 협찬 중 위치와 다음 제안"),
+      lead: t("이번 협찬을 브랜드의 다른 협찬과 견주고, 다음 할 일을 정했어요."),
+      body: (
+        <>
+          <Records report={report} />
+          <Advice onOpenGroup={owner ? onOpenGroup : undefined} report={report} />
+        </>
+      ),
+    },
+    {
+      id: "method",
+      icon: "search",
+      title: t("측정 방법과 부록"),
+      body: (
+        <>
+          <Methodology report={report} />
+          <Appendix report={report} />
+        </>
+      ),
+    },
+  ]
+  // Each section ends with what it means and what to do.
+  return list.map((section) => ({
+    ...section,
+    body: (
+      <>
+        {section.body}
+        <ReadingBox reading={read[section.id]} />
+      </>
+    ),
+  }))
 }

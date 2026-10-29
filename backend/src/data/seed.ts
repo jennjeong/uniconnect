@@ -963,6 +963,45 @@ export function seedPosts(demoAccountIds: Partial<Record<Role, string>>): BoardP
   return posts
 }
 
+// The demo brand's sample report (sp-busking, lib/premiumReport.ts) as a
+// whole one, however old the data is: the store's own visitor counts, the
+// coupon takers who came back (the seeded visits by their coupon's
+// participant), and the e-contract's tasks with their proof.
+export function freshenDemoReport(database: Pick<Database, "sponsorships" | "measurements" | "agreements" | "demoAccountIds">) {
+  const brandId = database.demoAccountIds?.브랜드
+  const sponsorship = brandId ? database.sponsorships[brandId]?.find((item) => item.id === "sp-busking") : undefined
+  if (!sponsorship) return
+  sponsorship.lift ??= { before: 38, during: 47, updatedAt: "2026-10-21T10:00:00.000Z" }
+  const busking = database.measurements.find((item) => item.eventId === "event-busking-day")
+  if (busking) {
+    const takers = busking.log.filter((entry) => entry.kind === "coupons").map((entry) => entry.participant)
+    const visits = busking.log.filter((entry) => entry.kind === "visits")
+    if (takers.length && !visits.some((entry) => takers.includes(entry.participant))) {
+      visits.forEach((entry, index) => {
+        entry.participant = takers[index % takers.length]
+      })
+    }
+  }
+  if (!database.agreements.some((item) => item.id === "busking")) {
+    const at = "2026-10-05T10:00:00.000Z"
+    database.agreements.push({
+      id: "busking",
+      kind: "request",
+      items: [
+        { id: "busking-banner", side: "group", label: "무대 현수막에 로고 넣기", doneAt: "2026-10-12T17:00:00.000Z", links: [], photos: [] },
+        { id: "busking-mention", side: "group", label: "공연 중 쿠폰 안내 멘트 2회", doneAt: "2026-10-12T20:10:00.000Z", links: [], photos: [] },
+        { id: "busking-sns", side: "group", label: "인스타그램 홍보 게시물 1회", doneAt: "2026-10-10T09:00:00.000Z", links: ["https://www.instagram.com/"], photos: [] },
+        { id: "busking-qr", side: "group", label: "정문 부스에 QR 세우기", doneAt: "2026-10-12T16:30:00.000Z", links: [], photos: [] },
+        { id: "busking-coupon", side: "brand", label: "아메리카노 1+1 쿠폰 준비", doneAt: "2026-10-11T12:00:00.000Z", links: [], photos: [] },
+        { id: "busking-goods", side: "brand", label: "현장 시음 음료 200잔 전달", doneAt: "2026-10-12T15:00:00.000Z", links: [], photos: [] },
+      ],
+      confirmed: { group: at, brand: at },
+      createdAt: at,
+      updatedAt: at,
+    })
+  }
+}
+
 // The example posts stay open, a month ahead, however old the data is.
 export function freshenExamplePosts(database: Pick<Database, "posts" | "demoAccountIds">, now = new Date()) {
   const demo = new Set(Object.values(database.demoAccountIds ?? {}))

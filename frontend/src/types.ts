@@ -869,6 +869,28 @@ export type PremiumReport = {
   advice: { code: string; values?: Record<string, number | string> }[]
   next: { id: string; name: string; school: string; category: string; score: number; event?: { name: string; date: string } }[]
   benchmarkCount: number
+  groupName: string
+  overview: {
+    school: string
+    category: string
+    expectedAudience: number
+    valueBreakdown: { type: string; value: number }[]
+    coupon: { store: string; title: string }
+    targets: Record<ScoreKey, number>
+    agreedValue: { cash: number; inKind: number } | null
+  }
+  audience: {
+    responses: number
+    responseRate: number
+    grade: Record<string, number>
+    field: Record<string, number>
+    visited: Record<string, number>
+    firstTimeShare: number
+  } | null
+  visitsAnalysis: { redemption: number; sameDayShare: number | null; weekdays: number[]; newCustomers: number | null }
+  roi: { breakEvenVisits: number | null; sensitivity: { factor: number; spendPerVisit: number; roas: number }[] }
+  partner: { otherEvents: number; averageScanRate: number | null; rating: number | null; reviewCount: number }
+  history: { count: number; averageRoas: number | null; averagePerVisit: number | null; rank: number | null }
 }
 
 // The report as its page loads it: a preview with the price until bought.
