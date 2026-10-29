@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 
-import { answerNotices, brandNotifications, soonNotices, studentNotifications } from "./notifications"
+import { answerNotices, brandNotifications, isUnread, readParts, soonNotices, studentNotifications } from "./notifications"
 import type { Inquiry, Match } from "../types"
 
 describe("the notice of the operators' answers", () => {
@@ -60,5 +60,35 @@ describe("notices of the days that are near", () => {
 
   test("has nothing when no day is near", () => {
     expect(soonNotices(entries, "행사 일정", "2026-12-10")).toEqual([])
+  })
+})
+
+describe("read marks", () => {
+  const match = (id: string): Match => ({ id, name: id, category: "카페 · 식음료", industry: "cafe", offer: "", score: 70, tags: [] })
+  const notices = (ids: string[]) =>
+    studentNotifications({ matches: ids.map(match), brands: [], statuses: {}, report: null, offers: [], events: [] })
+
+  test("a notice is read once all its parts are, and a new part makes it unread again", () => {
+    const [shown] = notices(["a", "b"])
+    expect(shown.parts).toEqual(["match:a", "match:b"])
+    expect(isUnread(shown, new Set(["match:a"]))).toBe(true)
+    const read = new Set(readParts([shown], new Set(), [shown]))
+    expect(isUnread(shown, read)).toBe(false)
+    expect(isUnread(notices(["a", "b", "c"])[0], read)).toBe(true)
+    // One fewer is not news.
+    expect(isUnread(notices(["a"])[0], read)).toBe(false)
+  })
+
+  test("saving keeps only the parts on show, so the list stays short", () => {
+    const [shown] = notices(["b", "c"])
+    expect(readParts([shown], new Set(["match:a", "match:b"]), [])).toEqual(["match:b"])
+    expect(readParts([shown], new Set(["match:a"]), [shown])).toEqual(["match:b", "match:c"])
+  })
+
+  test("the day before and the day itself are new again", () => {
+    const entry = [{ id: "show", name: "공연", date: "2026-11-28" }]
+    const part = (today: string) => soonNotices(entry, "내 행사", today)[0].parts[0]
+    expect(part("2026-11-25")).toBe(part("2026-11-26"))
+    expect(new Set([part("2026-11-25"), part("2026-11-27"), part("2026-11-28")]).size).toBe(3)
   })
 })

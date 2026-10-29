@@ -115,6 +115,10 @@ export type Account = {
   // it (lib/business.ts): the number alone, so one business verifies one
   // account; the representative's name and opening date are not kept.
   business?: { number: string; verifiedAt: string }
+  // The parts of the bell's notices the account has read (lib/notifications.ts
+  // in the app), as it last sent them: only parts still shown, so the list
+  // stays as short as the bell.
+  readNotices?: string[]
 }
 
 export type PublicAccount = Omit<Account, "passwordHash" | "termsAgreedAt">

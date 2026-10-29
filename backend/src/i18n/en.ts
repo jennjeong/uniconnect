@@ -255,6 +255,7 @@ const en: Record<string, string> = {
   "브랜드 계정으로 가게를 연결할 수 있어요.": "Only brand accounts can link a shop.",
   "데모 계정은 가게를 연결할 수 없어요.": "The demo accounts can't link a shop.",
   "데모 계정은 담당자 정보를 바꿀 수 없어요.": "The demo accounts can't change their contact details.",
+  "읽은 알림을 알 수 없어요.": "We couldn't tell which notices you've read.",
   "담당자 이름을 입력해 주세요.": "Please enter the contact person's name.",
   "담당자 이름은 20자 이하로 입력해 주세요.": "Please keep the contact person's name to 20 characters or fewer.",
   "직책을 입력해 주세요.": "Please enter your position.",

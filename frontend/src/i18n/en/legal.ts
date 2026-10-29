@@ -91,6 +91,9 @@ const en: Record<string, string> = {
     "Finding and fixing errors in the service. Names, emails and what was typed are left out",
   "최근 200개까지, 그보다 오래된 것은 지워요": "The latest 200; older ones are deleted",
   "브랜드의 사업자등록번호와 확인한 시각": "A brand's business registration number and when it was verified",
+  "읽은 알림(알림의 종류와 그 대상의 번호)": "Notifications you've read (the kind of notification and the number of what it's about)",
+  "읽지 않은 알림이 있을 때만 종에 점을 보여 주기": "Showing a dot on the bell only while a notification is unread",
+  "탈퇴할 때까지, 지난 알림은 다음에 읽을 때 지워요": "Until you leave; past notifications are dropped the next time you read one",
   "국세청에서 사업자를 확인하고 소개에 '사업자 확인'을 표시":
     "Checking the business with the National Tax Service and marking the profile 'Business verified'",
   "브랜드가 사업자 확인을 하면, 적은 사업자등록번호, 개업일자, 대표자 성명을 공공데이터포털을 거쳐 국세청의 사업자등록정보 진위확인 서비스에 보내 확인해요. 대표자 성명과 개업일자는 저장하지 않아요.":

@@ -6313,7 +6313,22 @@ button.nav-pill:hover {
 }
 
 .notify-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
   margin-bottom: 10px;
+}
+
+.notify-read-all {
+  flex: none;
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--point-strong);
+  font-size: 12px;
+  font-weight: var(--weight-label);
 }
 
 @keyframes notify-drop {
@@ -6372,6 +6387,7 @@ button.nav-pill:hover {
 }
 
 .notification-icon {
+  position: relative;
   display: grid;
   width: 38px;
   height: 38px;
@@ -6384,6 +6400,24 @@ button.nav-pill:hover {
 .notification-icon.green {
   background: var(--green-soft);
   color: var(--green);
+}
+
+/* Read notices step back; an unread one keeps its weight and a dot on its icon. */
+.notification-list > button:not(.unread) strong {
+  color: var(--ink-soft);
+  font-weight: var(--weight-label);
+}
+
+.notification-list > button.unread .notification-icon::after {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 10px;
+  height: 10px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--blue);
+  content: "";
 }
 
 .report-detail-score {

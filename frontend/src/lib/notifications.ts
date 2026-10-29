@@ -27,6 +27,27 @@ export type NotificationItem = {
   target: NavLabel
   // Opens the help center's questions instead, where the answers are.
   faq?: true
+  // What it is made of, such as each offer it counts: it is read once all
+  // are, and a new one makes it unread again.
+  parts: string[]
+}
+
+// Parts tracked per notice and in all, as many as the server keeps.
+const partsPerNotice = 50
+const partsInAll = 300
+const tracked = (item: NotificationItem) => item.parts.slice(0, partsPerNotice)
+
+// Whether a notice has a part the account hasn't read, such as an offer
+// that came in after the last look.
+export const isUnread = (item: NotificationItem, read: ReadonlySet<string>) =>
+  tracked(item).some((part) => !read.has(part))
+
+// The read parts to save once `opened` are read too: of the parts on show,
+// those read before and the opened ones. Parts no longer on show drop off,
+// so the list stays as short as the bell.
+export function readParts(items: NotificationItem[], read: ReadonlySet<string>, opened: NotificationItem[]) {
+  const now = new Set(opened.flatMap(tracked))
+  return [...new Set(items.flatMap(tracked))].filter((part) => read.has(part) || now.has(part)).slice(0, partsInAll)
 }
 
 // The operators' answers the asker hasn't seen yet, as one notice that
@@ -46,6 +67,7 @@ export function answerNotices(inquiries: Inquiry[]): NotificationItem[] {
           : t("답변 {count}개를 확인해 보세요.", { count: unread.length }),
       target: "대시보드",
       faq: true,
+      parts: unread.map((inquiry) => `answer:${inquiry.id}`),
     },
   ]
 }
@@ -57,7 +79,8 @@ function nameList(names: string[]) {
 }
 
 // Days three days away or nearer, nearest first, at the top of the notices:
-// "오늘은 ‘X’ 날이에요", "내일은 ‘X’ 날이에요", "‘X’까지 3일 남았어요".
+// "오늘은 ‘X’ 날이에요", "내일은 ‘X’ 날이에요", "‘X’까지 3일 남았어요". Each is
+// unread again the day before and on the day.
 export function soonNotices(
   entries: { id: string; name: string; date: string }[],
   target: NavLabel,
@@ -78,6 +101,7 @@ export function soonNotices(
             : t("‘{name}’까지 {days}일 남았어요", { name: entry.name, days }),
       caption: t("임시 전자 계약서에서 두 쪽이 할 일을 확인해 보세요."),
       target,
+      parts: [`soon:${entry.id}:${entry.date}:${Math.min(days, 2)}`],
     }))
 }
 
@@ -98,10 +122,9 @@ export function studentNotifications({
   // The group's events, for the days that are near.
   events: EventItem[]
 }): NotificationItem[] {
-  const answered = (status: RequestStatus) =>
-    Object.keys(statuses)
-      .filter((id) => statuses[id] === status)
-      .map((id) => brands.find((brand) => brand.id === id)?.name ?? id)
+  // The brands that answered so, by id.
+  const answered = (status: RequestStatus) => Object.keys(statuses).filter((id) => statuses[id] === status)
+  const names = (ids: string[]) => ids.map((id) => brands.find((brand) => brand.id === id)?.name ?? id)
   const accepted = answered("수락")
   const declined = answered("거절")
   const items: NotificationItem[] = soonNotices(events, "내 행사")
@@ -113,6 +136,7 @@ export function studentNotifications({
       title: t("새 협찬 제안 {count}건", { count: waiting.length }),
       caption: t("{names} · 답을 기다리고 있어요", { names: nameList(waiting.map((offer) => offer.brandName)) }),
       target: "받은 협찬",
+      parts: waiting.map((offer) => `offer:${offer.id}`),
     })
   }
   if (accepted.length > 0) {
@@ -121,8 +145,9 @@ export function studentNotifications({
       icon: "check",
       good: true,
       title: t("협찬이 확정됐어요"),
-      caption: t("{names} · 제안 수락", { names: nameList(accepted) }),
+      caption: t("{names} · 제안 수락", { names: nameList(names(accepted)) }),
       target: "추천 매칭",
+      parts: accepted.map((id) => `accepted:${id}`),
     })
   }
   if (declined.length > 0) {
@@ -132,6 +157,7 @@ export function studentNotifications({
       title: t("거절된 제안 {count}건", { count: declined.length }),
       caption: t("다른 브랜드에도 제안해 보세요."),
       target: "추천 매칭",
+      parts: declined.map((id) => `declined:${id}`),
     })
   }
   // Only once there is a match to see (a member's partners are members).
@@ -142,6 +168,7 @@ export function studentNotifications({
       title: t("새 추천 매칭 {count}건", { count: matches.length }),
       caption: t("다가오는 일정과 잘 맞는 파트너를 찾았어요."),
       target: "추천 매칭",
+      parts: matches.map((match) => `match:${match.id}`),
     })
   }
   // Once the event shown on the report pages is over.
@@ -153,6 +180,7 @@ export function studentNotifications({
       title: t("성과 리포트가 완성됐어요"),
       caption: `${report.eventName} · ROAS ${roasText(report)}`,
       target: "리포트",
+      parts: [`report:${report.eventId}`],
     })
   }
   return items
@@ -183,6 +211,7 @@ export function brandNotifications({
       title: t("새 협찬 제안 {count}건", { count: pending.length }),
       caption: t("{names} · 답을 기다리고 있어요", { names: nameList(pending.map((request) => request.groupName)) }),
       target: "받은 제안",
+      parts: pending.map((request) => `request:${request.id}`),
     })
   }
   if (matches.length > 0) {
@@ -192,6 +221,7 @@ export function brandNotifications({
       title: t("추천 학생단체 {count}곳", { count: matches.length }),
       caption: t("캠페인과 잘 맞는 단체를 찾았어요."),
       target: "단체 찾기",
+      parts: matches.map((match) => `match:${match.id}`),
     })
   }
   if (latest) {
@@ -202,6 +232,7 @@ export function brandNotifications({
       title: t("협찬 성과가 집계됐어요"),
       caption: `${latest.eventName} · ROAS ${roasOf(latest)}%`,
       target: "성과 분석",
+      parts: [`analytics:${latest.id}`],
     })
   }
   return items

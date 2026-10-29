@@ -2435,6 +2435,35 @@ test("sign-up asks who runs the account, which only the two sides of an agreemen
   assert.deepEqual(agreement.brand.contact, testContact)
 })
 
+test("the bell's read marks stay with the account, so every device shows the same dot", async () => {
+  const token = await signUpMember("bell@syu.ac.kr", "bell-pass-123")
+  const read = ["offer:o1", "match:m1", "soon:e1:2026-11-25:0"]
+  const saved = await call("PUT", "/auth/notices", { read: [...read, "offer:o1"] }, token)
+  assert.equal(saved.status, 200)
+  assert.deepEqual(saved.data.readNotices, read)
+  // Another device logged into the same account reads them back.
+  const other = (await call("POST", "/auth/login", { role: "학생단체", email: "bell@syu.ac.kr", password: "bell-pass-123" }))
+    .data.token as string
+  assert.deepEqual((await call("GET", "/auth/me", undefined, other)).data.account.readNotices, read)
+  // Each save replaces the list, as the app sends only the parts still shown.
+  await call("PUT", "/auth/notices", { read: ["match:m1"] }, other)
+  assert.deepEqual((await call("GET", "/auth/me", undefined, token)).data.account.readNotices, ["match:m1"])
+  await call("PUT", "/auth/notices", { read: [] }, token)
+  assert.equal((await call("GET", "/auth/me", undefined, token)).data.account.readNotices, undefined)
+  // Anything else is refused, and so is a visitor.
+  for (const body of [
+    {},
+    { read: "offer:o1" },
+    { read: [1] },
+    { read: [""] },
+    { read: ["x".repeat(201)] },
+    { read: Array.from({ length: 301 }, (_, index) => `part:${index}`) },
+  ]) {
+    assert.equal((await call("PUT", "/auth/notices", body, token)).status, 400)
+  }
+  assert.equal((await call("PUT", "/auth/notices", { read: [] })).status, 401)
+})
+
 test("account types from before the lists grew take their new names", async () => {
   const { upgradeDatabase } = await import("./store.js")
   const { createSeed, demoContacts } = await import("./data/seed.js")

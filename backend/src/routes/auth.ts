@@ -388,6 +388,30 @@ authRouter.put("/contact", async (req, res) => {
   res.json({ account: toPublic(account) })
 })
 
+// Most parts of the bell's notices one save may hold, as many as the app
+// tracks (lib/notifications.ts).
+const maxReadNotices = 300
+
+// The bell's read marks (lib/notifications.ts in the app): the parts of the
+// notices on show that the account has read, replacing those saved before.
+// Kept on the account, so every device shows the same dot.
+authRouter.put("/notices", async (req, res) => {
+  const account = requireAccount(req)
+  const read: unknown = req.body?.read
+  if (
+    !Array.isArray(read) ||
+    read.length > maxReadNotices ||
+    !read.every((part) => typeof part === "string" && part.length > 0 && part.length <= 200)
+  ) {
+    throw new HttpError(400, "읽은 알림을 알 수 없어요.")
+  }
+  const parts = [...new Set(read as string[])]
+  if (parts.length > 0) account.readNotices = parts
+  else delete account.readNotices
+  await saveDatabase()
+  res.json({ readNotices: parts })
+})
+
 // Changing the password from 내 정보: the current one first. Other devices
 // are logged out; this one stays logged in.
 authRouter.post("/password", async (req, res) => {

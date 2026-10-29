@@ -87,6 +87,29 @@ test("the menu counts what waits for a member, and nothing for a visitor", async
   await expect(menu.getByRole("button", { name: /받은 제안/ }).locator("em")).toBeVisible()
 })
 
+test("the bell's dot shows only while a notice is unread, and stays read on reload", async ({ page }) => {
+  await page.goto("/dashboard")
+  await logIn(page, "학생단체", "muse@syu.ac.kr")
+  const bell = page.locator(".site-header").getByRole("button", { name: /^알림/ })
+  const panel = page.getByRole("region", { name: "알림" })
+  const dot = page.locator(".notification-dot")
+  await expect(dot).toBeVisible()
+  await expect(bell).toHaveAccessibleName(/^알림, 읽지 않은 \d+개$/)
+  await bell.click()
+  await expect(panel.locator("button.unread").first()).toBeVisible()
+  await panel.getByRole("button", { name: "모두 읽음" }).click()
+  await expect(panel.locator("button.unread")).toHaveCount(0)
+  await expect(panel.getByRole("button", { name: "모두 읽음" })).toHaveCount(0)
+  await expect(dot).toHaveCount(0)
+  await expect(bell).toHaveAccessibleName("알림")
+  // Kept on the account: after a reload the notices are there, all read.
+  await page.reload()
+  await bell.click()
+  await expect(panel.locator(".notification-list > button").first()).toBeVisible()
+  await expect(panel.locator("button.unread")).toHaveCount(0)
+  await expect(dot).toHaveCount(0)
+})
+
 test("a member who opens the introduction goes on to the dashboard", async ({ page }) => {
   await page.goto("/")
   await logIn(page, "학생단체", "muse@syu.ac.kr")

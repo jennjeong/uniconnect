@@ -26,7 +26,14 @@ import { nextEvent, todayIso } from "./lib/date"
 import { saveFile } from "./lib/download"
 import { reportKpis, type KpiKey } from "./lib/kpis"
 import { defaultMeasurement, measureState } from "./lib/measurements"
-import { answerNotices, brandNotifications, studentNotifications } from "./lib/notifications"
+import {
+  answerNotices,
+  brandNotifications,
+  isUnread,
+  readParts,
+  studentNotifications,
+  type NotificationItem,
+} from "./lib/notifications"
 import { track } from "./lib/analytics"
 import { applyPageMeta, pageMeta } from "./lib/pageMeta"
 import { install } from "./lib/install"
@@ -190,7 +197,6 @@ function App() {
   const [exporting, setExporting] = useState(false)
   // Brands' analytics report, made by AnalyticsExport the same way.
   const [exportingAnalytics, setExportingAnalytics] = useState(false)
-  const [notificationsRead, setNotificationsRead] = useState(false)
   // The notifications panel under the bell.
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   // The full-screen menu (the Menu button in the header).
@@ -982,6 +988,16 @@ function App() {
       ? studentNotifications({ matches, brands, statuses, report, offers, events })
       : brandNotifications({ matches, requests, sponsorships, events })),
   ]
+  // The parts of the bell's notices this account has read, saved on it.
+  const readNotices = new Set(account?.readNotices ?? [])
+  // Marks notices read (one opened, or 모두 읽음): at once on screen, then on
+  // the account for its other devices.
+  const markNoticesRead = (opened: NotificationItem[]) => {
+    if (!account || !opened.some((item) => isUnread(item, readNotices))) return
+    const next = readParts(notifications, readNotices, opened)
+    setAccount({ ...account, readNotices: next })
+    api.readNotices(next).catch(handleError)
+  }
 
   const activity: ActivityItem[] = students
     ? [
@@ -1369,8 +1385,8 @@ function App() {
         authReady={authReady}
         badges={badges}
         events={schedule}
-        hasUnread={!notificationsRead && notifications.length > 0}
         notifications={notifications}
+        isUnread={(item) => isUnread(item, readNotices)}
         notificationsOpen={notificationsOpen}
         menuOpen={menuOpen}
         unreadMessages={unreadMessages}
@@ -1386,11 +1402,9 @@ function App() {
           setAskOnFaq(true)
           openFaq()
         }}
-        onToggleNotifications={() => {
-          setNotificationsOpen((open) => !open)
-          setNotificationsRead(true)
-        }}
+        onToggleNotifications={() => setNotificationsOpen((open) => !open)}
         onCloseNotifications={closeNotifications}
+        onReadNotices={markNoticesRead}
         onOpenProfile={openProfile}
         onLogin={() => openAuth("login")}
         onSignup={() => openAuth("signup")}
