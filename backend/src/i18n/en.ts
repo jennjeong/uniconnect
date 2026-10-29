@@ -343,6 +343,10 @@ const en: Record<string, string> = {
   "데모 계정은 리포트를 공유할 수 없어요.": "The demo accounts can't share reports.",
   "상세 리포트를 산 뒤에 공유할 수 있어요.": "Buy the detailed report to share it.",
   "공유가 끝났거나 없는 리포트예요.": "This report is no longer shared, or doesn't exist.",
+  // Pro (lib/pro.ts)
+  "무료 요금제는 한 달에 협찬 제안 {name}건까지예요. 프로로 바꾸면 제한 없이 보낼 수 있어요.":
+    "The free plan sends up to {name} proposals a month. Switch to Pro to send without a limit.",
+  "프로는 브랜드 계정만 쓸 수 있어요.": "Pro is for brand accounts only.",
   "{name}에서 '{event}' 협찬의 협찬액을 바꿨어요. 바뀐 내용을 보고 다시 확인해 주세요.":
     "{name} changed the value of the '{event}' sponsorship. Please check the change and confirm again.",
 

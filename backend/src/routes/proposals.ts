@@ -8,6 +8,7 @@ import { text } from "../lib/validation.js"
 import { notify } from "../lib/notices.js"
 import { createRateLimit, senderKey } from "../lib/rateLimit.js"
 import { statusOf } from "../lib/proposals.js"
+import { assertCanOffer } from "../lib/pro.js"
 import { isOpen } from "./board.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -178,6 +179,7 @@ proposalsRouter.post("/", async (req, res) => {
   const note = text(req.body?.message)
   if (note.length > maxMessage) throw new HttpError(400, `메시지는 ${maxMessage}자 이하로 적어 주세요.`)
   const event = proposedEvent(account, text(req.body?.eventId))
+  assertCanOffer(database, account)
   await proposalsPerHour.take(senderKey(req, database, account))
 
   // A group with an account gets a brand's offer in its inbox, about the

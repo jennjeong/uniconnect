@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto"
 
+import { paidFor } from "./billing.js"
 import { browse } from "./catalog.js"
 import { addDays, todayInKorea } from "./dates.js"
 import { checkInWindow, eventOf, shareValue } from "./measurements.js"
@@ -102,6 +103,13 @@ function timing(measurement: Measurement, event: EventItem) {
     recordsKept: measurement.log.length,
   }
 }
+
+// Whether an account may read a sponsorship's report: bought it, or is the
+// demo brand (Pro, lib/pro.ts, adds itself).
+export const reportAccess: ((database: Database, account: Account, sponsorshipId: string) => boolean)[] = [
+  (database, account) => isDemoAccount(database, account),
+  (database, account, id) => Boolean(paidFor(database, account.id, "report", id)),
+]
 
 // The report's number: the event day and a short hash of the sponsorship.
 export const reportNumber = (sponsorship: Sponsorship) =>

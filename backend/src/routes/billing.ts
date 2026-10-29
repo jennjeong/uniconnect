@@ -6,6 +6,7 @@ import { HttpError } from "../lib/errors.js"
 // What brands can buy, each registered with lib/billing.ts.
 import "../lib/feeSales.js"
 import "../lib/reportSales.js"
+import { planOf } from "../lib/pro.js"
 import { isDemoAccount } from "../lib/reviews.js"
 import { text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
@@ -24,6 +25,7 @@ billingRouter.get("/", (req, res) => {
   res.json({
     prices,
     card: cardReady() ? { clientKey: config.tossClientKey } : null,
+    plan: planOf(database, account),
     payments: paymentsOf(database)
       .filter((payment) => payment.accountId === account.id)
       .reverse()

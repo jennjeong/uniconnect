@@ -4852,3 +4852,43 @@ test("a brand buys a sponsorship's detailed report, adds its store's counts and 
   assert.equal((await call("DELETE", `/insights/${id}/share`, undefined, brand)).status, 204)
   assert.equal((await call("GET", `/insights/shared/${shareToken}`)).status, 404)
 })
+
+test("a free brand sends five proposals a month; Pro lifts the limit for 30 days at a time and marks its listing", async () => {
+  const { token: brand, listingId } = await listedMember("pro@pro-cafe.kr", "pro-pass-123", "브랜드")
+  // Six groups to propose to, each with an event coming.
+  const groups: string[] = []
+  for (let index = 0; index < 6; index += 1) {
+    groups.push((await listedMember(`pro-club-${index}@syu.ac.kr`, "pro-pass-123")).listingId)
+  }
+  await call("POST", "/events", { name: "프로 캠페인", date: "2026-12-24", people: "50명", types: ["제품"] }, brand)
+  for (const group of groups.slice(0, 5)) assert.equal((await call("POST", "/proposals", { matchId: group }, brand)).status, 201)
+  const blocked = await call("POST", "/proposals", { matchId: groups[5] }, brand)
+  assert.equal(blocked.status, 402)
+  assert.match(blocked.data.error, /5건까지/)
+  const plan = (await call("GET", "/billing", undefined, brand)).data.plan
+  assert.deepEqual([plan.pro, plan.offersThisMonth, plan.freeOffers], [false, 5, 5])
+
+  // Paid Pro: 30 days, then 30 more after them.
+  const { order } = (await call("POST", "/billing/orders", { kind: "pro", targetId: "" }, brand)).data
+  assert.deepEqual([order.amount, order.orderName], [200000, "uniconnect 프로 30일"])
+  const { markPaid, paymentsOf } = await import("./lib/billing.js")
+  markPaid(getDatabase(), paymentsOf(getDatabase()).find((item) => item.id === order.id)!, { method: "transfer" })
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date())
+  const after = (days: number) => {
+    const date = new Date(`${today}T00:00:00Z`)
+    date.setUTCDate(date.getUTCDate() + days)
+    return date.toISOString().slice(0, 10)
+  }
+  assert.equal((await call("GET", "/billing", undefined, brand)).data.plan.until, after(29))
+  assert.equal((await call("POST", "/proposals", { matchId: groups[5] }, brand)).status, 201)
+  const renewal = (await call("POST", "/billing/orders", { kind: "pro", targetId: "" }, brand)).data.order
+  assert.equal(renewal.orderName, "uniconnect 프로 30일 연장")
+  markPaid(getDatabase(), paymentsOf(getDatabase()).find((item) => item.id === renewal.id)!, { method: "transfer" })
+  assert.equal((await call("GET", "/billing", undefined, brand)).data.plan.until, after(59))
+
+  // Its listing shows PRO to groups.
+  const club = await signUpMember("pro-viewer@syu.ac.kr", "pro-pass-123")
+  const seen = (await call("GET", "/brands", undefined, club)).data
+  const listing = (seen.brands ?? seen).find((item: { id: string }) => item.id === listingId)
+  assert.equal(listing.pro, true)
+})

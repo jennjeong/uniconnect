@@ -3,6 +3,7 @@ import type { ReactNode } from "react"
 import { AnimatedNumber } from "../components/AnimatedNumber"
 import { Icon, type IconName } from "../components/Icon"
 import { Pill } from "../components/Pill"
+import { PlanCard } from "../components/PlanCard"
 import { RevealTitle } from "../components/RevealText"
 import { mailKinds } from "../data/mail"
 import { profileLabels } from "../data/profile"
@@ -104,6 +105,7 @@ export function ProfilePage({
   onTwoFactor,
   onDevices,
   onPayments,
+  onPlan,
   onTeam,
   socialProviders,
   onSocialLink,
@@ -136,6 +138,8 @@ export function ProfilePage({
   onDevices?: () => void
   // A brand's payments to the platform; absent for groups and the demo accounts.
   onPayments?: () => void
+  // A brand's plan card (components/PlanCard.tsx), with where its notices go.
+  onPlan?: (message: string) => void
   // The people running the account with its owner; absent for the demo accounts.
   onTeam?: () => void
   // Kakao or Naver to link for logging in (the owner's; none for the demo accounts).
@@ -178,6 +182,7 @@ export function ProfilePage({
     { id: "profile-security", icon: "lock", label: t("로그인과 보안") },
     { id: "profile-prefs", icon: "bell", label: t("알림과 표시") },
     ...(together ? [{ id: "profile-together", icon: "users" as IconName, label: t("함께하는 사람") }] : []),
+    ...(onPlan ? [{ id: "profile-plan", icon: "won" as IconName, label: t("요금제") }] : []),
     { id: "profile-data", icon: "download", label: t("내 데이터") },
   ]
 
@@ -557,6 +562,12 @@ export function ProfilePage({
                   />
                 )}
               </dl>
+            </SettingsCard>
+          )}
+
+          {onPlan && (
+            <SettingsCard caption={t("브랜드는 무료로 시작하고, 제안을 더 보내거나 리포트를 모두 보려면 프로를 써요.")} icon="won" id="profile-plan" title={t("요금제")}>
+              <PlanCard onNotice={onPlan} />
             </SettingsCard>
           )}
 
