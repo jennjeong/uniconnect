@@ -10589,8 +10589,12 @@ button.nav-pill:hover {
 }
 
 .payment-agree {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
   font-size: 13px;
   line-height: 1.5;
+  text-align: left;
 }
 
 .payment-agree a {

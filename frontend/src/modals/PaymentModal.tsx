@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { createPortal } from "react-dom"
 
 import { api, errorMessage } from "../api"
 import { Icon } from "../components/Icon"
@@ -12,7 +13,8 @@ import type { BillingInfo, PaymentKind } from "../types"
 // costs, VAT included, agreeing to the paid terms, then Toss Payments' card
 // window, which comes back to this page, or a request to pay by bank
 // transfer, which the operators confirm. Without Toss keys only the
-// transfer is offered.
+// transfer is offered. Pages open it, so it goes to the end of the body to
+// sit over everything, the footer too.
 export function PaymentModal({
   kind,
   targetId,
@@ -73,7 +75,7 @@ export function PaymentModal({
     }
   }
 
-  return (
+  return createPortal(
     <Modal kicker="Payment" name="payment" onClose={onClose} title={title}>
       <div className="payment-sheet">
         <dl className="payment-lines">
@@ -127,6 +129,7 @@ export function PaymentModal({
         )}
         <p className="field-hint">{t("결제 내역과 영수증은 내 정보의 결제 내역에서 볼 수 있어요.")}</p>
       </div>
-    </Modal>
+    </Modal>,
+    document.body,
   )
 }
