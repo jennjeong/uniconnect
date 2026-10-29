@@ -1,5 +1,5 @@
 import { todayInKorea } from "./dates.js"
-import { distanceKm, placeOf } from "./geo.js"
+import { distanceKm, offsetMetres, placeOf } from "./geo.js"
 import { scoreMatch, type Viewer } from "./matchScore.js"
 import { isDemoAccount, reviewSummary, reviewsAbout } from "./reviews.js"
 import { blockedBetween } from "./safety.js"
@@ -155,7 +155,7 @@ export function viewerFor(database: Database, account: Account | undefined, cata
 // examples otherwise, as shownTo says, without the paused), best match first, each with its
 // match for the viewer and why (lib/matchScore.ts), and how far it is from
 // the viewer: a student's campus to a brand's store, a brand's store to a
-// group's campus (lib/geo.ts); its reviews' stars and count; and, for a
+// group's campus (lib/geo.ts), and which way, for the catalog map; its reviews' stars and count; and, for a
 // brand, whether its business registration was confirmed.
 export function browse(database: Database, catalog: "brands" | "groups", account?: Account) {
   const shown = listedCatalog(database, catalog, account)
@@ -172,7 +172,9 @@ export function browse(database: Database, catalog: "brands" | "groups", account
       const owner = ownerOf(database, catalog, listing)
       const checked = owner?.business ? { ...rated, businessVerified: true as const } : rated
       const there = placeOf(listing, owner)
-      return here && there ? { ...checked, distanceKm: distanceKm(here, there) } : checked
+      return here && there
+        ? { ...checked, distanceKm: distanceKm(here, there), mapOffset: offsetMetres(here, there) }
+        : checked
     })
     .sort((a, b) => b.score - a.score)
 }

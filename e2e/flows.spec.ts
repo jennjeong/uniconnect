@@ -454,6 +454,35 @@ test("a group writes its event page on the form, adds a photo, and a brand reads
   }
 })
 
+test("the catalogs show as a map around the campus or store, with search applied", async ({ page }) => {
+  await page.goto("/matches")
+  await page.getByRole("tab", { name: "전체" }).click()
+  await page.getByRole("group", { name: "보기 방식" }).getByRole("button", { name: "지도" }).click()
+  const map = page.locator(".catalog-map")
+  await expect(map.getByRole("group", { name: "우리 학교 기준 지도" })).toBeVisible()
+  const dots = map.locator(".place-dot")
+  const all = await dots.count()
+  expect(all).toBeGreaterThan(1)
+  // A dot opens its brand's card beside the map.
+  await map.getByRole("button", { name: /^오후의 커피, / }).click()
+  await expect(map.locator(".nearby-map-card h3")).toHaveText("오후의 커피")
+  // Brands without a store are named under it, and open the same way.
+  const unplaced = map.locator(".catalog-map-unplaced button")
+  await expect(unplaced.first()).toBeVisible()
+  const name = await unplaced.first().innerText()
+  await unplaced.first().click()
+  await expect(map.locator(".nearby-map-card h3")).toHaveText(name)
+  // Search narrows the dots too.
+  await page.getByRole("searchbox", { name: "브랜드 검색" }).fill("오후의 커피")
+  await expect(dots).toHaveCount(1)
+
+  // Brands see the groups around their store the same way.
+  await page.goto("/groups?role=브랜드")
+  await page.getByRole("group", { name: "보기 방식" }).getByRole("button", { name: "지도" }).click()
+  await expect(page.getByRole("group", { name: "내 매장 기준 지도" })).toBeVisible()
+  await expect(page.locator(".catalog-map .place-dot").first()).toBeVisible()
+})
+
 test("a member turns on two-step login, logs in with the app's code, and sees its devices", async ({ page, request, browser }) => {
   const member = await signUpMember(request, "학생단체", "e2e-2fa@syu.ac.kr", "보안 동아리")
   await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), member.token)

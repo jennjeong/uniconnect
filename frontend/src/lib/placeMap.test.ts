@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 
-import { mapPosition, mapRings, mapScale, offsetMetres, spreadPositions } from "./placeMap"
+import { catalogScale, mapPosition, mapRings, mapScale, offsetMetres, offsetPosition, spreadPositions } from "./placeMap"
 
 const campus = { lat: 37.64201, lng: 127.10562 }
 
@@ -59,5 +59,17 @@ describe("the schematic map of the shops around a campus", () => {
     }
     // Each stays close to where it is.
     for (const point of spread.slice(1)) expect(Math.hypot(point.left - 60, point.top - 60)).toBeLessThan(12)
+  })
+
+  test("draws catalog listings by their offsets on a scale in kilometres", () => {
+    expect(catalogScale([])).toEqual({ radius: 1000, step: 250 })
+    expect(catalogScale([{ east: 3000, north: 4000 }])).toEqual({ radius: 10000, step: 2500 })
+    expect(catalogScale([{ east: 900_000, north: 0 }]).radius).toBe(50000)
+    expect(offsetPosition({ east: 0, north: 0 }, 1000)).toEqual({ left: 50, top: 50 })
+    expect(offsetPosition({ east: 500, north: 500 }, 1000)).toEqual({ left: 75, top: 25 })
+    // Past the edge, on it.
+    const far = offsetPosition({ east: 0, north: -5000 }, 1000)
+    expect(far.left).toBeCloseTo(50)
+    expect(far.top).toBeCloseTo(100)
   })
 })

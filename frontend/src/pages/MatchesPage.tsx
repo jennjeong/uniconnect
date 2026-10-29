@@ -1,6 +1,7 @@
 import { useState, type CSSProperties } from "react"
 
 import { CatalogEmpty } from "../components/CatalogEmpty"
+import { CatalogMap, LayoutSwitch, type Layout } from "../components/CatalogMap"
 import { CatalogSearch } from "../components/CatalogSearch"
 import { DemoPreview } from "../components/DemoPreview"
 import { NearbyPlaces } from "../components/NearbyPlaces"
@@ -97,6 +98,8 @@ export function MatchesPage({
   const [industry, setIndustry] = useState<Industry>("cafe")
   // Words to find, kept across the brand tabs.
   const [query, setQuery] = useState("")
+  // The cards as a list, or as dots on a map around the campus.
+  const [layout, setLayout] = useState<Layout>("list")
 
   const list =
     tab === "추천"
@@ -114,6 +117,40 @@ export function MatchesPage({
   const intro = tabIntro[tab]
   // With no brand signed up yet, 추천 can't say it found some.
   const waiting = loaded && brands.length === 0 && tab === "추천"
+
+  // A brand's card, as the list and the map show it (`rank` on 인기).
+  const card = (match: Match, rank?: number) => (
+    <WorkCard
+      match={match}
+      meta={t(match.category)}
+      rank={rank}
+      onOpenDetail={() => onOpenDetail(match)}
+      saved={saved.includes(match.id)}
+      onToggleSave={() => onToggleSave(match)}
+      tags={
+        <>
+          {rank !== undefined && match.popularity !== undefined && (
+            <span className="tag-hot">{t("협찬 {count}회", { count: match.popularity })}</span>
+          )}
+          {shownTags(match).map((tag) => (
+            <span key={tag}>{tag}</span>
+          ))}
+        </>
+      }
+    >
+      <button className="cancel-button" onClick={() => onOpenDetail(match)} type="button">
+        {t("상세 정보")}
+      </button>
+      <ProposalControl
+        done={proposals.includes(match.id)}
+        status={statuses[match.id]}
+        label={t("협찬 제안 보내기")}
+        className="primary-button"
+        onPropose={() => onPropose(match)}
+        onCancel={() => onCancelProposal(match)}
+      />
+    </WorkCard>
+  )
 
   return (
     <section className="page-view">
@@ -166,6 +203,7 @@ export function MatchesPage({
             value={query}
           />
         )}
+        {tab !== "가까운 순" && <LayoutSwitch onChange={setLayout} value={layout} />}
       </div>
 
       {/* The nearest are real shops from Kakao, mostly not on uniconnect yet, in their own list (made-up ones for visitors). */}
@@ -209,6 +247,14 @@ export function MatchesPage({
         )
       ) : shown.length === 0 && query.trim() ? (
         <p className="day-empty">{t("찾는 브랜드가 없어요. 다른 낱말로 찾아보세요.")}</p>
+      ) : layout === "map" ? (
+        <CatalogMap
+          center={t("우리 학교")}
+          key={tab === "업종별" ? `${tab}-${industry}` : tab}
+          matches={shown}
+          noPlace={t("학교 위치를 알 수 없어 지도에 그릴 수 없어요. 목록으로 보세요.")}
+          renderCard={(match) => card(match)}
+        />
       ) : (
         <ul
           className="work-grid stagger slide"
@@ -219,36 +265,7 @@ export function MatchesPage({
             const rank = tab === "인기" ? index + 1 : undefined
             return (
               <li key={match.id} style={{ "--i": index } as CSSProperties}>
-                <WorkCard
-                  match={match}
-                  meta={t(match.category)}
-                  rank={rank}
-                  onOpenDetail={() => onOpenDetail(match)}
-                  saved={saved.includes(match.id)}
-                  onToggleSave={() => onToggleSave(match)}
-                  tags={
-                    <>
-                      {rank !== undefined && match.popularity !== undefined && (
-                        <span className="tag-hot">{t("협찬 {count}회", { count: match.popularity })}</span>
-                      )}
-                      {shownTags(match).map((tag) => (
-                        <span key={tag}>{tag}</span>
-                      ))}
-                    </>
-                  }
-                >
-                  <button className="cancel-button" onClick={() => onOpenDetail(match)} type="button">
-                    {t("상세 정보")}
-                  </button>
-                  <ProposalControl
-                    done={proposals.includes(match.id)}
-                    status={statuses[match.id]}
-                    label={t("협찬 제안 보내기")}
-                    className="primary-button"
-                    onPropose={() => onPropose(match)}
-                    onCancel={() => onCancelProposal(match)}
-                  />
-                </WorkCard>
+                {card(match, rank)}
               </li>
             )
           })}
