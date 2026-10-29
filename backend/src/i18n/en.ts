@@ -345,6 +345,12 @@ const en: Record<string, string> = {
   "공유가 끝났거나 없는 리포트예요.": "This report is no longer shared, or doesn't exist.",
   // The operators' console (routes/admin.ts)
   "회원을 찾을 수 없어요.": "We couldn't find that member.",
+  "메모는 1,000자 이하로 적어 주세요.": "Keep the note to 1,000 characters.",
+  "공지 내용을 적어 주세요.": "Write the notice.",
+  "공지는 200자 이하로 적어 주세요.": "Keep the notice to 200 characters.",
+  "공지 종류와 대상을 골라 주세요.": "Choose the notice's kind and who sees it.",
+  "끝나는 날을 오늘 이후로 골라 주세요.": "Choose an end date from today on.",
+  "공지를 찾을 수 없어요.": "We couldn't find that notice.",
   // The participants' optional survey (routes/checkin.ts)
   "이미 설문에 답했어요.": "You've already answered the survey.",
   "답을 하나 이상 골라 주세요.": "Please choose at least one answer.",

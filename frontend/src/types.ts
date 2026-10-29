@@ -982,4 +982,47 @@ export type AdminMemberDetail = AdminMember & {
   inquiries: number
   reportsAbout: number
   sessions: number
+  // The operators' own note on the member.
+  note: { text: string; at: string } | null
+}
+
+// What an operator did in the console, with its target's name as it is now.
+export type AdminLogRow = {
+  id: string
+  at: string
+  action:
+    | "payment-paid"
+    | "payment-cancelled"
+    | "report-resolved"
+    | "account-suspended"
+    | "account-unsuspended"
+    | "inquiry-answered"
+    | "note-saved"
+    | "announcement-posted"
+    | "announcement-ended"
+  target: { kind: "account" | "payment" | "inquiry" | "report" | "announcement"; id: string }
+  detail?: string
+  label: string | null
+}
+
+// Which services the API is set up for, as yes or no.
+export type AdminHealth = {
+  storage: "postgres" | "file"
+  payments: "off" | "test" | "live"
+  checks: { key: string; on: boolean }[]
+  vercel: boolean
+  region: string | null
+  commit: string | null
+  data: { accounts: number; sessions: number; payments: number; logEntries: number }
+}
+
+// A notice the operators show across the top of the site.
+export type SiteNotice = { id: string; text: string; tone: "info" | "warning" }
+
+export type AdminAnnouncement = SiteNotice & {
+  audience: "all" | Role
+  until?: string
+  createdAt: string
+  endedAt?: string
+  live: boolean
 }

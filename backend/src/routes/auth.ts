@@ -7,6 +7,7 @@ import { acceptedProposalsOf, dropOrphanAgreements, removeUploads } from "../lib
 import { findListing } from "../lib/catalog.js"
 import { deviceLabel } from "../lib/devices.js"
 import { emailRuleError, normalizeEmail } from "../lib/email.js"
+import { forgetAdminRecords } from "../lib/adminTools.js"
 import { HttpError } from "../lib/errors.js"
 import { sendVerificationCode } from "../lib/mailer.js"
 import { notify } from "../lib/notices.js"
@@ -474,6 +475,8 @@ function removeAccount(database: Database, account: Account) {
   }
   // Its board posts.
   database.posts = database.posts.filter((post) => post.accountId !== account.id)
+  // The operators' note on it and their log entries about it.
+  forgetAdminRecords(database, account.id)
   // Its 찜 list, and its listing in everyone else's.
   delete database.saved[account.id]
   for (const [saver, saved] of Object.entries(database.saved)) {

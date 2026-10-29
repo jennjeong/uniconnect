@@ -11712,6 +11712,64 @@ button.nav-pill:hover {
   }
 }
 
+/* The operators' notices across the top of the site (components/
+   SiteNotices.tsx): a slim tinted strip each, closed with the cross. They
+   sit above the page, so a hero pulled up under the header (the
+   dashboards') runs on behind them. */
+.site-notices {
+  position: relative;
+  z-index: 5;
+  display: grid;
+  gap: 8px;
+  width: min(var(--shell), 100% - 2 * var(--gutter));
+  margin: 14px auto 0;
+}
+
+.site-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 14px 12px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--point-tint);
+  color: var(--point-strong);
+  font-size: 14px;
+  font-weight: var(--weight-label);
+  line-height: 1.5;
+  box-shadow: 0 8px 24px -12px rgba(19, 48, 111, 0.35);
+}
+
+.site-notice.warning {
+  background: var(--orange-soft);
+  color: var(--orange);
+}
+
+.site-notice .icon {
+  flex: none;
+  stroke: currentColor;
+}
+
+.site-notice span {
+  flex: 1;
+}
+
+.site-notice button {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+}
+
+.site-notice button:hover {
+  background: rgba(255, 255, 255, 0.6);
+}
+
 /* The operators' console (/admin, pages/AdminPage.tsx), on its own page.
    TailAdmin's layout (a white side menu in groups that narrows to icons, a
    top bar with search, notices and the operator, figure cards with icon
@@ -12867,6 +12925,238 @@ button.nav-pill:hover {
 .console-list small {
   margin-left: 6px;
   color: var(--muted);
+}
+
+/* The console's tools (pages/AdminTools.tsx). */
+.console-filters.end {
+  justify-content: flex-end;
+}
+
+.console-filters .console-text-button {
+  margin-left: auto;
+}
+
+.console-search kbd {
+  padding: 1px 7px;
+  border-radius: 6px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+}
+
+.console-text-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.console-inline {
+  padding: 2px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--fill);
+  color: var(--point);
+  font-size: 12px;
+  font-weight: var(--weight-label);
+}
+
+.admin-card-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.console-table.plain tbody tr {
+  cursor: default;
+}
+
+.console-table.plain tbody tr:hover {
+  background: transparent;
+}
+
+.console-note {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--orange-soft);
+}
+
+.console-note label {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.console-note label > span {
+  display: flex;
+  justify-content: space-between;
+  color: var(--orange);
+}
+
+.console-note small {
+  color: var(--muted);
+  font-weight: var(--weight-body);
+}
+
+.console-note textarea,
+.console-form textarea,
+.console-form select,
+.console-form input,
+.console-templates select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  resize: vertical;
+}
+
+.console-note .console-text-button {
+  justify-self: end;
+}
+
+.console-templates {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.console-templates select {
+  width: auto;
+  min-width: 180px;
+  height: 40px;
+  padding-block: 0;
+}
+
+.console-form {
+  display: grid;
+  gap: 14px;
+}
+
+.console-form label {
+  display: grid;
+  gap: 6px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.console-form textarea,
+.console-form select,
+.console-form input {
+  background: var(--fill);
+  box-shadow: none;
+}
+
+.console-form select,
+.console-form input {
+  height: 44px;
+  padding-block: 0;
+}
+
+.console-form-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.console-form .primary-button {
+  justify-self: start;
+}
+
+.console-notices {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.console-notices li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--fill);
+  color: var(--muted);
+}
+
+.console-notices li.live {
+  background: var(--point-tint);
+  color: var(--ink);
+}
+
+.console-notices li.live.warning {
+  background: var(--orange-soft);
+}
+
+.console-notices p {
+  margin: 0 0 4px;
+  font-size: 14px;
+}
+
+.console-notices small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.console-checks {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.console-checks li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  padding: 10px 6px;
+}
+
+.console-checks li > span {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--fill-strong);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: var(--weight-badge);
+}
+
+.console-checks li.on > span {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.console-checks strong {
+  display: block;
+  font-size: 14px;
+}
+
+.console-checks small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+@media (max-width: 640px) {
+  .console-form-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 @media (max-width: 1200px) {

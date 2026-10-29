@@ -112,6 +112,7 @@ export function memberDetail(database: Database, account: Account) {
     inquiries: database.inquiries.filter((item) => item.accountId === account.id).length,
     reportsAbout: database.reports.filter((item) => item.accountId === account.id).length,
     sessions: database.sessions.filter((session) => session.accountId === account.id).length,
+    note: database.adminNotes?.[account.id] ?? null,
   }
 }
 

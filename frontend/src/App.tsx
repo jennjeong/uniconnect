@@ -12,6 +12,7 @@ import {
 import { Loader } from "./components/Loader"
 import { CampaignMeasurement } from "./components/CampaignMeasurement"
 import { Presence } from "./components/Presence"
+import { SiteNotices } from "./components/SiteNotices"
 import { ProfileChecklist } from "./components/ProfileChecklist"
 import { Toast } from "./components/Toast"
 import { demoAccounts } from "./data/demo"
@@ -1760,6 +1761,7 @@ function App() {
       />
 
       <main className="main-content" id="main" tabIndex={-1}>
+        <SiteNotices viewer={account?.id ?? ""} />
         {/* A new key on every page change replays the page's entrance. A
             detail page covers its list, which stays mounted (keeping its
             tab and scroll) and shows again on the way back. */}

@@ -1,9 +1,11 @@
-import { createHash, timingSafeEqual } from "node:crypto"
+import { createHash, randomUUID, timingSafeEqual } from "node:crypto"
 import { Router, type Request } from "express"
 
 import { config } from "../config.js"
+import { adminLogRows, isLive, logAdmin, noteLimit, serviceHealth } from "../lib/adminTools.js"
 import { markCancelled, markPaid, paymentsOf, toss } from "../lib/billing.js"
 import { memberDetail, memberRow, overview, proposalRows } from "../lib/console.js"
+import { todayInKorea } from "../lib/dates.js"
 import { recentErrors } from "../lib/errorLog.js"
 import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
@@ -12,7 +14,7 @@ import { isDemoAccount } from "../lib/reviews.js"
 import { platformStats } from "../lib/stats.js"
 import { text } from "../lib/validation.js"
 import { getDatabase, saveDatabase } from "../store.js"
-import type { ReportAction } from "../types.js"
+import type { Announcement, ReportAction } from "../types.js"
 
 // Operators read the questions sent from the FAQ page and answer them, and
 // watch the platform's figures, with the ADMIN_TOKEN from the environment in
@@ -63,6 +65,7 @@ adminRouter.post("/payments/:id/paid", async (req, res) => {
   const payment = paymentFor(String(req.params.id))
   if (payment.status !== "pending") throw new HttpError(409, "기다리는 주문만 입금 확인할 수 있어요.")
   markPaid(getDatabase(), payment, { method: "transfer" })
+  logAdmin(getDatabase(), "payment-paid", { kind: "payment", id: payment.id })
   await saveDatabase()
   res.json({ payment })
 })
@@ -77,6 +80,7 @@ adminRouter.post("/payments/:id/cancel", async (req, res) => {
   const reason = text(req.body?.reason) || (payment.status === "paid" ? "운영자 환불" : "운영자 취소")
   if (payment.status === "paid" && payment.paymentKey) await toss.cancel(payment.paymentKey, reason)
   markCancelled(getDatabase(), paymentFor(payment.id), reason)
+  logAdmin(getDatabase(), "payment-cancelled", { kind: "payment", id: payment.id }, reason)
   await saveDatabase()
   res.json({ payment })
 })
@@ -159,6 +163,7 @@ adminRouter.post("/reports/:id/resolve", async (req, res) => {
     database.sessions = database.sessions.filter((session) => session.accountId !== account.id)
   }
   report.resolution = { action, at: now }
+  logAdmin(database, "report-resolved", { kind: "report", id: report.id }, action)
   await saveDatabase()
   res.json({ ok: true })
 })
@@ -175,6 +180,7 @@ adminRouter.post("/accounts/:id/unsuspend", async (req, res) => {
   const account = getDatabase().accounts.find((item) => item.id === req.params.id)
   if (!account?.suspendedAt) throw new HttpError(404, "정지된 계정을 찾을 수 없어요.")
   delete account.suspendedAt
+  logAdmin(getDatabase(), "account-unsuspended", { kind: "account", id: account.id })
   await saveDatabase()
   res.status(204).end()
 })
@@ -192,6 +198,7 @@ adminRouter.post("/inquiries/:id/answer", async (req, res) => {
   inquiry.answeredAt = new Date().toISOString()
   // A new or changed answer is news to the asker, by email and on the bell.
   if (changed) delete inquiry.answerReadAt
+  logAdmin(database, "inquiry-answered", { kind: "inquiry", id: inquiry.id })
   await saveDatabase()
   if (changed) {
     const brief = (value: string, length: number) => (value.length > length ? `${value.slice(0, length)}…` : value)
@@ -254,6 +261,7 @@ adminRouter.post("/accounts/:id/suspend", async (req, res) => {
   if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 정지할 수 없어요.")
   account.suspendedAt ??= new Date().toISOString()
   database.sessions = database.sessions.filter((session) => session.accountId !== account.id)
+  logAdmin(database, "account-suspended", { kind: "account", id: account.id })
   await saveDatabase()
   res.json({ account: memberDetail(database, account) })
 })
@@ -262,4 +270,92 @@ adminRouter.post("/accounts/:id/suspend", async (req, res) => {
 adminRouter.get("/proposals", async (req, res) => {
   await requireAdmin(req)
   res.json({ proposals: proposalRows(getDatabase()) })
+})
+
+// An operator's note on a member (blank removes it).
+adminRouter.put("/accounts/:id/note", async (req, res) => {
+  await requireAdmin(req)
+  const database = getDatabase()
+  const account = database.accounts.find((item) => item.id === req.params.id)
+  if (!account) throw new HttpError(404, "회원을 찾을 수 없어요.")
+  const note = text(req.body?.note)
+  if (note.length > noteLimit) throw new HttpError(400, "메모는 1,000자 이하로 적어 주세요.")
+  database.adminNotes ??= {}
+  if (note) database.adminNotes[account.id] = { text: note, at: new Date().toISOString() }
+  else delete database.adminNotes[account.id]
+  logAdmin(database, "note-saved", { kind: "account", id: account.id })
+  await saveDatabase()
+  res.json({ account: memberDetail(database, account) })
+})
+
+// What the operators did, newest first.
+adminRouter.get("/log", async (req, res) => {
+  await requireAdmin(req)
+  res.json({ entries: adminLogRows(getDatabase()) })
+})
+
+// Which services this copy of the API is set up for (lib/adminTools.ts).
+adminRouter.get("/health", async (req, res) => {
+  await requireAdmin(req)
+  const database = getDatabase()
+  res.json({
+    ...serviceHealth(),
+    data: {
+      accounts: database.accounts.length,
+      sessions: database.sessions.length,
+      payments: database.payments?.length ?? 0,
+      logEntries: database.adminLog?.length ?? 0,
+    },
+  })
+})
+
+const tones: Announcement["tone"][] = ["info", "warning"]
+const audiences: Announcement["audience"][] = ["all", "학생단체", "브랜드"]
+
+// The site's notices, the live ones first.
+adminRouter.get("/announcements", async (req, res) => {
+  await requireAdmin(req)
+  const today = todayInKorea()
+  const items = [...(getDatabase().announcements ?? [])]
+    .reverse()
+    .map((item) => ({ ...item, live: isLive(item, today) }))
+    .sort((a, b) => Number(b.live) - Number(a.live))
+  res.json({ announcements: items })
+})
+
+adminRouter.post("/announcements", async (req, res) => {
+  await requireAdmin(req)
+  const message = text(req.body?.text)
+  if (!message) throw new HttpError(400, "공지 내용을 적어 주세요.")
+  if (message.length > 200) throw new HttpError(400, "공지는 200자 이하로 적어 주세요.")
+  const tone = text(req.body?.tone) as Announcement["tone"]
+  const audience = text(req.body?.audience) as Announcement["audience"]
+  if (!tones.includes(tone) || !audiences.includes(audience)) throw new HttpError(400, "공지 종류와 대상을 골라 주세요.")
+  const until = text(req.body?.until)
+  if (until && (!/^\d{4}-\d{2}-\d{2}$/.test(until) || until < todayInKorea())) throw new HttpError(400, "끝나는 날을 오늘 이후로 골라 주세요.")
+  const database = getDatabase()
+  const item: Announcement = {
+    id: randomUUID(),
+    text: message,
+    tone,
+    audience,
+    ...(until ? { until } : {}),
+    createdAt: new Date().toISOString(),
+  }
+  ;(database.announcements ??= []).push(item)
+  logAdmin(database, "announcement-posted", { kind: "announcement", id: item.id })
+  await saveDatabase()
+  res.status(201).json({ announcement: item })
+})
+
+// Takes a notice down.
+adminRouter.post("/announcements/:id/end", async (req, res) => {
+  await requireAdmin(req)
+  const database = getDatabase()
+  const item = database.announcements?.find((entry) => entry.id === req.params.id)
+  if (!item) throw new HttpError(404, "공지를 찾을 수 없어요.")
+  item.endedAt ??= new Date().toISOString()
+  logAdmin(database, "announcement-ended", { kind: "announcement", id: item.id })
+  await saveDatabase()
+  res.json({ announcement: item })
 })

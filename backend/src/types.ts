@@ -751,6 +751,50 @@ export type Database = {
     states: { hash: string; provider: SocialProvider; intent: "login" | "link"; accountId?: string; expiresAt: number }[]
     handoffs: { hash: string; accountId: string; userAgent?: string; expiresAt: number }[]
   }
+  // What the operators did in the console, newest last (lib/adminTools.ts).
+  adminLog?: AdminLogEntry[]
+  // The operators' notes on members, by account id.
+  adminNotes?: Record<string, AdminNote>
+  // Notices the operators show across the site.
+  announcements?: Announcement[]
+}
+
+// One thing an operator did in the console. It names its target by id only;
+// the console looks up names when it lists them.
+export type AdminLogEntry = {
+  id: string
+  at: string
+  action: AdminAction
+  target: { kind: "account" | "payment" | "inquiry" | "report" | "announcement"; id: string }
+  // A short word on how, such as a report's resolution.
+  detail?: string
+}
+
+export type AdminAction =
+  | "payment-paid"
+  | "payment-cancelled"
+  | "report-resolved"
+  | "account-suspended"
+  | "account-unsuspended"
+  | "inquiry-answered"
+  | "note-saved"
+  | "announcement-posted"
+  | "announcement-ended"
+
+// An operator's note on a member, for handling its reports and questions.
+export type AdminNote = { text: string; at: string }
+
+// A notice across the top of the site, to everyone or one side, until it
+// ends or is taken down.
+export type Announcement = {
+  id: string
+  text: string
+  tone: "info" | "warning"
+  audience: "all" | Role
+  // The last day it shows, "YYYY-MM-DD", or open-ended.
+  until?: string
+  createdAt: string
+  endedAt?: string
 }
 
 // A public post on the recruitment board (routes/board.ts): a brand looking
