@@ -66,6 +66,52 @@ function Bars({ rows, unit = "" }: { rows: { label: string; count: number }[]; u
 
 const kpiLabels = { signups: "가입", proposals: "제안", revenue: "매출" } as const
 
+// Members on a plain sketch of their area: campuses as circles sized by
+// their groups, stores as small squares, fitted to the points with a margin
+// (no map tiles, so nothing goes to a map service).
+function MemberMap({ map }: { map: AdminInsights["distribution"]["map"] }) {
+  const points = [...map.groups, ...map.brands]
+  if (points.length === 0) return <p className="day-empty">{t("위치를 아는 회원이 아직 없어요.")}</p>
+  const lats = points.map((point) => point.lat)
+  const lngs = points.map((point) => point.lng)
+  const pad = 0.01
+  const [south, north] = [Math.min(...lats) - pad, Math.max(...lats) + pad]
+  const [west, east] = [Math.min(...lngs) - pad, Math.max(...lngs) + pad]
+  const width = 800
+  const height = 360
+  // Longitude shrinks with latitude; keep the shape by scaling both the same.
+  const squeeze = Math.cos((((south + north) / 2) * Math.PI) / 180)
+  const scale = Math.min(width / ((east - west) * squeeze), height / (north - south))
+  const x = (lng: number) => width / 2 + (lng - (west + east) / 2) * squeeze * scale
+  const y = (lat: number) => height / 2 - (lat - (south + north) / 2) * scale
+  const top = Math.max(1, ...map.groups.map((group) => group.count))
+  return (
+    <figure className="console-map">
+      <svg aria-label={t("회원 지도")} role="img" viewBox={`0 0 ${width} ${height}`}>
+        {map.brands.map((brand) => (
+          <rect className="brand" height={10} key={`${brand.name}-${brand.lat}`} width={10} x={x(brand.lng) - 5} y={y(brand.lat) - 5}>
+            <title>{brand.name}</title>
+          </rect>
+        ))}
+        {map.groups.map((group) => (
+          <g key={group.name}>
+            <circle className="campus" cx={x(group.lng)} cy={y(group.lat)} r={8 + (group.count / top) * 16}>
+              <title>{t("{name} · 학생단체 {count}", { name: group.name, count: group.count })}</title>
+            </circle>
+            <text x={x(group.lng)} y={y(group.lat) + 8 + (group.count / top) * 16 + 16}>
+              {group.name} {group.count}
+            </text>
+          </g>
+        ))}
+      </svg>
+      <figcaption>
+        <span className="campus">{t("캠퍼스 (학생단체 수)")}</span>
+        <span className="brand">{t("브랜드 매장")}</span>
+      </figcaption>
+    </figure>
+  )
+}
+
 // The analysis screen: this month against the targets, the funnel, the
 // cohorts, where members are and what people search for.
 export function Insights({ token, onNotice }: { token: string; onNotice: Notice }) {
@@ -195,6 +241,12 @@ export function Insights({ token, onNotice }: { token: string; onNotice: Notice 
             ))}
           </tbody>
         </table>
+      </section>
+
+      <section className="console-card wide">
+        <h2>{t("회원 지도")}</h2>
+        <p className="field-hint">{t("학생단체는 캠퍼스에, 브랜드는 매장에 표시해요. 위치를 모르는 회원은 빠져요.")}</p>
+        <MemberMap map={data.distribution.map} />
       </section>
 
       <section className="console-card span-2">
@@ -421,7 +473,7 @@ export function Operations({ token, onNotice }: { token: string; onNotice: Notic
         </div>
 
         {tab === "board" && (
-          <div className="console-board">
+          <div aria-label={t("계약서 보드")} className="console-board" role="region" tabIndex={0}>
             {columns.map((state) => {
               const items = rows.filter((row) => row.state === state)
               return (

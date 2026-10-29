@@ -1,4 +1,4 @@
-import { duplicateIds, duplicatesOf, timeline } from "./adminInsights.js"
+import { agreementState, duplicateIds, duplicatesOf, fieldAlerts, staleProposals, timeline } from "./adminInsights.js"
 import { tagsOf } from "./adminTools.js"
 import { paymentsOf } from "./billing.js"
 import { addDays, todayInKorea } from "./dates.js"
@@ -50,10 +50,14 @@ export function overview(database: Database, now = new Date()) {
     weekly,
     revenue,
     attention: {
-      inquiries: database.inquiries.filter((inquiry) => !inquiry.answer).length,
+      // Questions on hold wait on something else, so they don't count here.
+      inquiries: database.inquiries.filter((inquiry) => !inquiry.answer && !database.inquiryHandling?.[inquiry.id]?.heldAt).length,
       reports: database.reports.filter((report) => !report.resolution).length,
       transfers: paymentsOf(database).filter((payment) => payment.status === "pending" && payment.transferRequestedAt).length,
       suspended: database.accounts.filter((account) => account.suspendedAt).length,
+      stale: staleProposals(database, now).length,
+      cancels: database.agreements.filter((agreement) => agreementState(agreement) === "cancel").length,
+      alerts: fieldAlerts(database, now).length,
     },
   }
 }

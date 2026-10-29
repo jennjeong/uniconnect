@@ -4967,7 +4967,7 @@ test("the operators' console lists what needs them, members with their record, a
     assert.equal((await fetch(`${baseUrl}/admin/overview`)).status, 403)
     const seen = (await admin("/overview")).data
     assert.equal(seen.weekly.length, 8)
-    assert.deepEqual(Object.keys(seen.attention).sort(), ["inquiries", "reports", "suspended", "transfers"])
+    assert.deepEqual(Object.keys(seen.attention).sort(), ["alerts", "cancels", "inquiries", "reports", "stale", "suspended", "transfers"])
     assert.deepEqual(Object.keys(seen.revenue.byKind).sort(), ["fee", "pro", "report"])
 
     await signUpMember("console@syu.ac.kr", "console-pass-123")
