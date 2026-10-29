@@ -15069,3 +15069,13 @@ body.checkin-body {
   display: flex;
   justify-content: flex-end;
 }
+
+/* For the moment a screen's code arrives (App's lazy screens). */
+.page-loading {
+  min-height: 50vh;
+  margin: 0;
+  padding-top: 120px;
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+}

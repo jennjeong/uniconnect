@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
+import { lazy, Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 
 import {
   api,
@@ -43,60 +43,15 @@ import { installReveal } from "./lib/reveal"
 import { installRipple } from "./lib/ripple"
 import { entryView, roleOfPage, viewPath, type HistoryEntry, type View } from "./lib/route"
 import { installSwipeNavigation, noteHistoryEnd } from "./lib/swipe"
-import { GoalModal } from "./modals/GoalModal"
-import { GoalsModal } from "./modals/GoalsModal"
-import { InstallGuideModal } from "./modals/InstallGuideModal"
-import { LeaveModal } from "./modals/LeaveModal"
 import { LoginModal } from "./modals/LoginModal"
-import { BusinessModal } from "./modals/BusinessModal"
-import { ContactModal } from "./modals/ContactModal"
-import { EmailChangeModal } from "./modals/EmailChangeModal"
-import { InviteShopModal } from "./modals/InviteShopModal"
-import { PasswordModal } from "./modals/PasswordModal"
-import { DevicesModal } from "./modals/DevicesModal"
-import { JoinTeamModal } from "./modals/JoinTeamModal"
-import { TeamModal } from "./modals/TeamModal"
-import { CouncilLinkModal } from "./modals/CouncilLinkModal"
-import { CouncilPage } from "./pages/CouncilPage"
 import { councilTypes } from "./data/roles"
-import { TwoFactorModal } from "./modals/TwoFactorModal"
-import { ProposeModal } from "./modals/ProposeModal"
-import { SafetyModal, type SafetyTarget } from "./modals/SafetyModal"
-import { ResetPasswordModal } from "./modals/ResetPasswordModal"
-import { MetricLogModal } from "./modals/MetricLogModal"
-import { QrModal } from "./modals/QrModal"
-import { ReportModal } from "./modals/ReportModal"
+import type { SafetyTarget } from "./modals/SafetyModal"
 import { SignupModal } from "./modals/SignupModal"
-import { AdminPage } from "./pages/AdminPage"
-import { AgreementPage } from "./pages/AgreementPage"
-import { AgreementsPage } from "./pages/AgreementsPage"
-import { AnalyticsPage } from "./pages/AnalyticsPage"
 import { BrandDashboardPage } from "./pages/BrandDashboardPage"
 import { DashboardPage } from "./pages/DashboardPage"
-import { EventCreatePage } from "./pages/EventCreatePage"
-import { EventDetailPage } from "./pages/EventDetailPage"
-import { BoardPage } from "./pages/BoardPage"
-import { PostPage } from "./pages/PostPage"
-import { PostFormModal } from "./modals/PostFormModal"
-import { EventsPage } from "./pages/EventsPage"
-import { FaqPage } from "./pages/FaqPage"
-import { LegalPage } from "./pages/LegalPage"
-import { GroupsPage } from "./pages/GroupsPage"
-import { InboxPage } from "./pages/InboxPage"
-import { InvitePage } from "./pages/InvitePage"
 import { LandingPage } from "./pages/LandingPage"
-import { ChatPage } from "./pages/ChatPage"
-import { MatchDetailPage } from "./pages/MatchDetailPage"
-import { MatchesPage } from "./pages/MatchesPage"
 import { NotFoundPage } from "./pages/NotFoundPage"
-import { OffersPage } from "./pages/OffersPage"
-import { MeasurementPage } from "./pages/MeasurementPage"
-import { MessagesPage } from "./pages/MessagesPage"
-import { ProfileEditPage } from "./pages/ProfileEditPage"
-import { ProfilePage, type ActivityItem } from "./pages/ProfilePage"
-import { ReportsPage } from "./pages/ReportsPage"
-import { AnalyticsExport } from "./report/AnalyticsExport"
-import { ReportExport } from "./report/ReportExport"
+import type { ActivityItem } from "./pages/ProfilePage"
 import type {
   Account,
   BlockedListing,
@@ -124,6 +79,57 @@ import type {
   SponsorRequest,
   Sponsorship,
 } from "./types"
+
+// Screens and popups that aren't on the first screen load the first time
+// they open, so the first page downloads less (lazy chunks; Suspense below).
+const GoalModal = lazy(() => import("./modals/GoalModal").then((module) => ({ default: module.GoalModal })))
+const GoalsModal = lazy(() => import("./modals/GoalsModal").then((module) => ({ default: module.GoalsModal })))
+const InstallGuideModal = lazy(() => import("./modals/InstallGuideModal").then((module) => ({ default: module.InstallGuideModal })))
+const LeaveModal = lazy(() => import("./modals/LeaveModal").then((module) => ({ default: module.LeaveModal })))
+const BusinessModal = lazy(() => import("./modals/BusinessModal").then((module) => ({ default: module.BusinessModal })))
+const ContactModal = lazy(() => import("./modals/ContactModal").then((module) => ({ default: module.ContactModal })))
+const EmailChangeModal = lazy(() => import("./modals/EmailChangeModal").then((module) => ({ default: module.EmailChangeModal })))
+const InviteShopModal = lazy(() => import("./modals/InviteShopModal").then((module) => ({ default: module.InviteShopModal })))
+const PasswordModal = lazy(() => import("./modals/PasswordModal").then((module) => ({ default: module.PasswordModal })))
+const DevicesModal = lazy(() => import("./modals/DevicesModal").then((module) => ({ default: module.DevicesModal })))
+const JoinTeamModal = lazy(() => import("./modals/JoinTeamModal").then((module) => ({ default: module.JoinTeamModal })))
+const TeamModal = lazy(() => import("./modals/TeamModal").then((module) => ({ default: module.TeamModal })))
+const CouncilLinkModal = lazy(() => import("./modals/CouncilLinkModal").then((module) => ({ default: module.CouncilLinkModal })))
+const CouncilPage = lazy(() => import("./pages/CouncilPage").then((module) => ({ default: module.CouncilPage })))
+const TwoFactorModal = lazy(() => import("./modals/TwoFactorModal").then((module) => ({ default: module.TwoFactorModal })))
+const ProposeModal = lazy(() => import("./modals/ProposeModal").then((module) => ({ default: module.ProposeModal })))
+const SafetyModal = lazy(() => import("./modals/SafetyModal").then((module) => ({ default: module.SafetyModal })))
+const ResetPasswordModal = lazy(() => import("./modals/ResetPasswordModal").then((module) => ({ default: module.ResetPasswordModal })))
+const MetricLogModal = lazy(() => import("./modals/MetricLogModal").then((module) => ({ default: module.MetricLogModal })))
+const QrModal = lazy(() => import("./modals/QrModal").then((module) => ({ default: module.QrModal })))
+const ReportModal = lazy(() => import("./modals/ReportModal").then((module) => ({ default: module.ReportModal })))
+const AdminPage = lazy(() => import("./pages/AdminPage").then((module) => ({ default: module.AdminPage })))
+const AgreementPage = lazy(() => import("./pages/AgreementPage").then((module) => ({ default: module.AgreementPage })))
+const AgreementsPage = lazy(() => import("./pages/AgreementsPage").then((module) => ({ default: module.AgreementsPage })))
+const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage").then((module) => ({ default: module.AnalyticsPage })))
+const EventCreatePage = lazy(() => import("./pages/EventCreatePage").then((module) => ({ default: module.EventCreatePage })))
+const EventDetailPage = lazy(() => import("./pages/EventDetailPage").then((module) => ({ default: module.EventDetailPage })))
+const BoardPage = lazy(() => import("./pages/BoardPage").then((module) => ({ default: module.BoardPage })))
+const PostPage = lazy(() => import("./pages/PostPage").then((module) => ({ default: module.PostPage })))
+const PostFormModal = lazy(() => import("./modals/PostFormModal").then((module) => ({ default: module.PostFormModal })))
+const EventsPage = lazy(() => import("./pages/EventsPage").then((module) => ({ default: module.EventsPage })))
+const FaqPage = lazy(() => import("./pages/FaqPage").then((module) => ({ default: module.FaqPage })))
+const LegalPage = lazy(() => import("./pages/LegalPage").then((module) => ({ default: module.LegalPage })))
+const GroupsPage = lazy(() => import("./pages/GroupsPage").then((module) => ({ default: module.GroupsPage })))
+const InboxPage = lazy(() => import("./pages/InboxPage").then((module) => ({ default: module.InboxPage })))
+const InvitePage = lazy(() => import("./pages/InvitePage").then((module) => ({ default: module.InvitePage })))
+const ChatPage = lazy(() => import("./pages/ChatPage").then((module) => ({ default: module.ChatPage })))
+const MatchDetailPage = lazy(() => import("./pages/MatchDetailPage").then((module) => ({ default: module.MatchDetailPage })))
+const MatchesPage = lazy(() => import("./pages/MatchesPage").then((module) => ({ default: module.MatchesPage })))
+const OffersPage = lazy(() => import("./pages/OffersPage").then((module) => ({ default: module.OffersPage })))
+const MeasurementPage = lazy(() => import("./pages/MeasurementPage").then((module) => ({ default: module.MeasurementPage })))
+const MessagesPage = lazy(() => import("./pages/MessagesPage").then((module) => ({ default: module.MessagesPage })))
+const ProfileEditPage = lazy(() => import("./pages/ProfileEditPage").then((module) => ({ default: module.ProfileEditPage })))
+const ProfilePage = lazy(() => import("./pages/ProfilePage").then((module) => ({ default: module.ProfilePage })))
+const ReportsPage = lazy(() => import("./pages/ReportsPage").then((module) => ({ default: module.ReportsPage })))
+const AnalyticsExport = lazy(() => import("./report/AnalyticsExport").then((module) => ({ default: module.AnalyticsExport })))
+const ReportExport = lazy(() => import("./report/ReportExport").then((module) => ({ default: module.ReportExport })))
+
 
 // The screen to open with: the history entry's on a reload while it still
 // fits the address, else the address.
@@ -1739,13 +1745,14 @@ function App() {
                     : page
           }`}
         >
-          {renderPage()}
+          <Suspense fallback={<PageLoading />}>{renderPage()}</Suspense>
         </div>
         {detailMatch && (
           <div
             className={fromHistory ? "page-enter from-history" : "page-enter"}
             key={`detail:${detailMatch.id}`}
           >
+            <Suspense fallback={<PageLoading />}>
             <MatchDetailPage
               match={detailMatch}
               kind={students ? "brand" : "group"}
@@ -1786,6 +1793,7 @@ function App() {
                   : undefined
               }
             />
+            </Suspense>
           </div>
         )}
       </main>
@@ -1838,7 +1846,9 @@ function App() {
         />
       </Presence>
 
-      {/* Each popup stays on screen for its closing animation. */}
+      {/* Each popup stays on screen for its closing animation, and loads the
+          first time it opens. */}
+      <Suspense fallback={null}>
       {report && (
         <Presence show={activeModal === "metric-log"}>
           <MetricLogModal
@@ -2068,6 +2078,9 @@ function App() {
         />
       </Presence>
 
+      </Suspense>
+
+      <Suspense fallback={null}>
       {exporting && report && (
         <ReportExport
           report={report}
@@ -2084,11 +2097,21 @@ function App() {
           onDone={finishAnalyticsExport}
         />
       )}
+      </Suspense>
 
       <Presence show={notice !== ""}>
         <Toast message={notice} />
       </Presence>
     </div>
+  )
+}
+
+// Shown for the moment a screen's code arrives.
+function PageLoading() {
+  return (
+    <p className="page-loading" role="status">
+      {t("불러오고 있어요…")}
+    </p>
   )
 }
 

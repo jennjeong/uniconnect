@@ -19,7 +19,7 @@ Run these from the repo root:
 
 ## Project Structure
 
-- `frontend/src/App.tsx` holds the app state and the API calls, and switches between pages and modals for the current role.
+- `frontend/src/App.tsx` holds the app state and the API calls, and switches between pages and modals for the current role. Only the introduction, the dashboards, the 404 page and the login and sign-up popups are in the first download; every other page, popup and the PDF exports are `lazy` chunks that load the first time they open (`<Suspense>` with `PageLoading` for pages, nothing for popups), so a new page or popup is added the same way.
 - `frontend/src/api/` has the fetch wrapper with the Bearer token (`client.ts`) and one function per endpoint (`index.ts`).
 - `frontend/src/pages/`, `modals/`, `layout/` and `components/` contain the UI. `data/`, `lib/` and `hooks/` contain constants and helpers.
 - `frontend/src/layout/Header.tsx` is the fixed header: the logo on its own, then floating pills for the role's menu on wide screens, the next event, account buttons and Menu (on the introduction a visitor gets its sections and 회원가입 instead of the menu; on a member screen shown to a visitor, a `예시 화면` chip sits by the logo) (registering is on the 내 행사 and 행사 일정 calendars and in Menu). The logo switches to its light version (`assets/brand/uniconnect_horizontal_reversed.svg`) over deep blue surfaces. `NavMenu.tsx` is the full-screen silver menu behind Menu and `Footer.tsx` the footer: the site's links, headed on the introduction (sign up, get the app) and the dashboard by a deep blue mesh card with linked chrome rings and the call to register (the whole footer is left out of a conversation).
