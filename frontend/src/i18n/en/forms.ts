@@ -508,12 +508,13 @@ const en: Record<string, string> = {
   카카오: "Kakao",
   "{provider} 계정을 연결했어요. 다음부터 {provider}로 로그인할 수 있어요.": "Linked your {provider} account. You can log in with {provider} from now on.",
   "이미 다른 uniconnect 계정에 연결된 계정이에요.": "That account is already linked to another uniconnect account.",
-  "연결된 uniconnect 계정이 없어요. 이메일로 로그인한 뒤 내 정보에서 연결해 주세요.":
-    "No uniconnect account is linked to it. Log in with your email, then link it in My Info.",
+  "{provider} 계정이 연결된 회원이 없어요. {provider} 로그인은 회원가입 뒤 내 정보에서 {provider} 계정을 연결해야 쓸 수 있어요.":
+    "No member has linked this {provider} account. {provider} login works only after you sign up and link your {provider} account in My Info.",
   "카카오 · 네이버 로그인을 마치지 못했어요. 다시 시도해 주세요.": "Couldn't finish logging in with Kakao or Naver. Please try again.",
   "{provider} 연결을 끊었어요. 이메일로는 그대로 로그인할 수 있어요.": "Unlinked {provider}. You can still log in with your email.",
   "{provider}로 로그인": "Log in with {provider}",
-  "내 정보에서 연결해 둔 계정으로 로그인해요. 가입은 이메일로 해요.": "Logs in with the account you linked in My Info. Sign up with your email.",
+  "연결한 계정으로 로그인": "Log in with a linked account",
+  "회원가입을 마치고 내 정보에서 계정을 연결한 회원만 쓸 수 있어요.": "Only for members who signed up and linked the account in My Info.",
   "{provider} 연결 끊기": "Unlink {provider}",
   "{provider} 계정 연결": "Link {provider}",
   // Student councils and their clubs (pages/CouncilPage.tsx, modals/CouncilLinkModal.tsx)

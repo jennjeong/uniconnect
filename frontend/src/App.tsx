@@ -667,11 +667,14 @@ function App() {
       "linked-kakao": t("{provider} 계정을 연결했어요. 다음부터 {provider}로 로그인할 수 있어요.", { provider }),
       "linked-naver": t("{provider} 계정을 연결했어요. 다음부터 {provider}로 로그인할 수 있어요.", { provider }),
       "link-taken": t("이미 다른 uniconnect 계정에 연결된 계정이에요."),
-      unlinked: t("연결된 uniconnect 계정이 없어요. 이메일로 로그인한 뒤 내 정보에서 연결해 주세요."),
+      "unlinked-kakao": t("{provider} 계정이 연결된 회원이 없어요. {provider} 로그인은 회원가입 뒤 내 정보에서 {provider} 계정을 연결해야 쓸 수 있어요.", { provider }),
+      "unlinked-naver": t("{provider} 계정이 연결된 회원이 없어요. {provider} 로그인은 회원가입 뒤 내 정보에서 {provider} 계정을 연결해야 쓸 수 있어요.", { provider }),
       error: t("카카오 · 네이버 로그인을 마치지 못했어요. 다시 시도해 주세요."),
       "link-error": t("카카오 · 네이버 로그인을 마치지 못했어요. 다시 시도해 주세요."),
     }
     if (Object.prototype.hasOwnProperty.call(notices, outcome)) showNotice(notices[outcome])
+    // Not linked yet: back to the login, to log in or sign up by email.
+    if (outcome.startsWith("unlinked")) openAuth("login")
     // Once, as the page opens.
   }, [])
 

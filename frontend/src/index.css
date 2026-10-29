@@ -7771,6 +7771,23 @@ button.nav-pill:hover {
   color: #fff;
 }
 
+.social-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: var(--weight-label);
+}
+
+.social-divider::before,
+.social-divider::after {
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+  content: "";
+}
+
 .social-login small {
   color: var(--muted);
   font-size: 12px;
