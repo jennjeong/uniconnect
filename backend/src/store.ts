@@ -10,6 +10,7 @@ import {
   seedMeasurements,
   seedOffers,
   seedPosts,
+  freshenDemoReport,
   freshenExamplePosts,
   seedRequests,
   seedSponsorships,
@@ -47,6 +48,7 @@ export async function loadDatabase() {
   if (await reload()) return getDatabase()
   const seed = await createSeed()
   for (const measurement of seed.measurements) syncSponsors(seed, measurement)
+  freshenDemoReport(seed)
   replace(seed)
   durable = JSON.stringify(seed)
   version = 0
@@ -153,6 +155,9 @@ export function upgradeDatabase(stored: Database) {
   // The demo busking day's survey, for data made before the survey.
   const surveyed = stored.measurements?.find((item) => item.eventId === "event-busking-day")
   if (surveyed) surveyed.survey ??= seedSurvey()
+  if (stored.measurements && stored.sponsorships && stored.agreements && stored.demoAccountIds) {
+    freshenDemoReport(stored as Parameters<typeof freshenDemoReport>[0])
+  }
   // Sessions saved with their plain token keep working, stored as its hash.
   stored.sessions = (stored.sessions ?? []).map((session) => {
     const legacy = session as typeof session & { token?: string }

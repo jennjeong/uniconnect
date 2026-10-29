@@ -8,35 +8,26 @@ import { t } from "../i18n"
 import { formatFullDate, formatPeriod } from "../lib/date"
 import { fullWon } from "../lib/sponsorships"
 import { PaymentModal } from "../modals/PaymentModal"
-import {
-  Advice,
-  Costs,
-  Effect,
-  Fulfillment,
-  Funnel,
-  GradeRing,
-  HeadlineFigures,
-  KeyFindings,
-  Methodology,
-  Scorecard,
-  Section,
-  Timing,
-  VenueAndReviews,
-} from "../report/insightSections"
+import { GradeRing, HeadlineFigures, Section, sections } from "../report/insightSections"
 import { InsightExport } from "../report/InsightExport"
 import { MeshBackdrop } from "../scenes/MeshBackdrop"
 import type { InsightAnswer, PremiumReport } from "../types"
 
-// What the report holds beyond the free screens, for the preview.
+// What the report holds beyond the free screens, for the preview: twelve
+// pages of analysis.
 const contents: { icon: IconName; title: string; text: string }[] = [
   { icon: "spark", title: "종합 등급과 핵심 요약", text: "목표 항목 평균 달성률로 매긴 등급과, 꼭 알아야 할 세 문장" },
-  { icon: "check", title: "목표 대비 성과", text: "도달 · 스캔 · 쿠폰 · 방문 · 참여율 · 전환율 · ROAS를 목표와 나란히" },
-  { icon: "chart", title: "다른 행사와 비교", text: "퍼널 단계마다 uniconnect에서 측정한 행사들의 중앙값과 순위" },
-  { icon: "won", title: "비용 효율", text: "도달 1,000명 · 스캔 · 쿠폰 · 방문 1명당 비용과 비교" },
-  { icon: "calendar", title: "언제 왔나요", text: "시간대별 스캔, 날짜별 기록, 쿠폰을 받고 방문하기까지 걸린 날" },
-  { icon: "store", title: "평소 대비 효과", text: "매장의 평소 방문객과 비교한 증분 방문 · 매출 · ROAS" },
-  { icon: "file", title: "계약 이행과 후기", text: "두 쪽이 약속한 일과 증빙, 현장 확인 집계, 서로 남긴 후기" },
-  { icon: "arrow", title: "다음 협찬 제안", text: "이번 결과로 정한 할 일, 적정 협찬액, 다음에 함께하기 좋은 단체" },
+  { icon: "file", title: "행사 개요와 협찬 조건", text: "단체 · 기간 · 장소, 협찬 가치 구성, 쿠폰과 확인 방식" },
+  { icon: "check", title: "목표 대비 성과", text: "7개 목표의 실제 · 목표 · 달성률" },
+  { icon: "users", title: "관객 구성", text: "참여자 설문으로 본 학년 · 전공 계열 · 처음 온 손님 비율" },
+  { icon: "chart", title: "전환 퍼널과 이탈", text: "단계별 전환과 이탈, 다른 행사들의 중앙값과 순위" },
+  { icon: "calendar", title: "시간 분석", text: "시간대별 스캔과 날짜별 스캔 · 쿠폰 · 방문" },
+  { icon: "store", title: "매장 방문 분석", text: "쿠폰 사용률, 당일 방문, 요일별 방문, 방문까지 걸린 날, 새 손님 추정" },
+  { icon: "won", title: "비용 효율과 투자 회수", text: "결과 1건당 비용, 손익분기 방문 수, 1인 지출에 따른 ROAS" },
+  { icon: "arrow", title: "평소 대비 효과", text: "매장의 평소 방문객과 비교한 증분 방문 · 매출 · ROAS" },
+  { icon: "link", title: "계약 이행 · 후기 · 파트너 이력", text: "약속한 일과 증빙, 현장 확인, 서로 남긴 후기, 단체의 이력" },
+  { icon: "briefcase", title: "우리 브랜드 협찬 중 위치와 다음 제안", text: "브랜드 평균과 비교, 할 일, 적정 협찬액, 함께하기 좋은 단체" },
+  { icon: "search", title: "측정 방법과 부록", text: "계산식과 가정, 날짜별 · 시간대별 원자료 표" },
 ]
 
 // The report itself: the cover on Stride's deep blue mesh with the grade,
@@ -129,39 +120,11 @@ function ReportBody({
       <HeadlineFigures report={report} />
 
       <div className="insight-sections">
-        <Section icon="spark" id="insight-findings" title={t("핵심 요약")}>
-          <KeyFindings report={report} />
-        </Section>
-        <Section icon="check" id="insight-score" lead={t("학생단체가 행사 전에 정한 목표와 실제 결과예요.")} title={t("목표 대비 성과")}>
-          <Scorecard report={report} />
-        </Section>
-        <Section icon="chart" id="insight-funnel" lead={t("단계마다 uniconnect의 다른 행사와 비교했어요.")} title={t("전환 퍼널과 비교")}>
-          <Funnel report={report} />
-        </Section>
-        <Section icon="won" id="insight-costs" lead={t("결과 하나를 얻는 데 든 협찬액이에요.")} title={t("비용 효율")}>
-          <Costs report={report} />
-        </Section>
-        <Section icon="calendar" id="insight-timing" lead={t("다음 행사의 부스 시간과 쿠폰 기한을 정할 때 보세요.")} title={t("언제 왔나요")}>
-          <Timing report={report} />
-        </Section>
-        <Section
-          icon="store"
-          id="insight-effect"
-          lead={t("쿠폰을 쓰지 않은 손님까지, 매장이 적은 하루 방문객으로 평소와 비교해요.")}
-          title={t("평소 대비 효과")}
-        >
-          <Effect onSave={owner ? onSaveLift : undefined} report={report} />
-        </Section>
-        <Section icon="file" id="insight-fulfillment" lead={t("임시 전자 계약서에 적은 할 일과 증빙이에요.")} title={t("계약 이행")}>
-          <Fulfillment report={report} />
-          <VenueAndReviews report={report} />
-        </Section>
-        <Section icon="arrow" id="insight-advice" lead={t("이번 결과로 정한 다음 할 일이에요.")} title={t("다음 협찬 제안")}>
-          <Advice onOpenGroup={owner ? onOpenGroup : undefined} report={report} />
-        </Section>
-        <Section icon="search" id="insight-method" title={t("측정 방법과 가정")}>
-          <Methodology report={report} />
-        </Section>
+        {sections(report, { owner, onSaveLift, onOpenGroup }).map((section) => (
+          <Section icon={section.icon} id={`insight-${section.id}`} key={section.id} lead={section.lead} title={section.title}>
+            {section.body}
+          </Section>
+        ))}
       </div>
       {exporting && <InsightExport onDone={done} report={report} />}
     </>
