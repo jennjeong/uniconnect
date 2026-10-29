@@ -5345,6 +5345,237 @@ button.nav-pill:hover {
   }
 }
 
+/* The recruitment board (pages/BoardPage.tsx): posts as cards, the soonest
+   deadline first; a closed one steps back. */
+.post-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.post-card {
+  display: grid;
+  height: 100%;
+  align-content: start;
+  gap: 12px;
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  background: var(--silver-gradient);
+  box-shadow: var(--silver-ring);
+}
+
+.post-card.closed {
+  opacity: 0.7;
+}
+
+.post-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.post-card-head span {
+  display: grid;
+  min-width: 0;
+}
+
+.post-card-head strong {
+  font-size: 14px;
+  font-weight: var(--weight-label);
+}
+
+.post-card-head small,
+.post-card-event {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.post-card h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: var(--weight-display);
+  letter-spacing: -0.02em;
+}
+
+.post-card h3 button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.post-card-event {
+  margin: 0;
+}
+
+.post-card-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.post-types {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.post-types span {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-size: 12px;
+  font-weight: var(--weight-label);
+}
+
+.post-deadline {
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: var(--weight-label);
+}
+
+.post-deadline em,
+.post-dday {
+  margin-left: 4px;
+  color: var(--point-strong);
+  font-style: normal;
+  font-weight: var(--weight-badge);
+}
+
+.post-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--fill-strong);
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: var(--weight-badge);
+}
+
+/* One post (pages/PostPage.tsx), beside its poster's card. */
+.post-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  align-items: start;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.post-main {
+  display: grid;
+  min-width: 0;
+  gap: 24px;
+}
+
+.post-text {
+  margin: 0;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.75;
+  white-space: pre-line;
+}
+
+.post-facts {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 18px 20px;
+  border-radius: var(--radius-md);
+  background: var(--fill);
+}
+
+.post-facts div {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+
+.post-facts dt {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.post-facts dd {
+  margin: 0;
+  font-size: 14px;
+}
+
+.post-applications h2 {
+  margin: 0 0 12px;
+  font-size: 20px;
+  font-weight: var(--weight-display);
+}
+
+.post-applications ul {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+}
+
+.post-applications li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 12px;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: #fff;
+  box-shadow: var(--ring);
+}
+
+.post-applications li span {
+  grid-column: 1;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.post-applications li .post-badge {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+}
+
+.post-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.post-poster .pill,
+.post-poster .cancel-button {
+  width: 100%;
+  margin-top: 6px;
+}
+
+.post-applied {
+  margin: 6px 0 0;
+  color: var(--point-strong);
+  font-size: 14px;
+  font-weight: var(--weight-label);
+}
+
+.post-form select {
+  height: 46px;
+}
+
+@media (max-width: 900px) {
+  .post-body {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* A group's event page (pages/EventDetailPage.tsx): what, when and where,
    then its words, photos and packages beside the group's card. */
 .event-facts {
@@ -10386,7 +10617,8 @@ button.nav-pill:hover {
   box-shadow: var(--silver-ring);
 }
 
-.review-form fieldset {
+.review-form fieldset,
+.post-form fieldset {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -10395,7 +10627,8 @@ button.nav-pill:hover {
   border: 0;
 }
 
-.review-form legend {
+.review-form legend,
+.post-form legend {
   width: 100%;
   margin-bottom: 8px;
   padding: 0;
@@ -10416,7 +10649,8 @@ button.nav-pill:hover {
 /* Each input invisible over its whole star or tag, so a press anywhere on
    it picks it. */
 .star-input input,
-.review-tag-input input {
+.review-tag-input input,
+.post-type-input input {
   position: absolute;
   z-index: 1;
   inset: 0;
@@ -10446,13 +10680,15 @@ button.nav-pill:hover {
 }
 
 .star-input label:has(input:focus-visible),
-.review-tag-input label:has(input:focus-visible) {
+.review-tag-input label:has(input:focus-visible),
+.post-type-input label:has(input:focus-visible) {
   outline: 2px solid var(--point-bright);
   outline-offset: 2px;
   border-radius: 999px;
 }
 
-.review-tag-input label {
+.review-tag-input label,
+.post-type-input label {
   position: relative;
   padding: 8px 14px;
   border-radius: 999px;
@@ -10464,7 +10700,8 @@ button.nav-pill:hover {
   cursor: pointer;
 }
 
-.review-tag-input label.on {
+.review-tag-input label.on,
+.post-type-input label.on {
   background: var(--point);
   color: var(--on-point);
   box-shadow: none;

@@ -258,6 +258,8 @@ export type SponsorRequest = {
   people: string
   ask: string
   message: string
+  // The brand's board post it applies to, when it came from one.
+  postId?: string
   status: RequestStatus
   createdAt: string
   respondedAt?: string
@@ -284,6 +286,8 @@ export type SponsorOffer = {
   // What the brand offers.
   offer: string
   message: string
+  // The group's board post it applies to, when it came from one.
+  postId?: string
   status: RequestStatus
   createdAt: string
   respondedAt?: string
@@ -623,4 +627,29 @@ export type Database = {
   reviews: Review[]
   // The listings each account saved (찜), newest first, by account id.
   saved: Record<string, string[]>
+  // The recruitment board (routes/board.ts).
+  posts: BoardPost[]
+}
+
+// A public post on the recruitment board (routes/board.ts): a brand looking
+// for events to sponsor, or a student group looking for sponsors for one of
+// its events. The other side applies by proposing (POST /api/proposals with
+// postId), and the poster answers in its inbox.
+export type BoardPost = {
+  id: string
+  accountId: string
+  // The poster's listing, which the post shows as.
+  listingId: string
+  title: string
+  body: string
+  // Kinds of sponsorship a brand offers or a group wants (sponsorTypes).
+  types: string[]
+  // A group's post is about one of its events.
+  eventId?: string
+  // The last day to apply, "YYYY-MM-DD".
+  deadline: string
+  // When its poster closed it before the deadline.
+  closedAt?: string
+  createdAt: string
+  updatedAt?: string
 }

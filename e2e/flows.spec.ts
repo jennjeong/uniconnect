@@ -453,6 +453,49 @@ test("a group writes its event page on the form, adds a photo, and a brand reads
   }
 })
 
+test("a group posts on the recruit board, and a brand applies with its campaign", async ({ page, request, browser }) => {
+  const group = await signUpMember(request, "학생단체", "e2e-board@syu.ac.kr", "모집 동아리")
+  const brand = await signUpMember(request, "브랜드", "e2e-board@board-cafe.kr", "모집 카페")
+  await request.put("/api/profile", { data: { intro: "캠퍼스 공연 동아리예요.", offer: "관객 100명" }, headers: group.headers })
+  const day = (days: number) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date(Date.now() + days * 86_400_000))
+  await request.post("/api/events", { data: { name: "모집 공연", date: day(20), types: ["현금"] }, headers: group.headers })
+  await request.post("/api/events", { data: { name: "모집 시음회", date: day(15), types: ["제품"] }, headers: brand.headers })
+
+  // The group writes its post from the board.
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
+  await page.goto("/board")
+  await page.getByRole("button", { name: "모집 글 쓰기" }).first().click()
+  const form = page.getByRole("dialog")
+  await expect(form.getByLabel("협찬사를 찾을 행사")).toContainText("모집 공연")
+  await form.getByLabel("제목", { exact: true }).fill("종강 공연 협찬사를 찾아요")
+  await form.getByLabel("내용", { exact: true }).fill("로비 부스와 현수막 로고를 드려요.")
+  await form.getByRole("checkbox", { name: "현금" }).check()
+  await form.getByRole("button", { name: "모집 글 올리기" }).click()
+  await expect(page).toHaveURL(/\/board\/[^/]+$/)
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("종강 공연 협찬사를 찾아요")
+  await expect(page.locator(".post-applications")).toContainText("아직 지원한 곳이 없어요")
+
+  // A brand member finds it on the board and applies with its campaign.
+  const brandPage = await (await browser.newContext()).newPage()
+  await brandPage.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
+  await brandPage.goto("/board")
+  await brandPage.locator(".post-card", { hasText: "종강 공연 협찬사를 찾아요" }).locator("h3 button").click()
+  await brandPage.getByRole("button", { name: "지원하기" }).click()
+  const apply = brandPage.getByRole("dialog")
+  await expect(apply.getByLabel("제안할 캠페인")).toContainText("모집 시음회")
+  await apply.getByRole("button", { name: "제안 보내기" }).click()
+  await expect(brandPage.getByText("지원했어요 · 검토 중")).toBeVisible()
+
+  // The group sees the application on its post, to answer in its inbox.
+  await page.reload()
+  await expect(page.locator(".post-applications")).toContainText("모집 카페")
+  await expect(page.getByRole("button", { name: "받은 협찬에서 답하기" })).toBeVisible()
+  for (const member of [group, brand]) {
+    const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: member.headers })
+    expect(left.status()).toBe(204)
+  }
+})
+
 test("a student group proposes and the brand accepts", async ({ browser }) => {
   const student = await (await browser.newContext()).newPage()
   await student.goto("/")

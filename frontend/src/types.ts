@@ -243,6 +243,34 @@ export type EventItem = {
 // gets, and the support the group asks for.
 export type SponsorPackage = { name: string; gives: string; asks: string }
 
+// A recruitment board post as the API gives it (backend routes/board.ts):
+// the post, its poster's side and listing, a group's event, whether it still
+// takes applications and whether the one looking posted it; the viewer's own
+// application, and to its poster the applications that came in.
+export type BoardPost = {
+  id: string
+  listingId: string
+  title: string
+  body: string
+  types: string[]
+  eventId?: string
+  // The last day to apply, "YYYY-MM-DD".
+  deadline: string
+  closedAt?: string
+  createdAt: string
+  updatedAt?: string
+  role: Role
+  poster: Pick<Match, "id" | "name" | "category" | "industry" | "logo" | "school">
+  event?: { id: string; name: string; date: string; endDate?: string; people: string }
+  open: boolean
+  own: boolean
+  applied?: RequestStatus
+  applications?: { id: string; name: string; about: string; date: string; status: RequestStatus }[]
+}
+
+// A post as written or edited: a group's names one of its events.
+export type PostDraft = { title: string; body: string; types: string[]; deadline: string; eventId?: string }
+
 // An event page as the API gives it: the event, the group behind it, and
 // whether the one looking owns it.
 export type EventPage = {
@@ -651,5 +679,6 @@ export type ModalName =
   | "calendar"
   | "install"
   | "propose"
+  | "post"
   | "safety"
   | "business"

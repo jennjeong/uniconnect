@@ -92,6 +92,10 @@ const en: Record<string, string> = {
   "최근 200개까지, 그보다 오래된 것은 지워요": "The latest 200; older ones are deleted",
   "브랜드의 사업자등록번호와 확인한 시각": "A brand's business registration number and when it was verified",
   "찜한 단체·브랜드": "Student groups and brands you saved",
+  "모집 게시판 글(제목, 내용, 협찬 종류, 마감일, 행사)과 어느 글에 지원했는지":
+    "Recruit board posts (title, text, kinds of sponsorship, deadline, event) and which posts you applied to",
+  "협찬 상대를 모집하고, 상대 쪽 회원이 보고 지원하도록 보여 주기":
+    "Looking for sponsorship partners, and showing the posts to the other side's members so they can apply",
   "받을 메일 설정과 메일 언어": "Your email choices and email language",
   "고른 종류의 알림 메일만, 쓰는 언어로 보내기": "Sending only the kinds of notice email you chose, in the language you use",
   "탈퇴하거나 바꿀 때까지": "Until you leave or change them",

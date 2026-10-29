@@ -1,8 +1,10 @@
+import { addDays, todayInKorea } from "../lib/dates.js"
 import { emptyVenueCounts } from "../lib/methods.js"
 import { hashPassword } from "../lib/password.js"
 import type {
   Account,
   AccountContact,
+  BoardPost,
   Conversation,
   Database,
   Match,
@@ -10,6 +12,7 @@ import type {
   MetricEntry,
   MetricKind,
   Review,
+  Role,
   SponsorOffer,
   SponsorRequest,
   Sponsorship,
@@ -913,6 +916,51 @@ export function seedMeasurements(accountId: string): Measurement[] {
   ]
 }
 
+// The example posts on the recruitment board, one per demo account, open
+// for a month from when they are made (freshenExamplePosts keeps them so).
+export function seedPosts(demoAccountIds: Partial<Record<Role, string>>): BoardPost[] {
+  const now = new Date()
+  const deadline = addDays(todayInKorea(now), 30)
+  const posts: BoardPost[] = []
+  const brand = demoAccountIds.브랜드
+  const group = demoAccountIds.학생단체
+  if (brand) {
+    posts.push({
+      id: "post-coffee-tasting",
+      accountId: brand,
+      listingId: "afternoon-coffee",
+      title: "11월 캠퍼스 시음회와 함께할 공연을 찾아요",
+      body: "신메뉴 시음회를 학생 공연과 함께 열고 싶어요. 관객 100명 이상의 공연이나 축제라면 음료 쿠폰과 시음 부스를 지원해요. 공연 전후 로비에서 부스를 열 수 있으면 좋아요.",
+      types: ["제품"],
+      deadline,
+      createdAt: now.toISOString(),
+    })
+  }
+  if (group) {
+    posts.push({
+      id: "post-muse-concert",
+      accountId: group,
+      listingId: "syu-muse",
+      title: "종강 공연을 함께할 협찬사를 찾아요",
+      body: "밴드 다섯 팀이 서는 종강 공연이에요. 무대 현수막 로고와 공연 중 소개, 로비 부스를 드릴 수 있어요. 음료나 간식을 협찬해 주실 브랜드를 찾아요.",
+      types: ["현금", "제품"],
+      eventId: "event-muse-concert",
+      deadline,
+      createdAt: now.toISOString(),
+    })
+  }
+  return posts
+}
+
+// The example posts stay open, a month ahead, however old the data is.
+export function freshenExamplePosts(database: Pick<Database, "posts" | "demoAccountIds">, now = new Date()) {
+  const demo = new Set(Object.values(database.demoAccountIds ?? {}))
+  const today = todayInKorea(now)
+  for (const post of database.posts) {
+    if (demo.has(post.accountId) && post.deadline < addDays(today, 7)) post.deadline = addDays(today, 30)
+  }
+}
+
 // The demo group's concert as its event page shows it, for visitors to see
 // what a group writes there (photos are left to members).
 export const museConcertPage = {
@@ -1015,5 +1063,6 @@ export async function createSeed(): Promise<Database> {
     reports: [],
     blocks: {},
     saved: {},
+    posts: seedPosts({ 학생단체: muse.id, 브랜드: coffee.id }),
   }
 }

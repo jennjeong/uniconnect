@@ -148,6 +148,13 @@ export function pageMeta(
       description: t("가입, 협찬 제안, 일정 등록, 성과 확인에 대해 자주 묻는 질문을 보고, 더 궁금한 점은 관리자에게 물어봐요."),
     }
   }
+  if (view.board || view.post) {
+    return {
+      title: titled(t(view.post ? "모집 글" : "모집 게시판")),
+      description: t("브랜드는 함께할 행사를, 학생단체는 협찬사를 모집하고, 상대 쪽 글에 지원해요."),
+      noindex: true,
+    }
+  }
   if (view.eventPage) {
     return {
       title: titled(t("행사 상세")),

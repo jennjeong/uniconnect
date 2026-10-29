@@ -26,6 +26,7 @@ export function NavMenu({
   onCreate,
   onOpenMessages,
   onOpenAgreements,
+  onOpenBoard,
   onOpenProfile,
   onOpenFaq,
   onLogin,
@@ -46,6 +47,8 @@ export function NavMenu({
   onCreate: () => void
   onOpenMessages: () => void
   onOpenAgreements: () => void
+  // The recruitment board, for members and visitors alike.
+  onOpenBoard: () => void
   onOpenProfile: () => void
   onOpenFaq: () => void
   onLogin: () => void
@@ -129,6 +132,9 @@ export function NavMenu({
               <button onClick={pick(onOpenAgreements)} type="button">
                 {t("임시 전자 계약서")}
               </button>
+              <button onClick={pick(onOpenBoard)} type="button">
+                {t("모집 게시판")}
+              </button>
               <button onClick={pick(onOpenProfile)} type="button">
                 {t("내 정보")}
               </button>
@@ -145,6 +151,9 @@ export function NavMenu({
             <>
               <button onClick={pick(onHome)} type="button">
                 {t("서비스 소개")}
+              </button>
+              <button onClick={pick(onOpenBoard)} type="button">
+                {t("모집 게시판")}
               </button>
               <button onClick={pick(onLogin)} type="button">
                 {t("로그인")}

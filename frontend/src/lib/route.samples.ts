@@ -19,6 +19,8 @@ export const sampleViews: View[] = [
   { page: "대시보드", create: "2026-11-27" },
   { page: "대시보드", edit: "event 1" },
   { page: "대시보드", eventPage: "event-muse-concert" },
+  { page: "대시보드", board: true },
+  { page: "대시보드", post: "post-muse-concert" },
   { page: "대시보드", profile: "page" },
   { page: "대시보드", profile: "edit" },
   { page: "대시보드", messages: true },

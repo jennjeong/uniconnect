@@ -8,6 +8,7 @@ import { text } from "../lib/validation.js"
 import { notify } from "../lib/notices.js"
 import { createRateLimit, senderKey } from "../lib/rateLimit.js"
 import { statusOf } from "../lib/proposals.js"
+import { isOpen } from "./board.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { Account, EventItem, RequestStatus, SponsorOffer, SponsorRequest } from "../types.js"
@@ -167,6 +168,12 @@ proposalsRouter.post("/", async (req, res) => {
   )
   if (!partner) throw new HttpError(404, "목록에 없는 상대예요.")
   if (partner.pausedAt) throw new HttpError(409, "지금은 제안을 받지 않는 상대예요.")
+  // Applying to the partner's board post (routes/board.ts) while it is open.
+  const postId = text(req.body?.postId)
+  const post = postId ? database.posts.find((item) => item.id === postId) : undefined
+  if (postId && (!post || post.listingId !== matchId || !isOpen(post))) {
+    throw new HttpError(409, "마감됐거나 찾을 수 없는 모집 글이에요.")
+  }
   const students = account.role === "학생단체"
   const note = text(req.body?.message)
   if (note.length > maxMessage) throw new HttpError(400, `메시지는 ${maxMessage}자 이하로 적어 주세요.`)
@@ -194,11 +201,16 @@ proposalsRouter.post("/", async (req, res) => {
       students,
     )
 
+  // An application has to arrive, not fold into one already waiting.
+  if (post && !send) throw new HttpError(409, "이 상대에게 보낸 제안이 이미 있어요. 받은 제안 · 보낸 제안에서 확인해 주세요.")
+  const applying = post ? { postId: post.id } : {}
+  const postLine = post ? [`모집 글: ${post.title}`] : []
+
   const current = database.proposals[account.id] ?? []
   if (!current.includes(matchId)) database.proposals[account.id] = [...current, matchId]
 
   if (!students && send && event) {
-    const offer = brandOffer(account, matchId, event, note)
+    const offer = { ...brandOffer(account, matchId, event, note), ...applying }
     database.offers.push(offer)
     void notify(
       database.accounts.find((item) => item.groupId === matchId),
@@ -207,6 +219,7 @@ proposalsRouter.post("/", async (req, res) => {
       [
         `${account.name}에서 '${offer.campaignName}' 협찬을 제안했어요.`,
         `제공 협찬: ${offer.offer}`,
+        ...postLine,
         ...(note ? [`메시지: ${note}`] : []),
       ],
       "/offers",
@@ -227,6 +240,7 @@ proposalsRouter.post("/", async (req, res) => {
       people: event.people ? `예상 인원 ${event.people}` : "인원 협의",
       ask: partner.offer,
       message: note || `${event.name}에 함께해 주세요! 현장과 SNS에서 브랜드를 알릴게요.`,
+      ...applying,
       status: "검토 중",
       createdAt: new Date().toISOString(),
     })
@@ -234,7 +248,7 @@ proposalsRouter.post("/", async (req, res) => {
       database.accounts.find((item) => item.brandId === matchId),
       "proposals",
       "새 협찬 제안이 왔어요",
-      [`${account.name}에서 '${event.name}' 협찬을 제안했어요.`, ...(note ? [`메시지: ${note}`] : [])],
+      [`${account.name}에서 '${event.name}' 협찬을 제안했어요.`, ...postLine, ...(note ? [`메시지: ${note}`] : [])],
       "/inbox",
     )
   }

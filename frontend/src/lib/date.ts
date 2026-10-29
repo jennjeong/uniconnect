@@ -27,6 +27,13 @@ export function fromIsoDate(iso: string) {
 
 export const todayIso = () => toIsoDate(new Date())
 
+// The "YYYY-MM-DD" a number of days after another.
+export function addDaysIso(iso: string, days: number) {
+  const day = fromIsoDate(iso) ?? new Date()
+  day.setDate(day.getDate() + days)
+  return toIsoDate(day)
+}
+
 export const startOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1)
 
 // "10월 12일 (월)", "Oct 12 (Mon)"
