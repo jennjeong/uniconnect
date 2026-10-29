@@ -239,6 +239,10 @@ const en: Record<string, string> = {
     "When a brand pays, the order number, what is bought, the amount and the email are sent to the payment processor Toss Payments (Republic of Korea) to process the payment. Toss Payments receives the card details directly; the service does not.",
   "결제 기록은 전자상거래법에 따라 탈퇴한 뒤에도 5년 동안 따로 보관하고, 그 뒤에 지워요.":
     "Payment records are kept apart for 5 years after leaving, as the E-Commerce Act requires, and deleted after that.",
+  "상세 성과 리포트: 협찬 1건의 상세 성과 리포트를 50,000원에 살 수 있어요. 행사 날부터 살 수 있고, 한 번 사면 계속 보고 PDF로 저장하고 링크로 공유할 수 있어요.":
+    "Detailed report: the detailed report of one sponsorship costs 50,000 KRW. It can be bought from the event's day; once bought it stays yours to view, save as a PDF and share by link.",
+  "리포트 환불: 사고 나서 7일 안에 리포트를 열어 보지 않았으면 돌려드려요. 연 뒤에는 디지털 콘텐츠라 돌려드리지 않아요(전자상거래법 제17조 제2항 제5호). 이 점은 결제 화면에서 먼저 알려요.":
+    "Report refunds: refunded if not opened within 7 days of buying. Once opened, as digital content, it is not refunded (E-Commerce Act, Article 17(2)5). This is stated on the payment screen first.",
 }
 
 export default en

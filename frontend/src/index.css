@@ -10450,6 +10450,949 @@ button.nav-pill:hover {
   font-weight: var(--weight-label);
 }
 
+/* 상세 성과 리포트 (pages/InsightPage.tsx, report/insightSections.tsx): a
+   deep blue cover with the grade ring, the four headline figures, then white
+   section cards; the locked preview lists what it holds beside its price. */
+.insight-hero {
+  --surface-tone: dark;
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  gap: 26px;
+  overflow: hidden;
+  padding: 40px 40px 30px;
+  border-radius: var(--radius-lg);
+  background: radial-gradient(110% 90% at 70% 30%, #1f4cb3 0%, #0b1a3e 72%);
+  color: #fff;
+}
+
+.insight-hero::after {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(8, 20, 52, 0.9) 0%, rgba(8, 20, 52, 0.66) 55%, rgba(8, 20, 52, 0.3) 100%);
+  content: "";
+  pointer-events: none;
+}
+
+.insight-hero-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.insight-hero h1 {
+  margin: 12px 0 8px;
+  font-size: clamp(30px, 4.4vw, 46px);
+  font-weight: var(--weight-display);
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+}
+
+.insight-hero p {
+  margin: 2px 0;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 15px;
+}
+
+.insight-status {
+  display: inline-flex;
+  margin-top: 14px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.24);
+  font-size: 12px;
+  font-weight: var(--weight-label);
+}
+
+.insight-status.final {
+  background: #fff;
+  color: var(--point);
+}
+
+.insight-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.insight-unshare {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 13px;
+  text-decoration: underline;
+}
+
+.insight-grade {
+  position: relative;
+  display: grid;
+  width: 150px;
+  height: 150px;
+  flex: none;
+  place-items: center;
+  align-content: center;
+  gap: 2px;
+}
+
+.insight-grade svg {
+  position: absolute;
+  inset: 0;
+  transform: rotate(-90deg);
+}
+
+.insight-grade circle {
+  fill: none;
+  stroke-width: 9;
+}
+
+.insight-grade .track {
+  stroke: rgba(255, 255, 255, 0.16);
+}
+
+.insight-grade .value {
+  stroke: var(--point-glow);
+  stroke-linecap: round;
+}
+
+.insight-grade strong {
+  font-size: 52px;
+  font-weight: var(--weight-black);
+  line-height: 1;
+}
+
+.insight-grade small {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 12px;
+  font-weight: var(--weight-label);
+}
+
+.insight-lock {
+  display: grid;
+  width: 96px;
+  height: 96px;
+  place-items: center;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+}
+
+.insight-figures {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 18px 0 0;
+}
+
+.insight-figures > div {
+  display: grid;
+  gap: 6px;
+  padding: 18px 20px;
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: var(--ring);
+}
+
+.insight-figures dt {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.insight-figures dd {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  color: var(--ink);
+  font-size: 26px;
+  font-weight: var(--weight-strong);
+  letter-spacing: -0.01em;
+}
+
+.insight-figures dd small,
+.insight-costs dd small,
+.insight-effect dd small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: var(--weight-body);
+  letter-spacing: 0;
+}
+
+.insight-sections {
+  display: grid;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.insight-section {
+  display: grid;
+  gap: 18px;
+  padding: 26px 28px;
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: var(--ring);
+}
+
+.insight-section-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.insight-section-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--point-tint);
+  color: var(--point-strong);
+}
+
+.insight-section h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: var(--weight-display);
+  letter-spacing: -0.01em;
+}
+
+.insight-section-head p,
+.insight-note {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.insight-section h3 {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: var(--weight-label);
+}
+
+.insight-findings {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  counter-reset: finding;
+  list-style: none;
+}
+
+.insight-findings li {
+  position: relative;
+  padding: 14px 16px 14px 52px;
+  border-radius: 16px;
+  background: var(--fill);
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.55;
+  counter-increment: finding;
+}
+
+.insight-findings li::before {
+  position: absolute;
+  top: 13px;
+  left: 14px;
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--point);
+  color: var(--on-point);
+  content: counter(finding);
+  font-size: 13px;
+  font-weight: var(--weight-badge);
+}
+
+.insight-scorecard,
+.insight-funnel {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.insight-scorecard li {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) 150px;
+  align-items: center;
+  gap: 16px;
+}
+
+.insight-score-label,
+.insight-funnel-name {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: var(--weight-label);
+}
+
+.insight-bar {
+  position: relative;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--fill);
+}
+
+.insight-bar .fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+  background: var(--goal-short);
+}
+
+.insight-bar .fill.met {
+  background: var(--goal-met);
+}
+
+.insight-bar .goal {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--goal-mark);
+}
+
+.insight-score-figures {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+}
+
+.insight-score-figures strong {
+  font-size: 16px;
+}
+
+.insight-score-figures small,
+.insight-funnel-rate small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.insight-funnel li {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr) 70px 230px;
+  align-items: center;
+  gap: 14px;
+}
+
+.insight-funnel-bar {
+  height: 34px;
+  border-radius: 10px;
+  background: var(--fill);
+}
+
+.insight-funnel-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--point) 0%, var(--point-bright) 100%);
+}
+
+.insight-funnel-count {
+  font-size: 16px;
+  font-weight: var(--weight-strong);
+  text-align: right;
+}
+
+.insight-funnel-rate {
+  display: grid;
+  gap: 2px;
+}
+
+.insight-funnel-rate strong {
+  color: var(--point-strong);
+  font-size: 14px;
+}
+
+.insight-costs,
+.insight-effect {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.insight-costs > div,
+.insight-effect > div {
+  display: grid;
+  gap: 4px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: var(--fill);
+}
+
+.insight-costs dt,
+.insight-effect dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: var(--weight-label);
+}
+
+.insight-costs dd,
+.insight-effect dd {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  font-size: 21px;
+  font-weight: var(--weight-strong);
+}
+
+.insight-timing {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.insight-timing figure {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--fill);
+}
+
+.insight-timing figcaption {
+  display: grid;
+  gap: 2px;
+  font-size: 14px;
+  font-weight: var(--weight-label);
+}
+
+.insight-timing figcaption small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: var(--weight-body);
+}
+
+.insight-columns {
+  display: flex;
+  height: 130px;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.insight-columns > span {
+  display: flex;
+  min-width: 0;
+  height: 100%;
+  flex: 1;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: stretch;
+  gap: 1px;
+}
+
+.insight-columns i {
+  display: block;
+  min-height: 2px;
+  border-radius: 4px 4px 0 0;
+  background: var(--goal-short);
+}
+
+.insight-columns > .peak i {
+  background: var(--point);
+}
+
+.insight-columns.stacked i {
+  border-radius: 2px;
+}
+
+.insight-columns.stacked .scans {
+  background: var(--goal-short);
+}
+
+.insight-columns.stacked .coupons {
+  background: var(--point-bright);
+}
+
+.insight-columns.stacked .visits {
+  background: var(--point);
+}
+
+.insight-columns small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 10px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.insight-effect-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+  align-items: end;
+  gap: 12px;
+}
+
+.insight-effect-form label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.insight-effect-form input {
+  height: 46px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--fill);
+  font-size: 15px;
+}
+
+.insight-effect-form .field-hint {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+
+.insight-fulfillment {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.insight-fulfillment ul,
+.insight-venue ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.insight-fulfillment li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--fill);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.insight-fulfillment li.done {
+  color: var(--ink);
+}
+
+.insight-fulfillment li.done .icon {
+  color: var(--point);
+  stroke-width: 2.6;
+}
+
+.insight-fulfillment li small {
+  margin-left: auto;
+  color: var(--point-strong);
+  font-weight: var(--weight-label);
+}
+
+.insight-fulfillment .insight-fulfillment-head {
+  padding: 0 2px 4px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: var(--weight-label);
+}
+
+.insight-venue {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.insight-venue li {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--fill);
+  font-size: 13px;
+}
+
+.insight-reviews li {
+  display: grid;
+  gap: 4px;
+  justify-content: stretch;
+}
+
+.insight-reviews span {
+  display: flex;
+  justify-content: space-between;
+  font-weight: var(--weight-label);
+}
+
+.insight-reviews em {
+  color: var(--goal-mark);
+  font-style: normal;
+}
+
+.insight-reviews p {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.insight-reviews small {
+  color: var(--muted);
+}
+
+.insight-advice ol {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 18px;
+  padding-left: 22px;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.insight-next {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.insight-next li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--fill);
+}
+
+.insight-next li > span:nth-child(2) {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 2px;
+}
+
+.insight-next small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.insight-next-score {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--point);
+  color: var(--on-point);
+  font-size: 14px;
+  font-weight: var(--weight-badge);
+}
+
+.insight-method ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 18px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.insight-stamp {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.insight-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
+  margin-top: 4px;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--point-tint);
+  color: var(--point-strong);
+  font-size: 12px;
+  font-weight: var(--weight-label);
+}
+
+.insight-offer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  align-items: start;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.insight-offer > div {
+  padding: 28px;
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: var(--ring);
+}
+
+.insight-offer h2 {
+  margin: 0 0 8px;
+  font-size: 22px;
+  font-weight: var(--weight-display);
+}
+
+.insight-offer > div > p {
+  margin: 0 0 18px;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.insight-contents {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.insight-contents li {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--fill);
+}
+
+.insight-contents .icon {
+  flex: none;
+  color: var(--point-strong);
+}
+
+.insight-contents span {
+  display: grid;
+  gap: 2px;
+}
+
+.insight-contents strong {
+  font-size: 14px;
+}
+
+.insight-contents small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.insight-price {
+  position: sticky;
+  top: 110px;
+  display: grid;
+  gap: 8px;
+  padding: 24px;
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: var(--ring), 0 24px 60px rgba(19, 48, 111, 0.12);
+}
+
+.insight-price > span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.insight-price strong {
+  color: var(--point-strong);
+  font-size: 34px;
+  font-weight: var(--weight-strong);
+}
+
+.insight-price small {
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.insight-shared-note {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@media (max-width: 960px) {
+  .insight-figures,
+  .insight-costs,
+  .insight-effect {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .insight-timing,
+  .insight-offer {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .insight-price {
+    position: static;
+  }
+}
+
+@media (max-width: 720px) {
+  .insight-hero {
+    padding: 26px 20px 22px;
+  }
+
+  .insight-grade {
+    width: 120px;
+    height: 120px;
+  }
+
+  .insight-grade strong {
+    font-size: 42px;
+  }
+
+  .insight-section {
+    padding: 22px 18px;
+    border-radius: 20px;
+  }
+
+  .insight-scorecard li {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px 12px;
+  }
+
+  .insight-scorecard .insight-bar {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .insight-funnel li {
+    grid-template-columns: 80px minmax(0, 1fr) 54px;
+    gap: 6px 10px;
+  }
+
+  .insight-funnel-rate {
+    grid-column: 1 / -1;
+  }
+
+  .insight-fulfillment,
+  .insight-venue,
+  .insight-contents,
+  .insight-effect-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .insight-effect-form .field-hint {
+    grid-row: auto;
+  }
+}
+
+/* The PDF's four A4 pages: the same sections, tighter, and a deep blue
+   cover band on the first. */
+.insight-pdf {
+  gap: 14px;
+}
+
+.insight-pdf .insight-section {
+  gap: 12px;
+  padding: 18px 20px;
+  border-radius: 16px;
+}
+
+.insight-pdf .insight-section h2 {
+  font-size: 16px;
+}
+
+.insight-pdf-cover {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 26px 28px;
+  border-radius: 18px;
+  background: radial-gradient(110% 90% at 70% 30%, #1f4cb3 0%, #0b1a3e 72%);
+  color: #fff;
+}
+
+.insight-pdf-cover h1 {
+  margin: 8px 0 6px;
+  font-size: 30px;
+  font-weight: var(--weight-display);
+}
+
+.insight-pdf-cover p {
+  margin: 2px 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 13px;
+}
+
+.insight-pdf-kicker {
+  font-size: 12px;
+  font-weight: var(--weight-label);
+  letter-spacing: 0.04em;
+}
+
+.insight-pdf .insight-grade {
+  width: 120px;
+  height: 120px;
+}
+
+.insight-pdf .insight-grade strong {
+  font-size: 42px;
+}
+
+.insight-pdf .insight-figures {
+  margin: 0;
+  gap: 8px;
+}
+
+.insight-pdf .insight-figures > div {
+  padding: 12px 14px;
+}
+
+.insight-pdf .insight-figures dd {
+  font-size: 20px;
+}
+
+.insight-pdf .insight-findings li {
+  font-size: 13px;
+}
+
+.insight-pdf .insight-funnel li {
+  grid-template-columns: 80px minmax(0, 1fr) 54px 220px;
+}
+
+.insight-pdf .insight-columns {
+  height: 110px;
+}
+
+.insight-pdf .insight-timing {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.insight-pdf-foot {
+  display: flex;
+  justify-content: space-between;
+  margin-top: auto;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.insight-pdf-date {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
 /* 협찬액과 수수료 on the agreement: the value, cash and in-kind, and the
    platform fee as two white tiles, or the form to write the value. */
 .value-panel h2 .subtle-link {

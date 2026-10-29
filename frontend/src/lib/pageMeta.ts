@@ -172,6 +172,13 @@ export function pageMeta(
       noindex: true,
     }
   }
+  if (view.insight || view.sharedReport) {
+    return {
+      title: titled(t("상세 성과 리포트")),
+      description: t("협찬 하나의 목표 달성, 다른 행사와의 비교, 비용 효율, 시간대, 평소 대비 효과와 다음 협찬 제안을 한 번에 봐요."),
+      noindex: true,
+    }
+  }
   if (view.council) {
     return {
       title: titled(t("소속 단체")),

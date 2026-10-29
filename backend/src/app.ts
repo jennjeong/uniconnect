@@ -24,6 +24,7 @@ import { errorsRouter } from "./routes/errors.js"
 import { eventsRouter } from "./routes/events.js"
 import { groupsRouter } from "./routes/groups.js"
 import { inquiriesRouter } from "./routes/inquiries.js"
+import { insightsRouter } from "./routes/insights.js"
 import { invitesRouter } from "./routes/invites.js"
 import { matchesRouter } from "./routes/matches.js"
 import { measurementsRouter } from "./routes/measurements.js"
@@ -122,6 +123,7 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   app.use("/api/measurements", measurementsRouter)
   app.use("/api/check-in", checkInRouter)
   app.use("/api/analytics", analyticsRouter)
+  app.use("/api/insights", insightsRouter)
   app.use("/api/profile", profileRouter)
   app.use("/api/places", placesRouter)
   app.use("/api/invites", invitesRouter)

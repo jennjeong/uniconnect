@@ -37,6 +37,7 @@ export function AnalyticsPage({
   sponsorships,
   exporting,
   onDownload,
+  onOpenReport,
   campaign,
 }: {
   // Newest first.
@@ -45,6 +46,9 @@ export function AnalyticsPage({
   exporting: boolean
   // Saves the analysis with each sponsorship's report as a PDF.
   onDownload: () => void
+  // A sponsorship's detailed report (pages/InsightPage.tsx), for those of a
+  // measured event.
+  onOpenReport: (sponsorshipId: string) => void
   // On-site measurement of the brand's own campaigns, at the end.
   campaign?: ReactNode
 }) {
@@ -245,6 +249,11 @@ export function AnalyticsPage({
                     <small>{row.groupName}</small>
                     <small>{formatFullDate(row.date)}</small>
                     {venueSummary(row) && <small className="venue-summary">{venueSummary(row)}</small>}
+                    {sponsorships.find((item) => item.id === row.id)?.eventId && (
+                      <button className="insight-link" onClick={() => onOpenReport(row.id)} type="button">
+                        <Icon name="file" size={13} /> {t("상세 리포트")}
+                      </button>
+                    )}
                   </span>
                   <span role="cell" data-label={t("집행액")}>
                     {formatWon(row.spend)}

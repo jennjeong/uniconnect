@@ -3,6 +3,7 @@ import catalog from "./catalog"
 import common from "./common"
 import dashboard from "./dashboard"
 import forms from "./forms"
+import insights from "./insights"
 import landing from "./landing"
 import layout from "./layout"
 import legal from "./legal"
@@ -18,6 +19,7 @@ export const en: Record<string, string> = {
   ...measurement,
   ...analytics,
   ...forms,
+  ...insights,
   ...landing,
   ...legal,
 }

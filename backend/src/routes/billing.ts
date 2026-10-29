@@ -5,6 +5,7 @@ import { cardReady, markPaid, orderFor, paymentsOf, paymentView, prices, toss } 
 import { HttpError } from "../lib/errors.js"
 // What brands can buy, each registered with lib/billing.ts.
 import "../lib/feeSales.js"
+import "../lib/reportSales.js"
 import { isDemoAccount } from "../lib/reviews.js"
 import { text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"

@@ -98,6 +98,7 @@ const JoinTeamModal = lazy(() => import("./modals/JoinTeamModal").then((module) 
 const TeamModal = lazy(() => import("./modals/TeamModal").then((module) => ({ default: module.TeamModal })))
 const CouncilLinkModal = lazy(() => import("./modals/CouncilLinkModal").then((module) => ({ default: module.CouncilLinkModal })))
 const CouncilPage = lazy(() => import("./pages/CouncilPage").then((module) => ({ default: module.CouncilPage })))
+const InsightPage = lazy(() => import("./pages/InsightPage").then((module) => ({ default: module.InsightPage })))
 const TwoFactorModal = lazy(() => import("./modals/TwoFactorModal").then((module) => ({ default: module.TwoFactorModal })))
 const ProposeModal = lazy(() => import("./modals/ProposeModal").then((module) => ({ default: module.ProposeModal })))
 const SafetyModal = lazy(() => import("./modals/SafetyModal").then((module) => ({ default: module.SafetyModal })))
@@ -1363,6 +1364,19 @@ function App() {
     if (view.council) {
       return <CouncilPage onBack={() => goBack({ page, profile: "page" })} onNotice={showNotice} />
     }
+    if (view.insight || view.sharedReport) {
+      return (
+        <InsightPage
+          id={view.insight}
+          onBack={() => goBack({ page: "성과 분석" })}
+          onLogin={() => (account ? go({ page: "대시보드" }) : openAuth("signup", "브랜드"))}
+          onNotice={showNotice}
+          onOpenGroup={(listingId) => go({ page: "단체 찾기", detail: listingId })}
+          paid={paid}
+          shareToken={view.sharedReport}
+        />
+      )
+    }
     if (view.agreements) {
       return (
         <AgreementsPage
@@ -1609,6 +1623,7 @@ function App() {
       case "성과 분석":
         return (
           <AnalyticsPage
+            onOpenReport={(id) => go({ page: "성과 분석", insight: id })}
             exporting={exportingAnalytics}
             onDownload={() => setExportingAnalytics(true)}
             sponsorships={sponsorships}
@@ -1767,6 +1782,8 @@ function App() {
                     ? "agreements"
                   : view.council
                     ? "council"
+                  : view.insight || view.sharedReport
+                    ? `insight-${view.insight ?? view.sharedReport}`
                   : editing !== null
                     ? `edit-${editing}`
                   : creating !== null

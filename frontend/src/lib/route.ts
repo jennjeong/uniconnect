@@ -38,6 +38,10 @@ export type View = {
   agreement?: string
   // A student council's clubs (/council).
   council?: true
+  // A brand's detailed report of one sponsorship (/insights/<id>), or one
+  // shared read-only by its link (/report/<token>).
+  insight?: string
+  sharedReport?: string
   // An address no screen has, kept as it was typed (the 404 page).
   missing?: string
 }
@@ -93,6 +97,8 @@ export function viewPath(view: View) {
   if (view.agreement) return `${base}/agreements/${encodeURIComponent(view.agreement)}`
   if (view.agreements) return `${base}/agreements`
   if (view.council) return `${base}/council`
+  if (view.insight) return `${base}/insights/${encodeURIComponent(view.insight)}`
+  if (view.sharedReport) return `${base}/report/${encodeURIComponent(view.sharedReport)}`
   const path = pagePaths[view.page]
   return `${base}/${view.detail ? `${path}/${encodeURIComponent(view.detail)}` : path}`
 }
@@ -146,6 +152,8 @@ export function readView(location: Location = window.location): View {
   if (first === "event") return named ? { page: "대시보드", eventPage: named } : missing
   if (first === "board") return named ? { page: "대시보드", post: named } : { page: "대시보드", board: true }
   if (first === "invite") return named && /^[\w-]+$/.test(named) ? { page: "대시보드", invite: named } : missing
+  if (first === "insights") return named ? { page: "성과 분석", insight: named } : missing
+  if (first === "report") return named && /^[\w-]+$/.test(named) ? { page: "대시보드", sharedReport: named } : missing
   if (first === "agreements") {
     return named ? { page: "대시보드", agreement: named } : { page: "대시보드", agreements: true }
   }

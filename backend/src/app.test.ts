@@ -4800,3 +4800,55 @@ test("a brand confirms an e-contract by paying the 15% fee, by card or by transf
     toss.cancel = realToss.cancel
   }
 })
+
+test("a brand buys a sponsorship's detailed report, adds its store's counts and shares it read-only", async () => {
+  const demo = await login("브랜드")
+  // The demo brand's report is open, for visitors to see one.
+  const sample = (await call("GET", "/insights/sp-busking", undefined, demo)).data
+  assert.equal(sample.locked, false)
+  assert.equal(sample.report.sponsorship.eventName, "가을 버스킹 데이")
+  assert.ok(["S", "A", "B", "C", "D"].includes(sample.report.grade))
+  assert.deepEqual(sample.report.scorecard.map((item: { key: string }) => item.key), ["reach", "scans", "coupons", "visits", "qrRate", "visitRate", "roas"])
+  assert.equal(sample.report.time.daily[0].date, "2026-10-12")
+  assert.ok(sample.report.advice.some((item: { code: string }) => item.code === "add-baseline"))
+  assert.equal((await call("GET", "/insights/sp-busking")).data.locked, false)
+  assert.equal((await call("PUT", "/insights/sp-busking/lift", { before: 30, during: 40 }, demo)).status, 403)
+
+  // A member's sponsorship of a measured event: a preview until bought.
+  const group = await signUpMember("insight-club@syu.ac.kr", "insight-pass-123")
+  const groupId = getDatabase().accounts.find((account) => account.email === "insight-club@syu.ac.kr")!.id
+  const { token: brand, listingId } = await listedMember("insight@insight-cafe.kr", "insight-pass-123", "브랜드")
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date())
+  await call("POST", "/events", { name: "리포트 공연", date: today, people: "120명", types: ["현금"] }, group)
+  await call("POST", "/proposals", { matchId: listingId }, group)
+  const request = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
+  await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+  await call("GET", `/agreements/${request.id}`, undefined, brand)
+  const id = `sp-${request.id}`
+  const locked = (await call("GET", `/insights/${id}`, undefined, brand)).data
+  assert.deepEqual([locked.locked, locked.price, locked.open], [true, 50000, true])
+  assert.equal((await call("GET", `/insights/${id}`, undefined, group)).status, 404)
+  assert.equal((await call("PUT", `/insights/${id}/lift`, { before: 30, during: 45 }, brand)).status, 402)
+  assert.equal((await call("POST", `/insights/${id}/share`, undefined, brand)).status, 402)
+
+  // Bought by transfer, it opens.
+  const { order } = (await call("POST", "/billing/orders", { kind: "report", targetId: id }, brand)).data
+  assert.deepEqual([order.amount, order.orderName], [50000, "리포트 공연 상세 성과 리포트"])
+  const { markPaid, paymentsOf } = await import("./lib/billing.js")
+  markPaid(getDatabase(), paymentsOf(getDatabase()).find((item) => item.id === order.id)!, { method: "transfer" })
+  const opened = (await call("GET", `/insights/${id}`, undefined, brand)).data
+  assert.equal(opened.locked, false)
+  assert.equal(opened.report.effect, null)
+  assert.equal((await call("POST", "/billing/orders", { kind: "report", targetId: "sp-nope" }, brand)).status, 404)
+
+  // The store's counts give the effect over the usual days.
+  assert.equal((await call("PUT", `/insights/${id}/lift`, { before: 0, during: 45 }, brand)).status, 400)
+  const effect = (await call("PUT", `/insights/${id}/lift`, { before: 30, during: 45 }, brand)).data.report.effect
+  assert.deepEqual([effect.lift, effect.days, effect.extraVisitors], [50, 9, 135])
+
+  // A read-only link, until it is turned off.
+  const { shareToken } = (await call("POST", `/insights/${id}/share`, undefined, brand)).data
+  assert.equal((await call("GET", `/insights/shared/${shareToken}`)).data.report.sponsorship.id, id)
+  assert.equal((await call("DELETE", `/insights/${id}/share`, undefined, brand)).status, 204)
+  assert.equal((await call("GET", `/insights/shared/${shareToken}`)).status, 404)
+})

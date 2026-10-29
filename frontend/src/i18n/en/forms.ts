@@ -610,6 +610,8 @@ const en: Record<string, string> = {
   "계좌 입금을 요청했어요. 입금이 확인되면 계약서가 확인돼요.": "Bank transfer requested. The e-contract is confirmed once the transfer arrives.",
   "플랫폼 수수료 결제": "Pay the platform fee",
   "수수료, 상세 리포트, 프로 결제와 영수증이에요.": "Fees, detailed reports, Pro, and their receipts.",
+  "열어 봄": "Opened",
+  "아직 안 열어 봄": "Not opened yet",
 }
 
 export default en
