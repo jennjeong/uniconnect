@@ -351,6 +351,27 @@ const en: Record<string, string> = {
   "우리 단체 현장 확인": "Our group's venue page",
   "임시 전자 계약서에서 우리 단체가 확인하기로 한 협찬 확인 방식(부스 스탬프, SNS 인증 등)을 행사 날 이 주소에서 기록해요. 우리 단체 담당자에게만 알려 주세요.":
     "On the event day, record the methods your group agreed to confirm (booth stamps, SNS posts and so on) at this address. Share it only with your group's staff.",
+  // The participants' optional survey (checkin/CheckInPage.tsx, data/survey.ts)
+  "10초 설문 (선택)": "10-second survey (optional)",
+  "이름이나 연락처는 묻지 않아요. 답은 행사별 숫자로만 모아 행사를 더 좋게 만드는 데 써요.": "No names or contacts. Answers are only counted per event, to make events better.",
+  "건너뛰기": "Skip",
+  "학년": "Year",
+  "전공 계열": "Field of study",
+  "쿠폰 가게에 가 본 적 있나요?": "Have you been to the coupon's store before?",
+  "1학년": "1st year",
+  "2학년": "2nd year",
+  "3학년": "3rd year",
+  "4학년 이상": "4th year or above",
+  "대학원생": "Graduate student",
+  "졸업생 · 기타": "Alumni · other",
+  "인문 · 사회": "Humanities · social sciences",
+  "경영 · 경제": "Business · economics",
+  "자연 · 공학": "Science · engineering",
+  "의약 · 보건": "Medicine · health",
+  "예체능": "Arts · sports",
+  "처음이에요": "First time",
+  "가 본 적 있어요": "Been before",
+  "잘 모르겠어요": "Not sure",
 }
 
 export default en

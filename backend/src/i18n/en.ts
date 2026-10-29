@@ -343,6 +343,9 @@ const en: Record<string, string> = {
   "데모 계정은 리포트를 공유할 수 없어요.": "The demo accounts can't share reports.",
   "상세 리포트를 산 뒤에 공유할 수 있어요.": "Buy the detailed report to share it.",
   "공유가 끝났거나 없는 리포트예요.": "This report is no longer shared, or doesn't exist.",
+  // The participants' optional survey (routes/checkin.ts)
+  "이미 설문에 답했어요.": "You've already answered the survey.",
+  "답을 하나 이상 골라 주세요.": "Please choose at least one answer.",
   // Pro (lib/pro.ts)
   "무료 요금제는 한 달에 협찬 제안 {name}건까지예요. 캠퍼스 파트너스로 바꾸면 제한 없이 보낼 수 있어요.":
     "The free plan sends up to {name} proposals a month. Switch to Campus Partners to send without a limit.",

@@ -4933,3 +4933,18 @@ test("with Toss test keys the demo brand shows the whole payment flow; with none
     config.tossSecretKey = saved.secret
   }
 })
+
+test("a participant answers the optional survey once, counted only per event", async () => {
+  const scanned = (await call("POST", "/check-in/20261012/scans")).data
+  const answer = (body: object) => call("POST", "/check-in/20261012/survey", { pass: scanned.pass, ...body })
+  assert.equal((await call("POST", "/check-in/20261012/survey", { pass: "nope", grade: "1학년" })).status, 403)
+  assert.equal((await answer({ grade: "없는 학년" })).status, 400)
+  const before = getDatabase().measurements.find((item) => item.code === "20261012")!.survey!
+  const { responses, grade } = { responses: before.responses, grade: before.grade["2학년"] ?? 0 }
+  assert.equal((await answer({ grade: "2학년", field: "자연 · 공학", visited: "처음이에요" })).status, 201)
+  assert.equal((await answer({ grade: "2학년" })).status, 409)
+  const after = getDatabase().measurements.find((item) => item.code === "20261012")!
+  assert.deepEqual([after.survey!.responses, after.survey!.grade["2학년"]], [responses + 1, grade + 1])
+  // Nothing about the answer is kept with the pass but that it answered.
+  assert.deepEqual(after.passes[scanned.pass], { surveyed: true })
+})

@@ -16649,6 +16649,71 @@ body.checkin-body {
   font-weight: var(--weight-strong);
 }
 
+/* The optional survey on the check-in page: each question a row of chips. */
+.checkin-survey {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+  padding: 18px;
+  border-radius: 18px;
+  background: var(--fill);
+  text-align: left;
+}
+
+.checkin-survey h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.checkin-survey > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.checkin-survey fieldset {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.checkin-survey legend {
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.checkin-survey fieldset > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.checkin-survey fieldset button {
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: var(--ring);
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.checkin-survey fieldset button.on {
+  background: var(--point);
+  box-shadow: none;
+  color: var(--on-point);
+}
+
+.checkin-survey-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .checkin-footer {
   color: var(--muted);
   font-size: 11px;

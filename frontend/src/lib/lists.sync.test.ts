@@ -14,6 +14,7 @@ import { reportReasons } from "../data/reports"
 import { reviewTags } from "../data/reviews"
 import { accountTypes, councilTypes, roles } from "../data/roles"
 import { sponsorOptions, valueTypes } from "../data/sponsorTypes"
+import { surveyOptions } from "../data/survey"
 import { passwordProblem } from "./password"
 
 // Lists the server checks input against (backend/src/lib/validation.ts) and
@@ -42,6 +43,10 @@ describe("the screens offer the choices the server takes", () => {
     expect(inquiryCategories).toEqual(server.inquiryCategories)
     expect(reportReasons).toEqual(server.reportReasons)
     expect(mailKinds.map((item) => item.kind)).toEqual(server.mailKinds)
+  })
+
+  test("the participants' survey answers", () => {
+    expect(surveyOptions).toEqual(server.surveyOptions)
   })
 
   test("kinds of shop to look for around the campus", () => {

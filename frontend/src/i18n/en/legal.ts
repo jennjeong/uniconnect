@@ -247,6 +247,8 @@ const en: Record<string, string> = {
     "Campus Partners: brands can use Campus Partners at 300,000 KRW for 30 days. It sends proposals without a limit (the free plan sends 5 a month), opens every detailed analysis report, adds the campus portfolio analysis, sends the operators 2 one-to-one partner requests a month, and puts a PARTNERS mark on the brand card. It doesn't renew by itself; paying again adds 30 days after the days left.",
   "캠퍼스 파트너스 환불: 결제하고 7일 안에는 모두 돌려드리고, 그 뒤에는 남은 날만큼 날짜로 나눠 돌려드려요.":
     "Campus Partners refunds: fully refunded within 7 days of paying, and after that for the days left, pro rata.",
+  "참여자가 고르면 답하는 선택 설문(학년, 전공 계열, 쿠폰 가게에 가 본 적이 있는지)은 누가 답했는지 남기지 않고 행사별 숫자로만 모아요. 브랜드의 상세 분석 리포트에 관객 구성으로 보여요.":
+    "The optional survey participants may answer (year, field of study, whether they had been to the coupon's store) keeps no record of who answered; it is only counted per event, and shows as the audience in the brand's detailed analysis report.",
 }
 
 export default en

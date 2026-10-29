@@ -397,7 +397,16 @@ export type MeasurementGoals = {
 
 // A coupon participants take at the check-in page, by its number.
 // `coupon` is true on passes from before numbers were issued.
-export type PassCoupon = { coupon?: string | true; visit?: true }
+export type PassCoupon = { coupon?: string | true; visit?: true; surveyed?: true }
+
+// The participants' optional survey answers on the check-in page, kept only
+// as counts for the event (never with the pass or anyone's details).
+export type SurveyCounts = {
+  responses: number
+  grade: Record<string, number>
+  field: Record<string, number>
+  visited: Record<string, number>
+}
 
 // One brand sponsoring a student event, on that event's measurement: its own
 // coupon, the PIN its store staff confirm visits with, its counts and the
@@ -450,6 +459,8 @@ export type Measurement = {
   // visit once: the event's coupon on the pass itself, sponsors' coupons
   // under their ids. The number is what the store staff enter.
   passes: Record<string, PassCoupon & { sponsors?: Record<string, PassCoupon> }>
+  // The optional survey's answers, counted (lib/validation.ts surveyOptions).
+  survey?: SurveyCounts
 }
 
 // Performance report of one event, worked out from its measurement and

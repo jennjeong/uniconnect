@@ -431,6 +431,8 @@ export const api = {
   checkIn: (code: string) => request<CheckInInfo>(`/check-in/${encodeURIComponent(code)}`),
   // A scan answers a pass; a coupon sends it with the coupon's id and
   // answers its number.
+  answerSurvey: (code: string, body: { pass: string; grade?: string; field?: string; visited?: string }) =>
+    request<{ ok: true }>(`/check-in/${encodeURIComponent(code)}/survey`, { method: "POST", body }),
   recordCheckIn: (code: string, kind: "scans" | "coupons", body?: { pass: string; couponId?: string }) =>
     request<{ entry: MetricEntry; pass?: string; coupon?: string }>(
       `/check-in/${encodeURIComponent(code)}/${kind}`,
