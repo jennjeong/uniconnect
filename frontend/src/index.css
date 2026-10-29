@@ -13108,6 +13108,177 @@ button.nav-pill:hover {
   justify-self: start;
 }
 
+/* The notice's showing period: a field like the form's boxes that opens
+   the site's month calendar (components/DatePicker.tsx) in a popover,
+   drawn in the console's flatter style. */
+.console-period {
+  position: relative;
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 6px;
+}
+
+.console-period > span {
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.console-period-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--fill);
+  color: var(--muted);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+}
+
+.console-period-button.set {
+  color: var(--ink);
+}
+
+.console-period-button .icon {
+  flex: none;
+  color: var(--point-strong);
+  stroke: currentColor;
+}
+
+.console-period-button[aria-expanded="true"] {
+  box-shadow: inset 0 0 0 2px var(--console-blue);
+}
+
+.console-period-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 20;
+  display: grid;
+  gap: 12px;
+  width: min(340px, calc(100vw - 48px));
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: 0 0 0 1px var(--line), 0 16px 40px rgba(0, 27, 55, 0.16);
+  animation: fade-in 0.2s var(--ease-out);
+}
+
+.console-period-pop > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.console-period-pop > div:last-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.console-period-pop .primary-button {
+  min-height: 36px;
+  padding: 0 16px;
+  font-size: 13px;
+}
+
+.console-period-pop .date-picker-head {
+  margin-bottom: 6px;
+}
+
+.console-period-pop .date-picker-head strong {
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.console-period-pop .calendar-nav {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-soft);
+  box-shadow: none;
+}
+
+.console-period-pop .calendar-nav:hover {
+  background: var(--fill);
+}
+
+.console-period-pop .calendar-weekdays {
+  margin-bottom: 2px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* No gap across a week, so a period reads as one bar. */
+.console-period-pop .date-picker-grid {
+  gap: 2px 0;
+}
+
+.console-period-pop .date-cell {
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.console-period-pop .date-cell:hover {
+  background: var(--fill);
+}
+
+.console-period-pop .date-cell.sunday {
+  color: var(--red);
+}
+
+.console-period-pop .date-cell.saturday {
+  color: var(--point-strong);
+}
+
+.console-period-pop .date-cell.outside {
+  color: var(--muted);
+  font-weight: var(--weight-body);
+}
+
+.console-period-pop .date-cell.today {
+  box-shadow: inset 0 0 0 1px var(--console-blue);
+  font-weight: var(--weight-display);
+}
+
+.console-period-pop .date-cell.in-range {
+  border-radius: 0;
+  background: var(--point-tint);
+  color: var(--point-strong);
+}
+
+.console-period-pop .date-cell.in-range:nth-child(7n + 1) {
+  border-radius: 10px 0 0 10px;
+}
+
+.console-period-pop .date-cell.in-range:nth-child(7n) {
+  border-radius: 0 10px 10px 0;
+}
+
+.console-period-pop .date-cell.range-start:not(:nth-child(7n)) {
+  border-radius: 10px 0 0 10px;
+}
+
+.console-period-pop .date-cell.range-end:not(:nth-child(7n + 1)) {
+  border-radius: 0 10px 10px 0;
+}
+
+.console-period-pop .date-cell.selected {
+  background: var(--point);
+  color: var(--on-point);
+  box-shadow: none;
+}
+
 .console-notices {
   display: grid;
   gap: 8px;

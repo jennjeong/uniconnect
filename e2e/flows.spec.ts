@@ -1487,6 +1487,18 @@ test("the operators' console stands on its own: token, side menu, members and a 
   await openMenu()
   await menu.getByRole("button", { name: "공지" }).click()
   await page.getByLabel("내용").fill("오늘 밤 점검이 있어요")
+  // The showing period opens the site's calendar in a popover; a picked day
+  // shows on the field, and clearing it goes back to from now on.
+  const period = page.getByRole("button", { name: /게시 기간/ })
+  await expect(period).toContainText("바로 올리고 내릴 때까지")
+  await period.click()
+  const picker = page.getByRole("dialog", { name: "게시 기간 고르기" })
+  await picker.locator(".date-cell.today").click()
+  await expect(period).not.toContainText("바로 올리고 내릴 때까지")
+  await picker.getByRole("button", { name: "기간 비우기" }).click()
+  await page.keyboard.press("Escape")
+  await expect(picker).toHaveCount(0)
+  await expect(period).toContainText("바로 올리고 내릴 때까지")
   await page.getByRole("button", { name: "공지 올리기" }).click()
   await expect(page.locator(".console-notices li.live")).toContainText("오늘 밤 점검이 있어요")
   await openMenu()

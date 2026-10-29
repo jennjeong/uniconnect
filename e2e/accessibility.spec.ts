@@ -130,5 +130,10 @@ for (const width of [1280, 390]) {
         await expect(page.getByText("불러오고 있어요…")).toHaveCount(0)
       })
     }
+    // The notice's period calendar, open.
+    await expectNoBlockingProblems(page, "/admin?view=notices", async () => {
+      await page.getByRole("button", { name: /게시 기간/ }).click()
+      await expect(page.getByRole("dialog", { name: "게시 기간 고르기" })).toBeVisible()
+    })
   })
 }
