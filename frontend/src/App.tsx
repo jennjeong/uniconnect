@@ -12,6 +12,7 @@ import {
 import { Loader } from "./components/Loader"
 import { CampaignMeasurement } from "./components/CampaignMeasurement"
 import { Presence } from "./components/Presence"
+import { ProfileChecklist } from "./components/ProfileChecklist"
 import { Toast } from "./components/Toast"
 import { demoAccounts } from "./data/demo"
 import type { LegalKind } from "./data/legal"
@@ -186,6 +187,9 @@ function App() {
   const [sponsorships, setSponsorships] = useState<Sponsorship[]>([])
   // The account's own listing (null until written) and its conversations.
   const [listing, setListing] = useState<Match | null>(null)
+  // Whose listing has arrived (an account id), so the dashboard's checklist
+  // waits for it rather than counting steps as left.
+  const [listingFor, setListingFor] = useState<string | null>(null)
   const [conversations, setConversations] = useState<Conversation[]>([])
   // The account's questions to the operators, for the bell's answer notice.
   const [inquiries, setInquiries] = useState<Inquiry[]>([])
@@ -442,7 +446,9 @@ function App() {
     api
       .profile()
       .then((result) => {
-        if (!cancelled) setListing(result.profile)
+        if (cancelled) return
+        setListing(result.profile)
+        setListingFor(accountId)
       })
       .catch(() => {})
     const loadConversations = () =>
@@ -1068,6 +1074,20 @@ function App() {
     />
   )
 
+  // A new member's checklist under the dashboard's hero, once its listing and
+  // events have arrived (never for the shared demo accounts).
+  const checklist =
+    member && account && listingFor === account.id && eventsFor === viewer ? (
+      <ProfileChecklist
+        accountId={account.id}
+        role={account.role}
+        listing={listing}
+        hasEvent={events.length > 0}
+        onEditProfile={() => go({ page, profile: "edit" })}
+        onCreate={() => openCreate()}
+      />
+    ) : undefined
+
   const renderPage = (): ReactNode => {
     if (view.missing) return <NotFoundPage onHome={goHome} onNavigate={navigate} role={role} />
     if (view.home) {
@@ -1372,6 +1392,7 @@ function App() {
             demo={visitor}
             paused={listing?.pausedAt !== undefined}
             onResume={() => pauseListing(false)}
+            checklist={checklist}
           />
         ) : (
           <BrandDashboardPage
@@ -1394,6 +1415,7 @@ function App() {
             onInstall={installKind === "app" ? undefined : startInstall}
             paused={listing?.pausedAt !== undefined}
             onResume={() => pauseListing(false)}
+            checklist={checklist}
           />
         )
     }

@@ -310,6 +310,32 @@ test("a member hides its listing from 내 정보 and shows it again from the das
   expect(left.status()).toBe(204)
 })
 
+test("a new member's dashboard lists what to fill in, and folds it for later", async ({ page, request }) => {
+  const group = await signUpMember(request, "학생단체", "e2e-checklist@syu.ac.kr", "새내기 동아리")
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
+  await page.goto("/dashboard")
+  const checklist = page.getByRole("region", { name: "소개를 채울수록 잘 맞는 상대를 찾아 드려요" })
+  const progress = checklist.getByRole("progressbar", { name: "소개 완성도" })
+  await expect(progress).toHaveAttribute("aria-valuenow", "0")
+  await expect(checklist.getByRole("listitem")).toHaveCount(6)
+  await checklist.getByRole("button", { name: "소개 쓰기" }).click()
+  await expect(page).toHaveURL(/\/me\/edit$/)
+  // A registered event checks its step.
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date())
+  await request.post("/api/events", { data: { name: "첫 공연", date: today, types: ["현금"] }, headers: group.headers })
+  await page.goto("/dashboard")
+  await expect(progress).toHaveAttribute("aria-valuenow", "1")
+  // 나중에 folds it to one line, kept after a reload.
+  await checklist.getByRole("button", { name: "나중에" }).click()
+  const folded = page.getByRole("region", { name: "소개 완성 체크리스트" })
+  await expect(folded).toContainText("1/6 완료")
+  await page.reload()
+  await folded.getByRole("button", { name: "펼치기" }).click()
+  await expect(checklist).toBeVisible()
+  const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: group.headers })
+  expect(left.status()).toBe(204)
+})
+
 test("a student group proposes and the brand accepts", async ({ browser }) => {
   const student = await (await browser.newContext()).newPage()
   await student.goto("/")
