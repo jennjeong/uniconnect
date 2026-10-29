@@ -198,7 +198,12 @@ npm run dev
 
 - 공개 화면(소개 페이지, 추천 매칭, 단체 찾기, 상세 프로필, FAQ, 약관)은 검색엔진에 나옵니다(`frontend/.figma/make/site.json`의 `robots.index`).
 - 한 계정이나 한 링크를 위한 화면에는 `noindex`를 붙입니다(`lib/pageMeta.ts`의 `noindex`). 대시보드(예시 데이터나 계정마다 다른 화면), 내 정보, 메시지, 내 행사·성과 화면, 운영자 화면, 임시 전자 계약서, 초대장, 체크인, 404 화면이 여기에 해당합니다.
-- `frontend/public/robots.txt`는 `/api/`, `/check-in/`, `/invite/`를 빼고 크롤링을 허용합니다.
+- `frontend/public/robots.txt`는 `/api/`, `/check-in/`, `/invite/`를 빼고 크롤링을 허용하고, `Sitemap:` 줄로 사이트맵을 알려 줍니다.
+- `/sitemap.xml`은 빌드할 때 `site.json`의 `url`(사이트 주소)과 `sitemap`(공개 페이지: 소개, 추천 매칭, 단체 찾기, FAQ, 약관, 개인정보 처리방침)으로 만들어집니다. 목록의 주소가 실제 화면이고 `noindex`가 아닌지, robots.txt의 주소와 맞는지 `lib/sitemap.test.ts`가 확인합니다. 사이트 주소가 바뀌면 `url`과 robots.txt를 함께 바꿔요.
+- 네이버 서치어드바이저와 구글 서치 콘솔의 사이트 소유 확인은 `site.json`의 `verification.naver` · `verification.google`에 받은 코드를 넣으면 모든 페이지 머리에 확인용 메타 태그(`naver-site-verification` · `google-site-verification`)가 들어갑니다. 등록하는 순서:
+  1. 네이버 서치어드바이저(searchadvisor.naver.com)에서 사이트 주소를 등록하고, 'HTML 태그' 방식의 `content` 값을 받습니다.
+  2. 그 값을 `verification.naver`에 넣어 배포한 뒤 서치어드바이저에서 '소유확인'을 누릅니다.
+  3. '요청 → 사이트맵 제출'에 `https://uniconnect-pied.vercel.app/sitemap.xml`을 넣습니다. 구글 서치 콘솔도 같은 방식입니다.
 - `frontend/public/llms.txt`는 AI 에이전트에게 서비스와 주요 화면을 소개합니다.
 
 ### 로고

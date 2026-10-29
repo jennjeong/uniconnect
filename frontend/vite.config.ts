@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import path from 'node:path'
 
 import siteConfiguration from './.figma/make/site.json'
+import { sitemapXml } from './src/lib/sitemap'
 
 
 // Vite config — https://vitejs.dev/config/
@@ -58,8 +59,18 @@ type FigmaSiteConfiguration = {
   title?: string
   description?: string
   language?: string
+  // The site's public address, for the sitemap's links.
+  url?: string
   robots?: {
     index?: boolean
+  }
+  // The public pages listed in /sitemap.xml (lib/sitemap.test.ts checks them).
+  sitemap?: string[]
+  // Site ownership codes from Google Search Console and Naver Search
+  // Advisor, written into each page's head once set.
+  verification?: {
+    google?: string
+    naver?: string
   }
   icons?: {
     icon?: string
@@ -105,6 +116,13 @@ function figmaSiteConfiguration(config: FigmaSiteConfiguration): Plugin {
   const bodyStart = config.customScripts?.bodyStart ?? ''
   const bodyEnd = config.customScripts?.bodyEnd ?? ''
   const robotsTxt = config.robots?.index === false ? 'User-agent: *\nDisallow: /\n' : ''
+  // Nothing to list while the whole site stays out of search.
+  const sitemap =
+    config.url && config.sitemap?.length && config.robots?.index !== false ? sitemapXml(config.url, config.sitemap) : ''
+  const verification = {
+    'google-site-verification': sanitizeHtmlValue(config.verification?.google),
+    'naver-site-verification': sanitizeHtmlValue(config.verification?.naver),
+  }
   // Google's gtag set-up, as a file of its own (/ga-init.js) rather than an
   // inline script, which the server's Content-Security-Policy blocks.
   const gaInit = googleAnalyticsId
@@ -123,6 +141,12 @@ gtag('config', ${JSON.stringify(googleAnalyticsId)});
 
         res.setHeader('Content-Type', 'text/plain; charset=utf-8')
         res.end(robotsTxt)
+      })
+      server.middlewares.use((req, res, next) => {
+        if (!sitemap || req.url?.split('?')[0] !== '/sitemap.xml') return next()
+
+        res.setHeader('Content-Type', 'application/xml; charset=utf-8')
+        res.end(sitemap)
       })
       server.middlewares.use((req, res, next) => {
         if (!gaInit || req.url?.split('?')[0] !== '/ga-init.js') return next()
@@ -146,6 +170,13 @@ gtag('config', ${JSON.stringify(googleAnalyticsId)});
           source: gaInit,
         })
       }
+      if (sitemap) {
+        this.emitFile({
+          type: 'asset',
+          fileName: 'sitemap.xml',
+          source: sitemap,
+        })
+      }
     },
     transformIndexHtml: {
       order: 'pre',
@@ -164,6 +195,9 @@ gtag('config', ${JSON.stringify(googleAnalyticsId)});
         }
         if (config.robots?.index === false) {
           tags.push({ tag: 'meta', attrs: { name: 'robots', content: 'noindex, nofollow' }, injectTo: 'head' })
+        }
+        for (const [name, content] of Object.entries(verification)) {
+          if (content) tags.push({ tag: 'meta', attrs: { name, content }, injectTo: 'head' })
         }
         if (favicon) {
           tags.push({ tag: 'link', attrs: { rel: 'icon', href: favicon }, injectTo: 'head' })

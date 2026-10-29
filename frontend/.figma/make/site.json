@@ -2,8 +2,21 @@
   "title": "uniconnect",
   "description": "학생단체와 브랜드를 연결하는 협찬 매칭 서비스, 유니커넥트",
   "language": "ko",
+  "url": "https://uniconnect-pied.vercel.app",
   "robots": {
     "index": true
+  },
+  "sitemap": [
+    "/",
+    "/matches",
+    "/groups",
+    "/faq",
+    "/terms",
+    "/privacy"
+  ],
+  "verification": {
+    "google": "",
+    "naver": ""
   },
   "accessibility": {
     "addBypassLinks": false,

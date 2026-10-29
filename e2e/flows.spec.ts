@@ -17,6 +17,18 @@ async function logIn(page: Page, role: "학생단체" | "브랜드", email: stri
   await expect(dialog).toBeHidden()
 }
 
+test("search engines find the sitemap from robots.txt", async ({ request }) => {
+  const robots = await (await request.get("/robots.txt")).text()
+  expect(robots).toContain("Sitemap: https://uniconnect-pied.vercel.app/sitemap.xml")
+  const sitemap = await request.get("/sitemap.xml")
+  expect(sitemap.status()).toBe(200)
+  expect(sitemap.headers()["content-type"]).toMatch(/xml/)
+  const xml = await sitemap.text()
+  expect(xml).toContain("<loc>https://uniconnect-pied.vercel.app/faq</loc>")
+  // Screens kept out of search stay out of it.
+  expect(xml).not.toContain("/dashboard")
+})
+
 test("visitors browse the site, its help and its 404 page", async ({ page }) => {
   await page.goto("/")
   await expect(page).toHaveTitle(/uniconnect/)
