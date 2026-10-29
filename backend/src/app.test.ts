@@ -4993,3 +4993,51 @@ test("the operators' console lists what needs them, members with their record, a
     config.adminToken = saved
   }
 })
+
+test("operators keep notes on members, post notices and read their own log and the services' state", async () => {
+  const saved = config.adminToken
+  config.adminToken = "test-admin-token"
+  const admin = (method: string, route: string, body?: unknown) =>
+    fetch(`${baseUrl}/admin${route}`, {
+      method,
+      headers: { "Content-Type": "application/json", "X-Admin-Token": "test-admin-token" },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    }).then(async (response) => ({ status: response.status, data: (await response.json()) as Record<string, any> }))
+  try {
+    for (const route of ["/log", "/health", "/announcements"]) assert.equal((await fetch(`${baseUrl}/admin${route}`)).status, 403)
+
+    // A note on a member, then the member leaves and takes it along.
+    const token = await signUpMember("noted@syu.ac.kr", "noted-pass-123")
+    const id = getDatabase().accounts.find((account) => account.email === "noted@syu.ac.kr")!.id
+    assert.equal((await admin("PUT", `/accounts/${id}/note`, { note: "x".repeat(1001) })).status, 400)
+    const noted = (await admin("PUT", `/accounts/${id}/note`, { note: "신고 두 번, 다음엔 정지" })).data.account
+    assert.equal(noted.note.text, "신고 두 번, 다음엔 정지")
+    const log = (await admin("GET", "/log")).data.entries
+    assert.deepEqual([log[0].action, log[0].target, log[0].label], ["note-saved", { kind: "account", id }, "noted 동아리"])
+    assert.equal((await call("DELETE", "/auth/account", { password: "noted-pass-123" }, token)).status, 204)
+    assert.equal(getDatabase().adminNotes?.[id], undefined)
+    assert.ok(!(await admin("GET", "/log")).data.entries.some((entry: { target: { id: string } }) => entry.target.id === id))
+
+    // A notice for brands only, then one for everyone that ends.
+    assert.equal((await admin("POST", "/announcements", { text: "", tone: "info", audience: "all" })).status, 400)
+    assert.equal((await admin("POST", "/announcements", { text: "점검", tone: "loud", audience: "all" })).status, 400)
+    assert.equal((await admin("POST", "/announcements", { text: "점검", tone: "info", audience: "all", until: "2000-01-01" })).status, 400)
+    const brands = (await admin("POST", "/announcements", { text: "브랜드 정산 안내", tone: "info", audience: "브랜드" })).data.announcement
+    const all = (await admin("POST", "/announcements", { text: "오늘 밤 점검이 있어요", tone: "warning", audience: "all" })).data.announcement
+    const seen = (await call("GET", "/announcements")).data.announcements.map((item: { id: string }) => item.id)
+    assert.ok(seen.includes(all.id))
+    assert.ok(!seen.includes(brands.id))
+    assert.equal((await admin("POST", `/announcements/${all.id}/end`)).status, 200)
+    assert.ok(!(await call("GET", "/announcements")).data.announcements.some((item: { id: string }) => item.id === all.id))
+    const listed = (await admin("GET", "/announcements")).data.announcements
+    assert.equal(listed.find((item: { id: string }) => item.id === all.id).live, false)
+
+    // Which services are set up, as yes or no only.
+    const health = (await admin("GET", "/health")).data
+    assert.equal(health.storage, "file")
+    assert.ok(health.checks.every((check: { key: string; on: unknown }) => typeof check.on === "boolean"))
+    assert.ok(!JSON.stringify(health).includes("test-admin-token"))
+  } finally {
+    config.adminToken = saved
+  }
+})

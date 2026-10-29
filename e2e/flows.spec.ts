@@ -1481,4 +1481,22 @@ test("the operators' console stands on its own: token, side menu, members and a 
   await expect(page).toHaveURL(/view=members&q=muse/)
   await expect(page.getByRole("button", { name: "삼육대 뮤즈" })).toBeVisible()
   await expect(page.getByRole("button", { name: "오후의 커피" })).toHaveCount(0)
+
+  // A notice posted here shows across the site until a visitor closes it,
+  // and the log keeps that it went up.
+  await openMenu()
+  await menu.getByRole("button", { name: "공지" }).click()
+  await page.getByLabel("내용").fill("오늘 밤 점검이 있어요")
+  await page.getByRole("button", { name: "공지 올리기" }).click()
+  await expect(page.locator(".console-notices li.live")).toContainText("오늘 밤 점검이 있어요")
+  await openMenu()
+  await menu.getByRole("button", { name: "활동 기록" }).click()
+  await expect(page.locator(".console-table")).toContainText("공지 올림")
+  await page.goto("/faq")
+  const notice = page.getByRole("status").filter({ hasText: "오늘 밤 점검이 있어요" })
+  await expect(notice).toBeVisible()
+  await notice.getByRole("button", { name: "공지 닫기" }).click()
+  await expect(notice).toHaveCount(0)
+  await page.reload()
+  await expect(page.getByText("오늘 밤 점검이 있어요")).toHaveCount(0)
 })

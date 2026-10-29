@@ -9,6 +9,7 @@ import { HttpError } from "./lib/errors.js"
 import { langOf, translate } from "./lib/i18n.js"
 import { readSession } from "./middleware/session.js"
 import { adminRouter } from "./routes/admin.js"
+import { announcementsRouter } from "./routes/announcements.js"
 import { agreementsRouter } from "./routes/agreements.js"
 import { analyticsRouter } from "./routes/analytics.js"
 import { authRouter } from "./routes/auth.js"
@@ -139,6 +140,7 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   app.use("/api/errors", errorsRouter)
   app.use("/api/billing", billingRouter)
   app.use("/api/admin", adminRouter)
+  app.use("/api/announcements", announcementsRouter)
   app.use("/api/cron", cronRouter)
   app.use("/api", () => {
     throw new HttpError(404, "없는 API 경로예요.")

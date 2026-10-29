@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ReactNode } from "react"
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 
 import { ApiError, api, errorMessage } from "../api"
 import logo from "../assets/brand/uniconnect_horizontal.svg"
@@ -12,6 +12,7 @@ import { locale, t } from "../i18n"
 import { formatDateTime } from "../lib/date"
 import { fullWon } from "../lib/sponsorships"
 import { useNotice } from "../hooks/useNotice"
+import { ActivityLog, CsvButton, groupErrors, NoteEditor, Notices, ServiceHealth, TemplatePicker, WaitBadge } from "./AdminTools"
 import type {
   AdminInquiry,
   AdminMember,
@@ -136,7 +137,10 @@ function InquiryCard({
     <article className="admin-card">
       <div className="admin-card-head">
         <span className="admin-category">{t(inquiry.category)}</span>
-        <time dateTime={inquiry.createdAt}>{formatDateTime(inquiry.createdAt)}</time>
+        <span className="admin-card-meta">
+          {!inquiry.answer && <WaitBadge at={inquiry.createdAt} late={2} text={(days) => t("{days}일째 대기", { days })} />}
+          <time dateTime={inquiry.createdAt}>{formatDateTime(inquiry.createdAt)}</time>
+        </span>
       </div>
       <p className="admin-from">
         {inquiry.from ? `${inquiry.from.name} · ${t(inquiry.from.role)} · ${inquiry.from.email}` : t("탈퇴한 회원")}
@@ -157,6 +161,7 @@ function InquiryCard({
             onAnswer(inquiry, draft.trim()).finally(() => setBusy(false))
           }}
         >
+          <TemplatePicker draft={draft} onPick={setDraft} />
           <textarea
             aria-label={t("답변")}
             maxLength={2000}
@@ -243,7 +248,12 @@ function PaymentCard({
     <article className="admin-card admin-payment">
       <div className="admin-card-head">
         <span className="admin-category">{t(paymentKinds[payment.kind])}</span>
-        <time dateTime={payment.paidAt ?? payment.requestedAt}>{formatDateTime(payment.paidAt ?? payment.requestedAt)}</time>
+        <span className="admin-card-meta">
+          {payment.status === "pending" && (
+            <WaitBadge at={payment.requestedAt} late={3} text={(days) => t("{days}일째 입금 대기", { days })} />
+          )}
+          <time dateTime={payment.paidAt ?? payment.requestedAt}>{formatDateTime(payment.paidAt ?? payment.requestedAt)}</time>
+        </span>
       </div>
       <p className="admin-question">
         {payment.orderName} · <strong>{fullWon(payment.amount)}</strong>
@@ -284,9 +294,9 @@ function PaymentCard({
 // server's environment, it shows the platform's figures, then lists the
 // questions sent from the help center, waiting ones first, and sends answers
 // members read under 내 질문.
-type Section = "overview" | "members" | "proposals" | "payments" | "inquiries" | "reports" | "errors"
+type Section = "overview" | "members" | "proposals" | "payments" | "inquiries" | "reports" | "errors" | "notices" | "log" | "health"
 
-const sections: Section[] = ["overview", "members", "proposals", "payments", "inquiries", "reports", "errors"]
+const sections: Section[] = ["overview", "members", "proposals", "payments", "inquiries", "reports", "errors", "notices", "log", "health"]
 
 type Place = { section: Section; member?: string; q?: string }
 
@@ -308,9 +318,11 @@ const placePath = ({ section, member, q }: Place) => {
   return `/admin${query ? `?${query}` : ""}`
 }
 
-// The side menu in two groups: running the service, then looking after
-// the people in it.
-const sectionInfo: { key: Section; label: string; icon: IconName; group: "메뉴" | "지원" }[] = [
+// The side menu in three groups: running the service, looking after the
+// people in it, and the operators' own tools.
+const menuGroups = ["메뉴", "지원", "설정"] as const
+
+const sectionInfo: { key: Section; label: string; icon: IconName; group: (typeof menuGroups)[number] }[] = [
   { key: "overview", label: "개요", icon: "home", group: "메뉴" },
   { key: "members", label: "회원", icon: "users", group: "메뉴" },
   { key: "proposals", label: "제안 · 협찬", icon: "send", group: "메뉴" },
@@ -318,9 +330,10 @@ const sectionInfo: { key: Section; label: string; icon: IconName; group: "메뉴
   { key: "inquiries", label: "문의 · 섭외 요청", icon: "chat", group: "지원" },
   { key: "reports", label: "신고 · 정지", icon: "close", group: "지원" },
   { key: "errors", label: "오류", icon: "search", group: "지원" },
+  { key: "notices", label: "공지", icon: "bell", group: "설정" },
+  { key: "log", label: "활동 기록", icon: "file", group: "설정" },
+  { key: "health", label: "서비스 상태", icon: "check", group: "설정" },
 ]
-
-const menuGroups = ["메뉴", "지원"] as const
 
 // A week's Monday (2026-10-26) as 10/26.
 const weekLabel = (week: string) => `${Number(week.slice(5, 7))}/${Number(week.slice(8, 10))}`
@@ -662,6 +675,25 @@ function Members({
             <option value="suspended">{t("정지됨")}</option>
             <option value="demo">{t("데모 계정")}</option>
           </select>
+          <CsvButton
+            name="members"
+            rows={() => [
+              [t("이름"), t("이메일"), t("유형"), t("종류"), t("학교"), t("가입"), t("마지막 접속"), t("행사"), t("보낸 제안"), t("협찬"), t("상태")],
+              ...(rows ?? []).map((row) => [
+                row.name,
+                row.email,
+                t(row.role),
+                t(row.type),
+                row.school,
+                row.createdAt,
+                row.lastSeen ?? "",
+                row.events,
+                row.sent,
+                row.sponsorships,
+                row.suspendedAt ? t("정지됨") : row.demo ? t("데모") : row.partnersUntil ? "PARTNERS" : t("활동"),
+              ]),
+            ]}
+          />
         </div>
         {!rows ? (
           <p className="field-hint">{t("불러오고 있어요…")}</p>
@@ -727,7 +759,21 @@ function Members({
           <dl className="console-facts">
             <div>
               <dt>{t("이메일")}</dt>
-              <dd>{open.email}</dd>
+              <dd>
+                {open.email}{" "}
+                <button
+                  className="console-inline"
+                  onClick={() =>
+                    void navigator.clipboard.writeText(open.email).then(
+                      () => onNotice(t("이메일을 복사했어요.")),
+                      () => onNotice(open.email),
+                    )
+                  }
+                  type="button"
+                >
+                  {t("복사")}
+                </button>
+              </dd>
             </div>
             {open.contact && (
               <div>
@@ -768,6 +814,7 @@ function Members({
               </dd>
             </div>
           </dl>
+          <NoteEditor member={open} onNotice={onNotice} onSaved={setOpen} token={token} />
           <h3>{t("행사 · 캠페인 {count}", { count: open.eventList.length })}</h3>
           <ul className="console-list">
             {open.eventList.map((event) => (
@@ -860,6 +907,22 @@ function Proposals({ token, onNotice }: { token: string; onNotice: (message: str
           <input checked={examples} onChange={(event) => setExamples(event.target.checked)} type="checkbox" />
           {t("예시 데이터도 보기")}
         </label>
+        <CsvButton
+          name="proposals"
+          rows={() => [
+            [t("보낸 쪽"), t("받은 쪽"), t("방향"), t("행사"), t("날짜"), t("상태"), t("계약서"), t("보낸 날")],
+            ...shown.map((row) => [
+              row.from,
+              row.to,
+              row.kind === "request" ? t("학생단체 → 브랜드") : t("브랜드 → 학생단체"),
+              row.event,
+              row.date,
+              t(row.status),
+              row.confirmed ? t("양쪽 확인") : "",
+              row.createdAt,
+            ]),
+          ]}
+        />
       </div>
       {!rows ? (
         <p className="field-hint">{t("불러오고 있어요…")}</p>
@@ -924,6 +987,26 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
   const [menuOpen, setMenuOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const [search, setSearch] = useState("")
+  const searchRef = useRef<HTMLInputElement>(null)
+  const [groupSame, setGroupSame] = useState(true)
+  // Reads everything again each minute while the operators watch.
+  const [autoRefresh, setAutoRefresh] = useState(false)
+  useEffect(() => {
+    if (!autoRefresh) return
+    const timer = window.setInterval(() => setReload((count) => count + 1), 60_000)
+    return () => window.clearInterval(timer)
+  }, [autoRefresh])
+  // "/" anywhere but a text box jumps to the member search.
+  useEffect(() => {
+    const jump = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      if (event.key !== "/" || event.metaKey || event.ctrlKey || target?.closest("input, textarea, select, [contenteditable]")) return
+      event.preventDefault()
+      searchRef.current?.focus()
+    }
+    document.addEventListener("keydown", jump)
+    return () => document.removeEventListener("keydown", jump)
+  }, [])
   const pick = (next: Section) => {
     setMenuOpen(false)
     setProfileOpen(false)
@@ -1149,11 +1232,14 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
           >
             <Icon name="search" size={16} />
             <input
+              aria-keyshortcuts="/"
               aria-label={t("회원 찾기")}
               onChange={(event) => setSearch(event.target.value)}
               placeholder={t("회원 이름 · 이메일 · 학교")}
+              ref={searchRef}
               value={search}
             />
+            <kbd aria-hidden="true">/</kbd>
           </form>
           <div className="console-bar-end">
             <button aria-label={t("처리할 일 {count}건", { count: todoCount })} className="console-round" onClick={() => pick("overview")} type="button">
@@ -1185,6 +1271,10 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
           </div>
           <div>
             {loadedAt && <small>{t("{time} 기준", { time: formatDateTime(loadedAt) })}</small>}
+            <label className="console-check">
+              <input checked={autoRefresh} onChange={(event) => setAutoRefresh(event.target.checked)} type="checkbox" />
+              {t("1분마다")}
+            </label>
             <button className="console-text-button" onClick={() => setReload((count) => count + 1)} type="button">
               {t("새로고침")}
             </button>
@@ -1208,6 +1298,26 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
 
         {section === "payments" && (
           <section className="console-card">
+            <div className="console-filters end">
+              <CsvButton
+                name="payments"
+                rows={() => [
+                  [t("주문 번호"), t("상품"), t("내용"), t("금액"), t("회원"), t("상태"), t("결제 수단"), t("요청"), t("결제"), t("취소 사유")],
+                  ...payments.map((payment) => [
+                    payment.id,
+                    t(paymentKinds[payment.kind]),
+                    payment.orderName,
+                    payment.amount,
+                    payment.accountName,
+                    payment.status === "paid" ? t("결제 완료") : payment.status === "pending" ? t("결제 대기") : t("취소 · 환불"),
+                    payment.method === "card" ? t("카드") : payment.method === "transfer" ? t("계좌 입금") : "",
+                    payment.requestedAt,
+                    payment.paidAt ?? "",
+                    payment.cancelReason ?? "",
+                  ]),
+                ]}
+              />
+            </div>
             <TabBar
               items={[
                 { value: "pending", label: <>{t("결제 대기")}<em>{payments.filter((item) => item.status === "pending").length}</em></> },
@@ -1318,17 +1428,32 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
           </>
         )}
 
+        {section === "notices" && <Notices onNotice={onNotice} token={token} />}
+
+        {section === "log" && <ActivityLog onNotice={onNotice} token={token} />}
+
+        {section === "health" && <ServiceHealth onNotice={onNotice} token={token} />}
+
         {section === "errors" && (
           <section className="console-card">
+            <div className="console-filters">
+              <label className="console-check">
+                <input checked={groupSame} onChange={(event) => setGroupSame(event.target.checked)} type="checkbox" />
+                {t("같은 오류 묶기")}
+              </label>
+            </div>
             {errors.length === 0 ? (
               <p className="day-empty">{t("기록된 오류가 없어요.")}</p>
             ) : (
               <div className="admin-list">
-                {errors.slice(0, 100).map((entry) => (
+                {(groupSame ? groupErrors(errors) : errors.map((entry) => ({ entry, count: 1 }))).slice(0, 100).map(({ entry, count }) => (
                   <article className="admin-card admin-error" key={entry.id}>
                     <div className="admin-card-head">
                       <span className="admin-category">{entry.source === "server" ? t("서버") : t("화면")}</span>
-                      <time dateTime={entry.at}>{formatDateTime(entry.at)}</time>
+                      <span className="admin-card-meta">
+                        {count > 1 && <span className="console-badge down">{t("{count}번", { count })}</span>}
+                        <time dateTime={entry.at}>{formatDateTime(entry.at)}</time>
+                      </span>
                     </div>
                     <p className="admin-question">{entry.message}</p>
                     <p className="admin-from">
