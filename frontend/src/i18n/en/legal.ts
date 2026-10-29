@@ -152,8 +152,9 @@ const en: Record<string, string> = {
   "7일, 로그아웃하거나 비밀번호를 다시 정하면 바로 삭제":
     "7 days; deleted immediately upon logout or password reset",
   "접속 주소(IP)": "Access address (IP)",
-  "로그인·인증번호 무차별 시도 막기": "Preventing brute-force attempts at login and verification codes",
-  "서버 메모리에만 최대 30분, 파일에 저장하지 않아요": "Up to 30 minutes in server memory only; not saved to files",
+  "로그인·인증번호 무차별 시도와 지나친 요청 막기": "Preventing brute-force attempts at login and verification codes, and floods of requests",
+  "횟수를 세는 동안만(최대 하루). 데이터베이스에는 되돌릴 수 없는 값(해시)으로만 두고, 시간이 지나면 지워요":
+    "Only while requests are counted (a day at most). The database keeps it only as an irreversible value (a hash), deleted once that time is over",
   "현장 QR 참여자": "On-Site QR Participants",
   "행사 현장에서 QR을 스캔한 참여자에게는 이름이나 연락처를 받지 않아요. 서버에는 '참여자 #번호'와 시각, 일회용 참여 코드와 쿠폰 번호, 쿠폰 수령·방문 여부만 남아요. 참여 코드는 행사가 끝나면(쿠폰을 받았다면 쿠폰 사용 기간 7일이 지나면) 지워지고, 집계 숫자만 남아요. 같은 휴대폰에서 두 번 세지 않도록 그 참여 코드를 휴대폰 브라우저에도 저장해요.":
     "No name or contact information is collected from participants who scan a QR code at an event. The server keeps only 'Participant #number' and the time, a one-time participation code and coupon number, and whether a coupon was received and a visit was made. The participation code is deleted when the event ends (or, if a coupon was received, after the coupon's 7-day validity period has passed), and only aggregate counts remain. To avoid counting the same phone twice, the participation code is also stored in the phone's browser.",

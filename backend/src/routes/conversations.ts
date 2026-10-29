@@ -236,11 +236,11 @@ const messagesPerHour = createRateLimit({
 })
 
 // Counts a message against the flood limits, before anything is kept.
-function countMessage(req: Parameters<typeof senderKey>[0], account: Account) {
+async function countMessage(req: Parameters<typeof senderKey>[0], account: Account) {
   const key = senderKey(req, getDatabase(), account)
-  messagesPerMinute.check(key)
-  messagesPerHour.take(key)
-  messagesPerMinute.hit(key)
+  await messagesPerMinute.check(key)
+  await messagesPerHour.take(key)
+  await messagesPerMinute.hit(key)
 }
 
 // Adds a message from this account's side and saves it. The other side is
@@ -274,7 +274,7 @@ conversationsRouter.post("/:id/messages", async (req, res) => {
   const account = requireAccount(req)
   const conversation = findOwn(account, req.params.id)
   const message = messageText(req.body?.text)
-  countMessage(req, account)
+  await countMessage(req, account)
   await addMessage(account, conversation, { text: message }, message.slice(0, 80))
   res.status(201).json({ conversation: view(conversation, sideOf(account), true) })
 })
@@ -310,7 +310,7 @@ conversationsRouter.post("/:id/attachments", async (req, res) => {
   if (storedBytes(getDatabase(), account) + kept.bytes.length > maxStoredBytes) {
     throw new HttpError(409, "보낸 파일이 10MB를 넘어요. 지난 파일 메시지를 지운 뒤 다시 보내 주세요.")
   }
-  countMessage(req, account)
+  await countMessage(req, account)
   const store = photos()
   await store.put(chatFiles(conversation.id), kept.name, kept.bytes)
   const type = photo ? "image" : "pdf"

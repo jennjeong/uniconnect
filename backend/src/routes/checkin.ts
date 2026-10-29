@@ -104,7 +104,7 @@ function newCouponNumber(passes: Measurement["passes"]) {
 // each coupon once (`couponId`, which may be left out while there is only
 // one), each with a number of its own. Store visits are not recorded here.
 checkInRouter.post("/:code/:kind", async (req, res) => {
-  recordsPerClient.take(clientKey(req))
+  await recordsPerClient.take(clientKey(req))
   const { measurement, event } = measurementFor(req.params.code)
   const kind = parseKind(req.params.kind, checkInKinds)
   if (kind !== "visits") assertOpen(getDatabase(), measurement, event, kind)
@@ -165,10 +165,10 @@ checkInRouter.get("/:code/passes/:pass", (req, res) => {
 // event each store has its own PIN, which confirms only its own coupons.
 // The PIN is never typed on, or sent from, a participant's phone.
 checkInRouter.post("/:code/staff/visits", async (req, res) => {
-  recordsPerClient.take(clientKey(req))
+  await recordsPerClient.take(clientKey(req))
   const { measurement, event } = measurementFor(req.params.code)
   assertOpen(getDatabase(), measurement, event, "visits")
-  const sponsor = staffShare(req, measurement)
+  const sponsor = await staffShare(req, measurement)
   if (!usesMethod(activeMethodsOf(measurement, sponsor), "visit")) {
     throw new HttpError(409, "이 협찬은 매장 방문을 확인하지 않아요.")
   }
@@ -198,36 +198,36 @@ checkInRouter.post("/:code/staff/visits", async (req, res) => {
 })
 
 // A wrong PIN counts against the address (for this event) and the event.
-function refusePin(req: Request, message: string): never {
+async function refusePin(req: Request, message: string): Promise<never> {
   const addressKey = `${clientKey(req)} ${req.params.code}`
-  pinFailures.hit(addressKey)
-  pinFailuresPerEvent.hit(String(req.params.code))
+  await pinFailures.hit(addressKey)
+  await pinFailuresPerEvent.hit(String(req.params.code))
   throw new HttpError(403, message)
 }
 
-function checkPinLimits(req: Request) {
-  pinFailures.check(`${clientKey(req)} ${req.params.code}`)
-  pinFailuresPerEvent.check(String(req.params.code))
+async function checkPinLimits(req: Request) {
+  await pinFailures.check(`${clientKey(req)} ${req.params.code}`)
+  await pinFailuresPerEvent.check(String(req.params.code))
 }
 
 // The brand's page (/staff) opens the share whose store PIN it is given: a
 // sponsor's, or the event's own while it has no sponsors.
-function staffShare(req: Request, measurement: Measurement): EventSponsor | undefined {
-  checkPinLimits(req)
+async function staffShare(req: Request, measurement: Measurement): Promise<EventSponsor | undefined> {
+  await checkPinLimits(req)
   const pin = text(req.body?.pin)
   const sponsor = measurement.sponsors.find((item) => item.staffPin === pin)
   if (measurement.sponsors.length ? !sponsor : pin !== measurement.staffPin) {
-    refusePin(req, "직원 PIN이 맞지 않아요. 행사 주최 측에 확인해 주세요.")
+    await refusePin(req, "직원 PIN이 맞지 않아요. 행사 주최 측에 확인해 주세요.")
   }
   return sponsor
 }
 
 // The student group's page (/group) takes the group's own PIN, and opens
 // every share of the event.
-function checkGroupPin(req: Request, measurement: Measurement) {
-  checkPinLimits(req)
+async function checkGroupPin(req: Request, measurement: Measurement) {
+  await checkPinLimits(req)
   if (text(req.body?.pin) !== measurement.groupPin) {
-    refusePin(req, "단체 확인 PIN이 맞지 않아요. 임시 전자 계약서에서 확인해 주세요.")
+    await refusePin(req, "단체 확인 PIN이 맞지 않아요. 임시 전자 계약서에서 확인해 주세요.")
   }
 }
 
@@ -249,17 +249,17 @@ function venueShare(measurement: Measurement, sponsor: EventSponsor | undefined,
 
 // What a venue page shows once its PIN is right, with the event: the
 // brand's page its own share, the group's page every share.
-checkInRouter.post("/:code/staff/session", (req, res) => {
-  recordsPerClient.take(clientKey(req))
+checkInRouter.post("/:code/staff/session", async (req, res) => {
+  await recordsPerClient.take(clientKey(req))
   const { measurement, event } = measurementFor(req.params.code)
-  const sponsor = staffShare(req, measurement)
+  const sponsor = await staffShare(req, measurement)
   res.json({ eventName: event.name, eventDate: event.date, shares: [venueShare(measurement, sponsor, "brand")] })
 })
 
-checkInRouter.post("/:code/group/session", (req, res) => {
-  recordsPerClient.take(clientKey(req))
+checkInRouter.post("/:code/group/session", async (req, res) => {
+  await recordsPerClient.take(clientKey(req))
   const { measurement, event } = measurementFor(req.params.code)
-  checkGroupPin(req, measurement)
+  await checkGroupPin(req, measurement)
   const sponsors = measurement.sponsors.length ? measurement.sponsors : [undefined]
   res.json({
     eventName: event.name,
@@ -274,12 +274,12 @@ checkInRouter.post("/:code/group/session", (req, res) => {
 // try-out), or takes back a mistake (a negative amount, never below zero).
 // Only on the event's days and the day after, except the demo accounts'.
 async function recordAtVenue(req: Request, side: ChatSide) {
-  recordsPerClient.take(clientKey(req))
+  await recordsPerClient.take(clientKey(req))
   const { measurement, event } = measurementFor(String(req.params.code))
   let sponsor: EventSponsor | undefined
-  if (side === "brand") sponsor = staffShare(req, measurement)
+  if (side === "brand") sponsor = await staffShare(req, measurement)
   else {
-    checkGroupPin(req, measurement)
+    await checkGroupPin(req, measurement)
     const share = text(req.body?.share) || eventCoupon
     sponsor = measurement.sponsors.find((item) => item.id === share)
     if (measurement.sponsors.length ? !sponsor : share !== eventCoupon) {

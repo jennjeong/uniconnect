@@ -42,7 +42,8 @@ async function createTable(sql: Sql, text: string) {
 
 // The store's tables, made the first time they are needed: the data as one
 // JSON document with the version each write moves on, hourly copies,
-// agreement photos, and the latest errors for the operators.
+// agreement photos, the latest errors for the operators, and the rate
+// limits' counts that every copy shares (lib/rateLimit.ts).
 export function ensureTables(sql: Sql) {
   tables ??= (async () => {
     await createTable(
@@ -57,6 +58,10 @@ export function ensureTables(sql: Sql) {
     await createTable(
       sql,
       "create table if not exists uniconnect_errors (id text primary key, at timestamptz not null, entry text not null)",
+    )
+    await createTable(
+      sql,
+      "create table if not exists uniconnect_limits (name text not null, key text not null, count integer not null, reset_at bigint not null, primary key (name, key))",
     )
   })().catch((error: unknown) => {
     tables = undefined

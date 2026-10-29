@@ -54,7 +54,7 @@ placesRouter.get("/", async (req, res) => {
     return
   }
   // Each kind is one question to Kakao.
-  kinds.forEach(() => asksPerClient.take(clientKey(req)))
+  for (const _kind of kinds) await asksPerClient.take(clientKey(req))
   try {
     const found = await Promise.all(kinds.map((kind) => nearbyPlaces(campus, kind, key)))
     const database = getDatabase()

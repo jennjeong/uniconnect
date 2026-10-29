@@ -103,7 +103,7 @@ reportsRouter.post("/", async (req, res) => {
       JSON.stringify(report.target) === JSON.stringify(target),
   )
   if (waiting) throw new HttpError(409, "이미 신고했어요. 운영자가 확인하고 있어요.")
-  reportsPerHour.take(account.id)
+  await reportsPerHour.take(account.id)
   database.reports.push({
     id: randomUUID(),
     reporterId: account.id,

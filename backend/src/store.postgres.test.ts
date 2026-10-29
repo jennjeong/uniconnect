@@ -180,8 +180,8 @@ test("a copy that loses the race to make the tables still loads the data", async
   useSql(racing)
   try {
     assert.ok((await store.loadDatabase()).accounts.length > 0)
-    // The data, backups, photos and errors tables each lost once.
-    assert.equal(lost.size, 4)
+    // The data, backups, photos, errors and rate limit tables each lost once.
+    assert.equal(lost.size, 5)
   } finally {
     useSql(sql)
   }
@@ -198,6 +198,48 @@ test("any other error while making the tables still fails the load", async () =>
   try {
     await assert.rejects(store.loadDatabase(), { code: "42501" })
   } finally {
+    useSql(sql)
+  }
+})
+
+test("copies of the API share rate limits through the database, and memory counts when it doesn't answer", async () => {
+  const { createRateLimit, sharedLimits } = await import("./lib/rateLimit.js")
+  // Two copies of the API each make the same limit, as each loads the module.
+  const settings = { limit: 3, windowMs: 60_000, message: "너무 많이 보냈어요." }
+  const first = createRateLimit(settings)
+  const second = createRateLimit(settings)
+  await first.take("1.2.3.4")
+  await second.take("1.2.3.4")
+  await first.take("1.2.3.4")
+  await assert.rejects(second.take("1.2.3.4"), { status: 429 })
+  await assert.rejects(first.check("1.2.3.4"), { status: 429 })
+  // Another key and another limit count apart.
+  await second.take("5.6.7.8")
+  await createRateLimit({ ...settings, message: "다른 한도예요." }).take("1.2.3.4")
+  // Keys are kept as hashes only, never the address or email.
+  const rows = await sql("select key from uniconnect_limits")
+  assert.ok(rows.length >= 3)
+  assert.ok(rows.every((row) => /^[0-9a-f]{64}$/.test(String(row.key))))
+  // A reset from either copy clears it for both.
+  await first.reset("1.2.3.4")
+  await second.check("1.2.3.4")
+
+  // A database that doesn't answer leaves the count to memory, and requests go on.
+  const saved = sharedLimits.waitMs
+  sharedLimits.waitMs = 50
+  useSql(() => new Promise(() => undefined))
+  try {
+    const started = Date.now()
+    const stalled = createRateLimit({ ...settings, limit: 1 })
+    await stalled.take("9.9.9.9")
+    await assert.rejects(stalled.take("9.9.9.9"), { status: 429 })
+    assert.ok(Date.now() - started < 1000)
+    useSql(async () => {
+      throw new Error("connection refused")
+    })
+    await createRateLimit(settings).take("9.9.9.9")
+  } finally {
+    sharedLimits.waitMs = saved
     useSql(sql)
   }
 })
