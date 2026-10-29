@@ -4892,3 +4892,29 @@ test("a free brand sends five proposals a month; Pro lifts the limit for 30 days
   const listing = (seen.brands ?? seen).find((item: { id: string }) => item.id === listingId)
   assert.equal(listing.pro, true)
 })
+
+test("with Toss test keys the demo brand shows the whole payment flow; with none or live keys it can't pay", async () => {
+  const saved = { client: config.tossClientKey, secret: config.tossSecretKey }
+  const demo = await login("브랜드")
+  try {
+    const off = (await call("GET", "/billing", undefined, demo)).data
+    assert.deepEqual([off.testMode, off.canPay], [false, false])
+    assert.equal((await call("POST", "/billing/orders", { kind: "pro", targetId: "" }, demo)).status, 403)
+
+    config.tossClientKey = "test_ck_example"
+    config.tossSecretKey = "test_sk_example"
+    const on = (await call("GET", "/billing", undefined, demo)).data
+    assert.deepEqual([on.testMode, on.canPay], [true, true])
+    const { order } = (await call("POST", "/billing/orders", { kind: "pro", targetId: "" }, demo)).data
+    assert.equal(order.amount, 200000)
+    await call("DELETE", `/billing/orders/${order.id}`, undefined, demo)
+
+    // Live keys: the shared demo accounts never pay for real.
+    config.tossClientKey = "live_ck_example"
+    config.tossSecretKey = "live_sk_example"
+    assert.equal((await call("POST", "/billing/orders", { kind: "pro", targetId: "" }, demo)).status, 403)
+  } finally {
+    config.tossClientKey = saved.client
+    config.tossSecretKey = saved.secret
+  }
+})

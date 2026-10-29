@@ -77,9 +77,10 @@ export function PlanCard({ onNotice }: { onNotice: (message: string) => void }) 
           </article>
         ))}
       </div>
-      <button className="primary-button" onClick={() => setBuying(true)} type="button">
+      <button className="primary-button" disabled={!billing.canPay} onClick={() => setBuying(true)} type="button">
         {plan.pro ? t("프로 {days}일 연장하기", { days: prices.proDays }) : t("프로 시작하기")}
       </button>
+      {!billing.canPay && <p className="field-hint">{t("데모 계정은 테스트 결제로만 시연할 수 있어요.")}</p>}
       <p className="field-hint">{t("자동으로 결제되지 않아요. 끝나는 날이 다가오면 다시 결제해 이어서 쓸 수 있어요.")}</p>
       <Presence show={buying}>
         <PaymentModal

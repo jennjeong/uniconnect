@@ -315,7 +315,7 @@ const en: Record<string, string> = {
   "환불하지 못했어요. {name}": "The refund didn't go through. {name}",
   "판매하지 않는 상품이에요.": "That isn't for sale.",
   "결제할 금액이 없어요.": "There's nothing to pay.",
-  "데모 계정은 결제할 수 없어요.": "The demo accounts can't pay.",
+  "데모 계정은 테스트 결제로만 시연할 수 있어요.": "The demo accounts can only demonstrate with test payments.",
   "결제는 브랜드 계정만 해요.": "Only brand accounts pay.",
   "주문을 찾을 수 없어요.": "We couldn't find that order.",
   "이미 결제한 주문이에요.": "That order is already paid.",
