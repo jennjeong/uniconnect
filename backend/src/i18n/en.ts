@@ -308,6 +308,34 @@ const en: Record<string, string> = {
   "후기는 300자 이하로 적어 주세요.": "Please keep the review to 300 characters or fewer.",
   "지울 후기가 없어요.": "There's no review to delete.",
 
+  // Payments (lib/billing.ts, lib/fees.ts, routes/billing.ts)
+  "결제를 승인하지 못했어요. 다시 시도해 주세요.": "The payment couldn't be approved. Please try again.",
+  "결제를 승인하지 못했어요. {name}": "The payment couldn't be approved. {name}",
+  "환불하지 못했어요. 다시 시도해 주세요.": "The refund didn't go through. Please try again.",
+  "환불하지 못했어요. {name}": "The refund didn't go through. {name}",
+  "판매하지 않는 상품이에요.": "That isn't for sale.",
+  "결제할 금액이 없어요.": "There's nothing to pay.",
+  "데모 계정은 결제할 수 없어요.": "The demo accounts can't pay.",
+  "결제는 브랜드 계정만 해요.": "Only brand accounts pay.",
+  "주문을 찾을 수 없어요.": "We couldn't find that order.",
+  "이미 결제한 주문이에요.": "That order is already paid.",
+  "취소된 주문이에요.": "That order was canceled.",
+  "카드 결제가 아직 준비되지 않았어요.": "Card payment isn't ready yet.",
+  "결제 금액이 주문과 달라요. 다시 결제해 주세요.": "The amount doesn't match the order. Please pay again.",
+  "결제가 끝나지 않았어요. 다시 시도해 주세요.": "The payment didn't finish. Please try again.",
+  "결제를 찾을 수 없어요.": "We couldn't find that payment.",
+  "기다리는 주문만 입금 확인할 수 있어요.": "Only a waiting order can be marked as transferred.",
+  "이미 취소된 결제예요.": "That payment was already canceled.",
+  "협찬액은 0원부터 1억 원까지 원 단위로 적어 주세요.": "Please write the value in whole won, from 0 to 100,000,000.",
+  "현금이나 현물 환산 금액을 적어 주세요.": "Please write a cash or in-kind amount.",
+  "협찬액(현금과 현물 환산)을 먼저 적어 주세요. 수수료는 그 금액으로 정해져요.":
+    "Please write the sponsorship value (cash and in-kind) first. The fee is set from it.",
+  "플랫폼 수수료를 결제하면 확인돼요.": "Pay the platform fee to confirm.",
+  "낼 수수료가 없어요.": "There's no fee to pay.",
+  "끝난 행사의 협찬액은 바꿀 수 없어요.": "The value can't change after the event is over.",
+  "{name}에서 '{event}' 협찬의 협찬액을 바꿨어요. 바뀐 내용을 보고 다시 확인해 주세요.":
+    "{name} changed the value of the '{event}' sponsorship. Please check the change and confirm again.",
+
   // Last, as patterns are tried in order and this one would also take
   // "{label}과 일정을 입력해 주세요." (routes/auth.ts sign-up names).
   "{label}을 입력해 주세요.": "Please enter the {label}.",

@@ -23,6 +23,7 @@ import { Footer } from "./layout/Footer"
 import { Header } from "./layout/Header"
 import { NavMenu } from "./layout/NavMenu"
 import { socialNames } from "./data/social"
+import { readPaymentReturn, withoutPaymentReturn } from "./lib/payments"
 import { lang, t, tc } from "./i18n"
 import { nextEvent, todayIso } from "./lib/date"
 import { saveFile } from "./lib/download"
@@ -92,6 +93,7 @@ const EmailChangeModal = lazy(() => import("./modals/EmailChangeModal").then((mo
 const InviteShopModal = lazy(() => import("./modals/InviteShopModal").then((module) => ({ default: module.InviteShopModal })))
 const PasswordModal = lazy(() => import("./modals/PasswordModal").then((module) => ({ default: module.PasswordModal })))
 const DevicesModal = lazy(() => import("./modals/DevicesModal").then((module) => ({ default: module.DevicesModal })))
+const PaymentsModal = lazy(() => import("./modals/PaymentsModal").then((module) => ({ default: module.PaymentsModal })))
 const JoinTeamModal = lazy(() => import("./modals/JoinTeamModal").then((module) => ({ default: module.JoinTeamModal })))
 const TeamModal = lazy(() => import("./modals/TeamModal").then((module) => ({ default: module.TeamModal })))
 const CouncilLinkModal = lazy(() => import("./modals/CouncilLinkModal").then((module) => ({ default: module.CouncilLinkModal })))
@@ -201,6 +203,8 @@ function App() {
   const [measuredId, setMeasuredId] = useState<string | null>(null)
   // Counts goals saved from an agreement, so the agreement reads them again.
   const [goalsSaved, setGoalsSaved] = useState(0)
+  // Counts payments the payment window finished, so pages read them again.
+  const [paid, setPaid] = useState(0)
   // Brand catalog that student groups browse on the matches page.
   const [brands, setBrands] = useState<Match[]>([])
   // Brand side: the student group catalog, proposals received and results.
@@ -639,6 +643,31 @@ function App() {
         : message,
     )
   }
+
+  // Back from Toss Payments' window (lib/payments.ts): the answer rides in
+  // the address, which loses it at once; a success is approved by the
+  // server, and the page shows what was bought.
+  useEffect(() => {
+    const answer = readPaymentReturn(window.location.search)
+    if (!answer) return
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${window.location.pathname}${withoutPaymentReturn(window.location.search)}${window.location.hash}`,
+    )
+    if (!answer.ok) {
+      showNotice(answer.canceled ? t("결제를 취소했어요.") : answer.message || t("결제하지 못했어요. 다시 시도해 주세요."))
+      return
+    }
+    api.confirmPayment({ orderId: answer.orderId, paymentKey: answer.paymentKey, amount: answer.amount }).then(
+      ({ order }) => {
+        showNotice(t("{name} 결제를 마쳤어요.", { name: order.orderName }))
+        setPaid((count) => count + 1)
+      },
+      (error: unknown) => showNotice(errorMessage(error)),
+    )
+    // Once, as the page opens.
+  }, [])
 
   // Back from Kakao or Naver (routes/social.ts): the outcome rides in
   // ?social=, which goes from the address at once; a login finishes here
@@ -1322,6 +1351,7 @@ function App() {
           id={view.agreement}
           loggedIn={account !== null}
           goalsSaved={goalsSaved}
+          paid={paid}
           onBack={() => goBack({ page, agreements: true })}
           onEditGoals={account ? editGoals : undefined}
           onError={handleError}
@@ -1412,6 +1442,7 @@ function App() {
           onChangePassword={() => setActiveModal("password")}
           onTwoFactor={member ? () => setActiveModal("two-factor") : undefined}
           onDevices={member ? () => setActiveModal("devices") : undefined}
+          onPayments={member && account?.role === "브랜드" ? () => setActiveModal("payments") : undefined}
           onTeam={member ? () => setActiveModal("team") : undefined}
           onCouncil={member && account && councilTypes.includes(account.type) ? () => go({ page, council: true }) : undefined}
           onCouncilLink={member && account?.role === "학생단체" ? () => setActiveModal("council-link") : undefined}
@@ -1948,6 +1979,9 @@ function App() {
           />
         </Presence>
       )}
+      <Presence show={activeModal === "payments"}>
+        <PaymentsModal onClose={closeModal} onNotice={showNotice} />
+      </Presence>
       <Presence show={activeModal === "devices"}>
         <DevicesModal onClose={closeModal} onNotice={showNotice} />
       </Presence>

@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto"
 
 import { todayInKorea } from "./dates.js"
+import { feeState } from "./fees.js"
+import { ensureMeasurement } from "./measurements.js"
 import { activeMethodsOf, confirmsAt, isVenueKind, methodsOf, venueCountsOf } from "./methods.js"
 import { photos } from "./photos.js"
 import { canReview, isDemoAccount, publicReview, reviewOpen } from "./reviews.js"
@@ -219,6 +221,27 @@ export function agreementFor(database: Database, proposal: AcceptedProposal) {
 // this side's own venue PIN, the reviews (whether this side may write one
 // now, its own and the other's), any request to call it off and whether this
 // side may ask. A canceled one is only a record: its items and the request.
+// A side confirms the agreement as it stands. Once both have, the
+// confirmation methods as they stand are the ones that count at the event
+// and in the results (`confirmedMethods`). Answers whether both have.
+export function confirmAgreement(database: Database, agreement: Agreement, proposal: AcceptedProposal, side: ChatSide) {
+  const now = new Date().toISOString()
+  agreement.confirmed[side] = now
+  agreement.updatedAt = now
+  const both = Boolean(agreement.confirmed.group && agreement.confirmed.brand)
+  const sponsored = sponsoredEvent(database, proposal)
+  if (both && sponsored) {
+    ensureMeasurement(database, sponsored.owner.id, sponsored.event)
+    const share = agreementShare(database, proposal)
+    if (share) {
+      const methods = methodsOf(share.measurement, share.sponsor)
+      if (share.sponsor) share.sponsor.confirmedMethods = methods
+      else share.measurement.confirmedMethods = methods
+    }
+  }
+  return both
+}
+
 export function agreementView(database: Database, agreement: Agreement, proposal: AcceptedProposal, side: ChatSide) {
   const other: ChatSide = side === "group" ? "brand" : "group"
   const review = (by: ChatSide) => database.reviews.find((item) => item.id === `${proposal.id}:${by}`)
@@ -253,6 +276,7 @@ export function agreementView(database: Database, agreement: Agreement, proposal
       : {}),
     ...(measure && !proposal.canceled ? { measure } : {}),
     gives: proposal.gives,
+    fee: feeState(database, agreement, proposal),
     review: {
       open: reviewOpen(proposal),
       canWrite: canReview(database, proposal, side),

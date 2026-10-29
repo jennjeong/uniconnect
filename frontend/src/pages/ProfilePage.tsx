@@ -103,6 +103,7 @@ export function ProfilePage({
   onChangePassword,
   onTwoFactor,
   onDevices,
+  onPayments,
   onTeam,
   socialProviders,
   onSocialLink,
@@ -133,6 +134,8 @@ export function ProfilePage({
   // Two-step login and the device list; absent for the shared demo accounts.
   onTwoFactor?: () => void
   onDevices?: () => void
+  // A brand's payments to the platform; absent for groups and the demo accounts.
+  onPayments?: () => void
   // The people running the account with its owner; absent for the demo accounts.
   onTeam?: () => void
   // Kakao or Naver to link for logging in (the owner's; none for the demo accounts).
@@ -559,6 +562,17 @@ export function ProfilePage({
 
           <SettingsCard caption={t("계정이 만들고 받은 모든 것을 파일로 받거나, 계정을 지워요.")} icon="download" id="profile-data" title={t("내 데이터")}>
             <dl className="settings-rows">
+              {onPayments && (
+                <SettingsRow
+                  action={
+                    <RowButton label={t("결제 내역")} onClick={onPayments}>
+                      {t("보기")}
+                    </RowButton>
+                  }
+                  label={t("결제 내역")}
+                  value={t("수수료, 상세 리포트, 프로 결제와 영수증이에요.")}
+                />
+              )}
               <SettingsRow
                 action={
                   <RowButton label={t("내 데이터 내려받기")} onClick={onDownloadData}>

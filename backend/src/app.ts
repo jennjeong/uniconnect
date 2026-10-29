@@ -32,6 +32,7 @@ import { placesRouter } from "./routes/places.js"
 import { profileRouter } from "./routes/profile.js"
 import { proposalsRouter } from "./routes/proposals.js"
 import { requestsRouter } from "./routes/requests.js"
+import { billingRouter } from "./routes/billing.js"
 import { boardRouter } from "./routes/board.js"
 import { blocksRouter, reportsRouter } from "./routes/reports.js"
 import { reviewsRouter } from "./routes/reviews.js"
@@ -63,21 +64,22 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   }
 
   // Security headers on every answer. The page may only run this site's own
-  // scripts (and Google Analytics once it is turned on), and no other site
-  // may frame it.
+  // scripts (and Google Analytics, and Toss Payments' window for paying),
+  // and no other site may frame it.
   app.use((_req, res, next) => {
     res.set({
       "Content-Security-Policy": [
         "default-src 'self'",
-        "script-src 'self' https://www.googletagmanager.com",
+        "script-src 'self' https://www.googletagmanager.com https://js.tosspayments.com",
         "style-src 'self' 'unsafe-inline'",
         "img-src 'self' data: blob: https:",
         "font-src 'self' data:",
-        "connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com",
+        "connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://*.tosspayments.com",
+        "frame-src 'self' https://*.tosspayments.com",
         "worker-src 'self' blob:",
         "object-src 'none'",
         "base-uri 'self'",
-        "form-action 'self'",
+        "form-action 'self' https://*.tosspayments.com",
         "frame-ancestors 'none'",
       ].join("; "),
       "X-Content-Type-Options": "nosniff",
@@ -133,6 +135,7 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   app.use("/api/calendar", calendarRouter)
   app.use("/api/board", boardRouter)
   app.use("/api/errors", errorsRouter)
+  app.use("/api/billing", billingRouter)
   app.use("/api/admin", adminRouter)
   app.use("/api/cron", cronRouter)
   app.use("/api", () => {

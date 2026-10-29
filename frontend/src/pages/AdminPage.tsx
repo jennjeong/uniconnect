@@ -7,7 +7,8 @@ import { Pill } from "../components/Pill"
 import { TabBar } from "../components/TabBar"
 import { locale, t } from "../i18n"
 import { formatDateTime } from "../lib/date"
-import type { AdminInquiry, AdminReport, ErrorEntry, PlatformStats, ReportAction, SuspendedAccount } from "../types"
+import { fullWon } from "../lib/sponsorships"
+import type { AdminInquiry, AdminPayment, AdminReport, ErrorEntry, PlatformStats, ReportAction, SuspendedAccount } from "../types"
 
 // The operators' token lives in this tab only, and goes when it closes.
 const storageKey = "uniconnect-admin-token"
@@ -207,6 +208,61 @@ function StatsPanel({ stats }: { stats: PlatformStats }) {
   )
 }
 
+const paymentKinds: Record<AdminPayment["kind"], string> = { fee: "수수료", report: "상세 리포트", pro: "프로" }
+
+// One payment for the operators: who paid what, how and when, with the
+// actions its state allows (confirming a transfer that arrived, cancelling
+// a waiting order, refunding a paid one).
+function PaymentCard({
+  payment,
+  onPaid,
+  onCancel,
+}: {
+  payment: AdminPayment
+  onPaid: (payment: AdminPayment) => void
+  onCancel: (payment: AdminPayment) => void
+}) {
+  const [sure, setSure] = useState(false)
+  return (
+    <article className="admin-card admin-payment">
+      <div className="admin-card-head">
+        <span className="admin-category">{t(paymentKinds[payment.kind])}</span>
+        <time dateTime={payment.paidAt ?? payment.requestedAt}>{formatDateTime(payment.paidAt ?? payment.requestedAt)}</time>
+      </div>
+      <p className="admin-question">
+        {payment.orderName} · <strong>{fullWon(payment.amount)}</strong>
+      </p>
+      <p className="admin-from">
+        {payment.accountName} · {payment.id}
+        {payment.status === "paid" && ` · ${payment.method === "card" ? t("카드") : t("계좌 입금")}`}
+        {payment.status === "cancelled" && ` · ${payment.cancelReason ?? ""}`}
+      </p>
+      <div className="admin-report-actions">
+        {payment.status === "pending" && (
+          <>
+            <button className="primary-button" onClick={() => onPaid(payment)} type="button">
+              {t("입금 확인")}
+            </button>
+            <button className="cancel-button" onClick={() => onCancel(payment)} type="button">
+              {t("주문 취소")}
+            </button>
+          </>
+        )}
+        {payment.status === "paid" &&
+          (sure ? (
+            <button className="decline-button" onClick={() => onCancel(payment)} type="button">
+              {payment.card ? t("카드 결제 환불하기") : t("환불했다고 기록하기")}
+            </button>
+          ) : (
+            <button className="cancel-button" onClick={() => setSure(true)} type="button">
+              {t("환불")}
+            </button>
+          ))}
+      </div>
+    </article>
+  )
+}
+
 // The operators' screen (/admin, in no menu): with the ADMIN_TOKEN from the
 // server's environment, it shows the platform's figures, then lists the
 // questions sent from the help center, waiting ones first, and sends answers
@@ -219,6 +275,7 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
   const [reports, setReports] = useState<AdminReport[]>([])
   const [suspended, setSuspended] = useState<SuspendedAccount[]>([])
   const [errors, setErrors] = useState<ErrorEntry[]>([])
+  const [payments, setPayments] = useState<AdminPayment[]>([])
   const [tab, setTab] = useState<Tab>("waiting")
   const [reportTab, setReportTab] = useState<"open" | "done">("open")
   const [error, setError] = useState("")
@@ -231,14 +288,21 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
     setReports([])
     setSuspended([])
     setErrors([])
+    setPayments([])
     setError(message)
   }, [])
 
   useEffect(() => {
     if (!token) return
     let cancelled = false
-    Promise.all([api.adminInquiries(token), api.adminStats(token), api.adminReports(token), api.adminErrors(token)])
-      .then(([listed, counted, reported, failed]) => {
+    Promise.all([
+      api.adminInquiries(token),
+      api.adminStats(token),
+      api.adminReports(token),
+      api.adminErrors(token),
+      api.adminPayments(token),
+    ])
+      .then(([listed, counted, reported, failed, paid]) => {
         if (cancelled) return
         writeToken(token)
         setInquiries(listed.inquiries)
@@ -246,6 +310,7 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
         setReports(reported.reports)
         setSuspended(reported.suspended)
         setErrors(failed.errors)
+        setPayments(paid.payments)
         setError("")
       })
       .catch((caught) => {
@@ -288,6 +353,17 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
       await api.unsuspendAccount(token, account.id)
       setSuspended((current) => current.filter((item) => item.id !== account.id))
       onNotice(t("{name}의 정지를 풀었어요.", { name: account.name }))
+    } catch (caught) {
+      onNotice(errorMessage(caught))
+    }
+  }
+
+  // Settles a payment, then reads the payments again.
+  const settle = async (change: () => Promise<unknown>, done: string) => {
+    try {
+      await change()
+      setPayments((await api.adminPayments(token)).payments)
+      onNotice(done)
     } catch (caught) {
       onNotice(errorMessage(caught))
     }
@@ -361,6 +437,27 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
             <div className="admin-list" key={tab}>
               {list.map((inquiry) => (
                 <InquiryCard inquiry={inquiry} key={inquiry.id} onAnswer={answer} />
+              ))}
+            </div>
+          )}
+
+          <h2 className="admin-section-title">{t("결제")}</h2>
+          {payments.length === 0 ? (
+            <p className="day-empty">{t("아직 결제가 없어요.")}</p>
+          ) : (
+            <div className="admin-list">
+              {payments.slice(0, 50).map((payment) => (
+                <PaymentCard
+                  key={payment.id}
+                  onCancel={(item) =>
+                    void settle(
+                      () => api.adminCancelPayment(token, item.id, item.status === "paid" ? t("운영자 환불") : t("운영자 취소")),
+                      item.status === "paid" ? t("환불했어요.") : t("주문을 취소했어요."),
+                    )
+                  }
+                  onPaid={(item) => void settle(() => api.adminMarkPaid(token, item.id), t("입금을 확인했어요."))}
+                  payment={payment}
+                />
               ))}
             </div>
           )}

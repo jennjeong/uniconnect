@@ -155,7 +155,47 @@ export type Agreement = {
   // this side may ask now: not after the event or from a demo account.
   cancel?: { by: ChatSide; reason: string; requestedAt: string; canceledAt?: string }
   cancelable: boolean
+  // What the sponsorship is worth, cash and in-kind, once written.
+  value?: { cash: number; inKind: number }
+  // The platform fee the brand pays to confirm (backend lib/fees.ts): none
+  // when exempt (the demo accounts, sponsorships from before fees), else
+  // its share of the value, what was paid and what is still due.
+  fee: { rate: number; exempt: boolean; amount: number; paid: number; due: number; needsValue: boolean }
 }
+
+// What a brand pays the platform (backend lib/billing.ts).
+export type PaymentKind = "fee" | "report" | "pro"
+
+export type Payment = {
+  id: string
+  accountName: string
+  kind: PaymentKind
+  targetId: string
+  orderName: string
+  amount: number
+  status: "pending" | "paid" | "cancelled"
+  method?: "card" | "transfer"
+  receiptUrl?: string
+  requestedAt: string
+  transferRequestedAt?: string
+  paidAt?: string
+  cancelledAt?: string
+  cancelReason?: string
+  periodEnd?: string
+}
+
+// Prices, whether card payment is on, and the account's payments.
+export type BillingInfo = {
+  prices: { feeRate: number; report: number; pro: number; proDays: number }
+  card: { clientKey: string } | null
+  payments: Payment[]
+}
+
+// An order to pay, with what the payment window needs.
+export type PaymentOrder = { order: Payment; customerKey: string; email: string }
+
+// A payment as the operators see it.
+export type AdminPayment = Payment & { accountId: string; card: boolean }
 
 // A review one side of a sponsorship wrote about the other after the event.
 export type Review = {
@@ -729,6 +769,8 @@ export type ModalName =
   | "team"
   | "join"
   | "council-link"
+  | "payment"
+  | "payments"
 
 // What a student council sees of one club that linked to it (backend
 // lib/council.ts): its coming events, open proposals, sponsorships and

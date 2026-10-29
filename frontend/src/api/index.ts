@@ -2,6 +2,11 @@ import type {
   Account,
   AccountContact,
   AdminInquiry,
+  AdminPayment,
+  BillingInfo,
+  Payment,
+  PaymentKind,
+  PaymentOrder,
   AdminReport,
   Agreement,
   AgreementSummary,
@@ -223,6 +228,17 @@ export const api = {
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/items`, { method: "PUT", body: { items } }),
   confirmAgreement: (id: string) =>
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/confirm`, { method: "POST" }),
+  saveAgreementValue: (id: string, value: { cash: number; inKind: number }) =>
+    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/value`, { method: "PUT", body: { value } }),
+  billing: () => request<BillingInfo>("/billing"),
+  order: (kind: PaymentKind, targetId: string) =>
+    request<PaymentOrder>("/billing/orders", { method: "POST", body: { kind, targetId } }),
+  askTransfer: (orderId: string) =>
+    request<{ order: Payment }>(`/billing/orders/${encodeURIComponent(orderId)}/transfer`, { method: "POST" }),
+  cancelOrder: (orderId: string) =>
+    request<{ order: Payment }>(`/billing/orders/${encodeURIComponent(orderId)}`, { method: "DELETE" }),
+  confirmPayment: (body: { orderId: string; paymentKey: string; amount: number }) =>
+    request<{ order: Payment }>("/billing/confirm", { method: "POST", body }),
   updateAgreementItem: (id: string, itemId: string, body: { done?: boolean; links?: string[] }) =>
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/items/${encodeURIComponent(itemId)}`, {
       method: "PATCH",
@@ -313,6 +329,20 @@ export const api = {
     request<{ ok: true }>(`/admin/reports/${encodeURIComponent(id)}/resolve`, {
       method: "POST",
       body: { action },
+      headers: { "X-Admin-Token": token },
+    }),
+  adminPayments: (token: string) =>
+    request<{ payments: AdminPayment[] }>("/admin/payments", { headers: { "X-Admin-Token": token } }),
+  adminMarkPaid: (token: string, id: string) =>
+    request<{ payment: AdminPayment }>(`/admin/payments/${encodeURIComponent(id)}/paid`, {
+      method: "POST",
+      body: {},
+      headers: { "X-Admin-Token": token },
+    }),
+  adminCancelPayment: (token: string, id: string, reason: string) =>
+    request<{ payment: AdminPayment }>(`/admin/payments/${encodeURIComponent(id)}/cancel`, {
+      method: "POST",
+      body: { reason },
       headers: { "X-Admin-Token": token },
     }),
   adminErrors: (token: string) =>

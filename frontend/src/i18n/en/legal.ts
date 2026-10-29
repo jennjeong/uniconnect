@@ -33,8 +33,6 @@ const en: Record<string, string> = {
   "협찬 계약": "Sponsorship Agreements",
   "서비스는 학생단체와 브랜드가 만나도록 돕는 곳이고, 두 회원 사이의 협찬 계약 당사자가 아니에요.":
     "The Service helps student groups and brands connect and is not a party to any sponsorship agreement between two members.",
-  "협찬 금액, 제공 물품, 일정 같은 조건과 그 이행은 두 회원이 직접 정하고 책임져요.":
-    "Terms such as the sponsorship amount, items provided and schedule, and their performance, are determined by and are the responsibility of the two members.",
   "추천 일치율과 예상 협찬 가치, ROAS 같은 수치는 참고용 추정치이고 결과를 보장하지 않아요.":
     "Figures such as the recommendation match rate, estimated sponsorship value and ROAS are estimates for reference only and do not guarantee any result.",
   "회원이 지킬 것": "Member Obligations",
@@ -200,8 +198,6 @@ const en: Record<string, string> = {
     "When a member deletes their account from 'Delete Account' in My Info, their account information, profile, events and campaigns, sponsorship proposals, messages and the photos and PDFs sent in chat (including the other party's side of the conversation), co-admins and the invitations sent, questions sent to the administrators, shop invitations they sent, provisional e-contracts with their proof photos (including the other party's), the reviews they wrote and got, and the reports and blocks they made or were the subject of are deleted immediately and cannot be restored. When a brand that joined from an invitation leaves, that shop can be invited again.",
   "그 밖의 요청은 도움말 센터의 '관리자에게 질문하기'로 보내 주세요. 확인한 뒤 지체 없이 처리해요.":
     "Please send any other requests through 'Ask the Administrators' in the Help Center. They will be processed without delay after review.",
-  "법령에 따라 보관해야 하는 정보가 생기면 그 기간 동안만 따로 보관해요.":
-    "If any information must be retained under applicable law, it will be stored separately and only for the required period.",
   "안전하게 지키는 방법": "Security Measures",
   "비밀번호는 복원할 수 없는 방식(scrypt)으로 바꿔 저장해요.":
     "Passwords are stored after being transformed with a method that cannot be reversed (scrypt).",
@@ -218,6 +214,31 @@ const en: Record<string, string> = {
     "With 'Download my data' under My Account, you can download your account details, introduction, events, proposals, messages, questions, shop invitations, provisional e-contracts and the reviews you wrote and got, the reports you sent and the accounts you blocked as one file.",
   "서버 장애에 대비한 백업에는 지운 내용이 최대 24시간 남아 있다가 새 백업으로 바뀌며 사라져요.":
     "Backups kept against server failures may hold deleted data for up to 24 hours, until newer backups replace them.",
+  // Paid services (the business plan's revenue model)
+  "학생단체는 서비스를 무료로 써요. 브랜드는 아래 유료 서비스를 이용할 때 결제해요. 금액은 모두 부가세를 포함해요.":
+    "Student groups use the service for free. Brands pay for the paid services below. All amounts include VAT.",
+  "성사 수수료: 협찬이 확정될 때 협찬액(현금과 현물 환산 금액을 더한 값)의 15%를 브랜드가 내요. 브랜드는 임시 전자 계약서를 확인할 때 이 수수료를 결제하고, 협찬액을 올리면 늘어난 만큼을 더 내요.":
+    "Success fee: when a sponsorship is confirmed, the brand pays 15% of its value (cash plus the value of what is given in kind). The brand pays it when confirming the provisional e-contract, and pays the difference if the value goes up.",
+  "결제는 토스페이먼츠의 카드 결제창이나 계좌 입금으로 해요. 계좌 입금은 운영자가 입금을 확인하면 반영돼요. 카드 정보는 서비스가 받지 않고 토스페이먼츠가 처리해요.":
+    "You pay by card through Toss Payments' payment window or by bank transfer. A bank transfer takes effect once the operators confirm it. The service never receives card details; Toss Payments handles them.",
+  "수수료 환불: 행사가 시작되기 전에 두 회원이 합의해 협찬을 취소하면 낸 수수료를 모두 돌려드려요. 협찬액을 낮췄을 때의 차액도 요청하면 돌려드려요. 행사가 시작된 뒤에는 돌려드리지 않아요.":
+    "Fee refunds: if both members agree to call the sponsorship off before the event begins, the whole fee is refunded. The difference is also refunded on request if the value goes down. Nothing is refunded once the event has begun.",
+  "환불은 도움말 센터의 '관리자에게 질문하기'로 요청해 주세요. 카드 결제는 결제를 취소해 돌려드리고, 계좌 입금은 받은 계좌로 돌려드려요. 결제 내역과 영수증은 내 정보의 '결제 내역'에서 볼 수 있어요.":
+    "Ask for refunds through 'Ask the operators' in the help center. Card payments are refunded by canceling them, and bank transfers to the account they came from. Your payments and receipts are under 'Payments' in My Account.",
+  "유료 서비스와 결제":
+    "Paid Services and Payment",
+  "협찬 금액, 제공 물품, 일정 같은 조건과 그 이행은 두 회원이 직접 정하고 책임져요. 협찬금은 브랜드가 학생단체에 직접 주고, 서비스는 맡아 두거나 대신 보내지 않아요.":
+    "The two members set and are responsible for the terms, such as the amount, the items given and the schedule, and for carrying them out. The brand pays the sponsorship money to the student group directly; the service neither holds nor forwards it.",
+  "결제 기록(주문 번호, 산 것, 금액, 결제 방법, 결제·취소 시각과 이유, 토스페이먼츠의 결제 키와 카드 영수증 주소, 고객 키)":
+    "Payment records (order number, what was bought, amount, payment method, when it was paid or canceled and why, Toss Payments' payment key and card receipt address, customer key)",
+  "유료 서비스 결제와 환불, 세금 신고":
+    "Paying for and refunding paid services, tax filing",
+  "5년(전자상거래법에 따라 탈퇴한 뒤에도 보관)":
+    "5 years (kept after leaving, as the E-Commerce Act requires)",
+  "브랜드가 결제하면 주문 번호, 산 것, 금액, 이메일을 결제 대행사 토스페이먼츠(대한민국)에 보내 결제를 처리해요. 카드 정보는 토스페이먼츠가 직접 받고 서비스는 받지 않아요.":
+    "When a brand pays, the order number, what is bought, the amount and the email are sent to the payment processor Toss Payments (Republic of Korea) to process the payment. Toss Payments receives the card details directly; the service does not.",
+  "결제 기록은 전자상거래법에 따라 탈퇴한 뒤에도 5년 동안 따로 보관하고, 그 뒤에 지워요.":
+    "Payment records are kept apart for 5 years after leaving, as the E-Commerce Act requires, and deleted after that.",
 }
 
 export default en
