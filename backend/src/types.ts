@@ -172,16 +172,23 @@ export type Account = {
   // the code each was emailed.
   members?: TeamMember[]
   memberInvites?: MemberInvite[]
+  // Kakao or Naver accounts linked from 내 정보, by the provider's member
+  // number, to log in with (routes/social.ts).
+  social?: Partial<Record<SocialProvider, { id: string; linkedAt: string }>>
 }
+
+export type SocialProvider = "kakao" | "naver"
 
 export type TeamMember = { id: string; name: string; email: string; passwordHash: string; addedAt: string }
 export type MemberInvite = { id: string; name: string; email: string; codeHash: string; invitedAt: string; expiresAt: number; tries: number }
 
 export type PublicAccount = Omit<
   Account,
-  "passwordHash" | "termsAgreedAt" | "calendarFeed" | "twoFactor" | "pendingTwoFactor" | "loginTicket" | "members" | "memberInvites"
+  "passwordHash" | "termsAgreedAt" | "calendarFeed" | "twoFactor" | "pendingTwoFactor" | "loginTicket" | "members" | "memberInvites" | "social"
 > & {
   twoFactorOn?: true
+  // The providers linked to log in with, never their member numbers.
+  socialLinks?: SocialProvider[]
   // Set when a co-admin is the one logged in (not the account's owner).
   asMember?: { id: string; name: string; email: string }
 }
@@ -670,6 +677,13 @@ export type Database = {
   saved: Record<string, string[]>
   // The recruitment board (routes/board.ts).
   posts: BoardPost[]
+  // Logins with Kakao or Naver under way (routes/social.ts): each started
+  // flow's state, and the one-time code that hands a finished login to the
+  // page, both by hash and for minutes only.
+  oauth?: {
+    states: { hash: string; provider: SocialProvider; intent: "login" | "link"; accountId?: string; expiresAt: number }[]
+    handoffs: { hash: string; accountId: string; userAgent?: string; expiresAt: number }[]
+  }
 }
 
 // A public post on the recruitment board (routes/board.ts): a brand looking

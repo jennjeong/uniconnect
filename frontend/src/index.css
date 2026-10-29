@@ -14,6 +14,10 @@
      --on-point for text on it. --point-strong is the shade for blue text
      and icons on white (9.6:1); --point-tint and --point-soft are faint
      fills and --point-line the matching hairline. */
+  /* Kakao's and Naver's login buttons keep the colors their guidelines ask for. */
+  --kakao-yellow: #fee500;
+  --kakao-ink: #191919;
+  --naver-green: #03c75a;
   --point: #1b3f8f;
   --point-hover: #16357a;
   --point-deep: #13306f;
@@ -7740,6 +7744,37 @@ button.nav-pill:hover {
 
 .auth-form .primary-button {
   margin-top: 22px;
+}
+
+/* Kakao and Naver under the login form (modals/LoginModal.tsx). */
+.social-login {
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.social-button {
+  height: 48px;
+  border: 0;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: var(--weight-label);
+}
+
+.social-button.kakao {
+  background: var(--kakao-yellow);
+  color: var(--kakao-ink);
+}
+
+.social-button.naver {
+  background: var(--naver-green);
+  color: #fff;
+}
+
+.social-login small {
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
 }
 
 /* Two-step login (modals/TwoFactorModal.tsx): the QR for the app, the key

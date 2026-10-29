@@ -6,11 +6,12 @@ import { Pill } from "../components/Pill"
 import { RevealTitle, RevealWords } from "../components/RevealText"
 import { mailKinds } from "../data/mail"
 import { profileLabels } from "../data/profile"
+import { socialNames } from "../data/social"
 import { lang, setLang, t, type Lang } from "../i18n"
 import { formatFullDate, toIsoDate } from "../lib/date"
 import { initialOf } from "../lib/format"
 import { MeshBackdrop } from "../scenes/MeshBackdrop"
-import type { Account, BlockedListing, BusinessStatus, MailKind, Match, NavLabel } from "../types"
+import type { Account, BlockedListing, BusinessStatus, MailKind, Match, NavLabel, SocialProvider } from "../types"
 
 export type ActivityItem = {
   label: string
@@ -49,6 +50,9 @@ export function ProfilePage({
   onTwoFactor,
   onDevices,
   onTeam,
+  socialProviders,
+  onSocialLink,
+  onSocialUnlink,
   onChangeContact,
   onChangeEmail,
   onDownloadData,
@@ -75,6 +79,10 @@ export function ProfilePage({
   onDevices?: () => void
   // The people running the account with its owner; absent for the demo accounts.
   onTeam?: () => void
+  // Kakao or Naver to link for logging in (the owner's; none for the demo accounts).
+  socialProviders: SocialProvider[]
+  onSocialLink: (provider: SocialProvider) => void
+  onSocialUnlink: (provider: SocialProvider) => void
   // The person running the account (modals/ContactModal.tsx).
   onChangeContact: () => void
   onChangeEmail: () => void
@@ -376,6 +384,19 @@ export function ProfilePage({
                 {t("로그인한 기기")}
               </Pill>
             )}
+            {onTeam &&
+              !account.asMember &&
+              socialProviders.map((provider) =>
+                account.socialLinks?.includes(provider) ? (
+                  <Pill key={provider} onClick={() => onSocialUnlink(provider)} variant="outline">
+                    {t("{provider} 연결 끊기", { provider: t(socialNames[provider]) })}
+                  </Pill>
+                ) : (
+                  <Pill key={provider} onClick={() => onSocialLink(provider)} variant="silver">
+                    {t("{provider} 계정 연결", { provider: t(socialNames[provider]) })}
+                  </Pill>
+                ),
+              )}
             {onTeam && (
               <Pill onClick={onTeam} variant="silver">
                 {t("함께 관리하는 사람")}

@@ -454,6 +454,17 @@ test("a group writes its event page on the form, adds a photo, and a brand reads
   }
 })
 
+test("Kakao and Naver stay hidden without keys, and a return from them says how it went", async ({ page }) => {
+  await page.goto("/")
+  await page.getByRole("button", { name: "로그인", exact: true }).first().click()
+  await expect(page.getByRole("dialog", { name: "로그인" }).getByRole("button", { name: "학생단체로 로그인" })).toBeVisible()
+  await expect(page.locator(".social-login")).toHaveCount(0)
+  // The provider's answer comes back as ?social=, said once and taken from the address.
+  await page.goto("/?social=unlinked")
+  await expect(page.getByText("연결된 uniconnect 계정이 없어요. 이메일로 로그인한 뒤 내 정보에서 연결해 주세요.")).toBeVisible()
+  await expect(page).toHaveURL(/\/$/)
+})
+
 test("an owner invites a co-admin, who joins with the code and can't do the owner's part", async ({ page, request, browser }) => {
   const owner = await signUpMember(request, "학생단체", "e2e-team@syu.ac.kr", "함께 동아리")
   await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), owner.token)

@@ -987,6 +987,97 @@ test("with two-step login on, a password alone doesn't log in, and recovery code
   assert.ok((await call("POST", "/auth/login", { role: "학생단체", email, password: newPassword })).data.token)
 })
 
+test("a linked Kakao account logs in, with the state bound to the browser and no token in an address", async () => {
+  const { socialAuth } = await import("./routes/social.js")
+  const realExchange = socialAuth.exchange
+  const saved = { kakao: config.kakaoClientId, naverId: config.naverClientId, naverSecret: config.naverClientSecret }
+  const origin = baseUrl.replace(/\/api$/, "")
+  // Starts a flow, as the page does: the provider's address and the state cookie.
+  const start = async (intent: "login" | "link", token?: string) => {
+    const response = await fetch(`${baseUrl}/auth/social/kakao/start`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify({ intent }),
+    })
+    const { url } = (await response.json()) as { url: string }
+    const cookie = response.headers.get("set-cookie")?.split(";")[0] ?? ""
+    return { url: new URL(url), cookie }
+  }
+  // The provider sends the browser back.
+  const back = async (state: string, cookie: string, code = "auth-code") => {
+    const response = await fetch(`${baseUrl}/auth/social/kakao/callback?code=${code}&state=${state}`, {
+      headers: cookie ? { Cookie: cookie } : {},
+      redirect: "manual",
+    })
+    // The cookie it sets for the page, besides clearing the state's.
+    const set = response.headers.getSetCookie().find((item) => item.startsWith("uc_social_login=") && !item.startsWith("uc_social_login=;"))
+    return { to: response.headers.get("location") ?? "", cookie: set?.split(";")[0] ?? "" }
+  }
+  try {
+    // Without keys there is nothing to offer.
+    config.kakaoClientId = undefined
+    config.naverClientId = undefined
+    assert.deepEqual((await call("GET", "/auth/social")).data.providers, [])
+    assert.equal((await call("POST", "/auth/social/kakao/start", { intent: "login" })).status, 404)
+    // Kakao with its key; Naver not until its secret is set too.
+    config.kakaoClientId = "kakao-rest-key"
+    config.naverClientId = "naver-id"
+    config.naverClientSecret = undefined
+    assert.deepEqual((await call("GET", "/auth/social")).data.providers, ["kakao"])
+    socialAuth.exchange = async (_provider, code) => (code === "other" ? "999" : "4242")
+
+    // The owner links its Kakao account from 내 정보.
+    const owner = await signUpMember("social@syu.ac.kr", "social-pass-123")
+    assert.equal((await call("POST", "/auth/social/kakao/start", { intent: "link" })).status, 401)
+    assert.equal((await call("POST", "/auth/social/kakao/start", { intent: "link" }, await login("학생단체"))).status, 403)
+    const link = await start("link", owner)
+    assert.equal(link.url.origin, "https://kauth.kakao.com")
+    assert.equal(link.url.searchParams.get("client_id"), "kakao-rest-key")
+    assert.equal(link.url.searchParams.get("redirect_uri"), `${origin}/api/auth/social/kakao/callback`)
+    assert.match(link.cookie, /^uc_social_state=/)
+    const state = link.url.searchParams.get("state")!
+    // Another browser, without the cookie, can't finish it.
+    assert.equal((await back(state, "")).to, "/?social=error")
+    assert.equal((await back(state, link.cookie)).to, "/me?social=linked-kakao")
+    // A state works once.
+    assert.equal((await back(state, link.cookie)).to, "/?social=error")
+    const me = (await call("GET", "/auth/me", undefined, owner)).data.account
+    assert.deepEqual(me.socialLinks, ["kakao"])
+    assert.equal(JSON.stringify(me).includes("4242"), false)
+
+    // Logging in: the callback hands the page a one-time code in a cookie,
+    // and its address carries nothing but the outcome.
+    const flow = await start("login")
+    const done = await back(flow.url.searchParams.get("state")!, flow.cookie)
+    assert.equal(done.to, "/?social=login")
+    assert.match(done.cookie, /^uc_social_login=/)
+    const complete = (cookie: string) =>
+      fetch(`${baseUrl}/auth/social/complete`, { method: "POST", headers: cookie ? { Cookie: cookie } : {} })
+    const session = (await (await complete(done.cookie)).json()) as { token: string; account: { email: string } }
+    assert.equal(session.account.email, "social@syu.ac.kr")
+    assert.equal((await call("GET", "/auth/me", undefined, session.token)).status, 200)
+    assert.equal((await complete(done.cookie)).status, 401)
+    assert.equal((await complete("")).status, 401)
+
+    // A Kakao account linked to no one logs no one in, and links to one account only.
+    const stranger = await start("login")
+    assert.equal((await back(stranger.url.searchParams.get("state")!, stranger.cookie, "other")).to, "/?social=unlinked")
+    const second = await signUpMember("social-two@syu.ac.kr", "social-pass-123")
+    const taken = await start("link", second)
+    assert.equal((await back(taken.url.searchParams.get("state")!, taken.cookie)).to, "/me?social=link-taken")
+
+    // Unlinked, it no longer logs in.
+    assert.equal((await call("DELETE", "/auth/social/kakao", undefined, owner)).data.account.socialLinks, undefined)
+    const after = await start("login")
+    assert.equal((await back(after.url.searchParams.get("state")!, after.cookie)).to, "/?social=unlinked")
+  } finally {
+    socialAuth.exchange = realExchange
+    config.kakaoClientId = saved.kakao
+    config.naverClientId = saved.naverId
+    config.naverClientSecret = saved.naverSecret
+  }
+})
+
 test("an owner invites co-admins, who log in with their own password and can't do the owner's part", async () => {
   const ownerPassword = "team-pass-123"
   const owner = await signUpMember("team@syu.ac.kr", ownerPassword)
