@@ -4803,15 +4803,19 @@ test("a brand confirms an e-contract by paying the 15% fee, by card or by transf
 
 test("a brand buys a sponsorship's detailed report, adds its store's counts and shares it read-only", async () => {
   const demo = await login("브랜드")
-  // The demo brand's report is open, for visitors to see one.
-  const sample = (await call("GET", "/insights/sp-busking", undefined, demo)).data
+  // The demo brand's sample is open to visitors; logged in as the demo brand
+  // it is locked, to show buying it.
+  const sample = (await call("GET", "/insights/sp-busking")).data
   assert.equal(sample.locked, false)
+  assert.equal((await call("GET", "/insights/sp-busking", undefined, demo)).data.locked, true)
+  const listed = (await call("GET", "/analytics")).data.sponsorships
+  assert.equal(listed.find((item: { id: string }) => item.id === "sp-busking").report, "open")
+  assert.equal((await call("GET", "/analytics", undefined, demo)).data.sponsorships.find((item: { id: string }) => item.id === "sp-busking").report, "locked")
   assert.equal(sample.report.sponsorship.eventName, "가을 버스킹 데이")
   assert.ok(["S", "A", "B", "C", "D"].includes(sample.report.grade))
   assert.deepEqual(sample.report.scorecard.map((item: { key: string }) => item.key), ["reach", "scans", "coupons", "visits", "qrRate", "visitRate", "roas"])
   assert.equal(sample.report.time.daily[0].date, "2026-10-12")
   assert.ok(sample.report.advice.some((item: { code: string }) => item.code === "add-baseline"))
-  assert.equal((await call("GET", "/insights/sp-busking")).data.locked, false)
   assert.equal((await call("PUT", "/insights/sp-busking/lift", { before: 30, during: 40 }, demo)).status, 403)
 
   // A member's sponsorship of a measured event: a preview until bought.

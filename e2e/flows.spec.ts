@@ -1351,7 +1351,7 @@ test("a brand writes the value, pays the 15% fee to confirm, and finds it under 
 test("the detailed report: the demo's open from 성과 분석, a member's locked behind its price", async ({ page, request, browser }) => {
   // Visitors read the demo brand's, from its analytics.
   await page.goto("/analytics?role=브랜드")
-  await page.getByRole("button", { name: "상세 리포트" }).first().click()
+  await page.getByRole("button", { name: "리포트 보기" }).first().click()
   await expect(page).toHaveURL(/\/insights\/sp-/)
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
   for (const section of ["핵심 요약", "목표 대비 성과", "전환 퍼널과 비교", "비용 효율", "언제 왔나요", "평소 대비 효과", "다음 협찬 제안", "측정 방법과 가정"]) {

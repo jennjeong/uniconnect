@@ -530,8 +530,10 @@ export type SentProposal = {
 export type Sponsorship = {
   id: string
   // The student event it sponsored, when measured; its detailed report is
-  // at /insights/<id>.
+  // at /insights/<id>, readable, to buy, not yet (before the event's day) or
+  // none (backend lib/premiumReport.ts reportState).
   eventId?: string
+  report?: "open" | "locked" | "soon" | "none"
   groupName: string
   eventName: string
   date: string

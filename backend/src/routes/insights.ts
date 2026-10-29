@@ -3,10 +3,9 @@ import { Router } from "express"
 
 import { paidFor, prices } from "../lib/billing.js"
 import { HttpError } from "../lib/errors.js"
-import { premiumReport, reportAccess, reportOpen, sponsorshipFor } from "../lib/premiumReport.js"
+import { canReadReport, premiumReport, reportOpen, sponsorshipFor } from "../lib/premiumReport.js"
 import { isDemoAccount } from "../lib/reviews.js"
 import { getDatabase, saveDatabase } from "../store.js"
-import type { Account, Database } from "../types.js"
 import { brandOwner } from "./requests.js"
 
 // 상세 성과 리포트 (lib/premiumReport.ts): a brand's own, once bought (the
@@ -15,7 +14,6 @@ import { brandOwner } from "./requests.js"
 // report compares.
 export const insightsRouter = Router()
 
-const unlocked = (database: Database, account: Account, id: string) => reportAccess.some((allows) => allows(database, account, id))
 
 function owned(req: Parameters<typeof brandOwner>[0], id: string) {
   const account = brandOwner(req)
@@ -27,7 +25,7 @@ function owned(req: Parameters<typeof brandOwner>[0], id: string) {
 
 insightsRouter.get("/:id", async (req, res) => {
   const { account, database, sponsorship, event } = owned(req, String(req.params.id))
-  if (!unlocked(database, account, sponsorship.id)) {
+  if (!canReadReport(database, account, sponsorship.id, !req.account)) {
     res.json({
       locked: true,
       price: prices.report,
@@ -57,7 +55,7 @@ insightsRouter.get("/:id", async (req, res) => {
 insightsRouter.put("/:id/lift", async (req, res) => {
   const { account, database, sponsorship } = owned(req, String(req.params.id))
   if (!req.account || isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 매장 방문 수를 적을 수 없어요.")
-  if (!unlocked(database, account, sponsorship.id)) throw new HttpError(402, "상세 리포트를 산 뒤에 적을 수 있어요.")
+  if (!canReadReport(database, account, sponsorship.id, !req.account)) throw new HttpError(402, "상세 리포트를 산 뒤에 적을 수 있어요.")
   const count = (value: unknown) => {
     const number = Number(value)
     if (!Number.isFinite(number) || number < 0 || number > 100_000) throw new HttpError(400, "하루 방문객 수는 0부터 100,000까지의 숫자로 적어 주세요.")
@@ -76,7 +74,7 @@ insightsRouter.put("/:id/lift", async (req, res) => {
 insightsRouter.post("/:id/share", async (req, res) => {
   const { account, database, sponsorship } = owned(req, String(req.params.id))
   if (!req.account || isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 리포트를 공유할 수 없어요.")
-  if (!unlocked(database, account, sponsorship.id)) throw new HttpError(402, "상세 리포트를 산 뒤에 공유할 수 있어요.")
+  if (!canReadReport(database, account, sponsorship.id, !req.account)) throw new HttpError(402, "상세 리포트를 산 뒤에 공유할 수 있어요.")
   sponsorship.shareToken ??= randomBytes(18).toString("base64url")
   await saveDatabase()
   res.json({ shareToken: sponsorship.shareToken })

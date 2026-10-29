@@ -174,6 +174,7 @@ function ReportBody({
 export function InsightPage({
   id,
   shareToken,
+  loggedIn,
   paid = 0,
   onBack,
   onLogin,
@@ -184,6 +185,8 @@ export function InsightPage({
   id?: string
   // The shared link's token instead.
   shareToken?: string
+  // Visitors log in before buying.
+  loggedIn: boolean
   // Counts payments finished in the payment window, so the page reads again.
   paid?: number
   onBack: () => void
@@ -273,8 +276,8 @@ export function InsightPage({
             <strong>{fullWon(answer.price)}</strong>
             <small>{t("부가세 포함 · 한 번 사면 계속 볼 수 있어요")}</small>
             {answer.open ? (
-              <button className="primary-button wide" onClick={() => setBuying(true)} type="button">
-                {t("리포트 사기")}
+              <button className="primary-button wide" onClick={() => (loggedIn ? setBuying(true) : onLogin())} type="button">
+                {loggedIn ? t("리포트 사기") : t("로그인하고 리포트 사기")}
               </button>
             ) : (
               <p className="field-hint">{t("행사 날부터 살 수 있어요.")}</p>

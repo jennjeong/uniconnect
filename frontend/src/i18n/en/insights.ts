@@ -159,6 +159,9 @@ const insights: Record<string, string> = {
   "브랜드는 무료로 시작하고, 제안을 더 보내거나 리포트를 모두 보려면 프로를 써요.": "Brands start free; Pro sends more proposals and opens every report.",
   "데모 계정은 테스트 결제로만 시연할 수 있어요.": "The demo accounts can only demonstrate with test payments.",
   "테스트 결제예요. 결제창을 끝까지 진행해도 실제로 돈이 빠져나가지 않아요.": "This is a test payment. Going through the payment window moves no real money.",
+  "리포트 보기": "View report",
+  "행사 날부터": "From the event day",
+  "로그인하고 리포트 사기": "Log in to buy the report",
 }
 
 export default insights

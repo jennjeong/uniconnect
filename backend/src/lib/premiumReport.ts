@@ -104,12 +104,20 @@ function timing(measurement: Measurement, event: EventItem) {
   }
 }
 
-// Whether an account may read a sponsorship's report: bought it, or is the
-// demo brand (Pro, lib/pro.ts, adds itself).
+// The demo brand's sample report, open to visitors (not logged in) so they
+// see a whole one. Logged in as the demo brand it is locked like anyone's,
+// to show buying it (with Toss test keys).
+export const sampleReportId = "sp-busking"
+
+// Whether an account may read a sponsorship's report: bought it (Pro,
+// lib/pro.ts, adds itself).
 export const reportAccess: ((database: Database, account: Account, sponsorshipId: string) => boolean)[] = [
-  (database, account) => isDemoAccount(database, account),
   (database, account, id) => Boolean(paidFor(database, account.id, "report", id)),
 ]
+
+export const canReadReport = (database: Database, account: Account, id: string, visitor: boolean) =>
+  (visitor && isDemoAccount(database, account) && id === sampleReportId) ||
+  reportAccess.some((allows) => allows(database, account, id))
 
 // The report's number: the event day and a short hash of the sponsorship.
 export const reportNumber = (sponsorship: Sponsorship) =>
@@ -127,6 +135,15 @@ export function sponsorshipFor(database: Database, account: Account, id: string)
 
 // Ready to buy once the event's day has come.
 export const reportOpen = (event: EventItem) => event.date <= todayInKorea()
+
+// Where a sponsorship's report stands for the account: readable, to buy,
+// not yet (before the event's day), or none (no measured event).
+export function reportState(database: Database, account: Account, sponsorshipId: string, visitor: boolean) {
+  const found = sponsorshipFor(database, account, sponsorshipId)
+  if (!found) return "none" as const
+  if (canReadReport(database, account, sponsorshipId, visitor)) return "open" as const
+  return reportOpen(found.event) ? ("locked" as const) : ("soon" as const)
+}
 
 export function premiumReport(database: Database, account: Account, id: string) {
   const found = sponsorshipFor(database, account, id)

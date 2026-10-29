@@ -13221,7 +13221,7 @@ button.nav-pill:hover {
 
 .analytics-row {
   display: grid;
-  grid-template-columns: minmax(0, 2.2fr) repeat(5, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 2.2fr) repeat(5, minmax(0, 1fr)) 112px;
   align-items: center;
   gap: 12px;
   padding: 14px 4px;
@@ -13241,6 +13241,37 @@ button.nav-pill:hover {
   color: var(--muted);
   font-size: 12px;
   font-weight: var(--weight-label);
+}
+
+/* Each row's detailed report, at its end (pages/AnalyticsPage.tsx). */
+.analytics-row > .analytics-report {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.report-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: var(--weight-label);
+  white-space: nowrap;
+}
+
+.report-button.open {
+  background: var(--point);
+  color: var(--on-point);
+}
+
+.analytics-report-none {
+  color: var(--muted);
+  font-size: 12px;
 }
 
 /* Where the analytics' value and sales come from, under the table. */
@@ -14200,6 +14231,11 @@ button.nav-pill:hover {
 
   .analytics-event {
     grid-column: 1 / -1;
+  }
+
+  .analytics-row > .analytics-report {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
   }
 
   .analytics-row > span:not(:first-child) {
