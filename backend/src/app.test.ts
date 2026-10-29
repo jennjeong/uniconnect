@@ -937,7 +937,9 @@ test("with two-step login on, a password alone doesn't log in, and recovery code
   assert.match(url, /^otpauth:\/\/totp\/uniconnect%3Atwostep%40syu\.ac\.kr\?secret=[A-Z2-7]+&issuer=uniconnect/)
   assert.equal((await call("POST", "/auth/two-factor/enable", { code: "000000" }, token)).status, 400)
   const code = () => codeAt(secret, stepAt(Date.now()))
-  const enabled = (await call("POST", "/auth/two-factor/enable", { code: code() }, token)).data
+  // Kept, as the clock may move on to the next 30 seconds' code meanwhile.
+  const used = code()
+  const enabled = (await call("POST", "/auth/two-factor/enable", { code: used }, token)).data
   assert.equal(enabled.account.twoFactorOn, true)
   assert.equal(enabled.account.twoFactor, undefined)
   assert.equal(enabled.recoveryCodes.length, 10)
@@ -950,7 +952,7 @@ test("with two-step login on, a password alone doesn't log in, and recovery code
   const withCode = (body: object) => call("POST", "/auth/login/code", { email, ticket: first.ticket, ...body })
   assert.equal((await call("POST", "/auth/login/code", { email, ticket: "nope", code: code() })).status, 401)
   // The code used to turn it on doesn't work twice; a recovery code does, once.
-  assert.equal((await withCode({ code: code() })).status, 401)
+  assert.equal((await withCode({ code: used })).status, 401)
   const recovered = await withCode({ code: enabled.recoveryCodes[0].toLowerCase() })
   assert.equal(recovered.status, 200)
   assert.equal(recovered.data.recoveryLeft, 9)
