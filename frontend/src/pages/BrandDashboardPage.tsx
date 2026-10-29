@@ -3,14 +3,12 @@ import type { CSSProperties, ReactNode } from "react"
 import { BrandMark } from "../components/BrandMark"
 import { CatalogEmpty } from "../components/CatalogEmpty"
 import { DateLine } from "../components/DateLine"
-import { FaqSection } from "../components/FaqSection"
 import { Icon } from "../components/Icon"
 import { JourneyChain, type JourneyStep } from "../components/JourneyChain"
-import { LogoMarquee } from "../components/LogoMarquee"
 import { MeetingHero } from "../components/MeetingHero"
 import { ProposalControl } from "../components/ProposalControl"
 import { RevealStatement, RevealTitle } from "../components/RevealText"
-import { StatsBento } from "../components/StatsBento"
+import { ValuePoints } from "../components/ValuePoints"
 import { WorkCard } from "../components/WorkCard"
 import { t } from "../i18n"
 import { dDayLabel, nextEvent, semesterLabel, shortDay } from "../lib/date"
@@ -42,7 +40,6 @@ export function BrandDashboardPage({
   onAccept,
   onPropose,
   onCancelProposal,
-  onOpenFaq,
   onInstall,
   demo = false,
   paused = false,
@@ -71,7 +68,6 @@ export function BrandDashboardPage({
   onAccept: (request: SponsorRequest) => void
   onPropose: (match: Match) => void
   onCancelProposal: (match: Match) => void
-  onOpenFaq: () => void
   // 앱 다운로드 on the hero; absent inside the installed app.
   onInstall?: () => void
   // A visitor, shown the demo account's data: the hero says it is an example.
@@ -92,10 +88,9 @@ export function BrandDashboardPage({
     roas: roasOf(sponsorship),
     met: roasMet(sponsorship),
   }))
-  const bestRoas = Math.max(0, ...results.map((result) => result.roas))
   // Bar scale with room past the best result and every goal marker.
   const roasScale =
-    Math.max(100, bestRoas, ...results.map((result) => result.targetRoas)) * 1.1
+    Math.max(100, ...results.map((result) => Math.max(result.roas, result.targetRoas))) * 1.1
   const catalog = groups.length > 0 ? groups : matches
   // No student group has signed up yet (a member sees only those that have).
   const noGroups = loaded && catalog.length === 0
@@ -171,18 +166,6 @@ export function BrandDashboardPage({
 
       {checklist}
 
-      {catalog.length > 0 && (
-        <LogoMarquee
-          label={t("함께할 수 있는 학생단체")}
-          rows={[
-            catalog.map((group) => ({ key: group.id, mark: <BrandMark match={group} />, label: group.name })),
-            catalog
-              .filter((group) => group.eventName)
-              .map((group) => ({ key: group.id, mark: <Icon name="link" size={22} />, label: group.eventName ?? "" })),
-          ]}
-        />
-      )}
-
       <section className="about-statement-section">
         <span className="eyebrow" data-reveal>
           About uniconnect
@@ -240,36 +223,43 @@ export function BrandDashboardPage({
         )}
       </section>
 
-      <StatsBento
-        stats={[
+      <ValuePoints
+        eyebrow="What We Do"
+        heading={t("브랜드를 위한 세 가지")}
+        points={[
           {
-            label: t("누적 집행액"),
-            value: fullWon(totals.spend),
-            note: t("학생단체와 함께한 협찬 {count}건이에요.", { count: sponsorships.length }),
-            onClick: () => onNavigate("성과 분석"),
+            icon: "users",
+            need: t("대학생 접점"),
+            title: t("우리 상권의 대학 행사를 찾아 드려요"),
+            text: t("행사 규모 · 시기 · 학교로 걸러 보고, 매장과 가까운 캠퍼스의 단체부터 일치율 순으로 만나요."),
+            figure: t("{count}곳", { count: catalog.length }),
+            figureLabel: t("함께할 수 있는 학생단체"),
+            action: t("단체 찾기"),
+            onClick: () => onNavigate("단체 찾기"),
           },
           {
-            label: t("평균 ROAS"),
-            value: `${totals.roas}%`,
-            note: t("“가장 좋았던 협찬은 ROAS {roas}%였어요.”", { roas: bestRoas }),
-            onClick: () => onNavigate("성과 분석"),
-          },
-          {
-            label: t("받은 제안"),
-            value: t("{count}건", { count: requests.length }),
-            note: t("그중 {count}건이 답을 기다려요.", { count: pending.length }),
+            icon: "won",
+            need: t("소액 · 측정형 협찬"),
+            title: t("작게 시작하고, 효과는 숫자로 확인해요"),
+            text: t("현금 · 현물 · 쿠폰으로 협찬하고, 행사 QR과 매장 직원 확인으로 쿠폰 · 방문을 정확히 세요."),
+            figure: t("{count}건", { count: confirmed.length }),
+            figureLabel: nextConfirmed
+              ? t("확정된 협찬 · 다음 일정 {date}", { date: shortDay(nextConfirmed.date) })
+              : t("확정된 협찬 · 받은 제안 {count}건", { count: requests.length }),
+            action: t("받은 제안 보기"),
             onClick: () => onNavigate("받은 제안"),
           },
           {
-            label: t("확정된 협찬"),
-            value: t("{count}건", { count: confirmed.length }),
-            note: nextConfirmed ? t("다음 일정 {date}", { date: shortDay(nextConfirmed.date) }) : t("예정된 일정 없음"),
-            onClick: () => onNavigate("행사 일정"),
+            icon: "chart",
+            need: t("다음 예산 결정"),
+            title: t("성과를 보고 다음 예산을 정해요"),
+            text: t("협찬마다 ROAS와 방문당 비용을 보고, 상세 분석 리포트와 캠퍼스 포트폴리오로 어디에 다시 쓸지 정해요."),
+            figure: `${totals.roas}%`,
+            figureLabel: t("평균 ROAS · 누적 집행액 {spend}", { spend: fullWon(totals.spend) }),
+            action: t("성과 분석 보기"),
+            onClick: () => onNavigate("성과 분석"),
           },
         ]}
-        marks={confirmed.slice(0, 4).map((request) => (
-          <BrandMark key={request.id} match={request} />
-        ))}
       />
 
       <section className="works-section">
@@ -391,7 +381,6 @@ export function BrandDashboardPage({
         </div>
       </section>
 
-      <FaqSection onOpenFaq={onOpenFaq} />
     </div>
   )
 }

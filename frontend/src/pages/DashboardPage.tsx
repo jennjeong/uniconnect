@@ -2,14 +2,12 @@ import type { CSSProperties, ReactNode } from "react"
 
 import { BrandMark } from "../components/BrandMark"
 import { CatalogEmpty } from "../components/CatalogEmpty"
-import { FaqSection } from "../components/FaqSection"
 import { Icon } from "../components/Icon"
 import { JourneyChain, type JourneyStep } from "../components/JourneyChain"
-import { LogoMarquee } from "../components/LogoMarquee"
 import { MeetingHero } from "../components/MeetingHero"
 import { ProposalControl } from "../components/ProposalControl"
 import { RevealStatement, RevealTitle } from "../components/RevealText"
-import { StatsBento } from "../components/StatsBento"
+import { ValuePoints } from "../components/ValuePoints"
 import { WorkCard } from "../components/WorkCard"
 import { locale, t } from "../i18n"
 import { formatFullDate, fromIsoDate, nextEvent, semesterLabel } from "../lib/date"
@@ -47,7 +45,6 @@ export function DashboardPage({
   onPropose,
   onCancelProposal,
   onOpenReport,
-  onOpenFaq,
   onInstall,
   demo = false,
   paused = false,
@@ -76,7 +73,6 @@ export function DashboardPage({
   onPropose: (match: Match) => void
   onCancelProposal: (match: Match) => void
   onOpenReport: () => void
-  onOpenFaq: () => void
   // 앱 다운로드 on the hero; absent inside the installed app.
   onInstall?: () => void
   // A visitor, shown the demo account's data: the hero says it is an example.
@@ -96,7 +92,6 @@ export function DashboardPage({
   const strongCut = 80
   const strong = candidates.filter((match) => match.score >= strongCut).length
   const running = events.filter((event) => event.status !== "측정 완료").length
-  const proposed = candidates.filter((match) => proposals.includes(match.id))
 
   // Where the next event stands in the sponsorship flow.
   const currentStep = !next ? 0 : next.status === "매칭 중" ? 1 : next.status === "집행 예정" ? 2 : 3
@@ -173,20 +168,6 @@ export function DashboardPage({
 
       {checklist}
 
-      {candidates.length > 0 && (
-        <LogoMarquee
-          label={t("함께할 수 있는 브랜드")}
-          rows={[
-            candidates.map((match) => ({ key: match.id, mark: <BrandMark match={match} />, label: match.name })),
-            candidates.map((match) => ({
-              key: match.id,
-              mark: <Icon name="link" size={22} />,
-              label: match.offer,
-            })),
-          ]}
-        />
-      )}
-
       <section className="about-statement-section">
         <span className="eyebrow" data-reveal>
           About uniconnect
@@ -199,42 +180,44 @@ export function DashboardPage({
         />
       </section>
 
-      <StatsBento
-        stats={[
+      <ValuePoints
+        eyebrow="What We Do"
+        heading={t("학생단체를 위한 세 가지")}
+        points={[
           {
-            label: t("추천 브랜드"),
-            value: t("{count}곳", { count: candidates.length }),
-            note: t("일치율 {cut}% 이상 브랜드가 {count}곳이에요.", { cut: strongCut, count: strong }),
+            icon: "spark",
+            need: t("협찬처 찾기"),
+            title: t("행사와 잘 맞는 브랜드를 찾아 드려요"),
+            text: t("업종 · 관심사 · 협찬 이력으로 일치율을 매기고, 학교 근처 가게까지 가까운 순으로 보여 줘요."),
+            figure: t("{count}곳", { count: candidates.length }),
+            figureLabel: t("추천 브랜드 · 일치율 {cut}% 이상 {count}곳", { cut: strongCut, count: strong }),
+            action: t("추천 매칭 보기"),
             onClick: () => onNavigate("추천 매칭"),
           },
           {
-            label: t("진행 중 협찬"),
-            value: t("{count}건", { count: running }),
-            note:
+            icon: "file",
+            need: t("협찬 준비와 증빙"),
+            title: t("약속부터 증빙까지 한곳에서 해요"),
+            text: t("제안을 주고받고, 임시 전자 계약서로 할 일을 정하고, 한 일을 사진과 링크로 남겨요."),
+            figure: t("{count}건", { count: running }),
+            figureLabel:
               confirmedCount > 0
-                ? t("“협찬 확정 {confirmed}건, 보낸 제안 {sent}건이에요.”", {
-                    confirmed: confirmedCount,
-                    sent: proposals.length,
-                  })
-                : t("“보낸 제안 {sent}건이 답을 기다리고 있어요.”", { sent: proposals.length }),
+                ? t("진행 중 · 확정 {confirmed}건, 보낸 제안 {sent}건", { confirmed: confirmedCount, sent: proposals.length })
+                : t("진행 중 · 보낸 제안 {sent}건", { sent: proposals.length }),
+            action: t("내 행사 보기"),
             onClick: () => onNavigate("내 행사"),
           },
           {
-            label: t("예상 협찬 가치"),
-            value: report ? fullWon(report.sponsorValue) : "-",
-            note: t("현물 환산을 포함한 금액이에요."),
+            icon: "chart",
+            need: t("성과 증명"),
+            title: t("성과를 숫자로 남겨 다음 협찬으로 이어요"),
+            text: t("행사 QR과 쿠폰, 매장 방문을 세어 리포트로 만들고, 쌓인 성과가 다음 브랜드의 신뢰가 돼요."),
+            figure: metrics.scans.toLocaleString(locale),
+            figureLabel: t("누적 QR 참여 · 예상 협찬 가치 {value}", { value: report ? fullWon(report.sponsorValue) : "-" }),
+            action: t("리포트 보기"),
             onClick: () => onNavigate("리포트"),
           },
-          {
-            label: t("누적 QR 참여"),
-            value: metrics.scans.toLocaleString(locale),
-            note: t("참여율 {rate}%", { rate: report ? percent(metrics.scans, report.expectedAudience) : 0 }),
-            onClick: () => onNavigate("성과"),
-          },
         ]}
-        marks={proposed.slice(0, 4).map((match) => (
-          <BrandMark key={match.id} match={match} />
-        ))}
       />
 
       <section className="works-section" id="matches">
@@ -353,7 +336,6 @@ export function DashboardPage({
         </div>
       </section>
 
-      <FaqSection onOpenFaq={onOpenFaq} />
     </div>
   )
 }
