@@ -298,7 +298,7 @@ test("a brand's 내 정보 offers the business check once the server has its key
   await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
   await page.goto("/me")
   // The test server has no NTS_SERVICE_KEY, so it isn't offered yet.
-  const row = page.locator(".service-row", { has: page.getByText("사업자 확인", { exact: true }) })
+  const row = page.locator(".settings-row", { has: page.getByText("사업자 확인", { exact: true }) })
   await expect(row).toContainText("아직 준비 중이에요")
   const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: brand.headers })
   expect(left.status()).toBe(204)
@@ -1048,7 +1048,7 @@ test("a member downloads their data and hands the account over to a new email", 
   await change.getByLabel("인증번호").fill((await change.locator(".field-hint strong").textContent()) ?? "")
   await change.getByRole("button", { name: "이메일 바꾸기" }).click()
   await expect(change).toBeHidden()
-  await expect(page.getByText("e2e-next-officer@syu.ac.kr")).toBeVisible()
+  await expect(page.getByText("e2e-next-officer@syu.ac.kr", { exact: true })).toBeVisible()
 
   // The new officer puts in their own name, position and number.
   await page.getByRole("button", { name: "담당자 정보 수정" }).click()

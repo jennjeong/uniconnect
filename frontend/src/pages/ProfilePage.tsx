@@ -1,9 +1,9 @@
-import type { CSSProperties } from "react"
+import type { ReactNode } from "react"
 
 import { AnimatedNumber } from "../components/AnimatedNumber"
-import { Icon } from "../components/Icon"
+import { Icon, type IconName } from "../components/Icon"
 import { Pill } from "../components/Pill"
-import { RevealTitle, RevealWords } from "../components/RevealText"
+import { RevealTitle } from "../components/RevealText"
 import { mailKinds } from "../data/mail"
 import { profileLabels } from "../data/profile"
 import { socialNames } from "../data/social"
@@ -20,24 +20,78 @@ export type ActivityItem = {
   target: NavLabel
 }
 
-const pad = (value: number) => String(value).padStart(2, "0")
-
-const delay = (seconds: number) => ({ "--reveal-delay": `${seconds}s` }) as CSSProperties
-
-// Blue, silver and slate, as in Stride's stats bento.
-const tileLooks = ["blue", "silver", "slate"]
-
 // The languages the app is in, each named in itself.
 const languages: { code: Lang; name: string }[] = [
   { code: "ko", name: "한국어" },
   { code: "en", name: "English" },
 ]
 
-// The account's own page: a banner on Stride's deep blue mesh with who it
-// is, what it has done so far as three tiles, the introduction the other
-// side sees, the account's details and its language as rows, the account's
-// actions (logout, password, login email for a handover, downloading its
-// data) and, quietly under them, leaving.
+// A settings card: an icon, a title and what it holds, then its rows.
+function SettingsCard({
+  id,
+  icon,
+  title,
+  caption,
+  children,
+}: {
+  id: string
+  icon: IconName
+  title: string
+  caption: string
+  children: ReactNode
+}) {
+  return (
+    <section aria-labelledby={`${id}-title`} className="settings-card" id={id}>
+      <header className="settings-card-head">
+        <span aria-hidden="true" className="settings-card-icon">
+          <Icon name={icon} size={18} />
+        </span>
+        <div>
+          <h2 id={`${id}-title`}>{title}</h2>
+          <p>{caption}</p>
+        </div>
+      </header>
+      {children}
+    </section>
+  )
+}
+
+// One row of a card: what it is, its value, and the action beside it.
+function SettingsRow({
+  label,
+  labelId,
+  value,
+  action,
+}: {
+  label: string
+  labelId?: string
+  value?: ReactNode
+  action?: ReactNode
+}) {
+  return (
+    <div className="settings-row">
+      <dt id={labelId}>{label}</dt>
+      <dd>{value}</dd>
+      {action && <div className="settings-action">{action}</div>}
+    </div>
+  )
+}
+
+// A row's action: a short word on screen, the whole action for screen readers.
+function RowButton({ label, children, onClick, tone }: { label: string; children: ReactNode; onClick?: () => void; tone?: "point" | "danger" }) {
+  return (
+    <button aria-label={label} className={tone ? `row-button ${tone}` : "row-button"} onClick={onClick} type="button">
+      {children}
+    </button>
+  )
+}
+
+// The account's own page, as a settings page: a compact card on Stride's
+// deep blue mesh with who it is, its three counts and the introduction's
+// edit button, then cards for the introduction the other side sees, the
+// account, logging in and security, notices and display, the people and
+// groups it works with, and its data with leaving. Wide screens keep a list
+// of the cards beside them to jump to.
 export function ProfilePage({
   account,
   listing,
@@ -108,24 +162,21 @@ export function ProfilePage({
 }) {
   const students = account.role === "학생단체"
   const labels = profileLabels[account.role]
-  const details = [
-    { label: t("회원 유형"), value: `${t(account.role)} · ${t(account.type)}` },
-    ...(account.school ? [{ label: t("학교"), value: account.school }] : []),
-    { label: t("이메일"), value: account.email },
-    {
-      label: t("담당자 정보"),
-      value: account.contact
-        ? `${account.contact.name} · ${t(account.contact.position)} · ${account.contact.phone}`
-        : t("아직 없어요"),
-    },
-    { label: t("가입일"), value: formatFullDate(toIsoDate(new Date(account.createdAt))) },
-  ]
+  const owner = !account.asMember
   const verified = business?.business
   const paused = listing?.pausedAt !== undefined
-  // The rows after 언어 are numbered on from it.
-  const pauseIndex = details.length + 2 + (business ? 1 : 0) + (blocked ? 1 : 0)
-  const mailIndex = pauseIndex + (onPause && listing ? 1 : 0)
   const mailOff = account.mailOff ?? []
+  const social = onTeam && owner ? socialProviders : []
+  const together = Boolean(onTeam || onCouncil || onCouncilLink || blocked)
+
+  const cards: { id: string; icon: IconName; label: string }[] = [
+    { id: "profile-public", icon: "file", label: t("공개 소개") },
+    { id: "profile-account", icon: "user", label: t("계정") },
+    { id: "profile-security", icon: "lock", label: t("로그인과 보안") },
+    { id: "profile-prefs", icon: "bell", label: t("알림과 표시") },
+    ...(together ? [{ id: "profile-together", icon: "users" as IconName, label: t("함께하는 사람") }] : []),
+    { id: "profile-data", icon: "download", label: t("내 데이터") },
+  ]
 
   return (
     <section className="page-view profile-view">
@@ -136,307 +187,402 @@ export function ProfilePage({
         </button>
       </div>
 
-      <header className="banner-hero profile-banner">
+      <header className="profile-hero">
         <MeshBackdrop seed={5.1} />
-        <div className="banner-content">
-          <div className="banner-top">
-            <span className="eyebrow light">My Page</span>
-            <span className="banner-role">
-              {students ? t("협찬 받기 · 학생단체") : t("협찬 하기 · 브랜드")}
-            </span>
-          </div>
-          <div className="banner-identity">
+        <div className="profile-hero-inner">
+          <div className="profile-hero-who">
             <div aria-hidden="true" className="avatar large">
               {initialOf(account.name)}
             </div>
             <div>
-              <span className="banner-meta">
-                {account.school ? `${account.school} · ${t(account.type)}` : t(account.type)}
+              <span className="eyebrow light">{students ? t("협찬 받기 · 학생단체") : t("협찬 하기 · 브랜드")}</span>
+              <RevealTitle className="profile-hero-name">{account.name}</RevealTitle>
+              <span className="profile-hero-meta">
+                {[account.school, t(account.type), account.email].filter(Boolean).join(" · ")}
               </span>
-              <RevealTitle className="banner-title">{account.name}</RevealTitle>
             </div>
           </div>
-          <div className="banner-bottom">
-            <span className="banner-note">{t("내 정보 · 공개 소개 · 활동")}</span>
-            <div className="banner-actions">
-              <Pill arrow="up-right" onClick={onEdit} variant="white">
-                {listing ? t("소개 편집하기") : t("소개 등록하기")}
-              </Pill>
-            </div>
-          </div>
+          <Pill arrow="up-right" onClick={onEdit} variant="white">
+            {listing ? t("소개 편집하기") : t("소개 등록하기")}
+          </Pill>
         </div>
+        <ul className="profile-hero-stats">
+          {activity.map((item) => (
+            <li key={item.label}>
+              <button onClick={() => onNavigate(item.target)} type="button">
+                <strong>
+                  <AnimatedNumber value={item.value} />
+                </strong>
+                <small>{item.label}</small>
+              </button>
+            </li>
+          ))}
+        </ul>
       </header>
 
-      <ul className="activity-tiles">
-        {activity.map((item, index) => (
-          <li data-reveal key={item.label} style={delay(index * 0.12)}>
-            <button className={`activity-tile ${tileLooks[index] ?? "silver"}`} onClick={() => onNavigate(item.target)} type="button">
-              <strong>
-                <AnimatedNumber value={item.value} />
-              </strong>
-              <small>{item.label}</small>
+      <div className="settings-layout">
+        <nav aria-label={t("내 정보 목차")} className="settings-nav">
+          {cards.map((card) => (
+            <button
+              key={card.id}
+              onClick={() => document.getElementById(card.id)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+              type="button"
+            >
+              <Icon name={card.icon} size={16} />
+              {card.label}
             </button>
-          </li>
-        ))}
-      </ul>
-
-      <section className="about-block">
-        <div className="about-side">
-          <span className="eyebrow">{t("공개 소개")}</span>
-          <Icon name="link" size={220} />
-          <p className="about-note" data-reveal>
-            <Icon name="users" size={20} />
-            <span>
-              {students
-                ? t("브랜드가 단체 찾기에서 보는 정보예요.")
-                : t("학생단체가 추천 매칭에서 보는 정보예요.")}
-            </span>
-          </p>
-        </div>
-        <div className="about-copy">
-          {listing ? (
-            <>
-              {listing.intro ? (
-                <RevealWords className="about-statement">{listing.intro}</RevealWords>
-              ) : (
-                <p className="about-statement muted">{t("소개 문장이 아직 없어요.")}</p>
-              )}
-              <div className="about-offer" data-reveal style={delay(0.15)}>
-                <span>{labels.offer}</span>
-                <strong>{listing.offer}</strong>
-              </div>
-            </>
-          ) : (
-            <p className="about-statement muted">
-              {students
-                ? t("아직 소개가 없어요. 소개를 등록하면 브랜드가 찾기에서 보고 문의할 수 있어요.")
-                : t("아직 소개가 없어요. 소개를 등록하면 학생단체가 찾기에서 보고 문의할 수 있어요.")}
-            </p>
-          )}
-          <div className="about-foot" data-reveal style={delay(0.2)}>
-            {listing ? (
-              <ul className="summary-chips">
-                <li>{t("기본 정보 {count}개", { count: listing.facts?.length ?? 0 })}</li>
-                <li>{t("SNS {count}개", { count: listing.sns?.length ?? 0 })}</li>
-                <li>
-                  {t("{label} {count}개", { label: labels.portfolio, count: listing.portfolio?.length ?? 0 })}
-                </li>
-              </ul>
-            ) : (
-              <span>{t("소개 · 협찬 내용 · SNS · {portfolio}", { portfolio: labels.portfolio })}</span>
-            )}
-            <Pill arrow="up-right" onClick={onEdit} variant="outline">
-              {listing ? t("편집하기") : t("소개 등록하기")}
-            </Pill>
-          </div>
-        </div>
-      </section>
-
-      <section className="service-section">
-        <span className="eyebrow" data-reveal>
-          Account
-        </span>
-        <RevealTitle as="h2" className="section-display">
-          {t("계정 정보")}
-        </RevealTitle>
-        <dl className="service-list">
-          {details.map((detail, index) => (
-            <div className="service-row" data-reveal key={detail.label} style={delay(index * 0.08)}>
-              <span className="service-index">{pad(index + 1)}</span>
-              <dt>{detail.label}</dt>
-              <dd>{detail.value}</dd>
-            </div>
           ))}
-          {/* Picking the other language reloads the page in it, remembered
-              for the next visit, as the footer's switch does. */}
-          <div className="service-row" data-reveal style={delay(details.length * 0.08)}>
-            <span className="service-index">{pad(details.length + 1)}</span>
-            <dt id="language-label">{t("언어")}</dt>
-            <dd>
-              <span aria-labelledby="language-label" className="lang-choice" role="group">
-                {languages.map((item) => (
-                  <button
-                    aria-pressed={lang === item.code}
-                    className={lang === item.code ? "active" : undefined}
-                    key={item.code}
-                    lang={item.code}
-                    onClick={() => {
-                      if (lang !== item.code) setLang(item.code)
-                    }}
-                    type="button"
-                  >
-                    {item.name}
-                  </button>
-                ))}
-              </span>
-            </dd>
-          </div>
-          {business && (
-            <div className="service-row" data-reveal style={delay((details.length + 1) * 0.08)}>
-              <span className="service-index">{pad(details.length + 2)}</span>
-              <dt>{t("사업자 확인")}</dt>
-              <dd>
-                {verified ? (
-                  t("확인됨 · {number} · {date}", {
-                    number: verified.number,
-                    date: formatFullDate(toIsoDate(new Date(verified.verifiedAt))),
-                  })
-                ) : business.ready ? (
-                  <button className="subtle-link" onClick={onVerifyBusiness} type="button">
-                    {t("사업자 확인하기")}
-                  </button>
-                ) : (
-                  t("아직 준비 중이에요")
-                )}
-              </dd>
-            </div>
-          )}
-          {blocked && (
-            <div className="service-row" data-reveal style={delay((details.length + (business ? 2 : 1)) * 0.08)}>
-              <span className="service-index">{pad(details.length + (business ? 3 : 2))}</span>
-              <dt>{t("차단한 상대")}</dt>
-              <dd>
-                {blocked.length === 0 ? (
-                  t("없어요")
-                ) : (
-                  <ul className="blocked-list">
-                    {blocked.map((item) => (
-                      <li key={item.listingId}>
-                        <span>{item.name}</span>
-                        <button className="subtle-link" onClick={() => onUnblock?.(item)} type="button">
-                          {t("차단 풀기")}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </dd>
-            </div>
-          )}
-          {onPause && listing && (
-            <div className="service-row" data-reveal style={delay((pauseIndex - 1) * 0.08)}>
-              <span className="service-index">{pad(pauseIndex)}</span>
-              <dt id="pause-label">{t("목록에서 숨기기")}</dt>
-              <dd>
-                <span className="pause-choice">
-                  <button
-                    aria-checked={paused}
-                    aria-labelledby="pause-label"
-                    className="toggle-switch"
-                    onClick={() => onPause(!paused)}
-                    role="switch"
-                    type="button"
-                  />
-                  <small>
-                    {paused
-                      ? t("숨기는 중이에요. 상대 목록에 보이지 않고 새 제안을 받지 않아요.")
-                      : t("협찬을 받지 않는 동안 상대 목록에서 잠시 빼 둘 수 있어요.")}
-                  </small>
-                </span>
-              </dd>
-            </div>
-          )}
-          {onMail && (
-            <div className="service-row" data-reveal style={delay((mailIndex - 1) * 0.08)}>
-              <span className="service-index">{pad(mailIndex)}</span>
-              <dt id="mail-label">{t("받을 메일")}</dt>
-              <dd>
-                <fieldset aria-labelledby="mail-label" className="mail-choices">
-                  {mailKinds.map((item) => (
-                    <label key={item.kind}>
-                      <input
-                        checked={!mailOff.includes(item.kind)}
-                        onChange={(event) =>
-                          onMail(
-                            event.target.checked ? mailOff.filter((kind) => kind !== item.kind) : [...mailOff, item.kind],
-                          )
-                        }
-                        type="checkbox"
-                      />
-                      <span>
-                        <strong>{item.label}</strong>
-                        <small>{item.caption}</small>
-                      </span>
-                    </label>
-                  ))}
-                  <small className="mail-note">{t("인증번호와 계정 안내 메일은 언제나 보내요. 메일은 지금 쓰는 언어로 가요.")}</small>
-                </fieldset>
-              </dd>
-            </div>
-          )}
-        </dl>
-        <div className="profile-logout">
-          {account.asMember && (
-            <p className="profile-member-note">
-              {t("{name}님은 공동 관리자로 로그인했어요. 탈퇴, 로그인 이메일 바꾸기, 2단계 인증은 대표만 할 수 있어요.", {
-                name: account.asMember.name,
-              })}
-            </p>
-          )}
-          <div className="profile-account-actions">
-            <Pill onClick={onLogout} variant="outline">
-              {t("로그아웃")}
-            </Pill>
-            <Pill onClick={onChangePassword} variant="silver">
-              {t("비밀번호 변경")}
-            </Pill>
-            {onTwoFactor && !account.asMember && (
-              <Pill onClick={onTwoFactor} variant="silver">
-                {account.twoFactorOn ? t("2단계 인증 · 켜짐") : t("2단계 인증 켜기")}
-              </Pill>
+        </nav>
+
+        <div className="settings-cards">
+          <SettingsCard
+            caption={students ? t("브랜드가 단체 찾기에서 보는 정보예요.") : t("학생단체가 추천 매칭에서 보는 정보예요.")}
+            icon="file"
+            id="profile-public"
+            title={t("공개 소개")}
+          >
+            {listing ? (
+              <div className="settings-public">
+                <p className={listing.intro ? "settings-intro" : "settings-intro muted"}>
+                  {listing.intro || t("소개 문장이 아직 없어요.")}
+                </p>
+                <dl className="settings-offer">
+                  <dt>{labels.offer}</dt>
+                  <dd>{listing.offer}</dd>
+                </dl>
+                <ul className="summary-chips">
+                  <li>{t("기본 정보 {count}개", { count: listing.facts?.length ?? 0 })}</li>
+                  <li>{t("SNS {count}개", { count: listing.sns?.length ?? 0 })}</li>
+                  <li>{t("{label} {count}개", { label: labels.portfolio, count: listing.portfolio?.length ?? 0 })}</li>
+                </ul>
+              </div>
+            ) : (
+              <p className="settings-intro muted">
+                {students
+                  ? t("아직 소개가 없어요. 소개를 등록하면 브랜드가 찾기에서 보고 문의할 수 있어요.")
+                  : t("아직 소개가 없어요. 소개를 등록하면 학생단체가 찾기에서 보고 문의할 수 있어요.")}
+              </p>
             )}
-            {onDevices && (
-              <Pill onClick={onDevices} variant="silver">
-                {t("로그인한 기기")}
-              </Pill>
-            )}
-            {onTeam &&
-              !account.asMember &&
-              socialProviders.map((provider) =>
-                account.socialLinks?.includes(provider) ? (
-                  <Pill key={provider} onClick={() => onSocialUnlink(provider)} variant="outline">
-                    {t("{provider} 연결 끊기", { provider: t(socialNames[provider]) })}
-                  </Pill>
-                ) : (
-                  <Pill key={provider} onClick={() => onSocialLink(provider)} variant="silver">
-                    {t("{provider} 계정 연결", { provider: t(socialNames[provider]) })}
-                  </Pill>
-                ),
+            <dl className="settings-rows">
+              {onPause && listing && (
+                <SettingsRow
+                  action={
+                    <button
+                      aria-checked={paused}
+                      aria-labelledby="pause-label"
+                      className="toggle-switch"
+                      onClick={() => onPause(!paused)}
+                      role="switch"
+                      type="button"
+                    />
+                  }
+                  label={t("목록에서 숨기기")}
+                  labelId="pause-label"
+                  value={
+                    <small>
+                      {paused
+                        ? t("숨기는 중이에요. 상대 목록에 보이지 않고 새 제안을 받지 않아요.")
+                        : t("협찬을 받지 않는 동안 상대 목록에서 잠시 빼 둘 수 있어요.")}
+                    </small>
+                  }
+                />
               )}
-            {onCouncil && (
-              <Pill onClick={onCouncil} variant="silver">
-                {t("소속 단체 보기")}
+            </dl>
+            <div className="settings-card-foot">
+              <Pill arrow="up-right" onClick={onEdit} variant="outline">
+                {listing ? t("편집하기") : t("소개 등록하기")}
               </Pill>
+            </div>
+          </SettingsCard>
+
+          <SettingsCard caption={t("가입 정보와 담당자예요. 담당자는 협찬이 확정된 상대에게만 보여요.")} icon="user" id="profile-account" title={t("계정")}>
+            <dl className="settings-rows">
+              <SettingsRow label={t("회원 유형")} value={`${t(account.role)} · ${t(account.type)}`} />
+              {account.school && <SettingsRow label={t("학교")} value={account.school} />}
+              <SettingsRow
+                action={
+                  owner && (
+                    <RowButton label={t("로그인 이메일 바꾸기")} onClick={onChangeEmail}>
+                      {t("변경")}
+                    </RowButton>
+                  )
+                }
+                label={t("이메일")}
+                value={account.email}
+              />
+              <SettingsRow
+                action={
+                  <RowButton label={t("담당자 정보 수정")} onClick={onChangeContact}>
+                    {t("수정")}
+                  </RowButton>
+                }
+                label={t("담당자 정보")}
+                value={
+                  account.contact
+                    ? `${account.contact.name} · ${t(account.contact.position)} · ${account.contact.phone}`
+                    : t("아직 없어요")
+                }
+              />
+              <SettingsRow label={t("가입일")} value={formatFullDate(toIsoDate(new Date(account.createdAt)))} />
+              {business && (
+                <SettingsRow
+                  action={
+                    !verified &&
+                    business.ready && (
+                      <RowButton label={t("사업자 확인하기")} onClick={onVerifyBusiness} tone="point">
+                        {t("확인하기")}
+                      </RowButton>
+                    )
+                  }
+                  label={t("사업자 확인")}
+                  value={
+                    verified ? (
+                      <span className="settings-ok">
+                        <Icon name="check" size={14} />
+                        {t("확인됨 · {number} · {date}", {
+                          number: verified.number,
+                          date: formatFullDate(toIsoDate(new Date(verified.verifiedAt))),
+                        })}
+                      </span>
+                    ) : business.ready ? (
+                      t("아직 확인하지 않았어요")
+                    ) : (
+                      t("아직 준비 중이에요")
+                    )
+                  }
+                />
+              )}
+            </dl>
+          </SettingsCard>
+
+          <SettingsCard caption={t("비밀번호와 2단계 인증, 연결한 계정, 로그인한 기기를 관리해요.")} icon="lock" id="profile-security" title={t("로그인과 보안")}>
+            {account.asMember && (
+              <p className="profile-member-note">
+                {t("{name}님은 공동 관리자로 로그인했어요. 탈퇴, 로그인 이메일 바꾸기, 2단계 인증은 대표만 할 수 있어요.", {
+                  name: account.asMember.name,
+                })}
+              </p>
             )}
-            {onCouncilLink && (
-              <Pill onClick={onCouncilLink} variant="silver">
-                {t("학생회 연결")}
+            <dl className="settings-rows">
+              <SettingsRow
+                action={
+                  <RowButton label={t("비밀번호 변경")} onClick={onChangePassword}>
+                    {t("변경")}
+                  </RowButton>
+                }
+                label={t("비밀번호")}
+                value={t("영문 · 숫자 · 특수문자를 섞은 8자 이상")}
+              />
+              {onTwoFactor && owner && (
+                <SettingsRow
+                  action={
+                    <RowButton
+                      label={account.twoFactorOn ? t("2단계 인증 · 켜짐") : t("2단계 인증 켜기")}
+                      onClick={onTwoFactor}
+                      tone={account.twoFactorOn ? undefined : "point"}
+                    >
+                      {account.twoFactorOn ? t("관리") : t("켜기")}
+                    </RowButton>
+                  }
+                  label={t("2단계 인증")}
+                  value={
+                    account.twoFactorOn ? (
+                      <span className="settings-ok">
+                        <Icon name="check" size={14} />
+                        {t("켜져 있어요")}
+                      </span>
+                    ) : (
+                      t("꺼져 있어요. 켜면 인증 앱의 코드도 있어야 로그인돼요.")
+                    )
+                  }
+                />
+              )}
+              {social.map((provider) => {
+                const name = t(socialNames[provider])
+                const linked = account.socialLinks?.includes(provider)
+                return (
+                  <SettingsRow
+                    action={
+                      linked ? (
+                        <RowButton label={t("{provider} 연결 끊기", { provider: name })} onClick={() => onSocialUnlink(provider)}>
+                          {t("끊기")}
+                        </RowButton>
+                      ) : (
+                        <RowButton label={t("{provider} 계정 연결", { provider: name })} onClick={() => onSocialLink(provider)} tone="point">
+                          {t("연결")}
+                        </RowButton>
+                      )
+                    }
+                    key={provider}
+                    label={t("{provider} 로그인", { provider: name })}
+                    value={
+                      linked
+                        ? t("연결돼 있어요. {provider}로 로그인할 수 있어요.", { provider: name })
+                        : t("연결하면 {provider}로도 로그인할 수 있어요.", { provider: name })
+                    }
+                  />
+                )
+              })}
+              {onDevices && (
+                <SettingsRow
+                  action={
+                    <RowButton label={t("로그인한 기기")} onClick={onDevices}>
+                      {t("보기")}
+                    </RowButton>
+                  }
+                  label={t("로그인한 기기")}
+                  value={t("지금 로그인한 기기를 보고, 다른 기기를 로그아웃시켜요.")}
+                />
+              )}
+            </dl>
+            <div className="settings-card-foot">
+              <Pill onClick={onLogout} variant="outline">
+                {t("로그아웃")}
               </Pill>
+            </div>
+          </SettingsCard>
+
+          <SettingsCard caption={t("화면의 언어와 받을 메일을 골라요.")} icon="bell" id="profile-prefs" title={t("알림과 표시")}>
+            <dl className="settings-rows">
+              {/* Picking the other language reloads the page in it, remembered
+                  for the next visit, as the footer's switch does. */}
+              <SettingsRow
+                action={
+                  <span aria-labelledby="language-label" className="lang-choice" role="group">
+                    {languages.map((item) => (
+                      <button
+                        aria-pressed={lang === item.code}
+                        className={lang === item.code ? "active" : undefined}
+                        key={item.code}
+                        lang={item.code}
+                        onClick={() => {
+                          if (lang !== item.code) setLang(item.code)
+                        }}
+                        type="button"
+                      >
+                        {item.name}
+                      </button>
+                    ))}
+                  </span>
+                }
+                label={t("언어")}
+                labelId="language-label"
+                value={t("화면과 메일에 쓰는 언어예요.")}
+              />
+            </dl>
+            {onMail && (
+              <fieldset aria-labelledby="mail-label" className="mail-choices">
+                <span className="settings-subhead" id="mail-label">
+                  {t("받을 메일")}
+                </span>
+                {mailKinds.map((item) => (
+                  <label key={item.kind}>
+                    <span>
+                      <strong>{item.label}</strong>
+                      <small>{item.caption}</small>
+                    </span>
+                    <input
+                      checked={!mailOff.includes(item.kind)}
+                      className="toggle-check"
+                      onChange={(event) =>
+                        onMail(event.target.checked ? mailOff.filter((kind) => kind !== item.kind) : [...mailOff, item.kind])
+                      }
+                      type="checkbox"
+                    />
+                  </label>
+                ))}
+                <small className="mail-note">{t("인증번호와 계정 안내 메일은 언제나 보내요. 메일은 지금 쓰는 언어로 가요.")}</small>
+              </fieldset>
             )}
-            {onTeam && (
-              <Pill onClick={onTeam} variant="silver">
-                {t("함께 관리하는 사람")}
-              </Pill>
-            )}
-            <Pill onClick={onChangeContact} variant="silver">
-              {t("담당자 정보 수정")}
-            </Pill>
-            {!account.asMember && (
-              <Pill onClick={onChangeEmail} variant="silver">
-                {t("로그인 이메일 바꾸기")}
-              </Pill>
-            )}
-            <Pill onClick={onDownloadData} variant="outline">
-              {t("내 데이터 내려받기")}
-            </Pill>
-          </div>
-          {!account.asMember && (
-            <button className="leave-link" onClick={onLeave} type="button">
-              {t("회원 탈퇴")}
-            </button>
+          </SettingsCard>
+
+          {together && (
+            <SettingsCard caption={t("계정을 함께 쓰는 사람과 연결한 단체, 차단한 상대예요.")} icon="users" id="profile-together" title={t("함께하는 사람")}>
+              <dl className="settings-rows">
+                {onTeam && (
+                  <SettingsRow
+                    action={
+                      <RowButton label={t("함께 관리하는 사람")} onClick={onTeam}>
+                        {t("관리")}
+                      </RowButton>
+                    }
+                    label={t("함께 관리하는 사람")}
+                    value={t("임원이 각자 이메일로 같은 계정에 들어와요.")}
+                  />
+                )}
+                {onCouncil && (
+                  <SettingsRow
+                    action={
+                      <RowButton label={t("소속 단체 보기")} onClick={onCouncil}>
+                        {t("보기")}
+                      </RowButton>
+                    }
+                    label={t("소속 단체")}
+                    value={t("학생회에 연결한 동아리를 한곳에서 봐요.")}
+                  />
+                )}
+                {onCouncilLink && (
+                  <SettingsRow
+                    action={
+                      <RowButton label={t("학생회 연결")} onClick={onCouncilLink}>
+                        {t("연결")}
+                      </RowButton>
+                    }
+                    label={t("학생회")}
+                    value={t("학생회 코드로 소속 학생회에 연결해요.")}
+                  />
+                )}
+                {blocked && (
+                  <SettingsRow
+                    label={t("차단한 상대")}
+                    value={
+                      blocked.length === 0 ? (
+                        t("없어요")
+                      ) : (
+                        <ul className="blocked-list">
+                          {blocked.map((item) => (
+                            <li key={item.listingId}>
+                              <span>{item.name}</span>
+                              <button className="subtle-link" onClick={() => onUnblock?.(item)} type="button">
+                                {t("차단 풀기")}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )
+                    }
+                  />
+                )}
+              </dl>
+            </SettingsCard>
           )}
+
+          <SettingsCard caption={t("계정이 만들고 받은 모든 것을 파일로 받거나, 계정을 지워요.")} icon="download" id="profile-data" title={t("내 데이터")}>
+            <dl className="settings-rows">
+              <SettingsRow
+                action={
+                  <RowButton label={t("내 데이터 내려받기")} onClick={onDownloadData}>
+                    {t("내려받기")}
+                  </RowButton>
+                }
+                label={t("내 데이터 내려받기")}
+                value={t("소개, 행사, 제안, 메시지를 JSON 파일로 받아요.")}
+              />
+              {owner && (
+                <SettingsRow
+                  action={
+                    <RowButton label={t("회원 탈퇴")} onClick={onLeave} tone="danger">
+                      {t("탈퇴하기")}
+                    </RowButton>
+                  }
+                  label={t("회원 탈퇴")}
+                  value={t("계정과 계정이 만든 것이 모두 지워지고 되돌릴 수 없어요.")}
+                />
+              )}
+            </dl>
+          </SettingsCard>
         </div>
-      </section>
+      </div>
     </section>
   )
 }
