@@ -1368,6 +1368,7 @@ function App() {
       return (
         <InsightPage
           id={view.insight}
+          loggedIn={account !== null}
           onBack={() => goBack({ page: "성과 분석" })}
           onLogin={() => (account ? go({ page: "대시보드" }) : openAuth("signup", "브랜드"))}
           onNotice={showNotice}

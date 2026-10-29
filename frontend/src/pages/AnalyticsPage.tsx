@@ -33,6 +33,19 @@ const countUnit = (unit: string) => (lang === "en" ? "" : unit)
 // the totals over getlayers.ai's Interference gradient, then ROAS, insights
 // and a table. The whole analysis, with a report page for each
 // sponsorship, downloads as a PDF.
+// A sponsorship's detailed report at the end of its row: to read, to buy,
+// or from its event's day.
+function ReportButton({ state, onOpen }: { state?: Sponsorship["report"]; onOpen: () => void }) {
+  if (!state || state === "none") return <small className="analytics-report-none">—</small>
+  if (state === "soon") return <small className="analytics-report-none">{t("행사 날부터")}</small>
+  return (
+    <button className={state === "open" ? "report-button open" : "report-button"} onClick={onOpen} type="button">
+      <Icon name={state === "open" ? "file" : "lock"} size={13} />
+      {state === "open" ? t("리포트 보기") : t("리포트 사기")}
+    </button>
+  )
+}
+
 export function AnalyticsPage({
   sponsorships,
   exporting,
@@ -241,6 +254,7 @@ export function AnalyticsPage({
                 <span role="columnheader">{t("매장 방문")}</span>
                 <span role="columnheader">{t("방문당 비용")}</span>
                 <span role="columnheader">ROAS</span>
+                <span role="columnheader">{t("상세 리포트")}</span>
               </div>
               {rows.map((row) => (
                 <div className="analytics-row" key={row.id} role="row">
@@ -249,11 +263,6 @@ export function AnalyticsPage({
                     <small>{row.groupName}</small>
                     <small>{formatFullDate(row.date)}</small>
                     {venueSummary(row) && <small className="venue-summary">{venueSummary(row)}</small>}
-                    {sponsorships.find((item) => item.id === row.id)?.eventId && (
-                      <button className="insight-link" onClick={() => onOpenReport(row.id)} type="button">
-                        <Icon name="file" size={13} /> {t("상세 리포트")}
-                      </button>
-                    )}
                   </span>
                   <span role="cell" data-label={t("집행액")}>
                     {formatWon(row.spend)}
@@ -273,6 +282,9 @@ export function AnalyticsPage({
                     className={row.met ? "analytics-roas met" : "analytics-roas"}
                   >
                     {row.roas}%<small>{t("목표 {target}%", { target: row.targetRoas })}</small>
+                  </span>
+                  <span className="analytics-report" role="cell">
+                    <ReportButton onOpen={() => onOpenReport(row.id)} state={sponsorships.find((item) => item.id === row.id)?.report} />
                   </span>
                 </div>
               ))}
