@@ -27,6 +27,7 @@ export function JourneyChain({
   current,
   scheduleLabel,
   onOpenSchedule,
+  tour = false,
 }: {
   // The paragraph at the bottom of the chain panel.
   intro: string
@@ -36,6 +37,9 @@ export function JourneyChain({
   current: number
   scheduleLabel: string
   onOpenSchedule: () => void
+  // An example dashboard for visitors: the glow and the line follow the
+  // pressed step, to show the flow.
+  tour?: boolean
 }) {
   const wrapRef = useRef<HTMLDivElement>(null)
 
@@ -70,7 +74,7 @@ export function JourneyChain({
             </Pill>
           </div>
         </div>
-        <Stepper current={current} steps={steps} />
+        <Stepper current={current} steps={steps} tour={tour} />
       </section>
     </div>
   )
@@ -83,30 +87,66 @@ const phaseLabel = { done: t("지난 단계"), current: t("지금 단계"), next
 
 // The steps as a stepper: numbered dots on one line, filled in deep blue up
 // to the step under way, whose dot glows with a turning gradient (getlayers'
-// Interference blues) while a light runs along the line toward it. A press
-// on a dot shows that step's details below; the current one shows first.
-function Stepper({ steps, current }: { steps: JourneyStep[]; current: number }) {
+// Interference blues) while a light runs along the line. A press on a dot
+// shows that step's details below; the current one shows first. In the
+// example dashboards (`tour`) the glow and the line follow the pressed dot
+// instead: the line runs on from the last pick to the new one like a
+// loading bar, each dot it passes turning deep blue as the line reaches it
+// (or back to silver as it pulls away).
+function Stepper({ steps, current, tour }: { steps: JourneyStep[]; current: number; tour: boolean }) {
   // The step whose details show: the current one until a dot is pressed
   // (the current step can move once the account's data arrives).
   const [picked, setPicked] = useState<number | null>(null)
-  const open = picked ?? current
+  // The last move from one pick to the next, numbered so that the parity of
+  // `run` swaps the animations' names and each move plays them again.
+  const [move, setMove] = useState<{ from: number; run: number } | null>(null)
+  const last = steps.length - 1
+  const open = Math.min(picked ?? current, last)
+  // The step the glow and the line reach.
+  const lit = tour ? open : Math.min(current, last)
+  const from = tour && move ? Math.min(move.from, last) : lit
+  const span = Math.abs(lit - from)
   const panelId = useId()
   const shown = steps[open] ?? steps[current]
-  const progress = steps.length > 1 ? Math.min(current, steps.length - 1) / (steps.length - 1) : 0
+  const style = {
+    "--progress": last > 0 ? lit / last : 0,
+    "--steps": steps.length,
+    "--fill-time": `${span === 0 ? 0 : Math.max(0.35, span * 0.3)}s`,
+  } as CSSProperties
+  const run = move && span > 0 ? (move.run % 2 ? " run-a" : " run-b") : ""
+
+  // A dot the moving line passes: when it gets there, as a share of the way.
+  const passing = (index: number) => {
+    if (span === 0) return ""
+    if (lit > from && index > from && index <= lit) return " arrive"
+    if (lit < from && index > lit && index <= from) return " leave"
+    return ""
+  }
+  const at = (index: number) => (span === 0 ? 0 : Math.abs(index - from) / span)
 
   return (
-    <div className="stepper" data-reveal style={{ "--progress": progress, "--steps": steps.length } as CSSProperties}>
-      <ol aria-label={t("협찬 단계")} className="stepper-track">
+    <div className="stepper" data-reveal style={style}>
+      <ol aria-label={t("협찬 단계")} className={`stepper-track${run}`}>
         {steps.map((step, index) => {
           const state = phase(index, current)
+          const reached = index <= lit ? " reached" : ""
+          const glow = index === lit ? " glow" : ""
           return (
-            <li className={`stepper-step ${state}`} key={step.label}>
+            <li
+              className={`stepper-step ${state}${reached}${glow}${passing(index)}`}
+              key={step.label}
+              style={{ "--at": at(index) } as CSSProperties}
+            >
               <button
                 aria-controls={panelId}
                 aria-current={index === current ? "step" : undefined}
                 aria-pressed={index === open}
                 className={index === open ? "stepper-dot open" : "stepper-dot"}
-                onClick={() => setPicked(index)}
+                onClick={() => {
+                  if (index === open) return
+                  if (tour) setMove((before) => ({ from: lit, run: (before?.run ?? 0) + 1 }))
+                  setPicked(index)
+                }}
                 type="button"
               >
                 <span aria-hidden="true">{state === "done" ? "✓" : index + 1}</span>
@@ -121,7 +161,12 @@ function Stepper({ steps, current }: { steps: JourneyStep[]; current: number }) 
         })}
       </ol>
 
-      <div aria-live="polite" className={`stepper-detail ${phase(open, current)}`} id={panelId} key={open}>
+      <div
+        aria-live="polite"
+        className={`stepper-detail ${open === lit ? "current" : phase(open, current)}`}
+        id={panelId}
+        key={open}
+      >
         <span className="stepper-detail-index">
           {pad(open + 1)} · {phaseLabel[phase(open, current)]}
         </span>

@@ -99,7 +99,7 @@ export function DashboardPage({
     {
       label: t("행사 등록"),
       status: next ? t("완료") : t("등록 전"),
-      detail: t("인원 · 일정 · 학과 구성과 노출할 자리를 알려 주세요."),
+      detail: t("인원 · 날짜 · 학과 구성과 브랜드가 보일 자리를 적어 두면 추천이 정확해져요."),
     },
     {
       label: t("매칭 · 제안"),
@@ -111,15 +111,15 @@ export function DashboardPage({
             : next
               ? t("진행 중")
               : t("대기"),
-      detail: t("일치율 높은 브랜드에 제안하고 답을 받아요."),
+      detail: t("일치율 높은 브랜드 몇 곳에 먼저 제안하고 답을 기다려요."),
     },
     {
       label: t("집행 관리"),
       status: nextDay ? t("{date} 예정", { date: `${nextDay.getMonth() + 1}.${nextDay.getDate()}` }) : t("대기"),
-      detail: t("협찬 조건과 받은 물품을 행사 전에 함께 확인해요."),
+      detail: t("계약서에서 받을 물품 · 할 일 · 확인 방식을 행사 전에 함께 정해요."),
     },
-    { label: t("성과"), status: t("대기"), detail: t("행사 QR과 쿠폰으로 참여와 방문을 집계해요.") },
-    { label: t("재협찬"), status: t("대기"), detail: t("쌓인 성과가 신뢰가 되어 다음 협찬으로 이어져요.") },
+    { label: t("성과"), status: t("대기"), detail: t("행사 날 QR을 띄우면 참여 · 쿠폰 · 방문이 저절로 집계돼요.") },
+    { label: t("재협찬"), status: t("대기"), detail: t("리포트를 들고 같은 브랜드에 다음 학기 협찬을 제안해요.") },
   ]
 
   const bars = [
@@ -138,7 +138,7 @@ export function DashboardPage({
               ? t("예시 화면 · {semester}", { semester: semesterLabel() })
               : semesterLabel()
         }
-        lines={[t("좋은 행사는,"), t("좋은 파트너를"), t("만날 때 커져요.")]}
+        lines={[t("콜드메일 대신,"), t("행사에 맞는 브랜드를"), t("먼저 만나요.")]}
         stats={[
           { value: t("{count}곳", { count: candidates.length }), label: t("추천 브랜드") },
           { value: t("{count}건", { count: running }), label: t("진행 중 협찬") },
@@ -156,7 +156,7 @@ export function DashboardPage({
             ? t("브랜드의 목록에 보이지 않고 새 협찬 제안을 받지 않아요. 진행 중인 대화와 협찬은 그대로예요.")
             : noBrands
               ? t("학교 근처 가게에 초대장을 보내 첫 파트너를 만들어 보세요. 브랜드가 가입하면 행사와 잘 맞는 순서로 추천해 드려요.")
-              : t("학생단체와 브랜드가 맞닿는 곳에서 협찬이 시작돼요. 일치율이 높은 브랜드부터 제안해 보세요.")
+              : t("일치율이 높은 브랜드부터 제안해 보세요. 수락되면 계약서 · 측정 · 리포트까지 여기서 이어져요.")
         }
         primary={
           paused && onResume
@@ -173,21 +173,21 @@ export function DashboardPage({
           About uniconnect
         </span>
         <RevealStatement
-          lead={t("학생단체와 브랜드를 잇고,")}
+          lead={t("uniconnect는 학생단체와 브랜드를 잇고,")}
           firstChip={<Icon name="link" size={18} />}
-          muted={t("협찬의 성과를 숫자로 증명해요")}
+          muted={t("협찬 성과를 숫자로 남기는 곳이에요")}
           secondChip={<Icon name="chart" size={18} />}
         />
       </section>
 
       <ValuePoints
         eyebrow="What We Do"
-        heading={t("학생단체를 위한 세 가지")}
+        heading={t("학생단체가 여기서 하는 일")}
         points={[
           {
             icon: "spark",
             need: t("협찬처 찾기"),
-            title: t("행사와 잘 맞는 브랜드를 찾아 드려요"),
+            title: t("제안할 곳부터 정해 드려요"),
             text: t("업종 · 관심사 · 협찬 이력으로 일치율을 매기고, 학교 근처 가게까지 가까운 순으로 보여 줘요."),
             figure: t("{count}곳", { count: candidates.length }),
             figureLabel: t("추천 브랜드 · 일치율 {cut}% 이상 {count}곳", { cut: strongCut, count: strong }),
@@ -196,9 +196,9 @@ export function DashboardPage({
           },
           {
             icon: "file",
-            need: t("협찬 준비와 증빙"),
-            title: t("약속부터 증빙까지 한곳에서 해요"),
-            text: t("제안을 주고받고, 임시 전자 계약서로 할 일을 정하고, 한 일을 사진과 링크로 남겨요."),
+            need: t("준비와 증빙"),
+            title: t("약속한 일을 계약서 하나로 챙겨요"),
+            text: t("제안 · 임시 전자 계약서 · 할 일 체크 · 사진 증빙까지 한 화면에서 끝내요."),
             figure: t("{count}건", { count: running }),
             figureLabel:
               confirmedCount > 0
@@ -210,8 +210,8 @@ export function DashboardPage({
           {
             icon: "chart",
             need: t("성과 증명"),
-            title: t("성과를 숫자로 남겨 다음 협찬으로 이어요"),
-            text: t("행사 QR과 쿠폰, 매장 방문을 세어 리포트로 만들고, 쌓인 성과가 다음 브랜드의 신뢰가 돼요."),
+            title: t("다음 제안서에 넣을 숫자가 남아요"),
+            text: t("QR 참여 · 쿠폰 · 매장 방문이 리포트로 쌓이고, 그 기록이 다음 브랜드를 설득해요."),
             figure: metrics.scans.toLocaleString(locale),
             figureLabel: t("누적 QR 참여 · 예상 협찬 가치 {value}", { value: report ? fullWon(report.sponsorValue) : "-" }),
             action: t("리포트 보기"),
@@ -267,13 +267,14 @@ export function DashboardPage({
                 date: formatFullDate(next.date),
                 step: journey[currentStep].label,
               })
-            : t("행사 등록부터 재협찬까지, 한 번의 협찬이 다음 협찬으로 이어지도록 모든 단계를 한곳에서 관리해요.")
+            : t("행사 하나를 등록하면 제안 · 계약 · 측정 · 리포트가 차례로 이어져요.")
         }
-        heading={t("내 협찬, 지금 여기까지 왔어요")}
+        heading={t("지금은 ‘{step}’ 차례예요", { step: journey[currentStep].label })}
         steps={journey}
         current={currentStep}
         scheduleLabel={t("전체 일정 보기")}
         onOpenSchedule={() => onNavigate("내 행사")}
+        tour={demo}
       />
 
       <section className="results-section">
@@ -282,7 +283,7 @@ export function DashboardPage({
             Last Event
           </span>
           <RevealTitle as="h2" className="section-display">
-            {t("함께 만든 지난 행사의 결과")}
+            {t("지난 행사가 남긴 숫자")}
           </RevealTitle>
         </div>
         <div className="results-grid">

@@ -3473,9 +3473,14 @@ button.nav-pill:hover {
 }
 
 /* The sponsorship's steps as a stepper (components/JourneyChain.tsx):
-   numbered dots on one line, deep blue up to the step under way. The
-   current dot glows with a turning gradient and a soft pulse, and a light
-   runs along the filled line toward it. A pressed dot opens its details. */
+   numbered dots on one line, deep blue up to the lit step (the step under
+   way, or the pressed one in the example dashboards), whose dot glows with
+   a turning gradient and a soft pulse while a light runs along the filled
+   line. A pressed dot opens its details. When the lit step moves, the line
+   runs on from the last one like a loading bar over --fill-time, and each
+   dot it passes (.arrive going on, .leave coming back) changes as the line
+   gets there (--at, its share of the way); run-a and run-b swap on each
+   move so the animations play again. */
 .stepper {
   --dot: 56px;
   display: flex;
@@ -3494,7 +3499,7 @@ button.nav-pill:hover {
 }
 
 /* The line runs from the first dot's centre to the last one's; the filled
-   part reaches the current step (--progress, 0 to 1). */
+   part reaches the lit step (--progress, 0 to 1). */
 .stepper-track::before,
 .stepper-track::after {
   position: absolute;
@@ -3516,6 +3521,7 @@ button.nav-pill:hover {
     linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.85) 50%, transparent 100%) 0 0 / 40% 100% no-repeat,
     linear-gradient(90deg, var(--point) 0%, var(--point-bright) 100%);
   animation: stepper-flow 2.4s var(--ease-quart) infinite;
+  transition: width var(--fill-time) linear;
 }
 
 @keyframes stepper-flow {
@@ -3558,21 +3564,21 @@ button.nav-pill:hover {
     box-shadow 0.3s ease;
 }
 
-.stepper-step.done .stepper-dot {
+.stepper-step.reached .stepper-dot {
   background: var(--point);
   color: var(--on-point);
   box-shadow: none;
 }
 
-/* The step under way: a gradient that turns, and a ring that pulses out. */
-.stepper-step.current .stepper-dot {
+/* The lit step: a gradient that turns, and a ring that pulses out. */
+.stepper-step.glow .stepper-dot {
   background: conic-gradient(from var(--turn, 0deg), #1a3e9c, #6f9dff, #c9d8ff, #3c6bf0, #1a3e9c);
   color: #fff;
   box-shadow: 0 12px 28px -10px rgba(26, 62, 156, 0.7);
   animation: stepper-turn 3.2s linear infinite;
 }
 
-.stepper-step.current .stepper-dot::after {
+.stepper-step.glow .stepper-dot::after {
   position: absolute;
   inset: 0;
   border-radius: 50%;
@@ -3593,6 +3599,74 @@ button.nav-pill:hover {
   }
 }
 
+/* A dot the line passes waits for it, then fills with a small pop, or
+   turns back to silver as the line pulls away. */
+.stepper-track.run-a .stepper-step.arrive .stepper-dot {
+  animation: stepper-reach-a 0.4s var(--ease-spring) both calc(var(--fill-time) * var(--at) - 0.08s);
+}
+
+.stepper-track.run-b .stepper-step.arrive .stepper-dot {
+  animation: stepper-reach-b 0.4s var(--ease-spring) both calc(var(--fill-time) * var(--at) - 0.08s);
+}
+
+.stepper-track.run-a .stepper-step.glow.arrive .stepper-dot {
+  animation:
+    stepper-reach-a 0.4s var(--ease-spring) both calc(var(--fill-time) * var(--at) - 0.08s),
+    stepper-turn 3.2s linear infinite;
+}
+
+.stepper-track.run-b .stepper-step.glow.arrive .stepper-dot {
+  animation:
+    stepper-reach-b 0.4s var(--ease-spring) both calc(var(--fill-time) * var(--at) - 0.08s),
+    stepper-turn 3.2s linear infinite;
+}
+
+.stepper-track.run-a .stepper-step.leave .stepper-dot {
+  animation: stepper-leave-a 0.3s ease-out both calc(var(--fill-time) * var(--at) - 0.12s);
+}
+
+.stepper-track.run-b .stepper-step.leave .stepper-dot {
+  animation: stepper-leave-b 0.3s ease-out both calc(var(--fill-time) * var(--at) - 0.12s);
+}
+
+@keyframes stepper-reach-a {
+  from {
+    background: var(--canvas);
+    color: var(--muted);
+    box-shadow: inset 0 0 0 2px var(--line-strong);
+  }
+  55% {
+    scale: 1.16;
+  }
+}
+
+@keyframes stepper-reach-b {
+  from {
+    background: var(--canvas);
+    color: var(--muted);
+    box-shadow: inset 0 0 0 2px var(--line-strong);
+  }
+  55% {
+    scale: 1.16;
+  }
+}
+
+@keyframes stepper-leave-a {
+  from {
+    background: var(--point);
+    color: var(--on-point);
+    box-shadow: none;
+  }
+}
+
+@keyframes stepper-leave-b {
+  from {
+    background: var(--point);
+    color: var(--on-point);
+    box-shadow: none;
+  }
+}
+
 @keyframes stepper-pulse {
   0% {
     box-shadow: 0 0 0 0 rgba(60, 107, 240, 0.45);
@@ -3607,9 +3681,11 @@ button.nav-pill:hover {
   transform: scale(1.1);
 }
 
-.stepper-step:not(.current) .stepper-dot.open {
+/* A ring around the open dot when it isn't the lit one. */
+.stepper-step:not(.glow) .stepper-dot.open {
   box-shadow:
     inset 0 0 0 2px var(--point),
+    0 0 0 5px rgba(60, 107, 240, 0.18),
     0 10px 24px -12px rgba(19, 48, 111, 0.5);
 }
 
@@ -3626,7 +3702,7 @@ button.nav-pill:hover {
   font-weight: var(--weight-label);
 }
 
-.stepper-step.current strong {
+.stepper-step.glow strong {
   color: var(--point-strong);
 }
 
