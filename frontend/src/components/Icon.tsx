@@ -35,6 +35,7 @@ export type IconName =
   | "copy"
   | "eye"
   | "eyeOff"
+  | "heart"
 
 const icons: Record<IconName, ReactNode> = {
   // An open eye, and one struck through, for showing and hiding a password.
@@ -111,6 +112,8 @@ const icons: Record<IconName, ReactNode> = {
       <path d="M14 3v5h5M9 13h6M9 17h6" />
     </>
   ),
+  // 찜: two arcs meeting at a point, filled once saved (CSS).
+  heart: <path d="M12 20.5 4.6 13.2a4.6 4.6 0 0 1 6.5-6.5l.9.9.9-.9a4.6 4.6 0 0 1 6.5 6.5Z" />,
   bell: (
     <>
       <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />

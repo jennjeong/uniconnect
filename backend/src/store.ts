@@ -141,6 +141,7 @@ export function upgradeDatabase(stored: Database) {
   stored.agreements ??= []
   stored.reports ??= []
   stored.blocks ??= {}
+  stored.saved ??= {}
   stored.reviews ??= seedReviews()
   // Sessions saved with their plain token keep working, stored as its hash.
   stored.sessions = (stored.sessions ?? []).map((session) => {

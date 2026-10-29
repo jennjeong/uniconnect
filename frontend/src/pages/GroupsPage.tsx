@@ -14,9 +14,9 @@ import { nearestFirst, shownTags } from "../lib/distance"
 import { matchesGroupFilters, matchesQuery, noGroupFilters, type GroupFilters } from "../lib/search"
 import type { Industry, Match, RequestStatus } from "../types"
 
-type Tab = "추천" | "가까운 순" | "행사 임박" | "전체" | "분야별"
+type Tab = "추천" | "가까운 순" | "행사 임박" | "전체" | "분야별" | "찜"
 
-const tabs: Tab[] = ["추천", "가까운 순", "행사 임박", "전체", "분야별"]
+const tabs: Tab[] = ["추천", "가까운 순", "행사 임박", "전체", "분야별", "찜"]
 
 const tabIntro: Record<Tab, { title: string; caption: string }> = {
   추천: {
@@ -39,6 +39,10 @@ const tabIntro: Record<Tab, { title: string; caption: string }> = {
     title: "분야별로 학생단체를 찾아보세요",
     caption: "원하는 분야를 고르면 해당 단체만 보여드려요.",
   },
+  찜: {
+    title: "찜한 학생단체예요",
+    caption: "하트를 눌러 모아 둔 학생단체예요. 최근에 찜한 순서로 보여 드려요.",
+  },
 }
 
 // Student groups brands can sponsor, by tab.
@@ -49,6 +53,8 @@ export function GroupsPage({
   onEditProfile,
   proposals,
   statuses,
+  saved,
+  onToggleSave,
   onOpenDetail,
   onPropose,
   onCancelProposal,
@@ -67,6 +73,9 @@ export function GroupsPage({
   proposals: string[]
   // Each group's answer to the brand's offer, once it has one.
   statuses: Partial<Record<string, RequestStatus>>
+  // The groups the account saved (찜), newest first, and the heart on each card.
+  saved: string[]
+  onToggleSave: (match: Match) => void
   onOpenDetail: (match: Match) => void
   onPropose: (match: Match) => void
   onCancelProposal: (match: Match) => void
@@ -106,7 +115,9 @@ export function GroupsPage({
             .sort((a, b) => (a.eventDate ?? "").localeCompare(b.eventDate ?? ""))
         : tab === "전체"
           ? groups
-          : groups.filter((group) => group.industry === field)
+          : tab === "찜"
+            ? saved.flatMap((id) => groups.filter((group) => group.id === id))
+            : groups.filter((group) => group.industry === field)
   const shown = list.filter((group) => matchesQuery(group, query) && matchesGroupFilters(group, filters, today))
 
   return (
@@ -222,6 +233,20 @@ export function GroupsPage({
             text={t("학생단체가 가입하면 여기에서 찾아 협찬을 제안할 수 있어요. 그 전에 내 정보에서 브랜드 소개를 써 두면, 가입한 학생단체가 먼저 찾아 제안할 수도 있어요.")}
             action={{ label: t("브랜드 소개 쓰기"), onClick: onEditProfile }}
           />
+        ) : tab === "찜" && list.length === 0 ? (
+          visitor ? (
+            <CatalogEmpty
+              title={t("로그인하면 찜할 수 있어요")}
+              text={t("마음에 드는 학생단체를 하트로 모아 두고 여기에서 다시 볼 수 있어요.")}
+              action={{ label: t("로그인"), onClick: onLogin }}
+            />
+          ) : (
+            <CatalogEmpty
+              title={t("아직 찜한 학생단체가 없어요")}
+              text={t("카드의 하트를 누르면 여기에 모여요.")}
+              action={{ label: t("전체 학생단체 보기"), onClick: () => pickTab("전체") }}
+            />
+          )
         ) : shown.length === 0 ? (
           <p className="day-empty" key={tab}>
             {t("조건에 맞는 학생단체가 없어요.")}
@@ -238,6 +263,8 @@ export function GroupsPage({
                   match={group}
                   meta={`${group.school} · ${t(group.category)}`}
                   onOpenDetail={() => onOpenDetail(group)}
+                  saved={saved.includes(group.id)}
+                  onToggleSave={() => onToggleSave(group)}
                   date={group.eventDate}
                   tags={
                     <>

@@ -137,6 +137,8 @@ function App() {
   const [safety, setSafety] = useState<{ mode: "report" | "block"; target: SafetyTarget } | null>(null)
   // The accounts this one blocked, for 내 정보.
   const [blocked, setBlocked] = useState<BlockedListing[]>([])
+  // The listings it saved (찜), newest first, for the catalogs' 찜 tab.
+  const [saved, setSaved] = useState<string[]>([])
   // A brand's business check, read when 내 정보 opens.
   const [business, setBusiness] = useState<BusinessStatus | null>(null)
   const [account, setAccount] = useState<Account | null>(null)
@@ -247,6 +249,7 @@ function App() {
     setUpdatedAt(null)
     setInquiries([])
     setBlocked([])
+    setSaved([])
   }
   // Brands for student groups, student groups for brands, and whether it
   // has arrived for whoever is looking now.
@@ -396,6 +399,7 @@ function App() {
         ? [
             settle(api.inquiries(), (result) => setInquiries(result.inquiries)),
             settle(api.blocks(), (result) => setBlocked(result.blocked)),
+            settle(api.saved(), (result) => setSaved(result.saved)),
           ]
         : []),
       ...(students
@@ -742,6 +746,26 @@ function App() {
   // Members report and block; the shared demo accounts can't, as everyone
   // trying the demo uses them.
   const member = account !== null && !Object.values(demoAccounts).some((demo) => demo.email === account.email)
+
+  // 찜: the heart keeps a listing to come back to on the catalog's 찜 tab. It
+  // shows at once and goes back if the server refuses.
+  const toggleSaved = (match: Match) => {
+    if (!account) {
+      requireLogin(t("찜하려면 로그인해 주세요."))
+      return
+    }
+    const wasSaved = saved.includes(match.id)
+    const without = (list: string[]) => list.filter((id) => id !== match.id)
+    setSaved((list) => (wasSaved ? without(list) : [match.id, ...without(list)]))
+    ;(wasSaved ? api.unsave(match.id) : api.save(match.id))
+      .then(() => {
+        if (!wasSaved) showNotice(t("찜했어요. 찜 탭에서 모아 볼 수 있어요."))
+      })
+      .catch((error: unknown) => {
+        setSaved((list) => (wasSaved ? [match.id, ...without(list)] : without(list)))
+        handleError(error)
+      })
+  }
 
   const openSafety = (mode: "report" | "block", target: SafetyTarget) => {
     setSafety({ mode, target })
@@ -1208,6 +1232,8 @@ function App() {
             loaded={catalogReady}
             proposals={proposals}
             statuses={statuses}
+            saved={saved}
+            onToggleSave={toggleSaved}
             onOpenDetail={openDetail}
             onPropose={propose}
             onCancelProposal={cancelProposal}
@@ -1255,6 +1281,8 @@ function App() {
             onEditProfile={() => go({ page, profile: "edit" })}
             proposals={proposals}
             statuses={statuses}
+            saved={saved}
+            onToggleSave={toggleSaved}
             onOpenDetail={openDetail}
             onPropose={propose}
             onCancelProposal={cancelProposal}
@@ -1465,6 +1493,8 @@ function App() {
               onChat={() => openChat(detailMatch)}
               onPropose={() => propose(detailMatch)}
               onCancel={() => cancelProposal(detailMatch)}
+              saved={saved.includes(detailMatch.id)}
+              onToggleSave={() => toggleSaved(detailMatch)}
               onReport={
                 member
                   ? () => openSafety("report", { kind: "account", listingId: detailMatch.id, name: detailMatch.name })

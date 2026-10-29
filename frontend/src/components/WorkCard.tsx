@@ -15,7 +15,7 @@ import { Stars } from "./Stars"
 // offer with the score ring centered beside them, a group's event date, how
 // far it is (when both places are known), its reviews' stars (when it has
 // any), tags and the card's actions along the bottom. The card lifts a
-// little on hover.
+// little on hover. Where the page offers 찜, a heart sits beside the badge.
 export function WorkCard({
   match,
   meta,
@@ -23,6 +23,8 @@ export function WorkCard({
   date,
   tags,
   onOpenDetail,
+  saved,
+  onToggleSave,
   children,
 }: {
   match: Match
@@ -35,6 +37,9 @@ export function WorkCard({
   // Tags under the offer; the match's own tags when left out.
   tags?: ReactNode
   onOpenDetail: () => void
+  // 찜: whether it is saved, and the heart that saves or unsaves it.
+  saved?: boolean
+  onToggleSave?: () => void
   // Actions at the bottom, such as the proposal button.
   children: ReactNode
 }) {
@@ -45,14 +50,27 @@ export function WorkCard({
           {rank !== undefined && <b className={rank <= 3 ? "work-rank top" : "work-rank"}>#{rank}</b>}
           {meta}
         </span>
-        <button
-          aria-label={t("{name} 상세 정보", { name: match.name })}
-          className="work-badge"
-          onClick={onOpenDetail}
-          type="button"
-        >
-          <Icon name="arrowUpRight" size={18} />
-        </button>
+        <span className="work-meta-actions">
+          {onToggleSave && (
+            <button
+              aria-label={t("{name} 찜하기", { name: match.name })}
+              aria-pressed={saved === true}
+              className="save-toggle"
+              onClick={onToggleSave}
+              type="button"
+            >
+              <Icon name="heart" size={18} />
+            </button>
+          )}
+          <button
+            aria-label={t("{name} 상세 정보", { name: match.name })}
+            className="work-badge"
+            onClick={onOpenDetail}
+            type="button"
+          >
+            <Icon name="arrowUpRight" size={18} />
+          </button>
+        </span>
       </div>
 
       <div aria-hidden="true" className="work-mark">

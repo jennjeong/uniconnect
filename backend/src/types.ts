@@ -581,4 +581,6 @@ export type Database = {
   // each other's listings, proposals or conversations.
   blocks: Record<string, string[]>
   reviews: Review[]
+  // The listings each account saved (찜), newest first, by account id.
+  saved: Record<string, string[]>
 }

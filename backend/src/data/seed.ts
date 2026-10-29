@@ -1001,5 +1001,6 @@ export async function createSeed(): Promise<Database> {
     measurements: seedMeasurements(muse.id),
     reports: [],
     blocks: {},
+    saved: {},
   }
 }

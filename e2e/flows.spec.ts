@@ -110,6 +110,36 @@ test("the bell's dot shows only while a notice is unread, and stays read on relo
   await expect(dot).toHaveCount(0)
 })
 
+test("a member saves a brand with the heart, finds it on the 찜 tab and lets it go", async ({ page }) => {
+  // A visitor's heart asks them to log in.
+  await page.goto("/matches")
+  await page.locator(".work-card").first().getByRole("button", { name: /찜하기$/ }).click()
+  await expect(page.getByRole("dialog")).toBeVisible()
+  await page.keyboard.press("Escape")
+  await expect(page.getByRole("dialog")).toBeHidden()
+  await logIn(page, "학생단체", "muse@syu.ac.kr")
+  await page.goto("/matches")
+  await page.getByRole("tab", { name: "전체" }).click()
+  const card = page.locator(".work-card").first()
+  const name = (await card.locator("h3").innerText()).trim()
+  const heart = card.getByRole("button", { name: `${name} 찜하기` })
+  await expect(heart).toHaveAttribute("aria-pressed", "false")
+  await heart.click()
+  await expect(heart).toHaveAttribute("aria-pressed", "true")
+  await expect(page.getByRole("status")).toContainText("찜했어요")
+  await page.getByRole("tab", { name: "찜" }).click()
+  await expect(page.locator(".work-card")).toHaveCount(1)
+  await expect(page.locator(".work-card h3")).toHaveText(name)
+  // The detail page shows it saved, and lets it go.
+  await page.locator(".work-card h3").getByRole("button", { name }).click()
+  const save = page.getByRole("button", { name: "찜하기", exact: true })
+  await expect(save).toHaveAttribute("aria-pressed", "true")
+  await save.click()
+  await expect(save).toHaveAttribute("aria-pressed", "false")
+  await page.goBack()
+  await expect(page.getByText("아직 찜한 브랜드가 없어요")).toBeVisible()
+})
+
 test("a member who opens the introduction goes on to the dashboard", async ({ page }) => {
   await page.goto("/")
   await logIn(page, "학생단체", "muse@syu.ac.kr")

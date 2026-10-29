@@ -63,6 +63,8 @@ export function MatchDetailPage({
   onChat,
   onPropose,
   onCancel,
+  saved,
+  onToggleSave,
   onReport,
   onBlock,
   onReportReview,
@@ -77,6 +79,9 @@ export function MatchDetailPage({
   onChat: () => void
   onPropose: () => void
   onCancel: () => void
+  // 찜: whether the account saved it, and the heart that saves or unsaves it.
+  saved: boolean
+  onToggleSave: () => void
   // Members (not the shared demo accounts) can report or block the account
   // behind the listing, and report its reviews.
   onReport?: () => void
@@ -187,6 +192,9 @@ export function MatchDetailPage({
               {proposal}
               <button className="cancel-button" onClick={onChat} type="button">
                 <Icon name="chat" size={16} /> {t("문의하기")}
+              </button>
+              <button aria-pressed={saved} className="cancel-button save-button" onClick={onToggleSave} type="button">
+                <Icon name="heart" size={16} /> {t("찜하기")}
               </button>
             </div>
             {(onReport || onBlock) && (

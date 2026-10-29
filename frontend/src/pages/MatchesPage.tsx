@@ -14,9 +14,9 @@ import { shownTags } from "../lib/distance"
 import { matchesQuery } from "../lib/search"
 import type { Industry, Match, NearbyPlace, RequestStatus } from "../types"
 
-type Tab = "추천" | "가까운 순" | "인기" | "전체" | "업종별"
+type Tab = "추천" | "가까운 순" | "인기" | "전체" | "업종별" | "찜"
 
-const tabs: Tab[] = ["추천", "가까운 순", "인기", "전체", "업종별"]
+const tabs: Tab[] = ["추천", "가까운 순", "인기", "전체", "업종별", "찜"]
 
 const tabIntro: Record<Tab, { title: string; caption: string }> = {
   추천: {
@@ -39,6 +39,10 @@ const tabIntro: Record<Tab, { title: string; caption: string }> = {
     title: "업종별로 브랜드를 찾아보세요",
     caption: "원하는 업종을 고르면 해당 브랜드만 보여드려요.",
   },
+  찜: {
+    title: "찜한 브랜드예요",
+    caption: "하트를 눌러 모아 둔 브랜드예요. 최근에 찜한 순서로 보여 드려요.",
+  },
 }
 
 // Brands for student groups to propose to, by tab.
@@ -48,6 +52,8 @@ export function MatchesPage({
   loaded,
   proposals,
   statuses,
+  saved,
+  onToggleSave,
   onOpenDetail,
   onPropose,
   onCancelProposal,
@@ -64,6 +70,9 @@ export function MatchesPage({
   loaded: boolean
   proposals: string[]
   statuses: Partial<Record<string, RequestStatus>>
+  // The brands the account saved (찜), newest first, and the heart on each card.
+  saved: string[]
+  onToggleSave: (match: Match) => void
   onOpenDetail: (match: Match) => void
   onPropose: (match: Match) => void
   onCancelProposal: (match: Match) => void
@@ -98,7 +107,9 @@ export function MatchesPage({
         ? [...brands].sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0))
         : tab === "전체"
           ? brands
-          : brands.filter((brand) => brand.industry === industry)
+          : tab === "찜"
+            ? saved.flatMap((id) => brands.filter((brand) => brand.id === id))
+            : brands.filter((brand) => brand.industry === industry)
   const shown = list.filter((match) => matchesQuery(match, query))
   const intro = tabIntro[tab]
   // With no brand signed up yet, 추천 can't say it found some.
@@ -182,6 +193,20 @@ export function MatchesPage({
           text={t("가까운 순에서 학교 근처 가게를 찾아 초대장을 보내 보세요. 가게가 브랜드로 가입하면 여기에서 협찬을 제안할 수 있어요.")}
           action={{ label: t("가까운 가게 보기"), onClick: () => pickTab("가까운 순") }}
         />
+      ) : tab === "찜" && list.length === 0 ? (
+        visitor ? (
+          <CatalogEmpty
+            title={t("로그인하면 찜할 수 있어요")}
+            text={t("마음에 드는 브랜드를 하트로 모아 두고 여기에서 다시 볼 수 있어요.")}
+            action={{ label: t("로그인"), onClick: onLogin }}
+          />
+        ) : (
+          <CatalogEmpty
+            title={t("아직 찜한 브랜드가 없어요")}
+            text={t("카드의 하트를 누르면 여기에 모여요.")}
+            action={{ label: t("전체 브랜드 보기"), onClick: () => pickTab("전체") }}
+          />
+        )
       ) : shown.length === 0 && query.trim() ? (
         <p className="day-empty">{t("찾는 브랜드가 없어요. 다른 낱말로 찾아보세요.")}</p>
       ) : (
@@ -199,6 +224,8 @@ export function MatchesPage({
                   meta={t(match.category)}
                   rank={rank}
                   onOpenDetail={() => onOpenDetail(match)}
+                  saved={saved.includes(match.id)}
+                  onToggleSave={() => onToggleSave(match)}
                   tags={
                     <>
                       {rank !== undefined && match.popularity !== undefined && (
