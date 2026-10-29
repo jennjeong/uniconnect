@@ -7471,6 +7471,49 @@ button.nav-pill:hover {
     0 0 0 4px var(--point);
 }
 
+/* 구독 링크 at the end of 캘린더에 추가. */
+.share-subscribe {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+.share-subscribe > strong {
+  font-size: 15px;
+  font-weight: var(--weight-label);
+}
+
+.share-subscribe-url {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--fill);
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.share-subscribe-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.share-subscribe-actions :is(.cancel-button, .primary-button) {
+  height: 38px;
+  padding: 0 14px;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.share-subscribe-confirm {
+  display: grid;
+  gap: 8px;
+}
+
 .share-actions {
   margin: 0;
   padding: 0;

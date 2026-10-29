@@ -1,5 +1,6 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
+import { api, errorMessage } from "../api"
 import { Icon } from "../components/Icon"
 import { Modal } from "../components/Modal"
 import { t } from "../i18n"
@@ -31,10 +32,13 @@ const appLabel = (app: CalendarApp) => t(calendarApps.find((item) => item.id ===
 // the app asks to add them.
 export function CalendarModal({
   entries,
+  subscribe = false,
   onClose,
   onNotice,
 }: {
   entries: CalendarEntry[]
+  // A member's own subscription link at the end (not the demo accounts).
+  subscribe?: boolean
   onClose: () => void
   onNotice?: (message: string) => void
 }) {
@@ -229,7 +233,122 @@ export function CalendarModal({
             </li>
           </ul>
         )}
+        {subscribe && <CalendarSubscription onNotice={onNotice} />}
       </div>
     </Modal>
+  )
+}
+
+// 구독 링크: a secret address calendar apps subscribe to, so new and changed
+// dates arrive by themselves (backend routes/calendar.ts). Made on request
+// and shown again later; a new one, asked for twice since it stops the
+// calendars already subscribed, replaces it when it has leaked.
+function CalendarSubscription({ onNotice }: { onNotice?: (message: string) => void }) {
+  // undefined while it loads, null before one is made.
+  const [url, setUrl] = useState<string | null | undefined>(undefined)
+  const [busy, setBusy] = useState(false)
+  const [replacing, setReplacing] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    api.calendarFeed().then(
+      (result) => {
+        if (!cancelled) setUrl(result.url)
+      },
+      () => {
+        if (!cancelled) setUrl(null)
+      },
+    )
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const change = async (make: boolean) => {
+    setBusy(true)
+    try {
+      if (make) setUrl((await api.createCalendarFeed()).url)
+      else {
+        await api.deleteCalendarFeed()
+        setUrl(null)
+        onNotice?.(t("구독 링크를 지웠어요. 구독한 캘린더에 더는 일정이 들어가지 않아요."))
+      }
+      setReplacing(false)
+    } catch (error) {
+      onNotice?.(errorMessage(error))
+    } finally {
+      setBusy(false)
+    }
+  }
+  const copy = async (link: string) => {
+    try {
+      await navigator.clipboard.writeText(link)
+      onNotice?.(t("구독 링크를 복사했어요."))
+    } catch {
+      onNotice?.(t("구독 링크를 복사하지 못했어요."))
+    }
+  }
+
+  if (url === undefined) return null
+  const webcal = url?.replace(/^https?:/, "webcal:")
+  return (
+    <section aria-labelledby="calendar-subscribe-title" className="share-subscribe">
+      <strong id="calendar-subscribe-title">{t("구독 링크")}</strong>
+      <p className="field-hint">{t("캘린더 앱에서 구독하면 새 일정과 바뀐 일정이 저절로 들어가요.")}</p>
+      {url && webcal ? (
+        <>
+          <input
+            aria-label={t("구독 링크 주소")}
+            className="share-subscribe-url"
+            onFocus={(event) => event.currentTarget.select()}
+            readOnly
+            value={url}
+          />
+          <div className="share-subscribe-actions">
+            <button className="cancel-button" onClick={() => void copy(url)} type="button">
+              <Icon name="copy" size={15} /> {t("링크 복사")}
+            </button>
+            <a
+              className="cancel-button"
+              href={`https://calendar.google.com/calendar/render?cid=${encodeURIComponent(webcal)}`}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              {t("Google 캘린더에서 구독")}
+            </a>
+            <a className="cancel-button" href={webcal}>
+              {t("Apple · Outlook에서 구독")}
+            </a>
+          </div>
+          {replacing ? (
+            <div className="share-subscribe-confirm" role="group" aria-label={t("새 링크로 바꾸기")}>
+              <p className="field-hint">{t("새 링크로 바꿀까요? 이미 구독한 캘린더는 새 링크로 다시 구독해야 해요.")}</p>
+              <div className="share-subscribe-actions">
+                <button className="cancel-button" onClick={() => setReplacing(false)} type="button">
+                  {t("취소")}
+                </button>
+                <button className="primary-button" disabled={busy} onClick={() => void change(true)} type="button">
+                  {t("새 링크 만들기")}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="field-hint">
+              {t("링크를 아는 사람은 내 일정을 볼 수 있어요. 새 링크로 바꾸면 예전 링크는 바로 막혀요.")}{" "}
+              <button className="subtle-link" onClick={() => setReplacing(true)} type="button">
+                {t("새 링크로 바꾸기")}
+              </button>{" "}
+              <button className="subtle-link" disabled={busy} onClick={() => void change(false)} type="button">
+                {t("링크 지우기")}
+              </button>
+            </p>
+          )}
+        </>
+      ) : (
+        <button className="primary-button" disabled={busy} onClick={() => void change(true)} type="button">
+          {t("구독 링크 만들기")}
+        </button>
+      )}
+    </section>
   )
 }

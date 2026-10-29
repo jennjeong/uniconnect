@@ -24,7 +24,7 @@ describe("the calendar file of events", () => {
 
   test("escapes commas, semicolons, backslashes and new lines", () => {
     const file = calendarFile([{ id: "e3", title: "A, B; C\\D", date: "2026-12-01", description: "줄 하나\n줄 둘" }], "x", now)
-    expect(file).toContain("SUMMARY:A\\, B\; C\\\\D\r\n")
+    expect(file).toContain("SUMMARY:A\\, B\\; C\\\\D\r\n")
     expect(file).toContain("DESCRIPTION:줄 하나\\n줄 둘\r\n")
   })
 

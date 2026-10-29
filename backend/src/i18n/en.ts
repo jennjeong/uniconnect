@@ -269,6 +269,8 @@ const en: Record<string, string> = {
   "지울 답글이 없어요.": "There's no reply to delete.",
   "신고할 답글을 찾을 수 없어요.": "We couldn't find the reply to report.",
   "내릴 답글이 없어요.": "There's no reply to take down.",
+  "데모 계정은 구독 링크를 만들 수 없어요.": "The demo accounts can't make a subscription link.",
+  "캘린더를 찾을 수 없어요.": "We couldn't find that calendar.",
   "찜은 200곳까지 할 수 있어요. 찜 탭에서 몇 곳을 풀어 주세요.": "You can save up to 200. Remove a few on the Saved tab.",
   "담당자 이름을 입력해 주세요.": "Please enter the contact person's name.",
   "담당자 이름은 20자 이하로 입력해 주세요.": "Please keep the contact person's name to 20 characters or fewer.",

@@ -13,7 +13,7 @@ export type CalendarEntry = {
 }
 
 const escapeText = (text: string) =>
-  text.replace(/\\/g, "\\\\").replace(/;/g, "\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n")
+  text.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n")
 
 export const compact = (date: string) => date.replace(/-/g, "")
 

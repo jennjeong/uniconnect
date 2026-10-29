@@ -54,7 +54,7 @@ const demoLocked = "데모 계정은 비밀번호를 바꾸거나 탈퇴할 수 
 // An account the operators stopped over a report.
 const suspendedMessage = "운영 정책에 따라 이용이 정지된 계정이에요."
 
-const toPublic = ({ passwordHash, termsAgreedAt, ...account }: Account): PublicAccount =>
+const toPublic = ({ passwordHash, termsAgreedAt, calendarFeed, ...account }: Account): PublicAccount =>
   account
 
 function startSession(accountId: string) {

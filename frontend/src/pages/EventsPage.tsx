@@ -141,6 +141,7 @@ export function EventsPage({
   onDelete,
   onOpenSponsorship,
   onNotice,
+  canSubscribe = false,
 }: {
   role: Role
   events: EventItem[]
@@ -154,6 +155,8 @@ export function EventsPage({
   onDelete: (event: EventItem) => void
   onOpenSponsorship?: () => void
   onNotice?: (message: string) => void
+  // A member's 캘린더에 추가 also offers its subscription link.
+  canSubscribe?: boolean
 }) {
   const today = todayIso()
 
@@ -437,7 +440,9 @@ export function EventsPage({
       </div>
 
       <Presence show={calendar !== null}>
-        {calendar && <CalendarModal entries={calendar} onClose={() => setCalendar(null)} onNotice={onNotice} />}
+        {calendar && (
+          <CalendarModal entries={calendar} onClose={() => setCalendar(null)} onNotice={onNotice} subscribe={canSubscribe} />
+        )}
       </Presence>
     </section>
   )

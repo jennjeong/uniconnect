@@ -354,6 +354,32 @@ test("the report and the analytics download as CSV files that Excel opens", asyn
   }
 })
 
+test("a member subscribes calendar apps to a link, and a new link stops the old one", async ({ page, request }) => {
+  const group = await signUpMember(request, "학생단체", "e2e-feed@syu.ac.kr", "구독 동아리")
+  const day = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date(Date.now() + 5 * 86_400_000))
+  await request.post("/api/events", { data: { name: "구독 공연", date: day, types: ["현금"] }, headers: group.headers })
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
+  await page.goto("/events")
+  await page.getByRole("button", { name: "캘린더에 추가" }).click()
+  const sheet = page.getByRole("dialog")
+  await sheet.getByRole("button", { name: "구독 링크 만들기" }).click()
+  const address = sheet.getByRole("textbox", { name: "구독 링크 주소" })
+  await expect(address).toHaveValue(/\/api\/calendar\/[\w-]{32}\.ics$/)
+  const url = await address.inputValue()
+  // A calendar app reads it without logging in.
+  const feed = await request.get(url)
+  expect(feed.status()).toBe(200)
+  expect(await feed.text()).toContain("SUMMARY:구독 공연")
+  await expect(sheet.getByRole("link", { name: "Apple · Outlook에서 구독" })).toHaveAttribute("href", url.replace(/^https?:/, "webcal:"))
+  // A new link, asked for twice, stops the old one.
+  await sheet.getByRole("button", { name: "새 링크로 바꾸기" }).click()
+  await sheet.getByRole("button", { name: "새 링크 만들기" }).click()
+  await expect(address).not.toHaveValue(url)
+  expect((await request.get(url)).status()).toBe(404)
+  const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: group.headers })
+  expect(left.status()).toBe(204)
+})
+
 test("a student group proposes and the brand accepts", async ({ browser }) => {
   const student = await (await browser.newContext()).newPage()
   await student.goto("/")
