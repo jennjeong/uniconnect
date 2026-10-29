@@ -309,6 +309,8 @@ const en: Record<string, string> = {
   "새 메시지": "New messages",
   "읽지 않은 메시지가 오기 시작할 때": "When unread messages start coming in",
   "행사 사흘 전부터 한 번": "Once, from three days before an event",
+  "주간 추천 요약": "Weekly picks",
+  "지난 일주일 동안 가입한 잘 맞는 상대, 월요일마다": "Good fits who joined in the past week, on Mondays",
   "인증번호와 계정 안내 메일은 언제나 보내요. 메일은 지금 쓰는 언어로 가요.": "Codes and account notices always go. Emails come in the language you use here.",
   "받을 메일을 바꿨어요.": "Email choices saved.",
   "숨기는 중이에요. 상대 목록에 보이지 않고 새 제안을 받지 않아요.": "Hidden for now. You don't show in the other side's lists or get new proposals.",

@@ -13,4 +13,5 @@ export const mailKinds: { kind: MailKind; label: string; caption: string }[] = [
   },
   { kind: "messages", label: t("새 메시지"), caption: t("읽지 않은 메시지가 오기 시작할 때") },
   { kind: "reminders", label: t("다가오는 일정"), caption: t("행사 사흘 전부터 한 번") },
+  { kind: "digest", label: t("주간 추천 요약"), caption: t("지난 일주일 동안 가입한 잘 맞는 상대, 월요일마다") },
 ]

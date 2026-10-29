@@ -257,7 +257,7 @@ export type Account = {
 }
 
 // The kinds of notice email (data/mail.ts).
-export type MailKind = "proposals" | "sponsorships" | "messages" | "reminders"
+export type MailKind = "proposals" | "sponsorships" | "messages" | "reminders" | "digest"
 
 // Whether brands can verify their business here (the server has the key),
 // and this brand's confirmed registration.

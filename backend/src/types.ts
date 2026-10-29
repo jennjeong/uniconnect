@@ -98,8 +98,9 @@ export type AccountContact = { name: string; position: string; phone: string }
 
 // The kinds of notice email an account can turn off in 내 정보 (mailKinds in
 // lib/validation.ts): proposals and their answers, news of confirmed
-// sponsorships, messages, and days that are near.
-export type MailKind = "proposals" | "sponsorships" | "messages" | "reminders"
+// sponsorships, messages, days that are near, and the weekly digest of
+// partners who joined (lib/digest.ts).
+export type MailKind = "proposals" | "sponsorships" | "messages" | "reminders" | "digest"
 
 export type Account = {
   id: string
@@ -135,6 +136,8 @@ export type Account = {
   // The kinds of notice email the account turned off; codes and notices
   // about the account itself always go.
   mailOff?: MailKind[]
+  // The Monday (Korea) the weekly digest last looked at this account.
+  digestOn?: string
   // The secret link calendar apps subscribe to (routes/calendar.ts); kept
   // as made, so 내 정보 can show it again, and never in the account's data
   // the app gets.
