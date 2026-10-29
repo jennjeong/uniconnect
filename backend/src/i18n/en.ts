@@ -333,6 +333,16 @@ const en: Record<string, string> = {
   "플랫폼 수수료를 결제하면 확인돼요.": "Pay the platform fee to confirm.",
   "낼 수수료가 없어요.": "There's no fee to pay.",
   "끝난 행사의 협찬액은 바꿀 수 없어요.": "The value can't change after the event is over.",
+  // The detailed report (routes/insights.ts)
+  "측정한 협찬을 찾을 수 없어요.": "We couldn't find that measured sponsorship.",
+  "상세 리포트는 행사 날부터 살 수 있어요.": "The detailed report can be bought from the event's day.",
+  "데모 계정은 매장 방문 수를 적을 수 없어요.": "The demo accounts can't write store visits.",
+  "상세 리포트를 산 뒤에 적을 수 있어요.": "Buy the detailed report to write this.",
+  "하루 방문객 수는 0부터 100,000까지의 숫자로 적어 주세요.": "Please write daily visitors as a number from 0 to 100,000.",
+  "협찬 전 하루 방문객 수를 1 이상으로 적어 주세요.": "Please write at least 1 daily visitor before the sponsorship.",
+  "데모 계정은 리포트를 공유할 수 없어요.": "The demo accounts can't share reports.",
+  "상세 리포트를 산 뒤에 공유할 수 있어요.": "Buy the detailed report to share it.",
+  "공유가 끝났거나 없는 리포트예요.": "This report is no longer shared, or doesn't exist.",
   "{name}에서 '{event}' 협찬의 협찬액을 바꿨어요. 바뀐 내용을 보고 다시 확인해 주세요.":
     "{name} changed the value of the '{event}' sponsorship. Please check the change and confirm again.",
 

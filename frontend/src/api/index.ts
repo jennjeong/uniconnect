@@ -3,6 +3,8 @@ import type {
   AccountContact,
   AdminInquiry,
   AdminPayment,
+  InsightAnswer,
+  PremiumReport,
   BillingInfo,
   Payment,
   PaymentKind,
@@ -230,6 +232,12 @@ export const api = {
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/confirm`, { method: "POST" }),
   saveAgreementValue: (id: string, value: { cash: number; inKind: number }) =>
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/value`, { method: "PUT", body: { value } }),
+  insight: (id: string) => request<InsightAnswer>(`/insights/${encodeURIComponent(id)}`),
+  sharedInsight: (token: string) => request<{ report: PremiumReport }>(`/insights/shared/${encodeURIComponent(token)}`),
+  saveLift: (id: string, body: { before: number; during: number }) =>
+    request<{ report: PremiumReport }>(`/insights/${encodeURIComponent(id)}/lift`, { method: "PUT", body }),
+  shareInsight: (id: string) => request<{ shareToken: string }>(`/insights/${encodeURIComponent(id)}/share`, { method: "POST" }),
+  unshareInsight: (id: string) => request<void>(`/insights/${encodeURIComponent(id)}/share`, { method: "DELETE" }),
   billing: () => request<BillingInfo>("/billing"),
   order: (kind: PaymentKind, targetId: string) =>
     request<PaymentOrder>("/billing/orders", { method: "POST", body: { kind, targetId } }),

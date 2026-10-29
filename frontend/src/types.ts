@@ -182,6 +182,7 @@ export type Payment = {
   cancelledAt?: string
   cancelReason?: string
   periodEnd?: string
+  openedAt?: string
 }
 
 // Prices, whether card payment is on, and the account's payments.
@@ -520,6 +521,9 @@ export type SentProposal = {
 // One finished sponsorship of a brand, for its analytics.
 export type Sponsorship = {
   id: string
+  // The student event it sponsored, when measured; its detailed report is
+  // at /insights/<id>.
+  eventId?: string
   groupName: string
   eventName: string
   date: string
@@ -793,3 +797,76 @@ export type CouncilClub = {
 
 // A council a club linked to (내 정보's 학생회 연결).
 export type CouncilLink = { id: string; name: string; type: string; school: string; linkedAt: string }
+
+// A figure among the other events measured on uniconnect: their median, how
+// many there were, and the share of them this one beat. None below three.
+export type Benchmark = { median: number; count: number; beats: number } | null
+
+export type ScoreKey = "reach" | "scans" | "coupons" | "visits" | "qrRate" | "visitRate" | "roas"
+
+// 상세 성과 리포트 (backend lib/premiumReport.ts): one sponsorship's detailed
+// report, worked out live until its coupons' days are over.
+export type PremiumReport = {
+  number: string
+  issuedAt: string
+  final: boolean
+  finalOn: string
+  sponsorship: { id: string; brandName: string; groupName: string; eventName: string }
+  event: {
+    date: string
+    endDate?: string
+    venue?: string
+    people?: string
+    window: { start: string; end: string; visitsEnd: string }
+  }
+  spend: number
+  averageSpend: number
+  snsReach: number
+  sales: number
+  grade: "S" | "A" | "B" | "C" | "D"
+  achievement: number
+  scorecard: { key: ScoreKey; target: number; actual: number; achievement: number | null }[]
+  funnel: { key: "audience" | "scans" | "coupons" | "visits"; count: number; rate: number | null; benchmark: Benchmark }[]
+  costs: {
+    perThousandReach: number | null
+    perScan: number | null
+    perCoupon: number | null
+    perVisit: number | null
+    perVisitBenchmark: Benchmark
+    roasBenchmark: Benchmark
+  }
+  time: {
+    hourly: { date: string; hour: number; scans: number }[]
+    peak: { date: string; hour: number; scans: number } | null
+    daily: { date: string; scans: number; coupons: number; visits: number }[]
+    lag: { days: number[]; average: number | null; sample: number }
+    recordsKept: number
+  }
+  effect: {
+    before: number
+    during: number
+    days: number
+    lift: number
+    extraVisitors: number
+    extraSales: number
+    incrementalRoas: number
+    attributedShare: number | null
+  } | null
+  fulfillment: { items: { side: ChatSide; label: string; done: boolean; proof: number }[]; done: number; proof: number }
+  venue: VenueCounts
+  methods: MethodKind[]
+  reviews: { side: ChatSide; rating: number; tags: string[]; comment: string }[]
+  advice: { code: string; values?: Record<string, number | string> }[]
+  next: { id: string; name: string; school: string; category: string; score: number; event?: { name: string; date: string } }[]
+  benchmarkCount: number
+}
+
+// The report as its page loads it: a preview with the price until bought.
+export type InsightAnswer =
+  | {
+      locked: true
+      price: number
+      open: boolean
+      sponsorship: { id: string; groupName: string; eventName: string; date: string }
+    }
+  | { locked: false; report: PremiumReport; editable: boolean; shared: boolean; shareToken?: string }

@@ -371,6 +371,12 @@ export type Sponsorship = {
   targetRoas: number
   // When the brand was emailed that the day is near (lib/reminders.ts).
   remindedAt?: string
+  // The store's own daily visitors, which the detailed report (lib/
+  // premiumReport.ts) compares: on the same weekdays before the
+  // sponsorship, and during its coupons' days.
+  lift?: { before: number; during: number; updatedAt: string }
+  // The detailed report's read-only link (/insights/shared/<token>), while shared.
+  shareToken?: string
 }
 
 // What a student group sets before an event to measure it against.
@@ -680,6 +686,8 @@ export type Payment = {
   cancelReason?: string
   // Pro: the day the month paid for ends (Korean date).
   periodEnd?: string
+  // A report: when its buyer first opened it (no refund after, per the terms).
+  openedAt?: string
 }
 
 export type Database = {

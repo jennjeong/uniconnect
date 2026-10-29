@@ -236,6 +236,7 @@ function PaymentCard({
         {payment.accountName} · {payment.id}
         {payment.status === "paid" && ` · ${payment.method === "card" ? t("카드") : t("계좌 입금")}`}
         {payment.status === "cancelled" && ` · ${payment.cancelReason ?? ""}`}
+        {payment.kind === "report" && payment.status === "paid" && ` · ${payment.openedAt ? t("열어 봄") : t("아직 안 열어 봄")}`}
       </p>
       <div className="admin-report-actions">
         {payment.status === "pending" && (

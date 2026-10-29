@@ -1347,3 +1347,42 @@ test("a brand writes the value, pays the 15% fee to confirm, and finds it under 
     expect((await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: member.headers })).status()).toBe(204)
   }
 })
+
+test("the detailed report: the demo's open from 성과 분석, a member's locked behind its price", async ({ page, request, browser }) => {
+  // Visitors read the demo brand's, from its analytics.
+  await page.goto("/analytics?role=브랜드")
+  await page.getByRole("button", { name: "상세 리포트" }).first().click()
+  await expect(page).toHaveURL(/\/insights\/sp-/)
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
+  for (const section of ["핵심 요약", "목표 대비 성과", "전환 퍼널과 비교", "비용 효율", "언제 왔나요", "평소 대비 효과", "다음 협찬 제안", "측정 방법과 가정"]) {
+    await expect(page.getByRole("region", { name: section })).toBeVisible()
+  }
+  await expect(page.getByRole("img", { name: /종합 등급/ })).toBeVisible()
+  // The demo only reads: no share link, no store counts to write.
+  await expect(page.getByRole("button", { name: "공유 링크 만들기" })).toHaveCount(0)
+  await expect(page.getByRole("button", { name: "효과 계산하기" })).toHaveCount(0)
+
+  // A member's sponsorship of today's event: the preview with its price.
+  const group = await signUpMember(request, "학생단체", "e2e-insight@syu.ac.kr", "리포트 동아리")
+  const brand = await signUpMember(request, "브랜드", "e2e-insight@insight-cafe.kr", "리포트 카페")
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date())
+  await request.post("/api/events", { data: { name: "리포트 공연", date: today, types: ["현금"] }, headers: group.headers })
+  await request.post("/api/proposals", { data: { matchId: brand.listingId }, headers: group.headers })
+  const { requests } = (await (await request.get("/api/requests", { headers: brand.headers })).json()) as { requests: { id: string }[] }
+  await request.post(`/api/requests/${requests[0].id}/accept`, { headers: brand.headers })
+  await request.get(`/api/agreements/${requests[0].id}`, { headers: brand.headers })
+  const member = await (await browser.newContext()).newPage()
+  await member.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
+  await member.goto(`/insights/sp-${requests[0].id}`)
+  await expect(member.getByText("화면에서 보는 숫자 너머의 리포트")).toBeVisible()
+  await expect(member.locator(".insight-price")).toContainText("50,000원")
+  await member.getByRole("button", { name: "리포트 사기" }).click()
+  const pay = member.getByRole("dialog", { name: "상세 성과 리포트 결제" })
+  await expect(pay).toContainText("연 뒤에는 환불되지 않아요")
+  await pay.getByText("결제 내용을 확인했고,").click()
+  await pay.getByRole("button", { name: "계좌 입금으로 요청하기" }).click()
+  await expect(member.getByText("계좌 입금을 요청했어요. 입금이 확인되면 리포트가 열려요.")).toBeVisible()
+  for (const account of [group, brand]) {
+    expect((await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: account.headers })).status()).toBe(204)
+  }
+})
