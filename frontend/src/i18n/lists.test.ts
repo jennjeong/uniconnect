@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest"
 
+import { carriers } from "../data/carriers"
 import { inquiryCategories } from "../data/inquiries"
 import { methodInfo } from "../data/methods"
 import { metricInfo } from "../data/metrics"
@@ -28,6 +29,7 @@ describe("English for listed values", () => {
       "샘플링 · 시음",
       ...inquiryCategories,
       ...reportReasons,
+      ...carriers,
       ...placeCategories.map((category) => category.label),
       ...roles.flatMap((role) => reviewTags[role]),
       "매칭 중",

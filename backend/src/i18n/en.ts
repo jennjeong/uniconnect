@@ -582,6 +582,11 @@ const en: Record<string, string> = {
   "템플릿은 10개까지 저장할 수 있어요.": "You can save up to 10 templates.",
   "템플릿 이름은 1~30자로 적어 주세요.": "Give the template a name of 1 to 30 characters.",
   "템플릿 내용은 1~300자로 적어 주세요.": "Write the template in 1 to 300 characters.",
+  "택배사를 목록에서 골라 주세요.": "Pick the carrier from the list.",
+  "운송장 번호는 숫자나 영문 6~20자로 적어 주세요.": "Write the tracking number as 6 to 20 letters or digits.",
+  "배송은 10건까지 남길 수 있어요.": "You can note up to 10 parcels.",
+  "배송을 찾을 수 없어요.": "Couldn't find that parcel.",
+  "상대가 남긴 배송은 상대만 지울 수 있어요.": "Only the other side can remove a parcel it noted.",
 }
 
 export default en

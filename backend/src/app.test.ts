@@ -3874,6 +3874,30 @@ test("methods saved before they were split, and e-contracts already confirmed, k
   assert.equal(upgradeMethods(undefined), undefined)
 })
 
+test("either side notes the parcels it sent on the agreement, and only it takes one off", async () => {
+  const group = await signUpMember("parcel-club@syu.ac.kr", "parcel-pass-123")
+  const groupId = getDatabase().accounts.find((account) => account.email === "parcel-club@syu.ac.kr")!.id
+  const { token: brand, listingId } = await listedMember("parcel@parcel-cafe.kr", "parcel-pass-123", "브랜드")
+  await call("POST", "/events", { name: "택배 공연", date: "2026-12-20", people: "100명", types: ["제품"] }, group)
+  assert.equal((await call("POST", "/proposals", { matchId: listingId }, group)).status, 201)
+  const request = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
+  await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+  const path = `/agreements/${request.id}/shipments`
+  const added = await call("POST", path, { carrier: "CJ대한통운", number: "1234-5678-9012", note: "음료 3박스" }, brand)
+  assert.equal(added.status, 201)
+  const [shipment] = added.data.agreement.shipments
+  assert.deepEqual([shipment.side, shipment.carrier, shipment.number, shipment.note], ["brand", "CJ대한통운", "123456789012", "음료 3박스"])
+  // The group reads it; carriers come from the list and numbers are checked.
+  assert.equal((await call("GET", `/agreements/${request.id}`, undefined, group)).data.agreement.shipments.length, 1)
+  assert.equal((await call("POST", path, { carrier: "아무 택배", number: "123456" }, group)).status, 400)
+  assert.equal((await call("POST", path, { carrier: "우체국택배", number: "12" }, group)).status, 400)
+  // Only the side that noted it takes it off.
+  assert.equal((await call("DELETE", `${path}/${shipment.id}`, undefined, group)).status, 403)
+  const removed = await call("DELETE", `${path}/${shipment.id}`, undefined, brand)
+  assert.equal(removed.data.agreement.shipments, undefined)
+  assert.equal((await call("POST", path, { carrier: "CJ대한통운", number: "123456789" })).status, 401)
+})
+
 test("both sides of an accepted proposal keep an agreement, confirm it and prove what they did", async () => {
   const { existsSync } = await import("node:fs")
   const { uploadsFolder } = await import("./lib/agreements.js")

@@ -7,6 +7,7 @@ import { Presence } from "../components/Presence"
 import { Pill } from "../components/Pill"
 import { ReviewCard, ReviewReply } from "../components/ReviewCard"
 import { starPath } from "../components/Stars"
+import { carriers, trackingLink } from "../data/carriers"
 import { methodInfo, methodKinds, sortedMethods } from "../data/methods"
 import { reviewTags } from "../data/reviews"
 import { locale, t } from "../i18n"
@@ -15,7 +16,7 @@ import { formatDateTime, formatFullDate } from "../lib/date"
 import { photoFromFile } from "../lib/image"
 import { fullWon } from "../lib/sponsorships"
 import { PaymentModal } from "../modals/PaymentModal"
-import type { Agreement, AgreementItem, ChatSide, MeasureMethod, MethodKind, MethodSide, Metrics, Review } from "../types"
+import type { Agreement, AgreementItem, ChatSide, MeasureMethod, MethodKind, MethodSide, Metrics, Review, Shipment } from "../types"
 import { agreementState } from "./AgreementsPage"
 
 // A proof photo, fetched with the login token (an <img> can't send it) and
@@ -914,6 +915,100 @@ function ValuePanel({
 // side's items to tick off with links and photos as proof; each side's
 // confirmation of the items as they stand; and printing it (or saving it
 // as a PDF from the print dialog).
+// 협찬 물품 배송: the parcels either side sent, each with its carrier, number
+// and a link to look it up, and a row to note one more. Only the side that
+// noted a parcel takes it off.
+function ShipmentsPanel({
+  agreement,
+  busy,
+  onAdd,
+  onRemove,
+}: {
+  agreement: Agreement
+  busy: boolean
+  onAdd: (body: { carrier: string; number: string; note?: string }) => Promise<boolean>
+  onRemove: (shipmentId: string) => void
+}) {
+  const [carrier, setCarrier] = useState<string>(carriers[0])
+  const [number, setNumber] = useState("")
+  const [note, setNote] = useState("")
+  const shipments = agreement.shipments ?? []
+  const canceled = Boolean(agreement.cancel?.canceledAt)
+  if (canceled && shipments.length === 0) return null
+  const sideName = (side: Shipment["side"]) => (side === "group" ? agreement.group.name : agreement.brand.name)
+  return (
+    <section aria-labelledby="agreement-shipments-title" className="agreement-section agreement-shipments">
+      <h2 id="agreement-shipments-title">{t("협찬 물품 배송")}</h2>
+      <p className="field-hint">{t("물품을 택배로 보냈다면 운송장 번호를 남겨 주세요. 상대에게 메일로 알리고, 여기서 바로 조회할 수 있어요.")}</p>
+      {shipments.length > 0 && (
+        <ul className="shipment-list">
+          {shipments.map((shipment) => (
+            <li key={shipment.id}>
+              <div>
+                <strong>
+                  {t(shipment.carrier)} · {shipment.number}
+                </strong>
+                <small>
+                  {t("{name}에서 보냄", { name: sideName(shipment.side) })} · {formatDateTime(shipment.addedAt)}
+                  {shipment.note ? ` · ${shipment.note}` : ""}
+                </small>
+              </div>
+              <a className="cancel-button" href={trackingLink(shipment.carrier, shipment.number)} rel="noreferrer" target="_blank">
+                {t("배송 조회")}
+              </a>
+              {shipment.side === agreement.side && !canceled && (
+                <button
+                  aria-label={t("{number} 배송 지우기", { number: shipment.number })}
+                  className="delete-button"
+                  disabled={busy}
+                  onClick={() => onRemove(shipment.id)}
+                  type="button"
+                >
+                  <Icon name="close" size={14} />
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      {!canceled && (
+        <form
+          className="shipment-form"
+          onSubmit={async (event) => {
+            event.preventDefault()
+            if (await onAdd({ carrier, number: number.trim(), ...(note.trim() ? { note: note.trim() } : {}) })) {
+              setNumber("")
+              setNote("")
+            }
+          }}
+        >
+          <label>
+            {t("택배사")}
+            <select onChange={(event) => setCarrier(event.target.value)} value={carrier}>
+              {carriers.map((item) => (
+                <option key={item} value={item}>
+                  {t(item)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            {t("운송장 번호")}
+            <input inputMode="numeric" maxLength={24} onChange={(event) => setNumber(event.target.value)} value={number} />
+          </label>
+          <label>
+            {t("메모 (선택)")}
+            <input maxLength={60} onChange={(event) => setNote(event.target.value)} placeholder={t("예) 음료 3박스")} value={note} />
+          </label>
+          <button className="primary-button" disabled={busy || !number.trim()} type="submit">
+            {t("배송 남기기")}
+          </button>
+        </form>
+      )}
+    </section>
+  )
+}
+
 export function AgreementPage({
   id,
   loggedIn,
@@ -1182,6 +1277,13 @@ export function AgreementPage({
       />
 
       <GoalsPanel agreement={agreement} onEdit={onEditGoals} />
+
+      <ShipmentsPanel
+        agreement={agreement}
+        busy={busy}
+        onAdd={(body) => run(() => api.addShipment(agreement.id, body), t("배송을 남겼어요. 상대에게 알렸어요."))}
+        onRemove={(shipmentId) => void run(() => api.deleteShipment(agreement.id, shipmentId), t("배송을 지웠어요."))}
+      />
 
       {editing ? (
         <ItemsEditor

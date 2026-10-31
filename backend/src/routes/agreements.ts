@@ -23,7 +23,7 @@ import { methodsOf, parseMethods } from "../lib/methods.js"
 import { notify } from "../lib/notices.js"
 import { parsePhoto, photoName, photoType, photos } from "../lib/photos.js"
 import { isDemoAccount } from "../lib/reviews.js"
-import { text } from "../lib/validation.js"
+import { carriers, text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { AgreementItem, Database } from "../types.js"
@@ -31,7 +31,7 @@ import type { AgreementItem, Database } from "../types.js"
 export const agreementsRouter = Router()
 
 // How much one agreement holds.
-export const agreementLimits = { items: 12, links: 5, photos: 3 }
+export const agreementLimits = { items: 12, links: 5, photos: 3, shipments: 10 }
 
 // Links as proof: http or https addresses only.
 function parseLinks(value: unknown) {
@@ -212,6 +212,44 @@ agreementsRouter.put("/:id/value", async (req, res) => {
       `/agreements/${encodeURIComponent(agreement.id)}`,
     )
   }
+  res.json({ agreement: agreementView(database, agreement, proposal, side) })
+})
+
+// Either side notes a parcel it sent (carrier and tracking number), and the
+// other side hears about it. Sent parcels don't change what was agreed, so
+// confirmations stay.
+agreementsRouter.post("/:id/shipments", async (req, res) => {
+  const { account, database, proposal, side } = openedToChange(req)
+  const carrier = text(req.body?.carrier)
+  const number = text(req.body?.number).replace(/[\s-]/g, "")
+  const note = text(req.body?.note).slice(0, 60)
+  if (!(carriers as readonly string[]).includes(carrier)) throw new HttpError(400, "택배사를 목록에서 골라 주세요.")
+  if (!/^[A-Za-z0-9]{6,20}$/.test(number)) throw new HttpError(400, "운송장 번호는 숫자나 영문 6~20자로 적어 주세요.")
+  const { agreement } = agreementFor(database, proposal)
+  const shipments = (agreement.shipments ??= [])
+  if (shipments.length >= agreementLimits.shipments) throw new HttpError(400, "배송은 10건까지 남길 수 있어요.")
+  shipments.push({ id: randomUUID(), side, carrier, number, ...(note ? { note } : {}), addedAt: new Date().toISOString() })
+  await saveDatabase()
+  void notify(
+    side === "group" ? proposal.brand.account : proposal.group.account,
+    "sponsorships",
+    "협찬 물품을 보냈어요",
+    [`${account.name}에서 '${proposal.eventName}' 협찬 물품을 ${carrier}로 보냈어요. 운송장 번호는 ${number}예요.`],
+    `/agreements/${encodeURIComponent(agreement.id)}`,
+  )
+  res.status(201).json({ agreement: agreementView(database, agreement, proposal, side) })
+})
+
+// The side that noted a parcel takes it off (a wrong number, say).
+agreementsRouter.delete("/:id/shipments/:shipmentId", async (req, res) => {
+  const { database, proposal, side } = openedToChange(req)
+  const { agreement } = agreementFor(database, proposal)
+  const shipment = agreement.shipments?.find((item) => item.id === String(req.params.shipmentId))
+  if (!shipment) throw new HttpError(404, "배송을 찾을 수 없어요.")
+  if (shipment.side !== side) throw new HttpError(403, "상대가 남긴 배송은 상대만 지울 수 있어요.")
+  agreement.shipments = agreement.shipments!.filter((item) => item !== shipment)
+  if (agreement.shipments.length === 0) delete agreement.shipments
+  await saveDatabase()
   res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 
