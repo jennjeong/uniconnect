@@ -72,3 +72,20 @@ export function platformStats(database: Database, now = new Date()): PlatformSta
     questionsWaiting: count(database.inquiries.filter((inquiry) => !inquiry.answer), (inquiry) => isReal(inquiry.accountId)),
   }
 }
+
+// What the dashboards may show anyone (GET /api/site): how many members
+// signed up on each side, from how many schools, and the sponsorships they
+// made, never counting the demo accounts or the seed.
+export function publicCounts(database: Database) {
+  const demo = new Set(Object.values(database.demoAccountIds))
+  const members = database.accounts.filter((account) => !demo.has(account.id))
+  const groups = members.filter((account) => account.role === "학생단체")
+  return {
+    groups: groups.length,
+    brands: members.filter((account) => account.role === "브랜드").length,
+    schools: new Set(groups.map((account) => account.school.trim()).filter(Boolean)).size,
+    sponsorships: Object.entries(database.sponsorships)
+      .filter(([accountId]) => !demo.has(accountId))
+      .reduce((total, [, list]) => total + list.length, 0),
+  }
+}

@@ -64,6 +64,17 @@ async function call(method: string, route: string, body?: unknown, token?: strin
   return { status: response.status, data: text ? JSON.parse(text) : null }
 }
 
+test("the site's counts are members only and grow with each sign-up", async () => {
+  const before = (await call("GET", "/site")).data.counts
+  assert.deepEqual(Object.keys(before).sort(), ["brands", "groups", "schools", "sponsorships"])
+  await signUpMember("counted@toolscafe.kr", "Counted-pass1!", "브랜드")
+  await signUpMember("counted@syu.ac.kr", "Counted-pass1!")
+  const after = (await call("GET", "/site")).data.counts
+  assert.equal(after.brands, before.brands + 1)
+  assert.equal(after.groups, before.groups + 1)
+  assert.ok(after.schools >= 1)
+})
+
 test("health check and unknown routes", async () => {
   assert.deepEqual((await call("GET", "/health")).data, { ok: true })
   assert.equal((await call("GET", "/nope")).status, 404)

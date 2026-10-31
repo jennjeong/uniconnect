@@ -9,6 +9,7 @@ import { MeetingHero } from "../components/MeetingHero"
 import { ProposalControl } from "../components/ProposalControl"
 import { RevealStatement, RevealTitle } from "../components/RevealText"
 import { ValuePoints } from "../components/ValuePoints"
+import { WhyUniconnect } from "../components/WhyUniconnect"
 import { WorkCard } from "../components/WorkCard"
 import { t } from "../i18n"
 import { dDayLabel, nextEvent, semesterLabel, shortDay } from "../lib/date"
@@ -258,6 +259,48 @@ export function BrandDashboardPage({
             figureLabel: t("평균 ROAS · 누적 집행액 {spend}", { spend: fullWon(totals.spend) }),
             action: t("성과 분석 보기"),
             onClick: () => onNavigate("성과 분석"),
+          },
+        ]}
+      />
+
+      <WhyUniconnect
+        heading={t("캠퍼스 협찬, 보낸 만큼 돌아왔는지 확인하세요")}
+        before={[
+          t("쏟아지는 제안 메일 중 어디가 맞는지 알 수 없어요"),
+          t("보낸 물품이 행사에서 어떻게 쓰였는지 몰라요"),
+          t("효과는 사진 몇 장으로 짐작할 뿐이에요"),
+          t("학교마다 담당자를 따로 찾아 연락해요"),
+        ]}
+        after={[
+          t("우리 업종과 맞는 단체를 일치율 순으로 받아 봐요"),
+          t("계약서의 할 일과 사진 증빙으로 집행을 확인해요"),
+          t("쿠폰 · 매장 방문 · 추정 매출로 ROAS를 계산해요"),
+          t("여러 학교 행사를 한 캘린더와 한 화면에서 관리해요"),
+        ]}
+        pillars={[
+          {
+            icon: "spark",
+            title: t("이유가 보이는 일치율"),
+            text: t("업종 · 관심사 · 행사 규모 · 함께한 기록 · 응답 준비 다섯 가지로 단체를 줄 세우고, 왜 맞는지 보여 줘요."),
+            proof: t("단체 찾기 · 추천"),
+          },
+          {
+            icon: "store",
+            title: t("매장에서 확인하는 방문"),
+            text: t("쿠폰을 받은 참여자가 오면 매장 직원이 PIN으로 확인해요. 학생단체가 대신 셀 수 없어요."),
+            proof: t("직원 PIN 확인"),
+          },
+          {
+            icon: "chart",
+            title: t("협찬별 ROAS"),
+            text: t("협찬 하나하나의 쿠폰 · 방문 · 추정 매출을 목표와 비교하고, 성과 분석을 PDF로 받아요."),
+            proof: t("성과 분석 PDF"),
+          },
+          {
+            icon: "heart",
+            title: t("공개된 파트너 후기"),
+            text: t("행사가 끝나면 양쪽이 서로를 평가해요. 다음 파트너를 고를 때 별점과 태그를 먼저 봐요."),
+            proof: t("파트너 후기"),
           },
         ]}
       />
