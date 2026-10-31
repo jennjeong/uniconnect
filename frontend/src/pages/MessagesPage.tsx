@@ -6,7 +6,13 @@ import type { Conversation } from "../types"
 
 // The last message in a line: its text, or the kind of file it sent.
 const previewOf = (last: NonNullable<Conversation["lastMessage"]>) =>
-  last.attachment === "image" ? t("사진") : last.attachment === "pdf" ? t("PDF 파일") : last.text
+  last.attachment === "image"
+    ? t("사진")
+    : last.attachment === "pdf"
+      ? t("PDF 파일")
+      : last.meeting
+        ? t("미팅 제안")
+        : last.text
 
 // Conversations with brands (for student groups) or groups (for brands),
 // latest first.

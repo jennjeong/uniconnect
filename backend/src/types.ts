@@ -543,6 +543,19 @@ export type ChatMessage = {
   deletedAt?: string
   // A photo or PDF sent with it; gone once the message is deleted.
   attachment?: ChatAttachment
+  // A meeting proposed as the message (미팅 잡기), answered by the other side.
+  meeting?: Meeting
+}
+
+// A meeting one side proposes in a conversation: the day and Korean time it
+// starts, how long, where (a place or a video link), and how it stands.
+export type Meeting = {
+  date: string
+  time: string
+  minutes: number
+  place: string
+  status: "proposed" | "accepted" | "declined" | "canceled"
+  answeredAt?: string
 }
 
 // A file sent in a conversation (routes/conversations.ts): a photo resized

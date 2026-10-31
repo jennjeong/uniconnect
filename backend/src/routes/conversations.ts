@@ -11,7 +11,8 @@ import { isDemoAccount } from "../lib/reviews.js"
 import { text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, refreshDatabase, saveDatabase } from "../store.js"
-import type { Account, ChatAttachment, ChatSide, Conversation, Database } from "../types.js"
+import { todayInKorea } from "../lib/dates.js"
+import type { Account, ChatAttachment, ChatSide, Conversation, Database, Meeting } from "../types.js"
 
 export const conversationsRouter = Router()
 
@@ -58,6 +59,7 @@ function view(conversation: Conversation, side: ChatSide, withMessages = false) 
           mine: last.from === side,
           ...(last.deletedAt ? { deleted: true } : {}),
           ...(last.attachment ? { attachment: last.attachment.type } : {}),
+          ...(last.meeting && !last.deletedAt ? { meeting: true } : {}),
         }
       : null,
     // A message the sender deleted is not waiting to be read.
@@ -75,6 +77,7 @@ function view(conversation: Conversation, side: ChatSide, withMessages = false) 
             ...(message.editedAt ? { editedAt: message.editedAt } : {}),
             ...(message.deletedAt ? { deletedAt: message.deletedAt } : {}),
             ...(message.attachment ? { attachment: message.attachment } : {}),
+            ...(message.meeting && !message.deletedAt ? { meeting: message.meeting } : {}),
           })),
         }
       : {}),
@@ -249,7 +252,7 @@ async function countMessage(req: Parameters<typeof senderKey>[0], account: Accou
 async function addMessage(
   account: Account,
   conversation: Conversation,
-  entry: { text: string; attachment?: ChatAttachment },
+  entry: { text: string; attachment?: ChatAttachment; meeting?: Meeting },
   line: string,
 ) {
   const side = sideOf(account)
@@ -277,6 +280,77 @@ conversationsRouter.post("/:id/messages", async (req, res) => {
   await countMessage(req, account)
   await addMessage(account, conversation, { text: message }, message.slice(0, 80))
   res.status(201).json({ conversation: view(conversation, sideOf(account), true) })
+})
+
+// How long a meeting may run, in minutes.
+const meetingLengths = [30, 60, 90, 120]
+
+// A meeting as asked for: a day from today on (Korean time), a start time,
+// one of the lengths and where, with an optional note as the message.
+function parseMeeting(body: Record<string, unknown> | undefined) {
+  const date = text(body?.date)
+  const time = text(body?.time)
+  const minutes = Number(body?.minutes)
+  const place = text(body?.place)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(`${date}T00:00:00Z`))) {
+    throw new HttpError(400, "미팅 날짜를 골라 주세요.")
+  }
+  if (date < todayInKorea()) throw new HttpError(400, "오늘이나 그 뒤의 날짜를 골라 주세요.")
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) throw new HttpError(400, "미팅 시작 시각을 골라 주세요.")
+  if (!meetingLengths.includes(minutes)) throw new HttpError(400, "미팅 시간을 목록에서 골라 주세요.")
+  if (!place || place.length > 100) throw new HttpError(400, "장소나 화상 회의 링크를 100자 이하로 적어 주세요.")
+  const note = text(body?.note)
+  if (note.length > 300) throw new HttpError(400, "메모는 300자 이하로 적어 주세요.")
+  return { meeting: { date, time, minutes, place, status: "proposed" as const }, note }
+}
+
+// 미팅 잡기: a meeting proposed as a message of its own, which the other side
+// accepts or declines and the sender can call off while it waits.
+conversationsRouter.post("/:id/meetings", async (req, res) => {
+  const account = requireAccount(req)
+  const conversation = findOwn(account, req.params.id)
+  const { meeting, note } = parseMeeting(req.body)
+  await countMessage(req, account)
+  const line = `미팅 제안: ${meeting.date} ${meeting.time} · ${meeting.place}`
+  await addMessage(account, conversation, { text: note || line, meeting }, line)
+  res.status(201).json({ conversation: view(conversation, sideOf(account), true) })
+})
+
+const meetingAnswers: Record<string, Meeting["status"]> = { accept: "accepted", decline: "declined", cancel: "canceled" }
+
+conversationsRouter.post("/:id/meetings/:messageId/answer", async (req, res) => {
+  const account = requireAccount(req)
+  const conversation = findOwn(account, req.params.id)
+  const side = sideOf(account)
+  const message = conversation.messages.find((item) => item.id === req.params.messageId)
+  if (!message?.meeting || message.deletedAt) throw new HttpError(404, "미팅 제안을 찾을 수 없어요.")
+  const answer = String(req.body?.answer ?? "")
+  const status = Object.hasOwn(meetingAnswers, answer) ? meetingAnswers[answer] : undefined
+  if (!status) throw new HttpError(400, "수락, 거절, 취소 가운데 골라 주세요.")
+  // The sender calls it off; the other side accepts or declines.
+  if ((status === "canceled") !== (message.from === side)) {
+    throw new HttpError(403, status === "canceled" ? "보낸 쪽만 미팅 제안을 취소할 수 있어요." : "받은 쪽만 미팅 제안에 답할 수 있어요.")
+  }
+  if (message.meeting.status !== "proposed" && !(status === "canceled" && message.meeting.status === "accepted")) {
+    throw new HttpError(409, "이미 답한 미팅 제안이에요.")
+  }
+  message.meeting.status = status
+  message.meeting.answeredAt = new Date().toISOString()
+  await saveDatabase()
+  changed(conversation.id)
+  const other: ChatSide = side === "group" ? "brand" : "group"
+  const partner = getDatabase().accounts.find((item) =>
+    other === "brand" ? item.brandId === conversation.brandId : item.groupId === conversation.groupId,
+  )
+  const word = status === "accepted" ? "수락했어요" : status === "declined" ? "거절했어요" : "취소했어요"
+  void notify(
+    partner,
+    "messages",
+    `미팅 제안을 ${word}`,
+    [`${account.name}에서 ${message.meeting.date} ${message.meeting.time} 미팅을 ${word}.`],
+    `/messages/${conversation.id}`,
+  )
+  res.json({ conversation: view(conversation, side, true) })
 })
 
 // Bytes of files one account keeps in its conversations, all told.
@@ -355,6 +429,7 @@ conversationsRouter.put("/:id/messages/:messageId", async (req, res) => {
   const message = findOwnMessage(conversation, side, req.params.messageId)
   if (message.deletedAt) throw new HttpError(409, "삭제한 메시지는 고칠 수 없어요.")
   if (message.attachment) throw new HttpError(409, "보낸 파일은 고칠 수 없어요. 지우고 다시 보내 주세요.")
+  if (message.meeting) throw new HttpError(409, "미팅 제안은 고칠 수 없어요. 지우고 다시 보내 주세요.")
   const edited = messageText(req.body?.text)
   if (edited !== message.text) {
     message.text = edited

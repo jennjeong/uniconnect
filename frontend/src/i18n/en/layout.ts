@@ -301,6 +301,22 @@ const en: Record<string, string> = {
   // The account panel under the header's account button (layout/AccountPanel.tsx)
   "내 계정": "Account menu",
   "복사하지 못했어요": "Couldn’t copy",
+  "미팅 제안": "Meeting proposal",
+  "답을 기다려요": "Waiting for an answer",
+  "확정된 미팅": "Meeting confirmed",
+  "거절된 미팅": "Meeting declined",
+  "취소된 미팅": "Meeting canceled",
+  "{name} 미팅": "Meeting with {name}",
+  "{minutes}분": "{minutes} min",
+  "Google 캘린더에 추가": "Add to Google Calendar",
+  "미팅 취소": "Cancel meeting",
+  "미팅 잡기": "Set up a meeting",
+  "시작 시각": "Start time",
+  "미팅 시간": "Length",
+  "장소 또는 화상 회의 링크": "Place or video call link",
+  "예) 학생회관 2층 카페, Zoom 링크": "e.g. Student union café, a Zoom link",
+  "예) 협찬 물품과 부스 위치를 같이 정해요.": "e.g. Let’s settle the goods and the booth spot.",
+  "미팅 제안 보내기": "Send meeting proposal",
 }
 
 export default en

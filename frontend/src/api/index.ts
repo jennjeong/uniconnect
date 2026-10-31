@@ -498,6 +498,13 @@ export const api = {
       `/conversations/${encodeURIComponent(id)}/messages`,
       { method: "POST", body: { text } },
     ),
+  proposeMeeting: (id: string, body: { date: string; time: string; minutes: number; place: string; note?: string }) =>
+    request<{ conversation: Conversation }>(`/conversations/${encodeURIComponent(id)}/meetings`, { method: "POST", body }),
+  answerMeeting: (id: string, messageId: string, answer: "accept" | "decline" | "cancel") =>
+    request<{ conversation: Conversation }>(
+      `/conversations/${encodeURIComponent(id)}/meetings/${encodeURIComponent(messageId)}/answer`,
+      { method: "POST", body: { answer } },
+    ),
   editMessage: (id: string, messageId: string, text: string) =>
     request<{ conversation: Conversation }>(
       `/conversations/${encodeURIComponent(id)}/messages/${encodeURIComponent(messageId)}`,
