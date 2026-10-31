@@ -179,6 +179,13 @@ export function pageMeta(
       noindex: true,
     }
   }
+  if (view.explore) {
+    return {
+      title: titled(t("다른 단체 행사 둘러보기")),
+      description: t("다른 학생회와 동아리의 다가오는 행사와 비슷한 행사의 협찬 사례를 봐요."),
+      noindex: true,
+    }
+  }
   if (view.council) {
     return {
       title: titled(t("소속 단체")),

@@ -145,6 +145,38 @@ test("a group puts its plan PDF on the event page, and brands who see the page d
   assert.equal((await fetch(`${baseUrl}/events/${id}/plan`, { headers: { Authorization: `Bearer ${brand}` } })).status, 404)
 })
 
+test("groups explore each other's coming events, and similar events' sponsorships by kind", async () => {
+  const { token: host } = await listedMember("explore-host@syu.ac.kr", "explore-pass-123")
+  const hostId = getDatabase().accounts.find((account) => account.email === "explore-host@syu.ac.kr")!.id
+  const { token: viewer } = await listedMember("explore-viewer@syu.ac.kr", "explore-pass-123")
+  const { token: brand, listingId } = await listedMember("explore@explore-cafe.kr", "explore-pass-123", "브랜드")
+  const made = await call(
+    "POST",
+    "/events",
+    { name: "탐색 축제", date: "2026-12-20", people: "400명", types: ["제품"], kind: "축제", intro: "가".repeat(400), packages: [{ name: "메인", gives: "현수막 로고", asks: "음료 300잔" }] },
+    host,
+  )
+  await call("POST", "/proposals", { matchId: listingId, eventId: made.data.event.id }, host)
+  const request = getDatabase().requests.find((item) => item.fromAccountId === hostId)!
+  request.ask = "음료 300잔"
+  await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+
+  const seen = (await call("GET", "/events/explore", undefined, viewer)).data
+  const event = seen.events.find((item: { name: string }) => item.name === "탐색 축제")
+  assert.ok(event)
+  assert.equal(event.kind, "축제")
+  assert.equal(event.intro.length, 220)
+  assert.deepEqual(event.packages, [{ name: "메인", gives: "현수막 로고" }])
+  assert.equal(event.own, undefined)
+  // A member sees members only, never the examples.
+  assert.ok(!seen.events.some((item: { group: { name: string } }) => item.group.name === "삼육대 뮤즈"))
+  const festival = seen.cases.find((item: { kind: string }) => item.kind === "축제")
+  assert.deepEqual([festival.sponsorships, festival.averagePeople, festival.asks], [1, 400, ["음료 300잔"]])
+  // The host sees its own marked.
+  const own = (await call("GET", "/events/explore", undefined, host)).data.events.find((item: { name: string }) => item.name === "탐색 축제")
+  assert.equal(own.own, true)
+})
+
 test("the site's counts are members only and grow with each sign-up", async () => {
   const before = (await call("GET", "/site")).data.counts
   assert.deepEqual(Object.keys(before).sort(), ["brands", "groups", "schools", "sponsorships"])

@@ -33,6 +33,7 @@ export const sampleViews: View[] = [
   { page: "대시보드", invite: "Ab3_x-9Z" },
   { page: "대시보드", agreements: true },
   { page: "대시보드", council: true },
+  { page: "대시보드", explore: true },
   { page: "성과 분석", insight: "sp-busking" },
   { page: "대시보드", sharedReport: "abc_DEF-123" },
   { page: "대시보드", agreement: "req-runners" },

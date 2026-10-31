@@ -40,6 +40,8 @@ export type View = {
   agreement?: string
   // A student council's clubs (/council).
   council?: true
+  // 행사 둘러보기: other groups' coming events and similar events' cases (/explore).
+  explore?: true
   // A brand's detailed report of one sponsorship (/insights/<id>), or one
   // shared read-only by its link (/report/<token>).
   insight?: string
@@ -99,6 +101,7 @@ export function viewPath(view: View) {
   if (view.agreement) return `${base}/agreements/${encodeURIComponent(view.agreement)}`
   if (view.agreements) return `${base}/agreements`
   if (view.council) return `${base}/council`
+  if (view.explore) return `${base}/explore`
   if (view.insight) return `${base}/insights/${encodeURIComponent(view.insight)}`
   if (view.sharedReport) return `${base}/report/${encodeURIComponent(view.sharedReport)}`
   const path = pagePaths[view.page]
@@ -147,6 +150,7 @@ export function readView(location: Location = window.location): View {
   if (first === "terms" || first === "privacy") return second ? missing : { page: "대시보드", legal: first }
   if (first === "admin") return second ? missing : { page: "대시보드", admin: true }
   if (first === "council") return second ? missing : { page: "대시보드", council: true }
+  if (first === "explore") return second ? missing : { page: "대시보드", explore: true }
   const named = second === undefined ? undefined : decodeSegment(second)
   if (second !== undefined && named === undefined) return missing
   if (first === "messages") {

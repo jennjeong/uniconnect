@@ -477,6 +477,18 @@ test("a visitor lays two brands side by side, and opens one from the table", asy
   await expect(page).toHaveURL(/\/matches\/[^/]+$/)
 })
 
+test("a group opens other groups' events from its calendar, and one event's page from there", async ({ page }) => {
+  await page.goto("/events")
+  await page.getByRole("button", { name: "다른 단체 행사 보기" }).click()
+  await expect(page).toHaveURL(/\/explore$/)
+  await expect(page.getByRole("heading", { level: 1, name: "다른 단체 행사 둘러보기" })).toBeVisible()
+  const first = page.locator(".post-card h3 button").first()
+  const name = (await first.textContent()) ?? ""
+  await first.click()
+  await expect(page).toHaveURL(/\/event\/[^/]+$/)
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(name)
+})
+
 test("both dashboards show what sets uniconnect apart, before and after", async ({ page }) => {
   await page.goto("/dashboard")
   const why = page.getByRole("region", { name: "연결에서 끝나지 않고, 협찬을 끝까지 함께해요" })

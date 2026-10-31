@@ -6,6 +6,7 @@ import { findListing, shownTo } from "../lib/catalog.js"
 import { todayInKorea, toIsoDate } from "../lib/dates.js"
 import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
+import { eventCases, exploreEvents } from "../lib/explore.js"
 import { eventPhotos, parsePdf, parsePhoto, photoName, photoType, photos } from "../lib/photos.js"
 import { isSponsored } from "../lib/sponsorships.js"
 import { audienceYears, eventKinds, handoutWays, logoSpots, parseRole, promoPosts, sponsorTypes, text } from "../lib/validation.js"
@@ -376,6 +377,13 @@ function eventPage(database: Database, eventId: string, viewer?: Account) {
   }
   return undefined
 }
+
+// 행사 둘러보기: the coming events of the groups the viewer sees, and the
+// sponsorships similar events had, by kind.
+eventsRouter.get("/explore", (req, res) => {
+  const database = getDatabase()
+  res.json({ events: exploreEvents(database, req.account), cases: eventCases(database, req.account) })
+})
 
 eventsRouter.get("/:id/page", (req, res) => {
   const found = eventPage(getDatabase(), String(req.params.id), req.account)
