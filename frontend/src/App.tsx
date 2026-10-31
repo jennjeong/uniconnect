@@ -1639,6 +1639,21 @@ function App() {
             onOpenReport={() => setActiveModal("report")}
             onOpenGoal={openGoal}
             onNotice={member && students ? showNotice : undefined}
+            terms={account?.terms ?? []}
+            onSaveTerms={
+              member && students
+                ? async (terms) => {
+                    try {
+                      setAccount((await api.saveTerms(terms)).account)
+                      showNotice(t("기수를 저장했어요."))
+                      return true
+                    } catch (error) {
+                      handleError(error)
+                      return false
+                    }
+                  }
+                : undefined
+            }
           />
         )
       case "단체 찾기":

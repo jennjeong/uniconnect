@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react"
+import { useState, type CSSProperties } from "react"
 
 import { AnimatedNumber } from "../components/AnimatedNumber"
 import { LedgerCard } from "../components/LedgerCard"
@@ -6,6 +6,7 @@ import { EventPicker } from "../components/EventPicker"
 import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { Pill } from "../components/Pill"
+import { TabBar } from "../components/TabBar"
 import { RevealTitle } from "../components/RevealText"
 import { metricInfo } from "../data/metrics"
 import { venueSummary } from "../data/methods"
@@ -13,7 +14,7 @@ import { t } from "../i18n"
 import { reportCsv } from "../lib/csv"
 import { formatFullDate } from "../lib/date"
 import { saveFile } from "../lib/download"
-import { historyCsv, sponsorHistory, trackRecord } from "../lib/history"
+import { historyCsv, sponsorHistory, trackRecord, type Term } from "../lib/history"
 import {
   achievement,
   formatKpi,
@@ -55,6 +56,8 @@ export function ReportsPage({
   onOpenReport,
   onOpenGoal,
   onNotice,
+  terms = [],
+  onSaveTerms,
 }: {
   // Every event of the group, to pick the one to report on.
   measurements: EventMeasurement[]
@@ -68,6 +71,9 @@ export function ReportsPage({
   onOpenGoal: (key: KpiKey) => void
   // 협찬 결산 공개, for a member group (absent for visitors and the demo).
   onNotice?: (message: string) => void
+  // 기수: the group's teams, and saving them (members only).
+  terms?: Term[]
+  onSaveTerms?: (terms: Term[]) => Promise<boolean>
 }) {
   // ROAS bar scale, with room past the larger of the result and the goal.
   const roasScale = report ? Math.max(1, report.roas, report.targets.roas) * 1.15 : 1
@@ -234,7 +240,7 @@ export function ReportsPage({
               </small>
             </div>
           )}
-          <SponsorHistory measurements={measurements} onOpen={onSelect} />
+          <SponsorHistory measurements={measurements} onOpen={onSelect} onSaveTerms={onSaveTerms} terms={terms} />
           {onNotice && <LedgerCard onNotice={onNotice} />}
         </>
       )}
@@ -245,9 +251,26 @@ export function ReportsPage({
 // The group's sponsorship record (협찬 기록): every event held, its
 // sponsors and results, what they add up to, and the whole as a file the
 // team hands to the next one.
-function SponsorHistory({ measurements, onOpen }: { measurements: EventMeasurement[]; onOpen: (eventId: string) => void }) {
-  const rows = sponsorHistory(measurements)
+function SponsorHistory({
+  measurements,
+  onOpen,
+  terms,
+  onSaveTerms,
+}: {
+  measurements: EventMeasurement[]
+  onOpen: (eventId: string) => void
+  terms: Term[]
+  onSaveTerms?: (terms: Term[]) => Promise<boolean>
+}) {
+  const allRows = sponsorHistory(measurements, undefined, terms)
+  // The terms that held events, and the one picked to read.
+  const shownTerms = terms.filter((term) => allRows.some((row) => row.term === term.name))
+  const [term, setTerm] = useState("전체")
+  const rows = term === "전체" ? allRows : allRows.filter((row) => row.term === term)
   const record = trackRecord(rows)
+  const [managing, setManaging] = useState(false)
+  const [termName, setTermName] = useState("")
+  const [termFrom, setTermFrom] = useState("")
   return (
     <div className="analytics-card history-card" data-reveal>
       <div className="history-head">
@@ -263,6 +286,67 @@ function SponsorHistory({ measurements, onOpen }: { measurements: EventMeasureme
           {t("인수인계용 CSV")}
         </Pill>
       </div>
+      {shownTerms.length > 0 && (
+        <TabBar
+          chips
+          items={["전체", ...shownTerms.map((item) => item.name)].map((value) => ({ value, label: value === "전체" ? t("전체") : value }))}
+          label={t("기수")}
+          onChange={setTerm}
+          value={term}
+        />
+      )}
+      {onSaveTerms && (
+        <div className="terms-manage">
+          <button aria-expanded={managing} className="underline-link" onClick={() => setManaging(!managing)} type="button">
+            {managing ? t("기수 관리 닫기") : t("기수 관리")}
+          </button>
+          {managing && (
+            <>
+              <p className="field-hint">{t("운영진이 바뀐 날과 이름(예: 제4대 하성)을 적으면 협찬 기록이 기수별로 나뉘고, 인수인계 CSV에도 들어가요.")}</p>
+              {terms.length > 0 && (
+                <ul className="terms-list">
+                  {terms.map((item) => (
+                    <li key={item.from}>
+                      <strong>{item.name}</strong>
+                      <small>{t("{date}부터", { date: formatFullDate(item.from) })}</small>
+                      <button
+                        aria-label={t("{name} 지우기", { name: item.name })}
+                        className="delete-button"
+                        onClick={() => void onSaveTerms(terms.filter((entry) => entry !== item))}
+                        type="button"
+                      >
+                        <Icon name="close" size={14} />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <form
+                className="terms-form"
+                onSubmit={async (event) => {
+                  event.preventDefault()
+                  if (await onSaveTerms([...terms, { name: termName.trim(), from: termFrom }])) {
+                    setTermName("")
+                    setTermFrom("")
+                  }
+                }}
+              >
+                <label>
+                  {t("기수 이름")}
+                  <input maxLength={30} onChange={(event) => setTermName(event.target.value)} placeholder={t("예) 제4대 하성")} value={termName} />
+                </label>
+                <label>
+                  {t("시작한 날")}
+                  <input onChange={(event) => setTermFrom(event.target.value)} type="date" value={termFrom} />
+                </label>
+                <button className="cancel-button" disabled={!termName.trim() || !termFrom} type="submit">
+                  {t("기수 추가")}
+                </button>
+              </form>
+            </>
+          )}
+        </div>
+      )}
       {rows.length === 0 ? (
         <p className="day-empty">{t("행사가 열리면 여기에 차곡차곡 쌓여요.")}</p>
       ) : (
@@ -298,7 +382,10 @@ function SponsorHistory({ measurements, onOpen }: { measurements: EventMeasureme
                 <span className="analytics-event" role="cell">
                   <button className="history-open" onClick={() => onOpen(row.eventId)} type="button">
                     <strong>{row.eventName}</strong>
-                    <small>{formatFullDate(row.date)}</small>
+                    <small>
+                      {row.term ? `${row.term} · ` : ""}
+                      {formatFullDate(row.date)}
+                    </small>
                   </button>
                 </span>
                 <span role="cell" data-label={t("협찬사")}>

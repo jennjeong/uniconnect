@@ -589,6 +589,32 @@ authRouter.get("/referral", async (req, res) => {
   res.json(stats)
 })
 
+// 기수: a student group's teams and the day each took over, replacing those
+// saved before, latest first. The shared demo accounts keep none.
+authRouter.put("/terms", async (req, res) => {
+  const account = requireAccount(req)
+  if (isDemo(account)) throw new HttpError(403, "데모 계정은 기수를 저장할 수 없어요.")
+  if (account.role !== "학생단체") throw new HttpError(403, "학생단체만 기수를 적을 수 있어요.")
+  const list: unknown = req.body?.terms
+  if (!Array.isArray(list) || list.length > 20) throw new HttpError(400, "기수는 20개까지 적을 수 있어요.")
+  const terms = list.map((item: unknown) => {
+    const { name, from } = (item ?? {}) as Record<string, unknown>
+    const label = text(name)
+    const day = text(from)
+    if (!label || label.length > 30) throw new HttpError(400, "기수 이름은 1~30자로 적어 주세요.")
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || Number.isNaN(Date.parse(`${day}T00:00:00Z`))) {
+      throw new HttpError(400, "기수가 시작한 날을 골라 주세요.")
+    }
+    return { name: label, from: day }
+  })
+  if (new Set(terms.map((term) => term.from)).size !== terms.length) throw new HttpError(400, "같은 날 시작한 기수가 둘이에요.")
+  terms.sort((a, b) => b.from.localeCompare(a.from))
+  if (terms.length > 0) account.terms = terms
+  else delete account.terms
+  await saveDatabase()
+  res.json({ account: toPublic(account, req.memberId) })
+})
+
 // Proposal messages an account keeps (제안 문구 템플릿): how many, and how
 // long a name and a message may be (a message as long as a proposal's).
 const maxTemplates = 10

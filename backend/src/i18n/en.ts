@@ -618,6 +618,12 @@ const en: Record<string, string> = {
   "협찬을 찾을 수 없어요.": "Couldn't find that sponsorship.",
   "메모는 200자 이하로 적어 주세요.": "Keep the note to 200 characters.",
   "공개된 협찬 결산을 찾을 수 없어요.": "Couldn't find that public sponsorship ledger.",
+  "데모 계정은 기수를 저장할 수 없어요.": "The demo accounts can't save terms.",
+  "학생단체만 기수를 적을 수 있어요.": "Only student groups can write down terms.",
+  "기수는 20개까지 적을 수 있어요.": "You can write down up to 20 terms.",
+  "기수 이름은 1~30자로 적어 주세요.": "Give the term a name of 1 to 30 characters.",
+  "기수가 시작한 날을 골라 주세요.": "Pick the day the term began.",
+  "같은 날 시작한 기수가 둘이에요.": "Two terms begin on the same day.",
 }
 
 export default en

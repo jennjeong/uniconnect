@@ -264,6 +264,9 @@ const en: Record<string, string> = {
   "협찬 결산 공개 설정(공개 링크, 금액을 보여 줄지, 협찬마다 남긴 쓰임 메모)": "Public ledger settings (the public link, whether amounts show, and the note on each sponsorship)",
   "학생단체가 링크를 만들면 링크를 아는 누구나 받은 협찬의 브랜드, 품목, 행사, 메모와 QR 참여 수를, 고르면 금액까지 보게 하기": "Once a group makes the link, anyone with it sees the brands, goods, events, notes and QR check-ins of the sponsorships it received, and the amounts if it chooses",
   "탈퇴하거나 공개를 멈출 때까지(멈추면 예전 링크는 열리지 않아요)": "Until you leave or stop sharing (the old link stops working)",
+  "기수(운영진 이름과 맡기 시작한 날)": "Terms (each team’s name and the day it took over)",
+  "협찬 기록과 인수인계 파일을 기수별로 나눠 보여 주기": "To show the sponsorship record and the handover file by term",
+  "탈퇴하거나 지울 때까지": "Until you leave or delete them",
 }
 
 export default en

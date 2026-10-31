@@ -202,6 +202,8 @@ export const api = {
   savePreferences: (body: { language?: "ko" | "en"; mailOff?: MailKind[] }) =>
     request<{ account: Account }>("/auth/preferences", { method: "PUT", body }),
   referral: () => request<{ code: string; joined: number; rewarded: number; rewardDays: number }>("/auth/referral"),
+  saveTerms: (terms: { name: string; from: string }[]) =>
+    request<{ account: Account }>("/auth/terms", { method: "PUT", body: { terms } }),
   saveTemplates: (templates: ProposalTemplate[]) =>
     request<{ account: Account }>("/auth/templates", { method: "PUT", body: { templates } }),
   readNotices: (read: string[]) =>

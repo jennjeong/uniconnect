@@ -375,6 +375,8 @@ export type Account = {
   createdAt: string
   // The parts of the bell's notices the account has read (lib/notifications.ts).
   readNotices?: string[]
+  // 기수: the group's teams by the day each took over, latest first.
+  terms?: { name: string; from: string }[]
   // Proposal messages saved to send again; {상대} and {행사} get filled in.
   templates?: ProposalTemplate[]
   // The language its emails are in, and the kinds of notice email it turned off.

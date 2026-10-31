@@ -323,6 +323,13 @@ test("a group publishes its sponsorship ledger from 리포트, and anyone with t
   await expect(page.getByText("메모를 저장했어요.")).toBeVisible()
   const link = (await card.locator(".invite-link").textContent()) ?? ""
   expect(link).toMatch(/\/ledger\/[\w-]+$/)
+  // 기수: the team in charge, under the record.
+  await page.getByRole("button", { name: "기수 관리" }).click()
+  await page.getByLabel("기수 이름").fill("제4대 결산")
+  await page.getByLabel("시작한 날").fill("2026-01-01")
+  await page.getByRole("button", { name: "기수 추가" }).click()
+  await expect(page.getByText("기수를 저장했어요.")).toBeVisible()
+  await expect(page.locator(".terms-list")).toContainText("제4대 결산")
 
   const reader = await (await browser.newContext()).newPage()
   await reader.goto(new URL(link).pathname)
@@ -479,7 +486,7 @@ test("the report page keeps the sponsorship record, handed over as a CSV file", 
   const file = await download
   expect(file.suggestedFilename()).toBe("uniconnect-sponsorship-history.csv")
   const text = await readFile(await file.path(), "utf8")
-  expect(text.startsWith("\uFEFF행사,시작일,종료일,협찬사,")).toBe(true)
+  expect(text.startsWith("\uFEFF기수,행사,시작일,종료일,협찬사,")).toBe(true)
 })
 
 test("공유하기 copies the page's link where the browser has no share sheet", async ({ page, context }) => {
