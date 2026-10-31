@@ -29,7 +29,7 @@ const asDataUrl = (blob: Blob) =>
 // and html-to-image would fetch and write in every one; the browser has
 // already loaded just the ones the pages use, so only those go in.
 // Undefined (html-to-image's own way) if none can be read.
-async function loadedFontCSS() {
+export async function loadedFontCSS() {
   const loaded = new Set<string>()
   for (const face of document.fonts) {
     if (face.status === "loaded") loaded.add(`${unquote(face.family)}|${face.weight}|${face.unicodeRange}`)

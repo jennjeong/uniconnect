@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { lazy, Suspense, useEffect, useState } from "react"
 
 import { api, ApiError, errorMessage } from "../api"
 import { Icon } from "../components/Icon"
@@ -18,6 +18,8 @@ import { fullWon } from "../lib/sponsorships"
 import { PaymentModal } from "../modals/PaymentModal"
 import type { Agreement, AgreementItem, ChatSide, MeasureMethod, MethodKind, MethodSide, Metrics, Review, Shipment } from "../types"
 import { agreementState } from "./AgreementsPage"
+
+const ThanksCardExport = lazy(() => import("../report/ThanksCard").then((module) => ({ default: module.ThanksCardExport })))
 
 // A proof photo, fetched with the login token (an <img> can't send it) and
 // shown from an object URL; pressing it opens it full size.
@@ -1038,6 +1040,8 @@ export function AgreementPage({
   const [busy, setBusy] = useState(false)
   const [editing, setEditing] = useState(false)
   const [paying, setPaying] = useState(false)
+  // True while the thank-you card image is being made.
+  const [carding, setCarding] = useState(false)
 
   useEffect(() => {
     if (!loggedIn) return
@@ -1277,6 +1281,29 @@ export function AgreementPage({
       />
 
       <GoalsPanel agreement={agreement} onEdit={onEditGoals} />
+
+      {agreement.side === "group" && agreement.review.open && !agreement.cancel?.canceledAt && (
+        <section aria-labelledby="agreement-thanks-title" className="agreement-section agreement-thanks">
+          <h2 id="agreement-thanks-title">{t("협찬 감사 카드뉴스")}</h2>
+          <p className="field-hint">
+            {t("{brand}에 고마움을 전하는 인스타그램용 이미지(1080×1350)를 행사 성과와 함께 만들어요. SNS 홍보 약속의 증빙으로도 올릴 수 있어요.", { brand: agreement.brand.name })}
+          </p>
+          <Pill arrow="up-right" disabled={carding} onClick={() => setCarding(true)}>
+            {carding ? t("이미지 만드는 중…") : t("카드뉴스 이미지 저장")}
+          </Pill>
+          {carding && (
+            <Suspense fallback={null}>
+              <ThanksCardExport
+                agreement={agreement}
+                onDone={(failed) => {
+                  setCarding(false)
+                  onNotice(failed ? t("이미지를 만들지 못했어요. 다시 시도해 주세요.") : t("카드뉴스 이미지를 저장했어요."))
+                }}
+              />
+            </Suspense>
+          )}
+        </section>
+      )}
 
       <ShipmentsPanel
         agreement={agreement}

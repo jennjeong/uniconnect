@@ -437,6 +437,14 @@ const en: Record<string, string> = {
   "시작한 날": "Took over on",
   "기수 추가": "Add term",
   "기수를 저장했어요.": "Terms saved.",
+  "고맙습니다": "Thank you",
+  "{group}의 ‘{event}’를 함께해 주셨어요.": "You joined {group} for ‘{event}’.",
+  "협찬 감사 카드뉴스": "Thank-you card",
+  "{brand}에 고마움을 전하는 인스타그램용 이미지(1080×1350)를 행사 성과와 함께 만들어요. SNS 홍보 약속의 증빙으로도 올릴 수 있어요.": "Make an Instagram image (1080×1350) thanking {brand}, with the event’s results. It can also serve as proof of the promised posts.",
+  "이미지 만드는 중…": "Making the image…",
+  "카드뉴스 이미지 저장": "Save the card image",
+  "이미지를 만들지 못했어요. 다시 시도해 주세요.": "Couldn’t make the image. Please try again.",
+  "카드뉴스 이미지를 저장했어요.": "Saved the card image.",
 }
 
 export default en
