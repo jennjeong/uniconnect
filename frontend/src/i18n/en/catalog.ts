@@ -600,6 +600,16 @@ const en: Record<string, string> = {
   "내려받기": "Download",
   "소개, 행사, 제안, 메시지를 JSON 파일로 받아요.": "Get your profile, events, proposals and messages as a JSON file.",
   "계정과 계정이 만든 것이 모두 지워지고 되돌릴 수 없어요.": "The account and everything it made are deleted for good.",
+  "제안함": "Offered",
+  "고르기 끝내기": "Stop picking",
+  "여러 곳에 제안": "Offer to several",
+  "{count}곳 골랐어요": "{count} picked",
+  "한 번에 {max}곳까지, 캠페인과 메시지 하나로 보내요.": "Up to {max} at once, with one campaign and message.",
+  "한 번에 제안하기": "Send to all picked",
+  "{count}곳에 협찬 제안": "Offer to {count} groups",
+  "저장한 문구의 상대 이름 자리는 단체마다 그 단체 이름으로 바뀌어서 가요.": "In a saved message, the partner’s name is filled with each group’s own name as it goes out.",
+  "{sent}곳에 보냈고, {failed}곳은 보내지 못했어요. {reasons}": "Sent to {sent}; {failed} couldn’t be sent. {reasons}",
+  "{count}곳에 협찬 제안을 보냈어요.": "Sent the offer to {count} groups.",
 }
 
 export default en

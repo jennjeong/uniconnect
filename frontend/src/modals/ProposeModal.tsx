@@ -22,6 +22,7 @@ export const fillTemplate = (text: string, partner: string, event: string) =>
 // written stays then.
 export function ProposeModal({
   match,
+  targets,
   role,
   events,
   templates,
@@ -31,6 +32,9 @@ export function ProposeModal({
   onCreate,
 }: {
   match: Match
+  // 일괄 제안: every group the one offer goes to (match is the first); the
+  // message's {상대} is filled with each one's name as it goes out.
+  targets?: Match[]
   role: Role
   events: EventItem[]
   // The account's saved messages (제안 문구 템플릿).
@@ -56,6 +60,7 @@ export function ProposeModal({
   const [picked, setPicked] = useState("")
   const [naming, setNaming] = useState<string | null>(null)
   const eventName = upcoming.find((event) => event.id === eventId)?.name ?? ""
+  const partnerName = targets ? "{상대}" : match.name
 
   const saveTemplates = async (next: ProposalTemplate[]) => {
     if (!onSaveTemplates) return
@@ -83,7 +88,13 @@ export function ProposeModal({
   }
 
   return (
-    <Modal kicker="Proposal" name="propose" onClose={onClose} title={t("{name}에 협찬 제안", { name: match.name })}>
+    <Modal
+      kicker="Proposal"
+      name={targets ? "propose-many" : "propose"}
+      onClose={onClose}
+      title={targets ? t("{count}곳에 협찬 제안", { count: targets.length }) : t("{name}에 협찬 제안", { name: match.name })}
+    >
+      {targets && <p className="auth-lead bulk-names">{targets.map((target) => target.name).join(", ")}</p>}
       <form
         className="auth-form"
         noValidate
@@ -126,7 +137,7 @@ export function ProposeModal({
                     onChange={(event) => {
                       setPicked(event.target.value)
                       const template = templates.find((item) => item.id === event.target.value)
-                      if (template) setMessage(fillTemplate(template.text, match.name, eventName).slice(0, maxMessage))
+                      if (template) setMessage(fillTemplate(template.text, partnerName, eventName).slice(0, maxMessage))
                     }}
                     value={picked}
                   >
@@ -182,7 +193,7 @@ export function ProposeModal({
                 // Saved with the partner's and event's names put back as
                 // blanks, so the next proposal fills its own.
                 let text = message.trim()
-                if (match.name) text = text.split(match.name).join("{상대}")
+                if (!targets && match.name) text = text.split(match.name).join("{상대}")
                 if (eventName) text = text.split(eventName).join("{행사}")
                 if (await saveTemplates([...templates, { id: "", name: naming.trim(), text }])) setNaming(null)
               }}
@@ -209,6 +220,9 @@ export function ProposeModal({
         <p className="field-hint">
           {t("{count}/{max}자 · 비워 두면 기본 인사말이 가요.", { count: message.length, max: maxMessage })}
         </p>
+        {targets && (
+          <p className="field-hint">{t("저장한 문구의 상대 이름 자리는 단체마다 그 단체 이름으로 바뀌어서 가요.")}</p>
+        )}
         {onSaveTemplates && (
           <p className="field-hint">{t("문구를 저장하면 상대와 행사 이름은 빈칸이 되고, 다음에 불러올 때 그 제안의 이름으로 채워져요.")}</p>
         )}

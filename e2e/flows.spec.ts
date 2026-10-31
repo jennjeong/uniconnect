@@ -804,6 +804,36 @@ test("a group posts on the recruit board, and a brand applies with its campaign"
   }
 })
 
+test("a brand offers one campaign to several groups at once", async ({ page, request }) => {
+  const groups = await Promise.all(
+    ["일괄 밴드", "일괄 댄스"].map(async (name, index) => {
+      const member = await signUpMember(request, "학생단체", `e2e-bulk-${index}@syu.ac.kr`, name)
+      await request.put("/api/profile", { data: { intro: "캠퍼스 동아리예요.", offer: "관객 100명" }, headers: member.headers })
+      return member
+    }),
+  )
+  const brand = await signUpMember(request, "브랜드", "e2e-bulk@bulk-cafe.kr", "일괄 카페")
+  const day = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date(Date.now() + 20 * 86_400_000))
+  await request.post("/api/events", { data: { name: "일괄 시음회", date: day, types: ["제품"] }, headers: brand.headers })
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
+  await page.goto("/groups")
+  await page.getByRole("tab", { name: "전체" }).click()
+  await page.getByRole("button", { name: "여러 곳에 제안" }).click()
+  await page.getByRole("checkbox", { name: "일괄 밴드 고르기" }).check()
+  await page.getByRole("checkbox", { name: "일괄 댄스 고르기" }).check()
+  await expect(page.getByRole("region", { name: "여러 곳에 제안" })).toContainText("2곳 골랐어요")
+  await page.getByRole("button", { name: "한 번에 제안하기" }).click()
+  const form = page.getByRole("dialog", { name: "2곳에 협찬 제안" })
+  await expect(form.getByLabel("제안할 캠페인")).toContainText("일괄 시음회")
+  await form.getByRole("button", { name: "제안 보내기" }).click()
+  await expect(page.getByText("2곳에 협찬 제안을 보냈어요.")).toBeVisible()
+  await expect(page.getByRole("region", { name: "여러 곳에 제안" })).toContainText("0곳 골랐어요")
+  for (const member of [...groups, brand]) {
+    const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: member.headers })
+    expect(left.status()).toBe(204)
+  }
+})
+
 test("a student group proposes and the brand accepts", async ({ browser }) => {
   const student = await (await browser.newContext()).newPage()
   await student.goto("/")

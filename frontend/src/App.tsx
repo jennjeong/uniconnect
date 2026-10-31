@@ -164,6 +164,8 @@ function App() {
   const [activeModal, setActiveModal] = useState<ModalName | null>(null)
   // The partner 제안하기 was pressed for, while its form is open.
   const [proposing, setProposing] = useState<Match | null>(null)
+  // 일괄 제안: the groups one offer goes to, while its form is open.
+  const [proposingMany, setProposingMany] = useState<Match[] | null>(null)
   // What 신고하기 or 차단하기 was pressed for, while its form is open.
   const [safety, setSafety] = useState<{ mode: "report" | "block"; target: SafetyTarget } | null>(null)
   // The accounts this one blocked, for 내 정보.
@@ -878,6 +880,44 @@ function App() {
     } else {
       showNotice(t("{name}에 협찬 제안을 보냈어요.", { name: proposing.name }))
     }
+    closeModal()
+  }
+
+  // 일괄 제안 from 단체 찾기: one campaign and message to several groups.
+  const proposeMany = (targets: Match[]) => {
+    track("contact_click", { method: "proposal", role })
+    setProposingMany(targets)
+    setActiveModal("propose-many")
+  }
+
+  // Sends to each in turn, its {상대} filled with its name. Those that went
+  // drop out of the picks; the form stays open with the reasons when none
+  // did, and otherwise closes saying which did not.
+  const sendMany = async (draft: { eventId?: string; message: string }) => {
+    if (!proposingMany) return
+    const failed: string[] = []
+    let sentCount = 0
+    for (const target of proposingMany) {
+      try {
+        applyProposals(await api.propose(target.id, { ...draft, message: draft.message.split("{상대}").join(target.name) }))
+        sentCount += 1
+        track("generate_lead", { method: "proposal", role })
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 401) {
+          closeModal()
+          handleError(error)
+          return
+        }
+        failed.push(`${target.name}: ${errorMessage(error)}`)
+      }
+    }
+    // Shown on the form as the server's reasons.
+    if (sentCount === 0) throw new ApiError(400, failed.join(" · "))
+    showNotice(
+      failed.length
+        ? t("{sent}곳에 보냈고, {failed}곳은 보내지 못했어요. {reasons}", { sent: sentCount, failed: failed.length, reasons: failed.join(" · ") })
+        : t("{count}곳에 협찬 제안을 보냈어요.", { count: sentCount }),
+    )
     closeModal()
   }
 
@@ -1606,6 +1646,7 @@ function App() {
             onOpenDetail={openDetail}
             onPropose={propose}
             onCancelProposal={cancelProposal}
+            onProposeMany={member ? proposeMany : undefined}
             visitor={visitor}
             onLogin={() => openAuth("login")}
             onSignup={() => openAuth("signup")}
@@ -2086,6 +2127,23 @@ function App() {
       {account && safety && (
         <Presence show={activeModal === "safety"}>
           <SafetyModal mode={safety.mode} onClose={closeModal} onDone={safetyDone} target={safety.target} />
+        </Presence>
+      )}
+      {account && proposingMany && proposingMany.length > 0 && (
+        <Presence show={activeModal === "propose-many"}>
+          <ProposeModal
+            events={events}
+            match={proposingMany[0]}
+            targets={proposingMany}
+            templates={account.templates ?? []}
+            onClose={closeModal}
+            onCreate={() => {
+              closeModal()
+              openCreate()
+            }}
+            onSend={sendMany}
+            role={role}
+          />
         </Presence>
       )}
       {account && proposing && (

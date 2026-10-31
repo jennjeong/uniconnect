@@ -2122,6 +2122,71 @@ button.nav-pill:hover {
   text-decoration: underline;
 }
 
+/* 여러 곳에 제안 on 단체 찾기: a box on each card while picking, and a bar
+   held at the bottom with the count and the send. */
+.bulk-toggle[aria-pressed="true"] {
+  color: var(--ink);
+}
+
+.bulk-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--point-tint);
+  color: var(--point-strong);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.bulk-pick input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--point);
+}
+
+.bulk-bar {
+  --surface-tone: dark;
+  position: sticky;
+  bottom: 16px;
+  z-index: 6;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 14px 18px;
+  border-radius: 22px;
+  background: var(--point);
+  box-shadow: 0 16px 40px rgba(0, 27, 55, 0.24);
+  color: var(--on-point);
+}
+
+.bulk-bar p {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+}
+
+.bulk-bar small {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 12px;
+}
+
+.bulk-bar .primary-button {
+  background: #fff;
+  color: var(--point);
+}
+
+.bulk-names {
+  margin: 0 0 4px;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
 .industry-chips {
   position: relative;
   display: flex;
