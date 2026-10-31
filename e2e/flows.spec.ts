@@ -460,6 +460,23 @@ test("공유하기 copies the page's link where the browser has no share sheet",
   expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(/\/matches\/afternoon-coffee$/)
 })
 
+test("a visitor lays two brands side by side, and opens one from the table", async ({ page }) => {
+  await page.goto("/matches")
+  await page.getByRole("tab", { name: "전체" }).click()
+  const toggles = page.getByRole("button", { name: /비교에 담기$/ })
+  await toggles.nth(0).click()
+  const tray = page.getByRole("region", { name: "비교함" })
+  await expect(tray).toContainText("하나 더 담으면 비교할 수 있어요.")
+  await expect(tray.getByRole("button", { name: "나란히 비교하기" })).toBeDisabled()
+  await toggles.nth(1).click()
+  await tray.getByRole("button", { name: "나란히 비교하기" }).click()
+  const table = page.getByRole("dialog", { name: "브랜드 2곳 비교" })
+  await expect(table.getByRole("rowheader", { name: "일치율" })).toBeVisible()
+  await expect(table.getByRole("columnheader")).toHaveCount(2)
+  await table.getByRole("button", { name: "상세 보기" }).first().click()
+  await expect(page).toHaveURL(/\/matches\/[^/]+$/)
+})
+
 test("both dashboards show what sets uniconnect apart, before and after", async ({ page }) => {
   await page.goto("/dashboard")
   const why = page.getByRole("region", { name: "연결에서 끝나지 않고, 협찬을 끝까지 함께해요" })

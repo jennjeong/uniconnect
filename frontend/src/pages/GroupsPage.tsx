@@ -3,6 +3,7 @@ import { useState, type CSSProperties } from "react"
 import { CatalogEmpty } from "../components/CatalogEmpty"
 import { CatalogMap, LayoutSwitch, type Layout } from "../components/CatalogMap"
 import { CatalogSearch } from "../components/CatalogSearch"
+import { CompareTray, useCompare } from "../components/CompareTray"
 import { DemoPreview } from "../components/DemoPreview"
 import { PageIntro } from "../components/PageIntro"
 import { ProposalControl } from "../components/ProposalControl"
@@ -92,6 +93,8 @@ export function GroupsPage({
   onSignup: () => void
 }) {
   const [tab, setTab] = useState<Tab>("추천")
+  // 비교: the cards laid side by side (components/CompareTray.tsx).
+  const compare = useCompare()
   // 여러 곳에 제안: picking groups on the cards, and those picked. Once an
   // offer reaches one it drops out of the picks.
   const [picking, setPicking] = useState(false)
@@ -144,6 +147,9 @@ export function GroupsPage({
       onOpenDetail={() => onOpenDetail(group)}
       saved={saved.includes(group.id)}
       onToggleSave={() => onToggleSave(group)}
+      compared={compare.has(group.id)}
+      // Picking groups for one offer and comparing them don't mix.
+      onToggleCompare={picking ? undefined : () => compare.toggle(group.id)}
       date={group.eventDate}
       tags={
         <>
@@ -358,6 +364,16 @@ export function GroupsPage({
             {t("한 번에 제안하기")}
           </button>
         </div>
+      )}
+
+      {!picking && (
+      <CompareTray
+        items={compare.ids.flatMap((id) => new Map([...matches, ...groups].map((item) => [item.id, item])).get(id) ?? [])}
+        kind="group"
+        onClear={compare.clear}
+        onOpenDetail={onOpenDetail}
+        onRemove={compare.remove}
+      />
       )}
     </section>
   )

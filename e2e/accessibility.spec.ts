@@ -111,6 +111,18 @@ test("the app download guide opens from the introduction and passes the checks",
   await expect(dialog).toBeHidden()
 })
 
+// The comparison table of two brands, open.
+test("the comparison of two brands has no critical or serious accessibility problems", async ({ page }) => {
+  await expectNoBlockingProblems(page, "/matches", async () => {
+    await page.getByRole("tab", { name: "전체" }).click()
+    const toggles = page.getByRole("button", { name: /비교에 담기$/ })
+    await toggles.nth(0).click()
+    await toggles.nth(1).click()
+    await page.getByRole("button", { name: "나란히 비교하기" }).click()
+    await expect(page.getByRole("dialog", { name: "브랜드 2곳 비교" })).toBeVisible()
+  })
+})
+
 // Every screen of the operators' console, once the token opens it, on a
 // wide screen and a phone.
 const consoleViews = ["overview", "insights", "members", "proposals", "operations", "live", "payments", "inquiries", "reports", "content", "errors", "notices", "log", "health", "system"]
