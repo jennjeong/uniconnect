@@ -52,12 +52,14 @@ function EventRow({
   event,
   onShowDetail,
   onEdit,
+  onCopy,
   onDelete,
 }: {
   role: Role
   event: EventItem
   onShowDetail: (event: EventItem) => void
   onEdit: (event: EventItem) => void
+  onCopy: (event: EventItem) => void
   onDelete: (event: EventItem) => void
 }) {
   const types = event.types.length > 0 ? ` · ${t("{types} 협찬", { types: typeLabels(event) })}` : ""
@@ -90,6 +92,14 @@ function EventRow({
           type="button"
         >
           <Icon name="edit" size={16} />
+        </button>
+        <button
+          className="delete-button"
+          aria-label={t("{name} 복제", { name: event.name })}
+          onClick={() => onCopy(event)}
+          type="button"
+        >
+          <Icon name="copy" size={16} />
         </button>
         <button
           className="delete-button"
@@ -138,6 +148,7 @@ export function EventsPage({
   onCreate,
   onShowDetail,
   onEdit,
+  onCopy,
   onDelete,
   onOpenSponsorship,
   onNotice,
@@ -152,6 +163,8 @@ export function EventsPage({
   onCreate: (date: string) => void
   onShowDetail: (event: EventItem) => void
   onEdit: (event: EventItem) => void
+  // Opens the registration form filled from this one (행사 복제).
+  onCopy: (event: EventItem) => void
   onDelete: (event: EventItem) => void
   onOpenSponsorship?: () => void
   onNotice?: (message: string) => void
@@ -394,6 +407,7 @@ export function EventsPage({
                     event={entry.event}
                     key={entry.id}
                     onEdit={onEdit}
+                    onCopy={onCopy}
                     onDelete={onDelete}
                     onShowDetail={onShowDetail}
                     role={role}

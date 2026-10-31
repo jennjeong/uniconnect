@@ -71,12 +71,15 @@ export function EventDetailPage({
   id,
   onBack,
   onEdit,
+  onCopy,
   onOpenGroup,
   onNotice,
 }: {
   id: string
   onBack: () => void
   onEdit: (eventId: string) => void
+  // Opens the registration form filled from this event (행사 복제).
+  onCopy: (eventId: string) => void
   // The group's profile, for a brand looking (the group catalog is theirs).
   onOpenGroup?: (listingId: string) => void
   onNotice: (message: string) => void
@@ -149,6 +152,9 @@ export function EventDetailPage({
               </button>
               <button className="cancel-button" onClick={() => onEdit(event.id)} type="button">
                 <Icon name="edit" size={15} /> {t("행사 수정")}
+              </button>
+              <button className="cancel-button" onClick={() => onCopy(event.id)} type="button">
+                <Icon name="copy" size={15} /> {t("복제해서 새로 등록")}
               </button>
             </>
           )

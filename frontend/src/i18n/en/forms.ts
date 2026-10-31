@@ -1018,6 +1018,9 @@ const en: Record<string, string> = {
   "바로 올리고 내릴 때까지": "From now until taken down",
   "기간 비우기": "Clear the period",
   "완료": "Done",
+  "복제해서 새로 등록": "Copy as a new one",
+  "{name} 복제": "Copy {name}",
+  "‘{name}’의 내용을 그대로 가져왔어요. 날짜를 고르고 바뀐 부분만 고쳐 주세요.": "Everything from ‘{name}’ is filled in. Pick the dates and change only what is different.",
 }
 
 export default en

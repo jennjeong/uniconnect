@@ -11,6 +11,8 @@ export type View = {
   home?: true
   // Day the registration page opens on, while it is open.
   create?: string
+  // The event whose details the new one starts from (행사 복제), by its id.
+  copy?: string
   // The event or campaign being edited on the same form, by its id.
   edit?: string
   // A student group's event page, by the event's id (/event/<id>).
@@ -82,7 +84,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "")
 export function viewPath(view: View) {
   if (view.missing) return `${base}${view.missing}`
   if (view.home) return `${base}/`
-  if (view.create) return `${base}/new?date=${view.create}`
+  if (view.create) return `${base}/new?date=${view.create}${view.copy ? `&from=${encodeURIComponent(view.copy)}` : ""}`
   if (view.edit) return `${base}/edit/${encodeURIComponent(view.edit)}`
   if (view.eventPage) return `${base}/event/${encodeURIComponent(view.eventPage)}`
   if (view.post) return `${base}/board/${encodeURIComponent(view.post)}`
@@ -132,8 +134,10 @@ export function readView(location: Location = window.location): View {
   if (!first) return { page: "대시보드", home: true }
   if (first === "new") {
     if (second) return missing
-    const date = new URLSearchParams(location.search).get("date") ?? ""
-    return { page: "대시보드", create: fromIsoDate(date) ? date : todayIso() }
+    const query = new URLSearchParams(location.search)
+    const date = query.get("date") ?? ""
+    const copy = query.get("from")
+    return { page: "대시보드", create: fromIsoDate(date) ? date : todayIso(), ...(copy ? { copy } : {}) }
   }
   if (first === "me") {
     if (second && second !== "edit") return missing

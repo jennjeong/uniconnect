@@ -1265,6 +1265,7 @@ function App() {
       }}
       onShowDetail={showEventDetail}
       onEdit={openEdit}
+      onCopy={(event) => go({ page, create: todayIso(), copy: event.id })}
       onDelete={deleteEvent}
       onOpenSponsorship={() => navigate("받은 제안")}
       onNotice={showNotice}
@@ -1343,6 +1344,7 @@ function App() {
           id={view.eventPage}
           onBack={() => goBack({ page })}
           onEdit={(eventId) => go({ page, edit: eventId })}
+          onCopy={(eventId) => go({ page, create: todayIso(), copy: eventId })}
           onOpenGroup={students ? undefined : (listingId) => go({ page: "단체 찾기", detail: listingId })}
           onNotice={showNotice}
         />
@@ -1426,9 +1428,14 @@ function App() {
       )
     }
     if (creating !== null) {
+      const copySource = view.copy ? events.find((item) => item.id === view.copy) : undefined
       return (
         <EventCreatePage
+          // The form takes the copied event once; it starts again when the
+          // events arrive after opening straight from the address.
+          key={copySource?.id ?? "new"}
           role={role}
+          copyFrom={copySource}
           initialDate={creating}
           onCancel={() => goBack({ page })}
           onSubmit={createEvent}
