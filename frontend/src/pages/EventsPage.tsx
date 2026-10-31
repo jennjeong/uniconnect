@@ -153,6 +153,7 @@ export function EventsPage({
   onOpenSponsorship,
   onNotice,
   canSubscribe = false,
+  onExplore,
 }: {
   role: Role
   events: EventItem[]
@@ -170,6 +171,8 @@ export function EventsPage({
   onNotice?: (message: string) => void
   // A member's 캘린더에 추가 also offers its subscription link.
   canSubscribe?: boolean
+  // 행사 둘러보기: other groups' events (student groups only).
+  onExplore?: () => void
 }) {
   const today = todayIso()
 
@@ -258,6 +261,11 @@ export function EventsPage({
         description={t("날짜를 고르면 그날의 일정이 함께 보여요. 두 번 누르면 그 날짜로 바로 등록해요.")}
         actions={
           <>
+            {onExplore && (
+              <Pill onClick={onExplore} variant="outline">
+                {t("다른 단체 행사 보기")}
+              </Pill>
+            )}
             <Pill onClick={exportCalendar} variant="outline">
               {t("캘린더에 추가")}
             </Pill>

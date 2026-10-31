@@ -1204,3 +1204,23 @@ export type AdminAnnouncement = SiteNotice & {
   endedAt?: string
   live: boolean
 }
+
+// 행사 둘러보기 (GET /api/events/explore): a coming event of a group the
+// account sees, with what it offers brands.
+export type ExploreEvent = {
+  id: string
+  name: string
+  date: string
+  endDate?: string
+  kind?: string
+  people: string
+  venue?: string
+  intro?: string
+  packages: { name: string; gives: string }[]
+  promo?: { spots: string[]; handouts: string[]; posts: string[] }
+  group: { id: string; name: string; school?: string; category: string; type: string }
+  own?: true
+}
+
+// The sponsorships one kind of event had confirmed, as counts.
+export type EventCase = { kind: string; sponsorships: number; averagePeople?: number; industries: string[]; asks: string[] }

@@ -117,6 +117,7 @@ const EventDetailPage = lazy(() => import("./pages/EventDetailPage").then((modul
 const BoardPage = lazy(() => import("./pages/BoardPage").then((module) => ({ default: module.BoardPage })))
 const PostPage = lazy(() => import("./pages/PostPage").then((module) => ({ default: module.PostPage })))
 const PostFormModal = lazy(() => import("./modals/PostFormModal").then((module) => ({ default: module.PostFormModal })))
+const ExplorePage = lazy(() => import("./pages/ExplorePage").then((module) => ({ default: module.ExplorePage })))
 const EventsPage = lazy(() => import("./pages/EventsPage").then((module) => ({ default: module.EventsPage })))
 const FaqPage = lazy(() => import("./pages/FaqPage").then((module) => ({ default: module.FaqPage })))
 const LegalPage = lazy(() => import("./pages/LegalPage").then((module) => ({ default: module.LegalPage })))
@@ -1310,6 +1311,7 @@ function App() {
       onOpenSponsorship={() => navigate("받은 제안")}
       onNotice={showNotice}
       canSubscribe={member}
+      onExplore={students ? () => go({ page, explore: true }) : undefined}
     />
   )
 
@@ -1409,6 +1411,9 @@ function App() {
     }
     if (view.council) {
       return <CouncilPage onBack={() => goBack({ page, profile: "page" })} onNotice={showNotice} />
+    }
+    if (view.explore) {
+      return <ExplorePage onBack={() => goBack({ page: "내 행사" })} onOpenEvent={(eventId) => go({ page, eventPage: eventId })} />
     }
     if (view.insight || view.sharedReport) {
       return (
@@ -1846,6 +1851,8 @@ function App() {
                     ? "agreements"
                   : view.council
                     ? "council"
+                  : view.explore
+                    ? "explore"
                   : view.insight || view.sharedReport
                     ? `insight-${view.insight ?? view.sharedReport}`
                   : editing !== null

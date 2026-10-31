@@ -42,6 +42,8 @@ import type {
   InsightAnswer,
   InvitePageData,
   MailKind,
+  EventCase,
+  ExploreEvent,
   ProposalTemplate,
   Match,
   MeasureMethod,
@@ -324,6 +326,7 @@ export const api = {
   dropCancelRequest: (id: string) =>
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/cancel`, { method: "DELETE" }),
   eventPage: (id: string) => request<EventPage>(`/events/${encodeURIComponent(id)}/page`),
+  exploreEvents: () => request<{ events: ExploreEvent[]; cases: EventCase[] }>("/events/explore"),
   addEventPlan: (id: string, file: string, name: string) =>
     request<{ event: EventItem }>(`/events/${encodeURIComponent(id)}/plan`, { method: "POST", body: { file, name } }),
   deleteEventPlan: (id: string) => request<{ event: EventItem }>(`/events/${encodeURIComponent(id)}/plan`, { method: "DELETE" }),

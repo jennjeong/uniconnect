@@ -622,6 +622,20 @@ const en: Record<string, string> = {
   "학생단체 {count}곳 비교": "Comparing {count} student groups",
   "비교표": "Comparison table",
   "내세우는 점": "What it brings",
+  "다른 단체 행사 둘러보기": "Explore other groups’ events",
+  "다른 학생회와 동아리가 연 행사와 브랜드에 드리는 혜택을 보고, 우리 행사 기획에 참고해요.": "See the events other councils and clubs run and what they offer brands, to plan your own.",
+  "비슷한 행사의 협찬 사례": "Sponsorships of similar events",
+  "확정된 협찬 {count}건": "{count} confirmed sponsorships",
+  "평균 {count}명이 참여": "{count} people on average",
+  "함께한 업종: {list}": "Industries: {list}",
+  "자주 받은 협찬: {list}": "Often given: {list}",
+  "이름 없이 숫자로만 모았어요.": "Counted without any names.",
+  "단체 종류": "Kind of group",
+  "모든 단체": "All groups",
+  "조건에 맞는 다가오는 행사가 없어요.": "No coming events match.",
+  "우리 단체": "Ours",
+  "다른 단체 행사 보기": "Other groups’ events",
+  "다른 학생회와 동아리의 다가오는 행사와 비슷한 행사의 협찬 사례를 봐요.": "See other councils’ and clubs’ coming events and sponsorships of similar events.",
 }
 
 export default en

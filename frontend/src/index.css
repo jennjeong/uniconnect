@@ -5128,6 +5128,70 @@ button.nav-pill:hover {
   margin-top: 14px;
 }
 
+/* 행사 둘러보기 (pages/ExplorePage.tsx): similar events' cases as silver
+   cards over the board's post cards, each with a short introduction. */
+.explore-cases {
+  display: grid;
+  gap: 12px;
+  margin: 8px 0 24px;
+}
+
+.explore-cases h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: var(--weight-display);
+}
+
+.explore-cases ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.explore-cases li {
+  display: grid;
+  gap: 4px;
+  padding: 18px;
+  border-radius: 22px;
+  background: var(--silver-gradient);
+  box-shadow: var(--silver-ring);
+}
+
+.explore-cases strong {
+  font-size: 18px;
+  font-weight: var(--weight-display);
+}
+
+.explore-cases small {
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.explore-case-kind,
+.post-types .explore-kind {
+  justify-self: start;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--point-tint);
+  color: var(--point-strong);
+  font-size: 12px;
+  font-weight: var(--weight-label);
+}
+
+.explore-intro {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
 /* 행사 기획안 on the event page: the PDF as a row to download, like a file
    in a conversation, on a silver fill. */
 .event-plan {
