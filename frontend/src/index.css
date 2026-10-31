@@ -5075,6 +5075,7 @@ button.nav-pill:hover {
 }
 
 .field input,
+.field select,
 .other-input,
 .package-row input {
   width: 100%;
@@ -5089,6 +5090,7 @@ button.nav-pill:hover {
 }
 
 .field input:focus,
+.field select:focus,
 .other-input:focus,
 .package-row input:focus {
   border-color: var(--point-line);
@@ -5097,6 +5099,28 @@ button.nav-pill:hover {
 
 .input-suffix {
   position: relative;
+}
+
+/* Two fields side by side on the event form (the start and end times). */
+.field-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 10px;
+}
+
+.field input:disabled {
+  opacity: 0.55;
+}
+
+/* Short choices (who comes) two to a row, without captions. */
+.check-list.compact {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 8px;
+}
+
+.check-list.compact .check-row {
+  padding-block: 10px;
 }
 
 .input-suffix input {
@@ -5197,9 +5221,15 @@ button.nav-pill:hover {
   margin-top: 16px;
 }
 
+.form-card > .field-label,
 .package-editor .field-label {
   color: var(--ink-soft);
   font-size: 13px;
+}
+
+.form-card > .field-label {
+  display: block;
+  margin-top: 14px;
 }
 
 .package-row {
@@ -5486,6 +5516,58 @@ button.nav-pill:hover {
   border-radius: 999px;
   background: var(--fill);
   font-size: 12px;
+}
+
+/* The event's kind leads its chips in the point tint. */
+.event-types .event-kind {
+  background: var(--point-tint);
+  color: var(--point-strong);
+  font-weight: var(--weight-label);
+}
+
+/* 참가자 구성 on the event page: a row per fact, the women's share as a bar. */
+.event-makeup {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.event-makeup div {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+
+.event-makeup dt {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.event-makeup dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.makeup-bar {
+  display: block;
+  width: 120px;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--fill-strong);
+}
+
+.makeup-bar i {
+  display: block;
+  height: 100%;
+  background: var(--point);
 }
 
 .event-body {

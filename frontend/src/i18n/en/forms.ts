@@ -1037,6 +1037,22 @@ const en: Record<string, string> = {
   "내 초대 링크": "My invitation link",
   "초대한 결과": "How it went",
   "가입 {joined}곳 · 첫 협찬 성사 {rewarded}곳": "{joined} signed up · {rewarded} had a first sponsorship",
+  "행사 유형": "Kind of event",
+  "고르지 않음": "Not chosen",
+  "끝나는 시각": "End time",
+  "끝나는 시각은 시작 시각 뒤로 골라 주세요.": "Pick an end time after the start time.",
+  "참가자 구성": "Who comes",
+  "정확하지 않아도 괜찮아요. 브랜드가 맞는 제품을 고르는 데 써요.": "It needn’t be exact. Brands use it to pick fitting products.",
+  "여성 비율": "Share of women",
+  "예) 60": "e.g. 60",
+  "오는 사람": "Who comes",
+  "주요 전공": "Main fields of study",
+  "예) 인공지능융합학부, 컴퓨터공학": "e.g. AI convergence, computer science",
+  "{time} 시작": "Starts {time}",
+  "성별 비율": "Gender split",
+  "여성 {female}% · 남성 {male}%": "Women {female}% · men {male}%",
+  "모든 행사 유형": "Any kind of event",
+  "여성 {female}%": "Women {female}%",
 }
 
 export default en

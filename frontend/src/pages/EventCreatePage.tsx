@@ -4,6 +4,7 @@ import type { EventDraft } from "../api"
 import { DatePicker } from "../components/DatePicker"
 import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
+import { audienceYears, eventKinds } from "../data/eventDetails"
 import { sponsorOptions } from "../data/sponsorTypes"
 import { t, tc } from "../i18n"
 import { formatPeriod, todayIso } from "../lib/date"
@@ -47,6 +48,13 @@ export function EventCreatePage({
   const [venue, setVenue] = useState(source?.venue ?? "")
   const [intro, setIntro] = useState(source?.intro ?? "")
   const [packages, setPackages] = useState<SponsorPackage[]>(source?.packages ?? [])
+  // What kind of event, when each day runs, and who comes.
+  const [kind, setKind] = useState(source?.kind ?? "")
+  const [startTime, setStartTime] = useState(source?.startTime ?? "")
+  const [endTime, setEndTime] = useState(source?.endTime ?? "")
+  const [female, setFemale] = useState(source?.makeup?.female === undefined ? "" : String(source.makeup.female))
+  const [years, setYears] = useState<string[]>(source?.makeup?.years ?? [])
+  const [majors, setMajors] = useState(source?.makeup?.majors ?? "")
   const changePackage = (index: number, part: keyof SponsorPackage, value: string) =>
     setPackages((current) => current.map((item, at) => (at === index ? { ...item, [part]: value } : item)))
   const [error, setError] = useState("")
@@ -75,7 +83,9 @@ export function EventCreatePage({
           ? t("기타 협찬 유형을 적어 주세요.")
           : filled.some((item) => !item.name || !item.gives)
             ? t("혜택 묶음마다 이름과 브랜드가 받는 것을 적어 주세요.")
-            : ""
+            : startTime && endTime && endTime <= startTime
+              ? t("끝나는 시각은 시작 시각 뒤로 골라 주세요.")
+              : ""
     if (problem) {
       setError(problem)
       return
@@ -91,7 +101,17 @@ export function EventCreatePage({
         types,
         typeNote: wantsOther ? typeNote.trim() : undefined,
         budget: !students && budget ? Number(budget) : undefined,
-        ...(students ? { venue: venue.trim(), intro: intro.trim(), packages: filled } : {}),
+        ...(students
+          ? {
+              venue: venue.trim(),
+              intro: intro.trim(),
+              packages: filled,
+              kind: kind || undefined,
+              startTime: startTime || undefined,
+              endTime: (startTime && endTime) || undefined,
+              makeup: { ...(female ? { female: Number(female) } : {}), years, majors: majors.trim() },
+            }
+          : {}),
       })
     } finally {
       setBusy(false)
@@ -203,6 +223,33 @@ export function EventCreatePage({
               <h3 className="form-card-title">{t("행사 페이지")}</h3>
               <p className="form-card-caption">{t("브랜드가 행사를 판단하도록 장소와 소개, 협찬 혜택 묶음을 적어 주세요. 사진은 행사 상세에서 올려요.")}</p>
               <label className="field">
+                <span>{t("행사 유형")}</span>
+                <select onChange={(changed) => setKind(changed.target.value)} value={kind}>
+                  <option value="">{t("고르지 않음")}</option>
+                  {eventKinds.map((item) => (
+                    <option key={item} value={item}>
+                      {t(item)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="field-pair">
+                <label className="field">
+                  <span>{t("시작 시각")}</span>
+                  <input onChange={(changed) => setStartTime(changed.target.value)} step={600} type="time" value={startTime} />
+                </label>
+                <label className="field">
+                  <span>{t("끝나는 시각")}</span>
+                  <input
+                    disabled={!startTime}
+                    onChange={(changed) => setEndTime(changed.target.value)}
+                    step={600}
+                    type="time"
+                    value={endTime}
+                  />
+                </label>
+              </div>
+              <label className="field">
                 <span>{t("장소")}</span>
                 <input
                   maxLength={60}
@@ -269,6 +316,54 @@ export function EventCreatePage({
                   </button>
                 )}
               </div>
+            </div>
+          )}
+          {students && (
+            <div aria-labelledby="makeup-title" className="form-card" role="group">
+              <h3 className="form-card-title" id="makeup-title">
+                {t("참가자 구성")}
+              </h3>
+              <p className="form-card-caption">{t("정확하지 않아도 괜찮아요. 브랜드가 맞는 제품을 고르는 데 써요.")}</p>
+              <label className="field">
+                <span>{t("여성 비율")}</span>
+                <div className="input-suffix">
+                  <input
+                    inputMode="numeric"
+                    onChange={(changed) => {
+                      const digits = changed.target.value.replace(/\D/g, "").slice(0, 3)
+                      setFemale(digits ? String(Math.min(100, Number(digits))) : "")
+                    }}
+                    placeholder={t("예) 60")}
+                    value={female}
+                  />
+                  <em>%</em>
+                </div>
+              </label>
+              <span className="field-label">{t("오는 사람")}</span>
+              <div className="check-list compact stagger">
+                {audienceYears.map((year) => {
+                  const checked = years.includes(year)
+                  return (
+                    <label className={checked ? "check-row checked" : "check-row"} key={year}>
+                      <input
+                        checked={checked}
+                        onChange={() => setYears((current) => (checked ? current.filter((item) => item !== year) : [...current, year]))}
+                        type="checkbox"
+                      />
+                      <span aria-hidden="true" className="check-box">
+                        <Icon name="check" size={14} />
+                      </span>
+                      <span className="check-copy">
+                        <strong>{t(year)}</strong>
+                      </span>
+                    </label>
+                  )
+                })}
+              </div>
+              <label className="field">
+                <span>{t("주요 전공")}</span>
+                <input maxLength={60} onChange={(changed) => setMajors(changed.target.value)} placeholder={t("예) 인공지능융합학부, 컴퓨터공학")} value={majors} />
+              </label>
             </div>
           )}
         </div>

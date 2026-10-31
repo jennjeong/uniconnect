@@ -64,6 +64,8 @@ export type Match = {
   eventId?: string
   eventName?: string
   eventDate?: string
+  // Its next event's kind (validation.ts eventKinds), when the group gave one.
+  eventKind?: string
   audience?: number
   // Detail page: a short introduction, key facts (labels per side in
   // lib/validation.ts), SNS accounts and a portfolio.
@@ -108,6 +110,13 @@ export type EventItem = {
   intro?: string
   photos?: string[]
   packages?: SponsorPackage[]
+  // A group's event: its kind (validation.ts eventKinds), the Korean times it
+  // starts and ends each day ("HH:MM"), and who is expected (the share of
+  // women in percent, the years, and fields of study as written).
+  kind?: string
+  startTime?: string
+  endTime?: string
+  makeup?: { female?: number; years?: string[]; majors?: string }
 }
 
 // The person who runs an account. The phone shows only to the two sides of

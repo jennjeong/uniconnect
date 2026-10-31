@@ -9,6 +9,7 @@ import { PageIntro } from "../components/PageIntro"
 import { ProposalControl } from "../components/ProposalControl"
 import { TabBar } from "../components/TabBar"
 import { WorkCard } from "../components/WorkCard"
+import { eventKinds } from "../data/eventDetails"
 import { groupFields } from "../data/industries"
 import { t } from "../i18n"
 import { todayIso } from "../lib/date"
@@ -153,6 +154,7 @@ export function GroupsPage({
       date={group.eventDate}
       tags={
         <>
+          {group.eventKind && <span className="tag-event">{t(group.eventKind)}</span>}
           {group.eventName && <span className="tag-event">{group.eventName}</span>}
           {shownTags(group).map((tag) => (
             <span key={tag}>{tag}</span>
@@ -261,6 +263,20 @@ export function GroupsPage({
               <option value="nextMonth">{t("다음 달")}</option>
               <option value="later">{t("그 뒤")}</option>
               <option value="unknown">{t("날짜 미정")}</option>
+            </select>
+          </span>
+          <span className="catalog-select">
+            <select
+              aria-label={t("행사 유형")}
+              onChange={(event) => setFilters({ ...filters, kind: event.target.value })}
+              value={filters.kind}
+            >
+              <option value="">{t("모든 행사 유형")}</option>
+              {eventKinds.map((kind) => (
+                <option key={kind} value={kind}>
+                  {t(kind)}
+                </option>
+              ))}
             </select>
           </span>
           <span className="catalog-select">

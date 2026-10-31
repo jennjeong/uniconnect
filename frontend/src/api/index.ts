@@ -101,7 +101,20 @@ export type SignupPayload = {
 
 export type EventDraft = Pick<
   EventItem,
-  "name" | "people" | "date" | "endDate" | "types" | "typeNote" | "budget" | "venue" | "intro" | "packages"
+  | "name"
+  | "people"
+  | "date"
+  | "endDate"
+  | "types"
+  | "typeNote"
+  | "budget"
+  | "venue"
+  | "intro"
+  | "packages"
+  | "kind"
+  | "startTime"
+  | "endTime"
+  | "makeup"
 >
 
 // Proposals the account sent, with each brand's answer so far.

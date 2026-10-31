@@ -7,16 +7,18 @@ export type GroupFilters = {
   size: "all" | "small" | "medium" | "large" | "unknown"
   when: "all" | "thisMonth" | "nextMonth" | "later" | "unknown"
   school: string
+  // The next event's kind (data/eventDetails.ts); empty for any.
+  kind: string
 }
 
-export const noGroupFilters: GroupFilters = { size: "all", when: "all", school: "" }
+export const noGroupFilters: GroupFilters = { size: "all", when: "all", school: "", kind: "" }
 
 // Whether a listing has every word typed into the search box, in its name,
 // kind (as stored or as shown), offer, tags, school or next event.
 export function matchesQuery(match: Match, query: string) {
   const words = query.toLowerCase().split(/\s+/).filter(Boolean)
   if (words.length === 0) return true
-  const text = [match.name, match.category, t(match.category), match.offer, match.school, match.eventName, ...match.tags]
+  const text = [match.name, match.category, t(match.category), match.offer, match.school, match.eventName, match.eventKind, ...match.tags]
     .filter(Boolean)
     .join(" ")
     .toLowerCase()
@@ -49,5 +51,6 @@ export function matchesGroupFilters(group: Match, filters: GroupFilters, today: 
           : "later"
   if (filters.when !== "all" && filters.when !== when) return false
 
+  if (filters.kind && group.eventKind !== filters.kind) return false
   return !filters.school || group.school === filters.school
 }

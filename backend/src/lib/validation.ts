@@ -146,3 +146,8 @@ export const surveyOptions = {
 // Parcel carriers a sponsorship's goods may go with (협찬 물품 배송); the app
 // lists the same (frontend data/carriers.ts).
 export const carriers = ["CJ대한통운", "우체국택배", "한진택배", "롯데택배", "로젠택배", "경동택배", "대신택배", "편의점택배", "기타"] as const
+
+// What kind of event a student group runs (frontend data/eventDetails.ts
+// lists the same; lists.sync.test.ts checks), and who comes to it.
+export const eventKinds = ["축제", "체육대회", "MT · OT", "간식 행사", "세미나 · 강연", "네트워킹", "공모전 · 해커톤", "졸업 전시 · 패션쇼", "총회", "공연", "기타"] as const
+export const audienceYears = ["1학년", "2학년", "3학년", "4학년", "대학원생", "졸업생 · 동문", "교직원", "지역 주민"] as const

@@ -41,7 +41,14 @@ export function ProposalDocument({ page, history }: { page: EventPage; history: 
         <dl className="pdf-facts">
           <div>
             <dt>{t("일시")}</dt>
-            <dd>{formatPeriod(event.date, event.endDate)}</dd>
+            <dd>
+              {formatPeriod(event.date, event.endDate)}
+              {event.startTime ? ` · ${event.startTime}${event.endTime ? `~${event.endTime}` : ""}` : ""}
+            </dd>
+          </div>
+          <div>
+            <dt>{t("행사 유형")}</dt>
+            <dd>{event.kind ? t(event.kind) : "—"}</dd>
           </div>
           <div>
             <dt>{t("장소")}</dt>
@@ -54,6 +61,18 @@ export function ProposalDocument({ page, history }: { page: EventPage; history: 
           <div>
             <dt>{t("원하는 협찬")}</dt>
             <dd>{types.join(", ")}</dd>
+          </div>
+          <div>
+            <dt>{t("참가자 구성")}</dt>
+            <dd>
+              {[
+                event.makeup?.female !== undefined ? t("여성 {female}%", { female: event.makeup.female }) : "",
+                (event.makeup?.years ?? []).map((year) => t(year)).join(", "),
+                event.makeup?.majors ?? "",
+              ]
+                .filter(Boolean)
+                .join(" · ") || "—"}
+            </dd>
           </div>
         </dl>
       </section>

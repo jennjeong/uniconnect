@@ -600,6 +600,13 @@ const en: Record<string, string> = {
   "이미 답한 미팅 제안이에요.": "This meeting proposal has already been answered.",
   "미팅 제안은 고칠 수 없어요. 지우고 다시 보내 주세요.": "A meeting proposal can't be edited. Delete it and send it again.",
   "데모 계정은 친구를 초대할 수 없어요.": "The demo accounts can't invite anyone.",
+  "행사 유형을 목록에서 골라 주세요.": "Pick the kind of event from the list.",
+  "시각은 00:00부터 23:59까지 골라 주세요.": "Pick a time from 00:00 to 23:59.",
+  "끝나는 시각은 시작 시각과 함께 골라 주세요.": "Pick the end time together with the start time.",
+  "끝나는 시각은 시작 시각 뒤로 골라 주세요.": "Pick an end time after the start time.",
+  "참가자 구성을 다시 확인해 주세요.": "Check who's expected again.",
+  "여성 비율은 0부터 100까지 숫자로 적어 주세요.": "Write the share of women as a number from 0 to 100.",
+  "주요 전공은 60자 이하로 적어 주세요.": "Keep the main fields of study to 60 characters.",
 }
 
 export default en

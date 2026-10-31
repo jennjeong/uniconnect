@@ -183,6 +183,13 @@ export function EventDetailPage({
           <Icon name="calendar" size={16} />
           <DateLine date={event.date} />
         </li>
+        {event.startTime && (
+          <li>
+            <Icon name="calendar" size={16} />
+            <span className="sr-only">{t("시간")}</span>
+            {event.endTime ? `${event.startTime} ~ ${event.endTime}` : t("{time} 시작", { time: event.startTime })}
+          </li>
+        )}
         {event.venue && (
           <li>
             <Icon name="pin" size={16} />
@@ -197,6 +204,7 @@ export function EventDetailPage({
           </li>
         )}
         <li className="event-types">
+          {event.kind && <span className="event-kind">{t(event.kind)}</span>}
           {event.types.map((type) => (
             <span key={type}>{type === "기타" && event.typeNote ? event.typeNote : t(type)}</span>
           ))}
@@ -215,6 +223,37 @@ export function EventDetailPage({
               </p>
             )}
           </section>
+
+          {event.makeup && (
+            <section aria-labelledby="event-makeup-title" className="event-section">
+              <h2 id="event-makeup-title">{t("참가자 구성")}</h2>
+              <dl className="event-makeup">
+                {event.makeup.female !== undefined && (
+                  <div>
+                    <dt>{t("성별 비율")}</dt>
+                    <dd>
+                      <span className="makeup-bar" aria-hidden="true">
+                        <i style={{ width: `${event.makeup.female}%` }} />
+                      </span>
+                      {t("여성 {female}% · 남성 {male}%", { female: event.makeup.female, male: 100 - event.makeup.female })}
+                    </dd>
+                  </div>
+                )}
+                {event.makeup.years && event.makeup.years.length > 0 && (
+                  <div>
+                    <dt>{t("오는 사람")}</dt>
+                    <dd>{event.makeup.years.map((year) => t(year)).join(", ")}</dd>
+                  </div>
+                )}
+                {event.makeup.majors && (
+                  <div>
+                    <dt>{t("주요 전공")}</dt>
+                    <dd>{event.makeup.majors}</dd>
+                  </div>
+                )}
+              </dl>
+            </section>
+          )}
 
           {(photos.length > 0 || own) && (
             <section aria-labelledby="event-photos-title" className="event-section">

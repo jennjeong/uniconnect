@@ -125,6 +125,20 @@ const en: Record<string, string> = {
   "경동택배": "Kyungdong",
   "대신택배": "Daesin",
   "편의점택배": "Convenience store parcel",
+  "축제": "Festival",
+  "체육대회": "Sports day",
+  "MT · OT": "Retreat · orientation",
+  "간식 행사": "Snack giveaway",
+  "세미나 · 강연": "Seminar · talk",
+  "네트워킹": "Networking",
+  "공모전 · 해커톤": "Contest · hackathon",
+  "졸업 전시 · 패션쇼": "Graduation show",
+  "총회": "General assembly",
+  "공연": "Performance",
+  "4학년": "4th years",
+  "졸업생 · 동문": "Alumni",
+  "교직원": "Staff",
+  "지역 주민": "Local residents",
 }
 
 export default en
