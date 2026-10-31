@@ -75,6 +75,25 @@ test("the site's counts are members only and grow with each sign-up", async () =
   assert.ok(after.schools >= 1)
 })
 
+test("a member keeps up to ten proposal templates; the demo accounts keep none", async () => {
+  const token = await signUpMember("templates@syu.ac.kr", "Templates-pass1!")
+  const saved = await call("PUT", "/auth/templates", { templates: [{ name: " 카페 첫 제안 ", text: "{상대}에 {행사} 협찬을 제안해요." }] }, token)
+  assert.equal(saved.status, 200)
+  assert.equal(saved.data.account.templates.length, 1)
+  assert.equal(saved.data.account.templates[0].name, "카페 첫 제안")
+  assert.match(saved.data.account.templates[0].id, /^[\w-]+$/)
+  // They come back with the account and go out with its data.
+  assert.equal((await call("GET", "/auth/me", undefined, token)).data.account.templates[0].text, "{상대}에 {행사} 협찬을 제안해요.")
+  assert.equal((await call("GET", "/auth/export", undefined, token)).data.account.templates.length, 1)
+  const many = Array.from({ length: 11 }, (_, index) => ({ name: `문구 ${index}`, text: "안녕하세요" }))
+  assert.equal((await call("PUT", "/auth/templates", { templates: many }, token)).status, 400)
+  assert.equal((await call("PUT", "/auth/templates", { templates: [{ name: "", text: "x" }] }, token)).status, 400)
+  assert.equal((await call("PUT", "/auth/templates", { templates: [{ name: "긴 글", text: "가".repeat(301) }] }, token)).status, 400)
+  const cleared = await call("PUT", "/auth/templates", { templates: [] }, token)
+  assert.equal(cleared.data.account.templates, undefined)
+  assert.equal((await call("PUT", "/auth/templates", { templates: [] }, await login("학생단체"))).status, 403)
+})
+
 test("health check and unknown routes", async () => {
   assert.deepEqual((await call("GET", "/health")).data, { ok: true })
   assert.equal((await call("GET", "/nope")).status, 404)

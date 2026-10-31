@@ -255,6 +255,9 @@ const en: Record<string, string> = {
     "Campus Partners refunds: fully refunded within 7 days of paying, and after that for the days left, pro rata.",
   "참여자가 고르면 답하는 선택 설문(학년, 전공 계열, 쿠폰 가게에 가 본 적이 있는지)은 누가 답했는지 남기지 않고 행사별 숫자로만 모아요. 브랜드의 상세 분석 리포트에 관객 구성으로 보여요.":
     "The optional survey participants may answer (year, field of study, whether they had been to the coupon's store) keeps no record of who answered; it is only counted per event, and shows as the audience in the brand's detailed analysis report.",
+  "저장한 제안 문구(이름과 내용, 10개까지)": "Saved proposal messages (their names and text, up to 10)",
+  "다음 제안을 보낼 때 불러와 쓰기": "To use them again in later proposals",
+  "탈퇴하거나 문구를 지울 때까지": "Until you leave or delete the message",
 }
 
 export default en

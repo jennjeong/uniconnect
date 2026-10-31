@@ -10248,6 +10248,35 @@ button.nav-pill:hover {
   background: #fff;
 }
 
+/* Saved proposal messages: a list to fill the message from, and a row to
+   name the one written before saving it. */
+.propose-templates {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+
+.propose-templates label {
+  flex: 1 1 200px;
+}
+
+.propose-templates .underline-link,
+.propose-template-name .underline-link {
+  font-size: 13px;
+}
+
+.propose-template-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 12px;
+}
+
+.propose-template-name label {
+  flex: 1 1 200px;
+}
+
 .propose-empty {
   display: grid;
   justify-items: start;

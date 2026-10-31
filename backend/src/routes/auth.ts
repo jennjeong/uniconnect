@@ -571,6 +571,38 @@ authRouter.put("/preferences", async (req, res) => {
   res.json({ account: toPublic(account, req.memberId) })
 })
 
+// Proposal messages an account keeps (제안 문구 템플릿): how many, and how
+// long a name and a message may be (a message as long as a proposal's).
+const maxTemplates = 10
+const maxTemplateName = 30
+const maxTemplateText = 300
+
+// The account's saved proposal messages, replacing those saved before.
+// The shared demo accounts keep none, as everyone trying them would see
+// each other's.
+authRouter.put("/templates", async (req, res) => {
+  const account = requireAccount(req)
+  if (isDemo(account)) throw new HttpError(403, "데모 계정은 템플릿을 저장할 수 없어요.")
+  const list: unknown = req.body?.templates
+  if (!Array.isArray(list) || list.length > maxTemplates) {
+    throw new HttpError(400, "템플릿은 10개까지 저장할 수 있어요.")
+  }
+  const templates = list.map((item: unknown) => {
+    const { id, name, text } = (item ?? {}) as Record<string, unknown>
+    if (typeof name !== "string" || !name.trim() || name.trim().length > maxTemplateName) {
+      throw new HttpError(400, "템플릿 이름은 1~30자로 적어 주세요.")
+    }
+    if (typeof text !== "string" || !text.trim() || text.trim().length > maxTemplateText) {
+      throw new HttpError(400, "템플릿 내용은 1~300자로 적어 주세요.")
+    }
+    return { id: typeof id === "string" && /^[\w-]{1,40}$/.test(id) ? id : randomUUID(), name: name.trim(), text: text.trim() }
+  })
+  if (templates.length > 0) account.templates = templates
+  else delete account.templates
+  await saveDatabase()
+  res.json({ account: toPublic(account, req.memberId) })
+})
+
 // Most parts of the bell's notices one save may hold, as many as the app
 // tracks (lib/notifications.ts).
 const maxReadNotices = 300

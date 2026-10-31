@@ -578,6 +578,10 @@ const en: Record<string, string> = {
   "이미 uniconnect에서 쓰는 이메일이에요.": "That email is already used on uniconnect.",
   "{name}: 사진을 보냈어요.": "{name}: Sent a photo.",
   "{name}: 파일을 보냈어요: {file}": "{name}: Sent a file: {file}",
+  "데모 계정은 템플릿을 저장할 수 없어요.": "The demo accounts can't save templates.",
+  "템플릿은 10개까지 저장할 수 있어요.": "You can save up to 10 templates.",
+  "템플릿 이름은 1~30자로 적어 주세요.": "Give the template a name of 1 to 30 characters.",
+  "템플릿 내용은 1~300자로 적어 주세요.": "Write the template in 1 to 300 characters.",
 }
 
 export default en
