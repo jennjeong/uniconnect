@@ -7433,6 +7433,133 @@ button.nav-pill:hover {
   outline-offset: 2px;
 }
 
+/* 미팅 잡기: the calendar button beside the clip, its form over the box,
+   and each proposed meeting as a card inside its bubble. */
+.chat-meeting {
+  border: 0;
+  background: none;
+}
+
+.chat-meeting .icon {
+  stroke: currentColor;
+}
+
+.chat-meeting[aria-expanded="true"] {
+  background: var(--point-tint);
+  color: var(--point-strong);
+}
+
+.meeting-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
+  padding: 16px;
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: var(--ring), 0 12px 32px rgba(0, 27, 55, 0.1);
+}
+
+.meeting-form label {
+  display: grid;
+  gap: 6px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.meeting-form .wide {
+  grid-column: 1 / -1;
+}
+
+.meeting-form :is(input, select) {
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+}
+
+.meeting-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 14px;
+}
+
+.meeting-card {
+  display: grid;
+  gap: 4px;
+  min-width: 220px;
+}
+
+.meeting-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: var(--weight-label);
+  opacity: 0.85;
+}
+
+.meeting-kicker .icon {
+  stroke: currentColor;
+}
+
+.meeting-card strong {
+  font-size: 16px;
+  font-weight: var(--weight-display);
+}
+
+.meeting-place {
+  font-size: 14px;
+}
+
+.meeting-card p {
+  margin: 4px 0 0;
+  font-size: 14px;
+}
+
+.meeting-card.declined strong,
+.meeting-card.canceled strong {
+  text-decoration: line-through;
+}
+
+.meeting-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.meeting-actions:empty {
+  display: none;
+}
+
+.meeting-actions a {
+  text-decoration: none;
+}
+
+/* Own meetings sit on the deep blue bubble. */
+.chat-message.mine .meeting-actions :is(.cancel-button, .primary-button) {
+  background: #fff;
+  color: var(--point);
+}
+
+.chat-message.mine .meeting-actions .underline-link {
+  color: #fff;
+}
+
+@media (max-width: 560px) {
+  .meeting-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .chat-attach[aria-disabled="true"] {
   cursor: progress;
   opacity: 0.5;

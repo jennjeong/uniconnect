@@ -587,6 +587,18 @@ const en: Record<string, string> = {
   "배송은 10건까지 남길 수 있어요.": "You can note up to 10 parcels.",
   "배송을 찾을 수 없어요.": "Couldn't find that parcel.",
   "상대가 남긴 배송은 상대만 지울 수 있어요.": "Only the other side can remove a parcel it noted.",
+  "미팅 날짜를 골라 주세요.": "Pick the meeting's date.",
+  "오늘이나 그 뒤의 날짜를 골라 주세요.": "Pick today or a later date.",
+  "미팅 시작 시각을 골라 주세요.": "Pick when the meeting starts.",
+  "미팅 시간을 목록에서 골라 주세요.": "Pick the meeting's length from the list.",
+  "장소나 화상 회의 링크를 100자 이하로 적어 주세요.": "Write the place or video call link in 100 characters or fewer.",
+  "메모는 300자 이하로 적어 주세요.": "Keep the note to 300 characters or fewer.",
+  "미팅 제안을 찾을 수 없어요.": "Couldn't find that meeting proposal.",
+  "수락, 거절, 취소 가운데 골라 주세요.": "Choose accept, decline or cancel.",
+  "보낸 쪽만 미팅 제안을 취소할 수 있어요.": "Only the side that sent it can cancel the meeting proposal.",
+  "받은 쪽만 미팅 제안에 답할 수 있어요.": "Only the side that received it can answer the meeting proposal.",
+  "이미 답한 미팅 제안이에요.": "This meeting proposal has already been answered.",
+  "미팅 제안은 고칠 수 없어요. 지우고 다시 보내 주세요.": "A meeting proposal can't be edited. Delete it and send it again.",
 }
 
 export default en

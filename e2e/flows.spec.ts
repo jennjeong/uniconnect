@@ -267,6 +267,43 @@ test("the brand notes the parcel it sent on the agreement, and the group tracks 
   }
 })
 
+test("a group proposes a meeting in a conversation, and the brand accepts and saves it", async ({ page, request, browser }) => {
+  const group = await signUpMember(request, "학생단체", "e2e-meet@syu.ac.kr", "미팅하는 동아리")
+  await request.put("/api/profile", { data: { intro: "캠퍼스 동아리예요.", offer: "관객 100명" }, headers: group.headers })
+  const brand = await signUpMember(request, "브랜드", "e2e-meet@meet-cafe.kr", "미팅하는 카페")
+  const chat = (await (await request.post("/api/conversations", { data: { partnerId: brand.listingId }, headers: group.headers })).json()) as {
+    conversation: { id: string }
+  }
+  const day = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date(Date.now() + 4 * 86_400_000))
+
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
+  await page.goto(`/messages/${chat.conversation.id}`)
+  await page.getByRole("button", { name: "미팅 잡기" }).click()
+  const form = page.getByRole("form", { name: "미팅 잡기" })
+  await form.getByLabel("날짜").fill(day)
+  await form.getByLabel("시작 시각").fill("15:00")
+  await form.getByLabel("미팅 시간").selectOption("30")
+  await form.getByLabel("장소 또는 화상 회의 링크").fill("학생회관 2층 카페")
+  await form.getByRole("button", { name: "미팅 제안 보내기" }).click()
+  await expect(page.locator(".meeting-card")).toContainText("답을 기다려요")
+  await expect(page.locator(".meeting-card")).toContainText("학생회관 2층 카페")
+
+  const brandPage = await (await browser.newContext()).newPage()
+  await brandPage.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
+  await brandPage.goto(`/messages/${chat.conversation.id}`)
+  const card = brandPage.locator(".meeting-card")
+  await card.getByRole("button", { name: "수락" }).click()
+  await expect(card).toContainText("확정된 미팅")
+  await expect(card.getByRole("link", { name: "Google 캘린더에 추가" })).toHaveAttribute("href", /calendar\.google\.com.*dates=/)
+  const file = brandPage.waitForEvent("download")
+  await card.getByRole("button", { name: "캘린더 파일로 저장" }).click()
+  expect((await file).suggestedFilename()).toBe(`uniconnect-meeting-${day}.ics`)
+  for (const member of [group, brand]) {
+    const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: member.headers })
+    expect(left.status()).toBe(204)
+  }
+})
+
 test("a sponsorship is called off from its agreement once the other side agrees", async ({ page, request }) => {
   const group = await signUpMember(request, "학생단체", "e2e-calloff@syu.ac.kr", "취소하는 동아리")
   const brand = await signUpMember(request, "브랜드", "e2e-calloff@calloff-cafe.kr", "취소하는 카페")

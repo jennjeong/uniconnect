@@ -903,6 +903,37 @@ test("a proposal names the sender's event and carries its note to the partner", 
   }
 })
 
+test("a meeting proposed in a conversation is accepted by the other side, and only the sender calls it off", async () => {
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const { token: group } = await listedMember("meeting@syu.ac.kr", "meeting-pass-123")
+  const { token: brand, listingId: brandListing } = await listedMember("meeting@meeting-cafe.kr", "meeting-pass-123", "브랜드")
+  const chat = (await call("POST", "/conversations", { partnerId: brandListing }, group)).data.conversation
+  const day = addDays(todayInKorea(), 3)
+  const meeting = { date: day, time: "14:30", minutes: 60, place: "학생회관 2층 카페" }
+  const sent = await call("POST", `/conversations/${chat.id}/meetings`, meeting, group)
+  assert.equal(sent.status, 201)
+  const message = sent.data.conversation.messages.at(-1)
+  assert.deepEqual(message.meeting, { ...meeting, status: "proposed" })
+  assert.equal(message.text, `미팅 제안: ${day} 14:30 · 학생회관 2층 카페`)
+  // A day gone, an odd length or no place is refused.
+  for (const wrong of [{ date: addDays(todayInKorea(), -1) }, { minutes: 45 }, { place: "" }, { time: "25:00" }]) {
+    assert.equal((await call("POST", `/conversations/${chat.id}/meetings`, { ...meeting, ...wrong }, group)).status, 400)
+  }
+  const answer = (token: string, value: string) =>
+    call("POST", `/conversations/${chat.id}/meetings/${message.id}/answer`, { answer: value }, token)
+  // The sender can't accept its own; the other side can't call it off.
+  assert.equal((await answer(group, "accept")).status, 403)
+  assert.equal((await answer(brand, "cancel")).status, 403)
+  const accepted = await answer(brand, "accept")
+  assert.equal(accepted.data.conversation.messages.at(-1).meeting.status, "accepted")
+  assert.equal((await answer(brand, "decline")).status, 409)
+  // It can't be edited, and the sender still calls it off once accepted.
+  assert.equal((await call("PUT", `/conversations/${chat.id}/messages/${message.id}`, { text: "바꿔요" }, group)).status, 409)
+  assert.equal((await answer(group, "cancel")).data.conversation.messages.at(-1).meeting.status, "canceled")
+  const listed = (await call("GET", "/conversations", undefined, brand)).data.conversations
+  assert.equal(listed.find((item: { id: string }) => item.id === chat.id).lastMessage.meeting, true)
+})
+
 test("an account sending messages or proposals in a flood is held back, and others aren't", async () => {
   const { addDays, todayInKorea } = await import("./lib/dates.js")
   const { token: group } = await listedMember("flood@syu.ac.kr", "flood-pass-123")

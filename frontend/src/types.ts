@@ -576,6 +576,19 @@ export type ChatMessage = {
   deletedAt?: string
   // A photo or PDF sent as the message; gone once it is deleted.
   attachment?: ChatAttachment
+  // A meeting proposed as the message, and how it stands.
+  meeting?: Meeting
+}
+
+// A meeting proposed in a conversation: the day, the Korean start time, the
+// length in minutes, and where (a place or a video link).
+export type Meeting = {
+  date: string
+  time: string
+  minutes: number
+  place: string
+  status: "proposed" | "accepted" | "declined" | "canceled"
+  answeredAt?: string
 }
 
 // A file sent in a conversation: the name it is kept by, the name it was
@@ -676,7 +689,7 @@ export type Conversation = {
     // Messages only reach partners who have an account.
     hasAccount: boolean
   }
-  lastMessage: { text: string; at: string; mine: boolean; deleted?: boolean; attachment?: ChatAttachment["type"] } | null
+  lastMessage: { text: string; at: string; mine: boolean; deleted?: boolean; attachment?: ChatAttachment["type"]; meeting?: true } | null
   unread: number
   messages?: ChatMessage[]
 }

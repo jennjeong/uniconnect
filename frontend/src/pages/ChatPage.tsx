@@ -4,10 +4,11 @@ import { ApiError, api, errorMessage } from "../api"
 import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { locale, t } from "../i18n"
-import { formatDay, toIsoDate } from "../lib/date"
+import { formatDay, todayIso, toIsoDate } from "../lib/date"
 import { saveFile } from "../lib/download"
 import { photoFromFile } from "../lib/image"
-import type { ChatAttachment, ChatMessage, Conversation } from "../types"
+import { googleMeetingLink, meetingIcs } from "../lib/meetings"
+import type { ChatAttachment, ChatMessage, Conversation, Meeting } from "../types"
 
 // How long an open conversation waits to ask again after a failed request.
 const retryMs = 4000
@@ -118,6 +119,140 @@ function ChatFile({
 // its place. A photo or PDF goes from the clip beside the box as a message
 // of its own, which can be deleted but not edited. It stops checking once
 // the conversation is gone, and hands an expired login to the app.
+const meetingLengths = [30, 60, 90, 120]
+
+const meetingStates: Record<Meeting["status"], string> = {
+  proposed: "답을 기다려요",
+  accepted: "확정된 미팅",
+  declined: "거절된 미팅",
+  canceled: "취소된 미팅",
+}
+
+// A meeting proposed in the conversation: when, how long and where, how it
+// stands, and the answers this side can give. Once accepted, either side
+// puts it in a calendar.
+function MeetingCard({
+  message,
+  partnerName,
+  busy,
+  onAnswer,
+}: {
+  message: ChatMessage & { meeting: Meeting }
+  partnerName: string
+  busy: boolean
+  onAnswer: (answer: "accept" | "decline" | "cancel") => void
+}) {
+  const { meeting } = message
+  const title = t("{name} 미팅", { name: partnerName })
+  const note = message.text.startsWith("미팅 제안:") ? "" : message.text
+  return (
+    <div className={`meeting-card ${meeting.status}`}>
+      <span className="meeting-kicker">
+        <Icon name="calendar" size={14} /> {t("미팅 제안")} · {t(meetingStates[meeting.status])}
+      </span>
+      <strong>
+        {formatDay(meeting.date)} {meeting.time} · {t("{minutes}분", { minutes: meeting.minutes })}
+      </strong>
+      <span className="meeting-place">{meeting.place}</span>
+      {note && <p>{note}</p>}
+      <div className="meeting-actions">
+        {!message.mine && meeting.status === "proposed" && (
+          <>
+            <button className="primary-button" disabled={busy} onClick={() => onAnswer("accept")} type="button">
+              {t("수락")}
+            </button>
+            <button className="cancel-button" disabled={busy} onClick={() => onAnswer("decline")} type="button">
+              {t("거절")}
+            </button>
+          </>
+        )}
+        {meeting.status === "accepted" && (
+          <>
+            <a className="cancel-button" href={googleMeetingLink(meeting, title)} rel="noreferrer" target="_blank">
+              {t("Google 캘린더에 추가")}
+            </a>
+            <button
+              className="cancel-button"
+              onClick={() => saveFile(`uniconnect-meeting-${meeting.date}.ics`, meetingIcs(meeting, title, message.id), "text/calendar")}
+              type="button"
+            >
+              {t("캘린더 파일로 저장")}
+            </button>
+          </>
+        )}
+        {message.mine && (meeting.status === "proposed" || meeting.status === "accepted") && (
+          <button className="underline-link" disabled={busy} onClick={() => onAnswer("cancel")} type="button">
+            {t("미팅 취소")}
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// 미팅 잡기: the day, start, length and place of a meeting to propose, with
+// a note. Sent as a message of its own.
+function MeetingForm({
+  busy,
+  onSend,
+  onClose,
+}: {
+  busy: boolean
+  onSend: (body: { date: string; time: string; minutes: number; place: string; note?: string }) => Promise<boolean>
+  onClose: () => void
+}) {
+  const [date, setDate] = useState("")
+  const [time, setTime] = useState("14:00")
+  const [minutes, setMinutes] = useState(60)
+  const [place, setPlace] = useState("")
+  const [note, setNote] = useState("")
+  return (
+    <form
+      aria-label={t("미팅 잡기")}
+      className="meeting-form"
+      onSubmit={async (event) => {
+        event.preventDefault()
+        if (await onSend({ date, time, minutes, place: place.trim(), ...(note.trim() ? { note: note.trim() } : {}) })) onClose()
+      }}
+    >
+      <label>
+        {t("날짜")}
+        <input min={todayIso()} onChange={(event) => setDate(event.target.value)} required type="date" value={date} />
+      </label>
+      <label>
+        {t("시작 시각")}
+        <input onChange={(event) => setTime(event.target.value)} required step={600} type="time" value={time} />
+      </label>
+      <label>
+        {t("미팅 시간")}
+        <select onChange={(event) => setMinutes(Number(event.target.value))} value={minutes}>
+          {meetingLengths.map((length) => (
+            <option key={length} value={length}>
+              {t("{minutes}분", { minutes: length })}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="wide">
+        {t("장소 또는 화상 회의 링크")}
+        <input maxLength={100} onChange={(event) => setPlace(event.target.value)} placeholder={t("예) 학생회관 2층 카페, Zoom 링크")} required value={place} />
+      </label>
+      <label className="wide">
+        {t("메모 (선택)")}
+        <input maxLength={300} onChange={(event) => setNote(event.target.value)} placeholder={t("예) 협찬 물품과 부스 위치를 같이 정해요.")} value={note} />
+      </label>
+      <div className="meeting-form-actions wide">
+        <button className="underline-link" onClick={onClose} type="button">
+          {t("닫기")}
+        </button>
+        <button className="primary-button" disabled={busy || !date || !place.trim()} type="submit">
+          {t("미팅 제안 보내기")}
+        </button>
+      </div>
+    </form>
+  )
+}
+
 export function ChatPage({
   id,
   canSendFiles,
@@ -145,6 +280,9 @@ export function ChatPage({
   const [error, setError] = useState("")
   const [sending, setSending] = useState(false)
   const [uploading, setUploading] = useState(false)
+  // 미팅 잡기's form, while open, and a meeting being sent or answered.
+  const [planning, setPlanning] = useState(false)
+  const [meetingBusy, setMeetingBusy] = useState(false)
   // The own message whose actions are open, and whether they ask to confirm a delete.
   const [menuFor, setMenuFor] = useState<string | null>(null)
   const [confirming, setConfirming] = useState(false)
@@ -317,6 +455,30 @@ export function ChatPage({
     }
   }
 
+  const proposeMeeting = async (body: { date: string; time: string; minutes: number; place: string; note?: string }) => {
+    setMeetingBusy(true)
+    try {
+      update((await api.proposeMeeting(id, body)).conversation)
+      return true
+    } catch (problem) {
+      fail(problem)
+      return false
+    } finally {
+      setMeetingBusy(false)
+    }
+  }
+
+  const answerMeeting = async (message: ChatMessage, answer: "accept" | "decline" | "cancel") => {
+    setMeetingBusy(true)
+    try {
+      update((await api.answerMeeting(id, message.id, answer)).conversation)
+    } catch (problem) {
+      fail(problem)
+    } finally {
+      setMeetingBusy(false)
+    }
+  }
+
   // Opens an own message's actions; once it has, the hint has done its job.
   const openMenu = (message: ChatMessage) => {
     setConfirming(false)
@@ -447,7 +609,7 @@ export function ChatPage({
           const deleted = Boolean(message.deletedAt)
           // Own messages are edited (files only deleted), a partner with an account's reported.
           const own = message.mine && !deleted
-          const editable = own && !message.attachment
+          const editable = own && !message.attachment && !message.meeting
           const reportable = !message.mine && !deleted && onReport !== undefined && partner?.hasAccount === true
           const actionable = own || reportable
           const classes = [
@@ -481,6 +643,13 @@ export function ChatPage({
                   />
                 ) : message.attachment ? (
                   <ChatFile attachment={message.attachment} conversationId={id} onError={fail} />
+                ) : message.meeting ? (
+                  <MeetingCard
+                    busy={meetingBusy}
+                    message={{ ...message, meeting: message.meeting }}
+                    onAnswer={(answer) => void answerMeeting(message, answer)}
+                    partnerName={partner?.name ?? ""}
+                  />
                 ) : (
                   message.text
                 )}
@@ -581,7 +750,19 @@ export function ChatPage({
               : t("내 메시지를 우클릭하면 수정하거나 삭제할 수 있어요.")}
           </p>
         )}
+        {planning && <MeetingForm busy={meetingBusy} onClose={() => setPlanning(false)} onSend={proposeMeeting} />}
         <div className="chat-input">
+          {partner?.hasAccount && !editing && (
+            <button
+              aria-expanded={planning}
+              aria-label={t("미팅 잡기")}
+              className="chat-attach chat-meeting"
+              onClick={() => setPlanning(!planning)}
+              type="button"
+            >
+              <Icon name="calendar" size={19} />
+            </button>
+          )}
           {canSendFiles && !editing && (
             <label className="chat-attach" aria-disabled={uploading || undefined}>
               <Icon name="clip" size={19} />
