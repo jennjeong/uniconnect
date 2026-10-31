@@ -609,6 +609,8 @@ const en: Record<string, string> = {
   "주요 전공은 60자 이하로 적어 주세요.": "Keep the main fields of study to 60 characters.",
   "홍보 · 배포 계획을 다시 확인해 주세요.": "Check the promotion plan again.",
   "고른 홍보 · 배포 계획을 이행하는 데 동의해 주세요.": "Agree to carry out the promotion you chose.",
+  "기획안은 2MB 이하의 PDF로 올려 주세요.": "Upload the plan as a PDF of 2 MB or less.",
+  "기획안을 찾을 수 없어요.": "Couldn't find the plan.",
 }
 
 export default en

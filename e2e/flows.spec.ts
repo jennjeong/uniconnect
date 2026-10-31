@@ -593,6 +593,12 @@ test("a group writes its event page on the form, adds a photo, and a brand reads
   const png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
   await page.locator(".event-photo-add input").setInputFiles({ name: "stage.png", mimeType: "image/png", buffer: Buffer.from(png, "base64") })
   await expect(page.getByRole("img", { name: "페이지 공연 사진" })).toBeVisible()
+  // The plan PDF goes on the page for brands to download.
+  await page
+    .locator("label", { hasText: "기획안 올리기" })
+    .locator("input")
+    .setInputFiles({ name: "종강공연 기획안.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4\nplan\n%%EOF") })
+  await expect(page.getByText("기획안을 올렸어요.")).toBeVisible()
   // The group makes a proposal PDF from the page.
   const proposal = page.waitForEvent("download")
   await page.getByRole("button", { name: "제안서 PDF" }).click()
@@ -615,6 +621,10 @@ test("a group writes its event page on the form, adds a photo, and a brand reads
   await expect(brandPage.getByRole("img", { name: "페이지 공연 사진" })).toBeVisible()
   await expect(brandPage.getByRole("button", { name: "행사 수정" })).toHaveCount(0)
   await expect(brandPage.getByRole("button", { name: "제안서 PDF" })).toHaveCount(0)
+  const plan = brandPage.waitForEvent("download")
+  await brandPage.getByRole("button", { name: /종강공연 기획안\.pdf/ }).click()
+  expect((await plan).suggestedFilename()).toBe("종강공연 기획안.pdf")
+  await expect(brandPage.getByRole("button", { name: "기획안 지우기" })).toHaveCount(0)
   await brandPage.getByRole("button", { name: "단체 프로필 보기" }).click()
   await expect(brandPage).toHaveURL(/\/groups\//)
   for (const member of [group, brand]) {

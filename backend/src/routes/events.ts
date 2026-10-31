@@ -6,7 +6,7 @@ import { findListing, shownTo } from "../lib/catalog.js"
 import { todayInKorea, toIsoDate } from "../lib/dates.js"
 import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
-import { eventPhotos, parsePhoto, photoName, photoType, photos } from "../lib/photos.js"
+import { eventPhotos, parsePdf, parsePhoto, photoName, photoType, photos } from "../lib/photos.js"
 import { isSponsored } from "../lib/sponsorships.js"
 import { audienceYears, eventKinds, handoutWays, logoSpots, parseRole, promoPosts, sponsorTypes, text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
@@ -428,6 +428,53 @@ eventsRouter.post("/:id/photos", async (req, res) => {
     await store.remove(eventPhotos(event.id), [parsed.name])
     throw error
   }
+})
+
+// 행사 기획안: the group puts a PDF of its plan (2 MB at most) on its event
+// page, one at a time, kept beside the photos; brands who see the page
+// download it.
+eventsRouter.post("/:id/plan", async (req, res) => {
+  const { event } = ownEvent(req)
+  const parsed = parsePdf(req.body?.file)
+  if (!parsed) throw new HttpError(400, "기획안은 2MB 이하의 PDF로 올려 주세요.")
+  const name = text(req.body?.name).replace(/[\\/:*?"<>|]+/g, " ").slice(0, 80) || "기획안.pdf"
+  const store = photos()
+  await store.put(eventPhotos(event.id), parsed.name, parsed.bytes)
+  let previous: string | undefined
+  try {
+    const fresh = ownEvent(req).event
+    previous = fresh.plan?.file
+    fresh.plan = { file: parsed.name, name, size: parsed.bytes.length, addedAt: new Date().toISOString() }
+    await saveDatabase()
+    res.status(201).json({ event: fresh })
+  } catch (error) {
+    await store.remove(eventPhotos(event.id), [parsed.name])
+    throw error
+  }
+  // The plan it replaced goes once the new one is kept.
+  if (previous) await store.remove(eventPhotos(event.id), [previous])
+})
+
+eventsRouter.delete("/:id/plan", async (req, res) => {
+  const { event } = ownEvent(req)
+  const file = event.plan?.file
+  if (!file) throw new HttpError(404, "기획안을 찾을 수 없어요.")
+  delete event.plan
+  await saveDatabase()
+  await photos().remove(eventPhotos(event.id), [file])
+  res.json({ event })
+})
+
+eventsRouter.get("/:id/plan", async (req, res) => {
+  const found = eventPage(getDatabase(), String(req.params.id), req.account)
+  const plan = found?.event.plan
+  const bytes = found && plan ? await photos().get(eventPhotos(found.event.id), plan.file) : undefined
+  if (!bytes || !plan) throw new HttpError(404, "기획안을 찾을 수 없어요.")
+  res
+    .type("application/pdf")
+    .set("Cache-Control", "private, max-age=3600")
+    .set("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(plan.name)}`)
+    .send(bytes)
 })
 
 eventsRouter.delete("/:id/photos/:photo", async (req, res) => {

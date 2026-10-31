@@ -303,6 +303,8 @@ export type EventItem = {
   makeup?: { female?: number; years?: string[]; majors?: string }
   // 홍보 · 배포 계획 and when the group agreed to carry it out.
   promo?: { spots: string[]; handouts: string[]; posts: string[]; agreedAt: string }
+  // The event plan as a PDF (행사 기획안).
+  plan?: { file: string; name: string; size: number; addedAt: string }
 }
 
 // A sponsorship package on a group's event page: its name, what the brand

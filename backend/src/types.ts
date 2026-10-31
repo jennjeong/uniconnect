@@ -121,6 +121,9 @@ export type EventItem = {
   // handoutWays, promoPosts), and when it agreed to carry out what it chose;
   // an accepted proposal's agreement starts with them as the group's items.
   promo?: { spots: string[]; handouts: string[]; posts: string[]; agreedAt: string }
+  // The group's event plan as a PDF (행사 기획안), kept with its photos: the
+  // name it is kept by, the name it was sent with, its bytes and when.
+  plan?: { file: string; name: string; size: number; addedAt: string }
 }
 
 // The person who runs an account. The phone shows only to the two sides of

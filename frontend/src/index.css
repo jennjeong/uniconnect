@@ -5128,6 +5128,34 @@ button.nav-pill:hover {
   margin-top: 14px;
 }
 
+/* 행사 기획안 on the event page: the PDF as a row to download, like a file
+   in a conversation, on a silver fill. */
+.event-plan {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin-bottom: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--fill);
+}
+
+.event-plan .chat-file .icon {
+  color: var(--point-strong);
+}
+
+.event-plan .chat-file span {
+  display: grid;
+  gap: 2px;
+}
+
+.event-plan .chat-file small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 /* 브랜드가 받는 홍보 on the event page: each list as a row of chips. */
 .event-promo {
   display: grid;
@@ -5677,7 +5705,8 @@ button.nav-pill:hover {
   color: var(--ink);
 }
 
-.event-photo-add {
+.event-photo-add,
+.event-plan-add {
   cursor: pointer;
 }
 
