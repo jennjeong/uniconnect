@@ -17,6 +17,9 @@ import type { Industry, Match, RequestStatus } from "../types"
 
 type Tab = "추천" | "가까운 순" | "행사 임박" | "전체" | "분야별" | "찜"
 
+// As many groups as one offer goes to at once (App's proposeMany).
+export const maxBulk = 10
+
 const tabs: Tab[] = ["추천", "가까운 순", "행사 임박", "전체", "분야별", "찜"]
 
 const tabIntro: Record<Tab, { title: string; caption: string }> = {
@@ -59,6 +62,7 @@ export function GroupsPage({
   onOpenDetail,
   onPropose,
   onCancelProposal,
+  onProposeMany,
   visitor,
   onLogin,
   onSignup,
@@ -80,12 +84,21 @@ export function GroupsPage({
   onOpenDetail: (match: Match) => void
   onPropose: (match: Match) => void
   onCancelProposal: (match: Match) => void
+  // One offer to several groups (일괄 제안); members only.
+  onProposeMany?: (groups: Match[]) => void
   // Logged out: 가까운 순 measures from the demo brand's store, so it reads as an example.
   visitor: boolean
   onLogin: () => void
   onSignup: () => void
 }) {
   const [tab, setTab] = useState<Tab>("추천")
+  // 여러 곳에 제안: picking groups on the cards, and those picked. Once an
+  // offer reaches one it drops out of the picks.
+  const [picking, setPicking] = useState(false)
+  const [picks, setPicks] = useState<string[]>([])
+  const picked = picks.filter((id) => !proposals.includes(id))
+  const togglePick = (id: string) =>
+    setPicks((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]))
   const [field, setField] = useState<Industry>("performance")
   // Cards slide in from the side the picked tab or chip lies on.
   const [direction, setDirection] = useState<"forward" | "back">("forward")
@@ -141,6 +154,17 @@ export function GroupsPage({
         </>
       }
     >
+      {picking && (
+        <label className="bulk-pick">
+          <input
+            checked={picked.includes(group.id)}
+            disabled={proposals.includes(group.id) || (!picked.includes(group.id) && picked.length >= maxBulk)}
+            onChange={() => togglePick(group.id)}
+            type="checkbox"
+          />
+          <span>{proposals.includes(group.id) ? t("제안함") : t("{name} 고르기", { name: group.name })}</span>
+        </label>
+      )}
       <button className="cancel-button" onClick={() => onOpenDetail(group)} type="button">
         {t("상세 정보")}
       </button>
@@ -252,6 +276,11 @@ export function GroupsPage({
               {t("조건 지우기")}
             </button>
           )}
+          {onProposeMany && (
+            <button aria-pressed={picking} className="catalog-clear bulk-toggle" onClick={() => setPicking(!picking)} type="button">
+              {picking ? t("고르기 끝내기") : t("여러 곳에 제안")}
+            </button>
+          )}
         </div>
         <LayoutSwitch onChange={setLayout} value={layout} />
       </div>
@@ -309,6 +338,27 @@ export function GroupsPage({
           </ul>
         )}
       </DemoPreview>
+
+      {picking && onProposeMany && (
+        <div aria-label={t("여러 곳에 제안")} className="bulk-bar" role="region">
+          <p>
+            <strong>{t("{count}곳 골랐어요", { count: picked.length })}</strong>
+            <small>{t("한 번에 {max}곳까지, 캠페인과 메시지 하나로 보내요.", { max: maxBulk })}</small>
+          </p>
+          <button
+            className="primary-button"
+            disabled={picked.length === 0}
+            onClick={() => {
+              // 추천's picks may not be in the full list yet; each group once.
+              const pool = new Map([...matches, ...groups].map((group) => [group.id, group]))
+              onProposeMany(picked.flatMap((id) => pool.get(id) ?? []))
+            }}
+            type="button"
+          >
+            {t("한 번에 제안하기")}
+          </button>
+        </div>
+      )}
     </section>
   )
 }
