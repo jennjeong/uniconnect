@@ -2093,6 +2093,16 @@ function App() {
           <ProposeModal
             events={events}
             match={proposing}
+            templates={account.templates ?? []}
+            onSaveTemplates={
+              member
+                ? async (templates) => {
+                    const result = await api.saveTemplates(templates)
+                    setAccount(result.account)
+                    showNotice(t("제안 문구를 저장했어요."))
+                  }
+                : undefined
+            }
             onClose={closeModal}
             onCreate={() => {
               closeModal()

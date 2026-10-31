@@ -1021,6 +1021,15 @@ const en: Record<string, string> = {
   "복제해서 새로 등록": "Copy as a new one",
   "{name} 복제": "Copy {name}",
   "‘{name}’의 내용을 그대로 가져왔어요. 날짜를 고르고 바뀐 부분만 고쳐 주세요.": "Everything from ‘{name}’ is filled in. Pick the dates and change only what is different.",
+  "저장한 문구": "Saved messages",
+  "저장한 문구 불러오기": "Use a saved message",
+  "이 문구 지우기": "Delete this message",
+  "문구는 {max}개까지 저장해요": "Up to {max} saved messages",
+  "지금 문구 저장": "Save this message",
+  "문구 이름": "Message name",
+  "예) 카페 첫 제안": "e.g. First pitch to cafés",
+  "문구를 저장하면 상대와 행사 이름은 빈칸이 되고, 다음에 불러올 때 그 제안의 이름으로 채워져요.": "When saved, the partner and event names become blanks, filled with the next proposal’s names when you use it.",
+  "제안 문구를 저장했어요.": "Saved the proposal message.",
 }
 
 export default en

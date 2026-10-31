@@ -775,6 +775,13 @@ test("a group posts on the recruit board, and a brand applies with its campaign"
   await brandPage.getByRole("button", { name: "지원하기" }).click()
   const apply = brandPage.getByRole("dialog")
   await expect(apply.getByLabel("제안할 캠페인")).toContainText("모집 시음회")
+  // The message is saved as a template, kept on the account for next time.
+  await apply.getByLabel("전할 메시지").fill("시음 부스로 함께하고 싶어요.")
+  await apply.getByRole("button", { name: "지금 문구 저장" }).click()
+  await apply.getByLabel("문구 이름").fill("첫 지원")
+  await apply.getByRole("button", { name: "저장", exact: true }).click()
+  await expect(brandPage.getByText("제안 문구를 저장했어요.")).toBeVisible()
+  await expect(apply.getByLabel("저장한 문구")).toContainText("첫 지원")
   await apply.getByRole("button", { name: "제안 보내기" }).click()
   await expect(brandPage.getByText("지원했어요 · 검토 중")).toBeVisible()
 

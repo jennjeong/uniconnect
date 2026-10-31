@@ -42,6 +42,7 @@ import type {
   InsightAnswer,
   InvitePageData,
   MailKind,
+  ProposalTemplate,
   Match,
   MeasureMethod,
   MethodKind,
@@ -177,6 +178,8 @@ export const api = {
   updateContact: (body: AccountContact) => request<{ account: Account }>("/auth/contact", { method: "PUT", body }),
   savePreferences: (body: { language?: "ko" | "en"; mailOff?: MailKind[] }) =>
     request<{ account: Account }>("/auth/preferences", { method: "PUT", body }),
+  saveTemplates: (templates: ProposalTemplate[]) =>
+    request<{ account: Account }>("/auth/templates", { method: "PUT", body: { templates } }),
   readNotices: (read: string[]) =>
     request<{ readNotices: string[] }>("/auth/notices", { method: "PUT", body: { read } }),
   changePassword: (body: { current: string; next: string }) =>

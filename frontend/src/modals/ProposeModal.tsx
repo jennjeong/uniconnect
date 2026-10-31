@@ -4,10 +4,16 @@ import { errorMessage } from "../api"
 import { Modal } from "../components/Modal"
 import { t } from "../i18n"
 import { formatPeriod, todayIso } from "../lib/date"
-import type { EventItem, Match, Role } from "../types"
+import type { EventItem, Match, ProposalTemplate, Role } from "../types"
 
-// As the server takes it (routes/proposals.ts).
+// As the server takes it (routes/proposals.ts, routes/auth.ts).
 const maxMessage = 300
+const maxTemplates = 10
+
+// A saved message as it goes out: {상대} becomes the partner's name and
+// {행사} the event's.
+export const fillTemplate = (text: string, partner: string, event: string) =>
+  text.split("{상대}").join(partner).split("{행사}").join(event)
 
 // 제안하기: which of the account's own events or campaigns the proposal is
 // about (the nearest at first) and a note for the partner, sent as written
@@ -18,6 +24,8 @@ export function ProposeModal({
   match,
   role,
   events,
+  templates,
+  onSaveTemplates,
   onClose,
   onSend,
   onCreate,
@@ -25,6 +33,10 @@ export function ProposeModal({
   match: Match
   role: Role
   events: EventItem[]
+  // The account's saved messages (제안 문구 템플릿).
+  templates: ProposalTemplate[]
+  // Saves the whole list; absent for the shared demo accounts.
+  onSaveTemplates?: (templates: ProposalTemplate[]) => Promise<void>
   onClose: () => void
   onSend: (draft: { eventId?: string; message: string }) => Promise<void>
   // Registers an event first, when there is none to propose.
@@ -39,6 +51,23 @@ export function ProposeModal({
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
+  // The template picked in the list, and the name a new one is saved under
+  // while that box is open.
+  const [picked, setPicked] = useState("")
+  const [naming, setNaming] = useState<string | null>(null)
+  const eventName = upcoming.find((event) => event.id === eventId)?.name ?? ""
+
+  const saveTemplates = async (next: ProposalTemplate[]) => {
+    if (!onSaveTemplates) return
+    setError("")
+    try {
+      await onSaveTemplates(next)
+      return true
+    } catch (problem) {
+      setError(errorMessage(problem))
+      return false
+    }
+  }
 
   const send = async () => {
     if (busy) return
@@ -86,6 +115,86 @@ export function ProposeModal({
             </button>
           </div>
         )}
+        {(templates.length > 0 || onSaveTemplates) && (
+          <div className="propose-templates">
+            {templates.length > 0 && (
+              <>
+                <label>
+                  <span className="sr-only">{t("저장한 문구")}</span>
+                  <select
+                    aria-label={t("저장한 문구")}
+                    onChange={(event) => {
+                      setPicked(event.target.value)
+                      const template = templates.find((item) => item.id === event.target.value)
+                      if (template) setMessage(fillTemplate(template.text, match.name, eventName).slice(0, maxMessage))
+                    }}
+                    value={picked}
+                  >
+                    <option value="">{t("저장한 문구 불러오기")}</option>
+                    {templates.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {picked && onSaveTemplates && (
+                  <button
+                    className="underline-link"
+                    onClick={async () => {
+                      if (await saveTemplates(templates.filter((item) => item.id !== picked))) setPicked("")
+                    }}
+                    type="button"
+                  >
+                    {t("이 문구 지우기")}
+                  </button>
+                )}
+              </>
+            )}
+            {onSaveTemplates && naming === null && (
+              <button
+                className="underline-link"
+                disabled={!message.trim() || templates.length >= maxTemplates}
+                onClick={() => setNaming("")}
+                type="button"
+              >
+                {templates.length >= maxTemplates ? t("문구는 {max}개까지 저장해요", { max: maxTemplates }) : t("지금 문구 저장")}
+              </button>
+            )}
+          </div>
+        )}
+        {naming !== null && (
+          <div className="propose-template-name">
+            <label>
+              {t("문구 이름")}
+              <input
+                autoFocus
+                maxLength={30}
+                onChange={(event) => setNaming(event.target.value)}
+                placeholder={t("예) 카페 첫 제안")}
+                value={naming}
+              />
+            </label>
+            <button
+              className="cancel-button"
+              disabled={!naming.trim()}
+              onClick={async () => {
+                // Saved with the partner's and event's names put back as
+                // blanks, so the next proposal fills its own.
+                let text = message.trim()
+                if (match.name) text = text.split(match.name).join("{상대}")
+                if (eventName) text = text.split(eventName).join("{행사}")
+                if (await saveTemplates([...templates, { id: "", name: naming.trim(), text }])) setNaming(null)
+              }}
+              type="button"
+            >
+              {t("저장")}
+            </button>
+            <button className="underline-link" onClick={() => setNaming(null)} type="button">
+              {t("취소")}
+            </button>
+          </div>
+        )}
         <label>
           {t("전할 메시지")}
           <textarea
@@ -100,6 +209,9 @@ export function ProposeModal({
         <p className="field-hint">
           {t("{count}/{max}자 · 비워 두면 기본 인사말이 가요.", { count: message.length, max: maxMessage })}
         </p>
+        {onSaveTemplates && (
+          <p className="field-hint">{t("문구를 저장하면 상대와 행사 이름은 빈칸이 되고, 다음에 불러올 때 그 제안의 이름으로 채워져요.")}</p>
+        )}
         {error && (
           <p className="form-error" role="alert">
             {error}

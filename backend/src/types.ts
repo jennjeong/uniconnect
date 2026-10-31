@@ -120,6 +120,8 @@ export type AccountContact = { name: string; position: string; phone: string }
 // partners who joined (lib/digest.ts).
 export type MailKind = "proposals" | "sponsorships" | "messages" | "reminders" | "digest"
 
+export type ProposalTemplate = { id: string; name: string; text: string }
+
 export type Account = {
   id: string
   role: Role
@@ -151,6 +153,9 @@ export type Account = {
   // in the app), as it last sent them: only parts still shown, so the list
   // stays as short as the bell.
   readNotices?: string[]
+  // Proposal messages saved to send again (제안 문구 템플릿), at most
+  // maxTemplates; {상대} and {행사} are filled in when one is used.
+  templates?: ProposalTemplate[]
   // The language the account last used the app in, for its emails; Korean
   // until the app says.
   language?: "ko" | "en"

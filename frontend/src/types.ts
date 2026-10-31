@@ -335,6 +335,8 @@ export type EventPage = {
 // sponsorship's agreement.
 export type AccountContact = { name: string; position: string; phone: string }
 
+export type ProposalTemplate = { id: string; name: string; text: string }
+
 export type Account = {
   id: string
   // Two-step login with an authenticator app is on.
@@ -357,6 +359,8 @@ export type Account = {
   createdAt: string
   // The parts of the bell's notices the account has read (lib/notifications.ts).
   readNotices?: string[]
+  // Proposal messages saved to send again; {상대} and {행사} get filled in.
+  templates?: ProposalTemplate[]
   // The language its emails are in, and the kinds of notice email it turned off.
   language?: "ko" | "en"
   mailOff?: MailKind[]
