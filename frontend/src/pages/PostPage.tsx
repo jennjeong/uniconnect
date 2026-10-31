@@ -5,6 +5,7 @@ import { BrandMark } from "../components/BrandMark"
 import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { Pill } from "../components/Pill"
+import { ShareButton } from "../components/ShareButton"
 import { t } from "../i18n"
 import { dDayLabel, formatDay, formatFullDate, formatPeriod } from "../lib/date"
 import type { BoardPost, Role } from "../types"
@@ -100,6 +101,7 @@ export function PostPage({
             ? t("{name} · {date}까지 지원", { name: post.poster.name, date: formatDay(post.deadline) })
             : t("{name} · 마감된 글", { name: post.poster.name })
         }
+        actions={<ShareButton text={post.poster.name} title={post.title} />}
       />
 
       <div className="post-body">

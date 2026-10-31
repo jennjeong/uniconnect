@@ -5,6 +5,7 @@ import { BrandMark } from "../components/BrandMark"
 import { DateLine } from "../components/DateLine"
 import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
+import { ShareButton } from "../components/ShareButton"
 import { t } from "../i18n"
 import { formatPeriod } from "../lib/date"
 import { photoFromFile } from "../lib/image"
@@ -145,19 +146,24 @@ export function EventDetailPage({
         title={event.name}
         description={`${group.name} · ${formatPeriod(event.date, event.endDate)}`}
         actions={
-          own && (
-            <>
+          <>
+            {own && (
               <button className="primary-button" disabled={exporting} onClick={() => setExporting(true)} type="button">
                 <Icon name="download" size={15} /> {exporting ? t("PDF 만드는 중…") : t("제안서 PDF")}
               </button>
+            )}
+            {own && (
               <button className="cancel-button" onClick={() => onEdit(event.id)} type="button">
                 <Icon name="edit" size={15} /> {t("행사 수정")}
               </button>
+            )}
+            {own && (
               <button className="cancel-button" onClick={() => onCopy(event.id)} type="button">
                 <Icon name="copy" size={15} /> {t("복제해서 새로 등록")}
               </button>
-            </>
-          )
+            )}
+            <ShareButton text={`${group.name} · ${formatPeriod(event.date, event.endDate)}`} title={event.name} />
+          </>
         }
       />
       {exporting && (

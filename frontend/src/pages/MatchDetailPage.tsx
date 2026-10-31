@@ -3,6 +3,7 @@ import { useState } from "react"
 import { BrandMark } from "../components/BrandMark"
 import { DateLine } from "../components/DateLine"
 import { Icon } from "../components/Icon"
+import { ShareButton } from "../components/ShareButton"
 import { Pill } from "../components/Pill"
 import { ProfileBars, ProfileFigures, type ProfileFigure } from "../components/ProfileStats"
 import { ProposalControl } from "../components/ProposalControl"
@@ -18,33 +19,6 @@ import { ANTIPODE } from "../scenes/shaders"
 import type { Match, RequestStatus, Review } from "../types"
 
 type Tab = "match" | "reviews"
-
-// Passes the page on: the phone's share sheet where there is one, else a
-// copy of its address, saying so for a moment.
-function ShareButton({ name }: { name: string }) {
-  const [copied, setCopied] = useState(false)
-  const share = async () => {
-    const url = window.location.href
-    if (navigator.share) {
-      // Closing the sheet rejects; nothing to tell.
-      await navigator.share({ title: name, url }).catch(() => undefined)
-      return
-    }
-    try {
-      await navigator.clipboard.writeText(url)
-      setCopied(true)
-      window.setTimeout(() => setCopied(false), 2000)
-    } catch {
-      // No clipboard either: the address bar still has the link.
-    }
-  }
-  return (
-    <button className="back-pill share-pill" onClick={share} type="button">
-      <Icon name="share" size={15} />
-      <span aria-live="polite">{copied ? t("링크를 복사했어요") : t("공유하기")}</span>
-    </button>
-  )
-}
 
 // One brand (for student groups) or student group (for brands) as a
 // profile: a card with a cover on getlayers.ai's Antipode gradient (two
@@ -146,7 +120,7 @@ export function MatchDetailPage({
           <Icon name="chevron" size={16} />
           <span>{t("뒤로")}</span>
         </button>
-        <ShareButton name={match.name} />
+        <ShareButton className="back-pill share-pill" title={match.name} />
       </div>
 
       <div className="profile-layout">

@@ -300,6 +300,7 @@ const en: Record<string, string> = {
   "성과 리포트@step": "Report",
   // The account panel under the header's account button (layout/AccountPanel.tsx)
   "내 계정": "Account menu",
+  "복사하지 못했어요": "Couldn’t copy",
 }
 
 export default en
