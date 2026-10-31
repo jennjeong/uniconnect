@@ -99,7 +99,7 @@ export const tagsOf = (database: Database, accountId: string) => database.adminT
 
 // Gives a member Campus Partners for some days without a charge: a paid
 // zero-won order marked as a grant, after any time it already has.
-export function grantPartners(database: Database, account: Account, days: number, now = new Date()) {
+export function grantPartners(database: Database, account: Account, days: number, now = new Date(), reason = "운영자 부여") {
   const until = proUntil(database, account.id)
   const from = until ? addDays(until, 1) : todayInKorea(now)
   const payment: Payment = {
@@ -108,7 +108,7 @@ export function grantPartners(database: Database, account: Account, days: number
     accountName: account.name,
     kind: "pro",
     targetId: "",
-    orderName: `캠퍼스 파트너스 ${days}일 (운영자 부여)`,
+    orderName: `캠퍼스 파트너스 ${days}일 (${reason})`,
     amount: 0,
     status: "paid",
     method: "grant",

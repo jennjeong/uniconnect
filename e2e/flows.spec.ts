@@ -515,6 +515,21 @@ test("a member subscribes calendar apps to a link, and a new link stops the old 
   expect(left.status()).toBe(204)
 })
 
+test("a member finds its invitation link in 내 정보, and a visitor arriving by it keeps the code for sign-up", async ({ page, request, browser }) => {
+  const group = await signUpMember(request, "학생단체", "e2e-invite@syu.ac.kr", "초대하는 동아리")
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
+  await page.goto("/me")
+  const card = page.getByRole("region", { name: "친구 초대" })
+  const link = (await card.locator(".invite-link").textContent()) ?? ""
+  expect(link).toMatch(/\/\?ref=[A-Z2-9]{8}$/)
+  await expect(card).toContainText("가입 0곳 · 첫 협찬 성사 0곳")
+  const visitor = await (await browser.newContext()).newPage()
+  await visitor.goto(new URL(link).pathname + new URL(link).search)
+  expect(await visitor.evaluate(() => sessionStorage.getItem("uniconnect-ref"))).toBe(new URL(link).searchParams.get("ref"))
+  const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: group.headers })
+  expect(left.status()).toBe(204)
+})
+
 test("a member chooses which notice emails come, and the choice stays", async ({ page, request }) => {
   const group = await signUpMember(request, "학생단체", "e2e-mail@syu.ac.kr", "메일 고르는 동아리")
   await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)

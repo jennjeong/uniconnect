@@ -153,6 +153,12 @@ export type Account = {
   // in the app), as it last sent them: only parts still shown, so the list
   // stays as short as the bell.
   readNotices?: string[]
+  // 친구 초대: this account's code for its invitation link, the account
+  // whose link it signed up through, and when that one was rewarded for it
+  // (lib/referrals.ts).
+  referralCode?: string
+  referredBy?: string
+  referralRewardedAt?: string
   // Proposal messages saved to send again (제안 문구 템플릿), at most
   // maxTemplates; {상대} and {행사} are filled in when one is used.
   templates?: ProposalTemplate[]

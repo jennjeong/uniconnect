@@ -19,6 +19,7 @@ import { freezeSponsorships } from "../lib/sponsorships.js"
 import { emailTaken, memberByEmail, memberOf, requireOwner } from "../lib/team.js"
 import { hashRecovery, matchStep, newRecoveryCodes, newSecret, otpauthUrl } from "../lib/totp.js"
 import { accountTypes, checkPassword, mailKinds, parseContact, parseRole, text } from "../lib/validation.js"
+import { referralStats, referrerOf } from "../lib/referrals.js"
 import { hashToken, requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { Account, Database, EmailCode, MailKind, PublicAccount, Role, Session, SocialProvider } from "../types.js"
@@ -297,6 +298,10 @@ authRouter.post("/signup", async (req, res) => {
     // Its emails follow the language it signed up in until the app says otherwise.
     language: langOf(req),
   }
+  // Signed up through a member's invitation link (친구 초대); a code that
+  // isn't one is let go quietly.
+  const referrer = referrerOf(database, body.referral)
+  if (referrer) account.referredBy = referrer.id
   database.accounts.push(account)
   database.events[account.id] = []
   database.proposals[account.id] = []
@@ -435,6 +440,8 @@ authRouter.post("/login/code", async (req, res) => {
 function removeAccount(database: Database, account: Account) {
   const listingId = account.groupId ?? account.brandId
   database.accounts = database.accounts.filter((item) => item.id !== account.id)
+  // Those it invited no longer point at it.
+  for (const invited of database.accounts) if (invited.referredBy === account.id) delete invited.referredBy
   // A council's clubs are unlinked from it.
   for (const club of database.accounts) {
     if (club.councils?.some((link) => link.accountId === account.id)) {
@@ -569,6 +576,17 @@ authRouter.put("/preferences", async (req, res) => {
   }
   await saveDatabase()
   res.json({ account: toPublic(account, req.memberId) })
+})
+
+// 친구 초대 in 내 정보: the account's code and how its invitations went. The
+// shared demo accounts invite no one.
+authRouter.get("/referral", async (req, res) => {
+  const account = requireAccount(req)
+  if (isDemo(account)) throw new HttpError(403, "데모 계정은 친구를 초대할 수 없어요.")
+  const had = account.referralCode
+  const stats = referralStats(getDatabase(), account)
+  if (!had) await saveDatabase()
+  res.json(stats)
 })
 
 // Proposal messages an account keeps (제안 문구 템플릿): how many, and how

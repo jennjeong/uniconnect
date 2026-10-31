@@ -5,6 +5,7 @@ import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
 import { statusOf } from "../lib/proposals.js"
 import { blockedBetween } from "../lib/safety.js"
+import { rewardReferrals, tellReferrers } from "../lib/referrals.js"
 import { recordSponsorship } from "../lib/sponsorships.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -75,6 +76,8 @@ requestsRouter.post("/:id/:decision", async (req, res) => {
     const event = database.events[request.fromAccountId]?.find((item) => item.id === request.eventId)
     if (event?.status === "매칭 중") event.status = "집행 예정"
   }
+  // Each side's first sponsorship rewards whoever invited it (친구 초대).
+  let rewarded: ReturnType<typeof rewardReferrals> = []
   if (decision === "수락") {
     recordSponsorship(database, account.id, {
       id: `sp-${request.id}`,
@@ -83,8 +86,10 @@ requestsRouter.post("/:id/:decision", async (req, res) => {
       date: request.eventDate,
       ...(request.eventId ? { eventId: request.eventId } : {}),
     })
+    rewarded = rewardReferrals(database, [account, database.accounts.find((item) => item.id === request.fromAccountId)])
   }
   await saveDatabase()
+  tellReferrers(rewarded)
   void notify(
     database.accounts.find((item) => item.id === request.fromAccountId),
     "proposals",

@@ -5,6 +5,7 @@ import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
 import { statusOf } from "../lib/proposals.js"
 import { blockedBetween } from "../lib/safety.js"
+import { rewardReferrals, tellReferrers } from "../lib/referrals.js"
 import { recordSponsorship } from "../lib/sponsorships.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -81,7 +82,11 @@ offersRouter.post("/:id/:decision", async (req, res) => {
       date: offer.campaignDate,
     })
   }
+  // Each side's first sponsorship rewards whoever invited it (친구 초대).
+  const rewarded =
+    decision === "수락" ? rewardReferrals(database, [account, database.accounts.find((item) => item.id === offer.fromAccountId)]) : []
   await saveDatabase()
+  tellReferrers(rewarded)
   void notify(
     database.accounts.find((item) => item.id === offer.fromAccountId),
     "proposals",

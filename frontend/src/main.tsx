@@ -9,6 +9,7 @@ import { currentCheckIn } from './lib/checkin'
 import { installErrorReports } from './lib/errorReports'
 import { watchInstall } from './lib/install'
 import { keepOutOfSearch } from './lib/pageMeta'
+import { keepReferral } from './lib/referral'
 import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css'
 import './index.css'
 
@@ -28,6 +29,8 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
 // Errors the page didn't catch reach the operators' log, from the built app
 // only, as the development server shows them anyway.
 if (import.meta.env.PROD) installErrorReports()
+// An invitation link's code waits for sign-up (친구 초대).
+keepReferral()
 
 // Participants who scan an event QR get the check-in page instead of the
 // app, the sponsor's store staff their own page (/check-in/<code>/staff) and
