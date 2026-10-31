@@ -11712,6 +11712,267 @@ button.nav-pill:hover {
   }
 }
 
+/* What sets uniconnect apart (components/WhyUniconnect.tsx): before and
+   after side by side, the after in deep blue, then the four things only it
+   does, then the members' counts. */
+.why-section {
+  display: grid;
+  gap: 32px;
+  margin: 88px auto 0;
+}
+
+.why-compare {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: stretch;
+  gap: 14px;
+}
+
+.why-before,
+.why-after {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 28px;
+  border-radius: 28px;
+}
+
+.why-before {
+  background: var(--silver-gradient);
+  box-shadow: var(--silver-ring);
+}
+
+.why-after {
+  --surface-tone: dark;
+  background: radial-gradient(120% 90% at 85% 0%, #2a59c4 0%, #10275c 72%);
+  color: #fff;
+}
+
+.why-label {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.why-after .why-label {
+  color: var(--point-glow);
+}
+
+.why-before h3,
+.why-after h3 {
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: var(--weight-display);
+  letter-spacing: -0.01em;
+}
+
+.why-before ul,
+.why-after ul {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.why-before li,
+.why-after li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.why-before li {
+  color: var(--ink-soft);
+}
+
+.why-mark {
+  display: grid;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--fill-strong);
+  color: var(--muted);
+}
+
+.why-mark .icon {
+  stroke: currentColor;
+  stroke-width: 2.4;
+}
+
+.why-after .why-mark {
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--point-glow);
+}
+
+.why-arrow {
+  display: grid;
+  align-self: center;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: var(--ring);
+  color: var(--point-strong);
+}
+
+.why-arrow .icon {
+  stroke: currentColor;
+}
+
+.why-only {
+  display: grid;
+  gap: 16px;
+}
+
+.why-only > h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: var(--weight-label);
+  text-align: center;
+}
+
+.why-pillars {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.why-pillars li {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap: 10px;
+  padding: 22px;
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: var(--ring);
+}
+
+.why-pillar-icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--point-tint);
+  color: var(--point-strong);
+}
+
+.why-pillars strong {
+  font-size: 17px;
+  font-weight: var(--weight-display);
+  line-height: 1.35;
+}
+
+.why-pillars p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.why-proof {
+  justify-self: start;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--point-strong);
+  font-size: 12px;
+  font-weight: var(--weight-label);
+}
+
+.why-counts {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: 28px;
+  border-radius: 28px;
+  background: var(--silver-gradient);
+  box-shadow: var(--silver-ring);
+  text-align: center;
+}
+
+.why-counts p {
+  margin: 0;
+  font-size: 17px;
+  font-weight: var(--weight-label);
+}
+
+.why-counts dl {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+  margin: 0;
+}
+
+.why-counts dl div {
+  display: grid;
+  gap: 2px;
+}
+
+.why-counts dt {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.why-counts dd {
+  margin: 0;
+  color: var(--point-strong);
+  font-size: 30px;
+  font-weight: var(--weight-display);
+}
+
+.why-counts small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+@media (max-width: 960px) {
+  .why-section {
+    margin-top: 56px;
+  }
+
+  .why-compare {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .why-arrow {
+    justify-self: center;
+    transform: rotate(90deg);
+  }
+
+  .why-pillars {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .why-pillars,
+  .why-counts dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .why-pillars {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .why-before,
+  .why-after {
+    padding: 22px;
+  }
+}
+
 /* Maintenance (switched on from /admin): a calm screen over the whole site
    with the operators' message, until they switch it off. */
 .maintenance-screen {
@@ -16398,6 +16659,94 @@ th[aria-sort="descending"] .console-sort span {
   grid-template-columns: minmax(0, 2.2fr) repeat(4, minmax(0, 1fr));
 }
 
+/* The group's sponsorship record on the report page: what it adds up to,
+   then a row per event that opens its report. */
+.history-card {
+  display: grid;
+  gap: 16px;
+  margin-top: 28px;
+}
+
+.history-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.history-head .section-title {
+  margin-bottom: 4px;
+}
+
+.history-totals {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.history-totals div {
+  display: grid;
+  gap: 2px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--fill);
+}
+
+.history-totals dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: var(--weight-label);
+}
+
+.history-totals dd {
+  margin: 0;
+  color: var(--ink);
+  font-size: 22px;
+  font-weight: var(--weight-display);
+}
+
+.history-table .analytics-row {
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1.6fr) repeat(3, minmax(0, 0.8fr));
+}
+
+.history-table .analytics-row > span:nth-child(2) {
+  text-align: left;
+}
+
+.history-open {
+  display: grid;
+  gap: 3px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.history-open:hover strong {
+  color: var(--point-strong);
+  text-decoration: underline;
+}
+
+@media (max-width: 720px) {
+  .history-totals {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .history-table .analytics-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px 8px;
+    padding: 14px 0;
+  }
+
+  .history-table .analytics-row > span:nth-child(2) {
+    grid-column: 1 / -1;
+  }
+}
+
 .analytics-event {
   display: flex;
   min-width: 0;
@@ -19282,6 +19631,108 @@ button:active:not(:disabled) {
   border-top: 1px solid var(--line);
   color: var(--muted);
   font-size: 10px;
+}
+
+/* The sponsorship proposal page (report/ProposalDocument.tsx): the
+   event's facts in two columns, its packages, the track record and how
+   results are counted. */
+.pdf-proposal-intro {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.pdf-facts {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin: 0;
+}
+
+.pdf-facts div {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.pdf-facts dt {
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: var(--weight-strong);
+}
+
+.pdf-facts dd {
+  margin: 4px 0 0;
+  font-size: 13px;
+  font-weight: var(--weight-strong);
+}
+
+.pdf-packages {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pdf-packages li {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--point-tint);
+}
+
+.pdf-packages strong {
+  color: var(--point-strong);
+  font-size: 13px;
+}
+
+.pdf-packages p,
+.pdf-note {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.pdf-packages small {
+  color: var(--muted);
+  font-size: 10.5px;
+}
+
+.pdf-promise {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: promise;
+}
+
+.pdf-promise li {
+  display: grid;
+  grid-template-columns: 22px 150px 1fr;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  counter-increment: promise;
+}
+
+.pdf-promise li::before {
+  color: var(--point-deep);
+  content: counter(promise, decimal-leading-zero);
+  font-weight: var(--weight-badge);
+}
+
+.pdf-promise b {
+  color: var(--ink);
+  font-weight: var(--weight-strong);
 }
 
 /* Participant check-in page (checkin/CheckInPage.tsx), opened from the event QR. */

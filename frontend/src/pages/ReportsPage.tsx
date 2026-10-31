@@ -12,6 +12,7 @@ import { t } from "../i18n"
 import { reportCsv } from "../lib/csv"
 import { formatFullDate } from "../lib/date"
 import { saveFile } from "../lib/download"
+import { historyCsv, sponsorHistory, trackRecord } from "../lib/history"
 import {
   achievement,
   formatKpi,
@@ -229,8 +230,89 @@ export function ReportsPage({
               </small>
             </div>
           )}
+          <SponsorHistory measurements={measurements} onOpen={onSelect} />
         </>
       )}
     </section>
+  )
+}
+
+// The group's sponsorship record (협찬 기록): every event held, its
+// sponsors and results, what they add up to, and the whole as a file the
+// team hands to the next one.
+function SponsorHistory({ measurements, onOpen }: { measurements: EventMeasurement[]; onOpen: (eventId: string) => void }) {
+  const rows = sponsorHistory(measurements)
+  const record = trackRecord(rows)
+  return (
+    <div className="analytics-card history-card" data-reveal>
+      <div className="history-head">
+        <div>
+          <p className="section-title">{t("협찬 기록")}</p>
+          <small className="field-hint">{t("운영진이 바뀌어도 이어지도록, 지금까지 연 행사와 협찬 결과를 모아 둬요.")}</small>
+        </div>
+        <Pill
+          disabled={rows.length === 0}
+          onClick={() => saveFile("uniconnect-sponsorship-history.csv", historyCsv(rows), "text/csv;charset=utf-8")}
+          variant="outline"
+        >
+          {t("인수인계용 CSV")}
+        </Pill>
+      </div>
+      {rows.length === 0 ? (
+        <p className="day-empty">{t("행사가 열리면 여기에 차곡차곡 쌓여요.")}</p>
+      ) : (
+        <>
+          <dl className="history-totals">
+            <div>
+              <dt>{t("연 행사")}</dt>
+              <dd>{t("{count}건", { count: record.events })}</dd>
+            </div>
+            <div>
+              <dt>{t("함께한 브랜드")}</dt>
+              <dd>{t("{count}곳", { count: record.brands })}</dd>
+            </div>
+            <div>
+              <dt>{t("누적 QR 참여")}</dt>
+              <dd>{record.scans.toLocaleString("ko-KR")}</dd>
+            </div>
+            <div>
+              <dt>{t("평균 ROAS")}</dt>
+              <dd>{record.roas === null ? "—" : `${record.roas}%`}</dd>
+            </div>
+          </dl>
+          <div className="analytics-table history-table" role="table" aria-label={t("협찬 기록")}>
+            <div className="analytics-row head" role="row">
+              <span role="columnheader">{t("행사")}</span>
+              <span role="columnheader">{t("협찬사")}</span>
+              <span role="columnheader">{t("QR 스캔")}</span>
+              <span role="columnheader">{t("매장 방문")}</span>
+              <span role="columnheader">ROAS</span>
+            </div>
+            {rows.map((row) => (
+              <div className="analytics-row" key={row.eventId} role="row">
+                <span className="analytics-event" role="cell">
+                  <button className="history-open" onClick={() => onOpen(row.eventId)} type="button">
+                    <strong>{row.eventName}</strong>
+                    <small>{formatFullDate(row.date)}</small>
+                  </button>
+                </span>
+                <span role="cell" data-label={t("협찬사")}>
+                  {row.brands.length ? row.brands.join(", ") : t("협찬 없음")}
+                </span>
+                <span role="cell" data-label={t("QR 스캔")}>
+                  {row.scans.toLocaleString("ko-KR")}
+                </span>
+                <span role="cell" data-label={t("매장 방문")}>
+                  {t("{count}명", { count: row.visits.toLocaleString("ko-KR") })}
+                </span>
+                <span role="cell" data-label="ROAS">
+                  {row.roas === null ? "—" : `${row.roas}%`}
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
   )
 }

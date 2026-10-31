@@ -367,6 +367,31 @@ test("the report and the analytics download as CSV files that Excel opens", asyn
   }
 })
 
+test("the report page keeps the sponsorship record, handed over as a CSV file", async ({ page }) => {
+  await page.goto("/reports")
+  const record = page.getByRole("table", { name: "협찬 기록" })
+  // The header row folds away on a phone; each event's row opens its report.
+  await expect(record.getByRole("row").filter({ has: page.getByRole("button") }).first()).toBeVisible()
+  const download = page.waitForEvent("download")
+  await page.getByRole("button", { name: "인수인계용 CSV" }).click()
+  const file = await download
+  expect(file.suggestedFilename()).toBe("uniconnect-sponsorship-history.csv")
+  const text = await readFile(await file.path(), "utf8")
+  expect(text.startsWith("\uFEFF행사,시작일,종료일,협찬사,")).toBe(true)
+})
+
+test("both dashboards show what sets uniconnect apart, before and after", async ({ page }) => {
+  await page.goto("/dashboard")
+  const why = page.getByRole("region", { name: "연결에서 끝나지 않고, 협찬을 끝까지 함께해요" })
+  await expect(why.getByRole("heading", { name: "이렇게 바뀌어요" })).toBeVisible()
+  await expect(why.locator(".why-pillars li")).toHaveCount(4)
+  // Too few members yet to show the counts.
+  await expect(why.locator(".why-counts")).toHaveCount(0)
+  await page.getByRole("button", { name: "전체 메뉴" }).click()
+  await page.getByRole("dialog", { name: "전체 메뉴" }).getByRole("button", { name: "브랜드 화면" }).click()
+  await expect(page.getByRole("region", { name: "캠퍼스 협찬, 보낸 만큼 돌아왔는지 확인하세요" })).toBeVisible()
+})
+
 test("a member subscribes calendar apps to a link, and a new link stops the old one", async ({ page, request }) => {
   const group = await signUpMember(request, "학생단체", "e2e-feed@syu.ac.kr", "구독 동아리")
   const day = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date(Date.now() + 5 * 86_400_000))
@@ -438,6 +463,11 @@ test("a group writes its event page on the form, adds a photo, and a brand reads
   const png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
   await page.locator(".event-photo-add input").setInputFiles({ name: "stage.png", mimeType: "image/png", buffer: Buffer.from(png, "base64") })
   await expect(page.getByRole("img", { name: "페이지 공연 사진" })).toBeVisible()
+  // The group makes a proposal PDF from the page.
+  const proposal = page.waitForEvent("download")
+  await page.getByRole("button", { name: "제안서 PDF" }).click()
+  expect((await proposal).suggestedFilename()).toBe(`uniconnect-proposal-${day}.pdf`)
+  await expect(page.getByText("제안서를 PDF로 저장했어요.")).toBeVisible()
 
   // A brand member reads the same page, and goes on to the group's profile.
   const brandPage = await (await browser.newContext()).newPage()
@@ -446,6 +476,7 @@ test("a group writes its event page on the form, adds a photo, and a brand reads
   await expect(brandPage.locator(".event-packages")).toContainText("메인 스폰서")
   await expect(brandPage.getByRole("img", { name: "페이지 공연 사진" })).toBeVisible()
   await expect(brandPage.getByRole("button", { name: "행사 수정" })).toHaveCount(0)
+  await expect(brandPage.getByRole("button", { name: "제안서 PDF" })).toHaveCount(0)
   await brandPage.getByRole("button", { name: "단체 프로필 보기" }).click()
   await expect(brandPage).toHaveURL(/\/groups\//)
   for (const member of [group, brand]) {

@@ -2,15 +2,17 @@ import { Router } from "express"
 
 import { countSearch, searchTerm, siteState } from "../lib/adminTools.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
+import { publicCounts } from "../lib/stats.js"
 import { getDatabase, saveDatabase } from "../store.js"
 
 export const siteRouter = Router()
 
 // What the whole site needs from the operators' switches: maintenance,
-// whether sign-up is open, and the help center questions they added or hid.
+// whether sign-up is open, and the help center questions they added or hid;
+// with the members' counts the dashboards show.
 siteRouter.get("/", (_req, res) => {
   const database = getDatabase()
-  res.json({ ...siteState(database), faq: database.faq ?? { added: [], hidden: [] } })
+  res.json({ ...siteState(database), faq: database.faq ?? { added: [], hidden: [] }, counts: publicCounts(database) })
 })
 
 const searches = createRateLimit({

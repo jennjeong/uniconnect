@@ -8,6 +8,7 @@ import { MeetingHero } from "../components/MeetingHero"
 import { ProposalControl } from "../components/ProposalControl"
 import { RevealStatement, RevealTitle } from "../components/RevealText"
 import { ValuePoints } from "../components/ValuePoints"
+import { WhyUniconnect } from "../components/WhyUniconnect"
 import { WorkCard } from "../components/WorkCard"
 import { locale, t } from "../i18n"
 import { formatFullDate, fromIsoDate, nextEvent, semesterLabel } from "../lib/date"
@@ -216,6 +217,48 @@ export function DashboardPage({
             figureLabel: t("누적 QR 참여 · 예상 협찬 가치 {value}", { value: report ? fullWon(report.sponsorValue) : "-" }),
             action: t("리포트 보기"),
             onClick: () => onNavigate("리포트"),
+          },
+        ]}
+      />
+
+      <WhyUniconnect
+        heading={t("연결에서 끝나지 않고, 협찬을 끝까지 함께해요")}
+        before={[
+          t("아는 가게마다 메일과 DM을 돌리고 답을 기다려요"),
+          t("말로 정한 약속이 행사 날 엇갈려요"),
+          t("결과 보고는 사진 몇 장이 전부예요"),
+          t("운영진이 바뀌면 협찬 기록도 같이 사라져요"),
+        ]}
+        after={[
+          t("일치율과 거리로 제안할 브랜드부터 골라 드려요"),
+          t("전자 계약서에 물품 · 할 일 · 확인 방식을 남겨요"),
+          t("QR · 쿠폰 · 매장 방문이 저절로 집계돼 리포트가 돼요"),
+          t("제안서와 협찬 기록이 다음 운영진에게 그대로 이어져요"),
+        ]}
+        pillars={[
+          {
+            icon: "spark",
+            title: t("이유가 보이는 일치율"),
+            text: t("업종 · 관심사 · 협찬 이력 · 함께한 기록 · 응답 준비 다섯 가지로 점수를 매기고, 왜 맞는지 막대로 보여 줘요."),
+            proof: t("추천 브랜드 {count}곳", { count: candidates.length }),
+          },
+          {
+            icon: "pin",
+            title: t("캠퍼스 앞 가게까지"),
+            text: t("학교 근처 실제 가게를 가까운 순으로 찾고, 아직 가입하지 않은 가게에도 초대장을 보내요."),
+            proof: t("가까운 순 · 초대장"),
+          },
+          {
+            icon: "scan",
+            title: t("현장에서 세는 성과"),
+            text: t("참여자 QR, 쿠폰, 매장 직원의 PIN 확인까지 양쪽이 계약서에서 고른 방식으로만 세요."),
+            proof: t("누적 QR 참여 {count}", { count: metrics.scans.toLocaleString(locale) }),
+          },
+          {
+            icon: "file",
+            title: t("숫자로 쓰는 다음 제안서"),
+            text: t("지난 행사의 참여 · 방문 · ROAS가 담긴 제안서를 PDF로 만들고, 협찬 기록은 다음 운영진에게 넘겨요."),
+            proof: t("제안서 PDF · 협찬 기록"),
           },
         ]}
       />

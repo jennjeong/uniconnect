@@ -1111,7 +1111,10 @@ export type SiteFaq = {
   hidden: string[]
 }
 
-export type SiteState = { maintenance: { message: string } | null; signupsClosed: boolean; faq: SiteFaq }
+// Members only, never the demo accounts or the seed (backend lib/stats.ts).
+export type SiteCounts = { groups: number; brands: number; schools: number; sponsorships: number }
+
+export type SiteState = { maintenance: { message: string } | null; signupsClosed: boolean; faq: SiteFaq; counts?: SiteCounts }
 
 export type AdminInsights = {
   funnel: { step: string; count: number }[]

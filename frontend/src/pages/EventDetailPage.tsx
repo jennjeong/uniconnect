@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { lazy, Suspense, useEffect, useState } from "react"
 
 import { api, errorMessage } from "../api"
 import { BrandMark } from "../components/BrandMark"
@@ -9,6 +9,8 @@ import { t } from "../i18n"
 import { formatPeriod } from "../lib/date"
 import { photoFromFile } from "../lib/image"
 import type { EventPage } from "../types"
+
+const ProposalExport = lazy(() => import("../report/ProposalExport").then((module) => ({ default: module.ProposalExport })))
 
 // As many photos as the server keeps on an event page (routes/events.ts).
 const maxPhotos = 4
@@ -82,6 +84,8 @@ export function EventDetailPage({
   const [data, setData] = useState<EventPage | null>(null)
   const [failed, setFailed] = useState("")
   const [busy, setBusy] = useState(false)
+  // True while the proposal PDF is being made.
+  const [exporting, setExporting] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -139,12 +143,28 @@ export function EventDetailPage({
         description={`${group.name} · ${formatPeriod(event.date, event.endDate)}`}
         actions={
           own && (
-            <button className="cancel-button" onClick={() => onEdit(event.id)} type="button">
-              <Icon name="edit" size={15} /> {t("행사 수정")}
-            </button>
+            <>
+              <button className="primary-button" disabled={exporting} onClick={() => setExporting(true)} type="button">
+                <Icon name="download" size={15} /> {exporting ? t("PDF 만드는 중…") : t("제안서 PDF")}
+              </button>
+              <button className="cancel-button" onClick={() => onEdit(event.id)} type="button">
+                <Icon name="edit" size={15} /> {t("행사 수정")}
+              </button>
+            </>
           )
         }
       />
+      {exporting && (
+        <Suspense fallback={null}>
+          <ProposalExport
+            onDone={(failed) => {
+              setExporting(false)
+              onNotice(failed ? t("제안서를 만들지 못했어요. 다시 시도해 주세요.") : t("제안서를 PDF로 저장했어요."))
+            }}
+            page={data}
+          />
+        </Suspense>
+      )}
 
       <ul className="event-facts">
         <li>
