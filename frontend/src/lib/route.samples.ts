@@ -17,6 +17,7 @@ export const sampleViews: View[] = [
   { page: "행사 일정" },
   { page: "성과 분석" },
   { page: "대시보드", create: "2026-11-27" },
+  { page: "대시보드", create: "2026-11-27", copy: "event 1" },
   { page: "대시보드", edit: "event 1" },
   { page: "대시보드", eventPage: "event-muse-concert" },
   { page: "대시보드", board: true },

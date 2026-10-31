@@ -13,6 +13,7 @@ import type { EventItem, Role, SponsorPackage } from "../types"
 export function EventCreatePage({
   role,
   event,
+  copyFrom,
   initialDate,
   onCancel,
   onSubmit,
@@ -20,6 +21,8 @@ export function EventCreatePage({
   role: Role
   // The event or campaign being edited; a new one when absent.
   event?: EventItem
+  // An earlier one a new one starts from (행사 복제): everything but its days.
+  copyFrom?: EventItem
   // "YYYY-MM-DD", usually the day picked on the calendar.
   initialDate: string
   onCancel: () => void
@@ -29,20 +32,21 @@ export function EventCreatePage({
   const editing = event !== undefined
   // Its dates stay once it has begun, as its results were counted on them.
   const datesLocked = editing && event.date <= todayIso()
-  const [name, setName] = useState(event?.name ?? "")
+  const source = event ?? copyFrom
+  const [name, setName] = useState(source?.name ?? "")
   // Digits only, from "1,234명".
-  const [people, setPeople] = useState(event?.people.replace(/\D/g, "") ?? "")
+  const [people, setPeople] = useState(source?.people.replace(/\D/g, "") ?? "")
   // Digits only; brands plan a budget in won.
-  const [budget, setBudget] = useState(event?.budget === undefined ? "" : String(event.budget))
+  const [budget, setBudget] = useState(source?.budget === undefined ? "" : String(source.budget))
   // The first day, and the last when it runs over several days.
   const [date, setDate] = useState(event?.date ?? initialDate)
   const [endDate, setEndDate] = useState<string | undefined>(event?.endDate)
-  const [types, setTypes] = useState<string[]>(event?.types ?? [])
-  const [typeNote, setTypeNote] = useState(event?.typeNote ?? "")
+  const [types, setTypes] = useState<string[]>(source?.types ?? [])
+  const [typeNote, setTypeNote] = useState(source?.typeNote ?? "")
   // A group's event page: where, what it is, and the packages it offers.
-  const [venue, setVenue] = useState(event?.venue ?? "")
-  const [intro, setIntro] = useState(event?.intro ?? "")
-  const [packages, setPackages] = useState<SponsorPackage[]>(event?.packages ?? [])
+  const [venue, setVenue] = useState(source?.venue ?? "")
+  const [intro, setIntro] = useState(source?.intro ?? "")
+  const [packages, setPackages] = useState<SponsorPackage[]>(source?.packages ?? [])
   const changePackage = (index: number, part: keyof SponsorPackage, value: string) =>
     setPackages((current) => current.map((item, at) => (at === index ? { ...item, [part]: value } : item)))
   const [error, setError] = useState("")
@@ -105,7 +109,9 @@ export function EventCreatePage({
         description={
           editing
             ? t("바꾼 내용은 이 일정에 대한 제안과 협찬에도 반영되고, 상대에게 메일로 알려요.")
-            : students
+            : copyFrom
+              ? t("‘{name}’의 내용을 그대로 가져왔어요. 날짜를 고르고 바뀐 부분만 고쳐 주세요.", { name: copyFrom.name })
+              : students
               ? t("행사 정보를 알려 주시면 잘 맞는 브랜드를 찾아 드려요.")
               : t("캠페인 정보를 알려 주시면 잘 맞는 학생단체를 찾아 드려요.")
         }

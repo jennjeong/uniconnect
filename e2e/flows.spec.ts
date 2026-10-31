@@ -468,6 +468,14 @@ test("a group writes its event page on the form, adds a photo, and a brand reads
   await page.getByRole("button", { name: "제안서 PDF" }).click()
   expect((await proposal).suggestedFilename()).toBe(`uniconnect-proposal-${day}.pdf`)
   await expect(page.getByText("제안서를 PDF로 저장했어요.")).toBeVisible()
+  // 복제 opens the form with everything but the dates filled in.
+  await page.getByRole("button", { name: "복제해서 새로 등록" }).click()
+  await expect(page).toHaveURL(/\/new\?date=[\d-]+&from=/)
+  await expect(page.getByLabel("행사명")).toHaveValue("페이지 공연")
+  await expect(page.getByLabel("장소", { exact: true })).toHaveValue("삼육대학교 대강당")
+  await expect(page.getByLabel("브랜드가 받는 것", { exact: true })).toHaveValue("무대 현수막 로고")
+  await page.goBack()
+  await expect(page).toHaveURL(/\/event\/[^/]+$/)
 
   // A brand member reads the same page, and goes on to the group's profile.
   const brandPage = await (await browser.newContext()).newPage()
