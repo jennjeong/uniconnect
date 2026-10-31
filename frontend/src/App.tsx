@@ -117,6 +117,7 @@ const EventDetailPage = lazy(() => import("./pages/EventDetailPage").then((modul
 const BoardPage = lazy(() => import("./pages/BoardPage").then((module) => ({ default: module.BoardPage })))
 const PostPage = lazy(() => import("./pages/PostPage").then((module) => ({ default: module.PostPage })))
 const PostFormModal = lazy(() => import("./modals/PostFormModal").then((module) => ({ default: module.PostFormModal })))
+const LedgerPage = lazy(() => import("./pages/LedgerPage").then((module) => ({ default: module.LedgerPage })))
 const ExplorePage = lazy(() => import("./pages/ExplorePage").then((module) => ({ default: module.ExplorePage })))
 const EventsPage = lazy(() => import("./pages/EventsPage").then((module) => ({ default: module.EventsPage })))
 const FaqPage = lazy(() => import("./pages/FaqPage").then((module) => ({ default: module.FaqPage })))
@@ -1412,6 +1413,7 @@ function App() {
     if (view.council) {
       return <CouncilPage onBack={() => goBack({ page, profile: "page" })} onNotice={showNotice} />
     }
+    if (view.ledger) return <LedgerPage token={view.ledger} />
     if (view.explore) {
       return <ExplorePage onBack={() => goBack({ page: "내 행사" })} onOpenEvent={(eventId) => go({ page, eventPage: eventId })} />
     }
@@ -1636,6 +1638,7 @@ function App() {
             onDownload={saveReport}
             onOpenReport={() => setActiveModal("report")}
             onOpenGoal={openGoal}
+            onNotice={member && students ? showNotice : undefined}
           />
         )
       case "단체 찾기":
@@ -1853,6 +1856,8 @@ function App() {
                     ? "council"
                   : view.explore
                     ? "explore"
+                  : view.ledger
+                    ? `ledger-${view.ledger}`
                   : view.insight || view.sharedReport
                     ? `insight-${view.insight ?? view.sharedReport}`
                   : editing !== null

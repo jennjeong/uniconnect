@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react"
 
 import { AnimatedNumber } from "../components/AnimatedNumber"
+import { LedgerCard } from "../components/LedgerCard"
 import { EventPicker } from "../components/EventPicker"
 import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
@@ -53,6 +54,7 @@ export function ReportsPage({
   onDownload,
   onOpenReport,
   onOpenGoal,
+  onNotice,
 }: {
   // Every event of the group, to pick the one to report on.
   measurements: EventMeasurement[]
@@ -64,6 +66,8 @@ export function ReportsPage({
   onDownload: () => void
   onOpenReport: () => void
   onOpenGoal: (key: KpiKey) => void
+  // 협찬 결산 공개, for a member group (absent for visitors and the demo).
+  onNotice?: (message: string) => void
 }) {
   // ROAS bar scale, with room past the larger of the result and the goal.
   const roasScale = report ? Math.max(1, report.roas, report.targets.roas) * 1.15 : 1
@@ -231,6 +235,7 @@ export function ReportsPage({
             </div>
           )}
           <SponsorHistory measurements={measurements} onOpen={onSelect} />
+          {onNotice && <LedgerCard onNotice={onNotice} />}
         </>
       )}
     </section>

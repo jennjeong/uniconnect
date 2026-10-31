@@ -36,5 +36,6 @@ export const sampleViews: View[] = [
   { page: "대시보드", explore: true },
   { page: "성과 분석", insight: "sp-busking" },
   { page: "대시보드", sharedReport: "abc_DEF-123" },
+  { page: "대시보드", ledger: "xyz_LEDGER-12345678901" },
   { page: "대시보드", agreement: "req-runners" },
 ]

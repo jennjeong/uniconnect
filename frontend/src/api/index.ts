@@ -43,6 +43,8 @@ import type {
   InvitePageData,
   MailKind,
   EventCase,
+  OwnLedger,
+  PublicLedger,
   ExploreEvent,
   ProposalTemplate,
   Match,
@@ -326,6 +328,11 @@ export const api = {
   dropCancelRequest: (id: string) =>
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/cancel`, { method: "DELETE" }),
   eventPage: (id: string) => request<EventPage>(`/events/${encodeURIComponent(id)}/page`),
+  ledger: () => request<OwnLedger>("/ledger"),
+  saveLedger: (body: { showValues?: boolean; notes?: Record<string, string> }) => request<OwnLedger>("/ledger", { method: "PUT", body }),
+  makeLedgerLink: () => request<OwnLedger>("/ledger/link", { method: "POST" }),
+  stopLedgerLink: () => request<OwnLedger>("/ledger/link", { method: "DELETE" }),
+  publicLedger: (token: string) => request<PublicLedger>(`/ledger/public/${encodeURIComponent(token)}`),
   exploreEvents: () => request<{ events: ExploreEvent[]; cases: EventCase[] }>("/events/explore"),
   addEventPlan: (id: string, file: string, name: string) =>
     request<{ event: EventItem }>(`/events/${encodeURIComponent(id)}/plan`, { method: "POST", body: { file, name } }),

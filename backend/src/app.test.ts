@@ -177,6 +177,41 @@ test("groups explore each other's coming events, and similar events' sponsorship
   assert.equal(own.own, true)
 })
 
+test("a group publishes its sponsorship ledger by a link, amounts only when it chooses, and can stop", async () => {
+  const group = await signUpMember("ledger-club@syu.ac.kr", "ledger-pass-123")
+  const groupId = getDatabase().accounts.find((account) => account.email === "ledger-club@syu.ac.kr")!.id
+  const { token: brand, listingId } = await listedMember("ledger@ledger-cafe.kr", "ledger-pass-123", "브랜드")
+  await call("POST", "/events", { name: "결산 공연", date: "2026-12-19", people: "150명", types: ["제품"] }, group)
+  await call("POST", "/proposals", { matchId: listingId }, group)
+  const request = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
+  await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+  await call("PUT", `/agreements/${request.id}/value`, { value: { cash: 100000, inKind: 50000 } }, group)
+
+  const mine = (await call("GET", "/ledger", undefined, group)).data
+  assert.deepEqual([mine.token, mine.showValues, mine.entries.length], [null, false, 1])
+  assert.equal(mine.entries[0].value, 150000)
+  // Brands and the demo accounts publish none.
+  assert.equal((await call("GET", "/ledger", undefined, brand)).status, 403)
+  assert.equal((await call("GET", "/ledger", undefined, await login("학생단체"))).status, 403)
+  const linked = (await call("POST", "/ledger/link", undefined, group)).data
+  assert.match(linked.token, /^[\w-]{24}$/)
+  assert.equal((await call("PUT", "/ledger", { notes: { "not-mine": "x" } }, group)).status, 404)
+  await call("PUT", "/ledger", { notes: { [request.id]: "음료를 부스에서 나눴어요." } }, group)
+  // The public page needs no login, and hides amounts until the group shows them.
+  const open = (await call("GET", `/ledger/public/${linked.token}`)).data
+  assert.equal(open.entries[0].note, "음료를 부스에서 나눴어요.")
+  assert.equal(open.entries[0].value, undefined)
+  assert.equal(open.totals.value, undefined)
+  await call("PUT", "/ledger", { showValues: true }, group)
+  const shown = (await call("GET", `/ledger/public/${linked.token}`)).data
+  assert.deepEqual([shown.entries[0].value, shown.totals.value, shown.totals.brands], [150000, 150000, 1])
+  // A new link stops the old; stopping stops both.
+  const renewed = (await call("POST", "/ledger/link", undefined, group)).data
+  assert.equal((await call("GET", `/ledger/public/${linked.token}`)).status, 404)
+  await call("DELETE", "/ledger/link", undefined, group)
+  assert.equal((await call("GET", `/ledger/public/${renewed.token}`)).status, 404)
+})
+
 test("the site's counts are members only and grow with each sign-up", async () => {
   const before = (await call("GET", "/site")).data.counts
   assert.deepEqual(Object.keys(before).sort(), ["brands", "groups", "schools", "sponsorships"])

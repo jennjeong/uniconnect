@@ -304,6 +304,37 @@ test("a group proposes a meeting in a conversation, and the brand accepts and sa
   }
 })
 
+test("a group publishes its sponsorship ledger from 리포트, and anyone with the link reads it", async ({ page, request, browser }) => {
+  const group = await signUpMember(request, "학생단체", "e2e-ledger@syu.ac.kr", "결산하는 동아리")
+  const brand = await signUpMember(request, "브랜드", "e2e-ledger@ledger-cafe.kr", "결산 카페")
+  const date = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date(Date.now() + 6 * 86_400_000))
+  await request.post("/api/events", { data: { name: "결산 공연", date, types: ["제품"] }, headers: group.headers })
+  await request.post("/api/proposals", { data: { matchId: brand.listingId }, headers: group.headers })
+  const { requests } = (await (await request.get("/api/requests", { headers: brand.headers })).json()) as { requests: { id: string }[] }
+  await request.post(`/api/requests/${requests[0].id}/accept`, { headers: brand.headers })
+
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
+  await page.goto("/reports")
+  const card = page.locator(".ledger-card")
+  await card.getByRole("button", { name: "공개 링크 만들기" }).click()
+  await expect(page.getByText("공개 링크를 만들었어요.")).toBeVisible()
+  await card.getByLabel("결산 카페 협찬의 쓰임 메모").fill("음료를 부스에서 나눴어요.")
+  await card.getByRole("button", { name: "저장" }).click()
+  await expect(page.getByText("메모를 저장했어요.")).toBeVisible()
+  const link = (await card.locator(".invite-link").textContent()) ?? ""
+  expect(link).toMatch(/\/ledger\/[\w-]+$/)
+
+  const reader = await (await browser.newContext()).newPage()
+  await reader.goto(new URL(link).pathname)
+  await expect(reader.getByRole("heading", { level: 1 })).toHaveText("결산하는 동아리 협찬 결산")
+  await expect(reader.locator(".ledger-list")).toContainText("결산 카페")
+  await expect(reader.locator(".ledger-list")).toContainText("음료를 부스에서 나눴어요.")
+  for (const member of [group, brand]) {
+    const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: member.headers })
+    expect(left.status()).toBe(204)
+  }
+})
+
 test("a sponsorship is called off from its agreement once the other side agrees", async ({ page, request }) => {
   const group = await signUpMember(request, "학생단체", "e2e-calloff@syu.ac.kr", "취소하는 동아리")
   const brand = await signUpMember(request, "브랜드", "e2e-calloff@calloff-cafe.kr", "취소하는 카페")

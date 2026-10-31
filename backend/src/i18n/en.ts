@@ -611,6 +611,13 @@ const en: Record<string, string> = {
   "고른 홍보 · 배포 계획을 이행하는 데 동의해 주세요.": "Agree to carry out the promotion you chose.",
   "기획안은 2MB 이하의 PDF로 올려 주세요.": "Upload the plan as a PDF of 2 MB or less.",
   "기획안을 찾을 수 없어요.": "Couldn't find the plan.",
+  "학생단체만 협찬 결산을 공개할 수 있어요.": "Only student groups can publish a sponsorship ledger.",
+  "데모 계정은 협찬 결산을 공개할 수 없어요.": "The demo accounts can't publish a sponsorship ledger.",
+  "금액 공개 여부를 다시 확인해 주세요.": "Check whether amounts show again.",
+  "메모를 다시 확인해 주세요.": "Check the notes again.",
+  "협찬을 찾을 수 없어요.": "Couldn't find that sponsorship.",
+  "메모는 200자 이하로 적어 주세요.": "Keep the note to 200 characters.",
+  "공개된 협찬 결산을 찾을 수 없어요.": "Couldn't find that public sponsorship ledger.",
 }
 
 export default en

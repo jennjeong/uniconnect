@@ -1224,3 +1224,25 @@ export type ExploreEvent = {
 
 // The sponsorships one kind of event had confirmed, as counts.
 export type EventCase = { kind: string; sponsorships: number; averagePeople?: number; industries: string[]; asks: string[] }
+
+// One sponsorship a student group received, on its ledger (routes/ledger.ts):
+// the amount only where the group shows amounts.
+export type LedgerEntry = {
+  id: string
+  eventName: string
+  eventDate: string
+  brandName: string
+  gives: string
+  value?: number
+  note?: string
+  scans?: number
+}
+
+export type PublicLedger = {
+  group: { name: string; school: string }
+  showValues: boolean
+  entries: LedgerEntry[]
+  totals: { sponsorships: number; brands: number; value?: number }
+}
+
+export type OwnLedger = { token: string | null; showValues: boolean; entries: LedgerEntry[] }
