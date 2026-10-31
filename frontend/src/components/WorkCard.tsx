@@ -25,6 +25,8 @@ export function WorkCard({
   onOpenDetail,
   saved,
   onToggleSave,
+  compared,
+  onToggleCompare,
   children,
 }: {
   match: Match
@@ -40,6 +42,10 @@ export function WorkCard({
   // 찜: whether it is saved, and the heart that saves or unsaves it.
   saved?: boolean
   onToggleSave?: () => void
+  // 비교: whether it is in the comparison, and the button that puts it in
+  // or takes it out (components/CompareTray.tsx).
+  compared?: boolean
+  onToggleCompare?: () => void
   // Actions at the bottom, such as the proposal button.
   children: ReactNode
 }) {
@@ -60,6 +66,18 @@ export function WorkCard({
               type="button"
             >
               <Icon name="heart" size={18} />
+            </button>
+          )}
+          {onToggleCompare && (
+            <button
+              aria-label={t("{name} 비교에 담기", { name: match.name })}
+              aria-pressed={compared === true}
+              className="compare-toggle"
+              onClick={onToggleCompare}
+              type="button"
+            >
+              <Icon name={compared ? "check" : "plus"} size={16} />
+              <span aria-hidden="true">{t("비교")}</span>
             </button>
           )}
           <button

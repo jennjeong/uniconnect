@@ -3,6 +3,7 @@ import { useState, type CSSProperties } from "react"
 import { CatalogEmpty } from "../components/CatalogEmpty"
 import { CatalogMap, LayoutSwitch, type Layout } from "../components/CatalogMap"
 import { CatalogSearch } from "../components/CatalogSearch"
+import { CompareTray, useCompare } from "../components/CompareTray"
 import { DemoPreview } from "../components/DemoPreview"
 import { NearbyPlaces } from "../components/NearbyPlaces"
 import { PageIntro } from "../components/PageIntro"
@@ -86,6 +87,8 @@ export function MatchesPage({
   onSignup: () => void
 }) {
   const [tab, setTab] = useState<Tab>("추천")
+  // 비교: the cards laid side by side (components/CompareTray.tsx).
+  const compare = useCompare()
   // Cards slide in from the side the picked tab or chip lies on.
   const [direction, setDirection] = useState<"forward" | "back">("forward")
   const pickTab = (next: Tab) => {
@@ -127,6 +130,8 @@ export function MatchesPage({
       onOpenDetail={() => onOpenDetail(match)}
       saved={saved.includes(match.id)}
       onToggleSave={() => onToggleSave(match)}
+      compared={compare.has(match.id)}
+      onToggleCompare={() => compare.toggle(match.id)}
       tags={
         <>
           {rank !== undefined && match.popularity !== undefined && (
@@ -271,6 +276,14 @@ export function MatchesPage({
           })}
         </ul>
       )}
+
+      <CompareTray
+        items={compare.ids.flatMap((id) => new Map([...matches, ...brands].map((item) => [item.id, item])).get(id) ?? [])}
+        kind="brand"
+        onClear={compare.clear}
+        onOpenDetail={onOpenDetail}
+        onRemove={compare.remove}
+      />
     </section>
   )
 }

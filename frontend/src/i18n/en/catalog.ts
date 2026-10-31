@@ -610,6 +610,18 @@ const en: Record<string, string> = {
   "저장한 문구의 상대 이름 자리는 단체마다 그 단체 이름으로 바뀌어서 가요.": "In a saved message, the partner’s name is filled with each group’s own name as it goes out.",
   "{sent}곳에 보냈고, {failed}곳은 보내지 못했어요. {reasons}": "Sent to {sent}; {failed} couldn’t be sent. {reasons}",
   "{count}곳에 협찬 제안을 보냈어요.": "Sent the offer to {count} groups.",
+  "{name} 비교에 담기": "Add {name} to compare",
+  "비교": "Compare",
+  "비교함": "Comparison",
+  "{name} 비교에서 빼기": "Remove {name} from compare",
+  "하나 더 담으면 비교할 수 있어요.": "Add one more to compare.",
+  "{max}곳까지 담을 수 있어요.": "Up to {max} at a time.",
+  "비우기": "Clear",
+  "나란히 비교하기": "Compare side by side",
+  "브랜드 {count}곳 비교": "Comparing {count} brands",
+  "학생단체 {count}곳 비교": "Comparing {count} student groups",
+  "비교표": "Comparison table",
+  "내세우는 점": "What it brings",
 }
 
 export default en
