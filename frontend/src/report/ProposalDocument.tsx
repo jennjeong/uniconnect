@@ -98,6 +98,26 @@ export function ProposalDocument({ page, history }: { page: EventPage; history: 
         )}
       </section>
 
+      {event.promo && (
+        <section className="pdf-section">
+          <h2>{t("브랜드가 받는 홍보")}</h2>
+          <dl className="pdf-facts">
+            <div>
+              <dt>{t("로고가 보이는 곳")}</dt>
+              <dd>{event.promo.spots.map((item) => t(item)).join(", ") || "—"}</dd>
+            </div>
+            <div>
+              <dt>{t("현장 배포 방식")}</dt>
+              <dd>{event.promo.handouts.map((item) => t(item)).join(", ") || "—"}</dd>
+            </div>
+            <div className="wide">
+              <dt>{t("SNS 홍보")}</dt>
+              <dd>{event.promo.posts.map((item) => t(item)).join(", ") || "—"}</dd>
+            </div>
+          </dl>
+        </section>
+      )}
+
       <section className="pdf-section">
         <h2>{t("지난 협찬 성과")}</h2>
         {record.events > 0 ? (

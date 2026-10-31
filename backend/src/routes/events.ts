@@ -8,7 +8,7 @@ import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
 import { eventPhotos, parsePhoto, photoName, photoType, photos } from "../lib/photos.js"
 import { isSponsored } from "../lib/sponsorships.js"
-import { audienceYears, eventKinds, parseRole, sponsorTypes, text } from "../lib/validation.js"
+import { audienceYears, eventKinds, handoutWays, logoSpots, parseRole, promoPosts, sponsorTypes, text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { Account, Database, EventItem, RequestStatus, Role, SponsorPackage } from "../types.js"
@@ -53,6 +53,7 @@ type EventFields = Pick<
   | "startTime"
   | "endTime"
   | "makeup"
+  | "promo"
 >
 
 // What an event page holds, at most: four packages and four photos.
@@ -144,6 +145,7 @@ function parseEventFields(role: Role, body: Request["body"]): EventFields {
   if (endTime && !startTime) throw new HttpError(400, "끝나는 시각은 시작 시각과 함께 골라 주세요.")
   if (startTime && endTime && endTime <= startTime) throw new HttpError(400, "끝나는 시각은 시작 시각 뒤로 골라 주세요.")
   const makeup = students ? parseMakeup(body?.makeup) : undefined
+  const promo = students ? parsePromo(body?.promo, body?.promoAgreed) : undefined
   if (venue.length > 60) throw new HttpError(400, "장소는 60자 이하로 적어 주세요.")
   if (intro.length > 1000) throw new HttpError(400, "행사 소개는 1000자 이하로 적어 주세요.")
 
@@ -162,7 +164,25 @@ function parseEventFields(role: Role, body: Request["body"]): EventFields {
     ...(startTime ? { startTime } : {}),
     ...(endTime ? { endTime } : {}),
     ...(makeup ? { makeup } : {}),
+    ...(promo ? { promo } : {}),
   }
+}
+
+// 홍보 · 배포 계획: the choices from each list, kept only once the group
+// agreed to carry them out (an edit keeps the first agreement's time).
+function parsePromo(value: unknown, agreed: unknown): EventItem["promo"] {
+  if (value === undefined || value === null) return undefined
+  if (typeof value !== "object") throw new HttpError(400, "홍보 · 배포 계획을 다시 확인해 주세요.")
+  const input = value as Record<string, unknown>
+  const pick = (list: readonly string[], chosen: unknown) =>
+    Array.isArray(chosen) ? list.filter((item) => chosen.map(String).includes(item)) : []
+  const spots = pick(logoSpots, input.spots)
+  const handouts = pick(handoutWays, input.handouts)
+  const posts = pick(promoPosts, input.posts)
+  if (spots.length + handouts.length + posts.length === 0) return undefined
+  if (agreed !== true) throw new HttpError(400, "고른 홍보 · 배포 계획을 이행하는 데 동의해 주세요.")
+  const agreedAt = typeof input.agreedAt === "string" && !Number.isNaN(Date.parse(input.agreedAt)) ? input.agreedAt : new Date().toISOString()
+  return { spots, handouts, posts, agreedAt }
 }
 
 // Who is expected at a group's event: the share of women (0–100), the

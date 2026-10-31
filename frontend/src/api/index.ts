@@ -115,7 +115,11 @@ export type EventDraft = Pick<
   | "startTime"
   | "endTime"
   | "makeup"
->
+> & {
+  // 홍보 · 배포 계획 as chosen, and the agreement to carry it out.
+  promo?: { spots: string[]; handouts: string[]; posts: string[]; agreedAt?: string }
+  promoAgreed?: boolean
+}
 
 // Proposals the account sent, with each brand's answer so far.
 export type ProposalState = {

@@ -89,6 +89,37 @@ test("a group's event keeps its kind, times and who comes, and brands filter by 
   assert.equal(groups.find((item) => item.name.startsWith("kind-club"))?.eventKind, "축제")
 })
 
+test("a group's promotion plan needs its agreement, and becomes its items on the agreement", async () => {
+  const group = await signUpMember("promo-club@syu.ac.kr", "promo-pass-123")
+  const groupId = getDatabase().accounts.find((account) => account.email === "promo-club@syu.ac.kr")!.id
+  const { token: brand, listingId } = await listedMember("promo@promo-cafe.kr", "promo-pass-123", "브랜드")
+  const promo = { spots: ["현수막", "SNS 카드뉴스", "없는 자리"], handouts: ["선착순 배포"], posts: ["협찬 게시물 1회", "행사 당일 스토리"] }
+  const base = { name: "홍보 축제", date: "2026-12-12", people: "300명", types: ["제품"], promo }
+  assert.equal((await call("POST", "/events", base, group)).status, 400)
+  const made = await call("POST", "/events", { ...base, promoAgreed: true }, group)
+  assert.equal(made.status, 201)
+  assert.deepEqual(made.data.event.promo.spots, ["현수막", "SNS 카드뉴스"])
+  assert.ok(made.data.event.promo.agreedAt)
+  // Nothing chosen needs no agreement and keeps no plan.
+  const none = await call("POST", "/events", { ...base, name: "홍보 없는 행사", date: "2027-01-10", promo: { spots: [], handouts: [], posts: [] } }, group)
+  assert.equal(none.data.event.promo, undefined)
+  // Accepted, the agreement starts with what the group promised.
+  await call("POST", "/proposals", { matchId: listingId, eventId: made.data.event.id }, group)
+  const request = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
+  await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+  const labels = (await call("GET", `/agreements/${request.id}`, undefined, group)).data.agreement.items
+    .filter((item: { side: string }) => item.side === "group")
+    .map((item: { label: string }) => item.label)
+  assert.deepEqual(labels, [
+    "로고 노출: 현수막, SNS 카드뉴스",
+    "현장 배포: 선착순 배포",
+    "SNS 홍보: 협찬 게시물 1회",
+    "SNS 홍보: 행사 당일 스토리",
+    "참여자에게 쿠폰 나눠 주기",
+    "행사 후 사진과 성과 리포트 공유하기",
+  ])
+})
+
 test("the site's counts are members only and grow with each sign-up", async () => {
   const before = (await call("GET", "/site")).data.counts
   assert.deepEqual(Object.keys(before).sort(), ["brands", "groups", "schools", "sponsorships"])

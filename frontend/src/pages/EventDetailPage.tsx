@@ -298,6 +298,33 @@ export function EventDetailPage({
             </section>
           )}
 
+          {event.promo && (
+            <section aria-labelledby="event-promo-title" className="event-section">
+              <h2 id="event-promo-title">{t("브랜드가 받는 홍보")}</h2>
+              <dl className="event-promo">
+                {(
+                  [
+                    [t("로고가 보이는 곳"), event.promo.spots],
+                    [t("현장 배포 방식"), event.promo.handouts],
+                    [t("SNS 홍보"), event.promo.posts],
+                  ] as const
+                )
+                  .filter(([, list]) => list.length > 0)
+                  .map(([label, list]) => (
+                    <div key={label}>
+                      <dt>{label}</dt>
+                      <dd>
+                        {list.map((item) => (
+                          <span key={item}>{t(item)}</span>
+                        ))}
+                      </dd>
+                    </div>
+                  ))}
+              </dl>
+              <p className="field-hint">{t("단체가 이 홍보를 이행하기로 동의했어요. 협찬이 확정되면 계약서의 할 일로 들어가요.")}</p>
+            </section>
+          )}
+
           <section aria-labelledby="event-packages-title" className="event-section">
             <h2 id="event-packages-title">{t("협찬 혜택 묶음")}</h2>
             {packages.length > 0 ? (

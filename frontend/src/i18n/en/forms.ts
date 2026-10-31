@@ -1053,6 +1053,16 @@ const en: Record<string, string> = {
   "여성 {female}% · 남성 {male}%": "Women {female}% · men {male}%",
   "모든 행사 유형": "Any kind of event",
   "여성 {female}%": "Women {female}%",
+  "홍보 · 배포 계획": "Promotion plan",
+  "브랜드가 무엇을 받는지 고르면, 협찬이 확정될 때 계약서의 할 일로 그대로 들어가요.": "Pick what brands get; once a sponsorship is confirmed, it goes into the contract as your tasks.",
+  "로고가 보이는 곳": "Where the logo shows",
+  "현장 배포 방식": "How goods are handed out",
+  "SNS 홍보": "Social promotion",
+  "고른 홍보를 이행할게요": "We will carry out this promotion",
+  "협찬을 받으면 고른 방식대로 홍보하고, 계약서에서 증빙을 남겨요.": "When sponsored, we promote as chosen and leave proof in the contract.",
+  "고른 홍보 · 배포 계획을 이행하는 데 동의해 주세요.": "Agree to carry out the promotion you chose.",
+  "브랜드가 받는 홍보": "What brands get",
+  "단체가 이 홍보를 이행하기로 동의했어요. 협찬이 확정되면 계약서의 할 일로 들어가요.": "The group agreed to carry this out. Once confirmed, it goes into the contract as tasks.",
 }
 
 export default en

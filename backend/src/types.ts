@@ -117,6 +117,10 @@ export type EventItem = {
   startTime?: string
   endTime?: string
   makeup?: { female?: number; years?: string[]; majors?: string }
+  // 홍보 · 배포 계획: what the group offers brands (validation.ts logoSpots,
+  // handoutWays, promoPosts), and when it agreed to carry out what it chose;
+  // an accepted proposal's agreement starts with them as the group's items.
+  promo?: { spots: string[]; handouts: string[]; posts: string[]; agreedAt: string }
 }
 
 // The person who runs an account. The phone shows only to the two sides of

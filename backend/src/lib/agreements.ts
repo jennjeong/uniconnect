@@ -7,7 +7,7 @@ import { activeMethodsOf, confirmsAt, isVenueKind, methodsOf, venueCountsOf } fr
 import { photos } from "./photos.js"
 import { canReview, isDemoAccount, publicReview, reviewOpen } from "./reviews.js"
 import { isSponsored } from "./sponsorships.js"
-import type { Account, Agreement, AgreementItem, ChatSide, Database } from "../types.js"
+import type { Account, Agreement, AgreementItem, ChatSide, Database, EventItem } from "../types.js"
 
 export { uploadsFolder } from "./photos.js"
 
@@ -186,16 +186,31 @@ const item = (side: ChatSide, label: string): AgreementItem => ({ id: randomUUID
 // What a sponsorship usually takes, to start from: the brand hands over what
 // it gives and gets its coupon ready; the group promotes the event, shows
 // the brand there, hands out the coupon and shares the results after.
-export function defaultItems(proposal: AcceptedProposal): AgreementItem[] {
+export function defaultItems(proposal: AcceptedProposal, promo?: EventItem["promo"]): AgreementItem[] {
+  // The group's own 홍보 · 배포 계획, when its event has one, stands in for
+  // the usual promotion items: the logo's places, how goods are handed out,
+  // and each post it promised.
+  const promised = promo
+    ? [
+        ...(promo.spots.length ? [item("group", `로고 노출: ${promo.spots.join(", ")}`.slice(0, 80))] : []),
+        ...(promo.handouts.length ? [item("group", `현장 배포: ${promo.handouts.join(", ")}`.slice(0, 80))] : []),
+        ...promo.posts.slice(0, 5).map((post) => item("group", `SNS 홍보: ${post}`)),
+      ]
+    : []
   return [
     item("brand", `협찬 전달: ${proposal.gives}`.slice(0, 80)),
     item("brand", "행사용 쿠폰과 매장 직원 안내 준비"),
-    item("group", "행사 전 SNS 홍보 게시물 올리기"),
-    item("group", "행사장에 브랜드 보여 주기(현수막·부스·무대 소개)"),
+    ...(promised.length
+      ? promised
+      : [item("group", "행사 전 SNS 홍보 게시물 올리기"), item("group", "행사장에 브랜드 보여 주기(현수막·부스·무대 소개)")]),
     item("group", "참여자에게 쿠폰 나눠 주기"),
     item("group", "행사 후 사진과 성과 리포트 공유하기"),
   ]
 }
+
+// The 홍보 · 배포 계획 of the group's event a proposal is about, if any.
+export const promoOf = (database: Database, proposal: AcceptedProposal) =>
+  proposal.eventOwner === "group" ? sponsoredEvent(database, proposal)?.event.promo : undefined
 
 // The stored agreement, or a new one with the usual items (the caller saves).
 export function agreementFor(database: Database, proposal: AcceptedProposal) {
@@ -205,7 +220,7 @@ export function agreementFor(database: Database, proposal: AcceptedProposal) {
   const agreement: Agreement = {
     id: proposal.id,
     kind: proposal.kind,
-    items: defaultItems(proposal),
+    items: defaultItems(proposal, promoOf(database, proposal)),
     confirmed: {},
     createdAt: now,
     updatedAt: now,

@@ -5123,6 +5123,45 @@ button.nav-pill:hover {
   padding-block: 10px;
 }
 
+/* The agreement under the 홍보 · 배포 계획 choices. */
+.promo-agree {
+  margin-top: 14px;
+}
+
+/* 브랜드가 받는 홍보 on the event page: each list as a row of chips. */
+.event-promo {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.event-promo div {
+  display: grid;
+  gap: 6px;
+}
+
+.event-promo dt {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.event-promo dd {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+}
+
+.event-promo dd span {
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: var(--point-tint);
+  color: var(--point-strong);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
 .input-suffix input {
   padding-right: 40px;
 }
@@ -20186,6 +20225,10 @@ button:active:not(:disabled) {
   padding: 12px 14px;
   border: 1px solid var(--line);
   border-radius: 12px;
+}
+
+.pdf-facts .wide {
+  grid-column: 1 / -1;
 }
 
 .pdf-facts dt {
