@@ -1,16 +1,19 @@
-import type { ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 
 import { AnimatedNumber } from "../components/AnimatedNumber"
+import { api } from "../api"
 import { Icon, type IconName } from "../components/Icon"
 import { Pill } from "../components/Pill"
 import { PlanCard } from "../components/PlanCard"
 import { RevealTitle } from "../components/RevealText"
+import { ShareButton } from "../components/ShareButton"
 import { mailKinds } from "../data/mail"
 import { profileLabels } from "../data/profile"
 import { socialNames } from "../data/social"
 import { lang, setLang, t, type Lang } from "../i18n"
 import { formatFullDate, toIsoDate } from "../lib/date"
 import { initialOf } from "../lib/format"
+import { referralLink } from "../lib/referral"
 import { MeshBackdrop } from "../scenes/MeshBackdrop"
 import type { Account, BlockedListing, BusinessStatus, MailKind, Match, NavLabel, SocialProvider } from "../types"
 
@@ -122,6 +125,7 @@ export function ProfilePage({
   onVerifyBusiness,
   onPause,
   onMail,
+  canInvite = false,
 }: {
   account: Account
   // The listing brands (or student groups) see; null until written.
@@ -166,6 +170,8 @@ export function ProfilePage({
   onPause?: (paused: boolean) => void
   // 받을 메일: the kinds of notice email to turn off; absent for the demo accounts.
   onMail?: (mailOff: MailKind[]) => void
+  // 친구 초대: the account's invitation link and how it went; members only.
+  canInvite?: boolean
 }) {
   const students = account.role === "학생단체"
   const labels = profileLabels[account.role]
@@ -175,6 +181,21 @@ export function ProfilePage({
   const mailOff = account.mailOff ?? []
   const social = onTeam && owner ? socialProviders : []
   const together = Boolean(onTeam || onCouncil || onCouncilLink || blocked)
+  const [invite, setInvite] = useState<{ code: string; joined: number; rewarded: number; rewardDays: number } | null>(null)
+  useEffect(() => {
+    if (!canInvite) return
+    let cancelled = false
+    api.referral().then(
+      (result) => {
+        if (!cancelled) setInvite(result)
+      },
+      // Without it the card just doesn't show.
+      () => undefined,
+    )
+    return () => {
+      cancelled = true
+    }
+  }, [canInvite])
 
   const cards: { id: string; icon: IconName; label: string }[] = [
     { id: "profile-public", icon: "file", label: t("공개 소개") },
@@ -182,6 +203,7 @@ export function ProfilePage({
     { id: "profile-security", icon: "lock", label: t("로그인과 보안") },
     { id: "profile-prefs", icon: "bell", label: t("알림과 표시") },
     ...(together ? [{ id: "profile-together", icon: "users" as IconName, label: t("함께하는 사람") }] : []),
+    ...(invite ? [{ id: "profile-invite", icon: "share" as IconName, label: t("친구 초대") }] : []),
     ...(onPlan ? [{ id: "profile-plan", icon: "won" as IconName, label: t("요금제") }] : []),
     { id: "profile-data", icon: "download", label: t("내 데이터") },
   ]
@@ -561,6 +583,31 @@ export function ProfilePage({
                     }
                   />
                 )}
+              </dl>
+            </SettingsCard>
+          )}
+
+          {invite && (
+            <SettingsCard
+              caption={
+                invite.rewardDays
+                  ? t("내 링크로 가입한 곳의 첫 협찬이 성사되면 캠퍼스 파트너스 {days}일을 더해 드려요.", { days: invite.rewardDays })
+                  : t("내 링크로 다른 단체와 가게를 초대해 보세요. 가입하면 여기에 세어져요.")
+              }
+              icon="share"
+              id="profile-invite"
+              title={t("친구 초대")}
+            >
+              <dl className="settings-rows">
+                <SettingsRow
+                  action={<ShareButton className="row-button" text={t("uniconnect에서 캠퍼스 협찬을 함께해요.")} title="uniconnect" url={referralLink(invite.code)} />}
+                  label={t("내 초대 링크")}
+                  value={<code className="invite-link">{referralLink(invite.code)}</code>}
+                />
+                <SettingsRow
+                  label={t("초대한 결과")}
+                  value={t("가입 {joined}곳 · 첫 협찬 성사 {rewarded}곳", { joined: invite.joined, rewarded: invite.rewarded })}
+                />
               </dl>
             </SettingsCard>
           )}

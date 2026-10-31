@@ -2122,6 +2122,14 @@ button.nav-pill:hover {
   text-decoration: underline;
 }
 
+/* 친구 초대 in 내 정보: the invitation link, wrapping on a phone. */
+.invite-link {
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 13px;
+  word-break: break-all;
+}
+
 /* 비교 on the catalogs (components/CompareTray.tsx): the button on each
    card, the tray held at the bottom, and the table side by side. */
 .compare-toggle {

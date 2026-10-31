@@ -599,6 +599,7 @@ const en: Record<string, string> = {
   "받은 쪽만 미팅 제안에 답할 수 있어요.": "Only the side that received it can answer the meeting proposal.",
   "이미 답한 미팅 제안이에요.": "This meeting proposal has already been answered.",
   "미팅 제안은 고칠 수 없어요. 지우고 다시 보내 주세요.": "A meeting proposal can't be edited. Delete it and send it again.",
+  "데모 계정은 친구를 초대할 수 없어요.": "The demo accounts can't invite anyone.",
 }
 
 export default en

@@ -75,6 +75,35 @@ test("the site's counts are members only and grow with each sign-up", async () =
   assert.ok(after.schools >= 1)
 })
 
+test("an invitation link's code ties a sign-up to its inviter, rewarded once at the first sponsorship", async () => {
+  const { token: brand, listingId } = await listedMember("inviter@invite-cafe.kr", "invite-pass-123", "브랜드")
+  const stats = (await call("GET", "/auth/referral", undefined, brand)).data
+  assert.match(stats.code, /^[A-Z2-9]{8}$/)
+  assert.deepEqual([stats.joined, stats.rewarded, stats.rewardDays], [0, 0, 30])
+  // The same code each time; the demo accounts have none.
+  assert.equal((await call("GET", "/auth/referral", undefined, brand)).data.code, stats.code)
+  assert.equal((await call("GET", "/auth/referral", undefined, await login("브랜드"))).status, 403)
+  // A code that isn't one is let go; a real one ties the new account.
+  await signUpMember("invite-wrong@syu.ac.kr", "invite-pass-123", "학생단체", { referral: "NOTACODE" })
+  const group = await signUpMember("invited@syu.ac.kr", "invite-pass-123", "학생단체", { referral: stats.code })
+  const groupAccount = getDatabase().accounts.find((account) => account.email === "invited@syu.ac.kr")!
+  const brandAccount = getDatabase().accounts.find((account) => account.email === "inviter@invite-cafe.kr")!
+  assert.equal(groupAccount.referredBy, brandAccount.id)
+  assert.equal(getDatabase().accounts.find((account) => account.email === "invite-wrong@syu.ac.kr")!.referredBy, undefined)
+  assert.equal((await call("GET", "/auth/referral", undefined, brand)).data.joined, 1)
+  // Its first accepted sponsorship gives the inviting brand Partners days, once.
+  const grants = () => (getDatabase().payments ?? []).filter((item) => item.accountId === brandAccount.id && item.orderName.includes("친구 초대 보상"))
+  for (const name of ["초대 공연", "초대 공연 2"]) {
+    await call("POST", "/events", { name, date: "2026-12-24", people: "100명", types: ["제품"] }, group)
+    const sent = await call("POST", "/proposals", { matchId: listingId }, group)
+    assert.equal(sent.status, 201)
+    const request = getDatabase().requests.filter((item) => item.fromAccountId === groupAccount.id && item.status === "검토 중").at(-1)!
+    assert.equal((await call("POST", `/requests/${request.id}/accept`, undefined, brand)).status, 200)
+    assert.equal(grants().length, 1)
+  }
+  assert.equal((await call("GET", "/auth/referral", undefined, brand)).data.rewarded, 1)
+})
+
 test("a member keeps up to ten proposal templates; the demo accounts keep none", async () => {
   const token = await signUpMember("templates@syu.ac.kr", "Templates-pass1!")
   const saved = await call("PUT", "/auth/templates", { templates: [{ name: " 카페 첫 제안 ", text: "{상대}에 {행사} 협찬을 제안해요." }] }, token)
@@ -2540,7 +2569,7 @@ test("sign-up codes stay off the response unless turned on", () => {
 
 // A member signed up for a test, logged in, with their token: a student
 // group unless a brand is asked for.
-async function signUpMember(email: string, password: string, role: "학생단체" | "브랜드" = "학생단체") {
+async function signUpMember(email: string, password: string, role: "학생단체" | "브랜드" = "학생단체", extra: Record<string, unknown> = {}) {
   const students = role === "학생단체"
   const sent = await call("POST", "/auth/email-code", { role, email })
   const verified = await call("POST", "/auth/email-code/verify", { email, code: sent.data.devCode })
@@ -2555,6 +2584,7 @@ async function signUpMember(email: string, password: string, role: "학생단체
     agreedToTerms: true,
     contact: testContact,
     over14: true,
+    ...extra,
   })
   assert.equal(signup.status, 201)
   return signup.data.token as string

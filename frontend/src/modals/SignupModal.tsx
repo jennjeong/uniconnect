@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 
 import { api, errorMessage } from "../api"
+import { keptReferral } from "../lib/referral"
 import { Modal } from "../components/Modal"
 import { PasswordField } from "../components/PasswordField"
 import { PasswordRules } from "../components/PasswordRules"
@@ -147,6 +148,7 @@ export function SignupModal({
           agreedToTerms: draft.agreed,
           over14: draft.over14,
           contact: { name: draft.contactName.trim(), position: draft.position.trim(), phone: draft.phone },
+          ...(keptReferral() ? { referral: keptReferral() } : {}),
         }),
       )
     })

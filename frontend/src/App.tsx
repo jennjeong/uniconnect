@@ -1498,6 +1498,7 @@ function App() {
     if (profileOpen && account) {
       return (
         <ProfilePage
+          canInvite={member && !account.asMember}
           account={account}
           listing={listing}
           activity={activity}

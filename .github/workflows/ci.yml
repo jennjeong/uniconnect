@@ -19,7 +19,9 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # The browser tests alone take about 10 minutes on GitHub's runners
+    # (3 on a laptop) and grow with each feature, so the job has room past them.
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6

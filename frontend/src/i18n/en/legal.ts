@@ -258,6 +258,9 @@ const en: Record<string, string> = {
   "저장한 제안 문구(이름과 내용, 10개까지)": "Saved proposal messages (their names and text, up to 10)",
   "다음 제안을 보낼 때 불러와 쓰기": "To use them again in later proposals",
   "탈퇴하거나 문구를 지울 때까지": "Until you leave or delete the message",
+  "친구 초대 기록(내 초대 코드, 어떤 회원의 링크로 가입했는지, 그 보상을 준 시각)": "Invitation records (your invitation code, whose link you signed up through, and when that was rewarded)",
+  "초대한 회원 수를 보여 주고, 초대받은 곳의 첫 협찬이 성사되면 초대한 회원에게 보상하기": "To show how many you invited, and to reward the inviter once the invited account’s first sponsorship goes through",
+  "탈퇴할 때까지, 초대한 회원이 탈퇴하면 그 연결을 지워요": "Until you leave; the link is removed if the inviter leaves",
 }
 
 export default en
