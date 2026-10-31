@@ -12,7 +12,7 @@ import { placeCategories } from "../data/places"
 import { mailKinds } from "../data/mail"
 import { reportReasons } from "../data/reports"
 import { carriers } from "../data/carriers"
-import { audienceYears, eventKinds } from "../data/eventDetails"
+import { audienceYears, eventKinds, handoutWays, logoSpots, promoPosts } from "../data/eventDetails"
 import { reviewTags } from "../data/reviews"
 import { accountTypes, councilTypes, roles } from "../data/roles"
 import { sponsorOptions, valueTypes } from "../data/sponsorTypes"
@@ -47,6 +47,9 @@ describe("the screens offer the choices the server takes", () => {
     expect(carriers).toEqual(server.carriers)
     expect(eventKinds).toEqual(server.eventKinds)
     expect(audienceYears).toEqual(server.audienceYears)
+    expect(logoSpots).toEqual(server.logoSpots)
+    expect(handoutWays).toEqual(server.handoutWays)
+    expect(promoPosts).toEqual(server.promoPosts)
     expect(mailKinds.map((item) => item.kind)).toEqual(server.mailKinds)
   })
 

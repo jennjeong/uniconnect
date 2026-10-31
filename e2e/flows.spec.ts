@@ -570,6 +570,12 @@ test("a group writes its event page on the form, adds a photo, and a brand reads
   await page.getByLabel("묶음 이름", { exact: true }).fill("메인 스폰서")
   await page.getByLabel("브랜드가 받는 것", { exact: true }).fill("무대 현수막 로고")
   await page.getByLabel("원하는 협찬", { exact: true }).fill("현금 30만원")
+  // A promotion plan needs the group's agreement before it registers.
+  await page.locator("label.check-row", { hasText: "현수막" }).first().click()
+  await page.locator("label.check-row", { hasText: "협찬 게시물 1회" }).click()
+  await page.getByRole("button", { name: "등록하고 매칭 받기" }).click()
+  await expect(page.getByRole("alert")).toHaveText("고른 홍보 · 배포 계획을 이행하는 데 동의해 주세요.")
+  await page.locator("label.check-row", { hasText: "고른 홍보를 이행할게요" }).click()
   await page.getByRole("button", { name: "등록하고 매칭 받기" }).click()
   // The calendar's 상세 보기 opens the event's page.
   await page.locator(".day-event-card", { hasText: "페이지 공연" }).getByRole("button", { name: "상세 보기" }).click()
@@ -582,6 +588,8 @@ test("a group writes its event page on the form, adds a photo, and a brand reads
   await expect(page.locator(".event-kind")).toHaveText("공연")
   await expect(page.locator(".event-makeup")).toContainText("여성 60% · 남성 40%")
   await expect(page.locator(".event-makeup")).toContainText("1학년")
+  await expect(page.locator(".event-promo")).toContainText("현수막")
+  await expect(page.locator(".event-promo")).toContainText("협찬 게시물 1회")
   const png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
   await page.locator(".event-photo-add input").setInputFiles({ name: "stage.png", mimeType: "image/png", buffer: Buffer.from(png, "base64") })
   await expect(page.getByRole("img", { name: "페이지 공연 사진" })).toBeVisible()

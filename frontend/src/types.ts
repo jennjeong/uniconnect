@@ -301,6 +301,8 @@ export type EventItem = {
   startTime?: string
   endTime?: string
   makeup?: { female?: number; years?: string[]; majors?: string }
+  // 홍보 · 배포 계획 and when the group agreed to carry it out.
+  promo?: { spots: string[]; handouts: string[]; posts: string[]; agreedAt: string }
 }
 
 // A sponsorship package on a group's event page: its name, what the brand

@@ -11,6 +11,7 @@ import {
   agreementView,
   cancelSponsorship,
   defaultItems,
+  promoOf,
   eventOver,
   sideIn,
   sponsoredEvent,
@@ -84,7 +85,7 @@ agreementsRouter.get("/", (req, res) => {
   const agreements = acceptedProposalsOf(database, account).map((proposal) => {
     const side = sideIn(proposal, account)!
     const stored = database.agreements.find((agreement) => agreement.id === proposal.id)
-    const items = stored?.items ?? defaultItems(proposal)
+    const items = stored?.items ?? defaultItems(proposal, promoOf(database, proposal))
     return {
       id: proposal.id,
       side,

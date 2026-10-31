@@ -4,7 +4,7 @@ import type { EventDraft } from "../api"
 import { DatePicker } from "../components/DatePicker"
 import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
-import { audienceYears, eventKinds } from "../data/eventDetails"
+import { audienceYears, eventKinds, handoutWays, logoSpots, promoPosts } from "../data/eventDetails"
 import { sponsorOptions } from "../data/sponsorTypes"
 import { t, tc } from "../i18n"
 import { formatPeriod, todayIso } from "../lib/date"
@@ -55,6 +55,13 @@ export function EventCreatePage({
   const [female, setFemale] = useState(source?.makeup?.female === undefined ? "" : String(source.makeup.female))
   const [years, setYears] = useState<string[]>(source?.makeup?.years ?? [])
   const [majors, setMajors] = useState(source?.makeup?.majors ?? "")
+  // 홍보 · 배포 계획: what the group offers brands, and its agreement to
+  // carry it out (kept when editing; a copy asks again).
+  const [spots, setSpots] = useState<string[]>(source?.promo?.spots ?? [])
+  const [handouts, setHandouts] = useState<string[]>(source?.promo?.handouts ?? [])
+  const [posts, setPosts] = useState<string[]>(source?.promo?.posts ?? [])
+  const [promoAgreed, setPromoAgreed] = useState(Boolean(event?.promo))
+  const promoChosen = spots.length + handouts.length + posts.length > 0
   const changePackage = (index: number, part: keyof SponsorPackage, value: string) =>
     setPackages((current) => current.map((item, at) => (at === index ? { ...item, [part]: value } : item)))
   const [error, setError] = useState("")
@@ -85,7 +92,9 @@ export function EventCreatePage({
             ? t("혜택 묶음마다 이름과 브랜드가 받는 것을 적어 주세요.")
             : startTime && endTime && endTime <= startTime
               ? t("끝나는 시각은 시작 시각 뒤로 골라 주세요.")
-              : ""
+              : students && promoChosen && !promoAgreed
+                ? t("고른 홍보 · 배포 계획을 이행하는 데 동의해 주세요.")
+                : ""
     if (problem) {
       setError(problem)
       return
@@ -110,6 +119,8 @@ export function EventCreatePage({
               startTime: startTime || undefined,
               endTime: (startTime && endTime) || undefined,
               makeup: { ...(female ? { female: Number(female) } : {}), years, majors: majors.trim() },
+              promo: { spots, handouts, posts, ...(event?.promo ? { agreedAt: event.promo.agreedAt } : {}) },
+              promoAgreed,
             }
           : {}),
       })
@@ -117,6 +128,33 @@ export function EventCreatePage({
       setBusy(false)
     }
   }
+
+  // One list of short choices as the form's check rows.
+  const choices = (label: string, list: readonly string[], chosen: string[], set: (next: string[]) => void) => (
+    <>
+      <span className="field-label">{label}</span>
+      <div className="check-list compact">
+        {list.map((option) => {
+          const checked = chosen.includes(option)
+          return (
+            <label className={checked ? "check-row checked" : "check-row"} key={option}>
+              <input
+                checked={checked}
+                onChange={() => set(checked ? chosen.filter((item) => item !== option) : [...chosen, option])}
+                type="checkbox"
+              />
+              <span aria-hidden="true" className="check-box">
+                <Icon name="check" size={14} />
+              </span>
+              <span className="check-copy">
+                <strong>{t(option)}</strong>
+              </span>
+            </label>
+          )
+        })}
+      </div>
+    </>
+  )
 
   return (
     <section className="page-view create-view">
@@ -316,6 +354,29 @@ export function EventCreatePage({
                   </button>
                 )}
               </div>
+            </div>
+          )}
+          {students && (
+            <div aria-labelledby="promo-title" className="form-card" role="group">
+              <h3 className="form-card-title" id="promo-title">
+                {t("홍보 · 배포 계획")}
+              </h3>
+              <p className="form-card-caption">{t("브랜드가 무엇을 받는지 고르면, 협찬이 확정될 때 계약서의 할 일로 그대로 들어가요.")}</p>
+              {choices(t("로고가 보이는 곳"), logoSpots, spots, setSpots)}
+              {choices(t("현장 배포 방식"), handoutWays, handouts, setHandouts)}
+              {choices(t("SNS 홍보"), promoPosts, posts, setPosts)}
+              {promoChosen && (
+                <label className={promoAgreed ? "check-row checked promo-agree" : "check-row promo-agree"}>
+                  <input checked={promoAgreed} onChange={() => setPromoAgreed(!promoAgreed)} type="checkbox" />
+                  <span aria-hidden="true" className="check-box">
+                    <Icon name="check" size={14} />
+                  </span>
+                  <span className="check-copy">
+                    <strong>{t("고른 홍보를 이행할게요")}</strong>
+                    <small>{t("협찬을 받으면 고른 방식대로 홍보하고, 계약서에서 증빙을 남겨요.")}</small>
+                  </span>
+                </label>
+              )}
             </div>
           )}
           {students && (
