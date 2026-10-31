@@ -142,3 +142,7 @@ export const surveyOptions = {
   field: ["인문 · 사회", "경영 · 경제", "자연 · 공학", "의약 · 보건", "예체능", "교육", "기타"],
   visited: ["처음이에요", "가 본 적 있어요", "잘 모르겠어요"],
 } as const
+
+// Parcel carriers a sponsorship's goods may go with (협찬 물품 배송); the app
+// lists the same (frontend data/carriers.ts).
+export const carriers = ["CJ대한통운", "우체국택배", "한진택배", "롯데택배", "로젠택배", "경동택배", "대신택배", "편의점택배", "기타"] as const

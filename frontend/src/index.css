@@ -10349,6 +10349,73 @@ button.nav-pill:hover {
   margin-top: 8px;
 }
 
+/* 협찬 물품 배송 on the agreement (ShipmentsPanel): each parcel as a row
+   with its lookup, then the row to note another. */
+.shipment-list {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+}
+
+.shipment-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--fill);
+}
+
+.shipment-list li > div {
+  display: grid;
+  flex: 1 1 220px;
+  gap: 2px;
+}
+
+.shipment-list small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.shipment-list .cancel-button {
+  text-decoration: none;
+}
+
+.shipment-form {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.8fr) minmax(140px, 1fr) minmax(140px, 1fr) auto;
+  align-items: end;
+  gap: 10px;
+}
+
+.shipment-form label {
+  display: grid;
+  gap: 6px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.shipment-form :is(input, select) {
+  height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+}
+
+@media (max-width: 720px) {
+  .shipment-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .agreement-sheet {
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);

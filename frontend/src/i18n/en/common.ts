@@ -117,6 +117,14 @@ const en: Record<string, string> = {
   // API client (api/client.ts)
   "서버에 연결할 수 없어요. 백엔드가 실행 중인지 확인해 주세요.": "Can't reach the server. Check that the backend is running.",
   "요청을 처리하지 못했어요.": "Couldn't process the request.",
+  "CJ대한통운": "CJ Logistics",
+  "우체국택배": "Korea Post",
+  "한진택배": "Hanjin",
+  "롯데택배": "Lotte Global Logistics",
+  "로젠택배": "Logen",
+  "경동택배": "Kyungdong",
+  "대신택배": "Daesin",
+  "편의점택배": "Convenience store parcel",
 }
 
 export default en

@@ -255,6 +255,12 @@ export const api = {
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/items`, { method: "PUT", body: { items } }),
   confirmAgreement: (id: string) =>
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/confirm`, { method: "POST" }),
+  addShipment: (id: string, body: { carrier: string; number: string; note?: string }) =>
+    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/shipments`, { method: "POST", body }),
+  deleteShipment: (id: string, shipmentId: string) =>
+    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/shipments/${encodeURIComponent(shipmentId)}`, {
+      method: "DELETE",
+    }),
   saveAgreementValue: (id: string, value: { cash: number; inKind: number }) =>
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/value`, { method: "PUT", body: { value } }),
   insight: (id: string) => request<InsightAnswer>(`/insights/${encodeURIComponent(id)}`),

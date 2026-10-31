@@ -233,6 +233,40 @@ test("an event is edited from 내 행사, and one that has begun keeps its dates
   expect(left.status()).toBe(204)
 })
 
+test("the brand notes the parcel it sent on the agreement, and the group tracks it", async ({ page, request, browser }) => {
+  const group = await signUpMember(request, "학생단체", "e2e-parcel@syu.ac.kr", "택배 받는 동아리")
+  const brand = await signUpMember(request, "브랜드", "e2e-parcel@parcel-cafe.kr", "택배 보내는 카페")
+  const date = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date(Date.now() + 9 * 86_400_000))
+  await request.post("/api/events", { data: { name: "택배 공연", date, types: ["제품"] }, headers: group.headers })
+  await request.post("/api/proposals", { data: { matchId: brand.listingId }, headers: group.headers })
+  const { requests } = (await (await request.get("/api/requests", { headers: brand.headers })).json()) as { requests: { id: string }[] }
+  const id = requests[0].id
+  await request.post(`/api/requests/${id}/accept`, { headers: brand.headers })
+
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
+  await page.goto(`/agreements/${id}`)
+  const panel = page.getByRole("region", { name: "협찬 물품 배송" })
+  await panel.getByLabel("택배사").selectOption("우체국택배")
+  await panel.getByLabel("운송장 번호").fill("6070 1234 5678")
+  await panel.getByLabel("메모 (선택)").fill("음료 2박스")
+  await panel.getByRole("button", { name: "배송 남기기" }).click()
+  await expect(page.getByText("배송을 남겼어요. 상대에게 알렸어요.")).toBeVisible()
+  await expect(panel.locator(".shipment-list")).toContainText("우체국택배 · 607012345678")
+  await expect(panel.getByRole("link", { name: "배송 조회" })).toHaveAttribute("href", /search\.naver\.com.*607012345678/)
+
+  // The group sees it, without a way to take the brand's parcel off.
+  const groupPage = await (await browser.newContext()).newPage()
+  await groupPage.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
+  await groupPage.goto(`/agreements/${id}`)
+  const seen = groupPage.getByRole("region", { name: "협찬 물품 배송" })
+  await expect(seen.locator(".shipment-list")).toContainText("택배 보내는 카페에서 보냄")
+  await expect(seen.getByRole("button", { name: /배송 지우기/ })).toHaveCount(0)
+  for (const member of [group, brand]) {
+    const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: member.headers })
+    expect(left.status()).toBe(204)
+  }
+})
+
 test("a sponsorship is called off from its agreement once the other side agrees", async ({ page, request }) => {
   const group = await signUpMember(request, "학생단체", "e2e-calloff@syu.ac.kr", "취소하는 동아리")
   const brand = await signUpMember(request, "브랜드", "e2e-calloff@calloff-cafe.kr", "취소하는 카페")

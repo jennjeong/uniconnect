@@ -396,6 +396,18 @@ const en: Record<string, string> = {
   "브랜드마다 쿠폰을 따로 주고, 방문은 매장 직원이 PIN으로 직접 확인해요.": "Each brand gets its own coupon, and your staff confirm visits with a PIN.",
   "행사 뒤 참여 · 방문 · 추정 매출로 ROAS를 계산해 PDF로 공유해요.": "After the event, ROAS from turnout, visits and estimated sales, shared as a PDF.",
   "uniconnect · 협찬 제안서 · 행사 정보와 지난 측정 기록으로 만들었어요.": "uniconnect · sponsorship proposal · made from the event's details and past measurements.",
+  "협찬 물품 배송": "Shipping the goods",
+  "물품을 택배로 보냈다면 운송장 번호를 남겨 주세요. 상대에게 메일로 알리고, 여기서 바로 조회할 수 있어요.": "If you sent goods by parcel, note the tracking number. The other side gets an email, and either side can track it from here.",
+  "{name}에서 보냄": "Sent by {name}",
+  "배송 조회": "Track",
+  "{number} 배송 지우기": "Remove parcel {number}",
+  "택배사": "Carrier",
+  "운송장 번호": "Tracking number",
+  "메모 (선택)": "Note (optional)",
+  "예) 음료 3박스": "e.g. 3 boxes of drinks",
+  "배송 남기기": "Add parcel",
+  "배송을 남겼어요. 상대에게 알렸어요.": "Parcel noted, and the other side told.",
+  "배송을 지웠어요.": "Parcel removed.",
 }
 
 export default en

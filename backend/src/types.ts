@@ -604,9 +604,14 @@ export type Agreement = {
   // One side's request to call the sponsorship off, with why, and when the
   // other side agreed to it (its proposal is 취소 from then on).
   cancel?: { by: ChatSide; reason: string; requestedAt: string; canceledAt?: string }
+  // Parcels of sponsored goods on their way (협찬 물품 배송), with the side
+  // that sent each; the page links each to its carrier's tracking.
+  shipments?: Shipment[]
   createdAt: string
   updatedAt: string
 }
+
+export type Shipment = { id: string; side: ChatSide; carrier: string; number: string; note?: string; addedAt: string }
 
 // One side's review of the other after a sponsorship's event: stars, up to
 // three of the listed tags (validation.ts reviewTags) and a short comment,

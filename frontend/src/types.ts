@@ -117,9 +117,13 @@ export type AgreementItem = {
 // A sponsorship's agreement (임시 전자 계약서) as one side sees it: the two sides
 // (member when they have an account), the event, what the brand gives, the
 // items, and when each side confirmed them as they stand.
+// A parcel of sponsored goods one side sent, noted on the agreement.
+export type Shipment = { id: string; side: ChatSide; carrier: string; number: string; note?: string; addedAt: string }
+
 export type Agreement = {
   id: string
   kind: "request" | "offer"
+  shipments?: Shipment[]
   side: ChatSide
   // Each side, with the person running it (only the two sides see this).
   group: { name: string; member: boolean; contact?: AccountContact }
