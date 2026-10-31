@@ -380,6 +380,15 @@ test("the report page keeps the sponsorship record, handed over as a CSV file", 
   expect(text.startsWith("\uFEFF행사,시작일,종료일,협찬사,")).toBe(true)
 })
 
+test("공유하기 copies the page's link where the browser has no share sheet", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"])
+  await page.addInitScript(() => Object.defineProperty(navigator, "share", { value: undefined }))
+  await page.goto("/matches/afternoon-coffee")
+  await page.getByRole("button", { name: "공유하기" }).click()
+  await expect(page.getByRole("button", { name: "링크를 복사했어요" })).toBeVisible()
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(/\/matches\/afternoon-coffee$/)
+})
+
 test("both dashboards show what sets uniconnect apart, before and after", async ({ page }) => {
   await page.goto("/dashboard")
   const why = page.getByRole("region", { name: "연결에서 끝나지 않고, 협찬을 끝까지 함께해요" })
