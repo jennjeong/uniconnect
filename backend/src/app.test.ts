@@ -120,6 +120,31 @@ test("a group's promotion plan needs its agreement, and becomes its items on the
   ])
 })
 
+test("a group puts its plan PDF on the event page, and brands who see the page download it", async () => {
+  const { token: group } = await listedMember("plan-club@syu.ac.kr", "plan-pass-123")
+  const { token: brand } = await listedMember("plan@plan-cafe.kr", "plan-pass-123", "브랜드")
+  const made = await call("POST", "/events", { name: "기획안 공연", date: "2026-12-18", people: "100명", types: ["제품"] }, group)
+  const id = made.data.event.id
+  const pdf = (text: string) => `data:application/pdf;base64,${Buffer.from(`%PDF-1.4\n${text}\n%%EOF`).toString("base64")}`
+  assert.equal((await call("POST", `/events/${id}/plan`, { file: "data:application/pdf;base64,aGVsbG8=", name: "a.pdf" }, group)).status, 400)
+  const first = await call("POST", `/events/${id}/plan`, { file: pdf("first"), name: "기획/안.pdf" }, group)
+  assert.equal(first.status, 201)
+  assert.equal(first.data.event.plan.name, "기획 안.pdf")
+  // Brands who see the page download it, under its own name.
+  const download = await fetch(`${baseUrl}/events/${id}/plan`, { headers: { Authorization: `Bearer ${brand}` } })
+  assert.equal(download.status, 200)
+  assert.equal(download.headers.get("content-type"), "application/pdf")
+  assert.match(download.headers.get("content-disposition") ?? "", /filename\*=UTF-8''/)
+  assert.ok((await download.text()).includes("first"))
+  // A new one replaces it; only the group changes or removes it.
+  const firstFile = first.data.event.plan.file
+  const second = await call("POST", `/events/${id}/plan`, { file: pdf("second"), name: "새 기획안.pdf" }, group)
+  assert.notEqual(second.data.event.plan.file, firstFile)
+  assert.equal((await call("POST", `/events/${id}/plan`, { file: pdf("x"), name: "x.pdf" }, brand)).status, 404)
+  assert.equal((await call("DELETE", `/events/${id}/plan`, undefined, group)).data.event.plan, undefined)
+  assert.equal((await fetch(`${baseUrl}/events/${id}/plan`, { headers: { Authorization: `Bearer ${brand}` } })).status, 404)
+})
+
 test("the site's counts are members only and grow with each sign-up", async () => {
   const before = (await call("GET", "/site")).data.counts
   assert.deepEqual(Object.keys(before).sort(), ["brands", "groups", "schools", "sponsorships"])

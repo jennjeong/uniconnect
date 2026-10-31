@@ -1063,6 +1063,14 @@ const en: Record<string, string> = {
   "고른 홍보 · 배포 계획을 이행하는 데 동의해 주세요.": "Agree to carry out the promotion you chose.",
   "브랜드가 받는 홍보": "What brands get",
   "단체가 이 홍보를 이행하기로 동의했어요. 협찬이 확정되면 계약서의 할 일로 들어가요.": "The group agreed to carry this out. Once confirmed, it goes into the contract as tasks.",
+  "행사 기획안": "Event plan",
+  "기획안을 지웠어요.": "Plan removed.",
+  "기획안 지우기": "Remove plan",
+  "세부 기획안을 PDF로 올려 두면 브랜드가 행사를 더 자세히 검토할 수 있어요.": "Upload a detailed plan as a PDF so brands can look into the event further.",
+  "다른 기획안으로 바꾸기": "Replace the plan",
+  "기획안 올리기": "Upload a plan",
+  "기획안은 2MB 이하의 PDF로 올려 주세요.": "Upload the plan as a PDF of 2 MB or less.",
+  "기획안을 올렸어요.": "Plan uploaded.",
 }
 
 export default en

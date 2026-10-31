@@ -324,6 +324,10 @@ export const api = {
   dropCancelRequest: (id: string) =>
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/cancel`, { method: "DELETE" }),
   eventPage: (id: string) => request<EventPage>(`/events/${encodeURIComponent(id)}/page`),
+  addEventPlan: (id: string, file: string, name: string) =>
+    request<{ event: EventItem }>(`/events/${encodeURIComponent(id)}/plan`, { method: "POST", body: { file, name } }),
+  deleteEventPlan: (id: string) => request<{ event: EventItem }>(`/events/${encodeURIComponent(id)}/plan`, { method: "DELETE" }),
+  eventPlan: (id: string) => requestBlob(`/events/${encodeURIComponent(id)}/plan`),
   eventPhoto: (id: string, photo: string) =>
     requestBlob(`/events/${encodeURIComponent(id)}/photos/${encodeURIComponent(photo)}`),
   addEventPhoto: (id: string, image: string) =>

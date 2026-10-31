@@ -8,6 +8,7 @@ import { PageIntro } from "../components/PageIntro"
 import { ShareButton } from "../components/ShareButton"
 import { t } from "../i18n"
 import { formatPeriod } from "../lib/date"
+import { saveFile } from "../lib/download"
 import { photoFromFile } from "../lib/image"
 import type { EventPage } from "../types"
 
@@ -15,6 +16,19 @@ const ProposalExport = lazy(() => import("../report/ProposalExport").then((modul
 
 // As many photos as the server keeps on an event page (routes/events.ts).
 const maxPhotos = 4
+
+// The largest plan PDF the server takes.
+const planMaxBytes = 2 * 1024 * 1024
+
+const pdfDataUrl = (file: File) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result).replace(/^data:[^;,]*;base64,/, "data:application/pdf;base64,"))
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(file)
+  })
+
+const sizeOf = (bytes: number) => (bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))}KB` : `${(bytes / 1024 / 1024).toFixed(1)}MB`)
 
 // One photo of the event, fetched with the login token (an <img> can't send
 // it) and shown from an object URL; the group can take it down.
@@ -322,6 +336,68 @@ export function EventDetailPage({
                   ))}
               </dl>
               <p className="field-hint">{t("단체가 이 홍보를 이행하기로 동의했어요. 협찬이 확정되면 계약서의 할 일로 들어가요.")}</p>
+            </section>
+          )}
+
+          {(event.plan || own) && (
+            <section aria-labelledby="event-plan-title" className="event-section">
+              <h2 id="event-plan-title">{t("행사 기획안")}</h2>
+              {event.plan ? (
+                <div className="event-plan">
+                  <button
+                    className="chat-file"
+                    onClick={async () => {
+                      try {
+                        saveFile(event.plan!.name, await api.eventPlan(event.id), "application/pdf")
+                      } catch (error) {
+                        onNotice(errorMessage(error))
+                      }
+                    }}
+                    type="button"
+                  >
+                    <Icon name="file" size={20} />
+                    <span>
+                      <strong>{event.plan.name}</strong>
+                      <small>
+                        PDF · {sizeOf(event.plan.size)} · {t("내려받기")}
+                      </small>
+                    </span>
+                  </button>
+                  {own && (
+                    <button
+                      className="underline-link"
+                      disabled={busy}
+                      onClick={() => void change(() => api.deleteEventPlan(event.id), t("기획안을 지웠어요."))}
+                      type="button"
+                    >
+                      {t("기획안 지우기")}
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <p className="field-hint">{t("세부 기획안을 PDF로 올려 두면 브랜드가 행사를 더 자세히 검토할 수 있어요.")}</p>
+              )}
+              {own && (
+                <label className="cancel-button event-plan-add">
+                  <Icon name="plus" size={15} /> {event.plan ? t("다른 기획안으로 바꾸기") : t("기획안 올리기")}
+                  <input
+                    accept="application/pdf,.pdf"
+                    className="sr-only"
+                    disabled={busy}
+                    onChange={(changed) => {
+                      const file = changed.target.files?.[0]
+                      changed.target.value = ""
+                      if (!file) return
+                      if (file.size > planMaxBytes) {
+                        onNotice(t("기획안은 2MB 이하의 PDF로 올려 주세요."))
+                        return
+                      }
+                      void change(async () => api.addEventPlan(event.id, await pdfDataUrl(file), file.name), t("기획안을 올렸어요."))
+                    }}
+                    type="file"
+                  />
+                </label>
+              )}
             </section>
           )}
 
