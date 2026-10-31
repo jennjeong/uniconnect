@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 
-import { historyCsv, sponsorHistory, trackRecord } from "./history"
+import { historyCsv, sponsorHistory, termOf, trackRecord } from "./history"
 import type { EventMeasurement } from "../types"
 
 const noVenue = { samples: 0, stamps: 0, posts: 0, surveys: 0, purchases: 0, giveaways: 0, raffles: 0, signups: 0, experiences: 0 }
@@ -41,8 +41,21 @@ describe("the sponsorship record", () => {
 
   test("hands over as a spreadsheet", () => {
     const file = historyCsv(sponsorHistory(list, "2026-11-01")).replace(/^﻿/, "").split("\r\n")
-    expect(file[0]).toBe("행사,시작일,종료일,협찬사,협찬 가치(원),QR 스캔,쿠폰 수령,매장 방문,ROAS(%)")
-    expect(file[1]).toBe("행사 b,2026-10-12,2026-10-12,,0,40,20,0,")
-    expect(file[2]).toBe("행사 d,2026-09-01,2026-09-01,오후의 커피 / 캠퍼스 문구,500000,200,100,50,120")
+    expect(file[0]).toBe("기수,행사,시작일,종료일,협찬사,협찬 가치(원),QR 스캔,쿠폰 수령,매장 방문,ROAS(%)")
+    expect(file[1]).toBe(",행사 b,2026-10-12,2026-10-12,,0,40,20,0,")
+    expect(file[2]).toBe(",행사 d,2026-09-01,2026-09-01,오후의 커피 / 캠퍼스 문구,500000,200,100,50,120")
+  })
+
+  test("each event falls under the team in charge on its day", () => {
+    const terms = [
+      { name: "제3대", from: "2026-03-01" },
+      { name: "제4대", from: "2026-09-01" },
+    ]
+    expect(termOf("2026-08-31", terms)).toBe("제3대")
+    expect(termOf("2026-09-01", terms)).toBe("제4대")
+    expect(termOf("2026-02-01", terms)).toBeUndefined()
+    const rows = sponsorHistory(list, "2026-11-01", terms)
+    expect(rows.map((row) => row.term)).toEqual(["제4대", "제4대", "제3대"])
+    expect(historyCsv(rows).split("\r\n")[3]).toMatch(/^제3대,행사 a,/)
   })
 })

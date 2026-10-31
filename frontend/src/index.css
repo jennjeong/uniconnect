@@ -5128,6 +5128,63 @@ button.nav-pill:hover {
   margin-top: 14px;
 }
 
+/* 기수 관리 under the sponsorship record: each term as a row, then a row
+   to add one. */
+.terms-manage {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+}
+
+.terms-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.terms-list li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 6px 6px 14px;
+  border-radius: 999px;
+  background: var(--fill);
+  font-size: 13px;
+}
+
+.terms-list small {
+  color: var(--muted);
+}
+
+.terms-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.terms-form label {
+  display: grid;
+  gap: 6px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.terms-form input {
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--fill);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+}
+
 /* 협찬 결산 공개: the link's row with its switch, and each sponsorship as a
    row (the public page and the report page's card share them). */
 .ledger-share {

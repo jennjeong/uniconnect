@@ -212,6 +212,23 @@ test("a group publishes its sponsorship ledger by a link, amounts only when it c
   assert.equal((await call("GET", `/ledger/public/${renewed.token}`)).status, 404)
 })
 
+test("a group writes down its terms, latest first, and only groups that are members can", async () => {
+  const group = await signUpMember("terms-club@syu.ac.kr", "terms-pass-123")
+  const saved = await call("PUT", "/auth/terms", { terms: [{ name: "제3대", from: "2026-03-01" }, { name: " 제4대 하성 ", from: "2026-09-01" }] }, group)
+  assert.equal(saved.status, 200)
+  assert.deepEqual(saved.data.account.terms, [
+    { name: "제4대 하성", from: "2026-09-01" },
+    { name: "제3대", from: "2026-03-01" },
+  ])
+  for (const wrong of [[{ name: "", from: "2026-03-01" }], [{ name: "제5대", from: "언젠가" }], [{ name: "a", from: "2026-03-01" }, { name: "b", from: "2026-03-01" }]]) {
+    assert.equal((await call("PUT", "/auth/terms", { terms: wrong }, group)).status, 400)
+  }
+  assert.equal((await call("PUT", "/auth/terms", { terms: [] }, group)).data.account.terms, undefined)
+  assert.equal((await call("PUT", "/auth/terms", { terms: [] }, await login("학생단체"))).status, 403)
+  const brand = await signUpMember("terms@terms-cafe.kr", "terms-pass-123", "브랜드")
+  assert.equal((await call("PUT", "/auth/terms", { terms: [] }, brand)).status, 403)
+})
+
 test("the site's counts are members only and grow with each sign-up", async () => {
   const before = (await call("GET", "/site")).data.counts
   assert.deepEqual(Object.keys(before).sort(), ["brands", "groups", "schools", "sponsorships"])

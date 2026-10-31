@@ -427,6 +427,16 @@ const en: Record<string, string> = {
   "{name} 협찬의 쓰임 메모": "Note on how the {name} sponsorship was used",
   "예) 음료 300잔을 축제 부스에서 선착순으로 나눴어요.": "e.g. 300 drinks went out first come, first served at the festival booth.",
   "학생단체가 학생들에게 공개하는 협찬 내역이에요.": "The sponsorships a student group shares with its students.",
+  "기수": "Term",
+  "기수 관리 닫기": "Close terms",
+  "기수 관리": "Manage terms",
+  "운영진이 바뀐 날과 이름(예: 제4대 하성)을 적으면 협찬 기록이 기수별로 나뉘고, 인수인계 CSV에도 들어가요.": "Write each team’s name (e.g. 4th council) and the day it took over; the record splits by term and the handover CSV includes it.",
+  "{name} 지우기": "Remove {name}",
+  "기수 이름": "Term name",
+  "예) 제4대 하성": "e.g. 4th council",
+  "시작한 날": "Took over on",
+  "기수 추가": "Add term",
+  "기수를 저장했어요.": "Terms saved.",
 }
 
 export default en
