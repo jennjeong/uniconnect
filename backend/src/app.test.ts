@@ -64,6 +64,31 @@ async function call(method: string, route: string, body?: unknown, token?: strin
   return { status: response.status, data: text ? JSON.parse(text) : null }
 }
 
+test("a group's event keeps its kind, times and who comes, and brands filter by its kind", async () => {
+  const { token: group } = await listedMember("kind-club@syu.ac.kr", "kind-pass-123")
+  const { token: brand } = await listedMember("kind@kind-cafe.kr", "kind-pass-123", "브랜드")
+  const base = { name: "가을 축제", date: "2026-12-05", people: "500명", types: ["제품"] }
+  const made = await call(
+    "POST",
+    "/events",
+    { ...base, kind: "축제", startTime: "11:00", endTime: "18:30", makeup: { female: 55, years: ["1학년", "2학년", "없는 학년"], majors: " 인공지능 " } },
+    group,
+  )
+  assert.equal(made.status, 201)
+  assert.deepEqual(
+    [made.data.event.kind, made.data.event.startTime, made.data.event.endTime, made.data.event.makeup],
+    ["축제", "11:00", "18:30", { female: 55, years: ["1학년", "2학년"], majors: "인공지능" }],
+  )
+  for (const wrong of [{ kind: "파티" }, { startTime: "18:00", endTime: "09:00" }, { endTime: "10:00" }, { makeup: { female: 101 } }]) {
+    assert.equal((await call("POST", "/events", { ...base, ...wrong }, group)).status, 400)
+  }
+  // An empty makeup is left out; brands see the next event's kind on the group.
+  const plain = await call("POST", "/events", { ...base, name: "평범한 행사", date: "2027-03-01", makeup: { years: [] } }, group)
+  assert.equal(plain.data.event.makeup, undefined)
+  const groups = (await call("GET", "/groups", undefined, brand)).data.groups as { name: string; eventKind?: string }[]
+  assert.equal(groups.find((item) => item.name.startsWith("kind-club"))?.eventKind, "축제")
+})
+
 test("the site's counts are members only and grow with each sign-up", async () => {
   const before = (await call("GET", "/site")).data.counts
   assert.deepEqual(Object.keys(before).sort(), ["brands", "groups", "schools", "sponsorships"])

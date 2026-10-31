@@ -56,6 +56,8 @@ export type Match = {
   eventId?: string
   eventName?: string
   eventDate?: string
+  // Its next event's kind, when the group gave one.
+  eventKind?: string
   audience?: number
   // Detail page: a short introduction, key facts, SNS and a portfolio.
   intro?: string
@@ -293,6 +295,12 @@ export type EventItem = {
   intro?: string
   photos?: string[]
   packages?: SponsorPackage[]
+  // Its kind (data/eventDetails.ts), the Korean times it starts and ends
+  // each day ("HH:MM"), and who is expected.
+  kind?: string
+  startTime?: string
+  endTime?: string
+  makeup?: { female?: number; years?: string[]; majors?: string }
 }
 
 // A sponsorship package on a group's event page: its name, what the brand

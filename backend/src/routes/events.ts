@@ -8,7 +8,7 @@ import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
 import { eventPhotos, parsePhoto, photoName, photoType, photos } from "../lib/photos.js"
 import { isSponsored } from "../lib/sponsorships.js"
-import { parseRole, sponsorTypes, text } from "../lib/validation.js"
+import { audienceYears, eventKinds, parseRole, sponsorTypes, text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { Account, Database, EventItem, RequestStatus, Role, SponsorPackage } from "../types.js"
@@ -39,7 +39,20 @@ eventsRouter.get("/", (req, res) => {
 
 type EventFields = Pick<
   EventItem,
-  "name" | "date" | "endDate" | "people" | "types" | "typeNote" | "budget" | "venue" | "intro" | "packages"
+  | "name"
+  | "date"
+  | "endDate"
+  | "people"
+  | "types"
+  | "typeNote"
+  | "budget"
+  | "venue"
+  | "intro"
+  | "packages"
+  | "kind"
+  | "startTime"
+  | "endTime"
+  | "makeup"
 >
 
 // What an event page holds, at most: four packages and four photos.
@@ -119,6 +132,18 @@ function parseEventFields(role: Role, body: Request["body"]): EventFields {
   if (budget !== undefined && !(Number.isInteger(budget) && budget >= 0 && budget <= 1e10)) {
     throw new HttpError(400, "예산은 0원 이상 숫자로 입력해 주세요.")
   }
+  // A group's event: its kind, times and who comes, each left out when empty.
+  const kind = students ? text(body?.kind) : ""
+  if (kind && !(eventKinds as readonly string[]).includes(kind)) throw new HttpError(400, "행사 유형을 목록에서 골라 주세요.")
+  const clock = /^([01]\d|2[0-3]):[0-5]\d$/
+  const startTime = students ? text(body?.startTime) : ""
+  const endTime = students ? text(body?.endTime) : ""
+  if ((startTime && !clock.test(startTime)) || (endTime && !clock.test(endTime))) {
+    throw new HttpError(400, "시각은 00:00부터 23:59까지 골라 주세요.")
+  }
+  if (endTime && !startTime) throw new HttpError(400, "끝나는 시각은 시작 시각과 함께 골라 주세요.")
+  if (startTime && endTime && endTime <= startTime) throw new HttpError(400, "끝나는 시각은 시작 시각 뒤로 골라 주세요.")
+  const makeup = students ? parseMakeup(body?.makeup) : undefined
   if (venue.length > 60) throw new HttpError(400, "장소는 60자 이하로 적어 주세요.")
   if (intro.length > 1000) throw new HttpError(400, "행사 소개는 1000자 이하로 적어 주세요.")
 
@@ -133,6 +158,32 @@ function parseEventFields(role: Role, body: Request["body"]): EventFields {
     ...(venue ? { venue } : {}),
     ...(intro ? { intro } : {}),
     ...(packages.length > 0 ? { packages } : {}),
+    ...(kind ? { kind } : {}),
+    ...(startTime ? { startTime } : {}),
+    ...(endTime ? { endTime } : {}),
+    ...(makeup ? { makeup } : {}),
+  }
+}
+
+// Who is expected at a group's event: the share of women (0–100), the
+// years from the list and fields of study as written. Undefined when none.
+function parseMakeup(value: unknown): EventItem["makeup"] {
+  if (value === undefined || value === null) return undefined
+  if (typeof value !== "object") throw new HttpError(400, "참가자 구성을 다시 확인해 주세요.")
+  const input = value as Record<string, unknown>
+  const rawFemale = input.female
+  const female = rawFemale === undefined || rawFemale === null || rawFemale === "" ? undefined : Number(rawFemale)
+  if (female !== undefined && !(Number.isInteger(female) && female >= 0 && female <= 100)) {
+    throw new HttpError(400, "여성 비율은 0부터 100까지 숫자로 적어 주세요.")
+  }
+  const years = Array.isArray(input.years) ? audienceYears.filter((year) => (input.years as unknown[]).map(String).includes(year)) : []
+  const majors = text(input.majors)
+  if (majors.length > 60) throw new HttpError(400, "주요 전공은 60자 이하로 적어 주세요.")
+  if (female === undefined && years.length === 0 && !majors) return undefined
+  return {
+    ...(female === undefined ? {} : { female }),
+    ...(years.length ? { years } : {}),
+    ...(majors ? { majors } : {}),
   }
 }
 
