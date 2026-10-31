@@ -46,6 +46,8 @@ export type View = {
   // shared read-only by its link (/report/<token>).
   insight?: string
   sharedReport?: string
+  // A student group's public sponsorship ledger, by its link (/ledger/<token>).
+  ledger?: string
   // An address no screen has, kept as it was typed (the 404 page).
   missing?: string
 }
@@ -104,6 +106,7 @@ export function viewPath(view: View) {
   if (view.explore) return `${base}/explore`
   if (view.insight) return `${base}/insights/${encodeURIComponent(view.insight)}`
   if (view.sharedReport) return `${base}/report/${encodeURIComponent(view.sharedReport)}`
+  if (view.ledger) return `${base}/ledger/${encodeURIComponent(view.ledger)}`
   const path = pagePaths[view.page]
   return `${base}/${view.detail ? `${path}/${encodeURIComponent(view.detail)}` : path}`
 }
@@ -162,6 +165,7 @@ export function readView(location: Location = window.location): View {
   if (first === "invite") return named && /^[\w-]+$/.test(named) ? { page: "대시보드", invite: named } : missing
   if (first === "insights") return named ? { page: "성과 분석", insight: named } : missing
   if (first === "report") return named && /^[\w-]+$/.test(named) ? { page: "대시보드", sharedReport: named } : missing
+  if (first === "ledger") return named && /^[\w-]+$/.test(named) ? { page: "대시보드", ledger: named } : missing
   if (first === "agreements") {
     return named ? { page: "대시보드", agreement: named } : { page: "대시보드", agreements: true }
   }

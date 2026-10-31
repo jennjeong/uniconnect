@@ -21,6 +21,7 @@ const appPaths = [
   /^\/agreements(\/[^/]+)?\/?$/,
   /^\/insights\/[^/]+\/?$/,
   /^\/report\/[\w-]+\/?$/,
+  /^\/ledger\/[\w-]+\/?$/,
   /^\/check-in\/[\w-]+(\/(staff|group))?\/?$/,
 ]
 

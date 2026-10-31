@@ -5128,6 +5128,109 @@ button.nav-pill:hover {
   margin-top: 14px;
 }
 
+/* 협찬 결산 공개: the link's row with its switch, and each sponsorship as a
+   row (the public page and the report page's card share them). */
+.ledger-share {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--fill);
+}
+
+.ledger-share .invite-link {
+  flex: 1 1 260px;
+}
+
+.ledger-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.ledger-toggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--point);
+}
+
+.ledger-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ledger-list li {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  box-shadow: var(--ring);
+}
+
+.ledger-list li > div {
+  display: grid;
+  gap: 2px;
+}
+
+.ledger-list strong {
+  font-size: 15px;
+}
+
+.ledger-list small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.ledger-list p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.ledger-figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.ledger-figures b {
+  color: var(--point-strong);
+}
+
+.ledger-list .ledger-note {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--fill);
+}
+
+.ledger-note-form {
+  display: flex;
+  gap: 8px;
+}
+
+.ledger-note-form input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--fill);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+}
+
 /* 행사 둘러보기 (pages/ExplorePage.tsx): similar events' cases as silver
    cards over the board's post cards, each with a short introduction. */
 .explore-cases {

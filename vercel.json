@@ -24,6 +24,7 @@
     { "source": "/invite/:code([\\w-]+)", "destination": "/index.html" },
     { "source": "/insights/:id", "destination": "/index.html" },
     { "source": "/report/:token([\\w-]+)", "destination": "/index.html" },
+    { "source": "/ledger/:token([\\w-]+)", "destination": "/index.html" },
     { "source": "/check-in/:code([\\w-]+)/:part(staff|group)?", "destination": "/index.html" }
   ],
   "headers": [

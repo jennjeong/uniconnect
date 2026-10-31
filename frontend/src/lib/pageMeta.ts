@@ -179,6 +179,13 @@ export function pageMeta(
       noindex: true,
     }
   }
+  if (view.ledger) {
+    return {
+      title: titled(t("협찬 결산")),
+      description: t("학생단체가 학생들에게 공개하는 협찬 내역이에요."),
+      noindex: true,
+    }
+  }
   if (view.explore) {
     return {
       title: titled(t("다른 단체 행사 둘러보기")),

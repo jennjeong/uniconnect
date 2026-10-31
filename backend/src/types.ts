@@ -172,6 +172,10 @@ export type Account = {
   // 친구 초대: this account's code for its invitation link, the account
   // whose link it signed up through, and when that one was rewarded for it
   // (lib/referrals.ts).
+  // 협찬 결산 공개: a student group's public page of the sponsorships it
+  // received (routes/ledger.ts): its secret link, whether amounts show, and
+  // a note on each sponsorship by its proposal's id.
+  ledger?: { token?: string; showValues: boolean; notes?: Record<string, string> }
   referralCode?: string
   referredBy?: string
   referralRewardedAt?: string
