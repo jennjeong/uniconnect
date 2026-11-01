@@ -8,11 +8,11 @@ import { locale, t } from "../i18n"
 import { formatWon } from "../lib/kpis"
 import {
   calendarDays,
+  dDayLabel,
   daysOf,
   formatDay,
   formatPeriod,
   fromIsoDate,
-  shortDay,
   startOfMonth,
   toIsoDate,
   todayIso,
@@ -238,10 +238,12 @@ export function EventsPage({
   const monthEntries = entries
     .filter((entry) => entry.date <= monthEnd && (entry.end ?? entry.date) >= monthStart)
     .sort((a, b) => a.date.localeCompare(b.date))
-  const upcoming = entries
+  // The summary over the calendar: the next one still to come, and how many
+  // of the account's own stand at each step.
+  const next = entries
     .filter((entry) => (entry.end ?? entry.date) >= today)
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .slice(0, 4)
+    .sort((a, b) => a.date.localeCompare(b.date))[0]
+  const countOf = (status: EventItem["status"]) => events.filter((event) => event.status === status).length
 
   const shiftMonth = (months: number) =>
     setMonth((current) => new Date(current.getFullYear(), current.getMonth() + months, 1))
@@ -275,6 +277,57 @@ export function EventsPage({
           </>
         }
       />
+
+      <section aria-label={t("일정 요약")} className="events-summary">
+        <article className="events-next">
+          <span className="events-next-kicker">{role === "학생단체" ? t("다음 행사") : t("다음 캠페인")}</span>
+          {next ? (
+            <>
+              <strong>{next.name}</strong>
+              <span className="events-next-date">
+                {formatPeriod(next.date, next.end)} <em>{dDayLabel(next.date)}</em>
+              </span>
+              <div className="events-next-actions">
+                <span className={`status-chip ${statusClass(next)}`}>{statusLabel(next)}</span>
+                <button
+                  className="events-next-open"
+                  onClick={() => (next.kind === "event" ? onShowDetail(next.event) : onOpenSponsorship?.())}
+                  type="button"
+                >
+                  {t("상세 보기")}
+                  <Icon name="arrowUpRight" size={14} />
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <strong>{role === "학생단체" ? t("아직 다가오는 행사가 없어요") : t("아직 다가오는 캠페인이 없어요")}</strong>
+              <button className="events-next-open" onClick={() => onCreate(selected)} type="button">
+                {t("지금 등록하기")}
+                <Icon name="arrowUpRight" size={14} />
+              </button>
+            </>
+          )}
+        </article>
+        <dl className="events-counts">
+          <div>
+            <dt>{t("{month} 일정", { month: month.toLocaleDateString(locale, { month: "long" }) })}</dt>
+            <dd>{monthEntries.length}</dd>
+          </div>
+          <div>
+            <dt>{t("매칭 중")}</dt>
+            <dd>{countOf("매칭 중")}</dd>
+          </div>
+          <div>
+            <dt>{t("집행 예정")}</dt>
+            <dd>{countOf("집행 예정")}</dd>
+          </div>
+          <div>
+            <dt>{t("측정 완료")}</dt>
+            <dd>{countOf("측정 완료")}</dd>
+          </div>
+        </dl>
+      </section>
 
       <div className="calendar-layout">
         <div className="calendar-card">
@@ -359,40 +412,6 @@ export function EventsPage({
             {role === "브랜드" && <span className="legend-confirmed">{t("협찬 확정")}</span>}
           </div>
 
-          <div className="month-agenda">
-            <p className="month-agenda-title">
-              {t("{month} 일정", { month: month.toLocaleDateString(locale, { month: "long" }) })}{" "}
-              <em>{monthEntries.length}</em>
-            </p>
-            {monthEntries.length === 0 ? (
-              <p className="day-empty">{t("이 달에는 일정이 없어요.")}</p>
-            ) : (
-              <ol className="stagger" key={toIsoDate(month)}>
-                {monthEntries.map((entry) => {
-                  const start = fromIsoDate(entry.date)
-                  return (
-                    <li key={entry.id}>
-                      <button
-                        className={entry.date === selected ? "agenda-item selected" : "agenda-item"}
-                        onClick={() => jumpTo(entry.date)}
-                        type="button"
-                      >
-                        <span className="agenda-day">
-                          <strong>{start?.getDate()}</strong>
-                          <small>{start ? weekdayNames[start.getDay()] : ""}</small>
-                        </span>
-                        <span className="agenda-copy">
-                          <strong>{entry.name}</strong>
-                          <small>{formatPeriod(entry.date, entry.end)}</small>
-                        </span>
-                        <span className={`status-chip ${statusClass(entry)}`}>{statusLabel(entry)}</span>
-                      </button>
-                    </li>
-                  )
-                })}
-              </ol>
-            )}
-          </div>
         </div>
 
         <aside className="day-panel">
@@ -436,26 +455,38 @@ export function EventsPage({
             {role === "학생단체" ? t("이 날짜에 행사 등록") : t("이 날짜에 캠페인 등록")}
           </button>
 
-          <div className="upcoming stagger">
-            <span className="upcoming-title">{t("다가오는 일정")}</span>
-            {upcoming.length === 0 ? (
-              <p className="day-empty">{t("예정된 일정이 없어요.")}</p>
+          <div className="month-agenda">
+            <p className="month-agenda-title">
+              {t("{month} 일정", { month: month.toLocaleDateString(locale, { month: "long" }) })}{" "}
+              <em>{monthEntries.length}</em>
+            </p>
+            {monthEntries.length === 0 ? (
+              <p className="day-empty">{t("이 달에는 일정이 없어요.")}</p>
             ) : (
-              upcoming.map((entry) => (
-                <button
-                  className="upcoming-item"
-                  key={entry.id}
-                  onClick={() => jumpTo(entry.date)}
-                  type="button"
-                >
-                  <span className="upcoming-date">
-                    {formatDay(entry.date)}
-                    {entry.end && ` ~ ${shortDay(entry.end)}`}
-                  </span>
-                  <strong>{entry.name}</strong>
-                  <span className={`status-chip ${statusClass(entry)}`}>{statusLabel(entry)}</span>
-                </button>
-              ))
+              <ol className="stagger" key={toIsoDate(month)}>
+                {monthEntries.map((entry) => {
+                  const start = fromIsoDate(entry.date)
+                  return (
+                    <li key={entry.id}>
+                      <button
+                        className={entry.date === selected ? "agenda-item selected" : "agenda-item"}
+                        onClick={() => jumpTo(entry.date)}
+                        type="button"
+                      >
+                        <span className="agenda-day">
+                          <strong>{start?.getDate()}</strong>
+                          <small>{start ? weekdayNames[start.getDay()] : ""}</small>
+                        </span>
+                        <span className="agenda-copy">
+                          <strong>{entry.name}</strong>
+                          <small>{formatPeriod(entry.date, entry.end)}</small>
+                        </span>
+                        <span className={`status-chip ${statusClass(entry)}`}>{statusLabel(entry)}</span>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ol>
             )}
           </div>
         </aside>
