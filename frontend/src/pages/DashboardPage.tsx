@@ -139,7 +139,7 @@ export function DashboardPage({
               ? t("예시 화면 · {semester}", { semester: semesterLabel() })
               : semesterLabel()
         }
-        lines={[t("콜드메일 대신,"), t("행사에 맞는 브랜드를"), t("먼저 만나요.")]}
+        lines={[t("협찬 구하느라"), t("밤새던 날은"), t("이제 끝.")]}
         stats={[
           { value: t("{count}곳", { count: candidates.length }), label: t("추천 브랜드") },
           { value: t("{count}건", { count: running }), label: t("진행 중 협찬") },
