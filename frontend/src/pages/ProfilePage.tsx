@@ -613,7 +613,7 @@ export function ProfilePage({
           )}
 
           {onPlan && (
-            <SettingsCard caption={t("브랜드는 무료로 시작하고, 제안을 더 보내고 리포트와 포트폴리오 분석까지 보려면 캠퍼스 파트너스를 써요.")} icon="won" id="profile-plan" title={t("요금제")}>
+            <SettingsCard caption={t("무료로 시작하고, 더 많은 제안과 분석은 캠퍼스 파트너스로 써요.")} icon="won" id="profile-plan" title={t("요금제")}>
               <PlanCard onNotice={onPlan} />
             </SettingsCard>
           )}

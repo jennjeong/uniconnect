@@ -27,7 +27,7 @@ function withAnd(name: string) {
 const pages: Record<Exclude<NavLabel, "대시보드">, PageMeta> = {
   "추천 매칭": {
     title: titled(t("추천 매칭")),
-    description: t("행사와 잘 맞는 브랜드를 일치율 순으로 보고, 마음에 드는 브랜드에 협찬을 제안해요."),
+    description: t("잘 맞는 브랜드를 골라 보고, 바로 협찬을 제안해요."),
   },
   "받은 협찬": {
     title: titled(t("받은 협찬 제안")),
@@ -39,7 +39,7 @@ const pages: Record<Exclude<NavLabel, "대시보드">, PageMeta> = {
   },
   성과: {
     title: titled(t("성과")),
-    description: t("행사 QR 스캔, 쿠폰 수령, 매장 방문을 실시간으로 집계하고 목표와 비교해요."),
+    description: t("QR · 쿠폰 · 매장 방문을 실시간으로 세고, 목표와 비교해요."),
   },
   리포트: {
     title: titled(t("협찬 성과 리포트")),
@@ -47,7 +47,7 @@ const pages: Record<Exclude<NavLabel, "대시보드">, PageMeta> = {
   },
   "단체 찾기": {
     title: titled(t("학생단체 찾기")),
-    description: t("캠페인과 잘 맞는 학생단체를 추천, 행사 임박, 분야별로 찾아 협찬을 제안해요."),
+    description: t("잘 맞는 학생단체를 골라 보고, 바로 협찬을 제안해요."),
   },
   "받은 제안": {
     title: titled(t("받은 협찬 제안")),
@@ -59,7 +59,7 @@ const pages: Record<Exclude<NavLabel, "대시보드">, PageMeta> = {
   },
   "성과 분석": {
     title: titled(t("협찬 성과 분석")),
-    description: t("협찬마다 집행액, 쿠폰, 방문, ROAS를 비교하고 분석 보고서를 PDF로 내려받아요."),
+    description: t("협찬마다 ROAS를 비교하고, 분석 보고서를 PDF로 받아요."),
   },
 }
 

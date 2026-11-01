@@ -40,7 +40,7 @@ export function ExplorePage({ onBack, onOpenEvent }: { onBack: () => void; onOpe
         onBack={onBack}
         eyebrow="Explore Events"
         title={t("다른 단체 행사 둘러보기")}
-        description={t("다른 학생회와 동아리가 연 행사와 브랜드에 드리는 혜택을 보고, 우리 행사 기획에 참고해요.")}
+        description={t("다른 단체는 어떻게 협찬받았을까요? 행사와 혜택을 보고 우리 기획에 참고해요.")}
       />
 
       {cases.length > 0 && (

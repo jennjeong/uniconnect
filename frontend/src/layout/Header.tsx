@@ -159,8 +159,8 @@ export function Header({
     <header className={["site-header", scrolled && "scrolled", onDark && "on-dark"].filter(Boolean).join(" ")}>
       <div className="nav-group">
         <button aria-label={t("uniconnect 홈으로")} className="brand-link" onClick={onHome} ref={brandRef} type="button">
-          <img alt="" className="logo-dark" height={27} src={logo} width={116} />
-          <img alt="" className="logo-light" height={27} src={logoReversed} width={116} />
+          <img alt="" className="logo-dark" height={38} src={logo} width={163} />
+          <img alt="" className="logo-light" height={38} src={logoReversed} width={163} />
         </button>
         {demo && (
           <span className="nav-pill demo-chip" title={t("로그인하지 않아 예시 데이터로 보여요")}>

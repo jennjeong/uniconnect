@@ -27,27 +27,27 @@ const tabs: Tab[] = ["추천", "가까운 순", "행사 임박", "전체", "분�
 const tabIntro: Record<Tab, { title: string; caption: string }> = {
   추천: {
     title: "캠페인에 맞는 학생단체를 찾았어요",
-    caption: "타깃, 행사 규모, 지난 협찬 성과를 함께 분석한 결과예요.",
+    caption: "타깃 · 규모 · 지난 성과로 골랐어요.",
   },
   "가까운 순": {
     title: "매장에서 가까운 학생단체예요",
-    caption: "우리 매장에서 학교까지 가까운 순서예요. 매장 주소는 내 정보에서 적을 수 있어요.",
+    caption: "매장에서 가까운 학교 순이에요. 매장 주소는 내 정보에서 적어요.",
   },
   "행사 임박": {
     title: "곧 행사를 여는 학생단체예요",
-    caption: "행사일이 가까운 순서예요. 지금 제안하면 이번 행사에 함께할 수 있어요.",
+    caption: "행사가 코앞인 순서예요. 지금 제안하면 이번 행사에 함께해요.",
   },
   전체: {
     title: "협찬할 수 있는 학생단체 전체예요",
-    caption: "우리 브랜드와 일치율이 높은 순서로 보여드려요.",
+    caption: "우리 브랜드와 잘 맞는 순서예요.",
   },
   분야별: {
     title: "분야별로 학생단체를 찾아보세요",
-    caption: "원하는 분야를 고르면 해당 단체만 보여드려요.",
+    caption: "분야를 고르면 그 단체만 보여요.",
   },
   찜: {
     title: "찜한 학생단체예요",
-    caption: "하트를 눌러 모아 둔 학생단체예요. 최근에 찜한 순서로 보여 드려요.",
+    caption: "하트로 모아 둔 학생단체예요. 최근 순으로 보여요.",
   },
 }
 
@@ -199,7 +199,7 @@ export function GroupsPage({
         }
         description={
           loaded && groups.length === 0 && tab === "추천"
-            ? t("타깃, 행사 규모, 지난 협찬 성과를 함께 분석해 잘 맞는 단체부터 보여 드려요.")
+            ? t("타깃 · 규모 · 지난 성과로 잘 맞는 단체부터 보여 드려요.")
             : t(tabIntro[tab].caption)
         }
       />
@@ -310,14 +310,14 @@ export function GroupsPage({
       <DemoPreview
         active={visitor && tab === "가까운 순"}
         title={t("매장마다 가까운 학생단체가 달라요")}
-        text={t("지금은 데모 브랜드 매장에서 가까운 순서를 예시로 보여 드려요. 로그인하면 우리 매장 기준으로 볼 수 있어요.")}
+        text={t("지금은 예시 매장 기준이에요. 로그인하면 우리 매장 기준으로 보여요.")}
         onLogin={onLogin}
         onSignup={onSignup}
       >
         {loaded && groups.length === 0 ? (
           <CatalogEmpty
             title={t("아직 가입한 학생단체가 없어요")}
-            text={t("학생단체가 가입하면 여기에서 찾아 협찬을 제안할 수 있어요. 그 전에 내 정보에서 브랜드 소개를 써 두면, 가입한 학생단체가 먼저 찾아 제안할 수도 있어요.")}
+            text={t("학생단체가 가입하면 여기서 찾아 제안해요. 소개를 먼저 써 두면 단체가 먼저 찾아와요.")}
             action={{ label: t("브랜드 소개 쓰기"), onClick: onEditProfile }}
           />
         ) : tab === "찜" && list.length === 0 ? (

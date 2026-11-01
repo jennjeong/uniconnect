@@ -107,7 +107,7 @@ export function AnalyticsPage({
       <PageIntro
         eyebrow="Sponsorship Analytics"
         title={t("협찬 성과 분석")}
-        description={t("협찬마다 쓴 금액과 돌아온 쿠폰, 방문, 추정 매출을 함께 비교해요.")}
+        description={t("협찬마다 쓴 돈과 돌아온 손님을 한눈에 비교해요.")}
         actions={
           <>
             <Pill arrow="up-right" disabled={rows.length === 0 || exporting} onClick={onDownload}>

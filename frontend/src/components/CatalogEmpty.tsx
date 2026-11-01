@@ -1,3 +1,4 @@
+import { Lines } from "./Lines"
 import { Pill } from "./Pill"
 
 // A catalog with no one in it yet: members see only members, so before the
@@ -15,7 +16,7 @@ export function CatalogEmpty({
   return (
     <div className="catalog-empty">
       <strong>{title}</strong>
-      <p>{text}</p>
+      <p><Lines text={text} /></p>
       {action && (
         <Pill arrow="right" onClick={action.onClick} variant="outline">
           {action.label}

@@ -7,6 +7,7 @@ import measurementExample from "../assets/examples/measurement.jpg"
 import { BrandMark } from "../components/BrandMark"
 import { FaqSection } from "../components/FaqSection"
 import { Icon } from "../components/Icon"
+import { Lines } from "../components/Lines"
 import { LogoMarquee } from "../components/LogoMarquee"
 import { MeetingHero } from "../components/MeetingHero"
 import { Pill } from "../components/Pill"
@@ -50,23 +51,23 @@ const sides: { role: Role; eyebrow: string; title: string; points: string[]; sig
 const steps: { title: string; detail: string }[] = [
   {
     title: t("가입하고 소개 쓰기"),
-    detail: t("학교 · 회사 이메일로 가입하고, 상대에게 보일 소개와 행사 · 캠페인을 등록해요."),
+    detail: t("학교 · 회사 이메일로 가입하고, 소개와 행사를 올려요."),
   },
   {
     title: t("추천 매칭 확인하기"),
-    detail: t("업종 적합도, 겹치는 태그, 실적, 함께한 이력, 답할 준비 다섯 가지로 잘 맞는 상대를 보여 드려요."),
+    detail: t("다섯 가지 기준으로 점수를 매겨, 잘 맞는 상대부터 보여 드려요."),
   },
   {
     title: t("제안하고 답 받기"),
-    detail: t("학생단체도 브랜드도 먼저 제안할 수 있어요. 수락하면 날짜가 정해진 협찬이 돼요."),
+    detail: t("누구든 먼저 제안할 수 있어요. 수락하면 바로 협찬이 확정돼요."),
   },
   {
     title: t("임시 전자 계약서로 정리하기"),
-    detail: t("두 쪽이 할 일을 계약서에 적고 함께 확인해요. 끝낸 일은 링크와 사진으로 남겨요."),
+    detail: t("할 일은 계약서에 함께 적고, 끝낸 일은 사진으로 남겨요."),
   },
   {
     title: t("현장에서 재고 리포트로 보기"),
-    detail: t("행사 날 QR 스캔 · 쿠폰 · 매장 방문을 세고, 끝나면 성과 리포트와 ROAS로 정리해요."),
+    detail: t("행사 날 QR · 쿠폰 · 방문이 저절로 세지고, 끝나면 리포트가 돼요."),
   },
 ]
 
@@ -77,25 +78,25 @@ const examples: { page: NavLabel; role: Role; image: string; description: string
     page: "추천 매칭",
     role: "학생단체",
     image: matchesExample,
-    description: t("행사와 잘 맞는 브랜드를 일치율 순으로 보고, 마음에 드는 브랜드에 협찬을 제안해요."),
+    description: t("잘 맞는 브랜드를 골라 보고, 바로 협찬을 제안해요."),
   },
   {
     page: "단체 찾기",
     role: "브랜드",
     image: groupsExample,
-    description: t("캠페인과 잘 맞는 학생단체를 추천, 행사 임박, 분야별로 찾아 협찬을 제안해요."),
+    description: t("잘 맞는 학생단체를 골라 보고, 바로 협찬을 제안해요."),
   },
   {
     page: "성과",
     role: "학생단체",
     image: measurementExample,
-    description: t("행사 QR 스캔, 쿠폰 수령, 매장 방문을 실시간으로 집계하고 목표와 비교해요."),
+    description: t("QR · 쿠폰 · 매장 방문을 실시간으로 세고, 목표와 비교해요."),
   },
   {
     page: "성과 분석",
     role: "브랜드",
     image: analyticsExample,
-    description: t("협찬마다 집행액, 쿠폰, 방문, ROAS를 비교하고 분석 보고서를 PDF로 내려받아요."),
+    description: t("협찬마다 ROAS를 비교하고, 분석 보고서를 PDF로 받아요."),
   },
 ]
 
@@ -125,9 +126,9 @@ export function LandingPage({
       <MeetingHero
         eyebrow="Campus Sponsorship Matching"
         lines={[t("좋은 행사와"), t("좋은 브랜드가"), t("만나는 곳")]}
-        lead={t("행사에 맞는 브랜드 추천부터 제안, 임시 전자 계약서, 현장 QR 측정과 성과 리포트까지 한곳에서 해요.")}
+        lead={t("브랜드 추천부터 계약 · 현장 측정 · 리포트까지, 협찬의 모든 과정을 한곳에서.")}
         insight={t("가입은 이메일 인증 한 번이면 돼요.")}
-        detail={t("학생단체는 학교 이메일, 브랜드는 회사 이메일로 가입해요. 가입하기 전에 예시 화면으로 먼저 둘러볼 수 있어요.")}
+        detail={t("학교 · 회사 이메일로 가입해요. 가입 전에 예시 화면부터 둘러보세요.")}
         primary={{ label: t("지금 시작하기"), onClick: () => onSignup() }}
         secondary={{ label: t("예시 화면 둘러보기"), onClick: () => onBrowse("학생단체") }}
         onInstall={onInstall}
@@ -218,7 +219,7 @@ export function LandingPage({
                 {pad(index + 1)}
               </span>
               <strong>{step.title}</strong>
-              <p>{step.detail}</p>
+              <p><Lines text={step.detail} /></p>
             </li>
           ))}
         </ol>
@@ -233,7 +234,7 @@ export function LandingPage({
             {t("가입하기 전에 예시 화면으로 둘러보세요")}
           </RevealTitle>
           <p className="landing-note" data-reveal>
-            {t("데모 학생단체와 데모 브랜드의 예시 데이터예요. 근처 가게처럼 학교마다 다른 화면은 가입하면 우리 단체와 매장 기준으로 보여요.")}
+            <Lines text={t("지금은 예시 데이터예요. 가입하면 우리 단체 · 매장 기준으로 보여요.")} />
           </p>
         </div>
         <ul className="example-grid stagger">
@@ -250,7 +251,7 @@ export function LandingPage({
                     {t(example.role)}
                   </span>
                   <h3>{t(example.page)}</h3>
-                  <p>{example.description}</p>
+                  <p><Lines text={example.description} /></p>
                   <Pill arrow="right" onClick={() => onOpenExample(example.role, example.page)} variant="outline">
                     {t("예시 보기")}
                   </Pill>

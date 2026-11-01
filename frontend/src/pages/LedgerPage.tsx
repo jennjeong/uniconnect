@@ -32,7 +32,7 @@ export function LedgerPage({ token }: { token: string }) {
       <PageIntro
         eyebrow="Sponsorship Ledger"
         title={t("{name} 협찬 결산", { name: data.group.name })}
-        description={t("{school} · 학생들에게 공개하는 협찬 내역이에요. uniconnect의 협찬 기록으로 만들었어요.", { school: data.group.school })}
+        description={t("{school} · 학생들에게 공개하는 협찬 내역이에요.", { school: data.group.school })}
       />
       <div className="analytics-card history-card">
         <dl className="history-totals">

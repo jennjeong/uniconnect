@@ -21,6 +21,9 @@ const { config, emailCodesExposed } = await import("./config.js")
 const { clearRateLimits } = await import("./lib/rateLimit.js")
 const { getDatabase, loadDatabase, saveDatabase } = await import("./store.js")
 const { DEMO_PASSWORD } = await import("./data/seed.js")
+// Fees began on a fixed day (lib/fees.ts), now past; the cases here run as if
+// before it, and the fee case moves it back itself.
+;(await import("./lib/fees.js")).feeStart.since = "9999-12-31"
 // Every venue count at 0, as a new share of an event starts.
 const emptyVenue = (await import("./lib/methods.js")).emptyVenueCounts()
 

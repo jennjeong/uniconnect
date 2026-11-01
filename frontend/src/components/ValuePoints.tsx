@@ -2,6 +2,7 @@ import type { CSSProperties } from "react"
 
 import { t } from "../i18n"
 import { Icon, type IconName } from "./Icon"
+import { Lines } from "./Lines"
 import { RevealTitle } from "./RevealText"
 
 export type ValuePoint = {
@@ -46,7 +47,7 @@ export function ValuePoints({ eyebrow, heading, points }: { eyebrow: string; hea
               <Icon name={point.icon} size={22} />
             </span>
             <h3>{point.title}</h3>
-            <p>{point.text}</p>
+            <p><Lines text={point.text} /></p>
             <div className="value-point-figure">
               <strong>{point.figure}</strong>
               <small>{point.figureLabel}</small>

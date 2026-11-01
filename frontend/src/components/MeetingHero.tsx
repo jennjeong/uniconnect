@@ -6,6 +6,7 @@ import { ANTIPODE } from "../scenes/shaders"
 import { t } from "../i18n"
 import { AnimatedNumber } from "./AnimatedNumber"
 import { Icon } from "./Icon"
+import { Lines } from "./Lines"
 import { Pill } from "./Pill"
 import { RevealTitle } from "./RevealText"
 
@@ -67,11 +68,11 @@ export function MeetingHero({
                 ))}
               </ul>
             ) : (
-              <p className="hero-lead">{lead}</p>
+              <p className="hero-lead"><Lines text={lead ?? ""} /></p>
             )}
             <div className="hero-insight">
-              <p className="insight-title">{insight}</p>
-              <p className="insight-detail">{detail}</p>
+              <p className="insight-title"><Lines text={insight} /></p>
+              <p className="insight-detail"><Lines text={detail} /></p>
               <div className="hero-cta">
                 <Pill onClick={primary.onClick} variant="white">
                   {primary.label}

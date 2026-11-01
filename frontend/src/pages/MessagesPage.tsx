@@ -35,7 +35,7 @@ export function MessagesPage({
         onBack={onBack}
         eyebrow="Messages"
         title={t("메시지")}
-        description={t("협찬 상대와 나눈 대화를 최근 순서로 모았어요.")}
+        description={t("협찬 상대와 나눈 대화를 최근 순으로 모았어요.")}
       />
 
       {!loggedIn ? (

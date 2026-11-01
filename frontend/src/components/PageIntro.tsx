@@ -2,6 +2,7 @@ import type { ReactNode } from "react"
 
 import { t } from "../i18n"
 import { Icon } from "./Icon"
+import { Lines } from "./Lines"
 import { RevealTitle } from "./RevealText"
 
 // The top of a page, after Stride's section headings: an eyebrow, a large
@@ -38,7 +39,7 @@ export function PageIntro({
           <RevealTitle className="intro-title" key={title}>
             {title}
           </RevealTitle>
-          {description && <p className="intro-description">{description}</p>}
+          {description && <p className="intro-description">{typeof description === "string" ? <Lines text={description} /> : description}</p>}
         </div>
         {actions && <div className="intro-actions">{actions}</div>}
       </div>

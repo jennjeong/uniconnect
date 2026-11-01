@@ -44,7 +44,7 @@ export function CouncilPage({ onBack, onNotice }: { onBack: () => void; onNotice
         onBack={onBack}
         eyebrow="Council"
         title={t("소속 단체")}
-        description={t("소속 동아리가 학생회 코드로 연결하면 행사와 협찬 현황을 여기에서 함께 봐요. 메시지, 연락처, 계약서 내용은 보이지 않아요.")}
+        description={t("소속 동아리의 행사와 협찬을 한곳에서 봐요. 메시지와 연락처는 동아리만 봐요.")}
       />
       <div className="council-code">
         <span>
@@ -81,7 +81,7 @@ export function CouncilPage({ onBack, onNotice }: { onBack: () => void; onNotice
       {data.clubs.length === 0 ? (
         <CatalogEmpty
           title={t("아직 연결한 단체가 없어요")}
-          text={t("소속 동아리에 위 코드를 알려 주세요. 동아리가 내 정보의 학생회 연결에서 코드를 넣으면 여기에 보여요.")}
+          text={t("위 코드를 동아리에 알려 주세요. 코드를 넣으면 여기에 보여요.")}
         />
       ) : (
         <ul className="council-clubs stagger">

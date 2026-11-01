@@ -83,7 +83,7 @@ export function ReportsPage({
       <PageIntro
         eyebrow="Performance Reports"
         title={t("성과 리포트")}
-        description={t("행사가 끝나면 현장 참여와 협찬 효과를 한 장으로 정리해 드려요.")}
+        description={t("행사가 끝나면, 참여와 협찬 효과를 한 장으로 정리해 드려요.")}
         actions={
           <>
             <Pill arrow="up-right" disabled={!report || exporting} onClick={onDownload}>
