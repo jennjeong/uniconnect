@@ -1294,6 +1294,43 @@ test("가까운 순 looks around the group's school for real shops, and says so 
   await expect(page.getByText("지도 서비스가 연결되면 학교 근처 가게를 보여 드려요.")).toBeVisible()
 })
 
+// A stand-in for Kakao's Maps SDK: each overlay's content goes into the map box.
+const fakeKakaoSdk = `
+window.kakao = { maps: {
+  load: (done) => done(),
+  LatLng: function (lat, lng) { this.lat = lat; this.lng = lng },
+  LatLngBounds: function () { this.extend = () => {} },
+  Map: function (el) { this.el = el; this.setBounds = () => {}; this.relayout = () => {} },
+  CustomOverlay: function (o) { this.setMap = (map) => { if (map) map.el.append(o.content); else o.content.remove() } },
+} }`
+
+test("가까운 순's map sits on Kakao's map once a key is set, and on the sketch when Kakao doesn't load", async ({ page }) => {
+  await page.route("**/api/site", async (route) => {
+    const response = await route.fetch()
+    await route.fulfill({ response, json: { ...(await response.json()), maps: { kakao: "test-key" } } })
+  })
+  let sdk = "ok"
+  await page.route("https://dapi.kakao.com/**", (route) =>
+    sdk === "ok" ? route.fulfill({ contentType: "text/javascript", body: fakeKakaoSdk }) : route.abort(),
+  )
+  await page.goto("/matches")
+  await page.getByRole("tab", { name: "가까운 순" }).click()
+  await page.getByRole("group", { name: "보기 방식" }).getByRole("button", { name: "지도" }).click()
+  const map = page.locator(".kakao-map")
+  await expect(map.locator(".kakao-campus")).toBeVisible()
+  const dots = map.locator(".kakao-dot")
+  expect(await dots.count()).toBeGreaterThan(1)
+  await dots.nth(1).click()
+  await expect(dots.nth(1)).toHaveAttribute("aria-pressed", "true")
+  // Without Kakao the same shops show on the sketch.
+  sdk = "down"
+  await page.reload()
+  await page.getByRole("tab", { name: "가까운 순" }).click()
+  await page.getByRole("group", { name: "보기 방식" }).getByRole("button", { name: "지도" }).click()
+  await expect(page.locator(".place-map")).toBeVisible()
+  await expect(page.locator(".kakao-map")).toHaveCount(0)
+})
+
 test("brands and student groups can be searched and filtered", async ({ page }) => {
   await page.goto("/matches")
   await page.getByRole("tab", { name: "전체" }).click()

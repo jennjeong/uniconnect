@@ -67,6 +67,16 @@ async function call(method: string, route: string, body?: unknown, token?: strin
   return { status: response.status, data: text ? JSON.parse(text) : null }
 }
 
+test("the site hands out the Kakao map key only once it is set", async () => {
+  assert.equal((await call("GET", "/site")).data.maps, undefined)
+  config.kakaoMapKey = "test-map-key"
+  try {
+    assert.deepEqual((await call("GET", "/site")).data.maps, { kakao: "test-map-key" })
+  } finally {
+    config.kakaoMapKey = undefined
+  }
+})
+
 test("a group's event keeps its kind, times and who comes, and brands filter by its kind", async () => {
   const { token: group } = await listedMember("kind-club@syu.ac.kr", "kind-pass-123")
   const { token: brand } = await listedMember("kind@kind-cafe.kr", "kind-pass-123", "브랜드")

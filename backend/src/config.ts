@@ -51,6 +51,10 @@ export const config = {
   // campus (lib/places.ts). Kakao allows its results only as live answers, so
   // nothing from it is kept.
   kakaoRestApiKey: process.env.KAKAO_REST_API_KEY,
+  // Kakao Maps' JavaScript key, for the map on 가까운 순; the browser sends
+  // it, limited to the site's domains in Kakao's console. Without it the
+  // app draws its own sketch.
+  kakaoMapKey: process.env.KAKAO_JS_KEY,
   // Logging in with Kakao or Naver (routes/social.ts): each provider shows
   // once its client ID is set (Kakao's is the app's REST API key, its secret
   // optional; Naver's needs both). The redirect address to register with the

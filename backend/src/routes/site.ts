@@ -1,5 +1,6 @@
 import { Router } from "express"
 
+import { config } from "../config.js"
 import { countSearch, searchTerm, siteState } from "../lib/adminTools.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { publicCounts } from "../lib/stats.js"
@@ -12,7 +13,12 @@ export const siteRouter = Router()
 // with the members' counts the dashboards show.
 siteRouter.get("/", (_req, res) => {
   const database = getDatabase()
-  res.json({ ...siteState(database), faq: database.faq ?? { added: [], hidden: [] }, counts: publicCounts(database) })
+  res.json({
+    ...siteState(database),
+    faq: database.faq ?? { added: [], hidden: [] },
+    counts: publicCounts(database),
+    ...(config.kakaoMapKey ? { maps: { kakao: config.kakaoMapKey } } : {}),
+  })
 })
 
 const searches = createRateLimit({

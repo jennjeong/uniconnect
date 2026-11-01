@@ -75,7 +75,7 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
     res.set({
       "Content-Security-Policy": [
         "default-src 'self'",
-        "script-src 'self' https://www.googletagmanager.com https://js.tosspayments.com",
+        "script-src 'self' https://www.googletagmanager.com https://js.tosspayments.com https://dapi.kakao.com https://t1.daumcdn.net",
         "style-src 'self' 'unsafe-inline'",
         "img-src 'self' data: blob: https:",
         "font-src 'self' data:",

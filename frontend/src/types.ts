@@ -1157,7 +1157,14 @@ export type SiteFaq = {
 // Members only, never the demo accounts or the seed (backend lib/stats.ts).
 export type SiteCounts = { groups: number; brands: number; schools: number; sponsorships: number }
 
-export type SiteState = { maintenance: { message: string } | null; signupsClosed: boolean; faq: SiteFaq; counts?: SiteCounts }
+export type SiteState = {
+  maintenance: { message: string } | null
+  signupsClosed: boolean
+  faq: SiteFaq
+  counts?: SiteCounts
+  // Kakao Maps' JavaScript key, when the operators set one.
+  maps?: { kakao: string }
+}
 
 export type AdminInsights = {
   funnel: { step: string; count: number }[]
