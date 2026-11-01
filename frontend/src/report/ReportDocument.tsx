@@ -8,6 +8,7 @@ import { formatDateTime, formatFullDate, todayIso } from "../lib/date"
 import { percent } from "../lib/format"
 import { achievement, formatKpi, formatWon, hasRoas, kpiGap, kpiValue, reportKpis, roasSummary, roasText } from "../lib/kpis"
 import { venueKindsOf } from "../lib/measurements"
+import { shares, studentInsights } from "../lib/studentInsights"
 import type { MetricEntry, Metrics, MetricKind, Report } from "../types"
 
 // Colors of the sponsorship value parts (cash, products, services): deep
@@ -289,7 +290,7 @@ export function ReportDocument({
           </div>
         </section>
 
-        <PageFooter note={footerNote} page={1} total={2} />
+        <PageFooter note={footerNote} page={1} total={3} />
       </div>
 
       <div className="pdf-page">
@@ -358,8 +359,106 @@ export function ReportDocument({
           </ol>
         </section>
 
-        <PageFooter note={footerNote} page={2} total={2} />
+        <PageFooter note={footerNote} page={2} total={3} />
       </div>
+
+      <StudentPage author={author} metrics={metrics} report={report} />
     </>
+  )
+}
+
+// One survey answer's shares as bars, the largest first.
+function Distribution({ title, counts }: { title: string; counts?: Record<string, number> }) {
+  const rows = shares(counts)
+  return (
+    <div className="pdf-dist">
+      <h3>{title}</h3>
+      {rows.length === 0 ? (
+        <p className="pdf-note">{t("응답이 없어요.")}</p>
+      ) : (
+        <ul>
+          {rows.slice(0, 5).map((row) => (
+            <li key={row.label}>
+              <span>{t(row.label)}</span>
+              <i>
+                <b style={{ width: `${row.share}%` }} />
+              </i>
+              <em>{row.share}%</em>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+// Page 3, for the students themselves: who came (turnout down the funnel,
+// the survey's years, fields and genders against who was expected) and
+// what to change for the next event.
+function StudentPage({ report, metrics, author }: { report: Report; metrics: Metrics; author: string }) {
+  const insight = studentInsights(report, metrics)
+  const expected = report.makeup
+  return (
+    <div className="pdf-page">
+      <PageHeader author={author} />
+      <div className="pdf-title">
+        <span>FOR OUR STUDENTS</span>
+        <h1>{t("참여 학생 분석과 다음 행사 제안")}</h1>
+        <p>{t("누가 왔고 어디서 놓쳤는지 보고, 다음 행사를 더 잘 준비해요.")}</p>
+      </div>
+      <section className="pdf-section">
+        <h2>{t("참여 흐름")}</h2>
+        <div className="pdf-kpis">
+          <div className="pdf-kpi">
+            <span>{t("참여율")}</span>
+            <strong>{report.expectedAudience > 0 ? `${insight.participation}%` : "—"}</strong>
+            <small className="good">{t("예상 {count}명 중 QR 참여", { count: report.expectedAudience.toLocaleString("ko-KR") })}</small>
+          </div>
+          <div className="pdf-kpi">
+            <span>{t("쿠폰 전환")}</span>
+            <strong>{metrics.scans > 0 ? `${insight.couponRate}%` : "—"}</strong>
+            <small className="good">{t("QR 참여 중 쿠폰 수령")}</small>
+          </div>
+          <div className="pdf-kpi">
+            <span>{t("방문 전환")}</span>
+            <strong>{metrics.coupons > 0 ? `${insight.visitRate}%` : "—"}</strong>
+            <small className="good">{t("쿠폰 수령 중 매장 방문")}</small>
+          </div>
+          <div className="pdf-kpi">
+            <span>{t("설문 응답")}</span>
+            <strong>{t("{count}명", { count: insight.responses.toLocaleString("ko-KR") })}</strong>
+            <small className="good">{insight.hour !== undefined ? t("가장 붐빈 시간 {hour}시", { hour: insight.hour }) : t("시간대 기록 없음")}</small>
+          </div>
+        </div>
+      </section>
+      <section className="pdf-section pdf-card">
+        <h2>{t("참여 학생 구성")}</h2>
+        <div className="pdf-dists">
+          <Distribution counts={report.survey?.grade} title={t("학년")} />
+          <Distribution counts={report.survey?.field} title={t("전공 계열")} />
+          <Distribution counts={report.survey?.gender} title={t("성별")} />
+        </div>
+        {expected && (
+          <p className="pdf-note">
+            {[
+              expected.female !== undefined ? t("예상 여성 비율 {female}%", { female: expected.female }) : "",
+              expected.years?.length ? t("예상 참여 {years}", { years: expected.years.map((year) => t(year)).join(", ") }) : "",
+              expected.majors ? t("주요 전공 {majors}", { majors: expected.majors }) : "",
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+        )}
+      </section>
+      <section className="pdf-section">
+        <h2>{t("다음 행사에 이렇게 반영해요")}</h2>
+        <ol className="pdf-advice">
+          {insight.advice.map((line) => (
+            <li key={line}>{line}</li>
+          ))}
+        </ol>
+      </section>
+      <PageFooter note={footerNote} page={3} total={3} />
+    </div>
   )
 }

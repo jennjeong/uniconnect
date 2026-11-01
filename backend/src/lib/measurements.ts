@@ -317,6 +317,11 @@ export function buildReport(
     ...(withGroupPin ? { groupPin: measurement.groupPin } : {}),
     methods: activeMethodsOf(measurement),
     venue: venueCountsOf(metrics),
+    // Who came, for the students' own report: the kind of event, who was
+    // expected, and the optional survey's counts once anyone answered.
+    ...(event.kind ? { eventKind: event.kind } : {}),
+    ...(event.makeup ? { makeup: event.makeup } : {}),
+    ...(measurement.survey && measurement.survey.responses > 0 ? { survey: measurement.survey } : {}),
     ...(measurement.sponsors.length
       ? {
           sponsors: measurement.sponsors.map((sponsor) => {

@@ -748,6 +748,11 @@ export type Report = {
   venue: VenueCounts
   // Once brands sponsor the event, each one's own coupon, counts and value;
   // participants then take these coupons instead of the event's.
+  // For the students' own report: the event's kind, who was expected and
+  // the optional survey's counts.
+  eventKind?: string
+  makeup?: { female?: number; years?: string[]; majors?: string }
+  survey?: { responses: number; grade: Record<string, number>; field: Record<string, number>; visited: Record<string, number>; gender?: Record<string, number> }
   sponsors?: SponsorReport[]
 }
 

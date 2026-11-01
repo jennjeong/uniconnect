@@ -21031,6 +21031,96 @@ button:active:not(:disabled) {
   font-size: 10px;
 }
 
+/* Page 3 of the students' report: each survey answer as bars, three side
+   by side, then the advice for next time as a numbered list. */
+.pdf-dists {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.pdf-dist h3 {
+  margin: 0 0 8px;
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: var(--weight-strong);
+}
+
+.pdf-dist ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pdf-dist li {
+  display: grid;
+  grid-template-columns: 70px 1fr 34px;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+}
+
+.pdf-dist li span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pdf-dist i {
+  display: block;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--canvas);
+}
+
+.pdf-dist b {
+  display: block;
+  height: 100%;
+  background: var(--point-deep);
+}
+
+.pdf-dist em {
+  color: var(--ink);
+  font-style: normal;
+  font-weight: var(--weight-strong);
+  text-align: right;
+}
+
+.pdf-dists + .pdf-note {
+  margin-top: 12px;
+}
+
+.pdf-advice {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: advice;
+}
+
+.pdf-advice li {
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--point-tint);
+  color: var(--ink);
+  font-size: 12.5px;
+  line-height: 1.55;
+  counter-increment: advice;
+}
+
+.pdf-advice li::before {
+  color: var(--point-strong);
+  content: counter(advice, decimal-leading-zero);
+  font-weight: var(--weight-badge);
+}
+
 /* The sponsorship proposal page (report/ProposalDocument.tsx): the
    event's facts in two columns, its packages, the track record and how
    results are counted. */
