@@ -30,6 +30,7 @@ export function CatalogMap({
   const scale = catalogScale(placed.map((match) => match.mapOffset!))
   const rings = mapRings(scale)
   const positions = spreadPositions(placed.map((match) => offsetPosition(match.mapOffset!, scale.radius)))
+  const currentAt = placed.findIndex((match) => match.id === current?.id)
 
   return (
     <div className="nearby-map catalog-map">
@@ -42,9 +43,19 @@ export function CatalogMap({
               {rings.map((ring) => (
                 <circle cx="50" cy="50" key={ring} r={(ring / scale.radius) * 50 - 0.4} />
               ))}
+              {currentAt >= 0 && (
+                <line
+                  className="place-map-route"
+                  key={current?.id}
+                  x1="50"
+                  x2={positions[currentAt].left}
+                  y1="50"
+                  y2={positions[currentAt].top}
+                />
+              )}
             </svg>
             {rings.map((ring) => (
-              <span aria-hidden="true" className="place-map-ring" key={ring} style={{ left: `${50 + (ring / scale.radius) * 50}%` }}>
+              <span aria-hidden="true" className="place-map-ring" key={ring} style={{ top: `${50 + (ring / scale.radius) * 50}%` }}>
                 {formatDistance(ring / 1000)}
               </span>
             ))}
@@ -66,7 +77,13 @@ export function CatalogMap({
                   style={{ left: `${left}%`, top: `${top}%` }}
                   title={match.name}
                   type="button"
-                />
+                >
+                  {current?.id === match.id && (
+                    <span aria-hidden="true" className="place-dot-name">
+                      {match.name}
+                    </span>
+                  )}
+                </button>
               )
             })}
           </div>

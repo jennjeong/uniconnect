@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { t } from "../i18n"
 import { formatDistance } from "../lib/distance"
+import { walkMinutes } from "../lib/placeMap"
 import type { NearbyPlace } from "../types"
 import { placeState, placeStateLabels } from "./PlaceMap"
 
@@ -45,7 +46,7 @@ function loadKakao(key: string) {
 }
 
 // Kakao's map as the ground, with uniconnect's own marks on it: the campus pin
-// and each shop as a dot to press, colored as on the sketch. The shops' points
+// and each shop as a pin to press, colored and named as on the drawing. The shops' points
 // come with Kakao's live answer and are only drawn, never kept. When the SDK
 // can't load, onFail lets PlaceMap draw the sketch instead.
 export function KakaoMap({
@@ -109,7 +110,17 @@ export function KakaoMap({
       )
       dot.setAttribute("aria-pressed", String(selected === place.id))
       dot.addEventListener("click", () => select.current(place))
-      overlays.push(new maps.CustomOverlay({ position, content: dot, zIndex: selected === place.id ? 2 : 1, clickable: true }))
+      if (selected === place.id) {
+        const name = document.createElement("span")
+        name.className = "place-dot-name"
+        name.setAttribute("aria-hidden", "true")
+        const walk = document.createElement("small")
+        walk.textContent = t("도보 {minutes}분", { minutes: walkMinutes(place.distanceM) })
+        name.append(place.name, walk)
+        dot.append(name)
+      }
+      // The pin's tip on the spot.
+      overlays.push(new maps.CustomOverlay({ position, content: dot, yAnchor: 1, zIndex: selected === place.id ? 2 : 1, clickable: true }))
     }
     for (const overlay of overlays) overlay.setMap(map)
     return () => {

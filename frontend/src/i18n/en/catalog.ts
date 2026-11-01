@@ -646,6 +646,8 @@ const en: Record<string, string> = {
   "행사 페이지 보기": "Open the event page",
   "다가오는 행사가 아직 없어요.": "No coming event yet.",
   "지도를 불러오는 중이에요": "Loading the map",
+  "{distance} · 도보 {minutes}분": "{distance} · {minutes} min walk",
+  "도보 {minutes}분": "{minutes} min walk",
 }
 
 export default en

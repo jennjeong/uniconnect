@@ -48,6 +48,11 @@ export function mapScale(center: Point, points: Point[]) {
   return scales.find((scale) => scale.radius >= farthest * 1.1) ?? scales[scales.length - 1]
 }
 
+// Minutes on foot at 4 km/h, for the rings and the picked place: at least one.
+export function walkMinutes(metres: number) {
+  return Math.max(1, Math.round(metres / 67))
+}
+
 // The rings drawn on the map, in metres, out to its edge.
 export function mapRings({ radius, step }: { radius: number; step: number }) {
   const rings: number[] = []

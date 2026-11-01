@@ -1,10 +1,14 @@
 import { describe, expect, test } from "vitest"
 
-import { catalogScale, mapPosition, mapRings, mapScale, offsetMetres, offsetPosition, spreadPositions } from "./placeMap"
+import { catalogScale, mapPosition, mapRings, mapScale, offsetMetres, offsetPosition, spreadPositions, walkMinutes } from "./placeMap"
 
 const campus = { lat: 37.64201, lng: 127.10562 }
 
 describe("the schematic map of the shops around a campus", () => {
+  test("says how many minutes a distance is on foot, at least one", () => {
+    expect([walkMinutes(0), walkMinutes(30), walkMinutes(500), walkMinutes(1500)]).toEqual([1, 1, 7, 22])
+  })
+
   test("measures metres east and north", () => {
     const north = offsetMetres(campus, { lat: campus.lat + 0.001, lng: campus.lng })
     expect(north.north).toBeCloseTo(111.3, 1)

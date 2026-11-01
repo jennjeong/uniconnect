@@ -1837,12 +1837,19 @@ button.nav-pill:hover {
   gap: 12px;
 }
 
-/* A silver disc with rings every 500 m, the campus in the middle. */
+/* uniconnect's own map, drawn rather than fetched: a silver square with a
+   street-block grid, a blue glow over the walkable middle, rings every few
+   hundred metres, the campus as a deep blue pin and each place as a pin. */
 .place-map {
   position: relative;
   aspect-ratio: 1;
-  border-radius: 50%;
-  background: radial-gradient(circle at 50% 50%, #fff 0%, #f3f5f9 70%, #e9ecf2 100%);
+  overflow: hidden;
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(46, 108, 230, 0.13) 0%, rgba(46, 108, 230, 0.04) 34%, transparent 62%),
+    linear-gradient(90deg, rgba(19, 48, 111, 0.05) 1px, transparent 1px) 0 0 / 8.333% 8.333%,
+    linear-gradient(rgba(19, 48, 111, 0.05) 1px, transparent 1px) 0 0 / 8.333% 8.333%,
+    linear-gradient(160deg, #fbfcfe 0%, #eef1f6 100%);
   box-shadow: var(--silver-ring), 0 18px 44px rgba(19, 48, 111, 0.1);
 }
 
@@ -1852,116 +1859,181 @@ button.nav-pill:hover {
   width: 100%;
   height: 100%;
   fill: none;
-  stroke: var(--line-strong);
+  stroke: rgba(27, 63, 143, 0.22);
   stroke-width: 0.3;
+  stroke-dasharray: 0.8 1.2;
 }
 
 .place-map-rings line {
-  stroke: var(--line);
-  stroke-dasharray: 1 1.4;
+  stroke: rgba(27, 63, 143, 0.12);
+  stroke-dasharray: none;
 }
 
-/* Each ring's distance just inside it, under the east line; N at the top. */
+/* The way from the campus to the picked place, with its distance. */
+.place-map-rings .place-map-route {
+  stroke: var(--point-bright);
+  stroke-width: 0.7;
+  stroke-dasharray: 1.6 1.2;
+  stroke-linecap: round;
+  animation: route-draw 0.5s var(--ease-out) both;
+}
+
+@keyframes route-draw {
+  from {
+    stroke-dashoffset: 12;
+    opacity: 0;
+  }
+}
+
+/* Each ring's distance and walk; N at the top. */
 .place-map-ring,
 .place-map-north {
   position: absolute;
-  color: var(--muted);
+  color: var(--point-strong);
   font-size: 11px;
   font-weight: var(--weight-label);
   line-height: 1;
 }
 
-/* Over the dots, with a white halo, and never in the way of a press. */
+/* Over the pins, on a frosted chip just inside each ring on the south
+   line, and never in the way of a press. */
 .place-map-ring {
-  top: 50%;
+  left: 50%;
   z-index: 2;
+  padding: 3px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(27, 63, 143, 0.1);
   pointer-events: none;
-  text-shadow:
-    0 0 2px #fff,
-    0 0 4px #fff;
-  transform: translate(calc(-100% - 5px), 5px);
+  white-space: nowrap;
+  transform: translate(-50%, calc(-100% - 4px));
 }
 
 .place-map-north {
-  top: 10px;
+  top: 12px;
   left: 50%;
-  color: var(--point-strong);
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: var(--silver-ring);
   transform: translateX(-50%);
 }
 
+/* The campus: a deep blue disc with a slow pulse and its name under it. */
 .place-map-campus {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 18px;
-  height: 18px;
+  z-index: 1;
+  width: 22px;
+  height: 22px;
   border: 4px solid #fff;
   border-radius: 50%;
   background: var(--point);
-  box-shadow: 0 0 0 6px rgba(27, 63, 143, 0.14);
+  box-shadow: 0 6px 16px rgba(19, 48, 111, 0.3);
   transform: translate(-50%, -50%);
+}
+
+.place-map-campus::before {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  background: rgba(46, 108, 230, 0.18);
+  animation: campus-pulse 2.4s ease-out infinite;
+}
+
+@keyframes campus-pulse {
+  from {
+    transform: scale(0.5);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.6);
+    opacity: 0;
+  }
 }
 
 .place-map-campus span {
   position: absolute;
-  top: 18px;
+  top: 24px;
   left: 50%;
-  padding: 3px 8px;
+  padding: 4px 10px;
   border-radius: 999px;
   background: var(--point);
   color: var(--on-point);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: var(--weight-label);
   white-space: nowrap;
+  box-shadow: 0 6px 14px rgba(19, 48, 111, 0.25);
   transform: translateX(-50%);
 }
 
-/* Each shop: a 28px target around a small dot, silver before it is on
-   uniconnect, ringed in blue once invited, deep blue once it joined. */
+/* Each place: a pin whose tip sits on the spot, inside a 28px target;
+   silver before it is on uniconnect, ringed in blue once invited, deep blue
+   once it joined. The picked one grows and shows its name. */
 .place-dot {
   position: absolute;
   width: 28px;
-  height: 28px;
+  height: 34px;
   padding: 0;
   border: 0;
-  border-radius: 50%;
   background: transparent;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -100%);
+  cursor: pointer;
 }
 
-.place-dot::before,
-.place-dot-key {
+.place-dot::before {
   content: '';
+  display: block;
+  width: 18px;
+  height: 18px;
+  margin: 4px auto 0;
+  border-radius: 50% 50% 50% 0;
+  background: var(--silver);
+  box-shadow: inset 0 0 0 5px #fff, 0 4px 10px rgba(19, 48, 111, 0.22);
+  transform: rotate(-45deg);
+  transform-origin: 50% 50%;
+  transition: scale 0.2s var(--ease-pop);
+}
+
+.place-dot-key {
   display: block;
   width: 12px;
   height: 12px;
   border-radius: 50%;
   background: var(--silver);
   box-shadow: 0 0 0 2px #fff;
-  transition: transform 0.2s var(--ease-pop);
 }
 
-.place-dot::before {
-  margin: auto;
+.place-dot.invited::before {
+  background: var(--point-bright);
+  box-shadow: inset 0 0 0 5px #fff, inset 0 0 0 7px var(--point-bright), 0 4px 10px rgba(19, 48, 111, 0.22);
 }
 
-.place-dot.invited::before,
 .place-dot-key.invited {
   background: #fff;
   box-shadow: inset 0 0 0 3px var(--point-bright), 0 0 0 2px #fff;
 }
 
-.place-dot.joined::before,
+.place-dot.joined::before {
+  background: var(--point);
+  box-shadow: inset 0 0 0 5px var(--point), inset 0 0 0 7px #fff, 0 4px 10px rgba(19, 48, 111, 0.3);
+}
+
 .place-dot-key.joined {
   background: var(--point);
 }
 
 .place-dot:hover::before {
-  transform: scale(1.25);
+  scale: 1.15;
 }
 
 .place-dot[aria-pressed='true'] {
-  z-index: 1;
+  z-index: 3;
 }
 
 /* Kakao's map as the ground, toned toward the silver theme, with the same
@@ -1997,19 +2069,8 @@ button.nav-pill:hover {
 
 .kakao-dot {
   position: relative;
+  display: block;
   transform: none;
-  cursor: pointer;
-}
-
-.kakao-dot::before {
-  width: 16px;
-  height: 16px;
-  box-shadow: 0 0 0 3px #fff, 0 4px 10px rgba(19, 48, 111, 0.25);
-}
-
-.kakao-dot[aria-pressed='true']::before {
-  transform: scale(1.45);
-  box-shadow: 0 0 0 3px #fff, 0 0 0 6px var(--point-bright);
 }
 
 .kakao-campus {
@@ -2039,12 +2100,28 @@ button.nav-pill:hover {
 }
 
 .place-dot[aria-pressed='true']::before {
-  transform: scale(1.5);
-  box-shadow: 0 0 0 2px #fff, 0 0 0 5px var(--point-bright);
+  scale: 1.35;
 }
 
-.place-dot.invited[aria-pressed='true']::before {
-  box-shadow: inset 0 0 0 3px var(--point-bright), 0 0 0 2px #fff, 0 0 0 5px var(--point-bright);
+.place-dot-name {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  padding: 4px 9px;
+  border-radius: 8px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 12px;
+  font-weight: var(--weight-label);
+  white-space: nowrap;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.place-dot-name small {
+  margin-left: 6px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
 }
 
 .place-map-legend {
