@@ -67,7 +67,7 @@ export function MeasurementPage({
       <PageIntro
         eyebrow="Live Attribution"
         title={t("현장 반응을 실시간으로 측정해요")}
-        description={t("고유 QR과 쿠폰 데이터를 행사 성과로 안전하게 집계합니다.")}
+        description={t("QR과 쿠폰으로 행사 성과를 실시간으로 세요.")}
         actions={
           <Pill arrow="up-right" disabled={!report} onClick={onOpenQr}>
             {t("현장 QR 열기")}

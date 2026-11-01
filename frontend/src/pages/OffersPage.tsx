@@ -182,7 +182,7 @@ export function OffersPage({
       <PageIntro
         eyebrow="Offer Inbox"
         title={t("받은 협찬 제안")}
-        description={t("브랜드가 보낸 협찬 제안을 확인하고 함께할지 정해 주세요. 우리 단체가 보낸 제안도 검토 중에서 보고 취소할 수 있어요.")}
+        description={t("브랜드가 보낸 협찬 제안이 도착했어요. 내가 보낸 제안은 검토 중에서 봐요.")}
       />
 
       <TabBar

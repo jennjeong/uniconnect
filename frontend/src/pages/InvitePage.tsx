@@ -101,7 +101,7 @@ export function InvitePage({
       <PageIntro
         eyebrow="Invitation"
         title={t("{name}에서 초대했어요", { name })}
-        description={t("학교 근처 가게와 협찬을 함께하고 싶어 해요. uniconnect에 가게로 가입하면 이 단체의 협찬 제안을 받을 수 있어요.")}
+        description={t("학교 앞 가게와 협찬하고 싶어 해요. 가게로 가입하면 바로 제안을 받아요.")}
       />
 
       <div className="invite-layout">

@@ -329,7 +329,7 @@ button.nav-pill:hover {
    least 24px tall, never tilted or shadowed. */
 .brand-link {
   display: grid;
-  height: 44px;
+  height: 52px;
   flex: 0 0 auto;
   align-items: center;
   padding: 0 2px;
@@ -341,7 +341,7 @@ button.nav-pill:hover {
 .brand-link img {
   display: block;
   width: auto;
-  height: 26px;
+  height: 38px;
   grid-area: 1 / 1;
   transition:
     opacity 0.3s ease,
@@ -17891,8 +17891,12 @@ th[aria-sort="descending"] .console-sort span {
     height: 42px;
   }
 
+  .brand-link {
+    height: 44px;
+  }
+
   .brand-link img {
-    height: 24px;
+    height: 30px;
   }
 
   .icons-pill {

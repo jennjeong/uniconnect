@@ -1,6 +1,7 @@
 import type { ReactNode } from "react"
 
 import { t } from "../i18n"
+import { Lines } from "./Lines"
 import { Pill } from "./Pill"
 
 // A part of an example screen that would be different for the visitor, such
@@ -29,7 +30,7 @@ export function DemoPreview({
         <span className="demo-badge">{t("예시 화면")}</span>
         <div className="demo-preview-copy">
           <strong>{title}</strong>
-          <p>{text}</p>
+          <p><Lines text={text} /></p>
         </div>
         <div className="demo-preview-actions">
           <Pill onClick={onLogin}>{t("로그인")}</Pill>

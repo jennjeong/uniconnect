@@ -258,7 +258,7 @@ export function EventsPage({
       <PageIntro
         eyebrow={role === "학생단체" ? "My Events" : "Event Calendar"}
         title={t("행사 일정")}
-        description={t("날짜를 고르면 그날의 일정이 함께 보여요. 두 번 누르면 그 날짜로 바로 등록해요.")}
+        description={t("날짜를 누르면 그날 일정이 보이고, 두 번 누르면 바로 등록해요.")}
         actions={
           <>
             {onExplore && (

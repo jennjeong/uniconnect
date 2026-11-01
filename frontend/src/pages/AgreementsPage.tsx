@@ -53,7 +53,7 @@ export function AgreementsPage({
         onBack={onBack}
         eyebrow="Agreements"
         title={t("임시 전자 계약서")}
-        description={t("확정된 협찬마다 두 쪽이 할 일을 정하고 확인해요. 한 일은 링크와 사진으로 남겨 두면 결과를 바로 보여 줄 수 있어요.")}
+        description={t("협찬마다 할 일을 함께 정하고, 끝낸 일은 사진으로 남겨요.")}
       />
       {!loggedIn ? (
         <div className="day-empty messages-empty">

@@ -23,27 +23,27 @@ const tabs: Tab[] = ["추천", "가까운 순", "인기", "전체", "업종별",
 const tabIntro: Record<Tab, { title: string; caption: string }> = {
   추천: {
     title: "내 행사에 맞는 브랜드를 찾았어요",
-    caption: "행사 정보, 타깃과 지난 성과를 함께 분석한 결과예요.",
+    caption: "행사 · 타깃 · 지난 성과로 골랐어요.",
   },
   "가까운 순": {
     title: "학교에서 가까운 가게예요",
-    caption: "카카오 지도에서 지금 찾은 학교 주변의 실제 가게예요. 아직 uniconnect와 협약하지 않은 곳은 초대장을 보내 가입을 권해 보세요.",
+    caption: "학교 앞 실제 가게예요. 아직 없는 곳엔 초대장을 보내 보세요.",
   },
   인기: {
     title: "학생단체가 많이 찾는 브랜드예요",
-    caption: "이번 학기 협찬을 많이 한 순서로 보여드려요.",
+    caption: "이번 학기 협찬을 많이 한 순서예요.",
   },
   전체: {
     title: "협찬할 수 있는 브랜드 전체예요",
-    caption: "우리 행사와 일치율이 높은 순서로 보여드려요.",
+    caption: "우리 행사와 잘 맞는 순서예요.",
   },
   업종별: {
     title: "업종별로 브랜드를 찾아보세요",
-    caption: "원하는 업종을 고르면 해당 브랜드만 보여드려요.",
+    caption: "업종을 고르면 그 브랜드만 보여요.",
   },
   찜: {
     title: "찜한 브랜드예요",
-    caption: "하트를 눌러 모아 둔 브랜드예요. 최근에 찜한 순서로 보여 드려요.",
+    caption: "하트로 모아 둔 브랜드예요. 최근 순으로 보여요.",
   },
 }
 
@@ -164,9 +164,9 @@ export function MatchesPage({
         title={waiting ? t("브랜드가 가입하면 여기에 추천해 드려요") : t(intro.title)}
         description={
           waiting
-            ? t("행사 정보, 타깃과 지난 성과를 함께 분석해 잘 맞는 브랜드부터 보여 드려요.")
+            ? t("행사 · 타깃 · 지난 성과로 잘 맞는 브랜드부터 보여 드려요.")
             : visitor && tab === "가까운 순"
-              ? t("학교 주변 가게를 가까운 순서로 보여 드려요. 아직 uniconnect와 협약하지 않은 곳은 초대장을 보내 가입을 권해 보세요.")
+              ? t("학교 앞 가게를 가까운 순으로 보여 드려요. 아직 없는 가게엔 초대장을 보내 보세요.")
               : t(intro.caption)
         }
       />
@@ -216,7 +216,7 @@ export function MatchesPage({
         <DemoPreview
           active={visitor}
           title={t("학교마다 근처 가게가 달라요")}
-          text={t("지금 보이는 가게는 데모 단체의 학교 근처에 있다고 가정해 만든 예시예요. 로그인하면 카카오 지도에서 찾은 우리 학교 근처의 실제 가게를 볼 수 있어요.")}
+          text={t("지금은 예시 가게예요. 로그인하면 우리 학교 앞 실제 가게가 보여요.")}
           onLogin={onLogin}
           onSignup={onSignup}
         >
@@ -233,7 +233,7 @@ export function MatchesPage({
       ) : loaded && brands.length === 0 ? (
         <CatalogEmpty
           title={t("아직 가입한 브랜드가 없어요")}
-          text={t("가까운 순에서 학교 근처 가게를 찾아 초대장을 보내 보세요. 가게가 브랜드로 가입하면 여기에서 협찬을 제안할 수 있어요.")}
+          text={t("가까운 순에서 학교 앞 가게에 초대장을 보내 보세요. 가입하면 여기서 제안할 수 있어요.")}
           action={{ label: t("가까운 가게 보기"), onClick: () => pickTab("가까운 순") }}
         />
       ) : tab === "찜" && list.length === 0 ? (

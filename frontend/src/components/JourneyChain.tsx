@@ -3,6 +3,7 @@ import { useId, useRef, useState, type CSSProperties } from "react"
 import { t } from "../i18n"
 import { ChromeScene } from "../scenes/ChromeScene"
 import { MeshBackdrop } from "../scenes/MeshBackdrop"
+import { Lines } from "./Lines"
 import { Pill } from "./Pill"
 import { RevealTitle } from "./RevealText"
 
@@ -52,7 +53,7 @@ export function JourneyChain({
           <span className="eyebrow light">Sponsorship Flow</span>
           <RevealTitle accent={1} as="h2" className="chain-title" lines={[t("끊기지 않는"), t("협찬의 고리")]} />
           <div className="chain-bottom">
-            <p>{intro}</p>
+            <p><Lines text={intro} /></p>
             <p aria-hidden="true" className="chain-aside">
               {t("함께라서 더 단단하게")}
             </p>
@@ -171,7 +172,7 @@ function Stepper({ steps, current, tour }: { steps: JourneyStep[]; current: numb
           {pad(open + 1)} · {phaseLabel[phase(open, current)]}
         </span>
         <strong>{shown.label}</strong>
-        <p>{shown.detail}</p>
+        <p><Lines text={shown.detail} /></p>
         <small>{shown.status}</small>
       </div>
     </div>

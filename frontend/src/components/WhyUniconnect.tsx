@@ -3,6 +3,7 @@ import type { CSSProperties } from "react"
 import { useSiteState } from "../hooks/useSiteState"
 import { locale, t } from "../i18n"
 import { Icon, type IconName } from "./Icon"
+import { Lines } from "./Lines"
 import { RevealTitle } from "./RevealText"
 
 export type Pillar = {
@@ -91,7 +92,7 @@ export function WhyUniconnect({
                 <Icon name={pillar.icon} size={20} />
               </span>
               <strong>{pillar.title}</strong>
-              <p>{pillar.text}</p>
+              <p><Lines text={pillar.text} /></p>
               <span className="why-proof">{pillar.proof}</span>
             </li>
           ))}

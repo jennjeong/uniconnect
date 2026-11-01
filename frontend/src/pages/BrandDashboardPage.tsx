@@ -101,22 +101,22 @@ export function BrandDashboardPage({
     {
       label: t("캠페인 등록"),
       status: t("브랜드 일정"),
-      detail: t("예산과 원하는 노출, 함께하고 싶은 시기를 행사 일정에 적어 두세요."),
+      detail: t("예산과 시기를 캠페인으로 적어 두세요."),
     },
     {
       label: t("받은 제안 검토"),
       status: pending.length > 0 ? t("검토 중 {count}건", { count: pending.length }) : t("새 제안 없음"),
-      detail: t("학생단체의 제안을 보고 수락하면 바로 계약서가 만들어져요."),
+      detail: t("제안을 수락하면 바로 계약서가 생겨요."),
     },
     {
       label: t("협찬 확정"),
       status: confirmed.length > 0 ? t("확정 {count}건", { count: confirmed.length }) : t("대기"),
-      detail: t("확정한 협찬은 행사 일정에 들어가고, 할 일과 확인 방식은 계약서에서 정해요."),
+      detail: t("확정한 협찬은 일정에 들어가고, 할 일은 계약서로 정해요."),
     },
     {
       label: t("성과 분석"),
       status: sponsorships.length > 0 ? t("협찬 {count}건", { count: sponsorships.length }) : t("대기"),
-      detail: t("쿠폰 · 방문으로 협찬마다 ROAS와 방문당 비용을 계산해요."),
+      detail: t("쿠폰 · 방문으로 협찬마다 ROAS를 계산해요."),
     },
     { label: t("재집행"), status: t("대기"), detail: t("ROAS가 좋았던 단체에 다음 학기에도 먼저 제안해요.") },
   ]
@@ -148,10 +148,10 @@ export function BrandDashboardPage({
         }
         detail={
           paused
-            ? t("학생단체의 목록에 보이지 않고 새 협찬 제안을 받지 않아요. 진행 중인 대화와 협찬은 그대로예요.")
+            ? t("새 제안은 받지 않아요. 진행 중인 대화와 협찬은 그대로예요.")
             : noGroups && pending.length === 0
-              ? t("브랜드 소개를 써 두고 캠페인을 행사 일정에 등록해 두세요. 학생단체가 가입하면 캠페인과 잘 맞는 순서로 추천해 드려요.")
-              : t("학생 행사에서 쿠폰을 나누고, 매장에 온 손님까지 세어 협찬마다 ROAS로 보여 드려요.")
+              ? t("소개와 캠페인을 먼저 올려 두세요. 학생단체가 가입하면 바로 추천해 드려요.")
+              : t("학생 행사에서 쿠폰을 나누고, 매장에 온 손님까지 ROAS로 보여 드려요.")
         }
         primary={
           paused && onResume
@@ -232,7 +232,7 @@ export function BrandDashboardPage({
             icon: "users",
             need: t("대학생 접점"),
             title: t("매장 가까운 캠퍼스 행사를 골라요"),
-            text: t("행사 규모 · 시기 · 학교로 걸러 보고, 매장과 가까운 캠퍼스의 단체부터 일치율 순으로 만나요."),
+            text: t("규모 · 시기 · 학교로 거르고, 가까운 캠퍼스부터 만나요."),
             figure: t("{count}곳", { count: catalog.length }),
             figureLabel: t("함께할 수 있는 학생단체"),
             action: t("단체 찾기"),
@@ -242,7 +242,7 @@ export function BrandDashboardPage({
             icon: "won",
             need: t("소액 · 측정형 협찬"),
             title: t("작게 시작해도 효과가 숫자로 남아요"),
-            text: t("현금 · 현물 · 쿠폰 중에 고르고, 행사 QR과 매장 직원 확인으로 쿠폰 · 방문을 정확히 세요."),
+            text: t("현금 · 현물 · 쿠폰 중에 고르고, 방문은 매장에서 직접 확인해요."),
             figure: t("{count}건", { count: confirmed.length }),
             figureLabel: nextConfirmed
               ? t("확정된 협찬 · 다음 일정 {date}", { date: shortDay(nextConfirmed.date) })
@@ -254,7 +254,7 @@ export function BrandDashboardPage({
             icon: "chart",
             need: t("다음 예산 결정"),
             title: t("다시 쓸 곳을 데이터로 정해요"),
-            text: t("협찬마다 ROAS와 방문당 비용을 보고, 상세 분석 리포트와 캠퍼스 포트폴리오로 어디에 다시 쓸지 정해요."),
+            text: t("협찬마다 ROAS를 보고, 다음 예산을 어디에 쓸지 정해요."),
             figure: `${totals.roas}%`,
             figureLabel: t("평균 ROAS · 누적 집행액 {spend}", { spend: fullWon(totals.spend) }),
             action: t("성과 분석 보기"),
@@ -281,25 +281,25 @@ export function BrandDashboardPage({
           {
             icon: "spark",
             title: t("이유가 보이는 일치율"),
-            text: t("업종 · 관심사 · 행사 규모 · 함께한 기록 · 응답 준비 다섯 가지로 단체를 줄 세우고, 왜 맞는지 보여 줘요."),
+            text: t("다섯 가지 기준으로 단체를 줄 세우고, 왜 맞는지 보여 줘요."),
             proof: t("단체 찾기 · 추천"),
           },
           {
             icon: "store",
             title: t("매장에서 확인하는 방문"),
-            text: t("쿠폰을 받은 참여자가 오면 매장 직원이 PIN으로 확인해요. 학생단체가 대신 셀 수 없어요."),
+            text: t("손님이 오면 직원이 PIN으로 확인해요. 단체가 대신 셀 수 없어요."),
             proof: t("직원 PIN 확인"),
           },
           {
             icon: "chart",
             title: t("협찬별 ROAS"),
-            text: t("협찬 하나하나의 쿠폰 · 방문 · 추정 매출을 목표와 비교하고, 성과 분석을 PDF로 받아요."),
+            text: t("협찬마다 매출을 목표와 비교하고, 분석을 PDF로 받아요."),
             proof: t("성과 분석 PDF"),
           },
           {
             icon: "heart",
             title: t("공개된 파트너 후기"),
-            text: t("행사가 끝나면 양쪽이 서로를 평가해요. 다음 파트너를 고를 때 별점과 태그를 먼저 봐요."),
+            text: t("행사가 끝나면 서로 평가해요. 다음 파트너는 별점부터 보고 골라요."),
             proof: t("파트너 후기"),
           },
         ]}
@@ -322,7 +322,7 @@ export function BrandDashboardPage({
         {noGroups && (
           <CatalogEmpty
             title={t("아직 추천할 학생단체가 없어요")}
-            text={t("학생단체가 가입하면 캠페인과 잘 맞는 순서로 여기에 추천해 드려요. 제안은 다가오는 캠페인으로 보내지니, 행사 일정에 캠페인을 먼저 등록해 두세요.")}
+            text={t("학생단체가 가입하면 여기에 추천해 드려요. 캠페인을 먼저 등록해 두세요.")}
             action={{ label: t("행사 일정 보기"), onClick: () => onNavigate("행사 일정") }}
           />
         )}
@@ -379,7 +379,7 @@ export function BrandDashboardPage({
         <div className="results-grid">
           <div className="silver-panel" data-reveal>
             {results.length === 0 && (
-              <p className="day-empty">{t("협찬이 끝나면 협찬마다 돌아온 만큼이 여기에 보여요.")}</p>
+              <p className="day-empty">{t("협찬이 끝나면 돌아온 만큼이 여기에 보여요.")}</p>
             )}
             <div className="roas-list stagger">
               {results.map((result) => (

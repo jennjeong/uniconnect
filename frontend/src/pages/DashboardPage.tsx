@@ -100,7 +100,7 @@ export function DashboardPage({
     {
       label: t("행사 등록"),
       status: next ? t("완료") : t("등록 전"),
-      detail: t("인원 · 날짜 · 학과 구성과 브랜드가 보일 자리를 적어 두면 추천이 정확해져요."),
+      detail: t("행사를 자세히 적을수록 추천이 정확해져요."),
     },
     {
       label: t("매칭 · 제안"),
@@ -112,15 +112,15 @@ export function DashboardPage({
             : next
               ? t("진행 중")
               : t("대기"),
-      detail: t("일치율 높은 브랜드 몇 곳에 먼저 제안하고 답을 기다려요."),
+      detail: t("잘 맞는 브랜드 몇 곳에 먼저 제안해요."),
     },
     {
       label: t("집행 관리"),
       status: nextDay ? t("{date} 예정", { date: `${nextDay.getMonth() + 1}.${nextDay.getDate()}` }) : t("대기"),
-      detail: t("계약서에서 받을 물품 · 할 일 · 확인 방식을 행사 전에 함께 정해요."),
+      detail: t("받을 물품과 할 일을 계약서로 미리 정해요."),
     },
-    { label: t("성과"), status: t("대기"), detail: t("행사 날 QR을 띄우면 참여 · 쿠폰 · 방문이 저절로 집계돼요.") },
-    { label: t("재협찬"), status: t("대기"), detail: t("리포트를 들고 같은 브랜드에 다음 학기 협찬을 제안해요.") },
+    { label: t("성과"), status: t("대기"), detail: t("QR만 띄우면 참여 · 쿠폰 · 방문이 저절로 세져요.") },
+    { label: t("재협찬"), status: t("대기"), detail: t("리포트를 들고 다음 학기 협찬을 제안해요.") },
   ]
 
   const bars = [
@@ -154,10 +154,10 @@ export function DashboardPage({
         }
         detail={
           paused
-            ? t("브랜드의 목록에 보이지 않고 새 협찬 제안을 받지 않아요. 진행 중인 대화와 협찬은 그대로예요.")
+            ? t("새 제안은 받지 않아요. 진행 중인 대화와 협찬은 그대로예요.")
             : noBrands
-              ? t("학교 근처 가게에 초대장을 보내 첫 파트너를 만들어 보세요. 브랜드가 가입하면 행사와 잘 맞는 순서로 추천해 드려요.")
-              : t("일치율이 높은 브랜드부터 제안해 보세요. 수락되면 계약서 · 측정 · 리포트까지 여기서 이어져요.")
+              ? t("학교 앞 가게에 초대장을 보내 보세요. 가입하면 바로 추천해 드려요.")
+              : t("잘 맞는 브랜드부터 제안해 보세요. 수락되면 계약부터 리포트까지 여기서 이어져요.")
         }
         primary={
           paused && onResume
@@ -189,7 +189,7 @@ export function DashboardPage({
             icon: "spark",
             need: t("협찬처 찾기"),
             title: t("제안할 곳부터 정해 드려요"),
-            text: t("업종 · 관심사 · 협찬 이력으로 일치율을 매기고, 학교 근처 가게까지 가까운 순으로 보여 줘요."),
+            text: t("일치율로 골라 주고, 학교 앞 가게까지 보여 줘요."),
             figure: t("{count}곳", { count: candidates.length }),
             figureLabel: t("추천 브랜드 · 일치율 {cut}% 이상 {count}곳", { cut: strongCut, count: strong }),
             action: t("추천 매칭 보기"),
@@ -199,7 +199,7 @@ export function DashboardPage({
             icon: "file",
             need: t("준비와 증빙"),
             title: t("약속한 일을 계약서 하나로 챙겨요"),
-            text: t("제안 · 임시 전자 계약서 · 할 일 체크 · 사진 증빙까지 한 화면에서 끝내요."),
+            text: t("제안부터 계약서 · 증빙까지 한 화면에서 끝내요."),
             figure: t("{count}건", { count: running }),
             figureLabel:
               confirmedCount > 0
@@ -212,7 +212,7 @@ export function DashboardPage({
             icon: "chart",
             need: t("성과 증명"),
             title: t("다음 제안서에 넣을 숫자가 남아요"),
-            text: t("QR 참여 · 쿠폰 · 매장 방문이 리포트로 쌓이고, 그 기록이 다음 브랜드를 설득해요."),
+            text: t("현장 숫자가 리포트로 쌓이고, 다음 브랜드를 설득해요."),
             figure: metrics.scans.toLocaleString(locale),
             figureLabel: t("누적 QR 참여 · 예상 협찬 가치 {value}", { value: report ? fullWon(report.sponsorValue) : "-" }),
             action: t("리포트 보기"),
@@ -239,25 +239,25 @@ export function DashboardPage({
           {
             icon: "spark",
             title: t("이유가 보이는 일치율"),
-            text: t("업종 · 관심사 · 협찬 이력 · 함께한 기록 · 응답 준비 다섯 가지로 점수를 매기고, 왜 맞는지 막대로 보여 줘요."),
+            text: t("다섯 가지 기준으로 점수를 매기고, 왜 맞는지 보여 줘요."),
             proof: t("추천 브랜드 {count}곳", { count: candidates.length }),
           },
           {
             icon: "pin",
             title: t("캠퍼스 앞 가게까지"),
-            text: t("학교 근처 실제 가게를 가까운 순으로 찾고, 아직 가입하지 않은 가게에도 초대장을 보내요."),
+            text: t("학교 앞 실제 가게를 찾고, 초대장까지 보내요."),
             proof: t("가까운 순 · 초대장"),
           },
           {
             icon: "scan",
             title: t("현장에서 세는 성과"),
-            text: t("참여자 QR, 쿠폰, 매장 직원의 PIN 확인까지 양쪽이 계약서에서 고른 방식으로만 세요."),
+            text: t("QR · 쿠폰 · 직원 PIN 확인으로, 약속한 방식대로만 세요."),
             proof: t("누적 QR 참여 {count}", { count: metrics.scans.toLocaleString(locale) }),
           },
           {
             icon: "file",
             title: t("숫자로 쓰는 다음 제안서"),
-            text: t("지난 행사의 참여 · 방문 · ROAS가 담긴 제안서를 PDF로 만들고, 협찬 기록은 다음 운영진에게 넘겨요."),
+            text: t("숫자가 담긴 제안서를 만들고, 기록은 다음 운영진에게 넘겨요."),
             proof: t("제안서 PDF · 협찬 기록"),
           },
         ]}
@@ -280,7 +280,7 @@ export function DashboardPage({
         {noBrands && (
           <CatalogEmpty
             title={t("아직 추천할 브랜드가 없어요")}
-            text={t("추천 매칭의 가까운 순에서 학교 근처 가게를 찾아 초대장을 보내 보세요. 가게가 가입하면 여기에 추천해 드려요.")}
+            text={t("가까운 순에서 학교 앞 가게에 초대장을 보내 보세요. 가입하면 여기에 추천해 드려요.")}
             action={{ label: t("추천 매칭 열기"), onClick: () => onNavigate("추천 매칭") }}
           />
         )}
@@ -365,7 +365,7 @@ export function DashboardPage({
               <small>
                 {report && hasRoas(report) && report.roas >= 100
                   ? t("함께한 브랜드가 쓴 금액보다 더 많이 돌아왔어요.")
-                  : t("목표까지 남은 만큼은 리포트에서 볼 수 있어요.")}
+                  : t("목표까지 남은 만큼은 리포트에서 봐요.")}
               </small>
             </div>
             <div className="report-highlight-actions">
