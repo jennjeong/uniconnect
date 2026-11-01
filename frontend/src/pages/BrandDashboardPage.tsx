@@ -131,7 +131,7 @@ export function BrandDashboardPage({
               ? t("예시 화면 · {semester}", { semester: semesterLabel() })
               : semesterLabel()
         }
-        lines={[t("감이 아닌 숫자로"), t("캠퍼스 협찬을"), t("집행하세요.")]}
+        lines={[t("대학생에게 닿는"), t("가장 확실한 길,"), t("숫자로 확인하세요.")]}
         stats={[
           { value: t("{count}건", { count: pending.length }), label: t("검토할 제안") },
           { value: t("{count}건", { count: confirmed.length }), label: t("확정된 협찬") },
