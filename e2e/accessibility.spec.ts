@@ -5,7 +5,7 @@ import { signUpMember } from "./members"
 
 // Automatic accessibility checks (WCAG 2.1 A and AA) on the main screens.
 // Critical and serious problems fail the run; the rest are printed.
-const pages = ["/", "/dashboard", "/matches", "/groups", "/faq", "/terms", "/privacy", "/admin", "/explore", "/check-in/20261012", "/check-in/20261012/staff", "/check-in/20261012/group", "/no-such-page"]
+const pages = ["/", "/dashboard", "/matches", "/groups", "/faq", "/terms", "/privacy", "/admin", "/explore", "/events", "/check-in/20261012", "/check-in/20261012/staff", "/check-in/20261012/group", "/no-such-page"]
 
 async function expectNoBlockingProblems(page: Page, path: string, open?: () => Promise<void>) {
   await page.goto(path)

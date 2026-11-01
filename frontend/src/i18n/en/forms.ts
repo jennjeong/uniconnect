@@ -1071,6 +1071,11 @@ const en: Record<string, string> = {
   "기획안 올리기": "Upload a plan",
   "기획안은 2MB 이하의 PDF로 올려 주세요.": "Upload the plan as a PDF of 2 MB or less.",
   "기획안을 올렸어요.": "Plan uploaded.",
+  "일정 요약": "Schedule summary",
+  "다음 캠페인": "Next campaign",
+  "아직 다가오는 행사가 없어요": "No coming event yet",
+  "아직 다가오는 캠페인이 없어요": "No coming campaign yet",
+  "지금 등록하기": "Register now",
 }
 
 export default en
