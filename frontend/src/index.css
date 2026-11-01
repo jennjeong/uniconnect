@@ -72,10 +72,12 @@
   --red-soft: #fbe9e7;
   /* A hairline drawn inside the box. */
   --ring: inset 0 0 0 1px var(--line);
-  --radius-sm: 14px;
-  --radius-md: 20px;
-  /* Stride's card corners (1.5rem). */
-  --radius-lg: 24px;
+  /* Corners kept modest rather than soft: boxes at 10–14px, and buttons,
+     chips and bars at --radius-pill instead of fully round. */
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
+  --radius-pill: 12px;
   --shadow: 0 24px 60px rgba(19, 48, 111, 0.12);
   /* Pretendard's named weights, one job each: Bold for display headings,
      large numbers and emphasis, so what carries a page stays solid;
@@ -195,7 +197,7 @@ strong {
   top: 16px;
   left: 16px;
   padding: 8px 16px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--point);
   color: #fff;
   font-size: 14px;
@@ -301,7 +303,7 @@ strong {
   gap: 8px;
   padding: 0 18px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.76);
   color: var(--ink);
   box-shadow: var(--silver-ring);
@@ -336,7 +338,7 @@ button.nav-pill:hover {
   align-items: center;
   padding: 0 2px;
   border: 0;
-  border-radius: 10px;
+  border-radius: 8px;
   background: none;
 }
 
@@ -374,7 +376,7 @@ button.nav-pill:hover {
   gap: 6px;
   padding: 0 14px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--ink-soft);
   font-size: 14px;
@@ -405,7 +407,7 @@ button.nav-pill:hover {
   height: 18px;
   place-items: center;
   padding: 0 5px;
-  border-radius: 9px;
+  border-radius: 6px;
   background: var(--point);
   color: #fff;
   font-size: 11px;
@@ -428,7 +430,7 @@ button.nav-pill:hover {
 .event-pill b {
   flex: 0 0 auto;
   padding: 6px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--point);
   color: #fff;
   font-size: 11px;
@@ -452,7 +454,7 @@ button.nav-pill:hover {
   height: 36px;
   place-items: center;
   border: 0;
-  border-radius: 50%;
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--ink);
 }
@@ -487,7 +489,7 @@ button.nav-pill:hover {
   place-items: center;
   margin-left: 2px;
   border: 0;
-  border-radius: 50%;
+  border-radius: var(--radius-pill);
   background: #fff;
   color: var(--point);
   box-shadow: inset 0 0 0 1.5px var(--point-line);
@@ -600,7 +602,7 @@ button.nav-pill:hover {
   gap: 8px;
   padding: 0 18px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.8);
   color: var(--ink);
   box-shadow: var(--silver-ring);
@@ -739,7 +741,7 @@ button.nav-pill:hover {
   display: inline-flex;
   gap: 2px;
   padding: 4px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.75);
   box-shadow: var(--silver-ring);
 }
@@ -748,7 +750,7 @@ button.nav-pill:hover {
   height: 36px;
   padding: 0 14px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--ink-soft);
   font-size: 13px;
@@ -1263,7 +1265,7 @@ button.nav-pill:hover {
   gap: 6px;
   padding: 0 16px 0 10px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--silver-gradient);
   color: var(--ink);
   box-shadow: var(--silver-ring);
@@ -1308,7 +1310,7 @@ button.nav-pill:hover {
   gap: 12px;
   padding: 0 26px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: 14px;
   font-weight: var(--weight-label);
   white-space: nowrap;
@@ -1373,7 +1375,7 @@ button.nav-pill:hover {
   height: 36px;
   flex: 0 0 auto;
   place-items: center;
-  border-radius: 50%;
+  border-radius: 8px;
   background: var(--point);
   color: #fff;
   font-style: normal;
@@ -1402,7 +1404,7 @@ button.nav-pill:hover {
   gap: 8px;
   padding: 0 22px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: 14px;
   font-weight: var(--weight-label);
   white-space: nowrap;
@@ -1509,7 +1511,7 @@ button.nav-pill:hover {
   gap: 6px;
   padding: 0 22px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--point);
   color: #fff;
   font-size: 14px;
@@ -1610,13 +1612,13 @@ button.nav-pill:hover {
   flex: 0 0 auto;
   place-items: center;
   overflow: hidden;
-  border-radius: 14px;
+  border-radius: 10px;
 }
 
 .match-logo.large {
   width: 74px;
   height: 74px;
-  border-radius: 20px;
+  border-radius: 12px;
 }
 
 /* Without a logo, the industry mark in the logo's blues on a faint blue tile. */
@@ -1719,7 +1721,7 @@ button.nav-pill:hover {
   max-width: 100%;
   gap: 4px;
   padding: 4px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--silver-gradient);
   box-shadow: var(--silver-ring);
 }
@@ -1730,7 +1732,7 @@ button.nav-pill:hover {
   height: 40px;
   padding: 0 20px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--ink-soft);
   font-size: 14px;
@@ -1753,7 +1755,7 @@ button.nav-pill:hover {
   margin-left: 6px;
   padding: 0 6px;
   place-items: center;
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--fill-strong);
   color: var(--ink-soft);
   font-size: 11px;
@@ -1803,7 +1805,7 @@ button.nav-pill:hover {
 .nearby-layout {
   display: inline-flex;
   padding: 4px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--fill);
 }
 
@@ -1811,7 +1813,7 @@ button.nav-pill:hover {
   height: 32px;
   padding: 0 16px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--ink-soft);
   font-size: 13px;
@@ -1846,7 +1848,7 @@ button.nav-pill:hover {
   position: relative;
   aspect-ratio: 1;
   overflow: hidden;
-  border-radius: 28px;
+  border-radius: 16px;
   background:
     radial-gradient(circle at 50% 50%, rgba(46, 108, 230, 0.13) 0%, rgba(46, 108, 230, 0.04) 34%, transparent 62%),
     linear-gradient(90deg, rgba(19, 48, 111, 0.05) 1px, transparent 1px) 0 0 / 8.333% 8.333%,
@@ -1903,7 +1905,7 @@ button.nav-pill:hover {
   left: 50%;
   z-index: 2;
   padding: 3px 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.82);
   box-shadow: inset 0 0 0 1px rgba(27, 63, 143, 0.1);
   pointer-events: none;
@@ -1964,7 +1966,7 @@ button.nav-pill:hover {
   top: 24px;
   left: 50%;
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--point);
   color: var(--on-point);
   font-size: 12px;
@@ -2044,7 +2046,7 @@ button.nav-pill:hover {
   position: relative;
   aspect-ratio: 1;
   overflow: hidden;
-  border-radius: 28px;
+  border-radius: 16px;
   background: var(--fill);
   box-shadow: var(--silver-ring), 0 18px 44px rgba(19, 48, 111, 0.1);
 }
@@ -2080,7 +2082,7 @@ button.nav-pill:hover {
   display: block;
   margin-bottom: 10px;
   padding: 7px 14px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--point);
   color: var(--on-point);
   font-size: 13px;
@@ -2189,7 +2191,7 @@ button.nav-pill:hover {
   height: 34px;
   padding: 0 14px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--fill);
   color: var(--ink-soft);
   font-size: 13px;
@@ -2222,7 +2224,7 @@ button.nav-pill:hover {
   align-items: center;
   gap: 8px;
   padding: 0 16px 0 14px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--surface);
   box-shadow: inset 0 0 0 1px var(--line-strong);
   color: var(--muted);
@@ -2254,7 +2256,7 @@ button.nav-pill:hover {
   height: 40px;
   padding: 0 36px 0 16px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   appearance: none;
   background:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
@@ -2299,7 +2301,7 @@ button.nav-pill:hover {
   height: 34px;
   padding: 0 10px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--surface);
   box-shadow: var(--ring);
   color: var(--ink-soft);
@@ -2327,7 +2329,7 @@ button.nav-pill:hover {
   gap: 10px 14px;
   margin-top: 20px;
   padding: 12px 16px;
-  border-radius: 22px;
+  border-radius: 14px;
   background: var(--surface);
   box-shadow: var(--ring), 0 16px 40px rgba(0, 27, 55, 0.16);
 }
@@ -2347,7 +2349,7 @@ button.nav-pill:hover {
   align-items: center;
   gap: 6px;
   padding: 6px 8px 6px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--point-tint);
   color: var(--point-strong);
   font-size: 13px;
@@ -2360,7 +2362,7 @@ button.nav-pill:hover {
   height: 22px;
   place-items: center;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--surface);
   color: var(--point-strong);
 }
@@ -2429,7 +2431,7 @@ button.nav-pill:hover {
   display: block;
   max-width: 90px;
   height: 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--point);
 }
 
@@ -2454,7 +2456,7 @@ button.nav-pill:hover {
   gap: 8px;
   min-height: 40px;
   padding: 0 14px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--point-tint);
   color: var(--point-strong);
   font-size: 13px;
@@ -2479,7 +2481,7 @@ button.nav-pill:hover {
   gap: 12px;
   margin-top: 20px;
   padding: 14px 18px;
-  border-radius: 22px;
+  border-radius: 14px;
   background: var(--point);
   box-shadow: 0 16px 40px rgba(0, 27, 55, 0.24);
   color: var(--on-point);
@@ -2520,7 +2522,7 @@ button.nav-pill:hover {
   height: 38px;
   padding: 0 16px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--ink-soft);
   box-shadow: inset 0 0 0 1px var(--line-strong);
@@ -2550,7 +2552,7 @@ button.nav-pill:hover {
    stretches on the way and lands at the tab's width. */
 .tab-highlight {
   position: absolute;
-  border-radius: 999px;
+  border-radius: 8px;
   background: var(--point);
   pointer-events: none;
   transition:
@@ -2653,7 +2655,7 @@ button.nav-pill:hover {
   gap: 10px;
   margin-bottom: auto;
   padding: 8px 16px 8px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(8, 20, 52, 0.36);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
   font-size: 13px;
@@ -2760,7 +2762,7 @@ button.nav-pill:hover {
   max-width: 30rem;
   justify-self: end;
   padding: 24px 26px;
-  border-radius: 20px;
+  border-radius: 12px;
   background: rgba(8, 20, 52, 0.58);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
   backdrop-filter: blur(20px) saturate(1.3);
@@ -2827,7 +2829,7 @@ button.nav-pill:hover {
   gap: 12px;
   margin-right: 12px;
   padding: 0 26px 0 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--silver-gradient);
   color: var(--ink-soft);
   box-shadow: var(--silver-ring);
@@ -3024,7 +3026,7 @@ button.nav-pill:hover {
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--point);
   color: var(--on-point);
   font-size: 12px;
@@ -3156,7 +3158,7 @@ button.nav-pill:hover {
   width: 120px;
   height: 6px;
   overflow: hidden;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(43, 51, 67, 0.1);
 }
 
@@ -3260,7 +3262,7 @@ button.nav-pill:hover {
   height: 0.96em;
   margin: 0 0.06em;
   place-items: center;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   vertical-align: 0.13em;
 }
 
@@ -3358,7 +3360,7 @@ button.nav-pill:hover {
 
 .work-rank {
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(43, 51, 67, 0.08);
   color: var(--ink);
   font-size: 12px;
@@ -3377,7 +3379,7 @@ button.nav-pill:hover {
   flex: 0 0 auto;
   place-items: center;
   border: 0;
-  border-radius: 50%;
+  border-radius: var(--radius-pill);
   background: #fff;
   color: var(--ink);
   box-shadow: inset 0 0 0 1px var(--line-strong);
@@ -3405,7 +3407,7 @@ button.nav-pill:hover {
   flex: 0 0 auto;
   place-items: center;
   border: 0;
-  border-radius: 50%;
+  border-radius: var(--radius-pill);
   background: #fff;
   color: var(--muted);
   box-shadow: inset 0 0 0 1px var(--line-strong);
@@ -3552,7 +3554,7 @@ button.nav-pill:hover {
 .skeleton-line {
   width: 80%;
   height: 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 .skeleton-line.short {
@@ -3567,19 +3569,19 @@ button.nav-pill:hover {
   width: 48px;
   height: 48px;
   flex: 0 0 auto;
-  border-radius: 14px;
+  border-radius: 10px;
 }
 
 .skeleton-block {
   flex: 1;
   min-height: 72px;
-  border-radius: 14px;
+  border-radius: 10px;
 }
 
 .skeleton-pill {
   width: 100%;
   height: 44px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 @keyframes skeleton-sweep {
@@ -3609,7 +3611,7 @@ button.nav-pill:hover {
 .work-mark .match-logo.large {
   width: 80px;
   height: 80px;
-  border-radius: 24px;
+  border-radius: 14px;
   box-shadow:
     0 0 0 6px rgba(255, 255, 255, 0.7),
     0 22px 40px -18px rgba(19, 48, 111, 0.4);
@@ -3713,7 +3715,7 @@ button.nav-pill:hover {
   display: inline-flex;
   align-items: center;
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.72);
   color: var(--ink-soft);
   box-shadow: inset 0 0 0 1px var(--line-strong);
@@ -3909,7 +3911,7 @@ button.nav-pill:hover {
 .pending-dday {
   flex: 0 0 auto;
   padding: 5px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--point-tint);
   color: var(--point);
   font-size: 12px;
@@ -4028,7 +4030,7 @@ button.nav-pill:hover {
   position: relative;
   z-index: 1;
   padding: 104px max(var(--gutter), calc((100% - var(--shell)) / 2)) 112px;
-  border-radius: 32px 32px 0 0;
+  border-radius: 18px 18px 0 0;
   background: var(--canvas);
   box-shadow: 0 -40px 80px -40px rgba(8, 20, 52, 0.5);
 }
@@ -4315,7 +4317,7 @@ button.nav-pill:hover {
   justify-self: start;
   margin-top: 4px;
   padding: 6px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: #fff;
   color: var(--ink-soft);
   box-shadow: inset 0 0 0 1px var(--line-strong);
@@ -4391,7 +4393,7 @@ button.nav-pill:hover {
 .complete-badge {
   flex: 0 0 auto;
   padding: 6px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--green-soft);
   color: var(--green);
   font-size: 12px;
@@ -4470,7 +4472,7 @@ button.nav-pill:hover {
   bottom: 0;
   left: 0;
   min-height: 6px;
-  border-radius: 9px 9px 3px 3px;
+  border-radius: 6px 6px 3px 3px;
   background: var(--point);
 }
 
@@ -4572,7 +4574,7 @@ button.nav-pill:hover {
   align-items: center;
   gap: 10px;
   padding: 6px 16px 6px 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--silver-gradient);
   box-shadow: var(--silver-ring);
 }
@@ -4607,7 +4609,7 @@ button.nav-pill:hover {
 
 .summary-chips li {
   padding: 6px 14px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--fill);
   color: var(--ink-soft);
   font-size: 13px;
@@ -4630,7 +4632,7 @@ button.nav-pill:hover {
 .avatar.large {
   width: 96px;
   height: 96px;
-  border-radius: 28px;
+  border-radius: 16px;
   background: #fff;
   color: var(--point);
   box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.14);
@@ -4691,7 +4693,7 @@ button.nav-pill:hover {
   gap: 24px;
   margin: 0;
   padding: 28px 24px;
-  border-radius: 20px;
+  border-radius: 12px;
   transition:
     background-color 0.45s var(--ease-spring),
     padding 0.45s var(--ease-spring);
@@ -4743,7 +4745,7 @@ button.nav-pill:hover {
   display: inline-flex;
   gap: 2px;
   padding: 4px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--silver-gradient);
   box-shadow: var(--silver-ring);
 }
@@ -4752,7 +4754,7 @@ button.nav-pill:hover {
   height: 36px;
   padding: 0 16px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--ink-soft);
   font-size: 14px;
@@ -4864,7 +4866,7 @@ button.nav-pill:hover {
 
 .power-status {
   padding: 6px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.16);
   color: #fff;
   font-size: 12px;
@@ -4886,7 +4888,7 @@ button.nav-pill:hover {
   max-width: 36rem;
   margin: -8px 0 0;
   padding: 10px 16px;
-  border-radius: 14px;
+  border-radius: 10px;
   background: rgba(8, 20, 52, 0.55);
   backdrop-filter: blur(12px);
   color: rgba(255, 255, 255, 0.92);
@@ -4900,7 +4902,7 @@ button.nav-pill:hover {
   flex-direction: column;
   gap: 10px;
   padding: 18px 20px;
-  border-radius: 20px;
+  border-radius: 12px;
   background: rgba(8, 20, 52, 0.55);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
   backdrop-filter: blur(14px);
@@ -4983,7 +4985,7 @@ button.nav-pill:hover {
   gap: 8px;
   padding: 18px 18px 16px;
   border: 0;
-  border-radius: 20px;
+  border-radius: 12px;
   background: rgba(8, 20, 52, 0.55);
   color: #fff;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
@@ -5192,7 +5194,7 @@ button.nav-pill:hover {
   height: 40px;
   place-items: center;
   border: 0;
-  border-radius: 50%;
+  border-radius: var(--radius-pill);
   background: var(--fill);
   color: var(--ink-soft);
 }
@@ -5293,7 +5295,7 @@ button.nav-pill:hover {
   place-items: center;
   padding: 0;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--muted);
   transform: translateY(-50%);
@@ -5357,7 +5359,7 @@ button.nav-pill:hover {
   align-items: center;
   gap: 10px;
   padding: 0 22px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--slate);
   color: #fff;
   box-shadow: 0 16px 40px rgba(19, 48, 111, 0.28);
@@ -5494,7 +5496,7 @@ button.nav-pill:hover {
   height: 46px;
   padding: 0 14px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--fill);
   color: var(--ink);
   font-size: 15px;
@@ -5562,7 +5564,7 @@ button.nav-pill:hover {
   align-items: center;
   gap: 8px;
   padding: 6px 6px 6px 14px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--fill);
   font-size: 13px;
 }
@@ -5590,7 +5592,7 @@ button.nav-pill:hover {
   height: 42px;
   padding: 0 12px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--fill);
   color: var(--ink);
   font: inherit;
@@ -5612,7 +5614,7 @@ button.nav-pill:hover {
   align-content: start;
   gap: 10px;
   padding: 20px;
-  border-radius: 22px;
+  border-radius: 14px;
 }
 
 .deal-box.gives {
@@ -5635,7 +5637,7 @@ button.nav-pill:hover {
   width: 36px;
   height: 36px;
   place-items: center;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--surface);
   color: var(--point-strong);
 }
@@ -5746,7 +5748,7 @@ button.nav-pill:hover {
   padding: 0 10px;
   place-items: center;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--fill);
   color: var(--ink-soft);
   font-size: 14px;
@@ -5783,7 +5785,7 @@ button.nav-pill:hover {
   align-items: center;
   gap: 10px 14px;
   padding: 12px 14px;
-  border-radius: 16px;
+  border-radius: 10px;
   background: var(--fill);
 }
 
@@ -5818,7 +5820,7 @@ button.nav-pill:hover {
   display: grid;
   gap: 6px;
   padding: 14px 16px;
-  border-radius: 16px;
+  border-radius: 10px;
   box-shadow: var(--ring);
 }
 
@@ -5856,7 +5858,7 @@ button.nav-pill:hover {
 
 .ledger-list .ledger-note {
   padding: 10px 12px;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--fill);
 }
 
@@ -5871,7 +5873,7 @@ button.nav-pill:hover {
   height: 40px;
   padding: 0 12px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--fill);
   color: var(--ink);
   font: inherit;
@@ -5905,7 +5907,7 @@ button.nav-pill:hover {
   display: grid;
   gap: 4px;
   padding: 18px;
-  border-radius: 22px;
+  border-radius: 14px;
   background: var(--silver-gradient);
   box-shadow: var(--silver-ring);
 }
@@ -5924,7 +5926,7 @@ button.nav-pill:hover {
 .post-types .explore-kind {
   justify-self: start;
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--point-tint);
   color: var(--point-strong);
   font-size: 12px;
@@ -5952,7 +5954,7 @@ button.nav-pill:hover {
   gap: 10px 16px;
   margin-bottom: 12px;
   padding: 14px 16px;
-  border-radius: 16px;
+  border-radius: 10px;
   background: var(--fill);
 }
 
@@ -5997,7 +5999,7 @@ button.nav-pill:hover {
 
 .event-promo dd span {
   padding: 5px 11px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--point-tint);
   color: var(--point-strong);
   font-size: 13px;
@@ -6032,7 +6034,7 @@ button.nav-pill:hover {
   gap: 12px;
   padding: 12px 14px;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 10px;
   cursor: pointer;
 }
 
@@ -6225,7 +6227,7 @@ button.nav-pill:hover {
 
 .post-types span {
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: #fff;
   box-shadow: inset 0 0 0 1px var(--line);
   font-size: 12px;
@@ -6248,7 +6250,7 @@ button.nav-pill:hover {
 
 .post-badge {
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--fill-strong);
   color: var(--ink-soft);
   font-size: 12px;
@@ -6394,7 +6396,7 @@ button.nav-pill:hover {
 
 .event-types span {
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--fill);
   font-size: 12px;
 }
@@ -6441,7 +6443,7 @@ button.nav-pill:hover {
   width: 120px;
   height: 8px;
   overflow: hidden;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--fill-strong);
 }
 
@@ -6514,7 +6516,7 @@ button.nav-pill:hover {
   height: 28px;
   place-items: center;
   border: 0;
-  border-radius: 50%;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.92);
   color: var(--ink);
 }
@@ -6619,7 +6621,7 @@ button.nav-pill:hover {
 .date-cell {
   aspect-ratio: 1 / 1;
   border: 1px solid transparent;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--fill);
   color: var(--ink);
   font-size: 14px;
@@ -6666,7 +6668,7 @@ button.nav-pill:hover {
   gap: 8px;
   margin: 14px 0 0;
   padding: 12px 14px;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--point-tint);
   color: var(--point-strong);
   font-size: 14px;
@@ -6713,7 +6715,7 @@ button.nav-pill:hover {
   align-content: start;
   gap: 8px;
   padding: 22px 24px;
-  border-radius: 24px;
+  border-radius: 14px;
   background: radial-gradient(120% 90% at 80% 10%, #2a59c4 0%, #10275c 70%);
   color: #fff;
 }
@@ -6738,7 +6740,7 @@ button.nav-pill:hover {
 .events-next-date em {
   margin-left: 6px;
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.16);
   color: #fff;
   font-style: normal;
@@ -6762,7 +6764,7 @@ button.nav-pill:hover {
   height: 38px;
   padding: 0 16px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: #fff;
   color: var(--point);
   font-size: 13px;
@@ -6785,7 +6787,7 @@ button.nav-pill:hover {
   align-content: space-between;
   gap: 10px;
   padding: 20px;
-  border-radius: 24px;
+  border-radius: 14px;
   background: var(--silver-gradient);
   box-shadow: var(--silver-ring);
 }
@@ -6850,7 +6852,7 @@ button.nav-pill:hover {
   height: 32px;
   place-items: center;
   border: 0;
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--fill);
   color: var(--ink-soft);
   box-shadow: var(--ring);
@@ -6914,7 +6916,7 @@ button.nav-pill:hover {
   padding: 6px;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--surface);
   color: var(--ink);
   text-align: left;
@@ -6959,7 +6961,7 @@ button.nav-pill:hover {
   min-width: 22px;
   height: 22px;
   place-items: center;
-  border-radius: 11px;
+  border-radius: 8px;
   font-size: 13px;
   font-weight: var(--weight-label);
 }
@@ -7036,7 +7038,7 @@ button.nav-pill:hover {
   height: 22px;
   padding: 0 7px;
   place-items: center;
-  border-radius: 11px;
+  border-radius: 8px;
   background: var(--point);
   color: var(--on-point);
   font-size: 12px;
@@ -7061,7 +7063,7 @@ button.nav-pill:hover {
   gap: 12px;
   padding: 10px 12px 10px 10px;
   border: 0;
-  border-radius: 16px;
+  border-radius: 10px;
   background: var(--silver-gradient);
   color: var(--ink);
   box-shadow: var(--silver-ring);
@@ -7078,7 +7080,7 @@ button.nav-pill:hover {
   flex-direction: column;
   align-items: center;
   padding: 6px 0;
-  border-radius: 12px;
+  border-radius: 8px;
   background: #fff;
   box-shadow: inset 0 0 0 1px var(--line);
 }
@@ -7164,7 +7166,7 @@ button.nav-pill:hover {
   gap: 10px;
   padding: 14px;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 10px;
 }
 
 .day-event-copy {
@@ -7199,7 +7201,7 @@ button.nav-pill:hover {
   margin: 0;
   padding: 18px;
   border: 1px dashed var(--line);
-  border-radius: 14px;
+  border-radius: 10px;
   color: var(--muted);
   font-size: 13px;
   text-align: center;
@@ -7215,7 +7217,7 @@ button.nav-pill:hover {
   margin: 0 0 24px;
   padding: 36px 20px;
   border: 1px dashed var(--line);
-  border-radius: 20px;
+  border-radius: 12px;
   color: var(--muted);
   text-align: center;
 }
@@ -7254,7 +7256,7 @@ button.nav-pill:hover {
   gap: 10px;
   padding: 10px 12px;
   border: 0;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--fill);
   color: inherit;
   text-align: left;
@@ -7279,7 +7281,7 @@ button.nav-pill:hover {
    brand is linked, and measured turns green. */
 .status-chip {
   padding: 4px 7px;
-  border-radius: 9px;
+  border-radius: 6px;
   background: var(--fill);
   color: var(--ink-soft);
   font-size: 11px;
@@ -7308,7 +7310,7 @@ button.nav-pill:hover {
   height: 34px;
   place-items: center;
   border: 0;
-  border-radius: 50%;
+  border-radius: var(--radius-pill);
   background: var(--fill);
   color: var(--muted);
   box-shadow: var(--ring);
@@ -7426,7 +7428,7 @@ button.nav-pill:hover {
   height: 24px;
   align-items: center;
   padding: 0 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--fill);
   color: var(--ink-soft);
   font-size: 12px;
@@ -7489,7 +7491,7 @@ button.nav-pill:hover {
   height: 38px;
   padding: 0 36px 0 38px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   appearance: none;
   background:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
@@ -7515,7 +7517,7 @@ button.nav-pill:hover {
   align-items: center;
   gap: 6px;
   padding: 0 10px;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--green-soft);
   color: var(--green);
   font-size: 13px;
@@ -7648,7 +7650,7 @@ button.nav-pill:hover {
   align-items: center;
   justify-content: center;
   padding: 0 7px;
-  border-radius: 11px;
+  border-radius: 8px;
   background: var(--point-tint);
   color: var(--point-strong);
   font-size: 12px;
@@ -7730,7 +7732,7 @@ button.nav-pill:hover {
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--fill);
 }
 
@@ -7763,7 +7765,7 @@ button.nav-pill:hover {
   flex-direction: column;
   gap: 4px;
   padding: 16px;
-  border-radius: 14px;
+  border-radius: 10px;
   background: var(--fill);
 }
 
@@ -7786,7 +7788,7 @@ button.nav-pill:hover {
 
 .goal-badge {
   padding: 2px 8px;
-  border-radius: 9px;
+  border-radius: 6px;
   background: var(--fill);
   color: var(--ink-soft);
   font-size: 12px;
@@ -7885,7 +7887,7 @@ button.nav-pill:hover {
   margin-top: 18px;
   padding: 14px 16px;
   border: 1px dashed var(--line);
-  border-radius: 14px;
+  border-radius: 10px;
 }
 
 .goal-formula span {
@@ -7909,7 +7911,7 @@ button.nav-pill:hover {
   max-height: min(70vh, 520px);
   overflow-y: auto;
   padding: 22px 24px 8px;
-  border-radius: 24px;
+  border-radius: 14px;
   background: rgba(255, 255, 255, 0.94);
   box-shadow: var(--ring), 0 30px 80px rgba(19, 48, 111, 0.16);
   animation: notify-drop 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -7929,7 +7931,7 @@ button.nav-pill:hover {
   flex: none;
   padding: 7px 12px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--fill);
   color: var(--point-strong);
   font-size: 12px;
@@ -8018,7 +8020,7 @@ button.nav-pill:hover {
   min-height: 44px;
   padding: 0 10px;
   border: 0;
-  border-radius: 12px;
+  border-radius: 8px;
   background: transparent;
   color: var(--ink);
   font-size: 14px;
@@ -8085,7 +8087,7 @@ button.nav-pill:hover {
   width: 38px;
   height: 38px;
   place-items: center;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--point-tint);
   color: var(--point-strong);
 }
@@ -8119,7 +8121,7 @@ button.nav-pill:hover {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-radius: 16px;
+  border-radius: 10px;
   background: var(--point-tint);
 }
 
@@ -8166,7 +8168,7 @@ button.nav-pill:hover {
 .edit-row select {
   width: 100%;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--fill);
   color: var(--ink);
   font-size: 14px;
@@ -8339,7 +8341,7 @@ button.nav-pill:hover {
   height: 20px;
   padding: 0 6px;
   place-items: center;
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--point);
   color: var(--on-point);
   font-size: 13px;
@@ -8392,7 +8394,7 @@ button.nav-pill:hover {
 .chat-note {
   margin: 0 0 12px;
   padding: 12px 14px;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--fill);
   color: var(--ink-soft);
   font-size: 13px;
@@ -8426,7 +8428,7 @@ button.nav-pill:hover {
   margin: 8px 0;
   padding: 4px 12px;
   border: 0;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--fill);
   color: var(--muted);
   font-size: 13px;
@@ -8437,7 +8439,7 @@ button.nav-pill:hover {
 .chat-bubble {
   max-width: min(72%, 520px);
   padding: 11px 14px;
-  border-radius: 20px 20px 20px 6px;
+  border-radius: 12px 12px 12px 6px;
   background: var(--fill);
   font-size: 14px;
   line-height: 1.6;
@@ -8445,7 +8447,7 @@ button.nav-pill:hover {
 }
 
 .chat-message.mine .chat-bubble {
-  border-radius: 20px 20px 6px 20px;
+  border-radius: 12px 12px 6px 12px;
   background: var(--point);
   color: #fff;
 }
@@ -8472,7 +8474,7 @@ button.nav-pill:hover {
   place-items: center;
   padding: 0;
   border: 0;
-  border-radius: 50%;
+  border-radius: 8px;
   background: transparent;
   color: var(--muted);
 }
@@ -8543,7 +8545,7 @@ button.nav-pill:hover {
   justify-content: flex-end;
   gap: 6px;
   padding: 6px;
-  border-radius: 18px;
+  border-radius: 12px;
   background: var(--surface);
   box-shadow:
     var(--ring),
@@ -8564,7 +8566,7 @@ button.nav-pill:hover {
   gap: 6px;
   padding: 0 14px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--fill);
   color: var(--ink);
   font-size: 13px;
@@ -8587,7 +8589,7 @@ button.nav-pill:hover {
   gap: 8px;
   margin: 0 0 8px;
   padding: 9px 14px;
-  border-radius: 16px;
+  border-radius: 10px;
   background: var(--point-tint);
   color: var(--point-strong);
   font-size: 13px;
@@ -8627,7 +8629,7 @@ button.nav-pill:hover {
   gap: 8px;
   padding: 7px 7px 7px 16px;
   border: 1px solid var(--line);
-  border-radius: 28px;
+  border-radius: 16px;
   background: rgba(255, 255, 255, 0.88);
   box-shadow: 0 16px 40px rgba(19, 48, 111, 0.12);
   backdrop-filter: blur(18px) saturate(1.4);
@@ -8659,7 +8661,7 @@ button.nav-pill:hover {
   height: 42px;
   flex: 0 0 auto;
   padding: 0;
-  border-radius: 50%;
+  border-radius: var(--radius-pill);
 }
 
 /* The clip beside the box picks a photo or a PDF to send. */
@@ -8673,7 +8675,7 @@ button.nav-pill:hover {
   height: 42px;
   flex: 0 0 auto;
   place-items: center;
-  border-radius: 50%;
+  border-radius: var(--radius-pill);
   color: var(--ink-soft);
   cursor: pointer;
   transition: background 0.2s var(--ease-out), color 0.2s var(--ease-out);
@@ -8711,7 +8713,7 @@ button.nav-pill:hover {
   gap: 10px;
   margin-bottom: 10px;
   padding: 16px;
-  border-radius: 20px;
+  border-radius: 12px;
   background: var(--surface);
   box-shadow: var(--ring), 0 12px 32px rgba(0, 27, 55, 0.1);
 }
@@ -8732,7 +8734,7 @@ button.nav-pill:hover {
   height: 42px;
   padding: 0 12px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--surface);
   color: var(--ink);
   font: inherit;
@@ -8903,7 +8905,7 @@ button.nav-pill:hover {
 .social-button {
   height: 48px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: 15px;
   font-weight: var(--weight-label);
 }
@@ -8947,7 +8949,7 @@ button.nav-pill:hover {
   width: min(200px, 60vw);
   margin: 4px auto 0;
   padding: 10px;
-  border-radius: 18px;
+  border-radius: 12px;
   background: #fff;
   box-shadow: var(--ring);
 }
@@ -8978,7 +8980,7 @@ button.nav-pill:hover {
   gap: 8px 16px;
   margin: 0;
   padding: 16px 20px 16px 40px;
-  border-radius: 18px;
+  border-radius: 12px;
   background: var(--fill);
   font-size: 15px;
 }
@@ -8999,7 +9001,7 @@ button.nav-pill:hover {
   justify-content: space-between;
   gap: 12px;
   padding: 14px 16px;
-  border-radius: 18px;
+  border-radius: 12px;
   background: var(--fill);
 }
 
@@ -9023,7 +9025,7 @@ button.nav-pill:hover {
 
 .device-current {
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--point);
   color: var(--on-point);
   font-size: 11px;
@@ -9050,7 +9052,7 @@ button.nav-pill:hover {
   margin: 0;
   padding: 14px;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 10px;
   background: var(--fill);
   color: var(--ink);
   cursor: pointer;
@@ -9157,7 +9159,7 @@ button.nav-pill:hover {
   min-height: 30px;
   padding: 0 14px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--surface);
   box-shadow: var(--ring);
   color: var(--ink-soft);
@@ -9175,7 +9177,7 @@ button.nav-pill:hover {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-radius: 14px;
+  border-radius: 10px;
   background: var(--surface);
   box-shadow: var(--ring);
   line-height: 1.1;
@@ -9224,7 +9226,7 @@ button.nav-pill:hover {
   gap: 6px;
   padding: 12px 12px 14px;
   border: 0;
-  border-radius: 18px;
+  border-radius: 12px;
   background: var(--surface);
   box-shadow: var(--ring);
   color: var(--ink);
@@ -9240,7 +9242,7 @@ button.nav-pill:hover {
   width: 44px;
   height: 44px;
   margin-bottom: 4px;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--fill);
   box-shadow: none;
 }
@@ -9322,7 +9324,7 @@ button.nav-pill:hover {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-radius: 16px;
+  border-radius: 10px;
   background: var(--surface);
   box-shadow: var(--ring);
   line-height: 1.05;
@@ -9374,7 +9376,7 @@ button.nav-pill:hover {
   display: grid;
   gap: 10px;
   padding: 16px;
-  border-radius: 18px;
+  border-radius: 12px;
   background: var(--surface);
 }
 
@@ -9388,7 +9390,7 @@ button.nav-pill:hover {
   min-width: 0;
   padding: 10px 12px;
   border: 0;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--fill);
   color: var(--ink-soft);
   font-size: 12px;
@@ -9416,7 +9418,7 @@ button.nav-pill:hover {
   margin: 0;
   padding: 0;
   overflow: hidden;
-  border-radius: 18px;
+  border-radius: 12px;
   background: var(--surface);
   list-style: none;
 }
@@ -9546,7 +9548,7 @@ button.nav-pill:hover {
   height: 43px;
   padding: 0 14px;
   border: 0;
-  border-radius: 11px;
+  border-radius: 8px;
   background: var(--point);
   color: var(--on-point);
   font-size: 13px;
@@ -9576,7 +9578,7 @@ button.nav-pill:hover {
   gap: 8px;
   margin: 10px 0 6px;
   padding: 12px 14px;
-  border-radius: 16px;
+  border-radius: 10px;
   background: var(--fill);
   color: var(--muted);
   font-size: 12px;
@@ -9597,7 +9599,7 @@ button.nav-pill:hover {
   align-items: center;
   gap: 5px;
   padding: 4px 9px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--surface);
   box-shadow: var(--ring);
   color: var(--ink-soft);
@@ -9691,7 +9693,7 @@ button.nav-pill:hover {
   gap: 8px;
   padding: 6px 12px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--fill);
   box-shadow: var(--silver-ring);
   color: var(--ink);
@@ -9913,7 +9915,7 @@ button.nav-pill:hover {
 
 .admin-category {
   padding: 3px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: #fff;
   color: var(--point-strong);
   font-weight: var(--weight-label);
@@ -10238,7 +10240,7 @@ button.nav-pill:hover {
   margin: 4px 0 20px;
   padding: 14px;
   border: 1px solid var(--line);
-  border-radius: 20px;
+  border-radius: 12px;
   background: #fff;
   box-shadow: 0 16px 40px rgba(19, 48, 111, 0.12);
 }
@@ -10265,7 +10267,7 @@ button.nav-pill:hover {
   max-width: 100%;
   overflow: hidden;
   padding: 8px 12px;
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--fill);
   color: var(--ink-soft);
   font-size: 13px;
@@ -10317,7 +10319,7 @@ button.nav-pill:hover {
 .install-steps li,
 .install-devices li {
   padding: 14px 16px;
-  border-radius: 14px;
+  border-radius: 10px;
   background: var(--fill);
   color: var(--ink);
   font-size: 15px;
@@ -10732,7 +10734,7 @@ button.nav-pill:hover {
   height: 24px;
   padding: 0 7px;
   place-items: center;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--fill);
   color: var(--point-strong);
   font-size: 12px;
@@ -10805,7 +10807,7 @@ button.nav-pill:hover {
   gap: 8px;
   margin: 0;
   padding: 12px 14px;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--fill);
 }
 
@@ -10847,7 +10849,7 @@ button.nav-pill:hover {
   gap: 12px;
   padding: 12px 14px;
   border: 1px solid var(--point-line);
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--point-soft);
 }
 
@@ -10899,7 +10901,7 @@ button.nav-pill:hover {
 .decline-button {
   padding: 0 16px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--red-soft);
   color: var(--red);
   box-shadow: inset 0 0 0 1px rgba(194, 53, 43, 0.25);
@@ -10912,7 +10914,7 @@ button.nav-pill:hover {
   align-items: center;
   gap: 6px;
   padding: 7px 12px;
-  border-radius: 16px;
+  border-radius: 10px;
   background: var(--fill);
   color: var(--muted);
   font-size: 13px;
@@ -10998,7 +11000,7 @@ button.nav-pill:hover {
   align-items: center;
   justify-self: start;
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: 12px;
   font-weight: var(--weight-label);
   white-space: nowrap;
@@ -11125,7 +11127,7 @@ button.nav-pill:hover {
   flex: none;
   padding: 0;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--fill-strong);
   box-shadow: inset 0 0 0 1px var(--line-strong);
   transition: background-color 0.2s ease;
@@ -11197,7 +11199,7 @@ button.nav-pill:hover {
 .profile-hero-who .avatar.large {
   width: 76px;
   height: 76px;
-  border-radius: 24px;
+  border-radius: 14px;
   font-size: 32px;
 }
 
@@ -11238,7 +11240,7 @@ button.nav-pill:hover {
   gap: 4px;
   padding: 16px 18px;
   border: 0;
-  border-radius: 18px;
+  border-radius: 12px;
   background: rgba(255, 255, 255, 0.1);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
   color: #fff;
@@ -11283,7 +11285,7 @@ button.nav-pill:hover {
   min-height: 42px;
   padding: 0 14px;
   border: 0;
-  border-radius: 12px;
+  border-radius: 8px;
   background: transparent;
   color: var(--ink-soft);
   font-size: 14px;
@@ -11310,7 +11312,7 @@ button.nav-pill:hover {
   display: grid;
   gap: 18px;
   padding: 26px 28px;
-  border-radius: 24px;
+  border-radius: 14px;
   background: var(--surface);
   box-shadow: var(--ring);
   scroll-margin-top: 110px;
@@ -11328,7 +11330,7 @@ button.nav-pill:hover {
   height: 38px;
   flex: none;
   place-items: center;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--point-tint);
   color: var(--point-strong);
 }
@@ -11395,7 +11397,7 @@ button.nav-pill:hover {
   height: 36px;
   padding: 0 16px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--fill);
   color: var(--ink);
   font-size: 13px;
@@ -11508,7 +11510,7 @@ button.nav-pill:hover {
   width: 44px;
   height: 26px;
   margin: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--fill-strong);
   box-shadow: inset 0 0 0 1px var(--line-strong);
   appearance: none;
@@ -11568,7 +11570,7 @@ button.nav-pill:hover {
   .profile-hero-who .avatar.large {
     width: 60px;
     height: 60px;
-    border-radius: 18px;
+    border-radius: 12px;
     font-size: 26px;
   }
 
@@ -11590,7 +11592,7 @@ button.nav-pill:hover {
 
   .settings-card {
     padding: 22px 18px;
-    border-radius: 20px;
+    border-radius: 12px;
   }
 
   .settings-row {
@@ -11745,7 +11747,7 @@ button.nav-pill:hover {
   gap: 0;
   margin: 0;
   padding: 6px 22px;
-  border-radius: 22px;
+  border-radius: 14px;
   background: var(--surface);
   box-shadow: var(--ring);
   list-style: none;
@@ -11793,7 +11795,7 @@ button.nav-pill:hover {
   gap: 4px;
   padding: 18px 20px;
   border: 1px dashed var(--line-strong, var(--line));
-  border-radius: 18px;
+  border-radius: 12px;
 }
 
 .contract-sign span {
@@ -11815,7 +11817,7 @@ button.nav-pill:hover {
   justify-self: start;
   margin-top: 6px;
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--fill);
   color: var(--muted);
   font-size: 12px;
@@ -11920,7 +11922,7 @@ button.nav-pill:hover {
   display: grid;
   gap: 6px;
   padding: 28px;
-  border-radius: 28px;
+  border-radius: 16px;
   background: rgba(255, 255, 255, 0.12);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
 }
@@ -11965,7 +11967,7 @@ button.nav-pill:hover {
   align-items: center;
   gap: 10px;
   padding: 12px 14px;
-  border-radius: 16px;
+  border-radius: 10px;
   background: var(--fill);
 }
 
@@ -11996,7 +11998,7 @@ button.nav-pill:hover {
   align-items: end;
   gap: 16px 14px;
   padding: 20px;
-  border-radius: 20px;
+  border-radius: 12px;
   background: var(--fill);
 }
 
@@ -12016,7 +12018,7 @@ button.nav-pill:hover {
   height: 48px;
   padding: 0 12px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--surface);
   color: var(--ink);
   font: inherit;
@@ -12177,7 +12179,7 @@ button.nav-pill:hover {
   display: inline-flex;
   margin-top: 14px;
   padding: 6px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.14);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.24);
   font-size: 12px;
@@ -12253,7 +12255,7 @@ button.nav-pill:hover {
   width: 96px;
   height: 96px;
   place-items: center;
-  border-radius: 28px;
+  border-radius: 16px;
   background: rgba(255, 255, 255, 0.12);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
 }
@@ -12269,7 +12271,7 @@ button.nav-pill:hover {
   display: grid;
   gap: 6px;
   padding: 18px 20px;
-  border-radius: 20px;
+  border-radius: 12px;
   background: var(--surface);
   box-shadow: var(--ring);
 }
@@ -12309,7 +12311,7 @@ button.nav-pill:hover {
   display: grid;
   gap: 18px;
   padding: 26px 28px;
-  border-radius: 24px;
+  border-radius: 14px;
   background: var(--surface);
   box-shadow: var(--ring);
 }
@@ -12326,7 +12328,7 @@ button.nav-pill:hover {
   height: 38px;
   flex: none;
   place-items: center;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--point-tint);
   color: var(--point-strong);
 }
@@ -12364,7 +12366,7 @@ button.nav-pill:hover {
 .insight-findings li {
   position: relative;
   padding: 14px 16px 14px 52px;
-  border-radius: 16px;
+  border-radius: 10px;
   background: var(--fill);
   color: var(--ink);
   font-size: 15px;
@@ -12414,7 +12416,7 @@ button.nav-pill:hover {
 .insight-bar {
   position: relative;
   height: 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--fill);
 }
 
@@ -12463,7 +12465,7 @@ button.nav-pill:hover {
 
 .insight-funnel-bar {
   height: 34px;
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--fill);
 }
 
@@ -12503,7 +12505,7 @@ button.nav-pill:hover {
   display: grid;
   gap: 4px;
   padding: 16px 18px;
-  border-radius: 18px;
+  border-radius: 12px;
   background: var(--fill);
 }
 
@@ -12534,7 +12536,7 @@ button.nav-pill:hover {
   gap: 12px;
   margin: 0;
   padding: 16px;
-  border-radius: 18px;
+  border-radius: 12px;
   background: var(--fill);
 }
 
@@ -12622,7 +12624,7 @@ button.nav-pill:hover {
   height: 46px;
   padding: 0 14px;
   border: 0;
-  border-radius: 14px;
+  border-radius: 10px;
   background: var(--fill);
   font-size: 15px;
 }
@@ -12652,7 +12654,7 @@ button.nav-pill:hover {
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--fill);
   color: var(--muted);
   font-size: 13px;
@@ -12691,7 +12693,7 @@ button.nav-pill:hover {
   display: flex;
   justify-content: space-between;
   padding: 10px 12px;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--fill);
   font-size: 13px;
 }
@@ -12745,7 +12747,7 @@ button.nav-pill:hover {
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
-  border-radius: 14px;
+  border-radius: 10px;
   background: var(--fill);
 }
 
@@ -12767,7 +12769,7 @@ button.nav-pill:hover {
   height: 40px;
   flex: none;
   place-items: center;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--point);
   color: var(--on-point);
   font-size: 14px;
@@ -12798,7 +12800,7 @@ button.nav-pill:hover {
   margin-top: 4px;
   padding: 4px 10px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--point-tint);
   color: var(--point-strong);
   font-size: 12px;
@@ -12815,7 +12817,7 @@ button.nav-pill:hover {
 
 .insight-offer > div {
   padding: 28px;
-  border-radius: 24px;
+  border-radius: 14px;
   background: var(--surface);
   box-shadow: var(--ring);
 }
@@ -12846,7 +12848,7 @@ button.nav-pill:hover {
   display: flex;
   gap: 12px;
   padding: 14px;
-  border-radius: 16px;
+  border-radius: 10px;
   background: var(--fill);
 }
 
@@ -12876,7 +12878,7 @@ button.nav-pill:hover {
   display: grid;
   gap: 8px;
   padding: 24px;
-  border-radius: 24px;
+  border-radius: 14px;
   background: var(--surface);
   box-shadow: var(--ring), 0 24px 60px rgba(19, 48, 111, 0.12);
 }
@@ -12938,7 +12940,7 @@ button.nav-pill:hover {
 
   .insight-section {
     padding: 22px 18px;
-    border-radius: 20px;
+    border-radius: 12px;
   }
 
   .insight-scorecard li {
@@ -12990,7 +12992,7 @@ button.nav-pill:hover {
   display: grid;
   gap: 4px;
   padding: 14px 16px;
-  border-radius: 16px;
+  border-radius: 10px;
   background: var(--fill);
 }
 
@@ -13044,7 +13046,7 @@ button.nav-pill:hover {
 
 .insight-tags li {
   padding: 6px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--point-tint);
   color: var(--point-strong);
   font-size: 12px;
@@ -13063,7 +13065,7 @@ button.nav-pill:hover {
   gap: 10px;
   margin: 0;
   padding: 16px;
-  border-radius: 18px;
+  border-radius: 12px;
   background: var(--fill);
 }
 
@@ -13093,7 +13095,7 @@ button.nav-pill:hover {
   display: grid;
   gap: 4px;
   padding: 14px 16px;
-  border-radius: 16px;
+  border-radius: 10px;
   background: var(--fill);
   font-size: 13px;
 }
@@ -13166,7 +13168,7 @@ button.nav-pill:hover {
   gap: 8px;
   padding: 16px 18px;
   border-left: 3px solid var(--point);
-  border-radius: 0 16px 16px 0;
+  border-radius: 0 10px 10px 0;
   background: var(--point-tint);
 }
 
@@ -13204,7 +13206,7 @@ button.nav-pill:hover {
   gap: 4px;
   margin: 0;
   padding: 14px 18px;
-  border-radius: 16px;
+  border-radius: 10px;
   background: var(--fill);
   list-style: none;
 }
@@ -13247,7 +13249,7 @@ button.nav-pill:hover {
 .insight-pdf .insight-section {
   gap: 12px;
   padding: 18px 20px;
-  border-radius: 16px;
+  border-radius: 10px;
 }
 
 .insight-pdf .insight-section h2 {
@@ -13260,7 +13262,7 @@ button.nav-pill:hover {
   justify-content: space-between;
   gap: 18px;
   padding: 26px 28px;
-  border-radius: 18px;
+  border-radius: 12px;
   background: radial-gradient(110% 90% at 70% 30%, #1f4cb3 0%, #0b1a3e 72%);
   color: #fff;
 }
@@ -13358,7 +13360,7 @@ button.nav-pill:hover {
   grid-template-rows: auto auto auto 1fr auto auto;
   gap: 12px;
   padding: 26px;
-  border-radius: 28px;
+  border-radius: 16px;
   background: var(--silver-gradient);
   box-shadow: var(--silver-ring);
 }
@@ -13394,7 +13396,7 @@ button.nav-pill:hover {
   width: 44px;
   height: 44px;
   place-items: center;
-  border-radius: 14px;
+  border-radius: 10px;
   background: var(--surface);
   color: var(--point-strong);
 }
@@ -13457,7 +13459,7 @@ button.nav-pill:hover {
   height: 44px;
   padding: 0 18px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--surface);
   color: var(--ink);
   font-size: 14px;
@@ -13508,7 +13510,7 @@ button.nav-pill:hover {
   align-content: start;
   gap: 10px;
   padding: 28px;
-  border-radius: 28px;
+  border-radius: 16px;
 }
 
 .why-before {
@@ -13569,7 +13571,7 @@ button.nav-pill:hover {
   height: 22px;
   margin-top: 1px;
   place-items: center;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--fill-strong);
   color: var(--muted);
 }
@@ -13590,7 +13592,7 @@ button.nav-pill:hover {
   width: 40px;
   height: 40px;
   place-items: center;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--surface);
   box-shadow: var(--ring);
   color: var(--point-strong);
@@ -13626,7 +13628,7 @@ button.nav-pill:hover {
   grid-template-rows: auto auto 1fr auto;
   gap: 10px;
   padding: 22px;
-  border-radius: 24px;
+  border-radius: 14px;
   background: var(--surface);
   box-shadow: var(--ring);
 }
@@ -13636,7 +13638,7 @@ button.nav-pill:hover {
   width: 40px;
   height: 40px;
   place-items: center;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--point-tint);
   color: var(--point-strong);
 }
@@ -13657,7 +13659,7 @@ button.nav-pill:hover {
 .why-proof {
   justify-self: start;
   padding: 5px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--fill);
   color: var(--point-strong);
   font-size: 12px;
@@ -13669,7 +13671,7 @@ button.nav-pill:hover {
   justify-items: center;
   gap: 14px;
   padding: 28px;
-  border-radius: 28px;
+  border-radius: 16px;
   background: var(--silver-gradient);
   box-shadow: var(--silver-ring);
   text-align: center;
@@ -13826,7 +13828,7 @@ button.nav-pill:hover {
   flex: none;
   place-items: center;
   border: 0;
-  border-radius: 50%;
+  border-radius: 8px;
   background: transparent;
   color: inherit;
 }
@@ -13886,7 +13888,7 @@ button.nav-pill:hover {
   gap: 14px;
   width: min(420px, 100%);
   padding: 36px 32px;
-  border-radius: 24px;
+  border-radius: 14px;
   background: var(--surface);
   box-shadow: 0 8px 24px rgba(0, 27, 55, 0.06);
 }
@@ -13920,7 +13922,7 @@ button.nav-pill:hover {
   height: 52px;
   padding: 0 48px 0 16px;
   border: 0;
-  border-radius: 14px;
+  border-radius: 10px;
   background: var(--fill);
   box-shadow: none;
   font-size: 15px;
@@ -13932,7 +13934,7 @@ button.nav-pill:hover {
 
 .console-login-card .primary-button {
   min-height: 52px;
-  border-radius: 16px;
+  border-radius: 10px;
   font-size: 16px;
 }
 
@@ -13969,7 +13971,7 @@ button.nav-pill:hover {
   gap: 10px;
   padding: 6px 10px;
   border: 0;
-  border-radius: 12px;
+  border-radius: 8px;
   background: transparent;
   cursor: pointer;
 }
@@ -13986,7 +13988,7 @@ button.nav-pill:hover {
 
 .console-brand span {
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--point-tint);
   color: var(--point);
   font-size: 11px;
@@ -14020,7 +14022,7 @@ button.nav-pill:hover {
   min-height: 46px;
   padding: 0 12px;
   border: 0;
-  border-radius: 12px;
+  border-radius: 8px;
   background: transparent;
   color: var(--ink-soft);
   font-size: 15px;
@@ -14048,7 +14050,7 @@ button.nav-pill:hover {
   margin-left: auto;
   min-width: 22px;
   padding: 1px 7px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--red);
   color: #fff;
   font-size: 11px;
@@ -14063,7 +14065,7 @@ button.nav-pill:hover {
   gap: 10px;
   margin-top: auto;
   padding: 10px 12px;
-  border-radius: 12px;
+  border-radius: 8px;
   color: var(--muted);
   font-size: 14px;
   text-decoration: none;
@@ -14147,7 +14149,7 @@ button.nav-pill:hover {
   flex: none;
   place-items: center;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--surface);
   color: var(--ink-soft);
 }
@@ -14178,7 +14180,7 @@ button.nav-pill:hover {
   width: min(420px, 100%);
   height: 44px;
   padding: 0 14px;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--fill);
   color: var(--muted);
 }
@@ -14221,7 +14223,7 @@ button.nav-pill:hover {
   height: 44px;
   padding: 0 10px 0 6px;
   border: 0;
-  border-radius: 12px;
+  border-radius: 8px;
   background: transparent;
   color: var(--ink);
   font-size: 14px;
@@ -14255,7 +14257,7 @@ button.nav-pill:hover {
   display: grid;
   min-width: 160px;
   padding: 6px;
-  border-radius: 14px;
+  border-radius: 10px;
   background: var(--surface);
   box-shadow: 0 12px 32px rgba(0, 27, 55, 0.14);
 }
@@ -14263,7 +14265,7 @@ button.nav-pill:hover {
 .console-profile-menu :is(a, button) {
   padding: 10px 12px;
   border: 0;
-  border-radius: 10px;
+  border-radius: 8px;
   background: transparent;
   color: var(--ink);
   font: inherit;
@@ -14312,7 +14314,7 @@ button.nav-pill:hover {
 .console-text-button {
   padding: 8px 12px;
   border: 0;
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--point-tint);
   color: var(--point);
   font-size: 14px;
@@ -14335,7 +14337,7 @@ button.nav-pill:hover {
   gap: 16px;
   min-width: 0;
   padding: 24px;
-  border-radius: 20px;
+  border-radius: 12px;
   background: var(--surface);
   box-shadow: 0 1px 2px rgba(0, 27, 55, 0.04);
 }
@@ -14385,7 +14387,7 @@ button.nav-pill:hover {
   height: 48px;
   grid-column: 1 / -1;
   place-items: center;
-  border-radius: 14px;
+  border-radius: 10px;
   background: var(--fill);
   color: var(--ink-soft);
 }
@@ -14411,7 +14413,7 @@ button.nav-pill:hover {
 
 .console-badge {
   padding: 4px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--fill);
   color: var(--ink-soft);
   font-size: 12px;
@@ -14556,7 +14558,7 @@ button.nav-pill:hover {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   margin: 0;
-  border-radius: 16px;
+  border-radius: 10px;
   background: var(--fill);
 }
 
@@ -14596,7 +14598,7 @@ button.nav-pill:hover {
   gap: 14px;
   padding: 14px 10px;
   border: 0;
-  border-radius: 14px;
+  border-radius: 10px;
   background: transparent;
   color: var(--ink);
   font-size: 15px;
@@ -14612,7 +14614,7 @@ button.nav-pill:hover {
   width: 40px;
   height: 40px;
   place-items: center;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--fill);
   color: var(--ink-soft);
 }
@@ -14668,7 +14670,7 @@ button.nav-pill:hover {
   height: 10px;
   min-width: 4px;
   grid-column: 1 / -1;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--console-blue);
 }
 
@@ -14684,14 +14686,14 @@ button.nav-pill:hover {
 .console-segment {
   display: inline-flex;
   padding: 4px;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--fill);
 }
 
 .console-segment button {
   padding: 7px 14px;
   border: 0;
-  border-radius: 9px;
+  border-radius: 6px;
   background: transparent;
   color: var(--muted);
   font-size: 13px;
@@ -14759,7 +14761,7 @@ button.nav-pill:hover {
   height: 44px;
   padding: 0 14px;
   border: 0;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--fill);
   color: var(--ink);
   font: inherit;
@@ -14848,11 +14850,11 @@ button.nav-pill:hover {
 }
 
 .console-table thead th:first-child {
-  border-radius: 10px 0 0 10px;
+  border-radius: 8px 0 0 8px;
 }
 
 .console-table thead th:last-child {
-  border-radius: 0 10px 10px 0;
+  border-radius: 0 8px 8px 0;
 }
 
 .console-table tbody tr {
@@ -14938,7 +14940,7 @@ button.nav-pill:hover {
   height: 36px;
   place-items: center;
   border: 0;
-  border-radius: 50%;
+  border-radius: var(--radius-pill);
   background: var(--fill);
 }
 
@@ -14975,7 +14977,7 @@ button.nav-pill:hover {
 
 .console-list li {
   padding: 10px 12px;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--fill);
 }
 
@@ -15044,7 +15046,7 @@ button.nav-pill:hover {
   display: grid;
   gap: 8px;
   padding: 14px;
-  border-radius: 14px;
+  border-radius: 10px;
   background: var(--orange-soft);
 }
 
@@ -15074,7 +15076,7 @@ button.nav-pill:hover {
   width: 100%;
   padding: 10px 12px;
   border: 0;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--surface);
   box-shadow: inset 0 0 0 1px var(--line);
   color: var(--ink);
@@ -15166,7 +15168,7 @@ button.nav-pill:hover {
   height: 44px;
   padding: 0 12px;
   border: 0;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--fill);
   color: var(--muted);
   font: inherit;
@@ -15197,7 +15199,7 @@ button.nav-pill:hover {
   gap: 12px;
   width: min(340px, calc(100vw - 48px));
   padding: 16px;
-  border-radius: 18px;
+  border-radius: 12px;
   background: var(--surface);
   box-shadow: 0 0 0 1px var(--line), 0 16px 40px rgba(0, 27, 55, 0.16);
   animation: fade-in 0.2s var(--ease-out);
@@ -15258,7 +15260,7 @@ button.nav-pill:hover {
 
 .console-period-pop .date-cell {
   border: 0;
-  border-radius: 10px;
+  border-radius: 8px;
   background: transparent;
   color: var(--ink);
   font-size: 13px;
@@ -15293,19 +15295,19 @@ button.nav-pill:hover {
 }
 
 .console-period-pop .date-cell.in-range:nth-child(7n + 1) {
-  border-radius: 10px 0 0 10px;
+  border-radius: 8px 0 0 8px;
 }
 
 .console-period-pop .date-cell.in-range:nth-child(7n) {
-  border-radius: 0 10px 10px 0;
+  border-radius: 0 8px 8px 0;
 }
 
 .console-period-pop .date-cell.range-start:not(:nth-child(7n)) {
-  border-radius: 10px 0 0 10px;
+  border-radius: 8px 0 0 8px;
 }
 
 .console-period-pop .date-cell.range-end:not(:nth-child(7n + 1)) {
-  border-radius: 0 10px 10px 0;
+  border-radius: 0 8px 8px 0;
 }
 
 .console-period-pop .date-cell.selected {
@@ -15328,7 +15330,7 @@ button.nav-pill:hover {
   justify-content: space-between;
   gap: 12px;
   padding: 14px 16px;
-  border-radius: 14px;
+  border-radius: 10px;
   background: var(--fill);
   color: var(--muted);
 }
@@ -15430,7 +15432,7 @@ button.nav-pill:hover {
   height: 8px;
   min-width: 4px;
   grid-column: 1 / -1;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--console-blue);
 }
 
@@ -15445,7 +15447,7 @@ button.nav-pill:hover {
   display: grid;
   gap: 4px;
   padding: 16px;
-  border-radius: 16px;
+  border-radius: 10px;
   background: var(--fill);
 }
 
@@ -15464,7 +15466,7 @@ button.nav-pill:hover {
   display: block;
   height: 6px;
   overflow: hidden;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--fill-strong);
 }
 
@@ -15595,7 +15597,7 @@ button.nav-pill:hover {
   gap: 8px;
   min-height: 160px;
   padding: 12px;
-  border-radius: 16px;
+  border-radius: 10px;
   background: var(--fill);
 }
 
@@ -15620,7 +15622,7 @@ button.nav-pill:hover {
   gap: 4px;
   padding: 12px;
   border: 0;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--surface);
   box-shadow: 0 1px 2px rgba(0, 27, 55, 0.06);
   color: var(--ink);
@@ -15671,7 +15673,7 @@ button.nav-pill:hover {
   display: grid;
   gap: 12px;
   padding: 16px;
-  border-radius: 16px;
+  border-radius: 10px;
   background: var(--fill);
 }
 
@@ -15795,7 +15797,7 @@ th[aria-sort="descending"] .console-sort span {
   flex-wrap: wrap;
   gap: 14px;
   padding: 12px 14px;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--fill);
 }
 
@@ -15805,7 +15807,7 @@ th[aria-sort="descending"] .console-sort span {
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--point-tint);
 }
 
@@ -15814,7 +15816,7 @@ th[aria-sort="descending"] .console-sort span {
   height: 34px;
   padding: 0 10px;
   border: 0;
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--surface);
   color: var(--ink);
   font: inherit;
@@ -15856,7 +15858,7 @@ th[aria-sort="descending"] .console-sort span {
   align-items: center;
   gap: 6px;
   padding: 12px 14px;
-  border-radius: 14px;
+  border-radius: 10px;
   background: var(--red-soft);
   color: var(--red);
   font-size: 13px;
@@ -15883,7 +15885,7 @@ th[aria-sort="descending"] .console-sort span {
   gap: 4px;
   padding: 4px 10px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--point-tint);
   color: var(--point);
   font-size: 12px;
@@ -15901,7 +15903,7 @@ th[aria-sort="descending"] .console-sort span {
   height: 34px;
   padding: 0 10px;
   border: 0;
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--fill);
   color: var(--ink);
   font: inherit;
@@ -15992,7 +15994,7 @@ th[aria-sort="descending"] .console-sort span {
   display: grid;
   width: min(560px, 100%);
   overflow: hidden;
-  border-radius: 18px;
+  border-radius: 12px;
   background: var(--surface);
   box-shadow: 0 24px 60px rgba(0, 27, 55, 0.3);
 }
@@ -16023,7 +16025,7 @@ th[aria-sort="descending"] .console-sort span {
   justify-content: space-between;
   gap: 10px;
   padding: 10px 14px;
-  border-radius: 10px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
 }
@@ -16052,7 +16054,7 @@ th[aria-sort="descending"] .console-sort span {
   display: block;
   width: 100%;
   height: auto;
-  border-radius: 16px;
+  border-radius: 10px;
   background:
     radial-gradient(circle at 1px 1px, var(--line) 1px, transparent 0) 0 0 / 22px 22px,
     var(--fill);
@@ -16339,7 +16341,7 @@ th[aria-sort="descending"] .console-sort span {
   justify-items: start;
   gap: 12px;
   padding: 20px;
-  border-radius: 18px;
+  border-radius: 12px;
   background: var(--fill);
   color: var(--ink-soft);
   font-size: 14px;
@@ -16363,7 +16365,7 @@ th[aria-sort="descending"] .console-sort span {
   display: grid;
   gap: 4px;
   padding: 14px 16px;
-  border-radius: 16px;
+  border-radius: 10px;
   background: var(--fill);
 }
 
@@ -16393,7 +16395,7 @@ th[aria-sort="descending"] .console-sort span {
   gap: 10px;
   margin: 0;
   padding: 16px;
-  border-radius: 18px;
+  border-radius: 12px;
   background: var(--surface);
   box-shadow: var(--ring);
 }
@@ -16423,7 +16425,7 @@ th[aria-sort="descending"] .console-sort span {
 
 .portfolio-bar {
   height: 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--fill);
 }
 
@@ -16461,7 +16463,7 @@ th[aria-sort="descending"] .console-sort span {
   display: grid;
   gap: 10px;
   padding: 18px;
-  border-radius: 18px;
+  border-radius: 12px;
   background: var(--point-tint);
 }
 
@@ -16477,7 +16479,7 @@ th[aria-sort="descending"] .console-sort span {
   height: 44px;
   padding: 0 14px;
   border: 0;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--surface);
   font-size: 15px;
 }
@@ -16499,7 +16501,7 @@ th[aria-sort="descending"] .console-sort span {
   display: grid;
   gap: 10px;
   padding: 16px;
-  border-radius: 18px;
+  border-radius: 12px;
   background: var(--fill);
 }
 
@@ -16513,7 +16515,7 @@ th[aria-sort="descending"] .console-sort span {
 .partner-request textarea {
   padding: 12px 14px;
   border: 0;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--surface);
   font: inherit;
   font-size: 14px;
@@ -16558,7 +16560,7 @@ th[aria-sort="descending"] .console-sort span {
   align-content: start;
   gap: 10px;
   padding: 20px;
-  border-radius: 20px;
+  border-radius: 12px;
   background: var(--fill);
 }
 
@@ -16580,7 +16582,7 @@ th[aria-sort="descending"] .console-sort span {
 
 .plan-option header em {
   padding: 3px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.18);
   font-size: 11px;
   font-style: normal;
@@ -16639,7 +16641,7 @@ th[aria-sort="descending"] .console-sort span {
   display: grid;
   gap: 4px;
   padding: 16px 18px;
-  border-radius: 18px;
+  border-radius: 12px;
   background: var(--surface);
   box-shadow: var(--ring);
 }
@@ -16670,7 +16672,7 @@ th[aria-sort="descending"] .console-sort span {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   padding: 18px;
-  border-radius: 18px;
+  border-radius: 12px;
   background: var(--surface);
   box-shadow: var(--ring);
 }
@@ -16686,7 +16688,7 @@ th[aria-sort="descending"] .console-sort span {
   height: 46px;
   padding: 0 14px;
   border: 0;
-  border-radius: 14px;
+  border-radius: 10px;
   background: var(--fill);
   font-size: 15px;
 }
@@ -16713,7 +16715,7 @@ th[aria-sort="descending"] .console-sort span {
   display: grid;
   margin: 0;
   padding: 4px 18px;
-  border-radius: 18px;
+  border-radius: 12px;
   background: var(--fill);
 }
 
@@ -16790,7 +16792,7 @@ th[aria-sort="descending"] .console-sort span {
 .payment-test {
   margin: 0;
   padding: 10px 14px;
-  border-radius: 14px;
+  border-radius: 10px;
   background: var(--orange-soft);
   color: var(--orange);
   font-size: 13px;
@@ -16800,7 +16802,7 @@ th[aria-sort="descending"] .console-sort span {
 .payment-note {
   margin: 0;
   padding: 12px 14px;
-  border-radius: 14px;
+  border-radius: 10px;
   background: var(--point-tint);
   color: var(--point-strong);
   font-size: 13px;
@@ -16844,7 +16846,7 @@ th[aria-sort="descending"] .console-sort span {
 
 .payment-status {
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--fill);
   color: var(--ink-soft);
   font-size: 11px;
@@ -17239,7 +17241,7 @@ th[aria-sort="descending"] .console-sort span {
   height: 24px;
   padding: 0;
   border: 0;
-  border-radius: 50%;
+  border-radius: 8px;
   background: rgba(43, 51, 67, 0.72);
   color: #fff;
 }
@@ -17262,7 +17264,7 @@ th[aria-sort="descending"] .console-sort span {
   height: 40px;
   padding: 0 14px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--fill);
   color: var(--ink);
   font-size: 14px;
@@ -17443,7 +17445,7 @@ th[aria-sort="descending"] .console-sort span {
 .work-tags > span.tag-verified,
 .tag-pro {
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--point);
   color: var(--on-point);
   font-size: 10px;
@@ -17462,7 +17464,7 @@ th[aria-sort="descending"] .console-sort span {
 .profile-verified {
   margin-top: 6px;
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--point-tint);
   font-size: 12px;
 }
@@ -17517,7 +17519,7 @@ th[aria-sort="descending"] .console-sort span {
 
 .review-tags li {
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--point-tint);
   color: var(--point-strong);
   font-size: 12px;
@@ -17662,14 +17664,14 @@ th[aria-sort="descending"] .console-sort span {
 .post-type-input label:has(input:focus-visible) {
   outline: 2px solid var(--point-bright);
   outline-offset: 2px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 .review-tag-input label,
 .post-type-input label {
   position: relative;
   padding: 8px 14px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: #fff;
   color: var(--ink-soft);
   box-shadow: inset 0 0 0 1px var(--line-strong);
@@ -17747,7 +17749,7 @@ th[aria-sort="descending"] .console-sort span {
   top: 16px;
   left: 16px;
   padding: 6px 12px 6px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(8, 20, 52, 0.55);
   backdrop-filter: blur(10px);
   color: #fff;
@@ -17962,7 +17964,7 @@ th[aria-sort="descending"] .console-sort span {
   height: 8px;
   flex: 1;
   overflow: hidden;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--fill-strong);
 }
 
@@ -18124,7 +18126,7 @@ th[aria-sort="descending"] .console-sort span {
   height: 52px;
   margin-top: 20px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--point-tint);
   color: var(--point-strong);
   font-size: 15px;
@@ -18344,7 +18346,7 @@ th[aria-sort="descending"] .console-sort span {
   width: 32px;
   height: 32px;
   place-items: center;
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--surface);
   color: var(--point-strong);
 }
@@ -18409,7 +18411,7 @@ th[aria-sort="descending"] .console-sort span {
   height: 32px;
   padding: 0 12px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--fill);
   color: var(--ink);
   font-size: 12px;
@@ -18472,7 +18474,7 @@ th[aria-sort="descending"] .console-sort span {
   display: grid;
   gap: 2px;
   padding: 14px 16px;
-  border-radius: 16px;
+  border-radius: 10px;
   background: var(--fill);
 }
 
@@ -18588,7 +18590,7 @@ th[aria-sort="descending"] .console-sort span {
 .request-card,
 .analytics-card {
   border: 0;
-  border-radius: 28px;
+  border-radius: 16px;
   background: var(--surface);
   box-shadow: inset 0 0 0 1px var(--line);
 }
@@ -18606,7 +18608,7 @@ th[aria-sort="descending"] .console-sort span {
 }
 
 .chat-row {
-  border-radius: 24px;
+  border-radius: 14px;
 }
 
 .form-card-title {
@@ -18790,7 +18792,7 @@ th[aria-sort="descending"] .console-sort span {
     left: 12px;
     width: auto;
     max-height: min(65vh, 480px);
-    border-radius: 22px;
+    border-radius: 14px;
     transform-origin: top center;
   }
 
@@ -19020,7 +19022,7 @@ th[aria-sort="descending"] .console-sort span {
   .work-mark .match-logo.large {
     width: 56px;
     height: 56px;
-    border-radius: 18px;
+    border-radius: 12px;
     box-shadow:
       0 0 0 4px rgba(255, 255, 255, 0.7),
       0 12px 24px -12px rgba(19, 48, 111, 0.4);
@@ -19086,7 +19088,7 @@ th[aria-sort="descending"] .console-sort span {
 
   .journey {
     padding-block: 64px 72px;
-    border-radius: 24px 24px 0 0;
+    border-radius: 14px 14px 0 0;
   }
 
   .journey .section-head {
@@ -19190,7 +19192,7 @@ th[aria-sort="descending"] .console-sort span {
   .avatar.large {
     width: 72px;
     height: 72px;
-    border-radius: 22px;
+    border-radius: 14px;
     font-size: 30px;
   }
 
@@ -19268,7 +19270,7 @@ th[aria-sort="descending"] .console-sort span {
     width: 100%;
     max-height: 92vh;
     padding: 28px 20px calc(28px + env(safe-area-inset-bottom));
-    border-radius: 28px 28px 0 0;
+    border-radius: 16px 16px 0 0;
   }
 
   .modal-calendar {
@@ -19304,7 +19306,7 @@ th[aria-sort="descending"] .console-sort span {
   .measure-card,
   .analytics-card {
     padding: 20px;
-    border-radius: 24px;
+    border-radius: 14px;
   }
 
   .request-card {
@@ -19343,7 +19345,7 @@ th[aria-sort="descending"] .console-sort span {
     align-items: stretch;
     gap: 3px;
     padding: 4px 2px;
-    border-radius: 10px;
+    border-radius: 8px;
   }
 
   .day-number {
@@ -19638,7 +19640,7 @@ th[aria-sort="descending"] .console-sort span {
   gap: 6px;
   padding: 9px 15px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.14);
   color: #fff;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.32);
@@ -19666,7 +19668,7 @@ th[aria-sort="descending"] .console-sort span {
   align-items: center;
   gap: 10px;
   padding: 6px 6px 6px 18px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: #fff;
   color: var(--muted);
   box-shadow: 0 18px 40px -18px rgba(8, 20, 52, 0.6);
@@ -19694,7 +19696,7 @@ th[aria-sort="descending"] .console-sort span {
   flex: 0 0 auto;
   padding: 0 24px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--point);
   color: var(--on-point);
   font-size: 14px;
@@ -19714,7 +19716,7 @@ th[aria-sort="descending"] .console-sort span {
   left: 0;
   margin: 0;
   padding: 6px;
-  border-radius: 20px;
+  border-radius: 12px;
   background: #fff;
   box-shadow:
     var(--ring),
@@ -19728,7 +19730,7 @@ th[aria-sort="descending"] .console-sort span {
   align-items: center;
   gap: 10px;
   padding: 11px 14px;
-  border-radius: 14px;
+  border-radius: 10px;
   color: var(--ink);
   cursor: pointer;
   font-size: 14px;
@@ -19752,7 +19754,7 @@ th[aria-sort="descending"] .console-sort span {
 .help-suggestions li small {
   flex: 0 0 auto;
   padding: 3px 9px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--fill);
   color: var(--muted);
   font-size: 11px;
@@ -19798,7 +19800,7 @@ th[aria-sort="descending"] .console-sort span {
   height: 48px;
   place-items: center;
   margin-bottom: 4px;
-  border-radius: 16px;
+  border-radius: 10px;
   background: var(--point-tint);
   color: var(--point);
 }
@@ -19882,7 +19884,7 @@ th[aria-sort="descending"] .console-sort span {
   align-items: flex-start;
   gap: 12px;
   padding: 16px;
-  border-radius: 14px;
+  border-radius: 10px;
   background: var(--point-soft);
   color: var(--ink-soft);
   font-size: 14px;
@@ -19902,7 +19904,7 @@ th[aria-sort="descending"] .console-sort span {
   height: 34px;
   padding: 0 14px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--fill);
   color: var(--ink-soft);
   font-size: 13px;
@@ -19917,7 +19919,7 @@ th[aria-sort="descending"] .console-sort span {
 .ask-sent {
   margin: 0;
   padding: 10px 14px;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--green-soft);
   color: var(--green);
   font-size: 13px;
@@ -19947,7 +19949,7 @@ th[aria-sort="descending"] .console-sort span {
 
 .ask-history li {
   padding: 14px;
-  border-radius: 14px;
+  border-radius: 10px;
   background: var(--fill);
 }
 
@@ -19967,7 +19969,7 @@ th[aria-sort="descending"] .console-sort span {
 .ask-chip,
 .ask-state {
   padding: 3px 9px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: #fff;
   color: var(--ink-soft);
   font-weight: var(--weight-label);
@@ -19993,7 +19995,7 @@ th[aria-sort="descending"] .console-sort span {
 .ask-answer {
   margin-top: 10px;
   padding: 12px;
-  border-radius: 12px;
+  border-radius: 8px;
   background: #fff;
   box-shadow: inset 3px 0 0 var(--point);
   font-size: 13px;
@@ -21013,7 +21015,7 @@ button:active:not(:disabled) {
 
 .pdf-summary {
   padding: 18px 22px;
-  border-radius: 16px;
+  border-radius: 10px;
   background: var(--point-tint);
 }
 
@@ -21053,7 +21055,7 @@ button:active:not(:disabled) {
 .pdf-card {
   padding: 16px 18px;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 10px;
 }
 
 .pdf-kpis {
@@ -21068,7 +21070,7 @@ button:active:not(:disabled) {
   gap: 4px;
   padding: 14px;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 10px;
 }
 
 .pdf-kpi > span {
@@ -21286,7 +21288,7 @@ button:active:not(:disabled) {
   display: flex;
   height: 22px;
   overflow: hidden;
-  border-radius: 11px;
+  border-radius: 8px;
 }
 
 .pdf-value-legend {
@@ -21342,7 +21344,7 @@ button:active:not(:disabled) {
 .pdf-insights li {
   position: relative;
   padding: 11px 14px 11px 38px;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--canvas);
   font-size: 12px;
   line-height: 1.55;
@@ -21491,7 +21493,7 @@ button:active:not(:disabled) {
   display: block;
   height: 8px;
   overflow: hidden;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--canvas);
 }
 
@@ -21526,7 +21528,7 @@ button:active:not(:disabled) {
   grid-template-columns: 26px 1fr;
   gap: 8px;
   padding: 12px 14px;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--point-tint);
   color: var(--ink);
   font-size: 12.5px;
@@ -21562,7 +21564,7 @@ button:active:not(:disabled) {
 .pdf-facts div {
   padding: 12px 14px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 8px;
 }
 
 .pdf-facts .wide {
@@ -21594,7 +21596,7 @@ button:active:not(:disabled) {
   display: grid;
   gap: 4px;
   padding: 12px 14px;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--point-tint);
 }
 
@@ -21677,7 +21679,7 @@ body.checkin-body {
   flex-direction: column;
   gap: 14px;
   padding: 26px 22px;
-  border-radius: 24px;
+  border-radius: 14px;
   background: var(--surface);
   box-shadow: var(--ring), 0 24px 60px rgba(19, 48, 111, 0.12);
 }
@@ -21713,7 +21715,7 @@ body.checkin-body {
   align-items: center;
   gap: 12px;
   padding: 14px;
-  border-radius: 16px;
+  border-radius: 10px;
   background: var(--green-soft);
 }
 
@@ -21764,7 +21766,7 @@ body.checkin-body {
   gap: 4px;
   padding: 20px 20px 18px;
   border: 1.5px dashed var(--point-deep);
-  border-radius: 18px;
+  border-radius: 12px;
   background: var(--point-soft);
 }
 
@@ -21811,7 +21813,7 @@ body.checkin-body {
   align-items: center;
   gap: 2px;
   padding: 12px;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--surface);
 }
 
@@ -21840,7 +21842,7 @@ body.checkin-body {
   gap: 6px;
   margin: 0;
   padding: 12px;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--green-soft);
   color: var(--green);
   font-size: 13px;
@@ -21853,7 +21855,7 @@ body.checkin-body {
   gap: 12px;
   margin-top: 18px;
   padding: 18px;
-  border-radius: 18px;
+  border-radius: 12px;
   background: var(--fill);
   text-align: left;
 }
@@ -21893,7 +21895,7 @@ body.checkin-body {
 .checkin-survey fieldset button {
   padding: 7px 12px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--surface);
   box-shadow: var(--ring);
   color: var(--ink);
@@ -21950,7 +21952,7 @@ body.checkin-body {
   gap: 10px 12px;
   margin-bottom: 28px;
   padding: 16px 20px;
-  border-radius: 22px;
+  border-radius: 14px;
   background: var(--fill);
   box-shadow: var(--ring);
 }
@@ -21987,7 +21989,7 @@ body.checkin-body {
   gap: 16px;
   height: 100%;
   padding: 20px;
-  border-radius: 24px;
+  border-radius: 14px;
   background: #fff;
   box-shadow: var(--ring), 0 14px 34px rgba(19, 48, 111, 0.08);
 }
@@ -22024,7 +22026,7 @@ body.checkin-body {
 
 .council-figures div {
   padding: 10px 12px;
-  border-radius: 14px;
+  border-radius: 10px;
   background: var(--fill);
 }
 
