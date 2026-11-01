@@ -1676,8 +1676,9 @@ test("the account button opens a small panel with 내 정보 and 로그아웃", 
 test("every sponsorship on 성과 분석 has its detailed report, and 요금제 보기 opens the plans in place", async ({ page, request }) => {
   await page.goto("/analytics?role=브랜드")
   const rows = page.locator(".analytics-table .analytics-row:not(.head)")
+  // count() doesn't wait, so wait for the rows to arrive before counting them.
+  await expect(rows.nth(1)).toBeVisible()
   const count = await rows.count()
-  expect(count).toBeGreaterThan(1)
   await expect(page.locator(".analytics-table .report-button")).toHaveCount(count)
   // One without a measured event can be bought too, worked out from its record.
   await rows.last().locator(".report-button").click()
