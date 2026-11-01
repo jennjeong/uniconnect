@@ -1171,6 +1171,621 @@ button.nav-pill:hover {
   padding-bottom: 40px;
 }
 
+/* The student group's dashboard (DashboardPage.tsx), laid out like Toss's
+   home: a plain greeting, the next event on a deep blue Antipode card with
+   the sponsorship's five steps, then flat silver tiles and rows that each
+   go where they say, pressing in a little as they are pressed. One title
+   size per block, no statements or pitches. */
+.dash {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  padding-top: 28px;
+}
+
+.dash-greeting {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.dash-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: var(--weight-label);
+}
+
+.dash-eyebrow b {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--point-tint);
+  color: var(--point-strong);
+  font-size: 12px;
+  font-weight: var(--weight-badge);
+}
+
+.dash-greeting h1 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 32px;
+  font-weight: var(--weight-display);
+  letter-spacing: -0.03em;
+  line-height: 1.3;
+}
+
+.dash-greeting p {
+  margin: 0 0 4px;
+  color: var(--ink-soft);
+  font-size: 17px;
+  line-height: 1.5;
+}
+
+.dash-next {
+  --surface-tone: dark;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 28px;
+  background: radial-gradient(120% 120% at 85% 100%, #2c5bc4 0%, #0f2559 65%);
+  color: #fff;
+}
+
+/* A shade from the left keeps the copy clear of the moving light. */
+.dash-next::after {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: linear-gradient(100deg, rgba(8, 20, 52, 0.82) 0%, rgba(8, 20, 52, 0.55) 50%, rgba(8, 20, 52, 0.12) 100%);
+  content: "";
+  pointer-events: none;
+}
+
+.dash-next-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 32px 36px;
+}
+
+.dash-next-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 15px;
+  font-weight: var(--weight-label);
+}
+
+.dash-next-label b {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  font-size: 13px;
+  font-weight: var(--weight-badge);
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-next h2 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: var(--weight-display);
+  letter-spacing: -0.03em;
+  line-height: 1.3;
+}
+
+.dash-next-date {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* The five steps, joined by a line that is solid up to the current one. */
+.dash-steps {
+  display: grid;
+  width: min(640px, 100%);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin: 14px 0 6px;
+  padding: 0;
+  list-style: none;
+}
+
+.dash-steps li {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+  text-align: center;
+}
+
+.dash-steps li + li::before {
+  position: absolute;
+  z-index: -1;
+  top: 12px;
+  right: 50%;
+  width: 100%;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.22);
+  content: "";
+}
+
+.dash-steps li:is(.done, .current)::before {
+  background: var(--point-glow);
+}
+
+.dash-steps i {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border-radius: 50%;
+  background: #12285f;
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.35);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: var(--weight-badge);
+}
+
+.dash-steps .done i {
+  background: var(--point-glow);
+  box-shadow: none;
+  color: var(--point-deep);
+}
+
+.dash-steps .current {
+  color: #fff;
+}
+
+.dash-steps .current i {
+  background: #fff;
+  box-shadow: 0 0 0 5px rgba(143, 182, 255, 0.3);
+  color: var(--point);
+}
+
+.dash-next-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  margin-top: 8px;
+}
+
+.dash-text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 0;
+  border: 0;
+  background: none;
+  color: rgba(255, 255, 255, 0.92);
+  font: inherit;
+  font-size: 15px;
+  font-weight: var(--weight-label);
+  cursor: pointer;
+}
+
+.dash-text-link:hover {
+  color: #fff;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* Three figures as silver tiles, each opening its page. */
+.dash-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dash-summary button {
+  display: grid;
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px 12px;
+  padding: 22px 22px 22px 24px;
+  border: 0;
+  border-radius: 20px;
+  background: var(--fill);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, scale 0.15s ease;
+}
+
+.dash-summary button > span {
+  color: var(--ink-soft);
+  font-size: 15px;
+  font-weight: var(--weight-label);
+}
+
+.dash-summary strong {
+  grid-column: 1;
+  grid-row: 2;
+  font-size: 28px;
+  font-weight: var(--weight-display);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-summary svg {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  color: var(--muted);
+}
+
+:is(.dash-summary button, .dash-list button):hover {
+  background: var(--fill-strong);
+}
+
+:is(.dash-summary button, .dash-list button):active {
+  scale: 0.98;
+}
+
+.dash-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dash-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+
+.dash-section-head small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.dash-title {
+  margin: 0;
+  color: var(--ink);
+  font-size: 22px;
+  font-weight: var(--weight-display);
+  letter-spacing: -0.02em;
+}
+
+.dash-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  padding: 6px 4px 6px 8px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 15px;
+  font-weight: var(--weight-label);
+  cursor: pointer;
+}
+
+.dash-more:hover {
+  background: var(--fill);
+  color: var(--ink);
+}
+
+/* What to do now: rows with a round icon, a title, a line under it and
+   the figure that says why. */
+.dash-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 8px;
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: var(--ring);
+  list-style: none;
+}
+
+.dash-list button {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 44px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 14px 14px 12px;
+  border: 0;
+  border-radius: 16px;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, scale 0.15s ease;
+}
+
+.dash-list i {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--point-tint);
+  color: var(--point-strong);
+}
+
+.dash-row-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dash-row-copy strong {
+  font-size: 17px;
+  font-weight: var(--weight-label);
+}
+
+.dash-row-copy small {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.dash-list b {
+  color: var(--point-strong);
+  font-size: 17px;
+  font-weight: var(--weight-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-list button > svg {
+  color: var(--muted);
+}
+
+/* The last event: each count against its goal, beside the ROAS. */
+.dash-results {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 28px;
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: var(--ring);
+}
+
+.dash-results-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dash-results-head div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dash-results-head strong {
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: var(--weight-label);
+}
+
+.dash-results-head div > span {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.dash-results-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+  align-items: stretch;
+  gap: 32px;
+}
+
+.dash-bars {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 22px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dash-bars li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 8px 12px;
+}
+
+.dash-bars li > span {
+  color: var(--ink-soft);
+  font-size: 15px;
+  font-weight: var(--weight-label);
+}
+
+.dash-bars strong {
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: var(--weight-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-bars i {
+  position: relative;
+  grid-column: 1 / -1;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--fill);
+}
+
+.dash-bars em {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 5px;
+  background: var(--goal-met);
+}
+
+.dash-bars i b {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 3px;
+  border-radius: 1.5px;
+  background: var(--goal-mark);
+  box-shadow: 0 0 0 1.5px #fff;
+  translate: -50% 0;
+}
+
+.dash-bars small {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.dash-roas {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 24px;
+  border-radius: 20px;
+  background: var(--silver-gradient);
+  box-shadow: var(--silver-ring);
+}
+
+.dash-roas > span {
+  color: var(--ink-soft);
+  font-size: 15px;
+  font-weight: var(--weight-label);
+}
+
+.dash-roas > strong {
+  color: var(--point-strong);
+  font-size: 44px;
+  font-weight: var(--weight-display);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-roas > small {
+  margin-bottom: 10px;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+  .dash-results-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .dash {
+    gap: 32px;
+    padding-top: 16px;
+  }
+
+  .dash-greeting h1 {
+    font-size: 26px;
+  }
+
+  .dash-greeting p {
+    font-size: 16px;
+  }
+
+  .dash-next {
+    border-radius: 24px;
+  }
+
+  .dash-next::after {
+    background: linear-gradient(180deg, rgba(8, 20, 52, 0.8) 0%, rgba(8, 20, 52, 0.55) 60%, rgba(8, 20, 52, 0.35) 100%);
+  }
+
+  .dash-next-body {
+    padding: 26px 20px 22px;
+  }
+
+  .dash-next h2 {
+    font-size: 24px;
+  }
+
+  .dash-steps li {
+    font-size: 11px;
+  }
+
+  /* On a phone the three figures read as rows: name, figure, arrow. */
+  .dash-summary {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .dash-summary button {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    padding: 18px 16px 18px 20px;
+  }
+
+  .dash-summary strong {
+    grid-column: 2;
+    grid-row: 1;
+    font-size: 20px;
+  }
+
+  .dash-summary svg {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .dash-title {
+    font-size: 20px;
+  }
+
+  .dash-list {
+    padding: 4px;
+  }
+
+  .dash-list button {
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    gap: 12px;
+    padding: 12px 10px;
+  }
+
+  .dash-list i {
+    width: 40px;
+    height: 40px;
+  }
+
+  .dash-list button > svg {
+    display: none;
+  }
+
+  .dash-row-copy strong {
+    font-size: 16px;
+  }
+
+  .dash-row-copy small {
+    font-size: 13px;
+  }
+
+  .dash-results {
+    padding: 20px;
+  }
+}
+
 .page-intro {
   display: flex;
   flex-direction: column;

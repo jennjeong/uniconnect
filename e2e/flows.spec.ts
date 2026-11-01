@@ -159,7 +159,7 @@ test("a member who opens the introduction goes on to the dashboard", async ({ pa
   await expect(page).toHaveURL(/\/dashboard$/)
   await page.goto("/")
   await expect(page).toHaveURL(/\/dashboard$/)
-  await expect(page.locator(".hero-eyebrow")).toContainText("반가워요")
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("반가워요")
   await expect(page.locator(".demo-chip")).toHaveCount(0)
 })
 
@@ -559,13 +559,17 @@ test("a group opens other groups' events from its calendar, and one event's page
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(name)
 })
 
-test("both dashboards show what sets uniconnect apart, before and after", async ({ page }) => {
+test("the group's dashboard leads with the next event and what to do, and the brand's shows what sets uniconnect apart", async ({ page }) => {
   await page.goto("/dashboard")
-  const why = page.getByRole("region", { name: "연결에서 끝나지 않고, 협찬을 끝까지 함께해요" })
-  await expect(why.getByRole("heading", { name: "이렇게 바뀌어요" })).toBeVisible()
-  await expect(why.locator(".why-pillars li")).toHaveCount(4)
-  // Too few members yet to show the counts.
-  await expect(why.locator(".why-counts")).toHaveCount(0)
+  const next = page.getByRole("region", { name: "다음 행사" })
+  await expect(next.getByRole("heading", { level: 2 })).not.toBeEmpty()
+  await expect(next.getByRole("list", { name: "협찬 단계" }).locator("[aria-current=step]")).toHaveCount(1)
+  await expect(page.getByRole("list", { name: "한눈에 보기" }).getByRole("button")).toHaveCount(3)
+  const todo = page.getByRole("region", { name: "지금 할 일" })
+  await todo.getByRole("button", { name: /잘 맞는 브랜드에 제안하기/ }).click()
+  await expect(page).toHaveURL(/\/matches$/)
+  await page.goBack()
+  await expect(page.getByRole("region", { name: "연결에서 끝나지 않고, 협찬을 끝까지 함께해요" })).toHaveCount(0)
   await page.getByRole("button", { name: "전체 메뉴" }).click()
   await page.getByRole("dialog", { name: "전체 메뉴" }).getByRole("button", { name: "브랜드 화면" }).click()
   await expect(page.getByRole("region", { name: "캠퍼스 협찬, 보낸 만큼 돌아왔는지 확인하세요" })).toBeVisible()
