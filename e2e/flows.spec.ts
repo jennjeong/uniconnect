@@ -159,7 +159,7 @@ test("a member who opens the introduction goes on to the dashboard", async ({ pa
   await expect(page).toHaveURL(/\/dashboard$/)
   await page.goto("/")
   await expect(page).toHaveURL(/\/dashboard$/)
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("반가워요")
+  await expect(page.locator(".dash-hello")).toContainText("반가워요")
   await expect(page.locator(".demo-chip")).toHaveCount(0)
 })
 

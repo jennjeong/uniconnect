@@ -1,30 +1,22 @@
-import type { CSSProperties, ReactNode } from "react"
+import type { ReactNode } from "react"
 
-import { AnimatedNumber } from "../components/AnimatedNumber"
+import { BrandMark } from "../components/BrandMark"
 import { CatalogEmpty } from "../components/CatalogEmpty"
 import { Icon, type IconName } from "../components/Icon"
-import { Lines } from "../components/Lines"
-import { Pill } from "../components/Pill"
 import { ProposalControl } from "../components/ProposalControl"
-import { WorkCard } from "../components/WorkCard"
 import { locale, t } from "../i18n"
 import { daysUntil, formatFullDate, nextEvent, semesterLabel } from "../lib/date"
 import { hasRoas, roasText } from "../lib/kpis"
 import { measureState } from "../lib/measurements"
 import { fullWon } from "../lib/sponsorships"
-import { LayersGradient } from "../scenes/LayersGradient"
-import { ANTIPODE } from "../scenes/shaders"
 import type { EventItem, Match, Metrics, NavLabel, Report, RequestStatus } from "../types"
 
-const pad = (value: number) => String(value).padStart(2, "0")
-
-const delay = (seconds: number) => ({ "--reveal-delay": `${seconds}s` }) as CSSProperties
-
-// Dashboard for student groups, laid out the way Toss lays out a home: what
-// the group needs to do now first, then plain numbers, then the brands to
-// pitch and the last event's results. One question per block, one main
-// action per block, every row a button that goes where it says. The deep
-// blue Antipode card for the next event keeps uniconnect's own look.
+// Dashboard for student groups, laid out like Toss's app home: one narrow
+// column of white cards on a gray page, each card one question with plain
+// rows under it. The next event is a sentence with the steps as a thin bar
+// and one wide button; figures are small, side by side in one card; the
+// brands to pitch are rows with their mark, offer and match. The deep blue
+// of the next-event card and the silver of the rows keep uniconnect's look.
 export function DashboardPage({
   accountName,
   matches,
@@ -36,7 +28,6 @@ export function DashboardPage({
   confirmedCount,
   metrics,
   report,
-  updatedAt,
   onNavigate,
   onOpenDetail,
   onPropose,
@@ -63,14 +54,14 @@ export function DashboardPage({
   confirmedCount: number
   metrics: Metrics
   report: Report | null
-  // When the matches were last loaded.
+  // When the matches were last loaded (not shown on this layout).
   updatedAt: Date | null
   onNavigate: (label: NavLabel) => void
   onOpenDetail: (match: Match) => void
   onPropose: (match: Match) => void
   onCancelProposal: (match: Match) => void
   onOpenReport: () => void
-  // 앱 다운로드 on the next-event card; absent inside the installed app.
+  // 앱 다운로드; absent inside the installed app.
   onInstall?: () => void
   // A visitor, shown the demo account's data: the greeting says it is an example.
   demo?: boolean
@@ -78,7 +69,7 @@ export function DashboardPage({
   // says so and shows it again with one press.
   paused?: boolean
   onResume?: () => void
-  // A new member's checklist (components/ProfileChecklist.tsx), under the card.
+  // A new member's checklist (components/ProfileChecklist.tsx), under the event.
   checklist?: ReactNode
 }) {
   const next = nextEvent(events)
@@ -100,7 +91,7 @@ export function DashboardPage({
       ? t("아직 가입한 브랜드가 없어요.")
       : t("다가오는 행사와 잘 맞는 브랜드 {count}곳을 찾았어요.", { count: matches.length })
 
-  const summary: { label: string; value: string; nav: NavLabel }[] = [
+  const figures: { label: string; value: string; nav: NavLabel }[] = [
     { label: t("추천 브랜드"), value: t("{count}곳", { count: candidates.length }), nav: "추천 매칭" },
     { label: t("진행 중 협찬"), value: t("{count}건", { count: running }), nav: "내 행사" },
     { label: t("누적 QR 참여"), value: metrics.scans.toLocaleString(locale), nav: "리포트" },
@@ -142,95 +133,87 @@ export function DashboardPage({
 
   return (
     <div className="dashboard dash">
-      <header className="dash-greeting">
-        <span className="dash-eyebrow">
+      <header className="dash-hello">
+        <span>
           {demo && <b>{t("예시 화면")}</b>}
-          {semesterLabel()}
+          {accountName ? t("반가워요, {name}", { name: accountName }) : semesterLabel()}
         </span>
-        <h1>{accountName ? t("반가워요, {name}", { name: accountName }) : t("오늘의 협찬 현황이에요")}</h1>
-        <p className="insight-title">{insight}</p>
+        <h1 className="insight-title">{insight}</h1>
         {paused && onResume && (
-          <Pill onClick={onResume} variant="primary">
+          <button className="dash-button small" onClick={onResume} type="button">
             {t("다시 보이게 하기")}
-          </Pill>
+          </button>
         )}
       </header>
 
-      <section aria-label={t("다음 행사")} className="dash-next">
-        <LayersGradient shader={ANTIPODE} />
-        <div className="dash-next-body">
-          {next ? (
-            <>
-              <span className="dash-next-label">
-                {t("다음 행사")}
-                <b>{dDay === 0 ? "D-DAY" : `D-${dDay}`}</b>
-              </span>
-              <h2>{next.name}</h2>
-              <p className="dash-next-date">{formatFullDate(next.date)}</p>
-            </>
-          ) : (
-            <>
-              <span className="dash-next-label">{t("다음 행사")}</span>
-              <h2>{t("아직 등록한 행사가 없어요")}</h2>
-              <p className="dash-next-date">
-                <Lines text={t("행사 하나를 등록하면 제안 · 계약 · 측정 · 리포트가 차례로 이어져요.")} />
-              </p>
-            </>
-          )}
-          <ol aria-label={t("협찬 단계")} className="dash-steps">
-            {steps.map((step, index) => (
-              <li
-                aria-current={index === currentStep ? "step" : undefined}
-                className={index < currentStep ? "done" : index === currentStep ? "current" : undefined}
-                key={step}
-              >
-                <i aria-hidden="true">{index < currentStep ? <Icon name="check" size={12} /> : index + 1}</i>
-                <span>{step}</span>
-              </li>
-            ))}
-          </ol>
-          <div className="dash-next-actions">
-            <Pill arrow="right" onClick={() => onNavigate("추천 매칭")} variant="white">
-              {t("추천 매칭 확인하기")}
-            </Pill>
-            <button className="dash-text-link" onClick={() => onNavigate("내 행사")} type="button">
-              {t("전체 일정 보기")}
+      <section aria-label={t("다음 행사")} className="dash-card dash-event">
+        {next ? (
+          <>
+            <span className="dash-event-label">
+              {t("다음 행사")} · {formatFullDate(next.date)}
+            </span>
+            <h2>
+              {dDay === 0
+                ? t("오늘은 ‘{name}’ 날이에요", { name: next.name })
+                : t("‘{name}’까지 {days}일 남았어요", { name: next.name, days: dDay })}
+            </h2>
+            <p>{t("지금은 ‘{step}’ 단계예요", { step: steps[currentStep] })}</p>
+          </>
+        ) : (
+          <>
+            <span className="dash-event-label">{t("다음 행사")}</span>
+            <h2>{t("아직 등록한 행사가 없어요")}</h2>
+            <p>{t("행사 하나를 등록하면 제안 · 계약 · 측정 · 리포트가 차례로 이어져요.")}</p>
+          </>
+        )}
+        <ol aria-label={t("협찬 단계")} className="dash-steps">
+          {steps.map((step, index) => (
+            <li
+              aria-current={index === currentStep ? "step" : undefined}
+              className={index < currentStep ? "done" : index === currentStep ? "current" : undefined}
+              key={step}
+            >
+              <span>{step}</span>
+            </li>
+          ))}
+        </ol>
+        <button className="dash-button" onClick={() => onNavigate("추천 매칭")} type="button">
+          {t("추천 매칭 확인하기")}
+        </button>
+        <div className="dash-event-links">
+          <button onClick={() => onNavigate("내 행사")} type="button">
+            {t("전체 일정 보기")}
+          </button>
+          {onInstall && (
+            <button onClick={onInstall} type="button">
+              {t("앱 다운로드")}
             </button>
-            {onInstall && (
-              <button className="dash-text-link" onClick={onInstall} type="button">
-                <Icon name="download" size={15} />
-                {t("앱 다운로드")}
-              </button>
-            )}
-          </div>
+          )}
         </div>
       </section>
 
       {checklist}
 
-      <ul aria-label={t("한눈에 보기")} className="dash-summary">
-        {summary.map((item, index) => (
-          <li data-reveal key={item.label} style={delay(index * 0.06)}>
-            <button onClick={() => onNavigate(item.nav)} type="button">
-              <span>{item.label}</span>
-              <strong>
-                <AnimatedNumber value={item.value} />
-              </strong>
-              <Icon name="chevron" size={18} />
+      <ul aria-label={t("한눈에 보기")} className="dash-card dash-figures">
+        {figures.map((figure) => (
+          <li key={figure.label}>
+            <button onClick={() => onNavigate(figure.nav)} type="button">
+              <span>{figure.label}</span>
+              <strong>{figure.value}</strong>
             </button>
           </li>
         ))}
       </ul>
 
-      <section aria-labelledby="dash-todo" className="dash-section">
+      <section aria-labelledby="dash-todo" className="dash-card">
         <h2 className="dash-title" id="dash-todo">
           {t("지금 할 일")}
         </h2>
-        <ul className="dash-list">
-          {todos.map((todo, index) => (
-            <li data-reveal key={todo.title} style={delay(index * 0.06)}>
-              <button onClick={todo.onClick} type="button">
-                <i aria-hidden="true">
+        <ul className="dash-rows">
+          {todos.map((todo) => (
+            <li key={todo.title}>
+              <button className="dash-row" onClick={todo.onClick} type="button">
+                <i aria-hidden="true" className="dash-icon">
                   <Icon name={todo.icon} size={20} />
                 </i>
                 <span className="dash-row-copy">
@@ -238,100 +221,94 @@ export function DashboardPage({
                   <small>{todo.text}</small>
                 </span>
                 <b>{todo.figure}</b>
-                <Icon name="chevron" size={18} />
               </button>
             </li>
           ))}
         </ul>
       </section>
 
-      <section aria-labelledby="dash-matches" className="dash-section" id="matches">
-        <div className="dash-section-head">
-          <h2 className="dash-title" id="dash-matches">
-            {t("맞춤 추천 매칭")}
-          </h2>
-          {updatedAt && (
-            <small>{t("오늘 {time} 업데이트", { time: `${pad(updatedAt.getHours())}:${pad(updatedAt.getMinutes())}` })}</small>
-          )}
-          <button className="dash-more" onClick={() => onNavigate("추천 매칭")} type="button">
-            {t("전체 보기")}
-            <Icon name="chevron" size={16} />
-          </button>
-        </div>
-        {noBrands && (
+      <section aria-labelledby="dash-matches" className="dash-card" id="matches">
+        <h2 className="dash-title" id="dash-matches">
+          {t("맞춤 추천 매칭")}
+        </h2>
+        {noBrands ? (
           <CatalogEmpty
             title={t("아직 추천할 브랜드가 없어요")}
             text={t("가까운 순에서 학교 앞 가게에 초대장을 보내 보세요. 가입하면 여기에 추천해 드려요.")}
             action={{ label: t("추천 매칭 열기"), onClick: () => onNavigate("추천 매칭") }}
           />
-        )}
-        <ul className="work-grid three">
-          {matches.map((match, index) => (
-            <li data-reveal key={match.id} style={delay(index * 0.09)}>
-              <WorkCard match={match} meta={t(match.category)} onOpenDetail={() => onOpenDetail(match)}>
+        ) : (
+          <ul className="dash-rows">
+            {matches.map((match) => (
+              <li className="dash-brand" key={match.id}>
+                <button className="dash-row" onClick={() => onOpenDetail(match)} type="button">
+                  <BrandMark match={match} />
+                  <span className="dash-row-copy">
+                    <strong>{match.name}</strong>
+                    <small>
+                      {t(match.category)} · {match.offer}
+                    </small>
+                  </span>
+                  <b>{t("{score}% 일치", { score: match.score })}</b>
+                </button>
                 <ProposalControl
                   done={proposals.includes(match.id)}
                   status={statuses[match.id]}
                   label={t("제안하기")}
-                  className="proposal-button"
+                  className="proposal-button dash-propose"
                   onPropose={() => onPropose(match)}
                   onCancel={() => onCancelProposal(match)}
                 />
-              </WorkCard>
-            </li>
-          ))}
-        </ul>
+              </li>
+            ))}
+          </ul>
+        )}
+        <button className="dash-more" onClick={() => onNavigate("추천 매칭")} type="button">
+          {t("전체 보기")}
+        </button>
       </section>
 
-      <section aria-labelledby="dash-results" className="dash-section">
-        <div className="dash-section-head">
-          <h2 className="dash-title" id="dash-results">
-            {t("지난 행사가 남긴 숫자")}
-          </h2>
-          <button className="dash-more" onClick={() => onNavigate("리포트")} type="button">
-            {t("리포트 페이지로")}
-            <Icon name="chevron" size={16} />
-          </button>
+      <section aria-labelledby="dash-results" className="dash-card">
+        <h2 className="dash-title" id="dash-results">
+          {t("지난 행사가 남긴 숫자")}
+        </h2>
+        <div className="dash-last">
+          <span>
+            {report?.eventName ?? t("최근 행사")}
+            {report && ` · ${formatFullDate(report.eventDate)}`}
+          </span>
+          {report && <span className="complete-badge">{t(measureState(report))}</span>}
         </div>
-        <div className="dash-results" data-reveal>
-          <div className="dash-results-head">
-            <div>
-              <strong>{report?.eventName ?? t("최근 행사")}</strong>
-              <span>{report ? formatFullDate(report.eventDate) : ""}</span>
-            </div>
-            {report && <span className="complete-badge">{t(measureState(report))}</span>}
-          </div>
-          <div className="dash-results-body">
-            <ul className="dash-bars">
-              {bars.map((bar) => {
-                const top = Math.max(1, bar.value, bar.target ?? 0)
-                return (
-                  <li key={bar.label}>
-                    <span>{bar.label}</span>
-                    <strong>{bar.value.toLocaleString(locale)}</strong>
-                    <i aria-hidden="true">
-                      <em style={{ width: `${(bar.value / top) * 100}%` }} />
-                      {bar.target !== undefined && <b style={{ left: `${(bar.target / top) * 100}%` }} />}
-                    </i>
-                    {bar.target !== undefined && <small>{t("목표 {target}", { target: bar.target })}</small>}
-                  </li>
-                )
-              })}
-            </ul>
-            <div className="dash-roas">
-              <span>{t("추정 ROAS")}</span>
-              <strong>{report ? roasText(report) : "-"}</strong>
-              <small>
-                {report && hasRoas(report) && report.roas >= 100
-                  ? t("함께한 브랜드가 쓴 금액보다 더 많이 돌아왔어요.")
-                  : t("목표까지 남은 만큼은 리포트에서 봐요.")}
-              </small>
-              <Pill onClick={onOpenReport} variant="primary">
-                {t("상세 데이터")}
-              </Pill>
-            </div>
-          </div>
-        </div>
+        <button className="dash-roas" onClick={onOpenReport} type="button">
+          <span>{t("추정 ROAS")}</span>
+          <strong>{report ? roasText(report) : "-"}</strong>
+          <small>
+            {report && hasRoas(report) && report.roas >= 100
+              ? t("함께한 브랜드가 쓴 금액보다 더 많이 돌아왔어요.")
+              : t("목표까지 남은 만큼은 리포트에서 봐요.")}
+          </small>
+        </button>
+        <ul className="dash-bars">
+          {bars.map((bar) => {
+            const top = Math.max(1, bar.value, bar.target ?? 0)
+            return (
+              <li key={bar.label}>
+                <span>{bar.label}</span>
+                <i aria-hidden="true">
+                  <em style={{ width: `${(bar.value / top) * 100}%` }} />
+                  {bar.target !== undefined && <b style={{ left: `${(bar.target / top) * 100}%` }} />}
+                </i>
+                <strong>
+                  {bar.value.toLocaleString(locale)}
+                  {bar.target !== undefined && <small> / {bar.target.toLocaleString(locale)}</small>}
+                </strong>
+              </li>
+            )
+          })}
+        </ul>
+        <button className="dash-more" onClick={() => onNavigate("리포트")} type="button">
+          {t("리포트 페이지로")}
+        </button>
       </section>
     </div>
   )

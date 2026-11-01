@@ -1172,337 +1172,260 @@ button.nav-pill:hover {
 }
 
 /* The student group's dashboard (DashboardPage.tsx), laid out like Toss's
-   home: a plain greeting, the next event on a deep blue Antipode card with
-   the sponsorship's five steps, then flat silver tiles and rows that each
-   go where they say, pressing in a little as they are pressed. One title
-   size per block, no statements or pitches. */
-.dash {
-  display: flex;
-  flex-direction: column;
-  gap: 40px;
-  padding-top: 28px;
+   app home: one narrow column of white cards on the gray page, each card a
+   title and plain rows. Rows and buttons press in a little; nothing floats
+   or moves on its own. The next-event card is the one deep blue surface. */
+.main-content:has(.dash) {
+  background: var(--fill);
 }
 
-.dash-greeting {
+.dash {
+  display: flex;
+  width: min(640px, 100%);
+  flex-direction: column;
+  gap: 12px;
+  margin: 0 auto;
+  padding-top: 20px;
+}
+
+.dash-hello {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
+  gap: 6px;
+  padding: 8px 4px 12px;
 }
 
-.dash-eyebrow {
+.dash-hello > span {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: var(--muted);
-  font-size: 14px;
+  color: var(--ink-soft);
+  font-size: 15px;
   font-weight: var(--weight-label);
 }
 
-.dash-eyebrow b {
-  padding: 3px 10px;
-  border-radius: 999px;
+.dash-hello b {
+  padding: 2px 8px;
+  border-radius: 6px;
   background: var(--point-tint);
   color: var(--point-strong);
   font-size: 12px;
   font-weight: var(--weight-badge);
 }
 
-.dash-greeting h1 {
+.dash-hello h1 {
   margin: 0;
   color: var(--ink);
-  font-size: 32px;
+  font-size: 24px;
   font-weight: var(--weight-display);
-  letter-spacing: -0.03em;
-  line-height: 1.3;
+  letter-spacing: -0.02em;
+  line-height: 1.4;
 }
 
-.dash-greeting p {
-  margin: 0 0 4px;
-  color: var(--ink-soft);
+.dash-card {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 24px;
+  border-radius: 24px;
+  background: var(--surface);
+  list-style: none;
+}
+
+.dash-title {
+  margin: 0 0 8px;
+  color: var(--ink);
+  font-size: 19px;
+  font-weight: var(--weight-display);
+  letter-spacing: -0.02em;
+}
+
+/* The wide button of a card, as Toss's: a filled block, pressed in. */
+.dash-button {
+  width: 100%;
+  min-height: 54px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--point);
+  color: var(--on-point);
+  font: inherit;
   font-size: 17px;
-  line-height: 1.5;
+  font-weight: var(--weight-label);
+  cursor: pointer;
+  transition: background 0.15s ease, scale 0.15s ease;
 }
 
-.dash-next {
+.dash-button.small {
+  width: auto;
+  min-height: 40px;
+  margin-top: 6px;
+  border-radius: 12px;
+  font-size: 15px;
+}
+
+.dash-button:hover {
+  background: var(--point-hover);
+}
+
+:is(.dash-button, .dash-row, .dash-figures button, .dash-roas, .dash-more):active {
+  scale: 0.97;
+}
+
+.dash-event {
   --surface-tone: dark;
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  border-radius: 28px;
-  background: radial-gradient(120% 120% at 85% 100%, #2c5bc4 0%, #0f2559 65%);
+  gap: 6px;
+  background: var(--point-gradient);
   color: #fff;
 }
 
-/* A shade from the left keeps the copy clear of the moving light. */
-.dash-next::after {
-  position: absolute;
-  z-index: -1;
-  inset: 0;
-  background: linear-gradient(100deg, rgba(8, 20, 52, 0.82) 0%, rgba(8, 20, 52, 0.55) 50%, rgba(8, 20, 52, 0.12) 100%);
-  content: "";
-  pointer-events: none;
-}
-
-.dash-next-body {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 32px 36px;
-}
-
-.dash-next-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  color: rgba(255, 255, 255, 0.84);
-  font-size: 15px;
+.dash-event-label {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 14px;
   font-weight: var(--weight-label);
 }
 
-.dash-next-label b {
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.18);
-  color: #fff;
-  font-size: 13px;
-  font-weight: var(--weight-badge);
-  font-variant-numeric: tabular-nums;
-}
-
-.dash-next h2 {
+.dash-event h2 {
   margin: 0;
-  font-size: 30px;
+  font-size: 24px;
   font-weight: var(--weight-display);
-  letter-spacing: -0.03em;
-  line-height: 1.3;
+  letter-spacing: -0.02em;
+  line-height: 1.4;
 }
 
-.dash-next-date {
+.dash-event p {
   margin: 0;
-  color: rgba(255, 255, 255, 0.88);
-  font-size: 16px;
-  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 15px;
 }
 
-/* The five steps, joined by a line that is solid up to the current one. */
+/* The five steps as one thin bar of segments, the names under it. */
 .dash-steps {
   display: grid;
-  width: min(640px, 100%);
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  margin: 14px 0 6px;
+  gap: 4px;
+  margin: 18px 0 20px;
   padding: 0;
   list-style: none;
 }
 
 .dash-steps li {
-  position: relative;
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 8px;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
   font-weight: var(--weight-label);
-  text-align: center;
 }
 
-.dash-steps li + li::before {
-  position: absolute;
-  z-index: -1;
-  top: 12px;
-  right: 50%;
-  width: 100%;
-  height: 2px;
-  background: rgba(255, 255, 255, 0.22);
+.dash-steps li::before {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.2);
   content: "";
 }
 
-.dash-steps li:is(.done, .current)::before {
+.dash-steps .done::before {
   background: var(--point-glow);
 }
 
-.dash-steps i {
-  display: grid;
-  width: 26px;
-  height: 26px;
-  place-items: center;
-  border-radius: 50%;
-  background: #12285f;
-  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.35);
-  font-size: 12px;
-  font-style: normal;
-  font-weight: var(--weight-badge);
-}
-
-.dash-steps .done i {
-  background: var(--point-glow);
-  box-shadow: none;
-  color: var(--point-deep);
+.dash-steps .current::before {
+  background: #fff;
 }
 
 .dash-steps .current {
   color: #fff;
 }
 
-.dash-steps .current i {
+.dash-event .dash-button {
   background: #fff;
-  box-shadow: 0 0 0 5px rgba(143, 182, 255, 0.3);
   color: var(--point);
 }
 
-.dash-next-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 20px;
-  margin-top: 8px;
+.dash-event .dash-button:hover {
+  background: var(--point-soft);
 }
 
-.dash-text-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 0;
+.dash-event-links {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.dash-event-links button {
+  padding: 8px 12px;
   border: 0;
+  border-radius: 10px;
   background: none;
-  color: rgba(255, 255, 255, 0.92);
+  color: rgba(255, 255, 255, 0.86);
   font: inherit;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: var(--weight-label);
   cursor: pointer;
 }
 
-.dash-text-link:hover {
+.dash-event-links button:hover {
+  background: rgba(255, 255, 255, 0.1);
   color: #fff;
-  text-decoration: underline;
-  text-underline-offset: 4px;
 }
 
-/* Three figures as silver tiles, each opening its page. */
-.dash-summary {
+/* Three small figures side by side in one card, split by hairlines. */
+.dash-figures {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+  padding: 8px;
 }
 
-.dash-summary button {
-  display: grid;
+.dash-figures li + li {
+  border-left: 1px solid var(--line);
+}
+
+.dash-figures button {
+  display: flex;
   width: 100%;
-  grid-template-columns: minmax(0, 1fr) auto;
+  flex-direction: column;
   align-items: center;
-  gap: 6px 12px;
-  padding: 22px 22px 22px 24px;
+  gap: 4px;
+  padding: 12px 4px;
   border: 0;
-  border-radius: 20px;
-  background: var(--fill);
-  color: var(--ink);
+  border-radius: 14px;
+  background: none;
   font: inherit;
-  text-align: left;
   cursor: pointer;
   transition: background 0.15s ease, scale 0.15s ease;
 }
 
-.dash-summary button > span {
-  color: var(--ink-soft);
-  font-size: 15px;
+.dash-figures span {
+  color: var(--muted);
+  font-size: 13px;
   font-weight: var(--weight-label);
 }
 
-.dash-summary strong {
-  grid-column: 1;
-  grid-row: 2;
-  font-size: 28px;
+.dash-figures strong {
+  color: var(--ink);
+  font-size: 18px;
   font-weight: var(--weight-display);
-  letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
 }
 
-.dash-summary svg {
-  grid-column: 2;
-  grid-row: 1 / 3;
-  color: var(--muted);
-}
-
-:is(.dash-summary button, .dash-list button):hover {
-  background: var(--fill-strong);
-}
-
-:is(.dash-summary button, .dash-list button):active {
-  scale: 0.98;
-}
-
-.dash-section {
+.dash-rows {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-}
-
-.dash-section-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 12px;
-}
-
-.dash-section-head small {
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.dash-title {
-  margin: 0;
-  color: var(--ink);
-  font-size: 22px;
-  font-weight: var(--weight-display);
-  letter-spacing: -0.02em;
-}
-
-.dash-more {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  margin-left: auto;
-  padding: 6px 4px 6px 8px;
-  border: 0;
-  border-radius: 10px;
-  background: none;
-  color: var(--ink-soft);
-  font: inherit;
-  font-size: 15px;
-  font-weight: var(--weight-label);
-  cursor: pointer;
-}
-
-.dash-more:hover {
-  background: var(--fill);
-  color: var(--ink);
-}
-
-/* What to do now: rows with a round icon, a title, a line under it and
-   the figure that says why. */
-.dash-list {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 8px;
-  border-radius: 24px;
-  background: var(--surface);
-  box-shadow: var(--ring);
+  margin: 0 -12px;
+  padding: 0;
   list-style: none;
 }
 
-.dash-list button {
+.dash-row {
   display: grid;
   width: 100%;
-  grid-template-columns: 44px minmax(0, 1fr) auto auto;
+  min-width: 0;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 16px;
-  padding: 14px 14px 14px 12px;
+  gap: 14px;
+  padding: 12px;
   border: 0;
   border-radius: 16px;
   background: none;
@@ -1513,7 +1436,11 @@ button.nav-pill:hover {
   transition: background 0.15s ease, scale 0.15s ease;
 }
 
-.dash-list i {
+:is(.dash-row, .dash-figures button, .dash-more):hover {
+  background: var(--fill);
+}
+
+.dash-icon {
   display: grid;
   width: 44px;
   height: 44px;
@@ -1531,73 +1458,131 @@ button.nav-pill:hover {
 }
 
 .dash-row-copy strong {
-  font-size: 17px;
+  overflow: hidden;
+  font-size: 16px;
   font-weight: var(--weight-label);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .dash-row-copy small {
+  overflow: hidden;
   color: var(--muted);
-  font-size: 14px;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.dash-list b {
+.dash-row > b {
   color: var(--point-strong);
-  font-size: 17px;
+  font-size: 15px;
   font-weight: var(--weight-display);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
-.dash-list button > svg {
-  color: var(--muted);
-}
-
-/* The last event: each count against its goal, beside the ROAS. */
-.dash-results {
+/* A brand: its row opens the profile, the small button beside it proposes. */
+.dash-brand {
   display: flex;
-  flex-direction: column;
-  gap: 24px;
-  padding: 28px;
-  border-radius: 24px;
-  background: var(--surface);
-  box-shadow: var(--ring);
+  align-items: center;
+  gap: 4px;
+  padding-right: 12px;
 }
 
-.dash-results-head {
+.dash-brand .dash-row {
+  flex: 1;
+}
+
+.dash-brand .match-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+}
+
+.dash-brand :is(.proposal-actions, .proposal-button) {
+  flex: 0 0 auto;
+}
+
+.dash-propose:not(.confirmed, .declined) {
+  min-height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--point-tint);
+  color: var(--point-strong);
+  font-size: 14px;
+  font-weight: var(--weight-label);
+}
+
+.dash-propose:not(.confirmed, .declined):hover {
+  background: var(--point-line);
+}
+
+.dash-more {
+  margin: 8px -12px -12px;
+  padding: 14px;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 16px 16px;
+  background: none;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 15px;
+  font-weight: var(--weight-label);
+  cursor: pointer;
+  transition: background 0.15s ease, scale 0.15s ease;
+}
+
+.dash-last {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-}
-
-.dash-results-head div {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.dash-results-head strong {
-  color: var(--ink);
-  font-size: 18px;
-  font-weight: var(--weight-label);
-}
-
-.dash-results-head div > span {
-  color: var(--muted);
+  color: var(--ink-soft);
   font-size: 14px;
 }
 
-.dash-results-body {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
-  align-items: stretch;
-  gap: 32px;
+.dash-roas {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  margin: 14px 0 18px;
+  padding: 18px 20px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--silver-gradient);
+  box-shadow: var(--silver-ring);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: scale 0.15s ease;
 }
 
+.dash-roas > span {
+  color: var(--ink-soft);
+  font-size: 14px;
+  font-weight: var(--weight-label);
+}
+
+.dash-roas > strong {
+  color: var(--point-strong);
+  font-size: 34px;
+  font-weight: var(--weight-display);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-roas > small {
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+/* Each count against its goal: name, bar with the goal's tick, count. */
 .dash-bars {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 22px;
+  gap: 14px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -1605,43 +1590,35 @@ button.nav-pill:hover {
 
 .dash-bars li {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: baseline;
-  gap: 8px 12px;
+  grid-template-columns: 72px minmax(0, 1fr) 76px;
+  align-items: center;
+  gap: 12px;
 }
 
 .dash-bars li > span {
   color: var(--ink-soft);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: var(--weight-label);
-}
-
-.dash-bars strong {
-  color: var(--ink);
-  font-size: 20px;
-  font-weight: var(--weight-display);
-  font-variant-numeric: tabular-nums;
 }
 
 .dash-bars i {
   position: relative;
-  grid-column: 1 / -1;
-  height: 10px;
-  border-radius: 5px;
+  height: 8px;
+  border-radius: 4px;
   background: var(--fill);
 }
 
 .dash-bars em {
   position: absolute;
   inset: 0 auto 0 0;
-  border-radius: 5px;
+  border-radius: 4px;
   background: var(--goal-met);
 }
 
 .dash-bars i b {
   position: absolute;
-  top: -4px;
-  bottom: -4px;
+  top: -3px;
+  bottom: -3px;
   width: 3px;
   border-radius: 1.5px;
   background: var(--goal-mark);
@@ -1649,140 +1626,68 @@ button.nav-pill:hover {
   translate: -50% 0;
 }
 
-.dash-bars small {
-  grid-column: 1 / -1;
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.dash-roas {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-  padding: 24px;
-  border-radius: 20px;
-  background: var(--silver-gradient);
-  box-shadow: var(--silver-ring);
-}
-
-.dash-roas > span {
-  color: var(--ink-soft);
+.dash-bars strong {
+  color: var(--ink);
   font-size: 15px;
-  font-weight: var(--weight-label);
-}
-
-.dash-roas > strong {
-  color: var(--point-strong);
-  font-size: 44px;
   font-weight: var(--weight-display);
-  letter-spacing: -0.03em;
-  line-height: 1.1;
+  text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-.dash-roas > small {
-  margin-bottom: 10px;
-  color: var(--ink-soft);
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-@media (max-width: 900px) {
-  .dash-results-body {
-    grid-template-columns: 1fr;
-  }
+.dash-bars strong small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: var(--weight-label);
 }
 
 @media (max-width: 720px) {
   .dash {
-    gap: 32px;
-    padding-top: 16px;
+    padding-top: 8px;
   }
 
-  .dash-greeting h1 {
-    font-size: 26px;
+  .dash-hello h1 {
+    font-size: 21px;
   }
 
-  .dash-greeting p {
-    font-size: 16px;
+  .dash-card {
+    padding: 20px;
+    border-radius: 22px;
   }
 
-  .dash-next {
-    border-radius: 24px;
-  }
-
-  .dash-next::after {
-    background: linear-gradient(180deg, rgba(8, 20, 52, 0.8) 0%, rgba(8, 20, 52, 0.55) 60%, rgba(8, 20, 52, 0.35) 100%);
-  }
-
-  .dash-next-body {
-    padding: 26px 20px 22px;
-  }
-
-  .dash-next h2 {
-    font-size: 24px;
+  .dash-event h2 {
+    font-size: 21px;
   }
 
   .dash-steps li {
     font-size: 11px;
   }
 
-  /* On a phone the three figures read as rows: name, figure, arrow. */
-  .dash-summary {
-    grid-template-columns: 1fr;
-    gap: 8px;
+  .dash-rows {
+    margin-inline: -8px;
   }
 
-  .dash-summary button {
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    padding: 18px 16px 18px 20px;
-  }
-
-  .dash-summary strong {
-    grid-column: 2;
-    grid-row: 1;
-    font-size: 20px;
-  }
-
-  .dash-summary svg {
-    grid-column: 3;
-    grid-row: 1;
-  }
-
-  .dash-title {
-    font-size: 20px;
-  }
-
-  .dash-list {
-    padding: 4px;
-  }
-
-  .dash-list button {
+  .dash-row {
     grid-template-columns: 40px minmax(0, 1fr) auto;
     gap: 12px;
-    padding: 12px 10px;
+    padding: 10px 8px;
   }
 
-  .dash-list i {
+  .dash-icon,
+  .dash-brand .match-logo {
     width: 40px;
     height: 40px;
   }
 
-  .dash-list button > svg {
+  .dash-brand {
+    padding-right: 8px;
+  }
+
+  .dash-brand .dash-row > b {
     display: none;
   }
 
-  .dash-row-copy strong {
-    font-size: 16px;
-  }
-
-  .dash-row-copy small {
-    font-size: 13px;
-  }
-
-  .dash-results {
-    padding: 20px;
+  .dash-more {
+    margin-inline: -8px;
   }
 }
 

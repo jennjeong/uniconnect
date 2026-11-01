@@ -4,7 +4,9 @@ const en: Record<string, string> = {
   "지금은 ‘{step}’ 차례예요": "Up now: {step}",
   "반가워요, {name}": "Welcome, {name}",
   // The student group's dashboard: greeting, next event, figures, to-dos
-  "오늘의 협찬 현황이에요": "Here's where your sponsorships stand",
+  "오늘은 ‘{name}’ 날이에요": "‘{name}’ is today",
+  "지금은 ‘{step}’ 단계예요": "You're at ‘{step}’",
+  "{score}% 일치": "{score}% match",
   "아직 등록한 행사가 없어요": "No events yet",
   "한눈에 보기": "At a glance",
   "지금 할 일": "Up next",
