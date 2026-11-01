@@ -247,6 +247,19 @@ test("every sponsorship whose day has come has a detailed report, from its recor
   assert.equal(report.scorecard.find((item) => item.key === "visits")!.actual, unmeasured.visits)
 })
 
+test("participants may say their gender on the survey, and the students' report carries the counts", async () => {
+  const { todayInKorea } = await import("./lib/dates.js")
+  const group = await signUpMember("gender-club@syu.ac.kr", "gender-pass-123")
+  const made = (await call("POST", "/events", { name: "설문 공연", date: todayInKorea(), people: "50명", types: ["제품"] }, group)).data.event
+  const code = (await call("GET", `/measurements/${made.id}`, undefined, group)).data.report.code
+  const { pass } = (await call("POST", `/check-in/${code}/scans`)).data
+  assert.equal((await call("POST", `/check-in/${code}/survey`, { pass, gender: "여성", grade: "1학년" })).status, 201)
+  const { pass: other } = (await call("POST", `/check-in/${code}/scans`)).data
+  assert.equal((await call("POST", `/check-in/${code}/survey`, { pass: other, gender: "모름" })).status, 400)
+  const report = (await call("GET", `/measurements/${made.id}`, undefined, group)).data.report
+  assert.deepEqual([report.survey.gender, report.survey.grade], [{ 여성: 1 }, { "1학년": 1 }])
+})
+
 test("the site's counts are members only and grow with each sign-up", async () => {
   const before = (await call("GET", "/site")).data.counts
   assert.deepEqual(Object.keys(before).sort(), ["brands", "groups", "schools", "sponsorships"])

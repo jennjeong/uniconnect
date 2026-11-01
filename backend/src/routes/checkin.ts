@@ -116,13 +116,16 @@ checkInRouter.post("/:code/survey", async (req, res) => {
     const value = text(req.body?.[key])
     return (surveyOptions[key] as readonly string[]).includes(value) ? value : undefined
   }
-  const answers = { grade: pick("grade"), field: pick("field"), visited: pick("visited") }
-  if (!answers.grade && !answers.field && !answers.visited) throw new HttpError(400, "답을 하나 이상 골라 주세요.")
+  const keys = Object.keys(surveyOptions) as (keyof typeof surveyOptions)[]
+  const answers = Object.fromEntries(keys.map((key) => [key, pick(key)])) as Partial<Record<keyof typeof surveyOptions, string>>
+  if (!keys.some((key) => answers[key])) throw new HttpError(400, "답을 하나 이상 골라 주세요.")
   const survey = (measurement.survey ??= { responses: 0, grade: {}, field: {}, visited: {} })
   survey.responses += 1
-  for (const key of ["grade", "field", "visited"] as const) {
+  for (const key of keys) {
     const value = answers[key]
-    if (value) survey[key][value] = (survey[key][value] ?? 0) + 1
+    if (!value) continue
+    const counts = (survey[key] ??= {})
+    counts[value] = (counts[value] ?? 0) + 1
   }
   pass.surveyed = true
   await saveDatabase()

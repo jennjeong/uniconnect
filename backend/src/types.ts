@@ -440,6 +440,8 @@ export type SurveyCounts = {
   grade: Record<string, number>
   field: Record<string, number>
   visited: Record<string, number>
+  // Asked from 2026-11 (lib/validation.ts surveyOptions); earlier counts have none.
+  gender?: Record<string, number>
 }
 
 // One brand sponsoring a student event, on that event's measurement: its own
@@ -539,6 +541,11 @@ export type Report = {
   // What the venue's staff confirmed so far, for the whole event.
   venue: VenueCounts
   // The event's sponsors with their own share, once brands sponsor it.
+  // For the students' own report: the event's kind, who was expected and
+  // the optional survey's counts.
+  eventKind?: string
+  makeup?: { female?: number; years?: string[]; majors?: string }
+  survey?: { responses: number; grade: Record<string, number>; field: Record<string, number>; visited: Record<string, number>; gender?: Record<string, number> }
   sponsors?: SponsorReport[]
 }
 
