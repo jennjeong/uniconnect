@@ -1331,6 +1331,44 @@ test("가까운 순's map sits on Kakao's map once a key is set, and on the sket
   await expect(page.locator(".kakao-map")).toHaveCount(0)
 })
 
+// Every overlay at the map's left edge, stacked by zIndex as Kakao does.
+const edgeKakaoSdk = fakeKakaoSdk.replace(
+  "CustomOverlay: function (o) { this.setMap = (map) => { if (map) map.el.append(o.content); else o.content.remove() } },",
+  `CustomOverlay: function (o) { this.setMap = (map) => {
+    if (!map) return o.content.remove()
+    const holder = document.createElement("div")
+    holder.style.cssText = "position:absolute;left:0;top:50%;z-index:" + (o.zIndex ?? 0)
+    holder.append(o.content)
+    map.el.append(holder)
+    o.content.remove = () => holder.remove()
+  } },`,
+)
+
+test("on Kakao's map the campus label lets the shops beside it be pressed, and a picked name stays inside the map", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.route("**/api/site", async (route) => {
+    const response = await route.fetch()
+    await route.fulfill({ response, json: { ...(await response.json()), maps: { kakao: "test-key" } } })
+  })
+  await page.route("https://dapi.kakao.com/**", (route) => route.fulfill({ contentType: "text/javascript", body: edgeKakaoSdk }))
+  await page.goto("/matches")
+  await page.getByRole("tab", { name: "가까운 순" }).click()
+  await page.getByRole("group", { name: "보기 방식" }).getByRole("button", { name: "지도" }).click()
+  const map = page.locator(".kakao-map")
+  await expect(map.locator(".kakao-campus")).toBeVisible()
+  // The shop sits right on the campus label and still takes the press.
+  const dot = map.locator(".kakao-dot").first()
+  await dot.click()
+  await expect(dot).toHaveAttribute("aria-pressed", "true")
+  const name = dot.locator(".place-dot-name")
+  await expect(name).toBeVisible()
+  await expect(async () => {
+    const [box, label] = [await map.boundingBox(), await name.boundingBox()]
+    expect(label!.x).toBeGreaterThanOrEqual(box!.x)
+    expect(label!.x + label!.width).toBeLessThanOrEqual(box!.x + box!.width)
+  }).toPass()
+})
+
 test("brands and student groups can be searched and filtered", async ({ page }) => {
   await page.goto("/matches")
   await page.getByRole("tab", { name: "전체" }).click()
