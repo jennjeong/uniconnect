@@ -162,11 +162,6 @@ export function Header({
           <img alt="" className="logo-dark" height={38} src={logo} width={163} />
           <img alt="" className="logo-light" height={38} src={logoReversed} width={163} />
         </button>
-        {demo && (
-          <span className="nav-pill demo-chip" title={t("로그인하지 않아 예시 데이터로 보여요")}>
-            {t("예시 화면")}
-          </span>
-        )}
         {landing ? (
           <nav className="nav-pill links-pill" aria-label={t("소개 페이지 구역")}>
             {sections.map((section) => (
@@ -278,6 +273,11 @@ export function Header({
             </div>
           ) : (
             <>
+              {demo && (
+                <span className="nav-pill demo-chip" title={t("로그인하지 않아 예시 데이터로 보여요")}>
+                  {t("예시 화면")}
+                </span>
+              )}
               <button className="nav-pill login-pill" onClick={onLogin} type="button">
                 {t("로그인")}
               </button>
