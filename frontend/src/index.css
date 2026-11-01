@@ -515,14 +515,34 @@ button.nav-pill:hover {
   letter-spacing: 0.04em;
 }
 
-/* By the logo on a member screen a visitor sees with the demo data: says
-   it is an example, with an amber dot like the goal line's. */
+/* Beside 로그인 on a member screen a visitor sees with the demo data: says
+   it is an example, with an amber dot like the goal line's, and dims and
+   brightens very slowly so it is noticed without pulling at the eye. */
 .demo-chip {
   height: 32px;
   gap: 6px;
   padding: 0 12px;
   font-size: 12px;
   font-weight: var(--weight-badge);
+  animation: demo-breathe 4s ease-in-out infinite;
+}
+
+.demo-chip::before {
+  animation: demo-breathe-dot 4s ease-in-out infinite;
+}
+
+/* The words go from ink to the muted gray, which still reads at AA, rather
+   than fading out. */
+@keyframes demo-breathe {
+  50% {
+    color: var(--muted);
+  }
+}
+
+@keyframes demo-breathe-dot {
+  50% {
+    opacity: 0.3;
+  }
 }
 
 .demo-chip::before {
