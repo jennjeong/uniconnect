@@ -1,7 +1,10 @@
+import { useCallback, useState } from "react"
+import { useSiteState } from "../hooks/useSiteState"
 import { t } from "../i18n"
 import { formatDistance } from "../lib/distance"
 import { mapPosition, mapRings, mapScale, spreadPositions } from "../lib/placeMap"
 import type { NearbyPlace } from "../types"
+import { KakaoMap } from "./KakaoMap"
 
 // How a shop stands with uniconnect, for its dot and its name.
 export function placeState(place: NearbyPlace) {
@@ -13,8 +16,10 @@ export const placeStateLabels = { joined: "uniconnect 가입", invited: "초대�
 // The shops around the campus drawn by direction and distance: the campus in
 // the middle, north up, rings out to the farthest shop (lib/placeMap.ts),
 // each shop a dot to press (deep blue once it joined, ringed once invited,
-// silver before). It is a sketch, not a map service: the points come with
-// Kakao's live answer and are drawn only on screen.
+// silver before). With a Kakao JavaScript key (/api/site's maps.kakao) the
+// same marks sit on Kakao's map instead (KakaoMap.tsx); without one, or when it
+// fails to load, this sketch. The points come with Kakao's live answer and are
+// drawn only on screen.
 export function PlaceMap({
   campus,
   center,
@@ -28,6 +33,16 @@ export function PlaceMap({
   selected?: string
   onSelect: (place: NearbyPlace) => void
 }) {
+  const kakaoKey = useSiteState()?.maps?.kakao
+  const [kakaoFailed, setKakaoFailed] = useState(false)
+  const fail = useCallback(() => setKakaoFailed(true), [])
+  if (kakaoKey && !kakaoFailed)
+    return (
+      <div className="place-map-wrap">
+        <KakaoMap appKey={kakaoKey} campus={campus} center={center} onFail={fail} onSelect={onSelect} places={places} selected={selected} />
+        <PlaceLegend />
+      </div>
+    )
   const scale = mapScale(center, places)
   const rings = mapRings(scale)
   const positions = spreadPositions(places.map((place) => mapPosition(center, place, scale.radius)))
@@ -73,14 +88,20 @@ export function PlaceMap({
           )
         })}
       </div>
-      <ul className="place-map-legend">
-        {(Object.keys(placeStateLabels) as (keyof typeof placeStateLabels)[]).map((state) => (
-          <li key={state}>
-            <span aria-hidden="true" className={`place-dot-key ${state}`} />
-            {t(placeStateLabels[state])}
-          </li>
-        ))}
-      </ul>
+      <PlaceLegend />
     </div>
+  )
+}
+
+function PlaceLegend() {
+  return (
+    <ul className="place-map-legend">
+      {(Object.keys(placeStateLabels) as (keyof typeof placeStateLabels)[]).map((state) => (
+        <li key={state}>
+          <span aria-hidden="true" className={`place-dot-key ${state}`} />
+          {t(placeStateLabels[state])}
+        </li>
+      ))}
+    </ul>
   )
 }

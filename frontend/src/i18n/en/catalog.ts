@@ -645,6 +645,7 @@ const en: Record<string, string> = {
   "원하는 협찬은 제안하면서 함께 정해요.": "You settle what they ask for in the proposal.",
   "행사 페이지 보기": "Open the event page",
   "다가오는 행사가 아직 없어요.": "No coming event yet.",
+  "지도를 불러오는 중이에요": "Loading the map",
 }
 
 export default en

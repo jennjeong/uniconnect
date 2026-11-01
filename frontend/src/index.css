@@ -1964,6 +1964,80 @@ button.nav-pill:hover {
   z-index: 1;
 }
 
+/* Kakao's map as the ground, toned toward the silver theme, with the same
+   dots and a deep blue campus pin drawn over it (KakaoMap.tsx). */
+.kakao-map {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 28px;
+  background: var(--fill);
+  box-shadow: var(--silver-ring), 0 18px 44px rgba(19, 48, 111, 0.1);
+}
+
+.kakao-map-ground {
+  position: absolute;
+  inset: 0;
+  filter: saturate(0.35) contrast(0.96) brightness(1.03);
+}
+
+.kakao-map-ground .kakao-dot,
+.kakao-map-ground .kakao-campus {
+  filter: saturate(2.8) contrast(1.04) brightness(0.97);
+}
+
+.kakao-map-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-weight: var(--weight-body);
+}
+
+.kakao-dot {
+  position: relative;
+  transform: none;
+  cursor: pointer;
+}
+
+.kakao-dot::before {
+  width: 16px;
+  height: 16px;
+  box-shadow: 0 0 0 3px #fff, 0 4px 10px rgba(19, 48, 111, 0.25);
+}
+
+.kakao-dot[aria-pressed='true']::before {
+  transform: scale(1.45);
+  box-shadow: 0 0 0 3px #fff, 0 0 0 6px var(--point-bright);
+}
+
+.kakao-campus {
+  position: relative;
+  display: block;
+  margin-bottom: 10px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: var(--point);
+  color: var(--on-point);
+  font-size: 13px;
+  font-weight: var(--weight-label);
+  white-space: nowrap;
+  box-shadow: 0 8px 20px rgba(19, 48, 111, 0.3);
+}
+
+.kakao-campus::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 12px;
+  height: 12px;
+  background: var(--point);
+  transform: translateX(-50%) rotate(45deg);
+  border-radius: 2px;
+}
+
 .place-dot[aria-pressed='true']::before {
   transform: scale(1.5);
   box-shadow: 0 0 0 2px #fff, 0 0 0 5px var(--point-bright);
