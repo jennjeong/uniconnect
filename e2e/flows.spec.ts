@@ -245,6 +245,11 @@ test("the brand notes the parcel it sent on the agreement, and the group tracks 
 
   await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
   await page.goto(`/agreements/${id}`)
+  // The agreement reads as a contract: nine articles and both signatures.
+  const terms = page.getByRole("region", { name: /계약 조항/ })
+  await expect(terms.locator(".contract-articles li")).toHaveCount(9)
+  await expect(terms.locator(".contract-articles")).toContainText("제1조 (목적)")
+  await expect(terms.locator(".contract-sign")).toHaveCount(2)
   const panel = page.getByRole("region", { name: "협찬 물품 배송" })
   await panel.getByLabel("택배사").selectOption("우체국택배")
   await panel.getByLabel("운송장 번호").fill("6070 1234 5678")

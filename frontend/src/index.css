@@ -11320,6 +11320,118 @@ button.nav-pill:hover {
   margin-top: 8px;
 }
 
+/* 계약 조항 on the agreement: numbered articles on white, then the two
+   parties' confirmations side by side as the signature block. */
+.contract-terms h2 small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: var(--weight-body);
+}
+
+.contract-articles {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 6px 22px;
+  border-radius: 22px;
+  background: var(--surface);
+  box-shadow: var(--ring);
+  list-style: none;
+}
+
+.contract-articles li {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 6px 18px;
+  padding: 14px 0;
+  border-top: 1px solid var(--line);
+}
+
+.contract-articles li:first-child {
+  border-top: 0;
+}
+
+.contract-articles li > strong {
+  color: var(--point-strong);
+  font-size: 14px;
+  font-weight: var(--weight-label);
+}
+
+.contract-articles p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.contract-articles p strong {
+  color: var(--ink);
+  font-weight: var(--weight-label);
+}
+
+.contract-signs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 14px 0 10px;
+}
+
+.contract-sign {
+  display: grid;
+  gap: 4px;
+  padding: 18px 20px;
+  border: 1px dashed var(--line-strong, var(--line));
+  border-radius: 18px;
+}
+
+.contract-sign span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: var(--weight-label);
+}
+
+.contract-sign strong {
+  font-size: 16px;
+}
+
+.contract-sign small {
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.contract-sign em {
+  justify-self: start;
+  margin-top: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--muted);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: var(--weight-label);
+}
+
+.contract-sign.signed {
+  border-style: solid;
+  border-color: transparent;
+  background: var(--point-tint);
+}
+
+.contract-sign.signed em {
+  background: var(--point);
+  color: var(--on-point);
+}
+
+@media (max-width: 720px) {
+  .contract-articles li {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .contract-signs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* 협찬 감사 카드뉴스 (report/ThanksCard.tsx): a 1080×1350 card on the
    value cards' deep blue, rendered off screen and saved as a PNG. */
 .card-export {

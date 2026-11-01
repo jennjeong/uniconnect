@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from "react"
+import { lazy, Suspense, useEffect, useState, type ReactNode } from "react"
 
 import { api, ApiError, errorMessage } from "../api"
 import { Icon } from "../components/Icon"
@@ -917,6 +917,124 @@ function ValuePanel({
 // side's items to tick off with links and photos as proof; each side's
 // confirmation of the items as they stand; and printing it (or saving it
 // as a PDF from the print dialog).
+// 계약 조항: the agreement read as a contract, from what it holds: a number,
+// the two parties, nine articles (purpose, what is sponsored, when, each
+// side's duties, how results are confirmed, the fee, changes and calling it
+// off, contacts, when it takes effect) and each side's confirmation as its
+// signature. It says what is agreed on this page; it isn't a certified
+// e-signature.
+function ContractTerms({ agreement }: { agreement: Agreement }) {
+  const brand = agreement.brand.name
+  const group = agreement.group.name
+  const duties = (side: AgreementItem["side"]) => agreement.items.filter((item) => item.side === side).map((item) => item.label)
+  const methods = (agreement.measure?.confirmedMethods ?? agreement.measure?.methods ?? []).map((method) => t(methodInfo[method.kind].label))
+  const value = agreement.value
+  const number = `UC-${agreement.id.replace(/[^A-Za-z0-9]/g, "").slice(0, 8).toUpperCase()}`
+  const articles: { title: string; body: ReactNode }[] = [
+    {
+      title: t("목적"),
+      body: t("{brand}(이하 ‘협찬사’)는 {group}(이하 ‘단체’)의 ‘{event}’에 협찬하고, 단체는 약속한 홍보와 성과 확인을 이행해요.", {
+        brand,
+        group,
+        event: agreement.eventName,
+      }),
+    },
+    {
+      title: t("협찬 내용"),
+      body: (
+        <>
+          {t("협찬 품목: {gives}", { gives: agreement.gives })}
+          <br />
+          {value
+            ? t("협찬액: 현금 {cash} · 현물 환산 {inKind} · 합계 {total}", {
+                cash: fullWon(value.cash),
+                inKind: fullWon(value.inKind),
+                total: fullWon(value.cash + value.inKind),
+              })
+            : t("협찬액: 아직 적지 않았어요. 위의 협찬액을 적으면 여기에 들어가요.")}
+        </>
+      ),
+    },
+    {
+      title: t("일정"),
+      body: agreement.eventDate ? t("행사일: {date}", { date: formatFullDate(agreement.eventDate) }) : t("행사일은 정해지는 대로 이 계약서에 들어가요."),
+    },
+    {
+      title: t("서로 할 일"),
+      body: (
+        <>
+          <strong>{t("협찬사")}</strong> {duties("brand").join(" · ") || "—"}
+          <br />
+          <strong>{t("단체")}</strong> {duties("group").join(" · ") || "—"}
+          <br />
+          {t("각자 끝낸 일은 이 계약서에 표시하고, 링크와 사진으로 증빙을 남겨요.")}
+        </>
+      ),
+    },
+    {
+      title: t("성과 확인"),
+      body: methods.length
+        ? t("{methods} 방식으로 확인하고, 양쪽이 모두 확인한 방식만 성과로 세요.", { methods: methods.join(", ") })
+        : t("현장 QR 체크인과 쿠폰, 매장 방문으로 확인해요."),
+    },
+    {
+      title: t("수수료"),
+      body: agreement.fee.exempt
+        ? t("이 협찬에는 플랫폼 수수료가 없어요. 단체는 어떤 경우에도 수수료를 내지 않아요.")
+        : t("협찬사는 협찬액의 {rate}%를 플랫폼 수수료로 내고, 결제하면 이 계약서를 확인한 것으로 봐요. 단체는 수수료를 내지 않아요.", {
+            rate: Math.round(agreement.fee.rate * 100),
+          }),
+    },
+    {
+      title: t("변경과 취소"),
+      body: t("내용을 바꾸면 양쪽이 다시 확인해야 해요. 행사 전에는 한쪽이 이유를 적어 취소를 요청하고 상대가 동의하면 취소되고, 이때 낸 수수료는 돌려드려요."),
+    },
+    {
+      title: t("개인정보"),
+      body: t("서로의 담당자 연락처는 이 협찬을 위해서만 쓰고, 다른 곳에 알리지 않아요."),
+    },
+    {
+      title: t("효력"),
+      body: t("양쪽이 모두 확인한 때부터 효력이 생기고, 각자의 확인 시각이 서명을 대신해요."),
+    },
+  ]
+  const signer = (side: AgreementItem["side"]) => {
+    const party = agreement[side]
+    const at = agreement.confirmed[side]
+    return (
+      <div className={at ? "contract-sign signed" : "contract-sign"}>
+        <span>{side === "brand" ? t("협찬사") : t("단체")}</span>
+        <strong>{party.name}</strong>
+        {party.contact && <small>{t("담당자 {name} · {position}", { name: party.contact.name, position: t(party.contact.position) })}</small>}
+        <em>{at ? t("{date} 확인", { date: formatDateTime(at) }) : t("확인 전")}</em>
+      </div>
+    )
+  }
+  return (
+    <section aria-labelledby="agreement-terms-title" className="agreement-section contract-terms">
+      <h2 id="agreement-terms-title">
+        {t("계약 조항")}
+        <small>
+          {t("계약 번호 {number} · 작성 {date}", { number, date: formatFullDate(agreement.createdAt.slice(0, 10)) })}
+        </small>
+      </h2>
+      <ol className="contract-articles">
+        {articles.map((article, index) => (
+          <li key={article.title}>
+            <strong>{t("제{number}조 ({title})", { number: index + 1, title: article.title })}</strong>
+            <p>{article.body}</p>
+          </li>
+        ))}
+      </ol>
+      <div className="contract-signs">
+        {signer("brand")}
+        {signer("group")}
+      </div>
+      <p className="field-hint">{t("임시 전자 계약서는 두 쪽이 합의한 내용을 남기는 기록이에요. 공인 전자서명은 아니에요.")}</p>
+    </section>
+  )
+}
+
 // 협찬 물품 배송: the parcels either side sent, each with its carrier, number
 // and a link to look it up, and a row to note one more. Only the side that
 // noted a parcel takes it off.
@@ -1374,6 +1492,7 @@ export function AgreementPage({
               />
             </>
           )}
+          <ContractTerms agreement={agreement} />
           <CancelPanel
             agreement={agreement}
             busy={busy}
