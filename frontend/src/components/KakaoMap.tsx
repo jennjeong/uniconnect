@@ -25,9 +25,14 @@ declare global {
 
 let loading: Promise<KakaoMaps> | undefined
 
-// Adds Kakao's SDK once per page (autoload off, so it loads when asked).
+// Adds Kakao's SDK once per page (autoload off, so it loads when asked). The
+// SDK fetches the rest of itself and only then calls back, so a part that never
+// arrives (a blocked script) counts as a failure after loadTimeoutMs.
+const loadTimeoutMs = 10_000
+
 function loadKakao(key: string) {
   loading ??= new Promise<KakaoMaps>((resolve, reject) => {
+    setTimeout(() => reject(new Error("kakao maps timed out")), loadTimeoutMs)
     const script = document.createElement("script")
     script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(key)}&autoload=false`
     script.async = true
