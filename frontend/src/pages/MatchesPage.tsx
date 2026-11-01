@@ -18,7 +18,7 @@ import type { Industry, Match, NearbyPlace, RequestStatus } from "../types"
 
 type Tab = "추천" | "가까운 순" | "인기" | "전체" | "업종별" | "찜"
 
-const tabs: Tab[] = ["추천", "가까운 순", "인기", "전체", "업종별", "찜"]
+const tabs: Tab[] = ["전체", "추천", "인기", "가까운 순", "업종별", "찜"]
 
 const tabIntro: Record<Tab, { title: string; caption: string }> = {
   추천: {
@@ -86,7 +86,7 @@ export function MatchesPage({
   onLogin: () => void
   onSignup: () => void
 }) {
-  const [tab, setTab] = useState<Tab>("추천")
+  const [tab, setTab] = useState<Tab>("전체")
   // 비교: the cards laid side by side (components/CompareTray.tsx).
   const compare = useCompare()
   // Cards slide in from the side the picked tab or chip lies on.

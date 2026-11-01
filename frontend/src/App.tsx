@@ -748,6 +748,9 @@ function App() {
     }
     endSession()
     setActiveModal(null)
+    // Out of the account, back to the introduction rather than the same
+    // screen with the examples in it.
+    go({ page: "대시보드", home: true })
     showNotice(t("로그아웃했어요."))
   }
 

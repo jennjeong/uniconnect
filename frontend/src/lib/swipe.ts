@@ -83,14 +83,23 @@ export function installSwipeNavigation() {
 
   // data-swiped on the root lets the next screen arrive from the side it was
   // swiped from (index.css, "Motion").
+  // The screen on show slides away first (data-swipe-out), then the next
+  // one arrives; with reduced motion it moves at once.
   let arrived = 0
+  let leaving = 0
+  const outMs = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 160
   const move = (direction: Direction) => {
     hide()
-    root.dataset.swiped = direction
     window.clearTimeout(arrived)
-    arrived = window.setTimeout(() => delete root.dataset.swiped, 700)
-    if (direction === "back") history.back()
-    else history.forward()
+    window.clearTimeout(leaving)
+    root.dataset.swipeOut = direction
+    leaving = window.setTimeout(() => {
+      delete root.dataset.swipeOut
+      root.dataset.swiped = direction
+      arrived = window.setTimeout(() => delete root.dataset.swiped, 700)
+      if (direction === "back") history.back()
+      else history.forward()
+    }, outMs)
   }
 
   // Touch: one finger, mostly sideways and moving soon after it lands (a

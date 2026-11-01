@@ -1585,6 +1585,15 @@ test("the account button opens a small panel with 내 정보 and 로그아웃", 
   await panel.getByRole("button", { name: "로그아웃" }).click()
   await expect(page.getByText("로그아웃했어요.")).toBeVisible()
   await expect(page.getByRole("button", { name: "로그인", exact: true }).first()).toBeVisible()
+  // Out of the account, the introduction shows rather than the same screen.
+  await expect(page).toHaveURL(/\/$/)
+})
+
+test("추천 매칭 opens on 전체, its tabs in the order 전체 · 추천 · 인기 · 가까운 순 · 업종별 · 찜", async ({ page }) => {
+  await page.goto("/matches")
+  const tabs = page.getByRole("tablist", { name: "브랜드 보기" }).getByRole("tab")
+  await expect(tabs).toHaveText(["전체", "추천", "인기", "가까운 순", "업종별", "찜"])
+  await expect(tabs.first()).toHaveAttribute("aria-selected", "true")
 })
 
 test("a brand writes the value, pays the 15% fee to confirm, and finds it under 결제 내역", async ({ page, request, browser }) => {
