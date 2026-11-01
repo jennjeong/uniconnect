@@ -342,6 +342,29 @@ test("a group publishes its sponsorship ledger from 리포트, and anyone with t
   }
 })
 
+test("on the event day a group saves a thank-you card image from the agreement", async ({ page, request }) => {
+  const group = await signUpMember(request, "학생단체", "e2e-thanks@syu.ac.kr", "감사하는 동아리")
+  const brand = await signUpMember(request, "브랜드", "e2e-thanks@thanks-cafe.kr", "고마운 카페")
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date())
+  await request.post("/api/events", { data: { name: "오늘 공연", date: today, types: ["제품"] }, headers: group.headers })
+  await request.post("/api/proposals", { data: { matchId: brand.listingId }, headers: group.headers })
+  const { requests } = (await (await request.get("/api/requests", { headers: brand.headers })).json()) as { requests: { id: string }[] }
+  await request.post(`/api/requests/${requests[0].id}/accept`, { headers: brand.headers })
+
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
+  await page.goto(`/agreements/${requests[0].id}`)
+  const panel = page.getByRole("region", { name: "협찬 감사 카드뉴스" })
+  await expect(panel).toContainText("고마운 카페")
+  const image = page.waitForEvent("download")
+  await panel.getByRole("button", { name: "카드뉴스 이미지 저장" }).click()
+  expect((await image).suggestedFilename()).toBe(`uniconnect-thanks-${today}.png`)
+  await expect(page.getByText("카드뉴스 이미지를 저장했어요.")).toBeVisible()
+  for (const member of [group, brand]) {
+    const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: member.headers })
+    expect(left.status()).toBe(204)
+  }
+})
+
 test("a sponsorship is called off from its agreement once the other side agrees", async ({ page, request }) => {
   const group = await signUpMember(request, "학생단체", "e2e-calloff@syu.ac.kr", "취소하는 동아리")
   const brand = await signUpMember(request, "브랜드", "e2e-calloff@calloff-cafe.kr", "취소하는 카페")

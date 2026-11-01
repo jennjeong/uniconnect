@@ -11010,6 +11010,111 @@ button.nav-pill:hover {
   margin-top: 8px;
 }
 
+/* 협찬 감사 카드뉴스 (report/ThanksCard.tsx): a 1080×1350 card on the
+   value cards' deep blue, rendered off screen and saved as a PNG. */
+.card-export {
+  position: fixed;
+  top: 0;
+  left: -10000px;
+  pointer-events: none;
+}
+
+.thanks-card {
+  display: flex;
+  width: 1080px;
+  height: 1350px;
+  flex-direction: column;
+  padding: 96px;
+  background:
+    radial-gradient(70% 55% at 85% 12%, rgba(124, 165, 255, 0.55) 0%, transparent 70%),
+    radial-gradient(120% 90% at 80% 10%, #2a59c4 0%, #10275c 70%);
+  color: #fff;
+  font-family: var(--font-sans);
+}
+
+.thanks-logo {
+  width: auto;
+  height: 54px;
+  align-self: flex-start;
+}
+
+.thanks-eyebrow {
+  margin-top: auto;
+  color: #b8ccff;
+  font-size: 30px;
+  font-weight: var(--weight-badge);
+  letter-spacing: 0.24em;
+}
+
+.thanks-card h1 {
+  display: grid;
+  gap: 8px;
+  margin: 20px 0 0;
+  font-size: 96px;
+  font-weight: var(--weight-display);
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+}
+
+.thanks-card h1 span {
+  color: #d6e2ff;
+}
+
+.thanks-lead {
+  margin: 36px 0 0;
+  font-size: 40px;
+  font-weight: var(--weight-body);
+  line-height: 1.4;
+}
+
+.thanks-date {
+  margin: 12px 0 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 30px;
+}
+
+.thanks-figures {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin: 64px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.thanks-figures li {
+  display: grid;
+  gap: 6px;
+  padding: 28px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+}
+
+.thanks-figures strong {
+  font-size: 64px;
+  font-weight: var(--weight-display);
+}
+
+.thanks-figures small {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 26px;
+}
+
+.thanks-card footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 64px;
+  padding-top: 28px;
+  border-top: 1px solid rgba(255, 255, 255, 0.24);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 26px;
+}
+
+.agreement-thanks .pill {
+  justify-self: start;
+}
+
 /* 협찬 물품 배송 on the agreement (ShipmentsPanel): each parcel as a row
    with its lookup, then the row to note another. */
 .shipment-list {
