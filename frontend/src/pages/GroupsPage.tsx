@@ -1,6 +1,7 @@
 import { useState, type CSSProperties } from "react"
 
 import { CatalogEmpty } from "../components/CatalogEmpty"
+import { CatalogSkeleton } from "../components/CatalogSkeleton"
 import { CatalogMap, LayoutSwitch, type Layout } from "../components/CatalogMap"
 import { CatalogSearch } from "../components/CatalogSearch"
 import { CompareTray, useCompare } from "../components/CompareTray"
@@ -314,7 +315,9 @@ export function GroupsPage({
         onLogin={onLogin}
         onSignup={onSignup}
       >
-        {loaded && groups.length === 0 ? (
+        {!loaded ? (
+          <CatalogSkeleton />
+        ) : groups.length === 0 ? (
           <CatalogEmpty
             title={t("아직 가입한 학생단체가 없어요")}
             text={t("학생단체가 가입하면 여기서 찾아 제안해요. 소개를 먼저 써 두면 단체가 먼저 찾아와요.")}

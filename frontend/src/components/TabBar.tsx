@@ -2,9 +2,12 @@ import { useLayoutEffect, useRef, useState, type MouseEvent, type ReactNode } fr
 
 export type TabItem<T extends string> = { value: T; label: ReactNode }
 
-type Box = { x: number; y: number; width: number; height: number }
+// Where the highlight sits, and which way it last moved.
+type Box = { left: number; right: number; top: number; height: number; toward: "left" | "right" }
 
 // A row of tabs, or of filter chips, whose highlight slides to the picked one.
+// Its edges move on their own curves, the leading one quicker, so the pill
+// stretches as it travels and settles back when it lands.
 export function TabBar<T extends string>({
   items,
   value,
@@ -30,12 +33,14 @@ export function TabBar<T extends string>({
     const measure = () => {
       const active = element.querySelector<HTMLElement>("[data-active='true']")
       if (!active) return
-      setHighlight({
-        x: active.offsetLeft,
-        y: active.offsetTop,
-        width: active.offsetWidth,
+      const left = active.offsetLeft
+      setHighlight((last) => ({
+        left,
+        right: element.clientWidth - left - active.offsetWidth,
+        top: active.offsetTop,
         height: active.offsetHeight,
-      })
+        toward: last && left < last.left ? "left" : last && left > last.left ? "right" : (last?.toward ?? "right"),
+      }))
     }
     measure()
     const observer = new ResizeObserver(measure)
@@ -54,11 +59,8 @@ export function TabBar<T extends string>({
         <span
           aria-hidden="true"
           className="tab-highlight"
-          style={{
-            width: highlight.width,
-            height: highlight.height,
-            transform: `translate(${highlight.x}px, ${highlight.y}px)`,
-          }}
+          data-toward={highlight.toward}
+          style={{ left: highlight.left, right: highlight.right, top: highlight.top, height: highlight.height }}
         />
       )}
       {items.map((item) => {
