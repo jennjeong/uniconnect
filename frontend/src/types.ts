@@ -797,6 +797,7 @@ export type NavLabel =
   | "성과 분석"
 
 export type ModalName =
+  | "plan"
   | "compare"
   | "propose-many"
   | "report"

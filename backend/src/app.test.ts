@@ -232,6 +232,21 @@ test("a group writes down its terms, latest first, and only groups that are memb
   assert.equal((await call("PUT", "/auth/terms", { terms: [] }, brand)).status, 403)
 })
 
+test("every sponsorship whose day has come has a detailed report, from its record when no event was measured", async () => {
+  const brand = await login("브랜드")
+  const { sponsorships } = (await call("GET", "/analytics", undefined, brand)).data as { sponsorships: { id: string; report?: string }[] }
+  assert.ok(sponsorships.length > 1)
+  assert.ok(sponsorships.every((item) => item.report && item.report !== "none"))
+  // Locked until bought; worked out from the record, its visits are the record's.
+  const database = getDatabase()
+  const owner = database.accounts.find((account) => account.id === database.demoAccountIds["브랜드"])!
+  const unmeasured = database.sponsorships[owner.id].find((item) => !item.eventId)!
+  assert.equal((await call("GET", `/insights/${unmeasured.id}`, undefined, brand)).data.locked, true)
+  const { premiumReport } = await import("./lib/premiumReport.js")
+  const report = premiumReport(database, owner, unmeasured.id)!
+  assert.equal(report.scorecard.find((item) => item.key === "visits")!.actual, unmeasured.visits)
+})
+
 test("the site's counts are members only and grow with each sign-up", async () => {
   const before = (await call("GET", "/site")).data.counts
   assert.deepEqual(Object.keys(before).sort(), ["brands", "groups", "schools", "sponsorships"])

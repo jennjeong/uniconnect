@@ -1589,6 +1589,27 @@ test("the account button opens a small panel with 내 정보 and 로그아웃", 
   await expect(page).toHaveURL(/\/$/)
 })
 
+test("every sponsorship on 성과 분석 has its detailed report, and 요금제 보기 opens the plans in place", async ({ page, request }) => {
+  await page.goto("/analytics?role=브랜드")
+  const rows = page.locator(".analytics-table .analytics-row:not(.head)")
+  const count = await rows.count()
+  expect(count).toBeGreaterThan(1)
+  await expect(page.locator(".analytics-table .report-button")).toHaveCount(count)
+  // One without a measured event can be bought too, worked out from its record.
+  await rows.last().locator(".report-button").click()
+  await expect(page).toHaveURL(/\/insights\/[^/]+$/)
+  await expect(page.getByText("화면에서 보는 숫자 너머의 리포트")).toBeVisible()
+  await expect(page.getByRole("button", { name: "로그인하고 리포트 사기" })).toBeVisible()
+
+  const brand = await signUpMember(request, "브랜드", "e2e-plan@plan-cafe.kr", "요금제 카페")
+  await page.evaluate((value) => localStorage.setItem("uniconnect-token", value), brand.token)
+  await page.goto("/analytics")
+  await page.getByRole("button", { name: "요금제 보기" }).click()
+  const plans = page.getByRole("dialog", { name: "요금제 고르기" })
+  await expect(plans.getByRole("button", { name: "캠퍼스 파트너스 시작하기" })).toBeVisible()
+  expect((await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: brand.headers })).status()).toBe(204)
+})
+
 test("추천 매칭 opens on 전체, its tabs in the order 전체 · 추천 · 인기 · 가까운 순 · 업종별 · 찜", async ({ page }) => {
   await page.goto("/matches")
   const tabs = page.getByRole("tablist", { name: "브랜드 보기" }).getByRole("tab")

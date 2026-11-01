@@ -3,11 +3,11 @@ import { createHash } from "node:crypto"
 import { paidFor } from "./billing.js"
 import { browse } from "./catalog.js"
 import { addDays, todayInKorea } from "./dates.js"
-import { checkInWindow, eventOf, shareValue } from "./measurements.js"
+import { checkInWindow, defaultGoals, emptyMetrics, eventOf, shareValue } from "./measurements.js"
 import { activeMethodsOf, venueCountsOf } from "./methods.js"
 import { isDemoAccount } from "./reviews.js"
 import { finishedSponsorships } from "./sponsorships.js"
-import type { Account, Database, EventItem, Measurement, Sponsorship } from "../types.js"
+import type { Account, Database, EventItem, Measurement, Sponsorship, VenueCounts } from "../types.js"
 
 // 상세 성과 리포트: what a brand buys for one sponsorship (the business plan's
 // 50,000 KRW report), worked out live from the event's measurement and
@@ -127,10 +127,47 @@ export const reportNumber = (sponsorship: Sponsorship) =>
 // The brand's sponsorship behind a report, with its measured event.
 export function sponsorshipFor(database: Database, account: Account, id: string) {
   const sponsorship = (database.sponsorships[account.id] ?? []).find((item) => item.id === id)
-  if (!sponsorship?.eventId) return undefined
-  const measurement = database.measurements.find((item) => item.eventId === sponsorship.eventId)
+  if (!sponsorship) return undefined
+  const measurement = sponsorship.eventId ? database.measurements.find((item) => item.eventId === sponsorship.eventId) : undefined
   const event = measurement && eventOf(database, measurement)
-  if (!measurement || !event) return undefined
+  if (!measurement || !event) return fromRecord(sponsorship)
+  return { sponsorship, measurement, event }
+}
+
+// A sponsorship without a measured event (a brand's campaign, or one before
+// on-site counting) still gets its report, worked out from its own record:
+// what was spent, the coupons and visits, the sales they brought (so the
+// spend per visitor) and its ROAS goal. What only a measurement holds (QR
+// scans, hours, the survey) stays empty.
+function fromRecord(sponsorship: Sponsorship) {
+  const event: EventItem = {
+    id: `record-${sponsorship.id}`,
+    name: sponsorship.eventName,
+    date: sponsorship.date,
+    people: "",
+    types: [],
+    status: "측정 완료",
+    createdAt: sponsorship.date,
+  }
+  const base = defaultGoals(event)
+  const measurement: Measurement = {
+    eventId: event.id,
+    accountId: "",
+    code: "",
+    metrics: { ...emptyMetrics(), ...venueCountsOf(sponsorship as Partial<VenueCounts> as VenueCounts), coupons: sponsorship.coupons, visits: sponsorship.visits },
+    hourlyScans: [],
+    log: [],
+    goals: {
+      ...base,
+      averageSpend: sponsorship.visits > 0 ? Math.round(sponsorship.sales / sponsorship.visits) : base.averageSpend,
+      valueBreakdown: [{ type: "협찬액", value: sponsorship.spend }],
+      targets: { ...base.targets, roas: sponsorship.targetRoas },
+    },
+    staffPin: "",
+    groupPin: "",
+    sponsors: [],
+    passes: {},
+  }
   return { sponsorship, measurement, event }
 }
 
