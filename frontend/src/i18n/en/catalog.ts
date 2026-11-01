@@ -636,6 +636,15 @@ const en: Record<string, string> = {
   "우리 단체": "Ours",
   "다른 단체 행사 보기": "Other groups’ events",
   "다른 학생회와 동아리의 다가오는 행사와 비슷한 행사의 협찬 사례를 봐요.": "See other councils’ and clubs’ coming events and sponsorships of similar events.",
+  "로고 노출 · {place}": "Logo · {place}",
+  "현장 배포 · {way}": "Handout · {way}",
+  "SNS · {post}": "Social · {post}",
+  "협찬 한눈에 보기": "The deal at a glance",
+  "단체가 해 드리는 것": "What the group does for you",
+  "아직 정해 두지 않았어요. 문의로 물어보세요.": "Not set yet. Ask them.",
+  "원하는 협찬은 제안하면서 함께 정해요.": "You settle what they ask for in the proposal.",
+  "행사 페이지 보기": "Open the event page",
+  "다가오는 행사가 아직 없어요.": "No coming event yet.",
 }
 
 export default en

@@ -2,6 +2,7 @@ import { useState } from "react"
 
 import { BrandMark } from "../components/BrandMark"
 import { DateLine } from "../components/DateLine"
+import { GroupDeal } from "../components/GroupDeal"
 import { Icon } from "../components/Icon"
 import { ShareButton } from "../components/ShareButton"
 import { Pill } from "../components/Pill"
@@ -218,6 +219,7 @@ export function MatchDetailPage({
 
           {tab === "match" ? (
             <div className="profile-panel">
+              {group && <GroupDeal match={match} onOpenEvent={onOpenEvent} />}
               <ProfileFigures figures={figures} />
               {match.scoreParts && match.scoreParts.length > 0 && (
                 <ProfileBars rows={match.scoreParts.map((part) => ({ label: t(part.label), share: part.value }))} />
