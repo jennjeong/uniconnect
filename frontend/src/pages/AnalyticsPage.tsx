@@ -1,9 +1,10 @@
-import { Fragment, type CSSProperties, type ReactNode } from "react"
+import { Fragment, useState, type CSSProperties, type ReactNode } from "react"
 
 import { AnimatedNumber } from "../components/AnimatedNumber"
 import { CampusPortfolio } from "../components/CampusPortfolio"
 import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
+import { Pager } from "../components/Pager"
 import { Pill } from "../components/Pill"
 import { RevealTitle } from "../components/RevealText"
 import { venueSummary } from "../data/methods"
@@ -18,6 +19,9 @@ import { INTERFERENCE } from "../scenes/shaders"
 import type { Sponsorship } from "../types"
 
 const delay = (seconds: number) => ({ "--reveal-delay": `${seconds}s` }) as CSSProperties
+
+// Sponsorships on one page of the table.
+const perPage = 5
 
 // A translated sentence with parts in markup: each {name} in it becomes
 // nodes[name]. Plain values go to t() first, which also picks a plural word.
@@ -71,6 +75,11 @@ export function AnalyticsPage({
 }) {
   const { totals, rows, best, furthestBelow, cheapest, metCount, visitRate, roasScale } =
     analyzeSponsorships(sponsorships)
+  // The table's page, five sponsorships at a time.
+  const [page, setPage] = useState(0)
+  const pages = Math.ceil(rows.length / perPage)
+  const current = Math.min(page, Math.max(0, pages - 1))
+  const pageRows = rows.slice(current * perPage, (current + 1) * perPage)
 
   // Each number with its unit set smaller after it, so the four read alike.
   const kpis = [
@@ -260,7 +269,7 @@ export function AnalyticsPage({
                 <span role="columnheader">ROAS</span>
                 <span role="columnheader">{t("상세 리포트")}</span>
               </div>
-              {rows.map((row) => (
+              {pageRows.map((row) => (
                 <div className="analytics-row" key={row.id} role="row">
                   <span className="analytics-event" role="cell">
                     <strong>{row.eventName}</strong>
@@ -293,6 +302,7 @@ export function AnalyticsPage({
                 </div>
               ))}
             </div>
+            <Pager label={t("협찬별 상세 페이지")} onPage={setPage} page={current} pages={pages} />
             <p className="field-hint analytics-hint">
               {t(
                 "집행액은 학생단체가 목표 설정에서 적은 협찬 가치이고, 추정 매출은 매장 방문 수 × 학생단체가 적은 1인 예상 지출이에요. 실제 매출과 다를 수 있어요.",

@@ -160,6 +160,10 @@ const en: Record<string, string> = {
   "인사이트와 다음 행사 제안": "Insights and Ideas for the Next Event",
   "목표@marker": "Goal",
   "항목@log": "Type",
+  "이전 페이지": "Previous page",
+  "다음 페이지": "Next page",
+  "협찬별 상세 페이지": "Sponsorship detail pages",
+  "요금제 고르기": "Choose a plan",
 }
 
 export default en

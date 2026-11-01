@@ -102,6 +102,7 @@ const CouncilLinkModal = lazy(() => import("./modals/CouncilLinkModal").then((mo
 const CouncilPage = lazy(() => import("./pages/CouncilPage").then((module) => ({ default: module.CouncilPage })))
 const InsightPage = lazy(() => import("./pages/InsightPage").then((module) => ({ default: module.InsightPage })))
 const TwoFactorModal = lazy(() => import("./modals/TwoFactorModal").then((module) => ({ default: module.TwoFactorModal })))
+const PlanModal = lazy(() => import("./modals/PlanModal").then((module) => ({ default: module.PlanModal })))
 const ProposeModal = lazy(() => import("./modals/ProposeModal").then((module) => ({ default: module.ProposeModal })))
 const SafetyModal = lazy(() => import("./modals/SafetyModal").then((module) => ({ default: module.SafetyModal })))
 const ResetPasswordModal = lazy(() => import("./modals/ResetPasswordModal").then((module) => ({ default: module.ResetPasswordModal })))
@@ -1705,7 +1706,7 @@ function App() {
         return (
           <AnalyticsPage
             onOpenReport={(id) => go({ page: "성과 분석", insight: id })}
-            onOpenPlan={() => (account ? go({ page, profile: "page" }) : openAuth("signup", "브랜드"))}
+            onOpenPlan={() => (account ? setActiveModal("plan") : openAuth("signup", "브랜드"))}
             exporting={exportingAnalytics}
             onDownload={() => setExportingAnalytics(true)}
             sponsorships={sponsorships}
@@ -2160,6 +2161,9 @@ function App() {
           <SafetyModal mode={safety.mode} onClose={closeModal} onDone={safetyDone} target={safety.target} />
         </Presence>
       )}
+      <Presence show={activeModal === "plan"}>
+        <PlanModal onClose={closeModal} onNotice={showNotice} />
+      </Presence>
       {account && proposingMany && proposingMany.length > 0 && (
         <Presence show={activeModal === "propose-many"}>
           <ProposeModal
