@@ -102,6 +102,8 @@
   --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-snap: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-pop: cubic-bezier(0.3, 1.5, 0.5, 1);
+  /* The leading edge of a sliding tab highlight: quick, a little past. */
+  --ease-tab-lead: cubic-bezier(0.3, 1.25, 0.5, 1);
   --ease-quart: cubic-bezier(0.25, 1, 0.5, 1);
 }
 
@@ -2544,16 +2546,25 @@ button.nav-pill:hover {
   color: inherit;
 }
 
+/* The edge it moves toward springs ahead and the other follows, so the pill
+   stretches on the way and lands at the tab's width. */
 .tab-highlight {
   position: absolute;
-  top: 0;
-  left: 0;
   border-radius: 999px;
   background: var(--point);
   pointer-events: none;
   transition:
-    transform 0.45s var(--ease-out),
-    width 0.45s var(--ease-out),
+    left 0.5s var(--ease-out),
+    right 0.3s var(--ease-tab-lead),
+    top 0.45s var(--ease-out),
+    height 0.45s var(--ease-out);
+}
+
+.tab-highlight[data-toward="left"] {
+  transition:
+    left 0.3s var(--ease-tab-lead),
+    right 0.5s var(--ease-out),
+    top 0.45s var(--ease-out),
     height 0.45s var(--ease-out);
 }
 
@@ -3408,6 +3419,177 @@ button.nav-pill:hover {
 .save-toggle[aria-pressed="true"] .icon,
 .save-button[aria-pressed="true"] .icon {
   fill: currentColor;
+}
+
+/* 찜's burst (components/SaveHeart.tsx): the heart presses in, then pops
+   back filled while a ring spreads and thins and eight sparks fly out. */
+.save-heart {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+}
+
+.save-heart-icon {
+  display: inline-grid;
+  transition: transform 0.12s ease-out;
+}
+
+.save-toggle:active .save-heart-icon,
+.save-button:active .save-heart-icon {
+  transform: scale(0.88);
+}
+
+.save-heart-icon.pop {
+  animation: heart-pop 0.38s var(--ease-pop);
+}
+
+.save-burst {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.save-burst-ring {
+  position: absolute;
+  top: -14px;
+  left: -14px;
+  width: 28px;
+  height: 28px;
+  border: 7px solid var(--point-bright);
+  border-radius: 50%;
+  opacity: 0.9;
+  animation: burst-ring 0.42s var(--ease-out) forwards;
+}
+
+.save-burst-spark {
+  --angle: calc(var(--spark) * 45deg + 11.5deg);
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--point);
+  transform: rotate(var(--angle)) translateY(-12px);
+  animation: burst-spark 0.6s var(--ease-out) 0.04s forwards;
+}
+
+.save-burst-spark:nth-child(4n + 3) {
+  background: var(--point-bright);
+}
+
+.save-burst-spark:nth-child(4n) {
+  background: var(--goal-mark);
+}
+
+.save-burst-spark:nth-child(4n + 1) {
+  background: var(--point-glow);
+}
+
+@keyframes heart-pop {
+  from {
+    transform: scale(0.3);
+  }
+}
+
+@keyframes burst-ring {
+  from {
+    transform: scale(0.4);
+  }
+
+  to {
+    border-width: 0;
+    transform: scale(1.5);
+  }
+}
+
+@keyframes burst-spark {
+  to {
+    transform: rotate(var(--angle)) translateY(-26px) scale(0);
+  }
+}
+
+/* Stand-ins while a catalog loads (components/CatalogSkeleton.tsx): silver
+   shapes in a card, and one light band sweeping across them all together. */
+.skeleton-card {
+  display: flex;
+  height: 100%;
+  min-height: 260px;
+  flex-direction: column;
+  gap: 16px;
+  padding: 22px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, #f6f7f9 0%, #eceff4 100%);
+  box-shadow: var(--silver-ring);
+}
+
+.skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.skeleton-lines {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skeleton-line,
+.skeleton-mark,
+.skeleton-block,
+.skeleton-pill {
+  display: block;
+  background: linear-gradient(100deg, var(--fill-strong) 40%, #fff 50%, var(--fill-strong) 60%) fixed;
+  background-size: 200vw 100%;
+  animation: skeleton-sweep 1.4s linear infinite;
+}
+
+.skeleton-line {
+  width: 80%;
+  height: 12px;
+  border-radius: 999px;
+}
+
+.skeleton-line.short {
+  width: 36%;
+}
+
+.skeleton-line.shorter {
+  width: 52%;
+}
+
+.skeleton-mark {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  border-radius: 14px;
+}
+
+.skeleton-block {
+  flex: 1;
+  min-height: 72px;
+  border-radius: 14px;
+}
+
+.skeleton-pill {
+  width: 100%;
+  height: 44px;
+  border-radius: 999px;
+}
+
+@keyframes skeleton-sweep {
+  from {
+    background-position: 100vw 0;
+  }
+
+  to {
+    background-position: -100vw 0;
+  }
 }
 
 .save-button[aria-pressed="true"] {
@@ -5184,9 +5366,61 @@ button.nav-pill:hover {
   animation: toast-in 0.3s var(--ease-out);
 }
 
-.toast .icon {
-  color: #a9c1f5;
-  stroke-width: 2.2;
+/* Draws in as the toast arrives: the ring goes round from the top, fills,
+   then the check strokes in while the badge pops. */
+.toast-check {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  overflow: visible;
+  animation: check-pop 0.3s var(--ease-pop) 0.42s;
+}
+
+.toast-check-ring {
+  fill: none;
+  stroke: #a9c1f5;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  stroke-linecap: round;
+  stroke-width: 2;
+  transform: rotate(-90deg);
+  transform-origin: center;
+  animation: check-stroke 0.4s var(--ease-quart) 0.05s forwards;
+}
+
+.toast-check-fill {
+  fill: #a9c1f5;
+  opacity: 0;
+  animation: check-fill 0.12s ease-out 0.42s forwards;
+}
+
+.toast-check-mark {
+  fill: none;
+  stroke: var(--slate);
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.4;
+  animation: check-stroke 0.22s var(--ease-out) 0.5s forwards;
+}
+
+@keyframes check-stroke {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes check-fill {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes check-pop {
+  50% {
+    transform: scale(1.14);
+  }
 }
 
 @keyframes toast-in {

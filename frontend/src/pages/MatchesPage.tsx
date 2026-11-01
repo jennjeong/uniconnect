@@ -1,6 +1,7 @@
 import { useState, type CSSProperties } from "react"
 
 import { CatalogEmpty } from "../components/CatalogEmpty"
+import { CatalogSkeleton } from "../components/CatalogSkeleton"
 import { CatalogMap, LayoutSwitch, type Layout } from "../components/CatalogMap"
 import { CatalogSearch } from "../components/CatalogSearch"
 import { CompareTray, useCompare } from "../components/CompareTray"
@@ -230,7 +231,9 @@ export function MatchesPage({
             statuses={statuses}
           />
         </DemoPreview>
-      ) : loaded && brands.length === 0 ? (
+      ) : !loaded ? (
+        <CatalogSkeleton />
+      ) : brands.length === 0 ? (
         <CatalogEmpty
           title={t("아직 가입한 브랜드가 없어요")}
           text={t("가까운 순에서 학교 앞 가게에 초대장을 보내 보세요. 가입하면 여기서 제안할 수 있어요.")}

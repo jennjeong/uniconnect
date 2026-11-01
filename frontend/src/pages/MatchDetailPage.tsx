@@ -10,6 +10,7 @@ import { ProfileBars, ProfileFigures, type ProfileFigure } from "../components/P
 import { ProposalControl } from "../components/ProposalControl"
 import { RevealTitle } from "../components/RevealText"
 import { ReviewsSection } from "../components/ReviewsSection"
+import { SaveHeart } from "../components/SaveHeart"
 import { TabBar } from "../components/TabBar"
 import { profileLabels } from "../data/profile"
 import { locale, t } from "../i18n"
@@ -69,6 +70,7 @@ export function MatchDetailPage({
   onOpenEvent?: (eventId: string) => void
 }) {
   const [tab, setTab] = useState<Tab>("match")
+  const [burst, setBurst] = useState(0)
   const group = kind === "group"
   const labels = profileLabels[group ? "학생단체" : "브랜드"]
   const facts = [
@@ -178,8 +180,16 @@ export function MatchDetailPage({
               <button className="cancel-button" onClick={onChat} type="button">
                 <Icon name="chat" size={16} /> {t("문의하기")}
               </button>
-              <button aria-pressed={saved} className="cancel-button save-button" onClick={onToggleSave} type="button">
-                <Icon name="heart" size={16} /> {t("찜하기")}
+              <button
+                aria-pressed={saved}
+                className="cancel-button save-button"
+                onClick={() => {
+                  if (!saved) setBurst(burst + 1)
+                  onToggleSave()
+                }}
+                type="button"
+              >
+                <SaveHeart burst={burst} saved={saved} size={16} /> {t("찜하기")}
               </button>
             </div>
             {(onReport || onBlock) && (

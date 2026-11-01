@@ -1,4 +1,4 @@
-import type { ReactNode } from "react"
+import { useState, type ReactNode } from "react"
 
 import { t } from "../i18n"
 import { formatDistance, shownTags } from "../lib/distance"
@@ -6,6 +6,7 @@ import type { Match } from "../types"
 import { BrandMark } from "./BrandMark"
 import { DateLine } from "./DateLine"
 import { Icon } from "./Icon"
+import { SaveHeart } from "./SaveHeart"
 import { ScoreRing } from "./ScoreRing"
 import { Stars } from "./Stars"
 
@@ -49,6 +50,7 @@ export function WorkCard({
   // Actions at the bottom, such as the proposal button.
   children: ReactNode
 }) {
+  const [burst, setBurst] = useState(0)
   return (
     <article className="work-card">
       <div className="work-meta">
@@ -62,10 +64,13 @@ export function WorkCard({
               aria-label={t("{name} 찜하기", { name: match.name })}
               aria-pressed={saved === true}
               className="save-toggle"
-              onClick={onToggleSave}
+              onClick={() => {
+                if (!saved) setBurst(burst + 1)
+                onToggleSave()
+              }}
               type="button"
             >
-              <Icon name="heart" size={18} />
+              <SaveHeart burst={burst} saved={saved === true} size={18} />
             </button>
           )}
           {onToggleCompare && (
