@@ -42,7 +42,7 @@ function roasHeadline(report: Report) {
 }
 
 // One event's results (the latest one that has started, or the one picked):
-// the ROAS on a deep blue panel over getlayers.ai's
+// the headline beside the ROAS card on a deep blue panel over getlayers.ai's
 // Interference gradient (waves from two sources adding up where they meet,
 // the way a sponsorship does), then each goal as a card that opens its
 // details.
@@ -112,16 +112,21 @@ export function ReportsPage({
           </div>
           <article className="power-panel" data-reveal>
             <LayersGradient shader={INTERFERENCE} />
-            <div className="power-content">
-              <div className="power-top">
-                <span className="eyebrow light">
-                  {report.eventName} · {formatFullDate(report.eventDate)}
-                </span>
-                <span className="power-status">{t(measureState(report))}</span>
+            <div className="power-content power-split">
+              <div className="power-main">
+                <div className="power-top">
+                  <span className="eyebrow light">
+                    {report.eventName} · {formatFullDate(report.eventDate)}
+                  </span>
+                  <span className="power-status">{t(measureState(report))}</span>
+                </div>
+                <RevealTitle as="h2" className="power-title">
+                  {hasRoas(report) ? roasHeadline(report) : t("협찬 가치를 정하면 ROAS가 계산돼요")}
+                </RevealTitle>
+                <Pill arrow="right" onClick={onOpenReport} variant="white">
+                  {t("상세 데이터 보기")}
+                </Pill>
               </div>
-              <RevealTitle as="h2" className="power-title">
-                {hasRoas(report) ? roasHeadline(report) : t("협찬 가치를 정하면 ROAS가 계산돼요")}
-              </RevealTitle>
               <div className="power-roas">
                 <div className="power-roas-head">
                   <span>{t("추정 ROAS")}</span>
@@ -140,9 +145,6 @@ export function ReportsPage({
                   })}
                 </small>
               </div>
-              <Pill arrow="right" onClick={onOpenReport} variant="white">
-                {t("상세 데이터 보기")}
-              </Pill>
             </div>
           </article>
 
