@@ -13272,27 +13272,9 @@ button.nav-pill:hover {
   text-align: center;
 }
 
-/* On narrower screens the cards swipe sideways, one and a bit in view,
-   instead of stacking into a long column. */
 @media (max-width: 960px) {
   .value-point-list {
-    grid-auto-columns: min(82%, 340px);
-    grid-auto-flow: column;
-    grid-template-columns: none;
-    margin-inline: calc(-1 * var(--gutter));
-    padding: 2px var(--gutter);
-    overflow-x: auto;
-    scroll-padding-inline: var(--gutter);
-    scroll-snap-type: x mandatory;
-    scrollbar-width: none;
-  }
-
-  .value-point-list::-webkit-scrollbar {
-    display: none;
-  }
-
-  .value-point {
-    scroll-snap-align: start;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .value-points {

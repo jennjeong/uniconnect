@@ -23,7 +23,7 @@ const delay = (seconds: number) => ({ "--reveal-delay": `${seconds}s` }) as CSSP
 
 // What uniconnect does for this side, as three needs it answers: each
 // leads with the account's own figure for it, so the row reads at a glance,
-// then how, and the way into the feature. On a phone they swipe sideways.
+// then how, and the way into the feature.
 // The dashboards' second block, after the hero: what the service is about
 // and where the account stands in each part of it.
 export function ValuePoints({ eyebrow, heading, points }: { eyebrow: string; heading: string; points: ValuePoint[] }) {
