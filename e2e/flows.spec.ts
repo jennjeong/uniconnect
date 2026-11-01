@@ -1610,6 +1610,17 @@ test("every sponsorship on 성과 분석 has its detailed report, and 요금제 
   expect((await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: brand.headers })).status()).toBe(204)
 })
 
+test("a group's profile shows a brand the deal in three boxes", async ({ page }) => {
+  await page.goto("/groups")
+  await page.getByRole("tab", { name: "전체" }).click()
+  await page.locator(".work-card h3 button").first().click()
+  await expect(page).toHaveURL(/\/groups\/[^/]+$/)
+  const deal = page.getByRole("region", { name: "협찬 한눈에 보기" })
+  await expect(deal.getByRole("heading", { name: "단체가 해 드리는 것" })).toBeVisible()
+  await expect(deal.getByRole("heading", { name: "원하는 협찬" })).toBeVisible()
+  await expect(deal.getByRole("heading", { name: "다음 행사" })).toBeVisible()
+})
+
 test("추천 매칭 opens on 전체, its tabs in the order 전체 · 추천 · 인기 · 가까운 순 · 업종별 · 찜", async ({ page }) => {
   await page.goto("/matches")
   const tabs = page.getByRole("tablist", { name: "브랜드 보기" }).getByRole("tab")

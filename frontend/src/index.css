@@ -5185,6 +5185,139 @@ button.nav-pill:hover {
   font-size: 14px;
 }
 
+/* 협찬 한눈에 보기 on a group's profile (components/GroupDeal.tsx): what it
+   does for the brand in the point tint, what it asks on silver, and its
+   next event in deep blue, side by side. */
+.deal-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.deal-box {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 20px;
+  border-radius: 22px;
+}
+
+.deal-box.gives {
+  background: var(--point-tint);
+}
+
+.deal-box.asks {
+  background: var(--silver-gradient);
+  box-shadow: var(--silver-ring);
+}
+
+.deal-box.event {
+  --surface-tone: dark;
+  background: radial-gradient(120% 90% at 80% 10%, #2a59c4 0%, #10275c 70%);
+  color: #fff;
+}
+
+.deal-icon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--point-strong);
+}
+
+.deal-box.event .deal-icon {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+.deal-icon .icon,
+.deal-box li .icon {
+  stroke: currentColor;
+}
+
+.deal-box h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: var(--weight-display);
+}
+
+.deal-box ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.deal-box li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.deal-box li .icon {
+  flex: none;
+  margin-top: 3px;
+  color: var(--point-strong);
+}
+
+.deal-box p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.deal-box.event strong {
+  font-size: 18px;
+  font-weight: var(--weight-display);
+}
+
+.deal-box.event dl {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.deal-box.event dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.deal-box.event dt {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.deal-box.event dd {
+  margin: 0;
+  font-weight: var(--weight-label);
+  text-align: right;
+}
+
+.deal-box.event p {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.deal-box.event .cancel-button {
+  justify-self: start;
+  margin-top: 4px;
+  background: #fff;
+  color: var(--point);
+}
+
+@media (max-width: 960px) {
+  .deal-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* Page buttons under a long table (components/Pager.tsx), centered. */
 .pager {
   display: flex;
