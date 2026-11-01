@@ -50,6 +50,19 @@ function loadKakao(key: string) {
   return loading
 }
 
+// Moves the picked shop's name label sideways, or under its pin, so it
+// stays inside the map near an edge.
+function keepInside(name: HTMLElement, box: HTMLElement | null) {
+  if (!box) return
+  const edge = 8
+  const area = box.getBoundingClientRect()
+  const label = name.getBoundingClientRect()
+  if (label.width === 0) return
+  const shift = Math.max(area.left + edge - label.left, 0) + Math.min(area.right - edge - label.right, 0)
+  name.style.setProperty("--name-shift", `${Math.round(shift)}px`)
+  name.classList.toggle("below", label.top < area.top + edge)
+}
+
 // Kakao's map as the ground, with uniconnect's own marks on it: the campus pin
 // and each shop as a pin to press, colored and named as on the drawing. The shops' points
 // come with Kakao's live answer and are only drawn, never kept. When the SDK
@@ -98,7 +111,9 @@ export function KakaoMap({
     const pin = document.createElement("span")
     pin.className = "kakao-campus"
     pin.textContent = campus
-    const overlays = [new maps.CustomOverlay({ position: home, content: pin, yAnchor: 1, zIndex: 3 })]
+    // Under the shops, so a shop beside the campus stays in reach.
+    const overlays = [new maps.CustomOverlay({ position: home, content: pin, yAnchor: 1, zIndex: 0 })]
+    let name: HTMLElement | undefined
     for (const place of places) {
       const position = new maps.LatLng(place.lat, place.lng)
       const dot = document.createElement("button")
@@ -116,7 +131,7 @@ export function KakaoMap({
       dot.setAttribute("aria-pressed", String(selected === place.id))
       dot.addEventListener("click", () => select.current(place))
       if (selected === place.id) {
-        const name = document.createElement("span")
+        name = document.createElement("span")
         name.className = "place-dot-name"
         name.setAttribute("aria-hidden", "true")
         const walk = document.createElement("small")
@@ -128,7 +143,11 @@ export function KakaoMap({
       overlays.push(new maps.CustomOverlay({ position, content: dot, yAnchor: 1, zIndex: selected === place.id ? 2 : 1, clickable: true }))
     }
     for (const overlay of overlays) overlay.setMap(map)
+    // Measured once Kakao has placed the overlays.
+    const label = name
+    const frame = label ? requestAnimationFrame(() => keepInside(label, box.current)) : 0
     return () => {
+      cancelAnimationFrame(frame)
       for (const overlay of overlays) overlay.setMap(null)
     }
   }, [ready, campus, center.lat, center.lng, places, selected])

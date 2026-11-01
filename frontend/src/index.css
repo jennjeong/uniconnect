@@ -2085,6 +2085,7 @@ button.nav-pill:hover {
   font-weight: var(--weight-label);
   white-space: nowrap;
   box-shadow: 0 8px 20px rgba(19, 48, 111, 0.3);
+  pointer-events: none;
 }
 
 .kakao-campus::after {
@@ -2114,8 +2115,14 @@ button.nav-pill:hover {
   font-size: 12px;
   font-weight: var(--weight-label);
   white-space: nowrap;
-  transform: translateX(-50%);
+  transform: translateX(calc(-50% + var(--name-shift, 0px)));
   pointer-events: none;
+}
+
+/* Near the map's top edge the name goes under its pin (KakaoMap's keepInside). */
+.place-dot-name.below {
+  top: calc(100% + 4px);
+  bottom: auto;
 }
 
 .place-dot-name small {
