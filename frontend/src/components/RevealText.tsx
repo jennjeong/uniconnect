@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react"
 
 import { useIntroDone } from "../hooks/useIntroDone"
+import { splitLines } from "./Lines"
 
 type Tag = "h1" | "h2" | "h3" | "p" | "span"
 
@@ -60,7 +61,8 @@ export function RevealTitle({
 }) {
   const { ref, shown } = useShown()
   const Tag = as
-  const rows = lines ?? [children ?? ""]
+  // A heading breaks where it pauses, after a comma or a full stop.
+  const rows = lines ?? splitLines(children ?? "")
   const text = rows.join(" ")
   const still = reducedMotion() || /\d/.test(text)
   const classes = ["reveal-title", className, still || shown ? "is-shown" : ""].filter(Boolean).join(" ")
@@ -162,7 +164,10 @@ export function RevealStatement({
   const classes = ["reveal-title", "statement", className, still || shown ? "is-shown" : ""]
     .filter(Boolean)
     .join(" ")
-  const leadLetters = lead.replace(/\s/g, "").length
+  // A lead ending in a comma ends its line there, without the comma.
+  const breaks = /,\s*$/.test(lead)
+  const leadText = breaks ? lead.replace(/,\s*$/, "") : lead
+  const leadLetters = leadText.replace(/\s/g, "").length
   const total = leadLetters + 1 + muted.replace(/\s/g, "").length + 1
   let index = 0
   const chip = (content: ReactNode, tone: string) => (
@@ -200,7 +205,9 @@ export function RevealStatement({
         {lead} {muted}
       </span>
       <span aria-hidden="true">
-        {run(lead, "lead", firstChip, "blue")} {run(muted, "muted", secondChip, "silver")}
+        {run(leadText, "lead", firstChip, "blue")}
+        {breaks ? <br /> : " "}
+        {run(muted, "muted", secondChip, "silver")}
       </span>
     </h2>
   )

@@ -11119,8 +11119,8 @@ button.nav-pill:hover {
    with its lookup, then the row to note another. */
 .shipment-list {
   display: grid;
-  gap: 8px;
-  margin: 0 0 14px;
+  gap: 10px;
+  margin: 0 0 18px;
   padding: 0;
   list-style: none;
 }
@@ -11150,23 +11150,36 @@ button.nav-pill:hover {
   text-decoration: none;
 }
 
+.agreement-shipments > .field-hint {
+  margin: 0 0 18px;
+  line-height: 1.6;
+}
+
+/* The row to note a parcel sits in its own silver box with room around it. */
 .shipment-form {
   display: grid;
-  grid-template-columns: minmax(120px, 0.8fr) minmax(140px, 1fr) minmax(140px, 1fr) auto;
+  grid-template-columns: minmax(140px, 0.8fr) minmax(160px, 1fr) minmax(160px, 1.2fr) auto;
   align-items: end;
-  gap: 10px;
+  gap: 16px 14px;
+  padding: 20px;
+  border-radius: 20px;
+  background: var(--fill);
 }
 
 .shipment-form label {
   display: grid;
-  gap: 6px;
+  gap: 8px;
   color: var(--ink-soft);
   font-size: 13px;
   font-weight: var(--weight-label);
 }
 
+.shipment-form .primary-button {
+  height: 48px;
+}
+
 .shipment-form :is(input, select) {
-  height: 44px;
+  height: 48px;
   padding: 0 12px;
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -15913,10 +15926,18 @@ th[aria-sort="descending"] .console-sort span {
   font-weight: var(--weight-body);
 }
 
-.payment-agree {
+/* A check row in a popup keeps its box beside its words: the popups' label
+   rule stacks label contents. */
+.modal label.check-row {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+.modal .payment-agree {
   display: flex;
   flex-direction: row;
-  align-items: flex-start;
+  align-items: center;
   font-size: 13px;
   line-height: 1.5;
   text-align: left;
@@ -19600,23 +19621,47 @@ th[aria-sort="descending"] .console-sort span {
 @keyframes slide-from-left {
   from {
     opacity: 0;
-    transform: translateX(-56px);
+    transform: translateX(-14vw);
   }
 }
 
 @keyframes slide-from-right {
   from {
     opacity: 0;
-    transform: translateX(56px);
+    transform: translateX(14vw);
   }
 }
 
+@keyframes slide-out-right {
+  to {
+    opacity: 0;
+    transform: translateX(10vw);
+  }
+}
+
+@keyframes slide-out-left {
+  to {
+    opacity: 0;
+    transform: translateX(-10vw);
+  }
+}
+
+/* Going back, the screen leaves to the right and the earlier one comes in
+   from the left; going forward, the other way round. */
+[data-swipe-out="back"] .page-enter {
+  animation: slide-out-right 0.16s var(--ease-in, ease-in) forwards;
+}
+
+[data-swipe-out="forward"] .page-enter {
+  animation: slide-out-left 0.16s var(--ease-in, ease-in) forwards;
+}
+
 [data-swiped="back"] .page-enter.from-history {
-  animation: slide-from-left 0.4s var(--ease-out) backwards;
+  animation: slide-from-left 0.45s var(--ease-out) backwards;
 }
 
 [data-swiped="forward"] .page-enter.from-history {
-  animation: slide-from-right 0.4s var(--ease-out) backwards;
+  animation: slide-from-right 0.45s var(--ease-out) backwards;
 }
 
 .from-history .stagger > * {
