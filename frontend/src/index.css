@@ -3258,6 +3258,7 @@ button.nav-pill:hover {
   align-items: flex-start;
   gap: 28px;
   padding: 96px 0 72px;
+  container-type: inline-size;
 }
 
 .reveal-title.statement {
@@ -3267,6 +3268,17 @@ button.nav-pill:hover {
   font-weight: var(--weight-display);
   letter-spacing: -0.045em;
   line-height: 1.16;
+}
+
+/* In Korean each half stays on one line, sized to the section's width:
+   the longest half is about 17.3em. */
+:lang(ko) .reveal-title.statement {
+  max-width: none;
+  font-size: min(76px, 5.6cqi);
+}
+
+:lang(ko) .statement-line {
+  white-space: nowrap;
 }
 
 /* Silver gray, still 3.7:1 on white for text this large. */
