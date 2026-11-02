@@ -5268,6 +5268,48 @@ test("a free brand sends five proposals a month; Pro lifts the limit for 30 days
   assert.equal(listing.pro, true)
 })
 
+test("either side buys a top ad: first on the other side's list for 30 days, 10% off when extended before it ends", async () => {
+  const { token: brand, listingId: brandListing } = await listedMember("ad@ad-cafe.kr", "ad-pass-123", "브랜드")
+  const { token: group, listingId: groupListing } = await listedMember("ad-club@syu.ac.kr", "ad-pass-123")
+  const viewer = await listedMember("ad-viewer@syu.ac.kr", "ad-pass-123")
+  const viewingBrand = await listedMember("ad-viewer@viewer-cafe.kr", "ad-pass-123", "브랜드")
+  // Without a listing there is nothing to advertise.
+  const bare = await signUpMember("ad-bare@syu.ac.kr", "ad-pass-123")
+  assert.equal((await call("POST", "/billing/orders", { kind: "ad", targetId: "" }, bare)).status, 409)
+  // A group pays only for ads.
+  assert.equal((await call("POST", "/billing/orders", { kind: "pro", targetId: "" }, group)).status, 403)
+
+  const { markPaid, paymentsOf } = await import("./lib/billing.js")
+  const pay = async (token: string) => {
+    const { order } = (await call("POST", "/billing/orders", { kind: "ad", targetId: "" }, token)).data
+    markPaid(getDatabase(), paymentsOf(getDatabase()).find((item) => item.id === order.id)!, { method: "transfer" })
+    return order as { amount: number; orderName: string }
+  }
+  const first = await pay(brand)
+  assert.deepEqual([first.amount, first.orderName], [99000, "상단 광고 30일"])
+  assert.deepEqual([(await pay(group)).amount], [10000])
+
+  // Each comes first on the other side's list, marked AD.
+  const brands = (await call("GET", "/brands", undefined, viewer.token)).data.brands as { id: string; ad?: true }[]
+  assert.deepEqual([brands[0].id, brands[0].ad], [brandListing, true])
+  const groups = (await call("GET", "/groups", undefined, viewingBrand.token)).data.groups as { id: string; ad?: true }[]
+  assert.deepEqual([groups[0].id, groups[0].ad], [groupListing, true])
+
+  // Extended while it runs: 10% off, 30 more days after it.
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date())
+  const after = (days: number) => {
+    const date = new Date(`${today}T00:00:00Z`)
+    date.setUTCDate(date.getUTCDate() + days)
+    return date.toISOString().slice(0, 10)
+  }
+  const shown = (await call("GET", "/billing", undefined, brand)).data.ad
+  assert.deepEqual([shown.until, shown.price, shown.next, shown.renewing], [after(29), 99000, 89100, true])
+  const renewal = await pay(brand)
+  assert.deepEqual([renewal.amount, renewal.orderName], [89100, "상단 광고 30일 연장 (10% 할인)"])
+  assert.equal((await call("GET", "/billing", undefined, brand)).data.ad.until, after(59))
+  assert.equal((await call("GET", "/billing", undefined, group)).data.ad.next, 9000)
+})
+
 test("with Toss test keys the demo brand shows the whole payment flow; with none or live keys it can't pay", async () => {
   const saved = { client: config.tossClientKey, secret: config.tossSecretKey }
   const demo = await login("브랜드")
@@ -5323,7 +5365,7 @@ test("the operators' console lists what needs them, members with their record, a
     const seen = (await admin("/overview")).data
     assert.equal(seen.weekly.length, 8)
     assert.deepEqual(Object.keys(seen.attention).sort(), ["alerts", "cancels", "inquiries", "reports", "stale", "suspended", "transfers"])
-    assert.deepEqual(Object.keys(seen.revenue.byKind).sort(), ["fee", "pro", "report"])
+    assert.deepEqual(Object.keys(seen.revenue.byKind).sort(), ["ad", "fee", "pro", "report"])
 
     await signUpMember("console@syu.ac.kr", "console-pass-123")
     const found = (await admin("/accounts?q=console%40syu")).data.accounts

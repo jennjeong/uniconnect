@@ -5,7 +5,7 @@ import type { Account, Database, Payment, PaymentKind } from "../types.js"
 import { HttpError } from "./errors.js"
 
 // The business plan's revenue model (표 9) as prices, VAT included: brands
-// pay; student groups never do.
+// pay; student groups pay only for their own ads.
 export const prices = {
   // Of a sponsorship's value, cash and in-kind, when both sides confirm it.
   feeRate: 0.15,
@@ -14,6 +14,13 @@ export const prices = {
   // 캠퍼스 파트너스 (Pro inside), for 30 days.
   pro: 300_000,
   proDays: 30,
+  // 상단 광고 (lib/ads.ts) for 30 days: a brand's on the student groups'
+  // catalog, a group's on the brands'. Extending before it ends takes 10%
+  // off.
+  adBrand: 99_000,
+  adGroup: 10_000,
+  adDays: 30,
+  adRenewalDiscount: 0.1,
 } as const
 
 // Toss Payments' payment window takes the client key; the server confirms

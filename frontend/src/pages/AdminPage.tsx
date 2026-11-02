@@ -280,7 +280,7 @@ function StatsPanel({ stats }: { stats: PlatformStats }) {
   )
 }
 
-const paymentKinds: Record<AdminPayment["kind"], string> = { fee: "수수료", report: "상세 리포트", pro: "캠퍼스 파트너스" }
+const paymentKinds: Record<AdminPayment["kind"], string> = { fee: "수수료", report: "상세 리포트", pro: "캠퍼스 파트너스", ad: "상단 광고" }
 
 // One payment for the operators: who paid what, how and when, with the
 // actions its state allows (confirming a transfer that arrived, cancelling
@@ -554,6 +554,7 @@ const revenueKinds = [
   { key: "fee", label: "수수료" },
   { key: "report", label: "상세 리포트" },
   { key: "pro", label: "캠퍼스 파트너스" },
+  { key: "ad", label: "상단 광고" },
 ] as const
 
 // The overview: the figures as cards, the weeks as bars beside the

@@ -47,6 +47,8 @@ export type Match = {
   businessVerified?: true
   // A brand on Pro (backend lib/plan.ts).
   pro?: true
+  // A running 상단 광고 (backend lib/ads.ts): first in the catalog, marked AD.
+  ad?: true
   // Km from the account browsing (its campus or store); absent when either
   // place is unknown.
   distanceKm?: number
@@ -178,7 +180,7 @@ export type Agreement = {
 }
 
 // What a brand pays the platform (backend lib/billing.ts).
-export type PaymentKind = "fee" | "report" | "pro"
+export type PaymentKind = "fee" | "report" | "pro" | "ad"
 
 export type Payment = {
   id: string
@@ -201,7 +203,7 @@ export type Payment = {
 
 // Prices, whether card payment is on, and the account's payments.
 export type BillingInfo = {
-  prices: { feeRate: number; report: number; pro: number; proDays: number }
+  prices: { feeRate: number; report: number; pro: number; proDays: number; adBrand: number; adGroup: number; adDays: number; adRenewalDiscount: number }
   card: { clientKey: string } | null
   // Toss test keys: no money moves, and the demo accounts may pay to show it.
   testMode: boolean
@@ -210,6 +212,13 @@ export type BillingInfo = {
   // The brand's plan (backend lib/pro.ts): Pro until a Korean day, and this
   // month's proposals against the free plan's limit.
   plan: { pro: boolean; until: string | null; offersThisMonth: number; freeOffers: number; partnerRequestsLeft: number }
+  // 상단 광고 (backend lib/ads.ts): until a Korean day while it runs, the
+  // role's monthly price and what the next 30 days cost (10% off while one
+  // runs).
+  ad: { until: string | null; price: number; next: number; renewing: boolean; days: number }
+  // Whether this account may pay for its ad (a group too; the demo accounts
+  // only in test mode).
+  canPayAd: boolean
 }
 
 // An order to pay, with what the payment window needs.

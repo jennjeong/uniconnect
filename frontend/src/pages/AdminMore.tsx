@@ -275,8 +275,8 @@ export function Insights({ token, onNotice }: { token: string; onNotice: Notice 
 export function RevenuePanel({ payments }: { payments: AdminPayment[] }) {
   const paid = payments.filter((payment) => payment.status === "paid" && payment.method !== "grant")
   const months = [...new Set(paid.map((payment) => (payment.paidAt ?? payment.requestedAt).slice(0, 7)))].sort().slice(-6)
-  const kinds = ["fee", "report", "pro"] as const
-  const kindLabels = { fee: "수수료", report: "상세 리포트", pro: "캠퍼스 파트너스" }
+  const kinds = ["fee", "report", "pro", "ad"] as const
+  const kindLabels = { fee: "수수료", report: "상세 리포트", pro: "캠퍼스 파트너스", ad: "상단 광고" }
   const byMonth = months.map((month) => {
     const rows = paid.filter((payment) => (payment.paidAt ?? payment.requestedAt).startsWith(month))
     return { month, ...Object.fromEntries(kinds.map((kind) => [kind, rows.filter((row) => row.kind === kind).reduce((sum, row) => sum + row.amount, 0)])) } as {

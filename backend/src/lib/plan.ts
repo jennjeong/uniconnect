@@ -17,3 +17,15 @@ export function proUntil(database: Database, accountId: string) {
 }
 
 export const isPro = (database: Database, accountId: string) => proUntil(database, accountId) !== null
+
+// The last Korean day an account's 상단 광고 (lib/ads.ts sells it) runs,
+// while it is today or later; here too so the catalog can put ads first.
+export function adUntil(database: Database, accountId: string) {
+  const today = todayInKorea()
+  const ends = paymentsOf(database)
+    .filter((payment) => payment.accountId === accountId && payment.kind === "ad" && payment.status === "paid" && payment.periodEnd)
+    .map((payment) => payment.periodEnd!)
+    .filter((end) => end >= today)
+    .sort()
+  return ends.at(-1) ?? null
+}

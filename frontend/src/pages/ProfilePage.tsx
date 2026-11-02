@@ -4,6 +4,7 @@ import { AnimatedNumber } from "../components/AnimatedNumber"
 import { api } from "../api"
 import { Icon, type IconName } from "../components/Icon"
 import { Pill } from "../components/Pill"
+import { AdCard } from "../components/AdCard"
 import { PlanCard } from "../components/PlanCard"
 import { RevealTitle } from "../components/RevealText"
 import { ShareButton } from "../components/ShareButton"
@@ -109,6 +110,7 @@ export function ProfilePage({
   onDevices,
   onPayments,
   onPlan,
+  onAd,
   onTeam,
   socialProviders,
   onSocialLink,
@@ -140,10 +142,12 @@ export function ProfilePage({
   // Two-step login and the device list; absent for the shared demo accounts.
   onTwoFactor?: () => void
   onDevices?: () => void
-  // A brand's payments to the platform; absent for groups and the demo accounts.
+  // The account's payments to the platform (a group's ads, a brand's all).
   onPayments?: () => void
   // A brand's plan card (components/PlanCard.tsx), with where its notices go.
   onPlan?: (message: string) => void
+  // Where the 상단 광고 card's notices go (components/AdCard.tsx).
+  onAd: (message: string) => void
   // The people running the account with its owner; absent for the demo accounts.
   onTeam?: () => void
   // Kakao or Naver to link for logging in (the owner's; none for the demo accounts).
@@ -280,6 +284,7 @@ export function ProfilePage({
                   <dt>{labels.offer}</dt>
                   <dd>{listing.offer}</dd>
                 </dl>
+                <AdCard onNotice={onAd} role={account.role} />
                 <ul className="summary-chips">
                   <li>{t("기본 정보 {count}개", { count: listing.facts?.length ?? 0 })}</li>
                   <li>{t("SNS {count}개", { count: listing.sns?.length ?? 0 })}</li>
