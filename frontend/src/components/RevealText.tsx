@@ -205,9 +205,9 @@ export function RevealStatement({
         {lead} {muted}
       </span>
       <span aria-hidden="true">
-        {run(leadText, "lead", firstChip, "blue")}
+        <span className="statement-line">{run(leadText, "lead", firstChip, "blue")}</span>
         {breaks ? <br /> : " "}
-        {run(muted, "muted", secondChip, "silver")}
+        <span className="statement-line">{run(muted, "muted", secondChip, "silver")}</span>
       </span>
     </h2>
   )
