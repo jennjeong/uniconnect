@@ -145,7 +145,7 @@ export function GroupsPage({
   const card = (group: Match) => (
     <WorkCard
       match={group}
-      meta={`${group.school} · ${t(group.category)}`}
+      meta={t(group.category)}
       onOpenDetail={() => onOpenDetail(group)}
       saved={saved.includes(group.id)}
       onToggleSave={() => onToggleSave(group)}

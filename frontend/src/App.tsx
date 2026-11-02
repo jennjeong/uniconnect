@@ -44,7 +44,7 @@ import { applyPageMeta, pageMeta } from "./lib/pageMeta"
 import { install } from "./lib/install"
 import { installReveal } from "./lib/reveal"
 import { installRipple } from "./lib/ripple"
-import { entryView, roleOfPage, viewPath, type HistoryEntry, type View } from "./lib/route"
+import { entryView, menuPageOf, roleOfPage, viewPath, type HistoryEntry, type View } from "./lib/route"
 import { installSwipeNavigation, noteHistoryEnd } from "./lib/swipe"
 import { LoginModal } from "./modals/LoginModal"
 import { councilTypes } from "./data/roles"
@@ -265,6 +265,8 @@ function App() {
   const students = role === "학생단체"
   // The picked page, or the dashboard when this role has no such page.
   const page = pageFor(role, view.page)
+  // The page the menus mark as picked, if the screen is one of them.
+  const menuPage = menuPageOf(view, page)
   // Day the registration page opens on; null while that page is closed.
   const creating = view.create ?? null
   // The event or campaign being edited; null while that page is closed.
@@ -1813,7 +1815,7 @@ function App() {
 
       <Header
         role={role}
-        activeNav={page}
+        activeNav={menuPage}
         account={account}
         authReady={authReady}
         badges={badges}
@@ -1972,7 +1974,7 @@ function App() {
       <Presence show={menuOpen}>
         <NavMenu
           role={role}
-          activeNav={page}
+          activeNav={menuPage}
           account={account}
           badges={badges}
           unreadMessages={unreadMessages}

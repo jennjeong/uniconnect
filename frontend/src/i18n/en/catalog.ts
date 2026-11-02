@@ -611,6 +611,7 @@ const en: Record<string, string> = {
   "{sent}곳에 보냈고, {failed}곳은 보내지 못했어요. {reasons}": "Sent to {sent}; {failed} couldn’t be sent. {reasons}",
   "{count}곳에 협찬 제안을 보냈어요.": "Sent the offer to {count} groups.",
   "{name} 비교에 담기": "Add {name} to compare",
+  "{rank}위": "#{rank}",
   "비교": "Compare",
   "비교함": "Comparison",
   "{name} 비교에서 빼기": "Remove {name} from compare",

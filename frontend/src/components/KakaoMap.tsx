@@ -1,9 +1,5 @@
 import { useEffect, useRef, useState } from "react"
 import { t } from "../i18n"
-import { formatDistance } from "../lib/distance"
-import { walkMinutes } from "../lib/placeMap"
-import type { NearbyPlace } from "../types"
-import { placeState, placeStateLabels } from "./PlaceMap"
 
 // The parts of Kakao's Maps SDK this map uses.
 type LatLng = object
@@ -63,26 +59,33 @@ function keepInside(name: HTMLElement, box: HTMLElement | null) {
   name.classList.toggle("below", label.top < area.top + edge)
 }
 
-// Kakao's map as the ground, with uniconnect's own marks on it: the campus pin
-// and each shop as a pin to press, colored and named as on the drawing. The shops' points
-// come with Kakao's live answer and are only drawn, never kept. When the SDK
-// can't load, onFail lets PlaceMap draw the sketch instead.
+// One mark on the map: where it is, its name, the classes that color it
+// (place-dot's states), what a screen reader hears, and a short line under
+// the name once it is picked.
+export type MapPin = { id: string; name: string; lat: number; lng: number; tone: string; label: string; detail?: string }
+
+// Kakao's map as the ground, with uniconnect's own marks on it: the center's
+// pin (a campus or a store) and each pin to press, colored and named as on the
+// drawing. The points are only drawn, never kept. When the SDK can't load,
+// onFail lets the caller draw the sketch instead.
 export function KakaoMap({
   appKey,
-  campus,
+  centerName,
   center,
-  places,
+  pins,
   selected,
   onSelect,
   onFail,
+  label,
 }: {
   appKey: string
-  campus: string
+  centerName: string
   center: { lat: number; lng: number }
-  places: NearbyPlace[]
+  pins: MapPin[]
   selected?: string
-  onSelect: (place: NearbyPlace) => void
+  onSelect: (id: string) => void
   onFail: () => void
+  label: string
 }) {
   const box = useRef<HTMLDivElement>(null)
   const [ready, setReady] = useState<{ maps: KakaoMaps; map: KakaoMapObject }>()
@@ -108,63 +111,59 @@ export function KakaoMap({
     if (!ready) return
     const { maps, map } = ready
     const home = new maps.LatLng(center.lat, center.lng)
-    const pin = document.createElement("span")
-    pin.className = "kakao-campus"
-    pin.textContent = campus
-    // Under the shops, so a shop beside the campus stays in reach.
-    const overlays = [new maps.CustomOverlay({ position: home, content: pin, yAnchor: 1, zIndex: 0 })]
+    const mark = document.createElement("span")
+    mark.className = "kakao-campus"
+    mark.textContent = centerName
+    // Under the pins, so one beside the center stays in reach.
+    const overlays = [new maps.CustomOverlay({ position: home, content: mark, yAnchor: 1, zIndex: 0 })]
     let name: HTMLElement | undefined
-    for (const place of places) {
-      const position = new maps.LatLng(place.lat, place.lng)
+    for (const pin of pins) {
+      const position = new maps.LatLng(pin.lat, pin.lng)
       const dot = document.createElement("button")
       dot.type = "button"
-      dot.className = `place-dot kakao-dot ${placeState(place)}`
-      dot.title = place.name
-      dot.setAttribute(
-        "aria-label",
-        t("{name}, {distance}, {state}", {
-          name: place.name,
-          distance: formatDistance(place.distanceM / 1000),
-          state: t(placeStateLabels[placeState(place)]),
-        }),
-      )
-      dot.setAttribute("aria-pressed", String(selected === place.id))
-      dot.addEventListener("click", () => select.current(place))
-      if (selected === place.id) {
+      dot.className = `place-dot kakao-dot ${pin.tone}`
+      dot.title = pin.name
+      dot.setAttribute("aria-label", pin.label)
+      dot.setAttribute("aria-pressed", String(selected === pin.id))
+      dot.addEventListener("click", () => select.current(pin.id))
+      if (selected === pin.id) {
         name = document.createElement("span")
         name.className = "place-dot-name"
         name.setAttribute("aria-hidden", "true")
-        const walk = document.createElement("small")
-        walk.textContent = t("도보 {minutes}분", { minutes: walkMinutes(place.distanceM) })
-        name.append(place.name, walk)
+        name.append(pin.name)
+        if (pin.detail) {
+          const detail = document.createElement("small")
+          detail.textContent = pin.detail
+          name.append(detail)
+        }
         dot.append(name)
       }
       // The pin's tip on the spot.
-      overlays.push(new maps.CustomOverlay({ position, content: dot, yAnchor: 1, zIndex: selected === place.id ? 2 : 1, clickable: true }))
+      overlays.push(new maps.CustomOverlay({ position, content: dot, yAnchor: 1, zIndex: selected === pin.id ? 2 : 1, clickable: true }))
     }
     for (const overlay of overlays) overlay.setMap(map)
     // Measured once Kakao has placed the overlays.
-    const label = name
-    const frame = label ? requestAnimationFrame(() => keepInside(label, box.current)) : 0
+    const picked = name
+    const frame = picked ? requestAnimationFrame(() => keepInside(picked, box.current)) : 0
     return () => {
       cancelAnimationFrame(frame)
       for (const overlay of overlays) overlay.setMap(null)
     }
-  }, [ready, campus, center.lat, center.lng, places, selected])
+  }, [ready, centerName, center.lat, center.lng, pins, selected])
 
-  // Fit the campus and every shop once they first arrive or change, not on each pick.
+  // Fit the center and every pin once they first arrive or change, not on each pick.
   useEffect(() => {
-    if (!ready || places.length === 0) return
+    if (!ready || pins.length === 0) return
     const { maps, map } = ready
     const bounds = new maps.LatLngBounds()
     bounds.extend(new maps.LatLng(center.lat, center.lng))
-    for (const place of places) bounds.extend(new maps.LatLng(place.lat, place.lng))
+    for (const pin of pins) bounds.extend(new maps.LatLng(pin.lat, pin.lng))
     map.relayout()
     map.setBounds(bounds, 40, 40, 40, 40)
-  }, [ready, center.lat, center.lng, places])
+  }, [ready, center.lat, center.lng, pins])
 
   return (
-    <div aria-label={t("{campus} 주변 가게 지도", { campus })} className="kakao-map" role="group">
+    <div aria-label={label} className="kakao-map" role="group">
       <div className="kakao-map-ground" ref={box} />
       {!ready && <span className="kakao-map-loading">{t("지도를 불러오는 중이에요")}</span>}
     </div>

@@ -3514,7 +3514,12 @@ test("catalogs say how far each listing is from the viewer's campus or store", a
   assert.equal(distanceKm({ lat: 37.5, lng: 127 }, { lat: 37.5, lng: 127 }), 0)
 
   // The demo group (삼육대) sees each brand's store distance; online brands have none.
-  type Placed = { id: string; distanceKm?: number; mapOffset?: { east: number; north: number } }
+  type Placed = {
+    id: string
+    distanceKm?: number
+    mapOffset?: { east: number; north: number }
+    mapPoint?: { lat: number; lng: number }
+  }
   const brands = (await call("GET", "/brands")).data.brands as Placed[]
   const coffee = brands.find((brand) => brand.id === "afternoon-coffee")!
   assert.ok(coffee.distanceKm! > 3 && coffee.distanceKm! < 4.5, String(coffee.distanceKm))
@@ -3524,6 +3529,9 @@ test("catalogs say how far each listing is from the viewer's campus or store", a
   assert.ok(east % 10 === 0 && north % 10 === 0)
   assert.ok(Math.abs(Math.hypot(east, north) / 1000 - coffee.distanceKm!) < 0.1)
   assert.equal(brands.find((brand) => brand.id === "freshon")!.mapOffset, undefined)
+  // Its point is only where it is, for Kakao's pins.
+  assert.deepEqual(Object.keys(coffee.mapPoint!).sort(), ["lat", "lng"])
+  assert.equal(brands.find((brand) => brand.id === "freshon")!.mapPoint, undefined)
 
   // The demo brand (공릉역) sees each group's campus distance; a union of schools has none.
   const groups = (await call("GET", "/groups")).data.groups as { id: string; distanceKm?: number }[]

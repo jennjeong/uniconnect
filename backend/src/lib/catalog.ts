@@ -176,7 +176,7 @@ export function browse(database: Database, catalog: "brands" | "groups", account
       const checked = catalog === "brands" && owner && isPro(database, owner.id) ? { ...verified, pro: true as const } : verified
       const there = placeOf(listing, owner)
       return here && there
-        ? { ...checked, distanceKm: distanceKm(here, there), mapOffset: offsetMetres(here, there) }
+        ? { ...checked, distanceKm: distanceKm(here, there), mapOffset: offsetMetres(here, there), mapPoint: { lat: there.lat, lng: there.lng } }
         : checked
     })
     .sort((a, b) => b.score - a.score)

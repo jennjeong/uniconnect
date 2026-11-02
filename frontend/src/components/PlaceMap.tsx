@@ -1,10 +1,10 @@
-import { useCallback, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { useSiteState } from "../hooks/useSiteState"
 import { t } from "../i18n"
 import { formatDistance } from "../lib/distance"
 import { mapPosition, mapRings, mapScale, spreadPositions, walkMinutes } from "../lib/placeMap"
 import type { NearbyPlace } from "../types"
-import { KakaoMap } from "./KakaoMap"
+import { KakaoMap, type MapPin } from "./KakaoMap"
 
 // How a shop stands with uniconnect, for its dot and its name.
 export function placeState(place: NearbyPlace) {
@@ -37,10 +37,40 @@ export function PlaceMap({
   const kakaoKey = useSiteState()?.maps?.kakao
   const [kakaoFailed, setKakaoFailed] = useState(false)
   const fail = useCallback(() => setKakaoFailed(true), [])
+  const pins = useMemo<MapPin[]>(
+    () =>
+      places.map((place) => ({
+        id: place.id,
+        name: place.name,
+        lat: place.lat,
+        lng: place.lng,
+        tone: placeState(place),
+        label: t("{name}, {distance}, {state}", {
+          name: place.name,
+          distance: formatDistance(place.distanceM / 1000),
+          state: t(placeStateLabels[placeState(place)]),
+        }),
+        detail: t("도보 {minutes}분", { minutes: walkMinutes(place.distanceM) }),
+      })),
+    [places],
+  )
+  const pick = useCallback((id: string) => {
+    const place = places.find((item) => item.id === id)
+    if (place) onSelect(place)
+  }, [places, onSelect])
   if (kakaoKey && !kakaoFailed)
     return (
       <div className="place-map-wrap">
-        <KakaoMap appKey={kakaoKey} campus={campus} center={center} onFail={fail} onSelect={onSelect} places={places} selected={selected} />
+        <KakaoMap
+          appKey={kakaoKey}
+          center={center}
+          centerName={campus}
+          label={t("{campus} 주변 가게 지도", { campus })}
+          onFail={fail}
+          onSelect={pick}
+          pins={pins}
+          selected={selected}
+        />
         <PlaceLegend />
       </div>
     )

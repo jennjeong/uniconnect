@@ -60,7 +60,7 @@ export function Header({
   onOpenMenu,
 }: {
   role: Role
-  activeNav: NavLabel
+  activeNav?: NavLabel
   account: Account | null
   // False while a saved session is being checked, so the login button doesn't flash.
   authReady: boolean

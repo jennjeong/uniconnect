@@ -1848,7 +1848,7 @@ button.nav-pill:hover {
    pressed on it; one above the other on phones. */
 .nearby-map {
   display: grid;
-  grid-template-columns: minmax(0, 520px) minmax(0, 360px);
+  grid-template-columns: minmax(0, 400px) minmax(0, 360px);
   align-items: start;
   gap: 24px;
 }
@@ -2062,7 +2062,7 @@ button.nav-pill:hover {
    dots and a deep blue campus pin drawn over it (KakaoMap.tsx). */
 .kakao-map {
   position: relative;
-  aspect-ratio: 1;
+  aspect-ratio: 4 / 3;
   overflow: hidden;
   border-radius: 28px;
   background: var(--fill);
@@ -3073,7 +3073,9 @@ button.nav-pill:hover {
   padding: 18px 20px;
   border-radius: var(--radius-md);
   background: var(--silver-gradient);
-  box-shadow: var(--silver-ring);
+  /* A plain line all round: the silver ring's white top highlight would
+     hide its top edge on the white page. */
+  box-shadow: inset 0 0 0 1px var(--line-strong);
 }
 
 .demo-preview-copy {
@@ -3368,11 +3370,13 @@ button.nav-pill:hover {
     box-shadow 0.3s ease;
 }
 
+/* What it is at the top left, its first line level with the buttons, which
+   keep to the top right however long it runs. */
 .work-meta {
   position: relative;
   z-index: 1;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   color: var(--muted);
@@ -3386,6 +3390,13 @@ button.nav-pill:hover {
   min-width: 0;
   align-items: center;
   gap: 10px;
+}
+
+.work-meta > span:first-child {
+  flex-wrap: wrap;
+  align-content: flex-start;
+  row-gap: 4px;
+  padding-top: 12px;
 }
 
 .work-rank {
@@ -3423,6 +3434,7 @@ button.nav-pill:hover {
 
 .work-meta-actions {
   flex: none;
+  margin-left: auto;
 }
 
 .work-meta > .work-meta-actions {
@@ -6805,18 +6817,21 @@ button.nav-pill:hover {
   stroke: currentColor;
 }
 
+/* Two by two beside the next event, so each tile is only as tall as its
+   label and number. */
 .events-counts {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   margin: 0;
 }
 
 .events-counts div {
-  display: grid;
-  align-content: space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 10px;
-  padding: 20px;
+  padding: 16px 20px;
   border-radius: 24px;
   background: var(--silver-gradient);
   box-shadow: var(--silver-ring);
@@ -6841,9 +6856,6 @@ button.nav-pill:hover {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .events-counts {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 /* Beside the calendar on wide screens, the day stays in view while the
@@ -18990,6 +19002,10 @@ th[aria-sort="descending"] .console-sort span {
     align-self: end;
   }
 
+  .work-meta > span:first-child {
+    padding-top: 0;
+  }
+
   .work-badge {
     display: none;
   }
@@ -19007,6 +19023,7 @@ th[aria-sort="descending"] .console-sort span {
     grid-area: save;
     align-self: center;
     justify-self: center;
+    margin-left: 0;
     padding-top: 10px;
   }
 
