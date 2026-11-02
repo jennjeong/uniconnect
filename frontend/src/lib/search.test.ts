@@ -62,4 +62,11 @@ describe("group filters", () => {
     expect(matchesGroupFilters(group(80, undefined, "광운대학교"), { ...noGroupFilters, school: "삼육대학교" }, today)).toBe(false)
     expect(matchesGroupFilters(group(80, undefined, "광운대학교"), noGroupFilters, today)).toBe(true)
   })
+
+  test("keep one region's schools; a school not in the table is in no region", () => {
+    expect(matchesGroupFilters(group(80, undefined, "광운대학교"), { ...noGroupFilters, region: "서울" }, today)).toBe(true)
+    expect(matchesGroupFilters(group(80, undefined, "광운대학교"), { ...noGroupFilters, region: "부산" }, today)).toBe(false)
+    expect(matchesGroupFilters(group(80, undefined, "부산대학교"), { ...noGroupFilters, region: "부산" }, today)).toBe(true)
+    expect(matchesGroupFilters(group(80, undefined, "노원구 5개 대학 연합"), { ...noGroupFilters, region: "서울" }, today)).toBe(false)
+  })
 })

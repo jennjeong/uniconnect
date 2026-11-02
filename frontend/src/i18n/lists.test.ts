@@ -11,6 +11,7 @@ import { reportReasons } from "../data/reports"
 import { reviewTags } from "../data/reviews"
 import { accountTypeGroups, accountTypes, positionHints, roles } from "../data/roles"
 import { valueTypes } from "../data/sponsorTypes"
+import { regions } from "../data/universities"
 import { en } from "./en"
 
 // Values the screens show through t(value), from lists rather than written
@@ -32,6 +33,7 @@ describe("English for listed values", () => {
       ...reportReasons,
       ...carriers,
       ...eventKinds,
+      ...regions,
       ...audienceYears,
       ...logoSpots,
       ...handoutWays,

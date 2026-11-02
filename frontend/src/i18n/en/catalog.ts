@@ -503,6 +503,9 @@ const en: Record<string, string> = {
   "그 뒤": "Later",
   "날짜 미정": "Date not set",
   "모든 학교": "All schools",
+  지역: "Region",
+  "모든 지역": "All regions",
+  "{region} 모든 학교": "All schools in {region}",
   "조건 지우기": "Clear filters",
   "학교에서 가까운 가게예요": "Shops near your school",
   "카카오 지도에서 지금 찾은 학교 주변의 실제 가게예요. 아직 uniconnect와 협약하지 않은 곳이라, 지도나 전화로 먼저 연락해 보세요.":
