@@ -9,6 +9,7 @@ import { ShareButton } from "../components/ShareButton"
 import { t } from "../i18n"
 import { formatPeriod } from "../lib/date"
 import { saveFile } from "../lib/download"
+import { formatWon } from "../lib/kpis"
 import { photoFromFile } from "../lib/image"
 import type { EventPage } from "../types"
 
@@ -217,6 +218,12 @@ export function EventDetailPage({
             {t("예상 {count}명", { count: event.people.replace(/명$/, "") })}
           </li>
         )}
+        {event.budget !== undefined && (
+          <li>
+            <Icon name="won" size={16} />
+            {t("예산 {budget}", { budget: formatWon(event.budget) })}
+          </li>
+        )}
         <li className="event-types">
           {event.kind && <span className="event-kind">{t(event.kind)}</span>}
           {event.types.map((type) => (
@@ -242,17 +249,6 @@ export function EventDetailPage({
             <section aria-labelledby="event-makeup-title" className="event-section">
               <h2 id="event-makeup-title">{t("참가자 구성")}</h2>
               <dl className="event-makeup">
-                {event.makeup.female !== undefined && (
-                  <div>
-                    <dt>{t("성별 비율")}</dt>
-                    <dd>
-                      <span className="makeup-bar" aria-hidden="true">
-                        <i style={{ width: `${event.makeup.female}%` }} />
-                      </span>
-                      {t("여성 {female}% · 남성 {male}%", { female: event.makeup.female, male: 100 - event.makeup.female })}
-                    </dd>
-                  </div>
-                )}
                 {event.makeup.years && event.makeup.years.length > 0 && (
                   <div>
                     <dt>{t("오는 사람")}</dt>

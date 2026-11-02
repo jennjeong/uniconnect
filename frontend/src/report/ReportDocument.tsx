@@ -441,7 +441,6 @@ function StudentPage({ report, metrics, author }: { report: Report; metrics: Met
         {expected && (
           <p className="pdf-note">
             {[
-              expected.female !== undefined ? t("예상 여성 비율 {female}%", { female: expected.female }) : "",
               expected.years?.length ? t("예상 참여 {years}", { years: expected.years.map((year) => t(year)).join(", ") }) : "",
               expected.majors ? t("주요 전공 {majors}", { majors: expected.majors }) : "",
             ]

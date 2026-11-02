@@ -12,7 +12,7 @@ const report = {
     { date: "2026-11-01", hour: 18, scans: 25 },
     { date: "2026-11-02", hour: 13, scans: 5 },
   ],
-  makeup: { female: 50 },
+  makeup: { years: ["1학년"] },
   survey: {
     responses: 20,
     grade: { "1학년": 12, "2학년": 8 },
@@ -39,7 +39,6 @@ describe("the students' report", () => {
     expect([insight.participation, insight.couponRate, insight.visitRate, insight.firstTime]).toEqual([40, 50, 20, 50])
     expect(insight.grade?.label).toBe("1학년")
     expect(insight.advice.some((line) => line.includes("참여율이 40%"))).toBe(true)
-    expect(insight.advice.some((line) => line.includes("실제 여성 참여는 70%"))).toBe(true)
     expect(insight.advice.length).toBeLessThanOrEqual(6)
     // Without a survey, it asks for one next time.
     const bare = studentInsights({ ...report, survey: undefined } as Report, metrics)

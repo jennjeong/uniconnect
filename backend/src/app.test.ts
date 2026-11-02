@@ -90,9 +90,10 @@ test("a group's event keeps its kind, times and who comes, and brands filter by 
   assert.equal(made.status, 201)
   assert.deepEqual(
     [made.data.event.kind, made.data.event.startTime, made.data.event.endTime, made.data.event.makeup],
-    ["축제", "11:00", "18:30", { female: 55, years: ["1학년", "2학년"], majors: "인공지능" }],
+    // The share of women is no longer asked, so it isn't kept.
+    ["축제", "11:00", "18:30", { years: ["1학년", "2학년"], majors: "인공지능" }],
   )
-  for (const wrong of [{ kind: "파티" }, { startTime: "18:00", endTime: "09:00" }, { endTime: "10:00" }, { makeup: { female: 101 } }]) {
+  for (const wrong of [{ kind: "파티" }, { startTime: "18:00", endTime: "09:00" }, { endTime: "10:00" }]) {
     assert.equal((await call("POST", "/events", { ...base, ...wrong }, group)).status, 400)
   }
   // An empty makeup is left out; brands see the next event's kind on the group.
@@ -1832,7 +1833,7 @@ test("each sponsor of an event gets its own coupon, staff PIN and share of the r
   }
 })
 
-test("brand campaigns take an optional budget", async () => {
+test("events and campaigns take an optional budget", async () => {
   const brand = await login("브랜드")
   const campaign = { name: "겨울 시즌 투어", date: "2026-12-03", types: ["제품"] }
   const negative = await call("POST", "/events", { ...campaign, budget: -1 }, brand)
@@ -1845,8 +1846,9 @@ test("brand campaigns take an optional budget", async () => {
   await call("DELETE", `/events/${created.data.event.id}`, undefined, brand)
 
   const student = await login("학생단체")
-  const event = await call("POST", "/events", { ...campaign, budget: 1200000 }, student)
-  assert.equal(event.data.event.budget, undefined)
+  const event = await call("POST", "/events", { ...campaign, budget: 300000 }, student)
+  assert.equal(event.data.event.budget, 300000)
+  assert.equal((await call("POST", "/events", { ...campaign, budget: -1 }, student)).status, 400)
   await call("DELETE", `/events/${event.data.event.id}`, undefined, student)
 })
 

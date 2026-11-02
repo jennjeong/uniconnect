@@ -37,7 +37,7 @@ export function EventCreatePage({
   const [name, setName] = useState(source?.name ?? "")
   // Digits only, from "1,234명".
   const [people, setPeople] = useState(source?.people.replace(/\D/g, "") ?? "")
-  // Digits only; brands plan a budget in won.
+  // Digits only; the event's or campaign's budget in won.
   const [budget, setBudget] = useState(source?.budget === undefined ? "" : String(source.budget))
   // The first day, and the last when it runs over several days.
   const [date, setDate] = useState(event?.date ?? initialDate)
@@ -52,7 +52,6 @@ export function EventCreatePage({
   const [kind, setKind] = useState(source?.kind ?? "")
   const [startTime, setStartTime] = useState(source?.startTime ?? "")
   const [endTime, setEndTime] = useState(source?.endTime ?? "")
-  const [female, setFemale] = useState(source?.makeup?.female === undefined ? "" : String(source.makeup.female))
   const [years, setYears] = useState<string[]>(source?.makeup?.years ?? [])
   const [majors, setMajors] = useState(source?.makeup?.majors ?? "")
   // 홍보 · 배포 계획: what the group offers brands, and its agreement to
@@ -109,7 +108,7 @@ export function EventCreatePage({
         endDate,
         types,
         typeNote: wantsOther ? typeNote.trim() : undefined,
-        budget: !students && budget ? Number(budget) : undefined,
+        budget: budget ? Number(budget) : undefined,
         ...(students
           ? {
               venue: venue.trim(),
@@ -118,7 +117,7 @@ export function EventCreatePage({
               kind: kind || undefined,
               startTime: startTime || undefined,
               endTime: (startTime && endTime) || undefined,
-              makeup: { ...(female ? { female: Number(female) } : {}), years, majors: majors.trim() },
+              makeup: { years, majors: majors.trim() },
               promo: { spots, handouts, posts, ...(event?.promo ? { agreedAt: event.promo.agreedAt } : {}) },
               promoAgreed,
             }
@@ -200,22 +199,20 @@ export function EventCreatePage({
                 <em>{t("명")}</em>
               </div>
             </label>
-            {!students && (
-              <label className="field">
-                <span>{t("예산")}</span>
-                <div className="input-suffix">
-                  <input
-                    inputMode="numeric"
-                    onChange={(event) =>
-                      setBudget(event.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "").slice(0, 10))
-                    }
-                    placeholder={t("예) 800,000")}
-                    value={budget ? Number(budget).toLocaleString("ko-KR") : ""}
-                  />
-                  <em>{t("원")}</em>
-                </div>
-              </label>
-            )}
+            <label className="field">
+              <span>{t("예산")}</span>
+              <div className="input-suffix">
+                <input
+                  inputMode="numeric"
+                  onChange={(event) =>
+                    setBudget(event.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "").slice(0, 10))
+                  }
+                  placeholder={students ? t("예) 300,000") : t("예) 800,000")}
+                  value={budget ? Number(budget).toLocaleString("ko-KR") : ""}
+                />
+                <em>{t("원")}</em>
+              </div>
+            </label>
           </div>
 
           <div aria-labelledby="sponsor-type-title" className="form-card" role="group">
@@ -274,17 +271,17 @@ export function EventCreatePage({
               <div className="field-pair">
                 <label className="field">
                   <span>{t("시작 시각")}</span>
-                  <input onChange={(changed) => setStartTime(changed.target.value)} step={600} type="time" value={startTime} />
+                  <TimeSelect
+                    onChange={(time) => {
+                      setStartTime(time)
+                      if (!time || (endTime && endTime <= time)) setEndTime("")
+                    }}
+                    value={startTime}
+                  />
                 </label>
                 <label className="field">
                   <span>{t("끝나는 시각")}</span>
-                  <input
-                    disabled={!startTime}
-                    onChange={(changed) => setEndTime(changed.target.value)}
-                    step={600}
-                    type="time"
-                    value={endTime}
-                  />
+                  <TimeSelect after={startTime} disabled={!startTime} onChange={setEndTime} value={endTime} />
                 </label>
               </div>
               <label className="field">
@@ -385,21 +382,6 @@ export function EventCreatePage({
                 {t("참가자 구성")}
               </h3>
               <p className="form-card-caption">{t("정확하지 않아도 괜찮아요. 브랜드가 맞는 제품을 고르는 데 써요.")}</p>
-              <label className="field">
-                <span>{t("여성 비율")}</span>
-                <div className="input-suffix">
-                  <input
-                    inputMode="numeric"
-                    onChange={(changed) => {
-                      const digits = changed.target.value.replace(/\D/g, "").slice(0, 3)
-                      setFemale(digits ? String(Math.min(100, Number(digits))) : "")
-                    }}
-                    placeholder={t("예) 60")}
-                    value={female}
-                  />
-                  <em>%</em>
-                </div>
-              </label>
               <span className="field-label">{t("오는 사람")}</span>
               <div className="check-list compact stagger">
                 {audienceYears.map((year) => {
@@ -469,5 +451,39 @@ export function EventCreatePage({
         </button>
       </div>
     </section>
+  )
+}
+
+// Every half hour from 6:00 to 23:30, written as the event page shows times
+// (24-hour, as 18:30), with a time saved off that grid kept as it was. The
+// end time offers only times after the start.
+const halfHours = Array.from({ length: 36 }, (_, index) => {
+  const minutes = 6 * 60 + index * 30
+  return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`
+})
+
+function TimeSelect({
+  value,
+  onChange,
+  after,
+  disabled,
+}: {
+  value: string
+  onChange: (time: string) => void
+  after?: string
+  disabled?: boolean
+}) {
+  const times = [...new Set([...halfHours, ...(value ? [value] : [])])]
+    .sort()
+    .filter((time) => !after || time > after)
+  return (
+    <select disabled={disabled} onChange={(changed) => onChange(changed.target.value)} value={value}>
+      <option value="">{t("고르지 않음")}</option>
+      {times.map((time) => (
+        <option key={time} value={time}>
+          {time}
+        </option>
+      ))}
+    </select>
   )
 }

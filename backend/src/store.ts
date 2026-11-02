@@ -218,6 +218,15 @@ export function upgradeDatabase(stored: Database) {
     ? stored.events?.[demoGroupId]?.find((event) => event.id === "event-muse-concert")
     : undefined
   if (concert && !concert.packages) Object.assign(concert, museConcertPage)
+  // Events no longer ask for the share of women; what was saved goes.
+  for (const list of Object.values(stored.events ?? {})) {
+    for (const event of list) {
+      const makeup = event.makeup as (NonNullable<typeof event.makeup> & { female?: number }) | undefined
+      if (makeup?.female === undefined) continue
+      delete makeup.female
+      if (!makeup.years?.length && !makeup.majors) delete event.makeup
+    }
+  }
   // The busking day's sponsorship follows that event's measurement.
   const busking = demoBrandId
     ? stored.sponsorships[demoBrandId]?.find((sponsorship) => sponsorship.id === "sp-busking")

@@ -605,7 +605,6 @@ const en: Record<string, string> = {
   "끝나는 시각은 시작 시각과 함께 골라 주세요.": "Pick the end time together with the start time.",
   "끝나는 시각은 시작 시각 뒤로 골라 주세요.": "Pick an end time after the start time.",
   "참가자 구성을 다시 확인해 주세요.": "Check who's expected again.",
-  "여성 비율은 0부터 100까지 숫자로 적어 주세요.": "Write the share of women as a number from 0 to 100.",
   "주요 전공은 60자 이하로 적어 주세요.": "Keep the main fields of study to 60 characters.",
   "홍보 · 배포 계획을 다시 확인해 주세요.": "Check the promotion plan again.",
   "고른 홍보 · 배포 계획을 이행하는 데 동의해 주세요.": "Agree to carry out the promotion you chose.",
