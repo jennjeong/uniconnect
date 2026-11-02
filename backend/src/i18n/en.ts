@@ -172,6 +172,7 @@ const en: Record<string, string> = {
   "로고는 PNG, JPG, WebP 이미지를 100KB 이하로 올려 주세요.": "Please upload the logo as a PNG, JPG or WebP image of 100KB or less.",
   "소개는 10자 이상 300자 이하로 적어 주세요.": "Please write an introduction of 10 to 300 characters.",
   "{label}을 60자 이하로 적어 주세요.": "Please keep {label} to 60 characters or fewer.",
+  "제공하는 협찬을 하나 이상 골라 주세요.": "Pick at least one thing you offer.",
   "협찬하면 얻는 것": "what sponsors get",
   "제공하는 협찬": "the sponsorship you offer",
   "태그는 4개까지, 하나에 12자 이하로 적어 주세요.": "Please add up to 4 tags, each 12 characters or fewer.",

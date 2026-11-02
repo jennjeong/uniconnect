@@ -6,10 +6,11 @@ import { HttpError } from "../lib/errors.js"
 import { geocode } from "../lib/geocode.js"
 import { createRateLimit } from "../lib/rateLimit.js"
 import { isDemoAccount } from "../lib/reviews.js"
-import { factLabels, snsPlatforms, text } from "../lib/validation.js"
+import { brandProfile } from "../lib/brandProfile.js"
+import { brandOffers, factLabels, snsPlatforms, text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
-import type { Role } from "../types.js"
+import type { Match, Role } from "../types.js"
 
 export const profileRouter = Router()
 
@@ -30,26 +31,39 @@ function parseLogo(value: unknown) {
   return value
 }
 
-// The parts of a listing an account writes itself.
+// A brand's offer line from its picks: all of them while they fit the
+// card, else the first three and how many more.
+export function offerLine(offers: string[]) {
+  const all = offers.join(" · ")
+  return all.length <= 40 ? all : `${offers.slice(0, 3).join(" · ")} 외 ${offers.length - 3}`
+}
+
+// The parts of a listing an account writes itself. A brand picks its offers
+// from the list; its tags and 기본 정보 are worked out from what it does
+// (lib/brandProfile.ts), so it writes neither.
 function parseProfile(body: unknown, role: Role) {
   const input = (body ?? {}) as Record<string, unknown>
+  const brand = role === "브랜드"
   const intro = text(input.intro)
   if (intro.length < 10 || intro.length > 300) {
     throw new HttpError(400, "소개는 10자 이상 300자 이하로 적어 주세요.")
   }
-  const offer = text(input.offer)
+  const offers = brand ? brandOffers.filter((item) => rows(input.offers).map(String).includes(item)) : []
+  if (brand && offers.length === 0) throw new HttpError(400, "제공하는 협찬을 하나 이상 골라 주세요.")
+  const offer = brand ? offerLine(offers) : text(input.offer)
   if (!offer || offer.length > 60) {
-    const label = role === "학생단체" ? "협찬하면 얻는 것" : "제공하는 협찬"
-    throw new HttpError(400, `${label}을 60자 이하로 적어 주세요.`)
+    throw new HttpError(400, "협찬하면 얻는 것을 60자 이하로 적어 주세요.")
   }
-  const tags = rows(input.tags).map((tag) => text(tag)).filter(Boolean)
+  const tags = brand ? [] : rows(input.tags).map((tag) => text(tag)).filter(Boolean)
   if (tags.length > 4 || tags.some((tag) => tag.length > 12)) {
     throw new HttpError(400, "태그는 4개까지, 하나에 12자 이하로 적어 주세요.")
   }
   // Only this side's labels, in their order; blank ones are left out.
-  const facts = factLabels[role]
-    .map((label) => ({ label, value: text(rows(input.facts).find((fact) => fact?.label === label)?.value) }))
-    .filter((fact) => fact.value)
+  const facts = brand
+    ? []
+    : factLabels[role]
+        .map((label) => ({ label, value: text(rows(input.facts).find((fact) => fact?.label === label)?.value) }))
+        .filter((fact) => fact.value)
   if (facts.some((fact) => fact.value.length > 40)) {
     throw new HttpError(400, "기본 정보는 항목마다 40자 이하로 적어 주세요.")
   }
@@ -57,7 +71,8 @@ function parseProfile(body: unknown, role: Role) {
     .map((row) => ({
       platform: text(row?.platform),
       handle: text(row?.handle),
-      followers: text(row?.followers),
+      // Brands show no follower counts.
+      followers: brand ? "" : text(row?.followers),
     }))
     .filter((row) => row.handle)
   if (sns.length > 4) throw new HttpError(400, "SNS는 4개까지 등록할 수 있어요.")
@@ -85,12 +100,18 @@ function parseProfile(body: unknown, role: Role) {
     address,
     intro,
     offer,
+    ...(brand ? { offers } : {}),
     tags,
     facts,
     sns: sns.map(({ followers, ...row }) => (followers ? { ...row, followers } : row)),
     portfolio,
   }
 }
+
+// A listing as its owner sees it: a brand's with its worked-out 기본 정보
+// and tags.
+const shownProfile = (database: ReturnType<typeof getDatabase>, listing: Match) =>
+  database.accounts.some((account) => account.brandId === listing.id) ? brandProfile(database, listing) : listing
 
 // Each check asks a government service, so a brand gets a few an hour.
 const businessChecksPerHour = createRateLimit({
@@ -172,7 +193,9 @@ profileRouter.put("/pause", async (req, res) => {
 // The logged-in account's own listing, or null before it has written one.
 profileRouter.get("/", (req, res) => {
   const account = requireAccount(req)
-  res.json({ profile: findListing(getDatabase(), account) ?? null })
+  const database = getDatabase()
+  const listing = findListing(database, account)
+  res.json({ profile: listing ? shownProfile(database, listing) : null })
 })
 
 // Saves the listing the other side sees, creating it the first time. A store
@@ -188,11 +211,16 @@ profileRouter.put("/", async (req, res) => {
   const database = getDatabase()
   const listing = findListing(database, account) ?? createListing(database, account)
   Object.assign(listing, rest)
+  // A brand's are worked out each time it is shown.
+  if (account.role === "브랜드") {
+    delete listing.facts
+    listing.tags = []
+  }
   // A logo left out stays as it was; null removes it.
   if (logo === null) delete listing.logo
   else if (logo) listing.logo = logo
   if (address === "") delete listing.location
   else if (address && (address !== listing.location?.address || place)) listing.location = { address, ...place }
   await saveDatabase()
-  res.json({ profile: listing })
+  res.json({ profile: shownProfile(database, listing) })
 })

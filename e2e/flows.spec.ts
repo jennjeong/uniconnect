@@ -1247,11 +1247,34 @@ test("brands show how far their store is from the school, and a brand keeps its 
   await expect(student.locator(".work-card", { hasText: "프레시온" }).locator(".tag-distance")).toHaveCount(0)
 
   const brand = await (await browser.newContext()).newPage()
+  // Kakao's address search stands in here as one button that picks an address.
+  await brand.addInitScript(() => {
+    type Options = { oncomplete: (data: { roadAddress: string; jibunAddress: string; address: string }) => void }
+    ;(window as unknown as { daum: unknown }).daum = {
+      Postcode: class {
+        constructor(private options: Options) {}
+        embed(element: HTMLElement) {
+          const pick = document.createElement("button")
+          pick.textContent = "화랑로 815 고르기"
+          pick.onclick = () => this.options.oncomplete({ roadAddress: "서울 노원구 화랑로 815", jibunAddress: "", address: "" })
+          element.append(pick)
+        }
+      },
+    }
+  })
   await brand.goto("/")
   await logIn(brand, "브랜드", "hello@afternoon-coffee.kr")
   await brand.goto("/me/edit")
+  // The address is found, not typed; the offers are picked; 기본 정보 fills in.
   await expect(brand.getByLabel("매장 주소")).toHaveValue("서울 노원구 공릉역 2번 출구 앞")
-  await brand.getByLabel("매장 주소").fill("서울 노원구 화랑로 815")
+  await expect(brand.getByLabel("매장 주소")).not.toBeEditable()
+  await expect(brand.getByRole("button", { name: "할인 쿠폰" })).toHaveAttribute("aria-pressed", "true")
+  await brand.getByRole("button", { name: "부스 운영" }).click()
+  await expect(brand.locator(".auto-facts")).toContainText("서울 노원구")
+  await expect(brand.getByLabel("팔로워")).toHaveCount(0)
+  await brand.getByRole("button", { name: "주소 검색" }).click()
+  await brand.getByRole("button", { name: "화랑로 815 고르기" }).click()
+  await expect(brand.getByLabel("매장 주소")).toHaveValue("서울 노원구 화랑로 815")
   await brand.getByRole("button", { name: "저장하기" }).click()
   await expect(brand.getByText(/소개를 저장했어요/)).toBeVisible()
   // The server has no map key here, so the new address has no place yet

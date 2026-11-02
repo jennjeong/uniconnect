@@ -628,11 +628,19 @@ test("student groups browse the brand catalog and propose to any brand", async (
   const { brands } = (await call("GET", "/brands")).data
   assert.equal(brands.length, 12)
   assert.ok(brands.every((brand: { popularity?: number }) => typeof brand.popularity === "number"))
-  assert.ok(
-    brands.every(
-      (brand: { intro?: string; facts?: unknown[] }) => brand.intro && brand.facts?.length === 4,
-    ),
-  )
+  // The examples show their seeded 기본 정보; the demo brand, which an
+  // account owns, shows what its activity says (lib/brandProfile.ts).
+  type Shown = { id: string; intro?: string; facts?: { label: string; value: string }[]; tags: string[]; sns?: { followers?: string }[] }
+  const shown = brands as Shown[]
+  assert.ok(shown.every((brand) => brand.intro && brand.facts?.length))
+  assert.ok(shown.filter((brand) => brand.id !== "afternoon-coffee").every((brand) => brand.facts?.length === 4))
+  const coffee = shown.find((brand) => brand.id === "afternoon-coffee")!
+  assert.deepEqual(coffee.facts?.slice(0, 2), [
+    { label: "위치", value: "서울 노원구" },
+    { label: "제공 서비스", value: "할인 쿠폰 · 현금 후원 · 시음 · 샘플링" },
+  ])
+  // No brand shows follower counts.
+  assert.ok(shown.every((brand) => (brand.sns ?? []).every((row) => row.followers === undefined)))
   assert.deepEqual(
     brands.slice(0, 3).map((brand: { id: string }) => brand.id),
     (await call("GET", "/matches?role=학생단체")).data.matches.map((match: { id: string }) => match.id),
@@ -2239,13 +2247,29 @@ test("accounts write the listing the other side sees", async () => {
   // Chatting needs a listing first.
   const early = await call("POST", "/conversations", { partnerId: "syu-muse" }, newBrand)
   assert.equal(early.status, 409)
+  // A brand picks its offers from the list, at least one; what it would type
+  // for its tags, 기본 정보 or follower counts isn't kept.
+  const typed = { intro: "대학생을 위한 온라인 강의 플랫폼이에요.", offer: "수강권 50장" }
+  assert.equal((await call("PUT", "/profile", typed, newBrand)).status, 400)
   const created = await call(
     "PUT",
     "/profile",
-    { intro: "대학생을 위한 온라인 강의 플랫폼이에요.", offer: "수강권 50장" },
+    {
+      ...typed,
+      offers: ["제품 협찬", "없는 협찬", "할인 쿠폰"],
+      tags: ["직접 쓴 태그"],
+      facts: [{ label: "평균 응답", value: "1분 이내" }],
+      sns: [{ platform: "인스타그램", handle: "@newbrand", followers: "9,999명" }],
+    },
     newBrand,
   )
   assert.equal(created.data.profile.industry, "education")
+  assert.deepEqual(created.data.profile.offers, ["제품 협찬", "할인 쿠폰"])
+  assert.equal(created.data.profile.offer, "제품 협찬 · 할인 쿠폰")
+  assert.deepEqual(created.data.profile.sns, [{ platform: "인스타그램", handle: "@newbrand" }])
+  // Its 기본 정보 and tags come from what it does: its offers so far.
+  assert.deepEqual(created.data.profile.facts, [{ label: "제공 서비스", value: "제품 협찬 · 할인 쿠폰" }])
+  assert.deepEqual(created.data.profile.tags, ["제품 협찬"])
   // Members of the other side find it; the examples that visitors and the
   // demo accounts see don't show it.
   const named = async (token?: string) =>
@@ -2268,7 +2292,7 @@ test("the proposal state lists what an account sent, until it is taken back", as
   assert.equal(sent.length, 1)
   assert.deepEqual(
     [sent[0].partnerId, sent[0].partnerName, sent[0].eventName, sent[0].offer, sent[0].status],
-    [brandListing, "sender 카페", "보낸 공연", "음료 쿠폰 100장", "검토 중"],
+    [brandListing, "sender 카페", "보낸 공연", "음료 · 식품 · 할인 쿠폰", "검토 중"],
   )
   // A brand's offer, to a group with its school.
   const offered = (await call("POST", "/proposals", { matchId: groupListing }, brand)).data.sent
@@ -2805,7 +2829,7 @@ async function listedMember(email: string, password: string, role: "학생단체
   const students = role === "학생단체"
   const profile = students
     ? { intro: "캠퍼스에서 정기 공연을 여는 동아리예요.", offer: "관객 100명" }
-    : { intro: "대학가에서 학생 행사를 돕는 카페예요.", offer: "음료 쿠폰 100장" }
+    : { intro: "대학가에서 학생 행사를 돕는 카페예요.", offers: ["음료 · 식품", "할인 쿠폰"] }
   const written = await call("PUT", "/profile", profile, token)
   assert.equal(written.status, 200)
   return { token, listingId: written.data.profile.id as string }
@@ -3548,7 +3572,7 @@ test("a brand's store address is placed on the map through OpenStreetMap once a 
   const saved = structuredClone(listing)
   const form = (address?: string) => ({
     intro: listing.intro,
-    offer: listing.offer,
+    offers: ["음료 · 식품"],
     tags: listing.tags,
     facts: listing.facts,
     sns: listing.sns,

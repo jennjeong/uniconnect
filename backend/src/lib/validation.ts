@@ -101,6 +101,21 @@ export const factLabels: Record<Role, string[]> = {
 
 export const snsPlatforms = ["인스타그램", "유튜브", "틱톡", "블로그", "웹사이트", "기타"]
 
+// What a brand can offer, picked on its profile (any number of them). Keep
+// in sync with brandOffers in frontend/src/data/profile.ts.
+export const brandOffers = [
+  "현금 후원",
+  "제품 협찬",
+  "음료 · 식품",
+  "할인 쿠폰",
+  "시음 · 샘플링",
+  "굿즈 · 경품",
+  "매장 공간 대관",
+  "부스 운영",
+  "촬영 · 디자인",
+  "SNS 홍보",
+]
+
 // "기타" comes with a free-text typeNote on the event.
 export const sponsorTypes = ["현금", "제품", "서비스", "기타"]
 

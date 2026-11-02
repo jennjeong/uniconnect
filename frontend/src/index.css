@@ -8254,6 +8254,90 @@ button.nav-pill:hover {
   grid-template-columns: 120px minmax(0, 1fr) 150px 36px;
 }
 
+/* A brand's SNS rows have no follower count. */
+.edit-row.sns.no-followers {
+  grid-template-columns: 120px minmax(0, 1fr) 36px;
+}
+
+/* A brand's offers, picked as pills: deep blue once picked. */
+.offer-picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.offer-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: var(--weight-label);
+}
+
+.offer-pick[aria-pressed='true'] {
+  border-color: var(--point);
+  background: var(--point);
+  color: var(--on-point);
+}
+
+/* A brand's 기본 정보 and tags as they read, worked out from what it does. */
+.auto-facts dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.auto-facts dl > div {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--fill);
+}
+
+.auto-facts dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: var(--weight-label);
+}
+
+.auto-facts dd {
+  margin: 0;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: var(--weight-body);
+}
+
+.auto-facts dd.empty {
+  color: var(--muted);
+}
+
+/* The store address, found with the address search rather than typed. */
+.address-row {
+  display: flex;
+  gap: 8px;
+}
+
+.address-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.address-search {
+  height: 420px;
+  margin-top: 8px;
+  overflow: hidden;
+  border-radius: 12px;
+  box-shadow: var(--ring);
+}
+
 .edit-row.portfolio {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) 36px;
 }
@@ -19488,7 +19572,8 @@ th[aria-sort="descending"] .console-sort span {
     font-weight: var(--weight-body);
   }
 
-  .edit-facts {
+  .edit-facts,
+  .auto-facts dl {
     grid-template-columns: 1fr;
   }
 

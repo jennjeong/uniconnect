@@ -1,4 +1,5 @@
 import { todayInKorea } from "./dates.js"
+import { brandProfile } from "./brandProfile.js"
 import { distanceKm, offsetMetres, placeOf } from "./geo.js"
 import { scoreMatch, type Viewer } from "./matchScore.js"
 import { isDemoAccount, reviewSummary, reviewsAbout } from "./reviews.js"
@@ -160,7 +161,8 @@ export function viewerFor(database: Database, account: Account | undefined, cata
 // brand, whether its business registration was confirmed.
 export function browse(database: Database, catalog: "brands" | "groups", account?: Account) {
   const shown = listedCatalog(database, catalog, account)
-  const listings = catalog === "brands" ? shown : shown.map((group) => withLiveEvent(database, group))
+  const listings =
+    catalog === "brands" ? shown.map((brand) => brandProfile(database, brand)) : shown.map((group) => withLiveEvent(database, group))
   const viewer = viewerFor(database, account, catalog)
   // A brand's track record counts against the brands seen beside it.
   const maxPopularity = Math.max(1, ...listedCatalog(database, "brands", account).map((brand) => brand.popularity ?? 0))

@@ -158,6 +158,16 @@ const en: Record<string, string> = {
   "행사 당일 스토리": "Stories on the day",
   "행사 후 후기 게시물": "Recap post after",
   "브랜드 계정 태그": "Brand account tags",
+  // A brand's offers (data/profile.ts).
+  "현금 후원": "Cash",
+  "제품 협찬": "Products",
+  "음료 · 식품": "Drinks · food",
+  "할인 쿠폰": "Discount coupons",
+  "시음 · 샘플링": "Tastings · samples",
+  "굿즈 · 경품": "Goods · prizes",
+  "매장 공간 대관": "Store space",
+  "부스 운영": "Booth",
+  "촬영 · 디자인": "Photo · design",
   // Regions (data/universities.ts).
   서울: "Seoul",
   경기: "Gyeonggi",

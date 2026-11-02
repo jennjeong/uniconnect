@@ -212,6 +212,9 @@ export function upgradeDatabase(stored: Database) {
     ? stored.events?.[demoBrandId]?.find((event) => event.id === "event-coffee-tasting")
     : undefined
   if (tasting) tasting.budget ??= 800000
+  // Brands pick their offers now; the demo brand's are its seeded ones.
+  const demoListing = stored.brands?.find((brand) => brand.id === "afternoon-coffee")
+  if (demoListing) demoListing.offers ??= seedBrands[0].offers
   // The demo group's concert gained its event page.
   const demoGroupId = stored.demoAccountIds?.학생단체
   const concert = demoGroupId

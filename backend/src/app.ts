@@ -80,7 +80,7 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
         "img-src 'self' data: blob: https:",
         "font-src 'self' data:",
         "connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://*.tosspayments.com",
-        "frame-src 'self' https://*.tosspayments.com",
+        "frame-src 'self' https://*.tosspayments.com postcode.map.kakao.com",
         "worker-src 'self' blob:",
         "object-src 'none'",
         "base-uri 'self'",
