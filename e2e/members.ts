@@ -35,7 +35,7 @@ export async function signUpMember(
   const headers = { Authorization: `Bearer ${token}` }
   if (students) return { token, headers, listingId: undefined }
   const written = await request.put("/api/profile", {
-    data: { intro: "대학가에서 학생 행사를 돕는 카페예요.", offer: "음료 쿠폰 100장" },
+    data: { intro: "대학가에서 학생 행사를 돕는 카페예요.", offers: ["음료 · 식품", "할인 쿠폰"] },
     headers,
   })
   const { profile } = (await written.json()) as { profile: { id: string } }

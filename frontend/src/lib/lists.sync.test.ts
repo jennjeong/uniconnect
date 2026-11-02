@@ -5,7 +5,7 @@ import * as serverCouncil from "../../../backend/src/lib/council"
 import * as serverMethods from "../../../backend/src/lib/methods"
 import * as server from "../../../backend/src/lib/validation"
 import { demoAccounts, demoPassword } from "../data/demo"
-import { factFields, snsPlatforms } from "../data/profile"
+import { brandOffers, factFields, snsPlatforms } from "../data/profile"
 import { inquiryCategories } from "../data/inquiries"
 import { defaultMethods, isVenueMethod, methodInfo, methodKinds } from "../data/methods"
 import { placeCategories } from "../data/places"
@@ -42,6 +42,7 @@ describe("the screens offer the choices the server takes", () => {
   test("sponsorship kinds in the goals form, SNS platforms and question kinds", () => {
     expect(valueTypes).toEqual(server.sponsorTypes)
     expect(snsPlatforms).toEqual(server.snsPlatforms)
+    expect(brandOffers).toEqual(server.brandOffers)
     expect(inquiryCategories).toEqual(server.inquiryCategories)
     expect(reportReasons).toEqual(server.reportReasons)
     expect(carriers).toEqual(server.carriers)

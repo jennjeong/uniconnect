@@ -26,6 +26,9 @@ export type Match = {
   // Logo image URL; the frontend shows an industry graphic when it is missing.
   logo?: string
   offer: string
+  // A brand's offers as picked on its profile (lib/validation.ts
+  // brandOffers); its offer line is made from them.
+  offers?: string[]
   // Match for the account browsing, worked out when the catalog is served
   // (lib/matchScore.ts), with the reasons that count most and each part
   // of it as a share of its best (0 to 1).

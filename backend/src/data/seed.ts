@@ -40,6 +40,7 @@ export const seedBrands: Match[] = [
     category: "카페 · 식음료",
     industry: "cafe",
     offer: "쿠폰 150장 + 현금 20만원",
+    offers: ["할인 쿠폰", "현금 후원", "시음 · 샘플링"],
     score: 94,
     tags: ["대학생 선호", "반경 1.2km"],
     popularity: 32,
@@ -51,7 +52,7 @@ export const seedBrands: Match[] = [
       { label: "평균 응답", value: "1일 이내" },
     ],
     sns: [
-      { platform: "인스타그램", handle: "@afternoon.coffee", followers: "8,700명" },
+      { platform: "인스타그램", handle: "@afternoon.coffee" },
     ],
     portfolio: [
       { title: "삼육대 뮤즈 가을 버스킹 데이 (2026.10)", detail: "쿠폰 150장 + 현금 20만원 · 추정 ROAS 243%" },
@@ -77,7 +78,7 @@ export const seedBrands: Match[] = [
       { label: "평균 응답", value: "2일" },
     ],
     sns: [
-      { platform: "인스타그램", handle: "@moment.studio", followers: "5,200명" },
+      { platform: "인스타그램", handle: "@moment.studio" },
       { platform: "블로그", handle: "모먼트 촬영 후기" },
     ],
     portfolio: [
@@ -102,8 +103,8 @@ export const seedBrands: Match[] = [
       { label: "평균 응답", value: "3일" },
     ],
     sns: [
-      { platform: "인스타그램", handle: "@freshon_kr", followers: "2.4만 명" },
-      { platform: "유튜브", handle: "프레시온 TV", followers: "9,000명" },
+      { platform: "인스타그램", handle: "@freshon_kr" },
+      { platform: "유튜브", handle: "프레시온 TV" },
     ],
     portfolio: [
       { title: "5개 대학 시험 응원 (2026.06)", detail: "에너지 드링크 1,200개 배부" },
@@ -129,8 +130,8 @@ export const seedBrands: Match[] = [
       { label: "평균 응답", value: "2일" },
     ],
     sns: [
-      { platform: "인스타그램", handle: "@glowlab.official", followers: "4.1만 명" },
-      { platform: "틱톡", handle: "@glowlab", followers: "1.8만 명" },
+      { platform: "인스타그램", handle: "@glowlab.official" },
+      { platform: "틱톡", handle: "@glowlab" },
     ],
     portfolio: [
       { title: "덕성여대 봄 축제 (2026.05)", detail: "샘플 500개 · 부스 방문 900명" },
@@ -156,7 +157,7 @@ export const seedBrands: Match[] = [
       { label: "평균 응답", value: "1일 이내" },
     ],
     sns: [
-      { platform: "인스타그램", handle: "@brewinglab", followers: "3,900명" },
+      { platform: "인스타그램", handle: "@brewinglab" },
     ],
     portfolio: [
       { title: "광운대 코드랩 해커톤 (2025.12)", detail: "야식 디저트 140세트" },
@@ -180,8 +181,8 @@ export const seedBrands: Match[] = [
       { label: "평균 응답", value: "3일" },
     ],
     sns: [
-      { platform: "인스타그램", handle: "@runup.sports", followers: "1.6만 명" },
-      { platform: "기타", handle: "스트라바 런업 크루", followers: "1,100명" },
+      { platform: "인스타그램", handle: "@runup.sports" },
+      { platform: "기타", handle: "스트라바 런업 크루" },
     ],
     portfolio: [
       { title: "서울여대 러너스 여름 나이트 런 (2026.07)", detail: "양말 80켤레 · 페이스메이커 2명" },
@@ -205,7 +206,7 @@ export const seedBrands: Match[] = [
       { label: "평균 응답", value: "2일" },
     ],
     sns: [
-      { platform: "인스타그램", handle: "@studymate_app", followers: "2.2만 명" },
+      { platform: "인스타그램", handle: "@studymate_app" },
       { platform: "블로그", handle: "스터디메이트 공부법" },
     ],
     portfolio: [
@@ -230,7 +231,7 @@ export const seedBrands: Match[] = [
       { label: "평균 응답", value: "2일" },
     ],
     sns: [
-      { platform: "인스타그램", handle: "@filmlog.booth", followers: "1.1만 명" },
+      { platform: "인스타그램", handle: "@filmlog.booth" },
     ],
     portfolio: [
       { title: "덕성여대 봄 축제 (2026.05)", detail: "현장 인화 1,800장" },
@@ -256,7 +257,7 @@ export const seedBrands: Match[] = [
       { label: "평균 응답", value: "2일" },
     ],
     sns: [
-      { platform: "인스타그램", handle: "@greenday_salad", followers: "2,600명" },
+      { platform: "인스타그램", handle: "@greenday_salad" },
     ],
     portfolio: [
       { title: "서울여대 러너스 가을 5K (2025.11)", detail: "완주자 샐러드 쿠폰 70장" },
@@ -282,7 +283,7 @@ export const seedBrands: Match[] = [
       { label: "평균 응답", value: "3일" },
     ],
     sns: [
-      { platform: "인스타그램", handle: "@mood.salon", followers: "3,300명" },
+      { platform: "인스타그램", handle: "@mood.salon" },
     ],
     portfolio: [
       { title: "광운대 무브먼트 여름 쇼케이스 (2026.08)", detail: "무대 스타일링 18명" },
@@ -306,8 +307,8 @@ export const seedBrands: Match[] = [
       { label: "평균 응답", value: "4일" },
     ],
     sns: [
-      { platform: "유튜브", handle: "클립스튜디오", followers: "2.7만 명" },
-      { platform: "인스타그램", handle: "@clip.studio", followers: "6,100명" },
+      { platform: "유튜브", handle: "클립스튜디오" },
+      { platform: "인스타그램", handle: "@clip.studio" },
     ],
     portfolio: [
       { title: "과기대 소리샘 가을 정기 공연 (2026.09)", detail: "하이라이트 영상 조회 1.5만 회" },
@@ -331,8 +332,8 @@ export const seedBrands: Match[] = [
       { label: "평균 응답", value: "2일" },
     ],
     sns: [
-      { platform: "유튜브", handle: "잉글리시업", followers: "4.5만 명" },
-      { platform: "인스타그램", handle: "@englishup_kr", followers: "1.3만 명" },
+      { platform: "유튜브", handle: "잉글리시업" },
+      { platform: "인스타그램", handle: "@englishup_kr" },
     ],
     portfolio: [
       { title: "학술제 경품 (2025.11)", detail: "수강권 30장" },

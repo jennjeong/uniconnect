@@ -23,6 +23,9 @@ export type Match = {
   industry: Industry
   logo?: string
   offer: string
+  // A brand's offers as picked on its profile (data/profile.ts brandOffers);
+  // its offer line is made from them.
+  offers?: string[]
   // Match for the account browsing, with the reasons that count most and
   // each part of it as a share of its best (0 to 1).
   score: number
@@ -270,7 +273,7 @@ export type InvitePageData = {
   group?: Partial<Match> & { name: string; category: string }
 }
 
-export type ProfileDraft = Pick<Match, "intro" | "offer" | "tags" | "facts" | "sns" | "portfolio"> & {
+export type ProfileDraft = Pick<Match, "intro" | "offer" | "offers" | "tags" | "facts" | "sns" | "portfolio"> & {
   logo?: string | null
   // A brand's store address; empty removes it.
   address?: string
