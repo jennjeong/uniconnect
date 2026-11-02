@@ -74,7 +74,11 @@ function EventRow({
         )}
         <p>
           {role === "학생단체"
-            ? `${t("예상 참여 {people}", { people })}${types}`
+            ? `${
+                event.budget === undefined
+                  ? t("예상 참여 {people}", { people })
+                  : t("예상 참여 {people} · 예산 {budget}", { people, budget: formatWon(event.budget) })
+              }${types}`
             : `${t("목표 도달 {people} · 예산 {budget}", {
                 people,
                 budget: event.budget === undefined ? t("미정") : formatWon(event.budget),

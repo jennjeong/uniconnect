@@ -94,8 +94,9 @@ function parseEventFields(role: Role, body: Request["body"]): EventFields {
     : []
   // Free text describing the "기타" type.
   const typeNote = text(body?.typeNote)
-  // Brands plan an optional campaign budget in won.
-  const rawBudget = students ? "" : text(body?.budget)
+  // An optional budget in won: a group's for its event, a brand's for its
+  // campaign.
+  const rawBudget = text(body?.budget)
   const budget = rawBudget ? Number(rawBudget) : undefined
   // A group's event page: where it is, what it is, and its packages.
   const venue = students ? text(body?.venue) : ""
@@ -186,23 +187,17 @@ function parsePromo(value: unknown, agreed: unknown): EventItem["promo"] {
   return { spots, handouts, posts, agreedAt }
 }
 
-// Who is expected at a group's event: the share of women (0–100), the
-// years from the list and fields of study as written. Undefined when none.
+// Who is expected at a group's event: the years from the list and fields of
+// study as written. Undefined when none.
 function parseMakeup(value: unknown): EventItem["makeup"] {
   if (value === undefined || value === null) return undefined
   if (typeof value !== "object") throw new HttpError(400, "참가자 구성을 다시 확인해 주세요.")
   const input = value as Record<string, unknown>
-  const rawFemale = input.female
-  const female = rawFemale === undefined || rawFemale === null || rawFemale === "" ? undefined : Number(rawFemale)
-  if (female !== undefined && !(Number.isInteger(female) && female >= 0 && female <= 100)) {
-    throw new HttpError(400, "여성 비율은 0부터 100까지 숫자로 적어 주세요.")
-  }
   const years = Array.isArray(input.years) ? audienceYears.filter((year) => (input.years as unknown[]).map(String).includes(year)) : []
   const majors = text(input.majors)
   if (majors.length > 60) throw new HttpError(400, "주요 전공은 60자 이하로 적어 주세요.")
-  if (female === undefined && years.length === 0 && !majors) return undefined
+  if (years.length === 0 && !majors) return undefined
   return {
-    ...(female === undefined ? {} : { female }),
     ...(years.length ? { years } : {}),
     ...(majors ? { majors } : {}),
   }

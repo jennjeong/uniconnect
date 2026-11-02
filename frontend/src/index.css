@@ -6480,21 +6480,6 @@ button.nav-pill:hover {
   font-size: 14px;
 }
 
-.makeup-bar {
-  display: block;
-  width: 120px;
-  height: 8px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: var(--fill-strong);
-}
-
-.makeup-bar i {
-  display: block;
-  height: 100%;
-  background: var(--point);
-}
-
 .event-body {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 280px;
@@ -6660,10 +6645,11 @@ button.nav-pill:hover {
   gap: 4px;
 }
 
+/* Days only as tall as their number, so the month fits beside the form. */
 .date-cell {
-  aspect-ratio: 1 / 1;
+  height: 40px;
   border: 1px solid transparent;
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--fill);
   color: var(--ink);
   font-size: 14px;

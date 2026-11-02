@@ -66,7 +66,6 @@ export function ProposalDocument({ page, history }: { page: EventPage; history: 
             <dt>{t("참가자 구성")}</dt>
             <dd>
               {[
-                event.makeup?.female !== undefined ? t("여성 {female}%", { female: event.makeup.female }) : "",
                 (event.makeup?.years ?? []).map((year) => t(year)).join(", "),
                 event.makeup?.majors ?? "",
               ]

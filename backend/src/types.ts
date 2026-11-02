@@ -100,7 +100,7 @@ export type EventItem = {
   types: string[]
   // What "기타" in types means, written by the organizer.
   typeNote?: string
-  // Campaign budget in won (brand accounts only).
+  // Budget in won: a group's for its event, a brand's for its campaign.
   budget?: number
   status: EventStatus
   createdAt: string
@@ -119,7 +119,7 @@ export type EventItem = {
   kind?: string
   startTime?: string
   endTime?: string
-  makeup?: { female?: number; years?: string[]; majors?: string }
+  makeup?: { years?: string[]; majors?: string }
   // 홍보 · 배포 계획: what the group offers brands (validation.ts logoSpots,
   // handoutWays, promoPosts), and when it agreed to carry out what it chose;
   // an accepted proposal's agreement starts with them as the group's items.
@@ -547,7 +547,7 @@ export type Report = {
   // For the students' own report: the event's kind, who was expected and
   // the optional survey's counts.
   eventKind?: string
-  makeup?: { female?: number; years?: string[]; majors?: string }
+  makeup?: { years?: string[]; majors?: string }
   survey?: { responses: number; grade: Record<string, number>; field: Record<string, number>; visited: Record<string, number>; gender?: Record<string, number> }
   sponsors?: SponsorReport[]
 }

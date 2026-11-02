@@ -31,7 +31,6 @@ export function studentInsights(report: Report, metrics: Metrics) {
   const grade = shares(survey?.grade)[0]
   const field = shares(survey?.field)[0]
   const gender = shares(survey?.gender)
-  const women = gender.find((item) => item.label === "여성")
   const firstTime = survey ? percent(survey.visited["처음이에요"] ?? 0, survey.responses) : 0
   const hour = peakHour(report)
 
@@ -41,9 +40,6 @@ export function studentInsights(report: Report, metrics: Metrics) {
     advice.push(t("참여율이 {rate}%였어요. QR을 입구와 무대 앞 두 곳에 두고, 사회자가 한 번 더 안내해 보세요.", { rate: participation }))
   } else if (participation >= 80) {
     advice.push(t("참여율이 {rate}%로 높았어요. 다음 제안서에 이 숫자를 앞세워 보세요.", { rate: participation }))
-  }
-  if (women && report.makeup?.female !== undefined) {
-    advice.push(t("실제 여성 참여는 {actual}%였어요(예상 {expected}%). 다음 행사의 예상 구성을 이 숫자로 고쳐 두세요.", { actual: women.share, expected: report.makeup.female }))
   }
   if (grade) advice.push(t("{grade} 참여가 {share}%로 가장 많았어요. 다음 홍보는 {grade} 단톡방과 수업 공지부터 시작해 보세요.", { grade: t(grade.label), share: grade.share }))
   if (field) advice.push(t("{field} 계열 학생이 가장 많았어요. 이 학생들이 좋아할 업종의 브랜드에 먼저 제안해 보세요.", { field: t(field.label) }))
