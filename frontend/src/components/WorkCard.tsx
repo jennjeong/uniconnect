@@ -121,6 +121,11 @@ export function WorkCard({
               {formatDistance(match.distanceKm)}
             </span>
           )}
+          {match.ad && (
+            <span className="tag-ad" title={t("상단 광고")}>
+              AD
+            </span>
+          )}
           {match.pro && <span className="tag-pro">PARTNERS</span>}
           {match.businessVerified && (
             <span className="tag-verified">

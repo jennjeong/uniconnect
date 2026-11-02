@@ -35,6 +35,8 @@ export type Match = {
   score: number
   // The brand is on Pro (lib/plan.ts), worked out in browse().
   pro?: true
+  // A running 상단 광고 (backend lib/ads.ts): first in the catalog, marked AD.
+  ad?: true
   reasons?: string[]
   scoreParts?: { label: string; value: number }[]
   tags: string[]
@@ -737,9 +739,10 @@ export type ShopInvite = {
   brandId?: string
 }
 
-// What a brand pays the platform (lib/billing.ts): the 15% fee when a
-// sponsorship is confirmed, a detailed report, or a month of Pro.
-export type PaymentKind = "fee" | "report" | "pro"
+// What an account pays the platform (lib/billing.ts): a brand's 15% fee when
+// a sponsorship is confirmed, a detailed report or a month of Pro, and
+// either side's month of 상단 광고 (lib/ads.ts).
+export type PaymentKind = "fee" | "report" | "pro" | "ad"
 
 export type Payment = {
   // Also the order id Toss Payments sees.
@@ -766,7 +769,7 @@ export type Payment = {
   paidAt?: string
   cancelledAt?: string
   cancelReason?: string
-  // Pro: the day the month paid for ends (Korean date).
+  // Pro or an ad: the day the month paid for ends (Korean date).
   periodEnd?: string
   // A report: when its buyer first opened it (no refund after, per the terms).
   openedAt?: string

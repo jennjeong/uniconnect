@@ -221,8 +221,8 @@ const en: Record<string, string> = {
   "서버 장애에 대비한 백업에는 지운 내용이 최대 24시간 남아 있다가 새 백업으로 바뀌며 사라져요.":
     "Backups kept against server failures may hold deleted data for up to 24 hours, until newer backups replace them.",
   // Paid services (the business plan's revenue model)
-  "학생단체는 서비스를 무료로 써요. 브랜드는 아래 유료 서비스를 이용할 때 결제해요. 금액은 모두 부가세를 포함해요.":
-    "Student groups use the service for free. Brands pay for the paid services below. All amounts include VAT.",
+  "학생단체는 상단 광고 말고는 서비스를 무료로 써요. 브랜드는 아래 유료 서비스를 이용할 때 결제해요. 금액은 모두 부가세를 포함해요.":
+    "Student groups use the service for free, except for top ads. Brands pay for the paid services below. All amounts include VAT.",
   "성사 수수료: 협찬이 확정될 때 협찬액(현금과 현물 환산 금액을 더한 값)의 15%를 브랜드가 내요. 브랜드는 임시 전자 계약서를 확인할 때 이 수수료를 결제하고, 협찬액을 올리면 늘어난 만큼을 더 내요.":
     "Success fee: when a sponsorship is confirmed, the brand pays 15% of its value (cash plus the value of what is given in kind). The brand pays it when confirming the provisional e-contract, and pays the difference if the value goes up.",
   "결제는 토스페이먼츠의 카드 결제창이나 계좌 입금으로 해요. 계좌 입금은 운영자가 입금을 확인하면 반영돼요. 카드 정보는 서비스가 받지 않고 토스페이먼츠가 처리해요.":
@@ -241,8 +241,8 @@ const en: Record<string, string> = {
     "Paying for and refunding paid services, tax filing",
   "5년(전자상거래법에 따라 탈퇴한 뒤에도 보관)":
     "5 years (kept after leaving, as the E-Commerce Act requires)",
-  "브랜드가 결제하면 주문 번호, 산 것, 금액, 이메일을 결제 대행사 토스페이먼츠(대한민국)에 보내 결제를 처리해요. 카드 정보는 토스페이먼츠가 직접 받고 서비스는 받지 않아요.":
-    "When a brand pays, the order number, what is bought, the amount and the email are sent to the payment processor Toss Payments (Republic of Korea) to process the payment. Toss Payments receives the card details directly; the service does not.",
+  "회원이 결제하면 주문 번호, 산 것, 금액, 이메일을 결제 대행사 토스페이먼츠(대한민국)에 보내 결제를 처리해요. 카드 정보는 토스페이먼츠가 직접 받고 서비스는 받지 않아요.":
+    "When a member pays, the order number, what is bought, the amount and the email are sent to the payment processor Toss Payments (Republic of Korea) to process the payment. Toss Payments receives the card details directly; the service does not.",
   "결제 기록은 전자상거래법에 따라 탈퇴한 뒤에도 5년 동안 따로 보관하고, 그 뒤에 지워요.":
     "Payment records are kept apart for 5 years after leaving, as the E-Commerce Act requires, and deleted after that.",
   "상세 성과 리포트: 협찬 1건의 상세 성과 리포트를 50,000원에 살 수 있어요. 행사 날부터 살 수 있고, 한 번 사면 계속 보고 PDF로 저장하고 링크로 공유할 수 있어요.":
@@ -253,6 +253,8 @@ const en: Record<string, string> = {
     "Campus Partners: brands can use Campus Partners at 300,000 KRW for 30 days. It sends proposals without a limit (the free plan sends 5 a month), opens every detailed analysis report, adds the campus portfolio analysis, sends the operators 2 one-to-one partner requests a month, and puts a PARTNERS mark on the brand card. It doesn't renew by itself; paying again adds 30 days after the days left.",
   "캠퍼스 파트너스 환불: 결제하고 7일 안에는 모두 돌려드리고, 그 뒤에는 남은 날만큼 날짜로 나눠 돌려드려요.":
     "Campus Partners refunds: fully refunded within 7 days of paying, and after that for the days left, pro rata.",
+  "상단 광고: 30일 동안 우리 소개를 상대편 목록 맨 위에 AD 표시와 함께 보여 줘요. 브랜드는 30일에 99,000원, 학생단체는 30일에 10,000원이에요. 광고가 끝나기 전에 연장하면 10% 할인해요. 자동으로 결제되지 않고, 연장하면 남은 날 뒤에 30일이 이어져요. 환불은 캠퍼스 파트너스와 같아요.":
+    "Top ads: for 30 days your listing shows first on the other side's list, marked AD. Brands pay 99,000 won and student groups 10,000 won for 30 days. Extending before an ad ends takes 10% off. Nothing renews by itself; an extension adds 30 days after the days left. Refunds work as for Campus Partners.",
   "참여자가 고르면 답하는 선택 설문(학년, 전공 계열, 쿠폰 가게에 가 본 적이 있는지, 성별)은 누가 답했는지 남기지 않고 행사별 숫자로만 모아요. 브랜드의 상세 분석 리포트에 관객 구성으로 보여요.":
     "The optional survey participants may answer (year, field of study, whether they had been to the coupon's store, gender) keeps no record of who answered; it is only counted per event, and shows as the audience in the brand's detailed analysis report.",
   "저장한 제안 문구(이름과 내용, 10개까지)": "Saved proposal messages (their names and text, up to 10)",

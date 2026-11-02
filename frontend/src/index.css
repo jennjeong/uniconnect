@@ -15675,6 +15675,11 @@ button.nav-pill:hover {
   background: var(--console-blue-soft);
 }
 
+.console-stack i.ad,
+.console-legend li.ad::before {
+  background: var(--goal-mark);
+}
+
 .console-stack small {
   color: var(--muted);
   font-size: 11px;
@@ -17555,6 +17560,63 @@ th[aria-sort="descending"] .console-sort span {
 
 /* A brand whose business registration the National Tax Service confirmed. */
 .work-tags > span.tag-verified,
+/* 상단 광고 (components/AdCard.tsx): an amber AD mark on the card. */
+.tag-ad,
+.ad-mark {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--goal-mark);
+  color: var(--ink);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: var(--weight-badge);
+  letter-spacing: 0.06em;
+}
+
+.ad-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  margin: 14px 0;
+  padding: 16px 18px;
+  border-radius: var(--radius-md);
+  background: var(--fill);
+  box-shadow: var(--ring);
+}
+
+.ad-card-copy {
+  display: grid;
+  flex: 1 1 260px;
+  gap: 4px;
+}
+
+.ad-card-copy strong {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: var(--weight-label);
+}
+
+.ad-card-copy p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.ad-card .ad-card-deal {
+  color: var(--point-strong);
+  font-weight: var(--weight-label);
+}
+
+.ad-card .field-hint {
+  flex-basis: 100%;
+  margin: 0;
+}
+
 .tag-pro {
   padding: 2px 8px;
   border-radius: 999px;

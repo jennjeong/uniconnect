@@ -7,6 +7,7 @@ import { HttpError } from "../lib/errors.js"
 // What brands can buy, each registered with lib/billing.ts.
 import "../lib/feeSales.js"
 import "../lib/reportSales.js"
+import { adOf } from "../lib/ads.js"
 import { isPro } from "../lib/plan.js"
 import { partnerRequestCategory, partnerRequestsPerMonth, partnerRequestsThisMonth, planOf } from "../lib/pro.js"
 import { isDemoAccount } from "../lib/reviews.js"
@@ -14,9 +15,10 @@ import { text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 
-// What a brand pays (lib/billing.ts): an order for what it buys, paid in
+// What an account pays (lib/billing.ts): an order for what it buys, paid in
 // Toss Payments' window by card and approved here, or by bank transfer
-// that an operator confirms on /admin.
+// that an operator confirms on /admin. Brands buy everything; student
+// groups only their own ads.
 export const billingRouter = Router()
 
 // Prices, whether card payment is on (and the client key for its window),
@@ -31,6 +33,8 @@ billingRouter.get("/", (req, res) => {
     testMode: testMode(),
     canPay: account.role === "브랜드" && (!isDemoAccount(database, account) || testMode()),
     plan: planOf(database, account),
+    ad: adOf(database, account),
+    canPayAd: !isDemoAccount(database, account) || testMode(),
     payments: paymentsOf(database)
       .filter((payment) => payment.accountId === account.id)
       .reverse()
@@ -44,8 +48,9 @@ billingRouter.post("/orders", async (req, res) => {
   const account = requireAccount(req)
   const database = getDatabase()
   if (isDemoAccount(database, account) && !testMode()) throw new HttpError(403, "데모 계정은 테스트 결제로만 시연할 수 있어요.")
-  if (account.role !== "브랜드") throw new HttpError(403, "결제는 브랜드 계정만 해요.")
-  const payment = orderFor(database, account, text(req.body?.kind), text(req.body?.targetId))
+  const kind = text(req.body?.kind)
+  if (account.role !== "브랜드" && kind !== "ad") throw new HttpError(403, "결제는 브랜드 계정만 해요.")
+  const payment = orderFor(database, account, kind, text(req.body?.targetId))
   await saveDatabase()
   res.json({ order: paymentView(payment), customerKey: account.customerKey, email: account.email })
 })

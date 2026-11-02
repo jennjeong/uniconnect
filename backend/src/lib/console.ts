@@ -41,7 +41,7 @@ export function overview(database: Database, now = new Date()) {
   const revenue = {
     total: paid.reduce((sum, payment) => sum + payment.amount, 0),
     thisMonth: paid.filter((payment) => koreanDate(payment.paidAt ?? payment.requestedAt).slice(0, 7) === month).reduce((sum, payment) => sum + payment.amount, 0),
-    byKind: { fee: 0, report: 0, pro: 0 } as Record<"fee" | "report" | "pro", number>,
+    byKind: { fee: 0, report: 0, pro: 0, ad: 0 } as Record<"fee" | "report" | "pro" | "ad", number>,
     partners: database.accounts.filter((account) => proUntil(database, account.id) !== null).length,
   }
   for (const payment of paid) revenue.byKind[payment.kind] += payment.amount

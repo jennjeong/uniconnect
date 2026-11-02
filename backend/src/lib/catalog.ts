@@ -4,7 +4,7 @@ import { distanceKm, offsetMetres, placeOf } from "./geo.js"
 import { scoreMatch, type Viewer } from "./matchScore.js"
 import { isDemoAccount, reviewSummary, reviewsAbout } from "./reviews.js"
 import { blockedBetween } from "./safety.js"
-import { isPro } from "./plan.js"
+import { adUntil, isPro } from "./plan.js"
 import type { Account, Database, Industry, Match, Role } from "../types.js"
 
 // How an account's type (validation.ts) is filed among the industries the
@@ -175,11 +175,13 @@ export function browse(database: Database, catalog: "brands" | "groups", account
       const owner = ownerOf(database, catalog, listing)
       const verified = owner?.business ? { ...rated, businessVerified: true as const } : rated
       // A brand on Pro (lib/plan.ts) shows a PRO mark.
-      const checked = catalog === "brands" && owner && isPro(database, owner.id) ? { ...verified, pro: true as const } : verified
+      const pro = catalog === "brands" && owner && isPro(database, owner.id) ? { ...verified, pro: true as const } : verified
+      // A running 상단 광고 (lib/ads.ts) puts it first, marked AD.
+      const checked = owner && adUntil(database, owner.id) ? { ...pro, ad: true as const } : pro
       const there = placeOf(listing, owner)
       return here && there
         ? { ...checked, distanceKm: distanceKm(here, there), mapOffset: offsetMetres(here, there), mapPoint: { lat: there.lat, lng: there.lng } }
         : checked
     })
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => Number(b.ad === true) - Number(a.ad === true) || b.score - a.score)
 }
