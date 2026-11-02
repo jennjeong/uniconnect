@@ -31,7 +31,7 @@ export function WorkCard({
   children,
 }: {
   match: Match
-  // The line at the top left, such as the category or school.
+  // The line at the top left, such as the category.
   meta: ReactNode
   // Ranking on the 인기 tab.
   rank?: number
@@ -55,7 +55,7 @@ export function WorkCard({
     <article className="work-card">
       <div className="work-meta">
         <span>
-          {rank !== undefined && <b className={rank <= 3 ? "work-rank top" : "work-rank"}>#{rank}</b>}
+          {rank !== undefined && <b className={rank <= 3 ? "work-rank top" : "work-rank"}>{t("{rank}위", { rank })}</b>}
           {meta}
         </span>
         <span className="work-meta-actions">

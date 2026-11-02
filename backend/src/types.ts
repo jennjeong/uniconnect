@@ -58,6 +58,9 @@ export type Match = {
   // Which way, in metres east and north of the account browsing, for the
   // catalog map; served with distanceKm.
   mapOffset?: { east: number; north: number }
+  // Where it is, for pins on Kakao's map (a campus from the table, a store
+  // placed through OpenStreetMap); served with mapOffset.
+  mapPoint?: { lat: number; lng: number }
   // Student group catalog only: school, next event (its id for its page) and
   // its expected audience.
   school?: string

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from "vitest"
 
-import { entryView, readView, roleOfPage, viewPath } from "./route"
+import { entryView, menuPageOf, readView, roleOfPage, viewPath } from "./route"
 import { sampleViews } from "./route.samples"
 
 const at = (path: string) => new URL(path, "http://localhost") as unknown as Location
@@ -51,5 +51,18 @@ describe("addresses", () => {
     expect(roleOfPage("대시보드")).toBeUndefined()
     expect(roleOfPage("추천 매칭")).toBe("학생단체")
     expect(roleOfPage("받은 제안")).toBe("브랜드")
+  })
+})
+
+describe("menuPageOf", () => {
+  test("marks the page itself and its brands or groups", () => {
+    expect(menuPageOf({ page: "추천 매칭" }, "추천 매칭")).toBe("추천 매칭")
+    expect(menuPageOf({ page: "추천 매칭", detail: "afternoon-coffee" }, "추천 매칭")).toBe("추천 매칭")
+  })
+
+  test("marks no page on a screen outside the menu, though the view keeps one", () => {
+    expect(menuPageOf({ page: "대시보드", board: true }, "대시보드")).toBeUndefined()
+    expect(menuPageOf({ page: "대시보드", faq: true }, "대시보드")).toBeUndefined()
+    expect(menuPageOf({ page: "대시보드", missing: "/nowhere" }, "대시보드")).toBeUndefined()
   })
 })

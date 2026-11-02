@@ -1,15 +1,19 @@
-import { useState, type ReactNode } from "react"
+import { useCallback, useMemo, useState, type ReactNode } from "react"
 
+import { useSiteState } from "../hooks/useSiteState"
 import { t } from "../i18n"
 import { formatDistance } from "../lib/distance"
 import { catalogScale, mapRings, offsetPosition, spreadPositions } from "../lib/placeMap"
 import type { Match } from "../types"
+import { KakaoMap, type MapPin } from "./KakaoMap"
 
 // A catalog drawn by direction and distance from the account browsing (its
 // campus or store) in the middle, north up, rings out to the farthest
 // (lib/placeMap.ts), as 가까운 순's sketch: each listing a dot to press,
-// whose card shows beside the map. The same search and filters as the list
-// give the listings; those without a place are named under the map.
+// whose card shows beside the map. With a Kakao JavaScript key the same pins
+// sit on Kakao's map (KakaoMap.tsx), centered on the account browsing; without
+// one, or when it fails to load, the sketch. The same search and filters as
+// the list give the listings; those without a place are named under the map.
 export function CatalogMap({
   center,
   matches,
@@ -24,17 +28,49 @@ export function CatalogMap({
   noPlace: string
 }) {
   const [selected, setSelected] = useState<string>()
-  const placed = matches.filter((match) => match.mapOffset)
+  const placed = useMemo(() => matches.filter((match) => match.mapOffset), [matches])
   const unplaced = matches.filter((match) => !match.mapOffset)
   const current = matches.find((match) => match.id === selected) ?? placed[0] ?? matches[0]
   const scale = catalogScale(placed.map((match) => match.mapOffset!))
   const rings = mapRings(scale)
   const positions = spreadPositions(placed.map((match) => offsetPosition(match.mapOffset!, scale.radius)))
   const currentAt = placed.findIndex((match) => match.id === current?.id)
+  const kakaoKey = useSiteState()?.maps?.kakao
+  const [kakaoFailed, setKakaoFailed] = useState(false)
+  const fail = useCallback(() => setKakaoFailed(true), [])
+  const pins = useMemo<MapPin[]>(
+    () =>
+      placed
+        .filter((match) => match.mapPoint)
+        .map((match) => ({
+          id: match.id,
+          name: match.name,
+          lat: match.mapPoint!.lat,
+          lng: match.mapPoint!.lng,
+          tone: "joined",
+          label: t("{name}, {distance}", { name: match.name, distance: formatDistance(match.distanceKm ?? 0) }),
+          detail: formatDistance(match.distanceKm ?? 0),
+        })),
+    [placed],
+  )
+  const home = homeOf(placed)
 
   return (
     <div className="nearby-map catalog-map">
-      {placed.length > 0 ? (
+      {placed.length > 0 && kakaoKey && !kakaoFailed && home ? (
+        <div className="place-map-wrap">
+          <KakaoMap
+            appKey={kakaoKey}
+            center={home}
+            centerName={center}
+            label={t("{center} 기준 지도", { center })}
+            onFail={fail}
+            onSelect={setSelected}
+            pins={pins}
+            selected={current?.id}
+          />
+        </div>
+      ) : placed.length > 0 ? (
         <div className="place-map-wrap">
           <div aria-label={t("{center} 기준 지도", { center })} className="place-map" role="group">
             <svg aria-hidden="true" className="place-map-rings" viewBox="0 0 100 100">
@@ -110,6 +146,17 @@ export function CatalogMap({
       )}
     </div>
   )
+}
+
+// Where the account browsing is: any placed listing's point less its offset
+// (lib/geo.ts's offsetMetres, the other way round).
+function homeOf(placed: Match[]) {
+  const known = placed.find((match) => match.mapPoint && match.mapOffset)
+  if (!known) return undefined
+  const metresPerDegree = 111_320
+  const lat = known.mapPoint!.lat - known.mapOffset!.north / metresPerDegree
+  const lng = known.mapPoint!.lng - known.mapOffset!.east / (metresPerDegree * Math.cos((lat * Math.PI) / 180))
+  return { lat, lng }
 }
 
 export type Layout = "list" | "map"

@@ -52,6 +52,14 @@ export type View = {
   missing?: string
 }
 
+// The menu page a view is on, for the menus to mark: the page itself or one
+// of its brands or groups. Other screens (the board, FAQ, 내 정보, a form…)
+// are on none, so no page shows as picked while they are open.
+export function menuPageOf(view: View, page: NavLabel): NavLabel | undefined {
+  const others = Object.entries(view).filter(([key, value]) => !["page", "detail"].includes(key) && value !== undefined)
+  return others.length === 0 ? page : undefined
+}
+
 // What App keeps in history.state for each entry.
 export type HistoryEntry = {
   view: View

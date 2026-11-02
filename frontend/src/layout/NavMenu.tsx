@@ -36,7 +36,7 @@ export function NavMenu({
   onClose,
 }: {
   role: Role
-  activeNav: NavLabel
+  activeNav?: NavLabel
   account: Account | null
   badges: Partial<Record<NavLabel, number>>
   unreadMessages: number
