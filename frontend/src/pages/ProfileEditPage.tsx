@@ -249,7 +249,7 @@ export function ProfileEditPage({
           </div>
         )}
         {brand && (
-          <div aria-labelledby="store-address" className="field" role="group">
+          <div className="field">
             <span id="store-address">{t("매장 주소")}</span>
             <div className="address-row">
               <input aria-labelledby="store-address" placeholder={t("주소 검색으로 매장을 찾아 주세요")} readOnly value={address} />
