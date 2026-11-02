@@ -1,17 +1,21 @@
+import { inRegion, type Region } from "../data/universities"
 import { t } from "../i18n"
 import type { Match } from "../types"
 
-// The group catalog's filters: how big the next event is, when it is, and
-// the school ("" for any).
+// The group catalog's filters: how big the next event is, when it is, its
+// kind, and the region and school ("" for any).
 export type GroupFilters = {
   size: "all" | "small" | "medium" | "large" | "unknown"
   when: "all" | "thisMonth" | "nextMonth" | "later" | "unknown"
+  // A province or city (data/universities.ts) and one of its schools; empty
+  // for any.
+  region: Region | ""
   school: string
   // The next event's kind (data/eventDetails.ts); empty for any.
   kind: string
 }
 
-export const noGroupFilters: GroupFilters = { size: "all", when: "all", school: "", kind: "" }
+export const noGroupFilters: GroupFilters = { size: "all", when: "all", region: "", school: "", kind: "" }
 
 // Whether a listing has every word typed into the search box, in its name,
 // kind (as stored or as shown), offer, tags, school or next event.
@@ -52,5 +56,6 @@ export function matchesGroupFilters(group: Match, filters: GroupFilters, today: 
   if (filters.when !== "all" && filters.when !== when) return false
 
   if (filters.kind && group.eventKind !== filters.kind) return false
+  if (filters.region && !inRegion(group.school, filters.region)) return false
   return !filters.school || group.school === filters.school
 }

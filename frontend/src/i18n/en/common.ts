@@ -158,6 +158,24 @@ const en: Record<string, string> = {
   "행사 당일 스토리": "Stories on the day",
   "행사 후 후기 게시물": "Recap post after",
   "브랜드 계정 태그": "Brand account tags",
+  // Regions (data/universities.ts).
+  서울: "Seoul",
+  경기: "Gyeonggi",
+  인천: "Incheon",
+  강원: "Gangwon",
+  대전: "Daejeon",
+  세종: "Sejong",
+  충북: "North Chungcheong",
+  충남: "South Chungcheong",
+  광주: "Gwangju",
+  전북: "North Jeolla",
+  전남: "South Jeolla",
+  대구: "Daegu",
+  경북: "North Gyeongsang",
+  부산: "Busan",
+  울산: "Ulsan",
+  경남: "South Gyeongsang",
+  제주: "Jeju",
 }
 
 export default en

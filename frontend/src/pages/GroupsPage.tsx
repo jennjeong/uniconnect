@@ -12,6 +12,7 @@ import { TabBar } from "../components/TabBar"
 import { WorkCard } from "../components/WorkCard"
 import { eventKinds } from "../data/eventDetails"
 import { groupFields } from "../data/industries"
+import { regions, universities, type Region } from "../data/universities"
 import { t } from "../i18n"
 import { todayIso } from "../lib/date"
 import { nearestFirst, shownTags } from "../lib/distance"
@@ -118,7 +119,11 @@ export function GroupsPage({
   const [filters, setFilters] = useState<GroupFilters>(noGroupFilters)
   // The cards as a list, or as dots on a map around the store.
   const [layout, setLayout] = useState<Layout>("list")
-  const schools = [...new Set(groups.flatMap((group) => (group.school ? [group.school] : [])))].sort()
+  // Every school of the picked region, or, for all regions, the schools the
+  // listed groups come from.
+  const schools = filters.region
+    ? universities[filters.region]
+    : [...new Set(groups.flatMap((group) => (group.school ? [group.school] : [])))].sort()
   const filtering = query.trim() !== "" || JSON.stringify(filters) !== JSON.stringify(noGroupFilters)
   const clear = () => {
     setQuery("")
@@ -282,11 +287,25 @@ export function GroupsPage({
           </span>
           <span className="catalog-select">
             <select
+              aria-label={t("지역")}
+              onChange={(event) => setFilters({ ...filters, region: event.target.value as Region | "", school: "" })}
+              value={filters.region}
+            >
+              <option value="">{t("모든 지역")}</option>
+              {regions.map((region) => (
+                <option key={region} value={region}>
+                  {t(region)}
+                </option>
+              ))}
+            </select>
+          </span>
+          <span className="catalog-select">
+            <select
               aria-label={t("학교")}
               onChange={(event) => setFilters({ ...filters, school: event.target.value })}
               value={filters.school}
             >
-              <option value="">{t("모든 학교")}</option>
+              <option value="">{filters.region ? t("{region} 모든 학교", { region: t(filters.region) }) : t("모든 학교")}</option>
               {schools.map((school) => (
                 <option key={school} value={school}>
                   {school}
