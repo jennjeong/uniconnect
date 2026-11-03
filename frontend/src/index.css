@@ -4097,9 +4097,12 @@ button.nav-pill:hover {
   text-align: right;
 }
 
+/* The stage holds the screen for a while before the sheet comes up, so the
+   copy at its bottom can be read first. */
 .journey {
   position: relative;
   z-index: 1;
+  margin-top: 70lvh;
   padding: 104px max(var(--gutter), calc((100% - var(--shell)) / 2)) 112px;
   border-radius: 32px 32px 0 0;
   background: var(--canvas);
@@ -19518,6 +19521,7 @@ span.odometer {
   }
 
   .journey {
+    margin-top: 50lvh;
     padding-block: 64px 72px;
     border-radius: 24px 24px 0 0;
   }
