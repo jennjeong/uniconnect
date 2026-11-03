@@ -253,7 +253,7 @@ function App() {
   const restoreScroll = useRef<number | null>(null)
   // When matches and events were last loaded, shown on the dashboard.
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null)
-  const { notice, showNotice } = useNotice()
+  const { notice, noticeId, showNotice, hideNotice, pauseNotice } = useNotice()
   // How 앱 다운로드 works in this browser (lib/install.ts); "app" inside the
   // installed app, which shows no button.
   const installKind = useInstallState()
@@ -1906,6 +1906,11 @@ function App() {
             <MatchDetailPage
               match={detailMatch}
               kind={students ? "brand" : "group"}
+              viewer={{
+                // A visitor browses as the demo account of its side.
+                name: listing?.name ?? account?.name ?? demoAccounts[role].name,
+                mark: listing ?? { industry: students ? "performance" : "cafe" },
+              }}
               done={proposals.includes(detailMatch.id)}
               status={statuses[detailMatch.id]}
               onBack={() => goBack({ page })}
@@ -2283,7 +2288,7 @@ function App() {
       </Suspense>
 
       <Presence show={notice !== ""}>
-        <Toast message={notice} />
+        <Toast id={noticeId} message={notice} onDismiss={hideNotice} onPause={pauseNotice} />
       </Presence>
     </div>
   )
