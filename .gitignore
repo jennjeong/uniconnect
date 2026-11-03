@@ -3,6 +3,8 @@ dist/
 build/
 .cache/
 .env*
+# The empty template of the keys (backend/.env.example) is shared.
+!.env.example
 .vite/
 vite.config.*.timestamp-*
 *.tsbuildinfo
