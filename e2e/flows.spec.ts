@@ -1268,9 +1268,19 @@ test("brands show how far their store is from the school, and a brand keeps its 
   // The address is found, not typed; the offers are picked; 기본 정보 fills in.
   await expect(brand.getByLabel("매장 주소")).toHaveValue("서울 노원구 공릉역 2번 출구 앞")
   await expect(brand.getByLabel("매장 주소")).not.toBeEditable()
-  await expect(brand.getByRole("button", { name: "할인 쿠폰" })).toHaveAttribute("aria-pressed", "true")
-  await brand.getByRole("button", { name: "부스 운영" }).click()
-  await expect(brand.locator(".auto-facts")).toContainText("서울 노원구")
+  await expect(brand.getByLabel("협찬 종류").first()).toHaveValue("할인 쿠폰")
+  await expect(brand.getByLabel("협찬 내용").first()).toHaveValue("150장")
+  await brand.getByRole("button", { name: "협찬 추가" }).click()
+  await expect(brand.getByLabel("협찬 종류")).toHaveCount(4)
+  // What it can't edit stands apart, filled in from its activity.
+  await expect(brand.getByRole("group", { name: /저절로 채워지는 정보/ })).toContainText("서울 노원구")
+  // 불러오기 adds a past sponsorship to the portfolio.
+  const rows = await brand.getByLabel("제목", { exact: true }).count()
+  await brand.getByRole("button", { name: "지난 협찬 불러오기" }).click()
+  const pick = brand.getByRole("dialog").locator("label.check-row:not(.checked)").first()
+  await pick.click()
+  await brand.getByRole("button", { name: /개 더하기$/ }).click()
+  await expect(brand.getByLabel("제목", { exact: true })).toHaveCount(rows + 1)
   await expect(brand.getByLabel("팔로워")).toHaveCount(0)
   await brand.getByRole("button", { name: "주소 검색" }).click()
   await brand.getByRole("button", { name: "화랑로 815 고르기" }).click()

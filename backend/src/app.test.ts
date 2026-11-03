@@ -2256,7 +2256,7 @@ test("accounts write the listing the other side sees", async () => {
     "/profile",
     {
       ...typed,
-      offers: ["제품 협찬", "없는 협찬", "할인 쿠폰"],
+      offers: [{ kind: "제품 협찬" }, { kind: "없는 협찬" }, { kind: "할인 쿠폰", detail: " 100장 " }, { kind: "할인 쿠폰" }],
       tags: ["직접 쓴 태그"],
       facts: [{ label: "평균 응답", value: "1분 이내" }],
       sns: [{ platform: "인스타그램", handle: "@newbrand", followers: "9,999명" }],
@@ -2264,8 +2264,10 @@ test("accounts write the listing the other side sees", async () => {
     newBrand,
   )
   assert.equal(created.data.profile.industry, "education")
-  assert.deepEqual(created.data.profile.offers, ["제품 협찬", "할인 쿠폰"])
-  assert.equal(created.data.profile.offer, "제품 협찬 · 할인 쿠폰")
+  assert.deepEqual(created.data.profile.offers, [{ kind: "제품 협찬" }, { kind: "할인 쿠폰", detail: "100장" }])
+  assert.equal(created.data.profile.offer, "제품 협찬 · 할인 쿠폰 100장")
+  const long = { ...typed, offers: [{ kind: "현금 후원", detail: "가".repeat(31) }] }
+  assert.equal((await call("PUT", "/profile", long, newBrand)).status, 400)
   assert.deepEqual(created.data.profile.sns, [{ platform: "인스타그램", handle: "@newbrand" }])
   // Its 기본 정보 and tags come from what it does: its offers so far.
   assert.deepEqual(created.data.profile.facts, [{ label: "제공 서비스", value: "제품 협찬 · 할인 쿠폰" }])
@@ -2277,6 +2279,22 @@ test("accounts write the listing the other side sees", async () => {
   assert.ok((await named(await signUpMember("finder@syu.ac.kr", "finder-pass-123"))).includes("새로운 브랜드"))
   assert.ok(!(await named()).includes("새로운 브랜드"))
   assert.ok(!(await named(student)).includes("새로운 브랜드"))
+})
+
+test("불러오기 offers a brand's past sponsorships and a group's past events as portfolio rows", async () => {
+  const brand = await login("브랜드")
+  const { items } = (await call("GET", "/profile/history", undefined, brand)).data as {
+    items: { id: string; date: string; title: string; detail: string }[]
+  }
+  assert.ok(items.length > 0)
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date())
+  assert.ok(items.every((item) => item.date <= today && /\(\d{4}\.\d{2}\)$/.test(item.title) && item.title.length <= 40))
+  // Newest first.
+  assert.deepEqual(items.map((item) => item.date), [...items.map((item) => item.date)].sort().reverse())
+  const group = await login("학생단체")
+  const events = (await call("GET", "/profile/history", undefined, group)).data.items as { date: string }[]
+  assert.ok(events.every((item) => item.date < today))
+  assert.equal((await call("GET", "/profile/history")).status, 401)
 })
 
 test("the proposal state lists what an account sent, until it is taken back", async () => {

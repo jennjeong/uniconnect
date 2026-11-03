@@ -7,10 +7,11 @@ import { geocode } from "../lib/geocode.js"
 import { createRateLimit } from "../lib/rateLimit.js"
 import { isDemoAccount } from "../lib/reviews.js"
 import { brandProfile } from "../lib/brandProfile.js"
+import { portfolioHistory } from "../lib/portfolioHistory.js"
 import { brandOffers, factLabels, snsPlatforms, text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
-import type { Match, Role } from "../types.js"
+import type { BrandOffer, Match, Role } from "../types.js"
 
 export const profileRouter = Router()
 
@@ -31,11 +32,30 @@ function parseLogo(value: unknown) {
   return value
 }
 
-// A brand's offer line from its picks: all of them while they fit the
-// card, else the first three and how many more.
-export function offerLine(offers: string[]) {
-  const all = offers.join(" · ")
-  return all.length <= 40 ? all : `${offers.slice(0, 3).join(" · ")} 외 ${offers.length - 3}`
+// A brand's offer line from its rows ("할인 쿠폰 150장 · 현금 후원 20만원"):
+// as many as fit the card, then how many more.
+export function offerLine(offers: BrandOffer[]) {
+  const parts = offers.map((item) => (item.detail ? `${item.kind} ${item.detail}` : item.kind))
+  let shown = parts.length
+  while (shown > 1 && parts.slice(0, shown).join(" · ").length > 40) shown -= 1
+  const line = parts.slice(0, shown).join(" · ")
+  return shown < parts.length ? `${line} 외 ${parts.length - shown}` : line
+}
+
+// A brand's offer rows: each a listed kind, once, with what of it (30
+// characters at most); a plain kind counts as a row without one.
+function parseOffers(value: unknown): BrandOffer[] {
+  const seen = new Set<string>()
+  const items: BrandOffer[] = []
+  for (const row of Array.isArray(value) ? value : []) {
+    const kind = text(typeof row === "string" ? row : (row as Record<string, unknown> | undefined)?.kind)
+    const detail = typeof row === "string" ? "" : text((row as Record<string, unknown> | undefined)?.detail)
+    if (!brandOffers.includes(kind) || seen.has(kind)) continue
+    if (detail.length > 30) throw new HttpError(400, "협찬 내용은 30자 이하로 적어 주세요.")
+    seen.add(kind)
+    items.push(detail ? { kind, detail } : { kind })
+  }
+  return items
 }
 
 // The parts of a listing an account writes itself. A brand picks its offers
@@ -48,7 +68,7 @@ function parseProfile(body: unknown, role: Role) {
   if (intro.length < 10 || intro.length > 300) {
     throw new HttpError(400, "소개는 10자 이상 300자 이하로 적어 주세요.")
   }
-  const offers = brand ? brandOffers.filter((item) => rows(input.offers).map(String).includes(item)) : []
+  const offers = brand ? parseOffers(input.offers) : []
   if (brand && offers.length === 0) throw new HttpError(400, "제공하는 협찬을 하나 이상 골라 주세요.")
   const offer = brand ? offerLine(offers) : text(input.offer)
   if (!offer || offer.length > 60) {
@@ -188,6 +208,12 @@ profileRouter.put("/pause", async (req, res) => {
   else delete listing.pausedAt
   await saveDatabase()
   res.json({ profile: listing })
+})
+
+// Past sponsorships or events to add to the portfolio (소개 편집's 불러오기).
+profileRouter.get("/history", (req, res) => {
+  const account = requireAccount(req)
+  res.json({ items: portfolioHistory(getDatabase(), account) })
 })
 
 // The logged-in account's own listing, or null before it has written one.

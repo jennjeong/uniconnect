@@ -213,8 +213,12 @@ export function upgradeDatabase(stored: Database) {
     : undefined
   if (tasting) tasting.budget ??= 800000
   // Brands pick their offers now; the demo brand's are its seeded ones.
+  // Offers saved as plain kinds become rows.
   const demoListing = stored.brands?.find((brand) => brand.id === "afternoon-coffee")
   if (demoListing) demoListing.offers ??= seedBrands[0].offers
+  for (const brand of stored.brands ?? []) {
+    if (brand.offers) brand.offers = brand.offers.map((item) => (typeof item === "string" ? { kind: item } : item))
+  }
   // The demo group's concert gained its event page.
   const demoGroupId = stored.demoAccountIds?.학생단체
   const concert = demoGroupId

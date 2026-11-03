@@ -16,6 +16,12 @@ export type SnsAccount = { platform: string; handle: string; followers?: string 
 // Brands: past collaborations; student groups: past events and sponsorships.
 export type PortfolioItem = { title: string; detail: string }
 
+// A past sponsorship or event 소개 편집's 불러오기 offers as a portfolio row.
+export type HistoryItem = { id: string; date: string; title: string; detail: string }
+
+// One thing a brand offers: its kind (brandOffers) and how much of it.
+export type BrandOffer = { kind: string; detail?: string }
+
 export type Match = {
   id: string
   name: string
@@ -23,9 +29,9 @@ export type Match = {
   industry: Industry
   logo?: string
   offer: string
-  // A brand's offers as picked on its profile (data/profile.ts brandOffers);
-  // its offer line is made from them.
-  offers?: string[]
+  // A brand's offers, one row each as on its profile: a kind from
+  // brandOffers and what of it ("150장"); its offer line is made from them.
+  offers?: BrandOffer[]
   // Match for the account browsing, with the reasons that count most and
   // each part of it as a share of its best (0 to 1).
   score: number
@@ -817,6 +823,7 @@ export type NavLabel =
   | "성과 분석"
 
 export type ModalName =
+  | "portfolio-history"
   | "plan"
   | "compare"
   | "propose-many"

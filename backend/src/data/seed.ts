@@ -40,7 +40,7 @@ export const seedBrands: Match[] = [
     category: "카페 · 식음료",
     industry: "cafe",
     offer: "쿠폰 150장 + 현금 20만원",
-    offers: ["할인 쿠폰", "현금 후원", "시음 · 샘플링"],
+    offers: [{ kind: "할인 쿠폰", detail: "150장" }, { kind: "현금 후원", detail: "20만원" }, { kind: "시음 · 샘플링" }],
     score: 94,
     tags: ["대학생 선호", "반경 1.2km"],
     popularity: 32,

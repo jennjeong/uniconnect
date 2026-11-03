@@ -11,7 +11,7 @@ export function brandProfile(database: Database, stored: Match): Match {
   const owner = database.accounts.find((account) => account.brandId === listing.id)
   if (!owner) return listing
   const place = district(listing.location?.address)
-  const offers = listing.offers ?? []
+  const offers = (listing.offers ?? []).map((item) => item.kind)
   const kinds = sponsoredKinds(database, owner.id, listing.id)
   const answerHours = averageAnswerHours(database, listing.id)
   const sponsored = database.sponsorships[owner.id]?.length ?? 0
