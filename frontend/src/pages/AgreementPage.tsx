@@ -895,7 +895,7 @@ function ValuePanel({
                         ? t("결제했어요")
                         : fee.paid > 0
                           ? t("{paid} 결제 · {due} 남음", { paid: fullWon(fee.paid), due: fullWon(fee.due) })
-                          : t("협찬액의 {rate}% · 부가세 포함", { rate: Math.round(fee.rate * 100) })}
+                          : t("협찬액의 {rate}% · 부가세 별도", { rate: Math.round(fee.rate * 100) })}
                   </small>
                 </>
               ) : (

@@ -221,8 +221,8 @@ const en: Record<string, string> = {
   "서버 장애에 대비한 백업에는 지운 내용이 최대 24시간 남아 있다가 새 백업으로 바뀌며 사라져요.":
     "Backups kept against server failures may hold deleted data for up to 24 hours, until newer backups replace them.",
   // Paid services (the business plan's revenue model)
-  "학생단체는 상단 광고 말고는 서비스를 무료로 써요. 브랜드는 아래 유료 서비스를 이용할 때 결제해요. 금액은 모두 부가세를 포함해요.":
-    "Student groups use the service for free, except for top ads. Brands pay for the paid services below. All amounts include VAT.",
+  "학생단체는 상단 광고 말고는 서비스를 무료로 써요. 브랜드는 아래 유료 서비스를 이용할 때 결제해요. 아래 금액은 부가세 별도이고, 결제할 때 부가세 10%를 더해요.":
+    "Student groups use the service for free, except for top ads. Brands pay for the paid services below. The amounts below exclude VAT, and 10% VAT is added at checkout.",
   "성사 수수료: 협찬이 확정될 때 협찬액(현금과 현물 환산 금액을 더한 값)의 15%를 브랜드가 내요. 브랜드는 임시 전자 계약서를 확인할 때 이 수수료를 결제하고, 협찬액을 올리면 늘어난 만큼을 더 내요.":
     "Success fee: when a sponsorship is confirmed, the brand pays 15% of its value (cash plus the value of what is given in kind). The brand pays it when confirming the provisional e-contract, and pays the difference if the value goes up.",
   "결제는 토스페이먼츠의 카드 결제창이나 계좌 입금으로 해요. 계좌 입금은 운영자가 입금을 확인하면 반영돼요. 카드 정보는 서비스가 받지 않고 토스페이먼츠가 처리해요.":

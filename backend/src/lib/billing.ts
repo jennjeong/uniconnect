@@ -4,8 +4,9 @@ import { config } from "../config.js"
 import type { Account, Database, Payment, PaymentKind } from "../types.js"
 import { HttpError } from "./errors.js"
 
-// The business plan's revenue model (표 9) as prices, VAT included: brands
-// pay; student groups pay only for their own ads.
+// The business plan's revenue model (표 9) as prices before VAT, which is
+// added on top when an order is made (vatOf): brands pay; student groups pay
+// only for their own ads.
 export const prices = {
   // Of a sponsorship's value, cash and in-kind, when both sides confirm it.
   feeRate: 0.15,
@@ -21,7 +22,19 @@ export const prices = {
   adGroup: 10_000,
   adDays: 30,
   adRenewalDiscount: 0.1,
+  // VAT, added to every price at checkout.
+  vatRate: 0.1,
 } as const
+
+// The VAT on a price, in whole won.
+export const vatOf = (supply: number) => Math.round(supply * prices.vatRate)
+
+// What a price comes to with VAT.
+export const withVat = (supply: number) => supply + vatOf(supply)
+
+// The part of a paid amount its price covered: payments from before VAT
+// was added on top carry no supply and covered their whole amount.
+export const supplyOf = (payment: Payment) => payment.supply ?? payment.amount
 
 // Toss Payments' payment window takes the client key; the server confirms
 // each payment with the secret key, which never leaves it. Without both,
@@ -70,7 +83,7 @@ export const toss = {
   },
 }
 
-// What each kind costs and is called for an account and its target, and
+// What each kind costs before VAT and is called for an account and its target, and
 // what paying for it does; registered by the features that sell them
 // (lib/fees.ts, lib/premiumReport.ts, lib/pro.ts).
 type Product = {
@@ -104,20 +117,20 @@ export const paidFor = (database: Database, accountId: string, kind: PaymentKind
   )
 
 // An order for the account: its waiting one for the same thing when there
-// is one, at today's price, else a new one.
+// is one, at today's price with VAT, else a new one.
 export function orderFor(database: Database, account: Account, kind: string, requested: string) {
   const product = productOf(kind)
   const targetId = product.targetless ? "" : requested
   const { amount, orderName } = product.quote(database, account, targetId)
   if (amount <= 0) throw new HttpError(409, "결제할 금액이 없어요.")
+  const priced = { supply: amount, amount: withVat(amount) }
   account.customerKey ??= `uc_${randomBytes(18).toString("base64url")}`
   const payments = paymentsOf(database)
   const waiting = payments.find(
     (payment) => payment.accountId === account.id && payment.kind === kind && payment.targetId === targetId && payment.status === "pending",
   )
   if (waiting) {
-    waiting.amount = amount
-    waiting.orderName = orderName
+    Object.assign(waiting, priced, { orderName })
     return waiting
   }
   const payment: Payment = {
@@ -127,7 +140,7 @@ export function orderFor(database: Database, account: Account, kind: string, req
     kind: kind as PaymentKind,
     targetId,
     orderName,
-    amount,
+    ...priced,
     status: "pending",
     requestedAt: new Date().toISOString(),
   }

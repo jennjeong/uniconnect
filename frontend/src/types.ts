@@ -194,7 +194,10 @@ export type Payment = {
   kind: PaymentKind
   targetId: string
   orderName: string
+  // Charged, VAT included; supply is the price before VAT (missing on
+  // payments from before VAT was added on top).
   amount: number
+  supply?: number
   status: "pending" | "paid" | "cancelled"
   method?: "card" | "transfer" | "grant"
   receiptUrl?: string
@@ -209,7 +212,7 @@ export type Payment = {
 
 // Prices, whether card payment is on, and the account's payments.
 export type BillingInfo = {
-  prices: { feeRate: number; report: number; pro: number; proDays: number; adBrand: number; adGroup: number; adDays: number; adRenewalDiscount: number }
+  prices: { feeRate: number; report: number; pro: number; proDays: number; adBrand: number; adGroup: number; adDays: number; adRenewalDiscount: number; vatRate: number }
   card: { clientKey: string } | null
   // Toss test keys: no money moves, and the demo accounts may pay to show it.
   testMode: boolean

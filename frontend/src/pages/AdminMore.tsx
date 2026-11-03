@@ -310,8 +310,9 @@ export function RevenuePanel({ payments }: { payments: AdminPayment[] }) {
                 kinds.map((kind) => {
                   const rows = paid.filter((payment) => payment.kind === kind && (payment.paidAt ?? payment.requestedAt).startsWith(month))
                   const total = rows.reduce((sum, row) => sum + row.amount, 0)
-                  const vat = Math.round(total / 11)
-                  return [month, t(kindLabels[kind]), rows.length, total, total - vat, vat]
+                  // Payments from before VAT was added on top had it inside.
+                  const supply = rows.reduce((sum, row) => sum + (row.supply ?? row.amount - Math.round(row.amount / 11)), 0)
+                  return [month, t(kindLabels[kind]), rows.length, total, supply, total - supply]
                 }),
               ),
             ]}

@@ -9,8 +9,9 @@ import { payByCard } from "../lib/payments"
 import { fullWon } from "../lib/sponsorships"
 import type { BillingInfo, PaymentKind } from "../types"
 
-// Pays for one thing a brand buys (backend lib/billing.ts): what it is and
-// costs, VAT included, agreeing to the paid terms, then Toss Payments' card
+// Pays for one thing a brand buys (backend lib/billing.ts): what it is, its
+// price and the VAT added on top (as the server's vatOf works it out),
+// agreeing to the paid terms, then Toss Payments' card
 // window, which comes back to this page, or a request to pay by bank
 // transfer, which the operators confirm. Without Toss keys only the
 // transfer is offered. Pages open it, so it goes to the end of the body to
@@ -27,7 +28,8 @@ export function PaymentModal({
   kind: PaymentKind
   targetId: string
   title: string
-  // What is due, as the page last saw it; the order says the final amount.
+  // The price before VAT, as the page last saw it; the order says the final
+  // amount.
   amount: number
   // What is being bought, as label and value rows.
   lines: { label: string; value: string }[]
@@ -53,6 +55,9 @@ export function PaymentModal({
       cancelled = true
     }
   }, [])
+
+  const vat = billing ? Math.round(amount * billing.prices.vatRate) : undefined
+  const total = amount + (vat ?? 0)
 
   const pay = async (how: "card" | "transfer") => {
     if (!agreed) {
@@ -88,10 +93,18 @@ export function PaymentModal({
               <dd>{line.value}</dd>
             </div>
           ))}
+          <div>
+            <dt>{t("공급가액")}</dt>
+            <dd>{fullWon(amount)}</dd>
+          </div>
+          <div>
+            <dt>{t("부가세 ({rate}%)", { rate: Math.round((billing?.prices.vatRate ?? 0.1) * 100) })}</dt>
+            <dd>{vat === undefined ? "…" : fullWon(vat)}</dd>
+          </div>
           <div className="payment-total">
             <dt>{t("결제 금액")}</dt>
             <dd>
-              {fullWon(amount)}
+              {vat === undefined ? "…" : fullWon(total)}
               <small>{t("부가세 포함")}</small>
             </dd>
           </div>
@@ -120,7 +133,7 @@ export function PaymentModal({
           <div className="payment-actions">
             {billing.card ? (
               <button className="primary-button wide" disabled={busy} onClick={() => void pay("card")} type="button">
-                {t("카드로 {amount} 결제하기", { amount: fullWon(amount) })}
+                {t("카드로 {amount} 결제하기", { amount: fullWon(total) })}
               </button>
             ) : (
               <p className="payment-note">{t("카드 결제는 준비 중이에요. 계좌 입금을 요청하면 운영자가 입금 계좌를 안내하고 입금이 확인되면 바로 반영돼요.")}</p>

@@ -758,8 +758,11 @@ export type Payment = {
   // The agreement a fee is for, the sponsorship a report is for; empty for Pro.
   targetId: string
   orderName: string
-  // Won, VAT included.
+  // Won charged, VAT included.
   amount: number
+  // The price before VAT; missing on payments from before VAT was added on
+  // top, whose amount was the whole price.
+  supply?: number
   status: "pending" | "paid" | "cancelled"
   // How it was paid: by card through Toss Payments, or by bank transfer an
   // operator confirmed.

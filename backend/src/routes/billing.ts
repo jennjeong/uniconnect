@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto"
 import { Router } from "express"
 
 import { config } from "../config.js"
-import { cardReady, markPaid, orderFor, paymentsOf, paymentView, prices, productOf, testMode, toss } from "../lib/billing.js"
+import { cardReady, markPaid, orderFor, paymentsOf, paymentView, prices, productOf, testMode, toss, withVat } from "../lib/billing.js"
 import { HttpError } from "../lib/errors.js"
 // What brands can buy, each registered with lib/billing.ts.
 import "../lib/feeSales.js"
@@ -99,8 +99,8 @@ billingRouter.post("/confirm", async (req, res) => {
   // Priced again now: an order made earlier (a renewal discount since run
   // out, an old price) isn't approved at its stale amount.
   const quoted = productOf(payment.kind).quote(getDatabase(), account, payment.targetId).amount
-  if (quoted !== payment.amount) {
-    payment.amount = quoted
+  if (withVat(quoted) !== payment.amount) {
+    Object.assign(payment, { supply: quoted, amount: withVat(quoted) })
     await saveDatabase()
     throw new HttpError(409, "금액이 바뀌었어요. 바뀐 금액으로 다시 결제해 주세요.")
   }
