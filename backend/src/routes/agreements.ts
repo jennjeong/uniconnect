@@ -18,6 +18,7 @@ import {
 } from "../lib/agreements.js"
 import { todayInKorea } from "../lib/dates.js"
 import { feeState, parseValue } from "../lib/fees.js"
+import { rewardReferrals, tellReferrers } from "../lib/referrals.js"
 import { HttpError } from "../lib/errors.js"
 import { ensureMeasurement } from "../lib/measurements.js"
 import { methodsOf, parseMethods } from "../lib/methods.js"
@@ -267,7 +268,10 @@ agreementsRouter.post("/:id/confirm", async (req, res) => {
     if (fee.due > 0) throw new HttpError(402, "플랫폼 수수료를 결제하면 확인돼요.")
   }
   const both = confirmAgreement(database, agreement, proposal, side)
+  // Each side's first confirmed sponsorship rewards whoever invited it (친구 초대).
+  const rewarded = both ? rewardReferrals(database, [proposal.group.account, proposal.brand.account]) : []
   await saveDatabase()
+  tellReferrers(rewarded)
   void notify(
     side === "group" ? proposal.brand.account : proposal.group.account,
     "sponsorships",

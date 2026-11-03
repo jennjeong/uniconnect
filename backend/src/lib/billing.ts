@@ -75,6 +75,9 @@ export const toss = {
 // (lib/fees.ts, lib/premiumReport.ts, lib/pro.ts).
 type Product = {
   quote: (database: Database, account: Account, targetId: string) => { amount: number; orderName: string }
+  // Bought for the account itself (Pro, an ad), not one of its things: one
+  // waiting order at a time, whatever target is sent.
+  targetless?: true
   fulfil?: (database: Database, payment: Payment) => void
   // Undoes `fulfil` when a payment is refunded.
   revoke?: (database: Database, payment: Payment) => void
@@ -86,7 +89,7 @@ export function sell(kind: PaymentKind, product: Product) {
   products.set(kind, product)
 }
 
-function productOf(kind: string) {
+export function productOf(kind: string) {
   const product = products.get(kind as PaymentKind)
   if (!product) throw new HttpError(404, "판매하지 않는 상품이에요.")
   return product
@@ -102,8 +105,9 @@ export const paidFor = (database: Database, accountId: string, kind: PaymentKind
 
 // An order for the account: its waiting one for the same thing when there
 // is one, at today's price, else a new one.
-export function orderFor(database: Database, account: Account, kind: string, targetId: string) {
+export function orderFor(database: Database, account: Account, kind: string, requested: string) {
   const product = productOf(kind)
+  const targetId = product.targetless ? "" : requested
   const { amount, orderName } = product.quote(database, account, targetId)
   if (amount <= 0) throw new HttpError(409, "결제할 금액이 없어요.")
   account.customerKey ??= `uc_${randomBytes(18).toString("base64url")}`
@@ -136,6 +140,20 @@ export function markPaid(database: Database, payment: Payment, details: Pick<Pay
   if (payment.status === "paid") return
   Object.assign(payment, details, { status: "paid", paidAt: details.paidAt ?? new Date().toISOString() })
   productOf(payment.kind).fulfil?.(database, payment)
+}
+
+// A refunded month of Pro or an ad takes its days back: later paid months
+// of the same kind, which were added after it, move back by its days.
+export function shiftLaterPeriods(database: Database, payment: Payment, days: number) {
+  const end = payment.periodEnd
+  if (!end) return
+  for (const later of paymentsOf(database)) {
+    if (later === payment || later.accountId !== payment.accountId || later.kind !== payment.kind) continue
+    if (later.status !== "paid" || !later.periodEnd || later.periodEnd <= end) continue
+    const date = new Date(`${later.periodEnd}T00:00:00Z`)
+    date.setUTCDate(date.getUTCDate() - days)
+    later.periodEnd = date.toISOString().slice(0, 10)
+  }
 }
 
 // Cancels a waiting order, or takes back a paid one after its refund.

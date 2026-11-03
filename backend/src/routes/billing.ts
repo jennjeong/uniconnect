@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto"
 import { Router } from "express"
 
 import { config } from "../config.js"
-import { cardReady, markPaid, orderFor, paymentsOf, paymentView, prices, testMode, toss } from "../lib/billing.js"
+import { cardReady, markPaid, orderFor, paymentsOf, paymentView, prices, productOf, testMode, toss } from "../lib/billing.js"
 import { HttpError } from "../lib/errors.js"
 // What brands can buy, each registered with lib/billing.ts.
 import "../lib/feeSales.js"
@@ -96,6 +96,14 @@ billingRouter.post("/confirm", async (req, res) => {
   }
   const payment = ownWaiting(account.id, orderId)
   if (!paymentKey || amount !== payment.amount) throw new HttpError(400, "결제 금액이 주문과 달라요. 다시 결제해 주세요.")
+  // Priced again now: an order made earlier (a renewal discount since run
+  // out, an old price) isn't approved at its stale amount.
+  const quoted = productOf(payment.kind).quote(getDatabase(), account, payment.targetId).amount
+  if (quoted !== payment.amount) {
+    payment.amount = quoted
+    await saveDatabase()
+    throw new HttpError(409, "금액이 바뀌었어요. 바뀐 금액으로 다시 결제해 주세요.")
+  }
   const approved = await toss.confirm(paymentKey, orderId, amount)
   if (approved.status !== "DONE" || approved.totalAmount !== payment.amount) {
     throw new HttpError(402, "결제가 끝나지 않았어요. 다시 시도해 주세요.")

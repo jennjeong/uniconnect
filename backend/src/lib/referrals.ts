@@ -31,13 +31,16 @@ export function referrerOf(database: Database, code: unknown) {
   return account && !isDemoAccount(database, account) && !account.suspendedAt ? account : undefined
 }
 
-// After a sponsorship is accepted: each side that signed up through someone's
-// link and hadn't yet had a sponsorship rewards that someone once, a brand
-// with Partners days. Answers who was rewarded for whom, to tell them.
-export function rewardReferrals(database: Database, accounts: (Account | undefined)[], now = new Date()) {
+// Once both sides confirm a sponsorship's e-contract (the brand having paid
+// its fee): each side that signed up through someone's link and hadn't yet
+// had a sponsorship rewards that someone once, a brand with Partners days.
+// A sponsorship with the inviter itself rewards no one, so an account can't
+// invite itself a partner. Answers who was rewarded for whom, to tell them.
+export function rewardReferrals(database: Database, accounts: [Account | undefined, Account | undefined], now = new Date()) {
   const rewarded: { referrer: Account; joined: Account; days: number }[] = []
-  for (const joined of accounts) {
+  for (const [index, joined] of accounts.entries()) {
     if (!joined?.referredBy || joined.referralRewardedAt) continue
+    if (accounts[1 - index]?.id === joined.referredBy) continue
     joined.referralRewardedAt = now.toISOString()
     const referrer = database.accounts.find((item) => item.id === joined.referredBy)
     if (!referrer || referrer.suspendedAt) continue

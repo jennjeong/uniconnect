@@ -133,17 +133,24 @@ teamRouter.post("/join", async (req, res) => {
   const limitKey = `${clientKey(req)} ${email}`
   await joinFailures.take(limitKey)
   const database = getDatabase()
-  const account = database.accounts.find((item) =>
-    item.memberInvites?.some((invite) => invite.email === email && invite.expiresAt > Date.now()),
+  // Every live invitation to this email, as several accounts may invite it;
+  // the code says which one it is, so an earlier invitation from someone
+  // else can't stand in the way.
+  const invites = database.accounts.flatMap((item) =>
+    (item.memberInvites ?? []).filter((invite) => invite.email === email && invite.expiresAt > Date.now()).map((invite) => ({ account: item, invite })),
   )
-  const invite = account?.memberInvites?.find((item) => item.email === email && item.expiresAt > Date.now())
-  if (!account || !invite) throw new HttpError(400, "이 이메일로 온 초대가 없거나 기간이 지났어요. 대표에게 다시 초대해 달라고 해 주세요.")
-  if (invite.codeHash !== codeHash(email, String(req.body?.code ?? ""))) {
-    invite.tries += 1
-    if (invite.tries >= inviteTries) account.memberInvites = account.memberInvites!.filter((item) => item !== invite)
+  if (invites.length === 0) throw new HttpError(400, "이 이메일로 온 초대가 없거나 기간이 지났어요. 대표에게 다시 초대해 달라고 해 주세요.")
+  const hash = codeHash(email, String(req.body?.code ?? ""))
+  const found = invites.find((item) => item.invite.codeHash === hash)
+  if (!found) {
+    for (const { account: inviter, invite } of invites) {
+      invite.tries += 1
+      if (invite.tries >= inviteTries) inviter.memberInvites = inviter.memberInvites!.filter((item) => item !== invite)
+    }
     await saveDatabase()
     throw new HttpError(400, "초대 코드가 올바르지 않아요.")
   }
+  const { account, invite } = found
   if (account.suspendedAt) throw new HttpError(403, "운영 정책에 따라 이용이 정지된 계정이에요.")
   const password = checkPassword(String(req.body?.password ?? ""))
   // Used up before the slow hash, so one code makes one co-admin.

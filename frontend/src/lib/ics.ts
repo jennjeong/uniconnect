@@ -12,8 +12,11 @@ export type CalendarEntry = {
   description?: string
 }
 
+// Text in a calendar file: backslash, semicolon and comma escaped, and every
+// line break (a lone carriage return too) written as \n, so a value can't
+// start a line of its own.
 const escapeText = (text: string) =>
-  text.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n")
+  text.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r\n|\r|\n/g, "\\n")
 
 export const compact = (date: string) => date.replace(/-/g, "")
 

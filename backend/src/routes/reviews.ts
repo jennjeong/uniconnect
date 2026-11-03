@@ -4,14 +4,7 @@ import { acceptedProposal, sideIn } from "../lib/agreements.js"
 import { findListing } from "../lib/catalog.js"
 import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
-import {
-  isDemoAccount,
-  publicReview,
-  reviewOpen,
-  reviewSummary,
-  reviewTarget,
-  reviewsAbout,
-} from "../lib/reviews.js"
+import { agreementHeld, isDemoAccount, publicReview, reviewOpen, reviewsAbout, reviewSummary, reviewTarget } from "../lib/reviews.js"
 import { reviewTags, text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -42,6 +35,12 @@ reviewsRouter.put("/:proposalId", async (req, res) => {
   if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 후기를 쓸 수 없어요.")
   if (proposal.canceled) throw new HttpError(409, "취소된 협찬에는 후기를 남길 수 없어요.")
   if (!reviewOpen(proposal)) throw new HttpError(409, "행사 날부터 후기를 쓸 수 있어요.")
+  // Only a sponsorship both sides confirmed on its e-contract (the brand
+  // having paid its fee), so a pair of accounts can't trade reviews for an
+  // agreement that never held.
+  if (!agreementHeld(database, proposal)) {
+    throw new HttpError(409, "양쪽이 임시 전자 계약서를 확인한 협찬에만 후기를 남길 수 있어요.")
+  }
   const aboutId = reviewTarget(proposal, side)
   const listings = side === "group" ? database.brands : database.groups
   if (!aboutId || !listings.some((listing) => listing.id === aboutId)) {

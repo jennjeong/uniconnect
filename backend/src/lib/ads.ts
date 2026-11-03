@@ -1,4 +1,4 @@
-import { prices, sell } from "./billing.js"
+import { prices, sell, shiftLaterPeriods } from "./billing.js"
 import { addDays, todayInKorea } from "./dates.js"
 import { HttpError } from "./errors.js"
 import { adUntil } from "./plan.js"
@@ -26,6 +26,7 @@ export function adOf(database: Database, account: Account) {
 }
 
 sell("ad", {
+  targetless: true,
   quote(database, account) {
     if (!findListing(database, account)) throw new HttpError(409, "소개를 먼저 등록해야 광고할 수 있어요.")
     const { amount, renewing } = adPrice(database, account)
@@ -39,5 +40,9 @@ sell("ad", {
     const until = adUntil(database, payment.accountId)
     const from = until ? addDays(until, 1) : todayInKorea()
     payment.periodEnd = addDays(from, prices.adDays - 1)
+  },
+  // Refunded: the months paid after it move back by its days.
+  revoke(database, payment) {
+    shiftLaterPeriods(database, payment, prices.adDays)
   },
 })

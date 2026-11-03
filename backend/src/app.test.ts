@@ -298,16 +298,30 @@ test("an invitation link's code ties a sign-up to its inviter, rewarded once at 
   assert.equal(groupAccount.referredBy, brandAccount.id)
   assert.equal(getDatabase().accounts.find((account) => account.email === "invite-wrong@syu.ac.kr")!.referredBy, undefined)
   assert.equal((await call("GET", "/auth/referral", undefined, brand)).data.joined, 1)
-  // Its first accepted sponsorship gives the inviting brand Partners days, once.
   const grants = () => (getDatabase().payments ?? []).filter((item) => item.accountId === brandAccount.id && item.orderName.includes("친구 초대 보상"))
-  for (const name of ["초대 공연", "초대 공연 2"]) {
+  const propose = async (name: string, to: string, token: string) => {
     await call("POST", "/events", { name, date: "2026-12-24", people: "100명", types: ["제품"] }, group)
-    const sent = await call("POST", "/proposals", { matchId: listingId }, group)
-    assert.equal(sent.status, 201)
+    assert.equal((await call("POST", "/proposals", { matchId: to }, group)).status, 201)
     const request = getDatabase().requests.filter((item) => item.fromAccountId === groupAccount.id && item.status === "검토 중").at(-1)!
-    assert.equal((await call("POST", `/requests/${request.id}/accept`, undefined, brand)).status, 200)
-    assert.equal(grants().length, 1)
+    assert.equal((await call("POST", `/requests/${request.id}/accept`, undefined, token)).status, 200)
+    return request.id
   }
+  const confirm = async (id: string, brandToken: string) => {
+    await call("POST", `/agreements/${id}/confirm`, undefined, group)
+    await call("POST", `/agreements/${id}/confirm`, undefined, brandToken)
+  }
+  // A sponsorship with the inviter itself rewards no one, even confirmed.
+  await confirm(await propose("초대 공연", listingId, brand), brand)
+  assert.equal(grants().length, 0)
+  // One with another brand rewards the inviter once both sides confirm its
+  // e-contract, not when it is accepted, and only the first time.
+  const other = await listedMember("invite-other@other-cafe.kr", "invite-pass-123", "브랜드")
+  const first = await propose("초대 공연 2", other.listingId, other.token)
+  assert.equal(grants().length, 0)
+  await confirm(first, other.token)
+  assert.equal(grants().length, 1)
+  await confirm(await propose("초대 공연 3", other.listingId, other.token), other.token)
+  assert.equal(grants().length, 1)
   assert.equal((await call("GET", "/auth/referral", undefined, brand)).data.rewarded, 1)
 })
 
@@ -328,6 +342,78 @@ test("a member keeps up to ten proposal templates; the demo accounts keep none",
   const cleared = await call("PUT", "/auth/templates", { templates: [] }, token)
   assert.equal(cleared.data.account.templates, undefined)
   assert.equal((await call("PUT", "/auth/templates", { templates: [] }, await login("학생단체"))).status, 403)
+})
+
+test("security: tokens, stale prices, refunds, late edits, codes and invitations are guarded", async () => {
+  const { feeOf, parseValue } = await import("./lib/fees.js")
+  const { markCancelled, markPaid, orderFor, paymentsOf } = await import("./lib/billing.js")
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const today = todayInKorea()
+
+  // A token value can't round the fee away: at least 10,000 won, and the
+  // fee rounds up.
+  assert.throws(() => parseValue({ cash: 33 }), /1만 원 이상/)
+  assert.equal(feeOf({ cash: 10_001, inKind: 0 }), 1510)
+
+  // An ad is one waiting order however many targets are sent, so a renewal
+  // discount can't be stocked up; a stale amount isn't approved at confirm.
+  const { token: brand } = await listedMember("sec@sec-cafe.kr", "sec-pass-123", "브랜드")
+  const account = getDatabase().accounts.find((item) => item.email === "sec@sec-cafe.kr")!
+  const first = orderFor(getDatabase(), account, "ad", "one")
+  assert.equal(orderFor(getDatabase(), account, "ad", "two"), first)
+  assert.equal(first.targetId, "")
+  markPaid(getDatabase(), first, { method: "transfer" })
+  const renewal = (await call("POST", "/billing/orders", { kind: "ad", targetId: "x" }, brand)).data.order
+  assert.equal(renewal.amount, 89100)
+  const pay = paymentsOf(getDatabase()).find((item) => item.id === renewal.id)!
+  pay.amount = 50_000
+  const { config: settings } = await import("./config.js")
+  const saved = { client: settings.tossClientKey, secret: settings.tossSecretKey }
+  settings.tossClientKey = "test_ck_example"
+  settings.tossSecretKey = "test_sk_example"
+  try {
+    const stale = await call("POST", "/billing/confirm", { orderId: renewal.id, paymentKey: "pk", amount: 50_000 }, brand)
+    assert.equal(stale.status, 409)
+    assert.equal(paymentsOf(getDatabase()).find((item) => item.id === renewal.id)!.amount, 89100)
+  } finally {
+    settings.tossClientKey = saved.client
+    settings.tossSecretKey = saved.secret
+  }
+  // A refunded month takes its days back from the months after it.
+  markPaid(getDatabase(), pay, { method: "transfer" })
+  assert.equal((await call("GET", "/billing", undefined, brand)).data.ad.until, addDays(today, 59))
+  markCancelled(getDatabase(), first, "환불")
+  assert.equal((await call("GET", "/billing", undefined, brand)).data.ad.until, addDays(today, 29))
+  // Ends here, so the ad doesn't put this brand first in later tests.
+  markCancelled(getDatabase(), pay, "정리")
+
+  // Goals stay as they were once a member's event begins, and an event
+  // can't be moved to a day already past.
+  const group = await signUpMember("sec-club@syu.ac.kr", "sec-pass-123")
+  const event = (await call("POST", "/events", { name: "보안 공연", date: addDays(today, 3), people: "100명", types: ["제품"] }, group)).data.event
+  const moved = await call("PUT", `/events/${event.id}`, { name: "보안 공연", date: addDays(today, -1), people: "100명", types: ["제품"] }, group)
+  assert.equal(moved.status, 400)
+  const stored = Object.values(getDatabase().events).flat().find((item) => item.id === event.id)!
+  stored.date = today
+  const goals = (await call("GET", `/measurements/${event.id}`, undefined, group)).data.report.goals
+  assert.equal((await call("PUT", `/measurements/${event.id}/goals`, goals, group)).status, 409)
+
+  // Asking for a sign-up code to an address doesn't end its reset code.
+  await call("POST", "/auth/password-reset/code", { email: "sec-club@syu.ac.kr" })
+  const resets = () => getDatabase().emailCodes.filter((item) => item.email === "sec-club@syu.ac.kr" && item.purpose === "reset").length
+  assert.equal(resets(), 1)
+  await call("POST", "/auth/email-code", { role: "학생단체", email: "sec-club@syu.ac.kr" })
+  assert.equal(resets(), 1)
+
+  // Two accounts invite the same email: each invitation's own code works,
+  // so the first one can't stand in the other's way.
+  const first2 = await signUpMember("sec-a@syu.ac.kr", "sec-pass-123")
+  const second = await signUpMember("sec-b@syu.ac.kr", "sec-pass-123")
+  await call("POST", "/team/invites", { name: "가", email: "sec-vice@syu.ac.kr" }, first2)
+  const code = (await call("POST", "/team/invites", { name: "나", email: "sec-vice@syu.ac.kr" }, second)).data.devCode
+  const joined = await call("POST", "/team/join", { email: "sec-vice@syu.ac.kr", code, password: "Vice-pass-123!" })
+  assert.equal(joined.status, 201)
+  assert.equal(joined.data.account.email, "sec-b@syu.ac.kr")
 })
 
 test("health check and unknown routes", async () => {
@@ -4415,6 +4501,11 @@ test("after the event each side reviews the other, and the reviews show on the l
   const request = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
   await call("POST", `/requests/${request.id}/accept`, undefined, brand)
   const route = `/reviews/${request.id}`
+  // Not before both sides confirm the e-contract.
+  assert.equal((await call("PUT", route, { rating: 5 }, group)).status, 409)
+  assert.equal((await call("GET", `/agreements/${request.id}`, undefined, group)).data.agreement.review.canWrite, false)
+  await call("POST", `/agreements/${request.id}/confirm`, undefined, group)
+  await call("POST", `/agreements/${request.id}/confirm`, undefined, brand)
 
   assert.equal((await call("PUT", route, { rating: 5 })).status, 401)
   assert.equal((await call("PUT", "/reviews/req-movement", { rating: 5 }, group)).status, 404)
@@ -4499,6 +4590,8 @@ test("the reviewed side answers a review once, shown under it, and a report can 
     await call("POST", "/proposals", { matchId: brandListing }, group)
     const request = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
     await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+    await call("POST", `/agreements/${request.id}/confirm`, undefined, group)
+    await call("POST", `/agreements/${request.id}/confirm`, undefined, brand)
     const reply = `/reviews/${request.id}/reply`
     // Nothing to answer before the group's review.
     assert.equal((await call("PUT", reply, { text: "감사해요" }, brand)).status, 404)
@@ -4576,7 +4669,7 @@ test("a member's calendar link gives calendar apps its events and sponsorship da
   const text = await feed.text()
   assert.ok(text.startsWith("BEGIN:VCALENDAR\r\n"))
   // The brand's calendar has the day it sponsors, escaped as RFC 5545 asks.
-  assert.match(text, /SUMMARY:협찬 · feed 동아리 구독\; 공연\\, 가을\r\n/)
+  assert.match(text, /SUMMARY:협찬 · feed 동아리 구독\\; 공연\\, 가을\r\n/)
   // Never in the account the app gets; the same link again from 내 정보.
   assert.equal((await call("GET", "/auth/me", undefined, brand)).data.account.calendarFeed, undefined)
   assert.equal((await call("GET", "/calendar/feed", undefined, brand)).data.url, url)
@@ -4588,7 +4681,7 @@ test("a member's calendar link gives calendar apps its events and sponsorship da
   // The group's own calendar has its event over its two days.
   const groupUrl = (await call("POST", "/calendar/feed", undefined, group)).data.url as string
   const groupText = await (await fetch(groupUrl)).text()
-  assert.match(groupText, /SUMMARY:구독\; 공연\\, 가을\r\n/)
+  assert.match(groupText, /SUMMARY:구독\\; 공연\\, 가을\r\n/)
   assert.ok(groupText.includes(`DTSTART;VALUE=DATE:${day.replace(/-/g, "")}\r\n`))
   assert.ok(groupText.includes(`DTEND;VALUE=DATE:${addDays(day, 2).replace(/-/g, "")}\r\n`))
   // Deleting it stops it; the demo accounts can't make one, nor can a visitor.
@@ -5261,6 +5354,11 @@ test("a brand buys a sponsorship's detailed report, adds its store's counts and 
   // A read-only link, until it is turned off.
   const { shareToken } = (await call("POST", `/insights/${id}/share`, undefined, brand)).data
   assert.equal((await call("GET", `/insights/shared/${shareToken}`)).data.report.sponsorship.id, id)
+  // A suspended brand's link stops while it is suspended.
+  const sharer = getDatabase().accounts.find((item) => (getDatabase().sponsorships[item.id] ?? []).some((entry) => entry.id === id))!
+  sharer.suspendedAt = new Date().toISOString()
+  assert.equal((await call("GET", `/insights/shared/${shareToken}`)).status, 404)
+  delete sharer.suspendedAt
   assert.equal((await call("DELETE", `/insights/${id}/share`, undefined, brand)).status, 204)
   assert.equal((await call("GET", `/insights/shared/${shareToken}`)).status, 404)
 })

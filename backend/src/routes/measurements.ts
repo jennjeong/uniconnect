@@ -1,6 +1,8 @@
 import type { Request } from "express"
 import { Router } from "express"
 
+import { todayInKorea } from "../lib/dates.js"
+import { isDemoAccount } from "../lib/reviews.js"
 import { HttpError } from "../lib/errors.js"
 import {
   applySponsorGoals,
@@ -82,9 +84,15 @@ measurementsRouter.get("/:eventId/log", async (req, res) => {
 // logged-in group that owns the event can.
 measurementsRouter.put("/:eventId/goals", async (req, res) => {
   requireAccount(req)
+  const { measurement, event } = await ownedMeasurement(req)
+  // Set before the event, as the e-contract says: once it begins, the goals
+  // its results are read against stay as they were. The demo accounts'
+  // events stay open, as their check-in windows do, for visitors to try.
+  const database = getDatabase()
+  const demo = isDemoAccount(database, database.accounts.find((item) => item.id === measurement.accountId))
+  if (!demo && event.date <= todayInKorea()) throw new HttpError(409, "시작한 행사의 목표는 바꿀 수 없어요.")
   const goals = parseGoals(req.body)
   const staffPin = parseStaffPin(req.body?.staffPin)
-  const { measurement, event } = await ownedMeasurement(req)
   applySponsorGoals(measurement, goals, req.body?.sponsors)
   measurement.goals = goals
   if (staffPin) measurement.staffPin = staffPin

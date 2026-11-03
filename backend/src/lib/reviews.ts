@@ -16,15 +16,25 @@ export const reviewTarget = (proposal: AcceptedProposal, side: ChatSide) =>
 export const isDemoAccount = (database: Database, account: Account | undefined) =>
   account !== undefined && Object.values(database.demoAccountIds).includes(account.id)
 
+// Whether both sides confirmed the sponsorship's e-contract (the brand
+// having paid its fee); a partner without an account can't confirm, so
+// then it needn't.
+export function agreementHeld(database: Database, proposal: AcceptedProposal) {
+  if (!proposal.group.account || !proposal.brand.account) return true
+  const agreement = database.agreements.find((item) => item.id === proposal.id)
+  return Boolean(agreement?.confirmed.group && agreement.confirmed.brand)
+}
+
 // Whether a side may write its review now: it isn't a shared demo account
-// (reviews show to everyone), the day has come, and the other side has a
-// listing to show it on.
+// (reviews show to everyone), the day has come, both sides confirmed the
+// e-contract, and the other side has a listing to show it on.
 export function canReview(database: Database, proposal: AcceptedProposal, side: ChatSide) {
   const aboutId = reviewTarget(proposal, side)
   const listings = side === "group" ? database.brands : database.groups
   return (
     !isDemoAccount(database, proposal[side].account) &&
     reviewOpen(proposal) &&
+    agreementHeld(database, proposal) &&
     aboutId !== undefined &&
     listings.some((listing) => listing.id === aboutId)
   )

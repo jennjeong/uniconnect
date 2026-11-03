@@ -28,6 +28,12 @@ describe("the calendar file of events", () => {
     expect(file).toContain("DESCRIPTION:줄 하나\\n줄 둘\r\n")
   })
 
+  test("a lone carriage return can't start a line of its own", () => {
+    const file = calendarFile([{ id: "e5", title: "x\rURL:https://evil.example", date: "2026-12-01" }], "x", now)
+    expect(file).toContain("SUMMARY:x\\nURL:https://evil.example\r\n")
+    expect(file).not.toMatch(/\rURL:/)
+  })
+
   test("folds long lines at 75 bytes without splitting a letter", () => {
     const title = "가".repeat(60)
     const file = calendarFile([{ id: "e4", title, date: "2026-12-01" }], "x", now)

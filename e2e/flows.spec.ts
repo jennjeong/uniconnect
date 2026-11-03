@@ -1562,6 +1562,13 @@ test("visitors see a partner's reviews, a group reviews the brand after its even
   }
   const proposal = inbox.requests.find((item) => item.groupName === "후기 동아리")!
   await request.post(`/api/requests/${proposal.id}/accept`, { headers: brand.headers })
+  // Reviews follow a confirmed e-contract: the value, the group's check, and
+  // the brand's, which is paying the fee (by transfer, confirmed by an operator).
+  await request.put(`/api/agreements/${proposal.id}/value`, { data: { value: { cash: 100000, inKind: 0 } }, headers: group.headers })
+  await request.post(`/api/agreements/${proposal.id}/confirm`, { headers: group.headers })
+  const order = (await (await request.post("/api/billing/orders", { data: { kind: "fee", targetId: proposal.id }, headers: brand.headers })).json()) as { order: { id: string } }
+  const paid = await request.post(`/api/admin/payments/${order.order.id}/paid`, { headers: { "X-Admin-Token": "e2e-admin-token" } })
+  expect(paid.ok()).toBe(true)
 
   // On the agreement, the group leaves its review.
   await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)

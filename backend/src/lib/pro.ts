@@ -1,4 +1,4 @@
-import { prices, sell } from "./billing.js"
+import { prices, sell, shiftLaterPeriods } from "./billing.js"
 import { addDays, todayInKorea } from "./dates.js"
 import { HttpError } from "./errors.js"
 import { isPro, proUntil } from "./plan.js"
@@ -58,6 +58,7 @@ export function planOf(database: Database, account: Account) {
 }
 
 sell("pro", {
+  targetless: true,
   quote(database, account) {
     if (account.role !== "브랜드") throw new HttpError(403, "캠퍼스 파트너스는 브랜드 계정만 쓸 수 있어요.")
     const until = proUntil(database, account.id)
@@ -71,6 +72,10 @@ sell("pro", {
     const until = proUntil(database, payment.accountId)
     const from = until ? addDays(until, 1) : todayInKorea()
     payment.periodEnd = addDays(from, prices.proDays - 1)
+  },
+  // Refunded: the months paid after it move back by its days.
+  revoke(database, payment) {
+    shiftLaterPeriods(database, payment, prices.proDays)
   },
 })
 

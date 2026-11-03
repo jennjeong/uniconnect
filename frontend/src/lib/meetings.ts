@@ -25,8 +25,11 @@ export function googleMeetingLink(meeting: Meeting, title: string) {
   return `https://calendar.google.com/calendar/render?${params}`
 }
 
+// Text in a calendar file: backslash, semicolon and comma escaped, and every
+// line break (a lone carriage return too) written as \n, so a value can't
+// start a line of its own.
 const escapeText = (text: string) =>
-  text.replace(/\\/g, "\\\\").replace(/;/g, "\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n")
+  text.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r\n|\r|\n/g, "\\n")
 
 // The meeting as a calendar file (iCalendar) any calendar app opens, with a
 // reminder half an hour before.
