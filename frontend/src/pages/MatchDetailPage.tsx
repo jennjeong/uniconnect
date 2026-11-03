@@ -4,6 +4,7 @@ import { BrandMark } from "../components/BrandMark"
 import { DateLine } from "../components/DateLine"
 import { GroupDeal } from "../components/GroupDeal"
 import { Icon } from "../components/Icon"
+import { MatchBeam } from "../components/MatchBeam"
 import { ShareButton } from "../components/ShareButton"
 import { Pill } from "../components/Pill"
 import { ProfileBars, ProfileFigures, type ProfileFigure } from "../components/ProfileStats"
@@ -46,6 +47,7 @@ export function MatchDetailPage({
   onReportReview,
   onReportReply,
   onOpenEvent,
+  viewer,
 }: {
   match: Match
   kind: "brand" | "group"
@@ -68,6 +70,8 @@ export function MatchDetailPage({
   onReportReply?: (review: Review) => void
   // A group's next event page.
   onOpenEvent?: (eventId: string) => void
+  // The account browsing, for the match beam: its name and mark.
+  viewer: { name: string; mark: Pick<Match, "industry" | "logo"> }
 }) {
   const [tab, setTab] = useState<Tab>("match")
   const [burst, setBurst] = useState(0)
@@ -229,6 +233,7 @@ export function MatchDetailPage({
 
           {tab === "match" ? (
             <div className="profile-panel">
+              <MatchBeam from={viewer} score={match.score} to={{ name: match.name, mark: match }} />
               {group && <GroupDeal match={match} onOpenEvent={onOpenEvent} />}
               <ProfileFigures figures={figures} />
               {match.scoreParts && match.scoreParts.length > 0 && (

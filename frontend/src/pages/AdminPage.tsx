@@ -1596,12 +1596,12 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
 // /admin on its own (main.tsx): the console with its own notices, and no
 // member screens around it.
 export function AdminConsole() {
-  const { notice, showNotice } = useNotice()
+  const { notice, noticeId, showNotice, hideNotice, pauseNotice } = useNotice()
   return (
     <>
       <AdminPage onNotice={showNotice} />
       <Presence show={notice !== ""}>
-        <Toast message={notice} />
+        <Toast id={noticeId} message={notice} onDismiss={hideNotice} onPause={pauseNotice} />
       </Presence>
     </>
   )

@@ -649,6 +649,7 @@ const en: Record<string, string> = {
   "{count}곳에 협찬 제안을 보냈어요.": "Sent the offer to {count} groups.",
   "{name} 비교에 담기": "Add {name} to compare",
   "{rank}위": "#{rank}",
+  "{from}와 {to}의 일치율 {score}%": "{from} and {to} match {score}%",
   "비교": "Compare",
   "비교함": "Comparison",
   "{name} 비교에서 빼기": "Remove {name} from compare",
