@@ -364,7 +364,7 @@ test("security: tokens, stale prices, refunds, late edits, codes and invitations
   assert.equal(first.targetId, "")
   markPaid(getDatabase(), first, { method: "transfer" })
   const renewal = (await call("POST", "/billing/orders", { kind: "ad", targetId: "x" }, brand)).data.order
-  assert.equal(renewal.amount, 89100)
+  assert.equal(renewal.amount, 98010)
   const pay = paymentsOf(getDatabase()).find((item) => item.id === renewal.id)!
   pay.amount = 50_000
   const { config: settings } = await import("./config.js")
@@ -374,7 +374,7 @@ test("security: tokens, stale prices, refunds, late edits, codes and invitations
   try {
     const stale = await call("POST", "/billing/confirm", { orderId: renewal.id, paymentKey: "pk", amount: 50_000 }, brand)
     assert.equal(stale.status, 409)
-    assert.equal(paymentsOf(getDatabase()).find((item) => item.id === renewal.id)!.amount, 89100)
+    assert.equal(paymentsOf(getDatabase()).find((item) => item.id === renewal.id)!.amount, 98010)
   } finally {
     settings.tossClientKey = saved.client
     settings.tossSecretKey = saved.secret
@@ -5242,7 +5242,7 @@ test("a brand confirms an e-contract by paying the 15% fee, by card or by transf
     assert.equal((await call("POST", "/billing/orders", { kind: "fee", targetId: request.id }, await login("브랜드"))).status, 403)
     assert.equal((await call("POST", "/billing/orders", { kind: "nope", targetId: request.id }, brand)).status, 404)
     const { order } = (await call("POST", "/billing/orders", { kind: "fee", targetId: request.id }, brand)).data
-    assert.deepEqual([order.amount, order.status, order.orderName], [50000, "pending", "수수료 공연 협찬 수수료"])
+    assert.deepEqual([order.amount, order.supply, order.status, order.orderName], [55000, 50000, "pending", "수수료 공연 협찬 수수료"])
     assert.equal(order.paymentKey, undefined)
     // The same order comes back while it waits.
     assert.equal((await call("POST", "/billing/orders", { kind: "fee", targetId: request.id }, brand)).data.order.id, order.id)
@@ -5254,7 +5254,7 @@ test("a brand confirms an e-contract by paying the 15% fee, by card or by transf
     config.tossSecretKey = "test_sk_example"
     toss.confirm = async (_key, orderId, amount) => ({ status: "DONE", totalAmount: amount, orderId, receipt: { url: "https://receipt.example/1" }, approvedAt: "2026-10-29T12:00:00+09:00" })
     assert.equal((await confirm(1000)).status, 400)
-    const paid = (await confirm(50000)).data.order
+    const paid = (await confirm(55000)).data.order
     assert.deepEqual([paid.status, paid.method, paid.receiptUrl], ["paid", "card", "https://receipt.example/1"])
     const after = (await call("GET", `/agreements/${request.id}`, undefined, brand)).data.agreement
     assert.ok(after.confirmed.group && after.confirmed.brand)
@@ -5267,7 +5267,7 @@ test("a brand confirms an e-contract by paying the 15% fee, by card or by transf
     const raised = (await call("PUT", `/agreements/${request.id}/value`, { value: { cash: 300000, inKind: 100000 } }, brand)).data.agreement
     assert.deepEqual([raised.fee.amount, raised.fee.due, raised.confirmed], [60000, 10000, {}])
     const top = (await call("POST", "/billing/orders", { kind: "fee", targetId: request.id }, brand)).data.order
-    assert.equal(top.amount, 10000)
+    assert.equal(top.amount, 11000)
     assert.ok((await call("POST", `/billing/orders/${top.id}/transfer`, undefined, brand)).data.order.transferRequestedAt)
     assert.equal((await admin("/payments")).data.payments[0].id, top.id)
     assert.equal((await admin(`/payments/${top.id}/paid`, {})).status, 200)
@@ -5338,7 +5338,7 @@ test("a brand buys a sponsorship's detailed report, adds its store's counts and 
 
   // Bought by transfer, it opens.
   const { order } = (await call("POST", "/billing/orders", { kind: "report", targetId: id }, brand)).data
-  assert.deepEqual([order.amount, order.orderName], [50000, "리포트 공연 상세 성과 리포트"])
+  assert.deepEqual([order.amount, order.orderName], [55000, "리포트 공연 상세 성과 리포트"])
   const { markPaid, paymentsOf } = await import("./lib/billing.js")
   markPaid(getDatabase(), paymentsOf(getDatabase()).find((item) => item.id === order.id)!, { method: "transfer" })
   const opened = (await call("GET", `/insights/${id}`, undefined, brand)).data
@@ -5380,7 +5380,7 @@ test("a free brand sends five proposals a month; Pro lifts the limit for 30 days
 
   // Paid Pro: 30 days, then 30 more after them.
   const { order } = (await call("POST", "/billing/orders", { kind: "pro", targetId: "" }, brand)).data
-  assert.deepEqual([order.amount, order.orderName], [300000, "캠퍼스 파트너스 30일"])
+  assert.deepEqual([order.amount, order.orderName], [330000, "캠퍼스 파트너스 30일"])
   const { markPaid, paymentsOf } = await import("./lib/billing.js")
   markPaid(getDatabase(), paymentsOf(getDatabase()).find((item) => item.id === order.id)!, { method: "transfer" })
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date())
@@ -5432,8 +5432,8 @@ test("either side buys a top ad: first on the other side's list for 30 days, 10%
     return order as { amount: number; orderName: string }
   }
   const first = await pay(brand)
-  assert.deepEqual([first.amount, first.orderName], [99000, "상단 광고 30일"])
-  assert.deepEqual([(await pay(group)).amount], [10000])
+  assert.deepEqual([first.amount, first.orderName], [108900, "상단 광고 30일"])
+  assert.deepEqual([(await pay(group)).amount], [11000])
 
   // Each comes first on the other side's list, marked AD.
   const brands = (await call("GET", "/brands", undefined, viewer.token)).data.brands as { id: string; ad?: true }[]
@@ -5451,7 +5451,7 @@ test("either side buys a top ad: first on the other side's list for 30 days, 10%
   const shown = (await call("GET", "/billing", undefined, brand)).data.ad
   assert.deepEqual([shown.until, shown.price, shown.next, shown.renewing], [after(29), 99000, 89100, true])
   const renewal = await pay(brand)
-  assert.deepEqual([renewal.amount, renewal.orderName], [89100, "상단 광고 30일 연장 (10% 할인)"])
+  assert.deepEqual([renewal.amount, renewal.orderName], [98010, "상단 광고 30일 연장 (10% 할인)"])
   assert.equal((await call("GET", "/billing", undefined, brand)).data.ad.until, after(59))
   assert.equal((await call("GET", "/billing", undefined, group)).data.ad.next, 9000)
 })
@@ -5469,7 +5469,7 @@ test("with Toss test keys the demo brand shows the whole payment flow; with none
     const on = (await call("GET", "/billing", undefined, demo)).data
     assert.deepEqual([on.testMode, on.canPay], [true, true])
     const { order } = (await call("POST", "/billing/orders", { kind: "pro", targetId: "" }, demo)).data
-    assert.equal(order.amount, 300000)
+    assert.equal(order.amount, 330000)
     await call("DELETE", `/billing/orders/${order.id}`, undefined, demo)
 
     // Live keys: the shared demo accounts never pay for real.

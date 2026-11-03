@@ -30,7 +30,7 @@ const insights: Record<string, string> = {
   "화면에서 보는 숫자 너머의 리포트": "A report beyond the numbers on screen",
   "성과 분석 화면의 쿠폰 · 방문 · ROAS에 더해, 이 협찬 하나를 깊이 읽고 다음 결정을 돕는 리포트예요. PDF로 저장하고 링크로 공유할 수 있어요.": "Beyond the coupons, visits and ROAS on Analytics, it reads this one sponsorship in depth to guide your next decision. Save it as a PDF or share it by link.",
   "협찬 1건": "Per sponsorship",
-  "부가세 포함 · 한 번 사면 계속 볼 수 있어요": "VAT included · yours to keep once bought",
+  "부가세 별도 · 한 번 사면 계속 볼 수 있어요": "Plus VAT · yours to keep once bought",
   "리포트 사기": "Buy report",
   "행사 날부터 살 수 있어요.": "Available from the event's day.",
   "상품": "Item",

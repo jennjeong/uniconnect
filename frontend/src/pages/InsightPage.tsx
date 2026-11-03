@@ -237,7 +237,7 @@ export function InsightPage({
           <aside className="insight-price">
             <span>{t("협찬 1건")}</span>
             <strong>{fullWon(answer.price)}</strong>
-            <small>{t("부가세 포함 · 한 번 사면 계속 볼 수 있어요")}</small>
+            <small>{t("부가세 별도 · 한 번 사면 계속 볼 수 있어요")}</small>
             {answer.open ? (
               <button className="primary-button wide" onClick={() => (loggedIn ? setBuying(true) : onLogin())} type="button">
                 {loggedIn ? t("리포트 사기") : t("로그인하고 리포트 사기")}

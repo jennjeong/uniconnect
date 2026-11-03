@@ -1,12 +1,12 @@
 import type { AcceptedProposal } from "./agreements.js"
-import { paymentsOf, prices, testMode } from "./billing.js"
+import { paymentsOf, prices, supplyOf, testMode } from "./billing.js"
 import { HttpError } from "./errors.js"
 import { isDemoAccount } from "./reviews.js"
 import type { Agreement, Database } from "../types.js"
 
 // 성사 수수료 (the business plan's 표 9): when a sponsorship is confirmed,
-// the brand pays 15% of its value, cash and in-kind together, VAT
-// included; the student group pays nothing. The brand's confirmation of the
+// the brand pays 15% of its value, cash and in-kind together, plus VAT
+// (lib/billing.ts vatOf); the student group pays nothing. The brand's confirmation of the
 // e-contract is that payment (sold in lib/feeSales.ts).
 
 // Proposals accepted before fees began (a Korean date) owe none, nor does a
@@ -43,7 +43,7 @@ export const feeOf = (value: { cash: number; inKind: number }) =>
   Math.ceil(((value.cash + value.inKind) * prices.feeRate) / 10) * 10
 
 // Where an agreement's fee stands: owed at all, its amount for the value
-// written, what the brand paid for it and what is still due.
+// written, what the brand paid for it and what is still due, all before VAT.
 export function feeState(database: Database, agreement: Agreement, proposal: AcceptedProposal) {
   const brand = proposal.brand.account
   const exempt = !brand
@@ -54,7 +54,7 @@ export function feeState(database: Database, agreement: Agreement, proposal: Acc
   const amount = agreement.value ? feeOf(agreement.value) : 0
   const paid = paymentsOf(database)
     .filter((payment) => payment.kind === "fee" && payment.targetId === agreement.id && payment.status === "paid")
-    .reduce((sum, payment) => sum + payment.amount, 0)
+    .reduce((sum, payment) => sum + supplyOf(payment), 0)
   return {
     rate: prices.feeRate,
     exempt,
