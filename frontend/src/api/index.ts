@@ -1,5 +1,6 @@
 import type {
   Account,
+  HistoryItem,
   AccountContact,
   AdminAgreementRow,
   AdminAnnouncement,
@@ -267,6 +268,7 @@ export const api = {
   analytics: () => request<{ sponsorships: Sponsorship[] }>("/analytics"),
 
   profile: () => request<{ profile: Match | null }>("/profile"),
+  portfolioHistory: () => request<{ items: HistoryItem[] }>("/profile/history"),
   pauseProfile: (paused: boolean) => request<{ profile: Match }>("/profile/pause", { method: "PUT", body: { paused } }),
   saveProfile: (body: ProfileDraft) =>
     request<{ profile: Match }>("/profile", { method: "PUT", body }),

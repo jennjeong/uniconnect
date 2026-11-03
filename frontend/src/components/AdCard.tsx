@@ -10,7 +10,8 @@ import { Presence } from "./Presence"
 
 // 상단 광고 under 내 정보's 공개 소개 (backend lib/ads.ts): for 30 days the
 // listing comes first on the other side's catalog, marked AD. A brand pays
-// more than a group; extending while it still runs takes 10% off. Paid like
+// more than a group; extending while it still runs takes 10% off, shown
+// against the full price struck through (an anchor). Paid like
 // the other products (PaymentModal), by card or bank transfer.
 export function AdCard({ role, onNotice }: { role: Role; onNotice: (message: string) => void }) {
   const [billing, setBilling] = useState<BillingInfo>()
@@ -49,7 +50,11 @@ export function AdCard({ role, onNotice }: { role: Role; onNotice: (message: str
                 price: fullWon(ad.price),
               })}
         </p>
-        {ad.renewing && <p className="ad-card-deal">{t("끝나기 전에 연장하면 10% 할인된 {price}이에요.", { price: fullWon(ad.next) })}</p>}
+        {ad.renewing && (
+          <p className="ad-card-deal">
+            {t("끝나기 전에 연장하면 10% 할인돼요.")} <s>{fullWon(ad.price)}</s> <strong>{fullWon(ad.next)}</strong>
+          </p>
+        )}
       </div>
       <button className="primary-button" disabled={!billing.canPayAd} onClick={() => setBuying(true)} type="button">
         {ad.renewing ? t("광고 연장하기") : t("광고하기")}

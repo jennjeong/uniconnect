@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 
 import { BrandMark } from "../components/BrandMark"
 import { Icon } from "../components/Icon"
@@ -7,9 +8,13 @@ import { brandOffers, factFields, profileLabels, snsPlatforms } from "../data/pr
 import { t } from "../i18n"
 import { logoFromFile } from "../lib/image"
 import { embedPostcode } from "../lib/postcode"
-import type { Match, PortfolioItem, ProfileDraft, Role, SnsAccount } from "../types"
+import { Modal } from "../components/Modal"
+import { Presence } from "../components/Presence"
+import { api, errorMessage } from "../api"
+import type { BrandOffer, HistoryItem, Match, PortfolioItem, ProfileDraft, Role, SnsAccount } from "../types"
 
 const maxSns = 4
+const maxOffers = brandOffers.length
 const maxPortfolio = 5
 
 // Edits the listing the other side sees: introduction, offer, tags, basic
@@ -33,9 +38,13 @@ export function ProfileEditPage({
   const brand = role === "브랜드"
   const [intro, setIntro] = useState(listing?.intro ?? "")
   const [offer, setOffer] = useState(listing?.offer ?? "")
-  const [offers, setOffers] = useState<string[]>(listing?.offers ?? [])
-  const toggleOffer = (item: string) =>
-    setOffers((current) => (current.includes(item) ? current.filter((value) => value !== item) : [...current, item]))
+  // A brand's offers as rows like its SNS: a kind and what of it.
+  const [offers, setOffers] = useState<BrandOffer[]>(listing?.offers ?? [])
+  const updateOffer = (index: number, change: Partial<BrandOffer>) =>
+    setOffers((rows) => rows.map((row, at) => (at === index ? { ...row, ...change } : row)))
+  // 불러오기: past sponsorships or events to add to the portfolio.
+  const [history, setHistory] = useState<HistoryItem[] | null>(null)
+  const [picked, setPicked] = useState<string[]>([])
   const [tags, setTags] = useState((listing?.tags ?? []).join(", "))
   const [facts, setFacts] = useState<Record<string, string>>(() =>
     Object.fromEntries((listing?.facts ?? []).map((fact) => [fact.label, fact.value])),
@@ -72,7 +81,7 @@ export function ProfileEditPage({
       setError(t("소개는 10자 이상 적어 주세요."))
       return
     }
-    if (brand ? offers.length === 0 : !offer.trim()) {
+    if (brand ? !offers.some((row) => row.kind) : !offer.trim()) {
       setError(brand ? t("제공하는 협찬을 하나 이상 골라 주세요.") : t("{label}을 적어 주세요.", { label: labels.offer }))
       return
     }
@@ -81,7 +90,13 @@ export function ProfileEditPage({
     const problem = await onSave({
       intro: intro.trim(),
       ...(brand
-        ? { offer: "", offers, tags: [], facts: [], address: address.trim() }
+        ? {
+            offer: "",
+            offers: offers.map((row) => ({ kind: row.kind, ...(row.detail?.trim() ? { detail: row.detail.trim() } : {}) })),
+            tags: [],
+            facts: [],
+            address: address.trim(),
+          }
         : {
             offer: offer.trim(),
             tags: tags
@@ -164,24 +179,53 @@ export function ProfileEditPage({
           />
         </label>
         {brand ? (
-          <div aria-labelledby="offer-picks" className="field" role="group">
-            <span id="offer-picks">
-              {labels.offer} <em className="field-count">{t("여러 개를 고를 수 있어요.")}</em>
-            </span>
-            <div className="offer-picks">
-              {brandOffers.map((item) => (
-                <button
-                  aria-pressed={offers.includes(item)}
-                  className="offer-pick"
-                  key={item}
-                  onClick={() => toggleOffer(item)}
-                  type="button"
-                >
-                  {offers.includes(item) && <Icon name="check" size={13} />}
-                  {t(item)}
-                </button>
+          <div aria-labelledby="offer-rows" className="field" role="group">
+            <span id="offer-rows">{labels.offer}</span>
+            <div className="edit-rows">
+              {offers.map((row, index) => (
+                <div className="edit-row offer" key={index}>
+                  <select
+                    aria-label={t("협찬 종류")}
+                    onChange={(event) => updateOffer(index, { kind: event.target.value })}
+                    value={row.kind}
+                  >
+                    {brandOffers
+                      .filter((item) => item === row.kind || !offers.some((other) => other.kind === item))
+                      .map((item) => (
+                        <option key={item} value={item}>
+                          {t(item)}
+                        </option>
+                      ))}
+                  </select>
+                  <input
+                    aria-label={t("협찬 내용")}
+                    maxLength={30}
+                    onChange={(event) => updateOffer(index, { detail: event.target.value })}
+                    placeholder={t("내용 예) 150장, 20만원")}
+                    value={row.detail ?? ""}
+                  />
+                  <button
+                    aria-label={t("이 협찬 지우기")}
+                    className="delete-button"
+                    onClick={() => setOffers((rows) => rows.filter((_, at) => at !== index))}
+                    type="button"
+                  >
+                    <Icon name="close" size={15} />
+                  </button>
+                </div>
               ))}
             </div>
+            {offers.length < maxOffers && (
+              <button
+                className="add-row-button"
+                onClick={() =>
+                  setOffers((rows) => [...rows, { kind: brandOffers.find((item) => !rows.some((row) => row.kind === item)) ?? brandOffers[0] }])
+                }
+                type="button"
+              >
+                <Icon name="plus" size={15} /> {t("협찬 추가")}
+              </button>
+            )}
           </div>
         ) : (
           <>
@@ -207,31 +251,8 @@ export function ProfileEditPage({
       </div>
 
       <div className="form-card">
-        <h3 className="form-card-title">{t("기본 정보")}</h3>
-        {brand ? (
-          <div className="auto-facts">
-            <p className="form-card-caption">
-              {t("위치, 제공 서비스, 선호 행사, 평균 응답과 태그는 매장 주소와 고른 협찬, 협찬하고 답한 기록으로 저절로 채워져요.")}
-            </p>
-            <dl>
-              {factFields[role].map((field) => {
-                const value = listing?.facts?.find((fact) => fact.label === field.label)?.value
-                return (
-                  <div key={field.label}>
-                    <dt>{t(field.label)}</dt>
-                    <dd className={value ? undefined : "empty"}>{value ?? t("활동이 쌓이면 보여요")}</dd>
-                  </div>
-                )
-              })}
-              <div>
-                <dt>{t("태그")}</dt>
-                <dd className={listing?.tags.length ? undefined : "empty"}>
-                  {listing?.tags.length ? listing.tags.join(" · ") : t("활동이 쌓이면 보여요")}
-                </dd>
-              </div>
-            </dl>
-          </div>
-        ) : (
+        <h3 className="form-card-title">{brand ? t("매장") : t("기본 정보")}</h3>
+        {!brand && (
           <div className="edit-facts">
             {factFields[role].map((field) => (
               <label className="field" key={field.label}>
@@ -271,6 +292,36 @@ export function ProfileEditPage({
           </div>
         )}
       </div>
+
+      {brand && (
+        <div className="form-card locked-card" aria-labelledby="auto-facts-title" role="group">
+          <h3 className="form-card-title" id="auto-facts-title">
+            <Icon name="lock" size={16} />
+            {t("저절로 채워지는 정보")}
+            <em className="locked-badge">{t("직접 고칠 수 없어요")}</em>
+          </h3>
+          <p className="form-card-caption">
+            {t("위치, 제공 서비스, 선호 행사, 평균 응답과 태그는 매장 주소와 고른 협찬, 협찬하고 답한 기록으로 저절로 채워져요.")}
+          </p>
+          <dl className="auto-facts">
+            {factFields[role].map((field) => {
+              const value = listing?.facts?.find((fact) => fact.label === field.label)?.value
+              return (
+                <div key={field.label}>
+                  <dt>{t(field.label)}</dt>
+                  <dd className={value ? undefined : "empty"}>{value ?? t("활동이 쌓이면 보여요")}</dd>
+                </div>
+              )
+            })}
+            <div>
+              <dt>{t("태그")}</dt>
+              <dd className={listing?.tags.length ? undefined : "empty"}>
+                {listing?.tags.length ? listing.tags.join(" · ") : t("활동이 쌓이면 보여요")}
+              </dd>
+            </div>
+          </dl>
+        </div>
+      )}
 
       <div className="form-card">
         <h3 className="form-card-title">SNS</h3>
@@ -362,16 +413,106 @@ export function ProfileEditPage({
             </div>
           ))}
         </div>
-        {portfolio.length < maxPortfolio && (
+        <div className="edit-rows-actions">
+          {portfolio.length < maxPortfolio && (
+            <button
+              className="add-row-button"
+              onClick={() => setPortfolio((rows) => [...rows, { title: "", detail: "" }])}
+              type="button"
+            >
+              <Icon name="plus" size={15} /> {t("항목 추가")}
+            </button>
+          )}
           <button
-            className="add-row-button"
-            onClick={() => setPortfolio((rows) => [...rows, { title: "", detail: "" }])}
+            className="add-row-button import"
+            onClick={() => {
+              setPicked([])
+              api.portfolioHistory().then(
+                ({ items }) => setHistory(items),
+                (failure: unknown) => setError(errorMessage(failure)),
+              )
+            }}
             type="button"
           >
-            <Icon name="plus" size={15} /> {t("항목 추가")}
+            <Icon name="download" size={15} /> {brand ? t("지난 협찬 불러오기") : t("지난 행사 불러오기")}
           </button>
-        )}
+        </div>
       </div>
+
+      {/* At the end of the body, over everything, the footer too. */}
+      {createPortal(
+        <Presence show={history !== null}>
+          <Modal
+            kicker="Portfolio"
+            name="portfolio-history"
+            onClose={() => setHistory(null)}
+            title={brand ? t("지난 협찬 불러오기") : t("지난 행사 불러오기")}
+          >
+            {history?.length ? (
+              <>
+                <p className="form-card-caption">
+                  {t("고른 것을 포트폴리오에 더해요. 더한 뒤에도 고칠 수 있어요. ({count}개까지 더 넣을 수 있어요)", {
+                    count: maxPortfolio - portfolio.length,
+                  })}
+                </p>
+                <div className="check-list history-list">
+                  {history.map((item) => {
+                    const added = portfolio.some((row) => row.title === item.title)
+                    const checked = added || picked.includes(item.id)
+                    const full = !checked && portfolio.length + picked.length >= maxPortfolio
+                    return (
+                      <label className={checked ? "check-row checked" : "check-row"} key={item.id}>
+                        <input
+                          checked={checked}
+                          disabled={added || full}
+                          onChange={() =>
+                            setPicked((current) =>
+                              current.includes(item.id) ? current.filter((id) => id !== item.id) : [...current, item.id],
+                            )
+                          }
+                          type="checkbox"
+                        />
+                        <span aria-hidden="true" className="check-box">
+                          <Icon name="check" size={14} />
+                        </span>
+                        <span className="check-copy">
+                          <strong>{item.title}</strong>
+                          <small>{added ? t("이미 포트폴리오에 있어요") : item.detail || t("기록된 숫자가 없어요")}</small>
+                        </span>
+                      </label>
+                    )
+                  })}
+                </div>
+                <div className="history-actions">
+                  <button className="cancel-button" onClick={() => setHistory(null)} type="button">
+                    {t("취소")}
+                  </button>
+                  <button
+                    className="primary-button"
+                    disabled={picked.length === 0}
+                    onClick={() => {
+                      const chosen = history.filter((item) => picked.includes(item.id))
+                      setPortfolio((rows) => [
+                        ...rows.filter((row) => row.title.trim() || row.detail.trim()),
+                        ...chosen.map((item) => ({ title: item.title, detail: item.detail })),
+                      ].slice(0, maxPortfolio))
+                      setHistory(null)
+                    }}
+                    type="button"
+                  >
+                    {t("{count}개 더하기", { count: picked.length })}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <p className="day-empty">
+                {brand ? t("아직 끝난 협찬이 없어요. 행사가 끝나면 여기서 불러올 수 있어요.") : t("아직 끝난 행사가 없어요. 행사가 끝나면 여기서 불러올 수 있어요.")}
+              </p>
+            )}
+          </Modal>
+        </Presence>,
+        document.body,
+      )}
 
       {error && (
         <p className="form-error create-error" role="alert">

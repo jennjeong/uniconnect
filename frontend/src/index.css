@@ -5567,12 +5567,24 @@ button.nav-pill:hover {
   font-weight: var(--weight-body);
 }
 
+/* Form selects draw their own arrow, larger than the browser's and set in
+   from the edge. */
+.field select,
+.edit-row select {
+  padding-right: 44px;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-position: right 16px center;
+  background-repeat: no-repeat;
+  background-size: 16px;
+}
+
 .field input:focus,
 .field select:focus,
 .other-input:focus,
 .package-row input:focus {
   border-color: var(--point-line);
-  background: var(--fill-strong);
+  background-color: var(--fill-strong);
 }
 
 .input-suffix {
@@ -6570,9 +6582,18 @@ button.nav-pill:hover {
   color: var(--ink);
 }
 
+/* The upload buttons keep room from the notes beside them. */
 .event-photo-add,
 .event-plan-add {
   cursor: pointer;
+}
+
+.event-photo-add {
+  margin-bottom: 14px;
+}
+
+.event-plan-add {
+  margin-top: 14px;
 }
 
 .event-packages {
@@ -8219,7 +8240,7 @@ button.nav-pill:hover {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: var(--fill);
+  background-color: var(--fill);
   color: var(--ink);
   font-size: 14px;
 }
@@ -8236,11 +8257,16 @@ button.nav-pill:hover {
   padding: 0 12px;
 }
 
+.edit-row select {
+  padding-right: 40px;
+  background-position: right 14px center;
+}
+
 .field textarea:focus,
 .edit-row input:focus,
 .edit-row select:focus {
   border-color: var(--point-deep);
-  background: var(--surface);
+  background-color: var(--surface);
 }
 
 .field-count {
@@ -8276,47 +8302,87 @@ button.nav-pill:hover {
   grid-template-columns: 120px minmax(0, 1fr) 150px 36px;
 }
 
+/* A brand's offers, one row each: the kind and what of it. */
+.edit-row.offer {
+  grid-template-columns: 180px minmax(0, 1fr) 36px;
+}
+
+.field > .add-row-button {
+  justify-self: start;
+}
+
+/* The portfolio's add and 불러오기, at either end. */
+.edit-rows-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.edit-rows-actions .add-row-button.import {
+  margin-left: auto;
+  border-style: solid;
+  background: #fff;
+}
+
+.history-list {
+  max-height: 360px;
+  margin: 12px 0 0;
+  overflow-y: auto;
+}
+
+.history-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+/* What a brand can't edit, set apart: a dashed outline, a lock and a note
+   saying so. */
+.form-card.locked-card {
+  border: 1px dashed var(--line-strong);
+  background: var(--fill);
+  box-shadow: none;
+}
+
+.locked-card .form-card-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-soft);
+}
+
+.locked-badge {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--fill-strong);
+  color: var(--muted);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: var(--weight-label);
+}
+
+.locked-card .auto-facts > div {
+  background: #fff;
+}
+
 /* A brand's SNS rows have no follower count. */
 .edit-row.sns.no-followers {
   grid-template-columns: 120px minmax(0, 1fr) 36px;
 }
 
-/* A brand's offers, picked as pills: deep blue once picked. */
-.offer-picks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.offer-pick {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 38px;
-  padding: 0 16px;
-  border: 1px solid var(--line-strong);
-  border-radius: 999px;
-  background: #fff;
-  color: var(--ink);
-  font-size: 14px;
-  font-weight: var(--weight-label);
-}
-
-.offer-pick[aria-pressed='true'] {
-  border-color: var(--point);
-  background: var(--point);
-  color: var(--on-point);
-}
-
 /* A brand's 기본 정보 and tags as they read, worked out from what it does. */
-.auto-facts dl {
+.auto-facts {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   margin: 0;
 }
 
-.auto-facts dl > div {
+.auto-facts > div {
   display: grid;
   gap: 4px;
   padding: 12px 14px;
@@ -19657,7 +19723,7 @@ th[aria-sort="descending"] .console-sort span {
   }
 
   .edit-facts,
-  .auto-facts dl {
+  .auto-facts {
     grid-template-columns: 1fr;
   }
 
@@ -19666,8 +19732,9 @@ th[aria-sort="descending"] .console-sort span {
   }
 
   /* SNS: kind, account and delete on one line, followers under them. */
-  .edit-row.sns {
-    grid-template-columns: 96px minmax(0, 1fr) 36px;
+  .edit-row.sns,
+  .edit-row.offer {
+    grid-template-columns: 120px minmax(0, 1fr) 36px;
   }
 
   .edit-row.sns .followers {

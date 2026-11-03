@@ -18,6 +18,9 @@ export type PortfolioItem = { title: string; detail: string }
 
 // A brand or student group listing that the other side browses. Accounts
 // edit their own listing from 내 정보.
+// One thing a brand offers: its kind (brandOffers) and how much of it.
+export type BrandOffer = { kind: string; detail?: string }
+
 export type Match = {
   id: string
   name: string
@@ -26,9 +29,9 @@ export type Match = {
   // Logo image URL; the frontend shows an industry graphic when it is missing.
   logo?: string
   offer: string
-  // A brand's offers as picked on its profile (lib/validation.ts
-  // brandOffers); its offer line is made from them.
-  offers?: string[]
+  // A brand's offers, one row each as on its profile: a kind from
+  // brandOffers and what of it ("150장"); its offer line is made from them.
+  offers?: BrandOffer[]
   // Match for the account browsing, worked out when the catalog is served
   // (lib/matchScore.ts), with the reasons that count most and each part
   // of it as a share of its best (0 to 1).
