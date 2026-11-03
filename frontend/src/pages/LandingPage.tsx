@@ -78,25 +78,25 @@ const examples: { page: NavLabel; role: Role; image: string; description: string
     page: "추천 매칭",
     role: "학생단체",
     image: matchesExample,
-    description: t("잘 맞는 브랜드를 골라 보고, 바로 협찬을 제안해요."),
+    description: t("잘 맞는 브랜드를 골라 보고 바로 협찬을 제안해요."),
   },
   {
     page: "단체 찾기",
     role: "브랜드",
     image: groupsExample,
-    description: t("잘 맞는 학생단체를 골라 보고, 바로 협찬을 제안해요."),
+    description: t("잘 맞는 학생단체를 골라 보고 바로 협찬을 제안해요."),
   },
   {
     page: "성과",
     role: "학생단체",
     image: measurementExample,
-    description: t("QR · 쿠폰 · 매장 방문을 실시간으로 세고, 목표와 비교해요."),
+    description: t("QR · 쿠폰 · 매장 방문을 실시간으로 세고 목표와 비교해요."),
   },
   {
     page: "성과 분석",
     role: "브랜드",
     image: analyticsExample,
-    description: t("협찬마다 ROAS를 비교하고, 분석 보고서를 PDF로 받아요."),
+    description: t("협찬마다 ROAS를 비교하고 분석 보고서를 PDF로 받아요."),
   },
 ]
 

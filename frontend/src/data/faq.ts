@@ -10,7 +10,7 @@ export type FaqTopic = "start" | "account" | "proposal" | "schedule" | "message"
 export const faqTopics: { key: FaqTopic; title: string; description: string; icon: IconName }[] = [
   { key: "start", title: t("시작하기"), description: t("가입할 수 있는 사람과 가입 전에 둘러보는 방법"), icon: "spark" },
   { key: "account", title: t("계정 · 소개"), description: t("내 정보와 다른 쪽에 보이는 우리 소개 관리"), icon: "users" },
-  { key: "proposal", title: t("협찬 제안"), description: t("제안을 보내고, 답을 받고, 거두는 방법"), icon: "send" },
+  { key: "proposal", title: t("협찬 제안"), description: t("제안을 보내고 답을 받고 거두는 방법"), icon: "send" },
   { key: "schedule", title: t("일정 등록"), description: t("행사와 캠페인을 하루나 기간으로 등록하기"), icon: "calendar" },
   { key: "message", title: t("메시지"), description: t("상대에게 직접 묻고 대화를 관리하는 방법"), icon: "chat" },
   { key: "results", title: t("성과 · 리포트"), description: t("현장 측정과 성과 리포트, 분석 보고서"), icon: "chart" },
@@ -94,7 +94,7 @@ export const faqs: FaqItem[] = [
     key: "협찬 성과는 어떻게 확인하나요?",
     question: t("협찬 성과는 어떻게 확인하나요?"),
     answer:
-      t("임시 전자 계약서 아래의 협찬 확인 방식에서 QR 체크인, 쿠폰 발급, 매장 방문, 샘플링 · 시음, 부스 스탬프, SNS 인증, 설문, 현장 구매, 사은품, 경품 응모, 회원 가입, 체험 가운데 여러 개를 고르고, 방식마다 학생단체 · 브랜드 · 두 쪽 모두 가운데 확인할 쪽을 정해요. 두 쪽이 계약서를 확인하면 확정되고, 행사장에서 각자 자기 PIN으로 확인한 숫자가 목표와 함께 모여요. 학생단체는 성과와 리포트에서, 브랜드는 성과 분석에서 확인해요."),
+      t("임시 전자 계약서 아래의 협찬 확인 방식에서 QR 체크인, 쿠폰 발급, 매장 방문, 샘플링 · 시음, 부스 스탬프, SNS 인증, 설문, 현장 구매, 사은품, 경품 응모, 회원 가입, 체험 가운데 여러 개를 고르고 방식마다 학생단체 · 브랜드 · 두 쪽 모두 가운데 확인할 쪽을 정해요. 두 쪽이 계약서를 확인하면 확정되고 행사장에서 각자 자기 PIN으로 확인한 숫자가 목표와 함께 모여요. 학생단체는 성과와 리포트에서, 브랜드는 성과 분석에서 확인해요."),
   },
   {
     topic: "results",

@@ -305,7 +305,7 @@ export function AnalyticsPage({
             <Pager label={t("협찬별 상세 페이지")} onPage={setPage} page={current} pages={pages} />
             <p className="field-hint analytics-hint">
               {t(
-                "집행액은 학생단체가 목표 설정에서 적은 협찬 가치이고, 추정 매출은 매장 방문 수 × 학생단체가 적은 1인 예상 지출이에요. 실제 매출과 다를 수 있어요.",
+                "집행액은 학생단체가 목표 설정에서 적은 협찬 가치이고 추정 매출은 매장 방문 수 × 학생단체가 적은 1인 예상 지출이에요. 실제 매출과 다를 수 있어요.",
               )}
             </p>
           </div>

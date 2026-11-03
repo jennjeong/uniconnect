@@ -49,7 +49,7 @@ export function LeaveModal({
         }}
       >
         <p className="auth-lead">
-          {t("탈퇴하면 {name} 계정과 아래 내용이 바로 지워지고, 되살릴 수 없어요.", { name: account.name })}
+          {t("탈퇴하면 {name} 계정과 아래 내용이 바로 지워지고 되살릴 수 없어요.", { name: account.name })}
         </p>
         <ul className="leave-list">
           <li>{students ? t("계정 정보와 단체 소개") : t("계정 정보와 브랜드 소개")}</li>
@@ -69,7 +69,7 @@ export function LeaveModal({
             type="checkbox"
             onChange={(event) => setUnderstood(event.target.checked)}
           />
-          <span>{t("지워지는 내용을 확인했고, 되살릴 수 없다는 것을 이해했어요.")}</span>
+          <span>{t("지워지는 내용을 확인했고 되살릴 수 없다는 것을 이해했어요.")}</span>
         </label>
         {error && (
           <p className="form-error" role="alert">

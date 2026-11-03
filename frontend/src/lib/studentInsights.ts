@@ -37,7 +37,7 @@ export function studentInsights(report: Report, metrics: Metrics) {
   // Most telling first: turnout, then who came, then each step's leak.
   const advice: string[] = []
   if (report.expectedAudience > 0 && participation < 50) {
-    advice.push(t("참여율이 {rate}%였어요. QR을 입구와 무대 앞 두 곳에 두고, 사회자가 한 번 더 안내해 보세요.", { rate: participation }))
+    advice.push(t("참여율이 {rate}%였어요. QR을 입구와 무대 앞 두 곳에 두고 사회자가 한 번 더 안내해 보세요.", { rate: participation }))
   } else if (participation >= 80) {
     advice.push(t("참여율이 {rate}%로 높았어요. 다음 제안서에 이 숫자를 앞세워 보세요.", { rate: participation }))
   }

@@ -152,7 +152,7 @@ export function ProposalDocument({ page, history }: { page: EventPage; history: 
           </li>
           <li>
             <b>{t("브랜드 쿠폰 · 매장 방문")}</b>
-            {t("브랜드마다 쿠폰을 따로 주고, 방문은 매장 직원이 PIN으로 직접 확인해요.")}
+            {t("브랜드마다 쿠폰을 따로 주고 방문은 매장 직원이 PIN으로 직접 확인해요.")}
           </li>
           <li>
             <b>{t("성과 리포트")}</b>

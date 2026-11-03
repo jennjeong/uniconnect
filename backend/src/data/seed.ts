@@ -588,7 +588,7 @@ export function seedConversations(): Conversation[] {
         {
           id: "msg-coffee-1",
           from: "brand",
-          text: "반가워요! 현장 배부도 좋고, QR로 받는 디지털 쿠폰이면 매장 방문까지 집계돼서 더 좋아요. 예상 관객은 몇 명인가요?",
+          text: "반가워요! 현장 배부도 좋고 QR로 받는 디지털 쿠폰이면 매장 방문까지 집계돼서 더 좋아요. 예상 관객은 몇 명인가요?",
           at: at("2026-10-19T15:42:00+09:00"),
         },
         {
@@ -658,7 +658,7 @@ export function seedReviews(): Review[] {
       eventName: "가을 버스킹 데이",
       rating: 5,
       tags: ["약속을 잘 지켜요", "매장 응대가 친절해요"],
-      comment: "버스킹 날 커피를 제때 보내 주셨고, 쿠폰을 들고 간 관객도 친절하게 맞아 주셨어요.",
+      comment: "버스킹 날 커피를 제때 보내 주셨고 쿠폰을 들고 간 관객도 친절하게 맞아 주셨어요.",
     },
     {
       proposalId: "seed-hackathon",
@@ -766,7 +766,7 @@ export function seedOffers(): SponsorOffer[] {
       campaignName: "겨울 립케어 캠퍼스 체험존",
       campaignDate: "2026-12-03",
       offer: "립밤 샘플 300개 + 부스 운영",
-      message: "종강 공연 관객에게 립밤 샘플을 나눠 드리고, 공연장 앞에 체험 부스를 열고 싶어요.",
+      message: "종강 공연 관객에게 립밤 샘플을 나눠 드리고 공연장 앞에 체험 부스를 열고 싶어요.",
       status: "검토 중",
       createdAt: "2026-10-21T14:10:00+09:00",
     },
@@ -1017,7 +1017,7 @@ export function freshenExamplePosts(database: Pick<Database, "posts" | "demoAcco
 export const museConcertPage = {
   venue: "삼육대학교 대강당",
   intro:
-    "뮤즈가 한 학기를 마무리하는 종강 공연이에요. 밴드 다섯 팀이 두 시간 동안 무대에 서고, 공연 전후 로비에서 부스를 열 수 있어요. 지난 공연에는 학생과 지역 주민 120명이 찾았어요.",
+    "뮤즈가 한 학기를 마무리하는 종강 공연이에요. 밴드 다섯 팀이 두 시간 동안 무대에 서고 공연 전후 로비에서 부스를 열 수 있어요. 지난 공연에는 학생과 지역 주민 120명이 찾았어요.",
   packages: [
     { name: "메인 스폰서", gives: "무대 현수막 로고, 공연 중 소개 멘트, SNS 게시물 2회", asks: "현금 30만원" },
     { name: "로비 부스", gives: "공연 전후 로비 부스 운영, 관객 대상 시음 · 쿠폰 배포", asks: "제품 100개" },

@@ -127,7 +127,7 @@ const en: Record<string, string> = {
   "비밀번호를 입력해 주세요.": "Enter your password.",
   "지워지는 내용을 확인했다고 체크해 주세요.": "Tick the box to confirm what will be deleted.",
   "회원 탈퇴": "Delete Account",
-  "탈퇴하면 {name} 계정과 아래 내용이 바로 지워지고, 되살릴 수 없어요.":
+  "탈퇴하면 {name} 계정과 아래 내용이 바로 지워지고 되살릴 수 없어요.":
     "Deleting your account removes {name} and everything below right away. This can't be undone.",
   "계정 정보와 단체 소개": "Your account details and group profile",
   "계정 정보와 브랜드 소개": "Your account details and brand profile",
@@ -135,7 +135,7 @@ const en: Record<string, string> = {
   "등록한 캠페인과 받은 협찬 제안": "Your campaigns and the proposals you received",
   "주고받은 메시지 (상대방 쪽 대화도 함께 사라져요)": "Your messages (they disappear for the other side too)",
   "관리자에게 보낸 질문과 답변": "Questions sent to our team and their answers",
-  "지워지는 내용을 확인했고, 되살릴 수 없다는 것을 이해했어요.":
+  "지워지는 내용을 확인했고 되살릴 수 없다는 것을 이해했어요.":
     "I've read what will be deleted and understand it can't be restored.",
   탈퇴하기: "Delete my account",
   "계속 이용할게요": "Keep my account",
@@ -220,7 +220,7 @@ const en: Record<string, string> = {
   "{name}의 정지를 풀었어요.": "{name} can use the service again.",
   지표: "Figures",
   질문: "Questions",
-  "큰 숫자는 실제 회원의 것이고, 작은 글씨는 데모 계정과 시드 데이터를 더한 값이에요.":
+  "큰 숫자는 실제 회원의 것이고 작은 글씨는 데모 계정과 시드 데이터를 더한 값이에요.":
     "Large numbers are real members'; the small print adds the demo accounts and seed data.",
   "데모 포함 {count}": "{count} with demo data",
   "가입한 학생단체": "Student groups signed up",
@@ -270,7 +270,7 @@ const en: Record<string, string> = {
   "계정 · 소개": "Account · Profile",
   "내 정보와 다른 쪽에 보이는 우리 소개 관리": "Your account and the profile the other side sees",
   "협찬 제안": "Proposals",
-  "제안을 보내고, 답을 받고, 거두는 방법": "Sending, answering and withdrawing proposals",
+  "제안을 보내고 답을 받고 거두는 방법": "Sending, answering and withdrawing proposals",
   "일정 등록": "Scheduling",
   "행사와 캠페인을 하루나 기간으로 등록하기": "Adding events and campaigns for a day or a stretch",
   메시지: "Messages",
@@ -305,13 +305,13 @@ const en: Record<string, string> = {
   "내가 보낸 메시지의 ⋯ 버튼에서 수정하거나 삭제할 수 있어요. 고친 메시지에는 ‘수정됨’, 지운 메시지는 삭제된 메시지로 양쪽 모두에게 보여요. 상대가 읽었는지도 메시지 옆에 표시돼요.":
     "Use the ⋯ button on a message you sent. Both sides see ‘Edited’ on a changed message and a placeholder for a deleted one. You can also see beside each message whether it's been read.",
   "협찬 성과는 어떻게 확인하나요?": "How do I track sponsorship results?",
-  "임시 전자 계약서 아래의 협찬 확인 방식에서 QR 체크인, 쿠폰 발급, 매장 방문, 샘플링 · 시음, 부스 스탬프, SNS 인증, 설문, 현장 구매, 사은품, 경품 응모, 회원 가입, 체험 가운데 여러 개를 고르고, 방식마다 학생단체 · 브랜드 · 두 쪽 모두 가운데 확인할 쪽을 정해요. 두 쪽이 계약서를 확인하면 확정되고, 행사장에서 각자 자기 PIN으로 확인한 숫자가 목표와 함께 모여요. 학생단체는 성과와 리포트에서, 브랜드는 성과 분석에서 확인해요.":
+  "임시 전자 계약서 아래의 협찬 확인 방식에서 QR 체크인, 쿠폰 발급, 매장 방문, 샘플링 · 시음, 부스 스탬프, SNS 인증, 설문, 현장 구매, 사은품, 경품 응모, 회원 가입, 체험 가운데 여러 개를 고르고 방식마다 학생단체 · 브랜드 · 두 쪽 모두 가운데 확인할 쪽을 정해요. 두 쪽이 계약서를 확인하면 확정되고 행사장에서 각자 자기 PIN으로 확인한 숫자가 목표와 함께 모여요. 학생단체는 성과와 리포트에서, 브랜드는 성과 분석에서 확인해요.":
     "Below the provisional e-contract, choose as many confirmation methods as you like (QR check-in, coupons, store visits, sampling, booth stamps, SNS posts, surveys, purchases, gifts, raffles, sign-ups, try-outs) and who confirms each: the student group, the brand or both. Once both sides confirm the e-contract they're settled, and what each side confirms at the venue with its own PIN is counted against your goals. Student groups see the results in Performance and Reports; brands in Analytics.",
   "리포트를 PDF로 받을 수 있나요?": "Can I get a report as a PDF?",
   "네. 학생단체는 리포트 페이지의 ‘PDF 리포트 다운로드’, 브랜드는 성과 분석의 ‘분석 보고서 다운로드’로 받아요. 브랜드 보고서에는 전체 요약과 협찬마다의 성과 페이지가 담겨요.":
     "Yes. Student groups use ‘Download PDF report’ on Reports; brands use ‘Download report’ in Analytics. The brand report has an overall summary plus a page for each sponsorship.",
   // Inviting a shop (modals/InviteShopModal.tsx)
-  "사장님이 이 초대장으로 가입하면 가게가 uniconnect 브랜드가 되고, 바로 협찬 제안을 보낼 수 있어요.":
+  "사장님이 이 초대장으로 가입하면 가게가 uniconnect 브랜드가 되고 바로 협찬 제안을 보낼 수 있어요.":
     "Once the owner joins with this invitation, the shop becomes a brand on uniconnect and you can send it a proposal right away.",
   "{name} 초대장 QR 코드": "QR code of the invitation to {name}",
   "가게에서 직접 보여 드리면 사장님이 휴대폰 카메라로 바로 열 수 있어요.":
@@ -333,9 +333,9 @@ const en: Record<string, string> = {
   "{name}에서 행사 전까지 정해요": "{name} sets them before the event",
   "목표 정하기": "Set goals",
   "정한 목표는 성과와 리포트에 바로 반영돼요.": "Goals show in Performance and the report right away.",
-  "학생단체와 브랜드가 협찬으로 할 일을 함께 정하고 확인하고, 한 일을 링크와 사진으로 남겨요.":
+  "학생단체와 브랜드가 협찬으로 할 일을 함께 정해 확인하고 끝낸 일은 링크와 사진으로 남겨요.":
     "A student group and a brand agree on what each will do for a sponsorship, confirm it, and keep links and photos of what was done.",
-  "확정된 협찬마다 계약서를 확인하고, 할 일이 얼마나 끝났는지 봐요.":
+  "확정된 협찬마다 계약서를 확인하고 할 일이 얼마나 끝났는지 봐요.":
     "See the e-contract for each confirmed sponsorship and how much has been done.",
   "확정된 협찬마다 두 쪽이 할 일을 정하고 확인해요. 한 일은 링크와 사진으로 남겨 두면 결과를 바로 보여 줄 수 있어요.":
     "For each confirmed sponsorship, both sides agree on what each will do. Keep links and photos of what's done to show the results right away.",
@@ -477,7 +477,7 @@ const en: Record<string, string> = {
   "{name} 계정을 함께 관리하기 시작했어요.": "You're now helping run {name}'s account.",
   "초대받은 이메일과 초대 코드를 입력해 주세요.": "Enter the email you were invited at and the invitation code.",
   "초대받아 함께 관리하기": "Join as a co-admin",
-  "대표가 보낸 초대 메일의 이메일과 6자리 코드를 입력하고, 나만 쓸 비밀번호를 정해 주세요. 그 뒤로는 이 이메일과 비밀번호로 로그인해요.":
+  "대표가 보낸 초대 메일의 이메일과 6자리 코드를 입력하고 나만 쓸 비밀번호를 정해 주세요. 그 뒤로는 이 이메일과 비밀번호로 로그인해요.":
     "Enter the email the owner invited and the 6-digit code from the invitation, and set a password of your own. From then on you log in with this email and password.",
   "초대받은 이메일": "Invited email",
   "초대 코드": "Invitation code",
@@ -523,7 +523,7 @@ const en: Record<string, string> = {
   "학생회 연결": "Link to council",
   "학생회에서 받은 코드를 입력해 주세요.": "Enter the code your council gave you.",
   "학생회에 연결했어요.": "Linked to the council.",
-  "소속 학생회가 알려 준 코드를 넣으면, 학생회가 우리 단체의 행사와 협찬 현황, 성과 숫자를 볼 수 있어요. 메시지, 연락처, 계약서 내용은 보이지 않고, 언제든 연결을 끊을 수 있어요.":
+  "소속 학생회가 알려 준 코드를 넣으면, 학생회가 우리 단체의 행사와 협찬 현황, 성과 숫자를 볼 수 있어요. 메시지, 연락처, 계약서 내용은 보이지 않고 언제든 연결을 끊을 수 있어요.":
     "Enter the code your student council gave you, and it can see your events, sponsorships and results. It never sees your messages, contacts or contracts, and you can unlink any time.",
   "{name}과 연결을 끊었어요.": "Unlinked from {name}.",
   "연결 끊기": "Unlink",
@@ -552,12 +552,12 @@ const en: Record<string, string> = {
   "결제창을 열지 못했어요. 잠시 뒤 다시 시도해 주세요.": "Couldn't open the payment window. Please try again shortly.",
   "결제 금액": "Amount",
   "부가세 포함": "VAT included",
-  "결제 내용을 확인했고, ": "I checked the payment details and agree to the ",
+  "결제 내용을 확인했고 ": "I checked the payment details and agree to the ",
   "유료 서비스 이용 조건과 환불 규정": "paid service terms and refund policy",
   "에 동의해요.": ".",
   "결제 방법을 불러오고 있어요…": "Loading payment methods…",
   "카드로 {amount} 결제하기": "Pay {amount} by card",
-  "카드 결제는 준비 중이에요. 계좌 입금을 요청하면 운영자가 입금 계좌를 안내하고, 입금이 확인되면 바로 반영돼요.": "Card payment is coming soon. Ask to pay by bank transfer and the operators will send the account details; it takes effect as soon as the transfer is confirmed.",
+  "카드 결제는 준비 중이에요. 계좌 입금을 요청하면 운영자가 입금 계좌를 안내하고 입금이 확인되면 바로 반영돼요.": "Card payment is coming soon. Ask to pay by bank transfer and the operators will send the account details; it takes effect as soon as the transfer is confirmed.",
   "계좌 입금으로 요청하기": "Pay by bank transfer",
   "결제 내역과 영수증은 내 정보의 결제 내역에서 볼 수 있어요.": "Your payments and receipts are under Payments in My Account.",
   "주문을 취소했어요.": "Order canceled.",
@@ -670,7 +670,7 @@ const en: Record<string, string> = {
   "학생단체 → 브랜드": "Group → brand",
   "브랜드 → 학생단체": "Brand → group",
   "운영자 콘솔": "Operator console",
-  "서버의 ADMIN_TOKEN으로 들어와요. 토큰은 이 탭에만 기억되고, 탭을 닫으면 지워져요.": "Enter with the server's ADMIN_TOKEN. It's kept in this tab only and goes when you close it.",
+  "서버의 ADMIN_TOKEN으로 들어와요. 토큰은 이 탭에만 기억되고 탭을 닫으면 지워져요.": "Enter with the server's ADMIN_TOKEN. It's kept in this tab only and goes when you close it.",
   "확인하고 있어요…": "Checking…",
   "들어가기": "Enter",
   "운영자 메뉴": "Operator menu",
@@ -926,7 +926,7 @@ const en: Record<string, string> = {
   "한 시간마다 최근 24개를 남겨요. 모든 회원의 데이터가 들어 있으니 안전한 곳에만 저장하세요.": "The latest 24 hourly copies are kept. They hold every member's data, so save them somewhere safe.",
   "아직 백업이 없어요.": "No backups yet.",
   "요청 제한": "Request limits",
-  "주소는 보여 주지 않고, 세는 중인 곳과 막힌 곳의 수만 보여요.": "Only how many are counted and blocked, never the addresses.",
+  "주소는 보여 주지 않고 세는 중인 곳과 막힌 곳의 수만 보여요.": "Only how many are counted and blocked, never the addresses.",
   "제한": "Limit",
   "기준": "Rule",
   "세는 중": "Counting",
@@ -1028,7 +1028,7 @@ const en: Record<string, string> = {
   "지금 문구 저장": "Save this message",
   "문구 이름": "Message name",
   "예) 카페 첫 제안": "e.g. First pitch to cafés",
-  "문구를 저장하면 상대와 행사 이름은 빈칸이 되고, 다음에 불러올 때 그 제안의 이름으로 채워져요.": "When saved, the partner and event names become blanks, filled with the next proposal’s names when you use it.",
+  "문구를 저장하면 상대와 행사 이름은 빈칸이 되고 다음에 불러올 때 그 제안의 이름으로 채워져요.": "When saved, the partner and event names become blanks, filled with the next proposal’s names when you use it.",
   "제안 문구를 저장했어요.": "Saved the proposal message.",
   "친구 초대": "Invite others",
   "내 링크로 가입한 곳의 첫 협찬이 성사되면 캠퍼스 파트너스 {days}일을 더해 드려요.": "When someone who signed up through your link has their first sponsorship, you get {days} more days of Campus Partners.",
@@ -1055,7 +1055,7 @@ const en: Record<string, string> = {
   "현장 배포 방식": "How goods are handed out",
   "SNS 홍보": "Social promotion",
   "고른 홍보를 이행할게요": "We will carry out this promotion",
-  "협찬을 받으면 고른 방식대로 홍보하고, 계약서에서 증빙을 남겨요.": "When sponsored, we promote as chosen and leave proof in the contract.",
+  "협찬을 받으면 고른 방식대로 홍보하고 계약서에서 증빙을 남겨요.": "When sponsored, we promote as chosen and leave proof in the contract.",
   "고른 홍보 · 배포 계획을 이행하는 데 동의해 주세요.": "Agree to carry out the promotion you chose.",
   "브랜드가 받는 홍보": "What brands get",
   "단체가 이 홍보를 이행하기로 동의했어요. 협찬이 확정되면 계약서의 할 일로 들어가요.": "The group agreed to carry this out. Once confirmed, it goes into the contract as tasks.",

@@ -561,7 +561,7 @@ test("a group opens other groups' events from its calendar, and one event's page
 
 test("both dashboards show what sets uniconnect apart, before and after", async ({ page }) => {
   await page.goto("/dashboard")
-  const why = page.getByRole("region", { name: "연결에서 끝나지 않고, 협찬을 끝까지 함께해요" })
+  const why = page.getByRole("region", { name: "연결에서 끝나지 않고 협찬을 끝까지 함께해요" })
   await expect(why.getByRole("heading", { name: "이렇게 바뀌어요" })).toBeVisible()
   await expect(why.locator(".why-pillars li")).toHaveCount(4)
   // Too few members yet to show the counts.
@@ -1774,7 +1774,7 @@ test("a brand writes the value, pays the 15% fee to confirm, and finds it under 
   await expect(pay).toContainText("카드 결제는 준비 중이에요")
   await pay.getByRole("button", { name: "계좌 입금으로 요청하기" }).click()
   await expect(pay.getByRole("alert")).toHaveText("결제 내용과 환불 규정에 동의해 주세요.")
-  await pay.getByText("결제 내용을 확인했고,").click()
+  await pay.getByText("결제 내용을 확인했고").click()
   await expect(pay.getByRole("checkbox")).toBeChecked()
   await pay.getByRole("button", { name: "계좌 입금으로 요청하기" }).click()
   await expect(page.getByText("계좌 입금을 요청했어요. 입금이 확인되면 계약서가 확인돼요.")).toBeVisible()
@@ -1840,7 +1840,7 @@ test("the detailed report: the demo's open from 성과 분석, a member's locked
   await member.getByRole("button", { name: "리포트 사기" }).click()
   const pay = member.getByRole("dialog", { name: "상세 성과 리포트 결제" })
   await expect(pay).toContainText("연 뒤에는 환불되지 않아요")
-  await pay.getByText("결제 내용을 확인했고,").click()
+  await pay.getByText("결제 내용을 확인했고").click()
   await pay.getByRole("button", { name: "계좌 입금으로 요청하기" }).click()
   await expect(member.getByText("계좌 입금을 요청했어요. 입금이 확인되면 리포트가 열려요.")).toBeVisible()
   for (const account of [group, brand]) {
@@ -1858,7 +1858,7 @@ test("a brand sees its plan in 내 정보 and asks to start Campus Partners", as
   await card.getByRole("button", { name: "캠퍼스 파트너스 시작하기" }).click()
   const pay = page.getByRole("dialog", { name: "캠퍼스 파트너스 결제" })
   await expect(pay).toContainText("300,000원")
-  await pay.getByText("결제 내용을 확인했고,").click()
+  await pay.getByText("결제 내용을 확인했고").click()
   await pay.getByRole("button", { name: "계좌 입금으로 요청하기" }).click()
   await expect(page.getByText("계좌 입금을 요청했어요. 입금이 확인되면 캠퍼스 파트너스가 시작돼요.")).toBeVisible()
   expect((await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: brand.headers })).status()).toBe(204)

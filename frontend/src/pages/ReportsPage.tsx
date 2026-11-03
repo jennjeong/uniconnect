@@ -238,7 +238,7 @@ export function ReportsPage({
                 ))}
               </div>
               <small className="field-hint">
-                {t("참여자는 협찬사마다 쿠폰을 따로 받고, 각 매장이 자기 쿠폰의 방문만 확인해요. 위 목표는 행사 전체 기준이에요.")}
+                {t("참여자는 협찬사마다 쿠폰을 따로 받고 각 매장이 자기 쿠폰의 방문만 확인해요. 위 목표는 행사 전체 기준이에요.")}
               </small>
             </div>
           )}
@@ -304,7 +304,7 @@ function SponsorHistory({
           </button>
           {managing && (
             <>
-              <p className="field-hint">{t("운영진이 바뀐 날과 이름(예: 제4대 하성)을 적으면 협찬 기록이 기수별로 나뉘고, 인수인계 CSV에도 들어가요.")}</p>
+              <p className="field-hint">{t("운영진이 바뀐 날과 이름(예: 제4대 하성)을 적으면 협찬 기록이 기수별로 나뉘고 인수인계 CSV에도 들어가요.")}</p>
               {terms.length > 0 && (
                 <ul className="terms-list">
                   {terms.map((item) => (

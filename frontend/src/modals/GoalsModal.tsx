@@ -141,7 +141,7 @@ export function GoalsModal({
             />
           </label>
           <small className="field-hint">
-            {t("도달은 QR 스캔 수에 현장 밖 도달을 더하고, ROAS는 매장 방문 × 1인 예상 지출을 협찬 가치로 나눠 계산해요.")}
+            {t("도달은 QR 스캔 수에 현장 밖 도달을 더하고 ROAS는 매장 방문 × 1인 예상 지출을 협찬 가치로 나눠 계산해요.")}
           </small>
         </fieldset>
 
@@ -223,7 +223,7 @@ export function GoalsModal({
             <legend>{t("협찬사별 쿠폰")}</legend>
             <small className="field-hint">
               {t(
-                "참여자는 협찬사마다 쿠폰을 따로 받고, 각 매장은 자기 PIN으로 자기 쿠폰만 확인해요. 그래서 협찬사마다 성과가 따로 집계돼요.",
+                "참여자는 협찬사마다 쿠폰을 따로 받고 각 매장은 자기 PIN으로 자기 쿠폰만 확인해요. 그래서 협찬사마다 성과가 따로 집계돼요.",
               )}
             </small>
             {draft.sponsors.map((sponsor) => (

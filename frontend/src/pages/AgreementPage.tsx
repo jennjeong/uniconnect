@@ -785,7 +785,7 @@ function CancelPanel({
             />
           </label>
           <p className="field-hint">
-            {t("상대가 동의하면 협찬이 취소되고, 성과와 일정에서도 빠져요. 되돌릴 수 없어요.")}
+            {t("상대가 동의하면 협찬이 취소되고 성과와 일정에서도 빠져요. 되돌릴 수 없어요.")}
           </p>
           <div className="agreement-cancel-actions">
             <button className="cancel-button" onClick={() => setWriting(false)} type="button">
@@ -967,14 +967,14 @@ function ContractTerms({ agreement }: { agreement: Agreement }) {
           <br />
           <strong>{t("단체")}</strong> {duties("group").join(" · ") || "—"}
           <br />
-          {t("각자 끝낸 일은 이 계약서에 표시하고, 링크와 사진으로 증빙을 남겨요.")}
+          {t("각자 끝낸 일은 이 계약서에 표시하고 링크와 사진으로 증빙을 남겨요.")}
         </>
       ),
     },
     {
       title: t("성과 확인"),
       body: methods.length
-        ? t("{methods} 방식으로 확인하고, 양쪽이 모두 확인한 방식만 성과로 세요.", { methods: methods.join(", ") })
+        ? t("{methods} 방식으로 확인하고 양쪽이 모두 확인한 방식만 성과로 세요.", { methods: methods.join(", ") })
         : t("현장 QR 체크인과 쿠폰, 매장 방문으로 확인해요."),
     },
     {
@@ -1059,7 +1059,7 @@ function ShipmentsPanel({
   return (
     <section aria-labelledby="agreement-shipments-title" className="agreement-section agreement-shipments">
       <h2 id="agreement-shipments-title">{t("협찬 물품 배송")}</h2>
-      <p className="field-hint">{t("물품을 택배로 보냈다면 운송장 번호를 남겨 주세요. 상대에게 메일로 알리고, 여기서 바로 조회할 수 있어요.")}</p>
+      <p className="field-hint">{t("물품을 택배로 보냈다면 운송장 번호를 남겨 주세요. 상대에게 메일로 알리고 여기서 바로 조회할 수 있어요.")}</p>
       {shipments.length > 0 && (
         <ul className="shipment-list">
           {shipments.map((shipment) => (

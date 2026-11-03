@@ -102,7 +102,7 @@ export function PaymentModal({
             <Icon name="check" size={14} />
           </span>
           <span>
-            {t("결제 내용을 확인했고, ")}
+            {t("결제 내용을 확인했고 ")}
             <a href="/terms#paid" rel="noreferrer" target="_blank">
               {t("유료 서비스 이용 조건과 환불 규정")}
             </a>
@@ -123,7 +123,7 @@ export function PaymentModal({
                 {t("카드로 {amount} 결제하기", { amount: fullWon(amount) })}
               </button>
             ) : (
-              <p className="payment-note">{t("카드 결제는 준비 중이에요. 계좌 입금을 요청하면 운영자가 입금 계좌를 안내하고, 입금이 확인되면 바로 반영돼요.")}</p>
+              <p className="payment-note">{t("카드 결제는 준비 중이에요. 계좌 입금을 요청하면 운영자가 입금 계좌를 안내하고 입금이 확인되면 바로 반영돼요.")}</p>
             )}
             <button className={billing.card ? "cancel-button wide" : "primary-button wide"} disabled={busy} onClick={() => void pay("transfer")} type="button">
               {t("계좌 입금으로 요청하기")}

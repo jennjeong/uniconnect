@@ -56,7 +56,7 @@ export function SafetyModal({
       <Modal kicker="Block" name="safety" onClose={onClose} title={t("{name} 차단", { name: target.name })}>
         <div className="auth-form">
           <p className="auth-lead">
-            {t("차단하면 서로 목록에서 보이지 않고, 제안과 메시지도 주고받을 수 없어요. 이미 확정된 협찬은 그대로예요. 내 정보에서 언제든 풀 수 있어요.")}
+            {t("차단하면 서로 목록에서 보이지 않고 제안과 메시지도 주고받을 수 없어요. 이미 확정된 협찬은 그대로예요. 내 정보에서 언제든 풀 수 있어요.")}
           </p>
           {error && (
             <p className="form-error" role="alert">

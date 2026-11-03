@@ -62,7 +62,7 @@ const en: Record<string, string> = {
   "{coupons}장": "{coupons}",
   "{visits}명": "{visits}",
   "목표 {target}%": "Goal {target}%",
-  "집행액은 학생단체가 목표 설정에서 적은 협찬 가치이고, 추정 매출은 매장 방문 수 × 학생단체가 적은 1인 예상 지출이에요. 실제 매출과 다를 수 있어요.":
+  "집행액은 학생단체가 목표 설정에서 적은 협찬 가치이고 추정 매출은 매장 방문 수 × 학생단체가 적은 1인 예상 지출이에요. 실제 매출과 다를 수 있어요.":
     "Spend is the sponsorship value the student group set in its goals; estimated sales are store visits × the group's expected spend per person. Actual sales may differ.",
 
   // Analytics PDF (report/AnalyticsDocument.tsx)

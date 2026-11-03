@@ -404,7 +404,7 @@ function StudentPage({ report, metrics, author }: { report: Report; metrics: Met
       <div className="pdf-title">
         <span>FOR OUR STUDENTS</span>
         <h1>{t("참여 학생 분석과 다음 행사 제안")}</h1>
-        <p>{t("누가 왔고 어디서 놓쳤는지 보고, 다음 행사를 더 잘 준비해요.")}</p>
+        <p>{t("누가 왔고 어디서 놓쳤는지 보고 다음 행사를 더 잘 준비해요.")}</p>
       </div>
       <section className="pdf-section">
         <h2>{t("참여 흐름")}</h2>

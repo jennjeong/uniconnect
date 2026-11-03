@@ -923,7 +923,7 @@ function App() {
     if (sentCount === 0) throw new ApiError(400, failed.join(" · "))
     showNotice(
       failed.length
-        ? t("{sent}곳에 보냈고, {failed}곳은 보내지 못했어요. {reasons}", { sent: sentCount, failed: failed.length, reasons: failed.join(" · ") })
+        ? t("{sent}곳에 보냈고 {failed}곳은 보내지 못했어요. {reasons}", { sent: sentCount, failed: failed.length, reasons: failed.join(" · ") })
         : t("{count}곳에 협찬 제안을 보냈어요.", { count: sentCount }),
     )
     closeModal()

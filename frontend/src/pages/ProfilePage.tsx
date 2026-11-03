@@ -466,7 +466,7 @@ export function ProfilePage({
                     </RowButton>
                   }
                   label={t("로그인한 기기")}
-                  value={t("지금 로그인한 기기를 보고, 다른 기기를 로그아웃시켜요.")}
+                  value={t("지금 로그인한 기기를 보고 다른 기기를 로그아웃시켜요.")}
                 />
               )}
             </dl>
@@ -618,7 +618,7 @@ export function ProfilePage({
           )}
 
           {onPlan && (
-            <SettingsCard caption={t("무료로 시작하고, 더 많은 제안과 분석은 캠퍼스 파트너스로 써요.")} icon="won" id="profile-plan" title={t("요금제")}>
+            <SettingsCard caption={t("무료로 시작하고 더 많은 제안과 분석은 캠퍼스 파트너스로 써요.")} icon="won" id="profile-plan" title={t("요금제")}>
               <PlanCard onNotice={onPlan} />
             </SettingsCard>
           )}

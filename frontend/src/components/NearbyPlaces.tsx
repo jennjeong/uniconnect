@@ -244,7 +244,7 @@ export function NearbyPlaces(partnering: Partnering) {
           <p className="nearby-source">
             {result?.example
               ? t("예시로 만든 가게예요. 실제 가게나 카카오의 정보가 아니에요.")
-              : t("정보 제공: 카카오 · 가게 로고는 각 회사의 상표이고, 표시가 제휴를 뜻하지는 않아요.")}
+              : t("정보 제공: 카카오 · 가게 로고는 각 회사의 상표이고 표시가 제휴를 뜻하지는 않아요.")}
           </p>
         </>
       )}

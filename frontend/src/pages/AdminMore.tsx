@@ -1031,7 +1031,7 @@ export function SystemPanel({ token, onNotice }: { token: string; onNotice: Noti
       </section>
       <section className="console-card span-2">
         <h2>{t("요청 제한")}</h2>
-        <p className="field-hint">{t("주소는 보여 주지 않고, 세는 중인 곳과 막힌 곳의 수만 보여요.")}</p>
+        <p className="field-hint">{t("주소는 보여 주지 않고 세는 중인 곳과 막힌 곳의 수만 보여요.")}</p>
         <table className="console-table plain">
           <thead>
             <tr>

@@ -165,7 +165,7 @@ export function EventCreatePage({
         }
         description={
           editing
-            ? t("고친 내용은 제안과 협찬에도 반영되고, 상대에게 메일로 알려요.")
+            ? t("고친 내용은 제안과 협찬에도 반영되고 상대에게 메일로 알려요.")
             : copyFrom
               ? t("‘{name}’을 그대로 가져왔어요. 날짜만 고르면 돼요.", { name: copyFrom.name })
               : students
@@ -370,7 +370,7 @@ export function EventCreatePage({
                   </span>
                   <span className="check-copy">
                     <strong>{t("고른 홍보를 이행할게요")}</strong>
-                    <small>{t("협찬을 받으면 고른 방식대로 홍보하고, 계약서에서 증빙을 남겨요.")}</small>
+                    <small>{t("협찬을 받으면 고른 방식대로 홍보하고 계약서에서 증빙을 남겨요.")}</small>
                   </span>
                 </label>
               )}

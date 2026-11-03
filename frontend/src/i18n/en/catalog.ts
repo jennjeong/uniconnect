@@ -268,7 +268,7 @@ const en: Record<string, string> = {
   "삭제된 메시지예요.": "This message was deleted.",
   "나: {text}": "You: {text}",
   대화: "Conversation",
-  "아직 uniconnect 계정이 없는 상대예요. 메시지는 남겨 두고, 계정이 연결되면 바로 볼 수 있어요.":
+  "아직 uniconnect 계정이 없는 상대예요. 메시지는 남겨 두고 계정이 연결되면 바로 볼 수 있어요.":
     "They're not on uniconnect yet. Leave a message and they'll see it once their account is linked.",
   수정됨: "Edited",
   읽음: "Read",
@@ -336,7 +336,7 @@ const en: Record<string, string> = {
   "메시지 신고": "Report message",
   "{name} 신고": "Report {name}",
   "{name} 차단": "Block {name}",
-  "차단하면 서로 목록에서 보이지 않고, 제안과 메시지도 주고받을 수 없어요. 이미 확정된 협찬은 그대로예요. 내 정보에서 언제든 풀 수 있어요.":
+  "차단하면 서로 목록에서 보이지 않고 제안과 메시지도 주고받을 수 없어요. 이미 확정된 협찬은 그대로예요. 내 정보에서 언제든 풀 수 있어요.":
     "Once blocked, you won't see each other in the lists or exchange proposals and messages. Sponsorships already confirmed go on. You can unblock any time in My Info.",
   "차단했어요. 내 정보에서 풀 수 있어요.": "Blocked. You can unblock in My Info.",
   "어떤 일인지 적어 주세요.": "Please say what happened.",
@@ -355,7 +355,7 @@ const en: Record<string, string> = {
   // The recruitment board (pages/BoardPage.tsx, PostPage.tsx, modals/PostFormModal.tsx)
   "모집 게시판": "Recruit board",
   "모집 글": "Post",
-  "브랜드는 함께할 행사를, 학생단체는 협찬사를 모집하고, 상대 쪽 글에 지원해요.":
+  "브랜드는 함께할 행사를, 학생단체는 협찬사를 모집하고 상대 쪽 글에 지원해요.":
     "Brands look for events and student groups for sponsors, and each applies to the other's posts.",
   "브랜드가 찾는 행사에 지원하거나, 우리 행사에 함께할 협찬사를 모집해요.":
     "Apply to the events brands are looking for, or look for sponsors for your own event.",
@@ -475,7 +475,7 @@ const en: Record<string, string> = {
   "취소에 동의": "Agree to call it off",
   "취소하려는 이유": "Why you want to call it off",
   "예) 기상 악화로 행사가 취소됐어요": "e.g. The event was canceled because of the weather",
-  "상대가 동의하면 협찬이 취소되고, 성과와 일정에서도 빠져요. 되돌릴 수 없어요.":
+  "상대가 동의하면 협찬이 취소되고 성과와 일정에서도 빠져요. 되돌릴 수 없어요.":
     "Once the other side agrees, the sponsorship is called off and leaves the results and calendars. This can't be undone.",
   "취소 요청 보내기": "Send the request",
   "행사가 취소되는 등 협찬을 이어 갈 수 없게 되면, 상대의 동의를 받아 협찬을 취소할 수 있어요.":
@@ -558,7 +558,7 @@ const en: Record<string, string> = {
   "{campus} 근처, 가까운 순서예요.": "Near {campus}, nearest first.",
   "카카오맵에서 보기": "View on Kakao Map",
   "(새 창)": "(opens in a new tab)",
-  "정보 제공: 카카오 · 가게 로고는 각 회사의 상표이고, 표시가 제휴를 뜻하지는 않아요.":
+  "정보 제공: 카카오 · 가게 로고는 각 회사의 상표이고 표시가 제휴를 뜻하지는 않아요.":
     "Data from Kakao · Shop logos are their companies' trademarks and don't mean a partnership.",
   "{name} 카카오맵에서 보기": "View {name} on Kakao Map",
   "우리 매장에서 학교까지 가까운 순서예요. 매장 주소는 내 정보에서 적을 수 있어요.":
@@ -583,7 +583,7 @@ const en: Record<string, string> = {
   "{campus} 주변 가게 지도": "Map of shops around {campus}",
   "{name}, {distance}, {state}": "{name}, {distance}, {state}",
   "uniconnect 초대장": "uniconnect invitation",
-  "학생단체가 보낸 초대예요. 가게로 가입하면 근처 학생단체의 협찬 제안을 받고, 행사 날 쿠폰과 방문 성과를 확인할 수 있어요.":
+  "학생단체가 보낸 초대예요. 가게로 가입하면 근처 학생단체의 협찬 제안을 받고 행사 날 쿠폰과 방문 성과를 확인할 수 있어요.":
     "An invitation from a student group. Join as a shop to get sponsorship proposals from groups nearby and see the coupons and visits from their events.",
   "초대장을 불러오고 있어요…": "Loading the invitation…",
   홈으로: "Go home",
@@ -626,7 +626,7 @@ const en: Record<string, string> = {
   "연결돼 있어요. {provider}로 로그인할 수 있어요.": "Linked. You can log in with {provider}.",
   "연결하면 {provider}로도 로그인할 수 있어요.": "Link it to log in with {provider} too.",
   "보기": "View",
-  "지금 로그인한 기기를 보고, 다른 기기를 로그아웃시켜요.": "See the devices logged in now and log the others out.",
+  "지금 로그인한 기기를 보고 다른 기기를 로그아웃시켜요.": "See the devices logged in now and log the others out.",
   "화면의 언어와 받을 메일을 골라요.": "Choose the language and the emails you get.",
   "화면과 메일에 쓰는 언어예요.": "The language of the screens and emails.",
   "계정을 함께 쓰는 사람과 연결한 단체, 차단한 상대예요.": "Who shares this account, the groups you linked and the accounts you blocked.",
@@ -645,7 +645,7 @@ const en: Record<string, string> = {
   "한 번에 제안하기": "Send to all picked",
   "{count}곳에 협찬 제안": "Offer to {count} groups",
   "저장한 문구의 상대 이름 자리는 단체마다 그 단체 이름으로 바뀌어서 가요.": "In a saved message, the partner’s name is filled with each group’s own name as it goes out.",
-  "{sent}곳에 보냈고, {failed}곳은 보내지 못했어요. {reasons}": "Sent to {sent}; {failed} couldn’t be sent. {reasons}",
+  "{sent}곳에 보냈고 {failed}곳은 보내지 못했어요. {reasons}": "Sent to {sent}; {failed} couldn’t be sent. {reasons}",
   "{count}곳에 협찬 제안을 보냈어요.": "Sent the offer to {count} groups.",
   "{name} 비교에 담기": "Add {name} to compare",
   "{rank}위": "#{rank}",

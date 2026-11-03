@@ -27,19 +27,19 @@ function withAnd(name: string) {
 const pages: Record<Exclude<NavLabel, "대시보드">, PageMeta> = {
   "추천 매칭": {
     title: titled(t("추천 매칭")),
-    description: t("잘 맞는 브랜드를 골라 보고, 바로 협찬을 제안해요."),
+    description: t("잘 맞는 브랜드를 골라 보고 바로 협찬을 제안해요."),
   },
   "받은 협찬": {
     title: titled(t("받은 협찬 제안")),
-    description: t("브랜드가 보낸 협찬 제안을 수락하거나 거절하고, 수락한 협찬의 진행 단계를 날짜별로 봐요."),
+    description: t("브랜드가 보낸 협찬 제안을 수락하거나 거절하고 수락한 협찬의 진행 단계를 날짜별로 봐요."),
   },
   "내 행사": {
     title: titled(t("내 행사 일정")),
-    description: t("등록한 행사를 달력과 그달 일정 목록으로 보고, 새 행사를 하루나 기간으로 등록해요."),
+    description: t("등록한 행사를 달력과 그달 일정 목록으로 보고 새 행사를 하루나 기간으로 등록해요."),
   },
   성과: {
     title: titled(t("성과")),
-    description: t("QR · 쿠폰 · 매장 방문을 실시간으로 세고, 목표와 비교해요."),
+    description: t("QR · 쿠폰 · 매장 방문을 실시간으로 세고 목표와 비교해요."),
   },
   리포트: {
     title: titled(t("협찬 성과 리포트")),
@@ -47,11 +47,11 @@ const pages: Record<Exclude<NavLabel, "대시보드">, PageMeta> = {
   },
   "단체 찾기": {
     title: titled(t("학생단체 찾기")),
-    description: t("잘 맞는 학생단체를 골라 보고, 바로 협찬을 제안해요."),
+    description: t("잘 맞는 학생단체를 골라 보고 바로 협찬을 제안해요."),
   },
   "받은 제안": {
     title: titled(t("받은 협찬 제안")),
-    description: t("학생단체가 보낸 협찬 제안을 수락하거나 거절하고, 수락한 협찬의 진행 단계를 날짜별로 봐요."),
+    description: t("학생단체가 보낸 협찬 제안을 수락하거나 거절하고 수락한 협찬의 진행 단계를 날짜별로 봐요."),
   },
   "행사 일정": {
     title: titled(t("행사 일정")),
@@ -59,7 +59,7 @@ const pages: Record<Exclude<NavLabel, "대시보드">, PageMeta> = {
   },
   "성과 분석": {
     title: titled(t("협찬 성과 분석")),
-    description: t("협찬마다 ROAS를 비교하고, 분석 보고서를 PDF로 받아요."),
+    description: t("협찬마다 ROAS를 비교하고 분석 보고서를 PDF로 받아요."),
   },
 }
 
@@ -145,13 +145,13 @@ export function pageMeta(
   if (view.faq) {
     return {
       title: titled(t("자주 묻는 질문")),
-      description: t("가입, 협찬 제안, 일정 등록, 성과 확인에 대해 자주 묻는 질문을 보고, 더 궁금한 점은 관리자에게 물어봐요."),
+      description: t("가입, 협찬 제안, 일정 등록, 성과 확인에 대해 자주 묻는 질문을 보고 더 궁금한 점은 관리자에게 물어봐요."),
     }
   }
   if (view.board || view.post) {
     return {
       title: titled(t(view.post ? "모집 글" : "모집 게시판")),
-      description: t("브랜드는 함께할 행사를, 학생단체는 협찬사를 모집하고, 상대 쪽 글에 지원해요."),
+      description: t("브랜드는 함께할 행사를, 학생단체는 협찬사를 모집하고 상대 쪽 글에 지원해요."),
       noindex: true,
     }
   }
@@ -168,7 +168,7 @@ export function pageMeta(
   if (view.agreement) {
     return {
       title: titled(t("임시 전자 계약서")),
-      description: t("학생단체와 브랜드가 협찬으로 할 일을 함께 정하고 확인하고, 한 일을 링크와 사진으로 남겨요."),
+      description: t("학생단체와 브랜드가 협찬으로 할 일을 함께 정해 확인하고 끝낸 일은 링크와 사진으로 남겨요."),
       noindex: true,
     }
   }
@@ -203,14 +203,14 @@ export function pageMeta(
   if (view.agreements) {
     return {
       title: titled(t("임시 전자 계약서")),
-      description: t("확정된 협찬마다 계약서를 확인하고, 할 일이 얼마나 끝났는지 봐요."),
+      description: t("확정된 협찬마다 계약서를 확인하고 할 일이 얼마나 끝났는지 봐요."),
       noindex: true,
     }
   }
   if (view.invite) {
     return {
       title: titled(t("uniconnect 초대장")),
-      description: t("학생단체가 보낸 초대예요. 가게로 가입하면 근처 학생단체의 협찬 제안을 받고, 행사 날 쿠폰과 방문 성과를 확인할 수 있어요."),
+      description: t("학생단체가 보낸 초대예요. 가게로 가입하면 근처 학생단체의 협찬 제안을 받고 행사 날 쿠폰과 방문 성과를 확인할 수 있어요."),
       noindex: true,
     }
   }
@@ -235,8 +235,8 @@ export function pageMeta(
   return {
     title: titled(t("대시보드")),
     description: students
-      ? t("학생단체가 행사와 잘 맞는 브랜드를 찾고, 협찬 제안부터 성과 리포트까지 한곳에서 관리해요.")
-      : t("브랜드가 캠페인에 맞는 학생단체를 찾고, 받은 제안과 협찬 성과(ROAS)를 한곳에서 봐요."),
+      ? t("학생단체가 행사와 잘 맞는 브랜드를 찾고 협찬 제안부터 성과 리포트까지 한곳에서 관리해요.")
+      : t("브랜드가 캠페인에 맞는 학생단체를 찾고 받은 제안과 협찬 성과(ROAS)를 한곳에서 봐요."),
     noindex: true,
   }
 }
