@@ -2478,6 +2478,36 @@ test("senders see when messages are read, and both sides see edits and deletions
   assert.equal(unread, 0)
 })
 
+test("the demo's sentences saved before PR #283 read as they do now; anyone else's stay", async () => {
+  const { upgradeDatabase } = await import("./store.js")
+  const { createSeed, museConcertPage } = await import("./data/seed.js")
+  const stored = await createSeed()
+  const comma = (text: string) => text.replace(/(서고|좋고|주셨고|드리고) /, "$1, ")
+  // As saved before: the same sentences with the comma.
+  const concert = Object.values(stored.events).flat().find((event) => event.id === "event-muse-concert")!
+  concert.intro = comma(museConcertPage.intro)
+  const review = stored.reviews.find((item) => item.comment.startsWith("버스킹 날 커피를"))!
+  review.comment = comma(review.comment)
+  const offer = stored.offers.find((item) => item.message.startsWith("종강 공연 관객에게"))!
+  offer.message = comma(offer.message)
+  const message = stored.conversations.flatMap((item) => item.messages).find((item) => item.text.startsWith("반가워요! 현장 배부도"))!
+  message.text = comma(message.text)
+  assert.ok([concert.intro, review.comment, offer.message, message.text].every((text) => text.includes(", ")))
+  // A member's own text that only looks alike is left alone.
+  const mine = "우리 공연은 밴드가 무대에 서고, 관객이 함께 노래해요."
+  const own = { ...concert, id: "event-mine", intro: mine }
+  stored.events.someone = [own]
+
+  const upgraded = upgradeDatabase(structuredClone(stored))
+  const events = Object.values(upgraded.events).flat()
+  assert.equal(events.find((event) => event.id === "event-muse-concert")!.intro, museConcertPage.intro)
+  assert.equal(events.find((event) => event.id === "event-mine")!.intro, mine)
+  assert.ok(!upgraded.reviews.find((item) => item.id === review.id)!.comment.includes(", "))
+  assert.ok(!upgraded.offers.find((item) => item.id === offer.id)!.message.includes(", "))
+  const texts = upgraded.conversations.flatMap((item) => item.messages).map((item) => item.text)
+  assert.ok(texts.some((text) => text.startsWith("반가워요! 현장 배부도 좋고 QR")))
+})
+
 test("older data files gain the new collections and calendar dates", async () => {
   const { upgradeDatabase } = await import("./store.js")
   const old = {

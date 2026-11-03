@@ -25,6 +25,17 @@ import { renamedAccountTypes } from "./lib/validation.js"
 import { hashToken } from "./middleware/session.js"
 import type { Database, Metrics, MetricEntry, Report } from "./types.js"
 
+// Demo sentences as seeded before PR #283, and as they read now.
+const demoCopy: Record<string, string> = {
+  "반가워요! 현장 배부도 좋고, QR로 받는 디지털 쿠폰이면 매장 방문까지 집계돼서 더 좋아요. 예상 관객은 몇 명인가요?":
+    "반가워요! 현장 배부도 좋고 QR로 받는 디지털 쿠폰이면 매장 방문까지 집계돼서 더 좋아요. 예상 관객은 몇 명인가요?",
+  "버스킹 날 커피를 제때 보내 주셨고, 쿠폰을 들고 간 관객도 친절하게 맞아 주셨어요.":
+    "버스킹 날 커피를 제때 보내 주셨고 쿠폰을 들고 간 관객도 친절하게 맞아 주셨어요.",
+  "종강 공연 관객에게 립밤 샘플을 나눠 드리고, 공연장 앞에 체험 부스를 열고 싶어요.":
+    "종강 공연 관객에게 립밤 샘플을 나눠 드리고 공연장 앞에 체험 부스를 열고 싶어요.",
+  [museConcertPage.intro.replace("무대에 서고 ", "무대에 서고, ")]: museConcertPage.intro,
+}
+
 export { backupFolder, backups } from "./lib/storage.js"
 
 // The data lives in memory as one document. Routes only touch it through
@@ -225,6 +236,15 @@ export function upgradeDatabase(stored: Database) {
     ? stored.events?.[demoGroupId]?.find((event) => event.id === "event-muse-concert")
     : undefined
   if (concert && !concert.packages) Object.assign(concert, museConcertPage)
+  // The demo's sentences lost the comma after a joining ending (PR #283);
+  // data saved before keeps the old ones until they are rewritten here.
+  const rewrite = (text: string | undefined) => (text !== undefined && Object.hasOwn(demoCopy, text) ? demoCopy[text] : text)
+  for (const list of Object.values(stored.events ?? {})) for (const event of list) event.intro = rewrite(event.intro)
+  for (const review of stored.reviews ?? []) review.comment = rewrite(review.comment) ?? review.comment
+  for (const offer of stored.offers ?? []) offer.message = rewrite(offer.message) ?? offer.message
+  for (const conversation of stored.conversations ?? []) {
+    for (const message of conversation.messages) message.text = rewrite(message.text) ?? message.text
+  }
   // Events no longer ask for the share of women; what was saved goes.
   for (const list of Object.values(stored.events ?? {})) {
     for (const event of list) {
