@@ -150,9 +150,21 @@ export function Header({
     }
   }, [])
 
+  // Brings the section's heading (its eyebrow) up 24px under the header.
+  // Measured by offsets, which leave out transforms: a heading still
+  // waiting to rise in (data-reveal) sits lower than where it settles.
   const showSection = (id: string) => {
     const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    document.getElementById(id)?.scrollIntoView({ behavior: still ? "auto" : "smooth", block: "start" })
+    const section = document.getElementById(id)
+    let element = (section?.querySelector(".eyebrow") ?? section) as HTMLElement | null
+    if (!element) return
+    let top = 0
+    while (element) {
+      top += element.offsetTop
+      element = element.offsetParent as HTMLElement | null
+    }
+    const header = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--header-h")) || 0
+    window.scrollTo({ top: top - header - 24, behavior: still ? "auto" : "smooth" })
   }
 
   return (
