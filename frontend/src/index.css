@@ -2868,10 +2868,8 @@ button.nav-pill:hover {
 }
 
 /* The introduction (pages/LandingPage.tsx). A header link brings a
-   section up clear of the fixed header. */
-.landing-section {
-  scroll-margin-top: calc(var(--header-h) + 24px);
-}
+   section's heading up 24px under the fixed header (Header.tsx's
+   showSection). */
 
 /* Who it is for: the two sides side by side, silver for student groups
    and the point blue for brands. */
@@ -2968,14 +2966,16 @@ button.nav-pill:hover {
   list-style: none;
 }
 
+/* A real border rather than an inset ring, which the picture at the top
+   would paint over. */
 .example-card {
   display: flex;
   height: 100%;
   flex-direction: column;
   overflow: hidden;
+  border: 1px solid var(--line-strong);
   border-radius: var(--radius-md);
   background: var(--surface);
-  box-shadow: var(--ring);
 }
 
 .example-preview {
@@ -3396,7 +3396,29 @@ button.nav-pill:hover {
   flex-wrap: wrap;
   align-content: flex-start;
   row-gap: 4px;
-  padding-top: 12px;
+  padding-top: 7px;
+}
+
+/* The top row reaches toward the card's corners, its buttons small. */
+.work-card > .work-meta {
+  margin: -10px -10px 0;
+}
+
+.work-meta-actions .save-toggle,
+.work-meta-actions .work-badge {
+  width: 32px;
+  height: 32px;
+}
+
+.work-meta-actions .compare-toggle {
+  height: 28px;
+  padding: 0 8px;
+  font-size: 11px;
+}
+
+.work-meta-actions .icon {
+  width: 14px;
+  height: 14px;
 }
 
 .work-rank {
@@ -3438,7 +3460,7 @@ button.nav-pill:hover {
 }
 
 .work-meta > .work-meta-actions {
-  gap: 8px;
+  gap: 6px;
 }
 
 /* 찜: a heart beside the badge, filled in deep blue once saved. */
