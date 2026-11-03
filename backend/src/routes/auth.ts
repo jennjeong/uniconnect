@@ -167,8 +167,10 @@ async function issueCode(email: string, role: Role, purpose: CodePurpose, lang: 
     previous && (previous.firstSentAt ?? 0) + config.emailCodeAttemptWindowMs > Date.now()
       ? previous
       : undefined
+  // Only this purpose's code is replaced, so asking for a sign-up code can't
+  // end someone's reset or email-change code.
   database.emailCodes = database.emailCodes.filter(
-    (entry) => entry.email !== email && keepUntil(entry) > Date.now(),
+    (entry) => !(entry.email === email && entry.purpose === purpose) && keepUntil(entry) > Date.now(),
   )
   database.emailCodes.push({
     email,

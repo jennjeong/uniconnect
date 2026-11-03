@@ -5,6 +5,7 @@ import { DatePicker } from "../components/DatePicker"
 import { Icon } from "../components/Icon"
 import { t } from "../i18n"
 import { formatDateTime, formatDay, formatPeriod } from "../lib/date"
+import { csvCell } from "../lib/csv"
 import { saveFile } from "../lib/download"
 import type { AdminAnnouncement, AdminHealth, AdminLogRow, AdminMemberDetail, ErrorEntry } from "../types"
 
@@ -121,11 +122,11 @@ export function WaitBadge({ at, late, text }: { at: string; late: number; text: 
 }
 
 // A table as a CSV file Excel opens in Korean (with a byte-order mark).
+// Cells go through csvCell, so a member's name starting with = + - or @
+// stays text instead of running as a formula in the operator's sheet.
 export function csvOf(rows: (string | number | null | undefined)[][]) {
-  const cell = (value: string | number | null | undefined) => {
-    const text = value === null || value === undefined ? "" : String(value)
-    return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
-  }
+  const cell = (value: string | number | null | undefined) =>
+    csvCell(value === null || value === undefined ? "" : typeof value === "number" ? value : String(value))
   return rows.map((row) => row.map(cell).join(",")).join("\r\n")
 }
 

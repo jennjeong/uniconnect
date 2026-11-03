@@ -28,4 +28,10 @@ describe("meetings in calendars", () => {
     expect(file).toContain("LOCATION:삼육대 학생회관\\, 2층\r\n")
     expect(file).toContain("TRIGGER:-PT30M")
   })
+
+  test("a place's semicolon is escaped and a lone carriage return stays inside it", () => {
+    const file = meetingIcs({ ...meeting, place: "회관; 2층\rATTACH:https://evil.example" }, "미팅", "m1")
+    expect(file).toContain("LOCATION:회관\\; 2층\\nATTACH:https://evil.example\r\n")
+    expect(file).not.toMatch(/\rATTACH:/)
+  })
 })

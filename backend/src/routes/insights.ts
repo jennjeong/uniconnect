@@ -95,7 +95,8 @@ insightsRouter.get("/shared/:token", (req, res) => {
   for (const [accountId, list] of Object.entries(database.sponsorships)) {
     const sponsorship = list.find((item) => item.shareToken && item.shareToken === token)
     const account = sponsorship && database.accounts.find((item) => item.id === accountId)
-    if (sponsorship && account) {
+    // A suspended brand's links stop, as its ledger and calendar links do.
+    if (sponsorship && account && !account.suspendedAt) {
       res.json({ report: premiumReport(database, account, sponsorship.id) })
       return
     }

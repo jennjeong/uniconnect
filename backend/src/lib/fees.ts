@@ -17,8 +17,12 @@ import type { Agreement, Database } from "../types.js"
 export const feeStart = { since: process.env.FEES_SINCE ?? "2026-11-01" }
 
 const maxValue = 100_000_000
+// The least a sponsorship may be worth, so a token value can't round the
+// fee away.
+export const minValue = 10_000
 
-// A value as written: whole won from 0, cash and in-kind, not both 0.
+// A value as written: whole won from 0, cash and in-kind, together at least
+// minValue.
 export function parseValue(input: unknown) {
   const raw = (input ?? {}) as { cash?: unknown; inKind?: unknown }
   const won = (value: unknown) => {
@@ -30,12 +34,13 @@ export function parseValue(input: unknown) {
   }
   const value = { cash: won(raw.cash), inKind: won(raw.inKind) }
   if (value.cash + value.inKind === 0) throw new HttpError(400, "현금이나 현물 환산 금액을 적어 주세요.")
+  if (value.cash + value.inKind < minValue) throw new HttpError(400, "협찬액은 현금과 현물을 더해 1만 원 이상으로 적어 주세요.")
   return value
 }
 
-// The fee for a value, to 10 won.
+// The fee for a value, rounded up to 10 won, so a value always owes one.
 export const feeOf = (value: { cash: number; inKind: number }) =>
-  Math.round(((value.cash + value.inKind) * prices.feeRate) / 10) * 10
+  Math.ceil(((value.cash + value.inKind) * prices.feeRate) / 10) * 10
 
 // Where an agreement's fee stands: owed at all, its amount for the value
 // written, what the brand paid for it and what is still due.

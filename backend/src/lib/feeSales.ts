@@ -3,6 +3,7 @@ import { sell } from "./billing.js"
 import { HttpError } from "./errors.js"
 import { feeState } from "./fees.js"
 import { notify } from "./notices.js"
+import { rewardReferrals, tellReferrers } from "./referrals.js"
 
 // The fee as a product (lib/billing.ts): the brand's share of an accepted
 // proposal's agreement, for what is still due; paying it confirms the
@@ -26,6 +27,8 @@ sell("fee", {
     const { agreement } = agreementFor(database, proposal)
     if (feeState(database, agreement, proposal).due > 0) return
     const both = confirmAgreement(database, agreement, proposal, "brand")
+    // Each side's first confirmed sponsorship rewards whoever invited it.
+    if (both) tellReferrers(rewardReferrals(database, [proposal.group.account, proposal.brand.account]))
     void notify(
       proposal.group.account,
       "sponsorships",

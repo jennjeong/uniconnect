@@ -281,6 +281,11 @@ eventsRouter.put("/:id", async (req, res) => {
   if (datesChanged && event.date <= todayInKorea()) {
     throw new HttpError(409, `이미 시작한 ${students ? "행사는" : "캠페인은"} 날짜를 바꿀 수 없어요.`)
   }
+  // Moved to a day already past, it would read as over at once (reviews,
+  // results), so a new date is today or later.
+  if (datesChanged && fields.date < todayInKorea()) {
+    throw new HttpError(400, "날짜는 오늘이나 그 뒤로 옮겨 주세요.")
+  }
 
   const before = { ...event }
   // Fields the edit leaves out (one day now, no 기타, no budget, no venue,
