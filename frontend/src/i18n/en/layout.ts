@@ -88,9 +88,9 @@ const en: Record<string, string> = {
   "일정을 복사하지 못했어요.": "Couldn't copy the dates.",
   "캘린더 파일을 저장했어요. 쓰는 캘린더 앱에서 가져올 수 있어요.":
     "Calendar file saved. You can import it into your calendar app.",
-  "캘린더 파일을 열면 Apple 캘린더가 열리고, 거기서 일정을 추가할 수 있어요.":
+  "캘린더 파일을 열면 Apple 캘린더가 열리고 거기서 일정을 추가할 수 있어요.":
     "Open the calendar file and Apple Calendar opens to add the dates.",
-  "캘린더 파일을 열면 쓰는 캘린더 앱이 열리고, 거기서 일정을 추가할 수 있어요.":
+  "캘린더 파일을 열면 쓰는 캘린더 앱이 열리고 거기서 일정을 추가할 수 있어요.":
     "Open the calendar file and your calendar app opens to add the dates.",
   "가게를 연결했어요. {name}에 알렸어요.": "Your shop is linked. We let {name} know.",
   "로그인하면 협찬 제안을 보낼 수 있어요.": "Log in to send a sponsorship proposal.",
@@ -165,11 +165,11 @@ const en: Record<string, string> = {
   "협찬이 있나요?": "to build together?",
   "학생들의 현장과": "Ready to meet",
   "이어 볼까요?": "students where they are?",
-  "행사를 등록하면 잘 맞는 브랜드를 찾아 드리고, 끝난 뒤에는 성과를 리포트로 정리해 드려요.":
+  "행사를 등록하면 잘 맞는 브랜드를 찾아 드리고 끝난 뒤에는 성과를 리포트로 정리해 드려요.":
     "Register an event and we'll find brands that fit, then sum up the results in a report once it's over.",
-  "캠페인을 등록하면 잘 맞는 학생단체를 찾아 드리고, 협찬의 효과를 ROAS로 보여 드려요.":
+  "캠페인을 등록하면 잘 맞는 학생단체를 찾아 드리고 협찬의 효과를 ROAS로 보여 드려요.":
     "Register a campaign and we'll find student groups that fit, then show what your sponsorship earned in ROAS.",
-  "학생단체와 브랜드 사이의 협찬을 잇고, 그 성과를 숫자로 증명하는 캠퍼스 스폰서십 플랫폼이에요.":
+  "학생단체와 브랜드 사이의 협찬을 잇고 그 성과를 숫자로 증명하는 캠퍼스 스폰서십 플랫폼이에요.":
     "A campus sponsorship platform that connects student groups and brands, and proves the results in numbers.",
   "약관과 방침": "Terms and policies",
   "맨 위로 ↑": "Back to top ↑",
@@ -250,10 +250,10 @@ const en: Record<string, string> = {
   // Page titles and descriptions (lib/pageMeta.ts)
   "행사와 잘 맞는 브랜드를 일치율 순으로 보고, 마음에 드는 브랜드에 협찬을 제안해요.":
     "See the brands that fit your event, best match first, and propose a sponsorship to the ones you like.",
-  "브랜드가 보낸 협찬 제안을 수락하거나 거절하고, 수락한 협찬의 진행 단계를 날짜별로 봐요.":
+  "브랜드가 보낸 협찬 제안을 수락하거나 거절하고 수락한 협찬의 진행 단계를 날짜별로 봐요.":
     "Accept or decline the offers brands send you, and follow each accepted sponsorship step by step.",
   "내 행사 일정": "My Event Calendar",
-  "등록한 행사를 달력과 그달 일정 목록으로 보고, 새 행사를 하루나 기간으로 등록해요.":
+  "등록한 행사를 달력과 그달 일정 목록으로 보고 새 행사를 하루나 기간으로 등록해요.":
     "See your events on a calendar and in a monthly list, and register new ones for a day or a period.",
   "행사 QR 스캔, 쿠폰 수령, 매장 방문을 실시간으로 집계하고 목표와 비교해요.":
     "Count QR scans, coupons taken and store visits live, and compare them with your goals.",
@@ -263,7 +263,7 @@ const en: Record<string, string> = {
   "학생단체 찾기": "Find Student Groups",
   "캠페인과 잘 맞는 학생단체를 추천, 행사 임박, 분야별로 찾아 협찬을 제안해요.":
     "Find student groups that fit your campaign by recommendation, upcoming date or field, and propose a sponsorship.",
-  "학생단체가 보낸 협찬 제안을 수락하거나 거절하고, 수락한 협찬의 진행 단계를 날짜별로 봐요.":
+  "학생단체가 보낸 협찬 제안을 수락하거나 거절하고 수락한 협찬의 진행 단계를 날짜별로 봐요.":
     "Accept or decline the proposals student groups send you, and follow each accepted sponsorship step by step.",
   "등록한 캠페인과 확정된 협찬 일정을 달력과 그달 일정 목록으로 봐요.":
     "See your campaigns and confirmed sponsorships on a calendar and in a monthly list.",
@@ -284,7 +284,7 @@ const en: Record<string, string> = {
   "대화 상대": "your contact",
   "{name}의 대화": "Chat with {name}",
   "{name} 주고받은 메시지예요.": "Messages you've exchanged with {name}.",
-  "가입, 협찬 제안, 일정 등록, 성과 확인에 대해 자주 묻는 질문을 보고, 더 궁금한 점은 관리자에게 물어봐요.":
+  "가입, 협찬 제안, 일정 등록, 성과 확인에 대해 자주 묻는 질문을 보고 더 궁금한 점은 관리자에게 물어봐요.":
     "Common questions about signing up, proposals, registering events and results. Anything else, just ask our team.",
   "운영자 화면": "Operator Console",
   "도움말 센터로 들어온 질문을 확인하고 답해요.": "Read and answer the questions sent to the help center.",
@@ -292,9 +292,9 @@ const en: Record<string, string> = {
   "{name}({category})의 소개와 협찬 조건, 일치율 {score}%를 확인하고 제안하거나 문의해요.":
     "See {name} ({category}): their profile, sponsorship terms and {score}% match, then propose or send a message.",
   "{site} · 학생단체와 브랜드를 잇는 협찬 매칭": "{site} · Sponsorship matching for student groups and brands",
-  "학생단체가 행사와 잘 맞는 브랜드를 찾고, 협찬 제안부터 성과 리포트까지 한곳에서 관리해요.":
+  "학생단체가 행사와 잘 맞는 브랜드를 찾고 협찬 제안부터 성과 리포트까지 한곳에서 관리해요.":
     "Student groups find brands that fit their events and manage everything from proposals to reports in one place.",
-  "브랜드가 캠페인에 맞는 학생단체를 찾고, 받은 제안과 협찬 성과(ROAS)를 한곳에서 봐요.":
+  "브랜드가 캠페인에 맞는 학생단체를 찾고 받은 제안과 협찬 성과(ROAS)를 한곳에서 봐요.":
     "Brands find student groups that fit their campaigns and see proposals and results (ROAS) in one place.",
   "받은 협찬 제안@tile": "Proposals received",
   "성과 리포트@step": "Report",
@@ -322,7 +322,7 @@ const en: Record<string, string> = {
   "브랜드가 찾는 행사에 지원하고, 우리 행사 협찬사도 모집해요.": "Apply to events brands look for, and find sponsors for yours.",
   "학생단체 모집에 지원하고, 캠페인과 함께할 행사도 모아요.": "Apply to groups' calls, and gather events for your campaign.",
   "소속 동아리의 행사와 협찬을 한곳에서 봐요. 메시지와 연락처는 동아리만 봐요.": "See your clubs' events and sponsorships in one place. Messages and contacts stay with each club.",
-  "고친 내용은 제안과 협찬에도 반영되고, 상대에게 메일로 알려요.": "Changes carry into its proposals and sponsorships, and partners get an email.",
+  "고친 내용은 제안과 협찬에도 반영되고 상대에게 메일로 알려요.": "Changes carry into its proposals and sponsorships, and partners get an email.",
   "‘{name}’을 그대로 가져왔어요. 날짜만 고르면 돼요.": "Everything from ‘{name}’ is in. Just pick the dates.",
   "행사를 알려 주시면, 딱 맞는 브랜드를 찾아 드려요.": "Tell us about the event, and we'll find brands that fit.",
   "캠페인을 알려 주시면, 딱 맞는 학생단체를 찾아 드려요.": "Tell us about the campaign, and we'll find groups that fit.",
@@ -358,10 +358,10 @@ const en: Record<string, string> = {
   "누구든 먼저 제안할 수 있어요. 수락하면 바로 협찬이 확정돼요.": "Either side can propose first. Once accepted, it's a sponsorship.",
   "할 일은 계약서에 함께 적고, 끝낸 일은 사진으로 남겨요.": "Write the tasks into the contract together, and leave photos when done.",
   "행사 날 QR · 쿠폰 · 방문이 저절로 세지고, 끝나면 리포트가 돼요.": "On the day QR, coupons and visits count themselves, and become a report.",
-  "잘 맞는 브랜드를 골라 보고, 바로 협찬을 제안해요.": "Browse the brands that fit, and propose right away.",
-  "잘 맞는 학생단체를 골라 보고, 바로 협찬을 제안해요.": "Browse the groups that fit, and propose right away.",
-  "QR · 쿠폰 · 매장 방문을 실시간으로 세고, 목표와 비교해요.": "Count QR, coupons and visits live, against the goals.",
-  "협찬마다 ROAS를 비교하고, 분석 보고서를 PDF로 받아요.": "Compare each sponsorship's ROAS, and get the analysis as a PDF.",
+  "잘 맞는 브랜드를 골라 보고 바로 협찬을 제안해요.": "Browse the brands that fit, and propose right away.",
+  "잘 맞는 학생단체를 골라 보고 바로 협찬을 제안해요.": "Browse the groups that fit, and propose right away.",
+  "QR · 쿠폰 · 매장 방문을 실시간으로 세고 목표와 비교해요.": "Count QR, coupons and visits live, against the goals.",
+  "협찬마다 ROAS를 비교하고 분석 보고서를 PDF로 받아요.": "Compare each sponsorship's ROAS, and get the analysis as a PDF.",
   "브랜드 추천부터 계약 · 현장 측정 · 리포트까지, 협찬의 모든 과정을 한곳에서.": "From brand picks to contract, on-site counts and report, every step in one place.",
   "학교 · 회사 이메일로 가입해요. 가입 전에 예시 화면부터 둘러보세요.": "Sign up with a school or work email. Look around the examples first.",
   "지금은 예시 데이터예요. 가입하면 우리 단체 · 매장 기준으로 보여요.": "This is example data. Once you join, it's based on your group or store.",
@@ -402,7 +402,7 @@ const en: Record<string, string> = {
   "학생단체가 가입하면 여기서 찾아 제안해요. 소개를 먼저 써 두면 단체가 먼저 찾아와요.": "Once groups join, find and propose here. Write your profile first, and groups may come to you.",
   "지금은 예시 가게예요. 로그인하면 우리 학교 앞 실제 가게가 보여요.": "These are example shops. Log in to see real ones near your campus.",
   "가까운 순에서 학교 앞 가게에 초대장을 보내 보세요. 가입하면 여기서 제안할 수 있어요.": "Invite shops near campus from Nearest. Once they join, propose here.",
-  "무료로 시작하고, 더 많은 제안과 분석은 캠퍼스 파트너스로 써요.": "Start free, and use Campus Partners for more proposals and analysis.",
+  "무료로 시작하고 더 많은 제안과 분석은 캠퍼스 파트너스로 써요.": "Start free, and use Campus Partners for more proposals and analysis.",
 }
 
 export default en

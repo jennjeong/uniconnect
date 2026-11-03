@@ -257,7 +257,7 @@ function StatsPanel({ stats }: { stats: PlatformStats }) {
       <h2 className="admin-section-title" id="admin-stats-title">
         {t("지표")}
       </h2>
-      <p className="field-hint">{t("큰 숫자는 실제 회원의 것이고, 작은 글씨는 데모 계정과 시드 데이터를 더한 값이에요.")}</p>
+      <p className="field-hint">{t("큰 숫자는 실제 회원의 것이고 작은 글씨는 데모 계정과 시드 데이터를 더한 값이에요.")}</p>
       <dl className="admin-stat-grid">
         {figures.map(({ key, label }) => (
           <div className="admin-stat" key={key}>
@@ -1162,7 +1162,7 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
         >
           <img alt="uniconnect" src={logo} />
           <h1>{t("운영자 콘솔")}</h1>
-          <p>{t("서버의 ADMIN_TOKEN으로 들어와요. 토큰은 이 탭에만 기억되고, 탭을 닫으면 지워져요.")}</p>
+          <p>{t("서버의 ADMIN_TOKEN으로 들어와요. 토큰은 이 탭에만 기억되고 탭을 닫으면 지워져요.")}</p>
           <PasswordField
             autoComplete="off"
             label={t("관리자 토큰")}

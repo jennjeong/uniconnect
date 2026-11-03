@@ -222,7 +222,7 @@ export function DashboardPage({
       />
 
       <WhyUniconnect
-        heading={t("연결에서 끝나지 않고, 협찬을 끝까지 함께해요")}
+        heading={t("연결에서 끝나지 않고 협찬을 끝까지 함께해요")}
         before={[
           t("아는 가게마다 메일과 DM을 돌리고 답을 기다려요"),
           t("말로 정한 약속이 행사 날 엇갈려요"),

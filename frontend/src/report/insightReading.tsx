@@ -78,13 +78,13 @@ export function readings(report: PremiumReport): Record<string, Reading> {
       ],
       action:
         weakest && (weakest.achievement ?? 0) < 100
-          ? t("다음 계약서에서는 {label} 목표를 이번 실제 값에 맞춰 다시 정하고, 그 항목을 올릴 할 일을 하나 더 넣어 보세요.", { label: t(labels[weakest.key]) })
+          ? t("다음 계약서에서는 {label} 목표를 이번 실제 값에 맞춰 다시 정하고 그 항목을 올릴 할 일을 하나 더 넣어 보세요.", { label: t(labels[weakest.key]) })
           : t("모든 목표를 넘었어요. 다음에는 목표를 이번 실제 값보다 10~20% 높게 잡아도 좋아요."),
     },
     audience: audience
       ? {
           points: [
-            t("응답자 중 {grade}이 {share}%로 가장 많았고, 전공은 {field} 계열이 가장 많았어요.", {
+            t("응답자 중 {grade}이 {share}%로 가장 많았고 전공은 {field} 계열이 가장 많았어요.", {
               grade: t(topGrade?.[0] ?? "—"),
               share: pct(topGrade?.[1] ?? 0, audience.responses),
               field: t(topField?.[0] ?? "—"),
@@ -95,10 +95,10 @@ export function readings(report: PremiumReport): Record<string, Reading> {
           ],
           action: t("이 학년 · 전공이 많이 오는 행사를 우선 찾으면 같은 비용으로 더 맞는 손님을 만날 수 있어요."),
         }
-      : { points: [t("설문 답이 모이면 어떤 학생이 왔고, 그중 새 손님이 얼마나 되는지 알 수 있어요.")] },
+      : { points: [t("설문 답이 모이면 어떤 학생이 왔고 그중 새 손님이 얼마나 되는지 알 수 있어요.")] },
     funnel: {
       points: [
-        t("QR을 스캔한 사람의 {coupon}%가 쿠폰을 받았고, 쿠폰을 받은 사람의 {visit}%가 매장에 왔어요.", {
+        t("QR을 스캔한 사람의 {coupon}%가 쿠폰을 받았고 쿠폰을 받은 사람의 {visit}%가 매장에 왔어요.", {
           coupon: pct(coupons, scans),
           visit: pct(visits, coupons),
         }),
@@ -125,7 +125,7 @@ export function readings(report: PremiumReport): Record<string, Reading> {
       points: [
         t("받은 쿠폰 {coupons}장 중 {rate}%가 실제 방문으로 이어졌어요.", { coupons, rate: report.visitsAnalysis.redemption }),
         ...(report.time.lag.average !== null
-          ? [t("쿠폰을 받고 평균 {days}일 뒤에 왔고, {weekday}요일 방문이 가장 많았어요.", { days: report.time.lag.average, weekday: t(weekdayNames[weekday]) })]
+          ? [t("쿠폰을 받고 평균 {days}일 뒤에 왔고 {weekday}요일 방문이 가장 많았어요.", { days: report.time.lag.average, weekday: t(weekdayNames[weekday]) })]
           : []),
         ...(report.visitsAnalysis.newCustomers !== null
           ? [t("방문 중 약 {count}명은 처음 온 손님으로 보여요.", { count: report.visitsAnalysis.newCustomers })]
@@ -139,7 +139,7 @@ export function readings(report: PremiumReport): Record<string, Reading> {
     costs: {
       points: [
         perVisit !== null
-          ? t("방문 1명을 데려오는 데 {cost}이 들었고, 방문 1명이 쓴 돈은 {spend}로 추정돼요.", { cost: fullWon(perVisit), spend: fullWon(report.averageSpend) })
+          ? t("방문 1명을 데려오는 데 {cost}이 들었고 방문 1명이 쓴 돈은 {spend}로 추정돼요.", { cost: fullWon(perVisit), spend: fullWon(report.averageSpend) })
           : t("아직 방문이 없어 방문당 비용을 계산할 수 없어요."),
         t("1인 지출이 20% 적었다면 ROAS는 {low}%, 20% 많았다면 {high}%예요.", {
           low: report.roi.sensitivity[0]?.roas ?? 0,
@@ -148,7 +148,7 @@ export function readings(report: PremiumReport): Record<string, Reading> {
       ],
       action:
         roas.actual >= roas.target
-          ? t("1인 지출이 20% 적게 나와도 ROAS가 유지되는지 보고, 그렇다면 같은 조건으로 다시 협찬해도 안전해요.")
+          ? t("1인 지출이 20% 적게 나와도 ROAS가 유지되는지 보고 그렇다면 같은 조건으로 다시 협찬해도 안전해요.")
           : t("방문당 비용을 줄이려면 현금보다 매장에서만 쓰는 현물 · 쿠폰 비중을 높여 보세요."),
     },
     effect: report.effect
@@ -169,7 +169,7 @@ export function readings(report: PremiumReport): Record<string, Reading> {
     fulfillment: {
       points: report.fulfillment.items.length
         ? [
-            t("계약서에 적은 할 일 {total}개 중 {done}개({share}%)를 마쳤고, 증빙은 {proof}건이에요.", {
+            t("계약서에 적은 할 일 {total}개 중 {done}개({share}%)를 마쳤고 증빙은 {proof}건이에요.", {
               total: report.fulfillment.items.length,
               done: report.fulfillment.done,
               share: doneShare,

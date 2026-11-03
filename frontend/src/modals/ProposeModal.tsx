@@ -224,7 +224,7 @@ export function ProposeModal({
           <p className="field-hint">{t("저장한 문구의 상대 이름 자리는 단체마다 그 단체 이름으로 바뀌어서 가요.")}</p>
         )}
         {onSaveTemplates && (
-          <p className="field-hint">{t("문구를 저장하면 상대와 행사 이름은 빈칸이 되고, 다음에 불러올 때 그 제안의 이름으로 채워져요.")}</p>
+          <p className="field-hint">{t("문구를 저장하면 상대와 행사 이름은 빈칸이 되고 다음에 불러올 때 그 제안의 이름으로 채워져요.")}</p>
         )}
         {error && (
           <p className="form-error" role="alert">

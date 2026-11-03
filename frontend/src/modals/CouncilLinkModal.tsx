@@ -49,7 +49,7 @@ export function CouncilLinkModal({ onClose, onNotice }: { onClose: () => void; o
         }}
       >
         <p className="auth-lead">
-          {t("소속 학생회가 알려 준 코드를 넣으면, 학생회가 우리 단체의 행사와 협찬 현황, 성과 숫자를 볼 수 있어요. 메시지, 연락처, 계약서 내용은 보이지 않고, 언제든 연결을 끊을 수 있어요.")}
+          {t("소속 학생회가 알려 준 코드를 넣으면, 학생회가 우리 단체의 행사와 협찬 현황, 성과 숫자를 볼 수 있어요. 메시지, 연락처, 계약서 내용은 보이지 않고 언제든 연결을 끊을 수 있어요.")}
         </p>
         {councils && councils.length > 0 && (
           <ul className="device-list">

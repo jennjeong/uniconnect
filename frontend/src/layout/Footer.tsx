@@ -111,10 +111,10 @@ export function Footer({
             />
             <p className="footer-lead">
               {landing
-                ? t("학생단체도 브랜드도 이메일 인증 한 번으로 가입해요. 웹에서 바로 쓰고, 원하면 앱으로 설치할 수 있어요.")
+                ? t("학생단체도 브랜드도 이메일 인증 한 번으로 가입해요. 웹에서 바로 쓰고 원하면 앱으로 설치할 수 있어요.")
                 : students
-                  ? t("행사를 등록하면 잘 맞는 브랜드를 찾아 드리고, 끝난 뒤에는 성과를 리포트로 정리해 드려요.")
-                  : t("캠페인을 등록하면 잘 맞는 학생단체를 찾아 드리고, 협찬의 효과를 ROAS로 보여 드려요.")}
+                  ? t("행사를 등록하면 잘 맞는 브랜드를 찾아 드리고 끝난 뒤에는 성과를 리포트로 정리해 드려요.")
+                  : t("캠페인을 등록하면 잘 맞는 학생단체를 찾아 드리고 협찬의 효과를 ROAS로 보여 드려요.")}
             </p>
             {landing ? (
               <div className="footer-actions">
@@ -141,7 +141,7 @@ export function Footer({
         <div className="footer-columns">
           <div className="footer-brand">
             <img alt="uniconnect" height={27} src={logo} width={116} />
-            <p>{t("학생단체와 브랜드 사이의 협찬을 잇고, 그 성과를 숫자로 증명하는 캠퍼스 스폰서십 플랫폼이에요.")}</p>
+            <p>{t("학생단체와 브랜드 사이의 협찬을 잇고 그 성과를 숫자로 증명하는 캠퍼스 스폰서십 플랫폼이에요.")}</p>
           </div>
           {columns.map((column) => (
             <div className="footer-column" key={column.title}>

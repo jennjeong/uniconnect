@@ -70,7 +70,7 @@ export default {
   "소개 페이지 구역": "Page sections",
   "캠퍼스 협찬,": "Campus sponsorship,",
   "지금 시작해 볼까요?": "ready to start?",
-  "학생단체도 브랜드도 이메일 인증 한 번으로 가입해요. 웹에서 바로 쓰고, 원하면 앱으로 설치할 수 있어요.":
+  "학생단체도 브랜드도 이메일 인증 한 번으로 가입해요. 웹에서 바로 쓰고 원하면 앱으로 설치할 수 있어요.":
     "Student groups and brands sign up with one email check. Use it on the web right away, or install it as an app.",
 
   // Search description of the introduction (lib/pageMeta.ts)

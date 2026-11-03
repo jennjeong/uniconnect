@@ -597,7 +597,7 @@ export function ChatPage({
 
       {partner && !partner.hasAccount && (
         <p className="chat-note">
-          {t("아직 uniconnect 계정이 없는 상대예요. 메시지는 남겨 두고, 계정이 연결되면 바로 볼 수 있어요.")}
+          {t("아직 uniconnect 계정이 없는 상대예요. 메시지는 남겨 두고 계정이 연결되면 바로 볼 수 있어요.")}
         </p>
       )}
 

@@ -32,7 +32,7 @@ export function inviteMessage({
     event && day
       ? `다가오는 행사 '${event.name}'(${day[0]}월 ${day[1]}일)에 함께할 가게를 찾고 있어요.`
       : "학생 행사에 함께할 가게를 찾고 있어요.",
-    "uniconnect는 대학생 단체와 학교 근처 가게를 잇는 협찬 서비스예요. 가입하시면 협찬 제안을 받아 보시고, 행사 날 쿠폰으로 찾아온 손님과 방문 성과도 확인하실 수 있어요.",
+    "uniconnect는 대학생 단체와 학교 근처 가게를 잇는 협찬 서비스예요. 가입하시면 협찬 제안을 받아 보시고 행사 날 쿠폰으로 찾아온 손님과 방문 성과도 확인하실 수 있어요.",
     "아래 링크에서 가게로 가입해 주시면 협찬 제안서를 보내 드릴게요.",
     link,
   ].join("\n")
@@ -84,7 +84,7 @@ export function InviteShopModal({
     <Modal name="invite" kicker="Invite" title={t("{name} 초대하기", { name: place.name })} onClose={onClose}>
       <div className="invite-content">
         <p className="auth-lead">
-          {t("사장님이 이 초대장으로 가입하면 가게가 uniconnect 브랜드가 되고, 바로 협찬 제안을 보낼 수 있어요.")}
+          {t("사장님이 이 초대장으로 가입하면 가게가 uniconnect 브랜드가 되고 바로 협찬 제안을 보낼 수 있어요.")}
         </p>
         <figure className="invite-qr">
           <div className="qr-frame">

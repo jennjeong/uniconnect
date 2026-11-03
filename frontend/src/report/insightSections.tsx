@@ -458,7 +458,7 @@ export function VenueAndReviews({ report }: { report: PremiumReport }) {
 
 const adviceText: Record<string, string> = {
   "peak-hour": "가장 붐빈 시간은 {hour}시예요. 다음 행사에서는 이 시간 앞뒤로 부스 인원과 QR 안내를 모아 주세요.",
-  "raise-scans": "QR 참여율이 {rate}%로 목표 {target}%에 못 미쳤어요. 입구와 무대 멘트로 QR을 안내하고, 스캔하면 바로 받는 혜택을 앞에 보여 주세요.",
+  "raise-scans": "QR 참여율이 {rate}%로 목표 {target}%에 못 미쳤어요. 입구와 무대 멘트로 QR을 안내하고 스캔하면 바로 받는 혜택을 앞에 보여 주세요.",
   "coupon-appeal": "스캔한 사람 중 {rate}%만 쿠폰을 받았어요. 혜택을 더 크게 보이게 하거나 바로 쓸 수 있는 혜택으로 바꿔 보세요.",
   "visit-nudge": "쿠폰을 받은 사람 중 {rate}%가 매장에 왔어요. 매장 위치 안내와 사용 기한 알림을 더하면 방문이 늘어요.",
   "shorter-window": "쿠폰을 받고 평균 {days}일 뒤에 방문했어요. 사용 기한을 짧게 정하면 행사 직후로 방문이 모여요.",
@@ -787,7 +787,7 @@ export function Roi({ report }: { report: PremiumReport }) {
         {breakEven === null
           ? t("1인 예상 지출이 없어 손익분기점을 계산하지 못했어요.")
           : visits >= breakEven
-            ? t("협찬액을 되찾는 데 방문 {need}명이 필요했고, {visits}명이 와서 {over}명을 넘겼어요.", { need: breakEven, visits, over: visits - breakEven })
+            ? t("협찬액을 되찾는 데 방문 {need}명이 필요했고 {visits}명이 와서 {over}명을 넘겼어요.", { need: breakEven, visits, over: visits - breakEven })
             : t("협찬액을 되찾으려면 방문 {need}명이 필요해요. 지금 {visits}명으로 {left}명 남았어요.", { need: breakEven, visits, left: breakEven - visits })}
       </p>
       <table className="insight-table">
@@ -963,7 +963,7 @@ export function sections(
       id: "advice",
       icon: "briefcase",
       title: t("우리 브랜드 협찬 중 위치와 다음 제안"),
-      lead: t("이번 협찬을 브랜드의 다른 협찬과 견주고, 다음 할 일을 정했어요."),
+      lead: t("이번 협찬을 브랜드의 다른 협찬과 견주고 다음 할 일을 정했어요."),
       body: (
         <>
           <Records report={report} />

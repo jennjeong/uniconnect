@@ -24,7 +24,7 @@ const stepCopy = (students: boolean): Record<ChecklistKey, { title: string; why:
   event: {
     title: students ? t("첫 행사") : t("첫 캠페인"),
     why: students
-      ? t("브랜드에 제안하려면 행사가 있어야 하고, 45일 안의 행사는 일치율을 올려요.")
+      ? t("브랜드에 제안하려면 행사가 있어야 하고 45일 안의 행사는 일치율을 올려요.")
       : t("학생단체에 제안하려면 캠페인이 있어야 해요."),
     action: students ? t("행사 등록") : t("캠페인 등록"),
   },
