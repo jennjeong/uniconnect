@@ -1,5 +1,5 @@
-// 인트로 로더(components/Loader.tsx)는 브라우저 세션마다 한 번 재생한다.
-// 장면들은 로더가 사라진 뒤에 등장하도록 기다리므로, 패널 뒤에서 낭비되지
+// 인트로 로더(components/Loader.tsx)는 브라우저의 첫 방문에만 재생한다. 다시
+// 찾은 사람을 매번 2.5초 기다리게 하지 않는다. 장면들은 로더가 사라진 뒤에 등장하도록 기다리므로, 패널 뒤에서 낭비되지
 // 않는다.
 
 const storageKey = "uniconnect:intro-played"
@@ -10,7 +10,7 @@ let done = false
 export function shouldPlayIntro() {
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false
   try {
-    return sessionStorage.getItem(storageKey) !== "1"
+    return localStorage.getItem(storageKey) !== "1"
   } catch {
     return false
   }
@@ -19,7 +19,7 @@ export function shouldPlayIntro() {
 export function finishIntro() {
   done = true
   try {
-    sessionStorage.setItem(storageKey, "1")
+    localStorage.setItem(storageKey, "1")
   } catch {
     // 시크릿 창은 저장소를 거부할 수 있다. 그 경우 로더가 다음에 다시 재생될
     // 뿐이다.
