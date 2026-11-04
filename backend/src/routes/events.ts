@@ -385,10 +385,20 @@ eventsRouter.get("/explore", (req, res) => {
   res.json({ events: exploreEvents(database, req.account), cases: eventCases(database, req.account) })
 })
 
+// An event's budget is for the two sides of a proposal about it: the group
+// and the brands it asked.
+const seesBudget = (database: Database, eventId: string, viewer: Account | undefined) =>
+  Boolean(viewer?.brandId) &&
+  database.requests.some((request) => request.eventId === eventId && request.brandId === viewer!.brandId)
+
 eventsRouter.get("/:id/page", (req, res) => {
-  const found = eventPage(getDatabase(), String(req.params.id), req.account)
+  const database = getDatabase()
+  const found = eventPage(database, String(req.params.id), req.account)
   if (!found) throw new HttpError(404, "행사를 찾을 수 없어요.")
-  const { remindedAt: _reminded, ...event } = found.event
+  const { remindedAt: _reminded, budget, ...event } = found.event
+  if (budget !== undefined && (found.own || seesBudget(database, found.event.id, req.account))) {
+    Object.assign(event, { budget })
+  }
   const { id, name, school, category, industry, logo } = found.listing
   res.json({ event, group: { id, name, school, category, industry, ...(logo ? { logo } : {}) }, own: found.own })
 })
