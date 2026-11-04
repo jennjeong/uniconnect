@@ -2,7 +2,8 @@ import { randomUUID } from "node:crypto"
 import { Router } from "express"
 
 import { config } from "../config.js"
-import { cardReady, markPaid, orderFor, paymentsOf, paymentView, prices, productOf, testMode, toss, withVat } from "../lib/billing.js"
+import { cardReady, orderFor, paymentsOf, paymentView, prices, productOf, testMode, toss, tossUnsure, withVat } from "../lib/billing.js"
+import { reconcileCards, recordApproval, settleCard, stuckCards } from "../lib/cardRecovery.js"
 import { HttpError } from "../lib/errors.js"
 // What brands can buy, each registered with lib/billing.ts.
 import "../lib/feeSales.js"
@@ -23,8 +24,11 @@ export const billingRouter = Router()
 
 // Prices, whether card payment is on (and the client key for its window),
 // and the account's payments, newest first.
-billingRouter.get("/", (req, res) => {
+billingRouter.get("/", async (req, res) => {
   const account = requireAccount(req)
+  // A card approval of this account's that didn't get recorded is settled
+  // from Toss first, so the list shows it paid (lib/cardRecovery.ts).
+  if (cardReady() && stuckCards(account.id).length > 0) await reconcileCards(account.id)
   const database = getDatabase()
   res.json({
     prices,
@@ -74,7 +78,15 @@ billingRouter.post("/orders/:id/transfer", async (req, res) => {
 
 billingRouter.delete("/orders/:id", async (req, res) => {
   const account = requireAccount(req)
-  const payment = ownWaiting(account.id, String(req.params.id))
+  const id = String(req.params.id)
+  // An order whose card approval was sent may have been charged: Toss says
+  // first, and a charged one is recorded instead of cancelled.
+  if (ownWaiting(account.id, id).paymentKey) {
+    const settled = await settleCard(id)
+    if (settled === "paid") throw new HttpError(409, "이미 결제한 주문이에요.")
+    if (settled === "open") throw new HttpError(409, "앞서 진행한 결제를 확인하고 있어요. 몇 분 뒤에 결제 내역을 확인해 주세요.")
+  }
+  const payment = ownWaiting(account.id, id)
   Object.assign(payment, { status: "cancelled", cancelledAt: new Date().toISOString(), cancelReason: "주문 취소" })
   await saveDatabase()
   res.json({ order: paymentView(payment) })
@@ -96,29 +108,60 @@ billingRouter.post("/confirm", async (req, res) => {
   }
   const payment = ownWaiting(account.id, orderId)
   if (!paymentKey || amount !== payment.amount) throw new HttpError(400, "결제 금액이 주문과 달라요. 다시 결제해 주세요.")
-  // Priced again now: an order made earlier (a renewal discount since run
-  // out, an old price) isn't approved at its stale amount.
-  const quoted = productOf(payment.kind).quote(getDatabase(), account, payment.targetId).amount
-  if (withVat(quoted) !== payment.amount) {
-    Object.assign(payment, { supply: quoted, amount: withVat(quoted) })
-    await saveDatabase()
-    throw new HttpError(409, "금액이 바뀌었어요. 바뀐 금액으로 다시 결제해 주세요.")
+  // An earlier try left another key: settled from Toss first, as that one
+  // may have charged the card (lib/cardRecovery.ts).
+  if (payment.paymentKey && payment.paymentKey !== paymentKey) {
+    const settled = await settleCard(orderId)
+    if (settled === "paid") {
+      res.json({ order: paymentView(paymentsOf(getDatabase()).find((item) => item.id === orderId)!) })
+      return
+    }
+    if (settled === "open") throw new HttpError(409, "앞서 진행한 결제를 확인하고 있어요. 몇 분 뒤에 결제 내역을 확인해 주세요.")
   }
-  const approved = await toss.confirm(paymentKey, orderId, amount)
-  if (approved.status !== "DONE" || approved.totalAmount !== payment.amount) {
+  const current = ownWaiting(account.id, orderId)
+  // Priced again now: an order made earlier (a renewal discount since run
+  // out, an old price) isn't approved at its stale amount. Not once its
+  // key is saved: the same approval tried again may already have charged it.
+  if (!current.paymentKey) {
+    const quoted = productOf(current.kind).quote(getDatabase(), account, current.targetId).amount
+    if (withVat(quoted) !== current.amount) {
+      Object.assign(current, { supply: quoted, amount: withVat(quoted) })
+      await saveDatabase()
+      throw new HttpError(409, "금액이 바뀌었어요. 바뀐 금액으로 다시 결제해 주세요.")
+    }
+  }
+  // The key is stored before any money moves; if this save fails, nothing
+  // was charged.
+  Object.assign(current, { paymentKey, confirmingAt: new Date().toISOString() })
+  await saveDatabase()
+  let approved
+  try {
+    approved = await toss.confirm(paymentKey, orderId, amount)
+  } catch (error) {
+    // Toss refused it, so the card wasn't charged: the key goes. Anything
+    // else (a timeout, Toss failing) keeps it for reconcileCards.
+    if (error instanceof HttpError && error.status === 402) await forget(orderId, paymentKey)
+    if (error instanceof HttpError) throw error
+    console.error(`[billing] confirm ${orderId}: ${(error as Error).message}`)
+    throw new HttpError(502, tossUnsure)
+  }
+  if (approved.status !== "DONE" || approved.totalAmount !== amount) {
+    console.error(`[billing] ${orderId}: Toss answered ${approved.status} for ${approved.totalAmount}`)
     throw new HttpError(402, "결제가 끝나지 않았어요. 다시 시도해 주세요.")
   }
-  const database = getDatabase()
-  const current = paymentsOf(database).find((item) => item.id === orderId)!
-  markPaid(database, current, {
-    method: "card",
-    paymentKey,
-    ...(approved.receipt?.url ? { receiptUrl: approved.receipt.url } : {}),
-    ...(approved.approvedAt ? { paidAt: new Date(approved.approvedAt).toISOString() } : {}),
-  })
-  await saveDatabase()
-  res.json({ order: paymentView(current) })
+  const paid = await recordApproval(orderId, paymentKey, approved)
+  res.json({ order: paymentView(paid) })
 })
+
+// Takes back a key Toss refused, best effort: left behind, reconcileCards
+// finds it uncharged later.
+async function forget(orderId: string, paymentKey: string) {
+  const payment = paymentsOf(getDatabase()).find((item) => item.id === orderId)
+  if (payment?.status !== "pending" || payment.paymentKey !== paymentKey) return
+  delete payment.paymentKey
+  delete payment.confirmingAt
+  await saveDatabase().catch(() => {})
+}
 
 // A partner's 1:1 섭외 요청: what events it looks for, which the operators
 // answer like a question (twice a Korean month).

@@ -83,6 +83,9 @@ import type {
   Sponsorship,
 } from "./types"
 
+// The waits before trying a card approval again after the server failed.
+const confirmRetryMs = [1500, 4000]
+
 // Screens and popups that aren't on the first screen load the first time
 // they open, so the first page downloads less (lazy chunks; Suspense below).
 const GoalModal = lazy(() => import("./modals/GoalModal").then((module) => ({ default: module.GoalModal })))
@@ -672,7 +675,22 @@ function App() {
       showNotice(answer.canceled ? t("결제를 취소했어요.") : answer.message || t("결제하지 못했어요. 다시 시도해 주세요."))
       return
     }
-    api.confirmPayment({ orderId: answer.orderId, paymentKey: answer.paymentKey, amount: answer.amount }).then(
+    // A save or Toss failing on the server (5xx) or no answer at all is
+    // tried again: the server keeps the key and Toss approves an order
+    // once, so trying again never charges twice.
+    const body = { orderId: answer.orderId, paymentKey: answer.paymentKey, amount: answer.amount }
+    const confirm = async () => {
+      for (const wait of confirmRetryMs) {
+        try {
+          return await api.confirmPayment(body)
+        } catch (error) {
+          if (!(error instanceof ApiError) || (error.status !== 0 && error.status < 500)) throw error
+          await new Promise((resolve) => setTimeout(resolve, wait))
+        }
+      }
+      return api.confirmPayment(body)
+    }
+    confirm().then(
       ({ order }) => {
         showNotice(t("{name} 결제를 마쳤어요.", { name: order.orderName }))
         setPaid((count) => count + 1)
