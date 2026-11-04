@@ -2093,6 +2093,7 @@ test("coming back from Kakao's page leaves the login popup usable", async ({ pag
   // Chrome's back/forward cache brings the page back as it was.
   await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true })))
   await expect(kakao).toBeEnabled()
+})
 
 test("a search box's X empties it and shows everything again", async ({ page }) => {
   await page.goto("/matches")
