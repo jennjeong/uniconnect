@@ -1,5 +1,3 @@
-import { en } from "./en"
-
 export type Lang = "ko" | "en"
 
 const storageKey = "uniconnect-lang"
@@ -21,6 +19,11 @@ function detect(): Lang {
 }
 
 export const lang: Lang = detect()
+
+// English is a large file of its own, fetched only for those who read it,
+// before any screen renders. If it can't be fetched the Korean shows.
+const en: Record<string, string> =
+  lang === "en" ? await import("./en").then((module) => module.en, () => ({})) : {}
 
 // For Intl formatting (numbers, dates).
 export const locale = lang === "ko" ? "ko-KR" : "en-US"

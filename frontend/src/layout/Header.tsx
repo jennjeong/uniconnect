@@ -121,9 +121,11 @@ export function Header({
 
   // The logo has no pill of its own, so it turns light while it floats over
   // a deep blue surface (index.css marks those with --surface-tone) and
-  // stays deep blue over white. Checked on scroll, resize and page changes.
+  // stays deep blue over white. Checked on scroll, resize and page changes;
+  // those come in bursts while a page builds, so they wait for a pause.
   useEffect(() => {
     let frame = 0
+    let pause = 0
     const check = () => {
       frame = 0
       const brand = brandRef.current
@@ -140,10 +142,14 @@ export function Header({
     schedule()
     window.addEventListener("scroll", schedule, { passive: true })
     window.addEventListener("resize", schedule)
-    const pages = new MutationObserver(schedule)
+    const pages = new MutationObserver(() => {
+      window.clearTimeout(pause)
+      pause = window.setTimeout(schedule, 100)
+    })
     pages.observe(document.body, { childList: true, subtree: true })
     return () => {
       cancelAnimationFrame(frame)
+      window.clearTimeout(pause)
       window.removeEventListener("scroll", schedule)
       window.removeEventListener("resize", schedule)
       pages.disconnect()
