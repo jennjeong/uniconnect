@@ -171,7 +171,8 @@ export function EventsPage({
   // Opens the registration form filled from this one (행사 복제).
   onCopy: (event: EventItem) => void
   onDelete: (event: EventItem) => void
-  onOpenSponsorship?: () => void
+  // The sponsored event's page when given a request, else the proposals.
+  onOpenSponsorship?: (request?: SponsorRequest) => void
   onNotice?: (message: string) => void
   // A member's 캘린더에 추가 also offers its subscription link.
   canSubscribe?: boolean
@@ -295,7 +296,7 @@ export function EventsPage({
                 <span className={`status-chip ${statusClass(next)}`}>{statusLabel(next)}</span>
                 <button
                   className="events-next-open"
-                  onClick={() => (next.kind === "event" ? onShowDetail(next.event) : onOpenSponsorship?.())}
+                  onClick={() => (next.kind === "event" ? onShowDetail(next.event) : onOpenSponsorship?.(next.request))}
                   type="button"
                 >
                   {t("상세 보기")}

@@ -157,8 +157,10 @@ export function pageMeta(
   }
   if (view.eventPage) {
     return {
-      title: titled(t("행사 상세")),
-      description: t("학생단체의 행사 장소와 소개, 사진, 브랜드에 드리는 협찬 혜택 묶음을 봐요."),
+      title: titled(students ? t("행사 상세") : t("행사 · 캠페인 상세")),
+      description: students
+        ? t("학생단체의 행사 장소와 소개, 사진, 브랜드에 드리는 협찬 혜택 묶음을 봐요.")
+        : t("캠페인의 일정과 목표, 제공할 협찬이나 학생단체의 행사 정보를 봐요."),
       noindex: true,
     }
   }
