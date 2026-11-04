@@ -46,14 +46,19 @@ export const cardReady = () => Boolean(config.tossClientKey && config.tossSecret
 export const testMode = () => cardReady() && (config.tossSecretKey ?? "").startsWith("test_")
 
 const tossApi = "https://api.tosspayments.com/v1/payments"
+// The answer when Toss failed or didn't answer an approval.
+export const tossUnsure ="결제 확인이 늦어지고 있어요. 결제됐다면 잠시 후 결제 내역에 반영돼요."
 const tossAuth = () => `Basic ${Buffer.from(`${config.tossSecretKey ?? ""}:`).toString("base64")}`
 
-type TossPayment = { status?: string; totalAmount?: number; orderId?: string; receipt?: { url?: string } | null; approvedAt?: string }
+export type TossPayment = { status?: string; totalAmount?: number; orderId?: string; receipt?: { url?: string } | null; approvedAt?: string }
 
 // Calls to Toss Payments; tests swap them.
 export const toss = {
   // Approves a payment the window authorized: within 10 minutes, for the
-  // amount the server set.
+  // amount the server set. The order id is the Idempotency-Key, so asking
+  // again for the same order answers the first approval, never a second
+  // charge. Toss refusing it is a 402; Toss failing (5xx) is a 502, after
+  // which the card may or may not have been charged.
   async confirm(paymentKey: string, orderId: string, amount: number): Promise<TossPayment> {
     const response = await fetch(`${tossApi}/confirm`, {
       method: "POST",
@@ -64,8 +69,21 @@ export const toss = {
     const body = (await response.json().catch(() => null)) as (TossPayment & { message?: string }) | null
     if (!response.ok || !body) {
       console.error(`[billing] confirm ${response.status}: ${body?.message ?? ""}`)
+      if (response.status >= 500 || (response.ok && !body)) throw new HttpError(502, tossUnsure)
       throw new HttpError(402, body?.message ? `결제를 승인하지 못했어요. ${body.message}` : "결제를 승인하지 못했어요. 다시 시도해 주세요.")
     }
+    return body
+  },
+  // A payment as Toss Payments has it now; undefined when Toss has no
+  // payment by that key.
+  async lookup(paymentKey: string): Promise<TossPayment | undefined> {
+    const response = await fetch(`${tossApi}/${encodeURIComponent(paymentKey)}`, {
+      headers: { Authorization: tossAuth() },
+      signal: AbortSignal.timeout(15_000),
+    })
+    if (response.status === 404) return undefined
+    const body = (await response.json().catch(() => null)) as (TossPayment & { message?: string }) | null
+    if (!response.ok || !body) throw new Error(`Toss lookup ${response.status}: ${body?.message ?? ""}`)
     return body
   },
   // Refunds a card payment in full.
@@ -130,6 +148,9 @@ export function orderFor(database: Database, account: Account, kind: string, req
     (payment) => payment.accountId === account.id && payment.kind === kind && payment.targetId === targetId && payment.status === "pending",
   )
   if (waiting) {
+    // Its card approval may already have charged the old amount, which
+    // lib/cardRecovery.ts checks against the order.
+    if (waiting.paymentKey) return waiting
     Object.assign(waiting, priced, { orderName })
     return waiting
   }
@@ -177,4 +198,4 @@ export function markCancelled(database: Database, payment: Payment, reason: stri
 }
 
 // A payment as its account sees it: no Toss key.
-export const paymentView = ({ paymentKey: _key, accountId: _account, ...payment }: Payment) => payment
+export const paymentView = ({ paymentKey: _key, confirmingAt: _confirming, accountId: _account, ...payment }: Payment) => payment

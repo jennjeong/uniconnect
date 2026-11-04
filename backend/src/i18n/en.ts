@@ -339,6 +339,12 @@ const en: Record<string, string> = {
   "카드 결제가 아직 준비되지 않았어요.": "Card payment isn't ready yet.",
   "결제 금액이 주문과 달라요. 다시 결제해 주세요.": "The amount doesn't match the order. Please pay again.",
   "결제가 끝나지 않았어요. 다시 시도해 주세요.": "The payment didn't finish. Please try again.",
+  "결제 확인이 늦어지고 있어요. 결제됐다면 잠시 후 결제 내역에 반영돼요.":
+    "Confirming the payment is taking longer. If it went through, it will show in your payments shortly.",
+  "결제는 승인됐지만 기록을 저장하지 못했어요. 잠시 후 결제 내역에 반영돼요.":
+    "The payment was approved but couldn't be recorded yet. It will show in your payments shortly.",
+  "앞서 진행한 결제를 확인하고 있어요. 몇 분 뒤에 결제 내역을 확인해 주세요.":
+    "We're still checking an earlier payment for this order. Please check your payments in a few minutes.",
   "결제를 찾을 수 없어요.": "We couldn't find that payment.",
   "기다리는 주문만 입금 확인할 수 있어요.": "Only a waiting order can be marked as transferred.",
   "이미 취소된 결제예요.": "That payment was already canceled.",

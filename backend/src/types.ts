@@ -796,6 +796,11 @@ export type Payment = {
   // operator confirmed.
   method?: "card" | "transfer" | "grant"
   paymentKey?: string
+  // A card payment sent to Toss Payments for approval: its paymentKey is
+  // saved before the approval, so a save that fails after the card is
+  // charged can still be recorded (lib/cardRecovery.ts). Cleared once paid
+  // or once Toss says it was never charged.
+  confirmingAt?: string
   receiptUrl?: string
   requestedAt: string
   // The brand asked to pay by bank transfer instead.
