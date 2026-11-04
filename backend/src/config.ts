@@ -67,6 +67,9 @@ export const config = {
   // for placing a brand's store address on the map (lib/geocode.ts). Without
   // it addresses are kept but have no distance.
   nominatimUrl: process.env.NOMINATIM_URL,
+  // A YouTube Data API key for the view counts of SNS posts (lib/snsPosts.ts).
+  // Without it posts are confirmed by their links and screenshots.
+  youtubeApiKey: process.env.YOUTUBE_API_KEY,
   // Where the operators hear of a new error after a quiet hour
   // (lib/errorLog.ts), once mail is set up.
   operatorEmail: process.env.OPERATOR_EMAIL,

@@ -470,6 +470,17 @@ const en: Record<string, string> = {
   "협찬이 취소됐어요": "A sponsorship was called off",
   "{name}에서 '{event}' 협찬 취소에 동의했어요.": "{name} agreed to call off the sponsorship for '{event}'.",
   "협찬 취소 요청을 거뒀어요": "A request to call off was withdrawn",
+  "확인할 SNS 게시물이 올라왔어요": "A social media post to check",
+  "SNS 게시물이 확인됐어요": "Your social media post was confirmed",
+  "SNS 게시물을 다시 요청했어요": "A brand asked again about your post",
+  "{name}에서 '{event}' 협찬 게시물을 올렸어요. 계약서에서 확인해 주세요.":
+    "{name} added a post for '{event}'. Please check it on the agreement.",
+  "{name}에서 '{event}' 협찬 게시물을 고쳤어요. 계약서에서 다시 확인해 주세요.":
+    "{name} corrected a post for '{event}'. Please check it again on the agreement.",
+  "{name}에서 '{event}' 협찬 게시물을 확인했어요. 리포트의 도달에 들어가요.":
+    "{name} confirmed a post for '{event}'. It now counts toward the report's reach.",
+  "{name}에서 '{event}' 협찬 게시물을 다시 요청했어요. 이유: {reason}":
+    "{name} asked again about a post for '{event}'. Why: {reason}",
   "협찬 취소 요청이 거절됐어요": "Your request to call off was declined",
   "{name}에서 '{event}' 협찬 취소 요청을 거뒀어요. 협찬은 그대로예요.":
     "{name} withdrew the request to call off the sponsorship for '{event}'. The sponsorship stands.",
@@ -593,6 +604,16 @@ const en: Record<string, string> = {
   "택배사를 목록에서 골라 주세요.": "Pick the carrier from the list.",
   "운송장 번호는 숫자나 영문 6~20자로 적어 주세요.": "Write the tracking number as 6 to 20 letters or digits.",
   "배송은 10건까지 남길 수 있어요.": "You can note up to 10 parcels.",
+  "게시물 링크는 https://로 시작하는 주소로 적어 주세요.": "Enter the post's link as an address starting with https://.",
+  "데모 계정은 SNS 게시물을 다룰 수 없어요.": "Demo accounts can't manage social media posts.",
+  "게시물은 학생단체가 올려요.": "The student group adds the posts.",
+  "게시물은 브랜드가 확인해요.": "The brand checks the posts.",
+  "게시물을 찾을 수 없어요.": "We couldn't find that post.",
+  "도달 수를 0 이상의 숫자로 적어 주세요.": "Enter the reach as a number, 0 or more.",
+  "게시물은 10개까지 올릴 수 있어요.": "You can add up to 10 posts.",
+  "이미 올린 게시물이에요.": "That post is already here.",
+  "다시 요청하는 이유를 100자 안으로 적어 주세요.": "Say why you're asking again in 100 characters or fewer.",
+  "캡처는 게시물마다 3장까지 올릴 수 있어요.": "Each post can hold up to 3 screenshots.",
   "배송을 찾을 수 없어요.": "Couldn't find that parcel.",
   "상대가 남긴 배송은 상대만 지울 수 있어요.": "Only the other side can remove a parcel it noted.",
   "미팅 날짜를 골라 주세요.": "Pick the meeting's date.",

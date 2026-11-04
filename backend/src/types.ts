@@ -541,6 +541,9 @@ export type Report = {
   // Inputs the figures above come from.
   averageSpend: number
   snsReach: number
+  // The reach of the SNS posts brands confirmed, and of those still waiting.
+  postedReach: number
+  pendingReach: number
   coupon: MeasurementGoals["coupon"]
   // Only for the group that owns the event.
   staffPin?: string
@@ -667,8 +670,26 @@ export type Agreement = {
   // Parcels of sponsored goods on their way (협찬 물품 배송), with the side
   // that sent each; the page links each to its carrier's tracking.
   shipments?: Shipment[]
+  // The group's SNS posts about the sponsorship, for the brand to confirm
+  // (lib/snsPosts.ts).
+  snsPosts?: SnsPost[]
   createdAt: string
   updatedAt: string
+}
+
+// One SNS post: its link, the reach the group wrote, up to three screenshots
+// and what the brand made of it. A YouTube link also keeps the views read
+// and when (no views: the video is private or gone).
+export type SnsPost = {
+  id: string
+  url: string
+  reach: number
+  photos: string[]
+  status: "pending" | "confirmed" | "rejected"
+  // The brand's reason for asking again.
+  reason?: string
+  youtube?: { views?: number; at: string }
+  addedAt: string
 }
 
 export type Shipment = { id: string; side: ChatSide; carrier: string; number: string; note?: string; addedAt: string }

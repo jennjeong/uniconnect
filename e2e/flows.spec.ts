@@ -272,6 +272,60 @@ test("the brand notes the parcel it sent on the agreement, and the group tracks 
   }
 })
 
+test("the group posts its SNS link, the brand asks again and then confirms it", async ({ page, request, browser }) => {
+  const group = await signUpMember(request, "학생단체", "e2e-post@syu.ac.kr", "게시물 올리는 동아리")
+  const brand = await signUpMember(request, "브랜드", "e2e-post@post-cafe.kr", "게시물 보는 카페")
+  const date = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date(Date.now() + 9 * 86_400_000))
+  await request.post("/api/events", { data: { name: "게시물 공연", date, types: ["제품"] }, headers: group.headers })
+  await request.post("/api/proposals", { data: { matchId: brand.listingId }, headers: group.headers })
+  const { requests } = (await (await request.get("/api/requests", { headers: brand.headers })).json()) as { requests: { id: string }[] }
+  const id = requests[0].id
+  await request.post(`/api/requests/${id}/accept`, { headers: brand.headers })
+
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
+  await page.goto(`/agreements/${id}`)
+  const panel = page.getByRole("region", { name: "SNS 게시물 확인" })
+  await panel.getByLabel("게시물 링크").fill("https://www.instagram.com/p/uniconnect/")
+  await panel.getByLabel("도달 수").fill("1200")
+  await panel.getByRole("button", { name: "게시물 올리기" }).click()
+  await expect(page.getByText("게시물을 올렸어요. 브랜드가 확인하면 도달에 들어가요.")).toBeVisible()
+  await expect(panel.locator(".agreement-post-sum")).toHaveText("확인된 도달 0명 · 확인 전 1,200명")
+  await panel.getByLabel("캡처 올리기").setInputFiles({
+    name: "reach.png",
+    mimeType: "image/png",
+    buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64"),
+  })
+  await expect(page.getByText("캡처를 올렸어요.")).toBeVisible()
+
+  // The brand sees it waiting, and sends it back with a reason.
+  const brandPage = await (await browser.newContext()).newPage()
+  await brandPage.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
+  await brandPage.goto(`/agreements/${id}`)
+  const check = brandPage.getByRole("region", { name: "SNS 게시물 확인" })
+  await expect(check.locator(".agreement-post-state")).toHaveText("확인 전")
+  await expect(check.locator(".agreement-photos img")).toBeVisible()
+  await expect(check.getByLabel("게시물 링크")).toHaveCount(0)
+  await check.getByRole("button", { name: "다시 요청" }).click()
+  await check.getByLabel("다시 요청하는 이유").fill("도달 수가 보이지 않아요")
+  await check.getByRole("button", { name: "보내기" }).click()
+  await expect(check.locator(".agreement-post-state")).toHaveText("다시 요청")
+
+  // The group corrects it, and once the brand confirms it counts in the report.
+  await page.reload()
+  await expect(panel).toContainText("다시 요청한 이유: 도달 수가 보이지 않아요")
+  await panel.getByRole("button", { name: "고치기" }).click()
+  await panel.getByLabel("도달 수").fill("1500")
+  await panel.getByRole("button", { name: "고쳐서 다시 보내기" }).click()
+  await expect(page.getByText("게시물을 고쳐서 다시 보냈어요.")).toBeVisible()
+  await brandPage.reload()
+  await check.getByRole("button", { name: "확인", exact: true }).click()
+  await expect(check.locator(".agreement-post-sum")).toHaveText("확인된 도달 1,500명 · 확인 전 0명")
+  for (const member of [group, brand]) {
+    const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: member.headers })
+    expect(left.status()).toBe(204)
+  }
+})
+
 test("a group proposes a meeting in a conversation, and the brand accepts and saves it", async ({ page, request, browser }) => {
   const group = await signUpMember(request, "학생단체", "e2e-meet@syu.ac.kr", "미팅하는 동아리")
   await request.put("/api/profile", { data: { intro: "캠퍼스 동아리예요.", offer: "관객 100명" }, headers: group.headers })

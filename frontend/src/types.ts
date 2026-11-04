@@ -136,10 +136,24 @@ export type AgreementItem = {
 // A parcel of sponsored goods one side sent, noted on the agreement.
 export type Shipment = { id: string; side: ChatSide; carrier: string; number: string; note?: string; addedAt: string }
 
+// The group's SNS post for the brand to confirm, with the views a YouTube
+// link read (none when the video is private or gone).
+export type SnsPost = {
+  id: string
+  url: string
+  reach: number
+  photos: string[]
+  status: "pending" | "confirmed" | "rejected"
+  reason?: string
+  youtube?: { views?: number; at: string }
+  addedAt: string
+}
+
 export type Agreement = {
   id: string
   kind: "request" | "offer"
   shipments?: Shipment[]
+  snsPosts?: SnsPost[]
   side: ChatSide
   // Each side, with the person running it (only the two sides see this).
   group: { name: string; member: boolean; contact?: AccountContact }
@@ -760,6 +774,9 @@ export type Report = {
   // sponsor's store, and reach beyond the venue.
   averageSpend: number
   snsReach: number
+  // The reach of the SNS posts brands confirmed, and of those still waiting.
+  postedReach: number
+  pendingReach: number
   coupon: { store: string; title: string }
   // 4 digits store staff enter to confirm a visit; only for the owner.
   staffPin?: string

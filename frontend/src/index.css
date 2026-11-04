@@ -12237,6 +12237,37 @@ button.nav-pill:hover {
   line-height: 1.6;
 }
 
+/* 게시물 확인 on the agreement (SnsPostsPanel) borrows the shipments' rows
+   and form; these are what it adds. */
+.agreement-post-sum {
+  margin: 0 0 12px;
+  font-weight: var(--weight-semibold);
+}
+
+.agreement-post-state {
+  font-weight: var(--weight-semibold);
+}
+
+.agreement-post-state.is-confirmed {
+  color: var(--point);
+}
+
+.agreement-post-ask,
+.agreement-post-photos {
+  display: flex;
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.agreement-post-ask label {
+  display: grid;
+  flex: 1 1 220px;
+  gap: 4px;
+  font-size: 13px;
+}
+
 /* The row to note a parcel sits in its own silver box with room around it. */
 .shipment-form {
   display: grid;

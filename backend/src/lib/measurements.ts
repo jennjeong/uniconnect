@@ -286,14 +286,15 @@ export const estimatedSales = (measurement: Measurement) =>
   measurement.metrics.visits * measurement.goals.averageSpend
 
 // The event's report: its goals, with reach and ROAS worked out from the
-// live counts (reach: QR scans plus the reach beyond the venue; ROAS:
+// live counts (reach: QR scans plus the reach beyond the venue, written in
+// the goals and from the posts brands confirmed, `posted`; ROAS:
 // estimated sales over the sponsorship's value), how it is confirmed (as
 // both sides confirmed it) and what the venue confirmed. The PINs go only to the event's owner, the
 // group's venue PIN only when the owner is the group.
 export function buildReport(
   measurement: Measurement,
   event: EventItem,
-  { withPin = false, withGroupPin = false } = {},
+  { withPin = false, withGroupPin = false, posted = { confirmed: 0, pending: 0 } } = {},
 ): Report {
   const { goals, metrics } = measurement
   const sponsorValue = goals.valueBreakdown.reduce((sum, part) => sum + part.value, 0)
@@ -305,13 +306,15 @@ export function buildReport(
     ...(event.endDate ? { eventEndDate: event.endDate } : {}),
     expectedAudience: goals.expectedAudience,
     sponsorValue,
-    reach: metrics.scans + goals.snsReach,
+    reach: metrics.scans + goals.snsReach + posted.confirmed,
     roas: percent(estimatedSales(measurement), sponsorValue),
     targets: goals.targets,
     hourlyScans: measurement.hourlyScans,
     valueBreakdown: goals.valueBreakdown,
     averageSpend: goals.averageSpend,
     snsReach: goals.snsReach,
+    postedReach: posted.confirmed,
+    pendingReach: posted.pending,
     coupon: goals.coupon,
     ...(withPin ? { staffPin: measurement.staffPin } : {}),
     ...(withGroupPin ? { groupPin: measurement.groupPin } : {}),

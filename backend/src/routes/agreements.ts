@@ -25,10 +25,11 @@ import { methodsOf, parseMethods } from "../lib/methods.js"
 import { notify } from "../lib/notices.js"
 import { parsePhoto, photoName, photoType, photos } from "../lib/photos.js"
 import { isDemoAccount } from "../lib/reviews.js"
+import { fetchViews, parsePostUrl, postLimits } from "../lib/snsPosts.js"
 import { carriers, text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
-import type { AgreementItem, Database } from "../types.js"
+import type { AgreementItem, Database, SnsPost } from "../types.js"
 
 export const agreementsRouter = Router()
 
@@ -76,6 +77,48 @@ function ownItem(database: Database, proposal: AcceptedProposal, itemId: unknown
   if (!agreement || !item) throw new HttpError(404, "약속한 일을 찾을 수 없어요.")
   if (item.side !== side) throw new HttpError(403, "상대가 할 일은 상대만 표시할 수 있어요.")
   return { agreement, item }
+}
+
+// One of an agreement's SNS posts, and the group's or the brand's right to
+// act on it: the group posts, the brand checks, and neither from the shared
+// demo accounts.
+function ownPost(
+  { account, database, proposal, side }: ReturnType<typeof opened>,
+  postId: unknown,
+  actor: AgreementItem["side"],
+) {
+  if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 SNS 게시물을 다룰 수 없어요.")
+  if (side !== actor) {
+    throw new HttpError(403, actor === "group" ? "게시물은 학생단체가 올려요." : "게시물은 브랜드가 확인해요.")
+  }
+  const agreement = database.agreements.find((entry) => entry.id === proposal.id)
+  const post = agreement?.snsPosts?.find((entry) => entry.id === String(postId))
+  if (!agreement || !post) throw new HttpError(404, "게시물을 찾을 수 없어요.")
+  return { agreement, post }
+}
+
+function parsePost(body: unknown) {
+  const input = (body ?? {}) as { url?: unknown; reach?: unknown }
+  const reach = Number(input.reach)
+  if (!Number.isInteger(reach) || reach < 0 || reach > postLimits.reach) {
+    throw new HttpError(400, "도달 수를 0 이상의 숫자로 적어 주세요.")
+  }
+  return { url: parsePostUrl(input.url), reach }
+}
+
+// Tells the other side about a post, by mail once mail is on.
+function tellAboutPost(
+  { account, proposal, side }: ReturnType<typeof opened>,
+  subject: string,
+  line: string,
+) {
+  void notify(
+    side === "group" ? proposal.brand.account : proposal.group.account,
+    "sponsorships",
+    subject,
+    [`${account.name}에서 '${proposal.eventName}' ${line}`],
+    `/agreements/${encodeURIComponent(proposal.id)}`,
+  )
 }
 
 // The account's accepted proposals with how far each agreement is: its
@@ -364,6 +407,123 @@ agreementsRouter.delete("/:id/cancel", async (req, res) => {
   res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 
+// The group adds an SNS post for the brand to confirm.
+agreementsRouter.post("/:id/sns-posts", async (req, res) => {
+  const opening = openedToChange(req)
+  const { account, database, proposal, side } = opening
+  if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 SNS 게시물을 다룰 수 없어요.")
+  if (side !== "group") throw new HttpError(403, "게시물은 학생단체가 올려요.")
+  const { agreement } = agreementFor(database, proposal)
+  const posts = agreement.snsPosts ?? []
+  if (posts.length >= postLimits.posts) throw new HttpError(400, "게시물은 10개까지 올릴 수 있어요.")
+  const { url, reach } = parsePost(req.body)
+  if (posts.some((post) => post.url === url)) throw new HttpError(409, "이미 올린 게시물이에요.")
+  const post: SnsPost = { id: randomUUID(), url, reach, photos: [], status: "pending", addedAt: new Date().toISOString() }
+  await fetchViews(post)
+  // Looked up again: the data may have been read anew during the call.
+  const fresh = agreementFor(getDatabase(), proposal).agreement
+  ;(fresh.snsPosts ??= []).push(post)
+  fresh.updatedAt = post.addedAt
+  await saveDatabase()
+  tellAboutPost(opening, "확인할 SNS 게시물이 올라왔어요", "협찬 게시물을 올렸어요. 계약서에서 확인해 주세요.")
+  res.status(201).json({ agreement: agreementView(getDatabase(), fresh, proposal, side) })
+})
+
+// The group corrects a post, which goes back to the brand.
+agreementsRouter.put("/:id/sns-posts/:postId", async (req, res) => {
+  const opening = openedToChange(req)
+  const { database, proposal, side } = opening
+  const { agreement, post } = ownPost(opening, req.params.postId, "group")
+  const { url, reach } = parsePost(req.body)
+  if (agreement.snsPosts!.some((entry) => entry !== post && entry.url === url)) throw new HttpError(409, "이미 올린 게시물이에요.")
+  if (url !== post.url) delete post.youtube
+  post.url = url
+  post.reach = reach
+  post.status = "pending"
+  delete post.reason
+  if (!post.youtube) await fetchViews(post)
+  agreement.updatedAt = new Date().toISOString()
+  await saveDatabase()
+  tellAboutPost(opening, "확인할 SNS 게시물이 올라왔어요", "협찬 게시물을 고쳤어요. 계약서에서 다시 확인해 주세요.")
+  res.json({ agreement: agreementView(database, agreement, proposal, side) })
+})
+
+agreementsRouter.delete("/:id/sns-posts/:postId", async (req, res) => {
+  const opening = openedToChange(req)
+  const { database, proposal, side } = opening
+  const { agreement, post } = ownPost(opening, req.params.postId, "group")
+  agreement.snsPosts = agreement.snsPosts!.filter((entry) => entry !== post)
+  if (agreement.snsPosts.length === 0) delete agreement.snsPosts
+  agreement.updatedAt = new Date().toISOString()
+  await saveDatabase()
+  await photos().remove(proposal.id, post.photos)
+  res.json({ agreement: agreementView(database, agreement, proposal, side) })
+})
+
+// The brand confirms a post, which counts in the reports from then on.
+agreementsRouter.post("/:id/sns-posts/:postId/confirm", async (req, res) => {
+  const opening = openedToChange(req)
+  const { database, proposal, side } = opening
+  const { agreement, post } = ownPost(opening, req.params.postId, "brand")
+  post.status = "confirmed"
+  delete post.reason
+  agreement.updatedAt = new Date().toISOString()
+  await saveDatabase()
+  tellAboutPost(opening, "SNS 게시물이 확인됐어요", "협찬 게시물을 확인했어요. 리포트의 도달에 들어가요.")
+  res.json({ agreement: agreementView(database, agreement, proposal, side) })
+})
+
+// The brand asks again, saying why in a line.
+agreementsRouter.post("/:id/sns-posts/:postId/reject", async (req, res) => {
+  const opening = openedToChange(req)
+  const { database, proposal, side } = opening
+  const { agreement, post } = ownPost(opening, req.params.postId, "brand")
+  const reason = text(req.body?.reason)
+  if (!reason || reason.length > postLimits.reason) throw new HttpError(400, "다시 요청하는 이유를 100자 안으로 적어 주세요.")
+  post.status = "rejected"
+  post.reason = reason
+  agreement.updatedAt = new Date().toISOString()
+  await saveDatabase()
+  tellAboutPost(opening, "SNS 게시물을 다시 요청했어요", `협찬 게시물을 다시 요청했어요. 이유: ${reason}`)
+  res.json({ agreement: agreementView(database, agreement, proposal, side) })
+})
+
+// A screenshot of a post's reach, kept like the items' proof photos.
+agreementsRouter.post("/:id/sns-posts/:postId/photos", async (req, res) => {
+  const opening = openedToChange(req)
+  const { proposal, side } = opening
+  const { post } = ownPost(opening, req.params.postId, "group")
+  if (post.photos.length >= postLimits.photos) throw new HttpError(409, "캡처는 게시물마다 3장까지 올릴 수 있어요.")
+  const parsed = parsePhoto(req.body?.image)
+  if (!parsed) throw new HttpError(400, "사진은 PNG, JPG, WebP로 올려 주세요.")
+  const photo = parsed.name
+  const store = photos()
+  await store.put(proposal.id, photo, parsed.bytes)
+  try {
+    const fresh = ownPost({ ...opening, database: getDatabase() }, req.params.postId, "group")
+    fresh.post.photos.push(photo)
+    fresh.agreement.updatedAt = new Date().toISOString()
+    await saveDatabase()
+    res.status(201).json({ agreement: agreementView(getDatabase(), fresh.agreement, proposal, side) })
+  } catch (error) {
+    await store.remove(proposal.id, [photo])
+    throw error
+  }
+})
+
+agreementsRouter.delete("/:id/sns-posts/:postId/photos/:photo", async (req, res) => {
+  const opening = openedToChange(req)
+  const { database, proposal, side } = opening
+  const { agreement, post } = ownPost(opening, req.params.postId, "group")
+  const photo = String(req.params.photo)
+  if (!post.photos.includes(photo)) throw new HttpError(404, "사진을 찾을 수 없어요.")
+  post.photos = post.photos.filter((entry) => entry !== photo)
+  agreement.updatedAt = new Date().toISOString()
+  await saveDatabase()
+  await photos().remove(proposal.id, [photo])
+  res.json({ agreement: agreementView(database, agreement, proposal, side) })
+})
+
 // The side an item belongs to marks it done (or not yet) and keeps its links.
 agreementsRouter.patch("/:id/items/:itemId", async (req, res) => {
   const { database, proposal, side } = openedToChange(req)
@@ -419,7 +579,8 @@ agreementsRouter.get("/:id/photos/:photo", async (req, res) => {
   const { database, proposal } = opened(req)
   const agreement = database.agreements.find((entry) => entry.id === proposal.id)
   const photo = String(req.params.photo)
-  if (!photoName.test(photo) || !agreement?.items.some((item) => item.photos.includes(photo))) {
+  const kept = [...(agreement?.items ?? []), ...(agreement?.snsPosts ?? [])].some((item) => item.photos.includes(photo))
+  if (!photoName.test(photo) || !kept) {
     throw new HttpError(404, "사진을 찾을 수 없어요.")
   }
   const bytes = await photos().get(proposal.id, photo)

@@ -141,6 +141,13 @@ npm run dev                     # 웹 http://localhost:8443, API http://localhos
 - **협찬 취소:** 행사가 끝나기 전에 이유와 함께 요청하고 상대가 동의하면 취소된다. 협찬 기록, 쿠폰 · PIN · 성과, 알림, 후기가 빠지고 계약서는 읽기 전용 기록으로 남는다.
 - 어느 한쪽이 탈퇴하면 계약서와 사진도 지운다.
 
+**SNS 게시물 확인.** 학생단체가 계약서에 게시물 링크(https)와 도달 수, 캡처 3장을 올리고(게시물 10개) 브랜드가 `확인`하거나 이유와 함께 `다시 요청`한다(`lib/snsPosts.ts`).
+
+- 확인된 게시물의 도달만 리포트의 도달에 더한다. 목표의 현장 밖 도달은 그대로 두고 함께 더한다. 확인 전 숫자는 패널에 따로 보인다.
+- 같은 행사의 여러 계약서에 같은 링크가 있으면 한 번만 센다. 취소된 협찬의 게시물은 세지 않는다.
+- `YOUTUBE_API_KEY`가 있으면 유튜브 링크의 공개 조회수를 가져와 적은 숫자 대신 쓴다. 올릴 때 한 번, 그 뒤 하루 한 번 새로 고친다. 비공개 · 삭제된 영상은 `가져올 수 없음`으로 표시하고 적은 숫자를 쓴다.
+- 캡처는 증빙 사진처럼 두 쪽만 본다. 고치면 다시 `확인 전`이 된다. 데모 계정은 쓸 수 없다.
+
 ### 협찬 확인 방식
 
 계약서 아래에서 방식을 여러 개 고르고 방식마다 확인할 쪽(학생단체 · 브랜드 · 모두)을 정한다(`lib/methods.ts`, `data/methods.ts`).
@@ -180,7 +187,7 @@ npm run dev                     # 웹 http://localhost:8443, API http://localhos
 ### 성과와 후기
 
 - 행사마다 측정이 쌓이고 처음에는 가장 최근 행사를 연다. 시작 전에는 `진행 전`, 끝나면 `진행 완료`로 보인다.
-- 도달 = QR 스캔 + 현장 밖 도달. ROAS = 방문 수 × 1인 예상 지출 ÷ 협찬 가치.
+- 도달 = QR 스캔 + 현장 밖 도달 + 브랜드가 확인한 게시물 도달. ROAS = 방문 수 × 1인 예상 지출 ÷ 협찬 가치.
 - 성과 분석에는 행사 날이 지난 협찬이 나오고 단체의 측정과 협찬 가치, 목표 ROAS를 따른다.
 - CSV는 브라우저에서 만든다(`lib/csv.ts`). UTF-8 BOM을 붙이고 `=` `+` `-` `@`로 시작하는 값 앞에 `'`를 붙인다.
 - **후기:** 행사 날부터 별점(1~5), 태그 3개, 한 줄(300자)을 남기고 고치거나 지운다. 상세 페이지 `파트너 후기`와 카드 별점에 공개되고 받은 쪽에 메일이 간다. 재협찬 의향은 '다시 함께하고 싶어요'의 비율이다.
@@ -355,6 +362,7 @@ cp backend/.env.example backend/.env.local
 | `NAVER_CLIENT_ID` · `NAVER_CLIENT_SECRET` | 없음 | 네이버 로그인 |
 | `NOMINATIM_URL` | 없음 (dev 켬) | 주소를 좌표로 바꾸는 서버 |
 | `NTS_SERVICE_KEY` | 없음 | 공공데이터포털 국세청 사업자 진위확인 키. 있으면 브랜드가 `사업자 확인`을 쓴다 |
+| `YOUTUBE_API_KEY` | 없음 | YouTube Data API v3 키. 있으면 SNS 게시물의 유튜브 조회수를 가져온다 |
 | `TOSS_CLIENT_KEY` · `TOSS_SECRET_KEY` | 없음 | 토스페이먼츠 키. 시크릿은 서버에만 둔다 |
 | `FEES_SINCE` | `2026-11-01` | 이 날짜(한국) 이후 수락된 협찬부터 수수료. 브라우저 테스트만 바꾼다 |
 
@@ -428,6 +436,9 @@ GitHub 저장소 시크릿에는 `NEON_API_KEY`를 둔다.
 | PUT | `/agreements/:id/items`, `/agreements/:id/methods`, `/agreements/:id/value` | 할 일, 확인 방식, 협찬액 | 필요 |
 | POST | `/agreements/:id/confirm` | 확인, 두 쪽이 다 하면 방식 확정 | 필요 |
 | POST · DELETE | `/agreements/:id/cancel`, `/agreements/:id/cancel/accept` | 취소 요청, 동의, 거두기 · 거절 | 필요 |
+| POST · PUT · DELETE | `/agreements/:id/sns-posts(/:postId)` | SNS 게시물 올리기, 고치기, 지우기 (학생단체) | 필요 |
+| POST | `/agreements/:id/sns-posts/:postId/confirm` · `reject` | 확인, 다시 요청 `{ reason }` (브랜드) | 필요 |
+| POST · DELETE | `/agreements/:id/sns-posts/:postId/photos(/:photo)` | 캡처 올리기, 지우기 | 필요 |
 | PATCH | `/agreements/:id/items/:itemId` | 완료 `{ done }`, 증빙 `{ links }` | 필요 |
 | GET · POST · DELETE | `/agreements/:id/items/:itemId/photos(/:photo)`, `/agreements/:id/photos/:photo` | 증빙 사진 | 필요 |
 | GET | `/reviews?about=` | 받은 후기와 요약 | |

@@ -4333,6 +4333,97 @@ test("either side notes the parcels it sent on the agreement, and only it takes 
   assert.equal((await call("POST", path, { carrier: "CJ대한통운", number: "123456789" })).status, 401)
 })
 
+test("a group's SNS posts count toward reach once the brand confirms them, with YouTube's views where it can read them", async () => {
+  const { youtube, refreshViews } = await import("./lib/snsPosts.js")
+  const { config } = await import("./config.js")
+  const realViews = youtube.views
+  const realKey = config.youtubeApiKey
+  const group = await signUpMember("post-club@syu.ac.kr", "post-pass-1234")
+  const groupId = getDatabase().accounts.find((account) => account.email === "post-club@syu.ac.kr")!.id
+  const { token: brand, listingId } = await listedMember("post@post-cafe.kr", "post-pass-1234", "브랜드")
+  const event = (await call("POST", "/events", { name: "게시물 공연", date: "2026-12-21", people: "100명", types: ["제품"] }, group)).data.event
+  await call("POST", "/proposals", { matchId: listingId }, group)
+  const request = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
+  await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+  const path = `/agreements/${request.id}/sns-posts`
+  const reach = async () => (await call("GET", `/measurements/${event.id}`, undefined, group)).data.report
+  const before = (await reach()).reach
+  try {
+    // Without a key a YouTube link is a link like any other.
+    config.youtubeApiKey = undefined
+    const added = await call("POST", path, { url: "https://www.instagram.com/p/abc/", reach: 500 }, group)
+    assert.equal(added.status, 201)
+    const [post] = added.data.agreement.snsPosts
+    assert.deepEqual([post.status, post.reach, post.youtube], ["pending", 500, undefined])
+    // Waiting, it shows apart from the reach.
+    assert.deepEqual([(await reach()).reach, (await reach()).pendingReach, (await reach()).postedReach], [before, 500, 0])
+    // Only https, a real number and one of each; only the group adds or corrects.
+    assert.equal((await call("POST", path, { url: "http://example.com/a", reach: 1 }, group)).status, 400)
+    assert.equal((await call("POST", path, { url: "javascript:alert(1)", reach: 1 }, group)).status, 400)
+    assert.equal((await call("POST", path, { url: "https://example.com/a", reach: -1 }, group)).status, 400)
+    assert.equal((await call("POST", path, { url: post.url, reach: 1 }, group)).status, 409)
+    assert.equal((await call("POST", path, { url: "https://example.com/a", reach: 1 }, brand)).status, 403)
+    assert.equal((await call("POST", path, { url: "https://example.com/a", reach: 1 }, await login("학생단체"))).status, 404)
+    assert.equal((await call("PUT", `${path}/${post.id}`, { url: post.url, reach: 1 }, brand)).status, 403)
+    // Only the brand checks, and asking again needs a reason.
+    assert.equal((await call("POST", `${path}/${post.id}/confirm`, undefined, group)).status, 403)
+    assert.equal((await call("POST", `${path}/${post.id}/reject`, { reason: " " }, brand)).status, 400)
+    const asked = await call("POST", `${path}/${post.id}/reject`, { reason: "도달 수가 보이지 않아요" }, brand)
+    assert.deepEqual([asked.data.agreement.snsPosts[0].status, asked.data.agreement.snsPosts[0].reason], ["rejected", "도달 수가 보이지 않아요"])
+    assert.equal((await reach()).pendingReach, 0)
+    // Corrected, it goes back to the brand, which confirms it.
+    const fixed = await call("PUT", `${path}/${post.id}`, { url: post.url, reach: 600 }, group)
+    assert.deepEqual([fixed.data.agreement.snsPosts[0].status, fixed.data.agreement.snsPosts[0].reason], ["pending", undefined])
+    await call("POST", `${path}/${post.id}/confirm`, undefined, brand)
+    assert.deepEqual([(await reach()).reach, (await reach()).postedReach], [before + 600, 600])
+
+    // A screenshot is for the two sides, and only the group takes it off.
+    const png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+    const photo = await call("POST", `${path}/${post.id}/photos`, { image: png }, group)
+    assert.equal(photo.status, 201)
+    const [shot] = photo.data.agreement.snsPosts[0].photos
+    assert.equal((await fetch(`${baseUrl}/agreements/${request.id}/photos/${shot}`, { headers: { Authorization: `Bearer ${brand}` } })).status, 200)
+    assert.equal((await fetch(`${baseUrl}/agreements/${request.id}/photos/${shot}`, { headers: { Authorization: `Bearer ${await login("학생단체")}` } })).status, 404)
+    assert.equal((await call("DELETE", `${path}/${post.id}/photos/${shot}`, undefined, brand)).status, 403)
+    assert.equal((await call("DELETE", `${path}/${post.id}/photos/${shot}`, undefined, group)).status, 200)
+
+    // With a key, views replace the number written, and a video that can't
+    // be read keeps the number.
+    config.youtubeApiKey = "test-key"
+    let views = new Map([["dQw4w9WgXcQ", 1234]])
+    youtube.views = async () => views
+    const video = await call("POST", path, { url: "https://youtu.be/dQw4w9WgXcQ", reach: 10 }, group)
+    const videoPost = video.data.agreement.snsPosts[1]
+    assert.equal(videoPost.youtube.views, 1234)
+    const shorts = await call("POST", path, { url: "https://www.youtube.com/shorts/aaaaaaaaaaa", reach: 20 }, group)
+    assert.equal(shorts.data.agreement.snsPosts[2].youtube.views, undefined)
+    await call("POST", `${path}/${videoPost.id}/confirm`, undefined, brand)
+    await call("POST", `${path}/${shorts.data.agreement.snsPosts[2].id}/confirm`, undefined, brand)
+    assert.equal((await reach()).postedReach, 600 + 1234 + 20)
+    // Read today, so the round skips them; a day on it reads them again.
+    assert.equal(await refreshViews(), 0)
+    for (const item of getDatabase().agreements.find((entry) => entry.id === request.id)!.snsPosts!) {
+      if (item.youtube) item.youtube.at = new Date(Date.now() - 86_400_000).toISOString()
+    }
+    views = new Map([["dQw4w9WgXcQ", 2000]])
+    assert.equal(await refreshViews(), 2)
+    assert.equal((await reach()).postedReach, 600 + 2000 + 20)
+
+    // A sponsorship called off takes its posts out of the reach.
+    const stored = getDatabase().requests.find((item) => item.id === request.id)!
+    await call("POST", `/agreements/${request.id}/cancel`, { reason: "행사가 취소됐어요" }, group)
+    await call("POST", `/agreements/${request.id}/cancel/accept`, undefined, brand)
+    assert.equal(stored.status, "취소됨")
+    assert.deepEqual([(await reach()).postedReach, (await reach()).reach], [0, before])
+    assert.equal((await call("POST", path, { url: "https://example.com/late", reach: 1 }, group)).status, 409)
+  } finally {
+    youtube.views = realViews
+    config.youtubeApiKey = realKey
+  }
+  // The shared demo accounts can't post.
+  assert.equal((await call("POST", "/agreements/req-runners/sns-posts", { url: "https://example.com/d", reach: 1 }, await login("브랜드"))).status, 403)
+})
+
 test("both sides of an accepted proposal keep an agreement, confirm it and prove what they did", async () => {
   const { existsSync } = await import("node:fs")
   const { uploadsFolder } = await import("./lib/agreements.js")

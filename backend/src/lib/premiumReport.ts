@@ -6,6 +6,7 @@ import { addDays, todayInKorea } from "./dates.js"
 import { checkInWindow, defaultGoals, emptyMetrics, eventOf, shareValue } from "./measurements.js"
 import { activeMethodsOf, venueCountsOf } from "./methods.js"
 import { isDemoAccount } from "./reviews.js"
+import { postedReach } from "./snsPosts.js"
 import { finishedSponsorships } from "./sponsorships.js"
 import type { Account, Database, EventItem, Measurement, Sponsorship, VenueCounts } from "../types.js"
 
@@ -194,7 +195,8 @@ export function premiumReport(database: Database, account: Account, id: string) 
   const coupons = sponsor?.metrics.coupons ?? metrics.coupons
   const visits = sponsor?.metrics.visits ?? metrics.visits
   const sales = visits * goals.averageSpend
-  const reach = metrics.scans + goals.snsReach
+  const snsReach = goals.snsReach + postedReach(database, measurement).confirmed
+  const reach = metrics.scans + snsReach
   const actual = {
     reach,
     scans: metrics.scans,
@@ -399,7 +401,7 @@ export function premiumReport(database: Database, account: Account, id: string) 
     event: { date: event.date, endDate: event.endDate, venue: event.venue, people: event.people, window },
     spend,
     averageSpend: goals.averageSpend,
-    snsReach: goals.snsReach,
+    snsReach,
     sales,
     grade,
     achievement: average,

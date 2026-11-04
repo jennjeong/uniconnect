@@ -289,6 +289,36 @@ export const api = {
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/shipments/${encodeURIComponent(shipmentId)}`, {
       method: "DELETE",
     }),
+  addSnsPost: (id: string, body: { url: string; reach: number }) =>
+    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/sns-posts`, { method: "POST", body }),
+  saveSnsPost: (id: string, postId: string, body: { url: string; reach: number }) =>
+    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/sns-posts/${encodeURIComponent(postId)}`, {
+      method: "PUT",
+      body,
+    }),
+  deleteSnsPost: (id: string, postId: string) =>
+    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/sns-posts/${encodeURIComponent(postId)}`, {
+      method: "DELETE",
+    }),
+  confirmSnsPost: (id: string, postId: string) =>
+    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/sns-posts/${encodeURIComponent(postId)}/confirm`, {
+      method: "POST",
+    }),
+  rejectSnsPost: (id: string, postId: string, reason: string) =>
+    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/sns-posts/${encodeURIComponent(postId)}/reject`, {
+      method: "POST",
+      body: { reason },
+    }),
+  addSnsPostPhoto: (id: string, postId: string, image: string) =>
+    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/sns-posts/${encodeURIComponent(postId)}/photos`, {
+      method: "POST",
+      body: { image },
+    }),
+  deleteSnsPostPhoto: (id: string, postId: string, photo: string) =>
+    request<{ agreement: Agreement }>(
+      `/agreements/${encodeURIComponent(id)}/sns-posts/${encodeURIComponent(postId)}/photos/${encodeURIComponent(photo)}`,
+      { method: "DELETE" },
+    ),
   saveAgreementValue: (id: string, value: { cash: number; inKind: number }) =>
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/value`, { method: "PUT", body: { value } }),
   insight: (id: string) => request<InsightAnswer>(`/insights/${encodeURIComponent(id)}`),
