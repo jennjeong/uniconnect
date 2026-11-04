@@ -3696,17 +3696,7 @@ input[type="search"]::-webkit-search-cancel-button {
     0 22px 40px -18px rgba(19, 48, 111, 0.4);
 }
 
-/* 캠퍼스 근처 매장 (NearbyPlaces.tsx): 체인의 워드마크는 읽히도록 더 넓은
-   타일을 받는다. 체인이 아니면 이름의 첫 글자가 로고 자리에 선다. */
-.work-mark .match-logo.large.wordmark {
-  width: 168px;
-}
-
-.match-logo.wordmark img {
-  width: 86%;
-  height: 56%;
-}
-
+/* 캠퍼스 근처 매장 (NearbyPlaces.tsx): 이름의 첫 글자가 로고 자리에 선다. */
 .match-logo.monogram {
   background: var(--point-tint);
   color: var(--point);
@@ -19473,26 +19463,6 @@ span.odometer {
     box-shadow:
       0 0 0 4px rgba(255, 255, 255, 0.7),
       0 12px 24px -12px rgba(19, 48, 111, 0.4);
-  }
-
-  /* 체인의 워드마크는 자기 너비가 필요하므로, 로고 열 대신 이름 위에 한 줄을
-     따로 차지한다. */
-  .work-card:has(.match-logo.wordmark) {
-    grid-template-areas:
-      "mark mark mark"
-      "meta meta ring"
-      "name name ring"
-      "tags tags tags"
-      "actions actions actions";
-  }
-
-  .work-card:has(.match-logo.wordmark) .work-mark {
-    place-items: center start;
-    margin-bottom: 8px;
-  }
-
-  .work-mark .match-logo.large.wordmark {
-    width: 150px;
   }
 
   .match-score-ring {
