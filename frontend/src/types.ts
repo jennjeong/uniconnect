@@ -420,7 +420,27 @@ export type Session = { token: string; account: Account }
 
 // A password that was right for an account with two-step login on: the
 // ticket to send back with the app's code (components/CodeStep.tsx).
-export type CodeTicket = { twoFactor: true; ticket: string }
+export type CodeTicket = {
+  twoFactor: true
+  ticket: string
+  // A co-admin's first login: two-step login to set up with this secret.
+  setup?: { secret: string; url: string }
+}
+
+// A sign-up that waits for the operators (backend lib/applications.ts).
+export type Pending = { pending: true }
+
+export type AdminApplication = {
+  id: string
+  kind: "shop" | "member"
+  name: string
+  email: string
+  document: { name: string; size: number }
+  requestedAt: string
+  brand?: string
+  contact?: AccountContact
+  team?: string
+}
 
 // The providers one can log in with once linked (routes/social.ts).
 export type SocialProvider = "kakao" | "naver"
@@ -442,6 +462,8 @@ export type Team = {
   owner: { name: string; email: string }
   members: { id: string; name: string; email: string; addedAt: string }[]
   invites: { id: string; name: string; email: string; invitedAt: string; expiresAt: string }[]
+  // Joined, and waiting for the operators to check their document.
+  waiting: { id: string; name: string; email: string; requestedAt: string }[]
   you: string
 }
 
@@ -1013,6 +1035,7 @@ export type AdminOverview = {
   weekly: { week: string; signups: number; proposals: number; accepted: number }[]
   revenue: { total: number; thisMonth: number; byKind: Record<PaymentKind, number>; partners: number }
   attention: {
+    applications: number
     inquiries: number
     reports: number
     transfers: number

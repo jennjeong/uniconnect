@@ -15914,6 +15914,50 @@ button.nav-pill:hover {
   float: right;
 }
 
+/* A document for the operators to check (components/DocumentField.tsx). */
+.document-field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: var(--weight-label);
+}
+
+.document-field small {
+  font-weight: var(--weight-copy);
+}
+
+.console-approvals {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.console-approvals li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.console-approvals li > div {
+  display: flex;
+  min-width: 240px;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.console-approvals small {
+  color: var(--muted);
+}
+
 .console-live {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));

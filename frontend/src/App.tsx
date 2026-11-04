@@ -2119,9 +2119,10 @@ function App() {
       <Presence show={activeModal === "join"}>
         <JoinTeamModal
           onClose={closeModal}
-          onJoined={(session) =>
-            startSession(session, t("{name} 계정을 함께 관리하기 시작했어요.", { name: session.account.name }))
-          }
+          onJoined={() => {
+            closeModal()
+            showNotice(t("서류를 보냈어요. 운영자가 확인하면 메일로 알려 드려요."))
+          }}
           onLogin={() => openAuth("login")}
         />
       </Presence>
@@ -2261,7 +2262,12 @@ function App() {
       <Presence show={activeModal === "signup"}>
         <SignupModal
           initialRole={authRole}
+          invite={view.invite}
           onClose={closeModal}
+          onPending={() => {
+            closeModal()
+            showNotice(t("서류를 보냈어요. 운영자가 확인하면 메일로 알려 드려요."))
+          }}
           onSignedUp={(session) => {
             track("sign_up", { method: "email", role: session.account.role })
             startSession(session, t("{name} 계정으로 가입했어요. 환영해요!", { name: session.account.name }))

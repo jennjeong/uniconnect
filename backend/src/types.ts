@@ -233,7 +233,35 @@ export type Account = {
 
 export type SocialProvider = "kakao" | "naver"
 
-export type TeamMember = { id: string; name: string; email: string; passwordHash: string; addedAt: string }
+export type TeamMember = {
+  id: string
+  name: string
+  email: string
+  passwordHash: string
+  addedAt: string
+  // A co-admin's own two-step login, which it must have: set up at its first
+  // login (routes/auth.ts).
+  twoFactor?: Account["twoFactor"]
+  pendingTwoFactor?: Account["pendingTwoFactor"]
+  loginTicket?: Account["loginTicket"]
+}
+
+// A sign-up waiting for the operators (lib/applications.ts).
+export type Application = {
+  id: string
+  kind: "shop" | "member"
+  name: string
+  email: string
+  // The photo or PDF it showed, kept with lib/photos.ts until it is decided.
+  document: { file: string; name: string; size: number }
+  requestedAt: string
+  // A shop: the account as it will be, and the invitation it came through.
+  account?: Account
+  invite?: string
+  // A co-admin: the account it joins, and the co-admin as it will be.
+  accountId?: string
+  member?: TeamMember
+}
 export type MemberInvite = { id: string; name: string; email: string; codeHash: string; invitedAt: string; expiresAt: number; tries: number }
 
 export type PublicAccount = Omit<
@@ -795,6 +823,7 @@ export type Database = {
   inquiries: Inquiry[]
   // Proposals from student groups to brands, answered by the brand.
   requests: SponsorRequest[]
+  applications?: Application[]
   // Proposals brands sent to student groups.
   offers: SponsorOffer[]
   // Finished sponsorships, keyed by brand account id.
@@ -885,6 +914,8 @@ export type AdminLogEntry = {
 export type AdminAction =
   | "account-logged-out"
   | "account-tagged"
+  | "application-approved"
+  | "application-rejected"
   | "business-set"
   | "partners-granted"
   | "demo-reset"

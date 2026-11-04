@@ -474,11 +474,8 @@ const en: Record<string, string> = {
   "2단계 인증 · 켜짐": "Two-step login · On",
   "2단계 인증 켜기": "Turn on two-step login",
   // One account, several people (modals/TeamModal.tsx, JoinTeamModal.tsx)
-  "{name} 계정을 함께 관리하기 시작했어요.": "You're now helping run {name}'s account.",
   "초대받은 이메일과 초대 코드를 입력해 주세요.": "Enter the email you were invited at and the invitation code.",
   "초대받아 함께 관리하기": "Join as a co-admin",
-  "대표가 보낸 초대 메일의 이메일과 6자리 코드를 입력하고 나만 쓸 비밀번호를 정해 주세요. 그 뒤로는 이 이메일과 비밀번호로 로그인해요.":
-    "Enter the email the owner invited and the 6-digit code from the invitation, and set a password of your own. From then on you log in with this email and password.",
   "초대받은 이메일": "Invited email",
   "초대 코드": "Invitation code",
   "함께 관리 시작하기": "Start helping run it",
@@ -488,8 +485,6 @@ const en: Record<string, string> = {
   "초대할 사람의 이름과 이메일을 적어 주세요.": "Enter the person's name and email.",
   "{email}로 초대 코드를 보냈어요.": "Sent an invitation code to {email}.",
   "함께 관리하는 사람": "Co-admins",
-  "임원 여러 명이 각자의 이메일과 비밀번호로 같은 계정에 로그인해요. 탈퇴, 로그인 이메일 바꾸기, 2단계 인증과 이 목록 관리는 대표만 할 수 있어요.":
-    "Several officers log in to one account, each with their own email and password. Only the owner can delete the account, change its login email, set up two-step login or manage this list.",
   "불러오고 있어요…": "Loading…",
   나: "You",
   "{date} 합류": "Joined {date}",

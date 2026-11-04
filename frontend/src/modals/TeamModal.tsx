@@ -55,7 +55,7 @@ export function TeamModal({ onClose, onNotice }: { onClose: () => void; onNotice
     <Modal name="team" kicker="Team" title={t("함께 관리하는 사람")} onClose={onClose}>
       <div className="auth-form">
         <p className="auth-lead">
-          {t("임원 여러 명이 각자의 이메일과 비밀번호로 같은 계정에 로그인해요. 탈퇴, 로그인 이메일 바꾸기, 2단계 인증과 이 목록 관리는 대표만 할 수 있어요.")}
+          {t("임원 여러 명이 각자의 이메일과 비밀번호로 같은 계정에 로그인해요. 초대받은 사람은 재직 증명 서류 확인을 거치고 2단계 인증을 꼭 설정해요. 탈퇴, 로그인 이메일 바꾸기와 이 목록 관리는 대표만 할 수 있어요.")}
         </p>
         {!team ? (
           <p className="field-hint">{error || t("불러오고 있어요…")}</p>
@@ -91,6 +91,16 @@ export function TeamModal({ onClose, onNotice }: { onClose: () => void; onNotice
                     {t("빼기")}
                   </button>
                 )}
+              </li>
+            ))}
+            {team.waiting.map((item) => (
+              <li className="pending" key={item.id}>
+                <span>
+                  <strong>{item.name}</strong>
+                  <small>
+                    {item.email} · {t("운영자 서류 확인 중")}
+                  </small>
+                </span>
               </li>
             ))}
             {team.invites.map((item) => (

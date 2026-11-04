@@ -49,10 +49,10 @@ type RequestOptions = {
 
 // A file the API serves only to a logged-in account (an agreement's photo),
 // as a blob for an object URL, since an <img> can't send the token.
-export async function requestBlob(path: string): Promise<Blob> {
+export async function requestBlob(path: string, { headers = {} }: { headers?: Record<string, string> } = {}): Promise<Blob> {
   const token = getToken()
   const response = await fetch(`${API_BASE}/api${path}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...headers },
   }).catch(() => undefined)
   if (!response?.ok) throw new ApiError(response?.status ?? 0, unreachable)
   return response.blob()

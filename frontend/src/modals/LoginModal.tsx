@@ -41,6 +41,9 @@ export function LoginModal({
   const [busy, setBusy] = useState(false)
   // The password was right and the account asks for its code next.
   const [ticket, setTicket] = useState<{ email: string; ticket: CodeTicket } | null>(initialTicket ?? null)
+  // Two-step login was just set up: its recovery codes show once before the
+  // login goes on.
+  const [recovery, setRecovery] = useState<{ session: Session; codes: string[] } | null>(null)
 
   // Off to the provider; it sends the browser back to the server, which
   // finishes the login (App reads ?social=).
@@ -76,10 +79,24 @@ export function LoginModal({
 
   return (
     <Modal banner name="login" kicker="Welcome Back" title={t("로그인")} onClose={onClose}>
-      {ticket ? (
+      {recovery ? (
+        <div className="auth-form">
+          <p className="auth-lead">
+            {t("2단계 인증을 켰어요. 휴대폰을 잃어버렸을 때 쓸 복구 코드예요. 지금만 보여 드리니 안전한 곳에 적어 두세요. 코드마다 한 번씩 쓸 수 있어요.")}
+          </p>
+          <ol className="recovery-codes">
+            {recovery.codes.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ol>
+          <button className="primary-button wide" onClick={() => onLoggedIn(recovery.session)} type="button">
+            {t("적어 뒀어요")}
+          </button>
+        </div>
+      ) : ticket ? (
         <CodeStep
           email={ticket.email}
-          onDone={onLoggedIn}
+          onDone={({ recoveryCodes, ...session }) => (recoveryCodes ? setRecovery({ session, codes: recoveryCodes }) : onLoggedIn(session))}
           onRestart={() => {
             setTicket(null)
             setDraft((current) => ({ ...current, password: "" }))

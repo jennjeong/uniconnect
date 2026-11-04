@@ -50,6 +50,7 @@ export function overview(database: Database, now = new Date()) {
     weekly,
     revenue,
     attention: {
+      applications: database.applications?.length ?? 0,
       // Questions on hold wait on something else, so they don't count here.
       inquiries: database.inquiries.filter((inquiry) => !inquiry.answer && !database.inquiryHandling?.[inquiry.id]?.heldAt).length,
       reports: database.reports.filter((report) => !report.resolution).length,

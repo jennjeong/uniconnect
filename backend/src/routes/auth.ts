@@ -6,7 +6,8 @@ import { paymentView } from "../lib/billing.js"
 import { acceptedProposalsOf, dropOrphanAgreements, removeUploads } from "../lib/agreements.js"
 import { findListing } from "../lib/catalog.js"
 import { deviceLabel } from "../lib/devices.js"
-import { emailRuleError, normalizeEmail } from "../lib/email.js"
+import { applicationFolder, applicationFor, applicationsOf, holdApplication, parseDocument } from "../lib/applications.js"
+import { emailRuleError, isPersonalMail, normalizeEmail } from "../lib/email.js"
 import { forgetAdminRecords } from "../lib/adminTools.js"
 import { HttpError } from "../lib/errors.js"
 import { sendVerificationCode } from "../lib/mailer.js"
@@ -120,9 +121,9 @@ const ticketTries = 5
 // The password was right, and the account asks for a code too: a ticket
 // the browser sends back with the code (POST /login/code) instead of a
 // session.
-export function startTicket(account: Account, req: Request) {
+export function startTicket(holder: Pick<Account, "loginTicket">, req: Request) {
   const ticket = randomBytes(24).toString("base64url")
-  account.loginTicket = {
+  holder.loginTicket = {
     hash: hashToken(ticket),
     expiresAt: Date.now() + ticketMs,
     tries: 0,
@@ -133,7 +134,7 @@ export function startTicket(account: Account, req: Request) {
 
 // Whether a typed code opens the account: the app's code for now (each once)
 // or one of its recovery codes (used up). Marks what it used; the caller saves.
-function useCode(account: Account, typed: string) {
+function useCode(account: Pick<Account, "twoFactor">, typed: string) {
   const twoFactor = account.twoFactor
   if (!twoFactor) return false
   const step = matchStep(twoFactor.secret, typed, Date.now(), twoFactor.usedStep)
@@ -145,6 +146,23 @@ function useCode(account: Account, typed: string) {
   if (typed.replace(/[^A-Za-z0-9]/g, "").length !== 8 || !twoFactor.recoveryHashes.includes(hash)) return false
   twoFactor.recoveryHashes = twoFactor.recoveryHashes.filter((item) => item !== hash)
   return true
+}
+
+// Turns on the two-step login being set up with the app's first code; its
+// recovery codes, which show once, or nothing when the code is wrong.
+function enableTwoFactor(holder: Pick<Account, "twoFactor" | "pendingTwoFactor">, typed: string) {
+  const pending = holder.pendingTwoFactor
+  const step = pending && matchStep(pending.secret, typed)
+  if (!pending || step === undefined) return undefined
+  const recoveryCodes = newRecoveryCodes()
+  holder.twoFactor = {
+    secret: pending.secret,
+    enabledAt: new Date().toISOString(),
+    recoveryHashes: recoveryCodes.map(hashRecovery),
+    usedStep: step,
+  }
+  delete holder.pendingTwoFactor
+  return recoveryCodes
 }
 
 type CodePurpose = EmailCode["purpose"]
@@ -210,16 +228,20 @@ async function checkCode(email: string, code: string, purpose: CodePurpose) {
   return entry
 }
 
+// Whether a sign-up came through a shop's invitation: only then may a brand
+// use a personal address, with a business document for the operators.
+const invited = (database: Database, code: unknown) => database.invites.some((invite) => invite.code === String(code ?? ""))
+
 // Step 1 of sign-up: send a 6-digit code to a school (student group) or
 // company (sponsor) address.
 authRouter.post("/email-code", async (req, res) => {
   await codesPerClient.take(clientKey(req))
   const role = parseRole(req.body?.role)
   const email = normalizeEmail(req.body?.email)
-  const ruleError = emailRuleError(role, email)
+  const database = getDatabase()
+  const ruleError = emailRuleError(role, email, { personal: role === "브랜드" && invited(database, req.body?.invite) })
   if (ruleError) throw new HttpError(400, ruleError)
 
-  const database = getDatabase()
   if (emailTaken(database, email)) {
     throw new HttpError(409, "이미 가입된 이메일이에요. 로그인해 주세요.")
   }
@@ -257,10 +279,14 @@ authRouter.post("/signup", async (req, res) => {
   if (!accountTypes[role].includes(type)) throw new HttpError(400, "분류를 다시 선택해 주세요.")
   if (role === "학생단체" && !school) throw new HttpError(400, "학교를 입력해 주세요.")
   const contact = parseContact(body.contact)
-  const ruleError = emailRuleError(role, email)
-  if (ruleError) throw new HttpError(400, ruleError)
-
   const database = getDatabase()
+  const shopInvite = role === "브랜드" && invited(database, body.invite)
+  const ruleError = emailRuleError(role, email, { personal: shopInvite })
+  if (ruleError) throw new HttpError(400, ruleError)
+  // Without a company email, a shop shows a business document and waits.
+  const personal = role === "브랜드" && isPersonalMail(email)
+  const document = personal ? parseDocument(body.document, "사업자등록증이나 재직 서류를 올려 주세요.") : undefined
+
   const verified = database.emailCodes.find(
     (entry) =>
       entry.email === email &&
@@ -304,6 +330,11 @@ authRouter.post("/signup", async (req, res) => {
   // isn't one is let go quietly.
   const referrer = referrerOf(database, body.referral)
   if (referrer) account.referredBy = referrer.id
+  if (document) {
+    await holdApplication(database, saveDatabase, document, { kind: "shop", name, email, account, invite: String(body.invite) })
+    res.status(202).json({ pending: true })
+    return
+  }
   database.accounts.push(account)
   database.events[account.id] = []
   database.proposals[account.id] = []
@@ -383,6 +414,10 @@ authRouter.post("/login", async (req, res) => {
   // longer opens a session.
   const hashAfter = team ? memberOf(account!, team.member.id)?.passwordHash : account?.passwordHash
   if (!account || !matches || hashAfter !== hashBefore || !database.accounts.includes(account)) {
+    // Waiting for the operators: its right password hears so.
+    const waiting = applicationFor(database, email)
+    const hash = waiting?.account?.passwordHash ?? waiting?.member?.passwordHash
+    if (hash && (await verifyPassword(password, hash))) throw new HttpError(403, "가입 서류를 확인하고 있어요. 승인되면 메일로 알려 드려요.")
     throw new HttpError(401, "이메일 또는 비밀번호가 올바르지 않아요.")
   }
   await loginFailures.reset(limitKey)
@@ -391,10 +426,19 @@ authRouter.post("/login", async (req, res) => {
     const label = account.role === "학생단체" ? "협찬 받기" : "협찬 하기"
     throw new HttpError(403, `'${label}' 회원으로 가입된 계정이에요. 유형을 바꿔 로그인해 주세요.`)
   }
+  // A co-admin must have two-step login: its first login after approval sets
+  // it up, with the first code finishing both.
   if (team) {
-    const token = startSession(account.id, req, { memberId: team.member.id })
+    const ticket = startTicket(team.member, req)
+    if (team.member.twoFactor) {
+      await saveDatabase()
+      res.json({ twoFactor: true, ticket })
+      return
+    }
+    const secret = newSecret()
+    team.member.pendingTwoFactor = { secret, createdAt: Date.now() }
     await saveDatabase()
-    res.json({ token, account: toPublic(account, team.member.id) })
+    res.json({ twoFactor: true, ticket, setup: { secret, url: otpauthUrl(secret, email) } })
     return
   }
   if (account.twoFactor) {
@@ -417,23 +461,34 @@ authRouter.post("/login/code", async (req, res) => {
   const limitKey = `${clientKey(req)} ${email}`
   await loginFailures.take(limitKey)
   const database = getDatabase()
-  const account = database.accounts.find((item) => item.email === email)
-  const ticket = account?.loginTicket
-  if (!account || !ticket || ticket.hash !== hashToken(String(req.body?.ticket ?? "")) || ticket.expiresAt < Date.now()) {
+  const owner = database.accounts.find((item) => item.email === email)
+  const team = owner ? undefined : memberByEmail(database, email)
+  const account = owner ?? team?.account
+  // Whose login this is: the account's owner, or a co-admin with its own.
+  const holder = owner ?? team?.member
+  const ticket = holder?.loginTicket
+  if (!account || !holder || !ticket || ticket.hash !== hashToken(String(req.body?.ticket ?? "")) || ticket.expiresAt < Date.now()) {
     throw new HttpError(401, "로그인 시간이 지났어요. 비밀번호부터 다시 입력해 주세요.")
   }
   if (account.suspendedAt) throw new HttpError(403, suspendedMessage)
-  if (!useCode(account, String(req.body?.code ?? ""))) {
+  const typed = String(req.body?.code ?? "")
+  const recoveryCodes = !holder.twoFactor && holder.pendingTwoFactor ? enableTwoFactor(holder, typed) : undefined
+  if (!recoveryCodes && !useCode(holder, typed)) {
     ticket.tries += 1
-    if (ticket.tries >= ticketTries) delete account.loginTicket
+    if (ticket.tries >= ticketTries) delete holder.loginTicket
     await saveDatabase()
     throw new HttpError(401, ticket.tries >= ticketTries ? "코드를 너무 많이 틀렸어요. 비밀번호부터 다시 입력해 주세요." : "코드가 올바르지 않아요. 인증 앱의 6자리 코드나 복구 코드를 입력해 주세요.")
   }
   await loginFailures.reset(limitKey)
-  delete account.loginTicket
-  const token = startSession(account.id, req, { userAgent: ticket.userAgent })
+  delete holder.loginTicket
+  const token = startSession(account.id, req, { userAgent: ticket.userAgent, ...(team ? { memberId: team.member.id } : {}) })
   await saveDatabase()
-  res.json({ token, account: toPublic(account, req.memberId), recoveryLeft: account.twoFactor?.recoveryHashes.length })
+  res.json({
+    token,
+    account: toPublic(account, team?.member.id),
+    recoveryLeft: holder.twoFactor?.recoveryHashes.length,
+    ...(recoveryCodes ? { recoveryCodes } : {}),
+  })
 })
 
 // Everything an account made goes with it: its listing and the
@@ -506,6 +561,10 @@ function removeAccount(database: Database, account: Account) {
   }
   // Its events' photos go with the dropped agreements' once the data is saved.
   droppedAgreements.push(...(database.events[account.id] ?? []).map((event) => eventPhotos(event.id)))
+  // So do the co-admins still waiting to join it, and their documents.
+  const waiting = applicationsOf(database).filter((application) => application.accountId === account.id)
+  droppedAgreements.push(...waiting.map((application) => applicationFolder(application.id)))
+  database.applications = applicationsOf(database).filter((application) => !waiting.includes(application))
   delete database.events[account.id]
   delete database.proposals[account.id]
   delete database.sponsorships[account.id]
@@ -845,17 +904,9 @@ authRouter.post("/two-factor/enable", async (req, res) => {
   }
   const limitKey = `${clientKey(req)} ${account.email}`
   await loginFailures.take(limitKey)
-  const step = matchStep(pending.secret, String(req.body?.code ?? ""))
-  if (step === undefined) throw new HttpError(400, "코드가 올바르지 않아요. 인증 앱에 보이는 6자리 코드를 입력해 주세요.")
+  const recoveryCodes = enableTwoFactor(account, String(req.body?.code ?? ""))
+  if (!recoveryCodes) throw new HttpError(400, "코드가 올바르지 않아요. 인증 앱에 보이는 6자리 코드를 입력해 주세요.")
   await loginFailures.reset(limitKey)
-  const recoveryCodes = newRecoveryCodes()
-  account.twoFactor = {
-    secret: pending.secret,
-    enabledAt: new Date().toISOString(),
-    recoveryHashes: recoveryCodes.map(hashRecovery),
-    usedStep: step,
-  }
-  delete account.pendingTwoFactor
   await saveDatabase()
   res.json({ account: toPublic(account, req.memberId), recoveryCodes })
 })

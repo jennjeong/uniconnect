@@ -589,6 +589,97 @@ const alertLabels = {
 
 // Events under way with their live figures, read again every 30 seconds,
 // and what looks wrong at any event.
+// 가입 승인: an invited shop with a personal email and a co-admin wait here
+// until an operator reads their document (backend lib/applications.ts).
+export function Approvals({ token, onNotice }: { token: string; onNotice: Notice }) {
+  const [data, reload] = useAdmin(() => api.adminApplications(token), onNotice, [token])
+  const [reasons, setReasons] = useState<Record<string, string>>({})
+  const [busy, setBusy] = useState(false)
+
+  const decide = async (run: () => Promise<void>, notice: string) => {
+    setBusy(true)
+    try {
+      await run()
+      onNotice(notice)
+      await reload()
+    } catch (error) {
+      onNotice(errorMessage(error))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (!data) return <p className="field-hint">{t("불러오고 있어요…")}</p>
+  return (
+    <div className="console-grid">
+      <section className="console-card wide">
+        <div className="console-card-head">
+          <div>
+            <h2>{t("가입 승인")}</h2>
+            <p>{t("서류를 확인하고 승인해야 가입이 끝나요. 서류는 결정하면 바로 지워져요.")}</p>
+          </div>
+        </div>
+        {data.applications.length === 0 ? (
+          <p className="day-empty">{t("기다리는 가입 신청이 없어요.")}</p>
+        ) : (
+          <ul className="console-approvals">
+            {data.applications.map((item) => (
+              <li key={item.id}>
+                <div>
+                  <strong>{item.kind === "shop" ? t("{name} · 초대받은 가게", { name: item.name }) : t("{name} · {team} 공동 관리자", { name: item.name, team: item.team ?? "" })}</strong>
+                  <small>
+                    {item.email} · {formatDateTime(item.requestedAt)}
+                    {item.contact && ` · ${item.contact.name} ${item.contact.phone}`}
+                  </small>
+                </div>
+                <button
+                  className="cancel-button"
+                  onClick={async () => {
+                    try {
+                      const blob = await api.adminApplicationDocument(token, item.id)
+                      saveFile(item.document.name, blob, blob.type)
+                    } catch (error) {
+                      onNotice(errorMessage(error))
+                    }
+                  }}
+                  type="button"
+                >
+                  {t("서류 내려받기")}
+                </button>
+                <button
+                  className="primary-button"
+                  disabled={busy}
+                  onClick={() => void decide(() => api.adminApproveApplication(token, item.id), t("{name} 가입을 승인했어요.", { name: item.name }))}
+                  type="button"
+                >
+                  {t("승인")}
+                </button>
+                <label>
+                  <span className="sr-only">{t("거절 사유")}</span>
+                  <input
+                    maxLength={200}
+                    onChange={(event) => setReasons((current) => ({ ...current, [item.id]: event.target.value }))}
+                    placeholder={t("거절 사유")}
+                    value={reasons[item.id] ?? ""}
+                  />
+                </label>
+                <button
+                  className="cancel-button"
+                  disabled={busy || !reasons[item.id]?.trim()}
+                  onClick={() => void decide(() => api.adminRejectApplication(token, item.id, reasons[item.id].trim()), t("{name} 가입을 거절했어요.", { name: item.name }))}
+                  type="button"
+                >
+                  {t("거절")}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </div>
+  )
+}
+
 export function Live({ token, onNotice }: { token: string; onNotice: Notice }) {
   const [data, reload] = useAdmin<AdminLive>(() => api.adminLive(token), onNotice, [token])
   useEffect(() => {

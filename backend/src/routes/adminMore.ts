@@ -16,7 +16,12 @@ import {
   staleProposals,
   topSearches,
 } from "../lib/adminInsights.js"
+import { config } from "../config.js"
 import { cleanTags, grantPartners, logAdmin, resetExamples } from "../lib/adminTools.js"
+import { applicationFolder, applicationsOf } from "../lib/applications.js"
+import { sendMail } from "../lib/mailer.js"
+import { photos, photoType } from "../lib/photos.js"
+import { linkShop, tellInviters } from "../lib/shopInvites.js"
 import { memberDetail } from "../lib/console.js"
 import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
@@ -42,6 +47,94 @@ const accountFor = (database: Database, id: string) => {
 const endSessions = (database: Database, account: Account) => {
   database.sessions = database.sessions.filter((session) => session.accountId !== account.id)
 }
+
+// The sign-ups waiting for a decision, oldest first (lib/applications.ts),
+// never a password.
+adminMoreRouter.get("/applications", async (req, res) => {
+  await requireAdmin(req)
+  const database = getDatabase()
+  res.json({
+    applications: applicationsOf(database).map(({ id, kind, name, email, document, requestedAt, account, accountId }) => ({
+      id,
+      kind,
+      name,
+      email,
+      document: { name: document.name, size: document.size },
+      requestedAt,
+      ...(account ? { brand: account.name, contact: account.contact } : {}),
+      ...(accountId ? { team: database.accounts.find((item) => item.id === accountId)?.name ?? "" } : {}),
+    })),
+  })
+})
+
+const applicationById = (database: Database, id: string) => {
+  const application = applicationsOf(database).find((item) => item.id === id)
+  if (!application) throw new HttpError(404, "가입 신청을 찾을 수 없어요.")
+  return application
+}
+
+adminMoreRouter.get("/applications/:id/document", async (req, res) => {
+  await requireAdmin(req)
+  const { id, document } = applicationById(getDatabase(), req.params.id)
+  const bytes = await photos().get(applicationFolder(id), document.file)
+  if (!bytes) throw new HttpError(404, "서류를 찾을 수 없어요.")
+  res.type(photoType(document.file)).set("Cache-Control", "no-store").send(bytes)
+})
+
+// Sends the answer; a mail that fails never undoes the decision.
+async function tellApplicant(email: string, subject: string, line: string) {
+  try {
+    await sendMail(email, subject, [line, ...(config.siteUrl ? [config.siteUrl] : [])].join("\n"))
+  } catch {
+    // The applicant finds out at its next login.
+  }
+}
+
+// Approving makes the account or co-admin real; the document goes either way.
+adminMoreRouter.post("/applications/:id/approve", async (req, res) => {
+  await requireAdmin(req)
+  const database = getDatabase()
+  const application = applicationById(database, req.params.id)
+  let link: ReturnType<typeof linkShop> | undefined
+  if (application.account) {
+    const { account } = application
+    database.accounts.push(account)
+    database.events[account.id] = []
+    database.proposals[account.id] = []
+    const invite = database.invites.find((item) => item.code === application.invite)
+    const taken = invite && database.brands.some((brand) => brand.kakaoPlaceId === invite.placeId)
+    if (invite && !taken) link = linkShop(database, account, invite)
+  } else {
+    const account = accountFor(database, application.accountId ?? "")
+    account.members = [...(account.members ?? []), application.member!]
+  }
+  database.applications = applicationsOf(database).filter((item) => item !== application)
+  logAdmin(database, "application-approved", { kind: "account", id: application.account?.id ?? application.accountId ?? "" }, application.email)
+  await saveDatabase()
+  await photos().removeAll([applicationFolder(application.id)])
+  if (link) tellInviters(database, link.brand, link.answered)
+  await tellApplicant(
+    application.email,
+    "[uniconnect] 가입이 승인되었어요",
+    application.account ? "서류를 확인했어요. 이제 가입한 이메일과 비밀번호로 로그인할 수 있어요." : "서류를 확인했어요. 첫 로그인에서 2단계 인증을 설정하면 함께 관리할 수 있어요.",
+  )
+  res.json({ ok: true })
+})
+
+// Turning one down takes it all away, with the reason in the mail.
+adminMoreRouter.post("/applications/:id/reject", async (req, res) => {
+  await requireAdmin(req)
+  const database = getDatabase()
+  const application = applicationById(database, req.params.id)
+  const reason = text(req.body?.reason)
+  if (!reason || reason.length > 200) throw new HttpError(400, "거절 사유를 200자 이하로 적어 주세요.")
+  database.applications = applicationsOf(database).filter((item) => item !== application)
+  logAdmin(database, "application-rejected", { kind: "account", id: application.account?.id ?? application.accountId ?? "" }, application.email)
+  await saveDatabase()
+  await photos().removeAll([applicationFolder(application.id)])
+  await tellApplicant(application.email, "[uniconnect] 가입을 승인하지 못했어요", `제출한 서류를 확인하지 못했어요. 사유: ${reason}`)
+  res.json({ ok: true })
+})
 
 // Logs a member out everywhere without stopping it.
 adminMoreRouter.post("/accounts/:id/logout", async (req, res) => {
