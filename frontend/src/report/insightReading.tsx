@@ -2,9 +2,8 @@ import { t } from "../i18n"
 import { fullWon } from "../lib/sponsorships"
 import type { PremiumReport } from "../types"
 
-// What each section of the detailed report means, in sentences worked out
-// from its figures, with one thing to do about it: the analysis a reader
-// pays for, beside the charts.
+// 상세 리포트의 각 섹션이 무엇을 뜻하는지를 그 수치로 계산한 문장과, 그에 대해
+// 할 한 가지로 쓴다. 독자가 값을 치르는 분석이며 차트 옆에 놓는다.
 export type Reading = { points: string[]; action?: string }
 
 const pct = (part: number, whole: number) => (whole > 0 ? Math.round((part / whole) * 100) : 0)
@@ -29,7 +28,7 @@ export function readings(report: PremiumReport): Record<string, Reading> {
     roas: "추정 ROAS",
   }
 
-  // Cash as written in the goals, else in the e-contract; unknown otherwise.
+  // 목표에 적힌 현금. 없으면 계약서의 현금이고, 그것도 없으면 알 수 없다.
   const cash =
     report.overview.valueBreakdown.find((part) => part.type === "현금")?.value ??
     report.overview.agreedValue?.cash ??

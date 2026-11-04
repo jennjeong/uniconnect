@@ -4,13 +4,12 @@ import { positionHints } from "../data/roles"
 import { t } from "../i18n"
 import type { Role } from "../types"
 
-// The value the list's 직접 입력 option holds.
+// 목록의 직접 입력 옵션이 담는 값.
 const typed = "__typed__"
 
-// The contact person's position (직책): the usual ones for the side as a
-// list like the form's other selects, or 직접 입력, which turns it into a
-// box to type any other in, with a way back to the list. A listed position
-// is kept as written in Korean and shown translated.
+// 담당자의 직책. 그 쪽에서 흔한 직책을 폼의 다른 셀렉트처럼 목록으로 보여
+// 주거나, 직접 입력을 골라 다른 직책을 입력하는 상자로 바꾼다. 목록으로
+// 돌아가는 길도 있다. 목록의 직책은 한국어로 저장하고 번역해서 보여 준다.
 export function PositionField({
   role,
   value,

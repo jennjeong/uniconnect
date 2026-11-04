@@ -25,7 +25,7 @@ import { renamedAccountTypes } from "./lib/validation.js"
 import { hashToken } from "./middleware/session.js"
 import type { Database, Metrics, MetricEntry, Report } from "./types.js"
 
-// Demo sentences as seeded before PR #283, and as they read now.
+// PR #283 이전에 시드된 데모 문장과 지금 읽히는 문장이다.
 const demoCopy: Record<string, string> = {
   "반가워요! 현장 배부도 좋고, QR로 받는 디지털 쿠폰이면 매장 방문까지 집계돼서 더 좋아요. 예상 관객은 몇 명인가요?":
     "반가워요! 현장 배부도 좋고 QR로 받는 디지털 쿠폰이면 매장 방문까지 집계돼서 더 좋아요. 예상 관객은 몇 명인가요?",
@@ -38,21 +38,21 @@ const demoCopy: Record<string, string> = {
 
 export { backupFolder, backups } from "./lib/storage.js"
 
-// The data lives in memory as one document. Routes only touch it through
-// getDatabase/saveDatabase, which writes it where it is kept
-// (lib/storage.ts): a JSON file on one machine, Postgres on Vercel.
+// 데이터는 문서 하나로 메모리에 있다. 라우트는 getDatabase/saveDatabase로만
+// 건드리며, saveDatabase가 데이터가 보관되는 곳(lib/storage.ts)에 쓴다. 한
+// 대의 기계에서는 JSON 파일에, Vercel에서는 Postgres에 쓴다.
 let database: Database | undefined
 let pendingWrite = Promise.resolve()
-// The data as last written, to go back to when a write fails, and a count
-// that moves on each time one does or the data is read anew.
+// 쓰기가 실패하면 돌아갈 마지막으로 쓴 데이터와, 쓰기가 일어나거나 데이터를
+// 새로 읽을 때마다 올라가는 횟수다.
 let durable = ""
 let generation = 0
-// The stored version this copy last read or wrote, and when it last looked
-// for other copies' writes.
+// 이 복사본이 마지막으로 읽거나 쓴 저장 버전과, 다른 복사본의 쓰기를 마지막으로
+// 살핀 시각이다.
 let version = 0
 let checkedAt = 0
 
-// How often a copy of the API on shared storage looks for others' writes.
+// 공유 저장소를 쓰는 API 복사본이 다른 복사본의 쓰기를 살피는 주기다.
 export const freshness = { everyMs: 2000 }
 
 export async function loadDatabase() {
@@ -66,14 +66,14 @@ export async function loadDatabase() {
   try {
     await saveDatabase()
   } catch (error) {
-    // Another copy of the API seeded the database first: its data stands.
+    // API의 다른 복사본이 먼저 데이터베이스를 시드했으므로 그 데이터가 우선한다.
     if (!(await reload())) throw error
   }
   return getDatabase()
 }
 
-// Puts data in place of what is in memory, in the same object, so code
-// holding the database sees it.
+// 메모리에 있는 것 대신 데이터를 같은 객체 안에 넣는다. 데이터베이스를 쥐고
+// 있는 코드에도 그것이 보이게 하기 위해서다.
 function replace(next: Database) {
   if (!database) {
     database = next
@@ -84,9 +84,9 @@ function replace(next: Database) {
   Object.assign(current, next)
 }
 
-// Reads the stored data again (upgraded like a fresh start); false when
-// nothing is stored yet. Writes queued from before it are turned away, as
-// their changes were made to the data it replaces.
+// 저장된 데이터를 다시 읽는다(새로 시작할 때처럼 업그레이드한다). 아직 저장된
+// 것이 없으면 false다. 그 전에 대기시킨 쓰기는 바뀐 데이터가 방금 대체한 것에
+// 대한 변경이므로 거절한다.
 async function reload() {
   const stored = await currentStorage().read()
   if (!stored) return false
@@ -97,11 +97,11 @@ async function reload() {
   return true
 }
 
-// Another copy of the API (Vercel starts more than one when busy) may have
-// saved since this one last read or wrote. With shared storage each request
-// first looks at the stored version, at most every freshness.everyMs, and
-// reads the data again when it has moved on, once this copy's own queued
-// writes are in. A database out of reach leaves the data as it is.
+// API의 다른 복사본(Vercel은 바쁘면 둘 이상 띄운다)이 이 복사본이 마지막으로
+// 읽거나 쓴 뒤에 저장했을 수 있다. 공유 저장소에서는 요청마다 먼저 저장된
+// 버전을 살피되 freshness.everyMs마다 한 번만 살피고, 버전이 달라졌으면 이
+// 복사본이 대기시킨 쓰기가 끝난 뒤 데이터를 다시 읽는다. 데이터베이스에 닿지
+// 않으면 데이터를 그대로 둔다.
 export async function refreshDatabase() {
   const storage = currentStorage()
   if (!storage.shared || !database || Date.now() - checkedAt < freshness.everyMs) return
@@ -117,19 +117,19 @@ export async function refreshDatabase() {
 
 const notSaved = "저장하지 못해서 방금 한 작업을 되돌렸어요. 잠시 후 다시 시도해 주세요."
 
-// Fills in data added after a db.json was created, so existing accounts,
-// sessions and events survive an update.
+// db.json을 만든 뒤에 추가된 데이터를 채워, 업데이트해도 기존 계정, 세션,
+// 행사가 살아남게 한다.
 export function upgradeDatabase(stored: Database) {
-  // Before version 2 nobody could edit the catalogs and they were refreshed
-  // from the seed on every start, so older files take the current seed once
-  // (with SNS and portfolios). From then on, edits made in 내 정보 stay.
+  // 버전 2 이전에는 아무도 카탈로그를 고칠 수 없었고 시작할 때마다 시드로
+  // 새로 채웠으므로, 오래된 파일은 현재 시드를 한 번 받는다(SNS와 포트폴리오
+  // 포함). 그 뒤로는 내 정보에서 한 수정이 유지된다.
   if ((stored.catalogVersion ?? 1) < 2) {
     stored.brands = structuredClone(seedBrands)
     stored.groups = structuredClone(seedGroups)
     stored.catalogVersion = 2
   }
-  // Version 3 gave the seeded brands a demo store location, for distances to
-  // campuses, once: a brand that clears its address keeps it cleared.
+  // 버전 3은 캠퍼스까지의 거리를 위해 시드된 브랜드에 데모 매장 위치를 한 번
+  // 주었다. 주소를 지운 브랜드는 지운 채로 둔다.
   if ((stored.catalogVersion ?? 1) < 3) {
     for (const brand of stored.brands) {
       const seeded = seedBrands.find((item) => item.id === brand.id)
@@ -137,9 +137,9 @@ export function upgradeDatabase(stored: Database) {
     }
     stored.catalogVersion = 3
   }
-  // Version 4 drops the coordinates Kakao's address search gave, which may not
-  // be kept: the address stays and is placed again through OpenStreetMap when
-  // it is next saved. The demo stores keep theirs, which never came from Kakao.
+  // 버전 4는 보관할 수 없는 Kakao 주소 검색의 좌표를 버린다. 주소는 남고, 다음에
+  // 저장할 때 OpenStreetMap으로 다시 위치를 잡는다. 데모 매장은 Kakao에서 온
+  // 적이 없으므로 좌표를 그대로 둔다.
   if ((stored.catalogVersion ?? 1) < 4) {
     for (const brand of stored.brands) {
       const seeded = seedBrands.find((item) => item.id === brand.id)?.location
@@ -150,7 +150,7 @@ export function upgradeDatabase(stored: Database) {
     }
     stored.catalogVersion = 4
   }
-  // Recommended matches are worked out from the catalogs now.
+  // 추천 매칭은 이제 카탈로그에서 계산한다.
   delete (stored as { matches?: unknown }).matches
   stored.conversations ??= seedConversations()
   stored.inquiries ??= []
@@ -159,17 +159,17 @@ export function upgradeDatabase(stored: Database) {
   stored.reports ??= []
   stored.blocks ??= {}
   stored.saved ??= {}
-  // Older data may have no demo accounts named yet.
+  // 오래된 데이터에는 이름이 붙은 데모 계정이 아직 없을 수 있다.
   stored.posts ??= seedPosts(stored.demoAccountIds ?? {})
   freshenExamplePosts(stored)
   stored.reviews ??= seedReviews()
-  // The demo busking day's survey, for data made before the survey.
+  // 설문이 생기기 전에 만든 데이터를 위한 데모 버스킹 날의 설문이다.
   const surveyed = stored.measurements?.find((item) => item.eventId === "event-busking-day")
   if (surveyed) surveyed.survey ??= seedSurvey()
   if (stored.measurements && stored.sponsorships && stored.agreements && stored.demoAccountIds) {
     freshenDemoReport(stored as Parameters<typeof freshenDemoReport>[0])
   }
-  // Sessions saved with their plain token keep working, stored as its hash.
+  // 평문 토큰으로 저장된 세션은 해시로 바꿔 저장해 계속 쓰이게 한다.
   stored.sessions = (stored.sessions ?? []).map((session) => {
     const legacy = session as typeof session & { token?: string }
     if (!legacy.token) return session
@@ -180,8 +180,8 @@ export function upgradeDatabase(stored: Database) {
     (account) => account.id === stored.demoAccountIds?.학생단체,
   )
   if (demoStudent) demoStudent.groupId ??= "syu-muse"
-  // Account types from before the lists grew take their new names, on the
-  // account and on its listing where it was named after the type.
+  // 목록이 늘기 전의 계정 유형은 새 이름을 받는다. 계정과, 유형의 이름을 딴
+  // 리스팅에 적용한다.
   for (const account of stored.accounts ?? []) {
     const renamed = renamedAccountTypes[account.type]
     if (!renamed) continue
@@ -191,8 +191,8 @@ export function upgradeDatabase(stored: Database) {
     account.type = renamed
   }
   if (demoStudent) demoStudent.contact ??= demoContacts.학생단체
-  // Measurement used to be one global set for the busking day; it moves to
-  // that event's own measurement, keeping the counts and records so far.
+  // 측정은 버스킹 날 하나의 전역 집합이었는데, 그 행사 자신의 측정으로 옮기며
+  // 지금까지의 집계와 기록을 유지한다.
   if (!stored.measurements) {
     const legacy = stored as Database & { metrics?: Metrics; metricLog?: MetricEntry[]; report?: Report }
     stored.measurements = demoStudent ? seedMeasurements(demoStudent.id) : []
@@ -210,34 +210,34 @@ export function upgradeDatabase(stored: Database) {
   const demoBrand = stored.accounts?.find((account) => account.id === demoBrandId)
   if (demoBrand) demoBrand.brandId ??= "afternoon-coffee"
   if (demoBrand) demoBrand.contact ??= demoContacts.브랜드
-  // Sponsorships saved before goals existed take the seeded goal, or
-  // break-even for any other.
+  // 목표가 생기기 전에 저장된 협찬은 시드된 목표를 받고, 다른 협찬은 손익분기를
+  // 받는다.
   const seededGoals = new Map(seedSponsorships().map((item) => [item.id, item.targetRoas]))
   for (const list of Object.values(stored.sponsorships)) {
     for (const sponsorship of list) {
       sponsorship.targetRoas ??= seededGoals.get(sponsorship.id) ?? 100
     }
   }
-  // The demo brand's seeded campaign gained a budget.
+  // 데모 브랜드의 시드 캠페인에 예산이 생겼다.
   const tasting = demoBrandId
     ? stored.events?.[demoBrandId]?.find((event) => event.id === "event-coffee-tasting")
     : undefined
   if (tasting) tasting.budget ??= 800000
-  // Brands pick their offers now; the demo brand's are its seeded ones.
-  // Offers saved as plain kinds become rows.
+  // 브랜드는 이제 제안을 직접 고른다. 데모 브랜드의 제안은 시드된 것이다.
+  // 평범한 종류로 저장된 제안은 행이 된다.
   const demoListing = stored.brands?.find((brand) => brand.id === "afternoon-coffee")
   if (demoListing) demoListing.offers ??= seedBrands[0].offers
   for (const brand of stored.brands ?? []) {
     if (brand.offers) brand.offers = brand.offers.map((item) => (typeof item === "string" ? { kind: item } : item))
   }
-  // The demo group's concert gained its event page.
+  // 데모 단체의 콘서트에 행사 페이지가 생겼다.
   const demoGroupId = stored.demoAccountIds?.학생단체
   const concert = demoGroupId
     ? stored.events?.[demoGroupId]?.find((event) => event.id === "event-muse-concert")
     : undefined
   if (concert && !concert.packages) Object.assign(concert, museConcertPage)
-  // The demo's sentences lost the comma after a joining ending (PR #283);
-  // data saved before keeps the old ones until they are rewritten here.
+  // 데모의 문장에서 이어짐 어미 뒤 쉼표가 빠졌다(PR #283). 이전에 저장된
+  // 데이터는 여기서 다시 쓰일 때까지 옛 문장을 유지한다.
   const rewrite = (text: string | undefined) => (text !== undefined && Object.hasOwn(demoCopy, text) ? demoCopy[text] : text)
   for (const list of Object.values(stored.events ?? {})) for (const event of list) event.intro = rewrite(event.intro)
   for (const review of stored.reviews ?? []) review.comment = rewrite(review.comment) ?? review.comment
@@ -245,7 +245,7 @@ export function upgradeDatabase(stored: Database) {
   for (const conversation of stored.conversations ?? []) {
     for (const message of conversation.messages) message.text = rewrite(message.text) ?? message.text
   }
-  // Events no longer ask for the share of women; what was saved goes.
+  // 행사는 더 이상 여성 비율을 묻지 않으므로 저장된 값은 지운다.
   for (const list of Object.values(stored.events ?? {})) {
     for (const event of list) {
       const makeup = event.makeup as (NonNullable<typeof event.makeup> & { female?: number }) | undefined
@@ -254,7 +254,7 @@ export function upgradeDatabase(stored: Database) {
       if (!makeup.years?.length && !makeup.majors) delete event.makeup
     }
   }
-  // The busking day's sponsorship follows that event's measurement.
+  // 버스킹 날의 협찬은 그 행사의 측정을 따른다.
   const busking = demoBrandId
     ? stored.sponsorships[demoBrandId]?.find((sponsorship) => sponsorship.id === "sp-busking")
     : undefined
@@ -262,7 +262,7 @@ export function upgradeDatabase(stored: Database) {
   for (const events of Object.values(stored.events)) {
     for (const event of events) event.date = toIsoDate(event.date) ?? event.date
   }
-  // Records made by the old demo test buttons read like real check-ins now.
+  // 옛 데모 테스트 버튼으로 만든 기록은 이제 실제 체크인처럼 읽힌다.
   const testDetails: Record<string, string> = {
     "QR 스캔 테스트": "현장 QR 스캔",
     "쿠폰 수령 테스트": "아메리카노 1+1 쿠폰",
@@ -270,34 +270,33 @@ export function upgradeDatabase(stored: Database) {
   }
   for (const measurement of stored.measurements) {
     for (const entry of measurement.log) entry.detail = testDetails[entry.detail] ?? entry.detail
-    // Visits need the staff PIN and a scan's pass now.
+    // 방문은 이제 직원 PIN과 스캔의 패스가 필요하다.
     measurement.staffPin ??= measurement.eventId === "event-busking-day" ? "1012" : newStaffPin()
     measurement.passes ??= {}
-    // Venue counts and the group's venue PIN came with measurement methods.
+    // 현장 집계와 단체의 현장 PIN은 측정 방식과 함께 생겼다.
     measurement.metrics = { ...emptyMetrics(), ...measurement.metrics }
     measurement.groupPin ??= measurement.eventId === "event-busking-day" ? "1013" : newStaffPin()
-    // Each sponsor gets its own coupon and counts; an event's only sponsor
-    // takes over what the event had.
-    // A ROAS goal starts at 1%; 0 was once taken and cannot be divided by.
+    // 협찬사마다 자기 쿠폰과 집계를 받고, 행사의 유일한 협찬사는 행사가 가졌던
+    // 것을 넘겨받는다.
+    // ROAS 목표는 1%에서 시작한다. 0이 한때 쓰였는데 0으로는 나눌 수 없다.
     if (measurement.goals.targets.roas < 1) measurement.goals.targets.roas = 100
     measurement.sponsors ??= []
     syncSponsors(stored, measurement)
     const { scans: _, ...noCounts } = emptyMetrics()
     for (const sponsor of measurement.sponsors) sponsor.metrics = { ...noCounts, ...sponsor.metrics }
-    // Methods saved before they were split (the coupon then stood for the
-    // QR, the coupon and the store's visits).
+    // 나뉘기 전에 저장된 방법이다(쿠폰이 QR, 쿠폰, 매장 방문을 모두 뜻했다).
     for (const holder of [measurement, ...measurement.sponsors]) {
       if (holder.methods) holder.methods = upgradeMethods(holder.methods)
       if (holder.confirmedMethods) holder.confirmedMethods = upgradeMethods(holder.confirmedMethods)
     }
-    // Scans by hour gained their day; older ones were on the event's first.
+    // 시간별 스캔에 날짜가 생겼고, 이전 것은 행사의 첫날에 있었다.
     const event = stored.events[measurement.accountId]?.find((item) => item.id === measurement.eventId)
     for (const slot of measurement.hourlyScans) slot.date ??= event?.date ?? ""
-    // Participation records an event no longer needs go on each start.
+    // 행사가 더 이상 필요 없는 참여 기록은 시작할 때마다 지운다.
     if (event) prunePasses(stored, measurement, event)
   }
-  // E-contracts both sides confirmed before confirmed methods were kept
-  // count the methods they hold as confirmed.
+  // 확정된 방법이 보관되기 전에 양쪽이 확정한 e-contract는 가진 방법을
+  // 확정된 것으로 센다.
   for (const agreement of stored.agreements) {
     if (!agreement.confirmed?.group || !agreement.confirmed?.brand) continue
     const proposal = acceptedProposal(stored, agreement.id)
@@ -313,14 +312,13 @@ export function getDatabase() {
   return database
 }
 
-// Writes are queued, each over the version this copy last read or wrote
-// (lib/storage.ts makes a file write crash-safe and turns away a database
-// write another copy beat). When a write fails, the data in memory goes back
-// to what was last written, so a request answered with an error leaves
-// nothing behind and can simply be tried again: its caller, and the callers
-// of writes queued behind it (whose changes went back too), get a 503. When
-// another copy wrote first, its data comes in for the next request. The
-// queue carries on, so the next save tries again.
+// 쓰기는 대기열에 넣고, 각각 이 복사본이 마지막으로 읽거나 쓴 버전 위에 쓴다
+// (lib/storage.ts는 파일 쓰기가 중간에 죽어도 안전하게 하고, 다른 복사본이
+// 먼저 쓴 데이터베이스 쓰기는 거절한다). 쓰기가 실패하면 메모리의 데이터는
+// 마지막으로 쓴 것으로 돌아가므로, 오류로 답한 요청은 아무것도 남기지 않고
+// 그대로 다시 시도할 수 있다. 호출한 쪽과 그 뒤에 대기한 쓰기의 호출한 쪽
+// (변경도 함께 돌아갔다)은 503을 받는다. 다른 복사본이 먼저 썼다면 그 데이터가
+// 다음 요청에 들어온다. 대기열은 계속 돌아가므로 다음 저장이 다시 시도한다.
 export function saveDatabase() {
   const storage = currentStorage()
   const snapshot = JSON.stringify(getDatabase(), null, storage.indent)
@@ -344,7 +342,7 @@ export function saveDatabase() {
   return write
 }
 
-// Puts the last written data back in place.
+// 마지막으로 쓴 데이터를 제자리에 되돌린다.
 function rollBack() {
   replace(JSON.parse(durable) as Database)
 }

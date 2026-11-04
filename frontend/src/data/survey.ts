@@ -1,6 +1,6 @@
-// The participants' optional four questions on the check-in page (backend
-// lib/validation.ts surveyOptions; lib/lists.sync.test.ts checks they
-// match), kept in Korean and shown through t().
+// 체크인 페이지에서 참여자에게 묻는 선택 질문 넷 (backend lib/validation.ts의
+// surveyOptions와 일치하는지 lib/lists.sync.test.ts가 검사한다). 한국어로
+// 유지하고 t()로 보여준다.
 export const surveyOptions = {
   grade: ["1학년", "2학년", "3학년", "4학년 이상", "대학원생", "졸업생 · 기타"],
   field: ["인문 · 사회", "경영 · 경제", "자연 · 공학", "의약 · 보건", "예체능", "교육", "기타"],

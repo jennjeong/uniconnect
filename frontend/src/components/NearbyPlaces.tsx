@@ -12,28 +12,27 @@ import { PlaceMap, placeState, placeStateLabels } from "./PlaceMap"
 import { ProposalControl } from "./ProposalControl"
 import { TabBar } from "./TabBar"
 
-// Every kind at once, then each kind on its own.
+// 모든 종류를 한 번에 보여 준 뒤 종류별로 보여 준다.
 const kinds = [{ code: "all", label: "전체" }, ...placeCategories]
 
 type Partnering = {
-  // The brand catalog, where a shop that joined is found as its brand.
+  // 브랜드 카탈로그. 가입한 가게는 여기서 브랜드로 찾는다.
   brands: Match[]
   proposals: string[]
   statuses: Partial<Record<string, RequestStatus>>
   onOpenDetail: (match: Match) => void
   onPropose: (match: Match) => void
   onCancelProposal: (match: Match) => void
-  // Opens the invitation for a shop (InviteShopModal); true once it is sent.
+  // 가게에 보내는 초대(InviteShopModal)를 연다. 보내졌으면 true.
   onInvite: (place: NearbyPlace) => Promise<boolean>
 }
 
-// One shop as the other tabs' silver card (WorkCard.tsx): its kind and its
-// Kakao Map page at the top, its brand's or chain's logo (or its name's first
-// letter) in the middle, then its name, address, distance and phone. A shop
-// not on uniconnect says 협약 전 where a partner's card offers a proposal and
-// can be invited (초대함 once it is); one that joined from an invitation is
-// that brand, with its detail page and a proposal. The made-up shops visitors
-// see have no map page to link.
+// 다른 탭의 은색 카드(WorkCard.tsx)와 같은 모양의 가게 하나. 맨 위에 종류와
+// Kakao Map 페이지, 가운데에 브랜드나 체인의 로고 (없으면 이름의 첫 글자), 그
+// 아래에 이름, 주소, 거리, 전화번호가 온다. uniconnect에 없는 가게는 파트너
+// 카드라면 제안을 보여 줄 자리에 협약 전이라고 쓰고, 초대할 수 있다 (초대하면
+// 초대함). 초대로 가입한 가게는 그 브랜드이며 상세 페이지와 제안이 있다.
+// 방문자가 보는 가상의 가게에는 연결할 지도 페이지가 없다.
 function PlaceCard({ place, partnering }: { place: NearbyPlace; partnering: Partnering }) {
   const brand = place.brandId ? partnering.brands.find((item) => item.id === place.brandId) : undefined
   const franchise = franchiseOf(place.name)
@@ -131,17 +130,17 @@ function PlaceCard({ place, partnering }: { place: NearbyPlace; partnering: Part
   )
 }
 
-// Real shops around the student group's campus, live from Kakao Local: the
-// kinds as chips (every kind at first), a line saying where with a switch
-// between the list and a sketch map, then the shops nearest first as cards
-// like the other tabs'. Kakao doesn't allow keeping its results, so each pick
-// asks the server afresh and the answer lives only on screen. Visitors get
-// made-up shops around the demo group's campus, and the lines say so.
+// 학생단체 캠퍼스 주변의 실제 가게를 Kakao Local에서 실시간으로 가져온다.
+// 종류는 칩으로 고르고(처음에는 전체), 위치를 말해 주는 한 줄과 목록·스케치
+// 지도 전환이 있으며, 가까운 가게부터 다른 탭과 같은 카드로 보여 준다. Kakao는
+// 결과 저장을 허용하지 않으므로 고를 때마다 서버에 새로 물어보고 답은 화면에만
+// 둔다. 방문자에게는 데모 그룹의 캠퍼스 주변에 가상의 가게를 보여 주며, 문구로
+// 그 사실을 알린다.
 export function NearbyPlaces(partnering: Partnering) {
   const [category, setCategory] = useState(kinds[0].code)
   const [answer, setAnswer] = useState<{ category: string; result?: Answer; error?: string }>()
   const [layout, setLayout] = useState<"list" | "map">("list")
-  // The shop shown under the map; the nearest until another is pressed.
+  // 지도 아래에 보여 줄 가게. 다른 가게를 누르기 전까지는 가장 가까운 곳이다.
   const [selected, setSelected] = useState<string>()
 
   useEffect(() => {
@@ -159,7 +158,7 @@ export function NearbyPlaces(partnering: Partnering) {
     }
   }, [category])
 
-  // An answer for an earlier pick doesn't count while the new one loads.
+  // 이전에 고른 종류의 답은 새 답을 불러오는 동안 반영하지 않는다.
   const current = answer?.category === category ? answer : undefined
   const result = current?.result
   const places = result?.places ?? []
@@ -178,7 +177,7 @@ export function NearbyPlaces(partnering: Partnering) {
             : t("{campus} 근처, 가까운 순서예요.", { campus: result.campus })
   const shown = places.find((place) => place.id === selected) ?? places[0]
 
-  // An invitation sent marks its shop at once, without asking Kakao again.
+  // 초대를 보내면 Kakao에 다시 묻지 않고 그 가게에 바로 표시한다.
   const invite = async (place: NearbyPlace) => {
     if (!(await partnering.onInvite(place)) || !result) return false
     setAnswer({
@@ -198,7 +197,7 @@ export function NearbyPlaces(partnering: Partnering) {
         onChange={(value, event) => {
           setCategory(value)
           setSelected(undefined)
-          // The chip row scrolls sideways on phones; keep the pick in view.
+          // 칩 행은 폰에서 옆으로 스크롤되므로 고른 칩이 보이게 한다.
           event.currentTarget.scrollIntoView({ block: "nearest", inline: "center" })
         }}
         value={category}

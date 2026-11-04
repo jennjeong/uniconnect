@@ -3,33 +3,30 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'node:path'
 
-import siteConfiguration from './.figma/make/site.json'
+import siteConfiguration from './site.config.json'
 import { sitemapXml } from './src/lib/sitemap'
 
 
-// Vite config — https://vitejs.dev/config/
+// Vite 설정 — https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  // .figma/make/deploy-preview passes `--mode development` for cached-preview builds.
+  // `--mode development`는 소스맵을 포함해 빌드를 읽기 쉽게 둔다.
   const emitSourcemaps = mode === 'development'
-  // Forward /api calls to the Express backend (backend/) while developing.
+  // 개발 중에는 /api 호출을 Express 백엔드(backend/)로 넘긴다.
   const apiProxy = { '/api': `http://localhost:${process.env.API_PORT || '4000'}` }
 
   return {
-    base: process.env.FIGMA_PUBLIC_URL ? `${process.env.FIGMA_PUBLIC_URL}/` : '/',
+    base: '/',
     build: {
       sourcemap: emitSourcemaps ? 'inline' : false,
       minify: !emitSourcemaps,
-      // three.js (the chrome chain and rings, and the login gradient) loads
-      // lazily in chunks of its own, up to ~0.7 MB.
+      // three.js(크롬 체인과 링, 로그인 그라디언트)는 지연 로딩되어 별도 청크로
+      // 나뉘며 최대 약 0.7MB다.
       chunkSizeWarningLimit: 800,
     },
     plugins: [
-react(),
+      react(),
       tailwindcss(),
-      figmaSiteConfiguration(siteConfiguration),
-      figmaErrorOverlayReplay(),
-      figmaReactRefreshBoundaryFallback(),
-      figmaMakeKitPlugin({ storiesGlob: '/src/**/*.stories.{ts,tsx,js,jsx}' }),
+      siteDocument(siteConfiguration),
     ],
     resolve: {
       alias: {
@@ -37,37 +34,32 @@ react(),
       },
     },
     server: {
-      host: process.env.FIGMA_DEV_SERVER_HOST || '0.0.0.0',
+      host: '0.0.0.0',
       port: parseInt(process.env.PORT || '8443'),
       strictPort: true,
-      watch: {
-        ignored: [
-          '**/.figma/**',
-],
-      },
       proxy: apiProxy,
     },
     preview: {
-      host: process.env.FIGMA_DEV_SERVER_HOST || '0.0.0.0',
+      host: '0.0.0.0',
       port: parseInt(process.env.PORT || '8443'),
       proxy: apiProxy,
     },
   }
 })
 
-type FigmaSiteConfiguration = {
+type SiteConfiguration = {
   title?: string
   description?: string
   language?: string
-  // The site's public address, for the sitemap's links.
+  // 사이트맵 링크에 쓰는 사이트의 공개 주소.
   url?: string
   robots?: {
     index?: boolean
   }
-  // The public pages listed in /sitemap.xml (lib/sitemap.test.ts checks them).
+  // /sitemap.xml에 싣는 공개 페이지 (lib/sitemap.test.ts가 검사한다).
   sitemap?: string[]
-  // Site ownership codes from Google Search Console and Naver Search
-  // Advisor, written into each page's head once set.
+  // Google Search Console과 Naver Search Advisor의 사이트 소유 확인 코드. 값이
+  // 있으면 각 페이지의 head에 쓴다.
   verification?: {
     google?: string
     naver?: string
@@ -87,13 +79,10 @@ type FigmaSiteConfiguration = {
     bodyStart?: string
     bodyEnd?: string
   }
-  accessibility?: {
-    addBypassLinks?: boolean
-  }
 }
 
-/** Applies /.figma/make/site.json to the generated document shell. */
-function figmaSiteConfiguration(config: FigmaSiteConfiguration): Plugin {
+/** site.config.json을 index.html과 그 옆에서 서빙하는 파일에 적용한다. */
+function siteDocument(config: SiteConfiguration): Plugin {
   function sanitizeHtmlValue(value: string | undefined): string {
     return value?.replace(/[^a-zA-Z0-9_-]/g, '') || ''
   }
@@ -104,9 +93,8 @@ function figmaSiteConfiguration(config: FigmaSiteConfiguration): Plugin {
     return html.replace(`<!-- ${slotName} -->`, content)
   }
 
-  const title = config.title ?? "Figma Make App"
+  const title = config.title ?? "uniconnect"
   const description = config.description ?? ''
-  // Imported HTML keeps its own favicon; new Makes default to the Make product icon.
   const favicon = config.icons?.icon ?? '/favicon.svg'
   const socialImage = config.openGraph?.image ?? ''
   const language = sanitizeHtmlValue(config.language) || 'en'
@@ -116,15 +104,15 @@ function figmaSiteConfiguration(config: FigmaSiteConfiguration): Plugin {
   const bodyStart = config.customScripts?.bodyStart ?? ''
   const bodyEnd = config.customScripts?.bodyEnd ?? ''
   const robotsTxt = config.robots?.index === false ? 'User-agent: *\nDisallow: /\n' : ''
-  // Nothing to list while the whole site stays out of search.
+  // 사이트 전체가 검색에서 빠져 있는 동안은 싣지 않는다.
   const sitemap =
     config.url && config.sitemap?.length && config.robots?.index !== false ? sitemapXml(config.url, config.sitemap) : ''
   const verification = {
     'google-site-verification': sanitizeHtmlValue(config.verification?.google),
     'naver-site-verification': sanitizeHtmlValue(config.verification?.naver),
   }
-  // Google's gtag set-up, as a file of its own (/ga-init.js) rather than an
-  // inline script, which the server's Content-Security-Policy blocks.
+  // Google의 gtag 설정을 인라인 스크립트가 아닌 별도 파일(/ga-init.js)로 둔다.
+  // 서버의 Content-Security-Policy가 인라인 스크립트를 막기 때문이다.
   const gaInit = googleAnalyticsId
     ? `window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
@@ -134,7 +122,7 @@ gtag('config', ${JSON.stringify(googleAnalyticsId)});
     : ''
 
   return {
-    name: 'figma-site-configuration',
+    name: 'site-document',
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         if (!robotsTxt || req.url?.split('?')[0] !== '/robots.txt') return next()
@@ -182,12 +170,12 @@ gtag('config', ${JSON.stringify(googleAnalyticsId)});
       order: 'pre',
       handler(html) {
         let result = html
-        result = replaceHtmlCommentSlot(result, 'figma:lang', language)
-        result = replaceHtmlCommentSlot(result, 'figma:title', escapeHtmlText(title))
-        result = replaceHtmlCommentSlot(result, 'figma:head-start', headStart)
-        result = replaceHtmlCommentSlot(result, 'figma:head-end', headEnd)
-        result = replaceHtmlCommentSlot(result, 'figma:body-start', bodyStart)
-        result = replaceHtmlCommentSlot(result, 'figma:body-end', bodyEnd)
+        result = replaceHtmlCommentSlot(result, 'site:lang', language)
+        result = replaceHtmlCommentSlot(result, 'site:title', escapeHtmlText(title))
+        result = replaceHtmlCommentSlot(result, 'site:head-start', headStart)
+        result = replaceHtmlCommentSlot(result, 'site:head-end', headEnd)
+        result = replaceHtmlCommentSlot(result, 'site:body-start', bodyStart)
+        result = replaceHtmlCommentSlot(result, 'site:body-end', bodyEnd)
 
         const tags: HtmlTagDescriptor[] = []
         if (description) {
@@ -234,214 +222,11 @@ gtag('config', ${JSON.stringify(googleAnalyticsId)});
           )
         }
 
-        if (config.accessibility?.addBypassLinks) {
-          tags.push(
-            {
-              tag: 'style',
-              children: `
-  .figma-bypass-link {
-    position: fixed;
-    top: 8px;
-    left: 8px;
-    z-index: 2147483647;
-    transform: translateY(-150%);
-    border-radius: 6px;
-    background: #111827;
-    color: #fff;
-    padding: 8px 12px;
-    font: 600 14px/1.2 system-ui, sans-serif;
-    text-decoration: none;
-  }
-  .figma-bypass-link:focus {
-    transform: translateY(0);
-  }
-`,
-              injectTo: 'head',
-            },
-            {
-              tag: 'a',
-              attrs: { class: 'figma-bypass-link', href: '#root' },
-              children: 'Skip to content',
-              injectTo: 'body-prepend',
-            },
-          )
-        }
-
         return {
           html: result,
           tags,
         }
       },
-    },
-  }
-}
-
-/**
- * Replay the most recent build error to clients that connect after
- * it was first broadcast. Vite buffers an error payload only while
- * no clients are connected and clears the buffer on the first
- * reconnect (see `bufferedMessage` in `createWebSocketServer`), so
- * if the preview iframe reloads after Vite already delivered an
- * error to a live socket, the new socket misses the payload and
- * the overlay stays hidden even though the build is still broken.
- * We intercept `ws.send` to remember the latest error and replay
- * it on every new connection; the cache clears on a successful
- * `update` or `full-reload` so a stale overlay can't survive a
- * fixed build.
- */
-function figmaErrorOverlayReplay(): Plugin {
-  return {
-    name: 'figma-error-overlay-replay',
-    apply: 'serve',
-    configureServer(server) {
-      let lastError: object | null = null
-
-      const origSend = server.ws.send.bind(server.ws) as (...args: any[]) => void
-      server.ws.send = ((...args: any[]) => {
-        const payload = args[0]
-        if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
-          const type = (payload as { type?: string }).type
-          if (type === 'error') {
-            lastError = payload as object
-          } else if (type === 'update' || type === 'full-reload') {
-            lastError = null
-          }
-        }
-        return origSend(...args)
-      }) as typeof server.ws.send
-
-      server.ws.on('connection', (socket) => {
-        if (lastError !== null) {
-          socket.send(JSON.stringify(lastError))
-        }
-      })
-    },
-  }
-}
-
-/**
- * Reload when a module that previously defined a React Refresh boundary stops
- * defining one. This happens when an agent moves a component into a new file
- * and replaces the old module with a re-export:
- *
- *   export { default } from './app/App'
- *
- * Vite otherwise accepts the update using the previous module's HMR boundary,
- * but the re-export-only transform no longer registers a replacement for the
- * mounted component family. React reports a successful refresh while leaving
- * the old tree mounted until the page is reloaded.
- */
-function figmaReactRefreshBoundaryFallback(): Plugin {
-  type ModuleNode = import('vite').ModuleNode
-  const hadRefreshBoundary = new Map<string, boolean>()
-  const lostRefreshBoundaries = new Set<string>()
-  let sendFullReload: (() => void) | null = null
-
-  return {
-    name: 'figma-react-refresh-boundary-fallback',
-    apply: 'serve',
-    enforce: 'post',
-    configureServer(server) {
-      sendFullReload = () => server.ws.send({ type: 'full-reload', path: '*' })
-    },
-    handleHotUpdate({ modules, server, timestamp }) {
-      if (lostRefreshBoundaries.size === 0) return
-
-      const visited = new Set<ModuleNode>()
-      const pending = [...modules]
-      while (pending.length > 0) {
-        const current = pending.pop()
-        if (!current || visited.has(current)) continue
-        visited.add(current)
-
-        const moduleId = current.id?.split('?')[0]
-        if (moduleId && lostRefreshBoundaries.has(moduleId)) {
-          const invalidated = new Set<ModuleNode>()
-          for (const updatedModule of modules) {
-            server.moduleGraph.invalidateModule(updatedModule, invalidated, timestamp, true)
-          }
-          sendFullReload?.()
-          return []
-        }
-
-        pending.push(...current.importers)
-      }
-    },
-    transform(code, id) {
-      if (!/\.[jt]sx?(?:\?|$)/.test(id) || id.includes('/node_modules/')) return null
-
-      const moduleId = id.split('?')[0] ?? id
-      const hasRefreshBoundary = code.includes('registerExportsForReactRefresh')
-      const previousHadRefreshBoundary = hadRefreshBoundary.get(moduleId)
-      hadRefreshBoundary.set(moduleId, hasRefreshBoundary)
-
-      if (hasRefreshBoundary) lostRefreshBoundaries.delete(moduleId)
-      if (previousHadRefreshBoundary && !hasRefreshBoundary) {
-        lostRefreshBoundaries.add(moduleId)
-        queueMicrotask(() => sendFullReload?.())
-      }
-
-      return null
-    },
-  }
-}
-
-/**
- * Serves a blank render-target page at /.figma/make/kit.html that
- * the Figma preview script drives directly. The page exposes a
- * registry of every file matching `storiesGlob` on
- * window.__FIGMA__.stories so the design surface can dynamically
- * import + mount each entry into its own grid view.
- *
- * Dev-only: `apply: 'serve'` gates the plugin to `vite dev`. Prod
- * builds (`vite build`) skip it entirely so the route doesn't leak
- * into shipped bundles.
- */
-function figmaMakeKitPlugin(options: { storiesGlob: string | string[] }): Plugin {
-  const storiesGlob = Array.isArray(options.storiesGlob) ? options.storiesGlob : [options.storiesGlob]
-  const ROUTE = '/.figma/make/kit.html'
-  const VIRTUAL_ID = 'virtual:figma-stories'
-  const RESOLVED_ID = '\0' + VIRTUAL_ID
-  const STORIES_MODULE = `export const stories = import.meta.glob(${JSON.stringify(storiesGlob)})`
-  const HTML_BOOTSTRAP = `<!doctype html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-</head>
-<body>
-<div id="figma-make-kit-root"></div>
-<script type="module">
-  import { stories } from 'virtual:figma-stories'
-  window.__FIGMA__ = Object.assign(window.__FIGMA__ ?? {}, { stories })
-  window.dispatchEvent(new CustomEvent('figma.ready'))
-</script>
-</body>
-</html>`
-
-  return {
-    name: 'figma-make-kit',
-    apply: 'serve',
-    resolveId(id) {
-      if (id === VIRTUAL_ID) return RESOLVED_ID
-      return null
-    },
-    load(id) {
-      if (id !== RESOLVED_ID) return null
-      return STORIES_MODULE
-    },
-    configureServer(server) {
-      server.middlewares.use(async (req, res, next) => {
-        const url = req.url || ''
-        if (url.split('?')[0] !== ROUTE) return next()
-
-        try {
-          res.setHeader('Content-Type', 'text/html')
-          res.end(await server.transformIndexHtml(url, HTML_BOOTSTRAP))
-        } catch (err) {
-          next(err as Error)
-        }
-      })
     },
   }
 }

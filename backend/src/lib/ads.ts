@@ -5,21 +5,19 @@ import { adUntil } from "./plan.js"
 import { findListing } from "./catalog.js"
 import type { Account, Database } from "../types.js"
 
-// 상단 광고: 30 days at a time when an account's listing comes first on the
-// other side's catalog with an AD mark (lib/catalog.ts browse). A brand pays
-// prices.adBrand a month, a student group prices.adGroup. Paying again
-// while an ad still runs adds 30 days after it and takes
-// prices.adRenewalDiscount off.
+// 상단 광고: 계정의 리스팅이 상대편 카탈로그 맨 앞에 AD 마크와 함께 오르는
+// 30일 단위 상품(lib/catalog.ts browse). 브랜드는 한 달에 prices.adBrand,
+// 학생 단체는 prices.adGroup을 낸다. 광고가 도는 중에 다시 결제하면 그
+// 뒤로 30일을 더하고 prices.adRenewalDiscount를 깎는다.
 
-// What the next 30 days cost the account: the role's price, less the
-// discount while an ad still runs.
+// 다음 30일의 비용: 역할별 가격에서, 광고가 도는 중이면 할인을 뺀 값.
 export function adPrice(database: Database, account: Account) {
   const base = account.role === "브랜드" ? prices.adBrand : prices.adGroup
   const renewing = adUntil(database, account.id) !== null
   return { base, amount: renewing ? Math.round((base * (1 - prices.adRenewalDiscount)) / 100) * 100 : base, renewing }
 }
 
-// The account's ad as its pages show it.
+// 페이지가 보여 주는 계정의 광고.
 export function adOf(database: Database, account: Account) {
   const { base, amount, renewing } = adPrice(database, account)
   return { until: adUntil(database, account.id), price: base, next: amount, renewing, days: prices.adDays }
@@ -35,13 +33,13 @@ sell("ad", {
       orderName: renewing ? `상단 광고 ${prices.adDays}일 연장 (10% 할인)` : `상단 광고 ${prices.adDays}일`,
     }
   },
-  // Paid: 30 more days, from today or after the days already paid.
+  // 결제됨: 오늘부터, 또는 이미 낸 일수 뒤로 30일 더한다.
   fulfil(database, payment) {
     const until = adUntil(database, payment.accountId)
     const from = until ? addDays(until, 1) : todayInKorea()
     payment.periodEnd = addDays(from, prices.adDays - 1)
   },
-  // Refunded: the months paid after it move back by its days.
+  // 환불됨: 그 뒤에 결제한 달이 그 일수만큼 앞당겨진다.
   revoke(database, payment) {
     shiftLaterPeriods(database, payment, prices.adDays)
   },

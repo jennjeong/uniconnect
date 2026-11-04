@@ -1,9 +1,9 @@
 import { HttpError } from "./errors.js"
 import type { ChatSide, EventSponsor, MeasureMethod, Measurement, MethodKind, MethodSide, VenueCounts } from "../types.js"
 
-// The ways a sponsorship can be confirmed at the event (협찬 확인 방식), in
-// the order the e-contract lists them. Keep in sync with
-// frontend/src/data/methods.ts (lib/lists.sync.test.ts checks).
+// 협찬을 행사에서 확인하는 방식(협찬 확인 방식). 전자계약서가 나열하는
+// 순서다. frontend/src/data/methods.ts와 맞춰 둔다(lib/lists.sync.test.ts가
+// 검사한다).
 export const methodKinds: MethodKind[] = [
   "qr",
   "coupon",
@@ -19,9 +19,8 @@ export const methodKinds: MethodKind[] = [
   "experience",
 ]
 
-// What the venue's staff count for each method beyond the check-in QR, its
-// coupon and the store's visits, which the participants' phones and the
-// store's page record.
+// 체크인 QR, 그 쿠폰, 매장 방문(참가자 휴대폰과 매장 페이지가 기록한다)
+// 말고 방식마다 행사장 직원이 세는 것.
 export const venueMetrics = {
   sampling: "samples",
   booth: "stamps",
@@ -42,38 +41,38 @@ export const venueMetricKeys = Object.values(venueMetrics) as VenueMetric[]
 export const isVenueKind = (kind: MethodKind): kind is VenueKind =>
   Object.prototype.hasOwnProperty.call(venueMetrics, kind)
 
-// Counted by the box (samples, goods); the rest one person at a time.
+// 상자 단위(샘플, 물품)로 세고 나머지는 한 사람씩 센다.
 export const bulkKinds: VenueKind[] = ["sampling", "giveaway"]
 
-// Store visits are confirmed at the brand's store, so they are the brand's
-// to confirm; the others are up to the e-contract, either side or both.
+// 매장 방문은 브랜드의 매장에서 확인하므로 브랜드가 확인한다. 나머지는
+// 전자계약서에 따라 어느 한쪽 또는 양쪽이다.
 export const fixedSides: Partial<Record<MethodKind, MethodSide>> = { visit: "brand" }
 
-// What a method needs beside it: the coupon is taken on the QR's check-in
-// page, and a store visit is confirmed by the coupon's number.
+// 방식이 함께 필요로 하는 것: 쿠폰은 QR 체크인 페이지에서 받고 매장 방문은
+// 쿠폰 번호로 확인한다.
 export const methodNeeds: Partial<Record<MethodKind, MethodKind>> = { coupon: "qr", visit: "coupon" }
 
-// How a sponsorship is confirmed until both sides confirm their e-contract:
-// the check-in QR, its coupon and the store's visits, as before methods.
+// 양쪽이 전자계약서를 확인하기 전까지의 협찬 확인 방식: 방식이 생기기 전과
+// 같이 체크인 QR, 그 쿠폰, 매장 방문이다.
 export const defaultMethods: MeasureMethod[] = [
   { kind: "qr", side: "group" },
   { kind: "coupon", side: "brand" },
   { kind: "visit", side: "brand" },
 ]
 
-// The methods an e-contract sets for one share of an event: a sponsor's,
-// or the event's own while it has no sponsors.
+// 전자계약서가 행사 한 몫에 정한 방식. 협찬사의 몫이거나 협찬사가 없을 때는
+// 행사 자체의 몫이다.
 export const methodsOf = (measurement: Measurement, sponsor?: EventSponsor) =>
   (sponsor ? sponsor.methods : measurement.methods) ?? defaultMethods
 
-// The methods that count: those both sides last confirmed on the
-// e-contract, or the default until they have.
+// 효력이 있는 방식: 양쪽이 전자계약서에서 마지막으로 확인한 것, 확인하기
+// 전에는 기본값.
 export const activeMethodsOf = (measurement: Measurement, sponsor?: EventSponsor) =>
   (sponsor ? sponsor.confirmedMethods : measurement.confirmedMethods) ?? defaultMethods
 
 export const usesMethod = (methods: MeasureMethod[], kind: MethodKind) => methods.some((method) => method.kind === kind)
 
-// Whether a side's venue page confirms a method.
+// 어느 쪽의 행사장 페이지가 방식을 확인하는지.
 export const confirmsAt = (method: MeasureMethod, side: ChatSide) => method.side === side || method.side === "both"
 
 const sides: MethodSide[] = ["group", "brand", "both"]
@@ -81,9 +80,9 @@ const sides: MethodSide[] = ["group", "brand", "both"]
 const sortMethods = (methods: MeasureMethod[]) =>
   methodKinds.flatMap((kind) => methods.filter((method) => method.kind === kind))
 
-// The methods an e-contract sets: known kinds, each once, in the listed
-// order, each with the side that confirms it (store visits the brand's),
-// and the coupon only with the QR, store visits only with the coupon.
+// 전자계약서가 정하는 방식: 알려진 종류를 한 번씩, 나열된 순서로 두고
+// 각각 확인하는 쪽(매장 방문은 브랜드)을 붙인다. 쿠폰은 QR과 함께만,
+// 매장 방문은 쿠폰과 함께만 둘 수 있다.
 export function parseMethods(input: unknown): MeasureMethod[] {
   if (!Array.isArray(input)) throw new HttpError(400, "협찬 확인 방식을 다시 확인해 주세요.")
   const methods = input.map((raw) => {
@@ -110,8 +109,8 @@ export function parseMethods(input: unknown): MeasureMethod[] {
   return sortMethods(methods)
 }
 
-// How many a venue page may add or take back at once: a box of samples or
-// goods, else one person at a time.
+// 행사장 페이지가 한 번에 더하거나 되돌릴 수 있는 양: 샘플이나 물품은
+// 한 상자, 나머지는 한 사람.
 export function parseAmount(kind: VenueKind, value: unknown) {
   const amount = typeof value === "number" ? value : Number(value ?? 1)
   const bulk = bulkKinds.includes(kind)
@@ -121,8 +120,8 @@ export function parseAmount(kind: VenueKind, value: unknown) {
   return amount
 }
 
-// Methods saved before they were split: the coupon then stood for the QR,
-// the coupon and the store's visits together.
+// 방식이 나뉘기 전에 저장된 방식. 그때는 쿠폰이 QR, 쿠폰, 매장 방문을
+// 함께 뜻했다.
 export function upgradeMethods(methods: MeasureMethod[] | undefined) {
   if (!methods || !usesMethod(methods, "coupon") || usesMethod(methods, "qr")) return methods
   return sortMethods([
@@ -131,7 +130,7 @@ export function upgradeMethods(methods: MeasureMethod[] | undefined) {
   ])
 }
 
-// A share's venue counts, each from 0.
+// 한 몫의 행사장 집계. 각각 0에서 시작한다.
 export const emptyVenueCounts = (): VenueCounts =>
   Object.fromEntries(venueMetricKeys.map((metric) => [metric, 0])) as VenueCounts
 

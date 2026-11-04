@@ -18,13 +18,12 @@ import type { EventMeasurement, MetricKind, Metrics, Report } from "../types"
 
 const delay = (seconds: number) => ({ "--reveal-delay": `${seconds}s` }) as CSSProperties
 
-// The event's live counts on getlayers.ai's Interference gradient, only
-// those of the confirmation methods both sides confirmed on the e-contracts
-// (the QR, coupon and store visits until then), then the funnel when the
-// QR is among them, and the latest participation as cards. Once the event is
-// over (진행 완료) the panel says so. Before the event (진행 전) the counts wait as
-// dashes beside their goals, the cards say what will show once it takes
-// place, and the goals are set on the sponsorship's agreement.
+// getlayers.ai의 Interference 그라디언트 위의 행사 실시간 집계. 양쪽이 전자
+// 계약서에서 확인한 확인 방식의 것만 보여 주며(그 전에는 QR, 쿠폰, 매장 방문),
+// QR이 있으면 이어서 퍼널, 마지막으로 최근 참여를 카드로 보여 준다. 행사가
+// 끝나면(진행 완료) 패널이 그렇게 알린다. 행사 전에는(진행 전) 집계가 목표 옆에
+// 대시로 기다리고, 카드는 행사가 열리면 보일 내용을 알려 주며, 목표는 협찬의
+// 계약서에서 정한다.
 export function MeasurementPage({
   measurements,
   metrics,
@@ -35,17 +34,17 @@ export function MeasurementPage({
   onOpenAgreements,
   onShowLog,
 }: {
-  // Every event of the group, to pick the one to measure.
+  // 단체의 모든 행사. 측정할 행사를 고른다.
   measurements: EventMeasurement[]
   metrics: Metrics
   report: Report | null
   onSelect: (eventId: string) => void
-  // Receives fresh counts and report from each refresh.
+  // 새로 고칠 때마다 최신 집계와 리포트를 받는다.
   onUpdate: (measurement: EventMeasurement) => void
   onOpenQr: () => void
-  // Opens the agreements, where an event's goals are set.
+  // 행사 목표를 정하는 계약서를 연다.
   onOpenAgreements: () => void
-  // Opens the participation history; without a kind, all of it.
+  // 참여 기록을 연다. 종류가 없으면 전부.
   onShowLog: (kind?: MetricKind) => void
 }) {
   const entries = useLiveMeasurement(report?.eventId, "학생단체", onUpdate)
@@ -53,7 +52,7 @@ export function MeasurementPage({
   const upcoming = state === "진행 전"
   const ended = state === "진행 완료"
   const tiles: MetricKind[] = report ? shownKindsOf(report) : metricKinds
-  // A column per tile up to four, then rows of four or three.
+  // 타일은 네 개까지 한 열씩, 그 뒤는 네 개나 세 개씩 한 줄.
   const columns = tiles.length <= 4 ? tiles.length : tiles.length % 4 === 0 ? 4 : 3
 
   const funnel: { kind: MetricKind; note: string }[] = [

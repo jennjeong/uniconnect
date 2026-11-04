@@ -1,24 +1,23 @@
 import type { HistoryEntry } from "./route"
 
-// Swiping between screens, as Safari does on iPhone and Mac: a finger (or
-// two on a trackpad) moving from left to right goes back a screen, and from
-// right to left forward again, through this app's own history entries. A
-// round arrow follows the swipe in from the left for back and from the
-// right for forward, fills deep blue once letting go will move, and the
-// screen that comes arrives from that side. Swipes that start on a screen
-// edge are left to the browser's own gesture (except in a home-screen app,
-// which has none), and so are swipes while a popup is open and over text
-// boxes or anything that scrolls sideways.
+// Safari가 iPhone과 Mac에서 하듯 화면 사이를 스와이프한다: 손가락
+// 하나(트랙패드에서는 둘)를 왼쪽에서 오른쪽으로 밀면 한 화면 뒤로 가고,
+// 오른쪽에서 왼쪽으로 밀면 다시 앞으로 간다. 이 앱 자체의 기록 항목을 따라간다.
+// 둥근 화살표가 스와이프를 따라 뒤로는 왼쪽에서, 앞으로는 오른쪽에서 들어오고,
+// 손을 놓으면 이동할 상태가 되면 진한 파랑으로 채워지며, 다음 화면은 그쪽에서
+// 들어온다. 화면 가장자리에서 시작하는 스와이프는 브라우저 자체 제스처에
+// 맡기고(홈 화면 앱에는 그것이 없으므로 예외), 팝업이 열려 있을 때와 텍스트
+// 상자나 가로로 스크롤되는 곳 위의 스와이프도 맡긴다.
 
 const storageKey = "uniconnect:history-end"
 
-// Index of the last entry App pushed in this tab, so a forward swipe knows
-// whether there is a screen to go to. App calls it whenever it pushes one.
+// App이 이 탭에서 마지막으로 푸시한 항목의 인덱스. 앞으로 스와이프가 갈 화면이
+// 있는지 알게 한다. App이 항목을 푸시할 때마다 부른다.
 export function noteHistoryEnd(index: number) {
   try {
     sessionStorage.setItem(storageKey, String(index))
   } catch {
-    // Without storage, forward swipes stay off.
+    // 저장소가 없으면 앞으로 스와이프는 꺼진 채로 둔다.
   }
 }
 
@@ -36,8 +35,8 @@ const currentIndex = () => (history.state as HistoryEntry | null)?.index ?? 0
 const canGo = (direction: Direction) =>
   direction === "back" ? currentIndex() > 0 : currentIndex() < historyEnd()
 
-// Popups keep the gesture while they are open, and so do text boxes and
-// anything that scrolls sideways under the finger.
+// 팝업은 열려 있는 동안 제스처를 유지하고, 텍스트 상자와 손가락 밑에서 가로로
+// 스크롤되는 곳도 그렇다.
 const popups = ".modal-backdrop, .nav-menu, .notify-panel"
 const fields = "input, textarea, select, [contenteditable]"
 
@@ -57,11 +56,11 @@ const leftAlone = (target: EventTarget | null) =>
   target.closest(fields) !== null ||
   scrollsSideways(target)
 
-// How far a finger, or a trackpad's scrolling, travels to move a screen.
+// 화면을 옮기려면 손가락이나 트랙패드 스크롤이 움직여야 하는 거리.
 const touchDistance = 90
 const wheelDistance = 220
 
-// Returns a function that stops it.
+// 이를 멈추는 함수를 돌려준다.
 export function installSwipeNavigation() {
   const root = document.documentElement
   const hint = document.createElement("div")
@@ -81,10 +80,10 @@ export function installSwipeNavigation() {
     hint.style.setProperty("--progress", "0")
   }
 
-  // data-swiped on the root lets the next screen arrive from the side it was
-  // swiped from (index.css, "Motion").
-  // The screen on show slides away first (data-swipe-out), then the next
-  // one arrives; with reduced motion it moves at once.
+  // 루트의 data-swiped는 다음 화면이 스와이프해 온 쪽에서 들어오게 한다
+  // (index.css의 "Motion").\n|지금 보이는 화면이 먼저 미끄러져
+  // 나가고(data-swipe-out), 그다음 화면이 들어온다. 모션 줄이기가 켜져 있으면
+  // 곧바로 옮긴다.
   let arrived = 0
   let leaving = 0
   const outMs = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 160
@@ -102,9 +101,9 @@ export function installSwipeNavigation() {
     }, outMs)
   }
 
-  // Touch: one finger, mostly sideways and moving soon after it lands (a
-  // long press is selecting text). A home-screen app has no edge gesture of
-  // its own, so there the edges count too.
+  // 터치: 손가락 하나로, 대부분 옆으로, 닿자마자 곧 움직일 때 (길게 누르면
+  // 텍스트를 선택하는 것이다). 홈 화면 앱에는 자체 가장자리 제스처가 없으므로
+  // 거기서는 가장자리도 센다.
   const standalone =
     window.matchMedia("(display-mode: standalone)").matches ||
     (navigator as Navigator & { standalone?: boolean }).standalone === true
@@ -148,12 +147,12 @@ export function installSwipeNavigation() {
     hide()
   }
 
-  // Trackpads: a two-finger sideways swipe arrives as wheel events, deltaX
-  // negative while the fingers move right. A gesture (wheel events until
-  // they rest) is settled as a swipe or not by its first event. A swipe's
-  // events are all taken, so the browser's own swipe doesn't move a second
-  // time, and it moves at most one screen; anything else (scrolling, Shift
-  // or pinch zoom, nowhere to go) is left to the browser.
+  // 트랙패드: 두 손가락 가로 스와이프는 wheel 이벤트로 들어오며, 손가락이
+  // 오른쪽으로 움직이면 deltaX가 음수다. 제스처(멈출 때까지의 wheel 이벤트들)가
+  // 스와이프인지는 첫 이벤트로 정한다. 스와이프의 이벤트는 모두 가로채서
+  // 브라우저 자체 스와이프가 두 번 움직이지 않게 하고, 한 번에 한 화면까지만
+  // 움직인다. 그 밖의 것(스크롤, Shift나 핀치 줌, 갈 곳이 없는 경우)은
+  // 브라우저에 맡긴다.
   let gesture: "swipe" | "other" | null = null
   let travelled = 0
   let moved = false

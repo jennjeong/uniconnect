@@ -1,11 +1,11 @@
 import { starPath } from "./Stars"
 
-// A figure on a profile tab's tinted card: the number (with a star for an
-// average rating), what it is and a line under it.
+// 프로필 탭의 색 입힌 카드 속 수치 하나. 숫자(평균 별점이면 별 포함), 그것이
+// 무엇인지, 그 아래 한 줄로 이루어진다.
 export type ProfileFigure = { value: string; label: string; note?: string; star?: boolean }
 
-// The tinted card of figures at the top of a profile tab (MatchDetailPage),
-// each read as its number, then what it is.
+// 프로필 탭 맨 위의 색 입힌 수치 카드 (MatchDetailPage). 각 수치는 숫자를 먼저,
+// 그다음 의미를 읽는다.
 export function ProfileFigures({ figures }: { figures: ProfileFigure[] }) {
   return (
     <ul className="profile-figures">
@@ -27,8 +27,7 @@ export function ProfileFigures({ figures }: { figures: ProfileFigure[] }) {
   )
 }
 
-// Rows under the card: a label, a bar filled to its share (0 to 1) and the
-// share as a percentage.
+// 카드 아래의 행. 라벨, 비율(0~1)만큼 채워진 막대, 퍼센트로 나타낸 비율이다.
 export function ProfileBars({ rows }: { rows: { label: string; share: number }[] }) {
   return (
     <dl className="profile-bars">

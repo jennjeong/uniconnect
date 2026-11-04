@@ -7,12 +7,12 @@ import { GradientBackdrop } from "./GradientBackdrop"
 import { Icon } from "./Icon"
 import { ClosingContext } from "./Presence"
 
-// Shared dialog frame: a white panel over a blurred backdrop, an eyebrow
-// over the title and a round close button. With `banner`, the heading sits
-// on a moving navy ShaderGradient strip (login and sign-up). Backdrop click, the close button and Escape all close it; inside
-// a Presence it slides down while closing. While open it holds the
-// keyboard (useDialogFocus), and its title has an id of its own, so one
-// closing while another opens never share one.
+// 공용 대화창 틀. 흐린 배경 위의 흰 패널에 제목 위 아이콘 라벨과 둥근 닫기
+// 버튼이 있다. `banner`가 있으면 제목이 움직이는 남색 ShaderGradient 띠 위에
+// 놓인다 (로그인과 가입). 배경 클릭, 닫기 버튼, Escape가 모두 닫는다. Presence
+// 안에서는 닫히는 동안 아래로 미끄러진다. 열려 있는 동안 키보드를
+// 붙잡고(useDialogFocus), 제목에는 고유한 id가 있어서 하나가 닫히고 다른 하나가
+// 열릴 때 id를 같이 쓰지 않는다.
 export function Modal({
   name,
   kicker,

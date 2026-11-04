@@ -5,7 +5,7 @@ import { config } from "../config.js"
 import { cardReady, orderFor, paymentsOf, paymentView, prices, productOf, testMode, toss, tossUnsure, withVat } from "../lib/billing.js"
 import { reconcileCards, recordApproval, settleCard, stuckCards } from "../lib/cardRecovery.js"
 import { HttpError } from "../lib/errors.js"
-// What brands can buy, each registered with lib/billing.ts.
+// 브랜드가 살 수 있는 것으로, 각각 lib/billing.ts에 등록된다.
 import "../lib/feeSales.js"
 import "../lib/reportSales.js"
 import { adOf } from "../lib/ads.js"
@@ -16,24 +16,23 @@ import { text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 
-// What an account pays (lib/billing.ts): an order for what it buys, paid in
-// Toss Payments' window by card and approved here, or by bank transfer
-// that an operator confirms on /admin. Brands buy everything; student
-// groups only their own ads.
+// 계정이 내는 돈이다(lib/billing.ts). 산 것에 대한 주문을 Toss Payments의
+// 창에서 카드로 결제해 여기서 승인하거나, 운영자가 /admin에서 확인하는 계좌
+// 이체로 낸다. 브랜드는 모든 것을 살 수 있고, 학생단체는 자기 광고만 살 수 있다.
 export const billingRouter = Router()
 
-// Prices, whether card payment is on (and the client key for its window),
-// and the account's payments, newest first.
+// 가격, 카드 결제가 켜져 있는지(그 창에 쓰는 클라이언트 키), 계정의 결제를
+// 최신순으로 보여 준다.
 billingRouter.get("/", async (req, res) => {
   const account = requireAccount(req)
-  // A card approval of this account's that didn't get recorded is settled
-  // from Toss first, so the list shows it paid (lib/cardRecovery.ts).
+  // 이 계정의 카드 승인 중 기록되지 못한 것을 Toss 기준으로 먼저 정리해
+  // 목록에 결제 완료로 보이게 한다(lib/cardRecovery.ts).
   if (cardReady() && stuckCards(account.id).length > 0) await reconcileCards(account.id)
   const database = getDatabase()
   res.json({
     prices,
     card: cardReady() ? { clientKey: config.tossClientKey } : null,
-    // Test payments move no money; the demo accounts pay only then.
+    // 테스트 결제는 돈이 오가지 않으며, 데모 계정은 그때만 결제한다.
     testMode: testMode(),
     canPay: account.role === "브랜드" && (!isDemoAccount(database, account) || testMode()),
     plan: planOf(database, account),
@@ -46,8 +45,8 @@ billingRouter.get("/", async (req, res) => {
   })
 })
 
-// An order to pay for: what and how much, with the account's customer key
-// for the payment window. The shared demo accounts can't pay.
+// 결제할 주문이다. 무엇을 얼마에 사는지와, 결제 창에 쓰는 계정의 고객 키를
+// 담는다. 공유 데모 계정은 결제할 수 없다.
 billingRouter.post("/orders", async (req, res) => {
   const account = requireAccount(req)
   const database = getDatabase()
@@ -66,8 +65,8 @@ function ownWaiting(accountId: string, id: string) {
   return payment
 }
 
-// Paying by bank transfer instead: the operators see the order and
-// confirm it once the money arrives.
+// 대신 계좌 이체로 결제한다. 운영자가 주문을 보고 돈이 들어오면
+// 확인한다.
 billingRouter.post("/orders/:id/transfer", async (req, res) => {
   const account = requireAccount(req)
   const payment = ownWaiting(account.id, String(req.params.id))
@@ -79,8 +78,8 @@ billingRouter.post("/orders/:id/transfer", async (req, res) => {
 billingRouter.delete("/orders/:id", async (req, res) => {
   const account = requireAccount(req)
   const id = String(req.params.id)
-  // An order whose card approval was sent may have been charged: Toss says
-  // first, and a charged one is recorded instead of cancelled.
+  // 카드 승인을 보낸 주문은 청구됐을 수 있다. Toss에 먼저 묻고, 청구된
+  // 주문은 취소하지 않고 기록한다.
   if (ownWaiting(account.id, id).paymentKey) {
     const settled = await settleCard(id)
     if (settled === "paid") throw new HttpError(409, "이미 결제한 주문이에요.")
@@ -92,8 +91,8 @@ billingRouter.delete("/orders/:id", async (req, res) => {
   res.json({ order: paymentView(payment) })
 })
 
-// Back from the payment window: the amount must be the order's, as the
-// address could have been changed, and Toss Payments approves it.
+// 결제 창에서 돌아온다. 주소가 바뀌었을 수 있으므로 금액은 주문의 것이어야
+// 하고, Toss Payments가 승인한다.
 billingRouter.post("/confirm", async (req, res) => {
   const account = requireAccount(req)
   const orderId = text(req.body?.orderId)
@@ -101,15 +100,15 @@ billingRouter.post("/confirm", async (req, res) => {
   const amount = Number(req.body?.amount)
   if (!cardReady()) throw new HttpError(409, "카드 결제가 아직 준비되지 않았어요.")
   const existing = paymentsOf(getDatabase()).find((item) => item.id === orderId && item.accountId === account.id)
-  // A page opened twice: the first already approved it.
+  // 페이지를 두 번 열었으며 처음 연 쪽이 이미 승인했다.
   if (existing?.status === "paid") {
     res.json({ order: paymentView(existing) })
     return
   }
   const payment = ownWaiting(account.id, orderId)
   if (!paymentKey || amount !== payment.amount) throw new HttpError(400, "결제 금액이 주문과 달라요. 다시 결제해 주세요.")
-  // An earlier try left another key: settled from Toss first, as that one
-  // may have charged the card (lib/cardRecovery.ts).
+  // 앞선 시도가 다른 키를 남겼다. 그 키가 카드를 청구했을 수 있으므로 Toss
+  // 기준으로 먼저 정리한다(lib/cardRecovery.ts).
   if (payment.paymentKey && payment.paymentKey !== paymentKey) {
     const settled = await settleCard(orderId)
     if (settled === "paid") {
@@ -119,9 +118,9 @@ billingRouter.post("/confirm", async (req, res) => {
     if (settled === "open") throw new HttpError(409, "앞서 진행한 결제를 확인하고 있어요. 몇 분 뒤에 결제 내역을 확인해 주세요.")
   }
   const current = ownWaiting(account.id, orderId)
-  // Priced again now: an order made earlier (a renewal discount since run
-  // out, an old price) isn't approved at its stale amount. Not once its
-  // key is saved: the same approval tried again may already have charged it.
+  // 지금 가격을 다시 매긴다. 앞서 만든 주문(그 뒤 끝난 재가입 할인, 옛 가격)은
+  // 낡은 금액으로 승인하지 않는다. 키를 저장한 뒤에는 하지 않는다. 같은 승인을
+  // 다시 시도한 것이면 이미 청구됐을 수 있다.
   if (!current.paymentKey) {
     const quoted = productOf(current.kind).quote(getDatabase(), account, current.targetId).amount
     if (withVat(quoted) !== current.amount) {
@@ -130,16 +129,15 @@ billingRouter.post("/confirm", async (req, res) => {
       throw new HttpError(409, "금액이 바뀌었어요. 바뀐 금액으로 다시 결제해 주세요.")
     }
   }
-  // The key is stored before any money moves; if this save fails, nothing
-  // was charged.
+  // 돈이 움직이기 전에 키를 저장한다. 이 저장이 실패하면 청구된 것이 없다.
   Object.assign(current, { paymentKey, confirmingAt: new Date().toISOString() })
   await saveDatabase()
   let approved
   try {
     approved = await toss.confirm(paymentKey, orderId, amount)
   } catch (error) {
-    // Toss refused it, so the card wasn't charged: the key goes. Anything
-    // else (a timeout, Toss failing) keeps it for reconcileCards.
+    // Toss가 거절했으므로 카드는 청구되지 않았고 키를 지운다. 그 밖의 경우
+    // (시간 초과, Toss 실패)에는 reconcileCards를 위해 키를 남긴다.
     if (error instanceof HttpError && error.status === 402) await forget(orderId, paymentKey)
     if (error instanceof HttpError) throw error
     console.error(`[billing] confirm ${orderId}: ${(error as Error).message}`)
@@ -153,8 +151,8 @@ billingRouter.post("/confirm", async (req, res) => {
   res.json({ order: paymentView(paid) })
 })
 
-// Takes back a key Toss refused, best effort: left behind, reconcileCards
-// finds it uncharged later.
+// Toss가 거절한 키를 되도록 거둬들인다. 남더라도 reconcileCards가 나중에
+// 청구되지 않은 것을 찾아낸다.
 async function forget(orderId: string, paymentKey: string) {
   const payment = paymentsOf(getDatabase()).find((item) => item.id === orderId)
   if (payment?.status !== "pending" || payment.paymentKey !== paymentKey) return
@@ -163,8 +161,8 @@ async function forget(orderId: string, paymentKey: string) {
   await saveDatabase().catch(() => {})
 }
 
-// A partner's 1:1 섭외 요청: what events it looks for, which the operators
-// answer like a question (twice a Korean month).
+// 파트너의 1:1 섭외 요청이다. 어떤 행사를 찾는지 적으면 운영자가 질문처럼
+// 답한다(한국 시간 기준 한 달에 두 번).
 billingRouter.post("/partner-requests", async (req, res) => {
   const account = requireAccount(req)
   const database = getDatabase()

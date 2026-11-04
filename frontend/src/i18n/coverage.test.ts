@@ -16,9 +16,9 @@ import measurement from "./en/measurement"
 
 const areas = { common, layout, dashboard, catalog, measurement, analytics, forms, landing, legal }
 
-// Every sentence the code passes to t() as written has English in i18n/en,
-// so an English screen shows no Korean by mistake. (Sentences picked from
-// lists, such as t(label), are checked by their own tests.)
+// 코드가 t()에 쓰인 그대로 넘기는 모든 문장에는 i18n/en에 영어가 있어서, 영어
+// 화면에 실수로 한국어가 나오지 않는다. (t(label)처럼 목록에서 고른 문장은 자체
+// 테스트가 검사한다.)
 const root = path.resolve(__dirname, "..")
 
 function sourceFiles(dir: string): string[] {
@@ -36,7 +36,7 @@ for (const file of sourceFiles(root)) {
     if (match[1] === "`" && match[2].includes("${")) continue
     keys.set(match[2].replace(/\\(["'`\\])/g, "$1"), path.relative(root, file))
   }
-  // tc("place", "…") needs English for that place.
+  // tc("place", "…")는 그 place의 영어가 필요하다.
   for (const match of source.matchAll(/\btc\(\s*"(\w+)"\s*,\s*"((?:\\.|[^"\\])*)"/g)) {
     keys.set(`${match[2]}@${match[1]}`, path.relative(root, file))
   }

@@ -7,8 +7,8 @@ import { fullWon } from "../lib/sponsorships"
 import type { Portfolio, PortfolioGroup } from "../types"
 import { Icon } from "./Icon"
 
-// One way of grouping the sponsorships: each group's ROAS as a bar, with
-// how many, the value and the visits.
+// 협찬을 묶는 한 가지 방식. 그룹별 ROAS를 막대로 보여 주고 건수, 금액, 방문
+// 수를 곁들인다.
 function Groups({ title, groups, label }: { title: string; groups: PortfolioGroup[]; label?: (key: string) => string }) {
   const top = Math.max(1, ...groups.map((group) => group.roas))
   return (
@@ -32,7 +32,7 @@ function Groups({ title, groups, label }: { title: string; groups: PortfolioGrou
   )
 }
 
-// What a budget would bring at the cost per visit so far.
+// 지금까지의 방문당 비용으로 예산을 쓰면 얻을 수 있는 성과.
 function Simulator({ portfolio }: { portfolio: Portfolio }) {
   const [budget, setBudget] = useState(1_000_000)
   const { costPerVisit, salesPerVisit } = portfolio.totals
@@ -68,10 +68,10 @@ function Simulator({ portfolio }: { portfolio: Portfolio }) {
   )
 }
 
-// 캠퍼스 포트폴리오 on 성과 분석 (backend lib/portfolio.ts): for Campus
-// Partners (and visitors, with the demo brand's), every sponsorship
-// together by school, month and kind of group, the best and weakest, and a
-// budget planner; locked with what it holds for a free brand.
+// 성과 분석의 캠퍼스 포트폴리오 (backend lib/portfolio.ts). 캠퍼스
+// 파트너스(그리고 데모 브랜드의 것을 보는 방문자)에게 모든 협찬을 학교, 월,
+// 그룹 종류별로 묶어 가장 좋은 쪽과 약한 쪽, 예산 플래너를 보여 준다. 무료
+// 브랜드에게는 내용을 잠가 둔다.
 export function CampusPortfolio({ onOpenPlan }: { onOpenPlan: () => void }) {
   const [answer, setAnswer] = useState<{ locked: true } | { locked: false; portfolio: Portfolio }>()
 

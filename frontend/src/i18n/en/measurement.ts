@@ -1,6 +1,6 @@
-// English for this area's Korean copy (see i18n/index.ts).
+// 이 영역의 한국어 카피에 대한 영어 (i18n/index.ts 참고).
 const en: Record<string, string> = {
-  // Shared by the measurement pages and modals
+  // 측정 페이지와 모달이 함께 쓰는 것
   "{count}명": "{count} people",
   "{count}건": "{count}",
   "{count}장": "{count}",
@@ -17,18 +17,18 @@ const en: Record<string, string> = {
   "협찬 가치": "Sponsorship Value",
   "도달 인원": "Reach",
   "PDF 리포트 다운로드": "Download PDF report",
-  // Measurement states (lib/measurements.ts measureState)
+  // 측정 상태 (lib/measurements.ts의 measureState)
   "진행 전": "Not started",
   "측정 중": "Measuring",
   "진행 완료": "Finished",
-  // Records from the server: a scan's, and a visit's from the old demo buttons (store.ts)
+  // 서버에서 오는 기록: 스캔 기록과, 예전 데모 버튼의 방문 기록 (store.ts)
   "현장 QR 스캔": "QR scan at the event",
   "매장 방문 확인": "Store visit confirmed",
-  // KPI names (lib/kpis.ts reportKpis)
+  // KPI 이름 (lib/kpis.ts의 reportKpis)
   "QR 참여율": "QR rate",
   "방문 전환율": "Visit rate",
 
-  // Calendar (pages/EventsPage.tsx)
+  // 캘린더 (pages/EventsPage.tsx)
   "협찬 확정": "Confirmed",
   미정: "TBD",
   "{types} 협찬": "{types} sponsorship",
@@ -60,7 +60,7 @@ const en: Record<string, string> = {
   "다가오는 일정": "Coming up",
   "예정된 일정이 없어요.": "Nothing coming up.",
 
-  // Registering (pages/EventCreatePage.tsx)
+  // 등록 (pages/EventCreatePage.tsx)
   "행사명을 입력해 주세요.": "Enter the event name.",
   "캠페인명을 입력해 주세요.": "Enter the campaign name.",
   "원하는 협찬 유형을 하나 이상 골라 주세요.": "Pick at least one kind of sponsorship.",
@@ -100,7 +100,7 @@ const en: Record<string, string> = {
   취소: "Cancel",
   "등록하고 매칭 받기": "Register & get matched",
   "등록하고 단체 추천 받기": "Register & find groups",
-  // Sponsorship kinds' captions (data/sponsorTypes.ts)
+  // 협찬 종류의 설명 (data/sponsorTypes.ts)
   "행사 운영비 지원": "Funding for running the event",
   "음료 · 간식 · 굿즈 같은 현물": "Drinks, snacks, merch and other goods",
   "촬영 · 디자인 · 장소 지원": "Photo, design or venue support",
@@ -110,7 +110,7 @@ const en: Record<string, string> = {
   "매장 공간 · 촬영 · 디자인 지원": "Store space, photo or design support",
   "제공할 협찬을 직접 적어 주세요": "Describe what you'll offer",
 
-  // Live measurement (pages/MeasurementPage.tsx, components/CampaignMeasurement.tsx)
+  // 실시간 측정 (pages/MeasurementPage.tsx, components/CampaignMeasurement.tsx)
   "현장에서 QR을 스캔했어요": "Scanned the QR at the event",
   "QR 스캔의 {rate}%가 받았어요": "{rate}% of scanners took one",
   "쿠폰 받은 사람의 {rate}%가 왔어요": "{rate}% of coupon holders came in",
@@ -125,7 +125,7 @@ const en: Record<string, string> = {
   "실시간 참여 기록": "Live Activity",
   "전체 보기": "See all",
   "아직 참여 기록이 없어요.": "No check-ins yet.",
-  // Before the event (진행 전)
+  // 행사 전 (진행 전)
   "목표는 임시 전자 계약서에서 정해요": "Goals are set on the provisional e-contract",
   "행사가 시작되면 현장 반응이 여기에 떠요": "The Crowd Shows Here Once It Starts",
   "{date}부터 QR 스캔 · 쿠폰 · 매장 방문을 실시간으로 집계해요.":
@@ -142,7 +142,8 @@ const en: Record<string, string> = {
   "행사 일정에서 캠페인을 등록하면 캠페인마다 현장 QR과 측정이 생겨요.":
     "Register a campaign in Calendar to get its own QR and live measurement.",
 
-  // Reports (pages/ReportsPage.tsx, modals/ReportModal.tsx, modals/GoalModal.tsx)
+  // 리포트 (pages/ReportsPage.tsx, modals/ReportModal.tsx,
+  // modals/GoalModal.tsx)
   "성과 리포트": "Performance Reports",
   "행사가 끝나면 현장 참여와 협찬 효과를 한 장으로 정리해 드려요.":
     "After your event, we sum up turnout and sponsorship impact on one page.",
@@ -167,7 +168,7 @@ const en: Record<string, string> = {
   "목표 대비 {gap}": "{gap} vs. goal",
   "계산 방법": "How it's calculated",
 
-  // Goals form (modals/GoalsModal.tsx)
+  // 목표 양식 (modals/GoalsModal.tsx)
   "도달 (명)": "Reach (people)",
   "QR 스캔 (건)": "QR scans",
   "쿠폰 수령 (건)": "Coupons taken",
@@ -199,7 +200,7 @@ const en: Record<string, string> = {
   "참여 쿠폰": "Guest Coupon",
   "목표 저장하기": "Save goals",
 
-  // Check-in QR and log (modals/QrModal.tsx, modals/MetricLogModal.tsx)
+  // 체크인 QR과 기록 (modals/QrModal.tsx, modals/MetricLogModal.tsx)
   "참여 링크를 복사했어요.": "Check-in link copied.",
   "링크를 복사하지 못했어요. 직접 선택해서 복사해 주세요.": "Couldn't copy the link. Select it and copy it yourself.",
   "현장 참여 QR": "Event Check-In QR",
@@ -223,7 +224,7 @@ const en: Record<string, string> = {
   "{date}부터 QR 스캔 · 쿠폰 · 매장 방문이 들어오는 대로 쌓여요.":
     "From {date}, QR scans, coupons and store visits gather here as they come in.",
 
-  // Participants' check-in (checkin/CheckInPage.tsx)
+  // 참여자의 체크인 (checkin/CheckInPage.tsx)
   "발급일부터 7일 동안 쓸 수 있어요": "Valid for 7 days",
   "현장 참여": "Check-in",
   "행사 참여": "Event check-in",
@@ -239,7 +240,7 @@ const en: Record<string, string> = {
     "Show this number to the store staff. Once they confirm, you'll see it here.",
   "학생단체와 브랜드를 잇는 협찬 플랫폼": "Sponsorships connecting student groups and brands",
 
-  // Store staff's check-in (checkin/StaffCheckInPage.tsx)
+  // 매장 직원의 체크인 (checkin/StaffCheckInPage.tsx)
   "직원 PIN 4자리를 입력해 주세요.": "Enter the 4-digit staff PIN.",
   "참여자의 쿠폰 번호를 입력해 주세요.": "Enter the guest's coupon number.",
   "매장 직원용": "For store staff",
@@ -250,7 +251,7 @@ const en: Record<string, string> = {
   "{line} 방문 확인": "{line} · confirmed",
   "일정@heading": "Dates",
 
-  // Confirmation methods (data/methods.ts) and their counts (data/metrics.ts)
+  // 확인 방식 (data/methods.ts)과 그 집계 (data/metrics.ts)
   "QR 체크인": "QR check-in",
   "참여자가 행사장 QR을 휴대폰으로 찍으면 자동으로 세요.": "Counted automatically when participants scan the event QR.",
   "쿠폰 발급": "Coupon",
@@ -283,7 +284,7 @@ const en: Record<string, string> = {
   "가입 {count}명": "{count} sign-ups",
   "체험 {count}명": "{count} try-outs",
 
-  // The e-contract's confirmation methods (pages/AgreementPage.tsx)
+  // 전자계약서의 확인 방식 (pages/AgreementPage.tsx)
   "협찬 확인 방식": "Confirmation methods",
   "여러 개를 고를 수 있어요. 방식마다 현장에서 확인할 쪽도 골라 주세요": "Choose as many as you like, and who confirms each at the venue",
   "{method} 맡는 쪽": "Who runs {method}",
@@ -307,7 +308,7 @@ const en: Record<string, string> = {
   "행사가 진행되면 참여 기록이 여기에 떠요. 확정한 협찬 확인 방식으로 기록되는 대로 보여요.":
     "Participation shows here once the event begins, as the confirmed methods record it.",
 
-  // Earlier method names, still in records kept from before, and the venue counts
+  // 예전에 쓰던 방식 이름(이전에 보관된 기록에 아직 남아 있다)과 현장 집계
   "부스 방문 · 스탬프": "Booth visits · Stamps",
   "SNS 인증 · 설문": "SNS posts · Surveys",
   "샘플 · 시음": "Samples · Tastings",
@@ -320,7 +321,7 @@ const en: Record<string, string> = {
   "현장에서 확인한 성과": "Confirmed at the venue",
   "행사장에서 담당자가 확인한 성과도 함께 집계됐어요: {counts}.": "What staff confirmed at the venues is counted too: {counts}.",
 
-  // The e-contract's methods and venue page (pages/AgreementPage.tsx)
+  // 전자계약서의 방식과 현장 페이지 (pages/AgreementPage.tsx)
   "{method} 확인하는 쪽": "Who confirms {method}",
   "{name}에서 현장 확인": "Confirmed at the venue by {name}",
   "우리 쪽 현장 확인": "Our venue page",
@@ -331,7 +332,8 @@ const en: Record<string, string> = {
   PIN: "PIN",
   "고치면 두 쪽 모두 계약서를 다시 확인해야 해요.": "After a change, both sides confirm the e-contract again.",
 
-  // The venue pages (checkin/GroupCheckInPage.tsx, checkin/StaffCheckInPage.tsx, components/VenueCounters.tsx)
+  // 현장 페이지 (checkin/GroupCheckInPage.tsx, checkin/StaffCheckInPage.tsx,
+  // components/VenueCounters.tsx)
   "학생단체 현장 확인": "Student group venue page",
   "현장 확인": "Venue check",
   "임시 전자 계약서에서 우리 단체가 확인하기로 한 협찬 확인 방식을 여기서 기록해요. 단체 확인 PIN은 임시 전자 계약서와 성과의 현장 QR에서 볼 수 있어요.":
@@ -354,7 +356,7 @@ const en: Record<string, string> = {
   "우리 단체 현장 확인": "Our group's venue page",
   "임시 전자 계약서에서 우리 단체가 확인하기로 한 협찬 확인 방식(부스 스탬프, SNS 인증 등)을 행사 날 이 주소에서 기록해요. 우리 단체 담당자에게만 알려 주세요.":
     "On the event day, record the methods your group agreed to confirm (booth stamps, SNS posts and so on) at this address. Share it only with your group's staff.",
-  // The participants' optional survey (checkin/CheckInPage.tsx, data/survey.ts)
+  // 참여자의 선택 설문 (checkin/CheckInPage.tsx, data/survey.ts)
   "10초 설문 (선택)": "10-second survey (optional)",
   "이름이나 연락처는 묻지 않아요. 답은 행사별 숫자로만 모아 행사를 더 좋게 만드는 데 써요.": "No names or contacts. Answers are only counted per event, to make events better.",
   "건너뛰기": "Skip",

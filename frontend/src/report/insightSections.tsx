@@ -8,9 +8,9 @@ import { fullWon } from "../lib/sponsorships"
 import type { Benchmark, PremiumReport, ScoreKey } from "../types"
 import { ReadingBox, readings } from "./insightReading"
 
-// The sections of 상세 성과 리포트, shared by its page (pages/InsightPage.tsx)
-// and its PDF (report/InsightDocument.tsx). They word what the server works
-// out (backend lib/premiumReport.ts).
+// 상세 성과 리포트의 섹션. 페이지(pages/InsightPage.tsx)와
+// PDF(report/InsightDocument.tsx)가 함께 쓴다. 서버가 계산한 것(backend
+// lib/premiumReport.ts)을 말로 옮긴다.
 
 const scoreLabels: Record<ScoreKey, { label: string; unit: "명" | "건" | "장" | "%" }> = {
   reach: { label: "도달", unit: "명" },
@@ -40,7 +40,7 @@ const gradeWords: Record<PremiumReport["grade"], string> = {
   D: "목표에 많이 못 미쳤어요",
 }
 
-// A benchmark in words: the median of the other events and where this one stands.
+// 말로 쓴 비교 기준: 다른 행사의 중앙값과 이 행사의 위치.
 export function benchmarkLine(benchmark: Benchmark, unit: "%" | "원" = "%") {
   if (!benchmark) return t("비교할 행사가 아직 적어요")
   const median = unit === "%" ? `${benchmark.median}%` : fullWon(Math.round(benchmark.median))
@@ -68,7 +68,7 @@ export function Section({ id, icon, title, lead, children }: { id: string; icon:
   )
 }
 
-// The grade with the average achievement, as a ring.
+// 등급과 평균 달성률을 링으로.
 export function GradeRing({ report }: { report: PremiumReport }) {
   const share = Math.min(report.achievement, 150) / 150
   return (
@@ -83,7 +83,7 @@ export function GradeRing({ report }: { report: PremiumReport }) {
   )
 }
 
-// The four figures a reader looks for first.
+// 독자가 먼저 찾는 수치 네 개.
 export function HeadlineFigures({ report }: { report: PremiumReport }) {
   const find = (key: ScoreKey) => report.scorecard.find((item) => item.key === key)!
   const figures = [
@@ -107,8 +107,8 @@ export function HeadlineFigures({ report }: { report: PremiumReport }) {
   )
 }
 
-// Three sentences that sum the report up: the grade, the ROAS against its
-// goal, and the step that stood out most against the other events.
+// 리포트를 요약하는 세 문장: 등급, 목표 대비 ROAS, 다른 행사와 견줘 가장
+// 두드러진 단계.
 export function KeyFindings({ report }: { report: PremiumReport }) {
   const roas = report.scorecard.find((item) => item.key === "roas")!
   const steps = report.funnel.filter((step) => step.benchmark)
@@ -154,7 +154,7 @@ export function KeyFindings({ report }: { report: PremiumReport }) {
   )
 }
 
-// Each goal against what happened, as a bar to its target.
+// 각 목표를 실제 결과와 견준 목표까지의 막대.
 export function Scorecard({ report }: { report: PremiumReport }) {
   return (
     <ul className="insight-scorecard">
@@ -183,8 +183,8 @@ export function Scorecard({ report }: { report: PremiumReport }) {
   )
 }
 
-// The funnel from the expected audience to store visits, each step's rate
-// beside the median of the other events.
+// 예상 방문객에서 매장 방문까지의 퍼널. 각 단계의 비율을 다른 행사의 중앙값
+// 옆에 둔다.
 export function Funnel({ report }: { report: PremiumReport }) {
   const names = { audience: "예상 관객", scans: "QR 스캔", coupons: "쿠폰 수령", visits: "매장 방문" }
   const rateNames = { audience: "", scans: "참여율", coupons: "수령률", visits: "방문율" }
@@ -216,8 +216,7 @@ export function Funnel({ report }: { report: PremiumReport }) {
   )
 }
 
-// What each result cost, with the cost per visit and the ROAS against the
-// other events.
+// 결과마다 든 비용: 방문당 비용과 다른 행사 대비 ROAS.
 export function Costs({ report }: { report: PremiumReport }) {
   const cost = (value: number | null) => (value === null ? "—" : fullWon(value))
   const items = [
@@ -249,8 +248,7 @@ export function Costs({ report }: { report: PremiumReport }) {
   )
 }
 
-// When people came: scans by hour on the busiest day, and each day of the
-// window.
+// 사람들이 온 때: 가장 붐빈 날의 시간별 스캔과 기간의 날마다.
 export function Timing({ report }: { report: PremiumReport }) {
   const { hourly, peak, daily } = report.time
   const day = peak?.date ?? report.event.date
@@ -293,8 +291,8 @@ export function Timing({ report }: { report: PremiumReport }) {
   )
 }
 
-// The effect over the store's usual days, from its own counts, or the form
-// to write them (only the brand, on its own report).
+// 가게의 평소 날 대비 효과. 가게 자신의 집계로 계산하거나 그것을 쓰는 폼을 보여
+// 준다(자기 리포트의 브랜드만).
 export function Effect({
   report,
   onSave,
@@ -378,7 +376,7 @@ export function Effect({
   )
 }
 
-// What each side promised in the e-contract and did, with how much proof.
+// 각 쪽이 계약서에서 약속한 것과 한 일, 증빙의 정도.
 export function Fulfillment({ report }: { report: PremiumReport }) {
   const { items, done, proof } = report.fulfillment
   if (items.length === 0) return <p className="insight-note">{t("임시 전자 계약서가 없는 협찬이에요.")}</p>
@@ -411,7 +409,7 @@ export function Fulfillment({ report }: { report: PremiumReport }) {
   )
 }
 
-// What the venue confirmed by the agreed methods, and the reviews.
+// 합의한 방식으로 현장이 확인한 것과 후기.
 export function VenueAndReviews({ report }: { report: PremiumReport }) {
   const counted = report.methods
     .map((kind) => ({ kind, info: methodInfo[kind] }))
@@ -507,7 +505,7 @@ export function Advice({ report, onOpenGroup }: { report: PremiumReport; onOpenG
   )
 }
 
-// How the figures were made, so the report can be checked.
+// 리포트를 검증할 수 있도록 수치를 만든 방법.
 export function Methodology({ report }: { report: PremiumReport }) {
   return (
     <div className="insight-method">
@@ -545,8 +543,7 @@ export function Methodology({ report }: { report: PremiumReport }) {
   )
 }
 
-// A share of a whole as a labelled bar, for the survey's answers and the
-// value by kind.
+// 전체에서 차지하는 몫을 라벨이 붙은 막대로. 설문 답과 종류별 가치에 쓴다.
 function ShareBars({ entries, unit = "명" }: { entries: [string, number][]; unit?: "명" | "원" }) {
   const total = entries.reduce((sum, [, count]) => sum + count, 0)
   return (
@@ -565,8 +562,8 @@ function ShareBars({ entries, unit = "명" }: { entries: [string, number][]; uni
   )
 }
 
-// The event and what both sides agreed: who, when and where, the value by
-// kind, the coupon, how it was confirmed and the goals set before it.
+// 행사와 양쪽이 합의한 것: 누가, 언제, 어디서, 종류별 가치, 쿠폰, 확인 방법, 그
+// 전에 정한 목표.
 export function Overview({ report }: { report: PremiumReport }) {
   const { overview, event } = report
   const facts = [
@@ -617,7 +614,7 @@ export function Overview({ report }: { report: PremiumReport }) {
   )
 }
 
-// Who came, from the participants' optional survey.
+// 선택 설문으로 본 방문자.
 export function Audience({ report }: { report: PremiumReport }) {
   const audience = report.audience
   if (!audience) {
@@ -667,7 +664,7 @@ export function Audience({ report }: { report: PremiumReport }) {
   )
 }
 
-// Where people dropped out between the steps.
+// 단계 사이에서 사람들이 빠져나간 곳.
 export function Dropoff({ report }: { report: PremiumReport }) {
   const steps = report.funnel
   const names = { audience: "예상 관객", scans: "QR 스캔", coupons: "쿠폰 수령", visits: "매장 방문" }
@@ -705,8 +702,8 @@ export function Dropoff({ report }: { report: PremiumReport }) {
 
 const weekdayNames = ["일", "월", "화", "수", "목", "금", "토"]
 
-// The store visits: how many coupons became visits, how soon, on which
-// weekday, and how many were likely new customers.
+// 매장 방문: 쿠폰이 방문이 된 수, 얼마나 빨리, 어느 요일에, 그리고 신규
+// 고객으로 보이는 수.
 export function Visits({ report }: { report: PremiumReport }) {
   const { visitsAnalysis, time } = report
   const top = Math.max(1, ...visitsAnalysis.weekdays)
@@ -776,8 +773,8 @@ export function Visits({ report }: { report: PremiumReport }) {
   )
 }
 
-// Paying the value back: the visits that would have, and the ROAS if each
-// visitor spent less or more than estimated.
+// 가치 회수: 회수가 되었을 방문 수와, 방문객이 추정보다 적게 또는 많이 썼을
+// 때의 ROAS.
 export function Roi({ report }: { report: PremiumReport }) {
   const visits = report.scorecard.find((item) => item.key === "visits")!.actual
   const breakEven = report.roi.breakEvenVisits
@@ -813,7 +810,8 @@ export function Roi({ report }: { report: PremiumReport }) {
   )
 }
 
-// The group's record on uniconnect, and this sponsorship among the brand's own.
+// uniconnect에서의 단체의 이력과, 이 협찬이 브랜드 자신의 협찬 중 차지하는
+// 위치.
 export function Records({ report }: { report: PremiumReport }) {
   const { partner, history } = report
   return (
@@ -850,7 +848,7 @@ export function Records({ report }: { report: PremiumReport }) {
   )
 }
 
-// The records behind the charts, as tables.
+// 차트 뒤의 기록을 표로.
 export function Appendix({ report }: { report: PremiumReport }) {
   return (
     <div className="insight-appendix">
@@ -898,8 +896,8 @@ export function Appendix({ report }: { report: PremiumReport }) {
   )
 }
 
-// The report's sections in order, for the page (each a card) and the PDF
-// (laid out on pages by report/InsightDocument.tsx).
+// 리포트의 섹션을 순서대로. 페이지(각각 카드)와
+// PDF(report/InsightDocument.tsx가 페이지에 배치한다)가 쓴다.
 export function sections(
   report: PremiumReport,
   {
@@ -983,7 +981,7 @@ export function sections(
       ),
     },
   ]
-  // Each section ends with what it means and what to do.
+  // 각 섹션은 그 의미와 할 일로 끝난다.
   return list.map((section) => ({
     ...section,
     body: (

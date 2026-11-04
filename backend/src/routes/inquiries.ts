@@ -9,10 +9,10 @@ import type { Inquiry } from "../types.js"
 
 export const inquiriesRouter = Router()
 
-// What the asker sees of a question: not who asked.
+// 질문한 사람에게 보이는 질문의 모습이다. 누가 물었는지는 담지 않는다.
 export const inquiryView = ({ accountId: _accountId, ...inquiry }: Inquiry) => inquiry
 
-// The account's own questions, newest first, with any answers.
+// 계정 자신의 질문을 최신순으로, 답변이 있으면 함께 보여 준다.
 inquiriesRouter.get("/", (req, res) => {
   const account = requireAccount(req)
   const inquiries = getDatabase()
@@ -21,7 +21,7 @@ inquiriesRouter.get("/", (req, res) => {
   res.json({ inquiries: inquiries.map(inquiryView) })
 })
 
-// The asker has seen the answers as they stand, so the bell lets them go.
+// 질문한 사람이 지금 달린 답변을 확인했으므로 알림 벨에서 내려 준다.
 inquiriesRouter.post("/read", async (req, res) => {
   const account = requireAccount(req)
   const database = getDatabase()

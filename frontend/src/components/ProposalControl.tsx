@@ -11,7 +11,7 @@ export function ProposalControl({
   onCancel,
 }: {
   done: boolean
-  // The brand's answer, once a brand with an account has replied.
+  // 계정이 있는 브랜드가 답했을 때 그 브랜드의 답.
   status?: RequestStatus
   label: string
   className: string
@@ -25,8 +25,8 @@ export function ProposalControl({
       </button>
     )
   }
-  // A confirmed partner can be asked again about the next event; the server
-  // answers when there is none yet.
+  // 수락한 파트너에게는 다음 행사에 대해 다시 물을 수 있다. 아직 행사가 없으면
+  // 서버가 그렇게 답한다.
   if (status === "수락") {
     return (
       <div className="proposal-actions">
@@ -39,7 +39,7 @@ export function ProposalControl({
       </div>
     )
   }
-  // Declined, called off, or closed as its event ended: it can be sent again.
+  // 거절·취소됐거나 행사가 끝나 닫힌 경우. 다시 보낼 수 있다.
   if (status === "거절" || status === "취소됨" || status === "마감") {
     const label = status === "거절" ? t("거절된 제안") : status === "취소됨" ? t("취소된 협찬") : t("마감된 제안")
     return (

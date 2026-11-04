@@ -5,10 +5,8 @@ import { Modal } from "../components/Modal"
 import { t } from "../i18n"
 import type { BusinessStatus } from "../types"
 
-// 사업자 확인: the number, opening date and representative's name as on
-// the business registration certificate, checked with the National Tax
-// Service (backend lib/business.ts). Only the number is kept, once it
-// matches.
+// 사업자 확인: 사업자등록증에 적힌 번호, 개업일, 대표자 이름을 국세청에
+// 확인한다(backend lib/business.ts). 일치하면 번호만 보관한다.
 export function BusinessModal({
   onClose,
   onVerified,

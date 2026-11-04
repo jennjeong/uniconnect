@@ -7,10 +7,10 @@ import { addDays, todayInKorea } from "./dates.js"
 import { proUntil } from "./plan.js"
 import type { Account, AdminAction, AdminLogEntry, Announcement, Database, Payment } from "../types.js"
 
-// The console keeps the latest entries only.
+// 콘솔은 최근 항목만 둔다.
 export const adminLogLimit = 500
 
-// Notes what an operator did, by id only.
+// 운영자가 한 일을 id만으로 기록한다.
 export function logAdmin(
   database: Database,
   action: AdminAction,
@@ -23,8 +23,8 @@ export function logAdmin(
   if (log.length > adminLogLimit) log.splice(0, log.length - adminLogLimit)
 }
 
-// The log newest first, each target with the name it has now (a member
-// that left shows without one).
+// 새것부터 본 기록. 대상마다 지금의 이름을 붙인다(탈퇴한 회원은 이름
+// 없이 나온다).
 export function adminLogRows(database: Database) {
   const label = (target: AdminLogEntry["target"]) => {
     if (target.kind === "account") return database.accounts.find((account) => account.id === target.id)?.name
@@ -36,8 +36,8 @@ export function adminLogRows(database: Database) {
   return [...(database.adminLog ?? [])].reverse().map((entry) => ({ ...entry, label: label(entry.target) ?? null }))
 }
 
-// Drops what the operators kept about a member that leaves: its note,
-// tags, log entries and the handling of questions it asked.
+// 탈퇴하는 회원에 대해 운영자가 남긴 것을 지운다: 메모, 태그, 기록 항목,
+// 회원이 한 문의의 처리.
 export function forgetAdminRecords(database: Database, accountId: string) {
   if (database.adminNotes) delete database.adminNotes[accountId]
   if (database.adminTags) delete database.adminTags[accountId]
@@ -52,12 +52,11 @@ export function forgetAdminRecords(database: Database, accountId: string) {
 
 export const noteLimit = 1000
 
-// Whether a notice shows today: not taken down, between its first and
-// last days.
+// 공지가 오늘 보이는지: 내려지지 않았고 첫날과 마지막 날 사이다.
 export const isLive = (item: Announcement, today = todayInKorea()) =>
   !item.endedAt && (!item.from || item.from <= today) && (!item.until || item.until >= today)
 
-// The notices one viewer sees: everyone's, and its side's once logged in.
+// 보는 사람 하나가 보는 공지: 모두에게 보내는 것과 로그인하면 그 쪽의 것.
 export function liveAnnouncements(database: Database, account?: Account) {
   return (database.announcements ?? [])
     .filter((item) => isLive(item))
@@ -65,8 +64,8 @@ export function liveAnnouncements(database: Database, account?: Account) {
     .map(({ id, text, tone }) => ({ id, text, tone }))
 }
 
-// Which services this copy of the API is set up for, without any of their
-// values: what the operators would otherwise check in Vercel's settings.
+// API의 이 복사본이 어떤 서비스에 맞춰 설정됐는지. 값은 담지 않는다.
+// 운영자가 아니면 Vercel 설정에서 확인해야 하는 것이다.
 export function serviceHealth() {
   const on = (value: unknown) => Boolean(value)
   return {
@@ -89,7 +88,7 @@ export function serviceHealth() {
   }
 }
 
-// A member's tags, cleaned: trimmed, short, no repeats, at most ten.
+// 회원의 태그를 다듬는다: 앞뒤 공백 제거, 짧게, 중복 없이, 최대 열 개.
 export function cleanTags(values: unknown) {
   const list = Array.isArray(values) ? values : []
   return [...new Set(list.map((value) => String(value).trim().slice(0, 20)).filter(Boolean))].slice(0, 10)
@@ -97,8 +96,8 @@ export function cleanTags(values: unknown) {
 
 export const tagsOf = (database: Database, accountId: string) => database.adminTags?.[accountId] ?? []
 
-// Gives a member Campus Partners for some days without a charge: a paid
-// zero-won order marked as a grant, after any time it already has.
+// 회원에게 며칠간 요금 없이 캠퍼스 파트너스를 준다. 지원금으로 표시한
+// 0원 결제 주문이며 이미 가진 기간 뒤에 이어 붙인다.
 export function grantPartners(database: Database, account: Account, days: number, now = new Date(), reason = "운영자 부여") {
   const until = proUntil(database, account.id)
   const from = until ? addDays(until, 1) : todayInKorea(now)
@@ -120,9 +119,9 @@ export function grantPartners(database: Database, account: Account, days: number
   return payment
 }
 
-// Puts the example data back as the seed has it: the demo accounts' own
-// records and the seed catalog, proposals, conversations, reviews and posts.
-// Members' data stays as it is, and the demo accounts keep their sessions.
+// 예시 데이터를 시드대로 되돌린다: 데모 계정 자신의 기록과 시드 카탈로그,
+// 제안, 대화, 후기, 게시물. 회원의 데이터는 그대로 두고 데모 계정은
+// 세션을 유지한다.
 export async function resetExamples(database: Database) {
   const fresh = await createSeed()
   const demo = new Set(Object.values(fresh.demoAccountIds))
@@ -159,14 +158,13 @@ export async function resetExamples(database: Database) {
   database.payments = paymentsOf(database).filter((item) => !demo.has(item.accountId))
 }
 
-// A search as the console counts it: lower case, one space between words,
-// two to thirty characters.
+// 콘솔이 세는 검색어: 소문자, 단어 사이 공백 하나, 두 글자에서 서른 글자.
 export function searchTerm(value: unknown) {
   const term = String(value ?? "").toLowerCase().replace(/\s+/g, " ").trim()
   return term.length >= 2 && term.length <= 30 ? term : null
 }
 
-// Counts a search, keeping the 300 most searched.
+// 검색어를 세고 가장 많이 검색된 300개를 둔다.
 export function countSearch(database: Database, term: string) {
   const terms = (database.searchTerms ??= {})
   terms[term] = (terms[term] ?? 0) + 1
@@ -176,7 +174,7 @@ export function countSearch(database: Database, term: string) {
   }
 }
 
-// The site's switches as the public sees them.
+// 방문자에게 보이는 사이트의 스위치.
 export function siteState(database: Database) {
   const maintenance = database.settings?.maintenance
   return {
@@ -185,7 +183,7 @@ export function siteState(database: Database) {
   }
 }
 
-// Notes a run of the date reminders, keeping the latest 30.
+// 날짜 알림 실행을 기록하고 최근 30개를 둔다.
 export function noteCronRun(database: Database, sent: number, now = new Date()) {
   const runs = (database.cronRuns ??= [])
   runs.push({ at: now.toISOString(), sent })

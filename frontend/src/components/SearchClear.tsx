@@ -1,9 +1,9 @@
 import { Icon } from "./Icon"
 import { t } from "../i18n"
 
-// The X at the end of a search box, shown while it holds words: empties it
-// and puts the cursor back. Mouse-down is kept from taking the focus, which a
-// box with suggestions would read as leaving.
+// 검색창 끝의 X 버튼. 단어가 들어 있는 동안 보이며, 누르면 비우고 커서를
+// 되돌린다. 마우스를 누를 때 포커스가 옮겨 가지 않게 막는다. 제안 목록이 있는
+// 입력창은 포커스를 잃은 것으로 읽기 때문이다.
 export function SearchClear({ value, onClear }: { value: string; onClear: () => void }) {
   if (!value) return null
   return (

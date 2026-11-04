@@ -3,7 +3,7 @@ import type { Metrics, Report } from "../types"
 
 const percent = (part: number, whole: number) => (whole > 0 ? Math.round((part / whole) * 100) : 0)
 
-// A survey answer's counts as shares, the largest first, without empty ones.
+// 설문 응답을 비율로 센 것. 많은 순이며 빈 응답은 뺀다.
 export function shares(counts: Record<string, number> = {}) {
   const total = Object.values(counts).reduce((sum, value) => sum + value, 0)
   return Object.entries(counts)
@@ -12,7 +12,7 @@ export function shares(counts: Record<string, number> = {}) {
     .map(([label, value]) => ({ label, count: value, share: percent(value, total) }))
 }
 
-// The busiest hour of the event, summed over its days.
+// 날짜를 합산한 행사의 가장 붐비는 시간.
 export function peakHour(report: Report) {
   const byHour = new Map<number, number>()
   for (const entry of report.hourlyScans) byHour.set(entry.hour, (byHour.get(entry.hour) ?? 0) + entry.scans)
@@ -20,9 +20,8 @@ export function peakHour(report: Report) {
   return hour === undefined || !scans ? undefined : hour
 }
 
-// What the students' report says about who came and what to do next time:
-// the rates down the funnel, the survey's leading answers and plain advice,
-// each a sentence in the language shown.
+// 누가 왔는지와 다음에 무엇을 할지에 대해 학생들의 리포트가 하는 말: 깔때기
+// 단계별 비율, 설문의 상위 응답, 담백한 조언을, 각각 화면 언어의 한 문장으로.
 export function studentInsights(report: Report, metrics: Metrics) {
   const participation = percent(metrics.scans, report.expectedAudience)
   const couponRate = percent(metrics.coupons, metrics.scans)
@@ -34,7 +33,7 @@ export function studentInsights(report: Report, metrics: Metrics) {
   const firstTime = survey ? percent(survey.visited["처음이에요"] ?? 0, survey.responses) : 0
   const hour = peakHour(report)
 
-  // Most telling first: turnout, then who came, then each step's leak.
+  // 가장 말해 주는 것부터: 참석률, 누가 왔는지, 그다음 각 단계의 이탈.
   const advice: string[] = []
   if (report.expectedAudience > 0 && participation < 50) {
     advice.push(t("참여율이 {rate}%였어요. QR을 입구와 무대 앞 두 곳에 두고 사회자가 한 번 더 안내해 보세요.", { rate: participation }))

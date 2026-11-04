@@ -40,7 +40,7 @@ describe("the students' report", () => {
     expect(insight.grade?.label).toBe("1학년")
     expect(insight.advice.some((line) => line.includes("참여율이 40%"))).toBe(true)
     expect(insight.advice.length).toBeLessThanOrEqual(6)
-    // Without a survey, it asks for one next time.
+    // 설문이 없으면 다음에 해 달라고 한다.
     const bare = studentInsights({ ...report, survey: undefined } as Report, metrics)
     expect(bare.advice.at(-1)).toContain("설문")
     expect(bare.advice.filter((line) => line.includes("설문"))).toHaveLength(1)

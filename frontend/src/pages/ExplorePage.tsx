@@ -13,10 +13,10 @@ import type { EventCase, ExploreEvent } from "../types"
 
 const industryName = (industry: string) => brandIndustries.find(([value]) => value === industry)?.[1] ?? industry
 
-// 행사 둘러보기 (/explore): the coming events of the other student groups the
-// account sees, by kind and by the kind of group, each opening its page, and
-// above them what similar events had sponsored, so a group plans its own
-// from what worked for others.
+// 행사 둘러보기(/explore): 계정이 볼 수 있는 다른 학생단체의 다가오는 행사를
+// 종류와 단체의 종류로 나눠 보여 주며 각각 자기 페이지를 연다. 그 위에는 비슷한
+// 행사가 받은 협찬이 있어서 단체가 다른 단체에서 통한 것을 보고 자기 행사를
+// 계획한다.
 export function ExplorePage({ onBack, onOpenEvent }: { onBack: () => void; onOpenEvent: (eventId: string) => void }) {
   const [data, setData] = useState<{ events: ExploreEvent[]; cases: EventCase[] } | null>(null)
   const [failed, setFailed] = useState("")

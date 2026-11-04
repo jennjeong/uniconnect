@@ -25,32 +25,32 @@ export function LoginModal({
 }: {
   initialRole: Role
   onClose: () => void
-  // With two-step login on, after the code; `recoveryLeft` then says how
-  // many recovery codes remain.
+  // 2단계 인증이 켜져 있으면 코드 다음에. `recoveryLeft`가 남은 복구 코드 수를
+  // 알려 준다.
   onLoggedIn: (session: Session & { recoveryLeft?: number }) => void
   onSignup: (role: Role) => void
   onForgot: (email: string) => void
-  // An invited co-admin's first visit (modals/JoinTeamModal.tsx).
+  // 초대받은 공동 관리자의 첫 방문(modals/JoinTeamModal.tsx).
   onJoin: () => void
-  // Kakao or Naver, when the server offers them; a login back from one that
-  // still asks for the two-step code comes in as `initialTicket`.
+  // 서버가 제공하면 카카오나 네이버. 2단계 인증 코드를 아직 요구하는 로그인이
+  // 돌아오면 `initialTicket`으로 들어온다.
   providers: SocialProvider[]
   initialTicket?: { email: string; ticket: CodeTicket }
 }) {
   const [draft, setDraft] = useState({ role: initialRole, email: "", password: "" })
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
-  // The password was right and the account asks for its code next.
+  // 비밀번호가 맞았고 계정이 다음으로 코드를 요구한다.
   const [ticket, setTicket] = useState<{ email: string; ticket: CodeTicket } | null>(initialTicket ?? null)
-  // Two-step login was just set up: its recovery codes show once before the
-  // login goes on.
+  // 2단계 인증을 방금 설정했다. 로그인이 이어지기 전에 복구 코드를 한 번 보여
+  // 준다.
   const [recovery, setRecovery] = useState<{ session: Session; codes: string[] } | null>(null)
 
-  // Back from the provider's page without logging in.
+  // 로그인하지 않고 제공자 화면에서 돌아온 경우.
   usePageReturn(useCallback(() => setBusy(false), []))
 
-  // Off to the provider; it sends the browser back to the server, which
-  // finishes the login (App reads ?social=).
+  // 제공자로 나간다. 제공자가 브라우저를 서버로 돌려보내면 서버가 로그인을
+  // 끝낸다(App이 ?social=을 읽는다).
   const socialLogin = async (provider: SocialProvider) => {
     setBusy(true)
     setError("")
@@ -62,7 +62,7 @@ export function LoginModal({
     }
   }
 
-  // The form as typed, or a demo account's published login.
+  // 입력한 그대로의 폼, 또는 데모 계정의 공개된 로그인.
   const submit = async (form = draft) => {
     if (!form.email.trim() || !form.password) {
       setError(t("이메일과 비밀번호를 입력해 주세요."))

@@ -2,9 +2,9 @@ import { t } from "../i18n"
 import { passwordRules } from "../lib/password"
 import { Icon } from "./Icon"
 
-// The rules a new password follows (lib/password.ts), each ticked as the
-// password typed meets it, under the password boxes. Its id lets the box
-// point to it (aria-describedby).
+// 새 비밀번호가 따를 규칙(lib/password.ts). 비밀번호 칸 아래에서, 입력한
+// 비밀번호가 충족할 때마다 하나씩 체크된다. id를 두어 입력칸이 이 목록을 가리킬
+// 수 있다 (aria-describedby).
 export function PasswordRules({ id, password }: { id: string; password: string }) {
   const rules = passwordRules(password)
   return (

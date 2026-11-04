@@ -10,7 +10,7 @@ describe("meetings in calendars", () => {
     const { start, end } = meetingSpan(meeting)
     expect(start.toISOString()).toBe("2026-11-12T05:00:00.000Z")
     expect(end.toISOString()).toBe("2026-11-12T06:30:00.000Z")
-    // Early morning in Korea is still the day before in UTC.
+    // 한국의 이른 아침은 UTC로는 아직 전날이다.
     expect(meetingSpan({ ...meeting, time: "08:00", minutes: 30 }).start.toISOString()).toBe("2026-11-11T23:00:00.000Z")
   })
 

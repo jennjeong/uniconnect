@@ -1,10 +1,10 @@
 import type { PaymentOrder } from "../types"
 
-// Toss Payments' payment window (v2 SDK, loaded only when a brand pays, as
-// the Content-Security-Policy allows). The window comes back to this page's
-// address with ?payment=success&paymentKey…&orderId…&amount… or
-// ?payment=fail&code…&message…, which App reads (readPaymentReturn) and
-// the server approves.
+// Toss Payments 결제창 (v2 SDK, 브랜드가 결제할 때만 불러온다.
+// Content-Security-Policy가 허용한다). 결제창은
+// ?payment=success&paymentKey…&orderId…&amount… 또는
+// ?payment=fail&code…&message…를 붙여 이 페이지 주소로 돌아오며, App이 이를
+// 읽고(readPaymentReturn) 서버가 승인한다.
 const sdkUrl = "https://js.tosspayments.com/v2/standard"
 
 type TossPayments = (clientKey: string) => {
@@ -37,8 +37,8 @@ function loadSdk() {
   return loading
 }
 
-// Opens the card payment window for an order; the browser leaves for it and
-// comes back to this address.
+// 주문에 대한 카드 결제창을 연다. 브라우저가 그리로 떠났다가 이 주소로
+// 돌아온다.
 export async function payByCard({ order, customerKey, email }: PaymentOrder, clientKey: string) {
   const TossPayments = await loadSdk()
   const back = `${window.location.origin}${window.location.pathname}`
@@ -59,8 +59,8 @@ export type PaymentReturn =
   | { ok: true; orderId: string; paymentKey: string; amount: number }
   | { ok: false; canceled: boolean; message: string }
 
-// The payment window's answer in an address's query, or undefined; the
-// caller takes it out of the address.
+// 주소 쿼리에 담긴 결제창의 답. 없으면 undefined. 호출한 쪽이 주소에서
+// 걷어낸다.
 export function readPaymentReturn(search: string): PaymentReturn | undefined {
   const params = new URLSearchParams(search)
   const outcome = params.get("payment")
@@ -78,7 +78,7 @@ export function readPaymentReturn(search: string): PaymentReturn | undefined {
   return undefined
 }
 
-// The address without the payment window's answer.
+// 결제창의 답을 뺀 주소.
 export function withoutPaymentReturn(search: string) {
   const params = new URLSearchParams(search)
   for (const key of ["payment", "paymentKey", "orderId", "amount", "code", "message", "paymentType"]) params.delete(key)

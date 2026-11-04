@@ -6,12 +6,12 @@ import { t } from "../i18n"
 import { viewPath } from "../lib/route"
 import type { NearbyPlace } from "../types"
 
-// The invitation's address, which opens its page (pages/InvitePage.tsx).
+// 초대 주소. 열면 그 페이지가 뜬다(pages/InvitePage.tsx).
 export const inviteLink = (code: string) =>
   new URL(viewPath({ page: "대시보드", invite: code }), window.location.origin).href
 
-// The message to the shop's owner, in Korean whatever language the app is
-// in, as it goes to a shop in Korea (like the emails). "11월 27일" for a date.
+// 가게 주인에게 보내는 메시지. 한국 가게에 가므로 이메일처럼 앱 언어와 상관없이
+// 한국어로 쓴다. 날짜는 "11월 27일".
 export function inviteMessage({
   shop,
   group,
@@ -38,8 +38,8 @@ export function inviteMessage({
   ].join("\n")
 }
 
-// A student group invites a shop from 가까운 순: the invitation's QR to show
-// in person, and a message with its link to send by KakaoTalk or text.
+// 학생단체가 가까운 순에서 가게를 초대한다. 직접 보여 줄 초대 QR과,
+// 카카오톡이나 문자로 보낼 링크가 담긴 메시지.
 export function InviteShopModal({
   place,
   code,
@@ -53,7 +53,7 @@ export function InviteShopModal({
   code: string
   group: string
   school?: string
-  // The group's next event, which the message names.
+  // 메시지에 이름을 넣는, 단체의 다음 행사.
   event?: { name: string; date: string }
   onClose: () => void
   onNotice: (message: string) => void
@@ -75,7 +75,7 @@ export function InviteShopModal({
     try {
       await navigator.share({ title: t("uniconnect 초대장"), text: message })
     } catch (error) {
-      // Closing the share sheet isn't a failure.
+      // 공유 시트를 닫는 것은 실패가 아니다.
       if ((error as Error).name !== "AbortError") onNotice(t("공유하지 못했어요. 메시지를 복사해서 보내 주세요."))
     }
   }

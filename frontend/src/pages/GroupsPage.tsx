@@ -21,7 +21,7 @@ import type { Industry, Match, RequestStatus } from "../types"
 
 type Tab = "추천" | "가까운 순" | "행사 임박" | "전체" | "분야별" | "찜"
 
-// As many groups as one offer goes to at once (App's proposeMany).
+// 제안 하나를 한꺼번에 보낼 수 있는 최대 단체 수(App의 proposeMany).
 export const maxBulk = 10
 
 const tabs: Tab[] = ["추천", "가까운 순", "행사 임박", "전체", "분야별", "찜"]
@@ -53,7 +53,7 @@ const tabIntro: Record<Tab, { title: string; caption: string }> = {
   },
 }
 
-// Student groups brands can sponsor, by tab.
+// 브랜드가 협찬할 수 있는 학생단체. 탭별.
 export function GroupsPage({
   matches,
   groups,
@@ -71,42 +71,43 @@ export function GroupsPage({
   onLogin,
   onSignup,
 }: {
-  // Top picks for this brand.
+  // 이 브랜드의 추천 상위.
   matches: Match[]
-  // Every student group in the catalog: groups that signed up, for a member.
+  // 카탈로그의 모든 학생단체. 회원에게는 가입한 단체만.
   groups: Match[]
-  // The catalog has arrived, so an empty one is empty.
+  // 카탈로그가 도착했으므로 비어 있으면 정말 비어 있다.
   loaded: boolean
-  // 내 정보's form, where the brand writes what groups will find.
+  // 브랜드가 단체가 찾을 내용을 쓰는 내 정보의 폼.
   onEditProfile: () => void
   proposals: string[]
-  // Each group's answer to the brand's offer, once it has one.
+  // 브랜드의 제안에 대한 각 단체의 답. 있을 때만.
   statuses: Partial<Record<string, RequestStatus>>
-  // The groups the account saved (찜), newest first, and the heart on each card.
+  // 계정이 저장한 단체(찜)를 최신순으로, 그리고 각 카드의 하트.
   saved: string[]
   onToggleSave: (match: Match) => void
   onOpenDetail: (match: Match) => void
   onPropose: (match: Match) => void
   onCancelProposal: (match: Match) => void
-  // One offer to several groups (일괄 제안); members only.
+  // 여러 단체에 보내는 제안 하나(일괄 제안). 회원 전용.
   onProposeMany?: (groups: Match[]) => void
-  // Logged out: 가까운 순 measures from the demo brand's store, so it reads as an example.
+  // 로그아웃 상태: 가까운 순은 데모 브랜드의 가게를 기준으로 재므로 예시로
+  // 읽힌다.
   visitor: boolean
   onLogin: () => void
   onSignup: () => void
 }) {
   const [tab, setTab] = useState<Tab>("추천")
-  // 비교: the cards laid side by side (components/CompareTray.tsx).
+  // 비교: 카드를 나란히 놓는다(components/CompareTray.tsx).
   const compare = useCompare()
-  // 여러 곳에 제안: picking groups on the cards, and those picked. Once an
-  // offer reaches one it drops out of the picks.
+  // 여러 곳에 제안: 카드에서 단체를 고르는 일과 고른 단체. 제안이 한 곳에
+  // 닿으면 선택에서 빠진다.
   const [picking, setPicking] = useState(false)
   const [picks, setPicks] = useState<string[]>([])
   const picked = picks.filter((id) => !proposals.includes(id))
   const togglePick = (id: string) =>
     setPicks((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]))
   const [field, setField] = useState<Industry>("performance")
-  // Cards slide in from the side the picked tab or chip lies on.
+  // 카드는 고른 탭이나 칩이 있는 쪽에서 미끄러져 들어온다.
   const [direction, setDirection] = useState<"forward" | "back">("forward")
   const pickTab = (next: Tab) => {
     setDirection(tabs.indexOf(next) >= tabs.indexOf(tab) ? "forward" : "back")
@@ -114,13 +115,12 @@ export function GroupsPage({
   }
   const fields = groupFields.filter(([value]) => groups.some((group) => group.industry === value))
   const today = todayIso()
-  // Words to find and the filters, kept across the tabs.
+  // 찾을 단어와 필터. 탭을 바꿔도 유지한다.
   const [query, setQuery] = useState("")
   const [filters, setFilters] = useState<GroupFilters>(noGroupFilters)
-  // The cards as a list, or as dots on a map around the store.
+  // 카드를 목록으로, 또는 가게 둘레 지도의 점으로 보여 준다.
   const [layout, setLayout] = useState<Layout>("list")
-  // Every school of the picked region, or, for all regions, the schools the
-  // listed groups come from.
+  // 고른 지역의 모든 학교. 모든 지역이면 목록에 오른 단체가 속한 학교.
   const schools = filters.region
     ? universities[filters.region]
     : [...new Set(groups.flatMap((group) => (group.school ? [group.school] : [])))].sort()
@@ -146,7 +146,7 @@ export function GroupsPage({
             : groups.filter((group) => group.industry === field)
   const shown = list.filter((group) => matchesQuery(group, query) && matchesGroupFilters(group, filters, today))
 
-  // A group's card, as the list and the map show it.
+  // 목록과 지도가 보여 주는 단체의 카드.
   const card = (group: Match) => (
     <WorkCard
       match={group}
@@ -155,7 +155,7 @@ export function GroupsPage({
       saved={saved.includes(group.id)}
       onToggleSave={() => onToggleSave(group)}
       compared={compare.has(group.id)}
-      // Picking groups for one offer and comparing them don't mix.
+      // 제안 하나에 보낼 단체를 고르는 일과 비교는 함께할 수 없다.
       onToggleCompare={picking ? undefined : () => compare.toggle(group.id)}
       date={group.eventDate}
       tags={
@@ -195,7 +195,7 @@ export function GroupsPage({
 
   return (
     <section className="page-view">
-      {/* With no group signed up yet, 추천 can't say it found some. */}
+      {/* 가입한 단체가 아직 없으면 추천은 찾았다고 말할 수 없다. */}
       <PageIntro
         eyebrow="Find Student Groups"
         title={
@@ -393,7 +393,7 @@ export function GroupsPage({
             className="primary-button"
             disabled={picked.length === 0}
             onClick={() => {
-              // 추천's picks may not be in the full list yet; each group once.
+              // 추천이 고른 것이 전체 목록에 아직 없을 수 있다. 단체마다 한 번.
               const pool = new Map([...matches, ...groups].map((group) => [group.id, group]))
               onProposeMany(picked.flatMap((id) => pool.get(id) ?? []))
             }}

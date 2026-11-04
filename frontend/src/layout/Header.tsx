@@ -14,7 +14,7 @@ import type { Account, NavLabel, Role } from "../types"
 import { AccountPanel } from "./AccountPanel"
 import { NotificationsPanel } from "./NotificationsPanel"
 
-// The introduction's sections, for the header's links there.
+// 소개 페이지의 섹션. 헤더의 링크용.
 const sections: { id: string; label: string }[] = [
   { id: "sides", label: t("서비스 소개") },
   { id: "how", label: t("이용 방법") },
@@ -22,13 +22,12 @@ const sections: { id: string; label: string }[] = [
   { id: "faq", label: "FAQ" },
 ]
 
-// Stride's floating navigation from getlayers.ai: the logo on its own and
-// the role's menu as a silver glass pill on the left; the next event (or,
-// for visitors, the side to preview), the account buttons and Menu on the
-// right. On the introduction the menu gives way to its sections and sign-up
-// stands beside login; on a member screen shown to a visitor, a chip by the
-// logo says it is an example. The pills gain a soft shadow once the page
-// scrolls, and slide in after the intro loader.
+// getlayers.ai의 Stride 플로팅 내비게이션. 로고는 홀로 두고, 역할별 메뉴는
+// 왼쪽의 은색 유리 알약으로, 다음 행사(방문자에게는 미리 볼 쪽), 계정 버튼,
+// Menu는 오른쪽에 둔다. 소개 페이지에서는 메뉴 대신 섹션이 나오고 가입이 로그인
+// 옆에 놓인다. 방문자에게 보이는 회원 화면에서는 로고 옆의 칩이 예시 화면임을
+// 알린다. 페이지를 스크롤하면 알약에 부드러운 그림자가 붙고, 인트로 로더 뒤에
+// 미끄러져 들어온다.
 export function Header({
   role,
   activeNav,
@@ -62,37 +61,37 @@ export function Header({
   role: Role
   activeNav?: NavLabel
   account: Account | null
-  // False while a saved session is being checked, so the login button doesn't flash.
+  // 저장된 세션을 확인하는 동안 false. 로그인 버튼이 깜박이지 않게 한다.
   authReady: boolean
-  // Counts shown next to menu items, such as unanswered proposals.
+  // 메뉴 항목 옆에 보이는 수. 답하지 않은 제안 같은 것.
   badges: Partial<Record<NavLabel, number>>
-  // Upcoming schedule for the next event pill.
+  // 다음 행사 알약에 보여 줄 앞으로의 일정.
   events: { name: string; date: string; status: string }[]
   notifications: NotificationItem[]
-  // Whether the account has yet to read a notice; the bell's dot shows while one is.
+  // 계정이 아직 읽지 않은 알림이 있는지. 있는 동안 종 모양의 점이 보인다.
   isUnread: (item: NotificationItem) => boolean
-  // The notifications panel hangs under the bell while this is true.
+  // 이 값이 true인 동안 알림 패널이 종 아래에 걸린다.
   notificationsOpen: boolean
   menuOpen: boolean
-  // Messages not yet read, shown on the chat button.
+  // 아직 읽지 않은 메시지. 채팅 버튼에 보인다.
   unreadMessages: number
-  // A visitor on the introduction.
+  // 소개 페이지에 있는 방문자.
   landing: boolean
-  // A visitor on a member screen, shown with the demo data.
+  // 회원 화면을 데모 데이터로 보고 있는 방문자.
   demo: boolean
-  // The logo: the introduction for visitors, the dashboard for a member.
+  // 로고. 방문자는 소개 페이지로, 회원은 대시보드로 간다.
   onHome: () => void
   onNavigate: (label: NavLabel) => void
   onSwitchRole: (role: Role) => void
   onCreate: () => void
-  // Opens the 내 행사 (or 캠페인) calendar on this day.
+  // 이 날짜의 내 행사(또는 캠페인) 달력을 연다.
   onOpenEvent: (date: string) => void
   onOpenMessages: () => void
-  // The help center's questions, where the operators' answers are.
+  // 도움말 센터의 질문. 운영진의 답이 있는 곳.
   onOpenAnswers: () => void
   onToggleNotifications: () => void
   onCloseNotifications: () => void
-  // Marks notices read: one opened, or all with 모두 읽음.
+  // 알림을 읽음으로 표시한다. 하나를 열었을 때나, 모두 읽음으로 전체를.
   onReadNotices: (items: NotificationItem[]) => void
   onOpenProfile: () => void
   onLogout: () => void
@@ -102,7 +101,7 @@ export function Header({
 }) {
   const bellRef = useRef<HTMLButtonElement>(null)
   const accountRef = useRef<HTMLButtonElement>(null)
-  // The account panel; it and the notifications never hang open together.
+  // 계정 패널. 이 패널과 알림 패널이 동시에 열려 있지는 않는다.
   const [accountOpen, setAccountOpen] = useState(false)
   const closeAccount = useCallback(() => setAccountOpen(false), [])
   const unread = notifications.filter(isUnread).length
@@ -119,9 +118,9 @@ export function Header({
     return () => window.removeEventListener("scroll", update)
   }, [])
 
-  // The logo has no pill of its own, so it turns light while it floats over
-  // a deep blue surface (index.css marks those with --surface-tone) and
-  // stays deep blue over white. Checked on scroll, resize and page changes.
+  // 로고에는 자기 알약이 없어서 짙은 파랑 표면 위에 떠 있을 때는 밝게 바뀌고
+  // (index.css가 --surface-tone으로 그런 표면을 표시한다) 흰색 위에서는 짙은
+  // 파랑을 유지한다. 스크롤, 크기 변경, 페이지 전환 때 확인한다.
   useEffect(() => {
     let frame = 0
     const check = () => {
@@ -150,9 +149,9 @@ export function Header({
     }
   }, [])
 
-  // Brings the section's heading (its eyebrow) up 24px under the header.
-  // Measured by offsets, which leave out transforms: a heading still
-  // waiting to rise in (data-reveal) sits lower than where it settles.
+  // 섹션의 제목(라벨)을 헤더 아래 24px 위치로 가져온다. 변형(transform)을
+  // 무시하는 offset으로 측정하므로, 아직 올라오기를 기다리는
+  // 제목(data-reveal)은 자리 잡았을 때보다 낮게 있다.
   const showSection = (id: string) => {
     const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches
     const section = document.getElementById(id)
@@ -226,7 +225,8 @@ export function Header({
             )}
           </button>
         ) : landing ? null : (
-          // Visitors can preview either side; a logged-in account stays on its own role.
+          // 방문자는 어느 쪽이든 미리 볼 수 있다. 로그인한 계정은 자기 역할에
+          // 머문다.
           <div className="nav-pill role-switch" aria-label={t("사용자 유형")}>
             {roles.map((item) => (
               <button

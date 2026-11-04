@@ -10,17 +10,17 @@ import { photoFromFile } from "../lib/image"
 import { googleMeetingLink, meetingIcs } from "../lib/meetings"
 import type { ChatAttachment, ChatMessage, Conversation, Meeting } from "../types"
 
-// How long an open conversation waits to ask again after a failed request.
+// 요청이 실패한 뒤 열린 대화가 다시 묻기까지 기다리는 시간.
 const retryMs = 4000
 
-// As large a PDF as the server takes (routes/conversations.ts).
+// 서버가 받는 최대 크기의 PDF(routes/conversations.ts).
 const pdfMaxBytes = 2 * 1024 * 1024
 
-// How long a finger rests on an own message before its menu opens.
+// 손가락을 내 메시지에 올려 두면 메뉴가 열리기까지 걸리는 시간.
 const holdMs = 450
 
-// Kept once this viewer has opened a message's menu, so the line saying how
-// to open it stops showing.
+// 이 사용자가 메시지 메뉴를 한 번 열면 저장해서, 여는 방법을 알려 주는 줄을
+// 더는 보이지 않는다.
 const menuKnownKey = "uniconnect:chat-menu-known"
 
 const menuKnown = () => {
@@ -37,7 +37,7 @@ const timeOf = (at: string) =>
 const sizeOf = (bytes: number) =>
   bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)}MB` : `${Math.max(1, Math.round(bytes / 1024))}KB`
 
-// A picked PDF as a data URL, typed as a PDF even when the system gave it no type.
+// 고른 PDF를 data URL로. 시스템이 타입을 주지 않아도 PDF 타입으로 만든다.
 const pdfDataUrl = (file: File) =>
   new Promise<string>((resolve, reject) => {
     const reader = new FileReader()
@@ -46,8 +46,8 @@ const pdfDataUrl = (file: File) =>
     reader.readAsDataURL(file)
   })
 
-// A photo sent in the conversation, fetched with the login token (an <img>
-// can't send it) and shown from an object URL; it opens full size in a tab.
+// 대화로 보낸 사진. 로그인 토큰으로 가져와서(<img>는 토큰을 보낼 수 없다) 객체
+// URL로 보여 주며, 탭에서 원래 크기로 열린다.
 function ChatPhoto({ conversationId, attachment, alt }: { conversationId: string; attachment: ChatAttachment; alt: string }) {
   const [url, setUrl] = useState<string>()
   const [failed, setFailed] = useState(false)
@@ -79,7 +79,7 @@ function ChatPhoto({ conversationId, attachment, alt }: { conversationId: string
   )
 }
 
-// A PDF sent in the conversation: its name and size, saved when pressed.
+// 대화로 보낸 PDF: 이름과 크기를 보여 주고 누르면 저장된다.
 function ChatFile({
   conversationId,
   attachment,
@@ -109,16 +109,14 @@ function ChatFile({
   )
 }
 
-// One conversation: messages (own on the right), and a box to write more.
-// While open and in view it keeps one request waiting on the server, which
-// answers as soon as anything changes, so replies, the partner's read marks,
-// edits and deletions show at once. Own messages say whether
-// they were read and can be edited or deleted from a menu: pressed and held
-// on a touch screen, right-clicked with a mouse, or opened from a ⋯ button
-// the keyboard reaches. Both sides then see "수정됨" or a deleted message in
-// its place. A photo or PDF goes from the clip beside the box as a message
-// of its own, which can be deleted but not edited. It stops checking once
-// the conversation is gone, and hands an expired login to the app.
+// 대화 하나: 메시지(내 것은 오른쪽)와 더 쓰는 입력창. 열려 있고 보이는 동안은
+// 서버에 요청 하나를 걸어 두고, 서버가 무언가 바뀌는 즉시 답하므로 답장, 상대의
+// 읽음 표시, 수정, 삭제가 바로 보인다. 내 메시지는 읽혔는지를 보여 주고
+// 메뉴에서 고치거나 지울 수 있다. 터치 화면에서는 길게 누르고, 마우스는 오른쪽
+// 클릭하며, 키보드는 ⋯ 버튼으로 연다. 이후 양쪽에 "수정됨"이나 지워진 메시지가
+// 대신 보인다. 사진이나 PDF는 입력창 옆 클립으로 보내며 따로 하나의 메시지가
+// 되고, 지울 수는 있지만 고칠 수는 없다. 대화가 사라지면 확인을 멈추고, 만료된
+// 로그인은 앱에 넘긴다.
 const meetingLengths = [30, 60, 90, 120]
 
 const meetingStates: Record<Meeting["status"], string> = {
@@ -128,9 +126,8 @@ const meetingStates: Record<Meeting["status"], string> = {
   canceled: "취소된 미팅",
 }
 
-// A meeting proposed in the conversation: when, how long and where, how it
-// stands, and the answers this side can give. Once accepted, either side
-// puts it in a calendar.
+// 대화에서 제안한 미팅: 언제, 얼마 동안, 어디서, 진행 상태, 이쪽이 줄 수 있는
+// 답. 수락되면 양쪽이 캘린더에 넣을 수 있다.
 function MeetingCard({
   message,
   partnerName,
@@ -190,8 +187,8 @@ function MeetingCard({
   )
 }
 
-// 미팅 잡기: the day, start, length and place of a meeting to propose, with
-// a note. Sent as a message of its own.
+// 미팅 잡기: 제안할 미팅의 날, 시작, 길이, 장소와 메모. 따로 하나의 메시지로
+// 보낸다.
 function MeetingForm({
   busy,
   onSend,
@@ -263,16 +260,16 @@ export function ChatPage({
   onReport,
 }: {
   id: string
-  // Whether photos and PDFs can be sent: not from the shared demo accounts.
+  // 사진과 PDF를 보낼 수 있는지. 공용 데모 계정은 보낼 수 없다.
   canSendFiles: boolean
   onBack: () => void
-  // Opens the partner's detail page; absent when it can't be opened.
+  // 파트너의 상세 페이지를 연다. 열 수 없으면 없다.
   onOpenPartner?: (partnerId: string) => void
-  // Receives the conversation after each load or send (for unread counts).
+  // 불러오거나 보낼 때마다 대화를 받는다(안 읽은 수 계산용).
   onChange: (conversation: Conversation) => void
-  // Called with a 401: the login ran out.
+  // 401로 불린다. 로그인이 만료되었다.
   onSessionEnd: (error: unknown) => void
-  // Reports one of the partner's messages; absent for the demo accounts.
+  // 파트너의 메시지 하나를 신고한다. 데모 계정에는 없다.
   onReport?: (message: ChatMessage) => void
 }) {
   const [conversation, setConversation] = useState<Conversation | null>(null)
@@ -280,35 +277,35 @@ export function ChatPage({
   const [error, setError] = useState("")
   const [sending, setSending] = useState(false)
   const [uploading, setUploading] = useState(false)
-  // 미팅 잡기's form, while open, and a meeting being sent or answered.
+  // 열려 있는 동안의 미팅 잡기 폼과, 보내거나 답하는 중인 미팅.
   const [planning, setPlanning] = useState(false)
   const [meetingBusy, setMeetingBusy] = useState(false)
-  // The own message whose actions are open, and whether they ask to confirm a delete.
+  // 작업 메뉴가 열린 내 메시지와, 삭제 확인을 묻는 중인지 여부.
   const [menuFor, setMenuFor] = useState<string | null>(null)
   const [confirming, setConfirming] = useState(false)
-  // The message being edited in the box; what was typed before waits for after.
+  // 입력창에서 고치는 메시지. 그 전에 입력하던 내용은 고친 뒤로 미룬다.
   const [editing, setEditing] = useState<ChatMessage | null>(null)
-  // A finger resting on an own message: where it went down, and the timer
-  // that opens the menu unless it moves (to scroll) or lifts first.
+  // 내 메시지에 손가락을 올린 상태: 닿은 위치와, 움직이거나(스크롤) 먼저 떼지
+  // 않으면 메뉴를 여는 타이머.
   const hold = useRef<{ timer: number; x: number; y: number } | null>(null)
-  // Set when a hold opened the menu, so the click as the finger lifts
-  // doesn't also open a photo or save a file.
+  // 길게 눌러 메뉴가 열렸을 때 설정한다. 손가락을 뗄 때의 클릭이 사진을 열거나
+  // 파일을 저장하지 않게 한다.
   const heldOpen = useRef(false)
-  // Until a menu has been opened once, a line over the box says how.
+  // 메뉴를 한 번 열 때까지 입력창 위의 한 줄이 여는 방법을 알려 준다.
   const [hintShown, setHintShown] = useState(() => !menuKnown())
   const [touch] = useState(() => window.matchMedia("(hover: none)").matches)
   const keptDraft = useRef("")
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const lastCount = useRef(0)
-  // Moves on with every send, edit or delete, so a check that started
-  // before one cannot put the older messages back.
+  // 보내기, 수정, 삭제마다 올라서 그 전에 시작한 확인이 이전 메시지를 되돌려
+  // 놓지 못하게 한다.
   const changes = useRef(0)
 
   useEffect(() => {
     let cancelled = false
     const aborter = new AbortController()
     const pause = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms))
-    // A hidden page keeps no request waiting, and asks again once seen.
+    // 숨겨진 페이지는 기다리는 요청을 두지 않고 다시 보일 때 다시 묻는다.
     const shown = () =>
       document.hidden
         ? new Promise<void>((resolve) => {
@@ -321,7 +318,7 @@ export function ChatPage({
           })
         : Promise.resolve()
     const listen = async () => {
-      // What the page shows, as the server stamped it; none asks at once.
+      // 페이지가 서버가 찍은 대로 보여 주는 것. 없으면 바로 묻는다.
       let stamp: string | undefined
       while (!cancelled) {
         await shown()
@@ -330,7 +327,8 @@ export function ChatPage({
         try {
           const { conversation: loaded, stamp: next } = await api.conversation(id, stamp, aborter.signal)
           if (cancelled) return
-          // A send, edit or delete meanwhile shows newer messages: ask again at once.
+          // 그 사이 보내기, 수정, 삭제로 더 새로운 메시지가 보이면 바로 다시
+          // 묻는다.
           if (startedAt !== changes.current) {
             stamp = undefined
             continue
@@ -346,7 +344,7 @@ export function ChatPage({
             return
           }
           setError(errorMessage(problem))
-          // The partner left or the conversation is gone: nothing more to wait for.
+          // 파트너가 떠났거나 대화가 사라졌다. 더 기다릴 것이 없다.
           if (problem instanceof ApiError && problem.status === 404) return
           stamp = undefined
           await pause(retryMs)
@@ -360,7 +358,7 @@ export function ChatPage({
     }
   }, [id, onChange, onSessionEnd])
 
-  // New messages scroll into view.
+  // 새 메시지가 보이도록 스크롤한다.
   const count = conversation?.messages?.length ?? 0
   useEffect(() => {
     if (count === lastCount.current) return
@@ -369,12 +367,12 @@ export function ChatPage({
     window.scrollTo({ top: document.documentElement.scrollHeight, behavior: smooth ? "smooth" : "auto" })
   }, [count])
 
-  // An opened menu scrolls clear of the message box held at the bottom.
+  // 열린 메뉴는 아래에 고정된 입력창에 가리지 않게 스크롤한다.
   useEffect(() => {
     if (menuFor) document.querySelector(".chat-actions")?.scrollIntoView({ block: "nearest", behavior: "smooth" })
   }, [menuFor, confirming])
 
-  // An open message menu closes on a press anywhere else, or Escape.
+  // 열린 메시지 메뉴는 다른 곳을 누르거나 Escape를 누르면 닫힌다.
   useEffect(() => {
     if (!menuFor) return
     const close = () => {
@@ -396,7 +394,7 @@ export function ChatPage({
     }
   }, [menuFor])
 
-  // A hold still timing when the page goes opens nothing.
+  // 페이지가 사라질 때 아직 재는 중인 길게 누르기는 아무것도 열지 않는다.
   useEffect(
     () => () => {
       if (hold.current) window.clearTimeout(hold.current.timer)
@@ -416,7 +414,7 @@ export function ChatPage({
     else setError(errorMessage(problem))
   }
 
-  // A picked photo goes resized (lib/image.ts), a PDF as it is, up to 2 MB.
+  // 고른 사진은 크기를 줄여(lib/image.ts), PDF는 그대로 2MB까지 보낸다.
   const sendFile = async (file: File) => {
     if (uploading) return
     const pdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name)
@@ -429,7 +427,7 @@ export function ChatPage({
       const data = pdf ? await pdfDataUrl(file) : await photoFromFile(file)
       update((await api.sendFile(id, data, file.name)).conversation)
     } catch (problem) {
-      // A photo that can't be read says why (lib/image.ts).
+      // 읽을 수 없는 사진은 이유를 알려 준다(lib/image.ts).
       if (problem instanceof Error && !(problem instanceof ApiError)) setError(problem.message)
       else fail(problem)
     } finally {
@@ -479,7 +477,7 @@ export function ChatPage({
     }
   }
 
-  // Opens an own message's actions; once it has, the hint has done its job.
+  // 내 메시지의 작업을 연다. 한 번 열면 힌트는 할 일을 다한 것이다.
   const openMenu = (message: ChatMessage) => {
     setConfirming(false)
     setMenuFor(message.id)
@@ -488,7 +486,7 @@ export function ChatPage({
     try {
       localStorage.setItem(menuKnownKey, "1")
     } catch {
-      // Private browsing: the hint simply shows again next time.
+      // 사생활 보호 브라우징에서는 힌트가 다음에도 그냥 다시 보인다.
     }
   }
 
@@ -503,8 +501,8 @@ export function ChatPage({
     hold.current = null
   }
 
-  // A press and hold opens the menu on touch screens (Safari sends no
-  // contextmenu event for it); a mouse opens it with the right button.
+  // 터치 화면에서는 길게 누르면 메뉴가 열리고(Safari는 이때 contextmenu
+  // 이벤트를 보내지 않는다) 마우스는 오른쪽 버튼으로 연다.
   const startHold = (event: PointerEvent<HTMLDivElement>, message: ChatMessage) => {
     heldOpen.current = false
     if (event.pointerType === "mouse") return
@@ -518,7 +516,7 @@ export function ChatPage({
     hold.current = { timer, x: event.clientX, y: event.clientY }
   }
 
-  // A finger that moves is scrolling, not holding.
+  // 움직이는 손가락은 길게 누르는 것이 아니라 스크롤하는 것이다.
   const moveHold = (event: PointerEvent<HTMLDivElement>) => {
     if (hold.current && Math.hypot(event.clientX - hold.current.x, event.clientY - hold.current.y) > 10) endHold()
   }
@@ -561,8 +559,8 @@ export function ChatPage({
     }
   }
 
-  // Enter sends (or saves an edit); Shift+Enter starts a new line; Escape
-  // stops editing. Korean input finishes its syllable first.
+  // Enter는 보내기(또는 수정 저장), Shift+Enter는 줄바꿈, Escape는 수정 중단.
+  // 한글 입력은 음절을 먼저 마친다.
   const sendOnEnter = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === "Escape" && editing) {
       event.preventDefault()
@@ -607,7 +605,8 @@ export function ChatPage({
           const newDay = day !== lastDay
           lastDay = day
           const deleted = Boolean(message.deletedAt)
-          // Own messages are edited (files only deleted), a partner with an account's reported.
+          // 내 메시지는 고칠 수 있고(파일은 삭제만), 계정이 있는 파트너의
+          // 메시지는 신고할 수 있다.
           const own = message.mine && !deleted
           const editable = own && !message.attachment && !message.meeting
           const reportable = !message.mine && !deleted && onReport !== undefined && partner?.hasAccount === true

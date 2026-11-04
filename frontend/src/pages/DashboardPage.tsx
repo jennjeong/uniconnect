@@ -20,15 +20,14 @@ import type { EventItem, Match, Metrics, NavLabel, Report, RequestStatus } from 
 
 const pad = (value: number) => String(value).padStart(2, "0")
 
-// Top of the performance chart's y-axis (150 / 100 / 50 / 0).
+// 성과 차트 y축의 맨 위(150 / 100 / 50 / 0).
 const chartMax = 150
 
 const delay = (seconds: number) => ({ "--reveal-delay": `${seconds}s` }) as CSSProperties
 
-// Dashboard for student groups, told in the three moves of a sponsorship:
-// where the group and its brands meet (the hero), what keeps them linked
-// (the steps of the sponsorship, over the chain), and what they make
-// together (the numbers and the last event's results).
+// 학생단체 대시보드. 협찬의 세 흐름으로 이야기한다: 단체와 브랜드가 만나는
+// 곳(히어로), 둘을 잇는 것(체인 위의 협찬 단계), 함께 만든 것(숫자와 마지막
+// 행사의 결과).
 export function DashboardPage({
   accountName,
   matches,
@@ -52,49 +51,49 @@ export function DashboardPage({
   onResume,
   checklist,
 }: {
-  // The logged-in group's name for the greeting.
+  // 인사말에 쓰는, 로그인한 단체의 이름.
   accountName?: string
   matches: Match[]
-  // Every brand in the catalog: brands that signed up, for a member.
+  // 카탈로그의 모든 브랜드. 회원에게는 가입한 브랜드만.
   brands: Match[]
-  // The catalog has arrived, so an empty one is empty.
+  // 카탈로그가 도착했으므로 비어 있으면 정말 비어 있다.
   loaded: boolean
   events: EventItem[]
   proposals: string[]
-  // Answers from brands that replied to a proposal.
+  // 제안에 답한 브랜드의 답변.
   statuses: Partial<Record<string, RequestStatus>>
-  // Sponsorships confirmed either way round.
+  // 어느 쪽이든 확정된 협찬.
   confirmedCount: number
   metrics: Metrics
   report: Report | null
-  // When the matches were last loaded.
+  // 매칭을 마지막으로 불러온 때.
   updatedAt: Date | null
   onNavigate: (label: NavLabel) => void
   onOpenDetail: (match: Match) => void
   onPropose: (match: Match) => void
   onCancelProposal: (match: Match) => void
   onOpenReport: () => void
-  // 앱 다운로드 on the hero; absent inside the installed app.
+  // 히어로의 앱 다운로드. 설치된 앱 안에서는 없다.
   onInstall?: () => void
-  // A visitor, shown the demo account's data: the hero says it is an example.
+  // 방문자에게는 데모 계정의 데이터를 보여 주며, 히어로가 예시라고 알린다.
   demo?: boolean
-  // The account's listing is out of the lists for now (내 정보): the hero
-  // says so and shows it again with one press.
+  // 계정의 리스팅이 당분간 목록에서 빠져 있다(내 정보). 히어로가 그렇게 알리고
+  // 한 번 누르면 다시 보이게 한다.
   paused?: boolean
   onResume?: () => void
-  // A new member's checklist (components/ProfileChecklist.tsx), under the hero.
+  // 히어로 아래의 새 회원 체크리스트(components/ProfileChecklist.tsx).
   checklist?: ReactNode
 }) {
   const next = nextEvent(events)
   const nextDay = next ? fromIsoDate(next.date) : undefined
   const candidates = brands.length > 0 ? brands : matches
-  // No brand has signed up yet (a member sees only those that have).
+  // 아직 가입한 브랜드가 없다(회원은 가입한 브랜드만 본다).
   const noBrands = loaded && candidates.length === 0
   const strongCut = 80
   const strong = candidates.filter((match) => match.score >= strongCut).length
   const running = events.filter((event) => event.status !== "측정 완료").length
 
-  // Where the next event stands in the sponsorship flow.
+  // 다음 행사가 협찬 흐름 어디에 있는지.
   const currentStep = !next ? 0 : next.status === "매칭 중" ? 1 : next.status === "집행 예정" ? 2 : 3
   const journey: JourneyStep[] = [
     {

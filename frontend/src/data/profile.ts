@@ -1,9 +1,9 @@
 import { t } from "../i18n"
 import type { Role } from "../types"
 
-// Keep in sync with factLabels and snsPlatforms in backend/src/lib/validation.ts
-// (lib/lists.sync.test.ts checks). The labels and platforms are values the
-// server checks: keep them in Korean and show them with t().
+// backend/src/lib/validation.ts의 factLabels, snsPlatforms와 맞춰 둔다
+// (lib/lists.sync.test.ts가 검사한다). 라벨과 플랫폼은 서버가 검사하는 값이므로
+// 한국어로 유지하고 t()로 보여준다.
 export const factFields: Record<Role, { label: string; placeholder: string }[]> = {
   학생단체: [
     { label: "회원 수", placeholder: t("예) 42명") },
@@ -21,8 +21,8 @@ export const factFields: Record<Role, { label: string; placeholder: string }[]> 
 
 export const snsPlatforms = ["인스타그램", "유튜브", "틱톡", "블로그", "웹사이트", "기타"]
 
-// What a brand can offer, picked on its profile (any number). Keep in sync
-// with brandOffers in backend/src/lib/validation.ts; values shown with t().
+// 브랜드가 프로필에서 고를 수 있는 제공 내용 (개수 제한 없음).
+// backend/src/lib/validation.ts의 brandOffers와 맞춰 둔다. 값은 t()로 보여준다.
 export const brandOffers = [
   "현금 후원",
   "제품 협찬",
@@ -36,7 +36,7 @@ export const brandOffers = [
   "SNS 홍보",
 ]
 
-// What each side calls its offer and its portfolio.
+// 각 쪽이 자기 제공 내용과 포트폴리오를 부르는 이름.
 export const profileLabels: Record<Role, { offer: string; portfolio: string; portfolioHint: string }> = {
   학생단체: {
     offer: t("협찬하면 얻는 것"),

@@ -7,8 +7,8 @@ import { PasswordRules } from "../components/PasswordRules"
 import { t } from "../i18n"
 import { passwordProblem } from "../lib/password"
 
-// Changing the password from 내 정보: the current one, then the new one
-// twice. Other devices are logged out; this one stays logged in.
+// 내 정보에서 비밀번호를 바꾼다. 현재 비밀번호와 새 비밀번호 두 번. 다른 기기는
+// 로그아웃되고 이 기기는 로그인된 채 남는다.
 export function PasswordModal({ onClose, onChanged }: { onClose: () => void; onChanged: () => void }) {
   const [draft, setDraft] = useState({ current: "", next: "", confirm: "" })
   const [error, setError] = useState("")

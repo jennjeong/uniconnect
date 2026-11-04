@@ -8,8 +8,8 @@ import { t } from "../i18n"
 import { formatDateTime, formatFullDate } from "../lib/date"
 import type { MetricEntry, MetricKind, Role } from "../types"
 
-// Recent participation records behind one measurement count, or all of
-// them; before the event, what will show here once it takes place.
+// 측정 수치 하나(또는 전체)의 바탕이 된 최근 참여 기록. 행사 전에는 행사가
+// 열리면 여기에 보일 내용을 알려 준다.
 export function MetricLogModal({
   eventId,
   role,
@@ -22,7 +22,7 @@ export function MetricLogModal({
   role: Role
   kind?: MetricKind
   total: number
-  // The event's first day while it is still to come (진행 전).
+  // 행사가 아직 오지 않았을 때(진행 전) 행사의 첫날.
   startsOn?: string
   onClose: () => void
 }) {

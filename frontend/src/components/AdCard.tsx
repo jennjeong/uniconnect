@@ -8,11 +8,11 @@ import { PaymentModal } from "../modals/PaymentModal"
 import type { BillingInfo, Role } from "../types"
 import { Presence } from "./Presence"
 
-// 상단 광고 under 내 정보's 공개 소개 (backend lib/ads.ts): for 30 days the
-// listing comes first on the other side's catalog, marked AD. A brand pays
-// more than a group; extending while it still runs takes 10% off, shown
-// against the full price struck through (an anchor). Paid like
-// the other products (PaymentModal), by card or bank transfer.
+// 내 정보의 공개 소개 위에 붙는 상단 광고 (backend lib/ads.ts). 30일 동안
+// 리스팅이 반대쪽 카탈로그의 맨 앞에 AD 표시와 함께 나온다. 브랜드는 그룹보다
+// 더 낸다. 아직 진행 중일 때 연장하면 10%가 할인되며, 정가에 취소선을 그어 함께
+// 보여 준다 (기준가). 다른 상품과 같이(PaymentModal) 카드나 계좌이체로
+// 결제한다.
 export function AdCard({ role, onNotice }: { role: Role; onNotice: (message: string) => void }) {
   const [billing, setBilling] = useState<BillingInfo>()
   const [buying, setBuying] = useState(false)

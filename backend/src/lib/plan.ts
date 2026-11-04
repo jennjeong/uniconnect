@@ -2,10 +2,10 @@ import { paymentsOf } from "./billing.js"
 import { todayInKorea } from "./dates.js"
 import type { Database } from "../types.js"
 
-// Whether a brand has Pro (lib/pro.ts sells it), apart from its sale so the
-// catalog can mark Pro listings without loading the rest.
+// 브랜드가 Pro인지(lib/pro.ts가 판다). 카탈로그가 나머지를 불러오지 않고
+// Pro 리스팅을 표시할 수 있도록 판매와 따로 둔다.
 
-// The last Korean day Pro is paid for, while it is today or later.
+// Pro가 결제된 마지막 한국 날짜. 오늘이거나 그 뒤일 때만이다.
 export function proUntil(database: Database, accountId: string) {
   const today = todayInKorea()
   const ends = paymentsOf(database)
@@ -18,8 +18,8 @@ export function proUntil(database: Database, accountId: string) {
 
 export const isPro = (database: Database, accountId: string) => proUntil(database, accountId) !== null
 
-// The last Korean day an account's 상단 광고 (lib/ads.ts sells it) runs,
-// while it is today or later; here too so the catalog can put ads first.
+// 계정의 상단 광고(lib/ads.ts가 판다)가 도는 마지막 한국 날짜. 오늘이거나
+// 그 뒤일 때만이다. 카탈로그가 광고를 앞에 둘 수 있도록 여기에도 둔다.
 export function adUntil(database: Database, accountId: string) {
   const today = todayInKorea()
   const ends = paymentsOf(database)

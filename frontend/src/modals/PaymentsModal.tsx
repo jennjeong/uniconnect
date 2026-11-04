@@ -13,9 +13,8 @@ const statusLabel: Record<Payment["status"], string> = {
   cancelled: "취소 · 환불",
 }
 
-// A brand's payments to the platform (결제 내역), newest first: what each
-// was for, its amount and state, the card receipt, and a waiting order to
-// cancel.
+// 브랜드가 플랫폼에 낸 결제(결제 내역). 최신순이며 무엇을 위한 것인지, 금액과
+// 상태, 카드 영수증, 취소할 수 있는 대기 주문을 보여 준다.
 export function PaymentsModal({ onClose, onNotice }: { onClose: () => void; onNotice: (message: string) => void }) {
   const [payments, setPayments] = useState<Payment[]>()
   const [error, setError] = useState("")

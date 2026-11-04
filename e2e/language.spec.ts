@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test"
 
-// A browser set to English gets the app in English, and the footer's switch
-// brings back Korean (remembered for the next visit).
+// 브라우저를 영어로 설정하면 앱이 영어로 나오고, 푸터의 전환 버튼을 누르면
+// 한국어로 돌아온다(다음 방문에도 기억한다).
 test.use({ locale: "en-US" })
 
 test("an English browser gets English, and the switch brings back Korean", async ({ page }) => {
@@ -9,7 +9,7 @@ test("an English browser gets English, and the switch brings back Korean", async
   await expect(page.locator("html")).toHaveAttribute("lang", "en")
   await expect(page).toHaveTitle(/Sponsorship matching for student groups and brands/)
 
-  // The server answers its errors in English too.
+  // 서버도 오류를 영어로 답한다.
   const answer = await page.evaluate(async () => {
     const response = await fetch("/api/auth/login", {
       method: "POST",

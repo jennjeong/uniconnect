@@ -1,7 +1,6 @@
-// Errors the page itself didn't catch go to the operators' log (backend
-// lib/errorLog.ts, /admin): the message, where in the scripts, and the
-// page's path without its query. Never names, emails or what was typed,
-// and five a page at most.
+// 페이지가 스스로 잡지 못한 오류는 운영자의 로그로 간다 (backend
+// lib/errorLog.ts, /admin): 메시지, 스크립트에서의 위치, 쿼리를 뺀 페이지 경로.
+// 이름, 이메일, 입력한 내용은 절대 담지 않으며, 한 페이지에 최대 다섯 건이다.
 const API_BASE = (import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "")
 const most = 5
 

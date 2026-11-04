@@ -6,9 +6,8 @@ import type { Review } from "../types"
 import { Icon } from "./Icon"
 import { Stars } from "./Stars"
 
-// One review: who wrote it and for which event, its stars and tags, its
-// comment, the reviewed side's reply under it, and (on the agreement page)
-// the writer's own buttons.
+// 리뷰 하나. 작성자와 대상 행사, 별점과 태그, 코멘트, 그 아래 리뷰를 받은 쪽의
+// 답글, 그리고 (협약 페이지에서는) 작성자 본인의 버튼을 보여 준다.
 export function ReviewCard({
   review,
   title,
@@ -18,8 +17,8 @@ export function ReviewCard({
   review: Review
   title?: string
   actions?: ReactNode
-  // The reply as it shows here: ReviewReply for readers, its editor for the
-  // side that answers on the agreement page.
+  // 여기서 보이는 답글. 읽는 쪽에는 ReviewReply, 협약 페이지에서 답하는 쪽에는
+  // 편집기를 보여 준다.
   reply?: ReactNode
 }) {
   return (
@@ -46,16 +45,15 @@ export function ReviewCard({
   )
 }
 
-// The reviewed side's reply under a review, for readers: its name, when,
-// the text, and (for members) the button to report it. Nothing once the
-// operators took it down.
+// 리뷰 아래에 읽는 사람용으로 보이는 리뷰 받은 쪽의 답글. 이름, 시각, 본문,
+// (회원에게는) 신고 버튼이 있다. 운영진이 내렸으면 아무것도 보이지 않는다.
 export function ReviewReply({
   review,
   name,
   onReport,
 }: {
   review: Review
-  // The reviewed listing's name, which replied.
+  // 답글을 쓴 리스팅의 이름.
   name: string
   onReport?: () => void
 }) {

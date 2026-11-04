@@ -9,10 +9,9 @@ import type { Account, Inquiry } from "../types"
 
 const maxLength = 1000
 
-// Asking the operators, from the help center (pages/FaqPage.tsx). A question
-// shows as sent only once the server has stored it; if sending fails, what
-// was written stays. The account's own questions are listed under the box
-// with the answers as they come.
+// 도움말 센터(pages/FaqPage.tsx)에서 운영자에게 묻는다. 질문은 서버가 저장한
+// 뒤에야 보냄으로 보이고, 보내기가 실패하면 쓴 내용이 남는다. 계정이 한 질문은
+// 입력창 아래에 목록으로 나오고 답이 오는 대로 함께 보인다.
 export function AskModal({
   account,
   onLogin,
@@ -22,7 +21,7 @@ export function AskModal({
   account: Account | null
   onLogin: () => void
   onClose: () => void
-  // The questions once their answers are marked seen.
+  // 답변을 확인했다고 표시한 뒤의 질문.
   onAnswersRead?: (inquiries: Inquiry[]) => void
 }) {
   const [inquiries, setInquiries] = useState<Inquiry[]>([])
@@ -40,7 +39,7 @@ export function AskModal({
       .then((result) => {
         if (cancelled) return
         setInquiries(result.inquiries)
-        // Seen here, so the bell lets the answers go.
+        // 여기서 확인했으므로 벨이 답변 알림을 놓는다.
         if (!result.inquiries.some((inquiry) => inquiry.answeredAt && !inquiry.answerReadAt)) return
         api
           .readInquiryAnswers()

@@ -9,10 +9,10 @@ const focusable = [
   "[tabindex]:not([tabindex='-1'])",
 ].join(", ")
 
-// Keeps the keyboard in a dialog while it is open (`active`): focus moves
-// into it (to `initial`, else the dialog itself), Tab and Shift+Tab go round
-// its own controls instead of the page behind, and when it closes focus goes
-// back where it was, unless something else has taken it meanwhile.
+// 대화창이 열려 있는 동안 키보드를 그 안에 붙잡아 둔다 (`active`). 포커스는
+// 안으로 들어가고 (`initial`로, 없으면 대화창 자체로), Tab과 Shift+Tab은 뒤의
+// 페이지 대신 대화창 안의 컨트롤을 돈다. 닫히면 포커스는 원래 있던 곳으로
+// 돌아간다. 그사이 다른 것이 포커스를 가져갔다면 돌려주지 않는다.
 export function useDialogFocus(
   dialog: RefObject<HTMLElement | null>,
   active: boolean,

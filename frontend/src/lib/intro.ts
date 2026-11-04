@@ -1,12 +1,12 @@
-// The intro loader (components/Loader.tsx) plays once per browser session.
-// Scenes wait for it to leave before their entrance, so it isn't wasted
-// behind the panel.
+// 인트로 로더(components/Loader.tsx)는 브라우저 세션마다 한 번 재생한다.
+// 장면들은 로더가 사라진 뒤에 등장하도록 기다리므로, 패널 뒤에서 낭비되지
+// 않는다.
 
 const storageKey = "uniconnect:intro-played"
 const eventName = "uniconnect:intro-done"
 let done = false
 
-// Whether the loader should play on this load.
+// 이번 로드에서 로더를 재생해야 하는지 여부.
 export function shouldPlayIntro() {
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false
   try {
@@ -21,7 +21,8 @@ export function finishIntro() {
   try {
     sessionStorage.setItem(storageKey, "1")
   } catch {
-    // Private windows may refuse storage; the loader just plays again next time.
+    // 시크릿 창은 저장소를 거부할 수 있다. 그 경우 로더가 다음에 다시 재생될
+    // 뿐이다.
   }
   window.dispatchEvent(new Event(eventName))
 }
@@ -30,7 +31,7 @@ export function isIntroDone() {
   return done
 }
 
-// Calls back once the intro is done (right away if it already is).
+// 인트로가 끝나면 콜백을 부른다 (이미 끝났다면 바로).
 export function onIntroDone(callback: () => void) {
   if (done) {
     callback()

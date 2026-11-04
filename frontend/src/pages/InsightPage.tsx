@@ -13,8 +13,7 @@ import { InsightExport } from "../report/InsightExport"
 import { MeshBackdrop } from "../scenes/MeshBackdrop"
 import type { InsightAnswer, PremiumReport } from "../types"
 
-// What the report holds beyond the free screens, for the preview: twelve
-// pages of analysis.
+// 미리보기용으로, 무료 화면 외에 리포트가 담은 것: 12페이지 분량의 분석.
 const contents: { icon: IconName; title: string; text: string }[] = [
   { icon: "spark", title: "종합 등급과 핵심 요약", text: "목표 항목 평균 달성률로 매긴 등급과, 꼭 알아야 할 세 문장" },
   { icon: "file", title: "행사 개요와 협찬 조건", text: "단체 · 기간 · 장소, 협찬 가치 구성, 쿠폰과 확인 방식" },
@@ -30,9 +29,9 @@ const contents: { icon: IconName; title: string; text: string }[] = [
   { icon: "search", title: "측정 방법과 부록", text: "계산식과 가정, 날짜별 · 시간대별 원자료 표" },
 ]
 
-// The report itself: the cover on Stride's deep blue mesh with the grade,
-// then the sections; the brand's own adds its store's counts, saves the PDF
-// and shares a read-only link.
+// 리포트 본문: 스트라이드의 짙은 파란색 메시 위에 등급이 있는 표지, 이어서 각
+// 섹션. 브랜드 자신의 리포트는 가게의 집계를 더하고 PDF로 저장하며 읽기 전용
+// 링크를 공유한다.
 function ReportBody({
   report,
   owner,
@@ -131,9 +130,9 @@ function ReportBody({
   )
 }
 
-// 상세 성과 리포트 (/insights/<id>): a brand's detailed report of one
-// sponsorship, or a preview of what it holds with its price until bought;
-// /report/<token> shows one shared read-only.
+// 상세 성과 리포트(/insights/<id>): 협찬 하나에 대한 브랜드의 상세 리포트, 또는
+// 사기 전에 리포트가 담은 것과 가격을 보여 주는 미리보기. /report/<token>은
+// 읽기 전용으로 공유한 리포트를 보여 준다.
 export function InsightPage({
   id,
   shareToken,
@@ -144,13 +143,13 @@ export function InsightPage({
   onNotice,
   onOpenGroup,
 }: {
-  // The sponsorship, for the brand's own report.
+  // 브랜드 자신의 리포트용 협찬.
   id?: string
-  // The shared link's token instead.
+  // 대신 공유 링크의 토큰.
   shareToken?: string
-  // Visitors log in before buying.
+  // 방문자는 사기 전에 로그인한다.
   loggedIn: boolean
-  // Counts payments finished in the payment window, so the page reads again.
+  // 결제 창에서 끝낸 결제의 횟수. 페이지가 다시 읽게 한다.
   paid?: number
   onBack: () => void
   onLogin: () => void

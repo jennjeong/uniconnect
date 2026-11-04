@@ -19,39 +19,39 @@ import { roasOf } from "./sponsorships"
 export type NotificationItem = {
   key: string
   icon: IconName
-  // Green marks good news, such as a confirmed sponsorship.
+  // 초록색은 확정된 협찬 같은 좋은 소식을 나타낸다.
   good?: boolean
   title: string
   caption: string
-  // Page that has the details.
+  // 자세한 내용이 있는 페이지.
   target: NavLabel
-  // Opens the help center's questions instead, where the answers are.
+  // 대신 도움말 센터의 질문을 열어, 답이 있는 곳으로 안내한다.
   faq?: true
-  // What it is made of, such as each offer it counts: it is read once all
-  // are, and a new one makes it unread again.
+  // 알림을 이루는 항목(받은 제안 각각 등). 전부 읽으면 읽음이 되고, 새 항목이
+  // 생기면 다시 읽지 않음이 된다.
   parts: string[]
 }
 
-// Parts tracked per notice and in all, as many as the server keeps.
+// 알림별로 그리고 전체로 추적하는 항목. 서버가 보관하는 만큼이다.
 const partsPerNotice = 50
 const partsInAll = 300
 const tracked = (item: NotificationItem) => item.parts.slice(0, partsPerNotice)
 
-// Whether a notice has a part the account hasn't read, such as an offer
-// that came in after the last look.
+// 계정이 읽지 않은 항목이 알림에 있는지 여부. 마지막으로 본 뒤에 들어온 제안
+// 같은 것이다.
 export const isUnread = (item: NotificationItem, read: ReadonlySet<string>) =>
   tracked(item).some((part) => !read.has(part))
 
-// The read parts to save once `opened` are read too: of the parts on show,
-// those read before and the opened ones. Parts no longer on show drop off,
-// so the list stays as short as the bell.
+// `opened`도 읽은 것으로 쳐서 저장할 읽은 항목: 화면에 있는 항목 가운데 전에
+// 읽은 것과 지금 연 것이다. 더는 화면에 없는 항목은 빠지므로 목록이 종 모양
+// 알림만큼 짧게 유지된다.
 export function readParts(items: NotificationItem[], read: ReadonlySet<string>, opened: NotificationItem[]) {
   const now = new Set(opened.flatMap(tracked))
   return [...new Set(items.flatMap(tracked))].filter((part) => read.has(part) || now.has(part)).slice(0, partsInAll)
 }
 
-// The operators' answers the asker hasn't seen yet, as one notice that
-// opens them.
+// 질문한 사람이 아직 보지 못한 운영자의 답변을, 그것들을 여는 알림 하나로
+// 묶는다.
 export function answerNotices(inquiries: Inquiry[]): NotificationItem[] {
   const unread = inquiries.filter((inquiry) => inquiry.answeredAt && !inquiry.answerReadAt)
   if (unread.length === 0) return []
@@ -78,9 +78,9 @@ function nameList(names: string[]) {
   return names.length > 2 ? t("{names} 외 {count}곳", { names: shown, count: names.length - 2 }) : shown
 }
 
-// Days three days away or nearer, nearest first, at the top of the notices:
-// "오늘은 ‘X’ 날이에요", "내일은 ‘X’ 날이에요", "‘X’까지 3일 남았어요". Each is
-// unread again the day before and on the day.
+// 사흘 안으로 다가온 날을 가까운 순으로 알림 맨 위에 둔다: "오늘은 ‘X’
+// 날이에요", "내일은 ‘X’ 날이에요", "‘X’까지 3일 남았어요". 각각 전날과 당일에
+// 다시 읽지 않음이 된다.
 export function soonNotices(
   entries: { id: string; name: string; date: string }[],
   target: NavLabel,
@@ -117,12 +117,12 @@ export function studentNotifications({
   brands: Match[]
   statuses: Partial<Record<string, RequestStatus>>
   report: Report | null
-  // Proposals brands sent the group.
+  // 브랜드가 단체에 보낸 제안.
   offers: SponsorOffer[]
-  // The group's events, for the days that are near.
+  // 다가오는 날짜를 위한 단체의 행사.
   events: EventItem[]
 }): NotificationItem[] {
-  // The brands that answered so, by id.
+  // 그렇게 답한 브랜드를 id로.
   const answered = (status: RequestStatus) => Object.keys(statuses).filter((id) => statuses[id] === status)
   const names = (ids: string[]) => ids.map((id) => brands.find((brand) => brand.id === id)?.name ?? id)
   const accepted = answered("수락")
@@ -160,7 +160,7 @@ export function studentNotifications({
       parts: declined.map((id) => `declined:${id}`),
     })
   }
-  // Only once there is a match to see (a member's partners are members).
+  // 볼 수 있는 매칭이 있을 때만 (회원의 파트너는 회원이다).
   if (matches.length > 0) {
     items.push({
       key: "matches",
@@ -171,7 +171,7 @@ export function studentNotifications({
       parts: matches.map((match) => `match:${match.id}`),
     })
   }
-  // Once the event shown on the report pages is over.
+  // 리포트 페이지에 보이는 행사가 끝난 뒤에만.
   if (report && measureState(report) === "진행 완료") {
     items.push({
       key: "report",
@@ -195,7 +195,7 @@ export function brandNotifications({
   matches: Match[]
   requests: SponsorRequest[]
   sponsorships: Sponsorship[]
-  // The brand's campaigns; with the events it sponsors, for the days near.
+  // 브랜드의 캠페인. 다가오는 날짜를 위해 협찬하는 행사와 함께 쓴다.
   events: EventItem[]
 }): NotificationItem[] {
   const pending = requests.filter((request) => request.status === "검토 중")

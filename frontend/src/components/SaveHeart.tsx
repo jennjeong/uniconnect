@@ -4,8 +4,8 @@ import { Icon } from "./Icon"
 
 const sparks = [0, 1, 2, 3, 4, 5, 6, 7]
 
-// The 찜 heart. After a press that saves (`burst` counts them), it pops in
-// filled while a ring spreads and thins and eight sparks fly out.
+// 찜 하트. 저장하는 누름 뒤(`burst`가 센다) 채워진 하트가 튀어나오고, 링이
+// 퍼지며 얇아지고 불꽃 여덟 개가 날아간다.
 export function SaveHeart({ saved, burst, size }: { saved: boolean; burst: number; size: number }) {
   const bursting = saved && burst > 0
   return (

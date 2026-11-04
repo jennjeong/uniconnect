@@ -1,9 +1,9 @@
 import type { IconName } from "../components/Icon"
 import { t } from "../i18n"
 
-// The help center's topics and questions (pages/FaqPage.tsx; the dashboards
-// show the featured ones). Answers say only what the service does today;
-// prices, refunds and reply times stay out until there is a real policy.
+// 도움말 센터의 주제와 질문 (pages/FaqPage.tsx, 대시보드는 대표 질문을
+// 보여준다). 답은 서비스가 지금 하는 일만 말한다. 가격, 환불, 응답 시간은 실제
+// 정책이 생기기 전에는 넣지 않는다.
 
 export type FaqTopic = "start" | "account" | "proposal" | "schedule" | "message" | "results"
 
@@ -16,8 +16,8 @@ export const faqTopics: { key: FaqTopic; title: string; description: string; ico
   { key: "results", title: t("성과 · 리포트"), description: t("현장 측정과 성과 리포트, 분석 보고서"), icon: "chart" },
 ]
 
-// A question in the help center. `key` is its Korean wording, which the
-// operators hide it by from the console (hooks/useSiteState.ts).
+// 도움말 센터의 질문. `key`는 한국어 문구로, 운영자가 콘솔에서 이것으로 질문을
+// 숨긴다 (hooks/useSiteState.ts).
 export type FaqItem = { key: string; topic: FaqTopic; question: string; answer: string; featured?: boolean }
 
 export const faqs: FaqItem[] = [

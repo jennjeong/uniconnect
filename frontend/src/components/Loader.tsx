@@ -3,21 +3,19 @@ import { useEffect, useRef, useState, type CSSProperties } from "react"
 import wordmark from "../assets/brand/uniconnect_wordmark.svg"
 import { finishIntro, shouldPlayIntro } from "../lib/intro"
 
-// When the circle starts opening, when the page is let go (its own
-// entrance starts while the circle grows), and when the screen is gone, in
-// ms. The drawing before it is timed in index.css ("Start screen").
+// 원이 열리기 시작하는 때, 페이지를 풀어 주는 때(원이 커지는 동안 페이지 자체의
+// 등장이 시작된다), 화면이 사라지는 때. 단위는 ms다. 그 앞의 그림은
+// index.css("Start screen")에서 시간을 정한다.
 const OPEN_AT = 1650
 const RELEASE_AT = 1800
 const DONE_AT = 2500
 
-// The start screen, the logo's mark drawn as a link: the school (student
-// groups) and the shop (brands) appear, each reaches down its half of the
-// U, and the halves click together at the bottom with a pulse; the name
-// slides in beside them; then a circle ringed in deep blue opens from the
-// point where they met and the page shows through it. It plays once per
-// browser session and never with reduced motion; the page holds still
-// under it, and the header and hero wait for it (intro-playing in
-// index.css).
+// 시작 화면. 로고의 마크를 링크처럼 그려 낸다. 학교(학생단체)와 가게(브랜드)가
+// 나타나 각자 U의 반쪽을 따라 내려오고, 두 반쪽이 아래에서 맞물리며 한 번
+// 고동친다. 이름이 옆에서 미끄러져 들어온 뒤, 짙은 파랑 테두리의 원이 둘이 만난
+// 지점에서 열리며 그 사이로 페이지가 보인다. 브라우저 세션마다 한 번 재생하고
+// 동작 줄이기 설정에서는 재생하지 않는다. 그동안 페이지는 멈춰 있고, 헤더와
+// 히어로도 기다린다 (index.css의 intro-playing).
 export function Loader() {
   const [play] = useState(shouldPlayIntro)
   const [stage, setStage] = useState<"drawing" | "opening" | "gone">(play ? "drawing" : "gone")

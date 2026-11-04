@@ -10,14 +10,14 @@ import { getDatabase, saveDatabase } from "../store.js"
 import type { Database, SocialProvider } from "../types.js"
 import { startSession, startTicket, toPublic } from "./auth.js"
 
-// Logging in with Kakao or Naver (OAuth 2.0, the authorization code flow).
-// Signing up stays by email, as the school or company address is checked
-// then; a member links a provider from 내 정보 and logs in with its button
-// from then on. A provider account linked to no one logs no one in, and its
-// connection to this site's app is taken back at once, so trying the button
-// before linking leaves nothing behind at Kakao or Naver. The flow's `state` is bound to the browser by a cookie, and
-// the finished login reaches the page through a one-time code in another
-// cookie, so no token or code for this site rides in an address.
+// Kakao나 Naver로 로그인한다(OAuth 2.0 인가 코드 방식). 가입은 그때 학교나
+// 회사 주소를 확인하므로 계속 이메일로 하며, 회원이 내 정보에서 제공자를
+// 연결하고 이후에는 그 버튼으로 로그인한다. 아무에게도 연결되지 않은 제공자
+// 계정은 아무도 로그인시키지 못하고, 이 사이트 앱과의 연결도 바로 거둔다.
+// 그래서 연결하기 전에 버튼을 눌러 봐도 Kakao나 Naver에 아무것도 남지 않는다.
+// 흐름의 `state`는 쿠키로 브라우저에 묶고, 끝난 로그인은 다른 쿠키에 담긴
+// 일회용 코드로 페이지에 닿으므로 이 사이트의 토큰이나 코드가 주소에 실리지
+// 않는다.
 export const socialRouter = Router()
 
 const providers = {
@@ -39,7 +39,7 @@ const providers = {
   },
 } as const
 
-// A provider is offered once its keys are set (Naver needs its secret too).
+// 키가 설정된 제공자만 보여 준다(Naver는 비밀 키도 필요하다).
 const ready = (provider: SocialProvider) =>
   Boolean(providers[provider].clientId()) && (provider === "kakao" || Boolean(providers[provider].clientSecret()))
 
@@ -48,7 +48,7 @@ function providerOf(value: unknown): SocialProvider {
   throw new HttpError(404, "지원하지 않는 로그인 방법이에요.")
 }
 
-// Where the provider sends the browser back: this site's address.
+// 제공자가 브라우저를 돌려보낼 곳으로, 이 사이트의 주소다.
 const callbackUrl = (req: Request, provider: SocialProvider) =>
   `${(config.siteUrl ?? `${req.protocol}://${req.get("host")}`).replace(/\/$/, "")}/api/auth/social/${provider}/callback`
 
@@ -56,9 +56,8 @@ const sha = (value: string) => createHash("sha256").update(value).digest("hex")
 const flowMs = 10 * 60 * 1000
 const handoffMs = 2 * 60 * 1000
 
-// The provider's member number for an authorization code: the code traded
-// for a token, the token for the profile, with the token kept for `revoke`.
-// Tests swap both.
+// 인가 코드로 얻는 제공자의 회원 번호다. 코드를 토큰으로 바꾸고 토큰으로
+// 프로필을 받으며, 토큰은 `revoke`를 위해 둔다. 테스트에서는 둘 다 바꿔 쓴다.
 export const socialAuth = {
   async exchange(provider: SocialProvider, code: string, redirectUri: string, state: string): Promise<{ id: string; token: string }> {
     const settings = providers[provider]
@@ -87,8 +86,8 @@ export const socialAuth = {
     return { id: String(id), token: token.access_token }
   },
 
-  // Ends the connection the login just made: Kakao unlinks the member from
-  // the app, Naver deletes the token.
+  // 방금 로그인으로 만든 연결을 끊는다. Kakao는 회원과 앱의 연결을 끊고,
+  // Naver는 토큰을 지운다.
   async revoke(provider: SocialProvider, token: string) {
     const response =
       provider === "kakao"
@@ -121,7 +120,7 @@ function oauthOf(database: Database) {
   return database.oauth
 }
 
-// Cookies only this flow's addresses see, out of reach of the page's scripts.
+// 이 흐름의 주소만 보는 쿠키로, 페이지의 스크립트가 닿지 못한다.
 const cookieOptions = (req: Request, maxAge: number) => ({
   httpOnly: true,
   secure: req.secure || config.isProduction,
@@ -138,13 +137,13 @@ function cookieOf(req: Request, name: string) {
   return undefined
 }
 
-// The providers this site offers, for the buttons.
+// 이 사이트가 내놓는 제공자로, 버튼에 쓴다.
 socialRouter.get("/", (_req, res) => {
   res.json({ providers: (["kakao", "naver"] as const).filter(ready) })
 })
 
-// Starts a login, or linking from 내 정보 (the owner of a member account, not
-// the shared demo accounts): the address to send the browser to.
+// 로그인이나 내 정보에서의 연결을 시작한다(회원 계정의 주인만 하며, 공유 데모
+// 계정은 안 된다). 브라우저를 보낼 주소를 돌려준다.
 socialRouter.post("/:provider/start", async (req, res) => {
   const provider = providerOf(req.params.provider)
   const intent = req.body?.intent === "link" ? "link" : "login"
@@ -168,9 +167,9 @@ socialRouter.post("/:provider/start", async (req, res) => {
   res.json({ url: url.toString() })
 })
 
-// Back from the provider: the state must be the one this browser started,
-// used once. Linking saves the member number on the account; a login finds
-// the account it was linked to and hands it to the page by a one-time code.
+// 제공자에서 돌아온다. state는 이 브라우저가 시작한 것이어야 하며 한 번만
+// 쓴다. 연결이면 회원 번호를 계정에 저장하고, 로그인이면 연결된 계정을 찾아
+// 일회용 코드로 페이지에 넘긴다.
 socialRouter.get("/:provider/callback", async (req, res) => {
   const back = (result: string) => res.redirect(303, `/${result.startsWith("linked") || result.startsWith("link-") ? "me" : ""}?social=${result}`)
   let provider: SocialProvider
@@ -203,7 +202,7 @@ socialRouter.get("/:provider/callback", async (req, res) => {
   if (flow.intent === "link") {
     const account = fresh.accounts.find((item) => item.id === flow.accountId)
     if (!account) return back("link-error")
-    // One provider account opens one uniconnect account.
+    // 제공자 계정 하나는 uniconnect 계정 하나만 연다.
     if (owner && owner !== account) return back("link-taken")
     account.social = { ...account.social, [provider]: { id: memberNumber, linkedAt: new Date().toISOString() } }
     await saveDatabase()
@@ -227,9 +226,8 @@ socialRouter.get("/:provider/callback", async (req, res) => {
   back("login")
 })
 
-// The page finishes a login the callback handed it: the one-time code in
-// its cookie for a session, as an email login gives. Two-step login, when
-// on, still asks for its code first.
+// 페이지가 콜백이 넘긴 로그인을 마무리한다. 쿠키에 담긴 일회용 코드로 이메일
+// 로그인과 같은 세션을 받는다. 2단계 로그인이 켜져 있으면 코드를 먼저 묻는다.
 socialRouter.post("/complete", async (req: Request, res: Response) => {
   const handoff = cookieOf(req, "uc_social_login") ?? ""
   res.clearCookie("uc_social_login", { path: "/api/auth/social" })
@@ -251,7 +249,7 @@ socialRouter.post("/complete", async (req: Request, res: Response) => {
   res.json({ token, account: toPublic(account) })
 })
 
-// Unlinks a provider (the owner); the email login stays.
+// 제공자 연결을 끊는다(주인만 한다). 이메일 로그인은 그대로 남는다.
 socialRouter.delete("/:provider", async (req, res) => {
   const account = requireOwner(req, requireAccount(req))
   const provider = req.params.provider

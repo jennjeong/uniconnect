@@ -2,15 +2,15 @@ import { useCallback, useEffect, useRef, useState } from "react"
 
 export const noticeDuration = 2400
 
-// Short toast message that hides itself; a new message restarts the timer.
-// Holding or hovering it pauses the timer (pauseNotice), and swiping it
-// away hides it at once (hideNotice). Each message has its own id, so its
-// time bar starts over.
+// 저절로 사라지는 짧은 토스트 메시지. 새 메시지는 타이머를 다시 시작한다.
+// 누르고 있거나 마우스를 올리면 타이머가 멈추고 (pauseNotice), 옆으로 밀면 바로
+// 숨겨진다 (hideNotice). 메시지마다 고유한 id가 있어서 시간 막대가 처음부터
+// 다시 시작한다.
 export function useNotice() {
   const [notice, setNotice] = useState("")
   const [noticeId, setNoticeId] = useState(0)
   const timer = useRef<number | undefined>(undefined)
-  // When the shown message hides, and how long it had left when paused.
+  // 보이는 메시지가 숨겨질 때와, 멈췄을 때 남아 있던 시간.
   const deadline = useRef(0)
   const left = useRef<number | undefined>(undefined)
 

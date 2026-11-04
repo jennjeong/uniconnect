@@ -7,26 +7,25 @@ import { costPerVisit, roasOf } from "./sponsorships"
 
 type Cell = string | number
 
-// One cell, quoted when it holds a comma, a quote or a line break. Text that
-// starts with =, +, -, @, a tab or a carriage return gets a ' in front, so a
-// spreadsheet never runs a name someone typed as a formula (CSV injection).
+// 셀 하나. 쉼표, 따옴표, 줄바꿈이 있으면 따옴표로 감싼다. =, +, -, @, 탭,
+// 캐리지 리턴으로 시작하는 텍스트는 앞에 '를 붙여, 누가 입력한 이름을
+// 스프레드시트가 수식으로 실행하지 못하게 한다 (CSV 인젝션).
 export function csvCell(value: Cell): string {
   if (typeof value === "number") return String(value)
   const plain = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value
   return /[",\r\n]/.test(plain) ? `"${plain.replace(/"/g, '""')}"` : plain
 }
 
-// A CSV file that Excel opens with Korean intact: UTF-8 with a byte order
-// mark, each line ended with CRLF.
+// Excel이 한글을 그대로 여는 CSV 파일: 바이트 순서 표시가 붙은 UTF-8이고 각
+// 줄은 CRLF로 끝난다.
 export const toCsv = (rows: Cell[][]) => `﻿${rows.map((row) => row.map(csvCell).join(",")).join("\r\n")}\r\n`
 
-// A goal's result is blank where the page shows a dash (no value to work from).
+// 목표의 결과는 페이지에 대시가 나오는 곳(계산할 값이 없는 경우)에서 비워 둔다.
 const result = (missing: boolean | undefined, value: number): Cell => (missing ? "" : value)
 
-// One event's report as the report page shows it, in the language shown: the
-// event, each goal with its result and how much of it was met, what was
-// counted (QR, coupons, visits and the venue's confirmation methods), QR
-// scans by day and hour, and each sponsor's share.
+// 리포트 페이지가 보여주는 그대로, 화면 언어로 쓴 행사 하나의 리포트: 행사, 각
+// 목표와 그 결과 및 달성 정도, 집계된 것(QR, 쿠폰, 방문, 현장 확인 방식),
+// 날짜·시간별 QR 스캔, 스폰서별 몫.
 export function reportCsv(report: Report, metrics: Metrics): string {
   const counted: MetricKind[] = ["scans", "coupons", "visits", ...venueKindsOf(report)]
   const rows: Cell[][] = [
@@ -57,8 +56,8 @@ export function reportCsv(report: Report, metrics: Metrics): string {
   return toCsv(rows)
 }
 
-// A brand's sponsorships as the analytics table shows them, one a line,
-// newest first, with a column for each venue count any of them has.
+// 분석 표가 보여주는 그대로, 한 줄에 하나씩 최신 순으로 담은 브랜드의 협찬.
+// 협찬 중 하나라도 가진 현장 집계마다 열이 붙는다.
 export function analyticsCsv(sponsorships: Sponsorship[]): string {
   const counted = venueKinds.filter((kind) => sponsorships.some((item) => (item[kind as keyof Sponsorship] ?? 0) !== 0))
   const head: Cell[] = [

@@ -13,24 +13,24 @@ import type { AbuseReport, Account, ChatSide, Database } from "../types.js"
 export const reportsRouter = Router()
 export const blocksRouter = Router()
 
-// The catalog of the side an account meets: brands for student groups.
+// 계정이 만나는 쪽의 카탈로그다. 학생단체에게는 브랜드다.
 const partnerCatalog = (account: Account) => (account.role === "학생단체" ? "brands" : "groups")
 
-// The account behind a listing, when it has one (the examples have none).
+// 리스팅 뒤에 있는 계정이다. 리스팅에 계정이 있을 때만 있다(예시에는 없다).
 const ownerOfListing = (database: Database, listingId: string) =>
   database.accounts.find((account) => account.groupId === listingId || account.brandId === listingId)
 
-// More than anyone reports in an hour.
+// 한 시간에 누구나 신고하는 횟수보다 많은 수다.
 const reportsPerHour = createRateLimit({
   limit: 20,
   windowMs: 60 * 60 * 1000,
   message: "신고를 너무 많이 보냈어요. 1시간 뒤에 다시 보내 주세요.",
 })
 
-// What a report is about, from the request: an account by its listing (one
-// the reporter sees), a message the other side of the reporter's own
-// conversation sent, or a review or the reply to it by the review's public key. Answers the account it
-// is about and the reported text as it is now.
+// 신고 대상을 요청에서 찾는다. 리스팅으로 찾는 계정(신고자에게 보이는
+// 것), 신고자 자신의 대화에서 상대편이 보낸 메시지, 후기나 그 답글(후기의
+// 공개 키로 찾는다) 중 하나다. 대상이 되는 계정과 지금 시점의 신고된 글을
+// 돌려준다.
 function reportedThing(database: Database, account: Account, body: Record<string, unknown> | undefined) {
   const kind = text(body?.kind)
   if (kind === "account") {
@@ -50,7 +50,7 @@ function reportedThing(database: Database, account: Account, body: Record<string
     return {
       accountId: ownerOfListing(database, side === "group" ? conversation.brandId : conversation.groupId)?.id,
       target: { kind, conversationId: conversation.id, messageId: message.id } as AbuseReport["target"],
-      // A file shows by the name it was sent with.
+      // 파일은 보낼 때의 이름으로 보인다.
       excerpt: message.deletedAt ? undefined : message.text || message.attachment?.name,
     }
   }
@@ -69,7 +69,7 @@ function reportedThing(database: Database, account: Account, body: Record<string
     )
     if (!review?.reply) throw new HttpError(404, "신고할 답글을 찾을 수 없어요.")
     return {
-      // The reply's author: the account behind the listing the review is about.
+      // 답글의 작성자는 후기가 가리키는 리스팅 뒤의 계정이다.
       accountId: ownerOfListing(database, review.aboutId)?.id,
       target: { kind, reviewId: review.id } as AbuseReport["target"],
       excerpt: review.reply.text,
@@ -78,10 +78,9 @@ function reportedThing(database: Database, account: Account, body: Record<string
   throw new HttpError(400, "무엇을 신고하는지 알 수 없어요.")
 }
 
-// A member reports an account, one of the messages it was sent or a review,
-// saying why; the operators see it on /admin. One report of a thing waits
-// for them at a time. The shared demo accounts can't report, as everyone
-// trying the demo uses them.
+// 회원이 계정, 그 계정이 받은 메시지 하나, 또는 후기를 이유와 함께 신고한다.
+// 운영자는 /admin에서 신고를 본다. 같은 대상의 신고는 한 번에 하나만 대기한다.
+// 데모를 써 보는 모두가 공유하는 데모 계정은 신고할 수 없다.
 reportsRouter.post("/", async (req, res) => {
   const account = requireAccount(req)
   const database = getDatabase()
@@ -92,7 +91,7 @@ reportsRouter.post("/", async (req, res) => {
   if (reason === "기타" && !detail) throw new HttpError(400, "어떤 일인지 적어 주세요.")
   if (detail.length > 300) throw new HttpError(400, "설명은 300자 이하로 적어 주세요.")
   const { accountId, target, excerpt } = reportedThing(database, account, req.body)
-  // The examples and the seeded reviews have no account to answer for them.
+  // 예시와 시드 후기에는 책임질 계정이 없다.
   if (!accountId) throw new HttpError(409, "계정이 없는 상대라 신고할 수 없어요.")
   if (accountId === account.id) throw new HttpError(400, "내 계정은 신고할 수 없어요.")
   const waiting = database.reports.some(
@@ -132,9 +131,9 @@ blocksRouter.get("/", (req, res) => {
   res.json({ blocked })
 })
 
-// Blocks the account behind a listing this account sees. From then on the
-// two don't see each other's listings, proposals or conversations, either
-// way, until it is unblocked; sponsorships already confirmed go on.
+// 이 계정에 보이는 리스팅 뒤의 계정을 차단한다. 그때부터 두 계정은 서로의
+// 리스팅, 제안, 대화를 양쪽 모두 보지 못하며 차단을 풀 때까지 계속된다.
+// 이미 확정된 협찬은 그대로 진행한다.
 blocksRouter.post("/", async (req, res) => {
   const account = requireAccount(req)
   const database = getDatabase()

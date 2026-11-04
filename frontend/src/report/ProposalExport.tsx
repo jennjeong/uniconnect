@@ -7,12 +7,11 @@ import type { EventPage } from "../types"
 import { exportPdf } from "./pdf"
 import { ProposalDocument } from "./ProposalDocument"
 
-// Renders the event's proposal off screen with the group's sponsorship
-// record, saves it as a PDF, then reports back through onDone (true when
-// it failed).
+// 단체의 협찬 기록과 함께 행사의 제안서를 화면 밖에서 그려 PDF로 저장한 뒤
+// onDone으로 알린다(실패하면 true).
 export function ProposalExport({ page, onDone }: { page: EventPage; onDone: (failed: boolean) => void }) {
   const container = useRef<HTMLDivElement>(null)
-  // StrictMode runs effects twice while developing; export only once.
+  // StrictMode는 개발 중 effect를 두 번 실행한다. 내보내기는 한 번만 한다.
   const started = useRef(false)
   const [history, setHistory] = useState<HistoryRow[] | null>(null)
 

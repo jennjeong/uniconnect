@@ -1,6 +1,6 @@
-// English for this area's Korean copy (see i18n/index.ts).
+// 이 영역의 한국어 카피에 대한 영어 (i18n/index.ts 참고).
 const en: Record<string, string> = {
-  // Report KPIs (lib/kpis.ts)
+  // 리포트 KPI (lib/kpis.ts)
   "도달 인원": "Reach",
   "QR 스캔 + 현장 밖 도달": "QR scans + off-site reach",
   "QR 스캔 {scans}건에 목표 설정에서 적은 현장 밖 도달(SNS 등) {snsReach}명을 더한 값이에요.":
@@ -22,7 +22,7 @@ const en: Record<string, string> = {
   "{gain}% 높았어요.": "{gain}% above goal.",
   "{gain}% 낮았어요.": "{gain}% below goal.",
 
-  // Analytics page (pages/AnalyticsPage.tsx)
+  // 분석 페이지 (pages/AnalyticsPage.tsx)
   "누적 집행액": "Total spend",
   "협찬 {count}건 · 현금과 현물 포함": "{count:sponsorship|sponsorships} · cash and in-kind",
   "협찬당 평균 {count}장": "Avg. {count} per sponsorship",
@@ -65,7 +65,7 @@ const en: Record<string, string> = {
   "집행액은 학생단체가 목표 설정에서 적은 협찬 가치이고 추정 매출은 매장 방문 수 × 학생단체가 적은 1인 예상 지출이에요. 실제 매출과 다를 수 있어요.":
     "Spend is the sponsorship value the student group set in its goals; estimated sales are store visits × the group's expected spend per person. Actual sales may differ.",
 
-  // Analytics PDF (report/AnalyticsDocument.tsx)
+  // 분석 PDF (report/AnalyticsDocument.tsx)
   "uniconnect · 협찬 성과 분석 보고서 · 집계된 협찬 데이터로 자동 생성했어요.":
     "uniconnect · Sponsorship Analytics Report · Generated from recorded sponsorship data.",
   "목표 ROAS를 달성한 협찬은 {total}건 중 {met}건이에요.": "{met} of {total:sponsorship|sponsorships} met their ROAS goal.",
@@ -108,7 +108,7 @@ const en: Record<string, string> = {
   "{people}명": "{people}",
   평가: "Assessment",
 
-  // Event report PDF (report/ReportDocument.tsx)
+  // 행사 리포트 PDF (report/ReportDocument.tsx)
   "발행 {date}": "Issued {date}",
   "작성 {author}": "Prepared by {author}",
   "uniconnect · 협찬 성과 리포트 · 행사 측정 데이터로 자동 생성했어요.":
@@ -134,7 +134,7 @@ const en: Record<string, string> = {
   "목표 대비 실적": "Results vs. Goals",
   목표: "Goals",
   실적: "Actual",
-  // The CSV files (lib/csv.ts)
+  // CSV 파일 (lib/csv.ts)
   "CSV로 내보내기": "Export CSV",
   "협찬 가치(원)": "Sponsorship value (KRW)",
   결과: "Result",

@@ -1,6 +1,6 @@
-// English for this area's Korean copy (see i18n/index.ts).
+// 이 영역의 한국어 카피에 대한 영어 (i18n/index.ts 참고).
 const en: Record<string, string> = {
-  // Shared by the catalog pages
+  // 카탈로그 페이지가 함께 쓰는 것
   추천: "For You",
   전체: "All",
   "상세 정보": "Details",
@@ -10,7 +10,7 @@ const en: Record<string, string> = {
   문의하기: "Contact",
   "{count}회": "{count}",
 
-  // Brands for student groups (pages/MatchesPage.tsx)
+  // 학생단체를 위한 브랜드 (pages/MatchesPage.tsx)
   인기: "Popular",
   찜: "Saved",
   업종별: "By industry",
@@ -49,7 +49,7 @@ const en: Record<string, string> = {
   업종: "Industry",
   "협찬 {count}회": "{count:sponsorship|sponsorships}",
 
-  // Student groups for brands (pages/GroupsPage.tsx)
+  // 브랜드를 위한 학생단체 (pages/GroupsPage.tsx)
   "행사 임박": "Coming up",
   분야별: "By field",
   "캠페인에 맞는 학생단체를 찾았어요": "Student groups that fit your campaign",
@@ -70,7 +70,7 @@ const en: Record<string, string> = {
   분야: "Field",
   "조건에 맞는 학생단체가 없어요.": "No student groups match yet.",
 
-  // A member's catalog before the other side joins (components/CatalogEmpty.tsx)
+  // 상대쪽이 가입하기 전의 회원 카탈로그 (components/CatalogEmpty.tsx)
   "아직 가입한 브랜드가 없어요": "No brands have joined yet",
   "가까운 순에서 학교 근처 가게를 찾아 초대장을 보내 보세요. 가게가 브랜드로 가입하면 여기에서 협찬을 제안할 수 있어요.":
     "Find shops near your school under Nearby and send them an invitation. Once a shop joins as a brand, you can propose a sponsorship here.",
@@ -86,7 +86,7 @@ const en: Record<string, string> = {
   "타깃, 행사 규모, 지난 협찬 성과를 함께 분석해 잘 맞는 단체부터 보여 드려요.":
     "We'll weigh audience, event size and past sponsorships to show the best fits first.",
 
-  // One brand or group (pages/MatchDetailPage.tsx)
+  // 브랜드나 단체 하나 (pages/MatchDetailPage.tsx)
   "이번 학기 협찬": "Sponsorships this term",
   "단체 소개": "About the group",
   "브랜드 소개": "About the brand",
@@ -105,14 +105,14 @@ const en: Record<string, string> = {
   "학생단체와 함께한 협찬": "With student groups",
   "매장에서 학교까지": "From your store",
   "학교에서 매장까지": "From your campus",
-  // The parts of a match, as bars (backend/src/lib/matchScore.ts)
+  // 막대로 보이는 매칭의 항목 (backend/src/lib/matchScore.ts)
   "업종 궁합": "Industry fit",
   관심사: "Shared interests",
   "협찬 경험": "Sponsorship record",
   "함께한 이력": "Worked together",
   "응답 준비": "Ready to answer",
   "가까운 행사": "Event coming up",
-  // Reasons for a match (backend/src/lib/matchScore.ts)
+  // 매칭의 이유 (backend/src/lib/matchScore.ts)
   "업종 궁합이 좋아요": "Great industry fit",
   "관심사가 겹쳐요": "Shared interests",
   "협찬 경험이 많아요": "Lots of sponsorships",
@@ -121,7 +121,7 @@ const en: Record<string, string> = {
   "제안에 바로 답할 수 있어요": "Ready to answer",
   "가까운 행사가 있어요": "Event coming up",
 
-  // Profile fields (data/profile.ts): the labels and platforms are server values
+  // 프로필 항목 (data/profile.ts): 라벨과 플랫폼은 서버 값이다
   "회원 수": "Members",
   "주요 활동": "Main activities",
   "행사 규모": "Event Size",
@@ -152,7 +152,7 @@ const en: Record<string, string> = {
   "예) 삼육대 뮤즈 버스킹 데이 (2026.10) / 쿠폰 150장 · ROAS 243%":
     "e.g. Sahmyook Muse Busking Day (2026.10) / 150 coupons · 243% ROAS",
 
-  // The account's own page (pages/ProfilePage.tsx)
+  // 계정 자신의 페이지 (pages/ProfilePage.tsx)
   "회원 유형": "Account type",
   학교: "School",
   이메일: "Email",
@@ -181,7 +181,7 @@ const en: Record<string, string> = {
   "비밀번호 변경": "Change Password",
   "회원 탈퇴": "Delete Account",
 
-  // Editing the listing (pages/ProfileEditPage.tsx)
+  // 리스팅 편집 (pages/ProfileEditPage.tsx)
   "소개는 10자 이상 적어 주세요.": "Please write at least 10 characters for your intro.",
   "{label}을 적어 주세요.": "Please fill in “{label}”.",
   "소개 편집": "Edit Profile",
@@ -256,7 +256,7 @@ const en: Record<string, string> = {
   취소: "Cancel",
   저장하기: "Save",
 
-  // Conversations (pages/MessagesPage.tsx, pages/ChatPage.tsx)
+  // 대화 (pages/MessagesPage.tsx, pages/ChatPage.tsx)
   메시지: "Messages",
   "협찬 상대와 나눈 대화를 최근 순서로 모았어요.": "Your conversations with sponsorship partners, newest first.",
   "로그인하면 브랜드와 학생단체가 서로 메시지를 주고받을 수 있어요.": "Log in to message brands and student groups.",
@@ -273,7 +273,7 @@ const en: Record<string, string> = {
   수정됨: "Edited",
   읽음: "Read",
   "안 읽음": "Unread",
-  // The catalog map (components/CatalogMap.tsx)
+  // 카탈로그 지도 (components/CatalogMap.tsx)
   "{center} 기준 지도": "Map around {center}",
   "{name}, {distance}": "{name}, {distance}",
   "위치를 몰라 지도에 없는 곳 {count}": "{count} not on the map, with no known place",
@@ -305,14 +305,14 @@ const en: Record<string, string> = {
   "수정 완료": "Save edit",
   보내기: "Send",
 
-  // Proposal inboxes (pages/InboxPage.tsx, pages/OffersPage.tsx)
+  // 제안 받은편지함 (pages/InboxPage.tsx, pages/OffersPage.tsx)
   수락함: "Accepted",
   거절함: "Declined",
   "마감된 제안이 없어요.": "No closed proposals.",
   "마감된 협찬 제안이 없어요.": "No closed sponsorship offers.",
   "행사가 끝나 마감됐어요.": "Closed, as the event is over",
   "협찬 취소": "Calling it off",
-  // A brand's business check (modals/BusinessModal.tsx)
+  // 브랜드의 사업자 확인 (modals/BusinessModal.tsx)
   "사업자 확인": "Business verified",
   "사업자등록번호 10자리를 적어 주세요.": "Please enter the 10-digit business registration number.",
   "개업일자와 대표자 성명을 적어 주세요.": "Please enter the opening date and the representative's name.",
@@ -326,7 +326,7 @@ const en: Record<string, string> = {
   "사업자 확인하기": "Verify the business",
   "아직 준비 중이에요": "Not available yet",
   "사업자 확인을 마쳤어요. 소개에 '사업자 확인'이 붙어요.": "Business verified. Your profile now shows it.",
-  // Reporting and blocking (modals/SafetyModal.tsx)
+  // 신고와 차단 (modals/SafetyModal.tsx)
   신고하기: "Report",
   차단하기: "Block",
   "후기 신고": "Report review",
@@ -352,7 +352,7 @@ const en: Record<string, string> = {
   "신고 보내기": "Send report",
   "차단한 상대": "Blocked",
   "목록에서 숨기기": "Hide from the lists",
-  // The recruitment board (pages/BoardPage.tsx, PostPage.tsx, modals/PostFormModal.tsx)
+  // 모집 게시판 (pages/BoardPage.tsx, PostPage.tsx, modals/PostFormModal.tsx)
   "모집 게시판": "Recruit board",
   "모집 글": "Post",
   "브랜드는 함께할 행사를, 학생단체는 협찬사를 모집하고 상대 쪽 글에 지원해요.":
@@ -414,7 +414,7 @@ const en: Record<string, string> = {
   "로그인하면 모집 글에 지원할 수 있어요.": "Log in to apply to posts.",
   "{name}의 모집 글에 지원했어요. 상대가 받은 제안에서 답해요.": "You applied to {name}'s post. They answer in their proposals.",
 
-  // A group's event page (pages/EventDetailPage.tsx)
+  // 단체의 행사 페이지 (pages/EventDetailPage.tsx)
   "행사 상세": "Event",
   "학생단체의 행사 장소와 소개, 사진, 브랜드에 드리는 협찬 혜택 묶음을 봐요.":
     "See a student group's event: its venue, introduction, photos and the sponsorship packages it offers brands.",
@@ -570,7 +570,7 @@ const en: Record<string, string> = {
     "We haven't found this address on the map yet, so no distance shows. Enter a street address and save again.",
   "학생단체에게 학교에서 매장까지의 거리를 보여 드려요. 온라인 브랜드는 비워 두세요.":
     "Student groups see how far your store is from their school. Leave it empty if you're online only.",
-  // Inviting the shops on 가까운 순, the map of them, and the invitation page
+  // 가까운 순에서 매장 초대하기, 그 지도, 초대 페이지
   "uniconnect 가입": "On uniconnect",
   초대함: "Invited",
   초대하기: "Invite",
@@ -605,7 +605,7 @@ const en: Record<string, string> = {
   "우리 가게로 연결하기": "Link to my shop",
   "가게 사장님께 이 링크를 보내 주세요. 사장님이 가게로 가입하면 연결돼요.":
     "Send this link to the shop's owner. The shop is linked once they join.",
-  // 내 정보 as a settings page (pages/ProfilePage.tsx)
+  // 설정 페이지로서의 내 정보 (pages/ProfilePage.tsx)
   "로그인과 보안": "Login and security",
   "알림과 표시": "Notices and display",
   "함께하는 사람": "People you work with",

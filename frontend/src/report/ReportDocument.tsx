@@ -11,21 +11,19 @@ import { venueKindsOf } from "../lib/measurements"
 import { shares, studentInsights } from "../lib/studentInsights"
 import type { MetricEntry, Metrics, MetricKind, Report } from "../types"
 
-// Colors of the sponsorship value parts (cash, products, services): deep
-// blue, a lighter blue and silver.
+// 협찬 가치 구성(현금, 제품, 서비스)의 색: 짙은 파랑, 더 밝은 파랑, 은색.
 const valueColors = ["#1b3f8f", "#5b86e0", "#b9c2d2"]
 
-// A translated sentence with parts in markup: each {name} in it becomes
-// nodes[name]. Plain values go to t() first, which also picks a plural word.
+// 일부가 마크업인 번역 문장. 문장 안의 {name}마다 nodes[name]이 들어간다. 일반
+// 값은 먼저 t()로 넘기며, t()가 복수형 단어도 고른다.
 function rich(text: string, nodes: Record<string, ReactNode>) {
   return text.split(/\{(\w+)\}/).map((part, index) =>
     index % 2 ? <Fragment key={index}>{nodes[part]}</Fragment> : part,
   )
 }
 
-// What the venue's staff confirmed by the measurement methods, a tile per
-// count with a line for each sponsor when there are several. Nothing when
-// no method counts any.
+// 측정 방식으로 현장 직원이 확인한 것. 개수마다 타일 하나이고, 스폰서가
+// 여럿이면 스폰서마다 한 줄. 어떤 방식도 세지 않았으면 아무것도 없다.
 export function VenueCounts({
   kinds,
   counts,
@@ -62,7 +60,7 @@ export function VenueCounts({
   )
 }
 
-// The top of every PDF page: the logo, the day and who it was made for.
+// PDF 모든 페이지의 위쪽: 로고, 날짜, 누구를 위해 만들었는지.
 export function PageHeader({ author }: { author: string }) {
   return (
     <header className="pdf-header">
@@ -75,7 +73,7 @@ export function PageHeader({ author }: { author: string }) {
   )
 }
 
-// The bottom of every PDF page: what it is and the page number.
+// PDF 모든 페이지의 아래쪽: 무엇인지와 쪽 번호.
 export function PageFooter({ note, page, total }: { note: string; page: number; total: number }) {
   return (
     <footer className="pdf-footer">
@@ -90,7 +88,7 @@ export function PageFooter({ note, page, total }: { note: string; page: number; 
 const footerNote = t("uniconnect · 협찬 성과 리포트 · 행사 측정 데이터로 자동 생성했어요.")
 
 
-// Two A4 pages (794×1123 px) of the event's performance report.
+// 행사 성과 리포트의 A4 두 페이지(794×1123 px).
 export function ReportDocument({
   report,
   metrics,
@@ -99,7 +97,7 @@ export function ReportDocument({
 }: {
   report: Report
   metrics: Metrics
-  // Recent participation records, newest first.
+  // 최근 참여 기록. 최신순.
   entries: MetricEntry[]
   author: string
 }) {
@@ -133,7 +131,7 @@ export function ReportDocument({
     (best, hour) => (hour.scans > best.scans ? hour : best),
     report.hourlyScans[0] ?? { date: report.eventDate, hour: 0, scans: 0 },
   )
-  // An event over several days labels each hour with its day.
+  // 여러 날에 걸친 행사는 시간마다 날짜를 붙인다.
   const severalDays = new Set(report.hourlyScans.map((hour) => hour.date)).size > 1
   const hourLabel = (hour: { date: string; hour: number }) =>
     severalDays
@@ -367,7 +365,7 @@ export function ReportDocument({
   )
 }
 
-// One survey answer's shares as bars, the largest first.
+// 설문 답 하나의 비율을 막대로. 큰 순서.
 function Distribution({ title, counts }: { title: string; counts?: Record<string, number> }) {
   const rows = shares(counts)
   return (
@@ -392,9 +390,8 @@ function Distribution({ title, counts }: { title: string; counts?: Record<string
   )
 }
 
-// Page 3, for the students themselves: who came (turnout down the funnel,
-// the survey's years, fields and genders against who was expected) and
-// what to change for the next event.
+// 학생 자신을 위한 3페이지: 누가 왔는지(퍼널에 따른 참석, 예상한 사람과 견준
+// 설문의 학년, 전공, 성별)와 다음 행사에서 바꿀 것.
 function StudentPage({ report, metrics, author }: { report: Report; metrics: Metrics; author: string }) {
   const insight = studentInsights(report, metrics)
   const expected = report.makeup

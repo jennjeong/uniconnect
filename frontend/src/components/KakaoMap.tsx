@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { t } from "../i18n"
 
-// The parts of Kakao's Maps SDK this map uses.
+// 이 지도가 쓰는 Kakao Maps SDK의 부분.
 type LatLng = object
 type KakaoOverlay = { setMap(map: KakaoMapObject | null): void }
 type KakaoMapObject = { setBounds(bounds: object, ...padding: number[]): void; relayout(): void }
@@ -21,9 +21,9 @@ declare global {
 
 let loading: Promise<KakaoMaps> | undefined
 
-// Adds Kakao's SDK once per page (autoload off, so it loads when asked). The
-// SDK fetches the rest of itself and only then calls back, so a part that never
-// arrives (a blocked script) counts as a failure after loadTimeoutMs.
+// Kakao SDK를 페이지당 한 번만 붙인다 (autoload를 꺼서 요청할 때 불러온다).
+// SDK는 나머지를 스스로 내려받은 뒤에야 콜백을 부르므로, 끝내 도착하지 않는
+// 부분(막힌 스크립트)은 loadTimeoutMs가 지나면 실패로 센다.
 const loadTimeoutMs = 10_000
 
 function loadKakao(key: string) {
@@ -46,8 +46,8 @@ function loadKakao(key: string) {
   return loading
 }
 
-// Moves the picked shop's name label sideways, or under its pin, so it
-// stays inside the map near an edge.
+// 고른 가게의 이름표를 옆이나 핀 아래로 옮겨, 지도 가장자리 근처에서도 지도
+// 안에 머물게 한다.
 function keepInside(name: HTMLElement, box: HTMLElement | null) {
   if (!box) return
   const edge = 8
@@ -59,15 +59,14 @@ function keepInside(name: HTMLElement, box: HTMLElement | null) {
   name.classList.toggle("below", label.top < area.top + edge)
 }
 
-// One mark on the map: where it is, its name, the classes that color it
-// (place-dot's states), what a screen reader hears, and a short line under
-// the name once it is picked.
+// 지도 위의 마크 하나. 위치, 이름, 색을 정하는 클래스(place-dot의 상태), 스크린
+// 리더가 읽는 내용, 고르면 이름 아래에 뜨는 짧은 줄을 가진다.
 export type MapPin = { id: string; name: string; lat: number; lng: number; tone: string; label: string; detail?: string }
 
-// Kakao's map as the ground, with uniconnect's own marks on it: the center's
-// pin (a campus or a store) and each pin to press, colored and named as on the
-// drawing. The points are only drawn, never kept. When the SDK can't load,
-// onFail lets the caller draw the sketch instead.
+// Kakao 지도를 바탕으로 깔고 그 위에 uniconnect 자체의 마크를 얹는다. 가운데
+// 핀(캠퍼스나 매장)과 누를 수 있는 각 핀이며, 스케치와 같은 색과 이름으로 보여
+// 준다. 좌표는 화면에 그리기만 하고 저장하지 않는다. SDK를 불러올 수 없으면
+// onFail로 호출한 쪽이 스케치를 대신 그린다.
 export function KakaoMap({
   appKey,
   centerName,
@@ -114,7 +113,7 @@ export function KakaoMap({
     const mark = document.createElement("span")
     mark.className = "kakao-campus"
     mark.textContent = centerName
-    // Under the pins, so one beside the center stays in reach.
+    // 핀들 아래에 두어, 중심 옆에 있는 핀도 누를 수 있게 한다.
     const overlays = [new maps.CustomOverlay({ position: home, content: mark, yAnchor: 1, zIndex: 0 })]
     let name: HTMLElement | undefined
     for (const pin of pins) {
@@ -138,11 +137,11 @@ export function KakaoMap({
         }
         dot.append(name)
       }
-      // The pin's tip on the spot.
+      // 핀의 뾰족한 끝이 그 지점에 오도록 한다.
       overlays.push(new maps.CustomOverlay({ position, content: dot, yAnchor: 1, zIndex: selected === pin.id ? 2 : 1, clickable: true }))
     }
     for (const overlay of overlays) overlay.setMap(map)
-    // Measured once Kakao has placed the overlays.
+    // Kakao가 오버레이를 배치한 뒤에 한 번 측정한다.
     const picked = name
     const frame = picked ? requestAnimationFrame(() => keepInside(picked, box.current)) : 0
     return () => {
@@ -151,7 +150,8 @@ export function KakaoMap({
     }
   }, [ready, centerName, center.lat, center.lng, pins, selected])
 
-  // Fit the center and every pin once they first arrive or change, not on each pick.
+  // 중심과 모든 핀이 처음 도착하거나 바뀔 때 맞추고, 핀을 고를 때마다 맞추지는
+  // 않는다.
   useEffect(() => {
     if (!ready || pins.length === 0) return
     const { maps, map } = ready

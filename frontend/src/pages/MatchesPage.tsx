@@ -48,7 +48,7 @@ const tabIntro: Record<Tab, { title: string; caption: string }> = {
   },
 }
 
-// Brands for student groups to propose to, by tab.
+// 학생단체가 제안할 브랜드. 탭별.
 export function MatchesPage({
   matches,
   brands,
@@ -65,32 +65,32 @@ export function MatchesPage({
   onLogin,
   onSignup,
 }: {
-  // Top picks for the group's events.
+  // 단체의 행사에 대한 추천 상위.
   matches: Match[]
-  // Every brand in the catalog: brands that signed up, for a member.
+  // 카탈로그의 모든 브랜드. 회원에게는 가입한 브랜드만.
   brands: Match[]
-  // The catalog has arrived, so an empty one is empty.
+  // 카탈로그가 도착했으므로 비어 있으면 정말 비어 있다.
   loaded: boolean
   proposals: string[]
   statuses: Partial<Record<string, RequestStatus>>
-  // The brands the account saved (찜), newest first, and the heart on each card.
+  // 계정이 저장한 브랜드(찜)를 최신순으로, 그리고 각 카드의 하트.
   saved: string[]
   onToggleSave: (match: Match) => void
   onOpenDetail: (match: Match) => void
   onPropose: (match: Match) => void
   onCancelProposal: (match: Match) => void
-  // Invites a shop from 가까운 순 (true once the invitation exists).
+  // 가까운 순에서 가게를 초대한다(초대가 만들어지면 true).
   onInvite: (place: NearbyPlace) => Promise<boolean>
-  // Logged out: 가까운 순 shows made-up shops around the demo group's campus,
-  // marked as an example.
+  // 로그아웃 상태: 가까운 순은 데모 단체의 캠퍼스 둘레에 꾸며 낸 가게를 예시로
+  // 표시해 보여 준다.
   visitor: boolean
   onLogin: () => void
   onSignup: () => void
 }) {
   const [tab, setTab] = useState<Tab>("전체")
-  // 비교: the cards laid side by side (components/CompareTray.tsx).
+  // 비교: 카드를 나란히 놓는다(components/CompareTray.tsx).
   const compare = useCompare()
-  // Cards slide in from the side the picked tab or chip lies on.
+  // 카드는 고른 탭이나 칩이 있는 쪽에서 미끄러져 들어온다.
   const [direction, setDirection] = useState<"forward" | "back">("forward")
   const pickTab = (next: Tab) => {
     setDirection(tabs.indexOf(next) >= tabs.indexOf(tab) ? "forward" : "back")
@@ -100,9 +100,9 @@ export function MatchesPage({
     brands.some((brand) => brand.industry === industry),
   )
   const [industry, setIndustry] = useState<Industry>("cafe")
-  // Words to find, kept across the brand tabs.
+  // 찾을 단어. 브랜드 탭을 바꿔도 유지한다.
   const [query, setQuery] = useState("")
-  // The cards as a list, or as dots on a map around the campus.
+  // 카드를 목록으로, 또는 캠퍼스 둘레 지도의 점으로 보여 준다.
   const [layout, setLayout] = useState<Layout>("list")
 
   const list =
@@ -119,10 +119,10 @@ export function MatchesPage({
             : brands.filter((brand) => brand.industry === industry)
   const shown = list.filter((match) => matchesQuery(match, query))
   const intro = tabIntro[tab]
-  // With no brand signed up yet, 추천 can't say it found some.
+  // 가입한 브랜드가 아직 없으면 추천은 찾았다고 말할 수 없다.
   const waiting = loaded && brands.length === 0 && tab === "추천"
 
-  // A brand's card, as the list and the map show it (`rank` on 인기).
+  // 목록과 지도가 보여 주는 브랜드의 카드(인기의 `rank`).
   const card = (match: Match, rank?: number) => (
     <WorkCard
       match={match}
@@ -195,7 +195,7 @@ export function MatchesPage({
               const order = industries.map(([item]) => item)
               setDirection(order.indexOf(value) >= order.indexOf(industry) ? "forward" : "back")
               setIndustry(value)
-              // The chip row scrolls sideways on phones; keep the pick in view.
+              // 칩 줄은 휴대폰에서 옆으로 스크롤된다. 고른 칩이 보이게 한다.
               event.currentTarget.scrollIntoView({ block: "nearest", inline: "center" })
             }}
             value={industry}
@@ -212,7 +212,8 @@ export function MatchesPage({
         {tab !== "가까운 순" && <LayoutSwitch onChange={setLayout} value={layout} />}
       </div>
 
-      {/* The nearest are real shops from Kakao, mostly not on uniconnect yet, in their own list (made-up ones for visitors). */}
+      {/* 가장 가까운 곳은 카카오의 실제 가게로 대부분 아직 uniconnect에 없고 별도 목록에
+         둔다(방문자에게는 꾸며 낸 가게). */}
       {tab === "가까운 순" ? (
         <DemoPreview
           active={visitor}

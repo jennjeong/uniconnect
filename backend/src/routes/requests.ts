@@ -12,22 +12,22 @@ import type { RequestStatus } from "../types.js"
 
 export const requestsRouter = Router()
 
-// Brand whose inbox to show: the logged-in brand, or the demo brand for
-// visitors previewing the brand side. Student accounts have no inbox.
+// 받은편지함을 보여 줄 브랜드다. 로그인한 브랜드이거나, 브랜드 쪽을 미리
+// 보는 방문자에게는 데모 브랜드다. 학생 계정에는 받은편지함이 없다.
 export function brandOwner(req: Request) {
   const database = getDatabase()
   if (req.account) return req.account.role === "브랜드" ? req.account : undefined
   return database.accounts.find((account) => account.id === database.demoAccountIds.브랜드)
 }
 
-// Proposals student groups sent to this brand, newest first, closed ones
-// as such.
+// 학생단체가 이 브랜드에 보낸 제안을 최신순으로 보여 주며, 닫힌 제안은 닫힌
+// 대로 보여 준다.
 requestsRouter.get("/", (req, res) => {
   const owner = brandOwner(req)
   const database = getDatabase()
   const requests = owner?.brandId
     ? database.requests
-        // Not from a group either side blocked.
+        // 어느 한쪽이 차단한 단체의 제안은 제외한다.
         .filter(
           (request) =>
             request.brandId === owner.brandId &&
@@ -41,11 +41,11 @@ requestsRouter.get("/", (req, res) => {
 
 const decisions: Record<string, RequestStatus> = { accept: "수락", decline: "거절" }
 
-// The brand accepts or declines one proposal.
+// 브랜드가 제안 하나를 수락하거나 거절한다.
 requestsRouter.post("/:id/:decision", async (req, res) => {
   const account = requireAccount(req)
   if (account.role !== "브랜드") throw new HttpError(403, "브랜드 회원만 제안에 답할 수 있어요.")
-  // hasOwn keeps names every object has, such as constructor, out.
+  // hasOwn으로 constructor처럼 모든 객체가 가진 이름은 걸러 낸다.
   if (!Object.hasOwn(decisions, req.params.decision)) throw new HttpError(404, "없는 API 경로예요.")
   const decision = decisions[req.params.decision]
 
@@ -59,7 +59,7 @@ requestsRouter.post("/:id/:decision", async (req, res) => {
   const status = statusOf(database, request)
   if (status === "마감") throw new HttpError(409, "행사가 끝나 마감된 제안이에요.")
   if (status !== "검토 중") throw new HttpError(409, "이미 답한 제안이에요.")
-  // An event deleted since the proposal cannot be sponsored.
+  // 제안 뒤에 삭제된 행사는 협찬할 수 없다.
   if (
     decision === "수락" &&
     request.eventId &&

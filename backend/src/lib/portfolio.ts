@@ -1,10 +1,9 @@
 import { finishedSponsorships } from "./sponsorships.js"
 import type { Account, Database } from "../types.js"
 
-// 캠퍼스 포트폴리오 (a Campus Partners brand's, lib/pro.ts): every finished
-// sponsorship together, by school, by month and by the kind of group, with
-// the best and weakest, and what a visit has cost so far for planning the
-// next budget.
+// 캠퍼스 포트폴리오(캠퍼스 파트너스 브랜드의 것, lib/pro.ts): 마친 모든
+// 협찬을 학교별, 월별, 단체 종류별로 모으고 가장 좋은 것과 가장 약한 것,
+// 지금까지 방문 한 건에 든 비용을 보여 다음 예산을 짜게 한다.
 
 const percent = (part: number, whole: number) => (whole > 0 ? Math.round((part / whole) * 1000) / 10 : 0)
 

@@ -44,8 +44,8 @@ import { reviewsRouter } from "./routes/reviews.js"
 import { savedRouter } from "./routes/saved.js"
 import { getDatabase, refreshDatabase } from "./store.js"
 
-// `loaded`: on Vercel (vercel.ts), each copy of the API reads the data on
-// its first request rather than at start.
+// `loaded`: Vercel(vercel.ts)에서는 API의 각 복사본이 시작할 때가 아니라 첫
+// 요청에서 데이터를 읽는다.
 export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   const app = express()
   app.disable("x-powered-by")
@@ -56,7 +56,7 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
     app.use((req, res, next) => {
       res.set({
         "Access-Control-Allow-Origin": origin,
-        // X-Admin-Token: the operators' screen (/admin) from that origin too.
+        // X-Admin-Token: 그 출처에서도 운영자 화면(/admin)이 동작한다.
         "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Admin-Token",
         "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
       })
@@ -68,9 +68,9 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
     })
   }
 
-  // Security headers on every answer. The page may only run this site's own
-  // scripts (and Google Analytics, and Toss Payments' window for paying),
-  // and no other site may frame it.
+  // 모든 응답에 보안 헤더를 붙인다. 페이지는 이 사이트 자체의 스크립트(와
+  // Google Analytics, 결제용 Toss Payments 창)만 실행할 수 있고, 다른 사이트는
+  // 페이지를 프레임에 넣을 수 없다.
   app.use((_req, res, next) => {
     res.set({
       "Content-Security-Policy": [
@@ -96,26 +96,26 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
     next()
   })
 
-  // A file sent in a conversation (a PDF up to 2 MB, as base64) needs a
-  // larger body than the rest; it is parsed here first.
+  // 대화에서 보낸 파일(base64로 된 2MB 이하의 PDF)은 나머지보다 큰 본문이
+  // 필요하므로 여기서 먼저 파싱한다.
   app.use("/api/conversations/:id/attachments", express.json({ limit: "3mb" }))
-  // So does an event's plan (a PDF up to 2 MB, routes/events.ts).
+  // 행사의 기획안도 마찬가지다(2MB 이하의 PDF, routes/events.ts).
   app.use("/api/events/:id/plan", express.json({ limit: "3mb" }))
-  // And the document a sign-up waiting for the operators shows (lib/applications.ts).
+  // 운영자를 기다리는 가입이 보이는 서류도 마찬가지다(lib/applications.ts).
   app.use("/api/auth/signup", express.json({ limit: "3mb" }))
   app.use("/api/team/join", express.json({ limit: "3mb" }))
-  // Room for a resized logo (routes/profile.ts caps one at about 100KB).
+  // 줄인 로고가 들어갈 자리다(routes/profile.ts는 약 100KB로 제한한다).
   app.use(express.json({ limit: "300kb" }))
-  // The data is in, and as other copies of the API left it (store.ts), before
-  // the session or anything else is read.
+  // 세션이나 다른 것을 읽기 전에, 데이터가 들어와 있고 API의 다른 복사본이
+  // 남긴 상태여야 한다(store.ts).
   app.use("/api", async (_req, _res, next) => {
     await loaded?.()
     await refreshDatabase()
     next()
   })
   app.use(readSession)
-  // Maintenance (set from the console): the site keeps answering reads,
-  // and turns writes away, except the operators' and logging in.
+  // 점검(콘솔에서 설정)이면 사이트는 읽기에는 계속 답하고, 운영자의 쓰기와
+  // 로그인을 빼고 쓰기는 돌려보낸다.
   app.use("/api", (req, _res, next) => {
     const maintenance = getDatabase().settings?.maintenance
     const open = req.method === "GET" || req.path.startsWith("/admin") || req.path.startsWith("/auth/login") || req.path.startsWith("/errors")
@@ -165,25 +165,23 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
     throw new HttpError(404, "없는 API 경로예요.")
   })
 
-  // After `npm run build`, the same server also serves the built frontend.
+  // `npm run build` 뒤에는 같은 서버가 빌드한 프론트엔드도 서빙한다.
   if (existsSync(config.frontendDist)) {
     app.use(express.static(config.frontendDist))
-    // Every screen loads the same page; addresses with no screen answer 404
-    // (the page then shows its 404 screen).
+    // 모든 화면이 같은 페이지를 불러온다. 화면이 없는 주소는 404로 답한다
+    // (그러면 페이지가 404 화면을 보여 준다).
     app.use((req, res, next) => {
       if (req.method !== "GET") return next()
       res.status(isAppPath(req.path) ? 200 : 404).sendFile(path.join(config.frontendDist, "index.html"))
     })
   }
 
-  // Messages are written in Korean and answered in the request's language
-  // (lib/i18n.ts).
+  // 메시지는 한국어로 쓰고 요청의 언어로 답한다(lib/i18n.ts).
   const handleError: ErrorRequestHandler = (error, req, res, _next) => {
     const say = (status: number, message: string) =>
       res.status(status).json({ error: translate(message, langOf(req)) })
-    // A failure on the server's side is kept for the operators (lib/errorLog.ts):
-    // the request's method and path, the message, and for an unexpected
-    // error the first frames of its stack.
+    // 서버 쪽 실패는 운영자를 위해 남긴다(lib/errorLog.ts). 요청의 메서드와
+    // 경로, 메시지, 예상 밖의 오류라면 스택의 처음 몇 줄을 담는다.
     const keep = (message: string, stack?: string) =>
       void recordError({
         source: "server",
@@ -201,9 +199,9 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
       say(400, "요청 형식이 올바르지 않아요.")
       return
     }
-    // The request's own fault, as Express and the body parser mark it: a
-    // body over the size limit, an address that cannot be decoded and the
-    // like. Answered as such, not logged as a server error.
+    // Express와 본문 파서가 표시한 요청 자체의 잘못이다. 크기 제한을 넘은 본문,
+    // 해독할 수 없는 주소 같은 것이며, 그렇게 답하고 서버 오류로는 기록하지
+    // 않는다.
     const status = typeof error?.status === "number" ? error.status : typeof error?.statusCode === "number" ? error.statusCode : 0
     if (status >= 400 && status < 500) {
       say(status, status === 413 ? "보낸 내용이 너무 커요. 내용을 줄여서 다시 보내 주세요." : "요청 형식이 올바르지 않아요.")

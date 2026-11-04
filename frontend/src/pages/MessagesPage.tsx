@@ -4,7 +4,7 @@ import { t } from "../i18n"
 import { formatDateTime } from "../lib/date"
 import type { Conversation } from "../types"
 
-// The last message in a line: its text, or the kind of file it sent.
+// 한 줄로 보이는 마지막 메시지: 그 글, 또는 보낸 파일의 종류.
 const previewOf = (last: NonNullable<Conversation["lastMessage"]>) =>
   last.attachment === "image"
     ? t("사진")
@@ -14,8 +14,7 @@ const previewOf = (last: NonNullable<Conversation["lastMessage"]>) =>
         ? t("미팅 제안")
         : last.text
 
-// Conversations with brands (for student groups) or groups (for brands),
-// latest first.
+// 브랜드(학생단체용)나 단체(브랜드용)와의 대화. 최신순.
 export function MessagesPage({
   conversations,
   loggedIn,

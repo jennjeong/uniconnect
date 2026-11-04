@@ -7,16 +7,15 @@ import { t } from "../i18n"
 import { formatFullDate } from "../lib/date"
 import type { AgreementSummary, ChatSide } from "../types"
 
-// Where an agreement stands for the side looking.
+// 보는 쪽에서 본 계약서의 진행 상태.
 export function agreementState(confirmed: Partial<Record<ChatSide, string>>, side: ChatSide) {
   if (confirmed.group && confirmed.brand) return { label: "양쪽 확인", className: "done" }
   if (confirmed[side]) return { label: "상대 확인 기다리는 중", className: "waiting" }
   return { label: "내 확인 필요", className: "todo" }
 }
 
-// Every sponsorship the account is in (accepted proposals both ways), each
-// with how far its agreement is: the confirmations, the items done and the
-// proof so far.
+// 계정이 참여한 모든 협찬(양방향으로 수락된 제안). 각각 계약서가 어디까지
+// 왔는지(확인, 완료한 항목, 지금까지의 증빙)를 보여 준다.
 export function AgreementsPage({
   loggedIn,
   onBack,

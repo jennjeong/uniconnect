@@ -3,8 +3,8 @@ import { expect, test, type Page } from "@playwright/test"
 
 import { signUpMember } from "./members"
 
-// Automatic accessibility checks (WCAG 2.1 A and AA) on the main screens.
-// Critical and serious problems fail the run; the rest are printed.
+// 주요 화면의 자동 접근성 검사(WCAG 2.1 A와 AA)다. 치명적이거나 심각한
+// 문제는 실행을 실패시키고, 나머지는 출력만 한다.
 const pages = ["/", "/dashboard", "/matches", "/groups", "/faq", "/terms", "/privacy", "/admin", "/explore", "/events", "/check-in/20261012", "/check-in/20261012/staff", "/check-in/20261012/group", "/no-such-page"]
 
 async function expectNoBlockingProblems(page: Page, path: string, open?: () => Promise<void>) {
@@ -25,8 +25,8 @@ for (const path of pages) {
   })
 }
 
-// What differs per account (the 가까운 순 tabs) shows a visitor examples in
-// full, under a note, once its cards have arrived.
+// 계정마다 다른 부분(가까운 순 탭)은 카드가 도착한 뒤에 방문자에게 안내문
+// 아래로 예시를 전부 보여 준다.
 for (const path of ["/matches", "/groups"]) {
   test(`${path}'s 가까운 순 shows a visitor examples without critical or serious accessibility problems`, async ({ page }) => {
     await expectNoBlockingProblems(page, path, async () => {
@@ -40,8 +40,8 @@ for (const path of ["/matches", "/groups"]) {
   })
 }
 
-// An invitation's page needs a code, which a group that signed up makes
-// first (the demo group can't invite real shops).
+// 초대 페이지는 코드가 있어야 하는데, 가입한 단체가 먼저 만들어야 한다(데모
+// 단체는 실제 매장을 초대할 수 없다).
 test("an invitation's page has no critical or serious accessibility problems", async ({ page, request }) => {
   const { headers } = await signUpMember(request, "학생단체", "e2e-a11y-inviter@syu.ac.kr", "접근성 동아리")
   const made = await request.post("/api/invites", { data: { placeId: "87654321" }, headers })
@@ -49,8 +49,8 @@ test("an invitation's page has no critical or serious accessibility problems", a
   await expectNoBlockingProblems(page, `/invite/${invite.code}`)
 })
 
-// Popups are checked open: no blocking problems, the keyboard stays inside
-// while they are open, and focus goes back to what opened them.
+// 팝업은 열어 둔 채로 검사한다. 막는 문제가 없고, 열려 있는 동안 키보드가
+// 안에 머물며, 닫으면 포커스가 연 요소로 돌아가야 한다.
 test("an open popup holds the keyboard and passes the checks", async ({ page }) => {
   await page.goto("/")
   const opener = page.getByRole("button", { name: "로그인" }).first()
@@ -72,9 +72,9 @@ test("an open popup holds the keyboard and passes the checks", async ({ page }) 
   await expect(opener).toBeFocused()
 })
 
-// The menu is taller than a phone held sideways or a screen zoomed to 400%
-// (1280×1024 shows 320×256, as WCAG's reflow asks): it starts at its first
-// page and scrolls to the rest.
+// 메뉴는 옆으로 든 폰이나 400%로 확대한 화면보다 길다(WCAG의 리플로가 요구하는
+// 대로 1280×1024는 320×256으로 보인다). 그래서 첫 페이지에서 시작해 나머지는
+// 스크롤해서 본다.
 for (const [width, height] of [
   [844, 390],
   [320, 256],
@@ -91,8 +91,8 @@ for (const [width, height] of [
   })
 }
 
-// 앱 다운로드 on the introduction opens the guide where the browser offers no
-// install dialog of its own (here the page never hears of one).
+// 소개 페이지의 앱 다운로드는 브라우저가 자체 설치 대화상자를 주지 않을 때
+// (여기서는 페이지가 그런 것을 전혀 받지 못한다) 안내를 연다.
 test("the app download guide opens from the introduction and passes the checks", async ({ page }) => {
   await page.addInitScript(() => {
     window.addEventListener("beforeinstallprompt", (event) => event.stopImmediatePropagation(), true)
@@ -111,7 +111,7 @@ test("the app download guide opens from the introduction and passes the checks",
   await expect(dialog).toBeHidden()
 })
 
-// The comparison table of two brands, open.
+// 브랜드 둘을 비교하는 표를 연 상태다.
 test("the comparison of two brands has no critical or serious accessibility problems", async ({ page }) => {
   await expectNoBlockingProblems(page, "/matches", async () => {
     await page.getByRole("tab", { name: "전체" }).click()
@@ -123,13 +123,12 @@ test("the comparison of two brands has no critical or serious accessibility prob
   })
 })
 
-// Every screen of the operators' console, once the token opens it, on a
-// wide screen and a phone.
+// 토큰으로 콘솔을 연 뒤 운영자 콘솔의 모든 화면을 넓은 화면과 폰에서 본다.
 const consoleViews = ["overview", "insights", "members", "proposals", "operations", "live", "payments", "inquiries", "reports", "content", "errors", "notices", "log", "health", "system"]
 
 for (const width of [1280, 390]) {
   test(`the operators' console screens at ${width}px have no critical or serious accessibility problems`, async ({ page }) => {
-    // Fifteen screens, each checked.
+    // 화면 열다섯 개를 각각 검사한다.
     test.setTimeout(240_000)
     await page.setViewportSize({ width, height: 900 })
     await page.goto("/admin")
@@ -142,7 +141,7 @@ for (const width of [1280, 390]) {
         await expect(page.getByText("불러오고 있어요…")).toHaveCount(0)
       })
     }
-    // The notice's period calendar, open.
+    // 공지의 기간 캘린더를 연 상태다.
     await expectNoBlockingProblems(page, "/admin?view=notices", async () => {
       await page.getByRole("button", { name: /게시 기간/ }).click()
       await expect(page.getByRole("dialog", { name: "게시 기간 고르기" })).toBeVisible()

@@ -12,11 +12,10 @@ import { RevealTitle } from "./RevealText"
 
 export type HeroStat = { value: string; label: string }
 
-// A dashboard's opening screen, and the introduction's: Stride's hero from
-// getlayers.ai (the copy over a full-bleed scene that insets into a rounded
-// card as the page scrolls on) over getlayers.ai's Antipode gradient — a
-// deep blue mass and a silver one leaning against each other, brightest
-// where they touch.
+// 대시보드와 소개 페이지의 첫 화면. getlayers.ai의 Stride 히어로(화면을 가득
+// 채운 장면 위에 카피를 얹고, 스크롤하면 둥근 카드로 줄어든다)를 getlayers.ai의
+// Antipode 그라디언트 위에 올린 것이다. 짙은 파랑 덩어리와 은색 덩어리가 서로
+// 기대어 있고 맞닿은 곳이 가장 밝다.
 export function MeetingHero({
   eyebrow,
   lines,
@@ -29,18 +28,18 @@ export function MeetingHero({
   onInstall,
 }: {
   eyebrow: string
-  // The headline's lines, short enough to stay on the dark side; the
-  // second is in the point blue.
+  // 헤드라인의 줄들. 어두운 쪽에 머물 만큼 짧게 하고, 둘째 줄은 포인트 파랑으로
+  // 쓴다.
   lines: string[]
-  // The figures under the headline, or, on the introduction, a line of copy.
+  // 헤드라인 아래의 수치들. 소개 페이지에서는 카피 한 줄.
   stats?: HeroStat[]
   lead?: string
   insight: string
   detail: string
   primary: { label: string; onClick: () => void }
-  // A text link beside the main action, when the page has one.
+  // 페이지에 있다면 주요 동작 옆에 두는 텍스트 링크.
   secondary?: { label: string; onClick: () => void }
-  // 앱 다운로드, for the site opened in a browser (none inside the app).
+  // 앱 다운로드. 브라우저에서 연 사이트를 위한 것이다 (앱 안에서는 없다).
   onInstall?: () => void
 }) {
   const sectionRef = useRef<HTMLElement>(null)

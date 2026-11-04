@@ -4,9 +4,9 @@ import { api } from "../api"
 import { Icon } from "./Icon"
 import { SearchClear } from "./SearchClear"
 
-// The search box above a catalog: a magnifier and the words to find
-// (lib/search.ts matches them). Once typing stops for a moment, the words
-// are counted for the operators, without who typed them.
+// 카탈로그 위의 검색창. 돋보기 아이콘과 찾을 단어로 이루어진다 (lib/search.ts가
+// 단어를 맞춘다). 입력이 잠시 멈추면 단어를 운영진용으로 센다. 입력한 사람은
+// 기록하지 않는다.
 export function CatalogSearch({
   value,
   label,
@@ -14,7 +14,7 @@ export function CatalogSearch({
   onChange,
 }: {
   value: string
-  // The box's accessible name.
+  // 검색창의 접근성 이름.
   label: string
   placeholder: string
   onChange: (value: string) => void

@@ -8,9 +8,8 @@ import { PasswordRules } from "../components/PasswordRules"
 import { t } from "../i18n"
 import { passwordProblem } from "../lib/password"
 
-// Joining an account one was invited to run (from the login popup's
-// 초대받았나요?): the email the invitation went to, its code, a password of
-// one's own and proof of employment, which the operators check first.
+// 초대받은 계정에 합류한다(로그인 팝업의 초대받았나요?에서). 초대가 간 이메일,
+// 코드, 본인 비밀번호, 재직 증빙을 받고 운영자가 먼저 확인한다.
 export function JoinTeamModal({
   onClose,
   onJoined,

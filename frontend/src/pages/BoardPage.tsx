@@ -10,9 +10,8 @@ import { t } from "../i18n"
 import { dDayLabel, formatDay, formatPeriod } from "../lib/date"
 import type { BoardPost, Role } from "../types"
 
-// One post on the board: who posted it, its title, a group's event, the kinds
-// of sponsorship, and its deadline (or that it closed), with the viewer's
-// application when there is one.
+// 게시판의 글 하나: 올린 사람, 제목, 단체의 행사, 협찬의 종류, 마감(또는
+// 마감됨). 보는 사람이 지원했다면 그 지원도 보여 준다.
 export function PostCard({ post, onOpen }: { post: BoardPost; onOpen: () => void }) {
   return (
     <article className={post.open ? "post-card" : "post-card closed"}>
@@ -55,10 +54,9 @@ export function PostCard({ post, onOpen }: { post: BoardPost; onOpen: () => void
 
 type Tab = "posts" | "mine"
 
-// The recruitment board (/board): the other side's open posts, the soonest
-// deadline first, and the account's own. Brands post what events they look
-// for, student groups what sponsors their events need; applying sends a
-// proposal (PostPage). Visitors read the examples of the side they preview.
+// 모집 게시판(/board): 상대편의 열린 글(마감이 빠른 순)과 계정 자신의 글.
+// 브랜드는 찾는 행사를, 학생단체는 행사에 필요한 스폰서를 올리고, 지원하면
+// 제안이 간다(PostPage). 방문자는 미리 보는 쪽의 예시를 읽는다.
 export function BoardPage({
   role,
   visitor,
@@ -68,7 +66,7 @@ export function BoardPage({
 }: {
   role: Role
   visitor: boolean
-  // Moves on when a post was written, so the lists load again.
+  // 글을 쓰면 올라가서 목록을 다시 불러온다.
   reload: number
   onOpen: (id: string) => void
   onWrite: () => void

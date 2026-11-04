@@ -6,9 +6,9 @@ import { useDismiss } from "../hooks/useDismiss"
 import { t } from "../i18n"
 import type { NotificationItem } from "../lib/notifications"
 
-// Drops down under the bell in the top bar and slides back up when closed.
-// Escape or a press anywhere outside the panel and its bell closes it.
-// Unread notices carry a dot on their icon; 모두 읽음 reads them all.
+// 상단 바의 종 아래로 내려오고, 닫으면 다시 올라간다. Escape나 패널과 종 바깥을
+// 누르면 닫는다. 읽지 않은 알림은 아이콘에 점이 붙고, 모두 읽음으로 전부 읽음
+// 처리한다.
 export function NotificationsPanel({
   items,
   unread,
@@ -19,7 +19,7 @@ export function NotificationsPanel({
 }: {
   items: NotificationItem[]
   unread: (item: NotificationItem) => boolean
-  // The bell, which toggles the panel itself.
+  // 종 모양 버튼. 패널은 이 버튼이 스스로 토글한다.
   toggleRef: RefObject<HTMLButtonElement | null>
   onClose: () => void
   onOpen: (item: NotificationItem) => void

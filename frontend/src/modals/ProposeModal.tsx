@@ -6,20 +6,19 @@ import { t } from "../i18n"
 import { formatPeriod, todayIso } from "../lib/date"
 import type { EventItem, Match, ProposalTemplate, Role } from "../types"
 
-// As the server takes it (routes/proposals.ts, routes/auth.ts).
+// 서버가 받는 형식(routes/proposals.ts, routes/auth.ts).
 const maxMessage = 300
 const maxTemplates = 10
 
-// A saved message as it goes out: {상대} becomes the partner's name and
-// {행사} the event's.
+// 나가는 대로의 저장된 메시지: {상대}는 파트너의 이름, {행사}는 행사의 이름이
+// 된다.
 export const fillTemplate = (text: string, partner: string, event: string) =>
   text.split("{상대}").join(partner).split("{행사}").join(event)
 
-// 제안하기: which of the account's own events or campaigns the proposal is
-// about (the nearest at first) and a note for the partner, sent as written
-// or, left empty, with the usual greeting. The server answers when the
-// partner has an inbox and the account no event to propose; what was
-// written stays then.
+// 제안하기: 제안이 다루는 계정 자신의 행사나 캠페인(가까운 것이 먼저)과
+// 파트너에게 보낼 메모. 쓴 대로 보내거나 비우면 기본 인사와 함께 보낸다.
+// 파트너에게 받은함이 있는데 계정에 제안할 행사가 없으면 서버가 답하고, 그때는
+// 쓴 내용이 남는다.
 export function ProposeModal({
   match,
   targets,
@@ -32,18 +31,18 @@ export function ProposeModal({
   onCreate,
 }: {
   match: Match
-  // 일괄 제안: every group the one offer goes to (match is the first); the
-  // message's {상대} is filled with each one's name as it goes out.
+  // 일괄 제안: 제안 하나가 가는 모든 단체(match가 첫 번째). 메시지의 {상대}는
+  // 나갈 때 각 단체의 이름으로 채워진다.
   targets?: Match[]
   role: Role
   events: EventItem[]
   // The account's saved messages (제안 문구 템플릿).
   templates: ProposalTemplate[]
-  // Saves the whole list; absent for the shared demo accounts.
+  // 목록 전체를 저장한다. 공용 데모 계정에는 없다.
   onSaveTemplates?: (templates: ProposalTemplate[]) => Promise<void>
   onClose: () => void
   onSend: (draft: { eventId?: string; message: string }) => Promise<void>
-  // Registers an event first, when there is none to propose.
+  // 제안할 행사가 없으면 먼저 행사를 등록한다.
   onCreate: () => void
 }) {
   const students = role === "학생단체"
@@ -55,8 +54,7 @@ export function ProposeModal({
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
-  // The template picked in the list, and the name a new one is saved under
-  // while that box is open.
+  // 목록에서 고른 템플릿과, 그 칸이 열려 있는 동안 새 템플릿으로 저장할 이름.
   const [picked, setPicked] = useState("")
   const [naming, setNaming] = useState<string | null>(null)
   const eventName = upcoming.find((event) => event.id === eventId)?.name ?? ""
@@ -190,8 +188,8 @@ export function ProposeModal({
               className="cancel-button"
               disabled={!naming.trim()}
               onClick={async () => {
-                // Saved with the partner's and event's names put back as
-                // blanks, so the next proposal fills its own.
+                // 파트너와 행사의 이름은 빈칸으로 되돌려 저장한다. 다음 제안이
+                // 제 이름을 채우도록 하기 위해서다.
                 let text = message.trim()
                 if (!targets && match.name) text = text.split(match.name).join("{상대}")
                 if (eventName) text = text.split(eventName).join("{행사}")

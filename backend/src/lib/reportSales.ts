@@ -2,8 +2,8 @@ import { prices, sell } from "./billing.js"
 import { HttpError } from "./errors.js"
 import { reportOpen, sponsorshipFor } from "./premiumReport.js"
 
-// The detailed report as a product (lib/billing.ts): one sponsorship's, from
-// its event's day; paying unlocks it for good.
+// 상품으로서의 상세 리포트(lib/billing.ts): 협찬 하나의 것이며 행사 날부터
+// 살 수 있고, 결제하면 영구히 열린다.
 sell("report", {
   quote(database, account, targetId) {
     const found = sponsorshipFor(database, account, targetId)

@@ -42,8 +42,9 @@ export type IconName =
   | "lock"
   | "globe"
 
-// Lucide's icons (ISC licence) from Iconify, https://icon-sets.iconify.design/lucide/,
-// kept here so no page calls Iconify's servers. Stroke and caps come from .icon.
+// Iconify의 Lucide 아이콘 (ISC 라이선스),
+// https://icon-sets.iconify.design/lucide/. 어느 페이지도 Iconify 서버를 부르지
+// 않도록 여기에 두었다. 선 굵기와 끝 모양은 .icon에서 정한다.
 const icons: Record<IconName, ReactNode> = {
   home: (
     <>
@@ -96,7 +97,7 @@ const icons: Record<IconName, ReactNode> = {
       <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11" />
     </>
   ),
-  // Lucide has no won sign, so this one is Tabler's (MIT).
+  // Lucide에는 원화 기호가 없어서 Tabler(MIT)의 것을 쓴다.
   won: <path d="m4 6l3.245 11.358a.85.85 0 0 0 1.624.035L12 8l3.131 9.393a.85.85 0 0 0 1.624-.035L20 6m1 4H3m18 4H3" />,
   chat: <path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092a10 10 0 1 0-4.777-4.719" />,
   send: <path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11zm7.318-19.539l-10.94 10.939" />,
@@ -116,7 +117,7 @@ const icons: Record<IconName, ReactNode> = {
   ),
   menu: <path d="M4 5h16M4 12h16M4 19h16" />,
   arrowUpRight: <path d="M7 7h10v10M7 17L17 7" />,
-  // Filled, as the brand mark on dark panels.
+  // 어두운 패널 위의 브랜드 마크처럼 속이 채워진 형태.
   mark: <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" fill="currentColor" />,
   link: (
     <>
@@ -176,7 +177,7 @@ const icons: Record<IconName, ReactNode> = {
       <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151a1 1 0 0 1 0-.696a10.75 10.75 0 0 1 4.446-5.143M2 2l20 20" />
     </>
   ),
-  // 찜: filled once saved (CSS).
+  // 찜: 저장하면 채워진다 (CSS).
   heart: <path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676a.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5" />,
   user: (
     <>

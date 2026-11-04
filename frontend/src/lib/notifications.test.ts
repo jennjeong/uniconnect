@@ -75,7 +75,7 @@ describe("read marks", () => {
     const read = new Set(readParts([shown], new Set(), [shown]))
     expect(isUnread(shown, read)).toBe(false)
     expect(isUnread(notices(["a", "b", "c"])[0], read)).toBe(true)
-    // One fewer is not news.
+    // 하나 줄어든 것은 새 소식이 아니다.
     expect(isUnread(notices(["a"])[0], read)).toBe(false)
   })
 

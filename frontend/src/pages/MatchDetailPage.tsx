@@ -23,14 +23,13 @@ import type { Match, RequestStatus, Review } from "../types"
 
 type Tab = "match" | "reviews"
 
-// One brand (for student groups) or student group (for brands) as a
-// profile: a card with a cover on getlayers.ai's Antipode gradient (two
-// masses of light meeting — the two sides of a sponsorship), its mark over
-// the cover's edge, who they are, where, and the ways to get in touch; then
-// two tabs. 매칭 정보 has the match and the other figure that says most on a
-// tinted card, each part of the match as a bar, then the introduction, SNS,
-// facts and portfolio; 파트너 후기 has the reviews (ReviewsSection). On wide
-// screens the card stays beside the tabs as they scroll.
+// 프로필로 보는 브랜드(학생단체용) 또는 학생단체(브랜드용) 하나: getlayers.ai의
+// Antipode 그라디언트 표지(협찬의 두 쪽처럼 만나는 두 빛 덩어리)가 있는 카드에
+// 표지 가장자리를 넘는 마크, 누구인지, 어디인지, 연락 방법. 이어서 탭 두 개.
+// 매칭 정보는 매칭과 가장 많은 것을 말해 주는 다른 수치를 색을 입힌 카드로 보여
+// 주고, 매칭의 각 부분을 막대로, 이어서 소개, SNS, 기본 정보, 포트폴리오를 보여
+// 준다. 파트너 후기는 후기를 보여 준다(ReviewsSection). 넓은 화면에서는 탭이
+// 스크롤되어도 카드가 그 옆에 남는다.
 export function MatchDetailPage({
   match,
   kind,
@@ -51,26 +50,26 @@ export function MatchDetailPage({
 }: {
   match: Match
   kind: "brand" | "group"
-  // Whether a proposal was already sent, and the answer if there is one.
+  // 제안을 이미 보냈는지와, 있다면 그 답.
   done: boolean
   status?: RequestStatus
   onBack: () => void
-  // Opens the conversation with this brand or group.
+  // 이 브랜드나 단체와의 대화를 연다.
   onChat: () => void
   onPropose: () => void
   onCancel: () => void
-  // 찜: whether the account saved it, and the heart that saves or unsaves it.
+  // 찜: 계정이 저장했는지 여부와, 저장하거나 저장을 푸는 하트.
   saved: boolean
   onToggleSave: () => void
-  // Members (not the shared demo accounts) can report or block the account
-  // behind the listing, and report its reviews.
+  // 회원(공용 데모 계정 제외)은 리스팅의 계정을 신고하거나 차단하고 그 후기를
+  // 신고할 수 있다.
   onReport?: () => void
   onBlock?: () => void
   onReportReview?: (review: Review) => void
   onReportReply?: (review: Review) => void
-  // A group's next event page.
+  // 단체의 다음 행사 페이지.
   onOpenEvent?: (eventId: string) => void
-  // The account browsing, for the match beam: its name and mark.
+  // 매치 빔을 위한, 둘러보는 계정의 이름과 마크.
   viewer: { name: string; mark: Pick<Match, "industry" | "logo"> }
 }) {
   const [tab, setTab] = useState<Tab>("match")
@@ -99,8 +98,8 @@ export function MatchDetailPage({
     />
   )
 
-  // Beside the match: a group's expected audience or a brand's
-  // sponsorships this semester, else how far it is.
+  // 매칭 옆에 단체의 예상 방문객이나 브랜드의 이번 학기 협찬을, 없으면 얼마나
+  // 먼지를 보여 준다.
   const nearby: ProfileFigure | undefined = distance
     ? { value: distance, label: t("거리"), note: group ? t("매장에서 학교까지") : t("학교에서 매장까지") }
     : undefined

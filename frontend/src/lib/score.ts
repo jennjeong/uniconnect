@@ -1,6 +1,6 @@
-// Ring colors at a few match scores, from silver blue at 60% to the point's
-// deep blue from 96% up: the closer the match, the deeper the blue. Scores
-// in between blend their two neighbors, so every point gets its own shade.
+// 몇 가지 매칭 점수에서의 링 색: 60%의 은빛 파랑에서 96% 이상의 포인트
+// 진파랑까지. 매칭이 가까울수록 파랑이 진해진다. 그 사이 점수는 이웃한 두 색을
+// 섞어서 모든 점수가 자기 색을 갖는다.
 const stops: [number, string][] = [
   [60, "#a7b4cd"],
   [70, "#8599c4"],
@@ -16,7 +16,7 @@ const channels = (hex: string) =>
 const toHex = (rgb: number[]) =>
   `#${rgb.map((value) => Math.round(value).toString(16).padStart(2, "0")).join("")}`
 
-// WCAG contrast ratio against a white background.
+// 흰 배경에 대한 WCAG 대비율.
 function contrastWithWhite(rgb: number[]) {
   const [r, g, b] = rgb.map((value) => {
     const c = value / 255
@@ -25,8 +25,8 @@ function contrastWithWhite(rgb: number[]) {
   return 1.05 / (0.2126 * r + 0.7152 * g + 0.0722 * b + 0.05)
 }
 
-// The score's ring color, and for its number a darker shade of the same
-// color that reaches 3.6:1 on white (the numbers are large and bold).
+// 점수의 링 색과, 숫자에는 같은 색에서 흰색 위 대비 3.6:1에 이르는 더 어두운 색
+// (숫자는 크고 굵다).
 export function scoreColors(score: number) {
   const value = Math.min(Math.max(score, stops[0][0]), stops[stops.length - 1][0])
   const upper = Math.max(1, stops.findIndex(([at]) => at >= value))

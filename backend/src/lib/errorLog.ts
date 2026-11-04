@@ -8,27 +8,26 @@ import { config } from "../config.js"
 import { sendMail } from "./mailer.js"
 import { databaseSql, ensureTables } from "./sql.js"
 
-// A request the server failed, or an error a visitor's browser caught,
-// for the operators (/admin): what went wrong, where and when, with no
-// names, emails or messages in it.
+// 서버가 실패한 요청이나 방문자 브라우저가 잡은 오류를 운영자(/admin)에게
+// 보여 준다: 무엇이, 어디서, 언제 잘못됐는지. 이름, 이메일, 메시지는 담지
+// 않는다.
 export type ErrorEntry = {
   id: string
   at: string
   source: "server" | "browser"
   message: string
-  // The method and route for the server; the script, line and column for
-  // a browser.
+  // 서버는 메서드와 라우트, 브라우저는 스크립트, 줄, 열.
   where: string
-  // The page's or API's path, without its query.
+  // 페이지나 API의 경로. 쿼리는 뺀다.
   path: string
-  // The first frames of the server's stack, to find the line.
+  // 줄을 찾을 수 있도록 서버 스택의 첫 프레임들.
   stack?: string
 }
 
-// The newest ones kept.
+// 최근 것만 둔다.
 const keep = 200
-// Without another error in this long before it, a new one is news to the
-// operators; after it, they already know something is wrong.
+// 이만한 시간 전까지 다른 오류가 없었으면 새 오류는 운영자에게 새 소식이다.
+// 그 이후라면 이미 문제가 있음을 안다.
 const quietMs = 60 * 60 * 1000
 
 const errorsFile = () => path.join(path.dirname(config.dataFile), "errors.json")
@@ -41,11 +40,11 @@ async function readFileEntries(): Promise<ErrorEntry[]> {
   }
 }
 
-// Writes to the file go one at a time, so none is lost.
+// 파일 쓰기는 한 번에 하나씩 해서 잃는 것이 없게 한다.
 let fileQueue: Promise<unknown> = Promise.resolve()
 
-// The newest first, from the Postgres table when there is a database (as
-// files don't last on Vercel), else from the file beside the data.
+// 새것부터. 데이터베이스가 있으면 Postgres 테이블에서(Vercel에는 파일이
+// 남지 않는다), 없으면 데이터 옆 파일에서.
 export async function recentErrors(): Promise<ErrorEntry[]> {
   const sql = databaseSql()
   if (!sql) return (await readFileEntries()).sort((a, b) => b.at.localeCompare(a.at))
@@ -72,9 +71,9 @@ async function store(entry: ErrorEntry) {
   await fileQueue
 }
 
-// Keeps an error and, when it is the first after a quiet hour, emails the
-// operators at OPERATOR_EMAIL. Never fails or holds up the request it
-// came from; on Vercel waitUntil lets it finish after the answer.
+// 오류를 남기고, 조용한 한 시간 뒤 처음 난 오류면 OPERATOR_EMAIL로 운영자에게
+// 이메일을 보낸다. 원래 요청을 실패하게 하거나 붙잡지 않는다. Vercel에서는
+// waitUntil이 응답 뒤에도 끝까지 돌게 한다.
 export function recordError(entry: Omit<ErrorEntry, "id" | "at">) {
   const full: ErrorEntry = {
     id: randomUUID(),
@@ -112,7 +111,7 @@ export function recordError(entry: Omit<ErrorEntry, "id" | "at">) {
   return done
 }
 
-// Tests start from an empty log.
+// 테스트는 빈 로그에서 시작한다.
 export async function clearErrorLog() {
   const sql = databaseSql()
   if (sql) {

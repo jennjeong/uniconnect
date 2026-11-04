@@ -10,10 +10,9 @@ import { t } from "../i18n"
 import { dDayLabel, formatDay, formatFullDate, formatPeriod } from "../lib/date"
 import type { BoardPost, Role } from "../types"
 
-// One post (/board/<id>): what the poster looks for, by when, and who posted
-// it. The other side applies with one of its events or campaigns (a
-// proposal); the poster sees the applications, answers them in its inbox,
-// and edits, closes or deletes the post.
+// 글 하나(/board/<id>): 글쓴이가 찾는 것, 기한, 글쓴이. 상대편은 자기 행사나
+// 캠페인으로 지원하고(제안), 글쓴이는 지원을 보고 받은함에서 답하며 글을
+// 고치거나 마감하거나 지운다.
 export function PostPage({
   id,
   role,
@@ -31,16 +30,16 @@ export function PostPage({
   id: string
   role: Role
   visitor: boolean
-  // Moves on when the post was edited or applied to, so it loads again.
+  // 글을 고치거나 지원하면 올라가서 다시 불러온다.
   reload: number
   onBack: () => void
   onApply: (post: BoardPost) => void
   onEdit: (post: BoardPost) => void
   onDeleted: () => void
-  // The poster's profile, for the other side.
+  // 상대편에게 보이는 글쓴이의 프로필.
   onOpenProfile: (listingId: string) => void
   onOpenEvent: (eventId: string) => void
-  // Where the applications are answered.
+  // 지원에 답하는 곳.
   onOpenInbox: () => void
   onNotice: (message: string) => void
 }) {

@@ -15,10 +15,10 @@ import type { EventPage } from "../types"
 
 const ProposalExport = lazy(() => import("../report/ProposalExport").then((module) => ({ default: module.ProposalExport })))
 
-// As many photos as the server keeps on an event page (routes/events.ts).
+// 서버가 행사 페이지에 보관하는 최대 사진 수(routes/events.ts).
 const maxPhotos = 4
 
-// The largest plan PDF the server takes.
+// 서버가 받는 가장 큰 기획서 PDF.
 const planMaxBytes = 2 * 1024 * 1024
 
 const pdfDataUrl = (file: File) =>
@@ -31,8 +31,8 @@ const pdfDataUrl = (file: File) =>
 
 const sizeOf = (bytes: number) => (bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))}KB` : `${(bytes / 1024 / 1024).toFixed(1)}MB`)
 
-// One photo of the event, fetched with the login token (an <img> can't send
-// it) and shown from an object URL; the group can take it down.
+// 행사 사진 한 장. 로그인 토큰으로 가져와서(<img>는 토큰을 보낼 수 없다) 객체
+// URL로 보여 주며, 단체가 내릴 수 있다.
 function EventPhoto({
   eventId,
   photo,
@@ -79,10 +79,9 @@ function EventPhoto({
   )
 }
 
-// A student group's event as its page shows it (/event/<id>): when and
-// where, what it is, its photos and the sponsorship packages it offers, and
-// the group behind it. The group adds and takes down photos here, and edits
-// the rest on the registration form.
+// 페이지가 보여 주는 학생단체의 행사(/event/<id>): 일시와 장소, 내용, 사진,
+// 제공하는 협찬 패키지, 그 뒤의 단체. 단체는 여기서 사진을 올리고 내리며
+// 나머지는 등록 폼에서 고친다.
 export function EventDetailPage({
   id,
   onBack,
@@ -94,16 +93,16 @@ export function EventDetailPage({
   id: string
   onBack: () => void
   onEdit: (eventId: string) => void
-  // Opens the registration form filled from this event (행사 복제).
+  // 이 행사로 채운 등록 폼을 연다(행사 복제).
   onCopy: (eventId: string) => void
-  // The group's profile, for a brand looking (the group catalog is theirs).
+  // 보는 브랜드를 위한 단체 프로필(단체 카탈로그는 브랜드의 것이다).
   onOpenGroup?: (listingId: string) => void
   onNotice: (message: string) => void
 }) {
   const [data, setData] = useState<EventPage | null>(null)
   const [failed, setFailed] = useState("")
   const [busy, setBusy] = useState(false)
-  // True while the proposal PDF is being made.
+  // 제안서 PDF를 만드는 동안 true.
   const [exporting, setExporting] = useState(false)
 
   useEffect(() => {

@@ -23,7 +23,7 @@ describe("measurement pages", () => {
       { kind: "visit", side: "brand" },
     ]
     expect(shownKindsOf(report(defaults))).toEqual(["scans", "coupons", "visits"])
-    // Every sponsor's, once brands sponsor the event, in the methods' order.
+    // 브랜드가 행사를 협찬하면 모든 스폰서의 것을 방식의 순서대로.
     const sponsors = [
       { methods: [{ kind: "booth", side: "both" }] },
       { methods: [{ kind: "survey", side: "brand" }, { kind: "qr", side: "group" }] },

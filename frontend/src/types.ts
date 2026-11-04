@@ -1,4 +1,4 @@
-// Shapes returned by the backend API (backend/src/types.ts).
+// 백엔드 API가 돌려주는 데이터의 모양 (backend/src/types.ts).
 export type Role = "학생단체" | "브랜드"
 
 export type Industry =
@@ -13,13 +13,13 @@ export type Industry =
 
 export type SnsAccount = { platform: string; handle: string; followers?: string }
 
-// Brands: past collaborations; student groups: past events and sponsorships.
+// 브랜드는 지난 협업, 학생단체는 지난 행사와 협찬.
 export type PortfolioItem = { title: string; detail: string }
 
-// A past sponsorship or event 소개 편집's 불러오기 offers as a portfolio row.
+// 소개 편집의 불러오기가 포트폴리오 한 줄로 내놓는 지난 협찬이나 행사.
 export type HistoryItem = { id: string; date: string; title: string; detail: string }
 
-// One thing a brand offers: its kind (brandOffers) and how much of it.
+// 브랜드가 제공하는 것 하나: 종류(brandOffers)와 그 양.
 export type BrandOffer = { kind: string; detail?: string }
 
 export type Match = {
@@ -29,62 +29,62 @@ export type Match = {
   industry: Industry
   logo?: string
   offer: string
-  // A brand's offers, one row each as on its profile: a kind from
-  // brandOffers and what of it ("150장"); its offer line is made from them.
+  // 브랜드의 제공 목록. 프로필에 나오는 대로 한 줄씩이며, brandOffers의 종류와
+  // 그 분량("150장")으로 이루어진다. 제공 문구는 이것으로 만든다.
   offers?: BrandOffer[]
-  // Match for the account browsing, with the reasons that count most and
-  // each part of it as a share of its best (0 to 1).
+  // 둘러보는 계정에 맞춘 매칭. 가장 크게 작용한 이유와, 각 항목이 최고점 대비
+  // 차지하는 비율(0~1)을 담는다.
   score: number
   reasons?: string[]
   scoreParts?: { label: string; value: number }[]
   tags: string[]
-  // Sponsorships with student groups this semester (brand catalog only).
+  // 이번 학기에 학생단체와 맺은 협찬 (브랜드 카탈로그 전용).
   popularity?: number
-  // Brand catalog only: the store's address, and its coordinates once a map
-  // service has placed it.
+  // 브랜드 카탈로그 전용: 매장 주소와, 지도 서비스가 위치를 찾은 뒤의 좌표.
   location?: { address: string; lat?: number; lng?: number }
-  // Brand catalog only: the shop on Kakao Map this brand is, once it joined
-  // from a student group's invitation.
+  // 브랜드 카탈로그 전용: 학생단체의 초대로 가입한 경우, 이 브랜드에 해당하는
+  // Kakao Map의 매장.
   kakaoPlaceId?: string
-  // Its sponsorship reviews: the average stars and how many, when it has any.
+  // 협찬 후기: 평균 별점과 후기 수 (후기가 있을 때만).
   rating?: number
   reviewCount?: number
-  // Brand catalog only: its business registration was confirmed.
+  // 브랜드 카탈로그 전용: 사업자 등록이 확인됐다.
   businessVerified?: true
-  // A brand on Pro (backend lib/plan.ts).
+  // Pro 요금제를 쓰는 브랜드 (backend lib/plan.ts).
   pro?: true
-  // A running 상단 광고 (backend lib/ads.ts): first in the catalog, marked AD.
+  // 진행 중인 상단 광고 (backend lib/ads.ts): 카탈로그 맨 위에 AD 표시와 함께
+  // 나온다.
   ad?: true
-  // Km from the account browsing (its campus or store); absent when either
-  // place is unknown.
+  // 둘러보는 계정(캠퍼스 또는 매장)에서 떨어진 거리(km). 어느 한쪽 위치를
+  // 모르면 없다.
   distanceKm?: number
-  // Which way, in metres east and north of the account browsing, for the
-  // catalog map; served with distanceKm.
+  // 둘러보는 계정에서 본 방향을 동쪽·북쪽 미터로 나타낸 값. 카탈로그 지도에
+  // 쓰며 distanceKm과 함께 내려준다.
   mapOffset?: { east: number; north: number }
-  // Where it is, for pins on Kakao's map (a campus from the table, a store
-  // placed through OpenStreetMap); served with mapOffset.
+  // Kakao 지도 핀에 쓰는 위치 (캠퍼스는 표에서, 매장은 OpenStreetMap으로
+  // 찾는다). mapOffset과 함께 내려준다.
   mapPoint?: { lat: number; lng: number }
-  // Student group catalog only: school, next event (its id for its page) and
-  // its expected audience.
+  // 학생단체 카탈로그 전용: 학교, 다음 행사(행사 페이지용 id), 예상 참여 인원.
   school?: string
   eventId?: string
   eventName?: string
   eventDate?: string
-  // Its next event's kind, when the group gave one.
+  // 단체가 정했다면 다음 행사의 종류.
   eventKind?: string
   audience?: number
-  // Detail page: a short introduction, key facts, SNS and a portfolio.
+  // 상세 페이지: 짧은 소개, 주요 정보, SNS, 포트폴리오.
   intro?: string
   facts?: { label: string; value: string }[]
   sns?: SnsAccount[]
   portfolio?: PortfolioItem[]
-  // The owner's own listing only: taken out of the lists for now (내 정보).
+  // 본인 리스팅에만 있다: 당분간 목록에서 뺀 상태 (내 정보).
   pausedAt?: string
 }
 
-// The parts of its listing an account writes itself in 내 정보.
-// `logo`: a data URL to set, null to remove, left out to keep.
-// A real shop near the campus, live from Kakao Local (GET /api/places).
+// 계정이 내 정보에서 직접 쓰는 리스팅 항목.
+// `logo`: 설정할 data URL, 지우려면 null, 그대로 두려면 생략.
+// 캠퍼스 근처의 실제 매장. Kakao Local에서 실시간으로 가져온다 (GET
+// /api/places).
 export type NearbyPlace = {
   id: string
   name: string
@@ -92,22 +92,21 @@ export type NearbyPlace = {
   address: string
   phone?: string
   distanceM: number
-  // Its page on Kakao Map; the made-up shops visitors see have none.
+  // Kakao Map의 매장 페이지. 방문자에게 보이는 가상 매장에는 없다.
   url?: string
-  // Where it is, for the map on screen only, and the kind it was found
-  // under (data/places.ts).
+  // 화면의 지도에만 쓰는 위치와, 이 매장이 검색된 종류(data/places.ts).
   lat: number
   lng: number
   kind: string
-  // The student group looking invited it.
+  // 초대한 학생단체.
   invited?: true
-  // The brand it joined as, from an invitation.
+  // 초대를 받아 가입한 브랜드.
   brandId?: string
 }
 
-// map is false while the server has no map key; campus is null for a school
-// not on the map. center is the campus's point, with the shops. Visitors get
-// made-up shops around the demo group's campus (example), not Kakao's.
+// map은 서버에 지도 키가 없으면 false이고, campus는 지도에 없는 학교면
+// null이다. center는 매장과 함께 내려주는 캠퍼스의 좌표다. 방문자에게는 Kakao
+// 대신 데모 단체의 캠퍼스 주변 가상 매장(example)을 보여준다.
 export type NearbyPlaces = {
   map: boolean
   example?: true
@@ -116,11 +115,11 @@ export type NearbyPlaces = {
   places: NearbyPlace[]
 }
 
-// The two sides of a sponsorship (backend ChatSide).
+// 협찬의 두 당사자 (backend ChatSide).
 export type ChatSide = "group" | "brand"
 
-// One thing a side of an accepted proposal promised, with its proof: links
-// and photos (fetched with the login token, api.agreementPhoto).
+// 수락된 제안에서 한쪽이 약속한 것 하나와 그 증빙: 링크와 사진 (로그인 토큰으로
+// 가져온다, api.agreementPhoto).
 export type AgreementItem = {
   id: string
   side: ChatSide
@@ -130,10 +129,10 @@ export type AgreementItem = {
   photos: string[]
 }
 
-// A sponsorship's agreement (임시 전자 계약서) as one side sees it: the two sides
-// (member when they have an account), the event, what the brand gives, the
-// items, and when each side confirmed them as they stand.
-// A parcel of sponsored goods one side sent, noted on the agreement.
+// 한쪽이 보는 협찬의 합의서(임시 전자 계약서): 양쪽 당사자(계정이 있으면
+// member), 행사, 브랜드가 주는 것, 항목, 그리고 각 쪽이 현재 항목을 확정한
+// 시각.
+// 한쪽이 보낸 협찬 물품 택배 한 건. 합의서에 적어 둔다.
 export type Shipment = { id: string; side: ChatSide; carrier: string; number: string; note?: string; addedAt: string }
 
 export type Agreement = {
@@ -141,14 +140,14 @@ export type Agreement = {
   kind: "request" | "offer"
   shipments?: Shipment[]
   side: ChatSide
-  // Each side, with the person running it (only the two sides see this).
+  // 각 당사자와 계정을 운영하는 담당자 (두 당사자에게만 보인다).
   group: { name: string; member: boolean; contact?: AccountContact }
   brand: { name: string; member: boolean; contact?: AccountContact }
   eventName: string
   eventDate: string
-  // The event, while the side whose it is has it (a group's event for a
-  // request, a brand's campaign for an offer), and its goals: set on the
-  // agreement until the event begins, read by both sides.
+  // 행사는 그 행사를 가진 쪽이 있는 동안만 있다 (요청이면 단체의 행사, 제안이면
+  // 브랜드의 캠페인). 목표도 같다. 목표는 행사가 시작되기 전까지 합의서에서
+  // 정하고 양쪽이 읽는다.
   event?: { id: string; owner: ChatSide; started: boolean }
   goals?: { expectedAudience: number; targets: Report["targets"] }
   gives: string
@@ -156,37 +155,36 @@ export type Agreement = {
   confirmed: Partial<Record<ChatSide, string>>
   createdAt: string
   updatedAt: string
-  // How the sponsorship is confirmed at the event (data/methods.ts): the
-  // methods as set here, the ones both sides last confirmed (which count,
-  // once there are any), what the venue counted for it, and this side's own
-  // venue page and PIN when it confirms any of them; once the event has a
-  // measurement.
+  // 협찬을 행사에서 확인하는 방식 (data/methods.ts): 여기서 정한 방식, 양쪽이
+  // 마지막으로 확정한 방식(있으면 이쪽이 집계된다), 현장에서 센 값, 그리고
+  // 행사에 측정이 생긴 뒤 이쪽이 확인하는 방식이 있을 때 이쪽의 현장 페이지와
+  // PIN.
   measure?: {
     code: string
     methods: MeasureMethod[]
     confirmedMethods?: MeasureMethod[]
     counts: Metrics
-    // The PIN shows from the day before the event; until then, that day.
+    // PIN은 행사 전날부터 보인다. 그전에는 그 날짜만 알려준다.
     venue?: { page: VenuePage; pin?: string; pinsFrom?: string }
   }
-  // Reviews open from the event's day; canWrite is false for the demo
-  // accounts and when the other side has no listing to show it on; canReply
-  // says this side may answer the other's review of it.
+  // 후기는 행사 당일부터 열린다. canWrite는 데모 계정이거나 상대에게 후기를
+  // 보여 줄 리스팅이 없으면 false다. canReply는 이쪽이 자신에 대한 상대의
+  // 후기에 답할 수 있다는 뜻이다.
   review: { open: boolean; canWrite: boolean; canReply: boolean; mine?: Review; theirs?: Review }
-  // A side's request to call the sponsorship off, with why, and when the
-  // other side agreed (then the agreement is only a record), and whether
-  // this side may ask now: not after the event or from a demo account.
+  // 협찬을 취소하자는 한쪽의 요청과 사유, 그리고 상대가 동의한 시각(그 뒤
+  // 합의서는 기록일 뿐이다). 이쪽이 지금 요청할 수 있는지도 담는다: 행사 뒤나
+  // 데모 계정은 요청할 수 없다.
   cancel?: { by: ChatSide; reason: string; requestedAt: string; canceledAt?: string }
   cancelable: boolean
-  // What the sponsorship is worth, cash and in-kind, once written.
+  // 협찬의 가치. 현금과 현물이며, 적은 뒤에만 있다.
   value?: { cash: number; inKind: number }
-  // The platform fee the brand pays to confirm (backend lib/fees.ts): none
-  // when exempt (the demo accounts, sponsorships from before fees), else
-  // its share of the value, what was paid and what is still due.
+  // 브랜드가 확정하려고 내는 플랫폼 수수료 (backend lib/fees.ts): 면제이면(데모
+  // 계정, 수수료 도입 전 협찬) 없고, 아니면 가치에서 정한 비율과 낸 금액, 아직
+  // 낼 금액이다.
   fee: { rate: number; exempt: boolean; amount: number; paid: number; due: number; needsValue: boolean }
 }
 
-// What a brand pays the platform (backend lib/billing.ts).
+// 브랜드가 플랫폼에 내는 돈 (backend lib/billing.ts).
 export type PaymentKind = "fee" | "report" | "pro" | "ad"
 
 export type Payment = {
@@ -195,8 +193,8 @@ export type Payment = {
   kind: PaymentKind
   targetId: string
   orderName: string
-  // Charged, VAT included; supply is the price before VAT (missing on
-  // payments from before VAT was added on top).
+  // 부가세를 포함해 청구한 금액. supply는 부가세 전 가격이다 (부가세를 얹기
+  // 전의 결제에는 없다).
   amount: number
   supply?: number
   status: "pending" | "paid" | "cancelled"
@@ -211,35 +209,35 @@ export type Payment = {
   openedAt?: string
 }
 
-// Prices, whether card payment is on, and the account's payments.
+// 가격, 카드 결제 사용 여부, 계정의 결제 내역.
 export type BillingInfo = {
   prices: { feeRate: number; report: number; pro: number; proDays: number; adBrand: number; adGroup: number; adDays: number; adRenewalDiscount: number; vatRate: number }
   card: { clientKey: string } | null
-  // Toss test keys: no money moves, and the demo accounts may pay to show it.
+  // Toss 테스트 키: 돈은 오가지 않으며, 데모 계정도 시연을 위해 결제해 볼 수
+  // 있다.
   testMode: boolean
   canPay: boolean
   payments: Payment[]
-  // The brand's plan (backend lib/pro.ts): Pro until a Korean day, and this
-  // month's proposals against the free plan's limit.
+  // 브랜드의 요금제 (backend lib/pro.ts): Pro는 정해진 한국 날짜까지이고, 이번
+  // 달 제안 수는 무료 요금제의 한도와 비교한다.
   plan: { pro: boolean; until: string | null; offersThisMonth: number; freeOffers: number; partnerRequestsLeft: number }
-  // 상단 광고 (backend lib/ads.ts): until a Korean day while it runs, the
-  // role's monthly price and what the next 30 days cost (10% off while one
-  // runs).
+  // 상단 광고 (backend lib/ads.ts): 진행 중이면 끝나는 한국 날짜, 역할별 월
+  // 가격, 앞으로 30일의 비용(진행 중이면 10% 할인).
   ad: { until: string | null; price: number; next: number; renewing: boolean; days: number }
-  // Whether this account may pay for its ad (a group too; the demo accounts
-  // only in test mode).
+  // 이 계정이 광고 대금을 낼 수 있는지 여부 (단체도 가능하고, 데모 계정은
+  // 테스트 모드에서만 가능하다).
   canPayAd: boolean
 }
 
-// An order to pay, with what the payment window needs.
+// 결제할 주문과, 결제창에 필요한 값.
 export type PaymentOrder = { order: Payment; customerKey: string; email: string }
 
-// A payment as the operators see it.
+// 운영자가 보는 결제 한 건.
 export type AdminPayment = Payment & { accountId: string; card: boolean }
 
-// A review one side of a sponsorship wrote about the other after the event.
+// 협찬 한쪽이 행사 뒤에 상대에 대해 쓴 후기.
 export type Review = {
-  // Stands for the review without giving its proposal away, to report it.
+  // 제안을 드러내지 않고 이 후기를 가리키는 값. 신고할 때 쓴다.
   key: string
   authorName: string
   side: ChatSide
@@ -249,24 +247,24 @@ export type Review = {
   comment: string
   createdAt: string
   updatedAt?: string
-  // Taken down by the operators; only its author still sees it.
+  // 운영자가 내렸다. 작성자에게만 계속 보인다.
   hidden?: true
-  // The reviewed side's answer, under the review; once the operators took it
-  // down, only that it was (no text).
+  // 후기를 받은 쪽의 답변. 후기 아래에 붙는다. 운영자가 내렸다면 내려졌다는
+  // 사실만 남고 본문은 없다.
   reply?: { text?: string; createdAt: string; updatedAt?: string; hidden?: true }
 }
 
-// A listing's reviews in short.
+// 리스팅의 후기 요약.
 export type ReviewSummary = { count: number; average: number; tags: { tag: string; count: number }[] }
 
-// One line of the agreements list.
+// 합의서 목록의 한 줄.
 export type AgreementSummary = {
   id: string
   side: ChatSide
   partner: string
   eventName: string
   eventDate: string
-  // Both sides called it off.
+  // 양쪽이 취소했다.
   canceled?: true
   confirmed: Partial<Record<ChatSide, string>>
   done: number
@@ -274,7 +272,7 @@ export type AgreementSummary = {
   proof: number
 }
 
-// A student group's invitation to a shop (/invite/<code>).
+// 학생단체가 매장에 보내는 초대 (/invite/<code>).
 export type ShopInvite = {
   code: string
   placeId: string
@@ -284,9 +282,9 @@ export type ShopInvite = {
   brandId?: string
 }
 
-// The invitation page: who invited (their listing, or only a name and
-// school before they wrote one) and whether the shop joined, as the brand
-// looking ("you") or another.
+// 초대 페이지: 누가 초대했는지(그쪽 리스팅, 아직 쓰지 않았다면 이름과 학교만)와
+// 매장이 가입했는지. 보는 브랜드 본인("you")인지 다른 브랜드인지에 따라 다르게
+// 나온다.
 export type InvitePageData = {
   invite: { code: string; placeUrl: string; createdAt: string; joined: "you" | "other" | null }
   group?: Partial<Match> & { name: string; category: string }
@@ -294,7 +292,7 @@ export type InvitePageData = {
 
 export type ProfileDraft = Pick<Match, "intro" | "offer" | "offers" | "tags" | "facts" | "sns" | "portfolio"> & {
   logo?: string | null
-  // A brand's store address; empty removes it.
+  // 브랜드의 매장 주소. 비워 두면 지운다.
   address?: string
 }
 
@@ -303,43 +301,42 @@ export type EventStatus = "매칭 중" | "집행 예정" | "측정 완료"
 export type EventItem = {
   id: string
   name: string
-  // Calendar day as "YYYY-MM-DD"; the first day when it runs over several.
+  // "YYYY-MM-DD" 형식의 달력 날짜. 여러 날에 걸치면 첫날이다.
   date: string
-  // Last day of an event that runs over several days; absent for one day.
+  // 여러 날에 걸친 행사의 마지막 날. 하루짜리면 없다.
   endDate?: string
   people: string
   types: string[]
-  // What "기타" in types means, written by the organizer.
+  // types의 "기타"가 뜻하는 것. 주최자가 적는다.
   typeNote?: string
-  // Budget in won: a group's for its event, a brand's for its campaign.
+  // 원 단위 예산: 단체는 행사, 브랜드는 캠페인의 예산이다.
   budget?: number
   status: EventStatus
-  // A student group's event page (pages/EventDetailPage.tsx): where, what it
-  // is, its photos' names and the packages it offers brands.
+  // 학생단체의 행사 페이지 (pages/EventDetailPage.tsx): 장소, 내용, 사진 이름,
+  // 브랜드에 내놓는 패키지.
   venue?: string
   intro?: string
   photos?: string[]
   packages?: SponsorPackage[]
-  // Its kind (data/eventDetails.ts), the Korean times it starts and ends
-  // each day ("HH:MM"), and who is expected.
+  // 행사 종류(data/eventDetails.ts), 매일 시작하고 끝나는 한국 시각("HH:MM"),
+  // 예상 참여자.
   kind?: string
   startTime?: string
   endTime?: string
   makeup?: { years?: string[]; majors?: string }
-  // 홍보 · 배포 계획 and when the group agreed to carry it out.
+  // 홍보 · 배포 계획과, 단체가 이를 실행하기로 동의한 시각.
   promo?: { spots: string[]; handouts: string[]; posts: string[]; agreedAt: string }
-  // The event plan as a PDF (행사 기획안).
+  // PDF로 만든 행사 기획안.
   plan?: { file: string; name: string; size: number; addedAt: string }
 }
 
-// A sponsorship package on a group's event page: its name, what the brand
-// gets, and the support the group asks for.
+// 단체의 행사 페이지에 있는 협찬 패키지: 이름, 브랜드가 얻는 것, 단체가
+// 요청하는 지원.
 export type SponsorPackage = { name: string; gives: string; asks: string }
 
-// A recruitment board post as the API gives it (backend routes/board.ts):
-// the post, its poster's side and listing, a group's event, whether it still
-// takes applications and whether the one looking posted it; the viewer's own
-// application, and to its poster the applications that came in.
+// API가 내려주는 모집 게시판 글 (backend routes/board.ts): 글, 작성자의 쪽과
+// 리스팅, 단체의 행사, 아직 지원을 받는지, 보는 사람이 쓴 글인지. 보는 사람
+// 자신의 지원서와, 작성자에게는 들어온 지원서도 담는다.
 export type BoardPost = {
   id: string
   listingId: string
@@ -347,7 +344,7 @@ export type BoardPost = {
   body: string
   types: string[]
   eventId?: string
-  // The last day to apply, "YYYY-MM-DD".
+  // 지원 마감일, "YYYY-MM-DD".
   deadline: string
   closedAt?: string
   createdAt: string
@@ -361,73 +358,71 @@ export type BoardPost = {
   applications?: { id: string; name: string; about: string; date: string; status: RequestStatus }[]
 }
 
-// A post as written or edited: a group's names one of its events.
+// 쓰거나 고친 글. 단체의 글은 자기 행사 가운데 하나를 가리킨다.
 export type PostDraft = { title: string; body: string; types: string[]; deadline: string; eventId?: string }
 
-// An event page as the API gives it: the event, the group behind it, and
-// whether the one looking owns it.
+// API가 내려주는 행사 페이지: 행사, 그 뒤의 단체, 보는 사람이 주인인지 여부.
 export type EventPage = {
   event: EventItem
   group: Pick<Match, "id" | "name" | "school" | "category" | "industry" | "logo">
   own: boolean
 }
 
-// The person who runs an account; partners see it only on a confirmed
-// sponsorship's agreement.
+// 계정을 운영하는 사람. 상대에게는 확정된 협찬의 합의서에서만 보인다.
 export type AccountContact = { name: string; position: string; phone: string }
 
 export type ProposalTemplate = { id: string; name: string; text: string }
 
 export type Account = {
   id: string
-  // Two-step login with an authenticator app is on.
+  // 인증 앱을 쓰는 2단계 로그인이 켜져 있다.
   twoFactorOn?: true
-  // Set when a co-admin is the one logged in (not the account's owner).
+  // 계정 주인이 아니라 공동 관리자가 로그인했을 때 설정된다.
   asMember?: { id: string; name: string; email: string }
-  // Kakao or Naver accounts linked to log in with.
+  // 로그인에 쓰려고 연결한 Kakao나 Naver 계정.
   socialLinks?: SocialProvider[]
   role: Role
   name: string
   type: string
   school: string
   email: string
-  // Asked at sign-up; accounts from before have none.
+  // 가입할 때 묻는다. 그 전에 만든 계정에는 없다.
   contact?: AccountContact
-  // The account's own listing: brands in the brand catalog, student
-  // groups in the group catalog.
+  // 계정 자신의 리스팅: 브랜드는 브랜드 카탈로그, 학생단체는 단체 카탈로그에
+  // 있다.
   brandId?: string
   groupId?: string
   createdAt: string
-  // The parts of the bell's notices the account has read (lib/notifications.ts).
+  // 계정이 읽은 알림 항목 (lib/notifications.ts).
   readNotices?: string[]
-  // 기수: the group's teams by the day each took over, latest first.
+  // 기수: 단체의 팀을 맡은 날짜별로 나눈 것. 최근 순이다.
   terms?: { name: string; from: string }[]
-  // Proposal messages saved to send again; {상대} and {행사} get filled in.
+  // 다시 보내려고 저장해 둔 제안 메시지. {상대}와 {행사}가 채워진다.
   templates?: ProposalTemplate[]
-  // The language its emails are in, and the kinds of notice email it turned off.
+  // 이메일을 받는 언어와, 계정이 끈 알림 메일의 종류.
   language?: "ko" | "en"
   mailOff?: MailKind[]
 }
 
-// The kinds of notice email (data/mail.ts).
+// 알림 메일의 종류 (data/mail.ts).
 export type MailKind = "proposals" | "sponsorships" | "messages" | "reminders" | "digest"
 
-// Whether brands can verify their business here (the server has the key),
-// and this brand's confirmed registration.
+// 브랜드가 여기서 사업자를 확인할 수 있는지(서버에 키가 있는지)와, 이 브랜드의
+// 확인된 사업자 등록.
 export type BusinessStatus = { ready: boolean; business: { number: string; verifiedAt: string } | null }
 
 export type Session = { token: string; account: Account }
 
-// A password that was right for an account with two-step login on: the
-// ticket to send back with the app's code (components/CodeStep.tsx).
+// 2단계 로그인이 켜진 계정에서 맞게 입력된 비밀번호: 앱의 코드와 함께 돌려보낼
+// 티켓이다 (components/CodeStep.tsx).
 export type CodeTicket = {
   twoFactor: true
   ticket: string
-  // A co-admin's first login: two-step login to set up with this secret.
+  // 공동 관리자의 첫 로그인: 이 시크릿으로 2단계 로그인을 설정한다.
   setup?: { secret: string; url: string }
 }
 
-// A sign-up that waits for the operators (backend lib/applications.ts).
+// 운영자의 승인을 기다리는 가입 (backend lib/applications.ts).
 export type Pending = { pending: true }
 
 export type AdminApplication = {
@@ -442,34 +437,33 @@ export type AdminApplication = {
   team?: string
 }
 
-// The providers one can log in with once linked (routes/social.ts).
+// 연결한 뒤 로그인에 쓸 수 있는 제공자 (routes/social.ts).
 export type SocialProvider = "kakao" | "naver"
 
-// One device logged in to the account (내 정보's 로그인한 기기).
+// 계정에 로그인한 기기 하나 (내 정보의 로그인한 기기).
 export type DeviceSession = {
   id: string
   device: string
   createdAt?: string
   lastUsedAt?: string
   current: boolean
-  // A co-admin's login, by its name, in the owner's list.
+  // 소유자의 목록에 이름으로 나오는 공동 관리자의 로그인.
   member?: string
 }
 
-// The people running one account (내 정보's 함께 관리하는 사람): the owner,
-// co-admins and invitations still open; `you` is "owner" or a member's id.
+// 계정 하나를 운영하는 사람들 (내 정보의 함께 관리하는 사람): 소유자, 공동
+// 관리자, 아직 열려 있는 초대. `you`는 "owner" 또는 멤버의 id다.
 export type Team = {
   owner: { name: string; email: string }
   members: { id: string; name: string; email: string; addedAt: string }[]
   invites: { id: string; name: string; email: string; invitedAt: string; expiresAt: string }[]
-  // Joined, and waiting for the operators to check their document.
+  // 가입했고, 운영자가 서류를 확인하기를 기다리는 중이다.
   waiting: { id: string; name: string; email: string; requestedAt: string }[]
   you: string
 }
 
-// What the venue's staff count by the confirmation methods: samples or
-// tastings, booth stamps, SNS posts, survey answers, purchases, goods given
-// away, raffle entries, sign-ups or app installs, people who tried it.
+// 현장 직원이 확인 방식별로 세는 것: 샘플이나 시식, 부스 스탬프, SNS 게시물,
+// 설문 응답, 구매, 나눠 준 물품, 래플 응모, 가입이나 앱 설치, 체험한 사람.
 export type VenueCounts = {
   samples: number
   stamps: number
@@ -482,13 +476,13 @@ export type VenueCounts = {
   experiences: number
 }
 
-// QR scans, coupons and store visits, then the venue's counts.
+// QR 스캔, 쿠폰, 매장 방문, 그리고 현장에서 센 값.
 export type Metrics = { scans: number; coupons: number; visits: number } & VenueCounts
 
 export type MetricKind = keyof Metrics
 
-// How a sponsorship is confirmed at the event (협찬 확인 방식), and the side
-// that confirms each method there, either or both (backend lib/methods.ts).
+// 협찬을 행사에서 확인하는 방식(협찬 확인 방식)과, 각 방식을 현장에서 확인하는
+// 쪽(어느 한쪽이거나 양쪽)이다 (backend lib/methods.ts).
 export type MethodKind =
   | "qr"
   | "coupon"
@@ -507,15 +501,15 @@ export type MethodSide = ChatSide | "both"
 
 export type MeasureMethod = { kind: MethodKind; side: MethodSide }
 
-// One share's counts (a sponsor's, or a whole event's before any).
+// 한 몫의 집계 (스폰서 한 곳의 몫, 스폰서가 생기기 전에는 행사 전체의 몫).
 export type ShareCounts = Omit<Metrics, "scans">
 
-// The two venue pages: the brand's (its store staff, /check-in/<code>/staff)
-// and the student group's (/check-in/<code>/group).
+// 두 현장 페이지: 브랜드의 것(매장 직원용, /check-in/<code>/staff)과 학생단체의
+// 것(/check-in/<code>/group).
 export type VenuePage = "staff" | "group"
 
-// A venue page once its PIN is right: the event and each share it confirms
-// for, with the methods this side confirms there and the counts so far.
+// PIN이 맞았을 때의 현장 페이지: 행사와, 각 몫별로 이쪽이 그곳에서 확인하는
+// 방식 및 지금까지의 집계.
 export type VenueShare = { id: string; brandName: string | null; store: string; kinds: MethodKind[]; counts: ShareCounts }
 
 export type VenueSession = { eventName: string; eventDate: string; shares: VenueShare[] }
@@ -528,21 +522,21 @@ export type MetricEntry = {
   detail: string
 }
 
-// "취소됨": accepted, then called off by both sides from its agreement.
-// "마감": a proposal that waited for an answer until its event ended.
+// "취소됨": 수락된 뒤 합의서에서 양쪽이 취소했다.\n|"마감": 행사가 끝날 때까지
+// 답을 기다리다 만 제안.
 export type RequestStatus = "검토 중" | "수락" | "거절" | "취소됨" | "마감"
 
-// A sponsorship proposal a student group sent to a brand.
+// 학생단체가 브랜드에 보낸 협찬 제안.
 export type SponsorRequest = {
   id: string
   brandId: string
-  // The group's event it is about, whose page it links to.
+  // 제안이 다루는 단체의 행사. 그 행사 페이지로 연결된다.
   eventId?: string
   groupName: string
   school: string
   industry: Industry
   eventName: string
-  // "YYYY-MM-DD", or "" while the group has no event scheduled.
+  // "YYYY-MM-DD". 단체에 잡힌 행사가 없으면 "".
   eventDate: string
   people: string
   ask: string
@@ -550,11 +544,11 @@ export type SponsorRequest = {
   status: RequestStatus
   createdAt: string
   respondedAt?: string
-  // When both sides called it off (취소).
+  // 양쪽이 취소한 시각 (취소).
   canceledAt?: string
 }
 
-// A sponsorship proposal a brand sent to a student group.
+// 브랜드가 학생단체에 보낸 협찬 제안.
 export type SponsorOffer = {
   id: string
   groupId: string
@@ -562,45 +556,45 @@ export type SponsorOffer = {
   brandName: string
   industry: Industry
   campaignName: string
-  // "YYYY-MM-DD", or "" while the brand has no campaign scheduled.
+  // "YYYY-MM-DD". 브랜드에 잡힌 캠페인이 없으면 "".
   campaignDate: string
   offer: string
   message: string
   status: RequestStatus
   createdAt: string
   respondedAt?: string
-  // When both sides called it off (취소).
+  // 양쪽이 취소한 시각 (취소).
   canceledAt?: string
 }
 
-// A proposal the account sent (a group's request, a brand's offer), as its
-// inbox lists it beside the ones it received.
+// 계정이 보낸 제안(단체의 요청, 브랜드의 제안). 받은 제안 옆에 받은편지함이
+// 나열하는 모습 그대로다.
 export type SentProposal = {
   id: string
-  // The partner's listing, which DELETE /api/proposals/:matchId takes back.
+  // 상대의 리스팅. DELETE /api/proposals/:matchId로 제안을 거둔다.
   partnerId: string
   partnerName: string
   industry: Industry
   logo?: string
   school?: string
-  // The sender's own event or campaign it is about.
+  // 제안이 다루는, 보낸 쪽 자신의 행사나 캠페인.
   eventName: string
   eventDate?: string
-  // What the group asked for, or what the brand offered.
+  // 단체가 요청한 것, 또는 브랜드가 제안한 것.
   offer: string
-  // The note that went with it.
+  // 함께 보낸 메모.
   message?: string
   status: RequestStatus
   createdAt: string
   respondedAt?: string
 }
 
-// One finished sponsorship of a brand, for its analytics.
+// 브랜드의 끝난 협찬 한 건. 분석에 쓴다.
 export type Sponsorship = {
   id: string
-  // The student event it sponsored, when measured; its detailed report is
-  // at /insights/<id>, readable, to buy, not yet (before the event's day) or
-  // none (backend lib/premiumReport.ts reportState).
+  // 협찬한 학생 행사(측정된 경우). 상세 리포트는 /insights/<id>에 있으며, 읽을
+  // 수 있음, 구매 필요, 아직 아님(행사 당일 전), 없음 중 하나다 (backend
+  // lib/premiumReport.ts reportState).
   eventId?: string
   report?: "open" | "locked" | "soon" | "none"
   groupName: string
@@ -610,7 +604,7 @@ export type Sponsorship = {
   coupons: number
   visits: number
   sales: number
-  // What the venue confirmed for it by its confirmation methods.
+  // 현장이 확인 방식별로 이 협찬에 대해 확인한 것.
   samples?: number
   stamps?: number
   posts?: number
@@ -620,29 +614,29 @@ export type Sponsorship = {
   raffles?: number
   signups?: number
   experiences?: number
-  // ROAS goal in percent.
+  // ROAS 목표(퍼센트).
   targetRoas: number
 }
 
 export type ChatMessage = {
   id: string
-  // Empty once deleted.
+  // 삭제되면 비어 있다.
   text: string
   at: string
   mine: boolean
-  // Own messages only: whether the partner has read it.
+  // 내가 보낸 메시지에만 있다: 상대가 읽었는지 여부.
   read?: boolean
-  // When the sender edited or deleted it; both sides are shown which.
+  // 보낸 쪽이 고치거나 지운 시각. 양쪽 모두 어느 쪽인지 보인다.
   editedAt?: string
   deletedAt?: string
-  // A photo or PDF sent as the message; gone once it is deleted.
+  // 메시지로 보낸 사진이나 PDF. 삭제되면 사라진다.
   attachment?: ChatAttachment
-  // A meeting proposed as the message, and how it stands.
+  // 메시지로 제안한 미팅과 그 진행 상태.
   meeting?: Meeting
 }
 
-// A meeting proposed in a conversation: the day, the Korean start time, the
-// length in minutes, and where (a place or a video link).
+// 대화에서 제안한 미팅: 날짜, 한국 시각의 시작 시간, 분 단위 길이, 장소(장소나
+// 화상 링크).
 export type Meeting = {
   date: string
   time: string
@@ -652,12 +646,11 @@ export type Meeting = {
   answeredAt?: string
 }
 
-// A file sent in a conversation: the name it is kept by, the name it was
-// sent with, its kind and its size in bytes.
+// 대화에서 보낸 파일: 저장된 이름, 보낼 때의 이름, 종류, 바이트 단위 크기.
 export type ChatAttachment = { file: string; name: string; type: "image" | "pdf"; size: number }
 
-// A conversation with a brand (for student groups) or a group (for brands).
-// A question this account sent the operators, with their answer once given.
+// 브랜드(학생단체용) 또는 단체(브랜드용)와의 대화.\n|이 계정이 운영자에게 보낸
+// 질문과, 답이 있으면 그 답변.
 export type Inquiry = {
   id: string
   category: string
@@ -665,24 +658,24 @@ export type Inquiry = {
   createdAt: string
   answer?: string
   answeredAt?: string
-  // When the asker saw the answer as it stands.
+  // 질문한 사람이 지금 상태의 답변을 본 시각.
   answerReadAt?: string
 }
 
-// A question as the operators see it, with who sent it.
+// 운영자가 보는 질문. 누가 보냈는지도 담는다.
 export type AdminInquiry = Inquiry & {
-  // Who asked, for opening the member.
+  // 질문한 사람. 회원을 열어 볼 때 쓴다.
   accountId: string
   from: { name: string; role: Role; email: string } | null
-  // Who on the team handles it and whether it is on hold.
+  // 팀에서 누가 맡았는지와 보류 중인지 여부.
   handling: { assignee?: string; heldAt?: string } | null
 }
 
-// What the operators can do about a report.
+// 신고에 대해 운영자가 할 수 있는 조치.
 export type ReportAction = "dismiss" | "hide-review" | "hide-reply" | "suspend"
 
-// A member's report as the operators see it: who reported whom over what,
-// with the reported text as it was, and what was done.
+// 운영자가 보는 회원 신고: 누가 무엇 때문에 누구를 신고했는지, 신고된 내용
+// 원문, 그리고 처리한 내용.
 export type AdminReport = {
   id: string
   target:
@@ -699,11 +692,11 @@ export type AdminReport = {
   about: { id: string; name: string; role: Role; email: string } | null
 }
 
-// An account the operators suspended.
+// 운영자가 정지한 계정.
 export type SuspendedAccount = { id: string; name: string; role: Role; email: string; suspendedAt: string }
 
-// A request the server failed or an error a browser caught, as the
-// operators read it (backend lib/errorLog.ts).
+// 서버가 실패한 요청이나 브라우저가 잡은 오류. 운영자가 읽는 그대로다 (backend
+// lib/errorLog.ts).
 export type ErrorEntry = {
   id: string
   at: string
@@ -714,13 +707,13 @@ export type ErrorEntry = {
   stack?: string
 }
 
-// An account this one blocked, by its listing.
+// 이 계정이 차단한 계정. 리스팅으로 가리킨다.
 export type BlockedListing = { listingId: string; name: string }
 
-// One figure two ways: real members' only, and with the demo data.
+// 수치 하나를 두 가지로: 실제 회원만의 값과, 데모 데이터를 합친 값.
 export type Figure = { real: number; total: number }
 
-// The platform's figures for the operators (GET /api/admin/stats).
+// 운영자용 플랫폼 수치 (GET /api/admin/stats).
 export type PlatformStats = Record<
   | "students"
   | "brands"
@@ -747,7 +740,7 @@ export type Conversation = {
     category: string
     industry: Industry
     school?: string
-    // Messages only reach partners who have an account.
+    // 메시지는 계정이 있는 상대에게만 닿는다.
     hasAccount: boolean
   }
   lastMessage: { text: string; at: string; mine: boolean; deleted?: boolean; attachment?: ChatAttachment["type"]; meeting?: true } | null
@@ -757,11 +750,11 @@ export type Conversation = {
 
 export type Report = {
   eventId: string
-  // In the event's check-in address.
+  // 행사 체크인 주소에 들어가는 값.
   code: string
   eventName: string
   eventDate: string
-  // Last day of an event over several days.
+  // 여러 날에 걸친 행사의 마지막 날.
   eventEndDate?: string
   expectedAudience: number
   sponsorValue: number
@@ -776,29 +769,27 @@ export type Report = {
     visitRate: number
     roas: number
   }
-  // QR scans by day (YYYY-MM-DD, Korea) and hour.
+  // 날짜(YYYY-MM-DD, 한국 기준)와 시간별 QR 스캔 수.
   hourlyScans: { date: string; hour: number; scans: number }[]
   valueBreakdown: { type: string; value: number }[]
-  // Inputs the figures above come from: won a participant spends at the
-  // sponsor's store, and reach beyond the venue.
+  // 위 수치를 계산하는 데 쓴 입력값: 참여자가 스폰서 매장에서 쓴 금액(원)과,
+  // 행사장 밖으로 닿은 범위.
   averageSpend: number
   snsReach: number
   coupon: { store: string; title: string }
-  // 4 digits store staff enter to confirm a visit; only for the owner.
+  // 방문을 확인하려고 매장 직원이 입력하는 4자리 숫자. 소유자에게만 보인다.
   staffPin?: string
-  // The student group's venue PIN; only for the group that owns the event.
+  // 학생단체의 현장 PIN. 행사를 가진 단체에게만 보인다.
   groupPin?: string
-  // The day the PINs start to show, while they don't yet.
+  // PIN이 보이기 시작하는 날. 아직 보이지 않을 때만 있다.
   pinsFrom?: string
-  // How the event is confirmed (as both sides confirmed it) before any
-  // sponsor (each sponsor's below), and what the venue confirmed for the
-  // whole event.
+  // 스폰서가 생기기 전의 행사 확인 방식(양쪽이 확정한 그대로. 각 스폰서의 것은
+  // 아래에 있다)과, 현장이 행사 전체에 대해 확인한 것.
   methods: MeasureMethod[]
   venue: VenueCounts
-  // Once brands sponsor the event, each one's own coupon, counts and value;
-  // participants then take these coupons instead of the event's.
-  // For the students' own report: the event's kind, who was expected and
-  // the optional survey's counts.
+  // 브랜드가 행사를 협찬하면 각 브랜드의 쿠폰, 집계, 가치가 따로 생긴다.
+  // 이때부터 참여자는 행사의 쿠폰 대신 이 쿠폰을 받는다.\n|학생들 자신의
+  // 리포트용: 행사 종류, 예상 참석자, 선택 설문의 집계.
   eventKind?: string
   makeup?: { years?: string[]; majors?: string }
   survey?: { responses: number; grade: Record<string, number>; field: Record<string, number>; visited: Record<string, number>; gender?: Record<string, number> }
@@ -806,38 +797,38 @@ export type Report = {
 }
 
 export type SponsorReport = {
-  // The brand's sponsorship.
+  // 브랜드의 협찬.
   id: string
   brandName: string
   coupon: { store: string; title: string }
-  // Won this sponsor gave (an even split until the group sets each).
+  // 이 스폰서가 낸 금액(원). 단체가 각각 정하기 전에는 균등 분할이다.
   value: number
   coupons: number
   visits: number
   roas: number
-  // How this sponsorship is confirmed (as both sides confirmed it).
+  // 이 협찬을 확인하는 방식 (양쪽이 확정한 그대로).
   methods: MeasureMethod[]
-  // Its store staff's PIN; only for the owner.
+  // 이 매장 직원의 PIN. 소유자에게만 보인다.
   staffPin?: string
 } & VenueCounts
 
-// One event of the group with its live counts and report.
+// 단체의 행사 하나와 그 실시간 집계 및 리포트.
 export type EventMeasurement = {
   eventId: string
   metrics: Metrics
   report: Report
 }
 
-// What a participant sees after scanning an event's QR.
+// 행사 QR을 스캔한 뒤 참여자가 보는 것.
 export type CheckInInfo = {
   eventName: string
   eventDate: string
   groupName: string
-  // One per sponsor, or the event's own ("event") before any.
+  // 스폰서마다 하나, 스폰서가 생기기 전에는 행사 자체의 것("event").
   coupons: { id: string; store: string; title: string }[]
 }
 
-// Student groups and brands each have their own menu (data/navigation.ts).
+// 학생단체와 브랜드는 각자 메뉴가 있다 (data/navigation.ts).
 export type NavLabel =
   | "대시보드"
   | "추천 매칭"
@@ -883,9 +874,9 @@ export type ModalName =
   | "payment"
   | "payments"
 
-// What a student council sees of one club that linked to it (backend
-// lib/council.ts): its coming events, open proposals, sponsorships and
-// results so far, never its messages, contacts or agreements.
+// 학생회가 자신에게 연결한 동아리 하나에 대해 보는 것 (backend lib/council.ts):
+// 다가오는 행사, 열린 제안, 지금까지의 협찬과 성과. 메시지, 연락처, 합의서는
+// 절대 보이지 않는다.
 export type CouncilClub = {
   id: string
   name: string
@@ -902,17 +893,17 @@ export type CouncilClub = {
   results: { scans: number; coupons: number; visits: number }
 }
 
-// A council a club linked to (내 정보's 학생회 연결).
+// 동아리가 연결한 학생회 (내 정보의 학생회 연결).
 export type CouncilLink = { id: string; name: string; type: string; school: string; linkedAt: string }
 
-// A figure among the other events measured on uniconnect: their median, how
-// many there were, and the share of them this one beat. None below three.
+// uniconnect에서 측정된 다른 행사들 가운데 한 수치: 그 중앙값, 행사 수, 이
+// 행사가 그중 앞선 비율. 세 건 미만이면 없다.
 export type Benchmark = { median: number; count: number; beats: number } | null
 
 export type ScoreKey = "reach" | "scans" | "coupons" | "visits" | "qrRate" | "visitRate" | "roas"
 
-// 상세 성과 리포트 (backend lib/premiumReport.ts): one sponsorship's detailed
-// report, worked out live until its coupons' days are over.
+// 상세 성과 리포트 (backend lib/premiumReport.ts): 협찬 하나의 상세 리포트.
+// 쿠폰 날짜가 모두 지날 때까지는 실시간으로 계산한다.
 export type PremiumReport = {
   number: string
   issuedAt: string
@@ -990,7 +981,7 @@ export type PremiumReport = {
   history: { count: number; averageRoas: number | null; averagePerVisit: number | null; rank: number | null }
 }
 
-// The report as its page loads it: a preview with the price until bought.
+// 페이지가 불러오는 리포트: 구매하기 전에는 가격이 붙은 미리보기다.
 export type InsightAnswer =
   | {
       locked: true
@@ -1000,8 +991,8 @@ export type InsightAnswer =
     }
   | { locked: false; report: PremiumReport; editable: boolean; shared: boolean; shareToken?: string }
 
-// 캠퍼스 포트폴리오 (backend lib/portfolio.ts): a Campus Partners brand's
-// sponsorships together, grouped three ways.
+// 캠퍼스 포트폴리오 (backend lib/portfolio.ts): Campus Partners 브랜드의 협찬을
+// 모아 세 가지로 묶은 것.
 export type PortfolioGroup = { key: string; count: number; spend: number; visits: number; coupons: number; sales: number; roas: number }
 
 export type PortfolioRow = {
@@ -1029,7 +1020,7 @@ export type Portfolio = {
   rows: PortfolioRow[]
 }
 
-// The operators' console (backend lib/console.ts).
+// 운영자 콘솔 (backend lib/console.ts).
 export type AdminOverview = {
   stats: PlatformStats
   weekly: { week: string; signups: number; proposals: number; accepted: number }[]
@@ -1040,8 +1031,8 @@ export type AdminOverview = {
     reports: number
     transfers: number
     suspended: number
-    // Proposals waiting over a week, agreements with a cancel asked for,
-    // and field alerts (lib/adminInsights.ts).
+    // 일주일 넘게 기다리는 제안, 취소 요청이 들어온 합의서, 현장 알림
+    // (lib/adminInsights.ts).
     stale: number
     cancels: number
     alerts: number
@@ -1066,8 +1057,7 @@ export type AdminMember = {
   sent: number
   sponsorships: number
   business: boolean
-  // The operators' own tags, and whether another account shares its phone
-  // or business number.
+  // 운영자가 붙인 태그와, 다른 계정이 같은 전화번호나 사업자번호를 쓰는지 여부.
   tags: string[]
   duplicate: boolean
 }
@@ -1094,7 +1084,7 @@ export type AdminMemberDetail = AdminMember & {
   inquiries: number
   reportsAbout: number
   sessions: number
-  // The operators' own note on the member.
+  // 회원에 대한 운영자의 메모.
   note: { text: string; at: string } | null
   businessNumber: string | null
   timeline: { at: string; kind: string; text: string }[]
@@ -1198,14 +1188,13 @@ export type AdminInvites = {
 
 export type FaqTopicKey = "start" | "account" | "proposal" | "schedule" | "message" | "results"
 
-// Help center questions the operators added (Korean only), and built-in
-// ones they hid, by their Korean wording.
+// 운영자가 추가한 도움말 질문(한국어만)과, 한국어 문구로 가리킨 숨긴 기본 질문.
 export type SiteFaq = {
   added: { id: string; topic: FaqTopicKey; question: string; answer: string; featured?: boolean; createdAt: string }[]
   hidden: string[]
 }
 
-// Members only, never the demo accounts or the seed (backend lib/stats.ts).
+// 회원만 센다. 데모 계정과 시드는 제외한다 (backend lib/stats.ts).
 export type SiteCounts = { groups: number; brands: number; schools: number; sponsorships: number }
 
 export type SiteState = {
@@ -1213,7 +1202,7 @@ export type SiteState = {
   signupsClosed: boolean
   faq: SiteFaq
   counts?: SiteCounts
-  // Kakao Maps' JavaScript key, when the operators set one.
+  // 운영자가 설정했다면 Kakao 지도의 JavaScript 키.
   maps?: { kakao: string }
 }
 
@@ -1237,7 +1226,7 @@ export type AdminSystem = {
   maintenance: { on: boolean; message?: string; blockSignups?: boolean }
 }
 
-// What an operator did in the console, with its target's name as it is now.
+// 운영자가 콘솔에서 한 일과, 지금의 이름으로 적은 대상.
 export type AdminLogRow = {
   id: string
   at: string
@@ -1247,7 +1236,7 @@ export type AdminLogRow = {
   label: string | null
 }
 
-// Which services the API is set up for, as yes or no.
+// API가 어떤 서비스에 맞춰 설정됐는지, 예와 아니오로.
 export type AdminHealth = {
   storage: "postgres" | "file"
   payments: "off" | "test" | "live"
@@ -1258,7 +1247,7 @@ export type AdminHealth = {
   data: { accounts: number; sessions: number; payments: number; logEntries: number }
 }
 
-// A notice the operators show across the top of the site.
+// 운영자가 사이트 맨 위에 띄우는 공지.
 export type SiteNotice = { id: string; text: string; tone: "info" | "warning" }
 
 export type AdminAnnouncement = SiteNotice & {
@@ -1271,8 +1260,8 @@ export type AdminAnnouncement = SiteNotice & {
   live: boolean
 }
 
-// 행사 둘러보기 (GET /api/events/explore): a coming event of a group the
-// account sees, with what it offers brands.
+// 행사 둘러보기 (GET /api/events/explore): 계정에게 보이는 단체의 다가오는
+// 행사와 브랜드에 제공하는 것.
 export type ExploreEvent = {
   id: string
   name: string
@@ -1288,11 +1277,11 @@ export type ExploreEvent = {
   own?: true
 }
 
-// The sponsorships one kind of event had confirmed, as counts.
+// 한 종류의 행사가 확정한 협찬을 건수로 센 것.
 export type EventCase = { kind: string; sponsorships: number; averagePeople?: number; industries: string[]; asks: string[] }
 
-// One sponsorship a student group received, on its ledger (routes/ledger.ts):
-// the amount only where the group shows amounts.
+// 학생단체의 장부에 오른 협찬 한 건 (routes/ledger.ts): 금액은 단체가 금액을
+// 공개하는 경우에만 담는다.
 export type LedgerEntry = {
   id: string
   eventName: string

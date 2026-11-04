@@ -1,8 +1,8 @@
 import { todayInKorea } from "./dates.js"
 import type { Database } from "../types.js"
 
-// One figure two ways: from real members only, and with the demo accounts
-// and the seed data that came with them.
+// 같은 수치를 두 가지로: 실제 회원만 센 것, 그리고 데모 계정과 함께 온
+// 시드 데이터를 더한 것.
 export type Figure = { real: number; total: number }
 
 export type PlatformStats = Record<
@@ -23,10 +23,9 @@ export type PlatformStats = Record<
   Figure
 >
 
-// What the operators watch (GET /api/admin/stats): sign-ups, events,
-// proposals and their answers, sponsorships, on-site measurement, messages
-// and questions waiting. "real" leaves out the demo accounts and anything
-// no member made (the seed's proposals), so it is what actual members did.
+// 운영자가 보는 것(GET /api/admin/stats): 가입, 행사, 제안과 그 답, 협찬,
+// 현장 측정, 메시지, 대기 중인 문의. "real"은 데모 계정과 회원이 만들지
+// 않은 것(시드의 제안)을 빼서 실제 회원이 한 일만 센다.
 export function platformStats(database: Database, now = new Date()): PlatformStats {
   const demo = new Set(Object.values(database.demoAccountIds))
   const isReal = (accountId: string | undefined) => accountId !== undefined && !demo.has(accountId)
@@ -47,7 +46,7 @@ export function platformStats(database: Database, now = new Date()): PlatformSta
   )
   const proposals = [...database.requests, ...database.offers]
   const sponsorships = Object.entries(database.sponsorships).flatMap(([accountId, list]) => list.map(() => accountId))
-  // A conversation is real once either side's listing belongs to a member.
+  // 대화는 어느 한쪽의 리스팅이 회원 것이면 실제 대화다.
   const memberListings = new Set(
     accounts.filter((account) => isReal(account.id)).flatMap((account) => [account.groupId, account.brandId]),
   )
@@ -73,9 +72,8 @@ export function platformStats(database: Database, now = new Date()): PlatformSta
   }
 }
 
-// What the dashboards may show anyone (GET /api/site): how many members
-// signed up on each side, from how many schools, and the sponsorships they
-// made, never counting the demo accounts or the seed.
+// 대시보드가 누구에게나 보여 줄 수 있는 것(GET /api/site): 양쪽에 가입한
+// 회원 수, 학교 수, 이들이 맺은 협찬. 데모 계정과 시드는 세지 않는다.
 export function publicCounts(database: Database) {
   const demo = new Set(Object.values(database.demoAccountIds))
   const members = database.accounts.filter((account) => !demo.has(account.id))

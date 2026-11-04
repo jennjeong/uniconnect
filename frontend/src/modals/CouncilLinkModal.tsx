@@ -5,10 +5,9 @@ import { Modal } from "../components/Modal"
 import { t } from "../i18n"
 import type { CouncilLink } from "../types"
 
-// A club's link to its student councils (내 정보's 학생회 연결): the code the
-// council shared links it, three at most, and it can unlink any time. The
-// council then sees its events, proposals and results, never its messages,
-// contacts or agreements.
+// 동아리가 학생회에 거는 링크(내 정보의 학생회 연결). 학생회가 공유한 코드로
+// 최대 세 곳까지 연결하며 언제든 해제할 수 있다. 학생회는 동아리의 행사, 제안,
+// 결과를 보지만 메시지, 연락처, 계약서는 보지 못한다.
 export function CouncilLinkModal({ onClose, onNotice }: { onClose: () => void; onNotice: (message: string) => void }) {
   const [councils, setCouncils] = useState<CouncilLink[] | null>(null)
   const [code, setCode] = useState("")

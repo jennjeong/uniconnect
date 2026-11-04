@@ -18,8 +18,8 @@ export const profileRouter = Router()
 const rows = (value: unknown) =>
   (Array.isArray(value) ? value : []) as (Record<string, unknown> | undefined)[]
 
-// A logo the browser resized: a PNG, JPEG or WebP data URL of about 100KB
-// at most. SVG and the like are refused, since they can carry scripts.
+// 브라우저가 줄인 로고로, 약 100KB 이하의 PNG, JPEG, WebP 데이터 URL이다.
+// SVG 같은 것은 스크립트를 담을 수 있으므로 받지 않는다.
 const logoPattern = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/
 const logoMaxLength = 140_000
 
@@ -32,8 +32,8 @@ function parseLogo(value: unknown) {
   return value
 }
 
-// A brand's offer line from its rows ("할인 쿠폰 150장 · 현금 후원 20만원"):
-// as many as fit the card, then how many more.
+// 브랜드의 제안 한 줄을 행에서 만든다("할인 쿠폰 150장 · 현금 후원 20만원").
+// 카드에 들어가는 만큼 보여 주고 나머지는 몇 개 더 있는지 알려 준다.
 export function offerLine(offers: BrandOffer[]) {
   const parts = offers.map((item) => (item.detail ? `${item.kind} ${item.detail}` : item.kind))
   let shown = parts.length
@@ -42,8 +42,8 @@ export function offerLine(offers: BrandOffer[]) {
   return shown < parts.length ? `${line} 외 ${parts.length - shown}` : line
 }
 
-// A brand's offer rows: each a listed kind, once, with what of it (30
-// characters at most); a plain kind counts as a row without one.
+// 브랜드의 제안 행이다. 행마다 목록에 있는 종류 하나를 한 번씩 쓰고 그 내용
+// (30자 이하)을 붙이며, 내용이 없는 종류는 내용 없는 행으로 센다.
 function parseOffers(value: unknown): BrandOffer[] {
   const seen = new Set<string>()
   const items: BrandOffer[] = []
@@ -58,9 +58,9 @@ function parseOffers(value: unknown): BrandOffer[] {
   return items
 }
 
-// The parts of a listing an account writes itself. A brand picks its offers
-// from the list; its tags and 기본 정보 are worked out from what it does
-// (lib/brandProfile.ts), so it writes neither.
+// 계정이 직접 쓰는 리스팅의 항목이다. 브랜드는 제안을 목록에서 고르고, 태그와
+// 기본 정보는 하는 일에서 계산하므로(lib/brandProfile.ts) 둘 다 직접 쓰지
+// 않는다.
 function parseProfile(body: unknown, role: Role) {
   const input = (body ?? {}) as Record<string, unknown>
   const brand = role === "브랜드"
@@ -78,7 +78,7 @@ function parseProfile(body: unknown, role: Role) {
   if (tags.length > 4 || tags.some((tag) => tag.length > 12)) {
     throw new HttpError(400, "태그는 4개까지, 하나에 12자 이하로 적어 주세요.")
   }
-  // Only this side's labels, in their order; blank ones are left out.
+  // 이쪽의 라벨만 순서대로 받고, 빈 것은 뺀다.
   const facts = brand
     ? []
     : factLabels[role]
@@ -91,7 +91,7 @@ function parseProfile(body: unknown, role: Role) {
     .map((row) => ({
       platform: text(row?.platform),
       handle: text(row?.handle),
-      // Brands show no follower counts.
+      // 브랜드는 팔로워 수를 보여 주지 않는다.
       followers: brand ? "" : text(row?.followers),
     }))
     .filter((row) => row.handle)
@@ -109,8 +109,8 @@ function parseProfile(body: unknown, role: Role) {
   if (portfolio.some((row) => row.title.length > 40 || row.detail.length > 100)) {
     throw new HttpError(400, "포트폴리오 제목은 40자, 내용은 100자 이하로 적어 주세요.")
   }
-  // A brand's store address, for the distance to campuses: left out keeps
-  // it, empty removes it.
+  // 캠퍼스까지의 거리를 위한 브랜드의 매장 주소다. 빼면 기존 값을 유지하고,
+  // 비우면 지운다.
   const address = role === "브랜드" && input.address !== undefined ? text(input.address) : undefined
   if (address !== undefined && address.length > 100) {
     throw new HttpError(400, "매장 주소는 100자 이하로 적어 주세요.")
@@ -128,12 +128,12 @@ function parseProfile(body: unknown, role: Role) {
   }
 }
 
-// A listing as its owner sees it: a brand's with its worked-out 기본 정보
-// and tags.
+// 주인이 보는 리스팅이다. 브랜드의 것은 계산한 기본 정보와 태그를 함께
+// 보여 준다.
 const shownProfile = (database: ReturnType<typeof getDatabase>, listing: Match) =>
   database.accounts.some((account) => account.brandId === listing.id) ? brandProfile(database, listing) : listing
 
-// Each check asks a government service, so a brand gets a few an hour.
+// 확인할 때마다 정부 서비스에 묻기 때문에 브랜드는 한 시간에 몇 번만 할 수 있다.
 const businessChecksPerHour = createRateLimit({
   limit: 10,
   windowMs: 60 * 60 * 1000,
@@ -143,8 +143,8 @@ const businessChecksPerHour = createRateLimit({
 // "123-45-67890" as it shows on 내 정보.
 const shownNumber = (number: string) => `${number.slice(0, 3)}-${number.slice(3, 5)}-${number.slice(5)}`
 
-// Whether brands can verify their business here (the key is set), and this
-// brand's confirmed registration.
+// 브랜드가 여기서 사업자를 확인할 수 있는지(키가 설정되었는지)와 이 브랜드가
+// 확인된 등록 정보를 알려 준다.
 profileRouter.get("/business", (req, res) => {
   const account = requireAccount(req)
   res.json({
@@ -153,11 +153,10 @@ profileRouter.get("/business", (req, res) => {
   })
 })
 
-// A brand confirms its business registration with the National Tax
-// Service: the number, the opening date and the representative's name, as
-// on the registration certificate. Only the number is kept, once it
-// matches; one business verifies one account. Its listing then shows
-// 사업자 확인. The shared demo brand can't.
+// 브랜드가 국세청으로 사업자등록을 확인한다. 사업자등록증에 있는 대로 번호,
+// 개업일, 대표자 이름을 받는다. 일치하면 번호만 보관하고, 사업자 하나는 계정
+// 하나만 확인한다. 그러면 리스팅에 사업자 확인이 표시된다. 공유 데모 브랜드는
+// 할 수 없다.
 profileRouter.post("/business", async (req, res) => {
   const account = requireAccount(req)
   const database = getDatabase()
@@ -184,7 +183,7 @@ profileRouter.post("/business", async (req, res) => {
     throw new HttpError(400, "입력한 정보로 확인되지 않았어요. 사업자등록증의 번호, 개업일자, 대표자 성명을 확인해 주세요.")
   }
   if (result === "closed") throw new HttpError(400, "폐업한 사업자로 확인돼요.")
-  // Looked up again: the data may have been read anew during the check.
+  // 다시 찾는다. 확인하는 동안 데이터를 새로 읽었을 수 있다.
   const fresh = getDatabase().accounts.find((item) => item.id === account.id)
   if (!fresh) throw new HttpError(404, "계정을 찾을 수 없어요.")
   fresh.business = { number, verifiedAt: new Date().toISOString() }
@@ -192,10 +191,10 @@ profileRouter.post("/business", async (req, res) => {
   res.json({ business: { number: shownNumber(number), verifiedAt: fresh.business.verifiedAt } })
 })
 
-// 목록에서 잠시 숨기기 from 내 정보: while paused, the listing leaves the other
-// side's lists (listedTo in lib/catalog.ts) and new proposals to it are
-// refused; what is under way carries on. The shared demo accounts can't, as
-// visitors see their listings as the examples.
+// 내 정보의 목록에서 잠시 숨기기다. 숨기는 동안 리스팅은 반대편의 목록(
+// lib/catalog.ts의 listedTo)에서 빠지고 이 리스팅에 대한 새 제안은 거절된다.
+// 진행 중인 것은 계속된다. 방문자가 데모 계정의 리스팅을 예시로 보므로 공유
+// 데모 계정은 할 수 없다.
 profileRouter.put("/pause", async (req, res) => {
   const account = requireAccount(req)
   const database = getDatabase()
@@ -216,7 +215,7 @@ profileRouter.get("/history", (req, res) => {
   res.json({ items: portfolioHistory(getDatabase(), account) })
 })
 
-// The logged-in account's own listing, or null before it has written one.
+// 로그인한 계정 자신의 리스팅이다. 아직 쓰지 않았다면 null이다.
 profileRouter.get("/", (req, res) => {
   const account = requireAccount(req)
   const database = getDatabase()
@@ -224,9 +223,9 @@ profileRouter.get("/", (req, res) => {
   res.json({ profile: listing ? shownProfile(database, listing) : null })
 })
 
-// Saves the listing the other side sees, creating it the first time. A store
-// address that is new, or still has no place (saved before the map key was
-// set), is placed on the map first (lib/geocode.ts), before anything changes.
+// 반대편이 보는 리스팅을 저장하며, 처음이면 만든다. 새 매장 주소이거나 아직
+// 위치가 없는 주소(지도 키가 설정되기 전에 저장한 것)는 아무것도 바꾸기 전에
+// 먼저 지도에 위치를 잡는다(lib/geocode.ts).
 profileRouter.put("/", async (req, res) => {
   const account = requireAccount(req)
   const profile = parseProfile(req.body, account.role)
@@ -237,12 +236,12 @@ profileRouter.put("/", async (req, res) => {
   const database = getDatabase()
   const listing = findListing(database, account) ?? createListing(database, account)
   Object.assign(listing, rest)
-  // A brand's are worked out each time it is shown.
+  // 브랜드의 것은 보여 줄 때마다 계산한다.
   if (account.role === "브랜드") {
     delete listing.facts
     listing.tags = []
   }
-  // A logo left out stays as it was; null removes it.
+  // 빼 두면 로고는 그대로 두고, null이면 지운다.
   if (logo === null) delete listing.logo
   else if (logo) listing.logo = logo
   if (address === "") delete listing.location

@@ -6,21 +6,20 @@ import { mapPosition, mapRings, mapScale, spreadPositions, walkMinutes } from ".
 import type { NearbyPlace } from "../types"
 import { KakaoMap, type MapPin } from "./KakaoMap"
 
-// How a shop stands with uniconnect, for its dot and its name.
+// uniconnect와 가게의 관계 상태. 점과 이름의 모양을 정한다.
 export function placeState(place: NearbyPlace) {
   return place.brandId ? "joined" : place.invited ? "invited" : "open"
 }
 
 export const placeStateLabels = { joined: "uniconnect 가입", invited: "초대함", open: "협약 전" } as const
 
-// The shops around the campus drawn by direction and distance: the campus in
-// the middle, north up, rings out to the farthest shop (lib/placeMap.ts),
-// each shop a pin to press (deep blue once it joined, ringed once invited,
-// silver before), the picked one named, with a line from the campus. With a
-// Kakao JavaScript key (/api/site's maps.kakao) the same pins sit on Kakao's
-// map instead (KakaoMap.tsx); without one, or when it fails to load, this
-// drawing. The points come with Kakao's live answer and are drawn only on
-// screen.
+// 캠퍼스 주변 가게를 방향과 거리로 그린다. 캠퍼스가 가운데에 있고 북쪽이
+// 위이며, 가장 먼 가게까지 이어지는 동심원(lib/placeMap.ts)이 있다. 각 가게는
+// 누를 수 있는 핀이다 (가입했으면 짙은 파랑, 초대했으면 테두리, 그 전에는
+// 은색). 고른 가게는 이름이 붙고 캠퍼스에서 선이 이어진다. Kakao JavaScript
+// 키가 있으면 (/api/site의 maps.kakao) 같은 핀이 Kakao 지도 위에 놓이고
+// (KakaoMap.tsx), 키가 없거나 로딩에 실패하면 이 그림을 쓴다. 좌표는 Kakao의
+// 실시간 응답에 딸려 오며 화면에만 그린다.
 export function PlaceMap({
   campus,
   center,

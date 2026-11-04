@@ -13,7 +13,7 @@ describe("the calendar file of events", () => {
     expect(file).toContain("DTSTAMP:20261024T093000Z\r\n")
     expect(file).toContain("DTSTART;VALUE=DATE:20261127\r\nDTEND;VALUE=DATE:20261128\r\n")
     expect(file).toContain("BEGIN:VALARM\r\nACTION:DISPLAY\r\nDESCRIPTION:종강 공연\r\nTRIGGER:-PT15H\r\nEND:VALARM")
-    // Every line ends in CRLF, never a bare newline.
+    // 모든 줄은 CRLF로 끝나며 단독 개행은 없다.
     expect(file.replace(/\r\n/g, "")).not.toMatch(/[\r\n]/)
   })
 
@@ -39,7 +39,7 @@ describe("the calendar file of events", () => {
     const file = calendarFile([{ id: "e4", title, date: "2026-12-01" }], "x", now)
     const lines = file.split("\r\n")
     expect(lines.every((line) => new TextEncoder().encode(line).length <= 75)).toBe(true)
-    // Unfolded (each fold is CRLF and a space), the title is whole again.
+    // 접힘을 풀면(접힌 곳마다 CRLF와 공백) 제목이 다시 온전해진다.
     expect(file.replace(/\r\n /g, "")).toContain(`SUMMARY:${title}\r\n`)
   })
 })

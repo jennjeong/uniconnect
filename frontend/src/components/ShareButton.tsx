@@ -3,9 +3,9 @@ import { useEffect, useState } from "react"
 import { t } from "../i18n"
 import { Icon } from "./Icon"
 
-// 공유하기: the phone's share sheet where the browser has one (KakaoTalk,
-// messages and the rest are listed there), else the link copied. The
-// button says how it went for a moment, so no page needs a notice for it.
+// 공유하기: 브라우저에 있으면 휴대폰의 공유 시트 (KakaoTalk, 메시지 등이 거기
+// 나열된다), 없으면 링크를 복사한다. 버튼이 잠깐 결과를 알려 주므로 어떤
+// 페이지도 따로 안내를 둘 필요가 없다.
 export function ShareButton({ title, text, url = location.href, className = "cancel-button" }: { title: string; text?: string; url?: string; className?: string }) {
   const [state, setState] = useState<"idle" | "copied" | "failed">("idle")
   useEffect(() => {
@@ -20,7 +20,7 @@ export function ShareButton({ title, text, url = location.href, className = "can
         await navigator.share({ title, text, url })
         return
       } catch (error) {
-        // Closing the share sheet isn't a failure.
+        // 공유 시트를 닫은 것은 실패가 아니다.
         if ((error as Error).name === "AbortError") return
       }
     }

@@ -83,11 +83,11 @@ import type {
   Sponsorship,
 } from "./types"
 
-// The waits before trying a card approval again after the server failed.
+// 서버가 실패한 뒤 카드 승인을 다시 시도하기까지 기다리는 시간.
 const confirmRetryMs = [1500, 4000]
 
-// Screens and popups that aren't on the first screen load the first time
-// they open, so the first page downloads less (lazy chunks; Suspense below).
+// 첫 화면에 필요 없는 화면과 팝업은 처음 열릴 때 불러와서 첫 페이지의
+// 다운로드를 줄인다(지연 청크, 아래의 Suspense).
 const GoalModal = lazy(() => import("./modals/GoalModal").then((module) => ({ default: module.GoalModal })))
 const GoalsModal = lazy(() => import("./modals/GoalsModal").then((module) => ({ default: module.GoalsModal })))
 const InstallGuideModal = lazy(() => import("./modals/InstallGuideModal").then((module) => ({ default: module.InstallGuideModal })))
@@ -143,8 +143,8 @@ const AnalyticsExport = lazy(() => import("./report/AnalyticsExport").then((modu
 const ReportExport = lazy(() => import("./report/ReportExport").then((module) => ({ default: module.ReportExport })))
 
 
-// The screen to open with: the history entry's on a reload while it still
-// fits the address, else the address.
+// 처음 열 화면. 새로고침이면 주소와 맞는 한 히스토리 항목의 화면, 아니면 주소의
+// 화면이다.
 const initialView = entryView(history.state as HistoryEntry | null)
 
 const noMetrics: Metrics = {
@@ -163,125 +163,125 @@ const noMetrics: Metrics = {
 }
 
 function App() {
-  // The operators' switches (maintenance, sign-up, FAQ), read once.
+  // 운영자의 스위치(점검, 가입, FAQ). 한 번만 읽는다.
   const site = useSiteState()
   const [view, setView] = useState<View>(initialView)
-  // True when the view came from the back or forward button (or a swipe).
+  // 뒤로 가기나 앞으로 가기 버튼(또는 스와이프)으로 온 화면이면 true.
   const [fromHistory, setFromHistory] = useState(false)
   const [activeModal, setActiveModal] = useState<ModalName | null>(null)
-  // The partner 제안하기 was pressed for, while its form is open.
+  // 제안하기를 누른 파트너. 폼이 열려 있는 동안.
   const [proposing, setProposing] = useState<Match | null>(null)
-  // 일괄 제안: the groups one offer goes to, while its form is open.
+  // 일괄 제안: 제안 하나가 가는 단체들. 폼이 열려 있는 동안.
   const [proposingMany, setProposingMany] = useState<Match[] | null>(null)
-  // What 신고하기 or 차단하기 was pressed for, while its form is open.
+  // 신고하기나 차단하기를 누른 대상. 폼이 열려 있는 동안.
   const [safety, setSafety] = useState<{ mode: "report" | "block"; target: SafetyTarget } | null>(null)
-  // The accounts this one blocked, for 내 정보.
+  // 이 계정이 차단한 계정. 내 정보에서 쓴다.
   const [blocked, setBlocked] = useState<BlockedListing[]>([])
-  // The listings it saved (찜), newest first, for the catalogs' 찜 tab.
+  // 저장한 리스팅(찜). 최신순이며 카탈로그의 찜 탭에서 쓴다.
   const [saved, setSaved] = useState<string[]>([])
-  // The recruitment board: the post being written or edited, the post an
-  // application goes to, and a count that moves on to load the board again.
+  // 모집 게시판 상태. 쓰거나 고치는 글, 지원서를 보낼 글, 게시판을 다시
+  // 불러오려고 올리는 횟수.
   const [postForm, setPostForm] = useState<BoardPost | "new" | null>(null)
   const [applyingPost, setApplyingPost] = useState<string | null>(null)
   const [boardTick, setBoardTick] = useState(0)
   // A brand's business check, read when 내 정보 opens.
   const [business, setBusiness] = useState<BusinessStatus | null>(null)
   const [account, setAccount] = useState<Account | null>(null)
-  // With a saved token, role-specific data waits until /auth/me answers.
+  // 저장된 토큰이 있으면 /auth/me가 답할 때까지 역할별 데이터를 기다린다.
   const [authReady, setAuthReady] = useState(() => getToken() === null)
-  // Visitors preview either role (the one the address belongs to, at first);
-  // a logged-in account always uses its own.
+  // 방문자는 어느 역할이든 미리 본다(처음엔 주소가 속한 쪽). 로그인한 계정은
+  // 항상 자기 역할을 쓴다.
   const [previewRole, setPreviewRole] = useState<Role>(
     () => (initialView.invite ? "브랜드" : roleOfPage(initialView.page) ?? "학생단체"),
   )
-  // Role pre-selected when the login or sign-up form opens.
+  // 로그인이나 가입 폼이 열릴 때 미리 골라 둔 역할.
   const [authRole, setAuthRole] = useState<Role>("학생단체")
-  // The email the login form had when 비밀번호 찾기 opened.
+  // 비밀번호 찾기를 열 때 로그인 폼에 있던 이메일.
   const [resetEmail, setResetEmail] = useState("")
-  // The shop a student group is inviting and its invitation's code.
+  // 학생단체가 초대하려는 가게와 그 초대 코드.
   const [inviting, setInviting] = useState<{ place: NearbyPlace; code: string } | null>(null)
   const [matches, setMatches] = useState<Match[]>([])
   const [events, setEvents] = useState<EventItem[]>([])
   const [proposals, setProposals] = useState<string[]>([])
-  // Answers from brands that replied to the student group's proposals.
+  // 학생단체의 제안에 답한 브랜드의 답변.
   const [statuses, setStatuses] = useState<ProposalState["statuses"]>({})
   const [confirmedCount, setConfirmedCount] = useState(0)
-  // Proposals the account sent, for the inbox's 검토 중 beside those it received.
+  // 계정이 보낸 제안. 받은 제안 옆의 받은함 검토 중에 보여 준다.
   const [sent, setSent] = useState<SentProposal[]>([])
-  // Moves on every minute and when the window comes back into view, so
-  // answers from the other side show without reloading.
+  // 1분마다, 그리고 창이 다시 보일 때 올라가서 상대의 답이 새로고침 없이
+  // 나타나게 한다.
   const [refreshTick, setRefreshTick] = useState(0)
-  // Each of the student group's events with its live counts and report, and
-  // the one the measurement pages show (the default one until picked).
+  // 학생단체의 행사별 실시간 집계와 리포트, 그리고 측정 페이지가 보여 주는
+  // 행사(고르기 전에는 기본 행사).
   const [measurements, setMeasurements] = useState<EventMeasurement[]>([])
   const [measuredId, setMeasuredId] = useState<string | null>(null)
-  // Counts goals saved from an agreement, so the agreement reads them again.
+  // 계약서에서 저장한 목표의 횟수. 계약서가 목표를 다시 읽게 한다.
   const [goalsSaved, setGoalsSaved] = useState(0)
-  // Counts payments the payment window finished, so pages read them again.
+  // 결제 창이 끝낸 결제의 횟수. 페이지가 다시 읽게 한다.
   const [paid, setPaid] = useState(0)
-  // Brand catalog that student groups browse on the matches page.
+  // 학생단체가 매칭 페이지에서 둘러보는 브랜드 카탈로그.
   const [brands, setBrands] = useState<Match[]>([])
-  // Brand side: the student group catalog, proposals received and results.
+  // 브랜드 쪽: 학생단체 카탈로그, 받은 제안, 결과.
   const [groups, setGroups] = useState<Match[]>([])
-  // Whose catalog has arrived ("role accountId"), so an empty one says it
-  // is empty only once it has loaded.
+  // 카탈로그가 도착한 대상("role accountId"). 비어 있다는 말은 불러온 뒤에만
+  // 한다.
   const [catalogFor, setCatalogFor] = useState<string | null>(null)
-  // Whose events have arrived, as catalogFor is for the catalog.
+  // 행사가 도착한 대상. 카탈로그의 catalogFor와 같은 역할이다.
   const [eventsFor, setEventsFor] = useState<string | null>(null)
   const [requests, setRequests] = useState<SponsorRequest[]>([])
   const [offers, setOffers] = useState<SponsorOffer[]>([])
   const [sponsorships, setSponsorships] = useState<Sponsorship[]>([])
-  // The account's own listing (null until written) and its conversations.
+  // 계정 자신의 리스팅(작성 전에는 null)과 대화 목록.
   const [listing, setListing] = useState<Match | null>(null)
-  // Whose listing has arrived (an account id), so the dashboard's checklist
-  // waits for it rather than counting steps as left.
+  // 리스팅이 도착한 대상(계정 id). 대시보드 체크리스트가 단계를 남은 것으로
+  // 세지 않고 이를 기다린다.
   const [listingFor, setListingFor] = useState<string | null>(null)
   const [conversations, setConversations] = useState<Conversation[]>([])
-  // The account's questions to the operators, for the bell's answer notice.
+  // 운영자에게 한 계정의 질문. 벨의 답변 알림에 쓴다.
   const [inquiries, setInquiries] = useState<Inquiry[]>([])
-  // The bell's answer notice opens the help center's questions at once.
+  // 벨의 답변 알림이 도움말 센터의 질문을 바로 연다.
   const [askOnFaq, setAskOnFaq] = useState(false)
-  // Day the 내 행사 calendar opens on, such as a just-registered event's.
+  // 내 행사 캘린더가 열리는 날. 방금 등록한 행사의 날짜 등.
   const [eventsFocus, setEventsFocus] = useState<string | undefined>(undefined)
-  // Which history or goal the open modal shows.
+  // 열린 모달이 보여 주는 기록이나 목표.
   const [logKind, setLogKind] = useState<MetricKind | "all">("all")
   const [goalKey, setGoalKey] = useState<KpiKey>("reach")
   const [exporting, setExporting] = useState(false)
-  // Brands' analytics report, made by AnalyticsExport the same way.
+  // 브랜드의 분석 리포트. AnalyticsExport가 같은 방식으로 만든다.
   const [exportingAnalytics, setExportingAnalytics] = useState(false)
-  // The notifications panel under the bell.
+  // 벨 아래의 알림 패널.
   const [notificationsOpen, setNotificationsOpen] = useState(false)
-  // The full-screen menu (the Menu button in the header).
+  // 전체 화면 메뉴(헤더의 Menu 버튼).
   const [menuOpen, setMenuOpen] = useState(false)
-  // Where to scroll once a view from the history has rendered.
+  // 히스토리의 화면이 그려진 뒤 스크롤할 위치.
   const restoreScroll = useRef<number | null>(null)
-  // When matches and events were last loaded, shown on the dashboard.
+  // 매칭과 행사를 마지막으로 불러온 때. 대시보드에 보인다.
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null)
   const { notice, noticeId, showNotice, hideNotice, pauseNotice } = useNotice()
-  // How 앱 다운로드 works in this browser (lib/install.ts); "app" inside the
-  // installed app, which shows no button.
+  // 이 브라우저에서 앱 다운로드가 동작하는 방식(lib/install.ts). 설치된 앱
+  // 안에서는 "app"이며 버튼이 보이지 않는다.
   const installKind = useInstallState()
 
   const role = account?.role ?? previewRole
   const accountId = account?.id
-  // Known to be logged out: not while a saved session is still checked.
+  // 로그아웃이 확인된 상태. 저장된 세션을 확인하는 동안은 아니다.
   const visitor = authReady && account === null
   const students = role === "학생단체"
-  // The picked page, or the dashboard when this role has no such page.
+  // 고른 페이지. 이 역할에 그런 페이지가 없으면 대시보드.
   const page = pageFor(role, view.page)
-  // The page the menus mark as picked, if the screen is one of them.
+  // 메뉴가 선택됨으로 표시할 페이지. 화면이 메뉴에 속할 때만.
   const menuPage = menuPageOf(view, page)
-  // Day the registration page opens on; null while that page is closed.
+  // 등록 페이지가 열리는 날짜. 그 페이지가 닫혀 있으면 null.
   const creating = view.create ?? null
-  // The event or campaign being edited; null while that page is closed.
+  // 고치는 중인 행사나 캠페인. 그 페이지가 닫혀 있으면 null.
   const editing = view.edit ?? null
   const profileOpen = view.profile !== undefined && account !== null
   const chatOpen = view.chat !== undefined && account !== null
   const unreadMessages = conversations.reduce((sum, item) => sum + item.unread, 0)
-  // Someone new is looking (a login, a logout or the other side): their
-  // lists start empty in this same render, before anything is drawn, so the
-  // last viewer's data (the examples, just before logging in) never shows
-  // as theirs. The effects below then load the new viewer's.
+  // 보는 사람이 바뀌면(로그인, 로그아웃, 반대편 보기) 같은 렌더에서 목록을
+  // 비운다. 아무것도 그려지기 전이라 이전 보는 사람의 데이터(로그인 직전의
+  // 예시)가 새 사람의 것처럼 보이지 않는다. 아래 effect가 새 보는 사람의
+  // 데이터를 불러온다.
   const viewer = `${role} ${accountId ?? ""}`
   const [listsFor, setListsFor] = useState(viewer)
   if (listsFor !== viewer) {
@@ -303,8 +303,8 @@ function App() {
     setBlocked([])
     setSaved([])
   }
-  // Brands for student groups, student groups for brands, and whether it
-  // has arrived for whoever is looking now.
+  // 학생단체가 볼 브랜드, 브랜드가 볼 학생단체, 그리고 지금 보는 사람 기준으로
+  // 도착했는지 여부.
   const catalog = students ? brands : groups
   const catalogReady = catalogFor === viewer
   const detailMatch = view.detail
@@ -312,7 +312,7 @@ function App() {
     : undefined
   const calendarPage: NavLabel = students ? "내 행사" : "행사 일정"
 
-  // The tab title and search description follow the screen (lib/pageMeta.ts).
+  // 탭 제목과 검색 설명이 화면을 따라간다(lib/pageMeta.ts).
   const partnerName = conversations.find((item) => item.id === view.chat)?.partner.name
   useEffect(() => {
     applyPageMeta(pageMeta(view, { role, page, detail: detailMatch, partnerName }))
@@ -325,14 +325,14 @@ function App() {
   const pendingOffers = offers.filter((offer) => offer.status === "검토 중")
   const confirmedRequests = requests.filter((request) => request.status === "수락")
 
-  // Buttons ripple from where they are pressed, marked blocks rise into view
-  // as the page scrolls to them, and swiping sideways moves between views.
+  // 버튼은 누른 자리에서 물결이 퍼지고, 표시된 블록은 스크롤해 오면 떠오르며,
+  // 옆으로 스와이프하면 화면을 오간다.
   useEffect(() => installRipple(), [])
   useEffect(() => installReveal(), [])
   useEffect(() => installSwipeNavigation(), [])
 
-  // Every view has a history entry, so the back and forward buttons and
-  // swipe gestures move between views. Scroll positions are kept per entry.
+  // 모든 화면에 히스토리 항목이 있어서 뒤로·앞으로 버튼과 스와이프로 화면을
+  // 오간다. 스크롤 위치는 항목마다 따로 둔다.
   useEffect(() => {
     history.scrollRestoration = "manual"
     if (!(history.state as HistoryEntry | null)?.view) {
@@ -344,7 +344,7 @@ function App() {
       const next = entryView(entry)
       setView(next)
       setFromHistory(true)
-      // Visitors follow the entry to the side it belongs to.
+      // 방문자는 그 항목이 속한 쪽을 따라간다.
       const side = roleOfPage(next.page)
       if (side && !getToken()) setPreviewRole(side)
       restoreScroll.current = entry?.scrollY ?? 0
@@ -359,10 +359,8 @@ function App() {
     restoreScroll.current = null
   }, [view])
 
-  // Once the account is known, an address it can't use (the other side's
-  // page, or 내 정보 and registration while logged out) is corrected to the
-  // page on screen, and a member opening the introduction goes on to the
-  // dashboard.
+  // 계정이 확인되면, 쓸 수 없는 주소(반대편의 페이지, 로그아웃 상태의 내 정보와
+  // 등록)는 화면의 페이지로 바로잡고, 소개를 연 회원은 대시보드로 넘긴다.
   useEffect(() => {
     if (!authReady) return
     const usable =
@@ -371,7 +369,7 @@ function App() {
     if (!usable) go({ page }, true)
   })
 
-  // The login providers the server offers (routes/social.ts).
+  // 서버가 제공하는 로그인 제공자(routes/social.ts).
   const [socialProviders, setSocialProviders] = useState<SocialProvider[]>([])
   useEffect(() => {
     api.socialProviders().then(
@@ -379,13 +377,12 @@ function App() {
       () => undefined,
     )
   }, [])
-  // A login back from Kakao or Naver that still asks for the two-step code.
+  // 2단계 인증 코드를 아직 요구하는, 카카오나 네이버에서 돌아온 로그인.
   const [socialTicket, setSocialTicket] = useState<{ email: string; ticket: CodeTicket } | null>(null)
 
-  // Restore the saved session. An expired one is dropped. While the server
-  // cannot be reached the token stays and the page waits, trying again a
-  // little later each time: going on as a visitor would show a visitor's
-  // screens while the server, still sent the token, answers as the account.
+  // 저장된 세션을 복원한다. 만료된 세션은 지운다. 서버에 닿지 못하는 동안은
+  // 토큰을 두고 기다리며 매번 조금 뒤에 다시 시도한다. 방문자로 넘어가면 서버는
+  // 토큰을 받았으니 계정으로 답하는데 방문자 화면이 보이게 된다.
   useEffect(() => {
     if (!getToken()) return
     let cancelled = false
@@ -432,9 +429,9 @@ function App() {
     }
   }, [authReady])
 
-  // What the role and account see, loaded when they change and refreshed in
-  // the background. Each request applies on its own, so one failing leaves
-  // the rest current; only a first load says so.
+  // 역할과 계정이 보는 데이터. 바뀔 때 불러오고 백그라운드에서 새로 고친다.
+  // 요청마다 따로 적용하므로 하나가 실패해도 나머지는 최신으로 남고, 첫 로딩일
+  // 때만 실패를 알린다.
   const loadedFor = useRef("")
   useEffect(() => {
     if (!authReady) return
@@ -446,8 +443,8 @@ function App() {
       request.then((result) => {
         if (!cancelled) apply(result)
       })
-    // Student groups browse brands and answer their offers; brands browse
-    // groups, answer proposals and follow their results.
+    // 학생단체는 브랜드를 둘러보고 받은 협찬 제안에 답한다. 브랜드는 학생단체를
+    // 둘러보고 제안에 답하며 결과를 따라간다.
     const requests = [
       settle(api.matches(role), (result) => {
         setMatches(result.matches)
@@ -493,8 +490,8 @@ function App() {
     }
   }, [authReady, role, accountId, showNotice, refreshTick])
 
-  // The account's own listing and conversations; the list refreshes every
-  // 20 seconds so the chat button shows new messages.
+  // 계정 자신의 리스팅과 대화. 채팅 버튼에 새 메시지가 보이도록 목록을 20초마다
+  // 새로 고친다.
   useEffect(() => {
     if (!accountId) {
       setListing(null)
@@ -525,8 +522,8 @@ function App() {
     }
   }, [accountId])
 
-  // The account's events (a group's events, a brand's campaigns) with their
-  // measurements, again whenever its calendar changes.
+  // 계정의 행사(단체의 행사, 브랜드의 캠페인)와 그 측정. 캘린더가 바뀔 때마다
+  // 다시 불러온다.
   useEffect(() => {
     if (!authReady) return
     let cancelled = false
@@ -536,20 +533,20 @@ function App() {
         if (!cancelled) setMeasurements(result.measurements)
       })
       .catch(() => {
-        // Connection problems are already reported by the requests above.
+        // 연결 문제는 위의 요청들이 이미 알린다.
       })
     return () => {
       cancelled = true
     }
   }, [authReady, role, accountId, events])
 
-  // Fresh counts and report for one event, from the measurement page.
+  // 측정 페이지에서 한 행사의 최신 집계와 리포트.
   const updateMeasurement = useCallback((next: EventMeasurement) => {
     setMeasurements((current) => current.map((item) => (item.eventId === next.eventId ? next : item)))
   }, [])
 
-  // Shows a view as a new history entry (or in place of the current one),
-  // remembering how far the page it leaves was scrolled.
+  // 화면을 새 히스토리 항목으로(또는 현재 항목을 대체해) 보여 준다. 떠나는
+  // 페이지의 스크롤 위치를 기억한다.
   const go = (next: View, replace = false) => {
     const current = history.state as HistoryEntry | null
     const index = current?.index ?? 0
@@ -566,8 +563,8 @@ function App() {
     window.scrollTo(0, 0)
   }
 
-  // The back arrow on a page: one step back in this app's history, or
-  // `fallback` when the page was opened directly.
+  // 페이지의 뒤로 화살표. 이 앱의 히스토리에서 한 단계 뒤로 가고, 페이지를 바로
+  // 열었다면 `fallback`으로 간다.
   const goBack = (fallback: View) => {
     if ((history.state as HistoryEntry | null)?.index) history.back()
     else go(fallback, true)
@@ -575,11 +572,10 @@ function App() {
 
   const navigate = (label: NavLabel) => go({ page: label })
 
-  // Home: the introduction for visitors, the dashboard for a member.
+  // 홈: 방문자에게는 소개, 회원에게는 대시보드.
   const goHome = () => go(account ? { page: "대시보드" } : { page: "대시보드", home: true })
 
-  // A member screen with the demo data of the side it belongs to, opened
-  // from the introduction as a new page.
+  // 소속한 쪽의 데모 데이터로 보여 주는 회원 화면. 소개에서 새 페이지로 연다.
   const openExample = (side: Role, next: NavLabel = "대시보드") => {
     if (!account) setPreviewRole(side)
     go({ page: next })
@@ -595,7 +591,7 @@ function App() {
 
   const openAgreements = () => go({ page, agreements: true })
 
-  // The goals form for one of the account's own events, from its agreement.
+  // 계정 자신의 행사 하나에 대한 목표 폼. 계약서에서 연다.
   const editGoals = (eventId: string) => {
     if (!measurements.some((item) => item.eventId === eventId)) return
     setMeasuredId(eventId)
@@ -604,8 +600,7 @@ function App() {
 
   const openAgreement = (id: string) => go({ page, agreement: id })
 
-  // Keeps the conversation list (latest message first) in step with an open
-  // conversation.
+  // 열린 대화에 맞춰 대화 목록(최신 메시지 순)을 맞춘다.
   const updateConversation = useCallback((updated: Conversation) => {
     setConversations((current) =>
       [{ ...updated, messages: undefined }, ...current.filter((item) => item.id !== updated.id)].sort(
@@ -616,8 +611,8 @@ function App() {
 
   const openDetail = (match: Match) => go({ page, detail: match.id })
 
-  // The dashboard has no address for a detail page of its own, so its cards
-  // open the detail over the catalog page; back returns to the dashboard.
+  // 대시보드에는 상세 페이지 주소가 따로 없어서 카드를 누르면 카탈로그 페이지
+  // 위에 상세가 열린다. 뒤로 가면 대시보드로 돌아온다.
   const openCatalogDetail = (match: Match) =>
     go({ page: students ? "추천 매칭" : "단체 찾기", detail: match.id })
 
@@ -630,8 +625,8 @@ function App() {
     setActiveModal(modal)
   }
 
-  // 앱 다운로드: the browser's own install dialog where it has one, else how
-  // to install in this browser.
+  // 앱 다운로드: 브라우저에 자체 설치 대화 상자가 있으면 그것을, 없으면 이
+  // 브라우저에서 설치하는 방법을 보여 준다.
   const startInstall = () => {
     if (installKind !== "prompt") {
       setActiveModal("install")
@@ -645,8 +640,8 @@ function App() {
     openAuth("login")
   }
 
-  // `recoveryLeft` comes with a login by two-step login: few recovery codes
-  // left are worth a word.
+  // `recoveryLeft`는 2단계 인증으로 로그인할 때 함께 온다. 복구 코드가 몇 개
+  // 남지 않았다면 알려 줄 만하다.
   const startSession = (session: Session & { recoveryLeft?: number }, message: string) => {
     setToken(session.token)
     setAccount(session.account)
@@ -660,9 +655,9 @@ function App() {
     )
   }
 
-  // Back from Toss Payments' window (lib/payments.ts): the answer rides in
-  // the address, which loses it at once; a success is approved by the
-  // server, and the page shows what was bought.
+  // 토스페이먼츠 창에서 돌아온 경우(lib/payments.ts). 답은 주소에 실려 오고
+  // 주소는 이를 곧바로 잃는다. 성공은 서버가 승인하고 페이지가 산 내용을 보여
+  // 준다.
   useEffect(() => {
     const answer = readPaymentReturn(window.location.search)
     if (!answer) return
@@ -675,9 +670,9 @@ function App() {
       showNotice(answer.canceled ? t("결제를 취소했어요.") : answer.message || t("결제하지 못했어요. 다시 시도해 주세요."))
       return
     }
-    // A save or Toss failing on the server (5xx) or no answer at all is
-    // tried again: the server keeps the key and Toss approves an order
-    // once, so trying again never charges twice.
+    // 서버에서 저장이나 Toss가 실패했거나(5xx) 아예 답이 없으면 다시
+    // 시도한다. 서버가 키를 갖고 있고 Toss는 주문을 한 번만 승인하므로 다시
+    // 시도해도 두 번 청구되지 않는다.
     const body = { orderId: answer.orderId, paymentKey: answer.paymentKey, amount: answer.amount }
     const confirm = async () => {
       for (const wait of confirmRetryMs) {
@@ -697,12 +692,12 @@ function App() {
       },
       (error: unknown) => showNotice(errorMessage(error)),
     )
-    // Once, as the page opens.
+    // 페이지가 열릴 때 한 번.
   }, [])
 
-  // Back from Kakao or Naver (routes/social.ts): the outcome rides in
-  // ?social=, which goes from the address at once; a login finishes here
-  // with the one-time code the server left in a cookie.
+  // 카카오나 네이버에서 돌아온 경우(routes/social.ts). 결과는 ?social=에 실려
+  // 오고 주소에서 곧 사라진다. 로그인은 서버가 쿠키에 남긴 일회용 코드로 여기서
+  // 끝낸다.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const outcome = params.get("social")
@@ -733,14 +728,14 @@ function App() {
       "link-error": t("카카오 · 네이버 로그인을 마치지 못했어요. 다시 시도해 주세요."),
     }
     if (Object.prototype.hasOwnProperty.call(notices, outcome)) showNotice(notices[outcome])
-    // Not linked yet: back to the login, to log in or sign up by email.
+    // 아직 연결되지 않았다. 로그인으로 돌아가 이메일로 로그인하거나 가입한다.
     if (outcome.startsWith("unlinked")) openAuth("login")
-    // Once, as the page opens.
+    // 페이지가 열릴 때 한 번.
   }, [])
 
   const endSession = () => {
     setToken(null)
-    // Keep showing the same side after logging out.
+    // 로그아웃한 뒤에도 같은 쪽을 계속 보여 준다.
     if (account) setPreviewRole(account.role)
     setAccount(null)
     if (view.profile || view.create || view.edit || view.chat) go({ page: view.page }, true)
@@ -756,8 +751,8 @@ function App() {
     }
     showNotice(errorMessage(error))
   }
-  // The same handling for the chat page, kept as one function so the page's
-  // checking does not restart on every render.
+  // 채팅 페이지도 같은 처리를 한다. 렌더마다 페이지의 확인이 다시 시작되지
+  // 않도록 함수 하나로 둔다.
   const latestHandleError = useRef(handleError)
   latestHandleError.current = handleError
   const handleSessionEnd = useCallback((error: unknown) => latestHandleError.current(error), [])
@@ -766,19 +761,18 @@ function App() {
     try {
       await api.logout()
     } catch {
-      // The token is dropped locally either way.
+      // 어느 쪽이든 토큰은 로컬에서 지운다.
     }
     endSession()
     setActiveModal(null)
-    // Out of the account, back to the introduction rather than the same
-    // screen with the examples in it.
+    // 계정에서 나오면 예시가 담긴 같은 화면이 아니라 소개로 돌아간다.
     go({ page: "대시보드", home: true })
     showNotice(t("로그아웃했어요."))
   }
 
   const switchRole = (next: Role) => {
     if (account) return
-    // From the introduction, either side's example dashboard opens.
+    // 소개에서 어느 쪽이든 예시 대시보드가 열린다.
     if (view.home) {
       openExample(next)
       return
@@ -806,7 +800,7 @@ function App() {
       const { event } = await api.createEvent(draft)
       setEvents((current) => [event, ...current])
       setEventsFocus(event.date)
-      // The calendar takes the registration page's place in the history.
+      // 캘린더가 등록 페이지의 자리를 히스토리에서 대신한다.
       go({ page: calendarPage }, true)
       showNotice(
         role === "학생단체"
@@ -846,7 +840,7 @@ function App() {
       const { event } = await api.updateEvent(editing, draft)
       setEvents((current) => current.map((item) => (item.id === event.id ? event : item)))
       setEventsFocus(event.date)
-      // Proposals and sponsorships about it took its new name and dates.
+      // 그 행사에 대한 제안과 협찬이 새 이름과 날짜를 받았다.
       setRefreshTick((tick) => tick + 1)
       goBack({ page: calendarPage })
       showNotice(students ? t("행사 정보를 고쳤어요.") : t("캠페인 정보를 고쳤어요."))
@@ -855,7 +849,7 @@ function App() {
     }
   }
 
-  // An event's page (/event/<id>): a group's event, or a brand's own campaign.
+  // 행사 페이지(/event/<id>): 단체의 행사 또는 브랜드 자신의 캠페인.
   const openEventPage = (eventId: string) => go({ page, eventPage: eventId })
 
   function applyProposals(result: ProposalState) {
@@ -865,8 +859,8 @@ function App() {
     setSent(result.sent ?? [])
   }
 
-  // The click and the server's acceptance are tracked apart (lib/analytics.ts).
-  // The click opens the form, where the event and a note are picked.
+  // 클릭과 서버의 수락은 따로 추적한다(lib/analytics.ts). 클릭은 폼을 열고,
+  // 거기서 행사와 메모를 고른다.
   const propose = (match: Match) => {
     track("contact_click", { method: "proposal", role })
     if (!account) {
@@ -878,7 +872,7 @@ function App() {
     setActiveModal("propose")
   }
 
-  // Sends it; a problem other than an ended session stays on the form.
+  // 제안을 보낸다. 세션 종료가 아닌 문제는 폼에 남는다.
   const sendProposal = async (draft: { eventId?: string; message: string }) => {
     if (!proposing) return
     try {
@@ -899,16 +893,16 @@ function App() {
     closeModal()
   }
 
-  // 일괄 제안 from 단체 찾기: one campaign and message to several groups.
+  // 단체 찾기의 일괄 제안: 캠페인 하나와 메시지를 여러 단체에 보낸다.
   const proposeMany = (targets: Match[]) => {
     track("contact_click", { method: "proposal", role })
     setProposingMany(targets)
     setActiveModal("propose-many")
   }
 
-  // Sends to each in turn, its {상대} filled with its name. Those that went
-  // drop out of the picks; the form stays open with the reasons when none
-  // did, and otherwise closes saying which did not.
+  // 하나씩 차례로 보내며 {상대}를 그 이름으로 채운다. 보내진 단체는 선택에서
+  // 빠진다. 하나도 보내지 못했으면 이유와 함께 폼이 열려 있고, 아니면 닫으면서
+  // 어느 단체에 보내지 못했는지 알린다.
   const sendMany = async (draft: { eventId?: string; message: string }) => {
     if (!proposingMany) return
     const failed: string[] = []
@@ -927,7 +921,7 @@ function App() {
         failed.push(`${target.name}: ${errorMessage(error)}`)
       }
     }
-    // Shown on the form as the server's reasons.
+    // 서버가 준 사유로 폼에 보여 준다.
     if (sentCount === 0) throw new ApiError(400, failed.join(" · "))
     showNotice(
       failed.length
@@ -937,7 +931,7 @@ function App() {
     closeModal()
   }
 
-  // The recruitment board (/board) and its posts (/board/<id>).
+  // 모집 게시판(/board)과 그 글(/board/<id>).
   const openBoard = () => go({ page, board: true })
   const openPost = (id: string) => go({ page, post: id })
   const writePost = (post?: BoardPost) => {
@@ -948,7 +942,7 @@ function App() {
     setPostForm(post ?? "new")
     setActiveModal("post")
   }
-  // A problem from the server stays on the form (the modal shows it).
+  // 서버가 알려 준 문제는 폼에 남는다(모달이 보여 준다).
   const savePost = async (draft: PostDraft) => {
     const editing = postForm !== "new" ? postForm : null
     const { post } = editing ? await api.updatePost(editing.id, draft) : await api.createPost(draft)
@@ -957,8 +951,8 @@ function App() {
     showNotice(editing ? t("모집 글을 고쳤어요.") : t("모집 글을 올렸어요."))
     if (!editing) openPost(post.id)
   }
-  // Applying sends a proposal to the poster with one of this account's events
-  // or campaigns, through the same form as 제안하기.
+  // 지원하면 계정의 행사나 캠페인으로 글쓴이에게 제안이 간다. 제안하기와 같은
+  // 폼을 쓴다.
   const applyToPost = (post: BoardPost) => {
     track("contact_click", { method: "proposal", role })
     if (!account) {
@@ -978,11 +972,11 @@ function App() {
     setActiveModal("propose")
   }
 
-  // Members report and block; the shared demo accounts can't, as everyone
-  // trying the demo uses them.
+  // 회원은 신고하고 차단할 수 있다. 공용 데모 계정은 데모를 해 보는 모두가
+  // 쓰므로 할 수 없다.
   const member = account !== null && !Object.values(demoAccounts).some((demo) => demo.email === account.email)
 
-  // 받을 메일 from 내 정보: shown at once, then saved.
+  // 내 정보의 받을 메일: 바로 화면에 반영한 뒤 저장한다.
   const saveMailOff = (mailOff: MailKind[]) => {
     if (!account) return
     setAccount({ ...account, mailOff })
@@ -995,9 +989,9 @@ function App() {
       .catch(handleError)
   }
 
-  // The emails follow the language the app is shown in: whenever a member's
-  // differs (a new choice in 내 정보 or the footer reloads the page in it),
-  // the server hears of it. The shared demo accounts keep theirs.
+  // 이메일은 앱이 보이는 언어를 따른다. 회원의 언어가 달라질 때마다(내 정보나
+  // 푸터에서 새로 고르면 그 언어로 페이지를 다시 불러온다) 서버에 알린다. 공용
+  // 데모 계정은 자기 언어를 그대로 둔다.
   useEffect(() => {
     if (!member || !account || (account.language ?? "ko") === lang) return
     api
@@ -1021,8 +1015,8 @@ function App() {
       .catch(handleError)
   }
 
-  // 찜: the heart keeps a listing to come back to on the catalog's 찜 tab. It
-  // shows at once and goes back if the server refuses.
+  // 찜: 하트는 리스팅을 카탈로그의 찜 탭에 두고 다시 보게 한다. 바로 화면에
+  // 반영하고 서버가 거절하면 되돌린다.
   const toggleSaved = (match: Match) => {
     if (!account) {
       requireLogin(t("찜하려면 로그인해 주세요."))
@@ -1046,7 +1040,7 @@ function App() {
     setActiveModal("safety")
   }
 
-  // A block takes the listing out of the lists and closes its page.
+  // 차단하면 목록에서 그 리스팅이 빠지고 페이지가 닫힌다.
   const safetyDone = (notice: string) => {
     const blocking = safety?.mode === "block"
     closeModal()
@@ -1087,8 +1081,8 @@ function App() {
     }
   }
 
-  // A student group invites a shop from 가까운 순; true once the invitation
-  // exists, so its card says 초대함.
+  // 학생단체가 가까운 순에서 가게를 초대한다. 초대가 만들어지면 true가 되어
+  // 카드에 초대함이 나온다.
   const inviteShop = async (place: NearbyPlace) => {
     if (!account) {
       requireLogin(t("로그인하면 가게를 초대할 수 있어요."))
@@ -1114,11 +1108,11 @@ function App() {
     }
   }
 
-  // 제안 취소 on a sent proposal in the inbox.
+  // 받은함에서 보낸 제안의 제안 취소.
   const withdrawProposal = (proposal: SentProposal) =>
     cancelProposal({ id: proposal.partnerId, name: proposal.partnerName })
 
-  // 문의하기 on a detail page: opens (or starts) the conversation with it.
+  // 상세 페이지의 문의하기: 그 상대와의 대화를 연다(없으면 시작한다).
   const openChat = async (match: Match) => {
     track("contact_click", { method: "message", role })
     if (!account) {
@@ -1131,12 +1125,12 @@ function App() {
       go({ page, chat: conversation.id })
     } catch (error) {
       handleError(error)
-      // The other side needs to see who is asking: write an introduction first.
+      // 상대가 누가 요청하는지 알아야 하므로 먼저 소개를 쓴다.
       if (error instanceof ApiError && error.status === 409) go({ page, profile: "edit" })
     }
   }
 
-  // Everything the account made, saved as one JSON file (GET /api/auth/export).
+  // 계정이 만든 모든 것을 JSON 파일 하나로 저장한다(GET /api/auth/export).
   const downloadData = async () => {
     try {
       const data = await api.exportData()
@@ -1147,12 +1141,12 @@ function App() {
     }
   }
 
-  // Returns the problem to show on the form, or null once saved.
+  // 폼에 보여 줄 문제를 돌려주고, 저장되면 null.
   const saveProfile = async (draft: ProfileDraft) => {
     try {
       const { profile } = await api.saveProfile(draft)
       setListing(profile)
-      // The catalogs' scores and distances are worked out from the listing.
+      // 카탈로그의 점수와 거리는 리스팅으로 계산한다.
       setRefreshTick((tick) => tick + 1)
       goBack({ page, profile: "page" })
       showNotice(
@@ -1169,7 +1163,7 @@ function App() {
     }
   }
 
-  // A brand accepts or declines a student group's proposal.
+  // 브랜드가 학생단체의 제안을 수락하거나 거절한다.
   const answerRequest = async (request: SponsorRequest, decision: "accept" | "decline") => {
     if (!account) {
       requireLogin(t("로그인하면 받은 제안에 답할 수 있어요."))
@@ -1188,7 +1182,7 @@ function App() {
       )
     } catch (error) {
       handleError(error)
-      // Answered or withdrawn elsewhere in the meantime: show the current state.
+      // 그 사이 다른 곳에서 답했거나 철회했다면 현재 상태를 보여 준다.
       if (error instanceof ApiError && (error.status === 409 || error.status === 404)) {
         api
           .requests()
@@ -1198,7 +1192,7 @@ function App() {
     }
   }
 
-  // A student group accepts or declines a brand's offer.
+  // 학생단체가 브랜드의 제안을 수락하거나 거절한다.
   const answerOffer = async (offer: SponsorOffer, decision: "accept" | "decline") => {
     if (!account) {
       requireLogin(t("로그인하면 받은 협찬 제안에 답할 수 있어요."))
@@ -1215,7 +1209,7 @@ function App() {
       )
     } catch (error) {
       handleError(error)
-      // Answered or withdrawn elsewhere in the meantime: show the current state.
+      // 그 사이 다른 곳에서 답했거나 철회했다면 현재 상태를 보여 준다.
       if (error instanceof ApiError && (error.status === 409 || error.status === 404)) {
         api
           .offers()
@@ -1225,7 +1219,7 @@ function App() {
     }
   }
 
-  // Without a kind, the history of every measurement.
+  // 종류가 없으면 모든 측정의 기록.
   const openLog = (kind?: MetricKind) => {
     setLogKind(kind ?? "all")
     setActiveModal("metric-log")
@@ -1241,7 +1235,7 @@ function App() {
     setActiveModal("goal")
   }
 
-  // The PDF is made by ReportExport, which mounts while exporting is true.
+  // PDF는 ReportExport가 만들며, exporting이 true인 동안 마운트된다.
   const saveReport = () => {
     if (report && !exporting) setExporting(true)
   }
@@ -1268,7 +1262,7 @@ function App() {
 
   const goal = report ? reportKpis(report, metrics).find((kpi) => kpi.key === goalKey) : undefined
 
-  // Brands' calendars also hold the student events they agreed to sponsor.
+  // 브랜드의 캘린더에는 협찬하기로 한 학생 행사도 들어간다.
   const schedule = students
     ? events
     : [
@@ -1286,10 +1280,10 @@ function App() {
       ? studentNotifications({ matches, brands, statuses, report, offers, events })
       : brandNotifications({ matches, requests, sponsorships, events })),
   ]
-  // The parts of the bell's notices this account has read, saved on it.
+  // 이 계정이 읽은 벨 알림의 부분. 계정에 저장된다.
   const readNotices = new Set(account?.readNotices ?? [])
-  // Marks notices read (one opened, or 모두 읽음): at once on screen, then on
-  // the account for its other devices.
+  // 알림을 읽음으로 표시한다(하나를 열거나 모두 읽음). 화면에는 바로, 계정에는
+  // 다른 기기를 위해 나중에 반영한다.
   const markNoticesRead = (opened: NotificationItem[]) => {
     if (!account || !opened.some((item) => isUnread(item, readNotices))) return
     const next = readParts(notifications, readNotices, opened)
@@ -1330,8 +1324,8 @@ function App() {
     />
   )
 
-  // A new member's checklist under the dashboard's hero, once its listing and
-  // events have arrived (never for the shared demo accounts).
+  // 리스팅과 행사가 도착한 뒤 대시보드 히어로 아래에 보이는 새 회원의
+  // 체크리스트(공용 데모 계정에는 없다).
   const checklist =
     member && account && listingFor === account.id && eventsFor === viewer ? (
       <ProfileChecklist
@@ -1347,8 +1341,8 @@ function App() {
   const renderPage = (): ReactNode => {
     if (view.missing) return <NotFoundPage onHome={goHome} onNavigate={navigate} role={role} />
     if (view.home) {
-      // Nothing while a saved session is checked, or while a member is sent
-      // on to the dashboard.
+      // 저장된 세션을 확인하는 동안과 회원이 대시보드로 넘어가는 동안은
+      // 아무것도 보이지 않는다.
       if (!authReady || account) return null
       return (
         <LandingPage
@@ -1396,7 +1390,7 @@ function App() {
       )
     }
     if (view.eventPage) {
-      // A brand's own campaign has its own page; any other is a group's event.
+      // 브랜드 자신의 캠페인은 자기 페이지가 있고, 그 밖의 것은 단체의 행사다.
       if (!students && eventsFor !== viewer) return null
       const campaign = students ? undefined : events.find((event) => event.id === view.eventPage)
       if (campaign) {
@@ -1490,7 +1484,8 @@ function App() {
     }
     if (editing !== null) {
       const event = events.find((item) => item.id === editing)
-      // Nothing while the events load; one that isn't there gets the 404 page.
+      // 행사를 불러오는 동안은 아무것도 보이지 않고, 없는 행사는 404 페이지로
+      // 간다.
       if (!event) return eventsFor === viewer ? <NotFoundPage onHome={goHome} onNavigate={navigate} role={role} /> : null
       return (
         <EventCreatePage
@@ -1507,8 +1502,8 @@ function App() {
       const copySource = view.copy ? events.find((item) => item.id === view.copy) : undefined
       return (
         <EventCreatePage
-          // The form takes the copied event once; it starts again when the
-          // events arrive after opening straight from the address.
+          // 폼은 복사한 행사를 한 번만 받는다. 주소로 바로 열어 행사가 나중에
+          // 도착하면 다시 시작한다.
           key={copySource?.id ?? "new"}
           role={role}
           copyFrom={copySource}
@@ -1521,8 +1516,8 @@ function App() {
     if (profileOpen && account && view.profile === "edit") {
       return (
         <ProfileEditPage
-          // The form takes the listing once; opened straight from its
-          // address, it starts again when the listing arrives.
+          // 폼은 리스팅을 한 번만 받는다. 주소로 바로 열면 리스팅이 도착할 때
+          // 다시 시작한다.
           key={listing?.id ?? "new"}
           role={role}
           listing={listing}
@@ -1597,7 +1592,7 @@ function App() {
                     conversationId: view.chat!,
                     messageId: message.id,
                     name: partnerName ?? t("상대"),
-                    // A file shows by the name it was sent with.
+                    // 파일은 보낼 때의 이름으로 보인다.
                     text: message.text || (message.attachment?.name ?? ""),
                   })
               : undefined
@@ -1801,21 +1796,21 @@ function App() {
     }
   }
 
-  // Counts beside the menu's pages, of what waits for the account. A visitor
-  // gets none: the demo data's counts would read as their own notifications.
+  // 메뉴 페이지 옆의, 계정이 처리할 일의 개수. 방문자에게는 없다. 데모 데이터의
+  // 개수가 자기 알림처럼 읽히기 때문이다.
   const badges: Partial<Record<NavLabel, number>> = !account
     ? {}
     : students
       ? { "추천 매칭": matches.length, "받은 협찬": pendingOffers.length }
       : { "받은 제안": pendingRequests.length }
-  // A visitor on the introduction, and a visitor on a member screen shown
-  // with the demo data (marked as an example in the header).
+  // 소개를 보는 방문자와, 데모 데이터로 보여 주는 회원 화면을 보는
+  // 방문자(헤더에 예시로 표시한다).
   const landing = view.home === true && visitor
   const demoScreen = visitor && !view.home && !view.faq && !view.legal && !view.admin && !view.invite && !view.missing
 
   return (
     <div className="app-shell">
-      {/* A link (not a fragment, which would add a history entry) to the page body. */}
+      {/* 본문으로 가는 링크(프래그먼트는 히스토리 항목을 추가하므로 쓰지 않는다). */}
       <a
         className="skip-link"
         href="#main"
@@ -1876,9 +1871,9 @@ function App() {
 
       <main className="main-content" id="main" tabIndex={-1}>
         <SiteNotices viewer={account?.id ?? ""} />
-        {/* A new key on every page change replays the page's entrance. A
-            detail page covers its list, which stays mounted (keeping its
-            tab and scroll) and shows again on the way back. */}
+        {/* 페이지가 바뀔 때마다 새 key를 주어 페이지의 등장 효과를 다시
+           재생한다. 상세 페이지는 목록을 덮으며, 목록은 마운트된 채(탭과
+           스크롤을 유지) 남아 있다가 돌아올 때 다시 보인다. */}
         <div
           className={fromHistory ? "page-enter from-history" : "page-enter"}
           hidden={detailMatch !== undefined}
@@ -1930,7 +1925,7 @@ function App() {
               match={detailMatch}
               kind={students ? "brand" : "group"}
               viewer={{
-                // A visitor browses as the demo account of its side.
+                // 방문자는 자기 쪽의 데모 계정으로 둘러본다.
                 name: listing?.name ?? account?.name ?? demoAccounts[role].name,
                 mark: listing ?? { industry: students ? "performance" : "cafe" },
               }}
@@ -1976,9 +1971,8 @@ function App() {
         )}
       </main>
 
-      {/* A conversation keeps its message box at the bottom of the screen; the
-          call to register heads the footer on the introduction and the
-          dashboard only. */}
+      {/* 대화는 메시지 입력창을 화면 아래에 둔다. 가입 유도는 소개와 대시보드의
+         푸터 머리에만 나온다. */}
       {!chatOpen && (
         <Footer
           role={role}
@@ -2024,8 +2018,8 @@ function App() {
         />
       </Presence>
 
-      {/* Each popup stays on screen for its closing animation, and loads the
-          first time it opens. */}
+      {/* 팝업은 닫히는 애니메이션이 끝날 때까지 화면에 남고, 처음 열릴 때
+         불러온다. */}
       <Suspense fallback={null}>
       {report && (
         <Presence show={activeModal === "metric-log"}>
@@ -2323,7 +2317,7 @@ function App() {
   )
 }
 
-// Shown for the moment a screen's code arrives.
+// 화면의 코드가 도착하는 동안 보인다.
 function PageLoading() {
   return (
     <p className="page-loading" role="status">
