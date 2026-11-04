@@ -177,8 +177,8 @@ const en: Record<string, string> = {
   "브라우저에 저장하는 정보": "Information Stored in the Browser",
   "로그인 상태를 기억하려고 접속 토큰을 브라우저 저장소(localStorage)에 둬요. 로그아웃하면 지워져요.":
     "To remember the login status, the access token is kept in browser storage (localStorage). It is deleted upon logout.",
-  "첫 화면 소개 애니메이션을 한 번만 보여 주고, 앞으로·뒤로 이동을 기억하려고 탭을 닫으면 사라지는 저장소(sessionStorage)를 써요.":
-    "To show the opening animation only once and to remember forward and back navigation, storage that is cleared when the tab is closed (sessionStorage) is used.",
+  "첫 화면 소개 애니메이션을 첫 방문에만 보여 주려고 브라우저 저장소(localStorage)에 재생 기록을 둬요. 앞으로·뒤로 이동을 기억하려고 탭을 닫으면 사라지는 저장소(sessionStorage)도 써요.":
+    "To show the opening animation on the first visit only, a note that it played is kept in browser storage (localStorage). Storage that is cleared when the tab is closed (sessionStorage) is also used to remember forward and back navigation.",
   "방문 통계를 내려고 Google Analytics를 써요. Google이 브라우저에 쿠키(_ga로 시작, 최대 2년)를 두고 본 화면의 주소, 기기와 브라우저 종류, 대략적인 지역, 버튼 사용과 가입 같은 이벤트를 받아요. 이름, 이메일, 메시지 내용은 보내지 않아요. 쿠키는 브라우저 설정에서 지우거나 막을 수 있어요.":
     "Google Analytics is used for visit statistics. Google places cookies in the browser (starting with _ga, for up to 2 years) and receives the address of the screens viewed, the device and browser type, the approximate region, and events such as button use and sign-ups. No names, email addresses or message content are sent. The cookies can be deleted or blocked in the browser settings.",
   "제3자 제공과 처리 위탁": "Provision to Third Parties and Outsourcing of Processing",
