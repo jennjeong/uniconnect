@@ -19,6 +19,7 @@ const en: Record<string, string> = {
     "Change your campaign's name, dates, target reach and the sponsorship you offer.",
   "목표 도달 {count}명": "Target reach {count}",
   "행사 · 캠페인 상세": "Event or campaign details",
+  "검색어 지우기": "Clear search",
   "서류를 보냈어요. 운영자가 확인하면 메일로 알려 드려요.": "Your document is sent. We'll email you once an operator checks it.",
   "함께 관리하는 사람은 2단계 인증이 필수예요. 인증 앱으로 이 QR을 찍고 앱에 보이는 6자리 코드를 입력해 주세요.": "Co-admins must use two-step login. Scan this QR with an authenticator app and enter the 6-digit code it shows.",
   "사진이나 2MB 이하의 PDF로 올려 주세요.": "Please upload a photo or a PDF of 2MB or less.",

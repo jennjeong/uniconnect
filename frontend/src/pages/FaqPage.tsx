@@ -4,6 +4,7 @@ import { FaqList } from "../components/FaqSection"
 import { Icon } from "../components/Icon"
 import { Presence } from "../components/Presence"
 import { RevealTitle } from "../components/RevealText"
+import { SearchClear } from "../components/SearchClear"
 import { faqTopics, type FaqTopic } from "../data/faq"
 import { useFaqs } from "../hooks/useSiteState"
 import { t } from "../i18n"
@@ -38,6 +39,7 @@ export function FaqPage({
   const [query, setQuery] = useState("")
   const [topic, setTopic] = useState<FaqTopic | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
+  const helpBox = useRef<HTMLInputElement>(null)
   const [asking, setAsking] = useState(askNow)
   // Opened from the bell's notice of an answer, even while already here;
   // once, not again on the next visit.
@@ -140,8 +142,19 @@ export function FaqPage({
             onFocus={() => setSuggesting(true)}
             onKeyDown={moveThroughSuggestions}
             placeholder={t("궁금한 내용 검색 (예: 제안 취소)")}
+            ref={helpBox}
             role="combobox"
             type="search"
+            value={query}
+          />
+          <SearchClear
+            onClear={() => {
+              setQuery("")
+              setTopic(null)
+              setActive(-1)
+              setPicked(undefined)
+              helpBox.current?.focus()
+            }}
             value={query}
           />
           <button type="submit">{t("검색")}</button>
