@@ -5715,3 +5715,25 @@ test("the console's member tools, operations, content, analysis and system scree
     database.settings = {}
   }
 })
+
+test("a QR can't be run up: one device is limited, and an event stops at three times its audience", async () => {
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const group = await signUpMember("scan-club@syu.ac.kr", "scan-pass-123")
+  const made = await call("POST", "/events", { name: "스캔 공연", date: addDays(todayInKorea(), 3), people: "10명", types: ["제품"] }, group)
+  const { report } = (await call("GET", `/measurements/${made.data.event.id}`, undefined, group)).data
+  const event = getDatabase().events[getDatabase().accounts.find((item) => item.email === "scan-club@syu.ac.kr")!.id][0]
+  event.date = todayInKorea()
+  const scan = () => call("POST", `/check-in/${report.code}/scans`)
+  for (let count = 0; count < 20; count += 1) assert.equal((await scan()).status, 200)
+  const limited = await scan()
+  assert.equal(limited.status, 429)
+  assert.match(limited.data.error, /같은 기기/)
+
+  const measurement = getDatabase().measurements.find((item) => item.code === report.code)!
+  assert.equal(measurement.metrics.scans, 20)
+  await clearRateLimits()
+  measurement.metrics.scans = 100
+  const ceiling = await scan()
+  assert.equal(ceiling.status, 409)
+  assert.match(ceiling.data.error, /3배/)
+})

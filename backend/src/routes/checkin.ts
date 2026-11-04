@@ -1,11 +1,11 @@
-import { randomBytes } from "node:crypto"
+import { createHash, randomBytes } from "node:crypto"
 import { Router } from "express"
 
 import type { Request } from "express"
 
 import { todayInKorea } from "../lib/dates.js"
 import { HttpError } from "../lib/errors.js"
-import { assertOpen, checkInKinds, eventOf, parseKind, passLimit, recordMetric } from "../lib/measurements.js"
+import { assertOpen, checkInKinds, eventOf, isDemoEvent, parseKind, passLimit, recordMetric, scanCeiling } from "../lib/measurements.js"
 import {
   activeMethodsOf,
   confirmsAt,
@@ -72,6 +72,18 @@ const recordsPerClient = createRateLimit({
   windowMs: 60 * 1000,
   message: "기록 요청이 너무 많아요. 잠시 후 다시 시도해 주세요.",
 })
+
+// One phone counts once (the page keeps its pass), so scans of one event from
+// the same address and browser can't run up: people sharing a campus Wi-Fi
+// on different phones stay well under it.
+const scansPerDevice = createRateLimit({
+  limit: 20,
+  windowMs: 10 * 60 * 1000,
+  message: "같은 기기에서 QR을 너무 많이 스캔했어요. 참여는 한 번만 기록돼요.",
+})
+
+const deviceKey = (req: Request, code: string) =>
+  createHash("sha256").update(`${clientKey(req)} ${req.get("user-agent") ?? ""} ${code}`).digest("hex")
 
 // Wrong staff PINs, per address and event and per event alone: 4 digits
 // must not be guessable from one place or from many (about 80 hours for
@@ -142,8 +154,13 @@ checkInRouter.post("/:code/:kind", async (req, res) => {
   if (kind !== "visits") assertOpen(getDatabase(), measurement, event, kind)
 
   if (kind === "scans") {
+    // The demo accounts' events are open for visitors to try.
+    if (!isDemoEvent(getDatabase(), measurement)) await scansPerDevice.take(deviceKey(req, req.params.code))
     if (Object.keys(measurement.passes).length >= passLimit) {
       throw new HttpError(409, "이 행사의 참여 기록이 가득 찼어요. 행사 주최 측에 알려 주세요.")
+    }
+    if (measurement.metrics.scans >= scanCeiling(getDatabase(), measurement)) {
+      throw new HttpError(409, "이 행사의 참여 수가 예상 인원의 3배를 넘어 더 기록하지 않아요. 행사 주최 측에 알려 주세요.")
     }
     const entry = recordMetric(measurement, kind)
     const pass = randomBytes(16).toString("hex")

@@ -243,6 +243,8 @@ const en: Record<string, string> = {
 
   // Check-in (routes/checkin.ts)
   "행사를 찾을 수 없어요. QR을 다시 스캔해 주세요.": "We couldn't find the event. Please scan the QR code again.",
+  "같은 기기에서 QR을 너무 많이 스캔했어요. 참여는 한 번만 기록돼요.": "Too many scans from this device. Each person counts once.",
+  "이 행사의 참여 수가 예상 인원의 3배를 넘어 더 기록하지 않아요. 행사 주최 측에 알려 주세요.": "This event has passed three times its expected audience, so no more are counted. Please tell the organizers.",
   "이 행사의 참여 기록이 가득 찼어요. 행사 주최 측에 알려 주세요.":
     "This event's participation records are full. Please let the event organizers know.",
   "매장 방문은 매장 직원 화면에서 확인해요.": "Store visits are confirmed on the store staff's screen.",
