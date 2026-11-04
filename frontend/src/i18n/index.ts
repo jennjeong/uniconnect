@@ -1,5 +1,3 @@
-import { en } from "./en"
-
 export type Lang = "ko" | "en"
 
 const storageKey = "uniconnect-lang"
@@ -20,6 +18,11 @@ function detect(): Lang {
 }
 
 export const lang: Lang = detect()
+
+// 영어는 따로 큰 파일이어서 읽는 사람에게만, 화면을 그리기 전에 가져온다.
+// 가져오지 못하면 한국어를 보여 준다.
+const en: Record<string, string> =
+  lang === "en" ? await import("./en").then((module) => module.en, () => ({})) : {}
 
 // Intl 서식(숫자, 날짜)용.
 export const locale = lang === "ko" ? "ko-KR" : "en-US"
