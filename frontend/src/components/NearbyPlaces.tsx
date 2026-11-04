@@ -1,11 +1,9 @@
 import { useEffect, useState, type CSSProperties } from "react"
 
 import { api, errorMessage } from "../api"
-import { franchiseLogos } from "../data/franchises"
 import { placeCategories } from "../data/places"
 import { t } from "../i18n"
 import { formatDistance } from "../lib/distance"
-import { franchiseOf } from "../lib/franchises"
 import type { Match, NearbyPlaces as Answer, NearbyPlace, RequestStatus } from "../types"
 import { Icon } from "./Icon"
 import { PlaceMap, placeState, placeStateLabels } from "./PlaceMap"
@@ -28,16 +26,14 @@ type Partnering = {
 }
 
 // One shop as the other tabs' silver card (WorkCard.tsx): its kind and its
-// Kakao Map page at the top, its brand's or chain's logo (or its name's first
-// letter) in the middle, then its name, address, distance and phone. A shop
-// not on uniconnect says 협약 전 where a partner's card offers a proposal and
+// Kakao Map page at the top, its brand's logo (or its name's first letter)
+// in the middle, then its name, address, distance and phone. A shop not on
+// uniconnect says 협약 전 where a partner's card offers a proposal and
 // can be invited (초대함 once it is); one that joined from an invitation is
 // that brand, with its detail page and a proposal. The made-up shops visitors
 // see have no map page to link.
 function PlaceCard({ place, partnering }: { place: NearbyPlace; partnering: Partnering }) {
   const brand = place.brandId ? partnering.brands.find((item) => item.id === place.brandId) : undefined
-  const franchise = franchiseOf(place.name)
-  const logo = franchise && franchiseLogos[franchise]
   const map = place.url ? { href: place.url, rel: "noopener noreferrer", target: "_blank" } : undefined
   const state = placeState(place)
   return (
@@ -55,10 +51,6 @@ function PlaceCard({ place, partnering }: { place: NearbyPlace; partnering: Part
         {brand?.logo ? (
           <div className="match-logo large has-logo">
             <img alt="" src={brand.logo} />
-          </div>
-        ) : logo ? (
-          <div className={logo.wide ? "match-logo large has-logo wordmark" : "match-logo large has-logo"}>
-            <img alt="" src={logo.src} />
           </div>
         ) : (
           <div className="match-logo large monogram">{Array.from(place.name.trim())[0]}</div>
@@ -244,7 +236,7 @@ export function NearbyPlaces(partnering: Partnering) {
           <p className="nearby-source">
             {result?.example
               ? t("예시로 만든 가게예요. 실제 가게나 카카오의 정보가 아니에요.")
-              : t("정보 제공: 카카오 · 가게 로고는 각 회사의 상표이고 표시가 제휴를 뜻하지는 않아요.")}
+              : t("정보 제공: 카카오")}
           </p>
         </>
       )}

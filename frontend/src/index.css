@@ -3688,18 +3688,8 @@ button.nav-pill:hover {
     0 22px 40px -18px rgba(19, 48, 111, 0.4);
 }
 
-/* A shop near the campus (NearbyPlaces.tsx): a chain's wordmark gets a wider
-   tile so it stays legible; without a chain, the first letter of its name
+/* A shop near the campus (NearbyPlaces.tsx): the first letter of its name
    stands in the logo's place. */
-.work-mark .match-logo.large.wordmark {
-  width: 168px;
-}
-
-.match-logo.wordmark img {
-  width: 86%;
-  height: 56%;
-}
-
 .match-logo.monogram {
   background: var(--point-tint);
   color: var(--point);
@@ -19491,26 +19481,6 @@ span.odometer {
     box-shadow:
       0 0 0 4px rgba(255, 255, 255, 0.7),
       0 12px 24px -12px rgba(19, 48, 111, 0.4);
-  }
-
-  /* A chain's wordmark needs its width, so it takes a row of its own above
-     the name instead of the logo column. */
-  .work-card:has(.match-logo.wordmark) {
-    grid-template-areas:
-      "mark mark mark"
-      "meta meta ring"
-      "name name ring"
-      "tags tags tags"
-      "actions actions actions";
-  }
-
-  .work-card:has(.match-logo.wordmark) .work-mark {
-    place-items: center start;
-    margin-bottom: 8px;
-  }
-
-  .work-mark .match-logo.large.wordmark {
-    width: 150px;
   }
 
   .match-score-ring {

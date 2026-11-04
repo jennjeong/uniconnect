@@ -3,8 +3,7 @@
 // real businesses on show, and it asks nothing of Kakao. Each sits `east`
 // and `north` metres from the campus, and its address reads from the campus
 // ("삼육대학교 정문 앞 상가 1층"). None has a Kakao Map page or a phone
-// number, and no name starts like a chain whose logo the app carries
-// (frontend lib/franchises.ts). Kinds are Kakao's category group codes
+// number. Kinds are Kakao's category group codes
 // (placeCategories in lib/validation.ts).
 export type ExampleShop = {
   id: string
