@@ -17,7 +17,9 @@ const en: Record<string, string> = {
     "Change your event's name, dates, head count and the sponsorship types you want.",
   "등록한 캠페인의 이름과 일정, 목표 인원, 제공할 협찬 형태를 고쳐요.":
     "Change your campaign's name, dates, target reach and the sponsorship you offer.",
-  "{name} 상세 흐름을 열었어요.": "Opened the details for {name}.",
+  "목표 도달 {count}명": "Target reach {count}",
+  "행사 · 캠페인 상세": "Event or campaign details",
+  "캠페인의 일정과 목표, 제공할 협찬이나 학생단체의 행사 정보를 봐요.": "See a campaign's dates, target and offer, or a student group's event.",
   "로그인하면 가게를 초대할 수 있어요.": "Log in to invite shops.",
   "앱 다운로드": "Get the app",
   "uniconnect를 앱으로 설치했어요.": "uniconnect is installed as an app.",

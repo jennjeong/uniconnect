@@ -114,6 +114,7 @@ const AgreementPage = lazy(() => import("./pages/AgreementPage").then((module) =
 const AgreementsPage = lazy(() => import("./pages/AgreementsPage").then((module) => ({ default: module.AgreementsPage })))
 const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage").then((module) => ({ default: module.AnalyticsPage })))
 const EventCreatePage = lazy(() => import("./pages/EventCreatePage").then((module) => ({ default: module.EventCreatePage })))
+const CampaignDetailPage = lazy(() => import("./pages/CampaignDetailPage").then((module) => ({ default: module.CampaignDetailPage })))
 const EventDetailPage = lazy(() => import("./pages/EventDetailPage").then((module) => ({ default: module.EventDetailPage })))
 const BoardPage = lazy(() => import("./pages/BoardPage").then((module) => ({ default: module.BoardPage })))
 const PostPage = lazy(() => import("./pages/PostPage").then((module) => ({ default: module.PostPage })))
@@ -836,19 +837,8 @@ function App() {
     }
   }
 
-  // A student group's event page (/event/<id>).
+  // An event's page (/event/<id>): a group's event, or a brand's own campaign.
   const openEventPage = (eventId: string) => go({ page, eventPage: eventId })
-
-  // 상세 보기 on a calendar card: a group's event opens its page; a brand's
-  // campaign goes on to finding groups, or its results once measured.
-  const showEventDetail = (event: EventItem) => {
-    if (students) {
-      openEventPage(event.id)
-      return
-    }
-    navigate(event.status === "측정 완료" ? "성과 분석" : "단체 찾기")
-    showNotice(t("{name} 상세 흐름을 열었어요.", { name: event.name }))
-  }
 
   function applyProposals(result: ProposalState) {
     setProposals(result.proposals)
@@ -1311,11 +1301,11 @@ function App() {
         setEventsFocus(date)
         openCreate(date)
       }}
-      onShowDetail={showEventDetail}
+      onShowDetail={(event) => openEventPage(event.id)}
       onEdit={openEdit}
       onCopy={(event) => go({ page, create: todayIso(), copy: event.id })}
       onDelete={deleteEvent}
-      onOpenSponsorship={() => navigate("받은 제안")}
+      onOpenSponsorship={(request) => (request?.eventId ? openEventPage(request.eventId) : navigate("받은 제안"))}
       onNotice={showNotice}
       canSubscribe={member}
       onExplore={students ? () => go({ page, explore: true }) : undefined}
@@ -1388,6 +1378,21 @@ function App() {
       )
     }
     if (view.eventPage) {
+      // A brand's own campaign has its own page; any other is a group's event.
+      if (!students && eventsFor !== viewer) return null
+      const campaign = students ? undefined : events.find((event) => event.id === view.eventPage)
+      if (campaign) {
+        return (
+          <CampaignDetailPage
+            campaign={campaign}
+            onBack={() => goBack({ page })}
+            onEdit={openEdit}
+            onCopy={(event) => go({ page, create: todayIso(), copy: event.id })}
+            onFindGroups={() => navigate("단체 찾기")}
+            onOpenResults={() => navigate("성과 분석")}
+          />
+        )
+      }
       return (
         <EventDetailPage
           id={view.eventPage}
