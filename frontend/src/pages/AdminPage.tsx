@@ -7,6 +7,7 @@ import { PasswordField } from "../components/PasswordField"
 import { Pill } from "../components/Pill"
 import { Presence } from "../components/Presence"
 import { Toast } from "../components/Toast"
+import { SearchClear } from "../components/SearchClear"
 import { TabBar } from "../components/TabBar"
 import { locale, t } from "../i18n"
 import { formatDateTime } from "../lib/date"
@@ -1274,6 +1275,13 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
               onChange={(event) => setSearch(event.target.value)}
               placeholder={t("회원 이름 · 이메일 · 학교")}
               ref={searchRef}
+              value={search}
+            />
+            <SearchClear
+              onClear={() => {
+                setSearch("")
+                searchRef.current?.focus()
+              }}
               value={search}
             />
             <kbd aria-hidden="true">/</kbd>

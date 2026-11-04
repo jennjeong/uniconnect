@@ -2093,4 +2093,17 @@ test("coming back from Kakao's page leaves the login popup usable", async ({ pag
   // Chrome's back/forward cache brings the page back as it was.
   await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true })))
   await expect(kakao).toBeEnabled()
+
+test("a search box's X empties it and shows everything again", async ({ page }) => {
+  await page.goto("/matches")
+  await page.getByRole("tab", { name: "전체" }).click()
+  const box = page.getByRole("searchbox", { name: /찾기|검색/ }).first()
+  const all = await page.locator(".work-card").count()
+  await expect(page.getByRole("button", { name: "검색어 지우기" })).toHaveCount(0)
+  await box.fill("없는 브랜드 이름")
+  await expect(page.locator(".work-card")).toHaveCount(0)
+  await page.getByRole("button", { name: "검색어 지우기" }).click()
+  await expect(box).toHaveValue("")
+  await expect(box).toBeFocused()
+  await expect(page.locator(".work-card")).toHaveCount(all)
 })

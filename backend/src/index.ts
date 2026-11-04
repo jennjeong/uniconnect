@@ -1,5 +1,7 @@
 import { createApp } from "./app.js"
 import { config } from "./config.js"
+import { cardReady } from "./lib/billing.js"
+import { reconcileCards } from "./lib/cardRecovery.js"
 import { mailConfigured } from "./lib/mailer.js"
 import { sendDigests } from "./lib/digest.js"
 import { sendReminders } from "./lib/reminders.js"
@@ -8,8 +10,10 @@ import { loadDatabase } from "./store.js"
 await loadDatabase()
 
 // Reminders of events three days away or nearer, now and every hour after,
-// and on Mondays the weekly digests (each member's once).
+// and on Mondays the weekly digests (each member's once); card payments
+// whose approval wasn't recorded are settled on the same hour.
 const remind = () => {
+  if (cardReady()) reconcileCards().catch((error: Error) => console.error(`[billing] ${error.message}`))
   sendReminders().catch((error: Error) => console.error(`[reminders] ${error.message}`))
   sendDigests().catch((error: Error) => console.error(`[digests] ${error.message}`))
 }
