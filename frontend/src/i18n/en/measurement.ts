@@ -180,9 +180,8 @@ const en: Record<string, string> = {
   "행사 규모": "Event Size",
   "예상 인원 (명)": "Expected attendance",
   "1인 예상 지출 (원)": "Spend per person (KRW)",
-  "현장 밖 도달 (SNS 등, 명)": "Reach beyond the venue (social etc.)",
-  "도달은 QR 스캔 수에 현장 밖 도달을 더하고 ROAS는 매장 방문 × 1인 예상 지출을 협찬 가치로 나눠 계산해요.":
-    "Reach is QR scans plus reach beyond the venue. ROAS is store visits × spend per person, divided by the sponsorship value.",
+  "도달은 QR 스캔 수에 브랜드가 확인한 SNS 게시물 도달을 더하고 ROAS는 매장 방문 × 1인 예상 지출을 협찬 가치로 나눠 계산해요.":
+    "Reach is QR scans plus the reach of SNS posts the brand confirmed; ROAS is store visits × expected spend per person over the sponsorship's value.",
   "협찬 종류": "Kind of sponsorship",
   "금액 (원)": "Amount (KRW)",
   "이 항목 지우기": "Remove this item",
