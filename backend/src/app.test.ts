@@ -4842,7 +4842,7 @@ test("a group's event page shows its venue, introduction, photos and packages to
   const { eventPhotos, uploadsFolder } = await import("./lib/photos.js")
   const { existsSync } = await import("node:fs")
   const { token: group, listingId: groupListing } = await listedMember("page-club@syu.ac.kr", "page-pass-123")
-  const { token: brand } = await listedMember("page@page-cafe.kr", "page-pass-123", "브랜드")
+  const { token: brand, listingId: brandListing } = await listedMember("page@page-cafe.kr", "page-pass-123", "브랜드")
   const packages = [{ name: "메인 스폰서", gives: "현수막 로고, SNS 게시물 2회", asks: "현금 30만원" }]
   const body = {
     name: "페이지 공연",
@@ -4879,6 +4879,13 @@ test("a group's event page shows its venue, introduction, photos and packages to
   assert.equal((await call("GET", `/events/${event.id}/page`, undefined, group)).data.own, true)
   assert.equal((await call("GET", `/events/${event.id}/page`)).status, 404)
   assert.equal((await call("GET", `/events/${event.id}/page`, undefined, await login("브랜드"))).status, 404)
+  // The budget is for the group and the brands it asked about this event.
+  const budgeted = (await call("POST", "/events", { ...body, name: "예산 공연", budget: "500000" }, group)).data.event
+  const budgetSeen = async (token?: string) => (await call("GET", `/events/${budgeted.id}/page`, undefined, token)).data.event.budget
+  assert.equal(await budgetSeen(group), 500000)
+  assert.equal(await budgetSeen(brand), undefined)
+  assert.equal((await call("POST", "/proposals", { matchId: brandListing, eventId: budgeted.id }, group)).status, 201)
+  assert.equal(await budgetSeen(brand), 500000)
   const demo = await call("GET", "/events/event-muse-concert/page")
   assert.equal(demo.data.event.venue, "삼육대학교 대강당")
   assert.equal(demo.data.event.packages.length, 2)
