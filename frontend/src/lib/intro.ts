@@ -1,4 +1,5 @@
-// The intro loader (components/Loader.tsx) plays once per browser session.
+// The intro loader (components/Loader.tsx) plays on a browser's first visit only,
+// as it holds the page for 2.5 seconds on every return otherwise.
 // Scenes wait for it to leave before their entrance, so it isn't wasted
 // behind the panel.
 
@@ -10,7 +11,7 @@ let done = false
 export function shouldPlayIntro() {
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false
   try {
-    return sessionStorage.getItem(storageKey) !== "1"
+    return localStorage.getItem(storageKey) !== "1"
   } catch {
     return false
   }
@@ -19,7 +20,7 @@ export function shouldPlayIntro() {
 export function finishIntro() {
   done = true
   try {
-    sessionStorage.setItem(storageKey, "1")
+    localStorage.setItem(storageKey, "1")
   } catch {
     // Private windows may refuse storage; the loader just plays again next time.
   }

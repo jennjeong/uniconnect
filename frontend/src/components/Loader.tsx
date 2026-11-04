@@ -14,8 +14,8 @@ const DONE_AT = 2500
 // groups) and the shop (brands) appear, each reaches down its half of the
 // U, and the halves click together at the bottom with a pulse; the name
 // slides in beside them; then a circle ringed in deep blue opens from the
-// point where they met and the page shows through it. It plays once per
-// browser session and never with reduced motion; the page holds still
+// point where they met and the page shows through it. It plays on a
+// browser's first visit and never with reduced motion; the page holds still
 // under it, and the header and hero wait for it (intro-playing in
 // index.css).
 export function Loader() {
