@@ -49,7 +49,7 @@ describe("report figures", () => {
 
   test("explain reach and ROAS as they are worked out", () => {
     const [reach, , , roas] = reportKpis(report(680000, 243, 170), metrics)
-    expect(reach.formula).toBe("QR 스캔 128건에 목표 설정에서 적은 현장 밖 도달(SNS 등) 1,112명을 더한 값이에요.")
+    expect(reach.formula).toBe("QR 스캔 128건에 목표 설정에서 적은 현장 밖 도달(SNS 등) 1,112명과 브랜드가 확인한 게시물 도달 0명을 더한 값이에요.")
     expect(roas.formula).toContain("매장 방문 41건 × 1인 예상 지출 40,300원")
     expect(roas.formula).toContain("68만원")
   })
