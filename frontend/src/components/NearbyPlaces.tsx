@@ -1,11 +1,9 @@
 import { useEffect, useState, type CSSProperties } from "react"
 
 import { api, errorMessage } from "../api"
-import { franchiseLogos } from "../data/franchises"
 import { placeCategories } from "../data/places"
 import { t } from "../i18n"
 import { formatDistance } from "../lib/distance"
-import { franchiseOf } from "../lib/franchises"
 import type { Match, NearbyPlaces as Answer, NearbyPlace, RequestStatus } from "../types"
 import { Icon } from "./Icon"
 import { PlaceMap, placeState, placeStateLabels } from "./PlaceMap"
@@ -28,15 +26,13 @@ type Partnering = {
 }
 
 // 다른 탭의 은색 카드(WorkCard.tsx)와 같은 모양의 가게 하나. 맨 위에 종류와
-// Kakao Map 페이지, 가운데에 브랜드나 체인의 로고 (없으면 이름의 첫 글자), 그
+// Kakao Map 페이지, 가운데에 브랜드의 로고 (없으면 이름의 첫 글자), 그
 // 아래에 이름, 주소, 거리, 전화번호가 온다. uniconnect에 없는 가게는 파트너
 // 카드라면 제안을 보여 줄 자리에 협약 전이라고 쓰고, 초대할 수 있다 (초대하면
 // 초대함). 초대로 가입한 가게는 그 브랜드이며 상세 페이지와 제안이 있다.
 // 방문자가 보는 가상의 가게에는 연결할 지도 페이지가 없다.
 function PlaceCard({ place, partnering }: { place: NearbyPlace; partnering: Partnering }) {
   const brand = place.brandId ? partnering.brands.find((item) => item.id === place.brandId) : undefined
-  const franchise = franchiseOf(place.name)
-  const logo = franchise && franchiseLogos[franchise]
   const map = place.url ? { href: place.url, rel: "noopener noreferrer", target: "_blank" } : undefined
   const state = placeState(place)
   return (
@@ -54,10 +50,6 @@ function PlaceCard({ place, partnering }: { place: NearbyPlace; partnering: Part
         {brand?.logo ? (
           <div className="match-logo large has-logo">
             <img alt="" src={brand.logo} />
-          </div>
-        ) : logo ? (
-          <div className={logo.wide ? "match-logo large has-logo wordmark" : "match-logo large has-logo"}>
-            <img alt="" src={logo.src} />
           </div>
         ) : (
           <div className="match-logo large monogram">{Array.from(place.name.trim())[0]}</div>
@@ -243,7 +235,7 @@ export function NearbyPlaces(partnering: Partnering) {
           <p className="nearby-source">
             {result?.example
               ? t("예시로 만든 가게예요. 실제 가게나 카카오의 정보가 아니에요.")
-              : t("정보 제공: 카카오 · 가게 로고는 각 회사의 상표이고 표시가 제휴를 뜻하지는 않아요.")}
+              : t("정보 제공: 카카오")}
           </p>
         </>
       )}

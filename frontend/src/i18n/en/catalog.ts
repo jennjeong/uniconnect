@@ -558,8 +558,7 @@ const en: Record<string, string> = {
   "{campus} 근처, 가까운 순서예요.": "Near {campus}, nearest first.",
   "카카오맵에서 보기": "View on Kakao Map",
   "(새 창)": "(opens in a new tab)",
-  "정보 제공: 카카오 · 가게 로고는 각 회사의 상표이고 표시가 제휴를 뜻하지는 않아요.":
-    "Data from Kakao · Shop logos are their companies' trademarks and don't mean a partnership.",
+  "정보 제공: 카카오": "Data from Kakao",
   "{name} 카카오맵에서 보기": "View {name} on Kakao Map",
   "우리 매장에서 학교까지 가까운 순서예요. 매장 주소는 내 정보에서 적을 수 있어요.":
     "Nearest first, from your store to each school. Add your store's address under My Account.",

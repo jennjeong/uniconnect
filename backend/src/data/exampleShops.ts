@@ -2,8 +2,7 @@
 // 캠퍼스 주변에 두며 Kakao의 실제 가게를 대신한다. 예시가 실제 사업장을
 // 내보이면 안 되고 Kakao에 요청도 하지 않기 위해서다. 가게마다 캠퍼스에서
 // 동쪽 `east`, 북쪽 `north` 미터에 있고 주소는 캠퍼스를 기준으로 쓴다
-// ("삼육대학교 정문 앞 상가 1층"). Kakao Map 페이지나 전화번호는 없고, 앱이
-// 로고를 가진 체인(frontend lib/franchises.ts)처럼 시작하는 이름도 없다.
+// ("삼육대학교 정문 앞 상가 1층"). Kakao Map 페이지나 전화번호는 없다.
 // 종류는 Kakao의 카테고리 그룹 코드다(lib/validation.ts의 placeCategories).
 export type ExampleShop = {
   id: string
