@@ -5356,6 +5356,142 @@ test("a brand confirms an e-contract by paying the 15% fee, by card or by transf
   }
 })
 
+test("a card approval whose save fails is kept by its key and recorded later, never charged twice", async () => {
+  const { toss } = await import("./lib/billing.js")
+  const { cardRecovery, reconcileCards } = await import("./lib/cardRecovery.js")
+  const { HttpError } = await import("./lib/errors.js")
+  const saved = { client: config.tossClientKey, secret: config.tossSecretKey, settle: cardRecovery.settleAfterMs }
+  const realToss = { confirm: toss.confirm, lookup: toss.lookup }
+  const dataFile = config.dataFile
+  config.tossClientKey = "test_ck_example"
+  config.tossSecretKey = "test_sk_example"
+  // Toss가 청구한 내역(결제 키별)과 요청받은 횟수.
+  const charged = new Map<string, { orderId: string; totalAmount: number }>()
+  let confirms = 0
+  toss.confirm = async (paymentKey, orderId, amount) => {
+    confirms += 1
+    // Toss는 Idempotency-Key대로 주문의 첫 승인을 다시 답한다.
+    const earlier = [...charged.values()].find((item) => item.orderId === orderId)
+    if (!earlier) charged.set(paymentKey, { orderId, totalAmount: amount })
+    return { status: "DONE", orderId, totalAmount: earlier?.totalAmount ?? amount, approvedAt: "2026-11-04T12:00:00+09:00" }
+  }
+  toss.lookup = async (paymentKey) => {
+    const found = charged.get(paymentKey)
+    return found ? { status: "DONE", ...found } : undefined
+  }
+  const stored = (id: string) => getDatabase().payments!.find((payment) => payment.id === id)!
+  try {
+    const { token: brand } = await listedMember("card-save@card-cafe.kr", "card-pass-123", "브랜드")
+    const order = async () => (await call("POST", "/billing/orders", { kind: "pro" }, brand)).data.order
+    const confirm = (id: string, paymentKey: string, amount: number) =>
+      call("POST", "/billing/confirm", { orderId: id, paymentKey, amount }, brand)
+
+    // Toss가 카드를 청구한 뒤 저장이 모두 실패한다. 주문은 Toss에 묻기 전에
+    // 저장한 키를 가진 채 기다린다.
+    const first = await order()
+    const approve = toss.confirm
+    toss.confirm = async (...args) => {
+      const answer = await approve(...args)
+      config.dataFile = process.env.FRONTEND_DIST!
+      return answer
+    }
+    const failed = await confirm(first.id, "pk-lost", first.amount)
+    config.dataFile = dataFile
+    toss.confirm = approve
+    assert.equal(failed.status, 503)
+    assert.match(failed.data.error, /승인됐지만/)
+    assert.deepEqual([stored(first.id).status, stored(first.id).paymentKey], ["pending", "pk-lost"])
+    assert.ok(stored(first.id).confirmingAt)
+
+    // 같은 승인을 다시 시도하면 두 번 청구 없이 기록된다.
+    const again = await confirm(first.id, "pk-lost", first.amount)
+    assert.equal(again.status, 200)
+    assert.deepEqual([again.data.order.status, again.data.order.method, again.data.order.paymentKey], ["paid", "card", undefined])
+    assert.equal(stored(first.id).confirmingAt, undefined)
+    assert.equal(charged.size, 1)
+
+    // 같은 식으로 유실된 다른 주문. 새 창에서 다시 결제하면 Toss에서 첫
+    // 청구를 찾아 그것을 기록한다.
+    cardRecovery.settleAfterMs = 60 * 60 * 1000
+    const second = await order()
+    assert.notEqual(second.id, first.id)
+    toss.confirm = async (...args) => {
+      const answer = await approve(...args)
+      config.dataFile = process.env.FRONTEND_DIST!
+      return answer
+    }
+    assert.equal((await confirm(second.id, "pk-second", second.amount)).status, 503)
+    config.dataFile = dataFile
+    toss.confirm = approve
+    // 결제창을 다시 열어도 주문과 금액은 그대로다.
+    assert.equal((await order()).id, second.id)
+    assert.equal(stored(second.id).status, "pending")
+    const repaid = await confirm(second.id, "pk-new-window", second.amount)
+    assert.deepEqual([repaid.status, repaid.data.order.status], [200, "paid"])
+    assert.equal(stored(second.id).paymentKey, "pk-second")
+    assert.equal(confirms, 3)
+    assert.equal((await call("DELETE", `/billing/orders/${second.id}`, undefined, brand)).status, 409)
+
+    // 브랜드가 취소하려는 멈춘 주문은 Toss에 먼저 확인한다. 청구된 주문은
+    // 취소되지 않고 기록된다.
+    const fourth = await order()
+    toss.confirm = async (...args) => {
+      const answer = await approve(...args)
+      config.dataFile = process.env.FRONTEND_DIST!
+      return answer
+    }
+    assert.equal((await confirm(fourth.id, "pk-fourth", fourth.amount)).status, 503)
+    config.dataFile = dataFile
+    toss.confirm = approve
+    assert.equal((await call("DELETE", `/billing/orders/${fourth.id}`, undefined, brand)).status, 409)
+    assert.equal(stored(fourth.id).status, "paid")
+
+    // Toss가 승인을 거절하면 청구되지 않고 키가 지워진다.
+    const third = await order()
+    toss.confirm = async () => {
+      throw new HttpError(402, "결제를 승인하지 못했어요. 다시 시도해 주세요.")
+    }
+    assert.equal((await confirm(third.id, "pk-refused", third.amount)).status, 402)
+    assert.deepEqual([stored(third.id).paymentKey, stored(third.id).confirmingAt], [undefined, undefined])
+    // Toss가 답하지 않으면 키를 남긴다. Toss에 그런 결제가 없으면 정리할 때
+    // 키를 지우고 주문을 취소할 수 있다.
+    toss.confirm = async () => {
+      throw new Error("timeout")
+    }
+    assert.equal((await confirm(third.id, "pk-timeout", third.amount)).status, 502)
+    assert.equal(stored(third.id).paymentKey, "pk-timeout")
+    // 아직 멈춘 것이 아니면 계정의 결제 내역은 건드리지 않는다.
+    await call("GET", "/billing", undefined, brand)
+    assert.equal(stored(third.id).paymentKey, "pk-timeout")
+    cardRecovery.settleAfterMs = 0
+    const accountId = getDatabase().accounts.find((account) => account.email === "card-save@card-cafe.kr")!.id
+    assert.deepEqual(await reconcileCards(accountId), { paid: 0, unpaid: 1, open: 0, failed: 0 })
+    assert.equal(stored(third.id).paymentKey, undefined)
+    assert.equal((await call("DELETE", `/billing/orders/${third.id}`, undefined, brand)).status, 200)
+
+    // 유실된 저장 하나 더. 브랜드가 결제 내역을 열 때 정리된다.
+    const fifth = await order()
+    toss.confirm = async (...args) => {
+      const answer = await approve(...args)
+      config.dataFile = process.env.FRONTEND_DIST!
+      return answer
+    }
+    assert.equal((await confirm(fifth.id, "pk-fifth", fifth.amount)).status, 503)
+    config.dataFile = dataFile
+    toss.confirm = approve
+    const listed = (await call("GET", "/billing", undefined, brand)).data.payments as { id: string; status: string }[]
+    assert.equal(listed.find((payment) => payment.id === fifth.id)!.status, "paid")
+    assert.equal(confirms, 5)
+  } finally {
+    config.dataFile = dataFile
+    config.tossClientKey = saved.client
+    config.tossSecretKey = saved.secret
+    cardRecovery.settleAfterMs = saved.settle
+    toss.confirm = realToss.confirm
+    toss.lookup = realToss.lookup
+  }
+})
+
 test("a brand buys a sponsorship's detailed report, adds its store's counts and shares it read-only", async () => {
   const demo = await login("브랜드")
   // 데모 브랜드의 샘플은 방문자에게 열려 있고, 데모 브랜드로 로그인하면

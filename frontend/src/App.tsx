@@ -83,6 +83,9 @@ import type {
   Sponsorship,
 } from "./types"
 
+// 서버가 실패한 뒤 카드 승인을 다시 시도하기까지 기다리는 시간.
+const confirmRetryMs = [1500, 4000]
+
 // 첫 화면에 필요 없는 화면과 팝업은 처음 열릴 때 불러와서 첫 페이지의
 // 다운로드를 줄인다(지연 청크, 아래의 Suspense).
 const GoalModal = lazy(() => import("./modals/GoalModal").then((module) => ({ default: module.GoalModal })))
@@ -667,7 +670,22 @@ function App() {
       showNotice(answer.canceled ? t("결제를 취소했어요.") : answer.message || t("결제하지 못했어요. 다시 시도해 주세요."))
       return
     }
-    api.confirmPayment({ orderId: answer.orderId, paymentKey: answer.paymentKey, amount: answer.amount }).then(
+    // 서버에서 저장이나 Toss가 실패했거나(5xx) 아예 답이 없으면 다시
+    // 시도한다. 서버가 키를 갖고 있고 Toss는 주문을 한 번만 승인하므로 다시
+    // 시도해도 두 번 청구되지 않는다.
+    const body = { orderId: answer.orderId, paymentKey: answer.paymentKey, amount: answer.amount }
+    const confirm = async () => {
+      for (const wait of confirmRetryMs) {
+        try {
+          return await api.confirmPayment(body)
+        } catch (error) {
+          if (!(error instanceof ApiError) || (error.status !== 0 && error.status < 500)) throw error
+          await new Promise((resolve) => setTimeout(resolve, wait))
+        }
+      }
+      return api.confirmPayment(body)
+    }
+    confirm().then(
       ({ order }) => {
         showNotice(t("{name} 결제를 마쳤어요.", { name: order.orderName }))
         setPaid((count) => count + 1)

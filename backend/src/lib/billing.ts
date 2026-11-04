@@ -45,13 +45,18 @@ export const cardReady = () => Boolean(config.tossClientKey && config.tossSecret
 export const testMode = () => cardReady() && (config.tossSecretKey ?? "").startsWith("test_")
 
 const tossApi = "https://api.tosspayments.com/v1/payments"
+// Toss가 승인에 실패했거나 답하지 않았을 때의 응답.
+export const tossUnsure ="결제 확인이 늦어지고 있어요. 결제됐다면 잠시 후 결제 내역에 반영돼요."
 const tossAuth = () => `Basic ${Buffer.from(`${config.tossSecretKey ?? ""}:`).toString("base64")}`
 
-type TossPayment = { status?: string; totalAmount?: number; orderId?: string; receipt?: { url?: string } | null; approvedAt?: string }
+export type TossPayment = { status?: string; totalAmount?: number; orderId?: string; receipt?: { url?: string } | null; approvedAt?: string }
 
 // Toss Payments 호출. 테스트에서 바꿔 쓴다.
 export const toss = {
   // 결제창이 승인한 결제를 확정한다. 10분 안에, 서버가 정한 금액으로 한다.
+  // 주문 id가 Idempotency-Key이므로 같은 주문을 다시 요청하면 첫 승인 결과가
+  // 돌아오고 두 번 청구되지 않는다. Toss가 거절하면 402, Toss가 실패하면(5xx)
+  // 502이며, 502 뒤에는 카드가 청구됐을 수도 아닐 수도 있다.
   async confirm(paymentKey: string, orderId: string, amount: number): Promise<TossPayment> {
     const response = await fetch(`${tossApi}/confirm`, {
       method: "POST",
@@ -62,8 +67,20 @@ export const toss = {
     const body = (await response.json().catch(() => null)) as (TossPayment & { message?: string }) | null
     if (!response.ok || !body) {
       console.error(`[billing] confirm ${response.status}: ${body?.message ?? ""}`)
+      if (response.status >= 500 || (response.ok && !body)) throw new HttpError(502, tossUnsure)
       throw new HttpError(402, body?.message ? `결제를 승인하지 못했어요. ${body.message}` : "결제를 승인하지 못했어요. 다시 시도해 주세요.")
     }
+    return body
+  },
+  // Toss Payments에 지금 있는 결제. 그 키의 결제가 없으면 undefined다.
+  async lookup(paymentKey: string): Promise<TossPayment | undefined> {
+    const response = await fetch(`${tossApi}/${encodeURIComponent(paymentKey)}`, {
+      headers: { Authorization: tossAuth() },
+      signal: AbortSignal.timeout(15_000),
+    })
+    if (response.status === 404) return undefined
+    const body = (await response.json().catch(() => null)) as (TossPayment & { message?: string }) | null
+    if (!response.ok || !body) throw new Error(`Toss lookup ${response.status}: ${body?.message ?? ""}`)
     return body
   },
   // 카드 결제를 전액 환불한다.
@@ -128,6 +145,9 @@ export function orderFor(database: Database, account: Account, kind: string, req
     (payment) => payment.accountId === account.id && payment.kind === kind && payment.targetId === targetId && payment.status === "pending",
   )
   if (waiting) {
+    // 카드 승인이 이미 옛 금액을 청구했을 수 있으며, lib/cardRecovery.ts가
+    // 이를 주문과 대조한다.
+    if (waiting.paymentKey) return waiting
     Object.assign(waiting, priced, { orderName })
     return waiting
   }
@@ -175,4 +195,4 @@ export function markCancelled(database: Database, payment: Payment, reason: stri
 }
 
 // 계정이 보는 결제. Toss 키는 없다.
-export const paymentView = ({ paymentKey: _key, accountId: _account, ...payment }: Payment) => payment
+export const paymentView = ({ paymentKey: _key, confirmingAt: _confirming, accountId: _account, ...payment }: Payment) => payment

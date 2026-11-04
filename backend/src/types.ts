@@ -777,6 +777,10 @@ export type Payment = {
   // 결제 방법이다. Toss Payments를 통한 카드이거나 운영자가 확인한 계좌 이체다.
   method?: "card" | "transfer" | "grant"
   paymentKey?: string
+  // Toss Payments에 승인을 요청한 카드 결제. 승인 전에 paymentKey를 저장해
+  // 카드 청구 뒤 저장이 실패해도 기록할 수 있다(lib/cardRecovery.ts). 결제가
+  // 끝나거나 Toss가 청구되지 않았다고 하면 지운다.
+  confirmingAt?: string
   receiptUrl?: string
   requestedAt: string
   // 브랜드가 대신 계좌 이체로 결제하겠다고 했다.
