@@ -789,7 +789,10 @@ authRouter.get("/export", (req, res) => {
     sponsorships: database.sponsorships[account.id] ?? [],
     measurements: database.measurements
       .filter((item) => item.accountId === account.id)
-      .map(({ passes: _passes, log: _log, ...measurement }) => measurement),
+      .map(({ passes: _passes, log: _log, staffPin: _staffPin, groupPin: _groupPin, sponsors, ...measurement }) => ({
+        ...measurement,
+        sponsors: sponsors.map(({ staffPin: _pin, ...sponsor }) => sponsor),
+      })),
     conversations: listing
       ? database.conversations.filter((item) => item.groupId === listing.id || item.brandId === listing.id)
       : [],

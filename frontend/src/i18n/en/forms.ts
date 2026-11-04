@@ -552,6 +552,8 @@ const en: Record<string, string> = {
   "결제창을 열지 못했어요. 잠시 뒤 다시 시도해 주세요.": "Couldn't open the payment window. Please try again shortly.",
   "결제 금액": "Amount",
   "부가세 포함": "VAT included",
+  "PIN은 행사 하루 전인 {date}부터 여기에 보여요.": "The PIN shows here from {date}, the day before the event.",
+  "직원 PIN과 단체 확인 PIN은 행사 하루 전인 {date}부터 여기에 보여요.": "Staff and group PINs show here from {date}, the day before the event.",
   "부가세 ({rate}%)": "VAT ({rate}%)",
   "결제 내용을 확인했고 ": "I checked the payment details and agree to the ",
   "유료 서비스 이용 조건과 환불 규정": "paid service terms and refund policy",

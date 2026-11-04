@@ -11,9 +11,12 @@ import {
   parseGoals,
   parseKind,
   parseStaffPin,
+  pinsFrom,
+  pinsOpen,
 } from "../lib/measurements.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
+import type { EventItem, Measurement } from "../types.js"
 
 export const measurementsRouter = Router()
 
@@ -27,12 +30,14 @@ function measurementOwner(req: Request) {
   return database.accounts.find((account) => account.id === database.demoAccountIds[role])
 }
 
-// The PINs go to the logged-in owner only: the store PINs, and the group's
-// venue PIN when the owner is the student group.
-const pinsFor = (req: Request) => ({
-  withPin: Boolean(req.account),
-  withGroupPin: req.account?.role === "학생단체",
-})
+// The PINs go to the logged-in owner only, from the day before the event:
+// the store PINs, and the group's venue PIN when the owner is the student
+// group. Until then the report says when they will show.
+function pinsFor(req: Request, measurement: Measurement, event: EventItem) {
+  if (!req.account) return {}
+  if (!pinsOpen(getDatabase(), measurement, event)) return { pinsDay: pinsFrom(event) }
+  return { withPin: true, withGroupPin: req.account.role === "학생단체" }
+}
 
 // The owner's event with its measurement, created the first time it is opened.
 async function ownedMeasurement(req: Request) {
@@ -56,7 +61,7 @@ measurementsRouter.get("/", async (req, res) => {
     .map((event) => {
       const { measurement, created } = ensureMeasurement(database, owner!.id, event)
       changed ||= created
-      return { eventId: event.id, metrics: measurement.metrics, report: buildReport(measurement, event, pinsFor(req)) }
+      return { eventId: event.id, metrics: measurement.metrics, report: buildReport(measurement, event, pinsFor(req, measurement, event)) }
     })
   if (changed) await saveDatabase()
   res.json({ measurements })
@@ -64,7 +69,7 @@ measurementsRouter.get("/", async (req, res) => {
 
 measurementsRouter.get("/:eventId", async (req, res) => {
   const { measurement, event } = await ownedMeasurement(req)
-  res.json({ metrics: measurement.metrics, report: buildReport(measurement, event, pinsFor(req)) })
+  res.json({ metrics: measurement.metrics, report: buildReport(measurement, event, pinsFor(req, measurement, event)) })
 })
 
 // Participation history, newest first; ?kind= narrows it to one measurement.
@@ -97,5 +102,5 @@ measurementsRouter.put("/:eventId/goals", async (req, res) => {
   measurement.goals = goals
   if (staffPin) measurement.staffPin = staffPin
   await saveDatabase()
-  res.json({ metrics: measurement.metrics, report: buildReport(measurement, event, pinsFor(req)) })
+  res.json({ metrics: measurement.metrics, report: buildReport(measurement, event, pinsFor(req, measurement, event)) })
 })

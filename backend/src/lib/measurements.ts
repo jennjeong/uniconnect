@@ -293,7 +293,7 @@ export const estimatedSales = (measurement: Measurement) =>
 export function buildReport(
   measurement: Measurement,
   event: EventItem,
-  { withPin = false, withGroupPin = false } = {},
+  { withPin = false, withGroupPin = false, pinsDay = "" } = {},
 ): Report {
   const { goals, metrics } = measurement
   const sponsorValue = goals.valueBreakdown.reduce((sum, part) => sum + part.value, 0)
@@ -315,6 +315,7 @@ export function buildReport(
     coupon: goals.coupon,
     ...(withPin ? { staffPin: measurement.staffPin } : {}),
     ...(withGroupPin ? { groupPin: measurement.groupPin } : {}),
+    ...(pinsDay ? { pinsFrom: pinsDay } : {}),
     methods: activeMethodsOf(measurement),
     venue: venueCountsOf(metrics),
     // Who came, for the students' own report: the kind of event, who was
@@ -357,6 +358,13 @@ export function checkInWindow(event: EventItem) {
 
 const isDemoEvent = (database: Database, measurement: Measurement) =>
   Object.values(database.demoAccountIds).includes(measurement.accountId)
+
+// The day an event's PINs start to show to those who run it: the day before
+// it begins; the demo accounts' show at once, for visitors to try the flow.
+export const pinsFrom = (event: EventItem) => addDays(event.date, -1)
+
+export const pinsOpen = (database: Database, measurement: Measurement, event: EventItem) =>
+  isDemoEvent(database, measurement) || pinsFrom(event) <= todayInKorea()
 
 // Refuses a scan or coupon outside the event's days, or a visit after its
 // coupons ran out.

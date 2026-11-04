@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto"
 
 import { todayInKorea } from "./dates.js"
 import { feeState } from "./fees.js"
-import { ensureMeasurement } from "./measurements.js"
+import { ensureMeasurement, pinsFrom, pinsOpen } from "./measurements.js"
 import { activeMethodsOf, confirmsAt, isVenueKind, methodsOf, venueCountsOf } from "./methods.js"
 import { photos } from "./photos.js"
 import { canReview, isDemoAccount, publicReview, reviewOpen } from "./reviews.js"
@@ -143,7 +143,7 @@ export function agreementShare(database: Database, proposal: AcceptedProposal) {
 function measureView(database: Database, proposal: AcceptedProposal, side: ChatSide) {
   const share = agreementShare(database, proposal)
   if (!share) return undefined
-  const { measurement, sponsor } = share
+  const { event, measurement, sponsor } = share
   const methods = methodsOf(measurement, sponsor)
   const confirmed = sponsor ? sponsor.confirmedMethods : measurement.confirmedMethods
   const counts = sponsor?.metrics ?? measurement.metrics
@@ -156,7 +156,15 @@ function measureView(database: Database, proposal: AcceptedProposal, side: ChatS
     methods,
     ...(confirmed ? { confirmedMethods: confirmed } : {}),
     counts: { scans: measurement.metrics.scans, coupons: counts.coupons, visits: counts.visits, ...venueCountsOf(counts) },
-    ...(mine ? { venue: { page: side === "brand" ? ("staff" as const) : ("group" as const), pin } } : {}),
+    ...(mine
+      ? {
+          venue: {
+            page: side === "brand" ? ("staff" as const) : ("group" as const),
+            // Each side's own PIN shows from the day before the event.
+            ...(pinsOpen(database, measurement, event) ? { pin } : { pinsFrom: pinsFrom(event) }),
+          },
+        }
+      : {}),
   }
 }
 

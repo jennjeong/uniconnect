@@ -4131,6 +4131,15 @@ test("an e-contract sets how its sponsorship is confirmed, which counts once bot
     { kind: "visit", side: "brand" },
   ]
 
+  // Neither shows until the day before the event.
+  const early = (await call("GET", `/measurements/${request.eventId}`, undefined, group)).data.report
+  assert.deepEqual([early.groupPin, early.staffPin, early.pinsFrom], [undefined, undefined, addDays(day, -1)])
+  const hidden = (await call("GET", agreementPath, undefined, brand)).data.agreement.measure.venue
+  assert.deepEqual([hidden.pin, hidden.pinsFrom], [undefined, addDays(day, -1)])
+  const exported = (await call("GET", "/auth/export", undefined, group)).data
+  assert.equal(/staffPin|groupPin/.test(JSON.stringify(exported)), false)
+  const sponsoredEvent = getDatabase().events[groupId].find((item) => item.id === request.eventId)!
+  sponsoredEvent.date = addDays(todayInKorea(), 1)
   // Until the e-contract says otherwise: the QR, its coupon and the store's
   // visits, which the brand confirms with its store PIN on the staff page;
   // the group has nothing to record by hand, so no venue page yet.
@@ -4272,7 +4281,7 @@ test("an e-contract sets how its sponsorship is confirmed, which counts once bot
   // A brand's campaign is confirmed as a whole: an offer's e-contract sets
   // the campaign's own methods, and the group's page opens it as one share.
   const { token: campaignGroup, listingId: campaignListing } = await listedMember("campaign-club@syu.ac.kr", "campaign-pass-123")
-  await call("POST", "/events", { name: "측정 캠페인", date: day, types: ["제품"] }, brand)
+  await call("POST", "/events", { name: "측정 캠페인", date: addDays(todayInKorea(), 1), types: ["제품"] }, brand)
   assert.equal((await call("POST", "/proposals", { matchId: campaignListing }, brand)).status, 201)
   const [offer] = (await call("GET", "/offers", undefined, campaignGroup)).data.offers
   await call("POST", `/offers/${offer.id}/accept`, undefined, campaignGroup)

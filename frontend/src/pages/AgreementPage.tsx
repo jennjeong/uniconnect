@@ -478,9 +478,13 @@ function MethodsPanel({
           <a className="qr-link" href={venueLink(measure.code, venue.page)} rel="noreferrer" target="_blank">
             {venueLink(measure.code, venue.page)}
           </a>
-          <span>
-            {t("PIN")} <strong>{venue.pin}</strong>
-          </span>
+          {venue.pin ? (
+            <span>
+              {t("PIN")} <strong>{venue.pin}</strong>
+            </span>
+          ) : (
+            venue.pinsFrom && <small>{t("PIN은 행사 하루 전인 {date}부터 여기에 보여요.", { date: formatFullDate(venue.pinsFrom) })}</small>
+          )}
         </div>
       )}
       {!event.started && (
