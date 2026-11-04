@@ -34,14 +34,14 @@ type Draft = ReturnType<typeof emptyDraft>
 
 type Verification = {
   expiresAt: number
-  // Sent back only while the backend has no mail service (development).
+  // 백엔드에 메일 서비스가 없을 때(개발)만 돌려준다.
   devCode?: string
-  // Set once the code is confirmed; sign-up sends it as proof.
+  // 코드를 확인하면 설정된다. 가입은 이를 증거로 보낸다.
   token?: string
 }
 
-// Quick checks before calling the API. The backend validates everything
-// again, including the school/company email rules.
+// API를 부르기 전의 간단한 검사. 백엔드가 학교·회사 이메일 규칙을 포함해 모두
+// 다시 검증한다.
 function draftError(draft: Draft, verified: boolean) {
   if (!draft.name.trim()) {
     return draft.role === "학생단체" ? t("단체명을 입력해 주세요.") : t("브랜드명을 입력해 주세요.")
@@ -68,11 +68,11 @@ export function SignupModal({
   onNotice,
 }: {
   initialRole: Role
-  // The shop's invitation the visitor is signing up through (/invite/<code>).
+  // 방문자가 가입하는 가게의 초대(/invite/<code>).
   invite?: string
   onClose: () => void
   onSignedUp: (session: Session) => void
-  // Sent to the operators to check; nothing to log in to yet.
+  // 운영자에게 보내 확인한다. 아직 로그인할 곳은 없다.
   onPending: () => void
   onLogin: (role: Role) => void
   onNotice: (message: string) => void
@@ -83,11 +83,11 @@ export function SignupModal({
   const [now, setNow] = useState(() => Date.now())
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
-  // An invited shop with no company email: a personal one, with a document.
+  // 회사 이메일이 없는 초대된 가게. 개인 이메일과 서류를 받는다.
   const [noCompanyEmail, setNoCompanyEmail] = useState(false)
   const [document, setDocument] = useState<PickedDocument>()
   const verified = verification?.token !== undefined
-  // The agreement sentence around its two links, in the language shown.
+  // 두 링크를 둘러싼 동의 문장. 보이는 언어로 쓴다.
   const [termsBefore, termsBetween, termsAfter] = t("{terms}과 {privacy}에 동의합니다.").split(
     /\{terms\}|\{privacy\}/,
   )
@@ -106,7 +106,7 @@ export function SignupModal({
     setCodeInput("")
   }
 
-  // Runs one request at a time and shows its error above the submit button.
+  // 요청을 한 번에 하나씩 실행하고 오류는 제출 버튼 위에 보여 준다.
   const run = async (task: () => Promise<void>) => {
     setBusy(true)
     setError("")
@@ -375,7 +375,7 @@ export function SignupModal({
             type="checkbox"
             onChange={(event) => update({ agreed: event.target.checked })}
           />
-          {/* The documents open in a new tab, so the form keeps what was typed. */}
+          {/* 문서는 새 탭에서 열려서 폼에 입력한 내용이 남는다. */}
           <span>
             {termsBefore}
             <a href={viewPath({ page: "대시보드", legal: "terms" })} rel="noopener" target="_blank">
@@ -388,7 +388,7 @@ export function SignupModal({
             {termsAfter}
           </span>
         </label>
-        {/* The terms take members from 14 (younger ones need a guardian). */}
+        {/* 약관은 만 14세부터 회원으로 받는다(더 어리면 보호자가 필요하다). */}
         <label className="terms-check">
           <input
             checked={draft.over14}

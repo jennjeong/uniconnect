@@ -1,9 +1,8 @@
-// The universities of each province and metropolitan city, for 단체 찾기's
-// region and school filters: four-year universities, universities of
-// education and the science institutes, plus colleges that student groups on
-// uniconnect come from (backend/src/data/campuses.ts). A university with a
-// campus in another region is listed there too (고려대학교 in 세종). Names are
-// as the schools write them; region names are values, shown through t().
+// 단체 찾기의 지역·학교 필터를 위한 광역시·도별 대학: 4년제 대학, 교육대학,
+// 과학기술원에 더해 uniconnect의 학생단체가 속한
+// 대학(backend/src/data/campuses.ts). 다른 지역에도 캠퍼스가 있는 대학은
+// 그곳에도 올린다 (세종의 고려대학교). 이름은 학교가 쓰는 대로이고 지역 이름은
+// 값이므로 t()로 보여준다.
 export const regions = [
   "서울",
   "경기",
@@ -259,7 +258,7 @@ export const universities: Record<Region, string[]> = {
   제주: ["제주국제대학교", "제주대학교"],
 }
 
-// Whether a school is in a region; an unknown school is in none.
+// 학교가 어느 지역에 있는지 여부. 모르는 학교는 어디에도 속하지 않는다.
 export function inRegion(school: string | undefined, region: Region) {
   return school !== undefined && universities[region].includes(school)
 }

@@ -5,21 +5,20 @@ import { Modal } from "../components/Modal"
 import { reportReasons } from "../data/reports"
 import { t } from "../i18n"
 
-// What is reported: an account by its listing, a message it sent, a review,
-// or a listing's reply to one, with the name it goes by and the text in
-// question.
+// 신고 대상. 리스팅의 계정, 그 계정이 보낸 메시지, 후기, 또는 후기에 대한
+// 리스팅의 답글. 불리는 이름과 문제가 된 글을 함께 담는다.
 export type SafetyTarget =
   | { kind: "account"; listingId: string; name: string }
   | { kind: "message"; conversationId: string; messageId: string; name: string; text: string }
   | { kind: "review"; reviewKey: string; name: string; text: string }
   | { kind: "reply"; reviewKey: string; name: string; text: string }
 
-// As the server takes it (routes/reports.ts).
+// 서버가 받는 형식(routes/reports.ts).
 const maxDetail = 300
 
-// 신고하기: why (one of the listed reasons) and, in the member's words, what
-// happened; the operators see it on /admin. 차단하기 (an account only): the
-// two stop seeing each other, which 내 정보 can undo.
+// 신고하기: 이유(목록 중 하나)와 회원의 말로 쓴 일의 경위. 운영자가 /admin에서
+// 본다. 차단하기(계정에만): 둘이 서로를 보지 않게 되며 내 정보에서 되돌릴 수
+// 있다.
 export function SafetyModal({
   mode,
   target,
@@ -29,7 +28,7 @@ export function SafetyModal({
   mode: "report" | "block"
   target: SafetyTarget
   onClose: () => void
-  // After the server took it, with what to tell the member.
+  // 서버가 받은 뒤, 회원에게 알려 줄 내용과 함께.
   onDone: (notice: string) => void
 }) {
   const [reason, setReason] = useState(reportReasons[0])

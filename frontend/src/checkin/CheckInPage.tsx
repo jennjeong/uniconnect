@@ -8,15 +8,14 @@ import { t } from "../i18n"
 import { formatFullDate } from "../lib/date"
 import type { CheckInInfo } from "../types"
 
-// What this phone has done at the event, kept so a refresh doesn't count
-// twice: `pass` lets the server count each coupon once, and `coupons` holds
-// the numbers the store staff confirm visits with on their own device, by
-// coupon id (one per sponsor).
+// 이 휴대폰이 행사에서 한 일. 새로고침해도 두 번 세지 않도록 저장해 둔다.
+// `pass`는 서버가 쿠폰을 한 번씩만 세게 하고, `coupons`는 가게 직원이 자기
+// 기기에서 방문을 확인할 때 쓰는 번호를 쿠폰 id별로(스폰서마다 하나) 담는다.
 type TakenCoupon = { number: string; visited?: boolean }
-// `surveyed` once the optional survey was sent or skipped on this phone.
+// 선택 설문을 이 휴대폰에서 보냈거나 건너뛰면 `surveyed`.
 type CheckIn = { participant: string; pass?: string; coupons?: Record<string, TakenCoupon>; surveyed?: true }
 
-// The optional three questions, each a row of choices; sent once, or skipped.
+// 선택 질문 세 개. 각각 선택지가 한 줄이고, 한 번 보내거나 건너뛴다.
 function Survey({ onSend, onSkip }: { onSend: (answers: Partial<Record<SurveyKey, string>>) => Promise<void>; onSkip: () => void }) {
   const [answers, setAnswers] = useState<Partial<Record<SurveyKey, string>>>({})
   const [sending, setSending] = useState(false)
@@ -65,7 +64,7 @@ function Survey({ onSend, onSkip }: { onSend: (answers: Partial<Record<SurveyKey
 
 const couponTerms = "발급일부터 7일 동안 쓸 수 있어요"
 
-// How often the phone asks whether the store has confirmed a visit.
+// 가게가 방문을 확인했는지 휴대폰이 묻는 주기.
 const visitCheckMs = 3_000
 
 const storageKey = (code: string) => `uniconnect-checkin-${code}`
@@ -83,20 +82,19 @@ function writeCheckIn(code: string, checkIn: CheckIn | null) {
     if (checkIn) localStorage.setItem(storageKey(code), JSON.stringify(checkIn))
     else localStorage.removeItem(storageKey(code))
   } catch {
-    // Without storage a refresh may count again; the visit still works.
+    // 저장소가 없으면 새로고침 때 다시 셀 수 있다. 방문 자체는 동작한다.
   }
 }
 
-// Page participants reach by scanning the event QR: records the scan for
-// that event and hands out each sponsor's coupon with its number. Store
-// staff confirm the visit on their own device (StaffCheckInPage) with that
-// number; this page then shows it as confirmed.
+// 참가자가 행사 QR을 스캔해 들어오는 페이지. 그 행사의 스캔을 기록하고 스폰서별
+// 쿠폰을 번호와 함께 준다. 가게 직원은 자기 기기(StaffCheckInPage)에서 그
+// 번호로 방문을 확인하고, 이 페이지는 그것을 확인됨으로 보여 준다.
 export function CheckInPage({ code }: { code: string }) {
   const [info, setInfo] = useState<CheckInInfo | null>(null)
   const [checkIn, setCheckIn] = useState<CheckIn | null>(() => readCheckIn(code))
   const [busy, setBusy] = useState("")
   const [error, setError] = useState("")
-  // StrictMode runs effects twice while developing; record the scan once.
+  // StrictMode는 개발 중 effect를 두 번 실행한다. 스캔은 한 번만 기록한다.
   const scanned = useRef(false)
 
   const save = (next: CheckIn | null) => {
@@ -104,8 +102,8 @@ export function CheckInPage({ code }: { code: string }) {
     writeCheckIn(code, next)
   }
 
-  // A check-in kept from before passes existed, or one the server no longer
-  // knows, scans again.
+  // 패스가 생기기 전에 저장된 체크인이나 서버가 더는 모르는 체크인은 다시
+  // 스캔한다.
   const restart = () => {
     scanned.current = false
     save(null)
@@ -118,7 +116,7 @@ export function CheckInPage({ code }: { code: string }) {
       .catch((caught) => setError(errorMessage(caught)))
   }, [code])
 
-  // The first visit from this phone counts as one QR scan.
+  // 이 휴대폰의 첫 방문은 QR 스캔 한 번으로 센다.
   useEffect(() => {
     if (checkIn || scanned.current) return
     scanned.current = true
@@ -128,8 +126,8 @@ export function CheckInPage({ code }: { code: string }) {
       .catch((caught) => setError(errorMessage(caught)))
   }, [checkIn, code])
 
-  // The server's word on this pass's coupons, once on arrival and, while a
-  // taken coupon waits for the store, every few seconds.
+  // 이 패스의 쿠폰에 대한 서버의 답. 도착할 때 한 번, 받은 쿠폰이 가게를
+  // 기다리는 동안은 몇 초마다 확인한다.
   const pass = checkIn?.pass
   const waiting = Object.values(checkIn?.coupons ?? {}).some((coupon) => !coupon.visited)
   useEffect(() => {

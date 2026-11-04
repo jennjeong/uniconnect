@@ -4,10 +4,10 @@ import { notify } from "./notices.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { Account, Database } from "../types.js"
 
-// How many days ahead an event is first reminded of.
+// 행사 며칠 전부터 처음 알리는지.
 export const remindDaysBefore = 3
 
-// Days from today to a "YYYY-MM-DD", or undefined when it is not one.
+// 오늘부터 "YYYY-MM-DD"까지의 일수. 그런 형식이 아니면 undefined.
 function daysUntil(today: string, date: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return undefined
   for (let days = 0; days <= remindDaysBefore; days += 1) if (addDays(today, days) === date) return days
@@ -22,10 +22,10 @@ function subjectFor(name: string, days: number, sponsored: boolean) {
   return `${what}까지 ${days}일 남았어요`
 }
 
-// Emails each account once about each of its events (and a brand about the
-// events it sponsors) when the day is three days away or nearer, with the
-// agreement to check. The shared demo accounts are left out: their emails
-// stand for no one. Run hourly by index.ts; answers how many went out.
+// 계정마다 자기 행사(브랜드는 협찬하는 행사)에 대해 그날이 사흘 이내가
+// 되면 한 번 이메일을 보내고 확인할 계약서를 붙인다. 공용 데모 계정은
+// 제외한다. 그 이메일이 누구도 가리키지 않기 때문이다. index.ts가 매시간
+// 돌리며 나간 수를 답한다.
 export async function sendReminders(database: Database = getDatabase(), now = new Date()) {
   const today = todayInKorea(now)
   const stamp = now.toISOString()

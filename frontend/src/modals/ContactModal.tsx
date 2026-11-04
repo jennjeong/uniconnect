@@ -6,8 +6,8 @@ import { PositionField } from "../components/PositionField"
 import { t } from "../i18n"
 import type { Account } from "../types"
 
-// The person running the account, from 내 정보: name, position and mobile
-// number, as sign-up asks for them (a new officer after a handover, say).
+// 내 정보에서 계정을 운영하는 사람: 가입 때 받는 이름, 직책, 휴대폰 번호(인계
+// 뒤의 새 담당자 등).
 export function ContactModal({
   account,
   onClose,

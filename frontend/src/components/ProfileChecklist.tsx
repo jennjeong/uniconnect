@@ -5,7 +5,7 @@ import { checklistSteps, type ChecklistKey } from "../lib/checklist"
 import type { Match, Role } from "../types"
 import { Icon } from "./Icon"
 
-// Each step's name, why it matters for that side, and its button.
+// 각 단계의 이름, 그 쪽에 왜 중요한지, 버튼.
 const stepCopy = (students: boolean): Record<ChecklistKey, { title: string; why: string; action: string }> => ({
   intro: { title: t("소개"), why: t("상대가 카드와 상세 페이지에서 가장 먼저 읽어요."), action: t("소개 쓰기") },
   logo: { title: t("로고"), why: t("카드와 상세 페이지에서 업종 그림 대신 보여요."), action: t("로고 올리기") },
@@ -30,10 +30,9 @@ const stepCopy = (students: boolean): Record<ChecklistKey, { title: string; why:
   },
 })
 
-// Under the dashboard's hero for a member whose listing is not complete:
-// each step with why it matters and the button that does it, and how far
-// along it is. 나중에 folds it to one line, remembered in this browser; it
-// goes once every step is done.
+// 리스팅이 완성되지 않은 회원에게 대시보드 히어로 아래에 보여 준다. 각 단계와
+// 그것이 왜 중요한지, 그것을 해 주는 버튼, 그리고 진행 정도를 담는다. 나중에를
+// 누르면 한 줄로 접히고 이 브라우저에 기억된다. 모든 단계를 마치면 사라진다.
 export function ProfileChecklist({
   accountId,
   role,
@@ -44,7 +43,7 @@ export function ProfileChecklist({
 }: {
   accountId: string
   role: Role
-  // The account's listing; null before it has written one.
+  // 계정의 리스팅. 아직 작성하지 않았으면 null.
   listing: Match | null
   hasEvent: boolean
   onEditProfile: () => void
@@ -64,7 +63,7 @@ export function ProfileChecklist({
       if (next) localStorage.setItem(storageKey, "folded")
       else localStorage.removeItem(storageKey)
     } catch {
-      // Without storage it folds for this visit only.
+      // 저장소를 쓸 수 없으면 이번 방문 동안만 접어 둔다.
     }
   }
   const students = role === "학생단체"

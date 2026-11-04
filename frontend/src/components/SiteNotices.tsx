@@ -15,8 +15,8 @@ function readDismissed(): string[] {
   }
 }
 
-// The operators' notices across the top of the page (posted from /admin),
-// read again when the viewer changes; each closes for good in this browser.
+// 페이지 맨 위에 보이는 운영진 공지 (/admin에서 올린다). 보는 사람이 바뀌면
+// 다시 읽고, 공지마다 이 브라우저에서는 영구히 닫을 수 있다.
 export function SiteNotices({ viewer }: { viewer: string }) {
   const [notices, setNotices] = useState<SiteNotice[]>([])
   const [dismissed, setDismissed] = useState(readDismissed)
@@ -26,7 +26,7 @@ export function SiteNotices({ viewer }: { viewer: string }) {
       (result) => {
         if (!cancelled) setNotices(result.announcements)
       },
-      // A notice is never worth an error on the page.
+      // 공지 때문에 페이지에 오류를 띄우지는 않는다.
       () => undefined,
     )
     return () => {
@@ -50,7 +50,7 @@ export function SiteNotices({ viewer }: { viewer: string }) {
               try {
                 localStorage.setItem(dismissedKey, JSON.stringify(next.slice(-50)))
               } catch {
-                // Closed for this visit only.
+                // 이번 방문에서만 닫는다.
               }
             }}
             type="button"

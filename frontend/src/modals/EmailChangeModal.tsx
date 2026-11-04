@@ -6,9 +6,9 @@ import { PasswordField } from "../components/PasswordField"
 import { t } from "../i18n"
 import type { Account } from "../types"
 
-// Handing the account over from 내 정보 (a group's new officers, say): the
-// new login email and the current password send a code to the new address,
-// and that code moves the account there. Other devices are logged out.
+// 내 정보에서 계정을 넘긴다(단체의 새 임원 등). 새 로그인 이메일과 현재
+// 비밀번호를 보내면 새 주소로 코드가 가고, 그 코드로 계정이 그 주소로 옮겨진다.
+// 다른 기기는 로그아웃된다.
 export function EmailChangeModal({
   onClose,
   onChanged,

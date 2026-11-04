@@ -10,7 +10,7 @@ import { t, tc } from "../i18n"
 import { formatPeriod, todayIso } from "../lib/date"
 import type { EventItem, Role, SponsorPackage } from "../types"
 
-// Full page for registering an event or campaign, or editing one.
+// 행사나 캠페인을 등록하거나 고치는 전체 페이지.
 export function EventCreatePage({
   role,
   event,
@@ -20,42 +20,43 @@ export function EventCreatePage({
   onSubmit,
 }: {
   role: Role
-  // The event or campaign being edited; a new one when absent.
+  // 고치는 행사나 캠페인. 없으면 새로 만든다.
   event?: EventItem
-  // An earlier one a new one starts from (행사 복제): everything but its days.
+  // 새 행사가 시작하는 바탕이 되는 이전 행사(행사 복제). 날짜만 빼고 모두
+  // 가져온다.
   copyFrom?: EventItem
-  // "YYYY-MM-DD", usually the day picked on the calendar.
+  // "YYYY-MM-DD". 보통 캘린더에서 고른 날.
   initialDate: string
   onCancel: () => void
   onSubmit: (draft: EventDraft) => Promise<void>
 }) {
   const students = role === "학생단체"
   const editing = event !== undefined
-  // Its dates stay once it has begun, as its results were counted on them.
+  // 시작한 뒤에는 그 날짜로 결과를 센 것이므로 날짜를 그대로 둔다.
   const datesLocked = editing && event.date <= todayIso()
   const source = event ?? copyFrom
   const [name, setName] = useState(source?.name ?? "")
   // Digits only, from "1,234명".
   const [people, setPeople] = useState(source?.people.replace(/\D/g, "") ?? "")
-  // Digits only; the event's or campaign's budget in won.
+  // 숫자만. 행사나 캠페인의 예산(원).
   const [budget, setBudget] = useState(source?.budget === undefined ? "" : String(source.budget))
-  // The first day, and the last when it runs over several days.
+  // 첫날, 그리고 여러 날이면 마지막 날.
   const [date, setDate] = useState(event?.date ?? initialDate)
   const [endDate, setEndDate] = useState<string | undefined>(event?.endDate)
   const [types, setTypes] = useState<string[]>(source?.types ?? [])
   const [typeNote, setTypeNote] = useState(source?.typeNote ?? "")
-  // A group's event page: where, what it is, and the packages it offers.
+  // 단체의 행사 페이지: 장소, 내용, 제공하는 패키지.
   const [venue, setVenue] = useState(source?.venue ?? "")
   const [intro, setIntro] = useState(source?.intro ?? "")
   const [packages, setPackages] = useState<SponsorPackage[]>(source?.packages ?? [])
-  // What kind of event, when each day runs, and who comes.
+  // 어떤 행사인지, 날마다 언제 열리는지, 누가 오는지.
   const [kind, setKind] = useState(source?.kind ?? "")
   const [startTime, setStartTime] = useState(source?.startTime ?? "")
   const [endTime, setEndTime] = useState(source?.endTime ?? "")
   const [years, setYears] = useState<string[]>(source?.makeup?.years ?? [])
   const [majors, setMajors] = useState(source?.makeup?.majors ?? "")
-  // 홍보 · 배포 계획: what the group offers brands, and its agreement to
-  // carry it out (kept when editing; a copy asks again).
+  // 홍보 · 배포 계획: 단체가 브랜드에 제공하는 것과 이를 실행하겠다는 동의(고칠
+  // 때는 유지하고, 복제하면 다시 묻는다).
   const [spots, setSpots] = useState<string[]>(source?.promo?.spots ?? [])
   const [handouts, setHandouts] = useState<string[]>(source?.promo?.handouts ?? [])
   const [posts, setPosts] = useState<string[]>(source?.promo?.posts ?? [])
@@ -73,7 +74,7 @@ export function EventCreatePage({
 
   const submit = async () => {
     const wantsOther = types.includes("기타")
-    // Rows left empty are dropped; one begun needs its name and what the brand gets.
+    // 비어 있는 행은 버린다. 시작한 행은 이름과 브랜드가 받는 것이 있어야 한다.
     const filled = packages
       .map((item) => ({ name: item.name.trim(), gives: item.gives.trim(), asks: item.asks.trim() }))
       .filter((item) => item.name || item.gives || item.asks)
@@ -128,7 +129,7 @@ export function EventCreatePage({
     }
   }
 
-  // One list of short choices as the form's check rows.
+  // 짧은 선택지 목록을 폼의 체크 행으로.
   const choices = (label: string, list: readonly string[], chosen: string[], set: (next: string[]) => void) => (
     <>
       <span className="field-label">{label}</span>
@@ -454,9 +455,9 @@ export function EventCreatePage({
   )
 }
 
-// Every half hour from 6:00 to 23:30, written as the event page shows times
-// (24-hour, as 18:30), with a time saved off that grid kept as it was. The
-// end time offers only times after the start.
+// 6:00부터 23:30까지 30분마다. 행사 페이지가 시간을 보여 주는 방식(24시간제,
+// 예: 18:30)으로 쓰며, 이 격자에 없는 저장된 시간은 그대로 둔다. 종료 시간에는
+// 시작보다 늦은 시간만 나온다.
 const halfHours = Array.from({ length: 36 }, (_, index) => {
   const minutes = 6 * 60 + index * 30
   return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`

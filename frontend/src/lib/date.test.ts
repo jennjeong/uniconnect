@@ -15,7 +15,7 @@ import {
   toIsoDate,
 } from "./date"
 
-// Displayed dates join their parts with no-break spaces.
+// 표시하는 날짜는 부분들을 줄바꿈 없는 공백으로 잇는다.
 const spaced = (text: string) => text.replace(/ /g, " ")
 
 describe("days", () => {

@@ -10,7 +10,7 @@ import { t } from "../i18n"
 import { dDayLabel, formatDateTime, formatDay } from "../lib/date"
 import type { Match, RequestStatus, SentProposal, SponsorOffer } from "../types"
 
-// Card class for each status (the brand inbox's cards).
+// 상태별 카드 클래스(브랜드 받은함의 카드).
 const cardState: Record<RequestStatus, string> = {
   "검토 중": "pending",
   수락: "accepted",
@@ -19,7 +19,7 @@ const cardState: Record<RequestStatus, string> = {
   마감: "closed",
 }
 
-// Accepted ones stay under 수락함 once called off, as a record.
+// 취소된 수락 건은 기록으로 수락함에 남는다.
 const inTab = (status: RequestStatus, tab: RequestStatus) => status === tab || (tab === "수락" && status === "취소됨")
 
 const tabs: { status: RequestStatus; label: string; empty: string }[] = [
@@ -36,12 +36,12 @@ function OfferCard({
   onOpenAgreement,
 }: {
   offer: SponsorOffer
-  // The brand's listing, for its logo.
+  // 로고를 위한 브랜드의 리스팅.
   brand?: Match
   onAnswer: (offer: SponsorOffer, decision: "accept" | "decline") => void
   onOpenAgreement: (id: string) => void
 }) {
-  // Declining can't be undone, so it asks once more.
+  // 거절은 되돌릴 수 없으므로 한 번 더 묻는다.
   const [confirming, setConfirming] = useState(false)
 
   return (
@@ -138,8 +138,8 @@ function OfferCard({
   )
 }
 
-// Proposals brands sent to the student group, to accept or decline, and
-// under 검토 중 the proposals it sent that wait for an answer, to take back.
+// 브랜드가 학생단체에 보낸 제안은 수락하거나 거절하고, 검토 중에는 단체가 보낸
+// 제안 중 답을 기다리는 것을 거둘 수 있게 보여 준다.
 export function OffersPage({
   offers,
   brands,
@@ -153,7 +153,7 @@ export function OffersPage({
   sent: SentProposal[]
   onAnswer: (offer: SponsorOffer, decision: "accept" | "decline") => void
   onWithdraw: (proposal: SentProposal) => void
-  // An accepted offer's agreement (pages/AgreementPage.tsx).
+  // 수락된 제안의 계약서(pages/AgreementPage.tsx).
   onOpenAgreement: (id: string) => void
 }) {
   const [tab, setTab] = useState<RequestStatus>("검토 중")

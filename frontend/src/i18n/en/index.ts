@@ -9,8 +9,8 @@ import layout from "./layout"
 import legal from "./legal"
 import measurement from "./measurement"
 
-// English for every Korean sentence the screens show (i18n/index.ts),
-// one file per area of the app.
+// 화면에 나오는 모든 한국어 문장의 영어 (i18n/index.ts), 앱의 영역마다 파일
+// 하나.
 export const en: Record<string, string> = {
   ...common,
   ...layout,

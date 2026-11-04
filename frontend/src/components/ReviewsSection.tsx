@@ -10,15 +10,14 @@ import { ProfileBars, ProfileFigures } from "./ProfileStats"
 import { ReviewCard, ReviewReply } from "./ReviewCard"
 import { Stars } from "./Stars"
 
-// The tag that says a partner would sponsor together again, shown as its
-// own figure rather than one of the bars.
+// 파트너가 다시 함께 협찬하겠다고 말하는 태그. 막대 중 하나가 아니라 별도의
+// 수치로 보여 준다.
 const againTag = "다시 함께하고 싶어요"
 
-// A brand's or group's reviews, the detail page's 파트너 후기 tab: the
-// average and how many would sponsor together again on the tinted card,
-// how many picked each other tag as bars, the latest review, and the rest
-// on request, each with the listing's reply under it. Partners write them on
-// a sponsorship's agreement after the event, where the listing answers.
+// 브랜드나 그룹의 리뷰. 상세 페이지의 파트너 후기 탭이다. 색 입힌 카드에 평균과
+// 다시 협찬하겠다는 응답 수, 다른 태그를 고른 수를 막대로, 최신 리뷰, 요청하면
+// 나머지를 보여 주며, 각각 아래에 리스팅의 답글이 붙는다. 파트너는 행사가 끝난
+// 뒤 협찬 협약 페이지에서 리뷰를 쓰고, 리스팅은 거기서 답한다.
 export function ReviewsSection({
   id,
   name,
@@ -27,10 +26,10 @@ export function ReviewsSection({
   onReportReply,
 }: {
   id: string
-  // The listing's name, for its replies.
+  // 답글에 쓸 리스팅 이름.
   name: string
   role: Role
-  // Members can report a review, or the reply to it, to the operators.
+  // 회원은 리뷰나 그 답글을 운영진에게 신고할 수 있다.
   onReport?: (review: Review) => void
   onReportReply?: (review: Review) => void
 }) {

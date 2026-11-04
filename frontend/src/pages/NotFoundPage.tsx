@@ -5,8 +5,8 @@ import { navItems } from "../data/navigation"
 import { t } from "../i18n"
 import type { NavLabel, Role } from "../types"
 
-// An address no screen has (the server answers it with 404): says so, with
-// the way home and the role's own pages.
+// 어떤 화면에도 없는 주소(서버가 404로 답한다). 그렇다고 알리고 홈으로 가는
+// 길과 역할의 페이지를 보여 준다.
 export function NotFoundPage({
   role,
   onHome,

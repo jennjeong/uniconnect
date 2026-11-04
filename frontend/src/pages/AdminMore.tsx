@@ -26,13 +26,13 @@ import type {
 } from "../types"
 import { CsvButton } from "./AdminTools"
 
-// More of the operators' console (pages/AdminPage.tsx): analysis,
-// sponsorship operations, today's events, content and the system, with
-// the revenue panel the payments screen shows and the proposal drawer.
+// 운영자 콘솔의 나머지(pages/AdminPage.tsx): 분석, 협찬 운영, 오늘의 행사,
+// 콘텐츠와 시스템, 그리고 결제 화면이 보여 주는 매출 패널과 제안 서랍.
 
 type Notice = (message: string) => void
 
-// Loads once per token and again on `reload`, with the error as a notice.
+// 토큰마다 한 번, 그리고 `reload`일 때 다시 불러온다. 오류는 알림으로 보여
+// 준다.
 function useAdmin<T>(load: () => Promise<T>, onNotice: Notice, deps: unknown[]) {
   const [data, setData] = useState<T>()
   const run = useCallback(() => load().then(setData, (error: unknown) => onNotice(errorMessage(error))), deps) // eslint-disable-line react-hooks/exhaustive-deps
@@ -44,7 +44,7 @@ function useAdmin<T>(load: () => Promise<T>, onNotice: Notice, deps: unknown[]) 
 
 const percent = (part: number, whole: number) => (whole === 0 ? 0 : Math.round((part / whole) * 100))
 
-// Horizontal bars for labeled counts.
+// 라벨이 붙은 개수의 가로 막대.
 function Bars({ rows, unit = "" }: { rows: { label: string; count: number }[]; unit?: string }) {
   const top = Math.max(1, ...rows.map((row) => row.count))
   if (rows.length === 0) return <p className="day-empty">{t("아직 데이터가 없어요.")}</p>
@@ -66,9 +66,9 @@ function Bars({ rows, unit = "" }: { rows: { label: string; count: number }[]; u
 
 const kpiLabels = { signups: "가입", proposals: "제안", revenue: "매출" } as const
 
-// Members on a plain sketch of their area: campuses as circles sized by
-// their groups, stores as small squares, fitted to the points with a margin
-// (no map tiles, so nothing goes to a map service).
+// 회원을 지역의 간단한 스케치 위에 보여 준다. 캠퍼스는 소속 단체 수에 따른 원,
+// 가게는 작은 사각형이며 여백을 두고 점에 맞춘다(지도 타일이 없어서 지도
+// 서비스로 나가는 요청이 없다).
 function MemberMap({ map }: { map: AdminInsights["distribution"]["map"] }) {
   const points = [...map.groups, ...map.brands]
   if (points.length === 0) return <p className="day-empty">{t("위치를 아는 회원이 아직 없어요.")}</p>
@@ -79,7 +79,7 @@ function MemberMap({ map }: { map: AdminInsights["distribution"]["map"] }) {
   const [west, east] = [Math.min(...lngs) - pad, Math.max(...lngs) + pad]
   const width = 800
   const height = 360
-  // Longitude shrinks with latitude; keep the shape by scaling both the same.
+  // 경도는 위도에 따라 줄어든다. 두 축을 같은 비율로 줄여 모양을 유지한다.
   const squeeze = Math.cos((((south + north) / 2) * Math.PI) / 180)
   const scale = Math.min(width / ((east - west) * squeeze), height / (north - south))
   const x = (lng: number) => width / 2 + (lng - (west + east) / 2) * squeeze * scale
@@ -112,8 +112,7 @@ function MemberMap({ map }: { map: AdminInsights["distribution"]["map"] }) {
   )
 }
 
-// The analysis screen: this month against the targets, the funnel, the
-// cohorts, where members are and what people search for.
+// 분석 화면: 이번 달과 목표, 퍼널, 코호트, 회원 위치, 사람들이 검색하는 것.
 export function Insights({ token, onNotice }: { token: string; onNotice: Notice }) {
   const [data, reload] = useAdmin(() => api.adminInsights(token), onNotice, [token])
   const [editing, setEditing] = useState(false)
@@ -270,8 +269,7 @@ export function Insights({ token, onNotice }: { token: string; onNotice: Notice 
   )
 }
 
-// Monthly revenue by product, refunds by reason, and the monthly
-// settlement file, worked out from the payments already loaded.
+// 이미 불러온 결제로 계산한 상품별 월 매출, 사유별 환불, 월 정산 파일.
 export function RevenuePanel({ payments }: { payments: AdminPayment[] }) {
   const paid = payments.filter((payment) => payment.status === "paid" && payment.method !== "grant")
   const months = [...new Set(paid.map((payment) => (payment.paidAt ?? payment.requestedAt).slice(0, 7)))].sort().slice(-6)
@@ -310,7 +308,8 @@ export function RevenuePanel({ payments }: { payments: AdminPayment[] }) {
                 kinds.map((kind) => {
                   const rows = paid.filter((payment) => payment.kind === kind && (payment.paidAt ?? payment.requestedAt).startsWith(month))
                   const total = rows.reduce((sum, row) => sum + row.amount, 0)
-                  // Payments from before VAT was added on top had it inside.
+                  // 부가세를 위에 붙이기 전의 결제는 부가세를 가격 안에 품고
+                  // 있었다.
                   const supply = rows.reduce((sum, row) => sum + (row.supply ?? row.amount - Math.round(row.amount / 11)), 0)
                   return [month, t(kindLabels[kind]), rows.length, total, supply, total - supply]
                 }),
@@ -358,7 +357,7 @@ const stateLabels: Record<AgreementState, string> = {
   cancel: "취소 요청",
 }
 
-// One proposal in full beside the operations screens.
+// 운영 화면 옆에 제안 하나를 전체로 보여 준다.
 export function ProposalDrawer({ token, id, onClose, onNotice }: { token: string; id: string; onClose: () => void; onNotice: Notice }) {
   const [detail] = useAdmin<{ proposal: AdminProposalDetail }>(() => api.adminProposal(token, id), onNotice, [token, id])
   const proposal = detail?.proposal
@@ -440,8 +439,8 @@ export function ProposalDrawer({ token, id, onClose, onNotice }: { token: string
 
 type OpsTab = "board" | "stale" | "events"
 
-// Sponsorship operations: the agreements as a board by where they stand,
-// proposals waiting too long (with a reminder), and every event by month.
+// 협찬 운영: 진행 상태별 보드로 보는 계약서, 너무 오래 기다린 제안(리마인더
+// 포함), 월별 전체 행사.
 export function Operations({ token, onNotice }: { token: string; onNotice: Notice }) {
   const [tab, setTab] = useState<OpsTab>("board")
   const [open, setOpen] = useState<string>()
@@ -587,10 +586,9 @@ const alertLabels = {
   "visit-burst": "10분 안에 방문 8건 이상",
 } as const
 
-// Events under way with their live figures, read again every 30 seconds,
-// and what looks wrong at any event.
-// 가입 승인: an invited shop with a personal email and a co-admin wait here
-// until an operator reads their document (backend lib/applications.ts).
+// 진행 중인 행사의 실시간 수치(30초마다 다시 읽는다)와 어느 행사에서든 이상해
+// 보이는 것. 가입 승인: 개인 이메일의 초대된 가게와 공동 관리자는 운영자가
+// 서류를 읽을 때까지 여기서 기다린다(backend lib/applications.ts).
 export function Approvals({ token, onNotice }: { token: string; onNotice: Notice }) {
   const [data, reload] = useAdmin(() => api.adminApplications(token), onNotice, [token])
   const [reasons, setReasons] = useState<Record<string, string>>({})
@@ -768,7 +766,7 @@ export function Live({ token, onNotice }: { token: string; onNotice: Notice }) {
 
 type ContentTab = "posts" | "reviews" | "invites" | "faq"
 
-// Content: board posts, reviews, shop invites and the help center.
+// 콘텐츠: 게시판 글, 후기, 가게 초대, 도움말 센터.
 export function Content({ token, onNotice }: { token: string; onNotice: Notice }) {
   const [tab, setTab] = useState<ContentTab>("posts")
   return (
@@ -933,8 +931,8 @@ function Invites({ token, onNotice }: { token: string; onNotice: Notice }) {
   )
 }
 
-// The help center: questions added here show beside the built-in ones
-// (in Korean only), and built-in ones can be hidden.
+// 도움말 센터: 여기서 추가한 질문은 기본 질문 옆에 보이고(한국어만), 기본
+// 질문은 숨길 수 있다.
 function FaqEditor({ token, onNotice }: { token: string; onNotice: Notice }) {
   const [faq, , setFaq] = useAdmin<SiteFaq>(() => api.adminFaq(token), onNotice, [token])
   const [form, setForm] = useState({ topic: "start" as FaqTopicKey, question: "", answer: "", featured: false })
@@ -1017,8 +1015,7 @@ function FaqEditor({ token, onNotice }: { token: string; onNotice: Notice }) {
 
 const limitLabel = (message: string) => message.replace(/[.。].*$/, "")
 
-// The system: maintenance, resetting the examples, backups, request
-// limits and the reminders' runs.
+// 시스템: 점검, 예시 초기화, 백업, 요청 제한, 리마인더 실행.
 export function SystemPanel({ token, onNotice }: { token: string; onNotice: Notice }) {
   const [data, reload] = useAdmin<AdminSystem>(() => api.adminSystem(token), onNotice, [token])
   const [form, setForm] = useState({ on: false, message: "", blockSignups: false })

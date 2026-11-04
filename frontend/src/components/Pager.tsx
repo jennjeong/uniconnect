@@ -1,8 +1,8 @@
 import { t } from "../i18n"
 import { Icon } from "./Icon"
 
-// Page buttons under a long list, centered: back, each page, forward.
-// Nothing while it all fits on one page.
+// 긴 목록 아래 가운데에 놓는 페이지 버튼. 이전, 각 페이지, 다음 순서다. 한
+// 페이지에 다 들어가면 아무것도 보이지 않는다.
 export function Pager({ page, pages, onPage, label }: { page: number; pages: number; onPage: (page: number) => void; label: string }) {
   if (pages <= 1) return null
   return (

@@ -9,10 +9,10 @@ import type { BillingInfo } from "../types"
 import { Icon } from "./Icon"
 import { Presence } from "./Presence"
 
-// 요금제 on a brand's 내 정보 (backend lib/pro.ts): the plan it is on, this
-// month's proposals against the free plan's limit, the free plan and 캠퍼스
-// 파트너스 side by side, paying for 30 days of it (or 30 more), and a
-// partner's 1:1 섭외 요청 to the operators.
+// 브랜드의 내 정보에 있는 요금제 (backend lib/pro.ts). 쓰고 있는 요금제, 이번
+// 달 제안 수와 무료 요금제의 한도, 무료와 캠퍼스 파트너스를 나란히 비교한 표,
+// 30일(또는 30일 추가) 결제, 파트너의 1:1 섭외 요청을 운영진에게 보내는 기능을
+// 담는다.
 export function PlanCard({ onNotice }: { onNotice: (message: string) => void }) {
   const [billing, setBilling] = useState<BillingInfo>()
   const [buying, setBuying] = useState(false)

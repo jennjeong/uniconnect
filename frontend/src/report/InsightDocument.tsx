@@ -3,9 +3,8 @@ import { formatFullDate, formatPeriod } from "../lib/date"
 import type { PremiumReport } from "../types"
 import { GradeRing, HeadlineFigures, Section, sections } from "./insightSections"
 
-// The detailed analysis report as A4 pages (report/pdf.ts makes them a
-// PDF): the cover with the grade, figures and key findings, then each
-// section on a page of its own, eleven more, numbered.
+// A4 페이지로 만든 상세 분석 리포트(report/pdf.ts가 PDF로 만든다): 등급, 수치,
+// 핵심 발견이 있는 표지, 이어서 각 섹션을 번호를 매겨 한 페이지씩 열한 쪽.
 export function InsightDocument({ report }: { report: PremiumReport }) {
   const [findings, ...rest] = sections(report)
   const total = rest.length + 1

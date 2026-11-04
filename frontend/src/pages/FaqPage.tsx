@@ -12,15 +12,13 @@ import { AskModal } from "../modals/AskModal"
 import { MeshBackdrop } from "../scenes/MeshBackdrop"
 import type { Account, Inquiry } from "../types"
 
-// Spaces and case don't matter to the search.
+// 검색은 공백과 대소문자를 가리지 않는다.
 const normalize = (value: string) => value.replace(/\s+/g, "").toLowerCase()
 
-// The help center: a deep blue banner asking how it can help, with a search
-// over the questions and the link that opens the box for asking the
-// operators (modals/AskModal.tsx); the topics as cards that narrow the
-// questions to one; then the questions. While a search is typed, the
-// questions it matches drop down under the box to pick from (arrow keys
-// and Enter work too); a pick opens that question in the list.
+// 도움말 센터: 무엇을 도와줄지 묻는 짙은 파란색 배너, 질문 검색, 운영자에게
+// 묻는 상자(modals/AskModal.tsx)를 여는 링크, 질문을 하나로 좁히는 카드형 주제,
+// 그리고 질문 목록. 검색어를 입력하는 동안 맞는 질문이 상자 아래에 내려와 고를
+// 수 있고(화살표와 Enter도 된다) 고르면 목록에서 그 질문이 열린다.
 export function FaqPage({
   account,
   askNow = false,
@@ -29,7 +27,7 @@ export function FaqPage({
   onLogin,
 }: {
   account: Account | null
-  // Opens the questions at once, as the bell's notice of an answer does.
+  // 벨의 답변 알림처럼 질문을 바로 연다.
   askNow?: boolean
   onAsked?: () => void
   onAnswersRead?: (inquiries: Inquiry[]) => void
@@ -41,17 +39,17 @@ export function FaqPage({
   const listRef = useRef<HTMLDivElement>(null)
   const helpBox = useRef<HTMLInputElement>(null)
   const [asking, setAsking] = useState(askNow)
-  // Opened from the bell's notice of an answer, even while already here;
-  // once, not again on the next visit.
+  // 벨의 답변 알림에서 열린 경우. 이미 여기 있어도 열리며, 한 번만 열고 다음
+  // 방문에는 다시 열지 않는다.
   useEffect(() => {
     if (!askNow) return
     setAsking(true)
     onAsked?.()
   }, [askNow, onAsked])
-  // The suggestion list under the search box, and the one the arrows are on.
+  // 검색 상자 아래의 추천 목록과, 화살표가 가 있는 항목.
   const [suggesting, setSuggesting] = useState(false)
   const [active, setActive] = useState(-1)
-  // The question a pick opened, scrolled to once the list shows it.
+  // 선택이 연 질문. 목록에 보이면 그곳으로 스크롤한다.
   const [picked, setPicked] = useState<string>()
 
   const words = normalize(query)
@@ -166,7 +164,7 @@ export function FaqPage({
                   className={index === active ? "active" : undefined}
                   id={`help-suggestion-${index}`}
                   key={item.question}
-                  // Before the box loses focus, so the pick lands.
+                  // 상자가 포커스를 잃기 전에 해서 선택이 반영되게 한다.
                   onMouseDown={(event) => {
                     event.preventDefault()
                     pick(item.question)

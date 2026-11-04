@@ -3,9 +3,9 @@ import { HttpError } from "./errors.js"
 import { notify } from "./notices.js"
 import type { Account, Database, Match, ShopInvite } from "../types.js"
 
-// A brand account takes an invitation: its listing (made now if it has none
-// yet) becomes that shop, so groups nearby see it joined and can send
-// proposals. The caller saves, then tells the groups.
+// 브랜드 계정이 초대를 받아들인다. 리스팅(없으면 지금 만든다)이 그 가게가
+// 되어, 근처 단체가 가입한 것을 보고 제안을 보낼 수 있다. 호출한 쪽이
+// 저장한 뒤 단체에 알린다.
 export function linkShop(database: Database, account: Account, invite: ShopInvite) {
   const listing = findListing(database, account)
   const holder = database.brands.find((brand) => brand.kakaoPlaceId === invite.placeId)
@@ -24,7 +24,7 @@ export function linkShop(database: Database, account: Account, invite: ShopInvit
   return { brand, answered }
 }
 
-// Every group that invited the shop hears about it.
+// 가게를 초대한 모든 단체에 소식이 간다.
 export function tellInviters(database: Database, brand: Match, answered: ShopInvite[]) {
   for (const item of answered) {
     void notify(

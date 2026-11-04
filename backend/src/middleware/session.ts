@@ -10,7 +10,7 @@ declare global {
     interface Request {
       account?: Account
       sessionToken?: string
-      // Set when a co-admin of the account is the one logged in.
+      // 계정의 공동 관리자가 로그인한 경우에 설정한다.
       memberId?: string
     }
   }
@@ -18,12 +18,12 @@ declare global {
 
 export const hashToken = (token: string) => createHash("sha256").update(token).digest("hex")
 
-// How stale a session's last use may get before it is written again, so the
-// device list is right to the hour without a save on every request.
+// 세션의 마지막 사용 시각이 얼마나 낡아도 되는지를 정한다. 요청마다 저장하지
+// 않고도 기기 목록이 시간 단위로 맞도록 하기 위해서다.
 const lastUseEveryMs = 60 * 60 * 1000
 
-// Attaches the logged-in account (if any) from the "Authorization: Bearer"
-// header, and notes the session's use for the device list.
+// "Authorization: Bearer" 헤더로 로그인한 계정이 있으면 붙이고, 기기 목록을
+// 위해 세션의 사용을 기록한다.
 export async function readSession(req: Request, _res: Response, next: NextFunction) {
   const header = req.get("authorization")
   const token = header?.startsWith("Bearer ") ? header.slice(7) : undefined
@@ -33,8 +33,8 @@ export async function readSession(req: Request, _res: Response, next: NextFuncti
     const session = database.sessions.find(
       (entry) => entry.tokenHash === tokenHash && entry.expiresAt > Date.now(),
     )
-    // A suspended account is as good as logged out, and so is a co-admin
-    // the owner took off the team.
+    // 정지된 계정은 로그아웃한 것과 같고, 주인이 팀에서 뺀 공동 관리자도
+    // 마찬가지다.
     const account = session && database.accounts.find((item) => item.id === session.accountId && !item.suspendedAt)
     const member = session?.memberId ? account?.members?.find((item) => item.id === session.memberId) : undefined
     if (session && account && (!session.memberId || member)) {
@@ -43,7 +43,7 @@ export async function readSession(req: Request, _res: Response, next: NextFuncti
       if (member) req.memberId = member.id
       if (Date.now() - (session.lastUsedAt ?? 0) > lastUseEveryMs) {
         session.lastUsedAt = Date.now()
-        // Only a note: a failed save doesn't fail the request.
+        // 기록일 뿐이므로 저장에 실패해도 요청은 실패시키지 않는다.
         await saveDatabase().catch(() => undefined)
       }
     }

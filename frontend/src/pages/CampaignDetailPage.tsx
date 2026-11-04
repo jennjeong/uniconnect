@@ -6,9 +6,9 @@ import { formatPeriod } from "../lib/date"
 import { formatWon } from "../lib/kpis"
 import type { EventItem } from "../types"
 
-// A brand's own campaign (/event/<id>, where a student group's event has
-// pages/EventDetailPage.tsx): its days, target, budget and what it offers,
-// with the next step: finding groups, or its results once measured.
+// 브랜드 자신의 캠페인(/event/<id>. 학생단체의 행사는
+// pages/EventDetailPage.tsx). 일정, 목표, 예산, 제공하는 것과 다음 단계(단체
+// 찾기, 측정되면 결과)를 보여 준다.
 export function CampaignDetailPage({
   campaign,
   onBack,

@@ -30,7 +30,7 @@ export const metricKinds: MetricKind[] = [
   "experiences",
 ]
 
-// What a participant's phone records on the check-in page.
+// 참가자의 휴대폰이 체크인 페이지에서 기록하는 내용.
 export const checkInKinds: MetricKind[] = ["scans", "coupons", "visits"]
 
 export const emptyMetrics = (): Measurement["metrics"] => ({ scans: 0, coupons: 0, visits: 0, ...emptyVenueCounts() })
@@ -41,18 +41,18 @@ export function parseKind(value: unknown, kinds = metricKinds) {
   return kind
 }
 
-// Only the most recent records are kept; the counts stay exact.
+// 최근 기록만 남기고 집계 숫자는 정확히 유지한다.
 const logLimit = 300
 
-// "120명" → 120; a guess of 100 when the event gives no number. Kept within
-// what the goals form takes, so the default goals save as they are.
+// "120명" → 120. 행사에 숫자가 없으면 100으로 짐작한다. 목표 폼이 받는
+// 범위 안으로 맞춰서 기본 목표가 그대로 저장되게 한다.
 function audienceOf(event: EventItem) {
   const people = Number(event.people?.replace(/[^\d]/g, ""))
   return people > 0 ? Math.min(people, 100_000) : 100
 }
 
-// Goals a new event starts from, scaled to its expected audience; the group
-// sets its own from the measurement page.
+// 새 행사가 시작하는 목표. 예상 인원에 맞춰 크기를 정하며 단체는 측정
+// 페이지에서 직접 바꾼다.
 export function defaultGoals(event: EventItem): MeasurementGoals {
   const audience = audienceOf(event)
   return {
@@ -73,13 +73,13 @@ export function defaultGoals(event: EventItem): MeasurementGoals {
   }
 }
 
-// "예상 인원은", "협찬 가치는": 은 after a final consonant.
+// "예상 인원은", "협찬 가치는": 받침 뒤에는 '은'을 쓴다.
 function topic(label: string) {
   const syllable = label.charCodeAt(label.length - 1) - 0xac00
   return `${label}${syllable >= 0 && syllable < 11172 && syllable % 28 !== 0 ? "은" : "는"}`
 }
 
-// A whole number from `min` to `max`, or a Korean error naming the field.
+// `min`부터 `max`까지의 정수. 아니면 필드 이름을 넣은 한국어 오류를 낸다.
 function wholeNumber(value: unknown, label: string, max: number, min = 0) {
   const number = typeof value === "number" ? value : Number(String(value ?? "").replace(/,/g, ""))
   if (!Number.isInteger(number) || number < min || number > max) {
@@ -89,7 +89,7 @@ function wholeNumber(value: unknown, label: string, max: number, min = 0) {
   return number
 }
 
-// Goals the group sets from the measurement page, checked field by field.
+// 단체가 측정 페이지에서 정하는 목표. 필드마다 검사한다.
 export function parseGoals(body: unknown): MeasurementGoals {
   const input = (body ?? {}) as Record<string, unknown>
   const targets = (input.targets ?? {}) as Record<string, unknown>
@@ -125,9 +125,9 @@ export function parseGoals(body: unknown): MeasurementGoals {
   }
 }
 
-// Each sponsor's coupon, value and staff PIN from the goals form, checked
-// and applied to the measurement. Values, when there are several sponsors,
-// must add up to the event's value; PINs must differ between sponsors.
+// 목표 폼의 협찬사별 쿠폰, 가치, 직원 PIN을 검사해 측정에 반영한다.
+// 협찬사가 여럿이면 가치의 합이 행사의 가치와 같아야 하고 PIN은 협찬사마다
+// 달라야 한다.
 export function applySponsorGoals(measurement: Measurement, goals: MeasurementGoals, body: unknown) {
   const total = goals.valueBreakdown.reduce((sum, part) => sum + part.value, 0)
   const several = measurement.sponsors.length > 1
@@ -161,14 +161,14 @@ export function applySponsorGoals(measurement: Measurement, goals: MeasurementGo
     }
     return
   }
-  // Without them, the event's value must still add up with what was set.
+  // 값이 없어도 행사의 가치는 이미 정해진 값과 맞아야 한다.
   const set = measurement.sponsors.filter((sponsor) => sponsor.value !== undefined)
   if (several && set.length === measurement.sponsors.length && set.reduce((sum, item) => sum + item.value!, 0) !== total) {
     throw new HttpError(400, `협찬사별 가치를 더하면 협찬 가치 합계(${total.toLocaleString("ko-KR")}원)와 같아야 해요.`)
   }
 }
 
-// The staff PIN, when the goals form sends one: 4 digits.
+// 목표 폼이 직원 PIN을 보내면 4자리여야 한다.
 export function parseStaffPin(value: unknown) {
   if (value === undefined) return undefined
   const pin = text(value)
@@ -176,7 +176,7 @@ export function parseStaffPin(value: unknown) {
   return pin
 }
 
-// A check-in code no other event has.
+// 다른 행사에 없는 체크인 코드.
 function newCode(database: Database) {
   let code: string
   do code = randomBytes(4).toString("hex")
@@ -186,7 +186,7 @@ function newCode(database: Database) {
 
 export const newStaffPin = () => String(randomInt(0, 10000)).padStart(4, "0")
 
-// A PIN none of the event's sponsors has, so a PIN tells whose store it is.
+// 행사의 어느 협찬사도 쓰지 않는 PIN. PIN만 봐도 어느 매장인지 알 수 있다.
 function newSponsorPin(measurement: Measurement) {
   let pin: string
   do pin = newStaffPin()
@@ -194,13 +194,11 @@ function newSponsorPin(measurement: Measurement) {
   return pin
 }
 
-// Gives each brand sponsoring the event its own coupon, staff PIN and counts
-// on the event's measurement. The event's first sponsor takes over what the
-// event had so far, when it is the only one: the coupon, the PIN, the counts
-// and the coupon numbers already handed out. A later sponsor starts from
-// zero with a coupon named after the brand, and the event's value goes back
-// to an even split until the group sets each share again. Returns whether
-// any was added.
+// 행사를 협찬하는 브랜드마다 행사 측정에 자기 쿠폰, 직원 PIN, 집계를 준다.
+// 행사의 첫 협찬사가 혼자일 때는 행사가 지금까지 가진 쿠폰, PIN, 집계,
+// 이미 나간 쿠폰 번호를 넘겨받는다. 이후 협찬사는 브랜드 이름을 딴 쿠폰과
+// 0에서 시작하고, 단체가 각자의 몫을 다시 정하기 전까지 행사의 가치는
+// 균등 분할로 돌아간다. 추가된 것이 있는지 돌려준다.
 export function syncSponsors(database: Database, measurement: Measurement) {
   const sponsorships = Object.entries(database.sponsorships).flatMap(([brandAccountId, list]) =>
     list
@@ -247,17 +245,16 @@ export function syncSponsors(database: Database, measurement: Measurement) {
   return true
 }
 
-// Won a sponsor gave: the whole value when it is the only one, else what the
-// group set for it, or an even split until it has.
+// 협찬사가 낸 금액. 혼자면 전체 가치, 아니면 단체가 정한 몫이고 아직
+// 없으면 균등 분할이다.
 export function shareValue(measurement: Measurement, sponsor: EventSponsor) {
   const total = measurement.goals.valueBreakdown.reduce((sum, part) => sum + part.value, 0)
   if (measurement.sponsors.length <= 1) return total
   return sponsor.value ?? Math.round(total / measurement.sponsors.length)
 }
 
-// The event's measurement, created with default goals the first time, with
-// a share for each sponsor. Returns whether anything changed, so the caller
-// knows to save.
+// 행사의 측정. 처음에는 기본 목표로 만들고 협찬사마다 몫을 둔다. 바뀐 것이
+// 있는지 돌려주어 호출한 쪽이 저장할지 알게 한다.
 export function ensureMeasurement(database: Database, accountId: string, event: EventItem) {
   const found = database.measurements.find((measurement) => measurement.eventId === event.id)
   if (found) return { measurement: found, created: syncSponsors(database, found) }
@@ -281,15 +278,14 @@ export function ensureMeasurement(database: Database, accountId: string, event: 
 
 const percent = (part: number, whole: number) => (whole > 0 ? Math.round((part / whole) * 100) : 0)
 
-// Estimated sales at the sponsor's store from the visits so far.
+// 지금까지의 방문으로 추정한 협찬사 매장의 매출.
 export const estimatedSales = (measurement: Measurement) =>
   measurement.metrics.visits * measurement.goals.averageSpend
 
-// The event's report: its goals, with reach and ROAS worked out from the
-// live counts (reach: QR scans plus the reach beyond the venue; ROAS:
-// estimated sales over the sponsorship's value), how it is confirmed (as
-// both sides confirmed it) and what the venue confirmed. The PINs go only to the event's owner, the
-// group's venue PIN only when the owner is the group.
+// 행사의 리포트. 목표와 함께, 실시간 집계로 계산한 도달과 ROAS를 담는다
+// (도달: QR 스캔 + 행사장 밖 도달, ROAS: 추정 매출 ÷ 협찬 가치). 확인
+// 방식(양쪽이 확인한 그대로)과 행사장에서 확인한 내용도 담는다. PIN은
+// 행사 주인에게만 보내고 단체의 행사장 PIN은 주인이 단체일 때만 보낸다.
 export function buildReport(
   measurement: Measurement,
   event: EventItem,
@@ -318,8 +314,8 @@ export function buildReport(
     ...(pinsDay ? { pinsFrom: pinsDay } : {}),
     methods: activeMethodsOf(measurement),
     venue: venueCountsOf(metrics),
-    // Who came, for the students' own report: the kind of event, who was
-    // expected, and the optional survey's counts once anyone answered.
+    // 학생 단체 자신의 리포트용 참석자 정보. 행사 종류, 예상 참석자, 그리고
+    // 설문에 응답이 있으면 그 집계.
     ...(event.kind ? { eventKind: event.kind } : {}),
     ...(event.makeup ? { makeup: event.makeup } : {}),
     ...(measurement.survey && measurement.survey.responses > 0 ? { survey: measurement.survey } : {}),
@@ -345,10 +341,10 @@ export function buildReport(
   }
 }
 
-// When an event takes check-ins, in days in Korea: scans and coupons on its
-// own days and the day after (for events running past midnight), store
-// visits until the coupons run out, 7 days after the last coupon. The demo
-// accounts' events are always open, so visitors can try the flow.
+// 행사가 체크인을 받는 기간(한국 날짜 기준). 스캔과 쿠폰은 행사 당일과
+// 다음 날(자정을 넘기는 행사 때문), 매장 방문은 마지막 쿠폰 발급 7일 뒤
+// 쿠폰이 소진될 때까지다. 데모 계정의 행사는 늘 열려 있어 방문자가
+// 흐름을 체험할 수 있다.
 export const couponDays = 7
 
 export function checkInWindow(event: EventItem) {
@@ -359,21 +355,20 @@ export function checkInWindow(event: EventItem) {
 export const isDemoEvent = (database: Database, measurement: Measurement) =>
   Object.values(database.demoAccountIds).includes(measurement.accountId)
 
-// The day an event's PINs start to show to those who run it: the day before
-// it begins; the demo accounts' show at once, for visitors to try the flow.
+// 행사를 운영하는 쪽에게 PIN이 보이기 시작하는 날은 행사 하루 전이다.
+// 데모 계정은 방문자가 체험하도록 바로 보인다.
 export const pinsFrom = (event: EventItem) => addDays(event.date, -1)
 
 export const pinsOpen = (database: Database, measurement: Measurement, event: EventItem) =>
   isDemoEvent(database, measurement) || pinsFrom(event) <= todayInKorea()
 
-// The most scans an event counts, so a QR passed around can't inflate its
-// reach far past what the event expected: three times its audience, at least
-// 100, whatever the demo accounts' visitors try.
+// 행사가 세는 스캔의 상한. 돌려 쓰는 QR로 도달이 예상보다 크게 부풀지
+// 않도록 예상 인원의 세 배, 최소 100으로 한다. 데모 계정의 방문자가
+// 무엇을 시도해도 같다.
 export const scanCeiling = (database: Database, measurement: Measurement) =>
   isDemoEvent(database, measurement) ? Infinity : Math.max(100, measurement.goals.expectedAudience * 3)
 
-// Refuses a scan or coupon outside the event's days, or a visit after its
-// coupons ran out.
+// 행사 기간 밖의 스캔이나 쿠폰, 쿠폰이 소진된 뒤의 방문을 거절한다.
 export function assertOpen(database: Database, measurement: Measurement, event: EventItem, kind: MetricKind) {
   if (isDemoEvent(database, measurement)) return
   const today = todayInKorea()
@@ -388,13 +383,12 @@ export function assertOpen(database: Database, measurement: Measurement, event: 
   if (today > end) throw new HttpError(409, "참여 기간이 끝난 행사예요.")
 }
 
-// Participation records a measurement keeps at most: far above any campus
-// event, low enough to keep the data file small.
+// 측정이 남기는 참여 기록의 최대 개수. 캠퍼스 행사에는 한참 넉넉하고
+// 데이터 파일이 커지지 않을 만큼 낮다.
 export const passLimit = 20_000
 
-// Drops the participation records an event no longer needs: those without
-// a coupon once its days are over, and all of them once its coupons ran
-// out. Returns whether any went.
+// 행사에 더는 필요 없는 참여 기록을 지운다. 기간이 끝나면 쿠폰이 없는
+// 기록을, 쿠폰이 소진되면 전부 지운다. 지운 것이 있는지 돌려준다.
 export function prunePasses(database: Database, measurement: Measurement, event: EventItem) {
   if (isDemoEvent(database, measurement)) return false
   const today = todayInKorea()
@@ -413,7 +407,7 @@ export function prunePasses(database: Database, measurement: Measurement, event:
   return Object.keys(measurement.passes).length !== before
 }
 
-// What the venue's staff confirm, as the records name it.
+// 행사장 직원이 확인하는 것. 기록에 적힌 이름 그대로 쓴다.
 const venueDetails: Partial<Record<MetricKind, string>> = {
   samples: "샘플링 · 시음",
   stamps: "부스 방문 · 스탬프",
@@ -426,12 +420,12 @@ const venueDetails: Partial<Record<MetricKind, string>> = {
   experiences: "체험 · 시연 참여",
 }
 
-// Counted by the box rather than by the person.
+// 사람 단위가 아닌 상자 단위로 센다.
 const countedByBox: MetricKind[] = ["samples", "giveaways"]
 
-// Counts one QR scan, coupon or store visit, or what the venue confirmed
-// (`amount` samples, one stamp or post, or fewer to correct a mistake), and
-// its record; a sponsor's count grows with the event's.
+// QR 스캔, 쿠폰, 매장 방문 한 건 또는 행사장에서 확인한 것(`amount`개의
+// 샘플, 도장이나 게시물 하나, 실수를 바로잡는 더 적은 양)과 그 기록을
+// 센다. 협찬사의 집계는 행사의 집계와 함께 늘어난다.
 export function recordMetric(
   measurement: Measurement,
   kind: MetricKind,
@@ -442,7 +436,7 @@ export function recordMetric(
   if (sponsor && kind !== "scans") sponsor.metrics[kind] += amount
   const now = new Date()
   if (kind === "scans") {
-    // Hours on the clock in Korea, where the events take place, by day.
+    // 행사가 열리는 한국 시간 기준으로 날짜별 시각을 센다.
     const { date, hour } = hourInKorea(now)
     const slot = measurement.hourlyScans.find((item) => item.date === date && item.hour === hour)
     if (slot) slot.scans += 1
@@ -466,7 +460,7 @@ export function recordMetric(
   return entry
 }
 
-// The event a measurement belongs to, with its owner's account id.
+// 측정이 속한 행사와 그 주인의 계정 id.
 export function eventOf(database: Database, measurement: Measurement) {
   return database.events[measurement.accountId]?.find((event) => event.id === measurement.eventId)
 }

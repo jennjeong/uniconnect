@@ -10,9 +10,9 @@ import { ShareButton } from "./ShareButton"
 
 const ledgerLink = (token: string) => `${location.origin}/ledger/${token}`
 
-// 협찬 결산 공개 on the report page: a link anyone can open (students, the
-// school) listing the sponsorships the group received; amounts only when it
-// chooses, and a note on each to say how it was used.
+// 리포트 페이지의 협찬 결산 공개. 누구나 열 수 있는 링크(학생, 학교)로, 그룹이
+// 받은 협찬을 나열한다. 금액은 그룹이 공개하기로 한 경우에만 보이고, 각
+// 항목에는 어떻게 썼는지 설명하는 메모가 붙는다.
 export function LedgerCard({ onNotice }: { onNotice: (message: string) => void }) {
   const [data, setData] = useState<OwnLedger | null>(null)
   const [notes, setNotes] = useState<Record<string, string>>({})

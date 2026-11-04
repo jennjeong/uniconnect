@@ -14,17 +14,16 @@ const hexToVec3 = (hex: string) => {
   return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255] as const
 }
 
-// Uniform name for a CONFIG key: colorA → uColorA, bgColor → uBg.
+// CONFIG 키의 유니폼 이름. colorA → uColorA, bgColor → uBg.
 const uniformName = (key: string) =>
   key === "bgColor" ? "uBg" : `u${key[0].toUpperCase()}${key.slice(1)}`
 
-// The engine shared by getlayers.ai's WebGL2 gradients (scenes/shaders.ts):
-// one fullscreen triangle and one fragment shader, a uniform per CONFIG key,
-// a pointer that trails the cursor (a quick lead chased by a slower body),
-// and a clock built from clamped frame time so a hidden tab costs a pause,
-// never a jump. It fills its parent and draws only while on screen; reduced
-// motion holds the clock still. Without WebGL2 the parent's own background
-// shows.
+// getlayers.ai의 WebGL2 그라디언트들이 함께 쓰는 엔진 (scenes/shaders.ts). 전체
+// 화면 삼각형 하나와 프래그먼트 셰이더 하나, CONFIG 키마다 하나씩의 유니폼,
+// 커서를 따라가는 포인터 (빠른 선두를 더 느린 몸이 쫓는다), 프레임 시간을
+// 제한해 만든 시계로 이루어진다. 숨은 탭은 점프가 아니라 멈춤으로 끝난다.
+// 부모를 가득 채우며 화면에 있을 때만 그린다. 동작 줄이기 설정에서는 시계를
+// 멈춘다. WebGL2가 없으면 부모의 배경이 보인다.
 export function LayersGradient({
   shader,
   className,
@@ -36,10 +35,11 @@ export function LayersGradient({
 
   useEffect(() => {
     const host = hostRef.current
-    // Lite mode (lib/lite.ts) keeps the parent's CSS background.
+    // 라이트 모드(lib/lite.ts)에서는 부모의 CSS 배경을 그대로 둔다.
     if (!host || liteScenes()) return
-    // A fresh canvas on every mount: a canvas keeps one context for life,
-    // and cleanup loses this one (React mounts twice in development).
+    // 마운트할 때마다 새 캔버스를 쓴다. 캔버스는 평생 컨텍스트 하나만 가지는데,
+    // 정리 단계에서 이 컨텍스트를 잃기 때문이다 (React는 개발 모드에서 두 번
+    // 마운트한다).
     const canvas = document.createElement("canvas")
     host.append(canvas)
     const remove = () => canvas.remove()
@@ -99,7 +99,7 @@ export function LayersGradient({
     resizeObserver.observe(canvas)
     resize()
 
-    // The pointer is felt, not tracked: a quick lead chased by a slower body.
+    // 포인터는 추적하지 않고 느낌만 준다. 빠른 선두를 더 느린 몸이 쫓는다.
     const mouse = { x: 0, y: 0, ax: 0, ay: 0, tx: 0, ty: 0 }
     const aim = (event: PointerEvent) => {
       const box = canvas.getBoundingClientRect()
@@ -138,7 +138,7 @@ export function LayersGradient({
       gl.uniform2f(loc("iMouse"), mouse.x, mouse.y)
       gl.drawArrays(gl.TRIANGLES, 0, 3)
     }
-    // One draw before the reveal, so it never fades onto a blank canvas.
+    // 드러나기 전에 한 번 그려서 빈 캔버스 위로 페이드되지 않게 한다.
     gl.uniform1f(loc("iTime"), 0)
     gl.uniform2f(loc("iMouse"), 0, 0)
     gl.drawArrays(gl.TRIANGLES, 0, 3)

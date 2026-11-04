@@ -19,23 +19,23 @@ import type {
   SurveyCounts,
 } from "../types.js"
 
-// Demo accounts for trying the app. Both use DEMO_PASSWORD (see README).
+// 앱을 써 보는 데모 계정. 둘 다 DEMO_PASSWORD를 쓴다(README 참고).
 export const DEMO_PASSWORD = "uniconnect2026"
 
-// The demo accounts' contacts, on their agreements; 010-0000 numbers are
-// given to no one.
+// 데모 계정의 연락처. 계약서에 나온다. 010-0000 번호는 누구에게도 배정되지
+// 않은 번호다.
 export const demoContacts: Record<"학생단체" | "브랜드", AccountContact> = {
   학생단체: { name: "김뮤즈", position: "회장", phone: "010-0000-0000" },
   브랜드: { name: "이오후", position: "점장", phone: "010-0000-0001" },
 }
 
-// Brands student groups can browse. score is the match for the demo group's
-// event; popularity counts sponsorships this semester.
+// 학생 단체가 둘러볼 수 있는 브랜드. score는 데모 단체의 행사에 대한
+// 매칭 점수이고 popularity는 이번 학기 협찬 수다.
 export const seedBrands: Match[] = [
   {
     id: "afternoon-coffee",
     name: "오후의 커피",
-    // Demo store location (approximate), for distances to campuses.
+    // 데모 매장 위치(대략). 캠퍼스와의 거리 계산용.
     location: { address: "서울 노원구 공릉역 2번 출구 앞", lat: 37.6256, lng: 127.0731 },
     category: "카페 · 식음료",
     industry: "cafe",
@@ -62,7 +62,7 @@ export const seedBrands: Match[] = [
   {
     id: "moment-studio",
     name: "모먼트 스튜디오",
-    // Demo store location (approximate), for distances to campuses.
+    // 데모 매장 위치(대략). 캠퍼스와의 거리 계산용.
     location: { address: "서울 노원구 노원역 인근", lat: 37.6551, lng: 127.0613 },
     category: "사진 · 콘텐츠",
     industry: "photo",
@@ -114,7 +114,7 @@ export const seedBrands: Match[] = [
   {
     id: "glowlab",
     name: "글로우랩",
-    // Demo store location (approximate), for distances to campuses.
+    // 데모 매장 위치(대략). 캠퍼스와의 거리 계산용.
     location: { address: "서울 성동구 성수동 팝업 매장", lat: 37.5446, lng: 127.0557 },
     category: "뷰티 · 화장품",
     industry: "beauty",
@@ -141,7 +141,7 @@ export const seedBrands: Match[] = [
   {
     id: "brewing-lab",
     name: "브루잉랩",
-    // Demo store location (approximate), for distances to campuses.
+    // 데모 매장 위치(대략). 캠퍼스와의 거리 계산용.
     location: { address: "서울 노원구 석계역 인근", lat: 37.6148, lng: 127.0657 },
     category: "카페 · 디저트",
     industry: "cafe",
@@ -241,7 +241,7 @@ export const seedBrands: Match[] = [
   {
     id: "greenday",
     name: "그린데이 샐러드",
-    // Demo store location (approximate), for distances to campuses.
+    // 데모 매장 위치(대략). 캠퍼스와의 거리 계산용.
     location: { address: "서울 노원구 공릉역 인근", lat: 37.6262, lng: 127.0745 },
     category: "샐러드 · 건강식",
     industry: "wellness",
@@ -267,7 +267,7 @@ export const seedBrands: Match[] = [
   {
     id: "mood-salon",
     name: "무드살롱",
-    // Demo store location (approximate), for distances to campuses.
+    // 데모 매장 위치(대략). 캠퍼스와의 거리 계산용.
     location: { address: "서울 노원구 태릉입구역 인근", lat: 37.6178, lng: 127.075 },
     category: "헤어 · 뷰티",
     industry: "beauty",
@@ -342,7 +342,7 @@ export const seedBrands: Match[] = [
   },
 ]
 
-// Student groups brands can browse. score is the match for the demo brand.
+// 브랜드가 둘러볼 수 있는 학생 단체. score는 데모 브랜드에 대한 매칭 점수다.
 export const seedGroups: Match[] = [
   {
     id: "syu-muse",
@@ -569,8 +569,8 @@ export const seedGroups: Match[] = [
   },
 ]
 
-// Messages the demo accounts have exchanged (KST). 노원 크리에이터스 and
-// 모먼트 스튜디오 have no account, so their side is history only.
+// 데모 계정이 주고받은 메시지(KST). 노원 크리에이터스와 모먼트 스튜디오는
+// 계정이 없어 그쪽은 기록일 뿐이다.
 export function seedConversations(): Conversation[] {
   const at = (time: string) => new Date(time).toISOString()
   return [
@@ -637,10 +637,9 @@ export function seedConversations(): Conversation[] {
   ]
 }
 
-// Reviews from past sponsorships, for the detail pages to show (KST). They
-// come from before the agreements, so they have no proposal or account.
-// The demo busking day's survey answers, counted, so its sample report shows
-// an audience (lib/premiumReport.ts).
+// 지난 협찬의 후기로 상세 페이지에 보여 준다(KST). 계약서보다 앞선 것이라
+// 제안이나 계정이 없다. 데모 버스킹 날의 설문 응답을 집계해 샘플 리포트가
+// 청중을 보이게 한다(lib/premiumReport.ts).
 export const seedSurvey = (): SurveyCounts => ({
   responses: 86,
   grade: { "1학년": 24, "2학년": 21, "3학년": 18, "4학년 이상": 14, "대학원생": 3, "졸업생 · 기타": 4 },
@@ -689,7 +688,7 @@ export function seedReviews(): Review[] {
   }))
 }
 
-// Proposals the demo brand has received from student groups (KST).
+// 데모 브랜드가 학생 단체에서 받은 제안(KST).
 export function seedRequests(): SponsorRequest[] {
   const requests: Omit<SponsorRequest, "brandId">[] = [
     {
@@ -755,7 +754,7 @@ export function seedRequests(): SponsorRequest[] {
   }))
 }
 
-// Proposals brands sent the demo student group (KST).
+// 브랜드가 데모 학생 단체에 보낸 제안(KST).
 export function seedOffers(): SponsorOffer[] {
   const offers: Omit<SponsorOffer, "groupId">[] = [
     {
@@ -804,8 +803,8 @@ export function seedOffers(): SponsorOffer[] {
   }))
 }
 
-// The demo brand's finished sponsorships (the busking day's counts and
-// sales follow its live measurement in /api/analytics).
+// 데모 브랜드의 마친 협찬(버스킹 날의 집계와 매출은 /api/analytics의 실시간
+// 측정을 따른다).
 export const seedSponsorships = (): Sponsorship[] => [
   {
     id: "sp-busking",
@@ -817,7 +816,7 @@ export const seedSponsorships = (): Sponsorship[] => [
     visits: 41,
     sales: 1652300,
     eventId: "event-busking-day",
-    // Same goal as the busking day's report.
+    // 버스킹 날의 리포트와 같은 목표.
     targetRoas: 170,
   },
   {
@@ -844,7 +843,7 @@ export const seedSponsorships = (): Sponsorship[] => [
   },
 ]
 
-// The last few records of each measurement at the busking day (KST).
+// 버스킹 날 측정의 마지막 몇 건의 기록(KST).
 export function seedMetricLog(): MetricEntry[] {
   const records: [MetricKind, number, string, string][] = [
     ["scans", 123, "2026-10-12T19:41:00+09:00", "정문 부스 QR"],
@@ -877,9 +876,9 @@ export function seedMetricLog(): MetricEntry[] {
     .sort((a, b) => a.at.localeCompare(b.at))
 }
 
-// The busking day's measurement (KST): its counts and scans by hour, the
-// last few records, and the goals set before it. Its estimated sales,
-// 41 visits × 40,300원, make the report's ROAS of 243%.
+// 버스킹 날의 측정(KST): 집계와 시간대별 스캔, 마지막 몇 건의 기록, 그리고
+// 그 전에 정한 목표. 추정 매출은 41회 방문 × 40,300원으로 리포트의 ROAS
+// 243%가 된다.
 export function seedMeasurements(accountId: string): Measurement[] {
   return [
     {
@@ -899,7 +898,7 @@ export function seedMeasurements(accountId: string): Measurement[] {
       goals: {
         expectedAudience: 350,
         averageSpend: 40300,
-        // With the 128 scans, a reach of 1,240.
+        // 스캔 128건으로 도달 1,240.
         snsReach: 1112,
         valueBreakdown: [
           { type: "현금", value: 200000 },
@@ -917,8 +916,7 @@ export function seedMeasurements(accountId: string): Measurement[] {
         },
         coupon: { store: "오후의 커피 공릉점", title: "아메리카노 1+1" },
       },
-      // The demo's staff PIN, given to the store before the event, and the
-      // group's own venue PIN.
+      // 행사 전에 매장에 준 데모의 직원 PIN과 단체 자신의 행사장 PIN.
       survey: seedSurvey(),
       staffPin: "1012",
       groupPin: "1013",
@@ -928,8 +926,8 @@ export function seedMeasurements(accountId: string): Measurement[] {
   ]
 }
 
-// The example posts on the recruitment board, one per demo account, open
-// for a month from when they are made (freshenExamplePosts keeps them so).
+// 채용 게시판의 예시 게시물. 데모 계정마다 하나씩이며 만든 때부터 한 달
+// 열려 있다(freshenExamplePosts가 유지한다).
 export function seedPosts(demoAccountIds: Partial<Record<Role, string>>): BoardPost[] {
   const now = new Date()
   const deadline = addDays(todayInKorea(now), 30)
@@ -964,10 +962,9 @@ export function seedPosts(demoAccountIds: Partial<Record<Role, string>>): BoardP
   return posts
 }
 
-// The demo brand's sample report (sp-busking, lib/premiumReport.ts) as a
-// whole one, however old the data is: the store's own visitor counts, the
-// coupon takers who came back (the seeded visits by their coupon's
-// participant), and the e-contract's tasks with their proof.
+// 데모 브랜드의 샘플 리포트(sp-busking, lib/premiumReport.ts)를 데이터가
+// 오래됐어도 온전하게 보이게 한다: 매장 자체의 방문자 수, 돌아온 쿠폰 수령자
+// (시드된 방문을 쿠폰 참가자별로), 전자계약서의 작업과 증빙.
 export function freshenDemoReport(database: Pick<Database, "sponsorships" | "measurements" | "agreements" | "demoAccountIds">) {
   const brandId = database.demoAccountIds?.브랜드
   const sponsorship = brandId ? database.sponsorships[brandId]?.find((item) => item.id === "sp-busking") : undefined
@@ -1003,7 +1000,7 @@ export function freshenDemoReport(database: Pick<Database, "sponsorships" | "mea
   }
 }
 
-// The example posts stay open, a month ahead, however old the data is.
+// 예시 게시물은 데이터가 오래돼도 한 달 앞까지 열려 있다.
 export function freshenExamplePosts(database: Pick<Database, "posts" | "demoAccountIds">, now = new Date()) {
   const demo = new Set(Object.values(database.demoAccountIds ?? {}))
   const today = todayInKorea(now)
@@ -1012,8 +1009,8 @@ export function freshenExamplePosts(database: Pick<Database, "posts" | "demoAcco
   }
 }
 
-// The demo group's concert as its event page shows it, for visitors to see
-// what a group writes there (photos are left to members).
+// 데모 단체의 콘서트를 행사 페이지가 보여 주는 대로 둔다. 방문자가 단체가
+// 거기에 무엇을 쓰는지 볼 수 있다(사진은 회원에게만 맡긴다).
 export const museConcertPage = {
   venue: "삼육대학교 대강당",
   intro:

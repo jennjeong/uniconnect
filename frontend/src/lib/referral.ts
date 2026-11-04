@@ -1,5 +1,5 @@
-// 친구 초대: the code an invitation link (/?ref=CODE, any page) brought, kept
-// for this tab until sign-up sends it. Without storage the code is let go.
+// 친구 초대: 초대 링크(/?ref=CODE, 어느 페이지든)가 가져온 코드를 가입이 보낼
+// 때까지 이 탭에 보관한다. 저장소가 없으면 코드는 버린다.
 const key = "uniconnect-ref"
 
 export function keepReferral(search = location.search) {
@@ -8,7 +8,7 @@ export function keepReferral(search = location.search) {
   try {
     sessionStorage.setItem(key, code)
   } catch {
-    // No storage: sign-up goes without it.
+    // 저장소가 없으면 코드 없이 가입한다.
   }
 }
 
@@ -20,5 +20,5 @@ export function keptReferral() {
   }
 }
 
-// The link a member shares.
+// 회원이 공유하는 링크.
 export const referralLink = (code: string) => `${location.origin}/?ref=${code}`

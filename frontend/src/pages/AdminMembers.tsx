@@ -8,9 +8,9 @@ import { fullWon } from "../lib/sponsorships"
 import type { AdminMember, AdminMemberDetail } from "../types"
 import { CsvButton, NoteEditor, Pager, SortHeader, readStored, useTable, writeStored } from "./AdminTools"
 
-// The operators' members screen (pages/AdminPage.tsx): searched and
-// filtered (saved as views), sorted and paged, picked for one action on
-// many, and one opening beside the list with its record and tools.
+// 운영자의 회원 화면(pages/AdminPage.tsx). 검색하고 필터(뷰로 저장)하고
+// 정렬하고 페이지로 나누며, 여러 명에게 한 작업을 하려고 고르고, 하나는 목록
+// 옆에 기록과 도구와 함께 연다.
 
 type Notice = (message: string) => void
 type Filters = { q: string; role: string; state: string; tag: string }
@@ -18,7 +18,7 @@ type Filters = { q: string; role: string; state: string; tag: string }
 const viewsKey = "uniconnect-admin-views"
 const columnsKey = "uniconnect-admin-columns"
 
-// Columns that can be hidden, in order.
+// 숨길 수 있는 열을 순서대로.
 const optionalColumns = [
   { key: "type", label: "유형" },
   { key: "createdAt", label: "가입" },
@@ -54,7 +54,7 @@ export function Members({
 }: {
   token: string
   memberId?: string
-  // A search typed in the top bar.
+  // 상단 바에 입력한 검색어.
   query?: string
   onOpenMember: (id?: string) => void
   onNotice: Notice
@@ -68,7 +68,7 @@ export function Members({
   const [views, setViews] = useState(() => readStored<{ name: string; filters: Filters }[]>(viewsKey, []))
   const [columns, setColumns] = useState(() => new Set(readStored<Column[]>(columnsKey, ["type", "createdAt", "lastSeen", "events", "sent", "tags"])))
   const [choosing, setChoosing] = useState(false)
-  // Stopping many members asks once more before it goes.
+  // 회원 여러 명을 정지시킬 때는 실행 전에 한 번 더 묻는다.
   const [sureBulk, setSureBulk] = useState(false)
 
   useEffect(() => {
@@ -96,7 +96,7 @@ export function Members({
     [token, onNotice],
   )
 
-  // The member in the address, read again when it changes.
+  // 주소에 든 회원. 바뀌면 다시 읽는다.
   useEffect(() => {
     if (memberId) void load(memberId)
     else setOpen(undefined)
@@ -115,7 +115,7 @@ export function Members({
   const allPicked = pageIds.length > 0 && pageIds.every((id) => picked.has(id))
   const knownTags = [...new Set((rows ?? []).flatMap((row) => row.tags))].sort()
 
-  // After a change to the open member, its row too.
+  // 열린 회원에게 변경이 있으면 그 행도 갱신한다.
   const changed = (account: AdminMemberDetail, message: string) => {
     setOpen(account)
     setReload((count) => count + 1)
@@ -370,9 +370,8 @@ export function Members({
   )
 }
 
-// One member beside the list: its facts, the operators' note and tags, the
-// tools (log out, business check, Campus Partners, stop), its record and a
-// timeline of what it did.
+// 목록 옆의 회원 한 명: 사실 정보, 운영자의 메모와 태그, 도구(로그아웃, 사업자
+// 확인, Campus Partners, 정지), 기록, 그리고 활동 타임라인.
 function MemberDetail({
   token,
   member: open,

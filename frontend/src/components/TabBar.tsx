@@ -2,12 +2,12 @@ import { useLayoutEffect, useRef, useState, type MouseEvent, type ReactNode } fr
 
 export type TabItem<T extends string> = { value: T; label: ReactNode }
 
-// Where the highlight sits, and which way it last moved.
+// 강조 표시가 놓인 곳과 마지막으로 움직인 방향.
 type Box = { left: number; right: number; top: number; height: number; toward: "left" | "right" }
 
-// A row of tabs, or of filter chips, whose highlight slides to the picked one.
-// Its edges move on their own curves, the leading one quicker, so the pill
-// stretches as it travels and settles back when it lands.
+// 탭이나 필터 칩의 한 줄. 강조 표시가 고른 항목으로 미끄러진다. 양 끝이 각자의
+// 곡선으로 움직이고 앞쪽이 더 빨라서, 알약이 이동하는 동안 늘어났다가 도착하면
+// 다시 줄어든다.
 export function TabBar<T extends string>({
   items,
   value,
@@ -18,15 +18,15 @@ export function TabBar<T extends string>({
   items: TabItem<T>[]
   value: T
   onChange: (value: T, event: MouseEvent<HTMLButtonElement>) => void
-  // Accessible name of the row.
+  // 행의 접근성 이름.
   label: string
-  // Filter chips (업종별, 분야별) instead of tabs.
+  // 탭 대신 쓰는 필터 칩 (업종별, 분야별).
   chips?: boolean
 }) {
   const row = useRef<HTMLDivElement>(null)
   const [highlight, setHighlight] = useState<Box | null>(null)
 
-  // Measures the picked item, and again when the row resizes or wraps.
+  // 고른 항목을 측정하고, 행의 크기가 바뀌거나 줄이 바뀔 때 다시 측정한다.
   useLayoutEffect(() => {
     const element = row.current
     if (!element) return

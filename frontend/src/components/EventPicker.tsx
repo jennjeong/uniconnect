@@ -4,8 +4,8 @@ import { measureState } from "../lib/measurements"
 import type { EventMeasurement } from "../types"
 import { Icon } from "./Icon"
 
-// Which event the measurement and report pages show: the group's events,
-// latest first, each with where its measurement stands.
+// 측정·리포트 페이지가 보여 줄 행사를 고른다. 그룹의 행사를 최신순으로 늘어놓고
+// 측정이 어디까지 왔는지 함께 보여 준다.
 export function EventPicker({
   measurements,
   value,

@@ -1,8 +1,8 @@
-// English for the server's Korean messages (lib/i18n.ts). A {name} in a
-// Korean key stands for any text there, which is translated too when this
-// file has it (a field's name, say).
+// 서버의 한국어 메시지에 대응하는 영어(lib/i18n.ts). 한국어 키의 {name}은
+// 그 자리의 어떤 텍스트든 뜻하며, 이 파일에 있으면 그것도 번역한다(예: 필드
+// 이름).
 const en: Record<string, string> = {
-  // app.ts, store.ts, middleware
+  // app.ts, store.ts, 미들웨어
   "서버 오류가 발생했어요. 잠시 후 다시 시도해 주세요.": "Something went wrong on the server. Please try again in a moment.",
   "요청 형식이 올바르지 않아요.": "The request isn't in the right format.",
   "보낸 내용이 너무 커요. 내용을 줄여서 다시 보내 주세요.": "What you sent is too large. Please shorten it and try again.",
@@ -13,7 +13,7 @@ const en: Record<string, string> = {
   "로그인이 필요해요.": "Please log in.",
   "회원 유형을 선택해 주세요.": "Please choose a member type.",
 
-  // Rate limits
+  // 요청 한도
   "관리자 인증 실패가 너무 많아요. 15분 뒤에 다시 시도해 주세요.":
     "Too many failed admin sign-ins. Please try again in 15 minutes.",
   "메시지를 너무 빨리 보내고 있어요. 1분 뒤에 다시 보내 주세요.":
@@ -32,7 +32,7 @@ const en: Record<string, string> = {
   "이 행사의 직원 PIN이 너무 많이 틀렸어요. 15분 뒤에 다시 시도해 주세요.":
     "Too many wrong staff PINs for this event. Please try again in 15 minutes.",
 
-  // Accounts (routes/auth.ts, lib/email.ts, lib/mailer.ts)
+  // 계정 (routes/auth.ts, lib/email.ts, lib/mailer.ts)
   "이메일 형식을 확인해 주세요.": "Please check the email format.",
   "학교 이메일(예: name@syu.ac.kr)로 인증해 주세요.": "Please verify with a school email (e.g. name@syu.ac.kr).",
   "개인 메일은 사용할 수 없어요. 회사 이메일로 인증해 주세요.":
@@ -72,7 +72,7 @@ const en: Record<string, string> = {
   "협찬 받기": "Receive Sponsorship",
   "협찬 하기": "Give Sponsorship",
 
-  // Admin and questions (routes/admin.ts, routes/inquiries.ts)
+  // 운영자와 문의 (routes/admin.ts, routes/inquiries.ts)
   "관리자만 쓸 수 있어요.": "Only administrators can use this.",
   "답변을 적어 주세요.": "Please write an answer.",
   "답변은 2,000자 이하로 적어 주세요.": "Please keep the answer to 2,000 characters or fewer.",
@@ -81,7 +81,7 @@ const en: Record<string, string> = {
   "질문을 5자 이상 적어 주세요.": "Please write a question of at least 5 characters.",
   "질문은 1,000자 이하로 적어 주세요.": "Please keep the question to 1,000 characters or fewer.",
 
-  // Messages (routes/conversations.ts)
+  // 메시지 (routes/conversations.ts)
   "메시지를 입력해 주세요.": "Please enter a message.",
   "메시지는 1,000자 이하로 보내 주세요.": "Please keep messages to 1,000 characters or fewer.",
   "대화를 찾을 수 없어요.": "We couldn't find the conversation.",
@@ -91,7 +91,7 @@ const en: Record<string, string> = {
   "대화할 상대를 찾을 수 없어요.": "We couldn't find who you want to message.",
   "삭제한 메시지는 고칠 수 없어요.": "Deleted messages can't be edited.",
 
-  // Events and campaigns (routes/events.ts)
+  // 행사와 캠페인 (routes/events.ts)
   "{label}과 일정을 입력해 주세요.": "Please enter the {label} and dates.",
   "{label}은 40자 이하로 적어 주세요.": "Please keep the {label} to 40 characters or fewer.",
   "{label}은 1명부터 {max}명까지 숫자로 적어 주세요.": "Please enter the {label} as a number from 1 to {max}.",
@@ -168,7 +168,7 @@ const en: Record<string, string> = {
   "협찬이 확정된 행사는 지울 수 없어요. 협찬사와 먼저 이야기해 주세요.":
     "An event with a confirmed sponsorship can't be deleted. Please talk to the sponsor first.",
 
-  // Listings (routes/profile.ts)
+  // 리스팅 (routes/profile.ts)
   "로고는 PNG, JPG, WebP 이미지를 100KB 이하로 올려 주세요.": "Please upload the logo as a PNG, JPG or WebP image of 100KB or less.",
   "소개는 10자 이상 300자 이하로 적어 주세요.": "Please write an introduction of 10 to 300 characters.",
   "{label}을 60자 이하로 적어 주세요.": "Please keep {label} to 60 characters or fewer.",
@@ -192,7 +192,7 @@ const en: Record<string, string> = {
   "포트폴리오 제목은 40자, 내용은 100자 이하로 적어 주세요.":
     "Please keep portfolio titles to 40 characters and descriptions to 100 characters or fewer.",
 
-  // Proposals and offers (routes/proposals.ts, requests.ts, offers.ts)
+  // 제안과 요청 (routes/proposals.ts, requests.ts, offers.ts)
   "협찬받을 행사를 먼저 내 행사에 등록해 주세요. 제안은 다가오는 행사로 보내져요.":
     "Please register the event you want sponsored in My Events first. Proposals are sent about your upcoming event.",
   "제안할 캠페인을 먼저 행사 일정에 등록해 주세요. 제안은 다가오는 캠페인으로 보내져요.":
@@ -210,8 +210,8 @@ const en: Record<string, string> = {
   "삭제된 행사에 대한 제안이에요.": "This proposal is about a deleted event.",
   "삭제된 캠페인에 대한 제안이에요.": "This proposal is about a deleted campaign.",
 
-  // Measurement and goals (lib/measurements.ts). topic() puts 은 or 는
-  // after the field's name, so both forms are here.
+  // 측정과 목표 (lib/measurements.ts). topic()이 필드 이름 뒤에 은이나 는을
+  // 붙이므로 두 형태가 모두 있다.
   "알 수 없는 측정 항목이에요.": "Unknown measurement type.",
   "{label}은 {range}의 숫자로 적어 주세요.": "{label} must be a number {range}.",
   "{label}는 {range}의 숫자로 적어 주세요.": "{label} must be a number {range}.",
@@ -241,7 +241,7 @@ const en: Record<string, string> = {
     "This event isn't open for participation yet. Please scan again on the day of the event ({date}).",
   "참여 기간이 끝난 행사예요.": "Participation for this event has ended.",
 
-  // Check-in (routes/checkin.ts)
+  // 체크인 (routes/checkin.ts)
   "행사를 찾을 수 없어요. QR을 다시 스캔해 주세요.": "We couldn't find the event. Please scan the QR code again.",
   "같은 기기에서 QR을 너무 많이 스캔했어요. 참여는 한 번만 기록돼요.": "Too many scans from this device. Each person counts once.",
   "이 행사의 참여 수가 예상 인원의 3배를 넘어 더 기록하지 않아요. 행사 주최 측에 알려 주세요.": "This event has passed three times its expected audience, so no more are counted. Please tell the organizers.",
@@ -263,7 +263,7 @@ const en: Record<string, string> = {
   "쿠폰 번호를 찾을 수 없어요. 다시 확인해 주세요.": "We couldn't find the coupon number. Please check it again.",
   "이미 방문이 확인된 쿠폰이에요.": "A visit has already been confirmed for this coupon.",
 
-  // Invitations to shops (routes/invites.ts)
+  // 가게 초대 (routes/invites.ts)
   "학생단체 계정으로 가게를 초대할 수 있어요.": "Only student group accounts can invite shops.",
   "초대할 가게를 다시 골라 주세요.": "Please pick the shop to invite again.",
   "가게는 100곳까지 초대할 수 있어요.": "You can invite up to 100 shops.",
@@ -298,7 +298,7 @@ const en: Record<string, string> = {
   "이미 다른 브랜드와 연결된 가게예요.": "This shop is already linked to another brand.",
   "이미 다른 가게와 연결된 브랜드예요.": "Your brand is already linked to another shop.",
 
-  // Sponsorship agreements (routes/agreements.ts)
+  // 협찬 계약서 (routes/agreements.ts)
   "임시 전자 계약서를 찾을 수 없어요.": "We couldn't find this provisional e-contract.",
   "약속한 일을 찾을 수 없어요.": "We couldn't find that item.",
   "상대가 할 일은 상대만 표시할 수 있어요.": "Only the other side can mark what they do.",
@@ -313,7 +313,7 @@ const en: Record<string, string> = {
   "사진은 PNG, JPG, WebP로 올려 주세요.": "Please upload photos as PNG, JPG or WebP.",
   "사진을 찾을 수 없어요.": "We couldn't find that photo.",
 
-  // Sponsorship reviews (routes/reviews.ts)
+  // 협찬 후기 (routes/reviews.ts)
   "후기를 쓸 협찬을 찾을 수 없어요.": "We couldn't find the sponsorship to review.",
   "데모 계정은 후기를 쓸 수 없어요.": "The demo accounts can't write reviews.",
   "행사 날부터 후기를 쓸 수 있어요.": "You can write a review from the day of the event.",
@@ -324,7 +324,7 @@ const en: Record<string, string> = {
   "후기는 300자 이하로 적어 주세요.": "Please keep the review to 300 characters or fewer.",
   "지울 후기가 없어요.": "There's no review to delete.",
 
-  // Payments (lib/billing.ts, lib/fees.ts, routes/billing.ts)
+  // 결제 (lib/billing.ts, lib/fees.ts, routes/billing.ts)
   "결제를 승인하지 못했어요. 다시 시도해 주세요.": "The payment couldn't be approved. Please try again.",
   "결제를 승인하지 못했어요. {name}": "The payment couldn't be approved. {name}",
   "환불하지 못했어요. 다시 시도해 주세요.": "The refund didn't go through. Please try again.",
@@ -349,7 +349,7 @@ const en: Record<string, string> = {
   "플랫폼 수수료를 결제하면 확인돼요.": "Pay the platform fee to confirm.",
   "낼 수수료가 없어요.": "There's no fee to pay.",
   "끝난 행사의 협찬액은 바꿀 수 없어요.": "The value can't change after the event is over.",
-  // The detailed report (routes/insights.ts)
+  // 상세 리포트 (routes/insights.ts)
   "측정한 협찬을 찾을 수 없어요.": "We couldn't find that measured sponsorship.",
   "상세 리포트는 행사 날부터 살 수 있어요.": "The detailed report can be bought from the event's day.",
   "데모 계정은 매장 방문 수를 적을 수 없어요.": "The demo accounts can't write store visits.",
@@ -359,7 +359,7 @@ const en: Record<string, string> = {
   "데모 계정은 리포트를 공유할 수 없어요.": "The demo accounts can't share reports.",
   "상세 리포트를 산 뒤에 공유할 수 있어요.": "Buy the detailed report to share it.",
   "공유가 끝났거나 없는 리포트예요.": "This report is no longer shared, or doesn't exist.",
-  // The operators' console (routes/admin.ts)
+  // 운영자 콘솔 (routes/admin.ts)
   "회원을 찾을 수 없어요.": "We couldn't find that member.",
   "메모는 1,000자 이하로 적어 주세요.": "Keep the note to 1,000 characters.",
   "공지 내용을 적어 주세요.": "Write the notice.",
@@ -385,7 +385,7 @@ const en: Record<string, string> = {
   "백업을 찾을 수 없어요.": "We couldn't find that backup.",
   "요청이 너무 많아요. 잠시 뒤에 다시 시도해 주세요.": "Too many requests. Please try again in a moment.",
   "지금은 새 가입을 잠시 막아 두었어요. 잠시 뒤에 다시 시도해 주세요.": "Sign-up is paused for now. Please try again later.",
-  // The participants' optional survey (routes/checkin.ts)
+  // 참가자 선택 설문 (routes/checkin.ts)
   "이미 설문에 답했어요.": "You've already answered the survey.",
   "답을 하나 이상 골라 주세요.": "Please choose at least one answer.",
   // Pro (lib/pro.ts)
@@ -398,8 +398,8 @@ const en: Record<string, string> = {
   "{name}에서 '{event}' 협찬의 협찬액을 바꿨어요. 바뀐 내용을 보고 다시 확인해 주세요.":
     "{name} changed the value of the '{event}' sponsorship. Please check the change and confirm again.",
 
-  // Last, as patterns are tried in order and this one would also take
-  // "{label}과 일정을 입력해 주세요." (routes/auth.ts sign-up names).
+  // 맨 마지막에 둔다. 패턴은 순서대로 시도하는데 이 패턴이 "{label}과 일정을
+  // 입력해 주세요." (routes/auth.ts 가입 이름)까지 받아 버리기 때문이다.
   "{label}을 입력해 주세요.": "Please enter the {label}.",
   "매장 주소는 100자 이하로 적어 주세요.": "Please keep the store address to 100 characters or fewer.",
   "찾을 가게 종류를 골라 주세요.": "Please choose a kind of shop to look for.",
@@ -408,7 +408,7 @@ const en: Record<string, string> = {
   "가게 검색이 너무 많아요. 잠시 후 다시 시도해 주세요.": "Too many shop searches. Please try again in a moment.",
   "주변 가게를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.": "We couldn't load the shops nearby. Please try again in a moment.",
 
-  // Confirmation methods (lib/methods.ts, routes/agreements.ts, routes/checkin.ts)
+  // 확인 방식 (lib/methods.ts, routes/agreements.ts, routes/checkin.ts)
   "협찬 확인 방식을 다시 확인해 주세요.": "Please check the confirmation methods again.",
   "방식마다 현장에서 확인할 쪽을 골라 주세요.": "Please choose which side confirms each method at the venue.",
   "매장 방문은 브랜드 매장에서만 확인할 수 있어요.": "Store visits can only be confirmed at the brand's store.",
@@ -430,7 +430,7 @@ const en: Record<string, string> = {
   "이 방식은 상대 쪽 현장 화면에서 확인해요.": "The other side confirms this method on its own venue page.",
   "되돌릴 기록이 없어요.": "There's nothing to take back.",
 
-  // Email (lib/notices.ts notify, lib/mailer.ts codes, lib/reminders.ts)
+  // 이메일 (lib/notices.ts notify, lib/mailer.ts 코드, lib/reminders.ts)
   "고를 수 없는 언어예요.": "That language isn't available.",
   "고를 수 없는 메일 종류예요.": "That kind of email isn't available.",
   "바로 가기": "Open",
@@ -512,7 +512,7 @@ const en: Record<string, string> = {
   "지난 일주일 동안 가입한 학생단체 가운데 잘 맞는 곳이에요.": "Student groups that joined in the past week and fit you best.",
   "· {name} (일치율 {score}%)": "· {name} ({score}% match)",
 
-  // Event pages (routes/events.ts)
+  // 행사 페이지 (routes/events.ts)
   "협찬 혜택 묶음은 {count}개까지 넣을 수 있어요.": "You can add up to {count} packages.",
   "혜택 묶음마다 이름과 브랜드가 받는 것을 적어 주세요.": "Give each package a name and what the brand gets.",
   "혜택 묶음은 이름 30자, 받는 것 200자, 원하는 협찬 100자까지 적을 수 있어요.":
@@ -521,7 +521,7 @@ const en: Record<string, string> = {
   "행사 소개는 1000자 이하로 적어 주세요.": "Keep the event introduction to 1,000 characters.",
   "행사 사진은 {count}장까지 올릴 수 있어요.": "You can add up to {count} photos to an event.",
 
-  // The recruitment board (routes/board.ts)
+  // 채용 게시판 (routes/board.ts)
   "모집 글을 너무 많이 올렸어요. 내일 다시 올려 주세요.": "You've posted a lot today. Post again tomorrow.",
   "모집 글을 찾을 수 없어요.": "We couldn't find that post.",
   "제목과 내용을 적어 주세요.": "Write a title and the post.",
@@ -537,14 +537,14 @@ const en: Record<string, string> = {
   "이 상대에게 보낸 제안이 이미 있어요. 받은 제안 · 보낸 제안에서 확인해 주세요.": "You've already sent them a proposal. Check your proposals.",
   "모집 글: {title}": "Post: {title}",
 
-  // Files in conversations (routes/conversations.ts)
+  // 대화의 파일 (routes/conversations.ts)
   "사진(PNG, JPG, WebP)이나 2MB 이하의 PDF를 보내 주세요.": "Send a photo (PNG, JPG, WebP) or a PDF of 2 MB or less.",
   "보낸 파일이 10MB를 넘어요. 지난 파일 메시지를 지운 뒤 다시 보내 주세요.": "Your files are over 10 MB. Delete some earlier file messages and try again.",
   "파일을 찾을 수 없어요.": "We couldn't find that file.",
   "보낸 파일은 고칠 수 없어요. 지우고 다시 보내 주세요.": "A file can't be edited. Delete it and send it again.",
   "데모 계정은 파일을 보낼 수 없어요.": "Demo accounts can't send files.",
 
-  // Two-step login and devices (routes/auth.ts)
+  // 2단계 로그인과 기기 (routes/auth.ts)
   "로그인 시간이 지났어요. 비밀번호부터 다시 입력해 주세요.": "The login timed out. Please enter your password again.",
   "코드를 너무 많이 틀렸어요. 비밀번호부터 다시 입력해 주세요.": "Too many wrong codes. Please enter your password again.",
   "코드가 올바르지 않아요. 인증 앱의 6자리 코드나 복구 코드를 입력해 주세요.": "That code isn't right. Enter the 6-digit code from your authenticator app or a recovery code.",
@@ -556,7 +556,7 @@ const en: Record<string, string> = {
   "로그인한 기기를 찾을 수 없어요.": "We couldn't find that device.",
   "데모 계정은 로그인한 기기를 볼 수 없어요.": "Demo accounts can't see their devices.",
 
-  // One account, several people (routes/team.ts, lib/team.ts)
+  // 한 계정, 여러 사람 (routes/team.ts, lib/team.ts)
   "계정 대표만 할 수 있어요.": "Only the account's owner can do this.",
   "초대를 너무 많이 보냈어요. 내일 다시 보내 주세요.": "Too many invitations today. Please try again tomorrow.",
   "초대 코드 입력이 너무 많아요. 15분 뒤에 다시 시도해 주세요.": "Too many tries. Please try again in 15 minutes.",
@@ -575,12 +575,12 @@ const en: Record<string, string> = {
     "There's no open invitation for this email. Ask the account's owner to invite you again.",
   "초대 코드가 올바르지 않아요.": "That invitation code isn't right.",
 
-  // Kakao and Naver login (routes/social.ts)
+  // Kakao와 Naver 로그인 (routes/social.ts)
   "지원하지 않는 로그인 방법이에요.": "That login method isn't available.",
   "데모 계정은 카카오 · 네이버 계정을 연결할 수 없어요.": "Demo accounts can't link Kakao or Naver.",
   "로그인 시간이 지났어요. 다시 시도해 주세요.": "The login timed out. Please try again.",
 
-  // Student councils and their clubs (routes/council.ts)
+  // 학생회와 동아리 (routes/council.ts)
   "코드를 너무 많이 틀렸어요. 15분 뒤에 다시 시도해 주세요.": "Too many wrong codes. Please try again in 15 minutes.",
   "학생회 계정만 볼 수 있어요.": "Only student council accounts can see this.",
   "연결된 단체를 찾을 수 없어요.": "We couldn't find that club.",

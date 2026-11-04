@@ -9,13 +9,12 @@ import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { Account } from "../types.js"
 
-// A student council and the clubs that belong to it (lib/council.ts): the
-// council shares a code, a club links with it from 내 정보, and the council's
-// 소속 단체 page reads each linked club's summary. Either side unlinks at
-// any time.
+// 총학생회와 거기 속한 동아리다(lib/council.ts). 총학생회가 코드를 공유하면
+// 동아리가 내 정보에서 코드로 연결하고, 총학생회의 소속 단체 페이지에서 연결된
+// 동아리마다의 요약을 본다. 어느 쪽이든 언제든 연결을 끊을 수 있다.
 export const councilRouter = Router()
 
-// Wrong codes, per address.
+// 주소별로 틀린 코드를 센다.
 const codeFailures = createRateLimit({
   limit: 10,
   windowMs: 15 * 60 * 1000,
@@ -27,7 +26,7 @@ function requireCouncil(account: Account) {
   return account
 }
 
-// The councils a club linked to, by name.
+// 동아리가 연결한 총학생회를 이름순으로 보여 준다.
 function linksOf(club: Account) {
   const database = getDatabase()
   return (club.councils ?? []).flatMap((link) => {
@@ -36,7 +35,7 @@ function linksOf(club: Account) {
   })
 }
 
-// The council's page: its code and its clubs (the code is made the first time).
+// 총학생회의 페이지다. 코드와 소속 동아리를 담는다(코드는 처음 열 때 만든다).
 councilRouter.get("/clubs", async (req, res) => {
   const council = requireCouncil(requireAccount(req))
   const database = getDatabase()
@@ -52,7 +51,8 @@ councilRouter.get("/clubs", async (req, res) => {
   })
 })
 
-// A new code; the old one links no more clubs (those linked stay).
+// 새 코드를 만든다. 기존 코드로는 더 이상 동아리를 연결할 수 없다(이미 연결된
+// 곳은 그대로다).
 councilRouter.post("/code", async (req, res) => {
   const council = requireCouncil(requireAccount(req))
   council.councilCode = { code: newCouncilCode(), createdAt: new Date().toISOString() }
@@ -60,7 +60,7 @@ councilRouter.post("/code", async (req, res) => {
   res.json({ code: council.councilCode.code })
 })
 
-// The council takes a club off its page.
+// 총학생회가 동아리를 자기 페이지에서 뺀다.
 councilRouter.delete("/clubs/:id", async (req, res) => {
   const council = requireCouncil(requireAccount(req))
   const club = clubsOf(getDatabase(), council).find((item) => item.id === req.params.id)
@@ -75,8 +75,8 @@ councilRouter.get("/links", (req, res) => {
   res.json({ councils: linksOf(requireAccount(req)) })
 })
 
-// A club links to a council with its code (three councils at most; not the
-// shared demo accounts, nor a council to itself).
+// 동아리가 코드로 총학생회에 연결한다(총학생회는 최대 셋까지이며, 공유 데모
+// 계정과 총학생회 자기 자신은 안 된다).
 councilRouter.post("/links", async (req, res) => {
   const club = requireAccount(req)
   const database = getDatabase()
@@ -97,7 +97,7 @@ councilRouter.post("/links", async (req, res) => {
   res.status(201).json({ councils: linksOf(club) })
 })
 
-// A club unlinks from a council; the council no longer sees it.
+// 동아리가 총학생회와의 연결을 끊는다. 총학생회는 더 이상 그 동아리를 보지 못한다.
 councilRouter.delete("/links/:id", async (req, res) => {
   const club = requireAccount(req)
   if (!club.councils?.some((link) => link.accountId === req.params.id)) throw new HttpError(404, "연결된 학생회를 찾을 수 없어요.")

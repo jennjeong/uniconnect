@@ -1,13 +1,14 @@
-// Google Analytics 4 events. GA4 itself is set up by its measurement ID in
-// site.config.json (analytics.googleAnalyticsId), which adds gtag to
-// the page; until then these calls do nothing. Events say what happened
-// and on which side, never who: no names, emails or message text.
+// Google Analytics 4 이벤트. GA4 자체는 site.config.json의 측정
+// ID(analytics.googleAnalyticsId)로 설정하며, 그러면 페이지에 gtag가 붙는다.
+// 그전에는 이 호출들이 아무 일도 하지 않는다. 이벤트는 무슨 일이 어느 쪽에서
+// 일어났는지만 말하고 누구인지는 말하지 않는다: 이름, 이메일, 메시지 내용은
+// 담지 않는다.
 type EventName =
-  // A press on 제안하기 or 문의하기, before the server has answered.
+  // 서버가 답하기 전, 제안하기나 문의하기를 누른 것.
   | "contact_click"
-  // A proposal the server accepted.
+  // 서버가 받아들인 제안.
   | "generate_lead"
-  // An account the server created.
+  // 서버가 만든 계정.
   | "sign_up"
 
 type Params = Record<string, string | number>

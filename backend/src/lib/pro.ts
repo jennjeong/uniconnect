@@ -6,29 +6,28 @@ import { reportAccess } from "./premiumReport.js"
 import { isDemoAccount } from "./reviews.js"
 import type { Account, Database } from "../types.js"
 
-// 캠퍼스 파트너스 (the business plan's brand subscription, 300,000 KRW a
-// month, freemium; `pro` in the data): 30 days paid at a time, added on
-// after the days already paid. Partners send proposals without a monthly
-// limit, read every detailed report and their 캠퍼스 포트폴리오
-// (lib/portfolio.ts), ask the operators to find partners for them twice a
-// month (1:1 섭외 요청), and show a PARTNERS mark on their listing. The free plan sends up to
-// `freeOffersPerMonth` proposals a calendar month (Korean).
+// 캠퍼스 파트너스(사업 계획의 브랜드 구독, 월 300,000원, 프리미엄;
+// 데이터의 `pro`): 30일씩 결제하고 이미 낸 일수 뒤에 이어 붙인다. 파트너스는
+// 월 한도 없이 제안을 보내고, 모든 상세 리포트와 캠퍼스 포트폴리오
+// (lib/portfolio.ts)를 읽고, 한 달에 두 번 운영자에게 파트너를 찾아 달라고
+// 부탁하며(1:1 섭외 요청), 리스팅에 PARTNERS 마크가 붙는다. 무료
+// 플랜은 달력 달(한국 기준)마다 `freeOffersPerMonth`건까지 제안을 보낸다.
 export const freeOffersPerMonth = 5
 
-// 1:1 섭외 요청s a partner may send a Korean month, kept as questions to
-// the operators under their own kind.
+// 파트너가 한국 달마다 보낼 수 있는 1:1 섭외 요청. 운영자에게 가는 문의로
+// 자기 종류 아래 쌓인다.
 export const partnerRequestsPerMonth = 2
 export const partnerRequestCategory = "파트너스 섭외 요청"
 
 const koreanMonth = (at: string) => new Date(new Date(at).getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 7)
 
-// Proposals the brand sent this month.
+// 브랜드가 이번 달에 보낸 제안.
 export function offersThisMonth(database: Database, accountId: string) {
   const month = todayInKorea().slice(0, 7)
   return database.offers.filter((offer) => offer.fromAccountId === accountId && koreanMonth(offer.createdAt) === month).length
 }
 
-// Stops a free brand past this month's proposals (never the demo brand).
+// 이번 달 제안을 다 쓴 무료 브랜드를 막는다(데모 브랜드는 제외).
 export function assertCanOffer(database: Database, account: Account) {
   if (account.role !== "브랜드" || isDemoAccount(database, account) || isPro(database, account.id)) return
   if (offersThisMonth(database, account.id) >= freeOffersPerMonth) {
@@ -36,7 +35,7 @@ export function assertCanOffer(database: Database, account: Account) {
   }
 }
 
-// The partner's 1:1 섭외 요청s this Korean month.
+// 파트너가 이번 한국 달에 보낸 1:1 섭외 요청.
 export const partnerRequestsThisMonth = (database: Database, accountId: string) =>
   database.inquiries.filter(
     (inquiry) =>
@@ -45,7 +44,7 @@ export const partnerRequestsThisMonth = (database: Database, accountId: string) 
       koreanMonth(inquiry.createdAt) === todayInKorea().slice(0, 7),
   ).length
 
-// The account's plan as its pages show it.
+// 페이지가 보여 주는 계정의 플랜.
 export function planOf(database: Database, account: Account) {
   const until = proUntil(database, account.id)
   return {
@@ -67,13 +66,13 @@ sell("pro", {
       orderName: until ? `캠퍼스 파트너스 ${prices.proDays}일 연장` : `캠퍼스 파트너스 ${prices.proDays}일`,
     }
   },
-  // Paid: 30 more days, from tomorrow or after the days already paid.
+  // 결제됨: 내일부터, 또는 이미 낸 일수 뒤로 30일 더한다.
   fulfil(database, payment) {
     const until = proUntil(database, payment.accountId)
     const from = until ? addDays(until, 1) : todayInKorea()
     payment.periodEnd = addDays(from, prices.proDays - 1)
   },
-  // Refunded: the months paid after it move back by its days.
+  // 환불됨: 그 뒤에 결제한 달이 그 일수만큼 앞당겨진다.
   revoke(database, payment) {
     shiftLaterPeriods(database, payment, prices.proDays)
   },

@@ -12,12 +12,12 @@ import type { Account, Database } from "../types.js"
 
 export const ledgerRouter = Router()
 
-// How long a note on one sponsorship may be.
+// 협찬 하나에 남길 수 있는 메모의 최대 길이다.
 const maxNote = 200
 
-// The sponsorships a student group received and kept (accepted, not called
-// off), latest first: the event, the brand, what it gave, what the agreement
-// says it was worth, the group's note and the event's QR check-ins.
+// 학생단체가 받아서 유지 중인 협찬(수락했고 취소하지 않은 것)을 최신순으로
+// 보여 준다. 행사, 브랜드, 브랜드가 준 것, 계약서가 매긴 가치, 단체의 메모,
+// 행사의 QR 체크인을 담는다.
 function entriesOf(database: Database, account: Account) {
   const notes = account.ledger?.notes ?? {}
   return acceptedProposalsOf(database, account)
@@ -41,7 +41,7 @@ function entriesOf(database: Database, account: Account) {
     })
 }
 
-// The group's own account; the shared demo accounts publish nothing.
+// 단체 자신의 계정이다. 공유 데모 계정은 아무것도 공개하지 않는다.
 function ownGroup(req: Parameters<typeof requireAccount>[0]) {
   const account = requireAccount(req)
   if (account.role !== "학생단체") throw new HttpError(403, "학생단체만 협찬 결산을 공개할 수 있어요.")
@@ -59,7 +59,7 @@ ledgerRouter.get("/", (req, res) => {
   res.json(ownView(getDatabase(), ownGroup(req)))
 })
 
-// Makes the public link, or a new one in place of the old (which stops).
+// 공개 링크를 만들거나, 기존 링크 대신 새 링크를 만든다(기존 링크는 멈춘다).
 ledgerRouter.post("/link", async (req, res) => {
   const account = ownGroup(req)
   account.ledger = { showValues: false, ...account.ledger, token: randomBytes(18).toString("base64url") }
@@ -67,7 +67,7 @@ ledgerRouter.post("/link", async (req, res) => {
   res.json(ownView(getDatabase(), account))
 })
 
-// Stops sharing: the link answers 404 from now on.
+// 공유를 멈춘다. 이후 링크는 404로 답한다.
 ledgerRouter.delete("/link", async (req, res) => {
   const account = ownGroup(req)
   if (account.ledger) delete account.ledger.token
@@ -75,7 +75,7 @@ ledgerRouter.delete("/link", async (req, res) => {
   res.json(ownView(getDatabase(), account))
 })
 
-// Whether amounts show, and the notes on the group's own sponsorships.
+// 금액을 보여 줄지와 단체 자신의 협찬에 붙은 메모를 정한다.
 ledgerRouter.put("/", async (req, res) => {
   const account = ownGroup(req)
   const database = getDatabase()
@@ -102,8 +102,8 @@ ledgerRouter.put("/", async (req, res) => {
   res.json(ownView(database, account))
 })
 
-// The public page behind the link: the group, its sponsorships (amounts
-// only when it chose to show them) and what they add up to. No login.
+// 링크 뒤의 공개 페이지다. 단체, 그 협찬(금액은 보여 주기로 한 경우에만),
+// 합계를 보여 준다. 로그인은 필요 없다.
 ledgerRouter.get("/public/:token", (req, res) => {
   const database = getDatabase()
   const token = String(req.params.token)

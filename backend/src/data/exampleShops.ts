@@ -1,11 +1,10 @@
-// Made-up shops that visitors see on 추천 매칭's 가까운 순, around the demo
-// group's campus, in place of real ones from Kakao: an example shouldn't put
-// real businesses on show, and it asks nothing of Kakao. Each sits `east`
-// and `north` metres from the campus, and its address reads from the campus
-// ("삼육대학교 정문 앞 상가 1층"). None has a Kakao Map page or a phone
-// number, and no name starts like a chain whose logo the app carries
-// (frontend lib/franchises.ts). Kinds are Kakao's category group codes
-// (placeCategories in lib/validation.ts).
+// 추천 매칭의 가까운 순에서 방문자에게 보이는 지어낸 가게. 데모 단체의
+// 캠퍼스 주변에 두며 Kakao의 실제 가게를 대신한다. 예시가 실제 사업장을
+// 내보이면 안 되고 Kakao에 요청도 하지 않기 위해서다. 가게마다 캠퍼스에서
+// 동쪽 `east`, 북쪽 `north` 미터에 있고 주소는 캠퍼스를 기준으로 쓴다
+// ("삼육대학교 정문 앞 상가 1층"). Kakao Map 페이지나 전화번호는 없고, 앱이
+// 로고를 가진 체인(frontend lib/franchises.ts)처럼 시작하는 이름도 없다.
+// 종류는 Kakao의 카테고리 그룹 코드다(lib/validation.ts의 placeCategories).
 export type ExampleShop = {
   id: string
   name: string

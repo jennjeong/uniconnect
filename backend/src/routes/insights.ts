@@ -8,10 +8,9 @@ import { isDemoAccount } from "../lib/reviews.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import { brandOwner } from "./requests.js"
 
-// 상세 성과 리포트 (lib/premiumReport.ts): a brand's own, once bought (the
-// demo brand's are open, for visitors to see one), or a preview of what it
-// holds; a read-only link to share it; and the store's own counts the
-// report compares.
+// 상세 성과 리포트(lib/premiumReport.ts)다. 브랜드가 산 자기 리포트(데모
+// 브랜드의 리포트는 방문자가 볼 수 있게 열려 있다)나 담긴 내용의 미리보기,
+// 공유용 읽기 전용 링크, 리포트가 비교하는 매장 자체의 집계를 다룬다.
 export const insightsRouter = Router()
 
 
@@ -34,7 +33,7 @@ insightsRouter.get("/:id", async (req, res) => {
     })
     return
   }
-  // The first look at a bought report is kept: the terms refund it only before.
+  // 산 리포트를 처음 열어 본 뒤에는 환불하지 않는다. 약관이 그 전까지만 환불해 준다.
   const bought = req.account ? paidFor(database, account.id, "report", sponsorship.id) : undefined
   if (bought && !bought.openedAt) {
     bought.openedAt = new Date().toISOString()
@@ -43,15 +42,15 @@ insightsRouter.get("/:id", async (req, res) => {
   res.json({
     locked: false,
     report: premiumReport(database, account, sponsorship.id),
-    // A member may add its store's counts and share; the demo only reads.
+    // 회원은 자기 매장의 집계와 점유를 추가할 수 있고, 데모는 읽기만 한다.
     editable: Boolean(req.account) && !isDemoAccount(database, account),
     shared: Boolean(sponsorship.shareToken),
     ...(sponsorship.shareToken ? { shareToken: sponsorship.shareToken } : {}),
   })
 })
 
-// The store's daily visitors before and during, for the effect over the
-// usual days; members only, on a report they may read.
+// 행사 전과 행사 중 매장의 일별 방문자 수로, 평소 날과 비교해 효과를 본다.
+// 회원만 쓸 수 있고, 읽을 권한이 있는 리포트에 한한다.
 insightsRouter.put("/:id/lift", async (req, res) => {
   const { account, database, sponsorship } = owned(req, String(req.params.id))
   if (!req.account || isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 매장 방문 수를 적을 수 없어요.")
@@ -69,8 +68,8 @@ insightsRouter.put("/:id/lift", async (req, res) => {
   res.json({ report: premiumReport(database, account, sponsorship.id) })
 })
 
-// A read-only link anyone with it can open, such as the student group or a
-// manager; turned off, the old link stops working.
+// 링크를 가진 누구나(예: 학생단체나 담당자) 열 수 있는 읽기 전용 링크다.
+// 끄면 기존 링크는 쓸 수 없게 된다.
 insightsRouter.post("/:id/share", async (req, res) => {
   const { account, database, sponsorship } = owned(req, String(req.params.id))
   if (!req.account || isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 리포트를 공유할 수 없어요.")
@@ -88,14 +87,14 @@ insightsRouter.delete("/:id/share", async (req, res) => {
   res.status(204).end()
 })
 
-// The shared report, by its link, for anyone holding it.
+// 링크를 가진 누구에게나 링크로 공유 리포트를 보여 준다.
 insightsRouter.get("/shared/:token", (req, res) => {
   const database = getDatabase()
   const token = String(req.params.token)
   for (const [accountId, list] of Object.entries(database.sponsorships)) {
     const sponsorship = list.find((item) => item.shareToken && item.shareToken === token)
     const account = sponsorship && database.accounts.find((item) => item.id === accountId)
-    // A suspended brand's links stop, as its ledger and calendar links do.
+    // 정지된 브랜드의 링크는 장부와 캘린더 링크처럼 멈춘다.
     if (sponsorship && account && !account.suspendedAt) {
       res.json({ report: premiumReport(database, account, sponsorship.id) })
       return

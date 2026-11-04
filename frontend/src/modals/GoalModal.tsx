@@ -3,12 +3,12 @@ import { Modal } from "../components/Modal"
 import { t } from "../i18n"
 import { achievement, formatKpi, kpiGap, kpiValue, type Kpi } from "../lib/kpis"
 
-// Goal set before the event against the current value of one report number;
-// everything turns green once the goal is met.
+// 행사 전에 정한 목표를 리포트 숫자 하나의 현재 값과 견준다. 목표를 달성하면
+// 모두 초록으로 바뀐다.
 export function GoalModal({ kpi, onClose }: { kpi: Kpi; onClose: () => void }) {
   const rate = achievement(kpi)
   const achieved = rate >= 100
-  // Leave room past the larger value so the goal marker never sits on the edge.
+  // 큰 값보다 여유를 두어 목표 표시가 가장자리에 붙지 않게 한다.
   const scale = Math.max(kpi.current, kpi.target) * 1.15 || 1
 
   return (

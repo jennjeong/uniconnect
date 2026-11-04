@@ -21,7 +21,7 @@ const pad = (value: number) => String(value).padStart(2, "0")
 
 const delay = (seconds: number) => ({ "--reveal-delay": `${seconds}s` }) as CSSProperties
 
-// What each side does here.
+// 각 쪽이 여기서 하는 일.
 const sides: { role: Role; eyebrow: string; title: string; points: string[]; signup: string }[] = [
   {
     role: "학생단체",
@@ -47,7 +47,7 @@ const sides: { role: Role; eyebrow: string; title: string; points: string[]; sig
   },
 ]
 
-// One sponsorship from the first match to its results.
+// 첫 매칭부터 결과까지의 협찬 하나.
 const steps: { title: string; detail: string }[] = [
   {
     title: t("가입하고 소개 쓰기"),
@@ -71,8 +71,7 @@ const steps: { title: string; detail: string }[] = [
   },
 ]
 
-// Member screens to look around with the demo accounts' data; the pictures
-// are those screens, marked as examples.
+// 데모 계정의 데이터로 둘러보는 회원 화면. 그림은 그 화면이며 예시로 표시한다.
 const examples: { page: NavLabel; role: Role; image: string; description: string }[] = [
   {
     page: "추천 매칭",
@@ -100,11 +99,11 @@ const examples: { page: NavLabel; role: Role; image: string; description: string
   },
 ]
 
-// The page visitors land on: what uniconnect is and does, built from the
-// members' dashboard pieces (Stride's hero, marquee and statement), then
-// who it is for, how a sponsorship runs, pictures of the member screens
-// as examples to open, and the FAQ; the footer's call to sign up closes it.
-// It shows no live data, so nothing waits on the API.
+// 방문자가 처음 닿는 페이지: uniconnect가 무엇이고 무엇을 하는지(회원
+// 대시보드의 구성 요소인 스트라이드의 히어로, 마키, 문구로 만든다), 누구를 위한
+// 것인지, 협찬이 어떻게 진행되는지, 열어 볼 수 있는 예시 회원 화면 그림, FAQ
+// 순이고, 푸터의 가입 유도로 끝난다. 실시간 데이터가 없어서 API를 기다리지
+// 않는다.
 export function LandingPage({
   onSignup,
   onBrowse,
@@ -112,13 +111,13 @@ export function LandingPage({
   onOpenFaq,
   onInstall,
 }: {
-  // Opens sign-up, for the side picked when there is one.
+  // 고른 쪽이 있으면 그 쪽으로 가입을 연다.
   onSignup: (role?: Role) => void
-  // The example dashboard of one side.
+  // 한쪽의 예시 대시보드.
   onBrowse: (role: Role) => void
   onOpenExample: (role: Role, page: NavLabel) => void
   onOpenFaq: () => void
-  // 앱 다운로드, for the site opened in a browser (none inside the app).
+  // 브라우저에서 연 사이트용 앱 다운로드(앱 안에서는 없다).
   onInstall?: () => void
 }) {
   return (

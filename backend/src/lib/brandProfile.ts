@@ -1,11 +1,10 @@
 import type { Database, Match } from "../types.js"
 
-// A member brand's 기본 정보 and tags, worked out from what it has done
-// rather than typed: 위치 from its store address, 제공 서비스 from the offers
-// it picked, 선호 행사 from the kinds of events it sponsored, 평균 응답 from
-// how fast it answered student groups' proposals. Facts with nothing to go
-// on are left out. The examples (listings no account owns) keep what the
-// seed wrote. No brand shows follower counts.
+// 회원 브랜드의 기본 정보와 태그는 입력이 아니라 한 일로 계산한다: 위치는
+// 매장 주소에서, 제공 서비스는 고른 제공 항목에서, 선호 행사는 협찬한
+// 행사 종류에서, 평균 응답은 학생 단체의 제안에 답한 속도에서 얻는다.
+// 근거가 없는 항목은 뺀다. 예시(어느 계정도 갖지 않은 리스팅)는 시드에
+// 적힌 대로 둔다. 팔로워 수는 어느 브랜드에도 보이지 않는다.
 export function brandProfile(database: Database, stored: Match): Match {
   const listing = stored.sns ? { ...stored, sns: stored.sns.map(({ followers, ...row }) => row) } : stored
   const owner = database.accounts.find((account) => account.brandId === listing.id)
@@ -33,15 +32,14 @@ export function brandProfile(database: Database, stored: Match): Match {
   return { ...listing, facts, tags }
 }
 
-// "서울 노원구 공릉로 232" → "서울 노원구": the city and district, the part a
-// student group places a store by.
+// "서울 노원구 공릉로 232" → "서울 노원구": 시와 구. 학생 단체가 매장을
+// 가늠하는 부분이다.
 export function district(address: string | undefined) {
   const words = address?.trim().split(/\s+/) ?? []
   return words.length >= 2 ? words.slice(0, 2).join(" ") : undefined
 }
 
-// The kinds of the events the brand sponsored or accepted a proposal about,
-// most often first.
+// 브랜드가 협찬했거나 제안을 수락한 행사의 종류. 많은 순.
 function sponsoredKinds(database: Database, ownerId: string, brandId: string) {
   const eventIds = new Set([
     ...(database.sponsorships[ownerId] ?? []).flatMap((item) => (item.eventId ? [item.eventId] : [])),
@@ -58,8 +56,8 @@ function sponsoredKinds(database: Database, ownerId: string, brandId: string) {
   return [...counts].sort((a, b) => b[1] - a[1]).map(([kind]) => kind)
 }
 
-// Hours from a group's proposal to the brand's answer, on average; undefined
-// before it has answered any.
+// 학생 단체의 제안부터 브랜드가 답할 때까지 걸린 평균 시간(시간 단위).
+// 아직 답한 적이 없으면 undefined.
 function averageAnswerHours(database: Database, brandId: string) {
   const hours = database.requests
     .filter((request) => request.brandId === brandId && request.respondedAt)

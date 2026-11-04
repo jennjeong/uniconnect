@@ -11,7 +11,7 @@ describe("calendar apps", () => {
     expect(link.origin + link.pathname).toBe("https://calendar.google.com/calendar/render")
     expect(link.searchParams.get("action")).toBe("TEMPLATE")
     expect(link.searchParams.get("text")).toBe("겨울 정기 공연")
-    // All-day entries end on the day after their last.
+    // 종일 일정은 마지막 날의 다음 날에 끝난다.
     expect(link.searchParams.get("dates")).toBe("20261127/20261128")
     expect(link.searchParams.get("details")).toBe("200명 · 제품")
     expect(new URL(googleCalendarLink(festival)).searchParams.get("dates")).toBe("20261129/20261201")

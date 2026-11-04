@@ -9,22 +9,21 @@ import { RevealTitle } from "./RevealText"
 export type Pillar = {
   icon: IconName
   title: string
-  // How it works, in a sentence.
+  // 어떻게 작동하는지 한 문장으로.
   text: string
-  // What it ends in, short (shown as a chip).
+  // 무엇으로 끝나는지 짧게 (칩으로 보인다).
   proof: string
 }
 
-// Members on both sides from which the counts are worth showing; fewer
-// would say the service is empty rather than that it is used.
+// 수치를 보여 줄 만한 양쪽 회원 수의 기준. 이보다 적으면 서비스가 쓰이고
+// 있다기보다 비어 있다는 인상을 준다.
 export const countsShownFrom = 10
 
 const delay = (seconds: number) => ({ "--reveal-delay": `${seconds}s` }) as CSSProperties
 
-// What sets uniconnect apart, for the side looking: how a sponsorship went
-// before and how it goes here, side by side, then the four things only it
-// does, then how many members are on it (GET /api/site, members only, once
-// there are enough to say so).
+// 보는 쪽에게 uniconnect가 다른 점. 협찬이 예전에 어떻게 진행됐고 여기서는
+// 어떻게 진행되는지를 나란히 놓고, 그다음 이곳에만 있는 네 가지, 마지막으로
+// 회원 수를 보여 준다 (GET /api/site, 회원만, 말할 만큼 모였을 때).
 export function WhyUniconnect({
   heading,
   before,

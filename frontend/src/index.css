@@ -4,17 +4,16 @@
   --font-sans: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
-/* After getlayers.ai's Stride, retinted for sponsorships between campus and
-   company: white pages with silver fills and hairlines, deep blue for the
-   actions and for the panels where the two sides meet, slate grays instead
-   of black for copy, and Pretendard in the weights below. */
+/* getlayers.ai의 Stride를 본떠 캠퍼스와 기업 사이의 협찬에 맞게 다시 물들였다:
+   은색 채움과 헤어라인이 있는 흰 페이지, 행동과 두 쪽이 만나는 패널에는 진한
+   파랑, 본문에는 검정 대신 슬레이트 회색, 그리고 아래 굵기의 Pretendard. */
 :root {
   color-scheme: light;
-  /* Point color: deep blue fills buttons, the open page and marks, with
-     --on-point for text on it. --point-strong is the shade for blue text
-     and icons on white (9.6:1); --point-tint and --point-soft are faint
-     fills and --point-line the matching hairline. */
-  /* Kakao's and Naver's login buttons keep the colors their guidelines ask for. */
+  /* 포인트 색: 진한 파랑이 버튼, 열린 페이지, 마크를 채우며, 그 위의 글자는
+     --on-point를 쓴다. --point-strong은 흰 바탕의 파란 글자와 아이콘용
+     색조다(9.6:1). --point-tint와 --point-soft는 옅은 채움이고 --point-line은
+     이에 맞는 헤어라인이다. */
+  /* Kakao와 Naver의 로그인 버튼은 각 가이드라인이 요구하는 색을 그대로 쓴다. */
   --kakao-yellow: #fee500;
   --kakao-ink: #191919;
   --naver-green: #03c75a;
@@ -27,17 +26,17 @@
   --point-soft: #f2f6fd;
   --on-point: #ffffff;
   --point-gradient: linear-gradient(140deg, #2c5bc4 0%, #1b3f8f 48%, #13306f 100%);
-  /* Accent blues for the words and numbers a block turns on: brighter on
-     white (5.6:1), luminous on deep blue. */
+  /* 블록이 강조하는 단어와 숫자를 위한 강조 파랑: 흰 바탕에서는 더 밝게(5.6:1),
+     진한 파랑 위에서는 빛나게. */
   --point-bright: #2f63d9;
   --point-glow: #8fb6ff;
-  /* Silver: the chrome's color, and fills that read as brushed metal. */
+  /* 은색: 크롬의 색이자, 브러시드 메탈처럼 보이는 채움. */
   --silver: #c1c8d6;
   --silver-gradient: linear-gradient(180deg, #f8f9fb 0%, #e9ecf2 100%);
   --silver-ring: inset 0 0 0 1px rgba(193, 200, 214, 0.6), inset 0 1px 0 #fff;
-  /* Copy in slate grays, never black: --ink for copy, --ink-soft for
-     secondary copy, --muted for small print (5.2:1 on white, 4.6:1 on
-     --fill), --faint only for disabled and outside-month text. */
+  /* 본문은 검정이 아닌 슬레이트 회색으로: 본문은 --ink, 보조 본문은 --ink-soft,
+     작은 글씨는 --muted(흰 바탕에서 5.2:1, --fill 위에서 4.6:1), --faint는
+     비활성과 이번 달 밖의 텍스트에만 쓴다. */
   --ink: #2b3343;
   --ink-soft: #4d5668;
   --muted: #636d7f;
@@ -49,17 +48,17 @@
   --surface: #ffffff;
   --surface-raised: #ffffff;
   --canvas: #ffffff;
-  /* The darkest gray, where a dark surface is needed (toasts, tiles). */
+  /* 어두운 면이 필요한 곳(토스트, 타일)을 위한 가장 어두운 회색. */
   --slate: #3b4456;
-  /* Deep blue surfaces set this to dark, so the header logo floating over
-     them switches to its light version (Header.tsx). */
+  /* 진한 파랑 면은 이 값을 dark로 둔다. 그 위에 뜬 헤더 로고가 밝은 버전으로
+     바뀐다 (Header.tsx). */
   --surface-tone: light;
-  /* Goals: met in the point's deep blue, not yet in silver; the goal line
-     itself in amber, which reads over both. */
+  /* 목표: 달성은 포인트의 진한 파랑, 미달은 은색으로. 목표선 자체는 두 색
+     위에서 모두 읽히는 호박색이다. */
   --goal-met: linear-gradient(90deg, #3d6ad0, #1b3f8f);
   --goal-short: linear-gradient(90deg, #d3d9e3, #aab5c7);
   --goal-mark: #ec9a22;
-  /* Status colors, dark enough for small text on white and on their tints. */
+  /* 흰 바탕과 그 옅은 색조 위의 작은 글씨에도 충분히 어두운 상태 색. */
   --green: #1a7340;
   --green-soft: #e5f4ea;
   --blue: #2556c4;
@@ -70,20 +69,19 @@
   --orange-soft: #fcecdf;
   --red: #c2352b;
   --red-soft: #fbe9e7;
-  /* A hairline drawn inside the box. */
+  /* 상자 안쪽에 그리는 헤어라인. */
   --ring: inset 0 0 0 1px var(--line);
   --radius-sm: 14px;
   --radius-md: 20px;
-  /* Stride's card corners (1.5rem). */
+  /* Stride의 카드 모서리 (1.5rem). */
   --radius-lg: 24px;
   --shadow: 0 24px 60px rgba(19, 48, 111, 0.12);
-  /* Pretendard's named weights, one job each: Bold for display headings,
-     large numbers and emphasis, so what carries a page stays solid;
-     ExtraLight only for decorative large text (the chain's aside); Medium
-     for copy; SemiBold for labels, buttons and card titles; ExtraBold for
-     badges and counts; Black for the wordmark. Thin, Light and Regular are
-     left out. The variable font (main.tsx) draws each of them from one set
-     of files. */
+  /* Pretendard의 이름 붙은 굵기를 하나씩 역할에 맞춰: Bold는 디스플레이 제목,
+     큰 숫자, 강조에 써서 페이지를 떠받치는 것이 단단하게 보이게 한다.
+     ExtraLight는 장식용 큰 글자(체인의 곁글)에만. Medium은 본문, SemiBold는
+     라벨, 버튼, 카드 제목, ExtraBold는 배지와 숫자, Black은 워드마크. Thin,
+     Light, Regular는 쓰지 않는다. 가변 폰트(main.tsx)가 이 굵기를 모두 한 벌의
+     파일에서 그린다. */
   --weight-light: 200;
   --weight-display: 700;
   --weight-body: 500;
@@ -91,18 +89,18 @@
   --weight-strong: 700;
   --weight-badge: 800;
   --weight-black: 900;
-  /* Content up to 1240px wide, centered, with gutters: wide enough for
-     four cards a row, narrow enough that a wide screen keeps it together. */
+  /* 최대 1240px 너비로 가운데에 놓고 여백을 둔 콘텐츠: 한 줄에 카드 넷이 들어갈
+     만큼 넓고, 넓은 화면에서도 흩어지지 않을 만큼 좁다. */
   --shell: 1240px;
   --gutter: 32px;
   --header-h: 88px;
-  /* Curves for entrances, the header and hovers; --ease-quart is the
-     easeOutQuart of Stride's text and card reveals. */
+  /* 등장, 헤더, 호버에 쓰는 곡선. --ease-quart는 Stride의 텍스트와 카드 리빌에
+     쓰인 easeOutQuart다. */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-snap: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-pop: cubic-bezier(0.3, 1.5, 0.5, 1);
-  /* The leading edge of a sliding tab highlight: quick, a little past. */
+  /* 미끄러지는 탭 하이라이트의 앞쪽 가장자리: 빠르게, 조금 지나치게. */
   --ease-tab-lead: cubic-bezier(0.3, 1.25, 0.5, 1);
   --ease-quart: cubic-bezier(0.25, 1, 0.5, 1);
 }
@@ -116,8 +114,8 @@ html {
   scroll-padding-top: var(--header-h);
 }
 
-/* Long lines wrap between words, never inside one (keep-all for Korean);
-   only a single word too long for its box, like an email, may break. */
+/* 긴 줄은 단어 사이에서 줄을 바꾸고 단어 안에서는 바꾸지 않는다(한국어는
+   keep-all). 이메일처럼 상자보다 긴 단어 하나만 끊길 수 있다. */
 body {
   margin: 0;
   background: var(--canvas);
@@ -131,14 +129,14 @@ body {
   overflow-wrap: break-word;
 }
 
-/* Korean type (oh-my-design's hangul rules): words kept whole, no faked
-   bold or italics on Hangul, letter-spacing 0 below 20px and no tighter
-   than -0.03em on headings. */
+/* 한글 타이포그래피 (oh-my-design의 한글 규칙): 단어를 쪼개지 않고, 한글에 가짜
+   볼드나 이탤릭을 쓰지 않으며, 자간은 20px 미만에서 0, 제목에서도 -0.03em보다
+   좁히지 않는다. */
 :lang(ko) body {
   font-synthesis: none;
 }
 
-/* While the intro or the menu covers the page, the page holds still. */
+/* 인트로나 메뉴가 페이지를 덮는 동안에는 페이지가 멈춰 있다. */
 html.scroll-locked {
   overflow: hidden;
 }
@@ -165,7 +163,7 @@ strong {
   font-weight: var(--weight-strong);
 }
 
-/* Icons draw with the text color unless a rule says otherwise. */
+/* 규칙이 달리 정하지 않는 한 아이콘은 텍스트 색으로 그린다. */
 .icon {
   flex: 0 0 auto;
   stroke: currentColor;
@@ -195,7 +193,7 @@ strong {
   white-space: nowrap;
 }
 
-/* The first stop for keyboards, shown only while focused. */
+/* 키보드가 처음 닿는 곳. 포커스를 받는 동안에만 보인다. */
 .skip-link {
   position: fixed;
   z-index: 130;
@@ -223,8 +221,8 @@ strong {
   min-height: 100vh;
 }
 
-/* Pages keep to the centered shell under the fixed header. Clipped
-   sideways so cards sliding in never widen the page. */
+/* 페이지는 고정 헤더 아래의 가운데 정렬 셸을 따른다. 옆으로 미끄러져 들어오는
+   카드가 페이지를 넓히지 않도록 가로로 잘라 낸다. */
 .main-content {
   position: relative;
   z-index: 1;
@@ -237,10 +235,10 @@ strong {
   margin-inline: auto;
 }
 
-/* Stride's floating navigation from getlayers.ai (layout/Header.tsx):
-   separate pills of silver glass over whatever is behind them. Clicks
-   pass through the gaps between the pills; the pills gain a shadow once
-   the page scrolls, and the bar slides in after the intro. */
+/* getlayers.ai Stride의 떠 있는 내비게이션 (layout/Header.tsx): 뒤에 있는 것
+   위에 놓인 은빛 유리 알약들이 따로따로 있다. 알약 사이 틈으로는 클릭이
+   통과하고, 페이지가 스크롤되면 알약에 그림자가 생기며, 바는 인트로가 끝난 뒤에
+   미끄러져 들어온다. */
 .site-header {
   position: fixed;
   z-index: 40;
@@ -264,9 +262,9 @@ strong {
   transform: translateY(-14px);
 }
 
-/* Once the page scrolls, a soft fade under the bar keeps the logo, which
-   has no pill of its own, clear of the content passing beneath it: white
-   over white pages, navy over deep blue sections. */
+/* 페이지가 스크롤되면 바 아래의 부드러운 페이드가, 자기 알약이 없는 로고가 그
+   밑으로 지나가는 콘텐츠와 겹치지 않게 해 준다: 흰 페이지 위에서는 흰색, 진한
+   파랑 구역 위에서는 네이비. */
 .site-header::before {
   position: absolute;
   z-index: -1;
@@ -333,9 +331,9 @@ button.nav-pill:hover {
   background: #fff;
 }
 
-/* The logo stands on its own, drawn twice so it can crossfade to its light
-   version over deep blue (Header.tsx). Logo guide: horizontal logo at
-   least 24px tall, never tilted or shadowed. */
+/* 로고는 혼자 서 있으며, 진한 파랑 위에서 밝은 버전으로 크로스페이드할 수
+   있도록 두 번 그린다 (Header.tsx). 로고 가이드: 가로 로고는 높이 24px 이상,
+   기울이거나 그림자를 주지 않는다. */
 .brand-link {
   display: grid;
   height: 52px;
@@ -399,7 +397,7 @@ button.nav-pill:hover {
   color: var(--ink);
 }
 
-/* The open page and the side being previewed fill deep blue. */
+/* 열려 있는 페이지와 미리 보는 쪽은 진한 파랑으로 채운다. */
 .header-link.active,
 .role-button.active {
   background: var(--point);
@@ -425,7 +423,7 @@ button.nav-pill:hover {
   color: var(--point);
 }
 
-/* The next event: its D-day as a deep blue tag, then its name. */
+/* 다음 행사: D-day를 진한 파랑 태그로, 그다음 이름. */
 .event-pill {
   max-width: 300px;
   padding: 0 18px 0 7px;
@@ -484,8 +482,8 @@ button.nav-pill:hover {
   background: var(--blue);
 }
 
-/* The account's initial on white inside a blue ring, so beside a pressed
-   (deep blue) icon it never reads as pressed itself. */
+/* 파란 링 안의 흰 바탕 계정 이니셜. 눌린(진한 파랑) 아이콘 옆에서도 스스로 눌린
+   것처럼 보이지 않는다. */
 .account-button {
   display: grid;
   width: 36px;
@@ -522,9 +520,9 @@ button.nav-pill:hover {
   letter-spacing: 0.04em;
 }
 
-/* Beside 로그인 on a member screen a visitor sees with the demo data: says
-   it is an example, with an amber dot like the goal line's, and dims and
-   brightens very slowly so it is noticed without pulling at the eye. */
+/* 방문자가 데모 데이터로 보는 회원 화면의 로그인 옆에서, 예시라는 것을 알린다.
+   목표선처럼 호박색 점이 있고, 시선을 끌지 않으면서도 눈에 띄도록 아주 천천히
+   어두워졌다 밝아진다. */
 .demo-chip {
   height: 32px;
   gap: 6px;
@@ -538,8 +536,7 @@ button.nav-pill:hover {
   animation: demo-breathe-dot 4s ease-in-out infinite;
 }
 
-/* The words go from ink to the muted gray, which still reads at AA, rather
-   than fading out. */
+/* 글자는 잉크색에서 AA 대비가 유지되는 뮤트 회색으로 바뀔 뿐 사라지지 않는다. */
 @keyframes demo-breathe {
   50% {
     color: var(--muted);
@@ -560,8 +557,7 @@ button.nav-pill:hover {
   background: var(--goal-mark);
 }
 
-/* 회원가입 beside 로그인 on the introduction, in the point blue whether or
-   not the page has scrolled. */
+/* 소개의 로그인 옆 회원가입은 페이지가 스크롤됐든 아니든 포인트 파랑이다. */
 .site-header .nav-pill.signup-pill {
   padding: 0 20px;
   background: var(--point);
@@ -578,9 +574,9 @@ button.nav-pill:hover {
   }
 }
 
-/* The full-screen menu (layout/NavMenu.tsx): brushed silver with a blue
-   haze, the pages in large SemiBold type arriving one after another,
-   the account links under them, and register at the bottom. */
+/* 전체 화면 메뉴 (layout/NavMenu.tsx): 파란 안개가 낀 브러시드 실버 위에, 큰
+   SemiBold 글자의 페이지들이 차례로 들어오고, 그 아래에 계정 링크, 맨 아래에
+   가입이 있다. */
 .nav-menu {
   position: fixed;
   z-index: 115;
@@ -650,10 +646,10 @@ button.nav-pill:hover {
   overflow-y: auto;
 }
 
-/* Centred while it fits. Unlike justify-content: center, which pushes the
-   first pages above the top where scrolling can't reach, auto margins
-   shrink to nothing on a short screen (a phone held sideways, a page
-   zoomed in), so the menu starts at its first page and scrolls. */
+/* 들어맞는 동안은 가운데에 둔다. justify-content: center는 첫 페이지들을
+   스크롤이 닿지 않는 위쪽 밖으로 밀어내지만, auto 마진은 짧은 화면(옆으로 든
+   휴대폰, 확대한 페이지)에서 0으로 줄어서 메뉴가 첫 페이지에서 시작하고
+   스크롤된다. */
 .nav-menu-body > :first-child {
   margin-top: auto;
 }
@@ -700,7 +696,7 @@ button.nav-pill:hover {
   text-align: left;
 }
 
-/* The number takes a fixed width, so the page names line up. */
+/* 숫자가 고정 너비를 차지해 페이지 이름이 가지런히 맞는다. */
 .nav-menu-item small {
   min-width: 20px;
   color: var(--muted);
@@ -735,8 +731,8 @@ button.nav-pill:hover {
   letter-spacing: 0;
 }
 
-/* The account links (메시지 · 임시 전자 계약서 · 내 정보 · FAQ), centred under the
-   rule; a visitor's picker of screens wraps centred with them. */
+/* 계정 링크(메시지 · 임시 전자 계약서 · 내 정보 · FAQ)를 구분선 아래 가운데
+   정렬한다. 방문자의 화면 선택기는 이들과 함께 가운데에서 줄바꿈한다. */
 .nav-menu-extra {
   display: flex;
   flex-wrap: wrap;
@@ -818,10 +814,9 @@ button.nav-pill:hover {
   text-underline-offset: 3px;
 }
 
-/* Stride's footer (layout/Footer.tsx): a deep blue mesh card where two
-   linked chrome rings settle into the open side as it scrolls in, the
-   call to register over it, then the links and the name as a large silver
-   wordmark on white. */
+/* Stride의 푸터 (layout/Footer.tsx): 스크롤해 들어오면 연결된 크롬 링 둘이 열린
+   쪽에 자리 잡는 진한 파랑 메시 카드, 그 위의 가입 안내, 그다음 링크와 흰
+   바탕의 큰 은색 워드마크로 된 이름. */
 .site-footer {
   position: relative;
   z-index: 2;
@@ -840,7 +835,7 @@ button.nav-pill:hover {
   color: #fff;
 }
 
-/* The rings take the right side, clear of the copy. */
+/* 링은 본문을 피해 오른쪽을 차지한다. */
 .footer-stage .chrome-scene {
   left: 36%;
 }
@@ -871,7 +866,7 @@ button.nav-pill:hover {
   line-height: 1.65;
 }
 
-/* The introduction's card: sign up, and get the app beside it. */
+/* 소개의 카드: 가입, 그리고 그 옆의 앱 받기. */
 .footer-actions {
   display: flex;
   flex-wrap: wrap;
@@ -940,7 +935,7 @@ button.nav-pill:hover {
   transform: translateX(4px);
 }
 
-/* The name in Pretendard Black, brushed silver, spanning the shell. */
+/* Pretendard Black의 이름을 브러시드 실버로, 셸 전체에 걸쳐 놓는다. */
 .footer-wordmark {
   margin: 72px 0 0;
   background: linear-gradient(180deg, #cfd6e1 0%, #eef1f5 82%);
@@ -982,11 +977,11 @@ button.nav-pill:hover {
   text-decoration: underline;
 }
 
-/* Start screen (components/Loader.tsx): the logo's mark drawn as a link.
-   The school and the shop pop up (0–0.45s), their halves of the U draw down
-   to meet at the bottom (0.25–0.85s) and click shut with a bounce and two
-   pulses (0.85s); the logo then slides over for its name (1.05–1.6s), and
-   a circle opens from where the halves met (from 1.65s) to show the page. */
+/* 시작 화면 (components/Loader.tsx): 로고의 마크를 링크처럼 그린다. 학교와
+   매장이 튀어나오고(0–0.45초), U의 두 반쪽이 아래로 그려져 바닥에서
+   만나며(0.25–0.85초), 튕기면서 두 번 맥박치고 맞물린다(0.85초). 이어 로고가
+   이름을 위해 옆으로 미끄러지고(1.05–1.6초), 반쪽들이 만난 곳에서 원이
+   열리며(1.65초부터) 페이지를 드러낸다. */
 @property --hole {
   syntax: "<length>";
   inherits: true;
@@ -1007,8 +1002,8 @@ button.nav-pill:hover {
   animation: loader-open 0.85s cubic-bezier(0.6, 0, 0.3, 1) forwards;
 }
 
-/* The circle's edge: a deep blue ring with a silver halo, the link opening
-   out around the page. */
+/* 원의 가장자리: 은빛 후광이 있는 진한 파랑 링. 링크가 페이지 둘레로 열려
+   나가는 모습이다. */
 .intro-ring {
   position: absolute;
   top: var(--y, 50%);
@@ -1039,9 +1034,8 @@ button.nav-pill:hover {
   }
 }
 
-/* The mark starts on its own in the middle (its centre is 38.7% of the
-   logo's width left of the logo's), then moves over to make room for the
-   name. */
+/* 마크는 처음에 가운데에 혼자 있다 (그 중심은 로고 너비의 38.7%만큼 로고의
+   중심보다 왼쪽이다). 그다음 이름이 들어올 자리를 내주려고 옆으로 옮겨 간다. */
 .intro-logo {
   width: min(92vw, 640px);
   height: auto;
@@ -1078,9 +1072,8 @@ button.nav-pill:hover {
   }
 }
 
-/* Each half of the U draws from its building down to the bottom. The gap
-   runs a little past the path's length, so no rounded tip shows before the
-   line starts. */
+/* U의 각 반쪽은 건물에서 바닥까지 그려진다. 간격은 경로 길이를 조금 넘겨서,
+   선이 시작되기 전에 둥근 끝이 보이지 않는다. */
 .intro-arc {
   fill: none;
   stroke-dasharray: 1 1.1;
@@ -1100,7 +1093,7 @@ button.nav-pill:hover {
   }
 }
 
-/* The click where they meet. */
+/* 둘이 만나는 곳의 맞물림. */
 .intro-mark {
   transform-box: fill-box;
   transform-origin: 50% 90%;
@@ -1153,10 +1146,10 @@ button.nav-pill:hover {
   }
 }
 
-/* Scenes fill their panel behind its copy: getlayers.ai's WebGL2 gradients
-   (scenes/LayersGradient.tsx), Stride's mesh drawn once to an image
-   (scenes/MeshBackdrop.tsx) and its chrome models (scenes/ChromeScene.tsx).
-   Without WebGL the panel's own deep blue shows. */
+/* 장면은 본문 뒤의 패널을 채운다: getlayers.ai의 WebGL2
+   그라디언트(scenes/LayersGradient.tsx), 이미지로 한 번 그린 Stride의
+   메시(scenes/MeshBackdrop.tsx), 그 크롬 모델(scenes/ChromeScene.tsx). WebGL이
+   없으면 패널 고유의 진한 파랑이 보인다. */
 .layers-gradient,
 .mesh-backdrop,
 .chrome-scene {
@@ -1194,8 +1187,8 @@ button.nav-pill:hover {
   height: 100%;
 }
 
-/* Page heading (components/PageIntro.tsx), after Stride's section heads:
-   an eyebrow, a large Bold title and the page's actions on the right. */
+/* 페이지 제목 (components/PageIntro.tsx), Stride의 섹션 제목을 본떠서:
+   아이브로, 큰 Bold 제목, 오른쪽에 페이지의 액션. */
 .page-view {
   padding-bottom: 40px;
 }
@@ -1253,7 +1246,7 @@ button.nav-pill:hover {
   gap: 10px;
 }
 
-/* Stride's label: a deep blue dot held in a faint ring, before the words. */
+/* Stride의 라벨: 옅은 링에 담긴 진한 파랑 점이 글자 앞에 온다. */
 .eyebrow {
   display: inline-flex;
   align-items: center;
@@ -1306,7 +1299,7 @@ button.nav-pill:hover {
   transform: rotate(180deg);
 }
 
-/* Back on the left; on a partner's page, sharing it on the right. */
+/* 왼쪽에는 뒤로 가기, 파트너 페이지에서는 오른쪽에 공유. */
 .detail-top {
   display: flex;
   align-items: center;
@@ -1323,10 +1316,9 @@ button.nav-pill:hover {
   transform: none;
 }
 
-/* Stride's pill buttons (components/Pill.tsx): deep blue for the main
-   action, white on blue panels, silver, or outlined (silver on white,
-   white on blue), with a round arrow badge that nudges toward where the
-   button leads. */
+/* Stride의 알약 버튼 (components/Pill.tsx): 주 액션은 진한 파랑, 파란 패널
+   위에서는 흰색, 은색, 또는 윤곽선(흰 바탕에서는 은색, 파랑 위에서는 흰색).
+   버튼이 이끄는 쪽으로 살짝 움직이는 둥근 화살표 배지가 붙는다. */
 .pill {
   display: inline-flex;
   height: 48px;
@@ -1417,8 +1409,8 @@ button.nav-pill:hover {
   transition: transform 0.35s var(--ease-snap);
 }
 
-/* The app's own buttons in the same pill shapes: primary is deep blue,
-   cancel is outlined and detail is silver. */
+/* 같은 알약 모양의 앱 자체 버튼: primary는 진한 파랑, cancel은 윤곽선, detail은
+   은색이다. */
 .primary-button,
 .cancel-button,
 .detail-button {
@@ -1470,7 +1462,7 @@ button.nav-pill:hover {
   width: 100%;
 }
 
-/* A text button underlined like a link (the second action beside a pill). */
+/* 링크처럼 밑줄이 있는 텍스트 버튼 (알약 옆의 두 번째 액션). */
 .underline-link {
   padding: 4px 0;
   border: 0;
@@ -1491,8 +1483,7 @@ button.nav-pill:hover {
   color: #fff;
 }
 
-/* A button that reads as a link, in the line it sits in: an event's name
-   opening its page. */
+/* 앉아 있는 줄 안에서 링크처럼 읽히는 버튼: 행사 이름이 그 페이지를 연다. */
 .text-link {
   padding: 0;
   border: 0;
@@ -1527,7 +1518,7 @@ button.nav-pill:hover {
   letter-spacing: -0.01em;
 }
 
-/* Proposal buttons on cards and dashboards; answered ones read as status. */
+/* 카드와 대시보드의 제안 버튼. 답을 받은 것은 상태처럼 읽힌다. */
 .proposal-button {
   display: inline-flex;
   height: 44px;
@@ -1554,8 +1545,7 @@ button.nav-pill:hover {
   cursor: default;
 }
 
-/* A brand's answer: confirmed is solid green, declined is gray with a link
-   to propose again. */
+/* 브랜드의 답: 확정은 꽉 찬 초록, 거절은 다시 제안하는 링크가 붙은 회색. */
 .proposal-button.confirmed {
   background: var(--green);
   color: #fff;
@@ -1594,7 +1584,7 @@ button.nav-pill:hover {
   color: var(--point);
 }
 
-/* Buttons on deep blue banners turn white. */
+/* 진한 파랑 배너 위의 버튼은 흰색이 된다. */
 .cta-panel :is(.primary-button, .proposal-button:not(.done, .confirmed, .declined)) {
   background: #fff;
   color: var(--point);
@@ -1604,7 +1594,7 @@ button.nav-pill:hover {
   background: var(--point-soft);
 }
 
-/* Frosted navy, so it reads wherever the light falls. */
+/* 빛이 어디서 오든 읽히도록 한 서리 낀 네이비. */
 .cta-panel .cancel-button {
   background: rgba(8, 20, 52, 0.5);
   color: #fff;
@@ -1628,8 +1618,8 @@ button.nav-pill:hover {
   outline-color: #fff;
 }
 
-/* Logos and industry marks (BrandMark.tsx). With no logo, an industry mark
-   on a faint tint of its color; the art covers the tile. */
+/* 로고와 업종 마크 (BrandMark.tsx). 로고가 없으면 그 색의 옅은 색조 위에 업종
+   마크를 놓고, 그림이 타일을 덮는다. */
 .match-logo {
   display: grid;
   width: 48px;
@@ -1646,7 +1636,7 @@ button.nav-pill:hover {
   border-radius: 20px;
 }
 
-/* Without a logo, the industry mark in the logo's blues on a faint blue tile. */
+/* 로고가 없으면 옅은 파랑 타일 위에 로고의 파랑 계열로 그린 업종 마크. */
 .match-logo.industry {
   background: var(--point-tint);
 }
@@ -1667,8 +1657,8 @@ button.nav-pill:hover {
   object-fit: contain;
 }
 
-/* Match score as a ring in the score's own shade of blue (ScoreRing.tsx)
-   over a silver track, the number on white in the middle. */
+/* 점수를 그 점수 자신의 파랑 음영으로 그린 링 (ScoreRing.tsx). 은색 트랙 위에
+   놓이고, 가운데에 흰 바탕의 숫자가 있다. */
 .match-score-ring {
   position: relative;
   display: flex;
@@ -1729,9 +1719,9 @@ button.nav-pill:hover {
   font-weight: var(--weight-label);
 }
 
-/* Tabs as a silver track with a deep blue pill on the pick, and filter
-   chips whose pick turns pale blue. The highlight slides to the new pick
-   (TabBar.tsx); the buttons sit above it. */
+/* 은색 트랙에 고른 곳이 진한 파랑 알약이 되는 탭, 고른 것이 옅은 파랑이 되는
+   필터 칩. 하이라이트는 새로 고른 곳으로 미끄러져 가고 (TabBar.tsx), 버튼은 그
+   위에 놓인다. */
 .match-filters {
   display: flex;
   flex-direction: column;
@@ -1793,8 +1783,8 @@ button.nav-pill:hover {
   color: #fff;
 }
 
-/* Real shops around the campus (components/NearbyPlaces.tsx): the kinds as
-   chips and a line saying where, above the shops in the other tabs' cards. */
+/* 캠퍼스 주변의 실제 매장 (components/NearbyPlaces.tsx): 종류를 칩으로,
+   어디인지 알려 주는 줄을, 다른 탭의 카드로 된 매장 위에 둔다. */
 .nearby-places {
   display: flex;
   flex-direction: column;
@@ -1817,8 +1807,8 @@ button.nav-pill:hover {
   font-size: 12px;
 }
 
-/* The line saying where, with the switch between the list and the map at
-   its right (wrapping under it on phones). */
+/* 어디인지 알려 주는 줄. 오른쪽에 목록과 지도를 바꾸는 스위치가 있다
+   (휴대폰에서는 그 아래로 줄바꿈). */
 .nearby-head {
   display: flex;
   flex-wrap: wrap;
@@ -1851,8 +1841,8 @@ button.nav-pill:hover {
   box-shadow: 0 2px 8px rgba(19, 48, 111, 0.12);
 }
 
-/* The sketch map (components/PlaceMap.tsx) beside the card of the shop
-   pressed on it; one above the other on phones. */
+/* 스케치 지도 (components/PlaceMap.tsx)와, 거기서 누른 매장의 카드를 나란히.
+   휴대폰에서는 위아래로. */
 .nearby-map {
   display: grid;
   grid-template-columns: minmax(0, 400px) minmax(0, 360px);
@@ -1866,9 +1856,9 @@ button.nav-pill:hover {
   gap: 12px;
 }
 
-/* uniconnect's own map, drawn rather than fetched: a silver square with a
-   street-block grid, a blue glow over the walkable middle, rings every few
-   hundred metres, the campus as a deep blue pin and each place as a pin. */
+/* uniconnect 자체 지도. 가져오는 것이 아니라 그린 것이다: 거리 블록 격자가 있는
+   은색 정사각형, 걸어갈 수 있는 가운데에 파란 빛, 수백 미터마다 링, 진한 파랑
+   핀의 캠퍼스, 각 장소의 핀. */
 .place-map {
   position: relative;
   aspect-ratio: 1;
@@ -1898,7 +1888,7 @@ button.nav-pill:hover {
   stroke-dasharray: none;
 }
 
-/* The way from the campus to the picked place, with its distance. */
+/* 캠퍼스에서 고른 장소까지의 길과 그 거리. */
 .place-map-rings .place-map-route {
   stroke: var(--point-bright);
   stroke-width: 0.7;
@@ -1914,7 +1904,7 @@ button.nav-pill:hover {
   }
 }
 
-/* Each ring's distance and walk; N at the top. */
+/* 각 링의 거리와 도보 시간. N은 맨 위. */
 .place-map-ring,
 .place-map-north {
   position: absolute;
@@ -1924,8 +1914,8 @@ button.nav-pill:hover {
   line-height: 1;
 }
 
-/* Over the pins, on a frosted chip just inside each ring on the south
-   line, and never in the way of a press. */
+/* 핀 위에, 남쪽 선의 각 링 바로 안쪽에 서리 낀 칩으로 놓이며, 누르는 데 방해가
+   되지 않는다. */
 .place-map-ring {
   left: 50%;
   z-index: 2;
@@ -1951,7 +1941,7 @@ button.nav-pill:hover {
   transform: translateX(-50%);
 }
 
-/* The campus: a deep blue disc with a slow pulse and its name under it. */
+/* 캠퍼스: 천천히 맥박치는 진한 파랑 원판과 그 아래의 이름. */
 .place-map-campus {
   position: absolute;
   top: 50%;
@@ -2001,9 +1991,9 @@ button.nav-pill:hover {
   transform: translateX(-50%);
 }
 
-/* Each place: a pin whose tip sits on the spot, inside a 28px target;
-   silver before it is on uniconnect, ringed in blue once invited, deep blue
-   once it joined. The picked one grows and shows its name. */
+/* 각 장소: 끝이 그 지점에 놓이는 핀을 28px 타깃 안에 둔다. uniconnect에 아직
+   없으면 은색, 초대하면 파란 링, 가입하면 진한 파랑. 고른 것은 커지고 이름을
+   보여준다. */
 .place-dot {
   position: absolute;
   width: 28px;
@@ -2065,8 +2055,8 @@ button.nav-pill:hover {
   z-index: 3;
 }
 
-/* Kakao's map as the ground, toned toward the silver theme, with the same
-   dots and a deep blue campus pin drawn over it (KakaoMap.tsx). */
+/* Kakao 지도를 바탕으로 깔고 은색 테마에 맞게 톤을 낮춘 뒤, 같은 점들과 진한
+   파랑 캠퍼스 핀을 그 위에 그린다 (KakaoMap.tsx). */
 .kakao-map {
   position: relative;
   aspect-ratio: 4 / 3;
@@ -2148,7 +2138,7 @@ button.nav-pill:hover {
   pointer-events: none;
 }
 
-/* Near the map's top edge the name goes under its pin (KakaoMap's keepInside). */
+/* 지도 윗가장자리 근처에서는 이름이 핀 아래로 간다 (KakaoMap의 keepInside). */
 .place-dot-name.below {
   top: calc(100% + 4px);
   bottom: auto;
@@ -2184,13 +2174,13 @@ button.nav-pill:hover {
   }
 }
 
-/* 목록 · 지도 over a catalog keeps its own width. */
+/* 카탈로그 위의 목록 · 지도는 자기 너비를 유지한다. */
 .match-filters > .nearby-layout {
   align-self: flex-start;
 }
 
-/* The catalog map (components/CatalogMap.tsx): the listings it couldn't
-   place, as pills under the map and card. */
+/* 카탈로그 지도 (components/CatalogMap.tsx): 놓을 수 없었던 리스팅을 지도와
+   카드 아래에 알약으로. */
 .catalog-map-unplaced {
   display: grid;
   grid-column: 1 / -1;
@@ -2228,9 +2218,9 @@ button.nav-pill:hover {
   color: var(--on-point);
 }
 
-/* Search and filters above a catalog (CatalogSearch.tsx; GroupsPage.tsx adds
-   the selects): a white search pill with a magnifier, then silver select
-   pills, wrapping onto new lines on phones. */
+/* 카탈로그 위의 검색과 필터 (CatalogSearch.tsx, 셀렉트는 GroupsPage.tsx가
+   더한다): 돋보기가 있는 흰 검색 알약, 그다음 은색 셀렉트 알약. 휴대폰에서는 새
+   줄로 넘어간다. */
 .catalog-tools {
   display: flex;
   flex-wrap: wrap;
@@ -2238,9 +2228,9 @@ button.nav-pill:hover {
   gap: 8px;
 }
 
-/* Sized to its words: 40px high and as wide as its placeholder needs, in a
-   row of tabs or tools alike (a flex size here once stretched it 260px
-   tall in 추천 매칭's column of tabs); the whole width on phones. */
+/* 글자에 맞춘 크기: 높이 40px에 자리표시자가 필요한 만큼의 너비. 탭 줄이든 도구
+   줄이든 같다 (여기에 flex 크기를 주었더니 추천 매칭의 탭 열에서 260px 높이로
+   늘어난 적이 있다). 휴대폰에서는 전체 너비. */
 .catalog-search {
   display: flex;
   width: min(100%, 340px);
@@ -2276,8 +2266,7 @@ button.nav-pill:hover {
   outline: none;
 }
 
-/* The X that empties a search box (components/SearchClear.tsx), in place of
-   the browser's own. */
+/* 검색창을 비우는 X (components/SearchClear.tsx). 브라우저 기본 것을 대신한다. */
 .search-clear {
   display: inline-grid;
   width: 24px;
@@ -2333,7 +2322,7 @@ input[type="search"]::-webkit-search-cancel-button {
   text-decoration: underline;
 }
 
-/* 친구 초대 in 내 정보: the invitation link, wrapping on a phone. */
+/* 내 정보의 친구 초대: 초대 링크. 휴대폰에서는 줄바꿈한다. */
 .invite-link {
   color: var(--ink);
   font-family: inherit;
@@ -2341,8 +2330,8 @@ input[type="search"]::-webkit-search-cancel-button {
   overflow-wrap: anywhere;
 }
 
-/* 비교 on the catalogs (components/CompareTray.tsx): the button on each
-   card, the tray held at the bottom, and the table side by side. */
+/* 카탈로그의 비교 (components/CompareTray.tsx): 각 카드의 버튼, 아래에 붙은
+   트레이, 나란히 놓은 표. */
 .compare-toggle {
   display: inline-flex;
   align-items: center;
@@ -2493,8 +2482,8 @@ input[type="search"]::-webkit-search-cancel-button {
   border-bottom: 0;
 }
 
-/* 여러 곳에 제안 on 단체 찾기: a box on each card while picking, and a bar
-   held at the bottom with the count and the send. */
+/* 단체 찾기의 여러 곳에 제안: 고르는 동안 각 카드에 뜨는 상자와, 개수와
+   보내기가 있는 아래에 붙은 바. */
 .bulk-toggle[aria-pressed="true"] {
   color: var(--ink);
 }
@@ -2597,8 +2586,8 @@ input[type="search"]::-webkit-search-cancel-button {
   color: inherit;
 }
 
-/* The edge it moves toward springs ahead and the other follows, so the pill
-   stretches on the way and lands at the tab's width. */
+/* 움직여 가는 쪽 가장자리가 먼저 튀어 나가고 반대쪽이 따라가므로, 알약은 가는
+   길에 늘어났다가 탭의 너비에 내려앉는다. */
 .tab-highlight {
   position: absolute;
   border-radius: 999px;
@@ -2624,7 +2613,7 @@ input[type="search"]::-webkit-search-cancel-button {
   box-shadow: inset 0 0 0 1px var(--point-line);
 }
 
-/* Section heads inside pages: the eyebrow over a large Bold title. */
+/* 페이지 안의 섹션 제목: 큰 Bold 제목 위의 아이브로. */
 .section-head {
   display: flex;
   flex-direction: column;
@@ -2653,13 +2642,13 @@ input[type="search"]::-webkit-search-cancel-button {
   font-size: 13px;
 }
 
-/* Stride's hero (components/MeetingHero.tsx) over getlayers.ai's Antipode
-   gradient: full-bleed under the header at first, insetting into a rounded
-   card as the page scrolls on (hooks/useHeroInset.ts). The two masses meet
-   on the right; the headline and the numbers sit low on the left over a
-   deep navy shade, and the next step on frosted glass where the silver can
-   reach it. It fills the screen, and grows past it when its copy needs more
-   room (a short window, or the band stacked on medium screens). */
+/* getlayers.ai의 Antipode 그라디언트 위에 놓인 Stride의 히어로
+   (components/MeetingHero.tsx): 처음에는 헤더 아래까지 꽉 차고, 페이지가
+   스크롤되면 둥근 카드로 들어간다 (hooks/useHeroInset.ts). 두 덩어리가
+   오른쪽에서 만나고, 헤드라인과 숫자는 진한 네이비 음영 위 왼쪽 아래에, 다음
+   단계는 은빛이 닿을 수 있는 서리 낀 유리 위에 놓인다. 화면을 채우며, 본문이 더
+   많은 공간을 필요로 할 때(짧은 창, 또는 중간 화면에서 쌓인 띠) 화면 너머로
+   늘어난다. */
 .meeting-hero {
   position: relative;
   min-height: max(680px, 100svh);
@@ -2721,8 +2710,8 @@ input[type="search"]::-webkit-search-cancel-button {
   content: "";
 }
 
-/* Room between the letters and the lines: Hangul fills more of its square
-   than Latin, so tighter spacing crowded "좋은 행사는," into its next line. */
+/* 글자와 줄 사이의 여백: 한글은 라틴보다 칸을 더 채우므로, 자간을 더 좁게 하면
+   "좋은 행사는,"이 다음 줄에 붙어 답답해 보였다. */
 .hero-title {
   margin: 48px 0 40px;
   font-size: clamp(48px, 6vw, 96px);
@@ -2750,7 +2739,7 @@ input[type="search"]::-webkit-search-cancel-button {
   list-style: none;
 }
 
-/* Each label centered under its own number. */
+/* 각 라벨을 자기 숫자 아래에 가운데 정렬한다. */
 .hero-stats li {
   display: flex;
   flex-direction: column;
@@ -2760,22 +2749,22 @@ input[type="search"]::-webkit-search-cancel-button {
 }
 
 .hero-stats strong {
-  /* The tight spacing trims after the last figure too; this padding gives
-     it back, so the label is centred on the figures you see. */
+  /* 좁은 자간은 마지막 숫자 뒤도 깎는다. 이 패딩이 그만큼을 돌려주므로, 라벨은
+     눈에 보이는 숫자를 기준으로 가운데에 놓인다. */
   padding-right: 0.03em;
   font-size: clamp(38px, 3.8vw, 60px);
   font-weight: var(--weight-display);
   letter-spacing: -0.03em;
   line-height: 1;
-  /* Proportional figures: with even-width ones a "1" keeps a wide gap on
-     its right, so "1건" looked looser than "12곳". */
+  /* 비례 숫자: 폭이 같은 숫자에서는 "1"의 오른쪽에 넓은 틈이 남아 "1건"이
+     "12곳"보다 느슨해 보였다. */
   font-variant-numeric: proportional-nums;
 }
 
-/* "곳", "건": small beside the figure, so the label below reads as centred
-   on the number rather than on a wide Korean unit. Hangul reaches below
-   the baseline the figures stand on (곳 by 0.085em, 건 by 0.075em), so the
-   unit is raised 0.08em to end level with the figures' foot. */
+/* "곳", "건": 숫자 옆에서 작게 하여, 아래의 라벨이 폭 넓은 한국어 단위가 아니라
+   숫자를 기준으로 가운데에 놓인 것처럼 읽히게 한다. 한글은 숫자가 서 있는
+   기준선 아래로 내려오므로(곳은 0.085em, 건은 0.075em), 단위를 0.08em 올려
+   숫자의 밑과 맞춘다. */
 .hero-stats .number-unit {
   position: relative;
   bottom: 0.08em;
@@ -2784,8 +2773,8 @@ input[type="search"]::-webkit-search-cancel-button {
   letter-spacing: 0;
 }
 
-/* A "1" carries its own room on the right; pulled in this much, "1건" is
-   spaced like "12곳". */
+/* "1"은 오른쪽에 자기 여백을 가진다. 이만큼 당겨 주면 "1건"의 간격이 "12곳"과
+   같아진다. */
 .hero-stats .number-unit[data-after="1"] {
   margin-left: 0.04em;
 }
@@ -2796,8 +2785,8 @@ input[type="search"]::-webkit-search-cancel-button {
   font-weight: var(--weight-label);
 }
 
-/* On the introduction, a line of copy stands where the dashboard's numbers
-   do, on the same navy shade. */
+/* 소개에서는 대시보드의 숫자가 있는 자리에 본문 한 줄이 같은 네이비 음영 위에
+   놓인다. */
 .hero-lead {
   max-width: 32rem;
   margin: 0;
@@ -2839,17 +2828,17 @@ input[type="search"]::-webkit-search-cancel-button {
   margin-top: 22px;
 }
 
-/* 앱 다운로드 on the hero: the outlined pill with its icon beside the words. */
+/* 히어로의 앱 다운로드: 아이콘이 글자 옆에 오는 윤곽선 알약. */
 .hero-install span {
   display: inline-flex;
   align-items: center;
   gap: 8px;
 }
 
-/* Stride's logo marquee (components/LogoMarquee.tsx): two full-width rows
-   of silver chips passing each other as the page scrolls, fading out at
-   both edges. Items carry their own spacing, so each repeated set is
-   exactly a sixth of the track and the loop never jumps. */
+/* Stride의 로고 마키 (components/LogoMarquee.tsx): 은색 칩으로 된 전체 너비 줄
+   둘이 페이지를 스크롤하면 서로 지나치며, 양쪽 가장자리에서 사라진다. 항목이
+   자기 간격을 가지므로 반복되는 한 벌은 정확히 트랙의 6분의 1이고, 반복은
+   끊기지 않는다. */
 .logo-marquee {
   display: flex;
   flex-direction: column;
@@ -2898,12 +2887,10 @@ input[type="search"]::-webkit-search-cancel-button {
   color: var(--point);
 }
 
-/* The introduction (pages/LandingPage.tsx). A header link brings a
-   section's heading up 24px under the fixed header (Header.tsx's
-   showSection). */
+/* 소개 (pages/LandingPage.tsx). 헤더 링크는 섹션의 제목을 고정 헤더 아래 24px에
+   올려 놓는다 (Header.tsx의 showSection). */
 
-/* Who it is for: the two sides side by side, silver for student groups
-   and the point blue for brands. */
+/* 누구를 위한 것인가: 두 쪽을 나란히, 학생단체는 은색, 브랜드는 포인트 파랑. */
 .landing-sides {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2986,8 +2973,8 @@ input[type="search"]::-webkit-search-cancel-button {
   line-height: 1.65;
 }
 
-/* Member screens as examples: each picture blurred, the example mark over
-   it, then which side it belongs to and a way in. */
+/* 예시로서의 회원 화면: 각 그림을 흐리게 하고 그 위에 예시 마크를, 그다음 어느
+   쪽 화면인지와 들어가는 길을 둔다. */
 .example-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -2997,8 +2984,7 @@ input[type="search"]::-webkit-search-cancel-button {
   list-style: none;
 }
 
-/* A real border rather than an inset ring, which the picture at the top
-   would paint over. */
+/* 위쪽의 그림이 덮어 칠하는 안쪽 링 대신 진짜 테두리를 쓴다. */
 .example-card {
   display: flex;
   height: 100%;
@@ -3016,8 +3002,8 @@ input[type="search"]::-webkit-search-cancel-button {
   background: var(--fill);
 }
 
-/* The screen in full, its made-up brands and groups readable, marked as
-   an example in its top right corner, clear of the page's heading. */
+/* 화면 전체를, 가상의 브랜드와 단체가 읽히게 하여, 페이지 제목을 피한 오른쪽 위
+   모서리에 예시 표시를 붙인다. */
 .example-preview img {
   display: block;
   width: 100%;
@@ -3068,8 +3054,8 @@ input[type="search"]::-webkit-search-cancel-button {
   margin-top: auto;
 }
 
-/* The example mark: on the pictures above and on a blurred part of an
-   example screen (components/DemoPreview.tsx). */
+/* 예시 마크: 위의 그림들과, 예시 화면의 흐려진 부분 위에 쓴다
+   (components/DemoPreview.tsx). */
 .demo-badge {
   display: inline-flex;
   align-items: center;
@@ -3092,9 +3078,8 @@ input[type="search"]::-webkit-search-cancel-button {
   background: var(--goal-mark);
 }
 
-/* A part of an example screen that differs for each visitor, such as the
-   shops near a campus: shown in full with examples, under a silver note
-   that says so and offers to log in. */
+/* 캠퍼스 주변 매장처럼 방문자마다 다른 예시 화면의 부분: 예시로 전부 보여주되,
+   그렇다고 알리고 로그인을 권하는 은색 안내 아래에 둔다. */
 .demo-preview-note {
   display: flex;
   flex-wrap: wrap;
@@ -3104,8 +3089,8 @@ input[type="search"]::-webkit-search-cancel-button {
   padding: 18px 20px;
   border-radius: var(--radius-md);
   background: var(--silver-gradient);
-  /* A plain line all round: the silver ring's white top highlight would
-     hide its top edge on the white page. */
+  /* 사방에 평범한 선을 둔다: 은색 링의 흰 윗 하이라이트는 흰 페이지에서 윗
+     가장자리를 가린다. */
   box-shadow: inset 0 0 0 1px var(--line-strong);
 }
 
@@ -3155,11 +3140,10 @@ input[type="search"]::-webkit-search-cancel-button {
   }
 }
 
-/* Stride's About statement (RevealStatement): a large Bold line whose
-   second half fades to silver gray, with round icon chips set into the
-   words that grow in as the cascade reaches them. */
-/* A new member's checklist under the dashboard's hero (ProfileChecklist):
-   a silver card of steps, each white until done, or one line once folded. */
+/* Stride의 소개 문장 (RevealStatement): 후반부가 은회색으로 바래는 큰 Bold 한
+   줄. 단어 사이에 박힌 둥근 아이콘 칩이 연쇄가 닿으면 커진다. */
+/* 대시보드 히어로 아래 신규 회원의 체크리스트 (ProfileChecklist): 단계마다 완료
+   전에는 흰색인 은색 카드, 접으면 한 줄. */
 .checklist-section {
   margin: 40px 0 8px;
   padding: 28px;
@@ -3303,8 +3287,8 @@ input[type="search"]::-webkit-search-cancel-button {
   line-height: 1.16;
 }
 
-/* In Korean each half stays on one line, sized to the section's width:
-   the longest half is about 17.6em. */
+/* 한국어에서는 각 반쪽이 한 줄에 머물며 섹션 너비에 맞춰진다: 가장 긴 반쪽이 약
+   17.6em이다. */
 :lang(ko) .reveal-title.statement {
   max-width: none;
   font-size: min(76px, 5.4cqi);
@@ -3314,7 +3298,7 @@ input[type="search"]::-webkit-search-cancel-button {
   white-space: nowrap;
 }
 
-/* Silver gray, still 3.7:1 on white for text this large. */
+/* 은회색. 이만큼 큰 글자에는 흰 바탕에서 3.7:1로 충분하다. */
 .statement .reveal-word.muted {
   color: #7b8598;
 }
@@ -3345,24 +3329,24 @@ input[type="search"]::-webkit-search-cancel-button {
   box-shadow: var(--silver-ring);
 }
 
-/* Numbers shrink with their card (16cqi), so whole amounts such as
-   "1,480,000원" stay on one line. */
+/* 숫자는 카드에 맞춰 줄어들어(16cqi) "1,480,000원" 같은 전체 금액이 한 줄에
+   머문다. */
 
-/* Numbers on white and silver read in the point blue. */
+/* 흰색과 은색 위의 숫자는 포인트 파랑으로 읽힌다. */
 .kpi-card strong {
   color: var(--point);
 }
 
-/* Recommended partners as Stride's silver cards (components/WorkCard.tsx):
-   what it is at the top with a round badge to its page, its mark large on
-   a white glow in the room left in the middle, details along the bottom.
-   The card lifts a little on hover and its badge turns toward the corner. */
+/* Stride의 은색 카드로 된 추천 파트너 (components/WorkCard.tsx): 위쪽에
+   무엇인지와 그 페이지로 가는 둥근 배지, 가운데 남는 자리에 흰 빛 위로 큰 마크,
+   아래쪽을 따라 세부 정보. 카드는 호버하면 조금 떠오르고 배지는 모서리 쪽으로
+   돈다. */
 .works-section {
   padding: 48px 0 72px;
 }
 
-/* As many cards a row as fit at 280px or more each: four on a wide
-   screen, fewer as it narrows. */
+/* 각각 280px 이상이 들어가는 만큼 한 줄에 카드를 놓는다: 넓은 화면에서는 넷,
+   좁아지면 더 적게. */
 .work-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
@@ -3380,8 +3364,8 @@ input[type="search"]::-webkit-search-cancel-button {
   min-width: 0;
 }
 
-/* Content runs from the top, so names line up across a row whatever the
-   tags and actions below them; the actions sit at the bottom. */
+/* 콘텐츠가 위에서부터 흐르므로, 아래의 태그나 액션이 어떻든 이름이 한 줄에서
+   가지런하다. 액션은 맨 아래에 놓인다. */
 .work-card {
   position: relative;
   display: flex;
@@ -3401,8 +3385,8 @@ input[type="search"]::-webkit-search-cancel-button {
     box-shadow 0.3s ease;
 }
 
-/* What it is at the top left, its first line level with the buttons, which
-   keep to the top right however long it runs. */
+/* 왼쪽 위에는 무엇인지, 첫 줄은 오른쪽 위에 머무는 버튼과 같은 높이로. 버튼은
+   아무리 길어져도 오른쪽 위에 머문다. */
 .work-meta {
   position: relative;
   z-index: 1;
@@ -3430,7 +3414,7 @@ input[type="search"]::-webkit-search-cancel-button {
   padding-top: 7px;
 }
 
-/* The top row reaches toward the card's corners, its buttons small. */
+/* 윗줄은 카드 모서리 쪽으로 뻗으며, 버튼은 작다. */
 .work-card > .work-meta {
   margin: -10px -10px 0;
 }
@@ -3494,7 +3478,7 @@ input[type="search"]::-webkit-search-cancel-button {
   gap: 6px;
 }
 
-/* 찜: a heart beside the badge, filled in deep blue once saved. */
+/* 찜: 배지 옆의 하트. 저장하면 진한 파랑으로 채워진다. */
 .save-toggle {
   display: grid;
   width: 44px;
@@ -3518,8 +3502,8 @@ input[type="search"]::-webkit-search-cancel-button {
   fill: currentColor;
 }
 
-/* 찜's burst (components/SaveHeart.tsx): the heart presses in, then pops
-   back filled while a ring spreads and thins and eight sparks fly out. */
+/* 찜의 터짐 (components/SaveHeart.tsx): 하트가 눌려 들어갔다가 채워진 채
+   튀어나오고, 링이 퍼지며 얇아지고 불꽃 여덟 개가 날아간다. */
 .save-heart {
   position: relative;
   display: inline-grid;
@@ -3609,8 +3593,8 @@ input[type="search"]::-webkit-search-cancel-button {
   }
 }
 
-/* Stand-ins while a catalog loads (components/CatalogSkeleton.tsx): silver
-   shapes in a card, and one light band sweeping across them all together. */
+/* 카탈로그가 로딩되는 동안의 자리표시 (components/CatalogSkeleton.tsx): 카드
+   안의 은색 모양들과, 그것들을 모두 함께 가로지르는 가벼운 띠 하나. */
 .skeleton-card {
   display: flex;
   height: 100%;
@@ -3694,7 +3678,7 @@ input[type="search"]::-webkit-search-cancel-button {
   box-shadow: inset 0 0 0 1.5px var(--point);
 }
 
-/* Kept modest, so a row of cards fits the screen with room to compare. */
+/* 너무 크지 않게 두어, 한 줄의 카드가 비교할 여유를 두고 화면에 들어온다. */
 .work-mark {
   display: grid;
   min-height: 92px;
@@ -3712,9 +3696,8 @@ input[type="search"]::-webkit-search-cancel-button {
     0 22px 40px -18px rgba(19, 48, 111, 0.4);
 }
 
-/* A shop near the campus (NearbyPlaces.tsx): a chain's wordmark gets a wider
-   tile so it stays legible; without a chain, the first letter of its name
-   stands in the logo's place. */
+/* 캠퍼스 근처 매장 (NearbyPlaces.tsx): 체인의 워드마크는 읽히도록 더 넓은
+   타일을 받는다. 체인이 아니면 이름의 첫 글자가 로고 자리에 선다. */
 .work-mark .match-logo.large.wordmark {
   width: 168px;
 }
@@ -3741,7 +3724,7 @@ input[type="search"]::-webkit-search-cancel-button {
   gap: 8px;
 }
 
-/* The score ring a little smaller in a card, in step with the name. */
+/* 카드 안의 점수 링은 이름에 맞춰 조금 작게. */
 .work-card .match-score-ring {
   width: 62px;
   height: 62px;
@@ -3751,7 +3734,7 @@ input[type="search"]::-webkit-search-cancel-button {
   font-size: 15px;
 }
 
-/* The score ring sits level with the name and offer beside it. */
+/* 점수 링은 그 옆의 이름과 제공 내용과 같은 높이에 앉는다. */
 .work-title {
   display: flex;
   align-items: center;
@@ -3797,7 +3780,7 @@ input[type="search"]::-webkit-search-cancel-button {
   line-height: 1.5;
 }
 
-/* Small tag chips right under the name, so they read as its summary. */
+/* 이름 바로 아래의 작은 태그 칩은 그 요약처럼 읽힌다. */
 .work-tags {
   display: flex;
   flex-wrap: wrap;
@@ -3834,7 +3817,7 @@ input[type="search"]::-webkit-search-cancel-button {
   box-shadow: none;
 }
 
-/* How far it is, first among the tags, with a pin. */
+/* 얼마나 먼지를 핀과 함께 태그 맨 앞에. */
 .work-tags .tag-distance {
   gap: 4px;
   color: var(--point-strong);
@@ -3862,8 +3845,8 @@ input[type="search"]::-webkit-search-cancel-button {
   padding: 0 18px;
 }
 
-/* Where a partner's card offers a proposal, a shop not on uniconnect yet
-   says so in a quiet silver pill; one invited says so in blue on white. */
+/* 파트너 카드가 제안을 내놓는 곳에서, 아직 uniconnect에 없는 매장은 조용한 은색
+   알약으로 그렇다고 알리고, 초대한 매장은 흰 바탕에 파랑으로 알린다. */
 .proposal-button.unpartnered {
   background: var(--fill);
   color: var(--ink-soft);
@@ -3876,8 +3859,8 @@ input[type="search"]::-webkit-search-cancel-button {
   box-shadow: inset 0 0 0 1px var(--point-line);
 }
 
-/* A shop that joined from an invitation, first among its tags (as specific
-   as the plain tags' rule above, so it wins by coming later). */
+/* 초대로 가입한 매장은 태그 맨 앞에 둔다 (위의 평범한 태그 규칙과 같은
+   구체성이므로, 뒤에 와서 이긴다). */
 .work-tags > span.tag-joined {
   background: var(--point);
   color: var(--on-point);
@@ -3885,7 +3868,7 @@ input[type="search"]::-webkit-search-cancel-button {
   font-weight: var(--weight-label);
 }
 
-/* A shop's card links to Kakao Map where a partner's card has buttons. */
+/* 매장 카드는 파트너 카드에 버튼이 있는 자리에서 Kakao 지도로 연결된다. */
 .work-card a.work-badge,
 .work-card a.cancel-button,
 .work-title h3 a,
@@ -3908,9 +3891,9 @@ input[type="search"]::-webkit-search-cancel-button {
   gap: 14px;
 }
 
-/* Details beside the proposal: two halves of the row, the status of a sent
-   proposal filling its half with the cancel link under it, in the card's
-   bottom padding so the buttons stay level with the other cards'. */
+/* 제안 옆의 세부 정보: 줄을 반으로 나누어, 보낸 제안의 상태가 자기 반을 채우고
+   그 아래에 취소 링크를 둔다. 카드의 아래 패딩 안에 들어가므로 버튼이 다른
+   카드와 같은 높이를 유지한다. */
 .work-actions:has(> :nth-child(2)) {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3930,9 +3913,9 @@ input[type="search"]::-webkit-search-cancel-button {
   align-items: stretch;
 }
 
-/* Every card in a list showing such a link keeps room for it under its
-   buttons, so the buttons stay level and the link keeps the card's padding
-   beneath it rather than sitting on its edge. */
+/* 이런 링크를 보여주는 목록의 모든 카드는 버튼 아래에 그 자리를 남겨 둔다.
+   버튼의 높이가 맞고, 링크는 카드 가장자리에 붙지 않고 카드 패딩을 그 아래에
+   유지한다. */
 .work-grid:has(.proposal-cancel) .work-actions:has(> :nth-child(2)) {
   padding-bottom: 26px;
 }
@@ -3948,7 +3931,7 @@ input[type="search"]::-webkit-search-cancel-button {
   white-space: nowrap;
 }
 
-/* Proposals waiting for a brand's answer (pages/BrandDashboardPage.tsx). */
+/* 브랜드의 답을 기다리는 제안 (pages/BrandDashboardPage.tsx). */
 .inbox-section {
   padding: 8px 0 48px;
 }
@@ -4036,10 +4019,9 @@ input[type="search"]::-webkit-search-cancel-button {
   margin-top: 0;
 }
 
-/* Stride's layered pinned reveal (components/JourneyChain.tsx): the chrome
-   chain over the deep blue mesh holds the screen while the steps of the
-   sponsorship scroll up over it on a white sheet, the step under way in
-   deep blue. */
+/* Stride의 겹겹이 고정되는 리빌 (components/JourneyChain.tsx): 진한 파랑 메시
+   위의 크롬 체인이 화면을 붙잡는 동안, 협찬의 단계들이 흰 시트에 담겨 그 위로
+   스크롤되어 올라오고, 진행 중인 단계는 진한 파랑이다. */
 .chain-wrap {
   position: relative;
   margin: 72px calc(50% - 50vw) 0;
@@ -4056,12 +4038,12 @@ input[type="search"]::-webkit-search-cancel-button {
   color: #fff;
 }
 
-/* The chain takes the right side, clear of the title. */
+/* 체인은 제목을 피해 오른쪽을 차지한다. */
 .chain-stage .chrome-scene {
   left: 38%;
 }
 
-/* A shade under the copy at the bottom; the chain stays above it. */
+/* 아래쪽 본문 밑의 음영. 체인은 그 위에 머문다. */
 .chain-stage::after {
   position: absolute;
   z-index: -2;
@@ -4121,8 +4103,8 @@ input[type="search"]::-webkit-search-cancel-button {
   text-align: right;
 }
 
-/* The stage holds the screen for a while before the sheet comes up, so the
-   copy at its bottom can be read first. */
+/* 무대는 시트가 올라오기 전에 한동안 화면을 붙잡고 있어서, 아래쪽 본문을 먼저
+   읽을 수 있다. */
 .journey {
   position: relative;
   z-index: 1;
@@ -4137,15 +4119,13 @@ input[type="search"]::-webkit-search-cancel-button {
   margin: 0 0 56px;
 }
 
-/* The sponsorship's steps as a stepper (components/JourneyChain.tsx):
-   numbered dots on one line, deep blue up to the lit step (the step under
-   way, or the pressed one in the example dashboards), whose dot glows with
-   a turning gradient and a soft pulse while a light runs along the filled
-   line. A pressed dot opens its details. When the lit step moves, the line
-   runs on from the last one like a loading bar over --fill-time, and each
-   dot it passes (.arrive going on, .leave coming back) changes as the line
-   gets there (--at, its share of the way); run-a and run-b swap on each
-   move so the animations play again. */
+/* 협찬의 단계를 스텝퍼로 (components/JourneyChain.tsx): 한 줄의 번호 붙은 점,
+   불이 켜진 단계(진행 중인 단계, 예시 대시보드에서는 누른 단계)까지 진한
+   파랑이며, 그 점은 도는 그라디언트와 부드러운 맥박으로 빛나고 채워진 선을 따라
+   빛이 달린다. 눌린 점은 세부 정보를 연다. 불이 켜진 단계가 움직이면 선은
+   마지막 점에서부터 --fill-time 동안 로딩 바처럼 이어지고, 선이 지나는 각
+   점(켜질 때 .arrive, 돌아올 때 .leave)은 선이 닿는 순간 바뀐다 (--at, 길 중 그
+   점의 몫). 이동할 때마다 run-a와 run-b를 바꾸어 애니메이션이 다시 재생된다. */
 .stepper {
   --dot: 56px;
   display: flex;
@@ -4163,8 +4143,8 @@ input[type="search"]::-webkit-search-cancel-button {
   list-style: none;
 }
 
-/* The line runs from the first dot's centre to the last one's; the filled
-   part reaches the lit step (--progress, 0 to 1). */
+/* 선은 첫 점의 중심에서 마지막 점의 중심까지 이어지며, 채워진 부분은 불이 켜진
+   단계에 이른다 (--progress, 0~1). */
 .stepper-track::before,
 .stepper-track::after {
   position: absolute;
@@ -4235,7 +4215,7 @@ input[type="search"]::-webkit-search-cancel-button {
   box-shadow: none;
 }
 
-/* The lit step: a gradient that turns, and a ring that pulses out. */
+/* 불이 켜진 단계: 도는 그라디언트와 밖으로 맥박치는 링. */
 .stepper-step.glow .stepper-dot {
   background: conic-gradient(from var(--turn, 0deg), #1a3e9c, #6f9dff, #c9d8ff, #3c6bf0, #1a3e9c);
   color: #fff;
@@ -4264,8 +4244,8 @@ input[type="search"]::-webkit-search-cancel-button {
   }
 }
 
-/* A dot the line passes waits for it, then fills with a small pop, or
-   turns back to silver as the line pulls away. */
+/* 선이 지나가는 점은 그것을 기다렸다가 작게 튀며 채워지고, 선이 물러나면
+   은색으로 돌아간다. */
 .stepper-track.run-a .stepper-step.arrive .stepper-dot {
   animation: stepper-reach-a 0.4s var(--ease-spring) both calc(var(--fill-time) * var(--at) - 0.08s);
 }
@@ -4341,12 +4321,12 @@ input[type="search"]::-webkit-search-cancel-button {
   }
 }
 
-/* The dot whose details are open. */
+/* 세부 정보가 열린 점. */
 .stepper-dot.open {
   transform: scale(1.1);
 }
 
-/* A ring around the open dot when it isn't the lit one. */
+/* 열린 점이 불이 켜진 점이 아닐 때, 그 둘레의 링. */
 .stepper-step:not(.glow) .stepper-dot.open {
   box-shadow:
     inset 0 0 0 2px var(--point),
@@ -4440,8 +4420,7 @@ input[type="search"]::-webkit-search-cancel-button {
   }
 }
 
-/* What the two sides made together: a silver panel of results beside the
-   ROAS on deep blue. */
+/* 두 쪽이 함께 만든 것: 진한 파랑 위의 ROAS 옆에 놓인 결과의 은색 패널. */
 .results-section {
   padding: 24px 0;
 }
@@ -4498,7 +4477,7 @@ input[type="search"]::-webkit-search-cancel-button {
   font-weight: var(--weight-badge);
 }
 
-/* Gridlines at 150, 100, 50 and 0 behind bars scaled to 150. */
+/* 150에 맞춘 막대 뒤의 150, 100, 50, 0 격자선. */
 .chart-area {
   position: relative;
   display: grid;
@@ -4563,7 +4542,7 @@ input[type="search"]::-webkit-search-cancel-button {
   height: 160px;
 }
 
-/* Scans, coupons and visits: deep blue, a lighter blue and slate. */
+/* 스캔, 쿠폰, 방문: 진한 파랑, 더 옅은 파랑, 슬레이트. */
 .bar-track span {
   position: absolute;
   right: 0;
@@ -4637,21 +4616,20 @@ input[type="search"]::-webkit-search-cancel-button {
   gap: 14px 22px;
 }
 
-/* Detail and profile banners: getlayers.ai's Antipode gradient on a
-   partner's page (the two sides meeting) and Stride's mesh on the
-   account's own. As on the hero, the copy keeps to a deep navy left side
-   and the light plays on the right. */
+/* 상세·프로필 배너: 파트너 페이지에는 getlayers.ai의 Antipode 그라디언트(두
+   쪽이 만난다), 계정 자신의 페이지에는 Stride의 메시. 히어로와 마찬가지로
+   본문은 진한 네이비의 왼쪽에 머물고 빛은 오른쪽에서 논다. */
 
-/* The mesh's bright glow sits bottom left; mirrored, it goes behind the
-   buttons on the right instead of the name. */
+/* 메시의 밝은 빛은 왼쪽 아래에 있다. 뒤집으면 이름이 아니라 오른쪽의 버튼 뒤로
+   간다. */
 .cta-panel .mesh-backdrop {
   transform: scaleX(-1);
 }
 
-/* The score keeps its colors on a white disc. */
+/* 점수는 흰 원판 위에서 자기 색을 유지한다. */
 
-/* A partner's introduction: a large faint link mark beside a statement
-   whose words rise in, the offer, and a footer row. */
+/* 파트너의 소개: 큰 옅은 링크 마크가, 단어들이 떠오르는 문장, 제공 내용, 푸터
+   줄 옆에 놓인다. */
 
 .sns-chips,
 .summary-chips {
@@ -4726,7 +4704,7 @@ input[type="search"]::-webkit-search-cancel-button {
   font-weight: var(--weight-strong);
 }
 
-/* On the profile banner: a white tile, like a partner's mark. */
+/* 프로필 배너 위: 파트너의 마크처럼 흰 타일. */
 .avatar.large {
   width: 96px;
   height: 96px;
@@ -4738,7 +4716,7 @@ input[type="search"]::-webkit-search-cancel-button {
   font-weight: var(--weight-strong);
 }
 
-/* Leaving sits quietly at the end of 내 정보 (modals/LeaveModal.tsx). */
+/* 탈퇴는 내 정보 맨 끝에 조용히 놓인다 (modals/LeaveModal.tsx). */
 
 
 .leave-list {
@@ -4768,7 +4746,7 @@ input[type="search"]::-webkit-search-cancel-button {
   filter: brightness(0.92);
 }
 
-/* Numbered rows that fill with silver and shift sideways on hover. */
+/* 번호 붙은 줄이 호버하면 은색으로 차고 옆으로 밀린다. */
 .service-section {
   padding: 64px 0;
 }
@@ -4797,7 +4775,7 @@ input[type="search"]::-webkit-search-cancel-button {
     padding 0.45s var(--ease-spring);
 }
 
-/* Hairlines between rows; they give way to a filled row. */
+/* 줄 사이의 헤어라인. 채워진 줄에는 자리를 내준다. */
 .service-row + .service-row::before {
   position: absolute;
   top: 0;
@@ -4837,8 +4815,8 @@ input[type="search"]::-webkit-search-cancel-button {
   text-align: right;
 }
 
-/* The language row in 내 정보 (ProfilePage.tsx): both languages, each
-   named in itself, as a silver pill with the one on screen in deep blue. */
+/* 내 정보의 언어 행 (ProfilePage.tsx): 두 언어를 각각 자기 언어로 이름 붙여,
+   은색 알약에 놓고 화면에 있는 쪽을 진한 파랑으로. */
 .lang-choice {
   display: inline-flex;
   gap: 2px;
@@ -4868,7 +4846,7 @@ input[type="search"]::-webkit-search-cancel-button {
   color: var(--on-point);
 }
 
-/* A closing call on Stride's mesh. */
+/* Stride의 메시 위의 마무리 호출. */
 .cta-panel {
   --surface-tone: dark;
   position: relative;
@@ -4902,11 +4880,10 @@ input[type="search"]::-webkit-search-cancel-button {
   gap: 10px;
 }
 
-/* Results over getlayers.ai's Interference gradient (scenes/shaders.ts):
-   ripples from two sources adding up where they cross, the way the two
-   sides of a sponsorship add up. The numbers sit on frosted navy tiles and
-   a shade from the top left keeps the copy clear of the moving light;
-   without WebGL2 the panel's deep blue shows. */
+/* getlayers.ai의 Interference 그라디언트 위의 결과 (scenes/shaders.ts): 두
+   원천의 물결이 만나는 곳에서 합쳐지는 것이, 협찬의 두 쪽이 합쳐지는 모습과
+   닮았다. 숫자는 서리 낀 네이비 타일에 놓이고, 왼쪽 위에서 오는 음영이 본문을
+   움직이는 빛으로부터 지켜 준다. WebGL2가 없으면 패널의 진한 파랑이 보인다. */
 .power-panel {
   --surface-tone: dark;
   position: relative;
@@ -4935,8 +4912,8 @@ input[type="search"]::-webkit-search-cancel-button {
   padding: 36px 40px;
 }
 
-/* 리포트: the headline and its button beside the ROAS card, so the panel
-   stays one short band on wide screens. */
+/* 리포트: 헤드라인과 그 버튼이 ROAS 카드 옆에 놓여, 넓은 화면에서 패널이 짧은
+   띠 하나로 유지된다. */
 .power-split {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(300px, 400px);
@@ -4980,8 +4957,7 @@ input[type="search"]::-webkit-search-cancel-button {
   line-height: 1.1;
 }
 
-/* Before the event: when counting starts, on frosted navy glass over the
-   moving wave. */
+/* 행사 전: 집계가 언제 시작되는지를, 움직이는 물결 위의 서리 낀 네이비 유리에. */
 .power-lead {
   max-width: 36rem;
   margin: -8px 0 0;
@@ -5034,7 +5010,7 @@ input[type="search"]::-webkit-search-cancel-button {
   background: rgba(255, 255, 255, 0.16);
 }
 
-/* The result in silver, the goal as an amber tick edged in white. */
+/* 결과는 은색, 목표는 흰색 테두리를 두른 호박색 눈금. */
 .power-track i {
   position: absolute;
   inset: 0 auto 0 0;
@@ -5057,8 +5033,8 @@ input[type="search"]::-webkit-search-cancel-button {
   font-size: 13px;
 }
 
-/* Four tiles a row, or as many as 성과's page sets (--columns, one per
-   method the e-contract confirmed). */
+/* 한 줄에 타일 넷, 또는 성과 페이지가 정한 만큼 (--columns, 전자계약서가 확정한
+   방식마다 하나). */
 .power-stats {
   display: grid;
   width: 100%;
@@ -5121,8 +5097,8 @@ input[type="search"]::-webkit-search-cancel-button {
   color: #a9c1f5;
 }
 
-/* Analytics: every number in the luminous accent with its unit set
-   smaller after it, so the four cards read the same way. */
+/* 분석: 모든 숫자를 빛나는 강조색으로 쓰고 단위를 뒤에 작게 붙여 네 카드가 같은
+   방식으로 읽히게 한다. */
 .power-stat strong {
   display: inline-flex;
   align-items: baseline;
@@ -5137,7 +5113,7 @@ input[type="search"]::-webkit-search-cancel-button {
   letter-spacing: 0;
 }
 
-/* Each goal as a silver card that opens its details. */
+/* 각 목표는 세부 정보가 열리는 은색 카드. */
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -5219,7 +5195,7 @@ input[type="search"]::-webkit-search-cancel-button {
   font-weight: var(--weight-strong);
 }
 
-/* "113% 달성" wraps as one piece after the goal. */
+/* "113% 달성"은 목표 뒤에서 한 덩어리로 줄바꿈한다. */
 .kpi-status b {
   margin-left: 6px;
   white-space: nowrap;
@@ -5234,8 +5210,7 @@ input[type="search"]::-webkit-search-cancel-button {
   font-size: 13px;
 }
 
-/* Popups: a white panel over a blurred page, an eyebrow over the title and
-   a round close button. */
+/* 팝업: 흐려진 페이지 위의 흰 패널, 제목 위의 아이브로, 둥근 닫기 버튼. */
 .modal-backdrop {
   position: fixed;
   z-index: 110;
@@ -5260,8 +5235,8 @@ input[type="search"]::-webkit-search-cancel-button {
     0 40px 100px rgba(19, 48, 111, 0.2);
 }
 
-/* The dialog takes focus itself when it opens (useDialogFocus); its own
-   controls show the focus ring, not the whole panel. */
+/* 다이얼로그는 열릴 때 스스로 포커스를 받는다 (useDialogFocus). 패널 전체가
+   아니라 그 안의 컨트롤이 포커스 링을 보인다. */
 .modal:focus {
   outline: none;
 }
@@ -5302,7 +5277,7 @@ input[type="search"]::-webkit-search-cancel-button {
   color: var(--ink);
 }
 
-/* Login and sign-up open on a moving ShaderGradient strip. */
+/* 로그인과 가입은 움직이는 ShaderGradient 띠와 함께 열린다. */
 .modal.has-banner {
   padding-top: 0;
 }
@@ -5360,8 +5335,8 @@ input[type="search"]::-webkit-search-cancel-button {
   background: #fff;
 }
 
-/* A password box with the eye button that shows what was typed
-   (components/PasswordField.tsx), inside the box on its right. */
+/* 입력한 것을 보여주는 눈 버튼이 있는 비밀번호 상자
+   (components/PasswordField.tsx). 버튼은 상자 안 오른쪽에 있다. */
 .password-input {
   position: relative;
   display: block;
@@ -5374,7 +5349,7 @@ input[type="search"]::-webkit-search-cancel-button {
   padding-right: 48px;
 }
 
-/* The staff PIN stays centred between the two sides. */
+/* 매장 직원 PIN은 두 쪽 사이의 가운데에 머문다. */
 .password-input > input.checkin-pin.password-box {
   padding-left: 48px;
 }
@@ -5404,17 +5379,17 @@ input[type="search"]::-webkit-search-cancel-button {
   color: var(--point-strong);
 }
 
-/* Two fields side by side, always half each, even when one holds a box
-   with a button (the position typed in). */
+/* 한 칸에 상자와 버튼(직접 입력한 직책)이 들어 있어도 두 필드를 항상 반반으로
+   나란히. */
 .form-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 12px;
 }
 
-/* Banners with a moving ShaderGradient behind their content
-   (components/GradientBackdrop.tsx). The canvas fades in over a still
-   version of the same glow, which stays when there is no WebGL. */
+/* 내용 뒤에 움직이는 ShaderGradient가 있는 배너
+   (components/GradientBackdrop.tsx). 캔버스는 같은 빛을 담은 정지 버전 위에
+   서서히 나타나며, WebGL이 없을 때는 그것이 남는다. */
 .has-gradient {
   position: relative;
   isolation: isolate;
@@ -5438,7 +5413,7 @@ input[type="search"]::-webkit-search-cancel-button {
   animation: fade-in 1.2s ease-out backwards;
 }
 
-/* A navy shade from the left under the copy, so the glow never washes it out. */
+/* 본문 아래 왼쪽에서 오는 네이비 음영: 빛이 글자를 바래게 하지 않는다. */
 .gradient-backdrop::after {
   position: absolute;
   inset: 0;
@@ -5474,13 +5449,13 @@ input[type="search"]::-webkit-search-cancel-button {
     opacity 0.2s ease;
 }
 
-/* Swiped: it follows the finger, then springs back or goes. */
+/* 스와이프하면 손가락을 따라가다가, 되돌아오거나 사라진다. */
 .toast[data-dragging="true"] {
   cursor: grabbing;
   transition: none;
 }
 
-/* The time left, shrinking along the foot; held or hovered, it waits. */
+/* 남은 시간이 아래쪽을 따라 줄어든다. 누르고 있거나 호버하면 기다린다. */
 .toast-fuse {
   position: absolute;
   right: 0;
@@ -5502,8 +5477,8 @@ input[type="search"]::-webkit-search-cancel-button {
   }
 }
 
-/* Draws in as the toast arrives: the ring goes round from the top, fills,
-   then the check strokes in while the badge pops. */
+/* 토스트가 올 때 그려진다: 링이 위에서부터 돌며 채워지고, 배지가 튀는 동안
+   체크가 그어진다. */
 .toast-check {
   width: 22px;
   height: 22px;
@@ -5637,8 +5612,8 @@ input[type="search"]::-webkit-search-cancel-button {
   font-weight: var(--weight-body);
 }
 
-/* Form selects draw their own arrow, larger than the browser's and set in
-   from the edge. */
+/* 폼 셀렉트는 브라우저 기본보다 크고 가장자리에서 안쪽으로 들인 자체 화살표를
+   그린다. */
 .field select,
 .edit-row select {
   padding-right: 44px;
@@ -5661,7 +5636,7 @@ input[type="search"]::-webkit-search-cancel-button {
   position: relative;
 }
 
-/* Two fields side by side on the event form (the start and end times). */
+/* 행사 양식에서 두 필드를 나란히 (시작과 끝 시간). */
 .field-pair {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -5672,7 +5647,7 @@ input[type="search"]::-webkit-search-cancel-button {
   opacity: 0.55;
 }
 
-/* Short choices (who comes) two to a row, without captions. */
+/* 짧은 선택(누가 오는지)은 캡션 없이 한 줄에 둘씩. */
 .check-list.compact {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -5683,13 +5658,12 @@ input[type="search"]::-webkit-search-cancel-button {
   padding-block: 10px;
 }
 
-/* The agreement under the 홍보 · 배포 계획 choices. */
+/* 홍보 · 배포 계획 선택 아래의 합의. */
 .promo-agree {
   margin-top: 14px;
 }
 
-/* 기수 관리 under the sponsorship record: each term as a row, then a row
-   to add one. */
+/* 협찬 기록 아래의 기수 관리: 각 임기를 한 줄로, 그다음 추가하는 줄. */
 .terms-manage {
   display: grid;
   gap: 10px;
@@ -5745,9 +5719,9 @@ input[type="search"]::-webkit-search-cancel-button {
   font-size: 14px;
 }
 
-/* 협찬 한눈에 보기 on a group's profile (components/GroupDeal.tsx): what it
-   does for the brand in the point tint, what it asks on silver, and its
-   next event in deep blue, side by side. */
+/* 단체의 프로필에 있는 협찬 한눈에 보기 (components/GroupDeal.tsx): 브랜드를
+   위해 하는 일은 포인트 색조로, 요청하는 것은 은색으로, 다음 행사는 진한
+   파랑으로, 나란히. */
 .deal-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -5878,7 +5852,7 @@ input[type="search"]::-webkit-search-cancel-button {
   }
 }
 
-/* Page buttons under a long table (components/Pager.tsx), centered. */
+/* 긴 표 아래의 페이지 버튼 (components/Pager.tsx), 가운데 정렬. */
 .pager {
   display: flex;
   justify-content: center;
@@ -5918,13 +5892,13 @@ input[type="search"]::-webkit-search-cancel-button {
   transform: rotate(180deg);
 }
 
-/* 요금제 고르기 from 성과 분석: the plan card in a popup. */
+/* 성과 분석에서 요금제 고르기: 팝업 안의 요금제 카드. */
 .modal-plan {
   width: min(760px, calc(100vw - 32px));
 }
 
-/* 협찬 결산 공개: the link's row with its switch, and each sponsorship as a
-   row (the public page and the report page's card share them). */
+/* 협찬 결산 공개: 스위치가 있는 링크 줄과, 한 줄씩의 협찬 (공개 페이지와 리포트
+   페이지의 카드가 함께 쓴다). */
 .ledger-share {
   display: flex;
   flex-wrap: wrap;
@@ -6026,8 +6000,8 @@ input[type="search"]::-webkit-search-cancel-button {
   font-size: 14px;
 }
 
-/* 행사 둘러보기 (pages/ExplorePage.tsx): similar events' cases as silver
-   cards over the board's post cards, each with a short introduction. */
+/* 행사 둘러보기 (pages/ExplorePage.tsx): 게시판의 글 카드 위에, 비슷한 행사의
+   사례를 짧은 소개와 함께 은색 카드로. */
 .explore-cases {
   display: grid;
   gap: 12px;
@@ -6090,8 +6064,8 @@ input[type="search"]::-webkit-search-cancel-button {
   line-height: 1.55;
 }
 
-/* 행사 기획안 on the event page: the PDF as a row to download, like a file
-   in a conversation, on a silver fill. */
+/* 행사 페이지의 행사 기획안: 대화 속 파일처럼 은색 바탕에 내려받는 한 줄로 된
+   PDF. */
 .event-plan {
   display: flex;
   flex-wrap: wrap;
@@ -6118,7 +6092,7 @@ input[type="search"]::-webkit-search-cancel-button {
   font-size: 12px;
 }
 
-/* 브랜드가 받는 홍보 on the event page: each list as a row of chips. */
+/* 행사 페이지의 브랜드가 받는 홍보: 각 목록을 칩 한 줄로. */
 .event-promo {
   display: grid;
   gap: 12px;
@@ -6166,7 +6140,7 @@ input[type="search"]::-webkit-search-cancel-button {
   transform: translateY(-50%);
 }
 
-/* Sponsor types as checkboxes; the real input stays for keyboard and screen readers. */
+/* 체크박스로 된 협찬 종류. 실제 input은 키보드와 스크린 리더를 위해 남아 있다. */
 .check-list {
   display: flex;
   flex-direction: column;
@@ -6241,8 +6215,8 @@ input[type="search"]::-webkit-search-cancel-button {
   margin-top: 10px;
 }
 
-/* A group's event page on the registration form: its packages, one row
-   each (name, what the brand gets, what the group asks for). */
+/* 등록 양식의 단체 행사 페이지: 패키지를 한 줄씩 (이름, 브랜드가 얻는 것,
+   단체가 요청하는 것). */
 .package-editor {
   display: grid;
   justify-items: start;
@@ -6288,8 +6262,8 @@ input[type="search"]::-webkit-search-cancel-button {
   }
 }
 
-/* The recruitment board (pages/BoardPage.tsx): posts as cards, the soonest
-   deadline first; a closed one steps back. */
+/* 모집 게시판 (pages/BoardPage.tsx): 글을 카드로, 마감이 임박한 것부터. 마감된
+   것은 물러난다. */
 .post-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
@@ -6404,7 +6378,7 @@ input[type="search"]::-webkit-search-cancel-button {
   font-weight: var(--weight-badge);
 }
 
-/* One post (pages/PostPage.tsx), beside its poster's card. */
+/* 글 하나 (pages/PostPage.tsx)와 그 작성자의 카드를 나란히. */
 .post-body {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 280px;
@@ -6519,8 +6493,8 @@ input[type="search"]::-webkit-search-cancel-button {
   }
 }
 
-/* A group's event page (pages/EventDetailPage.tsx): what, when and where,
-   then its words, photos and packages beside the group's card. */
+/* 단체의 행사 페이지 (pages/EventDetailPage.tsx): 무엇을, 언제, 어디서, 그다음
+   글, 사진, 패키지를 단체의 카드 옆에. */
 .event-facts {
   display: flex;
   flex-wrap: wrap;
@@ -6547,14 +6521,14 @@ input[type="search"]::-webkit-search-cancel-button {
   font-size: 12px;
 }
 
-/* The event's kind leads its chips in the point tint. */
+/* 행사의 종류가 포인트 색조의 칩 맨 앞에 온다. */
 .event-types .event-kind {
   background: var(--point-tint);
   color: var(--point-strong);
   font-weight: var(--weight-label);
 }
 
-/* 참가자 구성 on the event page: a row per fact, the women's share as a bar. */
+/* 행사 페이지의 참가자 구성: 사실마다 한 줄, 여성의 비율은 막대로. */
 .event-makeup {
   display: grid;
   gap: 10px;
@@ -6652,7 +6626,7 @@ input[type="search"]::-webkit-search-cancel-button {
   color: var(--ink);
 }
 
-/* The upload buttons keep room from the notes beside them. */
+/* 업로드 버튼은 옆의 메모와 간격을 둔다. */
 .event-photo-add,
 .event-plan-add {
   cursor: pointer;
@@ -6740,7 +6714,7 @@ input[type="search"]::-webkit-search-cancel-button {
   }
 }
 
-/* Date picker on the new event page, matching the 내 행사 calendar. */
+/* 새 행사 페이지의 날짜 선택기. 내 행사 캘린더와 맞춘다. */
 .date-picker-head {
   display: flex;
   align-items: center;
@@ -6758,7 +6732,7 @@ input[type="search"]::-webkit-search-cancel-button {
   gap: 4px;
 }
 
-/* Days only as tall as their number, so the month fits beside the form. */
+/* 날짜 숫자만큼만 높은 날짜 칸: 한 달이 양식 옆에 들어맞는다. */
 .date-cell {
   height: 40px;
   border: 1px solid transparent;
@@ -6797,7 +6771,7 @@ input[type="search"]::-webkit-search-cancel-button {
   color: var(--on-point);
 }
 
-/* The days between the first and last of a period, on a faint blue. */
+/* 기간의 첫날과 마지막 날 사이의 날들은 옅은 파랑 위에. */
 .date-cell.in-range {
   background: var(--point-tint);
   color: var(--point-strong);
@@ -6832,7 +6806,7 @@ input[type="search"]::-webkit-search-cancel-button {
   padding: 0 22px;
 }
 
-/* My events: a month calendar with the selected day's details beside it. */
+/* 내 행사: 월 달력과 선택한 날의 세부 정보를 옆에. */
 .calendar-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr);
@@ -6841,8 +6815,8 @@ input[type="search"]::-webkit-search-cancel-button {
   margin-top: 18px;
 }
 
-/* 일정 요약 over the calendar: the next one in deep blue, then how many
-   stand at each step as silver tiles. */
+/* 달력 위의 일정 요약: 다음 일정은 진한 파랑으로, 그다음 각 단계에 몇 건이
+   있는지를 은색 타일로. */
 .events-summary {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 2fr);
@@ -6916,8 +6890,7 @@ input[type="search"]::-webkit-search-cancel-button {
   stroke: currentColor;
 }
 
-/* Two by two beside the next event, so each tile is only as tall as its
-   label and number. */
+/* 다음 행사 옆에 두 줄 두 칸으로, 각 타일은 라벨과 숫자만큼만 높다. */
 .events-counts {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -6957,8 +6930,7 @@ input[type="search"]::-webkit-search-cancel-button {
 
 }
 
-/* Beside the calendar on wide screens, the day stays in view while the
-   month scrolls. */
+/* 넓은 화면에서는 달력 옆에서, 달이 스크롤되는 동안에도 그날이 화면에 남는다. */
 @media (min-width: 1101px) {
   .calendar-layout .day-panel {
     position: sticky;
@@ -7046,7 +7018,7 @@ input[type="search"]::-webkit-search-cancel-button {
   color: var(--blue);
 }
 
-/* Day cells a little wider than tall; overflow hides extra events past "+n". */
+/* 날짜 칸은 높이보다 조금 넓다. 넘치는 행사는 "+n" 뒤로 숨는다. */
 .calendar-day {
   display: flex;
   min-width: 0;
@@ -7068,7 +7040,7 @@ input[type="search"]::-webkit-search-cancel-button {
   background: transparent;
 }
 
-/* A day with something on it reads at a glance on the lighter grid. */
+/* 뭔가 있는 날이 더 밝은 격자 위에서 한눈에 읽힌다. */
 .calendar-day.has-events {
   background: var(--point-tint);
   border-color: transparent;
@@ -7086,7 +7058,7 @@ input[type="search"]::-webkit-search-cancel-button {
   color: var(--faint);
 }
 
-/* Days with something on them read at a glance on a faint blue. */
+/* 뭔가 있는 날이 옅은 파랑 위에서 한눈에 읽힌다. */
 .calendar-day.has-events {
   background: var(--point-soft);
   box-shadow: inset 0 0 0 1px var(--point-line);
@@ -7107,7 +7079,7 @@ input[type="search"]::-webkit-search-cancel-button {
   font-weight: var(--weight-label);
 }
 
-/* Today: a deep blue circle behind the day number. */
+/* 오늘: 날짜 숫자 뒤의 진한 파랑 원. */
 .calendar-day.today .day-number {
   background: var(--point);
   color: var(--on-point);
@@ -7121,7 +7093,7 @@ input[type="search"]::-webkit-search-cancel-button {
   gap: 3px;
 }
 
-/* Event names on the calendar; color follows the status chips. */
+/* 달력의 행사 이름. 색은 상태 칩을 따른다. */
 .day-event {
   overflow: hidden;
   padding: 2px 5px;
@@ -7151,15 +7123,14 @@ input[type="search"]::-webkit-search-cancel-button {
   font-weight: var(--weight-label);
 }
 
-/* The month's schedule under the calendar: the day on a white tile, the
-   name and period, then the status. */
+/* 달력 아래 이번 달의 일정: 흰 타일의 날짜, 이름과 기간, 그다음 상태. */
 .month-agenda {
   margin-top: 18px;
   padding-top: 16px;
   border-top: 1px solid var(--line);
 }
 
-/* In the side panel the month's list stands under the day's. */
+/* 사이드 패널에서는 이번 달 목록이 그날의 목록 아래에 선다. */
 .day-panel .month-agenda {
   margin-top: 20px;
 }
@@ -7327,7 +7298,7 @@ input[type="search"]::-webkit-search-cancel-button {
   font-size: 13px;
 }
 
-/* The whole period of an event over several days. */
+/* 여러 날에 걸친 행사의 전체 기간. */
 .day-event-period {
   color: var(--point-strong);
   font-size: 13px;
@@ -7348,8 +7319,8 @@ input[type="search"]::-webkit-search-cancel-button {
   text-align: center;
 }
 
-/* A catalog no one has joined yet (components/CatalogEmpty.tsx): the same
-   dashed outline, with a title and what to do meanwhile. */
+/* 아직 아무도 가입하지 않은 카탈로그 (components/CatalogEmpty.tsx): 같은 점선
+   윤곽에 제목과, 그동안 할 일을 둔다. */
 .catalog-empty {
   display: flex;
   flex-direction: column;
@@ -7418,8 +7389,8 @@ input[type="search"]::-webkit-search-cancel-button {
   font-size: 13px;
 }
 
-/* Matching is silver gray, not linked yet; scheduled turns blue once a
-   brand is linked, and measured turns green. */
+/* 매칭은 은회색으로 아직 연결되지 않은 것, 예정은 브랜드가 연결되면 파랑이
+   되고, 측정됨은 초록이 된다. */
 .status-chip {
   padding: 4px 7px;
   border-radius: 9px;
@@ -7465,7 +7436,7 @@ input[type="search"]::-webkit-search-cancel-button {
   stroke-width: 1.8;
 }
 
-/* Event, live status and last record above the counts. */
+/* 집계 위의 행사, 실시간 상태, 마지막 기록. */
 .measure-bar {
   display: flex;
   flex-wrap: wrap;
@@ -7492,9 +7463,9 @@ input[type="search"]::-webkit-search-cancel-button {
   stroke-width: 2;
 }
 
-/* A brand's own campaign measured on site, at the end of 성과 분석
-   (components/CampaignMeasurement.tsx): three silver count tiles that open
-   their records, then the goals and the QR. */
+/* 성과 분석 끝에서 현장에서 측정하는 브랜드 자신의 캠페인
+   (components/CampaignMeasurement.tsx): 기록을 여는 은색 집계 타일 셋, 그다음
+   목표와 QR. */
 .campaign-measure {
   padding: 56px 0 24px;
 }
@@ -7563,7 +7534,7 @@ input[type="search"]::-webkit-search-cancel-button {
   }
 }
 
-/* Where a finished or coming event's measurement stands, beside the picker. */
+/* 끝났거나 다가오는 행사의 측정이 어디까지 왔는지를 선택기 옆에. */
 .measure-state {
   display: inline-flex;
   height: 24px;
@@ -7576,14 +7547,13 @@ input[type="search"]::-webkit-search-cancel-button {
   font-weight: var(--weight-label);
 }
 
-/* An event still to come (진행 전) in deep blue, as what comes next. */
+/* 아직 오지 않은 행사(진행 전)는 다음에 올 것으로서 진한 파랑. */
 .measure-state.upcoming {
   background: var(--point-tint);
   color: var(--point-strong);
 }
 
-/* Before the event, in place of the funnel and the records: what will show
-   there once it takes place. */
+/* 행사 전에, 깔때기와 기록 대신: 행사가 열리면 거기에 무엇이 나올지. */
 .measure-wait {
   display: flex;
   align-items: flex-start;
@@ -7607,8 +7577,8 @@ input[type="search"]::-webkit-search-cancel-button {
   color: var(--point-strong);
 }
 
-/* Which event the measurement and report pages show
-   (components/EventPicker.tsx): a pill-shaped select. */
+/* 측정·리포트 페이지가 보여주는 행사 (components/EventPicker.tsx): 알약 모양의
+   셀렉트. */
 .event-picker {
   position: relative;
   display: inline-flex;
@@ -7784,7 +7754,7 @@ input[type="search"]::-webkit-search-cancel-button {
   font-variant-numeric: tabular-nums;
 }
 
-/* Kind chip shared by the feed and the full history. */
+/* 피드와 전체 기록이 함께 쓰는 종류 칩. */
 .activity-kind {
   display: inline-flex;
   height: 22px;
@@ -7810,7 +7780,7 @@ input[type="search"]::-webkit-search-cancel-button {
   color: var(--green);
 }
 
-/* What the venue's staff confirmed by a measurement method, in silver. */
+/* 현장 직원이 측정 방식으로 확인한 것을 은색으로. */
 .activity-kind:is(.kind-samples, .kind-stamps, .kind-posts) {
   background: var(--fill-strong);
   color: var(--ink-soft);
@@ -7821,8 +7791,8 @@ input[type="search"]::-webkit-search-cancel-button {
   vertical-align: 1px;
 }
 
-/* Participation history modal. */
-/* Before the event: what the history will hold once it takes place. */
+/* 참여 기록 모달. */
+/* 행사 전: 행사가 열리면 기록에 무엇이 담길지. */
 .log-wait {
   display: flex;
   flex-direction: column;
@@ -7894,7 +7864,7 @@ input[type="search"]::-webkit-search-cancel-button {
   font-size: 13px;
 }
 
-/* Goal details modal: goal and current side by side, then progress. */
+/* 목표 상세 모달: 목표와 현재를 나란히, 그다음 진행도. */
 .goal-compare {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -7950,7 +7920,7 @@ input[type="search"]::-webkit-search-cancel-button {
   color: var(--point-strong);
 }
 
-/* Leaves room for the goal chip that sits above the bar. */
+/* 막대 위에 놓이는 목표 칩의 자리를 남긴다. */
 .goal-progress {
   margin-top: 52px;
 }
@@ -7983,7 +7953,7 @@ input[type="search"]::-webkit-search-cancel-button {
   box-shadow: 0 0 0 1.5px #fff;
 }
 
-/* "목표 30%" chip above the marker, clear of the bar. */
+/* 마커 위의 "목표 30%" 칩. 막대를 피해 있다. */
 .goal-marker em {
   position: absolute;
   top: -30px;
@@ -8042,7 +8012,7 @@ input[type="search"]::-webkit-search-cancel-button {
   font-size: 13px;
 }
 
-/* Notifications drop down from the bell (from the top bar on phones). */
+/* 알림이 종에서 아래로 내려온다 (휴대폰에서는 상단 바에서). */
 .notify-panel {
   position: absolute;
   z-index: 30;
@@ -8097,8 +8067,8 @@ input[type="search"]::-webkit-search-cancel-button {
   }
 }
 
-/* The account panel (layout/AccountPanel.tsx): the notifications' panel,
-   narrower, with who is logged in over 내 정보 and 로그아웃. */
+/* 계정 패널 (layout/AccountPanel.tsx): 알림 패널을 더 좁게, 로그인한 사람을 내
+   정보와 로그아웃 위에 놓는다. */
 .notify-panel.account-panel {
   width: 300px;
   padding: 18px 18px 12px;
@@ -8238,7 +8208,7 @@ input[type="search"]::-webkit-search-cancel-button {
   color: var(--green);
 }
 
-/* Read notices step back; an unread one keeps its weight and a dot on its icon. */
+/* 읽은 알림은 물러나고, 읽지 않은 것은 굵기를 유지하며 아이콘에 점이 붙는다. */
 .notification-list > button:not(.unread) strong {
   color: var(--ink-soft);
   font-weight: var(--weight-label);
@@ -8299,7 +8269,7 @@ input[type="search"]::-webkit-search-cancel-button {
   font-weight: var(--weight-body);
 }
 
-/* Profile editor (ProfileEditPage.tsx). */
+/* 프로필 편집기 (ProfileEditPage.tsx). */
 .profile-edit .form-card {
   margin-top: 14px;
 }
@@ -8372,7 +8342,7 @@ input[type="search"]::-webkit-search-cancel-button {
   grid-template-columns: 120px minmax(0, 1fr) 150px 36px;
 }
 
-/* A brand's offers, one row each: the kind and what of it. */
+/* 브랜드의 제공 내용을 한 줄씩: 종류와 그 분량. */
 .edit-row.offer {
   grid-template-columns: 180px minmax(0, 1fr) 36px;
 }
@@ -8381,7 +8351,7 @@ input[type="search"]::-webkit-search-cancel-button {
   justify-self: start;
 }
 
-/* The portfolio's add and 불러오기, at either end. */
+/* 포트폴리오의 추가와 불러오기를 양 끝에. */
 .edit-rows-actions {
   display: flex;
   flex-wrap: wrap;
@@ -8409,8 +8379,8 @@ input[type="search"]::-webkit-search-cancel-button {
   margin-top: 18px;
 }
 
-/* What a brand can't edit, set apart: a dashed outline, a lock and a note
-   saying so. */
+/* 브랜드가 고칠 수 없는 것은 떨어뜨려 놓는다: 점선 윤곽, 자물쇠, 그렇다고
+   알리는 안내. */
 .form-card.locked-card {
   border: 1px dashed var(--line-strong);
   background: var(--fill);
@@ -8439,12 +8409,12 @@ input[type="search"]::-webkit-search-cancel-button {
   background: #fff;
 }
 
-/* A brand's SNS rows have no follower count. */
+/* 브랜드의 SNS 줄에는 팔로워 수가 없다. */
 .edit-row.sns.no-followers {
   grid-template-columns: 120px minmax(0, 1fr) 36px;
 }
 
-/* A brand's 기본 정보 and tags as they read, worked out from what it does. */
+/* 브랜드의 기본 정보와 태그가 읽히는 대로, 브랜드가 하는 일에서 계산한다. */
 .auto-facts {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -8477,7 +8447,7 @@ input[type="search"]::-webkit-search-cancel-button {
   color: var(--muted);
 }
 
-/* The store address, found with the address search rather than typed. */
+/* 매장 주소는 직접 치지 않고 주소 검색으로 찾는다. */
 .address-row {
   display: flex;
   gap: 8px;
@@ -8526,7 +8496,7 @@ input[type="search"]::-webkit-search-cancel-button {
   stroke-width: 2;
 }
 
-/* Messages (MessagesPage.tsx): one row per conversation. */
+/* 메시지 (MessagesPage.tsx): 대화마다 한 줄. */
 .chat-list {
   display: flex;
   flex-direction: column;
@@ -8574,7 +8544,7 @@ input[type="search"]::-webkit-search-cancel-button {
   font-size: 13px;
 }
 
-/* Previews keep to two lines. */
+/* 미리 보기는 두 줄까지. */
 .chat-row-preview {
   display: -webkit-box;
   overflow: hidden;
@@ -8643,9 +8613,9 @@ input[type="search"]::-webkit-search-cancel-button {
   margin: 0;
 }
 
-/* A conversation (ChatPage.tsx): bubbles, own ones on the right with their
-   read marks, and the message box held at the bottom of the screen. The
-   page fills the screen so even a short thread keeps the box at the bottom. */
+/* 대화 (ChatPage.tsx): 말풍선, 내 것은 읽음 표시와 함께 오른쪽에, 메시지 상자는
+   화면 아래에 붙는다. 페이지가 화면을 채우므로 짧은 대화에서도 상자가 아래에
+   있다. */
 .main-content:has(.chat-view) {
   padding-bottom: 16px;
 }
@@ -8722,8 +8692,8 @@ input[type="search"]::-webkit-search-cancel-button {
   color: #fff;
 }
 
-/* Under each bubble: edited, read and the time, and on own messages the ⋯
-   button the keyboard opens edit and delete with (below). */
+/* 각 말풍선 아래: 수정됨, 읽음, 시간, 그리고 내 메시지에는 키보드로 수정·삭제를
+   여는 ⋯ 버튼(아래). */
 .chat-meta {
   display: flex;
   align-items: center;
@@ -8755,9 +8725,8 @@ input[type="search"]::-webkit-search-cancel-button {
   color: var(--ink);
 }
 
-/* An own message's menu opens with a press and hold on touch screens or a
-   right click with a mouse, so the ⋯ shows only once the keyboard reaches
-   it; screen readers still find it. */
+/* 내 메시지의 메뉴는 터치 화면에서는 길게 눌러서, 마우스에서는 오른쪽 클릭으로
+   열린다. 그래서 ⋯는 키보드가 닿을 때만 보이며, 스크린 리더는 여전히 찾는다. */
 .chat-more:not(:focus-visible) {
   position: absolute;
   width: 1px;
@@ -8766,8 +8735,8 @@ input[type="search"]::-webkit-search-cancel-button {
   clip-path: inset(50%);
 }
 
-/* The held bubble gives a little under the finger, and the hold doesn't also
-   select its text or open the system's own callout. */
+/* 눌러 잡은 말풍선은 손가락 아래에서 조금 꺼지고, 누르고 있다고 텍스트가
+   선택되거나 시스템 자체 콜아웃이 열리지 않는다. */
 @media (hover: none) {
   .chat-message.mine:not(.deleted) .chat-bubble {
     -webkit-touch-callout: none;
@@ -8781,7 +8750,7 @@ input[type="search"]::-webkit-search-cancel-button {
   }
 }
 
-/* Over the box until a menu has been opened once: how to open one. */
+/* 메뉴를 한 번이라도 열기 전까지 상자 위에서: 메뉴를 여는 방법. */
 .chat-hint {
   display: flex;
   align-items: center;
@@ -8792,7 +8761,7 @@ input[type="search"]::-webkit-search-cancel-button {
   font-size: 12px;
 }
 
-/* A deleted message keeps its place, outlined and emptied, on both sides. */
+/* 삭제된 메시지는 윤곽선만 남은 빈 모습으로 양쪽 모두에서 자리를 유지한다. */
 .chat-message.deleted .chat-bubble,
 .chat-message.mine.deleted .chat-bubble {
   background: transparent;
@@ -8800,12 +8769,12 @@ input[type="search"]::-webkit-search-cancel-button {
   box-shadow: inset 0 0 0 1px var(--line-strong);
 }
 
-/* The message being edited in the box below. */
+/* 아래 상자에서 수정 중인 메시지. */
 .chat-message.editing .chat-bubble {
   box-shadow: 0 0 0 3px var(--point-line);
 }
 
-/* Scrolled into view clear of the message box below. */
+/* 아래 메시지 상자를 피해 보이는 곳으로 스크롤된다. */
 .chat-actions {
   display: flex;
   max-width: min(100%, 420px);
@@ -8852,7 +8821,7 @@ input[type="search"]::-webkit-search-cancel-button {
   color: var(--red);
 }
 
-/* Over the box while a message is being edited. */
+/* 메시지를 수정하는 동안 상자 위에. */
 .chat-editing {
   display: flex;
   align-items: center;
@@ -8934,7 +8903,7 @@ input[type="search"]::-webkit-search-cancel-button {
   border-radius: 50%;
 }
 
-/* The clip beside the box picks a photo or a PDF to send. */
+/* 상자 옆의 클립은 보낼 사진이나 PDF를 고른다. */
 .chat-input:has(.chat-attach) {
   padding-left: 7px;
 }
@@ -8961,8 +8930,8 @@ input[type="search"]::-webkit-search-cancel-button {
   outline-offset: 2px;
 }
 
-/* 미팅 잡기: the calendar button beside the clip, its form over the box,
-   and each proposed meeting as a card inside its bubble. */
+/* 미팅 잡기: 클립 옆의 캘린더 버튼, 상자 위의 양식, 말풍선 안에 카드로 된
+   제안된 미팅. */
 .chat-meeting {
   border: 0;
   background: none;
@@ -9072,7 +9041,7 @@ input[type="search"]::-webkit-search-cancel-button {
   text-decoration: none;
 }
 
-/* Own meetings sit on the deep blue bubble. */
+/* 내 미팅은 진한 파랑 말풍선에 놓인다. */
 .chat-message.mine .meeting-actions :is(.cancel-button, .primary-button) {
   background: #fff;
   color: var(--point);
@@ -9093,7 +9062,7 @@ input[type="search"]::-webkit-search-cancel-button {
   opacity: 0.5;
 }
 
-/* A photo stands without the bubble's fill, in its shape; it opens full size. */
+/* 사진은 말풍선의 채움 없이 자기 모양으로 서며, 누르면 원본 크기로 열린다. */
 .chat-message.has-photo .chat-bubble {
   padding: 0;
   overflow: hidden;
@@ -9106,7 +9075,7 @@ input[type="search"]::-webkit-search-cancel-button {
   display: block;
 }
 
-/* Sized by the screen, not the bubble, so the bubble hugs the photo. */
+/* 말풍선이 사진을 감싸도록 말풍선이 아니라 화면에 맞춰 크기를 정한다. */
 .chat-photo img {
   max-width: min(260px, 62vw);
   max-height: 320px;
@@ -9125,7 +9094,7 @@ input[type="search"]::-webkit-search-cancel-button {
   text-align: center;
 }
 
-/* A PDF in its bubble: the file's name and size, saved when pressed. */
+/* 말풍선 속 PDF: 파일 이름과 크기. 누르면 저장된다. */
 .chat-file {
   display: flex;
   max-width: 100%;
@@ -9165,7 +9134,7 @@ input[type="search"]::-webkit-search-cancel-button {
   margin-top: 22px;
 }
 
-/* Kakao and Naver under the login form (modals/LoginModal.tsx). */
+/* 로그인 양식 아래의 Kakao와 Naver (modals/LoginModal.tsx). */
 .social-login {
   display: grid;
   gap: 8px;
@@ -9213,8 +9182,8 @@ input[type="search"]::-webkit-search-cancel-button {
   text-align: center;
 }
 
-/* Two-step login (modals/TwoFactorModal.tsx): the QR for the app, the key
-   to type instead, and the recovery codes shown once. */
+/* 2단계 로그인 (modals/TwoFactorModal.tsx): 앱용 QR, 대신 입력할 키, 한 번만
+   보여주는 복구 코드. */
 .two-factor-qr {
   width: min(200px, 60vw);
   margin: 4px auto 0;
@@ -9255,8 +9224,8 @@ input[type="search"]::-webkit-search-cancel-button {
   font-size: 15px;
 }
 
-/* The devices logged in (modals/DevicesModal.tsx). The team (modals/TeamModal.tsx)
-   shares its rows; an invitation not yet taken is outlined. */
+/* 로그인한 기기 (modals/DevicesModal.tsx). 팀 (modals/TeamModal.tsx)이 그 줄을
+   함께 쓴다. 아직 받지 않은 초대는 윤곽선으로 그린다. */
 .device-list {
   display: grid;
   gap: 10px;
@@ -9344,7 +9313,7 @@ input[type="search"]::-webkit-search-cancel-button {
   pointer-events: none;
 }
 
-/* The logo's school and company symbols, faded until chosen. */
+/* 로고의 학교와 회사 심벌은 고르기 전까지 흐리게. */
 .role-option .role-mark {
   grid-row: span 2;
   opacity: 0.55;
@@ -9365,13 +9334,12 @@ input[type="search"]::-webkit-search-cancel-button {
   font-weight: var(--weight-body);
 }
 
-/* 캘린더에 추가 (modals/CalendarModal.tsx), laid out like the phone's
-   share sheet: a silver sheet whose title stays for screen readers only,
-   the picked dates' count by a calendar page, the dates as cards to pick,
-   a row of calendar app icons, then the actions as one white group (or,
-   for Google Calendar and Outlook with several dates, each date with its
-   button). The rows scroll sideways to the sheet's edges (--sheet-pad, the
-   panel's padding). */
+/* 캘린더에 추가 (modals/CalendarModal.tsx), 휴대폰의 공유 시트처럼 배치했다:
+   제목이 스크린 리더에만 남는 은색 시트, 캘린더 페이지 옆에 고른 날짜의 수,
+   고를 수 있는 카드로 된 날짜들, 캘린더 앱 아이콘 한 줄, 그다음 하나의 흰
+   묶음으로 된 액션들 (또는 날짜가 여럿인 Google Calendar와 Outlook에서는
+   날짜마다 버튼). 줄은 시트의 가장자리까지 옆으로 스크롤된다 (--sheet-pad,
+   패널의 패딩). */
 .modal-calendar {
   --sheet-pad: 32px;
   width: min(500px, 100%);
@@ -9437,8 +9405,7 @@ input[type="search"]::-webkit-search-cancel-button {
   font-weight: var(--weight-label);
 }
 
-/* A day as a page torn off a calendar: the month in the accent blue over
-   the day. */
+/* 달력에서 뜯어낸 한 장 같은 날: 날짜 위에 강조 파랑의 월. */
 .share-page {
   display: flex;
   width: 56px;
@@ -9556,7 +9523,7 @@ input[type="search"]::-webkit-search-cancel-button {
   box-shadow: none;
 }
 
-/* The apps under a hairline that stays put while the row scrolls. */
+/* 앱 줄이 스크롤되는 동안에도 제자리에 있는 헤어라인 아래의 앱들. */
 .share-apps {
   gap: 4px;
   padding-top: 18px;
@@ -9585,8 +9552,8 @@ input[type="search"]::-webkit-search-cancel-button {
   opacity: 0.45;
 }
 
-/* Each app as a calendar icon showing today, told apart by its colors;
-   the other apps as three dots. */
+/* 각 앱을 오늘 날짜가 든 캘린더 아이콘으로 그려 색으로 구분하고, 나머지 앱은 점
+   셋으로. */
 .share-app-icon {
   display: flex;
   width: 64px;
@@ -9839,10 +9806,9 @@ input[type="search"]::-webkit-search-cancel-button {
   line-height: 1.5;
 }
 
-/* The rules a new password follows, each turning green with a check as
-   the password typed meets it (components/PasswordRules.tsx). */
-/* Under the password boxes: a panel of its own, apart from the last box and
-   from what follows. */
+/* 새 비밀번호가 따르는 규칙. 입력한 비밀번호가 충족할 때마다 체크와 함께 초록이
+   된다 (components/PasswordRules.tsx). */
+/* 비밀번호 상자 아래: 마지막 상자와 뒤따르는 것에서 떨어진 자기만의 패널. */
 .password-rules {
   display: grid;
   gap: 8px;
@@ -9931,8 +9897,8 @@ input[type="search"]::-webkit-search-cancel-button {
   text-underline-offset: 2px;
 }
 
-/* One press logs into a shared demo account (data/demo.ts), so no one has
-   to type its published password; silver pills under a hairline. */
+/* 한 번 누르면 공유 데모 계정 (data/demo.ts)으로 로그인하므로, 공개된
+   비밀번호를 칠 필요가 없다. 헤어라인 아래의 은색 알약. */
 .demo-login {
   display: grid;
   gap: 10px;
@@ -9992,8 +9958,8 @@ input[type="search"]::-webkit-search-cancel-button {
   line-height: 1.5;
 }
 
-/* An event's goals (modals/GoalsModal.tsx): groups of fields under small
-   headings, the sponsorship's value as rows of kind, amount and remove. */
+/* 행사의 목표 (modals/GoalsModal.tsx): 작은 제목 아래에 묶은 필드들, 협찬의
+   가치는 종류, 금액, 삭제의 줄로. */
 .goals-form fieldset {
   margin: 0;
   padding: 0 0 18px;
@@ -10017,7 +9983,7 @@ input[type="search"]::-webkit-search-cancel-button {
   margin-top: 8px;
 }
 
-/* Each sponsor's coupon, share and PIN in the goals form. */
+/* 목표 양식에서 각 스폰서의 쿠폰, 몫, PIN. */
 .goals-sponsor {
   margin-top: 14px;
   padding-top: 14px;
@@ -10074,8 +10040,8 @@ input[type="search"]::-webkit-search-cancel-button {
   }
 }
 
-/* The operators' screen (pages/AdminPage.tsx): the token form, then each
-   question as a card with who sent it and the answer or a box for one. */
+/* 운영자 화면 (pages/AdminPage.tsx): 토큰 양식, 그다음 질문마다 보낸 사람과 답,
+   또는 답을 쓸 상자가 있는 카드. */
 .admin-login {
   display: flex;
   max-width: 420px;
@@ -10107,8 +10073,8 @@ input[type="search"]::-webkit-search-cancel-button {
   align-self: flex-start;
 }
 
-/* The operators' figures (AdminPage.tsx): tiles with real members' numbers,
-   the totals with the demo data under each. */
+/* 운영자의 수치 (AdminPage.tsx): 실제 회원의 숫자가 담긴 타일과, 각각 아래에
+   데모 데이터를 합친 합계. */
 .admin-section-title {
   margin: 36px 0 4px;
   font-size: 20px;
@@ -10250,7 +10216,7 @@ input[type="search"]::-webkit-search-cancel-button {
   align-self: flex-end;
 }
 
-/* The logo in 소개 편집: the mark as it will show, then the picker. */
+/* 소개 편집의 로고: 보일 모습의 마크, 그다음 선택기. */
 .logo-field {
   display: flex;
   flex-wrap: wrap;
@@ -10279,7 +10245,7 @@ input[type="search"]::-webkit-search-cancel-button {
   outline-offset: 2px;
 }
 
-/* Under the login password, the way to a new one (modals/ResetPasswordModal.tsx). */
+/* 로그인 비밀번호 아래, 새 비밀번호로 가는 길 (modals/ResetPasswordModal.tsx). */
 .forgot-row {
   margin: 10px 0 0;
   text-align: right;
@@ -10305,7 +10271,7 @@ input[type="search"]::-webkit-search-cancel-button {
   line-height: 1.6;
 }
 
-/* The staff PIN under the check-in link, for the group to give the store. */
+/* 체크인 링크 아래의 매장 직원 PIN: 단체가 매장에 건네 준다. */
 .qr-pin {
   display: flex;
   flex-direction: column;
@@ -10332,7 +10298,7 @@ input[type="search"]::-webkit-search-cancel-button {
   font-size: 12px;
 }
 
-/* One PIN per sponsor's store once brands sponsor the event. */
+/* 브랜드가 행사를 협찬하면 스폰서 매장마다 PIN 하나. */
 .qr-pins {
   display: flex;
   flex-direction: column;
@@ -10347,8 +10313,8 @@ input[type="search"]::-webkit-search-cancel-button {
   font-size: 16px;
 }
 
-/* The store staff's page (checkin/StaffCheckInPage.tsx): the PIN and the
-   coupon number, then the visits just confirmed. */
+/* 매장 직원 페이지 (checkin/StaffCheckInPage.tsx): PIN과 쿠폰 번호, 그다음 방금
+   확인한 방문. */
 .staff-form {
   display: flex;
   flex-direction: column;
@@ -10383,7 +10349,7 @@ input[type="search"]::-webkit-search-cancel-button {
   font-weight: var(--weight-label);
 }
 
-/* The PIN and coupon boxes on the staff page. */
+/* 직원 페이지의 PIN과 쿠폰 상자. */
 .checkin-pin {
   width: 100%;
   height: 48px;
@@ -10399,9 +10365,9 @@ input[type="search"]::-webkit-search-cancel-button {
   text-align: center;
 }
 
-/* The venue pages' counters (VenueCounters.tsx): a white card per method
-   with its count, then the buttons that add to it or take back a mistake,
-   under each sponsor's name on the group's page. */
+/* 현장 페이지의 카운터 (VenueCounters.tsx): 방식마다 집계가 든 흰 카드, 그다음
+   그것에 더하거나 실수를 되돌리는 버튼. 단체 페이지에서는 각 스폰서의 이름
+   아래에 둔다. */
 .venue-share {
   display: flex;
   flex-direction: column;
@@ -10558,9 +10524,9 @@ input[type="search"]::-webkit-search-cancel-button {
   text-decoration: none;
 }
 
-/* Getting the app where the browser has no install dialog of its own
-   (modals/InstallGuideModal.tsx): numbered steps on silver, or one line per
-   kind of device, then OK. */
+/* 브라우저에 자체 설치 대화상자가 없을 때 앱 받기
+   (modals/InstallGuideModal.tsx): 은색 위의 번호 붙은 단계, 또는 기기 종류마다
+   한 줄, 그다음 확인. */
 .install-guide {
   display: grid;
   gap: 14px;
@@ -10642,8 +10608,8 @@ input[type="search"]::-webkit-search-cancel-button {
   text-decoration: none;
 }
 
-/* Inviting a shop (modals/InviteShopModal.tsx): the invitation's QR, the
-   message to send, then copy and share. */
+/* 매장 초대 (modals/InviteShopModal.tsx): 초대의 QR, 보낼 메시지, 그다음 복사와
+   공유. */
 .invite-content .qr-frame {
   width: 176px;
   margin: 0;
@@ -10685,8 +10651,8 @@ input[type="search"]::-webkit-search-cancel-button {
   grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
 }
 
-/* The invitation's page (pages/InvitePage.tsx): the group's card at the
-   left, what the shop gets and the way in at the right. */
+/* 초대 페이지 (pages/InvitePage.tsx): 왼쪽에 단체의 카드, 오른쪽에 매장이 얻는
+   것과 들어가는 길. */
 .invite-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -10828,7 +10794,7 @@ input[type="search"]::-webkit-search-cancel-button {
   border-top: 1px solid var(--line);
 }
 
-/* On the dashboard the list opens its panel, with no rule above it. */
+/* 대시보드에서는 목록이 자기 패널을 열며, 위에 구분선이 없다. */
 .results-grid .roas-list {
   padding-top: 0;
   border-top: 0;
@@ -10845,8 +10811,8 @@ input[type="search"]::-webkit-search-cancel-button {
   font-size: 13px;
 }
 
-/* Below its goal the ROAS bar is silver; once met, number and bar turn the
-   point's deep blue. */
+/* 목표 아래에서 ROAS 막대는 은색이고, 달성하면 숫자와 막대가 포인트의 진한
+   파랑이 된다. */
 .roas-row-head span {
   color: var(--ink-soft);
   font-size: 14px;
@@ -10877,7 +10843,7 @@ input[type="search"]::-webkit-search-cancel-button {
   background: var(--goal-met);
 }
 
-/* Goal ROAS marker, edged in white where it crosses a bar. */
+/* 목표 ROAS 마커. 막대를 가로지르는 곳에서 흰 테두리를 두른다. */
 .roas-track b,
 .roas-legend b {
   width: 3px;
@@ -10953,7 +10919,7 @@ input[type="search"]::-webkit-search-cancel-button {
   border-radius: 6px;
 }
 
-/* An event day on its own line: D-day badge, then the date (DateLine.tsx). */
+/* 한 줄을 차지하는 행사일: D-day 배지, 그다음 날짜 (DateLine.tsx). */
 .date-line {
   display: flex;
   align-items: center;
@@ -10980,8 +10946,8 @@ input[type="search"]::-webkit-search-cancel-button {
   margin-top: 16px;
 }
 
-/* 검토 중 both ways (components/SentProposals.tsx): what came in, then what
-   the account sent, each under a small heading with its count. */
+/* 양쪽의 검토 중 (components/SentProposals.tsx): 들어온 것, 그다음 계정이 보낸
+   것을, 각각 개수가 붙은 작은 제목 아래에. */
 .inbox-both {
   display: grid;
   gap: 40px;
@@ -11012,8 +10978,8 @@ input[type="search"]::-webkit-search-cancel-button {
   font-weight: var(--weight-badge);
 }
 
-/* A sent proposal waits on the partner: silver rather than the warm glow of
-   one waiting on this account. */
+/* 보낸 제안은 파트너를 기다리므로, 이 계정을 기다리는 제안의 따뜻한 빛 대신
+   은색이다. */
 .request-card.pending.sent {
   border-color: var(--line);
   box-shadow: none;
@@ -11196,7 +11162,7 @@ input[type="search"]::-webkit-search-cancel-button {
   color: var(--green);
 }
 
-/* An accepted proposal's agreement, beside its result. */
+/* 수락된 제안의 합의서를 그 결과 옆에. */
 .request-actions .detail-button {
   display: inline-flex;
   align-items: center;
@@ -11205,10 +11171,9 @@ input[type="search"]::-webkit-search-cancel-button {
   padding: 0 16px;
 }
 
-/* Sponsorship agreements (pages/AgreementsPage.tsx and AgreementPage.tsx):
-   a list of silver rows, then one agreement as a silver sheet of facts with
-   the confirmations in a white card, each side's items as white rows with
-   their proof, and an editor for the items. */
+/* 협찬 합의서 (pages/AgreementsPage.tsx와 AgreementPage.tsx): 은색 줄의 목록,
+   그리고 합의서 하나는 사실을 담은 은색 시트에, 확정은 흰 카드에, 각 쪽의
+   항목은 증빙이 달린 흰 줄로, 항목을 고치는 편집기. */
 .agreement-list {
   display: flex;
   flex-direction: column;
@@ -11309,8 +11274,8 @@ input[type="search"]::-webkit-search-cancel-button {
   resize: vertical;
 }
 
-/* Reporting and blocking (modals/SafetyModal.tsx), and where they start:
-   quiet links under a profile's actions, a review, a chat message. */
+/* 신고와 차단 (modals/SafetyModal.tsx)과 그 시작점: 프로필의 액션, 후기, 채팅
+   메시지 아래의 조용한 링크. */
 .profile-safety {
   display: flex;
   flex-wrap: wrap;
@@ -11335,7 +11300,7 @@ input[type="search"]::-webkit-search-cancel-button {
   margin-top: 16px;
 }
 
-/* 받을 메일 on 내 정보: a checkbox for each kind of notice email. */
+/* 내 정보의 받을 메일: 알림 메일 종류마다 체크박스. */
 .mail-choices {
   display: grid;
   gap: 10px;
@@ -11377,7 +11342,7 @@ input[type="search"]::-webkit-search-cancel-button {
   line-height: 1.5;
 }
 
-/* 목록에서 숨기기 on 내 정보: an on/off switch, deep blue when on. */
+/* 내 정보의 목록에서 숨기기: 켜면 진한 파랑이 되는 켜기/끄기 스위치. */
 .pause-choice {
   display: flex;
   align-items: center;
@@ -11425,10 +11390,9 @@ input[type="search"]::-webkit-search-cancel-button {
   transform: translateX(20px);
 }
 
-/* 내 정보 (pages/ProfilePage.tsx) as a settings page: a compact deep blue
-   card with who the account is and its three counts, then cards of rows
-   (what it is, its value, a short action), with a list of the cards to jump
-   to beside them on wide screens. */
+/* 설정 페이지로서의 내 정보 (pages/ProfilePage.tsx): 계정이 누구인지와 세 가지
+   집계를 담은 작은 진한 파랑 카드, 그다음 행으로 된 카드들(무엇인지, 그 값,
+   짧은 액션). 넓은 화면에서는 카드로 건너뛰는 목록이 옆에 있다. */
 .profile-hero {
   --surface-tone: dark;
   position: relative;
@@ -11968,8 +11932,8 @@ input[type="search"]::-webkit-search-cancel-button {
   background: #fff;
 }
 
-/* Saved proposal messages: a list to fill the message from, and a row to
-   name the one written before saving it. */
+/* 저장해 둔 제안 메시지: 메시지를 채울 목록과, 저장하기 전에 쓴 것에 이름을
+   붙이는 줄. */
 .propose-templates {
   display: flex;
   flex-wrap: wrap;
@@ -12004,8 +11968,8 @@ input[type="search"]::-webkit-search-cancel-button {
   margin-top: 8px;
 }
 
-/* 계약 조항 on the agreement: numbered articles on white, then the two
-   parties' confirmations side by side as the signature block. */
+/* 합의서의 계약 조항: 흰 바탕의 번호 붙은 조항, 그다음 서명란처럼 두 당사자의
+   확정을 나란히. */
 .contract-terms h2 small {
   color: var(--muted);
   font-size: 12px;
@@ -12116,8 +12080,8 @@ input[type="search"]::-webkit-search-cancel-button {
   }
 }
 
-/* 협찬 감사 카드뉴스 (report/ThanksCard.tsx): a 1080×1350 card on the
-   value cards' deep blue, rendered off screen and saved as a PNG. */
+/* 협찬 감사 카드뉴스 (report/ThanksCard.tsx): 값 카드의 진한 파랑 위에 놓인
+   1080×1350 카드로, 화면 밖에서 렌더해 PNG로 저장한다. */
 .card-export {
   position: fixed;
   top: 0;
@@ -12221,8 +12185,8 @@ input[type="search"]::-webkit-search-cancel-button {
   justify-self: start;
 }
 
-/* 협찬 물품 배송 on the agreement (ShipmentsPanel): each parcel as a row
-   with its lookup, then the row to note another. */
+/* 합의서의 협찬 물품 배송 (ShipmentsPanel): 택배마다 조회가 달린 한 줄, 그다음
+   다른 택배를 적는 줄. */
 .shipment-list {
   display: grid;
   gap: 10px;
@@ -12261,7 +12225,7 @@ input[type="search"]::-webkit-search-cancel-button {
   line-height: 1.6;
 }
 
-/* The row to note a parcel sits in its own silver box with room around it. */
+/* 택배를 적는 줄은 주위에 여백이 있는 자기만의 은색 상자에 놓인다. */
 .shipment-form {
   display: grid;
   grid-template-columns: minmax(140px, 0.8fr) minmax(160px, 1fr) minmax(160px, 1.2fr) auto;
@@ -12339,7 +12303,7 @@ input[type="search"]::-webkit-search-cancel-button {
   font-weight: var(--weight-body);
 }
 
-/* Each side's contact person, with a number to call. */
+/* 각 쪽의 담당자와 걸 수 있는 번호. */
 .agreement-contact a {
   color: var(--point-strong);
   font-weight: var(--weight-label);
@@ -12398,9 +12362,9 @@ input[type="search"]::-webkit-search-cancel-button {
   font-weight: var(--weight-label);
 }
 
-/* 상세 성과 리포트 (pages/InsightPage.tsx, report/insightSections.tsx): a
-   deep blue cover with the grade ring, the four headline figures, then white
-   section cards; the locked preview lists what it holds beside its price. */
+/* 상세 성과 리포트 (pages/InsightPage.tsx, report/insightSections.tsx): 등급
+   링이 있는 진한 파랑 표지, 네 가지 헤드라인 수치, 그다음 흰 섹션 카드. 잠긴
+   미리 보기는 담긴 내용을 가격 옆에 나열한다. */
 .insight-hero {
   --surface-tone: dark;
   position: relative;
@@ -13244,8 +13208,8 @@ input[type="search"]::-webkit-search-cancel-button {
   }
 }
 
-/* The deeper sections of the detailed report: shares as bars, the event's
-   facts, the drop-off between steps, tables, and two charts side by side. */
+/* 상세 리포트의 더 깊은 섹션: 막대로 된 비율, 행사의 사실, 단계 사이의 이탈,
+   표, 나란한 차트 둘. */
 .insight-overview {
   display: grid;
   gap: 18px;
@@ -13510,8 +13474,7 @@ input[type="search"]::-webkit-search-cancel-button {
   }
 }
 
-/* The PDF's four A4 pages: the same sections, tighter, and a deep blue
-   cover band on the first. */
+/* PDF의 A4 네 쪽: 같은 섹션을 더 촘촘하게, 첫 쪽에는 진한 파랑 표지 띠. */
 .insight-pdf {
   gap: 14px;
 }
@@ -13607,9 +13570,9 @@ input[type="search"]::-webkit-search-cancel-button {
   font-size: 11px;
 }
 
-/* What uniconnect does for this side (components/ValuePoints.tsx): three
-   needs as cards, the first in deep blue, each with the account's own
-   figure and the way into the feature. */
+/* uniconnect가 이 쪽에 해 주는 일 (components/ValuePoints.tsx): 필요 셋을
+   카드로, 첫 번째는 진한 파랑이며, 각각 계정 자신의 수치와 기능으로 가는 길이
+   있다. */
 .value-points {
   display: grid;
   gap: 28px;
@@ -13758,9 +13721,8 @@ input[type="search"]::-webkit-search-cancel-button {
   }
 }
 
-/* What sets uniconnect apart (components/WhyUniconnect.tsx): before and
-   after side by side, the after in deep blue, then the four things only it
-   does, then the members' counts. */
+/* uniconnect를 다르게 하는 것 (components/WhyUniconnect.tsx): 전과 후를 나란히,
+   후는 진한 파랑으로, 그다음 uniconnect만 하는 네 가지, 그다음 회원 수. */
 .why-section {
   display: grid;
   gap: 32px;
@@ -14019,8 +13981,8 @@ input[type="search"]::-webkit-search-cancel-button {
   }
 }
 
-/* Maintenance (switched on from /admin): a calm screen over the whole site
-   with the operators' message, until they switch it off. */
+/* 점검 (/admin에서 켠다): 운영자의 메시지를 담은 차분한 화면이 사이트 전체를
+   덮으며, 운영자가 끌 때까지 이어진다. */
 .maintenance-screen {
   position: fixed;
   inset: 0;
@@ -14049,10 +14011,9 @@ input[type="search"]::-webkit-search-cancel-button {
   line-height: 1.6;
 }
 
-/* The operators' notices across the top of the site (components/
-   SiteNotices.tsx): a slim tinted strip each, closed with the cross. They
-   sit above the page, so a hero pulled up under the header (the
-   dashboards') runs on behind them. */
+/* 사이트 맨 위에 걸리는 운영자의 공지 (components/SiteNotices.tsx): 옅게 물든
+   얇은 띠가 하나씩, 십자로 닫는다. 페이지 위에 놓이므로, 헤더 아래까지
+   끌어올려진 히어로(대시보드의 것)는 그 뒤로 이어진다. */
 .site-notices {
   position: relative;
   z-index: 5;
@@ -14107,15 +14068,14 @@ input[type="search"]::-webkit-search-cancel-button {
   background: rgba(255, 255, 255, 0.6);
 }
 
-/* The operators' console (/admin, pages/AdminPage.tsx), on its own page.
-   TailAdmin's layout (a white side menu in groups that narrows to icons, a
-   top bar with search, notices and the operator, figure cards with icon
-   tiles, paired weekly bars, a half-ring gauge and an area chart) in Toss's
-   look: a light gray canvas, white cards with soft corners, large bold
-   numbers, blue for action and gray for the rest. The console sets Toss's
-   palette over the app's tokens, so the shared buttons, tabs and cards
-   inside follow it. Blues and grays for text keep 4.5:1 on white; the
-   brighter blue is only for bars and lines. */
+/* 운영자 콘솔 (/admin, pages/AdminPage.tsx)은 자기만의 페이지에 있다.
+   TailAdmin의 레이아웃(아이콘으로 좁아지는, 그룹이 있는 흰 사이드 메뉴, 검색과
+   공지와 운영자가 있는 상단 바, 아이콘 타일이 붙은 수치 카드, 짝을 이룬 주간
+   막대, 반원 게이지, 영역 차트)을 Toss의 룩으로: 옅은 회색 캔버스, 부드러운
+   모서리의 흰 카드, 크고 굵은 숫자, 행동에는 파랑, 나머지는 회색. 콘솔은 앱의
+   토큰 위에 Toss의 팔레트를 얹으므로, 그 안의 공유 버튼, 탭, 카드가 따라간다.
+   글자의 파랑과 회색은 흰 바탕에서 4.5:1을 지키고, 더 밝은 파랑은 막대와 선에만
+   쓴다. */
 .console-body {
   --point: #1b64da;
   --point-strong: #1b64da;
@@ -14219,8 +14179,8 @@ input[type="search"]::-webkit-search-cancel-button {
   grid-template-columns: 84px minmax(0, 1fr);
 }
 
-/* The side menu: white, its groups headed in small gray capitals, the open
-   page in a tinted blue pill. */
+/* 사이드 메뉴: 흰색이고, 그룹은 작은 회색 대문자 제목이 붙으며, 열린 페이지는
+   옅은 파랑 알약. */
 .console-side {
   position: sticky;
   top: 0;
@@ -14346,7 +14306,7 @@ input[type="search"]::-webkit-search-cancel-button {
   color: var(--ink);
 }
 
-/* Narrowed to icons, on wide screens only (narrow ones use a drawer). */
+/* 아이콘으로 좁아진다. 넓은 화면에서만이다 (좁은 화면에서는 서랍을 쓴다). */
 @media (min-width: 961px) {
   .console.narrow .console-side {
     padding-inline: 14px;
@@ -14361,7 +14321,7 @@ input[type="search"]::-webkit-search-cancel-button {
     white-space: nowrap;
   }
 
-  /* Only the logo's mark shows. */
+  /* 로고의 마크만 보인다. */
   .console.narrow .console-brand {
     overflow: hidden;
     width: 40px;
@@ -14396,8 +14356,7 @@ input[type="search"]::-webkit-search-cancel-button {
   flex-direction: column;
 }
 
-/* The top bar: the menu switch, member search, the notices bell and the
-   operator, on white under a hairline. */
+/* 상단 바: 메뉴 스위치, 회원 검색, 공지 종, 운영자를 헤어라인 아래의 흰색 위에. */
 .console-bar {
   position: sticky;
   top: 0;
@@ -14645,7 +14604,7 @@ input[type="search"]::-webkit-search-cancel-button {
   font-size: 13px;
 }
 
-/* A figure card: an icon tile, the label and the number, a badge. */
+/* 수치 카드: 아이콘 타일, 라벨과 숫자, 배지. */
 .console-stat {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
@@ -14725,7 +14684,7 @@ input[type="search"]::-webkit-search-cancel-button {
   background: var(--console-blue-soft);
 }
 
-/* Paired weekly bars on grid lines. */
+/* 격자선 위의 짝을 이룬 주간 막대. */
 .console-bars {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -14786,7 +14745,7 @@ input[type="search"]::-webkit-search-cancel-button {
   font-size: 11px;
 }
 
-/* The acceptance rate as a half ring, three figures under it. */
+/* 수락률을 반원으로, 그 아래에 수치 셋. */
 .console-rate {
   align-content: space-between;
 }
@@ -14850,8 +14809,8 @@ input[type="search"]::-webkit-search-cancel-button {
   font-weight: var(--weight-strong);
 }
 
-/* What needs the operators: Toss's list rows with an icon, a count and a
-   chevron; rows with something waiting count in red. */
+/* 운영자에게 필요한 것: 아이콘, 개수, 쉐브론이 있는 Toss식 목록 줄. 기다리는
+   것이 있는 줄은 개수가 빨갛다. */
 .console-todo {
   display: grid;
   gap: 2px;
@@ -14952,7 +14911,7 @@ input[type="search"]::-webkit-search-cancel-button {
   background: var(--console-blue-soft);
 }
 
-/* Toss's segmented switch. */
+/* Toss의 세그먼트 스위치. */
 .console-segment {
   display: inline-flex;
   padding: 4px;
@@ -14976,7 +14935,7 @@ input[type="search"]::-webkit-search-cancel-button {
   box-shadow: 0 1px 3px rgba(0, 27, 55, 0.12);
 }
 
-/* Eight weeks as a line over a soft area, with each week's count under. */
+/* 8주를 부드러운 영역 위의 선으로, 아래에 주마다 개수. */
 .console-area {
   display: grid;
   gap: 10px;
@@ -15043,8 +15002,7 @@ input[type="search"]::-webkit-search-cancel-button {
   flex: 1;
 }
 
-/* A check box in Toss's way: a rounded square that fills blue with a
-   white tick. */
+/* Toss식 체크박스: 파랑으로 차오르며 흰 체크가 들어가는 둥근 정사각형. */
 .console-check {
   display: inline-flex;
   align-items: center;
@@ -15264,7 +15222,7 @@ input[type="search"]::-webkit-search-cancel-button {
   color: var(--muted);
 }
 
-/* The console's tools (pages/AdminTools.tsx). */
+/* 콘솔의 도구 (pages/AdminTools.tsx). */
 .console-filters.end {
   justify-content: flex-end;
 }
@@ -15415,9 +15373,8 @@ input[type="search"]::-webkit-search-cancel-button {
   justify-self: start;
 }
 
-/* The notice's showing period: a field like the form's boxes that opens
-   the site's month calendar (components/DatePicker.tsx) in a popover,
-   drawn in the console's flatter style. */
+/* 공지가 보이는 기간: 양식 상자와 같은 필드로, 팝오버에서 사이트의 월
+   달력(components/DatePicker.tsx)을 열며, 콘솔의 더 평평한 스타일로 그린다. */
 .console-period {
   position: relative;
   display: grid;
@@ -15523,7 +15480,7 @@ input[type="search"]::-webkit-search-cancel-button {
   font-size: 12px;
 }
 
-/* No gap across a week, so a period reads as one bar. */
+/* 한 주를 가로지르는 간격이 없어서 기간이 하나의 막대로 읽힌다. */
 .console-period-pop .date-picker-grid {
   gap: 2px 0;
 }
@@ -15673,8 +15630,8 @@ input[type="search"]::-webkit-search-cancel-button {
   }
 }
 
-/* The console's analysis, operations, content and system screens
-   (pages/AdminMore.tsx) and the member tools (pages/AdminMembers.tsx). */
+/* 콘솔의 분석, 운영, 콘텐츠, 시스템 화면 (pages/AdminMore.tsx)과 회원 도구
+   (pages/AdminMembers.tsx). */
 .console-hbars {
   display: grid;
   gap: 12px;
@@ -15938,7 +15895,7 @@ input[type="search"]::-webkit-search-cancel-button {
   float: right;
 }
 
-/* A document for the operators to check (components/DocumentField.tsx). */
+/* 운영자가 확인할 서류 (components/DocumentField.tsx). */
 .document-field {
   display: flex;
   flex-direction: column;
@@ -16151,7 +16108,7 @@ th[aria-sort="descending"] .console-sort span {
   width: 36px;
 }
 
-/* Beside an open member the table scrolls sideways rather than wrapping. */
+/* 열려 있는 회원 옆에서는 표가 줄바꿈하지 않고 옆으로 스크롤된다. */
 .console-split.open .console-table {
   display: block;
   overflow-x: auto;
@@ -16474,7 +16431,7 @@ th[aria-sort="descending"] .console-sort span {
   color: var(--ink-soft);
 }
 
-/* Dark mode for the console, from its top bar (kept in this browser). */
+/* 콘솔의 다크 모드, 상단 바에서 켠다 (이 브라우저에 보관). */
 .console-body[data-console-theme="dark"] {
   --point: #2a62d4;
   --point-strong: #7aa9ff;
@@ -16503,8 +16460,8 @@ th[aria-sort="descending"] .console-sort span {
   color-scheme: dark;
 }
 
-/* Blue words on dark tints use the lighter blue; the deeper --point stays
-   for fills with white words on them. */
+/* 어두운 색조 위의 파란 글자는 더 밝은 파랑을 쓴다. 더 짙은 --point는 흰 글자가
+   올라가는 채움에 남겨 둔다. */
 .console-body[data-console-theme="dark"]
   :is(
     .console-text-button,
@@ -16553,7 +16510,7 @@ th[aria-sort="descending"] .console-sort span {
   }
 }
 
-/* Narrow screens: the side menu becomes a drawer over a scrim. */
+/* 좁은 화면: 사이드 메뉴가 스크림 위의 서랍이 된다. */
 @media (max-width: 960px) {
   .console,
   .console.narrow {
@@ -16613,7 +16570,7 @@ th[aria-sort="descending"] .console-sort span {
   }
 }
 
-/* Phones: the figure cards two to a row, the rest full width. */
+/* 휴대폰: 수치 카드는 한 줄에 둘, 나머지는 전체 너비. */
 @media (max-width: 640px) {
   .console-grid {
     gap: 12px;
@@ -16647,8 +16604,8 @@ th[aria-sort="descending"] .console-sort span {
   }
 }
 
-/* 캠퍼스 포트폴리오 on 성과 분석 (components/CampusPortfolio.tsx): totals,
-   three groupings as ROAS bars, the best and weakest, and the budget planner. */
+/* 성과 분석의 캠퍼스 포트폴리오 (components/CampusPortfolio.tsx): 합계, ROAS
+   막대로 된 세 가지 묶음, 가장 좋은 것과 가장 약한 것, 예산 계획. */
 .portfolio-card {
   display: grid;
   gap: 18px;
@@ -16859,8 +16816,8 @@ th[aria-sort="descending"] .console-sort span {
   }
 }
 
-/* 요금제 on a brand's 내 정보 (components/PlanCard.tsx): the plan it is on,
-   then the free plan and Pro side by side, the current one in deep blue. */
+/* 브랜드의 내 정보에 있는 요금제 (components/PlanCard.tsx): 쓰고 있는 요금제,
+   그다음 무료 요금제와 Pro를 나란히, 현재 것은 진한 파랑. */
 .plan-status {
   margin: 0;
   color: var(--ink);
@@ -16943,8 +16900,8 @@ th[aria-sort="descending"] .console-sort span {
   }
 }
 
-/* 협찬액과 수수료 on the agreement: the value, cash and in-kind, and the
-   platform fee as two white tiles, or the form to write the value. */
+/* 합의서의 협찬액과 수수료: 가치, 현금과 현물, 플랫폼 수수료를 흰 타일 둘로,
+   또는 가치를 쓰는 양식. */
 .value-panel h2 .subtle-link {
   margin-left: auto;
 }
@@ -17023,8 +16980,7 @@ th[aria-sort="descending"] .console-sort span {
   gap: 8px;
 }
 
-/* Paying (modals/PaymentModal.tsx) and the payment history
-   (modals/PaymentsModal.tsx). */
+/* 결제 (modals/PaymentModal.tsx)와 결제 내역 (modals/PaymentsModal.tsx). */
 .payment-sheet {
   display: grid;
   gap: 16px;
@@ -17081,8 +17037,8 @@ th[aria-sort="descending"] .console-sort span {
   font-weight: var(--weight-body);
 }
 
-/* A check row in a popup keeps its box beside its words: the popups' label
-   rule stacks label contents. */
+/* 팝업의 체크 줄은 상자를 글자 옆에 둔다: 팝업의 라벨 규칙은 라벨의 내용을
+   쌓는다. */
 .modal label.check-row {
   flex-direction: row;
   align-items: center;
@@ -17198,8 +17154,8 @@ th[aria-sort="descending"] .console-sort span {
   color: var(--point-strong);
 }
 
-/* The event's goals (행사 목표): each figure on a white tile, then the way to
-   set them while the event is still to come. */
+/* 행사 목표: 각 수치를 흰 타일에, 그다음 행사가 아직 오지 않은 동안 그것을
+   정하는 방법. */
 .goals-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr));
@@ -17239,10 +17195,9 @@ th[aria-sort="descending"] .console-sort span {
   margin: 0;
 }
 
-/* How the sponsorship is confirmed (협찬 확인 방식): whether both sides
-   have settled it, each method with the side that confirms it and its
-   count, this side's venue page and PIN, and, while choosing, a card per
-   method (as many as wanted) with the sides to choose from. */
+/* 협찬 확인 방식: 양쪽이 확정했는지, 각 방식과 그것을 확인하는 쪽 및 집계,
+   이쪽의 현장 페이지와 PIN, 그리고 고르는 동안에는 방식마다 고를 수 있는 쪽이
+   있는 카드(원하는 만큼). */
 .methods-panel h2 small.settled {
   color: var(--point-strong);
 }
@@ -17366,7 +17321,7 @@ th[aria-sort="descending"] .console-sort span {
   accent-color: var(--point);
 }
 
-/* A store visit is the brand's to confirm, so the other sides stay greyed. */
+/* 매장 방문은 브랜드가 확인하므로 다른 쪽은 회색으로 둔다. */
 .method-side label:has(input:disabled) {
   color: var(--muted);
 }
@@ -17432,8 +17387,8 @@ th[aria-sort="descending"] .console-sort span {
   background: var(--point-soft);
 }
 
-/* The box in its own column, so a long item wraps beside it, and the day
-   it was done under the words. */
+/* 상자는 자기 열에 있어서, 긴 항목이 그 옆에서 줄바꿈되고, 한 날짜는 글자
+   아래에 온다. */
 .agreement-check {
   display: grid;
   grid-template-columns: 20px minmax(0, 1fr);
@@ -17595,7 +17550,7 @@ th[aria-sort="descending"] .console-sort span {
   font-size: 13px;
 }
 
-/* The file picker is the whole button, invisible over it. */
+/* 파일 선택기가 버튼 전체이며, 그 위에서 보이지 않는다. */
 .agreement-upload {
   position: relative;
   display: inline-flex;
@@ -17714,8 +17669,8 @@ th[aria-sort="descending"] .console-sort span {
   }
 }
 
-/* Stars for a review or an average (components/Stars.tsx): silver stars
-   with deep blue ones over them, cut at the rating. */
+/* 후기나 평균의 별 (components/Stars.tsx): 은색 별 위에 진한 파랑 별을 얹어,
+   점수에서 자른다. */
 .stars {
   position: relative;
   display: inline-flex;
@@ -17747,7 +17702,7 @@ th[aria-sort="descending"] .console-sort span {
   fill: var(--point);
 }
 
-/* A card's stars among its tags (WorkCard.tsx). */
+/* 카드의 별은 태그 사이에 (WorkCard.tsx). */
 .work-tags > span.tag-rating {
   gap: 4px;
   color: var(--ink);
@@ -17760,10 +17715,10 @@ th[aria-sort="descending"] .console-sort span {
   font-weight: var(--weight-body);
 }
 
-/* A brand whose business registration the National Tax Service confirmed. */
+/* 국세청이 사업자 등록을 확인한 브랜드. */
 .work-tags > span.tag-verified,
-/* The match beam (components/MatchBeam.tsx): the two marks joined by a
-   silver line a blue light runs along, the match above its middle. */
+/* 매칭 빔 (components/MatchBeam.tsx): 두 마크를 은색 선으로 잇고 그 위로 파란
+   빛이 달리며, 매칭은 가운데 위에 놓는다. */
 .match-beam {
   position: relative;
   display: grid;
@@ -17804,7 +17759,7 @@ th[aria-sort="descending"] .console-sort span {
   background: var(--line-strong);
 }
 
-/* The light: a short blue glow sliding from the viewer to the listing. */
+/* 빛: 보는 사람에서 리스팅으로 미끄러지는 짧은 파란 광채. */
 .match-beam-line::after {
   position: absolute;
   inset: 0 auto 0 0;
@@ -17843,12 +17798,12 @@ th[aria-sort="descending"] .console-sort span {
   font-style: normal;
 }
 
-/* Numbers roll like an odometer (components/AnimatedNumber.tsx): each
-   digit stays in the text, invisible, with its 0-9 strip drawn over it and
-   turned to the digit, the right-hand digits a moment later. clip-path
-   clips the strip without moving the digit's baseline. */
-/* A number's own size and color, whatever a layout gives its other spans
-   (as .hero-stats does its labels). */
+/* 숫자가 주행 거리계처럼 굴러간다 (components/AnimatedNumber.tsx): 각 숫자는
+   보이지 않게 글자에 남아 있고, 그 위에 0~9 띠를 그려 그 숫자로 돌리며, 오른쪽
+   자리는 조금 늦게 따라간다. clip-path가 숫자의 기준선을 움직이지 않고 띠를
+   자른다. */
+/* 레이아웃이 다른 span에 무엇을 주든 숫자 자신의 크기와 색을 따른다
+   (.hero-stats가 라벨에 그러하듯). */
 span.odometer,
 .odometer .odometer-digit {
   color: inherit;
@@ -17856,7 +17811,7 @@ span.odometer,
   font-weight: inherit;
 }
 
-/* Every digit as wide as the others, so none jumps while it turns. */
+/* 돌아가는 동안 튀지 않도록 모든 숫자가 같은 너비를 갖는다. */
 span.odometer {
   font-variant-numeric: tabular-nums;
 }
@@ -17966,7 +17921,7 @@ span.odometer {
   font-size: 12px;
 }
 
-/* A review (components/ReviewCard.tsx), on the agreement and the detail page. */
+/* 합의서와 상세 페이지의 후기 (components/ReviewCard.tsx). */
 .review-card {
   display: flex;
   flex-direction: column;
@@ -18023,7 +17978,7 @@ span.odometer {
   font-weight: var(--weight-label);
 }
 
-/* The reviewed side's reply, set in under its review. */
+/* 후기를 받은 쪽의 답변: 후기 아래로 들여서. */
 .review-reply {
   display: grid;
   gap: 6px;
@@ -18073,7 +18028,7 @@ span.odometer {
   padding: 0 18px;
 }
 
-/* Writing a review on the agreement: stars to press, tags to pick, a line. */
+/* 합의서에서 후기 쓰기: 누를 별, 고를 태그, 한 줄. */
 .review-panel {
   display: flex;
   flex-direction: column;
@@ -18123,8 +18078,7 @@ span.odometer {
   cursor: pointer;
 }
 
-/* Each input invisible over its whole star or tag, so a press anywhere on
-   it picks it. */
+/* 각 input은 별이나 태그 전체 위에서 보이지 않으므로, 어디를 눌러도 선택된다. */
 .star-input input,
 .review-tag-input input,
 .post-type-input input {
@@ -18209,10 +18163,9 @@ span.odometer {
   resize: vertical;
 }
 
-/* A brand's or group's page as a profile (pages/MatchDetailPage.tsx): the
-   card (cover, mark, who and where, the ways to get in touch) beside its
-   two tabs on wide screens, held in view as they scroll, and above them on
-   phones. */
+/* 프로필로서의 브랜드나 단체 페이지 (pages/MatchDetailPage.tsx): 카드(커버,
+   마크, 누구이고 어디인지, 연락할 방법)가 넓은 화면에서는 두 탭 옆에서
+   스크롤해도 화면에 남고, 휴대폰에서는 그 위에 있다. */
 .profile-layout {
   display: grid;
   grid-template-columns: minmax(300px, 400px) minmax(0, 1fr);
@@ -18229,8 +18182,7 @@ span.odometer {
   box-shadow: var(--ring), var(--shadow);
 }
 
-/* The cover: Antipode's light on deep blue, the CSS gradient staying when
-   WebGL is missing. */
+/* 커버: 진한 파랑 위의 Antipode 빛. WebGL이 없으면 CSS 그라디언트가 남는다. */
 .profile-cover {
   --surface-tone: dark;
   position: relative;
@@ -18240,7 +18192,7 @@ span.odometer {
   background: radial-gradient(110% 90% at 70% 30%, #1f4cb3 0%, #0b1a3e 72%);
 }
 
-/* On frosted navy glass, so it stays readable whatever the light does. */
+/* 빛이 어떻게 변하든 읽히도록 서리 낀 네이비 유리 위에. */
 .profile-cover .eyebrow {
   position: absolute;
   top: 16px;
@@ -18252,7 +18204,7 @@ span.odometer {
   color: #fff;
 }
 
-/* The mark in a white ring over the cover's lower edge. */
+/* 커버의 아래쪽 가장자리에 걸친 흰 링 속의 마크. */
 .profile-avatar {
   position: relative;
   width: 116px;
@@ -18348,7 +18300,7 @@ span.odometer {
   margin: 0;
 }
 
-/* The main way in across the card, and asking a question under it. */
+/* 카드 너비의 주된 연결 방법과, 그 아래의 질문하기. */
 .profile-actions {
   display: grid;
   gap: 8px;
@@ -18361,7 +18313,7 @@ span.odometer {
   font-size: 15px;
 }
 
-/* The two tabs share the row equally. */
+/* 두 탭은 한 줄을 똑같이 나눈다. */
 .profile-main > .match-tabs {
   display: grid;
   width: 100%;
@@ -18379,7 +18331,7 @@ span.odometer {
   padding-top: 16px;
 }
 
-/* Two figures on a faint blue card: each number, what it is, a line under. */
+/* 옅은 파랑 카드 위의 수치 둘: 각 숫자, 그것이 무엇인지, 아래 한 줄. */
 .profile-figures {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -18428,8 +18380,7 @@ span.odometer {
   line-height: 1.45;
 }
 
-/* Under the card, each part as a row: its name, a bar and the share it
-   reached. */
+/* 카드 아래에서 각 항목을 한 줄로: 이름, 막대, 도달한 비율. */
 .profile-bars {
   display: grid;
   gap: 16px;
@@ -18568,8 +18519,7 @@ span.odometer {
   font-size: 13px;
 }
 
-/* The latest review: the writer's initial, the event, the stars and words,
-   then who and when. */
+/* 가장 최근의 후기: 작성자의 이니셜, 행사, 별과 글, 그다음 누가 언제. */
 .profile-review {
   display: grid;
   grid-template-columns: 48px minmax(0, 1fr);
@@ -18679,8 +18629,7 @@ span.odometer {
   }
 }
 
-/* Printing an agreement (인쇄 · PDF 저장): the sheet and the items, without
-   the site around them or the buttons. */
+/* 합의서 인쇄 (인쇄 · PDF 저장): 시트와 항목만, 주변 사이트와 버튼은 없이. */
 @media print {
   body:has(.agreement-view) .site-header,
   body:has(.agreement-view) .site-footer,
@@ -18723,8 +18672,8 @@ span.odometer {
   opacity: 0.75;
 }
 
-/* An accepted sponsorship's steps under its status: dots on a line, deep
-   blue up to today, a ringed dot for the step under way, silver after. */
+/* 수락된 협찬의 단계를 상태 아래에: 선 위의 점들, 오늘까지는 진한 파랑, 진행
+   중인 단계는 링이 둘린 점, 그 뒤는 은색. */
 .request-progress {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -18744,7 +18693,7 @@ span.odometer {
   text-align: center;
 }
 
-/* The line to the previous step, from its dot to this one. */
+/* 이전 단계로 가는 선: 그 점에서 이 점까지. */
 .request-progress li + li::before {
   position: absolute;
   top: 6px;
@@ -18895,7 +18844,7 @@ span.odometer {
   font-weight: var(--weight-label);
 }
 
-/* Each row's detailed report, at its end (pages/AnalyticsPage.tsx). */
+/* 각 줄의 상세 리포트는 그 끝에 (pages/AnalyticsPage.tsx). */
 .analytics-row > .analytics-report {
   display: flex;
   justify-content: flex-end;
@@ -18926,12 +18875,12 @@ span.odometer {
   font-size: 12px;
 }
 
-/* Where the analytics' value and sales come from, under the table. */
+/* 분석의 가치와 매출이 어디서 오는지를 표 아래에. */
 .analytics-hint {
   margin: 14px 0 0;
 }
 
-/* The group's report: each sponsor's share of the event, one column fewer. */
+/* 단체의 리포트: 스폰서별 행사 몫, 열이 하나 적다. */
 .sponsor-card {
   margin-top: 28px;
 }
@@ -18940,8 +18889,8 @@ span.odometer {
   grid-template-columns: minmax(0, 2.2fr) repeat(4, minmax(0, 1fr));
 }
 
-/* The group's sponsorship record on the report page: what it adds up to,
-   then a row per event that opens its report. */
+/* 리포트 페이지의 단체의 협찬 기록: 무엇이 합쳐지는지, 그다음 행사마다 리포트를
+   여는 줄. */
 .history-card {
   display: grid;
   gap: 16px;
@@ -19062,7 +19011,7 @@ span.odometer {
   font-weight: var(--weight-body);
 }
 
-/* Student events a brand agreed to sponsor, on its campaign calendar. */
+/* 브랜드가 협찬하기로 한 학생 행사를 그 캠페인 캘린더에. */
 .status-협찬확정 {
   background: var(--violet-soft);
   color: var(--violet);
@@ -19077,8 +19026,7 @@ span.odometer {
   background: var(--violet);
 }
 
-/* Cards that hold forms, calendars, feeds and tables: white with a
-   hairline and large corners. */
+/* 양식, 캘린더, 피드, 표를 담는 카드: 헤어라인이 있는 흰색에 큰 모서리. */
 .form-card,
 .calendar-card,
 .day-panel,
@@ -19114,7 +19062,7 @@ span.odometer {
   font-weight: var(--weight-label);
 }
 
-/* Unread conversations and proposals waiting for an answer. */
+/* 읽지 않은 대화와 답을 기다리는 제안. */
 .chat-row.unread,
 .request-card.pending {
   box-shadow:
@@ -19140,11 +19088,10 @@ span.odometer {
   font-weight: var(--weight-label);
 }
 
-/* Narrower screens. Under 1360px the next-event pill and the role switch
-   leave the header (both stay in Menu and the footer); under 1100px the
-   page links move into Menu and side-by-side layouts stack; under 720px
-   (phones) the gutters shrink, cards go one to a row, Menu shrinks to a
-   round icon and popups rise from the bottom. */
+/* 좁은 화면. 1360px 아래에서는 다음 행사 알약과 역할 스위치가 헤더를 떠난다(둘
+   다 메뉴와 푸터에 남는다). 1100px 아래에서는 페이지 링크가 메뉴로 옮겨 가고
+   나란한 레이아웃이 쌓인다. 720px(휴대폰) 아래에서는 여백이 줄고, 카드는 한
+   줄에 하나가 되고, 메뉴는 둥근 아이콘으로 줄고, 팝업이 아래에서 올라온다. */
 @media (max-width: 1360px) {
   .event-pill,
   .role-switch {
@@ -19183,7 +19130,7 @@ span.odometer {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  /* Two a row, so an odd number of tiles starts with a wide one. */
+  /* 한 줄에 둘씩. 타일 수가 홀수이면 넓은 것으로 시작한다. */
   .power-stats.odd > li:first-child {
     grid-column: 1 / -1;
   }
@@ -19242,7 +19189,7 @@ span.odometer {
     padding-bottom: 72px;
   }
 
-  /* The header keeps the logo, the account buttons and Menu. */
+  /* 헤더에는 로고, 계정 버튼, 메뉴가 남는다. */
   .site-header,
   .nav-group {
     gap: 6px;
@@ -19334,9 +19281,8 @@ span.odometer {
     font-size: 34px;
   }
 
-  /* Tabs stretch across the screen, sitting closer so five labels fit at
-     360px, and scroll sideways on narrower screens; filter chips scroll
-     sideways. */
+  /* 탭은 화면 전체에 걸쳐 늘어나며 라벨 다섯이 360px에 들어가도록 더 가까이
+     붙고, 더 좁은 화면에서는 옆으로 스크롤된다. 필터 칩은 옆으로 스크롤된다. */
   .match-filters {
     margin-bottom: 24px;
   }
@@ -19365,7 +19311,7 @@ span.odometer {
     flex: 0 0 auto;
   }
 
-  /* The band stacks under the headline over a shade from the top. */
+  /* 띠는 위에서 오는 음영 위의 헤드라인 아래로 쌓인다. */
   .hero-clip::after {
     background: linear-gradient(180deg, rgba(8, 20, 52, 0.15) 0%, rgba(8, 20, 52, 0.66) 22%, rgba(8, 20, 52, 0.78) 50%, rgba(8, 20, 52, 0.88) 100%);
   }
@@ -19428,10 +19374,9 @@ span.odometer {
     gap: 16px;
   }
 
-  /* On a phone a card is a compact row: the logo with the category and
-     name beside it and the score at the end, then the tags and actions,
-     so three or so fit a screen. The name opens the details, so the arrow
-     button stays off. */
+  /* 휴대폰에서 카드는 컴팩트한 한 줄이다: 로고와 그 옆의 카테고리와 이름, 끝에
+     점수, 그다음 태그와 액션이어서, 한 화면에 셋쯤 들어간다. 이름이 상세를
+     열므로 화살표 버튼은 쓰지 않는다. */
   .work-card {
     display: grid;
     min-height: 0;
@@ -19465,7 +19410,7 @@ span.odometer {
     display: none;
   }
 
-  /* The heart takes the end of the actions row, under the ring. */
+  /* 하트는 액션 줄의 끝, 링 아래에 놓인다. */
   .work-card:has(.save-toggle) {
     grid-template-areas:
       "mark meta ring"
@@ -19530,8 +19475,8 @@ span.odometer {
       0 12px 24px -12px rgba(19, 48, 111, 0.4);
   }
 
-  /* A chain's wordmark needs its width, so it takes a row of its own above
-     the name instead of the logo column. */
+  /* 체인의 워드마크는 자기 너비가 필요하므로, 로고 열 대신 이름 위에 한 줄을
+     따로 차지한다. */
   .work-card:has(.match-logo.wordmark) {
     grid-template-areas:
       "mark mark mark"
@@ -19563,8 +19508,8 @@ span.odometer {
     margin-top: 48px;
   }
 
-  /* The paragraph sits under the title, where the cards scrolling up over
-     the stage reach it last, and the chain takes the lower half. */
+  /* 문단은 제목 아래에 있어서, 무대 위로 스크롤되어 올라오는 카드가 마지막에
+     닿고, 체인은 아래쪽 절반을 차지한다. */
   .chain-stage .chrome-scene {
     top: 46%;
     bottom: 2%;
@@ -19598,7 +19543,7 @@ span.odometer {
     margin-bottom: 44px;
   }
 
-  /* Five dots fit a phone: smaller, with the labels under them. */
+  /* 점 다섯이 휴대폰에 들어간다: 더 작게, 라벨은 그 아래에. */
   .stepper {
     --dot: 44px;
     gap: 28px;
@@ -19719,7 +19664,7 @@ span.odometer {
     flex: 1;
   }
 
-  /* The footer card grows with its copy, the rings below it. */
+  /* 푸터 카드는 본문에 맞춰 커지고, 링은 그 아래에 온다. */
   .footer-stage {
     min-height: 0;
     margin: 0 8px;
@@ -19816,7 +19761,7 @@ span.odometer {
     padding: 18px;
   }
 
-  /* Cancel and register share the width, register larger. */
+  /* 취소와 등록이 너비를 나누고, 등록이 더 크다. */
   .create-actions {
     display: grid;
     grid-template-columns: 1fr 2fr;
@@ -19826,9 +19771,9 @@ span.odometer {
     padding: 0;
   }
 
-  /* Calendar first, day details below. The calendar takes more of the
-     width, and days grow taller to name up to two events in small labels
-     in their status color, then "+n". */
+  /* 캘린더가 먼저, 날짜 세부 정보는 그 아래에. 캘린더가 너비를 더 차지하고,
+     날짜 칸이 높아져서 행사를 상태 색의 작은 라벨로 두 개까지 이름을 보이고,
+     그다음 "+n". */
   .calendar-card {
     padding: 18px 10px;
   }
@@ -19862,8 +19807,8 @@ span.odometer {
     gap: 2px;
   }
 
-  /* A name wraps over up to three lines (two when the day has two), so
-     events that start alike still read apart. */
+  /* 이름은 세 줄까지 줄바꿈한다 (그날 행사가 둘이면 두 줄). 비슷하게 시작하는
+     행사도 구별되어 읽힌다. */
   .day-event {
     display: -webkit-box;
     padding: 2px;
@@ -19923,7 +19868,7 @@ span.odometer {
     width: 100%;
   }
 
-  /* Each sponsorship becomes a small card: event on top, numbers below. */
+  /* 각 협찬은 작은 카드가 된다: 위에 행사, 아래에 숫자. */
   .analytics-row.head {
     display: none;
   }
@@ -19967,7 +19912,7 @@ span.odometer {
     margin-top: 14px;
   }
 
-  /* SNS: kind, account and delete on one line, followers under them. */
+  /* SNS: 종류, 계정, 삭제를 한 줄에, 팔로워는 그 아래에. */
   .edit-row.sns,
   .edit-row.offer {
     grid-template-columns: 120px minmax(0, 1fr) 36px;
@@ -20019,7 +19964,7 @@ span.odometer {
   }
 }
 
-/* Small phones. */
+/* 작은 휴대폰. */
 @media (max-width: 380px) {
   .match-logo.large {
     width: 64px;
@@ -20040,8 +19985,8 @@ span.odometer {
   }
 }
 
-/* The dashboards' FAQ (components/FaqSection.tsx): questions as silver
-   rows; a plus turns to a cross as the answer opens under it. */
+/* 대시보드의 FAQ (components/FaqSection.tsx): 질문을 은색 줄로. 답이 그
+   아래에서 열리면서 더하기가 엑스로 바뀐다. */
 .faq-section {
   padding: 24px 0 72px;
 }
@@ -20108,12 +20053,11 @@ span.odometer {
   font-size: 14px;
 }
 
-/* The help center (pages/FaqPage.tsx): a deep blue mesh banner asking how
-   it can help, with the search in a white pill and the link that opens
-   the box for asking the operators; the topics as white cards; then the
-   questions. */
-/* Not clipped, so the search suggestions can drop past its edge; the mesh
-   keeps to the rounded corners on its own. */
+/* 도움말 센터 (pages/FaqPage.tsx): 무엇을 도와줄지 묻는 진한 파랑 메시 배너, 흰
+   알약 안의 검색과 운영자에게 묻는 상자를 여는 링크, 주제를 흰 카드로, 그다음
+   질문. */
+/* 잘리지 않으므로 검색 제안이 가장자리를 넘어 내려올 수 있다. 메시는 스스로
+   둥근 모서리 안에 머문다. */
 .help-hero {
   --surface-tone: dark;
   position: relative;
@@ -20212,7 +20156,7 @@ span.odometer {
   background: var(--point-hover);
 }
 
-/* Questions the search matches, dropping down under it to pick from. */
+/* 검색이 맞춘 질문: 그 아래로 내려와 고를 수 있다. */
 .help-suggestions {
   position: absolute;
   z-index: 3;
@@ -20372,7 +20316,7 @@ span.odometer {
   max-width: none;
 }
 
-/* Asking the operators (modals/AskModal.tsx). */
+/* 운영자에게 묻기 (modals/AskModal.tsx). */
 .ask-card {
   display: flex;
   flex-direction: column;
@@ -20559,8 +20503,8 @@ span.odometer {
   }
 }
 
-/* The 404 page (pages/NotFoundPage.tsx): the role's pages as silver rows
-   under the way home. */
+/* 404 페이지 (pages/NotFoundPage.tsx): 그 역할의 페이지를 은색 줄로, 집으로
+   가는 길 아래에. */
 .not-found-links {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
@@ -20599,9 +20543,9 @@ span.odometer {
   color: var(--muted);
 }
 
-/* The terms of service and privacy policy (pages/LegalPage.tsx): a draft
-   note and the effective date, then numbered sections in a reading column.
-   The data table stacks into one card per row on a phone. */
+/* 이용약관과 개인정보처리방침 (pages/LegalPage.tsx): 초안 안내와 시행일, 그다음
+   읽기 좋은 단의 번호 붙은 섹션. 데이터 표는 휴대폰에서 줄마다 카드 하나로
+   쌓인다. */
 .legal-page .match-tabs {
   margin-top: 28px;
 }
@@ -20791,8 +20735,7 @@ span.odometer {
   }
 }
 
-/* The two documents in the footer's last line; the privacy policy stands
-   out, as Korean sites show it. */
+/* 푸터 마지막 줄의 두 문서: 한국 사이트가 하듯 개인정보처리방침이 눈에 띈다. */
 .footer-policies {
   display: flex;
   flex-wrap: wrap;
@@ -20805,7 +20748,7 @@ span.odometer {
   font-weight: var(--weight-label);
 }
 
-/* The documents linked from the sign-up agreement. */
+/* 가입 동의서에서 연결되는 문서. */
 .terms-check a {
   color: var(--point-strong);
   font-weight: var(--weight-label);
@@ -20813,9 +20756,9 @@ span.odometer {
   text-underline-offset: 3px;
 }
 
-/* Swiping between screens (lib/swipe.ts): a round arrow follows the swipe
-   in from the left for back and from the right for forward, and fills deep
-   blue once letting go will move. */
+/* 화면 사이의 스와이프 (lib/swipe.ts): 둥근 화살표가 스와이프를 따라 뒤로는
+   왼쪽에서, 앞으로는 오른쪽에서 들어오고, 손을 놓으면 이동할 상태가 되면 진한
+   파랑으로 채워진다. */
 .swipe-hint {
   --progress: 0;
   position: fixed;
@@ -20853,13 +20796,12 @@ span.odometer {
   scale: 1.08;
 }
 
-/* Motion. Pages, lists and popups ease in; headings cascade in letter by
-   letter and blocks rise out of a blur as they scroll into view (Stride's
-   reveals: RevealText.tsx, lib/reveal.ts); buttons give way when pressed
-   and ripple from the press (lib/ripple.ts); cards, pills and rows answer
-   the pointer; bars grow, score rings draw and numbers count up
-   (AnimatedNumber.tsx). With reduced motion everything settles at once
-   (end of this section). */
+/* 모션. 페이지, 목록, 팝업이 부드럽게 들어온다. 제목은 글자 하나씩 연쇄적으로
+   들어오고 블록은 스크롤해 들어오면 흐림에서 떠오른다 (Stride의 리빌:
+   RevealText.tsx, lib/reveal.ts). 버튼은 누르면 물러나고 누른 곳에서 물결이
+   인다 (lib/ripple.ts). 카드, 알약, 줄은 포인터에 반응한다. 막대가 자라고, 점수
+   링이 그려지고, 숫자가 올라간다 (AnimatedNumber.tsx). 모션 줄이기에서는 모든
+   것이 한 번에 자리 잡는다 (이 섹션의 끝). */
 
 @keyframes rise-in {
   from {
@@ -20887,7 +20829,7 @@ span.odometer {
   }
 }
 
-/* Each page change (App.tsx keys the wrapper) and its title. */
+/* 페이지가 바뀔 때마다(App.tsx가 래퍼에 key를 준다)와 그 제목. */
 .page-enter {
   animation: rise-in 0.45s var(--ease-out) backwards;
 }
@@ -20896,8 +20838,8 @@ span.odometer {
   animation: rise-in 0.4s var(--ease-out) backwards;
 }
 
-/* Cards and rows arrive one after another. Lists re-key on tab, month or
-   day changes, so their items arrive again. */
+/* 카드와 줄이 차례로 들어온다. 목록은 탭, 월, 날짜가 바뀔 때 key가 바뀌므로
+   항목이 다시 들어온다. */
 .stagger > * {
   animation: rise-in 0.5s var(--ease-out) backwards;
 }
@@ -20935,7 +20877,7 @@ span.odometer {
   animation: fade-in 0.35s var(--ease-out) backwards;
 }
 
-/* Find pages: cards slide in from the side of the tab or chip picked. */
+/* 찾기 페이지: 고른 탭이나 칩 쪽에서 카드가 미끄러져 들어온다. */
 .stagger.slide > * {
   animation-name: slide-in-forward;
 }
@@ -20958,9 +20900,9 @@ span.odometer {
   }
 }
 
-/* Back and forward just fade the page in, as Safari's own swipe already
-   slides it; after a swipe of this app's own (lib/swipe.ts), the page
-   arrives from the side it was swiped from. */
+/* 뒤로·앞으로는 페이지를 페이드로만 들여온다. Safari 자체 스와이프가 이미
+   미끄러뜨리기 때문이다. 이 앱 자체의 스와이프(lib/swipe.ts) 뒤에는 페이지가
+   스와이프해 온 쪽에서 들어온다. */
 .page-enter.from-history {
   animation-name: fade-in;
   animation-duration: 0.25s;
@@ -20994,8 +20936,8 @@ span.odometer {
   }
 }
 
-/* Going back, the screen leaves to the right and the earlier one comes in
-   from the left; going forward, the other way round. */
+/* 뒤로 갈 때는 화면이 오른쪽으로 나가고 이전 화면이 왼쪽에서 들어오며, 앞으로
+   갈 때는 반대다. */
 [data-swipe-out="back"] .page-enter {
   animation: slide-out-right 0.16s var(--ease-in, ease-in) forwards;
 }
@@ -21016,7 +20958,7 @@ span.odometer {
   animation: none;
 }
 
-/* Buttons sink a little while pressed; large cards sink less. */
+/* 버튼은 누르는 동안 조금 가라앉고, 큰 카드는 덜 가라앉는다. */
 button {
   transition:
     transform 0.18s var(--ease-out),
@@ -21049,7 +20991,7 @@ button:active:not(:disabled) {
   transform: scale(0.98);
 }
 
-/* The ripple layer takes the button's shape and sits behind its label. */
+/* 물결 레이어는 버튼의 모양을 따르고 라벨 뒤에 놓인다. */
 .ripple-layer {
   position: absolute;
   z-index: -1;
@@ -21116,8 +21058,8 @@ button:active:not(:disabled) {
   }
 }
 
-/* Popups: dialogs scale in over a fading backdrop (phones slide them up
-   from the bottom); the toast and the + button pop in. */
+/* 팝업: 다이얼로그는 흐려지는 백드롭 위로 커지며 들어오고 (휴대폰에서는
+   아래에서 올라온다), 토스트와 + 버튼은 튀어 나온다. */
 .modal-backdrop {
   animation: fade-in 0.2s ease-out;
 }
@@ -21145,9 +21087,8 @@ button:active:not(:disabled) {
   }
 }
 
-/* Closing: dialogs slide down over a fading backdrop (off the bottom on
-   phones), and the toast sinks away. Presence.tsx keeps them mounted for
-   0.26s. */
+/* 닫힐 때: 다이얼로그가 흐려지는 백드롭 위로 내려가고(휴대폰에서는 아래로
+   빠진다), 토스트는 가라앉는다. Presence.tsx가 0.26초 동안 마운트해 둔다. */
 .modal-backdrop.closing {
   pointer-events: none;
   animation: fade-out 0.24s ease-in forwards;
@@ -21205,7 +21146,7 @@ button:active:not(:disabled) {
   }
 }
 
-/* The unread dot breathes. */
+/* 읽지 않은 점이 숨 쉰다. */
 .notification-dot {
   animation: dot-pulse 2.2s ease-in-out infinite;
 }
@@ -21216,8 +21157,8 @@ button:active:not(:disabled) {
   }
 }
 
-/* Stride's card reveal (lib/reveal.ts): marked blocks rise 24px out of a
-   12px blur the first time they scroll into view, each after its own delay. */
+/* Stride의 카드 리빌 (lib/reveal.ts): 표시된 블록은 처음 스크롤해 들어올 때
+   12px 블러에서 24px 떠오르며, 각자의 지연 뒤에 시작한다. */
 .reveal-ready [data-reveal] {
   transition:
     opacity 1.1s var(--ease-quart),
@@ -21232,9 +21173,9 @@ button:active:not(:disabled) {
   transform: translateY(24px);
 }
 
-/* Stride's heading cascade (RevealText.tsx): each letter (or word) rises
-   16px out of an 8px blur, starting at its share of the 1.4s run (--s).
-   Words never break inside, and lines set by hand stay lines. */
+/* Stride의 제목 캐스케이드 (RevealText.tsx): 각 글자(또는 단어)가 8px 블러에서
+   16px 떠오르며, 1.4초 실행 중 자기 몫의 지점에서 시작한다 (--s). 단어는 안에서
+   끊기지 않고, 손으로 나눈 줄은 줄로 남는다. */
 .reveal-line {
   display: block;
 }
@@ -21262,8 +21203,7 @@ button:active:not(:disabled) {
   transform: none;
 }
 
-/* A heading's accented line: the brighter blue on white, the luminous one
-   on deep blue. */
+/* 제목의 강조된 줄: 흰 바탕에서는 더 밝은 파랑, 진한 파랑 위에서는 빛나는 파랑. */
 .reveal-line.accent {
   color: var(--point-bright);
 }
@@ -21272,13 +21212,13 @@ button:active:not(:disabled) {
   color: var(--point-glow);
 }
 
-/* The hero's own heading runs a little longer (1.6s). */
+/* 히어로의 제목은 조금 더 길게 (1.6초) 진행된다. */
 .hero-title .reveal-letter {
   transition-duration: 0.72s;
   transition-delay: calc(var(--s, 0) * 1600ms);
 }
 
-/* Statement chips grow from 30% as the cascade reaches them. */
+/* 소개 칩은 연쇄가 닿으면 30%에서 커진다. */
 .statement-chip {
   opacity: 0;
   transform: scale(0.3);
@@ -21293,9 +21233,8 @@ button:active:not(:disabled) {
   transform: none;
 }
 
-/* The dashboard hero after the intro: its label, then the numbers one by
-   one and the next step rise 20px out of a 10px blur. The page holds its
-   entrance behind the loader. */
+/* 인트로 뒤의 대시보드 히어로: 라벨, 그다음 숫자가 하나씩, 그리고 다음 단계가
+   10px 블러에서 20px 떠오른다. 페이지는 로더 뒤에서 자기 등장을 붙잡아 둔다. */
 .meeting-hero :is(.hero-eyebrow, .hero-stats li, .hero-lead, .hero-insight) {
   animation: hero-item-in 1.1s var(--ease-quart) backwards;
 }
@@ -21354,8 +21293,8 @@ button:active:not(:disabled) {
   animation: fade-in 0.4s 1s backwards;
 }
 
-/* Hovers, for pointers that hover: pills swell and their arrows nudge,
-   cards and tiles lift, badges turn, rows fill. */
+/* 호버하는 포인터를 위한 호버: 알약이 부풀고 화살표가 움직이며, 카드와 타일이
+   뜨고, 배지가 돌고, 줄이 채워진다. */
 .pill {
   transition:
     transform 0.35s var(--ease-snap),
@@ -21443,10 +21382,9 @@ button:active:not(:disabled) {
   }
 }
 
-/* PDF report pages (report/ReportDocument.tsx): rendered off screen at A4
-   size, 794×1123 px, and captured into the PDF by report/pdf.ts. They keep
-   their own print colors whatever the app's theme, so the tokens they use
-   are set here. */
+/* PDF 리포트 페이지 (report/ReportDocument.tsx): A4 크기 794×1123px로 화면
+   밖에서 렌더해 report/pdf.ts가 PDF로 캡처한다. 앱의 테마와 무관하게 자기만의
+   인쇄 색을 유지하므로, 쓰는 토큰을 여기서 정한다. */
 .pdf-export {
   --point: #1b3f8f;
   --point-deep: #2f5fc8;
@@ -21599,7 +21537,7 @@ button:active:not(:disabled) {
   color: #2f8a52;
 }
 
-/* Each sponsor's venue counts under their tiles, when there are several. */
+/* 스폰서가 여럿일 때 타일 아래에 스폰서별 현장 집계. */
 .pdf-venue-sponsors {
   display: flex;
   flex-direction: column;
@@ -21869,7 +21807,7 @@ button:active:not(:disabled) {
   font-size: 10px;
 }
 
-/* Analytics report: each sponsorship's ROAS as a bar with its goal tick. */
+/* 분석 리포트: 각 협찬의 ROAS를 목표 눈금이 있는 막대로. */
 .pdf-roas {
   display: flex;
   flex-direction: column;
@@ -21957,8 +21895,8 @@ button:active:not(:disabled) {
   font-size: 10px;
 }
 
-/* Page 3 of the students' report: each survey answer as bars, three side
-   by side, then the advice for next time as a numbered list. */
+/* 학생 리포트 3쪽: 설문의 응답마다 막대, 셋을 나란히, 그다음 다음을 위한 조언을
+   번호 붙은 목록으로. */
 .pdf-dists {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -22047,9 +21985,8 @@ button:active:not(:disabled) {
   font-weight: var(--weight-badge);
 }
 
-/* The sponsorship proposal page (report/ProposalDocument.tsx): the
-   event's facts in two columns, its packages, the track record and how
-   results are counted. */
+/* 협찬 제안 페이지 (report/ProposalDocument.tsx): 두 단으로 행사의 사실,
+   패키지, 실적, 결과를 세는 방법. */
 .pdf-proposal-intro {
   display: -webkit-box;
   overflow: hidden;
@@ -22153,8 +22090,8 @@ button:active:not(:disabled) {
   font-weight: var(--weight-strong);
 }
 
-/* Participant check-in page (checkin/CheckInPage.tsx), opened from the event QR. */
-/* A phone-sized page: drop the app's desktop minimum width. */
+/* 참여자 체크인 페이지 (checkin/CheckInPage.tsx): 행사 QR로 연다. */
+/* 휴대폰 크기의 페이지: 앱의 데스크톱 최소 너비를 없앤다. */
 body.checkin-body {
   min-width: 0;
   padding-bottom: 0;
@@ -22253,7 +22190,7 @@ body.checkin-body {
   font-size: 12px;
 }
 
-/* One ticket per sponsor's coupon. */
+/* 스폰서의 쿠폰마다 티켓 하나. */
 .coupon-list {
   display: flex;
   flex-direction: column;
@@ -22263,7 +22200,7 @@ body.checkin-body {
   list-style: none;
 }
 
-/* Coupon ticket with notches cut into both sides. */
+/* 양쪽에 홈이 파인 쿠폰 티켓. */
 .coupon {
   position: relative;
   display: flex;
@@ -22354,7 +22291,7 @@ body.checkin-body {
   font-weight: var(--weight-strong);
 }
 
-/* The optional survey on the check-in page: each question a row of chips. */
+/* 체크인 페이지의 선택 설문: 질문마다 칩 한 줄. */
 .checkin-survey {
   display: grid;
   gap: 12px;
@@ -22424,7 +22361,7 @@ body.checkin-body {
   font-size: 11px;
 }
 
-/* An invitation not taken yet (modals/TeamModal.tsx), and the form to send one. */
+/* 아직 받지 않은 초대 (modals/TeamModal.tsx)와 초대를 보내는 양식. */
 .team-list li.pending {
   background: transparent;
   box-shadow: inset 0 0 0 1px var(--line-strong);
@@ -22441,15 +22378,15 @@ body.checkin-body {
   font-weight: var(--weight-body);
 }
 
-/* 내 정보 for a co-admin: what stays the owner's. */
+/* 공동 관리자의 내 정보: 소유자에게 남는 것. */
 .profile-member-note {
   margin: 0 0 12px;
   color: var(--muted);
   font-size: 13px;
 }
 
-/* A student council's clubs (pages/CouncilPage.tsx): its code to share,
-   then a card per club with its figures and coming events. */
+/* 학생회의 동아리 (pages/CouncilPage.tsx): 공유할 코드, 그다음 동아리마다
+   수치와 다가오는 행사가 담긴 카드. */
 .council-code {
   display: flex;
   flex-wrap: wrap;
@@ -22569,7 +22506,7 @@ body.checkin-body {
   justify-content: flex-end;
 }
 
-/* For the moment a screen's code arrives (App's lazy screens). */
+/* 화면의 코드가 도착하는 동안 (App의 지연 로딩 화면). */
 .page-loading {
   min-height: 50vh;
   margin: 0;

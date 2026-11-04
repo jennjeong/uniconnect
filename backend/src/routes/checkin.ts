@@ -21,8 +21,8 @@ import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { ChatSide, EventSponsor, Measurement, PassCoupon } from "../types.js"
 
-// The page participants reach by scanning an event's QR. It needs no login,
-// so the event is found by the code in its address alone.
+// 참여자가 행사의 QR을 스캔해 닿는 페이지다. 로그인이 필요 없으므로 행사는
+// 주소에 담긴 코드만으로 찾는다.
 export const checkInRouter = Router()
 
 function measurementFor(code: string) {
@@ -33,9 +33,9 @@ function measurementFor(code: string) {
   return { measurement, event }
 }
 
-// The coupons participants can take: one per sponsor once brands sponsor
-// the event (by the sponsorship's id), else the event's own ("event"); only
-// those whose confirmed methods include the coupon (lib/methods.ts).
+// 참여자가 받을 수 있는 쿠폰이다. 브랜드가 행사를 협찬하면 협찬사마다 하나씩
+// (협찬의 id로), 아니면 행사 자체의 것 하나("event")다. 확정된 방식에 쿠폰이
+// 들어 있는 협찬만 해당한다(lib/methods.ts).
 const eventCoupon = "event"
 
 function couponsOf(measurement: Measurement) {
@@ -47,13 +47,13 @@ function couponsOf(measurement: Measurement) {
   return usesMethod(activeMethodsOf(measurement), "coupon") ? [{ id: eventCoupon, ...measurement.goals.coupon }] : []
 }
 
-// A pass's coupon by its id: the event's on the pass itself, a sponsor's
-// under its id.
+// id로 찾는 패스의 쿠폰이다. 행사의 것은 패스 자체에, 협찬사의 것은 그
+// id 아래에 있다.
 function passCoupon(pass: Measurement["passes"][string], id: string): PassCoupon | undefined {
   return id === eventCoupon ? pass : pass.sponsors?.[id]
 }
 
-// What the participant sees: the event, the group and the coupons.
+// 참여자가 보는 것이다. 행사, 단체, 쿠폰이다.
 checkInRouter.get("/:code", (req, res) => {
   const { measurement, event } = measurementFor(req.params.code)
   const group = getDatabase().accounts.find((account) => account.id === measurement.accountId)
@@ -65,17 +65,17 @@ checkInRouter.get("/:code", (req, res) => {
   })
 })
 
-// Each address may record only so many a minute; a busy booth on one
-// Wi-Fi stays well under it.
+// 주소마다 1분에 기록할 수 있는 수를 제한한다. 한 와이파이를 쓰는 붐비는
+// 부스도 이 한도에 훨씬 못 미친다.
 const recordsPerClient = createRateLimit({
   limit: 120,
   windowMs: 60 * 1000,
   message: "기록 요청이 너무 많아요. 잠시 후 다시 시도해 주세요.",
 })
 
-// One phone counts once (the page keeps its pass), so scans of one event from
-// the same address and browser can't run up: people sharing a campus Wi-Fi
-// on different phones stay well under it.
+// 폰 하나는 한 번만 센다(페이지가 자기 패스를 보관한다). 그래서 같은 주소와
+// 브라우저에서 한 행사를 여러 번 스캔해도 수가 부풀지 않는다. 캠퍼스 와이파이를
+// 함께 쓰는 서로 다른 폰의 사람들은 이 한도에 훨씬 못 미친다.
 const scansPerDevice = createRateLimit({
   limit: 20,
   windowMs: 10 * 60 * 1000,
@@ -85,9 +85,9 @@ const scansPerDevice = createRateLimit({
 const deviceKey = (req: Request, code: string) =>
   createHash("sha256").update(`${clientKey(req)} ${req.get("user-agent") ?? ""} ${code}`).digest("hex")
 
-// Wrong staff PINs, per address and event and per event alone: 4 digits
-// must not be guessable from one place or from many (about 80 hours for
-// all 10,000 at the event cap).
+// 직원 PIN이 틀린 횟수를 주소와 행사별로, 행사 단독으로도 센다. 네 자리
+// 숫자는 한 곳에서도 여러 곳에서도 추측할 수 없어야 한다(행사 한도에서
+// 1만 개를 모두 시도하는 데 약 80시간이 걸린다).
 const pinFailures = createRateLimit({
   limit: 10,
   windowMs: 15 * 60 * 1000,
@@ -99,7 +99,7 @@ const pinFailuresPerEvent = createRateLimit({
   message: "이 행사의 직원 PIN이 너무 많이 틀렸어요. 15분 뒤에 다시 시도해 주세요.",
 })
 
-// Coupon numbers staff type: no 0/O or 1/I to mix up.
+// 직원이 입력하는 쿠폰 번호다. 헷갈리는 0/O와 1/I는 쓰지 않는다.
 const couponAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
 function newCouponNumber(passes: Measurement["passes"]) {
@@ -113,8 +113,8 @@ function newCouponNumber(passes: Measurement["passes"]) {
   return number
 }
 
-// The participant's optional three questions, once a pass: only the counts
-// for the event are kept, and the pass remembers it answered.
+// 참여자가 답해도 되는 세 가지 질문은 패스가 있어야 받는다. 행사의 집계만
+// 보관하고, 패스는 답했다는 사실만 기억한다.
 checkInRouter.post("/:code/survey", async (req, res) => {
   await recordsPerClient.take(clientKey(req))
   const { measurement } = measurementFor(req.params.code)
@@ -144,9 +144,9 @@ checkInRouter.post("/:code/survey", async (req, res) => {
   res.status(201).json({ ok: true })
 })
 
-// The participant's phone: a scan hands back a pass, and the pass claims
-// each coupon once (`couponId`, which may be left out while there is only
-// one), each with a number of its own. Store visits are not recorded here.
+// 참여자의 폰이다. 스캔하면 패스가 돌아오고, 패스는 쿠폰마다 한 번씩
+// 받아(`couponId`는 쿠폰이 하나뿐이면 생략할 수 있다) 각자 번호를 얻는다.
+// 매장 방문은 여기서 기록하지 않는다.
 checkInRouter.post("/:code/:kind", async (req, res) => {
   await recordsPerClient.take(clientKey(req))
   const { measurement, event } = measurementFor(req.params.code)
@@ -154,7 +154,7 @@ checkInRouter.post("/:code/:kind", async (req, res) => {
   if (kind !== "visits") assertOpen(getDatabase(), measurement, event, kind)
 
   if (kind === "scans") {
-    // The demo accounts' events are open for visitors to try.
+    // 데모 계정의 행사는 방문자가 써 볼 수 있게 열려 있다.
     if (!isDemoEvent(getDatabase(), measurement)) await scansPerDevice.take(deviceKey(req, req.params.code))
     if (Object.keys(measurement.passes).length >= passLimit) {
       throw new HttpError(409, "이 행사의 참여 기록이 가득 찼어요. 행사 주최 측에 알려 주세요.")
@@ -193,7 +193,7 @@ checkInRouter.post("/:code/:kind", async (req, res) => {
   res.json({ entry, coupon })
 })
 
-// The participant's phone asks whether the store has confirmed the visit.
+// 참여자의 폰이 매장이 방문을 확인했는지 묻는다.
 checkInRouter.get("/:code/passes/:pass", (req, res) => {
   const { measurement } = measurementFor(req.params.code)
   if (!Object.hasOwn(measurement.passes, req.params.pass)) {
@@ -209,10 +209,10 @@ checkInRouter.get("/:code/passes/:pass", (req, res) => {
   res.json({ coupons })
 })
 
-// The store staff's own device (/check-in/<code>/staff): the participant's
-// coupon number and the staff PIN record one visit. Once brands sponsor the
-// event each store has its own PIN, which confirms only its own coupons.
-// The PIN is never typed on, or sent from, a participant's phone.
+// 매장 직원의 기기(/check-in/<code>/staff)다. 참여자의 쿠폰 번호와 직원 PIN이
+// 방문 한 건을 기록한다. 브랜드가 행사를 협찬하면 매장마다 자기 PIN이 있고,
+// 그 PIN은 자기 쿠폰만 확인한다. PIN을 참여자의 폰에서 입력하거나 보내는
+// 일은 없다.
 checkInRouter.post("/:code/staff/visits", async (req, res) => {
   await recordsPerClient.take(clientKey(req))
   const { measurement, event } = measurementFor(req.params.code)
@@ -246,8 +246,8 @@ checkInRouter.post("/:code/staff/visits", async (req, res) => {
   res.json({ entry, store: (sponsor?.coupon ?? measurement.goals.coupon).store })
 })
 
-// A wrong PIN counts against the address (for this event) and the event,
-// and toward today's count the operators' alerts read.
+// 틀린 PIN은 주소(이 행사에서)와 행사에 세며, 운영자 경보가 읽는 오늘의
+// 집계에도 넣는다.
 async function refusePin(req: Request, message: string): Promise<never> {
   const addressKey = `${clientKey(req)} ${req.params.code}`
   await pinFailures.hit(addressKey)
@@ -256,7 +256,7 @@ async function refusePin(req: Request, message: string): Promise<never> {
   if (measurement) {
     const today = todayInKorea()
     measurement.pinMisses = { day: today, count: measurement.pinMisses?.day === today ? measurement.pinMisses.count + 1 : 1 }
-    // Only a note: a failed save doesn't change the answer.
+    // 기록일 뿐이므로 저장에 실패해도 답은 바뀌지 않는다.
     await saveDatabase().catch(() => undefined)
   }
   throw new HttpError(403, message)
@@ -267,8 +267,8 @@ async function checkPinLimits(req: Request) {
   await pinFailuresPerEvent.check(String(req.params.code))
 }
 
-// The brand's page (/staff) opens the share whose store PIN it is given: a
-// sponsor's, or the event's own while it has no sponsors.
+// 브랜드의 페이지(/staff)는 받은 매장 PIN에 해당하는 몫을 연다. 협찬사의
+// 몫이거나, 협찬사가 없는 동안에는 행사 자체의 몫이다.
 async function staffShare(req: Request, measurement: Measurement): Promise<EventSponsor | undefined> {
   await checkPinLimits(req)
   const pin = text(req.body?.pin)
@@ -279,8 +279,8 @@ async function staffShare(req: Request, measurement: Measurement): Promise<Event
   return sponsor
 }
 
-// The student group's page (/group) takes the group's own PIN, and opens
-// every share of the event.
+// 학생단체의 페이지(/group)는 단체 자신의 PIN을 받아 행사의 모든 몫을
+// 연다.
 async function checkGroupPin(req: Request, measurement: Measurement) {
   await checkPinLimits(req)
   if (text(req.body?.pin) !== measurement.groupPin) {
@@ -288,9 +288,8 @@ async function checkGroupPin(req: Request, measurement: Measurement) {
   }
 }
 
-// One share as a venue page shows it: whose it is, the confirmed methods
-// this side confirms there (alone or with the other side), and the counts
-// so far.
+// 현장 페이지가 보여 주는 몫 하나다. 누구의 것인지, 이쪽이 거기서 확정하는
+// 방식(단독이거나 상대편과 함께), 지금까지의 집계를 담는다.
 function venueShare(measurement: Measurement, sponsor: EventSponsor | undefined, side: ChatSide) {
   const counts = sponsor?.metrics ?? measurement.metrics
   return {
@@ -304,8 +303,8 @@ function venueShare(measurement: Measurement, sponsor: EventSponsor | undefined,
   }
 }
 
-// What a venue page shows once its PIN is right, with the event: the
-// brand's page its own share, the group's page every share.
+// PIN이 맞으면 현장 페이지가 행사와 함께 보여 주는 것이다. 브랜드의
+// 페이지는 자기 몫을, 단체의 페이지는 모든 몫을 보여 준다.
 checkInRouter.post("/:code/staff/session", async (req, res) => {
   await recordsPerClient.take(clientKey(req))
   const { measurement, event } = measurementFor(req.params.code)
@@ -325,11 +324,10 @@ checkInRouter.post("/:code/group/session", async (req, res) => {
   })
 })
 
-// A venue page records what its side confirms by one of the share's
-// confirmed methods (samples handed out, a booth visit stamped, a post or a
-// survey checked, a purchase, goods given, a raffle entry, a sign-up, a
-// try-out), or takes back a mistake (a negative amount, never below zero).
-// Only on the event's days and the day after, except the demo accounts'.
+// 현장 페이지는 이쪽이 확정한 방식으로 몫의 확정된 방법 중 하나로 기록한다
+// (나눠 준 샘플, 도장 찍은 부스 방문, 확인한 게시글이나 설문, 구매, 준 굿즈,
+// 응모, 가입, 체험). 또는 실수를 되돌린다(음수이며 0 밑으로는 내려가지
+// 않는다). 행사 기간과 그다음 날에만 되며, 데모 계정은 예외다.
 async function recordAtVenue(req: Request, side: ChatSide) {
   await recordsPerClient.take(clientKey(req))
   const { measurement, event } = measurementFor(String(req.params.code))

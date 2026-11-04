@@ -1,9 +1,9 @@
 import { t } from "../i18n"
 import type { MailKind } from "../types"
 
-// The kinds of notice email a member can turn off in 내 정보, in order, with
-// what each covers; the server lists the same kinds (backend
-// lib/validation.ts mailKinds; lib/lists.sync.test.ts checks).
+// 회원이 내 정보에서 끌 수 있는 알림 메일의 종류를 순서대로, 각각이 다루는 것과
+// 함께. 서버가 같은 종류를 가진다 (backend lib/validation.ts의 mailKinds,
+// lib/lists.sync.test.ts가 검사한다).
 export const mailKinds: { kind: MailKind; label: string; caption: string }[] = [
   { kind: "proposals", label: t("협찬 제안과 답"), caption: t("새 제안, 보낸 제안의 답, 초대한 가게의 가입") },
   {

@@ -16,9 +16,8 @@ import { text } from "../lib/validation.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { Announcement, ReportAction } from "../types.js"
 
-// Operators read the questions sent from the FAQ page and answer them, and
-// watch the platform's figures, with the ADMIN_TOKEN from the environment in
-// the X-Admin-Token header (pages/AdminPage.tsx).
+// 운영자는 FAQ 페이지에서 온 질문을 읽고 답하며 플랫폼의 수치를 본다. 환경의
+// ADMIN_TOKEN을 X-Admin-Token 헤더로 보낸다(pages/AdminPage.tsx).
 export const adminRouter = Router()
 
 const adminFailures = createRateLimit({
@@ -27,8 +26,8 @@ const adminFailures = createRateLimit({
   message: "관리자 인증 실패가 너무 많아요. 15분 뒤에 다시 시도해 주세요.",
 })
 
-// Hashing both sides gives equal lengths for timingSafeEqual whatever was
-// sent, Korean included.
+// 양쪽을 해시하면 무엇을 보냈든(한글이어도) 길이가 같아져 timingSafeEqual을
+// 쓸 수 있다.
 const digest = (value: string) => createHash("sha256").update(value).digest()
 
 export async function requireAdmin(req: Request) {
@@ -43,8 +42,8 @@ export async function requireAdmin(req: Request) {
   }
 }
 
-// Every payment, newest first: bank transfers waiting to be confirmed, what
-// was paid and refunded.
+// 모든 결제를 최신순으로 보여 준다. 확인을 기다리는 계좌 이체, 결제된 것,
+// 환불된 것이다.
 adminRouter.get("/payments", async (req, res) => {
   await requireAdmin(req)
   const payments = [...paymentsOf(getDatabase())]
@@ -59,7 +58,7 @@ function paymentFor(id: string) {
   return payment
 }
 
-// A bank transfer arrived: the order is paid, and gives what it bought.
+// 계좌 이체가 들어왔다. 주문이 결제된 것이 되어 산 것을 준다.
 adminRouter.post("/payments/:id/paid", async (req, res) => {
   await requireAdmin(req)
   const payment = paymentFor(String(req.params.id))
@@ -70,9 +69,9 @@ adminRouter.post("/payments/:id/paid", async (req, res) => {
   res.json({ payment })
 })
 
-// Cancels a waiting order, or refunds a paid one: a card payment through
-// Toss Payments, a transfer by the operators themselves (this only
-// records it). What it bought is taken back.
+// 기다리는 주문을 취소하거나 결제된 주문을 환불한다. 카드 결제는 Toss
+// Payments로, 이체는 운영자가 직접 환불하며(여기서는 기록만 한다) 산 것은
+// 회수한다.
 adminRouter.post("/payments/:id/cancel", async (req, res) => {
   await requireAdmin(req)
   const payment = paymentFor(String(req.params.id))
@@ -85,13 +84,13 @@ adminRouter.post("/payments/:id/cancel", async (req, res) => {
   res.json({ payment })
 })
 
-// The platform's figures, real members' and with the demo data (lib/stats.ts).
+// 플랫폼의 수치로, 실제 회원 기준과 데모 데이터를 더한 것을 보여 준다(lib/stats.ts).
 adminRouter.get("/stats", async (req, res) => {
   await requireAdmin(req)
   res.json({ stats: platformStats(getDatabase()) })
 })
 
-// Every question, unanswered first, then newest, with who sent it.
+// 모든 질문을 답 없는 것부터, 그다음 최신순으로 보낸 사람과 함께 보여 준다.
 adminRouter.get("/inquiries", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
@@ -109,9 +108,9 @@ adminRouter.get("/inquiries", async (req, res) => {
   res.json({ inquiries })
 })
 
-// Members' reports, the ones waiting first, then the newest: who reported
-// whom over what, with the reported text as it was; and the accounts
-// stopped so far, to restore.
+// 회원의 신고를 대기 중인 것부터, 그다음 최신순으로 보여 준다. 누가 누구를
+// 무엇 때문에 신고했는지와 신고된 글 그대로를 담고, 지금까지 정지된 계정도
+// 담아 복구할 수 있게 한다.
 adminRouter.get("/reports", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
@@ -131,11 +130,10 @@ adminRouter.get("/reports", async (req, res) => {
 
 const reportActions: ReportAction[] = ["dismiss", "hide-review", "hide-reply", "suspend"]
 
-// The operators settle a report: leave things as they are, take the
-// reported review (with its reply) or the reported reply down, or stop the
-// reported account (it can't log in,
-// gets no email and shows to no one; its sessions end). The shared demo
-// accounts can't be stopped.
+// 운영자가 신고를 처리한다. 그대로 두거나, 신고된 후기(와 그 답글) 또는
+// 신고된 답글을 내리거나, 신고된 계정을 정지한다(로그인할 수 없고, 메일을
+// 받지 못하고, 누구에게도 보이지 않으며, 세션이 끝난다). 공유 데모 계정은
+// 정지할 수 없다.
 adminRouter.post("/reports/:id/resolve", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
@@ -169,13 +167,13 @@ adminRouter.post("/reports/:id/resolve", async (req, res) => {
   res.json({ ok: true })
 })
 
-// The latest server and browser errors, newest first.
+// 가장 최근의 서버와 브라우저 오류를 최신순으로 보여 준다.
 adminRouter.get("/errors", async (req, res) => {
   await requireAdmin(req)
   res.json({ errors: await recentErrors() })
 })
 
-// Lets a stopped account back in.
+// 정지된 계정을 다시 들여보낸다.
 adminRouter.post("/accounts/:id/unsuspend", async (req, res) => {
   await requireAdmin(req)
   const account = getDatabase().accounts.find((item) => item.id === req.params.id)
@@ -197,7 +195,7 @@ adminRouter.post("/inquiries/:id/answer", async (req, res) => {
   const changed = inquiry.answer !== answer
   inquiry.answer = answer
   inquiry.answeredAt = new Date().toISOString()
-  // A new or changed answer is news to the asker, by email and on the bell.
+  // 새로 달거나 바뀐 답은 질문한 사람에게 소식이므로 메일과 알림 벨로 알린다.
   if (changed) delete inquiry.answerReadAt
   logAdmin(database, "inquiry-answered", { kind: "inquiry", id: inquiry.id })
   await saveDatabase()
@@ -218,15 +216,15 @@ adminRouter.post("/inquiries/:id/answer", async (req, res) => {
   res.json({ inquiry })
 })
 
-// The console's overview: what needs the operators, the figures, eight
-// weeks of trend and the revenue (lib/console.ts).
+// 콘솔의 개요다. 운영자가 처리할 것, 수치, 여덟 주의 추이, 매출을 보여 준다
+// (lib/console.ts).
 adminRouter.get("/overview", async (req, res) => {
   await requireAdmin(req)
   res.json(overview(getDatabase()))
 })
 
-// Every member, newest first, searched by name, email or school and
-// filtered by side and state.
+// 모든 회원을 최신순으로 보여 주며, 이름, 이메일, 학교로 검색하고 쪽과
+// 상태로 거를 수 있다.
 adminRouter.get("/accounts", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
@@ -260,8 +258,8 @@ adminRouter.get("/accounts/:id", async (req, res) => {
   res.json({ account: memberDetail(database, account) })
 })
 
-// Stops a member directly (it can't log in, gets no email and shows to no
-// one; its sessions end), as a report's suspension does.
+// 회원을 바로 정지한다(로그인할 수 없고, 메일을 받지 못하고, 누구에게도 보이지
+// 않으며, 세션이 끝난다). 신고로 인한 정지와 같다.
 adminRouter.post("/accounts/:id/suspend", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
@@ -275,13 +273,13 @@ adminRouter.post("/accounts/:id/suspend", async (req, res) => {
   res.json({ account: memberDetail(database, account) })
 })
 
-// Every proposal, newest first.
+// 모든 제안을 최신순으로 보여 준다.
 adminRouter.get("/proposals", async (req, res) => {
   await requireAdmin(req)
   res.json({ proposals: proposalRows(getDatabase()) })
 })
 
-// An operator's note on a member (blank removes it).
+// 회원에 대한 운영자 메모다(비우면 지운다).
 adminRouter.put("/accounts/:id/note", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
@@ -297,13 +295,13 @@ adminRouter.put("/accounts/:id/note", async (req, res) => {
   res.json({ account: memberDetail(database, account) })
 })
 
-// What the operators did, newest first.
+// 운영자가 한 일을 최신순으로 보여 준다.
 adminRouter.get("/log", async (req, res) => {
   await requireAdmin(req)
   res.json({ entries: adminLogRows(getDatabase()) })
 })
 
-// Which services this copy of the API is set up for (lib/adminTools.ts).
+// 이 API 복사본이 어떤 서비스에 맞게 설정되어 있는지 알려 준다(lib/adminTools.ts).
 adminRouter.get("/health", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
@@ -321,7 +319,7 @@ adminRouter.get("/health", async (req, res) => {
 const tones: Announcement["tone"][] = ["info", "warning"]
 const audiences: Announcement["audience"][] = ["all", "학생단체", "브랜드"]
 
-// The site's notices, the live ones first.
+// 사이트의 공지를 지금 게시 중인 것부터 보여 준다.
 adminRouter.get("/announcements", async (req, res) => {
   await requireAdmin(req)
   const today = todayInKorea()
@@ -361,7 +359,7 @@ adminRouter.post("/announcements", async (req, res) => {
   res.status(201).json({ announcement: item })
 })
 
-// Takes a notice down.
+// 공지를 내린다.
 adminRouter.post("/announcements/:id/end", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()

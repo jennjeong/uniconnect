@@ -1,9 +1,8 @@
-// Campuses the app knows, found by a student's school email domain (or a
-// group's school name), with where each is, for the distance to sponsors'
-// stores (lib/geo.ts). The coordinates are each university's own feature in
-// OpenStreetMap (looked up 2026-10-23; © OpenStreetMap contributors, ODbL),
-// next to its road address. Kakao's results can't be kept, so none come
-// from there.
+// 앱이 아는 캠퍼스. 학생의 학교 이메일 도메인(또는 단체의 학교 이름)으로
+// 찾으며 각 위치는 협찬사 매장과의 거리 계산에 쓴다(lib/geo.ts). 좌표는
+// OpenStreetMap에서 각 대학 자신의 지물(2026-10-23에 조회, © OpenStreetMap
+// contributors, ODbL)이며 옆에 도로명 주소를 둔다. Kakao의 결과는 보관할 수
+// 없어서 거기서 가져온 것은 없다.
 export type Campus = { name: string; domains: string[]; lat: number; lng: number }
 
 export const campuses: Campus[] = [

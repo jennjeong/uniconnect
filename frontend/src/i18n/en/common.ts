@@ -1,7 +1,7 @@
-// English for copy shared across the app: dates, roles, statuses, units
-// and the API client's own messages (see i18n/index.ts).
+// 앱 전체가 함께 쓰는 카피의 영어: 날짜, 역할, 상태, 단위, API 클라이언트
+// 자체의 메시지 (i18n/index.ts 참고).
 const en: Record<string, string> = {
-  // Weekdays and dates (lib/date.ts)
+  // 요일과 날짜 (lib/date.ts)
   일: "Sun",
   월: "Mon",
   화: "Tue",
@@ -11,7 +11,7 @@ const en: Record<string, string> = {
   토: "Sat",
   종료: "Ended",
   "{days}일": "{days:day|days}",
-  // Review tags (data/reviews.ts), shown with t(tag)
+  // 후기 태그 (data/reviews.ts), t(tag)로 보여준다
   "약속을 잘 지켜요": "Keeps their word",
   "응답이 빨라요": "Answers quickly",
   "협찬 물품이 좋아요": "Great sponsorship goods",
@@ -19,23 +19,23 @@ const en: Record<string, string> = {
   "다시 함께하고 싶어요": "Would work together again",
   "홍보를 잘해요": "Promotes well",
   "성과 공유가 꼼꼼해요": "Shares results carefully",
-  // Roles (types.ts Role), shown with t(role)
+  // 역할 (types.ts의 Role), t(role)로 보여준다
   학생단체: "Student group",
   브랜드: "Brand",
-  // Statuses (types.ts EventStatus, RequestStatus)
+  // 상태 (types.ts의 EventStatus, RequestStatus)
   "매칭 중": "Matching",
   "집행 예정": "Scheduled",
   "측정 완료": "Measured",
   "검토 중": "Under review",
   마감: "Closed",
-  // Why a member reports another (data/reports.ts)
+  // 회원이 다른 회원을 신고하는 이유 (data/reports.ts)
   "스팸 · 광고": "Spam · Ads",
   "욕설 · 괴롭힘": "Abuse · Harassment",
   "사기 의심": "Suspected fraud",
   취소됨: "Called off",
   수락: "Accepted",
   거절: "Declined",
-  // Pages in the menus (types.ts NavLabel)
+  // 메뉴의 페이지 (types.ts의 NavLabel)
   대시보드: "Dashboard",
   "추천 매칭": "Matches",
   매칭: "Matches",
@@ -47,12 +47,12 @@ const en: Record<string, string> = {
   "받은 제안": "Proposals",
   "행사 일정": "Calendar",
   "성과 분석": "Analytics",
-  // Kinds of sponsorship (data/sponsorTypes.ts)
+  // 협찬의 종류 (data/sponsorTypes.ts)
   현금: "Cash",
   제품: "Products",
   서비스: "Services",
   기타: "Other",
-  // Account types (data/roles.ts), also a listing's category
+  // 계정 유형 (data/roles.ts), 리스팅의 카테고리이기도 하다
   "공연 동아리": "Performing arts club",
   "학술 동아리": "Academic club",
   "봉사 동아리": "Volunteer club",
@@ -95,7 +95,7 @@ const en: Record<string, string> = {
   "여행 · 숙박": "Travel · Stays",
   "금융 · 보험": "Finance · Insurance",
   "생활용품 · 리빙": "Home · Living",
-  // The groups the forms list them in (data/roles.ts)
+  // 양식이 나열하는 묶음 (data/roles.ts)
   "학생회 · 기획단": "Councils · Committees",
   "공연 · 예술": "Performing arts",
   "학술 · 활동": "Academics · Activities",
@@ -105,16 +105,16 @@ const en: Record<string, string> = {
   "콘텐츠 · IT": "Content · IT",
   "교육 · 문화": "Education · Culture",
   "생활 · 서비스": "Life · Services",
-  // Measurements (data/metrics.ts)
+  // 측정 (data/metrics.ts)
   "QR 스캔": "QR scans",
   "쿠폰 수령": "Coupons taken",
   "매장 방문": "Store visits",
-  // Kinds of question (data/inquiries.ts)
+  // 질문의 종류 (data/inquiries.ts)
   "이용 방법": "Using uniconnect",
   "계정 · 가입": "Account · Sign-up",
   "제안 · 매칭": "Proposals · Matching",
   "오류 신고": "Report a bug",
-  // API client (api/client.ts)
+  // API 클라이언트 (api/client.ts)
   "서버에 연결할 수 없어요. 백엔드가 실행 중인지 확인해 주세요.": "Can't reach the server. Check that the backend is running.",
   "요청을 처리하지 못했어요.": "Couldn't process the request.",
   "CJ대한통운": "CJ Logistics",
@@ -158,7 +158,7 @@ const en: Record<string, string> = {
   "행사 당일 스토리": "Stories on the day",
   "행사 후 후기 게시물": "Recap post after",
   "브랜드 계정 태그": "Brand account tags",
-  // A brand's offers (data/profile.ts).
+  // 브랜드의 제공 내용 (data/profile.ts).
   "현금 후원": "Cash",
   "제품 협찬": "Products",
   "음료 · 식품": "Drinks · food",
@@ -168,7 +168,7 @@ const en: Record<string, string> = {
   "매장 공간 대관": "Store space",
   "부스 운영": "Booth",
   "촬영 · 디자인": "Photo · design",
-  // Regions (data/universities.ts).
+  // 지역 (data/universities.ts).
   서울: "Seoul",
   경기: "Gyeonggi",
   인천: "Incheon",

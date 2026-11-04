@@ -5,8 +5,8 @@ import type { Sponsorship } from "../types"
 import { AnalyticsDocument } from "./AnalyticsDocument"
 import { exportPdf } from "./pdf"
 
-// Renders the analytics report pages off screen, saves them as a PDF, then
-// reports back through onDone (true when it failed).
+// 분석 리포트 페이지를 화면 밖에서 그려 PDF로 저장한 뒤 onDone으로
+// 알린다(실패하면 true).
 export function AnalyticsExport({
   sponsorships,
   author,
@@ -17,7 +17,7 @@ export function AnalyticsExport({
   onDone: (failed: boolean) => void
 }) {
   const container = useRef<HTMLDivElement>(null)
-  // StrictMode runs effects twice while developing; export only once.
+  // StrictMode는 개발 중 effect를 두 번 실행한다. 내보내기는 한 번만 한다.
   const started = useRef(false)
 
   useEffect(() => {

@@ -1,7 +1,6 @@
-// Addresses the frontend has a screen for (frontend/src/lib/route.ts, and
-// the event check-in page with its two venue pages). Anything else gets the
-// frontend's 404 page with a real 404 status. Keep this in step with
-// readView.
+// 프런트엔드에 화면이 있는 주소(frontend/src/lib/route.ts와 행사 체크인
+// 페이지와 그 행사장 페이지 둘). 그 밖의 주소는 프런트엔드의 404 페이지를
+// 실제 404 상태로 받는다. readView와 맞춰 둔다.
 const appPaths = [
   /^\/$/,
   /^\/(matches|groups)(\/[^/]+)?\/?$/,

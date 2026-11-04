@@ -7,9 +7,9 @@ import { t } from "../i18n"
 import { initialOf } from "../lib/format"
 import type { Account } from "../types"
 
-// Drops down under the account button in the top bar, as the notifications
-// do under the bell: who is logged in, 내 정보, and 로그아웃. A co-admin sees
-// their own name and email under the account's.
+// 상단 바의 계정 버튼 아래로 내려오는 패널. 알림이 종 아래에 내려오는 것과
+// 같다. 로그인한 사람, 내 정보, 로그아웃이 있다. 공동 관리자에게는 계정 정보
+// 아래에 자기 이름과 이메일이 보인다.
 export function AccountPanel({
   account,
   toggleRef,
@@ -18,7 +18,7 @@ export function AccountPanel({
   onLogout,
 }: {
   account: Account
-  // The account button, which toggles the panel itself.
+  // 계정 버튼. 패널은 이 버튼이 스스로 토글한다.
   toggleRef: RefObject<HTMLButtonElement | null>
   onClose: () => void
   onOpenProfile: () => void

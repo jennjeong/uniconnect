@@ -10,7 +10,7 @@ function derive(password: string, salt: string) {
   })
 }
 
-// Stored as "salt:hash" (hex). Plain passwords are never written to disk.
+// "salt:hash"(16진수)로 저장한다. 평문 비밀번호는 디스크에 쓰지 않는다.
 export async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex")
   const key = await derive(password, salt)

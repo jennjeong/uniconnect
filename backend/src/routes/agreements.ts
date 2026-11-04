@@ -32,10 +32,10 @@ import type { AgreementItem, Database } from "../types.js"
 
 export const agreementsRouter = Router()
 
-// How much one agreement holds.
+// 계약서 하나가 담을 수 있는 양이다.
 export const agreementLimits = { items: 12, links: 5, photos: 3, shipments: 10 }
 
-// Links as proof: http or https addresses only.
+// 증빙 링크는 http나 https 주소만 받는다.
 function parseLinks(value: unknown) {
   if (!Array.isArray(value)) throw new HttpError(400, "링크 목록을 다시 확인해 주세요.")
   const links = value.map(text).filter(Boolean)
@@ -45,13 +45,13 @@ function parseLinks(value: unknown) {
       const url = new URL(link)
       if ((url.protocol === "http:" || url.protocol === "https:") && link.length <= 300) return url.href
     } catch {
-      // Not an address; answered below.
+      // 주소가 아니므로 아래에서 답한다.
     }
     throw new HttpError(400, "링크는 http:// 또는 https://로 시작하는 주소로 적어 주세요.")
   })
 }
 
-// The accepted proposal behind the address, for one of its two sides only.
+// 주소가 가리키는 수락된 제안을 두 쪽 중 한쪽만의 입장에서 가져온다.
 function opened(req: Request) {
   const account = requireAccount(req)
   const database = getDatabase()
@@ -61,15 +61,15 @@ function opened(req: Request) {
   return { account, database, proposal, side }
 }
 
-// The same, to change: a sponsorship called off is only a record.
+// 바꾸기 위한 같은 조회다. 취소된 협찬은 기록일 뿐이다.
 function openedToChange(req: Request) {
   const opening = opened(req)
   if (opening.proposal.canceled) throw new HttpError(409, "취소된 협찬은 고칠 수 없어요.")
   return opening
 }
 
-// One of the items of an agreement already opened, which only its own side
-// marks done or proves.
+// 이미 연 계약서의 항목 하나다. 그 항목이 속한 쪽만 완료로 표시하거나
+// 증빙한다.
 function ownItem(database: Database, proposal: AcceptedProposal, itemId: unknown, side: AgreementItem["side"]) {
   const agreement = database.agreements.find((entry) => entry.id === proposal.id)
   const item = agreement?.items.find((entry) => entry.id === String(itemId))
@@ -78,8 +78,8 @@ function ownItem(database: Database, proposal: AcceptedProposal, itemId: unknown
   return { agreement, item }
 }
 
-// The account's accepted proposals with how far each agreement is: its
-// confirmations, the items done and the proof so far.
+// 계정의 수락된 제안과 계약서가 어디까지 왔는지를 보여 준다. 확정 여부, 끝난
+// 항목, 지금까지의 증빙을 담는다.
 agreementsRouter.get("/", (req, res) => {
   const account = requireAccount(req)
   const database = getDatabase()
@@ -106,16 +106,15 @@ agreementsRouter.get("/", (req, res) => {
 agreementsRouter.get("/:id", async (req, res) => {
   const { database, proposal, side } = opened(req)
   const { agreement, created } = agreementFor(database, proposal)
-  // The event's goals show here, so its measurement is made the first time,
-  // as opening the event would.
+  // 행사의 목표가 여기 보이므로, 행사를 열 때처럼 측정을 처음에 만든다.
   const sponsored = sponsoredEvent(database, proposal)
   const measured = sponsored ? ensureMeasurement(database, sponsored.owner.id, sponsored.event).created : false
   if (created || measured) await saveDatabase()
   res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 
-// Either side writes what each will do. An item kept keeps its proof; a
-// change of any kind asks both sides to confirm again.
+// 양쪽이 각자 할 일을 쓴다. 유지한 항목은 증빙도 유지하고, 어떤 변경이든
+// 양쪽이 다시 확정하게 한다.
 agreementsRouter.put("/:id/items", async (req, res) => {
   const { account, database, proposal, side } = openedToChange(req)
   const input = req.body?.items
@@ -157,10 +156,10 @@ agreementsRouter.put("/:id/items", async (req, res) => {
   res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 
-// Either side sets how the sponsorship is confirmed at the event (협찬 확인
-// 방식) and which side confirms each method there, either or both, until the
-// event begins (lib/methods.ts). Like the items, a change asks both sides to
-// confirm again; the methods count once both have.
+// 양쪽 중 어느 쪽이든 행사가 시작되기 전까지 협찬을 행사에서 어떻게 확인할지
+// (협찬 확인 방식)와 각 방법을 어느 쪽이 확인할지(한쪽 또는 양쪽)를 정한다
+// (lib/methods.ts). 항목처럼 바꾸면 양쪽이 다시 확정해야 하고, 방법은 양쪽이
+// 확정한 뒤에 센다.
 agreementsRouter.put("/:id/methods", async (req, res) => {
   const { account, database, proposal, side } = openedToChange(req)
   const methods = parseMethods(req.body?.methods)
@@ -190,9 +189,9 @@ agreementsRouter.put("/:id/methods", async (req, res) => {
   res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 
-// What the sponsorship is worth, cash and in-kind, which either side writes
-// until the event begins; a change asks both sides to confirm again, and a
-// higher value leaves the difference of the fee to pay.
+// 협찬의 가치로 현금과 현물을 말하며, 행사가 시작되기 전까지 어느 쪽이든 쓸
+// 수 있다. 바꾸면 양쪽이 다시 확정해야 하고, 가치가 오르면 수수료의 차액을
+// 더 내야 한다.
 agreementsRouter.put("/:id/value", async (req, res) => {
   const { account, database, proposal, side } = openedToChange(req)
   const value = parseValue(req.body?.value)
@@ -217,9 +216,8 @@ agreementsRouter.put("/:id/value", async (req, res) => {
   res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 
-// Either side notes a parcel it sent (carrier and tracking number), and the
-// other side hears about it. Sent parcels don't change what was agreed, so
-// confirmations stay.
+// 한쪽이 보낸 소포(택배사와 운송장 번호)를 적으면 상대편이 알림을 받는다.
+// 보낸 소포는 합의한 내용을 바꾸지 않으므로 확정은 그대로 남는다.
 agreementsRouter.post("/:id/shipments", async (req, res) => {
   const { account, database, proposal, side } = openedToChange(req)
   const carrier = text(req.body?.carrier)
@@ -242,7 +240,7 @@ agreementsRouter.post("/:id/shipments", async (req, res) => {
   res.status(201).json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 
-// The side that noted a parcel takes it off (a wrong number, say).
+// 소포를 적은 쪽이 그것을 뺀다(예를 들어 번호가 틀렸을 때).
 agreementsRouter.delete("/:id/shipments/:shipmentId", async (req, res) => {
   const { database, proposal, side } = openedToChange(req)
   const { agreement } = agreementFor(database, proposal)
@@ -255,10 +253,9 @@ agreementsRouter.delete("/:id/shipments/:shipmentId", async (req, res) => {
   res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 
-// A side confirms the items, methods and value as they stand; the other
-// side hears about it.
-// The brand confirms by paying the fee still due (lib/fees.ts), which
-// confirms for it once paid; with nothing due it confirms here.
+// 한쪽이 지금 상태의 항목, 방법, 가치를 확정하면 상대편이 알림을 받는다.
+// 브랜드는 아직 내야 하는 수수료(lib/fees.ts)를 내는 것으로 확정하며, 내고
+// 나면 확정된 것으로 본다. 낼 것이 없으면 여기서 확정한다.
 agreementsRouter.post("/:id/confirm", async (req, res) => {
   const { account, database, proposal, side } = openedToChange(req)
   const { agreement } = agreementFor(database, proposal)
@@ -282,11 +279,10 @@ agreementsRouter.post("/:id/confirm", async (req, res) => {
   res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 
-// Calling a sponsorship off takes both sides: one asks, saying why, until
-// the event is over, and the other agrees or declines. A partner without
-// an account can't answer, so then asking is enough. The shared demo
-// accounts can't ask, as everyone trying the demo shares their
-// sponsorships.
+// 협찬을 취소하려면 양쪽이 필요하다. 한쪽이 이유를 말하며 행사가 끝나기
+// 전까지 요청하고, 다른 쪽이 동의하거나 거절한다. 계정이 없는 파트너는
+// 답할 수 없으므로 그때는 요청만으로 충분하다. 공유 데모 계정은 데모를 써
+// 보는 모두가 협찬을 함께 쓰므로 요청할 수 없다.
 agreementsRouter.post("/:id/cancel", async (req, res) => {
   const { account, database, proposal, side } = openedToChange(req)
   if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 협찬을 취소할 수 없어요.")
@@ -319,7 +315,7 @@ agreementsRouter.post("/:id/cancel", async (req, res) => {
   res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 
-// The other side agrees, and the sponsorship is called off for both.
+// 상대편이 동의하면 협찬이 양쪽 모두에서 취소된다.
 agreementsRouter.post("/:id/cancel/accept", async (req, res) => {
   const { account, database, proposal, side } = openedToChange(req)
   const { agreement } = agreementFor(database, proposal)
@@ -340,8 +336,8 @@ agreementsRouter.post("/:id/cancel/accept", async (req, res) => {
   res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 
-// The side that asked takes the request back, or the other side declines
-// it; the sponsorship stays either way.
+// 요청한 쪽이 요청을 거두거나 상대편이 거절한다. 어느 쪽이든 협찬은
+// 그대로 남는다.
 agreementsRouter.delete("/:id/cancel", async (req, res) => {
   const { account, database, proposal, side } = openedToChange(req)
   const { agreement } = agreementFor(database, proposal)
@@ -364,7 +360,7 @@ agreementsRouter.delete("/:id/cancel", async (req, res) => {
   res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 
-// The side an item belongs to marks it done (or not yet) and keeps its links.
+// 항목이 속한 쪽이 항목을 완료로(또는 아직으로) 표시하고 링크를 보관한다.
 agreementsRouter.patch("/:id/items/:itemId", async (req, res) => {
   const { database, proposal, side } = openedToChange(req)
   const { agreement, item } = ownItem(database, proposal, req.params.itemId, side)
@@ -377,8 +373,8 @@ agreementsRouter.patch("/:id/items/:itemId", async (req, res) => {
   res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 
-// A photo as proof (lib/photos.ts: on disk, or in Postgres on Vercel);
-// three per item.
+// 증빙 사진이다(lib/photos.ts. 디스크에 두고, Vercel에서는 Postgres에 둔다).
+// 항목마다 세 장까지다.
 agreementsRouter.post("/:id/items/:itemId/photos", async (req, res) => {
   const { database, proposal, side } = openedToChange(req)
   const { item } = ownItem(database, proposal, req.params.itemId, side)
@@ -389,14 +385,14 @@ agreementsRouter.post("/:id/items/:itemId/photos", async (req, res) => {
   const store = photos()
   await store.put(proposal.id, photo, parsed.bytes)
   try {
-    // Looked up again: the data may have been read anew while the photo went in.
+    // 다시 찾는다. 사진이 들어오는 동안 데이터를 새로 읽었을 수 있다.
     const fresh = ownItem(getDatabase(), proposal, req.params.itemId, side)
     fresh.item.photos.push(photo)
     fresh.agreement.updatedAt = new Date().toISOString()
     await saveDatabase()
     res.status(201).json({ agreement: agreementView(getDatabase(), fresh.agreement, proposal, side) })
   } catch (error) {
-    // The data went back to before the photo; so does the photo store.
+    // 데이터가 사진을 넣기 전으로 돌아갔으므로 사진 저장소도 돌린다.
     await store.remove(proposal.id, [photo])
     throw error
   }
@@ -414,7 +410,7 @@ agreementsRouter.delete("/:id/items/:itemId/photos/:photo", async (req, res) => 
   res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 
-// A photo, for the two sides only; the page fetches it with the login token.
+// 양쪽에게만 사진을 보여 준다. 페이지는 로그인 토큰으로 가져온다.
 agreementsRouter.get("/:id/photos/:photo", async (req, res) => {
   const { database, proposal } = opened(req)
   const agreement = database.agreements.find((entry) => entry.id === proposal.id)

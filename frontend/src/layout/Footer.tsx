@@ -12,12 +12,11 @@ import { ChromeScene } from "../scenes/ChromeScene"
 import { MeshBackdrop } from "../scenes/MeshBackdrop"
 import type { Account, NavLabel, Role } from "../types"
 
-// Stride's footer from getlayers.ai: a deep blue mesh card where a chrome
-// object settles into the open side as the card scrolls in — here two
-// linked rings, the two sides holding on to each other — with the call to
-// register over it (on the introduction, to sign up or get the app, and on
-// the dashboard); then the site's links and the name as a large silver
-// wordmark on white.
+// getlayers.ai의 Stride 푸터. 짙은 파랑 메시 카드에 크롬 오브제가 스크롤에 맞춰
+// 열린 쪽으로 자리를 잡는다. 여기서는 서로 이어진 반지 두 개가 두 쪽이 서로를
+// 붙잡은 모습을 나타낸다. 그 위에 가입을 권하는 문구가 놓이고 (소개
+// 페이지에서는 가입 또는 앱 받기, 대시보드에서도), 그 아래에 사이트 링크와 흰
+// 바탕의 큰 은색 워드마크로 이름이 나온다.
 export function Footer({
   role,
   account,
@@ -38,11 +37,11 @@ export function Footer({
 }: {
   role: Role
   account: Account | null
-  // Whether the deep blue card with the call to register comes first.
+  // 가입을 권하는 짙은 파랑 카드를 맨 앞에 둘지 여부.
   invite?: boolean
-  // The card on the introduction: for both sides, to sign up or get the app.
+  // 소개 페이지의 카드. 양쪽 모두에게 가입이나 앱 받기를 권한다.
   landing?: boolean
-  // 앱 다운로드, for the site opened in a browser (none inside the app).
+  // 앱 다운로드. 브라우저에서 연 사이트를 위한 것이다 (앱 안에서는 없다).
   onInstall?: () => void
   onNavigate: (label: NavLabel) => void
   onSwitchRole: (role: Role) => void
@@ -165,7 +164,7 @@ export function Footer({
 
         <div className="footer-legal">
           <span>© {new Date().getFullYear()} uniconnect. All rights reserved.</span>
-          {/* Campuses and stores are placed with OpenStreetMap data (ODbL), which asks for this credit. */}
+          {/* 캠퍼스와 매장의 위치는 OpenStreetMap 데이터(ODbL)로 찾으며, 이 데이터는 출처 표기를 요구한다. */}
           <a className="footer-credit" href="https://www.openstreetmap.org/copyright" rel="noopener noreferrer" target="_blank">
             Map data © OpenStreetMap contributors
           </a>
@@ -176,7 +175,7 @@ export function Footer({
               </button>
             ))}
           </nav>
-          {/* The other language, named in itself; the choice is remembered. */}
+          {/* 다른 언어를 그 언어 자체로 적는다. 고른 언어는 기억한다. */}
           <button lang={lang === "ko" ? "en" : "ko"} onClick={() => setLang(lang === "ko" ? "en" : "ko")} type="button">
             {lang === "ko" ? "English" : "한국어"}
           </button>

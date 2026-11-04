@@ -5,7 +5,7 @@ import { expect, test, type Page } from "@playwright/test"
 import { codeAt, stepAt } from "../backend/src/lib/totp"
 import { signUpMember } from "./members"
 
-// The demo accounts' password (DEMO_PASSWORD in backend/src/data/seed.ts).
+// 데모 계정의 비밀번호다(backend/src/data/seed.ts의 DEMO_PASSWORD).
 const demoPassword = "uniconnect2026"
 
 async function logIn(page: Page, role: "학생단체" | "브랜드", email: string) {
@@ -26,15 +26,14 @@ test("search engines find the sitemap from robots.txt", async ({ request }) => {
   expect(sitemap.headers()["content-type"]).toMatch(/xml/)
   const xml = await sitemap.text()
   expect(xml).toContain("<loc>https://uniconnect-pied.vercel.app/faq</loc>")
-  // Screens kept out of search stay out of it.
+  // 검색에서 뺀 화면은 계속 빠져 있다.
   expect(xml).not.toContain("/dashboard")
 })
 
 test("visitors browse the site, its help and its 404 page", async ({ page }) => {
   await page.goto("/")
   await expect(page).toHaveTitle(/uniconnect/)
-  // The introduction leads to the example dashboard, marked as an example,
-  // and back.
+  // 소개 페이지는 예시로 표시된 예시 대시보드로 이어지고, 다시 돌아온다.
   await expect(page.getByRole("heading", { level: 1 })).toContainText("좋은 행사와")
   await page.getByRole("button", { name: "예시 화면 둘러보기" }).click()
   await expect(page).toHaveURL(/\/dashboard$/)
@@ -53,15 +52,15 @@ test("visitors browse the site, its help and its 404 page", async ({ page }) => 
 })
 
 test("a visitor sees made-up shops and the example groups on the nearby tabs", async ({ page }) => {
-  // Nearby shops and groups depend on the account's campus or store, so a
-  // visitor sees examples in full, under a note that says so. The test
-  // server has no map key, and the made-up shops need none.
+  // 가까운 매장과 단체는 계정의 캠퍼스나 매장에 달려 있으므로, 방문자는
+  // 안내문 아래에 예시를 전부 본다. 테스트 서버에는 지도 키가 없고, 만들어진
+  // 매장은 키가 필요 없다.
   await page.goto("/matches")
   await page.getByRole("tab", { name: "가까운 순" }).click()
   await expect(page.getByRole("note")).toContainText("학교마다 근처 가게가 달라요")
   await expect(page.getByText("삼육대학교 근처에 있다고 가정해 만든 예시 가게예요. 가까운 순서예요.")).toBeVisible()
   await expect(page.getByText("예시로 만든 가게예요. 실제 가게나 카카오의 정보가 아니에요.")).toBeVisible()
-  // The nearest made-up shop has no Kakao Map page, and inviting it asks to log in.
+  // 가장 가까운 만들어진 매장에는 Kakao Map 페이지가 없고, 초대하려면 로그인하라고 묻는다.
   const shop = page.locator(".work-card").first()
   await expect(shop).toContainText("정문분식")
   await expect(shop.getByRole("link")).toHaveCount(0)
@@ -73,7 +72,7 @@ test("a visitor sees made-up shops and the example groups on the nearby tabs", a
   await page.goto("/groups")
   await page.getByRole("tab", { name: "가까운 순" }).click()
   await expect(page.getByRole("note")).toContainText("매장마다 가까운 학생단체가 달라요")
-  // The example groups, nearest the demo brand's store first.
+  // 예시 단체를 데모 브랜드의 매장에서 가까운 순으로 본다.
   await expect(page.locator(".work-card").first()).toContainText("과기대 소리샘")
   await page.getByRole("note").getByRole("button", { name: "회원가입" }).click()
   await expect(page.getByRole("dialog")).toBeVisible()
@@ -82,8 +81,8 @@ test("a visitor sees made-up shops and the example groups on the nearby tabs", a
 test("the menu counts what waits for a member, and nothing for a visitor", async ({ page }) => {
   const menu = page.locator("#site-menu")
   const openMenu = () => page.getByRole("button", { name: "전체 메뉴" }).click()
-  // A visitor sees the demo accounts' inboxes as examples; their counts
-  // would read as the visitor's own notifications.
+  // 방문자는 데모 계정의 받은편지함을 예시로 보며, 그 수가 방문자 자신의
+  // 알림처럼 읽히면 안 된다.
   for (const path of ["/offers", "/inbox"]) {
     await page.goto(path)
     await expect(page.locator(".request-card").first()).toBeVisible()
@@ -94,7 +93,7 @@ test("the menu counts what waits for a member, and nothing for a visitor", async
     await page.keyboard.press("Escape")
     await expect(menu).toBeHidden()
   }
-  // Logged in, the brand sees its own unanswered proposals counted.
+  // 로그인하면 브랜드는 자기가 답하지 않은 제안의 수를 본다.
   await logIn(page, "브랜드", "hello@afternoon-coffee.kr")
   await openMenu()
   await expect(menu.getByRole("button", { name: /받은 제안/ }).locator("em")).toBeVisible()
@@ -115,7 +114,7 @@ test("the bell's dot shows only while a notice is unread, and stays read on relo
   await expect(panel.getByRole("button", { name: "모두 읽음" })).toHaveCount(0)
   await expect(dot).toHaveCount(0)
   await expect(bell).toHaveAccessibleName("알림")
-  // Kept on the account: after a reload the notices are there, all read.
+  // 계정에 보관하므로 새로 고침 뒤에도 알림이 있고 모두 읽은 상태다.
   await page.reload()
   await bell.click()
   await expect(panel.locator(".notification-list > button").first()).toBeVisible()
@@ -124,7 +123,7 @@ test("the bell's dot shows only while a notice is unread, and stays read on relo
 })
 
 test("a member saves a brand with the heart, finds it on the 찜 tab and lets it go", async ({ page }) => {
-  // A visitor's heart asks them to log in.
+  // 방문자가 하트를 누르면 로그인하라고 묻는다.
   await page.goto("/matches")
   await page.locator(".work-card").first().getByRole("button", { name: /찜하기$/ }).click()
   await expect(page.getByRole("dialog")).toBeVisible()
@@ -143,7 +142,7 @@ test("a member saves a brand with the heart, finds it on the 찜 tab and lets it
   await page.getByRole("tab", { name: "찜" }).click()
   await expect(page.locator(".work-card")).toHaveCount(1)
   await expect(page.locator(".work-card h3")).toHaveText(name)
-  // The detail page shows it saved, and lets it go.
+  // 상세 페이지는 저장된 것으로 보여 주고 놓을 수 있게 한다.
   await page.locator(".work-card h3").getByRole("button", { name }).click()
   const save = page.getByRole("button", { name: "찜하기", exact: true })
   await expect(save).toHaveAttribute("aria-pressed", "true")
@@ -201,12 +200,12 @@ test("a proposal sent waits under 검토 중 beside those received, and is taken
   const sentPart = page.locator(".inbox-part", { has: page.getByRole("heading", { name: /보낸 제안/ }) })
   const card = sentPart.locator(".request-card", { hasText: "받는 카페" })
   await expect(card).toContainText("보내는 공연")
-  // Asked once more, then gone.
+  // 한 번 더 묻고 나면 사라진다.
   await card.getByRole("button", { name: "제안 취소" }).click()
   await card.getByRole("button", { name: "제안 취소" }).click()
   await expect(sentPart.locator(".request-card")).toHaveCount(0)
   await expect(page.getByText("받는 카페에 보낸 제안을 취소했어요.")).toBeVisible()
-  // The brand leaves, so later cases see no member brand from this one.
+  // 브랜드가 떠나므로 이후 사례는 이 사례의 회원 브랜드를 보지 않는다.
   const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: brand.headers })
   expect(left.status()).toBe(204)
 })
@@ -221,14 +220,14 @@ test("an event is edited from 내 행사, and one that has begun keeps its dates
   await page.getByRole("button", { name: "고칠 공연 수정" }).click()
   await expect(page).toHaveURL(/\/edit\//)
   await expect(page.getByRole("heading", { name: "행사 수정" })).toBeVisible()
-  // It began today, so its dates stay as they are.
+  // 오늘 시작했으므로 날짜는 그대로 둔다.
   await expect(page.getByText("이미 시작한 행사라 일정은 바꿀 수 없어요.")).toBeVisible()
   await expect(page.getByLabel("행사명")).toHaveValue("고칠 공연")
   await page.getByLabel("행사명").fill("고친 공연")
   await page.getByRole("button", { name: "저장하기" }).click()
   await expect(page.getByText("행사 정보를 고쳤어요.")).toBeVisible()
   await expect(page.locator(".day-event-card", { hasText: "고친 공연" })).toBeVisible()
-  // The group leaves, so later cases see no member group from this one.
+  // 단체가 떠나므로 이후 사례는 이 사례의 회원 단체를 보지 않는다.
   const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: group.headers })
   expect(left.status()).toBe(204)
 })
@@ -245,7 +244,7 @@ test("the brand notes the parcel it sent on the agreement, and the group tracks 
 
   await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
   await page.goto(`/agreements/${id}`)
-  // The agreement reads as a contract: nine articles and both signatures.
+  // 계약서는 계약처럼 읽힌다. 아홉 조항과 양쪽의 서명이 있다.
   const terms = page.getByRole("region", { name: /계약 조항/ })
   await expect(terms.locator(".contract-articles li")).toHaveCount(9)
   await expect(terms.locator(".contract-articles")).toContainText("제1조 (목적)")
@@ -259,7 +258,7 @@ test("the brand notes the parcel it sent on the agreement, and the group tracks 
   await expect(panel.locator(".shipment-list")).toContainText("우체국택배 · 607012345678")
   await expect(panel.getByRole("link", { name: "배송 조회" })).toHaveAttribute("href", /search\.naver\.com.*607012345678/)
 
-  // The group sees it, without a way to take the brand's parcel off.
+  // 단체는 보지만 브랜드의 소포를 뺄 방법은 없다.
   const groupPage = await (await browser.newContext()).newPage()
   await groupPage.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
   await groupPage.goto(`/agreements/${id}`)
@@ -386,13 +385,13 @@ test("a sponsorship is called off from its agreement once the other side agrees"
   const panel = page.getByRole("region", { name: "협찬 취소" })
   await expect(panel).toContainText("취소하는 카페에서 협찬 취소를 요청했어요.")
   await expect(panel).toContainText("이유: 매장 공사로 협찬이 어려워요.")
-  // Agreeing asks once more, as it can't be undone.
+  // 되돌릴 수 없으므로 동의하려면 한 번 더 묻는다.
   await panel.getByRole("button", { name: "취소에 동의" }).click()
   await panel.getByRole("button", { name: "취소에 동의" }).click()
   await expect(page.getByRole("status").getByText("협찬을 취소했어요.", { exact: true })).toBeVisible()
   await expect(page.locator(".agreement-state.canceled")).toHaveText("취소된 협찬")
   await expect(page.getByRole("button", { name: "이 내용으로 확인하기" })).toHaveCount(0)
-  // Both leave, so later cases see no member from this one.
+  // 둘 다 떠나므로 이후 사례는 이 사례의 회원을 보지 않는다.
   for (const member of [group, brand]) {
     const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: member.headers })
     expect(left.status()).toBe(204)
@@ -415,7 +414,7 @@ test("a member reports and blocks a partner from its profile, and unblocks it in
   await page.locator(".profile-safety").getByRole("button", { name: "차단하기" }).click()
   await page.getByRole("dialog").getByRole("button", { name: "차단하기" }).click()
   await expect(page.getByText("차단했어요. 내 정보에서 풀 수 있어요.")).toBeVisible()
-  // The blocked brand is gone from the catalog.
+  // 차단한 브랜드는 카탈로그에서 사라졌다.
   await page.goto("/matches")
   await page.waitForLoadState("networkidle")
   await expect(page.locator(".work-card", { hasText: "신고된 카페" })).toHaveCount(0)
@@ -423,7 +422,7 @@ test("a member reports and blocks a partner from its profile, and unblocks it in
   await page.goto("/me")
   await page.locator(".blocked-list li", { hasText: "신고된 카페" }).getByRole("button", { name: "차단 풀기" }).click()
   await expect(page.getByText("신고된 카페의 차단을 풀었어요.")).toBeVisible()
-  // Both leave, so later cases see no member from this one.
+  // 둘 다 떠나므로 이후 사례는 이 사례의 회원을 보지 않는다.
   for (const member of [group, brand]) {
     const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: member.headers })
     expect(left.status()).toBe(204)
@@ -434,7 +433,7 @@ test("a brand's 내 정보 offers the business check once the server has its key
   const brand = await signUpMember(request, "브랜드", "e2e-business@business-cafe.kr", "확인할 카페")
   await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
   await page.goto("/me")
-  // The test server has no NTS_SERVICE_KEY, so it isn't offered yet.
+  // 테스트 서버에는 NTS_SERVICE_KEY가 없으므로 아직 내놓지 않는다.
   const row = page.locator(".settings-row", { has: page.getByText("사업자 확인", { exact: true }) })
   await expect(row).toContainText("아직 준비 중이에요")
   const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: brand.headers })
@@ -450,7 +449,7 @@ test("a member hides its listing from 내 정보 and shows it again from the das
   await toggle.click()
   await expect(page.getByText("내 소개를 숨겼어요. 상대 목록에 보이지 않고 새 제안을 받지 않아요.")).toBeVisible()
   await expect(toggle).toHaveAttribute("aria-checked", "true")
-  // The dashboard's hero says so, and brings it back with one press.
+  // 대시보드의 히어로가 그렇게 알리고, 한 번 눌러 되살린다.
   await page.goto("/dashboard")
   await expect(page.getByText("내 소개를 숨기는 중이에요.")).toBeVisible()
   await page.getByRole("button", { name: "다시 보이게 하기" }).click()
@@ -470,7 +469,7 @@ test("a new member's dashboard lists what to fill in, and folds it for later", a
   await expect(checklist.getByRole("listitem")).toHaveCount(6)
   await checklist.getByRole("button", { name: "소개 쓰기" }).click()
   await expect(page).toHaveURL(/\/me\/edit$/)
-  // A registered event checks its step.
+  // 등록한 행사는 그 단계를 확인한다.
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date())
   await request.post("/api/events", { data: { name: "첫 공연", date: today, types: ["현금"] }, headers: group.headers })
   await page.goto("/dashboard")
@@ -487,7 +486,7 @@ test("a new member's dashboard lists what to fill in, and folds it for later", a
 })
 
 test("the report and the analytics download as CSV files that Excel opens", async ({ page }) => {
-  // A visitor sees the demo group's report and the demo brand's analytics.
+  // 방문자는 데모 단체의 리포트와 데모 브랜드의 분석을 본다.
   for (const [path, name, first] of [
     ["/reports", /^uniconnect-report-\d{4}-\d{2}-\d{2}\.csv$/, "행사,"],
     ["/analytics", /^uniconnect-analytics-\d{4}-\d{2}-\d{2}\.csv$/, "단체,행사,날짜,"],
@@ -498,7 +497,7 @@ test("the report and the analytics download as CSV files that Excel opens", asyn
     const file = await download
     expect(file.suggestedFilename()).toMatch(name)
     const text = await readFile(await file.path(), "utf8")
-    // A byte order mark first, so Excel reads it as UTF-8.
+    // 엑셀이 UTF-8로 읽도록 바이트 순서 표식을 맨 앞에 둔다.
     expect(text.startsWith(`\uFEFF${first}`)).toBe(true)
     expect(text).toContain("\r\n")
   }
@@ -507,7 +506,7 @@ test("the report and the analytics download as CSV files that Excel opens", asyn
 test("the report page keeps the sponsorship record, handed over as a CSV file", async ({ page }) => {
   await page.goto("/reports")
   const record = page.getByRole("table", { name: "협찬 기록" })
-  // The header row folds away on a phone; each event's row opens its report.
+  // 머리 행은 폰에서 접히고, 행사마다의 행이 그 리포트를 연다.
   await expect(record.getByRole("row").filter({ has: page.getByRole("button") }).first()).toBeVisible()
   const download = page.waitForEvent("download")
   await page.getByRole("button", { name: "인수인계용 CSV" }).click()
@@ -545,7 +544,7 @@ test("a visitor lays two brands side by side, and opens one from the table", asy
 
 test("a group opens other groups' events from its calendar, and one event's page from there", async ({ page }) => {
   await page.goto("/events")
-  // The summary over the calendar leads with the next event.
+  // 캘린더 위의 요약은 다음 행사로 시작한다.
   const summary = page.getByRole("region", { name: "일정 요약" })
   await expect(summary.locator(".events-next strong")).not.toBeEmpty()
   await expect(summary.locator(".events-counts div")).toHaveCount(4)
@@ -564,7 +563,7 @@ test("both dashboards show what sets uniconnect apart, before and after", async 
   const why = page.getByRole("region", { name: "연결에서 끝나지 않고 협찬을 끝까지 함께해요" })
   await expect(why.getByRole("heading", { name: "이렇게 바뀌어요" })).toBeVisible()
   await expect(why.locator(".why-pillars li")).toHaveCount(4)
-  // Too few members yet to show the counts.
+  // 아직 회원이 너무 적어 집계를 보여 주지 않는다.
   await expect(why.locator(".why-counts")).toHaveCount(0)
   await page.getByRole("button", { name: "전체 메뉴" }).click()
   await page.getByRole("dialog", { name: "전체 메뉴" }).getByRole("button", { name: "브랜드 화면" }).click()
@@ -583,12 +582,12 @@ test("a member subscribes calendar apps to a link, and a new link stops the old 
   const address = sheet.getByRole("textbox", { name: "구독 링크 주소" })
   await expect(address).toHaveValue(/\/api\/calendar\/[\w-]{32}\.ics$/)
   const url = await address.inputValue()
-  // A calendar app reads it without logging in.
+  // 캘린더 앱은 로그인 없이 읽는다.
   const feed = await request.get(url)
   expect(feed.status()).toBe(200)
   expect(await feed.text()).toContain("SUMMARY:구독 공연")
   await expect(sheet.getByRole("link", { name: "Apple · Outlook에서 구독" })).toHaveAttribute("href", url.replace(/^https?:/, "webcal:"))
-  // A new link, asked for twice, stops the old one.
+  // 두 번 요청한 새 링크는 옛 링크를 멈춘다.
   await sheet.getByRole("button", { name: "새 링크로 바꾸기" }).click()
   await sheet.getByRole("button", { name: "새 링크 만들기" }).click()
   await expect(address).not.toHaveValue(url)
@@ -633,7 +632,7 @@ test("a member chooses which notice emails come, and the choice stays", async ({
 test("a group writes its event page on the form, adds a photo, and a brand reads it", async ({ page, request, browser }) => {
   const group = await signUpMember(request, "학생단체", "e2e-page@syu.ac.kr", "페이지 동아리")
   const brand = await signUpMember(request, "브랜드", "e2e-page@page-cafe.kr", "페이지 카페")
-  // Its page shows to brands once the group has a listing.
+  // 단체에 리스팅이 생기면 그 페이지가 브랜드에게 보인다.
   await request.put("/api/profile", { data: { intro: "캠퍼스 공연 동아리예요.", offer: "관객 100명" }, headers: group.headers })
   const day = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date(Date.now() + 14 * 86_400_000))
   await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
@@ -652,7 +651,7 @@ test("a group writes its event page on the form, adds a photo, and a brand reads
   await page.getByLabel("묶음 이름", { exact: true }).fill("메인 스폰서")
   await page.getByLabel("브랜드가 받는 것", { exact: true }).fill("무대 현수막 로고")
   await page.getByLabel("원하는 협찬", { exact: true }).fill("현금 30만원")
-  // A promotion plan needs the group's agreement before it registers.
+  // 홍보 계획은 등록하기 전에 단체의 동의가 필요하다.
   await page.locator("label.check-row", { hasText: "현수막" }).first().click()
   await page.locator("label.check-row", { hasText: "협찬 게시물 1회" }).click()
   await page.getByRole("button", { name: "등록하고 매칭 받기" }).click()
@@ -675,13 +674,13 @@ test("a group writes its event page on the form, adds a photo, and a brand reads
   const png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
   await page.locator(".event-photo-add input").setInputFiles({ name: "stage.png", mimeType: "image/png", buffer: Buffer.from(png, "base64") })
   await expect(page.getByRole("img", { name: "페이지 공연 사진" })).toBeVisible()
-  // The plan PDF goes on the page for brands to download.
+  // 기획안 PDF를 페이지에 올리면 브랜드가 내려받는다.
   await page
     .locator("label", { hasText: "기획안 올리기" })
     .locator("input")
     .setInputFiles({ name: "종강공연 기획안.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4\nplan\n%%EOF") })
   await expect(page.getByText("기획안을 올렸어요.")).toBeVisible()
-  // The group makes a proposal PDF from the page.
+  // 단체는 페이지에서 제안서 PDF를 만든다.
   const proposal = page.waitForEvent("download")
   await page.getByRole("button", { name: "제안서 PDF" }).click()
   expect((await proposal).suggestedFilename()).toBe(`uniconnect-proposal-${day}.pdf`)
@@ -695,7 +694,7 @@ test("a group writes its event page on the form, adds a photo, and a brand reads
   await page.goBack()
   await expect(page).toHaveURL(/\/event\/[^/]+$/)
 
-  // A brand member reads the same page, and goes on to the group's profile.
+  // 브랜드 회원은 같은 페이지를 읽고 단체의 프로필로 간다.
   const brandPage = await (await browser.newContext()).newPage()
   await brandPage.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
   await brandPage.goto(new URL(page.url()).pathname)
@@ -739,13 +738,13 @@ test("a club links to its student council with the code, and the council sees it
   await link.getByRole("button", { name: "연결하기" }).click()
   await expect(link.locator(".device-list")).toContainText("총학생회 e2e")
 
-  // The council sees the club and its coming event, nothing private.
+  // 총학생회는 동아리와 그 다가오는 행사를 보되 사적인 것은 보지 않는다.
   await page.reload()
   const card = page.locator(".council-club")
   await expect(card).toContainText("소속 밴드")
   await expect(card.locator(".council-events")).toContainText("소속 밴드 공연")
 
-  // Unlinked, it is gone.
+  // 연결을 끊으면 사라진다.
   await link.getByRole("button", { name: "연결 끊기" }).click()
   await expect(link.locator(".device-list")).toHaveCount(0)
   await page.reload()
@@ -760,8 +759,8 @@ test("Kakao and Naver stay hidden without keys, and a return from them says how 
   await page.getByRole("button", { name: "로그인", exact: true }).first().click()
   await expect(page.getByRole("dialog", { name: "로그인" }).getByRole("button", { name: "학생단체로 로그인" })).toBeVisible()
   await expect(page.locator(".social-login")).toHaveCount(0)
-  // The provider's answer comes back as ?social=, said once and taken from the address.
-  // A Kakao account no member linked logs no one in: the login opens again.
+  // 제공자의 답이 ?social=로 돌아오고, 한 번 알린 뒤 주소에서 사라진다.
+  // 회원이 연결하지 않은 Kakao 계정은 아무도 로그인시키지 못하고 로그인이 다시 열린다.
   await page.goto("/?social=unlinked-kakao")
   await expect(
     page.getByText("카카오 계정이 연결된 회원이 없어요. 카카오 로그인은 회원가입 뒤 내 정보에서 카카오 계정을 연결해야 쓸 수 있어요."),
@@ -783,7 +782,7 @@ test("an owner invites a co-admin, who joins with the code and can't do the owne
   await expect(team.locator(".team-list li.pending")).toContainText("e2e-vice@syu.ac.kr")
   const code = await team.locator(".field-hint strong").innerText()
 
-  // The invited person joins from the login popup in another browser.
+  // 초대받은 사람이 다른 브라우저의 로그인 팝업에서 합류한다.
   const vice = await (await browser.newContext()).newPage()
   await vice.goto("/")
   await vice.getByRole("button", { name: "로그인", exact: true }).first().click()
@@ -799,7 +798,7 @@ test("an owner invites a co-admin, who joins with the code and can't do the owne
   await expect(join).toBeHidden()
   await expect(vice.getByText("서류를 보냈어요. 운영자가 확인하면 메일로 알려 드려요.")).toBeVisible()
 
-  // The operators read the document and approve it on /admin.
+  // 운영자가 /admin에서 서류를 읽고 승인한다.
   const console = await (await browser.newContext()).newPage()
   await console.goto("/admin")
   await console.getByLabel("관리자 토큰").fill("e2e-admin-token")
@@ -811,7 +810,7 @@ test("an owner invites a co-admin, who joins with the code and can't do the owne
   await row.getByRole("button", { name: "승인" }).click()
   await expect(console.locator(".console-approvals li", { hasText: "e2e-vice@syu.ac.kr" })).toHaveCount(0)
 
-  // The first login sets up two-step login, which a co-admin must have.
+  // 첫 로그인에서 2단계 로그인을 설정하며, 공동 관리자는 반드시 있어야 한다.
   await vice.getByRole("button", { name: "로그인", exact: true }).first().click()
   const login = vice.getByRole("dialog")
   await login.getByLabel("이메일").fill("e2e-vice@syu.ac.kr")
@@ -832,7 +831,7 @@ test("an owner invites a co-admin, who joins with the code and can't do the owne
   await expect(vice.getByRole("button", { name: "로그인 이메일 바꾸기" })).toHaveCount(0)
   await expect(vice.getByRole("button", { name: /2단계 인증/ })).toHaveCount(0)
 
-  // The owner sees the co-admin joined, and takes it off, which logs it out.
+  // 주인은 공동 관리자가 합류한 것을 보고 팀에서 빼며, 그 로그인이 끝난다.
   await page.goto("/me")
   await page.getByRole("button", { name: "함께 관리하는 사람" }).click()
   const joined = page.getByRole("dialog", { name: "함께 관리하는 사람" })
@@ -854,20 +853,20 @@ test("the catalogs show as a map around the campus or store, with search applied
   const dots = map.locator(".place-dot")
   const all = await dots.count()
   expect(all).toBeGreaterThan(1)
-  // A dot opens its brand's card beside the map.
+  // 점을 누르면 지도 옆에 그 브랜드의 카드가 열린다.
   await map.getByRole("button", { name: /^오후의 커피, / }).click()
   await expect(map.locator(".nearby-map-card h3")).toHaveText("오후의 커피")
-  // Brands without a store are named under it, and open the same way.
+  // 매장이 없는 브랜드는 그 밑에 이름이 나오고 같은 방식으로 열린다.
   const unplaced = map.locator(".catalog-map-unplaced button")
   await expect(unplaced.first()).toBeVisible()
   const name = await unplaced.first().innerText()
   await unplaced.first().click()
   await expect(map.locator(".nearby-map-card h3")).toHaveText(name)
-  // Search narrows the dots too.
+  // 검색은 점도 좁힌다.
   await page.getByRole("searchbox", { name: "브랜드 검색" }).fill("오후의 커피")
   await expect(dots).toHaveCount(1)
 
-  // Brands see the groups around their store the same way.
+  // 브랜드도 같은 방식으로 매장 주변의 단체를 본다.
   await page.goto("/groups?role=브랜드")
   await page.getByRole("group", { name: "보기 방식" }).getByRole("button", { name: "지도" }).click()
   await expect(page.getByRole("group", { name: "내 매장 기준 지도" })).toBeVisible()
@@ -879,7 +878,7 @@ test("a member turns on two-step login, logs in with the app's code, and sees it
   await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), member.token)
   await page.goto("/me")
 
-  // On with the password, the app's key and its first code; the recovery codes show once.
+  // 비밀번호, 앱의 키, 첫 코드로 켜고 복구 코드는 한 번만 보여 준다.
   await page.getByRole("button", { name: "2단계 인증 켜기" }).click()
   const dialog = page.getByRole("dialog")
   await dialog.getByLabel("지금 비밀번호").fill("e2e-pass-123")
@@ -892,7 +891,7 @@ test("a member turns on two-step login, logs in with the app's code, and sees it
   await dialog.getByRole("button", { name: "적어 뒀어요" }).click()
   await expect(page.getByRole("button", { name: "2단계 인증 · 켜짐" })).toBeVisible()
 
-  // Logging in on another browser asks for the code after the password.
+  // 다른 브라우저에서 로그인하면 비밀번호 뒤에 코드를 묻는다.
   const other = await (await browser.newContext()).newPage()
   await other.goto("/")
   await other.getByRole("button", { name: "로그인", exact: true }).first().click()
@@ -903,12 +902,12 @@ test("a member turns on two-step login, logs in with the app's code, and sees it
   await login.getByLabel("인증 코드").fill("000000")
   await login.getByRole("button", { name: "확인하고 로그인" }).click()
   await expect(login.getByRole("alert")).toContainText("코드가 올바르지 않아요")
-  // The next step's code, as the first was used to turn it on.
+  // 첫 코드는 켜는 데 썼으므로 다음 단계의 코드를 쓴다.
   await login.getByLabel("인증 코드").fill(codeAt(secret, stepAt(Date.now()) + 1))
   await login.getByRole("button", { name: "확인하고 로그인" }).click()
   await expect(login).toBeHidden()
 
-  // Its device list shows it and the first browser, which it can log out.
+  // 기기 목록은 이 기기와 첫 브라우저를 보여 주며 첫 브라우저를 로그아웃시킬 수 있다.
   await other.goto("/me")
   await other.getByRole("button", { name: "로그인한 기기" }).click()
   const devices = other.getByRole("dialog")
@@ -936,14 +935,14 @@ test("an open conversation shows replies and reads as they happen", async ({ pag
   await brandPage.goto(`/messages/${conversation.id}`)
   await expect(brandPage.getByText("첫 메시지로 궁금한 점을 물어보세요.")).toBeVisible()
 
-  // The group's message reaches the brand's open page within moments, and
-  // the group sees it read as the brand's page shows it.
+  // 단체의 메시지는 몇 초 안에 브랜드의 열린 페이지에 닿고, 단체는 브랜드의
+  // 페이지가 보여 주는 대로 읽힌 것을 본다.
   await page.getByLabel("보낼 메시지").fill("협찬 이야기 나눠요!")
   await page.keyboard.press("Enter")
   await expect(brandPage.getByText("협찬 이야기 나눠요!")).toBeVisible({ timeout: 2500 })
   await expect(page.locator(".chat-read")).toHaveText("읽음", { timeout: 2500 })
 
-  // And the brand's reply comes back the same way.
+  // 브랜드의 답도 같은 방식으로 돌아온다.
   await brandPage.getByLabel("보낼 메시지").fill("좋아요, 언제 통화할까요?")
   await brandPage.keyboard.press("Enter")
   await expect(page.getByText("좋아요, 언제 통화할까요?")).toBeVisible({ timeout: 2500 })
@@ -960,7 +959,7 @@ test("members send each other a photo and a PDF in a conversation", async ({ pag
   const started = await request.post("/api/conversations", { data: { partnerId: brand.listingId }, headers: group.headers })
   const { conversation } = (await started.json()) as { conversation: { id: string } }
 
-  // The group sends a photo from the clip beside the box, then a PDF.
+  // 단체가 입력칸 옆의 클립으로 사진을 보낸 뒤 PDF를 보낸다.
   await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
   await page.goto(`/messages/${conversation.id}`)
   const clip = page.getByLabel("사진이나 PDF 보내기")
@@ -969,7 +968,7 @@ test("members send each other a photo and a PDF in a conversation", async ({ pag
   await clip.setInputFiles({ name: "제안서.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4\n%%EOF\n") })
   await expect(page.getByRole("button", { name: /제안서\.pdf/ })).toBeVisible()
 
-  // The brand sees both, its list says a PDF came last, and it saves the PDF by its name.
+  // 브랜드는 둘 다 보고, 목록에는 PDF가 마지막으로 왔다고 나오며, PDF는 그 이름으로 저장한다.
   const brandPage = await (await browser.newContext()).newPage()
   await brandPage.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
   await brandPage.goto("/messages")
@@ -980,7 +979,7 @@ test("members send each other a photo and a PDF in a conversation", async ({ pag
   await brandPage.getByRole("button", { name: /제안서\.pdf/ }).click()
   expect((await download).suggestedFilename()).toBe("제안서.pdf")
 
-  // A file is deleted, not edited.
+  // 파일은 수정하지 않고 지운다.
   await page.getByRole("button", { name: "메시지 삭제" }).first().focus()
   await page.keyboard.press("Enter")
   const actions = page.locator(".chat-actions")
@@ -1003,7 +1002,7 @@ test("a group posts on the recruit board, and a brand applies with its campaign"
   await request.post("/api/events", { data: { name: "모집 공연", date: day(20), types: ["현금"] }, headers: group.headers })
   await request.post("/api/events", { data: { name: "모집 시음회", date: day(15), types: ["제품"] }, headers: brand.headers })
 
-  // The group writes its post from the board.
+  // 단체가 게시판에서 글을 쓴다.
   await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
   await page.goto("/board")
   await page.getByRole("button", { name: "모집 글 쓰기" }).first().click()
@@ -1017,7 +1016,7 @@ test("a group posts on the recruit board, and a brand applies with its campaign"
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("종강 공연 협찬사를 찾아요")
   await expect(page.locator(".post-applications")).toContainText("아직 지원한 곳이 없어요")
 
-  // A brand member finds it on the board and applies with its campaign.
+  // 브랜드 회원이 게시판에서 그 글을 찾아 자기 캠페인으로 지원한다.
   const brandPage = await (await browser.newContext()).newPage()
   await brandPage.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
   await brandPage.goto("/board")
@@ -1025,7 +1024,7 @@ test("a group posts on the recruit board, and a brand applies with its campaign"
   await brandPage.getByRole("button", { name: "지원하기" }).click()
   const apply = brandPage.getByRole("dialog")
   await expect(apply.getByLabel("제안할 캠페인")).toContainText("모집 시음회")
-  // The message is saved as a template, kept on the account for next time.
+  // 메시지를 템플릿으로 저장해 두어 다음에도 쓰도록 계정에 보관한다.
   await apply.getByLabel("전할 메시지").fill("시음 부스로 함께하고 싶어요.")
   await apply.getByRole("button", { name: "지금 문구 저장" }).click()
   await apply.getByLabel("문구 이름").fill("첫 지원")
@@ -1035,7 +1034,7 @@ test("a group posts on the recruit board, and a brand applies with its campaign"
   await apply.getByRole("button", { name: "제안 보내기" }).click()
   await expect(brandPage.getByText("지원했어요 · 검토 중")).toBeVisible()
 
-  // The group sees the application on its post, to answer in its inbox.
+  // 단체는 자기 글에서 지원을 보고 받은편지함에서 답한다.
   await page.reload()
   await expect(page.locator(".post-applications")).toContainText("모집 카페")
   await expect(page.getByRole("button", { name: "받은 협찬에서 답하기" })).toBeVisible()
@@ -1079,10 +1078,10 @@ test("a student group proposes and the brand accepts", async ({ browser }) => {
   const student = await (await browser.newContext()).newPage()
   await student.goto("/")
   await logIn(student, "학생단체", "muse@syu.ac.kr")
-  // Logging in opens the dashboard; the brand's page is one step away.
+  // 로그인하면 대시보드가 열리고 브랜드의 페이지는 한 걸음 거리다.
   await student.goto("/matches/afternoon-coffee")
   await student.locator(".profile-actions").getByRole("button", { name: /협찬 제안 보내기/ }).click()
-  // The form picks the event (the nearest at first) and takes a note.
+  // 양식이 행사를 고르고(처음에는 가장 가까운 것) 메모를 받는다.
   const form = student.getByRole("dialog")
   await expect(form.getByLabel("제안할 행사")).toBeVisible()
   await form.getByLabel("전할 메시지").fill("현장 부스와 SNS로 브랜드를 알릴게요.")
@@ -1099,14 +1098,14 @@ test("a student group proposes and the brand accepts", async ({ browser }) => {
   await card.getByRole("button", { name: /수락하기/ }).click()
   await expect(brand.locator(".request-card", { hasText: "삼육대 뮤즈" }).first()).toBeHidden()
   await brand.getByRole("tab", { name: /수락함/ }).click()
-  // Accepted: the result and the progress steps show on the card.
+  // 수락되면 결과와 진행 단계가 카드에 보인다.
   const accepted = brand.locator(".request-card", { hasText: "삼육대 뮤즈" })
   await expect(accepted.locator(".request-result.confirmed")).toBeVisible()
   await expect(accepted.getByRole("list", { name: "협찬 진행 상황" })).toBeVisible()
 })
 
 test("the e-contract sets how the sponsorship is confirmed, and once both sides confirm, each side records its own methods at the venue", async ({ browser }) => {
-  // The concert the group proposed above, which the brand accepted.
+  // 앞서 단체가 제안했고 브랜드가 수락한 콘서트다.
   const student = await (await browser.newContext()).newPage()
   await student.goto("/")
   await logIn(student, "학생단체", "muse@syu.ac.kr")
@@ -1115,14 +1114,14 @@ test("the e-contract sets how the sponsorship is confirmed, and once both sides 
   await expect(student.getByRole("heading", { name: "2026 뮤즈 종강 공연 임시 전자 계약서" })).toBeVisible()
   const methods = student.locator(".methods-panel")
   const status = methods.getByRole("heading", { name: /협찬 확인 방식/ })
-  // At first the QR, its coupon and the store's visits, not yet settled.
+  // 처음에는 QR, 그 쿠폰, 매장 방문이며 아직 확정되지 않았다.
   await expect(methods.locator(".method-list li")).toHaveCount(3)
   await expect(methods.locator(".method-list")).toContainText("QR 체크인")
   await expect(methods.locator(".method-list")).toContainText("매장 방문")
   await expect(status).toContainText("두 쪽이 계약서를 모두 확인하면 성과에 반영돼요")
   await expect(methods.locator(".venue-access")).toHaveCount(0)
 
-  // The group adds booth stamps for itself and sampling for the brand.
+  // 단체는 자기를 위한 부스 도장과 브랜드를 위한 샘플을 더한다.
   await methods.getByRole("button", { name: "협찬 확인 방식 고르기" }).click()
   await methods.getByRole("checkbox", { name: /부스 방문 · 스탬프/ }).check()
   await methods.getByRole("checkbox", { name: /샘플링 · 시음/ }).check()
@@ -1131,7 +1130,7 @@ test("the e-contract sets how the sponsorship is confirmed, and once both sides 
   await methods.getByRole("button", { name: "저장" }).click()
   await expect(methods.locator(".method-list li")).toHaveCount(5)
   await expect(methods.locator(".method-list")).toContainText("삼육대 뮤즈에서 현장 확인")
-  // They count once both sides confirm the e-contract.
+  // 양쪽이 e-contract를 확정해야 센다.
   await expect(methods.locator(".venue-access")).toHaveCount(0)
   await student.getByRole("button", { name: "이 내용으로 확인하기" }).click()
   await expect(student.getByText("확인했어요. 오후의 커피에 알렸어요.")).toBeVisible()
@@ -1145,7 +1144,7 @@ test("the e-contract sets how the sponsorship is confirmed, and once both sides 
   const brandMethods = brand.locator(".methods-panel")
   await expect(brandMethods.getByRole("heading", { name: /협찬 확인 방식/ })).toContainText("확정됐어요")
 
-  // The group's own venue page opens with its PIN, which only it sees, and takes the stamps.
+  // 단체의 현장 페이지는 자기만 보는 PIN으로 열려 도장을 센다.
   await student.reload()
   await expect(status).toContainText("확정됐어요")
   const link = await methods.locator(".venue-access a").getAttribute("href")
@@ -1153,7 +1152,7 @@ test("the e-contract sets how the sponsorship is confirmed, and once both sides 
   expect(link).toMatch(/\/check-in\/[\w-]+\/group$/)
   const venue = await (await browser.newContext()).newPage()
   await venue.goto(link!)
-  // The event shows before the PIN, so the staff know it is the right page.
+  // 직원이 맞는 페이지임을 알 수 있도록 행사가 PIN보다 먼저 보인다.
   await expect(venue.getByRole("heading", { level: 1 })).toHaveText("2026 뮤즈 종강 공연")
   await expect(venue.getByText(/삼육대 뮤즈 · /)).toBeVisible()
   await venue.getByLabel("단체 확인 PIN").fill(pin === "0000" ? "0001" : "0000")
@@ -1167,7 +1166,7 @@ test("the e-contract sets how the sponsorship is confirmed, and once both sides 
   await venue.getByRole("button", { name: "부스 방문 · 스탬프 하나 되돌리기" }).click()
   await expect(venue.locator(".venue-counter-head strong")).toHaveText("1")
 
-  // The brand's store staff count the samples on the staff page with the brand's PIN.
+  // 브랜드의 매장 직원이 직원 페이지에서 브랜드의 PIN으로 샘플을 센다.
   const staffLink = await brandMethods.locator(".venue-access a").getAttribute("href")
   const staffPin = (await brandMethods.locator(".venue-access span strong").textContent())!
   expect(staffLink).toMatch(/\/staff$/)
@@ -1188,7 +1187,7 @@ test("the e-contract sets how the sponsorship is confirmed, and once both sides 
   await expect(tiles).toHaveCount(5)
   await expect(tiles.filter({ hasText: "부스 스탬프" })).toHaveCount(1)
   await expect(tiles.filter({ hasText: "SNS 인증" })).toHaveCount(0)
-  // An event that has ended says so.
+  // 끝난 행사는 그렇다고 알린다.
   await student.getByLabel("행사 고르기").selectOption("event-busking-day")
   await expect(student.locator(".measure-bar .measure-state")).toHaveText("진행 완료")
   await expect(student.locator(".live-panel .eyebrow")).toHaveText("Event Ended")
@@ -1201,7 +1200,7 @@ test("a participant takes the coupon and the store's staff confirm the visit on 
   await participant.getByRole("button", { name: "쿠폰 받기" }).click()
   const number = (await participant.locator(".coupon-code strong").textContent()) ?? ""
   expect(number).toMatch(/^UC-[A-Z2-9]{6}$/)
-  // Nothing on the participant's phone asks for the staff PIN.
+  // 참여자의 폰에서는 직원 PIN을 묻는 것이 아무것도 없다.
   await expect(participant.getByLabel("직원 PIN")).toHaveCount(0)
 
   const staff = await (await browser.newContext()).newPage()
@@ -1214,7 +1213,7 @@ test("a participant takes the coupon and the store's staff confirm the visit on 
   await staff.getByRole("button", { name: "방문 확인" }).click()
   await expect(staff.getByRole("status").getByText(`${number}`, { exact: false })).toBeVisible()
 
-  // The participant's page shows the confirmation on its next check.
+  // 참여자의 페이지는 다음에 확인할 때 확정을 보여 준다.
   await expect(participant.getByText("방문이 확인됐어요", { exact: false })).toBeVisible({ timeout: 10_000 })
 })
 
@@ -1235,11 +1234,11 @@ test("a new group signs up with the code shown on screen", async ({ page }) => {
   await expect(dialog.getByText("이메일 인증이 완료됐어요.")).toBeVisible()
   await dialog.getByLabel("비밀번호", { exact: true }).fill("e2e-pass-123")
   await dialog.getByLabel("비밀번호 확인").fill("e2e-pass-123")
-  // The agreement's words hold links to the documents, so tick the boxes.
+  // 계약서의 문구에 문서 링크가 있으므로 확인란에 체크한다.
   await dialog.getByRole("checkbox").nth(0).check()
   await dialog.getByRole("checkbox").nth(1).check()
-  // The page loaded the examples for the visitor; none may flash on the
-  // new member's dashboard while its own data loads.
+  // 페이지가 방문자를 위해 예시를 불러왔으므로, 새 회원의 대시보드에 자기
+  // 데이터를 불러오는 동안 예시가 번쩍이면 안 된다.
   await page.evaluate(() => {
     const watch = window as unknown as { exampleShown: boolean }
     watch.exampleShown = false
@@ -1251,9 +1250,9 @@ test("a new group signs up with the code shown on screen", async ({ page }) => {
   await expect(dialog).toBeHidden()
   await expect(page.getByText(/가입했어요/)).toBeVisible()
 
-  // Members see only members: with no brand signed up yet, the dashboard
-  // and 추천 매칭 say so, and point to inviting nearby shops, instead of
-  // showing the example brands.
+  // 회원은 회원만 보므로, 가입한 브랜드가 아직 없으면 대시보드와 추천 매칭이
+  // 예시 브랜드를 보여 주는 대신 그렇다고 알리고 근처 매장을 초대하라고
+  // 안내한다.
   await expect(page.locator(".insight-title")).toHaveText("아직 가입한 브랜드가 없어요.")
   await expect(page.locator(".catalog-empty")).toContainText("아직 추천할 브랜드가 없어요")
   await expect(page.getByText("오후의 커피")).toHaveCount(0)
@@ -1266,16 +1265,16 @@ test("a new group signs up with the code shown on screen", async ({ page }) => {
 })
 
 test("brands show how far their store is from the school, and a brand keeps its store address", async ({ browser }) => {
-  // Visitors see the demo group's campus and the demo stores.
+  // 방문자는 데모 단체의 캠퍼스와 데모 매장을 본다.
   const student = await (await browser.newContext()).newPage()
   await student.goto("/matches")
   await student.getByRole("tab", { name: "전체" }).click()
   await expect(student.locator(".work-card", { hasText: "그린데이 샐러드" }).locator(".tag-distance")).toHaveText(/3\.3km/)
-  // Online brands have no store, so no distance.
+  // 온라인 브랜드는 매장이 없으므로 거리가 없다.
   await expect(student.locator(".work-card", { hasText: "프레시온" }).locator(".tag-distance")).toHaveCount(0)
 
   const brand = await (await browser.newContext()).newPage()
-  // Kakao's address search stands in here as one button that picks an address.
+  // 여기서는 Kakao의 주소 검색이 주소를 고르는 버튼 하나로 대신한다.
   await brand.addInitScript(() => {
     type Options = { oncomplete: (data: { roadAddress: string; jibunAddress: string; address: string }) => void }
     ;(window as unknown as { daum: unknown }).daum = {
@@ -1300,7 +1299,7 @@ test("brands show how far their store is from the school, and a brand keeps its 
   await expect(brand.getByLabel("협찬 내용").first()).toHaveValue("150장")
   await brand.getByRole("button", { name: "협찬 추가" }).click()
   await expect(brand.getByLabel("협찬 종류")).toHaveCount(4)
-  // What it can't edit stands apart, filled in from its activity.
+  // 고칠 수 없는 것은 따로 두고 활동에서 채운다.
   await expect(brand.getByRole("group", { name: /저절로 채워지는 정보/ })).toContainText("서울 노원구")
   // 불러오기 adds a past sponsorship to the portfolio.
   const rows = await brand.getByLabel("제목", { exact: true }).count()
@@ -1315,8 +1314,8 @@ test("brands show how far their store is from the school, and a brand keeps its 
   await expect(brand.getByLabel("매장 주소")).toHaveValue("서울 노원구 화랑로 815")
   await brand.getByRole("button", { name: "저장하기" }).click()
   await expect(brand.getByText(/소개를 저장했어요/)).toBeVisible()
-  // The server has no map key here, so the new address has no place yet
-  // and the groups show no distance.
+  // 여기서는 서버에 지도 키가 없으므로 새 주소에는 아직 위치가 없고 단체에는
+  // 거리가 나오지 않는다.
   await brand.goto("/groups")
   await brand.getByRole("tab", { name: "가까운 순" }).click()
   await expect(brand.locator(".work-card").first()).toBeVisible()
@@ -1335,27 +1334,27 @@ test("the language is set in 내 정보, and the page stays where it was", async
   await language.getByRole("button", { name: "English" }).click()
   await expect(page.locator("html")).toHaveAttribute("lang", "en")
   await expect(page).toHaveURL(/\/me$/)
-  // In English the row is Language, and Korean brings the app back.
+  // 영어에서는 행이 Language이고, 한국어를 고르면 앱이 돌아온다.
   await page.getByRole("group", { name: "Language" }).getByRole("button", { name: "한국어" }).click()
   await expect(page.locator("html")).toHaveAttribute("lang", "ko")
 })
 
 test("가까운 순 looks around the group's school for real shops, and says so while the map isn't connected", async ({ page }) => {
-  // A member's own campus; visitors see this tab blurred, as an example.
+  // 회원 자신의 캠퍼스다. 방문자는 이 탭을 예시로 흐리게 본다.
   await page.goto("/")
   await logIn(page, "학생단체", "muse@syu.ac.kr")
   await page.goto("/matches")
   await page.getByRole("tab", { name: "가까운 순" }).click()
-  // Every kind at first.
+  // 처음에는 모든 종류다.
   await expect(page.getByRole("button", { name: "전체", exact: true })).toHaveAttribute("aria-pressed", "true")
-  // The test server has no map key.
+  // 테스트 서버에는 지도 키가 없다.
   await expect(page.getByText("지도 서비스가 연결되면 학교 근처 가게를 보여 드려요.")).toBeVisible()
   await page.getByRole("button", { name: "학원", exact: true }).click()
   await expect(page.getByRole("button", { name: "학원", exact: true })).toHaveAttribute("aria-pressed", "true")
   await expect(page.getByText("지도 서비스가 연결되면 학교 근처 가게를 보여 드려요.")).toBeVisible()
 })
 
-// A stand-in for Kakao's Maps SDK: each overlay's content goes into the map box.
+// Kakao Maps SDK를 대신하는 것으로, 각 오버레이의 내용을 지도 상자에 넣는다.
 const fakeKakaoSdk = `
 window.kakao = { maps: {
   load: (done) => done(),
@@ -1383,7 +1382,7 @@ test("가까운 순's map sits on Kakao's map once a key is set, and on the sket
   expect(await dots.count()).toBeGreaterThan(1)
   await dots.nth(1).click()
   await expect(dots.nth(1)).toHaveAttribute("aria-pressed", "true")
-  // Without Kakao the same shops show on the sketch.
+  // Kakao가 없으면 같은 매장을 스케치에 보여 준다.
   sdk = "down"
   await page.reload()
   await page.getByRole("tab", { name: "가까운 순" }).click()
@@ -1392,7 +1391,7 @@ test("가까운 순's map sits on Kakao's map once a key is set, and on the sket
   await expect(page.locator(".kakao-map")).toHaveCount(0)
 })
 
-// Every overlay at the map's left edge, stacked by zIndex as Kakao does.
+// 모든 오버레이를 지도의 왼쪽 가장자리에 Kakao처럼 zIndex 순으로 쌓는다.
 const edgeKakaoSdk = fakeKakaoSdk.replace(
   "CustomOverlay: function (o) { this.setMap = (map) => { if (map) map.el.append(o.content); else o.content.remove() } },",
   `CustomOverlay: function (o) { this.setMap = (map) => {
@@ -1417,7 +1416,7 @@ test("on Kakao's map the campus label lets the shops beside it be pressed, and a
   await page.getByRole("group", { name: "보기 방식" }).getByRole("button", { name: "지도" }).click()
   const map = page.locator(".kakao-map")
   await expect(map.locator(".kakao-campus")).toBeVisible()
-  // The shop sits right on the campus label and still takes the press.
+  // 매장이 캠퍼스 라벨 바로 위에 있어도 누르는 것을 받는다.
   const dot = map.locator(".kakao-dot").first()
   await dot.click()
   await expect(dot).toHaveAttribute("aria-pressed", "true")
@@ -1478,13 +1477,13 @@ test("a member downloads their data and hands the account over to a new email", 
   await change.getByLabel("새 로그인 이메일").fill("e2e-next-officer@syu.ac.kr")
   await change.getByLabel("지금 비밀번호").fill("e2e-pass-123")
   await change.getByRole("button", { name: "인증번호 받기" }).click()
-  // The test server shows codes on screen, as in development.
+  // 테스트 서버는 개발 환경처럼 코드를 화면에 보여 준다.
   await change.getByLabel("인증번호").fill((await change.locator(".field-hint strong").textContent()) ?? "")
   await change.getByRole("button", { name: "이메일 바꾸기" }).click()
   await expect(change).toBeHidden()
   await expect(page.getByText("e2e-next-officer@syu.ac.kr", { exact: true })).toBeVisible()
 
-  // The new officer puts in their own name, position and number.
+  // 새 임원이 자기 이름, 직책, 번호를 넣는다.
   await page.getByRole("button", { name: "담당자 정보 수정" }).click()
   const contact = page.getByRole("dialog")
   await contact.getByLabel("담당자 이름").fill("새 임원")
@@ -1496,13 +1495,13 @@ test("a member downloads their data and hands the account over to a new email", 
 })
 
 test("a shop a student group invited joins as a brand from the invitation", async ({ page, request }) => {
-  // Kakao isn't connected here, so a group that signed up invites a shop by
-  // its place ID through the API (the demo group can't invite real shops).
+  // 여기서는 Kakao가 연결되어 있지 않으므로, 가입한 단체가 API로 장소 ID를
+  // 써서 매장을 초대한다(데모 단체는 실제 매장을 초대할 수 없다).
   const group = await signUpMember(request, "학생단체", "e2e-inviter@syu.ac.kr", "초대 동아리")
   const made = await request.post("/api/invites", { data: { placeId: "12345678" }, headers: group.headers })
   const { invite } = (await made.json()) as { invite: { code: string } }
 
-  // The owner opens the link, reads who invited, and signs up as a brand.
+  // 주인이 링크를 열어 누가 초대했는지 읽고 브랜드로 가입한다.
   await page.goto(`/invite/${invite.code}`)
   await expect(page.getByRole("heading", { name: "초대 동아리에서 초대했어요" })).toBeVisible()
   await page.getByRole("button", { name: "가게로 가입하기" }).click()
@@ -1522,13 +1521,13 @@ test("a shop a student group invited joins as a brand from the invitation", asyn
   await signup.getByRole("button", { name: "가입하고 시작하기" }).click()
   await expect(signup).toBeHidden()
 
-  // Back on the invitation, one press links the shop, and the brand is listed for groups to find.
+  // 초대 페이지로 돌아와 한 번 누르면 매장이 연결되고, 단체가 찾도록 브랜드가 목록에 오른다.
   await page.getByRole("button", { name: "우리 가게로 연결하기" }).click()
   await expect(page.getByText("연결됐어요. 이제 초대 동아리의 협찬 제안을 받을 수 있어요.")).toBeVisible()
   const listed = async (headers?: Record<string, string>) =>
     ((await (await request.get("/api/brands", { headers })).json()) as { brands: { name: string; kakaoPlaceId?: string }[] }).brands
   expect((await listed(group.headers)).some((brand) => brand.name === "골목 카페" && brand.kakaoPlaceId === "12345678")).toBe(true)
-  // Visitors' examples don't list it.
+  // 방문자의 예시에는 오르지 않는다.
   expect((await listed()).some((brand) => brand.name === "골목 카페")).toBe(false)
 })
 
@@ -1574,14 +1573,14 @@ test("a brand opens an accepted proposal's agreement, confirms it and proves wha
   await page.locator(".request-card", { hasText: "서울여대 러너스" }).getByRole("button", { name: "계약서" }).click()
   await expect(page.getByRole("heading", { name: "가을 캠퍼스 런 5K 임시 전자 계약서" })).toBeVisible()
   await expect(page.getByText("아직 uniconnect 계정이 없어요")).toBeVisible()
-  // Its own side shows the person running it, with a number to call.
+  // 자기 쪽은 운영하는 사람을 연락할 전화번호와 함께 보여 준다.
   await expect(page.locator(".agreement-contact")).toContainText("이오후 · 점장")
   await expect(page.locator(".agreement-contact a")).toHaveAttribute("href", "tel:01000000001")
 
   await page.getByRole("button", { name: "이 내용으로 확인하기" }).click()
   await expect(page.locator(".agreement-confirm .agreement-state")).toHaveText("상대 확인 기다리는 중")
 
-  // The brand ticks its first item and proves it with a link and a photo.
+  // 브랜드가 첫 항목을 체크하고 링크와 사진으로 증빙한다.
   const item = page.locator(".agreement-item").first()
   await item.getByRole("checkbox").check()
   await expect(item.getByRole("checkbox")).toBeChecked()
@@ -1592,7 +1591,7 @@ test("a brand opens an accepted proposal's agreement, confirms it and proves wha
   await item.getByLabel("사진 추가").setInputFiles({ name: "proof.png", mimeType: "image/png", buffer: png })
   await expect(item.getByRole("img", { name: "증빙 사진" })).toBeVisible()
 
-  // The list shows how far it is.
+  // 목록에 진행 정도가 보인다.
   await page.goto("/agreements")
   await expect(page.locator(".agreement-row", { hasText: "서울여대 러너스" })).toContainText("증빙 2개")
 })
@@ -1602,7 +1601,7 @@ test("visitors see a partner's reviews, a group reviews the brand after its even
   request,
   browser,
 }) => {
-  // The seeded reviews, on the card and the detail page.
+  // 시드된 후기가 카드와 상세 페이지에 있다.
   await page.goto("/matches")
   await expect(page.locator(".work-card", { hasText: "오후의 커피" }).first().locator(".tag-rating")).toContainText("후기 2")
   await page.goto("/matches/afternoon-coffee")
@@ -1613,7 +1612,7 @@ test("visitors see a partner's reviews, a group reviews the brand after its even
   await reviews.getByRole("button", { name: "후기 모두 보기 (2)" }).click()
   await expect(reviews.locator(".profile-review, .review-card")).toHaveCount(2)
 
-  // Two members: a group's event today, proposed to a brand and accepted (through the API).
+  // 회원 둘이다. 단체의 오늘 행사를 브랜드에 제안하고 수락한다(API로).
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date())
   const group = await signUpMember(request, "학생단체", "e2e-reviewer@syu.ac.kr", "후기 동아리")
   const brand = await signUpMember(request, "브랜드", "e2e-reviewed@reviewed-cafe.kr", "후기 카페")
@@ -1624,15 +1623,15 @@ test("visitors see a partner's reviews, a group reviews the brand after its even
   }
   const proposal = inbox.requests.find((item) => item.groupName === "후기 동아리")!
   await request.post(`/api/requests/${proposal.id}/accept`, { headers: brand.headers })
-  // Reviews follow a confirmed e-contract: the value, the group's check, and
-  // the brand's, which is paying the fee (by transfer, confirmed by an operator).
+  // 후기는 확정된 e-contract 뒤에 쓴다. 가치, 단체의 확인, 수수료를 내는
+  // 브랜드의 확인이 필요하다(이체이며 운영자가 확인한다).
   await request.put(`/api/agreements/${proposal.id}/value`, { data: { value: { cash: 100000, inKind: 0 } }, headers: group.headers })
   await request.post(`/api/agreements/${proposal.id}/confirm`, { headers: group.headers })
   const order = (await (await request.post("/api/billing/orders", { data: { kind: "fee", targetId: proposal.id }, headers: brand.headers })).json()) as { order: { id: string } }
   const paid = await request.post(`/api/admin/payments/${order.order.id}/paid`, { headers: { "X-Admin-Token": "e2e-admin-token" } })
   expect(paid.ok()).toBe(true)
 
-  // On the agreement, the group leaves its review.
+  // 계약서에서 단체가 후기를 남긴다.
   await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
   await page.goto(`/agreements/${proposal.id}`)
   const panel = page.locator(".review-panel")
@@ -1642,12 +1641,12 @@ test("visitors see a partner's reviews, a group reviews the brand after its even
   await panel.getByRole("button", { name: "후기 남기기" }).click()
   await expect(panel.getByText("내가 남긴 후기")).toBeVisible()
 
-  // It shows on the brand's page, which the group (a member) sees.
+  // 단체(회원)가 보는 브랜드의 페이지에 그 후기가 보인다.
   await page.goto(`/matches/${brand.listingId}`)
   await page.getByRole("tab", { name: /파트너 후기/ }).click()
   await expect(page.locator(".profile-review")).toContainText("커피가 공연 전에 딱 맞춰 왔어요.")
 
-  // The brand answers it on the agreement, and the answer shows under the review.
+  // 브랜드가 계약서에서 답하고, 답은 후기 밑에 보인다.
   const brandPage = await (await browser.newContext()).newPage()
   await brandPage.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
   await brandPage.goto(`/agreements/${proposal.id}`)
@@ -1663,8 +1662,8 @@ test("visitors see a partner's reviews, a group reviews the brand after its even
 })
 
 test("the app can be installed, and the calendar gives its dates to calendar apps", async ({ page, request }) => {
-  // The manifest, its icons and the service worker are served; links to the
-  // site ask to open in the browser, not the installed app.
+  // 매니페스트와 아이콘과 서비스 워커를 서빙하며, 사이트로 가는 링크는
+  // 설치한 앱이 아니라 브라우저에서 열라고 요청한다.
   const manifest = (await (await request.get("/manifest.webmanifest")).json()) as {
     name: string
     display: string
@@ -1679,7 +1678,7 @@ test("the app can be installed, and the calendar gives its dates to calendar app
   expect(await (await request.get("/sw.js")).text()).toContain("/api/")
   await page.goto("/")
   await expect(page.locator('link[rel="manifest"]')).toHaveAttribute("href", "/manifest.webmanifest")
-  // The built app registers the service worker.
+  // 빌드한 앱은 서비스 워커를 등록한다.
   const worker = await page.evaluate(async () => (await navigator.serviceWorker.ready).active?.scriptURL ?? "")
   expect(worker).toMatch(/\/sw\.js$/)
 
@@ -1716,11 +1715,11 @@ test("the app can be installed, and the calendar gives its dates to calendar app
   await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), token)
   await page.goto("/events")
   await page.getByRole("button", { name: "캘린더에 추가" }).click()
-  // Laid out like the phone's share sheet: the coming dates, all picked, then the calendar apps.
+  // 폰의 공유 시트처럼 짜여 있다. 다가오는 날짜가 모두 골라져 있고, 그 밑에 캘린더 앱이 있다.
   const sheet = page.getByRole("dialog", { name: "캘린더에 추가" })
   await expect(sheet.getByText("일정 2개 선택됨")).toBeVisible()
   await expect(sheet.getByRole("button", { name: /겨울 정기 공연/ })).toHaveAttribute("aria-pressed", "true")
-  // With several dates, Google Calendar opens each one's add page in turn.
+  // 날짜가 여럿이면 Google Calendar가 날짜마다의 추가 페이지를 차례로 연다.
   await sheet.getByRole("button", { name: "Google 캘린더" }).click()
   const google = sheet.getByRole("link", { name: "겨울 정기 공연 Google 캘린더에서 열기" })
   const added = new URL((await google.getAttribute("href")) ?? "")
@@ -1729,14 +1728,14 @@ test("the app can be installed, and the calendar gives its dates to calendar app
   expect(added.searchParams.get("dates")).toMatch(new RegExp(`^${date.replace(/-/g, "")}/\\d{8}$`))
   await expect(google).toHaveAttribute("target", "_blank")
   await expect(sheet.getByRole("link", { name: "신년 버스킹 Google 캘린더에서 열기" })).toBeVisible()
-  // With none picked no app opens; with one, its add page opens straight from the icon.
+  // 고른 것이 없으면 앱이 열리지 않고, 하나면 아이콘에서 바로 그 추가 페이지가 열린다.
   await sheet.getByRole("button", { name: /겨울 정기 공연/ }).click()
   await sheet.getByRole("button", { name: /신년 버스킹/ }).click()
   await expect(sheet.getByRole("button", { name: "Apple 캘린더" })).toBeDisabled()
   await sheet.getByRole("button", { name: /겨울 정기 공연/ }).click()
   await expect(sheet.getByText("일정 1개 선택됨")).toBeVisible()
   await expect(sheet.getByRole("link", { name: "Outlook" })).toHaveAttribute("href", /^https:\/\/outlook\.live\.com\//)
-  // Apple Calendar takes the calendar file with the picked date.
+  // Apple Calendar는 고른 날짜의 캘린더 파일을 받는다.
   const download = page.waitForEvent("download")
   await sheet.getByRole("button", { name: "Apple 캘린더" }).click()
   const file = await download
@@ -1757,7 +1756,7 @@ test("the account button opens a small panel with 내 정보 and 로그아웃", 
   const panel = page.getByRole("region", { name: "내 계정" })
   await expect(panel.getByText("메뉴 카페")).toBeVisible()
   await expect(panel.getByText("e2e-account-menu@cafe.co.kr")).toBeVisible()
-  // The bell closes it, as Escape does.
+  // 벨을 누르면 Escape처럼 닫힌다.
   await page.getByRole("button", { name: /^알림/ }).click()
   await expect(panel).toHaveCount(0)
   await toggle.click()
@@ -1771,18 +1770,18 @@ test("the account button opens a small panel with 내 정보 and 로그아웃", 
   await panel.getByRole("button", { name: "로그아웃" }).click()
   await expect(page.getByText("로그아웃했어요.")).toBeVisible()
   await expect(page.getByRole("button", { name: "로그인", exact: true }).first()).toBeVisible()
-  // Out of the account, the introduction shows rather than the same screen.
+  // 계정에서 나오면 같은 화면이 아니라 소개 페이지가 보인다.
   await expect(page).toHaveURL(/\/$/)
 })
 
 test("every sponsorship on 성과 분석 has its detailed report, and 요금제 보기 opens the plans in place", async ({ page, request }) => {
   await page.goto("/analytics?role=브랜드")
   const rows = page.locator(".analytics-table .analytics-row:not(.head)")
-  // count() doesn't wait, so wait for the rows to arrive before counting them.
+  // count()는 기다리지 않으므로 행이 도착하기를 기다린 뒤에 센다.
   await expect(rows.nth(1)).toBeVisible()
   const count = await rows.count()
   await expect(page.locator(".analytics-table .report-button")).toHaveCount(count)
-  // One without a measured event can be bought too, worked out from its record.
+  // 측정한 행사가 없는 것도 기록에서 계산해 살 수 있다.
   await rows.last().locator(".report-button").click()
   await expect(page).toHaveURL(/\/insights\/[^/]+$/)
   await expect(page.getByText("화면에서 보는 숫자 너머의 리포트")).toBeVisible()
@@ -1837,7 +1836,7 @@ test("a brand writes the value, pays the 15% fee to confirm, and finds it under 
   await expect(panel).toContainText("333,333원")
   await expect(panel).toContainText("50,000원")
 
-  // Without Toss keys, the transfer is the way to pay; the terms come first.
+  // Toss 키가 없으면 이체가 결제 방법이며, 약관이 먼저 나온다.
   await page.getByRole("button", { name: "수수료 50,000원 결제하고 확인하기" }).click()
   const pay = page.getByRole("dialog", { name: "플랫폼 수수료 결제" })
   await expect(pay).toContainText("카드 결제는 준비 중이에요")
@@ -1855,7 +1854,7 @@ test("a brand writes the value, pays the 15% fee to confirm, and finds it under 
   await expect(history).toContainText("수수료 공연 협찬 수수료")
   await expect(history).toContainText("입금 확인 중")
 
-  // The group sees it pays nothing.
+  // 단체는 아무것도 내지 않는 것을 본다.
   const groupPage = await (await browser.newContext()).newPage()
   await groupPage.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
   await groupPage.goto(`/agreements/${id}`)
@@ -1866,7 +1865,7 @@ test("a brand writes the value, pays the 15% fee to confirm, and finds it under 
 })
 
 test("the detailed report: the demo's open from 성과 분석, a member's locked behind its price", async ({ page, request, browser }) => {
-  // Visitors read the demo brand's, from its analytics.
+  // 방문자는 데모 브랜드의 것을 분석에서 읽는다.
   await page.goto("/analytics?role=브랜드")
   await page.getByRole("button", { name: "리포트 보기" }).first().click()
   await expect(page).toHaveURL(/\/insights\/sp-/)
@@ -1888,11 +1887,11 @@ test("the detailed report: the demo's open from 성과 분석, a member's locked
     await expect(page.getByRole("region", { name: section })).toBeVisible()
   }
   await expect(page.getByRole("img", { name: /종합 등급/ })).toBeVisible()
-  // The demo only reads: no share link, no store counts to write.
+  // 데모는 읽기만 한다. 공유 링크도 쓸 매장 집계도 없다.
   await expect(page.getByRole("button", { name: "공유 링크 만들기" })).toHaveCount(0)
   await expect(page.getByRole("button", { name: "효과 계산하기" })).toHaveCount(0)
 
-  // A member's sponsorship of today's event: the preview with its price.
+  // 회원이 오늘 행사를 협찬하면 가격이 붙은 미리보기가 나온다.
   const group = await signUpMember(request, "학생단체", "e2e-insight@syu.ac.kr", "리포트 동아리")
   const brand = await signUpMember(request, "브랜드", "e2e-insight@insight-cafe.kr", "리포트 카페")
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date())
@@ -1950,7 +1949,7 @@ test("the demo brand's 내 정보 shows its plan and payments; without test keys
 
 test("the operators' console stands on its own: token, side menu, members and a member's record", async ({ page }) => {
   await page.goto("/admin")
-  // No member header or footer around it.
+  // 둘레에 회원 헤더나 푸터가 없다.
   await expect(page.getByRole("button", { name: "전체 메뉴" })).toHaveCount(0)
   await expect(page.getByRole("heading", { name: "운영자 콘솔" })).toBeVisible()
   await page.getByLabel("관리자 토큰").fill("wrong-token")
@@ -1959,7 +1958,7 @@ test("the operators' console stands on its own: token, side menu, members and a 
   await page.getByLabel("관리자 토큰").fill("e2e-admin-token")
   await page.getByRole("button", { name: "들어가기" }).click()
   await expect(page.getByRole("heading", { level: 2, name: "지금 처리할 일" })).toBeVisible()
-  // On a phone the side menu is a drawer behind the menu button.
+  // 폰에서는 사이드 메뉴가 메뉴 버튼 뒤의 서랍이다.
   const menu = page.getByRole("navigation", { name: "운영자 메뉴" })
   const openMenu = () => page.getByRole("button", { name: "메뉴 접기 · 펴기" }).click()
   await expect(menu).toBeHidden()
@@ -1971,7 +1970,7 @@ test("the operators' console stands on its own: token, side menu, members and a 
   await page.getByRole("button", { name: "오후의 커피" }).click()
   const detail = page.getByRole("complementary", { name: "오후의 커피" })
   await expect(detail).toContainText("hello@afternoon-coffee.kr")
-  // The demo accounts can't be stopped, so there is no button for it.
+  // 데모 계정은 정지할 수 없으므로 그 버튼이 없다.
   await expect(detail.getByRole("button", { name: "계정 정지" })).toHaveCount(0)
   await openMenu()
   await menu.getByRole("button", { name: /제안 · 협찬/ }).click()
@@ -1979,7 +1978,7 @@ test("the operators' console stands on its own: token, side menu, members and a 
   await expect(page.locator(".console-table tbody tr").first()).toBeVisible()
   await expect(page).toHaveURL(/\/admin\?view=proposals$/)
 
-  // Back and forward move through the console, the open member too.
+  // 뒤로와 앞으로는 콘솔을 지나며 열린 회원도 지난다.
   await page.goBack()
   await expect(page).toHaveURL(/view=members&member=/)
   await expect(page.getByRole("complementary", { name: "오후의 커피" })).toBeVisible()
@@ -1987,25 +1986,25 @@ test("the operators' console stands on its own: token, side menu, members and a 
   await expect(page.getByRole("complementary", { name: "오후의 커피" })).toHaveCount(0)
   await page.goForward()
   await expect(page.getByRole("complementary", { name: "오후의 커피" })).toBeVisible()
-  // The logo leads to the console's first screen.
+  // 로고는 콘솔의 첫 화면으로 이어진다.
   await openMenu()
   await page.getByRole("button", { name: "운영자 콘솔 처음으로" }).click()
   await expect(page).toHaveURL(/\/admin$/)
   await expect(page.getByRole("heading", { level: 2, name: "지금 처리할 일" })).toBeVisible()
-  // The top bar's search opens the members found.
+  // 상단 바의 검색은 찾은 회원을 연다.
   await page.getByLabel("회원 찾기").fill("muse")
   await page.getByLabel("회원 찾기").press("Enter")
   await expect(page).toHaveURL(/view=members&q=muse/)
   await expect(page.getByRole("button", { name: "삼육대 뮤즈" })).toBeVisible()
   await expect(page.getByRole("button", { name: "오후의 커피" })).toHaveCount(0)
 
-  // A notice posted here shows across the site until a visitor closes it,
-  // and the log keeps that it went up.
+  // 여기서 올린 공지는 방문자가 닫을 때까지 사이트 전체에 보이고, 올렸다는
+  // 기록은 로그에 남는다.
   await openMenu()
   await menu.getByRole("button", { name: "공지" }).click()
   await page.getByLabel("내용").fill("오늘 밤 점검이 있어요")
-  // The showing period opens the site's calendar in a popover; a picked day
-  // shows on the field, and clearing it goes back to from now on.
+  // 보이는 기간은 팝오버로 사이트의 캘린더를 열고, 고른 날은 입력칸에 보이며
+  // 지우면 지금부터로 돌아간다.
   const period = page.getByRole("button", { name: /게시 기간/ })
   await expect(period).toContainText("바로 올리고 내릴 때까지")
   await period.click()
@@ -2044,7 +2043,7 @@ test("the console's command palette opens screens, and maintenance covers the si
   await expect(page.getByRole("heading", { level: 1, name: "분석" })).toBeVisible()
   await expect(page.getByRole("heading", { level: 2, name: "전환 퍼널" })).toBeVisible()
 
-  // "?" shows the keyboard shortcuts, and Escape closes them.
+  // "?"는 키보드 단축키를 보여 주고 Escape가 닫는다.
   await page.keyboard.press("?")
   await expect(page.getByRole("dialog", { name: "키보드 단축키" })).toBeVisible()
   await page.keyboard.press("Escape")

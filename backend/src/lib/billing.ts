@@ -4,45 +4,44 @@ import { config } from "../config.js"
 import type { Account, Database, Payment, PaymentKind } from "../types.js"
 import { HttpError } from "./errors.js"
 
-// The business plan's revenue model (표 9) as prices before VAT, which is
-// added on top when an order is made (vatOf): brands pay; student groups pay
-// only for their own ads.
+// 사업 계획의 수익 모델(표 9)을 부가세 전 가격으로 둔 것이다. 부가세는
+// 주문을 만들 때 위에 더한다(vatOf). 브랜드가 내고 학생 단체는 자기 광고만
+// 낸다.
 export const prices = {
-  // Of a sponsorship's value, cash and in-kind, when both sides confirm it.
+  // 협찬 가치(현금과 현물)의 일부. 양쪽이 확인할 때 낸다.
   feeRate: 0.15,
-  // A detailed report of one sponsorship.
+  // 협찬 하나의 상세 리포트.
   report: 50_000,
-  // 캠퍼스 파트너스 (Pro inside), for 30 days.
+  // 캠퍼스 파트너스 (Pro 포함), 30일.
   pro: 300_000,
   proDays: 30,
-  // 상단 광고 (lib/ads.ts) for 30 days: a brand's on the student groups'
-  // catalog, a group's on the brands'. Extending before it ends takes 10%
-  // off.
+  // 상단 광고 (lib/ads.ts) 30일. 브랜드는 학생 단체 카탈로그에, 단체는
+  // 브랜드 카탈로그에 낸다. 끝나기 전에 연장하면 10% 깎아 준다.
   adBrand: 99_000,
   adGroup: 10_000,
   adDays: 30,
   adRenewalDiscount: 0.1,
-  // VAT, added to every price at checkout.
+  // 부가세. 결제할 때 모든 가격에 더한다.
   vatRate: 0.1,
 } as const
 
-// The VAT on a price, in whole won.
+// 가격에 붙는 부가세. 원 단위 정수.
 export const vatOf = (supply: number) => Math.round(supply * prices.vatRate)
 
-// What a price comes to with VAT.
+// 부가세를 더한 가격.
 export const withVat = (supply: number) => supply + vatOf(supply)
 
-// The part of a paid amount its price covered: payments from before VAT
-// was added on top carry no supply and covered their whole amount.
+// 결제한 금액 중 가격이 차지한 부분. 부가세를 위에 더하기 전의 결제는
+// 공급가액이 없고 결제 금액 전체가 가격이었다.
 export const supplyOf = (payment: Payment) => payment.supply ?? payment.amount
 
-// Toss Payments' payment window takes the client key; the server confirms
-// each payment with the secret key, which never leaves it. Without both,
-// brands can still ask to pay by bank transfer, which an operator confirms.
+// Toss Payments 결제창은 클라이언트 키를 쓰고, 서버는 비밀 키로 결제마다
+// 확인한다. 비밀 키는 서버 밖으로 나가지 않는다. 둘 다 없으면 브랜드는
+// 계좌이체로 결제를 요청할 수 있고 운영자가 확인한다.
 export const cardReady = () => Boolean(config.tossClientKey && config.tossSecretKey)
 
-// Test keys (test_…): no money moves, so the shared demo accounts may pay
-// too, to show the whole flow in a demonstration. With live keys they can't.
+// 테스트 키(test_…)는 돈이 오가지 않으므로 공용 데모 계정도 결제해서
+// 데모에서 전체 흐름을 보여 줄 수 있다. 실제 키에서는 그럴 수 없다.
 export const testMode = () => cardReady() && (config.tossSecretKey ?? "").startsWith("test_")
 
 const tossApi = "https://api.tosspayments.com/v1/payments"
@@ -50,10 +49,9 @@ const tossAuth = () => `Basic ${Buffer.from(`${config.tossSecretKey ?? ""}:`).to
 
 type TossPayment = { status?: string; totalAmount?: number; orderId?: string; receipt?: { url?: string } | null; approvedAt?: string }
 
-// Calls to Toss Payments; tests swap them.
+// Toss Payments 호출. 테스트에서 바꿔 쓴다.
 export const toss = {
-  // Approves a payment the window authorized: within 10 minutes, for the
-  // amount the server set.
+  // 결제창이 승인한 결제를 확정한다. 10분 안에, 서버가 정한 금액으로 한다.
   async confirm(paymentKey: string, orderId: string, amount: number): Promise<TossPayment> {
     const response = await fetch(`${tossApi}/confirm`, {
       method: "POST",
@@ -68,7 +66,7 @@ export const toss = {
     }
     return body
   },
-  // Refunds a card payment in full.
+  // 카드 결제를 전액 환불한다.
   async cancel(paymentKey: string, reason: string) {
     const response = await fetch(`${tossApi}/${encodeURIComponent(paymentKey)}/cancel`, {
       method: "POST",
@@ -83,16 +81,16 @@ export const toss = {
   },
 }
 
-// What each kind costs before VAT and is called for an account and its target, and
-// what paying for it does; registered by the features that sell them
+// 종류마다 부가세 전 가격과 계정 및 대상에 붙는 이름, 그리고 결제하면
+// 일어나는 일을 둔다. 이를 파는 기능이 등록한다
 // (lib/fees.ts, lib/premiumReport.ts, lib/pro.ts).
 type Product = {
   quote: (database: Database, account: Account, targetId: string) => { amount: number; orderName: string }
-  // Bought for the account itself (Pro, an ad), not one of its things: one
-  // waiting order at a time, whatever target is sent.
+  // 계정 자체(Pro, 광고)를 위해 사며 계정이 가진 무엇을 위한 것이 아니다.
+  // 보낸 대상이 무엇이든 대기 중인 주문은 하나만 둔다.
   targetless?: true
   fulfil?: (database: Database, payment: Payment) => void
-  // Undoes `fulfil` when a payment is refunded.
+  // 결제가 환불되면 `fulfil`을 되돌린다.
   revoke?: (database: Database, payment: Payment) => void
 }
 
@@ -110,14 +108,14 @@ export function productOf(kind: string) {
 
 export const paymentsOf = (database: Database) => (database.payments ??= [])
 
-// The account's paid payment for a target, if any.
+// 대상에 대한 계정의 결제 완료된 결제. 있으면 돌려준다.
 export const paidFor = (database: Database, accountId: string, kind: PaymentKind, targetId: string) =>
   paymentsOf(database).find(
     (payment) => payment.accountId === accountId && payment.kind === kind && payment.targetId === targetId && payment.status === "paid",
   )
 
-// An order for the account: its waiting one for the same thing when there
-// is one, at today's price with VAT, else a new one.
+// 계정의 주문. 같은 건의 대기 중인 주문이 있으면 그것을 오늘 가격과
+// 부가세로 맞추고 없으면 새로 만든다.
 export function orderFor(database: Database, account: Account, kind: string, requested: string) {
   const product = productOf(kind)
   const targetId = product.targetless ? "" : requested
@@ -148,15 +146,15 @@ export function orderFor(database: Database, account: Account, kind: string, req
   return payment
 }
 
-// Marks a payment paid and gives what it bought.
+// 결제를 완료로 표시하고 산 것을 준다.
 export function markPaid(database: Database, payment: Payment, details: Pick<Payment, "method"> & Partial<Payment>) {
   if (payment.status === "paid") return
   Object.assign(payment, details, { status: "paid", paidAt: details.paidAt ?? new Date().toISOString() })
   productOf(payment.kind).fulfil?.(database, payment)
 }
 
-// A refunded month of Pro or an ad takes its days back: later paid months
-// of the same kind, which were added after it, move back by its days.
+// 환불된 Pro나 광고 한 달은 그 일수를 돌려받는다. 같은 종류에서 그 뒤에
+// 더해진 결제된 달은 그 일수만큼 앞당겨진다.
 export function shiftLaterPeriods(database: Database, payment: Payment, days: number) {
   const end = payment.periodEnd
   if (!end) return
@@ -169,12 +167,12 @@ export function shiftLaterPeriods(database: Database, payment: Payment, days: nu
   }
 }
 
-// Cancels a waiting order, or takes back a paid one after its refund.
+// 대기 중인 주문을 취소하거나 환불된 결제를 거둔다.
 export function markCancelled(database: Database, payment: Payment, reason: string) {
   const wasPaid = payment.status === "paid"
   Object.assign(payment, { status: "cancelled", cancelledAt: new Date().toISOString(), cancelReason: reason })
   if (wasPaid) productOf(payment.kind).revoke?.(database, payment)
 }
 
-// A payment as its account sees it: no Toss key.
+// 계정이 보는 결제. Toss 키는 없다.
 export const paymentView = ({ paymentKey: _key, accountId: _account, ...payment }: Payment) => payment

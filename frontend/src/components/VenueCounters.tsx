@@ -5,11 +5,11 @@ import { t } from "../i18n"
 import type { MethodKind, VenueShare } from "../types"
 import { Icon } from "./Icon"
 
-// What one side confirms at the venue for one share, a card per method:
-// its count, then a number to add (or take back) for what is counted by
-// the box, or one person at a time with a way to take back a mistake. The
-// QR and its coupon count themselves, and store visits have their own form
-// on the staff page, so they have no card here.
+// 한쪽이 행사장에서 한 몫에 대해 확인하는 내용. 방법마다 카드가 하나씩 있다.
+// 카운트와 더할 수(또는 되돌릴 수) 있는 숫자가 있어, 상자 단위로 세는 것은
+// 숫자로 넣고 한 명씩 세는 것은 실수를 되돌리는 방법과 함께 넣는다. QR과 쿠폰은
+// 스스로 세고 매장 방문은 직원 페이지에 별도 양식이 있어서 여기에는 카드가
+// 없다.
 export function VenueCounters({
   share,
   busy,

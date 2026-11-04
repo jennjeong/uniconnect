@@ -5,15 +5,14 @@ import { notify } from "./notices.js"
 import { isDemoAccount } from "./reviews.js"
 import type { Account, Database } from "../types.js"
 
-// Days of 캠퍼스 파트너스 a brand gets for each account that signed up
-// through its link and went on to a sponsorship. Student groups use the
-// service free, so theirs are counted only.
+// 브랜드가 자기 링크로 가입해 협찬까지 이어진 계정마다 받는 캠퍼스 파트너스
+// 일수. 학생 단체는 무료로 쓰므로 단체의 것은 세기만 한다.
 export const referralRewardDays = 30
 
-// Letters that read the same on any screen, without 0/O or 1/I/L.
+// 어느 화면에서나 똑같이 읽히는 글자. 0/O, 1/I/L은 뺀다.
 const letters = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
 
-// The account's invitation code, made the first time it's asked for.
+// 계정의 초대 코드. 처음 요청할 때 만든다.
 export function referralCodeOf(database: Database, account: Account) {
   if (account.referralCode) return account.referralCode
   let code = ""
@@ -24,18 +23,18 @@ export function referralCodeOf(database: Database, account: Account) {
   return code
 }
 
-// The member a code belongs to, never a demo account or a suspended one.
+// 코드를 가진 회원. 데모 계정이나 정지된 계정은 제외한다.
 export function referrerOf(database: Database, code: unknown) {
   if (typeof code !== "string" || !/^[A-Z0-9]{8}$/.test(code)) return undefined
   const account = database.accounts.find((item) => item.referralCode === code)
   return account && !isDemoAccount(database, account) && !account.suspendedAt ? account : undefined
 }
 
-// Once both sides confirm a sponsorship's e-contract (the brand having paid
-// its fee): each side that signed up through someone's link and hadn't yet
-// had a sponsorship rewards that someone once, a brand with Partners days.
-// A sponsorship with the inviter itself rewards no one, so an account can't
-// invite itself a partner. Answers who was rewarded for whom, to tell them.
+// 협찬의 전자계약서를 양쪽이 확인하면(브랜드는 수수료를 낸 뒤) 누군가의
+// 링크로 가입했고 아직 협찬이 없던 쪽마다 그 누군가에게 한 번 보상한다.
+// 브랜드에는 파트너스 일수다. 초대한 계정 자신과의 협찬에는 보상이 없어
+// 계정이 스스로 파트너를 초대할 수 없다. 누가 누구 덕에 보상받았는지
+// 답하여 알릴 수 있게 한다.
 export function rewardReferrals(database: Database, accounts: [Account | undefined, Account | undefined], now = new Date()) {
   const rewarded: { referrer: Account; joined: Account; days: number }[] = []
   for (const [index, joined] of accounts.entries()) {
@@ -51,8 +50,8 @@ export function rewardReferrals(database: Database, accounts: [Account | undefin
   return rewarded
 }
 
-// What 내 정보 shows: the code, how many signed up through it, and how many
-// of those have had a sponsorship (each one a reward for a brand).
+// 내 정보에 보이는 것: 코드, 그것으로 가입한 수, 그중 협찬을 한 수(각각은
+// 브랜드에게 보상이다).
 export function referralStats(database: Database, account: Account) {
   const joined = database.accounts.filter((item) => item.referredBy === account.id)
   return {
@@ -63,7 +62,7 @@ export function referralStats(database: Database, account: Account) {
   }
 }
 
-// Emails each rewarded inviter, once the reward is saved.
+// 보상이 저장되면 보상받은 초대자마다 이메일을 보낸다.
 export function tellReferrers(rewarded: ReturnType<typeof rewardReferrals>) {
   for (const { referrer, joined, days } of rewarded) {
     void notify(

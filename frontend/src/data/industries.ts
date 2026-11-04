@@ -11,7 +11,7 @@ export const brandIndustries: [Industry, string][] = [
   ["sports", "스포츠"],
 ]
 
-// The student groups' fields, in the order of 단체 찾기's 분야별 chips.
+// 단체 찾기의 분야별 칩 순서대로, 학생단체의 분야.
 export const groupFields: [Industry, string][] = [
   ["performance", "공연·행사"],
   ["content", "콘텐츠"],

@@ -1,16 +1,16 @@
-// The terms of service and the privacy policy (pages/LegalPage.tsx), at
-// /terms and /privacy. The privacy policy lists what the backend actually
-// stores (backend/src/types.ts Database) and keeps; change it with them.
-// Both are drafts for the prototype: before a public launch the operator,
-// contacts and privacy officer must be named and a lawyer should review them.
-// In English each document opens with `notice`: the Korean original prevails.
+// 이용약관과 개인정보처리방침 (pages/LegalPage.tsx)을 /terms와 /privacy에서.
+// 개인정보처리방침은 백엔드가 실제로 저장하는 것(backend/src/types.ts의
+// Database)과 보관하는 것을 나열한다. 그것들이 바뀌면 함께 고친다. 둘 다
+// 프로토타입용 초안이다: 공개 출시 전에 운영자, 연락처, 개인정보 보호책임자를
+// 밝혀야 하고 변호사가 검토해야 한다. 영어로는 각 문서가 `notice`로 시작한다:
+// 한국어 원문이 우선한다.
 
 import { lang, t } from "../i18n"
 
 export type LegalKind = "terms" | "privacy"
 
 export type LegalSection = {
-  // An anchor for links into the section (/terms#paid).
+  // 섹션으로 가는 링크용 앵커 (/terms#paid).
   id?: string
   title: string
   body?: string[]
@@ -22,7 +22,7 @@ export type LegalDoc = {
   title: string
   eyebrow: string
   summary: string
-  // Shown above the document in English only.
+  // 영어에서만 문서 위에 보인다.
   notice?: string
   sections: LegalSection[]
 }

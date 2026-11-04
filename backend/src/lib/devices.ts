@@ -1,6 +1,5 @@
-// A login's device as the device list shows it: the browser and system
-// from its User-Agent, such as "Chrome · macOS". Only this short label is
-// kept, never the whole header.
+// 기기 목록이 보여 주는 로그인 기기: User-Agent에서 가져온 "Chrome · macOS"
+// 같은 브라우저와 시스템. 이 짧은 이름만 보관하고 헤더 전체는 보관하지 않는다.
 export function deviceLabel(userAgent: string | undefined) {
   const agent = userAgent ?? ""
   const browser = /Edg\//.test(agent)

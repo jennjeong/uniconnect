@@ -4,36 +4,36 @@ import path from "node:path"
 import { config } from "../config.js"
 import { databaseSql, ensureTables, type Sql } from "./sql.js"
 
-// The data as stored, with a version that moves on with every write.
+// 저장된 그대로의 데이터. 쓸 때마다 올라가는 버전이 붙는다.
 export type Stored = { data: string; version: number }
 
-// Another copy of the API wrote first, so this write was not made.
+// 다른 API 복사본이 먼저 써서 이 쓰기는 이뤄지지 않았다.
 export class StaleWrite extends Error {}
 
-// Where the data lives (store.ts writes through this). A JSON file (local
-// runs, tests, one server with a disk) has a single writer. A Postgres
-// database (Vercel, where files don't last) is shared by every copy of the
-// API, so each write says which version it builds on, and each copy looks
-// for the others' writes.
+// 데이터가 있는 곳(store.ts가 이를 통해 쓴다). JSON 파일(로컬 실행, 테스트,
+// 디스크가 있는 서버 한 대)은 쓰는 쪽이 하나다. Postgres 데이터베이스
+// (파일이 남지 않는 Vercel)는 API의 모든 복사본이 공유하므로, 쓸 때마다
+// 어느 버전 위에 쓰는지 밝히고 각 복사본이 다른 쪽의 쓰기를 살핀다.
 export type Storage = {
   shared: boolean
-  // Spaces for JSON.stringify: the file stays readable.
+  // JSON.stringify에 쓰는 들여쓰기. 파일이 읽기 쉽게 남는다.
   indent?: number
   read(): Promise<Stored | undefined>
   version(): Promise<number | undefined>
   write(data: string, version: number): Promise<number>
-  // A copy at most once an hour, keeping the latest 24, so a bad change can
-  // be undone (README says how). A failed backup never fails the save.
+  // 복사본은 한 시간에 한 번 이하로 만들고 최근 24개를 둔다. 잘못된 변경을
+  // 되돌릴 수 있게 한다(README에 방법이 있다). 백업이 실패해도 저장은 실패하지
+  // 않는다.
   backUp(data: string): Promise<void>
-  // The copies kept, newest first, by the hour they were taken (UTC,
-  // "2026-10-24T13"), and one of them in full, for the operators' console.
+  // 남은 복사본을 찍은 시각(UTC, "2026-10-24T13")별로 새것부터 나열하고, 그중
+  // 하나를 통째로 읽는다. 운영자 콘솔용이다.
   listBackups(): Promise<{ hour: string; bytes: number }[]>
   readBackup(hour: string): Promise<string | undefined>
 }
 
 const backupHour = /^\d{4}-\d{2}-\d{2}T\d{2}$/
 
-// Tests reset lastAt to take a copy at once.
+// 테스트는 lastAt을 초기화해 곧바로 복사본을 만든다.
 export const backups = { lastAt: 0, everyMs: 60 * 60 * 1000, kept: 24 }
 
 const backupDue = () => {
@@ -44,7 +44,7 @@ const backupDue = () => {
 
 export const backupFolder = () => path.join(path.dirname(config.dataFile), "backups")
 
-// config.dataFile is read on every call, so tests can point it elsewhere.
+// config.dataFile은 호출마다 읽어서 테스트가 다른 곳을 가리킬 수 있다.
 const fileStorage: Storage = {
   shared: false,
   indent: 2,
@@ -59,7 +59,7 @@ const fileStorage: Storage = {
   async version() {
     return undefined
   },
-  // Through a temp file, so a crash mid-write cannot leave half a db.json.
+  // 임시 파일을 거쳐, 쓰다 멈춰도 db.json이 반쯤 쓰인 채 남지 않는다.
   async write(data, version) {
     await mkdir(path.dirname(config.dataFile), { recursive: true })
     const tempFile = `${config.dataFile}.tmp`
@@ -67,8 +67,8 @@ const fileStorage: Storage = {
     await rename(tempFile, config.dataFile)
     return version + 1
   },
-  // In a backups folder beside the data file: db-2026-10-24-13.json, the
-  // hour it was taken in UTC.
+  // 데이터 파일 옆 backups 폴더에 db-2026-10-24-13.json 식으로 둔다. 찍은
+  // 시각은 UTC 기준 시(hour)다.
   async backUp(data) {
     if (!backupDue()) return
     try {
@@ -118,8 +118,8 @@ function postgresStorage(sql: Sql): Storage {
       const [row] = await sql("select version from uniconnect_store where id = 1")
       return row ? Number(row.version) : undefined
     },
-    // Only over the version this copy has; otherwise another copy wrote
-    // first (or seeded first, for version 0).
+    // 이 복사본이 가진 버전 위에서만 쓴다. 아니면 다른 복사본이 먼저 쓴
+    // 것이다(버전 0이면 먼저 시드한 것).
     async write(data, version) {
       await ensureTables(sql)
       const rows =
@@ -135,7 +135,7 @@ function postgresStorage(sql: Sql): Storage {
       if (rows.length === 0) throw new StaleWrite("The data was saved by another copy first.")
       return Number(rows[0].version)
     },
-    // One row per hour (UTC), the latest 24.
+    // 시간(UTC)마다 한 행, 최근 24개.
     async backUp(data) {
       if (!backupDue()) return
       try {
@@ -165,8 +165,8 @@ function postgresStorage(sql: Sql): Storage {
   }
 }
 
-// The database when DATABASE_URL is set (or a test handed one in), else
-// the JSON file.
+// DATABASE_URL이 있으면(또는 테스트가 넘겨 주면) 데이터베이스, 아니면
+// JSON 파일.
 export function currentStorage(): Storage {
   const sql = databaseSql()
   return sql ? postgresStorage(sql) : fileStorage

@@ -9,13 +9,11 @@ import { payByCard } from "../lib/payments"
 import { fullWon } from "../lib/sponsorships"
 import type { BillingInfo, PaymentKind } from "../types"
 
-// Pays for one thing a brand buys (backend lib/billing.ts): what it is, its
-// price and the VAT added on top (as the server's vatOf works it out),
-// agreeing to the paid terms, then Toss Payments' card
-// window, which comes back to this page, or a request to pay by bank
-// transfer, which the operators confirm. Without Toss keys only the
-// transfer is offered. Pages open it, so it goes to the end of the body to
-// sit over everything, the footer too.
+// 브랜드가 사는 것 하나를 결제한다(백엔드 lib/billing.ts). 무엇인지, 가격과 그
+// 위에 붙는 부가세(서버의 vatOf가 계산한 대로), 유료 약관 동의를 보여 준 다음
+// 토스페이먼츠 카드 창으로 가서 이 페이지로 돌아오거나, 운영자가 확인하는
+// 계좌이체를 요청한다. 토스 키가 없으면 이체만 제공한다. 페이지들이 이 모달을
+// 열므로 푸터까지 덮도록 body 끝에 둔다.
 export function PaymentModal({
   kind,
   targetId,
@@ -28,10 +26,9 @@ export function PaymentModal({
   kind: PaymentKind
   targetId: string
   title: string
-  // The price before VAT, as the page last saw it; the order says the final
-  // amount.
+  // 페이지가 마지막으로 본 부가세 전 가격. 최종 금액은 주문이 알려 준다.
   amount: number
-  // What is being bought, as label and value rows.
+  // 사는 것을 라벨과 값의 행으로 보여 준다.
   lines: { label: string; value: string }[]
   onClose: () => void
   onTransferAsked: () => void

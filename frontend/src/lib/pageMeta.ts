@@ -3,22 +3,21 @@ import { lang, t } from "../i18n"
 import type { Match, NavLabel, Role } from "../types"
 import type { View } from "./route"
 
-// The browser tab title and search description of each screen, so no two
-// screens share them. Descriptions say only what the screen really shows.
-// Screens for one account or one link are kept out of search results
-// (noindex), and so is the dashboard, an app screen that visitors see with
-// example data; the introduction, catalogs, profiles, FAQ and policies stay
-// findable.
+// 각 화면의 브라우저 탭 제목과 검색 설명. 두 화면이 같은 것을 쓰지 않는다.
+// 설명은 화면이 실제로 보여주는 것만 말한다.\n|계정 하나나 링크 하나를 위한
+// 화면은 검색 결과에서 뺀다(noindex). 방문자가 예시 데이터로 보는 앱 화면인
+// 대시보드도 마찬가지다. 소개, 카탈로그, 프로필, FAQ, 약관은 검색에 잡히게
+// 둔다.
 
 export type PageMeta = { title: string; description: string; noindex?: true }
 
-// The pages of the menus that search engines may list.
+// 검색 엔진이 목록에 올려도 되는 메뉴 페이지.
 const searchable = new Set<NavLabel>(["추천 매칭", "단체 찾기"])
 
 const site = "uniconnect"
 const titled = (name: string) => `${name} · ${site}`
 
-// "뮤즈와", "코드랩과": 과 after a final consonant.
+// "뮤즈와", "코드랩과": 받침 뒤의 과.
 function withAnd(name: string) {
   const syllable = name.charCodeAt(name.length - 1) - 0xac00
   return `${name}${syllable >= 0 && syllable < 11172 && syllable % 28 !== 0 ? "과" : "와"}`
@@ -72,11 +71,11 @@ export function pageMeta(
     partnerName,
   }: {
     role: Role
-    // The page on screen (view.page corrected for the role).
+    // 화면에 떠 있는 페이지 (역할에 맞게 고친 view.page).
     page: NavLabel
-    // The brand or group whose detail page is open.
+    // 상세 페이지가 열려 있는 브랜드나 단체.
     detail?: Match
-    // The other side of the open conversation.
+    // 열려 있는 대화의 상대.
     partnerName?: string
   },
 ): PageMeta {
@@ -243,7 +242,7 @@ export function pageMeta(
   }
 }
 
-// Writes the meta to the tab title, the description and their share copies.
+// 메타 정보를 탭 제목, 설명, 공유용 사본에 쓴다.
 export function applyPageMeta({ title, description, noindex }: PageMeta) {
   document.title = title
   document.querySelector('meta[property="og:title"]')?.setAttribute("content", title)
@@ -253,8 +252,8 @@ export function applyPageMeta({ title, description, noindex }: PageMeta) {
   keepOutOfSearch(noindex === true)
 }
 
-// A robots meta of noindex while the screen is one for an account or a link
-// (the check-in pages call it themselves), and none otherwise.
+// 화면이 계정이나 링크 하나를 위한 것이면 noindex인 robots 메타를 두고(체크인
+// 페이지는 스스로 부른다), 아니면 두지 않는다.
 export function keepOutOfSearch(hidden = true) {
   let robots = document.querySelector<HTMLMetaElement>('meta[name="robots"]')
   if (!hidden) {

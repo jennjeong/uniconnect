@@ -10,13 +10,12 @@ import { SaveHeart } from "./SaveHeart"
 import { ScoreRing } from "./ScoreRing"
 import { Stars } from "./Stars"
 
-// A brand or student group as one of Stride's silver cards from
-// getlayers.ai: what it is at the top with a round badge that opens its
-// page, its mark large on a white glow in the middle, then the name and the
-// offer with the score ring centered beside them, a group's event date, how
-// far it is (when both places are known), its reviews' stars (when it has
-// any), tags and the card's actions along the bottom. The card lifts a
-// little on hover. Where the page offers 찜, a heart sits beside the badge.
+// getlayers.ai의 Stride 은색 카드 같은 브랜드나 학생단체 카드. 맨 위에는 그것이
+// 무엇인지와 페이지를 여는 둥근 배지가 있고, 가운데에는 흰 빛 위에 큰 마크가
+// 놓인다. 그 아래에 이름과 제안, 옆에 점수 링이 가운데 정렬로 붙는다. 그룹이면
+// 행사 날짜, (두 위치를 모두 알면) 거리, (있으면) 리뷰 별점, 태그, 맨 아래의
+// 카드 동작이 이어진다. 카드는 마우스를 올리면 살짝 뜬다. 페이지가 찜을
+// 제공하면 배지 옆에 하트가 놓인다.
 export function WorkCard({
   match,
   meta,
@@ -31,23 +30,22 @@ export function WorkCard({
   children,
 }: {
   match: Match
-  // The line at the top left, such as the category.
+  // 왼쪽 위의 줄. 카테고리 같은 것.
   meta: ReactNode
-  // Ranking on the 인기 tab.
+  // 인기 탭의 순위.
   rank?: number
-  // A group's next event, on its own line above the tags.
+  // 그룹의 다음 행사. 태그 위에 한 줄로 놓는다.
   date?: string
-  // Tags under the offer; the match's own tags when left out.
+  // 제안 아래의 태그. 지정하지 않으면 매치 자체의 태그를 쓴다.
   tags?: ReactNode
   onOpenDetail: () => void
-  // 찜: whether it is saved, and the heart that saves or unsaves it.
+  // 찜: 저장됐는지와, 저장하거나 해제하는 하트.
   saved?: boolean
   onToggleSave?: () => void
-  // 비교: whether it is in the comparison, and the button that puts it in
-  // or takes it out (components/CompareTray.tsx).
+  // 비교: 비교에 담겼는지와, 담거나 빼는 버튼 (components/CompareTray.tsx).
   compared?: boolean
   onToggleCompare?: () => void
-  // Actions at the bottom, such as the proposal button.
+  // 아래쪽의 동작. 제안 버튼 같은 것.
   children: ReactNode
 }) {
   const [burst, setBurst] = useState(0)

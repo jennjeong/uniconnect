@@ -1,6 +1,6 @@
-// English for this area's Korean copy (see i18n/index.ts).
+// 이 영역의 한국어 카피에 대한 영어 (i18n/index.ts 참고).
 const en: Record<string, string> = {
-  // Shared by the account forms (modals/)
+  // 계정 양식이 함께 쓰는 것 (modals/)
   로그인: "Log In",
   회원가입: "Sign Up",
   이메일: "Email",
@@ -19,14 +19,14 @@ const en: Record<string, string> = {
   "개발 모드라서 메일 대신 인증번호를 여기에 보여드려요:": "Dev mode, so here's your code instead of an email:",
   "비밀번호가 일치하지 않아요.": "The passwords don't match.",
 
-  // Log in (modals/LoginModal.tsx)
+  // 로그인 (modals/LoginModal.tsx)
   "이메일과 비밀번호를 입력해 주세요.": "Enter your email and password.",
   "비밀번호를 잊으셨나요?": "Forgot your password?",
   "학생단체로 로그인": "Log in as a student group",
   "스폰서로 로그인": "Log in as a brand",
   "아직 계정이 없나요?": "New to uniconnect?",
   "비밀번호 보기": "Show password",
-  // Who runs the account (sign-up, 내 정보, the agreement)
+  // 계정을 운영하는 사람 (가입, 내 정보, 합의서)
   "담당자 정보": "Contact person",
   "담당자 이름": "Contact name",
   직책: "Position",
@@ -66,7 +66,7 @@ const en: Record<string, string> = {
   "목록에서 고르기": "Pick from the list",
   "예) 마케팅 매니저": "e.g. Marketing manager",
 
-  // New passwords (lib/password.ts, components/PasswordRules.tsx)
+  // 새 비밀번호 (lib/password.ts, components/PasswordRules.tsx)
   "비밀번호 조건": "Password rules",
   "8~64자": "8–64 characters",
   영문: "A letter",
@@ -83,7 +83,7 @@ const en: Record<string, string> = {
   "여러 사람이 함께 쓰는 체험용 계정이라, 예시 데이터 안에서만 제안하고 수락해 볼 수 있어요.":
     "These shared accounts are for trying uniconnect: you can propose and accept within the example data only.",
 
-  // Sign up (modals/SignupModal.tsx)
+  // 가입 (modals/SignupModal.tsx)
   "단체명을 입력해 주세요.": "Enter your group's name.",
   "브랜드명을 입력해 주세요.": "Enter your brand's name.",
   "학교를 입력해 주세요.": "Enter your school.",
@@ -113,7 +113,7 @@ const en: Record<string, string> = {
   "가입하고 시작하기": "Sign up and get started",
   "이미 계정이 있나요?": "Already have an account?",
 
-  // Reset password (modals/ResetPasswordModal.tsx)
+  // 비밀번호 재설정 (modals/ResetPasswordModal.tsx)
   "가입한 이메일을 입력해 주세요.": "Enter the email you signed up with.",
   "6자리 인증번호를 입력해 주세요.": "Enter the 6-digit code.",
   "비밀번호 찾기": "Reset Password",
@@ -123,7 +123,7 @@ const en: Record<string, string> = {
   "새 비밀번호로 로그인": "Log in with new password",
   "비밀번호가 기억났나요?": "Remembered it?",
 
-  // Leave (modals/LeaveModal.tsx)
+  // 탈퇴 (modals/LeaveModal.tsx)
   "비밀번호를 입력해 주세요.": "Enter your password.",
   "지워지는 내용을 확인했다고 체크해 주세요.": "Tick the box to confirm what will be deleted.",
   "회원 탈퇴": "Delete Account",
@@ -140,7 +140,7 @@ const en: Record<string, string> = {
   탈퇴하기: "Delete my account",
   "계속 이용할게요": "Keep my account",
 
-  // Change password (modals/PasswordModal.tsx)
+  // 비밀번호 변경 (modals/PasswordModal.tsx)
   "지금 비밀번호를 입력해 주세요.": "Enter your current password.",
   "새 비밀번호가 일치하지 않아요.": "The new passwords don't match.",
   "비밀번호 변경": "Change Password",
@@ -159,7 +159,7 @@ const en: Record<string, string> = {
   "지금 비밀번호": "Current password",
   "비밀번호 바꾸기": "Change password",
 
-  // Ask the operators (modals/AskModal.tsx)
+  // 운영자에게 문의 (modals/AskModal.tsx)
   "질문을 5자 이상 적어 주세요.": "Write at least 5 characters.",
   "관리자에게 질문하기": "Ask Our Team",
   "질문은 관리자가 확인한 뒤 답해요. 답변은 아래 ‘내 질문’에 표시돼요.":
@@ -179,7 +179,7 @@ const en: Record<string, string> = {
   "답변 대기": "Waiting",
   "관리자 답변": "Our answer",
 
-  // Operators (pages/AdminPage.tsx)
+  // 운영자 (pages/AdminPage.tsx)
   "탈퇴한 회원": "Former member",
   답변: "Answer",
   "회원이 '내 질문'에서 보게 될 답변을 적어 주세요.": "Write the answer the member will see under 'My questions'.",
@@ -189,7 +189,7 @@ const en: Record<string, string> = {
   "운영자 화면": "Operator Console",
   "서비스 지표를 보고, 도움말 센터의 '관리자에게 질문하기'로 들어온 질문에 답하고, 회원의 신고를 처리해요.":
     "Watch the service's figures, answer the questions sent through 'Ask the Administrators' in the Help Center, and settle members' reports.",
-  // The reports (pages/AdminPage.tsx)
+  // 신고 (pages/AdminPage.tsx)
   신고: "Reports",
   "처리 대기": "Waiting",
   "처리 완료": "Settled",
@@ -240,7 +240,7 @@ const en: Record<string, string> = {
   "답을 기다리는 질문이 없어요.": "No questions waiting for an answer.",
   "아직 답한 질문이 없어요.": "No answered questions yet.",
 
-  // Help center (pages/FaqPage.tsx)
+  // 도움말 센터 (pages/FaqPage.tsx)
   "무엇을 도와드릴까요?": "How Can We Help?",
   "자주 묻는 질문 검색": "Search the FAQ",
   "궁금한 내용 검색 (예: 제안 취소)": "Search (e.g. cancel a proposal)",
@@ -253,18 +253,18 @@ const en: Record<string, string> = {
   "자주 묻는 질문 전체 보기": "See all questions",
   "찾는 답이 없어요. 관리자에게 직접 물어보세요.": "Can't find your answer? Ask our team directly.",
 
-  // Not found (pages/NotFoundPage.tsx)
+  // 찾을 수 없음 (pages/NotFoundPage.tsx)
   "페이지를 찾을 수 없어요": "Page Not Found",
   "주소가 바뀌었거나 없는 페이지예요. 홈이나 아래 메뉴에서 이어서 둘러보세요.":
     "This page has moved or never existed. Head home or pick a page below.",
   "홈으로 가기": "Go home",
   "주요 메뉴": "Main menu",
 
-  // Terms and privacy frame (pages/LegalPage.tsx)
+  // 약관과 개인정보 틀 (pages/LegalPage.tsx)
   "약관과 방침": "Terms and policies",
   "시행일 {date}": "Effective {date}",
 
-  // Help topics and questions (data/faq.ts)
+  // 도움말 주제와 질문 (data/faq.ts)
   시작하기: "Getting Started",
   "가입할 수 있는 사람과 가입 전에 둘러보는 방법": "Who can join, and how to look around first",
   "계정 · 소개": "Account · Profile",
@@ -310,7 +310,7 @@ const en: Record<string, string> = {
   "리포트를 PDF로 받을 수 있나요?": "Can I get a report as a PDF?",
   "네. 학생단체는 리포트 페이지의 ‘PDF 리포트 다운로드’, 브랜드는 성과 분석의 ‘분석 보고서 다운로드’로 받아요. 브랜드 보고서에는 전체 요약과 협찬마다의 성과 페이지가 담겨요.":
     "Yes. Student groups use ‘Download PDF report’ on Reports; brands use ‘Download report’ in Analytics. The brand report has an overall summary plus a page for each sponsorship.",
-  // Inviting a shop (modals/InviteShopModal.tsx)
+  // 매장 초대 (modals/InviteShopModal.tsx)
   "사장님이 이 초대장으로 가입하면 가게가 uniconnect 브랜드가 되고 바로 협찬 제안을 보낼 수 있어요.":
     "Once the owner joins with this invitation, the shop becomes a brand on uniconnect and you can send it a proposal right away.",
   "{name} 초대장 QR 코드": "QR code of the invitation to {name}",
@@ -323,9 +323,9 @@ const en: Record<string, string> = {
   "메시지를 복사했어요. 카카오톡이나 문자로 보내 주세요.": "Message copied. Send it by KakaoTalk or text.",
   "복사하지 못했어요. 직접 선택해서 복사해 주세요.": "Couldn't copy. Please select it and copy it yourself.",
   "공유하지 못했어요. 메시지를 복사해서 보내 주세요.": "Couldn't share. Please copy the message and send it.",
-  // Sponsorship agreements (pages/AgreementsPage.tsx, AgreementPage.tsx)
+  // 협찬 합의서 (pages/AgreementsPage.tsx, AgreementPage.tsx)
   "임시 전자 계약서": "Provisional e-contracts",
-  // The event's goals on an agreement (GoalsPanel in pages/AgreementPage.tsx)
+  // 합의서의 행사 목표 (pages/AgreementPage.tsx의 GoalsPanel)
   "행사 목표": "Event goals",
   도달: "Reach",
   "행사가 시작돼 목표를 더 바꿀 수 없어요": "The event has begun, so its goals are fixed",
@@ -370,7 +370,7 @@ const en: Record<string, string> = {
   "사진 추가": "Add photo",
   "사진을 올렸어요.": "Photo added.",
   "사진을 지웠어요.": "Photo deleted.",
-  // A group's event page on the registration form (pages/EventCreatePage.tsx)
+  // 등록 양식의 단체 행사 페이지 (pages/EventCreatePage.tsx)
   "행사 페이지": "Event page",
   "브랜드가 행사를 판단하도록 장소와 소개, 협찬 혜택 묶음을 적어 주세요. 사진은 행사 상세에서 올려요.":
     "Add the venue, an introduction and sponsorship packages so brands can judge the event. Photos go up on the event page.",
@@ -399,7 +399,7 @@ const en: Record<string, string> = {
   "할 일 더하기": "Add item",
   저장: "Save",
   "사진에 다른 사람의 얼굴이 나오면 동의를 받고 올려 주세요.": "If other people's faces show in a photo, get their consent before adding it.",
-  // Sponsorship reviews (pages/AgreementPage.tsx, components/ReviewsSection.tsx)
+  // 협찬 후기 (pages/AgreementPage.tsx, components/ReviewsSection.tsx)
   "협찬 후기": "Sponsorship reviews",
   "아직 후기가 없어요. 협찬을 마친 학생단체와 브랜드가 서로 남겨요.":
     "No reviews yet. Student groups and brands leave them for each other after a sponsorship.",
@@ -432,7 +432,8 @@ const en: Record<string, string> = {
   "운영자가 이 답글을 내렸어요. 다른 사람에게는 보이지 않아요.": "The operators took this reply down. Others no longer see it.",
   "답글을 남겼어요. 후기 아래에 함께 보여요.": "Reply posted. It shows under the review.",
   "답글을 지웠어요.": "Reply deleted.",
-  // Two-step login and devices (modals/TwoFactorModal.tsx, DevicesModal.tsx, components/CodeStep.tsx)
+  // 2단계 로그인과 기기 (modals/TwoFactorModal.tsx, DevicesModal.tsx,
+  // components/CodeStep.tsx)
   "남은 복구 코드가 {count}개예요. 2단계 인증을 껐다 다시 켜면 새 코드를 받아요.":
     "{count} recovery codes left. Turn two-step login off and on again for new ones.",
   "2단계 인증을 껐어요.": "Two-step login is off.",
@@ -473,7 +474,7 @@ const en: Record<string, string> = {
   다음: "Next",
   "2단계 인증 · 켜짐": "Two-step login · On",
   "2단계 인증 켜기": "Turn on two-step login",
-  // One account, several people (modals/TeamModal.tsx, JoinTeamModal.tsx)
+  // 계정 하나, 여러 사람 (modals/TeamModal.tsx, JoinTeamModal.tsx)
   "초대받은 이메일과 초대 코드를 입력해 주세요.": "Enter the email you were invited at and the invitation code.",
   "초대받아 함께 관리하기": "Join as a co-admin",
   "초대받은 이메일": "Invited email",
@@ -498,7 +499,7 @@ const en: Record<string, string> = {
   "초대 코드 보내기": "Send invitation code",
   "{name}님은 공동 관리자로 로그인했어요. 탈퇴, 로그인 이메일 바꾸기, 2단계 인증은 대표만 할 수 있어요.":
     "{name}, you're logged in as a co-admin. Only the owner can delete the account, change its login email or set up two-step login.",
-  // Kakao and Naver login (modals/LoginModal.tsx, data/social.ts)
+  // Kakao와 Naver 로그인 (modals/LoginModal.tsx, data/social.ts)
   네이버: "Naver",
   카카오: "Kakao",
   "{provider} 계정을 연결했어요. 다음부터 {provider}로 로그인할 수 있어요.": "Linked your {provider} account. You can log in with {provider} from now on.",
@@ -512,7 +513,7 @@ const en: Record<string, string> = {
   "회원가입을 마치고 내 정보에서 계정을 연결한 회원만 쓸 수 있어요.": "Only for members who signed up and linked the account in My Info.",
   "{provider} 연결 끊기": "Unlink {provider}",
   "{provider} 계정 연결": "Link {provider}",
-  // Student councils and their clubs (pages/CouncilPage.tsx, modals/CouncilLinkModal.tsx)
+  // 학생회와 동아리 (pages/CouncilPage.tsx, modals/CouncilLinkModal.tsx)
   "소속 단체": "Member clubs",
   "학생회에 연결한 소속 단체의 행사와 협찬 현황을 한곳에서 봐요.": "See the events and sponsorships of the clubs linked to your council in one place.",
   "학생회 연결": "Link to council",
@@ -539,7 +540,8 @@ const en: Record<string, string> = {
   "{name}의 연결을 끊었어요.": "Unlinked {name}.",
   "정말 연결 끊기": "Unlink for sure",
   "소속 단체 보기": "Member clubs",
-  // Payments (modals/PaymentModal.tsx, modals/PaymentsModal.tsx, the fee on pages/AgreementPage.tsx, /admin)
+  // 결제 (modals/PaymentModal.tsx, modals/PaymentsModal.tsx,
+  // pages/AgreementPage.tsx의 수수료, /admin)
   "결제를 취소했어요.": "You canceled the payment.",
   "결제하지 못했어요. 다시 시도해 주세요.": "The payment didn't go through. Please try again.",
   "{name} 결제를 마쳤어요.": "Paid for {name}.",
@@ -609,7 +611,7 @@ const en: Record<string, string> = {
   "플랫폼 수수료 결제": "Pay the platform fee",
   "열어 봄": "Opened",
   "아직 안 열어 봄": "Not opened yet",
-  // The operators' console (pages/AdminPage.tsx)
+  // 운영자 콘솔 (pages/AdminPage.tsx)
   "답변을 기다리는 문의": "Questions waiting",
   "처리를 기다리는 신고": "Reports waiting",
   "확인할 계좌 입금": "Transfers to confirm",
@@ -685,7 +687,7 @@ const en: Record<string, string> = {
   "문의 · 섭외 요청": "Questions · partner requests",
   "신고 · 정지": "Reports · suspensions",
   "오류": "Errors",
-  // The operators' console tools (pages/AdminTools.tsx) and site notices
+  // 운영자 콘솔 도구 (pages/AdminTools.tsx)와 사이트 공지
   "공지 닫기": "Close the notice",
   "{days}일째 대기": "Waiting {days} days",
   "{days}일째 입금 대기": "Transfer due {days} days",
@@ -777,7 +779,7 @@ const en: Record<string, string> = {
   "매장 주소에 거리가 붙지 않아요.": "Store addresses get no distance.",
   "사업자 확인 (국세청)": "Business check (NTS)",
   "브랜드가 사업자 등록을 확인할 수 없어요.": "Brands can't verify their business registration.",
-  // The console's analysis, operations, content and system screens
+  // 콘솔의 분석, 운영, 콘텐츠, 시스템 화면
   "점검 중": "Maintenance",
   "잠시 점검하고 있어요": "We're doing some maintenance",
   "곧 다시 열게요. 조금 뒤에 다시 들러 주세요.": "We'll be back shortly. Please check in again soon.",

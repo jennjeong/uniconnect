@@ -7,11 +7,11 @@ import siteConfiguration from './site.config.json'
 import { sitemapXml } from './src/lib/sitemap'
 
 
-// Vite config — https://vitejs.dev/config/
+// Vite 설정 — https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  // `--mode development` keeps a build readable, with its source maps.
+  // `--mode development`는 소스맵을 포함해 빌드를 읽기 쉽게 둔다.
   const emitSourcemaps = mode === 'development'
-  // Forward /api calls to the Express backend (backend/) while developing.
+  // 개발 중에는 /api 호출을 Express 백엔드(backend/)로 넘긴다.
   const apiProxy = { '/api': `http://localhost:${process.env.API_PORT || '4000'}` }
 
   return {
@@ -19,8 +19,8 @@ export default defineConfig(({ mode }) => {
     build: {
       sourcemap: emitSourcemaps ? 'inline' : false,
       minify: !emitSourcemaps,
-      // three.js (the chrome chain and rings, and the login gradient) loads
-      // lazily in chunks of its own, up to ~0.7 MB.
+      // three.js(크롬 체인과 링, 로그인 그라디언트)는 지연 로딩되어 별도 청크로
+      // 나뉘며 최대 약 0.7MB다.
       chunkSizeWarningLimit: 800,
     },
     plugins: [
@@ -51,15 +51,15 @@ type SiteConfiguration = {
   title?: string
   description?: string
   language?: string
-  // The site's public address, for the sitemap's links.
+  // 사이트맵 링크에 쓰는 사이트의 공개 주소.
   url?: string
   robots?: {
     index?: boolean
   }
-  // The public pages listed in /sitemap.xml (lib/sitemap.test.ts checks them).
+  // /sitemap.xml에 싣는 공개 페이지 (lib/sitemap.test.ts가 검사한다).
   sitemap?: string[]
-  // Site ownership codes from Google Search Console and Naver Search
-  // Advisor, written into each page's head once set.
+  // Google Search Console과 Naver Search Advisor의 사이트 소유 확인 코드. 값이
+  // 있으면 각 페이지의 head에 쓴다.
   verification?: {
     google?: string
     naver?: string
@@ -81,7 +81,7 @@ type SiteConfiguration = {
   }
 }
 
-/** Applies site.config.json to index.html and the files served beside it. */
+/** site.config.json을 index.html과 그 옆에서 서빙하는 파일에 적용한다. */
 function siteDocument(config: SiteConfiguration): Plugin {
   function sanitizeHtmlValue(value: string | undefined): string {
     return value?.replace(/[^a-zA-Z0-9_-]/g, '') || ''
@@ -104,15 +104,15 @@ function siteDocument(config: SiteConfiguration): Plugin {
   const bodyStart = config.customScripts?.bodyStart ?? ''
   const bodyEnd = config.customScripts?.bodyEnd ?? ''
   const robotsTxt = config.robots?.index === false ? 'User-agent: *\nDisallow: /\n' : ''
-  // Nothing to list while the whole site stays out of search.
+  // 사이트 전체가 검색에서 빠져 있는 동안은 싣지 않는다.
   const sitemap =
     config.url && config.sitemap?.length && config.robots?.index !== false ? sitemapXml(config.url, config.sitemap) : ''
   const verification = {
     'google-site-verification': sanitizeHtmlValue(config.verification?.google),
     'naver-site-verification': sanitizeHtmlValue(config.verification?.naver),
   }
-  // Google's gtag set-up, as a file of its own (/ga-init.js) rather than an
-  // inline script, which the server's Content-Security-Policy blocks.
+  // Google의 gtag 설정을 인라인 스크립트가 아닌 별도 파일(/ga-init.js)로 둔다.
+  // 서버의 Content-Security-Policy가 인라인 스크립트를 막기 때문이다.
   const gaInit = googleAnalyticsId
     ? `window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}

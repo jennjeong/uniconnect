@@ -12,22 +12,22 @@ import type { RequestStatus } from "../types.js"
 
 export const offersRouter = Router()
 
-// Group whose inbox to show: the logged-in student group, or the demo group
-// for visitors previewing the student side. Brand accounts have no offers inbox.
+// 받은편지함을 보여 줄 학생단체다. 로그인한 학생단체이거나, 학생 쪽을 미리
+// 보는 방문자에게는 데모 단체다. 브랜드 계정에는 받은 협찬함이 없다.
 function groupOwner(req: Request) {
   const database = getDatabase()
   if (req.account) return req.account.role === "학생단체" ? req.account : undefined
   return database.accounts.find((account) => account.id === database.demoAccountIds.학생단체)
 }
 
-// Proposals brands sent to this student group, newest first, closed ones
-// as such.
+// 브랜드가 이 학생단체에 보낸 제안을 최신순으로 보여 주며, 닫힌 제안은 닫힌
+// 대로 보여 준다.
 offersRouter.get("/", (req, res) => {
   const owner = groupOwner(req)
   const database = getDatabase()
   const offers = owner?.groupId
     ? database.offers
-        // Not from a brand either side blocked.
+        // 어느 한쪽이 차단한 브랜드의 제안은 제외한다.
         .filter(
           (offer) =>
             offer.groupId === owner.groupId &&
@@ -41,11 +41,11 @@ offersRouter.get("/", (req, res) => {
 
 const decisions: Record<string, RequestStatus> = { accept: "수락", decline: "거절" }
 
-// The student group accepts or declines one offer.
+// 학생단체가 협찬 제안 하나를 수락하거나 거절한다.
 offersRouter.post("/:id/:decision", async (req, res) => {
   const account = requireAccount(req)
   if (account.role !== "학생단체") throw new HttpError(403, "학생단체 회원만 받은 협찬에 답할 수 있어요.")
-  // hasOwn keeps names every object has, such as constructor, out.
+  // hasOwn으로 constructor처럼 모든 객체가 가진 이름은 걸러 낸다.
   if (!Object.hasOwn(decisions, req.params.decision)) throw new HttpError(404, "없는 API 경로예요.")
   const decision = decisions[req.params.decision]
 
@@ -59,7 +59,7 @@ offersRouter.post("/:id/:decision", async (req, res) => {
   const status = statusOf(database, offer)
   if (status === "마감") throw new HttpError(409, "캠페인이 끝나 마감된 제안이에요.")
   if (status !== "검토 중") throw new HttpError(409, "이미 답한 제안이에요.")
-  // A campaign deleted since the offer cannot be sponsored.
+  // 제안 뒤에 삭제된 캠페인은 협찬할 수 없다.
   if (
     decision === "수락" &&
     offer.campaignId &&

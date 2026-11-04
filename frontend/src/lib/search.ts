@@ -2,23 +2,21 @@ import { inRegion, type Region } from "../data/universities"
 import { t } from "../i18n"
 import type { Match } from "../types"
 
-// The group catalog's filters: how big the next event is, when it is, its
-// kind, and the region and school ("" for any).
+// 단체 카탈로그의 필터: 다음 행사의 규모, 시기, 종류, 지역과 학교(""는 전체).
 export type GroupFilters = {
   size: "all" | "small" | "medium" | "large" | "unknown"
   when: "all" | "thisMonth" | "nextMonth" | "later" | "unknown"
-  // A province or city (data/universities.ts) and one of its schools; empty
-  // for any.
+  // 광역시·도나 시(data/universities.ts)와 그 안의 학교. 비워 두면 전체.
   region: Region | ""
   school: string
-  // The next event's kind (data/eventDetails.ts); empty for any.
+  // 다음 행사의 종류 (data/eventDetails.ts). 비워 두면 전체.
   kind: string
 }
 
 export const noGroupFilters: GroupFilters = { size: "all", when: "all", region: "", school: "", kind: "" }
 
-// Whether a listing has every word typed into the search box, in its name,
-// kind (as stored or as shown), offer, tags, school or next event.
+// 리스팅이 검색창에 입력한 모든 단어를 가졌는지 여부: 이름, 종류(저장된 대로
+// 또는 보이는 대로), 제공 내용, 태그, 학교, 다음 행사에서 찾는다.
 export function matchesQuery(match: Match, query: string) {
   const words = query.toLowerCase().split(/\s+/).filter(Boolean)
   if (words.length === 0) return true
@@ -29,14 +27,14 @@ export function matchesQuery(match: Match, query: string) {
   return words.every((word) => text.includes(word))
 }
 
-// The month after a YYYY-MM month.
+// YYYY-MM 달의 다음 달.
 const nextMonth = (month: string) => {
   const [year, number] = month.split("-").map(Number)
   return number === 12 ? `${year + 1}-01` : `${year}-${String(number + 1).padStart(2, "0")}`
 }
 
-// Whether a student group passes the filters, its next event's size and
-// month measured against today (YYYY-MM-DD).
+// 학생단체가 필터를 통과하는지 여부. 다음 행사의 규모와 월을 오늘(YYYY-MM-DD)에
+// 비춰 잰다.
 export function matchesGroupFilters(group: Match, filters: GroupFilters, today: string) {
   const audience = group.audience
   const size =

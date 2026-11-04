@@ -16,16 +16,14 @@ import type { Account, EventItem, RequestStatus, SponsorOffer, SponsorRequest } 
 
 export const proposalsRouter = Router()
 
-// Ids the account proposed to, with each answer so far: brands answer
-// student groups' requests, groups answer brands' offers. Only partners
-// with an account answer; the rest stay "sent". `confirmed` counts the
-// account's sponsorships either way round: proposals it sent that were
-// accepted and ones it received and accepted, each event once.
+// 계정이 제안한 id와 지금까지의 답을 보여 준다. 브랜드는 학생단체의 요청에,
+// 단체는 브랜드의 제안에 답한다. 계정이 있는 파트너만 답하고, 나머지는 "sent"로
+// 남는다. `confirmed`는 방향에 상관없이 계정의 협찬을 센다. 보낸 제안 중 수락된
+// 것과 받아서 수락한 것을, 행사마다 한 번씩 센다.
 function proposalState(account: Account) {
   const database = getDatabase()
-  // Proposals to listings the account no longer sees (a member's to the
-  // examples, sent before they were set apart) drop out; ones to a partner
-  // that left stay.
+  // 계정이 더 이상 볼 수 없는 리스팅에 보낸 제안(예시를 분리하기 전에 회원이
+  // 예시에 보낸 것)은 빠지고, 떠난 파트너에게 보낸 제안은 남는다.
   const catalog = account.role === "학생단체" ? "brands" : "groups"
   const listings = catalog === "brands" ? database.brands : database.groups
   const proposals = (database.proposals[account.id] ?? []).filter((id) => {
@@ -41,7 +39,7 @@ function proposalState(account: Account) {
       : database.offers
           .filter((offer) => offer.fromAccountId === account.id)
           .map((offer) => ({ partnerId: offer.groupId, ...offer, status: statusOf(database, offer) }))
-  // Oldest first, so a partner's newest answer wins.
+  // 오래된 것부터 읽어서 파트너의 가장 최근 답이 이기게 한다.
   for (const item of sent
     .filter((item) => proposals.includes(item.partnerId))
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt))) {
@@ -52,9 +50,9 @@ function proposalState(account: Account) {
       ? database.requests.filter((item) => item.fromAccountId === account.id && item.status === "수락").length +
         database.offers.filter((item) => item.groupId === account.groupId && item.status === "수락").length
       : (database.sponsorships[account.id] ?? []).length
-  // What the account sent, newest first, as its inbox lists them beside what
-  // it received: to whom, about which of its events, offering what, and the
-  // answer so far.
+  // 계정이 보낸 것을 최신순으로 보여 주며, 받은 것과 함께 받은편지함에
+  // 나열한다. 누구에게, 자기 어느 행사에 대해, 무엇을 제안했는지와 지금까지의
+  // 답을 담는다.
   const sentList = sent
     .filter((item) => proposals.includes(item.partnerId))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
@@ -80,11 +78,11 @@ function proposalState(account: Account) {
   return { proposals, statuses, confirmed, sent: sentList }
 }
 
-// The longest note a proposal carries to its partner.
+// 제안이 파트너에게 전하는 메모의 최대 길이다.
 const maxMessage = 300
 
-// The account's event (a group's) or campaign (a brand's) a proposal is
-// about: the one it picked, which must not have ended, or else its next.
+// 제안이 다루는 계정의 행사(단체의 경우)나 캠페인(브랜드의 경우)이다. 고른
+// 것이 끝나지 않았으면 그것이고, 아니면 다음 것이다.
 function proposedEvent(account: Account, eventId: string) {
   const today = todayInKorea()
   const events = getDatabase().events[account.id] ?? []
@@ -102,8 +100,8 @@ function proposedEvent(account: Account, eventId: string) {
   return picked
 }
 
-// A brand's offer about its campaign, for a group with an account, with the
-// brand's note or the usual line.
+// 계정이 있는 단체에 보내는, 브랜드의 캠페인에 대한 제안이다. 브랜드의 메모나
+// 기본 문구를 담는다.
 function brandOffer(account: Account, groupId: string, campaign: EventItem, note: string): SponsorOffer {
   const listing = getDatabase().brands.find((brand) => brand.id === account.brandId)
   return {
@@ -123,11 +121,10 @@ function brandOffer(account: Account, groupId: string, campaign: EventItem, note
   }
 }
 
-// Whether a proposal can go to a partner with an account about this event:
-// not while one waits for an answer (sending again changes nothing; one
-// whose event has ended is closed and doesn't count), and not about an
-// event the partner already accepted. A sponsorship needs an
-// event, so its results reach the brand's analytics.
+// 계정이 있는 파트너에게 이 행사에 대해 제안을 보낼 수 있는지 정한다. 답을
+// 기다리는 제안이 있는 동안(다시 보내도 달라지는 것이 없고, 행사가 끝난
+// 제안은 닫혔으므로 세지 않는다)은 안 되고, 파트너가 이미 수락한 행사에 대해서도
+// 안 된다. 협찬에는 행사가 필요하므로, 그 결과가 브랜드의 분석에 닿는다.
 function canPropose(sent: { status: RequestStatus; eventId?: string }[], event: EventItem | undefined, students: boolean) {
   if (!event) {
     throw new HttpError(
@@ -151,7 +148,7 @@ proposalsRouter.get("/", (req, res) => {
   res.json(req.account ? proposalState(req.account) : { proposals: [], statuses: {}, confirmed: 0, sent: [] })
 })
 
-// More than any group or brand proposes in an hour, each emailing a partner.
+// 단체나 브랜드가 한 시간에 제안하는 수보다 많은 수다. 제안마다 파트너에게 메일이 간다.
 const proposalsPerHour = createRateLimit({
   limit: 30,
   windowMs: 60 * 60 * 1000,
@@ -162,14 +159,14 @@ proposalsRouter.post("/", async (req, res) => {
   const account = requireAccount(req)
   const matchId = String(req.body?.matchId ?? "")
   const database = getDatabase()
-  // Student groups propose to any brand they see, brands to any group: a
-  // member to members, a demo account within the examples.
+  // 학생단체는 자기가 보는 모든 브랜드에, 브랜드는 모든 단체에 제안한다.
+  // 회원은 회원에게, 데모 계정은 예시 안에서만이다.
   const partner = shownCatalog(database, account.role === "학생단체" ? "brands" : "groups", account).find(
     (match) => match.id === matchId,
   )
   if (!partner) throw new HttpError(404, "목록에 없는 상대예요.")
   if (partner.pausedAt) throw new HttpError(409, "지금은 제안을 받지 않는 상대예요.")
-  // Applying to the partner's board post (routes/board.ts) while it is open.
+  // 파트너의 게시판 글(routes/board.ts)이 열려 있는 동안 거기에 지원한다.
   const postId = text(req.body?.postId)
   const post = postId ? database.posts.find((item) => item.id === postId) : undefined
   if (postId && (!post || post.listingId !== matchId || !isOpen(post))) {
@@ -182,10 +179,9 @@ proposalsRouter.post("/", async (req, res) => {
   assertCanOffer(database, account)
   await proposalsPerHour.take(senderKey(req, database, account))
 
-  // A group with an account gets a brand's offer in its inbox, about the
-  // brand's next campaign; a brand with an account gets a group's proposal,
-  // about the group's next event. A declined one can be sent again, and an
-  // accepted one again about a later event.
+  // 계정이 있는 단체는 브랜드의 다음 캠페인에 대한 제안을 받은편지함에 받고,
+  // 계정이 있는 브랜드는 단체의 다음 행사에 대한 제안을 받는다. 거절된 것은
+  // 다시 보낼 수 있고, 수락된 것은 더 나중 행사에 대해서만 다시 보낼 수 있다.
   const partnerHasInbox = database.accounts.some((item) =>
     students ? item.brandId === matchId : item.groupId === matchId,
   )
@@ -203,7 +199,7 @@ proposalsRouter.post("/", async (req, res) => {
       students,
     )
 
-  // An application has to arrive, not fold into one already waiting.
+  // 지원은 이미 대기 중인 것에 합쳐지지 않고 따로 도착해야 한다.
   if (post && !send) throw new HttpError(409, "이 상대에게 보낸 제안이 이미 있어요. 받은 제안 · 보낸 제안에서 확인해 주세요.")
   const applying = post ? { postId: post.id } : {}
   const postLine = post ? [`모집 글: ${post.title}`] : []
@@ -266,9 +262,9 @@ proposalsRouter.delete("/:matchId", async (req, res) => {
     account.role === "학생단체"
       ? database.requests.filter((request) => request.fromAccountId === account.id && request.brandId === matchId)
       : database.offers.filter((offer) => offer.fromAccountId === account.id && offer.groupId === matchId)
-  // A withdrawn proposal leaves the other side's inbox; answered ones stay in
-  // its history. With an accepted one, only a waiting one about a later
-  // event can be withdrawn, and the partner stays among the proposals.
+  // 철회한 제안은 상대편의 받은편지함에서 사라지고, 답한 제안은 이력에
+  // 남는다. 수락된 제안은 더 나중 행사에 대해 기다리는 것만 철회할 수 있고,
+  // 파트너는 제안 목록에 남는다.
   const withdrawn = new Set(sent.filter((item) => item.status === "검토 중"))
   const accepted = sent.some((item) => item.status === "수락")
   if (accepted && withdrawn.size === 0) throw new HttpError(409, "이미 수락된 제안이에요.")

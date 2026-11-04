@@ -21,17 +21,17 @@ import type { Account, BlockedListing, BusinessStatus, MailKind, Match, NavLabel
 export type ActivityItem = {
   label: string
   value: string
-  // Page with the items behind the count.
+  // 개수 뒤의 항목이 담긴 페이지.
   target: NavLabel
 }
 
-// The languages the app is in, each named in itself.
+// 앱이 지원하는 언어. 각각 그 언어로 쓴다.
 const languages: { code: Lang; name: string }[] = [
   { code: "ko", name: "한국어" },
   { code: "en", name: "English" },
 ]
 
-// A settings card: an icon, a title and what it holds, then its rows.
+// 설정 카드: 아이콘, 제목과 담긴 내용, 그리고 행.
 function SettingsCard({
   id,
   icon,
@@ -61,7 +61,7 @@ function SettingsCard({
   )
 }
 
-// One row of a card: what it is, its value, and the action beside it.
+// 카드의 행 하나: 무엇인지, 값, 그 옆의 동작.
 function SettingsRow({
   label,
   labelId,
@@ -82,7 +82,7 @@ function SettingsRow({
   )
 }
 
-// A row's action: a short word on screen, the whole action for screen readers.
+// 행의 동작: 화면에는 짧은 말, 스크린 리더에는 전체 동작.
 function RowButton({ label, children, onClick, tone }: { label: string; children: ReactNode; onClick?: () => void; tone?: "point" | "danger" }) {
   return (
     <button aria-label={label} className={tone ? `row-button ${tone}` : "row-button"} onClick={onClick} type="button">
@@ -91,12 +91,10 @@ function RowButton({ label, children, onClick, tone }: { label: string; children
   )
 }
 
-// The account's own page, as a settings page: a compact card on Stride's
-// deep blue mesh with who it is, its three counts and the introduction's
-// edit button, then cards for the introduction the other side sees, the
-// account, logging in and security, notices and display, the people and
-// groups it works with, and its data with leaving. Wide screens keep a list
-// of the cards beside them to jump to.
+// 설정 페이지로서의 계정 자신의 페이지: 스트라이드의 짙은 파란색 메시 위의 작은
+// 카드에 누구인지, 세 개수, 소개 수정 버튼을 두고, 이어서 상대편에게 보이는
+// 소개, 계정, 로그인과 보안, 알림과 화면, 함께하는 사람과 단체, 데이터와 탈퇴의
+// 카드가 나온다. 넓은 화면에서는 카드로 건너뛰는 목록이 옆에 남는다.
 export function ProfilePage({
   account,
   listing,
@@ -130,51 +128,51 @@ export function ProfilePage({
   canInvite = false,
 }: {
   account: Account
-  // The listing brands (or student groups) see; null until written.
+  // 브랜드(또는 학생단체)에게 보이는 리스팅. 작성 전에는 null.
   listing: Match | null
-  // Counts such as events registered and proposals sent.
+  // 등록한 행사와 보낸 제안 같은 개수.
   activity: ActivityItem[]
   onBack: () => void
   onEdit: () => void
   onNavigate: (label: NavLabel) => void
   onLogout: () => void
   onChangePassword: () => void
-  // Two-step login and the device list; absent for the shared demo accounts.
+  // 2단계 인증과 기기 목록. 공용 데모 계정에는 없다.
   onTwoFactor?: () => void
   onDevices?: () => void
-  // The account's payments to the platform (a group's ads, a brand's all).
+  // 계정이 플랫폼에 낸 결제(단체는 광고, 브랜드는 전부).
   onPayments?: () => void
-  // A brand's plan card (components/PlanCard.tsx), with where its notices go.
+  // 알림이 가는 곳과 함께 보이는 브랜드의 요금제 카드(components/PlanCard.tsx).
   onPlan?: (message: string) => void
   // Where the 상단 광고 card's notices go (components/AdCard.tsx).
   onAd: (message: string) => void
-  // The people running the account with its owner; absent for the demo accounts.
+  // 소유자와 함께 계정을 운영하는 사람들. 데모 계정에는 없다.
   onTeam?: () => void
-  // Kakao or Naver to link for logging in (the owner's; none for the demo accounts).
+  // 로그인용으로 연결할 카카오나 네이버(소유자의 것. 데모 계정에는 없다).
   socialProviders: SocialProvider[]
   onSocialLink: (provider: SocialProvider) => void
-  // A council's clubs page, and a club's links to its councils; absent
-  // where they don't apply (brands, the demo accounts).
+  // 학생회의 동아리 페이지와, 동아리가 학생회에 거는 링크. 해당하지
+  // 않으면(브랜드, 데모 계정) 없다.
   onCouncil?: () => void
   onCouncilLink?: () => void
   onSocialUnlink: (provider: SocialProvider) => void
-  // The person running the account (modals/ContactModal.tsx).
+  // 계정을 운영하는 사람(modals/ContactModal.tsx).
   onChangeContact: () => void
   onChangeEmail: () => void
   onDownloadData: () => void
   onLeave: () => void
-  // The accounts this one blocked, to unblock; absent for the demo accounts.
+  // 이 계정이 차단한 계정. 차단을 푸는 데 쓴다. 데모 계정에는 없다.
   blocked?: BlockedListing[]
   onUnblock?: (item: BlockedListing) => void
-  // A brand's business check; absent for groups and the demo brand.
+  // 브랜드의 사업자 확인. 단체와 데모 브랜드에는 없다.
   business?: BusinessStatus
   onVerifyBusiness?: () => void
-  // 목록에서 숨기기: takes the listing out of the other side's lists for now,
-  // or shows it again; absent for the demo accounts.
+  // 목록에서 숨기기: 리스팅을 당분간 상대편의 목록에서 빼거나 다시 보이게 한다.
+  // 데모 계정에는 없다.
   onPause?: (paused: boolean) => void
-  // 받을 메일: the kinds of notice email to turn off; absent for the demo accounts.
+  // 받을 메일: 끌 알림 이메일의 종류. 데모 계정에는 없다.
   onMail?: (mailOff: MailKind[]) => void
-  // 친구 초대: the account's invitation link and how it went; members only.
+  // 친구 초대: 계정의 초대 링크와 그 진행 결과. 회원 전용.
   canInvite?: boolean
 }) {
   const students = account.role === "학생단체"
@@ -193,7 +191,7 @@ export function ProfilePage({
       (result) => {
         if (!cancelled) setInvite(result)
       },
-      // Without it the card just doesn't show.
+      // 없으면 카드가 그냥 보이지 않는다.
       () => undefined,
     )
     return () => {
@@ -479,8 +477,8 @@ export function ProfilePage({
 
           <SettingsCard caption={t("화면의 언어와 받을 메일을 골라요.")} icon="bell" id="profile-prefs" title={t("알림과 표시")}>
             <dl className="settings-rows">
-              {/* Picking the other language reloads the page in it, remembered
-                  for the next visit, as the footer's switch does. */}
+              {/* 다른 언어를 고르면 그 언어로 페이지를 다시 불러오고 다음
+                 방문을 위해 기억한다. 푸터의 스위치와 같다. */}
               <SettingsRow
                 action={
                   <span aria-labelledby="language-label" className="lang-choice" role="group">

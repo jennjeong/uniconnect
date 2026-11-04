@@ -2,8 +2,8 @@ import { lang, t } from "../i18n"
 
 const TOKEN_KEY = "uniconnect-token"
 
-// Empty in development (Vite proxies /api to the backend). Set VITE_API_URL
-// when the frontend and backend are deployed on different origins.
+// 개발 중에는 비워 둔다 (Vite가 /api를 백엔드로 프록시한다). 프런트엔드와
+// 백엔드를 서로 다른 오리진에 배포할 때 VITE_API_URL을 설정한다.
 const API_BASE = (import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "")
 
 const unreachable = t("서버에 연결할 수 없어요. 백엔드가 실행 중인지 확인해 주세요.")
@@ -33,7 +33,8 @@ export function setToken(token: string | null) {
     if (token) localStorage.setItem(TOKEN_KEY, token)
     else localStorage.removeItem(TOKEN_KEY)
   } catch {
-    // Storage can be unavailable (private mode); the session then lasts until reload.
+    // 저장소를 쓸 수 없을 수 있다 (시크릿 모드). 그러면 세션은 새로고침할
+    // 때까지만 유지된다.
   }
 }
 
@@ -41,14 +42,14 @@ type RequestOptions = {
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
   body?: unknown
   query?: Record<string, string>
-  // Extra headers, such as the operators' X-Admin-Token.
+  // 운영자의 X-Admin-Token 같은 추가 헤더.
   headers?: Record<string, string>
-  // Stops a request the page no longer waits for (an open chat's).
+  // 페이지가 더는 기다리지 않는 요청(열려 있던 채팅의 것)을 멈춘다.
   signal?: AbortSignal
 }
 
-// A file the API serves only to a logged-in account (an agreement's photo),
-// as a blob for an object URL, since an <img> can't send the token.
+// 로그인한 계정에게만 API가 내주는 파일(합의서의 사진)을 object URL용 blob으로
+// 받는다. <img>는 토큰을 보낼 수 없기 때문이다.
 export async function requestBlob(path: string, { headers = {} }: { headers?: Record<string, string> } = {}): Promise<Blob> {
   const token = getToken()
   const response = await fetch(`${API_BASE}/api${path}`, {
@@ -72,7 +73,7 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
       headers: {
         ...(options.body === undefined ? {} : { "Content-Type": "application/json" }),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        // The server answers its messages in the language shown.
+        // 서버는 화면에 보이는 언어로 메시지를 답한다.
         "Accept-Language": lang,
         ...options.headers,
       },
@@ -86,8 +87,8 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   if (response.status === 204) return undefined as T
   const data = await response.json().catch(() => null)
   if (!response.ok) {
-    // The API always answers errors as { error }; anything else came from a
-    // proxy or host that could not reach it.
+    // API는 오류를 항상 { error }로 답한다. 그 밖의 것은 API에 닿지 못한
+    // 프록시나 호스트에서 온 것이다.
     throw new ApiError(response.status, data?.error ?? unreachable)
   }
   return data as T

@@ -4,8 +4,8 @@ import { t } from "../i18n"
 import { formatWon, hasRoas, roasText } from "../lib/kpis"
 import type { Metrics, Report } from "../types"
 
-// "목표 120%보다 43% 높았어요." from the ROAS against its goal (as
-// roasSummary in lib/kpis.ts works it out), in the language shown.
+// 목표 대비 ROAS로 만든 "목표 120%보다 43% 높았어요." 같은 문장(lib/kpis.ts의
+// roasSummary가 계산한다). 보이는 언어로 쓴다.
 function roasAgainstGoal(report: Report) {
   const goal = report.targets.roas
   const gain = Math.round((report.roas / Math.max(1, goal) - 1) * 100)

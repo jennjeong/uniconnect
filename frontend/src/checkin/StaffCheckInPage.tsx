@@ -10,12 +10,10 @@ import { t } from "../i18n"
 import { formatFullDate } from "../lib/date"
 import type { CheckInInfo } from "../types"
 
-// The sponsor's store staff open /check-in/<code>/staff on their own device:
-// with their store's staff PIN (kept in this tab for the next coupons, never
-// in a participant's browser), each participant's coupon number for that
-// store confirms one store visit, and what the sponsorship's measurement
-// methods give the brand to confirm at the venue, such as samples handed
-// out, is counted below.
+// 스폰서의 가게 직원은 자기 기기에서 /check-in/<code>/staff를 연다. 가게의 직원
+// PIN(다음 쿠폰을 위해 이 탭에만 두고 참가자의 브라우저에는 두지 않는다)으로
+// 참가자의 쿠폰 번호마다 매장 방문을 한 번 확인하고, 협찬의 측정 방식이
+// 브랜드에 맡긴 현장 확인(예: 나눠 준 샘플)은 아래에서 센다.
 export function StaffCheckInPage({ code }: { code: string }) {
   const [info, setInfo] = useState<CheckInInfo | null>(null)
   const venue = useVenueSession(code, "staff")
@@ -24,8 +22,8 @@ export function StaffCheckInPage({ code }: { code: string }) {
   const [error, setError] = useState("")
   const [confirmed, setConfirmed] = useState<string[]>([])
   const share = venue.session?.shares[0]
-  // Visits are confirmed while the sponsorship confirms store visits (and
-  // before the PIN has said which share it opens).
+  // 협찬이 매장 방문을 확인하는 동안(그리고 PIN이 어느 몫을 여는지 알려 주기
+  // 전까지) 방문을 확인한다.
   const visits = !share || share.kinds.includes("visit")
 
   useEffect(() => {

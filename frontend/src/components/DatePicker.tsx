@@ -12,11 +12,10 @@ import {
 } from "../lib/date"
 import { Icon } from "./Icon"
 
-// Month calendar for picking a day or a period, styled like the 내 행사
-// calendar. The first press picks the first day; the next press on a later
-// day closes the period (or, on an earlier day, starts over from there),
-// and the one after starts a new pick. One day is a period that ends where
-// it starts.
+// 하루 또는 기간을 고르는 월 달력. 내 행사 달력과 같은 모양이다. 첫 번째 누름이
+// 첫날을 고르고, 이후 더 늦은 날을 누르면 기간이 닫힌다 (더 이른 날을 누르면
+// 거기서 다시 시작한다). 그다음 누름은 새로 고르기 시작한다. 하루는 끝이 시작과
+// 같은 기간이다.
 export function DatePicker({
   start,
   end,
@@ -24,12 +23,12 @@ export function DatePicker({
 }: {
   // "YYYY-MM-DD"
   start: string
-  // Last day of the period; absent for one day.
+  // 기간의 마지막 날. 하루짜리면 없다.
   end?: string
   onChange: (start: string, end?: string) => void
 }) {
   const [month, setMonth] = useState(() => startOfMonth(fromIsoDate(start) ?? new Date()))
-  // Whether the next press closes the period started by the last one.
+  // 다음 누름이 직전에 시작한 기간을 닫는지 여부.
   const [closing, setClosing] = useState(false)
   const today = todayIso()
   const last = end ?? start

@@ -1,9 +1,8 @@
 import { Lines } from "./Lines"
 import { Pill } from "./Pill"
 
-// A catalog with no one in it yet: members see only members, so before the
-// other side signs up there is nothing to list. Says so, and what to do
-// meanwhile.
+// 아직 아무도 없는 카탈로그. 회원에게는 회원만 보이므로 반대편이 가입하기
+// 전에는 보여 줄 목록이 없다. 이 사실과 그동안 할 일을 알려 준다.
 export function CatalogEmpty({
   title,
   text,

@@ -2,8 +2,8 @@ import { brandIndustries, groupIndustries } from "./catalog.js"
 import { todayInKorea } from "./dates.js"
 import type { Account, Database, Industry, Match } from "../types.js"
 
-// How well a student group's field and a brand's industry go together, from
-// 0 to 1: a concert crowd buys coffee, a running club wants sportswear.
+// 학생 단체의 분야와 브랜드 업종이 얼마나 어울리는지 0부터 1까지로 낸다.
+// 콘서트 관객은 커피를 사고, 러닝 동아리는 스포츠웨어를 원한다.
 const fit: Partial<Record<Industry, Partial<Record<Industry, number>>>> = {
   performance: { cafe: 1, photo: 0.9, beauty: 0.8, content: 0.7, wellness: 0.6, sports: 0.4, education: 0.4 },
   content: { content: 1, photo: 0.9, cafe: 0.8, beauty: 0.8, wellness: 0.6, sports: 0.5, education: 0.5 },
@@ -15,7 +15,7 @@ const fit: Partial<Record<Industry, Partial<Record<Industry, number>>>> = {
 const industryFit = (group: Industry, brand: Industry) =>
   fit[group]?.[brand] ?? (group === brand ? 1 : 0.5)
 
-// Words of a listing's tags and category, for finding what two have in common.
+// 리스팅의 태그와 카테고리 단어. 둘의 공통점을 찾는 데 쓴다.
 const words = (listing: Pick<Match, "tags" | "category">) =>
   new Set(
     [...listing.tags, listing.category]
@@ -23,8 +23,8 @@ const words = (listing: Pick<Match, "tags" | "category">) =>
       .filter((word) => word.length >= 2),
   )
 
-// Have these two already sponsored together? A brand's finished sponsorship
-// of the group, or a proposal either side accepted.
+// 이 둘이 이미 함께 협찬한 적이 있는지: 브랜드가 그 단체에 마친 협찬이나
+// 어느 쪽이든 수락한 제안.
 function workedTogether(database: Database, brand: Match, group: Match) {
   const brandAccount = database.accounts.find((account) => account.brandId === brand.id)
   const groupAccount = database.accounts.find((account) => account.groupId === group.id)
@@ -51,8 +51,8 @@ const daysBetween = (from: string, to: string) =>
 
 export type Viewer = { account: Account; listing?: Match }
 
-// The viewer's side as a listing: its own, or one made up from the
-// account's type before it has written one.
+// 보는 쪽을 리스팅으로 바꾼 것: 자기 리스팅이거나, 아직 쓰지 않았으면 계정
+// 유형으로 만든 가상의 것.
 function viewerListing({ account, listing }: Viewer): Match {
   if (listing) return listing
   const students = account.role === "학생단체"
@@ -67,10 +67,9 @@ function viewerListing({ account, listing }: Viewer): Match {
   }
 }
 
-// One partner's match for the viewer, 55 to 98, with the reasons that
-// count most and each part as a share of its best (0 to 1, the detail
-// page's bars). Weights: industry fit 35, shared tags 15, track record 20,
-// sponsored together before 15, ready to answer 15.
+// 보는 사람 기준으로 한 상대의 매칭 점수(55~98), 가장 크게 작용한 이유,
+// 각 항목이 가장 높은 값에 대한 비율(0~1, 상세 페이지의 막대). 가중치:
+// 업종 적합 35, 공통 태그 15, 실적 20, 함께 협찬한 경험 15, 답할 준비 15.
 export function scoreMatch(database: Database, viewer: Viewer, partner: Match, maxPopularity: number) {
   const mine = viewerListing(viewer)
   const students = viewer.account.role === "학생단체"
@@ -111,7 +110,7 @@ export function scoreMatch(database: Database, viewer: Viewer, partner: Match, m
     },
   ]
   const total = parts.reduce((sum, part) => sum + part.weight * part.value, 0) / 100
-  // Having sponsored together says the most, so it leads when it applies.
+  // 함께 협찬한 경험이 가장 큰 의미라서 해당하면 맨 앞에 둔다.
   const rank = (part: (typeof parts)[number]) => (part.reason === "함께한 협찬이 있어요" ? 100 : part.weight * part.value)
   const reasons = parts
     .filter((part) => part.value >= 0.7)

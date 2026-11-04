@@ -8,16 +8,15 @@ import { isDemoAccount } from "./reviews.js"
 import { platformStats } from "./stats.js"
 import type { Account, Database } from "../types.js"
 
-// The operators' console (pages/AdminPage.tsx): what needs them now, the
-// platform's figures with eight weeks of trend and the revenue, every
-// member with what it did, and every proposal. Never passwords, tokens,
-// PINs or messages.
+// 운영자 콘솔(pages/AdminPage.tsx): 지금 운영자가 처리할 일, 8주 추이와 매출을
+// 담은 플랫폼 수치, 회원별 활동, 모든 제안. 비밀번호, 토큰, PIN, 메시지는
+// 절대 담지 않는다.
 
 const koreanDate = (at: string) => new Date(new Date(at).getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
 
 export function overview(database: Database, now = new Date()) {
   const today = todayInKorea(now)
-  // Eight weeks, oldest first, each starting on a Monday.
+  // 8주, 오래된 순. 각 주는 월요일에 시작한다.
   const monday = addDays(today, -((new Date(`${today}T00:00:00Z`).getUTCDay() + 6) % 7))
   const weeks = Array.from({ length: 8 }, (_, index) => addDays(monday, (index - 7) * 7))
   const weekOf = (date: string) => [...weeks].reverse().find((start) => start <= date)
@@ -51,7 +50,7 @@ export function overview(database: Database, now = new Date()) {
     revenue,
     attention: {
       applications: database.applications?.length ?? 0,
-      // Questions on hold wait on something else, so they don't count here.
+      // 보류 중인 문의는 다른 일을 기다리므로 여기서는 세지 않는다.
       inquiries: database.inquiries.filter((inquiry) => !inquiry.answer && !database.inquiryHandling?.[inquiry.id]?.heldAt).length,
       reports: database.reports.filter((report) => !report.resolution).length,
       transfers: paymentsOf(database).filter((payment) => payment.status === "pending" && payment.transferRequestedAt).length,
@@ -63,7 +62,7 @@ export function overview(database: Database, now = new Date()) {
   }
 }
 
-// One member as the list shows it.
+// 목록에 보이는 회원 한 명.
 export function memberRow(database: Database, account: Account) {
   const listing = account.role === "학생단체"
     ? database.groups.find((item) => item.id === account.groupId)
@@ -96,7 +95,7 @@ export function memberRow(database: Database, account: Account) {
   }
 }
 
-// Everything about one member the operators may see.
+// 운영자가 볼 수 있는 회원 한 명의 모든 것.
 export function memberDetail(database: Database, account: Account) {
   const received = account.role === "브랜드"
     ? database.requests.filter((item) => item.brandId === account.brandId)
@@ -128,7 +127,7 @@ export function memberDetail(database: Database, account: Account) {
   }
 }
 
-// Every proposal, newest first: who to whom, about what, and where it stands.
+// 모든 제안을 새것부터: 누가 누구에게, 무엇에 대해, 어느 상태인지.
 export function proposalRows(database: Database) {
   const named = (id?: string) => database.accounts.find((account) => account.id === id)?.name
   return [

@@ -8,22 +8,22 @@ import type { Account, Database } from "../types.js"
 
 export const savedRouter = Router()
 
-// Most listings one account keeps saved.
+// 한 계정이 저장해 둘 수 있는 리스팅의 최대 수다.
 const maxSaved = 200
 
-// The catalog of the side an account meets: brands for student groups.
+// 계정이 만나는 쪽의 카탈로그다. 학생단체에게는 브랜드다.
 const partnerCatalog = (account: Account) => (account.role === "학생단체" ? "brands" : "groups")
 
-// A listing of the other side this account finds in the lists, by id.
+// 이 계정이 목록에서 찾을 수 있는 반대편의 리스팅을 id로 찾는다.
 function seenListing(database: Database, account: Account, id: string) {
   const catalog = partnerCatalog(account)
   const listing = database[catalog].find((item) => item.id === id)
   return listing && listedTo(database, catalog, listing, account) ? listing : undefined
 }
 
-// The listings this account saved (찜) that it still finds, newest first: one
-// that left, was blocked or is paused for now drops out (and a paused one
-// comes back once its owner shows it again).
+// 이 계정이 저장한(찜) 리스팅 중 아직 찾을 수 있는 것을 최신순으로 보여 준다.
+// 떠났거나 차단됐거나 잠시 멈춘 리스팅은 빠지고(멈춘 리스팅은 주인이 다시
+// 보이게 하면 돌아온다).
 savedRouter.get("/", (req, res) => {
   const account = requireAccount(req)
   const database = getDatabase()

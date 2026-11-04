@@ -7,8 +7,8 @@ import { blockedBetween } from "./safety.js"
 import { adUntil, isPro } from "./plan.js"
 import type { Account, Database, Industry, Match, Role } from "../types.js"
 
-// How an account's type (validation.ts) is filed among the industries the
-// match and the marks use; the old names stay for data from before.
+// 계정 유형(validation.ts)을 매칭과 마크가 쓰는 업종 중 어디에 넣는지.
+// 이전 데이터를 위해 옛 이름도 남겨 둔다.
 export const groupIndustries: Record<string, Industry> = {
   총학생회: "performance",
   "단과대 학생회": "performance",
@@ -58,7 +58,7 @@ export const brandIndustries: Record<string, Industry> = {
   교육: "education",
 }
 
-// The catalog an account of `role` is listed in, and the one it browses.
+// `role` 계정이 올라가는 카탈로그와 그 계정이 둘러보는 카탈로그.
 export const ownCatalog = (database: Database, role: Role) =>
   role === "학생단체" ? database.groups : database.brands
 
@@ -73,18 +73,17 @@ export function findListing(database: Database, account: Account) {
   return id ? ownCatalog(database, account.role).find((listing) => listing.id === id) : undefined
 }
 
-// The account a listing belongs to; the seed catalog's belong to none.
+// 리스팅이 속한 계정. 시드 카탈로그는 어느 계정에도 속하지 않는다.
 export const ownerOf = (database: Database, catalog: "brands" | "groups", listing: Match) =>
   database.accounts.find((item) => (catalog === "brands" ? item.brandId : item.groupId) === listing.id)
 
-// Members (accounts that signed up) see only each other's listings. The
-// seed catalog and the demo accounts' listings make up the examples, which
-// visitors and the shared demo accounts see. The two never meet: nothing
-// made up reaches a member, and a demo account reaches no member.
+// 회원(가입한 계정)은 다른 회원의 리스팅만 본다. 시드 카탈로그와 데모
+// 계정의 리스팅은 예시로, 방문자와 공용 데모 계정이 본다. 둘은 만나지 않는다.
+// 만든 것이 회원에게 닿지 않고 데모 계정도 회원에게 닿지 않는다.
 export function shownTo(database: Database, catalog: "brands" | "groups", listing: Match, account?: Account) {
   const owner = ownerOf(database, catalog, listing)
-  // A suspended account shows to no one, and two accounts where one blocked
-  // the other don't see each other.
+  // 정지된 계정은 누구에게도 보이지 않고, 한쪽이 상대를 차단한 두 계정은
+  // 서로 보이지 않는다.
   if (owner?.suspendedAt) return false
   if (owner && account && blockedBetween(database, owner.id, account.id)) return false
   const memberListing = owner !== undefined && !isDemoAccount(database, owner)
@@ -92,24 +91,24 @@ export function shownTo(database: Database, catalog: "brands" | "groups", listin
   return memberListing === member
 }
 
-// The listings of a catalog that `account` (or a visitor) sees.
+// `account`(또는 방문자)가 보는 카탈로그의 리스팅.
 export const shownCatalog = (database: Database, catalog: "brands" | "groups", account?: Account) =>
   (catalog === "brands" ? database.brands : database.groups).filter((listing) =>
     shownTo(database, catalog, listing, account),
   )
 
-// Whether `account` finds a listing in the lists: shown to it, and not taken
-// out of them for now by its owner (pausedAt). What is under way with a
-// paused listing still goes through shownTo.
+// `account`가 목록에서 리스팅을 찾을 수 있는지: 보이는 것이고 주인이
+// 잠시 목록에서 뺀(pausedAt) 것이 아니어야 한다. 멈춘 리스팅과 진행 중인
+// 일은 여전히 shownTo를 거친다.
 export const listedTo = (database: Database, catalog: "brands" | "groups", listing: Match, account?: Account) =>
   !listing.pausedAt && shownTo(database, catalog, listing, account)
 
-// The listings of a catalog that `account` (or a visitor) finds in the lists.
+// `account`(또는 방문자)가 목록에서 찾는 카탈로그의 리스팅.
 export const listedCatalog = (database: Database, catalog: "brands" | "groups", account?: Account) =>
   shownCatalog(database, catalog, account).filter((listing) => !listing.pausedAt)
 
-// Lists a new account so the other side can find it, once it has written
-// its introduction. Its score starts at 70 until there is matching data.
+// 새 계정이 소개를 쓰면 상대편이 찾을 수 있게 리스팅을 올린다. 매칭
+// 데이터가 생기기 전까지 점수는 70에서 시작한다.
 export function createListing(database: Database, account: Account): Match {
   const students = account.role === "학생단체"
   const listing: Match = {
@@ -128,13 +127,13 @@ export function createListing(database: Database, account: Account): Match {
   return listing
 }
 
-// A group with an account shows that account's next event from its calendar.
+// 계정이 있는 단체는 그 계정 캘린더의 다음 행사를 보여 준다.
 export function withLiveEvent(database: Database, group: Match): Match {
   const account = database.accounts.find((item) => item.groupId === group.id)
   if (!account) return group
   const today = todayInKorea()
   const next = (database.events[account.id] ?? [])
-    // An event over several days stays next until its last day.
+    // 여러 날에 걸친 행사는 마지막 날까지 다음 행사로 남는다.
     .filter((event) => (event.endDate ?? event.date) >= today)
     .sort((a, b) => a.date.localeCompare(b.date))[0]
   if (!next) return { ...group, eventId: undefined, eventName: undefined, eventDate: undefined, eventKind: undefined, audience: undefined }
@@ -142,8 +141,8 @@ export function withLiveEvent(database: Database, group: Match): Match {
   return { ...group, eventId: next.id, eventName: next.name, eventDate: next.date, eventKind: next.kind, audience }
 }
 
-// Who a catalog is matched for: the logged-in account when it browses the
-// other side, otherwise the demo account of that side (visitors preview it).
+// 카탈로그가 누구를 위해 매칭되는지: 상대편을 둘러보는 로그인 계정, 아니면
+// 그쪽의 데모 계정(방문자는 미리 본다).
 export function viewerFor(database: Database, account: Account | undefined, catalog: "brands" | "groups"): Viewer | undefined {
   const role: Role = catalog === "brands" ? "학생단체" : "브랜드"
   const viewer =
@@ -153,18 +152,17 @@ export function viewerFor(database: Database, account: Account | undefined, cata
   return viewer && { account: viewer, listing: findListing(database, viewer) }
 }
 
-// A catalog as the other side finds it (members' listings for a member, the
-// examples otherwise, as shownTo says, without the paused), best match first, each with its
-// match for the viewer and why (lib/matchScore.ts), and how far it is from
-// the viewer: a student's campus to a brand's store, a brand's store to a
-// group's campus (lib/geo.ts), and which way, for the catalog map; its reviews' stars and count; and, for a
-// brand, whether its business registration was confirmed.
+// 상대편이 찾는 카탈로그(회원에게는 회원의 리스팅, 그 밖에는 shownTo가
+// 말하는 예시, 멈춘 것은 뺀다). 가장 잘 맞는 순으로 두고 각각에 보는 사람
+// 기준의 매칭과 이유(lib/matchScore.ts), 보는 사람과의 거리(학생의 캠퍼스
+// 에서 브랜드 매장, 브랜드 매장에서 단체 캠퍼스, lib/geo.ts)와 방향(카탈로그
+// 지도용), 후기의 별점과 수를 담고, 브랜드는 사업자 등록 확인 여부도 담는다.
 export function browse(database: Database, catalog: "brands" | "groups", account?: Account) {
   const shown = listedCatalog(database, catalog, account)
   const listings =
     catalog === "brands" ? shown.map((brand) => brandProfile(database, brand)) : shown.map((group) => withLiveEvent(database, group))
   const viewer = viewerFor(database, account, catalog)
-  // A brand's track record counts against the brands seen beside it.
+  // 브랜드의 실적은 함께 보이는 브랜드와 견주어 센다.
   const maxPopularity = Math.max(1, ...listedCatalog(database, "brands", account).map((brand) => brand.popularity ?? 0))
   const here = viewer && placeOf(viewer.listing, viewer.account)
   return listings
@@ -174,9 +172,9 @@ export function browse(database: Database, catalog: "brands" | "groups", account
       const rated = reviews.count ? { ...scored, rating: reviews.average, reviewCount: reviews.count } : scored
       const owner = ownerOf(database, catalog, listing)
       const verified = owner?.business ? { ...rated, businessVerified: true as const } : rated
-      // A brand on Pro (lib/plan.ts) shows a PRO mark.
+      // Pro 브랜드(lib/plan.ts)는 PRO 마크를 보인다.
       const pro = catalog === "brands" && owner && isPro(database, owner.id) ? { ...verified, pro: true as const } : verified
-      // A running 상단 광고 (lib/ads.ts) puts it first, marked AD.
+      // 진행 중인 상단 광고(lib/ads.ts)는 맨 앞에 두고 AD로 표시한다.
       const checked = owner && adUntil(database, owner.id) ? { ...pro, ad: true as const } : pro
       const there = placeOf(listing, owner)
       return here && there

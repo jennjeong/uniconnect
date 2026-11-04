@@ -8,9 +8,9 @@ import { saveFile } from "../lib/download"
 import type { Agreement } from "../types"
 import { loadedFontCSS } from "./pdf"
 
-// 협찬 감사 카드뉴스: one 1080×1350 image (Instagram's portrait post) thanking
-// the brand for a sponsorship, on uniconnect's deep blue with the event and
-// what it brought, for the group to post as it promised.
+// 협찬 감사 카드뉴스: 협찬에 대해 브랜드에 감사하는 1080×1350 이미지(인스타그램
+// 세로 게시물) 하나. uniconnect의 짙은 파랑 위에 행사와 그것이 가져온 것을
+// 담고, 단체가 약속한 대로 올린다.
 export function ThanksCardImage({ agreement }: { agreement: Agreement }) {
   const counts = agreement.measure?.counts
   const figures = counts
@@ -50,11 +50,10 @@ export function ThanksCardImage({ agreement }: { agreement: Agreement }) {
   )
 }
 
-// Renders the card off screen, saves it as a PNG, then reports back through
-// onDone (true when it failed).
+// 카드를 화면 밖에서 그려 PNG로 저장한 뒤 onDone으로 알린다(실패하면 true).
 export function ThanksCardExport({ agreement, onDone }: { agreement: Agreement; onDone: (failed: boolean) => void }) {
   const container = useRef<HTMLDivElement>(null)
-  // StrictMode runs effects twice while developing; save only once.
+  // StrictMode는 개발 중 effect를 두 번 실행한다. 저장은 한 번만 한다.
   const started = useRef(false)
 
   useEffect(() => {
@@ -65,8 +64,8 @@ export function ThanksCardExport({ agreement, onDone }: { agreement: Agreement; 
       const { toPng } = await import("html-to-image")
       await document.fonts.ready
       const image = await toPng(card!, { fontEmbedCSS: await loadedFontCSS(), pixelRatio: 1, width: 1080, height: 1350 })
-      // Decoded here: the Content-Security-Policy lets fetch() reach this
-      // site only, not a data: address.
+      // 여기서 디코딩한다. Content-Security-Policy가 fetch()가 이 사이트에만
+      // 닿게 하고 data: 주소는 막는다.
       const bytes = Uint8Array.from(atob(image.split(",")[1]), (letter) => letter.charCodeAt(0))
       saveFile(`uniconnect-thanks-${agreement.eventDate || "card"}.png`, bytes, "image/png")
     })().then(

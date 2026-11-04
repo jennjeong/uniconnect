@@ -22,9 +22,8 @@ import type { CalendarEntry } from "../lib/ics"
 import { CalendarModal } from "../modals/CalendarModal"
 import type { EventItem, Role, SponsorRequest } from "../types"
 
-// A day on the calendar holds the account's own events or campaigns and,
-// for brands, the student events whose proposal they accepted. An event
-// over several days shows on each of them.
+// 캘린더의 하루에는 계정 자신의 행사나 캠페인이 담기고, 브랜드는 제안을 수락한
+// 학생 행사도 담긴다. 여러 날에 걸친 행사는 각 날에 보인다.
 type Entry =
   | { kind: "event"; id: string; date: string; end?: string; name: string; event: EventItem }
   | { kind: "sponsorship"; id: string; date: string; end?: string; name: string; request: SponsorRequest }
@@ -34,14 +33,13 @@ const statusClass = (entry: Entry) =>
 
 const statusLabel = (entry: Entry) => (entry.kind === "event" ? t(entry.event.status) : t("협찬 확정"))
 
-// Head counts are stored as written, such as "120명"; in English they read
-// "120 people".
+// 인원수는 "120명"처럼 쓴 대로 저장된다. 영어로는 "120 people"로 읽는다.
 const peopleLabel = (people: string) => {
   const match = /^([\d,]+)명$/.exec(people)
   return match ? t("{count}명", { count: match[1] }) : people
 }
 
-// "현금 · 기타(음향 장비)" in the language shown.
+// 보이는 언어로 쓴 "현금 · 기타(음향 장비)".
 const typeLabels = (event: EventItem) =>
   event.types
     .map((type) => (type === "기타" && event.typeNote ? `${t("기타")}(${event.typeNote})` : t(type)))
@@ -118,7 +116,7 @@ function EventRow({
   )
 }
 
-// A student event a brand agreed to sponsor.
+// 브랜드가 협찬하기로 한 학생 행사.
 function SponsorshipRow({
   request,
   onOpen,
@@ -161,28 +159,28 @@ export function EventsPage({
 }: {
   role: Role
   events: EventItem[]
-  // Brands only: accepted proposals, shown on their event days.
+  // 브랜드 전용: 수락된 제안을 행사 날에 보여 준다.
   sponsorships?: SponsorRequest[]
-  // Day to open on, such as the date of a just-registered event.
+  // 처음 열 날. 방금 등록한 행사의 날짜 등.
   initialDate?: string
   onCreate: (date: string) => void
   onShowDetail: (event: EventItem) => void
   onEdit: (event: EventItem) => void
-  // Opens the registration form filled from this one (행사 복제).
+  // 이 행사로 채운 등록 폼을 연다(행사 복제).
   onCopy: (event: EventItem) => void
   onDelete: (event: EventItem) => void
-  // The sponsored event's page when given a request, else the proposals.
+  // 요청이 주어지면 협찬 행사의 페이지로, 아니면 제안으로 간다.
   onOpenSponsorship?: (request?: SponsorRequest) => void
   onNotice?: (message: string) => void
-  // A member's 캘린더에 추가 also offers its subscription link.
+  // 회원의 캘린더에 추가는 구독 링크도 함께 제공한다.
   canSubscribe?: boolean
-  // 행사 둘러보기: other groups' events (student groups only).
+  // 행사 둘러보기: 다른 단체의 행사(학생단체 전용).
   onExplore?: () => void
 }) {
   const today = todayIso()
 
-  // The events from today on, and for brands the days they sponsor, by
-  // date, to add to the calendar app picked in CalendarModal.
+  // 오늘부터의 행사와 브랜드가 협찬하는 날을 날짜순으로. CalendarModal에서 고른
+  // 캘린더 앱에 추가한다.
   const [calendar, setCalendar] = useState<CalendarEntry[] | null>(null)
   const exportCalendar = () => {
     const entries: CalendarEntry[] = [
@@ -237,14 +235,14 @@ export function EventsPage({
     for (const day of daysOf(entry.date, entry.end)) byDate.set(day, [...(byDate.get(day) ?? []), entry])
   }
   const selectedEntries = byDate.get(selected) ?? []
-  // Everything on the month shown, for the list under the calendar.
+  // 보이는 달의 모든 것. 캘린더 아래 목록용.
   const monthStart = toIsoDate(month)
   const monthEnd = toIsoDate(new Date(month.getFullYear(), month.getMonth() + 1, 0))
   const monthEntries = entries
     .filter((entry) => entry.date <= monthEnd && (entry.end ?? entry.date) >= monthStart)
     .sort((a, b) => a.date.localeCompare(b.date))
-  // The summary over the calendar: the next one still to come, and how many
-  // of the account's own stand at each step.
+  // 캘린더 위의 요약: 아직 오지 않은 다음 행사와, 계정 자신의 행사가 각 단계에
+  // 몇 개 있는지.
   const next = entries
     .filter((entry) => (entry.end ?? entry.date) >= today)
     .sort((a, b) => a.date.localeCompare(b.date))[0]

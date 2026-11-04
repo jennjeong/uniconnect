@@ -3,8 +3,7 @@ import { useEffect, useState } from "react"
 import { api, errorMessage } from "../api"
 import type { MethodKind, VenuePage, VenueSession } from "../types"
 
-// The PIN stays in this tab for the next confirmations, never in a
-// participant's browser.
+// PIN은 이 탭에만 남겨 다음 확인에 쓰고, 참가자의 브라우저에는 두지 않는다.
 const pinKey = (code: string, page: VenuePage) => `uniconnect-${page}-pin-${code}`
 
 function readPin(code: string, page: VenuePage) {
@@ -19,13 +18,13 @@ function writePin(code: string, page: VenuePage, pin: string) {
   try {
     sessionStorage.setItem(pinKey(code, page), pin)
   } catch {
-    // Without storage the PIN is typed again on the next visit.
+    // 저장소가 없으면 다음 방문에 PIN을 다시 입력한다.
   }
 }
 
-// A venue page's PIN and what it opens: once its 4 digits are in, the server
-// answers the shares this side confirms for (or says the PIN is wrong); each
-// confirmation brings that share's counts back as they now stand.
+// 행사장 페이지의 PIN과 그것이 여는 내용. 4자리가 들어오면 서버가 이쪽이
+// 확인하는 몫을 답하고 (PIN이 틀리면 그렇게 알린다), 확인할 때마다 그 몫의 현재
+// 카운트를 돌려준다.
 export function useVenueSession(code: string, page: VenuePage) {
   const [pin, setPin] = useState(() => readPin(code, page))
   const [answer, setAnswer] = useState<{ pin: string; session?: VenueSession; error?: string }>()
@@ -50,7 +49,7 @@ export function useVenueSession(code: string, page: VenuePage) {
     }
   }, [code, page, pin])
 
-  // An answer for another PIN doesn't count.
+  // 다른 PIN에 대한 답은 반영하지 않는다.
   const current = answer?.pin === pin ? answer : undefined
 
   const count = async (share: string, method: MethodKind, amount: number) => {

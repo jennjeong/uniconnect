@@ -38,7 +38,7 @@ describe("group filters", () => {
     listing({ audience, eventDate, school })
 
   test("sort the next event by size", () => {
-    // The next event's kind, when one is picked.
+    // 고른 경우의 다음 행사 종류.
     expect(matchesGroupFilters({ ...group(80, "2026-11-01"), eventKind: "축제" }, { ...noGroupFilters, kind: "축제" }, today)).toBe(true)
     expect(matchesGroupFilters({ ...group(80, "2026-11-01"), eventKind: "MT · OT" }, { ...noGroupFilters, kind: "축제" }, today)).toBe(false)
     expect(matchesGroupFilters(group(80, "2026-11-01"), { ...noGroupFilters, kind: "축제" }, today)).toBe(false)

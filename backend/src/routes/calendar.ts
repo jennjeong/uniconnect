@@ -13,18 +13,17 @@ import type { Account, Database } from "../types.js"
 
 export const calendarRouter = Router()
 
-// How far back a subscribed calendar keeps past days.
+// 구독한 캘린더가 지난 날짜를 얼마나 거슬러 올라가 담는지 정한다.
 const keepDays = 90
 
-// The address calendar apps subscribe to: on the site's own address
-// (SITE_URL) when it is set, else the one this request came to.
+// 캘린더 앱이 구독하는 주소다. SITE_URL이 있으면 사이트 자체 주소를 쓰고,
+// 없으면 이 요청이 들어온 주소를 쓴다.
 const feedUrl = (req: Request, token: string) =>
   `${config.siteUrl?.replace(/\/$/, "") ?? `${req.protocol}://${req.get("host")}`}/api/calendar/${token}.ics`
 
-// What an account's subscribed calendar holds, from 90 days back on: its
-// events or campaigns, and its confirmed sponsorships' days (a brand
-// sponsoring a group's event, a group taking part in a brand's campaign),
-// as the 캘린더에 추가 sheet lists them.
+// 계정의 구독 캘린더에 담기는 내용이다. 90일 전부터의 행사나 캠페인, 확정된
+// 협찬의 날짜(브랜드가 단체의 행사를 협찬하는 경우, 단체가 브랜드의 캠페인에
+// 참여하는 경우)를 담으며, 캘린더에 추가 시트가 보여 주는 목록과 같다.
 export function feedEntries(database: Database, account: Account): CalendarEntry[] {
   const from = addDays(todayInKorea(), -keepDays)
   const own: CalendarEntry[] = (database.events[account.id] ?? []).map((event) => ({
@@ -58,14 +57,14 @@ export function feedEntries(database: Database, account: Account): CalendarEntry
     .sort((a, b) => a.date.localeCompare(b.date))
 }
 
-// The account's subscription link, or null before it made one.
+// 계정의 구독 링크다. 아직 만들지 않았다면 null이다.
 calendarRouter.get("/feed", (req, res) => {
   const account = requireAccount(req)
   res.json({ url: account.calendarFeed ? feedUrl(req, account.calendarFeed.token) : null })
 })
 
-// Makes the account's link, or a new one in its place: the old one stops at
-// once. Not for the shared demo accounts, as everyone trying them would see it.
+// 계정의 링크를 만들거나 기존 링크 대신 새 링크를 만든다. 기존 링크는 바로
+// 멈춘다. 데모 계정을 써 보는 모두에게 보이게 되므로 공유 데모 계정은 쓸 수 없다.
 calendarRouter.post("/feed", async (req, res) => {
   const account = requireAccount(req)
   if (isDemoAccount(getDatabase(), account)) throw new HttpError(403, "데모 계정은 구독 링크를 만들 수 없어요.")
@@ -83,8 +82,8 @@ calendarRouter.delete("/feed", async (req, res) => {
   res.status(204).end()
 })
 
-// The calendar itself, for the app that subscribed: no login, as the link is
-// the key. A link replaced or deleted, or a stopped account's, answers 404.
+// 구독한 앱이 가져가는 캘린더 자체다. 링크가 곧 열쇠이므로 로그인은 필요 없다.
+// 바뀌거나 지워진 링크, 정지된 계정의 링크는 404로 답한다.
 calendarRouter.get("/:file", (req, res) => {
   const token = /^([\w-]{20,64})\.ics$/.exec(String(req.params.file))?.[1]
   const database = getDatabase()

@@ -4,13 +4,12 @@ import { trackRecord, type HistoryRow } from "../lib/history"
 import type { EventPage } from "../types"
 import { PageFooter, PageHeader } from "./ReportDocument"
 
-// As many packages as fit on the page beside the rest.
+// 페이지에 나머지와 함께 들어가는 만큼의 패키지.
 const shownPackages = 4
 
-// One A4 page (794×1123 px): a student group's sponsorship proposal for an
-// event, filled from its event page and its sponsorship record, so a brand
-// reads the event, what it gets, what the group did before and how the
-// results will be counted.
+// A4 한 페이지(794×1123 px): 행사에 대한 학생단체의 협찬 제안서. 행사 페이지와
+// 협찬 기록으로 채워서 브랜드가 행사, 얻는 것, 단체의 이전 활동, 결과를 어떻게
+// 셀지 읽게 한다.
 export function ProposalDocument({ page, history }: { page: EventPage; history: HistoryRow[] }) {
   const { event, group } = page
   const record = trackRecord(history)

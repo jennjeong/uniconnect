@@ -6,20 +6,18 @@ import { sendMail } from "./mailer.js"
 import { getDatabase } from "../store.js"
 import type { Account, MailKind } from "../types.js"
 
-// The shared demo accounts are never emailed: everyone trying the demo uses
-// them, so their addresses stand for no one, and one is on a real
-// university's domain. Nor are accounts the operators suspended.
+// 공용 데모 계정에는 이메일을 보내지 않는다. 데모를 써 보는 모두가 쓰므로
+// 주소가 누구도 가리키지 않고, 하나는 실제 대학교 도메인에 있다. 운영자가
+// 정지한 계정에도 보내지 않는다.
 const isDemo = (account: Account) => Object.values(getDatabase().demoAccountIds).includes(account.id)
 
-// Tells an account by email that something waits for it: a proposal, an
-// answer or a message, with a link to the page when SITE_URL is set. A kind
-// the account turned off in 내 정보 doesn't go; "account" (its own login
-// email, the operators' answers) always does. The email is in the language
-// the account last used the app in: each line the server wrote in Korean
-// goes through translate (i18n/en.ts, {name} patterns for the lines with a
-// value). It never holds up or fails the request that caused it. On Vercel a
-// function may stop once its answer is sent, so waitUntil keeps it running
-// until the mail has gone; elsewhere that does nothing.
+// 계정에 처리할 일이 있다고 이메일로 알린다: 제안, 답, 메시지. SITE_URL이
+// 있으면 페이지 링크를 붙인다. 계정이 내 정보에서 끈 종류는 보내지 않지만
+// "account"(로그인 이메일, 운영자의 답)는 늘 보낸다. 이메일은 계정이 앱을
+// 마지막으로 쓴 언어로 가며, 서버가 한국어로 쓴 줄은 translate(i18n/en.ts,
+// 값이 있는 줄은 {name} 패턴)를 거친다. 일으킨 요청을 붙잡거나 실패하게 하지
+// 않는다. Vercel에서는 응답을 보내면 함수가 멈출 수 있어서 waitUntil로 메일이
+// 나갈 때까지 돌게 하며, 다른 곳에서는 아무 일도 하지 않는다.
 export function notify(
   account: Account | undefined,
   kind: MailKind | "account",
@@ -34,7 +32,7 @@ export function notify(
   const text = [
     ...lines.map(say),
     ...(site ? ["", `${say("바로 가기")}: ${site}${path}`] : []),
-    // Where to turn this kind off.
+    // 이 종류를 끄는 곳.
     ...(site && kind !== "account" ? [`${say("받을 메일 바꾸기")}: ${site}/me`] : []),
     "",
     "uniconnect",

@@ -3,12 +3,12 @@ import { useContext, useRef, useState, type CSSProperties } from "react"
 import { noticeDuration } from "../hooks/useNotice"
 import { ClosingContext } from "./Presence"
 
-// How far a swipe goes before it sends the toast away.
+// 토스트를 쓸어 보내려면 얼마나 밀어야 하는지.
 const swipeAway = 80
 
-// Short message after an action; inside a Presence it sinks away when hidden.
-// A bar along its foot shows the time left, which holding or hovering it
-// pauses; swiping it sideways sends it off at once.
+// 동작 뒤에 뜨는 짧은 메시지. Presence 안에서는 숨겨질 때 가라앉는다. 아래쪽
+// 막대가 남은 시간을 보여 주며, 누르고 있거나 마우스를 올리면 멈추고 옆으로
+// 밀면 바로 사라진다.
 export function Toast({
   message,
   id,
@@ -16,7 +16,7 @@ export function Toast({
   onPause,
 }: {
   message: string
-  // Changes with each message, to start its time bar over.
+  // 메시지마다 바뀌어서 시간 막대를 처음부터 다시 시작하게 한다.
   id: number
   onDismiss: () => void
   onPause: (paused: boolean) => void
@@ -63,7 +63,7 @@ export function Toast({
       role="status"
       style={style}
     >
-      {/* The ring draws itself round, fills, and the check strokes in. */}
+      {/* 링이 둥글게 그려지고 채워진 뒤 체크 표시가 그어진다. */}
       <svg aria-hidden="true" className="toast-check" viewBox="0 0 24 24">
         <circle className="toast-check-fill" cx="12" cy="12" r="10" />
         <circle className="toast-check-ring" cx="12" cy="12" pathLength="1" r="10" />

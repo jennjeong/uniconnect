@@ -8,9 +8,9 @@ import { getDatabase, saveDatabase } from "../store.js"
 
 export const siteRouter = Router()
 
-// What the whole site needs from the operators' switches: maintenance,
-// whether sign-up is open, and the help center questions they added or hid;
-// with the members' counts the dashboards show.
+// 운영자의 스위치로 사이트 전체가 알아야 할 것들이다. 점검 중인지, 가입이
+// 열려 있는지, 운영자가 추가하거나 숨긴 도움말 센터 질문, 그리고 대시보드가
+// 보여 주는 회원 수를 담는다.
 siteRouter.get("/", (_req, res) => {
   const database = getDatabase()
   res.json({
@@ -27,8 +27,8 @@ const searches = createRateLimit({
   message: "요청이 너무 많아요. 잠시 뒤에 다시 시도해 주세요.",
 })
 
-// A word searched in a catalog, counted without who searched it. Too
-// short or long a search is let go quietly.
+// 카탈로그에서 검색된 단어를 누가 검색했는지는 빼고 센다. 너무 짧거나 긴
+// 검색어는 조용히 넘긴다.
 siteRouter.post("/searches", async (req, res) => {
   await searches.take(clientKey(req))
   const term = searchTerm(req.body?.q)

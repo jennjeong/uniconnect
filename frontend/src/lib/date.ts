@@ -1,10 +1,10 @@
 import { lang, t } from "../i18n"
 
-// Calendar helpers. Days travel as "YYYY-MM-DD" strings (the API's format)
-// and become local Dates only for display, so time zones never shift a day.
-// Displayed dates join their parts with no-break spaces, so a long line
-// moves a date to the next line whole instead of splitting it. In English
-// they read "Oct 12 (Mon)" and "Oct 12, 2026 (Mon)".
+// 달력 도우미. 날짜는 "YYYY-MM-DD" 문자열(API의 형식)로 오가고, 표시할 때만
+// 로컬 Date가 되므로 시간대 때문에 하루가 밀리는 일이 없다.\n|표시하는 날짜는
+// 부분들을 줄바꿈 없는 공백으로 이어서, 긴 줄에서 날짜가 쪼개지지 않고 통째로
+// 다음 줄로 넘어가게 한다. 영어로는 "Oct 12 (Mon)"과 "Oct 12, 2026 (Mon)"처럼
+// 읽힌다.
 
 const nbsp = "\u00a0"
 
@@ -18,7 +18,7 @@ export function toIsoDate(date: Date) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
-// Local midnight of an "YYYY-MM-DD" day, or undefined for anything else.
+// "YYYY-MM-DD" 날짜의 로컬 자정. 그 외 값이면 undefined.
 export function fromIsoDate(iso: string) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso)
   if (!match) return undefined
@@ -27,7 +27,7 @@ export function fromIsoDate(iso: string) {
 
 export const todayIso = () => toIsoDate(new Date())
 
-// The "YYYY-MM-DD" a number of days after another.
+// "YYYY-MM-DD" 날짜에서 며칠 뒤의 "YYYY-MM-DD".
 export function addDaysIso(iso: string, days: number) {
   const day = fromIsoDate(iso) ?? new Date()
   day.setDate(day.getDate() + days)
@@ -45,8 +45,8 @@ export function formatDay(iso: string) {
   return `${date.getMonth() + 1}월${nbsp}${date.getDate()}일${nbsp}${weekday}`
 }
 
-// A day as a page torn off a calendar: its month ("11월", "Nov"), day and
-// weekday ("금", "Fri").
+// 달력에서 뜯어낸 한 장처럼 보이는 날짜: 월("11월", "Nov"), 일, 요일("금",
+// "Fri").
 export function calendarPage(iso: string) {
   const date = fromIsoDate(iso) ?? new Date()
   return {
@@ -66,7 +66,7 @@ export function formatFullDate(iso: string) {
   return `${parts.join(nbsp)}${nbsp}${weekday}`
 }
 
-// Whole days from today (or `from`) until an "YYYY-MM-DD" day.
+// 오늘(또는 `from`)부터 "YYYY-MM-DD" 날짜까지 남은 일수.
 export function daysUntil(iso: string, from = todayIso()) {
   const start = fromIsoDate(from)
   const end = fromIsoDate(iso)
@@ -81,14 +81,13 @@ export function shortDay(iso: string) {
   return lang === "en" ? `${monthNames[date.getMonth()]}${nbsp}${date.getDate()}` : `${date.getMonth() + 1}.${date.getDate()}`
 }
 
-// "D-25", "D-DAY", or "종료" once the day has passed.
+// "D-25", "D-DAY", 날짜가 지났다면 "종료".
 export function dDayLabel(iso: string) {
   const days = daysUntil(iso)
   return days > 0 ? `D-${days}` : days === 0 ? "D-DAY" : t("종료")
 }
 
-// The earliest event from today on; one over several days counts until
-// its last day.
+// 오늘부터 가장 가까운 행사. 여러 날에 걸친 행사는 마지막 날까지 센다.
 export function nextEvent<T extends { date: string; endDate?: string }>(events: T[]) {
   const today = todayIso()
   return events
@@ -96,7 +95,7 @@ export function nextEvent<T extends { date: string; endDate?: string }>(events: 
     .sort((a, b) => a.date.localeCompare(b.date))[0]
 }
 
-// Every "YYYY-MM-DD" day from `start` to `end`, both included.
+// `start`부터 `end`까지 양 끝을 포함한 모든 "YYYY-MM-DD" 날짜.
 export function daysOf(start: string, end = start) {
   const first = fromIsoDate(start)
   const last = fromIsoDate(end)
@@ -112,7 +111,7 @@ export function formatPeriod(start: string, end?: string) {
   return `${formatDay(start)} ~ ${formatDay(end)} · ${t("{days}일", { days: daysOf(start, end).length })}`
 }
 
-// "10.12 19:41" ("Oct 12 19:41") in local time, for an ISO timestamp.
+// ISO 타임스탬프를 로컬 시간으로 나타낸 "10.12 19:41" ("Oct 12 19:41").
 export function formatDateTime(timestamp: string) {
   const date = new Date(timestamp)
   if (Number.isNaN(date.getTime())) return timestamp
@@ -121,7 +120,7 @@ export function formatDateTime(timestamp: string) {
   return `${date.getMonth() + 1}.${date.getDate()}${nbsp}${time}`
 }
 
-// Whole weeks (Sunday first) covering the month of `month`.
+// `month`가 속한 달을 채우는 주(일요일 시작)들.
 export function calendarDays(month: Date) {
   const first = startOfMonth(month)
   const daysInMonth = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate()
@@ -133,7 +132,7 @@ export function calendarDays(month: Date) {
   )
 }
 
-// "2026 FALL SEMESTER" for today (or `date`).
+// 오늘(또는 `date`)의 "2026 FALL SEMESTER".
 export function semesterLabel(date = new Date()) {
   const month = date.getMonth() + 1
   const season = month >= 9 ? "FALL" : month >= 7 ? "SUMMER" : month >= 3 ? "SPRING" : "WINTER"

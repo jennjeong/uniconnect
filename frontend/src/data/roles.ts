@@ -8,14 +8,14 @@ export const roleOptions: {
   title: string
   caption: string
 }[] = [
-  // Each shows with its symbol from the logo (components/RoleMark.tsx).
+  // 각각 로고의 심벌과 함께 보인다 (components/RoleMark.tsx).
   { value: "학생단체", title: t("협찬 받기"), caption: t("학생단체 · 동아리") },
   { value: "브랜드", title: t("협찬 하기"), caption: t("스폰서 · 브랜드") },
 ]
 
-// Account types, in the groups the sign-up and profile forms show them in.
-// In order they must equal accountTypes in backend/src/lib/validation.ts
-// (lib/lists.sync.test.ts checks).
+// 가입·프로필 양식이 보여주는 묶음대로의 계정 유형. 순서까지
+// backend/src/lib/validation.ts의 accountTypes와 같아야 한다
+// (lib/lists.sync.test.ts가 검사한다).
 export const accountTypeGroups: Record<Role, { label: string; types: string[] }[]> = {
   학생단체: [
     { label: "학생회 · 기획단", types: ["총학생회", "단과대 학생회", "학과 학생회", "축제 · 행사 기획단"] },
@@ -42,8 +42,8 @@ export const accountTypeGroups: Record<Role, { label: string; types: string[] }[
   ],
 }
 
-// Account types that are student councils, which see the clubs that link
-// to them (backend lib/council.ts; lists.sync.test.ts checks).
+// 학생회인 계정 유형. 자신에게 연결한 동아리를 본다 (backend lib/council.ts,
+// lists.sync.test.ts가 검사한다).
 export const councilTypes = ["총학생회", "단과대 학생회", "학과 학생회"]
 
 export const accountTypes: Record<Role, string[]> = {
@@ -51,9 +51,8 @@ export const accountTypes: Record<Role, string[]> = {
   브랜드: accountTypeGroups.브랜드.flatMap((group) => group.types),
 }
 
-// The usual positions the contact fields list (components/PositionField.tsx),
-// with 직접 입력 for any other: a student group's officers, and the common
-// titles at a company or a store.
+// 연락처 칸이 나열하는 흔한 직책 (components/PositionField.tsx). 그 밖의 직책은
+// 직접 입력으로 고른다: 학생단체의 임원진과, 회사나 매장의 흔한 직함이다.
 export const positionHints: Record<Role, string[]> = {
   학생단체: ["회장", "부회장", "총무", "기획부장", "홍보부장", "대외협력부장", "부원"],
   브랜드: ["대표", "이사", "본부장", "팀장", "부장", "차장", "과장", "대리", "주임", "사원", "점장"],

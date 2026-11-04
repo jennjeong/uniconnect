@@ -11,9 +11,9 @@ import type { Account, Agreement, AgreementItem, ChatSide, Database, EventItem }
 
 export { uploadsFolder } from "./photos.js"
 
-// An accepted proposal as both sides see it: who is in it (their accounts
-// and listings when they have them), the event and what the brand gives.
-// One both sides called off stays, as canceled, for its agreement's record.
+// 양쪽이 보는 수락된 제안: 누가 속해 있는지(계정과 있으면 리스팅), 행사,
+// 브랜드가 주는 것. 양쪽이 취소한 것은 계약서 기록으로 canceled 상태로
+// 남는다.
 export type AcceptedProposal = {
   id: string
   kind: Agreement["kind"]
@@ -21,10 +21,9 @@ export type AcceptedProposal = {
   group: { name: string; account?: Account; listingId?: string }
   brand: { name: string; account?: Account; listingId?: string }
   eventName: string
-  // "YYYY-MM-DD", or "" while there is none.
+  // "YYYY-MM-DD". 없으면 "".
   eventDate: string
-  // The event itself and whose it is: a group's event for a request, a
-  // brand's campaign for an offer.
+  // 행사 자체와 그 주인: 요청이면 단체의 행사, 제안이면 브랜드의 캠페인.
   eventId?: string
   eventOwner: ChatSide
   gives: string
@@ -77,8 +76,8 @@ export function acceptedProposal(database: Database, id: string): AcceptedPropos
   }
 }
 
-// The event a sponsorship is for, while the side whose event it is still
-// has it (an account and the event on its calendar).
+// 협찬이 속한 행사. 그 행사의 주인 쪽이 아직 가지고 있을 때만이다
+// (계정과 그 캘린더에 있는 행사).
 export function sponsoredEvent(database: Database, proposal: AcceptedProposal) {
   const owner = proposal[proposal.eventOwner].account
   const event =
@@ -86,17 +85,16 @@ export function sponsoredEvent(database: Database, proposal: AcceptedProposal) {
   return owner && event ? { owner, event } : undefined
 }
 
-// Whether the sponsored event is over: its last day has gone.
+// 협찬한 행사가 끝났는지: 마지막 날이 지났다.
 export function eventOver(database: Database, proposal: AcceptedProposal) {
   const event = sponsoredEvent(database, proposal)?.event
   const lastDay = event ? (event.endDate ?? event.date) : proposal.eventDate
   return Boolean(lastDay) && lastDay < todayInKorea()
 }
 
-// Both sides called the sponsorship off. Its proposal is 취소, and the
-// brand's record of it and its share of the event's measurement go, so its
-// results, reminders and calendar day go with them, as does any review of
-// it. The event is matching again when nothing else sponsors it.
+// 양쪽이 협찬을 취소했다. 제안은 취소가 되고 브랜드의 협찬 기록과 행사
+// 측정에서 그 몫이 사라진다. 그래서 결과, 알림, 캘린더 날짜도 함께 없어지고
+// 그 협찬의 후기도 없어진다. 다른 협찬이 없으면 행사는 다시 매칭 중이 된다.
 export function cancelSponsorship(database: Database, proposal: AcceptedProposal, now: string) {
   const stored =
     proposal.kind === "request"
@@ -119,10 +117,9 @@ export function cancelSponsorship(database: Database, proposal: AcceptedProposal
   }
 }
 
-// The part of the sponsored event's measurement an agreement measures: the
-// brand's own share of a student event (its sponsorship), or a brand's
-// campaign itself, which has no sponsors. Undefined until the event has a
-// measurement.
+// 계약서가 측정하는 협찬 행사 측정의 일부: 학생 행사에서는 브랜드 자신의
+// 몫(그 협찬), 브랜드 캠페인에서는 캠페인 자체로 협찬사가 없다. 행사에
+// 측정이 생기기 전에는 undefined다.
 export function agreementShare(database: Database, proposal: AcceptedProposal) {
   const sponsored = sponsoredEvent(database, proposal)
   const measurement =
@@ -134,12 +131,11 @@ export function agreementShare(database: Database, proposal: AcceptedProposal) {
   return sponsor ? { event: sponsored.event, measurement, sponsor } : undefined
 }
 
-// How the e-contract's share is confirmed at the event: the methods as set
-// here, the methods both sides last confirmed (which count, and only once
-// there are such), what the venue counted for it, and, once the confirmed
-// methods give this side something to record at the event (a count by hand,
-// or the store's visits), its own venue page and PIN: the brand's store PIN
-// on the staff page, the group's PIN on its page.
+// 전자계약서의 몫을 행사에서 어떻게 확인하는지: 여기서 정한 방식, 양쪽이
+// 마지막으로 확인한 방식(이쪽만 효력이 있고 있을 때만), 행사장이 센 것,
+// 그리고 확인된 방식으로 이쪽이 행사에서 기록할 것(손으로 센 집계나
+// 매장 방문)이 생기면 자기 행사장 페이지와 PIN이다. 브랜드는 직원
+// 페이지의 매장 PIN, 단체는 자기 페이지의 PIN이다.
 function measureView(database: Database, proposal: AcceptedProposal, side: ChatSide) {
   const share = agreementShare(database, proposal)
   if (!share) return undefined
@@ -160,7 +156,7 @@ function measureView(database: Database, proposal: AcceptedProposal, side: ChatS
       ? {
           venue: {
             page: side === "brand" ? ("staff" as const) : ("group" as const),
-            // Each side's own PIN shows from the day before the event.
+            // 각 측의 PIN은 행사 하루 전부터 보인다.
             ...(pinsOpen(database, measurement, event) ? { pin } : { pinsFrom: pinsFrom(event) }),
           },
         }
@@ -168,14 +164,14 @@ function measureView(database: Database, proposal: AcceptedProposal, side: ChatS
   }
 }
 
-// The side an account takes in an accepted proposal, if any.
+// 수락된 제안에서 계정이 맡는 쪽. 없으면 없음.
 export function sideIn(proposal: AcceptedProposal, account: Account): ChatSide | undefined {
   if (proposal.group.account?.id === account.id) return "group"
   if (proposal.brand.account?.id === account.id) return "brand"
   return undefined
 }
 
-// The accepted proposals an account is in, newest answer first.
+// 계정이 속한 수락된 제안. 최근에 답한 순서다.
 export function acceptedProposalsOf(database: Database, account: Account) {
   const ids = [
     ...database.requests.filter((item) => accepted(item.status)).map((item) => item.id),
@@ -191,13 +187,12 @@ export function acceptedProposalsOf(database: Database, account: Account) {
 
 const item = (side: ChatSide, label: string): AgreementItem => ({ id: randomUUID(), side, label, links: [], photos: [] })
 
-// What a sponsorship usually takes, to start from: the brand hands over what
-// it gives and gets its coupon ready; the group promotes the event, shows
-// the brand there, hands out the coupon and shares the results after.
+// 협찬이 보통 거치는 일, 시작점으로 쓴다. 브랜드는 주는 것을 넘기고 쿠폰을
+// 준비하며, 단체는 행사를 알리고 브랜드를 그곳에 보여 주고 쿠폰을 나눠 준 뒤
+// 결과를 공유한다.
 export function defaultItems(proposal: AcceptedProposal, promo?: EventItem["promo"]): AgreementItem[] {
-  // The group's own 홍보 · 배포 계획, when its event has one, stands in for
-  // the usual promotion items: the logo's places, how goods are handed out,
-  // and each post it promised.
+  // 행사에 단체 자신의 홍보 · 배포 계획이 있으면 보통의 홍보 항목을
+  // 대신한다: 로고가 들어갈 곳, 물품을 나눠 주는 방법, 약속한 게시물.
   const promised = promo
     ? [
         ...(promo.spots.length ? [item("group", `로고 노출: ${promo.spots.join(", ")}`.slice(0, 80))] : []),
@@ -216,11 +211,11 @@ export function defaultItems(proposal: AcceptedProposal, promo?: EventItem["prom
   ]
 }
 
-// The 홍보 · 배포 계획 of the group's event a proposal is about, if any.
+// 제안이 가리키는 단체 행사의 홍보 · 배포 계획. 있으면 돌려준다.
 export const promoOf = (database: Database, proposal: AcceptedProposal) =>
   proposal.eventOwner === "group" ? sponsoredEvent(database, proposal)?.event.promo : undefined
 
-// The stored agreement, or a new one with the usual items (the caller saves).
+// 저장된 계약서, 없으면 보통의 항목으로 새로 만든 것(저장은 호출한 쪽이 한다).
 export function agreementFor(database: Database, proposal: AcceptedProposal) {
   const stored = database.agreements.find((agreement) => agreement.id === proposal.id)
   if (stored) return { agreement: stored, created: false }
@@ -237,16 +232,14 @@ export function agreementFor(database: Database, proposal: AcceptedProposal) {
   return { agreement, created: true }
 }
 
-// An agreement with its proposal, as the side looking sees it, with the
-// event (whose it is, and whether it has begun: its goals and measurement
-// methods are set on the agreement until then), the goals both sides read,
-// without the PINs and coupons only the owner keeps, how it is measured with
-// this side's own venue PIN, the reviews (whether this side may write one
-// now, its own and the other's), any request to call it off and whether this
-// side may ask. A canceled one is only a record: its items and the request.
-// A side confirms the agreement as it stands. Once both have, the
-// confirmation methods as they stand are the ones that count at the event
-// and in the results (`confirmedMethods`). Answers whether both have.
+// 계약서와 그 제안을 보는 쪽 기준으로 보여 준다. 행사(누구의 것인지, 시작
+// 했는지: 시작 전까지 목표와 측정 방식은 계약서에서 정한다), 양쪽이 읽는
+// 목표(주인만 가진 PIN과 쿠폰은 뺀다), 이쪽 행사장 PIN을 곁들인 측정
+// 방식, 후기(이쪽이 지금 쓸 수 있는지, 이쪽의 것과 상대의 것), 취소
+// 요청과 이쪽이 요청할 수 있는지를 담는다. 취소된 계약은 기록일 뿐이라
+// 항목과 요청만 담는다. 한쪽이 계약서를 현재 상태 그대로 확인한다. 양쪽이
+// 확인하면 그때의 확인 방식이 행사와 결과에서 효력을 갖는다
+// (`confirmedMethods`). 양쪽이 확인했는지 답한다.
 export function confirmAgreement(database: Database, agreement: Agreement, proposal: AcceptedProposal, side: ChatSide) {
   const now = new Date().toISOString()
   agreement.confirmed[side] = now
@@ -278,7 +271,7 @@ export function agreementView(database: Database, agreement: Agreement, proposal
   return {
     ...agreement,
     side,
-    // Each side's contact, which only the two sides of an accepted proposal see.
+    // 각 측의 연락처. 수락된 제안의 두 측만 본다.
     group: {
       name: proposal.group.name,
       member: Boolean(proposal.group.account),
@@ -303,7 +296,7 @@ export function agreementView(database: Database, agreement: Agreement, proposal
     review: {
       open: reviewOpen(proposal),
       canWrite: canReview(database, proposal, side),
-      // This side may answer the other's review of it (not from a demo account).
+      // 이쪽은 상대가 쓴 후기에 답할 수 있다(데모 계정은 제외).
       canReply: Boolean(theirs && !theirs.hiddenAt) && !isDemoAccount(database, proposal[side].account),
       ...(mine ? { mine: publicReview(mine) } : {}),
       ...(theirs ? { theirs: publicReview(theirs) } : {}),
@@ -316,8 +309,8 @@ export function agreementView(database: Database, agreement: Agreement, proposal
   }
 }
 
-// Agreements whose proposal is gone (one side left) go too; their photos'
-// folders are returned for removing once the data is saved.
+// 제안이 없어진(한쪽이 탈퇴한) 계약서도 함께 지운다. 사진 폴더는 데이터를
+// 저장한 뒤 지우도록 돌려준다.
 export function dropOrphanAgreements(database: Database) {
   const gone = database.agreements.filter((agreement) => !acceptedProposal(database, agreement.id))
   database.agreements = database.agreements.filter((agreement) => !gone.includes(agreement))
