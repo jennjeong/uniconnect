@@ -166,7 +166,8 @@ export type Agreement = {
     methods: MeasureMethod[]
     confirmedMethods?: MeasureMethod[]
     counts: Metrics
-    venue?: { page: VenuePage; pin: string }
+    // The PIN shows from the day before the event; until then, that day.
+    venue?: { page: VenuePage; pin?: string; pinsFrom?: string }
   }
   // Reviews open from the event's day; canWrite is false for the demo
   // accounts and when the other side has no listing to show it on; canReply
@@ -765,6 +766,8 @@ export type Report = {
   staffPin?: string
   // The student group's venue PIN; only for the group that owns the event.
   groupPin?: string
+  // The day the PINs start to show, while they don't yet.
+  pinsFrom?: string
   // How the event is confirmed (as both sides confirmed it) before any
   // sponsor (each sponsor's below), and what the venue confirmed for the
   // whole event.

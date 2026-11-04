@@ -63,6 +63,9 @@ export function QrModal({
             </small>
           </div>
         )}
+        {report.pinsFrom && (
+          <p className="field-hint">{t("직원 PIN과 단체 확인 PIN은 행사 하루 전인 {date}부터 여기에 보여요.", { date: formatFullDate(report.pinsFrom) })}</p>
+        )}
         {report.groupPin && (
           <div className="qr-pin">
             {t("우리 단체 현장 확인")}
