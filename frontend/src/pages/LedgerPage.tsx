@@ -7,10 +7,9 @@ import { formatFullDate } from "../lib/date"
 import { formatWon } from "../lib/kpis"
 import type { PublicLedger } from "../types"
 
-// 협찬 결산 공개 (/ledger/<token>): what a student group received from brands,
-// for its own students to read without logging in: each sponsorship's event,
-// brand, goods, amount (when the group shows amounts), turnout and its note,
-// and what they add up to.
+// 협찬 결산 공개(/ledger/<token>): 학생단체가 브랜드에서 받은 것을 자기
+// 학생들이 로그인 없이 읽도록 보여 준다. 협찬마다 행사, 브랜드, 물품,
+// 금액(단체가 금액을 보여 줄 때), 참석, 메모와 그 합계.
 export function LedgerPage({ token }: { token: string }) {
   const [data, setData] = useState<PublicLedger | null>(null)
   const [failed, setFailed] = useState("")

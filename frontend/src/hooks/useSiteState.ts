@@ -4,9 +4,9 @@ import { api } from "../api"
 import { faqs, type FaqItem } from "../data/faq"
 import type { SiteState } from "../types"
 
-// The operators' switches the whole site reads (GET /api/site): maintenance,
-// whether sign-up is open, and the help center questions they added or hid.
-// Read once per page load and shared; refreshSiteState reads it again.
+// 사이트 전체가 읽는 운영진의 스위치 (GET /api/site). 점검 여부, 가입이 열려
+// 있는지, 운영진이 추가하거나 숨긴 도움말 센터 질문이 담긴다. 페이지를 불러올
+// 때 한 번 읽어 공유하고, refreshSiteState가 다시 읽는다.
 let cached: SiteState | undefined
 let loading: Promise<SiteState | undefined> | undefined
 const listeners = new Set<(state: SiteState | undefined) => void>()
@@ -18,7 +18,7 @@ export function refreshSiteState() {
       for (const listener of listeners) listener(state)
       return state
     },
-    // Without it the site works as if nothing were switched on.
+    // 없으면 아무것도 켜지 않은 것처럼 사이트가 동작한다.
     () => undefined,
   )
   return loading
@@ -36,8 +36,8 @@ export function useSiteState() {
   return state
 }
 
-// The help center's questions: the built-in ones the operators haven't
-// hidden, then the ones they added (in Korean only).
+// 도움말 센터의 질문. 운영진이 숨기지 않은 기본 질문 뒤에 운영진이 추가한
+// 질문이 온다 (한국어로만).
 export function useFaqs(): FaqItem[] {
   const state = useSiteState()
   const hidden = new Set(state?.faq.hidden ?? [])

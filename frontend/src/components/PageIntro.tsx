@@ -5,10 +5,9 @@ import { Icon } from "./Icon"
 import { Lines } from "./Lines"
 import { RevealTitle } from "./RevealText"
 
-// The top of a page, after Stride's section headings: an eyebrow, a large
-// Bold title whose letters rise into place, a line of description, and the
-// page's own actions at the right. Pages opened from another one get a back
-// button over the eyebrow.
+// 페이지의 맨 위. Stride의 섹션 제목을 본떴다. 아이콘 라벨, 글자가 올라와 자리
+// 잡는 큰 Bold 제목, 설명 한 줄, 오른쪽에 그 페이지 자체의 동작이 온다. 다른
+// 페이지에서 열린 페이지에는 라벨 위에 뒤로 가기 버튼이 붙는다.
 export function PageIntro({
   eyebrow,
   title,
@@ -35,7 +34,7 @@ export function PageIntro({
       </div>
       <div className="intro-row">
         <div className="intro-copy">
-          {/* A new title replays its entrance. */}
+          {/* 제목이 바뀌면 등장 애니메이션을 다시 재생한다. */}
           <RevealTitle className="intro-title" key={title}>
             {title}
           </RevealTitle>

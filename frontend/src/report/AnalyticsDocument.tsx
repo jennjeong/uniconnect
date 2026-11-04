@@ -12,8 +12,8 @@ import { PageFooter, PageHeader, VenueCounts } from "./ReportDocument"
 
 const footerNote = t("uniconnect · 협찬 성과 분석 보고서 · 집계된 협찬 데이터로 자동 생성했어요.")
 
-// A translated sentence with parts in markup: each {name} in it becomes
-// nodes[name]. Plain values go to t() first, which also picks a plural word.
+// 일부가 마크업인 번역 문장. 문장 안의 {name}마다 nodes[name]이 들어간다. 일반
+// 값은 먼저 t()로 넘기며, t()가 복수형 단어도 고른다.
 function rich(text: string, nodes: Record<string, ReactNode>) {
   return text.split(/\{(\w+)\}/).map((part, index) =>
     index % 2 ? <Fragment key={index}>{nodes[part]}</Fragment> : part,
@@ -22,7 +22,7 @@ function rich(text: string, nodes: Record<string, ReactNode>) {
 
 type Row = ReturnType<typeof analyzeSponsorships>["rows"][number]
 
-// One sponsorship's ROAS as a bar against its goal tick, on the summary page.
+// 요약 페이지에서 한 협찬의 ROAS를 목표 눈금과 견주는 막대로.
 function RoasBar({ row, scale }: { row: Row; scale: number }) {
   return (
     <div className={row.met ? "pdf-roas-row met" : "pdf-roas-row"}>
@@ -41,8 +41,8 @@ function RoasBar({ row, scale }: { row: Row; scale: number }) {
   )
 }
 
-// The brand's analytics as A4 pages (794×1123 px): a summary of every
-// sponsorship, then each sponsorship's own performance report.
+// A4 페이지(794×1123 px)로 만든 브랜드의 분석: 모든 협찬의 요약, 이어서 협찬별
+// 성과 리포트.
 export function AnalyticsDocument({
   sponsorships,
   author,
@@ -84,7 +84,7 @@ export function AnalyticsDocument({
     `${t("쿠폰을 받은 학생의 {rate}%가 매장에 왔어요.", { rate: visitRate })} ${
       visitRate >= 40 ? t("현장 쿠폰이 방문으로 잘 이어지고 있어요.") : t("쿠폰 혜택을 키우면 방문이 더 늘 수 있어요.")
     }`,
-    // What the venue confirmed by the measurement methods, across them all.
+    // 측정 방식으로 현장이 확인한 것. 전체를 합친다.
     ...(venueSummary(totals)
       ? [t("행사장에서 담당자가 확인한 성과도 함께 집계됐어요: {counts}.", { counts: venueSummary(totals) })]
       : []),
@@ -183,7 +183,7 @@ export function AnalyticsDocument({
           ? t("목표 ROAS {target}%를 {gap}%p 넘겼어요.", { target: row.targetRoas, gap: row.roas - row.targetRoas })
           : t("목표 ROAS {target}%까지 {gap}%p 남았어요.", { target: row.targetRoas, gap: row.targetRoas - row.roas })
         const perVisit = { cost: formatWon(row.perVisit), average: formatWon(averagePerVisit) }
-        // The venue counts it has, shown only when some method counted any.
+        // 가진 현장 집계. 어떤 방식이 하나라도 센 경우에만 보인다.
         const counted: Partial<Record<MetricKind, number>> = Object.fromEntries(venueKinds.map((kind) => [kind, row[kind as keyof typeof row] ?? 0]))
         const notes = [
           t("{spend}을 집행해 추정 매출 {sales}을 만들었어요. {verdict}", {

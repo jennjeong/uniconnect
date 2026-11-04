@@ -1,7 +1,7 @@
-// Stride's card reveal from getlayers.ai: anything marked data-reveal
-// starts lowered, faded and blurred, and rises into place the first time it
-// scrolls into view (index.css, "Motion"). A per-element delay can be set
-// with style={{ "--reveal-delay": "0.2s" }}. Returns a function that stops it.
+// getlayers.ai의 Stride 카드 리빌: data-reveal이 붙은 요소는 낮게 내려가고
+// 흐려진 채로 시작해, 처음 화면에 들어올 때 제자리로 떠오른다 (index.css의
+// "Motion"). 요소별 지연은 style={{ "--reveal-delay": "0.2s" }}로 줄 수 있다.
+// 이를 멈추는 함수를 돌려준다.
 export function installReveal() {
   const root = document.documentElement
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return () => {}

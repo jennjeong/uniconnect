@@ -1,14 +1,14 @@
 import type { IconName } from "../components/Icon"
 import type { MetricKind } from "../types"
 
-// What the check-in QR counts, in funnel order, each with a goal.
+// 체크인 QR이 세는 것을 깔때기 순서대로, 각각 목표와 함께.
 export type CheckInKind = "scans" | "coupons" | "visits"
 
 export const metricKinds: CheckInKind[] = ["scans", "coupons", "visits"]
 
 export const isCheckInKind = (kind: MetricKind): kind is CheckInKind => (metricKinds as MetricKind[]).includes(kind)
 
-// What the venue's staff count by the confirmation methods (data/methods.ts).
+// 확인 방식(data/methods.ts)으로 현장 직원이 세는 것.
 export const venueKinds: MetricKind[] = [
   "samples",
   "stamps",

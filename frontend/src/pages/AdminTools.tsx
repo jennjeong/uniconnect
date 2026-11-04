@@ -9,14 +9,13 @@ import { csvCell } from "../lib/csv"
 import { saveFile } from "../lib/download"
 import type { AdminAnnouncement, AdminHealth, AdminLogRow, AdminMemberDetail, ErrorEntry } from "../types"
 
-// Tools of the operators' console (pages/AdminPage.tsx): notes on members,
-// answer templates, CSV files, the site's notices, the log of what the
-// operators did and which services are set up.
+// 운영자 콘솔의 도구(pages/AdminPage.tsx): 회원 메모, 답변 템플릿, CSV 파일,
+// 사이트 공지, 운영자가 한 일의 로그, 설정된 서비스.
 
 const dayMs = 24 * 60 * 60 * 1000
 
-// A convenience kept in this browser (views, columns, templates), or the
-// fallback when storage is missing or unreadable.
+// 이 브라우저에 두는 편의 기능(뷰, 열, 템플릿). 저장소가 없거나 읽을 수 없으면
+// 대체값을 쓴다.
 export function readStored<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key)
@@ -30,12 +29,12 @@ export function writeStored(key: string, value: unknown) {
   try {
     localStorage.setItem(key, JSON.stringify(value))
   } catch {
-    // Kept until the page closes.
+    // 페이지를 닫을 때까지 유지한다.
   }
 }
 
-// A console table's sort and pages: the rows sorted by the picked key
-// (pressing it again turns the order), twenty to a page.
+// 콘솔 표의 정렬과 페이지: 고른 키로 행을 정렬하고(다시 누르면 순서가 뒤집힌다)
+// 20개씩 나눈다.
 export function useTable<T>(rows: T[], keys: Record<string, (row: T) => string | number>, pageSize = 20) {
   const [sort, setSort] = useState<{ key: string; desc: boolean } | null>(null)
   const [pageIndex, setPage] = useState(0)
@@ -48,7 +47,7 @@ export function useTable<T>(rows: T[], keys: Record<string, (row: T) => string |
       const order = typeof x === "number" && typeof y === "number" ? x - y : String(x).localeCompare(String(y))
       return sort.desc ? -order : order
     })
-    // keys is written inline by each table, so only the rows and sort count.
+    // keys는 표마다 인라인으로 쓰므로 행과 정렬만 따진다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows, sort])
   const pages = Math.max(1, Math.ceil(sorted.length / pageSize))
@@ -70,7 +69,7 @@ export function useTable<T>(rows: T[], keys: Record<string, (row: T) => string |
 
 type Table = ReturnType<typeof useTable<never>>
 
-// A column header that sorts by its key, with the order shown.
+// 키로 정렬하는 열 머리글. 순서를 보여 준다.
 export function SortHeader({ label, sortKey, table }: { label: string; sortKey: string; table: Pick<Table, "sort" | "sortBy"> }) {
   const active = table.sort?.key === sortKey
   return (
@@ -83,7 +82,7 @@ export function SortHeader({ label, sortKey, table }: { label: string; sortKey: 
   )
 }
 
-// The count and the pages under a table.
+// 표 아래의 개수와 페이지.
 export function Pager({ table, unit }: { table: Pick<Table, "pageIndex" | "pages" | "total" | "setPage">; unit: string }) {
   return (
     <div className="console-pager">
@@ -112,18 +111,18 @@ export function Pager({ table, unit }: { table: Pick<Table, "pageIndex" | "pages
   )
 }
 
-// Whole days since a moment, 0 on the day itself.
+// 어느 시점부터 지난 일 수. 그날이면 0.
 export const daysSince = (at: string, now = Date.now()) => Math.max(0, Math.floor((now - Date.parse(at)) / dayMs))
 
-// How long something has waited, red from `late` days on.
+// 무언가가 기다린 시간. `late`일부터 빨간색.
 export function WaitBadge({ at, late, text }: { at: string; late: number; text: (days: number) => string }) {
   const days = daysSince(at)
   return <span className={days >= late ? "console-badge down" : "console-badge"}>{days === 0 ? t("오늘") : text(days)}</span>
 }
 
-// A table as a CSV file Excel opens in Korean (with a byte-order mark).
-// Cells go through csvCell, so a member's name starting with = + - or @
-// stays text instead of running as a formula in the operator's sheet.
+// 엑셀이 한글로 여는 CSV 파일(바이트 순서 표시 포함). 셀은 csvCell을 거치므로
+// =, +, -, @로 시작하는 회원 이름이 운영자의 시트에서 수식으로 실행되지 않고
+// 텍스트로 남는다.
 export function csvOf(rows: (string | number | null | undefined)[][]) {
   const cell = (value: string | number | null | undefined) =>
     csvCell(value === null || value === undefined ? "" : typeof value === "number" ? value : String(value))
@@ -142,7 +141,7 @@ export function CsvButton({ name, rows }: { name: string; rows: () => (string | 
   )
 }
 
-// The operators' note on a member, saved with a press (blank removes it).
+// 회원에 대한 운영자 메모. 누르면 저장된다(비우면 지운다).
 export function NoteEditor({
   token,
   member,
@@ -196,8 +195,8 @@ export function NoteEditor({
   )
 }
 
-// Answers the operators write often, kept in this browser: three to start
-// with, and any answer saved as one.
+// 운영자가 자주 쓰는 답변을 이 브라우저에 둔다. 처음에는 세 개이고 저장한
+// 답변도 템플릿이 된다.
 type Template = { name: string; text: string; own?: boolean }
 
 const templateKey = "uniconnect-admin-templates"
@@ -224,11 +223,11 @@ function writeTemplates(list: Template[]) {
   try {
     localStorage.setItem(templateKey, JSON.stringify(list.filter((item) => item.own).map(({ name, text }) => ({ name, text }))))
   } catch {
-    // Without storage the templates last until the page closes.
+    // 저장소가 없으면 템플릿은 페이지를 닫을 때까지만 유지된다.
   }
 }
 
-// Picks a template into the answer, or keeps the answer as one.
+// 템플릿을 답변에 넣거나, 답변을 템플릿으로 저장한다.
 export function TemplatePicker({ draft, onPick }: { draft: string; onPick: (text: string) => void }) {
   const [list, setList] = useState(readTemplates)
   const [chosen, setChosen] = useState("")
@@ -283,7 +282,7 @@ export function TemplatePicker({ draft, onPick }: { draft: string; onPick: (text
   )
 }
 
-// The same error more than once as one row with its count and latest time.
+// 같은 오류가 여러 번이면 횟수와 마지막 시각을 담은 한 행으로 묶는다.
 export function groupErrors(errors: ErrorEntry[]) {
   const groups = new Map<string, { entry: ErrorEntry; count: number }>()
   for (const entry of errors) {
@@ -297,9 +296,9 @@ export function groupErrors(errors: ErrorEntry[]) {
 
 const audienceLabels: Record<AdminAnnouncement["audience"], string> = { all: "모두", 학생단체: "학생단체", 브랜드: "브랜드" }
 
-// When a notice shows: a field that opens the site's month calendar under
-// it. One press is one day, a second on a later day closes the period, and
-// an empty period shows the notice from now until it is taken down.
+// 공지가 보이는 때: 아래에 사이트의 월 달력을 여는 칸. 한 번 누르면 하루, 더
+// 뒤의 날을 다시 누르면 기간이 닫히며, 기간이 비어 있으면 지금부터 내릴 때까지
+// 보인다.
 function PeriodField({ from, until, onChange }: { from: string; until: string; onChange: (from: string, until: string) => void }) {
   const [open, setOpen] = useState(false)
   const box = useRef<HTMLDivElement>(null)
@@ -348,8 +347,7 @@ function PeriodField({ from, until, onChange }: { from: string; until: string; o
   )
 }
 
-// The site's notices: a form for a new one, then the live ones with a press
-// to take each down, then those that ended.
+// 사이트 공지: 새 공지 폼, 지금 보이는 공지(눌러서 내린다), 끝난 공지.
 export function Notices({ token, onNotice }: { token: string; onNotice: (message: string) => void }) {
   const [items, setItems] = useState<AdminAnnouncement[]>()
   const [form, setForm] = useState({ text: "", tone: "info" as AdminAnnouncement["tone"], audience: "all" as AdminAnnouncement["audience"], from: "", until: "" })
@@ -361,7 +359,7 @@ export function Notices({ token, onNotice }: { token: string; onNotice: (message
     )
   useEffect(() => {
     void load()
-    // Loads once per token.
+    // 토큰마다 한 번 불러온다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token])
   return (
@@ -526,7 +524,7 @@ const kindLabels: Record<string, string> = {
   announcement: "공지",
 }
 
-// What the operators did, newest first, filtered by kind.
+// 운영자가 한 일. 최신순이고 종류로 거른다.
 export function ActivityLog({ token, onNotice }: { token: string; onNotice: (message: string) => void }) {
   const [entries, setEntries] = useState<AdminLogRow[]>()
   const [kind, setKind] = useState("")
@@ -608,8 +606,7 @@ const paymentModes: Record<AdminHealth["payments"], string> = {
   live: "실결제",
 }
 
-// Which services this copy of the API is set up for, and what is missing
-// without each.
+// 이 API 복사본에 설정된 서비스와, 각각이 없을 때 빠지는 것.
 export function ServiceHealth({ token, onNotice }: { token: string; onNotice: (message: string) => void }) {
   const [health, setHealth] = useState<AdminHealth>()
   useEffect(() => {

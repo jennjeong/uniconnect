@@ -1,14 +1,14 @@
 import { MESH_FRAG } from "./shaders"
 
-// Stride's mesh gradient never moves, so it is drawn once per size and
-// colour into an image and used as a CSS background. One small WebGL
-// context, made on first use, draws them all; nothing keeps running.
+// Stride의 메시 그라디언트는 움직이지 않으므로 크기와 색마다 한 번 이미지로
+// 그려 CSS 배경으로 쓴다. 처음 쓸 때 만든 작은 WebGL 컨텍스트 하나가 전부
+// 그리며, 계속 돌아가는 것은 없다.
 
 const VERT = `attribute vec2 position;
 varying vec2 vUv;
 void main(){ vUv = position * 0.5 + 0.5; gl_Position = vec4(position, 0.0, 1.0); }`
 
-// Draws at most this wide; the gradient is smooth enough to scale up.
+// 최대 이 너비까지만 그린다. 그라디언트는 충분히 부드러워서 키워도 된다.
 const maxWidth = 960
 
 let context: { canvas: HTMLCanvasElement; gl: WebGLRenderingContext; program: WebGLProgram } | null | undefined
@@ -22,7 +22,7 @@ const hexToVec3 = (hex: string) => {
 function setup() {
   if (context !== undefined) return context
   const canvas = document.createElement("canvas")
-  // Drawn on the CPU (lib/lite.ts), even one image holds the page up.
+  // CPU로 그리면 (lib/lite.ts) 이미지 하나만으로도 페이지가 멈춘다.
   const gl = canvas.getContext("webgl", {
     preserveDrawingBuffer: true,
     antialias: false,
@@ -50,7 +50,7 @@ function setup() {
   return (context = { canvas, gl, program })
 }
 
-// An object URL of the gradient for a box of this size, or "" without WebGL.
+// 이 크기의 상자에 맞춘 그라디언트의 오브젝트 URL. WebGL이 없으면 "".
 export function meshGradient(
   width: number,
   height: number,

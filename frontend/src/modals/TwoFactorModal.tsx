@@ -7,10 +7,9 @@ import { QrCode } from "../components/QrCode"
 import { t } from "../i18n"
 import type { Account } from "../types"
 
-// Two-step login from 내 정보. Turning it on: the password, then the QR code
-// (or the key typed in) for an authenticator app such as Google
-// Authenticator, then the app's code; the ten recovery codes show once.
-// Turning it off takes the password and a code.
+// 내 정보의 2단계 인증. 켜기: 비밀번호, 인증 앱(예: Google Authenticator)용 QR
+// 코드(또는 직접 입력하는 키), 앱의 코드 순이며 복구 코드 열 개는 한 번만 보여
+// 준다. 끄려면 비밀번호와 코드가 필요하다.
 export function TwoFactorModal({
   account,
   onClose,
@@ -18,8 +17,7 @@ export function TwoFactorModal({
 }: {
   account: Account
   onClose: () => void
-  // The account once it was turned on or off; the modal stays open to show
-  // the recovery codes after turning it on.
+  // 켜거나 끈 뒤의 계정. 켠 뒤에는 복구 코드를 보여 주려고 모달이 열려 있다.
   onSaved: (account: Account, on: boolean) => void
 }) {
   const [password, setPassword] = useState("")

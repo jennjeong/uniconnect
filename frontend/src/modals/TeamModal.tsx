@@ -6,10 +6,9 @@ import { t } from "../i18n"
 import { formatDay, toIsoDate } from "../lib/date"
 import type { Team } from "../types"
 
-// The people running the account (내 정보's 함께 관리하는 사람): the owner,
-// co-admins, and invitations still open. The owner invites by email (the
-// code goes to that address) and takes people off, which logs them out at
-// once; a co-admin sees the list only.
+// 계정을 운영하는 사람들(내 정보의 함께 관리하는 사람): 소유자, 공동 관리자,
+// 아직 열려 있는 초대. 소유자는 이메일로 초대하고(코드가 그 주소로 간다) 사람을
+// 빼면 바로 로그아웃된다. 공동 관리자는 목록만 본다.
 export function TeamModal({ onClose, onNotice }: { onClose: () => void; onNotice: (message: string) => void }) {
   const [team, setTeam] = useState<Team | null>(null)
   const [draft, setDraft] = useState({ name: "", email: "" })

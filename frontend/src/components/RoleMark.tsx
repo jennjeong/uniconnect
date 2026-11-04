@@ -2,9 +2,9 @@ import { useId } from "react"
 
 import type { Role } from "../types"
 
-// The two symbols of the uniconnect logo (assets/brand/uniconnect_horizontal.svg),
-// drawn with the logo's own shapes: the school a student group comes from,
-// in deep blue, and the company a brand is, in silver with its windows.
+// uniconnect 로고의 두 상징 (assets/brand/uniconnect_horizontal.svg)을 로고와
+// 같은 도형으로 그린다. 학생단체가 나온 학교는 짙은 파랑으로, 브랜드인 회사는
+// 창문이 있는 은색으로 그린다.
 export function RoleMark({ role, size = 28 }: { role: Role; size?: number }) {
   const silver = useId()
   return (

@@ -11,12 +11,11 @@ import { Icon } from "./Icon"
 import { Pill } from "./Pill"
 import { RevealTitle } from "./RevealText"
 
-// A brand's own campaign measured on site, at the end of 성과 분석: pick
-// the campaign, open its check-in QR, and watch its QR scans, coupons and
-// store visits as they come in, or whatever confirmation methods both
-// sides confirmed on its e-contract. Before the campaign (진행 전) the counts
-// wait as dashes beside their goals, which are set on the agreement with
-// the group that took the brand's offer.
+// 성과 분석 맨 끝에서 브랜드가 자기 캠페인을 현장에서 측정한다. 캠페인을
+// 고르고, 체크인 QR을 열고, QR 스캔·쿠폰·매장 방문이 들어오는 대로 지켜본다.
+// 양쪽이 전자계약서에서 확정한 확인 방식이 있으면 그것을 따른다. 캠페인 전(진행
+// 전)에는 목표 옆에 대시(-)만 보인다. 목표는 브랜드의 제안을 받은 그룹과의
+// 협약에서 정한다.
 export function CampaignMeasurement({
   measurements,
   metrics,
@@ -27,14 +26,14 @@ export function CampaignMeasurement({
   onOpenAgreements,
   onShowLog,
 }: {
-  // Every campaign of the brand, to pick the one to measure.
+  // 브랜드의 모든 캠페인. 측정할 캠페인을 고르는 데 쓴다.
   measurements: EventMeasurement[]
   metrics: Metrics
   report: Report | null
   onSelect: (eventId: string) => void
   onUpdate: (measurement: EventMeasurement) => void
   onOpenQr: () => void
-  // Opens the agreements, where a campaign's goals are set.
+  // 캠페인 목표를 정하는 협약 화면을 연다.
   onOpenAgreements: () => void
   onShowLog: (kind?: MetricKind) => void
 }) {

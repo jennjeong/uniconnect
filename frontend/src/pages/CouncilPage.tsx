@@ -8,11 +8,10 @@ import { t } from "../i18n"
 import { formatDay, formatPeriod, toIsoDate } from "../lib/date"
 import type { CouncilClub } from "../types"
 
-// A student council's clubs (/council): its code to share, and each club
-// that linked with it, read-only: its coming events, open proposals,
-// sponsorships and results so far. Messages, contacts and agreements stay
-// the club's. The council can take a club off, and make a new code that
-// links no more clubs.
+// 학생회의 동아리(/council): 공유할 코드와, 이 코드로 연결된 동아리를 읽기
+// 전용으로 보여 준다. 다가올 행사, 열린 제안, 협찬, 지금까지의 결과가 나온다.
+// 메시지, 연락처, 계약서는 동아리의 것으로 남는다. 학생회는 동아리를 뺄 수
+// 있고, 새 코드를 만들면 더는 동아리가 연결되지 않는다.
 export function CouncilPage({ onBack, onNotice }: { onBack: () => void; onNotice: (message: string) => void }) {
   const [data, setData] = useState<{ code: string; clubs: CouncilClub[] } | null>(null)
   const [failed, setFailed] = useState("")

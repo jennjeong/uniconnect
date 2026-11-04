@@ -17,11 +17,10 @@ const maxSns = 4
 const maxOffers = brandOffers.length
 const maxPortfolio = 5
 
-// Edits the listing the other side sees: introduction, offer, tags, basic
-// facts, SNS accounts and portfolio. A brand picks its offers from the list
-// and finds its store's address with the address search; its tags and 기본
-// 정보 come from what it does (backend lib/brandProfile.ts), shown here as
-// they read, and it shows no follower counts.
+// 상대편에게 보이는 리스팅을 고친다: 소개, 제공 내용, 태그, 기본 정보, SNS
+// 계정, 포트폴리오. 브랜드는 목록에서 제공 내용을 고르고 주소 검색으로 가게
+// 주소를 찾는다. 태그와 기본 정보는 브랜드가 하는 일에서 오며(backend
+// lib/brandProfile.ts) 읽히는 대로 여기에 보이고, 팔로워 수는 보이지 않는다.
 export function ProfileEditPage({
   role,
   listing,
@@ -29,7 +28,7 @@ export function ProfileEditPage({
   onSave,
 }: {
   role: Role
-  // The current listing, or null for the first introduction.
+  // 현재 리스팅. 첫 소개라면 null.
   listing: Match | null
   onCancel: () => void
   onSave: (draft: ProfileDraft) => Promise<string | null>
@@ -38,11 +37,11 @@ export function ProfileEditPage({
   const brand = role === "브랜드"
   const [intro, setIntro] = useState(listing?.intro ?? "")
   const [offer, setOffer] = useState(listing?.offer ?? "")
-  // A brand's offers as rows like its SNS: a kind and what of it.
+  // 브랜드의 제공 내용을 SNS처럼 행으로: 종류와 그 내용.
   const [offers, setOffers] = useState<BrandOffer[]>(listing?.offers ?? [])
   const updateOffer = (index: number, change: Partial<BrandOffer>) =>
     setOffers((rows) => rows.map((row, at) => (at === index ? { ...row, ...change } : row)))
-  // 불러오기: past sponsorships or events to add to the portfolio.
+  // 불러오기: 포트폴리오에 더할 지난 협찬이나 행사.
   const [history, setHistory] = useState<HistoryItem[] | null>(null)
   const [picked, setPicked] = useState<string[]>([])
   const [tags, setTags] = useState((listing?.tags ?? []).join(", "))
@@ -51,11 +50,11 @@ export function ProfileEditPage({
   )
   const [sns, setSns] = useState<SnsAccount[]>(listing?.sns ?? [])
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>(listing?.portfolio ?? [])
-  // The logo as it will be saved: a data URL, or "" for none.
+  // 저장될 로고: data URL, 없으면 "".
   const [logo, setLogo] = useState(listing?.logo ?? "")
-  // A brand's store, for how far it is from each school.
+  // 학교와의 거리를 위한 브랜드의 가게.
   const [address, setAddress] = useState(listing?.location?.address ?? "")
-  // The address search, while it is open.
+  // 열려 있는 동안의 주소 검색.
   const [searching, setSearching] = useState(false)
   const searchBox = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -439,7 +438,7 @@ export function ProfileEditPage({
         </div>
       </div>
 
-      {/* At the end of the body, over everything, the footer too. */}
+      {/* body 끝에 두어 푸터까지 모든 것을 덮는다. */}
       {createPortal(
         <Presence show={history !== null}>
           <Modal

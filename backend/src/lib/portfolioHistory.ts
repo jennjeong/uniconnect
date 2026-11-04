@@ -1,10 +1,9 @@
 import { todayInKorea } from "./dates.js"
 import type { Account, Database } from "../types.js"
 
-// What 소개 편집's 불러오기 offers for the portfolio: a brand's past
-// sponsorships, a group's past events, newest first, each as a portfolio
-// row (a title with its month, and what it came to) the account can still
-// edit after adding.
+// 소개 편집의 불러오기가 포트폴리오에 내놓는 것: 브랜드의 지난 협찬, 단체의
+// 지난 행사를 새것부터, 각각 포트폴리오 행(월이 붙은 제목과 성과)으로 둔다.
+// 계정은 더한 뒤에도 고칠 수 있다.
 export function portfolioHistory(database: Database, account: Account) {
   const today = todayInKorea()
   const month = (date: string) => `${date.slice(0, 4)}.${date.slice(5, 7)}`

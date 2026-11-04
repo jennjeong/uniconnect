@@ -16,34 +16,34 @@ export const boardRouter = Router()
 
 const maxTitle = 60
 const maxBody = 1000
-// How far ahead a deadline may be, and how many open posts one account keeps.
+// 마감일을 얼마나 먼 날로 잡을 수 있는지와, 한 계정이 열어 둘 수 있는 글의 수다.
 const maxDeadlineDays = 60
 const maxOpenPosts = 5
 
-// More than anyone posts in a day.
+// 하루에 누구나 올리는 수보다 많은 수다.
 const postsPerDay = createRateLimit({
   limit: 10,
   windowMs: 24 * 60 * 60 * 1000,
   message: "모집 글을 너무 많이 올렸어요. 내일 다시 올려 주세요.",
 })
 
-// Whether a post still takes applications: not closed, and its deadline not past.
+// 글이 아직 지원을 받는지 정한다. 닫히지 않았고 마감이 지나지 않았으면 받는다.
 export const isOpen = (post: BoardPost, today = todayInKorea()) => !post.closedAt && post.deadline >= today
 
-// The catalog a post's poster is listed in.
+// 글을 올린 쪽이 속한 카탈로그다.
 const catalogOf = (role: Role) => (role === "학생단체" ? "groups" : "brands")
 
-// The post's poster and listing, while both are there.
+// 글을 올린 사람과 리스팅이다. 둘 다 있을 때만 있다.
 function posterOf(database: Database, post: BoardPost) {
   const account = database.accounts.find((item) => item.id === post.accountId)
   const listing = account && findListing(database, account)
   return account && listing ? { account, listing } : undefined
 }
 
-// Whether the viewer (a visitor previewing `role` when undefined) finds a
-// post: its own any time; the other side's while it is open and its poster's
-// listing is in the viewer's lists (members' for members, the examples
-// otherwise, not while paused).
+// 보는 사람(`role`을 미리 보는 방문자라면 undefined)이 글을 찾을 수 있는지
+// 정한다. 자기 글은 언제든 되고, 상대편 글은 열려 있고 올린 쪽의 리스팅이 보는
+// 사람의 목록에 있을 때만 된다(회원에게는 회원의 것, 아니면 예시이며 멈춘
+// 동안은 아니다).
 function finds(database: Database, post: BoardPost, viewer: Account | undefined, role: Role) {
   const poster = posterOf(database, post)
   if (!poster) return false
@@ -52,8 +52,8 @@ function finds(database: Database, post: BoardPost, viewer: Account | undefined,
   return poster.account.role !== role && isOpen(post) && listedTo(database, catalogOf(poster.account.role), poster.listing, viewer)
 }
 
-// The proposals that applied to a post, to its poster: a brand's post gets
-// groups' requests, a group's post brands' offers.
+// 글에 지원한 제안을 올린 사람에게 보여 준다. 브랜드의 글에는 단체의 요청이,
+// 단체의 글에는 브랜드의 제안이 온다.
 function applicationsTo(database: Database, post: BoardPost, role: Role) {
   return role === "브랜드"
     ? database.requests
@@ -64,9 +64,8 @@ function applicationsTo(database: Database, post: BoardPost, role: Role) {
         .map((item) => ({ id: item.id, name: item.brandName, about: item.campaignName, date: item.campaignDate, status: statusOf(database, item) }))
 }
 
-// A post as the viewer sees it: who posted it (its listing's name and mark),
-// a group's event, whether it is open, the viewer's own application, and to
-// its poster the applications.
+// 보는 사람에게 보이는 글이다. 올린 사람(리스팅의 이름과 마크), 단체의 행사,
+// 열려 있는지, 보는 사람 자신의 지원을 담고, 올린 사람에게는 지원 내역도 담는다.
 function postView(database: Database, post: BoardPost, viewer: Account | undefined) {
   const poster = posterOf(database, post)!
   const event = post.eventId ? (database.events[post.accountId] ?? []).find((item) => item.id === post.eventId) : undefined
@@ -88,9 +87,9 @@ function postView(database: Database, post: BoardPost, viewer: Account | undefin
   }
 }
 
-// The board for the account (or a visitor previewing ?role=): the other
-// side's open posts it finds, the soonest deadline first, and its own,
-// newest first, open or not.
+// 계정(또는 ?role=를 미리 보는 방문자)의 게시판이다. 찾을 수 있는 상대편의
+// 열린 글을 마감이 가까운 순으로, 자기 글을 열려 있든 아니든 최신순으로
+// 보여 준다.
 boardRouter.get("/", (req, res) => {
   const database = getDatabase()
   const viewer = req.account
@@ -113,9 +112,8 @@ boardRouter.get("/:id", (req, res) => {
   res.json({ post: postView(database, post, req.account) })
 })
 
-// A post's words as written or edited: a title and body, the kinds of
-// sponsorship, a deadline from today to 60 days on, and a group's event (one
-// of its own that hasn't ended).
+// 쓰거나 고친 글의 내용이다. 제목과 본문, 협찬의 종류, 오늘부터 60일 이내의
+// 마감일, 단체의 행사(끝나지 않은 자기 행사 하나)를 담는다.
 function parsePost(account: Account, body: Request["body"]) {
   const title = text(body?.title)
   const words = text(body?.body)
@@ -138,7 +136,7 @@ function parsePost(account: Account, body: Request["body"]) {
   return { title, body: words, types, deadline, ...(eventId ? { eventId } : {}) }
 }
 
-// The account's own post, by the address.
+// 주소로 찾는 계정 자신의 글이다.
 function ownPost(req: Request) {
   const account = requireAccount(req)
   const post = getDatabase().posts.find((item) => item.id === req.params.id && item.accountId === account.id)
@@ -146,9 +144,9 @@ function ownPost(req: Request) {
   return { account, post }
 }
 
-// A member posts, five open posts at most; the shared demo accounts can't,
-// as everyone trying them would. Its listing must be written first, as the
-// post shows as it.
+// 회원이 글을 올린다. 열린 글은 최대 다섯 개이고, 공유 데모 계정은 써 보는
+// 모두가 함께 쓰므로 올릴 수 없다. 글이 리스팅으로 보이므로 리스팅을 먼저
+// 써야 한다.
 boardRouter.post("/", async (req, res) => {
   const account = requireAccount(req)
   const database = getDatabase()
@@ -180,8 +178,8 @@ boardRouter.put("/:id", async (req, res) => {
   res.json({ post: postView(getDatabase(), post, account) })
 })
 
-// Closes a post before its deadline: it leaves the board, and no one applies
-// any more; the applications already in stay in the inbox.
+// 마감 전에 글을 닫는다. 게시판에서 사라지고 더 이상 지원하지 못하며, 이미
+// 들어온 지원은 받은편지함에 남는다.
 boardRouter.post("/:id/close", async (req, res) => {
   const { account, post } = ownPost(req)
   post.closedAt ??= new Date().toISOString()

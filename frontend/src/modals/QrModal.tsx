@@ -6,7 +6,7 @@ import { checkInLink, staffCheckInLink, venueLink } from "../lib/checkin"
 import { formatFullDate } from "../lib/date"
 import type { Report } from "../types"
 
-// The event's check-in QR, to show on a screen or print at the venue.
+// 행사의 체크인 QR. 화면에 띄우거나 행사장에서 인쇄한다.
 export function QrModal({
   report,
   onClose,

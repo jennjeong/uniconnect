@@ -44,7 +44,7 @@ describe("sponsorship results", () => {
   })
 
   test("totals add every sponsorship up", () => {
-    // Venue counts only some sponsorships have add up as zero for the rest.
+    // 일부 협찬에만 있는 현장 집계는 나머지에서 0으로 합산된다.
     expect(sponsorshipTotals(list)).toEqual({
       spend: 1000000,
       sales: 1300000,
@@ -72,9 +72,9 @@ describe("sponsorship results", () => {
   test("the analysis names the standouts", () => {
     const analysis = analyzeSponsorships(list)
     expect(analysis.best.id).toBe("a")
-    // b is 40 points under its goal, c only 20.
+    // b는 목표보다 40포인트 낮고, c는 20포인트만 낮다.
     expect(analysis.furthestBelow?.id).toBe("b")
-    // c has no visits, so it cannot be the cheapest per visit.
+    // c는 방문이 없으므로 방문당 비용이 가장 낮을 수 없다.
     expect(analysis.cheapest?.id).toBe("b")
     expect(analysis.metCount).toBe(1)
     expect(analysis.visitRate).toBe(28)

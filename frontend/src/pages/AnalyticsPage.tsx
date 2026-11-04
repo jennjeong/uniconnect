@@ -20,26 +20,24 @@ import type { Sponsorship } from "../types"
 
 const delay = (seconds: number) => ({ "--reveal-delay": `${seconds}s` }) as CSSProperties
 
-// Sponsorships on one page of the table.
+// 표 한 페이지에 보이는 협찬.
 const perPage = 5
 
-// A translated sentence with parts in markup: each {name} in it becomes
-// nodes[name]. Plain values go to t() first, which also picks a plural word.
+// 일부가 마크업인 번역 문장. 문장 안의 {name}마다 nodes[name]이 들어간다. 일반
+// 값은 먼저 t()로 넘기며, t()가 복수형 단어도 고른다.
 function rich(text: string, nodes: Record<string, ReactNode>) {
   return text.split(/\{(\w+)\}/).map((part, index) =>
     index % 2 ? <Fragment key={index}>{nodes[part]}</Fragment> : part,
   )
 }
 
-// Counting words after a number ("장", "명"), which English leaves out.
+// 숫자 뒤의 세는 단위("장", "명")는 영어에서는 빠진다.
 const countUnit = (unit: string) => (lang === "en" ? "" : unit)
 
-// Spend, coupons, visits and ROAS of each sponsorship the brand has done:
-// the totals over getlayers.ai's Interference gradient, then ROAS, insights
-// and a table. The whole analysis, with a report page for each
-// sponsorship, downloads as a PDF.
-// A sponsorship's detailed report at the end of its row: to read, to buy,
-// or from its event's day.
+// 브랜드가 한 협찬마다의 지출, 쿠폰, 방문, ROAS. getlayers.ai의 Interference
+// 그라디언트 위에 총계를 놓고, 이어서 ROAS, 인사이트, 표를 보여 준다. 협찬마다
+// 리포트 페이지를 붙인 전체 분석은 PDF로 내려받는다. 협찬의 상세 리포트는 그
+// 행의 끝에서 읽거나 사거나, 행사 당일부터 열 수 있다.
 function ReportButton({ state, onOpen }: { state?: Sponsorship["report"]; onOpen: () => void }) {
   if (!state || state === "none") return <small className="analytics-report-none">—</small>
   if (state === "soon") return <small className="analytics-report-none">{t("행사 날부터")}</small>
@@ -59,29 +57,28 @@ export function AnalyticsPage({
   onOpenPlan,
   campaign,
 }: {
-  // Newest first.
+  // 최신순.
   sponsorships: Sponsorship[]
-  // While the PDF report is being made.
+  // PDF 리포트를 만드는 동안.
   exporting: boolean
-  // Saves the analysis with each sponsorship's report as a PDF.
+  // 협찬마다의 리포트를 붙인 분석을 PDF로 저장한다.
   onDownload: () => void
-  // A sponsorship's detailed report (pages/InsightPage.tsx), for those of a
-  // measured event.
+  // 측정된 행사의 협찬에 대한 상세 리포트(pages/InsightPage.tsx).
   onOpenReport: (sponsorshipId: string) => void
-  // The plan card on 내 정보, from the locked portfolio.
+  // 잠긴 포트폴리오로 만든, 내 정보의 요금제 카드.
   onOpenPlan: () => void
-  // On-site measurement of the brand's own campaigns, at the end.
+  // 브랜드 자신의 캠페인에 대한 현장 측정. 맨 끝에 둔다.
   campaign?: ReactNode
 }) {
   const { totals, rows, best, furthestBelow, cheapest, metCount, visitRate, roasScale } =
     analyzeSponsorships(sponsorships)
-  // The table's page, five sponsorships at a time.
+  // 표의 페이지. 한 번에 협찬 다섯 개.
   const [page, setPage] = useState(0)
   const pages = Math.ceil(rows.length / perPage)
   const current = Math.min(page, Math.max(0, pages - 1))
   const pageRows = rows.slice(current * perPage, (current + 1) * perPage)
 
-  // Each number with its unit set smaller after it, so the four read alike.
+  // 숫자마다 뒤에 단위를 작게 붙여 네 개가 같아 보이게 한다.
   const kpis = [
     {
       label: t("누적 집행액"),
@@ -122,7 +119,7 @@ export function AnalyticsPage({
             <Pill arrow="up-right" disabled={rows.length === 0 || exporting} onClick={onDownload}>
               {exporting ? t("PDF 만드는 중…") : t("분석 보고서 다운로드")}
             </Pill>
-            {/* The table as a spreadsheet (lib/csv.ts), made on the page. */}
+            {/* 표를 스프레드시트로(lib/csv.ts). 페이지에서 만든다. */}
             <Pill
               disabled={rows.length === 0}
               onClick={() =>

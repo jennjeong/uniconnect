@@ -5,15 +5,14 @@ import vercel from "../../../vercel.json"
 import { readView, viewPath } from "./route"
 import { sampleViews } from "./route.samples"
 
-// The server answers 404 for addresses no screen has (backend/src/lib/
-// appPaths.ts), so its list has to agree with route.ts, and with Vercel's
-// rewrites (vercel.json), past which Vercel answers 404 with 404.html.
+// 서버는 어느 화면에도 없는 주소에 404를 답한다 (backend/src/lib/appPaths.ts).
+// 그래서 그 목록은 route.ts와, 그리고 Vercel의 rewrites(vercel.json)와 같아야
+// 한다. rewrites에 걸리지 않으면 Vercel이 404.html로 404를 답한다.
 const at = (path: string) => new URL(path, "http://localhost") as unknown as Location
 
-// The forms vercel.json's rewrites use, in path-to-regexp's syntax as
-// Vercel reads them: fixed parts, and :name, :name?, :name(pattern) and
-// :name(pattern)? segments. Vercel matches them strictly, so a trailing
-// slash is not part of any.
+// vercel.json의 rewrites가 쓰는 형태. Vercel이 읽는 path-to-regexp 문법으로,
+// 고정 부분과 :name, :name?, :name(pattern), :name(pattern)? 세그먼트다.
+// Vercel은 이를 엄격하게 맞추므로 끝의 슬래시는 어느 것에도 속하지 않는다.
 function rewritePattern(source: string) {
   const parts = source.split(/(?=\/)/).map((segment) => {
     const param = /^\/:\w+(?:\((.+)\))?(\?)?$/.exec(segment)
@@ -27,9 +26,8 @@ function rewritePattern(source: string) {
 const appRewrites = vercel.rewrites
   .filter((rewrite) => rewrite.destination === "/index.html")
   .map((rewrite) => rewritePattern(rewrite.source))
-// With trailingSlash false, Vercel first sends an address ending in a slash
-// to the same address without it (308), and serves index.html for / by
-// itself.
+// trailingSlash가 false이면 Vercel은 먼저 슬래시로 끝나는 주소를 슬래시 없는
+// 같은 주소로 보내고(308), /에는 알아서 index.html을 서빙한다.
 const vercelServesApp = (path: string) => {
   const target = vercel.trailingSlash === false && path !== "/" ? path.replace(/\/$/, "") : path
   return target === "/" || appRewrites.some((pattern) => pattern.test(target))
@@ -134,8 +132,8 @@ describe("Vercel's rewrites match the server's page list", () => {
     expect(vercelServesApp(path)).toBe(isAppPath(path))
   })
 
-  // Express serves an app address ending in a slash as well. Vercel's
-  // rewrites never match one, so Vercel has to drop the slash first.
+  // Express는 슬래시로 끝나는 앱 주소도 서빙한다. Vercel의 rewrites는 그런
+  // 주소에 맞지 않으므로 Vercel이 먼저 슬래시를 떼어야 한다.
   test("an address ending in a slash reaches the app through Vercel's redirect", () => {
     expect(vercel.trailingSlash).toBe(false)
     expect(appRewrites.some((pattern) => pattern.test("/faq/"))).toBe(false)

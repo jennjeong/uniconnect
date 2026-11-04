@@ -1,10 +1,9 @@
 import type { APIRequestContext } from "@playwright/test"
 
-// A member signed up through the API with the code the test server shows
-// (EXPOSE_EMAIL_CODES), as the demo accounts meet only the examples: its
-// token and the header that sends it. A brand also writes its introduction,
-// so student groups find it. `type` picks another account type (a student
-// council's, say).
+// API로 가입한 회원이다. 테스트 서버가 보여 주는 코드(EXPOSE_EMAIL_CODES)로
+// 가입하며, 데모 계정은 예시만 만나기 때문이다. 토큰과 그것을 보내는 헤더를
+// 돌려준다. 브랜드는 소개도 써서 학생단체가 찾을 수 있게 한다. `type`으로
+// 다른 계정 유형(예: 총학생회)을 고를 수 있다.
 export async function signUpMember(
   request: APIRequestContext,
   role: "학생단체" | "브랜드",

@@ -6,16 +6,15 @@ import { todayInKorea } from "./dates.js"
 import { statusOf } from "./proposals.js"
 import type { Account, Database } from "../types.js"
 
-// A student council (총학생회, 단과대 학생회, 학과 학생회) sees the clubs that
-// linked to it with its code, read-only (routes/council.ts, pages/CouncilPage.tsx).
+// 학생회(총학생회, 단과대 학생회, 학과 학생회)는 자기 코드로 연결한 동아리를
+// 읽기 전용으로 본다(routes/council.ts, pages/CouncilPage.tsx).
 export const councilTypes = ["총학생회", "단과대 학생회", "학과 학생회"]
 export const isCouncil = (account: Account) => account.role === "학생단체" && councilTypes.includes(account.type)
 
-// How many councils one club links to at most (a department's, a college's
-// and the university's).
+// 동아리 하나가 연결할 수 있는 학생회의 최대 수(학과, 단과대, 대학).
 export const councilsPerClub = 3
 
-// A code like K7P2-QX9M, without letters that read alike.
+// K7P2-QX9M 같은 코드. 헷갈리는 글자는 뺀다.
 const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 export function newCouncilCode() {
   const chars = Array.from({ length: 8 }, () => alphabet[randomInt(alphabet.length)]).join("")
@@ -23,13 +22,13 @@ export function newCouncilCode() {
 }
 export const sameCode = (a: string, b: string) => a.toUpperCase().replace(/[^A-Z0-9]/g, "") === b.toUpperCase().replace(/[^A-Z0-9]/g, "")
 
-// The clubs linked to a council.
+// 학생회에 연결된 동아리.
 export const clubsOf = (database: Database, council: Account) =>
   database.accounts.filter((account) => account.councils?.some((link) => link.accountId === council.id))
 
-// What a council sees of one club: who it is, its coming events, how many
-// proposals are open and how many became sponsorships, and its results so
-// far in counts. Never its messages, contacts or agreements' contents.
+// 학생회가 동아리 하나에 대해 보는 것: 누구인지, 다가오는 행사, 열린 제안과
+// 협찬이 된 제안의 수, 지금까지의 결과(집계). 메시지, 연락처, 계약서 내용은
+// 절대 보지 않는다.
 export function clubSummary(database: Database, club: Account, council: Account) {
   const today = todayInKorea()
   const listing = findListing(database, club)

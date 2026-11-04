@@ -9,8 +9,8 @@ import { brandOwner } from "./requests.js"
 
 export const analyticsRouter = Router()
 
-// A brand's finished sponsorships, newest first (lib/sponsorships.ts), each
-// with where its detailed report stands (lib/premiumReport.ts).
+// 브랜드의 끝난 협찬을 최신순으로 보여 주며(lib/sponsorships.ts), 각 협찬의
+// 상세 리포트가 어디까지 왔는지도 함께 담는다(lib/premiumReport.ts).
 analyticsRouter.get("/", (req, res) => {
   const owner = brandOwner(req)
   const database = getDatabase()
@@ -24,8 +24,8 @@ analyticsRouter.get("/", (req, res) => {
   })
 })
 
-// 캠퍼스 포트폴리오 (lib/portfolio.ts): a Campus Partners brand's, or the
-// demo brand's for visitors to see one; others see it locked.
+// 캠퍼스 포트폴리오(lib/portfolio.ts)다. Campus Partners 브랜드는 자기 것을,
+// 방문자는 예시로 데모 브랜드의 것을 보고, 나머지는 잠긴 모습을 본다.
 analyticsRouter.get("/portfolio", (req, res) => {
   const owner = brandOwner(req)
   const database = getDatabase()

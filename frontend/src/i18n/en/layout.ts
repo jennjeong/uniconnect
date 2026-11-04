@@ -1,6 +1,6 @@
-// English for this area's Korean copy (see i18n/index.ts).
+// 이 영역의 한국어 카피에 대한 영어 (i18n/index.ts 참고).
 const en: Record<string, string> = {
-  // App notices (App.tsx)
+  // 앱 알림 (App.tsx)
   "서버에 연결하지 못했어요. 다시 연결하고 있어요…": "Couldn't reach the server. Reconnecting…",
   "로그인이 만료됐어요. 다시 로그인해 주세요.": "Your session has expired. Please log in again.",
   "로그아웃했어요.": "You're logged out.",
@@ -49,7 +49,7 @@ const en: Record<string, string> = {
   "로그인하면 가게를 초대할 수 있어요.": "Log in to invite shops.",
   "앱 다운로드": "Get the app",
   "uniconnect를 앱으로 설치했어요.": "uniconnect is installed as an app.",
-  // Getting the app where the browser has no install dialog (modals/InstallGuideModal.tsx)
+  // 브라우저에 설치 대화상자가 없을 때 앱 받기 (modals/InstallGuideModal.tsx)
   "uniconnect는 스토어를 거치지 않고 이 사이트에서 바로 설치하는 앱이에요.":
     "uniconnect installs straight from this site, with no app store.",
   "공유 버튼을 눌러요. 보이지 않으면 ⋯ 버튼을 먼저 눌러요.": "Tap the Share button. If you can't see it, tap ⋯ first.",
@@ -145,7 +145,7 @@ const en: Record<string, string> = {
   "새 비밀번호로 바꾸고 로그인했어요.": "Password reset. You're logged in.",
   "{name} 계정으로 가입했어요. 환영해요!": "Welcome, {name}! Your account is ready.",
   "본문으로 건너뛰기": "Skip to content",
-  // Activity tiles on 내 정보 (App.tsx)
+  // 내 정보의 활동 타일 (App.tsx)
   "등록한 행사": "Events registered",
   "보낸 협찬 제안": "Proposals sent",
   "확정된 협찬": "Confirmed sponsorships",
@@ -155,7 +155,7 @@ const en: Record<string, string> = {
   "{count}개": "{count}",
   "{count}건": "{count}",
 
-  // Header, menu, footer (layout/)
+  // 헤더, 메뉴, 푸터 (layout/)
   "uniconnect 홈으로": "uniconnect home",
   "주요 메뉴": "Main menu",
   "다가오는 일정 {name}, {date}, {status}": "Next up: {name}, {date}, {status}",
@@ -202,7 +202,7 @@ const en: Record<string, string> = {
   "약관과 방침": "Terms and policies",
   "맨 위로 ↑": "Back to top ↑",
 
-  // Roles and sponsorship kinds (data/roles.ts, data/sponsorTypes.ts)
+  // 역할과 협찬 종류 (data/roles.ts, data/sponsorTypes.ts)
   "협찬 받기": "Get sponsored",
   "학생단체 · 동아리": "Student groups · Clubs",
   "협찬 하기": "Sponsor",
@@ -218,7 +218,7 @@ const en: Record<string, string> = {
   "매장 공간 · 촬영 · 디자인 지원": "Store space, photo or design support",
   "제공할 협찬을 직접 적어 주세요": "Describe what you'll offer",
 
-  // Components
+  // 컴포넌트
   "회원 유형": "Account type",
   "매칭 일치율 {score}%": "Match score {score}%",
   일치율: "Match",
@@ -256,7 +256,7 @@ const en: Record<string, string> = {
   "숫자로 보는 협찬": "Sponsorship in numbers",
   "{name} 상세 정보": "{name} details",
 
-  // Notifications (lib/notifications.ts)
+  // 알림 (lib/notifications.ts)
   "{names} 외 {count}곳": "{names} and {count} more",
   "새 협찬 제안 {count}건": "New proposals ({count})",
   "{names} · 답을 기다리고 있어요": "{names} · Waiting for your answer",
@@ -271,11 +271,11 @@ const en: Record<string, string> = {
   "캠페인과 잘 맞는 단체를 찾았어요.": "We found groups that fit your campaign.",
   "협찬 성과가 집계됐어요": "Sponsorship results are in",
 
-  // Image upload (lib/image.ts)
+  // 이미지 업로드 (lib/image.ts)
   "PNG, JPG, WebP 이미지를 골라 주세요.": "Please choose a PNG, JPG or WebP image.",
   "이미지가 너무 커요. 더 작은 이미지를 골라 주세요.": "That image is too large. Please choose a smaller one.",
 
-  // Page titles and descriptions (lib/pageMeta.ts)
+  // 페이지 제목과 설명 (lib/pageMeta.ts)
   "행사와 잘 맞는 브랜드를 일치율 순으로 보고, 마음에 드는 브랜드에 협찬을 제안해요.":
     "See the brands that fit your event, best match first, and propose a sponsorship to the ones you like.",
   "브랜드가 보낸 협찬 제안을 수락하거나 거절하고 수락한 협찬의 진행 단계를 날짜별로 봐요.":
@@ -326,7 +326,7 @@ const en: Record<string, string> = {
     "Brands find student groups that fit their campaigns and see proposals and results (ROAS) in one place.",
   "받은 협찬 제안@tile": "Proposals received",
   "성과 리포트@step": "Report",
-  // The account panel under the header's account button (layout/AccountPanel.tsx)
+  // 헤더 계정 버튼 아래의 계정 패널 (layout/AccountPanel.tsx)
   "내 계정": "Account menu",
   "복사하지 못했어요": "Couldn’t copy",
   "미팅 제안": "Meeting proposal",

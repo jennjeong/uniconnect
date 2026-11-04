@@ -7,16 +7,16 @@ import { text } from "../lib/validation.js"
 
 export const errorsRouter = Router()
 
-// A page reports a few errors at most; more from one address is a flood.
+// 페이지 하나가 보내는 오류는 많아야 몇 건이다. 한 주소에서 더 오면 폭주로 본다.
 const reportsPerClient = createRateLimit({
   limit: 30,
   windowMs: 10 * 60 * 1000,
   message: "오류 보고가 너무 많아요. 잠시 후 다시 시도해 주세요.",
 })
 
-// An error a visitor's browser caught and the page didn't (lib/errorReports.ts
-// on the frontend): its message, where in the scripts, and the page's path.
-// Anyone may send one, as visitors meet errors too.
+// 방문자의 브라우저가 잡았지만 페이지는 처리하지 못한 오류다(프론트엔드의
+// lib/errorReports.ts). 메시지와 스크립트의 위치, 페이지 경로를 받는다.
+// 방문자도 오류를 만나므로 누구든 보낼 수 있다.
 errorsRouter.post("/", async (req, res) => {
   await reportsPerClient.take(clientKey(req))
   const message = text(req.body?.message)

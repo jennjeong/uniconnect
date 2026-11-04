@@ -15,8 +15,8 @@ import { regions } from "../data/universities"
 import { brandOffers } from "../data/profile"
 import { en } from "./en"
 
-// Values the screens show through t(value), from lists rather than written
-// in the code, each with its English.
+// 코드에 쓰이지 않고 목록에서 가져와 화면이 t(value)로 보여주는 값, 각각의
+// 영어와 함께.
 describe("English for listed values", () => {
   test("roles, menu pages, account types, kinds and statuses", () => {
     const values = [
@@ -28,7 +28,7 @@ describe("English for listed values", () => {
       ...valueTypes,
       ...Object.values(metricInfo).map((info) => info.label),
       ...Object.values(methodInfo).flatMap((info) => [info.label, info.detail]),
-      // What the venue's records say (backend lib/measurements.ts recordMetric).
+      // 현장의 기록이 말하는 것 (backend lib/measurements.ts의 recordMetric).
       "샘플링 · 시음",
       ...inquiryCategories,
       ...reportReasons,
@@ -45,7 +45,7 @@ describe("English for listed values", () => {
       "매칭 중",
       "집행 예정",
       "측정 완료",
-      // Where an event's measurement stands (lib/measurements.ts).
+      // 행사 측정의 상태 (lib/measurements.ts).
       "진행 전",
       "측정 중",
       "진행 완료",
@@ -54,7 +54,7 @@ describe("English for listed values", () => {
       "거절",
       "취소됨",
       "마감",
-      // The parts of a match the detail page shows as bars (matchScore.ts).
+      // 상세 페이지가 막대로 보여주는 매칭의 항목 (matchScore.ts).
       "업종 궁합",
       "관심사",
       "협찬 경험",

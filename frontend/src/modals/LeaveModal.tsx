@@ -6,8 +6,8 @@ import { PasswordField } from "../components/PasswordField"
 import { t } from "../i18n"
 import type { Account } from "../types"
 
-// Leaving uniconnect from 내 정보: what goes with the account, then the
-// password again and a tick that says so, since nothing can be brought back.
+// 내 정보에서 uniconnect를 떠난다. 계정과 함께 사라지는 것을 보여 준 뒤
+// 비밀번호를 다시 받고, 되돌릴 수 없으므로 이를 확인하는 체크를 받는다.
 export function LeaveModal({
   account,
   onClose,

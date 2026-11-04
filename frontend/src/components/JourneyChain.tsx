@@ -17,10 +17,9 @@ const pad = (value: number) => String(value).padStart(2, "0")
 
 const delay = (seconds: number) => ({ "--reveal-delay": `${seconds}s` }) as CSSProperties
 
-// Stride's layered pinned reveal from getlayers.ai: a chrome chain turning
-// over the deep blue mesh holds the screen, falling into place and spinning
-// with the scroll, while the sponsorship's steps scroll up over it on
-// white — the step under way in deep blue.
+// getlayers.ai의 Stride가 쓰는 겹친 고정 연출. 짙은 파랑 메시 위에서 크롬
+// 체인이 돌며 화면을 붙잡고, 스크롤에 맞춰 제자리로 떨어지며 회전한다. 그 위로
+// 협찬의 단계들이 흰 바탕으로 올라오고, 진행 중인 단계는 짙은 파랑으로 보인다.
 export function JourneyChain({
   intro,
   heading,
@@ -30,16 +29,15 @@ export function JourneyChain({
   onOpenSchedule,
   tour = false,
 }: {
-  // The paragraph at the bottom of the chain panel.
+  // 체인 패널 맨 아래의 문단.
   intro: string
   heading: string
   steps: JourneyStep[]
-  // Index of the step under way.
+  // 진행 중인 단계의 인덱스.
   current: number
   scheduleLabel: string
   onOpenSchedule: () => void
-  // An example dashboard for visitors: the glow and the line follow the
-  // pressed step, to show the flow.
+  // 방문자용 예시 대시보드. 누른 단계를 따라 빛과 선이 움직여 흐름을 보여 준다.
   tour?: boolean
 }) {
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -86,24 +84,23 @@ const phase = (index: number, current: number) =>
 
 const phaseLabel = { done: t("지난 단계"), current: t("지금 단계"), next: t("다음 단계") }
 
-// The steps as a stepper: numbered dots on one line, filled in deep blue up
-// to the step under way, whose dot glows with a turning gradient (getlayers'
-// Interference blues) while a light runs along the line. A press on a dot
-// shows that step's details below; the current one shows first. In the
-// example dashboards (`tour`) the glow and the line follow the pressed dot
-// instead: the line runs on from the last pick to the new one like a
-// loading bar, each dot it passes turning deep blue as the line reaches it
-// (or back to silver as it pulls away).
+// 단계를 스테퍼로 보여 준다. 번호가 붙은 점이 한 줄로 늘어서고, 진행 중인
+// 단계까지 짙은 파랑으로 채워진다. 그 단계의 점은 돌아가는
+// 그라디언트(getlayers의 Interference 파랑)로 빛나고, 선을 따라 빛이 달린다.
+// 점을 누르면 그 단계의 세부 내용이 아래에 나타나며, 처음에는 현재 단계가
+// 보인다. 예시 대시보드(`tour`)에서는 대신 누른 점을 따라 빛과 선이 움직인다.
+// 선은 마지막으로 고른 점에서 새로 고른 점까지 로딩 바처럼 이어지고, 선이 닿은
+// 점은 짙은 파랑이 되며 (선이 멀어지면 다시 은색이 된다).
 function Stepper({ steps, current, tour }: { steps: JourneyStep[]; current: number; tour: boolean }) {
-  // The step whose details show: the current one until a dot is pressed
-  // (the current step can move once the account's data arrives).
+  // 세부 내용을 보여 줄 단계. 점을 누르기 전까지는 현재 단계다 (계정 데이터가
+  // 도착하면 현재 단계가 바뀔 수 있다).
   const [picked, setPicked] = useState<number | null>(null)
-  // The last move from one pick to the next, numbered so that the parity of
-  // `run` swaps the animations' names and each move plays them again.
+  // 한 선택에서 다음 선택으로의 마지막 이동. `run`의 홀짝에 따라 애니메이션
+  // 이름이 바뀌도록 번호를 매겨, 이동할 때마다 애니메이션이 다시 재생된다.
   const [move, setMove] = useState<{ from: number; run: number } | null>(null)
   const last = steps.length - 1
   const open = Math.min(picked ?? current, last)
-  // The step the glow and the line reach.
+  // 빛과 선이 닿을 단계.
   const lit = tour ? open : Math.min(current, last)
   const from = tour && move ? Math.min(move.from, last) : lit
   const span = Math.abs(lit - from)
@@ -116,7 +113,8 @@ function Stepper({ steps, current, tour }: { steps: JourneyStep[]; current: numb
   } as CSSProperties
   const run = move && span > 0 ? (move.run % 2 ? " run-a" : " run-b") : ""
 
-  // A dot the moving line passes: when it gets there, as a share of the way.
+  // 움직이는 선이 지나가는 점. 선이 닿는 시점을 전체 길이에 대한 비율로
+  // 나타낸다.
   const passing = (index: number) => {
     if (span === 0) return ""
     if (lit > from && index > from && index <= lit) return " arrive"

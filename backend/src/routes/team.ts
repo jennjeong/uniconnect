@@ -16,13 +16,12 @@ import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { Account } from "../types.js"
 
-// One account run by several people (lib/team.ts): the owner invites
-// co-admins by email from 내 정보, each joins with the emailed code, a
-// password of its own and proof of employment, and the owner can take one
-// off, which ends its logins at once.
+// 여러 사람이 운영하는 계정 하나다(lib/team.ts). 주인이 내 정보에서 이메일로
+// 공동 관리자를 초대하고, 각자 메일로 받은 코드, 자기 비밀번호, 재직 증빙으로
+// 합류한다. 주인은 한 명을 빼서 그 로그인을 바로 끝낼 수 있다.
 export const teamRouter = Router()
 
-// How long an invitation's code lasts, and wrong codes before it goes.
+// 초대 코드가 얼마나 유효한지와, 코드가 사라지기까지 틀릴 수 있는 횟수다.
 const inviteMs = 7 * 24 * 60 * 60 * 1000
 const inviteTries = 5
 
@@ -39,12 +38,12 @@ const joinFailures = createRateLimit({
 
 const codeHash = (email: string, code: string) => createHash("sha256").update(`${email} ${code.trim()}`).digest("hex")
 
-// Those who joined and wait for the operators to check their document.
+// 합류해서 운영자가 서류를 확인하기를 기다리는 사람들이다.
 const waitingFor = (account: Account) =>
   applicationsOf(getDatabase()).filter((application) => application.accountId === account.id)
 
-// The team as its people see it: the owner, the co-admins, the invitations
-// still open and those waiting for the operators, never a password or code.
+// 사람들에게 보이는 팀의 모습이다. 주인, 공동 관리자, 아직 열려 있는 초대,
+// 운영자를 기다리는 사람을 담고 비밀번호나 코드는 담지 않는다.
 function teamView(account: Account, memberId: string | undefined) {
   return {
     owner: { name: account.contact?.name ?? account.name, email: account.email },
@@ -62,9 +61,9 @@ teamRouter.get("/", (req, res) => {
   res.json({ team: teamView(account, req.memberId) })
 })
 
-// The owner invites someone by email, five people at most with the
-// invitations open; the code goes by email (and, in development, back as
-// devCode like sign-up codes). Inviting the same address again sends a new code.
+// 주인이 이메일로 사람을 초대한다. 열린 초대와 합쳐 최대 다섯 명이며, 코드는
+// 메일로 간다(개발 중에는 가입 코드처럼 devCode로 돌려준다). 같은 주소를 다시
+// 초대하면 새 코드를 보낸다.
 teamRouter.post("/invites", async (req, res) => {
   const account = requireOwner(req, requireAccount(req))
   const database = getDatabase()
@@ -118,7 +117,7 @@ teamRouter.delete("/invites/:id", async (req, res) => {
   res.json({ team: teamView(account, req.memberId) })
 })
 
-// Taking a co-admin off the team ends its logins at once.
+// 공동 관리자를 팀에서 빼면 그 로그인이 바로 끝난다.
 teamRouter.delete("/members/:id", async (req, res) => {
   const account = requireOwner(req, requireAccount(req))
   const member = account.members?.find((item) => item.id === req.params.id)
@@ -130,18 +129,18 @@ teamRouter.delete("/members/:id", async (req, res) => {
   res.json({ team: teamView(account, req.memberId) })
 })
 
-// The invited person joins with the email, the code, a password of its own
-// and proof of employment, which the operators check before it counts
-// (lib/applications.ts); its first login then sets up two-step login. Wrong
-// codes count per address and email, and five end the invitation.
+// 초대받은 사람이 이메일, 코드, 자기 비밀번호, 재직 증빙으로 합류한다. 재직
+// 증빙은 효력이 생기기 전에 운영자가 확인하며(lib/applications.ts), 첫
+// 로그인에서 2단계 로그인을 설정한다. 틀린 코드는 주소와 이메일마다 세고,
+// 다섯 번이면 초대가 끝난다.
 teamRouter.post("/join", async (req, res) => {
   const email = normalizeEmail(req.body?.email)
   const limitKey = `${clientKey(req)} ${email}`
   await joinFailures.take(limitKey)
   const database = getDatabase()
-  // Every live invitation to this email, as several accounts may invite it;
-  // the code says which one it is, so an earlier invitation from someone
-  // else can't stand in the way.
+  // 이 이메일에 온 살아 있는 초대를 모두 찾는다. 여러 계정이 같은 이메일을
+  // 초대할 수 있기 때문이다. 어느 초대인지는 코드가 말해 주므로, 다른 사람이
+  // 앞서 보낸 초대가 방해하지 않는다.
   const invites = database.accounts.flatMap((item) =>
     (item.memberInvites ?? []).filter((invite) => invite.email === email && invite.expiresAt > Date.now()).map((invite) => ({ account: item, invite })),
   )
@@ -160,7 +159,7 @@ teamRouter.post("/join", async (req, res) => {
   if (account.suspendedAt) throw new HttpError(403, "운영 정책에 따라 이용이 정지된 계정이에요.")
   const password = checkPassword(String(req.body?.password ?? ""))
   const document = parseDocument(req.body?.document, "재직 증명 서류를 올려 주세요.")
-  // Used up before the slow hash, so one code makes one co-admin.
+  // 느린 해시 전에 코드를 소진해, 코드 하나로 공동 관리자 한 명만 만든다.
   account.memberInvites = account.memberInvites!.filter((item) => item !== invite)
   const passwordHash = await hashPassword(password)
   if (emailTaken(database, email)) throw new HttpError(409, "이미 uniconnect에서 쓰는 이메일이에요.")

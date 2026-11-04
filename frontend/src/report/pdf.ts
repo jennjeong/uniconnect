@@ -1,5 +1,5 @@
-// Captures each A4-sized page element as an image and saves them as one PDF.
-// Both libraries load on demand, so they stay out of the main bundle.
+// A4 크기의 페이지 요소를 이미지로 캡처해 하나의 PDF로 저장한다. 두
+// 라이브러리는 필요할 때 불러와서 메인 번들에 들어가지 않는다.
 export async function exportPdf(pages: HTMLElement[], fileName: string) {
   const [{ jsPDF }, { toJpeg }] = await Promise.all([import("jspdf"), import("html-to-image")])
   await document.fonts.ready
@@ -24,11 +24,11 @@ const asDataUrl = (blob: Blob) =>
     reader.readAsDataURL(blob)
   })
 
-// The pages become images, which can only use fonts written into them.
-// Pretendard comes as ninety-odd small files (a range of characters each),
-// and html-to-image would fetch and write in every one; the browser has
-// already loaded just the ones the pages use, so only those go in.
-// Undefined (html-to-image's own way) if none can be read.
+// 페이지는 이미지가 되므로 글꼴이 그 안에 써 넣어진 것만 쓸 수 있다.
+// Pretendard는 작은 파일 아흔 개 남짓(각각 글자 범위 하나)으로 오고,
+// html-to-image는 그 모두를 가져와 써 넣으려 한다. 브라우저가 이미 페이지가
+// 쓰는 것만 불러왔으므로 그것들만 넣는다. 읽을 수 있는 게 없으면
+// undefined(html-to-image 자체 방식).
 export async function loadedFontCSS() {
   const loaded = new Set<string>()
   for (const face of document.fonts) {

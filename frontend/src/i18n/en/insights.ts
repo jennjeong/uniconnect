@@ -1,4 +1,5 @@
-// The detailed report (pages/InsightPage.tsx, report/insightSections.tsx, report/InsightDocument.tsx)
+// 상세 리포트 (pages/InsightPage.tsx, report/insightSections.tsx,
+// report/InsightDocument.tsx)
 const insights: Record<string, string> = {
   "상세 성과 리포트": "Detailed report",
   "협찬 하나의 목표 달성, 다른 행사와의 비교, 비용 효율, 시간대, 평소 대비 효과와 다음 협찬 제안을 한 번에 봐요.": "One sponsorship's goals, comparison with other events, cost efficiency, timing, effect over usual days and next steps in one place.",
@@ -134,7 +135,7 @@ const insights: Record<string, string> = {
   "이번 방문 수로 목표 ROAS를 맞추는 협찬액은 {value} 정도예요. 다음 협찬액을 정할 때 기준으로 삼아 보세요.": "For these visits to meet the ROAS goal, the value would be about {value}. Use it as a guide next time.",
   "매장의 평소 하루 방문객과 쿠폰 기간 하루 방문객을 적으면, 쿠폰 밖까지 포함한 평소 대비 효과를 계산해 드려요.": "Write the store's usual daily visitors and those during the coupon days to see the effect over usual days, beyond the coupons.",
   "연 뒤에는 환불되지 않아요": "No refund once opened",
-  // Plans (components/PlanCard.tsx)
+  // 요금제 (components/PlanCard.tsx)
   "요금제를 불러오고 있어요…": "Loading your plan…",
   "무료": "Free",
   "0원": "₩0",
@@ -189,7 +190,7 @@ const insights: Record<string, string> = {
   "브랜드는 무료로 시작하고, 제안을 더 보내고 리포트와 포트폴리오 분석까지 보려면 캠퍼스 파트너스를 써요.": "Brands start free; Campus Partners sends more proposals and opens reports and the portfolio analysis.",
   "수수료, 상세 리포트, 캠퍼스 파트너스 결제와 영수증이에요.": "Fees, detailed reports, Campus Partners, and their receipts.",
   "파트너스 섭외 요청": "Partner request",
-  // The detailed analysis report's deeper sections
+  // 상세 분석 리포트의 더 깊은 섹션
   "행사 기간": "Event dates",
   "적지 않았어요": "Not given",
   "쿠폰": "Coupon",
@@ -253,7 +254,7 @@ const insights: Record<string, string> = {
   "우리 브랜드 협찬 중 위치와 다음 제안": "Among our sponsorships, and next steps",
   "이번 협찬을 브랜드의 다른 협찬과 견주고 다음 할 일을 정했어요.": "This sponsorship beside the brand's others, and what to do next.",
   "측정 방법과 부록": "Method and appendix",
-  // What each section means (report/insightReading.tsx)
+  // 각 섹션이 뜻하는 것 (report/insightReading.tsx)
   "협찬 가치 {total} 중 현금이 {cash}({share}%)이고 나머지는 현물이에요.": "Of the {total} value, {cash} ({share}%) was cash and the rest in kind.",
   "예상 관객 {audience}명 가운데 {scans}명이 QR로 참여해, 현장에서 브랜드와 직접 닿은 사람은 관객의 {share}%예요.": "Of {audience} expected, {scans} joined by QR: {share}% of the audience met the brand directly at the venue.",
   "현물은 판매가로 환산해 두면 다음 협찬에서도 같은 기준으로 ROAS를 비교할 수 있어요.": "Value in-kind items at their sale price to compare ROAS on the same basis next time.",

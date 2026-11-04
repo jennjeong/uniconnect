@@ -5,13 +5,13 @@ import { splitLines } from "./Lines"
 
 type Tag = "h1" | "h2" | "h3" | "p" | "span"
 
-// Stride's cascade from getlayers.ai: 1.4s in all, the last piece starting
-// at 55% of it, so each piece takes the remaining 45% (easeOutQuart in CSS).
+// getlayers.ai의 Stride 캐스케이드. 전체 1.4초이며 마지막 조각이 55% 지점에서
+// 시작하므로 각 조각은 나머지 45%를 쓴다 (CSS의 easeOutQuart).
 const SPREAD = 0.55
 
 const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches
 
-// Starts once the element scrolls into view (and the intro loader has gone).
+// 요소가 화면에 들어오면(그리고 인트로 로더가 사라지면) 시작한다.
 function useShown() {
   const ref = useRef<HTMLElement>(null)
   const ready = useIntroDone()
@@ -36,15 +36,15 @@ function useShown() {
   return { ref, shown }
 }
 
-// Where piece i of `total` starts, as a share of the whole cascade.
+// 전체 캐스케이드에 대한 비율로 나타낸, `total`개 중 i번째 조각이 시작하는
+// 지점.
 const startOf = (i: number, total: number) => (total > 1 ? (i / (total - 1)) * SPREAD : 0)
 
-// Stride's heading reveal: letters rise 16px out of an 8px blur and fade in
-// one after another across the heading, words never breaking inside. Give
-// `lines` to set the line breaks yourself, and `accent` to color one of
-// them in the point blue. Headings with a digit stay still (Stride's rule),
-// and so does everything with reduced motion. Screen readers get the plain
-// text.
+// Stride의 제목 등장 효과. 글자가 8px 블러에서 16px 올라오며 제목을 따라 차례로
+// 나타난다. 단어 안에서는 줄이 바뀌지 않는다. `lines`를 주면 줄바꿈을 직접
+// 정하고, `accent`를 주면 그중 한 줄을 포인트 파랑으로 칠한다. 숫자가 들어간
+// 제목은 움직이지 않으며 (Stride의 규칙), 동작 줄이기 설정에서는 모두 멈춘다.
+// 스크린 리더는 일반 텍스트를 읽는다.
 export function RevealTitle({
   as = "h1",
   className,
@@ -56,12 +56,12 @@ export function RevealTitle({
   className?: string
   lines?: string[]
   children?: string
-  // Index of the line in the point blue.
+  // 포인트 파랑으로 칠할 줄의 인덱스.
   accent?: number
 }) {
   const { ref, shown } = useShown()
   const Tag = as
-  // A heading breaks where it pauses, after a comma or a full stop.
+  // 제목은 쉬어 가는 곳, 곧 쉼표나 마침표 뒤에서 줄을 바꾼다.
   const rows = lines ?? splitLines(children ?? "")
   const text = rows.join(" ")
   const still = reducedMotion() || /\d/.test(text)
@@ -106,7 +106,7 @@ export function RevealTitle({
   )
 }
 
-// The same cascade word by word, for longer statements.
+// 긴 문장을 위한 단어 단위의 같은 캐스케이드.
 export function RevealWords({
   as = "p",
   className,
@@ -144,8 +144,8 @@ export function RevealWords({
   )
 }
 
-// Stride's About statement: a lead run, a round icon chip, a muted run and a
-// second chip, all in one cascade; the chips grow from 30% as they arrive.
+// Stride의 About 문장. 앞 구절, 둥근 아이콘 칩, 흐린 구절, 두 번째 칩이 하나의
+// 캐스케이드로 이어지고, 칩은 나타나면서 30%에서 커진다.
 export function RevealStatement({
   lead,
   firstChip,
@@ -164,7 +164,7 @@ export function RevealStatement({
   const classes = ["reveal-title", "statement", className, still || shown ? "is-shown" : ""]
     .filter(Boolean)
     .join(" ")
-  // A lead ending in a comma ends its line there, without the comma.
+  // 쉼표로 끝나는 앞 구절은 거기서 줄을 끝내고 쉼표는 뺀다.
   const breaks = /,\s*$/.test(lead)
   const leadText = breaks ? lead.replace(/,\s*$/, "") : lead
   const leadLetters = leadText.replace(/\s/g, "").length
@@ -175,8 +175,7 @@ export function RevealStatement({
       {content}
     </span>
   )
-  // The chip rides on the run's last word, so it never wraps onto a line
-  // of its own.
+  // 칩은 구절의 마지막 단어에 얹혀서 따로 한 줄로 넘어가지 않게 한다.
   const run = (text: string, tone: string, content: ReactNode, chipTone: string) => {
     const words = text.split(" ")
     return words.map((word, w) => (

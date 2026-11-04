@@ -3,7 +3,7 @@ import type { Account, Match } from "../types.js"
 
 export type Point = { lat: number; lng: number }
 
-// Straight-line distance in km between two points (haversine), to 0.1 km.
+// 두 지점 사이의 직선거리(km, haversine), 0.1km 단위.
 export function distanceKm(a: Point, b: Point) {
   const rad = (degrees: number) => (degrees * Math.PI) / 180
   const dLat = rad(b.lat - a.lat)
@@ -12,8 +12,8 @@ export function distanceKm(a: Point, b: Point) {
   return Math.round(6371 * 2 * Math.asin(Math.sqrt(h)) * 10) / 10
 }
 
-// Where `to` is from `from` in metres east and north, flat-earth (close
-// enough for a sketch), to 10 m: the catalog map's dots (CatalogMap.tsx).
+// `from`에서 본 `to`의 위치를 동쪽과 북쪽 미터로, 평면 지구로 계산해
+// (도식에는 충분하다) 10m 단위로 낸다. 카탈로그 지도의 점이다(CatalogMap.tsx).
 export function offsetMetres(from: Point, to: Point) {
   const metresPerDegree = 111_320
   const east = (to.lng - from.lng) * metresPerDegree * Math.cos((from.lat * Math.PI) / 180)
@@ -21,8 +21,8 @@ export function offsetMetres(from: Point, to: Point) {
   return { east: Math.round(east / 10) * 10, north: Math.round(north / 10) * 10 }
 }
 
-// A school's campus: by the email domain it verified with (or a subdomain of
-// it), else by the school's name. Undefined for schools not in the table.
+// 학교의 캠퍼스: 인증한 이메일 도메인(또는 그 하위 도메인)으로 찾고, 없으면
+// 학교 이름으로 찾는다. 표에 없는 학교는 undefined다.
 export function campusOf({ email, school }: { email?: string; school?: string }): Campus | undefined {
   const domain = email?.split("@")[1]?.toLowerCase()
   const byDomain =
@@ -30,9 +30,8 @@ export function campusOf({ email, school }: { email?: string; school?: string })
   return byDomain || campuses.find((campus) => campus.name === school?.trim())
 }
 
-// Where a listing (or an account without one) is: a brand's store, or a
-// student group's campus, by its account's email when it has one, else by
-// the school it lists.
+// 리스팅(또는 리스팅이 없는 계정)의 위치: 브랜드는 매장, 학생 단체는
+// 캠퍼스다. 계정의 이메일이 있으면 그것으로, 없으면 적힌 학교로 찾는다.
 export function placeOf(listing: Pick<Match, "location" | "school"> | undefined, account?: Account): Point | undefined {
   const location = listing?.location
   if (location?.lat !== undefined && location.lng !== undefined) return { lat: location.lat, lng: location.lng }

@@ -1,8 +1,8 @@
 import { useEffect, type RefObject } from "react"
 
-// Closes a panel that hangs from a button in the top bar: on Escape, or on a
-// press anywhere outside the panel and its button (which toggles it itself).
-// Nothing listens while the panel is animating closed.
+// 상단 바의 버튼에 매달린 패널을 닫는다. Escape나 패널과 그 버튼(버튼이 스스로
+// 토글한다) 바깥을 누르면 닫힌다. 패널이 닫히는 애니메이션 중에는 아무것도 듣지
+// 않는다.
 export function useDismiss(
   panelRef: RefObject<HTMLElement | null>,
   toggleRef: RefObject<HTMLElement | null>,

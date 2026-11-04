@@ -10,7 +10,7 @@ import { t } from "../i18n"
 import { dDayLabel, formatDateTime, formatDay } from "../lib/date"
 import type { RequestStatus, SentProposal, SponsorRequest } from "../types"
 
-// Card class for each status.
+// 상태별 카드 클래스.
 const cardState: Record<RequestStatus, string> = {
   "검토 중": "pending",
   수락: "accepted",
@@ -19,7 +19,7 @@ const cardState: Record<RequestStatus, string> = {
   마감: "closed",
 }
 
-// Accepted ones stay under 수락함 once called off, as a record.
+// 취소된 수락 건은 기록으로 수락함에 남는다.
 const inTab = (status: RequestStatus, tab: RequestStatus) => status === tab || (tab === "수락" && status === "취소됨")
 
 const tabs: { status: RequestStatus; label: string; empty: string }[] = [
@@ -38,10 +38,10 @@ function RequestCard({
   request: SponsorRequest
   onAnswer: (request: SponsorRequest, decision: "accept" | "decline") => void
   onOpenAgreement: (id: string) => void
-  // The group's event page, for a proposal about one.
+  // 제안이 행사에 관한 것이면 그 단체의 행사 페이지.
   onOpenEvent?: (eventId: string) => void
 }) {
-  // Declining can't be undone, so it asks once more.
+  // 거절은 되돌릴 수 없으므로 한 번 더 묻는다.
   const [confirming, setConfirming] = useState(false)
 
   return (
@@ -154,8 +154,8 @@ function RequestCard({
   )
 }
 
-// Proposals student groups sent to the brand, to accept or decline, and
-// under 검토 중 the offers it sent that wait for an answer, to take back.
+// 학생단체가 브랜드에 보낸 제안은 수락하거나 거절하고, 검토 중에는 브랜드가
+// 보낸 제안 중 답을 기다리는 것을 거둘 수 있게 보여 준다.
 export function InboxPage({
   requests,
   sent,
@@ -168,7 +168,7 @@ export function InboxPage({
   sent: SentProposal[]
   onAnswer: (request: SponsorRequest, decision: "accept" | "decline") => void
   onWithdraw: (proposal: SentProposal) => void
-  // An accepted proposal's agreement (pages/AgreementPage.tsx).
+  // 수락된 제안의 계약서(pages/AgreementPage.tsx).
   onOpenAgreement: (id: string) => void
   onOpenEvent?: (eventId: string) => void
 }) {

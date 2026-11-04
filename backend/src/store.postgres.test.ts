@@ -8,12 +8,12 @@ import { after, test } from "node:test"
 
 import { PGlite } from "@electric-sql/pglite"
 
-// The data store on Postgres, as on Vercel, with an in-process database
-// standing in for Neon: seeding once, writes that build on the version they
-// read, another copy's writes coming in, hourly copies, photos as rows, and
-// copies starting at once that all make the tables.
+// Vercel처럼 Postgres에 얹은 데이터 저장소다. 프로세스 안의 데이터베이스가
+// Neon을 대신하며, 시드를 한 번만 넣는 것, 읽은 버전을 바탕으로 쓰는 것, 다른
+// 복사본의 쓰기가 들어오는 것, 한 시간마다 하는 복사, 행으로 저장하는 사진,
+// 동시에 시작해 모두 테이블을 만드는 복사본을 검사한다.
 const dataDir = await mkdtemp(path.join(tmpdir(), "uniconnect-pg-"))
-// Where the JSON file would go; with a database it is never written.
+// JSON 파일이 놓일 자리다. 데이터베이스를 쓰면 이 파일에는 쓰지 않는다.
 process.env.DATA_FILE = path.join(dataDir, "db.json")
 
 const db = new PGlite()
@@ -34,7 +34,7 @@ const stored = async () => {
   return { data: JSON.parse(String(row.data)) as Data, version: Number(row.version) }
 }
 
-// Another copy of the API writes behind this one's back.
+// API의 다른 복사본이 이 복사본 몰래 쓴다.
 async function writeAsAnotherCopy(change: (data: { proposals: Record<string, string[]> }) => void) {
   const { data } = await stored()
   change(data)
@@ -46,7 +46,7 @@ test("the first copy seeds the database, and a later one reads it", async () => 
   assert.ok(database.accounts.length > 0)
   assert.equal((await stored()).version, 1)
   assert.equal(existsSync(process.env.DATA_FILE!), false)
-  // A copy starting now finds the data and keeps the version.
+  // 지금 시작한 복사본은 데이터를 찾아 버전을 그대로 둔다.
   await store.loadDatabase()
   assert.equal((await stored()).version, 1)
 })
@@ -72,7 +72,7 @@ test("a save over an older version is undone, the newer data comes in, and savin
   await writeAsAnotherCopy((data) => {
     data.proposals["late"] = ["brewing-lab"]
   })
-  // This copy saves without having looked.
+  // 이 복사본은 읽어 보지 않고 저장한다.
   store.getDatabase().proposals["mine"] = ["glowlab"]
   await assert.rejects(store.saveDatabase(), (error: { status?: number }) => error.status === 503)
   assert.equal(store.getDatabase().proposals["mine"], undefined)
@@ -141,7 +141,7 @@ test("through the API, an agreement photo goes into the database, is served to i
     assert.equal(served.status, 200)
     assert.equal(served.headers.get("content-type"), "image/png")
     assert.deepEqual(Buffer.from(await served.arrayBuffer()), Buffer.from(image.split(",")[1], "base64"))
-    // The data that names it is in the database too.
+    // 그것을 가리키는 데이터도 데이터베이스에 있다.
     assert.ok((await stored()).data.agreements.some((entry) => entry.items.some((each) => each.photos.includes(photo))))
     const removed = await fetch(`${base}/agreements/req-runners/items/${item.id}/photos/${photo}`, { method: "DELETE", headers: auth })
     assert.equal(removed.status, 200)
@@ -151,9 +151,9 @@ test("through the API, an agreement photo goes into the database, is served to i
   }
 })
 
-// Copies of the API starting at once all make the tables. Postgres answers
-// the ones that lose with a duplicate key in its catalog (23505) or an
-// existing table (42P07), though the table is there by then.
+// 동시에 시작한 API 복사본이 모두 테이블을 만든다. Postgres는 지는 쪽에
+// 카탈로그의 중복 키(23505)나 이미 있는 테이블(42P07)로 답하는데, 그때쯤에는
+// 테이블이 이미 있다.
 test("errors for the operators are rows of their own, never written beside the data", async () => {
   const { clearErrorLog, recentErrors, recordError } = await import("./lib/errorLog.js")
   await clearErrorLog()
@@ -180,7 +180,7 @@ test("a copy that loses the race to make the tables still loads the data", async
   useSql(racing)
   try {
     assert.ok((await store.loadDatabase()).accounts.length > 0)
-    // The data, backups, photos, errors and rate limit tables each lost once.
+    // 데이터, 백업, 사진, 오류, 속도 제한 테이블을 각각 한 번씩 잃는다.
     assert.equal(lost.size, 5)
   } finally {
     useSql(sql)
@@ -204,7 +204,7 @@ test("any other error while making the tables still fails the load", async () =>
 
 test("copies of the API share rate limits through the database, and memory counts when it doesn't answer", async () => {
   const { createRateLimit, sharedLimits } = await import("./lib/rateLimit.js")
-  // Two copies of the API each make the same limit, as each loads the module.
+  // API의 두 복사본이 각자 모듈을 불러오므로 같은 제한을 각자 만든다.
   const settings = { limit: 3, windowMs: 60_000, message: "너무 많이 보냈어요." }
   const first = createRateLimit(settings)
   const second = createRateLimit(settings)
@@ -213,18 +213,18 @@ test("copies of the API share rate limits through the database, and memory count
   await first.take("1.2.3.4")
   await assert.rejects(second.take("1.2.3.4"), { status: 429 })
   await assert.rejects(first.check("1.2.3.4"), { status: 429 })
-  // Another key and another limit count apart.
+  // 다른 키와 다른 제한은 따로 센다.
   await second.take("5.6.7.8")
   await createRateLimit({ ...settings, message: "다른 한도예요." }).take("1.2.3.4")
-  // Keys are kept as hashes only, never the address or email.
+  // 키는 해시로만 보관하며 주소나 이메일은 두지 않는다.
   const rows = await sql("select key from uniconnect_limits")
   assert.ok(rows.length >= 3)
   assert.ok(rows.every((row) => /^[0-9a-f]{64}$/.test(String(row.key))))
-  // A reset from either copy clears it for both.
+  // 어느 복사본에서 초기화하든 둘 다 초기화된다.
   await first.reset("1.2.3.4")
   await second.check("1.2.3.4")
 
-  // A database that doesn't answer leaves the count to memory, and requests go on.
+  // 응답하지 않는 데이터베이스는 세기를 메모리에 맡기고 요청은 계속 처리한다.
   const saved = sharedLimits.waitMs
   sharedLimits.waitMs = 50
   useSql(() => new Promise(() => undefined))

@@ -10,7 +10,7 @@ import type { Account, Database, ShopInvite } from "../types.js"
 
 export const invitesRouter = Router()
 
-// The most shops one student group may have invited (the 409 says 100).
+// 학생단체 하나가 초대할 수 있는 매장의 최대 수다(409 응답에는 100이라고 나온다).
 export const inviteLimit = 100
 
 const isDemo = (database: Database, account: Account) => Object.values(database.demoAccountIds).includes(account.id)
@@ -28,8 +28,8 @@ function findInvite(database: Database, code: unknown) {
   return invite
 }
 
-// What the inviting group shows of itself on the invitation: its listing
-// with its next event, or only its name and school before it has one.
+// 초대하는 단체가 초대장에 보여 주는 자기 정보다. 리스팅과 다음 행사를
+// 보여 주고, 리스팅이 아직 없으면 이름과 학교만 보여 준다.
 function inviterOf(database: Database, invite: ShopInvite) {
   const account = database.accounts.find((item) => item.id === invite.accountId)
   if (!account) return undefined
@@ -39,8 +39,8 @@ function inviterOf(database: Database, invite: ShopInvite) {
   return shown
 }
 
-// An invitation as its page shows it: whose it is and whether the shop has
-// joined (linked to the brand looking, or to another).
+// 초대 페이지가 보여 주는 모습의 초대장이다. 누구의 초대인지, 매장이
+// 합류했는지(지금 보는 브랜드와 연결됐는지, 다른 브랜드와 연결됐는지)를 담는다.
 function inviteView(database: Database, invite: ShopInvite, req: Request) {
   const holder = database.brands.find((brand) => brand.kakaoPlaceId === invite.placeId)
   const mine = req.account?.role === "브랜드" && holder !== undefined && holder.id === req.account.brandId
@@ -55,13 +55,13 @@ function inviteView(database: Database, invite: ShopInvite, req: Request) {
   }
 }
 
-// A student group invites a shop from 가까운 순 by its Kakao place ID; asked
-// again for the same shop, it gets the same invitation back.
+// 학생단체가 가까운 순에서 Kakao 장소 ID로 매장을 초대한다. 같은 매장을 다시
+// 초대하면 같은 초대장을 돌려준다.
 invitesRouter.post("/", async (req, res) => {
   const account = requireAccount(req)
   if (account.role !== "학생단체") throw new HttpError(403, "학생단체 계정으로 가게를 초대할 수 있어요.")
   const database = getDatabase()
-  // An invitation reaches a real shop's owner, so it comes from a member.
+  // 초대는 실제 매장 주인에게 가므로 회원이 보낸 것이어야 한다.
   if (isDemo(database, account)) {
     throw new HttpError(403, "데모 계정으로는 실제 가게를 초대할 수 없어요. 가입하면 우리 단체 이름으로 초대할 수 있어요.")
   }
@@ -86,16 +86,16 @@ invitesRouter.post("/", async (req, res) => {
   res.status(201).json({ invite })
 })
 
-// The invitation page, open to anyone with the link: the shop owner reads it
-// before signing up.
+// 링크를 가진 누구나 여는 초대 페이지다. 매장 주인이 가입하기 전에
+// 읽어 본다.
 invitesRouter.get("/:code", (req, res) => {
   const database = getDatabase()
   res.json(inviteView(database, findInvite(database, req.params.code), req))
 })
 
-// A brand account takes the invitation: its listing (made now if it has
-// none yet) becomes that shop, so groups nearby see it joined and can send
-// proposals. Every group that invited the shop hears about it.
+// 브랜드 계정이 초대를 받는다. 그 계정의 리스팅(아직 없으면 지금 만든다)이
+// 그 매장이 되어, 근처 단체가 합류를 보고 제안을 보낼 수 있다. 그 매장을
+// 초대한 모든 단체가 합류 소식을 받는다.
 invitesRouter.post("/:code/accept", async (req, res) => {
   const account = requireAccount(req)
   if (account.role !== "브랜드") throw new HttpError(403, "브랜드 계정으로 가게를 연결할 수 있어요.")

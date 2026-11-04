@@ -5,23 +5,22 @@ import { HttpError } from "./errors.js"
 import { databaseSql, ensureTables, type Sql } from "./sql.js"
 import type { Account, Database } from "../types.js"
 
-// Counts requests per key (an IP, or an IP and an email) in fixed windows.
-// With a database (DATABASE_URL) the counts live in its uniconnect_limits
-// table, so every copy of the API on Vercel shares them; a key is kept
-// there only as a hash, as it holds addresses and emails. Without one, or
-// when it doesn't answer within a moment, they are counted in this copy's
-// memory, as before.
+// 키(IP, 또는 IP와 이메일)별 요청을 고정 윈도로 센다. 데이터베이스
+// (DATABASE_URL)가 있으면 uniconnect_limits 테이블에 세어 Vercel의 모든
+// API 복사본이 공유한다. 키에 주소와 이메일이 들어 있으므로 거기에는
+// 해시로만 둔다. 데이터베이스가 없거나 잠시 안에 답하지 않으면 예전처럼 이
+// 복사본의 메모리에서 센다.
 type Bucket = { count: number; resetAt: number }
 
 const limiters = new Set<Map<string, Bucket>>()
 
-// Every limit by its name in the table, for the operators' status.
+// 운영자 상태 화면용으로 이름별로 모은 모든 한도.
 const registry = new Map<string, { limit: number; windowMs: number; message: string; buckets: Map<string, Bucket> }>()
 
-// How long a count may wait for the database before memory counts it.
+// 메모리로 넘어가기 전에 데이터베이스를 기다릴 수 있는 시간.
 export const sharedLimits = { waitMs: 1500 }
 
-// Rows of windows that ended are swept now and then, by one hit in this many.
+// 끝난 윈도의 행은 이만큼의 요청 중 한 번꼴로 가끔 쓸어 낸다.
 const sweepEvery = 200
 
 function withinWait<T>(work: Promise<T>) {
@@ -50,7 +49,7 @@ export function createRateLimit({
 }) {
   const buckets = new Map<string, Bucket>()
   limiters.add(buckets)
-  // The limit's name in the table: what tells it from the others.
+  // 테이블에서의 한도 이름. 다른 한도와 구분하는 값이다.
   const name = createHash("sha256").update(`${limit} ${windowMs} ${message}`).digest("hex").slice(0, 16)
   registry.set(name, { limit, windowMs, message, buckets })
   const keyHash = (key: string) => createHash("sha256").update(key).digest("hex")
@@ -76,7 +75,7 @@ export function createRateLimit({
     reset: (key: string) => void buckets.delete(key),
   }
 
-  // The count in the shared table, or in memory without one.
+  // 공유 테이블의 카운트. 테이블이 없으면 메모리의 카운트.
   const shared = async <T>(run: (sql: Sql) => Promise<T>, local: () => T) => {
     const sql = databaseSql()
     if (!sql) return local()
@@ -104,8 +103,7 @@ export function createRateLimit({
       () => memory.count(key),
     )
 
-  // Counts one more in the key's window (a new one once it ended), and
-  // answers the count.
+  // 키의 윈도에서 하나 더 센다(끝났으면 새 윈도). 센 값을 답한다.
   const hit = (key: string) =>
     shared(
       async (sql) => {
@@ -124,7 +122,7 @@ export function createRateLimit({
       () => memory.hit(key),
     )
 
-  // Throws 429 once the key has used up its window.
+  // 키가 윈도를 다 쓰면 429를 던진다.
   const check = async (key: string) => {
     if ((await count(key)) >= limit) throw new HttpError(429, message)
   }
@@ -134,9 +132,9 @@ export function createRateLimit({
     hit: async (key: string) => {
       await hit(key)
     },
-    // For limits on every request: counts this one, and throws 429 when it
-    // goes past the limit. One step, so requests sent at once can't all
-    // pass a check before any is counted.
+    // 모든 요청에 거는 한도용: 이 요청을 세고 한도를 넘으면 429를 던진다.
+    // 한 단계로 처리해, 동시에 온 요청이 하나도 세기 전에 모두 검사를
+    // 통과하지 못하게 한다.
     take: async (key: string) => {
       if ((await hit(key)) > limit) throw new HttpError(429, message)
     },
@@ -150,9 +148,8 @@ export function createRateLimit({
   }
 }
 
-// How many keys each limit is counting now and how many it is turning
-// away, never the keys themselves: from the shared table with a database,
-// else this copy's memory.
+// 한도마다 지금 세는 키 수와 막은 수. 키 자체는 담지 않는다. 데이터베이스가
+// 있으면 공유 테이블에서, 없으면 이 복사본의 메모리에서 센다.
 export async function limitStatus() {
   const now = Date.now()
   const sql = databaseSql()
@@ -182,19 +179,18 @@ export async function limitStatus() {
   })
 }
 
-// The caller's address. Behind a proxy it is only right once TRUST_PROXY
-// says how far to trust X-Forwarded-For (see config.ts).
+// 호출한 쪽 주소. 프록시 뒤에서는 TRUST_PROXY가 X-Forwarded-For를 어디까지
+// 믿을지 정해야만 맞는다(config.ts 참고).
 export const clientKey = (req: Request) => req.ip ?? req.socket.remoteAddress ?? "unknown"
 
-// What an account sends is counted by the account, from any address. The
-// shared demo accounts are counted per address too, so one visitor can't
-// use up everyone's.
+// 계정이 보내는 요청은 주소와 상관없이 계정별로 센다. 공용 데모 계정은
+// 주소별로도 세어서 한 방문자가 모두의 몫을 다 쓰지 못하게 한다.
 export function senderKey(req: Request, database: Database, account: Account) {
   const demo = Object.values(database.demoAccountIds).includes(account.id)
   return demo ? `${account.id} ${clientKey(req)}` : account.id
 }
 
-// Tests start each case with fresh counts, in memory and in the table.
+// 테스트는 메모리와 테이블 모두 새 카운트로 각 케이스를 시작한다.
 export async function clearRateLimits() {
   for (const buckets of limiters) buckets.clear()
   const sql = databaseSql()

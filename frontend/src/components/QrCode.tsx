@@ -1,8 +1,8 @@
 import qrcode from "qrcode-generator"
 import { useMemo } from "react"
 
-// Scannable QR code, drawn as one SVG path of its dark modules in the
-// deepest point blue, still far darker than scanners need (13:1 on white).
+// 스캔할 수 있는 QR 코드. 어두운 모듈을 SVG 경로 하나로 그리며, 색은 가장 짙은
+// 포인트 파랑이다. 스캐너에 필요한 것보다 훨씬 어둡다 (흰색 대비 13:1).
 export function QrCode({ value, label }: { value: string; label: string }) {
   const { size, path } = useMemo(() => {
     const qr = qrcode(0, "M")

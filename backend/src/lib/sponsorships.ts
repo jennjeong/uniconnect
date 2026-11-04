@@ -3,10 +3,9 @@ import { estimatedSales, shareValue, syncSponsors } from "./measurements.js"
 import { venueCountsOf } from "./methods.js"
 import type { Database, Sponsorship } from "../types.js"
 
-// An accepted proposal becomes one of the brand's sponsorships: the event
-// it is about, linked by id when it is a student event, so its counts,
-// value and goal come from that event's measurement, where it gets its own
-// coupon and counts. Once only.
+// 수락된 제안은 브랜드의 협찬 하나가 된다. 제안이 다루는 행사가 학생 행사면
+// id로 이어져, 집계, 가치, 목표가 그 행사의 측정에서 나오고 거기서 자기
+// 쿠폰과 집계를 갖는다. 한 번만 만든다.
 export function recordSponsorship(
   database: Database,
   brandAccountId: string,
@@ -19,11 +18,10 @@ export function recordSponsorship(
   if (sponsorship.eventId && measurement) syncSponsors(database, measurement)
 }
 
-// A sponsorship of a measured event with its own share of the event: the
-// coupons and visits of its coupon, their estimated sales, what the venue
-// confirmed by its methods and the value it gave, with the ROAS goal the
-// group set. (Without a share, which the
-// measurement gives every sponsor when it loads, the event's own figures.)
+// 측정된 행사의 협찬은 행사에서 자기 몫을 갖는다: 그 쿠폰의 쿠폰 수와 방문
+// 수, 추정 매출, 행사장이 방식별로 확인한 것, 낸 가치, 단체가 정한 ROAS
+// 목표. (측정이 로드될 때 모든 협찬사에게 몫을 주는데, 몫이 없으면 행사
+// 자체의 수치를 쓴다.)
 function withLiveFigures(database: Database, sponsorship: Sponsorship): Sponsorship {
   const measurement = database.measurements.find((item) => item.eventId === sponsorship.eventId)
   if (!measurement) return sponsorship
@@ -51,8 +49,7 @@ function withLiveFigures(database: Database, sponsorship: Sponsorship): Sponsors
   }
 }
 
-// The brand's sponsorships whose day has come, newest first, measured ones
-// with their live figures.
+// 날이 된 브랜드의 협찬. 새것부터 두고 측정된 것은 실시간 수치를 붙인다.
 export function finishedSponsorships(database: Database, brandAccountId: string) {
   const today = todayInKorea()
   return (database.sponsorships[brandAccountId] ?? [])
@@ -61,9 +58,8 @@ export function finishedSponsorships(database: Database, brandAccountId: string)
     .sort((a, b) => b.date.localeCompare(a.date))
 }
 
-// Before the measurements of these events go (their group is leaving), the
-// sponsorships of them keep their figures as they stand, so the sponsors'
-// history stays.
+// 이 행사들의 측정이 사라지기 전(그 단체가 탈퇴한다), 거기에 딸린 협찬은
+// 그때의 수치를 그대로 지녀 협찬사의 이력이 남는다.
 export function freezeSponsorships(database: Database, eventIds: Set<string>) {
   for (const [brandAccountId, list] of Object.entries(database.sponsorships)) {
     database.sponsorships[brandAccountId] = list.map((sponsorship) => {
@@ -74,8 +70,8 @@ export function freezeSponsorships(database: Database, eventIds: Set<string>) {
   }
 }
 
-// Whether a sponsor depends on this event: an accepted proposal about it or
-// a sponsorship recorded for it.
+// 협찬사가 이 행사에 기대고 있는지: 그 행사에 대한 수락된 제안이나 기록된
+// 협찬이 있다.
 export function isSponsored(database: Database, eventId: string) {
   return (
     database.requests.some((request) => request.eventId === eventId && request.status === "수락") ||

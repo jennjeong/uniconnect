@@ -7,15 +7,14 @@ import { t } from "../i18n"
 import { addDaysIso, formatPeriod, todayIso } from "../lib/date"
 import type { BoardPost, EventItem, PostDraft, Role } from "../types"
 
-// As the server takes it (backend routes/board.ts).
+// 서버가 받는 형식(backend routes/board.ts).
 const maxTitle = 60
 const maxBody = 1000
 const maxDeadlineDays = 60
 
-// Writes a post for the recruitment board, or edits one: a title and what is
-// sought, the kinds of sponsorship, a deadline within 60 days, and for a
-// student group the event it looks for sponsors for. A problem from the
-// server stays on the form.
+// 모집 게시판의 글을 쓰거나 고친다. 제목과 찾는 것, 협찬의 종류, 60일 안의
+// 마감일, 학생단체라면 스폰서를 찾는 행사를 적는다. 서버가 알려 준 문제는 폼에
+// 남는다.
 export function PostFormModal({
   role,
   post,
@@ -25,13 +24,13 @@ export function PostFormModal({
   onCreateEvent,
 }: {
   role: Role
-  // The post being edited; a new one when absent.
+  // 고치는 글. 없으면 새 글.
   post?: BoardPost
-  // The account's events or campaigns, for a group's to pick from.
+  // 계정의 행사나 캠페인. 단체가 그중에서 고른다.
   events: EventItem[]
   onClose: () => void
   onSave: (draft: PostDraft) => Promise<void>
-  // Registers an event first, when a group has none coming.
+  // 단체에 다가올 행사가 없으면 먼저 행사를 등록한다.
   onCreateEvent: () => void
 }) {
   const students = role === "학생단체"

@@ -4,25 +4,24 @@ import { HttpError } from "./errors.js"
 import { isDemoAccount } from "./reviews.js"
 import type { Agreement, Database } from "../types.js"
 
-// 성사 수수료 (the business plan's 표 9): when a sponsorship is confirmed,
-// the brand pays 15% of its value, cash and in-kind together, plus VAT
-// (lib/billing.ts vatOf); the student group pays nothing. The brand's confirmation of the
-// e-contract is that payment (sold in lib/feeSales.ts).
+// 성사 수수료(사업 계획의 표 9): 협찬이 확정되면 브랜드가 그 가치(현금과
+// 현물 합계)의 15%에 부가세(lib/billing.ts vatOf)를 더해 낸다. 학생 단체는
+// 내지 않는다. 브랜드가 전자계약서를 확인하는 것이 이 결제다(판매는
+// lib/feeSales.ts).
 
-// Proposals accepted before fees began (a Korean date) owe none, nor does a
-// brand without an account (an example listing); the shared demo brand owes
-// one only in test mode, to show it (lib/billing.ts testMode), whatever
-// the date.
-// The browser tests move it with FEES_SINCE, the server tests here.
+// 수수료가 시작되기 전(한국 날짜)에 수락된 제안과 계정이 없는 브랜드(예시
+// 리스팅)는 내지 않는다. 공용 데모 브랜드는 보여 주기 위해 테스트 모드
+// (lib/billing.ts testMode)에서만 내며 날짜는 상관없다. 브라우저 테스트는
+// FEES_SINCE로, 서버 테스트는 여기서 옮긴다.
 export const feeStart = { since: process.env.FEES_SINCE ?? "2026-11-01" }
 
 const maxValue = 100_000_000
-// The least a sponsorship may be worth, so a token value can't round the
-// fee away.
+// 협찬이 가질 수 있는 가장 작은 값. 형식적인 값이 수수료를 반올림으로
+// 없애지 못하게 한다.
 export const minValue = 10_000
 
-// A value as written: whole won from 0, cash and in-kind, together at least
-// minValue.
+// 적힌 그대로의 값: 0 이상의 정수 원, 현금과 현물을 합쳐 최소
+// minValue 이상.
 export function parseValue(input: unknown) {
   const raw = (input ?? {}) as { cash?: unknown; inKind?: unknown }
   const won = (value: unknown) => {
@@ -38,12 +37,12 @@ export function parseValue(input: unknown) {
   return value
 }
 
-// The fee for a value, rounded up to 10 won, so a value always owes one.
+// 값에 대한 수수료. 10원 단위로 올림하므로 값이 있으면 늘 수수료가 있다.
 export const feeOf = (value: { cash: number; inKind: number }) =>
   Math.ceil(((value.cash + value.inKind) * prices.feeRate) / 10) * 10
 
-// Where an agreement's fee stands: owed at all, its amount for the value
-// written, what the brand paid for it and what is still due, all before VAT.
+// 계약서의 수수료 상태: 내야 하는지, 적힌 값에 대한 금액, 브랜드가 낸
+// 것과 아직 낼 것. 모두 부가세 전이다.
 export function feeState(database: Database, agreement: Agreement, proposal: AcceptedProposal) {
   const brand = proposal.brand.account
   const exempt = !brand

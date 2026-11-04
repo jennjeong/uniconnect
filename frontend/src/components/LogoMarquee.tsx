@@ -1,15 +1,15 @@
 import { useEffect, useRef, type ReactNode } from "react"
 
-// Each row repeats its set this many times, so it never runs out.
+// 각 행은 세트를 이 횟수만큼 반복해 끊기지 않게 한다.
 const COPIES = 6
 const ONE_SET = 100 / COPIES
 
 export type MarqueeItem = { key: string; mark: ReactNode; label: string }
 
-// Stride's logo marquee from getlayers.ai: two rows that move with the
-// scroll, not on their own — the first to the left and the second to the
-// right, each eased toward where the scroll says it should be. Here the
-// rows carry the two sides of a sponsorship, passing each other.
+// getlayers.ai의 Stride가 쓰는 로고 마퀴. 두 행이 스스로 흐르지 않고 스크롤에
+// 맞춰 움직인다. 첫 행은 왼쪽으로, 둘째 행은 오른쪽으로 가며, 각각 스크롤이
+// 가리키는 위치로 완만하게 따라간다. 여기서는 두 행이 협찬의 양쪽을 나타내며
+// 서로 스쳐 지나간다.
 export function LogoMarquee({ rows, label }: { rows: [MarqueeItem[], MarqueeItem[]]; label: string }) {
   const tracks = useRef<(HTMLDivElement | null)[]>([])
 

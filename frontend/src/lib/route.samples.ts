@@ -1,7 +1,7 @@
 import type { View } from "./route"
 
-// One view of every kind, for the address tests (route.test.ts and
-// appPaths.sync.test.ts).
+// 주소 테스트(route.test.ts와 appPaths.sync.test.ts)를 위해 모든 종류의 view를
+// 하나씩 담았다.
 export const sampleViews: View[] = [
   { page: "대시보드", home: true },
   { page: "대시보드" },

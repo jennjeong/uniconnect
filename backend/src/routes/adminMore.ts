@@ -33,9 +33,9 @@ import { getDatabase, saveDatabase, upgradeDatabase } from "../store.js"
 import type { Account, Database, FaqEntry } from "../types.js"
 import { requireAdmin } from "./admin.js"
 
-// More of the operators' console (pages/AdminMore.tsx): member tools,
-// sponsorship operations, content, analysis and the system. Every route
-// needs the ADMIN_TOKEN, and every change goes in the operators' log.
+// 운영자 콘솔의 나머지(pages/AdminMore.tsx)다. 회원 도구, 협찬 운영, 콘텐츠,
+// 분석, 시스템을 다룬다. 모든 경로에 ADMIN_TOKEN이 필요하고, 모든 변경이
+// 운영자 로그에 남는다.
 export const adminMoreRouter = Router()
 
 const accountFor = (database: Database, id: string) => {
@@ -48,8 +48,8 @@ const endSessions = (database: Database, account: Account) => {
   database.sessions = database.sessions.filter((session) => session.accountId !== account.id)
 }
 
-// The sign-ups waiting for a decision, oldest first (lib/applications.ts),
-// never a password.
+// 결정을 기다리는 가입을 오래된 것부터 보여 준다(lib/applications.ts).
+// 비밀번호는 절대 담지 않는다.
 adminMoreRouter.get("/applications", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
@@ -81,16 +81,16 @@ adminMoreRouter.get("/applications/:id/document", async (req, res) => {
   res.type(photoType(document.file)).set("Cache-Control", "no-store").send(bytes)
 })
 
-// Sends the answer; a mail that fails never undoes the decision.
+// 답을 보낸다. 메일이 실패해도 결정을 되돌리지 않는다.
 async function tellApplicant(email: string, subject: string, line: string) {
   try {
     await sendMail(email, subject, [line, ...(config.siteUrl ? [config.siteUrl] : [])].join("\n"))
   } catch {
-    // The applicant finds out at its next login.
+    // 신청한 사람은 다음 로그인 때 알게 된다.
   }
 }
 
-// Approving makes the account or co-admin real; the document goes either way.
+// 승인하면 계정이나 공동 관리자가 실제로 만들어지고, 서류는 어느 쪽이든 지운다.
 adminMoreRouter.post("/applications/:id/approve", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
@@ -121,7 +121,7 @@ adminMoreRouter.post("/applications/:id/approve", async (req, res) => {
   res.json({ ok: true })
 })
 
-// Turning one down takes it all away, with the reason in the mail.
+// 거절하면 모두 없애고 이유를 메일에 담는다.
 adminMoreRouter.post("/applications/:id/reject", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
@@ -136,7 +136,7 @@ adminMoreRouter.post("/applications/:id/reject", async (req, res) => {
   res.json({ ok: true })
 })
 
-// Logs a member out everywhere without stopping it.
+// 회원을 정지하지 않고 모든 곳에서 로그아웃시킨다.
 adminMoreRouter.post("/accounts/:id/logout", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
@@ -160,8 +160,8 @@ adminMoreRouter.put("/accounts/:id/tags", async (req, res) => {
   res.json({ account: memberDetail(database, account) })
 })
 
-// One action on many members: stop them, log them out, or add or take
-// off a tag. The demo accounts are passed over for stopping.
+// 여러 회원에게 한 번에 하는 일이다. 정지, 로그아웃, 태그 추가나 빼기를
+// 한다. 데모 계정은 정지에서 건너뛴다.
 adminMoreRouter.post("/accounts/bulk", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
@@ -196,8 +196,8 @@ adminMoreRouter.post("/accounts/bulk", async (req, res) => {
   res.json({ done })
 })
 
-// Marks a brand's business as checked by hand (when the tax office's check
-// can't be reached), or takes the mark off.
+// 브랜드의 사업자를 직접 확인한 것으로 표시하거나(국세청 확인에 닿을 수 없을
+// 때) 표시를 뗀다.
 adminMoreRouter.put("/accounts/:id/business", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
@@ -215,7 +215,7 @@ adminMoreRouter.put("/accounts/:id/business", async (req, res) => {
   res.json({ account: memberDetail(database, account) })
 })
 
-// Gives a member Campus Partners for 1 to 365 days, free.
+// 회원에게 Campus Partners를 1일에서 365일 동안 무료로 준다.
 adminMoreRouter.post("/accounts/:id/partners", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
@@ -228,7 +228,7 @@ adminMoreRouter.post("/accounts/:id/partners", async (req, res) => {
   res.json({ account: memberDetail(database, account) })
 })
 
-// Puts the example data back as the seed has it, before a demonstration.
+// 시연 전에 예시 데이터를 시드대로 되돌린다.
 adminMoreRouter.post("/demo/reset", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
@@ -251,7 +251,7 @@ adminMoreRouter.get("/proposals/:id", async (req, res) => {
   res.json({ proposal: detail })
 })
 
-// Reminds the member a proposal is waiting on, once in three days.
+// 회원이 기다리는 제안을 알려 준다. 사흘에 한 번만이다.
 adminMoreRouter.post("/proposals/:id/nudge", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
@@ -276,7 +276,7 @@ adminMoreRouter.post("/proposals/:id/nudge", async (req, res) => {
   res.json({ ok: true })
 })
 
-// Every agreement with where it stands, the latest changed first.
+// 모든 계약을 진행 상황과 함께 최근에 바뀐 것부터 보여 준다.
 adminMoreRouter.get("/agreements", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
@@ -289,14 +289,14 @@ adminMoreRouter.get("/events", async (req, res) => {
   res.json({ events: allEvents(getDatabase()) })
 })
 
-// Events under way and what looks wrong at any event.
+// 진행 중인 행사와 어느 행사에서든 이상해 보이는 것을 보여 준다.
 adminMoreRouter.get("/live", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
   res.json({ events: liveEvents(database), alerts: fieldAlerts(database) })
 })
 
-// Every board post with its poster, newest first.
+// 모든 게시판 글을 올린 사람과 함께 최신순으로 보여 준다.
 adminMoreRouter.get("/posts", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
@@ -328,7 +328,7 @@ adminMoreRouter.post("/posts/:id/:action", async (req, res) => {
   res.status(204).end()
 })
 
-// Every review with whom it is about, newest first.
+// 모든 후기를 누구에 대한 것인지와 함께 최신순으로 보여 준다.
 adminMoreRouter.get("/reviews", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
@@ -372,7 +372,7 @@ adminMoreRouter.get("/invites", async (req, res) => {
   res.json(inviteStats(getDatabase()))
 })
 
-// Who handles a question, and whether it waits on something.
+// 질문을 누가 맡는지와 무언가를 기다리는지 보여 준다.
 adminMoreRouter.put("/inquiries/:id/handling", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
@@ -426,7 +426,7 @@ adminMoreRouter.delete("/faq/:id", async (req, res) => {
   res.json(faq)
 })
 
-// Hides one of the built-in questions (by its Korean wording), or shows it again.
+// 기본으로 들어 있는 질문 하나를(한국어 문구로 찾는다) 숨기거나 다시 보인다.
 adminMoreRouter.put("/faq/hidden", async (req, res) => {
   await requireAdmin(req)
   const question = text(req.body?.question)
@@ -439,8 +439,8 @@ adminMoreRouter.put("/faq/hidden", async (req, res) => {
   res.json(faq)
 })
 
-// The analysis screen: the funnel, cohorts, where members are, this month
-// against the targets, and what people search for.
+// 분석 화면이다. 퍼널, 코호트, 회원이 있는 곳, 이번 달과 목표의 비교,
+// 사람들이 검색하는 것을 보여 준다.
 adminMoreRouter.get("/insights", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
@@ -470,7 +470,7 @@ adminMoreRouter.put("/settings/kpi", async (req, res) => {
   res.json({ kpi: monthKpi(database) })
 })
 
-// Maintenance: on with a message, and whether new sign-ups stop.
+// 점검이다. 메시지와 함께 켜며, 새 가입을 멈출지도 정한다.
 adminMoreRouter.put("/settings/maintenance", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
@@ -484,8 +484,8 @@ adminMoreRouter.put("/settings/maintenance", async (req, res) => {
   res.json({ maintenance: database.settings.maintenance })
 })
 
-// The system screen: the request limits, the backups kept, the reminders'
-// runs and the maintenance switch.
+// 시스템 화면이다. 요청 제한, 보관 중인 백업, 알림의 실행 기록, 점검 스위치를
+// 보여 준다.
 adminMoreRouter.get("/system", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
@@ -497,8 +497,8 @@ adminMoreRouter.get("/system", async (req, res) => {
   })
 })
 
-// One backup in full, as the file it was kept as. It holds every member's
-// data, so only the console asks for it.
+// 백업 하나를 보관된 파일 그대로 통째로 준다. 모든 회원의 데이터가 들어
+// 있으므로 콘솔만 요청한다.
 adminMoreRouter.get("/backups/:hour", async (req, res) => {
   await requireAdmin(req)
   const hour = String(req.params.hour)

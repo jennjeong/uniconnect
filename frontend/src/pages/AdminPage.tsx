@@ -43,7 +43,7 @@ import type {
   SuspendedAccount,
 } from "../types"
 
-// The operators' token lives in this tab only, and goes when it closes.
+// 운영자의 토큰은 이 탭에만 있고 탭이 닫히면 사라진다.
 const storageKey = "uniconnect-admin-token"
 
 function readToken() {
@@ -59,13 +59,13 @@ function writeToken(token: string) {
     if (token) sessionStorage.setItem(storageKey, token)
     else sessionStorage.removeItem(storageKey)
   } catch {
-    // Without storage the token lasts until the page reloads.
+    // 저장소가 없으면 토큰은 페이지를 새로고침할 때까지만 유지된다.
   }
 }
 
 type Tab = "waiting" | "held" | "answered"
 
-// What was done about a report, in the past tense.
+// 신고에 대해 한 조치를 과거형으로.
 const doneLabels: Record<ReportAction, string> = {
   dismiss: "그대로 둠",
   "hide-review": "후기 내림",
@@ -80,9 +80,8 @@ const kindLabels: Record<AdminReport["target"]["kind"], string> = {
   reply: "후기 답글",
 }
 
-// A member's report: what kind of thing over which reason, who reported
-// whom, the reported text as it was, and either what was done or the ways
-// to settle it.
+// 회원의 신고: 어떤 사유로 무엇을 신고했는지, 누가 누구를 신고했는지, 신고된 글
+// 원문, 그리고 조치한 내용이나 처리 방법.
 function ReportCard({
   report,
   onResolve,
@@ -148,7 +147,7 @@ function InquiryCard({
   inquiry: AdminInquiry
   onOpenMember: (id: string) => void
   onAnswer: (inquiry: AdminInquiry, answer: string) => Promise<void>
-  // Who on the team takes it, and whether it waits on something.
+  // 팀에서 누가 맡았는지, 무엇을 기다리는지.
   onHandle: (inquiry: AdminInquiry, handling: { assignee: string; held: boolean }) => void
 }) {
   const [draft, setDraft] = useState("")
@@ -231,7 +230,7 @@ function InquiryCard({
   )
 }
 
-// The figures on the operators' screen, in the order they are shown.
+// 운영자 화면의 수치. 보이는 순서대로.
 const figures: { key: keyof PlatformStats; label: string }[] = [
   { key: "students", label: "가입한 학생단체" },
   { key: "brands", label: "가입한 브랜드" },
@@ -247,11 +246,11 @@ const figures: { key: keyof PlatformStats; label: string }[] = [
   { key: "questionsWaiting", label: "답변 대기 질문" },
 ]
 
-// Accepted out of the proposals answered so far, as a percentage.
+// 지금까지 답한 제안 중 수락된 비율(%).
 const acceptance = (accepted: number, declined: number) =>
   accepted + declined === 0 ? "-" : `${Math.round((accepted / (accepted + declined)) * 100)}%`
 
-// Real members' figures large, with the demo data's totals under each.
+// 실제 회원의 수치를 크게, 각각 아래에 데모 데이터를 합친 총계.
 function StatsPanel({ stats }: { stats: PlatformStats }) {
   return (
     <section aria-labelledby="admin-stats-title" className="admin-stats">
@@ -283,9 +282,8 @@ function StatsPanel({ stats }: { stats: PlatformStats }) {
 
 const paymentKinds: Record<AdminPayment["kind"], string> = { fee: "수수료", report: "상세 리포트", pro: "캠퍼스 파트너스", ad: "상단 광고" }
 
-// One payment for the operators: who paid what, how and when, with the
-// actions its state allows (confirming a transfer that arrived, cancelling
-// a waiting order, refunding a paid one).
+// 운영자가 보는 결제 하나: 누가 얼마를 어떻게 언제 냈는지와, 상태가 허용하는
+// 작업(들어온 이체 확인, 대기 중인 주문 취소, 결제된 건 환불).
 function PaymentCard({
   payment,
   onPaid,
@@ -347,10 +345,9 @@ function PaymentCard({
   )
 }
 
-// The operators' screen (/admin, in no menu): with the ADMIN_TOKEN from the
-// server's environment, it shows the platform's figures, then lists the
-// questions sent from the help center, waiting ones first, and sends answers
-// members read under 내 질문.
+// 운영자 화면(/admin, 메뉴에 없음): 서버 환경의 ADMIN_TOKEN으로 플랫폼의 수치를
+// 보여 준 뒤 도움말 센터에서 온 질문(기다리는 것 먼저)을 나열하고, 회원이 내
+// 질문에서 읽는 답을 보낸다.
 type Section =
   | "overview"
   | "insights"
@@ -408,8 +405,7 @@ const placePath = ({ section, member, q }: Place) => {
   return `/admin${query ? `?${query}` : ""}`
 }
 
-// The side menu in three groups: running the service, looking after the
-// people in it, and the operators' own tools.
+// 세 묶음으로 나눈 사이드 메뉴: 서비스 운영, 사용자 관리, 운영자 자신의 도구.
 const menuGroups = ["메뉴", "지원", "설정"] as const
 
 const sectionInfo: { key: Section; label: string; icon: IconName; group: (typeof menuGroups)[number] }[] = [
@@ -431,13 +427,13 @@ const sectionInfo: { key: Section; label: string; icon: IconName; group: (typeof
   { key: "system", label: "시스템", icon: "lock", group: "설정" },
 ]
 
-// A week's Monday (2026-10-26) as 10/26.
+// 한 주의 월요일(2026-10-26)을 10/26으로.
 const weekLabel = (week: string) => `${Number(week.slice(5, 7))}/${Number(week.slice(8, 10))}`
 
-// Change from the week before as a percentage, or null without one.
+// 전주 대비 변화율(%). 비교할 값이 없으면 null.
 const change = (now: number, before: number) => (before === 0 ? null : Math.round(((now - before) / before) * 100))
 
-// Up or down from the week before; without a week to compare, the fallback.
+// 전주보다 늘었는지 줄었는지. 비교할 주가 없으면 대체 표시.
 function ChangeBadge({ value, suffix, fallback }: { value: number | null; suffix?: string; fallback?: string }) {
   if (value === null) return fallback ? <span className="console-badge">{fallback}</span> : null
   return (
@@ -447,8 +443,8 @@ function ChangeBadge({ value, suffix, fallback }: { value: number | null; suffix
   )
 }
 
-// One figure on a card, after TailAdmin: an icon tile, the label, the
-// number large in Toss's way, and a badge.
+// TailAdmin을 따른 카드의 수치 하나: 아이콘 타일, 라벨, 토스 방식의 큰 숫자,
+// 배지.
 function StatCard({ icon, label, value, badge }: { icon: IconName; label: string; value: string; badge?: ReactNode }) {
   return (
     <section className="console-card console-stat">
@@ -464,7 +460,7 @@ function StatCard({ icon, label, value, badge }: { icon: IconName; label: string
   )
 }
 
-// Two figures a week as paired bars, on four grid lines.
+// 주마다 두 수치를 짝지은 막대로, 눈금선 네 줄 위에.
 function WeeklyBars({ weekly }: { weekly: AdminOverview["weekly"] }) {
   const top = Math.max(4, ...weekly.flatMap((row) => [row.signups, row.proposals]))
   const step = Math.ceil(top / 4)
@@ -491,7 +487,7 @@ function WeeklyBars({ weekly }: { weekly: AdminOverview["weekly"] }) {
   )
 }
 
-// The acceptance rate as a half ring (TailAdmin's target gauge).
+// 수락률을 반원 링으로(TailAdmin의 목표 게이지).
 function Gauge({ value }: { value: number | null }) {
   return (
     <div className="console-gauge">
@@ -510,8 +506,8 @@ const trendKeys = [
   { key: "accepted", label: "수락" },
 ] as const
 
-// Eight weeks of one figure as a line over a soft area, picked with a
-// segmented switch (TailAdmin's statistics chart, Toss's switch).
+// 한 수치의 8주를 부드러운 영역 위의 선으로 보여 주고 세그먼트 스위치로
+// 고른다(TailAdmin의 통계 차트, 토스의 스위치).
 function TrendChart({ weekly }: { weekly: AdminOverview["weekly"] }) {
   const [key, setKey] = useState<(typeof trendKeys)[number]["key"]>("proposals")
   const values = weekly.map((row) => row[key])
@@ -561,9 +557,8 @@ const revenueKinds = [
   { key: "ad", label: "상단 광고" },
 ] as const
 
-// The overview: the figures as cards, the weeks as bars beside the
-// acceptance gauge, what needs the operators now and the revenue, the
-// trend, then every figure (members' own beside the totals with the demo).
+// 개요: 수치 카드, 수락 게이지 옆의 주별 막대, 지금 운영자가 처리할 일과 매출,
+// 추이, 그리고 모든 수치(회원 자신의 수치와 데모를 합친 총계).
 function Overview({ data, onGo }: { data: AdminOverview; onGo: (section: Section) => void }) {
   const { attention, revenue, weekly, stats } = data
   const todo = [
@@ -698,7 +693,7 @@ function Overview({ data, onGo }: { data: AdminOverview; onGo: (section: Section
   )
 }
 
-// Every proposal, filtered by its state, newest first.
+// 모든 제안. 상태로 거르고 최신순.
 function Proposals({ token, onNotice }: { token: string; onNotice: (message: string) => void }) {
   const [rows, setRows] = useState<AdminProposalRow[]>()
   const [status, setStatus] = useState("")
@@ -793,8 +788,8 @@ function Proposals({ token, onNotice }: { token: string; onNotice: (message: str
   )
 }
 
-// ⌘K (Ctrl+K): jump to a screen, run an action, or open a member by name,
-// email or school, with the arrows and Enter.
+// ⌘K(Ctrl+K): 화면으로 이동하거나 작업을 실행하거나, 이름, 이메일, 학교로
+// 회원을 연다. 화살표와 Enter로 조작한다.
 type PaletteItem = { id: string; label: string; hint: string; run: () => void }
 
 function CommandPalette({
@@ -891,7 +886,7 @@ function CommandPalette({
   )
 }
 
-// A short two-note chime for new work, through Web Audio (no file).
+// 새 작업을 알리는 짧은 두 음의 알림음. Web Audio로 만든다(파일 없음).
 function chime() {
   try {
     const context = new AudioContext()
@@ -907,7 +902,7 @@ function chime() {
       oscillator.stop(context.currentTime + index * 0.12 + 0.3)
     }
   } catch {
-    // No sound where Web Audio is missing.
+    // Web Audio가 없으면 소리를 내지 않는다.
   }
 }
 
@@ -923,16 +918,14 @@ const shortcuts = [
 ]
 const soundKey = "uniconnect-admin-sound"
 
-// The operators' console (/admin, mounted on its own by main.tsx, with no
-// member screens around it): the ADMIN_TOKEN from the server's environment
-// opens it; a side menu leads to the overview, members, proposals,
-// payments and revenue, questions and partner requests, reports and
-// suspensions, and errors.
+// 운영자 콘솔(/admin, 회원 화면 없이 main.tsx가 단독으로 마운트한다). 서버
+// 환경의 ADMIN_TOKEN으로 열며, 사이드 메뉴로 개요, 회원, 제안, 결제와 매출,
+// 질문과 파트너 요청, 신고와 정지, 오류로 간다.
 export function AdminPage({ onNotice }: { onNotice: (message: string) => void }) {
   const [token, setToken] = useState(readToken)
   const [tokenDraft, setTokenDraft] = useState("")
-  // Where the console is, from the address (/admin?view=members&member=<id>),
-  // so the browser's back and forward buttons and swipes move through it.
+  // 콘솔의 위치를 주소(/admin?view=members&member=<id>)에서 읽어서 브라우저의
+  // 뒤로·앞으로 버튼과 스와이프로 오갈 수 있게 한다.
   const [place, setPlace] = useState(readPlace)
   const section = place.section
   const go = useCallback((next: Place) => {
@@ -943,7 +936,7 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
     window.scrollTo(0, 0)
   }, [])
   const setSection = useCallback((next: Section) => go({ section: next }), [go])
-  // The side menu: narrowed to icons on wide screens, a drawer on narrow ones.
+  // 사이드 메뉴: 넓은 화면에서는 아이콘만 남기고 좁은 화면에서는 서랍이다.
   const [narrow, setNarrow] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
@@ -957,7 +950,7 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
     if (dark) document.body.dataset.consoleTheme = "dark"
     else delete document.body.dataset.consoleTheme
   }, [dark])
-  // ⌘K or Ctrl+K opens the command palette from anywhere.
+  // ⌘K나 Ctrl+K는 어디서든 명령 팔레트를 연다.
   useEffect(() => {
     const open = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
@@ -968,7 +961,7 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
     document.addEventListener("keydown", open)
     return () => document.removeEventListener("keydown", open)
   }, [])
-  // "?" anywhere but a text box shows the keyboard shortcuts.
+  // 텍스트 상자가 아닌 곳에서 "?"를 누르면 키보드 단축키를 보여 준다.
   const [helpOpen, setHelpOpen] = useState(false)
   useEffect(() => {
     const help = (event: KeyboardEvent) => {
@@ -981,14 +974,14 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
     document.addEventListener("keydown", help)
     return () => document.removeEventListener("keydown", help)
   }, [])
-  // Reads everything again each minute while the operators watch.
+  // 운영자가 지켜보는 동안 1분마다 모두 다시 읽는다.
   const [autoRefresh, setAutoRefresh] = useState(false)
   useEffect(() => {
     if (!autoRefresh) return
     const timer = window.setInterval(() => setReload((count) => count + 1), 60_000)
     return () => window.clearInterval(timer)
   }, [autoRefresh])
-  // "/" anywhere but a text box jumps to the member search.
+  // 텍스트 상자가 아닌 곳에서 "/"를 누르면 회원 검색으로 이동한다.
   useEffect(() => {
     const jump = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
@@ -1088,7 +1081,7 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
       (error: unknown) => onNotice(errorMessage(error)),
     )
 
-  // Settles a report, then reads the reports and suspended accounts again.
+  // 신고를 처리한 뒤 신고와 정지된 계정을 다시 읽는다.
   const resolve = async (report: AdminReport, action: ReportAction) => {
     try {
       await api.resolveReport(token, report.id, action)
@@ -1111,7 +1104,7 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
     }
   }
 
-  // Settles a payment, then reads the payments again.
+  // 결제를 처리한 뒤 결제를 다시 읽는다.
   const settle = async (change: () => Promise<unknown>, done: string) => {
     try {
       await change()
@@ -1122,8 +1115,8 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
     }
   }
 
-  // What waits for the operators, in the tab's title, with a chime when it
-  // grows while the console is open.
+  // 운영자가 처리할 일을 탭 제목에 보여 준다. 콘솔이 열려 있는 동안 늘어나면
+  // 알림음을 낸다.
   const pendingCount =
     (inquiries ?? []).filter((inquiry) => !inquiry.answer && !inquiry.handling?.heldAt).length +
     reports.filter((report) => !report.resolution).length +
@@ -1135,8 +1128,8 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
     if (inquiries) lastCount.current = pendingCount
   }, [pendingCount, inquiries, sound])
 
-  // Thirty minutes without a press or a key signs the console out, so an
-  // open tab on a shared computer doesn't stay in.
+  // 클릭이나 키 입력 없이 30분이 지나면 콘솔에서 로그아웃해서, 공용 컴퓨터에
+  // 열린 탭이 로그인된 채 남지 않게 한다.
   useEffect(() => {
     if (!token) return
     let last = Date.now()
@@ -1607,8 +1600,7 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
   )
 }
 
-// /admin on its own (main.tsx): the console with its own notices, and no
-// member screens around it.
+// 단독 /admin(main.tsx): 자체 알림이 있고 회원 화면이 둘러싸지 않는 콘솔.
 export function AdminConsole() {
   const { notice, noticeId, showNotice, hideNotice, pauseNotice } = useNotice()
   return (

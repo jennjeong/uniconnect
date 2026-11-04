@@ -5,21 +5,20 @@ import { statusOf } from "./proposals.js"
 import { isDemoAccount } from "./reviews.js"
 import type { Account, Agreement, Database, SponsorOffer, SponsorRequest } from "../types.js"
 
-// What the operators' console works out from the data for its analysis
-// and operations screens (routes/adminMore.ts). Analysis counts real
-// members only; the demo accounts and the seed stay out.
+// 운영자 콘솔이 분석 화면과 운영 화면(routes/adminMore.ts)을 위해 데이터로
+// 계산하는 것. 분석은 실제 회원만 센다. 데모 계정과 시드는 뺀다.
 
 const dayMs = 24 * 60 * 60 * 1000
 
 const realAccounts = (database: Database) => database.accounts.filter((account) => !isDemoAccount(database, account))
 
-// The account that owns a listing, if a member does.
+// 리스팅을 가진 계정. 회원이 가졌을 때만 있다.
 export const ownerOf = (database: Database, listingId: string | undefined) =>
   listingId ? database.accounts.find((account) => account.brandId === listingId || account.groupId === listingId) : undefined
 
 const allProposals = (database: Database) => [...database.requests, ...database.offers]
 
-// Who a proposal went to: a request's brand, an offer's group.
+// 제안이 간 곳: 요청이면 브랜드, 제안이면 단체.
 export const recipientOf = (database: Database, proposal: SponsorRequest | SponsorOffer) =>
   ownerOf(database, "groupName" in proposal ? proposal.brandId : proposal.groupId)
 
@@ -32,8 +31,8 @@ const toName = (database: Database, proposal: SponsorRequest | SponsorOffer) =>
     ? (database.brands.find((brand) => brand.id === proposal.brandId)?.name ?? "")
     : (database.groups.find((group) => group.id === proposal.groupId)?.name ?? "")
 
-// The steps from signing up to paying, each counting the members that got
-// that far (real members only).
+// 가입부터 결제까지의 단계. 단계마다 거기까지 간 회원 수를 센다(실제
+// 회원만).
 export function funnel(database: Database) {
   const members = realAccounts(database)
   const ids = new Set(members.map((account) => account.id))
@@ -56,14 +55,14 @@ export function funnel(database: Database) {
   ]
 }
 
-// Monday of the week a day falls in, "YYYY-MM-DD".
+// 날짜가 속한 주의 월요일, "YYYY-MM-DD".
 const weekOf = (day: string) => {
   const date = new Date(`${day}T00:00:00Z`)
   return addDays(day, -((date.getUTCDay() + 6) % 7))
 }
 
-// Members by the week they joined, and the share of each still doing
-// something (an event, a proposal, a login) in each of the next weeks.
+// 가입한 주별 회원, 그리고 이후 각 주에 행사, 제안, 로그인 같은 활동을
+// 하고 있는 비율.
 export function cohorts(database: Database, now = new Date(), weeks = 8) {
   const today = todayInKorea(now)
   const thisWeek = weekOf(today)
@@ -96,7 +95,7 @@ export function cohorts(database: Database, now = new Date(), weeks = 8) {
   return rows
 }
 
-// Members by school (groups) and by industry (brands), most first.
+// 학교별(단체)과 업종별(브랜드) 회원. 많은 순.
 export function distribution(database: Database) {
   const count = (values: string[]) =>
     Object.entries(values.reduce<Record<string, number>>((all, value) => ({ ...all, [value]: (all[value] ?? 0) + 1 }), {}))
@@ -115,9 +114,8 @@ export function distribution(database: Database) {
   }
 }
 
-// Where members are: groups at their campus, counted per campus, and
-// brands at their store, for the analysis screen's map. Members without a
-// known place are left off.
+// 회원이 있는 곳: 단체는 캠퍼스별로 세고 브랜드는 매장 위치로 센다. 분석
+// 화면의 지도에 쓴다. 위치를 모르는 회원은 뺀다.
 function memberMap(database: Database) {
   const members = realAccounts(database)
   const groups = new Map<string, { name: string; lat: number; lng: number; count: number }>()
@@ -138,7 +136,7 @@ function memberMap(database: Database) {
   return { groups: [...groups.values()], brands }
 }
 
-// This month's sign-ups, proposals and revenue beside the targets.
+// 이번 달 가입, 제안, 매출을 목표와 나란히 둔다.
 export function monthKpi(database: Database, now = new Date()) {
   const month = todayInKorea(now).slice(0, 7)
   const inMonth = (at: string | undefined) => Boolean(at) && todayInKorea(new Date(at!)).slice(0, 7) === month
@@ -153,14 +151,14 @@ export function monthKpi(database: Database, now = new Date()) {
   return (["signups", "proposals", "revenue"] as const).map((key) => ({ key, actual: actual[key], target: targets[key] ?? null }))
 }
 
-// The most searched words, without who searched.
+// 가장 많이 검색된 단어. 누가 검색했는지는 담지 않는다.
 export const topSearches = (database: Database, limit = 30) =>
   Object.entries(database.searchTerms ?? {})
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .slice(0, limit)
     .map(([term, count]) => ({ term, count }))
 
-// Proposals still waiting for an answer after `days` days, oldest first.
+// `days`일이 지나도록 답을 기다리는 제안. 오래된 순.
 export function staleProposals(database: Database, now = new Date(), days = 7) {
   const cutoff = now.getTime() - days * dayMs
   return allProposals(database)
@@ -177,8 +175,8 @@ export function staleProposals(database: Database, now = new Date(), days = 7) {
     }))
 }
 
-// One proposal in full for the operators: the terms, the dates, the
-// agreement's progress and the event's figures, never the message.
+// 운영자용 제안 전체: 조건, 날짜, 계약서 진행, 행사 수치. 메시지는 넣지
+// 않는다.
 export function proposalDetail(database: Database, id: string) {
   const proposal = allProposals(database).find((item) => item.id === id)
   if (!proposal) return undefined
@@ -205,8 +203,8 @@ export function proposalDetail(database: Database, id: string) {
 
 export type AgreementState = "draft" | "one" | "both" | "done" | "cancel"
 
-// Where an agreement stands: a cancel asked for, done (both confirmed and
-// every item done), both or one side confirmed, or not yet.
+// 계약서의 상태: 취소 요청됨, 완료(양쪽 확인에 모든 항목 완료), 양쪽 또는
+// 한쪽 확인, 아직 아님.
 export function agreementState(agreement: Agreement): AgreementState {
   if (agreement.cancel && !agreement.cancel.canceledAt) return "cancel"
   const sides = Object.keys(agreement.confirmed).length
@@ -231,7 +229,7 @@ export function agreementRow(database: Database, agreement: Agreement) {
   }
 }
 
-// Every event and campaign with its owner, soonest first.
+// 모든 행사와 캠페인을 주인과 함께. 임박한 순.
 export function allEvents(database: Database) {
   return Object.entries(database.events)
     .flatMap(([accountId, events]) => {
@@ -254,8 +252,8 @@ export function allEvents(database: Database) {
     .sort((a, b) => a.date.localeCompare(b.date))
 }
 
-// Events on today (or ended yesterday, still counting), with their figures
-// as they stand and today's hours.
+// 오늘 열리는 행사(또는 어제 끝나 아직 세는 행사)와 현재 수치, 오늘의
+// 시간대별 수치.
 export function liveEvents(database: Database, now = new Date()) {
   const today = todayInKorea(now)
   return allEvents(database)
@@ -275,8 +273,8 @@ export function liveEvents(database: Database, now = new Date()) {
     })
 }
 
-// What looks wrong at events: many wrong PINs today, more visits than
-// coupons, or visits bunched in a few minutes.
+// 행사에서 이상해 보이는 것: 오늘 틀린 PIN이 많음, 쿠폰보다 방문이 많음,
+// 몇 분 안에 몰린 방문.
 export function fieldAlerts(database: Database, now = new Date()) {
   const today = todayInKorea(now)
   const alerts: { eventId: string; event: string; kind: "pin" | "visits-over-coupons" | "visit-burst"; detail: string }[] = []
@@ -300,7 +298,7 @@ export function fieldAlerts(database: Database, now = new Date()) {
   return alerts
 }
 
-// Shops invited from 가까운 순: how many, how many joined, by inviter.
+// 가까운 순에서 초대한 가게: 초대 수, 가입 수, 초대한 쪽별.
 export function inviteStats(database: Database) {
   const byInviter = new Map<string, { name: string; sent: number; joined: number }>()
   for (const invite of database.invites) {
@@ -320,8 +318,8 @@ export function inviteStats(database: Database) {
   }
 }
 
-// What happened to a member, in order: joining, its events, proposals sent
-// and answered, agreements, payments, questions, reports and suspension.
+// 회원에게 일어난 일을 순서대로: 가입, 행사, 보낸 제안과 받은 답, 계약서,
+// 결제, 문의, 신고, 정지.
 export function timeline(database: Database, account: Account) {
   const items: { at: string; kind: string; text: string }[] = [{ at: account.createdAt, kind: "가입", text: account.name }]
   for (const event of database.events[account.id] ?? []) if (event.createdAt) items.push({ at: event.createdAt, kind: "행사 등록", text: event.name })
@@ -347,7 +345,7 @@ export function timeline(database: Database, account: Account) {
   return items.sort((a, b) => b.at.localeCompare(a.at))
 }
 
-// Other accounts sharing this one's contact phone or business number.
+// 이 계정과 연락처 전화나 사업자 번호를 같이 쓰는 다른 계정.
 export function duplicatesOf(database: Database, account: Account) {
   const phone = account.contact?.phone
   const number = account.business?.number
@@ -356,7 +354,7 @@ export function duplicatesOf(database: Database, account: Account) {
     .map((other) => ({ id: other.id, name: other.name, by: number && other.business?.number === number ? ("business" as const) : ("phone" as const) }))
 }
 
-// Whether any other account shares a phone or business number, for the list.
+// 목록용으로 전화나 사업자 번호를 같이 쓰는 다른 계정이 있는지.
 export function duplicateIds(database: Database) {
   const seen = new Map<string, string[]>()
   for (const account of database.accounts) {

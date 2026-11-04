@@ -2,10 +2,10 @@ import { Modal } from "../components/Modal"
 import { t } from "../i18n"
 import { inKakaoTalk, kakaoTalkExternal, type InstallKind } from "../lib/install"
 
-// How to install uniconnect where the browser has no install dialog of its
-// own (lib/install.ts): the share sheet on iPhone and iPad, a browser first
-// for a page opened inside KakaoTalk or another app, and each kind of
-// browser's own way everywhere else.
+// 브라우저에 자체 설치 대화 상자가 없을 때 uniconnect를 설치하는
+// 방법(lib/install.ts). iPhone과 iPad는 공유 시트, 카카오톡이나 다른 앱 안에서
+// 연 페이지는 먼저 브라우저로 열기, 그 밖에는 브라우저마다 고유한 방법을
+// 안내한다.
 export function InstallGuideModal({ kind, onClose }: { kind: InstallKind; onClose: () => void }) {
   return (
     <Modal name="install" kicker="Get the App" title={t("앱 다운로드")} onClose={onClose}>

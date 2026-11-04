@@ -4,8 +4,8 @@ import { t } from "../i18n"
 import { legalDocs, legalDraftNote, legalEffectiveDate, type LegalKind } from "../data/legal"
 import { formatFullDate } from "../lib/date"
 
-// The terms of service (/terms) and the privacy policy (/privacy), linked
-// from the footer and the sign-up form. Tabs move between the two.
+// 이용약관(/terms)과 개인정보처리방침(/privacy). 푸터와 가입 폼에서 연결한다.
+// 탭으로 둘을 오간다.
 export function LegalPage({
   kind,
   onSwitch,
@@ -67,8 +67,8 @@ export function LegalPage({
                               {cell}
                             </th>
                           ) : (
-                            // On a phone each row stacks into a card, and
-                            // the label names what the cell is.
+                            // 휴대폰에서는 각 행이 카드로 쌓이고 라벨이 셀이
+                            // 무엇인지 알려 준다.
                             <td data-label={section.table?.head[column]} key={cell}>
                               {cell}
                             </td>

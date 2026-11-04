@@ -9,17 +9,16 @@ import { t } from "../i18n"
 import { formatFullDate } from "../lib/date"
 import type { Account, InvitePageData, Match, NavLabel } from "../types"
 
-// What a shop does on uniconnect, for its owner reading the invitation.
+// 가게가 uniconnect에서 하는 일. 초대를 읽는 사장님을 위한 것이다.
 const benefits = [
   { icon: "inbox", text: "근처 학생단체의 협찬 제안을 받고, 수락하거나 거절해요." },
   { icon: "scan", text: "행사 날 참여자가 받은 쿠폰을 매장에서 확인하고 손님을 맞아요." },
   { icon: "chart", text: "쿠폰, 방문, 예상 매출을 성과 분석에서 확인해요." },
 ] as const
 
-// The page a student group's invitation opens (/invite/<code>), for the
-// shop's owner: who invited and what the shop gets, then joining as a brand
-// (or logging in) and linking the shop with one press. The group and anyone
-// else see how it stands.
+// 학생단체의 초대가 여는 페이지(/invite/<code>). 가게 주인에게 누가 초대했고
+// 가게가 무엇을 얻는지 보여 준 다음, 브랜드로 가입(또는 로그인)하고 한 번 눌러
+// 가게를 연결하게 한다. 단체와 그 밖의 사람은 진행 상태를 본다.
 export function InvitePage({
   code,
   account,
@@ -45,8 +44,8 @@ export function InvitePage({
   const [failed, setFailed] = useState("")
   const [busy, setBusy] = useState(false)
 
-  // Read again when someone logs in, as whether the shop joined "as you"
-  // depends on who looks.
+  // 누가 로그인하면 다시 읽는다. 가게가 "본인으로" 가입했는지는 보는 사람에
+  // 달렸기 때문이다.
   const accountId = account?.id
   useEffect(() => {
     let cancelled = false

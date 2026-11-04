@@ -13,12 +13,11 @@ import { keepReferral } from './lib/referral'
 import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css'
 import './index.css'
 
-// Screen readers and the browser's own features read the page's language.
+// 스크린 리더와 브라우저 자체 기능이 페이지의 언어를 읽는다.
 document.documentElement.lang = lang
 
-// Installing as an app (앱 다운로드) and the service worker that
-// allows it (public/sw.js): only in the built app, as it would get in the way
-// of the development server.
+// 앱 다운로드(앱으로 설치)와 이를 가능하게 하는 서비스 워커(public/sw.js). 개발
+// 서버에 방해가 되므로 빌드된 앱에서만 쓴다.
 watchInstall()
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -26,24 +25,22 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   })
 }
 
-// Errors the page didn't catch reach the operators' log, from the built app
-// only, as the development server shows them anyway.
+// 페이지가 잡지 못한 오류는 운영자의 로그로 보낸다. 개발 서버가 이미 보여
+// 주므로 빌드된 앱에서만 보낸다.
 if (import.meta.env.PROD) installErrorReports()
-// An invitation link's code waits for sign-up (친구 초대).
+// 초대 링크의 코드는 가입할 때까지 기다린다(친구 초대).
 keepReferral()
 
-// Participants who scan an event QR get the check-in page instead of the
-// app, the sponsor's store staff their own page (/check-in/<code>/staff) and
-// the student group's staff theirs (/check-in/<code>/group). None belongs in
-// search results.
+// 행사 QR을 스캔한 참가자는 앱 대신 체크인 페이지를, 스폰서의 가게 직원은 자기
+// 페이지(/check-in/<code>/staff)를, 학생단체의 직원은 자기
+// 페이지(/check-in/<code>/group)를 본다. 어느 것도 검색 결과에 나오면 안 된다.
 const checkIn = currentCheckIn()
 if (checkIn) {
   document.body.classList.add('checkin-body')
   keepOutOfSearch()
 }
 
-// The operators' console (/admin) stands on its own too, with no member
-// header, menu or footer around it.
+// 운영자 콘솔(/admin)도 회원용 헤더, 메뉴, 푸터 없이 단독으로 선다.
 const adminConsole = window.location.pathname.replace(/\/$/, '') === '/admin'
 if (adminConsole) {
   document.body.classList.add('console-body')
@@ -51,7 +48,7 @@ if (adminConsole) {
   keepOutOfSearch()
 }
 
-// Loaded only there, so members never download it.
+// 거기서만 불러오므로 회원은 내려받지 않는다.
 const AdminConsole = React.lazy(() => import('./pages/AdminPage').then((module) => ({ default: module.AdminConsole })))
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

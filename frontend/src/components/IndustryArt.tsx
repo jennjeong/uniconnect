@@ -2,8 +2,8 @@ import type { ReactNode } from "react"
 
 import type { Industry } from "../types"
 
-// The logo's colors: each mark in deep and brighter blue with a silver
-// accent, the way the logo pairs the school in navy with the shop in silver.
+// 로고의 색. 각 마크는 짙은 파랑과 밝은 파랑에 은색 포인트를 더한다. 로고가
+// 남색 학교와 은색 가게를 짝지은 방식과 같다.
 const deep = "#1b3f8f"
 const blue = "#2f63d9"
 const light = "#8fb6ff"
@@ -12,10 +12,10 @@ const silverDeep = "#8a96ad"
 
 const line = { fill: "none", strokeLinecap: "round", strokeLinejoin: "round" } as const
 
-// Flat, rounded marks on the app icon's 64×64 grid. Each one
-// sits centered in about the middle 55% of the tile.
+// 앱 아이콘의 64×64 격자에 맞춘 납작하고 둥근 마크. 각 마크는 타일 가운데 약
+// 55% 안에 놓인다.
 const art: Record<Industry, ReactNode> = {
-  // Coffee cup with a heart, two wisps of steam and a saucer.
+  // 하트가 있는 커피잔, 김 두 줄, 받침 접시.
   cafe: (
     <>
       <path
@@ -36,7 +36,7 @@ const art: Record<Industry, ReactNode> = {
       <rect x="16.5" y="46.5" width="28" height="3.2" rx="1.6" fill={deep} />
     </>
   ),
-  // Camera with a silver lens.
+  // 은색 렌즈의 카메라.
   photo: (
     <>
       <rect x="18.5" y="19.8" width="5" height="3.6" rx="1" fill={silver} />
@@ -51,7 +51,7 @@ const art: Record<Industry, ReactNode> = {
       <circle cx="30.4" cy="32.4" r="1.3" fill="#fff" />
     </>
   ),
-  // Sprout with two leaves.
+  // 잎이 두 장인 새싹.
   wellness: (
     <>
       <path d="M32 44.5V32.5" {...line} stroke={deep} strokeWidth={3} />
@@ -66,7 +66,7 @@ const art: Record<Industry, ReactNode> = {
       <rect x="24" y="44.5" width="16" height="3" rx="1.5" fill={deep} />
     </>
   ),
-  // Microphone in a navy and silver U holder, like the logo's U.
+  // 남색과 은색 U자 거치대에 놓인 마이크. 로고의 U를 닮았다.
   performance: (
     <>
       <path d="M32 42.5v4" {...line} stroke={deep} strokeWidth={3.4} />
@@ -77,7 +77,7 @@ const art: Record<Industry, ReactNode> = {
       <path d="M28.6 20h6.8M28.6 24h6.8M28.6 28h6.8" {...line} stroke="#fff" strokeWidth={2} />
     </>
   ),
-  // Video screen with a play button and a silver progress bar.
+  // 재생 버튼과 은색 진행 막대가 있는 영상 화면.
   content: (
     <>
       <path d="M32 41.5v4" {...line} stroke={deep} strokeWidth={3.2} />
@@ -94,7 +94,7 @@ const art: Record<Industry, ReactNode> = {
       <rect x="19" y="35.5" width="10" height="2" rx="1" fill={silver} />
     </>
   ),
-  // Basketball mid-bounce over a silver shadow, with two speed lines.
+  // 은색 그림자 위로 튀어 오르는 농구공과 속도선 두 줄.
   sports: (
     <>
       <ellipse cx="34" cy="49" rx="10" ry="2.2" fill={silver} />
@@ -108,7 +108,7 @@ const art: Record<Industry, ReactNode> = {
       <path d="M12.5 24h4.5M10.5 30h5" {...line} stroke={silverDeep} strokeWidth={2.4} />
     </>
   ),
-  // Lipstick in a silver case.
+  // 은색 케이스에 든 립스틱.
   beauty: (
     <>
       <path d="M27.4 28.4V20.2c0-1.1.6-2.1 1.6-2.6l7.6-3.8v14.6Z" fill={blue} />
@@ -117,7 +117,7 @@ const art: Record<Industry, ReactNode> = {
       <path d="M29.6 25.6v-5M27.3 37v8" {...line} stroke="#fff" strokeOpacity={0.6} strokeWidth={1.7} />
     </>
   ),
-  // Graduation cap with a silver tassel.
+  // 은색 술이 달린 학사모.
   education: (
     <>
       <path d="M21 31.5v7c0 2.8 4.9 5.2 11 5.2s11-2.4 11-5.2v-7l-11 5.1Z" fill={deep} />

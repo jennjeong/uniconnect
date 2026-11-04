@@ -5,9 +5,9 @@ import { QrCode } from "./QrCode"
 import { t } from "../i18n"
 import type { CodeTicket, Session } from "../types"
 
-// The second step of a login with two-step login on: the 6-digit code from
-// the authenticator app, or one of the recovery codes when the phone isn't
-// at hand. Five wrong codes send the person back to the password.
+// 2단계 로그인이 켜진 계정의 로그인 두 번째 단계. 인증 앱의 6자리 코드를
+// 넣거나, 휴대폰이 없을 때는 복구 코드 중 하나를 넣는다. 코드가 다섯 번 틀리면
+// 비밀번호 단계로 돌려보낸다.
 export function CodeStep({
   email,
   ticket,

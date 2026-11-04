@@ -6,10 +6,10 @@ import { tmpdir } from "node:os"
 import path from "node:path"
 import { after, before, beforeEach, test } from "node:test"
 
-// Each run starts from a fresh seed in a temp file, never the real data/db.json.
+// 실행할 때마다 실제 data/db.json이 아니라 임시 파일의 새 시드로 시작한다.
 const dataDir = await mkdtemp(path.join(tmpdir(), "uniconnect-api-"))
 process.env.DATA_FILE = path.join(dataDir, "db.json")
-// A stand-in built frontend, so the server serves pages as in production.
+// 서버가 운영 환경처럼 페이지를 서빙하도록 빌드된 프론트엔드를 흉내 낸다.
 process.env.FRONTEND_DIST = path.join(dataDir, "dist")
 await mkdir(process.env.FRONTEND_DIST)
 await writeFile(path.join(process.env.FRONTEND_DIST, "index.html"), "<!doctype html><title>uniconnect</title>")
@@ -21,10 +21,10 @@ const { config, emailCodesExposed } = await import("./config.js")
 const { clearRateLimits } = await import("./lib/rateLimit.js")
 const { getDatabase, loadDatabase, saveDatabase } = await import("./store.js")
 const { DEMO_PASSWORD } = await import("./data/seed.js")
-// Fees began on a fixed day (lib/fees.ts), now past; the cases here run as if
-// before it, and the fee case moves it back itself.
+// 수수료는 정해진 날(lib/fees.ts)부터 받는데 그날은 이미 지났다. 여기 사례들은
+// 그날 전인 것처럼 돌리고, 수수료 사례는 스스로 되돌린다.
 ;(await import("./lib/fees.js")).feeStart.since = "9999-12-31"
-// Every venue count at 0, as a new share of an event starts.
+// 행사의 새 몫이 시작할 때처럼 모든 현장 집계를 0으로 둔다.
 const emptyVenue = (await import("./lib/methods.js")).emptyVenueCounts()
 
 let server: Server
@@ -37,7 +37,7 @@ before(async () => {
   baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api`
 })
 
-// Every request comes from 127.0.0.1, so each case starts with fresh limits.
+// 모든 요청이 127.0.0.1에서 오므로 사례마다 제한을 새로 시작한다.
 beforeEach(() => clearRateLimits())
 
 after(async () => {
@@ -45,8 +45,8 @@ after(async () => {
   await rm(dataDir, { recursive: true, force: true })
 })
 
-// Who runs an account made in a test, as sign-up asks for it.
-// A document for sign-ups the operators check (lib/applications.ts).
+// 가입이 요구하는 대로, 테스트에서 만든 계정을 운영하는 사람이다.
+// 운영자가 확인하는 가입 서류다(lib/applications.ts).
 const proofDocument = { file: `data:application/pdf;base64,${Buffer.from("%PDF-1.4 proof").toString("base64")}`, name: "재직증명서.pdf" }
 
 async function approveApplication(email: string) {
@@ -62,8 +62,8 @@ async function approveApplication(email: string) {
   }
 }
 
-// A co-admin's login: its first sets up two-step login with the secret it
-// is given, a later one takes the code of the secret kept.
+// 공동 관리자의 로그인이다. 첫 로그인은 받은 비밀 값으로 2단계 로그인을
+// 설정하고, 이후에는 보관한 비밀 값의 코드를 쓴다.
 async function logInCoAdmin(email: string, password: string) {
   const { codeAt, stepAt } = await import("./lib/totp.js")
   const { memberByEmail } = await import("./lib/team.js")
@@ -120,13 +120,13 @@ test("a group's event keeps its kind, times and who comes, and brands filter by 
   assert.equal(made.status, 201)
   assert.deepEqual(
     [made.data.event.kind, made.data.event.startTime, made.data.event.endTime, made.data.event.makeup],
-    // The share of women is no longer asked, so it isn't kept.
+    // 여성 비율은 더 이상 묻지 않으므로 보관하지 않는다.
     ["축제", "11:00", "18:30", { years: ["1학년", "2학년"], majors: "인공지능" }],
   )
   for (const wrong of [{ kind: "파티" }, { startTime: "18:00", endTime: "09:00" }, { endTime: "10:00" }]) {
     assert.equal((await call("POST", "/events", { ...base, ...wrong }, group)).status, 400)
   }
-  // An empty makeup is left out; brands see the next event's kind on the group.
+  // 비어 있는 구성은 뺀다. 브랜드는 단체에서 다음 행사의 종류를 본다.
   const plain = await call("POST", "/events", { ...base, name: "평범한 행사", date: "2027-03-01", makeup: { years: [] } }, group)
   assert.equal(plain.data.event.makeup, undefined)
   const groups = (await call("GET", "/groups", undefined, brand)).data.groups as { name: string; eventKind?: string }[]
@@ -144,10 +144,10 @@ test("a group's promotion plan needs its agreement, and becomes its items on the
   assert.equal(made.status, 201)
   assert.deepEqual(made.data.event.promo.spots, ["현수막", "SNS 카드뉴스"])
   assert.ok(made.data.event.promo.agreedAt)
-  // Nothing chosen needs no agreement and keeps no plan.
+  // 고른 것이 없으면 계약이 필요 없고 계획도 보관하지 않는다.
   const none = await call("POST", "/events", { ...base, name: "홍보 없는 행사", date: "2027-01-10", promo: { spots: [], handouts: [], posts: [] } }, group)
   assert.equal(none.data.event.promo, undefined)
-  // Accepted, the agreement starts with what the group promised.
+  // 수락되면 계약서는 단체가 약속한 것으로 시작한다.
   await call("POST", "/proposals", { matchId: listingId, eventId: made.data.event.id }, group)
   const request = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
   await call("POST", `/requests/${request.id}/accept`, undefined, brand)
@@ -174,13 +174,13 @@ test("a group puts its plan PDF on the event page, and brands who see the page d
   const first = await call("POST", `/events/${id}/plan`, { file: pdf("first"), name: "기획/안.pdf" }, group)
   assert.equal(first.status, 201)
   assert.equal(first.data.event.plan.name, "기획 안.pdf")
-  // Brands who see the page download it, under its own name.
+  // 페이지를 보는 브랜드는 자기 이름으로 내려받는다.
   const download = await fetch(`${baseUrl}/events/${id}/plan`, { headers: { Authorization: `Bearer ${brand}` } })
   assert.equal(download.status, 200)
   assert.equal(download.headers.get("content-type"), "application/pdf")
   assert.match(download.headers.get("content-disposition") ?? "", /filename\*=UTF-8''/)
   assert.ok((await download.text()).includes("first"))
-  // A new one replaces it; only the group changes or removes it.
+  // 새 것이 대체하며, 단체만 바꾸거나 지울 수 있다.
   const firstFile = first.data.event.plan.file
   const second = await call("POST", `/events/${id}/plan`, { file: pdf("second"), name: "새 기획안.pdf" }, group)
   assert.notEqual(second.data.event.plan.file, firstFile)
@@ -212,11 +212,11 @@ test("groups explore each other's coming events, and similar events' sponsorship
   assert.equal(event.intro.length, 220)
   assert.deepEqual(event.packages, [{ name: "메인", gives: "현수막 로고" }])
   assert.equal(event.own, undefined)
-  // A member sees members only, never the examples.
+  // 회원은 회원만 보고 예시는 절대 보지 않는다.
   assert.ok(!seen.events.some((item: { group: { name: string } }) => item.group.name === "삼육대 뮤즈"))
   const festival = seen.cases.find((item: { kind: string }) => item.kind === "축제")
   assert.deepEqual([festival.sponsorships, festival.averagePeople, festival.asks], [1, 400, ["음료 300잔"]])
-  // The host sees its own marked.
+  // 주최자는 자기 것에 표시가 붙은 것을 본다.
   const own = (await call("GET", "/events/explore", undefined, host)).data.events.find((item: { name: string }) => item.name === "탐색 축제")
   assert.equal(own.own, true)
 })
@@ -234,14 +234,14 @@ test("a group publishes its sponsorship ledger by a link, amounts only when it c
   const mine = (await call("GET", "/ledger", undefined, group)).data
   assert.deepEqual([mine.token, mine.showValues, mine.entries.length], [null, false, 1])
   assert.equal(mine.entries[0].value, 150000)
-  // Brands and the demo accounts publish none.
+  // 브랜드와 데모 계정은 아무것도 공개하지 않는다.
   assert.equal((await call("GET", "/ledger", undefined, brand)).status, 403)
   assert.equal((await call("GET", "/ledger", undefined, await login("학생단체"))).status, 403)
   const linked = (await call("POST", "/ledger/link", undefined, group)).data
   assert.match(linked.token, /^[\w-]{24}$/)
   assert.equal((await call("PUT", "/ledger", { notes: { "not-mine": "x" } }, group)).status, 404)
   await call("PUT", "/ledger", { notes: { [request.id]: "음료를 부스에서 나눴어요." } }, group)
-  // The public page needs no login, and hides amounts until the group shows them.
+  // 공개 페이지는 로그인이 필요 없고, 단체가 보여 주기 전에는 금액을 숨긴다.
   const open = (await call("GET", `/ledger/public/${linked.token}`)).data
   assert.equal(open.entries[0].note, "음료를 부스에서 나눴어요.")
   assert.equal(open.entries[0].value, undefined)
@@ -249,7 +249,7 @@ test("a group publishes its sponsorship ledger by a link, amounts only when it c
   await call("PUT", "/ledger", { showValues: true }, group)
   const shown = (await call("GET", `/ledger/public/${linked.token}`)).data
   assert.deepEqual([shown.entries[0].value, shown.totals.value, shown.totals.brands], [150000, 150000, 1])
-  // A new link stops the old; stopping stops both.
+  // 새 링크는 옛 링크를 멈추고, 멈추면 둘 다 멈춘다.
   const renewed = (await call("POST", "/ledger/link", undefined, group)).data
   assert.equal((await call("GET", `/ledger/public/${linked.token}`)).status, 404)
   await call("DELETE", "/ledger/link", undefined, group)
@@ -278,7 +278,7 @@ test("every sponsorship whose day has come has a detailed report, from its recor
   const { sponsorships } = (await call("GET", "/analytics", undefined, brand)).data as { sponsorships: { id: string; report?: string }[] }
   assert.ok(sponsorships.length > 1)
   assert.ok(sponsorships.every((item) => item.report && item.report !== "none"))
-  // Locked until bought; worked out from the record, its visits are the record's.
+  // 사기 전에는 잠겨 있고 기록에서 계산하며, 방문 수는 기록의 것이다.
   const database = getDatabase()
   const owner = database.accounts.find((account) => account.id === database.demoAccountIds["브랜드"])!
   const unmeasured = database.sponsorships[owner.id].find((item) => !item.eventId)!
@@ -317,10 +317,10 @@ test("an invitation link's code ties a sign-up to its inviter, rewarded once at 
   const stats = (await call("GET", "/auth/referral", undefined, brand)).data
   assert.match(stats.code, /^[A-Z2-9]{8}$/)
   assert.deepEqual([stats.joined, stats.rewarded, stats.rewardDays], [0, 0, 30])
-  // The same code each time; the demo accounts have none.
+  // 매번 같은 코드이고 데모 계정에는 없다.
   assert.equal((await call("GET", "/auth/referral", undefined, brand)).data.code, stats.code)
   assert.equal((await call("GET", "/auth/referral", undefined, await login("브랜드"))).status, 403)
-  // A code that isn't one is let go; a real one ties the new account.
+  // 코드가 아닌 것은 조용히 넘기고, 진짜 코드는 새 계정을 묶는다.
   await signUpMember("invite-wrong@syu.ac.kr", "invite-pass-123", "학생단체", { referral: "NOTACODE" })
   const group = await signUpMember("invited@syu.ac.kr", "invite-pass-123", "학생단체", { referral: stats.code })
   const groupAccount = getDatabase().accounts.find((account) => account.email === "invited@syu.ac.kr")!
@@ -340,11 +340,11 @@ test("an invitation link's code ties a sign-up to its inviter, rewarded once at 
     await call("POST", `/agreements/${id}/confirm`, undefined, group)
     await call("POST", `/agreements/${id}/confirm`, undefined, brandToken)
   }
-  // A sponsorship with the inviter itself rewards no one, even confirmed.
+  // 초대한 계정 자신과의 협찬은 확정되어도 아무에게도 보상하지 않는다.
   await confirm(await propose("초대 공연", listingId, brand), brand)
   assert.equal(grants().length, 0)
-  // One with another brand rewards the inviter once both sides confirm its
-  // e-contract, not when it is accepted, and only the first time.
+  // 다른 브랜드와의 협찬은 수락될 때가 아니라 양쪽이 e-contract를 확정할 때
+  // 초대한 사람에게 보상하며, 처음 한 번만이다.
   const other = await listedMember("invite-other@other-cafe.kr", "invite-pass-123", "브랜드")
   const first = await propose("초대 공연 2", other.listingId, other.token)
   assert.equal(grants().length, 0)
@@ -362,7 +362,7 @@ test("a member keeps up to ten proposal templates; the demo accounts keep none",
   assert.equal(saved.data.account.templates.length, 1)
   assert.equal(saved.data.account.templates[0].name, "카페 첫 제안")
   assert.match(saved.data.account.templates[0].id, /^[\w-]+$/)
-  // They come back with the account and go out with its data.
+  // 계정과 함께 돌아오고, 계정의 데이터와 함께 나간다.
   assert.equal((await call("GET", "/auth/me", undefined, token)).data.account.templates[0].text, "{상대}에 {행사} 협찬을 제안해요.")
   assert.equal((await call("GET", "/auth/export", undefined, token)).data.account.templates.length, 1)
   const many = Array.from({ length: 11 }, (_, index) => ({ name: `문구 ${index}`, text: "안녕하세요" }))
@@ -380,13 +380,13 @@ test("security: tokens, stale prices, refunds, late edits, codes and invitations
   const { addDays, todayInKorea } = await import("./lib/dates.js")
   const today = todayInKorea()
 
-  // A token value can't round the fee away: at least 10,000 won, and the
-  // fee rounds up.
+  // 토큰 값으로는 수수료를 반올림해 없앨 수 없다. 최소 10,000원이고
+  // 수수료는 올림한다.
   assert.throws(() => parseValue({ cash: 33 }), /1만 원 이상/)
   assert.equal(feeOf({ cash: 10_001, inKind: 0 }), 1510)
 
-  // An ad is one waiting order however many targets are sent, so a renewal
-  // discount can't be stocked up; a stale amount isn't approved at confirm.
+  // 광고는 보낸 대상이 몇 개든 기다리는 주문 하나이므로 재가입 할인을 쌓아 둘
+  // 수 없고, 낡은 금액은 확인할 때 승인하지 않는다.
   const { token: brand } = await listedMember("sec@sec-cafe.kr", "sec-pass-123", "브랜드")
   const account = getDatabase().accounts.find((item) => item.email === "sec@sec-cafe.kr")!
   const first = orderFor(getDatabase(), account, "ad", "one")
@@ -409,16 +409,16 @@ test("security: tokens, stale prices, refunds, late edits, codes and invitations
     settings.tossClientKey = saved.client
     settings.tossSecretKey = saved.secret
   }
-  // A refunded month takes its days back from the months after it.
+  // 환불한 달은 그다음 달들에서 그 일수를 되찾는다.
   markPaid(getDatabase(), pay, { method: "transfer" })
   assert.equal((await call("GET", "/billing", undefined, brand)).data.ad.until, addDays(today, 59))
   markCancelled(getDatabase(), first, "환불")
   assert.equal((await call("GET", "/billing", undefined, brand)).data.ad.until, addDays(today, 29))
-  // Ends here, so the ad doesn't put this brand first in later tests.
+  // 여기서 끝나므로 광고가 이 브랜드를 이후 테스트에서 맨 앞에 두지 않는다.
   markCancelled(getDatabase(), pay, "정리")
 
-  // Goals stay as they were once a member's event begins, and an event
-  // can't be moved to a day already past.
+  // 회원의 행사가 시작되면 목표는 그대로 있고, 행사를 이미 지난 날로 옮길
+  // 수 없다.
   const group = await signUpMember("sec-club@syu.ac.kr", "sec-pass-123")
   const event = (await call("POST", "/events", { name: "보안 공연", date: addDays(today, 3), people: "100명", types: ["제품"] }, group)).data.event
   const moved = await call("PUT", `/events/${event.id}`, { name: "보안 공연", date: addDays(today, -1), people: "100명", types: ["제품"] }, group)
@@ -428,15 +428,15 @@ test("security: tokens, stale prices, refunds, late edits, codes and invitations
   const goals = (await call("GET", `/measurements/${event.id}`, undefined, group)).data.report.goals
   assert.equal((await call("PUT", `/measurements/${event.id}/goals`, goals, group)).status, 409)
 
-  // Asking for a sign-up code to an address doesn't end its reset code.
+  // 주소에 가입 코드를 요청해도 그 주소의 초기화 코드는 끝나지 않는다.
   await call("POST", "/auth/password-reset/code", { email: "sec-club@syu.ac.kr" })
   const resets = () => getDatabase().emailCodes.filter((item) => item.email === "sec-club@syu.ac.kr" && item.purpose === "reset").length
   assert.equal(resets(), 1)
   await call("POST", "/auth/email-code", { role: "학생단체", email: "sec-club@syu.ac.kr" })
   assert.equal(resets(), 1)
 
-  // Two accounts invite the same email: each invitation's own code works,
-  // so the first one can't stand in the other's way.
+  // 두 계정이 같은 이메일을 초대한다. 각 초대의 코드가 각자 동작하므로 먼저 온
+  // 초대가 다른 초대를 가로막을 수 없다.
   const first2 = await signUpMember("sec-a@syu.ac.kr", "sec-pass-123")
   const second = await signUpMember("sec-b@syu.ac.kr", "sec-pass-123")
   await call("POST", "/team/invites", { name: "가", email: "sec-vice@syu.ac.kr" }, first2)
@@ -574,7 +574,7 @@ test("sign-up requires a verified school or company email", async () => {
   })
   assert.equal(verified.status, 200)
 
-  // The password needs 8 to 64 characters with a letter, a number and a symbol.
+  // 비밀번호는 8자에서 64자이며 글자, 숫자, 기호가 있어야 한다.
   for (const [password, error] of [
     ["club-1!", /8자에서 64자/],
     ["club pass-123", /공백/],
@@ -656,7 +656,7 @@ test("events and proposals belong to the logged-in account", async () => {
 
   const proposed = await call("POST", "/proposals", { matchId: "syu-muse" }, token)
   assert.deepEqual(proposed.data.proposals, ["syu-muse"])
-  // Brands propose to any group in the catalog, never to another brand.
+  // 브랜드는 카탈로그의 어느 단체에든 제안하고, 다른 브랜드에는 절대 하지 않는다.
   assert.equal((await call("POST", "/proposals", { matchId: "kw-code" }, token)).status, 201)
   await call("DELETE", "/proposals/kw-code", undefined, token)
   assert.equal((await call("POST", "/proposals", { matchId: "freshon" }, token)).status, 404)
@@ -670,7 +670,7 @@ test("each event counts its own QR scans, coupons and visits", async () => {
   const page = (await call("GET", "/check-in/20261012")).data
   assert.equal(page.eventName, "가을 버스킹 데이")
   assert.equal(page.groupName, "삼육대 뮤즈")
-  // The busking day's only sponsor took over its coupon.
+  // 버스킹 날의 유일한 협찬사가 그 쿠폰을 넘겨받았다.
   assert.deepEqual(page.coupons, [{ id: "sp-busking", store: "오후의 커피 공릉점", title: "아메리카노 1+1" }])
 
   const recorded = (await call("POST", "/check-in/20261012/scans")).data
@@ -678,9 +678,9 @@ test("each event counts its own QR scans, coupons and visits", async () => {
   assert.match(recorded.pass, /^[0-9a-f]{32}$/)
   assert.equal((await call("GET", busking)).data.metrics.scans, initial.scans + 1)
 
-  // A coupon needs the scan's pass and comes once, with a number; the visit
-  // is confirmed on the store staff's device with that number and the PIN,
-  // never from the participant's phone.
+  // 쿠폰은 스캔의 패스가 있어야 하고 번호와 함께 한 번만 나온다. 방문은 매장
+  // 직원의 기기에서 그 번호와 PIN으로 확인하며, 참여자의 폰에서는 절대 하지
+  // 않는다.
   const { pass } = recorded
   const record = (kind: string, body?: unknown) => call("POST", `/check-in/20261012/${kind}`, body)
   assert.equal((await record("coupons")).status, 403)
@@ -700,7 +700,7 @@ test("each event counts its own QR scans, coupons and visits", async () => {
   assert.equal((await staff({ pin: "1012", coupon: coupon.coupon.toLowerCase() })).status, 200)
   assert.equal((await staff({ pin: "1012", coupon: coupon.coupon })).status, 409)
   assert.deepEqual((await passState()).data, { coupons: { "sp-busking": { number: coupon.coupon, visited: true } } })
-  // The PIN is for the group that owns the event, not for visitors.
+  // PIN은 방문자가 아니라 행사를 가진 단체를 위한 것이다.
   assert.equal((await call("GET", busking)).data.report.staffPin, undefined)
   const owner = await login("학생단체")
   const owned = (await call("GET", busking, undefined, owner)).data.report
@@ -712,7 +712,7 @@ test("each event counts its own QR scans, coupons and visits", async () => {
   assert.ok(scans.every((entry: { kind: string }) => entry.kind === "scans"))
   assert.ok((await call("GET", `${busking}/log`)).data.entries.length > scans.length)
 
-  // Another event of the group starts from zero with a code of its own.
+  // 단체의 다른 행사는 자기 코드를 가지고 0에서 시작한다.
   const list = (await call("GET", "/measurements")).data.measurements
   assert.deepEqual(
     list.map((item: { eventId: string }) => item.eventId),
@@ -731,7 +731,7 @@ test("each event counts its own QR scans, coupons and visits", async () => {
   assert.equal((await call("POST", "/check-in/20261012/likes")).status, 404)
   assert.equal((await call("GET", `${busking}/log?kind=likes`)).status, 404)
   assert.equal((await call("GET", "/measurements/event-unknown")).status, 404)
-  // Brands measure their own campaigns, not the groups' events.
+  // 브랜드는 자기 캠페인을 측정하고, 단체의 행사는 측정하지 않는다.
   const brand = await login("브랜드")
   const campaigns = (await call("GET", "/measurements", undefined, brand)).data.measurements
   assert.deepEqual(campaigns.map((item: { eventId: string }) => item.eventId), ["event-coffee-tasting"])
@@ -746,8 +746,8 @@ test("student groups browse the brand catalog and propose to any brand", async (
   const { brands } = (await call("GET", "/brands")).data
   assert.equal(brands.length, 12)
   assert.ok(brands.every((brand: { popularity?: number }) => typeof brand.popularity === "number"))
-  // The examples show their seeded 기본 정보; the demo brand, which an
-  // account owns, shows what its activity says (lib/brandProfile.ts).
+  // 예시는 시드된 기본 정보를 보여 주고, 계정이 가진 데모 브랜드는 활동이 말하는
+  // 것을 보여 준다(lib/brandProfile.ts).
   type Shown = { id: string; intro?: string; facts?: { label: string; value: string }[]; tags: string[]; sns?: { followers?: string }[] }
   const shown = brands as Shown[]
   assert.ok(shown.every((brand) => brand.intro && brand.facts?.length))
@@ -757,7 +757,7 @@ test("student groups browse the brand catalog and propose to any brand", async (
     { label: "위치", value: "서울 노원구" },
     { label: "제공 서비스", value: "할인 쿠폰 · 현금 후원 · 시음 · 샘플링" },
   ])
-  // No brand shows follower counts.
+  // 어느 브랜드도 팔로워 수를 보여 주지 않는다.
   assert.ok(shown.every((brand) => (brand.sns ?? []).every((row) => row.followers === undefined)))
   assert.deepEqual(
     brands.slice(0, 3).map((brand: { id: string }) => brand.id),
@@ -783,8 +783,8 @@ test("an event's report follows its goals and live counts", async () => {
     report.valueBreakdown.reduce((sum: number, part: { value: number }) => sum + part.value, 0),
     report.sponsorValue,
   )
-  // Reach is the QR scans plus the reach beyond the venue; ROAS is the
-  // estimated sales (visits × average spend) over the sponsorship's value.
+  // 도달은 QR 스캔에 행사장 밖의 도달을 더한 것이고, ROAS는 추정 매출(방문 ×
+  // 평균 지출)을 협찬의 가치로 나눈 것이다.
   assert.equal(report.reach, metrics.scans + report.snsReach)
   assert.equal(report.roas, Math.round(((metrics.visits * report.averageSpend) / report.sponsorValue) * 100))
   assert.equal(
@@ -800,7 +800,7 @@ test("brands browse every student group with its next event", async () => {
   assert.equal(groups[0].school, "삼육대학교")
   assert.match(groups[0].eventDate, /^\d{4}-\d{2}-\d{2}$/)
   assert.ok(groups.every((group: { audience?: number }) => typeof group.audience === "number"))
-  // Every group has what its detail page shows.
+  // 모든 단체에는 상세 페이지가 보여 주는 것이 있다.
   assert.ok(
     groups.every(
       (group: { intro?: string; facts?: unknown[] }) => group.intro && group.facts?.length === 4,
@@ -837,7 +837,7 @@ test("a student group's proposal reaches the brand, and the answer comes back", 
   const sent = await call("POST", "/proposals", { matchId: "afternoon-coffee" }, student)
   assert.equal(sent.status, 201)
   assert.equal(sent.data.statuses["afternoon-coffee"], "검토 중")
-  // Sending twice does not file a second request.
+  // 두 번 보내도 요청이 두 건 접수되지 않는다.
   await call("POST", "/proposals", { matchId: "afternoon-coffee" }, student)
 
   const inbox = (await call("GET", "/requests", undefined, brand)).data.requests
@@ -847,7 +847,7 @@ test("a student group's proposal reaches the brand, and the answer comes back", 
   assert.equal(request.status, "검토 중")
   assert.equal(request.ask, "쿠폰 150장 + 현금 20만원")
 
-  // The proposal is about the group's next event, if there is one.
+  // 제안은 단체의 다음 행사가 있으면 그 행사에 대한 것이다.
   const today = new Date().toISOString().slice(0, 10)
   const events = (await call("GET", "/events", undefined, student)).data.events
   const next = events
@@ -864,15 +864,15 @@ test("a student group's proposal reaches the brand, and the answer comes back", 
   }
   assert.equal((await call("DELETE", "/proposals/afternoon-coffee", undefined, student)).status, 409)
 
-  // The accepted proposal becomes one of the brand's sponsorships, linked to
-  // the event; it shows in the analytics once the event's day has come.
+  // 수락된 제안은 행사에 연결된 브랜드의 협찬 하나가 되며, 행사의 날이
+  // 오면 분석에 나타난다.
   const brandId = (await call("GET", "/auth/me", undefined, brand)).data.account.id
   const record = getDatabase().sponsorships[brandId].find((item) => item.id === `sp-${request.id}`)
   assert.ok(record)
   assert.equal(record.groupName, "삼육대 뮤즈")
   assert.equal(record.eventId, next?.id)
   const analytics = async () => (await call("GET", "/analytics", undefined, brand)).data.sponsorships
-  // Its day has not come yet.
+  // 아직 그 날이 오지 않았다.
   assert.equal((await analytics()).some((item: { id: string }) => item.id === record.id), false)
   if (next) {
     const day = record.date
@@ -884,7 +884,7 @@ test("a student group's proposal reaches the brand, and the answer comes back", 
     record.date = day
   }
 
-  // Proposals to brands without an account have no answer to show.
+  // 계정이 없는 브랜드에 한 제안은 보여 줄 답이 없다.
   const other = await call("POST", "/proposals", { matchId: "studymate" }, student)
   assert.equal(other.data.statuses.studymate, undefined)
   const withdrawn = await call("DELETE", "/proposals/studymate", undefined, student)
@@ -917,8 +917,8 @@ test("proposals are about an upcoming event, and a sponsor can be asked again fo
   const { token: student, listingId: groupId } = await listedMember("proposer@syu.ac.kr", "proposer-pass-123")
   const { token: brand, listingId: brandId } = await listedMember("proposer@proposer-cafe.kr", "proposer-pass-123", "브랜드")
 
-  // Without an upcoming event a proposal would never reach the analytics,
-  // so it waits for one.
+  // 다가오는 행사가 없으면 제안이 분석에 닿지 않으므로, 행사가 생길 때까지
+  // 기다린다.
   const none = await call("POST", "/proposals", { matchId: brandId }, student)
   assert.equal(none.status, 409)
   assert.match(none.data.error, /행사를 먼저/)
@@ -929,12 +929,12 @@ test("proposals are about an upcoming event, and a sponsor can be asked again fo
   assert.equal((await call("POST", "/proposals", { matchId: brandId }, student)).status, 201)
   const mine = () => getDatabase().requests.filter((item) => item.groupName === "proposer 동아리")
   assert.deepEqual(mine().map((item) => item.eventId), [first.id])
-  // Sending again while it waits changes nothing.
+  // 기다리는 동안 다시 보내도 달라지는 것이 없다.
   assert.equal((await call("POST", "/proposals", { matchId: brandId }, student)).status, 201)
   assert.equal(mine().length, 1)
   assert.equal((await call("GET", "/proposals", undefined, student)).data.confirmed, 0)
   await call("POST", `/requests/${mine()[0].id}/accept`, undefined, brand)
-  // Confirmed sponsorships count either way round: the brand's are all its records.
+  // 확정된 협찬은 방향에 상관없이 센다. 브랜드의 것은 전부 그 기록이다.
   assert.equal((await call("GET", "/proposals", undefined, student)).data.confirmed, 1)
   const brandAccount = (await call("GET", "/auth/me", undefined, brand)).data.account.id as string
   assert.equal(
@@ -945,20 +945,20 @@ test("proposals are about an upcoming event, and a sponsor can be asked again fo
   assert.equal(again.status, 409)
   assert.match(again.data.error, /이미 협찬이 확정/)
 
-  // Once the first event is over, the next one can be proposed.
+  // 첫 행사가 끝나면 다음 행사로 제안할 수 있다.
   Object.values(getDatabase().events).flat().find((item) => item.id === first.id)!.date = addDays(today, -2)
   const next = await call("POST", "/proposals", { matchId: brandId }, student)
   assert.equal(next.status, 201)
   assert.deepEqual(mine().map((item) => item.eventId), [first.id, second.id])
   assert.equal(next.data.statuses[brandId], "검토 중")
-  // Withdrawing it leaves the accepted one and the brand among the proposals.
+  // 철회해도 수락된 것과 브랜드는 제안 목록에 남는다.
   const withdrawn = await call("DELETE", `/proposals/${brandId}`, undefined, student)
   assert.equal(withdrawn.status, 200)
   assert.ok(withdrawn.data.proposals.includes(brandId))
   assert.equal(withdrawn.data.statuses[brandId], "수락")
   assert.equal((await call("DELETE", `/proposals/${brandId}`, undefined, student)).status, 409)
 
-  // A brand needs an upcoming campaign the same way.
+  // 브랜드도 마찬가지로 다가오는 캠페인이 필요하다.
   const offer = await call("POST", "/proposals", { matchId: groupId }, brand)
   assert.equal(offer.status, 409)
   assert.match(offer.data.error, /캠페인을 먼저/)
@@ -991,7 +991,7 @@ test("an event is edited with the same checks, and its proposals, sponsorships a
     await call("POST", `/requests/${request.id}/accept`, undefined, brand)
     sent.length = 0
 
-    // Only its owner edits it, with the checks it was registered with.
+    // 주인만 고칠 수 있으며, 등록할 때의 검사를 그대로 거친다.
     const edit = {
       name: "고친 공연",
       date: addDays(today, 12),
@@ -1010,8 +1010,8 @@ test("an event is edited with the same checks, and its proposals, sponsorships a
       { name: edit.name, date: edit.date, endDate: edit.endDate, people: "120명", typeNote: edit.typeNote, status: "집행 예정" },
     )
 
-    // The brand's proposal and sponsorship take the new name and day, and
-    // the brand hears what changed.
+    // 브랜드의 제안과 협찬은 새 이름과 날을 따라가고, 브랜드는 무엇이
+    // 바뀌었는지 알림을 받는다.
     const [followed] = (await call("GET", "/requests", undefined, brand)).data.requests
     assert.deepEqual([followed.eventName, followed.eventDate, followed.people], ["고친 공연", addDays(today, 12), "예상 인원 120명"])
     const sponsorship = getDatabase().sponsorships[brandId].find((item) => item.eventId === event.id)!
@@ -1027,13 +1027,13 @@ test("an event is edited with the same checks, and its proposals, sponsorships a
     const oneDay = await call("PUT", `/events/${event.id}`, { ...edit, endDate: "", types: ["현금"] }, group)
     assert.equal(oneDay.data.event.endDate, undefined)
     assert.equal(oneDay.data.event.typeNote, undefined)
-    // A change no partner reads about (the types) sends nothing.
+    // 파트너가 읽을 일이 없는 변경(종류)은 아무것도 보내지 않는다.
     sent.length = 0
     await call("PUT", `/events/${event.id}`, { ...edit, endDate: "", types: ["현금", "제품"] }, group)
     await settle()
     assert.equal(sent.length, 0)
 
-    // A brand's campaign works the same way round.
+    // 브랜드의 캠페인도 반대 방향으로 같게 동작한다.
     const campaign = (
       await call("POST", "/events", { name: "고칠 캠페인", date: addDays(today, 15), types: ["제품"] }, brand)
     ).data.event
@@ -1048,8 +1048,8 @@ test("an event is edited with the same checks, and its proposals, sponsorships a
     await settle()
     assert.equal(sent.find((item) => item.to[0] === groupEmail)?.subject, "[uniconnect] 캠페인 정보가 바뀌었어요")
 
-    // Once it has begun its dates stay, as its results were counted on them;
-    // the rest can still change.
+    // 시작한 뒤에는 결과를 그 날짜로 집계했으므로 날짜는 그대로 두고, 나머지는
+    // 바꿀 수 있다.
     Object.values(getDatabase().events).flat().find((item) => item.id === event.id)!.date = today
     const moved = await call("PUT", `/events/${event.id}`, { ...edit, date: addDays(today, 20), endDate: "" }, group)
     assert.equal(moved.status, 409)
@@ -1072,7 +1072,7 @@ test("a proposal still waiting when its event ends is closed: it can't be answer
   await call("POST", "/proposals", { matchId: brandListing }, group)
   const stored = (id: string) => Object.values(getDatabase().events).flat().find((item) => item.id === id)!
 
-  // It waits while its event runs, and is closed from the day after its last day.
+  // 행사가 진행되는 동안은 기다리고, 마지막 날의 다음 날부터 닫힌다.
   stored(event.id).date = addDays(today, -3)
   stored(event.id).endDate = today
   assert.equal((await call("GET", "/requests", undefined, brand)).data.requests[0].status, "검토 중")
@@ -1083,10 +1083,10 @@ test("a proposal still waiting when its event ends is closed: it can't be answer
   assert.equal(accepted.status, 409)
   assert.match(accepted.data.error, /마감된 제안/)
   assert.equal((await call("POST", `/requests/${closed.id}/decline`, undefined, brand)).status, 409)
-  // It stays as it was sent.
+  // 보낸 그대로 남는다.
   assert.equal(getDatabase().requests.find((item) => item.id === closed.id)?.status, "검토 중")
 
-  // The group sees it closed, and can propose again about its next event.
+  // 단체는 닫힌 것으로 보며, 다음 행사에 대해 다시 제안할 수 있다.
   const state = (await call("GET", "/proposals", undefined, group)).data
   assert.equal(state.statuses[brandListing], "마감")
   assert.equal(state.sent[0].status, "마감")
@@ -1103,7 +1103,7 @@ test("a proposal still waiting when its event ends is closed: it can't be answer
     ],
   )
 
-  // A brand's offer about a campaign that has ended closes the same way.
+  // 끝난 캠페인에 대한 브랜드의 제안도 같은 방식으로 닫힌다.
   const campaign = (await call("POST", "/events", { name: "끝날 캠페인", date: addDays(today, 5), types: ["제품"] }, brand)).data.event
   await call("POST", "/proposals", { matchId: groupListing }, brand)
   stored(campaign.id).date = addDays(today, -1)
@@ -1137,13 +1137,13 @@ test("a sponsorship is called off only when both sides agree, and leaves the bra
     await call("POST", "/proposals", { matchId: brandListing }, group)
     const [request] = (await call("GET", "/requests", undefined, brand)).data.requests
     await call("POST", `/requests/${request.id}/accept`, undefined, brand)
-    // Opening the agreement makes the event's measurement, with the brand's share.
+    // 계약서를 열면 브랜드의 몫과 함께 행사의 측정이 만들어진다.
     assert.equal((await call("GET", `/agreements/${request.id}`, undefined, group)).data.agreement.cancelable, true)
     const measurement = () => getDatabase().measurements.find((item) => item.eventId === event.id)!
     assert.equal(measurement().sponsors.length, 1)
     sent.length = 0
 
-    // One side asks, saying why; only the other side can agree.
+    // 한쪽이 이유를 말하며 요청하고, 동의할 수 있는 것은 상대편뿐이다.
     assert.equal((await call("POST", `/agreements/${request.id}/cancel`, { reason: " " }, brand)).status, 400)
     const reason = "매장 공사로 협찬이 어려워요."
     const asked = await call("POST", `/agreements/${request.id}/cancel`, { reason }, brand)
@@ -1157,14 +1157,14 @@ test("a sponsorship is called off only when both sides agree, and leaves the bra
     assert.equal(askMail?.subject, "[uniconnect] 협찬 취소 요청이 왔어요")
     assert.match(askMail?.text ?? "", /이유: 매장 공사로/)
 
-    // Declined, the sponsorship stays, and it can be asked about again.
+    // 거절되면 협찬은 남고, 다시 요청할 수 있다.
     const declined = await call("DELETE", `/agreements/${request.id}/cancel`, undefined, group)
     assert.equal(declined.data.agreement.cancel, undefined)
     assert.equal(getDatabase().requests.find((item) => item.id === request.id)?.status, "수락")
     await call("POST", `/agreements/${request.id}/cancel`, { reason }, brand)
 
-    // Agreed, it is called off: the proposal, the brand's record and share go,
-    // and the event is matching again.
+    // 동의하면 취소된다. 제안, 브랜드의 기록과 몫이 사라지고 행사는 다시
+    // 매칭 상태가 된다.
     sent.length = 0
     const agreed = await call("POST", `/agreements/${request.id}/cancel/accept`, undefined, group)
     assert.equal(agreed.status, 200)
@@ -1178,18 +1178,18 @@ test("a sponsorship is called off only when both sides agree, and leaves the bra
     await settle()
     assert.equal(sent.find((mail) => mail.to[0] === brandEmail)?.subject, "[uniconnect] 협찬이 취소됐어요")
 
-    // The agreement stays as a record: it reads, but nothing changes it, and
-    // the list marks it.
+    // 계약서는 기록으로 남는다. 읽을 수는 있지만 아무것도 바꿀 수 없고, 목록에
+    // 표시한다.
     assert.equal((await call("GET", `/agreements/${request.id}`, undefined, brand)).status, 200)
     assert.equal((await call("POST", `/agreements/${request.id}/confirm`, undefined, brand)).status, 409)
     assert.equal((await call("PUT", `/reviews/${request.id}`, { rating: 5, tags: [], comment: "" }, group)).status, 409)
     const list = (await call("GET", "/agreements", undefined, group)).data.agreements as { id: string; canceled?: boolean }[]
     assert.equal(list.find((item) => item.id === request.id)?.canceled, true)
-    // Nothing sponsors the event now, so it can go.
+    // 이제 행사를 협찬하는 곳이 없으므로 삭제할 수 있다.
     assert.equal((await call("DELETE", `/events/${event.id}`, undefined, group)).status, 204)
 
-    // The brand can be asked again; once an event is over, its sponsorship
-    // can't be called off.
+    // 브랜드에게 다시 요청할 수 있다. 행사가 끝나면 그 협찬은 취소할 수
+    // 없다.
     const later = (await call("POST", "/events", { name: "다음 공연", date: addDays(today, 3), types: ["현금"] }, group)).data.event
     assert.equal((await call("POST", "/proposals", { matchId: brandListing }, group)).status, 201)
     const next = (await call("GET", "/requests", undefined, brand)).data.requests.find(
@@ -1201,7 +1201,7 @@ test("a sponsorship is called off only when both sides agree, and leaves the bra
     assert.equal(over.status, 409)
     assert.match(over.data.error, /끝난 행사/)
 
-    // The shared demo accounts can't call theirs off.
+    // 공유 데모 계정은 자기 협찬을 취소할 수 없다.
     const demoBrand = await login("브랜드")
     const [demoAgreement] = (await call("GET", "/agreements", undefined, demoBrand)).data.agreements
     assert.equal((await call("POST", `/agreements/${demoAgreement.id}/cancel`, { reason }, demoBrand)).status, 403)
@@ -1236,13 +1236,13 @@ test("a proposal names the sender's event and carries its note to the partner", 
     const past = await event("지난 공연", -3)
     const note = "공연이 끝나면 SNS 후기까지 함께 올릴게요."
 
-    // Someone else's event, one that has ended, or a note too long: refused.
+    // 남의 행사, 끝난 행사, 너무 긴 메모는 거절한다.
     const propose = (body: object) => call("POST", "/proposals", { matchId: brandListing, ...body }, group)
     assert.equal((await propose({ eventId: "not-mine" })).status, 404)
     assert.equal((await propose({ eventId: past.id })).status, 409)
     assert.equal((await propose({ message: "가".repeat(301) })).status, 400)
 
-    // It names the later event and takes the note to the brand's inbox and email.
+    // 나중 행사의 이름을 쓰고, 메모를 브랜드의 받은편지함과 메일로 가져간다.
     sent.length = 0
     assert.equal((await propose({ eventId: far.id, message: note })).status, 201)
     const [request] = (await call("GET", "/requests", undefined, brand)).data.requests
@@ -1252,7 +1252,7 @@ test("a proposal names the sender's event and carries its note to the partner", 
     // The group sees its note under 보낸 제안.
     assert.equal((await call("GET", "/proposals", undefined, group)).data.sent[0].message, note)
 
-    // Without either, it is about the nearest event, with the usual greeting.
+    // 둘 다 없으면 가장 가까운 행사에 대한 것이며 기본 인사말을 쓴다.
     await call("DELETE", `/proposals/${brandListing}`, undefined, group)
     assert.equal((await propose({})).status, 201)
     const [usual] = (await call("GET", "/requests", undefined, brand)).data.requests
@@ -1277,19 +1277,19 @@ test("a meeting proposed in a conversation is accepted by the other side, and on
   const message = sent.data.conversation.messages.at(-1)
   assert.deepEqual(message.meeting, { ...meeting, status: "proposed" })
   assert.equal(message.text, `미팅 제안: ${day} 14:30 · 학생회관 2층 카페`)
-  // A day gone, an odd length or no place is refused.
+  // 지난 날, 이상한 길이, 장소 없음은 거절한다.
   for (const wrong of [{ date: addDays(todayInKorea(), -1) }, { minutes: 45 }, { place: "" }, { time: "25:00" }]) {
     assert.equal((await call("POST", `/conversations/${chat.id}/meetings`, { ...meeting, ...wrong }, group)).status, 400)
   }
   const answer = (token: string, value: string) =>
     call("POST", `/conversations/${chat.id}/meetings/${message.id}/answer`, { answer: value }, token)
-  // The sender can't accept its own; the other side can't call it off.
+  // 보낸 쪽은 자기 것을 수락할 수 없고, 상대편은 취소할 수 없다.
   assert.equal((await answer(group, "accept")).status, 403)
   assert.equal((await answer(brand, "cancel")).status, 403)
   const accepted = await answer(brand, "accept")
   assert.equal(accepted.data.conversation.messages.at(-1).meeting.status, "accepted")
   assert.equal((await answer(brand, "decline")).status, 409)
-  // It can't be edited, and the sender still calls it off once accepted.
+  // 고칠 수 없고, 수락된 뒤에도 보낸 쪽이 취소할 수 있다.
   assert.equal((await call("PUT", `/conversations/${chat.id}/messages/${message.id}`, { text: "바꿔요" }, group)).status, 409)
   assert.equal((await answer(group, "cancel")).data.conversation.messages.at(-1).meeting.status, "canceled")
   const listed = (await call("GET", "/conversations", undefined, brand)).data.conversations
@@ -1303,15 +1303,15 @@ test("an account sending messages or proposals in a flood is held back, and othe
   const chat = (await call("POST", "/conversations", { partnerId: brandListing }, group)).data.conversation
   const say = (token: string, text: string) => call("POST", `/conversations/${chat.id}/messages`, { text }, token)
 
-  // Twenty in a minute go; the next waits, with a reason to show.
+  // 1분에 스무 번은 통과하고, 그다음은 보여 줄 이유와 함께 기다린다.
   for (let count = 1; count <= 20; count += 1) assert.equal((await say(group, `메시지 ${count}`)).status, 201)
   const held = await say(group, "하나 더")
   assert.equal(held.status, 429)
   assert.match(held.data.error, /1분 뒤에/)
-  // The other side, counted apart, still answers.
+  // 따로 세는 상대편은 여전히 답한다.
   assert.equal((await say(brand, "천천히 보내 주세요.")).status, 201)
 
-  // Thirty proposals an hour go, even ones that change nothing; then they wait.
+  // 한 시간에 서른 번의 제안은 달라지는 것이 없어도 통과하고, 그다음은 기다린다.
   await call("POST", "/events", { name: "많이 보내는 공연", date: addDays(todayInKorea(), 10), types: ["현금"] }, group)
   for (let count = 1; count <= 30; count += 1) {
     assert.equal((await call("POST", "/proposals", { matchId: brandListing }, group)).status, 201)
@@ -1324,12 +1324,12 @@ test("an account sending messages or proposals in a flood is held back, and othe
 test("authenticator codes follow RFC 6238, and devices are named by browser and system", async () => {
   const { codeAt, matchStep, stepAt, toBase32 } = await import("./lib/totp.js")
   const { deviceLabel } = await import("./lib/devices.js")
-  // RFC 6238's SHA-1 vectors, as six digits.
+  // RFC 6238의 SHA-1 벡터를 여섯 자리로 쓴다.
   const secret = toBase32(Buffer.from("12345678901234567890"))
   assert.equal(codeAt(secret, stepAt(59_000)), "287082")
   assert.equal(codeAt(secret, stepAt(1_111_111_109_000)), "081804")
   assert.equal(codeAt(secret, stepAt(2_000_000_000_000)), "279037")
-  // A step either side is taken, a code already used is not.
+  // 앞뒤 한 단계는 받아들이고, 이미 쓴 코드는 받아들이지 않는다.
   const now = 1_111_111_109_000
   assert.equal(matchStep(secret, "081804", now + 30_000), stepAt(now))
   assert.equal(matchStep(secret, "081 804", now), stepAt(now))
@@ -1353,14 +1353,14 @@ test("with two-step login on, a password alone doesn't log in, and recovery code
   const token = await signUpMember(email, password)
   const logIn = () => call("POST", "/auth/login", { role: "학생단체", email, password })
 
-  // Set up with the password, then the app's first code; the demo accounts can't.
+  // 비밀번호로 설정한 뒤 앱의 첫 코드로 켠다. 데모 계정은 할 수 없다.
   assert.equal((await call("POST", "/auth/two-factor/setup", { password: DEMO_PASSWORD }, await login("학생단체"))).status, 403)
   assert.equal((await call("POST", "/auth/two-factor/setup", { password: "wrong-pass-1!" }, token)).status, 400)
   const { secret, url } = (await call("POST", "/auth/two-factor/setup", { password }, token)).data
   assert.match(url, /^otpauth:\/\/totp\/uniconnect%3Atwostep%40syu\.ac\.kr\?secret=[A-Z2-7]+&issuer=uniconnect/)
   assert.equal((await call("POST", "/auth/two-factor/enable", { code: "000000" }, token)).status, 400)
   const code = () => codeAt(secret, stepAt(Date.now()))
-  // Kept, as the clock may move on to the next 30 seconds' code meanwhile.
+  // 보관한다. 그사이 시계가 다음 30초의 코드로 넘어갔을 수 있다.
   const used = code()
   const enabled = (await call("POST", "/auth/two-factor/enable", { code: used }, token)).data
   assert.equal(enabled.account.twoFactorOn, true)
@@ -1368,13 +1368,13 @@ test("with two-step login on, a password alone doesn't log in, and recovery code
   assert.equal(enabled.recoveryCodes.length, 10)
   assert.match(enabled.recoveryCodes[0], /^[A-Z2-9]{4}-[A-Z2-9]{4}$/)
 
-  // The password now gives a ticket, not a session; the ticket wants a code.
+  // 이제 비밀번호는 세션이 아니라 티켓을 주고, 티켓은 코드를 요구한다.
   const first = (await logIn()).data
   assert.equal(first.twoFactor, true)
   assert.equal(first.token, undefined)
   const withCode = (body: object) => call("POST", "/auth/login/code", { email, ticket: first.ticket, ...body })
   assert.equal((await call("POST", "/auth/login/code", { email, ticket: "nope", code: code() })).status, 401)
-  // The code used to turn it on doesn't work twice; a recovery code does, once.
+  // 켤 때 쓴 코드는 두 번 동작하지 않고, 복구 코드는 한 번 동작한다.
   assert.equal((await withCode({ code: used })).status, 401)
   const recovered = await withCode({ code: enabled.recoveryCodes[0].toLowerCase() })
   assert.equal(recovered.status, 200)
@@ -1383,7 +1383,7 @@ test("with two-step login on, a password alone doesn't log in, and recovery code
   const again = (await logIn()).data
   assert.equal((await call("POST", "/auth/login/code", { email, ticket: again.ticket, code: enabled.recoveryCodes[0] })).status, 401)
 
-  // Five wrong codes end the ticket.
+  // 틀린 코드가 다섯 번이면 티켓이 끝난다.
   const third = (await logIn()).data
   for (let count = 1; count <= 4; count += 1) {
     assert.equal((await call("POST", "/auth/login/code", { email, ticket: third.ticket, code: "111111" })).status, 401)
@@ -1392,7 +1392,7 @@ test("with two-step login on, a password alone doesn't log in, and recovery code
   assert.match(ended.data.error, /너무 많이/)
   assert.equal((await call("POST", "/auth/login/code", { email, ticket: third.ticket, code: enabled.recoveryCodes[1] })).status, 401)
 
-  // A password reset by email still asks for the code, and ends the other logins.
+  // 이메일로 한 비밀번호 초기화도 코드를 요구하고 다른 로그인을 끝낸다.
   const newPassword = "twostep-pass-456!"
   await call("POST", "/auth/password-reset/code", { email })
   const resetCode = getDatabase().emailCodes.find((item) => item.email === email && item.purpose === "reset")!.code
@@ -1403,7 +1403,7 @@ test("with two-step login on, a password alone doesn't log in, and recovery code
   const afterReset = await call("POST", "/auth/login/code", { email, ticket: reset.ticket, code: enabled.recoveryCodes[2] })
   assert.equal(afterReset.status, 200)
 
-  // Turning it off takes the password and a code.
+  // 끄려면 비밀번호와 코드가 필요하다.
   const session = afterReset.data.token
   assert.equal((await call("POST", "/auth/two-factor/disable", { password: newPassword, code: "111111" }, session)).status, 400)
   const off = await call("POST", "/auth/two-factor/disable", { password: newPassword, code: enabled.recoveryCodes[3] }, session)
@@ -1419,13 +1419,13 @@ test("a student council sees the clubs that linked with its code, read-only, unt
   const { token: club } = await listedMember("council-club@syu.ac.kr", "council-pass-123")
   const other = await signUpMember("council-other@syu.ac.kr", "council-pass-123")
 
-  // Only councils have the page; the code is made the first time.
+  // 총학생회만 이 페이지를 가지며 코드는 처음 열 때 만든다.
   assert.equal((await call("GET", "/council/clubs", undefined, club)).status, 403)
   const first = (await call("GET", "/council/clubs", undefined, council)).data
   assert.match(first.code, /^[A-Z2-9]{4}-[A-Z2-9]{4}$/)
   assert.deepEqual(first.clubs, [])
 
-  // A club links with the code, typed any way; wrong codes and the demo accounts don't.
+  // 동아리는 어떤 형태로 입력해도 코드로 연결한다. 틀린 코드와 데모 계정은 안 된다.
   assert.equal((await call("POST", "/council/links", { code: "AAAA-AAAA" }, club)).status, 400)
   assert.equal((await call("POST", "/council/links", { code: first.code }, await login("학생단체"))).status, 403)
   assert.equal((await call("POST", "/council/links", { code: first.code }, council)).status, 400)
@@ -1434,7 +1434,7 @@ test("a student council sees the clubs that linked with its code, read-only, unt
   assert.equal(linked.data.councils[0].type, "총학생회")
   assert.equal((await call("POST", "/council/links", { code: first.code }, club)).status, 409)
 
-  // The council reads the club's coming events, proposals and results, and nothing private.
+  // 총학생회는 동아리의 다가오는 행사, 제안, 결과를 읽고, 사적인 것은 읽지 않는다.
   await call("POST", "/events", { name: "소속 공연", date: addDays(todayInKorea(), 12), types: ["현금"] }, club)
   const { clubs } = (await call("GET", "/council/clubs", undefined, council)).data
   assert.equal(clubs.length, 1)
@@ -1444,17 +1444,17 @@ test("a student council sees the clubs that linked with its code, read-only, unt
   for (const secret of ["010-1234-5678", "council-club@syu.ac.kr", "passwordHash", "contact"]) {
     assert.equal(JSON.stringify(clubs).includes(secret), false, secret)
   }
-  // Clubs that didn't link don't show.
+  // 연결하지 않은 동아리는 보이지 않는다.
   assert.equal(clubs.some((item: { id: string }) => item.id === getDatabase().accounts.find((a) => a.email === "council-other@syu.ac.kr")!.id), false)
   void other
 
-  // A new code links no more clubs; those linked stay.
+  // 새 코드로는 더 이상 동아리를 연결할 수 없고, 연결된 곳은 그대로다.
   const renewed = (await call("POST", "/council/code", undefined, council)).data.code
   assert.notEqual(renewed, first.code)
   assert.equal((await call("POST", "/council/links", { code: first.code }, other)).status, 400)
   assert.equal((await call("GET", "/council/clubs", undefined, council)).data.clubs.length, 1)
 
-  // The club unlinks, and the council no longer sees it; or the council takes it off.
+  // 동아리가 연결을 끊거나 총학생회가 동아리를 빼면 총학생회는 더 이상 그 동아리를 보지 못한다.
   const councilId = linked.data.councils[0].id
   assert.deepEqual((await call("DELETE", `/council/links/${councilId}`, undefined, club)).data.councils, [])
   assert.deepEqual((await call("GET", "/council/clubs", undefined, council)).data.clubs, [])
@@ -1463,7 +1463,7 @@ test("a student council sees the clubs that linked with its code, read-only, unt
   assert.equal((await call("DELETE", `/council/clubs/${clubId}`, undefined, council)).status, 204)
   assert.deepEqual((await call("GET", "/council/links", undefined, club)).data.councils, [])
 
-  // When the council leaves, its clubs are unlinked.
+  // 총학생회가 떠나면 동아리의 연결이 끊긴다.
   await call("POST", "/council/links", { code: renewed }, club)
   assert.equal((await call("DELETE", "/auth/account", { password: "council-pass-123" }, council)).status, 204)
   assert.deepEqual((await call("GET", "/council/links", undefined, club)).data.councils, [])
@@ -1479,7 +1479,7 @@ test("a linked Kakao account logs in, with the state bound to the browser and no
   }
   const saved = { kakao: config.kakaoClientId, naverId: config.naverClientId, naverSecret: config.naverClientSecret }
   const origin = baseUrl.replace(/\/api$/, "")
-  // Starts a flow, as the page does: the provider's address and the state cookie.
+  // 페이지처럼 흐름을 시작한다. 제공자의 주소와 state 쿠키가 온다.
   const start = async (intent: "login" | "link", token?: string) => {
     const response = await fetch(`${baseUrl}/auth/social/kakao/start`, {
       method: "POST",
@@ -1490,23 +1490,23 @@ test("a linked Kakao account logs in, with the state bound to the browser and no
     const cookie = response.headers.get("set-cookie")?.split(";")[0] ?? ""
     return { url: new URL(url), cookie }
   }
-  // The provider sends the browser back.
+  // 제공자가 브라우저를 돌려보낸다.
   const back = async (state: string, cookie: string, code = "auth-code") => {
     const response = await fetch(`${baseUrl}/auth/social/kakao/callback?code=${code}&state=${state}`, {
       headers: cookie ? { Cookie: cookie } : {},
       redirect: "manual",
     })
-    // The cookie it sets for the page, besides clearing the state's.
+    // state의 쿠키를 지우는 것 말고도 페이지를 위해 설정하는 쿠키다.
     const set = response.headers.getSetCookie().find((item) => item.startsWith("uc_social_login=") && !item.startsWith("uc_social_login=;"))
     return { to: response.headers.get("location") ?? "", cookie: set?.split(";")[0] ?? "" }
   }
   try {
-    // Without keys there is nothing to offer.
+    // 키가 없으면 내놓을 것이 없다.
     config.kakaoClientId = undefined
     config.naverClientId = undefined
     assert.deepEqual((await call("GET", "/auth/social")).data.providers, [])
     assert.equal((await call("POST", "/auth/social/kakao/start", { intent: "login" })).status, 404)
-    // Kakao with its key; Naver not until its secret is set too.
+    // Kakao는 키만 있으면 되고, Naver는 비밀 키도 설정해야 한다.
     config.kakaoClientId = "kakao-rest-key"
     config.naverClientId = "naver-id"
     config.naverClientSecret = undefined
@@ -1523,17 +1523,17 @@ test("a linked Kakao account logs in, with the state bound to the browser and no
     assert.equal(link.url.searchParams.get("redirect_uri"), `${origin}/api/auth/social/kakao/callback`)
     assert.match(link.cookie, /^uc_social_state=/)
     const state = link.url.searchParams.get("state")!
-    // Another browser, without the cookie, can't finish it.
+    // 쿠키가 없는 다른 브라우저는 끝낼 수 없다.
     assert.equal((await back(state, "")).to, "/?social=error")
     assert.equal((await back(state, link.cookie)).to, "/me?social=linked-kakao")
-    // A state works once.
+    // state는 한 번만 동작한다.
     assert.equal((await back(state, link.cookie)).to, "/?social=error")
     const me = (await call("GET", "/auth/me", undefined, owner)).data.account
     assert.deepEqual(me.socialLinks, ["kakao"])
     assert.equal(JSON.stringify(me).includes("4242"), false)
 
-    // Logging in: the callback hands the page a one-time code in a cookie,
-    // and its address carries nothing but the outcome.
+    // 로그인이면 콜백이 쿠키로 일회용 코드를 페이지에 넘기고, 주소에는 결과만
+    // 실린다.
     const flow = await start("login")
     const done = await back(flow.url.searchParams.get("state")!, flow.cookie)
     assert.equal(done.to, "/?social=login")
@@ -1546,16 +1546,16 @@ test("a linked Kakao account logs in, with the state bound to the browser and no
     assert.equal((await complete(done.cookie)).status, 401)
     assert.equal((await complete("")).status, 401)
 
-    // A Kakao account linked to no one logs no one in, and links to one account only.
+    // 아무에게도 연결되지 않은 Kakao 계정은 아무도 로그인시키지 못하고, 계정 하나에만 연결된다.
     const stranger = await start("login")
     assert.equal((await back(stranger.url.searchParams.get("state")!, stranger.cookie, "other")).to, "/?social=unlinked-kakao")
-    // Its connection to the app is taken back; a linked one's never is.
+    // 앱과의 연결은 거두고, 연결된 계정의 연결은 절대 거두지 않는다.
     assert.deepEqual(revoked, ["t-999"])
     const second = await signUpMember("social-two@syu.ac.kr", "social-pass-123")
     const taken = await start("link", second)
     assert.equal((await back(taken.url.searchParams.get("state")!, taken.cookie)).to, "/me?social=link-taken")
 
-    // Unlinked, it no longer logs in.
+    // 연결을 끊으면 더 이상 로그인하지 못한다.
     assert.equal((await call("DELETE", "/auth/social/kakao", undefined, owner)).data.account.socialLinks, undefined)
     const after = await start("login")
     assert.equal((await back(after.url.searchParams.get("state")!, after.cookie)).to, "/?social=unlinked-kakao")
@@ -1574,7 +1574,7 @@ test("an owner invites co-admins, who log in with their own password and can't d
   const owner = await signUpMember("team@syu.ac.kr", ownerPassword)
   const join = (body: object) => call("POST", "/team/join", body)
 
-  // The owner invites by email; the code comes back only in development.
+  // 주인이 이메일로 초대하고, 코드는 개발 중에만 돌아온다.
   assert.equal((await call("POST", "/team/invites", { name: "부회장", email: "team@syu.ac.kr" }, owner)).status, 409)
   assert.equal((await call("POST", "/team/invites", { name: "부회장", email: "vice@gmail.com" }, owner)).status, 400)
   const invited = await call("POST", "/team/invites", { name: "부회장", email: "vice@syu.ac.kr" }, owner)
@@ -1584,15 +1584,15 @@ test("an owner invites co-admins, who log in with their own password and can't d
   assert.equal(JSON.stringify(invited.data.team).includes("codeHash"), false)
   assert.equal((await call("POST", "/team/invites", { name: "x", email: "x@syu.ac.kr" }, await login("학생단체"))).status, 403)
 
-  // A wrong code doesn't join; the right one does, with the person's own password.
+  // 틀린 코드는 합류시키지 않고, 맞는 코드는 그 사람의 비밀번호로 합류시킨다.
   assert.equal((await join({ email: "vice@syu.ac.kr", code: "000000", password: "vice-pass-123", document: proofDocument })).status, 400)
   assert.equal((await join({ email: "vice@syu.ac.kr", code: invited.data.devCode, password: "vice-pass-123" })).status, 400)
   const joined = await join({ email: "vice@syu.ac.kr", code: invited.data.devCode, password: "vice-pass-123", document: proofDocument })
   assert.deepEqual([joined.status, joined.data], [202, { pending: true }])
   assert.equal((await join({ email: "vice@syu.ac.kr", code: invited.data.devCode, password: "vice-pass-123", document: proofDocument })).status, 400)
-  // The email is taken for sign-up now.
+  // 이제 그 이메일은 가입에 쓰인 것이다.
   assert.equal((await call("POST", "/auth/email-code", { role: "학생단체", email: "vice@syu.ac.kr" })).status, 409)
-  // Until the operators approve it, it can't log in, and the owner sees it waiting.
+  // 운영자가 승인하기 전에는 로그인할 수 없고, 주인은 기다리는 중임을 본다.
   const waiting = await call("POST", "/auth/login", { role: "학생단체", email: "vice@syu.ac.kr", password: "vice-pass-123" })
   assert.equal(waiting.status, 403)
   assert.match(waiting.data.error, /서류/)
@@ -1600,8 +1600,7 @@ test("an owner invites co-admins, who log in with their own password and can't d
   await approveApplication("vice@syu.ac.kr")
   assert.deepEqual((await call("GET", "/team", undefined, owner)).data.team.waiting, [])
 
-  // Two-step login comes first: no session without a code, and the first
-  // login sets it up.
+  // 2단계 로그인이 먼저다. 코드 없이는 세션이 없고, 첫 로그인에서 설정한다.
   const first = await call("POST", "/auth/login", { role: "학생단체", email: "vice@syu.ac.kr", password: "vice-pass-123" })
   assert.deepEqual([first.data.token, first.data.twoFactor], [undefined, true])
   assert.ok(first.data.setup.secret)
@@ -1609,7 +1608,7 @@ test("an owner invites co-admins, who log in with their own password and can't d
   assert.equal(wrong.status, 401)
   const vice = await logInCoAdmin("vice@syu.ac.kr", "vice-pass-123")
   assert.equal(vice.recoveryCodes.length > 0, true)
-  // Once set up it asks for the code again, with no new secret.
+  // 설정한 뒤에는 새 비밀 값 없이 코드를 다시 묻는다.
   const again = await call("POST", "/auth/login", { role: "학생단체", email: "vice@syu.ac.kr", password: "vice-pass-123" })
   assert.deepEqual([again.data.token, again.data.twoFactor, again.data.setup], [undefined, true, undefined])
   assert.equal(vice.account.email, "team@syu.ac.kr")
@@ -1619,7 +1618,7 @@ test("an owner invites co-admins, who log in with their own password and can't d
   assert.ok(ownersEvents.some((event) => event.name === "함께 여는 공연"))
   assert.equal((await call("GET", "/auth/me", undefined, owner)).data.account.asMember, undefined)
 
-  // The owner's part stays the owner's.
+  // 주인의 몫은 주인의 것으로 남는다.
   for (const [method, route, body] of [
     ["DELETE", "/auth/account", { password: "vice-pass-123" }],
     ["POST", "/auth/email/code", { email: "new@syu.ac.kr", password: "vice-pass-123" }],
@@ -1628,23 +1627,23 @@ test("an owner invites co-admins, who log in with their own password and can't d
   ] as const) {
     assert.equal((await call(method, route, body, vice.token)).status, 403, route)
   }
-  // Each changes its own password.
+  // 각자 자기 비밀번호를 바꾼다.
   assert.equal((await call("POST", "/auth/password", { current: "vice-pass-123", next: "vice-pass-456!" }, vice.token)).status, 204)
   assert.equal((await call("POST", "/auth/login", { role: "학생단체", email: "team@syu.ac.kr", password: ownerPassword })).status, 200)
   assert.equal((await call("POST", "/auth/login", { role: "학생단체", email: "vice@syu.ac.kr", password: "vice-pass-123" })).status, 401)
 
-  // The owner's device list names the co-admin's logins; the co-admin sees its own.
+  // 주인의 기기 목록에는 공동 관리자의 로그인이 이름과 함께 나오고, 공동 관리자는 자기 것만 본다.
   const ownerSessions = (await call("GET", "/auth/sessions", undefined, owner)).data.sessions as { member?: string }[]
   assert.ok(ownerSessions.some((session) => session.member === "부회장"))
   const viceSessions = (await call("GET", "/auth/sessions", undefined, vice.token)).data.sessions as { member?: string }[]
   assert.ok(viceSessions.length >= 1 && viceSessions.every((session) => session.member === undefined))
 
-  // The data download lists the team without passwords.
+  // 데이터 다운로드는 팀을 비밀번호 없이 나열한다.
   const exported = (await call("GET", "/auth/export", undefined, owner)).data
   assert.deepEqual(exported.team.map((item: { name: string }) => item.name), ["부회장"])
   assert.equal(JSON.stringify(exported).includes("passwordHash"), false)
 
-  // Taking the co-admin off ends its logins at once.
+  // 공동 관리자를 팀에서 빼면 그 로그인이 바로 끝난다.
   const memberId = vice.account.asMember.id
   assert.equal((await call("DELETE", `/team/members/${memberId}`, undefined, owner)).status, 200)
   assert.equal((await call("GET", "/auth/me", undefined, vice.token)).status, 401)
@@ -1671,19 +1670,19 @@ test("the device list shows each login, and logs out one or all the others", asy
   assert.ok(listed[0].lastUsedAt && listed[0].createdAt)
   const devices = listed.map((session: { device: string }) => session.device)
   assert.ok(devices.includes("Samsung Internet · Android") && devices.includes("Safari · iPad"))
-  // Session ids stand for sessions, never their tokens.
+  // 세션 id는 세션을 가리킬 뿐 그 토큰이 아니다.
   assert.ok(listed.every((session: { id: string }) => /^[0-9a-f]{16}$/.test(session.id)))
 
-  // One device out: its login ends.
+  // 기기 하나를 내보내면 그 로그인이 끝난다.
   const phoneId = listed.find((session: { device: string }) => session.device.startsWith("Samsung")).id
   assert.equal((await call("DELETE", `/auth/sessions/${phoneId}`, undefined, mac)).status, 204)
   assert.equal((await call("GET", "/auth/me", undefined, phone)).status, 401)
   assert.equal((await call("DELETE", `/auth/sessions/${phoneId}`, undefined, mac)).status, 404)
-  // All the others out: this one stays.
+  // 나머지를 모두 내보내도 이 기기는 남는다.
   assert.equal((await call("DELETE", "/auth/sessions", undefined, mac)).status, 204)
   assert.equal((await call("GET", "/auth/me", undefined, tablet)).status, 401)
   assert.equal((await call("GET", "/auth/sessions", undefined, mac)).data.sessions.length, 1)
-  // Another account's sessions aren't found, and the shared demo accounts have no list.
+  // 다른 계정의 세션은 찾을 수 없고, 공유 데모 계정에는 목록이 없다.
   const other = await signUpMember("devices-other@syu.ac.kr", password)
   assert.equal((await call("DELETE", `/auth/sessions/${listed[0].id}`, undefined, other)).status, 404)
   assert.equal((await call("GET", "/auth/sessions", undefined, await login("학생단체"))).status, 403)
@@ -1701,7 +1700,7 @@ test("an open conversation hears of new messages and reads as they happen", asyn
     chatWait.holdMs = 3000
     chatWait.tickMs = 50
 
-    // A page showing the latest waits, and hears of a reply at once.
+    // 최신 것을 보여 주는 페이지는 기다리다가 답이 오면 바로 안다.
     const { stamp } = (await read(group)).data
     assert.match(stamp, /^[\w-]{16}$/)
     const started = Date.now()
@@ -1713,12 +1712,12 @@ test("an open conversation hears of new messages and reads as they happen", asyn
     assert.equal(heard.conversation.messages.at(-1).text, "지금 볼게요")
     assert.notEqual(heard.stamp, stamp)
 
-    // An older stamp answers at once.
+    // 더 오래된 표식은 바로 답한다.
     const begun = Date.now()
     assert.equal((await read(group, stamp)).data.conversation.messages.length, 1)
     assert.ok(Date.now() - begun < 500)
 
-    // The sender hears when its message is read.
+    // 보낸 쪽은 메시지가 읽히면 안다.
     await call("POST", `/conversations/${chat.id}/messages`, { text: "고마워요" }, group)
     const mine = (await read(group)).data
     assert.equal(mine.conversation.messages.at(-1).read, false)
@@ -1727,7 +1726,7 @@ test("an open conversation hears of new messages and reads as they happen", asyn
     await read(brand)
     assert.equal((await waitingRead).data.conversation.messages.at(-1).read, true)
 
-    // With nothing new, it answers the same when the hold runs out.
+    // 새것이 없으면 대기 시간이 끝날 때도 같게 답한다.
     chatWait.holdMs = 300
     const quiet = (await read(group)).data.stamp
     const from = Date.now()
@@ -1753,7 +1752,7 @@ test("photos and PDFs go in a conversation, only its two sides open them, and th
   const open = (token: string | undefined, file: string) =>
     fetch(`${baseUrl}${files}/${file}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
 
-  // Only photos and real PDFs of 2 MB at most, and none from the shared demo accounts.
+  // 2MB 이하의 사진과 진짜 PDF만 받고, 공유 데모 계정에서는 받지 않는다.
   assert.equal((await call("POST", files, { file: "data:application/pdf;base64,aGVsbG8=", name: "a.pdf" }, group)).status, 400)
   assert.equal((await call("POST", files, { file: png.replace("image/png", "image/gif") }, group)).status, 400)
   assert.equal((await call("POST", files, { file: pdfOf(2 * 1024 * 1024 + 1), name: "big.pdf" }, group)).status, 400)
@@ -1761,7 +1760,7 @@ test("photos and PDFs go in a conversation, only its two sides open them, and th
   const [demoChat] = (await call("GET", "/conversations", undefined, demoBrand)).data.conversations
   assert.equal((await call("POST", `/conversations/${demoChat.id}/attachments`, { file: png }, demoBrand)).status, 403)
 
-  // A photo goes as a message of its own, by the name it was picked with.
+  // 사진은 고른 이름 그대로 따로 하나의 메시지로 간다.
   const sent = await call("POST", files, { file: png, name: "C:\\fakepath\\poster.png" }, group)
   assert.equal(sent.status, 201)
   const [photo] = sent.data.conversation.messages
@@ -1774,7 +1773,7 @@ test("photos and PDFs go in a conversation, only its two sides open them, and th
   const listed = (await call("GET", "/conversations", undefined, brand)).data.conversations
   assert.equal(listed.find((item: { id: string }) => item.id === chat.id).lastMessage.attachment, "image")
 
-  // Both sides open it, and no one else.
+  // 양쪽은 열 수 있고 다른 누구도 열 수 없다.
   const seen = await open(brand, photo.attachment.file)
   assert.equal(seen.status, 200)
   assert.equal(seen.headers.get("content-type"), "image/png")
@@ -1784,21 +1783,21 @@ test("photos and PDFs go in a conversation, only its two sides open them, and th
   assert.equal((await open(undefined, photo.attachment.file)).status, 401)
   assert.equal((await open(brand, "..%2Fdb.json")).status, 404)
 
-  // A PDF comes named to be saved.
+  // PDF는 저장할 이름으로 내려온다.
   const pdf = (await call("POST", files, { file: pdfOf(1000), name: "제안서.pdf" }, brand)).data.conversation.messages.at(-1)
   assert.equal(pdf.attachment.type, "pdf")
   const saved = await open(group, pdf.attachment.file)
   assert.equal(saved.headers.get("content-type"), "application/pdf")
   assert.match(saved.headers.get("content-disposition") ?? "", /^attachment;.*filename\*=UTF-8''%EC%A0%9C%EC%95%88%EC%84%9C\.pdf/)
 
-  // A file isn't edited; deleting its message takes the file away too.
+  // 파일은 수정하지 않고, 그 메시지를 지우면 파일도 사라진다.
   assert.equal((await call("PUT", `/conversations/${chat.id}/messages/${photo.id}`, { text: "고친 글" }, group)).status, 409)
   const removed = (await call("DELETE", `/conversations/${chat.id}/messages/${photo.id}`, undefined, group)).data
   assert.equal(removed.conversation.messages[0].attachment, undefined)
   assert.equal((await open(brand, photo.attachment.file)).status, 404)
   assert.ok(!existsSync(path.join(uploadsFolder(chatFiles(chat.id)), photo.attachment.file)))
 
-  // Each account keeps 10 MB of files at most.
+  // 계정마다 파일은 최대 10MB까지 보관한다.
   for (let count = 1; count <= 5; count += 1) {
     assert.equal((await call("POST", files, { file: pdfOf(2 * 1024 * 1024), name: `${count}.pdf` }, group)).status, 201)
   }
@@ -1806,7 +1805,7 @@ test("photos and PDFs go in a conversation, only its two sides open them, and th
   assert.equal(full.status, 409)
   assert.match(full.data.error, /10MB/)
 
-  // When the group leaves, the conversation's files go with it.
+  // 단체가 떠나면 대화의 파일도 함께 사라진다.
   assert.equal((await call("DELETE", "/auth/account", { password: "files-pass-123" }, group)).status, 204)
   assert.ok(!existsSync(uploadsFolder(chatFiles(chat.id))))
 })
@@ -1822,13 +1821,13 @@ test("check-ins count only on the event's days, and records go once they are not
     return { event, report }
   }
 
-  // Not yet: tests before the day do not count.
+  // 아직 아니다. 그날 전의 테스트는 세지 않는다.
   const later = await create(addDays(today, 3))
   const early = await call("POST", `/check-in/${later.report.code}/scans`)
   assert.equal(early.status, 409)
   assert.match(early.data.error, /아직 참여를 받지 않는/)
 
-  // On the day: a scan by the day and hour, and a coupon.
+  // 그날에는 날짜와 시간별 스캔과 쿠폰이 센다.
   const now = await create(today)
   const code = now.report.code
   const { pass } = (await call("POST", `/check-in/${code}/scans`)).data
@@ -1839,7 +1838,7 @@ test("check-ins count only on the event's days, and records go once they are not
   assert.equal(measured.hourlyScans[0].date, today)
   assert.equal(measured.hourlyScans[0].scans, 2)
 
-  // Three days on, no more scans, but the coupon still brings a visit.
+  // 사흘 뒤에는 스캔이 더 늘지 않지만 쿠폰은 여전히 방문을 가져온다.
   const event = Object.values(getDatabase().events).flat().find((item) => item.id === now.event.id)!
   event.date = addDays(today, -3)
   const over = await call("POST", `/check-in/${code}/scans`)
@@ -1848,13 +1847,13 @@ test("check-ins count only on the event's days, and records go once they are not
   assert.equal((await call("POST", `/check-in/${code}/coupons`, { pass })).status, 409)
   const measurement = getDatabase().measurements.find((item) => item.eventId === now.event.id)!
   assert.equal(Object.keys(measurement.passes).length, 2)
-  // Records without a coupon are no longer needed.
+  // 쿠폰이 없는 기록은 더 이상 필요하지 않다.
   assert.equal(prunePasses(getDatabase(), measurement, event), true)
   assert.deepEqual(Object.keys(measurement.passes), [pass])
   const visit = await call("POST", `/check-in/${code}/staff/visits`, { pin: now.report.staffPin, coupon })
   assert.equal(visit.status, 200)
 
-  // Once the coupons ran out, no visits and no records.
+  // 쿠폰 기간이 끝나면 방문도 기록도 받지 않는다.
   event.date = addDays(today, -10)
   assert.equal((await call("POST", `/check-in/${code}/staff/visits`, { pin: now.report.staffPin, coupon })).status, 409)
   assert.equal(prunePasses(getDatabase(), measurement, event), true)
@@ -1894,8 +1893,8 @@ test("each sponsor of an event gets its own coupon, staff PIN and share of the r
   const before = await analytics()
   assert.equal(before.spend, 680000)
 
-  // A second brand sponsors the busking day: it gets a coupon of its own,
-  // and the event's value is split evenly until the group sets each share.
+  // 두 번째 브랜드가 버스킹 날을 협찬하면 자기 쿠폰을 받고, 단체가 몫을
+  // 정하기 전까지 행사의 가치는 똑같이 나뉜다.
   recordSponsorship(database, "another-brand", {
     id: "sp-another",
     groupName: "삼육대 뮤즈",
@@ -1918,7 +1917,7 @@ test("each sponsor of an event gets its own coupon, staff PIN and share of the r
     assert.deepEqual([theirs.coupons, theirs.visits], [0, 0])
     assert.equal((await analytics()).spend, 340000)
 
-    // A participant takes both coupons; each store confirms only its own.
+    // 참여자가 두 쿠폰을 모두 받고, 각 매장은 자기 쿠폰만 확인한다.
     const { pass } = (await call("POST", "/check-in/20261012/scans")).data
     const take = (couponId?: string) => call("POST", "/check-in/20261012/coupons", { pass, ...(couponId ? { couponId } : {}) })
     assert.equal((await take()).status, 404)
@@ -1938,7 +1937,7 @@ test("each sponsor of an event gets its own coupon, staff PIN and share of the r
       "sp-another": { number: other, visited: true },
     })
 
-    // The demo brand's analytics hold only its own coupon's figures.
+    // 데모 브랜드의 분석에는 자기 쿠폰의 수치만 담긴다.
     const after = await analytics()
     assert.equal(after.coupons, before.coupons + 1)
     assert.equal(after.visits, before.visits)
@@ -1946,7 +1945,7 @@ test("each sponsor of an event gets its own coupon, staff PIN and share of the r
     assert.deepEqual([split.report.sponsors[1].coupons, split.report.sponsors[1].visits], [1, 1])
     assert.equal(split.metrics.visits, before.visits + 1)
 
-    // The group sets each sponsor's share; the shares must add up.
+    // 단체가 협찬사마다의 몫을 정하며, 합이 맞아야 한다.
     const goals = { ...goalsBefore, sponsors: [] as unknown[] }
     const shares = (first: number, second: number, secondPin = theirs.staffPin) => ({
       ...goals,
@@ -1965,7 +1964,7 @@ test("each sponsor of an event gets its own coupon, staff PIN and share of the r
     assert.deepEqual(saved.data.report.sponsors.map((item: { value: number }) => item.value), [500000, 180000])
     assert.equal(saved.data.report.sponsors[1].coupon.title, "쿠키 증정")
     assert.equal((await analytics()).spend, 500000)
-    // A change to the event's value alone must keep the shares adding up.
+    // 행사의 가치만 바꿔도 몫의 합은 계속 맞아야 한다.
     const smaller = { ...goalsBefore, valueBreakdown: [{ type: "현금", value: 100000 }] }
     assert.equal((await call("PUT", route, smaller, owner)).status, 400)
   } finally {
@@ -2008,7 +2007,7 @@ test("events and campaigns can run over a period", async () => {
   assert.equal(week.data.event.endDate, "2026-12-11")
   await call("DELETE", `/events/${week.data.event.id}`, undefined, brand)
 
-  // Ending on the first day is a one-day event.
+  // 첫날에 끝나면 하루짜리 행사다.
   const oneDay = await call("POST", "/events", { ...campaign, endDate: "2026-12-07" }, brand)
   assert.equal(oneDay.data.event.endDate, undefined)
   await call("DELETE", `/events/${oneDay.data.event.id}`, undefined, brand)
@@ -2031,11 +2030,11 @@ test("accounts ask the operators questions, and see the answers", async () => {
   assert.equal(asked.data.inquiry.accountId, undefined)
   const id = asked.data.inquiry.id
 
-  // Only the asker sees the question.
+  // 질문한 사람만 질문을 본다.
   const brand = await login("브랜드")
   assert.equal((await call("GET", "/inquiries", undefined, brand)).data.inquiries.length, 0)
 
-  // Operators need the admin token.
+  // 운영자에게는 관리자 토큰이 필요하다.
   const admin = async (method: string, route: string, body?: unknown, token = "test-admin-token") => {
     const response = await fetch(baseUrl + route, {
       method,
@@ -2080,7 +2079,7 @@ test("an operator's answer is emailed to the asker, and stays news until the ask
     const member = await signUpMember(email, "asker-pass-123")
     const asked = await call("POST", "/inquiries", { category: "계정 · 가입", question: "로그인 이메일을 바꿀 수 있나요?" }, member)
     const id = asked.data.inquiry.id as string
-    // Only what the answer sends, not the sign-up code.
+    // 답이 보내는 것만 담고 가입 코드는 담지 않는다.
     sent.length = 0
 
     assert.equal((await answer(id, "내 정보의 '로그인 이메일 바꾸기'에서 바꿀 수 있어요.")).status, 200)
@@ -2092,7 +2091,7 @@ test("an operator's answer is emailed to the asker, and stays news until the ask
     const [unread] = (await call("GET", "/inquiries", undefined, member)).data.inquiries
     assert.equal(unread.answerReadAt, undefined)
 
-    // Seen, it is no longer news; the same answer again changes nothing.
+    // 보았다면 더 이상 소식이 아니며, 같은 답을 다시 달아도 달라지는 것이 없다.
     const [read] = (await call("POST", "/inquiries/read", undefined, member)).data.inquiries
     assert.ok(read.answerReadAt)
     sent.length = 0
@@ -2101,7 +2100,7 @@ test("an operator's answer is emailed to the asker, and stays news until the ask
     assert.equal(sent.length, 0)
     assert.ok((await call("GET", "/inquiries", undefined, member)).data.inquiries[0].answerReadAt)
 
-    // A changed answer is news again.
+    // 바뀐 답은 다시 소식이다.
     await answer(id, "내 정보에서 바꿀 수 있고, 새 이메일로 인증번호가 가요.")
     await settle()
     assert.equal(sent.filter((item) => item.to[0] === email).length, 1)
@@ -2145,7 +2144,7 @@ test("members report and block one another, and operators act on the reports", a
   assert.equal((await report(aboutBrand)).status, 201)
   assert.equal((await report(aboutBrand, await login("학생단체"))).status, 403)
 
-  // A review taken down leaves the listing's reviews.
+  // 내려진 후기는 리스팅의 후기에서 빠진다.
   getDatabase().reviews.push({
     id: "safety-review:brand",
     proposalId: "safety-review",
@@ -2162,7 +2161,7 @@ test("members report and block one another, and operators act on the reports", a
   const [shown] = (await call("GET", `/reviews?about=${groupListing}`)).data.reviews
   assert.equal((await report({ kind: "review", reviewKey: shown.key, reason: "욕설 · 괴롭힘" })).status, 201)
 
-  // Operators see what was reported, with the text as it was, waiting ones first.
+  // 운영자는 신고된 것을 당시 글과 함께, 대기 중인 것부터 본다.
   assert.equal((await call("GET", "/admin/reports")).status, 403)
   const listed = (await admin("GET", "/admin/reports")).data.reports as {
     id: string
@@ -2177,7 +2176,7 @@ test("members report and block one another, and operators act on the reports", a
   assert.equal((await call("GET", `/reviews?about=${groupListing}`)).data.reviews.length, 0)
   assert.equal((await admin("POST", `/admin/reports/${find("account").id}/resolve`, { action: "dismiss" })).status, 200)
 
-  // Blocking hides the two from each other: listings, proposals, conversations.
+  // 차단하면 둘이 서로의 리스팅, 제안, 대화를 보지 못한다.
   assert.equal((await call("POST", "/blocks", { listingId: brandListing }, group)).status, 201)
   const ids = async (route: string, key: string, token: string) =>
     ((await call("GET", route, undefined, token)).data[key] as { id: string }[]).map((item) => item.id)
@@ -2191,7 +2190,7 @@ test("members report and block one another, and operators act on the reports", a
   assert.equal((await call("DELETE", `/blocks/${brandListing}`, undefined, group)).status, 204)
   assert.equal((await ids("/brands", "brands", group)).includes(brandListing), true)
 
-  // Suspended, the account can't log in or stay logged in, and shows to no one.
+  // 정지되면 계정은 로그인할 수도 로그인을 유지할 수도 없고 누구에게도 보이지 않는다.
   assert.equal((await admin("POST", `/admin/reports/${find("message").id}/resolve`, { action: "suspend" })).status, 200)
   assert.equal((await call("GET", "/auth/me", undefined, brand)).status, 401)
   const credentials = { role: "브랜드", email: brandEmail, password: "safety-pass-123" }
@@ -2211,11 +2210,11 @@ test("members save listings they see to their 찜 list, which follows blocks and
   const { listingId: bakery } = await listedMember("saved2@saved-bakery.kr", "saved2-pass-123", "브랜드")
   assert.equal((await call("PUT", `/saved/${cafe}`, undefined, group)).status, 204)
   assert.equal((await call("PUT", `/saved/${bakery}`, undefined, group)).status, 204)
-  // Saving again keeps one, and the newest comes first.
+  // 다시 저장해도 하나만 남고, 가장 최근 것이 먼저 온다.
   assert.equal((await call("PUT", `/saved/${cafe}`, undefined, group)).status, 204)
   assert.deepEqual((await call("GET", "/saved", undefined, group)).data.saved, [bakery, cafe])
-  // Only listings of the other side the member sees: not the examples, nor
-  // anything unknown, and never for a visitor.
+  // 회원이 볼 수 있는 반대편의 리스팅만 되고 예시나 모르는 것은 안 되며,
+  // 방문자는 절대 안 된다.
   const database = getDatabase()
   const example = database.brands.find((item) => !database.accounts.some((account) => account.brandId === item.id))!
   assert.equal((await call("PUT", `/saved/${example.id}`, undefined, group)).status, 404)
@@ -2224,12 +2223,12 @@ test("members save listings they see to their 찜 list, which follows blocks and
   assert.equal((await call("DELETE", `/saved/${bakery}`, undefined, group)).status, 204)
   assert.deepEqual((await call("GET", "/saved", undefined, group)).data.saved, [cafe])
   assert.deepEqual((await call("GET", "/auth/export", undefined, group)).data.saved, [{ id: cafe, name: "saved 카페" }])
-  // A blocked partner drops out of the list until it is unblocked.
+  // 차단한 파트너는 차단을 풀 때까지 목록에서 빠진다.
   await call("POST", "/blocks", { listingId: cafe }, group)
   assert.deepEqual((await call("GET", "/saved", undefined, group)).data.saved, [])
   await call("DELETE", `/blocks/${cafe}`, undefined, group)
   assert.deepEqual((await call("GET", "/saved", undefined, group)).data.saved, [cafe])
-  // A brand that leaves goes from every list.
+  // 떠난 브랜드는 모든 목록에서 사라진다.
   assert.equal((await call("DELETE", "/auth/account", { password: "saved-pass-123" }, brand)).status, 204)
   assert.deepEqual((await call("GET", "/saved", undefined, group)).data.saved, [])
   assert.equal(Object.values(getDatabase().saved).some((ids) => ids.includes(cafe)), false)
@@ -2254,7 +2253,7 @@ test("a member takes its listing out of the lists for a while, and what is under
   assert.equal((await listed()).includes(cafe), false)
   assert.equal(((await call("GET", "/matches", undefined, group)).data.matches as { id: string }[]).some((item) => item.id === cafe), false)
   assert.deepEqual((await call("GET", "/saved", undefined, group)).data.saved, [])
-  // A new proposal is refused, while the one under way can still be accepted.
+  // 새 제안은 거절하지만, 진행 중인 제안은 여전히 수락할 수 있다.
   const request = (await call("GET", "/requests", undefined, brand)).data.requests[0] as { id: string; eventName: string }
   assert.equal(request.eventName, "숨김 공연")
   assert.equal((await call("POST", `/requests/${request.id}/accept`, undefined, brand)).status, 200)
@@ -2267,7 +2266,7 @@ test("a member takes its listing out of the lists for a while, and what is under
   assert.equal(shown.data.profile.pausedAt, undefined)
   assert.equal((await listed()).includes(cafe), true)
   assert.deepEqual((await call("GET", "/saved", undefined, group)).data.saved, [cafe])
-  // Bad input, the demo accounts and an account with no listing are refused.
+  // 잘못된 입력, 데모 계정, 리스팅이 없는 계정은 거절한다.
   assert.equal((await call("PUT", "/profile/pause", { paused: "yes" }, brand)).status, 400)
   assert.equal((await call("PUT", "/profile/pause", { paused: true }, await login("브랜드"))).status, 403)
   const fresh = await signUpMember("nolisting@syu.ac.kr", "nolisting-pass-123")
@@ -2291,7 +2290,7 @@ test("a brand verifies its business with the National Tax Service, and its listi
     const form = { number: "123-45-67890", startDate: "2020-03-02", owner: "김대표" }
     const verify = (body: object, token = brand) => call("POST", "/profile/business", body, token)
 
-    // Without the key it isn't offered yet.
+    // 키가 없으면 아직 내놓지 않는다.
     assert.deepEqual((await call("GET", "/profile/business", undefined, brand)).data, { ready: false, business: null })
     assert.equal((await verify(form)).status, 503)
     config.ntsServiceKey = "test-key"
@@ -2299,7 +2298,7 @@ test("a brand verifies its business with the National Tax Service, and its listi
     assert.equal((await verify(form, await login("브랜드"))).status, 403)
     assert.equal((await verify({ ...form, number: "123" })).status, 400)
 
-    // Details that don't match, a closed business, or the service down.
+    // 일치하지 않는 정보, 폐업한 사업자, 서비스 중단이다.
     answer = "invalid"
     const unmatched = await verify(form)
     assert.equal(unmatched.status, 400)
@@ -2309,7 +2308,7 @@ test("a brand verifies its business with the National Tax Service, and its listi
     answer = "down"
     assert.equal((await verify(form)).status, 502)
 
-    // Confirmed: the number alone is kept, and groups see the listing as checked.
+    // 확인되면 번호만 보관하고, 단체는 리스팅을 확인된 것으로 본다.
     answer = "valid"
     const verified = await verify(form)
     assert.equal(verified.status, 200)
@@ -2321,7 +2320,7 @@ test("a brand verifies its business with the National Tax Service, and its listi
     assert.equal(brands.find((item) => item.id === listingId)?.businessVerified, true)
     assert.equal((await call("GET", "/profile/business", undefined, brand)).data.business.number, "123-45-67890")
 
-    // One business verifies one account.
+    // 사업자 하나는 계정 하나만 확인한다.
     const { token: other } = await listedMember("other@other-cafe.kr", "other-pass-123", "브랜드")
     assert.equal((await verify(form, other)).status, 409)
   } finally {
@@ -2354,11 +2353,11 @@ test("accounts write the listing the other side sees", async () => {
   assert.equal(saved.status, 200)
   assert.deepEqual(saved.data.profile.facts, [{ label: "회원 수", value: "45명" }])
 
-  // Brands see the new introduction right away.
+  // 브랜드는 새 소개를 바로 본다.
   const { groups } = (await call("GET", "/groups")).data
   assert.equal(groups.find((group: { id: string }) => group.id === "syu-muse").offer, draft.offer)
 
-  // A new account is listed once it saves its introduction.
+  // 새 계정은 소개를 저장해야 목록에 오른다.
   const sent = await call("POST", "/auth/email-code", { role: "브랜드", email: "hi@newbrand.co.kr" })
   const verified = await call("POST", "/auth/email-code/verify", {
     email: "hi@newbrand.co.kr",
@@ -2378,11 +2377,11 @@ test("accounts write the listing the other side sees", async () => {
   })
   const newBrand = signup.data.token as string
   assert.equal((await call("GET", "/profile", undefined, newBrand)).data.profile, null)
-  // Chatting needs a listing first.
+  // 대화하려면 먼저 리스팅이 필요하다.
   const early = await call("POST", "/conversations", { partnerId: "syu-muse" }, newBrand)
   assert.equal(early.status, 409)
-  // A brand picks its offers from the list, at least one; what it would type
-  // for its tags, 기본 정보 or follower counts isn't kept.
+  // 브랜드는 제안을 목록에서 하나 이상 고르며, 태그, 기본 정보, 팔로워 수로
+  // 입력하려던 것은 보관하지 않는다.
   const typed = { intro: "대학생을 위한 온라인 강의 플랫폼이에요.", offer: "수강권 50장" }
   assert.equal((await call("PUT", "/profile", typed, newBrand)).status, 400)
   const created = await call(
@@ -2406,8 +2405,8 @@ test("accounts write the listing the other side sees", async () => {
   // Its 기본 정보 and tags come from what it does: its offers so far.
   assert.deepEqual(created.data.profile.facts, [{ label: "제공 서비스", value: "제품 협찬 · 할인 쿠폰" }])
   assert.deepEqual(created.data.profile.tags, ["제품 협찬"])
-  // Members of the other side find it; the examples that visitors and the
-  // demo accounts see don't show it.
+  // 반대편의 회원은 찾을 수 있고, 방문자와 데모 계정이 보는 예시에는
+  // 나타나지 않는다.
   const named = async (token?: string) =>
     ((await call("GET", "/brands", undefined, token)).data.brands as { name: string }[]).map((brand) => brand.name)
   assert.ok((await named(await signUpMember("finder@syu.ac.kr", "finder-pass-123"))).includes("새로운 브랜드"))
@@ -2423,7 +2422,7 @@ test("불러오기 offers a brand's past sponsorships and a group's past events 
   assert.ok(items.length > 0)
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date())
   assert.ok(items.every((item) => item.date <= today && /\(\d{4}\.\d{2}\)$/.test(item.title) && item.title.length <= 40))
-  // Newest first.
+  // 최신순이다.
   assert.deepEqual(items.map((item) => item.date), [...items.map((item) => item.date)].sort().reverse())
   const group = await login("학생단체")
   const events = (await call("GET", "/profile/history", undefined, group)).data.items as { date: string }[]
@@ -2439,17 +2438,17 @@ test("the proposal state lists what an account sent, until it is taken back", as
   await call("POST", "/events", { name: "보낸 공연", date: addDays(today, 9), types: ["현금"] }, group)
   await call("POST", "/events", { name: "보낸 캠페인", date: addDays(today, 11), types: ["제품"] }, brand)
 
-  // A group's request: to which brand, about which event, asking for what.
+  // 단체의 요청이다. 어느 브랜드에, 어느 행사에 대해, 무엇을 요청하는지다.
   const sent = (await call("POST", "/proposals", { matchId: brandListing }, group)).data.sent
   assert.equal(sent.length, 1)
   assert.deepEqual(
     [sent[0].partnerId, sent[0].partnerName, sent[0].eventName, sent[0].offer, sent[0].status],
     [brandListing, "sender 카페", "보낸 공연", "음료 · 식품 · 할인 쿠폰", "검토 중"],
   )
-  // A brand's offer, to a group with its school.
+  // 브랜드의 제안이며, 학교와 함께 단체에 간다.
   const offered = (await call("POST", "/proposals", { matchId: groupListing }, brand)).data.sent
   assert.deepEqual([offered[0].partnerName, offered[0].school, offered[0].eventName], ["sender 동아리", "삼육대학교", "보낸 캠페인"])
-  // Visitors have sent nothing, and taking one back empties the list.
+  // 방문자는 보낸 것이 없고, 하나를 거두면 목록이 빈다.
   assert.deepEqual((await call("GET", "/proposals")).data.sent, [])
   assert.deepEqual((await call("DELETE", `/proposals/${brandListing}`, undefined, group)).data.sent, [])
 })
@@ -2466,7 +2465,7 @@ test("members see only members, and the examples stay with visitors and the demo
   const ids = async (route: string, key: string, token?: string) =>
     ((await call("GET", route, undefined, token)).data[key] as { id: string }[]).map((listing) => listing.id)
 
-  // A member's catalogs and matches hold members' listings only.
+  // 회원의 카탈로그와 매칭에는 회원의 리스팅만 있다.
   const forGroup = await ids("/brands", "brands", group)
   assert.ok(forGroup.includes(brandListing))
   assert.ok(forGroup.every((id) => byMember("brandId", id)))
@@ -2475,7 +2474,7 @@ test("members see only members, and the examples stay with visitors and the demo
   assert.ok(forBrand.includes(groupListing))
   assert.ok(forBrand.every((id) => byMember("groupId", id)))
 
-  // Visitors and the demo accounts see the examples, and no member.
+  // 방문자와 데모 계정은 예시를 보고 회원은 보지 않는다.
   for (const token of [undefined, demoGroup]) {
     const shown = await ids("/brands", "brands", token)
     assert.ok(shown.includes("afternoon-coffee") && shown.includes("studymate"))
@@ -2483,7 +2482,7 @@ test("members see only members, and the examples stay with visitors and the demo
   }
   assert.ok(!(await ids("/groups", "groups", demoBrand)).some((id) => byMember("groupId", id)))
 
-  // Neither reaches the other with a proposal or a message.
+  // 둘은 서로에게 제안이나 메시지를 보낼 수 없다.
   await call("POST", "/events", { name: "따로 공연", date: "2026-12-19", types: ["현금"] }, group)
   for (const matchId of ["studymate", "afternoon-coffee"]) {
     assert.equal((await call("POST", "/proposals", { matchId }, group)).status, 404, matchId)
@@ -2493,7 +2492,7 @@ test("members see only members, and the examples stay with visitors and the demo
   assert.equal((await call("POST", "/conversations", { partnerId: "afternoon-coffee" }, group)).status, 404)
   assert.equal((await call("POST", "/conversations", { partnerId: brandListing }, demoGroup)).status, 404)
 
-  // A proposal to the examples sent before they were set apart no longer counts.
+  // 예시를 분리하기 전에 보낸 예시에 대한 제안은 더 이상 세지 않는다.
   const memberId = database.accounts.find((account) => account.email === "apart@syu.ac.kr")!.id
   database.proposals[memberId] = ["studymate"]
   assert.deepEqual((await call("GET", "/proposals", undefined, group)).data.proposals, [])
@@ -2528,7 +2527,7 @@ test("student groups and brands message each other", async () => {
   assert.equal(withMuse.unread, 1)
   assert.equal(withMuse.partner.hasAccount, true)
 
-  // Opening it reads it; replying reaches the student group.
+  // 열면 읽은 것이 되고, 답하면 학생단체에 닿는다.
   const opened = (await call("GET", `/conversations/${withMuse.id}`, undefined, brand)).data
   assert.equal(opened.conversation.messages.length, 3)
   assert.equal(opened.conversation.messages[0].mine, false)
@@ -2551,7 +2550,7 @@ test("student groups and brands message each other", async () => {
   assert.equal(withCoffee.unread, 1)
   assert.equal(withCoffee.lastMessage.text, "좋아요, 쿠폰 디자인 시안을 보내 드릴게요.")
 
-  // Starting a conversation twice opens the same one; partners must exist.
+  // 대화를 두 번 시작하면 같은 대화가 열리고, 파트너가 있어야 한다.
   const started = await call("POST", "/conversations", { partnerId: "glowlab" }, student)
   assert.equal(started.status, 201)
   assert.equal(started.data.conversation.partner.hasAccount, false)
@@ -2559,7 +2558,7 @@ test("student groups and brands message each other", async () => {
   assert.equal(again.data.conversation.id, started.data.conversation.id)
   assert.equal((await call("POST", "/conversations", { partnerId: "nope" }, student)).status, 404)
 
-  // Other accounts can't read it, and visitors have no conversations.
+  // 다른 계정은 읽을 수 없고, 방문자에게는 대화가 없다.
   assert.equal((await call("GET", `/conversations/${started.data.conversation.id}`, undefined, brand)).status, 404)
   assert.deepEqual((await call("GET", "/conversations")).data.conversations, [])
 })
@@ -2570,7 +2569,7 @@ test("senders see when messages are read, and both sides see edits and deletions
   const forStudent = (await call("GET", "/conversations", undefined, student)).data.conversations
   const { id } = forStudent.find((item: { partner: { id: string } }) => item.partner.id === "afternoon-coffee")
 
-  // Unread until the brand opens the conversation; the read mark is the sender's alone.
+  // 브랜드가 대화를 열기 전까지는 읽지 않은 상태이고, 읽음 표시는 보낸 쪽만의 것이다.
   const sent = await call("POST", `/conversations/${id}/messages`, { text: "내일 오후 3시에 통화 가능할까요?" }, student)
   const message = sent.data.conversation.messages.at(-1)
   assert.equal(message.read, false)
@@ -2579,7 +2578,7 @@ test("senders see when messages are read, and both sides see edits and deletions
   const reread = (await call("GET", `/conversations/${id}`, undefined, student)).data.conversation
   assert.equal(reread.messages.at(-1).read, true)
 
-  // Only the sender edits; both sides see the new text marked as edited.
+  // 보낸 쪽만 수정하며, 양쪽은 수정됨으로 표시된 새 본문을 본다.
   const route = `/conversations/${id}/messages/${message.id}`
   assert.equal((await call("PUT", route, { text: "제가 고칠게요" }, brand)).status, 403)
   assert.equal((await call("PUT", route, { text: " " }, student)).status, 400)
@@ -2590,7 +2589,7 @@ test("senders see when messages are read, and both sides see edits and deletions
   assert.equal(brandSees.text, "내일 오후 4시에 통화 가능할까요?")
   assert.ok(brandSees.editedAt)
 
-  // Only the sender deletes; the text is gone for both and stays deleted.
+  // 보낸 쪽만 지우며, 본문은 양쪽에서 사라지고 삭제된 채로 남는다.
   assert.equal((await call("DELETE", route, undefined, brand)).status, 403)
   const deleted = await call("DELETE", route, undefined, student)
   assert.equal(deleted.status, 200)
@@ -2603,7 +2602,7 @@ test("senders see when messages are read, and both sides see edits and deletions
   const brandThread = (await call("GET", `/conversations/${id}`, undefined, brand)).data.conversation
   assert.ok(brandThread.messages.at(-1).deletedAt)
   assert.equal((await call("DELETE", `/conversations/${id}/messages/nope`, undefined, student)).status, 404)
-  // A message deleted before it was read is not waiting to be read.
+  // 읽기 전에 삭제한 메시지는 읽기를 기다리지 않는다.
   const slip = await call("POST", `/conversations/${id}/messages`, { text: "잘못 보냈어요" }, student)
   await call("DELETE", `/conversations/${id}/messages/${slip.data.conversation.messages.at(-1).id}`, undefined, student)
   const unread = (await call("GET", "/conversations", undefined, brand)).data.conversations.find(
@@ -2617,7 +2616,7 @@ test("the demo's sentences saved before PR #283 read as they do now; anyone else
   const { createSeed, museConcertPage } = await import("./data/seed.js")
   const stored = await createSeed()
   const comma = (text: string) => text.replace(/(서고|좋고|주셨고|드리고) /, "$1, ")
-  // As saved before: the same sentences with the comma.
+  // 저장된 그대로, 쉼표가 있는 같은 문장이다.
   const concert = Object.values(stored.events).flat().find((event) => event.id === "event-muse-concert")!
   concert.intro = comma(museConcertPage.intro)
   const review = stored.reviews.find((item) => item.comment.startsWith("버스킹 날 커피를"))!
@@ -2627,7 +2626,7 @@ test("the demo's sentences saved before PR #283 read as they do now; anyone else
   const message = stored.conversations.flatMap((item) => item.messages).find((item) => item.text.startsWith("반가워요! 현장 배부도"))!
   message.text = comma(message.text)
   assert.ok([concert.intro, review.comment, offer.message, message.text].every((text) => text.includes(", ")))
-  // A member's own text that only looks alike is left alone.
+  // 비슷해 보일 뿐인 회원 자신의 글은 건드리지 않는다.
   const mine = "우리 공연은 밴드가 무대에 서고, 관객이 함께 노래해요."
   const own = { ...concert, id: "event-mine", intro: mine }
   stored.events.someone = [own]
@@ -2649,15 +2648,15 @@ test("older data files gain the new collections and calendar dates", async () =>
   } as unknown as Parameters<typeof upgradeDatabase>[0]
   const upgraded = upgradeDatabase(old)
   assert.equal(upgraded.brands.length, 12)
-  // Without the demo group there is no busking day to measure.
+  // 데모 단체가 없으면 측정할 버스킹 날도 없다.
   assert.deepEqual(upgraded.measurements, [])
   assert.equal(upgraded.groups.length, 8)
   assert.equal(upgraded.catalogVersion, 4)
   assert.ok(upgraded.brands.every((brand) => brand.intro && brand.sns && brand.portfolio))
   assert.equal(upgraded.conversations.length, 3)
 
-  // Version 2 catalogs keep their edits and gain the demo store locations
-  // once; a brand that clears its address afterwards keeps it cleared.
+  // 버전 2 카탈로그는 수정을 유지하고 데모 매장 위치를 한 번 얻는다. 이후에
+  // 주소를 지운 브랜드는 지운 채로 둔다.
   const edited = upgradeDatabase({
     events: {},
     catalogVersion: 2,
@@ -2669,8 +2668,8 @@ test("older data files gain the new collections and calendar dates", async () =>
   delete edited.brands[0].location
   assert.equal(upgradeDatabase(edited).brands[0].location, undefined)
 
-  // Version 3 data loses the coordinates Kakao's address search gave (they
-  // may not be kept), keeping the address; the demo stores keep theirs.
+  // 버전 3 데이터는 Kakao 주소 검색이 준 좌표를 잃고(보관할 수 없다) 주소는
+  // 유지하며, 데모 매장은 자기 좌표를 유지한다.
   const kakaoPlaced = upgradeDatabase({
     events: {},
     catalogVersion: 3,
@@ -2692,7 +2691,7 @@ test("older data files gain the new collections and calendar dates", async () =>
   assert.equal(upgraded.requests.length, 4)
   assert.deepEqual(upgraded.sponsorships, {})
 
-  // Sponsorships saved before goals existed get one.
+  // 목표가 생기기 전에 저장된 협찬은 목표를 받는다.
   const saved = upgradeDatabase({
     events: {},
     sponsorships: { brand: [{ id: "sp-finals" }, { id: "sp-other" }] },
@@ -2710,7 +2709,7 @@ test("older data files gain the new collections and calendar dates", async () =>
 test("a failed save does not stop later saves", async () => {
   await saveDatabase()
   const dataFile = config.dataFile
-  // Renaming onto a folder that has files fails, as a full disk would.
+  // 파일이 들어 있는 폴더로 이름을 바꾸면 디스크가 가득 찼을 때처럼 실패한다.
   config.dataFile = process.env.FRONTEND_DIST!
   await assert.rejects(saveDatabase())
   config.dataFile = dataFile
@@ -2729,7 +2728,7 @@ test("a request whose save fails leaves nothing behind", async () => {
   config.dataFile = dataFile
   assert.equal(failed.status, 503)
   assert.match(failed.data.error, /되돌렸어요/)
-  // Nothing stayed in memory, so trying again makes one event, not two.
+  // 메모리에 남은 것이 없으므로 다시 시도하면 행사가 둘이 아니라 하나 생긴다.
   assert.equal(count(), before)
   const again = await call("POST", "/events", event, student)
   assert.equal(again.status, 201)
@@ -2757,7 +2756,7 @@ test("server and browser errors are kept for the operators, and the first after 
   }
   const alerts = () => sent.filter((mail) => mail.to[0] === "ops@example.com")
   try {
-    // A request whose save fails is kept with its method and path.
+    // 저장에 실패한 요청은 그 메서드와 경로와 함께 남는다.
     const student = await login("학생단체")
     const dataFile = config.dataFile
     config.dataFile = process.env.FRONTEND_DIST!
@@ -2768,12 +2767,12 @@ test("server and browser errors are kept for the operators, and the first after 
     const [server] = await errors()
     assert.deepEqual([server.source, server.where], ["server", "POST /api/events"])
     assert.match(server.message, /되돌렸어요/)
-    // The operators hear of it by email.
+    // 운영자는 메일로 알게 된다.
     assert.equal(alerts().length, 1)
     assert.equal(alerts()[0].subject, "[uniconnect] 오류가 생겼어요")
 
-    // A browser's error is kept too, its page's path without the query;
-    // following close behind, it emails no one.
+    // 브라우저의 오류도 쿼리 없는 페이지 경로와 함께 남지만, 바로 뒤따르면
+    // 아무에게도 메일을 보내지 않는다.
     const reported = await call("POST", "/errors", {
       message: "TypeError: x is undefined",
       where: "index-abc.js:1:200",
@@ -2785,7 +2784,7 @@ test("server and browser errors are kept for the operators, and the first after 
     assert.deepEqual([browser.source, browser.path, browser.where], ["browser", "/matches", "index-abc.js:1:200"])
     assert.equal(alerts().length, 1)
     assert.equal((await call("POST", "/errors", { message: "", path: "/" })).status, 400)
-    // Only the operators read them.
+    // 운영자만 읽을 수 있다.
     assert.equal((await call("GET", "/admin/errors")).status, 403)
   } finally {
     mailTransport.post = realPost
@@ -2811,7 +2810,7 @@ test("event names and people are checked, and default goals save as they are", a
   const largest = (await event({ people: "100,000명" })).data.event
   assert.equal(largest.people, "100,000명")
 
-  // An event as large as allowed gets goals the goals form takes back as they are.
+  // 허용되는 최대 크기의 행사는 목표 양식이 그대로 받아들이는 목표를 얻는다.
   const { report } = (await call("GET", `/measurements/${largest.id}`, undefined, student)).data
   assert.equal(report.expectedAudience, 100000)
   const goals = {
@@ -2823,7 +2822,7 @@ test("event names and people are checked, and default goals save as they are", a
     coupon: report.coupon,
   }
   assert.equal((await call("PUT", `/measurements/${largest.id}/goals`, goals, student)).status, 200)
-  // A huge number kept from before the check still gives goals in range.
+  // 검사 전에 보관된 아주 큰 수도 범위 안의 목표를 준다.
   Object.values(getDatabase().events).flat().find((item) => item.id === largest.id)!.people = "250,000명"
   getDatabase().measurements = getDatabase().measurements.filter((item) => item.eventId !== largest.id)
   const again = (await call("GET", `/measurements/${largest.id}`, undefined, student)).data.report
@@ -2889,7 +2888,7 @@ test("codes can be asked for only so often", async () => {
   const limited = await call("POST", "/auth/email-code", { role: "학생단체", email })
   assert.equal(limited.status, 429)
   assert.match(limited.data.error, /30분/)
-  // Another address from the same place still gets one.
+  // 같은 곳의 다른 주소는 여전히 하나를 얻는다.
   const other = await call("POST", "/auth/email-code", { role: "학생단체", email: "other@syu.ac.kr" })
   assert.equal(other.status, 200)
 })
@@ -2899,7 +2898,7 @@ test("repeated wrong passwords lock that login for a while", async () => {
     call("POST", "/auth/login", { role: "학생단체", email: "muse@syu.ac.kr", password })
   for (let i = 0; i < 10; i += 1) assert.equal((await attempt("wrong-password")).status, 401)
   assert.equal((await attempt(DEMO_PASSWORD)).status, 429)
-  // Other accounts still log in.
+  // 다른 계정은 여전히 로그인한다.
   assert.ok(await login("브랜드"))
 })
 
@@ -2908,7 +2907,7 @@ test("the admin token check fails safely and slows guessing", async () => {
     fetch(`${baseUrl}/admin/inquiries`, { headers: { "X-Admin-Token": token } }).then(
       (response) => response.status,
     )
-  // Same length as the real token, with a letter outside ASCII.
+  // 진짜 토큰과 길이는 같고 ASCII 밖의 글자가 있다.
   assert.equal(await admin("tést-admin-token"), 403)
   assert.equal(await admin("test-admin-token"), 200)
   for (let i = 0; i < 9; i += 1) assert.equal(await admin("wrong"), 403)
@@ -2934,8 +2933,8 @@ test("wrong staff PINs are limited per address and per event", async () => {
   for (let i = 0; i < 10; i += 1) assert.equal(await staff("9999"), 403)
   assert.equal(await staff("1012"), 429)
 
-  // From many addresses (a proxy that is trusted), the event itself locks
-  // after 30 wrong PINs.
+  // 여러 주소(신뢰하는 프록시)에서 와도 틀린 PIN이 30번이면 행사 자체가
+  // 잠긴다.
   clearRateLimits()
   const app = createApp()
   app.set("trust proxy", true)
@@ -2967,7 +2966,7 @@ test("the old global measurement moves to the busking day's own", async () => {
   } as unknown as Parameters<typeof upgradeDatabase>[0])
   const [busking] = upgraded.measurements
   assert.equal(busking.eventId, "event-busking-day")
-  // The venue counts that came later start at zero, with the group's venue PIN.
+  // 나중에 생긴 현장 집계는 단체의 현장 PIN과 함께 0에서 시작한다.
   assert.deepEqual(busking.metrics, { scans: 200, coupons: 120, visits: 60, ...emptyVenue })
   assert.equal(busking.groupPin, "1013")
   assert.equal(busking.log[0].detail, "현장 QR 스캔")
@@ -2981,8 +2980,8 @@ test("sign-up codes stay off the response unless turned on", () => {
   assert.equal(emailCodesExposed({ EXPOSE_EMAIL_CODES: "true" }), true)
 })
 
-// A member signed up for a test, logged in, with their token: a student
-// group unless a brand is asked for.
+// 테스트를 위해 가입해 로그인한 회원과 그 토큰이다. 브랜드를 요청하지
+// 않으면 학생단체다.
 async function signUpMember(email: string, password: string, role: "학생단체" | "브랜드" = "학생단체", extra: Record<string, unknown> = {}) {
   const students = role === "학생단체"
   const sent = await call("POST", "/auth/email-code", { role, email })
@@ -3004,8 +3003,8 @@ async function signUpMember(email: string, password: string, role: "학생단체
   return signup.data.token as string
 }
 
-// A member with its listing written, so members of the other side find it:
-// its token and its listing's id.
+// 리스팅을 써서 반대편 회원이 찾을 수 있게 한 회원이다. 토큰과 리스팅의
+// id를 돌려준다.
 async function listedMember(email: string, password: string, role: "학생단체" | "브랜드" = "학생단체") {
   const token = await signUpMember(email, password, role)
   const students = role === "학생단체"
@@ -3048,8 +3047,8 @@ test("one verification makes one account, and one reset code sets one password",
 test("a forgotten password is reset with a code sent to the account's email", async () => {
   const email = "forgetful@syu.ac.kr"
   const before = await signUpMember(email, "first-pass-123")
-  // The code goes only by email (the log without a mail service), never in
-  // the answer, even with EXPOSE_EMAIL_CODES on; tests read it from the data.
+  // 코드는 메일로만 간다(메일 서비스가 없으면 로그로만 간다). EXPOSE_EMAIL_CODES가
+  // 켜져 있어도 응답에는 절대 담지 않으며, 테스트는 데이터에서 읽는다.
   const sendCode = async () => {
     const sent = await call("POST", "/auth/password-reset/code", { email })
     assert.equal(sent.status, 200)
@@ -3063,9 +3062,9 @@ test("a forgotten password is reset with a code sent to the account's email", as
 
   const code = await sendCode()
   const wrong = code === "000000" ? "111111" : "000000"
-  // A sign-up check cannot use a reset code.
+  // 가입 확인은 초기화 코드를 쓸 수 없다.
   assert.equal((await call("POST", "/auth/email-code/verify", { email, code })).status, 400)
-  // A new password follows the same rules as at sign-up, checked before the code.
+  // 새 비밀번호는 가입과 같은 규칙을 따르며, 코드보다 먼저 확인한다.
   for (const password of ["sh-1!", "no-digits-here", "nosymbols123", "12345678-!", "has space-1", "x".repeat(60) + "-1234"]) {
     const weak = await call("POST", "/auth/password-reset", { email, code, password })
     assert.equal(weak.status, 400, password)
@@ -3077,10 +3076,10 @@ test("a forgotten password is reset with a code sent to the account's email", as
   assert.equal(done.status, 200)
   assert.equal(done.data.account.email, email)
   assert.equal(done.data.account.passwordHash, undefined)
-  // Sessions from before the reset end; the new one works.
+  // 초기화 전의 세션은 끝나고 새 세션은 동작한다.
   assert.equal((await call("GET", "/auth/me", undefined, before)).status, 401)
   assert.equal((await call("GET", "/auth/me", undefined, done.data.token)).status, 200)
-  // The code is used up.
+  // 코드는 소진된다.
   assert.equal(
     (await call("POST", "/auth/password-reset", { email, code, password: "other-pass-123" })).status,
     400,
@@ -3114,8 +3113,8 @@ test("a login still checking the old password gets no session after a reset", as
     const oldPassword = round === 0 ? "old-pass-123" : `new-pass-${round - 1}`
     await call("POST", "/auth/password-reset/code", { email })
     const code = getDatabase().emailCodes.find((item) => item.email === email && item.purpose === "reset")!.code
-    // Started together: whichever finishes first, the old password must not
-    // leave a working session behind.
+    // 동시에 시작해도 무엇이 먼저 끝나든 옛 비밀번호가 동작하는 세션을
+    // 남기면 안 된다.
     const [login] = await Promise.all([
       call("POST", "/auth/login", { role: "학생단체", email, password: oldPassword }),
       call("POST", "/auth/password-reset", { email, code, password: `new-pass-${round}` }),
@@ -3154,7 +3153,7 @@ test("an account can leave, taking what it made with it", async () => {
   const { listingId: partnerId } = await listedMember("leaving@leaving-cafe.kr", "leave-pass-123", "브랜드")
   assert.equal((await call("POST", "/conversations", { partnerId }, token)).status, 201)
 
-  // The demo accounts stay for everyone.
+  // 데모 계정은 모두를 위해 남는다.
   const demo = await login("학생단체")
   assert.equal((await call("DELETE", "/auth/account", { password: DEMO_PASSWORD }, demo)).status, 403)
 
@@ -3171,7 +3170,7 @@ test("an account can leave, taking what it made with it", async () => {
   assert.equal(database.events[accountId], undefined)
   assert.equal(database.inquiries.some((inquiry) => inquiry.accountId === accountId), false)
   assert.equal(database.conversations.some((conversation) => conversation.groupId === listingId), false)
-  // The same email can sign up again.
+  // 같은 이메일로 다시 가입할 수 있다.
   assert.equal((await call("POST", "/auth/email-code", { role: "학생단체", email })).status, 200)
 })
 
@@ -3185,7 +3184,7 @@ test("a brand's offer reaches the student group, and the answer comes back", asy
   const brand = await login("브랜드")
   assert.equal((await call("POST", "/proposals", { matchId: "syu-muse" }, brand)).status, 201)
   assert.equal((await call("GET", "/proposals", undefined, brand)).data.statuses["syu-muse"], "검토 중")
-  // Proposing again sends no second offer.
+  // 다시 제안해도 두 번째 제안은 가지 않는다.
   await call("POST", "/proposals", { matchId: "syu-muse" }, brand)
 
   const student = await login("학생단체")
@@ -3234,7 +3233,7 @@ test("a student group sets its event's goals, and the report follows", async () 
   const route = "/measurements/event-muse-concert/goals"
   assert.equal((await call("PUT", route, goals)).status, 401)
   const brand = await login("브랜드")
-  // A brand cannot set a group's event goals.
+  // 브랜드는 단체의 행사 목표를 정할 수 없다.
   assert.equal((await call("PUT", route, goals, brand)).status, 404)
 
   const student = await login("학생단체")
@@ -3245,12 +3244,12 @@ test("a student group sets its event's goals, and the report follows", async () 
   assert.equal((await call("PUT", route, badType, student)).status, 400)
   assert.equal((await call("PUT", route, { ...goals, coupon: { store: "", title: "x" } }, student)).status, 400)
   assert.equal((await call("PUT", route, { ...goals, staffPin: "12a4" }, student)).status, 400)
-  // A ROAS goal of 0 would be divided by.
+  // ROAS 목표 0은 나누게 된다.
   const noGoal = await call("PUT", route, { ...goals, targets: { ...goals.targets, roas: 0 } }, student)
   assert.equal(noGoal.status, 400)
   assert.match(noGoal.data.error, /목표 ROAS는 1부터/)
 
-  // Once brands sponsor the event, each sponsor's coupon comes with the goals.
+  // 브랜드가 행사를 협찬하면 협찬사마다의 쿠폰이 목표와 함께 온다.
   const current = (await call("GET", "/measurements/event-muse-concert", undefined, student)).data.report
   const sponsors = (current.sponsors ?? []).map((sponsor: { id: string }) => ({ id: sponsor.id, ...goals.coupon }))
   const saved = await call("PUT", route, { ...goals, sponsors }, student)
@@ -3270,7 +3269,7 @@ test("a student group sets its event's goals, and the report follows", async () 
 
 test("the server's today is Korea's, whatever its own time zone", async () => {
   const { todayInKorea } = await import("./lib/dates.js")
-  // 01:00 on the 22nd in Korea is still the 21st in UTC.
+  // 한국 22일 01:00은 UTC로는 아직 21일이다.
   assert.equal(todayInKorea(new Date("2026-10-21T16:00:00Z")), "2026-10-22")
   assert.equal(todayInKorea(new Date("2026-10-21T14:59:00Z")), "2026-10-21")
 })
@@ -3283,7 +3282,7 @@ test("matches are worked out for the account browsing, with reasons", async () =
   // The demo group has sponsored with 오후의 커피 before, which leads its reasons.
   const coffee = forVisitors.find((brand: { id: string }) => brand.id === "afternoon-coffee")
   assert.equal(coffee.reasons[0], "함께한 협찬이 있어요")
-  // Each part of the score as a share of its best, for the detail page's bars.
+  // 상세 페이지의 막대를 위해 점수의 각 부분을 최선에 대한 몫으로 나타낸다.
   type Part = { label: string; value: number }
   assert.deepEqual(
     coffee.scoreParts.map((part: Part) => part.label),
@@ -3292,7 +3291,7 @@ test("matches are worked out for the account browsing, with reasons", async () =
   assert.ok(coffee.scoreParts.every((part: Part) => part.value >= 0 && part.value <= 1))
   assert.equal(coffee.scoreParts[3].value, 1)
 
-  // A new brand's listing is scored like any other, not left at its first 70.
+  // 새 브랜드의 리스팅은 처음의 70에 머물지 않고 다른 리스팅처럼 점수가 매겨진다.
   const groups = (await call("GET", "/groups")).data.groups
   const muse = groups.find((group: { id: string }) => group.id === "syu-muse")
   assert.ok(muse.reasons.length > 0)
@@ -3350,18 +3349,17 @@ test("proposals, answers and new messages are emailed to the other side, never t
   config.mailFrom = "uniconnect <no-reply@example.com>"
   config.siteUrl = "https://uniconnect.example"
   const settle = () => new Promise((resolve) => setTimeout(resolve, 20))
-  // Everyone trying the demo uses its accounts, so their addresses stand for no one.
+  // 데모를 써 보는 모두가 데모 계정을 쓰므로 그 주소는 아무도 가리키지 않는다.
   const toDemo = () => sent.filter((mail) => ["muse@syu.ac.kr", "hello@afternoon-coffee.kr"].includes(mail.to[0]))
   try {
-    // A group and a brand, each with a listing.
+    // 단체와 브랜드이며 각각 리스팅이 있다.
     const email = "notice@syu.ac.kr"
     const brandEmail = "notice@notice-cafe.kr"
     const { token: group, listingId: groupListing } = await listedMember(email, "notice-pass-123")
     const { token: brand, listingId: brandListing } = await listedMember(brandEmail, "notice-pass-123", "브랜드")
     sent.length = 0
 
-    // The group's proposal reaches the brand by email, and the brand's
-    // answer comes back to the group.
+    // 단체의 제안은 메일로 브랜드에 닿고, 브랜드의 답은 단체에게 돌아온다.
     const today = todayInKorea()
     await call("POST", "/events", { name: "알림 공연", date: addDays(today, 10), types: ["현금"] }, group)
     assert.equal((await call("POST", "/proposals", { matchId: brandListing }, group)).status, 201)
@@ -3374,7 +3372,7 @@ test("proposals, answers and new messages are emailed to the other side, never t
     assert.equal(answerMail?.subject, "[uniconnect] 협찬이 확정됐어요")
     assert.match(answerMail?.text ?? "", /notice 카페에서 '알림 공연' 제안을 수락했어요/)
 
-    // The brand's offer about its campaign reaches the group the same way.
+    // 브랜드의 캠페인에 대한 제안도 같은 방식으로 단체에 닿는다.
     sent.length = 0
     await call("POST", "/events", { name: "알림 캠페인", date: addDays(today, 12), types: ["제품"] }, brand)
     await call("POST", "/proposals", { matchId: groupListing }, brand)
@@ -3385,12 +3383,12 @@ test("proposals, answers and new messages are emailed to the other side, never t
     assert.match(offerMail?.text ?? "", /https:\/\/uniconnect\.example\/offers/)
 
     const [offer] = (await call("GET", "/offers", undefined, group)).data.offers
-    await call("POST", `/offers/${offer.id}/accept`, undefined, brand) // a brand cannot answer
+    await call("POST", `/offers/${offer.id}/accept`, undefined, brand) // 브랜드는 답할 수 없다
     await call("POST", `/offers/${offer.id}/accept`, undefined, group)
     await settle()
     assert.ok(sent.some((mail) => mail.to[0] === brandEmail && mail.subject === "[uniconnect] 협찬이 확정됐어요"))
 
-    // Messages: one email for a run of unread ones.
+    // 메시지는 읽지 않은 묶음마다 메일 한 통이다.
     sent.length = 0
     const chat = (await call("POST", "/conversations", { partnerId: brandListing }, group)).data.conversation
     await call("POST", `/conversations/${chat.id}/messages`, { text: "안녕하세요! 일정 이야기해요." }, group)
@@ -3403,7 +3401,7 @@ test("proposals, answers and new messages are emailed to the other side, never t
     assert.equal(toGroup.length, 1)
     assert.match(toGroup[0].text, /notice 카페: 네, 좋아요/)
 
-    // Between the demo accounts, which only meet each other, no mail goes.
+    // 서로만 만나는 데모 계정 사이에는 메일이 가지 않는다.
     sent.length = 0
     const demoGroup = await login("학생단체")
     const demoChat = (await call("POST", "/conversations", { partnerId: "afternoon-coffee" }, demoGroup)).data.conversation
@@ -3455,7 +3453,7 @@ test("sign-up asks who runs the account, which only the two sides of an agreemen
     assert.equal(refused.status, 400)
     assert.match(refused.data.error, error)
   }
-  // The old, broader types are gone from the list.
+  // 예전의 더 넓은 종류는 목록에서 사라졌다.
   assert.equal((await call("POST", "/auth/signup", { ...form, type: "학생회", contact: testContact })).status, 400)
   const signup = await call("POST", "/auth/signup", {
     ...form,
@@ -3470,7 +3468,7 @@ test("sign-up asks who runs the account, which only the two sides of an agreemen
   assert.deepEqual(changed.data.account.contact, { name: "박새임원", position: "부회장", phone: "010-2222-3333" })
   assert.equal((await call("PUT", "/auth/contact", { name: "누군가", position: "회장", phone: "010-1111-2222" }, await login("학생단체"))).status, 403)
 
-  // An accepted proposal's agreement shows both sides' contacts to the two sides.
+  // 수락된 제안의 계약서는 양쪽의 연락처를 양쪽에 보여 준다.
   const { addDays, todayInKorea } = await import("./lib/dates.js")
   const { token: brand, listingId: brandListing } = await listedMember("contact@contact-cafe.kr", "contact-pass-123", "브랜드")
   await call("POST", "/events", { name: "연락 공연", date: addDays(todayInKorea(), 6), types: ["현금"] }, token)
@@ -3489,16 +3487,16 @@ test("the bell's read marks stay with the account, so every device shows the sam
   const saved = await call("PUT", "/auth/notices", { read: [...read, "offer:o1"] }, token)
   assert.equal(saved.status, 200)
   assert.deepEqual(saved.data.readNotices, read)
-  // Another device logged into the same account reads them back.
+  // 같은 계정에 로그인한 다른 기기가 읽어 온다.
   const other = (await call("POST", "/auth/login", { role: "학생단체", email: "bell@syu.ac.kr", password: "bell-pass-123" }))
     .data.token as string
   assert.deepEqual((await call("GET", "/auth/me", undefined, other)).data.account.readNotices, read)
-  // Each save replaces the list, as the app sends only the parts still shown.
+  // 앱이 아직 보이는 부분만 보내므로 저장할 때마다 목록을 바꾼다.
   await call("PUT", "/auth/notices", { read: ["match:m1"] }, other)
   assert.deepEqual((await call("GET", "/auth/me", undefined, token)).data.account.readNotices, ["match:m1"])
   await call("PUT", "/auth/notices", { read: [] }, token)
   assert.equal((await call("GET", "/auth/me", undefined, token)).data.account.readNotices, undefined)
-  // Anything else is refused, and so is a visitor.
+  // 그 밖의 것은 거절하고, 방문자도 거절한다.
   for (const body of [
     {},
     { read: "offer:o1" },
@@ -3524,7 +3522,7 @@ test("account types from before the lists grew take their new names", async () =
   upgradeDatabase(stored)
   assert.equal(brand.type, "뷰티 · 화장품")
   assert.equal(listing.category, "뷰티 · 화장품")
-  // The demo accounts from before contacts were asked get theirs.
+  // 연락처를 묻기 전의 데모 계정도 연락처를 얻는다.
   assert.deepEqual(brand.contact, demoContacts.브랜드)
 })
 
@@ -3543,7 +3541,7 @@ test("members change their password from 내 정보, keeping this device logged 
     agreedToTerms: true,
     contact: testContact,
   }
-  // Under 14s cannot sign up.
+  // 14세 미만은 가입할 수 없다.
   assert.equal((await call("POST", "/auth/signup", form)).status, 400)
   const signup = await call("POST", "/auth/signup", { ...form, over14: true })
   assert.equal(signup.status, 201)
@@ -3583,7 +3581,7 @@ test("listings take a small PNG, JPEG or WebP logo, and drop it on request", asy
   const listed = (await call("GET", "/groups")).data.groups.find((group: { id: string }) => group.id === "syu-muse")
   assert.equal(listed.logo, png)
 
-  // Left out, it stays; SVG, other kinds and big ones are refused.
+  // 빼 두면 그대로이고, SVG와 다른 종류와 큰 것은 거절한다.
   assert.equal((await call("PUT", "/profile", draft, student)).data.profile.logo, png)
   const svg = "data:image/svg+xml;base64,PHN2Zz48L3N2Zz4="
   assert.equal((await call("PUT", "/profile", { ...draft, logo: svg }, student)).status, 400)
@@ -3604,15 +3602,15 @@ test("deleting an event withdraws its waiting proposals, and a sponsored one sta
   const pending = getDatabase().requests.find((item) => item.eventId === first.id)
   assert.equal(pending?.status, "검토 중")
 
-  // Deleted while waiting: the proposal goes from the brand's inbox and the
-  // group's sent list.
+  // 기다리는 동안 삭제하면 제안은 브랜드의 받은편지함과 단체의 보낸 목록에서
+  // 사라진다.
   assert.equal((await call("DELETE", `/events/${first.id}`, undefined, student)).status, 204)
   assert.equal(getDatabase().requests.some((item) => item.id === pending!.id), false)
   const sent = (await call("GET", "/proposals", undefined, student)).data
   assert.equal(sent.proposals.includes(brandId), false)
   assert.equal((await call("POST", `/requests/${pending!.id}/accept`, undefined, brand)).status, 404)
 
-  // Once the brand accepts, the event cannot be deleted.
+  // 브랜드가 수락하면 행사를 삭제할 수 없다.
   const second = (await call("POST", "/events", { ...event, name: "확정될 공연" }, student)).data.event
   await call("POST", "/proposals", { matchId: brandId }, student)
   const request = getDatabase().requests.find((item) => item.eventId === second.id)!
@@ -3670,7 +3668,7 @@ test("errors answer in English when the request asks for it", async () => {
   const koreanFirst = await send("/auth/login", wrongLogin, { "Accept-Language": "ko-KR,en;q=0.8" })
   assert.equal(koreanFirst.data.error, "이메일 또는 비밀번호가 올바르지 않아요.")
 
-  // A message built from parts: the field's name is translated inside it.
+  // 부분으로 만든 메시지는 그 안의 항목 이름을 번역한다.
   const student = await login("학생단체")
   const longName = { name: "가".repeat(41), date: "2026-12-05", types: ["현금"] }
   const tooLong = await send("/events", longName, { "Accept-Language": "en", Authorization: `Bearer ${student}` })
@@ -3695,11 +3693,11 @@ test("every Korean error message the server writes has English", async () => {
     for (const match of source.matchAll(/createRateLimit\(\{[^}]*?message:\s*"((?:[^"\\]|\\.)*)"/g)) messages.add(match[1])
   }
   assert.ok(messages.size > 50)
-  // Korean left anywhere in the English means no translation, or a pattern
-  // that caught a message it wasn't meant for.
+  // 영어 안에 한국어가 남아 있으면 번역이 없거나, 의도하지 않은 메시지를 잡은
+  // 패턴이 있다는 뜻이다.
   const missing = [...messages].filter((message) => /[가-힣]/.test(message) && /[가-힣]/.test(translate(message, "en")))
   assert.deepEqual(missing, [])
-  // Messages built from parts take English for each form the code writes.
+  // 부분으로 만든 메시지는 코드가 쓰는 형태마다 영어로 받는다.
   assert.equal(
     translate("목표 ROAS는 1부터 10,000까지의 숫자로 적어 주세요.", "en"),
     "Target ROAS must be a number from 1 to 10,000.",
@@ -3714,7 +3712,7 @@ test("every Korean error message the server writes has English", async () => {
 
 test("catalogs say how far each listing is from the viewer's campus or store", async () => {
   const { campusOf, distanceKm } = await import("./lib/geo.js")
-  // Campuses by email domain (subdomains too), else by the school's name.
+  // 캠퍼스는 이메일 도메인(하위 도메인도)으로 찾고, 없으면 학교 이름으로 찾는다.
   assert.equal(campusOf({ email: "muse@syu.ac.kr" })?.name, "삼육대학교")
   assert.equal(campusOf({ email: "lab@cs.kw.ac.kr" })?.name, "광운대학교")
   assert.equal(campusOf({ email: "who@unknown.ac.kr", school: "서울여자대학교" })?.name, "서울여자대학교")
@@ -3732,12 +3730,12 @@ test("catalogs say how far each listing is from the viewer's campus or store", a
   const coffee = brands.find((brand) => brand.id === "afternoon-coffee")!
   assert.ok(coffee.distanceKm! > 3 && coffee.distanceKm! < 4.5, String(coffee.distanceKm))
   assert.equal(brands.find((brand) => brand.id === "freshon")!.distanceKm, undefined)
-  // The catalog map's offset agrees with the distance, to 10 m.
+  // 카탈로그 지도의 오프셋은 10m 단위로 거리와 맞는다.
   const { east, north } = coffee.mapOffset!
   assert.ok(east % 10 === 0 && north % 10 === 0)
   assert.ok(Math.abs(Math.hypot(east, north) / 1000 - coffee.distanceKm!) < 0.1)
   assert.equal(brands.find((brand) => brand.id === "freshon")!.mapOffset, undefined)
-  // Its point is only where it is, for Kakao's pins.
+  // 그 위치는 있는 곳일 뿐이며 Kakao의 핀에 쓴다.
   assert.deepEqual(Object.keys(coffee.mapPoint!).sort(), ["lat", "lng"])
   assert.equal(brands.find((brand) => brand.id === "freshon")!.mapPoint, undefined)
 
@@ -3762,20 +3760,20 @@ test("a brand's store address is placed on the map through OpenStreetMap once a 
     ...(address === undefined ? {} : { address }),
   })
   const search = geocoder.search
-  // A geocoder in this computer's environment must not be reached from a test.
+  // 이 컴퓨터의 환경에 있는 지오코더에 테스트가 닿으면 안 된다.
   const nominatim = config.nominatimUrl
   config.nominatimUrl = undefined
   try {
-    // Left out, the address and its place stay.
+    // 빼 두면 주소와 위치가 남는다.
     assert.equal((await call("PUT", "/profile", form(), brand)).data.profile.location.lat, saved.location!.lat)
-    // Without a geocoder a new address is kept with no place, so no distance.
+    // 지오코더가 없으면 새 주소는 위치 없이 보관되므로 거리가 없다.
     const unplaced = (await call("PUT", "/profile", form("서울 노원구 화랑로 815"), brand)).data.profile
     assert.deepEqual(unplaced.location, { address: "서울 노원구 화랑로 815" })
     const far = (await call("GET", "/groups", undefined, brand)).data.groups
     assert.ok(far.every((group: { distanceKm?: number }) => group.distanceKm === undefined))
 
-    // With a geocoder, OpenStreetMap's answer places it (here, on 서울과기대's
-    // campus), and an address saved before it is looked up when saved again.
+    // 지오코더가 있으면 OpenStreetMap의 답이 위치를 잡으며(여기서는 서울과기대
+    // 캠퍼스), 그 전에 저장한 주소는 다시 저장할 때 찾는다.
     config.nominatimUrl = "https://nominatim.example"
     const { campuses } = await import("./data/campuses.js")
     const { lat, lng } = campuses.find((campus) => campus.name === "서울과학기술대학교")!
@@ -3792,11 +3790,10 @@ test("a brand's store address is placed on the map through OpenStreetMap once a 
     assert.deepEqual(asked, ["서울 노원구 화랑로 815", "서울 노원구 공릉로 232"])
     const near = (await call("GET", "/groups", undefined, brand)).data.groups
     assert.equal(near.find((group: { id: string }) => group.id === "seoultech-band").distanceKm, 0)
-    // A placed address isn't looked up again.
+    // 위치가 잡힌 주소는 다시 찾지 않는다.
     await call("PUT", "/profile", form("서울 노원구 공릉로 232"), brand)
     assert.equal(asked.length, 2)
-    // An address it can't find, or a geocoder that fails, still saves the
-    // address, with no place.
+    // 찾지 못하는 주소나 실패하는 지오코더도 주소는 위치 없이 저장한다.
     geocoder.search = async () => []
     const unknown = await call("PUT", "/profile", form("서울 어딘가 없는길 99999"), brand)
     assert.deepEqual(unknown.data.profile.location, { address: "서울 어딘가 없는길 99999" })
@@ -3830,7 +3827,7 @@ test("the shops around a campus come live from Kakao, are asked for again each t
   const saved = { email: demo.email, school: demo.school, groupSchool: group.school }
   const muse = await login("학생단체")
   try {
-    // Without the key there is nothing to show, and Kakao isn't asked.
+    // 키가 없으면 보여 줄 것이 없고 Kakao에도 묻지 않는다.
     assert.deepEqual((await call("GET", "/places?category=CE7", undefined, muse)).data, {
       map: false,
       campus: "삼육대학교",
@@ -3864,13 +3861,13 @@ test("the shops around a campus come live from Kakao, are asked for again each t
             x: "127.1041",
             y: "37.6428",
           },
-          // Not a Kakao Map page, so it is left out, and so is one without a place.
+          // Kakao Map 페이지가 아니면 빼고, 위치가 없는 것도 뺀다.
           { id: "3", place_name: "어딘가", distance: "50", place_url: "https://example.com/3", x: "127.1", y: "37.6" },
           { id: "4", place_name: "위치 없음", distance: "60", place_url: "http://place.map.kakao.com/4" },
         ],
       }
     }
-    // The group sees the shops around its campus, nearest first.
+    // 단체는 캠퍼스 주변의 매장을 가까운 순으로 본다.
     const found = (await call("GET", "/places?category=CE7", undefined, muse)).data
     assert.equal(found.campus, "삼육대학교")
     assert.equal(found.example, undefined)
@@ -3900,13 +3897,13 @@ test("the shops around a campus come live from Kakao, are asked for again each t
       },
     ])
     const campus = campuses.find((item) => item.name === "삼육대학교")!
-    // The campus comes with its point, for the map drawn on screen.
+    // 캠퍼스는 화면에 그리는 지도를 위한 좌표와 함께 온다.
     assert.deepEqual(found.center, { lat: campus.lat, lng: campus.lng })
     assert.deepEqual(asked[0], { category: "CE7", lat: campus.lat, lng: campus.lng })
-    // The same look asks Kakao again: nothing was kept.
+    // 같은 조회는 Kakao에 다시 묻는다. 아무것도 보관하지 않았다.
     await call("GET", "/places?category=CE7", undefined, muse)
     assert.equal(asked.length, 2)
-    // Every kind together: each kind asked once, each place once, nearest first.
+    // 모든 종류를 함께 보면 종류마다 한 번씩 묻고, 장소마다 한 번씩 담고, 가까운 순이다.
     const all = (await call("GET", "/places?category=all", undefined, muse)).data
     assert.deepEqual(asked.slice(2).map((item) => item.category), ["CE7", "FD6", "CS2", "AC5", "CT1"])
     assert.deepEqual(
@@ -3917,7 +3914,7 @@ test("the shops around a campus come live from Kakao, are asked for again each t
     assert.equal((await call("GET", "/places?category=constructor")).status, 400)
     assert.equal((await call("GET", "/places")).status, 400)
 
-    // A school not in the campus table has no shops to show.
+    // 캠퍼스 표에 없는 학교는 보여 줄 매장이 없다.
     demo.email = "muse@unknown.ac.kr"
     demo.school = "어느대학교"
     group.school = "어느대학교"
@@ -3929,7 +3926,7 @@ test("the shops around a campus come live from Kakao, are asked for again each t
     Object.assign(demo, { email: saved.email, school: saved.school })
     group.school = saved.groupSchool
 
-    // When Kakao fails, the screen gets a message it can show.
+    // Kakao가 실패하면 화면은 보여 줄 수 있는 메시지를 받는다.
     placeSearch.search = async () => {
       throw new Error("403 disabled")
     }
@@ -3937,9 +3934,9 @@ test("the shops around a campus come live from Kakao, are asked for again each t
     assert.equal(failed.status, 502)
     assert.match(failed.data.error, /주변 가게/)
 
-    // Each address may ask Kakao 30 times a minute, a look at every kind
-    // counting five: 8 asked so far (two single looks, one of every kind,
-    // the failed one). A visitor's look at the examples asks nothing.
+    // 주소마다 1분에 Kakao에 30번 물을 수 있고, 모든 종류를 보면 다섯으로
+    // 센다. 지금까지 8번이다(단일 조회 둘, 모든 종류 하나, 실패한 것). 방문자가
+    // 예시를 보는 것은 아무것도 묻지 않는다.
     placeSearch.search = async () => ({ documents: [] })
     for (let count = 8; count < 30; count += 1) {
       assert.equal((await call("GET", "/places?category=CS2", undefined, muse)).status, 200)
@@ -3969,9 +3966,9 @@ test("visitors see made-up shops around the demo group's campus, and Kakao isn't
   }
   try {
     const campus = campuses.find((item) => item.name === "삼육대학교")!
-    // Every kind the chips offer has some.
+    // 칩이 내놓는 모든 종류에 매장이 있다.
     for (const kind of placeCategories) assert.ok(exampleShops.some((shop) => shop.kind === kind), kind)
-    // The same examples with the map key or without it.
+    // 지도 키가 있든 없든 같은 예시다.
     for (const value of [undefined, "test-key"]) {
       config.kakaoRestApiKey = value
       const all = (await call("GET", "/places?category=all")).data
@@ -3982,8 +3979,8 @@ test("visitors see made-up shops around the demo group's campus, and Kakao isn't
       const distances = all.places.map((place: { distanceM: number }) => place.distanceM)
       assert.deepEqual(distances, [...distances].sort((a, b) => a - b))
       for (const place of all.places) {
-        // Near the campus and placed where they say, with an address read
-        // from it and no map page or phone number.
+        // 캠퍼스 가까이에 말하는 대로 놓여 있고, 주소는 거기서 읽으며 지도
+        // 페이지나 전화번호는 없다.
         assert.ok(place.distanceM <= placeRadius, place.name)
         assert.ok(Math.abs(distanceKm(campus, place) * 1000 - place.distanceM) < 100, place.name)
         assert.ok(place.address.startsWith("삼육대학교 "), place.name)
@@ -3991,12 +3988,12 @@ test("visitors see made-up shops around the demo group's campus, and Kakao isn't
         assert.equal(place.phone, undefined)
       }
     }
-    // One kind at a time, as the chips pick.
+    // 칩이 고르는 대로 한 번에 한 종류다.
     const cafes = (await call("GET", "/places?category=CE7")).data.places
     assert.ok(cafes.length > 0)
     assert.ok(cafes.every((place: { kind: string }) => place.kind === "CE7"))
     assert.equal(asked, 0)
-    // A logged-in group still gets the real shops around its campus.
+    // 로그인한 단체는 여전히 캠퍼스 주변의 진짜 매장을 본다.
     const found = (await call("GET", "/places?category=CE7", undefined, await login("학생단체"))).data
     assert.equal(found.example, undefined)
     assert.equal(asked, 1)
@@ -4024,8 +4021,8 @@ test("a student group invites a shop it found nearby, and the shop joins as a br
     const group = await signUpMember("inviter@syu.ac.kr", "inviter-pass-123")
     const brand = await login("브랜드")
 
-    // Only a logged-in student group invites, a shop by its Kakao place ID,
-    // and not the shared demo group: an invitation reaches a real shop.
+    // 로그인한 학생단체만 Kakao 장소 ID로 매장을 초대할 수 있고, 공유 데모
+    // 단체는 안 된다. 초대는 실제 매장에 닿는다.
     assert.equal((await call("POST", "/invites", { placeId: "26338954" })).status, 401)
     assert.equal((await call("POST", "/invites", { placeId: "26338954" }, brand)).status, 403)
     assert.equal((await call("POST", "/invites", { placeId: "26338954" }, await login("학생단체"))).status, 403)
@@ -4036,16 +4033,16 @@ test("a student group invites a shop it found nearby, and the shop joins as a br
     assert.equal(made.status, 201)
     const { code } = made.data.invite
     assert.match(code, /^[\w-]{8}$/)
-    // All it keeps of the shop is what Kakao allows: the ID and its map page.
+    // 매장에 대해 보관하는 것은 Kakao가 허락하는 것, 곧 ID와 지도 페이지뿐이다.
     const stored = getDatabase().invites.find((invite) => invite.code === code)!
     assert.deepEqual(Object.keys(stored).sort(), ["accountId", "code", "createdAt", "placeId", "placeUrl"])
     assert.equal(stored.placeUrl, "https://place.map.kakao.com/26338954")
-    // Asked again for the same shop, the same invitation comes back.
+    // 같은 매장을 다시 요청하면 같은 초대가 돌아온다.
     const again = await call("POST", "/invites", { placeId: "26338954" }, group)
     assert.equal(again.status, 200)
     assert.equal(again.data.invite.code, code)
 
-    // Anyone with the link sees who invited, and not who they are.
+    // 링크를 가진 누구나 누가 초대했는지 보되, 그들이 누구인지는 보지 못한다.
     const page = await call("GET", `/invites/${code}`)
     assert.equal(page.status, 200)
     assert.equal(page.data.group.name, "inviter 동아리")
@@ -4073,22 +4070,22 @@ test("a student group invites a shop it found nearby, and the shop joins as a br
         { id: "777", invited: undefined, brandId: undefined },
       ],
     )
-    // Visitors see only the made-up examples, never the shops groups found.
+    // 방문자는 만들어진 예시만 보고, 단체가 찾은 매장은 절대 보지 않는다.
     const examplesOnly = async () => (await shops()).every((place) => place.id.startsWith("example-") && !place.invited && !place.brandId)
     assert.ok(await examplesOnly())
 
-    // Only a brand takes it, and not the shared demo brand.
+    // 브랜드만 받을 수 있고, 공유 데모 브랜드는 안 된다.
     assert.equal((await call("POST", `/invites/${code}/accept`)).status, 401)
     assert.equal((await call("POST", `/invites/${code}/accept`, undefined, group)).status, 403)
     assert.equal((await call("POST", `/invites/${code}/accept`, undefined, brand)).status, 403)
     assert.equal((await call("POST", "/invites/nope/accept", undefined, await signUpMember("nobody@nope-cafe.kr", "nope-pass-123", "브랜드"))).status, 404)
 
-    // Another group nearby invited the same shop.
+    // 근처의 다른 단체가 같은 매장을 초대했다.
     const neighbour = await signUpMember("invite-one@syu.ac.kr", "invite-one-123")
     const neighbourCode = (await call("POST", "/invites", { placeId: "26338954" }, neighbour)).data.invite.code
 
-    // The shop's owner signs up as a brand and takes it: the new brand is
-    // listed at once, as that shop.
+    // 매장 주인이 브랜드로 가입해 받으면 새 브랜드가 그 매장으로 바로 목록에
+    // 오른다.
     const owner = await signUpMember("owner@golmok-cafe.kr", "golmok-pass-123", "브랜드")
     const accepted = await call("POST", `/invites/${code}/accept`, undefined, owner)
     assert.equal(accepted.status, 200)
@@ -4099,7 +4096,7 @@ test("a student group invites a shop it found nearby, and the shop joins as a br
     assert.ok(getDatabase().brands.some((item) => item.id === listing.id))
     assert.equal((await call("GET", `/invites/${code}`, undefined, owner)).data.invite.joined, "you")
     assert.equal((await call("GET", `/invites/${code}`)).data.invite.joined, "other")
-    // Taking it twice changes nothing.
+    // 두 번 받아도 달라지는 것이 없다.
     assert.equal((await call("POST", `/invites/${code}/accept`, undefined, owner)).status, 200)
     // The groups that invited it hear about it, with the brand's page on 추천 매칭.
     for (const address of ["inviter@syu.ac.kr", "invite-one@syu.ac.kr"]) {
@@ -4108,31 +4105,31 @@ test("a student group invites a shop it found nearby, and the shop joins as a br
       assert.match(notice.text, /owner 카페에서 초대를 받고/)
     }
 
-    // 가까운 순 now shows the shop joined to members nearby. Visitors still
-    // see only the examples.
+    // 이제 가까운 순은 근처 회원에게 합류한 매장을 보여 주고, 방문자는 여전히
+    // 예시만 본다.
     assert.equal((await shops(group))[0].brandId, listing.id)
     assert.ok(await examplesOnly())
 
-    // Another group's invitation to the same shop can't hand it to a second brand.
+    // 같은 매장에 대한 다른 단체의 초대가 그것을 두 번째 브랜드에 넘길 수는 없다.
     const otherGroup = await signUpMember("invite-two@syu.ac.kr", "invite-two-123")
     const second = (await call("POST", "/invites", { placeId: "26338954" }, otherGroup)).data.invite.code
     const rival = await signUpMember("rival@rival-cafe.kr", "rival-pass-123", "브랜드")
     const taken = await call("POST", `/invites/${second}/accept`, undefined, rival)
     assert.equal(taken.status, 409)
     assert.match(taken.data.error, /이미 다른 브랜드와 연결된 가게/)
-    // And a brand that is one shop already can't become another.
+    // 이미 한 매장인 브랜드가 다른 매장이 될 수도 없다.
     const elsewhere = (await call("POST", "/invites", { placeId: "777" }, otherGroup)).data.invite.code
     const twice = await call("POST", `/invites/${elsewhere}/accept`, undefined, owner)
     assert.equal(twice.status, 409)
     assert.match(twice.data.error, /이미 다른 가게와 연결된 브랜드/)
 
-    // The data download holds the invitations on both sides.
+    // 데이터 다운로드는 양쪽의 초대를 담는다.
     const groupExport = (await call("GET", "/auth/export", undefined, otherGroup)).data
     assert.deepEqual(groupExport.invites.map((item: { placeId: string }) => item.placeId).sort(), ["26338954", "777"])
     const ownerExport = (await call("GET", "/auth/export", undefined, owner)).data
     assert.deepEqual(ownerExport.invites.map((item: { code: string }) => item.code), [code, neighbourCode])
 
-    // When the brand leaves, the shop is open again; when a group leaves, its invitations go.
+    // 브랜드가 떠나면 매장이 다시 열리고, 단체가 떠나면 그 초대가 사라진다.
     assert.equal((await call("DELETE", "/auth/account", { password: "golmok-pass-123" }, owner)).status, 204)
     const reopened = getDatabase().invites.find((invite) => invite.code === code)!
     assert.equal(reopened.brandId, undefined)
@@ -4141,7 +4138,7 @@ test("a student group invites a shop it found nearby, and the shop joins as a br
     assert.equal((await call("DELETE", "/auth/account", { password: "invite-two-123" }, otherGroup)).status, 204)
     assert.equal(getDatabase().invites.some((invite) => invite.code === second || invite.code === elsewhere), false)
 
-    // A group may have invited at most 100 shops.
+    // 단체는 최대 100개의 매장을 초대할 수 있다.
     const { inviteLimit } = await import("./routes/invites.js")
     const crowd = await signUpMember("invite-many@syu.ac.kr", "invite-many-123")
     const crowdId = getDatabase().accounts.find((account) => account.email === "invite-many@syu.ac.kr")!.id
@@ -4179,7 +4176,7 @@ test("an e-contract sets how its sponsorship is confirmed, which counts once bot
     { kind: "visit", side: "brand" },
   ]
 
-  // Neither shows until the day before the event.
+  // 어느 쪽도 행사 전날까지는 보이지 않는다.
   const early = (await call("GET", `/measurements/${request.eventId}`, undefined, group)).data.report
   assert.deepEqual([early.groupPin, early.staffPin, early.pinsFrom], [undefined, undefined, addDays(day, -1)])
   const hidden = (await call("GET", agreementPath, undefined, brand)).data.agreement.measure.venue
@@ -4188,9 +4185,9 @@ test("an e-contract sets how its sponsorship is confirmed, which counts once bot
   assert.equal(/staffPin|groupPin/.test(JSON.stringify(exported)), false)
   const sponsoredEvent = getDatabase().events[groupId].find((item) => item.id === request.eventId)!
   sponsoredEvent.date = addDays(todayInKorea(), 1)
-  // Until the e-contract says otherwise: the QR, its coupon and the store's
-  // visits, which the brand confirms with its store PIN on the staff page;
-  // the group has nothing to record by hand, so no venue page yet.
+  // e-contract가 달리 정하기 전에는 QR, 그 쿠폰, 매장 방문이며, 매장 방문은
+  // 브랜드가 직원 페이지에서 매장 PIN으로 확인한다. 단체가 손으로 기록할 것이
+  // 없으므로 현장 페이지는 아직 없다.
   const before = (await call("GET", agreementPath, undefined, group)).data.agreement
   assert.deepEqual(before.measure.methods, defaults)
   assert.equal(before.measure.confirmedMethods, undefined)
@@ -4200,8 +4197,8 @@ test("an e-contract sets how its sponsorship is confirmed, which counts once bot
   assert.equal(brandBefore.measure.venue.page, "staff")
   assert.match(brandBefore.measure.venue.pin, /^\d{4}$/)
 
-  // Either side sets them; unknown, repeated or empty ones are turned away,
-  // store visits stay the brand's, the coupon needs the QR and visits the coupon.
+  // 어느 쪽이든 정할 수 있다. 모르는 것, 되풀이한 것, 빈 것은 돌려보내고,
+  // 매장 방문은 계속 브랜드의 것이며, 쿠폰은 QR이, 방문은 쿠폰이 필요하다.
   for (const [methods, error] of [
     [[], /하나 이상/],
     ["booth", /다시 확인/],
@@ -4225,29 +4222,29 @@ test("an e-contract sets how its sponsorship is confirmed, which counts once bot
   ]
   const set = await call("PUT", `${agreementPath}/methods`, { methods }, group)
   assert.equal(set.status, 200)
-  // In the listed order; like the items, a change takes back the confirmations.
+  // 나열한 순서대로 두며, 항목처럼 바꾸면 확정을 거둔다.
   const measure = set.data.agreement.measure
   assert.deepEqual(measure.methods.map((method: { kind: string }) => method.kind), ["sampling", "booth", "sns", "survey"])
   assert.deepEqual(set.data.agreement.confirmed, {})
-  // Its venue page waits until both sides confirm them; its PIN is in its
-  // report (the venue QR on 성과) all along.
+  // 현장 페이지는 양쪽이 확정할 때까지 기다리고, PIN은 처음부터 리포트
+  // (성과의 현장 QR)에 있다.
   assert.equal(measure.venue, undefined)
   const groupPin = (await call("GET", `/measurements/${request.eventId}`, undefined, group)).data.report.groupPin
   assert.match(groupPin, /^\d{4}$/)
-  // The brand gets its store PIN, never the group's.
+  // 브랜드는 자기 매장 PIN을 받고 단체의 PIN은 절대 받지 않는다.
   const forBrand = (await call("GET", agreementPath, undefined, brand)).data.agreement
   assert.equal(forBrand.measure.venue.page, "staff")
   const staffPin = forBrand.measure.venue.pin
   assert.equal(staffPin, getDatabase().measurements.find((item) => item.code === code)!.sponsors[0].staffPin)
   assert.equal(JSON.stringify(forBrand).includes("groupPin"), false)
 
-  // Not yet confirmed by both, so the default still counts: the coupon is
-  // offered, and the new methods can't be counted at the venue.
+  // 아직 양쪽이 확정하지 않았으므로 기본값이 계속 센다. 쿠폰은 내놓고, 새
+  // 방법은 현장에서 셀 수 없다.
   assert.equal((await call("GET", `/check-in/${code}`)).data.coupons.length, 1)
   const groupShares = async () => (await call("POST", `/check-in/${code}/group/session`, { pin: groupPin })).data.shares
   assert.deepEqual((await groupShares())[0].kinds, ["qr"])
 
-  // Once both sides confirm, the e-contract's methods count.
+  // 양쪽이 확정하면 e-contract의 방법이 센다.
   await call("POST", `${agreementPath}/confirm`, undefined, group)
   const settled = (await call("POST", `${agreementPath}/confirm`, undefined, brand)).data.agreement
   assert.deepEqual(settled.measure.confirmedMethods, settled.measure.methods)
@@ -4255,11 +4252,11 @@ test("an e-contract sets how its sponsorship is confirmed, which counts once bot
     (await call("GET", agreementPath, undefined, group)).data.agreement.measure.venue,
     { page: "group", pin: groupPin },
   )
-  // Without the coupon, participants are offered none.
+  // 쿠폰이 없으면 참여자에게 아무것도 내놓지 않는다.
   assert.deepEqual((await call("GET", `/check-in/${code}`)).data.coupons, [])
 
-  // Each venue page opens with its own PIN, showing what that side confirms,
-  // a method both confirm on both.
+  // 현장 페이지는 각자의 PIN으로 열려서 그쪽이 확정하는 것을 보여 주고, 양쪽이
+  // 확정하는 방법은 양쪽에 보여 준다.
   assert.equal((await call("POST", `/check-in/${code}/group/session`, { pin: groupPin === "0000" ? "0001" : "0000" })).status, 403)
   const shares = await groupShares()
   assert.deepEqual(
@@ -4269,7 +4266,7 @@ test("an e-contract sets how its sponsorship is confirmed, which counts once bot
   const share = shares[0].id
   assert.deepEqual((await call("POST", `/check-in/${code}/staff/session`, { pin: staffPin })).data.shares[0].kinds, ["sampling", "booth", "survey"])
 
-  // Nothing counts before the event's days.
+  // 행사 날 전에는 아무것도 세지 않는다.
   const count = (page: "group" | "staff", body: Record<string, unknown>) =>
     call("POST", `/check-in/${code}/${page}/count`, { pin: page === "group" ? groupPin : staffPin, share, ...body })
   assert.equal((await count("group", { method: "booth" })).status, 409)
@@ -4279,7 +4276,7 @@ test("an e-contract sets how its sponsorship is confirmed, which counts once bot
   event.date = todayInKorea()
   sponsorship.date = todayInKorea()
   try {
-    // On the day, each side counts what is its own, and both count the stamps.
+    // 그날에는 각자 자기 것을 세고, 도장은 둘 다 센다.
     const stamped = await count("group", { method: "booth" })
     assert.equal(stamped.status, 200)
     assert.equal(stamped.data.share.counts.stamps, 1)
@@ -4292,10 +4289,10 @@ test("an e-contract sets how its sponsorship is confirmed, which counts once bot
     assert.equal((await count("staff", { method: "raffle" })).status, 409)
     assert.equal((await count("staff", { method: "visit" })).status, 404)
     assert.equal((await count("group", { method: "booth", share: "elsewhere" })).status, 404)
-    // Store visits aren't confirmed in this sponsorship.
+    // 이 협찬에서는 매장 방문을 확인하지 않는다.
     assert.equal((await call("POST", `/check-in/${code}/staff/visits`, { pin: staffPin, coupon: "UC-AAAAAA" })).status, 409)
-    // A box of samples at once, one stamp at a time, and a mistake taken
-    // back, never below zero.
+    // 샘플은 한 상자씩, 도장은 한 번에 하나씩 세고, 실수는 되돌리되 0 밑으로는
+    // 내려가지 않는다.
     assert.equal((await count("staff", { method: "sampling", amount: 501 })).status, 400)
     assert.equal((await count("staff", { method: "sampling", amount: 40 })).data.share.counts.samples, 40)
     assert.equal((await count("staff", { method: "sampling", amount: -5 })).data.share.counts.samples, 35)
@@ -4304,9 +4301,8 @@ test("an e-contract sets how its sponsorship is confirmed, which counts once bot
     assert.equal((await count("group", { method: "sns", amount: -1 })).data.share.counts.posts, 0)
     assert.equal((await count("group", { method: "sns", amount: -1 })).status, 409)
 
-    // Both sides read the counts on the e-contract, the group in its report
-    // with its venue PIN and only the confirmed methods, and the brand in
-    // its analytics.
+    // 양쪽이 e-contract에서 집계를 읽는다. 단체는 리포트에서 현장 PIN과 확정된
+    // 방법만, 브랜드는 분석에서 읽는다.
     const counts = (await call("GET", agreementPath, undefined, brand)).data.agreement.measure.counts
     assert.deepEqual([counts.samples, counts.stamps, counts.posts, counts.surveys], [35, 1, 0, 1])
     const { metrics, report } = (await call("GET", `/measurements/${request.eventId}`, undefined, group)).data
@@ -4319,15 +4315,15 @@ test("an e-contract sets how its sponsorship is confirmed, which counts once bot
     const row = analytics.find((item: { id: string }) => item.id === sponsorship.id)
     assert.deepEqual([row.samples, row.stamps, row.surveys], [35, 1, 1])
 
-    // Once the event has begun, the methods stay as they are.
+    // 행사가 시작되면 방법은 그대로 둔다.
     assert.equal((await call("PUT", `${agreementPath}/methods`, { methods }, brand)).status, 409)
   } finally {
     event.date = day
     sponsorship.date = day
   }
 
-  // A brand's campaign is confirmed as a whole: an offer's e-contract sets
-  // the campaign's own methods, and the group's page opens it as one share.
+  // 브랜드의 캠페인은 통째로 확정한다. 제안의 e-contract가 캠페인 자신의 방법을
+  // 정하고, 단체의 페이지는 그것을 하나의 몫으로 연다.
   const { token: campaignGroup, listingId: campaignListing } = await listedMember("campaign-club@syu.ac.kr", "campaign-pass-123")
   await call("POST", "/events", { name: "측정 캠페인", date: addDays(todayInKorea(), 1), types: ["제품"] }, brand)
   assert.equal((await call("POST", "/proposals", { matchId: campaignListing }, brand)).status, 201)
@@ -4343,7 +4339,7 @@ test("an e-contract sets how its sponsorship is confirmed, which counts once bot
     campaignSession.shares.map((item: { id: string; brandName: string | null; kinds: string[] }) => [item.id, item.brandName, item.kinds]),
     [["event", null, ["qr", "experience"]]],
   )
-  // Its coupon is still offered, and the brand's own report has no group PIN.
+  // 쿠폰은 여전히 내놓고, 브랜드 자신의 리포트에는 단체 PIN이 없다.
   assert.equal((await call("GET", `/check-in/${confirmed.code}`)).data.coupons.length, 1)
   const campaignId = getDatabase().offers.find((item) => item.id === offer.id)!.campaignId!
   const brandReport = (await call("GET", `/measurements/${campaignId}`, undefined, brand)).data.report
@@ -4354,7 +4350,7 @@ test("an e-contract sets how its sponsorship is confirmed, which counts once bot
 
 test("methods saved before they were split, and e-contracts already confirmed, keep counting", async () => {
   const { upgradeMethods } = await import("./lib/methods.js")
-  // The coupon then stood for the QR, the coupon and the store's visits.
+  // 그때는 쿠폰이 QR, 쿠폰, 매장 방문을 모두 뜻했다.
   assert.deepEqual(upgradeMethods([{ kind: "coupon", side: "brand" }, { kind: "booth", side: "group" }]), [
     { kind: "qr", side: "group" },
     { kind: "coupon", side: "brand" },
@@ -4379,11 +4375,11 @@ test("either side notes the parcels it sent on the agreement, and only it takes 
   assert.equal(added.status, 201)
   const [shipment] = added.data.agreement.shipments
   assert.deepEqual([shipment.side, shipment.carrier, shipment.number, shipment.note], ["brand", "CJ대한통운", "123456789012", "음료 3박스"])
-  // The group reads it; carriers come from the list and numbers are checked.
+  // 단체가 읽으며, 택배사는 목록에서 고르고 번호를 검사한다.
   assert.equal((await call("GET", `/agreements/${request.id}`, undefined, group)).data.agreement.shipments.length, 1)
   assert.equal((await call("POST", path, { carrier: "아무 택배", number: "123456" }, group)).status, 400)
   assert.equal((await call("POST", path, { carrier: "우체국택배", number: "12" }, group)).status, 400)
-  // Only the side that noted it takes it off.
+  // 적은 쪽만 뺄 수 있다.
   assert.equal((await call("DELETE", `${path}/${shipment.id}`, undefined, group)).status, 403)
   const removed = await call("DELETE", `${path}/${shipment.id}`, undefined, brand)
   assert.equal(removed.data.agreement.shipments, undefined)
@@ -4395,7 +4391,7 @@ test("both sides of an accepted proposal keep an agreement, confirm it and prove
   const { uploadsFolder } = await import("./lib/agreements.js")
   const brand = await login("브랜드")
 
-  // The demo brand's accepted proposal from a group without an account.
+  // 계정이 없는 단체의 제안을 수락한 데모 브랜드의 것이다.
   const listed = (await call("GET", "/agreements", undefined, brand)).data.agreements as { id: string; side: string; partner: string; total: number }[]
   const runners = listed.find((item) => item.id === "req-runners")!
   assert.deepEqual([runners.side, runners.partner, runners.total], ["brand", "서울여대 러너스", 6])
@@ -4406,13 +4402,13 @@ test("both sides of an accepted proposal keep an agreement, confirm it and prove
     ["brand", "brand", "group", "group", "group", "group"],
   )
   assert.deepEqual([opened.group.member, opened.brand.member, opened.side], [false, true, "brand"])
-  // Only the two sides see it, and only for an accepted proposal.
+  // 양쪽만 보며, 수락된 제안만 본다.
   assert.equal((await call("GET", "/agreements/req-runners")).status, 401)
   assert.equal((await call("GET", "/agreements/req-runners", undefined, await login("학생단체"))).status, 404)
   assert.equal((await call("GET", "/agreements/req-movement", undefined, brand)).status, 404)
   assert.equal((await call("GET", "/agreements/constructor", undefined, brand)).status, 404)
 
-  // Two members: a group proposes, and the brand accepts.
+  // 회원 둘이다. 단체가 제안하고 브랜드가 수락한다.
   const group = await signUpMember("agreement-club@syu.ac.kr", "agreement-pass-123")
   const groupId = getDatabase().accounts.find((account) => account.email === "agreement-club@syu.ac.kr")!.id
   const { token: partner, listingId: partnerListing } = await listedMember("agreement@agreement-cafe.kr", "agreement-pass-123", "브랜드")
@@ -4426,16 +4422,15 @@ test("both sides of an accepted proposal keep an agreement, confirm it and prove
   assert.equal(forGroup.brand.name, "agreement 카페")
   const brandItem = forGroup.items.find((item: { side: string }) => item.side === "brand")
   const groupItem = forGroup.items.find((item: { side: string }) => item.side === "group")
-  // The event is the group's, its goals set from here until it begins; the
-  // brand reads them, without the PINs and coupons. A group without an
-  // account has no event here.
+  // 행사는 단체의 것이며, 목표는 시작할 때까지 여기서 정한다. 브랜드는 PIN과
+  // 쿠폰 없이 목표를 읽는다. 계정이 없는 단체는 여기에 행사가 없다.
   assert.deepEqual(forGroup.event, { id: request.eventId, owner: "group", started: false })
   assert.deepEqual(Object.keys(forGroup.goals).sort(), ["expectedAudience", "targets"])
   const forBrand = (await call("GET", `/agreements/${request.id}`, undefined, partner)).data.agreement
   assert.deepEqual([forBrand.event.owner, forBrand.goals.targets], ["group", forGroup.goals.targets])
   assert.equal(opened.event, undefined)
 
-  // Each side confirms, and the other hears about it.
+  // 각 쪽이 확정하면 상대편이 알게 된다.
   const { mailTransport } = await import("./lib/mailer.js")
   const post = mailTransport.post
   const sent: { to: string[]; subject: string }[] = []
@@ -4460,7 +4455,7 @@ test("both sides of an accepted proposal keep an agreement, confirm it and prove
     config.mailFrom = mail.from
   }
 
-  // The group marks its own item done with a link; never the brand's.
+  // 단체는 자기 항목을 링크와 함께 완료로 표시할 수 있고, 브랜드의 항목은 절대 안 된다.
   const link = "https://instagram.com/p/agreement"
   assert.equal((await call("PATCH", `/agreements/${request.id}/items/${brandItem.id}`, { done: true }, group)).status, 403)
   assert.equal((await call("PATCH", `/agreements/${request.id}/items/${groupItem.id}`, { links: ["javascript:alert(1)"] }, group)).status, 400)
@@ -4474,7 +4469,7 @@ test("both sides of an accepted proposal keep an agreement, confirm it and prove
   assert.deepEqual(marked.links, [link])
   assert.equal((await call("PATCH", `/agreements/${request.id}/items/nope`, { done: true }, group)).status, 404)
 
-  // A photo as proof is kept on disk, and the other side can see it.
+  // 증빙 사진은 디스크에 보관하며 상대편이 볼 수 있다.
   const png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
   const photos = `/agreements/${request.id}/items/${groupItem.id}/photos`
   assert.equal((await call("POST", photos, { image: "data:image/png;base64,aGVsbG8=" }, group)).status, 400)
@@ -4498,7 +4493,7 @@ test("both sides of an accepted proposal keep an agreement, confirm it and prove
   assert.equal(removed.status, 200)
   assert.ok(!existsSync(path.join(uploadsFolder(request.id), photo)))
 
-  // Changing the items asks both sides again; the items kept keep their proof.
+  // 항목을 바꾸면 양쪽에게 다시 묻고, 유지한 항목은 증빙을 유지한다.
   const items = done.items.map(({ id, side, label }: { id: string; side: string; label: string }) => ({ id, side, label }))
   assert.equal((await call("PUT", `/agreements/${request.id}/items`, { items: [] }, partner)).status, 400)
   assert.equal((await call("PUT", `/agreements/${request.id}/items`, { items: [{ side: "nobody", label: "x" }] }, partner)).status, 400)
@@ -4509,19 +4504,19 @@ test("both sides of an accepted proposal keep an agreement, confirm it and prove
   assert.deepEqual(edited.confirmed, {})
   assert.equal(edited.items.length, 7)
   assert.deepEqual(edited.items.find((item: { id: string }) => item.id === groupItem.id).links, [link])
-  // Writing the same items again changes nothing.
+  // 같은 항목을 다시 써도 달라지는 것이 없다.
   const reconfirmed = (await call("POST", `/agreements/${request.id}/confirm`, undefined, group)).data.agreement
   const same = edited.items.map(({ id, side, label }: { id: string; side: string; label: string }) => ({ id, side, label }))
   assert.ok((await call("PUT", `/agreements/${request.id}/items`, { items: same }, partner)).data.agreement.confirmed.group)
   assert.ok(reconfirmed.confirmed.group)
 
-  // The list shows how far it is, and the data download holds it.
+  // 목록은 진행 정도를 보여 주고 데이터 다운로드가 그것을 담는다.
   const summary = (await call("GET", "/agreements", undefined, group)).data.agreements[0]
   assert.deepEqual([summary.id, summary.partner, summary.done, summary.total, summary.proof], [request.id, "agreement 카페", 1, 7, 3])
   const exported = (await call("GET", "/auth/export", undefined, group)).data
   assert.deepEqual(exported.agreements.map((item: { id: string }) => item.id), [request.id])
 
-  // When the group leaves, the agreement and its photos go.
+  // 단체가 떠나면 계약서와 그 사진이 사라진다.
   assert.equal((await call("DELETE", "/auth/account", { password: "agreement-pass-123" }, group)).status, 204)
   assert.equal(getDatabase().agreements.some((item) => item.id === request.id), false)
   assert.ok(!existsSync(uploadsFolder(request.id)))
@@ -4533,10 +4528,10 @@ test("after the event each side reviews the other, and the reviews show on the l
   const about = async (id: string) =>
     (await call("GET", `/reviews?about=${id}`)).data as { summary: Summary; reviews: Record<string, unknown>[] }
 
-  // The seeded reviews, for anyone, without who wrote them behind the name.
+  // 시드된 후기는 누구에게나 보이며, 이름 뒤에 쓴 사람은 없다.
   const seeded = await about("afternoon-coffee")
   assert.deepEqual([seeded.summary.count, seeded.summary.average], [2, 4.5])
-  // How many picked each tag, the most picked first, for the page's bars.
+  // 태그마다 고른 수를 많이 고른 것부터 세어, 페이지의 막대에 쓴다.
   assert.deepEqual(
     seeded.summary.tags.map((item) => item.tag),
     ["다시 함께하고 싶어요", "매장 응대가 친절해요", "약속을 잘 지켜요", "응답이 빨라요"],
@@ -4549,7 +4544,7 @@ test("after the event each side reviews the other, and the reviews show on the l
   assert.deepEqual([coffee.rating, coffee.reviewCount], [4.5, 2])
   assert.equal(brands.find((brand) => brand.id === "freshon")!.reviewCount, undefined)
 
-  // Two members: a group's event today, proposed to a brand and accepted.
+  // 회원 둘이다. 단체의 오늘 행사를 브랜드에 제안하고 수락한다.
   const group = await signUpMember("review-club@syu.ac.kr", "review-pass-123")
   const groupId = getDatabase().accounts.find((account) => account.email === "review-club@syu.ac.kr")!.id
   const { token: brand, listingId: brandListing } = await listedMember("review@review-cafe.kr", "review-pass-123", "브랜드")
@@ -4558,7 +4553,7 @@ test("after the event each side reviews the other, and the reviews show on the l
   const request = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
   await call("POST", `/requests/${request.id}/accept`, undefined, brand)
   const route = `/reviews/${request.id}`
-  // Not before both sides confirm the e-contract.
+  // 양쪽이 e-contract를 확정하기 전에는 안 된다.
   assert.equal((await call("PUT", route, { rating: 5 }, group)).status, 409)
   assert.equal((await call("GET", `/agreements/${request.id}`, undefined, group)).data.agreement.review.canWrite, false)
   await call("POST", `/agreements/${request.id}/confirm`, undefined, group)
@@ -4566,7 +4561,7 @@ test("after the event each side reviews the other, and the reviews show on the l
 
   assert.equal((await call("PUT", route, { rating: 5 })).status, 401)
   assert.equal((await call("PUT", "/reviews/req-movement", { rating: 5 }, group)).status, 404)
-  // Not before the event's day.
+  // 행사 날 전에는 안 된다.
   const day = request.eventDate
   request.eventDate = "2099-01-01"
   assert.equal((await call("PUT", route, { rating: 5 }, group)).status, 409)
@@ -4576,7 +4571,7 @@ test("after the event each side reviews the other, and the reviews show on the l
     { rating: 0 },
     { rating: 4.5 },
     { rating: 5, tags: ["약속을 잘 지켜요", "응답이 빨라요", "협찬 물품이 좋아요", "다시 함께하고 싶어요"] },
-    // A tag for reviewing a group, not a brand.
+    // 브랜드가 아니라 단체를 후기로 쓰는 태그다.
     { rating: 5, tags: ["홍보를 잘해요"] },
     { rating: 5, tags: "약속을 잘 지켜요" },
     { rating: 5, comment: "가".repeat(301) },
@@ -4588,17 +4583,17 @@ test("after the event each side reviews the other, and the reviews show on the l
   assert.deepEqual(written.data.review.tags, ["약속을 잘 지켜요"])
   assert.equal(written.data.review.comment, "커피가 맛있었어요.")
   assert.equal(written.data.review.authorName, "review-club 동아리")
-  // The shared demo accounts can't write reviews anyone would see.
+  // 공유 데모 계정은 누가 볼 후기를 쓸 수 없다.
   assert.equal((await call("PUT", "/reviews/req-runners", { rating: 1 }, await login("브랜드"))).status, 403)
 
-  // Each side sees its own review and the other's on the agreement (the
-  // group has no listing yet, so the brand has nowhere to review it).
+  // 각 쪽은 계약서에서 자기 후기와 상대편 후기를 본다(단체에는 아직 리스팅이
+  // 없으므로 브랜드가 후기를 쓸 곳이 없다).
   const forGroup = (await call("GET", `/agreements/${request.id}`, undefined, group)).data.agreement.review
   assert.deepEqual([forGroup.open, forGroup.canWrite, forGroup.mine.rating, forGroup.theirs], [true, true, 5, undefined])
   const forBrand = (await call("GET", `/agreements/${request.id}`, undefined, brand)).data.agreement.review
   assert.deepEqual([forBrand.canWrite, forBrand.theirs.comment], [false, "커피가 맛있었어요."])
 
-  // Writing again changes the one review.
+  // 다시 쓰면 후기 하나가 바뀐다.
   const rewritten = await call("PUT", route, { rating: 4, tags: [], comment: "" }, group)
   assert.equal(rewritten.status, 200)
   assert.ok(rewritten.data.review.updatedAt)
@@ -4606,13 +4601,13 @@ test("after the event each side reviews the other, and the reviews show on the l
   assert.deepEqual([after.summary.count, after.summary.average], [1, 4])
   assert.equal(after.reviews[0].authorName, "review-club 동아리")
 
-  // The data download holds it; deleting it takes it off the listing.
+  // 데이터 다운로드가 담고, 지우면 리스팅에서 빠진다.
   assert.equal((await call("GET", "/auth/export", undefined, group)).data.reviews.length, 1)
   assert.equal((await call("DELETE", route, undefined, group)).status, 204)
   assert.equal((await call("DELETE", route, undefined, group)).status, 404)
   assert.equal((await about(brandListing)).summary.count, 0)
 
-  // Leaving takes the reviews it wrote with it.
+  // 떠나면 쓴 후기도 함께 가져간다.
   await call("PUT", route, { rating: 5 }, group)
   assert.equal((await about(brandListing)).summary.count, 1)
   assert.equal((await call("DELETE", "/auth/account", { password: "review-pass-123" }, group)).status, 204)
@@ -4650,7 +4645,7 @@ test("the reviewed side answers a review once, shown under it, and a report can 
     await call("POST", `/agreements/${request.id}/confirm`, undefined, group)
     await call("POST", `/agreements/${request.id}/confirm`, undefined, brand)
     const reply = `/reviews/${request.id}/reply`
-    // Nothing to answer before the group's review.
+    // 단체의 후기 전에는 답할 것이 없다.
     assert.equal((await call("PUT", reply, { text: "감사해요" }, brand)).status, 404)
     await call("PUT", `/reviews/${request.id}`, { rating: 5, tags: [], comment: "커피가 맛있었어요." }, group)
     assert.equal((await call("GET", `/agreements/${request.id}`, undefined, brand)).data.agreement.review.canReply, true)
@@ -4664,22 +4659,22 @@ test("the reviewed side answers a review once, shown under it, and a report can 
     assert.equal(answered.status, 201)
     assert.equal(answered.data.review.reply.text, "함께해서 즐거웠어요.")
     await settle()
-    // The reviewer hears about it once.
+    // 후기를 쓴 쪽은 한 번 알림을 받는다.
     assert.equal(sent.length, 1)
     assert.match(sent[0].subject, /답글/)
     assert.equal((await call("PUT", reply, { text: "다음에도 함께해요." }, brand)).status, 200)
     await settle()
     assert.equal(sent.length, 1)
-    // Under the review for anyone, and kept when the group rewrites its review.
+    // 누구에게나 후기 밑에 보이고, 단체가 후기를 다시 써도 남는다.
     await call("PUT", `/reviews/${request.id}`, { rating: 4, tags: [], comment: "고친 후기" }, group)
     const listed = (await call("GET", `/reviews?about=${brandListing}`)).data.reviews[0]
     assert.equal(listed.comment, "고친 후기")
     assert.equal(listed.reply.text, "다음에도 함께해요.")
     assert.ok(listed.reply.updatedAt)
-    // The group has no review of its own part to answer, and the demo accounts can't answer.
+    // 단체에게는 답할 자기 역할의 후기가 없고, 데모 계정은 답할 수 없다.
     assert.equal((await call("PUT", reply, { text: "저도요" }, group)).status, 404)
 
-    // A third member reports the answer; the operators take it down.
+    // 세 번째 회원이 답글을 신고하면 운영자가 내린다.
     const third = await signUpMember("reply-reader@syu.ac.kr", "reply-pass-123")
     const reported = await call("POST", "/reports", { kind: "reply", reviewKey: listed.key, reason: "욕설 · 괴롭힘" }, third)
     assert.equal(reported.status, 201)
@@ -4688,7 +4683,7 @@ test("the reviewed side answers a review once, shown under it, and a report can 
     assert.equal(report.accountId, brandId)
     assert.equal(report.excerpt, "다음에도 함께해요.")
     assert.equal(await admin(`/admin/reports/${report.id}/resolve`, { action: "hide-reply" }), 200)
-    // Gone for readers, the review stays; its author sees it was taken down.
+    // 읽는 사람에게는 사라지고 후기는 남으며, 쓴 사람은 내려졌음을 본다.
     const after = (await call("GET", `/reviews?about=${brandListing}`)).data.reviews[0]
     assert.equal(after.comment, "고친 후기")
     assert.deepEqual(Object.keys(after.reply).sort(), ["createdAt", "hidden"])
@@ -4719,29 +4714,29 @@ test("a member's calendar link gives calendar apps its events and sponsorship da
   assert.equal(made.status, 201)
   const url = made.data.url as string
   assert.match(url, /\/api\/calendar\/[\w-]{32}\.ics$/)
-  // The calendar itself needs no login: the link is the key.
+  // 캘린더 자체는 로그인이 필요 없다. 링크가 곧 열쇠다.
   const feed = await fetch(url)
   assert.equal(feed.status, 200)
   assert.match(feed.headers.get("content-type") ?? "", /^text\/calendar/)
   const text = await feed.text()
   assert.ok(text.startsWith("BEGIN:VCALENDAR\r\n"))
-  // The brand's calendar has the day it sponsors, escaped as RFC 5545 asks.
+  // 브랜드의 캘린더에는 협찬하는 날이 있고, RFC 5545가 요구하는 대로 이스케이프한다.
   assert.match(text, /SUMMARY:협찬 · feed 동아리 구독\\; 공연\\, 가을\r\n/)
   // Never in the account the app gets; the same link again from 내 정보.
   assert.equal((await call("GET", "/auth/me", undefined, brand)).data.account.calendarFeed, undefined)
   assert.equal((await call("GET", "/calendar/feed", undefined, brand)).data.url, url)
-  // A new link stops the old one at once.
+  // 새 링크는 옛 링크를 바로 멈춘다.
   const next = (await call("POST", "/calendar/feed", undefined, brand)).data.url as string
   assert.notEqual(next, url)
   assert.equal((await fetch(url)).status, 404)
   assert.equal((await fetch(next)).status, 200)
-  // The group's own calendar has its event over its two days.
+  // 단체 자신의 캘린더에는 행사가 이틀에 걸쳐 있다.
   const groupUrl = (await call("POST", "/calendar/feed", undefined, group)).data.url as string
   const groupText = await (await fetch(groupUrl)).text()
   assert.match(groupText, /SUMMARY:구독\\; 공연\\, 가을\r\n/)
   assert.ok(groupText.includes(`DTSTART;VALUE=DATE:${day.replace(/-/g, "")}\r\n`))
   assert.ok(groupText.includes(`DTEND;VALUE=DATE:${addDays(day, 2).replace(/-/g, "")}\r\n`))
-  // Deleting it stops it; the demo accounts can't make one, nor can a visitor.
+  // 지우면 멈추고, 데모 계정과 방문자는 만들 수 없다.
   assert.equal((await call("DELETE", "/calendar/feed", undefined, brand)).status, 204)
   assert.equal((await fetch(next)).status, 404)
   assert.equal((await call("POST", "/calendar/feed", undefined, await login("학생단체"))).status, 403)
@@ -4764,8 +4759,8 @@ test("members choose which notice emails they get, in the language they use the 
   const settle = () => new Promise((resolve) => setTimeout(resolve, 20))
   const english = { "Content-Type": "application/json", "Accept-Language": "en-US,en;q=0.9" }
   try {
-    // Signing up from an English page: the code comes in English, and the
-    // account's emails follow.
+    // 영어 페이지에서 가입하면 코드가 영어로 오고 계정의 메일도 그것을
+    // 따른다.
     const email = "mail-en@syu.ac.kr"
     sent.length = 0
     const asked = await fetch(`${baseUrl}/auth/email-code`, {
@@ -4807,7 +4802,7 @@ test("members choose which notice emails they get, in the language they use the 
     for (const body of [{ language: "fr" }, { mailOff: "messages" }, { mailOff: ["spam"] }]) {
       assert.equal((await preferences(body)).status, 400)
     }
-    // The brand turns message emails off: a message sends none, a proposal still goes.
+    // 브랜드가 메시지 메일을 끄면 메시지는 메일을 보내지 않고, 제안은 여전히 간다.
     const saved = await preferences({ mailOff: ["messages", "messages"] })
     assert.deepEqual(saved.data.account.mailOff, ["messages"])
     sent.length = 0
@@ -4819,7 +4814,7 @@ test("members choose which notice emails they get, in the language they use the 
     assert.deepEqual(sent.map((mail) => mail.subject), ["[uniconnect] 새 협찬 제안이 왔어요"])
     assert.match(sent[0].text, /받을 메일 바꾸기: https:\/\/uniconnect\.example\/me/)
 
-    // The group uses the app in English: the brand's answer reaches it in English.
+    // 단체가 앱을 영어로 쓰면 브랜드의 답이 영어로 닿는다.
     sent.length = 0
     const request = (await call("GET", "/requests", undefined, brand)).data.requests[0]
     await call("POST", `/requests/${request.id}/accept`, undefined, brand)
@@ -4828,7 +4823,7 @@ test("members choose which notice emails they get, in the language they use the 
     assert.match(sent[0].text, /accepted the proposal for '메일 공연'\./)
     assert.match(sent[0].text, /Open: https:\/\/uniconnect\.example\/matches/)
     assert.match(sent[0].text, /Choose which emails you get: https:\/\/uniconnect\.example\/me/)
-    // Back to Korean, and every kind on again.
+    // 한국어로 돌아오고 모든 종류를 다시 켠다.
     assert.equal((await preferences({ language: "ko", mailOff: [] }, group)).data.account.language, "ko")
     assert.equal((await preferences({ mailOff: [] })).data.account.mailOff, undefined)
   } finally {
@@ -4858,11 +4853,11 @@ test("each Monday a member hears once of the best-fitting partners that joined i
     await listedMember("digest@digest-cafe.kr", "digest-pass-123", "브랜드")
     await listedMember("digest-old@digest-old.kr", "digest-pass-123", "브랜드")
     const account = (email: string) => database.accounts.find((item) => item.email === email)!
-    // Seen from a Monday in 2030: one brand joined that Saturday, one a month before.
+    // 2030년의 한 월요일에서 보면, 브랜드 하나는 그 토요일에, 하나는 한 달 전에 합류했다.
     account("digest@digest-cafe.kr").createdAt = "2030-01-05T00:00:00.000Z"
     account("digest-old@digest-old.kr").createdAt = "2029-12-01T00:00:00.000Z"
     const monday = new Date("2030-01-07T01:00:00Z")
-    // The sign-up codes went out above.
+    // 가입 코드는 위에서 나갔다.
     sent.length = 0
 
     assert.ok((await sendDigests(database, monday)) >= 1)
@@ -4872,14 +4867,14 @@ test("each Monday a member hears once of the best-fitting partners that joined i
     assert.equal(digest.subject, "[uniconnect] 이번 주 새로 가입한 잘 맞는 브랜드 1곳")
     assert.match(digest.text, /^지난 일주일 동안 가입한 브랜드 가운데 잘 맞는 곳이에요\.\n· digest 카페 \(일치율 \d+%\)\n/)
     assert.doesNotMatch(digest.text, /digest-old/)
-    // Once a Monday, however often the timer runs; not on other days.
+    // 타이머가 몇 번 돌아도 월요일에 한 번만 보내고, 다른 요일에는 보내지 않는다.
     sent.length = 0
     assert.equal(await sendDigests(database, new Date("2030-01-07T05:00:00Z")), 0)
     assert.equal(await sendDigests(database, new Date("2030-01-08T01:00:00Z")), 0)
     await settle()
     assert.equal(sent.length, 0)
-    // The next Monday the brand is no longer new; a member who turned the
-    // digest off hears nothing, and the demo accounts never do.
+    // 다음 월요일에는 브랜드가 더 이상 새롭지 않다. 요약을 끈 회원은 아무것도
+    // 받지 않고, 데모 계정은 절대 받지 않는다.
     account("digest-old@digest-old.kr").createdAt = "2030-01-12T00:00:00.000Z"
     account("digest-club@syu.ac.kr").mailOff = ["digest"]
     await sendDigests(database, new Date("2030-01-14T01:00:00Z"))
@@ -4923,12 +4918,12 @@ test("a group's event page shows its venue, introduction, photos and packages to
   ]) {
     assert.equal((await call("POST", "/events", { ...body, ...extra }, group)).status, 400)
   }
-  // A brand's campaign has no event page.
+  // 브랜드의 캠페인에는 행사 페이지가 없다.
   const campaign = (await call("POST", "/events", { ...body, budget: "1000" }, brand)).data.event
   assert.deepEqual([campaign.venue, campaign.intro, campaign.packages], [undefined, undefined, undefined])
 
-  // Members who see the group read the page; visitors and the demo accounts
-  // (who meet the examples) don't, but they read the demo group's.
+  // 단체를 볼 수 있는 회원은 페이지를 읽는다. 방문자와 데모 계정(예시를 만난다)은
+  // 읽지 못하지만 데모 단체의 페이지는 읽는다.
   const page = await call("GET", `/events/${event.id}/page`, undefined, brand)
   assert.equal(page.status, 200)
   assert.deepEqual([page.data.group.id, page.data.group.name, page.data.own], [groupListing, "page-club 동아리", false])
@@ -4936,7 +4931,7 @@ test("a group's event page shows its venue, introduction, photos and packages to
   assert.equal((await call("GET", `/events/${event.id}/page`, undefined, group)).data.own, true)
   assert.equal((await call("GET", `/events/${event.id}/page`)).status, 404)
   assert.equal((await call("GET", `/events/${event.id}/page`, undefined, await login("브랜드"))).status, 404)
-  // The budget is for the group and the brands it asked about this event.
+  // 예산은 단체와, 이 행사에 대해 물은 브랜드를 위한 것이다.
   const budgeted = (await call("POST", "/events", { ...body, name: "예산 공연", budget: "500000" }, group)).data.event
   const budgetSeen = async (token?: string) => (await call("GET", `/events/${budgeted.id}/page`, undefined, token)).data.event.budget
   assert.equal(await budgetSeen(group), 500000)
@@ -4947,7 +4942,7 @@ test("a group's event page shows its venue, introduction, photos and packages to
   assert.equal(demo.data.event.venue, "삼육대학교 대강당")
   assert.equal(demo.data.event.packages.length, 2)
 
-  // Up to four photos, from the group only, served to those who see the page.
+  // 사진은 최대 네 장이며 단체만 올릴 수 있고, 페이지를 보는 사람에게 내려간다.
   const png =
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
   const photoRoute = `/events/${event.id}/photos`
@@ -4964,11 +4959,11 @@ test("a group's event page shows its venue, introduction, photos and packages to
   assert.equal((await call("DELETE", `${photoRoute}/${photos[0]}`, undefined, group)).status, 200)
   assert.ok(!existsSync(path.join(uploadsFolder(eventPhotos(event.id)), photos[0])))
 
-  // An edit replaces the page's words and keeps its photos.
+  // 수정하면 페이지의 글은 바뀌고 사진은 남는다.
   const edited = await call("PUT", `/events/${event.id}`, { ...body, venue: "", intro: "", packages: [] }, group)
   assert.deepEqual([edited.data.event.venue, edited.data.event.intro, edited.data.event.packages], [undefined, undefined, undefined])
   assert.equal(edited.data.event.photos.length, 3)
-  // Deleting the event takes its photos with it, and so does leaving.
+  // 행사를 지우면 사진도 함께 사라지고, 떠나도 마찬가지다.
   assert.equal((await call("DELETE", `/events/${event.id}`, undefined, group)).status, 204)
   assert.ok(!existsSync(uploadsFolder(eventPhotos(event.id))))
   const again = (await call("POST", "/events", body, group)).data.event
@@ -5001,7 +4996,7 @@ test("members post on the recruitment board, and the other side applies with a p
   assert.equal(made.status, 201)
   const post = made.data.post as Post
   assert.deepEqual([post.own, post.open, post.applications], [true, true, []])
-  // A group's post is about one of its coming events.
+  // 단체의 글은 다가오는 자기 행사 하나에 대한 것이다.
   const groupFields = { ...brandPost, title: "협찬사를 찾아요", types: ["현금"] }
   assert.equal((await call("POST", "/board", groupFields, group)).status, 400)
   const groupMade = await call("POST", "/board", { ...groupFields, eventId: groupEvent.id }, group)
@@ -5010,8 +5005,8 @@ test("members post on the recruitment board, and the other side applies with a p
   assert.equal(groupPost.event?.name, "게시판 공연")
   assert.equal((await call("POST", "/board", brandPost, await login("브랜드"))).status, 403)
 
-  // Each finds the other side's posts it sees; its own are under mine. Visitors
-  // and the demo accounts read the examples, members read members'.
+  // 각자 자기가 보는 반대편의 글을 찾고, 자기 글은 내 글에 있다. 방문자와 데모
+  // 계정은 예시를, 회원은 회원의 글을 읽는다.
   const groupBoard = (await call("GET", "/board", undefined, group)).data as { posts: Post[]; mine: Post[] }
   assert.ok(groupBoard.posts.some((item) => item.id === post.id))
   assert.equal(groupBoard.posts.some((item) => item.id === groupPost.id || item.id === "post-coffee-tasting"), false)
@@ -5020,29 +5015,29 @@ test("members post on the recruitment board, and the other side applies with a p
   assert.ok(visitor.posts.some((item) => item.id === "post-coffee-tasting"))
   assert.equal(visitor.posts.some((item) => item.id === post.id), false)
 
-  // The group applies with its event: a proposal in the brand's inbox, once.
+  // 단체는 자기 행사와 함께 지원하며, 브랜드의 받은편지함에 제안이 한 번 간다.
   const apply = { matchId: brandListing, eventId: groupEvent.id, message: "로비 부스 자리를 드릴게요.", postId: post.id }
   assert.equal((await call("POST", "/proposals", apply, group)).status, 201)
   const request = getDatabase().requests.find((item) => item.postId === post.id)!
   assert.equal(request.eventId, groupEvent.id)
   assert.equal((await call("POST", "/proposals", apply, group)).status, 409)
-  // Its own post is no post of the brand's.
+  // 브랜드 자신의 글은 브랜드의 글이 아니다.
   assert.equal((await call("POST", "/proposals", { ...apply, postId: groupPost.id }, group)).status, 409)
   const seen = (await call("GET", `/board/${post.id}`, undefined, brand)).data.post as Post
   assert.deepEqual(seen.applications?.map((item) => [item.name, item.about, item.status]), [["board-club 동아리", "게시판 공연", "검토 중"]])
   assert.equal(((await call("GET", `/board/${post.id}`, undefined, group)).data.post as Post).applied, "검토 중")
-  // The brand applies to the group's post with its campaign.
+  // 브랜드는 자기 캠페인과 함께 단체의 글에 지원한다.
   assert.equal((await call("POST", "/proposals", { matchId: groupListing, eventId: campaign.id, postId: groupPost.id }, brand)).status, 201)
   assert.ok(getDatabase().offers.some((item) => item.postId === groupPost.id && item.campaignId === campaign.id))
 
-  // Closed, it leaves the board and takes no more applications; its poster still edits it.
+  // 닫으면 게시판에서 빠지고 더 이상 지원을 받지 않으며, 올린 쪽은 여전히 고칠 수 있다.
   assert.equal((await call("POST", `/board/${post.id}/close`, undefined, brand)).data.post.open, false)
   assert.equal(((await call("GET", "/board", undefined, group)).data.posts as Post[]).some((item) => item.id === post.id), false)
   assert.equal((await call("GET", `/board/${post.id}`, undefined, group)).status, 404)
   assert.equal((await call("PUT", `/board/${post.id}`, brandPost, group)).status, 404)
   assert.equal((await call("PUT", `/board/${post.id}`, { ...brandPost, title: "고친 제목" }, brand)).data.post.title, "고친 제목")
   assert.equal((await call("DELETE", `/board/${post.id}`, undefined, brand)).status, 204)
-  // Deleting the group's event closes its post; leaving takes the post away.
+  // 단체의 행사를 지우면 그 글이 닫히고, 떠나면 글이 사라진다.
   assert.equal((await call("DELETE", `/events/${groupEvent.id}`, undefined, group)).status, 204)
   assert.ok(getDatabase().posts.find((item) => item.id === groupPost.id)?.closedAt)
   assert.equal((await call("DELETE", "/auth/account", { password: "board-pass-123" }, group)).status, 204)
@@ -5066,9 +5061,9 @@ test("members are emailed once when an event or a sponsored event is three days 
     status: "매칭 중" as const,
     createdAt: "2026-11-01T00:00:00.000Z",
   })
-  // Only these two members and the demo accounts are looked at: other
-  // tests leave members' events at dates counted from today, which some
-  // days fall in this test's week (a 30-day-away event did, on 26 October).
+  // 이 두 회원과 데모 계정만 살핀다. 다른 테스트가 회원의 행사를 오늘부터 센
+  // 날짜에 두는데 어떤 날은 이 테스트의 주에 들어온다(30일 뒤 행사가 10월
+  // 26일에 그랬다).
   const kept = { events: database.events, sponsorships: database.sponsorships }
   const demoIds = Object.values(database.demoAccountIds)
   const demoOnly = <T,>(byAccount: Record<string, T>) =>
@@ -5095,8 +5090,8 @@ test("members are emailed once when an event or a sponsored event is three days 
   config.resendApiKey = "test-resend-key"
   config.mailFrom = "uniconnect <no-reply@example.com>"
   try {
-    // Noon on 25 November in Korea: the demo group's 27 November concert is
-    // near too, but the demo accounts are never emailed.
+    // 한국의 11월 25일 정오다. 데모 단체의 11월 27일 콘서트도 가깝지만 데모
+    // 계정에는 메일을 보내지 않는다.
     const now = new Date("2026-11-25T03:00:00Z")
     assert.equal(await sendReminders(database, now), 3)
     const subjects = sent.map((message) => `${message.to[0]} ${message.subject}`).sort()
@@ -5107,8 +5102,8 @@ test("members are emailed once when an event or a sponsored event is three days 
     ])
     assert.ok(sent.every((message) => !message.to.includes("muse@syu.ac.kr") && !message.to.includes("hello@afternoon-coffee.kr")))
     assert.match(sent.find((message) => message.to.includes("remind@remind-cafe.kr"))!.text, /임시 전자 계약서/)
-    // Once each: the next hour sends nothing, and two days later only the
-    // event that has come near since.
+    // 각각 한 번씩이다. 다음 시간에는 아무것도 보내지 않고, 이틀 뒤에는 그사이
+    // 가까워진 행사만 보낸다.
     assert.equal(await sendReminders(database, new Date("2026-11-25T04:00:00Z")), 0)
     sent.length = 0
     assert.equal(await sendReminders(database, new Date("2026-11-27T03:00:00Z")), 1)
@@ -5133,14 +5128,14 @@ test("operators see the platform's figures, real members' apart from the demo da
   assert.equal((await call("GET", "/admin/stats")).status, 403)
 
   const before = (await stats()).data.stats
-  // The demo accounts and the seed's data count only in the totals.
+  // 데모 계정과 시드의 데이터는 합계에만 센다.
   assert.ok(before.proposals.total > before.proposals.real)
   assert.ok(before.scans.total > before.scans.real)
   for (const figure of Object.values(before)) {
     assert.ok(figure.real >= 0 && figure.real <= figure.total)
   }
 
-  // A new member counts as real, and as new this week.
+  // 새 회원은 실제로 세고, 이번 주의 새 회원으로 센다.
   await signUpMember("stats@syu.ac.kr", "stats-pass-123")
   const after = (await stats()).data.stats
   assert.equal(after.students.real, before.students.real + 1)
@@ -5162,7 +5157,7 @@ test("a group hands its account over by moving the login email, checked with a c
   const sent = await ask({ email: "handover-new@syu.ac.kr", password: "handover-pass-123" })
   assert.equal(sent.status, 200)
 
-  // Another account can't use the code; a wrong code is refused.
+  // 다른 계정은 코드를 쓸 수 없고, 틀린 코드는 거절한다.
   const stranger = await signUpMember("handover-other@syu.ac.kr", "handover-pass-123")
   assert.equal((await call("POST", "/auth/email", { email: "handover-new@syu.ac.kr", code: sent.data.devCode }, stranger)).status, 400)
   assert.equal((await call("POST", "/auth/email", { email: "handover-new@syu.ac.kr", code: "000000" }, token)).status, 400)
@@ -5170,14 +5165,14 @@ test("a group hands its account over by moving the login email, checked with a c
   assert.equal(moved.status, 200)
   assert.equal(moved.data.account.email, "handover-new@syu.ac.kr")
 
-  // This device stays logged in, the others are logged out, and the new email logs in.
+  // 이 기기는 로그인이 유지되고 다른 기기는 로그아웃되며, 새 이메일로 로그인된다.
   assert.equal((await call("GET", "/auth/me", undefined, token)).status, 200)
   assert.equal((await call("GET", "/auth/me", undefined, other)).status, 401)
   const login = (email: string) => call("POST", "/auth/login", { role: "학생단체", email, password: "handover-pass-123" })
   assert.equal((await login("handover-new@syu.ac.kr")).status, 200)
   assert.equal((await login("handover-old@syu.ac.kr")).status, 401)
 
-  // The demo accounts stay as they are.
+  // 데모 계정은 그대로 둔다.
   const demo = await call("POST", "/auth/login", { role: "학생단체", email: "muse@syu.ac.kr", password: DEMO_PASSWORD })
   assert.equal((await ask({ email: "elsewhere@syu.ac.kr", password: DEMO_PASSWORD }, demo.data.token)).status, 403)
 })
@@ -5195,7 +5190,7 @@ test("an account downloads everything it made, without its password or participa
   }
   assert.equal((await call("GET", "/auth/export")).status, 401)
 
-  // A measured event comes without the participants' passes and records.
+  // 측정한 행사는 참여자의 패스와 기록 없이 온다.
   const demo = await login("학생단체")
   const measured = (await call("GET", "/auth/export", undefined, demo)).data.measurements
   assert.ok(measured.length > 0)
@@ -5216,7 +5211,7 @@ test("the data is backed up at most hourly beside the data file, keeping the lat
   assert.equal(kept.length, 24)
   assert.ok(!kept.includes("db-2000-01-01-00.json"))
   assert.ok(JSON.parse(await readFile(path.join(folder, kept.at(-1)!), "utf8")).accounts.length > 0)
-  // Within the hour, no new copy.
+  // 한 시간 안에는 새 복사를 만들지 않는다.
   await saveDatabase()
   assert.deepEqual(await copies(), kept)
 })
@@ -5231,7 +5226,7 @@ test("Vercel serves the pages with the same security headers the API sends", asy
   const pages = vercel.headers.find((entry) => entry.source === "/(.*)")!.headers
   const answer = await fetch(`${baseUrl}/health`)
   for (const { key, value } of pages) assert.equal(answer.headers.get(key), value, key)
-  // All of them, but HSTS, which Vercel adds on its own.
+  // 모두 있지만 HSTS는 Vercel이 직접 더하므로 제외한다.
   const sent = [...answer.headers.keys()].filter((key) =>
     ["content-security-policy", "x-content-type-options", "x-frame-options", "referrer-policy", "permissions-policy"].includes(key),
   )
@@ -5253,7 +5248,7 @@ test("the Vercel entry reads the data on its first request and serves the API", 
   }
 })
 
-// Last, as it marks the events near today as reminded.
+// 오늘 가까운 행사를 알림이 간 것으로 표시하므로 마지막에 둔다.
 test("Vercel Cron sends the reminders with its secret, and nobody else can", async () => {
   const reminders = (authorization?: string) =>
     fetch(`${baseUrl}/cron/reminders`, authorization ? { headers: { Authorization: authorization } } : undefined)
@@ -5293,7 +5288,7 @@ test("a brand confirms an e-contract by paying the 15% fee, by card or by transf
     const request = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
     await call("POST", `/requests/${request.id}/accept`, undefined, brand)
 
-    // The value comes first; the group confirms without paying anything.
+    // 가치가 먼저이고, 단체는 아무것도 내지 않고 확정한다.
     assert.equal((await call("POST", `/agreements/${request.id}/confirm`, undefined, brand)).status, 409)
     assert.equal((await call("PUT", `/agreements/${request.id}/value`, { value: { cash: 0, inKind: 0 } }, group)).status, 400)
     const valued = (await call("PUT", `/agreements/${request.id}/value`, { value: { cash: 200000, inKind: 133333 } }, group)).data.agreement
@@ -5301,17 +5296,17 @@ test("a brand confirms an e-contract by paying the 15% fee, by card or by transf
     assert.equal((await call("POST", `/agreements/${request.id}/confirm`, undefined, brand)).status, 402)
     assert.ok((await call("POST", `/agreements/${request.id}/confirm`, undefined, group)).data.agreement.confirmed.group)
 
-    // Only the brand orders, at the fee due.
+    // 브랜드만 내야 할 수수료로 주문한다.
     assert.equal((await call("POST", "/billing/orders", { kind: "fee", targetId: request.id }, group)).status, 403)
     assert.equal((await call("POST", "/billing/orders", { kind: "fee", targetId: request.id }, await login("브랜드"))).status, 403)
     assert.equal((await call("POST", "/billing/orders", { kind: "nope", targetId: request.id }, brand)).status, 404)
     const { order } = (await call("POST", "/billing/orders", { kind: "fee", targetId: request.id }, brand)).data
     assert.deepEqual([order.amount, order.supply, order.status, order.orderName], [55000, 50000, "pending", "수수료 공연 협찬 수수료"])
     assert.equal(order.paymentKey, undefined)
-    // The same order comes back while it waits.
+    // 기다리는 동안은 같은 주문이 돌아온다.
     assert.equal((await call("POST", "/billing/orders", { kind: "fee", targetId: request.id }, brand)).data.order.id, order.id)
 
-    // By card: off without Toss keys; then the amount must be the order's.
+    // 카드는 Toss 키가 없으면 꺼져 있고, 그다음에는 금액이 주문의 것이어야 한다.
     const confirm = (amount: number) => call("POST", "/billing/confirm", { orderId: order.id, paymentKey: "pk-test", amount }, brand)
     assert.equal((await confirm(50000)).status, 409)
     config.tossClientKey = "test_ck_example"
@@ -5327,7 +5322,7 @@ test("a brand confirms an e-contract by paying the 15% fee, by card or by transf
     assert.deepEqual([listed.card.clientKey, listed.payments.length, listed.prices.report], ["test_ck_example", 1, 50000])
     assert.equal((await call("GET", "/billing", undefined, group)).data.payments.length, 0)
 
-    // A higher value leaves the difference, paid here by bank transfer.
+    // 가치가 오르면 차액이 남고, 여기서 계좌 이체로 낸다.
     const raised = (await call("PUT", `/agreements/${request.id}/value`, { value: { cash: 300000, inKind: 100000 } }, brand)).data.agreement
     assert.deepEqual([raised.fee.amount, raised.fee.due, raised.confirmed], [60000, 10000, {}])
     const top = (await call("POST", "/billing/orders", { kind: "fee", targetId: request.id }, brand)).data.order
@@ -5338,7 +5333,7 @@ test("a brand confirms an e-contract by paying the 15% fee, by card or by transf
     assert.equal((await admin(`/payments/${top.id}/paid`, {})).status, 409)
     assert.ok((await call("GET", `/agreements/${request.id}`, undefined, brand)).data.agreement.confirmed.brand)
 
-    // A refund of the card payment takes the brand's confirmation back.
+    // 카드 결제를 환불하면 브랜드의 확정을 거둔다.
     const refunded: string[] = []
     toss.cancel = async (key) => {
       refunded.push(key)
@@ -5347,7 +5342,7 @@ test("a brand confirms an e-contract by paying the 15% fee, by card or by transf
     assert.deepEqual(refunded, ["pk-test"])
     const back = (await call("GET", `/agreements/${request.id}`, undefined, brand)).data.agreement
     assert.deepEqual([back.confirmed.brand, back.fee.due], [undefined, 50000])
-    // The account's export holds its payments, without Toss's key.
+  // 계정의 내보내기는 결제를 담되 Toss의 키는 담지 않는다.
     const exported = (await call("GET", "/auth/export", undefined, brand)).data
     assert.equal(exported.payments.length, 2)
     assert.ok(exported.payments.every((payment: { paymentKey?: string }) => payment.paymentKey === undefined))
@@ -5370,12 +5365,12 @@ test("a card approval whose save fails is kept by its key and recorded later, ne
   const dataFile = config.dataFile
   config.tossClientKey = "test_ck_example"
   config.tossSecretKey = "test_sk_example"
-  // What Toss has charged, by payment key, and how often it was asked.
+  // Toss가 청구한 내역(결제 키별)과 요청받은 횟수.
   const charged = new Map<string, { orderId: string; totalAmount: number }>()
   let confirms = 0
   toss.confirm = async (paymentKey, orderId, amount) => {
     confirms += 1
-    // Toss answers an order's first approval again, as its Idempotency-Key does.
+    // Toss는 Idempotency-Key대로 주문의 첫 승인을 다시 답한다.
     const earlier = [...charged.values()].find((item) => item.orderId === orderId)
     if (!earlier) charged.set(paymentKey, { orderId, totalAmount: amount })
     return { status: "DONE", orderId, totalAmount: earlier?.totalAmount ?? amount, approvedAt: "2026-11-04T12:00:00+09:00" }
@@ -5391,8 +5386,8 @@ test("a card approval whose save fails is kept by its key and recorded later, ne
     const confirm = (id: string, paymentKey: string, amount: number) =>
       call("POST", "/billing/confirm", { orderId: id, paymentKey, amount }, brand)
 
-    // Every save fails once Toss has charged the card: the order waits with
-    // its key, which was saved before Toss was asked.
+    // Toss가 카드를 청구한 뒤 저장이 모두 실패한다. 주문은 Toss에 묻기 전에
+    // 저장한 키를 가진 채 기다린다.
     const first = await order()
     const approve = toss.confirm
     toss.confirm = async (...args) => {
@@ -5408,15 +5403,15 @@ test("a card approval whose save fails is kept by its key and recorded later, ne
     assert.deepEqual([stored(first.id).status, stored(first.id).paymentKey], ["pending", "pk-lost"])
     assert.ok(stored(first.id).confirmingAt)
 
-    // Trying the same approval again records it without a second charge.
+    // 같은 승인을 다시 시도하면 두 번 청구 없이 기록된다.
     const again = await confirm(first.id, "pk-lost", first.amount)
     assert.equal(again.status, 200)
     assert.deepEqual([again.data.order.status, again.data.order.method, again.data.order.paymentKey], ["paid", "card", undefined])
     assert.equal(stored(first.id).confirmingAt, undefined)
     assert.equal(charged.size, 1)
 
-    // Another order lost the same way: paying it again in a new window
-    // finds the first charge at Toss and records that one instead.
+    // 같은 식으로 유실된 다른 주문. 새 창에서 다시 결제하면 Toss에서 첫
+    // 청구를 찾아 그것을 기록한다.
     cardRecovery.settleAfterMs = 60 * 60 * 1000
     const second = await order()
     assert.notEqual(second.id, first.id)
@@ -5428,7 +5423,7 @@ test("a card approval whose save fails is kept by its key and recorded later, ne
     assert.equal((await confirm(second.id, "pk-second", second.amount)).status, 503)
     config.dataFile = dataFile
     toss.confirm = approve
-    // Its window opened again keeps the order and its amount as they were.
+    // 결제창을 다시 열어도 주문과 금액은 그대로다.
     assert.equal((await order()).id, second.id)
     assert.equal(stored(second.id).status, "pending")
     const repaid = await confirm(second.id, "pk-new-window", second.amount)
@@ -5437,8 +5432,8 @@ test("a card approval whose save fails is kept by its key and recorded later, ne
     assert.equal(confirms, 3)
     assert.equal((await call("DELETE", `/billing/orders/${second.id}`, undefined, brand)).status, 409)
 
-    // A stuck order the brand tries to cancel is checked at Toss first: a
-    // charged one is recorded, not cancelled.
+    // 브랜드가 취소하려는 멈춘 주문은 Toss에 먼저 확인한다. 청구된 주문은
+    // 취소되지 않고 기록된다.
     const fourth = await order()
     toss.confirm = async (...args) => {
       const answer = await approve(...args)
@@ -5451,21 +5446,21 @@ test("a card approval whose save fails is kept by its key and recorded later, ne
     assert.equal((await call("DELETE", `/billing/orders/${fourth.id}`, undefined, brand)).status, 409)
     assert.equal(stored(fourth.id).status, "paid")
 
-    // Toss refusing an approval charges nothing, and the key goes.
+    // Toss가 승인을 거절하면 청구되지 않고 키가 지워진다.
     const third = await order()
     toss.confirm = async () => {
       throw new HttpError(402, "결제를 승인하지 못했어요. 다시 시도해 주세요.")
     }
     assert.equal((await confirm(third.id, "pk-refused", third.amount)).status, 402)
     assert.deepEqual([stored(third.id).paymentKey, stored(third.id).confirmingAt], [undefined, undefined])
-    // Toss not answering keeps it; with no such payment at Toss, settling
-    // forgets it and the order can be cancelled.
+    // Toss가 답하지 않으면 키를 남긴다. Toss에 그런 결제가 없으면 정리할 때
+    // 키를 지우고 주문을 취소할 수 있다.
     toss.confirm = async () => {
       throw new Error("timeout")
     }
     assert.equal((await confirm(third.id, "pk-timeout", third.amount)).status, 502)
     assert.equal(stored(third.id).paymentKey, "pk-timeout")
-    // Not yet stuck: the account's payments leave it alone.
+    // 아직 멈춘 것이 아니면 계정의 결제 내역은 건드리지 않는다.
     await call("GET", "/billing", undefined, brand)
     assert.equal(stored(third.id).paymentKey, "pk-timeout")
     cardRecovery.settleAfterMs = 0
@@ -5474,7 +5469,7 @@ test("a card approval whose save fails is kept by its key and recorded later, ne
     assert.equal(stored(third.id).paymentKey, undefined)
     assert.equal((await call("DELETE", `/billing/orders/${third.id}`, undefined, brand)).status, 200)
 
-    // One more lost save, settled when the brand opens its payments.
+    // 유실된 저장 하나 더. 브랜드가 결제 내역을 열 때 정리된다.
     const fifth = await order()
     toss.confirm = async (...args) => {
       const answer = await approve(...args)
@@ -5499,8 +5494,8 @@ test("a card approval whose save fails is kept by its key and recorded later, ne
 
 test("a brand buys a sponsorship's detailed report, adds its store's counts and shares it read-only", async () => {
   const demo = await login("브랜드")
-  // The demo brand's sample is open to visitors; logged in as the demo brand
-  // it is locked, to show buying it.
+  // 데모 브랜드의 샘플은 방문자에게 열려 있고, 데모 브랜드로 로그인하면
+  // 사는 모습을 보이도록 잠겨 있다.
   const sample = (await call("GET", "/insights/sp-busking")).data
   assert.equal(sample.locked, false)
   assert.equal((await call("GET", "/insights/sp-busking", undefined, demo)).data.locked, true)
@@ -5511,15 +5506,15 @@ test("a brand buys a sponsorship's detailed report, adds its store's counts and 
   assert.ok(["S", "A", "B", "C", "D"].includes(sample.report.grade))
   assert.deepEqual(sample.report.scorecard.map((item: { key: string }) => item.key), ["reach", "scans", "coupons", "visits", "qrRate", "visitRate", "roas"])
   assert.equal(sample.report.time.daily[0].date, "2026-10-12")
-  // The sample is a whole one: the store's counts, the audience, the coupon
-  // takers who came back and the e-contract's tasks.
+  // 샘플은 온전한 것이다. 매장의 집계, 관객, 돌아온 쿠폰 이용자, e-contract의
+  // 할 일이 있다.
   assert.equal(sample.report.effect.lift, 23.7)
   assert.equal(sample.report.audience.responses, 86)
   assert.ok(sample.report.time.lag.sample > 0)
   assert.equal(sample.report.fulfillment.items.length, 6)
   assert.equal((await call("PUT", "/insights/sp-busking/lift", { before: 30, during: 40 }, demo)).status, 403)
 
-  // A member's sponsorship of a measured event: a preview until bought.
+  // 회원이 측정한 행사를 협찬하면 사기 전에는 미리보기다.
   const group = await signUpMember("insight-club@syu.ac.kr", "insight-pass-123")
   const groupId = getDatabase().accounts.find((account) => account.email === "insight-club@syu.ac.kr")!.id
   const { token: brand, listingId } = await listedMember("insight@insight-cafe.kr", "insight-pass-123", "브랜드")
@@ -5536,7 +5531,7 @@ test("a brand buys a sponsorship's detailed report, adds its store's counts and 
   assert.equal((await call("PUT", `/insights/${id}/lift`, { before: 30, during: 45 }, brand)).status, 402)
   assert.equal((await call("POST", `/insights/${id}/share`, undefined, brand)).status, 402)
 
-  // Bought by transfer, it opens.
+  // 이체로 사면 열린다.
   const { order } = (await call("POST", "/billing/orders", { kind: "report", targetId: id }, brand)).data
   assert.deepEqual([order.amount, order.orderName], [55000, "리포트 공연 상세 성과 리포트"])
   const { markPaid, paymentsOf } = await import("./lib/billing.js")
@@ -5546,15 +5541,15 @@ test("a brand buys a sponsorship's detailed report, adds its store's counts and 
   assert.equal(opened.report.effect, null)
   assert.equal((await call("POST", "/billing/orders", { kind: "report", targetId: "sp-nope" }, brand)).status, 404)
 
-  // The store's counts give the effect over the usual days.
+  // 매장의 집계는 평소 날과 비교한 효과를 준다.
   assert.equal((await call("PUT", `/insights/${id}/lift`, { before: 0, during: 45 }, brand)).status, 400)
   const effect = (await call("PUT", `/insights/${id}/lift`, { before: 30, during: 45 }, brand)).data.report.effect
   assert.deepEqual([effect.lift, effect.days, effect.extraVisitors], [50, 9, 135])
 
-  // A read-only link, until it is turned off.
+  // 끄기 전까지는 읽기 전용 링크다.
   const { shareToken } = (await call("POST", `/insights/${id}/share`, undefined, brand)).data
   assert.equal((await call("GET", `/insights/shared/${shareToken}`)).data.report.sponsorship.id, id)
-  // A suspended brand's link stops while it is suspended.
+  // 정지된 브랜드의 링크는 정지된 동안 멈춘다.
   const sharer = getDatabase().accounts.find((item) => (getDatabase().sponsorships[item.id] ?? []).some((entry) => entry.id === id))!
   sharer.suspendedAt = new Date().toISOString()
   assert.equal((await call("GET", `/insights/shared/${shareToken}`)).status, 404)
@@ -5565,7 +5560,7 @@ test("a brand buys a sponsorship's detailed report, adds its store's counts and 
 
 test("a free brand sends five proposals a month; Pro lifts the limit for 30 days at a time and marks its listing", async () => {
   const { token: brand, listingId } = await listedMember("pro@pro-cafe.kr", "pro-pass-123", "브랜드")
-  // Six groups to propose to, each with an event coming.
+  // 제안할 단체 여섯이며 각각 다가오는 행사가 있다.
   const groups: string[] = []
   for (let index = 0; index < 6; index += 1) {
     groups.push((await listedMember(`pro-club-${index}@syu.ac.kr`, "pro-pass-123")).listingId)
@@ -5578,7 +5573,7 @@ test("a free brand sends five proposals a month; Pro lifts the limit for 30 days
   const plan = (await call("GET", "/billing", undefined, brand)).data.plan
   assert.deepEqual([plan.pro, plan.offersThisMonth, plan.freeOffers], [false, 5, 5])
 
-  // Paid Pro: 30 days, then 30 more after them.
+  // 유료 Pro는 30일이고, 그 뒤에 30일이 더 붙는다.
   const { order } = (await call("POST", "/billing/orders", { kind: "pro", targetId: "" }, brand)).data
   assert.deepEqual([order.amount, order.orderName], [330000, "캠퍼스 파트너스 30일"])
   const { markPaid, paymentsOf } = await import("./lib/billing.js")
@@ -5598,17 +5593,17 @@ test("a free brand sends five proposals a month; Pro lifts the limit for 30 days
   markPaid(getDatabase(), paymentsOf(getDatabase()).find((item) => item.id === renewal.id)!, { method: "transfer" })
   assert.equal((await call("GET", "/billing", undefined, brand)).data.plan.until, after(59))
 
-  // Twice a month it asks the operators to find partners.
+  // 한 달에 두 번 운영자에게 파트너 찾기를 요청한다.
   const ask = (request: string) => call("POST", "/billing/partner-requests", { request }, brand)
   assert.equal((await ask("짧음")).status, 400)
   assert.equal((await ask("12월 공릉동 대학 축제 중 관객 300명 이상인 행사를 찾아 주세요.")).status, 201)
   assert.equal((await ask("1월 개강 행사 중 카페와 맞는 곳을 찾아 주세요.")).status, 201)
   assert.equal((await ask("하나 더 부탁드려요. 2월 졸업식 행사요.")).status, 409)
-  // Its portfolio opens; a free brand's is locked.
+  // 포트폴리오가 열리고, 무료 브랜드의 것은 잠겨 있다.
   assert.equal((await call("GET", "/analytics/portfolio", undefined, brand)).data.locked, false)
   assert.equal((await call("GET", "/analytics/portfolio", undefined, club)).data.locked, true)
 
-  // Its listing shows PARTNERS to groups.
+  // 리스팅이 단체에 PARTNERS로 보인다.
   const seen = (await call("GET", "/brands", undefined, club)).data
   const listing = (seen.brands ?? seen).find((item: { id: string }) => item.id === listingId)
   assert.equal(listing.pro, true)
@@ -5619,10 +5614,10 @@ test("either side buys a top ad: first on the other side's list for 30 days, 10%
   const { token: group, listingId: groupListing } = await listedMember("ad-club@syu.ac.kr", "ad-pass-123")
   const viewer = await listedMember("ad-viewer@syu.ac.kr", "ad-pass-123")
   const viewingBrand = await listedMember("ad-viewer@viewer-cafe.kr", "ad-pass-123", "브랜드")
-  // Without a listing there is nothing to advertise.
+  // 리스팅이 없으면 광고할 것이 없다.
   const bare = await signUpMember("ad-bare@syu.ac.kr", "ad-pass-123")
   assert.equal((await call("POST", "/billing/orders", { kind: "ad", targetId: "" }, bare)).status, 409)
-  // A group pays only for ads.
+  // 단체는 광고에만 돈을 낸다.
   assert.equal((await call("POST", "/billing/orders", { kind: "pro", targetId: "" }, group)).status, 403)
 
   const { markPaid, paymentsOf } = await import("./lib/billing.js")
@@ -5635,13 +5630,13 @@ test("either side buys a top ad: first on the other side's list for 30 days, 10%
   assert.deepEqual([first.amount, first.orderName], [108900, "상단 광고 30일"])
   assert.deepEqual([(await pay(group)).amount], [11000])
 
-  // Each comes first on the other side's list, marked AD.
+  // 각각 반대편 목록에서 맨 앞에 오고 AD로 표시된다.
   const brands = (await call("GET", "/brands", undefined, viewer.token)).data.brands as { id: string; ad?: true }[]
   assert.deepEqual([brands[0].id, brands[0].ad], [brandListing, true])
   const groups = (await call("GET", "/groups", undefined, viewingBrand.token)).data.groups as { id: string; ad?: true }[]
   assert.deepEqual([groups[0].id, groups[0].ad], [groupListing, true])
 
-  // Extended while it runs: 10% off, 30 more days after it.
+  // 진행 중에 연장하면 10% 할인되고 그 뒤로 30일이 더 붙는다.
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date())
   const after = (days: number) => {
     const date = new Date(`${today}T00:00:00Z`)
@@ -5672,7 +5667,7 @@ test("with Toss test keys the demo brand shows the whole payment flow; with none
     assert.equal(order.amount, 330000)
     await call("DELETE", `/billing/orders/${order.id}`, undefined, demo)
 
-    // Live keys: the shared demo accounts never pay for real.
+    // 라이브 키에서는 공유 데모 계정이 실제로 결제하는 일이 절대 없다.
     config.tossClientKey = "live_ck_example"
     config.tossSecretKey = "live_sk_example"
     assert.equal((await call("POST", "/billing/orders", { kind: "pro", targetId: "" }, demo)).status, 403)
@@ -5693,7 +5688,7 @@ test("a participant answers the optional survey once, counted only per event", a
   assert.equal((await answer({ grade: "2학년" })).status, 409)
   const after = getDatabase().measurements.find((item) => item.code === "20261012")!
   assert.deepEqual([after.survey!.responses, after.survey!.grade["2학년"]], [responses + 1, grade + 1])
-  // Nothing about the answer is kept with the pass but that it answered.
+  // 패스에는 응답했다는 사실 말고 답에 대한 것이 아무것도 남지 않는다.
   assert.deepEqual(after.passes[scanned.pass], { surveyed: true })
 })
 
@@ -5749,7 +5744,7 @@ test("operators keep notes on members, post notices and read their own log and t
   try {
     for (const route of ["/log", "/health", "/announcements"]) assert.equal((await fetch(`${baseUrl}/admin${route}`)).status, 403)
 
-    // A note on a member, then the member leaves and takes it along.
+    // 회원에 대한 메모를 남기고 회원이 떠나면 메모도 가져간다.
     const token = await signUpMember("noted@syu.ac.kr", "noted-pass-123")
     const id = getDatabase().accounts.find((account) => account.email === "noted@syu.ac.kr")!.id
     assert.equal((await admin("PUT", `/accounts/${id}/note`, { note: "x".repeat(1001) })).status, 400)
@@ -5761,7 +5756,7 @@ test("operators keep notes on members, post notices and read their own log and t
     assert.equal(getDatabase().adminNotes?.[id], undefined)
     assert.ok(!(await admin("GET", "/log")).data.entries.some((entry: { target: { id: string } }) => entry.target.id === id))
 
-    // A notice for brands only, then one for everyone that ends.
+    // 브랜드 전용 공지를 올리고, 끝나는 모두를 위한 공지를 올린다.
     assert.equal((await admin("POST", "/announcements", { text: "", tone: "info", audience: "all" })).status, 400)
     assert.equal((await admin("POST", "/announcements", { text: "점검", tone: "loud", audience: "all" })).status, 400)
     assert.equal((await admin("POST", "/announcements", { text: "점검", tone: "info", audience: "all", until: "2000-01-01" })).status, 400)
@@ -5775,7 +5770,7 @@ test("operators keep notes on members, post notices and read their own log and t
     const listed = (await admin("GET", "/announcements")).data.announcements
     assert.equal(listed.find((item: { id: string }) => item.id === all.id).live, false)
 
-    // Which services are set up, as yes or no only.
+    // 설정된 서비스를 예 또는 아니오로만 보여 준다.
     const health = (await admin("GET", "/health")).data
     assert.equal(health.storage, "file")
     assert.ok(health.checks.every((check: { key: string; on: unknown }) => typeof check.on === "boolean"))
@@ -5802,8 +5797,8 @@ test("the console's member tools, operations, content, analysis and system scree
       assert.equal((await fetch(`${baseUrl}/admin${route}`)).status, 403)
     }
 
-    // Members: logged out everywhere, tagged one by one and in bulk, checked
-    // as a business and given Campus Partners free.
+    // 회원은 모든 곳에서 로그아웃되고, 하나씩과 한꺼번에 태그가 붙고,
+    // 사업자로 확인되고, Campus Partners를 무료로 받는다.
     const token = await signUpMember("tools@toolscafe.kr", "tools-pass-123", "브랜드")
     const id = getDatabase().accounts.find((account) => account.email === "tools@toolscafe.kr")!.id
     assert.equal((await admin("POST", `/accounts/${id}/logout`)).data.account.sessions, 0)
@@ -5819,7 +5814,7 @@ test("the console's member tools, operations, content, analysis and system scree
     assert.ok(granted.timeline.some((item: { kind: string }) => item.kind === "가입"))
     assert.equal((await admin("POST", `/accounts/${id}/partners`, { days: 0 })).status, 400)
 
-    // Operations: every agreement, event, today's events, and one proposal in full.
+    // 운영은 모든 계약, 행사, 오늘의 행사, 제안 하나를 통째로 보여 준다.
     assert.ok(Array.isArray((await admin("GET", "/agreements")).data.agreements))
     assert.ok((await admin("GET", "/events")).data.events.length > 0)
     const live = (await admin("GET", "/live")).data
@@ -5830,7 +5825,7 @@ test("the console's member tools, operations, content, analysis and system scree
     assert.equal(detail.message, undefined)
     assert.ok(Array.isArray((await admin("GET", "/proposals/stale")).data.proposals))
 
-    // Content: a hidden post leaves the board, a pinned review goes first.
+    // 콘텐츠는 숨긴 글이 게시판에서 빠지고, 고정한 후기가 맨 앞에 온다.
     const post = getDatabase().posts[0]
     assert.equal((await admin("POST", `/posts/${post.id}/hide`)).status, 204)
     const board = (await call("GET", "/board?role=" + encodeURIComponent(post.accountId === getDatabase().demoAccountIds.브랜드 ? "학생단체" : "브랜드"))).data.posts
@@ -5842,14 +5837,14 @@ test("the console's member tools, operations, content, analysis and system scree
     assert.equal((await admin("POST", `/reviews/${review.id}/nope`)).status, 400)
     assert.equal(typeof (await admin("GET", "/invites")).data.sent, "number")
 
-    // A question's handling stays with the operators.
+    // 질문을 맡는 일은 운영자에게 남는다.
     const student = await login("학생단체")
     const asked = (await call("POST", "/inquiries", { category: "기타", question: "담당자 배정 테스트예요" }, student)).data.inquiry
     assert.deepEqual((await admin("PUT", `/inquiries/${asked.id}/handling`, { assignee: "지은", held: true })).data.handling.assignee, "지은")
     const mine = (await call("GET", "/inquiries", undefined, student)).data.inquiries
     assert.equal(mine.find((item: { id: string }) => item.id === asked.id).handling, undefined)
 
-    // The help center: a question added, a built-in one hidden, both public.
+    // 도움말 센터는 질문을 추가하고 기본 질문을 숨기며, 둘 다 공개된다.
     assert.equal((await admin("POST", "/faq", { topic: "nope", question: "q", answer: "a" })).status, 400)
     await admin("POST", "/faq", { topic: "start", question: "운영 시간은요?", answer: "평일 10시부터 6시까지 답해요." })
     await admin("PUT", "/faq/hidden", { question: "누가 가입할 수 있나요?", hidden: true })
@@ -5857,7 +5852,7 @@ test("the console's member tools, operations, content, analysis and system scree
     assert.equal(site.faq.added.at(-1).question, "운영 시간은요?")
     assert.deepEqual(site.faq.hidden, ["누가 가입할 수 있나요?"])
 
-    // Searches are counted without who; too short ones are let go.
+    // 검색어는 누가 입력했는지 빼고 세고, 너무 짧은 것은 넘긴다.
     await call("POST", "/site/searches", { q: "  카페   쿠폰 " })
     await call("POST", "/site/searches", { q: "a" })
     const insights = (await admin("GET", "/insights")).data
@@ -5868,8 +5863,8 @@ test("the console's member tools, operations, content, analysis and system scree
     const kpi = (await admin("PUT", "/settings/kpi", { signups: 20 })).data.kpi
     assert.equal(kpi.find((item: { key: string }) => item.key === "signups").target, 20)
 
-    // Maintenance turns writes away but not reads, logins or the console;
-    // sign-up can stop on its own.
+    // 점검은 쓰기를 돌려보내지만 읽기, 로그인, 콘솔은 막지 않으며, 가입은
+    // 따로 멈출 수 있다.
     await admin("PUT", "/settings/maintenance", { on: true, message: "점검 중", blockSignups: true })
     assert.deepEqual((await call("GET", "/site")).data.maintenance, { message: "점검 중" })
     assert.equal((await call("POST", "/inquiries", { category: "기타", question: "점검 중 질문이에요" }, student)).status, 503)
@@ -5879,14 +5874,14 @@ test("the console's member tools, operations, content, analysis and system scree
     assert.equal((await call("POST", "/auth/signup", { role: "학생단체" })).status, 503)
     await admin("PUT", "/settings/maintenance", { on: false, blockSignups: false })
 
-    // The system screen counts limits without addresses.
+    // 시스템 화면은 주소 없이 제한을 센다.
     const system = (await admin("GET", "/system")).data
     assert.ok(system.limits.length > 0)
     assert.ok(system.limits.every((limit: Record<string, unknown>) => Object.keys(limit).sort().join() === "blocked,counting,limit,message,minutes"))
     assert.ok(Array.isArray(system.backups) && Array.isArray(system.cronRuns))
     assert.equal((await admin("GET", "/backups/../../etc")).status, 404)
 
-    // Resetting the examples brings a renamed demo event back, members' data untouched.
+    // 예시를 초기화하면 이름이 바뀐 데모 행사가 돌아오고 회원의 데이터는 건드리지 않는다.
     const demoId = getDatabase().demoAccountIds.학생단체
     getDatabase().events[demoId][0].name = "바뀐 이름"
     assert.equal((await admin("POST", "/demo/reset")).status, 200)
@@ -5926,7 +5921,7 @@ test("a shop with no company email signs up by invitation with a document, and a
   const group = await signUpMember("doc-club@syu.ac.kr", "doc-pass-123")
   const { invite } = (await call("POST", "/invites", { placeId: "76543210" }, group)).data
   const email = "owner@gmail.com"
-  // Without an invitation a personal address stays refused.
+  // 초대가 없으면 개인 주소는 계속 거절한다.
   assert.equal((await call("POST", "/auth/email-code", { role: "브랜드", email })).status, 400)
   const sent = await call("POST", "/auth/email-code", { role: "브랜드", email, invite: invite.code })
   assert.equal(sent.status, 200)
@@ -5954,7 +5949,7 @@ test("a shop with no company email signs up by invitation with a document, and a
   assert.equal((await call("POST", "/auth/login", { ...log, password: "wrong-pass-123" })).status, 401)
   assert.equal((await call("POST", "/auth/email-code", { role: "브랜드", email, invite: invite.code })).status, 409)
 
-  // Only the operators read it; approving makes the account and links the shop.
+  // 운영자만 읽을 수 있고, 승인하면 계정을 만들고 매장을 연결한다.
   const { config: settings } = await import("./config.js")
   const saved = settings.adminToken
   settings.adminToken = "test-admin-token"
@@ -5977,7 +5972,7 @@ test("a shop with no company email signs up by invitation with a document, and a
   assert.equal(logged.status, 200)
   assert.equal(getDatabase().brands.find((brand) => brand.id === logged.data.account.brandId)?.kakaoPlaceId, "76543210")
 
-  // Turned down, the sign-up goes and the address is free again.
+  // 거절하면 가입이 사라지고 주소를 다시 쓸 수 있다.
   const other = await call("POST", "/auth/email-code", { role: "브랜드", email: "second@naver.com", invite: invite.code })
   const proof = await call("POST", "/auth/email-code/verify", { email: "second@naver.com", code: other.data.devCode })
   await call("POST", "/auth/signup", { ...form, email: "second@naver.com", verificationToken: proof.data.verificationToken, document: proofDocument })

@@ -9,10 +9,10 @@ import { Modal } from "./Modal"
 import { Presence } from "./Presence"
 import type { Match } from "../types"
 
-// As many as one comparison lays side by side.
+// 비교 한 번에 나란히 놓을 수 있는 최대 개수.
 export const maxCompared = 3
 
-// The cards picked for 비교 on a catalog page, by id, at most maxCompared.
+// 카탈로그 페이지에서 비교하려고 고른 카드의 id. 최대 maxCompared개.
 export function useCompare() {
   const [ids, setIds] = useState<string[]>([])
   return {
@@ -29,9 +29,9 @@ export function useCompare() {
 
 const percentOf = (value: number) => `${Math.round(value * 100)}%`
 
-// 비교: the picked brands or groups held at the bottom of the page, and,
-// with two or more, a table of them side by side: the match and its parts,
-// distance, reviews, what each offers and, for groups, the next event.
+// 비교: 고른 브랜드나 그룹을 페이지 아래쪽에 모아 두고, 둘 이상이면 나란히 놓은
+// 표를 보여 준다. 매치와 그 세부, 거리, 리뷰, 각자 제안하는 것, 그룹이면 다음
+// 행사가 들어간다.
 export function CompareTray({
   items,
   kind,
@@ -56,7 +56,7 @@ export function CompareTray({
       ))}
     </tr>
   )
-  // The best of a numeric row stands out.
+  // 숫자 행에서는 가장 좋은 값을 강조한다.
   const best = (value: (item: Match) => number | undefined, lowest = false) => {
     const values = items.map(value).filter((item): item is number => item !== undefined)
     return values.length > 1 ? (lowest ? Math.min(...values) : Math.max(...values)) : undefined

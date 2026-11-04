@@ -1,7 +1,7 @@
-// The introduction visitors land on (pages/LandingPage.tsx), its header
-// links and footer card, and the marks on example screens.
+// 방문자가 처음 닿는 소개 (pages/LandingPage.tsx), 그 헤더 링크와 푸터 카드,
+// 예시 화면의 표시.
 export default {
-  // Hero
+  // 히어로
   "좋은 행사와": "Great events",
   "좋은 브랜드가": "and great brands",
   "만나는 곳": "meet here.",
@@ -14,7 +14,7 @@ export default {
   "예시 화면 둘러보기": "Explore the examples",
   "이런 브랜드와 학생단체가 만나요": "Brands and student groups that meet here",
 
-  // Who it is for
+  // 누구를 위한 것인가
   "학생단체도 브랜드도, 협찬은 여기서": "Sponsorship for student groups and brands alike",
   "행사에 꼭 맞는 브랜드를 만나요": "Meet brands that fit your event",
   "업종 적합도와 실적으로 잘 맞는 브랜드를 추천해요": "Brands recommended by how well they fit and what they have sponsored",
@@ -27,7 +27,7 @@ export default {
   "쿠폰과 매장 방문으로 협찬마다 ROAS를 확인해요": "See each sponsorship's ROAS from coupons and store visits",
   "브랜드로 가입하기": "Sign up as a brand",
 
-  // How it works
+  // 이용 방법
   "협찬이 이어지는 다섯 단계": "Five steps from match to results",
   "가입하고 소개 쓰기": "Sign up and introduce yourself",
   "학교 · 회사 이메일로 가입하고, 상대에게 보일 소개와 행사 · 캠페인을 등록해요.":
@@ -44,7 +44,7 @@ export default {
   "행사 날 QR 스캔 · 쿠폰 · 매장 방문을 세고, 끝나면 성과 리포트와 ROAS로 정리해요.":
     "On the day, QR scans, coupons and store visits are counted; afterwards they become a results report and ROAS.",
 
-  // Example screens
+  // 예시 화면
   "가입하기 전에 예시 화면으로 둘러보세요": "Look around the example screens first",
   "데모 학생단체와 데모 브랜드의 예시 데이터예요. 근처 가게처럼 학교마다 다른 화면은 가입하면 우리 단체와 매장 기준으로 보여요.":
     "These use example data from a demo student group and a demo brand. Screens that differ by school, such as nearby shops, show your own group or store once you sign up.",
@@ -65,7 +65,7 @@ export default {
   "지금은 데모 브랜드 매장에서 가까운 순서를 예시로 보여 드려요. 로그인하면 우리 매장 기준으로 볼 수 있어요.":
     "This orders groups by distance from the demo brand's store as an example. Log in to see them from your store.",
 
-  // Header, menu and footer
+  // 헤더, 메뉴, 푸터
   "서비스 소개": "About",
   "소개 페이지 구역": "Page sections",
   "캠퍼스 협찬,": "Campus sponsorship,",
@@ -73,7 +73,7 @@ export default {
   "학생단체도 브랜드도 이메일 인증 한 번으로 가입해요. 웹에서 바로 쓰고 원하면 앱으로 설치할 수 있어요.":
     "Student groups and brands sign up with one email check. Use it on the web right away, or install it as an app.",
 
-  // Search description of the introduction (lib/pageMeta.ts)
+  // 소개의 검색 설명 (lib/pageMeta.ts)
   "학생단체와 브랜드를 잇는 캠퍼스 협찬 매칭 서비스예요. 추천 매칭부터 제안, 임시 전자 계약서, 현장 QR 측정과 성과 리포트까지 한곳에서 해요.":
     "A campus sponsorship matching service for student groups and brands: matches, proposals, provisional e-contracts, on-site QR measurement and results reports in one place.",
 }

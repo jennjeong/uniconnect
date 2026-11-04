@@ -6,10 +6,9 @@ import { formatPeriod } from "../lib/date"
 import type { EventPage, Match } from "../types"
 import { Icon } from "./Icon"
 
-// What a brand weighs on a group's profile, in three boxes read at a glance:
-// what the group does for the brand (its offer and its next event's
-// promotion plan), what it asks for (the kinds of sponsorship and each
-// package's ask), and the event itself, which opens its page.
+// 그룹 프로필에서 브랜드가 따져 보는 내용을 한눈에 읽는 세 칸으로 보여 준다.
+// 그룹이 브랜드에 해 주는 일(제안과 다음 행사의 홍보 계획), 그룹이 요청하는
+// 것(협찬 종류와 패키지별 요청), 그리고 페이지가 열리는 행사 자체다.
 export function GroupDeal({ match, onOpenEvent }: { match: Match; onOpenEvent?: (eventId: string) => void }) {
   const [page, setPage] = useState<EventPage | null>(null)
   useEffect(() => {
@@ -19,7 +18,7 @@ export function GroupDeal({ match, onOpenEvent }: { match: Match; onOpenEvent?: 
       (result) => {
         if (!cancelled) setPage(result)
       },
-      // Without the event the boxes keep to the listing.
+      // 행사가 없으면 칸들은 리스팅 내용만 보여 준다.
       () => undefined,
     )
     return () => {

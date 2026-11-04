@@ -4,12 +4,12 @@ import { fromIsoDate, shortDay, toIsoDate, todayIso } from "../lib/date"
 type Progress = {
   createdAt: string
   respondedAt?: string
-  // The event or campaign day, "YYYY-MM-DD" or "".
+  // 행사나 캠페인 날짜. "YYYY-MM-DD" 또는 "".
   day: string
 }
 
-// An accepted sponsorship from the proposal to its report, each step with
-// its day: done up to today, the next one under way.
+// 수락한 협찬을 제안부터 리포트까지 단계별로 날짜와 함께 보여 준다. 오늘까지는
+// 완료로, 다음 단계는 진행 중으로 표시한다.
 function progressSteps({ createdAt, respondedAt, day }: Progress) {
   const dayOf = (timestamp?: string) => (timestamp ? toIsoDate(new Date(timestamp)) : "")
   const event = fromIsoDate(day)
@@ -29,7 +29,7 @@ function progressSteps({ createdAt, respondedAt, day }: Progress) {
   }))
 }
 
-// The steps of an accepted proposal, on both sides' inboxes.
+// 수락한 제안의 단계. 양쪽 받은 편지함에서 쓴다.
 export function RequestProgress(props: Progress) {
   return (
     <ol aria-label={t("협찬 진행 상황")} className="request-progress">

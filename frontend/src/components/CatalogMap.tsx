@@ -7,24 +7,24 @@ import { catalogScale, mapRings, offsetPosition, spreadPositions } from "../lib/
 import type { Match } from "../types"
 import { KakaoMap, type MapPin } from "./KakaoMap"
 
-// A catalog drawn by direction and distance from the account browsing (its
-// campus or store) in the middle, north up, rings out to the farthest
-// (lib/placeMap.ts), as 가까운 순's sketch: each listing a dot to press,
-// whose card shows beside the map. With a Kakao JavaScript key the same pins
-// sit on Kakao's map (KakaoMap.tsx), centered on the account browsing; without
-// one, or when it fails to load, the sketch. The same search and filters as
-// the list give the listings; those without a place are named under the map.
+// 둘러보는 계정(캠퍼스나 매장)을 가운데에 두고 방향과 거리로 카탈로그를 그린다.
+// 북쪽이 위이고 가장 먼 곳까지 동심원이 이어지며 (lib/placeMap.ts), 가까운 순의
+// 스케치와 같다. 각 리스팅은 누를 수 있는 점이고, 카드는 지도 옆에 뜬다. Kakao
+// JavaScript 키가 있으면 같은 핀이 Kakao 지도 위에 놓이고 (KakaoMap.tsx)
+// 둘러보는 계정이 가운데에 온다. 키가 없거나 로딩에 실패하면 스케치를 쓴다.
+// 목록과 같은 검색과 필터가 리스팅을 정하며, 위치가 없는 것은 지도 아래에
+// 이름만 나열한다.
 export function CatalogMap({
   center,
   matches,
   renderCard,
   noPlace,
 }: {
-  // What sits in the middle: 우리 학교 or 내 매장.
+  // 가운데에 놓이는 것: 우리 학교 또는 내 매장.
   center: string
   matches: Match[]
   renderCard: (match: Match) => ReactNode
-  // Said instead of the map when no listing could be placed.
+  // 배치할 수 있는 항목이 하나도 없을 때 지도 대신 보여 주는 문구.
   noPlace: string
 }) {
   const [selected, setSelected] = useState<string>()
@@ -148,8 +148,8 @@ export function CatalogMap({
   )
 }
 
-// Where the account browsing is: any placed listing's point less its offset
-// (lib/geo.ts's offsetMetres, the other way round).
+// 둘러보는 계정의 위치. 배치된 항목의 좌표에서 오프셋을 뺀 값이다 (lib/geo.ts의
+// offsetMetres의 반대 방향).
 function homeOf(placed: Match[]) {
   const known = placed.find((match) => match.mapPoint && match.mapOffset)
   if (!known) return undefined

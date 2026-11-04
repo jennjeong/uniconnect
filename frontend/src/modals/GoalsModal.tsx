@@ -7,7 +7,7 @@ import { t } from "../i18n"
 import type { EventMeasurement, Report } from "../types"
 
 
-// Numbers are typed as text so a field can be empty while editing.
+// 숫자는 텍스트로 받아서 입력 중에 칸이 비어 있을 수 있다.
 const draftOf = (report: Report) => ({
   expectedAudience: String(report.expectedAudience),
   averageSpend: String(report.averageSpend),
@@ -41,12 +41,10 @@ const targetFields: { key: keyof Report["targets"]; label: string }[] = [
   { key: "roas", label: "추정 ROAS (%)" },
 ]
 
-// The event's goals and the inputs its report is worked out from: the
-// expected audience, what a participant spends at the sponsor's store,
-// reach beyond the venue, the sponsorship's value, the targets and the
-// coupon participants get; once brands sponsor the event, each sponsor's
-// coupon, share of the value and staff PIN instead. The server checks every
-// field again.
+// 행사의 목표와 리포트 계산에 쓰는 입력: 예상 방문객, 참가자가 스폰서 매장에서
+// 쓰는 금액, 행사장 밖의 도달, 협찬의 가치, 목표치, 참가자가 받는 쿠폰.
+// 브랜드가 행사를 협찬하면 대신 스폰서별 쿠폰, 가치 배분, 직원 PIN이 들어간다.
+// 서버가 모든 칸을 다시 검사한다.
 export function GoalsModal({
   report,
   onClose,

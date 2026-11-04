@@ -11,22 +11,21 @@ import { getDatabase } from "../store.js"
 
 export const placesRouter = Router()
 
-// Every look asks Kakao again (its results can't be kept), so each address
-// may ask only so often, counted per kind asked; picking kinds now and then
-// stays well under it.
+// 조회할 때마다 Kakao에 다시 묻기 때문에(결과를 보관할 수 없다) 주소마다
+// 물을 수 있는 횟수를 제한하고, 묻는 종류마다 센다. 종류를 가끔 골라 보는
+// 정도는 한도에 훨씬 못 미친다.
 const asksPerClient = createRateLimit({
   limit: 30,
   windowMs: 60 * 1000,
   message: "가게 검색이 너무 많아요. 잠시 후 다시 시도해 주세요.",
 })
 
-// Real shops around the student group's campus, nearest first, straight
-// from Kakao Local: of one kind, or of every kind together ("all"). Without
-// the map key, or for a school not in the campus table, there are none. Each
-// shop says whether the group looking invited it and which brand it joined
-// as; the campus comes with its point for the schematic map. Visitors see
-// made-up shops around the demo group's campus instead (example: true), and
-// Kakao isn't asked.
+// 학생단체 캠퍼스 주변의 실제 매장을 가까운 순으로 Kakao Local에서 바로
+// 가져온다. 한 종류만, 또는 모든 종류를 함께("all") 가져온다. 지도 키가
+// 없거나 캠퍼스 표에 없는 학교면 결과가 없다. 각 매장에는 보는 단체가 초대한
+// 적이 있는지와 어느 브랜드로 합류했는지가 담기고, 캠퍼스에는 약식 지도용
+// 좌표가 함께 온다. 방문자에게는 데모 단체의 캠퍼스 주변에 있는 가짜 매장을
+// 대신 보여 주며(example: true) Kakao에는 묻지 않는다.
 placesRouter.get("/", async (req, res) => {
   const category = String(req.query.category ?? "")
   const kinds = category === "all" ? placeCategories : placeCategories.filter((kind) => kind === category)
@@ -53,7 +52,7 @@ placesRouter.get("/", async (req, res) => {
     res.json({ map: Boolean(key), campus: campus?.name ?? null, places: [] })
     return
   }
-  // Each kind is one question to Kakao.
+  // 종류마다 Kakao에 한 번씩 묻는다.
   for (const _kind of kinds) await asksPerClient.take(clientKey(req))
   try {
     const found = await Promise.all(kinds.map((kind) => nearbyPlaces(campus, kind, key)))
@@ -64,8 +63,8 @@ placesRouter.get("/", async (req, res) => {
         : [],
     )
     const places = nearestPlaces(found.flat()).map((place) => {
-      // A shop shows as the brand it joined as only to those who find that brand
-      // in the lists (not while it is paused).
+      // 매장이 합류한 브랜드로 보이는 것은 그 브랜드를 목록에서 찾을 수 있는
+      // 사람에게만이다(멈춘 동안은 보이지 않는다).
       const brand = database.brands.find(
         (item) => item.kakaoPlaceId === place.id && listedTo(database, "brands", item, req.account),
       )

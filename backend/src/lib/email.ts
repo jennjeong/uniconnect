@@ -28,11 +28,11 @@ export const normalizeEmail = (value: unknown) =>
     .trim()
     .toLowerCase()
 
-// A personal address (Gmail, Naver and the like).
+// 개인 주소(Gmail, Naver 등).
 export const isPersonalMail = (email: string) => freeMailDomains.has(email.split("@")[1] ?? "")
 
-// Student groups must use a school address; sponsors a company address, or
-// (`personal`) a personal one for an invited shop without a company email.
+// 학생 단체는 학교 주소를 써야 하고 협찬사는 회사 주소를 쓴다. 회사 이메일이
+// 없는 초대받은 가게는 개인 주소(`personal`)도 된다.
 export function emailRuleError(role: Role, email: string, { personal = false } = {}) {
   if (!emailPattern.test(email)) return "이메일 형식을 확인해 주세요."
   const domain = email.split("@")[1]

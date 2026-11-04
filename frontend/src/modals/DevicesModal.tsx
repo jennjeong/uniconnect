@@ -6,9 +6,9 @@ import { t } from "../i18n"
 import { formatDateTime } from "../lib/date"
 import type { DeviceSession } from "../types"
 
-// The devices logged in to the account, this one first, each by its
-// browser and system with when it logged in and was last used (to the
-// hour). Any other one can be logged out, or all of them at once.
+// 계정에 로그인한 기기. 이 기기가 맨 위이고, 각각 브라우저와 시스템, 로그인한
+// 때와 마지막으로 쓴 때(시간 단위)를 보여 준다. 다른 기기는 로그아웃할 수 있고
+// 한꺼번에 할 수도 있다.
 export function DevicesModal({ onClose, onNotice }: { onClose: () => void; onNotice: (message: string) => void }) {
   const [sessions, setSessions] = useState<DeviceSession[] | null>(null)
   const [error, setError] = useState("")

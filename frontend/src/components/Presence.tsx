@@ -1,15 +1,15 @@
 import { createContext, useEffect, useState, type ReactNode } from "react"
 
-// True while a popup plays its closing animation (Modal.tsx reads it).
+// 팝업이 닫힘 애니메이션을 재생하는 동안 true (Modal.tsx가 읽는다).
 export const ClosingContext = createContext(false)
 
-// Matches the closing animations in index.css.
+// index.css의 닫힘 애니메이션과 맞춘다.
 const exitMs = 260
 
-// Keeps a popup on screen for its closing animation after `show` turns false,
-// however it was closed (close button, backdrop, Escape, or a finished login).
+// `show`가 false가 된 뒤에도 닫힘 애니메이션이 끝날 때까지 팝업을 화면에 둔다.
+// 닫는 방법은 상관없다 (닫기 버튼, 배경, Escape, 로그인 완료).
 export function Presence({ show, children }: { show: boolean; children: ReactNode }) {
-  // The last children shown, replayed while closing.
+  // 마지막으로 보여 준 children. 닫히는 동안 다시 재생한다.
   const [kept, setKept] = useState<ReactNode>(show ? children : null)
   if (show && kept !== children) setKept(children)
   const closing = !show && kept !== null

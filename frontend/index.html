@@ -4,19 +4,19 @@
     <!-- site:head-start -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- Share previews: title and description come from site.config.json
-         and follow each screen (src/lib/pageMeta.ts); the 1200×630 image,
-         public/og-image.png, needs the site's absolute URL there. -->
+    <!-- 공유 미리보기: 제목과 설명은 site.config.json에서 오며 화면마다
+         따라 바뀐다 (src/lib/pageMeta.ts). 1200×630 이미지인
+         public/og-image.png는 거기에 사이트의 절대 주소가 있어야 한다. -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="uniconnect" />
     <meta property="og:locale" content="ko_KR" />
-    <!-- Installing it as an app: public/manifest.webmanifest, its icons in
-         public/icons/ and the service worker public/sw.js. -->
+    <!-- 앱으로 설치하기: public/manifest.webmanifest, 그 아이콘은
+         public/icons/에, 서비스 워커는 public/sw.js에 있다. -->
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="theme-color" content="#1b3f8f" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-    <!-- The start screen's name (components/Loader.tsx) is the first large
-         paint, so it loads with the page rather than after the script. -->
+    <!-- 시작 화면의 이름(components/Loader.tsx)이 처음 그려지는 큰 요소이므로,
+         스크립트가 아니라 페이지와 함께 불러온다. -->
     <link rel="preload" as="image" href="/src/assets/brand/uniconnect_wordmark.svg" fetchpriority="high" />
     <title><!-- site:title --></title>
     <!-- site:head-end -->

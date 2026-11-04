@@ -1,9 +1,9 @@
 import { t } from "../i18n"
 import type { Role } from "../types"
 
-// Kinds of sponsorship, as the server takes them (sponsorTypes in
-// backend/src/lib/validation.ts; lib/lists.sync.test.ts checks they agree).
-// Student groups pick what they want; brands pick what they offer.
+// 서버가 받는 협찬의 종류 (backend/src/lib/validation.ts의 sponsorTypes,
+// lib/lists.sync.test.ts가 일치를 검사한다). 학생단체는 원하는 것을 고르고
+// 브랜드는 제공하는 것을 고른다.
 export const sponsorOptions: Record<Role, { value: string; caption: string }[]> = {
   학생단체: [
     { value: "현금", caption: t("행사 운영비 지원") },
@@ -19,5 +19,5 @@ export const sponsorOptions: Record<Role, { value: string; caption: string }[]> 
   ],
 }
 
-// The same kinds for a sponsorship's value in the goals form.
+// 목표 양식에서 협찬의 가치를 나타내는 같은 종류.
 export const valueTypes = sponsorOptions.학생단체.map((option) => option.value)

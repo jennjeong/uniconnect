@@ -1,10 +1,10 @@
-// English for this area's Korean copy (see i18n/index.ts).
+// 이 영역의 한국어 카피에 대한 영어 (i18n/index.ts 참고).
 const en: Record<string, string> = {
-  // Draft note
+  // 초안 안내
   "이 문서는 서비스 시연을 위한 초안이에요. 정식 출시 전에 운영 주체와 연락처, 개인정보 보호책임자를 정하고 법률 검토를 받아 고칠 예정이에요.":
     "This document is a draft for demonstrating the service. Before the official launch, the operator, contact details and privacy officer will be designated, and the document will be revised after legal review.",
 
-  // Terms of service
+  // 이용약관
   "서비스 이용약관": "Terms of Service",
   "uniconnect를 쓰는 학생단체와 브랜드가 지킬 약속과, 서비스가 맡는 일과 맡지 않는 일을 적었어요.":
     "These terms set out the commitments that student groups and brands using uniconnect must keep, and what the service is and is not responsible for.",
@@ -61,7 +61,7 @@ const en: Record<string, string> = {
   "이 약관은 대한민국 법을 따르고, 분쟁은 민사소송법에 따른 관할 법원에서 다뤄요.":
     "These terms are governed by the laws of the Republic of Korea, and disputes will be handled by the court having jurisdiction under the Civil Procedure Act.",
 
-  // Privacy policy
+  // 개인정보처리방침
   "개인정보 처리방침": "Privacy Policy",
   "uniconnect가 어떤 개인정보를 왜 받고, 얼마나 보관하며, 어떻게 지우는지 적었어요.":
     "This policy explains what personal information uniconnect collects and why, how long it is kept, and how it is deleted.",
@@ -220,7 +220,7 @@ const en: Record<string, string> = {
     "With 'Download my data' under My Account, you can download your account details, introduction, events, proposals, messages, questions, shop invitations, provisional e-contracts and the reviews you wrote and got, the reports you sent and the accounts you blocked as one file.",
   "서버 장애에 대비한 백업에는 지운 내용이 최대 24시간 남아 있다가 새 백업으로 바뀌며 사라져요.":
     "Backups kept against server failures may hold deleted data for up to 24 hours, until newer backups replace them.",
-  // Paid services (the business plan's revenue model)
+  // 유료 서비스 (사업계획서의 수익 모델)
   "학생단체는 상단 광고 말고는 서비스를 무료로 써요. 브랜드는 아래 유료 서비스를 이용할 때 결제해요. 아래 금액은 부가세 별도이고, 결제할 때 부가세 10%를 더해요.":
     "Student groups use the service for free, except for top ads. Brands pay for the paid services below. The amounts below exclude VAT, and 10% VAT is added at checkout.",
   "성사 수수료: 협찬이 확정될 때 협찬액(현금과 현물 환산 금액을 더한 값)의 15%를 브랜드가 내요. 브랜드는 임시 전자 계약서를 확인할 때 이 수수료를 결제하고, 협찬액을 올리면 늘어난 만큼을 더 내요.":

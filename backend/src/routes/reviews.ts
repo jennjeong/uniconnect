@@ -12,7 +12,7 @@ import type { ChatSide, Review } from "../types.js"
 
 export const reviewsRouter = Router()
 
-// The accepted proposal behind the address, for one of its two sides.
+// 주소가 가리키는 수락된 제안을 두 쪽 중 한쪽의 입장에서 가져온다.
 function sponsorship(req: Request) {
   const account = requireAccount(req)
   const database = getDatabase()
@@ -22,22 +22,22 @@ function sponsorship(req: Request) {
   return { account, database, proposal, side, id: `${proposal.id}:${side}` }
 }
 
-// A listing's reviews, for anyone: in short, then the latest 20.
+// 누구나 볼 수 있는 한 리스팅의 후기다. 요약과 최근 20건을 담는다.
 reviewsRouter.get("/", (req, res) => {
   const reviews = reviewsAbout(getDatabase(), String(req.query.about ?? ""))
   res.json({ summary: reviewSummary(reviews), reviews: reviews.slice(0, 20).map(publicReview) })
 })
 
-// A side writes (or rewrites) its review of the other side, from the event's
-// day on. The other side hears about a new one.
+// 한쪽이 행사일부터 상대편에 대한 후기를 쓴다(다시 쓸 수도 있다). 새 후기가
+// 달리면 상대편이 알림을 받는다.
 reviewsRouter.put("/:proposalId", async (req, res) => {
   const { account, database, proposal, side, id } = sponsorship(req)
   if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 후기를 쓸 수 없어요.")
   if (proposal.canceled) throw new HttpError(409, "취소된 협찬에는 후기를 남길 수 없어요.")
   if (!reviewOpen(proposal)) throw new HttpError(409, "행사 날부터 후기를 쓸 수 있어요.")
-  // Only a sponsorship both sides confirmed on its e-contract (the brand
-  // having paid its fee), so a pair of accounts can't trade reviews for an
-  // agreement that never held.
+  // e-contract에서 양쪽이 확정한 협찬만 쓸 수 있다(브랜드는 수수료를 낸
+  // 뒤여야 한다). 성사되지 않은 계약으로 두 계정이 서로 후기를 주고받지
+  // 못하게 하려는 것이다.
   if (!agreementHeld(database, proposal)) {
     throw new HttpError(409, "양쪽이 임시 전자 계약서를 확인한 협찬에만 후기를 남길 수 있어요.")
   }
@@ -72,8 +72,8 @@ reviewsRouter.put("/:proposalId", async (req, res) => {
     comment,
     createdAt: existing?.createdAt ?? now,
     ...(existing ? { updatedAt: now } : {}),
-    // Taken down by the operators, it stays down when rewritten; the other
-    // side's reply stays with it.
+    // 운영자가 내린 후기는 다시 써도 내려진 채로 있고, 상대편의 답글도
+    // 함께 남는다.
     ...(existing?.hiddenAt ? { hiddenAt: existing.hiddenAt } : {}),
     ...(existing?.reply ? { reply: existing.reply } : {}),
   }
@@ -99,17 +99,17 @@ reviewsRouter.delete("/:proposalId", async (req, res) => {
   res.status(204).end()
 })
 
-// The review the other side wrote about this side's part, which this side
-// may answer.
+// 상대편이 이쪽의 역할에 대해 쓴 후기다. 이쪽에서 이 후기에 답할 수
+// 있다.
 function reviewOfMe(req: Request) {
   const found = sponsorship(req)
   const other: ChatSide = found.side === "group" ? "brand" : "group"
   return { ...found, other, review: found.database.reviews.find((item) => item.id === `${found.proposal.id}:${other}`) }
 }
 
-// The reviewed side answers the review it got, once (writing again replaces
-// it), from the agreement; the reviewer hears about a new one. Not a review
-// the operators took down, and not from the shared demo accounts.
+// 후기를 받은 쪽이 계약서에서 받은 후기에 한 번 답한다(다시 쓰면 바뀐다).
+// 후기를 쓴 쪽은 새 답글을 알림으로 받는다. 운영자가 내린 후기에는 답할 수
+// 없고, 공유 데모 계정도 답할 수 없다.
 reviewsRouter.put("/:proposalId/reply", async (req, res) => {
   const { account, database, proposal, side, other, review } = reviewOfMe(req)
   if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 답글을 달 수 없어요.")
@@ -124,7 +124,7 @@ reviewsRouter.put("/:proposalId/reply", async (req, res) => {
     text: reply,
     createdAt: before?.createdAt ?? now,
     ...(before ? { updatedAt: now } : {}),
-    // Taken down by the operators, it stays down when rewritten.
+    // 운영자가 내린 답글은 다시 써도 내려진 채로 있다.
     ...(before?.hiddenAt ? { hiddenAt: before.hiddenAt } : {}),
   }
   await saveDatabase()

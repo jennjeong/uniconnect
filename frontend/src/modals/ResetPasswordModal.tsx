@@ -12,13 +12,13 @@ import type { CodeTicket, Session } from "../types"
 
 type Sent = {
   expiresAt: number
-  // Sent back only while the backend has no mail service (development).
+  // 백엔드에 메일 서비스가 없을 때(개발)만 돌려준다.
   devCode?: string
 }
 
-// A forgotten password: a code to the email the account signed up with,
-// then a new password. Setting it logs out every other device and logs in
-// here, after the app's code when two-step login is on.
+// 잊은 비밀번호. 계정이 가입한 이메일로 코드를 보낸 뒤 새 비밀번호를 받는다.
+// 설정하면 다른 모든 기기를 로그아웃하고 여기서 로그인하며, 2단계 인증이 켜져
+// 있으면 앱의 코드를 거친다.
 export function ResetPasswordModal({
   initialEmail,
   onClose,
@@ -48,7 +48,7 @@ export function ResetPasswordModal({
     return () => window.clearInterval(timer)
   }, [sent])
 
-  // Runs one request at a time and shows its error above the submit button.
+  // 요청을 한 번에 하나씩 실행하고 오류는 제출 버튼 위에 보여 준다.
   const run = async (task: () => Promise<void>) => {
     setBusy(true)
     setError("")

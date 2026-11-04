@@ -13,7 +13,7 @@ describe("the schematic map of the shops around a campus", () => {
     const north = offsetMetres(campus, { lat: campus.lat + 0.001, lng: campus.lng })
     expect(north.north).toBeCloseTo(111.3, 1)
     expect(north.east).toBeCloseTo(0)
-    // A degree of longitude is shorter than one of latitude this far north.
+    // 경도 1도는 이만큼 북쪽에서는 위도 1도보다 짧다.
     const east = offsetMetres(campus, { lat: campus.lat, lng: campus.lng + 0.001 })
     expect(east.east).toBeCloseTo(88.2, 0)
   })
@@ -41,7 +41,7 @@ describe("the schematic map of the shops around a campus", () => {
     expect(mapScale(campus, [north(120), north(260)])).toEqual({ radius: 300, step: 100 })
     expect(mapScale(campus, [north(120), north(450)])).toEqual({ radius: 600, step: 200 })
     expect(mapScale(campus, [north(1400)])).toEqual({ radius: 1500, step: 500 })
-    // Farther than any scale: the largest, with the point on its edge.
+    // 어느 눈금보다도 멀다: 가장 큰 눈금이며 점은 가장자리에 놓인다.
     expect(mapScale(campus, [north(4000)])).toEqual({ radius: 1500, step: 500 })
   })
 
@@ -61,7 +61,7 @@ describe("the schematic map of the shops around a campus", () => {
         expect(Math.hypot(spread[a].left - spread[b].left, spread[a].top - spread[b].top)).toBeGreaterThanOrEqual(3.4 - 1e-9)
       }
     }
-    // Each stays close to where it is.
+    // 각각 제자리에 가깝게 머문다.
     for (const point of spread.slice(1)) expect(Math.hypot(point.left - 60, point.top - 60)).toBeLessThan(12)
   })
 
@@ -71,7 +71,7 @@ describe("the schematic map of the shops around a campus", () => {
     expect(catalogScale([{ east: 900_000, north: 0 }]).radius).toBe(50000)
     expect(offsetPosition({ east: 0, north: 0 }, 1000)).toEqual({ left: 50, top: 50 })
     expect(offsetPosition({ east: 500, north: 500 }, 1000)).toEqual({ left: 75, top: 25 })
-    // Past the edge, on it.
+    // 가장자리를 넘으면 가장자리 위에.
     const far = offsetPosition({ east: 0, north: -5000 }, 1000)
     expect(far.left).toBeCloseTo(50)
     expect(far.top).toBeCloseTo(100)

@@ -16,10 +16,10 @@ import type { Account, Database, EventItem, RequestStatus, Role, SponsorPackage 
 
 export const eventsRouter = Router()
 
-// How many days past the first an event's period can run.
+// 행사 기간이 첫날 뒤로 며칠까지 이어질 수 있는지 정한다.
 const maxDays = 89
 
-// The most people an event can expect, as the goals form allows.
+// 목표 양식이 허용하는 행사의 최대 예상 인원이다.
 const maxPeople = 100_000
 
 // "1,234명" or "1234" as the people an event expects, written back as
@@ -31,7 +31,7 @@ function parsePeople(value: string) {
   return `${count.toLocaleString("ko-KR")}명`
 }
 
-// Visitors see the demo account's events for the role they are previewing.
+// 방문자는 미리 보는 역할의 데모 계정 행사를 본다.
 eventsRouter.get("/", (req, res) => {
   const database = getDatabase()
   const ownerId = req.account?.id ?? database.demoAccountIds[parseRole(req.query.role)]
@@ -57,12 +57,12 @@ type EventFields = Pick<
   | "promo"
 >
 
-// What an event page holds, at most: four packages and four photos.
+// 행사 페이지에 담을 수 있는 최대치다. 패키지 넷과 사진 넷이다.
 const maxPackages = 4
 const maxEventPhotos = 4
 
-// A group's sponsorship packages: each with a name and what the brand gets,
-// and the support it asks for when it says.
+// 단체의 협찬 패키지다. 각각 이름과 브랜드가 받는 것을 담고, 말하면
+// 요청하는 지원도 담는다.
 function parsePackages(value: unknown): SponsorPackage[] {
   if (value === undefined) return []
   if (!Array.isArray(value) || value.length > maxPackages) {
@@ -80,13 +80,13 @@ function parsePackages(value: unknown): SponsorPackage[] {
   })
 }
 
-// An event's or campaign's fields as they are registered or edited, checked
-// the same way both times.
+// 등록하거나 수정하는 행사나 캠페인의 항목이다. 두 경우 모두 같은 방식으로
+// 검사한다.
 function parseEventFields(role: Role, body: Request["body"]): EventFields {
   const students = role === "학생단체"
   const name = text(body?.name)
   const rawDate = text(body?.date)
-  // The last day, for an event over several days.
+  // 여러 날에 걸친 행사의 마지막 날이다.
   const rawEndDate = text(body?.endDate)
   const people = parsePeople(text(body?.people))
   const types: string[] = Array.isArray(body?.types)
@@ -94,11 +94,11 @@ function parseEventFields(role: Role, body: Request["body"]): EventFields {
     : []
   // Free text describing the "기타" type.
   const typeNote = text(body?.typeNote)
-  // An optional budget in won: a group's for its event, a brand's for its
-  // campaign.
+  // 원 단위의 예산이며 선택이다. 단체는 행사의, 브랜드는 캠페인의 예산을
+  // 쓴다.
   const rawBudget = text(body?.budget)
   const budget = rawBudget ? Number(rawBudget) : undefined
-  // A group's event page: where it is, what it is, and its packages.
+  // 단체의 행사 페이지다. 장소, 행사 소개, 패키지를 담는다.
   const venue = students ? text(body?.venue) : ""
   const intro = students ? text(body?.intro) : ""
   const packages = students ? parsePackages(body?.packages) : []
@@ -135,7 +135,7 @@ function parseEventFields(role: Role, body: Request["body"]): EventFields {
   if (budget !== undefined && !(Number.isInteger(budget) && budget >= 0 && budget <= 1e10)) {
     throw new HttpError(400, "예산은 0원 이상 숫자로 입력해 주세요.")
   }
-  // A group's event: its kind, times and who comes, each left out when empty.
+  // 단체의 행사다. 종류, 시간, 오는 사람을 담고 비어 있으면 각각 뺀다.
   const kind = students ? text(body?.kind) : ""
   if (kind && !(eventKinds as readonly string[]).includes(kind)) throw new HttpError(400, "행사 유형을 목록에서 골라 주세요.")
   const clock = /^([01]\d|2[0-3]):[0-5]\d$/
@@ -170,8 +170,8 @@ function parseEventFields(role: Role, body: Request["body"]): EventFields {
   }
 }
 
-// 홍보 · 배포 계획: the choices from each list, kept only once the group
-// agreed to carry them out (an edit keeps the first agreement's time).
+// 홍보 · 배포 계획이다. 각 목록에서 고른 것은 단체가 실행에 동의한 뒤에만
+// 보관한다(수정해도 처음 동의한 시각을 유지한다).
 function parsePromo(value: unknown, agreed: unknown): EventItem["promo"] {
   if (value === undefined || value === null) return undefined
   if (typeof value !== "object") throw new HttpError(400, "홍보 · 배포 계획을 다시 확인해 주세요.")
@@ -187,8 +187,8 @@ function parsePromo(value: unknown, agreed: unknown): EventItem["promo"] {
   return { spots, handouts, posts, agreedAt }
 }
 
-// Who is expected at a group's event: the years from the list and fields of
-// study as written. Undefined when none.
+// 단체의 행사에 올 것으로 기대하는 사람이다. 목록에서 고른 학년과 쓴 그대로의
+// 전공 분야다. 없으면 undefined다.
 function parseMakeup(value: unknown): EventItem["makeup"] {
   if (value === undefined || value === null) return undefined
   if (typeof value !== "object") throw new HttpError(400, "참가자 구성을 다시 확인해 주세요.")
@@ -225,19 +225,19 @@ const dayLabel = (iso: string) => {
 const periodLabel = (date: string, endDate?: string) =>
   endDate ? `${dayLabel(date)} ~ ${dayLabel(endDate)}` : dayLabel(date)
 
-// Proposals about an event and the sponsorships recorded for it carry its
-// name and dates, so after an edit they take the new ones; declined and
-// called-off proposals stay as they were.
+// 행사에 대한 제안과 그 행사에 기록된 협찬은 행사의 이름과 날짜를 복사해
+// 가지므로, 수정하면 새 값을 따라간다. 거절하거나 취소한 제안은 그대로
+// 둔다.
 const followed = (status: RequestStatus) => status === "검토 중" || status === "수락"
 
-// Carries an edit into those copies. Answers the other side of each
-// proposal still waiting or accepted, with the page to look at.
+// 수정 내용을 그 복사본에 반영한다. 아직 대기 중이거나 수락된 제안마다
+// 상대편에게 볼 페이지와 함께 알린다.
 function followEvent(database: Database, account: Account, event: EventItem, datesChanged: boolean) {
   const partners = new Map<string, string>()
   const follow = (sponsorship: { eventName: string; date: string; remindedAt?: string }) => {
     sponsorship.eventName = event.name
     sponsorship.date = event.date
-    // The reminder goes again for the new day.
+    // 새 날짜에 맞춰 알림을 다시 보낸다.
     if (datesChanged) delete sponsorship.remindedAt
   }
   if (account.role === "학생단체") {
@@ -266,10 +266,9 @@ function followEvent(database: Database, account: Account, event: EventItem, dat
   return [...partners].map(([id, path]) => ({ account: database.accounts.find((item) => item.id === id), path }))
 }
 
-// The owner changes an event or campaign, with the same checks as when it
-// was registered. Its dates stay once it has begun, as its results were
-// counted on them. Proposals about it and its sponsorships follow, and the
-// partners hear of a new name, day or head count.
+// 주인이 행사나 캠페인을 바꾼다. 등록할 때와 같은 검사를 한다. 시작한
+// 뒤에는 결과를 그 날짜로 집계했으므로 날짜는 그대로 둔다. 그에 대한 제안과
+// 협찬이 따라가고, 파트너는 새 이름, 날짜, 인원을 알림으로 받는다.
 eventsRouter.put("/:id", async (req, res) => {
   const account = requireAccount(req)
   const students = account.role === "학생단체"
@@ -281,15 +280,15 @@ eventsRouter.put("/:id", async (req, res) => {
   if (datesChanged && event.date <= todayInKorea()) {
     throw new HttpError(409, `이미 시작한 ${students ? "행사는" : "캠페인은"} 날짜를 바꿀 수 없어요.`)
   }
-  // Moved to a day already past, it would read as over at once (reviews,
-  // results), so a new date is today or later.
+  // 이미 지난 날로 옮기면 곧바로 끝난 것으로 읽혀(후기, 결과) 버리므로,
+  // 새 날짜는 오늘 이후여야 한다.
   if (datesChanged && fields.date < todayInKorea()) {
     throw new HttpError(400, "날짜는 오늘이나 그 뒤로 옮겨 주세요.")
   }
 
   const before = { ...event }
-  // Fields the edit leaves out (one day now, no 기타, no budget, no venue,
-  // introduction or packages) go; the photos stay.
+  // 수정에서 빠진 항목(이제 하루, 기타 없음, 예산 없음, 장소 없음, 소개나
+  // 패키지 없음)은 지우고 사진은 남긴다.
   delete event.endDate
   delete event.typeNote
   delete event.budget
@@ -331,12 +330,12 @@ eventsRouter.delete("/:id", async (req, res) => {
   if (!events.some((event) => event.id === eventId)) {
     throw new HttpError(404, "행사를 찾을 수 없어요.")
   }
-  // A sponsor's records and results depend on a sponsored event.
+  // 협찬의 기록과 결과는 협찬받은 행사에 달려 있다.
   if (isSponsored(database, eventId)) {
     throw new HttpError(409, "협찬이 확정된 행사는 지울 수 없어요. 협찬사와 먼저 이야기해 주세요.")
   }
-  // Proposals about it still waiting for an answer are withdrawn, on both
-  // sides; answered ones stay in the history.
+  // 아직 답을 기다리는 그 행사의 제안은 양쪽에서 철회한다. 답한 제안은
+  // 이력에 남는다.
   const withdrawn = new Set([
     ...database.requests.filter((item) => item.eventId === eventId && item.status === "검토 중").map((item) => item.brandId),
     ...database.offers.filter((item) => item.campaignId === eventId && item.status === "검토 중").map((item) => item.groupId),
@@ -350,7 +349,7 @@ eventsRouter.delete("/:id", async (req, res) => {
     (partnerId) => !withdrawn.has(partnerId) || stillOpen(partnerId),
   )
   database.events[account.id] = events.filter((event) => event.id !== eventId)
-  // Its board posts take no more applications.
+  // 그 행사의 게시판 글은 더 이상 지원을 받지 않는다.
   for (const post of database.posts) {
     if (post.accountId === account.id && post.eventId === eventId) post.closedAt ??= new Date().toISOString()
   }
@@ -362,9 +361,9 @@ eventsRouter.delete("/:id", async (req, res) => {
   res.status(204).end()
 })
 
-// A student group's event as its page shows it, for the group itself and for
-// anyone who sees the group (shownTo, as its profile): the event, the group's
-// listing, and whether the one looking owns it.
+// 행사 페이지에 보이는 단체의 행사다. 단체 자신과 그 단체를 볼 수 있는
+// 사람에게(프로필처럼 shownTo) 행사, 단체의 리스팅, 보는 사람이 주인인지를
+// 보여 준다.
 function eventPage(database: Database, eventId: string, viewer?: Account) {
   for (const [ownerId, events] of Object.entries(database.events)) {
     const event = events.find((item) => item.id === eventId)
@@ -378,15 +377,15 @@ function eventPage(database: Database, eventId: string, viewer?: Account) {
   return undefined
 }
 
-// 행사 둘러보기: the coming events of the groups the viewer sees, and the
-// sponsorships similar events had, by kind.
+// 행사 둘러보기다. 보는 사람이 볼 수 있는 단체의 다가오는 행사와, 비슷한
+// 행사가 종류별로 받은 협찬을 보여 준다.
 eventsRouter.get("/explore", (req, res) => {
   const database = getDatabase()
   res.json({ events: exploreEvents(database, req.account), cases: eventCases(database, req.account) })
 })
 
-// An event's budget is for the two sides of a proposal about it: the group
-// and the brands it asked.
+// 행사의 예산은 그 행사에 대한 제안의 두 쪽, 곧 단체와 단체가 제안을 보낸
+// 브랜드를 위한 것이다.
 const seesBudget = (database: Database, eventId: string, viewer: Account | undefined) =>
   Boolean(viewer?.brandId) &&
   database.requests.some((request) => request.eventId === eventId && request.brandId === viewer!.brandId)
@@ -403,8 +402,8 @@ eventsRouter.get("/:id/page", (req, res) => {
   res.json({ event, group: { id, name, school, category, industry, ...(logo ? { logo } : {}) }, own: found.own })
 })
 
-// A photo of an event page, for those who may see the page; the page
-// fetches it with the login token.
+// 페이지를 볼 수 있는 사람에게 행사 페이지의 사진을 보여 준다. 페이지는
+// 로그인 토큰으로 가져온다.
 eventsRouter.get("/:id/photos/:photo", async (req, res) => {
   const found = eventPage(getDatabase(), String(req.params.id), req.account)
   const photo = String(req.params.photo)
@@ -416,7 +415,7 @@ eventsRouter.get("/:id/photos/:photo", async (req, res) => {
   res.type(photoType(photo)).set("Cache-Control", "private, max-age=3600").send(bytes)
 })
 
-// The group's own event, by the address.
+// 주소로 찾는 단체 자신의 행사다.
 function ownEvent(req: Request) {
   const account = requireAccount(req)
   const event = (getDatabase().events[account.id] ?? []).find((item) => item.id === req.params.id)
@@ -424,8 +423,8 @@ function ownEvent(req: Request) {
   return { account, event }
 }
 
-// The group adds a photo to its event page, four at most, kept with
-// lib/photos.ts (on disk, or in Postgres on Vercel).
+// 단체가 행사 페이지에 사진을 올린다. 최대 넷이며 lib/photos.ts로 보관한다
+// (디스크에, Vercel에서는 Postgres에 둔다).
 eventsRouter.post("/:id/photos", async (req, res) => {
   const { event } = ownEvent(req)
   if ((event.photos?.length ?? 0) >= maxEventPhotos) {
@@ -436,21 +435,20 @@ eventsRouter.post("/:id/photos", async (req, res) => {
   const store = photos()
   await store.put(eventPhotos(event.id), parsed.name, parsed.bytes)
   try {
-    // Looked up again: the data may have been read anew while the photo went in.
+    // 다시 찾는다. 사진이 들어오는 동안 데이터를 새로 읽었을 수 있다.
     const fresh = ownEvent(req).event
     fresh.photos = [...(fresh.photos ?? []), parsed.name]
     await saveDatabase()
     res.status(201).json({ event: fresh })
   } catch (error) {
-    // The data went back to before the photo; so does the photo store.
+    // 데이터가 사진을 넣기 전으로 돌아갔으므로 사진 저장소도 돌린다.
     await store.remove(eventPhotos(event.id), [parsed.name])
     throw error
   }
 })
 
-// 행사 기획안: the group puts a PDF of its plan (2 MB at most) on its event
-// page, one at a time, kept beside the photos; brands who see the page
-// download it.
+// 행사 기획안이다. 단체가 행사 페이지에 기획 PDF(2MB 이하)를 한 번에
+// 하나씩 올리며, 사진 옆에 보관한다. 페이지를 볼 수 있는 브랜드가 내려받는다.
 eventsRouter.post("/:id/plan", async (req, res) => {
   const { event } = ownEvent(req)
   const parsed = parsePdf(req.body?.file)
@@ -469,7 +467,7 @@ eventsRouter.post("/:id/plan", async (req, res) => {
     await store.remove(eventPhotos(event.id), [parsed.name])
     throw error
   }
-  // The plan it replaced goes once the new one is kept.
+  // 대체된 기획안은 새 기획안이 저장된 뒤에 지운다.
   if (previous) await store.remove(eventPhotos(event.id), [previous])
 })
 

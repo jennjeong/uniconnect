@@ -22,10 +22,9 @@ const pad = (value: number) => String(value).padStart(2, "0")
 
 const delay = (seconds: number) => ({ "--reveal-delay": `${seconds}s` }) as CSSProperties
 
-// Dashboard for brands, in the same three moves as the student side: where
-// the brand meets campus (the hero and the proposals waiting for it), what
-// keeps a sponsorship going (the steps over the chain), and what it made
-// together (the totals and the ROAS of each sponsorship).
+// 브랜드 대시보드. 학생 쪽과 같은 세 흐름이다: 브랜드가 캠퍼스를 만나는
+// 곳(히어로와 기다리는 제안), 협찬을 이어 가는 것(체인 위의 단계), 함께 만든
+// 것(총계와 협찬별 ROAS).
 export function BrandDashboardPage({
   accountName,
   matches,
@@ -47,37 +46,37 @@ export function BrandDashboardPage({
   onResume,
   checklist,
 }: {
-  // The logged-in brand's name for the greeting.
+  // 인사말에 쓰는, 로그인한 브랜드의 이름.
   accountName?: string
-  // Recommended student groups.
+  // 추천 학생단체.
   matches: Match[]
-  // Every student group in the catalog: groups that signed up, for a member.
+  // 카탈로그의 모든 학생단체. 회원에게는 가입한 단체만.
   groups: Match[]
-  // The catalog has arrived, so an empty one is empty.
+  // 카탈로그가 도착했으므로 비어 있으면 정말 비어 있다.
   loaded: boolean
-  // Proposals student groups sent to this brand.
+  // 학생단체가 이 브랜드에 보낸 제안.
   requests: SponsorRequest[]
   sponsorships: Sponsorship[]
-  // Groups this brand has proposed to.
+  // 이 브랜드가 제안한 단체.
   proposals: string[]
-  // The groups' answers to this brand's offers.
+  // 이 브랜드의 제안에 대한 단체의 답.
   statuses: Partial<Record<string, RequestStatus>>
-  // When the recommendations were last loaded.
+  // 추천을 마지막으로 불러온 때.
   updatedAt: Date | null
   onNavigate: (label: NavLabel) => void
   onOpenDetail: (match: Match) => void
   onAccept: (request: SponsorRequest) => void
   onPropose: (match: Match) => void
   onCancelProposal: (match: Match) => void
-  // 앱 다운로드 on the hero; absent inside the installed app.
+  // 히어로의 앱 다운로드. 설치된 앱 안에서는 없다.
   onInstall?: () => void
-  // A visitor, shown the demo account's data: the hero says it is an example.
+  // 방문자에게는 데모 계정의 데이터를 보여 주며, 히어로가 예시라고 알린다.
   demo?: boolean
-  // The account's listing is out of the lists for now (내 정보): the hero
-  // says so and shows it again with one press.
+  // 계정의 리스팅이 당분간 목록에서 빠져 있다(내 정보). 히어로가 그렇게 알리고
+  // 한 번 누르면 다시 보이게 한다.
   paused?: boolean
   onResume?: () => void
-  // A new member's checklist (components/ProfileChecklist.tsx), under the hero.
+  // 히어로 아래의 새 회원 체크리스트(components/ProfileChecklist.tsx).
   checklist?: ReactNode
 }) {
   const pending = requests.filter((request) => request.status === "검토 중")
@@ -89,11 +88,11 @@ export function BrandDashboardPage({
     roas: roasOf(sponsorship),
     met: roasMet(sponsorship),
   }))
-  // Bar scale with room past the best result and every goal marker.
+  // 가장 좋은 결과와 모든 목표 표시보다 여유를 둔 막대 눈금.
   const roasScale =
     Math.max(100, ...results.map((result) => Math.max(result.roas, result.targetRoas))) * 1.1
   const catalog = groups.length > 0 ? groups : matches
-  // No student group has signed up yet (a member sees only those that have).
+  // 아직 가입한 학생단체가 없다(회원은 가입한 단체만 본다).
   const noGroups = loaded && catalog.length === 0
 
   const currentStep = pending.length > 0 ? 1 : confirmed.length > 0 ? 2 : sponsorships.length > 0 ? 3 : 0

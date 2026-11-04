@@ -32,8 +32,8 @@ import type { EventMeasurement, Metrics, Report } from "../types"
 
 const delay = (seconds: number) => ({ "--reveal-delay": `${seconds}s` }) as CSSProperties
 
-// "협찬 성과가 목표보다 43% 높았어요." from the ROAS against its goal (as
-// roasSummary in lib/kpis.ts works it out), in the language shown.
+// 목표 대비 ROAS로 만든 "협찬 성과가 목표보다 43% 높았어요." 같은
+// 문장(lib/kpis.ts의 roasSummary가 계산한다). 보이는 언어로 쓴다.
 function roasHeadline(report: Report) {
   const gain = Math.round((report.roas / Math.max(1, report.targets.roas) - 1) * 100)
   return gain >= 0
@@ -41,11 +41,10 @@ function roasHeadline(report: Report) {
     : t("협찬 성과가 목표보다 {gain}% 낮았어요.", { gain: -gain })
 }
 
-// One event's results (the latest one that has started, or the one picked):
-// the headline beside the ROAS card on a deep blue panel over getlayers.ai's
-// Interference gradient (waves from two sources adding up where they meet,
-// the way a sponsorship does), then each goal as a card that opens its
-// details.
+// 행사 하나의 결과(시작한 가장 최근 행사, 또는 고른 행사): 짙은 파란색 패널
+// 위의 ROAS 카드 옆 헤드라인(두 파원의 파동이 만나는 곳에서 더해지는
+// getlayers.ai의 Interference 그라디언트가 협찬과 닮았다), 이어서 각 목표를
+// 상세로 열리는 카드로.
 export function ReportsPage({
   measurements,
   report,
@@ -59,23 +58,23 @@ export function ReportsPage({
   terms = [],
   onSaveTerms,
 }: {
-  // Every event of the group, to pick the one to report on.
+  // 단체의 모든 행사. 리포트를 볼 행사를 고른다.
   measurements: EventMeasurement[]
   report: Report | null
   onSelect: (eventId: string) => void
   metrics: Metrics
-  // True while the PDF is being made.
+  // PDF를 만드는 동안 true.
   exporting: boolean
   onDownload: () => void
   onOpenReport: () => void
   onOpenGoal: (key: KpiKey) => void
-  // 협찬 결산 공개, for a member group (absent for visitors and the demo).
+  // 회원 단체의 협찬 결산 공개(방문자와 데모에는 없다).
   onNotice?: (message: string) => void
-  // 기수: the group's teams, and saving them (members only).
+  // 기수: 단체의 팀과 그 저장(회원 전용).
   terms?: Term[]
   onSaveTerms?: (terms: Term[]) => Promise<boolean>
 }) {
-  // ROAS bar scale, with room past the larger of the result and the goal.
+  // ROAS 막대 눈금. 결과와 목표 중 큰 값보다 여유를 둔다.
   const roasScale = report ? Math.max(1, report.roas, report.targets.roas) * 1.15 : 1
 
   return (
@@ -89,7 +88,7 @@ export function ReportsPage({
             <Pill arrow="up-right" disabled={!report || exporting} onClick={onDownload}>
               {exporting ? t("PDF 만드는 중…") : t("PDF 리포트 다운로드")}
             </Pill>
-            {/* The same figures as a spreadsheet (lib/csv.ts), made on the page. */}
+            {/* 같은 수치를 스프레드시트로(lib/csv.ts). 페이지에서 만든다. */}
             <Pill
               disabled={!report}
               onClick={() =>
@@ -250,9 +249,8 @@ export function ReportsPage({
   )
 }
 
-// The group's sponsorship record (협찬 기록): every event held, its
-// sponsors and results, what they add up to, and the whole as a file the
-// team hands to the next one.
+// 단체의 협찬 기록(협찬 기록): 연 모든 행사, 그 스폰서와 결과, 그 합계, 그리고
+// 팀이 다음 팀에 넘기는 파일로서의 전체.
 function SponsorHistory({
   measurements,
   onOpen,
@@ -265,7 +263,7 @@ function SponsorHistory({
   onSaveTerms?: (terms: Term[]) => Promise<boolean>
 }) {
   const allRows = sponsorHistory(measurements, undefined, terms)
-  // The terms that held events, and the one picked to read.
+  // 행사를 연 학기와, 읽으려고 고른 학기.
   const shownTerms = terms.filter((term) => allRows.some((row) => row.term === term.name))
   const [term, setTerm] = useState("전체")
   const rows = term === "전체" ? allRows : allRows.filter((row) => row.term === term)

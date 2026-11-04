@@ -9,11 +9,10 @@ import { useDialogFocus } from "../hooks/useDialogFocus"
 import { t } from "../i18n"
 import type { Account, NavLabel, Role } from "../types"
 
-// The full-screen menu behind Menu: a silver panel with the role's pages in
-// large type, numbered and arriving one after another, the account links
-// (and the FAQ) under them in line with the page names, and the register
-// action at the bottom.
-// Escape or 닫기 closes it; the page behind doesn't scroll while it is open.
+// Menu 뒤의 전체 화면 메뉴. 은색 패널에 역할별 페이지가 큰 글자로 번호와 함께
+// 차례로 나타나고, 그 아래에 계정 링크(와 FAQ)가 페이지 이름과 같은 줄에 맞춰
+// 놓이며, 맨 아래에 가입 버튼이 있다.
+// Escape나 닫기로 닫으며, 열려 있는 동안 뒤의 페이지는 스크롤되지 않는다.
 export function NavMenu({
   role,
   activeNav,
@@ -40,20 +39,20 @@ export function NavMenu({
   account: Account | null
   badges: Partial<Record<NavLabel, number>>
   unreadMessages: number
-  // The introduction, for visitors.
+  // 소개 페이지. 방문자용.
   onHome: () => void
   onNavigate: (label: NavLabel) => void
   onSwitchRole: (role: Role) => void
   onCreate: () => void
   onOpenMessages: () => void
   onOpenAgreements: () => void
-  // The recruitment board, for members and visitors alike.
+  // 모집 게시판. 회원과 방문자 모두에게 보인다.
   onOpenBoard: () => void
   onOpenProfile: () => void
   onOpenFaq: () => void
   onLogin: () => void
   onSignup: () => void
-  // 앱 다운로드, whenever the site is open in a browser (lib/install.ts).
+  // 앱 다운로드. 사이트를 브라우저에서 연 경우 항상 보인다 (lib/install.ts).
   onInstall: () => void
   installable: boolean
   onClose: () => void
@@ -62,9 +61,9 @@ export function NavMenu({
   const closeRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
-  // Focus moves into the menu (its close button), stays there while it is
-  // open and goes back to where it was when the menu goes, unless a link
-  // opened something that took the focus (a login form).
+  // 포커스는 메뉴 안(닫기 버튼)으로 들어가 메뉴가 열려 있는 동안 거기에 머물고,
+  // 메뉴가 사라지면 원래 있던 곳으로 돌아간다. 단 링크가 포커스를 가져가는
+  // 것(로그인 폼)을 열었다면 돌려주지 않는다.
   useDialogFocus(menuRef, !closing, closeRef)
 
   useEffect(() => {
@@ -82,7 +81,7 @@ export function NavMenu({
     return () => window.removeEventListener("keydown", closeOnEscape)
   }, [closing, onClose])
 
-  // Each link closes the menu first, then does its job.
+  // 링크는 각각 먼저 메뉴를 닫고 나서 제 일을 한다.
   const pick = (action: () => void) => () => {
     onClose()
     action()

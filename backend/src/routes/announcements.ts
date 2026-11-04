@@ -7,7 +7,7 @@ import { getDatabase, saveDatabase } from "../store.js"
 
 export const announcementsRouter = Router()
 
-// The operators' notices this viewer sees, shown across the top of the site.
+// 이 보는 사람에게 보이는 운영자 공지로, 사이트 맨 위에 띄운다.
 announcementsRouter.get("/", (req, res) => {
   res.json({ announcements: liveAnnouncements(getDatabase(), req.account) })
 })
@@ -18,7 +18,7 @@ const dismissals = createRateLimit({
   message: "요청이 너무 많아요. 잠시 뒤에 다시 시도해 주세요.",
 })
 
-// A visitor closed a notice: counted, for the console, without who.
+// 방문자가 공지를 닫으면 누가 닫았는지는 빼고 콘솔용으로 세기만 한다.
 announcementsRouter.post("/:id/dismiss", async (req, res) => {
   await dismissals.take(clientKey(req))
   const item = getDatabase().announcements?.find((entry) => entry.id === req.params.id)

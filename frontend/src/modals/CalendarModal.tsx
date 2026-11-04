@@ -22,14 +22,13 @@ const appLink = (app: CalendarApp, entry: CalendarEntry) =>
 
 const appLabel = (app: CalendarApp) => t(calendarApps.find((item) => item.id === app)?.label ?? app)
 
-// 캘린더에 추가, laid out like the phone's share sheet, which a page can't
-// fill with calendar apps itself (Chrome won't share a calendar file, and
-// iPhone's sheet offers no calendar for one): the coming dates, each picked
-// or not, then the calendar apps as icons, the one picked last first, then
-// the actions. Google Calendar and Outlook open a date's add page in a new
-// tab or their app, one at a time when several are picked; Apple Calendar
-// and the other apps open the calendar file with the picked dates, where
-// the app asks to add them.
+// 캘린더에 추가. 휴대폰의 공유 시트처럼 짠다. 페이지가 그 시트를 캘린더 앱으로
+// 채울 수 없기 때문이다(Chrome은 캘린더 파일을 공유하지 않고, iPhone의 시트는
+// 캘린더 파일에 캘린더 앱을 내놓지 않는다). 다가오는 날짜를 골랐는지 여부와
+// 함께 보여 주고, 이어서 마지막에 고른 것을 맨 앞에 둔 캘린더 앱 아이콘, 그리고
+// 동작이 나온다. 구글 캘린더와 아웃룩은 날짜의 추가 페이지를 새 탭이나 앱에서
+// 열고, 여럿을 고르면 하나씩 연다. 애플 캘린더와 나머지 앱은 고른 날짜의 캘린더
+// 파일을 열어 앱이 추가를 묻게 한다.
 export function CalendarModal({
   entries,
   subscribe = false,
@@ -37,15 +36,15 @@ export function CalendarModal({
   onNotice,
 }: {
   entries: CalendarEntry[]
-  // A member's own subscription link at the end (not the demo accounts).
+  // 끝에 두는 회원 자신의 구독 링크(데모 계정에는 없다).
   subscribe?: boolean
   onClose: () => void
   onNotice?: (message: string) => void
 }) {
   const [picked, setPicked] = useState(() => new Set(entries.map((entry) => entry.id)))
-  // Google Calendar or Outlook, while the picked dates wait to open one by one.
+  // 구글 캘린더나 아웃룩. 고른 날짜가 하나씩 열리기를 기다리는 동안.
   const [opening, setOpening] = useState<CalendarApp | null>(null)
-  // Read once, so the icons keep their places while the sheet is open.
+  // 한 번만 읽어서 시트가 열려 있는 동안 아이콘 자리가 바뀌지 않는다.
   const [last] = useState(lastCalendarApp)
   const chosen = entries.filter((entry) => picked.has(entry.id))
   const cover = calendarPage((chosen[0] ?? entries[0]).date)
@@ -149,7 +148,7 @@ export function CalendarModal({
             )
             return (
               <li key={app.id}>
-                {/* One date picked: its add page opens at once, as a link. */}
+                {/* 날짜 하나를 고르면 그 추가 페이지가 링크로 바로 열린다. */}
                 {opensEach(app.id) && chosen.length === 1 ? (
                   <a
                     className="share-app"
@@ -239,12 +238,12 @@ export function CalendarModal({
   )
 }
 
-// 구독 링크: a secret address calendar apps subscribe to, so new and changed
-// dates arrive by themselves (backend routes/calendar.ts). Made on request
-// and shown again later; a new one, asked for twice since it stops the
-// calendars already subscribed, replaces it when it has leaked.
+// 구독 링크: 캘린더 앱이 구독하는 비공개 주소로, 새 날짜와 바뀐 날짜가 저절로
+// 들어온다(backend routes/calendar.ts). 요청하면 만들고 나중에 다시 보여 준다.
+// 유출되면 새로 요청해 바꾸는데, 이미 구독한 캘린더가 멈추므로 두 번 확인을
+// 요청한다.
 function CalendarSubscription({ onNotice }: { onNotice?: (message: string) => void }) {
-  // undefined while it loads, null before one is made.
+  // 불러오는 동안은 undefined, 만들어지기 전에는 null.
   const [url, setUrl] = useState<string | null | undefined>(undefined)
   const [busy, setBusy] = useState(false)
   const [replacing, setReplacing] = useState(false)

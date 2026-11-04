@@ -1,12 +1,11 @@
 import { useThree } from "@react-three/fiber"
 import { ShaderGradient, ShaderGradientCanvas, type GradientT } from "@shadergradient/react"
 
-// Deep navy at the top left where the copy sits, opening into a brighter
-// blue toward the bottom right with silver on the crests. The shader blends
-// color2 (left) into color1 (right) and lifts the waves toward color3; the
-// troughs overshoot away from it, deepening the blue toward the point color
-// (--point in index.css). Settings left out come from the library's "halo"
-// preset.
+// 카피가 놓이는 왼쪽 위는 짙은 남색이고, 오른쪽 아래로 갈수록 밝은 파랑으로
+// 열리며 물마루에는 은색이 얹힌다. 셰이더는 color2(왼쪽)를 color1(오른쪽)로
+// 섞고 물결을 color3 쪽으로 끌어올린다. 골은 반대로 넘어가 파랑을 포인트
+// 색(index.css의 --point) 쪽으로 깊게 만든다. 지정하지 않은 설정은 라이브러리의
+// "halo" 프리셋을 따른다.
 const look: GradientT = {
   type: "plane",
   color1: "#2f5fc8",
@@ -24,8 +23,8 @@ const look: GradientT = {
   cAzimuthAngle: 180,
 }
 
-// A narrow lens keeps the view nearly flat, and the camera backs off on
-// narrow banners so every banner shows the same stretch of the gradient.
+// 좁은 렌즈로 화면을 거의 평평하게 유지하고, 좁은 배너에서는 카메라를 뒤로 물려
+// 모든 배너가 같은 범위의 그라디언트를 보여 주게 한다.
 const fov = 15
 const visibleWidth = 7
 
@@ -42,8 +41,8 @@ function Gradient() {
   )
 }
 
-// Loaded lazily by GradientBackdrop. The library only runs the canvas while
-// the banner is on screen (lazyLoad), and it holds still with reduced motion.
+// GradientBackdrop이 지연 로딩한다. 라이브러리는 배너가 화면에 있는 동안에만
+// 캔버스를 돌리고(lazyLoad), 동작 줄이기 설정에서는 멈춰 있다.
 export default function GradientScene() {
   return (
     <ShaderGradientCanvas

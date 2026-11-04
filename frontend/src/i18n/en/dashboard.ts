@@ -1,9 +1,9 @@
-// English for this area's Korean copy (see i18n/index.ts).
+// 이 영역의 한국어 카피에 대한 영어 (i18n/index.ts 참고).
 const en: Record<string, string> = {
-  // Shared by both dashboards
+  // 두 대시보드가 함께 쓰는 것
   "지금은 ‘{step}’ 차례예요": "Up now: {step}",
   "반가워요, {name}": "Welcome, {name}",
-  // Counts shown through AnimatedNumber next to a label that names them
+  // 숫자를 이름 붙인 라벨 옆에서 AnimatedNumber로 보여주는 집계
   "{count}건": "{count}",
   "{count}곳": "{count}",
   "오늘 {time} 업데이트": "Updated today at {time}",
@@ -13,12 +13,12 @@ const en: Record<string, string> = {
   "평균 ROAS": "Average ROAS",
   "확정된 협찬": "Confirmed sponsorships",
   "행사 일정 보기": "See calendar",
-  // A measurement's state (lib/measurements.ts measureState)
+  // 측정의 상태 (lib/measurements.ts의 measureState)
   "진행 전": "Not started",
   "측정 중": "Measuring",
   "진행 완료": "Finished",
 
-  // Student group dashboard (pages/DashboardPage.tsx)
+  // 학생단체 대시보드 (pages/DashboardPage.tsx)
   "행사 등록": "Register event",
   완료: "Done",
   "등록 전": "Not yet",
@@ -104,7 +104,7 @@ const en: Record<string, string> = {
   "상세 데이터": "Full data",
   "리포트 페이지로": "Go to Reports",
 
-  // Brand dashboard (pages/BrandDashboardPage.tsx)
+  // 브랜드 대시보드 (pages/BrandDashboardPage.tsx)
   "캠페인 등록": "Set up a campaign",
   "브랜드 일정": "Your timeline",
   "예산과 원하는 노출, 함께하고 싶은 시기를 행사 일정에 적어 두세요.": "Put your budget, the exposure you want and your timing on the calendar.",
@@ -160,7 +160,7 @@ const en: Record<string, string> = {
   "목표 달성": "Goal met",
   "학생단체와 함께한 협찬의 평균이에요.": "The average across your sponsorships with student groups.",
   "성과 분석 열기": "Open Analytics",
-  // What uniconnect does for each side (components/ValuePoints.tsx)
+  // uniconnect가 각 쪽에 해 주는 일 (components/ValuePoints.tsx)
   "학생단체는 무료, 브랜드는 성사될 때만 수수료를 내요.": "Free for student groups; brands pay a fee only when a sponsorship is made.",
   "브랜드가 여기서 하는 일": "What brands do here",
   "대학생 접점": "Reaching students",

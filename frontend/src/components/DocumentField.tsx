@@ -4,7 +4,7 @@ import { Icon } from "./Icon"
 import { t } from "../i18n"
 import { photoFromFile } from "../lib/image"
 
-// The largest PDF the server takes (backend lib/photos.ts).
+// 서버가 받는 가장 큰 PDF (backend lib/photos.ts).
 const pdfMaxBytes = 2 * 1024 * 1024
 
 export type PickedDocument = { file: string; name: string }
@@ -17,8 +17,8 @@ const readPdf = (file: File) =>
     reader.readAsDataURL(file)
   })
 
-// A document for the operators to check (backend lib/applications.ts): a
-// photo, resized in the browser, or a PDF up to 2 MB.
+// 운영진이 확인할 서류 (backend lib/applications.ts). 브라우저에서 크기를 줄인
+// 사진이거나 2MB 이하의 PDF다.
 export function DocumentField({
   label,
   hint,

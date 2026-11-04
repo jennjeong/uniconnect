@@ -21,8 +21,8 @@ import { agreementState } from "./AgreementsPage"
 
 const ThanksCardExport = lazy(() => import("../report/ThanksCard").then((module) => ({ default: module.ThanksCardExport })))
 
-// A proof photo, fetched with the login token (an <img> can't send it) and
-// shown from an object URL; pressing it opens it full size.
+// 증빙 사진. 로그인 토큰으로 가져와서(<img>는 토큰을 보낼 수 없다) 객체 URL로
+// 보여 주며, 누르면 원래 크기로 열린다.
 function ProofPhoto({ agreementId, photo, onRemove }: { agreementId: string; photo: string; onRemove?: () => void }) {
   const [url, setUrl] = useState<string>()
   useEffect(() => {
@@ -59,8 +59,8 @@ function ProofPhoto({ agreementId, photo, onRemove }: { agreementId: string; pho
   )
 }
 
-// One item: done or not (its own side presses it), then its links and
-// photos, which its own side adds and removes.
+// 항목 하나: 완료 여부(해당 쪽이 누른다)와 그 링크와 사진(해당 쪽이 더하고
+// 지운다).
 function ItemRow({
   agreementId,
   item,
@@ -79,7 +79,7 @@ function ItemRow({
   onRemovePhoto: (photo: string) => void
 }) {
   const [link, setLink] = useState("")
-  // The box ticks at once and goes back if saving fails.
+  // 체크 칸은 바로 체크되고 저장이 실패하면 되돌아간다.
   const [ticking, setTicking] = useState<boolean>()
   const tick = async (done: boolean) => {
     setTicking(done)
@@ -184,8 +184,8 @@ function ItemRow({
 
 type Draft = { id?: string; side: ChatSide; label: string }
 
-// The items being written: each side's list, an item's words, adding and
-// removing. Saving asks both sides to confirm again.
+// 쓰는 중인 항목: 각 쪽의 목록, 항목의 문구, 추가와 삭제. 저장하면 양쪽이 다시
+// 확인해야 한다.
 function ItemsEditor({
   agreement,
   busy,
@@ -257,9 +257,8 @@ function ItemsEditor({
   )
 }
 
-// The event's goals (행사 목표): the side whose event it is sets them here,
-// through the app's goals form, until the event begins; the other side
-// reads them. Measurement then counts toward them.
+// 행사 목표: 행사를 가진 쪽이 행사가 시작하기 전까지 앱의 목표 폼으로 여기서
+// 정하고 상대는 읽는다. 측정은 이 목표를 향해 센다.
 function GoalsPanel({ agreement, onEdit }: { agreement: Agreement; onEdit?: (eventId: string) => void }) {
   const { event, goals } = agreement
   if (!event) return null
@@ -309,7 +308,7 @@ function GoalsPanel({ agreement, onEdit }: { agreement: Agreement; onEdit?: (eve
   )
 }
 
-// What one method has counted for this sponsorship so far, with its unit.
+// 이 협찬에서 방식 하나가 지금까지 센 것과 그 단위.
 function methodCount(method: MeasureMethod, counts: Metrics) {
   const count = counts[methodInfo[method.kind].metric].toLocaleString(locale)
   if (methodInfo[method.kind].bulk) return t("{count}개", { count })
@@ -320,12 +319,11 @@ function methodCount(method: MeasureMethod, counts: Metrics) {
 
 const sameMethods = (a: MeasureMethod[], b: MeasureMethod[]) => JSON.stringify(a) === JSON.stringify(b)
 
-// How the sponsorship is confirmed at the event (협찬 확인 방식), right under
-// the e-contract: the methods it uses, any number of them, the side that
-// confirms each at the venue (either, or both) and what each has counted,
-// then this side's own venue page and PIN. Either side changes them until
-// the event begins, which asks both to confirm again; they count, here and
-// in 성과, once both sides have confirmed the e-contract with them.
+// 행사에서 협찬을 확인하는 방식(협찬 확인 방식). 전자 계약서 바로 아래에 있다.
+// 쓰는 방식은 몇 개든 되고, 각 방식을 현장에서 확인하는 쪽(어느 한쪽 또는
+// 양쪽)과 각각이 센 것, 그리고 이쪽의 현장 페이지와 PIN이 나온다. 행사가
+// 시작하기 전까지 양쪽 누구나 바꿀 수 있으며 바꾸면 양쪽이 다시 확인해야 한다.
+// 양쪽이 그 방식을 담은 전자 계약서를 확인한 뒤에야 여기와 성과에서 센다.
 function MethodsPanel({
   agreement,
   busy,
@@ -353,13 +351,12 @@ function MethodsPanel({
     const chosen = (kind: MethodKind) => draft.find((method) => method.kind === kind)
     const toggle = (kind: MethodKind) => {
       if (chosen(kind)) {
-        // What needs this method goes with it (the coupon with the QR, store
-        // visits with the coupon).
+        // 이 방식에 필요한 것이 함께 따라온다(QR에는 쿠폰, 쿠폰에는 매장 방문).
         const dropped = new Set([kind])
         for (const method of methodKinds) if (methodInfo[method].needs && dropped.has(methodInfo[method].needs!)) dropped.add(method)
         setDraft(draft.filter((method) => !dropped.has(method.kind)))
       } else {
-        // And what it needs comes with it.
+        // 필요한 것도 함께 따라온다.
         const added: MeasureMethod[] = []
         for (let need: MethodKind | undefined = kind; need && !chosen(need); need = methodInfo[need].needs) {
           added.push({ kind: need, side: methodInfo[need].side })
@@ -499,11 +496,10 @@ function MethodsPanel({
   )
 }
 
-// After the event, this side's review of the other (stars, up to three of
-// the listed tags, a short comment) as a form or as written, and the review
-// the other side left.
-// The reply this side writes under the other side's review of it: written
-// once, then fixed or deleted, with a note once the operators took it down.
+// 행사가 끝난 뒤 이쪽이 상대에게 쓰는 후기(별점, 목록에서 고른 태그 세 개까지,
+// 짧은 코멘트)를 폼이나 쓴 글로 보여 주고, 상대가 남긴 후기도 보여 준다. 상대의
+// 후기 아래에 이쪽이 쓰는 답글은 한 번 쓰면 고정되거나 지울 수 있으며, 운영자가
+// 내렸으면 안내가 붙는다.
 function ReplyEditor({
   review,
   name,
@@ -512,7 +508,7 @@ function ReplyEditor({
   onDelete,
 }: {
   review: Review
-  // This side's name, which the reply shows under.
+  // 답글 아래에 보일 이쪽의 이름.
   name: string
   busy: boolean
   onSave: (text: string) => Promise<boolean>
@@ -596,7 +592,7 @@ function ReviewPanel({
   busy: boolean
   onSave: (body: { rating: number; tags: string[]; comment: string }) => Promise<boolean>
   onDelete: () => void
-  // Answers the other side's review of this side, or takes the answer back.
+  // 이쪽에 대한 상대의 후기에 답하거나 답을 거둔다.
   onReply: (text: string) => Promise<boolean>
   onDeleteReply: () => void
 }) {
@@ -709,10 +705,9 @@ function ReviewPanel({
   )
 }
 
-// Calling the sponsorship off: one side asks, saying why, and the other
-// agrees or declines; the side that asked can take it back. Gone once it
-// is called off, and while this side may not ask (after the event, or from
-// a demo account) with nothing asked.
+// 협찬 취소: 한쪽이 이유를 밝혀 요청하면 상대가 동의하거나 거절하고, 요청한
+// 쪽은 거둘 수 있다. 취소되면 사라지며, 이쪽이 요청할 수 없는 경우(행사 뒤나
+// 데모 계정)에는 요청된 것이 없으면 보이지 않는다.
 function CancelPanel({
   agreement,
   busy,
@@ -816,9 +811,9 @@ function CancelPanel({
   )
 }
 
-// What the sponsorship is worth, cash and in-kind (현물 환산), which either
-// side writes until the event is over, and the platform fee it sets: the
-// brand pays 15% of it to confirm; the student group pays nothing.
+// 협찬의 가치(현금과 현물 환산). 행사가 끝날 때까지 양쪽 누구나 쓸 수 있고,
+// 그에 따른 플랫폼 수수료도 보여 준다. 브랜드는 확정할 때 가치의 15%를 내고
+// 학생단체는 내지 않는다.
 function ValuePanel({
   agreement,
   busy,
@@ -916,17 +911,13 @@ function ValuePanel({
   )
 }
 
-// A sponsorship's agreement (임시 전자 계약서): the two sides, the event and what
-// the brand gives, its value and fee; the event's goals, set here before it begins; each
-// side's items to tick off with links and photos as proof; each side's
-// confirmation of the items as they stand; and printing it (or saving it
-// as a PDF from the print dialog).
-// 계약 조항: the agreement read as a contract, from what it holds: a number,
-// the two parties, nine articles (purpose, what is sponsored, when, each
-// side's duties, how results are confirmed, the fee, changes and calling it
-// off, contacts, when it takes effect) and each side's confirmation as its
-// signature. It says what is agreed on this page; it isn't a certified
-// e-signature.
+// 협찬의 계약서(임시 전자 계약서): 양쪽, 행사와 브랜드가 주는 것, 가치와
+// 수수료. 시작하기 전에 여기서 정하는 행사 목표. 링크와 사진을 증빙으로
+// 체크하는 각 쪽의 항목. 현재 상태의 항목에 대한 각 쪽의 확인. 그리고 인쇄(또는
+// 인쇄 창에서 PDF로 저장). 계약 조항: 계약서에 든 내용으로 읽는 계약으로, 번호,
+// 양 당사자, 아홉 조항(목적, 협찬 대상, 시기, 각 쪽의 의무, 결과 확인 방법,
+// 수수료, 변경과 취소, 연락처, 효력 발생)과 서명으로서의 각 쪽의 확인을 담는다.
+// 이 페이지에서 합의한 내용을 말할 뿐 공인 전자서명은 아니다.
 function ContractTerms({ agreement }: { agreement: Agreement }) {
   const brand = agreement.brand.name
   const group = agreement.group.name
@@ -1039,9 +1030,8 @@ function ContractTerms({ agreement }: { agreement: Agreement }) {
   )
 }
 
-// 협찬 물품 배송: the parcels either side sent, each with its carrier, number
-// and a link to look it up, and a row to note one more. Only the side that
-// noted a parcel takes it off.
+// 협찬 물품 배송: 양쪽이 보낸 택배. 각각 택배사, 번호, 조회 링크가 있고 하나 더
+// 적을 행이 있다. 택배를 적은 쪽만 그것을 지울 수 있다.
 function ShipmentsPanel({
   agreement,
   busy,
@@ -1146,15 +1136,15 @@ export function AgreementPage({
 }: {
   id: string
   loggedIn: boolean
-  // Counts the goals saved from here, so the page reads them again.
+  // 여기서 저장한 목표의 횟수. 페이지가 다시 읽게 한다.
   goalsSaved?: number
-  // Counts payments finished in the payment window, likewise.
+  // 결제 창에서 끝낸 결제의 횟수. 마찬가지로 다시 읽게 한다.
   paid?: number
   onBack: () => void
   onLogin: () => void
   onError: (error: unknown) => void
   onNotice: (message: string) => void
-  // Opens the goals form for one of the account's own events.
+  // 계정 자신의 행사에 대한 목표 폼을 연다.
   onEditGoals?: (eventId: string) => void
 }) {
   const [agreement, setAgreement] = useState<Agreement>()
@@ -1162,7 +1152,7 @@ export function AgreementPage({
   const [busy, setBusy] = useState(false)
   const [editing, setEditing] = useState(false)
   const [paying, setPaying] = useState(false)
-  // True while the thank-you card image is being made.
+  // 감사 카드 이미지를 만드는 동안 true.
   const [carding, setCarding] = useState(false)
 
   useEffect(() => {
@@ -1181,7 +1171,7 @@ export function AgreementPage({
     }
   }, [id, loggedIn, goalsSaved, paid])
 
-  // Runs one change; the answer is the agreement as it now stands.
+  // 변경 하나를 실행한다. 답은 지금 상태의 계약서다.
   const run = async (change: () => Promise<{ agreement: Agreement }>, done?: string) => {
     setBusy(true)
     try {
@@ -1189,7 +1179,7 @@ export function AgreementPage({
       if (done) onNotice(done)
       return true
     } catch (error) {
-      // A photo the browser couldn't read says why in its own words.
+      // 브라우저가 읽지 못한 사진은 이유를 자기 말로 알려 준다.
       if (error instanceof ApiError || !(error instanceof Error)) onError(error)
       else onNotice(error.message)
       return false
@@ -1198,7 +1188,7 @@ export function AgreementPage({
     }
   }
 
-  // Writes this side's review (null deletes it) and shows it as it now stands.
+  // 이쪽의 후기를 쓰고(null이면 지운다) 지금 상태로 보여 준다.
   const saveReview = async (body: { rating: number; tags: string[]; comment: string } | null) => {
     if (!agreement) return false
     const partner = agreement.side === "group" ? agreement.brand : agreement.group
@@ -1218,7 +1208,7 @@ export function AgreementPage({
     }
   }
 
-  // This side's answer to the other's review of it; null takes it back.
+  // 상대의 후기에 대한 이쪽의 답. null이면 거둔다.
   const saveReply = async (text: string | null) => {
     const theirs = agreement?.review.theirs
     if (!agreement || !theirs) return false
@@ -1266,13 +1256,13 @@ export function AgreementPage({
   const side = agreement.side
   const other: ChatSide = side === "group" ? "brand" : "group"
   const state = agreementState(agreement.confirmed, side)
-  // Called off: kept only as a record.
+  // 취소됨: 기록으로만 남는다.
   const canceledAt = agreement.cancel?.canceledAt
   const parties = [
     { side: "brand" as const, role: t("브랜드"), ...agreement.brand },
     { side: "group" as const, role: t("학생단체"), ...agreement.group },
   ]
-  // My side's items first.
+  // 내 쪽 항목을 먼저.
   const sections = side === "group" ? [parties[1], parties[0]] : parties
 
   return (

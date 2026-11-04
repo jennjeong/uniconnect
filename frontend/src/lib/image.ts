@@ -1,7 +1,7 @@
 import { t } from "../i18n"
 
-// A picked photo as proof for an agreement: at most 1280 pixels on its long
-// side, as WebP (or JPEG), stepping down until it fits the server's limit.
+// 합의서의 증빙으로 고른 사진: 긴 변을 최대 1280픽셀로 줄이고 WebP(또는 JPEG)로
+// 바꾸며, 서버 한도에 들어갈 때까지 품질을 낮춘다.
 const photoMaxLength = 280_000
 
 export async function photoFromFile(file: File) {
@@ -29,9 +29,9 @@ export async function photoFromFile(file: File) {
   throw new Error(t("이미지가 너무 커요. 더 작은 이미지를 골라 주세요."))
 }
 
-// A picked image as a small square logo for the listing: drawn centered on
-// white at `size` pixels, as WebP (JPEG where the browser cannot write
-// WebP), stepping down until it fits the server's limit of about 100KB.
+// 리스팅의 작은 정사각형 로고로 고른 이미지: 흰 배경 한가운데에 `size` 픽셀로
+// 그린다. WebP(브라우저가 WebP를 쓸 수 없으면 JPEG)로 바꾸며, 서버 한도인 약
+// 100KB에 들어갈 때까지 품질을 낮춘다.
 const maxLength = 140_000
 
 export async function logoFromFile(file: File) {

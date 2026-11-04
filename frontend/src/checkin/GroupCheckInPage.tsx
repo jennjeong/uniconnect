@@ -10,11 +10,10 @@ import { t } from "../i18n"
 import { formatFullDate } from "../lib/date"
 import type { CheckInInfo } from "../types"
 
-// The student group's staff open /check-in/<code>/group on their own device:
-// the event shows at once, as on the staff page, so they know it is the
-// right one; with the group's venue PIN (on its agreements) they confirm
-// what the sponsorships' measurement methods give the group to confirm, such
-// as booth stamps or SNS posts, for each sponsor.
+// 학생단체의 직원은 자기 기기에서 /check-in/<code>/group을 연다. 스태프
+// 페이지처럼 행사가 바로 보여서 맞는 행사인지 알 수 있다. 단체의 현장
+// PIN(계약서에 있다)으로 스폰서별로 협찬의 측정 방식이 단체에 맡긴 것, 예를
+// 들어 부스 스탬프나 SNS 게시물을 확인한다.
 export function GroupCheckInPage({ code }: { code: string }) {
   const [info, setInfo] = useState<CheckInInfo | null>(null)
   const [infoError, setInfoError] = useState("")

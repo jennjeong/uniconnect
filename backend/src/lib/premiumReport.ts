@@ -9,20 +9,19 @@ import { isDemoAccount } from "./reviews.js"
 import { finishedSponsorships } from "./sponsorships.js"
 import type { Account, Database, EventItem, Measurement, Sponsorship, VenueCounts } from "../types.js"
 
-// 상세 성과 리포트: what a brand buys for one sponsorship (the business plan's
-// 50,000 KRW report), worked out live from the event's measurement and
-// beyond what the free screens show: a grade against the goals, each goal
-// scored, the funnel and costs against the other events measured here, when
-// people came, the effect over the store's usual days (from the brand's own
-// counts), what each side did by the e-contract, both reviews, and what to
-// do next. The words are the page's; this answers figures and codes.
+// 상세 성과 리포트: 브랜드가 협찬 하나에 대해 사는 것(사업 계획의
+// 50,000원 리포트)이다. 행사 측정에서 실시간으로 계산하며 무료 화면보다
+// 더 많이 담는다. 목표 대비 등급, 목표별 점수, 이곳에서 측정한 다른 행사와
+// 견준 퍼널과 비용, 사람이 온 시간대, 매장의 평소 요일과 견준 효과(브랜드
+// 자신의 집계 기준), 전자계약서에 따라 각 측이 한 일, 양쪽 후기, 다음에
+// 할 일을 담는다. 문구는 페이지가 정하고 여기서는 수치와 코드를 답한다.
 
 const percent = (part: number, whole: number) => (whole > 0 ? Math.round((part / whole) * 1000) / 10 : 0)
 const won = (value: number) => Math.round(value)
 
-// A figure among the other events measured here: the median, how many there
-// were, and the share of them this one beat (higher is better unless
-// `lowerIsBetter`). None below three events, as a median of fewer says little.
+// 이곳에서 측정한 다른 행사들 사이의 수치. 중앙값, 비교한 행사 수, 이 행사가
+// 앞선 비율이다(`lowerIsBetter`가 아니면 높을수록 좋다). 행사가 셋 미만이면
+// 중앙값이 말해 주는 게 적어 없음으로 둔다.
 export type Benchmark = { median: number; count: number; beats: number } | null
 
 function benchmark(value: number, others: number[], lowerIsBetter = false): Benchmark {
@@ -35,8 +34,7 @@ function benchmark(value: number, others: number[], lowerIsBetter = false): Benc
   return { median: Math.round(median * 10) / 10, count: sample.length, beats: Math.round((beaten / sample.length) * 100) }
 }
 
-// The figures of one measured event, for comparing: its own rates, with
-// the whole event's value.
+// 측정된 행사 하나의 비교용 수치. 자체 비율과 행사 전체의 가치를 담는다.
 function eventFigures(measurement: Measurement) {
   const { metrics, goals } = measurement
   const value = goals.valueBreakdown.reduce((sum, part) => sum + part.value, 0)
@@ -49,8 +47,8 @@ function eventFigures(measurement: Measurement) {
   }
 }
 
-// The events to compare with: those over, with scans, but this one. Members
-// compare with members' events; the demo with everything, examples too.
+// 비교할 행사. 끝났고 스캔이 있는 행사 중 이 행사를 뺀 것이다. 회원은
+// 회원의 행사와, 데모는 예시까지 모든 행사와 비교한다.
 function comparable(database: Database, measurement: Measurement, demo: boolean) {
   const today = todayInKorea()
   const demoIds = new Set(Object.values(database.demoAccountIds))
@@ -62,15 +60,14 @@ function comparable(database: Database, measurement: Measurement, demo: boolean)
   })
 }
 
-// Days between two Korean dates.
+// 두 한국 날짜 사이의 일수.
 const daysBetween = (from: string, to: string) =>
   Math.round((new Date(`${to}T00:00:00Z`).getTime() - new Date(`${from}T00:00:00Z`).getTime()) / 86_400_000)
 
 const koreanDate = (at: string) => new Date(new Date(at).getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
 
-// When people came: the scans by hour, each day's scans, coupons and visits
-// by the day of the window, and how many days after taking a coupon each
-// visit came (from the records kept, the latest 300).
+// 사람이 온 시간. 시간대별 스캔, 기간 중 날짜별 스캔, 쿠폰, 방문, 그리고
+// 쿠폰을 받은 지 며칠 뒤에 방문했는지(남아 있는 최근 300건 기준).
 function timing(measurement: Measurement, event: EventItem) {
   const window = checkInWindow(event)
   const days: { date: string; scans: number; coupons: number; visits: number }[] = []
@@ -96,7 +93,7 @@ function timing(measurement: Measurement, event: EventItem) {
     peak: peak ? { date: peak.date, hour: peak.hour, scans: peak.scans } : null,
     daily: days.filter((day) => day.date <= todayInKorea()),
     lag: {
-      // Visits by days after the coupon: 0 (the same day) to 7.
+      // 쿠폰 받은 뒤 며칠 만에 방문했는지: 0(당일)부터 7까지.
       days: Array.from({ length: 8 }, (_, lag) => lags.get(lag) ?? 0),
       average: lagCount ? Math.round((lagTotal / lagCount) * 10) / 10 : null,
       sample: lagCount,
@@ -105,13 +102,13 @@ function timing(measurement: Measurement, event: EventItem) {
   }
 }
 
-// The demo brand's sample report, open to visitors (not logged in) so they
-// see a whole one. Logged in as the demo brand it is locked like anyone's,
-// to show buying it (with Toss test keys).
+// 데모 브랜드의 샘플 리포트. 로그인하지 않은 방문자에게 열어 전체를 볼 수
+// 있게 한다. 데모 브랜드로 로그인하면 다른 계정처럼 잠겨 있어 구매 과정을
+// 보여 준다(Toss 테스트 키 사용).
 export const sampleReportId = "sp-busking"
 
-// Whether an account may read a sponsorship's report: bought it (Pro,
-// lib/pro.ts, adds itself).
+// 계정이 협찬의 리포트를 읽을 수 있는지. 구매했으면 가능하다(Pro는
+// lib/pro.ts가 스스로 더한다).
 export const reportAccess: ((database: Database, account: Account, sponsorshipId: string) => boolean)[] = [
   (database, account, id) => Boolean(paidFor(database, account.id, "report", id)),
 ]
@@ -120,11 +117,11 @@ export const canReadReport = (database: Database, account: Account, id: string, 
   (visitor && isDemoAccount(database, account) && id === sampleReportId) ||
   reportAccess.some((allows) => allows(database, account, id))
 
-// The report's number: the event day and a short hash of the sponsorship.
+// 리포트 번호: 행사 날짜와 협찬의 짧은 해시.
 export const reportNumber = (sponsorship: Sponsorship) =>
   `UC-${sponsorship.date.replace(/-/g, "")}-${createHash("sha256").update(sponsorship.id).digest("hex").slice(0, 6).toUpperCase()}`
 
-// The brand's sponsorship behind a report, with its measured event.
+// 리포트가 가리키는 브랜드의 협찬과 그 측정된 행사.
 export function sponsorshipFor(database: Database, account: Account, id: string) {
   const sponsorship = (database.sponsorships[account.id] ?? []).find((item) => item.id === id)
   if (!sponsorship) return undefined
@@ -134,11 +131,10 @@ export function sponsorshipFor(database: Database, account: Account, id: string)
   return { sponsorship, measurement, event }
 }
 
-// A sponsorship without a measured event (a brand's campaign, or one before
-// on-site counting) still gets its report, worked out from its own record:
-// what was spent, the coupons and visits, the sales they brought (so the
-// spend per visitor) and its ROAS goal. What only a measurement holds (QR
-// scans, hours, the survey) stays empty.
+// 측정된 행사가 없는 협찬(브랜드의 캠페인이거나 현장 집계 이전의 것)도
+// 자체 기록으로 리포트를 만든다. 쓴 비용, 쿠폰과 방문, 그로 인한 매출
+// (그래서 방문자당 비용), ROAS 목표를 담는다. 측정만 가진 것(QR 스캔,
+// 시간대, 설문)은 비워 둔다.
 function fromRecord(sponsorship: Sponsorship) {
   const event: EventItem = {
     id: `record-${sponsorship.id}`,
@@ -171,11 +167,11 @@ function fromRecord(sponsorship: Sponsorship) {
   return { sponsorship, measurement, event }
 }
 
-// Ready to buy once the event's day has come.
+// 행사 날이 되면 살 수 있다.
 export const reportOpen = (event: EventItem) => event.date <= todayInKorea()
 
-// Where a sponsorship's report stands for the account: readable, to buy,
-// not yet (before the event's day), or none (no measured event).
+// 계정 기준으로 협찬 리포트의 상태. 읽을 수 있음, 살 수 있음, 아직 아님
+// (행사 날 전), 없음(측정된 행사 없음) 중 하나다.
 export function reportState(database: Database, account: Account, sponsorshipId: string, visitor: boolean) {
   const found = sponsorshipFor(database, account, sponsorshipId)
   if (!found) return "none" as const
@@ -240,8 +236,8 @@ export function premiumReport(database: Database, account: Account, id: string) 
     roasBenchmark: benchmark(mine.roas, others.map((item) => item.roas)),
   }
 
-  // The effect over the usual days, from the brand's own store counts: the
-  // daily visitors on the same weekdays before, and during the coupons' days.
+  // 브랜드 자신의 매장 집계로 본 효과: 쿠폰 기간 동안과 그 전 같은 요일의
+  // 일일 방문자.
   const lift = sponsorship.lift
   const window = checkInWindow(event)
   const liftDays = daysBetween(window.start, window.visitsEnd) + 1
@@ -258,7 +254,7 @@ export function premiumReport(database: Database, account: Account, id: string) 
           extraVisitors,
           extraSales,
           incrementalRoas: percent(extraSales, spend),
-          // How many of the extra visitors the coupons account for.
+          // 늘어난 방문자 중 쿠폰이 차지하는 몫.
           attributedShare: extraVisitors > 0 ? Math.min(100, percent(visits, extraVisitors)) : null,
         }
       })()
@@ -280,8 +276,8 @@ export function premiumReport(database: Database, account: Account, id: string) 
   const venue = venueCountsOf(sponsor?.metrics ?? metrics)
   const methods = activeMethodsOf(measurement, sponsor).map((method) => method.kind)
 
-  // What to do next, as codes the page words: from the weakest step of the
-  // funnel, the timing, the costs and the goals.
+  // 다음에 할 일을 페이지가 문구로 옮길 코드로 정한다. 퍼널의 가장 약한
+  // 단계, 시점, 비용, 목표에서 뽑는다.
   const advice: { code: string; values?: Record<string, number | string> }[] = []
   if (time.peak) advice.push({ code: "peak-hour", values: { hour: time.peak.hour } })
   if (mine.scanRate < goals.targets.qrRate) advice.push({ code: "raise-scans", values: { rate: mine.scanRate, target: goals.targets.qrRate } })
@@ -290,7 +286,7 @@ export function premiumReport(database: Database, account: Account, id: string) 
   if (time.lag.average !== null && time.lag.average >= 3) advice.push({ code: "shorter-window", values: { days: time.lag.average } })
   if (actual.roas >= goals.targets.roas && goals.targets.roas > 0) advice.push({ code: "renew", values: { roas: actual.roas } })
   else if (spend > 0 && goals.averageSpend > 0) {
-    // The value at which this many visits would have met the ROAS goal.
+    // 이만큼의 방문이 ROAS 목표를 채웠을 가치.
     advice.push({ code: "budget", values: { value: won((sales * 100) / Math.max(1, goals.targets.roas)) } })
   }
   if (!effect) advice.push({ code: "add-baseline" })
@@ -310,8 +306,7 @@ export function premiumReport(database: Database, account: Account, id: string) 
       ...(group.eventName && group.eventDate ? { event: { name: group.eventName, date: group.eventDate } } : {}),
     }))
 
-  // The event and what was agreed: who, where, the value by kind, the
-  // coupon, the confirmation methods and the goals.
+  // 행사와 합의한 내용: 누가, 어디서, 종류별 가치, 쿠폰, 확인 방식, 목표.
   const groupAccount = database.accounts.find((item) => item.id === measurement.accountId)
   const groupListing =
     (groupAccount?.groupId && database.groups.find((item) => item.id === groupAccount.groupId)) || groupListing0
@@ -325,8 +320,7 @@ export function premiumReport(database: Database, account: Account, id: string) 
     agreedValue: agreement?.value ?? null,
   }
 
-  // Who came, from the optional survey: counts, and how many of those who
-  // scanned answered.
+  // 선택 설문으로 본 참석자: 집계와, 스캔한 사람 중 응답한 수.
   const survey = measurement.survey
   const audience = survey && survey.responses > 0
     ? {
@@ -339,8 +333,8 @@ export function premiumReport(database: Database, account: Account, id: string) 
       }
     : null
 
-  // The store visits: how many coupons became visits, on which weekday, how
-  // soon, and how many were likely new customers (by the survey's share).
+  // 매장 방문: 쿠폰이 방문으로 이어진 수, 요일, 걸린 시간, 설문 비율로
+  // 본 새 고객일 가능성이 높은 수.
   const weekdays = Array.from({ length: 7 }, () => 0)
   for (const entry of measurement.log) {
     if (entry.kind !== "visits") continue
@@ -353,8 +347,8 @@ export function premiumReport(database: Database, account: Account, id: string) 
     newCustomers: audience ? Math.round((visits * audience.firstTimeShare) / 100) : null,
   }
 
-  // Return on the value: the visits that would have paid it back, and the
-  // ROAS if each visitor spent 20% less or more than the group's estimate.
+  // 가치 대비 수익: 가치를 되찾았을 방문 수, 그리고 방문자가 단체의
+  // 추정보다 20% 덜 또는 더 썼을 때의 ROAS.
   const roi = {
     breakEvenVisits: goals.averageSpend > 0 ? Math.ceil(spend / goals.averageSpend) : null,
     sensitivity: [0.8, 1, 1.2].map((factor) => ({
@@ -364,7 +358,7 @@ export function premiumReport(database: Database, account: Account, id: string) 
     })),
   }
 
-  // The group's record here: its other measured events and its reviews.
+  // 이곳에서 단체의 기록: 측정한 다른 행사와 후기.
   const groupEvents = database.measurements.filter((item) => item.accountId === measurement.accountId && item !== measurement && item.metrics.scans > 0)
   const ratings = groupListing ? database.reviews.filter((review) => review.aboutId === groupListing.id && !review.hiddenAt) : []
   const partner = {
@@ -376,7 +370,7 @@ export function premiumReport(database: Database, account: Account, id: string) 
     reviewCount: ratings.length,
   }
 
-  // This sponsorship among the brand's own others.
+  // 브랜드 자신의 다른 협찬 가운데서 이 협찬의 위치.
   const own = finishedSponsorships(database, account.id).filter((item) => item.spend > 0)
   const ownRoas = own.map((item) => ({ id: item.id, roas: percent(item.sales, item.spend), perVisit: item.visits ? item.spend / item.visits : null }))
   const history = {

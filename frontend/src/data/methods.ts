@@ -2,9 +2,9 @@ import type { IconName } from "../components/Icon"
 import { t } from "../i18n"
 import type { MeasureMethod, MethodKind, MethodSide, MetricKind, VenueCounts } from "../types"
 
-// The ways a sponsorship can be confirmed at the event (협찬 확인 방식), as
-// the e-contract lists them. In order they must equal methodKinds in
-// backend/src/lib/methods.ts (lib/lists.sync.test.ts checks).
+// 행사에서 협찬을 확인할 수 있는 방식(협찬 확인 방식)을 전자계약서가 나열하는
+// 대로. 순서까지 backend/src/lib/methods.ts의 methodKinds와 같아야 한다
+// (lib/lists.sync.test.ts가 검사한다).
 export const methodKinds: MethodKind[] = [
   "qr",
   "coupon",
@@ -20,11 +20,10 @@ export const methodKinds: MethodKind[] = [
   "experience",
 ]
 
-// Each method: what it is, what it counts, and the side that usually
-// confirms it. The QR and its coupon count from the participants' phones
-// (auto: the side runs them), a store visit only at the brand's store
-// (fixed); a box of samples or goods is counted by the number (bulk); a
-// coupon needs the QR, a store visit the coupon (needs).
+// 각 방식의 설명: 무엇인지, 무엇을 세는지, 보통 어느 쪽이 확인하는지. QR과 그
+// 쿠폰은 참여자의 휴대폰에서 집계되고(auto: 그쪽이 운영한다), 매장 방문은
+// 브랜드의 매장에서만(fixed), 샘플이나 물품 상자는 개수로 센다(bulk). 쿠폰은
+// QR이 필요하고(needs), 매장 방문은 쿠폰이 필요하다.
 export const methodInfo: Record<
   MethodKind,
   {
@@ -132,18 +131,17 @@ export const methodInfo: Record<
   },
 }
 
-// The methods the venue pages count by hand, beyond the QR, its coupon and
-// the store's visits.
+// QR, 그 쿠폰, 매장 방문 외에 현장 페이지가 손으로 세는 방식.
 export const isVenueMethod = (kind: MethodKind) => !methodInfo[kind].auto && kind !== "visit"
 
-// How a sponsorship is confirmed until both sides confirm their e-contract.
+// 양쪽이 전자계약서를 확정하기 전까지 협찬을 확인하는 방식.
 export const defaultMethods: MeasureMethod[] = [
   { kind: "qr", side: "group" },
   { kind: "coupon", side: "brand" },
   { kind: "visit", side: "brand" },
 ]
 
-// A venue count with its unit, as "샘플 35개".
+// 단위가 붙은 현장 집계. 예: "샘플 35개".
 const venueUnits: Record<keyof VenueCounts, (count: string) => string> = {
   samples: (count) => t("샘플 {count}개", { count }),
   stamps: (count) => t("스탬프 {count}명", { count }),
@@ -156,8 +154,8 @@ const venueUnits: Record<keyof VenueCounts, (count: string) => string> = {
   experiences: (count) => t("체험 {count}명", { count }),
 }
 
-// The venue counts some methods counted, as "샘플 35개 · SNS 인증 1건",
-// leaving out those still at zero.
+// 어떤 방식들이 센 현장 집계. 예: "샘플 35개 · SNS 인증 1건", 여전히 0인 것은
+// 뺀다.
 export function venueSummary(counts: Partial<Record<MetricKind, number>>) {
   return (Object.keys(venueUnits) as (keyof VenueCounts)[])
     .filter((metric) => (counts[metric] ?? 0) > 0)
@@ -165,6 +163,6 @@ export function venueSummary(counts: Partial<Record<MetricKind, number>>) {
     .join(" · ")
 }
 
-// The methods with each one's side as set, in the listed order.
+// 정해진 쪽과 함께, 나열된 순서대로 정리한 방식들.
 export const sortedMethods = (methods: MeasureMethod[]) =>
   methodKinds.flatMap((kind) => methods.filter((method) => method.kind === kind))

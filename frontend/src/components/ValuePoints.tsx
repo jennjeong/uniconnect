@@ -7,12 +7,12 @@ import { RevealTitle } from "./RevealText"
 
 export type ValuePoint = {
   icon: IconName
-  // The need it answers, short.
+  // 그것이 해결하는 필요. 짧게 쓴다.
   need: string
   title: string
-  // How uniconnect does it, in a sentence.
+  // uniconnect가 그것을 해결하는 방법을 한 문장으로.
   text: string
-  // The account's own figure for it, live.
+  // 그것에 대한 계정 자신의 수치. 실시간이다.
   figure: string
   figureLabel: string
   action: string
@@ -21,10 +21,9 @@ export type ValuePoint = {
 
 const delay = (seconds: number) => ({ "--reveal-delay": `${seconds}s` }) as CSSProperties
 
-// What uniconnect does for this side, as three needs it answers: each
-// with how, the account's own figure for it and the way into the feature.
-// The dashboards' second block, after the hero: what the service is about
-// and where the account stands in each part of it.
+// 이쪽을 위해 uniconnect가 하는 일을 해결하는 필요 세 가지로 보여 준다. 각각
+// 방법, 계정 자신의 수치, 기능으로 가는 길을 담는다. 대시보드의 히어로 다음 두
+// 번째 블록으로, 서비스가 무엇이고 계정이 각 부분에서 어디에 있는지 보여 준다.
 export function ValuePoints({ eyebrow, heading, points }: { eyebrow: string; heading: string; points: ValuePoint[] }) {
   return (
     <section aria-label={heading} className="value-points">

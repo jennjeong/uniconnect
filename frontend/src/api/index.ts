@@ -101,9 +101,9 @@ export type SignupPayload = {
   verificationToken: string
   agreedToTerms: boolean
   over14: boolean
-  // The invitation code the visitor arrived with (친구 초대).
+  // 방문자가 가지고 온 초대 코드 (친구 초대).
   referral?: string
-  // A shop with no company email: its invitation and a document to check.
+  // 회사 이메일이 없는 매장: 그 초대와 확인할 서류.
   invite?: string
   document?: { file: string; name: string }
   contact: AccountContact
@@ -131,23 +131,22 @@ export type EventDraft = Pick<
   promoAgreed?: boolean
 }
 
-// Proposals the account sent, with each brand's answer so far.
+// 계정이 보낸 제안과 지금까지 각 브랜드의 답.
 export type ProposalState = {
   proposals: string[]
   statuses: Partial<Record<string, RequestStatus>>
-  // Sponsorships confirmed either way round (sent and accepted, or received
-  // and accepted).
+  // 어느 쪽으로든 확정된 협찬 (보내서 수락됐거나, 받아서 수락된 것).
   confirmed: number
-  // What the account sent, newest first, for its inbox.
+  // 계정이 보낸 것을 최신 순으로, 받은편지함용.
   sent: SentProposal[]
 }
 
-// One function per backend endpoint (see backend/src/routes).
+// 백엔드 엔드포인트마다 함수 하나 (backend/src/routes 참고).
 export const api = {
   me: () => request<{ account: Account }>("/auth/me"),
   login: (body: { role: Role; email: string; password: string }) =>
     request<Session | CodeTicket>("/auth/login", { method: "POST", body }),
-  // The second step with two-step login on: the app's code or a recovery code.
+  // 2단계 로그인이 켜진 경우의 두 번째 단계: 앱의 코드나 복구 코드.
   loginCode: (body: { email: string; ticket: string; code: string }) =>
     request<Session & { recoveryLeft?: number; recoveryCodes?: string[] }>("/auth/login/code", { method: "POST", body }),
   twoFactorSetup: (password: string) =>
@@ -159,8 +158,8 @@ export const api = {
   sessions: () => request<{ sessions: DeviceSession[] }>("/auth/sessions"),
   endSession: (id: string) => request<void>(`/auth/sessions/${encodeURIComponent(id)}`, { method: "DELETE" }),
   endOtherSessions: () => request<void>("/auth/sessions", { method: "DELETE" }),
-  // Kakao and Naver: the providers offered, the address to send the browser
-  // to, the login the server handed back in a cookie, and unlinking.
+  // Kakao와 Naver: 제공되는 제공자, 브라우저를 보낼 주소, 서버가 쿠키로 돌려준
+  // 로그인, 연결 해제.
   socialProviders: () => request<{ providers: SocialProvider[] }>("/auth/social"),
   socialStart: (provider: SocialProvider, intent: "login" | "link") =>
     request<{ url: string }>(`/auth/social/${provider}/start`, { method: "POST", body: { intent } }),
@@ -168,7 +167,7 @@ export const api = {
     request<Session | (CodeTicket & { email: string })>("/auth/social/complete", { method: "POST" }),
   socialUnlink: (provider: SocialProvider) =>
     request<{ account: Account }>(`/auth/social/${provider}`, { method: "DELETE" }),
-  // A student council's clubs and code, and a club's links to councils.
+  // 학생회의 동아리와 코드, 그리고 동아리가 학생회에 거는 연결.
   councilClubs: () => request<{ code: string; clubs: CouncilClub[] }>("/council/clubs"),
   newCouncilCode: () => request<{ code: string }>("/council/code", { method: "POST" }),
   removeClub: (id: string) => request<void>(`/council/clubs/${encodeURIComponent(id)}`, { method: "DELETE" }),
@@ -181,7 +180,7 @@ export const api = {
     request<{ team: Team; devCode?: string }>("/team/invites", { method: "POST", body }),
   cancelInvite: (id: string) => request<{ team: Team }>(`/team/invites/${encodeURIComponent(id)}`, { method: "DELETE" }),
   removeMember: (id: string) => request<{ team: Team }>(`/team/members/${encodeURIComponent(id)}`, { method: "DELETE" }),
-  // The invited person's own login to the account, from the emailed code.
+  // 초대받은 사람 자신이 이메일로 받은 코드로 계정에 로그인한다.
   joinTeam: (body: { email: string; code: string; password: string; document: { file: string; name: string } }) =>
     request<Pending>("/team/join", { method: "POST", body }),
   logout: () => request<void>("/auth/logout", { method: "POST" }),
@@ -239,7 +238,7 @@ export const api = {
     request<void>(`/events/${encodeURIComponent(id)}`, { method: "DELETE" }),
 
   proposals: () => request<ProposalState>("/proposals"),
-  // About the account's next event unless it names one, with its note.
+  // 행사를 지정하지 않으면 계정의 다음 행사에 대해, 메모와 함께.
   board: (role?: Role) =>
     request<{ posts: BoardPost[]; mine: BoardPost[] }>("/board", { query: role ? { role } : undefined }),
   boardPost: (id: string, role?: Role) =>
@@ -333,7 +332,7 @@ export const api = {
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/cancel`, { method: "POST", body: { reason } }),
   agreeToCancelAgreement: (id: string) =>
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/cancel/accept`, { method: "POST" }),
-  // Takes back this side's request, or declines the other side's.
+  // 이쪽의 요청을 거두거나, 상대의 요청을 거절한다.
   dropCancelRequest: (id: string) =>
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/cancel`, { method: "DELETE" }),
   eventPage: (id: string) => request<EventPage>(`/events/${encodeURIComponent(id)}/page`),
@@ -386,7 +385,7 @@ export const api = {
       body: { answer },
       headers: { "X-Admin-Token": token },
     }),
-  // Reports another account (by its listing), a message it sent, or a review.
+  // 다른 계정(리스팅으로 가리킴), 그 계정이 보낸 메시지, 또는 후기를 신고한다.
   report: (
     body: (
       | { kind: "account"; listingId: string }
@@ -466,10 +465,10 @@ export const api = {
       method: "POST",
       headers: { "X-Admin-Token": token },
     }),
-  // The operators' notices this viewer sees, and closing one (counted).
+  // 이 사용자에게 보이는 운영자의 공지와, 공지 닫기 (집계된다).
   announcements: () => request<{ announcements: SiteNotice[] }>("/announcements"),
   dismissAnnouncement: (id: string) => request<void>(`/announcements/${encodeURIComponent(id)}/dismiss`, { method: "POST" }),
-  // The operators' switches the whole site reads: maintenance, sign-up, FAQ.
+  // 사이트 전체가 읽는 운영자의 스위치: 점검, 가입, FAQ.
   siteState: () => request<SiteState>("/site"),
   countSearch: (q: string) => request<void>("/site/searches", { method: "POST", body: { q } }),
   adminLogout: (token: string, id: string) =>
@@ -526,7 +525,7 @@ export const api = {
       method: "POST",
       headers: { "X-Admin-Token": token },
     }),
-  // The account has seen its answers, so the bell lets them go.
+  // 계정이 답변을 봤으므로 종이 그것들을 놓아 준다.
   readInquiryAnswers: () => request<{ inquiries: Inquiry[] }>("/inquiries/read", { method: "POST" }),
   askInquiry: (body: { category: string; question: string }) =>
     request<{ inquiry: Inquiry }>("/inquiries", { method: "POST", body }),
@@ -537,8 +536,8 @@ export const api = {
       method: "POST",
       body: { partnerId },
     }),
-  // With `since` (the stamp of what the page shows) the answer waits, up to
-  // about 20 seconds, for something new.
+  // `since`(페이지가 보여주는 것의 스탬프)를 주면 새로운 것이 생길 때까지 최대
+  // 20초 정도 답이 기다린다.
   conversation: (id: string, since?: string, signal?: AbortSignal) =>
     request<{ conversation: Conversation; stamp: string }>(`/conversations/${encodeURIComponent(id)}`, {
       ...(since ? { query: { since } } : {}),
@@ -566,7 +565,7 @@ export const api = {
       `/conversations/${encodeURIComponent(id)}/messages/${encodeURIComponent(messageId)}`,
       { method: "DELETE" },
     ),
-  // A photo (resized by lib/image.ts) or a PDF, as data URLs, each a message.
+  // 사진(lib/image.ts로 줄인 것)이나 PDF를 data URL로, 각각 메시지 하나가 된다.
   sendFile: (id: string, file: string, name: string) =>
     request<{ conversation: Conversation }>(
       `/conversations/${encodeURIComponent(id)}/attachments`,
@@ -575,8 +574,8 @@ export const api = {
   chatFile: (id: string, file: string) =>
     requestBlob(`/conversations/${encodeURIComponent(id)}/attachments/${encodeURIComponent(file)}`),
 
-  // `role` picks the demo side for visitors; the server ignores it once
-  // logged in.
+  // `role`은 방문자에게 보여줄 데모 쪽을 고른다. 로그인한 뒤에는 서버가
+  // 무시한다.
   measurements: (role: Role) =>
     request<{ measurements: EventMeasurement[] }>("/measurements", { query: { role } }),
   measurement: (eventId: string, role: Role = "학생단체") =>
@@ -598,8 +597,8 @@ export const api = {
       body: goals,
     }),
   checkIn: (code: string) => request<CheckInInfo>(`/check-in/${encodeURIComponent(code)}`),
-  // A scan answers a pass; a coupon sends it with the coupon's id and
-  // answers its number.
+  // 스캔하면 pass가 답으로 오고, 쿠폰은 쿠폰의 id와 함께 보내 그 번호를 답으로
+  // 받는다.
   answerSurvey: (code: string, body: { pass: string; grade?: string; field?: string; visited?: string }) =>
     request<{ ok: true }>(`/check-in/${encodeURIComponent(code)}/survey`, { method: "POST", body }),
   recordCheckIn: (code: string, kind: "scans" | "coupons", body?: { pass: string; couponId?: string }) =>
@@ -611,15 +610,14 @@ export const api = {
     request<{ coupons: Record<string, { number: string | null; visited: boolean }> }>(
       `/check-in/${encodeURIComponent(code)}/passes/${encodeURIComponent(pass)}`,
     ),
-  // The store staff's device: the participant's coupon number and the PIN.
+  // 매장 직원의 기기: 참여자의 쿠폰 번호와 PIN.
   confirmVisit: (code: string, body: { pin: string; coupon: string }) =>
     request<{ entry: MetricEntry; store: string }>(`/check-in/${encodeURIComponent(code)}/staff/visits`, {
       method: "POST",
       body,
     }),
-  // A venue page (the brand's /staff, the group's /group): its PIN opens what
-  // its side confirms, and each confirmation (or correction, a negative
-  // amount) answers the share's counts as they now stand.
+  // 현장 페이지(브랜드의 /staff, 단체의 /group): PIN이 그쪽이 확인하는 것을
+  // 열고, 각 확인(또는 정정, 음수)은 그 몫의 집계를 지금 상태 그대로 답한다.
   venueSession: (code: string, page: VenuePage, pin: string) =>
     request<VenueSession>(`/check-in/${encodeURIComponent(code)}/${page}/session`, { method: "POST", body: { pin } }),
   venueCount: (code: string, page: VenuePage, body: { pin: string; share: string; method: MethodKind; amount: number }) =>

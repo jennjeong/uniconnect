@@ -3,8 +3,8 @@ import { useState } from "react"
 import type { Match } from "../types"
 import { IndustryArt } from "./IndustryArt"
 
-// A partner's logo on white, or without one its industry's mark on a faint
-// blue tile.
+// 흰 바탕 위의 파트너 로고. 로고가 없으면 옅은 파란 타일 위에 업종 마크를
+// 놓는다.
 export function BrandMark({
   match,
   large = false,
