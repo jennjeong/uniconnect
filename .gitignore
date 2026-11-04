@@ -11,32 +11,25 @@ vite.config.*.timestamp-*
 *-debug.log*
 logs/
 *.log
-.claude-replay.*
 .tmp-*
-/frontend/.figma/design-context/
 
 # Runtime data written by the API (created from the seed on first start).
 /backend/data/
 
-# Platform-managed agentplat state, not project source. In the
-# client-initiated single-repo workspace layout (make's `Path: "."` spec) the
-# repo root IS the workspace root, so these land inside this repo rather than
-# beside it.
-/.plugins/
-/.opencode-skills/
-
-# Ruflo (Claude Flow), a local AI helper installed in this folder: its
-# settings, agents, memory and data stay on this computer. The dev server
-# entry in .claude/launch.json is the project's own and stays tracked.
 .env
 .env.local
 .env.*.local
-/.claude/*
-!/.claude/launch.json
+
+# Local tool settings
+/.claude/
 /.claude-flow/
 /.swarm/
 /.mcp.json
 /ruvector.db
+/CLAUDE.md
+/AGENTS.md
+/.plugins/
+/.opencode-skills/
 
 # Playwright test output
 /test-results/

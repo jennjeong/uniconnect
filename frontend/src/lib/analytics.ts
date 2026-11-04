@@ -1,5 +1,5 @@
 // Google Analytics 4 events. GA4 itself is set up by its measurement ID in
-// .figma/make/site.json (analytics.googleAnalyticsId), which adds gtag to
+// site.config.json (analytics.googleAnalyticsId), which adds gtag to
 // the page; until then these calls do nothing. Events say what happened
 // and on which side, never who: no names, emails or message text.
 type EventName =

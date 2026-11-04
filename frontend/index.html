@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="<!-- figma:lang -->">
+<html lang="<!-- site:lang -->">
   <head>
-    <!-- figma:head-start -->
+    <!-- site:head-start -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- Share previews: title and description come from .figma/make/site.json
+    <!-- Share previews: title and description come from site.config.json
          and follow each screen (src/lib/pageMeta.ts); the 1200×630 image,
          public/og-image.png, needs the site's absolute URL there. -->
     <meta property="og:type" content="website" />
@@ -18,13 +18,13 @@
     <!-- The start screen's name (components/Loader.tsx) is the first large
          paint, so it loads with the page rather than after the script. -->
     <link rel="preload" as="image" href="/src/assets/brand/uniconnect_wordmark.svg" fetchpriority="high" />
-    <title><!-- figma:title --></title>
-    <!-- figma:head-end -->
+    <title><!-- site:title --></title>
+    <!-- site:head-end -->
   </head>
   <body>
-    <!-- figma:body-start -->
+    <!-- site:body-start -->
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <!-- figma:body-end -->
+    <!-- site:body-end -->
   </body>
 </html>

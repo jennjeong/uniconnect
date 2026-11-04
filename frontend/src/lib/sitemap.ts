@@ -1,5 +1,5 @@
 // The sitemap search engines read: the site's public pages at its address,
-// made at build from frontend/.figma/make/site.json (vite.config.ts serves
+// made at build from frontend/site.config.json (vite.config.ts serves
 // and emits it as /sitemap.xml). lib/sitemap.test.ts checks that each page
 // is a real screen open to search.
 
