@@ -356,7 +356,7 @@ export function checkInWindow(event: EventItem) {
   return { start: event.date, end, visitsEnd: addDays(end, couponDays) }
 }
 
-const isDemoEvent = (database: Database, measurement: Measurement) =>
+export const isDemoEvent = (database: Database, measurement: Measurement) =>
   Object.values(database.demoAccountIds).includes(measurement.accountId)
 
 // The day an event's PINs start to show to those who run it: the day before
@@ -365,6 +365,12 @@ export const pinsFrom = (event: EventItem) => addDays(event.date, -1)
 
 export const pinsOpen = (database: Database, measurement: Measurement, event: EventItem) =>
   isDemoEvent(database, measurement) || pinsFrom(event) <= todayInKorea()
+
+// The most scans an event counts, so a QR passed around can't inflate its
+// reach far past what the event expected: three times its audience, at least
+// 100, whatever the demo accounts' visitors try.
+export const scanCeiling = (database: Database, measurement: Measurement) =>
+  isDemoEvent(database, measurement) ? Infinity : Math.max(100, measurement.goals.expectedAudience * 3)
 
 // Refuses a scan or coupon outside the event's days, or a visit after its
 // coupons ran out.
