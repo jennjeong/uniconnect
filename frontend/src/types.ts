@@ -135,10 +135,24 @@ export type AgreementItem = {
 // 한쪽이 보낸 협찬 물품 택배 한 건. 합의서에 적어 둔다.
 export type Shipment = { id: string; side: ChatSide; carrier: string; number: string; note?: string; addedAt: string }
 
+// The group's SNS post for the brand to confirm, with the views a YouTube
+// link read (none when the video is private or gone).
+export type SnsPost = {
+  id: string
+  url: string
+  reach: number
+  photos: string[]
+  status: "pending" | "confirmed" | "rejected"
+  reason?: string
+  youtube?: { views?: number; at: string }
+  addedAt: string
+}
+
 export type Agreement = {
   id: string
   kind: "request" | "offer"
   shipments?: Shipment[]
+  snsPosts?: SnsPost[]
   side: ChatSide
   // 각 당사자와 계정을 운영하는 담당자 (두 당사자에게만 보인다).
   group: { name: string; member: boolean; contact?: AccountContact }
@@ -776,6 +790,9 @@ export type Report = {
   // 행사장 밖으로 닿은 범위.
   averageSpend: number
   snsReach: number
+  // The reach of the SNS posts brands confirmed, and of those still waiting.
+  postedReach: number
+  pendingReach: number
   coupon: { store: string; title: string }
   // 방문을 확인하려고 매장 직원이 입력하는 4자리 숫자. 소유자에게만 보인다.
   staffPin?: string

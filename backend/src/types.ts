@@ -552,6 +552,9 @@ export type Report = {
   // 위의 수치가 나온 입력이다.
   averageSpend: number
   snsReach: number
+  // The reach of the SNS posts brands confirmed, and of those still waiting.
+  postedReach: number
+  pendingReach: number
   coupon: MeasurementGoals["coupon"]
   // 행사를 가진 단체에게만 보인다.
   staffPin?: string
@@ -677,8 +680,26 @@ export type Agreement = {
   // 가는 중인 협찬 물품의 소포(협찬 물품 배송)와 각각 보낸 쪽이다. 페이지는
   // 각각을 택배사의 배송 조회에 연결한다.
   shipments?: Shipment[]
+  // The group's SNS posts about the sponsorship, for the brand to confirm
+  // (lib/snsPosts.ts).
+  snsPosts?: SnsPost[]
   createdAt: string
   updatedAt: string
+}
+
+// One SNS post: its link, the reach the group wrote, up to three screenshots
+// and what the brand made of it. A YouTube link also keeps the views read
+// and when (no views: the video is private or gone).
+export type SnsPost = {
+  id: string
+  url: string
+  reach: number
+  photos: string[]
+  status: "pending" | "confirmed" | "rejected"
+  // The brand's reason for asking again.
+  reason?: string
+  youtube?: { views?: number; at: string }
+  addedAt: string
 }
 
 export type Shipment = { id: string; side: ChatSide; carrier: string; number: string; note?: string; addedAt: string }

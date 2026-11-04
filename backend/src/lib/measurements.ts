@@ -283,13 +283,13 @@ export const estimatedSales = (measurement: Measurement) =>
   measurement.metrics.visits * measurement.goals.averageSpend
 
 // 행사의 리포트. 목표와 함께, 실시간 집계로 계산한 도달과 ROAS를 담는다
-// (도달: QR 스캔 + 행사장 밖 도달, ROAS: 추정 매출 ÷ 협찬 가치). 확인
+// (도달: QR 스캔 + 목표에 적은 행사장 밖 도달 + 브랜드가 확인한 게시물 `posted`, ROAS: 추정 매출 ÷ 협찬 가치). 확인
 // 방식(양쪽이 확인한 그대로)과 행사장에서 확인한 내용도 담는다. PIN은
 // 행사 주인에게만 보내고 단체의 행사장 PIN은 주인이 단체일 때만 보낸다.
 export function buildReport(
   measurement: Measurement,
   event: EventItem,
-  { withPin = false, withGroupPin = false, pinsDay = "" } = {},
+  { withPin = false, withGroupPin = false, pinsDay = "", posted = { confirmed: 0, pending: 0 } } = {},
 ): Report {
   const { goals, metrics } = measurement
   const sponsorValue = goals.valueBreakdown.reduce((sum, part) => sum + part.value, 0)
@@ -301,13 +301,15 @@ export function buildReport(
     ...(event.endDate ? { eventEndDate: event.endDate } : {}),
     expectedAudience: goals.expectedAudience,
     sponsorValue,
-    reach: metrics.scans + goals.snsReach,
+    reach: metrics.scans + goals.snsReach + posted.confirmed,
     roas: percent(estimatedSales(measurement), sponsorValue),
     targets: goals.targets,
     hourlyScans: measurement.hourlyScans,
     valueBreakdown: goals.valueBreakdown,
     averageSpend: goals.averageSpend,
     snsReach: goals.snsReach,
+    postedReach: posted.confirmed,
+    pendingReach: posted.pending,
     coupon: goals.coupon,
     ...(withPin ? { staffPin: measurement.staffPin } : {}),
     ...(withGroupPin ? { groupPin: measurement.groupPin } : {}),

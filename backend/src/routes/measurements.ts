@@ -14,6 +14,7 @@ import {
   pinsFrom,
   pinsOpen,
 } from "../lib/measurements.js"
+import { postedReach } from "../lib/snsPosts.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { EventItem, Measurement } from "../types.js"
@@ -38,6 +39,10 @@ function pinsFor(req: Request, measurement: Measurement, event: EventItem) {
   return { withPin: true, withGroupPin: req.account.role === "학생단체" }
 }
 
+// 행사의 리포트. SNS 게시물의 도달을 함께 담는다.
+const reportOf = (req: Request, measurement: Measurement, event: EventItem) =>
+  buildReport(measurement, event, { ...pinsFor(req, measurement, event), posted: postedReach(getDatabase(), measurement) })
+
 // 주인의 행사와 그 측정이다. 처음 열 때 측정을 만든다.
 async function ownedMeasurement(req: Request) {
   const database = getDatabase()
@@ -60,7 +65,7 @@ measurementsRouter.get("/", async (req, res) => {
     .map((event) => {
       const { measurement, created } = ensureMeasurement(database, owner!.id, event)
       changed ||= created
-      return { eventId: event.id, metrics: measurement.metrics, report: buildReport(measurement, event, pinsFor(req, measurement, event)) }
+      return { eventId: event.id, metrics: measurement.metrics, report: reportOf(req, measurement, event) }
     })
   if (changed) await saveDatabase()
   res.json({ measurements })
@@ -68,7 +73,7 @@ measurementsRouter.get("/", async (req, res) => {
 
 measurementsRouter.get("/:eventId", async (req, res) => {
   const { measurement, event } = await ownedMeasurement(req)
-  res.json({ metrics: measurement.metrics, report: buildReport(measurement, event, pinsFor(req, measurement, event)) })
+  res.json({ metrics: measurement.metrics, report: reportOf(req, measurement, event) })
 })
 
 // 참여 기록을 최신순으로 보여 주며, ?kind=로 측정 하나로 좁힐 수 있다.
@@ -100,5 +105,5 @@ measurementsRouter.put("/:eventId/goals", async (req, res) => {
   measurement.goals = goals
   if (staffPin) measurement.staffPin = staffPin
   await saveDatabase()
-  res.json({ metrics: measurement.metrics, report: buildReport(measurement, event, pinsFor(req, measurement, event)) })
+  res.json({ metrics: measurement.metrics, report: reportOf(req, measurement, event) })
 })

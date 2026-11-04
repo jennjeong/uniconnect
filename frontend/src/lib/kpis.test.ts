@@ -26,6 +26,8 @@ const report = (sponsorValue: number, roas: number, targetRoas: number) =>
     expectedAudience: 350,
     averageSpend: 40300,
     snsReach: 1112,
+    postedReach: 0,
+    pendingReach: 0,
     targets: { reach: 1100, scans: 105, coupons: 75, visits: 26, qrRate: 30, visitRate: 25, roas: targetRoas },
   }) as Report
 
