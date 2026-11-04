@@ -46,6 +46,36 @@ after(async () => {
 })
 
 // Who runs an account made in a test, as sign-up asks for it.
+// A document for sign-ups the operators check (lib/applications.ts).
+const proofDocument = { file: `data:application/pdf;base64,${Buffer.from("%PDF-1.4 proof").toString("base64")}`, name: "재직증명서.pdf" }
+
+async function approveApplication(email: string) {
+  const { config: settings } = await import("./config.js")
+  const saved = settings.adminToken
+  settings.adminToken = "test-admin-token"
+  try {
+    const application = getDatabase().applications!.find((item) => item.email === email)!
+    const response = await fetch(`${baseUrl}/admin/applications/${application.id}/approve`, { method: "POST", headers: { "X-Admin-Token": "test-admin-token" } })
+    assert.equal(response.status, 200)
+  } finally {
+    settings.adminToken = saved
+  }
+}
+
+// A co-admin's login: its first sets up two-step login with the secret it
+// is given, a later one takes the code of the secret kept.
+async function logInCoAdmin(email: string, password: string) {
+  const { codeAt, stepAt } = await import("./lib/totp.js")
+  const { memberByEmail } = await import("./lib/team.js")
+  const first = await call("POST", "/auth/login", { role: "학생단체", email, password })
+  const member = memberByEmail(getDatabase(), email)!.member
+  const secret = (first.data.setup?.secret as string | undefined) ?? member.twoFactor!.secret
+  const code = codeAt(secret, stepAt(Date.now()) + (member.twoFactor ? 1 : 0))
+  const done = await call("POST", "/auth/login/code", { email, ticket: first.data.ticket, code })
+  assert.equal(done.status, 200)
+  return done.data as { token: string; account: { email: string; asMember: { id: string; name: string } }; recoveryCodes: string[] }
+}
+
 const testContact = { name: "테스트 담당자", position: "회장", phone: "010-1234-5678" }
 
 async function login(role: "학생단체" | "브랜드") {
@@ -411,9 +441,11 @@ test("security: tokens, stale prices, refunds, late edits, codes and invitations
   const second = await signUpMember("sec-b@syu.ac.kr", "sec-pass-123")
   await call("POST", "/team/invites", { name: "가", email: "sec-vice@syu.ac.kr" }, first2)
   const code = (await call("POST", "/team/invites", { name: "나", email: "sec-vice@syu.ac.kr" }, second)).data.devCode
-  const joined = await call("POST", "/team/join", { email: "sec-vice@syu.ac.kr", code, password: "Vice-pass-123!" })
-  assert.equal(joined.status, 201)
-  assert.equal(joined.data.account.email, "sec-b@syu.ac.kr")
+  const joined = await call("POST", "/team/join", { email: "sec-vice@syu.ac.kr", code, password: "Vice-pass-123!", document: proofDocument })
+  assert.equal(joined.status, 202)
+  await approveApplication("sec-vice@syu.ac.kr")
+  const { account: joinedAccount } = await logInCoAdmin("sec-vice@syu.ac.kr", "Vice-pass-123!")
+  assert.equal(joinedAccount.email, "sec-b@syu.ac.kr")
 })
 
 test("health check and unknown routes", async () => {
@@ -1553,18 +1585,34 @@ test("an owner invites co-admins, who log in with their own password and can't d
   assert.equal((await call("POST", "/team/invites", { name: "x", email: "x@syu.ac.kr" }, await login("학생단체"))).status, 403)
 
   // A wrong code doesn't join; the right one does, with the person's own password.
-  assert.equal((await join({ email: "vice@syu.ac.kr", code: "000000", password: "vice-pass-123" })).status, 400)
-  const joined = await join({ email: "vice@syu.ac.kr", code: invited.data.devCode, password: "vice-pass-123" })
-  assert.equal(joined.status, 201)
-  assert.equal(joined.data.account.email, "team@syu.ac.kr")
-  assert.deepEqual(joined.data.account.asMember, { id: joined.data.account.asMember.id, name: "부회장", email: "vice@syu.ac.kr" })
+  assert.equal((await join({ email: "vice@syu.ac.kr", code: "000000", password: "vice-pass-123", document: proofDocument })).status, 400)
   assert.equal((await join({ email: "vice@syu.ac.kr", code: invited.data.devCode, password: "vice-pass-123" })).status, 400)
+  const joined = await join({ email: "vice@syu.ac.kr", code: invited.data.devCode, password: "vice-pass-123", document: proofDocument })
+  assert.deepEqual([joined.status, joined.data], [202, { pending: true }])
+  assert.equal((await join({ email: "vice@syu.ac.kr", code: invited.data.devCode, password: "vice-pass-123", document: proofDocument })).status, 400)
   // The email is taken for sign-up now.
   assert.equal((await call("POST", "/auth/email-code", { role: "학생단체", email: "vice@syu.ac.kr" })).status, 409)
+  // Until the operators approve it, it can't log in, and the owner sees it waiting.
+  const waiting = await call("POST", "/auth/login", { role: "학생단체", email: "vice@syu.ac.kr", password: "vice-pass-123" })
+  assert.equal(waiting.status, 403)
+  assert.match(waiting.data.error, /서류/)
+  assert.deepEqual((await call("GET", "/team", undefined, owner)).data.team.waiting.map((item: { name: string }) => item.name), ["부회장"])
+  await approveApplication("vice@syu.ac.kr")
+  assert.deepEqual((await call("GET", "/team", undefined, owner)).data.team.waiting, [])
 
-  // The co-admin logs in to the same account, and works in it.
-  const vice = (await call("POST", "/auth/login", { role: "학생단체", email: "vice@syu.ac.kr", password: "vice-pass-123" })).data
-  assert.equal(vice.account.id, joined.data.account.id)
+  // Two-step login comes first: no session without a code, and the first
+  // login sets it up.
+  const first = await call("POST", "/auth/login", { role: "학생단체", email: "vice@syu.ac.kr", password: "vice-pass-123" })
+  assert.deepEqual([first.data.token, first.data.twoFactor], [undefined, true])
+  assert.ok(first.data.setup.secret)
+  const wrong = await call("POST", "/auth/login/code", { email: "vice@syu.ac.kr", ticket: first.data.ticket, code: "000000" })
+  assert.equal(wrong.status, 401)
+  const vice = await logInCoAdmin("vice@syu.ac.kr", "vice-pass-123")
+  assert.equal(vice.recoveryCodes.length > 0, true)
+  // Once set up it asks for the code again, with no new secret.
+  const again = await call("POST", "/auth/login", { role: "학생단체", email: "vice@syu.ac.kr", password: "vice-pass-123" })
+  assert.deepEqual([again.data.token, again.data.twoFactor, again.data.setup], [undefined, true, undefined])
+  assert.equal(vice.account.email, "team@syu.ac.kr")
   assert.equal(vice.account.asMember.name, "부회장")
   assert.equal((await call("POST", "/events", { name: "함께 여는 공연", date: "2099-05-01", types: ["현금"] }, vice.token)).status, 201)
   const ownersEvents = (await call("GET", "/events", undefined, owner)).data.events as { name: string }[]
@@ -5526,7 +5574,7 @@ test("the operators' console lists what needs them, members with their record, a
     assert.equal((await fetch(`${baseUrl}/admin/overview`)).status, 403)
     const seen = (await admin("/overview")).data
     assert.equal(seen.weekly.length, 8)
-    assert.deepEqual(Object.keys(seen.attention).sort(), ["alerts", "cancels", "inquiries", "reports", "stale", "suspended", "transfers"])
+    assert.deepEqual(Object.keys(seen.attention).sort(), ["alerts", "applications", "cancels", "inquiries", "reports", "stale", "suspended", "transfers"])
     assert.deepEqual(Object.keys(seen.revenue.byKind).sort(), ["ad", "fee", "pro", "report"])
 
     await signUpMember("console@syu.ac.kr", "console-pass-123")
@@ -5736,4 +5784,74 @@ test("a QR can't be run up: one device is limited, and an event stops at three t
   const ceiling = await scan()
   assert.equal(ceiling.status, 409)
   assert.match(ceiling.data.error, /3배/)
+})
+
+test("a shop with no company email signs up by invitation with a document, and an operator decides", async () => {
+  const group = await signUpMember("doc-club@syu.ac.kr", "doc-pass-123")
+  const { invite } = (await call("POST", "/invites", { placeId: "76543210" }, group)).data
+  const email = "owner@gmail.com"
+  // Without an invitation a personal address stays refused.
+  assert.equal((await call("POST", "/auth/email-code", { role: "브랜드", email })).status, 400)
+  const sent = await call("POST", "/auth/email-code", { role: "브랜드", email, invite: invite.code })
+  assert.equal(sent.status, 200)
+  const verified = await call("POST", "/auth/email-code/verify", { email, code: sent.data.devCode })
+  const form = {
+    role: "브랜드",
+    name: "동네 카페",
+    type: "카페 · 식음료",
+    school: "",
+    email,
+    password: "doc-owner-123",
+    verificationToken: verified.data.verificationToken,
+    agreedToTerms: true,
+    contact: testContact,
+    over14: true,
+    invite: invite.code,
+  }
+  assert.equal((await call("POST", "/auth/signup", form)).status, 400)
+  const held = await call("POST", "/auth/signup", { ...form, document: proofDocument })
+  assert.deepEqual([held.status, held.data], [202, { pending: true }])
+  assert.equal(getDatabase().accounts.some((account) => account.email === email), false)
+
+  const log = { role: "브랜드", email, password: "doc-owner-123" }
+  assert.equal((await call("POST", "/auth/login", log)).status, 403)
+  assert.equal((await call("POST", "/auth/login", { ...log, password: "wrong-pass-123" })).status, 401)
+  assert.equal((await call("POST", "/auth/email-code", { role: "브랜드", email, invite: invite.code })).status, 409)
+
+  // Only the operators read it; approving makes the account and links the shop.
+  const { config: settings } = await import("./config.js")
+  const saved = settings.adminToken
+  settings.adminToken = "test-admin-token"
+  const admin = { "X-Admin-Token": "test-admin-token" }
+  try {
+    assert.equal((await fetch(`${baseUrl}/admin/applications`)).status, 403)
+    const { applications } = (await (await fetch(`${baseUrl}/admin/applications`, { headers: admin })).json()) as { applications: { id: string; kind: string; brand: string }[] }
+    assert.deepEqual([applications[0].kind, applications[0].brand], ["shop", "동네 카페"])
+    assert.equal(JSON.stringify(applications).includes("passwordHash"), false)
+    const document = await fetch(`${baseUrl}/admin/applications/${applications[0].id}/document`, { headers: admin })
+    assert.equal((await document.text()).startsWith("%PDF-"), true)
+    assert.equal((await fetch(`${baseUrl}/admin/applications/${applications[0].id}/reject`, { method: "POST", headers: { ...admin, "Content-Type": "application/json" }, body: "{}" })).status, 400)
+    await approveApplication(email)
+    settings.adminToken = "test-admin-token"
+    assert.equal((await fetch(`${baseUrl}/admin/applications/${applications[0].id}/document`, { headers: admin })).status, 404)
+  } finally {
+    settings.adminToken = saved
+  }
+  const logged = await call("POST", "/auth/login", log)
+  assert.equal(logged.status, 200)
+  assert.equal(getDatabase().brands.find((brand) => brand.id === logged.data.account.brandId)?.kakaoPlaceId, "76543210")
+
+  // Turned down, the sign-up goes and the address is free again.
+  const other = await call("POST", "/auth/email-code", { role: "브랜드", email: "second@naver.com", invite: invite.code })
+  const proof = await call("POST", "/auth/email-code/verify", { email: "second@naver.com", code: other.data.devCode })
+  await call("POST", "/auth/signup", { ...form, email: "second@naver.com", verificationToken: proof.data.verificationToken, document: proofDocument })
+  settings.adminToken = "test-admin-token"
+  try {
+    const { id } = getDatabase().applications!.find((item) => item.email === "second@naver.com")!
+    const rejected = await fetch(`${baseUrl}/admin/applications/${id}/reject`, { method: "POST", headers: { ...admin, "Content-Type": "application/json" }, body: JSON.stringify({ reason: "서류가 흐려요" }) })
+    assert.equal(rejected.status, 200)
+  } finally {
+    settings.adminToken = saved
+  }
+  assert.equal((await call("POST", "/auth/email-code", { role: "브랜드", email: "second@naver.com", invite: invite.code })).status, 200)
 })

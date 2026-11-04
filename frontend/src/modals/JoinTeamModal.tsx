@@ -1,26 +1,27 @@
 import { useState } from "react"
 
 import { api, errorMessage } from "../api"
+import { DocumentField, type PickedDocument } from "../components/DocumentField"
 import { Modal } from "../components/Modal"
 import { PasswordField } from "../components/PasswordField"
 import { PasswordRules } from "../components/PasswordRules"
 import { t } from "../i18n"
 import { passwordProblem } from "../lib/password"
-import type { Session } from "../types"
 
 // Joining an account one was invited to run (from the login popup's
-// 초대받았나요?): the email the invitation went to, its code, and a password
-// of one's own; then logged in as a co-admin.
+// 초대받았나요?): the email the invitation went to, its code, a password of
+// one's own and proof of employment, which the operators check first.
 export function JoinTeamModal({
   onClose,
   onJoined,
   onLogin,
 }: {
   onClose: () => void
-  onJoined: (session: Session) => void
+  onJoined: () => void
   onLogin: () => void
 }) {
   const [draft, setDraft] = useState({ email: "", code: "", password: "", confirm: "" })
+  const [document, setDocument] = useState<PickedDocument>()
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
 
@@ -28,10 +29,12 @@ export function JoinTeamModal({
     if (!draft.email.trim() || !draft.code.trim()) return setError(t("초대받은 이메일과 초대 코드를 입력해 주세요."))
     if (passwordProblem(draft.password)) return setError(passwordProblem(draft.password))
     if (draft.password !== draft.confirm) return setError(t("비밀번호가 일치하지 않아요."))
+    if (!document) return setError(t("재직 증명 서류를 올려 주세요."))
     setBusy(true)
     setError("")
     try {
-      onJoined(await api.joinTeam({ email: draft.email.trim(), code: draft.code.trim(), password: draft.password }))
+      await api.joinTeam({ email: draft.email.trim(), code: draft.code.trim(), password: draft.password, document })
+      onJoined()
     } catch (caught) {
       setError(errorMessage(caught))
     } finally {
@@ -53,7 +56,7 @@ export function JoinTeamModal({
         }}
       >
         <p className="auth-lead">
-          {t("대표가 보낸 초대 메일의 이메일과 6자리 코드를 입력하고 나만 쓸 비밀번호를 정해 주세요. 그 뒤로는 이 이메일과 비밀번호로 로그인해요.")}
+          {t("대표가 보낸 초대 메일의 이메일과 6자리 코드를 입력하고 나만 쓸 비밀번호를 정해 주세요. 운영자가 재직 증명 서류를 확인하면 메일로 알려 드리고, 첫 로그인에서 2단계 인증을 설정해요.")}
         </p>
         <label>
           {t("초대받은 이메일")}
@@ -72,6 +75,11 @@ export function JoinTeamModal({
         />
         <PasswordField autoComplete="new-password" label={t("새 비밀번호 확인")} onChange={set("confirm")} value={draft.confirm} />
         <PasswordRules id="join-password-rules" password={draft.password} />
+        <DocumentField
+          hint={t("재직증명서나 임명장, 학생증처럼 이 단체 소속임을 보여 주는 서류예요. 확인 뒤 바로 지워요.")}
+          label={t("재직 증명 서류")}
+          onPick={setDocument}
+        />
         {error && (
           <p className="form-error" role="alert">
             {error}

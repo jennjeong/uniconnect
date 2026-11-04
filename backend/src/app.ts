@@ -101,6 +101,9 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   app.use("/api/conversations/:id/attachments", express.json({ limit: "3mb" }))
   // So does an event's plan (a PDF up to 2 MB, routes/events.ts).
   app.use("/api/events/:id/plan", express.json({ limit: "3mb" }))
+  // And the document a sign-up waiting for the operators shows (lib/applications.ts).
+  app.use("/api/auth/signup", express.json({ limit: "3mb" }))
+  app.use("/api/team/join", express.json({ limit: "3mb" }))
   // Room for a resized logo (routes/profile.ts caps one at about 100KB).
   app.use(express.json({ limit: "300kb" }))
   // The data is in, and as other copies of the API left it (store.ts), before

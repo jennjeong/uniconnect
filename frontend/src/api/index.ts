@@ -3,6 +3,7 @@ import type {
   HistoryItem,
   AccountContact,
   AdminAgreementRow,
+  AdminApplication,
   AdminAnnouncement,
   AdminEventRow,
   AdminHealth,
@@ -10,6 +11,7 @@ import type {
   AdminInsights,
   AdminInvites,
   AdminLive,
+  Pending,
   AdminLogRow,
   AdminMember,
   AdminMemberDetail,
@@ -101,6 +103,9 @@ export type SignupPayload = {
   over14: boolean
   // The invitation code the visitor arrived with (친구 초대).
   referral?: string
+  // A shop with no company email: its invitation and a document to check.
+  invite?: string
+  document?: { file: string; name: string }
   contact: AccountContact
 }
 
@@ -144,7 +149,7 @@ export const api = {
     request<Session | CodeTicket>("/auth/login", { method: "POST", body }),
   // The second step with two-step login on: the app's code or a recovery code.
   loginCode: (body: { email: string; ticket: string; code: string }) =>
-    request<Session & { recoveryLeft?: number }>("/auth/login/code", { method: "POST", body }),
+    request<Session & { recoveryLeft?: number; recoveryCodes?: string[] }>("/auth/login/code", { method: "POST", body }),
   twoFactorSetup: (password: string) =>
     request<{ secret: string; url: string }>("/auth/two-factor/setup", { method: "POST", body: { password } }),
   twoFactorEnable: (code: string) =>
@@ -177,10 +182,10 @@ export const api = {
   cancelInvite: (id: string) => request<{ team: Team }>(`/team/invites/${encodeURIComponent(id)}`, { method: "DELETE" }),
   removeMember: (id: string) => request<{ team: Team }>(`/team/members/${encodeURIComponent(id)}`, { method: "DELETE" }),
   // The invited person's own login to the account, from the emailed code.
-  joinTeam: (body: { email: string; code: string; password: string }) =>
-    request<Session>("/team/join", { method: "POST", body }),
+  joinTeam: (body: { email: string; code: string; password: string; document: { file: string; name: string } }) =>
+    request<Pending>("/team/join", { method: "POST", body }),
   logout: () => request<void>("/auth/logout", { method: "POST" }),
-  requestEmailCode: (body: { role: Role; email: string }) =>
+  requestEmailCode: (body: { role: Role; email: string; invite?: string }) =>
     request<{ email: string; expiresAt: number; devCode?: string }>(
       "/auth/email-code",
       { method: "POST", body },
@@ -191,7 +196,7 @@ export const api = {
       body,
     }),
   signup: (body: SignupPayload) =>
-    request<Session>("/auth/signup", { method: "POST", body }),
+    request<Session | Pending>("/auth/signup", { method: "POST", body }),
   requestPasswordResetCode: (body: { email: string }) =>
     request<{ email: string; expiresAt: number; devCode?: string }>(
       "/auth/password-reset/code",
@@ -486,6 +491,14 @@ export const api = {
   adminAgreements: (token: string) => request<{ agreements: AdminAgreementRow[] }>("/admin/agreements", { headers: { "X-Admin-Token": token } }),
   adminEvents: (token: string) => request<{ events: AdminEventRow[] }>("/admin/events", { headers: { "X-Admin-Token": token } }),
   adminLive: (token: string) => request<AdminLive>("/admin/live", { headers: { "X-Admin-Token": token } }),
+  adminApplications: (token: string) =>
+    request<{ applications: AdminApplication[] }>("/admin/applications", { headers: { "X-Admin-Token": token } }),
+  adminApplicationDocument: (token: string, id: string) =>
+    requestBlob(`/admin/applications/${encodeURIComponent(id)}/document`, { headers: { "X-Admin-Token": token } }),
+  adminApproveApplication: (token: string, id: string) =>
+    request<void>(`/admin/applications/${encodeURIComponent(id)}/approve`, { method: "POST", headers: { "X-Admin-Token": token } }),
+  adminRejectApplication: (token: string, id: string, reason: string) =>
+    request<void>(`/admin/applications/${encodeURIComponent(id)}/reject`, { method: "POST", headers: { "X-Admin-Token": token }, body: { reason } }),
   adminPosts: (token: string) => request<{ posts: AdminPostRow[] }>("/admin/posts", { headers: { "X-Admin-Token": token } }),
   adminPostAction: (token: string, id: string, action: "hide" | "show" | "close") =>
     request<void>(`/admin/posts/${encodeURIComponent(id)}/${action}`, { method: "POST", headers: { "X-Admin-Token": token } }),

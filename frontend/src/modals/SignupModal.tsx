@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 
 import { api, errorMessage } from "../api"
 import { keptReferral } from "../lib/referral"
+import { DocumentField, type PickedDocument } from "../components/DocumentField"
 import { Modal } from "../components/Modal"
 import { PasswordField } from "../components/PasswordField"
 import { PasswordRules } from "../components/PasswordRules"
@@ -60,13 +61,19 @@ function draftError(draft: Draft, verified: boolean) {
 export function SignupModal({
   initialRole,
   onClose,
+  invite,
   onSignedUp,
+  onPending,
   onLogin,
   onNotice,
 }: {
   initialRole: Role
+  // The shop's invitation the visitor is signing up through (/invite/<code>).
+  invite?: string
   onClose: () => void
   onSignedUp: (session: Session) => void
+  // Sent to the operators to check; nothing to log in to yet.
+  onPending: () => void
   onLogin: (role: Role) => void
   onNotice: (message: string) => void
 }) {
@@ -76,6 +83,9 @@ export function SignupModal({
   const [now, setNow] = useState(() => Date.now())
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
+  // An invited shop with no company email: a personal one, with a document.
+  const [noCompanyEmail, setNoCompanyEmail] = useState(false)
+  const [document, setDocument] = useState<PickedDocument>()
   const verified = verification?.token !== undefined
   // The agreement sentence around its two links, in the language shown.
   const [termsBefore, termsBetween, termsAfter] = t("{terms}과 {privacy}에 동의합니다.").split(
@@ -111,7 +121,11 @@ export function SignupModal({
 
   const sendCode = () =>
     run(async () => {
-      const result = await api.requestEmailCode({ role: draft.role, email: draft.email })
+      const result = await api.requestEmailCode({
+        role: draft.role,
+        email: draft.email,
+        ...(noCompanyEmail ? { invite } : {}),
+      })
       setVerification({ expiresAt: result.expiresAt, devCode: result.devCode })
       setCodeInput("")
       setNow(Date.now())
@@ -130,14 +144,13 @@ export function SignupModal({
 
   const submit = () => {
     const verificationToken = verification?.token
-    const problem = draftError(draft, verified)
+    const problem = draftError(draft, verified) || (noCompanyEmail && !document ? t("사업자등록증이나 재직 서류를 올려 주세요.") : "")
     if (problem || !verificationToken) {
       setError(problem)
       return
     }
     void run(async () => {
-      onSignedUp(
-        await api.signup({
+      const answer = await api.signup({
           role: draft.role,
           name: draft.name,
           type: draft.type,
@@ -149,8 +162,10 @@ export function SignupModal({
           over14: draft.over14,
           contact: { name: draft.contactName.trim(), position: draft.position.trim(), phone: draft.phone },
           ...(keptReferral() ? { referral: keptReferral() } : {}),
-        }),
-      )
+          ...(noCompanyEmail && document ? { invite, document } : {}),
+      })
+      if ("pending" in answer) onPending()
+      else onSignedUp(answer)
     })
   }
 
@@ -242,9 +257,24 @@ export function SignupModal({
         <small className="field-hint" id="signup-phone-hint">
           {t("협찬이 확정된 상대에게만 임시 전자 계약서에서 보여요.")}
         </small>
+        {invite && draft.role === "브랜드" && (
+          <>
+            <label className="terms-check">
+              <input checked={noCompanyEmail} onChange={(event) => setNoCompanyEmail(event.target.checked)} type="checkbox" />
+              <span>{t("회사 이메일이 없어요. 개인 이메일로 가입할게요.")}</span>
+            </label>
+            {noCompanyEmail && (
+              <DocumentField
+                hint={t("운영자가 서류를 확인하고 승인하면 가입이 끝나요. 승인 전에는 로그인할 수 없고 서류는 확인 뒤 바로 지워요.")}
+                label={t("사업자등록증 또는 재직 서류")}
+                onPick={setDocument}
+              />
+            )}
+          </>
+        )}
         <div className="field-group">
           <label htmlFor="signup-email">
-            {draft.role === "학생단체" ? t("학교 이메일") : t("회사 이메일")}
+            {draft.role === "학생단체" ? t("학교 이메일") : noCompanyEmail ? t("이메일") : t("회사 이메일")}
           </label>
           <div className="field-with-action">
             <input

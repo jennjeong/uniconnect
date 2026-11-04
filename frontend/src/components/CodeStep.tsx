@@ -1,6 +1,7 @@
 import { useState } from "react"
 
 import { api, errorMessage } from "../api"
+import { QrCode } from "./QrCode"
 import { t } from "../i18n"
 import type { CodeTicket, Session } from "../types"
 
@@ -15,7 +16,7 @@ export function CodeStep({
 }: {
   email: string
   ticket: CodeTicket
-  onDone: (session: Session & { recoveryLeft?: number }) => void
+  onDone: (session: Session & { recoveryLeft?: number; recoveryCodes?: string[] }) => void
   onRestart: () => void
 }) {
   const [code, setCode] = useState("")
@@ -44,9 +45,19 @@ export function CodeStep({
         void submit()
       }}
     >
-      <p className="auth-lead">
-        {t("2단계 인증이 켜진 계정이에요. 인증 앱에 보이는 6자리 코드를 입력해 주세요. 휴대폰이 없으면 복구 코드를 입력해도 돼요.")}
-      </p>
+      {ticket.setup ? (
+        <>
+          <p className="auth-lead">
+            {t("함께 관리하는 사람은 2단계 인증이 필수예요. 인증 앱으로 이 QR을 찍고 앱에 보이는 6자리 코드를 입력해 주세요.")}
+          </p>
+          <QrCode label={t("인증 앱으로 찍을 QR 코드")} value={ticket.setup.url} />
+          <code>{ticket.setup.secret.replace(/(.{4})/g, "$1 ").trim()}</code>
+        </>
+      ) : (
+        <p className="auth-lead">
+          {t("2단계 인증이 켜진 계정이에요. 인증 앱에 보이는 6자리 코드를 입력해 주세요. 휴대폰이 없으면 복구 코드를 입력해도 돼요.")}
+        </p>
+      )}
       <label>
         {t("인증 코드")}
         <input

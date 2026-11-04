@@ -13,7 +13,7 @@ import { formatDateTime } from "../lib/date"
 import { fullWon } from "../lib/sponsorships"
 import { useNotice } from "../hooks/useNotice"
 import { Members } from "./AdminMembers"
-import { Content, Insights, Live, Operations, ProposalDrawer, RevenuePanel, SystemPanel } from "./AdminMore"
+import { Approvals, Content, Insights, Live, Operations, ProposalDrawer, RevenuePanel, SystemPanel } from "./AdminMore"
 import {
   ActivityLog,
   CsvButton,
@@ -358,6 +358,7 @@ type Section =
   | "operations"
   | "live"
   | "payments"
+  | "approvals"
   | "inquiries"
   | "reports"
   | "content"
@@ -375,6 +376,7 @@ const sections: Section[] = [
   "operations",
   "live",
   "payments",
+  "approvals",
   "inquiries",
   "reports",
   "content",
@@ -417,6 +419,7 @@ const sectionInfo: { key: Section; label: string; icon: IconName; group: (typeof
   { key: "operations", label: "협찬 운영", icon: "link", group: "메뉴" },
   { key: "live", label: "현장", icon: "scan", group: "메뉴" },
   { key: "payments", label: "결제 · 매출", icon: "won", group: "메뉴" },
+  { key: "approvals", label: "가입 승인", icon: "check", group: "지원" },
   { key: "inquiries", label: "문의 · 섭외 요청", icon: "chat", group: "지원" },
   { key: "reports", label: "신고 · 정지", icon: "close", group: "지원" },
   { key: "content", label: "콘텐츠", icon: "edit", group: "지원" },
@@ -1195,6 +1198,7 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
   const shownReports = reportTab === "open" ? openReports : doneReports
   const shownPayments = payments.filter((payment) => payment.status === paymentTab)
   const badges: Partial<Record<Section, number>> = {
+    approvals: overview.attention.applications,
     inquiries: waiting.length,
     reports: openReports.length,
     payments: payments.filter((payment) => payment.status === "pending").length,
@@ -1499,6 +1503,8 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
         {section === "operations" && <Operations onNotice={onNotice} token={token} />}
 
         {section === "live" && <Live onNotice={onNotice} token={token} />}
+
+        {section === "approvals" && <Approvals onNotice={onNotice} token={token} />}
 
         {section === "content" && <Content onNotice={onNotice} token={token} />}
 

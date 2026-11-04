@@ -1,5 +1,6 @@
 import type { Request } from "express"
 
+import { applicationFor } from "./applications.js"
 import { HttpError } from "./errors.js"
 import type { Account, Database } from "../types.js"
 
@@ -22,7 +23,9 @@ export function memberByEmail(database: Database, email: string) {
 
 // Whether an email already logs in somewhere: an account's or a co-admin's.
 export const emailTaken = (database: Database, email: string) =>
-  database.accounts.some((account) => account.email === email) || Boolean(memberByEmail(database, email))
+  database.accounts.some((account) => account.email === email) ||
+  Boolean(memberByEmail(database, email)) ||
+  Boolean(applicationFor(database, email))
 
 // The co-admin logged in, if it is one.
 export const memberOf = (account: Account, memberId: string | undefined) =>

@@ -2,6 +2,7 @@ import { createHash, randomInt, randomUUID } from "node:crypto"
 import { Router } from "express"
 
 import { config } from "../config.js"
+import { applicationsOf, holdApplication, parseDocument } from "../lib/applications.js"
 import { emailRuleError, normalizeEmail } from "../lib/email.js"
 import { HttpError } from "../lib/errors.js"
 import { translate } from "../lib/i18n.js"
@@ -14,12 +15,11 @@ import { checkPassword, text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { Account } from "../types.js"
-import { startSession, toPublic } from "./auth.js"
 
 // One account run by several people (lib/team.ts): the owner invites
-// co-admins by email from 내 정보, each joins with the emailed code and a
-// password of its own, and the owner can take one off, which ends its
-// logins at once.
+// co-admins by email from 내 정보, each joins with the emailed code, a
+// password of its own and proof of employment, and the owner can take one
+// off, which ends its logins at once.
 export const teamRouter = Router()
 
 // How long an invitation's code lasts, and wrong codes before it goes.
@@ -39,8 +39,12 @@ const joinFailures = createRateLimit({
 
 const codeHash = (email: string, code: string) => createHash("sha256").update(`${email} ${code.trim()}`).digest("hex")
 
-// The team as its people see it: the owner, the co-admins and the
-// invitations still open, never a password or code.
+// Those who joined and wait for the operators to check their document.
+const waitingFor = (account: Account) =>
+  applicationsOf(getDatabase()).filter((application) => application.accountId === account.id)
+
+// The team as its people see it: the owner, the co-admins, the invitations
+// still open and those waiting for the operators, never a password or code.
 function teamView(account: Account, memberId: string | undefined) {
   return {
     owner: { name: account.contact?.name ?? account.name, email: account.email },
@@ -48,6 +52,7 @@ function teamView(account: Account, memberId: string | undefined) {
     invites: (account.memberInvites ?? [])
       .filter((invite) => invite.expiresAt > Date.now())
       .map(({ id, name, email, invitedAt, expiresAt }) => ({ id, name, email, invitedAt, expiresAt: new Date(expiresAt).toISOString() })),
+    waiting: waitingFor(account).map(({ id, name, email, requestedAt }) => ({ id, name, email, requestedAt })),
     you: memberId ?? "owner",
   }
 }
@@ -71,7 +76,7 @@ teamRouter.post("/invites", async (req, res) => {
   if (ruleError) throw new HttpError(400, ruleError)
   if (emailTaken(database, email)) throw new HttpError(409, "이미 uniconnect에서 쓰는 이메일이에요. 다른 이메일로 초대해 주세요.")
   const open = (account.memberInvites ?? []).filter((invite) => invite.expiresAt > Date.now() && invite.email !== email)
-  if ((account.members?.length ?? 0) + open.length >= teamLimit) {
+  if ((account.members?.length ?? 0) + open.length + waitingFor(account).length >= teamLimit) {
     throw new HttpError(409, `함께 관리하는 사람은 대표 말고 ${teamLimit}명까지예요.`)
   }
   await invitesPerDay.take(account.id)
@@ -125,9 +130,10 @@ teamRouter.delete("/members/:id", async (req, res) => {
   res.json({ team: teamView(account, req.memberId) })
 })
 
-// The invited person joins with the email, the code and a password of its
-// own, and is logged in as a co-admin. Wrong codes count per address and
-// email, and five end the invitation.
+// The invited person joins with the email, the code, a password of its own
+// and proof of employment, which the operators check before it counts
+// (lib/applications.ts); its first login then sets up two-step login. Wrong
+// codes count per address and email, and five end the invitation.
 teamRouter.post("/join", async (req, res) => {
   const email = normalizeEmail(req.body?.email)
   const limitKey = `${clientKey(req)} ${email}`
@@ -153,14 +159,13 @@ teamRouter.post("/join", async (req, res) => {
   const { account, invite } = found
   if (account.suspendedAt) throw new HttpError(403, "운영 정책에 따라 이용이 정지된 계정이에요.")
   const password = checkPassword(String(req.body?.password ?? ""))
+  const document = parseDocument(req.body?.document, "재직 증명 서류를 올려 주세요.")
   // Used up before the slow hash, so one code makes one co-admin.
   account.memberInvites = account.memberInvites!.filter((item) => item !== invite)
   const passwordHash = await hashPassword(password)
   if (emailTaken(database, email)) throw new HttpError(409, "이미 uniconnect에서 쓰는 이메일이에요.")
   const member = { id: randomUUID(), name: invite.name, email, passwordHash, addedAt: new Date().toISOString() }
-  account.members = [...(account.members ?? []), member]
   await joinFailures.reset(limitKey)
-  const token = startSession(account.id, req, { memberId: member.id })
-  await saveDatabase()
-  res.status(201).json({ token, account: toPublic(account, member.id) })
+  await holdApplication(database, saveDatabase, document, { kind: "member", name: invite.name, email, accountId: account.id, member })
+  res.status(202).json({ pending: true })
 })

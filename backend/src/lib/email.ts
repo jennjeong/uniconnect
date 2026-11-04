@@ -28,8 +28,12 @@ export const normalizeEmail = (value: unknown) =>
     .trim()
     .toLowerCase()
 
-// Student groups must use a school address; sponsors a company address.
-export function emailRuleError(role: Role, email: string) {
+// A personal address (Gmail, Naver and the like).
+export const isPersonalMail = (email: string) => freeMailDomains.has(email.split("@")[1] ?? "")
+
+// Student groups must use a school address; sponsors a company address, or
+// (`personal`) a personal one for an invited shop without a company email.
+export function emailRuleError(role: Role, email: string, { personal = false } = {}) {
   if (!emailPattern.test(email)) return "이메일 형식을 확인해 주세요."
   const domain = email.split("@")[1]
   if (role === "학생단체") {
@@ -37,7 +41,7 @@ export function emailRuleError(role: Role, email: string) {
       ? ""
       : "학교 이메일(예: name@syu.ac.kr)로 인증해 주세요."
   }
-  if (freeMailDomains.has(domain)) {
+  if (freeMailDomains.has(domain) && !personal) {
     return "개인 메일은 사용할 수 없어요. 회사 이메일로 인증해 주세요."
   }
   if (isSchoolDomain(domain)) {
