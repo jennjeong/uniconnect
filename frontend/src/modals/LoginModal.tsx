@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useCallback, useState } from "react"
 
 import { api, errorMessage } from "../api"
 import { CodeStep } from "../components/CodeStep"
@@ -6,6 +6,7 @@ import { Modal } from "../components/Modal"
 import { PasswordField } from "../components/PasswordField"
 import { RoleMark } from "../components/RoleMark"
 import { RolePicker } from "../components/RolePicker"
+import { usePageReturn } from "../hooks/usePageReturn"
 import { demoAccounts, demoPassword } from "../data/demo"
 import { roles } from "../data/roles"
 import { t } from "../i18n"
@@ -44,6 +45,9 @@ export function LoginModal({
   // Two-step login was just set up: its recovery codes show once before the
   // login goes on.
   const [recovery, setRecovery] = useState<{ session: Session; codes: string[] } | null>(null)
+
+  // Back from the provider's page without logging in.
+  usePageReturn(useCallback(() => setBusy(false), []))
 
   // Off to the provider; it sends the browser back to the server, which
   // finishes the login (App reads ?social=).

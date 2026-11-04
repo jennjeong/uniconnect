@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { createPortal } from "react-dom"
 
 import { api, errorMessage } from "../api"
 import { Icon } from "../components/Icon"
 import { Modal } from "../components/Modal"
+import { usePageReturn } from "../hooks/usePageReturn"
 import { t } from "../i18n"
 import { payByCard } from "../lib/payments"
 import { fullWon } from "../lib/sponsorships"
@@ -55,6 +56,9 @@ export function PaymentModal({
       cancelled = true
     }
   }, [])
+
+  // Back from the card window without paying.
+  usePageReturn(useCallback(() => setBusy(false), []))
 
   const vat = billing ? Math.round(amount * billing.prices.vatRate) : undefined
   const total = amount + (vat ?? 0)

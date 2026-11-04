@@ -2081,3 +2081,16 @@ test("a brand's 상세 보기 opens the campaign itself, with finding groups as 
   await page.getByRole("button", { name: "단체 찾기" }).last().click()
   await expect(page).toHaveURL(/\/groups$/)
 })
+
+test("coming back from Kakao's page leaves the login popup usable", async ({ page }) => {
+  await page.route("**/api/auth/social", (route) => route.fulfill({ json: { providers: ["kakao"] } }))
+  await page.route("**/api/auth/social/kakao/start", (route) => route.fulfill({ json: { url: "#left" } }))
+  await page.goto("/dashboard")
+  await page.getByRole("button", { name: "로그인", exact: true }).first().click()
+  const kakao = page.getByRole("dialog").getByRole("button", { name: "카카오로 로그인" })
+  await kakao.click()
+  await expect(kakao).toBeDisabled()
+  // Chrome's back/forward cache brings the page back as it was.
+  await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true })))
+  await expect(kakao).toBeEnabled()
+})
