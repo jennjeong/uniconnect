@@ -1,7 +1,8 @@
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 
 import { api } from "../api"
 import { Icon } from "./Icon"
+import { SearchClear } from "./SearchClear"
 
 // The search box above a catalog: a magnifier and the words to find
 // (lib/search.ts matches them). Once typing stops for a moment, the words
@@ -18,6 +19,7 @@ export function CatalogSearch({
   placeholder: string
   onChange: (value: string) => void
 }) {
+  const box = useRef<HTMLInputElement>(null)
   useEffect(() => {
     const words = value.trim()
     if (words.length < 2) return
@@ -28,7 +30,14 @@ export function CatalogSearch({
     <label className="catalog-search">
       <Icon name="search" size={16} />
       <span className="sr-only">{label}</span>
-      <input onChange={(event) => onChange(event.target.value)} placeholder={placeholder} type="search" value={value} />
+      <input onChange={(event) => onChange(event.target.value)} placeholder={placeholder} ref={box} type="search" value={value} />
+      <SearchClear
+        onClear={() => {
+          onChange("")
+          box.current?.focus()
+        }}
+        value={value}
+      />
     </label>
   )
 }
