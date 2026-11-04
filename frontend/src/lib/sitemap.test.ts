@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs"
 import { describe, expect, test } from "vitest"
 
-import site from "../../.figma/make/site.json"
+import site from "../../site.config.json"
 import { isAppPath } from "../../../backend/src/lib/appPaths"
 import { pageMeta } from "./pageMeta"
 import { readView, roleOfPage, viewPath } from "./route"

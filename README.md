@@ -1,9 +1,9 @@
 # uniconnect
 
 학생단체와 브랜드를 연결하는 협찬 매칭 서비스 **유니커넥트**의 웹/앱 프로토타입입니다.
-Figma Make 프로젝트 [Create Web/App Service](https://www.figma.com/make/mhCaKcZdpbXcN9ZrN5pcjP/Create-Web-App-Service)에서 시작했고, 지금은 프론트엔드와 백엔드로 나뉜 모노레포입니다.
+프론트엔드와 백엔드로 나뉜 모노레포입니다.
 
-- 프론트엔드 `frontend/`: React 19 + Vite 8 + Tailwind CSS v4 (TypeScript). 글꼴은 Pretendard. 3D·그라디언트 배경은 three.js와 WebGL2(getlayers.ai 프롬프트), 로그인 팝업 머리는 [ShaderGradient](https://github.com/ruucm/shadergradient)
+- 프론트엔드 `frontend/`: React 19 + Vite 8 + Tailwind CSS v4 (TypeScript). 글꼴은 Pretendard. 3D·그라디언트 배경은 three.js와 WebGL2, 로그인 팝업 머리는 [ShaderGradient](https://github.com/ruucm/shadergradient)
 - 백엔드 `backend/`: Node.js + Express 5 (TypeScript), JSON 파일 저장소
 - 패키지 매니저: pnpm 10 워크스페이스 (`pnpm-workspace.yaml`, `pnpm-lock.yaml`)
 
@@ -41,9 +41,9 @@ Figma Make 프로젝트 [Create Web/App Service](https://www.figma.com/make/mhCa
 
 ## 디자인
 
-사업계획서의 핵심인 '연결'에 맞춰 [getlayers.ai](https://www.getlayers.ai/templates)의 프롬프트를 옮긴 밝은 테마입니다. 흰 바탕에 은색 면과 얇은 선, 짙은 파란색 포인트를 쓰고, 글자에는 검정 대신 슬레이트 회색을 씁니다. 학생단체와 브랜드가 **맞닿고**, 협찬이 다음 협찬으로 **이어지고**, **함께라서 생기는 힘**이 숫자로 남는 흐름을 화면마다 하나씩 맡겼습니다.
+사업계획서의 핵심인 '연결'에 맞춰 [getlayers.ai](https://www.getlayers.ai/templates)의 디자인을 옮긴 밝은 테마입니다. 흰 바탕에 은색 면과 얇은 선, 짙은 파란색 포인트를 쓰고, 글자에는 검정 대신 슬레이트 회색을 씁니다. 학생단체와 브랜드가 **맞닿고**, 협찬이 다음 협찬으로 **이어지고**, **함께라서 생기는 힘**이 숫자로 남는 흐름을 화면마다 하나씩 맡겼습니다.
 
-| 가져온 프롬프트 | 쓰인 곳 | 담은 뜻 |
+| 가져온 디자인 | 쓰인 곳 | 담은 뜻 |
 | --- | --- | --- |
 | Antipode (그라디언트) | 소개 페이지 · 대시보드 첫 화면, 브랜드 · 단체 상세 배너 | 맞닿음: 짙은 파란 덩어리와 은색 덩어리가 기대어 만나는 곳이 가장 밝게 빛남 |
 | Stride (템플릿) | 떠 있는 알약 헤더, 스크롤하면 둥근 카드로 줄어드는 첫 화면, 서로 반대로 흐르는 로고 띠, 아이콘 칩이 박힌 소개 문장, 숫자 벤토, 크롬 체인이 화면에 머무는 협찬 단계, 메시 그라디언트 푸터와 서로 걸린 크롬 고리, 글자와 카드가 흐림 속에서 떠오르는 효과 | 이어짐: 끊기지 않는 협찬의 고리 |
@@ -80,7 +80,7 @@ Figma Make 프로젝트 [Create Web/App Service](https://www.figma.com/make/mhCa
 - 회원은 상대의 상세 정보에서 `신고하기` · `차단하기`를, 채팅에서는 상대 메시지를 꾹 누르거나 오른쪽 클릭해 `신고하기`를, 파트너 후기에서는 `후기 신고`를 할 수 있어요. 신고는 사유(스팸 · 광고, 욕설 · 괴롭힘, 사기 의심, 기타)와 설명으로 운영자에게만 가고, 신고한 메시지나 후기의 글은 그때 그대로 남겨 둬요. 차단하면 두 쪽이 서로 목록에서 보이지 않고 제안과 메시지도 주고받을 수 없어요(이미 확정된 협찬은 그대로). 내 정보의 `차단한 상대`에서 풀 수 있어요. 여러 방문자가 함께 쓰는 데모 계정은 신고 · 차단을 할 수 없어요.
 - 운영자 화면의 `최근 오류`에는 서버가 처리하지 못한 요청(500대 응답)과 방문자 화면에서 처리되지 않은 오류가 새것부터 보여요(최근 200개, 데이터 파일 옆 `errors.json` 또는 Postgres의 `uniconnect_errors` 표). 오류 내용, 위치, 페이지 주소, 시각만 남기고 이름 · 이메일 · 입력한 내용은 넣지 않아요. `OPERATOR_EMAIL`을 설정하면 한 시간 동안 조용하다가 새 오류가 나면 그 주소로 알림 메일이 가요.
 - 운영자 화면의 `신고`에서 처리 대기인 신고를 보고 `그대로 두기`, `후기 내리기`(후기 신고), `계정 정지`를 할 수 있어요. 정지된 계정은 로그인할 수 없고(이미 로그인한 곳도 바로 로그아웃), 메일을 받지 않고, 목록에서 빠져요. 아래 `정지된 계정`에서 정지를 풀 수 있어요. 내린 후기는 상세 정보와 별점에서 빠지고, 쓴 회원이 다시 고쳐도 내려간 채로 남아요. 같은 화면 위쪽에는 가입한 학생단체·브랜드, 이번 주 새 가입, 등록된 행사, 보낸 제안과 수락률, 확정된 협찬, QR 스캔·쿠폰·매장 방문, 주고받은 메시지가 실제 회원 기준으로 나오고(작은 글씨는 데모 계정과 시드 데이터를 더한 값), 수업 발표나 사업계획서의 지표로 쓸 수 있어요. 토큰은 그 탭에만 기억되고 탭을 닫으면 지워져요.
-- 아래 값은 실제 정보가 정해지면 `frontend/.figma/make/site.json`에 넣어요.
+- 아래 값은 실제 정보가 정해지면 `frontend/site.config.json`에 넣어요.
   - GA4 측정 ID(`analytics.googleAnalyticsId`, 지금 `G-WK2GL8CB83`): 제안·문의 클릭과 실제 제안 접수, 가입이 이벤트로 기록돼요. 개인정보 처리방침의 '브라우저에 저장하는 정보'와 '처리 위탁'에 Google Analytics가 적혀 있어요. 보관 기간은 GA 관리 → 데이터 보관에서 14개월로 맞춰 두세요(기본 2개월).
   - 공유 이미지(`openGraph.image`): `https://<실제 도메인>/og-image.png` 처럼 절대 주소로 넣어요(1200×630, `frontend/public/og-image.png`).
   - 검색 노출(`robots.index`): `true`로 바꿔 공개 화면이 검색엔진에 나와요. 계정마다 다른 화면은 아래 '검색 노출'처럼 `noindex`로 빼요.
@@ -203,7 +203,7 @@ npm run dev
 
 ### 검색 노출
 
-- 공개 화면(소개 페이지, 추천 매칭, 단체 찾기, 상세 프로필, FAQ, 약관)은 검색엔진에 나옵니다(`frontend/.figma/make/site.json`의 `robots.index`).
+- 공개 화면(소개 페이지, 추천 매칭, 단체 찾기, 상세 프로필, FAQ, 약관)은 검색엔진에 나옵니다(`frontend/site.config.json`의 `robots.index`).
 - 한 계정이나 한 링크를 위한 화면에는 `noindex`를 붙입니다(`lib/pageMeta.ts`의 `noindex`). 대시보드(예시 데이터나 계정마다 다른 화면), 내 정보, 메시지, 내 행사·성과 화면, 운영자 화면, 임시 전자 계약서, 초대장, 체크인, 404 화면이 여기에 해당합니다.
 - `frontend/public/robots.txt`는 `/api/`, `/check-in/`, `/invite/`를 빼고 크롤링을 허용하고, `Sitemap:` 줄로 사이트맵을 알려 줍니다.
 - `/sitemap.xml`은 빌드할 때 `site.json`의 `url`(사이트 주소)과 `sitemap`(공개 페이지: 소개, 추천 매칭, 단체 찾기, FAQ, 약관, 개인정보 처리방침)으로 만들어집니다. 목록의 주소가 실제 화면이고 `noindex`가 아닌지, robots.txt의 주소와 맞는지 `lib/sitemap.test.ts`가 확인합니다. 사이트 주소가 바뀌면 `url`과 robots.txt를 함께 바꿔요.
@@ -604,8 +604,8 @@ GitHub에 push하거나 PR을 열면 GitHub Actions가 설치, 타입 검사, �
 │   │   ├── data/ lib/ hooks/  회원 유형별 메뉴, 화면 주소(route.ts)와 스와이프 이동(swipe.ts), 포맷·날짜·성과 계산 함수, 알림 토스트
 │   │   ├── types.ts           API 응답 타입
 │   │   └── index.css          전역 스타일 (Tailwind v4)
-│   ├── vite.config.ts         Vite 설정 (/api 프록시, Figma Make 플러그인)
-│   └── .figma/make/           Figma Make 실행 환경 스크립트 (site.json은 빌드에서도 사용)
+│   ├── vite.config.ts         Vite 설정 (/api 프록시, 사이트 정보 적용)
+│   └── site.config.json       사이트 제목 · 검색 노출 · GA 등 빌드에 쓰는 설정
 ├── backend/                   Express API
 │   └── src/
 │       ├── index.ts           서버 시작 (서버 한 대로 운영할 때)
