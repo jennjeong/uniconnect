@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useCallback, useState } from "react"
 
 import { api, errorMessage } from "../api"
 import { CodeStep } from "../components/CodeStep"
@@ -6,6 +6,7 @@ import { Modal } from "../components/Modal"
 import { PasswordField } from "../components/PasswordField"
 import { RoleMark } from "../components/RoleMark"
 import { RolePicker } from "../components/RolePicker"
+import { usePageReturn } from "../hooks/usePageReturn"
 import { demoAccounts, demoPassword } from "../data/demo"
 import { roles } from "../data/roles"
 import { t } from "../i18n"
@@ -44,6 +45,9 @@ export function LoginModal({
   // 2단계 인증을 방금 설정했다. 로그인이 이어지기 전에 복구 코드를 한 번 보여
   // 준다.
   const [recovery, setRecovery] = useState<{ session: Session; codes: string[] } | null>(null)
+
+  // 로그인하지 않고 제공자 화면에서 돌아온 경우.
+  usePageReturn(useCallback(() => setBusy(false), []))
 
   // 제공자로 나간다. 제공자가 브라우저를 서버로 돌려보내면 서버가 로그인을
   // 끝낸다(App이 ?social=을 읽는다).
