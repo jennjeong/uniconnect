@@ -423,6 +423,36 @@ test("on the event day a group saves a thank-you card image from the agreement",
   }
 })
 
+test("a brand replaces its store PIN during the event, and the old one stops at once", async ({ page, request }) => {
+  const group = await signUpMember(request, "학생단체", "e2e-newpin@syu.ac.kr", "PIN 바꾸는 동아리")
+  const brand = await signUpMember(request, "브랜드", "e2e-newpin@newpin-cafe.kr", "PIN 바꾸는 카페")
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date())
+  await request.post("/api/events", { data: { name: "PIN 공연", date: today, types: ["제품"] }, headers: group.headers })
+  await request.post("/api/proposals", { data: { matchId: brand.listingId }, headers: group.headers })
+  const { requests } = (await (await request.get("/api/requests", { headers: brand.headers })).json()) as { requests: { id: string }[] }
+  await request.post(`/api/requests/${requests[0].id}/accept`, { headers: brand.headers })
+
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
+  await page.goto(`/agreements/${requests[0].id}`)
+  const venue = page.locator(".venue-access")
+  const shown = venue.locator("span strong").first()
+  const old = (await shown.textContent())!
+  await venue.getByRole("button", { name: "PIN 바꾸기" }).click()
+  await expect(venue).toContainText("지금 PIN은 바로 막혀요.")
+  await venue.getByRole("button", { name: "새 PIN으로 바꾸기" }).click()
+  await expect(page.getByText("새 PIN을 만들었어요. 지금까지 쓰던 PIN은 막혔어요.")).toBeVisible()
+  await expect(shown).not.toHaveText(old)
+  await expect(venue.getByRole("button", { name: "PIN 바꾸기" })).toBeVisible()
+
+  const code = (await venue.locator("a").getAttribute("href"))!.match(/check-in\/([\w-]+)/)![1]
+  expect((await request.post(`/api/check-in/${code}/staff/session`, { data: { pin: old } })).status()).toBe(403)
+  expect((await request.post(`/api/check-in/${code}/staff/session`, { data: { pin: await shown.textContent() } })).status()).toBe(200)
+  for (const member of [group, brand]) {
+    const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: member.headers })
+    expect(left.status()).toBe(204)
+  }
+})
+
 test("a sponsorship is called off from its agreement once the other side agrees", async ({ page, request }) => {
   const group = await signUpMember(request, "학생단체", "e2e-calloff@syu.ac.kr", "취소하는 동아리")
   const brand = await signUpMember(request, "브랜드", "e2e-calloff@calloff-cafe.kr", "취소하는 카페")

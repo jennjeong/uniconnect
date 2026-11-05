@@ -7,6 +7,8 @@ import {
   type AcceptedProposal,
   agreementFor,
   agreementShare,
+  rotateCampaignGroupPin,
+  rotateVenuePin,
   confirmAgreement,
   agreementView,
   cancelSponsorship,
@@ -423,6 +425,29 @@ agreementsRouter.delete("/:id/cancel", async (req, res) => {
     ],
     `/agreements/${encodeURIComponent(agreement.id)}`,
   )
+  res.json({ agreement: agreementView(database, agreement, proposal, side) })
+})
+
+// 이쪽의 현장 PIN을 새로 만든다. 지금 PIN은 바로 막힌다. 공용 데모 계정의
+// PIN은 체험하는 모두가 쓰므로 바꿀 수 없다.
+agreementsRouter.post("/:id/pin", async (req, res) => {
+  const { account, database, proposal, side } = openedToChange(req)
+  if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 PIN을 바꿀 수 없어요.")
+  const { agreement } = agreementFor(database, proposal)
+  const shared = req.body?.page === "group" && side === "brand"
+  const groups = shared ? rotateCampaignGroupPin(database, proposal) : (rotateVenuePin(database, proposal, side), [])
+  agreement.updatedAt = new Date().toISOString()
+  await saveDatabase()
+  // PIN은 메일에 넣지 않는다. 각 단체는 자기 계약서에서 새 PIN을 본다.
+  for (const group of groups) {
+    void notify(
+      group.group.account,
+      "sponsorships",
+      "현장 PIN이 바뀌었어요",
+      [`'${group.eventName}' 현장 PIN이 바뀌었어요. 계약서에서 새 PIN을 확인해 주세요.`],
+      `/agreements/${encodeURIComponent(group.id)}`,
+    )
+  }
   res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 

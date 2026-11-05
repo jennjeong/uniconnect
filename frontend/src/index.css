@@ -17347,6 +17347,31 @@ th[aria-sort="descending"] .console-sort span {
   color: var(--muted);
 }
 
+/* 현장 PIN 바꾸기 (components/RotatePin.tsx). */
+.rotate-pin {
+  display: flex;
+  flex-direction: column;
+  align-items: inherit;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.rotate-pin small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.rotate-pin .rotate-pin-misses {
+  color: var(--ink);
+  font-weight: var(--weight-label);
+}
+
+.rotate-pin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .venue-access {
   display: flex;
   flex-direction: column;

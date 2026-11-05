@@ -5,6 +5,7 @@ import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { Presence } from "../components/Presence"
 import { Pill } from "../components/Pill"
+import { RotatePin } from "../components/RotatePin"
 import { ReviewCard, ReviewReply } from "../components/ReviewCard"
 import { starPath } from "../components/Stars"
 import { carriers, trackingLink } from "../data/carriers"
@@ -16,7 +17,7 @@ import { formatDateTime, formatFullDate } from "../lib/date"
 import { photoFromFile } from "../lib/image"
 import { fullWon } from "../lib/sponsorships"
 import { PaymentModal } from "../modals/PaymentModal"
-import type { Agreement, AgreementItem, ChatSide, MeasureMethod, MethodKind, MethodSide, Metrics, Review, Shipment, SnsPost } from "../types"
+import type { Agreement, AgreementItem, ChatSide, MeasureMethod, MethodKind, MethodSide, Metrics, Review, Shipment, SnsPost, VenuePage } from "../types"
 import { agreementState } from "./AgreementsPage"
 
 const ThanksCardExport = lazy(() => import("../report/ThanksCard").then((module) => ({ default: module.ThanksCardExport })))
@@ -328,10 +329,12 @@ function MethodsPanel({
   agreement,
   busy,
   onSave,
+  onRotatePin,
 }: {
   agreement: Agreement
   busy: boolean
   onSave: (methods: MeasureMethod[]) => Promise<boolean>
+  onRotatePin: (page?: VenuePage) => Promise<boolean>
 }) {
   const { measure, event } = agreement
   const [draft, setDraft] = useState<MeasureMethod[] | null>(null)
@@ -476,13 +479,19 @@ function MethodsPanel({
             {venueLink(measure.code, venue.page)}
           </a>
           {venue.pin ? (
-            <span>
-              {t("PIN")} <strong>{venue.pin}</strong>
-            </span>
+            <>
+              <span>
+                {t("PIN")} <strong>{venue.pin}</strong>
+              </span>
+              {venue.canRotate && <RotatePin misses={venue.misses} onRotate={() => onRotatePin()} />}
+            </>
           ) : (
             venue.pinsFrom && <small>{t("PIN은 행사 하루 전인 {date}부터 여기에 보여요.", { date: formatFullDate(venue.pinsFrom) })}</small>
           )}
         </div>
+      )}
+      {measure.canRotateGroupPin && (
+        <RotatePin label={t("단체들의 현장 PIN 바꾸기")} onRotate={() => onRotatePin("group")} />
       )}
       {!event.started && (
         <div className="goals-actions">
@@ -1596,6 +1605,7 @@ export function AgreementPage({
       <MethodsPanel
         agreement={agreement}
         busy={busy}
+        onRotatePin={(page) => run(() => api.rotateAgreementPin(agreement.id, page), t("새 PIN을 만들었어요. 지금까지 쓰던 PIN은 막혔어요."))}
         onSave={(methods) =>
           run(() => api.saveMeasureMethods(agreement.id, methods), t("협찬 확인 방식을 고쳤어요. 두 쪽 모두 다시 확인해 주세요."))
         }

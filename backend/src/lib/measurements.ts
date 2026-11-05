@@ -7,6 +7,7 @@ import { sponsorTypes, text } from "./validation.js"
 import type {
   Database,
   EventItem,
+  ChatSide,
   EventSponsor,
   Measurement,
   MeasurementGoals,
@@ -128,7 +129,7 @@ export function parseGoals(body: unknown): MeasurementGoals {
 // 목표 폼의 협찬사별 쿠폰, 가치, 직원 PIN을 검사해 측정에 반영한다.
 // 협찬사가 여럿이면 가치의 합이 행사의 가치와 같아야 하고 PIN은 협찬사마다
 // 달라야 한다.
-export function applySponsorGoals(measurement: Measurement, goals: MeasurementGoals, body: unknown) {
+export function applySponsorGoals(measurement: Measurement, goals: MeasurementGoals, body: unknown, keepPins = false) {
   const total = goals.valueBreakdown.reduce((sum, part) => sum + part.value, 0)
   const several = measurement.sponsors.length > 1
   if (Array.isArray(body)) {
@@ -145,7 +146,7 @@ export function applySponsorGoals(measurement: Measurement, goals: MeasurementGo
         sponsor,
         coupon: { store, title },
         value: several ? wholeNumber(row.value, `${sponsor.brandName}의 협찬 가치`, 1_000_000_000) : undefined,
-        staffPin: parseStaffPin(row.staffPin) ?? sponsor.staffPin,
+        staffPin: keepPins ? sponsor.staffPin : (parseStaffPin(row.staffPin) ?? sponsor.staffPin),
       }
     })
     if (new Set(updates.map((update) => update.staffPin)).size !== updates.length) {
@@ -193,6 +194,31 @@ function newSponsorPin(measurement: Measurement) {
   while (measurement.sponsors.some((sponsor) => sponsor.staffPin === pin))
   return pin
 }
+
+// 새 PIN으로 바꾼다. 행사 중에 유출이 의심될 때 쓰며, 지금 PIN은 바로 막힌다.
+// 값은 서버가 만들고 이 행사의 어떤 PIN과도 겹치지 않는다. 단체는 자기 PIN을,
+// 브랜드는 자기 매장 PIN을, 협찬사 몫이 없으면 행사의 직원 PIN을 바꾼다.
+export function rotatePin(measurement: Measurement, sponsor: EventSponsor | undefined, side: ChatSide) {
+  const used = new Set([measurement.staffPin, measurement.groupPin, ...measurement.sponsors.map((item) => item.staffPin)])
+  let pin: string
+  do pin = newStaffPin()
+  while (used.has(pin))
+  if (side === "group") {
+    measurement.groupPin = pin
+    return
+  }
+  // 첫 협찬사는 행사의 PIN을 넘겨받는다. 그 값을 남겨 두면 협찬이 취소됐을 때
+  // 막은 PIN이 되살아난다.
+  if (sponsor && measurement.staffPin !== sponsor.staffPin) sponsor.staffPin = pin
+  else {
+    if (sponsor) sponsor.staffPin = pin
+    measurement.staffPin = pin
+  }
+}
+
+// 오늘 틀린 PIN 시도 수. PIN을 가진 쪽이 바꿀지 판단하도록 보여 준다.
+export const pinMissesToday = (measurement: Measurement) =>
+  measurement.pinMisses?.day === todayInKorea() ? measurement.pinMisses.count : 0
 
 // 행사를 협찬하는 브랜드마다 행사 측정에 자기 쿠폰, 직원 PIN, 집계를 준다.
 // 행사의 첫 협찬사가 혼자일 때는 행사가 지금까지 가진 쿠폰, PIN, 집계,
@@ -289,7 +315,7 @@ export const estimatedSales = (measurement: Measurement) =>
 export function buildReport(
   measurement: Measurement,
   event: EventItem,
-  { withPin = false, withGroupPin = false, pinsDay = "", posted = { confirmed: 0, pending: 0 } } = {},
+  { withPin = false, withGroupPin = false, pinsDay = "", canRotatePin = false, posted = { confirmed: 0, pending: 0 } } = {},
 ): Report {
   const { goals, metrics } = measurement
   const sponsorValue = goals.valueBreakdown.reduce((sum, part) => sum + part.value, 0)
@@ -311,9 +337,10 @@ export function buildReport(
     postedReach: posted.confirmed,
     pendingReach: posted.pending,
     coupon: goals.coupon,
-    ...(withPin ? { staffPin: measurement.staffPin } : {}),
+    ...(withPin ? { staffPin: measurement.staffPin, pinMisses: pinMissesToday(measurement) } : {}),
     ...(withGroupPin ? { groupPin: measurement.groupPin } : {}),
     ...(pinsDay ? { pinsFrom: pinsDay } : {}),
+    ...(canRotatePin ? { canRotatePin } : {}),
     methods: activeMethodsOf(measurement),
     venue: venueCountsOf(metrics),
     // 학생 단체 자신의 리포트용 참석자 정보. 행사 종류, 예상 참석자, 그리고

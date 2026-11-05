@@ -1,20 +1,23 @@
 import { Icon } from "../components/Icon"
 import { Modal } from "../components/Modal"
 import { QrCode } from "../components/QrCode"
+import { RotatePin } from "../components/RotatePin"
 import { t } from "../i18n"
 import { checkInLink, staffCheckInLink, venueLink } from "../lib/checkin"
 import { formatFullDate } from "../lib/date"
-import type { Report } from "../types"
+import type { Report, VenuePage } from "../types"
 
 // 행사의 체크인 QR. 화면에 띄우거나 행사장에서 인쇄한다.
 export function QrModal({
   report,
   onClose,
   onCopied,
+  onRotatePin,
 }: {
   report: Report
   onClose: () => void
   onCopied: (message: string) => void
+  onRotatePin: (page: VenuePage) => Promise<unknown>
 }) {
   const link = checkInLink(report)
 
@@ -55,6 +58,7 @@ export function QrModal({
                 {t("직원 PIN")} <strong>{report.staffPin}</strong>
               </span>
             )}
+            {report.canRotatePin && !report.sponsors?.length && <RotatePin misses={report.pinMisses} onRotate={() => onRotatePin("staff")} />}
             <small>
               {t("이 주소와 PIN은 협찬 매장 직원에게만 알려 주세요. 직원이 자기 기기에서 참여자의 쿠폰 번호를 넣으면 방문이 기록돼요.")}
               {report.sponsors &&
@@ -73,6 +77,7 @@ export function QrModal({
             <span>
               {t("단체 확인 PIN")} <strong>{report.groupPin}</strong>
             </span>
+            {report.canRotatePin && <RotatePin misses={report.pinMisses} onRotate={() => onRotatePin("group")} />}
             <small>
               {t("임시 전자 계약서에서 우리 단체가 확인하기로 한 협찬 확인 방식(부스 스탬프, SNS 인증 등)을 행사 날 이 주소에서 기록해요. 우리 단체 담당자에게만 알려 주세요.")}
             </small>

@@ -2069,7 +2069,19 @@ function App() {
       )}
       {report && (
         <Presence show={activeModal === "qr"}>
-          <QrModal report={report} onClose={closeModal} onCopied={showNotice} />
+          <QrModal
+            report={report}
+            onClose={closeModal}
+            onCopied={showNotice}
+            onRotatePin={async (page) => {
+              try {
+                updateMeasurement({ eventId: report.eventId, ...(await api.rotateEventPin(report.eventId, page)) })
+                showNotice(t("새 PIN을 만들었어요. 지금까지 쓰던 PIN은 막혔어요."))
+              } catch (error) {
+                showNotice(errorMessage(error))
+              }
+            }}
+          />
         </Presence>
       )}
       <Presence show={activeModal === "login"}>

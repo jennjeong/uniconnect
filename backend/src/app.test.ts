@@ -4293,7 +4293,7 @@ test("an e-contract sets how its sponsorship is confirmed, which counts once bot
   assert.deepEqual(settled.measure.confirmedMethods, settled.measure.methods)
   assert.deepEqual(
     (await call("GET", agreementPath, undefined, group)).data.agreement.measure.venue,
-    { page: "group", pin: groupPin },
+    { page: "group", pin: groupPin, misses: 0, canRotate: true },
   )
   // 쿠폰이 없으면 참여자에게 아무것도 내놓지 않는다.
   assert.deepEqual((await call("GET", `/check-in/${code}`)).data.coupons, [])
@@ -4427,6 +4427,101 @@ test("either side notes the parcels it sent on the agreement, and only it takes 
   const removed = await call("DELETE", `${path}/${shipment.id}`, undefined, brand)
   assert.equal(removed.data.agreement.shipments, undefined)
   assert.equal((await call("POST", path, { carrier: "CJ대한통운", number: "123456789" })).status, 401)
+})
+
+test("each side can replace its venue PIN during the event, and the old one stops at once", async () => {
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const group = await signUpMember("pin-club@syu.ac.kr", "pin-pass-1234")
+  const groupId = getDatabase().accounts.find((account) => account.email === "pin-club@syu.ac.kr")!.id
+  const { token: brand, listingId } = await listedMember("pin@pin-cafe.kr", "pin-pass-1234", "브랜드")
+  await call("POST", "/events", { name: "PIN 공연", date: addDays(todayInKorea(), 9), people: "100명", types: ["제품"] }, group)
+  await call("POST", "/proposals", { matchId: listingId }, group)
+  const request = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
+  await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+  const path = `/agreements/${request.id}`
+  const eventPath = `/measurements/${request.eventId}`
+  await call("GET", path, undefined, brand)
+
+  // PIN이 보이기 전에는 바꿀 수 없다.
+  assert.equal((await call("POST", `${path}/pin`, undefined, brand)).status, 409)
+  assert.equal((await call("POST", `${eventPath}/pin`, { page: "group" }, group)).status, 409)
+
+  getDatabase().events[groupId].find((item) => item.id === request.eventId)!.date = todayInKorea()
+  const venue = (await call("GET", path, undefined, brand)).data.agreement.measure
+  assert.equal(venue.venue.canRotate, true)
+  const old = venue.venue.pin as string
+  const session = (pin: string) => call("POST", `/check-in/${venue.code}/staff/session`, { pin })
+  assert.equal((await session(old)).status, 200)
+
+  // 계약서의 두 쪽이 아니면 찾을 수 없고, 로그인이 필요하다.
+  assert.equal((await call("POST", `${path}/pin`, undefined, await login("학생단체"))).status, 404)
+  assert.equal((await call("POST", `${path}/pin`)).status, 401)
+  assert.equal((await call("POST", `${eventPath}/pin`, { page: "group" })).status, 401)
+  assert.equal((await call("POST", `${eventPath}/pin`, { page: "group" }, brand)).status, 404)
+
+  // 브랜드는 자기 매장 PIN을 바꾸고, 예전 PIN은 바로 막힌다.
+  const changed = await call("POST", `${path}/pin`, undefined, brand)
+  assert.equal(changed.status, 200)
+  const fresh = changed.data.agreement.measure.venue.pin as string
+  assert.notEqual(fresh, old)
+  assert.equal((await session(old)).status, 403)
+  assert.equal((await session(fresh)).status, 200)
+  // 틀린 시도는 PIN을 가진 쪽에게 보인다.
+  assert.equal((await call("GET", path, undefined, brand)).data.agreement.measure.venue.misses, 1)
+
+  // 혼자인 첫 협찬사는 행사의 PIN을 넘겨받았으므로 함께 바뀐다. 협찬이 취소돼도
+  // 막은 PIN이 되살아나지 않는다.
+  const measurement = getDatabase().measurements.find((item) => item.code === venue.code)!
+  assert.equal(measurement.staffPin, fresh)
+
+  // 열어 둔 목표 양식이 막은 PIN을 되돌리지 못한다.
+  const goals = (await call("GET", eventPath, undefined, group)).data.report
+  measurement.sponsors[0].staffPin = fresh
+  const { applySponsorGoals } = await import("./lib/measurements.js")
+  applySponsorGoals(measurement, measurement.goals, [{ id: measurement.sponsors[0].id, store: "가게", title: "쿠폰", staffPin: old }], true)
+  assert.equal(measurement.sponsors[0].staffPin, fresh)
+  assert.equal(goals.canRotatePin, true)
+
+  // 단체는 자기 PIN을 바꾸지만 브랜드의 매장 PIN은 바꾸지 못한다.
+  const before = (await call("GET", eventPath, undefined, group)).data.report
+  const rotated = await call("POST", `${eventPath}/pin`, { page: "group" }, group)
+  assert.equal(rotated.status, 200)
+  assert.notEqual(rotated.data.report.groupPin, before.groupPin)
+  assert.equal((await call("POST", `${eventPath}/pin`, { page: "staff" }, group)).status, 409)
+  assert.equal((await call("POST", `${eventPath}/pin`, { page: "constructor" }, group)).status, 400)
+
+  // 공용 데모 계정은 체험하는 모두가 쓰므로 바꿀 수 없다.
+  assert.equal((await call("POST", "/agreements/req-runners/pin", undefined, await login("브랜드"))).status, 403)
+})
+
+test("a venue PIN several groups share on a campaign is changed only by the brand", async () => {
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const { token: brand } = await listedMember("share-pin@share-cafe.kr", "share-pass-1234", "브랜드")
+  const { token: first, listingId: firstListing } = await listedMember("share-one@syu.ac.kr", "share-pass-1234")
+  const { token: second, listingId: secondListing } = await listedMember("share-two@syu.ac.kr", "share-pass-1234")
+  await call("POST", "/events", { name: "공유 캠페인", date: addDays(todayInKorea(), 5), types: ["제품"] }, brand)
+  await call("POST", "/proposals", { matchId: firstListing }, brand)
+  await call("POST", "/proposals", { matchId: secondListing }, brand)
+  const [offerOne] = (await call("GET", "/offers", undefined, first)).data.offers
+  const [offerTwo] = (await call("GET", "/offers", undefined, second)).data.offers
+  await call("POST", `/offers/${offerOne.id}/accept`, undefined, first)
+  await call("POST", `/offers/${offerTwo.id}/accept`, undefined, second)
+  const methods = [{ kind: "qr", side: "group" }, { kind: "experience", side: "group" }]
+  for (const [id, group] of [[offerOne.id, first], [offerTwo.id, second]]) {
+    await call("PUT", `/agreements/${id}/methods`, { methods }, group)
+    await call("POST", `/agreements/${id}/confirm`, undefined, group)
+    await call("POST", `/agreements/${id}/confirm`, undefined, brand)
+  }
+  const brandId = getDatabase().accounts.find((account) => account.email === "share-pin@share-cafe.kr")!.id
+  getDatabase().events[brandId][0].date = todayInKorea()
+  const shown = (await call("GET", `/agreements/${offerOne.id}`, undefined, first)).data.agreement.measure
+  assert.equal(shown.venue.canRotate, false)
+  assert.equal((await call("POST", `/agreements/${offerOne.id}/pin`, undefined, first)).status, 409)
+  assert.equal((await call("POST", `/agreements/${offerOne.id}/pin`, { page: "group" }, first)).status, 409)
+  const byBrand = await call("POST", `/agreements/${offerOne.id}/pin`, { page: "group" }, brand)
+  assert.equal(byBrand.status, 200)
+  const after = (await call("GET", `/agreements/${offerTwo.id}`, undefined, second)).data.agreement.measure
+  assert.notEqual(after.venue.pin, shown.venue.pin)
 })
 
 test("a group's SNS posts count toward reach once the brand confirms them, with YouTube's views where it can read them", async () => {

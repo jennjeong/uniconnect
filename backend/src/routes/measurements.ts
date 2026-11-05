@@ -13,6 +13,7 @@ import {
   parseStaffPin,
   pinsFrom,
   pinsOpen,
+  rotatePin,
 } from "../lib/measurements.js"
 import { postedReach } from "../lib/snsPosts.js"
 import { requireAccount } from "../middleware/session.js"
@@ -36,7 +37,11 @@ function measurementOwner(req: Request) {
 function pinsFor(req: Request, measurement: Measurement, event: EventItem) {
   if (!req.account) return {}
   if (!pinsOpen(getDatabase(), measurement, event)) return { pinsDay: pinsFrom(event) }
-  return { withPin: true, withGroupPin: req.account.role === "학생단체" }
+  return {
+    withPin: true,
+    withGroupPin: req.account.role === "학생단체",
+    canRotatePin: !isDemoAccount(getDatabase(), req.account),
+  }
 }
 
 // 행사의 리포트. SNS 게시물의 도달을 함께 담는다.
@@ -76,6 +81,23 @@ measurementsRouter.get("/:eventId", async (req, res) => {
   res.json({ metrics: measurement.metrics, report: reportOf(req, measurement, event) })
 })
 
+// 행사 주인이 자기 현장 PIN을 새로 만든다. 협찬사가 있으면 매장 PIN은 그
+// 브랜드만 계약서에서 바꾼다. 브랜드가 모르는 사이에 PIN이 바뀌면 안 된다.
+measurementsRouter.post("/:eventId/pin", async (req, res) => {
+  const account = requireAccount(req)
+  const { measurement, event } = await ownedMeasurement(req)
+  const database = getDatabase()
+  if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 PIN을 바꿀 수 없어요.")
+  if (!pinsOpen(database, measurement, event)) throw new HttpError(409, "PIN은 보이는 날부터 바꿀 수 있어요.")
+  const page = req.body?.page
+  if (page !== "group" && page !== "staff") throw new HttpError(400, "바꿀 PIN을 골라 주세요.")
+  if (page === "group" && account.role !== "학생단체") throw new HttpError(400, "바꿀 PIN을 골라 주세요.")
+  if (page === "staff" && measurement.sponsors.length) throw new HttpError(409, "매장 PIN은 브랜드가 계약서에서 바꿔요.")
+  rotatePin(measurement, undefined, page === "group" ? "group" : "brand")
+  await saveDatabase()
+  res.json({ metrics: measurement.metrics, report: buildReport(measurement, event, pinsFor(req, measurement, event)) })
+})
+
 // 참여 기록을 최신순으로 보여 주며, ?kind=로 측정 하나로 좁힐 수 있다.
 measurementsRouter.get("/:eventId/log", async (req, res) => {
   const { measurement } = await ownedMeasurement(req)
@@ -100,8 +122,11 @@ measurementsRouter.put("/:eventId/goals", async (req, res) => {
   const demo = isDemoAccount(database, database.accounts.find((item) => item.id === measurement.accountId))
   if (!demo && event.date <= todayInKorea()) throw new HttpError(409, "시작한 행사의 목표는 바꿀 수 없어요.")
   const goals = parseGoals(req.body)
-  const staffPin = parseStaffPin(req.body?.staffPin)
-  applySponsorGoals(measurement, goals, req.body?.sponsors)
+  // PIN이 보인 뒤에는 PIN 바꾸기로만 바꾼다. 열어 둔 양식이 막은 PIN을 되돌리지
+  // 못하게 하려는 것이다.
+  const keepPins = !demo && pinsOpen(database, measurement, event)
+  const staffPin = keepPins ? undefined : parseStaffPin(req.body?.staffPin)
+  applySponsorGoals(measurement, goals, req.body?.sponsors, keepPins)
   measurement.goals = goals
   if (staffPin) measurement.staffPin = staffPin
   await saveDatabase()
