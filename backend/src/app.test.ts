@@ -405,6 +405,10 @@ test("security: tokens, stale prices, refunds, late edits, codes and invitations
     const stale = await call("POST", "/billing/confirm", { orderId: renewal.id, paymentKey: "pk", amount: 50_000 }, brand)
     assert.equal(stale.status, 409)
     assert.equal(paymentsOf(getDatabase()).find((item) => item.id === renewal.id)!.amount, 98010)
+    // 부가세 전에 만든 주문은 총액이 맞아도 낡은 주문이다.
+    delete pay.supply
+    assert.equal((await call("POST", "/billing/confirm", { orderId: renewal.id, paymentKey: "pk", amount: 98010 }, brand)).status, 409)
+    assert.ok(pay.supply)
   } finally {
     settings.tossClientKey = saved.client
     settings.tossSecretKey = saved.secret
@@ -1567,6 +1571,45 @@ test("a linked Kakao account logs in, with the state bound to the browser and no
     config.naverClientId = saved.naverId
     config.naverClientSecret = saved.naverSecret
   }
+})
+
+test("wrong invitation codes pause joining without deleting anyone's invitation", async () => {
+  const first = await signUpMember("share-team-one@syu.ac.kr", "team-pass-123")
+  const second = await signUpMember("share-team-two@syu.ac.kr", "team-pass-123")
+  const invited = await call("POST", "/team/invites", { name: "부회장", email: "wanted@syu.ac.kr" }, first)
+  await call("POST", "/team/invites", { name: "총무", email: "wanted@syu.ac.kr" }, second)
+  const join = (code: string) =>
+    call("POST", "/team/join", { email: "wanted@syu.ac.kr", code, password: "vice-pass-123", document: proofDocument })
+  for (let turn = 0; turn < 5; turn += 1) assert.equal((await join("000000")).status, 400)
+  assert.equal((await join("000000")).status, 429)
+  for (const token of [first, second]) {
+    assert.equal((await call("GET", "/team", undefined, token)).data.team.invites.length, 1)
+  }
+  await clearRateLimits()
+  assert.equal((await join(invited.data.devCode)).status, 202)
+  await approveApplication("wanted@syu.ac.kr")
+})
+
+test("refunding a granted period moves later periods by that period's length", async () => {
+  const { grantPartners } = await import("./lib/adminTools.js")
+  const { markCancelled } = await import("./lib/billing.js")
+  await listedMember("grant-shift@grant-cafe.kr", "grant-pass-1234", "브랜드")
+  const database = getDatabase()
+  const brand = database.accounts.find((account) => account.email === "grant-shift@grant-cafe.kr")!
+  const year = grantPartners(database, brand, 365)
+  const month = grantPartners(database, brand, 30)
+  const end = new Date(`${month.periodEnd}T00:00:00Z`).getTime()
+  markCancelled(database, year, "테스트 환불")
+  assert.equal((end - new Date(`${month.periodEnd}T00:00:00Z`).getTime()) / 86_400_000, 365)
+})
+
+test("a document keeps the extension of what it is, and an email can't dodge the free-mail list with a dot", async () => {
+  const { parseDocument } = await import("./lib/applications.js")
+  const { isPersonalMail, normalizeEmail } = await import("./lib/email.js")
+  assert.equal(parseDocument({ ...proofDocument, name: "재직증명서.html" }, "없음").name, "재직증명서.pdf")
+  assert.equal(parseDocument({ ...proofDocument, name: "a.pdf.exe" }, "없음").name, "a.pdf.pdf")
+  assert.equal(parseDocument({ ...proofDocument, name: "" }, "없음").name, "서류.pdf")
+  assert.equal(isPersonalMail(normalizeEmail("shop@Gmail.com.")), true)
 })
 
 test("an owner invites co-admins, who log in with their own password and can't do the owner's part", async () => {

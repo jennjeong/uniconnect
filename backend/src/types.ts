@@ -250,7 +250,7 @@ export type Application = {
   accountId?: string
   member?: TeamMember
 }
-export type MemberInvite = { id: string; name: string; email: string; codeHash: string; invitedAt: string; expiresAt: number; tries: number }
+export type MemberInvite = { id: string; name: string; email: string; codeHash: string; invitedAt: string; expiresAt: number }
 
 export type PublicAccount = Omit<
   Account,
@@ -795,6 +795,8 @@ export type Payment = {
   cancelReason?: string
   // Pro나 광고의 경우, 결제한 한 달이 끝나는 날이다(한국 날짜).
   periodEnd?: string
+  // 그 기간의 일수. 환불하면 뒤의 기간을 이만큼 앞당긴다.
+  periodDays?: number
   // 리포트의 경우, 산 사람이 처음 연 시각이다(약관에 따라 그 뒤에는 환불 없음).
   openedAt?: string
 }
