@@ -67,6 +67,9 @@ export const config = {
   // (예: https://nominatim.openstreetmap.org, lib/geocode.ts). 없으면 주소는
   // 보관하지만 거리가 없다.
   nominatimUrl: process.env.NOMINATIM_URL,
+  // SNS 게시물의 조회수를 읽는 YouTube Data API 키(lib/snsPosts.ts). 없으면
+  // 게시물은 링크와 캡처로 확인한다.
+  youtubeApiKey: process.env.YOUTUBE_API_KEY,
   // 조용한 한 시간 뒤에 새 오류가 생기면 운영자에게 알린다(lib/errorLog.ts).
   // 메일이 설정된 뒤에 동작한다.
   operatorEmail: process.env.OPERATOR_EMAIL,

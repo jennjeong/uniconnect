@@ -143,8 +143,8 @@ const en: Record<string, string> = {
     "Following up on reports, questions and payments, and seeing who did what and when",
   "탈퇴할 때까지, 처리 기록은 최근 500건까지":
     "Until the member leaves; the log keeps the latest 500 entries",
-  "임시 전자 계약서(할 일, 확인한 시각, 완료 표시, 증빙 링크와 사진, 보낸 물품의 택배사와 운송장 번호, 협찬 취소 요청과 그 이유)":
-    "Provisional e-contracts (items, when they were confirmed, items marked done, proof links and photos, the carrier and tracking number of goods sent, requests to call the sponsorship off and why)",
+  "임시 전자 계약서(할 일, 확인한 시각, 완료 표시, 증빙 링크와 사진, 보낸 물품의 택배사와 운송장 번호, SNS 게시물 링크와 캡처 사진과 도달 수, 협찬 취소 요청과 그 이유)":
+    "Provisional e-contracts (items, when they were confirmed, items marked done, proof links and photos, the carrier and tracking number of goods sent, SNS post links, screenshots and reach, requests to call the sponsorship off and why)",
   "확정된 협찬의 할 일을 두 회원이 함께 정하고 결과를 남김":
     "Letting the two members of a confirmed sponsorship agree on what each will do and keep the results",
   "약속한 두 회원 중 한쪽이 탈퇴할 때까지": "Until either of the two members leaves",
@@ -188,6 +188,8 @@ const en: Record<string, string> = {
     "Once a mail service is connected, email addresses and the content of the emails are entrusted to the mail delivery company Resend (United States) to send verification emails and notices (new sponsorship proposals and answers, new messages, upcoming dates, provisional e-contracts and reviews, answers to questions, weekly picks). After sending, that company's retention policy applies. It is not connected at the moment.",
   "서비스를 운영하기 위해 회원 정보와 서비스의 모든 데이터(계정, 소개, 행사, 협찬 제안, 메시지, 임시 전자 계약서와 증빙 사진, 후기)를 서버 호스팅 업체 Vercel(미국, 서버는 싱가포르)과 데이터베이스 업체 Neon(미국, 저장 위치는 싱가포르)에 맡겨요. 회원이 탈퇴하거나 서비스를 마칠 때까지 맡기고, 백업은 아래처럼 최대 24시간 남아요.":
     "To run the service, member information and all of the service's data (accounts, introductions, events, sponsorship proposals, messages, provisional e-contracts and proof photos, reviews) are entrusted to the hosting provider Vercel (USA; servers in Singapore) and the database provider Neon (USA; stored in Singapore). They are entrusted until a member leaves or the service ends, and backups remain for up to 24 hours as described below.",
+  "SNS 게시물이 유튜브 영상이면, 공개 조회수를 가져오기 위해 영상 ID를 Google(미국)의 YouTube Data API에 보내요. 회원 정보는 보내지 않아요.":
+    "When an SNS post is a YouTube video, we send its video ID to Google's (USA) YouTube Data API to read the public view count. No member information is sent.",
   "방문 통계를 내기 위해 본 화면의 주소, 버튼 사용 같은 이용 기록, 쿠키 식별자와 기기 정보를 Google(미국)의 Google Analytics에 맡겨요. Google은 이 기록을 최대 14개월 보관하고, 이름, 이메일, 메시지 내용은 보내지 않아요.":
     "To produce visit statistics, the addresses of the screens viewed, usage records such as button use, cookie identifiers and device information are entrusted to Google Analytics by Google (United States). Google keeps these records for up to 14 months, and no names, email addresses or message content are sent.",
   "그 밖에 새로 맡기는 일이 생기면 받는 곳과 맡기는 일을 이곳에 먼저 적고 알려 드려요.":
