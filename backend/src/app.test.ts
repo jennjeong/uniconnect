@@ -4431,9 +4431,12 @@ test("either side notes the parcels it sent on the agreement, and only it takes 
 
 test("PINs saved with four digits become six once, and the first sponsor keeps the event's", async () => {
   const { upgradePins } = await import("./lib/measurements.js")
-  const measurement = { staffPin: "1111", groupPin: "2222", sponsors: [{ staffPin: "1111" }, { staffPin: "3333" }] }
-  const database = { measurements: [measurement] } as never
+  const measurement = { accountId: "a", staffPin: "1111", groupPin: "2222", sponsors: [{ staffPin: "1111" }, { staffPin: "3333" }] }
+  const demo = { accountId: "demo", staffPin: "1012", groupPin: "1013", sponsors: [] }
+  const database = { measurements: [measurement, demo], demoAccountIds: { 브랜드: "x", 학생단체: "demo" } } as never
   assert.equal(upgradePins(database), true)
+  assert.deepEqual([demo.staffPin, demo.groupPin], ["101234", "101334"])
+  assert.equal(new Set([measurement.staffPin, measurement.groupPin, measurement.sponsors[1].staffPin]).size, 3)
   assert.match(measurement.staffPin, /^\d{6}$/)
   assert.match(measurement.groupPin, /^\d{6}$/)
   assert.equal(measurement.sponsors[0].staffPin, measurement.staffPin)

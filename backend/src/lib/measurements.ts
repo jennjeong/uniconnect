@@ -189,21 +189,30 @@ export const newStaffPin = () => String(randomInt(0, 1_000_000)).padStart(6, "0"
 
 // 네 자리 시절의 PIN을 새 PIN으로 바꾼다. 바뀐 것이 있으면 true다. 값이 무작위라
 // 불러올 때마다 하면 API 복사본마다 달라지므로, 한 번 하고 저장한다(store.ts).
+// 데모 행사는 문서에 적힌 값으로 바꾸고, 다른 행사는 한 행사의 PIN이 서로
+// 겹치지 않게 뽑는다.
 export function upgradePins(database: Database) {
   let changed = false
   for (const measurement of database.measurements) {
-    const { staffPin } = measurement
-    const newPin = () => {
+    const demo = isDemoEvent(database, measurement)
+    const used = new Set([measurement.staffPin, measurement.groupPin, ...measurement.sponsors.map((item) => item.staffPin)])
+    const fresh = (old: string) => {
       changed = true
-      return newStaffPin()
+      if (demo) return `${old}34`
+      let pin: string
+      do pin = newStaffPin()
+      while (used.has(pin))
+      used.add(pin)
+      return pin
     }
-    if (staffPin.length !== 6) measurement.staffPin = newPin()
-    if (measurement.groupPin.length !== 6) measurement.groupPin = newPin()
+    const { staffPin } = measurement
+    if (staffPin.length !== 6) measurement.staffPin = fresh(staffPin)
+    if (measurement.groupPin.length !== 6) measurement.groupPin = fresh(measurement.groupPin)
     for (const sponsor of measurement.sponsors) {
       if (sponsor.staffPin.length === 6) continue
       changed = true
       // 첫 협찬사는 행사의 PIN을 넘겨받았으므로 같은 값을 이어 간다.
-      sponsor.staffPin = sponsor.staffPin === staffPin ? measurement.staffPin : newSponsorPin(measurement)
+      sponsor.staffPin = sponsor.staffPin === staffPin ? measurement.staffPin : fresh(sponsor.staffPin)
     }
   }
   return changed
