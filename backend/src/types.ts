@@ -801,6 +801,11 @@ export type Payment = {
   // 카드 청구 뒤 저장이 실패해도 기록할 수 있다(lib/cardRecovery.ts). 결제가
   // 끝나거나 Toss가 청구되지 않았다고 하면 지운다.
   confirmingAt?: string
+  // Toss Payments에 환불을 요청한 카드 결제와 그 사유. 요청 전에 저장해 환불 뒤
+  // 저장이 실패해도 기록할 수 있다(lib/cardRecovery.ts). 환불이 기록되거나 Toss가
+  // 환불되지 않았다고 하면 지운다.
+  refundingAt?: string
+  refundReason?: string
   receiptUrl?: string
   requestedAt: string
   // 브랜드가 대신 계좌 이체로 결제하겠다고 했다.

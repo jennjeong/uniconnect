@@ -346,6 +346,17 @@ const en: Record<string, string> = {
   "앞서 진행한 결제를 확인하고 있어요. 몇 분 뒤에 결제 내역을 확인해 주세요.":
     "We're still checking an earlier payment for this order. Please check your payments in a few minutes.",
   "결제를 찾을 수 없어요.": "We couldn't find that payment.",
+  "환불 확인이 늦어지고 있어요. 몇 분 뒤에 결제 내역을 확인해 주세요.":
+    "Confirming the refund is taking longer. Please check the payments in a few minutes.",
+  "환불은 됐지만 기록을 저장하지 못했어요. 잠시 후 결제 내역에 반영돼요.":
+    "The refund went through but couldn't be recorded yet. It will show in the payments shortly.",
+  "앞서 요청한 환불을 확인하고 있어요. 몇 분 뒤에 결제 내역을 확인해 주세요.":
+    "We're still checking an earlier refund for this payment. Please check the payments in a few minutes.",
+  "Toss에서 답을 받지 못했어요. 잠시 후 다시 시도해 주세요.": "Toss didn't answer. Please try again in a moment.",
+  "카드 결제가 확인되어 결제 완료로 기록했어요. 목록을 다시 확인해 주세요.":
+    "The card payment was confirmed and recorded as paid. Please check the list again.",
+  "앞서 진행한 카드 결제를 확인하고 있어요. 몇 분 뒤에 다시 시도해 주세요.":
+    "We're still checking an earlier card payment for this order. Please try again in a few minutes.",
   "기다리는 주문만 입금 확인할 수 있어요.": "Only a waiting order can be marked as transferred.",
   "이미 취소된 결제예요.": "That payment was already canceled.",
   "협찬액은 0원부터 1억 원까지 원 단위로 적어 주세요.": "Please write the value in whole won, from 0 to 100,000,000.",
