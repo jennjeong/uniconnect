@@ -57,8 +57,17 @@ export const freshness = { everyMs: 2000 }
 
 export async function loadDatabase() {
   if (await reload()) {
-    // 복사본 하나가 저장하면 다른 복사본은 먼저 저장된 값을 읽는다.
-    if (upgradePins(getDatabase())) await saveDatabase().catch(reload)
+    // 복사본 하나가 저장하면 다른 복사본은 먼저 저장된 값을 읽는다. 저장이 끝내
+    // 안 되면 네 자리 PIN으로 시작하지 않고 실패한다(화면은 여섯 자리만 받는다).
+    for (let attempt = 1; upgradePins(getDatabase()); attempt += 1) {
+      try {
+        await saveDatabase()
+        break
+      } catch (error) {
+        await reload()
+        if (attempt === 3) throw error
+      }
+    }
     return getDatabase()
   }
   const seed = await createSeed()
