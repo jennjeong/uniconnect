@@ -450,6 +450,8 @@ export type AdminApplication = {
   document: { name: string; size: number }
   requestedAt: string
   brand?: string
+  // 초대받은 가게의 카카오맵 주소.
+  placeUrl?: string
   contact?: AccountContact
   team?: string
 }

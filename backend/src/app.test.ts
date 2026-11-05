@@ -1645,9 +1645,11 @@ test("the QR ceiling takes the smaller audience either side saw when confirming"
   await call("GET", `/agreements/${request.id}`, undefined, brand)
   const measurement = getDatabase().measurements.find((item) => item.accountId === groupId && item.eventId === request.eventId)!
   const seen = measurement.goals.expectedAudience
-  await call("POST", `/agreements/${request.id}/confirm`, undefined, brand)
+  await call("POST", `/agreements/${request.id}/confirm`, { audience: seen }, brand)
   measurement.goals.expectedAudience = 100_000
-  await call("POST", `/agreements/${request.id}/confirm`, undefined, group)
+  // 화면에서 본 값과 다르면 다시 보게 한다.
+  assert.equal((await call("POST", `/agreements/${request.id}/confirm`, { audience: seen }, group)).status, 409)
+  await call("POST", `/agreements/${request.id}/confirm`, { audience: 100_000 }, group)
   assert.equal(measurement.agreedAudience, seen)
 })
 
@@ -4183,6 +4185,16 @@ test("a student group invites a shop it found nearby, and the shop joins as a br
     const held = await call("POST", `/invites/${code}/accept`, { document: proofDocument }, owner)
     assert.deepEqual([held.status, held.data], [202, { pending: true }])
     assert.equal((await call("POST", `/invites/${code}/accept`, { document: proofDocument }, owner)).status, 409)
+    // 운영자는 어느 가게를 잇는지 본다.
+    const { config: settings } = await import("./config.js")
+    const savedToken = settings.adminToken
+    settings.adminToken = "test-admin-token"
+    const waitingList = (await (await fetch(`${baseUrl}/admin/applications`, { headers: { "X-Admin-Token": "test-admin-token" } })).json()) as { applications: { email: string; placeUrl?: string }[] }
+    settings.adminToken = savedToken
+    assert.equal(waitingList.applications.find((item) => item.email === "owner@golmok-cafe.kr")!.placeUrl, "https://place.map.kakao.com/26338954")
+    // 서류를 하루에 많이 보내지 못한다.
+    for (let turn = 0; turn < 3; turn += 1) await call("POST", `/invites/${code}/accept`, { document: proofDocument }, owner)
+    assert.equal((await call("POST", `/invites/${code}/accept`, { document: proofDocument }, owner)).status, 429)
     assert.equal((await call("GET", `/invites/${code}`, undefined, owner)).data.invite.joined, null)
     // 기다리는 동안에도 계정은 그대로 로그인한다.
     assert.equal((await call("POST", "/auth/login", { role: "브랜드", email: "owner@golmok-cafe.kr", password: "golmok-pass-123" })).status, 200)

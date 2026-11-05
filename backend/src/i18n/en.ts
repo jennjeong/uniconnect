@@ -42,6 +42,8 @@ const en: Record<string, string> = {
     "We couldn't send the verification email. Please try again in a moment.",
   "데모 계정은 비밀번호를 바꾸거나 탈퇴할 수 없어요.": "Demo accounts can't change their password or leave.",
   "데모 계정은 탈퇴할 수 없어요.": "Demo accounts can't leave.",
+  "가게 연결 신청을 너무 많이 보냈어요. 내일 다시 보내 주세요.": "Too many shop link requests. Try again tomorrow.",
+  "행사 목표가 바뀌었어요. 화면을 새로 고쳐 다시 확인해 주세요.": "The event goals changed. Refresh the page and check again.",
   "이미 서류를 보냈어요. 운영자가 확인하면 메일로 알려 드려요.": "Your document is already in. We'll email you once an operator checks it.",
   "초대가 없어져서 연결할 수 없어요. 거절해 주세요.": "The invitation is gone, so this can't be linked. Please reject it.",
   "서류를 확인했어요. 가게를 연결했어요.": "We checked your document and linked your shop.",

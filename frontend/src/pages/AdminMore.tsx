@@ -629,6 +629,11 @@ export function Approvals({ token, onNotice }: { token: string; onNotice: Notice
                     {item.email} · {formatDateTime(item.requestedAt)}
                     {item.contact && ` · ${item.contact.name} ${item.contact.phone}`}
                   </small>
+                  {item.placeUrl && (
+                    <a href={item.placeUrl} rel="noreferrer" target="_blank">
+                      {t("연결할 가게 보기")}
+                    </a>
+                  )}
                 </div>
                 <button
                   className="cancel-button"

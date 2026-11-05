@@ -286,8 +286,9 @@ export const api = {
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/methods`, { method: "PUT", body: { methods } }),
   saveAgreementItems: (id: string, items: { id?: string; side: Agreement["side"]; label: string }[]) =>
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/items`, { method: "PUT", body: { items } }),
-  confirmAgreement: (id: string) =>
-    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/confirm`, { method: "POST" }),
+  // 화면에서 본 예상 인원을 함께 보낸다.
+  confirmAgreement: (id: string, audience?: number) =>
+    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/confirm`, { method: "POST", body: { audience } }),
   addShipment: (id: string, body: { carrier: string; number: string; note?: string }) =>
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/shipments`, { method: "POST", body }),
   deleteShipment: (id: string, shipmentId: string) =>

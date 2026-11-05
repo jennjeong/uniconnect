@@ -601,6 +601,7 @@ const en: Record<string, string> = {
   "이미 계정이 있어요": "I have an account",
   "가입할 때 사업자등록증이나 재직 서류를 함께 내요. 운영자가 확인하면 가게가 연결돼요.":
     "You send a business registration or proof of employment when you sign up. An operator checks it and links your shop.",
+  "연결할 가게 보기": "See the shop to link",
   "운영자가 서류를 확인하고 승인하면 가게가 연결돼요.": "An operator checks your document and links your shop.",
   "우리 가게로 연결하기": "Link to my shop",
   "가게 사장님께 이 링크를 보내 주세요. 사장님이 가게로 가입하면 연결돼요.":

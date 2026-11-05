@@ -54,7 +54,7 @@ adminMoreRouter.get("/applications", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
   res.json({
-    applications: applicationsOf(database).map(({ id, kind, name, email, document, requestedAt, account, accountId, linkAccountId }) => ({
+    applications: applicationsOf(database).map(({ id, kind, name, email, document, requestedAt, account, accountId, linkAccountId, invite }) => ({
       id,
       kind,
       name,
@@ -63,6 +63,8 @@ adminMoreRouter.get("/applications", async (req, res) => {
       requestedAt,
       ...(account ? { brand: account.name, contact: account.contact } : {}),
       ...(linkAccountId ? { brand: name } : {}),
+      // 어느 가게를 잇는지 보고 서류와 맞춰 본다.
+      ...(invite ? { placeUrl: database.invites.find((item) => item.code === invite)?.placeUrl } : {}),
       ...(accountId ? { team: database.accounts.find((item) => item.id === accountId)?.name ?? "" } : {}),
     })),
   })

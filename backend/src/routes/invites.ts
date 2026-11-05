@@ -4,6 +4,7 @@ import { Router, type Request } from "express"
 import { findListing, withLiveEvent } from "../lib/catalog.js"
 import { HttpError } from "../lib/errors.js"
 import { applicationsOf, holdApplication, parseDocument } from "../lib/applications.js"
+import { createRateLimit } from "../lib/rateLimit.js"
 import { assertLinkable } from "../lib/shopInvites.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -97,6 +98,12 @@ invitesRouter.get("/:code", (req, res) => {
 // 브랜드 계정이 초대를 받는다. 그 계정의 리스팅(아직 없으면 지금 만든다)이
 // 그 매장이 되어, 근처 단체가 합류를 보고 제안을 보낼 수 있다. 그 매장을
 // 초대한 모든 단체가 합류 소식을 받는다.
+const linksPerDay = createRateLimit({
+  limit: 5,
+  windowMs: 24 * 60 * 60 * 1000,
+  message: "가게 연결 신청을 너무 많이 보냈어요. 내일 다시 보내 주세요.",
+})
+
 invitesRouter.post("/:code/accept", async (req, res) => {
   const account = requireAccount(req)
   if (account.role !== "브랜드") throw new HttpError(403, "브랜드 계정으로 가게를 연결할 수 있어요.")
@@ -111,6 +118,8 @@ invitesRouter.post("/:code/accept", async (req, res) => {
   }
   // 사업자 확인은 그 가게의 주인임을 보여 주지 않는다. 가입과 같이 운영자가
   // 서류를 보고 연결한다.
+  // 서류는 크므로, 동시에 보내도 쌓이지 않게 확인 전에 계정별로 센다.
+  await linksPerDay.take(account.id)
   const waiting = applicationsOf(database).some((item) => item.linkAccountId === account.id && item.invite === invite.code)
   if (waiting) throw new HttpError(409, "이미 서류를 보냈어요. 운영자가 확인하면 메일로 알려 드려요.")
   const document = parseDocument(req.body?.document, "사업자등록증이나 재직 서류를 올려 주세요.")

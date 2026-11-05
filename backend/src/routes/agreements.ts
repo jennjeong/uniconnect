@@ -327,6 +327,11 @@ agreementsRouter.delete("/:id/shipments/:shipmentId", async (req, res) => {
 agreementsRouter.post("/:id/confirm", async (req, res) => {
   const { account, database, proposal, side } = openedToChange(req)
   const { agreement } = agreementFor(database, proposal)
+  // 화면에서 본 예상 인원을 함께 받는다. 그사이 바뀌었으면 다시 보게 한다.
+  const audience = agreementShare(database, proposal)?.measurement.goals.expectedAudience
+  if (req.body?.audience !== undefined && req.body.audience !== audience) {
+    throw new HttpError(409, "행사 목표가 바뀌었어요. 화면을 새로 고쳐 다시 확인해 주세요.")
+  }
   if (side === "brand") {
     const fee = feeState(database, agreement, proposal)
     if (fee.needsValue) throw new HttpError(409, "협찬액(현금과 현물 환산)을 먼저 적어 주세요. 수수료는 그 금액으로 정해져요.")
