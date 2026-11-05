@@ -47,6 +47,10 @@ export const testMode = () => cardReady() && (config.tossSecretKey ?? "").starts
 const tossApi = "https://api.tosspayments.com/v1/payments"
 // Toss가 승인에 실패했거나 답하지 않았을 때의 응답.
 export const tossUnsure ="결제 확인이 늦어지고 있어요. 결제됐다면 잠시 후 결제 내역에 반영돼요."
+// 환불 요청에 Toss가 실패했거나 답하지 않았을 때의 답.
+export const refundUnsure = "환불 확인이 늦어지고 있어요. 몇 분 뒤에 결제 내역을 확인해 주세요."
+// Toss가 이미 환불했다고 답하는 코드. 앞선 요청이 처리된 것이므로 성공과 같다.
+const alreadyRefunded = new Set(["ALREADY_CANCELED_PAYMENT", "ALREADY_REFUND_PAYMENT"])
 const tossAuth = () => `Basic ${Buffer.from(`${config.tossSecretKey ?? ""}:`).toString("base64")}`
 
 export type TossPayment = { status?: string; totalAmount?: number; orderId?: string; receipt?: { url?: string } | null; approvedAt?: string }
@@ -83,18 +87,22 @@ export const toss = {
     if (!response.ok || !body) throw new Error(`Toss lookup ${response.status}: ${body?.message ?? ""}`)
     return body
   },
-  // 카드 결제를 전액 환불한다.
-  async cancel(paymentKey: string, reason: string) {
+  // 카드 결제를 전액 환불한다. 멱등키가 같으면 같은 요청으로 처리되고, 이미
+  // 환불된 결제는 성공으로 본다. Toss가 거절하면 409(환불되지 않았다), Toss가
+  // 실패하거나 앞선 요청을 처리 중이면 502(환불됐는지 아직 모른다)다.
+  async cancel(paymentKey: string, reason: string, idempotencyKey: string) {
     const response = await fetch(`${tossApi}/${encodeURIComponent(paymentKey)}/cancel`, {
       method: "POST",
-      headers: { Authorization: tossAuth(), "Content-Type": "application/json" },
+      headers: { Authorization: tossAuth(), "Content-Type": "application/json", "Idempotency-Key": idempotencyKey },
       body: JSON.stringify({ cancelReason: reason.slice(0, 200) }),
       signal: AbortSignal.timeout(15_000),
     })
-    if (!response.ok) {
-      const body = (await response.json().catch(() => null)) as { message?: string } | null
-      throw new HttpError(502, body?.message ? `환불하지 못했어요. ${body.message}` : "환불하지 못했어요. 다시 시도해 주세요.")
-    }
+    if (response.ok) return
+    const body = (await response.json().catch(() => null)) as { code?: string; message?: string } | null
+    if (alreadyRefunded.has(body?.code ?? "")) return
+    console.error(`[billing] cancel ${response.status}: ${body?.code ?? ""} ${body?.message ?? ""}`)
+    if (response.status >= 500 || response.status === 409 || response.status === 429) throw new HttpError(502, refundUnsure)
+    throw new HttpError(409, body?.message ? `환불하지 못했어요. ${body.message}` : "환불하지 못했어요. 다시 시도해 주세요.")
   },
 }
 
@@ -195,4 +203,4 @@ export function markCancelled(database: Database, payment: Payment, reason: stri
 }
 
 // 계정이 보는 결제. Toss 키는 없다.
-export const paymentView = ({ paymentKey: _key, confirmingAt: _confirming, accountId: _account, ...payment }: Payment) => payment
+export const paymentView = ({ paymentKey: _key, confirmingAt: _confirming, refundingAt: _refunding, refundReason: _reason, accountId: _account, ...payment }: Payment) => payment

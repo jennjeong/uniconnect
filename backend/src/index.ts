@@ -1,7 +1,7 @@
 import { createApp } from "./app.js"
 import { config } from "./config.js"
 import { cardReady } from "./lib/billing.js"
-import { reconcileCards } from "./lib/cardRecovery.js"
+import { reconcileCards, reconcileRefunds } from "./lib/cardRecovery.js"
 import { mailConfigured } from "./lib/mailer.js"
 import { sendDigests } from "./lib/digest.js"
 import { sendReminders } from "./lib/reminders.js"
@@ -10,10 +10,10 @@ import { loadDatabase } from "./store.js"
 await loadDatabase()
 
 // 사흘 안으로 다가온 행사의 알림을 지금 보내고 이후 한 시간마다 보내며,
-// 월요일에는 주간 요약도 보낸다(회원마다 한 번씩). 승인이 기록되지 않은 카드
+// 월요일에는 주간 요약도 보낸다(회원마다 한 번씩). 승인이나 환불이 기록되지 않은 카드
 // 결제도 같은 시각에 정리한다.
 const remind = () => {
-  if (cardReady()) reconcileCards().catch((error: Error) => console.error(`[billing] ${error.message}`))
+  if (cardReady()) reconcileCards().then(reconcileRefunds).catch((error: Error) => console.error(`[billing] ${error.message}`))
   sendReminders().catch((error: Error) => console.error(`[reminders] ${error.message}`))
   sendDigests().catch((error: Error) => console.error(`[digests] ${error.message}`))
 }

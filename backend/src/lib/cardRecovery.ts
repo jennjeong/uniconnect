@@ -1,6 +1,7 @@
 import { getDatabase, saveDatabase } from "../store.js"
 import type { Payment } from "../types.js"
-import { markPaid, paymentsOf, toss, type TossPayment } from "./billing.js"
+import { logAdmin } from "./adminTools.js"
+import { markCancelled, markPaid, paymentsOf, refundUnsure, toss, type TossPayment } from "./billing.js"
 import { HttpError } from "./errors.js"
 
 // 카드 결제는 여기에 기록되기 전에 Toss Payments가 승인하므로, 그 사이에
@@ -110,6 +111,137 @@ export async function reconcileCards(accountId?: string) {
     } catch (error) {
       counts.failed += 1
       console.error(`[billing] settling ${id} failed: ${(error as Error).message}`)
+    }
+  }
+  return counts
+}
+
+// 환불도 같은 틈이 있다. Toss가 환불한 뒤 저장이 실패하면 카드는 환불됐는데
+// 결제는 완료로 남아 산 것을 회수하지 못한다. 그래서 Toss에 묻기 전에
+// `refundingAt`과 사유를 저장하고, 기록할 때 저장을 다시 시도하며, 멈춘 환불은
+// 나중에 Toss의 답을 기준으로 정리한다(`reconcileRefunds`).
+
+const refundedNotSaved = "환불은 됐지만 기록을 저장하지 못했어요. 잠시 후 결제 내역에 반영돼요."
+const refundOpen = "앞서 요청한 환불을 확인하고 있어요. 몇 분 뒤에 결제 내역을 확인해 주세요."
+const tossSilent = "Toss에서 답을 받지 못했어요. 잠시 후 다시 시도해 주세요."
+
+const paymentById = (id: string) => paymentsOf(getDatabase()).find((item) => item.id === id)
+
+// Toss에 묻는 일이 실패하면 서버 오류 대신 502로 답한다.
+export async function askToss<T>(asking: Promise<T>) {
+  try {
+    return await asking
+  } catch (error) {
+    if (error instanceof HttpError) throw error
+    console.error(`[billing] asking Toss failed: ${(error as Error).message}`)
+    throw new HttpError(502, tossSilent)
+  }
+}
+
+// Toss가 환불한 결제를 기록하고 산 것을 회수하며, 저장이 실패하면 다시 시도한다
+// (recordApproval과 같다). 그래도 실패하면 `refundingAt`을 남긴 채 503을 답하고
+// `reconcileRefunds`에 맡긴다.
+async function recordRefund(id: string) {
+  for (let attempt = 1; ; attempt += 1) {
+    const database = getDatabase()
+    const payment = paymentById(id)
+    if (!payment) throw new HttpError(404, "결제를 찾을 수 없어요.")
+    if (payment.status === "cancelled") return payment
+    const reason = payment.refundReason ?? "운영자 환불"
+    markCancelled(database, payment, reason)
+    delete payment.refundingAt
+    delete payment.refundReason
+    logAdmin(database, "payment-cancelled", { kind: "payment", id }, reason)
+    try {
+      await saveDatabase()
+      return payment
+    } catch (error) {
+      console.error(`[billing] recording refund ${id} failed (try ${attempt}): ${(error as Error).message}`)
+      if (attempt >= cardRecovery.saveAttempts) throw new HttpError(503, refundedNotSaved)
+    }
+  }
+}
+
+// 환불되지 않았음을 확인한 결제의 표시를 지워 다시 환불할 수 있게 한다.
+async function releaseRefund(id: string) {
+  const payment = paymentById(id)
+  if (!payment?.refundingAt) return
+  delete payment.refundingAt
+  delete payment.refundReason
+  await saveDatabase()
+}
+
+export type SettledRefund = "refunded" | "paid" | "open"
+
+// 환불을 요청한 결제를 Toss의 기록으로 정리한다. Toss가 환불했으면 환불 완료,
+// 환불 요청이 끝났어야 할 때가 지났는데 결제가 그대로면 결제 완료(표시를 지운다),
+// 그 밖에는 미정이다.
+export async function settleRefund(id: string): Promise<SettledRefund> {
+  const payment = paymentById(id)
+  if (!payment || payment.status === "cancelled") return "refunded"
+  if (!payment.refundingAt || !payment.paymentKey) return "paid"
+  const startedAt = Date.parse(payment.refundingAt)
+  const found = await toss.lookup(payment.paymentKey)
+  if (found?.status === "CANCELED") {
+    await recordRefund(id)
+    return "refunded"
+  }
+  if (found?.status !== "DONE") {
+    console.error(`[billing] refund ${id}: Toss has ${found?.status ?? "no payment"}`)
+    return "open"
+  }
+  if (startedAt > Date.now() - cardRecovery.settleAfterMs) return "open"
+  await releaseRefund(id)
+  return "paid"
+}
+
+// 결제 완료된 카드 결제를 환불한다. 앞선 요청이 남아 있으면 Toss에 먼저 묻는다.
+// 멱등키는 요청마다 하나이며, 환불되지 않았음을 Toss에서 확인한 뒤에만 새 키로
+// 다시 요청한다.
+export async function refundCard(id: string, reason: string) {
+  const earlier = paymentById(id)
+  if (earlier?.refundingAt) {
+    const settled = await askToss(settleRefund(id))
+    if (settled === "refunded") return paymentById(id)!
+    if (settled === "open") throw new HttpError(409, refundOpen)
+  }
+  const payment = paymentById(id)
+  if (!payment?.paymentKey) throw new HttpError(404, "결제를 찾을 수 없어요.")
+  const refundingAt = new Date().toISOString()
+  Object.assign(payment, { refundingAt, refundReason: reason })
+  // 이 저장이 실패하면 아직 환불하지 않은 것이다.
+  await saveDatabase()
+  try {
+    await toss.cancel(payment.paymentKey, reason, `refund_${id}_${Date.parse(refundingAt)}`)
+  } catch (error) {
+    if (error instanceof HttpError && error.status === 409) {
+      await releaseRefund(id).catch((caught: Error) => console.error(`[billing] releasing refund ${id}: ${caught.message}`))
+      throw error
+    }
+    if (error instanceof HttpError) throw error
+    console.error(`[billing] refund ${id}: ${(error as Error).message}`)
+    throw new HttpError(502, refundUnsure)
+  }
+  return recordRefund(id)
+}
+
+// 환불을 요청했고 지금쯤 끝났어야 할 결제.
+export const stuckRefunds = () => {
+  const before = Date.now() - cardRecovery.settleAfterMs
+  return paymentsOf(getDatabase()).filter(
+    (payment) => payment.status === "paid" && payment.refundingAt && Date.parse(payment.refundingAt) <= before,
+  )
+}
+
+// 멈춘 환불을 하나씩 정리해 하나가 실패해도 나머지는 계속한다.
+export async function reconcileRefunds() {
+  const counts = { refunded: 0, paid: 0, open: 0, failed: 0 }
+  for (const { id } of stuckRefunds()) {
+    try {
+      counts[await settleRefund(id)] += 1
+    } catch (error) {
+      counts.failed += 1
+      console.error(`[billing] settling refund ${id} failed: ${(error as Error).message}`)
     }
   }
   return counts
