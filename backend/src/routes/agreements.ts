@@ -7,6 +7,7 @@ import {
   type AcceptedProposal,
   agreementFor,
   agreementShare,
+  rotateCampaignGroupPin,
   rotateVenuePin,
   confirmAgreement,
   agreementView,
@@ -367,9 +368,20 @@ agreementsRouter.post("/:id/pin", async (req, res) => {
   const { account, database, proposal, side } = openedToChange(req)
   if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 PIN을 바꿀 수 없어요.")
   const { agreement } = agreementFor(database, proposal)
-  rotateVenuePin(database, proposal, side)
+  const shared = req.body?.page === "group" && side === "brand"
+  const groups = shared ? rotateCampaignGroupPin(database, proposal) : (rotateVenuePin(database, proposal, side), [])
   agreement.updatedAt = new Date().toISOString()
   await saveDatabase()
+  // PIN은 메일에 넣지 않는다. 각 단체는 자기 계약서에서 새 PIN을 본다.
+  for (const group of groups) {
+    void notify(
+      group.group.account,
+      "sponsorships",
+      "현장 PIN이 바뀌었어요",
+      [`'${group.eventName}' 현장 PIN이 바뀌었어요. 계약서에서 새 PIN을 확인해 주세요.`],
+      `/agreements/${encodeURIComponent(group.id)}`,
+    )
+  }
   res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 

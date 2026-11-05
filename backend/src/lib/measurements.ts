@@ -129,7 +129,7 @@ export function parseGoals(body: unknown): MeasurementGoals {
 // 목표 폼의 협찬사별 쿠폰, 가치, 직원 PIN을 검사해 측정에 반영한다.
 // 협찬사가 여럿이면 가치의 합이 행사의 가치와 같아야 하고 PIN은 협찬사마다
 // 달라야 한다.
-export function applySponsorGoals(measurement: Measurement, goals: MeasurementGoals, body: unknown) {
+export function applySponsorGoals(measurement: Measurement, goals: MeasurementGoals, body: unknown, keepPins = false) {
   const total = goals.valueBreakdown.reduce((sum, part) => sum + part.value, 0)
   const several = measurement.sponsors.length > 1
   if (Array.isArray(body)) {
@@ -146,7 +146,7 @@ export function applySponsorGoals(measurement: Measurement, goals: MeasurementGo
         sponsor,
         coupon: { store, title },
         value: several ? wholeNumber(row.value, `${sponsor.brandName}의 협찬 가치`, 1_000_000_000) : undefined,
-        staffPin: parseStaffPin(row.staffPin) ?? sponsor.staffPin,
+        staffPin: keepPins ? sponsor.staffPin : (parseStaffPin(row.staffPin) ?? sponsor.staffPin),
       }
     })
     if (new Set(updates.map((update) => update.staffPin)).size !== updates.length) {
@@ -203,9 +203,17 @@ export function rotatePin(measurement: Measurement, sponsor: EventSponsor | unde
   let pin: string
   do pin = newStaffPin()
   while (used.has(pin))
-  if (side === "group") measurement.groupPin = pin
-  else if (sponsor) sponsor.staffPin = pin
-  else measurement.staffPin = pin
+  if (side === "group") {
+    measurement.groupPin = pin
+    return
+  }
+  // 첫 협찬사는 행사의 PIN을 넘겨받는다. 그 값을 남겨 두면 협찬이 취소됐을 때
+  // 막은 PIN이 되살아난다.
+  if (sponsor && measurement.staffPin !== sponsor.staffPin) sponsor.staffPin = pin
+  else {
+    if (sponsor) sponsor.staffPin = pin
+    measurement.staffPin = pin
+  }
 }
 
 // 오늘 틀린 PIN 시도 수. PIN을 가진 쪽이 바꿀지 판단하도록 보여 준다.

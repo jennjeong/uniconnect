@@ -145,6 +145,7 @@ function measureView(database: Database, proposal: AcceptedProposal, side: ChatS
   const confirmed = sponsor ? sponsor.confirmedMethods : measurement.confirmedMethods
   const counts = sponsor?.metrics ?? measurement.metrics
   const pin = side === "brand" ? (sponsor?.staffPin ?? measurement.staffPin) : measurement.groupPin
+  const demo = isDemoAccount(database, side === "brand" ? proposal.brand.account : proposal.group.account)
   const mine = activeMethodsOf(measurement, sponsor).some(
     (method) => confirmsAt(method, side) && (isVenueKind(method.kind) || method.kind === "visit"),
   )
@@ -153,6 +154,10 @@ function measureView(database: Database, proposal: AcceptedProposal, side: ChatS
     methods,
     ...(confirmed ? { confirmedMethods: confirmed } : {}),
     counts: { scans: measurement.metrics.scans, coupons: counts.coupons, visits: counts.visits, ...venueCountsOf(counts) },
+    // 여러 단체가 함께하는 캠페인의 단체 PIN은 캠페인을 연 브랜드가 바꾼다.
+    ...(side === "brand" && !demo && pinsOpen(database, measurement, event) && campaignGroups(database, proposal).length > 1
+      ? { canRotateGroupPin: true }
+      : {}),
     ...(mine
       ? {
           venue: {
@@ -162,7 +167,7 @@ function measureView(database: Database, proposal: AcceptedProposal, side: ChatS
               ? {
                   pin,
                   misses: pinMissesToday(measurement),
-                  canRotate: !isDemoAccount(database, side === "brand" ? proposal.brand.account : proposal.group.account),
+                  canRotate: !demo && !(side === "group" && campaignGroups(database, proposal).length > 1),
                 }
               : { pinsFrom: pinsFrom(event) }),
           },
@@ -171,8 +176,32 @@ function measureView(database: Database, proposal: AcceptedProposal, side: ChatS
   }
 }
 
-// 계약서에서 이쪽 PIN을 새로 만든다. 이쪽에 PIN이 보일 때만 바꿀 수 있다.
+// 브랜드 캠페인을 함께하는 단체들의 제안. 단체 PIN은 캠페인에 하나뿐이어서
+// 이들이 함께 쓴다.
+export function campaignGroups(database: Database, proposal: AcceptedProposal) {
+  const owner = proposal.brand.account
+  if (proposal.kind !== "offer" || !owner) return []
+  return acceptedProposalsOf(database, owner).filter(
+    (item) => item.kind === "offer" && item.eventId === proposal.eventId && !item.canceled,
+  )
+}
+
+// 함께 쓰는 단체 PIN을 캠페인을 연 브랜드가 새로 만든다. 알릴 단체를 돌려준다.
+export function rotateCampaignGroupPin(database: Database, proposal: AcceptedProposal) {
+  const share = agreementShare(database, proposal)
+  if (!share || !measureView(database, proposal, "brand")?.canRotateGroupPin) {
+    throw new HttpError(409, "PIN은 보이는 날부터 바꿀 수 있어요.")
+  }
+  rotatePin(share.measurement, undefined, "group")
+  return campaignGroups(database, proposal)
+}
+
+// 계약서에서 이쪽 PIN을 새로 만든다. 이쪽에 PIN이 보일 때만 바꿀 수 있고, 다른
+// 단체와 함께 쓰는 PIN은 한 단체가 바꾸지 못한다.
 export function rotateVenuePin(database: Database, proposal: AcceptedProposal, side: ChatSide) {
+  if (side === "group" && campaignGroups(database, proposal).length > 1) {
+    throw new HttpError(409, "여러 단체가 함께 쓰는 PIN은 브랜드가 바꿔요.")
+  }
   const share = agreementShare(database, proposal)
   const venue = measureView(database, proposal, side)?.venue
   if (!share || !venue || !("pin" in venue)) {

@@ -165,6 +165,8 @@ export type Agreement = {
     confirmedMethods?: MeasureMethod[]
     counts: Metrics
     // PIN은 행사 전날부터 보인다. 그전에는 그 날짜만 알려준다.
+    // 여러 단체가 함께 쓰는 캠페인의 단체 PIN을 이 브랜드가 바꿀 수 있다.
+    canRotateGroupPin?: boolean
     venue?: { page: VenuePage; pin?: string; pinsFrom?: string; misses?: number; canRotate?: boolean }
   }
   // 후기는 행사 당일부터 열린다. canWrite는 데모 계정이거나 상대에게 후기를

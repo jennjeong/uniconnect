@@ -550,6 +550,7 @@ const en: Record<string, string> = {
   "결제 금액": "Amount",
   "부가세 포함": "VAT included",
   "PIN 바꾸기": "Change PIN",
+  "단체들의 현장 PIN 바꾸기": "Change the groups' venue PIN",
   "새 PIN으로 바꾸기": "Switch to a new PIN",
   "지금 PIN은 바로 막혀요. 현장 담당자에게 새 PIN을 다시 알려 주세요.": "The current PIN stops working at once. Give the new one to whoever runs the venue.",
   "오늘 틀린 PIN 시도 {count}회": "{count} wrong PIN tries today",

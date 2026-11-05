@@ -603,8 +603,8 @@ export const api = {
       body: { page },
     }),
   // 계약서에서 이쪽 현장 PIN을 새로 만든다.
-  rotateAgreementPin: (id: string) =>
-    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/pin`, { method: "POST" }),
+  rotateAgreementPin: (id: string, page?: VenuePage) =>
+    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/pin`, { method: "POST", body: { page } }),
   checkIn: (code: string) => request<CheckInInfo>(`/check-in/${encodeURIComponent(code)}`),
   // 스캔하면 pass가 답으로 오고, 쿠폰은 쿠폰의 id와 함께 보내 그 번호를 답으로
   // 받는다.

@@ -256,7 +256,7 @@ export function GoalsModal({
                       />
                     </label>
                   )}
-                  {report.staffPin !== undefined && (
+                  {report.staffPin !== undefined && !report.canRotatePin && (
                     <label>
                       {t("매장 직원 확인 PIN (숫자 4자리)")}
                       <input
@@ -293,7 +293,7 @@ export function GoalsModal({
               <input maxLength={30} value={draft.title} onChange={(event) => update({ title: event.target.value })} />
             </label>
           </div>
-          {report.staffPin !== undefined && (
+          {report.staffPin !== undefined && !report.canRotatePin && (
             <label>
               {t("매장 직원 확인 PIN (숫자 4자리)")}
               <input

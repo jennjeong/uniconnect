@@ -117,8 +117,11 @@ measurementsRouter.put("/:eventId/goals", async (req, res) => {
   const demo = isDemoAccount(database, database.accounts.find((item) => item.id === measurement.accountId))
   if (!demo && event.date <= todayInKorea()) throw new HttpError(409, "시작한 행사의 목표는 바꿀 수 없어요.")
   const goals = parseGoals(req.body)
-  const staffPin = parseStaffPin(req.body?.staffPin)
-  applySponsorGoals(measurement, goals, req.body?.sponsors)
+  // PIN이 보인 뒤에는 PIN 바꾸기로만 바꾼다. 열어 둔 양식이 막은 PIN을 되돌리지
+  // 못하게 하려는 것이다.
+  const keepPins = !demo && pinsOpen(database, measurement, event)
+  const staffPin = keepPins ? undefined : parseStaffPin(req.body?.staffPin)
+  applySponsorGoals(measurement, goals, req.body?.sponsors, keepPins)
   measurement.goals = goals
   if (staffPin) measurement.staffPin = staffPin
   await saveDatabase()
