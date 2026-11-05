@@ -120,9 +120,11 @@ export function Header({
 
   // 로고에는 자기 알약이 없어서 짙은 파랑 표면 위에 떠 있을 때는 밝게 바뀌고
   // (index.css가 --surface-tone으로 그런 표면을 표시한다) 흰색 위에서는 짙은
-  // 파랑을 유지한다. 스크롤, 크기 변경, 페이지 전환 때 확인한다.
+  // 파랑을 유지한다. 스크롤, 크기 변경, 페이지 전환 때 확인하며, 페이지를
+  // 그리는 동안 몰려오므로 잠잠해질 때를 기다린다.
   useEffect(() => {
     let frame = 0
+    let pause = 0
     const check = () => {
       frame = 0
       const brand = brandRef.current
@@ -139,10 +141,14 @@ export function Header({
     schedule()
     window.addEventListener("scroll", schedule, { passive: true })
     window.addEventListener("resize", schedule)
-    const pages = new MutationObserver(schedule)
+    const pages = new MutationObserver(() => {
+      window.clearTimeout(pause)
+      pause = window.setTimeout(schedule, 100)
+    })
     pages.observe(document.body, { childList: true, subtree: true })
     return () => {
       cancelAnimationFrame(frame)
+      window.clearTimeout(pause)
       window.removeEventListener("scroll", schedule)
       window.removeEventListener("resize", schedule)
       pages.disconnect()
