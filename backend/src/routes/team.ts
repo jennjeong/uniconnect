@@ -29,7 +29,8 @@ const invitesPerDay = createRateLimit({
   windowMs: 24 * 60 * 60 * 1000,
   message: "초대를 너무 많이 보냈어요. 내일 다시 보내 주세요.",
 })
-// 코드를 맞히는 시도는 주소와 상관없이 이메일별로도 센다. 초대를 지우는 대신
+// 코드를 맞히는 시도는 주소와 상관없이 이메일별로도, 확인하기 전에 센다. 동시에
+// 보내도 한도를 넘지 못한다. 초대를 지우는 대신
 // 잠시 막는다. 로그인 없이 부르는 경로라, 지우면 이메일만 아는 사람이 남의
 // 초대를 없앨 수 있다.
 const joinTriesPerEmail = createRateLimit({
@@ -144,7 +145,7 @@ teamRouter.post("/join", async (req, res) => {
   const email = normalizeEmail(req.body?.email)
   const limitKey = `${clientKey(req)} ${email}`
   await joinFailures.take(limitKey)
-  await joinTriesPerEmail.check(email)
+  await joinTriesPerEmail.take(email)
   const database = getDatabase()
   // 이 이메일에 온 살아 있는 초대를 모두 찾는다. 여러 계정이 같은 이메일을
   // 초대할 수 있기 때문이다. 어느 초대인지는 코드가 말해 주므로, 다른 사람이
@@ -155,10 +156,7 @@ teamRouter.post("/join", async (req, res) => {
   if (invites.length === 0) throw new HttpError(400, "이 이메일로 온 초대가 없거나 기간이 지났어요. 대표에게 다시 초대해 달라고 해 주세요.")
   const hash = codeHash(email, String(req.body?.code ?? ""))
   const found = invites.find((item) => item.invite.codeHash === hash)
-  if (!found) {
-    await joinTriesPerEmail.hit(email)
-    throw new HttpError(400, "초대 코드가 올바르지 않아요.")
-  }
+  if (!found) throw new HttpError(400, "초대 코드가 올바르지 않아요.")
   const { account, invite } = found
   if (account.suspendedAt) throw new HttpError(403, "운영 정책에 따라 이용이 정지된 계정이에요.")
   const password = checkPassword(String(req.body?.password ?? ""))
