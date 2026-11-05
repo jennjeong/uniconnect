@@ -4479,6 +4479,7 @@ test("a group's SNS posts count toward reach once the brand confirms them, with 
     assert.equal((await reach()).postedReach, 600 + 2000 + 20)
     // 다른 꼴의 주소도 같은 영상이다.
     assert.equal((await call("POST", path, { url: "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ", reach: 1 }, group)).status, 409)
+    assert.equal((await call("POST", path, { url: "https://www.youtube.com./watch?v=dQw4w9WgXcQ", reach: 1 }, group)).status, 409)
     // 영상을 내려도 마지막 조회수가 남고, 적은 숫자로 돌아가지 않는다.
     for (const item of getDatabase().agreements.find((entry) => entry.id === request.id)!.snsPosts!) {
       if (item.youtube) item.youtube.at = new Date(Date.now() - 86_400_000).toISOString()

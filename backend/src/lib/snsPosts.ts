@@ -13,6 +13,8 @@ export function parsePostUrl(value: unknown) {
   const link = typeof value === "string" ? value.trim() : ""
   try {
     const url = new URL(link)
+    // youtube.com. 처럼 끝에 점을 붙인 주소도 같은 사이트다.
+    url.hostname = url.hostname.replace(/\.+$/, "")
     if (url.protocol === "https:" && link.length <= 300 && !url.username && !url.password) return url.href
   } catch {
     // 주소가 아니다. 아래에서 답한다.
