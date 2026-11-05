@@ -83,8 +83,8 @@ export function SignupModal({
   const [now, setNow] = useState(() => Date.now())
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
-  // 회사 이메일이 없는 초대된 가게. 개인 이메일과 서류를 받는다.
-  const [noCompanyEmail, setNoCompanyEmail] = useState(false)
+  // 초대된 가게는 어떤 이메일이든 받고 서류를 함께 받는다.
+  const invitedShop = Boolean(invite) && draft.role === "브랜드"
   const [document, setDocument] = useState<PickedDocument>()
   const verified = verification?.token !== undefined
   // 두 링크를 둘러싼 동의 문장. 보이는 언어로 쓴다.
@@ -124,7 +124,7 @@ export function SignupModal({
       const result = await api.requestEmailCode({
         role: draft.role,
         email: draft.email,
-        ...(noCompanyEmail ? { invite } : {}),
+        ...(invitedShop ? { invite } : {}),
       })
       setVerification({ expiresAt: result.expiresAt, devCode: result.devCode })
       setCodeInput("")
@@ -144,7 +144,7 @@ export function SignupModal({
 
   const submit = () => {
     const verificationToken = verification?.token
-    const problem = draftError(draft, verified) || (noCompanyEmail && !document ? t("사업자등록증이나 재직 서류를 올려 주세요.") : "")
+    const problem = draftError(draft, verified) || (invitedShop && !document ? t("사업자등록증이나 재직 서류를 올려 주세요.") : "")
     if (problem || !verificationToken) {
       setError(problem)
       return
@@ -162,7 +162,7 @@ export function SignupModal({
           over14: draft.over14,
           contact: { name: draft.contactName.trim(), position: draft.position.trim(), phone: draft.phone },
           ...(keptReferral() ? { referral: keptReferral() } : {}),
-          ...(noCompanyEmail && document ? { invite, document } : {}),
+          ...(invitedShop && document ? { invite, document } : {}),
       })
       if ("pending" in answer) onPending()
       else onSignedUp(answer)
@@ -257,24 +257,16 @@ export function SignupModal({
         <small className="field-hint" id="signup-phone-hint">
           {t("협찬이 확정된 상대에게만 임시 전자 계약서에서 보여요.")}
         </small>
-        {invite && draft.role === "브랜드" && (
-          <>
-            <label className="terms-check">
-              <input checked={noCompanyEmail} onChange={(event) => setNoCompanyEmail(event.target.checked)} type="checkbox" />
-              <span>{t("회사 이메일이 없어요. 개인 이메일로 가입할게요.")}</span>
-            </label>
-            {noCompanyEmail && (
-              <DocumentField
-                hint={t("운영자가 서류를 확인하고 승인하면 가입이 끝나요. 승인 전에는 로그인할 수 없고 서류는 확인 뒤 바로 지워요.")}
-                label={t("사업자등록증 또는 재직 서류")}
-                onPick={setDocument}
-              />
-            )}
-          </>
+        {invitedShop && (
+          <DocumentField
+            hint={t("운영자가 서류를 확인하고 승인하면 가입이 끝나요. 승인 전에는 로그인할 수 없고 서류는 확인 뒤 바로 지워요.")}
+            label={t("사업자등록증 또는 재직 서류")}
+            onPick={setDocument}
+          />
         )}
         <div className="field-group">
           <label htmlFor="signup-email">
-            {draft.role === "학생단체" ? t("학교 이메일") : noCompanyEmail ? t("이메일") : t("회사 이메일")}
+            {draft.role === "학생단체" ? t("학교 이메일") : invitedShop ? t("이메일") : t("회사 이메일")}
           </label>
           <div className="field-with-action">
             <input

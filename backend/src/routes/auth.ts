@@ -7,7 +7,7 @@ import { acceptedProposalsOf, dropOrphanAgreements, removeUploads } from "../lib
 import { findListing } from "../lib/catalog.js"
 import { deviceLabel } from "../lib/devices.js"
 import { applicationFolder, applicationFor, applicationsOf, holdApplication, parseDocument } from "../lib/applications.js"
-import { emailRuleError, isPersonalMail, normalizeEmail } from "../lib/email.js"
+import { emailRuleError, normalizeEmail } from "../lib/email.js"
 import { forgetAdminRecords } from "../lib/adminTools.js"
 import { HttpError } from "../lib/errors.js"
 import { sendVerificationCode } from "../lib/mailer.js"
@@ -280,9 +280,9 @@ authRouter.post("/signup", async (req, res) => {
   const shopInvite = role === "브랜드" && invited(database, body.invite)
   const ruleError = emailRuleError(role, email, { personal: shopInvite })
   if (ruleError) throw new HttpError(400, ruleError)
-  // 회사 이메일이 없으면 매장은 사업 서류를 보이고 기다린다.
-  const personal = role === "브랜드" && isPersonalMail(email)
-  const document = personal ? parseDocument(body.document, "사업자등록증이나 재직 서류를 올려 주세요.") : undefined
+  // 초대받은 가게는 메일 주소와 상관없이 사업 서류를 보이고 기다린다. 개인 메일
+  // 목록은 모든 주소를 가려내지 못한다.
+  const document = shopInvite ? parseDocument(body.document, "사업자등록증이나 재직 서류를 올려 주세요.") : undefined
 
   const verified = database.emailCodes.find(
     (entry) =>

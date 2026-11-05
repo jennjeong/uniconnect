@@ -336,16 +336,29 @@ test("an invitation link's code ties a sign-up to its inviter, rewarded once at 
     assert.equal((await call("POST", `/requests/${request.id}/accept`, undefined, token)).status, 200)
     return request.id
   }
-  const confirm = async (id: string, brandToken: string) => {
+  // 보상에는 협찬액과 실제로 낸 수수료가 필요하다.
+  const { feeOf, feeStart } = await import("./lib/fees.js")
+  const started = feeStart.since
+  feeStart.since = "2000-01-01"
+  const confirm = async (id: string, brandToken: string, cash = 300_000) => {
+    const database = getDatabase()
+    const { acceptedProposal, agreementFor } = await import("./lib/agreements.js")
+    agreementFor(database, acceptedProposal(database, id)!).agreement.value = { cash, inKind: 0 }
+    const supply = feeOf({ cash, inKind: 0 })
+    ;(database.payments ??= []).push({ id: `fee-${id}`, accountId: "x", accountName: "x", kind: "fee", targetId: id, orderName: "수수료", amount: supply, supply, status: "paid", method: "transfer", requestedAt: "" } as never)
     await call("POST", `/agreements/${id}/confirm`, undefined, group)
     await call("POST", `/agreements/${id}/confirm`, undefined, brandToken)
   }
+  try {
   // 초대한 계정 자신과의 협찬은 확정되어도 아무에게도 보상하지 않는다.
   await confirm(await propose("초대 공연", listingId, brand), brand)
   assert.equal(grants().length, 0)
   // 다른 브랜드와의 협찬은 수락될 때가 아니라 양쪽이 e-contract를 확정할 때
   // 초대한 사람에게 보상하며, 처음 한 번만이다.
   const other = await listedMember("invite-other@other-cafe.kr", "invite-pass-123", "브랜드")
+  // 적은 금액의 협찬은 보상하지 않고 다음 협찬이 기회를 얻는다.
+  await confirm(await propose("초대 공연 작은", other.listingId, other.token), other.token, 10_000)
+  assert.equal(grants().length, 0)
   const first = await propose("초대 공연 2", other.listingId, other.token)
   assert.equal(grants().length, 0)
   await confirm(first, other.token)
@@ -353,6 +366,24 @@ test("an invitation link's code ties a sign-up to its inviter, rewarded once at 
   await confirm(await propose("초대 공연 3", other.listingId, other.token), other.token)
   assert.equal(grants().length, 1)
   assert.equal((await call("GET", "/auth/referral", undefined, brand)).data.rewarded, 1)
+
+  // 한 해에 받는 보상에는 상한이 있다.
+  const { referralRewardsPerYear, rewardReferrals } = await import("./lib/referrals.js")
+  const { acceptedProposal, agreementFor } = await import("./lib/agreements.js")
+  const database = getDatabase()
+  const proposal = acceptedProposal(database, first)!
+  const { agreement } = agreementFor(database, proposal)
+  const year = new Date().toISOString().slice(0, 4)
+  const fillers = Array.from({ length: referralRewardsPerYear }, () => ({ referredBy: brandAccount.id, referralRewardedAt: `${year}-01-01T00:00:00Z` }))
+  database.accounts.push(...(fillers as never[]))
+  delete groupAccount.referralRewardedAt
+  assert.deepEqual(rewardReferrals(database, { agreement, proposal }), [])
+  assert.equal(groupAccount.referralRewardedAt, undefined)
+  database.accounts = database.accounts.filter((account) => !fillers.includes(account as never))
+  } finally {
+    feeStart.since = started
+    getDatabase().payments = getDatabase().payments!.filter((item) => !item.id.startsWith("fee-"))
+  }
 })
 
 test("a member keeps up to ten proposal templates; the demo accounts keep none", async () => {
@@ -4130,6 +4161,9 @@ test("a student group invites a shop it found nearby, and the shop joins as a br
     // 매장 주인이 브랜드로 가입해 받으면 새 브랜드가 그 매장으로 바로 목록에
     // 오른다.
     const owner = await signUpMember("owner@golmok-cafe.kr", "golmok-pass-123", "브랜드")
+    // 사업자 확인을 마쳐야 남의 가게를 자기 것으로 잇지 못한다.
+    assert.equal((await call("POST", `/invites/${code}/accept`, undefined, owner)).status, 403)
+    getDatabase().accounts.find((account) => account.email === "owner@golmok-cafe.kr")!.business = { number: "1234567890", verifiedAt: "2026-11-05" }
     const accepted = await call("POST", `/invites/${code}/accept`, undefined, owner)
     assert.equal(accepted.status, 200)
     assert.equal(accepted.data.invite.joined, "you")
@@ -4157,6 +4191,7 @@ test("a student group invites a shop it found nearby, and the shop joins as a br
     const otherGroup = await signUpMember("invite-two@syu.ac.kr", "invite-two-123")
     const second = (await call("POST", "/invites", { placeId: "26338954" }, otherGroup)).data.invite.code
     const rival = await signUpMember("rival@rival-cafe.kr", "rival-pass-123", "브랜드")
+    getDatabase().accounts.find((account) => account.email === "rival@rival-cafe.kr")!.business = { number: "1234567891", verifiedAt: "2026-11-05" }
     const taken = await call("POST", `/invites/${second}/accept`, undefined, rival)
     assert.equal(taken.status, 409)
     assert.match(taken.data.error, /이미 다른 브랜드와 연결된 가게/)
@@ -6392,6 +6427,13 @@ test("a QR can't be run up: one device is limited, and an event stops at three t
   const ceiling = await scan()
   assert.equal(ceiling.status, 409)
   assert.match(ceiling.data.error, /3배/)
+  // 두 쪽이 확인한 뒤에는 주인이 예상 인원을 올려도 상한이 그대로다.
+  measurement.agreedAudience = 10
+  measurement.goals.expectedAudience = 10_000
+  await clearRateLimits()
+  assert.equal((await scan()).status, 409)
+  delete measurement.agreedAudience
+  assert.equal((await scan()).status, 200)
 })
 
 test("a shop with no company email signs up by invitation with a document, and an operator decides", async () => {

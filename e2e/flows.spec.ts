@@ -1594,10 +1594,11 @@ test("a shop a student group invited joins as a brand from the invitation", asyn
   await signup.getByLabel("담당자 이름").fill("테스트 담당자")
   await signup.getByLabel("직책").selectOption("대표")
   await signup.getByLabel("휴대폰 번호").fill("010-1234-5678")
-  await signup.getByLabel("회사 이메일", { exact: true }).fill("owner@golmok-cafe.kr")
+  await signup.getByLabel("이메일", { exact: true }).fill("owner@golmok-cafe.kr")
   await signup.getByRole("button", { name: "인증번호 받기" }).click()
   await signup.getByLabel("인증번호").fill((await signup.locator(".field-hint strong").textContent()) ?? "")
   await signup.getByRole("button", { name: "확인" }).click()
+  await signup.locator(".document-field input").setInputFiles({ name: "사업자등록증.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4 e2e") })
   await signup.getByLabel("비밀번호", { exact: true }).fill("e2e-pass-123")
   await signup.getByLabel("비밀번호 확인").fill("e2e-pass-123")
   await signup.getByRole("checkbox", { name: /동의합니다/ }).check()
@@ -1605,9 +1606,12 @@ test("a shop a student group invited joins as a brand from the invitation", asyn
   await signup.getByRole("button", { name: "가입하고 시작하기" }).click()
   await expect(signup).toBeHidden()
 
-  // 초대 페이지로 돌아와 한 번 누르면 매장이 연결되고, 단체가 찾도록 브랜드가 목록에 오른다.
-  await page.getByRole("button", { name: "우리 가게로 연결하기" }).click()
-  await expect(page.getByText("연결됐어요. 이제 초대 동아리의 협찬 제안을 받을 수 있어요.")).toBeVisible()
+  // 운영자가 서류를 승인하면 매장이 연결되고, 단체가 찾도록 브랜드가 목록에 오른다.
+  await expect(page.getByText("서류를 보냈어요. 운영자가 확인하면 메일로 알려 드려요.")).toBeVisible()
+  const admin = { headers: { "X-Admin-Token": "e2e-admin-token" } }
+  const { applications } = (await (await request.get("/api/admin/applications", admin)).json()) as { applications: { id: string; email: string }[] }
+  const held = applications.find((item) => item.email === "owner@golmok-cafe.kr")!
+  expect((await request.post(`/api/admin/applications/${held.id}/approve`, admin)).status()).toBe(200)
   const listed = async (headers?: Record<string, string>) =>
     ((await (await request.get("/api/brands", { headers })).json()) as { brands: { name: string; kakaoPlaceId?: string }[] }).brands
   expect((await listed(group.headers)).some((brand) => brand.name === "골목 카페" && brand.kakaoPlaceId === "12345678")).toBe(true)
@@ -1626,7 +1630,6 @@ test("a shop with no company email signs up with a document and waits for approv
   await signup.getByLabel("담당자 이름").fill("테스트 담당자")
   await signup.getByLabel("직책").selectOption("대표")
   await signup.getByLabel("휴대폰 번호").fill("010-1234-5678")
-  await signup.getByLabel("회사 이메일이 없어요").check()
   await signup.getByLabel("이메일", { exact: true }).fill("e2e-owner@gmail.com")
   await signup.getByRole("button", { name: "인증번호 받기" }).click()
   await signup.getByLabel("인증번호").fill((await signup.locator(".field-hint strong").textContent()) ?? "")

@@ -14,8 +14,8 @@ const en: Record<string, string> = {
   "회원과 가입": "Members and Sign-Up",
   "회원은 '협찬 받기'(학생단체)와 '협찬 하기'(브랜드) 두 유형이 있어요.":
     "There are two types of members: 'Receive Sponsorship' (student groups) and 'Give Sponsorship' (brands).",
-  "학생단체는 학교 이메일, 브랜드는 회사 이메일로 인증한 뒤 가입할 수 있어요. 개인 메일로는 가입할 수 없어요. 다만 학생단체의 초대를 받은 가게에 회사 이메일이 없으면 사업자 서류를 내고 운영자의 승인을 받아 개인 메일로 가입할 수 있어요.":
-    "Student groups may sign up after verifying a school email address, and brands after verifying a company email address. Personal email addresses cannot be used to sign up. However, a shop invited by a student group that has no company email may sign up with a personal one after submitting a business document and being approved by an operator.",
+  "학생단체는 학교 이메일, 브랜드는 회사 이메일로 인증한 뒤 가입할 수 있어요. 개인 메일로는 가입할 수 없어요. 다만 학생단체의 초대를 받은 가게는 사업자 서류를 내고 운영자의 승인을 받아 개인 메일로도 가입할 수 있어요.":
+    "Student groups may sign up after verifying a school email address, and brands after verifying a company email address. Personal email addresses cannot be used to sign up. However, a shop invited by a student group signs up with any email address after submitting a business document and being approved by an operator.",
   "만 14세 미만은 가입할 수 없어요.": "Persons under 14 years of age may not sign up.",
   "다른 사람이나 단체, 회사를 사칭하거나 사실과 다른 정보로 가입하면 이용을 제한할 수 있어요.":
     "If a member impersonates another person, group or company, or signs up with false information, the Service may restrict their use.",
@@ -259,8 +259,8 @@ const en: Record<string, string> = {
     "Top ads: for 30 days your listing shows first on the other side's list, marked AD. Brands pay 99,000 won and student groups 10,000 won for 30 days. Extending before an ad ends takes 10% off. Nothing renews by itself; an extension adds 30 days after the days left. Refunds work as for Campus Partners.",
   "참여자가 고르면 답하는 선택 설문(학년, 전공 계열, 쿠폰 가게에 가 본 적이 있는지, 성별)은 누가 답했는지 남기지 않고 행사별 숫자로만 모아요. 브랜드의 상세 분석 리포트에 관객 구성으로 보여요.":
     "The optional survey participants may answer (year, field of study, whether they had been to the coupon's store, gender) keeps no record of who answered; it is only counted per event, and shows as the audience in the brand's detailed analysis report.",
-  "가입 확인 서류(개인 이메일로 가입하는 가게의 사업자등록증이나 재직 서류, 공동 관리자의 재직 증명)":
-    "Sign-up documents (a business registration or proof of employment from shops signing up with a personal email, and co-admins' proof of employment)",
+  "가입 확인 서류(초대받아 가입하는 가게의 사업자등록증이나 재직 서류, 공동 관리자의 재직 증명)":
+    "Sign-up documents (a business registration or proof of employment from shops signing up by invitation, and co-admins' proof of employment)",
   "운영자가 소속을 확인하고 가입을 승인하기": "So operators can confirm who you are with and approve the sign-up",
   "승인하거나 거절하면 바로 지워요": "Deleted as soon as it is approved or rejected",
   "저장한 제안 문구(이름과 내용, 10개까지)": "Saved proposal messages (their names and text, up to 10)",

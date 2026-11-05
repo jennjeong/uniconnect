@@ -299,6 +299,8 @@ export function confirmAgreement(database: Database, agreement: Agreement, propo
       const methods = methodsOf(share.measurement, share.sponsor)
       if (share.sponsor) share.sponsor.confirmedMethods = methods
       else share.measurement.confirmedMethods = methods
+      // QR 상한의 기준. 행사 주인이 뒤에 고쳐도 두 쪽이 본 숫자로 남는다.
+      share.measurement.agreedAudience ??= share.measurement.goals.expectedAudience
     }
   }
   return both

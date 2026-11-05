@@ -42,6 +42,7 @@ const en: Record<string, string> = {
     "We couldn't send the verification email. Please try again in a moment.",
   "데모 계정은 비밀번호를 바꾸거나 탈퇴할 수 없어요.": "Demo accounts can't change their password or leave.",
   "데모 계정은 탈퇴할 수 없어요.": "Demo accounts can't leave.",
+  "내 정보에서 사업자 확인을 마친 뒤 가게를 연결해 주세요.": "Verify your business in My info first, then link the shop.",
   "데모 계정은 PIN을 바꿀 수 없어요.": "Demo accounts can't change the PIN.",
   "PIN은 보이는 날부터 바꿀 수 있어요.": "You can change the PIN from the day it shows.",
   "바꿀 PIN을 골라 주세요.": "Choose the PIN to change.",

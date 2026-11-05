@@ -102,6 +102,9 @@ invitesRouter.post("/:code/accept", async (req, res) => {
   const database = getDatabase()
   if (isDemo(database, account)) throw new HttpError(403, "데모 계정은 가게를 연결할 수 없어요.")
   const invite = findInvite(database, req.params.code)
+  // 초대 가입은 운영자가 서류를 보고 연결한다. 이미 있는 계정은 사업자 확인을
+  // 마쳐야 남의 가게를 자기 것으로 잇지 못한다.
+  if (!account.business) throw new HttpError(403, "내 정보에서 사업자 확인을 마친 뒤 가게를 연결해 주세요.")
   const { brand, answered } = linkShop(database, account, invite)
   await saveDatabase()
   tellInviters(database, brand, answered)

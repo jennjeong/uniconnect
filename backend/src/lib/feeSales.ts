@@ -28,7 +28,7 @@ sell("fee", {
     if (feeState(database, agreement, proposal).due > 0) return
     const both = confirmAgreement(database, agreement, proposal, "brand")
     // 각 측의 첫 확정 협찬은 초대한 사람에게 보상이 된다.
-    if (both) tellReferrers(rewardReferrals(database, [proposal.group.account, proposal.brand.account]))
+    if (both) tellReferrers(rewardReferrals(database, { agreement, proposal }))
     void notify(
       proposal.group.account,
       "sponsorships",

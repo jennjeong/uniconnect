@@ -395,7 +395,9 @@ export const pinsOpen = (database: Database, measurement: Measurement, event: Ev
 // 않도록 예상 인원의 세 배, 최소 100으로 한다. 데모 계정의 방문자가
 // 무엇을 시도해도 같다.
 export const scanCeiling = (database: Database, measurement: Measurement) =>
-  isDemoEvent(database, measurement) ? Infinity : Math.max(100, measurement.goals.expectedAudience * 3)
+  isDemoEvent(database, measurement)
+    ? Infinity
+    : Math.max(100, (measurement.agreedAudience ?? measurement.goals.expectedAudience) * 3)
 
 // 행사 기간 밖의 스캔이나 쿠폰, 쿠폰이 소진된 뒤의 방문을 거절한다.
 export function assertOpen(database: Database, measurement: Measurement, event: EventItem, kind: MetricKind) {

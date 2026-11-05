@@ -333,8 +333,8 @@ agreementsRouter.post("/:id/confirm", async (req, res) => {
     if (fee.due > 0) throw new HttpError(402, "플랫폼 수수료를 결제하면 확인돼요.")
   }
   const both = confirmAgreement(database, agreement, proposal, side)
-  // Each side's first confirmed sponsorship rewards whoever invited it (친구 초대).
-  const rewarded = both ? rewardReferrals(database, [proposal.group.account, proposal.brand.account]) : []
+  // 각 측의 첫 확정 협찬은 초대한 사람에게 보상이 된다(친구 초대).
+  const rewarded = both ? rewardReferrals(database, { agreement, proposal }) : []
   await saveDatabase()
   tellReferrers(rewarded)
   void notify(

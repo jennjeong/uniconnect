@@ -30,7 +30,6 @@ const en: Record<string, string> = {
   "재직증명서나 임명장, 학생증처럼 이 단체 소속임을 보여 주는 서류예요. 확인 뒤 바로 지워요.": "A certificate of employment, appointment letter or student ID showing you belong to this organization. It's deleted right after the check.",
   "재직 증명 서류": "Proof of employment",
   "사업자등록증이나 재직 서류를 올려 주세요.": "Please upload a business registration or proof of employment.",
-  "회사 이메일이 없어요. 개인 이메일로 가입할게요.": "I don't have a company email. I'll sign up with a personal one.",
   "운영자가 서류를 확인하고 승인하면 가입이 끝나요. 승인 전에는 로그인할 수 없고 서류는 확인 뒤 바로 지워요.": "Sign-up finishes when an operator checks and approves your document. You can't log in before then, and the document is deleted right after the check.",
   "사업자등록증 또는 재직 서류": "Business registration or proof of employment",
   "임원 여러 명이 각자의 이메일과 비밀번호로 같은 계정에 로그인해요. 초대받은 사람은 재직 증명 서류 확인을 거치고 2단계 인증을 꼭 설정해요. 탈퇴, 로그인 이메일 바꾸기와 이 목록 관리는 대표만 할 수 있어요.": "Several officers log in to the same account, each with their own email and password. Invited people pass a proof-of-employment check and must set up two-step login. Only the owner can leave, change the login email or manage this list.",

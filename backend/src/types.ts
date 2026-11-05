@@ -491,6 +491,8 @@ export type EventSponsor = {
 // 행사 하나의 실시간 측정이다. 집계, 시간별 스캔, 최근 기록, 목표를 담는다.
 // `code`는 행사의 체크인 주소에 들어 있다.
 export type Measurement = {
+  // 두 쪽이 처음 계약서를 확인했을 때의 예상 인원. QR 상한의 기준이다.
+  agreedAudience?: number
   eventId: string
   accountId: string
   code: string
