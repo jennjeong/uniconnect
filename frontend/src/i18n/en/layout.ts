@@ -119,7 +119,6 @@ const en: Record<string, string> = {
     "Open the calendar file and Apple Calendar opens to add the dates.",
   "캘린더 파일을 열면 쓰는 캘린더 앱이 열리고 거기서 일정을 추가할 수 있어요.":
     "Open the calendar file and your calendar app opens to add the dates.",
-  "가게를 연결했어요. {name}에 알렸어요.": "Your shop is linked. We let {name} know.",
   "로그인하면 협찬 제안을 보낼 수 있어요.": "Log in to send a sponsorship proposal.",
   "{name}에 협찬 제안을 보냈어요.": "Proposal sent to {name}.",
   "{name}에 보낸 제안을 취소했어요.": "Withdrew your proposal to {name}.",

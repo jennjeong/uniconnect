@@ -3,7 +3,8 @@ import { Router, type Request } from "express"
 
 import { findListing, withLiveEvent } from "../lib/catalog.js"
 import { HttpError } from "../lib/errors.js"
-import { linkShop, tellInviters } from "../lib/shopInvites.js"
+import { applicationsOf, holdApplication, parseDocument } from "../lib/applications.js"
+import { assertLinkable } from "../lib/shopInvites.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { Account, Database, ShopInvite } from "../types.js"
@@ -102,11 +103,23 @@ invitesRouter.post("/:code/accept", async (req, res) => {
   const database = getDatabase()
   if (isDemo(database, account)) throw new HttpError(403, "데모 계정은 가게를 연결할 수 없어요.")
   const invite = findInvite(database, req.params.code)
-  // 초대 가입은 운영자가 서류를 보고 연결한다. 이미 있는 계정은 사업자 확인을
-  // 마쳐야 남의 가게를 자기 것으로 잇지 못한다.
-  if (!account.business) throw new HttpError(403, "내 정보에서 사업자 확인을 마친 뒤 가게를 연결해 주세요.")
-  const { brand, answered } = linkShop(database, account, invite)
-  await saveDatabase()
-  tellInviters(database, brand, answered)
-  res.json({ ...inviteView(database, invite, req), listing: brand })
+  const listing = assertLinkable(database, account, invite)
+  // 두 번 받아도 달라지는 것이 없다.
+  if (listing?.kakaoPlaceId === invite.placeId) {
+    res.json({ ...inviteView(database, invite, req), listing })
+    return
+  }
+  // 사업자 확인은 그 가게의 주인임을 보여 주지 않는다. 가입과 같이 운영자가
+  // 서류를 보고 연결한다.
+  const waiting = applicationsOf(database).some((item) => item.linkAccountId === account.id && item.invite === invite.code)
+  if (waiting) throw new HttpError(409, "이미 서류를 보냈어요. 운영자가 확인하면 메일로 알려 드려요.")
+  const document = parseDocument(req.body?.document, "사업자등록증이나 재직 서류를 올려 주세요.")
+  await holdApplication(database, saveDatabase, document, {
+    kind: "shop",
+    name: account.name,
+    email: account.email,
+    linkAccountId: account.id,
+    invite: invite.code,
+  })
+  res.status(202).json({ pending: true })
 })

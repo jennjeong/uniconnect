@@ -14,7 +14,7 @@ export const applicationsOf = (database: Database) => (database.applications ??=
 export const applicationFolder = (id: string) => `application-${id}`
 
 export const applicationFor = (database: Database, email: string) =>
-  applicationsOf(database).find((application) => application.email === email)
+  applicationsOf(database).find((application) => application.email === email && !application.linkAccountId)
 
 // 보낸 그대로의 서류: 줄인 사진이나 2MB 이하 PDF와 그 이름. 오류는 빠진 것을
 // 말해 준다.

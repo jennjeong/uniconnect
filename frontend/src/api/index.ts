@@ -402,9 +402,11 @@ export const api = {
   inviteShop: (placeId: string) =>
     request<{ invite: ShopInvite }>("/invites", { method: "POST", body: { placeId } }),
   invite: (code: string) => request<InvitePageData>(`/invites/${encodeURIComponent(code)}`),
-  acceptInvite: (code: string) =>
-    request<InvitePageData & { listing: Match }>(`/invites/${encodeURIComponent(code)}/accept`, {
+  // 서류를 보내면 운영자가 확인한 뒤 가게를 잇는다.
+  acceptInvite: (code: string, document: { file: string; name: string }) =>
+    request<{ pending: true }>(`/invites/${encodeURIComponent(code)}/accept`, {
       method: "POST",
+      body: { document },
     }),
 
   inquiries: () => request<{ inquiries: Inquiry[] }>("/inquiries"),

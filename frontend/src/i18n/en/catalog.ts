@@ -599,8 +599,9 @@ const en: Record<string, string> = {
   "이 가게는 이미 uniconnect에 가입했어요.": "This shop is already on uniconnect.",
   "가게로 가입하기": "Join as a shop",
   "이미 계정이 있어요": "I have an account",
-  "가입은 회사나 가게 이메일로 해요. 네이버, 지메일 같은 개인 메일은 받지 않아요.":
-    "Sign up with a company or shop email. Personal addresses such as Naver or Gmail aren't accepted.",
+  "가입할 때 사업자등록증이나 재직 서류를 함께 내요. 운영자가 확인하면 가게가 연결돼요.":
+    "You send a business registration or proof of employment when you sign up. An operator checks it and links your shop.",
+  "운영자가 서류를 확인하고 승인하면 가게가 연결돼요.": "An operator checks your document and links your shop.",
   "우리 가게로 연결하기": "Link to my shop",
   "가게 사장님께 이 링크를 보내 주세요. 사장님이 가게로 가입하면 연결돼요.":
     "Send this link to the shop's owner. The shop is linked once they join.",

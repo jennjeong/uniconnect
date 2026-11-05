@@ -54,7 +54,7 @@ adminMoreRouter.get("/applications", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
   res.json({
-    applications: applicationsOf(database).map(({ id, kind, name, email, document, requestedAt, account, accountId }) => ({
+    applications: applicationsOf(database).map(({ id, kind, name, email, document, requestedAt, account, accountId, linkAccountId }) => ({
       id,
       kind,
       name,
@@ -62,6 +62,7 @@ adminMoreRouter.get("/applications", async (req, res) => {
       document: { name: document.name, size: document.size },
       requestedAt,
       ...(account ? { brand: account.name, contact: account.contact } : {}),
+      ...(linkAccountId ? { brand: name } : {}),
       ...(accountId ? { team: database.accounts.find((item) => item.id === accountId)?.name ?? "" } : {}),
     })),
   })
@@ -104,6 +105,10 @@ adminMoreRouter.post("/applications/:id/approve", async (req, res) => {
     const invite = database.invites.find((item) => item.code === application.invite)
     const taken = invite && database.brands.some((brand) => brand.kakaoPlaceId === invite.placeId)
     if (invite && !taken) link = linkShop(database, account, invite)
+  } else if (application.linkAccountId) {
+    const invite = database.invites.find((item) => item.code === application.invite)
+    if (!invite) throw new HttpError(409, "초대가 없어져서 연결할 수 없어요. 거절해 주세요.")
+    link = linkShop(database, accountFor(database, application.linkAccountId), invite)
   } else {
     const account = accountFor(database, application.accountId ?? "")
     account.members = [...(account.members ?? []), application.member!]
@@ -116,7 +121,11 @@ adminMoreRouter.post("/applications/:id/approve", async (req, res) => {
   await tellApplicant(
     application.email,
     "[uniconnect] 가입이 승인되었어요",
-    application.account ? "서류를 확인했어요. 이제 가입한 이메일과 비밀번호로 로그인할 수 있어요." : "서류를 확인했어요. 첫 로그인에서 2단계 인증을 설정하면 함께 관리할 수 있어요.",
+    application.linkAccountId
+      ? "서류를 확인했어요. 가게를 연결했어요."
+      : application.account
+        ? "서류를 확인했어요. 이제 가입한 이메일과 비밀번호로 로그인할 수 있어요."
+        : "서류를 확인했어요. 첫 로그인에서 2단계 인증을 설정하면 함께 관리할 수 있어요.",
   )
   res.json({ ok: true })
 })

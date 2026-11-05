@@ -1634,6 +1634,23 @@ test("refunding a granted period moves later periods by that period's length", a
   assert.equal((end - new Date(`${month.periodEnd}T00:00:00Z`).getTime()) / 86_400_000, 365)
 })
 
+test("the QR ceiling takes the smaller audience either side saw when confirming", async () => {
+  const group = await signUpMember("seen-club@syu.ac.kr", "seen-pass-1234")
+  const groupId = getDatabase().accounts.find((account) => account.email === "seen-club@syu.ac.kr")!.id
+  const { token: brand, listingId } = await listedMember("seen@seen-cafe.kr", "seen-pass-1234", "브랜드")
+  await call("POST", "/events", { name: "본 공연", date: "2026-12-22", people: "100명", types: ["제품"] }, group)
+  await call("POST", "/proposals", { matchId: listingId }, group)
+  const request = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
+  await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+  await call("GET", `/agreements/${request.id}`, undefined, brand)
+  const measurement = getDatabase().measurements.find((item) => item.accountId === groupId && item.eventId === request.eventId)!
+  const seen = measurement.goals.expectedAudience
+  await call("POST", `/agreements/${request.id}/confirm`, undefined, brand)
+  measurement.goals.expectedAudience = 100_000
+  await call("POST", `/agreements/${request.id}/confirm`, undefined, group)
+  assert.equal(measurement.agreedAudience, seen)
+})
+
 test("a document keeps the extension of what it is, and an email can't dodge the free-mail list with a dot", async () => {
   const { parseDocument } = await import("./lib/applications.js")
   const { isPersonalMail, normalizeEmail } = await import("./lib/email.js")
@@ -4161,9 +4178,15 @@ test("a student group invites a shop it found nearby, and the shop joins as a br
     // 매장 주인이 브랜드로 가입해 받으면 새 브랜드가 그 매장으로 바로 목록에
     // 오른다.
     const owner = await signUpMember("owner@golmok-cafe.kr", "golmok-pass-123", "브랜드")
-    // 사업자 확인을 마쳐야 남의 가게를 자기 것으로 잇지 못한다.
-    assert.equal((await call("POST", `/invites/${code}/accept`, undefined, owner)).status, 403)
-    getDatabase().accounts.find((account) => account.email === "owner@golmok-cafe.kr")!.business = { number: "1234567890", verifiedAt: "2026-11-05" }
+    // 서류 없이는 잇지 못하고, 운영자가 승인해야 연결된다.
+    assert.equal((await call("POST", `/invites/${code}/accept`, undefined, owner)).status, 400)
+    const held = await call("POST", `/invites/${code}/accept`, { document: proofDocument }, owner)
+    assert.deepEqual([held.status, held.data], [202, { pending: true }])
+    assert.equal((await call("POST", `/invites/${code}/accept`, { document: proofDocument }, owner)).status, 409)
+    assert.equal((await call("GET", `/invites/${code}`, undefined, owner)).data.invite.joined, null)
+    // 기다리는 동안에도 계정은 그대로 로그인한다.
+    assert.equal((await call("POST", "/auth/login", { role: "브랜드", email: "owner@golmok-cafe.kr", password: "golmok-pass-123" })).status, 200)
+    await approveApplication("owner@golmok-cafe.kr")
     const accepted = await call("POST", `/invites/${code}/accept`, undefined, owner)
     assert.equal(accepted.status, 200)
     assert.equal(accepted.data.invite.joined, "you")
@@ -4173,8 +4196,6 @@ test("a student group invites a shop it found nearby, and the shop joins as a br
     assert.ok(getDatabase().brands.some((item) => item.id === listing.id))
     assert.equal((await call("GET", `/invites/${code}`, undefined, owner)).data.invite.joined, "you")
     assert.equal((await call("GET", `/invites/${code}`)).data.invite.joined, "other")
-    // 두 번 받아도 달라지는 것이 없다.
-    assert.equal((await call("POST", `/invites/${code}/accept`, undefined, owner)).status, 200)
     // The groups that invited it hear about it, with the brand's page on 추천 매칭.
     for (const address of ["inviter@syu.ac.kr", "invite-one@syu.ac.kr"]) {
       const notice = sent.find((message) => message.to.includes(address) && message.subject.includes("초대"))!
@@ -4191,7 +4212,6 @@ test("a student group invites a shop it found nearby, and the shop joins as a br
     const otherGroup = await signUpMember("invite-two@syu.ac.kr", "invite-two-123")
     const second = (await call("POST", "/invites", { placeId: "26338954" }, otherGroup)).data.invite.code
     const rival = await signUpMember("rival@rival-cafe.kr", "rival-pass-123", "브랜드")
-    getDatabase().accounts.find((account) => account.email === "rival@rival-cafe.kr")!.business = { number: "1234567891", verifiedAt: "2026-11-05" }
     const taken = await call("POST", `/invites/${second}/accept`, undefined, rival)
     assert.equal(taken.status, 409)
     assert.match(taken.data.error, /이미 다른 브랜드와 연결된 가게/)
@@ -6427,7 +6447,8 @@ test("a QR can't be run up: one device is limited, and an event stops at three t
   const ceiling = await scan()
   assert.equal(ceiling.status, 409)
   assert.match(ceiling.data.error, /3배/)
-  // 두 쪽이 확인한 뒤에는 주인이 예상 인원을 올려도 상한이 그대로다.
+  // 두 쪽이 확인한 뒤에는 주인이 예상 인원을 올려도 상한이 그대로다(한쪽이 확인한
+  // 뒤에 올린 값도 기준이 되지 않는다는 것은 아래 테스트가 본다).
   measurement.agreedAudience = 10
   measurement.goals.expectedAudience = 10_000
   await clearRateLimits()

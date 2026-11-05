@@ -2,12 +2,13 @@ import { useEffect, useState } from "react"
 
 import { api, errorMessage } from "../api"
 import { BrandMark } from "../components/BrandMark"
+import { DocumentField, type PickedDocument } from "../components/DocumentField"
 import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { Pill } from "../components/Pill"
 import { t } from "../i18n"
 import { formatFullDate } from "../lib/date"
-import type { Account, InvitePageData, Match, NavLabel } from "../types"
+import type { Account, InvitePageData, NavLabel } from "../types"
 
 // 가게가 uniconnect에서 하는 일. 초대를 읽는 사장님을 위한 것이다.
 const benefits = [
@@ -24,7 +25,6 @@ export function InvitePage({
   account,
   onSignup,
   onLogin,
-  onAccepted,
   onHome,
   onNavigate,
   onEditProfile,
@@ -34,7 +34,6 @@ export function InvitePage({
   account: Account | null
   onSignup: () => void
   onLogin: () => void
-  onAccepted: (listing: Match, group: string) => void
   onHome: () => void
   onNavigate: (label: NavLabel) => void
   onEditProfile: () => void
@@ -43,6 +42,10 @@ export function InvitePage({
   const [data, setData] = useState<InvitePageData>()
   const [failed, setFailed] = useState("")
   const [busy, setBusy] = useState(false)
+
+  // 이미 있는 브랜드가 가게를 잇는 서류.
+  const [document, setDocument] = useState<PickedDocument>()
+  const [sent, setSent] = useState(false)
 
   // 누가 로그인하면 다시 읽는다. 가게가 "본인으로" 가입했는지는 보는 사람에
   // 달렸기 때문이다.
@@ -64,11 +67,11 @@ export function InvitePage({
   }, [code, accountId])
 
   const accept = async () => {
+    if (!document) return
     setBusy(true)
     try {
-      const result = await api.acceptInvite(code)
-      setData(result)
-      onAccepted(result.listing, result.group?.name ?? "")
+      await api.acceptInvite(code, document)
+      setSent(true)
     } catch (error) {
       onError(error)
     } finally {
@@ -173,15 +176,26 @@ export function InvitePage({
                   </Pill>
                 </div>
                 <p className="invite-note">
-                  {t("가입은 회사나 가게 이메일로 해요. 네이버, 지메일 같은 개인 메일은 받지 않아요.")}
+                  {t("가입할 때 사업자등록증이나 재직 서류를 함께 내요. 운영자가 확인하면 가게가 연결돼요.")}
                 </p>
               </>
             ) : account.role === "브랜드" ? (
-              <div className="invite-actions">
-                <Pill arrow="right" disabled={busy} onClick={() => void accept()}>
-                  {t("우리 가게로 연결하기")}
-                </Pill>
-              </div>
+              sent ? (
+                <p className="invite-note">{t("서류를 보냈어요. 운영자가 확인하면 메일로 알려 드려요.")}</p>
+              ) : (
+                <>
+                  <DocumentField
+                    hint={t("운영자가 서류를 확인하고 승인하면 가게가 연결돼요.")}
+                    label={t("사업자등록증 또는 재직 서류")}
+                    onPick={setDocument}
+                  />
+                  <div className="invite-actions">
+                    <Pill arrow="right" disabled={busy || !document} onClick={() => void accept()}>
+                      {t("우리 가게로 연결하기")}
+                    </Pill>
+                  </div>
+                </>
+              )
             ) : (
               <p className="invite-note">
                 {t("가게 사장님께 이 링크를 보내 주세요. 사장님이 가게로 가입하면 연결돼요.")}

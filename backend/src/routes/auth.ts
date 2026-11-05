@@ -557,7 +557,9 @@ function removeAccount(database: Database, account: Account) {
   // 이 계정 행사의 사진은 데이터를 저장한 뒤 없앤 계약서의 사진과 함께 지운다.
   droppedAgreements.push(...(database.events[account.id] ?? []).map((event) => eventPhotos(event.id)))
   // 아직 합류하지 않은 공동 관리자와 그 서류도 마찬가지다.
-  const waiting = applicationsOf(database).filter((application) => application.accountId === account.id)
+  const waiting = applicationsOf(database).filter(
+    (application) => application.accountId === account.id || application.linkAccountId === account.id,
+  )
   droppedAgreements.push(...waiting.map((application) => applicationFolder(application.id)))
   database.applications = applicationsOf(database).filter((application) => !waiting.includes(application))
   delete database.events[account.id]

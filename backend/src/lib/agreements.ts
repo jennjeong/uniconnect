@@ -292,6 +292,10 @@ export function confirmAgreement(database: Database, agreement: Agreement, propo
   agreement.updatedAt = now
   const both = Boolean(agreement.confirmed.group && agreement.confirmed.brand)
   const sponsored = sponsoredEvent(database, proposal)
+  // 각 쪽이 확인할 때 본 예상 인원의 작은 값이 QR 상한의 기준이다. 한쪽이 확인한
+  // 뒤에 주인이 올려도 상한은 오르지 않는다.
+  const seen = agreementShare(database, proposal)?.measurement.goals.expectedAudience
+  if (seen !== undefined) agreement.seenAudience = Math.min(agreement.seenAudience ?? seen, seen)
   if (both && sponsored) {
     ensureMeasurement(database, sponsored.owner.id, sponsored.event)
     const share = agreementShare(database, proposal)
@@ -299,8 +303,7 @@ export function confirmAgreement(database: Database, agreement: Agreement, propo
       const methods = methodsOf(share.measurement, share.sponsor)
       if (share.sponsor) share.sponsor.confirmedMethods = methods
       else share.measurement.confirmedMethods = methods
-      // QR 상한의 기준. 행사 주인이 뒤에 고쳐도 두 쪽이 본 숫자로 남는다.
-      share.measurement.agreedAudience ??= share.measurement.goals.expectedAudience
+      share.measurement.agreedAudience ??= agreement.seenAudience
     }
   }
   return both

@@ -246,6 +246,8 @@ export type Application = {
   // 매장은 만들어질 계정과, 그 계정이 온 초대를 담는다.
   account?: Account
   invite?: string
+  // 이미 있는 브랜드가 초대받은 가게를 잇는 신청이면 그 계정이다.
+  linkAccountId?: string
   // 공동 관리자는 합류할 계정과, 만들어질 공동 관리자를 담는다.
   accountId?: string
   member?: TeamMember
@@ -667,6 +669,8 @@ export type AgreementItem = {
 // 각 쪽이 지금 조건을 확정한 시각, 이행된 만큼의 증빙을 담는다. 어느 쪽이든
 // 처음 열 때 만든다.
 export type Agreement = {
+  // 두 쪽이 확인하며 본 예상 인원 중 작은 값(lib/agreements.ts).
+  seenAudience?: number
   id: string
   // 브랜드가 답한 학생단체의 제안이거나 브랜드의 제안이다.
   kind: "request" | "offer"

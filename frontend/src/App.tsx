@@ -1469,10 +1469,6 @@ function App() {
         <InvitePage
           account={account}
           code={view.invite}
-          onAccepted={(next, group) => {
-            setListing(next)
-            showNotice(t("가게를 연결했어요. {name}에 알렸어요.", { name: group }))
-          }}
           onEditProfile={() => go({ page, profile: "edit" })}
           onError={handleError}
           onLogin={() => openAuth("login", "브랜드")}
