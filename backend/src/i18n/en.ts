@@ -243,7 +243,7 @@ const en: Record<string, string> = {
   "직원 확인 PIN은 협찬사마다 다르게 정해 주세요.": "Please set a different staff PIN for each sponsor.",
   "협찬사별 가치를 더하면 협찬 가치 합계({total}원)와 같아야 해요.":
     "The sponsors' values must add up to the total sponsorship value (KRW {total}).",
-  "직원 확인 PIN은 숫자 4자리로 적어 주세요.": "Please enter the staff PIN as 4 digits.",
+  "직원 확인 PIN은 숫자 6자리로 적어 주세요.": "Please enter the staff PIN as 6 digits.",
   "쿠폰 사용 기간이 지났어요.": "The coupon has expired.",
   "아직 참여를 받지 않는 행사예요. 행사 당일({date})에 다시 스캔해 주세요.":
     "This event isn't open for participation yet. Please scan again on the day of the event ({date}).",

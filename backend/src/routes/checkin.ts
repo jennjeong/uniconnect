@@ -85,9 +85,9 @@ const scansPerDevice = createRateLimit({
 const deviceKey = (req: Request, code: string) =>
   createHash("sha256").update(`${clientKey(req)} ${req.get("user-agent") ?? ""} ${code}`).digest("hex")
 
-// 직원 PIN이 틀린 횟수를 주소와 행사별로, 행사 단독으로도 센다. 네 자리
+// 직원 PIN이 틀린 횟수를 주소와 행사별로, 행사 단독으로도 센다. 여섯 자리
 // 숫자는 한 곳에서도 여러 곳에서도 추측할 수 없어야 한다(행사 한도에서
-// 1만 개를 모두 시도하는 데 약 80시간이 걸린다).
+// 100만 개를 모두 시도하는 데 약 8,000시간이 걸린다).
 const pinFailures = createRateLimit({
   limit: 10,
   windowMs: 15 * 60 * 1000,

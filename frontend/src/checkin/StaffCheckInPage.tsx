@@ -35,7 +35,7 @@ export function StaffCheckInPage({ code }: { code: string }) {
 
   const confirm = async () => {
     const number = coupon.trim().toUpperCase()
-    if (venue.pin.length !== 4) return setError(t("직원 PIN 4자리를 입력해 주세요."))
+    if (venue.pin.length !== 6) return setError(t("직원 PIN 6자리를 입력해 주세요."))
     if (!number) return setError(t("참여자의 쿠폰 번호를 입력해 주세요."))
     setBusy(true)
     setError("")
@@ -83,7 +83,7 @@ export function StaffCheckInPage({ code }: { code: string }) {
             className="checkin-pin"
             inputMode="numeric"
             label={t("직원 PIN")}
-            maxLength={4}
+            maxLength={6}
             toggleLabel={t("PIN 보기")}
             value={venue.pin}
             onChange={(event) => venue.setPin(event.target.value)}

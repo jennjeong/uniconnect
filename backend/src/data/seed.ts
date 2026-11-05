@@ -918,8 +918,8 @@ export function seedMeasurements(accountId: string): Measurement[] {
       },
       // 행사 전에 매장에 준 데모의 직원 PIN과 단체 자신의 행사장 PIN.
       survey: seedSurvey(),
-      staffPin: "1012",
-      groupPin: "1013",
+      staffPin: "101234",
+      groupPin: "101334",
       sponsors: [],
       passes: {},
     },

@@ -18,7 +18,7 @@ import {
 import { acceptedProposal, agreementShare } from "./lib/agreements.js"
 import { toIsoDate } from "./lib/dates.js"
 import { HttpError } from "./lib/errors.js"
-import { emptyMetrics, newStaffPin, prunePasses, syncSponsors } from "./lib/measurements.js"
+import { emptyMetrics, newStaffPin, prunePasses, syncSponsors, upgradePins } from "./lib/measurements.js"
 import { upgradeMethods } from "./lib/methods.js"
 import { currentStorage, StaleWrite } from "./lib/storage.js"
 import { renamedAccountTypes } from "./lib/validation.js"
@@ -56,7 +56,11 @@ let checkedAt = 0
 export const freshness = { everyMs: 2000 }
 
 export async function loadDatabase() {
-  if (await reload()) return getDatabase()
+  if (await reload()) {
+    // 복사본 하나가 저장하면 다른 복사본은 먼저 저장된 값을 읽는다.
+    if (upgradePins(getDatabase())) await saveDatabase().catch(reload)
+    return getDatabase()
+  }
   const seed = await createSeed()
   for (const measurement of seed.measurements) syncSponsors(seed, measurement)
   freshenDemoReport(seed)

@@ -52,7 +52,7 @@ export function GroupCheckInPage({ code }: { code: string }) {
             className="checkin-pin"
             inputMode="numeric"
             label={t("단체 확인 PIN")}
-            maxLength={4}
+            maxLength={6}
             toggleLabel={t("PIN 보기")}
             value={venue.pin}
             onChange={(event) => venue.setPin(event.target.value)}

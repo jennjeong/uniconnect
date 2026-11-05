@@ -250,12 +250,12 @@ export function GoalsModal({
                   )}
                   {report.staffPin !== undefined && !report.canRotatePin && (
                     <label>
-                      {t("매장 직원 확인 PIN (숫자 4자리)")}
+                      {t("매장 직원 확인 PIN (숫자 6자리)")}
                       <input
                         inputMode="numeric"
-                        maxLength={4}
+                        maxLength={6}
                         value={sponsor.staffPin}
-                        onChange={(event) => updateSponsor(sponsor.id, { staffPin: number(event.target.value).slice(0, 4) })}
+                        onChange={(event) => updateSponsor(sponsor.id, { staffPin: number(event.target.value).slice(0, 6) })}
                       />
                     </label>
                   )}
@@ -287,12 +287,12 @@ export function GoalsModal({
           </div>
           {report.staffPin !== undefined && !report.canRotatePin && (
             <label>
-              {t("매장 직원 확인 PIN (숫자 4자리)")}
+              {t("매장 직원 확인 PIN (숫자 6자리)")}
               <input
                 inputMode="numeric"
-                maxLength={4}
+                maxLength={6}
                 value={draft.staffPin}
-                onChange={(event) => update({ staffPin: number(event.target.value).slice(0, 4) })}
+                onChange={(event) => update({ staffPin: number(event.target.value).slice(0, 6) })}
               />
             </label>
           )}

@@ -192,7 +192,7 @@ const en: Record<string, string> = {
   매장: "Store",
   혜택: "Offer",
   "협찬 가치 (원)": "Sponsorship value (KRW)",
-  "매장 직원 확인 PIN (숫자 4자리)": "Store staff PIN (4 digits)",
+  "매장 직원 확인 PIN (숫자 6자리)": "Store staff PIN (6 digits)",
   "협찬사별 가치 합계 {shared}원 / 협찬 가치 합계 {total}원":
     "Sponsors' total ₩{shared} / Sponsorship value total ₩{total}",
   "두 합계가 같아야 저장돼요": "The two totals must match to save",
@@ -240,7 +240,7 @@ const en: Record<string, string> = {
   "학생단체와 브랜드를 잇는 협찬 플랫폼": "Sponsorships connecting student groups and brands",
 
   // 매장 직원의 체크인 (checkin/StaffCheckInPage.tsx)
-  "직원 PIN 4자리를 입력해 주세요.": "Enter the 4-digit staff PIN.",
+  "직원 PIN 6자리를 입력해 주세요.": "Enter the 6-digit staff PIN.",
   "참여자의 쿠폰 번호를 입력해 주세요.": "Enter the guest's coupon number.",
   "매장 직원용": "For store staff",
   "방문 확인": "Confirm visit",
