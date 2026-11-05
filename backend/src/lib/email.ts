@@ -27,6 +27,7 @@ export const normalizeEmail = (value: unknown) =>
   String(value ?? "")
     .trim()
     .toLowerCase()
+    .replace(/\.+$/, "")
 
 // 개인 주소(Gmail, Naver 등).
 export const isPersonalMail = (email: string) => freeMailDomains.has(email.split("@")[1] ?? "")

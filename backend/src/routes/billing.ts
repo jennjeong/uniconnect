@@ -123,7 +123,9 @@ billingRouter.post("/confirm", async (req, res) => {
   // 다시 시도한 것이면 이미 청구됐을 수 있다.
   if (!current.paymentKey) {
     const quoted = productOf(current.kind).quote(getDatabase(), account, current.targetId).amount
-    if (withVat(quoted) !== current.amount) {
+    // supply가 없는 주문은 부가세 전에 만든 것이다. 총액이 우연히 같아도 낡은
+    // 주문이다.
+    if (withVat(quoted) !== current.amount || current.supply !== quoted) {
       Object.assign(current, { supply: quoted, amount: withVat(quoted) })
       await saveDatabase()
       throw new HttpError(409, "금액이 바뀌었어요. 바뀐 금액으로 다시 결제해 주세요.")

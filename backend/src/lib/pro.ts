@@ -71,10 +71,12 @@ sell("pro", {
     const until = proUntil(database, payment.accountId)
     const from = until ? addDays(until, 1) : todayInKorea()
     payment.periodEnd = addDays(from, prices.proDays - 1)
+    payment.periodDays = prices.proDays
   },
-  // 환불됨: 그 뒤에 결제한 달이 그 일수만큼 앞당겨진다.
+  // 환불됨: 그 뒤의 기간이 환불한 기간의 일수만큼 앞당겨진다. 운영자가 준 기간은
+  // 30일이 아닐 수 있다.
   revoke(database, payment) {
-    shiftLaterPeriods(database, payment, prices.proDays)
+    shiftLaterPeriods(database, payment, payment.periodDays ?? prices.proDays)
   },
 })
 

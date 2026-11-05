@@ -42,6 +42,7 @@ const en: Record<string, string> = {
     "We couldn't send the verification email. Please try again in a moment.",
   "데모 계정은 비밀번호를 바꾸거나 탈퇴할 수 없어요.": "Demo accounts can't change their password or leave.",
   "데모 계정은 탈퇴할 수 없어요.": "Demo accounts can't leave.",
+  "초대 코드를 너무 많이 틀렸어요. 15분 뒤에 다시 시도해 주세요.": "Too many wrong invitation codes. Try again in 15 minutes.",
   "인증번호를 먼저 받아 주세요.": "Please get a verification code first.",
   "인증 시간이 지났어요. 인증번호를 다시 받아 주세요.": "The verification time has run out. Please get a new verification code.",
   "인증 시도가 너무 많아요. 30분 뒤에 인증번호를 다시 받아 주세요.":

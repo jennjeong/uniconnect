@@ -114,6 +114,7 @@ export function grantPartners(database: Database, account: Account, days: number
     requestedAt: now.toISOString(),
     paidAt: now.toISOString(),
     periodEnd: addDays(from, days - 1),
+    periodDays: days,
   } as Payment
   ;(database.payments ??= []).push(payment)
   return payment
