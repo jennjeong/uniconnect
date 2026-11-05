@@ -3,7 +3,8 @@ import { Router, type Request } from "express"
 
 import { config } from "../config.js"
 import { adminLogRows, isLive, logAdmin, noteLimit, serviceHealth } from "../lib/adminTools.js"
-import { markCancelled, markPaid, paymentsOf, toss } from "../lib/billing.js"
+import { cardReady, markCancelled, markPaid, paymentsOf } from "../lib/billing.js"
+import { askToss, reconcileRefunds, refundCard, settleCard, stuckRefunds } from "../lib/cardRecovery.js"
 import { memberDetail, memberRow, overview, proposalRows } from "../lib/console.js"
 import { todayInKorea } from "../lib/dates.js"
 import { recentErrors } from "../lib/errorLog.js"
@@ -46,6 +47,8 @@ export async function requireAdmin(req: Request) {
 // 환불된 것이다.
 adminRouter.get("/payments", async (req, res) => {
   await requireAdmin(req)
+  // 기록되지 못한 환불을 먼저 Toss의 답으로 정리해 목록이 맞게 보이게 한다.
+  if (cardReady() && stuckRefunds().length > 0) await reconcileRefunds()
   const payments = [...paymentsOf(getDatabase())]
     .reverse()
     .map(({ paymentKey, ...payment }) => ({ ...payment, card: Boolean(paymentKey) }))
@@ -58,10 +61,23 @@ function paymentFor(id: string) {
   return payment
 }
 
+// 카드 승인을 보낸 대기 주문은 청구됐을 수 있으니 Toss에 먼저 묻는다. 청구됐으면
+// 결제로 기록하고 운영자가 다시 판단하게 하며, 청구되지 않았으면 키를 지운다.
+async function settleWaiting(id: string) {
+  const payment = paymentFor(id)
+  if (payment.status !== "pending" || !payment.paymentKey) return
+  const settled = await askToss(settleCard(id))
+  if (settled === "paid") throw new HttpError(409, "카드 결제가 확인되어 결제 완료로 기록했어요. 목록을 다시 확인해 주세요.")
+  if (settled === "open") throw new HttpError(409, "앞서 진행한 카드 결제를 확인하고 있어요. 몇 분 뒤에 다시 시도해 주세요.")
+}
+
 // 계좌 이체가 들어왔다. 주문이 결제된 것이 되어 산 것을 준다.
 adminRouter.post("/payments/:id/paid", async (req, res) => {
   await requireAdmin(req)
-  const payment = paymentFor(String(req.params.id))
+  const id = String(req.params.id)
+  if (paymentFor(id).status !== "pending") throw new HttpError(409, "기다리는 주문만 입금 확인할 수 있어요.")
+  await settleWaiting(id)
+  const payment = paymentFor(id)
   if (payment.status !== "pending") throw new HttpError(409, "기다리는 주문만 입금 확인할 수 있어요.")
   markPaid(getDatabase(), payment, { method: "transfer" })
   logAdmin(getDatabase(), "payment-paid", { kind: "payment", id: payment.id })
@@ -74,11 +90,17 @@ adminRouter.post("/payments/:id/paid", async (req, res) => {
 // 회수한다.
 adminRouter.post("/payments/:id/cancel", async (req, res) => {
   await requireAdmin(req)
-  const payment = paymentFor(String(req.params.id))
+  const id = String(req.params.id)
+  if (paymentFor(id).status === "cancelled") throw new HttpError(409, "이미 취소된 결제예요.")
+  await settleWaiting(id)
+  const payment = paymentFor(id)
   if (payment.status === "cancelled") throw new HttpError(409, "이미 취소된 결제예요.")
   const reason = text(req.body?.reason) || (payment.status === "paid" ? "운영자 환불" : "운영자 취소")
-  if (payment.status === "paid" && payment.paymentKey) await toss.cancel(payment.paymentKey, reason)
-  markCancelled(getDatabase(), paymentFor(payment.id), reason)
+  if (payment.status === "paid" && payment.paymentKey) {
+    res.json({ payment: await refundCard(id, reason) })
+    return
+  }
+  markCancelled(getDatabase(), payment, reason)
   logAdmin(getDatabase(), "payment-cancelled", { kind: "payment", id: payment.id }, reason)
   await saveDatabase()
   res.json({ payment })
