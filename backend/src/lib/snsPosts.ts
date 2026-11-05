@@ -20,15 +20,16 @@ export function parsePostUrl(value: unknown) {
   throw new HttpError(400, "게시물 링크는 https://로 시작하는 주소로 적어 주세요.")
 }
 
-// 유튜브 주소가 가리키는 영상. watch?v=, youtu.be/, shorts/, live/ 꼴이다.
+// 유튜브 주소가 가리키는 영상. watch?v=, youtu.be/, shorts/, live/, embed/, v/
+// 꼴이다.
 export function youtubeId(address: string) {
   const url = new URL(address)
-  const host = url.hostname.replace(/^(www|m|music)\./, "")
+  const host = url.hostname.replace(/^(www|m|music)\./, "").replace("youtube-nocookie.com", "youtube.com")
   const id =
     host === "youtu.be"
       ? url.pathname.split("/")[1]
       : host === "youtube.com"
-        ? (url.searchParams.get("v") ?? url.pathname.match(/^\/(?:shorts|live)\/([^/]+)/)?.[1])
+        ? (url.searchParams.get("v") ?? url.pathname.match(/^\/(?:shorts|live|embed|v)\/([^/]+)/)?.[1])
         : undefined
   return id && /^[\w-]{6,20}$/.test(id) ? id : undefined
 }
@@ -36,12 +37,26 @@ export function youtubeId(address: string) {
 // 공유 추적 값. 같은 게시물을 다른 주소로 두 번 세지 않도록 비교할 때 뺀다.
 const trackers = /^(utm_\w+|fbclid|igsh|igshid|si|feature|ref)$/
 
-// 같은 게시물인지 비교하는 값. 유튜브는 영상 ID, 그 밖에는 추적 값과 조각,
-// www · m, 끝의 빗금을 뺀 주소다.
+// 게시물이 경로로 정해지는 SNS. 언어 값이 붙어도, 주소 꼴이 달라도 같은 값이다.
+function socialKey(url: URL) {
+  const host = url.hostname.replace(/^(www|m)\./, "")
+  const instagram = url.pathname.match(/^\/(?:[^/]+\/)?(?:p|tv|reels?)\/([^/]+)/)
+  if (host === "instagram.com" && instagram) return `instagram:${instagram[1]}`
+  const tweet = url.pathname.match(/^\/[^/]+\/status\/(\d+)/)
+  if ((host === "twitter.com" || host === "x.com") && tweet) return `x:${tweet[1]}`
+  const video = url.pathname.match(/^\/@[^/]+\/video\/(\d+)/)
+  if (host === "tiktok.com" && video) return `tiktok:${video[1]}`
+  return undefined
+}
+
+// 같은 게시물인지 비교하는 값. 유튜브는 영상 ID, 주요 SNS는 게시물 번호, 그
+// 밖에는 추적 값과 조각, www · m, 끝의 빗금을 뺀 주소다.
 export function postKey(address: string) {
   const id = youtubeId(address)
   if (id) return `youtube:${id}`
   const url = new URL(address)
+  const social = socialKey(url)
+  if (social) return social
   for (const name of [...url.searchParams.keys()]) {
     if (trackers.test(name)) url.searchParams.delete(name)
   }
@@ -72,10 +87,12 @@ export const youtube = {
   },
 }
 
-// 유튜브의 답을 보관한다. 영상을 읽을 수 없으면 조회수 없이 남겨, 단체가 적은
-// 숫자로 센다.
+// 유튜브의 답을 보관한다. 영상을 읽을 수 없게 되면 마지막으로 읽은 조회수를
+// 남기고 `gone`으로 표시한다. 영상을 내려 적은 숫자로 되돌리지 못하게 하려는
+// 것이다. 한 번도 읽지 못한 영상만 단체가 적은 숫자로 센다.
 function record(post: SnsPost, views: number | undefined, at: string) {
-  post.youtube = { ...(views === undefined ? {} : { views }), at }
+  const known = views ?? post.youtube?.views
+  post.youtube = { ...(known === undefined ? {} : { views: known }), ...(views === undefined ? { gone: true } : {}), at }
 }
 
 // 게시물을 올릴 때의 조회수. 실패해도 게시물은 올라가고 매일 도는 일이 다시

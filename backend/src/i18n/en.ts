@@ -626,6 +626,7 @@ const en: Record<string, string> = {
   "도달 수를 0 이상의 숫자로 적어 주세요.": "Enter the reach as a number, 0 or more.",
   "게시물은 10개까지 올릴 수 있어요.": "You can add up to 10 posts.",
   "이미 올린 게시물이에요.": "That post is already here.",
+  "게시물이 바뀌었어요. 화면을 새로 고쳐 다시 확인해 주세요.": "This post has changed. Refresh the page and check it again.",
   "게시물을 너무 자주 고쳤어요. 1시간 뒤에 다시 해 주세요.": "You changed posts too often. Try again in an hour.",
   "다시 요청하는 이유를 100자 안으로 적어 주세요.": "Say why you're asking again in 100 characters or fewer.",
   "캡처는 게시물마다 3장까지 올릴 수 있어요.": "Each post can hold up to 3 screenshots.",

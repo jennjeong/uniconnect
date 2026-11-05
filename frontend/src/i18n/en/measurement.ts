@@ -409,6 +409,7 @@ const en: Record<string, string> = {
   "확인된 도달 {confirmed}명 · 확인 전 {pending}명": "{confirmed} confirmed reach · {pending} waiting",
   "다시 요청": "Ask again",
   "적은 도달 {reach}명": "{reach} reach written",
+  "지금은 볼 수 없는 영상": "Video no longer available",
   "조회수를 가져올 수 없음": "Views unavailable",
   "유튜브 조회수 {views}회": "{views} YouTube views",
   "다시 요청한 이유: {reason}": "Why it was sent back: {reason}",

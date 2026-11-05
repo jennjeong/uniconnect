@@ -1145,7 +1145,7 @@ function SnsPostsPanel({
   onAdd: (body: { url: string; reach: number }) => Promise<boolean>
   onSave: (postId: string, body: { url: string; reach: number }) => Promise<boolean>
   onRemove: (postId: string) => void
-  onConfirm: (postId: string) => void
+  onConfirm: (post: SnsPost) => void
   onReject: (postId: string, reason: string) => Promise<boolean>
   onAddPhoto: (postId: string, file: File) => void
   onRemovePhoto: (postId: string, photo: string) => void
@@ -1197,6 +1197,7 @@ function SnsPostsPanel({
                     <span className={`agreement-post-state is-${post.status}`}>{t(postState[post.status])}</span>
                     {" · "}
                     {t("적은 도달 {reach}명", { reach: post.reach.toLocaleString("ko-KR") })}
+                    {post.youtube?.gone && post.youtube.views !== undefined && ` · ${t("지금은 볼 수 없는 영상")}`}
                     {post.youtube &&
                       (post.youtube.views === undefined
                         ? ` · ${t("조회수를 가져올 수 없음")}`
@@ -1206,7 +1207,7 @@ function SnsPostsPanel({
                 </div>
                 {!group && !canceled && post.status !== "confirmed" && (
                   <>
-                    <button className="primary-button" disabled={busy} onClick={() => onConfirm(post.id)} type="button">
+                    <button className="primary-button" disabled={busy} onClick={() => onConfirm(post)} type="button">
                       {t("확인")}
                     </button>
                     <button
@@ -1638,7 +1639,7 @@ export function AgreementPage({
         onAdd={(body) => run(() => api.addSnsPost(agreement.id, body), t("게시물을 올렸어요. 브랜드가 확인하면 도달에 들어가요."))}
         onSave={(postId, body) => run(() => api.saveSnsPost(agreement.id, postId, body), t("게시물을 고쳐서 다시 보냈어요."))}
         onRemove={(postId) => void run(() => api.deleteSnsPost(agreement.id, postId), t("게시물을 지웠어요."))}
-        onConfirm={(postId) => void run(() => api.confirmSnsPost(agreement.id, postId), t("게시물을 확인했어요. 리포트의 도달에 들어가요."))}
+        onConfirm={(post) => void run(() => api.confirmSnsPost(agreement.id, post), t("게시물을 확인했어요. 리포트의 도달에 들어가요."))}
         onReject={(postId, reason) => run(() => api.rejectSnsPost(agreement.id, postId, reason), t("다시 요청했어요."))}
         onAddPhoto={(postId, file) =>
           void run(async () => api.addSnsPostPhoto(agreement.id, postId, await photoFromFile(file)), t("캡처를 올렸어요."))

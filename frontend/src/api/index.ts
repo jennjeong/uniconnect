@@ -56,6 +56,7 @@ import type {
   MetricEntry,
   MetricKind,
   Metrics,
+  SnsPost,
   NearbyPlaces,
   Payment,
   PaymentKind,
@@ -304,9 +305,11 @@ export const api = {
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/sns-posts/${encodeURIComponent(postId)}`, {
       method: "DELETE",
     }),
-  confirmSnsPost: (id: string, postId: string) =>
-    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/sns-posts/${encodeURIComponent(postId)}/confirm`, {
+  // 브랜드가 화면에서 본 내용을 함께 보낸다. 그사이 바뀌었으면 서버가 막는다.
+  confirmSnsPost: (id: string, post: Pick<SnsPost, "id" | "url" | "reach" | "photos">) =>
+    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/sns-posts/${encodeURIComponent(post.id)}/confirm`, {
       method: "POST",
+      body: { url: post.url, reach: post.reach, photos: post.photos },
     }),
   rejectSnsPost: (id: string, postId: string, reason: string) =>
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/sns-posts/${encodeURIComponent(postId)}/reject`, {

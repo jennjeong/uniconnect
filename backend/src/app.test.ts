@@ -4401,6 +4401,11 @@ test("a group's SNS posts count toward reach once the brand confirms them, with 
   const path = `/agreements/${request.id}/sns-posts`
   const reach = async () => (await call("GET", `/measurements/${event.id}`, undefined, group)).data.report
   const before = (await reach()).reach
+  // 브랜드는 화면에서 본 내용을 함께 보낸다.
+  const confirmPost = (postId: string) => {
+    const shown = getDatabase().agreements.find((entry) => entry.id === request.id)!.snsPosts!.find((entry) => entry.id === postId)!
+    return call("POST", `${path}/${postId}/confirm`, { url: shown.url, reach: shown.reach, photos: shown.photos }, brand)
+  }
   try {
     // 키가 없으면 유튜브 링크도 다른 링크와 같다.
     config.youtubeApiKey = undefined
@@ -4416,8 +4421,9 @@ test("a group's SNS posts count toward reach once the brand confirms them, with 
     assert.equal((await call("POST", path, { url: "https://example.com/a", reach: -1 }, group)).status, 400)
     assert.equal((await call("POST", path, { url: "https://user:secret@example.com/a", reach: 1 }, group)).status, 400)
     assert.equal((await call("POST", path, { url: post.url, reach: 1 }, group)).status, 409)
-    // 추적 값이나 www만 다른 주소도 같은 게시물이다.
+    // 추적 값이나 언어, www만 다른 주소도 같은 게시물이다.
     assert.equal((await call("POST", path, { url: "https://instagram.com/p/abc?igsh=xyz", reach: 1 }, group)).status, 409)
+    assert.equal((await call("POST", path, { url: "https://www.instagram.com/some.user/p/abc/?hl=en", reach: 1 }, group)).status, 409)
     assert.equal((await call("POST", path, { url: "https://example.com/a", reach: 1 }, brand)).status, 403)
     assert.equal((await call("POST", path, { url: "https://example.com/a", reach: 1 }, await login("학생단체"))).status, 404)
     assert.equal((await call("PUT", `${path}/${post.id}`, { url: post.url, reach: 1 }, brand)).status, 403)
@@ -4427,10 +4433,13 @@ test("a group's SNS posts count toward reach once the brand confirms them, with 
     const asked = await call("POST", `${path}/${post.id}/reject`, { reason: "도달 수가 보이지 않아요" }, brand)
     assert.deepEqual([asked.data.agreement.snsPosts[0].status, asked.data.agreement.snsPosts[0].reason], ["rejected", "도달 수가 보이지 않아요"])
     assert.equal((await reach()).pendingReach, 0)
+    // 브랜드가 본 뒤에 바뀐 게시물은 확인할 수 없다.
+    assert.equal((await call("POST", `${path}/${post.id}/confirm`, { url: post.url, reach: 1, photos: [] }, brand)).status, 409)
+    assert.equal((await call("POST", `${path}/${post.id}/confirm`, undefined, brand)).status, 409)
     // 고치면 브랜드에게 돌아가고 브랜드가 확인한다.
     const fixed = await call("PUT", `${path}/${post.id}`, { url: post.url, reach: 600 }, group)
     assert.deepEqual([fixed.data.agreement.snsPosts[0].status, fixed.data.agreement.snsPosts[0].reason], ["pending", undefined])
-    await call("POST", `${path}/${post.id}/confirm`, undefined, brand)
+    await confirmPost(post.id)
     assert.deepEqual([(await reach()).reach, (await reach()).postedReach], [before + 600, 600])
 
     // 캡처는 두 쪽만 보고 단체만 지운다.
@@ -4445,7 +4454,7 @@ test("a group's SNS posts count toward reach once the brand confirms them, with 
     // 확인된 게시물의 캡처가 바뀌면 다시 확인받는다.
     assert.equal(photo.data.agreement.snsPosts[0].status, "pending")
     assert.deepEqual([(await reach()).reach, (await reach()).postedReach], [before, 0])
-    await call("POST", `${path}/${post.id}/confirm`, undefined, brand)
+    await confirmPost(post.id)
 
     // 키가 있으면 조회수가 적은 숫자를 대신하고, 읽을 수 없는 영상은 숫자를
     // 그대로 쓴다.
@@ -4457,8 +4466,8 @@ test("a group's SNS posts count toward reach once the brand confirms them, with 
     assert.equal(videoPost.youtube.views, 1234)
     const shorts = await call("POST", path, { url: "https://www.youtube.com/shorts/aaaaaaaaaaa", reach: 20 }, group)
     assert.equal(shorts.data.agreement.snsPosts[2].youtube.views, undefined)
-    await call("POST", `${path}/${videoPost.id}/confirm`, undefined, brand)
-    await call("POST", `${path}/${shorts.data.agreement.snsPosts[2].id}/confirm`, undefined, brand)
+    await confirmPost(videoPost.id)
+    await confirmPost(shorts.data.agreement.snsPosts[2].id)
     assert.equal((await reach()).postedReach, 600 + 1234 + 20)
     // 오늘 읽었으니 건너뛰고, 하루 뒤에는 다시 읽는다.
     assert.equal(await refreshViews(), 0)
@@ -4467,6 +4476,15 @@ test("a group's SNS posts count toward reach once the brand confirms them, with 
     }
     views = new Map([["dQw4w9WgXcQ", 2000]])
     assert.equal(await refreshViews(), 2)
+    assert.equal((await reach()).postedReach, 600 + 2000 + 20)
+    // 다른 꼴의 주소도 같은 영상이다.
+    assert.equal((await call("POST", path, { url: "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ", reach: 1 }, group)).status, 409)
+    // 영상을 내려도 마지막 조회수가 남고, 적은 숫자로 돌아가지 않는다.
+    for (const item of getDatabase().agreements.find((entry) => entry.id === request.id)!.snsPosts!) {
+      if (item.youtube) item.youtube.at = new Date(Date.now() - 86_400_000).toISOString()
+    }
+    views = new Map()
+    await refreshViews()
     assert.equal((await reach()).postedReach, 600 + 2000 + 20)
 
     // 취소된 협찬의 게시물은 도달에서 빠진다.

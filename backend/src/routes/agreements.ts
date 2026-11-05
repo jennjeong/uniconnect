@@ -495,6 +495,13 @@ agreementsRouter.post("/:id/sns-posts/:postId/confirm", async (req, res) => {
   const opening = openedToChange(req)
   const { database, proposal, side } = opening
   const { agreement, post } = ownPost(opening, req.params.postId, "brand")
+  // 브랜드가 본 내용을 함께 받는다. 그사이 단체가 고쳤다면 본 것과 다른 값을
+  // 확인하게 되므로 막는다.
+  const seen = (req.body ?? {}) as { url?: unknown; reach?: unknown; photos?: unknown }
+  const samePhotos = Array.isArray(seen.photos) && seen.photos.join("/") === post.photos.join("/")
+  if (seen.url !== post.url || seen.reach !== post.reach || !samePhotos) {
+    throw new HttpError(409, "게시물이 바뀌었어요. 화면을 새로 고쳐 다시 확인해 주세요.")
+  }
   post.status = "confirmed"
   delete post.reason
   agreement.updatedAt = new Date().toISOString()

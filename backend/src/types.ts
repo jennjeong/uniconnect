@@ -696,7 +696,8 @@ export type SnsPost = {
   status: "pending" | "confirmed" | "rejected"
   // 브랜드가 다시 요청한 이유.
   reason?: string
-  youtube?: { views?: number; at: string }
+  // gone: 지금은 읽을 수 없는 영상. views는 마지막으로 읽은 값이다.
+  youtube?: { views?: number; gone?: boolean; at: string }
   addedAt: string
 }
 

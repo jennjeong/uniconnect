@@ -144,7 +144,8 @@ export type SnsPost = {
   photos: string[]
   status: "pending" | "confirmed" | "rejected"
   reason?: string
-  youtube?: { views?: number; at: string }
+  // gone: 지금은 읽을 수 없는 영상. views는 마지막으로 읽은 값이다.
+  youtube?: { views?: number; gone?: boolean; at: string }
   addedAt: string
 }
 
