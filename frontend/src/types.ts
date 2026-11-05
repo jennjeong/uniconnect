@@ -165,7 +165,7 @@ export type Agreement = {
     confirmedMethods?: MeasureMethod[]
     counts: Metrics
     // PIN은 행사 전날부터 보인다. 그전에는 그 날짜만 알려준다.
-    venue?: { page: VenuePage; pin?: string; pinsFrom?: string }
+    venue?: { page: VenuePage; pin?: string; pinsFrom?: string; misses?: number; canRotate?: boolean }
   }
   // 후기는 행사 당일부터 열린다. canWrite는 데모 계정이거나 상대에게 후기를
   // 보여 줄 리스팅이 없으면 false다. canReply는 이쪽이 자신에 대한 상대의
@@ -783,6 +783,10 @@ export type Report = {
   groupPin?: string
   // PIN이 보이기 시작하는 날. 아직 보이지 않을 때만 있다.
   pinsFrom?: string
+  // 오늘 틀린 PIN 시도 수. PIN이 보일 때만 있다.
+  pinMisses?: number
+  // 이 계정이 PIN을 바꿀 수 있다. 공용 데모 계정은 없다.
+  canRotatePin?: boolean
   // 스폰서가 생기기 전의 행사 확인 방식(양쪽이 확정한 그대로. 각 스폰서의 것은
   // 아래에 있다)과, 현장이 행사 전체에 대해 확인한 것.
   methods: MeasureMethod[]

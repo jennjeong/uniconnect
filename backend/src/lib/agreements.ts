@@ -2,7 +2,8 @@ import { randomUUID } from "node:crypto"
 
 import { todayInKorea } from "./dates.js"
 import { feeState } from "./fees.js"
-import { ensureMeasurement, pinsFrom, pinsOpen } from "./measurements.js"
+import { HttpError } from "./errors.js"
+import { ensureMeasurement, pinMissesToday, pinsFrom, pinsOpen, rotatePin } from "./measurements.js"
 import { activeMethodsOf, confirmsAt, isVenueKind, methodsOf, venueCountsOf } from "./methods.js"
 import { photos } from "./photos.js"
 import { canReview, isDemoAccount, publicReview, reviewOpen } from "./reviews.js"
@@ -157,11 +158,27 @@ function measureView(database: Database, proposal: AcceptedProposal, side: ChatS
           venue: {
             page: side === "brand" ? ("staff" as const) : ("group" as const),
             // 각 측의 PIN은 행사 하루 전부터 보인다.
-            ...(pinsOpen(database, measurement, event) ? { pin } : { pinsFrom: pinsFrom(event) }),
+            ...(pinsOpen(database, measurement, event)
+              ? {
+                  pin,
+                  misses: pinMissesToday(measurement),
+                  canRotate: !isDemoAccount(database, side === "brand" ? proposal.brand.account : proposal.group.account),
+                }
+              : { pinsFrom: pinsFrom(event) }),
           },
         }
       : {}),
   }
+}
+
+// 계약서에서 이쪽 PIN을 새로 만든다. 이쪽에 PIN이 보일 때만 바꿀 수 있다.
+export function rotateVenuePin(database: Database, proposal: AcceptedProposal, side: ChatSide) {
+  const share = agreementShare(database, proposal)
+  const venue = measureView(database, proposal, side)?.venue
+  if (!share || !venue || !("pin" in venue)) {
+    throw new HttpError(409, "PIN은 보이는 날부터 바꿀 수 있어요.")
+  }
+  rotatePin(share.measurement, share.sponsor, side)
 }
 
 // 수락된 제안에서 계정이 맡는 쪽. 없으면 없음.

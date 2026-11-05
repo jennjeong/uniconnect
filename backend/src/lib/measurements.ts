@@ -7,6 +7,7 @@ import { sponsorTypes, text } from "./validation.js"
 import type {
   Database,
   EventItem,
+  ChatSide,
   EventSponsor,
   Measurement,
   MeasurementGoals,
@@ -194,6 +195,23 @@ function newSponsorPin(measurement: Measurement) {
   return pin
 }
 
+// 새 PIN으로 바꾼다. 행사 중에 유출이 의심될 때 쓰며, 지금 PIN은 바로 막힌다.
+// 값은 서버가 만들고 이 행사의 어떤 PIN과도 겹치지 않는다. 단체는 자기 PIN을,
+// 브랜드는 자기 매장 PIN을, 협찬사 몫이 없으면 행사의 직원 PIN을 바꾼다.
+export function rotatePin(measurement: Measurement, sponsor: EventSponsor | undefined, side: ChatSide) {
+  const used = new Set([measurement.staffPin, measurement.groupPin, ...measurement.sponsors.map((item) => item.staffPin)])
+  let pin: string
+  do pin = newStaffPin()
+  while (used.has(pin))
+  if (side === "group") measurement.groupPin = pin
+  else if (sponsor) sponsor.staffPin = pin
+  else measurement.staffPin = pin
+}
+
+// 오늘 틀린 PIN 시도 수. PIN을 가진 쪽이 바꿀지 판단하도록 보여 준다.
+export const pinMissesToday = (measurement: Measurement) =>
+  measurement.pinMisses?.day === todayInKorea() ? measurement.pinMisses.count : 0
+
 // 행사를 협찬하는 브랜드마다 행사 측정에 자기 쿠폰, 직원 PIN, 집계를 준다.
 // 행사의 첫 협찬사가 혼자일 때는 행사가 지금까지 가진 쿠폰, PIN, 집계,
 // 이미 나간 쿠폰 번호를 넘겨받는다. 이후 협찬사는 브랜드 이름을 딴 쿠폰과
@@ -289,7 +307,7 @@ export const estimatedSales = (measurement: Measurement) =>
 export function buildReport(
   measurement: Measurement,
   event: EventItem,
-  { withPin = false, withGroupPin = false, pinsDay = "" } = {},
+  { withPin = false, withGroupPin = false, pinsDay = "", canRotatePin = false } = {},
 ): Report {
   const { goals, metrics } = measurement
   const sponsorValue = goals.valueBreakdown.reduce((sum, part) => sum + part.value, 0)
@@ -309,9 +327,10 @@ export function buildReport(
     averageSpend: goals.averageSpend,
     snsReach: goals.snsReach,
     coupon: goals.coupon,
-    ...(withPin ? { staffPin: measurement.staffPin } : {}),
+    ...(withPin ? { staffPin: measurement.staffPin, pinMisses: pinMissesToday(measurement) } : {}),
     ...(withGroupPin ? { groupPin: measurement.groupPin } : {}),
     ...(pinsDay ? { pinsFrom: pinsDay } : {}),
+    ...(canRotatePin ? { canRotatePin } : {}),
     methods: activeMethodsOf(measurement),
     venue: venueCountsOf(metrics),
     // 학생 단체 자신의 리포트용 참석자 정보. 행사 종류, 예상 참석자, 그리고

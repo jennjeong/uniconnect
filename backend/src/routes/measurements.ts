@@ -13,6 +13,7 @@ import {
   parseStaffPin,
   pinsFrom,
   pinsOpen,
+  rotatePin,
 } from "../lib/measurements.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -35,7 +36,11 @@ function measurementOwner(req: Request) {
 function pinsFor(req: Request, measurement: Measurement, event: EventItem) {
   if (!req.account) return {}
   if (!pinsOpen(getDatabase(), measurement, event)) return { pinsDay: pinsFrom(event) }
-  return { withPin: true, withGroupPin: req.account.role === "학생단체" }
+  return {
+    withPin: true,
+    withGroupPin: req.account.role === "학생단체",
+    canRotatePin: !isDemoAccount(getDatabase(), req.account),
+  }
 }
 
 // 주인의 행사와 그 측정이다. 처음 열 때 측정을 만든다.
@@ -68,6 +73,23 @@ measurementsRouter.get("/", async (req, res) => {
 
 measurementsRouter.get("/:eventId", async (req, res) => {
   const { measurement, event } = await ownedMeasurement(req)
+  res.json({ metrics: measurement.metrics, report: buildReport(measurement, event, pinsFor(req, measurement, event)) })
+})
+
+// 행사 주인이 자기 현장 PIN을 새로 만든다. 협찬사가 있으면 매장 PIN은 그
+// 브랜드만 계약서에서 바꾼다. 브랜드가 모르는 사이에 PIN이 바뀌면 안 된다.
+measurementsRouter.post("/:eventId/pin", async (req, res) => {
+  const account = requireAccount(req)
+  const { measurement, event } = await ownedMeasurement(req)
+  const database = getDatabase()
+  if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 PIN을 바꿀 수 없어요.")
+  if (!pinsOpen(database, measurement, event)) throw new HttpError(409, "PIN은 보이는 날부터 바꿀 수 있어요.")
+  const page = req.body?.page
+  if (page !== "group" && page !== "staff") throw new HttpError(400, "바꿀 PIN을 골라 주세요.")
+  if (page === "group" && account.role !== "학생단체") throw new HttpError(400, "바꿀 PIN을 골라 주세요.")
+  if (page === "staff" && measurement.sponsors.length) throw new HttpError(409, "매장 PIN은 브랜드가 계약서에서 바꿔요.")
+  rotatePin(measurement, undefined, page === "group" ? "group" : "brand")
+  await saveDatabase()
   res.json({ metrics: measurement.metrics, report: buildReport(measurement, event, pinsFor(req, measurement, event)) })
 })
 

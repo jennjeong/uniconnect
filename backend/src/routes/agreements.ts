@@ -7,6 +7,7 @@ import {
   type AcceptedProposal,
   agreementFor,
   agreementShare,
+  rotateVenuePin,
   confirmAgreement,
   agreementView,
   cancelSponsorship,
@@ -357,6 +358,18 @@ agreementsRouter.delete("/:id/cancel", async (req, res) => {
     ],
     `/agreements/${encodeURIComponent(agreement.id)}`,
   )
+  res.json({ agreement: agreementView(database, agreement, proposal, side) })
+})
+
+// 이쪽의 현장 PIN을 새로 만든다. 지금 PIN은 바로 막힌다. 공용 데모 계정의
+// PIN은 체험하는 모두가 쓰므로 바꿀 수 없다.
+agreementsRouter.post("/:id/pin", async (req, res) => {
+  const { account, database, proposal, side } = openedToChange(req)
+  if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 PIN을 바꿀 수 없어요.")
+  const { agreement } = agreementFor(database, proposal)
+  rotateVenuePin(database, proposal, side)
+  agreement.updatedAt = new Date().toISOString()
+  await saveDatabase()
   res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 
