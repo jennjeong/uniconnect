@@ -135,8 +135,8 @@ export type AgreementItem = {
 // 한쪽이 보낸 협찬 물품 택배 한 건. 합의서에 적어 둔다.
 export type Shipment = { id: string; side: ChatSide; carrier: string; number: string; note?: string; addedAt: string }
 
-// The group's SNS post for the brand to confirm, with the views a YouTube
-// link read (none when the video is private or gone).
+// 브랜드가 확인할 학생단체의 SNS 게시물. 유튜브 링크는 읽은 조회수를 함께
+// 담는다(비공개거나 삭제된 영상은 없음).
 export type SnsPost = {
   id: string
   url: string
@@ -790,7 +790,7 @@ export type Report = {
   // 행사장 밖으로 닿은 범위.
   averageSpend: number
   snsReach: number
-  // The reach of the SNS posts brands confirmed, and of those still waiting.
+  // 브랜드가 확인한 SNS 게시물의 도달과 아직 기다리는 도달.
   postedReach: number
   pendingReach: number
   coupon: { store: string; title: string }

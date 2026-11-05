@@ -25,7 +25,8 @@ import { methodsOf, parseMethods } from "../lib/methods.js"
 import { notify } from "../lib/notices.js"
 import { parsePhoto, photoName, photoType, photos } from "../lib/photos.js"
 import { isDemoAccount } from "../lib/reviews.js"
-import { fetchViews, parsePostUrl, postLimits } from "../lib/snsPosts.js"
+import { createRateLimit, senderKey } from "../lib/rateLimit.js"
+import { fetchViews, parsePostUrl, postKey, postLimits } from "../lib/snsPosts.js"
 import { carriers, text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -103,6 +104,29 @@ function parsePost(body: unknown) {
     throw new HttpError(400, "도달 수를 0 이상의 숫자로 적어 주세요.")
   }
   return { url: parsePostUrl(input.url), reach }
+}
+
+// 같은 게시물이 이미 있으면 막는다. 추적 값만 다른 주소도 같은 게시물이다.
+function assertNewPost(posts: SnsPost[], url: string, except?: SnsPost) {
+  const key = postKey(url)
+  if (posts.some((post) => post.id !== except?.id && postKey(post.url) === key)) {
+    throw new HttpError(409, "이미 올린 게시물이에요.")
+  }
+}
+
+// 게시물을 올리거나 고칠 때마다 유튜브 조회수를 읽는다. 지우고 다시 올리기를
+// 되풀이해 API 할당량을 다 쓰지 못하게 계정별로 센다.
+const postsPerHour = createRateLimit({
+  limit: 30,
+  windowMs: 60 * 60 * 1000,
+  message: "게시물을 너무 자주 고쳤어요. 1시간 뒤에 다시 해 주세요.",
+})
+
+// 확인된 게시물의 캡처가 바뀌면 브랜드가 본 것과 달라지므로 다시 확인받는다.
+function reopenPost(post: SnsPost) {
+  const confirmed = post.status === "confirmed"
+  if (confirmed) post.status = "pending"
+  return confirmed
 }
 
 // 게시물 소식을 상대에게 알린다. 메일이 설정되면 메일로 간다.
@@ -412,11 +436,14 @@ agreementsRouter.post("/:id/sns-posts", async (req, res) => {
   const posts = agreement.snsPosts ?? []
   if (posts.length >= postLimits.posts) throw new HttpError(400, "게시물은 10개까지 올릴 수 있어요.")
   const { url, reach } = parsePost(req.body)
-  if (posts.some((post) => post.url === url)) throw new HttpError(409, "이미 올린 게시물이에요.")
+  assertNewPost(posts, url)
+  await postsPerHour.take(senderKey(req, database, account))
   const post: SnsPost = { id: randomUUID(), url, reach, photos: [], status: "pending", addedAt: new Date().toISOString() }
   await fetchViews(post)
   // 호출하는 동안 데이터를 새로 읽었을 수 있어 다시 찾는다.
   const fresh = agreementFor(getDatabase(), proposal).agreement
+  if ((fresh.snsPosts?.length ?? 0) >= postLimits.posts) throw new HttpError(400, "게시물은 10개까지 올릴 수 있어요.")
+  assertNewPost(fresh.snsPosts ?? [], url)
   ;(fresh.snsPosts ??= []).push(post)
   fresh.updatedAt = post.addedAt
   await saveDatabase()
@@ -427,20 +454,28 @@ agreementsRouter.post("/:id/sns-posts", async (req, res) => {
 // 학생단체가 게시물을 고치면 다시 브랜드의 확인을 기다린다.
 agreementsRouter.put("/:id/sns-posts/:postId", async (req, res) => {
   const opening = openedToChange(req)
-  const { database, proposal, side } = opening
+  const { account, database, proposal, side } = opening
   const { agreement, post } = ownPost(opening, req.params.postId, "group")
   const { url, reach } = parsePost(req.body)
-  if (agreement.snsPosts!.some((entry) => entry !== post && entry.url === url)) throw new HttpError(409, "이미 올린 게시물이에요.")
-  if (url !== post.url) delete post.youtube
-  post.url = url
-  post.reach = reach
-  post.status = "pending"
-  delete post.reason
-  if (!post.youtube) await fetchViews(post)
-  agreement.updatedAt = new Date().toISOString()
+  assertNewPost(agreement.snsPosts!, url, post)
+  await postsPerHour.take(senderKey(req, database, account))
+  // 조회수를 먼저 읽는다. 호출하는 동안 데이터를 새로 읽으면 앞서 바꾼 것을
+  // 잃으므로 바꾸는 일은 그 뒤에 다시 찾아서 한다.
+  const read: SnsPost = { ...post, url }
+  if (url !== post.url) delete read.youtube
+  if (!read.youtube) await fetchViews(read)
+  const fresh = ownPost({ ...opening, database: getDatabase() }, req.params.postId, "group")
+  assertNewPost(fresh.agreement.snsPosts!, url, fresh.post)
+  fresh.post.url = url
+  fresh.post.reach = reach
+  fresh.post.status = "pending"
+  delete fresh.post.reason
+  if (read.youtube) fresh.post.youtube = read.youtube
+  else delete fresh.post.youtube
+  fresh.agreement.updatedAt = new Date().toISOString()
   await saveDatabase()
   tellAboutPost(opening, "확인할 SNS 게시물이 올라왔어요", "협찬 게시물을 고쳤어요. 계약서에서 다시 확인해 주세요.")
-  res.json({ agreement: agreementView(database, agreement, proposal, side) })
+  res.json({ agreement: agreementView(getDatabase(), fresh.agreement, proposal, side) })
 })
 
 agreementsRouter.delete("/:id/sns-posts/:postId", async (req, res) => {
@@ -496,9 +531,12 @@ agreementsRouter.post("/:id/sns-posts/:postId/photos", async (req, res) => {
   await store.put(proposal.id, photo, parsed.bytes)
   try {
     const fresh = ownPost({ ...opening, database: getDatabase() }, req.params.postId, "group")
+    if (fresh.post.photos.length >= postLimits.photos) throw new HttpError(409, "캡처는 게시물마다 3장까지 올릴 수 있어요.")
     fresh.post.photos.push(photo)
+    const reopened = reopenPost(fresh.post)
     fresh.agreement.updatedAt = new Date().toISOString()
     await saveDatabase()
+    if (reopened) tellAboutPost(opening, "확인할 SNS 게시물이 올라왔어요", "협찬 게시물을 고쳤어요. 계약서에서 다시 확인해 주세요.")
     res.status(201).json({ agreement: agreementView(getDatabase(), fresh.agreement, proposal, side) })
   } catch (error) {
     await store.remove(proposal.id, [photo])
@@ -513,9 +551,11 @@ agreementsRouter.delete("/:id/sns-posts/:postId/photos/:photo", async (req, res)
   const photo = String(req.params.photo)
   if (!post.photos.includes(photo)) throw new HttpError(404, "사진을 찾을 수 없어요.")
   post.photos = post.photos.filter((entry) => entry !== photo)
+  const reopened = reopenPost(post)
   agreement.updatedAt = new Date().toISOString()
   await saveDatabase()
   await photos().remove(proposal.id, [photo])
+  if (reopened) tellAboutPost(opening, "확인할 SNS 게시물이 올라왔어요", "협찬 게시물을 고쳤어요. 계약서에서 다시 확인해 주세요.")
   res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 

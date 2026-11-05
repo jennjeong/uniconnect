@@ -1123,13 +1123,12 @@ function ShipmentsPanel({
   )
 }
 
-// A post's state in a word, for both sides.
+// 게시물의 상태를 두 쪽에 한 낱말로 보여 준다.
 const postState = { pending: "확인 전", confirmed: "확인됨", rejected: "다시 요청" } as const
 
-// 게시물 확인: the group adds its SNS posts with the reach and screenshots,
-// the brand confirms each or asks again, and only what it confirmed counts
-// in the reports. A YouTube link shows its public views, which stand in for
-// the number written.
+// 게시물 확인. 학생단체가 SNS 게시물을 도달과 캡처와 함께 올리면 브랜드가
+// 확인하거나 다시 요청하고, 확인된 것만 리포트에 들어간다. 유튜브 링크는 공개
+// 조회수를 보여 주며 적은 숫자 대신 쓴다.
 function SnsPostsPanel({
   agreement,
   busy,
@@ -1153,7 +1152,7 @@ function SnsPostsPanel({
 }) {
   const [url, setUrl] = useState("")
   const [reach, setReach] = useState("")
-  // The post being corrected, whose link and reach the form then holds.
+  // 고치는 중인 게시물. 양식이 그 링크와 도달을 담는다.
   const [fixing, setFixing] = useState<string>()
   const [asking, setAsking] = useState<string>()
   const [reason, setReason] = useState("")
