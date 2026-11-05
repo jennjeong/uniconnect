@@ -36,6 +36,8 @@ describe("CSV files", () => {
       valueBreakdown: [],
       averageSpend: 9000,
       snsReach: 200,
+      postedReach: 0,
+      pendingReach: 0,
       coupon: { store: "오후의 커피", title: "음료 1잔" },
       methods: [],
       venue: noVenue,

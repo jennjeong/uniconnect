@@ -135,10 +135,25 @@ export type AgreementItem = {
 // 한쪽이 보낸 협찬 물품 택배 한 건. 합의서에 적어 둔다.
 export type Shipment = { id: string; side: ChatSide; carrier: string; number: string; note?: string; addedAt: string }
 
+// 브랜드가 확인할 학생단체의 SNS 게시물. 유튜브 링크는 읽은 조회수를 함께
+// 담는다(비공개거나 삭제된 영상은 없음).
+export type SnsPost = {
+  id: string
+  url: string
+  reach: number
+  photos: string[]
+  status: "pending" | "confirmed" | "rejected"
+  reason?: string
+  // gone: 지금은 읽을 수 없는 영상. views는 마지막으로 읽은 값이다.
+  youtube?: { views?: number; gone?: boolean; at: string }
+  addedAt: string
+}
+
 export type Agreement = {
   id: string
   kind: "request" | "offer"
   shipments?: Shipment[]
+  snsPosts?: SnsPost[]
   side: ChatSide
   // 각 당사자와 계정을 운영하는 담당자 (두 당사자에게만 보인다).
   group: { name: string; member: boolean; contact?: AccountContact }
@@ -778,6 +793,9 @@ export type Report = {
   // 행사장 밖으로 닿은 범위.
   averageSpend: number
   snsReach: number
+  // 브랜드가 확인한 SNS 게시물의 도달과 아직 기다리는 도달.
+  postedReach: number
+  pendingReach: number
   coupon: { store: string; title: string }
   // 방문을 확인하려고 매장 직원이 입력하는 4자리 숫자. 소유자에게만 보인다.
   staffPin?: string

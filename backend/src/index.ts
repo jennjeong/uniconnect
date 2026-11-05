@@ -5,6 +5,7 @@ import { reconcileCards, reconcileRefunds } from "./lib/cardRecovery.js"
 import { mailConfigured } from "./lib/mailer.js"
 import { sendDigests } from "./lib/digest.js"
 import { sendReminders } from "./lib/reminders.js"
+import { refreshViews } from "./lib/snsPosts.js"
 import { loadDatabase } from "./store.js"
 
 await loadDatabase()
@@ -16,6 +17,7 @@ const remind = () => {
   if (cardReady()) reconcileCards().then(reconcileRefunds).catch((error: Error) => console.error(`[billing] ${error.message}`))
   sendReminders().catch((error: Error) => console.error(`[reminders] ${error.message}`))
   sendDigests().catch((error: Error) => console.error(`[digests] ${error.message}`))
+  refreshViews().catch((error: Error) => console.error(`[youtube] ${error.message}`))
 }
 void remind()
 setInterval(remind, 60 * 60 * 1000).unref()

@@ -56,6 +56,7 @@ import type {
   MetricEntry,
   MetricKind,
   Metrics,
+  SnsPost,
   NearbyPlaces,
   Payment,
   PaymentKind,
@@ -293,6 +294,38 @@ export const api = {
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/shipments/${encodeURIComponent(shipmentId)}`, {
       method: "DELETE",
     }),
+  addSnsPost: (id: string, body: { url: string; reach: number }) =>
+    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/sns-posts`, { method: "POST", body }),
+  saveSnsPost: (id: string, postId: string, body: { url: string; reach: number }) =>
+    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/sns-posts/${encodeURIComponent(postId)}`, {
+      method: "PUT",
+      body,
+    }),
+  deleteSnsPost: (id: string, postId: string) =>
+    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/sns-posts/${encodeURIComponent(postId)}`, {
+      method: "DELETE",
+    }),
+  // 브랜드가 화면에서 본 내용을 함께 보낸다. 그사이 바뀌었으면 서버가 막는다.
+  confirmSnsPost: (id: string, post: Pick<SnsPost, "id" | "url" | "reach" | "photos">) =>
+    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/sns-posts/${encodeURIComponent(post.id)}/confirm`, {
+      method: "POST",
+      body: { url: post.url, reach: post.reach, photos: post.photos },
+    }),
+  rejectSnsPost: (id: string, postId: string, reason: string) =>
+    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/sns-posts/${encodeURIComponent(postId)}/reject`, {
+      method: "POST",
+      body: { reason },
+    }),
+  addSnsPostPhoto: (id: string, postId: string, image: string) =>
+    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/sns-posts/${encodeURIComponent(postId)}/photos`, {
+      method: "POST",
+      body: { image },
+    }),
+  deleteSnsPostPhoto: (id: string, postId: string, photo: string) =>
+    request<{ agreement: Agreement }>(
+      `/agreements/${encodeURIComponent(id)}/sns-posts/${encodeURIComponent(postId)}/photos/${encodeURIComponent(photo)}`,
+      { method: "DELETE" },
+    ),
   saveAgreementValue: (id: string, value: { cash: number; inKind: number }) =>
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/value`, { method: "PUT", body: { value } }),
   insight: (id: string) => request<InsightAnswer>(`/insights/${encodeURIComponent(id)}`),

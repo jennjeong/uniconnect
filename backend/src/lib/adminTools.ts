@@ -80,6 +80,7 @@ export function serviceHealth() {
       { key: "kakaoLogin", on: on(config.kakaoClientId) },
       { key: "naverLogin", on: on(config.naverClientId && config.naverClientSecret) },
       { key: "geocoder", on: on(config.nominatimUrl) },
+      { key: "youtube", on: on(config.youtubeApiKey) },
       { key: "nts", on: on(config.ntsServiceKey) },
     ],
     vercel: Boolean(process.env.VERCEL),
@@ -114,6 +115,7 @@ export function grantPartners(database: Database, account: Account, days: number
     requestedAt: now.toISOString(),
     paidAt: now.toISOString(),
     periodEnd: addDays(from, days - 1),
+    periodDays: days,
   } as Payment
   ;(database.payments ??= []).push(payment)
   return payment

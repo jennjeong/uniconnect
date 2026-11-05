@@ -405,6 +405,10 @@ test("security: tokens, stale prices, refunds, late edits, codes and invitations
     const stale = await call("POST", "/billing/confirm", { orderId: renewal.id, paymentKey: "pk", amount: 50_000 }, brand)
     assert.equal(stale.status, 409)
     assert.equal(paymentsOf(getDatabase()).find((item) => item.id === renewal.id)!.amount, 98010)
+    // 부가세 전에 만든 주문은 총액이 맞아도 낡은 주문이다.
+    delete pay.supply
+    assert.equal((await call("POST", "/billing/confirm", { orderId: renewal.id, paymentKey: "pk", amount: 98010 }, brand)).status, 409)
+    assert.ok(pay.supply)
   } finally {
     settings.tossClientKey = saved.client
     settings.tossSecretKey = saved.secret
@@ -1567,6 +1571,45 @@ test("a linked Kakao account logs in, with the state bound to the browser and no
     config.naverClientId = saved.naverId
     config.naverClientSecret = saved.naverSecret
   }
+})
+
+test("wrong invitation codes pause joining without deleting anyone's invitation", async () => {
+  const first = await signUpMember("share-team-one@syu.ac.kr", "team-pass-123")
+  const second = await signUpMember("share-team-two@syu.ac.kr", "team-pass-123")
+  const invited = await call("POST", "/team/invites", { name: "부회장", email: "wanted@syu.ac.kr" }, first)
+  await call("POST", "/team/invites", { name: "총무", email: "wanted@syu.ac.kr" }, second)
+  const join = (code: string) =>
+    call("POST", "/team/join", { email: "wanted@syu.ac.kr", code, password: "vice-pass-123", document: proofDocument })
+  for (let turn = 0; turn < 5; turn += 1) assert.equal((await join("000000")).status, 400)
+  assert.equal((await join("000000")).status, 429)
+  for (const token of [first, second]) {
+    assert.equal((await call("GET", "/team", undefined, token)).data.team.invites.length, 1)
+  }
+  await clearRateLimits()
+  assert.equal((await join(invited.data.devCode)).status, 202)
+  await approveApplication("wanted@syu.ac.kr")
+})
+
+test("refunding a granted period moves later periods by that period's length", async () => {
+  const { grantPartners } = await import("./lib/adminTools.js")
+  const { markCancelled } = await import("./lib/billing.js")
+  await listedMember("grant-shift@grant-cafe.kr", "grant-pass-1234", "브랜드")
+  const database = getDatabase()
+  const brand = database.accounts.find((account) => account.email === "grant-shift@grant-cafe.kr")!
+  const year = grantPartners(database, brand, 365)
+  const month = grantPartners(database, brand, 30)
+  const end = new Date(`${month.periodEnd}T00:00:00Z`).getTime()
+  markCancelled(database, year, "테스트 환불")
+  assert.equal((end - new Date(`${month.periodEnd}T00:00:00Z`).getTime()) / 86_400_000, 365)
+})
+
+test("a document keeps the extension of what it is, and an email can't dodge the free-mail list with a dot", async () => {
+  const { parseDocument } = await import("./lib/applications.js")
+  const { isPersonalMail, normalizeEmail } = await import("./lib/email.js")
+  assert.equal(parseDocument({ ...proofDocument, name: "재직증명서.html" }, "없음").name, "재직증명서.pdf")
+  assert.equal(parseDocument({ ...proofDocument, name: "a.pdf.exe" }, "없음").name, "a.pdf.pdf")
+  assert.equal(parseDocument({ ...proofDocument, name: "" }, "없음").name, "서류.pdf")
+  assert.equal(isPersonalMail(normalizeEmail("shop@Gmail.com.")), true)
 })
 
 test("an owner invites co-admins, who log in with their own password and can't do the owner's part", async () => {
@@ -4479,6 +4522,140 @@ test("a venue PIN several groups share on a campaign is changed only by the bran
   assert.equal(byBrand.status, 200)
   const after = (await call("GET", `/agreements/${offerTwo.id}`, undefined, second)).data.agreement.measure
   assert.notEqual(after.venue.pin, shown.venue.pin)
+})
+
+test("a group's SNS posts count toward reach once the brand confirms them, with YouTube's views where it can read them", async () => {
+  const { youtube, refreshViews } = await import("./lib/snsPosts.js")
+  const { config } = await import("./config.js")
+  const realViews = youtube.views
+  const realKey = config.youtubeApiKey
+  const group = await signUpMember("post-club@syu.ac.kr", "post-pass-1234")
+  const groupId = getDatabase().accounts.find((account) => account.email === "post-club@syu.ac.kr")!.id
+  const { token: brand, listingId } = await listedMember("post@post-cafe.kr", "post-pass-1234", "브랜드")
+  const event = (await call("POST", "/events", { name: "게시물 공연", date: "2026-12-21", people: "100명", types: ["제품"] }, group)).data.event
+  await call("POST", "/proposals", { matchId: listingId }, group)
+  const request = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
+  await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+  const path = `/agreements/${request.id}/sns-posts`
+  const reach = async () => (await call("GET", `/measurements/${event.id}`, undefined, group)).data.report
+  const before = (await reach()).reach
+  // 브랜드는 화면에서 본 내용을 함께 보낸다.
+  const confirmPost = (postId: string) => {
+    const shown = getDatabase().agreements.find((entry) => entry.id === request.id)!.snsPosts!.find((entry) => entry.id === postId)!
+    return call("POST", `${path}/${postId}/confirm`, { url: shown.url, reach: shown.reach, photos: shown.photos }, brand)
+  }
+  try {
+    // 키가 없으면 유튜브 링크도 다른 링크와 같다.
+    config.youtubeApiKey = undefined
+    const added = await call("POST", path, { url: "https://www.instagram.com/p/abc/", reach: 500 }, group)
+    assert.equal(added.status, 201)
+    const [post] = added.data.agreement.snsPosts
+    assert.deepEqual([post.status, post.reach, post.youtube], ["pending", 500, undefined])
+    // 기다리는 동안은 도달과 따로 보인다.
+    assert.deepEqual([(await reach()).reach, (await reach()).pendingReach, (await reach()).postedReach], [before, 500, 0])
+    // https, 올바른 숫자, 게시물당 하나만 받고 단체만 올리거나 고친다.
+    assert.equal((await call("POST", path, { url: "http://example.com/a", reach: 1 }, group)).status, 400)
+    assert.equal((await call("POST", path, { url: "javascript:alert(1)", reach: 1 }, group)).status, 400)
+    assert.equal((await call("POST", path, { url: "https://example.com/a", reach: -1 }, group)).status, 400)
+    assert.equal((await call("POST", path, { url: "https://user:secret@example.com/a", reach: 1 }, group)).status, 400)
+    assert.equal((await call("POST", path, { url: post.url, reach: 1 }, group)).status, 409)
+    // 추적 값이나 언어, www만 다른 주소도 같은 게시물이다.
+    assert.equal((await call("POST", path, { url: "https://instagram.com/p/abc?igsh=xyz", reach: 1 }, group)).status, 409)
+    assert.equal((await call("POST", path, { url: "https://www.instagram.com/some.user/p/abc/?hl=en", reach: 1 }, group)).status, 409)
+    assert.equal((await call("POST", path, { url: "https://example.com/a", reach: 1 }, brand)).status, 403)
+    assert.equal((await call("POST", path, { url: "https://example.com/a", reach: 1 }, await login("학생단체"))).status, 404)
+    assert.equal((await call("PUT", `${path}/${post.id}`, { url: post.url, reach: 1 }, brand)).status, 403)
+    // 브랜드만 확인하고, 다시 요청하려면 이유가 필요하다.
+    assert.equal((await call("POST", `${path}/${post.id}/confirm`, undefined, group)).status, 403)
+    assert.equal((await call("POST", `${path}/${post.id}/reject`, { reason: " " }, brand)).status, 400)
+    const asked = await call("POST", `${path}/${post.id}/reject`, { reason: "도달 수가 보이지 않아요" }, brand)
+    assert.deepEqual([asked.data.agreement.snsPosts[0].status, asked.data.agreement.snsPosts[0].reason], ["rejected", "도달 수가 보이지 않아요"])
+    assert.equal((await reach()).pendingReach, 0)
+    // 브랜드가 본 뒤에 바뀐 게시물은 확인할 수 없다.
+    assert.equal((await call("POST", `${path}/${post.id}/confirm`, { url: post.url, reach: 1, photos: [] }, brand)).status, 409)
+    assert.equal((await call("POST", `${path}/${post.id}/confirm`, undefined, brand)).status, 409)
+    // 고치면 브랜드에게 돌아가고 브랜드가 확인한다.
+    const fixed = await call("PUT", `${path}/${post.id}`, { url: post.url, reach: 600 }, group)
+    assert.deepEqual([fixed.data.agreement.snsPosts[0].status, fixed.data.agreement.snsPosts[0].reason], ["pending", undefined])
+    await confirmPost(post.id)
+    assert.deepEqual([(await reach()).reach, (await reach()).postedReach], [before + 600, 600])
+
+    // 캡처는 두 쪽만 보고 단체만 지운다.
+    const png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+    const photo = await call("POST", `${path}/${post.id}/photos`, { image: png }, group)
+    assert.equal(photo.status, 201)
+    const [shot] = photo.data.agreement.snsPosts[0].photos
+    assert.equal((await fetch(`${baseUrl}/agreements/${request.id}/photos/${shot}`, { headers: { Authorization: `Bearer ${brand}` } })).status, 200)
+    assert.equal((await fetch(`${baseUrl}/agreements/${request.id}/photos/${shot}`, { headers: { Authorization: `Bearer ${await login("학생단체")}` } })).status, 404)
+    assert.equal((await call("DELETE", `${path}/${post.id}/photos/${shot}`, undefined, brand)).status, 403)
+    assert.equal((await call("DELETE", `${path}/${post.id}/photos/${shot}`, undefined, group)).status, 200)
+    // 확인된 게시물의 캡처가 바뀌면 다시 확인받는다.
+    assert.equal(photo.data.agreement.snsPosts[0].status, "pending")
+    assert.deepEqual([(await reach()).reach, (await reach()).postedReach], [before, 0])
+    await confirmPost(post.id)
+
+    // 키가 있으면 조회수가 적은 숫자를 대신하고, 읽을 수 없는 영상은 숫자를
+    // 그대로 쓴다.
+    config.youtubeApiKey = "test-key"
+    let views = new Map([["dQw4w9WgXcQ", 1234]])
+    youtube.views = async () => views
+    const video = await call("POST", path, { url: "https://youtu.be/dQw4w9WgXcQ", reach: 10 }, group)
+    const videoPost = video.data.agreement.snsPosts[1]
+    assert.equal(videoPost.youtube.views, 1234)
+    const shorts = await call("POST", path, { url: "https://www.youtube.com/shorts/aaaaaaaaaaa", reach: 20 }, group)
+    assert.equal(shorts.data.agreement.snsPosts[2].youtube.views, undefined)
+    await confirmPost(videoPost.id)
+    await confirmPost(shorts.data.agreement.snsPosts[2].id)
+    assert.equal((await reach()).postedReach, 600 + 1234 + 20)
+    // 오늘 읽었으니 건너뛰고, 하루 뒤에는 다시 읽는다.
+    assert.equal(await refreshViews(), 0)
+    for (const item of getDatabase().agreements.find((entry) => entry.id === request.id)!.snsPosts!) {
+      if (item.youtube) item.youtube.at = new Date(Date.now() - 86_400_000).toISOString()
+    }
+    views = new Map([["dQw4w9WgXcQ", 2000]])
+    assert.equal(await refreshViews(), 2)
+    assert.equal((await reach()).postedReach, 600 + 2000 + 20)
+    // 다른 꼴의 주소도 같은 영상이다.
+    assert.equal((await call("POST", path, { url: "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ", reach: 1 }, group)).status, 409)
+    assert.equal((await call("POST", path, { url: "https://www.youtube.com./watch?v=dQw4w9WgXcQ", reach: 1 }, group)).status, 409)
+    // 영상을 내려도 마지막 조회수가 남고, 적은 숫자로 돌아가지 않는다.
+    for (const item of getDatabase().agreements.find((entry) => entry.id === request.id)!.snsPosts!) {
+      if (item.youtube) item.youtube.at = new Date(Date.now() - 86_400_000).toISOString()
+    }
+    views = new Map()
+    await refreshViews()
+    assert.equal((await reach()).postedReach, 600 + 2000 + 20)
+
+    // 취소된 협찬의 게시물은 도달에서 빠진다.
+    const stored = getDatabase().requests.find((item) => item.id === request.id)!
+    await call("POST", `/agreements/${request.id}/cancel`, { reason: "행사가 취소됐어요" }, group)
+    await call("POST", `/agreements/${request.id}/cancel/accept`, undefined, brand)
+    assert.equal(stored.status, "취소됨")
+    assert.deepEqual([(await reach()).postedReach, (await reach()).reach], [0, before])
+    assert.equal((await call("POST", path, { url: "https://example.com/late", reach: 1 }, group)).status, 409)
+  } finally {
+    youtube.views = realViews
+    config.youtubeApiKey = realKey
+  }
+  // 공용 데모 계정은 올릴 수 없다.
+  assert.equal((await call("POST", "/agreements/req-runners/sns-posts", { url: "https://example.com/d", reach: 1 }, await login("브랜드"))).status, 403)
+})
+
+test("posts can't be changed without limit, which would spend the YouTube quota", async () => {
+  const group = await signUpMember("post-limit@syu.ac.kr", "post-pass-1234")
+  const groupId = getDatabase().accounts.find((account) => account.email === "post-limit@syu.ac.kr")!.id
+  const { token: brand, listingId } = await listedMember("post-limit@limit-cafe.kr", "post-pass-1234", "브랜드")
+  await call("POST", "/events", { name: "한도 공연", date: "2026-12-21", people: "100명", types: ["제품"] }, group)
+  await call("POST", "/proposals", { matchId: listingId }, group)
+  const request = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
+  await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+  const path = `/agreements/${request.id}/sns-posts`
+  const added = await call("POST", path, { url: "https://example.com/one", reach: 1 }, group)
+  const [post] = added.data.agreement.snsPosts
+  for (let turn = 0; turn < 29; turn += 1) {
+    assert.equal((await call("PUT", `${path}/${post.id}`, { url: post.url, reach: turn }, group)).status, 200)
+  }
+  assert.equal((await call("PUT", `${path}/${post.id}`, { url: post.url, reach: 99 }, group)).status, 429)
 })
 
 test("both sides of an accepted proposal keep an agreement, confirm it and prove what they did", async () => {

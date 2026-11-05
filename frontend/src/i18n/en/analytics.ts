@@ -3,8 +3,8 @@ const en: Record<string, string> = {
   // 리포트 KPI (lib/kpis.ts)
   "도달 인원": "Reach",
   "QR 스캔 + 현장 밖 도달": "QR scans + off-site reach",
-  "QR 스캔 {scans}건에 목표 설정에서 적은 현장 밖 도달(SNS 등) {snsReach}명을 더한 값이에요.":
-    "{scans} QR scans plus the {snsReach} off-site reach (social media, etc.) entered in the goals.",
+  "QR 스캔 {scans}건에 목표 설정에서 적은 현장 밖 도달(SNS 등) {snsReach}명과 브랜드가 확인한 게시물 도달 {posted}명을 더한 값이에요.":
+    "{scans} QR scans, plus the {snsReach} off-site reach (social media, etc.) entered in the goals and the {posted} reach of posts the brand confirmed.",
   "QR 참여율": "QR rate",
   "QR 스캔 {scans}건": "{scans} QR scans",
   "QR 스캔 {scans}건 ÷ 예상 관객 {audience}명": "{scans} QR scans ÷ {audience} expected audience",

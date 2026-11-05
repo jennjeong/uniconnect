@@ -250,7 +250,7 @@ export type Application = {
   accountId?: string
   member?: TeamMember
 }
-export type MemberInvite = { id: string; name: string; email: string; codeHash: string; invitedAt: string; expiresAt: number; tries: number }
+export type MemberInvite = { id: string; name: string; email: string; codeHash: string; invitedAt: string; expiresAt: number }
 
 export type PublicAccount = Omit<
   Account,
@@ -552,6 +552,9 @@ export type Report = {
   // 위의 수치가 나온 입력이다.
   averageSpend: number
   snsReach: number
+  // 브랜드가 확인한 SNS 게시물의 도달과 아직 기다리는 도달.
+  postedReach: number
+  pendingReach: number
   coupon: MeasurementGoals["coupon"]
   // 행사를 가진 단체에게만 보인다.
   staffPin?: string
@@ -677,8 +680,25 @@ export type Agreement = {
   // 가는 중인 협찬 물품의 소포(협찬 물품 배송)와 각각 보낸 쪽이다. 페이지는
   // 각각을 택배사의 배송 조회에 연결한다.
   shipments?: Shipment[]
+  // 브랜드가 확인할 학생단체의 SNS 게시물(lib/snsPosts.ts).
+  snsPosts?: SnsPost[]
   createdAt: string
   updatedAt: string
+}
+
+// SNS 게시물 하나. 링크, 단체가 적은 도달, 캡처 3장까지, 브랜드의 판단을 담는다.
+// 유튜브 링크는 읽은 조회수와 시각도 남긴다(조회수가 없으면 비공개거나 삭제).
+export type SnsPost = {
+  id: string
+  url: string
+  reach: number
+  photos: string[]
+  status: "pending" | "confirmed" | "rejected"
+  // 브랜드가 다시 요청한 이유.
+  reason?: string
+  // gone: 지금은 읽을 수 없는 영상. views는 마지막으로 읽은 값이다.
+  youtube?: { views?: number; gone?: boolean; at: string }
+  addedAt: string
 }
 
 export type Shipment = { id: string; side: ChatSide; carrier: string; number: string; note?: string; addedAt: string }
@@ -795,6 +815,8 @@ export type Payment = {
   cancelReason?: string
   // Pro나 광고의 경우, 결제한 한 달이 끝나는 날이다(한국 날짜).
   periodEnd?: string
+  // 그 기간의 일수. 환불하면 뒤의 기간을 이만큼 앞당긴다.
+  periodDays?: number
   // 리포트의 경우, 산 사람이 처음 연 시각이다(약관에 따라 그 뒤에는 환불 없음).
   openedAt?: string
 }

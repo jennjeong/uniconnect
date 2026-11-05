@@ -130,16 +130,8 @@ export function GoalsModal({
               />
             </label>
           </div>
-          <label>
-            {t("현장 밖 도달 (SNS 등, 명)")}
-            <input
-              inputMode="numeric"
-              value={draft.snsReach}
-              onChange={(event) => update({ snsReach: number(event.target.value) })}
-            />
-          </label>
           <small className="field-hint">
-            {t("도달은 QR 스캔 수에 현장 밖 도달을 더하고 ROAS는 매장 방문 × 1인 예상 지출을 협찬 가치로 나눠 계산해요.")}
+            {t("도달은 QR 스캔 수에 브랜드가 확인한 SNS 게시물 도달을 더하고 ROAS는 매장 방문 × 1인 예상 지출을 협찬 가치로 나눠 계산해요.")}
           </small>
         </fieldset>
 

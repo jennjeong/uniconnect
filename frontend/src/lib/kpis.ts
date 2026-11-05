@@ -37,9 +37,10 @@ export function reportKpis(report: Report, metrics: Metrics): Kpi[] {
       current: report.reach,
       target: report.targets.reach,
       note: t("QR 스캔 + 현장 밖 도달"),
-      formula: t("QR 스캔 {scans}건에 목표 설정에서 적은 현장 밖 도달(SNS 등) {snsReach}명을 더한 값이에요.", {
+      formula: t("QR 스캔 {scans}건에 목표 설정에서 적은 현장 밖 도달(SNS 등) {snsReach}명과 브랜드가 확인한 게시물 도달 {posted}명을 더한 값이에요.", {
         scans: metrics.scans.toLocaleString("ko-KR"),
         snsReach: report.snsReach.toLocaleString("ko-KR"),
+        posted: report.postedReach.toLocaleString("ko-KR"),
       }),
     },
     {

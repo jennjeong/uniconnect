@@ -17,7 +17,7 @@ import { formatDateTime, formatFullDate } from "../lib/date"
 import { photoFromFile } from "../lib/image"
 import { fullWon } from "../lib/sponsorships"
 import { PaymentModal } from "../modals/PaymentModal"
-import type { Agreement, AgreementItem, ChatSide, MeasureMethod, MethodKind, MethodSide, Metrics, Review, Shipment, VenuePage } from "../types"
+import type { Agreement, AgreementItem, ChatSide, MeasureMethod, MethodKind, MethodSide, Metrics, Review, Shipment, SnsPost, VenuePage } from "../types"
 import { agreementState } from "./AgreementsPage"
 
 const ThanksCardExport = lazy(() => import("../report/ThanksCard").then((module) => ({ default: module.ThanksCardExport })))
@@ -1132,6 +1132,215 @@ function ShipmentsPanel({
   )
 }
 
+// 게시물의 상태를 두 쪽에 한 낱말로 보여 준다.
+const postState = { pending: "확인 전", confirmed: "확인됨", rejected: "다시 요청" } as const
+
+// 게시물 확인. 학생단체가 SNS 게시물을 도달과 캡처와 함께 올리면 브랜드가
+// 확인하거나 다시 요청하고, 확인된 것만 리포트에 들어간다. 유튜브 링크는 공개
+// 조회수를 보여 주며 적은 숫자 대신 쓴다.
+function SnsPostsPanel({
+  agreement,
+  busy,
+  onAdd,
+  onSave,
+  onRemove,
+  onConfirm,
+  onReject,
+  onAddPhoto,
+  onRemovePhoto,
+}: {
+  agreement: Agreement
+  busy: boolean
+  onAdd: (body: { url: string; reach: number }) => Promise<boolean>
+  onSave: (postId: string, body: { url: string; reach: number }) => Promise<boolean>
+  onRemove: (postId: string) => void
+  onConfirm: (post: SnsPost) => void
+  onReject: (postId: string, reason: string) => Promise<boolean>
+  onAddPhoto: (postId: string, file: File) => void
+  onRemovePhoto: (postId: string, photo: string) => void
+}) {
+  const [url, setUrl] = useState("")
+  const [reach, setReach] = useState("")
+  // 고치는 중인 게시물. 양식이 그 링크와 도달을 담는다.
+  const [fixing, setFixing] = useState<string>()
+  const [asking, setAsking] = useState<string>()
+  const [reason, setReason] = useState("")
+  const posts = agreement.snsPosts ?? []
+  const canceled = Boolean(agreement.cancel?.canceledAt)
+  const group = agreement.side === "group"
+  if (canceled && posts.length === 0) return null
+  const counted = (post: SnsPost) => post.youtube?.views ?? post.reach
+  const sum = (status: SnsPost["status"]) =>
+    posts.filter((post) => post.status === status).reduce((total, post) => total + counted(post), 0)
+  const clear = () => {
+    setUrl("")
+    setReach("")
+    setFixing(undefined)
+  }
+  return (
+    <section aria-labelledby="agreement-posts-title" className="agreement-section agreement-shipments">
+      <h2 id="agreement-posts-title">{t("SNS 게시물 확인")}</h2>
+      <p className="field-hint">
+        {group
+          ? t("올린 게시물의 링크와 도달 수를 남겨 주세요. 브랜드가 확인한 게시물만 리포트의 도달에 들어가요.")
+          : t("학생단체가 올린 게시물을 확인해 주세요. 확인한 게시물만 리포트의 도달에 들어가요.")}
+      </p>
+      {posts.length > 0 && (
+        <>
+          <p className="agreement-post-sum">
+            {t("확인된 도달 {confirmed}명 · 확인 전 {pending}명", {
+              confirmed: sum("confirmed").toLocaleString("ko-KR"),
+              pending: sum("pending").toLocaleString("ko-KR"),
+            })}
+          </p>
+          <ul className="shipment-list">
+            {posts.map((post) => (
+              <li key={post.id}>
+                <div>
+                  <strong>
+                    <a href={post.url} rel="noreferrer" target="_blank">
+                      {new URL(post.url).hostname.replace(/^www\./, "")}
+                    </a>
+                  </strong>
+                  <small>
+                    <span className={`agreement-post-state is-${post.status}`}>{t(postState[post.status])}</span>
+                    {" · "}
+                    {t("적은 도달 {reach}명", { reach: post.reach.toLocaleString("ko-KR") })}
+                    {post.youtube?.gone && post.youtube.views !== undefined && ` · ${t("지금은 볼 수 없는 영상")}`}
+                    {post.youtube &&
+                      (post.youtube.views === undefined
+                        ? ` · ${t("조회수를 가져올 수 없음")}`
+                        : ` · ${t("유튜브 조회수 {views}회", { views: post.youtube.views.toLocaleString("ko-KR") })} (${formatDateTime(post.youtube.at)})`)}
+                  </small>
+                  {post.reason && <small>{t("다시 요청한 이유: {reason}", { reason: post.reason })}</small>}
+                </div>
+                {!group && !canceled && post.status !== "confirmed" && (
+                  <>
+                    <button className="primary-button" disabled={busy} onClick={() => onConfirm(post)} type="button">
+                      {t("확인")}
+                    </button>
+                    <button
+                      className="cancel-button"
+                      disabled={busy}
+                      onClick={() => {
+                        setAsking(asking === post.id ? undefined : post.id)
+                        setReason("")
+                      }}
+                      type="button"
+                    >
+                      {t("다시 요청")}
+                    </button>
+                  </>
+                )}
+                {group && !canceled && (
+                  <>
+                    <button
+                      className="cancel-button"
+                      disabled={busy}
+                      onClick={() => {
+                        setFixing(post.id)
+                        setUrl(post.url)
+                        setReach(String(post.reach))
+                      }}
+                      type="button"
+                    >
+                      {t("고치기")}
+                    </button>
+                    <button
+                      aria-label={t("{site} 게시물 지우기", { site: new URL(post.url).hostname })}
+                      className="delete-button"
+                      disabled={busy}
+                      onClick={() => onRemove(post.id)}
+                      type="button"
+                    >
+                      <Icon name="close" size={14} />
+                    </button>
+                  </>
+                )}
+                {asking === post.id && (
+                  <form
+                    className="agreement-post-ask"
+                    onSubmit={async (event) => {
+                      event.preventDefault()
+                      if (await onReject(post.id, reason.trim())) setAsking(undefined)
+                    }}
+                  >
+                    <label>
+                      {t("다시 요청하는 이유")}
+                      <input maxLength={100} onChange={(event) => setReason(event.target.value)} value={reason} />
+                    </label>
+                    <button className="primary-button" disabled={busy || !reason.trim()} type="submit">
+                      {t("보내기")}
+                    </button>
+                  </form>
+                )}
+                {(post.photos.length > 0 || (group && !canceled)) && (
+                  <div className="agreement-post-photos">
+                    {post.photos.length > 0 && (
+                      <ul className="agreement-photos">
+                        {post.photos.map((photo) => (
+                          <ProofPhoto
+                            agreementId={agreement.id}
+                            key={photo}
+                            onRemove={group && !canceled ? () => onRemovePhoto(post.id, photo) : undefined}
+                            photo={photo}
+                          />
+                        ))}
+                      </ul>
+                    )}
+                    {group && !canceled && post.photos.length < 3 && (
+                      <label className="cancel-button agreement-upload">
+                        {t("캡처 올리기")}
+                        <input
+                          accept="image/*"
+                          disabled={busy}
+                          onChange={(event) => {
+                            const file = event.target.files?.[0]
+                            event.target.value = ""
+                            if (file) onAddPhoto(post.id, file)
+                          }}
+                          type="file"
+                        />
+                      </label>
+                    )}
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {group && !canceled && (
+        <form
+          className="shipment-form"
+          onSubmit={async (event) => {
+            event.preventDefault()
+            const body = { url: url.trim(), reach: Number(reach) }
+            if (await (fixing ? onSave(fixing, body) : onAdd(body))) clear()
+          }}
+        >
+          <label>
+            {t("게시물 링크")}
+            <input inputMode="url" maxLength={300} onChange={(event) => setUrl(event.target.value)} placeholder="https://" value={url} />
+          </label>
+          <label>
+            {t("도달 수")}
+            <input inputMode="numeric" maxLength={9} onChange={(event) => setReach(event.target.value.replace(/\D/g, ""))} value={reach} />
+          </label>
+          <button className="primary-button" disabled={busy || !url.trim() || !reach} type="submit">
+            {fixing ? t("고쳐서 다시 보내기") : t("게시물 올리기")}
+          </button>
+          {fixing && (
+            <button className="cancel-button" onClick={clear} type="button">
+              {t("취소")}
+            </button>
+          )}
+        </form>
+      )}
+    </section>
+  )
+}
+
 export function AgreementPage({
   id,
   loggedIn,
@@ -1432,6 +1641,20 @@ export function AgreementPage({
         busy={busy}
         onAdd={(body) => run(() => api.addShipment(agreement.id, body), t("배송을 남겼어요. 상대에게 알렸어요."))}
         onRemove={(shipmentId) => void run(() => api.deleteShipment(agreement.id, shipmentId), t("배송을 지웠어요."))}
+      />
+
+      <SnsPostsPanel
+        agreement={agreement}
+        busy={busy}
+        onAdd={(body) => run(() => api.addSnsPost(agreement.id, body), t("게시물을 올렸어요. 브랜드가 확인하면 도달에 들어가요."))}
+        onSave={(postId, body) => run(() => api.saveSnsPost(agreement.id, postId, body), t("게시물을 고쳐서 다시 보냈어요."))}
+        onRemove={(postId) => void run(() => api.deleteSnsPost(agreement.id, postId), t("게시물을 지웠어요."))}
+        onConfirm={(post) => void run(() => api.confirmSnsPost(agreement.id, post), t("게시물을 확인했어요. 리포트의 도달에 들어가요."))}
+        onReject={(postId, reason) => run(() => api.rejectSnsPost(agreement.id, postId, reason), t("다시 요청했어요."))}
+        onAddPhoto={(postId, file) =>
+          void run(async () => api.addSnsPostPhoto(agreement.id, postId, await photoFromFile(file)), t("캡처를 올렸어요."))
+        }
+        onRemovePhoto={(postId, photo) => void run(() => api.deleteSnsPostPhoto(agreement.id, postId, photo), t("캡처를 지웠어요."))}
       />
 
       {editing ? (

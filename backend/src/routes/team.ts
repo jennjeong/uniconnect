@@ -21,15 +21,24 @@ import type { Account } from "../types.js"
 // 합류한다. 주인은 한 명을 빼서 그 로그인을 바로 끝낼 수 있다.
 export const teamRouter = Router()
 
-// 초대 코드가 얼마나 유효한지와, 코드가 사라지기까지 틀릴 수 있는 횟수다.
+// 초대 코드가 유효한 시간.
 const inviteMs = 7 * 24 * 60 * 60 * 1000
-const inviteTries = 5
 
 const invitesPerDay = createRateLimit({
   limit: 10,
   windowMs: 24 * 60 * 60 * 1000,
   message: "초대를 너무 많이 보냈어요. 내일 다시 보내 주세요.",
 })
+// 코드를 맞히는 시도는 주소와 상관없이 이메일별로도, 확인하기 전에 센다. 동시에
+// 보내도 한도를 넘지 못한다. 초대를 지우는 대신
+// 잠시 막는다. 로그인 없이 부르는 경로라, 지우면 이메일만 아는 사람이 남의
+// 초대를 없앨 수 있다.
+const joinTriesPerEmail = createRateLimit({
+  limit: 5,
+  windowMs: 15 * 60 * 1000,
+  message: "초대 코드를 너무 많이 틀렸어요. 15분 뒤에 다시 시도해 주세요.",
+})
+
 const joinFailures = createRateLimit({
   limit: 10,
   windowMs: 15 * 60 * 1000,
@@ -87,7 +96,6 @@ teamRouter.post("/invites", async (req, res) => {
     codeHash: codeHash(email, code),
     invitedAt: new Date().toISOString(),
     expiresAt: Date.now() + inviteMs,
-    tries: 0,
   }
   account.memberInvites = [...open, invite]
   await saveDatabase()
@@ -131,12 +139,13 @@ teamRouter.delete("/members/:id", async (req, res) => {
 
 // 초대받은 사람이 이메일, 코드, 자기 비밀번호, 재직 증빙으로 합류한다. 재직
 // 증빙은 효력이 생기기 전에 운영자가 확인하며(lib/applications.ts), 첫
-// 로그인에서 2단계 로그인을 설정한다. 틀린 코드는 주소와 이메일마다 세고,
-// 다섯 번이면 초대가 끝난다.
+// 로그인에서 2단계 로그인을 설정한다. 틀린 코드는 주소와 이메일마다, 이메일별로도
+// 세어 잠시 막는다.
 teamRouter.post("/join", async (req, res) => {
   const email = normalizeEmail(req.body?.email)
   const limitKey = `${clientKey(req)} ${email}`
   await joinFailures.take(limitKey)
+  await joinTriesPerEmail.take(email)
   const database = getDatabase()
   // 이 이메일에 온 살아 있는 초대를 모두 찾는다. 여러 계정이 같은 이메일을
   // 초대할 수 있기 때문이다. 어느 초대인지는 코드가 말해 주므로, 다른 사람이
@@ -147,14 +156,7 @@ teamRouter.post("/join", async (req, res) => {
   if (invites.length === 0) throw new HttpError(400, "이 이메일로 온 초대가 없거나 기간이 지났어요. 대표에게 다시 초대해 달라고 해 주세요.")
   const hash = codeHash(email, String(req.body?.code ?? ""))
   const found = invites.find((item) => item.invite.codeHash === hash)
-  if (!found) {
-    for (const { account: inviter, invite } of invites) {
-      invite.tries += 1
-      if (invite.tries >= inviteTries) inviter.memberInvites = inviter.memberInvites!.filter((item) => item !== invite)
-    }
-    await saveDatabase()
-    throw new HttpError(400, "초대 코드가 올바르지 않아요.")
-  }
+  if (!found) throw new HttpError(400, "초대 코드가 올바르지 않아요.")
   const { account, invite } = found
   if (account.suspendedAt) throw new HttpError(403, "운영 정책에 따라 이용이 정지된 계정이에요.")
   const password = checkPassword(String(req.body?.password ?? ""))
@@ -165,6 +167,7 @@ teamRouter.post("/join", async (req, res) => {
   if (emailTaken(database, email)) throw new HttpError(409, "이미 uniconnect에서 쓰는 이메일이에요.")
   const member = { id: randomUUID(), name: invite.name, email, passwordHash, addedAt: new Date().toISOString() }
   await joinFailures.reset(limitKey)
+  await joinTriesPerEmail.reset(email)
   await holdApplication(database, saveDatabase, document, { kind: "member", name: invite.name, email, accountId: account.id, member })
   res.status(202).json({ pending: true })
 })
