@@ -20,7 +20,9 @@ const styles = {
   },
 }
 
-export const escapeHtml = (text) => String(text ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+// 이벤트 글을 한 줄로 눌러 알림의 줄과 구분선을 흉내 내지 못하게 한다.
+export const escapeHtml = (text) =>
+  String(text ?? "").replace(/\s+/g, " ").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
 
 const clip = (text, size) => {
   const value = String(text ?? "").trim()
@@ -87,7 +89,13 @@ export function route(event, payload, people) {
     })
   }
 
-  if (event === "pull_request_review" && payload.action === "submitted" && payload.review?.state === "changes_requested") {
+  // 공개 저장소라 누구나 리뷰를 남길 수 있다. 협업자의 리뷰만 전한다.
+  if (
+    event === "pull_request_review" &&
+    payload.action === "submitted" &&
+    payload.review?.state === "changes_requested" &&
+    trusted.includes(payload.review.author_association)
+  ) {
     return toOne(people, payload.pull_request.user?.login, {
       kind: "task",
       todo: `PR #${payload.pull_request.number}에 수정 요청이 왔어요.`,
@@ -131,7 +139,7 @@ export async function send(token, chat, text, fetcher = fetch) {
     fetcher(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: chat, text, ...body }),
+      body: JSON.stringify({ chat_id: chat, text, link_preview_options: { is_disabled: true }, ...body }),
     })
   let status = 0
   for (let attempt = 0; attempt < 3; attempt += 1) {

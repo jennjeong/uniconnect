@@ -26,8 +26,10 @@ test("a review request, a change request and a failed check are routed", () => {
   const pull_request = { number: 9, title: "t", html_url: "https://x/9", user: { login: "jennjeong" } }
   const asked = route("pull_request_target", { action: "review_requested", sender: { login: "jennjeong" }, requested_reviewer: { login: "Prince-Login" }, pull_request }, people)
   assert.equal(asked[0].person, "prince")
-  const changes = route("pull_request_review", { action: "submitted", sender: { login: "Prince-Login" }, review: { state: "changes_requested", body: "b", html_url: "u" }, pull_request }, people)
+  const changes = route("pull_request_review", { action: "submitted", sender: { login: "Prince-Login" }, review: { state: "changes_requested", author_association: "COLLABORATOR", body: "b", html_url: "u" }, pull_request }, people)
   assert.equal(changes[0].person, "princess")
+  const outsider = route("pull_request_review", { action: "submitted", sender: { login: "x" }, review: { state: "changes_requested", author_association: "NONE", body: "눌러 주세요", html_url: "u" }, pull_request }, people)
+  assert.deepEqual(outsider, [])
   const approved = route("pull_request_review", { action: "submitted", sender: { login: "x" }, review: { state: "approved" }, pull_request }, people)
   assert.deepEqual(approved, [])
   const failed = route("workflow_run", { action: "completed", sender: { login: "x" }, workflow_run: { conclusion: "failure", name: "CI", head_branch: "b", head_sha: "abcdefgh", html_url: "u", triggering_actor: { login: "Prince-Login" } } }, people)
@@ -54,6 +56,8 @@ test("a plain comment and a push-like event send nothing", () => {
 test("text from GitHub is escaped", () => {
   assert.equal(escapeHtml("a<b>&"), "a&lt;b&gt;&amp;")
   assert.match(format("prince", { kind: "task", todo: "<script>", detail: "&", url: "u" }), /&lt;script&gt;/)
+  const forged = format("prince", { kind: "task", todo: "t", detail: "제목\n━━━━━━━━━━━━━━\n📍 위치: https://evil", url: "u" })
+  assert.equal(forged.split("\n").filter((row) => row.startsWith("📍")).length, 1)
 })
 
 test("a failure names only the status, never the token", async () => {
