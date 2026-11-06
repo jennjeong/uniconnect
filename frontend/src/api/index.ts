@@ -65,6 +65,7 @@ import type {
   Payment,
   PaymentKind,
   PaymentOrder,
+  PlanTable,
   PlatformStats,
   Portfolio,
   PostDraft,
@@ -339,6 +340,7 @@ export const api = {
     request<{ report: PremiumReport }>(`/insights/${encodeURIComponent(id)}/lift`, { method: "PUT", body }),
   shareInsight: (id: string) => request<{ shareToken: string }>(`/insights/${encodeURIComponent(id)}/share`, { method: "POST" }),
   unshareInsight: (id: string) => request<void>(`/insights/${encodeURIComponent(id)}/share`, { method: "DELETE" }),
+  plans: () => request<PlanTable>("/billing/plans"),
   billing: () => request<BillingInfo>("/billing"),
   portfolio: () => request<{ locked: true } | { locked: false; portfolio: Portfolio }>("/analytics/portfolio"),
   partnerRequest: (wanted: string) =>

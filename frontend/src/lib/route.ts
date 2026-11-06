@@ -29,6 +29,8 @@ export type View = {
   detail?: string
   // FAQ 페이지. 여기서 운영자에게 질문도 보낸다.
   faq?: true
+  // 공개 요금제 표 (/plans).
+  plans?: true
   // 이용약관 또는 개인정보처리방침.
   legal?: LegalKind
   // 질문에 답하는 운영자 화면 (/admin).
@@ -105,6 +107,7 @@ export function viewPath(view: View) {
   if (view.chat) return `${base}/messages/${encodeURIComponent(view.chat)}`
   if (view.messages) return `${base}/messages`
   if (view.faq) return `${base}/faq`
+  if (view.plans) return `${base}/plans`
   if (view.legal) return `${base}/${view.legal}`
   if (view.admin) return `${base}/admin`
   if (view.invite) return `${base}/invite/${encodeURIComponent(view.invite)}`
@@ -158,6 +161,7 @@ export function readView(location: Location = window.location): View {
     return { page: "대시보드", profile: second === "edit" ? "edit" : "page" }
   }
   if (first === "faq") return second ? missing : { page: "대시보드", faq: true }
+  if (first === "plans") return second ? missing : { page: "대시보드", plans: true }
   if (first === "terms" || first === "privacy") return second ? missing : { page: "대시보드", legal: first }
   if (first === "admin") return second ? missing : { page: "대시보드", admin: true }
   if (first === "council") return second ? missing : { page: "대시보드", council: true }

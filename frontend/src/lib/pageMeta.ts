@@ -147,6 +147,12 @@ export function pageMeta(
       description: t("가입, 협찬 제안, 일정 등록, 성과 확인에 대해 자주 묻는 질문을 보고 더 궁금한 점은 관리자에게 물어봐요."),
     }
   }
+  if (view.plans) {
+    return {
+      title: titled(t("요금제")),
+      description: t("무료와 Growth 요금제의 금액과 쓸 수 있는 기능을 비교해요."),
+    }
+  }
   if (view.board || view.post) {
     return {
       title: titled(t(view.post ? "모집 글" : "모집 게시판")),

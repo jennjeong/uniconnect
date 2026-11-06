@@ -303,7 +303,7 @@ function StatsPanel({ stats }: { stats: PlatformStats }) {
   )
 }
 
-const paymentKinds: Record<AdminPayment["kind"], string> = { fee: "수수료", report: "상세 리포트", pro: "캠퍼스 파트너스", ad: "상단 광고" }
+const paymentKinds: Record<AdminPayment["kind"], string> = { fee: "수수료", report: "상세 리포트", pro: "Growth", ad: "상단 광고" }
 
 // 운영자가 보는 결제 하나: 누가 얼마를 어떻게 언제 냈는지와, 상태가 허용하는
 // 작업(들어온 이체 확인, 대기 중인 주문 취소, 결제된 건 환불).
@@ -579,7 +579,7 @@ function TrendChart({ weekly }: { weekly: AdminOverview["weekly"] }) {
 const revenueKinds = [
   { key: "fee", label: "수수료" },
   { key: "report", label: "상세 리포트" },
-  { key: "pro", label: "캠퍼스 파트너스" },
+  { key: "pro", label: "Growth" },
   { key: "ad", label: "상단 광고" },
 ] as const
 

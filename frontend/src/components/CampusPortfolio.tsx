@@ -93,7 +93,7 @@ export function CampusPortfolio({ onOpenPlan }: { onOpenPlan: () => void }) {
     <section aria-labelledby="portfolio-title" className="analytics-card portfolio-card">
       <header className="portfolio-head">
         <div>
-          <span className="eyebrow">Campus Partners</span>
+          <span className="eyebrow">Growth</span>
           <p className="section-title" id="portfolio-title">
             {t("캠퍼스 포트폴리오")}
           </p>
@@ -103,7 +103,7 @@ export function CampusPortfolio({ onOpenPlan }: { onOpenPlan: () => void }) {
       {answer.locked ? (
         <div className="portfolio-locked">
           <Icon name="lock" size={22} />
-          <p>{t("캠퍼스 파트너스에서 볼 수 있어요. 학교별 · 월별 · 단체 종류별 ROAS, 가장 좋았던 협찬과 아쉬웠던 협찬, 예산 계획기를 한 화면에서 봐요.")}</p>
+          <p>{t("Growth에서 볼 수 있어요. 학교별 · 월별 · 단체 종류별 ROAS, 가장 좋았던 협찬과 아쉬웠던 협찬, 예산 계획기를 한 화면에서 봐요.")}</p>
           <button className="primary-button" onClick={onOpenPlan} type="button">
             {t("요금제 보기")}
           </button>
