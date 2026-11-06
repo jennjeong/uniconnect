@@ -34,25 +34,31 @@ const adminFailures = createRateLimit({
 const digest = (value: string) => createHash("sha256").update(value).digest()
 
 export async function requireAdmin(req: Request) {
-  const key = clientKey(req)
-  await adminFailures.check(key)
-  const expected = config.adminToken
   const given = req.get("x-admin-token") ?? ""
   const request = adminRequest.getStore()
-  const tokenMatches = Boolean(expected) && timingSafeEqual(digest(given), digest(expected ?? ""))
-  if (tokenMatches && !tokenClosed(getDatabase())) {
-    if (request) request.actor = "token"
-    return
-  }
+  // 살아 있는 세션은 실패 한도와 상관없이 통과한다. 세션 토큰은 추측할 수 없고, 같은
+  // 주소의 누군가가 틀렸다고 로그인해 있는 운영자까지 막히면 안 된다.
   let operator = given ? operatorFor(getDatabase(), given) : undefined
-  // 방금 다른 복사본에서 로그인했으면 그 세션이 아직 여기에 없다.
-  if (!operator && given) {
-    await refreshDatabase({ force: true })
-    operator = operatorFor(getDatabase(), given)
-  }
   if (!operator) {
-    await adminFailures.hit(key)
-    throw new HttpError(403, "관리자만 쓸 수 있어요.")
+    const key = clientKey(req)
+    await adminFailures.check(key)
+    const expected = config.adminToken
+    if (expected && timingSafeEqual(digest(given), digest(expected))) {
+      // 맞는 토큰이 닫힌 것은 추측이 아니므로 실패로 세지 않는다. 콘솔을 한 번 열 때
+      // 요청이 여러 개라, 세면 열려 있던 탭 하나로 같은 주소의 운영자가 함께 막힌다.
+      if (tokenClosed(getDatabase())) throw new HttpError(403, "관리자만 쓸 수 있어요.")
+      if (request) request.actor = "token"
+      return
+    }
+    // 방금 다른 복사본에서 로그인했으면 그 세션이 아직 여기에 없다.
+    if (given) {
+      await refreshDatabase({ force: true })
+      operator = operatorFor(getDatabase(), given)
+    }
+    if (!operator) {
+      await adminFailures.hit(key)
+      throw new HttpError(403, "관리자만 쓸 수 있어요.")
+    }
   }
   if (request) request.actor = operator.id
 }

@@ -92,7 +92,7 @@ adminSessionRouter.post("/session/code", async (req, res) => {
   logAdmin(database, "operator-logged-in", { kind: "operator", id: operator.id })
   await saveDatabase()
   await operatorLogins.reset(clientKey(req))
-  res.json({ token, expiresAt, operator: operatorView(operator), ...(recoveryCodes ? { recoveryCodes } : {}) })
+  res.json({ token, expiresAt: new Date(expiresAt).toISOString(), operator: operatorView(operator), ...(recoveryCodes ? { recoveryCodes } : {}) })
 })
 
 // 지금 누구로 들어와 있는지와, 공유 토큰을 아직 받는지다.
