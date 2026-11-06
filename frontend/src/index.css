@@ -14169,16 +14169,26 @@ input[type="search"]::-webkit-search-cancel-button {
   font-weight: var(--weight-label);
 }
 
+/* 이메일과 코드 상자도 비밀번호 상자와 같다. */
+.console-login-card label > input:not([type="checkbox"]),
 .console-login-card .password-input > input.password-box {
+  width: 100%;
   height: 52px;
-  padding: 0 48px 0 16px;
+  padding: 0 16px;
   border: 0;
   border-radius: 14px;
+  outline: none;
   background: var(--fill);
   box-shadow: none;
+  color: var(--ink);
   font-size: 15px;
 }
 
+.console-login-card .password-input > input.password-box {
+  padding-right: 48px;
+}
+
+.console-login-card label > input:not([type="checkbox"]):focus,
 .console-login-card .password-input > input.password-box:focus {
   box-shadow: 0 0 0 2px var(--console-blue);
 }
