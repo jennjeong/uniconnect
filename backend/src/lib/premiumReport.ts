@@ -3,7 +3,7 @@ import { createHash } from "node:crypto"
 import { paidFor } from "./billing.js"
 import { browse } from "./catalog.js"
 import { addDays, todayInKorea } from "./dates.js"
-import { checkInWindow, defaultGoals, emptyMetrics, eventOf, shareValue } from "./measurements.js"
+import { checkInWindow, dailyCounts, defaultGoals, emptyMetrics, eventOf, shareValue } from "./measurements.js"
 import { activeMethodsOf, venueCountsOf } from "./methods.js"
 import { isDemoAccount } from "./reviews.js"
 import { postedReach } from "./snsPosts.js"
@@ -68,8 +68,8 @@ const daysBetween = (from: string, to: string) =>
 const koreanDate = (at: string) => new Date(new Date(at).getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
 
 // 사람이 온 시간. 시간대별 스캔, 기간 중 날짜별 스캔, 쿠폰, 방문, 그리고
-// 쿠폰을 받은 지 며칠 뒤에 방문했는지(남아 있는 최근 300건 기준).
-function timing(measurement: Measurement, event: EventItem) {
+// 쿠폰을 받은 지 며칠 뒤에 방문했는지(이것만 남아 있는 최근 300건 기준).
+export function timing(measurement: Measurement, event: EventItem) {
   const window = checkInWindow(event)
   const days: { date: string; scans: number; coupons: number; visits: number }[] = []
   for (let date = window.start; date <= window.visitsEnd; date = addDays(date, 1)) days.push({ date, scans: 0, coupons: 0, visits: 0 })
@@ -78,14 +78,14 @@ function timing(measurement: Measurement, event: EventItem) {
   for (const entry of [...measurement.log].sort((a, b) => a.at.localeCompare(b.at))) {
     if (entry.kind !== "scans" && entry.kind !== "coupons" && entry.kind !== "visits") continue
     const date = koreanDate(entry.at)
-    const day = days.find((item) => item.date === date)
-    if (day) day[entry.kind] += 1
     if (entry.kind === "coupons") couponDay.set(entry.participant, date)
     if (entry.kind === "visits") {
       const took = couponDay.get(entry.participant)
       if (took) lags.set(Math.max(0, daysBetween(took, date)), (lags.get(Math.max(0, daysBetween(took, date))) ?? 0) + 1)
     }
   }
+  const counted = dailyCounts(measurement)
+  for (const day of days) Object.assign(day, counted[day.date])
   const peak = [...measurement.hourlyScans].sort((a, b) => b.scans - a.scans)[0]
   const lagCount = [...lags.values()].reduce((sum, count) => sum + count, 0)
   const lagTotal = [...lags.entries()].reduce((sum, [lag, count]) => sum + lag * count, 0)

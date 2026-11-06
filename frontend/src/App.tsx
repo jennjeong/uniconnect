@@ -1413,6 +1413,7 @@ function App() {
           onCopy={(eventId) => go({ page, create: todayIso(), copy: eventId })}
           onOpenGroup={students ? undefined : (listingId) => go({ page: "단체 찾기", detail: listingId })}
           onNotice={showNotice}
+          canUpload={member}
         />
       )
     }

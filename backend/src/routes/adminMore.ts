@@ -17,7 +17,7 @@ import {
   topSearches,
 } from "../lib/adminInsights.js"
 import { config } from "../config.js"
-import { cleanTags, grantPartners, logAdmin, resetExamples } from "../lib/adminTools.js"
+import { backupWithoutSecrets, cleanTags, grantPartners, logAdmin, resetExamples } from "../lib/adminTools.js"
 import { applicationFolder, applicationsOf } from "../lib/applications.js"
 import { sendMail } from "../lib/mailer.js"
 import { photos, photoType } from "../lib/photos.js"
@@ -280,10 +280,12 @@ adminMoreRouter.post("/accounts/:id/partners", async (req, res) => {
 adminMoreRouter.post("/demo/reset", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
-  await resetExamples(database)
+  const leftovers = await resetExamples(database)
   upgradeDatabase(database)
   logAdmin(database, "demo-reset", { kind: "site", id: "demo" })
   await saveDatabase()
+  // 초기화는 끝났으므로 파일을 못 지워도 실패로 답하지 않는다.
+  await photos().removeAll(leftovers).catch((error: Error) => console.error(`[demo reset] ${error.message}`))
   res.json({ ok: true })
 })
 
@@ -545,13 +547,15 @@ adminMoreRouter.get("/system", async (req, res) => {
   })
 })
 
-// 백업 하나를 보관된 파일 그대로 통째로 준다. 모든 회원의 데이터가 들어
-// 있으므로 콘솔만 요청한다.
+// 백업 하나를 비밀값을 뺀 파일로 준다. 모든 회원의 데이터가 들어 있으므로 콘솔만
+// 요청하고, 누가 받았는지 남긴다.
 adminMoreRouter.get("/backups/:hour", async (req, res) => {
   await requireAdmin(req)
   const hour = String(req.params.hour)
   const data = await currentStorage().readBackup(hour)
   if (!data) throw new HttpError(404, "백업을 찾을 수 없어요.")
+  logAdmin(getDatabase(), "backup-downloaded", { kind: "backup", id: hour })
+  await saveDatabase()
   res.setHeader("Content-Disposition", `attachment; filename="uniconnect-backup-${hour}.json"`)
-  res.type("application/json").send(data)
+  res.type("application/json").send(backupWithoutSecrets(data))
 })

@@ -524,6 +524,8 @@ export type Measurement = {
   passes: Record<string, PassCoupon & { sponsors?: Record<string, PassCoupon> }>
   // 선택 설문의 응답을 센 것이다(lib/validation.ts surveyOptions).
   survey?: SurveyCounts
+  // 한국 날짜별 스캔, 쿠폰, 방문이다(lib/measurements.ts dailyCounts).
+  daily?: Record<string, { scans: number; coupons: number; visits: number }>
   // 오늘(한국 날짜) 틀린 현장 PIN으로, 운영자 경보에 쓴다.
   pinMisses?: { day: string; count: number }
 }
@@ -895,6 +897,9 @@ export type Database = {
   }
   // 운영자가 콘솔에서 한 일이며 최신이 마지막이다(lib/adminTools.ts).
   adminLog?: AdminLogEntry[]
+  // 콘솔에 들어오는 사람과 그 세션이다(routes/adminSession.ts).
+  operators?: Operator[]
+  operatorSessions?: OperatorSession[]
   // 회원에 대한 운영자 메모이며 계정 id로 구분한다.
   adminNotes?: Record<string, AdminNote>
   // 운영자가 사이트 전체에 보이는 공지다.
@@ -934,12 +939,28 @@ export type FaqEntry = {
 
 // 운영자가 콘솔에서 한 일 하나다. 대상은 id로만 가리키고, 이름은 콘솔이
 // 목록을 낼 때 찾아본다.
+export type Operator = {
+  id: string
+  email: string
+  name: string
+  passwordHash: string
+  createdAt: string
+  disabledAt?: string
+  twoFactor?: Account["twoFactor"]
+  pendingTwoFactor?: Account["pendingTwoFactor"]
+  loginTicket?: Account["loginTicket"]
+}
+
+export type OperatorSession = { tokenHash: string; operatorId: string; expiresAt: number; createdAt: number }
+
 export type AdminLogEntry = {
   id: string
   at: string
+  // 누가 했는지다. 운영자 id이거나, 운영자 계정이 생기기 전의 공유 토큰("token")이다.
+  actor?: string
   action: AdminAction
   target: {
-    kind: "account" | "payment" | "inquiry" | "report" | "announcement" | "proposal" | "post" | "review" | "site"
+    kind: "operator" | "backup" | "account" | "payment" | "inquiry" | "report" | "announcement" | "proposal" | "post" | "review" | "site"
     id: string
   }
   // 신고의 처리 결과 같은, 방법에 대한 짧은 말이다.
@@ -947,6 +968,10 @@ export type AdminLogEntry = {
 }
 
 export type AdminAction =
+  | "operator-created"
+  | "operator-disabled"
+  | "operator-logged-in"
+  | "backup-downloaded"
   | "account-logged-out"
   | "account-tagged"
   | "application-approved"

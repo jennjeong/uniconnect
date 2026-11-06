@@ -5631,19 +5631,20 @@ test("an account downloads everything it made, without its password or participa
   assert.ok(measured.every((item: object) => !("passes" in item) && !("log" in item)))
 })
 
-test("the data is backed up at most hourly beside the data file, keeping the latest 24", async () => {
+test("the data is backed up at most hourly beside the data file, for 24 hours", async () => {
   const { backups, backupFolder } = await import("./store.js")
   const folder = backupFolder()
   await mkdir(folder, { recursive: true })
-  for (let hour = 0; hour < 25; hour += 1) {
-    await writeFile(path.join(folder, `db-2000-01-01-${String(hour).padStart(2, "0")}.json`), "{}")
-  }
+  const named = (hours: number) => `db-${new Date(Date.now() - hours * 3_600_000).toISOString().slice(0, 13).replace("T", "-")}.json`
+  await writeFile(path.join(folder, "db-2000-01-01-00.json"), "{}")
+  await writeFile(path.join(folder, named(30)), "{}")
+  await writeFile(path.join(folder, named(5)), "{}")
   backups.lastAt = 0
   await saveDatabase()
   const copies = async () => (await readdir(folder)).filter((file) => file.startsWith("db-")).sort()
   const kept = await copies()
-  assert.equal(kept.length, 24)
-  assert.ok(!kept.includes("db-2000-01-01-00.json"))
+  assert.equal(kept.length, 2)
+  assert.ok(kept.includes(named(5)) && !kept.includes(named(30)) && !kept.includes("db-2000-01-01-00.json"))
   assert.ok(JSON.parse(await readFile(path.join(folder, kept.at(-1)!), "utf8")).accounts.length > 0)
   // 한 시간 안에는 새 복사를 만들지 않는다.
   await saveDatabase()
@@ -5679,6 +5680,267 @@ test("the Vercel entry reads the data on its first request and serves the API", 
     assert.ok(((await brands.json()) as { brands: unknown[] }).brands.length > 0)
   } finally {
     await new Promise((resolve) => vercelServer.close(resolve))
+  }
+})
+
+test("operators sign in with a password and a code, which closes the shared token and names who did what", async () => {
+  const { codeAt, stepAt } = await import("./lib/totp.js")
+  const { adminLogRows } = await import("./lib/adminTools.js")
+  const { backups } = await import("./store.js")
+  const database = getDatabase()
+  const saved = config.adminToken
+  config.adminToken = "test-admin-token"
+  const admin = async (method: string, route: string, token: string, body?: unknown) => {
+    const response = await fetch(`${baseUrl}/admin${route}`, {
+      method,
+      headers: { "X-Admin-Token": token, ...(body === undefined ? {} : { "Content-Type": "application/json" }) },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    })
+    const raw = await response.text()
+    return { status: response.status, raw, data: /json/.test(response.headers.get("content-type") ?? "") ? JSON.parse(raw) : null }
+  }
+  const shared = "test-admin-token"
+  const email = "first@uniconnect.kr"
+  const password = "operator-pass-123!"
+  try {
+    // 공유 토큰으로 첫 운영자를 만든다. 짧은 비밀번호는 받지 않고, 비밀값은 답에 없다.
+    assert.equal((await admin("POST", "/operators", shared, { email, name: "첫 운영자", password: "short-1!" })).status, 400)
+    const made = await admin("POST", "/operators", shared, { email, name: "첫 운영자", password })
+    assert.equal(made.status, 201)
+    assert.doesNotMatch(made.raw, /passwordHash/)
+    assert.equal((await admin("POST", "/operators", shared, { email, name: "또", password })).status, 409)
+    const operatorId = made.data.operator.id
+    assert.equal(database.adminLog!.at(-1)!.actor, "token")
+
+    // 없는 이메일과 틀린 비밀번호는 같은 답이다.
+    assert.equal((await admin("POST", "/session", "", { email, password: "wrong-pass-123!" })).status, 401)
+    assert.equal((await admin("POST", "/session", "", { email: "nobody@uniconnect.kr", password })).status, 401)
+    const first = await admin("POST", "/session", "", { email, password })
+    assert.equal(first.status, 200)
+    const { ticket, setup } = first.data
+    assert.ok(setup.secret)
+    // 설정이 끝나기 전에는 공유 토큰이 그대로 동작한다. 실패가 쌓이면 맞는 토큰도 막아서
+    // 추측을 끝까지 시도하지 못한다.
+    assert.equal((await admin("GET", "/operators", shared)).status, 200)
+    for (let count = 0; count < 10; count += 1) assert.equal((await admin("GET", "/overview", "guess")).status, 403)
+    assert.equal((await admin("GET", "/operators", shared)).status, 429)
+    await clearRateLimits()
+    assert.equal((await admin("POST", "/session/code", "", { email, ticket, code: "000000" })).status, 401)
+    const signedIn = await admin("POST", "/session/code", "", { email, ticket, code: codeAt(setup.secret, stepAt(Date.now())) })
+    assert.equal(signedIn.status, 200)
+    assert.equal(signedIn.data.recoveryCodes.length > 0, true)
+    const session = signedIn.data.token
+
+    // 이제 공유 토큰은 거절되고 운영자 세션이 모든 운영자 API에 통한다.
+    assert.equal((await admin("GET", "/operators", shared)).status, 403)
+    assert.equal((await admin("GET", "/payments", session)).status, 200)
+    assert.equal(new Date(signedIn.data.expiresAt).toISOString(), signedIn.data.expiresAt)
+
+    // 닫힌 토큰은 몇 번을 보내도 추측이 아니라 세지 않는다.
+    for (let count = 0; count < 15; count += 1) assert.equal((await admin("GET", "/overview", shared)).status, 403)
+    // 틀린 토큰은 세서 막지만, 로그인해 있는 운영자는 같은 주소여도 막히지 않는다.
+    for (let count = 0; count < 10; count += 1) assert.equal((await admin("GET", "/overview", "guess")).status, 403)
+    assert.equal((await admin("GET", "/overview", "guess")).status, 429)
+    assert.equal((await admin("GET", "/payments", session)).status, 200)
+    await clearRateLimits()
+
+    const me = await admin("GET", "/session", session)
+    assert.deepEqual([me.data.operator.id, me.data.operator.twoFactorOn, me.data.tokenClosed], [operatorId, true, true])
+
+    // 누가 했는지 남는다.
+    const second = await admin("POST", "/operators", session, { email: "second@uniconnect.kr", name: "둘째", password })
+    assert.equal(database.adminLog!.at(-1)!.actor, operatorId)
+    assert.equal(adminLogRows(database)[0].actorName, "첫 운영자")
+
+    // 자기 자신은 끄지 못하고, 꺼진 운영자는 로그인하지 못한다.
+    assert.equal((await admin("DELETE", `/operators/${operatorId}`, session)).status, 409)
+    assert.equal((await admin("DELETE", `/operators/${second.data.operator.id}`, session)).data.operator.twoFactorOn, false)
+    assert.equal((await admin("POST", "/session", "", { email: "second@uniconnect.kr", password })).status, 401)
+
+    // 내려받는 백업에는 비밀값이 없고, 누가 받았는지 남는다.
+    backups.lastAt = 0
+    await saveDatabase()
+    const { backups: listed } = (await admin("GET", "/system", session)).data
+    const download = await admin("GET", `/backups/${listed[0].hour}`, session)
+    assert.equal(download.status, 200)
+    assert.ok(JSON.parse(download.raw).accounts.length > 0)
+    assert.doesNotMatch(download.raw, /passwordHash|tokenHash|staffPin|groupPin|recoveryHashes|"operators"/)
+    assert.equal(database.adminLog!.at(-1)!.action, "backup-downloaded")
+    assert.equal(database.adminLog!.at(-1)!.actor, operatorId)
+
+    // 다음 로그인에는 설정 없이 코드만 받는다. 세션은 끝나면 쓰지 못한다.
+    const again = await admin("POST", "/session", "", { email, password })
+    assert.equal(again.data.setup, undefined)
+    const nextCode = codeAt(setup.secret, stepAt(Date.now()) + 1)
+    const later = await admin("POST", "/session/code", "", { email, ticket: again.data.ticket, code: nextCode })
+    assert.equal(later.status, 200)
+    assert.equal(later.data.recoveryCodes, undefined)
+    assert.equal((await admin("DELETE", "/session", later.data.token)).status, 200)
+    assert.equal((await admin("GET", "/session", later.data.token)).status, 403)
+    database.operatorSessions!.find((entry) => entry.operatorId === operatorId)!.expiresAt = Date.now() - 1
+    assert.equal((await admin("GET", "/session", session)).status, 403)
+  } finally {
+    config.adminToken = saved
+    delete database.operators
+    delete database.operatorSessions
+    await saveDatabase()
+  }
+})
+
+test("writes without their own limit are limited per account, and check-ins aren't counted with them", async () => {
+  const first = await signUpMember("writes-one@syu.ac.kr", "writes-pass-123")
+  const second = await signUpMember("writes-two@syu.ac.kr", "writes-pass-123")
+  for (let count = 0; count < 120; count += 1) {
+    assert.notEqual((await call("POST", "/billing/orders", { kind: "nothing" }, first)).status, 429)
+  }
+  const limited = await call("POST", "/billing/orders", { kind: "nothing" }, first)
+  assert.equal(limited.status, 429)
+  assert.match(limited.data.error, /요청이 너무 많아요/)
+  // 읽기와 다른 계정, 현장 기록은 그대로다.
+  assert.equal((await call("GET", "/auth/me", undefined, first)).status, 200)
+  assert.notEqual((await call("POST", "/billing/orders", { kind: "nothing" }, second)).status, 429)
+  assert.equal((await call("POST", "/check-in/20261012/scans", undefined, first)).status, 200)
+  // 로그인 전에는 많은 사람이 한 주소를 함께 쓰므로 주소당 한도가 더 크다. 위의 가입도
+  // 여기에 세었으므로 비우고 센다.
+  await clearRateLimits()
+  for (let count = 0; count < 600; count += 1) {
+    assert.notEqual((await call("POST", "/auth/social/nothing/start")).status, 429)
+  }
+  assert.equal((await call("POST", "/auth/social/nothing/start")).status, 429)
+})
+
+test("demo accounts can't upload event files, an account's files are capped, and a demo reset removes what's left", async () => {
+  const { photos, eventPhotos } = await import("./lib/photos.js")
+  const database = getDatabase()
+  const demo = await login("학생단체")
+  const demoId = database.demoAccountIds[Object.keys(database.demoAccountIds).find((key) => database.events[database.demoAccountIds[key as keyof typeof database.demoAccountIds]]?.length)! as keyof typeof database.demoAccountIds]
+  const demoEvent = database.events[demoId][0]
+  assert.equal((await call("POST", `/events/${demoEvent.id}/photos`, { image: "" }, demo)).status, 403)
+  assert.equal((await call("POST", `/events/${demoEvent.id}/plan`, { file: "" }, demo)).status, 403)
+
+  const group = await signUpMember("files-club@syu.ac.kr", "files-pass-123")
+  const made = await call("POST", "/events", { name: "파일 공연", date: "2031-05-01", people: "10명", types: ["제품"] }, group)
+  const id = made.data.event.id
+  const owner = database.accounts.find((account) => account.email === "files-club@syu.ac.kr")!
+  const mine = database.events[owner.id].find((event) => event.id === id)!
+  mine.photos = Array.from({ length: 100 }, (_, index) => `kept-${index}.png`)
+  const full = await call("POST", `/events/${id}/plan`, { file: "" }, group)
+  assert.equal(full.status, 409)
+  assert.match(full.data.error, /100개까지/)
+  delete mine.photos
+
+  // 전에 올린 데모 파일은 초기화에서 사라진다.
+  const saved = config.adminToken
+  config.adminToken = "test-admin-token"
+  try {
+    await photos().put(eventPhotos(demoEvent.id), "left.png", Buffer.from("left"))
+    const reset = await fetch(`${baseUrl}/admin/demo/reset`, { method: "POST", headers: { "X-Admin-Token": "test-admin-token" } })
+    assert.equal(reset.status, 200)
+    assert.equal(await photos().get(eventPhotos(demoEvent.id), "left.png"), undefined)
+  } finally {
+    config.adminToken = saved
+  }
+})
+
+test("a reminder or digest whose mail failed goes again on the next run, and one failing job leaves the others running", async () => {
+  const { sendReminders } = await import("./lib/reminders.js")
+  const { sendDigests } = await import("./lib/digest.js")
+  const { mailTransport } = await import("./lib/mailer.js")
+  const database = getDatabase()
+  await signUpMember("retry-club@syu.ac.kr", "retry-pass-123")
+  await listedMember("retry@retry-cafe.kr", "retry-pass-123", "브랜드")
+  const group = database.accounts.find((account) => account.email === "retry-club@syu.ac.kr")!
+  const kept = { events: database.events, sponsorships: database.sponsorships, createdAt: database.accounts.map((account) => account.createdAt) }
+  const post = mailTransport.post
+  const mail = { apiKey: config.resendApiKey, from: config.mailFrom }
+  const dataFile = config.dataFile
+  config.resendApiKey = "test-resend-key"
+  config.mailFrom = "uniconnect <no-reply@example.com>"
+  let up = false
+  let tries = 0
+  mailTransport.post = async () => {
+    tries += 1
+    return new Response(null, { status: up ? 200 : 500 })
+  }
+  try {
+    database.events = { [group.id]: [{ id: "retry-show", name: "다시 보내는 공연", date: "2031-03-05", people: "10명", types: ["제품"], status: "매칭 중", createdAt: "2031-01-01T00:00:00.000Z" }] }
+    database.sponsorships = {}
+    const now = new Date("2031-03-04T03:00:00Z")
+    const show = () => database.events[group.id][0]
+    assert.equal(await sendReminders(database, now), 0)
+    assert.equal(tries, 1)
+    assert.equal(show().remindedAt, undefined)
+    up = true
+    assert.equal(await sendReminders(database, now), 1)
+    assert.ok(show().remindedAt)
+    assert.equal(await sendReminders(database, now), 0)
+    assert.equal(tries, 2)
+
+    // 2031년 3월 3일은 월요일이다. 새로 합류한 브랜드를 알리지 못하면 표시하지 않는다.
+    for (const account of database.accounts) account.createdAt = "2020-01-01T00:00:00.000Z"
+    database.accounts.find((account) => account.email === "retry@retry-cafe.kr")!.createdAt = "2031-03-01T00:00:00.000Z"
+    const monday = new Date("2031-03-03T01:00:00Z")
+    up = false
+    assert.equal(await sendDigests(database, monday), 0)
+    assert.equal(group.digestOn, undefined)
+    up = true
+    assert.ok((await sendDigests(database, monday)) >= 1)
+    assert.equal(group.digestOn, "2031-03-03")
+
+    // 저장이 실패해 알림 작업이 던져도 뒤의 작업은 돌고 실패를 알린다.
+    config.cronSecret = "test-cron-secret"
+    config.dataFile = process.env.FRONTEND_DIST!
+    const ran = await fetch(`${baseUrl}/cron/reminders`, { headers: { Authorization: "Bearer test-cron-secret" } })
+    config.dataFile = dataFile
+    assert.equal(ran.status, 500)
+    const answer = (await ran.json()) as { failed: string[]; views: unknown }
+    assert.deepEqual(answer.failed, ["reminders"])
+    assert.equal(answer.views, 0)
+  } finally {
+    config.dataFile = dataFile
+    config.cronSecret = undefined
+    mailTransport.post = post
+    config.resendApiKey = mail.apiKey
+    config.mailFrom = mail.from
+    database.events = kept.events
+    database.sponsorships = kept.sponsorships
+    database.accounts.forEach((account, index) => {
+      account.createdAt = kept.createdAt[index]
+    })
+  }
+})
+
+test("a report's days count every record, past the 300 the log keeps", async () => {
+  const { recordMetric, dailyCounts, eventOf } = await import("./lib/measurements.js")
+  const { timing } = await import("./lib/premiumReport.js")
+  const { todayInKorea } = await import("./lib/dates.js")
+  const database = getDatabase()
+  const measurement = structuredClone(database.measurements[0])
+  const event = { ...eventOf(database, measurement)!, date: todayInKorea(), endDate: undefined }
+  const today = todayInKorea()
+  // 집계가 없는 옛 측정은 로그에서 시작하고 잊지 않는다.
+  delete measurement.daily
+  measurement.log = [{ id: "old", kind: "scans", at: new Date().toISOString(), participant: "참여자 #1", detail: "현장 QR 스캔" }]
+  for (let count = 0; count < 400; count += 1) recordMetric(measurement, "scans")
+  assert.equal(measurement.log.length, 300)
+  assert.equal(dailyCounts(measurement)[today].scans, 401)
+  assert.equal(timing(measurement, event).daily.find((day: { date: string }) => day.date === today)!.scans, 401)
+})
+
+test("a query that the database never answers is cut off", async () => {
+  const { neonConfig } = await import("@neondatabase/serverless")
+  const { neonSql } = await import("./lib/sql.js")
+  const fetchFunction = neonConfig.fetchFunction
+  neonConfig.fetchFunction = (_url: string, init: { signal: AbortSignal }) =>
+    new Promise((_resolve, reject) => {
+      init.signal.addEventListener("abort", () => reject(init.signal.reason))
+    })
+  try {
+    const startedAt = Date.now()
+    await assert.rejects(neonSql("postgresql://user:password@db.example.com/neondb", 30)("select 1"))
+    assert.ok(Date.now() - startedAt < 2000)
+  } finally {
+    neonConfig.fetchFunction = fetchFunction
   }
 })
 

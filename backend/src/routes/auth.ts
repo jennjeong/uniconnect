@@ -22,7 +22,7 @@ import { hashRecovery, matchStep, newRecoveryCodes, newSecret, otpauthUrl } from
 import { accountTypes, checkPassword, mailKinds, parseContact, parseRole, text } from "../lib/validation.js"
 import { forgetReferralRewards, referralRewardsOf, referralStats, referrerOf } from "../lib/referrals.js"
 import { hashToken, requireAccount } from "../middleware/session.js"
-import { getDatabase, saveDatabase } from "../store.js"
+import { getDatabase, retryConflicts, saveDatabase } from "../store.js"
 import type { Account, Database, EmailCode, MailKind, PublicAccount, Role, Session, SocialProvider } from "../types.js"
 
 export const authRouter = Router()
@@ -115,7 +115,7 @@ async function checkCurrentPassword(req: Request, account: Account) {
 // 비밀번호 뒤에 로그인이 코드를 기다리는 시간과, 코드를 틀릴 수 있는
 // 횟수다.
 const ticketMs = 10 * minute
-const ticketTries = 5
+export const ticketTries = 5
 
 // 비밀번호가 맞고 계정이 코드도 요구한다. 세션 대신 티켓을 내주고, 브라우저가
 // 코드와 함께 다시 보낸다(POST /login/code).
@@ -132,7 +132,7 @@ export function startTicket(holder: Pick<Account, "loginTicket">, req: Request) 
 
 // 입력한 코드가 계정을 여는지 정한다. 우선 앱의 코드(각각 한 번)이거나 복구
 // 코드(쓰면 소진된다)다. 쓴 것을 표시하며, 저장은 호출한 쪽이 한다.
-function useCode(account: Pick<Account, "twoFactor">, typed: string) {
+export function useCode(account: Pick<Account, "twoFactor">, typed: string) {
   const twoFactor = account.twoFactor
   if (!twoFactor) return false
   const step = matchStep(twoFactor.secret, typed, Date.now(), twoFactor.usedStep)
@@ -148,7 +148,7 @@ function useCode(account: Pick<Account, "twoFactor">, typed: string) {
 
 // 설정 중인 2단계 로그인을 앱의 첫 코드로 켠다. 복구 코드는 한 번만 보여
 // 주며, 코드가 틀리면 아무것도 주지 않는다.
-function enableTwoFactor(holder: Pick<Account, "twoFactor" | "pendingTwoFactor">, typed: string) {
+export function enableTwoFactor(holder: Pick<Account, "twoFactor" | "pendingTwoFactor">, typed: string) {
   const pending = holder.pendingTwoFactor
   const step = pending && matchStep(pending.secret, typed)
   if (!pending || step === undefined) return undefined
@@ -444,9 +444,17 @@ authRouter.post("/login", async (req, res) => {
     return
   }
 
-  const token = startSession(account.id, req)
-  await saveDatabase()
-  res.json({ token, account: toPublic(account, req.memberId) })
+  // 다른 복사본에 밀리면 최신 데이터에서 세션을 다시 만든다. 그사이 초기화, 변경,
+  // 삭제, 정지가 있었으면 그쪽이 이긴다.
+  const opened = await retryConflicts(async () => {
+    const current = getDatabase().accounts.find((item) => item.id === account.id)
+    if (!current || current.passwordHash !== hashBefore) throw new HttpError(401, "이메일 또는 비밀번호가 올바르지 않아요.")
+    if (current.suspendedAt) throw new HttpError(403, suspendedMessage)
+    const token = startSession(current.id, req)
+    await saveDatabase()
+    return { token, account: current }
+  })
+  res.json({ token: opened.token, account: toPublic(opened.account, req.memberId) })
 })
 
 // 2단계 로그인이 켜진 로그인의 두 번째 단계다. 비밀번호 단계의 티켓과 앱의
