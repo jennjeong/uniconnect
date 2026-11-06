@@ -89,8 +89,11 @@ export function EventDetailPage({
   onCopy,
   onOpenGroup,
   onNotice,
+  canUpload,
 }: {
   id: string
+  // 공유 데모 계정은 사진과 기획안을 올리지 못한다(서버가 403으로 답한다).
+  canUpload: boolean
   onBack: () => void
   onEdit: (eventId: string) => void
   // 이 행사로 채운 등록 폼을 연다(행사 복제).
@@ -284,7 +287,7 @@ export function EventDetailPage({
                   ))}
                 </ul>
               )}
-              {own && photos.length < maxPhotos && (
+              {own && canUpload && photos.length < maxPhotos && (
                 <label className="cancel-button event-photo-add">
                   <Icon name="plus" size={15} /> {t("사진 올리기")}
                   <input
@@ -372,7 +375,7 @@ export function EventDetailPage({
               ) : (
                 <p className="field-hint">{t("세부 기획안을 PDF로 올려 두면 브랜드가 행사를 더 자세히 검토할 수 있어요.")}</p>
               )}
-              {own && (
+              {own && canUpload && (
                 <label className="cancel-button event-plan-add">
                   <Icon name="plus" size={15} /> {event.plan ? t("다른 기획안으로 바꾸기") : t("기획안 올리기")}
                   <input
