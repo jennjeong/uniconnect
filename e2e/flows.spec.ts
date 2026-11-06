@@ -716,10 +716,18 @@ test("an operator logs in with a password and a code, sees its recovery codes on
   await page.getByLabel("코드", { exact: true }).fill("123456")
   await page.getByRole("button", { name: "확인" }).click()
   await expect(page.getByText("AAAA-BBBB")).toBeVisible()
+  // 로그인 뒤 로딩이 한 번 실패해도 코드 화면으로 돌아가지 않고 다시 불러온다.
+  let failed = false
+  await page.route("**/api/admin/overview", (route) => {
+    if (failed) return route.fallback()
+    failed = true
+    return route.fulfill({ status: 500, json: { message: "잠시 후 다시 시도해 주세요." } })
+  })
   const enter = page.getByRole("button", { name: "콘솔로 들어가기" })
   await expect(enter).toBeDisabled()
   await page.getByLabel("복구 코드를 안전한 곳에 저장했어요").check()
   await enter.click()
+  await page.getByRole("button", { name: "다시 불러오기" }).click()
   await expect(page.getByRole("heading", { level: 2, name: "지금 처리할 일" })).toBeVisible()
   await page.goto("/admin?view=operators")
   const row = page.getByRole("row", { name: /첫 운영자/ })

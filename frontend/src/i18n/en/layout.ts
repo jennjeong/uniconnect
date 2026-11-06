@@ -36,6 +36,7 @@ const en: Record<string, string> = {
   "임원 여러 명이 각자의 이메일과 비밀번호로 같은 계정에 로그인해요. 초대받은 사람은 재직 증명 서류 확인을 거치고 2단계 인증을 꼭 설정해요. 탈퇴, 로그인 이메일 바꾸기와 이 목록 관리는 대표만 할 수 있어요.": "Several officers log in to the same account, each with their own email and password. Invited people pass a proof-of-employment check and must set up two-step login. Only the owner can leave, change the login email or manage this list.",
   "운영자 서류 확인 중": "Being checked by an operator",
   "가입 승인": "Sign-up approvals",
+  "다시 불러오기": "Load again",
   "2단계 로그인": "Two-step login",
   "30분 동안 쓰지 않아 나갔어요. 다시 로그인해 주세요.": "Signed out after 30 idle minutes. Please log in again.",
   "{name} 끄기": "Turn off {name}",

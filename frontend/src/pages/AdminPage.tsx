@@ -1059,13 +1059,14 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
   useEffect(() => {
     if (!token) return
     let cancelled = false
-    Promise.all([
-      api.adminOverview(token),
-      api.adminInquiries(token),
-      api.adminReports(token),
-      api.adminErrors(token),
-      api.adminPayments(token),
-    ])
+    // 틀린 토큰이 실패 횟수를 한 번만 쓰도록 하나로 먼저 확인한다.
+    api
+      .adminOverview(token)
+      .then((seen) =>
+        Promise.all([api.adminInquiries(token), api.adminReports(token), api.adminErrors(token), api.adminPayments(token)]).then(
+          (rest) => [seen, ...rest] as const,
+        ),
+      )
       .then(([seen, listed, reported, failed, paid]) => {
         if (cancelled) return
         writeToken(token)
@@ -1177,6 +1178,34 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
     }
   }, [token, signOut])
 
+  // 운영자 로그인은 이미 끝났으므로 코드 화면으로 돌아가지 않는다. 쓴 코드는 다시
+  // 쓸 수 없고 받은 세션은 그대로 쓸 수 있다.
+  if (token && !overview && readSession()) {
+    return (
+      <div className="console-login">
+        <div className="console-login-card">
+          <img alt="uniconnect" src={logo} />
+          <h1>{t("운영자 콘솔")}</h1>
+          {error ? (
+            <>
+              <p className="form-error" role="alert">
+                {error}
+              </p>
+              <button className="primary-button wide" onClick={() => setReload((count) => count + 1)} type="button">
+                {t("다시 불러오기")}
+              </button>
+              <button className="cancel-button wide" onClick={() => signOut()} type="button">
+                {t("나가기")}
+              </button>
+            </>
+          ) : (
+            <p>{t("불러오고 있어요…")}</p>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   if (!token || !overview) {
     return (
       <div className="console-login">
@@ -1185,7 +1214,9 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
           error={error}
           logo={logo}
           onOperator={(next, expiresAt) => {
+            // 새로고침해도 이어지게 로딩을 기다리지 않고 바로 저장한다.
             writeSession({ expiresAt })
+            writeToken(next)
             setError("")
             setToken(next)
           }}
