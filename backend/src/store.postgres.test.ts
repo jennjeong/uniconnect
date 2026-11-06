@@ -84,6 +84,148 @@ test("a save over an older version is undone, the newer data comes in, and savin
   assert.deepEqual([after.data.proposals["late"], after.data.proposals["mine"]], [["brewing-lab"], ["glowlab"]])
 })
 
+test("a save pushed back by another copy runs again on the newer data and keeps both", async () => {
+  let tries = 0
+  await store.retryConflicts(async () => {
+    tries += 1
+    store.getDatabase().proposals["retry-mine"] = ["brewing-lab"]
+    if (tries === 1) {
+      await writeAsAnotherCopy((data) => {
+        data.proposals["retry-theirs"] = ["moment-studio"]
+      })
+    }
+    await store.saveDatabase()
+  })
+  assert.equal(tries, 2)
+  const { proposals } = (await stored()).data
+  assert.deepEqual([proposals["retry-mine"], proposals["retry-theirs"]], [["brewing-lab"], ["moment-studio"]])
+
+  // 계속 밀리면 정해진 횟수만큼만 하고 503으로 답한다.
+  let pushed = 0
+  await assert.rejects(
+    store.retryConflicts(async () => {
+      pushed += 1
+      await writeAsAnotherCopy(() => {})
+      await store.saveDatabase()
+    }),
+    (error: { status?: number }) => error.status === 503,
+  )
+  assert.equal(pushed, store.conflictRetry.attempts)
+  await store.refreshDatabase({ force: true })
+
+  // 다른 오류는 다시 하지 않는다.
+  let once = 0
+  await assert.rejects(store.retryConflicts(async () => {
+    once += 1
+    throw new Error("not a conflict")
+  }))
+  assert.equal(once, 1)
+})
+
+test("a write comes in on the newest data, and a session made on another copy is found at once", async () => {
+  const { createApp } = await import("./app.js")
+  const { hashToken } = await import("./middleware/session.js")
+  const { DEMO_PASSWORD } = await import("./data/seed.js")
+  const everyMs = store.freshness.everyMs
+  const server = createApp().listen(0)
+  await new Promise((resolve) => server.once("listening", resolve))
+  const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api`
+  try {
+    store.freshness.everyMs = 60_000
+    await store.refreshDatabase({ force: true })
+    const account = store.getDatabase().accounts.find((item) => item.email === "hello@afternoon-coffee.kr")!
+
+    // 다른 복사본의 로그인. 주기를 기다리지 않고 찾으므로 401이 아니다.
+    const token = "made-on-another-copy"
+    await writeAsAnotherCopy((data) => {
+      const session = { tokenHash: hashToken(token), accountId: account.id, expiresAt: Date.now() + 60_000, device: "test", createdAt: Date.now(), lastUsedAt: Date.now() }
+      ;(data as unknown as { sessions: unknown[] }).sessions.push(session)
+    })
+    const me = await fetch(`${base}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
+    assert.equal(me.status, 200)
+    assert.equal((await fetch(`${base}/auth/me`, { headers: { Authorization: "Bearer nobody" } })).status, 401)
+
+    // 다른 복사본이 쓴 직후의 쓰기도 밀리지 않는다.
+    await writeAsAnotherCopy((data) => {
+      data.proposals["before-login"] = ["moment-studio"]
+    })
+    const login = await fetch(`${base}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role: "브랜드", email: account.email, password: DEMO_PASSWORD }),
+    })
+    assert.equal(login.status, 200)
+    assert.deepEqual((await stored()).data.proposals["before-login"], ["moment-studio"])
+  } finally {
+    store.freshness.everyMs = everyMs
+    await new Promise((resolve) => server.close(resolve))
+  }
+})
+
+// 합의한 목표(#315)다. 한 행사 9,000명, 가장 몰릴 때 1분에 200명이며, 여기서는 그
+// 200명이 행사장 와이파이 하나에서 같은 브라우저로 한꺼번에 스캔한다. 프로세스
+// 하나에서는 저장 사이에 다른 쓰기가 거의 끼어들지 못하므로, 저장 다섯 번에 한
+// 번은 바로 앞에서 다른 복사본이 먼저 쓰게 해 충돌을 실제로 만든다.
+test("the agreed peak of 200 scans from one address all count when another copy writes first", async () => {
+  const { createApp } = await import("./app.js")
+  const { useSql } = await import("./lib/sql.js")
+  const { eventOf } = await import("./lib/measurements.js")
+  const { todayInKorea } = await import("./lib/dates.js")
+  const server = createApp().listen(0)
+  await new Promise((resolve) => server.once("listening", resolve))
+  const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api`
+  const rivalEvery = 5
+  let saves = 0
+  let rivals = 0
+  let bytes = 0
+  const demoAccountIds = store.getDatabase().demoAccountIds
+  const code = store.getDatabase().measurements[0].code
+  const measurement = () => store.getDatabase().measurements.find((item) => item.code === code)!
+  try {
+    // 데모가 아닌 실제 행사처럼 한도와 기간을 그대로 적용한다.
+    store.getDatabase().demoAccountIds = {} as typeof demoAccountIds
+    measurement().goals.expectedAudience = 9000
+    eventOf(store.getDatabase(), measurement())!.date = todayInKorea()
+    await store.saveDatabase()
+    useSql(async (text, params = []) => {
+      if (text.startsWith("update uniconnect_store set data")) {
+        bytes += String(params[0]).length
+        if ((saves += 1) % rivalEvery === 0) {
+          await writeAsAnotherCopy(() => {})
+          rivals += 1
+        }
+      }
+      return sql(text, params)
+    })
+    const before = measurement().metrics.scans
+    const startedAt = Date.now()
+    const answers = await Promise.all(
+      Array.from({ length: 200 }, () =>
+        fetch(`${base}/check-in/${code}/scans`, { method: "POST" }).then(async (response) => ({
+          status: response.status,
+          pass: ((await response.json()) as { pass?: string }).pass,
+        })),
+      ),
+    )
+    assert.ok(rivals > 0)
+    const succeeded = answers.filter((answer) => answer.status === 200)
+    const failed = answers.length - succeeded.length
+    console.log(`[qr] 200 scans, ${saves} saves, ${rivals} conflicts, ${failed} failed, ${Date.now() - startedAt}ms, ${Math.round(bytes / 1024 / 1024)}MB written`)
+    // 성공이라고 답한 스캔은 빠짐없이 한 번씩만 저장된다.
+    await store.refreshDatabase({ force: true })
+    assert.equal(measurement().metrics.scans - before, succeeded.length)
+    assert.equal(new Set(succeeded.map((answer) => answer.pass)).size, succeeded.length)
+    assert.ok(succeeded.every((answer) => Object.hasOwn(measurement().passes, answer.pass!)))
+    assert.equal(failed, 0)
+  } finally {
+    useSql(sql)
+    await store.refreshDatabase({ force: true })
+    store.getDatabase().demoAccountIds = demoAccountIds
+    await store.saveDatabase()
+    await new Promise((resolve) => server.close(resolve))
+  }
+})
+
 test("an hourly copy is kept, the latest 24", async () => {
   for (let hour = 0; hour < 25; hour += 1) {
     await sql("insert into uniconnect_backups (taken_at, data) values ($1, '{}')", [new Date(Date.UTC(2000, 0, 1, hour)).toISOString()])

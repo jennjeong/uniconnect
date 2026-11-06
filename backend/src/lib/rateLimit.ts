@@ -135,8 +135,9 @@ export function createRateLimit({
     // 모든 요청에 거는 한도용: 이 요청을 세고 한도를 넘으면 429를 던진다.
     // 한 단계로 처리해, 동시에 온 요청이 하나도 세기 전에 모두 검사를
     // 통과하지 못하게 한다.
-    take: async (key: string) => {
-      if ((await hit(key)) > limit) throw new HttpError(429, message)
+    // `most`는 키마다 한도가 다를 때 쓴다(행사 규모에 맞춘 QR 스캔 한도).
+    take: async (key: string, most = limit) => {
+      if ((await hit(key)) > most) throw new HttpError(429, message)
     },
     reset: (key: string) =>
       shared(

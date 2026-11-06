@@ -15,11 +15,17 @@ import { isDemoAccount } from "../lib/reviews.js"
 import { text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
+import type { Account, Database } from "../types.js"
 
 // 계정이 내는 돈이다(lib/billing.ts). 산 것에 대한 주문을 Toss Payments의
 // 창에서 카드로 결제해 여기서 승인하거나, 운영자가 /admin에서 확인하는 계좌
 // 이체로 낸다. 브랜드는 모든 것을 살 수 있고, 학생단체는 자기 광고만 살 수 있다.
 export const billingRouter = Router()
+
+// 테스트 키에서는 돈이 오가지 않으므로 카드 결제는 공유 데모 계정의 시연에만
+// 연다. 실제 회원이 돈을 내지 않고 결제 완료가 되는 일을 막으며, 실제 회원은
+// 그동안 계좌 이체로 낸다.
+const cardOpenTo = (database: Database, account: Account) => cardReady() && (!testMode() || isDemoAccount(database, account))
 
 // 가격, 카드 결제가 켜져 있는지(그 창에 쓰는 클라이언트 키), 계정의 결제를
 // 최신순으로 보여 준다.
@@ -31,9 +37,10 @@ billingRouter.get("/", async (req, res) => {
   const database = getDatabase()
   res.json({
     prices,
-    card: cardReady() ? { clientKey: config.tossClientKey } : null,
-    // 테스트 결제는 돈이 오가지 않으며, 데모 계정은 그때만 결제한다.
-    testMode: testMode(),
+    card: cardOpenTo(database, account) ? { clientKey: config.tossClientKey } : null,
+    // 테스트 결제는 돈이 오가지 않으며, 데모 계정은 그때만 결제한다. 실제 회원의
+    // 계좌 이체에는 진짜 돈이 오가므로 테스트라고 알리지 않는다.
+    testMode: testMode() && isDemoAccount(database, account),
     canPay: account.role === "브랜드" && (!isDemoAccount(database, account) || testMode()),
     plan: planOf(database, account),
     ad: adOf(database, account),
@@ -98,7 +105,7 @@ billingRouter.post("/confirm", async (req, res) => {
   const orderId = text(req.body?.orderId)
   const paymentKey = text(req.body?.paymentKey)
   const amount = Number(req.body?.amount)
-  if (!cardReady()) throw new HttpError(409, "카드 결제가 아직 준비되지 않았어요.")
+  if (!cardOpenTo(getDatabase(), account)) throw new HttpError(409, "카드 결제가 아직 준비되지 않았어요.")
   const existing = paymentsOf(getDatabase()).find((item) => item.id === orderId && item.accountId === account.id)
   // 페이지를 두 번 열었으며 처음 연 쪽이 이미 승인했다.
   if (existing?.status === "paid") {
