@@ -10,12 +10,16 @@ const styles = {
     task: { title: "👑🎀 공주님, 직접 확인할 일이 생겼어요! 💌", todo: "🌷 해야 할 일", detail: "💖 확인할 내용" },
     error: { title: "🥺💔 공주님, 문제가 생겼어요!", todo: "🌷 해야 할 일", detail: "💖 무슨 일인지" },
     where: "위치",
+    partner: "🤝 왕자님이 하신 일",
+    next: "🌟 공주님이 다음에 하실 일",
     footer: "💕 공주님의 확인을 기다리고 있을게요! ✨",
   },
   prince: {
     task: { title: "👑⚔️ 왕자님, 새로운 임무가 도착했습니다! 📜", todo: "🏰 임무", detail: "🛡️ 상황 보고" },
     error: { title: "🚨⚔️ 왕자님, 문제가 발생했습니다!", todo: "🏰 임무", detail: "🛡️ 상황 보고" },
     where: "작업 위치",
+    partner: "🤝 공주님이 하신 일",
+    next: "⚔️ 왕자님의 다음 임무",
     footer: "💙 왕자님의 확인을 기다리겠습니다! 👑✨",
   },
 }
@@ -29,7 +33,7 @@ const clip = (text, size) => {
   return value.length > size ? `${value.slice(0, size)}…` : value
 }
 
-export function format(style, { kind, todo, detail, url }) {
+export function format(style, { kind, todo, detail, url, did, next }) {
   const look = styles[style]
   const parts = look[kind]
   return [
@@ -41,6 +45,9 @@ export function format(style, { kind, todo, detail, url }) {
     `<b>${parts.detail}</b>`,
     escapeHtml(detail),
     "",
+    // 상대가 보낸 이벤트일 때만 상대가 한 일을 적는다.
+    ...(did ? [`<b>${look.partner}</b>`, `• ${escapeHtml(did)}`, ""] : []),
+    ...(next ? [`<b>${look.next}</b>`, `• ${escapeHtml(next)}`, ""] : []),
     `📍 <b>${look.where}:</b> ${escapeHtml(url)}`,
     line,
     look.footer,
@@ -60,6 +67,12 @@ function toOne(people, login, notice) {
   return [person ? { person, notice } : askAdmin(notice, login)]
 }
 
+// 이벤트를 일으킨 사람이 받는 사람의 상대일 때만 그 일을 적는다.
+function withPartner(people, sender, list, did) {
+  const from = personOf(people, sender)
+  return list.map((item) => (from && from !== item.person ? { ...item, notice: { ...item.notice, did } } : item))
+}
+
 const trusted = ["OWNER", "MEMBER", "COLLABORATOR"]
 const askTargets = { 왕자: ["prince"], 공주: ["princess"], 같이: ["princess", "prince"] }
 
@@ -71,22 +84,26 @@ export function route(event, payload, people) {
   if (event === "issues" && payload.action === "assigned") {
     const login = payload.assignee?.login
     if (login === sender) return []
-    return toOne(people, login, {
+    const list = toOne(people, login, {
       kind: "task",
       todo: `이슈 #${payload.issue.number}의 담당자가 됐어요.`,
       detail: clip(payload.issue.title, 200),
+      next: "이슈 내용을 읽고 작업을 시작하기",
       url: payload.issue.html_url,
     })
+    return withPartner(people, sender, list, `이슈 #${payload.issue.number}의 담당자로 지정`)
   }
 
   if (event === "pull_request_target" && payload.action === "review_requested") {
     const login = payload.requested_reviewer?.login ?? payload.requested_team?.slug
-    return toOne(people, login, {
+    const list = toOne(people, login, {
       kind: "task",
       todo: `PR #${payload.pull_request.number}의 리뷰 요청이 왔어요.`,
       detail: clip(payload.pull_request.title, 200),
+      next: "변경 내용을 보고 리뷰 남기기",
       url: payload.pull_request.html_url,
     })
+    return withPartner(people, sender, list, `PR #${payload.pull_request.number} 리뷰 요청`)
   }
 
   // 공개 저장소라 누구나 리뷰를 남길 수 있다. 협업자의 리뷰만 전한다.
@@ -96,12 +113,14 @@ export function route(event, payload, people) {
     payload.review?.state === "changes_requested" &&
     trusted.includes(payload.review.author_association)
   ) {
-    return toOne(people, payload.pull_request.user?.login, {
+    const list = toOne(people, payload.pull_request.user?.login, {
       kind: "task",
       todo: `PR #${payload.pull_request.number}에 수정 요청이 왔어요.`,
       detail: clip(payload.review.body || payload.pull_request.title, 300),
+      next: "리뷰 내용대로 고치고 다시 리뷰 요청하기",
       url: payload.review.html_url,
     })
+    return withPartner(people, sender, list, `PR #${payload.pull_request.number} 리뷰에서 수정 요청`)
   }
 
   if (event === "workflow_run" && payload.action === "completed" && payload.workflow_run?.conclusion === "failure") {
@@ -110,6 +129,7 @@ export function route(event, payload, people) {
       kind: "error",
       todo: `${clip(run.name, 60)} 검사가 실패했어요. 로그를 확인해 주세요.`,
       detail: `브랜치 ${clip(run.head_branch, 100)}, 커밋 ${String(run.head_sha ?? "").slice(0, 7)}`,
+      next: "실패한 로그를 보고 고치기",
       url: run.html_url,
     })
   }
@@ -119,7 +139,7 @@ export function route(event, payload, people) {
     const asked = /^\/알림\s+(왕자|공주|같이)\s*(?:\n|$)/.exec(payload.comment.body ?? "")
     if (!asked) return []
     const rest = payload.comment.body.slice(asked[0].length)
-    return askTargets[asked[1]]
+    const list = askTargets[asked[1]]
       .filter((person) => people[person])
       .map((person) => ({
         person,
@@ -127,9 +147,11 @@ export function route(event, payload, people) {
           kind: "task",
           todo: `${sender}님이 #${payload.issue.number} 확인을 요청했어요.`,
           detail: clip(rest || payload.issue.title, 300),
+          next: "요청한 내용을 확인하고 답하기",
           url: payload.comment.html_url,
         },
       }))
+    return withPartner(people, sender, list, `#${payload.issue.number} 확인 요청`)
   }
   return []
 }

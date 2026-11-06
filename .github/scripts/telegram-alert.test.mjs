@@ -12,6 +12,20 @@ test("an assigned issue goes only to its assignee, matched by GitHub login", () 
   assert.deepEqual(rest, [])
 })
 
+test("each side reads what the other did and its own next step", () => {
+  const pull_request = { number: 9, title: "t", html_url: "https://x/9", user: { login: "jennjeong" } }
+  const [one] = route("pull_request_target", { action: "review_requested", sender: { login: "jennjeong" }, requested_reviewer: { login: "prince-login" }, pull_request }, people)
+  const text = format(one.person, one.notice)
+  assert.match(text, /공주님이 하신 일/)
+  assert.match(text, /왕자님의 다음 임무/)
+})
+
+test("nothing is said about a partner when an outsider acted", () => {
+  const pull_request = { number: 9, title: "t", html_url: "https://x/9", user: { login: "jennjeong" } }
+  const [one] = route("pull_request_target", { action: "review_requested", sender: { login: "someone" }, requested_reviewer: { login: "prince-login" }, pull_request }, people)
+  assert.equal(one.notice.did, undefined)
+})
+
 test("assigning yourself sends nothing", () => {
   assert.deepEqual(route("issues", { action: "assigned", sender: { login: "jennjeong" }, assignee: { login: "jennjeong" }, issue }, people), [])
 })
@@ -45,7 +59,7 @@ test("only collaborators can ask, and together reaches both in their own style",
   const [first, second] = both.map((item) => format(item.person, item.notice))
   assert.match(first, /공주님/)
   assert.match(second, /왕자님/)
-  assert.doesNotMatch(second, /공주|🎀/)
+  assert.doesNotMatch(second, /🎀/)
 })
 
 test("a plain comment and a push-like event send nothing", () => {
