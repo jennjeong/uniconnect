@@ -226,6 +226,41 @@ test("the agreed peak of 200 scans from one address all count when another copy 
   }
 })
 
+test("a login pushed back by another copy still opens a session that's stored", async () => {
+  const { createApp } = await import("./app.js")
+  const { useSql } = await import("./lib/sql.js")
+  const { DEMO_PASSWORD } = await import("./data/seed.js")
+  const { hashToken } = await import("./middleware/session.js")
+  const server = createApp().listen(0)
+  await new Promise((resolve) => server.once("listening", resolve))
+  const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api`
+  let rivals = 0
+  try {
+    await store.refreshDatabase({ force: true })
+    // 로그인의 첫 저장 바로 앞에서 다른 복사본이 먼저 쓴다.
+    useSql(async (text, params = []) => {
+      if (text.startsWith("update uniconnect_store set data") && rivals === 0) {
+        rivals += 1
+        await writeAsAnotherCopy(() => {})
+      }
+      return sql(text, params)
+    })
+    const login = await fetch(`${base}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role: "브랜드", email: "hello@afternoon-coffee.kr", password: DEMO_PASSWORD }),
+    })
+    assert.equal(login.status, 200)
+    assert.equal(rivals, 1)
+    const { token } = (await login.json()) as { token: string }
+    const { sessions } = (await stored()).data as unknown as { sessions: { tokenHash: string }[] }
+    assert.ok(sessions.some((session) => session.tokenHash === hashToken(token)))
+  } finally {
+    useSql(sql)
+    await new Promise((resolve) => server.close(resolve))
+  }
+})
+
 test("an hourly copy is kept, the latest 24", async () => {
   for (let hour = 0; hour < 25; hour += 1) {
     await sql("insert into uniconnect_backups (taken_at, data) values ($1, '{}')", [new Date(Date.UTC(2000, 0, 1, hour)).toISOString()])

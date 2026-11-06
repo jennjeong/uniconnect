@@ -22,7 +22,7 @@ import { hashRecovery, matchStep, newRecoveryCodes, newSecret, otpauthUrl } from
 import { accountTypes, checkPassword, mailKinds, parseContact, parseRole, text } from "../lib/validation.js"
 import { referralStats, referrerOf } from "../lib/referrals.js"
 import { hashToken, requireAccount } from "../middleware/session.js"
-import { getDatabase, saveDatabase } from "../store.js"
+import { getDatabase, retryConflicts, saveDatabase } from "../store.js"
 import type { Account, Database, EmailCode, MailKind, PublicAccount, Role, Session, SocialProvider } from "../types.js"
 
 export const authRouter = Router()
@@ -444,9 +444,17 @@ authRouter.post("/login", async (req, res) => {
     return
   }
 
-  const token = startSession(account.id, req)
-  await saveDatabase()
-  res.json({ token, account: toPublic(account, req.memberId) })
+  // 다른 복사본에 밀리면 최신 데이터에서 세션을 다시 만든다. 그사이 초기화, 변경,
+  // 삭제, 정지가 있었으면 그쪽이 이긴다.
+  const opened = await retryConflicts(async () => {
+    const current = getDatabase().accounts.find((item) => item.id === account.id)
+    if (!current || current.passwordHash !== hashBefore) throw new HttpError(401, "이메일 또는 비밀번호가 올바르지 않아요.")
+    if (current.suspendedAt) throw new HttpError(403, suspendedMessage)
+    const token = startSession(current.id, req)
+    await saveDatabase()
+    return { token, account: current }
+  })
+  res.json({ token: opened.token, account: toPublic(opened.account, req.memberId) })
 })
 
 // 2단계 로그인이 켜진 로그인의 두 번째 단계다. 비밀번호 단계의 티켓과 앱의

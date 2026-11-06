@@ -5524,6 +5524,108 @@ test("the Vercel entry reads the data on its first request and serves the API", 
   }
 })
 
+test("a reminder or digest whose mail failed goes again on the next run, and one failing job leaves the others running", async () => {
+  const { sendReminders } = await import("./lib/reminders.js")
+  const { sendDigests } = await import("./lib/digest.js")
+  const { mailTransport } = await import("./lib/mailer.js")
+  const database = getDatabase()
+  await signUpMember("retry-club@syu.ac.kr", "retry-pass-123")
+  await listedMember("retry@retry-cafe.kr", "retry-pass-123", "브랜드")
+  const group = database.accounts.find((account) => account.email === "retry-club@syu.ac.kr")!
+  const kept = { events: database.events, sponsorships: database.sponsorships, createdAt: database.accounts.map((account) => account.createdAt) }
+  const post = mailTransport.post
+  const mail = { apiKey: config.resendApiKey, from: config.mailFrom }
+  const dataFile = config.dataFile
+  config.resendApiKey = "test-resend-key"
+  config.mailFrom = "uniconnect <no-reply@example.com>"
+  let up = false
+  let tries = 0
+  mailTransport.post = async () => {
+    tries += 1
+    return new Response(null, { status: up ? 200 : 500 })
+  }
+  try {
+    database.events = { [group.id]: [{ id: "retry-show", name: "다시 보내는 공연", date: "2031-03-05", people: "10명", types: ["제품"], status: "매칭 중", createdAt: "2031-01-01T00:00:00.000Z" }] }
+    database.sponsorships = {}
+    const now = new Date("2031-03-04T03:00:00Z")
+    const show = () => database.events[group.id][0]
+    assert.equal(await sendReminders(database, now), 0)
+    assert.equal(tries, 1)
+    assert.equal(show().remindedAt, undefined)
+    up = true
+    assert.equal(await sendReminders(database, now), 1)
+    assert.ok(show().remindedAt)
+    assert.equal(await sendReminders(database, now), 0)
+    assert.equal(tries, 2)
+
+    // 2031년 3월 3일은 월요일이다. 새로 합류한 브랜드를 알리지 못하면 표시하지 않는다.
+    for (const account of database.accounts) account.createdAt = "2020-01-01T00:00:00.000Z"
+    database.accounts.find((account) => account.email === "retry@retry-cafe.kr")!.createdAt = "2031-03-01T00:00:00.000Z"
+    const monday = new Date("2031-03-03T01:00:00Z")
+    up = false
+    assert.equal(await sendDigests(database, monday), 0)
+    assert.equal(group.digestOn, undefined)
+    up = true
+    assert.ok((await sendDigests(database, monday)) >= 1)
+    assert.equal(group.digestOn, "2031-03-03")
+
+    // 저장이 실패해 알림 작업이 던져도 뒤의 작업은 돌고 실패를 알린다.
+    config.cronSecret = "test-cron-secret"
+    config.dataFile = process.env.FRONTEND_DIST!
+    const ran = await fetch(`${baseUrl}/cron/reminders`, { headers: { Authorization: "Bearer test-cron-secret" } })
+    config.dataFile = dataFile
+    assert.equal(ran.status, 500)
+    const answer = (await ran.json()) as { failed: string[]; views: unknown }
+    assert.deepEqual(answer.failed, ["reminders"])
+    assert.equal(answer.views, 0)
+  } finally {
+    config.dataFile = dataFile
+    config.cronSecret = undefined
+    mailTransport.post = post
+    config.resendApiKey = mail.apiKey
+    config.mailFrom = mail.from
+    database.events = kept.events
+    database.sponsorships = kept.sponsorships
+    database.accounts.forEach((account, index) => {
+      account.createdAt = kept.createdAt[index]
+    })
+  }
+})
+
+test("a report's days count every record, past the 300 the log keeps", async () => {
+  const { recordMetric, dailyCounts, eventOf } = await import("./lib/measurements.js")
+  const { timing } = await import("./lib/premiumReport.js")
+  const { todayInKorea } = await import("./lib/dates.js")
+  const database = getDatabase()
+  const measurement = structuredClone(database.measurements[0])
+  const event = { ...eventOf(database, measurement)!, date: todayInKorea(), endDate: undefined }
+  const today = todayInKorea()
+  // 집계가 없는 옛 측정은 로그에서 시작하고 잊지 않는다.
+  delete measurement.daily
+  measurement.log = [{ id: "old", kind: "scans", at: new Date().toISOString(), participant: "참여자 #1", detail: "현장 QR 스캔" }]
+  for (let count = 0; count < 400; count += 1) recordMetric(measurement, "scans")
+  assert.equal(measurement.log.length, 300)
+  assert.equal(dailyCounts(measurement)[today].scans, 401)
+  assert.equal(timing(measurement, event).daily.find((day: { date: string }) => day.date === today)!.scans, 401)
+})
+
+test("a query that the database never answers is cut off", async () => {
+  const { neonConfig } = await import("@neondatabase/serverless")
+  const { neonSql } = await import("./lib/sql.js")
+  const fetchFunction = neonConfig.fetchFunction
+  neonConfig.fetchFunction = (_url: string, init: { signal: AbortSignal }) =>
+    new Promise((_resolve, reject) => {
+      init.signal.addEventListener("abort", () => reject(init.signal.reason))
+    })
+  try {
+    const startedAt = Date.now()
+    await assert.rejects(neonSql("postgresql://user:password@db.example.com/neondb", 30)("select 1"))
+    assert.ok(Date.now() - startedAt < 2000)
+  } finally {
+    neonConfig.fetchFunction = fetchFunction
+  }
+})
+
 // 오늘 가까운 행사를 알림이 간 것으로 표시하므로 마지막에 둔다.
 test("Vercel Cron sends the reminders with its secret, and nobody else can", async () => {
   const reminders = (authorization?: string) =>

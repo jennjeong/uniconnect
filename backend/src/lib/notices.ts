@@ -17,7 +17,8 @@ const isDemo = (account: Account) => Object.values(getDatabase().demoAccountIds)
 // 마지막으로 쓴 언어로 가며, 서버가 한국어로 쓴 줄은 translate(i18n/en.ts,
 // 값이 있는 줄은 {name} 패턴)를 거친다. 일으킨 요청을 붙잡거나 실패하게 하지
 // 않는다. Vercel에서는 응답을 보내면 함수가 멈출 수 있어서 waitUntil로 메일이
-// 나갈 때까지 돌게 하며, 다른 곳에서는 아무 일도 하지 않는다.
+// 나갈 때까지 돌게 하며, 다른 곳에서는 아무 일도 하지 않는다. 메일이 실패했을
+// 때만 false로 답한다(끄거나 정지한 계정처럼 보내지 않기로 한 것은 true).
 export function notify(
   account: Account | undefined,
   kind: MailKind | "account",
@@ -25,8 +26,8 @@ export function notify(
   lines: string[],
   path: string,
 ) {
-  if (!account || isDemo(account) || account.suspendedAt) return Promise.resolve()
-  if (kind !== "account" && account.mailOff?.includes(kind)) return Promise.resolve()
+  if (!account || isDemo(account) || account.suspendedAt) return Promise.resolve(true)
+  if (kind !== "account" && account.mailOff?.includes(kind)) return Promise.resolve(true)
   const say = (text: string) => translate(text, account.language ?? "ko")
   const site = config.siteUrl?.replace(/\/$/, "")
   const text = [
@@ -37,9 +38,13 @@ export function notify(
     "",
     "uniconnect",
   ].join("\n")
-  const sending = sendMail(account.email, `[uniconnect] ${say(subject)}`, text).catch((error: Error) => {
-    console.error(`[mail] notice "${subject}": ${error.message}`)
-  })
+  const sending = sendMail(account.email, `[uniconnect] ${say(subject)}`, text).then(
+    () => true,
+    (error: Error) => {
+      console.error(`[mail] notice "${subject}": ${error.message}`)
+      return false
+    },
+  )
   waitUntil(sending)
   return sending
 }

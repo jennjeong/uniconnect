@@ -15,8 +15,9 @@ export const cronRouter = Router()
 const digest = (value: string) => createHash("sha256").update(value).digest()
 
 // Vercel은 요청 사이에 아무것도 돌지 않으므로, 오래 떠 있는 서버가 쓰는 한
-// 시간 간격 타이머(index.ts) 대신 Vercel Cron이 하루에 한 번(vercel.json,
-// 한국 시간 09:00) 이 경로를 부른다. 승인이나 환불이 기록되지 않은 카드 결제를 먼저
+// 시간 간격 타이머(index.ts) 대신 Vercel Cron이 하루에 두 번(vercel.json, 한국
+// 시간 09:00과 15:00) 이 경로를 부른다. Vercel은 실패한 호출을 다시 부르지 않으므로
+// 두 번째가 첫 번째에서 실패한 것을 다시 한다. 승인이나 환불이 기록되지 않은 카드 결제를 먼저
 // 정리하고(lib/cardRecovery.ts) 알림 메일을 보내며, 월요일에는 주간 요약도
 // 보내고, 유튜브 조회수도 새로 고친다. CRON_SECRET을 bearer 토큰으로 보내며, 비밀 값이 없거나 토큰이
 // 다르면 이런 경로는 없는 것처럼 답한다.
@@ -26,7 +27,22 @@ cronRouter.get("/reminders", async (req, res) => {
   if (!expected || !timingSafeEqual(digest(given), digest(`Bearer ${expected}`))) {
     throw new HttpError(404, "없는 API 경로예요.")
   }
-  const cards = cardReady() ? await reconcileCards() : undefined
-  const refunds = cardReady() ? await reconcileRefunds() : undefined
-  res.json({ cards, refunds, sent: await sendReminders(), digests: await sendDigests(), views: await refreshViews() })
+  // 작업마다 따로 실패한다. 하나가 던져도 나머지는 돈다. 실패가 있으면 Vercel의
+  // 기록에 보이도록 500으로 답한다.
+  const failed: string[] = []
+  const job = async <T>(name: string, work: () => Promise<T>) => {
+    try {
+      return await work()
+    } catch (error) {
+      console.error(`[cron] ${name}: ${(error as Error).message}`)
+      failed.push(name)
+      return undefined
+    }
+  }
+  const cards = cardReady() ? await job("cards", reconcileCards) : undefined
+  const refunds = cardReady() ? await job("refunds", reconcileRefunds) : undefined
+  const sent = await job("reminders", () => sendReminders())
+  const digests = await job("digests", () => sendDigests())
+  const views = await job("views", refreshViews)
+  res.status(failed.length > 0 ? 500 : 200).json({ cards, refunds, sent, digests, views, failed })
 })

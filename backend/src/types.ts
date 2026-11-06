@@ -520,6 +520,8 @@ export type Measurement = {
   passes: Record<string, PassCoupon & { sponsors?: Record<string, PassCoupon> }>
   // 선택 설문의 응답을 센 것이다(lib/validation.ts surveyOptions).
   survey?: SurveyCounts
+  // 한국 날짜별 스캔, 쿠폰, 방문이다(lib/measurements.ts dailyCounts).
+  daily?: Record<string, { scans: number; coupons: number; visits: number }>
   // 오늘(한국 날짜) 틀린 현장 PIN으로, 운영자 경보에 쓴다.
   pinMisses?: { day: string; count: number }
 }

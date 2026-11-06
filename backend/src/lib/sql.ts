@@ -8,13 +8,22 @@ import { config } from "../config.js"
 // 파일에 남는다.
 export type Sql = (text: string, params?: unknown[]) => Promise<Record<string, unknown>[]>
 
+// 데이터베이스가 답하지 않아도 함수가 끝까지 묶이지 않게 끊는다. 끊은 쓰기는
+// 실제로 들어갔을 수 있지만, 그러면 버전이 올라가 있어 다음 저장이 StaleWrite를
+// 받고 그 데이터를 읽어 온다.
+export const sqlTimeoutMs = 10_000
+
+export function neonSql(url: string, timeoutMs = sqlTimeoutMs): Sql {
+  const run = neon(url)
+  return (text, params = []) => run.query(text, params, { fetchOptions: { signal: AbortSignal.timeout(timeoutMs) } })
+}
+
 let current: Sql | null | undefined
 let tables: Promise<void> | undefined
 
 export function databaseSql(): Sql | undefined {
   if (current === undefined) {
-    const run = config.databaseUrl ? neon(config.databaseUrl) : undefined
-    current = run ? (text, params = []) => run.query(text, params) : null
+    current = config.databaseUrl ? neonSql(config.databaseUrl) : null
   }
   return current ?? undefined
 }
