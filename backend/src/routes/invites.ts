@@ -118,11 +118,16 @@ invitesRouter.post("/:code/accept", async (req, res) => {
   }
   // 사업자 확인은 그 가게의 주인임을 보여 주지 않는다. 가입과 같이 운영자가
   // 서류를 보고 연결한다.
-  // 서류는 크므로, 동시에 보내도 쌓이지 않게 확인 전에 계정별로 센다.
-  await linksPerDay.take(account.id)
-  const waiting = applicationsOf(database).some((item) => item.linkAccountId === account.id && item.invite === invite.code)
-  if (waiting) throw new HttpError(409, "이미 서류를 보냈어요. 운영자가 확인하면 메일로 알려 드려요.")
+  const assertNotWaiting = () => {
+    const waiting = applicationsOf(database).some((item) => item.linkAccountId === account.id && item.invite === invite.code)
+    if (waiting) throw new HttpError(409, "이미 서류를 보냈어요. 운영자가 확인하면 메일로 알려 드려요.")
+  }
+  // 이미 낸 신청이나 빠진 서류는 하루 횟수를 쓰지 않는다. 횟수를 세는 사이에
+  // 다른 요청이 신청을 남겼을 수 있어 센 뒤 다시 본다.
+  assertNotWaiting()
   const document = parseDocument(req.body?.document, "사업자등록증이나 재직 서류를 올려 주세요.")
+  await linksPerDay.take(account.id)
+  assertNotWaiting()
   await holdApplication(database, saveDatabase, document, {
     kind: "shop",
     name: account.name,

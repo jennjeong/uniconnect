@@ -38,7 +38,8 @@ export async function holdApplication(
   fields: Omit<Application, "id" | "document" | "requestedAt">,
 ) {
   const id = randomUUID()
-  await photos().put(applicationFolder(id), document.file, document.bytes)
+  // 서류를 보관하기 전에 신청부터 남긴다. 그래야 동시에 온 요청이 중복 확인을
+  // 지나지 못한다.
   applicationsOf(database).push({
     ...fields,
     id,
@@ -46,8 +47,12 @@ export async function holdApplication(
     requestedAt: new Date().toISOString(),
   })
   try {
+    await photos().put(applicationFolder(id), document.file, document.bytes)
     await save()
   } catch (error) {
+    const held = applicationsOf(database)
+    const index = held.findIndex((application) => application.id === id)
+    if (index >= 0) held.splice(index, 1)
     await photos().removeAll([applicationFolder(id)])
     throw error
   }

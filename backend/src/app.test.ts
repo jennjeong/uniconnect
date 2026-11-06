@@ -1695,6 +1695,35 @@ test("the QR ceiling takes the smaller audience either side saw when confirming"
   assert.equal(measurement.agreedAudience, seen)
 })
 
+test("the audience a brand saw when it started paying the fee caps the QR, whatever is raised before the payment lands", async () => {
+  const { feeStart } = await import("./lib/fees.js")
+  const { markPaid, paymentsOf } = await import("./lib/billing.js")
+  const started = feeStart.since
+  feeStart.since = "2000-01-01"
+  try {
+    const group = await signUpMember("pay-seen-club@syu.ac.kr", "pay-seen-pass-1234")
+    const groupId = getDatabase().accounts.find((account) => account.email === "pay-seen-club@syu.ac.kr")!.id
+    const { token: brand, listingId } = await listedMember("pay-seen@seen-cafe.kr", "pay-seen-pass-1234", "브랜드")
+    await call("POST", "/events", { name: "결제 공연", date: "2026-12-22", people: "100명", types: ["제품"] }, group)
+    await call("POST", "/proposals", { matchId: listingId }, group)
+    const request = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
+    await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+    await call("GET", `/agreements/${request.id}`, undefined, brand)
+    await call("PUT", `/agreements/${request.id}/value`, { value: { cash: 200000, inKind: 0 } }, group)
+    const measurement = getDatabase().measurements.find((item) => item.accountId === groupId && item.eventId === request.eventId)!
+    const seen = measurement.goals.expectedAudience
+    const { order } = (await call("POST", "/billing/orders", { kind: "fee", targetId: request.id }, brand)).data
+    // 결제 중에 올리고 단체가 먼저 확인해도, 브랜드가 본 값이 기준이다.
+    measurement.goals.expectedAudience = 100_000
+    await call("POST", `/agreements/${request.id}/confirm`, { audience: 100_000 }, group)
+    const database = getDatabase()
+    markPaid(database, paymentsOf(database).find((item) => item.id === order.id)!, { method: "transfer" })
+    assert.equal(measurement.agreedAudience, seen)
+  } finally {
+    feeStart.since = started
+  }
+})
+
 test("a document keeps the extension of what it is, and an email can't dodge the free-mail list with a dot", async () => {
   const { parseDocument } = await import("./lib/applications.js")
   const { isPersonalMail, normalizeEmail } = await import("./lib/email.js")
@@ -4228,9 +4257,17 @@ test("a student group invites a shop it found nearby, and the shop joins as a br
     const owner = await signUpMember("owner@golmok-cafe.kr", "golmok-pass-123", "브랜드")
     // 서류 없이는 잇지 못하고, 운영자가 승인해야 연결된다.
     assert.equal((await call("POST", `/invites/${code}/accept`, undefined, owner)).status, 400)
-    const held = await call("POST", `/invites/${code}/accept`, { document: proofDocument }, owner)
-    assert.deepEqual([held.status, held.data], [202, { pending: true }])
-    assert.equal((await call("POST", `/invites/${code}/accept`, { document: proofDocument }, owner)).status, 409)
+    // 동시에 보내도 신청은 하나만 남는다.
+    const burst = await Promise.all([1, 2, 3].map(() => call("POST", `/invites/${code}/accept`, { document: proofDocument }, owner)))
+    assert.deepEqual(burst.map((answer) => answer.status).sort(), [202, 409, 409])
+    assert.deepEqual(burst.find((answer) => answer.status === 202)!.data, { pending: true })
+    const { applicationsOf } = await import("./lib/applications.js")
+    const heldOf = () => applicationsOf(getDatabase()).filter((item) => item.email === "owner@golmok-cafe.kr")
+    assert.equal(heldOf().length, 1)
+    // 기다리는 동안의 재전송은 하루 횟수를 쓰지 않는다.
+    for (let turn = 0; turn < 3; turn += 1) {
+      assert.equal((await call("POST", `/invites/${code}/accept`, { document: proofDocument }, owner)).status, 409)
+    }
     // 운영자는 어느 가게를 잇는지 본다.
     const { config: settings } = await import("./config.js")
     const savedToken = settings.adminToken
@@ -4239,8 +4276,20 @@ test("a student group invites a shop it found nearby, and the shop joins as a br
     settings.adminToken = savedToken
     assert.equal(waitingList.applications.find((item) => item.email === "owner@golmok-cafe.kr")!.placeUrl, "https://place.map.kakao.com/26338954")
     // 서류를 하루에 많이 보내지 못한다.
-    for (let turn = 0; turn < 3; turn += 1) await call("POST", `/invites/${code}/accept`, { document: proofDocument }, owner)
-    assert.equal((await call("POST", `/invites/${code}/accept`, { document: proofDocument }, owner)).status, 429)
+    const clearHeld = () => {
+      const [held] = heldOf()
+      applicationsOf(getDatabase()).splice(applicationsOf(getDatabase()).indexOf(held), 1)
+      return held
+    }
+    // 동시에 보낸 요청이 몇 번 세어졌는지는 도착 순서에 달려 있어, 막힐 때까지 보낸다.
+    let kept = clearHeld()
+    let status = 202
+    for (let turn = 0; turn < 5 && status === 202; turn += 1) {
+      status = (await call("POST", `/invites/${code}/accept`, { document: proofDocument }, owner)).status
+      if (status === 202) kept = clearHeld()
+    }
+    assert.equal(status, 429)
+    applicationsOf(getDatabase()).push(kept)
     assert.equal((await call("GET", `/invites/${code}`, undefined, owner)).data.invite.joined, null)
     // 기다리는 동안에도 계정은 그대로 로그인한다.
     assert.equal((await call("POST", "/auth/login", { role: "브랜드", email: "owner@golmok-cafe.kr", password: "golmok-pass-123" })).status, 200)

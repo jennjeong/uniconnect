@@ -286,16 +286,20 @@ export function agreementFor(database: Database, proposal: AcceptedProposal) {
 // 항목과 요청만 담는다. 한쪽이 계약서를 현재 상태 그대로 확인한다. 양쪽이
 // 확인하면 그때의 확인 방식이 행사와 결과에서 효력을 갖는다
 // (`confirmedMethods`). 양쪽이 확인했는지 답한다.
+// 각 쪽이 본 예상 인원의 작은 값이 QR 상한의 기준이다. 한쪽이 본 뒤에 주인이
+// 올려도 상한은 오르지 않는다.
+export function noteSeenAudience(database: Database, agreement: Agreement, proposal: AcceptedProposal) {
+  const seen = agreementShare(database, proposal)?.measurement.goals.expectedAudience
+  if (seen !== undefined) agreement.seenAudience = Math.min(agreement.seenAudience ?? seen, seen)
+}
+
 export function confirmAgreement(database: Database, agreement: Agreement, proposal: AcceptedProposal, side: ChatSide) {
   const now = new Date().toISOString()
   agreement.confirmed[side] = now
   agreement.updatedAt = now
   const both = Boolean(agreement.confirmed.group && agreement.confirmed.brand)
   const sponsored = sponsoredEvent(database, proposal)
-  // 각 쪽이 확인할 때 본 예상 인원의 작은 값이 QR 상한의 기준이다. 한쪽이 확인한
-  // 뒤에 주인이 올려도 상한은 오르지 않는다.
-  const seen = agreementShare(database, proposal)?.measurement.goals.expectedAudience
-  if (seen !== undefined) agreement.seenAudience = Math.min(agreement.seenAudience ?? seen, seen)
+  noteSeenAudience(database, agreement, proposal)
   if (both && sponsored) {
     ensureMeasurement(database, sponsored.owner.id, sponsored.event)
     const share = agreementShare(database, proposal)
