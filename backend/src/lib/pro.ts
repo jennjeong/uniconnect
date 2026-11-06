@@ -1,7 +1,7 @@
 import { prices, sell, shiftLaterPeriods } from "./billing.js"
 import { addDays, todayInKorea } from "./dates.js"
 import { HttpError } from "./errors.js"
-import { isPro, proUntil } from "./plan.js"
+import { isPro, localUntil, proUntil } from "./plan.js"
 import { reportAccess } from "./premiumReport.js"
 import { isDemoAccount } from "./reviews.js"
 import type { Account, Database } from "../types.js"
@@ -50,6 +50,7 @@ export function planOf(database: Database, account: Account) {
   return {
     pro: until !== null,
     until,
+    localUntil: localUntil(database, account.id),
     offersThisMonth: offersThisMonth(database, account.id),
     freeOffers: freeOffersPerMonth,
     partnerRequestsLeft: until ? Math.max(0, partnerRequestsPerMonth - partnerRequestsThisMonth(database, account.id)) : 0,

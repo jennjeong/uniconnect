@@ -6,7 +6,7 @@ import { proUntil } from "./plan.js"
 import { statusOf } from "./proposals.js"
 import { isDemoAccount } from "./reviews.js"
 import { platformStats } from "./stats.js"
-import type { Account, Database } from "../types.js"
+import type { Account, Database, PaymentKind } from "../types.js"
 
 // 운영자 콘솔(pages/AdminPage.tsx): 지금 운영자가 처리할 일, 8주 추이와 매출을
 // 담은 플랫폼 수치, 회원별 활동, 모든 제안. 비밀번호, 토큰, PIN, 메시지는
@@ -40,7 +40,7 @@ export function overview(database: Database, now = new Date()) {
   const revenue = {
     total: paid.reduce((sum, payment) => sum + payment.amount, 0),
     thisMonth: paid.filter((payment) => koreanDate(payment.paidAt ?? payment.requestedAt).slice(0, 7) === month).reduce((sum, payment) => sum + payment.amount, 0),
-    byKind: { fee: 0, report: 0, pro: 0, ad: 0 } as Record<"fee" | "report" | "pro" | "ad", number>,
+    byKind: { fee: 0, report: 0, pro: 0, ad: 0, local: 0 } as Record<PaymentKind, number>,
     partners: database.accounts.filter((account) => proUntil(database, account.id) !== null).length,
   }
   for (const payment of paid) revenue.byKind[payment.kind] += payment.amount

@@ -6688,7 +6688,7 @@ test("the operators' console lists what needs them, members with their record, a
     const seen = (await admin("/overview")).data
     assert.equal(seen.weekly.length, 8)
     assert.deepEqual(Object.keys(seen.attention).sort(), ["alerts", "applications", "cancels", "inquiries", "referrals", "reports", "stale", "suspended", "transfers"])
-    assert.deepEqual(Object.keys(seen.revenue.byKind).sort(), ["ad", "fee", "pro", "report"])
+    assert.deepEqual(Object.keys(seen.revenue.byKind).sort(), ["ad", "fee", "local", "pro", "report"])
 
     await signUpMember("console@syu.ac.kr", "console-pass-123")
     const found = (await admin("/accounts?q=console%40syu")).data.accounts
@@ -7101,4 +7101,144 @@ test("a restricted member is told why and how to appeal, and the operator learns
     config.mailFrom = undefined
     config.supportEmail = undefined
   }
+})
+
+test("Campus Local sells a 30-day pass that runs one always-on coupon campaign and a monthly report", async () => {
+  const { markCancelled, markPaid, paymentsOf } = await import("./lib/billing.js")
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const { prunePasses } = await import("./lib/measurements.js")
+  const { config } = await import("./config.js")
+  const plans = async () => (await call("GET", "/billing/plans")).data.plans.find((item: { id: string }) => item.id === "local")
+  const { token: brand } = await listedMember("local@local-cafe.kr", "local-pass-123", "브랜드")
+  const { token: group } = await listedMember("local@syu.ac.kr", "local-pass-123", "학생단체")
+  const pay = async () => {
+    const order = await call("POST", "/billing/orders", { kind: "local" }, brand)
+    assert.ok(order.status < 300, JSON.stringify(order.data))
+    const payment = paymentsOf(getDatabase()).find((item) => item.id === order.data.order.id)!
+    markPaid(getDatabase(), payment, { method: "transfer" })
+    return payment
+  }
+
+  // 판매를 열기 전에는 가격을 보여 주지 않고 사지 못한다.
+  assert.deepEqual([(await plans()).status, (await plans()).price], ["soon", null])
+  assert.equal((await call("POST", "/billing/orders", { kind: "local" }, brand)).status, 404)
+  assert.equal((await call("POST", "/local/campaign", { store: "카페", title: "할인" }, brand)).status, 402)
+
+  config.localOnSale = true
+  try {
+    const row = await plans()
+    assert.deepEqual([row.status, row.price, row.priceWithVat, row.days, row.orderKind], ["open", 79_000, 86_900, 30, "local"])
+    assert.equal((await call("GET", "/local", undefined, group)).status, 403)
+    assert.equal((await call("POST", "/billing/orders", { kind: "local" }, group)).status, 403)
+    assert.equal((await call("POST", "/local/campaign", { store: "카페", title: "할인" }, brand)).status, 402)
+
+    // 30일을 사고, 다시 사면 남은 날 뒤에 이어진다.
+    const first = await pay()
+    const today = todayInKorea()
+    assert.equal(first.amount, 86_900)
+    assert.equal(first.periodEnd, addDays(today, 29))
+    const second = await pay()
+    assert.equal(second.periodEnd, addDays(today, 59))
+    assert.equal((await call("GET", "/local", undefined, brand)).data.until, addDays(today, 59))
+    assert.equal((await call("GET", "/billing", undefined, brand)).data.plan.localUntil, addDays(today, 59))
+
+    // 캠페인은 계정마다 하나이고 일정에는 나오지 않는다.
+    assert.equal((await call("POST", "/local/campaign", { store: "", title: "할인" }, brand)).status, 400)
+    const opened = await call("POST", "/local/campaign", { store: "로컬 카페", title: "아메리카노 1잔" }, brand)
+    assert.equal(opened.status, 201, JSON.stringify(opened.data))
+    assert.equal((await call("POST", "/local/campaign", { store: "카페", title: "할인" }, brand)).status, 409)
+    const account = getDatabase().accounts.find((item) => item.email === "local@local-cafe.kr")!
+    assert.deepEqual(getDatabase().events[account.id] ?? [], [])
+    const { code, staffPin } = opened.data.campaign
+    assert.deepEqual([opened.data.campaign.store, opened.data.campaign.open, opened.data.campaign.couponDays], ["로컬 카페", true, 7])
+
+    const page = (await call("GET", `/check-in/${code}`)).data
+    assert.deepEqual([page.eventName, page.alwaysOn, page.open, page.couponDays], ["로컬 카페", true, true, 7])
+    assert.deepEqual(page.coupons, [{ id: "event", store: "로컬 카페", title: "아메리카노 1잔" }])
+
+    // 행사와 같은 흐름으로 스캔, 쿠폰, 직원 확인이 된다.
+    const take = async () => {
+      const scan = await call("POST", `/check-in/${code}/scans`, {})
+      assert.equal(scan.status, 200, JSON.stringify(scan.data))
+      const coupon = await call("POST", `/check-in/${code}/coupons`, { pass: scan.data.pass })
+      assert.equal(coupon.status, 200, JSON.stringify(coupon.data))
+      return { pass: scan.data.pass as string, number: coupon.data.coupon as string }
+    }
+    const used = await take()
+    const old = await take()
+    const session = await call("POST", `/check-in/${code}/staff/session`, { pin: staffPin })
+    assert.equal(session.data.shares[0].store, "로컬 카페")
+    assert.equal((await call("POST", `/check-in/${code}/staff/visits`, { pin: staffPin, coupon: used.number })).status, 200)
+    assert.equal((await call("GET", `/check-in/${code}/passes/${used.pass}`)).data.coupons.event.visited, true)
+    assert.ok((await call("GET", `/check-in/${code}/passes/${used.pass}`)).data.coupons.event.expiresAt)
+
+    // 쿠폰은 발급하고 7일까지다.
+    const measurement = getDatabase().measurements.find((item) => item.code === code)!
+    measurement.passes[old.pass].issuedAt = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString()
+    const late = await call("POST", `/check-in/${code}/staff/visits`, { pin: staffPin, coupon: old.number })
+    assert.deepEqual([late.status, late.data.error], [409, "쿠폰 사용 기간이 지났어요."])
+
+    // 지우는 것도 기록마다다. 집계는 그대로다.
+    assert.equal(prunePasses(getDatabase(), measurement, getDatabase().localCampaigns![account.id]), true)
+    assert.deepEqual(Object.keys(measurement.passes), [used.pass])
+
+    // 달로만 세므로 끝이 없어도 문서가 자라지 않는다.
+    assert.deepEqual(measurement.hourlyScans, [])
+    assert.equal(measurement.daily, undefined)
+    assert.ok(measurement.log.length <= 30)
+    const report = (await call("GET", "/local/report", undefined, brand)).data
+    assert.deepEqual(
+      [report.month, report.scans, report.coupons, report.visits, report.couponRate, report.visitRate],
+      [today.slice(0, 7), 2, 2, 1, 100, 50],
+    )
+    assert.deepEqual(report.months, [today.slice(0, 7)])
+    assert.equal((await call("GET", "/local/report?month=2020-01", undefined, brand)).data.scans, 0)
+    assert.equal((await call("GET", "/local/report?month=soon", undefined, brand)).status, 400)
+    assert.equal((await call("GET", "/local/report", undefined, group)).status, 403)
+
+    // 고치고 PIN을 바꾼다.
+    assert.equal((await call("PUT", "/local/campaign", { store: "로컬 카페 2호점", title: "라떼 1잔" }, brand)).status, 200)
+    assert.equal((await call("GET", `/check-in/${code}`)).data.eventName, "로컬 카페 2호점")
+    const rotated = (await call("POST", "/local/campaign/pin", {}, brand)).data.campaign.staffPin
+    assert.notEqual(rotated, staffPin)
+    assert.equal((await call("POST", `/check-in/${code}/staff/session`, { pin: staffPin })).status, 403)
+
+    // 스캔 상한(예상 인원의 3배)이 없다.
+    measurement.metrics.scans = 5000
+    assert.equal((await call("POST", `/check-in/${code}/scans`, {})).status, 200)
+    measurement.metrics.scans = 3
+
+    // 이용 기간이 끝나면 새 쿠폰은 멈추고, 나간 쿠폰은 쓴다. 다시 사면 그대로 다시 열린다.
+    const live = await take()
+    markCancelled(getDatabase(), second, "시험")
+    markCancelled(getDatabase(), first, "시험")
+    assert.equal((await call("GET", `/check-in/${code}`)).data.open, false)
+    assert.equal((await call("POST", `/check-in/${code}/scans`, {})).status, 409)
+    assert.equal((await call("POST", `/check-in/${code}/coupons`, { pass: live.pass })).status, 409)
+    assert.equal((await call("POST", `/check-in/${code}/staff/visits`, { pin: rotated, coupon: live.number })).status, 200)
+    assert.equal((await call("GET", "/local", undefined, brand)).data.campaign.open, false)
+    assert.equal((await call("GET", "/local/report", undefined, brand)).status, 200)
+    await pay()
+    assert.equal((await call("POST", `/check-in/${code}/scans`, {})).status, 200)
+
+    // 내 데이터 내보내기에 들어 있고, 탈퇴하면 함께 지워진다.
+    const exported = await call("GET", "/auth/export", undefined, brand)
+    assert.equal(exported.data.localCampaign.name, "로컬 카페 2호점")
+    assert.equal((await call("DELETE", "/auth/account", { password: "local-pass-123" }, brand)).status < 300, true)
+    assert.equal(getDatabase().localCampaigns?.[account.id], undefined)
+    assert.equal(getDatabase().measurements.some((item) => item.code === code), false)
+    assert.equal((await call("GET", `/check-in/${code}`)).status, 404)
+  } finally {
+    config.localOnSale = false
+  }
+})
+
+test("an always-on campaign has no scan ceiling and its coupons last 7 days from issue", async () => {
+  const measurements = await import("./lib/measurements.js")
+  const database = getDatabase()
+  const fake = { alwaysOn: true, accountId: "x", metrics: { scans: 1 } } as never
+  assert.equal(measurements.scanCeiling(database, fake), Infinity)
+  assert.equal(measurements.couponsValidFrom(database, { accountId: "x" } as never), undefined)
+  const from = measurements.couponsValidFrom(database, fake, new Date("2026-11-08T00:00:00Z"))
+  assert.equal(from?.toISOString(), "2026-11-01T00:00:00.000Z")
 })

@@ -41,6 +41,7 @@ import { profileRouter } from "./routes/profile.js"
 import { proposalsRouter } from "./routes/proposals.js"
 import { requestsRouter } from "./routes/requests.js"
 import { billingRouter } from "./routes/billing.js"
+import { localRouter } from "./routes/local.js"
 import { boardRouter } from "./routes/board.js"
 import { blocksRouter, reportsRouter } from "./routes/reports.js"
 import { reviewsRouter } from "./routes/reviews.js"
@@ -192,6 +193,7 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   app.use("/api/board", boardRouter)
   app.use("/api/errors", errorsRouter)
   app.use("/api/billing", billingRouter)
+  app.use("/api/local", localRouter)
   app.use("/api/admin", (_req, _res, next) => adminRequest.run({}, next))
   app.use("/api/admin", adminSessionRouter)
   app.use("/api/admin", adminRouter)

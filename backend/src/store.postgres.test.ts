@@ -475,7 +475,10 @@ test("rows keep participation out of the document, and counts reach it exactly o
     await passRows.movePassesToRows()
     assert.deepEqual(measurement().passes, {})
     const moved = await passRows.readPass(sql, code, "moved")
-    assert.deepEqual(moved, { surveyed: true, coupons: [{ couponId: "event", number: "UC-MOVEDA", visited: true }] })
+    assert.deepEqual(moved, {
+      surveyed: true,
+      coupons: [{ couponId: "event", number: "UC-MOVEDA", visited: true, issuedAt: moved!.coupons[0].issuedAt }],
+    })
     // 다시 옮겨도 그대로다.
     measurement().passes = { plain: {} }
     await store.saveDatabase()
@@ -539,7 +542,8 @@ test("rows keep participation out of the document, and counts reach it exactly o
     await store.saveDatabase()
     await passRows.foldCounts({ force: true })
     assert.equal(measurement().eventCouponsTo, undefined)
-    assert.deepEqual((await passRows.readPass(sql, code, "plain"))?.coupons, [{ couponId: "sponsor-a", number: "UC-TAKENA", visited: false }])
+    const taken = (await passRows.readPass(sql, code, "plain"))?.coupons
+    assert.deepEqual(taken?.map(({ couponId, number, visited }) => ({ couponId, number, visited })), [{ couponId: "sponsor-a", number: "UC-TAKENA", visited: false }])
 
     // 행사가 없어진 측정의 행은 지워진다.
     await sql("insert into uniconnect_passes (code, pass) values ('gone', 'a')")
@@ -547,6 +551,101 @@ test("rows keep participation out of the document, and counts reach it exactly o
     assert.ok((await passRows.prunePassRows()) >= 1)
     assert.equal((await sql("select pass from uniconnect_passes where code = 'gone'")).length, 0)
     assert.equal((await sql("select number from uniconnect_coupons where code = 'gone'")).length, 0)
+  } finally {
+    await new Promise((resolve) => server.close(resolve))
+  }
+})
+
+test("an always-on campaign keeps each coupon for 7 days in rows", async () => {
+  const { createApp } = await import("./app.js")
+  const passRows = await import("./lib/passRows.js")
+  const { openCampaign } = await import("./lib/local.js")
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const server = createApp().listen(0)
+  await new Promise((resolve) => server.once("listening", resolve))
+  const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api`
+  const send = async (route: string, body?: unknown) => {
+    const response = await fetch(base + route, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body ?? {}),
+    })
+    return { status: response.status, data: (await response.json()) as Record<string, never> }
+  }
+  try {
+    const database = store.getDatabase()
+    const demo = new Set(Object.values(database.demoAccountIds))
+    const demoBrand = database.accounts.find((item) => item.role === "브랜드" && demo.has(item.id))!
+    const brand = { ...demoBrand, id: "local-rows-brand" }
+    database.accounts.push(brand)
+    const measurement = openCampaign(database, brand, { store: "행 카페", title: "아메리카노 1잔" })
+    ;(database.payments ??= []).push({
+      id: "local-rows",
+      accountId: brand.id,
+      accountName: brand.name,
+      kind: "local",
+      targetId: "",
+      orderName: "Campus Local 30일",
+      amount: 79_000,
+      status: "paid",
+      requestedAt: new Date().toISOString(),
+      periodEnd: addDays(todayInKorea(), 29),
+    } as NonNullable<typeof database.payments>[number])
+    await store.saveDatabase()
+    const code = measurement.code
+
+    const take = async () => {
+      const scan = await send(`/check-in/${code}/scans`)
+      assert.equal(scan.status, 200, JSON.stringify(scan.data))
+      const coupon = await send(`/check-in/${code}/coupons`, { pass: scan.data.pass })
+      assert.equal(coupon.status, 200, JSON.stringify(coupon.data))
+      return { pass: scan.data.pass as string, number: coupon.data.coupon as string }
+    }
+    const fresh = await take()
+    const stale = await take()
+    await sql("update uniconnect_coupons set issued_at = now() - interval '8 days' where number = $1", [stale.number])
+    await sql("update uniconnect_passes set issued_at = now() - interval '8 days' where pass = $1", [stale.pass])
+    // 쿠폰 없이 스캔만 한 사람도 7일 뒤에 지워진다.
+    const scanOnly = (await send(`/check-in/${code}/scans`)).data.pass as string
+    await sql("update uniconnect_passes set issued_at = now() - interval '8 days' where pass = $1", [scanOnly])
+
+    const state = (await fetch(`${base}/check-in/${code}/passes/${fresh.pass}`).then((item) => item.json())) as {
+      coupons: Record<string, { expiresAt?: string }>
+    }
+    assert.ok(Date.parse(state.coupons.event.expiresAt!) > Date.now() + 6 * 24 * 60 * 60 * 1000)
+
+    // 기한이 지난 쿠폰은 확인되지 않고, 이유를 알려 준다. 안 지난 쿠폰은 된다.
+    const pin = measurement.staffPin
+    const late = await send(`/check-in/${code}/staff/visits`, { pin, coupon: stale.number })
+    assert.deepEqual([late.status, late.data.error], [409, "쿠폰 사용 기간이 지났어요."])
+    assert.equal((await send(`/check-in/${code}/staff/visits`, { pin, coupon: fresh.number })).status, 200)
+    const twice = await send(`/check-in/${code}/staff/visits`, { pin, coupon: fresh.number })
+    assert.deepEqual([twice.status, twice.data.error], [409, "이미 방문이 확인된 쿠폰이에요."])
+
+    // 집계는 달로 묶이고 시간별, 날짜별 칸은 생기지 않는다.
+    await passRows.foldCounts({ force: true })
+    const after = store.getDatabase().measurements.find((item) => item.code === code)!
+    const month = todayInKorea().slice(0, 7)
+    assert.deepEqual(after.monthly?.[month], { scans: 3, coupons: 2, visits: 1 })
+    assert.deepEqual(after.hourlyScans, [])
+    assert.equal(after.daily, undefined)
+
+    // 7일 지난 것만 지운다. 기간이 끝나지 않아도 지우고, 지운 뒤 집계는 그대로다.
+    await passRows.prunePassRows()
+    const left = await sql("select pass from uniconnect_passes where code = $1", [code])
+    assert.deepEqual(left.map((row) => row.pass), [fresh.pass])
+    const coupons = await sql("select number from uniconnect_coupons where code = $1", [code])
+    assert.deepEqual(coupons.map((row) => row.number), [fresh.number])
+    assert.equal(after.metrics.scans, 3)
+    const gone = await send(`/check-in/${code}/staff/visits`, { pin, coupon: stale.number })
+    assert.equal(gone.status, 404)
+
+    // 다음 시험에 남기지 않는다.
+    delete store.getDatabase().localCampaigns?.[brand.id]
+    store.getDatabase().measurements = store.getDatabase().measurements.filter((item) => item.code !== code)
+    store.getDatabase().payments = store.getDatabase().payments?.filter((item) => item.id !== "local-rows")
+    store.getDatabase().accounts = store.getDatabase().accounts.filter((item) => item.id !== brand.id)
+    await store.saveDatabase()
   } finally {
     await new Promise((resolve) => server.close(resolve))
   }

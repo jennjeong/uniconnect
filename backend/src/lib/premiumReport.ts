@@ -54,7 +54,7 @@ function comparable(database: Database, measurement: Measurement, demo: boolean)
   const today = todayInKorea()
   const demoIds = new Set(Object.values(database.demoAccountIds))
   return database.measurements.filter((other) => {
-    if (other === measurement || other.metrics.scans === 0) return false
+    if (other === measurement || other.metrics.scans === 0 || other.alwaysOn) return false
     if (!demo && demoIds.has(other.accountId)) return false
     const event = eventOf(database, other)
     return Boolean(event && (event.endDate ?? event.date) < today)

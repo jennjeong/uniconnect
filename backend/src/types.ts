@@ -457,7 +457,7 @@ export type MeasurementGoals = {
 
 // 참여자가 체크인 페이지에서 번호로 받는 쿠폰이다. `coupon`은 번호를
 // 발급하기 전의 패스에서는 true다.
-export type PassCoupon = { coupon?: string | true; visit?: true; surveyed?: true }
+export type PassCoupon = { coupon?: string | true; visit?: true; surveyed?: true; issuedAt?: string }
 
 // 체크인 페이지에서 참여자가 선택으로 하는 설문 응답으로, 행사의 집계로만
 // 보관한다(패스나 누구의 정보와도 함께 두지 않는다).
@@ -527,6 +527,10 @@ export type Measurement = {
   eventCouponsTo?: string
   // 선택 설문의 응답을 센 것이다(lib/validation.ts surveyOptions).
   survey?: SurveyCounts
+  // Campus Local의 상시 쿠폰 캠페인이다(lib/local.ts). 기간이 없어 집계를 달로 묶고,
+  // 참여 기록은 행사 기간이 아니라 기록마다 지운다.
+  alwaysOn?: true
+  monthly?: Record<string, { scans: number; coupons: number; visits: number }>
   // 한국 날짜별 스캔, 쿠폰, 방문이다(lib/measurements.ts dailyCounts).
   daily?: Record<string, { scans: number; coupons: number; visits: number }>
   // 오늘(한국 날짜) 틀린 현장 PIN으로, 운영자 경보에 쓴다.
@@ -786,7 +790,7 @@ export type ShopInvite = {
 // 계정이 플랫폼에 내는 돈이다(lib/billing.ts). 협찬이 확정될 때 브랜드가
 // 내는 15% 수수료, 상세 리포트, Pro 한 달, 양쪽이 사는 상단 광고 한 달
 // (lib/ads.ts)이 있다.
-export type PaymentKind = "fee" | "report" | "pro" | "ad"
+export type PaymentKind = "fee" | "report" | "pro" | "ad" | "local"
 
 export type Payment = {
   // Toss Payments가 보는 주문 id이기도 하다.
@@ -849,6 +853,9 @@ export type ReferralReward = {
 export type Database = {
   // 마지막으로 문서에 합친 집계 기록의 id다. 두 번 세지 않게 한다(lib/passRows.ts).
   foldedCounts?: string[]
+  // 브랜드 계정의 상시 쿠폰 캠페인이다(lib/local.ts). 일정, 카탈로그, 제안에 나오지
+  // 않도록 `events`와 따로 둔다.
+  localCampaigns?: Record<string, EventItem>
   accounts: Account[]
   sessions: Session[]
   emailCodes: EmailCode[]

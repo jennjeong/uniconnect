@@ -433,6 +433,12 @@ const en: Record<string, string> = {
   "무료 요금제는 한 달에 협찬 제안 {name}건까지예요. Growth로 바꾸면 제한 없이 보낼 수 있어요.":
     "The free plan sends up to {name} proposals a month. Switch to Growth to send without a limit.",
   "Growth는 브랜드 계정만 쓸 수 있어요.": "Growth is for brand accounts only.",
+  "Campus Local은 브랜드 계정만 쓸 수 있어요.": "Campus Local is for brand accounts only.",
+  "Campus Local을 결제하면 상시 쿠폰 캠페인을 열 수 있어요.": "Pay for Campus Local to open an always-on coupon campaign.",
+  "상시 쿠폰 캠페인은 계정마다 하나예요.": "Each account can have one always-on coupon campaign.",
+  "상시 쿠폰 캠페인이 없어요.": "There's no always-on coupon campaign yet.",
+  "지금은 쿠폰을 받을 수 없어요. 매장에 알려 주세요.": "Coupons aren't available right now. Please let the store know.",
+  "달을 YYYY-MM 형식으로 적어 주세요.": "Write the month as YYYY-MM.",
   "Growth만 쓸 수 있어요.": "This is for Growth only.",
   "섭외 요청은 한 달에 {name}건까지예요.": "Up to {name} partner requests a month.",
   "찾고 싶은 행사와 조건을 10자 이상 적어 주세요.": "Please describe the events you're looking for in 10 characters or more.",

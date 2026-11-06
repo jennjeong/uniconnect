@@ -18,7 +18,7 @@ import {
 import { acceptedProposal, agreementShare } from "./lib/agreements.js"
 import { toIsoDate } from "./lib/dates.js"
 import { HttpError } from "./lib/errors.js"
-import { emptyMetrics, newStaffPin, prunePasses, syncSponsors, upgradePins } from "./lib/measurements.js"
+import { emptyMetrics, eventOf, newStaffPin, prunePasses, syncSponsors, upgradePins } from "./lib/measurements.js"
 import { upgradeMethods } from "./lib/methods.js"
 import { currentStorage, StaleWrite } from "./lib/storage.js"
 import { renamedAccountTypes } from "./lib/validation.js"
@@ -341,7 +341,7 @@ export function upgradeDatabase(stored: Database) {
       if (holder.confirmedMethods) holder.confirmedMethods = upgradeMethods(holder.confirmedMethods)
     }
     // 시간별 스캔에 날짜가 생겼고, 이전 것은 행사의 첫날에 있었다.
-    const event = stored.events[measurement.accountId]?.find((item) => item.id === measurement.eventId)
+    const event = eventOf(stored, measurement)
     for (const slot of measurement.hourlyScans) slot.date ??= event?.date ?? ""
     // 행사가 더 이상 필요 없는 참여 기록은 시작할 때마다 지운다.
     if (event) prunePasses(stored, measurement, event)

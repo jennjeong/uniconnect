@@ -280,7 +280,7 @@ export function fieldAlerts(database: Database, now = new Date()) {
   const alerts: { eventId: string; event: string; kind: "pin" | "visits-over-coupons" | "visit-burst"; detail: string }[] = []
   for (const measurement of database.measurements) {
     const event = Object.values(database.events).flat().find((item) => item.id === measurement.eventId)
-    const name = event?.name ?? measurement.eventId
+    const name = event?.name ?? database.localCampaigns?.[measurement.accountId]?.name ?? measurement.eventId
     if (measurement.pinMisses?.day === today && measurement.pinMisses.count >= 5) {
       alerts.push({ eventId: measurement.eventId, event: name, kind: "pin", detail: String(measurement.pinMisses.count) })
     }

@@ -16,7 +16,20 @@ import {
   settleEventCoupons,
 } from "../lib/passRows.js"
 import { HttpError } from "../lib/errors.js"
-import { assertOpen, checkInKinds, eventOf, isDemoEvent, metricEntry, parseKind, passLimit, recordMetric, scanCeiling } from "../lib/measurements.js"
+import { localUntil } from "../lib/plan.js"
+import {
+  assertOpen,
+  checkInKinds,
+  couponDays,
+  couponsValidFrom,
+  eventOf,
+  isDemoEvent,
+  metricEntry,
+  parseKind,
+  passLimit,
+  recordMetric,
+  scanCeiling,
+} from "../lib/measurements.js"
 import {
   activeMethodsOf,
   confirmsAt,
@@ -74,6 +87,14 @@ checkInRouter.get("/:code", (req, res) => {
     eventDate: event.date,
     groupName: group?.name ?? "",
     coupons: couponsOf(measurement),
+    // 상시 캠페인이다. 행사 날짜 대신 새 쿠폰을 주는지와 쿠폰의 사용 기한을 쓴다.
+    ...(measurement.alwaysOn
+      ? {
+          alwaysOn: true,
+          open: isDemoEvent(getDatabase(), measurement) || localUntil(getDatabase(), measurement.accountId) !== null,
+          couponDays,
+        }
+      : {}),
   })
 })
 
@@ -98,8 +119,13 @@ const scansPerAddress = createRateLimit({
   message: "이 네트워크에서 QR 스캔이 너무 많아요. 잠시 후 다시 시도해 주세요.",
 })
 
+// 상시 캠페인에는 예상 인원이 없어 가장 낮은 값을 쓴다.
 const scansFromOneAddress = (database: Database, measurement: Measurement) =>
-  Math.max(30, Math.ceil(scanCeiling(database, measurement) / 12))
+  measurement.alwaysOn ? 30 : Math.max(30, Math.ceil(scanCeiling(database, measurement) / 12))
+
+// 쿠폰이 어디까지 쓸 수 있는지다. 상시 캠페인의 쿠폰만 기한이 쿠폰마다 있다.
+const couponExpiry = (measurement: Measurement, issuedAt: string | undefined) =>
+  measurement.alwaysOn && issuedAt ? new Date(Date.parse(issuedAt) + couponDays * 24 * 60 * 60 * 1000).toISOString() : undefined
 
 // 직원 PIN이 틀린 횟수를 주소와 행사별로, 행사 단독으로도 센다. 여섯 자리
 // 숫자는 한 곳에서도 여러 곳에서도 추측할 수 없어야 한다(행사 한도에서
@@ -242,7 +268,7 @@ async function recordCheckIn(req: Request<{ code: string }>, kind: ReturnType<ty
     }
     const entry = recordMetric(measurement, kind)
     const pass = randomBytes(16).toString("hex")
-    measurement.passes[pass] = {}
+    measurement.passes[pass] = measurement.alwaysOn ? { issuedAt: new Date().toISOString() } : {}
     await saveDatabase()
     return { entry, pass }
   }
@@ -265,6 +291,8 @@ async function recordCheckIn(req: Request<{ code: string }>, kind: ReturnType<ty
   const coupon = newCouponNumber(measurement.passes)
   if (sponsor) pass.sponsors = { ...pass.sponsors, [sponsor.id]: { coupon } }
   else pass.coupon = coupon
+  // 상시 캠페인의 패스는 쿠폰과 함께 7일을 다시 시작한다.
+  if (measurement.alwaysOn) pass.issuedAt = new Date().toISOString()
   const entry = recordMetric(measurement, kind, sponsor)
   await saveDatabase()
   return { entry, coupon }
@@ -282,7 +310,7 @@ checkInRouter.get("/:code/passes/:pass", async (req, res) => {
       couponsOf(measurement).map(({ id }) => {
         const taken = state.coupons.find((item) => item.couponId === id)
         const number = taken && !taken.number.startsWith("legacy-") ? taken.number : null
-        return [id, { number, visited: Boolean(taken?.visited) }]
+        return [id, { number, visited: Boolean(taken?.visited), expiresAt: couponExpiry(measurement, taken?.issuedAt) }]
       }),
     )
     return void res.json({ coupons })
@@ -294,7 +322,8 @@ checkInRouter.get("/:code/passes/:pass", async (req, res) => {
   const coupons = Object.fromEntries(
     couponsOf(measurement).map(({ id }) => {
       const taken = passCoupon(pass, id)
-      return [id, { number: typeof taken?.coupon === "string" ? taken.coupon : null, visited: Boolean(taken?.visit) }]
+      const expiresAt = typeof taken?.coupon === "string" ? couponExpiry(measurement, taken.issuedAt) : undefined
+      return [id, { number: typeof taken?.coupon === "string" ? taken.coupon : null, visited: Boolean(taken?.visit), expiresAt }]
     }),
   )
   res.json({ coupons })
@@ -318,13 +347,16 @@ async function recordVisit(req: Request<{ code: string }>) {
   }
   const couponId = sponsor?.id ?? eventCoupon
   const number = text(req.body?.coupon).toUpperCase()
+  const validFrom = couponsValidFrom(getDatabase(), measurement)
   const sql = passSql()
   if (sql) {
     await settleEventCoupons(sql, measurement)
-    const { marked, total } = number ? await markVisit(sql, req.params.code, number, couponId, sponsor?.id) : { marked: false, total: 0 }
+    const { marked, total } = number ? await markVisit(sql, req.params.code, number, couponId, sponsor?.id, validFrom) : { marked: false, total: 0 }
     if (!marked) {
       const found = number ? await findCoupon(sql, req.params.code, number) : undefined
-      if (found?.couponId === couponId) throw new HttpError(409, "이미 방문이 확인된 쿠폰이에요.")
+      if (found?.couponId === couponId) {
+        throw new HttpError(409, validFrom && !found.visited ? "쿠폰 사용 기간이 지났어요." : "이미 방문이 확인된 쿠폰이에요.")
+      }
       throw new HttpError(404, found ? "다른 매장의 쿠폰이에요. 쿠폰에 적힌 매장을 확인해 주세요." : wrongCouponNumber)
     }
     return { entry: metricEntry(measurement, "visits", sponsor, total, new Date()), store: (sponsor?.coupon ?? measurement.goals.coupon).store }
@@ -346,6 +378,7 @@ async function recordVisit(req: Request<{ code: string }>) {
     )
   }
   if (taken.visit) throw new HttpError(409, "이미 방문이 확인된 쿠폰이에요.")
+  if (validFrom && (taken.issuedAt ?? "") < validFrom.toISOString()) throw new HttpError(409, "쿠폰 사용 기간이 지났어요.")
   taken.visit = true
   const entry = recordMetric(measurement, "visits", sponsor)
   await saveDatabase()

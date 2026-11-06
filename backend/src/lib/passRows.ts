@@ -3,7 +3,7 @@ import { waitUntil } from "@vercel/functions"
 import { getDatabase, retryConflicts, saveDatabase } from "../store.js"
 import type { Database, Measurement, SurveyCounts } from "../types.js"
 import { todayInKorea } from "./dates.js"
-import { checkInWindow, eventOf, isDemoEvent, recordMetric } from "./measurements.js"
+import { checkInWindow, couponDays, eventOf, isDemoEvent, recordMetric } from "./measurements.js"
 import { databaseSql, ensureTables, type Sql } from "./sql.js"
 
 // Postgres에서 참여 기록과 현장 집계를 문서 밖에 둔다. 문서 하나를 스캔마다 쓰면
@@ -28,16 +28,21 @@ export async function issuePass(sql: Sql, code: string, pass: string, limit: num
   return { before: numberOf(rows, "before"), added: numberOf(rows, "added") === 1 }
 }
 
-export type PassState = { surveyed: boolean; coupons: { couponId: string; number: string; visited: boolean }[] }
+export type PassState = { surveyed: boolean; coupons: { couponId: string; number: string; visited: boolean; issuedAt: string }[] }
 
 export async function readPass(sql: Sql, code: string, pass: string): Promise<PassState | undefined> {
   await ensureTables(sql)
   const [row] = await sql("select surveyed from uniconnect_passes where code = $1 and pass = $2", [code, pass])
   if (!row) return undefined
-  const coupons = await sql("select coupon_id, number, visited from uniconnect_coupons where code = $1 and pass = $2", [code, pass])
+  const coupons = await sql("select coupon_id, number, visited, issued_at from uniconnect_coupons where code = $1 and pass = $2", [code, pass])
   return {
     surveyed: Boolean(row.surveyed),
-    coupons: coupons.map((item) => ({ couponId: String(item.coupon_id), number: String(item.number), visited: Boolean(item.visited) })),
+    coupons: coupons.map((item) => ({
+      couponId: String(item.coupon_id),
+      number: String(item.number),
+      visited: Boolean(item.visited),
+      issuedAt: new Date(String(item.issued_at)).toISOString(),
+    })),
   }
 }
 
@@ -59,18 +64,20 @@ export async function issueCoupon(sql: Sql, code: string, pass: string, couponId
   return { added: numberOf(rows, "added") === 1, total: numberOf(rows, "total") + 1 }
 }
 
-// 번호로 찾은 쿠폰의 방문을 확인한다. 어느 쿠폰인지까지 맞아야 한다.
-export async function markVisit(sql: Sql, code: string, number: string, couponId: string, sponsorId: string | undefined) {
+// 번호로 찾은 쿠폰의 방문을 확인한다. 어느 쿠폰인지까지 맞아야 하고, `validFrom`이 있으면
+// 그 뒤에 발급된 것이어야 한다(상시 캠페인).
+export async function markVisit(sql: Sql, code: string, number: string, couponId: string, sponsorId: string | undefined, validFrom?: Date) {
   await ensureTables(sql)
   const rows = await sql(
     `with marked as (
        update uniconnect_coupons set visited = true
-       where code = $1 and number = $2 and coupon_id = $3 and not visited returning number
+       where code = $1 and number = $2 and coupon_id = $3 and not visited
+         and ($5::timestamptz is null or issued_at >= $5::timestamptz) returning number
      ),
      counted as (insert into uniconnect_counts (code, kind, sponsor_id) select $1, 'visits', $4 from marked)
      select (select count(*)::int from marked) as marked,
             (select count(*)::int from uniconnect_coupons where code = $1 and visited) as visited`,
-    [code, number, couponId, sponsorId ?? null],
+    [code, number, couponId, sponsorId ?? null, validFrom?.toISOString() ?? null],
   )
   return { marked: numberOf(rows, "marked") === 1, total: numberOf(rows, "visited") + 1 }
 }
@@ -260,6 +267,19 @@ export async function prunePassRows(now = todayInKorea()) {
     if (!event) continue
     codes.push(measurement.code)
     if (isDemoEvent(database, measurement)) continue
+    // 상시 캠페인은 기록마다 발급하고 7일 뒤에 지운다. 쿠폰이 지워진 패스도 그때 함께 간다.
+    if (measurement.alwaysOn) {
+      await sql("delete from uniconnect_coupons where code = $1 and issued_at < now() - make_interval(days => $2::int)", [measurement.code, couponDays])
+      removed += (
+        await sql(
+          `delete from uniconnect_passes as item where code = $1 and issued_at < now() - make_interval(days => $2::int)
+           and not exists (select 1 from uniconnect_coupons as coupon where coupon.code = item.code and coupon.pass = item.pass)
+           returning pass`,
+          [measurement.code, couponDays],
+        )
+      ).length
+      continue
+    }
     const { end, visitsEnd } = checkInWindow(event)
     if (now <= end) continue
     if (now > visitsEnd) {

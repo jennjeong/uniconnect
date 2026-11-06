@@ -558,6 +558,7 @@ function removeAccount(database: Database, account: Account) {
     new Set(database.measurements.filter((item) => item.accountId === account.id).map((item) => item.eventId)),
   )
   database.measurements = database.measurements.filter((measurement) => measurement.accountId !== account.id)
+  delete database.localCampaigns?.[account.id]
   // 떠나는 브랜드의 쿠폰은 더 이상 쓸 수 없고, 행사 합계에는 그 집계가 남는다.
   const leaving = new Set((database.sponsorships[account.id] ?? []).map((sponsorship) => sponsorship.id))
   for (const measurement of database.measurements) {
@@ -851,6 +852,7 @@ authRouter.get("/export", (req, res) => {
       ...(account.groupId ? database.offers.filter((item) => item.groupId === account.groupId) : []),
     ],
     sponsorships: database.sponsorships[account.id] ?? [],
+    localCampaign: database.localCampaigns?.[account.id] ?? null,
     measurements: database.measurements
       .filter((item) => item.accountId === account.id)
       .map(({ passes: _passes, log: _log, staffPin: _staffPin, groupPin: _groupPin, sponsors, ...measurement }) => ({

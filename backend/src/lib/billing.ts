@@ -15,6 +15,9 @@ export const prices = {
   // Growth (이전 이름 캠퍼스 파트너스, 데이터 이름 `pro`), 30일.
   pro: 249_000,
   proDays: 30,
+  // Campus Local (lib/local.ts), 30일.
+  local: 79_000,
+  localDays: 30,
   // 상단 광고 (lib/ads.ts) 30일. 브랜드는 학생 단체 카탈로그에, 단체는
   // 브랜드 카탈로그에 낸다. 끝나기 전에 연장하면 10% 깎아 준다.
   adBrand: 99_000,
