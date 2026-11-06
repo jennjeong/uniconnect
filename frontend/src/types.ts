@@ -831,7 +831,7 @@ export type Report = {
   postedReach: number
   pendingReach: number
   coupon: { store: string; title: string }
-  // 방문을 확인하려고 매장 직원이 입력하는 4자리 숫자. 소유자에게만 보인다.
+  // 방문을 확인하려고 매장 직원이 입력하는 6자리 숫자. 소유자에게만 보인다.
   staffPin?: string
   // 학생단체의 현장 PIN. 행사를 가진 단체에게만 보인다.
   groupPin?: string

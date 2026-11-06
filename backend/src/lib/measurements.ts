@@ -169,11 +169,11 @@ export function applySponsorGoals(measurement: Measurement, goals: MeasurementGo
   }
 }
 
-// 목표 폼이 직원 PIN을 보내면 4자리여야 한다.
+// 목표 폼이 직원 PIN을 보내면 6자리여야 한다.
 export function parseStaffPin(value: unknown) {
   if (value === undefined) return undefined
   const pin = text(value)
-  if (!/^\d{4}$/.test(pin)) throw new HttpError(400, "직원 확인 PIN은 숫자 4자리로 적어 주세요.")
+  if (!/^\d{6}$/.test(pin)) throw new HttpError(400, "직원 확인 PIN은 숫자 6자리로 적어 주세요.")
   return pin
 }
 
@@ -185,7 +185,38 @@ function newCode(database: Database) {
   return code
 }
 
-export const newStaffPin = () => String(randomInt(0, 10000)).padStart(4, "0")
+export const newStaffPin = () => String(randomInt(0, 1_000_000)).padStart(6, "0")
+
+// 네 자리 시절의 PIN을 새 PIN으로 바꾼다. 바뀐 것이 있으면 true다. 값이 무작위라
+// 불러올 때마다 하면 API 복사본마다 달라지므로, 한 번 하고 저장한다(store.ts).
+// 데모 행사는 문서에 적힌 값으로 바꾸고, 다른 행사는 한 행사의 PIN이 서로
+// 겹치지 않게 뽑는다.
+export function upgradePins(database: Database) {
+  let changed = false
+  for (const measurement of database.measurements) {
+    const demo = isDemoEvent(database, measurement)
+    const used = new Set([measurement.staffPin, measurement.groupPin, ...measurement.sponsors.map((item) => item.staffPin)])
+    const fresh = (old: string) => {
+      changed = true
+      if (demo) return `${old}34`
+      let pin: string
+      do pin = newStaffPin()
+      while (used.has(pin))
+      used.add(pin)
+      return pin
+    }
+    const { staffPin } = measurement
+    if (staffPin.length !== 6) measurement.staffPin = fresh(staffPin)
+    if (measurement.groupPin.length !== 6) measurement.groupPin = fresh(measurement.groupPin)
+    for (const sponsor of measurement.sponsors) {
+      if (sponsor.staffPin.length === 6) continue
+      changed = true
+      // 첫 협찬사는 행사의 PIN을 넘겨받았으므로 같은 값을 이어 간다.
+      sponsor.staffPin = sponsor.staffPin === staffPin ? measurement.staffPin : fresh(sponsor.staffPin)
+    }
+  }
+  return changed
+}
 
 // 행사의 어느 협찬사도 쓰지 않는 PIN. PIN만 봐도 어느 매장인지 알 수 있다.
 function newSponsorPin(measurement: Measurement) {

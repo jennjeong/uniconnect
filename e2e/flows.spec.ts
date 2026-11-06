@@ -1281,7 +1281,7 @@ test("the e-contract sets how the sponsorship is confirmed, and once both sides 
   // 직원이 맞는 페이지임을 알 수 있도록 행사가 PIN보다 먼저 보인다.
   await expect(venue.getByRole("heading", { level: 1 })).toHaveText("2026 뮤즈 종강 공연")
   await expect(venue.getByText(/삼육대 뮤즈 · /)).toBeVisible()
-  await venue.getByLabel("단체 확인 PIN").fill(pin === "0000" ? "0001" : "0000")
+  await venue.getByLabel("단체 확인 PIN").fill(pin === "000000" ? "000001" : "000000")
   await expect(venue.getByText(/단체 확인 PIN이 맞지 않아요/)).toBeVisible()
   await venue.getByLabel("단체 확인 PIN").fill(pin)
   const stamp = venue.getByRole("button", { name: "부스 방문 · 스탬프 한 명 확인" })
@@ -1331,11 +1331,11 @@ test("a participant takes the coupon and the store's staff confirm the visit on 
 
   const staff = await (await browser.newContext()).newPage()
   await staff.goto("/check-in/20261012/staff")
-  await staff.getByLabel("직원 PIN").fill("0000")
+  await staff.getByLabel("직원 PIN").fill("000000")
   await staff.getByLabel("쿠폰 번호").fill(number)
   await staff.getByRole("button", { name: "방문 확인" }).click()
   await expect(staff.getByText(/직원 PIN이 맞지 않아요/)).toBeVisible()
-  await staff.getByLabel("직원 PIN").fill("1012")
+  await staff.getByLabel("직원 PIN").fill("101234")
   await staff.getByRole("button", { name: "방문 확인" }).click()
   await expect(staff.getByRole("status").getByText(`${number}`, { exact: false })).toBeVisible()
 

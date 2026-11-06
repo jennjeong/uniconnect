@@ -22,7 +22,7 @@ function writePin(code: string, page: VenuePage, pin: string) {
   }
 }
 
-// 행사장 페이지의 PIN과 그것이 여는 내용. 4자리가 들어오면 서버가 이쪽이
+// 행사장 페이지의 PIN과 그것이 여는 내용. 6자리가 들어오면 서버가 이쪽이
 // 확인하는 몫을 답하고 (PIN이 틀리면 그렇게 알린다), 확인할 때마다 그 몫의 현재
 // 카운트를 돌려준다.
 export function useVenueSession(code: string, page: VenuePage) {
@@ -32,7 +32,7 @@ export function useVenueSession(code: string, page: VenuePage) {
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
-    if (pin.length !== 4) return
+    if (pin.length !== 6) return
     let cancelled = false
     api.venueSession(code, page, pin).then(
       (session) => {
@@ -74,7 +74,7 @@ export function useVenueSession(code: string, page: VenuePage) {
   return {
     pin,
     setPin: (value: string) => {
-      setPin(value.replace(/\D/g, "").slice(0, 4))
+      setPin(value.replace(/\D/g, "").slice(0, 6))
       setCountError("")
     },
     session: current?.session ?? null,
