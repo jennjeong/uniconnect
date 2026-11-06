@@ -5525,6 +5525,96 @@ test("the Vercel entry reads the data on its first request and serves the API", 
   }
 })
 
+test("operators sign in with a password and a code, which closes the shared token and names who did what", async () => {
+  const { codeAt, stepAt } = await import("./lib/totp.js")
+  const { adminLogRows } = await import("./lib/adminTools.js")
+  const { backups } = await import("./store.js")
+  const database = getDatabase()
+  const saved = config.adminToken
+  config.adminToken = "test-admin-token"
+  const admin = async (method: string, route: string, token: string, body?: unknown) => {
+    const response = await fetch(`${baseUrl}/admin${route}`, {
+      method,
+      headers: { "X-Admin-Token": token, ...(body === undefined ? {} : { "Content-Type": "application/json" }) },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    })
+    const raw = await response.text()
+    return { status: response.status, raw, data: /json/.test(response.headers.get("content-type") ?? "") ? JSON.parse(raw) : null }
+  }
+  const shared = "test-admin-token"
+  const email = "first@uniconnect.kr"
+  const password = "operator-pass-123!"
+  try {
+    // 공유 토큰으로 첫 운영자를 만든다. 짧은 비밀번호는 받지 않고, 비밀값은 답에 없다.
+    assert.equal((await admin("POST", "/operators", shared, { email, name: "첫 운영자", password: "short-1!" })).status, 400)
+    const made = await admin("POST", "/operators", shared, { email, name: "첫 운영자", password })
+    assert.equal(made.status, 201)
+    assert.doesNotMatch(made.raw, /passwordHash/)
+    assert.equal((await admin("POST", "/operators", shared, { email, name: "또", password })).status, 409)
+    const operatorId = made.data.operator.id
+    assert.equal(database.adminLog!.at(-1)!.actor, "token")
+
+    // 없는 이메일과 틀린 비밀번호는 같은 답이다.
+    assert.equal((await admin("POST", "/session", "", { email, password: "wrong-pass-123!" })).status, 401)
+    assert.equal((await admin("POST", "/session", "", { email: "nobody@uniconnect.kr", password })).status, 401)
+    const first = await admin("POST", "/session", "", { email, password })
+    assert.equal(first.status, 200)
+    const { ticket, setup } = first.data
+    assert.ok(setup.secret)
+    // 설정이 끝나기 전에는 공유 토큰이 그대로 동작한다.
+    assert.equal((await admin("GET", "/operators", shared)).status, 200)
+    assert.equal((await admin("POST", "/session/code", "", { email, ticket, code: "000000" })).status, 401)
+    const signedIn = await admin("POST", "/session/code", "", { email, ticket, code: codeAt(setup.secret, stepAt(Date.now())) })
+    assert.equal(signedIn.status, 200)
+    assert.equal(signedIn.data.recoveryCodes.length > 0, true)
+    const session = signedIn.data.token
+
+    // 이제 공유 토큰은 거절되고 운영자 세션이 모든 운영자 API에 통한다.
+    assert.equal((await admin("GET", "/operators", shared)).status, 403)
+    assert.equal((await admin("GET", "/payments", session)).status, 200)
+    const me = await admin("GET", "/session", session)
+    assert.deepEqual([me.data.operator.id, me.data.operator.twoFactorOn, me.data.tokenClosed], [operatorId, true, true])
+
+    // 누가 했는지 남는다.
+    const second = await admin("POST", "/operators", session, { email: "second@uniconnect.kr", name: "둘째", password })
+    assert.equal(database.adminLog!.at(-1)!.actor, operatorId)
+    assert.equal(adminLogRows(database)[0].actorName, "첫 운영자")
+
+    // 자기 자신은 끄지 못하고, 꺼진 운영자는 로그인하지 못한다.
+    assert.equal((await admin("DELETE", `/operators/${operatorId}`, session)).status, 409)
+    assert.equal((await admin("DELETE", `/operators/${second.data.operator.id}`, session)).data.operator.twoFactorOn, false)
+    assert.equal((await admin("POST", "/session", "", { email: "second@uniconnect.kr", password })).status, 401)
+
+    // 내려받는 백업에는 비밀값이 없고, 누가 받았는지 남는다.
+    backups.lastAt = 0
+    await saveDatabase()
+    const { backups: listed } = (await admin("GET", "/system", session)).data
+    const download = await admin("GET", `/backups/${listed[0].hour}`, session)
+    assert.equal(download.status, 200)
+    assert.ok(JSON.parse(download.raw).accounts.length > 0)
+    assert.doesNotMatch(download.raw, /passwordHash|tokenHash|staffPin|groupPin|recoveryHashes|"operators"/)
+    assert.equal(database.adminLog!.at(-1)!.action, "backup-downloaded")
+    assert.equal(database.adminLog!.at(-1)!.actor, operatorId)
+
+    // 다음 로그인에는 설정 없이 코드만 받는다. 세션은 끝나면 쓰지 못한다.
+    const again = await admin("POST", "/session", "", { email, password })
+    assert.equal(again.data.setup, undefined)
+    const nextCode = codeAt(setup.secret, stepAt(Date.now()) + 1)
+    const later = await admin("POST", "/session/code", "", { email, ticket: again.data.ticket, code: nextCode })
+    assert.equal(later.status, 200)
+    assert.equal(later.data.recoveryCodes, undefined)
+    assert.equal((await admin("DELETE", "/session", later.data.token)).status, 200)
+    assert.equal((await admin("GET", "/session", later.data.token)).status, 403)
+    database.operatorSessions!.find((entry) => entry.operatorId === operatorId)!.expiresAt = Date.now() - 1
+    assert.equal((await admin("GET", "/session", session)).status, 403)
+  } finally {
+    config.adminToken = saved
+    delete database.operators
+    delete database.operatorSessions
+    await saveDatabase()
+  }
+})
+
 test("writes without their own limit are limited per account, and check-ins aren't counted with them", async () => {
   const first = await signUpMember("writes-one@syu.ac.kr", "writes-pass-123")
   const second = await signUpMember("writes-two@syu.ac.kr", "writes-pass-123")

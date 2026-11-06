@@ -17,7 +17,7 @@ import {
   topSearches,
 } from "../lib/adminInsights.js"
 import { config } from "../config.js"
-import { cleanTags, grantPartners, logAdmin, resetExamples } from "../lib/adminTools.js"
+import { backupWithoutSecrets, cleanTags, grantPartners, logAdmin, resetExamples } from "../lib/adminTools.js"
 import { applicationFolder, applicationsOf } from "../lib/applications.js"
 import { sendMail } from "../lib/mailer.js"
 import { photos, photoType } from "../lib/photos.js"
@@ -499,13 +499,15 @@ adminMoreRouter.get("/system", async (req, res) => {
   })
 })
 
-// 백업 하나를 보관된 파일 그대로 통째로 준다. 모든 회원의 데이터가 들어
-// 있으므로 콘솔만 요청한다.
+// 백업 하나를 비밀값을 뺀 파일로 준다. 모든 회원의 데이터가 들어 있으므로 콘솔만
+// 요청하고, 누가 받았는지 남긴다.
 adminMoreRouter.get("/backups/:hour", async (req, res) => {
   await requireAdmin(req)
   const hour = String(req.params.hour)
   const data = await currentStorage().readBackup(hour)
   if (!data) throw new HttpError(404, "백업을 찾을 수 없어요.")
+  logAdmin(getDatabase(), "backup-downloaded", { kind: "backup", id: hour })
+  await saveDatabase()
   res.setHeader("Content-Disposition", `attachment; filename="uniconnect-backup-${hour}.json"`)
-  res.type("application/json").send(data)
+  res.type("application/json").send(backupWithoutSecrets(data))
 })

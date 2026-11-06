@@ -2,7 +2,7 @@ import { createHash, randomUUID, timingSafeEqual } from "node:crypto"
 import { Router, type Request } from "express"
 
 import { config } from "../config.js"
-import { adminLogRows, isLive, logAdmin, noteLimit, serviceHealth } from "../lib/adminTools.js"
+import { adminLogRows, adminRequest, isLive, logAdmin, noteLimit, serviceHealth } from "../lib/adminTools.js"
 import { cardReady, markCancelled, markPaid, paymentsOf } from "../lib/billing.js"
 import { askToss, reconcileRefunds, refundCard, settleCard, stuckRefunds } from "../lib/cardRecovery.js"
 import { memberDetail, memberRow, overview, proposalRows } from "../lib/console.js"
@@ -10,15 +10,17 @@ import { todayInKorea } from "../lib/dates.js"
 import { recentErrors } from "../lib/errorLog.js"
 import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
+import { operatorFor, tokenClosed } from "../lib/operators.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { isDemoAccount } from "../lib/reviews.js"
 import { platformStats } from "../lib/stats.js"
 import { text } from "../lib/validation.js"
-import { getDatabase, saveDatabase } from "../store.js"
+import { getDatabase, refreshDatabase, saveDatabase } from "../store.js"
 import type { Announcement, ReportAction } from "../types.js"
 
-// 운영자는 FAQ 페이지에서 온 질문을 읽고 답하며 플랫폼의 수치를 본다. 환경의
-// ADMIN_TOKEN을 X-Admin-Token 헤더로 보낸다(pages/AdminPage.tsx).
+// 운영자는 FAQ 페이지에서 온 질문을 읽고 답하며 플랫폼의 수치를 본다.
+// X-Admin-Token 헤더로 운영자 세션 토큰을 보낸다(routes/adminSession.ts). 2단계
+// 로그인까지 마친 운영자가 생기기 전에는 환경의 ADMIN_TOKEN도 받는다.
 export const adminRouter = Router()
 
 const adminFailures = createRateLimit({
@@ -36,11 +38,23 @@ export async function requireAdmin(req: Request) {
   await adminFailures.check(key)
   const expected = config.adminToken
   const given = req.get("x-admin-token") ?? ""
-  const match = Boolean(expected) && timingSafeEqual(digest(given), digest(expected ?? ""))
-  if (!match) {
+  const request = adminRequest.getStore()
+  const tokenMatches = Boolean(expected) && timingSafeEqual(digest(given), digest(expected ?? ""))
+  if (tokenMatches && !tokenClosed(getDatabase())) {
+    if (request) request.actor = "token"
+    return
+  }
+  let operator = given ? operatorFor(getDatabase(), given) : undefined
+  // 방금 다른 복사본에서 로그인했으면 그 세션이 아직 여기에 없다.
+  if (!operator && given) {
+    await refreshDatabase({ force: true })
+    operator = operatorFor(getDatabase(), given)
+  }
+  if (!operator) {
     await adminFailures.hit(key)
     throw new HttpError(403, "관리자만 쓸 수 있어요.")
   }
+  if (request) request.actor = operator.id
 }
 
 // 모든 결제를 최신순으로 보여 준다. 확인을 기다리는 계좌 이체, 결제된 것,

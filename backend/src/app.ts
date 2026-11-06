@@ -5,6 +5,7 @@ import express, { type ErrorRequestHandler } from "express"
 import { config } from "./config.js"
 import { isAppPath } from "./lib/appPaths.js"
 import { recordError } from "./lib/errorLog.js"
+import { adminRequest } from "./lib/adminTools.js"
 import { clientKey, createRateLimit, senderKey } from "./lib/rateLimit.js"
 import { HttpError } from "./lib/errors.js"
 import { langOf, translate } from "./lib/i18n.js"
@@ -24,6 +25,7 @@ import { calendarRouter } from "./routes/calendar.js"
 import { checkInRouter } from "./routes/checkin.js"
 import { conversationsRouter } from "./routes/conversations.js"
 import { cronRouter } from "./routes/cron.js"
+import { adminSessionRouter } from "./routes/adminSession.js"
 import { errorsRouter } from "./routes/errors.js"
 import { eventsRouter } from "./routes/events.js"
 import { groupsRouter } from "./routes/groups.js"
@@ -182,6 +184,8 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   app.use("/api/board", boardRouter)
   app.use("/api/errors", errorsRouter)
   app.use("/api/billing", billingRouter)
+  app.use("/api/admin", (_req, _res, next) => adminRequest.run({}, next))
+  app.use("/api/admin", adminSessionRouter)
   app.use("/api/admin", adminRouter)
   app.use("/api/admin", adminMoreRouter)
   app.use("/api/announcements", announcementsRouter)

@@ -26,6 +26,13 @@ const en: Record<string, string> = {
     "Verification codes were sent to this email too often. Please try again in 30 minutes.",
   "인증 시도가 너무 많아요. 15분 뒤에 다시 시도해 주세요.": "Too many verification attempts. Please try again in 15 minutes.",
   "로그인 시도가 너무 많아요. 15분 뒤에 다시 시도해 주세요.": "Too many login attempts. Please try again in 15 minutes.",
+  "운영자 로그인 시도가 너무 많아요. 15분 뒤에 다시 시도해 주세요.": "Too many operator login attempts. Please try again in 15 minutes.",
+  "운영자 비밀번호는 12자에서 64자 사이로 정해 주세요.": "An operator's password must be 12 to 64 characters.",
+  "이미 운영자로 등록된 이메일이에요.": "This email is already an operator.",
+  "운영자 이름을 적어 주세요.": "Please enter the operator's name.",
+  "운영자를 찾을 수 없어요.": "We couldn't find this operator.",
+  "자기 자신은 끌 수 없어요. 다른 운영자에게 부탁해 주세요.": "You can't disable yourself. Ask another operator.",
+  "운영자 세션으로 로그인해 주세요.": "Please log in with an operator session.",
   "요청이 너무 많아요. 잠시 후 다시 시도해 주세요.": "Too many requests. Please try again in a moment.",
   "기록 요청이 너무 많아요. 잠시 후 다시 시도해 주세요.": "Too many check-in requests. Please try again in a moment.",
   "직원 PIN을 너무 많이 틀렸어요. 15분 뒤에 다시 시도해 주세요.":
