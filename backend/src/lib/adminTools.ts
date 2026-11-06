@@ -4,6 +4,7 @@ import { config } from "../config.js"
 import { createSeed } from "../data/seed.js"
 import { cardReady, paymentsOf, testMode } from "./billing.js"
 import { addDays, todayInKorea } from "./dates.js"
+import { chatFiles, eventPhotos } from "./photos.js"
 import { proUntil } from "./plan.js"
 import type { Account, AdminAction, AdminLogEntry, Announcement, Database, Payment } from "../types.js"
 
@@ -123,10 +124,16 @@ export function grantPartners(database: Database, account: Account, days: number
 
 // 예시 데이터를 시드대로 되돌린다: 데모 계정 자신의 기록과 시드 카탈로그,
 // 제안, 대화, 후기, 게시물. 회원의 데이터는 그대로 두고 데모 계정은
-// 세션을 유지한다.
+// 세션을 유지한다. 데모 계정의 행사와 함께 사라진 계약서, 대화의 파일을 지우도록
+// 그 파일 묶음의 이름을 돌려준다(저장한 뒤에 지운다).
 export async function resetExamples(database: Database) {
   const fresh = await createSeed()
   const demo = new Set(Object.values(fresh.demoAccountIds))
+  const before = {
+    events: [...demo].flatMap((id) => (database.events[id] ?? []).map((event) => event.id)),
+    agreements: database.agreements.map((item) => item.id),
+    conversations: database.conversations.map((item) => item.id),
+  }
   const exampleListings = new Set([...fresh.brands, ...fresh.groups].map((listing) => listing.id))
   const freshAccounts = new Map(fresh.accounts.map((account) => [account.id, account]))
   database.accounts = database.accounts.filter((account) => !demo.has(account.id)).concat(fresh.accounts.map((account) => {
@@ -158,6 +165,14 @@ export async function resetExamples(database: Database) {
   database.inquiries = database.inquiries.filter((item) => !demo.has(item.accountId))
   database.invites = database.invites.filter((item) => !demo.has(item.accountId))
   database.payments = paymentsOf(database).filter((item) => !demo.has(item.accountId))
+  const agreements = new Set(database.agreements.map((item) => item.id))
+  const conversations = new Set(database.conversations.map((item) => item.id))
+  return [
+    // 시드 행사에는 올린 파일이 없으므로 데모 행사의 파일은 모두 지운다.
+    ...before.events.map(eventPhotos),
+    ...before.agreements.filter((id) => !agreements.has(id)),
+    ...before.conversations.filter((id) => !conversations.has(id)).map(chatFiles),
+  ]
 }
 
 // 콘솔이 세는 검색어: 소문자, 단어 사이 공백 하나, 두 글자에서 서른 글자.

@@ -232,10 +232,12 @@ adminMoreRouter.post("/accounts/:id/partners", async (req, res) => {
 adminMoreRouter.post("/demo/reset", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
-  await resetExamples(database)
+  const leftovers = await resetExamples(database)
   upgradeDatabase(database)
   logAdmin(database, "demo-reset", { kind: "site", id: "demo" })
   await saveDatabase()
+  // 초기화는 끝났으므로 파일을 못 지워도 실패로 답하지 않는다.
+  await photos().removeAll(leftovers).catch((error: Error) => console.error(`[demo reset] ${error.message}`))
   res.json({ ok: true })
 })
 

@@ -26,6 +26,7 @@ const en: Record<string, string> = {
     "Verification codes were sent to this email too often. Please try again in 30 minutes.",
   "인증 시도가 너무 많아요. 15분 뒤에 다시 시도해 주세요.": "Too many verification attempts. Please try again in 15 minutes.",
   "로그인 시도가 너무 많아요. 15분 뒤에 다시 시도해 주세요.": "Too many login attempts. Please try again in 15 minutes.",
+  "요청이 너무 많아요. 잠시 후 다시 시도해 주세요.": "Too many requests. Please try again in a moment.",
   "기록 요청이 너무 많아요. 잠시 후 다시 시도해 주세요.": "Too many check-in requests. Please try again in a moment.",
   "직원 PIN을 너무 많이 틀렸어요. 15분 뒤에 다시 시도해 주세요.":
     "Too many wrong staff PINs. Please try again in 15 minutes.",
@@ -579,6 +580,8 @@ const en: Record<string, string> = {
   "파일을 찾을 수 없어요.": "We couldn't find that file.",
   "보낸 파일은 고칠 수 없어요. 지우고 다시 보내 주세요.": "A file can't be edited. Delete it and send it again.",
   "데모 계정은 파일을 보낼 수 없어요.": "Demo accounts can't send files.",
+  "데모 계정은 파일을 올릴 수 없어요.": "Demo accounts can't upload files.",
+  "행사 사진과 기획안은 계정마다 {count}개까지 올릴 수 있어요.": "An account can keep up to {count} event photos and plans.",
 
   // 2단계 로그인과 기기 (routes/auth.ts)
   "로그인 시간이 지났어요. 비밀번호부터 다시 입력해 주세요.": "The login timed out. Please enter your password again.",

@@ -5473,19 +5473,20 @@ test("an account downloads everything it made, without its password or participa
   assert.ok(measured.every((item: object) => !("passes" in item) && !("log" in item)))
 })
 
-test("the data is backed up at most hourly beside the data file, keeping the latest 24", async () => {
+test("the data is backed up at most hourly beside the data file, for 24 hours", async () => {
   const { backups, backupFolder } = await import("./store.js")
   const folder = backupFolder()
   await mkdir(folder, { recursive: true })
-  for (let hour = 0; hour < 25; hour += 1) {
-    await writeFile(path.join(folder, `db-2000-01-01-${String(hour).padStart(2, "0")}.json`), "{}")
-  }
+  const named = (hours: number) => `db-${new Date(Date.now() - hours * 3_600_000).toISOString().slice(0, 13).replace("T", "-")}.json`
+  await writeFile(path.join(folder, "db-2000-01-01-00.json"), "{}")
+  await writeFile(path.join(folder, named(30)), "{}")
+  await writeFile(path.join(folder, named(5)), "{}")
   backups.lastAt = 0
   await saveDatabase()
   const copies = async () => (await readdir(folder)).filter((file) => file.startsWith("db-")).sort()
   const kept = await copies()
-  assert.equal(kept.length, 24)
-  assert.ok(!kept.includes("db-2000-01-01-00.json"))
+  assert.equal(kept.length, 2)
+  assert.ok(kept.includes(named(5)) && !kept.includes(named(30)) && !kept.includes("db-2000-01-01-00.json"))
   assert.ok(JSON.parse(await readFile(path.join(folder, kept.at(-1)!), "utf8")).accounts.length > 0)
   // 한 시간 안에는 새 복사를 만들지 않는다.
   await saveDatabase()
@@ -5521,6 +5522,61 @@ test("the Vercel entry reads the data on its first request and serves the API", 
     assert.ok(((await brands.json()) as { brands: unknown[] }).brands.length > 0)
   } finally {
     await new Promise((resolve) => vercelServer.close(resolve))
+  }
+})
+
+test("writes without their own limit are limited per account, and check-ins aren't counted with them", async () => {
+  const first = await signUpMember("writes-one@syu.ac.kr", "writes-pass-123")
+  const second = await signUpMember("writes-two@syu.ac.kr", "writes-pass-123")
+  for (let count = 0; count < 120; count += 1) {
+    assert.notEqual((await call("POST", "/billing/orders", { kind: "nothing" }, first)).status, 429)
+  }
+  const limited = await call("POST", "/billing/orders", { kind: "nothing" }, first)
+  assert.equal(limited.status, 429)
+  assert.match(limited.data.error, /요청이 너무 많아요/)
+  // 읽기와 다른 계정, 현장 기록은 그대로다.
+  assert.equal((await call("GET", "/auth/me", undefined, first)).status, 200)
+  assert.notEqual((await call("POST", "/billing/orders", { kind: "nothing" }, second)).status, 429)
+  assert.equal((await call("POST", "/check-in/20261012/scans", undefined, first)).status, 200)
+  // 로그인 전에는 많은 사람이 한 주소를 함께 쓰므로 주소당 한도가 더 크다. 위의 가입도
+  // 여기에 세었으므로 비우고 센다.
+  await clearRateLimits()
+  for (let count = 0; count < 600; count += 1) {
+    assert.notEqual((await call("POST", "/auth/social/nothing/start")).status, 429)
+  }
+  assert.equal((await call("POST", "/auth/social/nothing/start")).status, 429)
+})
+
+test("demo accounts can't upload event files, an account's files are capped, and a demo reset removes what's left", async () => {
+  const { photos, eventPhotos } = await import("./lib/photos.js")
+  const database = getDatabase()
+  const demo = await login("학생단체")
+  const demoId = database.demoAccountIds[Object.keys(database.demoAccountIds).find((key) => database.events[database.demoAccountIds[key as keyof typeof database.demoAccountIds]]?.length)! as keyof typeof database.demoAccountIds]
+  const demoEvent = database.events[demoId][0]
+  assert.equal((await call("POST", `/events/${demoEvent.id}/photos`, { image: "" }, demo)).status, 403)
+  assert.equal((await call("POST", `/events/${demoEvent.id}/plan`, { file: "" }, demo)).status, 403)
+
+  const group = await signUpMember("files-club@syu.ac.kr", "files-pass-123")
+  const made = await call("POST", "/events", { name: "파일 공연", date: "2031-05-01", people: "10명", types: ["제품"] }, group)
+  const id = made.data.event.id
+  const owner = database.accounts.find((account) => account.email === "files-club@syu.ac.kr")!
+  const mine = database.events[owner.id].find((event) => event.id === id)!
+  mine.photos = Array.from({ length: 100 }, (_, index) => `kept-${index}.png`)
+  const full = await call("POST", `/events/${id}/plan`, { file: "" }, group)
+  assert.equal(full.status, 409)
+  assert.match(full.data.error, /100개까지/)
+  delete mine.photos
+
+  // 전에 올린 데모 파일은 초기화에서 사라진다.
+  const saved = config.adminToken
+  config.adminToken = "test-admin-token"
+  try {
+    await photos().put(eventPhotos(demoEvent.id), "left.png", Buffer.from("left"))
+    const reset = await fetch(`${baseUrl}/admin/demo/reset`, { method: "POST", headers: { "X-Admin-Token": "test-admin-token" } })
+    assert.equal(reset.status, 200)
+    assert.equal(await photos().get(eventPhotos(demoEvent.id), "left.png"), undefined)
+  } finally {
+    config.adminToken = saved
   }
 })
 

@@ -8,6 +8,7 @@ import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
 import { eventCases, exploreEvents } from "../lib/explore.js"
 import { eventPhotos, parsePdf, parsePhoto, photoName, photoType, photos } from "../lib/photos.js"
+import { isDemoAccount } from "../lib/reviews.js"
 import { isSponsored } from "../lib/sponsorships.js"
 import { audienceYears, eventKinds, handoutWays, logoSpots, parseRole, promoPosts, sponsorTypes, text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
@@ -425,8 +426,21 @@ function ownEvent(req: Request) {
 
 // 단체가 행사 페이지에 사진을 올린다. 최대 넷이며 lib/photos.ts로 보관한다
 // (디스크에, Vercel에서는 Postgres에 둔다).
+// 행사 수에는 한도가 없으므로 계정 전체의 파일 수도 막는다. 공유 데모 계정은
+// 올리지 못한다.
+const maxEventFiles = 100
+
+function assertCanUpload(req: Request) {
+  const account = requireAccount(req)
+  const database = getDatabase()
+  if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 파일을 올릴 수 없어요.")
+  const files = (database.events[account.id] ?? []).reduce((sum, event) => sum + (event.photos?.length ?? 0) + (event.plan ? 1 : 0), 0)
+  if (files >= maxEventFiles) throw new HttpError(409, `행사 사진과 기획안은 계정마다 ${maxEventFiles}개까지 올릴 수 있어요.`)
+}
+
 eventsRouter.post("/:id/photos", async (req, res) => {
   const { event } = ownEvent(req)
+  assertCanUpload(req)
   if ((event.photos?.length ?? 0) >= maxEventPhotos) {
     throw new HttpError(409, `행사 사진은 ${maxEventPhotos}장까지 올릴 수 있어요.`)
   }
@@ -451,6 +465,7 @@ eventsRouter.post("/:id/photos", async (req, res) => {
 // 하나씩 올리며, 사진 옆에 보관한다. 페이지를 볼 수 있는 브랜드가 내려받는다.
 eventsRouter.post("/:id/plan", async (req, res) => {
   const { event } = ownEvent(req)
+  assertCanUpload(req)
   const parsed = parsePdf(req.body?.file)
   if (!parsed) throw new HttpError(400, "기획안은 2MB 이하의 PDF로 올려 주세요.")
   const name = text(req.body?.name).replace(/[\\/:*?"<>|]+/g, " ").slice(0, 80) || "기획안.pdf"
