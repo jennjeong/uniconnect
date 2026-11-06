@@ -50,6 +50,7 @@ export function overview(database: Database, now = new Date()) {
     revenue,
     attention: {
       applications: database.applications?.length ?? 0,
+      referrals: database.referralRewards?.filter((item) => item.status === "waiting").length ?? 0,
       // 보류 중인 문의는 다른 일을 기다리므로 여기서는 세지 않는다.
       inquiries: database.inquiries.filter((inquiry) => !inquiry.answer && !database.inquiryHandling?.[inquiry.id]?.heldAt).length,
       reports: database.reports.filter((report) => !report.resolution).length,

@@ -120,6 +120,7 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   app.use("/api/events/:id/plan", express.json({ limit: "3mb" }))
   // 운영자를 기다리는 가입이 보이는 서류도 마찬가지다(lib/applications.ts).
   app.use("/api/auth/signup", express.json({ limit: "3mb" }))
+  app.use("/api/invites/:code/accept", express.json({ limit: "3mb" }))
   app.use("/api/team/join", express.json({ limit: "3mb" }))
   // 줄인 로고가 들어갈 자리다(routes/profile.ts는 약 100KB로 제한한다).
   app.use(express.json({ limit: "300kb" }))

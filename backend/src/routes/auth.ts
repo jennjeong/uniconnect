@@ -7,7 +7,7 @@ import { acceptedProposalsOf, dropOrphanAgreements, removeUploads } from "../lib
 import { findListing } from "../lib/catalog.js"
 import { deviceLabel } from "../lib/devices.js"
 import { applicationFolder, applicationFor, applicationsOf, holdApplication, parseDocument } from "../lib/applications.js"
-import { emailRuleError, isPersonalMail, normalizeEmail } from "../lib/email.js"
+import { emailRuleError, normalizeEmail } from "../lib/email.js"
 import { forgetAdminRecords } from "../lib/adminTools.js"
 import { HttpError } from "../lib/errors.js"
 import { sendVerificationCode } from "../lib/mailer.js"
@@ -20,7 +20,7 @@ import { freezeSponsorships } from "../lib/sponsorships.js"
 import { emailTaken, memberByEmail, memberOf, requireOwner } from "../lib/team.js"
 import { hashRecovery, matchStep, newRecoveryCodes, newSecret, otpauthUrl } from "../lib/totp.js"
 import { accountTypes, checkPassword, mailKinds, parseContact, parseRole, text } from "../lib/validation.js"
-import { referralStats, referrerOf } from "../lib/referrals.js"
+import { forgetReferralRewards, referralRewardsOf, referralStats, referrerOf } from "../lib/referrals.js"
 import { hashToken, requireAccount } from "../middleware/session.js"
 import { getDatabase, retryConflicts, saveDatabase } from "../store.js"
 import type { Account, Database, EmailCode, MailKind, PublicAccount, Role, Session, SocialProvider } from "../types.js"
@@ -280,9 +280,9 @@ authRouter.post("/signup", async (req, res) => {
   const shopInvite = role === "브랜드" && invited(database, body.invite)
   const ruleError = emailRuleError(role, email, { personal: shopInvite })
   if (ruleError) throw new HttpError(400, ruleError)
-  // 회사 이메일이 없으면 매장은 사업 서류를 보이고 기다린다.
-  const personal = role === "브랜드" && isPersonalMail(email)
-  const document = personal ? parseDocument(body.document, "사업자등록증이나 재직 서류를 올려 주세요.") : undefined
+  // 초대받은 가게는 메일 주소와 상관없이 사업 서류를 보이고 기다린다. 개인 메일
+  // 목록은 모든 주소를 가려내지 못한다.
+  const document = shopInvite ? parseDocument(body.document, "사업자등록증이나 재직 서류를 올려 주세요.") : undefined
 
   const verified = database.emailCodes.find(
     (entry) =>
@@ -502,6 +502,7 @@ function removeAccount(database: Database, account: Account) {
   database.accounts = database.accounts.filter((item) => item.id !== account.id)
   // 이 계정이 초대한 사람들은 더 이상 이 계정을 가리키지 않는다.
   for (const invited of database.accounts) if (invited.referredBy === account.id) delete invited.referredBy
+  forgetReferralRewards(database, account.id)
   // 총학생회의 동아리는 연결이 끊긴다.
   for (const club of database.accounts) {
     if (club.councils?.some((link) => link.accountId === account.id)) {
@@ -565,7 +566,9 @@ function removeAccount(database: Database, account: Account) {
   // 이 계정 행사의 사진은 데이터를 저장한 뒤 없앤 계약서의 사진과 함께 지운다.
   droppedAgreements.push(...(database.events[account.id] ?? []).map((event) => eventPhotos(event.id)))
   // 아직 합류하지 않은 공동 관리자와 그 서류도 마찬가지다.
-  const waiting = applicationsOf(database).filter((application) => application.accountId === account.id)
+  const waiting = applicationsOf(database).filter(
+    (application) => application.accountId === account.id || application.linkAccountId === account.id,
+  )
   droppedAgreements.push(...waiting.map((application) => applicationFolder(application.id)))
   database.applications = applicationsOf(database).filter((application) => !waiting.includes(application))
   delete database.events[account.id]
@@ -835,6 +838,9 @@ authRouter.get("/export", (req, res) => {
   // 총학생회의 코드와 동아리가 연결한 총학생회다.
     council: { code: account.councilCode?.code ?? null, links: account.councils ?? [] },
     listing: listing ?? null,
+    referralRewards: referralRewardsOf(database)
+      .filter((item) => item.referrerId === account.id)
+      .map(({ id, days, status, createdAt, decidedAt }) => ({ id, days, status, createdAt, decidedAt })),
     events: database.events[account.id] ?? [],
     proposalsSent: [
       ...database.requests.filter((item) => item.fromAccountId === account.id),

@@ -14,7 +14,7 @@ export const applicationsOf = (database: Database) => (database.applications ??=
 export const applicationFolder = (id: string) => `application-${id}`
 
 export const applicationFor = (database: Database, email: string) =>
-  applicationsOf(database).find((application) => application.email === email)
+  applicationsOf(database).find((application) => application.email === email && !application.linkAccountId)
 
 // 보낸 그대로의 서류: 줄인 사진이나 2MB 이하 PDF와 그 이름. 오류는 빠진 것을
 // 말해 준다.
@@ -38,7 +38,8 @@ export async function holdApplication(
   fields: Omit<Application, "id" | "document" | "requestedAt">,
 ) {
   const id = randomUUID()
-  await photos().put(applicationFolder(id), document.file, document.bytes)
+  // 서류를 보관하기 전에 신청부터 남긴다. 그래야 동시에 온 요청이 중복 확인을
+  // 지나지 못한다.
   applicationsOf(database).push({
     ...fields,
     id,
@@ -46,8 +47,12 @@ export async function holdApplication(
     requestedAt: new Date().toISOString(),
   })
   try {
+    await photos().put(applicationFolder(id), document.file, document.bytes)
     await save()
   } catch (error) {
+    const held = applicationsOf(database)
+    const index = held.findIndex((application) => application.id === id)
+    if (index >= 0) held.splice(index, 1)
     await photos().removeAll([applicationFolder(id)])
     throw error
   }

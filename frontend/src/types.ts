@@ -442,6 +442,19 @@ export type CodeTicket = {
 // 운영자의 승인을 기다리는 가입 (backend lib/applications.ts).
 export type Pending = { pending: true }
 
+// 운영자의 승인을 기다리는 친구 초대 보상 (backend lib/referrals.ts).
+export type AdminReferralReward = {
+  id: string
+  createdAt: string
+  days: number
+  proposalId: string
+  referrer: { id: string; name: string; business: boolean } | null
+  joined: { id: string; name: string; business: boolean; createdAt: string } | null
+  value: number
+  feePaid: number
+  blocked: "missing" | "suspended" | "canceled" | "refunded" | null
+}
+
 // 운영자 계정과 로그인 (backend routes/adminSession.ts).
 export type AdminOperator = {
   id: string
@@ -469,6 +482,8 @@ export type AdminApplication = {
   document: { name: string; size: number }
   requestedAt: string
   brand?: string
+  // 초대받은 가게의 카카오맵 주소.
+  placeUrl?: string
   contact?: AccountContact
   team?: string
 }
@@ -1070,6 +1085,7 @@ export type AdminOverview = {
   revenue: { total: number; thisMonth: number; byKind: Record<PaymentKind, number>; partners: number }
   attention: {
     applications: number
+    referrals: number
     inquiries: number
     reports: number
     transfers: number

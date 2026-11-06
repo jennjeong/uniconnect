@@ -336,23 +336,96 @@ test("an invitation link's code ties a sign-up to its inviter, rewarded once at 
     assert.equal((await call("POST", `/requests/${request.id}/accept`, undefined, token)).status, 200)
     return request.id
   }
-  const confirm = async (id: string, brandToken: string) => {
+  // 보상에는 협찬액과 실제로 낸 수수료가 필요하다.
+  const { feeOf, feeStart } = await import("./lib/fees.js")
+  const started = feeStart.since
+  feeStart.since = "2000-01-01"
+  const confirm = async (id: string, brandToken: string, cash = 300_000) => {
+    const database = getDatabase()
+    const { acceptedProposal, agreementFor } = await import("./lib/agreements.js")
+    agreementFor(database, acceptedProposal(database, id)!).agreement.value = { cash, inKind: 0 }
+    const supply = feeOf({ cash, inKind: 0 })
+    ;(database.payments ??= []).push({ id: `fee-${id}`, accountId: "x", accountName: "x", kind: "fee", targetId: id, orderName: "수수료", amount: supply, supply, status: "paid", method: "transfer", requestedAt: "" } as never)
     await call("POST", `/agreements/${id}/confirm`, undefined, group)
     await call("POST", `/agreements/${id}/confirm`, undefined, brandToken)
   }
+  try {
   // 초대한 계정 자신과의 협찬은 확정되어도 아무에게도 보상하지 않는다.
   await confirm(await propose("초대 공연", listingId, brand), brand)
   assert.equal(grants().length, 0)
   // 다른 브랜드와의 협찬은 수락될 때가 아니라 양쪽이 e-contract를 확정할 때
   // 초대한 사람에게 보상하며, 처음 한 번만이다.
   const other = await listedMember("invite-other@other-cafe.kr", "invite-pass-123", "브랜드")
+  // 적은 금액의 협찬은 보상하지 않고 다음 협찬이 기회를 얻는다.
+  await confirm(await propose("초대 공연 작은", other.listingId, other.token), other.token, 10_000)
+  assert.equal(grants().length, 0)
   const first = await propose("초대 공연 2", other.listingId, other.token)
   assert.equal(grants().length, 0)
   await confirm(first, other.token)
-  assert.equal(grants().length, 1)
+  // 파트너스 일수는 운영자가 승인해야 나간다.
+  assert.equal(grants().length, 0)
+  const waiting = (await call("GET", "/auth/referral", undefined, brand)).data
+  assert.equal(waiting.rewarded, 0)
+  assert.equal(waiting.waiting, 1)
+  const { config: settings } = await import("./config.js")
+  const savedToken = settings.adminToken
+  settings.adminToken = "test-admin-token"
+  const admin = async (method: string, path: string, body?: unknown) => {
+    const response = await fetch(`${baseUrl}/admin${path}`, { method, headers: { "X-Admin-Token": "test-admin-token", "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined })
+    return { status: response.status, data: (await response.json().catch(() => null)) as { rewards: { id: string; value: number; blocked: string | null }[] } }
+  }
+  try {
+    assert.equal((await fetch(`${baseUrl}/admin/referrals`)).status, 403)
+    const { rewards } = (await admin("GET", "/referrals")).data
+    assert.equal(rewards.length, 1)
+    assert.equal(rewards[0].value, 300_000)
+    assert.equal(rewards[0].blocked, null)
+    assert.equal((await admin("POST", `/referrals/${rewards[0].id}/reject`, {})).status, 400)
+    assert.equal((await admin("POST", `/referrals/${rewards[0].id}/approve`)).status, 200)
+    assert.equal(grants().length, 1)
+    assert.equal((await admin("POST", `/referrals/${rewards[0].id}/approve`)).status, 409)
+    assert.equal(grants().length, 1)
+    assert.equal((await admin("GET", "/referrals")).data.rewards.length, 0)
+  } finally {
+    settings.adminToken = savedToken
+  }
   await confirm(await propose("초대 공연 3", other.listingId, other.token), other.token)
   assert.equal(grants().length, 1)
-  assert.equal((await call("GET", "/auth/referral", undefined, brand)).data.rewarded, 1)
+  const after = (await call("GET", "/auth/referral", undefined, brand)).data
+  assert.equal(after.rewarded, 1)
+  assert.equal(after.waiting, 0)
+
+  // 한 해에 받는 보상에는 상한이 있다.
+  const { referralRewardsPerYear, rewardReferrals } = await import("./lib/referrals.js")
+  const { acceptedProposal, agreementFor } = await import("./lib/agreements.js")
+  const database = getDatabase()
+  const proposal = acceptedProposal(database, first)!
+  const { agreement } = agreementFor(database, proposal)
+  const year = new Date().toISOString().slice(0, 4)
+  const fillers = Array.from({ length: referralRewardsPerYear }, () => ({ referredBy: brandAccount.id, referralRewardedAt: `${year}-01-01T00:00:00Z` }))
+  database.accounts.push(...(fillers as never[]))
+  delete groupAccount.referralRewardedAt
+  assert.deepEqual(rewardReferrals(database, { agreement, proposal }), [])
+  assert.equal(groupAccount.referralRewardedAt, undefined)
+  database.accounts = database.accounts.filter((account) => !fillers.includes(account as never))
+  // 초대받은 계정이 지워져도 기록이 남아 상한이 줄지 않고, 거절한 것은 세지 않는다.
+  const { forgetReferralRewards, rejectReferralReward, referralRewardsOf } = await import("./lib/referrals.js")
+  const records = Array.from({ length: referralRewardsPerYear }, (_, index) => ({ id: `cap-${index}`, referrerId: brandAccount.id, joinedId: `gone-${index}`, proposalId: first, days: 30, status: "approved" as const, createdAt: `${year}-01-01T00:00:00.000Z` }))
+  referralRewardsOf(database).push(...records)
+  forgetReferralRewards(database, "gone-0")
+  assert.equal(referralRewardsOf(database).find((item) => item.id === "cap-0")?.joinedId, undefined)
+  assert.deepEqual(rewardReferrals(database, { agreement, proposal }), [])
+  assert.equal(groupAccount.referralRewardedAt, undefined)
+  rejectReferralReward(referralRewardsOf(database).find((item) => item.id === "cap-1")!)
+  rejectReferralReward(referralRewardsOf(database).find((item) => item.id === "cap-2")!)
+  rejectReferralReward(referralRewardsOf(database).find((item) => item.id === "cap-0")!)
+  rewardReferrals(database, { agreement, proposal })
+  assert.ok(groupAccount.referralRewardedAt)
+  database.referralRewards = referralRewardsOf(database).filter((item) => !item.id.startsWith("cap-"))
+  } finally {
+    feeStart.since = started
+    getDatabase().payments = getDatabase().payments!.filter((item) => !item.id.startsWith("fee-"))
+  }
 })
 
 test("a member keeps up to ten proposal templates; the demo accounts keep none", async () => {
@@ -1601,6 +1674,54 @@ test("refunding a granted period moves later periods by that period's length", a
   const end = new Date(`${month.periodEnd}T00:00:00Z`).getTime()
   markCancelled(database, year, "테스트 환불")
   assert.equal((end - new Date(`${month.periodEnd}T00:00:00Z`).getTime()) / 86_400_000, 365)
+})
+
+test("the QR ceiling takes the smaller audience either side saw when confirming", async () => {
+  const group = await signUpMember("seen-club@syu.ac.kr", "seen-pass-1234")
+  const groupId = getDatabase().accounts.find((account) => account.email === "seen-club@syu.ac.kr")!.id
+  const { token: brand, listingId } = await listedMember("seen@seen-cafe.kr", "seen-pass-1234", "브랜드")
+  await call("POST", "/events", { name: "본 공연", date: "2026-12-22", people: "100명", types: ["제품"] }, group)
+  await call("POST", "/proposals", { matchId: listingId }, group)
+  const request = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
+  await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+  await call("GET", `/agreements/${request.id}`, undefined, brand)
+  const measurement = getDatabase().measurements.find((item) => item.accountId === groupId && item.eventId === request.eventId)!
+  const seen = measurement.goals.expectedAudience
+  await call("POST", `/agreements/${request.id}/confirm`, { audience: seen }, brand)
+  measurement.goals.expectedAudience = 100_000
+  // 화면에서 본 값과 다르면 다시 보게 한다.
+  assert.equal((await call("POST", `/agreements/${request.id}/confirm`, { audience: seen }, group)).status, 409)
+  await call("POST", `/agreements/${request.id}/confirm`, { audience: 100_000 }, group)
+  assert.equal(measurement.agreedAudience, seen)
+})
+
+test("the audience a brand saw when it started paying the fee caps the QR, whatever is raised before the payment lands", async () => {
+  const { feeStart } = await import("./lib/fees.js")
+  const { markPaid, paymentsOf } = await import("./lib/billing.js")
+  const started = feeStart.since
+  feeStart.since = "2000-01-01"
+  try {
+    const group = await signUpMember("pay-seen-club@syu.ac.kr", "pay-seen-pass-1234")
+    const groupId = getDatabase().accounts.find((account) => account.email === "pay-seen-club@syu.ac.kr")!.id
+    const { token: brand, listingId } = await listedMember("pay-seen@seen-cafe.kr", "pay-seen-pass-1234", "브랜드")
+    await call("POST", "/events", { name: "결제 공연", date: "2026-12-22", people: "100명", types: ["제품"] }, group)
+    await call("POST", "/proposals", { matchId: listingId }, group)
+    const request = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
+    await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+    await call("GET", `/agreements/${request.id}`, undefined, brand)
+    await call("PUT", `/agreements/${request.id}/value`, { value: { cash: 200000, inKind: 0 } }, group)
+    const measurement = getDatabase().measurements.find((item) => item.accountId === groupId && item.eventId === request.eventId)!
+    const seen = measurement.goals.expectedAudience
+    const { order } = (await call("POST", "/billing/orders", { kind: "fee", targetId: request.id }, brand)).data
+    // 결제 중에 올리고 단체가 먼저 확인해도, 브랜드가 본 값이 기준이다.
+    measurement.goals.expectedAudience = 100_000
+    await call("POST", `/agreements/${request.id}/confirm`, { audience: 100_000 }, group)
+    const database = getDatabase()
+    markPaid(database, paymentsOf(database).find((item) => item.id === order.id)!, { method: "transfer" })
+    assert.equal(measurement.agreedAudience, seen)
+  } finally {
+    feeStart.since = started
+  }
 })
 
 test("a document keeps the extension of what it is, and an email can't dodge the free-mail list with a dot", async () => {
@@ -4134,6 +4255,45 @@ test("a student group invites a shop it found nearby, and the shop joins as a br
     // 매장 주인이 브랜드로 가입해 받으면 새 브랜드가 그 매장으로 바로 목록에
     // 오른다.
     const owner = await signUpMember("owner@golmok-cafe.kr", "golmok-pass-123", "브랜드")
+    // 서류 없이는 잇지 못하고, 운영자가 승인해야 연결된다.
+    assert.equal((await call("POST", `/invites/${code}/accept`, undefined, owner)).status, 400)
+    // 동시에 보내도 신청은 하나만 남는다.
+    const burst = await Promise.all([1, 2, 3].map(() => call("POST", `/invites/${code}/accept`, { document: proofDocument }, owner)))
+    assert.deepEqual(burst.map((answer) => answer.status).sort(), [202, 409, 409])
+    assert.deepEqual(burst.find((answer) => answer.status === 202)!.data, { pending: true })
+    const { applicationsOf } = await import("./lib/applications.js")
+    const heldOf = () => applicationsOf(getDatabase()).filter((item) => item.email === "owner@golmok-cafe.kr")
+    assert.equal(heldOf().length, 1)
+    // 기다리는 동안의 재전송은 하루 횟수를 쓰지 않는다.
+    for (let turn = 0; turn < 3; turn += 1) {
+      assert.equal((await call("POST", `/invites/${code}/accept`, { document: proofDocument }, owner)).status, 409)
+    }
+    // 운영자는 어느 가게를 잇는지 본다.
+    const { config: settings } = await import("./config.js")
+    const savedToken = settings.adminToken
+    settings.adminToken = "test-admin-token"
+    const waitingList = (await (await fetch(`${baseUrl}/admin/applications`, { headers: { "X-Admin-Token": "test-admin-token" } })).json()) as { applications: { email: string; placeUrl?: string }[] }
+    settings.adminToken = savedToken
+    assert.equal(waitingList.applications.find((item) => item.email === "owner@golmok-cafe.kr")!.placeUrl, "https://place.map.kakao.com/26338954")
+    // 서류를 하루에 많이 보내지 못한다.
+    const clearHeld = () => {
+      const [held] = heldOf()
+      applicationsOf(getDatabase()).splice(applicationsOf(getDatabase()).indexOf(held), 1)
+      return held
+    }
+    // 동시에 보낸 요청이 몇 번 세어졌는지는 도착 순서에 달려 있어, 막힐 때까지 보낸다.
+    let kept = clearHeld()
+    let status = 202
+    for (let turn = 0; turn < 5 && status === 202; turn += 1) {
+      status = (await call("POST", `/invites/${code}/accept`, { document: proofDocument }, owner)).status
+      if (status === 202) kept = clearHeld()
+    }
+    assert.equal(status, 429)
+    applicationsOf(getDatabase()).push(kept)
+    assert.equal((await call("GET", `/invites/${code}`, undefined, owner)).data.invite.joined, null)
+    // 기다리는 동안에도 계정은 그대로 로그인한다.
+    assert.equal((await call("POST", "/auth/login", { role: "브랜드", email: "owner@golmok-cafe.kr", password: "golmok-pass-123" })).status, 200)
+    await approveApplication("owner@golmok-cafe.kr")
     const accepted = await call("POST", `/invites/${code}/accept`, undefined, owner)
     assert.equal(accepted.status, 200)
     assert.equal(accepted.data.invite.joined, "you")
@@ -4143,8 +4303,6 @@ test("a student group invites a shop it found nearby, and the shop joins as a br
     assert.ok(getDatabase().brands.some((item) => item.id === listing.id))
     assert.equal((await call("GET", `/invites/${code}`, undefined, owner)).data.invite.joined, "you")
     assert.equal((await call("GET", `/invites/${code}`)).data.invite.joined, "other")
-    // 두 번 받아도 달라지는 것이 없다.
-    assert.equal((await call("POST", `/invites/${code}/accept`, undefined, owner)).status, 200)
     // The groups that invited it hear about it, with the brand's page on 추천 매칭.
     for (const address of ["inviter@syu.ac.kr", "invite-one@syu.ac.kr"]) {
       const notice = sent.find((message) => message.to.includes(address) && message.subject.includes("초대"))!
@@ -6498,7 +6656,7 @@ test("the operators' console lists what needs them, members with their record, a
     assert.equal((await fetch(`${baseUrl}/admin/overview`)).status, 403)
     const seen = (await admin("/overview")).data
     assert.equal(seen.weekly.length, 8)
-    assert.deepEqual(Object.keys(seen.attention).sort(), ["alerts", "applications", "cancels", "inquiries", "reports", "stale", "suspended", "transfers"])
+    assert.deepEqual(Object.keys(seen.attention).sort(), ["alerts", "applications", "cancels", "inquiries", "referrals", "reports", "stale", "suspended", "transfers"])
     assert.deepEqual(Object.keys(seen.revenue.byKind).sort(), ["ad", "fee", "pro", "report"])
 
     await signUpMember("console@syu.ac.kr", "console-pass-123")
@@ -6711,6 +6869,14 @@ test("a QR can't be run up: one address is limited by the event's size, and an e
   const ceiling = await scan()
   assert.equal(ceiling.status, 409)
   assert.match(ceiling.data.error, /3배/)
+  // 두 쪽이 확인한 뒤에는 주인이 예상 인원을 올려도 상한이 그대로다(한쪽이 확인한
+  // 뒤에 올린 값도 기준이 되지 않는다는 것은 아래 테스트가 본다).
+  measurement.agreedAudience = 10
+  measurement.goals.expectedAudience = 10_000
+  await clearRateLimits()
+  assert.equal((await scan()).status, 409)
+  delete measurement.agreedAudience
+  assert.equal((await scan()).status, 200)
 })
 
 test("a shop with no company email signs up by invitation with a document, and an operator decides", async () => {

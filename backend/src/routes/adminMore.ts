@@ -21,6 +21,7 @@ import { backupWithoutSecrets, cleanTags, grantPartners, logAdmin, resetExamples
 import { applicationFolder, applicationsOf } from "../lib/applications.js"
 import { sendMail } from "../lib/mailer.js"
 import { photos, photoType } from "../lib/photos.js"
+import { approveReferralReward, referralRewardsOf, rejectReferralReward, tellReferrers, waitingReferralRewards } from "../lib/referrals.js"
 import { linkShop, tellInviters } from "../lib/shopInvites.js"
 import { memberDetail } from "../lib/console.js"
 import { HttpError } from "../lib/errors.js"
@@ -54,7 +55,7 @@ adminMoreRouter.get("/applications", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
   res.json({
-    applications: applicationsOf(database).map(({ id, kind, name, email, document, requestedAt, account, accountId }) => ({
+    applications: applicationsOf(database).map(({ id, kind, name, email, document, requestedAt, account, accountId, linkAccountId, invite }) => ({
       id,
       kind,
       name,
@@ -62,6 +63,9 @@ adminMoreRouter.get("/applications", async (req, res) => {
       document: { name: document.name, size: document.size },
       requestedAt,
       ...(account ? { brand: account.name, contact: account.contact } : {}),
+      ...(linkAccountId ? { brand: name } : {}),
+      // 어느 가게를 잇는지 보고 서류와 맞춰 본다.
+      ...(invite ? { placeUrl: database.invites.find((item) => item.code === invite)?.placeUrl } : {}),
       ...(accountId ? { team: database.accounts.find((item) => item.id === accountId)?.name ?? "" } : {}),
     })),
   })
@@ -104,6 +108,10 @@ adminMoreRouter.post("/applications/:id/approve", async (req, res) => {
     const invite = database.invites.find((item) => item.code === application.invite)
     const taken = invite && database.brands.some((brand) => brand.kakaoPlaceId === invite.placeId)
     if (invite && !taken) link = linkShop(database, account, invite)
+  } else if (application.linkAccountId) {
+    const invite = database.invites.find((item) => item.code === application.invite)
+    if (!invite) throw new HttpError(409, "초대가 없어져서 연결할 수 없어요. 거절해 주세요.")
+    link = linkShop(database, accountFor(database, application.linkAccountId), invite)
   } else {
     const account = accountFor(database, application.accountId ?? "")
     account.members = [...(account.members ?? []), application.member!]
@@ -116,7 +124,11 @@ adminMoreRouter.post("/applications/:id/approve", async (req, res) => {
   await tellApplicant(
     application.email,
     "[uniconnect] 가입이 승인되었어요",
-    application.account ? "서류를 확인했어요. 이제 가입한 이메일과 비밀번호로 로그인할 수 있어요." : "서류를 확인했어요. 첫 로그인에서 2단계 인증을 설정하면 함께 관리할 수 있어요.",
+    application.linkAccountId
+      ? "서류를 확인했어요. 가게를 연결했어요."
+      : application.account
+        ? "서류를 확인했어요. 이제 가입한 이메일과 비밀번호로 로그인할 수 있어요."
+        : "서류를 확인했어요. 첫 로그인에서 2단계 인증을 설정하면 함께 관리할 수 있어요.",
   )
   res.json({ ok: true })
 })
@@ -133,6 +145,42 @@ adminMoreRouter.post("/applications/:id/reject", async (req, res) => {
   await saveDatabase()
   await photos().removeAll([applicationFolder(application.id)])
   await tellApplicant(application.email, "[uniconnect] 가입을 승인하지 못했어요", `제출한 서류를 확인하지 못했어요. 사유: ${reason}`)
+  res.json({ ok: true })
+})
+
+// 친구 초대 보상: 파트너스 일수는 운영자가 승인해야 나간다(lib/referrals.ts).
+adminMoreRouter.get("/referrals", async (req, res) => {
+  await requireAdmin(req)
+  res.json({ rewards: waitingReferralRewards(getDatabase()) })
+})
+
+function waitingReward(database: Database, id: unknown) {
+  const reward = referralRewardsOf(database).find((item) => item.id === id)
+  if (!reward) throw new HttpError(404, "찾을 수 없는 보상이에요.")
+  if (reward.status !== "waiting") throw new HttpError(409, "이미 결정한 보상이에요.")
+  return reward
+}
+
+adminMoreRouter.post("/referrals/:id/approve", async (req, res) => {
+  await requireAdmin(req)
+  const database = getDatabase()
+  const reward = waitingReward(database, req.params.id)
+  const told = approveReferralReward(database, reward)
+  logAdmin(database, "referral-approved", { kind: "account", id: reward.referrerId })
+  await saveDatabase()
+  tellReferrers([told])
+  res.json({ ok: true })
+})
+
+adminMoreRouter.post("/referrals/:id/reject", async (req, res) => {
+  await requireAdmin(req)
+  const database = getDatabase()
+  const reward = waitingReward(database, req.params.id)
+  const reason = text(req.body?.reason)
+  if (!reason || reason.length > 200) throw new HttpError(400, "거절 사유를 200자 이하로 적어 주세요.")
+  rejectReferralReward(reward)
+  logAdmin(database, "referral-rejected", { kind: "account", id: reward.referrerId }, reason)
+  await saveDatabase()
   res.json({ ok: true })
 })
 
