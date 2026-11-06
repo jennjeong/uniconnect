@@ -231,8 +231,8 @@ const en: Record<string, string> = {
     "Payment records (order number, what was bought, amount, payment method, when it was paid or canceled and why, Toss Payments' payment key and card receipt address, customer key)",
   "유료 서비스 결제와 환불, 세금 신고":
     "Paying for and refunding paid services, tax filing",
-  "5년(전자상거래법에 따라 탈퇴한 뒤에도 보관)":
-    "5 years (kept after leaving, as the E-Commerce Act requires)",
+  "결제한 날부터 5년(전자상거래법에 따라 탈퇴해도 이 기간에는 보관)":
+    "5 years from payment (kept through this period even after leaving, as the E-Commerce Act requires)",
   "회원이 결제하면 주문 번호, 산 것, 금액, 이메일을 결제 대행사 토스페이먼츠(대한민국)에 보내 결제를 처리해요. 카드 정보는 토스페이먼츠가 직접 받고 서비스는 받지 않아요.":
     "When a member pays, the order number, what is bought, the amount and the email are sent to the payment processor Toss Payments (Republic of Korea) to process the payment. Toss Payments receives the card details directly; the service does not.",
   "리포트 환불: 사고 나서 7일 안에 리포트를 열어 보지 않았으면 돌려드려요. 연 뒤에는 디지털 콘텐츠라 돌려드리지 않아요(전자상거래법 제17조 제2항 제5호). 이 점은 결제 화면에서 먼저 알려요.":
@@ -353,8 +353,8 @@ const en: Record<string, string> = {
     "Information in the database and files is deleted so it can't be restored. Personal information isn't kept on paper.",
   "법령에 따라 보존하는 정보는 아래 '지우기와 회원의 권리'에 근거와 항목을 적었어요.":
     "Information kept by law is listed with its basis under 'Deleting and your rights' below.",
-  "결제 기록(주문, 결제, 취소와 그 이유)은 전자상거래법 제6조와 같은 법 시행령 제6조에 따라 탈퇴한 뒤에도 5년 동안 결제 확인과 분쟁 처리에만 쓰려고 보관하고, 그 뒤에 지워요.":
-    "Payment records (orders, payments, cancellations and their reasons) are kept for 5 years after leaving under Article 6 of the E-Commerce Act and Article 6 of its Enforcement Decree, used only for confirming payments and handling disputes, and deleted after that.",
+  "결제 기록(주문, 결제, 취소와 그 이유)은 전자상거래법 제6조와 같은 법 시행령 제6조에 따라 결제한 날부터 5년 동안 보관하고, 탈퇴한 뒤에는 결제 확인과 분쟁 처리에만 써요. 기간이 지나면 지워요. 회원으로 있는 동안에는 산 리포트와 낸 수수료의 근거인 결제 완료 기록을 탈퇴할 때까지 둬요.":
+    "Payment records (orders, payments, cancellations and their reasons) are kept for 5 years from payment under Article 6 of the E-Commerce Act and Article 6 of its Enforcement Decree. After leaving they are used only for confirming payments and handling disputes, and they are deleted when the period ends. While you are a member, completed payments stay until you leave because they back the reports you bought and the fees you paid.",
   "관리자 기능은 운영자 계정과 2단계 인증으로 들어와요. 첫 운영자를 만들기 전에는 별도의 관리자 토큰을 써요. 운영자가 한 일은 누가 했는지와 함께 기록해요.":
     "Administrator functions are entered with an operator account and two-step login. Until the first operator is made, a separate administrator token is used. What operators do is recorded along with who did it.",
   "운영자가 내려받는 백업 파일에는 비밀번호와 로그인, 결제, 현장 확인에 쓰는 값을 넣지 않아요.":

@@ -45,6 +45,8 @@ export const config = {
   // 알림 메일의 링크에 쓰는 사이트 주소다(예: https://uniconnect.kr).
   siteUrl: process.env.SITE_URL,
   mailFrom: process.env.MAIL_FROM,
+  // 이용 제한에 이의를 받는 주소다. 없으면 알림 메일에 답장으로 받는다.
+  supportEmail: process.env.SUPPORT_EMAIL,
   // 프론트엔드를 다른 출처에서 호스팅할 때만 필요하다.
   corsOrigin: process.env.CORS_ORIGIN,
   // 캠퍼스 주변의 실시간 매장을 위한 Kakao Local의 REST 키다

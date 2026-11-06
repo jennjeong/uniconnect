@@ -9,14 +9,14 @@ import { memberDetail, memberRow, overview, proposalRows } from "../lib/console.
 import { todayInKorea } from "../lib/dates.js"
 import { recentErrors } from "../lib/errorLog.js"
 import { HttpError } from "../lib/errors.js"
-import { notify } from "../lib/notices.js"
+import { notify, notifyRestored, notifySuspended } from "../lib/notices.js"
 import { operatorFor, tokenClosed } from "../lib/operators.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { isDemoAccount } from "../lib/reviews.js"
 import { platformStats } from "../lib/stats.js"
 import { text } from "../lib/validation.js"
 import { getDatabase, refreshDatabase, saveDatabase } from "../store.js"
-import type { Announcement, ReportAction } from "../types.js"
+import type { Account, Announcement, ReportAction } from "../types.js"
 
 // 운영자는 FAQ 페이지에서 온 질문을 읽고 답하며 플랫폼의 수치를 본다.
 // X-Admin-Token 헤더로 운영자 세션 토큰을 보낸다(routes/adminSession.ts). 2단계
@@ -173,6 +173,9 @@ adminRouter.get("/reports", async (req, res) => {
 const reportActions: ReportAction[] = ["dismiss", "hide-review", "hide-reply", "suspend"]
 
 // 운영자가 신고를 처리한다. 그대로 두거나, 신고된 후기(와 그 답글) 또는
+// 운영자가 적은 정지 사유다. 회원에게 메일로 간다.
+const suspensionReason = (req: Request) => text(req.body?.reason).slice(0, 200) || undefined
+
 // 신고된 답글을 내리거나, 신고된 계정을 정지한다(로그인할 수 없고, 메일을
 // 받지 못하고, 누구에게도 보이지 않으며, 세션이 끝난다). 공유 데모 계정은
 // 정지할 수 없다.
@@ -184,6 +187,7 @@ adminRouter.post("/reports/:id/resolve", async (req, res) => {
   const action = text(req.body?.action) as ReportAction
   if (!reportActions.includes(action)) throw new HttpError(400, "처리 방법을 골라 주세요.")
   const now = new Date().toISOString()
+  let newlySuspended: Account | undefined
   if (action === "hide-review") {
     const { target } = report
     const review = target.kind === "review" ? database.reviews.find((item) => item.id === target.reviewId) : undefined
@@ -200,13 +204,16 @@ adminRouter.post("/reports/:id/resolve", async (req, res) => {
     const account = database.accounts.find((item) => item.id === report.accountId)
     if (!account) throw new HttpError(409, "이미 탈퇴한 회원이에요.")
     if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 정지할 수 없어요.")
-    account.suspendedAt = now
+    newlySuspended = account.suspendedAt ? undefined : account
+    account.suspendedAt ??= now
     database.sessions = database.sessions.filter((session) => session.accountId !== account.id)
   }
   report.resolution = { action, at: now }
   logAdmin(database, "report-resolved", { kind: "report", id: report.id }, action)
   await saveDatabase()
-  res.json({ ok: true })
+  // 사유는 운영자가 쓴 말이거나 신고 종류다. 신고자가 쓴 글은 보내지 않는다.
+  if (!newlySuspended) return void res.json({ ok: true })
+  res.json({ ok: true, noticeSent: await notifySuspended(newlySuspended, suspensionReason(req) ?? report.reason) })
 })
 
 // 가장 최근의 서버와 브라우저 오류를 최신순으로 보여 준다.
@@ -223,6 +230,7 @@ adminRouter.post("/accounts/:id/unsuspend", async (req, res) => {
   delete account.suspendedAt
   logAdmin(getDatabase(), "account-unsuspended", { kind: "account", id: account.id })
   await saveDatabase()
+  void notifyRestored(account)
   res.status(204).end()
 })
 
@@ -308,11 +316,13 @@ adminRouter.post("/accounts/:id/suspend", async (req, res) => {
   const account = database.accounts.find((item) => item.id === req.params.id)
   if (!account) throw new HttpError(404, "회원을 찾을 수 없어요.")
   if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 정지할 수 없어요.")
+  const fresh = !account.suspendedAt
   account.suspendedAt ??= new Date().toISOString()
   database.sessions = database.sessions.filter((session) => session.accountId !== account.id)
   logAdmin(database, "account-suspended", { kind: "account", id: account.id })
   await saveDatabase()
-  res.json({ account: memberDetail(database, account) })
+  const noticeSent = fresh ? await notifySuspended(account, suspensionReason(req) ?? "운영자가 약관을 어긴 일을 확인했어요.") : undefined
+  res.json({ account: memberDetail(getDatabase(), account), noticeSent })
 })
 
 // 모든 제안을 최신순으로 보여 준다.

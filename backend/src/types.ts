@@ -789,7 +789,7 @@ export type Payment = {
   // Toss Payments가 보는 주문 id이기도 하다.
   id: string
   // 결제한 계정이다. 결제 기록은 5년간 보관해야 하므로 계정이 떠난 뒤에는
-  // 이름만 남긴다.
+  // 이름만 남기고, 기간이 지나면 지운다(lib/paymentRetention.ts).
   accountId: string
   accountName: string
   kind: PaymentKind

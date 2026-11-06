@@ -6,6 +6,8 @@ import { tmpdir } from "node:os"
 import path from "node:path"
 import { after, before, beforeEach, test } from "node:test"
 
+import type { Payment } from "./types.js"
+
 // 실행할 때마다 실제 data/db.json이 아니라 임시 파일의 새 시드로 시작한다.
 const dataDir = await mkdtemp(path.join(tmpdir(), "uniconnect-api-"))
 process.env.DATA_FILE = path.join(dataDir, "db.json")
@@ -3167,7 +3169,7 @@ async function signUpMember(email: string, password: string, role: "학생단체
     over14: true,
     ...extra,
   })
-  assert.equal(signup.status, 201)
+  assert.equal(signup.status, 201, signup.data.error)
   return signup.data.token as string
 }
 
@@ -6976,4 +6978,127 @@ test("a shop with no company email signs up by invitation with a document, and a
     settings.adminToken = saved
   }
   assert.equal((await call("POST", "/auth/email-code", { role: "브랜드", email: "second@naver.com", invite: invite.code })).status, 200)
+})
+
+test("payment records leave 5 years after their last step, unless a member still relies on them", async () => {
+  const { expiredPayments, prunePayments } = await import("./lib/paymentRetention.js")
+  const { paymentsOf } = await import("./lib/billing.js")
+  const database = getDatabase()
+  const member = database.accounts[0].id
+  const now = new Date("2031-06-15T00:00:00.000Z")
+  const old = "2026-06-14T00:00:00.000Z"
+  const row = (id: string, accountId: string, extra: object) =>
+    ({ id, accountId, accountName: "이름", kind: "pro", targetId: "", orderName: "Growth 30일", amount: 1, requestedAt: old, ...extra }) as Payment
+  const rows = [
+    row("left-paid", "left-account", { status: "paid", paidAt: old }),
+    row("left-recent", "left-account", { status: "paid", paidAt: "2026-06-16T00:00:00.000Z" }),
+    row("left-refunded-late", "left-account", { status: "cancelled", paidAt: old, cancelledAt: "2028-01-01T00:00:00.000Z" }),
+    row("left-confirming", "left-account", { status: "pending", confirmingAt: old }),
+    row("left-refunding", "left-account", { status: "paid", paidAt: old, refundingAt: old }),
+    row("member-paid", member, { status: "paid", paidAt: old }),
+    row("member-cancelled", member, { status: "cancelled", cancelledAt: old }),
+    row("member-waiting", member, { status: "pending" }),
+  ]
+  paymentsOf(database).push(...rows)
+  try {
+    assert.deepEqual(expiredPayments(database, now).map((payment) => payment.id), ["left-paid", "member-cancelled", "member-waiting"])
+    assert.equal(await prunePayments(now), 3)
+    const left = new Set(paymentsOf(getDatabase()).map((payment) => payment.id))
+    assert.deepEqual(rows.map((item) => left.has(item.id)), [false, true, true, true, true, true, false, false])
+    // 지울 것이 없으면 아무 일도 하지 않는다.
+    assert.equal(await prunePayments(now), 0)
+    // 다른 결제는 그대로 둔다.
+    assert.equal(await prunePayments(new Date("2026-11-07T00:00:00.000Z")), 0)
+  } finally {
+    const ours = new Set(rows.map((item) => item.id))
+    getDatabase().payments = paymentsOf(getDatabase()).filter((payment) => !ours.has(payment.id))
+    await saveDatabase()
+  }
+})
+
+test("a restricted member is told why and how to appeal, and the operator learns when no mail went out", async () => {
+  const { mailTransport } = await import("./lib/mailer.js")
+  const admin = async (route: string, body?: unknown) => {
+    const response = await fetch(baseUrl + route, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Admin-Token": "test-admin-token" },
+      body: JSON.stringify(body ?? {}),
+    })
+    const reply = await response.text()
+    return { status: response.status, data: reply ? JSON.parse(reply) : null }
+  }
+  const { token: group } = await listedMember("reporter@syu.ac.kr", "notice-pass-123")
+  const { token: brand, listingId: brandListing } = await listedMember("restricted@restrictcafe.kr", "notice-pass-123", "브랜드")
+  const id = (await call("GET", "/auth/me", undefined, brand)).data.account.id as string
+  const { token: other } = await listedMember("restricted@othercafe.kr", "notice-pass-123", "브랜드")
+  const otherId = (await call("GET", "/auth/me", undefined, other)).data.account.id as string
+
+  // 메일 서비스가 없으면 보내지 못했다고 알려 준다.
+  const unsent = await admin(`/admin/accounts/${id}/suspend`, { reason: "사칭" })
+  assert.deepEqual([unsent.status, unsent.data.noticeSent], [200, false])
+  assert.equal((await admin(`/admin/accounts/${id}/unsuspend`)).status, 204)
+
+  const realPost = mailTransport.post
+  const sent: { to: string[]; subject: string; text: string }[] = []
+  let answer = 200
+  mailTransport.post = async (body) => {
+    sent.push(body)
+    return new Response(null, { status: answer })
+  }
+  config.resendApiKey = "test-key"
+  config.mailFrom = "uniconnect <no-reply@example.com>"
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 20))
+  try {
+    // 정지한 계정에는 다른 메일이 가지 않지만 제한 알림은 간다.
+    const done = await admin(`/admin/accounts/${id}/suspend`, { reason: "다른 회사를 사칭했어요" })
+    assert.equal(done.data.noticeSent, true)
+    assert.equal(sent.length, 1)
+    assert.deepEqual(sent[0].to, ["restricted@restrictcafe.kr"])
+    assert.match(sent[0].text, /사유: 다른 회사를 사칭했어요/)
+    assert.match(sent[0].text, /이 메일에 답장/)
+
+    // 이미 정지된 계정을 다시 정지해도 메일을 또 보내지 않는다.
+    const again = await admin(`/admin/accounts/${id}/suspend`, {})
+    assert.equal(again.data.noticeSent, undefined)
+    assert.equal(sent.length, 1)
+
+    // 풀면 알린다.
+    assert.equal((await admin(`/admin/accounts/${id}/unsuspend`)).status, 204)
+    await settle()
+    assert.equal(sent.length, 2)
+    assert.match(sent[1].subject, /제한이 풀렸어요/)
+
+    // 사유를 안 적으면 기본 문구가 가고, 이의 주소가 있으면 그 주소를 적는다.
+    config.supportEmail = "help@example.com"
+    await admin(`/admin/accounts/${otherId}/suspend`)
+    assert.match(sent[2].text, /사유: 운영자가 약관을 어긴 일을 확인했어요/)
+    assert.match(sent[2].text, /help@example\.com으로 알려 주세요/)
+    await admin(`/admin/accounts/${otherId}/unsuspend`)
+    await settle()
+
+    // 메일이 실패하면 운영자가 알 수 있다.
+    answer = 500
+    assert.equal((await admin(`/admin/accounts/${id}/suspend`, { reason: "사칭" })).data.noticeSent, false)
+    answer = 200
+    await admin(`/admin/accounts/${id}/unsuspend`)
+    await settle()
+
+    // 신고로 정지하면 신고 종류만 가고 신고자가 쓴 글은 가지 않는다.
+    const reported = await call("POST", "/reports", { kind: "account", listingId: brandListing, reason: "사기 의심", detail: "신고자가 쓴 비밀 글" }, group)
+    assert.ok(reported.status < 300, JSON.stringify(reported.data))
+    const reports = (await fetch(`${baseUrl}/admin/reports`, { headers: { "X-Admin-Token": "test-admin-token" } }).then((item) => item.json())) as { reports: { id: string; detail: string }[] }
+    const report = reports.reports.find((item) => item.detail === "신고자가 쓴 비밀 글")!
+    sent.length = 0
+    const resolved = await admin(`/admin/reports/${report.id}/resolve`, { action: "suspend" })
+    assert.equal(resolved.data.noticeSent, true)
+    assert.match(sent[0].text, /사유: 사기 의심/)
+    assert.doesNotMatch(sent[0].text, /비밀 글/)
+    await admin(`/admin/accounts/${id}/unsuspend`)
+    await settle()
+  } finally {
+    mailTransport.post = realPost
+    config.resendApiKey = undefined
+    config.mailFrom = undefined
+    config.supportEmail = undefined
+  }
 })

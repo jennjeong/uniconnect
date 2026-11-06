@@ -705,6 +705,19 @@ const en: Record<string, string> = {
   "기수 이름은 1~30자로 적어 주세요.": "Give the term a name of 1 to 30 characters.",
   "기수가 시작한 날을 골라 주세요.": "Pick the day the term began.",
   "같은 날 시작한 기수가 둘이에요.": "Two terms begin on the same day.",
+  "계정 이용이 제한됐어요": "Your account has been restricted",
+  "운영자가 계정 이용을 제한했어요. 로그인할 수 없고, 다른 회원에게 보이지 않아요.":
+    "An operator restricted your account. You can't log in, and other members can't see you.",
+  "사유: {name}": "Reason: {name}",
+  "스팸 · 광고": "Spam or advertising",
+  "욕설 · 괴롭힘": "Abuse or harassment",
+  "사기 의심": "Suspected fraud",
+  "기타": "Other",
+  "이의가 있으면 {name}으로 알려 주세요.": "If you disagree, write to {name}.",
+  "이의가 있으면 이 메일에 답장해 주세요.": "If you disagree, reply to this email.",
+  "계정 이용 제한이 풀렸어요": "Your account restriction has been lifted",
+  "운영자가 계정 이용 제한을 풀었어요. 다시 로그인할 수 있어요.": "An operator lifted the restriction on your account. You can log in again.",
+  "운영자가 약관을 어긴 일을 확인했어요.": "An operator found a breach of the terms.",
 }
 
 export default en
