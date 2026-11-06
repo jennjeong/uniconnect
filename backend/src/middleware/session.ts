@@ -2,7 +2,7 @@ import { createHash } from "node:crypto"
 import type { NextFunction, Request, Response } from "express"
 
 import { HttpError } from "../lib/errors.js"
-import { getDatabase, saveDatabase } from "../store.js"
+import { getDatabase, refreshDatabase, saveDatabase } from "../store.js"
 import type { Account } from "../types.js"
 
 declare global {
@@ -28,11 +28,13 @@ export async function readSession(req: Request, _res: Response, next: NextFuncti
   const header = req.get("authorization")
   const token = header?.startsWith("Bearer ") ? header.slice(7) : undefined
   if (token) {
-    const database = getDatabase()
     const tokenHash = hashToken(token)
-    const session = database.sessions.find(
-      (entry) => entry.tokenHash === tokenHash && entry.expiresAt > Date.now(),
-    )
+    const live = () => getDatabase().sessions.find((entry) => entry.tokenHash === tokenHash && entry.expiresAt > Date.now())
+    // 방금 다른 복사본에서 로그인했으면 그 세션이 아직 여기에 없다. 없는 세션으로
+    // 답하면 앱이 로그아웃시키므로 먼저 저장된 데이터를 살핀다.
+    if (!live()) await refreshDatabase({ force: true })
+    const database = getDatabase()
+    const session = live()
     // 정지된 계정은 로그아웃한 것과 같고, 주인이 팀에서 뺀 공동 관리자도
     // 마찬가지다.
     const account = session && database.accounts.find((item) => item.id === session.accountId && !item.suspendedAt)

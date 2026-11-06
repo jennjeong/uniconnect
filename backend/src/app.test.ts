@@ -399,8 +399,8 @@ test("security: tokens, stale prices, refunds, late edits, codes and invitations
   pay.amount = 50_000
   const { config: settings } = await import("./config.js")
   const saved = { client: settings.tossClientKey, secret: settings.tossSecretKey }
-  settings.tossClientKey = "test_ck_example"
-  settings.tossSecretKey = "test_sk_example"
+  settings.tossClientKey = "live_ck_example"
+  settings.tossSecretKey = "live_sk_example"
   try {
     const stale = await call("POST", "/billing/confirm", { orderId: renewal.id, paymentKey: "pk", amount: 50_000 }, brand)
     assert.equal(stale.status, 409)
@@ -2958,10 +2958,14 @@ test("the admin token check fails safely and slows guessing", async () => {
 })
 
 test("check-in records are limited per address", async () => {
-  for (let i = 0; i < 120; i += 1) {
+  // 한도까지 스캔하면 최근 기록이 밀려나므로 뒤의 테스트를 위해 되돌린다.
+  const sample = getDatabase().measurements.find((item) => item.code === "20261012")!
+  const { log, metrics, hourlyScans, passes } = structuredClone(sample)
+  for (let i = 0; i < 600; i += 1) {
     assert.equal((await call("POST", "/check-in/20261012/scans")).status, 200)
   }
   assert.equal((await call("POST", "/check-in/20261012/scans")).status, 429)
+  Object.assign(sample, { log, metrics, hourlyScans, passes })
 })
 
 test("wrong staff PINs are limited per address and per event", async () => {
@@ -5596,8 +5600,8 @@ test("a brand confirms an e-contract by paying the 15% fee, by card or by transf
     // 카드는 Toss 키가 없으면 꺼져 있고, 그다음에는 금액이 주문의 것이어야 한다.
     const confirm = (amount: number) => call("POST", "/billing/confirm", { orderId: order.id, paymentKey: "pk-test", amount }, brand)
     assert.equal((await confirm(50000)).status, 409)
-    config.tossClientKey = "test_ck_example"
-    config.tossSecretKey = "test_sk_example"
+    config.tossClientKey = "live_ck_example"
+    config.tossSecretKey = "live_sk_example"
     toss.confirm = async (_key, orderId, amount) => ({ status: "DONE", totalAmount: amount, orderId, receipt: { url: "https://receipt.example/1" }, approvedAt: "2026-10-29T12:00:00+09:00" })
     assert.equal((await confirm(1000)).status, 400)
     const paid = (await confirm(55000)).data.order
@@ -5606,7 +5610,7 @@ test("a brand confirms an e-contract by paying the 15% fee, by card or by transf
     assert.ok(after.confirmed.group && after.confirmed.brand)
     assert.deepEqual([after.fee.paid, after.fee.due], [50000, 0])
     const listed = (await call("GET", "/billing", undefined, brand)).data
-    assert.deepEqual([listed.card.clientKey, listed.payments.length, listed.prices.report], ["test_ck_example", 1, 50000])
+    assert.deepEqual([listed.card.clientKey, listed.payments.length, listed.prices.report], ["live_ck_example", 1, 50000])
     assert.equal((await call("GET", "/billing", undefined, group)).data.payments.length, 0)
 
     // 가치가 오르면 차액이 남고, 여기서 계좌 이체로 낸다.
@@ -5650,8 +5654,8 @@ test("a card approval whose save fails is kept by its key and recorded later, ne
   const saved = { client: config.tossClientKey, secret: config.tossSecretKey, settle: cardRecovery.settleAfterMs }
   const realToss = { confirm: toss.confirm, lookup: toss.lookup }
   const dataFile = config.dataFile
-  config.tossClientKey = "test_ck_example"
-  config.tossSecretKey = "test_sk_example"
+  config.tossClientKey = "live_ck_example"
+  config.tossSecretKey = "live_sk_example"
   // Toss가 청구한 내역(결제 키별)과 요청받은 횟수.
   const charged = new Map<string, { orderId: string; totalAmount: number }>()
   let confirms = 0
@@ -5786,8 +5790,8 @@ test("a card refund whose save fails is kept by its mark and recorded later, nev
   const saved = { client: config.tossClientKey, secret: config.tossSecretKey, settle: cardRecovery.settleAfterMs, admin: config.adminToken }
   const realToss = { confirm: toss.confirm, lookup: toss.lookup, cancel: toss.cancel }
   const dataFile = config.dataFile
-  config.tossClientKey = "test_ck_example"
-  config.tossSecretKey = "test_sk_example"
+  config.tossClientKey = "live_ck_example"
+  config.tossSecretKey = "live_sk_example"
   config.adminToken = "test-admin-token"
   // Toss가 가진 결제(결제 키별)와 받은 환불 요청의 멱등키.
   const atToss = new Map<string, { status: string; orderId: string; totalAmount: number }>()
@@ -6169,6 +6173,56 @@ test("with Toss test keys the demo brand shows the whole payment flow; with none
   }
 })
 
+test("with Toss test keys a real member can't finish a card payment for free, and still pays by transfer", async () => {
+  const { toss } = await import("./lib/billing.js")
+  const saved = { client: config.tossClientKey, secret: config.tossSecretKey }
+  const realConfirm = toss.confirm
+  let confirms = 0
+  toss.confirm = async (_key, orderId, amount) => {
+    confirms += 1
+    return { status: "DONE", totalAmount: amount, orderId }
+  }
+  try {
+    const { token: brand } = await listedMember("test-keys@test-cafe.kr", "card-pass-123", "브랜드")
+    const demo = await login("브랜드")
+    config.tossClientKey = "test_ck_example"
+    config.tossSecretKey = "test_sk_example"
+
+    // 실제 회원에게는 카드가 없고 테스트 안내도 없다. 이체에는 진짜 돈이 오간다.
+    const member = (await call("GET", "/billing", undefined, brand)).data
+    assert.deepEqual([member.card, member.testMode, member.canPay], [null, false, true])
+    const { order } = (await call("POST", "/billing/orders", { kind: "pro" }, brand)).data
+    const paying = { orderId: order.id, paymentKey: "pk-free", amount: order.amount }
+    assert.equal((await call("POST", "/billing/confirm", paying, brand)).status, 409)
+    assert.equal(confirms, 0)
+    const stored = getDatabase().payments!.find((payment) => payment.id === order.id)!
+    assert.deepEqual([stored.status, stored.paymentKey], ["pending", undefined])
+    assert.ok((await call("POST", `/billing/orders/${order.id}/transfer`, undefined, brand)).data.order.transferRequestedAt)
+
+    // 데모 계정은 시연을 끝까지 한다.
+    const shown = (await call("GET", "/billing", undefined, demo)).data
+    assert.deepEqual([shown.card.clientKey, shown.testMode, shown.canPay], ["test_ck_example", true, true])
+    const demoOrder = (await call("POST", "/billing/orders", { kind: "pro" }, demo)).data.order
+    const demoPaid = await call("POST", "/billing/confirm", { orderId: demoOrder.id, paymentKey: "pk-demo", amount: demoOrder.amount }, demo)
+    assert.equal(demoPaid.data.order.status, "paid")
+    assert.equal(confirms, 1)
+    const demoRow = getDatabase().payments!.find((payment) => payment.id === demoOrder.id)!
+    getDatabase().payments!.splice(getDatabase().payments!.indexOf(demoRow), 1)
+
+    // 라이브 키에서는 실제 회원이 카드로 낸다.
+    config.tossClientKey = "live_ck_example"
+    config.tossSecretKey = "live_sk_example"
+    const live = (await call("GET", "/billing", undefined, brand)).data
+    assert.deepEqual([live.card.clientKey, live.testMode], ["live_ck_example", false])
+    assert.equal((await call("POST", "/billing/confirm", paying, brand)).status, 200)
+    assert.equal(confirms, 2)
+  } finally {
+    config.tossClientKey = saved.client
+    config.tossSecretKey = saved.secret
+    toss.confirm = realConfirm
+  }
+})
+
 test("a participant answers the optional survey once, counted only per event", async () => {
   const scanned = (await call("POST", "/check-in/20261012/scans")).data
   const answer = (body: object) => call("POST", "/check-in/20261012/survey", { pass: scanned.pass, ...body })
@@ -6387,7 +6441,7 @@ test("the console's member tools, operations, content, analysis and system scree
   }
 })
 
-test("a QR can't be run up: one device is limited, and an event stops at three times its audience", async () => {
+test("a QR can't be run up: one address is limited by the event's size, and an event stops at three times its audience", async () => {
   const { addDays, todayInKorea } = await import("./lib/dates.js")
   const group = await signUpMember("scan-club@syu.ac.kr", "scan-pass-123")
   const made = await call("POST", "/events", { name: "스캔 공연", date: addDays(todayInKorea(), 3), people: "10명", types: ["제품"] }, group)
@@ -6395,13 +6449,16 @@ test("a QR can't be run up: one device is limited, and an event stops at three t
   const event = getDatabase().events[getDatabase().accounts.find((item) => item.email === "scan-club@syu.ac.kr")!.id][0]
   event.date = todayInKorea()
   const scan = () => call("POST", `/check-in/${report.code}/scans`)
-  for (let count = 0; count < 20; count += 1) assert.equal((await scan()).status, 200)
+  for (let count = 0; count < 30; count += 1) assert.equal((await scan()).status, 200)
   const limited = await scan()
   assert.equal(limited.status, 429)
-  assert.match(limited.data.error, /같은 기기/)
+  assert.match(limited.data.error, /이 네트워크/)
 
   const measurement = getDatabase().measurements.find((item) => item.code === report.code)!
-  assert.equal(measurement.metrics.scans, 20)
+  assert.equal(measurement.metrics.scans, 30)
+  // 브라우저 정보를 바꿔도 같은 주소다.
+  const renamed = await fetch(`${baseUrl}/check-in/${report.code}/scans`, { method: "POST", headers: { "User-Agent": "another-phone" } })
+  assert.equal(renamed.status, 429)
   await clearRateLimits()
   measurement.metrics.scans = 100
   const ceiling = await scan()
