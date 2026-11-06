@@ -6,7 +6,7 @@ import { reportAccess } from "./premiumReport.js"
 import { isDemoAccount } from "./reviews.js"
 import type { Account, Database } from "../types.js"
 
-// 캠퍼스 파트너스(사업 계획의 브랜드 구독, 월 300,000원, 프리미엄;
+// 캠퍼스 파트너스(사업 계획의 브랜드 구독, 30일 249,000원, 요금제 표의 Growth;
 // 데이터의 `pro`): 30일씩 결제하고 이미 낸 일수 뒤에 이어 붙인다. 파트너스는
 // 월 한도 없이 제안을 보내고, 모든 상세 리포트와 캠퍼스 포트폴리오
 // (lib/portfolio.ts)를 읽고, 한 달에 두 번 운영자에게 파트너를 찾아 달라고

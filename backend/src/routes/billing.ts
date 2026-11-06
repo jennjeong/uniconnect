@@ -10,6 +10,7 @@ import "../lib/feeSales.js"
 import "../lib/reportSales.js"
 import { adOf } from "../lib/ads.js"
 import { isPro } from "../lib/plan.js"
+import { planTable } from "../lib/planTable.js"
 import { partnerRequestCategory, partnerRequestsPerMonth, partnerRequestsThisMonth, planOf } from "../lib/pro.js"
 import { isDemoAccount } from "../lib/reviews.js"
 import { text } from "../lib/validation.js"
@@ -26,6 +27,11 @@ export const billingRouter = Router()
 // 연다. 실제 회원이 돈을 내지 않고 결제 완료가 되는 일을 막으며, 실제 회원은
 // 그동안 계좌 이체로 낸다.
 const cardOpenTo = (database: Database, account: Account) => cardReady() && (!testMode() || isDemoAccount(database, account))
+
+// 공개 요금제 표. 로그인하지 않아도 읽는다.
+billingRouter.get("/plans", (_req, res) => {
+  res.json(planTable())
+})
 
 // 가격, 카드 결제가 켜져 있는지(그 창에 쓰는 클라이언트 키), 계정의 결제를
 // 최신순으로 보여 준다.

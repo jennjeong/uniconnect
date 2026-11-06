@@ -6489,9 +6489,24 @@ test("a free brand sends five proposals a month; Pro lifts the limit for 30 days
   const plan = (await call("GET", "/billing", undefined, brand)).data.plan
   assert.deepEqual([plan.pro, plan.offersThisMonth, plan.freeOffers], [false, 5, 5])
 
+  // 요금제 표는 로그인 없이 읽고, 판매 중인 Growth만 가격과 주문 종류가 있다.
+  const table = (await call("GET", "/billing/plans")).data
+  assert.deepEqual(table.plans.map((row: { id: string; status: string }) => [row.id, row.status]), [
+    ["free", "open"],
+    ["local", "soon"],
+    ["growth", "open"],
+    ["enterprise", "contact"],
+  ])
+  const growth = table.plans[2]
+  assert.deepEqual([growth.price, growth.priceWithVat, growth.days, growth.orderKind], [249000, 273900, 30, "pro"])
+  assert.deepEqual([table.plans[0].limits.offersPerMonth, growth.limits.offersPerMonth], [5, null])
+  assert.deepEqual([table.feeRate, table.vatRate, table.reportPrice], [0.15, 0.1, 50000])
+  // 준비 중인 Local은 결제가 열리기 전까지 가격과 주문 종류를 싣지 않는다.
+  assert.deepEqual([table.plans[1].price, table.plans[1].priceWithVat, table.plans[1].orderKind], [null, null, null])
+
   // 유료 Pro는 30일이고, 그 뒤에 30일이 더 붙는다.
   const { order } = (await call("POST", "/billing/orders", { kind: "pro", targetId: "" }, brand)).data
-  assert.deepEqual([order.amount, order.orderName], [330000, "캠퍼스 파트너스 30일"])
+  assert.deepEqual([order.amount, order.orderName], [273900, "캠퍼스 파트너스 30일"])
   const { markPaid, paymentsOf } = await import("./lib/billing.js")
   markPaid(getDatabase(), paymentsOf(getDatabase()).find((item) => item.id === order.id)!, { method: "transfer" })
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date())
@@ -6580,7 +6595,7 @@ test("with Toss test keys the demo brand shows the whole payment flow; with none
     const on = (await call("GET", "/billing", undefined, demo)).data
     assert.deepEqual([on.testMode, on.canPay], [true, true])
     const { order } = (await call("POST", "/billing/orders", { kind: "pro", targetId: "" }, demo)).data
-    assert.equal(order.amount, 330000)
+    assert.equal(order.amount, 273900)
     await call("DELETE", `/billing/orders/${order.id}`, undefined, demo)
 
     // 라이브 키에서는 공유 데모 계정이 실제로 결제하는 일이 절대 없다.

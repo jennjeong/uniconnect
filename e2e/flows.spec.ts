@@ -2054,7 +2054,7 @@ test("a brand sees its plan in 내 정보 and asks to start Campus Partners", as
   await expect(card).toContainText("상세 분석 리포트 모두 포함")
   await card.getByRole("button", { name: "캠퍼스 파트너스 시작하기" }).click()
   const pay = page.getByRole("dialog", { name: "캠퍼스 파트너스 결제" })
-  await expect(pay).toContainText("300,000원")
+  await expect(pay).toContainText("249,000원")
   await pay.getByText("결제 내용을 확인했고").click()
   await pay.getByRole("button", { name: "계좌 입금으로 요청하기" }).click()
   await expect(page.getByText("계좌 입금을 요청했어요. 입금이 확인되면 캠퍼스 파트너스가 시작돼요.")).toBeVisible()
