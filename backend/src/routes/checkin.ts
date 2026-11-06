@@ -18,7 +18,7 @@ import {
 } from "../lib/methods.js"
 import { surveyOptions, text } from "../lib/validation.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
-import { getDatabase, saveDatabase } from "../store.js"
+import { getDatabase, retryConflicts, saveDatabase } from "../store.js"
 import type { ChatSide, EventSponsor, Measurement, PassCoupon } from "../types.js"
 
 // 참여자가 행사의 QR을 스캔해 닿는 페이지다. 로그인이 필요 없으므로 행사는
@@ -117,6 +117,11 @@ function newCouponNumber(passes: Measurement["passes"]) {
 // 보관하고, 패스는 답했다는 사실만 기억한다.
 checkInRouter.post("/:code/survey", async (req, res) => {
   await recordsPerClient.take(clientKey(req))
+  await retryConflicts(() => recordSurvey(req))
+  res.status(201).json({ ok: true })
+})
+
+async function recordSurvey(req: Request<{ code: string }>) {
   const { measurement } = measurementFor(req.params.code)
   const passId = text(req.body?.pass)
   if (!Object.hasOwn(measurement.passes, passId)) {
@@ -141,21 +146,28 @@ checkInRouter.post("/:code/survey", async (req, res) => {
   }
   pass.surveyed = true
   await saveDatabase()
-  res.status(201).json({ ok: true })
-})
+}
 
 // 참여자의 폰이다. 스캔하면 패스가 돌아오고, 패스는 쿠폰마다 한 번씩
 // 받아(`couponId`는 쿠폰이 하나뿐이면 생략할 수 있다) 각자 번호를 얻는다.
 // 매장 방문은 여기서 기록하지 않는다.
 checkInRouter.post("/:code/:kind", async (req, res) => {
   await recordsPerClient.take(clientKey(req))
-  const { measurement, event } = measurementFor(req.params.code)
+  const first = measurementFor(req.params.code)
   const kind = parseKind(req.params.kind, checkInKinds)
+  if (kind !== "visits") assertOpen(getDatabase(), first.measurement, first.event, kind)
+  // 데모 계정의 행사는 방문자가 써 볼 수 있게 열려 있다. 다시 시도해도 스캔은
+  // 한 번이므로 한도는 여기서 한 번만 센다.
+  if (kind === "scans" && !isDemoEvent(getDatabase(), first.measurement)) await scansPerDevice.take(deviceKey(req, req.params.code))
+  // 행사 현장에서 몰리는 쓰기라, 다른 복사본에 밀리면 최신 데이터에서 다시 한다.
+  res.json(await retryConflicts(() => recordCheckIn(req, kind)))
+})
+
+async function recordCheckIn(req: Request<{ code: string }>, kind: ReturnType<typeof parseKind>) {
+  const { measurement, event } = measurementFor(req.params.code)
   if (kind !== "visits") assertOpen(getDatabase(), measurement, event, kind)
 
   if (kind === "scans") {
-    // 데모 계정의 행사는 방문자가 써 볼 수 있게 열려 있다.
-    if (!isDemoEvent(getDatabase(), measurement)) await scansPerDevice.take(deviceKey(req, req.params.code))
     if (Object.keys(measurement.passes).length >= passLimit) {
       throw new HttpError(409, "이 행사의 참여 기록이 가득 찼어요. 행사 주최 측에 알려 주세요.")
     }
@@ -166,8 +178,7 @@ checkInRouter.post("/:code/:kind", async (req, res) => {
     const pass = randomBytes(16).toString("hex")
     measurement.passes[pass] = {}
     await saveDatabase()
-    res.json({ entry, pass })
-    return
+    return { entry, pass }
   }
   if (kind === "visits") {
     throw new HttpError(403, "매장 방문은 매장 직원 화면에서 확인해요.")
@@ -190,8 +201,8 @@ checkInRouter.post("/:code/:kind", async (req, res) => {
   else pass.coupon = coupon
   const entry = recordMetric(measurement, kind, sponsor)
   await saveDatabase()
-  res.json({ entry, coupon })
-})
+  return { entry, coupon }
+}
 
 // 참여자의 폰이 매장이 방문을 확인했는지 묻는다.
 checkInRouter.get("/:code/passes/:pass", (req, res) => {
@@ -215,6 +226,10 @@ checkInRouter.get("/:code/passes/:pass", (req, res) => {
 // 일은 없다.
 checkInRouter.post("/:code/staff/visits", async (req, res) => {
   await recordsPerClient.take(clientKey(req))
+  res.json(await retryConflicts(() => recordVisit(req)))
+})
+
+async function recordVisit(req: Request<{ code: string }>) {
   const { measurement, event } = measurementFor(req.params.code)
   assertOpen(getDatabase(), measurement, event, "visits")
   const sponsor = await staffShare(req, measurement)
@@ -243,8 +258,8 @@ checkInRouter.post("/:code/staff/visits", async (req, res) => {
   taken.visit = true
   const entry = recordMetric(measurement, "visits", sponsor)
   await saveDatabase()
-  res.json({ entry, store: (sponsor?.coupon ?? measurement.goals.coupon).store })
-})
+  return { entry, store: (sponsor?.coupon ?? measurement.goals.coupon).store }
+}
 
 // 틀린 PIN은 주소(이 행사에서)와 행사에 세며, 운영자 경보가 읽는 오늘의
 // 집계에도 넣는다.

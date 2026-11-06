@@ -108,9 +108,9 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   app.use(express.json({ limit: "300kb" }))
   // 세션이나 다른 것을 읽기 전에, 데이터가 들어와 있고 API의 다른 복사본이
   // 남긴 상태여야 한다(store.ts).
-  app.use("/api", async (_req, _res, next) => {
+  app.use("/api", async (req, _res, next) => {
     await loaded?.()
-    await refreshDatabase()
+    await refreshDatabase({ force: req.method !== "GET" && req.method !== "HEAD" })
     next()
   })
   app.use(readSession)

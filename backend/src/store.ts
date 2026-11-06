@@ -53,7 +53,7 @@ let version = 0
 let checkedAt = 0
 
 // 공유 저장소를 쓰는 API 복사본이 다른 복사본의 쓰기를 살피는 주기다.
-export const freshness = { everyMs: 2000 }
+export const freshness = { everyMs: 2000, timeoutMs: 3000 }
 
 export async function loadDatabase() {
   if (await reload()) return getDatabase()
@@ -101,21 +101,59 @@ async function reload() {
 // 읽거나 쓴 뒤에 저장했을 수 있다. 공유 저장소에서는 요청마다 먼저 저장된
 // 버전을 살피되 freshness.everyMs마다 한 번만 살피고, 버전이 달라졌으면 이
 // 복사본이 대기시킨 쓰기가 끝난 뒤 데이터를 다시 읽는다. 데이터베이스에 닿지
-// 않으면 데이터를 그대로 둔다.
-export async function refreshDatabase() {
+// 않으면 데이터를 그대로 둔다. `force`는 주기를 건너뛴다. 쓰기 요청은 낡은 데이터
+// 위에 쓰지 않으려고, 세션을 못 찾은 요청은 다른 복사본이 방금 만든 세션을
+// 찾으려고 이렇게 살핀다. 그래서 데이터베이스가 답하지 않아도 요청이 오래 묶이지
+// 않게 freshness.timeoutMs까지만 기다린다.
+export async function refreshDatabase({ force = false }: { force?: boolean } = {}) {
   const storage = currentStorage()
-  if (!storage.shared || !database || Date.now() - checkedAt < freshness.everyMs) return
+  if (!storage.shared || !database || (!force && Date.now() - checkedAt < freshness.everyMs)) return
   checkedAt = Date.now()
   try {
     await pendingWrite
-    const latest = await storage.version()
+    const latest = await withinTime(storage.version(), freshness.timeoutMs)
     if (latest !== undefined && latest !== version) await reload()
   } catch (error) {
     console.error(`[store] ${(error as Error).message}`)
   }
 }
 
+function withinTime<T>(work: Promise<T>, ms: number) {
+  let timer: NodeJS.Timeout
+  const late = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => reject(new Error(`The database didn't answer in ${ms}ms.`)), ms)
+  })
+  return Promise.race([work, late]).finally(() => clearTimeout(timer))
+}
+
 const notSaved = "저장하지 못해서 방금 한 작업을 되돌렸어요. 잠시 후 다시 시도해 주세요."
+
+// 다른 복사본이 먼저 써서 되돌린 저장이다. 답은 다른 저장 실패와 같은 503이지만,
+// 최신 데이터에서 다시 하면 된다(retryConflicts).
+export class SaveConflict extends HttpError {
+  constructor() {
+    super(503, notSaved)
+  }
+}
+
+export const conflictRetry = { attempts: 8, waitMs: 40 }
+
+// 경합이 잦은 요청의 변경과 저장을 묶어, 다른 복사본에 밀려 되돌려지면 최신
+// 데이터에서 처음부터 다시 한다. `work`는 데이터를 getDatabase()에서 새로 찾아야
+// 하고, 메일이나 결제처럼 되돌릴 수 없는 일을 저장 전에 하면 안 된다. 다른 오류는
+// 그대로 던진다.
+export async function retryConflicts<T>(work: () => Promise<T>) {
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return await work()
+    } catch (error) {
+      if (!(error instanceof SaveConflict) || attempt >= conflictRetry.attempts) throw error
+      // 복사본들이 같은 박자로 다시 부딪히지 않게 조금씩 다르게 기다린다.
+      await new Promise((resolve) => setTimeout(resolve, Math.random() * conflictRetry.waitMs * attempt))
+      await refreshDatabase({ force: true })
+    }
+  }
+}
 
 // db.json을 만든 뒤에 추가된 데이터를 채워, 업데이트해도 기존 계정, 세션,
 // 행사가 살아남게 한다.
@@ -318,21 +356,24 @@ export function getDatabase() {
 // 마지막으로 쓴 것으로 돌아가므로, 오류로 답한 요청은 아무것도 남기지 않고
 // 그대로 다시 시도할 수 있다. 호출한 쪽과 그 뒤에 대기한 쓰기의 호출한 쪽
 // (변경도 함께 돌아갔다)은 503을 받는다. 다른 복사본이 먼저 썼다면 그 데이터가
-// 다음 요청에 들어온다. 대기열은 계속 돌아가므로 다음 저장이 다시 시도한다.
+// 다음 요청에 들어오고, 호출한 쪽은 retryConflicts로 다시 할 수 있다. 대기열은 계속 돌아가므로 다음 저장이 다시 시도한다.
 export function saveDatabase() {
   const storage = currentStorage()
   const snapshot = JSON.stringify(getDatabase(), null, storage.indent)
   const at = generation
   const write = pendingWrite.then(async () => {
-    if (at !== generation) throw new HttpError(503, notSaved)
+    if (at !== generation) throw new SaveConflict()
     try {
       version = await storage.write(snapshot, version)
       checkedAt = Date.now()
     } catch (error) {
       generation += 1
       rollBack()
-      if (error instanceof StaleWrite) await reload().catch((caught: Error) => console.error(caught))
-      else console.error(error)
+      if (error instanceof StaleWrite) {
+        await reload().catch((caught: Error) => console.error(caught))
+        throw new SaveConflict()
+      }
+      console.error(error)
       throw new HttpError(503, notSaved)
     }
     durable = snapshot
