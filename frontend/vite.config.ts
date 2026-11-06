@@ -113,11 +113,19 @@ function siteDocument(config: SiteConfiguration): Plugin {
   }
   // Google의 gtag 설정을 인라인 스크립트가 아닌 별도 파일(/ga-init.js)로 둔다.
   // 서버의 Content-Security-Policy가 인라인 스크립트를 막기 때문이다.
+  // 체크인 화면에서는 싣지 않는다. 참여 코드와 쿠키 식별자가 한 브라우저에
+  // 함께 있지 않게 하려는 것이다.
   const gaInit = googleAnalyticsId
-    ? `window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', ${JSON.stringify(googleAnalyticsId)});
+    ? `if (!location.pathname.startsWith('/check-in/')) {
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = function () { dataLayer.push(arguments); };
+  gtag('js', new Date());
+  gtag('config', ${JSON.stringify(googleAnalyticsId)});
+  var tag = document.createElement('script');
+  tag.async = true;
+  tag.src = ${JSON.stringify(`https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`)};
+  document.head.appendChild(tag);
+}
 `
     : ''
 
@@ -205,21 +213,11 @@ gtag('config', ${JSON.stringify(googleAnalyticsId)});
         }
 
         if (googleAnalyticsId) {
-          tags.push(
-            {
-              tag: 'script',
-              attrs: {
-                async: true,
-                src: `https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`,
-              },
-              injectTo: 'head',
-            },
-            {
-              tag: 'script',
-              attrs: { src: '/ga-init.js' },
-              injectTo: 'head',
-            },
-          )
+          tags.push({
+            tag: 'script',
+            attrs: { src: '/ga-init.js' },
+            injectTo: 'head',
+          })
         }
 
         return {

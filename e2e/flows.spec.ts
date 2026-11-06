@@ -2251,3 +2251,32 @@ test("a visitor compares the plans, and a plan still to come names no price", as
   await growth.getByRole("button", { name: "회원가입" }).click()
   await expect(page.getByRole("dialog")).toBeVisible()
 })
+
+test("a chat can be searched, and clearing it brings every message back", async ({ page, request }) => {
+  const brand = await signUpMember(request, "브랜드", "e2e-search@search-cafe.kr", "검색 카페")
+  const group = await signUpMember(request, "학생단체", "e2e-search@syu.ac.kr", "검색 동아리")
+  const { headers } = group
+  await request.put("/api/profile", { data: { intro: "캠퍼스 동아리예요.", offer: "관객 100명" }, headers })
+  const { conversation } = await (await request.post("/api/conversations", { data: { partnerId: brand.listingId }, headers })).json()
+  for (const text of ["사과 상자를 보낼게요", "일정은 금요일이에요"]) {
+    await request.post(`/api/conversations/${conversation.id}/messages`, { data: { text }, headers })
+  }
+  await page.addInitScript((token) => localStorage.setItem("uniconnect-token", token), group.token)
+  await page.goto(`/messages/${conversation.id}`)
+  const box = page.getByRole("searchbox", { name: "대화 검색" })
+  await box.fill("금요일")
+  await expect(page.getByText("일정은 금요일이에요")).toBeVisible()
+  await expect(page.getByText("사과 상자를 보낼게요")).toHaveCount(0)
+  await box.fill("없는 말")
+  await expect(page.getByText("맞는 메시지가 없어요.")).toBeVisible()
+  await page.getByRole("button", { name: "검색어 지우기" }).click()
+  await expect(page.getByText("사과 상자를 보낼게요")).toBeVisible()
+})
+
+test("the check-in page loads no analytics, and the site's own pages do", async ({ page }) => {
+  await page.goto("/check-in/none")
+  await page.waitForLoadState("networkidle")
+  expect(await page.evaluate(() => "gtag" in window)).toBe(false)
+  await page.goto("/faq")
+  await page.waitForFunction(() => "gtag" in window)
+})

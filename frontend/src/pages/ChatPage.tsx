@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type 
 
 import { ApiError, api, errorMessage } from "../api"
 import { Icon } from "../components/Icon"
+import { SearchClear } from "../components/SearchClear"
 import { PageIntro } from "../components/PageIntro"
 import { locale, t } from "../i18n"
 import { formatDay, todayIso, toIsoDate } from "../lib/date"
@@ -276,6 +277,7 @@ export function ChatPage({
   const [draft, setDraft] = useState("")
   const [error, setError] = useState("")
   const [sending, setSending] = useState(false)
+  const [query, setQuery] = useState("")
   const [uploading, setUploading] = useState(false)
   // 열려 있는 동안의 미팅 잡기 폼과, 보내거나 답하는 중인 미팅.
   const [planning, setPlanning] = useState(false)
@@ -576,6 +578,11 @@ export function ChatPage({
   const unchanged = editing !== null && draft.trim() === editing.text
   const ownSent = (conversation?.messages ?? []).some((message) => message.mine && !message.deletedAt)
   let lastDay = ""
+  const all = conversation?.messages ?? []
+  const words = query.trim().toLowerCase()
+  const shown = words
+    ? all.filter((message) => !message.deletedAt && `${message.text} ${message.attachment?.name ?? ""}`.toLowerCase().includes(words))
+    : all
 
   return (
     <section className="page-view chat-view">
@@ -599,8 +606,27 @@ export function ChatPage({
         </p>
       )}
 
+      {all.length > 0 && (
+        <div className="chat-search">
+          <Icon name="search" size={16} />
+          <input
+            aria-label={t("대화 검색")}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={t("대화 검색")}
+            type="search"
+            value={query}
+          />
+          <SearchClear onClear={() => setQuery("")} value={query} />
+        </div>
+      )}
+      {words && (
+        <p className="chat-search-count" role="status">
+          {shown.length > 0 ? t("{count}개를 찾았어요.", { count: shown.length }) : t("맞는 메시지가 없어요.")}
+        </p>
+      )}
+
       <ol className="chat-thread">
-        {(conversation?.messages ?? []).map((message) => {
+        {shown.map((message) => {
           const day = toIsoDate(new Date(message.at))
           const newDay = day !== lastDay
           lastDay = day
