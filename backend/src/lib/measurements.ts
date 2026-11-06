@@ -289,6 +289,7 @@ export function syncSponsors(database: Database, measurement: Measurement) {
           metrics: { coupons: 0, visits: 0, ...emptyVenueCounts() },
         }
     if (takesOver) {
+      measurement.eventCouponsTo = sponsor.id
       for (const pass of Object.values(measurement.passes)) {
         if (!pass.coupon) continue
         pass.sponsors = { [sponsor.id]: { coupon: pass.coupon, ...(pass.visit ? { visit: true as const } : {}) } }
@@ -507,10 +508,10 @@ export function recordMetric(
   kind: MetricKind,
   sponsor?: EventSponsor,
   amount = 1,
+  now = new Date(),
 ): MetricEntry {
   measurement.metrics[kind] += amount
   if (sponsor && kind !== "scans") sponsor.metrics[kind] += amount
-  const now = new Date()
   // 행사가 열리는 한국 시간 기준으로 센다.
   const { date, hour } = hourInKorea(now)
   if (kind === "scans" || kind === "coupons" || kind === "visits") {
@@ -528,18 +529,30 @@ export function recordMetric(
       )
     }
   }
+  const participant =
+    amount < 0 ? `정정 ${amount}` : countedByBox.includes(kind) ? `${amount}개` : `참여자 #${measurement.metrics[kind]}`
+  const entry = metricEntry(measurement, kind, sponsor, participant, now)
+  measurement.log = [...measurement.log, entry].slice(-logLimit)
+  return entry
+}
+
+// 기록 한 줄이다. 숫자를 넘기면 그 번호의 참여자다.
+export function metricEntry(
+  measurement: Measurement,
+  kind: MetricKind,
+  sponsor: EventSponsor | undefined,
+  participant: string | number,
+  at: Date,
+): MetricEntry {
   const coupon = sponsor?.coupon ?? measurement.goals.coupon
-  const entry: MetricEntry = {
+  return {
     id: randomUUID(),
     kind,
-    at: now.toISOString(),
-    participant:
-      amount < 0 ? `정정 ${amount}` : countedByBox.includes(kind) ? `${amount}개` : `참여자 #${measurement.metrics[kind]}`,
+    at: at.toISOString(),
+    participant: typeof participant === "number" ? `참여자 #${participant}` : participant,
     detail:
       venueDetails[kind] ?? (kind === "scans" ? "현장 QR 스캔" : kind === "coupons" ? coupon.title : coupon.store),
   }
-  measurement.log = [...measurement.log, entry].slice(-logLimit)
-  return entry
 }
 
 // 측정이 속한 행사와 그 주인의 계정 id.

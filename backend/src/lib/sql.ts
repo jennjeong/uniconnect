@@ -66,6 +66,20 @@ export function ensureTables(sql: Sql) {
       sql,
       "create table if not exists uniconnect_errors (id text primary key, at timestamptz not null, entry text not null)",
     )
+    // 참여 기록과 쌓이는 집계다(lib/passRows.ts).
+    await createTable(
+      sql,
+      "create table if not exists uniconnect_passes (code text not null, pass text not null, surveyed boolean not null default false, issued_at timestamptz not null default now(), primary key (code, pass))",
+    )
+    await createTable(
+      sql,
+      "create table if not exists uniconnect_coupons (code text not null, number text not null, pass text not null, coupon_id text not null, visited boolean not null default false, issued_at timestamptz not null default now(), primary key (code, number), unique (code, pass, coupon_id))",
+    )
+    await createTable(
+      sql,
+      "create table if not exists uniconnect_counts (id bigserial primary key, code text not null, kind text not null, sponsor_id text, answers text, at timestamptz not null default now())",
+    )
+    await createTable(sql, "create table if not exists uniconnect_fold (id smallint primary key, at timestamptz not null)")
     await createTable(
       sql,
       "create table if not exists uniconnect_limits (name text not null, key text not null, count integer not null, reset_at bigint not null, primary key (name, key))",

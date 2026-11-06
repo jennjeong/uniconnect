@@ -6,6 +6,7 @@ import { cardReady } from "../lib/billing.js"
 import { reconcileCards, reconcileRefunds } from "../lib/cardRecovery.js"
 import { HttpError } from "../lib/errors.js"
 import { sendDigests } from "../lib/digest.js"
+import { foldCounts, prunePassRows } from "../lib/passRows.js"
 import { prunePayments } from "../lib/paymentRetention.js"
 import { sendReminders } from "../lib/reminders.js"
 import { refreshViews } from "../lib/snsPosts.js"
@@ -40,11 +41,14 @@ cronRouter.get("/reminders", async (req, res) => {
       return undefined
     }
   }
+  // 메일과 리포트가 읽기 전에 현장 집계를 문서에 합친다.
+  const counts = await job("counts", () => foldCounts({ force: true }))
+  const passes = await job("passes", () => prunePassRows())
   const cards = cardReady() ? await job("cards", reconcileCards) : undefined
   const refunds = cardReady() ? await job("refunds", reconcileRefunds) : undefined
   const sent = await job("reminders", () => sendReminders())
   const digests = await job("digests", () => sendDigests())
   const views = await job("views", refreshViews)
   const payments = await job("payments", prunePayments)
-  res.status(failed.length > 0 ? 500 : 200).json({ cards, refunds, sent, digests, views, payments, failed })
+  res.status(failed.length > 0 ? 500 : 200).json({ counts, passes, cards, refunds, sent, digests, views, payments, failed })
 })

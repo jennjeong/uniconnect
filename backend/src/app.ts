@@ -45,6 +45,7 @@ import { boardRouter } from "./routes/board.js"
 import { blocksRouter, reportsRouter } from "./routes/reports.js"
 import { reviewsRouter } from "./routes/reviews.js"
 import { savedRouter } from "./routes/saved.js"
+import { foldCounts, foldInBackground, movePassesToRows, passSql } from "./lib/passRows.js"
 import { getDatabase, refreshDatabase } from "./store.js"
 
 // `loaded`: Vercel(vercel.ts)에서는 API의 각 복사본이 시작할 때가 아니라 첫
@@ -129,6 +130,12 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   app.use("/api", async (req, _res, next) => {
     await loaded?.()
     await refreshDatabase({ force: req.method !== "GET" && req.method !== "HEAD" })
+    if (passSql()) {
+      await movePassesToRows()
+      // 현장의 요청은 기다리지 않는다. 집계를 읽을 수 있는 다른 요청은 합친 뒤에 답한다.
+      if (req.path.startsWith("/check-in/")) foldInBackground()
+      else await foldCounts().catch((error: Error) => console.error(`[passes] ${error.message}`))
+    }
     next()
   })
   app.use(readSession)

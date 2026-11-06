@@ -705,6 +705,7 @@ const en: Record<string, string> = {
   "기수 이름은 1~30자로 적어 주세요.": "Give the term a name of 1 to 30 characters.",
   "기수가 시작한 날을 골라 주세요.": "Pick the day the term began.",
   "같은 날 시작한 기수가 둘이에요.": "Two terms begin on the same day.",
+  "쿠폰을 만들지 못했어요. 다시 시도해 주세요.": "We couldn't make the coupon. Please try again.",
   "계정 이용이 제한됐어요": "Your account has been restricted",
   "운영자가 계정 이용을 제한했어요. 로그인할 수 없고, 다른 회원에게 보이지 않아요.":
     "An operator restricted your account. You can't log in, and other members can't see you.",

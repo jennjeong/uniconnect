@@ -521,7 +521,10 @@ export type Measurement = {
   // 스캔마다 패스 하나이므로 참여자는 쿠폰마다 한 번, 방문마다 한 번씩 받는다.
   // 행사의 쿠폰은 패스 자체에, 협찬사의 쿠폰은 그 id 아래에 둔다. 매장 직원이
   // 입력하는 것은 번호다.
+  // Postgres에서는 비어 있고 행으로 있다(lib/passRows.ts).
   passes: Record<string, PassCoupon & { sponsors?: Record<string, PassCoupon> }>
+  // 처음 들어온 협찬사다. 행으로 있는 행사의 쿠폰을 이 협찬사의 것으로 옮기면 지운다.
+  eventCouponsTo?: string
   // 선택 설문의 응답을 센 것이다(lib/validation.ts surveyOptions).
   survey?: SurveyCounts
   // 한국 날짜별 스캔, 쿠폰, 방문이다(lib/measurements.ts dailyCounts).
@@ -844,6 +847,8 @@ export type ReferralReward = {
 }
 
 export type Database = {
+  // 마지막으로 문서에 합친 집계 기록의 id다. 두 번 세지 않게 한다(lib/passRows.ts).
+  foldedCounts?: string[]
   accounts: Account[]
   sessions: Session[]
   emailCodes: EmailCode[]
