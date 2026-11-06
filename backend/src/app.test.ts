@@ -2958,10 +2958,14 @@ test("the admin token check fails safely and slows guessing", async () => {
 })
 
 test("check-in records are limited per address", async () => {
-  for (let i = 0; i < 120; i += 1) {
+  // 한도까지 스캔하면 최근 기록이 밀려나므로 뒤의 테스트를 위해 되돌린다.
+  const sample = getDatabase().measurements.find((item) => item.code === "20261012")!
+  const { log, metrics, hourlyScans, passes } = structuredClone(sample)
+  for (let i = 0; i < 600; i += 1) {
     assert.equal((await call("POST", "/check-in/20261012/scans")).status, 200)
   }
   assert.equal((await call("POST", "/check-in/20261012/scans")).status, 429)
+  Object.assign(sample, { log, metrics, hourlyScans, passes })
 })
 
 test("wrong staff PINs are limited per address and per event", async () => {
@@ -6422,7 +6426,7 @@ test("the console's member tools, operations, content, analysis and system scree
   }
 })
 
-test("a QR can't be run up: one device is limited, and an event stops at three times its audience", async () => {
+test("a QR can't be run up: one address is limited by the event's size, and an event stops at three times its audience", async () => {
   const { addDays, todayInKorea } = await import("./lib/dates.js")
   const group = await signUpMember("scan-club@syu.ac.kr", "scan-pass-123")
   const made = await call("POST", "/events", { name: "스캔 공연", date: addDays(todayInKorea(), 3), people: "10명", types: ["제품"] }, group)
@@ -6430,13 +6434,16 @@ test("a QR can't be run up: one device is limited, and an event stops at three t
   const event = getDatabase().events[getDatabase().accounts.find((item) => item.email === "scan-club@syu.ac.kr")!.id][0]
   event.date = todayInKorea()
   const scan = () => call("POST", `/check-in/${report.code}/scans`)
-  for (let count = 0; count < 20; count += 1) assert.equal((await scan()).status, 200)
+  for (let count = 0; count < 30; count += 1) assert.equal((await scan()).status, 200)
   const limited = await scan()
   assert.equal(limited.status, 429)
-  assert.match(limited.data.error, /같은 기기/)
+  assert.match(limited.data.error, /이 네트워크/)
 
   const measurement = getDatabase().measurements.find((item) => item.code === report.code)!
-  assert.equal(measurement.metrics.scans, 20)
+  assert.equal(measurement.metrics.scans, 30)
+  // 브라우저 정보를 바꿔도 같은 주소다.
+  const renamed = await fetch(`${baseUrl}/check-in/${report.code}/scans`, { method: "POST", headers: { "User-Agent": "another-phone" } })
+  assert.equal(renamed.status, 429)
   await clearRateLimits()
   measurement.metrics.scans = 100
   const ceiling = await scan()

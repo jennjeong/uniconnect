@@ -162,35 +162,46 @@ test("a write comes in on the newest data, and a session made on another copy is
   }
 })
 
-// 목표 인원은 아직 정해지지 않아 임의로 잡았다. 한 행사 500명, 가장 몰릴 때 1분에
-// 50명이며, 여기서는 그 50명이 한꺼번에 스캔한다. 프로세스 하나에서는 저장 사이에
-// 다른 쓰기가 거의 끼어들지 못하므로, 저장 세 번에 한 번은 바로 앞에서 다른
-// 복사본이 먼저 쓰게 해 충돌을 실제로 만든다.
-test("fifty QR scans at once all count when another copy writes just before the saves", async () => {
+// 합의한 목표(#315)다. 한 행사 9,000명, 가장 몰릴 때 1분에 200명이며, 여기서는 그
+// 200명이 행사장 와이파이 하나에서 같은 브라우저로 한꺼번에 스캔한다. 프로세스
+// 하나에서는 저장 사이에 다른 쓰기가 거의 끼어들지 못하므로, 저장 다섯 번에 한
+// 번은 바로 앞에서 다른 복사본이 먼저 쓰게 해 충돌을 실제로 만든다.
+test("the agreed peak of 200 scans from one address all count when another copy writes first", async () => {
   const { createApp } = await import("./app.js")
+  const { useSql } = await import("./lib/sql.js")
+  const { eventOf } = await import("./lib/measurements.js")
+  const { todayInKorea } = await import("./lib/dates.js")
   const server = createApp().listen(0)
   await new Promise((resolve) => server.once("listening", resolve))
   const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api`
-  const { useSql } = await import("./lib/sql.js")
-  const rivalEvery = 3
+  const rivalEvery = 5
   let saves = 0
   let rivals = 0
-  useSql(async (text, params = []) => {
-    if (text.startsWith("update uniconnect_store set data") && (saves += 1) % rivalEvery === 0) {
-      await writeAsAnotherCopy(() => {})
-      rivals += 1
-    }
-    return sql(text, params)
-  })
+  let bytes = 0
+  const demoAccountIds = store.getDatabase().demoAccountIds
+  const code = store.getDatabase().measurements[0].code
+  const measurement = () => store.getDatabase().measurements.find((item) => item.code === code)!
   try {
-    const { demoAccountIds, measurements } = store.getDatabase()
-    const code = measurements.find((item) => Object.values(demoAccountIds).includes(item.accountId))!.code
-    const scansOf = () => store.getDatabase().measurements.find((item) => item.code === code)!.metrics.scans
-    const before = scansOf()
+    // 데모가 아닌 실제 행사처럼 한도와 기간을 그대로 적용한다.
+    store.getDatabase().demoAccountIds = {} as typeof demoAccountIds
+    measurement().goals.expectedAudience = 9000
+    eventOf(store.getDatabase(), measurement())!.date = todayInKorea()
+    await store.saveDatabase()
+    useSql(async (text, params = []) => {
+      if (text.startsWith("update uniconnect_store set data")) {
+        bytes += String(params[0]).length
+        if ((saves += 1) % rivalEvery === 0) {
+          await writeAsAnotherCopy(() => {})
+          rivals += 1
+        }
+      }
+      return sql(text, params)
+    })
+    const before = measurement().metrics.scans
     const startedAt = Date.now()
     const answers = await Promise.all(
-      Array.from({ length: 50 }, (_, index) =>
-        fetch(`${base}/check-in/${code}/scans`, { method: "POST", headers: { "X-Forwarded-For": `10.0.0.${index}` } }).then(async (response) => ({
+      Array.from({ length: 200 }, () =>
+        fetch(`${base}/check-in/${code}/scans`, { method: "POST" }).then(async (response) => ({
           status: response.status,
           pass: ((await response.json()) as { pass?: string }).pass,
         })),
@@ -199,16 +210,18 @@ test("fifty QR scans at once all count when another copy writes just before the 
     assert.ok(rivals > 0)
     const succeeded = answers.filter((answer) => answer.status === 200)
     const failed = answers.length - succeeded.length
-    console.log(`[c2] 50 scans, ${saves} saves, ${rivals} conflicts, ${failed} failed, ${Date.now() - startedAt}ms`)
+    console.log(`[qr] 200 scans, ${saves} saves, ${rivals} conflicts, ${failed} failed, ${Date.now() - startedAt}ms, ${Math.round(bytes / 1024 / 1024)}MB written`)
     // 성공이라고 답한 스캔은 빠짐없이 한 번씩만 저장된다.
     await store.refreshDatabase({ force: true })
-    assert.equal(scansOf() - before, succeeded.length)
+    assert.equal(measurement().metrics.scans - before, succeeded.length)
     assert.equal(new Set(succeeded.map((answer) => answer.pass)).size, succeeded.length)
-    const passes = store.getDatabase().measurements.find((item) => item.code === code)!.passes
-    assert.ok(succeeded.every((answer) => Object.hasOwn(passes, answer.pass!)))
+    assert.ok(succeeded.every((answer) => Object.hasOwn(measurement().passes, answer.pass!)))
     assert.equal(failed, 0)
   } finally {
     useSql(sql)
+    await store.refreshDatabase({ force: true })
+    store.getDatabase().demoAccountIds = demoAccountIds
+    await store.saveDatabase()
     await new Promise((resolve) => server.close(resolve))
   }
 })
