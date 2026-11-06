@@ -14,8 +14,8 @@ const en: Record<string, string> = {
   "회원과 가입": "Members and Sign-Up",
   "회원은 '협찬 받기'(학생단체)와 '협찬 하기'(브랜드) 두 유형이 있어요.":
     "There are two types of members: 'Receive Sponsorship' (student groups) and 'Give Sponsorship' (brands).",
-  "학생단체는 학교 이메일, 브랜드는 회사 이메일로 인증한 뒤 가입할 수 있어요. 개인 메일로는 가입할 수 없어요. 다만 학생단체의 초대를 받은 가게에 회사 이메일이 없으면 사업자 서류를 내고 운영자의 승인을 받아 개인 메일로 가입할 수 있어요.":
-    "Student groups may sign up after verifying a school email address, and brands after verifying a company email address. Personal email addresses cannot be used to sign up. However, a shop invited by a student group that has no company email may sign up with a personal one after submitting a business document and being approved by an operator.",
+  "학생단체는 학교 이메일, 브랜드는 회사 이메일로 인증한 뒤 가입할 수 있어요. 개인 메일로는 가입할 수 없어요. 다만 학생단체의 초대를 받은 가게는 사업자 서류를 내고 운영자의 승인을 받아 개인 메일로도 가입할 수 있어요.":
+    "Student groups may sign up after verifying a school email address, and brands after verifying a company email address. Personal email addresses cannot be used to sign up. However, a shop invited by a student group signs up with any email address after submitting a business document and being approved by an operator.",
   "만 14세 미만은 가입할 수 없어요.": "Persons under 14 years of age may not sign up.",
   "다른 사람이나 단체, 회사를 사칭하거나 사실과 다른 정보로 가입하면 이용을 제한할 수 있어요.":
     "If a member impersonates another person, group or company, or signs up with false information, the Service may restrict their use.",
@@ -48,16 +48,10 @@ const en: Record<string, string> = {
   "회원이 올린 소개, 포트폴리오, 행사 정보와 메시지의 권리와 책임은 올린 회원에게 있어요. 서비스는 이를 서비스 안에서 보여 주는 데에만 써요. 법령이나 이 약관을 어긴 게시물은 알린 뒤 숨기거나 지울 수 있어요.":
     "The rights to and responsibility for profiles, portfolios, event information and messages posted by a member belong to the member who posted them. The Service uses them only to display them within the Service. Content that violates the law or these terms may be hidden or deleted after notice is given.",
   "이용 제한과 탈퇴": "Restriction of Use and Account Deletion",
-  "이 약관을 어기면 경고하거나 이용을 제한할 수 있어요.":
-    "If a member violates these terms, the Service may issue a warning or restrict their use.",
   "회원은 언제든 내 정보의 '회원 탈퇴'에서 비밀번호를 한 번 더 입력하고 탈퇴할 수 있어요. 탈퇴하면 계정과 회원이 만든 내용이 바로 지워지고 되살릴 수 없어요.":
     "Members may delete their account at any time from 'Delete Account' in My Info by entering their password once more. Upon deletion, the account and the content the member created are deleted immediately and cannot be restored.",
   "책임의 한계": "Limitation of Liability",
-  "서비스는 회원 사이의 거래와 회원이 올린 정보의 정확성에 대해 책임지지 않아요. 다만 서비스의 고의나 중대한 과실로 생긴 손해는 예외예요.":
-    "The Service is not responsible for transactions between members or for the accuracy of information posted by members, except for damages caused by the Service's intentional misconduct or gross negligence.",
   "약관의 변경과 분쟁": "Changes to the Terms and Disputes",
-  "약관을 바꿀 때는 시행 7일 전(회원에게 불리하면 30일 전)부터 서비스 안에 알려요.":
-    "When these terms are changed, notice will be given within the Service from 7 days before the changes take effect (30 days before, if the changes are unfavorable to members).",
   "이 약관은 대한민국 법을 따르고, 분쟁은 민사소송법에 따른 관할 법원에서 다뤄요.":
     "These terms are governed by the laws of the Republic of Korea, and disputes will be handled by the court having jurisdiction under the Civil Procedure Act.",
 
@@ -211,8 +205,6 @@ const en: Record<string, string> = {
     "Passwords are stored after being transformed with a method that cannot be reversed (scrypt).",
   "로그인과 인증번호, 관리자 기능은 시도 횟수를 제한해요.":
     "The number of attempts is limited for login, verification codes and administrator functions.",
-  "관리자 기능은 별도의 관리자 토큰이 있어야만 쓸 수 있어요.":
-    "Administrator functions can be used only with a separate administrator token.",
   "문의": "Contact",
   "개인정보에 관한 문의와 요청은 도움말 센터의 '관리자에게 질문하기'로 보내 주세요. 개인정보 침해에 대한 상담은 개인정보침해신고센터(국번 없이 118)에서도 받을 수 있어요.":
     "Please send inquiries and requests about personal information through 'Ask the Administrators' in the Help Center. Counseling on privacy infringement is also available from the Personal Information Infringement Report Center (dial 118 without an area code).",
@@ -231,8 +223,6 @@ const en: Record<string, string> = {
     "You pay by card through Toss Payments' payment window or by bank transfer. A bank transfer takes effect once the operators confirm it. The service never receives card details; Toss Payments handles them.",
   "수수료 환불: 행사가 시작되기 전에 두 회원이 합의해 협찬을 취소하면 낸 수수료를 모두 돌려드려요. 협찬액을 낮췄을 때의 차액도 요청하면 돌려드려요. 행사가 시작된 뒤에는 돌려드리지 않아요.":
     "Fee refunds: if both members agree to call the sponsorship off before the event begins, the whole fee is refunded. The difference is also refunded on request if the value goes down. Nothing is refunded once the event has begun.",
-  "환불은 도움말 센터의 '관리자에게 질문하기'로 요청해 주세요. 카드 결제는 결제를 취소해 돌려드리고, 계좌 입금은 받은 계좌로 돌려드려요. 결제 내역과 영수증은 내 정보의 '결제 내역'에서 볼 수 있어요.":
-    "Ask for refunds through 'Ask the operators' in the help center. Card payments are refunded by canceling them, and bank transfers to the account they came from. Your payments and receipts are under 'Payments' in My Account.",
   "유료 서비스와 결제":
     "Paid Services and Payment",
   "협찬 금액, 제공 물품, 일정 같은 조건과 그 이행은 두 회원이 직접 정하고 책임져요. 협찬금은 브랜드가 학생단체에 직접 주고, 서비스는 맡아 두거나 대신 보내지 않아요.":
@@ -245,36 +235,133 @@ const en: Record<string, string> = {
     "5 years (kept after leaving, as the E-Commerce Act requires)",
   "회원이 결제하면 주문 번호, 산 것, 금액, 이메일을 결제 대행사 토스페이먼츠(대한민국)에 보내 결제를 처리해요. 카드 정보는 토스페이먼츠가 직접 받고 서비스는 받지 않아요.":
     "When a member pays, the order number, what is bought, the amount and the email are sent to the payment processor Toss Payments (Republic of Korea) to process the payment. Toss Payments receives the card details directly; the service does not.",
-  "결제 기록은 전자상거래법에 따라 탈퇴한 뒤에도 5년 동안 따로 보관하고, 그 뒤에 지워요.":
-    "Payment records are kept apart for 5 years after leaving, as the E-Commerce Act requires, and deleted after that.",
-  "상세 성과 리포트: 협찬 1건의 상세 성과 리포트를 50,000원에 살 수 있어요. 행사 날부터 살 수 있고, 한 번 사면 계속 보고 PDF로 저장하고 링크로 공유할 수 있어요.":
-    "Detailed report: the detailed report of one sponsorship costs 50,000 KRW. It can be bought from the event's day; once bought it stays yours to view, save as a PDF and share by link.",
   "리포트 환불: 사고 나서 7일 안에 리포트를 열어 보지 않았으면 돌려드려요. 연 뒤에는 디지털 콘텐츠라 돌려드리지 않아요(전자상거래법 제17조 제2항 제5호). 이 점은 결제 화면에서 먼저 알려요.":
     "Report refunds: refunded if not opened within 7 days of buying. Once opened, as digital content, it is not refunded (E-Commerce Act, Article 17(2)5). This is stated on the payment screen first.",
-  "캠퍼스 파트너스: 브랜드는 30일에 300,000원으로 캠퍼스 파트너스를 쓸 수 있어요. 협찬 제안을 제한 없이 보내고(무료 요금제는 한 달에 5건), 상세 분석 리포트를 모두 보고, 캠퍼스 포트폴리오 분석을 쓰고, 운영자에게 1:1 섭외 요청을 한 달에 2건 보낼 수 있고, 브랜드 카드에 PARTNERS 표시가 붙어요. 자동으로 결제되지 않고, 다시 결제하면 남은 날 뒤에 30일이 이어져요.":
-    "Campus Partners: brands can use Campus Partners at 300,000 KRW for 30 days. It sends proposals without a limit (the free plan sends 5 a month), opens every detailed analysis report, adds the campus portfolio analysis, sends the operators 2 one-to-one partner requests a month, and puts a PARTNERS mark on the brand card. It doesn't renew by itself; paying again adds 30 days after the days left.",
   "캠퍼스 파트너스 환불: 결제하고 7일 안에는 모두 돌려드리고, 그 뒤에는 남은 날만큼 날짜로 나눠 돌려드려요.":
     "Campus Partners refunds: fully refunded within 7 days of paying, and after that for the days left, pro rata.",
-  "상단 광고: 30일 동안 우리 소개를 상대편 목록 맨 위에 AD 표시와 함께 보여 줘요. 브랜드는 30일에 99,000원, 학생단체는 30일에 10,000원이에요. 광고가 끝나기 전에 연장하면 10% 할인해요. 자동으로 결제되지 않고, 연장하면 남은 날 뒤에 30일이 이어져요. 환불은 캠퍼스 파트너스와 같아요.":
-    "Top ads: for 30 days your listing shows first on the other side's list, marked AD. Brands pay 99,000 won and student groups 10,000 won for 30 days. Extending before an ad ends takes 10% off. Nothing renews by itself; an extension adds 30 days after the days left. Refunds work as for Campus Partners.",
   "참여자가 고르면 답하는 선택 설문(학년, 전공 계열, 쿠폰 가게에 가 본 적이 있는지, 성별)은 누가 답했는지 남기지 않고 행사별 숫자로만 모아요. 브랜드의 상세 분석 리포트에 관객 구성으로 보여요.":
     "The optional survey participants may answer (year, field of study, whether they had been to the coupon's store, gender) keeps no record of who answered; it is only counted per event, and shows as the audience in the brand's detailed analysis report.",
-  "가입 확인 서류(개인 이메일로 가입하는 가게의 사업자등록증이나 재직 서류, 공동 관리자의 재직 증명)":
-    "Sign-up documents (a business registration or proof of employment from shops signing up with a personal email, and co-admins' proof of employment)",
+  "가입 확인 서류(초대받아 가입하는 가게의 사업자등록증이나 재직 서류, 공동 관리자의 재직 증명)":
+    "Sign-up documents (a business registration or proof of employment from shops signing up by invitation, and co-admins' proof of employment)",
   "운영자가 소속을 확인하고 가입을 승인하기": "So operators can confirm who you are with and approve the sign-up",
   "승인하거나 거절하면 바로 지워요": "Deleted as soon as it is approved or rejected",
   "저장한 제안 문구(이름과 내용, 10개까지)": "Saved proposal messages (their names and text, up to 10)",
   "다음 제안을 보낼 때 불러와 쓰기": "To use them again in later proposals",
   "탈퇴하거나 문구를 지울 때까지": "Until you leave or delete the message",
-  "친구 초대 기록(내 초대 코드, 어떤 회원의 링크로 가입했는지, 그 보상을 준 시각)": "Invitation records (your invitation code, whose link you signed up through, and when that was rewarded)",
-  "초대한 회원 수를 보여 주고, 초대받은 곳의 첫 협찬이 성사되면 초대한 회원에게 보상하기": "To show how many you invited, and to reward the inviter once the invited account’s first sponsorship goes through",
-  "탈퇴할 때까지, 초대한 회원이 탈퇴하면 그 연결을 지워요": "Until you leave; the link is removed if the inviter leaves",
+  "친구 초대 기록(내 초대 코드, 어떤 회원의 링크로 가입했는지, 보상의 승인 상태와 시각)": "Invitation records (your invitation code, whose link you signed up through, and the reward’s approval status and time)",
+  "초대한 회원 수를 보여 주고, 초대받은 곳의 첫 협찬이 성사되면 운영자 확인을 거쳐 초대한 회원에게 보상하기": "To show how many you invited, and to reward the inviter after an operator’s check once the invited account’s first sponsorship goes through",
+  "탈퇴할 때까지, 초대한 회원이 탈퇴하면 그 연결을 지워요. 초대받은 회원이 탈퇴해도 연간 보상 상한을 위해 회원을 알 수 없게 한 보상 기록은 남아요": "Until you leave; the link is removed if the inviter leaves. If the invited member leaves, a reward record that no longer identifies them stays for the yearly limit",
   "협찬 결산 공개 설정(공개 링크, 금액을 보여 줄지, 협찬마다 남긴 쓰임 메모)": "Public ledger settings (the public link, whether amounts show, and the note on each sponsorship)",
   "학생단체가 링크를 만들면 링크를 아는 누구나 받은 협찬의 브랜드, 품목, 행사, 메모와 QR 참여 수를, 고르면 금액까지 보게 하기": "Once a group makes the link, anyone with it sees the brands, goods, events, notes and QR check-ins of the sponsorships it received, and the amounts if it chooses",
   "탈퇴하거나 공개를 멈출 때까지(멈추면 예전 링크는 열리지 않아요)": "Until you leave or stop sharing (the old link stops working)",
   "기수(운영진 이름과 맡기 시작한 날)": "Terms (each team’s name and the day it took over)",
   "협찬 기록과 인수인계 파일을 기수별로 나눠 보여 주기": "To show the sponsorship record and the handover file by term",
   "탈퇴하거나 지울 때까지": "Until you leave or delete them",
+  "상세 성과 리포트: 협찬 1건의 상세 성과 리포트를 50,000원(부가세 포함 55,000원)에 살 수 있어요. 행사 날부터 살 수 있고, 한 번 사면 계속 보고 PDF로 저장하고 링크로 공유할 수 있어요.":
+    "Detailed report: the detailed report of one sponsorship costs 50,000 KRW (55,000 KRW with VAT). It can be bought from the event's day; once bought it stays yours to view, save as a PDF and share by link.",
+  "캠퍼스 파트너스: 브랜드는 30일에 300,000원(부가세 포함 330,000원)으로 캠퍼스 파트너스를 쓸 수 있어요. 협찬 제안을 제한 없이 보내고(무료 요금제는 한 달에 5건), 상세 분석 리포트를 모두 보고, 캠퍼스 포트폴리오 분석을 쓰고, 운영자에게 1:1 섭외 요청을 한 달에 2건 보낼 수 있고, 브랜드 카드에 PARTNERS 표시가 붙어요. 자동으로 결제되지 않고, 다시 결제하면 남은 날 뒤에 30일이 이어져요.":
+    "Campus Partners: brands can use Campus Partners at 300,000 KRW (330,000 KRW with VAT) for 30 days. It sends proposals without a limit (the free plan sends 5 a month), opens every detailed analysis report, adds the campus portfolio analysis, sends the operators 2 one-to-one partner requests a month, and puts a PARTNERS mark on the brand card. It doesn't renew by itself; paying again adds 30 days after the days left.",
+  "상단 광고: 30일 동안 우리 소개를 상대편 목록 맨 위에 AD 표시와 함께 보여 줘요. 브랜드는 30일에 99,000원(부가세 포함 108,900원), 학생단체는 30일에 10,000원(부가세 포함 11,000원)이에요. 광고가 끝나기 전에 연장하면 10% 할인해요. 자동으로 결제되지 않고, 연장하면 남은 날 뒤에 30일이 이어져요. 환불은 캠퍼스 파트너스와 같아요.":
+    "Top ads: for 30 days your listing shows first on the other side's list, marked AD. Brands pay 99,000 won (108,900 won with VAT) and student groups 10,000 won (11,000 won with VAT) for 30 days. Extending before an ad ends takes 10% off. Nothing renews by itself; an extension adds 30 days after the days left. Refunds work as for Campus Partners.",
+  "수수료 기준을 바꾸면 바뀐 기준은 시행일 이후에 확정되는 협찬에만 적용해요. 이미 확정된 협찬의 수수료는 그대로예요.":
+    "If the fee basis changes, the new basis applies only to sponsorships confirmed on or after its effective date. The fee of a sponsorship already confirmed stays the same.",
+  "환불은 도움말 센터의 '관리자에게 질문하기'로 요청해 주세요. 카드 결제는 결제를 취소해 돌려드리고, 계좌 입금은 받은 계좌로 돌려드려요. 환불하기로 확인한 날부터 3영업일 안에 돌려드려요. 결제 내역과 영수증은 내 정보의 '결제 내역'에서 볼 수 있어요.":
+    "Ask for refunds through 'Ask the operators' in the help center. Card payments are refunded by canceling them, and bank transfers to the account they came from, within 3 business days of confirming the refund. Your payments and receipts are under 'Payments' in My Account.",
+  "산 것이 서비스가 표시하거나 광고한 내용과 다르면 위 기간과 상관없이, 받은 날부터 3개월 안에, 그 사실을 알았거나 알 수 있었던 날부터 30일 안에 환불을 요청할 수 있어요.":
+    "If what you bought differs from what the Service displayed or advertised, you may ask for a refund regardless of the periods above, within 3 months of receiving it and within 30 days of when you learned or could have learned of the difference.",
+  "사칭, 성과 수치 조작, 다른 회원 괴롭힘, 서비스 운영 방해처럼 이 약관을 어기면 경고하거나 이용을 제한할 수 있어요. 제한하기 전에 이유와 이의를 제기하는 방법을 알려요. 다른 회원의 피해를 막으려고 급히 제한해야 하면 제한한 뒤 바로 알려요.":
+    "If a member violates these terms, for example by impersonation, inflating results, harassing other members or disrupting the Service, the Service may issue a warning or restrict their use. Before restricting, the Service gives the reason and how to object. If it must act at once to prevent harm to other members, it tells the member right after.",
+  "약관 위반을 이유로 회원 자격을 없앨 때는 30일 이상 소명할 기회를 드려요.":
+    "Before ending a membership for violating these terms, the Service gives at least 30 days to respond.",
+  "서비스는 회원 사이의 거래를 보증하지 않고, 회원이 올린 정보가 정확한지 미리 확인할 의무를 지지 않아요. 다만 서비스의 고의나 과실로 손해가 생기면 법령에 따라 책임져요.":
+    "The Service does not guarantee transactions between members and has no duty to check beforehand that information posted by members is accurate. If damage arises from the Service's intent or negligence, the Service is liable as the law provides.",
+  "약관을 바꿀 때는 시행일과 바꾸는 이유를 현재 약관과 함께 시행 7일 전부터 서비스 안에 알려요. 회원에게 불리하게 바꿀 때는 시행 30일 전부터 바뀌기 전과 후를 비교해 알리고, 이메일 등으로 회원에게 따로 알려요.":
+    "When these terms change, the effective date and the reason are posted in the Service with the current terms from 7 days before. Changes unfavorable to members are posted from 30 days before with a comparison of before and after, and members are also told individually, for example by email.",
+  "바뀐 약관은 시행일 이후에 맺는 계약과 결제에 적용해요. 이미 맺은 계약과 결제는 전 약관을 따라요.":
+    "Changed terms apply to contracts and payments made on or after the effective date. Those already made stay under the earlier terms.",
+  "운영자 계정(이름, 이메일, 비밀번호(복원할 수 없게 암호화), 2단계 인증 비밀값과 복구 코드(복구 코드는 복원할 수 없게 암호화), 로그인 상태, 로그인한 시각)":
+    "Operator accounts (name, email, password (encrypted so it can't be recovered), two-step login secret and recovery codes (recovery codes encrypted so they can't be recovered), login state, login times)",
+  "운영자 콘솔에 로그인하고, 운영자가 한 일이 누구의 일인지 남기기":
+    "Logging in to the operators' console and recording which operator did what",
+  "계정을 없앨 때까지. 끈 뒤에도 처리 기록에 이름을 보여 주려고 남겨요. 로그인 상태는 최대 8시간":
+    "Until the account is removed. It stays after being turned off so that its name still shows in the activity log. Login state lasts up to 8 hours",
+  "국외 이전":
+    "Transfers abroad",
+  "서비스를 제공하는 계약을 이행하려고 아래처럼 개인정보를 국외에 맡겨요. 개인정보 보호법 제28조의8 제1항 제3호에 따라 이 방침으로 알려요.":
+    "To perform the contract for the Service, personal information is entrusted abroad as below. This policy gives notice of it under Article 28-8(1)3 of the Personal Information Protection Act.",
+  "이전받는 곳과 연락처":
+    "Recipient and contact",
+  "국가":
+    "Country",
+  "시기와 방법":
+    "When and how",
+  "미국(서버는 싱가포르)":
+    "United States (servers in Singapore)",
+  "회원 정보와 서비스의 모든 데이터":
+    "Member information and all of the Service's data",
+  "서비스를 쓸 때마다 네트워크로":
+    "Over the network whenever the Service is used",
+  "서버 호스팅":
+    "Server hosting",
+  "탈퇴하거나 서비스를 마칠 때까지":
+    "Until you leave or the Service ends",
+  "Neon, LLC, Databricks 계열 (privacy@databricks.com)":
+    "Neon, LLC, a Databricks company (privacy@databricks.com)",
+  "미국(저장 위치는 싱가포르)":
+    "United States (stored in Singapore)",
+  "데이터베이스 보관":
+    "Database storage",
+  "탈퇴하거나 서비스를 마칠 때까지, 백업은 최대 24시간 더":
+    "Until you leave or the Service ends, with backups for up to 24 hours more",
+  "미국":
+    "United States",
+  "이메일 주소와 메일 내용":
+    "Email address and message content",
+  "메일을 보낼 때 네트워크로. 지금은 연결되어 있지 않아요":
+    "Over the network when mail is sent. It isn't connected now",
+  "인증 메일과 알림 메일 보내기":
+    "Sending verification and notice mail",
+  "그 업체의 보관 정책을 따라요":
+    "Under that company's retention policy",
+  "Google LLC (policies.google.com의 문의 경로)":
+    "Google LLC (the contact path at policies.google.com)",
+  "본 화면의 주소, 이용 기록, 쿠키 식별자, 기기 정보":
+    "Addresses of screens viewed, usage records, cookie identifiers, device information",
+  "화면을 볼 때 네트워크로":
+    "Over the network when a screen is viewed",
+  "방문 통계":
+    "Visit statistics",
+  "최대 14개월":
+    "Up to 14 months",
+  "영국, 네덜란드":
+    "United Kingdom, Netherlands",
+  "브랜드가 적은 매장 주소":
+    "Shop addresses written by brands",
+  "주소를 저장할 때 네트워크로":
+    "Over the network when an address is saved",
+  "주소를 좌표로 바꿔 학교와의 거리 계산":
+    "Turning addresses into coordinates to work out the distance from schools",
+  "그 재단의 보관 정책을 따라요":
+    "Under that foundation's retention policy",
+  "국외 이전을 거부하려면 탈퇴하거나 해당 기능을 쓰지 않으면 돼요. Vercel과 Neon 없이는 서비스를 제공할 수 없어서 거부하면 서비스를 쓸 수 없어요. 매장 주소를 적지 않으면 학교와의 거리를 볼 수 없어요. Google Analytics 쿠키는 브라우저 설정에서 막을 수 있고, 막아도 서비스를 그대로 쓸 수 있어요.":
+    "To refuse a transfer abroad, leave the Service or don't use the feature concerned. The Service can't run without Vercel and Neon, so refusing them means not using the Service. Without a shop address, distance from schools isn't shown. Google Analytics cookies can be blocked in browser settings, and the Service works the same.",
+  "파기 절차와 방법":
+    "How information is destroyed",
+  "보유 기간이 끝나거나 처리 목적을 이루면 지체 없이 지워요.":
+    "Once the retention period ends or the purpose is met, information is deleted without delay.",
+  "데이터베이스와 파일의 정보는 되살릴 수 없게 지워요. 개인정보를 종이 문서로 보관하지 않아요.":
+    "Information in the database and files is deleted so it can't be restored. Personal information isn't kept on paper.",
+  "법령에 따라 보존하는 정보는 아래 '지우기와 회원의 권리'에 근거와 항목을 적었어요.":
+    "Information kept by law is listed with its basis under 'Deleting and your rights' below.",
+  "결제 기록(주문, 결제, 취소와 그 이유)은 전자상거래법 제6조와 같은 법 시행령 제6조에 따라 탈퇴한 뒤에도 5년 동안 결제 확인과 분쟁 처리에만 쓰려고 보관하고, 그 뒤에 지워요.":
+    "Payment records (orders, payments, cancellations and their reasons) are kept for 5 years after leaving under Article 6 of the E-Commerce Act and Article 6 of its Enforcement Decree, used only for confirming payments and handling disputes, and deleted after that.",
+  "관리자 기능은 운영자 계정과 2단계 인증으로 들어와요. 첫 운영자를 만들기 전에는 별도의 관리자 토큰을 써요. 운영자가 한 일은 누가 했는지와 함께 기록해요.":
+    "Administrator functions are entered with an operator account and two-step login. Until the first operator is made, a separate administrator token is used. What operators do is recorded along with who did it.",
+  "운영자가 내려받는 백업 파일에는 비밀번호와 로그인, 결제, 현장 확인에 쓰는 값을 넣지 않아요.":
+    "Backup files downloaded by operators leave out passwords and the values used for login, payment and on-site checks.",
+  "서비스와 주고받는 데이터는 HTTPS로 암호화해요.":
+    "Data exchanged with the Service is encrypted with HTTPS.",
+  "보유 기간": "Retention",
 }
 
 export default en

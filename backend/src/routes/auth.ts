@@ -7,7 +7,7 @@ import { acceptedProposalsOf, dropOrphanAgreements, removeUploads } from "../lib
 import { findListing } from "../lib/catalog.js"
 import { deviceLabel } from "../lib/devices.js"
 import { applicationFolder, applicationFor, applicationsOf, holdApplication, parseDocument } from "../lib/applications.js"
-import { emailRuleError, isPersonalMail, normalizeEmail } from "../lib/email.js"
+import { emailRuleError, normalizeEmail } from "../lib/email.js"
 import { forgetAdminRecords } from "../lib/adminTools.js"
 import { HttpError } from "../lib/errors.js"
 import { sendVerificationCode } from "../lib/mailer.js"
@@ -20,9 +20,9 @@ import { freezeSponsorships } from "../lib/sponsorships.js"
 import { emailTaken, memberByEmail, memberOf, requireOwner } from "../lib/team.js"
 import { hashRecovery, matchStep, newRecoveryCodes, newSecret, otpauthUrl } from "../lib/totp.js"
 import { accountTypes, checkPassword, mailKinds, parseContact, parseRole, text } from "../lib/validation.js"
-import { referralStats, referrerOf } from "../lib/referrals.js"
+import { forgetReferralRewards, referralRewardsOf, referralStats, referrerOf } from "../lib/referrals.js"
 import { hashToken, requireAccount } from "../middleware/session.js"
-import { getDatabase, saveDatabase } from "../store.js"
+import { getDatabase, retryConflicts, saveDatabase } from "../store.js"
 import type { Account, Database, EmailCode, MailKind, PublicAccount, Role, Session, SocialProvider } from "../types.js"
 
 export const authRouter = Router()
@@ -115,7 +115,7 @@ async function checkCurrentPassword(req: Request, account: Account) {
 // 비밀번호 뒤에 로그인이 코드를 기다리는 시간과, 코드를 틀릴 수 있는
 // 횟수다.
 const ticketMs = 10 * minute
-const ticketTries = 5
+export const ticketTries = 5
 
 // 비밀번호가 맞고 계정이 코드도 요구한다. 세션 대신 티켓을 내주고, 브라우저가
 // 코드와 함께 다시 보낸다(POST /login/code).
@@ -132,7 +132,7 @@ export function startTicket(holder: Pick<Account, "loginTicket">, req: Request) 
 
 // 입력한 코드가 계정을 여는지 정한다. 우선 앱의 코드(각각 한 번)이거나 복구
 // 코드(쓰면 소진된다)다. 쓴 것을 표시하며, 저장은 호출한 쪽이 한다.
-function useCode(account: Pick<Account, "twoFactor">, typed: string) {
+export function useCode(account: Pick<Account, "twoFactor">, typed: string) {
   const twoFactor = account.twoFactor
   if (!twoFactor) return false
   const step = matchStep(twoFactor.secret, typed, Date.now(), twoFactor.usedStep)
@@ -148,7 +148,7 @@ function useCode(account: Pick<Account, "twoFactor">, typed: string) {
 
 // 설정 중인 2단계 로그인을 앱의 첫 코드로 켠다. 복구 코드는 한 번만 보여
 // 주며, 코드가 틀리면 아무것도 주지 않는다.
-function enableTwoFactor(holder: Pick<Account, "twoFactor" | "pendingTwoFactor">, typed: string) {
+export function enableTwoFactor(holder: Pick<Account, "twoFactor" | "pendingTwoFactor">, typed: string) {
   const pending = holder.pendingTwoFactor
   const step = pending && matchStep(pending.secret, typed)
   if (!pending || step === undefined) return undefined
@@ -280,9 +280,9 @@ authRouter.post("/signup", async (req, res) => {
   const shopInvite = role === "브랜드" && invited(database, body.invite)
   const ruleError = emailRuleError(role, email, { personal: shopInvite })
   if (ruleError) throw new HttpError(400, ruleError)
-  // 회사 이메일이 없으면 매장은 사업 서류를 보이고 기다린다.
-  const personal = role === "브랜드" && isPersonalMail(email)
-  const document = personal ? parseDocument(body.document, "사업자등록증이나 재직 서류를 올려 주세요.") : undefined
+  // 초대받은 가게는 메일 주소와 상관없이 사업 서류를 보이고 기다린다. 개인 메일
+  // 목록은 모든 주소를 가려내지 못한다.
+  const document = shopInvite ? parseDocument(body.document, "사업자등록증이나 재직 서류를 올려 주세요.") : undefined
 
   const verified = database.emailCodes.find(
     (entry) =>
@@ -444,9 +444,17 @@ authRouter.post("/login", async (req, res) => {
     return
   }
 
-  const token = startSession(account.id, req)
-  await saveDatabase()
-  res.json({ token, account: toPublic(account, req.memberId) })
+  // 다른 복사본에 밀리면 최신 데이터에서 세션을 다시 만든다. 그사이 초기화, 변경,
+  // 삭제, 정지가 있었으면 그쪽이 이긴다.
+  const opened = await retryConflicts(async () => {
+    const current = getDatabase().accounts.find((item) => item.id === account.id)
+    if (!current || current.passwordHash !== hashBefore) throw new HttpError(401, "이메일 또는 비밀번호가 올바르지 않아요.")
+    if (current.suspendedAt) throw new HttpError(403, suspendedMessage)
+    const token = startSession(current.id, req)
+    await saveDatabase()
+    return { token, account: current }
+  })
+  res.json({ token: opened.token, account: toPublic(opened.account, req.memberId) })
 })
 
 // 2단계 로그인이 켜진 로그인의 두 번째 단계다. 비밀번호 단계의 티켓과 앱의
@@ -494,6 +502,7 @@ function removeAccount(database: Database, account: Account) {
   database.accounts = database.accounts.filter((item) => item.id !== account.id)
   // 이 계정이 초대한 사람들은 더 이상 이 계정을 가리키지 않는다.
   for (const invited of database.accounts) if (invited.referredBy === account.id) delete invited.referredBy
+  forgetReferralRewards(database, account.id)
   // 총학생회의 동아리는 연결이 끊긴다.
   for (const club of database.accounts) {
     if (club.councils?.some((link) => link.accountId === account.id)) {
@@ -557,7 +566,9 @@ function removeAccount(database: Database, account: Account) {
   // 이 계정 행사의 사진은 데이터를 저장한 뒤 없앤 계약서의 사진과 함께 지운다.
   droppedAgreements.push(...(database.events[account.id] ?? []).map((event) => eventPhotos(event.id)))
   // 아직 합류하지 않은 공동 관리자와 그 서류도 마찬가지다.
-  const waiting = applicationsOf(database).filter((application) => application.accountId === account.id)
+  const waiting = applicationsOf(database).filter(
+    (application) => application.accountId === account.id || application.linkAccountId === account.id,
+  )
   droppedAgreements.push(...waiting.map((application) => applicationFolder(application.id)))
   database.applications = applicationsOf(database).filter((application) => !waiting.includes(application))
   delete database.events[account.id]
@@ -827,6 +838,9 @@ authRouter.get("/export", (req, res) => {
   // 총학생회의 코드와 동아리가 연결한 총학생회다.
     council: { code: account.councilCode?.code ?? null, links: account.councils ?? [] },
     listing: listing ?? null,
+    referralRewards: referralRewardsOf(database)
+      .filter((item) => item.referrerId === account.id)
+      .map(({ id, days, status, createdAt, decidedAt }) => ({ id, days, status, createdAt, decidedAt })),
     events: database.events[account.id] ?? [],
     proposalsSent: [
       ...database.requests.filter((item) => item.fromAccountId === account.id),

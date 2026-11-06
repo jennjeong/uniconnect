@@ -1561,7 +1561,7 @@ export function AgreementPage({
                 disabled={busy}
                 onClick={() =>
                   void run(
-                    () => api.confirmAgreement(agreement.id),
+                    () => api.confirmAgreement(agreement.id, agreement.goals?.expectedAudience),
                     agreement.confirmed[other]
                       ? t("양쪽 모두 확인했어요.")
                       : t("확인했어요. {name}에 알렸어요.", { name: agreement[other].name }),

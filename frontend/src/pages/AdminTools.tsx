@@ -1,13 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { api, errorMessage } from "../api"
 import { DatePicker } from "../components/DatePicker"
 import { Icon } from "../components/Icon"
+import { PasswordField } from "../components/PasswordField"
 import { t } from "../i18n"
 import { formatDateTime, formatDay, formatPeriod } from "../lib/date"
 import { csvCell } from "../lib/csv"
 import { saveFile } from "../lib/download"
-import type { AdminAnnouncement, AdminHealth, AdminLogRow, AdminMemberDetail, ErrorEntry } from "../types"
+import type { AdminAnnouncement, AdminHealth, AdminLogRow, AdminMemberDetail, AdminOperator, ErrorEntry } from "../types"
 
 // 운영자 콘솔의 도구(pages/AdminPage.tsx): 회원 메모, 답변 템플릿, CSV 파일,
 // 사이트 공지, 운영자가 한 일의 로그, 설정된 서비스.
@@ -486,6 +487,12 @@ const actionLabels: Record<string, string> = {
   "account-logged-out": "강제 로그아웃",
   "account-tagged": "태그 변경",
   "application-approved": "가입 승인",
+  "referral-approved": "친구 초대 보상 승인",
+  "referral-rejected": "친구 초대 보상 거절",
+  "operator-created": "운영자 추가",
+  "operator-disabled": "운영자 끄기",
+  "operator-logged-in": "운영자 로그인",
+  "backup-downloaded": "백업 내려받기",
   "application-rejected": "가입 거절",
   "business-set": "사업자 확인 변경",
   "partners-granted": "파트너스 부여",
@@ -522,7 +529,12 @@ const kindLabels: Record<string, string> = {
   inquiry: "문의",
   report: "신고",
   announcement: "공지",
+  operator: "운영자",
+  backup: "백업",
 }
+
+// 공유 토큰으로 한 일은 이름이 없다.
+const actorOf = (entry: AdminLogRow) => entry.actorName ?? (entry.actor === "token" ? t("공유 토큰") : "-")
 
 // 운영자가 한 일. 최신순이고 종류로 거른다.
 export function ActivityLog({ token, onNotice }: { token: string; onNotice: (message: string) => void }) {
@@ -549,8 +561,8 @@ export function ActivityLog({ token, onNotice }: { token: string; onNotice: (mes
         <CsvButton
           name="activity-log"
           rows={() => [
-            [t("시각"), t("한 일"), t("대상"), t("이름"), t("내용")],
-            ...shown.map((entry) => [entry.at, t(actionLabels[entry.action] ?? entry.action), t(kindLabels[entry.target.kind] ?? entry.target.kind), entry.label, entry.detail]),
+            [t("시각"), t("한 사람"), t("한 일"), t("대상"), t("이름"), t("내용")],
+            ...shown.map((entry) => [entry.at, actorOf(entry), t(actionLabels[entry.action] ?? entry.action), t(kindLabels[entry.target.kind] ?? entry.target.kind), entry.label, entry.detail]),
           ]}
         />
       </div>
@@ -563,6 +575,7 @@ export function ActivityLog({ token, onNotice }: { token: string; onNotice: (mes
           <thead>
             <tr>
               <th scope="col">{t("시각")}</th>
+              <th scope="col">{t("한 사람")}</th>
               <th scope="col">{t("한 일")}</th>
               <th scope="col">{t("대상")}</th>
             </tr>
@@ -571,6 +584,7 @@ export function ActivityLog({ token, onNotice }: { token: string; onNotice: (mes
             {shown.map((entry) => (
               <tr key={entry.id}>
                 <td>{formatDateTime(entry.at)}</td>
+                <td>{actorOf(entry)}</td>
                 <td>
                   {t(actionLabels[entry.action] ?? entry.action)}
                   {entry.detail && <small>{entry.detail}</small>}
@@ -666,6 +680,122 @@ export function ServiceHealth({ token, onNotice }: { token: string; onNotice: (m
           ))}
         </ul>
         <p className="field-hint">{t("값은 보여 주지 않고 설정 여부만 보여요. 바꾸려면 Vercel의 Environment Variables에서 고친 뒤 다시 배포하세요.")}</p>
+      </section>
+    </div>
+  )
+}
+
+// 운영자 계정: 목록, 추가, 끄기. 새 운영자는 받은 비밀번호로 처음 로그인하며 2단계
+// 로그인을 등록한다. 등록을 마친 운영자가 생기면 공유 토큰이 닫힌다.
+export function Operators({ token, onNotice }: { token: string; onNotice: (message: string) => void }) {
+  const [data, setData] = useState<{ operators: AdminOperator[]; me: AdminOperator | null; tokenClosed: boolean }>()
+  const [form, setForm] = useState({ name: "", email: "", password: "" })
+  const [busy, setBusy] = useState(false)
+
+  const load = useCallback(async () => {
+    const [{ operators }, session] = await Promise.all([api.adminOperators(token), api.adminSession(token)])
+    setData({ operators, me: session.operator, tokenClosed: session.tokenClosed })
+  }, [token])
+
+  useEffect(() => {
+    load().catch((error: unknown) => onNotice(errorMessage(error)))
+  }, [load, onNotice])
+
+  const act = async (run: () => Promise<unknown>, notice: string) => {
+    setBusy(true)
+    try {
+      await run()
+      onNotice(notice)
+      await load()
+      return true
+    } catch (error) {
+      onNotice(errorMessage(error))
+      return false
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (!data) return <p className="field-hint">{t("불러오고 있어요…")}</p>
+  return (
+    <div className="console-grid">
+      <section className="console-card wide">
+        <div className="console-card-head">
+          <div>
+            <h2>{t("운영자")}</h2>
+            <p>{data.tokenClosed ? t("공유 토큰은 닫혔어요. 운영자 로그인으로만 들어올 수 있어요.") : t("공유 토큰이 열려 있어요. 2단계 로그인을 마친 운영자가 생기면 닫혀요.")}</p>
+          </div>
+        </div>
+        {data.operators.length === 0 ? (
+          <p className="day-empty">{t("아직 운영자가 없어요.")}</p>
+        ) : (
+          <table className="console-table plain">
+            <thead>
+              <tr>
+                <th scope="col">{t("이름")}</th>
+                <th scope="col">{t("이메일")}</th>
+                <th scope="col">{t("2단계 로그인")}</th>
+                <th scope="col">{t("상태")}</th>
+                <th scope="col">
+                  <span className="sr-only">{t("끄기")}</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.operators.map((operator) => (
+                <tr key={operator.id}>
+                  <td>{operator.name}</td>
+                  <td>{operator.email}</td>
+                  <td>{operator.twoFactorOn ? t("등록함") : t("첫 로그인 전")}</td>
+                  <td>{operator.disabledAt ? t("꺼짐") : t("사용 중")}</td>
+                  <td>
+                    {!operator.disabledAt && operator.id !== data.me?.id && (
+                      <button
+                        aria-label={t("{name} 끄기", { name: operator.name })}
+                        className="cancel-button"
+                        disabled={busy}
+                        onClick={() => void act(() => api.adminDisableOperator(token, operator.id), t("{name}을 껐어요.", { name: operator.name }))}
+                        type="button"
+                      >
+                        {t("끄기")}
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+      <section className="console-card wide">
+        <div className="console-card-head">
+          <div>
+            <h2>{t("운영자 추가")}</h2>
+            <p>{t("비밀번호는 12자 이상 64자 이하로 영문, 숫자, 기호를 넣어 주세요.")}</p>
+          </div>
+        </div>
+        <form
+          className="console-form"
+          onSubmit={(event) => {
+            event.preventDefault()
+            void act(() => api.adminAddOperator(token, { ...form, name: form.name.trim(), email: form.email.trim() }), t("{name}을 추가했어요.", { name: form.name.trim() })).then((done) => {
+              if (done) setForm({ name: "", email: "", password: "" })
+            })
+          }}
+        >
+          <label>
+            {t("이름")}
+            <input maxLength={40} onChange={(event) => setForm({ ...form, name: event.target.value })} value={form.name} />
+          </label>
+          <label>
+            {t("이메일")}
+            <input onChange={(event) => setForm({ ...form, email: event.target.value })} type="email" value={form.email} />
+          </label>
+          <PasswordField autoComplete="new-password" label={t("비밀번호")} onChange={(event) => setForm({ ...form, password: event.target.value })} value={form.password} />
+          <button className="primary-button" disabled={busy || !form.name.trim() || !form.email.trim() || !form.password} type="submit">
+            {t("운영자 추가")}
+          </button>
+        </form>
       </section>
     </div>
   )

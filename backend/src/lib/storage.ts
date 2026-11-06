@@ -34,7 +34,7 @@ export type Storage = {
 const backupHour = /^\d{4}-\d{2}-\d{2}T\d{2}$/
 
 // 테스트는 lastAt을 초기화해 곧바로 복사본을 만든다.
-export const backups = { lastAt: 0, everyMs: 60 * 60 * 1000, kept: 24 }
+export const backups = { lastAt: 0, everyMs: 60 * 60 * 1000, keptHours: 24 }
 
 const backupDue = () => {
   if (Date.now() - backups.lastAt < backups.everyMs) return false
@@ -76,7 +76,9 @@ const fileStorage: Storage = {
       await mkdir(folder, { recursive: true })
       await writeFile(path.join(folder, `db-${new Date().toISOString().slice(0, 13).replace("T", "-")}.json`), data)
       const files = (await readdir(folder)).filter((file) => /^db-.+\.json$/.test(file)).sort()
-      await Promise.all(files.slice(0, -backups.kept).map((file) => unlink(path.join(folder, file))))
+      // 개수가 아니라 찍은 시각으로 지운다. 쓰기가 적어도 처리방침의 보관 기간을 넘기지 않는다.
+      const oldest = new Date(Date.now() - backups.keptHours * 60 * 60 * 1000).toISOString().slice(0, 13).replace("T", "-")
+      await Promise.all(files.filter((file) => file.slice(3, 16) < oldest).map((file) => unlink(path.join(folder, file))))
     } catch (error) {
       console.error(`[backup] ${(error as Error).message}`)
     }
@@ -135,17 +137,19 @@ function postgresStorage(sql: Sql): Storage {
       if (rows.length === 0) throw new StaleWrite("The data was saved by another copy first.")
       return Number(rows[0].version)
     },
-    // 시간(UTC)마다 한 행, 최근 24개.
+    // 시간(UTC)마다 한 행이며 그 시간에 처음 찍은 것을 둔다. 복사본마다 시계를
+    // 따로 재므로 같은 시간에 다시 와도 덮어쓰지 않는다. 처리방침의 보관 기간이
+    // 지난 행은 찍은 시각으로 지운다.
     async backUp(data) {
       if (!backupDue()) return
       try {
         await sql(
-          "insert into uniconnect_backups (taken_at, data) values (date_trunc('hour', now()), $1) on conflict (taken_at) do update set data = excluded.data",
+          "insert into uniconnect_backups (taken_at, data) values (date_trunc('hour', now()), $1) on conflict (taken_at) do nothing",
           [data],
         )
         await sql(
-          "delete from uniconnect_backups where taken_at < (select min(taken_at) from (select taken_at from uniconnect_backups order by taken_at desc limit $1) as kept)",
-          [backups.kept],
+          "delete from uniconnect_backups where taken_at < now() - make_interval(hours => $1::int)",
+          [backups.keptHours],
         )
       } catch (error) {
         console.error(`[backup] ${(error as Error).message}`)

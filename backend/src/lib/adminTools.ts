@@ -1,14 +1,20 @@
+import { AsyncLocalStorage } from "node:async_hooks"
 import { randomUUID } from "node:crypto"
 
 import { config } from "../config.js"
 import { createSeed } from "../data/seed.js"
 import { cardReady, paymentsOf, testMode } from "./billing.js"
 import { addDays, todayInKorea } from "./dates.js"
+import { chatFiles, eventPhotos } from "./photos.js"
 import { proUntil } from "./plan.js"
 import type { Account, AdminAction, AdminLogEntry, Announcement, Database, Payment } from "../types.js"
 
 // 콘솔은 최근 항목만 둔다.
 export const adminLogLimit = 500
+
+// 이 요청을 누가 하는지다. /api/admin의 요청마다 한 칸을 만들고(app.ts), 인증이
+// 채운다. 기록하는 곳마다 넘기지 않아도 모든 기록에 행위자가 남는다.
+export const adminRequest = new AsyncLocalStorage<{ actor?: string }>()
 
 // 운영자가 한 일을 id만으로 기록한다.
 export function logAdmin(
@@ -19,7 +25,8 @@ export function logAdmin(
   now = new Date(),
 ) {
   const log = (database.adminLog ??= [])
-  log.push({ id: randomUUID(), at: now.toISOString(), action, target, ...(detail ? { detail } : {}) })
+  const actor = adminRequest.getStore()?.actor
+  log.push({ id: randomUUID(), at: now.toISOString(), ...(actor ? { actor } : {}), action, target, ...(detail ? { detail } : {}) })
   if (log.length > adminLogLimit) log.splice(0, log.length - adminLogLimit)
 }
 
@@ -33,7 +40,40 @@ export function adminLogRows(database: Database) {
     if (target.kind === "announcement") return database.announcements?.find((item) => item.id === target.id)?.text.slice(0, 40)
     return undefined
   }
-  return [...(database.adminLog ?? [])].reverse().map((entry) => ({ ...entry, label: label(entry.target) ?? null }))
+  const actorName = (actor?: string) => database.operators?.find((operator) => operator.id === actor)?.name ?? null
+  return [...(database.adminLog ?? [])]
+    .reverse()
+    .map((entry) => ({ ...entry, label: label(entry.target) ?? null, actorName: actorName(entry.actor) }))
+}
+
+// 내려받는 백업에서 뺄 값이다. 로그인, 결제, 현장 확인에 쓸 수 있는 것들이다.
+// 데이터베이스 안의 백업에는 그대로 있어 복원할 수 있고, 내려받은 파일이 새도
+// 계정을 넘겨주지는 않는다.
+const secretKeys = new Set([
+  "passwordHash",
+  "twoFactor",
+  "pendingTwoFactor",
+  "loginTicket",
+  "calendarFeed",
+  "councilCode",
+  "paymentKey",
+  "customerKey",
+  "token",
+  "tokenHash",
+  "codeHash",
+  "shareToken",
+  "verificationToken",
+  "staffPin",
+  "groupPin",
+  "sessions",
+  "emailCodes",
+  "oauth",
+  "operators",
+  "operatorSessions",
+])
+
+export function backupWithoutSecrets(data: string) {
+  return JSON.stringify(JSON.parse(data), (key, value: unknown) => (secretKeys.has(key) ? undefined : value))
 }
 
 // 탈퇴하는 회원에 대해 운영자가 남긴 것을 지운다: 메모, 태그, 기록 항목,
@@ -123,10 +163,16 @@ export function grantPartners(database: Database, account: Account, days: number
 
 // 예시 데이터를 시드대로 되돌린다: 데모 계정 자신의 기록과 시드 카탈로그,
 // 제안, 대화, 후기, 게시물. 회원의 데이터는 그대로 두고 데모 계정은
-// 세션을 유지한다.
+// 세션을 유지한다. 데모 계정의 행사와 함께 사라진 계약서, 대화의 파일을 지우도록
+// 그 파일 묶음의 이름을 돌려준다(저장한 뒤에 지운다).
 export async function resetExamples(database: Database) {
   const fresh = await createSeed()
   const demo = new Set(Object.values(fresh.demoAccountIds))
+  const before = {
+    events: [...demo].flatMap((id) => (database.events[id] ?? []).map((event) => event.id)),
+    agreements: database.agreements.map((item) => item.id),
+    conversations: database.conversations.map((item) => item.id),
+  }
   const exampleListings = new Set([...fresh.brands, ...fresh.groups].map((listing) => listing.id))
   const freshAccounts = new Map(fresh.accounts.map((account) => [account.id, account]))
   database.accounts = database.accounts.filter((account) => !demo.has(account.id)).concat(fresh.accounts.map((account) => {
@@ -158,6 +204,14 @@ export async function resetExamples(database: Database) {
   database.inquiries = database.inquiries.filter((item) => !demo.has(item.accountId))
   database.invites = database.invites.filter((item) => !demo.has(item.accountId))
   database.payments = paymentsOf(database).filter((item) => !demo.has(item.accountId))
+  const agreements = new Set(database.agreements.map((item) => item.id))
+  const conversations = new Set(database.conversations.map((item) => item.id))
+  return [
+    // 시드 행사에는 올린 파일이 없으므로 데모 행사의 파일은 모두 지운다.
+    ...before.events.map(eventPhotos),
+    ...before.agreements.filter((id) => !agreements.has(id)),
+    ...before.conversations.filter((id) => !conversations.has(id)).map(chatFiles),
+  ]
 }
 
 // 콘솔이 세는 검색어: 소문자, 단어 사이 공백 하나, 두 글자에서 서른 글자.

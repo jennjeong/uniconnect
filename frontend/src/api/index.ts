@@ -4,6 +4,10 @@ import type {
   AccountContact,
   AdminAgreementRow,
   AdminApplication,
+  AdminReferralReward,
+  AdminLoginDone,
+  AdminLoginStart,
+  AdminOperator,
   AdminAnnouncement,
   AdminEventRow,
   AdminHealth,
@@ -207,7 +211,7 @@ export const api = {
   updateContact: (body: AccountContact) => request<{ account: Account }>("/auth/contact", { method: "PUT", body }),
   savePreferences: (body: { language?: "ko" | "en"; mailOff?: MailKind[] }) =>
     request<{ account: Account }>("/auth/preferences", { method: "PUT", body }),
-  referral: () => request<{ code: string; joined: number; rewarded: number; rewardDays: number }>("/auth/referral"),
+  referral: () => request<{ code: string; joined: number; rewarded: number; waiting: number; rewardDays: number }>("/auth/referral"),
   saveTerms: (terms: { name: string; from: string }[]) =>
     request<{ account: Account }>("/auth/terms", { method: "PUT", body: { terms } }),
   saveTemplates: (templates: ProposalTemplate[]) =>
@@ -286,8 +290,9 @@ export const api = {
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/methods`, { method: "PUT", body: { methods } }),
   saveAgreementItems: (id: string, items: { id?: string; side: Agreement["side"]; label: string }[]) =>
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/items`, { method: "PUT", body: { items } }),
-  confirmAgreement: (id: string) =>
-    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/confirm`, { method: "POST" }),
+  // 화면에서 본 예상 인원을 함께 보낸다.
+  confirmAgreement: (id: string, audience?: number) =>
+    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/confirm`, { method: "POST", body: { audience } }),
   addShipment: (id: string, body: { carrier: string; number: string; note?: string }) =>
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/shipments`, { method: "POST", body }),
   deleteShipment: (id: string, shipmentId: string) =>
@@ -402,9 +407,11 @@ export const api = {
   inviteShop: (placeId: string) =>
     request<{ invite: ShopInvite }>("/invites", { method: "POST", body: { placeId } }),
   invite: (code: string) => request<InvitePageData>(`/invites/${encodeURIComponent(code)}`),
-  acceptInvite: (code: string) =>
-    request<InvitePageData & { listing: Match }>(`/invites/${encodeURIComponent(code)}/accept`, {
+  // 서류를 보내면 운영자가 확인한 뒤 가게를 잇는다.
+  acceptInvite: (code: string, document: { file: string; name: string }) =>
+    request<{ pending: true }>(`/invites/${encodeURIComponent(code)}/accept`, {
       method: "POST",
+      body: { document },
     }),
 
   inquiries: () => request<{ inquiries: Inquiry[] }>("/inquiries"),
@@ -523,6 +530,17 @@ export const api = {
   adminAgreements: (token: string) => request<{ agreements: AdminAgreementRow[] }>("/admin/agreements", { headers: { "X-Admin-Token": token } }),
   adminEvents: (token: string) => request<{ events: AdminEventRow[] }>("/admin/events", { headers: { "X-Admin-Token": token } }),
   adminLive: (token: string) => request<AdminLive>("/admin/live", { headers: { "X-Admin-Token": token } }),
+  adminLogin: (body: { email: string; password: string }) => request<AdminLoginStart>("/admin/session", { method: "POST", body }),
+  adminLoginCode: (body: { email: string; ticket: string; code: string }) =>
+    request<AdminLoginDone>("/admin/session/code", { method: "POST", body }),
+  adminSession: (token: string) =>
+    request<{ operator: AdminOperator | null; tokenClosed: boolean }>("/admin/session", { headers: { "X-Admin-Token": token } }),
+  adminEndSession: (token: string) => request<void>("/admin/session", { method: "DELETE", headers: { "X-Admin-Token": token } }),
+  adminOperators: (token: string) => request<{ operators: AdminOperator[] }>("/admin/operators", { headers: { "X-Admin-Token": token } }),
+  adminAddOperator: (token: string, body: { email: string; name: string; password: string }) =>
+    request<{ operator: AdminOperator }>("/admin/operators", { method: "POST", headers: { "X-Admin-Token": token }, body }),
+  adminDisableOperator: (token: string, id: string) =>
+    request<{ operator: AdminOperator }>(`/admin/operators/${encodeURIComponent(id)}`, { method: "DELETE", headers: { "X-Admin-Token": token } }),
   adminApplications: (token: string) =>
     request<{ applications: AdminApplication[] }>("/admin/applications", { headers: { "X-Admin-Token": token } }),
   adminApplicationDocument: (token: string, id: string) =>
@@ -531,6 +549,12 @@ export const api = {
     request<void>(`/admin/applications/${encodeURIComponent(id)}/approve`, { method: "POST", headers: { "X-Admin-Token": token } }),
   adminRejectApplication: (token: string, id: string, reason: string) =>
     request<void>(`/admin/applications/${encodeURIComponent(id)}/reject`, { method: "POST", headers: { "X-Admin-Token": token }, body: { reason } }),
+  adminReferrals: (token: string) =>
+    request<{ rewards: AdminReferralReward[] }>("/admin/referrals", { headers: { "X-Admin-Token": token } }),
+  adminApproveReferral: (token: string, id: string) =>
+    request<void>(`/admin/referrals/${encodeURIComponent(id)}/approve`, { method: "POST", headers: { "X-Admin-Token": token } }),
+  adminRejectReferral: (token: string, id: string, reason: string) =>
+    request<void>(`/admin/referrals/${encodeURIComponent(id)}/reject`, { method: "POST", headers: { "X-Admin-Token": token }, body: { reason } }),
   adminPosts: (token: string) => request<{ posts: AdminPostRow[] }>("/admin/posts", { headers: { "X-Admin-Token": token } }),
   adminPostAction: (token: string, id: string, action: "hide" | "show" | "close") =>
     request<void>(`/admin/posts/${encodeURIComponent(id)}/${action}`, { method: "POST", headers: { "X-Admin-Token": token } }),

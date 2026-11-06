@@ -426,7 +426,9 @@ export const pinsOpen = (database: Database, measurement: Measurement, event: Ev
 // 않도록 예상 인원의 세 배, 최소 100으로 한다. 데모 계정의 방문자가
 // 무엇을 시도해도 같다.
 export const scanCeiling = (database: Database, measurement: Measurement) =>
-  isDemoEvent(database, measurement) ? Infinity : Math.max(100, measurement.goals.expectedAudience * 3)
+  isDemoEvent(database, measurement)
+    ? Infinity
+    : Math.max(100, (measurement.agreedAudience ?? measurement.goals.expectedAudience) * 3)
 
 // 행사 기간 밖의 스캔이나 쿠폰, 쿠폰이 소진된 뒤의 방문을 거절한다.
 export function assertOpen(database: Database, measurement: Measurement, event: EventItem, kind: MetricKind) {
@@ -486,6 +488,20 @@ const countedByBox: MetricKind[] = ["samples", "giveaways"]
 // QR 스캔, 쿠폰, 매장 방문 한 건 또는 행사장에서 확인한 것(`amount`개의
 // 샘플, 도장이나 게시물 하나, 실수를 바로잡는 더 적은 양)과 그 기록을
 // 센다. 협찬사의 집계는 행사의 집계와 함께 늘어난다.
+// 날짜별 스캔, 쿠폰, 방문이다. 최근 기록만 남는 로그와 달리 전부 센다. 이 집계가
+// 생기기 전의 행사는 로그에 남은 것으로 답한다.
+export function dailyCounts(measurement: Measurement): NonNullable<Measurement["daily"]> {
+  if (measurement.daily) return measurement.daily
+  const daily: NonNullable<Measurement["daily"]> = {}
+  for (const entry of measurement.log) {
+    if (entry.kind !== "scans" && entry.kind !== "coupons" && entry.kind !== "visits") continue
+    const { date } = hourInKorea(new Date(entry.at))
+    daily[date] ??= { scans: 0, coupons: 0, visits: 0 }
+    daily[date][entry.kind] += 1
+  }
+  return daily
+}
+
 export function recordMetric(
   measurement: Measurement,
   kind: MetricKind,
@@ -495,9 +511,15 @@ export function recordMetric(
   measurement.metrics[kind] += amount
   if (sponsor && kind !== "scans") sponsor.metrics[kind] += amount
   const now = new Date()
+  // 행사가 열리는 한국 시간 기준으로 센다.
+  const { date, hour } = hourInKorea(now)
+  if (kind === "scans" || kind === "coupons" || kind === "visits") {
+    // 이 기록을 남기기 전에 로그에서 시작한다. 로그는 밀려나므로 그 뒤에는 여기서만 센다.
+    const daily = (measurement.daily ??= dailyCounts(measurement))
+    daily[date] ??= { scans: 0, coupons: 0, visits: 0 }
+    daily[date][kind] += amount
+  }
   if (kind === "scans") {
-    // 행사가 열리는 한국 시간 기준으로 날짜별 시각을 센다.
-    const { date, hour } = hourInKorea(now)
     const slot = measurement.hourlyScans.find((item) => item.date === date && item.hour === hour)
     if (slot) slot.scans += 1
     else {

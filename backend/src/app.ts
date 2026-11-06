@@ -5,6 +5,8 @@ import express, { type ErrorRequestHandler } from "express"
 import { config } from "./config.js"
 import { isAppPath } from "./lib/appPaths.js"
 import { recordError } from "./lib/errorLog.js"
+import { adminRequest } from "./lib/adminTools.js"
+import { clientKey, createRateLimit, senderKey } from "./lib/rateLimit.js"
 import { HttpError } from "./lib/errors.js"
 import { langOf, translate } from "./lib/i18n.js"
 import { readSession } from "./middleware/session.js"
@@ -23,6 +25,7 @@ import { calendarRouter } from "./routes/calendar.js"
 import { checkInRouter } from "./routes/checkin.js"
 import { conversationsRouter } from "./routes/conversations.js"
 import { cronRouter } from "./routes/cron.js"
+import { adminSessionRouter } from "./routes/adminSession.js"
 import { errorsRouter } from "./routes/errors.js"
 import { eventsRouter } from "./routes/events.js"
 import { groupsRouter } from "./routes/groups.js"
@@ -46,6 +49,20 @@ import { getDatabase, refreshDatabase } from "./store.js"
 
 // `loaded`: Vercel(vercel.ts)에서는 API의 각 복사본이 시작할 때가 아니라 첫
 // 요청에서 데이터를 읽는다.
+// 한 계정이 1분에 할 수 있는 쓰기로, 사람이 쓰는 속도보다 훨씬 크다. 로그인 전에는
+// 주소로 세는데, 캠퍼스나 행사장 와이파이에서는 많은 사람이 한 주소로 보이므로
+// 현장 기록과 같은 수까지 받는다. 메시지가 같아도 한도가 달라 따로 센다.
+const writesPerAccount = createRateLimit({
+  limit: 120,
+  windowMs: 60 * 1000,
+  message: "요청이 너무 많아요. 잠시 후 다시 시도해 주세요.",
+})
+const writesPerAddress = createRateLimit({
+  limit: 600,
+  windowMs: 60 * 1000,
+  message: "요청이 너무 많아요. 잠시 후 다시 시도해 주세요.",
+})
+
 export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   const app = express()
   app.disable("x-powered-by")
@@ -103,6 +120,7 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   app.use("/api/events/:id/plan", express.json({ limit: "3mb" }))
   // 운영자를 기다리는 가입이 보이는 서류도 마찬가지다(lib/applications.ts).
   app.use("/api/auth/signup", express.json({ limit: "3mb" }))
+  app.use("/api/invites/:code/accept", express.json({ limit: "3mb" }))
   app.use("/api/team/join", express.json({ limit: "3mb" }))
   // 줄인 로고가 들어갈 자리다(routes/profile.ts는 약 100KB로 제한한다).
   app.use(express.json({ limit: "300kb" }))
@@ -120,6 +138,17 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
     const maintenance = getDatabase().settings?.maintenance
     const open = req.method === "GET" || req.path.startsWith("/admin") || req.path.startsWith("/auth/login") || req.path.startsWith("/errors")
     if (maintenance?.on && !open) throw new HttpError(503, "지금은 점검 중이에요. 점검이 끝나면 다시 시도해 주세요.")
+    next()
+  })
+
+  // 따로 한도가 없는 쓰기까지 모두 세어 한 곳에서 문서 저장을 몰아치지 못하게 한다.
+  // 현장 기록(행사장 와이파이), 운영자, 자체 한도가 있는 공개 기록은 뺀다.
+  app.use("/api", async (req, _res, next) => {
+    const reading = req.method === "GET" || req.method === "HEAD" || req.method === "OPTIONS"
+    if (!reading && !/^\/(check-in|admin|cron|site|errors)(\/|$)/.test(req.path)) {
+      if (req.account) await writesPerAccount.take(senderKey(req, getDatabase(), req.account))
+      else await writesPerAddress.take(clientKey(req))
+    }
     next()
   })
 
@@ -156,6 +185,8 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   app.use("/api/board", boardRouter)
   app.use("/api/errors", errorsRouter)
   app.use("/api/billing", billingRouter)
+  app.use("/api/admin", (_req, _res, next) => adminRequest.run({}, next))
+  app.use("/api/admin", adminSessionRouter)
   app.use("/api/admin", adminRouter)
   app.use("/api/admin", adminMoreRouter)
   app.use("/api/announcements", announcementsRouter)

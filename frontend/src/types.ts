@@ -442,6 +442,38 @@ export type CodeTicket = {
 // 운영자의 승인을 기다리는 가입 (backend lib/applications.ts).
 export type Pending = { pending: true }
 
+// 운영자의 승인을 기다리는 친구 초대 보상 (backend lib/referrals.ts).
+export type AdminReferralReward = {
+  id: string
+  createdAt: string
+  days: number
+  proposalId: string
+  referrer: { id: string; name: string; business: boolean } | null
+  joined: { id: string; name: string; business: boolean; createdAt: string } | null
+  value: number
+  feePaid: number
+  blocked: "missing" | "suspended" | "canceled" | "refunded" | null
+}
+
+// 운영자 계정과 로그인 (backend routes/adminSession.ts).
+export type AdminOperator = {
+  id: string
+  email: string
+  name: string
+  createdAt: string
+  disabledAt?: string
+  twoFactorOn: boolean
+}
+
+export type AdminLoginStart = {
+  twoFactor: true
+  ticket: string
+  // 처음 로그인일 때 인증 앱에 등록할 값이다.
+  setup?: { secret: string; url: string }
+}
+
+export type AdminLoginDone = { token: string; expiresAt: string; operator: AdminOperator; recoveryCodes?: string[] }
+
 export type AdminApplication = {
   id: string
   kind: "shop" | "member"
@@ -450,6 +482,8 @@ export type AdminApplication = {
   document: { name: string; size: number }
   requestedAt: string
   brand?: string
+  // 초대받은 가게의 카카오맵 주소.
+  placeUrl?: string
   contact?: AccountContact
   team?: string
 }
@@ -1051,6 +1085,7 @@ export type AdminOverview = {
   revenue: { total: number; thisMonth: number; byKind: Record<PaymentKind, number>; partners: number }
   attention: {
     applications: number
+    referrals: number
     inquiries: number
     reports: number
     transfers: number
@@ -1258,6 +1293,9 @@ export type AdminLogRow = {
   target: { kind: string; id: string }
   detail?: string
   label: string | null
+  // 공유 토큰으로 한 일은 actor가 "token"이고 이름이 없다.
+  actor?: string
+  actorName?: string | null
 }
 
 // API가 어떤 서비스에 맞춰 설정됐는지, 예와 아니오로.

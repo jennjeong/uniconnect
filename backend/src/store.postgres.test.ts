@@ -226,16 +226,61 @@ test("the agreed peak of 200 scans from one address all count when another copy 
   }
 })
 
-test("an hourly copy is kept, the latest 24", async () => {
-  for (let hour = 0; hour < 25; hour += 1) {
-    await sql("insert into uniconnect_backups (taken_at, data) values ($1, '{}')", [new Date(Date.UTC(2000, 0, 1, hour)).toISOString()])
+test("a login pushed back by another copy still opens a session that's stored", async () => {
+  const { createApp } = await import("./app.js")
+  const { useSql } = await import("./lib/sql.js")
+  const { DEMO_PASSWORD } = await import("./data/seed.js")
+  const { hashToken } = await import("./middleware/session.js")
+  const server = createApp().listen(0)
+  await new Promise((resolve) => server.once("listening", resolve))
+  const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api`
+  let rivals = 0
+  try {
+    await store.refreshDatabase({ force: true })
+    // 로그인의 첫 저장 바로 앞에서 다른 복사본이 먼저 쓴다.
+    useSql(async (text, params = []) => {
+      if (text.startsWith("update uniconnect_store set data") && rivals === 0) {
+        rivals += 1
+        await writeAsAnotherCopy(() => {})
+      }
+      return sql(text, params)
+    })
+    const login = await fetch(`${base}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role: "브랜드", email: "hello@afternoon-coffee.kr", password: DEMO_PASSWORD }),
+    })
+    assert.equal(login.status, 200)
+    assert.equal(rivals, 1)
+    const { token } = (await login.json()) as { token: string }
+    const { sessions } = (await stored()).data as unknown as { sessions: { tokenHash: string }[] }
+    assert.ok(sessions.some((session) => session.tokenHash === hashToken(token)))
+  } finally {
+    useSql(sql)
+    await new Promise((resolve) => server.close(resolve))
+  }
+})
+
+test("an hourly copy is kept for 24 hours, whatever their number, and another copy doesn't overwrite it", async () => {
+  await sql("delete from uniconnect_backups")
+  const hoursAgo = (hours: number) => new Date(Math.floor(Date.now() / 3_600_000 - hours) * 3_600_000).toISOString()
+  for (const hours of [30, 26, 5, 2]) {
+    await sql("insert into uniconnect_backups (taken_at, data) values ($1, '{}')", [hoursAgo(hours)])
   }
   store.backups.lastAt = 0
   await store.saveDatabase()
   const rows = await sql("select taken_at, data from uniconnect_backups order by taken_at")
-  assert.equal(rows.length, 24)
-  assert.equal(new Date(rows[0].taken_at as string).toISOString(), "2000-01-01T02:00:00.000Z")
-  assert.ok(String(rows.at(-1)!.data).includes("accounts"))
+  // 스물네 시간이 지난 것만 지운다.
+  assert.equal(rows.length, 3)
+  assert.equal(new Date(rows[0].taken_at as string).toISOString(), hoursAgo(5))
+  const newest = String(rows.at(-1)!.data)
+  assert.ok(newest.includes("accounts"))
+  // 같은 시간에 다른 복사본이 찍어도 그 시간의 첫 복사본이 남는다.
+  store.getDatabase().proposals["after-backup"] = ["moment-studio"]
+  store.backups.lastAt = 0
+  await store.saveDatabase()
+  const [latest] = await sql("select data from uniconnect_backups order by taken_at desc limit 1")
+  assert.equal(String(latest.data), newest)
 })
 
 test("agreement photos are rows that go with their agreement", async () => {

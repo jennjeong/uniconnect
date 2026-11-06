@@ -1,7 +1,8 @@
 import { browse, ownerOf } from "./catalog.js"
 import { todayInKorea } from "./dates.js"
 import { notify } from "./notices.js"
-import { getDatabase, saveDatabase } from "../store.js"
+import { mailBatch } from "./reminders.js"
+import { getDatabase, retryConflicts, saveDatabase } from "../store.js"
 import type { Account, Database } from "../types.js"
 
 // 주간 요약이 새 회원을 몇 주 전까지 살피는지와 몇 개를 보여 주는지.
@@ -33,31 +34,50 @@ export async function sendDigests(database: Database = getDatabase(), now = new 
   if (!isMondayInKorea(now)) return 0
   const today = todayInKorea(now)
   const demo = new Set(Object.values(database.demoAccountIds))
-  const looked: Account[] = []
+  const quiet: Account[] = []
   const due: { account: Account; partners: ReturnType<typeof newPartners> }[] = []
   for (const account of database.accounts) {
     if (demo.has(account.id) || account.suspendedAt || account.digestOn === today) continue
     if (account.mailOff?.includes("digest")) continue
-    account.digestOn = today
-    looked.push(account)
     const partners = newPartners(database, account, now)
     if (partners.length > 0) due.push({ account, partners })
+    else quiet.push(account)
   }
-  if (looked.length === 0) return 0
-  await saveDatabase()
-  for (const { account, partners } of due) {
-    const students = account.role === "학생단체"
-    const side = students ? "브랜드" : "학생단체"
-    void notify(
-      account,
-      "digest",
-      `이번 주 새로 가입한 잘 맞는 ${side} ${partners.length}곳`,
-      [
-        `지난 일주일 동안 가입한 ${side} 가운데 잘 맞는 곳이에요.`,
-        ...partners.map((partner) => `· ${partner.name} (일치율 ${partner.score}%)`),
-      ],
-      students ? "/matches" : "/groups",
+  // 보낸 뒤에 표시하므로 실패한 메일은 그날의 다음 실행에서 다시 간다. 보내는 동안
+  // 데이터를 새로 읽었을 수 있어 표시할 계정은 다시 찾는다.
+  const mark = (accounts: Account[]) =>
+    retryConflicts(async () => {
+      const current = getDatabase()
+      for (const { id } of accounts) {
+        const account = current.accounts.find((item) => item.id === id)
+        if (account) account.digestOn = today
+      }
+      await saveDatabase()
+    })
+  if (quiet.length > 0) await mark(quiet)
+  let sent = 0
+  for (let start = 0; start < due.length; start += mailBatch) {
+    const batch = due.slice(start, start + mailBatch)
+    const answers = await Promise.all(
+      batch.map(({ account, partners }) => {
+        const students = account.role === "학생단체"
+        const side = students ? "브랜드" : "학생단체"
+        return notify(
+          account,
+          "digest",
+          `이번 주 새로 가입한 잘 맞는 ${side} ${partners.length}곳`,
+          [
+            `지난 일주일 동안 가입한 ${side} 가운데 잘 맞는 곳이에요.`,
+            ...partners.map((partner) => `· ${partner.name} (일치율 ${partner.score}%)`),
+          ],
+          students ? "/matches" : "/groups",
+        )
+      }),
     )
+    const delivered = batch.filter((_, index) => answers[index]).map((item) => item.account)
+    sent += delivered.length
+    if (delivered.length > 0) await mark(delivered)
   }
-  return due.length
+  return sent
 }
+
