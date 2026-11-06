@@ -5561,8 +5561,12 @@ test("operators sign in with a password and a code, which closes the shared toke
     assert.equal(first.status, 200)
     const { ticket, setup } = first.data
     assert.ok(setup.secret)
-    // 설정이 끝나기 전에는 공유 토큰이 그대로 동작한다.
+    // 설정이 끝나기 전에는 공유 토큰이 그대로 동작한다. 실패가 쌓이면 맞는 토큰도 막아서
+    // 추측을 끝까지 시도하지 못한다.
     assert.equal((await admin("GET", "/operators", shared)).status, 200)
+    for (let count = 0; count < 10; count += 1) assert.equal((await admin("GET", "/overview", "guess")).status, 403)
+    assert.equal((await admin("GET", "/operators", shared)).status, 429)
+    await clearRateLimits()
     assert.equal((await admin("POST", "/session/code", "", { email, ticket, code: "000000" })).status, 401)
     const signedIn = await admin("POST", "/session/code", "", { email, ticket, code: codeAt(setup.secret, stepAt(Date.now())) })
     assert.equal(signedIn.status, 200)
@@ -5572,6 +5576,16 @@ test("operators sign in with a password and a code, which closes the shared toke
     // 이제 공유 토큰은 거절되고 운영자 세션이 모든 운영자 API에 통한다.
     assert.equal((await admin("GET", "/operators", shared)).status, 403)
     assert.equal((await admin("GET", "/payments", session)).status, 200)
+    assert.equal(new Date(signedIn.data.expiresAt).toISOString(), signedIn.data.expiresAt)
+
+    // 닫힌 토큰은 몇 번을 보내도 추측이 아니라 세지 않는다.
+    for (let count = 0; count < 15; count += 1) assert.equal((await admin("GET", "/overview", shared)).status, 403)
+    // 틀린 토큰은 세서 막지만, 로그인해 있는 운영자는 같은 주소여도 막히지 않는다.
+    for (let count = 0; count < 10; count += 1) assert.equal((await admin("GET", "/overview", "guess")).status, 403)
+    assert.equal((await admin("GET", "/overview", "guess")).status, 429)
+    assert.equal((await admin("GET", "/payments", session)).status, 200)
+    await clearRateLimits()
+
     const me = await admin("GET", "/session", session)
     assert.deepEqual([me.data.operator.id, me.data.operator.twoFactorOn, me.data.tokenClosed], [operatorId, true, true])
 
