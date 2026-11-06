@@ -14183,6 +14183,32 @@ input[type="search"]::-webkit-search-cancel-button {
   box-shadow: 0 0 0 2px var(--console-blue);
 }
 
+.console-login-form,
+.console-login-token form {
+  display: grid;
+  gap: 14px;
+}
+
+.console-login-token summary {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+
+.console-login-token[open] summary {
+  margin-bottom: 14px;
+}
+
+.console-login-qr {
+  width: 180px;
+  margin: 0 auto;
+}
+
+.console-login-key code {
+  overflow-wrap: anywhere;
+}
+
 .console-login-card .primary-button {
   min-height: 52px;
   border-radius: 16px;

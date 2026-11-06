@@ -124,14 +124,15 @@ test("the comparison of two brands has no critical or serious accessibility prob
 })
 
 // 토큰으로 콘솔을 연 뒤 운영자 콘솔의 모든 화면을 넓은 화면과 폰에서 본다.
-const consoleViews = ["overview", "insights", "members", "proposals", "operations", "live", "payments", "inquiries", "reports", "content", "errors", "notices", "log", "health", "system"]
+const consoleViews = ["overview", "insights", "members", "proposals", "operations", "live", "payments", "operators", "inquiries", "reports", "content", "errors", "notices", "log", "health", "system"]
 
 for (const width of [1280, 390]) {
   test(`the operators' console screens at ${width}px have no critical or serious accessibility problems`, async ({ page }) => {
-    // 화면 열다섯 개를 각각 검사한다.
+    // 화면 열여섯 개를 각각 검사한다.
     test.setTimeout(240_000)
     await page.setViewportSize({ width, height: 900 })
     await page.goto("/admin")
+    await page.getByText("공유 토큰으로 들어가기").click()
     await page.getByLabel("관리자 토큰").fill("e2e-admin-token")
     await page.getByRole("button", { name: "들어가기" }).click()
     await expect(page.getByRole("heading", { level: 2, name: "지금 처리할 일" })).toBeVisible()

@@ -4,6 +4,9 @@ import type {
   AccountContact,
   AdminAgreementRow,
   AdminApplication,
+  AdminLoginDone,
+  AdminLoginStart,
+  AdminOperator,
   AdminAnnouncement,
   AdminEventRow,
   AdminHealth,
@@ -523,6 +526,17 @@ export const api = {
   adminAgreements: (token: string) => request<{ agreements: AdminAgreementRow[] }>("/admin/agreements", { headers: { "X-Admin-Token": token } }),
   adminEvents: (token: string) => request<{ events: AdminEventRow[] }>("/admin/events", { headers: { "X-Admin-Token": token } }),
   adminLive: (token: string) => request<AdminLive>("/admin/live", { headers: { "X-Admin-Token": token } }),
+  adminLogin: (body: { email: string; password: string }) => request<AdminLoginStart>("/admin/session", { method: "POST", body }),
+  adminLoginCode: (body: { email: string; ticket: string; code: string }) =>
+    request<AdminLoginDone>("/admin/session/code", { method: "POST", body }),
+  adminSession: (token: string) =>
+    request<{ operator: AdminOperator | null; tokenClosed: boolean }>("/admin/session", { headers: { "X-Admin-Token": token } }),
+  adminEndSession: (token: string) => request<void>("/admin/session", { method: "DELETE", headers: { "X-Admin-Token": token } }),
+  adminOperators: (token: string) => request<{ operators: AdminOperator[] }>("/admin/operators", { headers: { "X-Admin-Token": token } }),
+  adminAddOperator: (token: string, body: { email: string; name: string; password: string }) =>
+    request<{ operator: AdminOperator }>("/admin/operators", { method: "POST", headers: { "X-Admin-Token": token }, body }),
+  adminDisableOperator: (token: string, id: string) =>
+    request<{ operator: AdminOperator }>(`/admin/operators/${encodeURIComponent(id)}`, { method: "DELETE", headers: { "X-Admin-Token": token } }),
   adminApplications: (token: string) =>
     request<{ applications: AdminApplication[] }>("/admin/applications", { headers: { "X-Admin-Token": token } }),
   adminApplicationDocument: (token: string, id: string) =>

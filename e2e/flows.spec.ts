@@ -695,6 +695,47 @@ test("a member finds its invitation link in 내 정보, and a visitor arriving b
   expect(left.status()).toBe(204)
 })
 
+test("an operator logs in with a password and a code, sees its recovery codes once, and a shared token opens the operators screen", async ({ page, request }) => {
+  const headers = { "X-Admin-Token": "e2e-admin-token" }
+  const email = "e2e-operator@uniconnect.test"
+  const added = await request.post("/api/admin/operators", { headers, data: { email, name: "첫 운영자", password: "Operator-pass-1!" } })
+  expect(added.status()).toBe(201)
+  const { operator } = (await added.json()) as { operator: { id: string } }
+  await page.goto("/admin")
+  await page.getByLabel("이메일").fill(email)
+  await page.getByLabel("비밀번호", { exact: true }).fill("wrong-pass-123!")
+  await page.getByRole("button", { name: "다음" }).click()
+  await expect(page.getByRole("alert")).toBeVisible()
+  await page.getByLabel("비밀번호", { exact: true }).fill("Operator-pass-1!")
+  await page.getByRole("button", { name: "다음" }).click()
+  await expect(page.getByRole("img", { name: "인증 앱에 등록할 QR 코드" })).toBeVisible()
+  // 2단계를 실제로 마치면 공유 토큰이 닫혀 다른 테스트가 막히므로 그 답만 흉내 낸다.
+  await page.route("**/api/admin/session/code", (route) =>
+    route.fulfill({ json: { token: "e2e-admin-token", expiresAt: new Date(Date.now() + 8 * 3_600_000).toISOString(), operator, recoveryCodes: ["AAAA-BBBB", "CCCC-DDDD"] } }),
+  )
+  await page.getByLabel("코드", { exact: true }).fill("123456")
+  await page.getByRole("button", { name: "확인" }).click()
+  await expect(page.getByText("AAAA-BBBB")).toBeVisible()
+  // 로그인 뒤 로딩이 한 번 실패해도 코드 화면으로 돌아가지 않고 다시 불러온다.
+  let failed = false
+  await page.route("**/api/admin/overview", (route) => {
+    if (failed) return route.fallback()
+    failed = true
+    return route.fulfill({ status: 500, json: { message: "잠시 후 다시 시도해 주세요." } })
+  })
+  const enter = page.getByRole("button", { name: "콘솔로 들어가기" })
+  await expect(enter).toBeDisabled()
+  await page.getByLabel("복구 코드를 안전한 곳에 저장했어요").check()
+  await enter.click()
+  await page.getByRole("button", { name: "다시 불러오기" }).click()
+  await expect(page.getByRole("heading", { level: 2, name: "지금 처리할 일" })).toBeVisible()
+  await page.goto("/admin?view=operators")
+  const row = page.getByRole("row", { name: /첫 운영자/ })
+  await expect(row).toContainText("첫 로그인 전")
+  await row.getByRole("button", { name: "첫 운영자 끄기" }).click()
+  await expect(row).toContainText("꺼짐")
+})
+
 test("a member chooses which notice emails come, and the choice stays", async ({ page, request }) => {
   const group = await signUpMember(request, "학생단체", "e2e-mail@syu.ac.kr", "메일 고르는 동아리")
   await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
@@ -885,6 +926,7 @@ test("an owner invites a co-admin, who joins with the code and can't do the owne
   // 운영자가 /admin에서 서류를 읽고 승인한다.
   const console = await (await browser.newContext()).newPage()
   await console.goto("/admin")
+  await console.getByText("공유 토큰으로 들어가기").click()
   await console.getByLabel("관리자 토큰").fill("e2e-admin-token")
   await console.getByRole("button", { name: "들어가기" }).click()
   await expect(console.getByRole("heading", { level: 2, name: "지금 처리할 일" })).toBeVisible()
@@ -2036,9 +2078,10 @@ test("the operators' console stands on its own: token, side menu, members and a 
   // 둘레에 회원 헤더나 푸터가 없다.
   await expect(page.getByRole("button", { name: "전체 메뉴" })).toHaveCount(0)
   await expect(page.getByRole("heading", { name: "운영자 콘솔" })).toBeVisible()
+  await page.getByText("공유 토큰으로 들어가기").click()
   await page.getByLabel("관리자 토큰").fill("wrong-token")
   await page.getByRole("button", { name: "들어가기" }).click()
-  await expect(page.getByRole("alert")).toHaveText("관리자 토큰이 맞지 않아요.")
+  await expect(page.getByRole("alert")).toHaveText("토큰이 맞지 않거나 이미 닫혔어요.")
   await page.getByLabel("관리자 토큰").fill("e2e-admin-token")
   await page.getByRole("button", { name: "들어가기" }).click()
   await expect(page.getByRole("heading", { level: 2, name: "지금 처리할 일" })).toBeVisible()
@@ -2116,6 +2159,7 @@ test("the operators' console stands on its own: token, side menu, members and a 
 test("the console's command palette opens screens, and maintenance covers the site until it is switched off", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 })
   await page.goto("/admin")
+  await page.getByText("공유 토큰으로 들어가기").click()
   await page.getByLabel("관리자 토큰").fill("e2e-admin-token")
   await page.getByRole("button", { name: "들어가기" }).click()
   await expect(page.getByRole("heading", { level: 2, name: "지금 처리할 일" })).toBeVisible()

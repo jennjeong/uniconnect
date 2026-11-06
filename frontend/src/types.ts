@@ -442,6 +442,25 @@ export type CodeTicket = {
 // 운영자의 승인을 기다리는 가입 (backend lib/applications.ts).
 export type Pending = { pending: true }
 
+// 운영자 계정과 로그인 (backend routes/adminSession.ts).
+export type AdminOperator = {
+  id: string
+  email: string
+  name: string
+  createdAt: string
+  disabledAt?: string
+  twoFactorOn: boolean
+}
+
+export type AdminLoginStart = {
+  twoFactor: true
+  ticket: string
+  // 처음 로그인일 때 인증 앱에 등록할 값이다.
+  setup?: { secret: string; url: string }
+}
+
+export type AdminLoginDone = { token: string; expiresAt: string; operator: AdminOperator; recoveryCodes?: string[] }
+
 export type AdminApplication = {
   id: string
   kind: "shop" | "member"
@@ -1258,6 +1277,9 @@ export type AdminLogRow = {
   target: { kind: string; id: string }
   detail?: string
   label: string | null
+  // 공유 토큰으로 한 일은 actor가 "token"이고 이름이 없다.
+  actor?: string
+  actorName?: string | null
 }
 
 // API가 어떤 서비스에 맞춰 설정됐는지, 예와 아니오로.

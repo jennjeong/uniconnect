@@ -22,6 +22,7 @@ import {
   Notices,
   Pager,
   readStored,
+  Operators,
   ServiceHealth,
   SortHeader,
   TemplatePicker,
@@ -29,6 +30,7 @@ import {
   WaitBadge,
   writeStored,
 } from "./AdminTools"
+import { AdminLogin } from "./AdminLogin"
 import type {
   AdminInquiry,
   AdminMember,
@@ -60,6 +62,27 @@ function writeToken(token: string) {
     else sessionStorage.removeItem(storageKey)
   } catch {
     // 저장소가 없으면 토큰은 페이지를 새로고침할 때까지만 유지된다.
+  }
+}
+
+// 운영자 로그인의 세션은 끝나는 시각과 함께 둔다. 공유 토큰으로 들어오면 없다.
+const sessionKey = "uniconnect-admin-session"
+
+function readSession(): { expiresAt: string } | null {
+  try {
+    const saved = sessionStorage.getItem(sessionKey)
+    return saved ? (JSON.parse(saved) as { expiresAt: string }) : null
+  } catch {
+    return null
+  }
+}
+
+function writeSession(session: { expiresAt: string } | null) {
+  try {
+    if (session) sessionStorage.setItem(sessionKey, JSON.stringify(session))
+    else sessionStorage.removeItem(sessionKey)
+  } catch {
+    // 저장소가 없으면 세션이 끝난 것은 다음 요청의 403으로 알게 된다.
   }
 }
 
@@ -363,6 +386,7 @@ type Section =
   | "errors"
   | "notices"
   | "log"
+  | "operators"
   | "health"
   | "system"
 
@@ -381,6 +405,7 @@ const sections: Section[] = [
   "errors",
   "notices",
   "log",
+  "operators",
   "health",
   "system",
 ]
@@ -423,6 +448,7 @@ const sectionInfo: { key: Section; label: string; icon: IconName; group: (typeof
   { key: "errors", label: "오류", icon: "search", group: "지원" },
   { key: "notices", label: "공지", icon: "bell", group: "설정" },
   { key: "log", label: "활동 기록", icon: "file", group: "설정" },
+  { key: "operators", label: "운영자", icon: "users", group: "설정" },
   { key: "health", label: "서비스 상태", icon: "check", group: "설정" },
   { key: "system", label: "시스템", icon: "lock", group: "설정" },
 ]
@@ -918,12 +944,11 @@ const shortcuts = [
 ]
 const soundKey = "uniconnect-admin-sound"
 
-// 운영자 콘솔(/admin, 회원 화면 없이 main.tsx가 단독으로 마운트한다). 서버
-// 환경의 ADMIN_TOKEN으로 열며, 사이드 메뉴로 개요, 회원, 제안, 결제와 매출,
+// 운영자 콘솔(/admin, 회원 화면 없이 main.tsx가 단독으로 마운트한다). 운영자
+// 로그인으로 열며(첫 운영자 전에는 공유 ADMIN_TOKEN), 사이드 메뉴로 개요, 회원, 제안, 결제와 매출,
 // 질문과 파트너 요청, 신고와 정지, 오류로 간다.
 export function AdminPage({ onNotice }: { onNotice: (message: string) => void }) {
   const [token, setToken] = useState(readToken)
-  const [tokenDraft, setTokenDraft] = useState("")
   // 콘솔의 위치를 주소(/admin?view=members&member=<id>)에서 읽어서 브라우저의
   // 뒤로·앞으로 버튼과 스와이프로 오갈 수 있게 한다.
   const [place, setPlace] = useState(readPlace)
@@ -1017,6 +1042,9 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
   const [reload, setReload] = useState(0)
 
   const signOut = useCallback((message = "") => {
+    // 운영자 세션은 서버에서도 지운다. 이미 끝났으면 실패해도 그만이다.
+    if (readSession()) void api.adminEndSession(readToken()).catch(() => undefined)
+    writeSession(null)
     writeToken("")
     setToken("")
     setOverview(null)
@@ -1031,13 +1059,14 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
   useEffect(() => {
     if (!token) return
     let cancelled = false
-    Promise.all([
-      api.adminOverview(token),
-      api.adminInquiries(token),
-      api.adminReports(token),
-      api.adminErrors(token),
-      api.adminPayments(token),
-    ])
+    // 틀린 토큰이 실패 횟수를 한 번만 쓰도록 하나로 먼저 확인한다.
+    api
+      .adminOverview(token)
+      .then((seen) =>
+        Promise.all([api.adminInquiries(token), api.adminReports(token), api.adminErrors(token), api.adminPayments(token)]).then(
+          (rest) => [seen, ...rest] as const,
+        ),
+      )
       .then(([seen, listed, reported, failed, paid]) => {
         if (cancelled) return
         writeToken(token)
@@ -1052,7 +1081,7 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
       })
       .catch((caught) => {
         if (cancelled) return
-        if (caught instanceof ApiError && caught.status === 403) signOut(t("관리자 토큰이 맞지 않아요."))
+        if (caught instanceof ApiError && caught.status === 403) signOut(readSession() ? t("로그인이 끝났어요. 다시 로그인해 주세요.") : t("토큰이 맞지 않거나 이미 닫혔어요."))
         else setError(errorMessage(caught))
       })
     return () => {
@@ -1139,7 +1168,9 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
     const events = ["pointerdown", "keydown", "wheel"] as const
     for (const name of events) document.addEventListener(name, touch, { passive: true })
     const timer = window.setInterval(() => {
-      if (Date.now() - last > idleMs) signOut(t("30분 동안 쓰지 않아 나갔어요. 토큰을 다시 넣어 주세요."))
+      const session = readSession()
+      if (session && Date.parse(session.expiresAt) <= Date.now()) signOut(t("로그인이 끝났어요. 다시 로그인해 주세요."))
+      else if (Date.now() - last > idleMs) signOut(t("30분 동안 쓰지 않아 나갔어요. 다시 로그인해 주세요."))
     }, 60_000)
     return () => {
       for (const name of events) document.removeEventListener(name, touch)
@@ -1147,36 +1178,54 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
     }
   }, [token, signOut])
 
+  // 운영자 로그인은 이미 끝났으므로 코드 화면으로 돌아가지 않는다. 쓴 코드는 다시
+  // 쓸 수 없고 받은 세션은 그대로 쓸 수 있다.
+  if (token && !overview && readSession()) {
+    return (
+      <div className="console-login">
+        <div className="console-login-card">
+          <img alt="uniconnect" src={logo} />
+          <h1>{t("운영자 콘솔")}</h1>
+          {error ? (
+            <>
+              <p className="form-error" role="alert">
+                {error}
+              </p>
+              <button className="primary-button wide" onClick={() => setReload((count) => count + 1)} type="button">
+                {t("다시 불러오기")}
+              </button>
+              <button className="cancel-button wide" onClick={() => signOut()} type="button">
+                {t("나가기")}
+              </button>
+            </>
+          ) : (
+            <p>{t("불러오고 있어요…")}</p>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   if (!token || !overview) {
     return (
       <div className="console-login">
-        <form
-          className="console-login-card"
-          onSubmit={(event) => {
-            event.preventDefault()
-            if (tokenDraft.trim()) setToken(tokenDraft.trim())
+        <AdminLogin
+          checking={Boolean(token) && !error}
+          error={error}
+          logo={logo}
+          onOperator={(next, expiresAt) => {
+            // 새로고침해도 이어지게 로딩을 기다리지 않고 바로 저장한다.
+            writeSession({ expiresAt })
+            writeToken(next)
+            setError("")
+            setToken(next)
           }}
-        >
-          <img alt="uniconnect" src={logo} />
-          <h1>{t("운영자 콘솔")}</h1>
-          <p>{t("서버의 ADMIN_TOKEN으로 들어와요. 토큰은 이 탭에만 기억되고 탭을 닫으면 지워져요.")}</p>
-          <PasswordField
-            autoComplete="off"
-            label={t("관리자 토큰")}
-            onChange={(event) => setTokenDraft(event.target.value)}
-            placeholder={t("서버의 ADMIN_TOKEN")}
-            toggleLabel={t("토큰 보기")}
-            value={tokenDraft}
-          />
-          {error && (
-            <p className="form-error" role="alert">
-              {error}
-            </p>
-          )}
-          <button className="primary-button wide" disabled={!tokenDraft.trim() || (Boolean(token) && !error)} type="submit">
-            {token && !error ? t("확인하고 있어요…") : t("들어가기")}
-          </button>
-        </form>
+          onToken={(next) => {
+            writeSession(null)
+            setError("")
+            setToken(next)
+          }}
+        />
       </div>
     )
   }
@@ -1514,6 +1563,8 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
         {section === "notices" && <Notices onNotice={onNotice} token={token} />}
 
         {section === "log" && <ActivityLog onNotice={onNotice} token={token} />}
+
+        {section === "operators" && <Operators onNotice={onNotice} token={token} />}
 
         {section === "health" && <ServiceHealth onNotice={onNotice} token={token} />}
 
