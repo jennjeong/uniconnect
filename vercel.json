@@ -13,7 +13,7 @@
     { "source": "/api/(.*)", "destination": "/api" },
     { "source": "/:section(matches|groups)/:id?", "destination": "/index.html" },
     {
-      "source": "/:page(dashboard|offers|events|measurement|reports|inbox|campaigns|analytics|new|faq|terms|privacy|admin|council|explore)",
+      "source": "/:page(dashboard|offers|events|measurement|reports|inbox|campaigns|analytics|new|faq|plans|terms|privacy|admin|council|explore)",
       "destination": "/index.html"
     },
     { "source": "/me/:part(edit)?", "destination": "/index.html" },

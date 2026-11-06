@@ -594,7 +594,7 @@ export function ProfilePage({
             <SettingsCard
               caption={
                 invite.rewardDays
-                  ? t("내 링크로 가입한 곳의 첫 협찬이 성사되면 운영자가 확인한 뒤 캠퍼스 파트너스 {days}일을 더해 드려요.", { days: invite.rewardDays })
+                  ? t("내 링크로 가입한 곳의 첫 협찬이 성사되면 운영자가 확인한 뒤 Growth {days}일을 더해 드려요.", { days: invite.rewardDays })
                   : t("내 링크로 다른 단체와 가게를 초대해 보세요. 가입하면 여기에 세어져요.")
               }
               icon="share"
@@ -616,7 +616,7 @@ export function ProfilePage({
           )}
 
           {onPlan && (
-            <SettingsCard caption={t("무료로 시작하고 더 많은 제안과 분석은 캠퍼스 파트너스로 써요.")} icon="won" id="profile-plan" title={t("요금제")}>
+            <SettingsCard caption={t("무료로 시작하고 더 많은 제안과 분석은 Growth로 써요.")} icon="won" id="profile-plan" title={t("요금제")}>
               <PlanCard onNotice={onPlan} />
             </SettingsCard>
           )}
@@ -631,7 +631,7 @@ export function ProfilePage({
                     </RowButton>
                   }
                   label={t("결제 내역")}
-                  value={t("수수료, 상세 리포트, 캠퍼스 파트너스 결제와 영수증이에요.")}
+                  value={t("수수료, 상세 리포트, Growth 결제와 영수증이에요.")}
                 />
               )}
               <SettingsRow

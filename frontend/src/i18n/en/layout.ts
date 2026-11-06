@@ -238,6 +238,18 @@ const en: Record<string, string> = {
   메뉴: "Menu",
   계정: "Account",
   "FAQ · 질문하기": "FAQ · Ask us",
+  "요금제": "Plans",
+  "준비 중": "Coming soon",
+  "브랜드 요금제": "Plans for brands",
+  "협찬 제안이 많아지면 Growth로 넓혀요.": "Move up to Growth as your proposals grow.",
+  "무료와 Growth 요금제의 금액과 쓸 수 있는 기능을 비교해요.": "Compare the price and features of the Free and Growth plans.",
+  "동네 가게를 위한 요금제를 준비하고 있어요.": "A plan for neighborhood shops is on the way.",
+  "부가세 포함 {price}": "{price} with VAT",
+  "내 정보에서 시작하기": "Start from My info",
+  "운영자 1:1 섭외 요청 한 달 {count}건": "{count} 1:1 partner requests to operators a month",
+  "금액은 부가세 별도예요. 결제할 때 {rate}%가 더해져요.": "Prices exclude VAT. {rate}% is added at checkout.",
+  "협찬이 성사되면 브랜드가 협찬액의 {rate}%를 수수료로 내요. 요금제와 상관없이 같아요.": "When a sponsorship is agreed, the brand pays a fee of {rate}% of its value. It's the same on every plan.",
+  "학생단체는 협찬 매칭을 무료로 써요.": "Student groups use sponsorship matching for free.",
   시작하기: "Getting Started",
   "소개 편집": "Edit Profile",
   "함께 시작하기": "Get started together",
@@ -482,7 +494,7 @@ const en: Record<string, string> = {
   "학생단체가 가입하면 여기서 찾아 제안해요. 소개를 먼저 써 두면 단체가 먼저 찾아와요.": "Once groups join, find and propose here. Write your profile first, and groups may come to you.",
   "지금은 예시 가게예요. 로그인하면 우리 학교 앞 실제 가게가 보여요.": "These are example shops. Log in to see real ones near your campus.",
   "가까운 순에서 학교 앞 가게에 초대장을 보내 보세요. 가입하면 여기서 제안할 수 있어요.": "Invite shops near campus from Nearest. Once they join, propose here.",
-  "무료로 시작하고 더 많은 제안과 분석은 캠퍼스 파트너스로 써요.": "Start free, and use Campus Partners for more proposals and analysis.",
+  "무료로 시작하고 더 많은 제안과 분석은 Growth로 써요.": "Start free, and use Growth for more proposals and analysis.",
 }
 
 export default en

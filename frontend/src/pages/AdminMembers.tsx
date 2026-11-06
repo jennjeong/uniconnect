@@ -173,7 +173,7 @@ export function Members({
           </select>
           <select aria-label={t("상태")} onChange={(event) => setFilters({ ...filters, state: event.target.value })} value={filters.state}>
             <option value="">{t("모든 상태")}</option>
-            <option value="partners">{t("캠퍼스 파트너스")}</option>
+            <option value="partners">{t("Growth")}</option>
             <option value="suspended">{t("정지됨")}</option>
             <option value="demo">{t("데모 계정")}</option>
             <option value="dormant30">{t("30일 넘게 미접속")}</option>
@@ -371,7 +371,7 @@ export function Members({
 }
 
 // 목록 옆의 회원 한 명: 사실 정보, 운영자의 메모와 태그, 도구(로그아웃, 사업자
-// 확인, Campus Partners, 정지), 기록, 그리고 활동 타임라인.
+// 확인, Growth, 정지), 기록, 그리고 활동 타임라인.
 function MemberDetail({
   token,
   member: open,
@@ -457,7 +457,7 @@ function MemberDetail({
           <dd>{open.listed ? (open.paused ? t("숨기는 중") : t("공개 중")) : t("아직 없음")}</dd>
         </div>
         <div>
-          <dt>{t("캠퍼스 파트너스")}</dt>
+          <dt>{t("Growth")}</dt>
           <dd>{open.partnersUntil ? t("{date}까지", { date: open.partnersUntil }) : "—"}</dd>
         </div>
         <div>
@@ -513,7 +513,7 @@ function MemberDetail({
             <option value={90}>{t("90일")}</option>
             <option value={365}>{t("1년")}</option>
           </select>
-          <button className="console-text-button" onClick={() => act(api.adminGrantPartners(token, open.id, days), t("캠퍼스 파트너스를 부여했어요."))} type="button">
+          <button className="console-text-button" onClick={() => act(api.adminGrantPartners(token, open.id, days), t("Growth를 부여했어요."))} type="button">
             {t("파트너스 부여")}
           </button>
         </span>

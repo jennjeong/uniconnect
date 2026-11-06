@@ -10,7 +10,7 @@ import { Icon } from "./Icon"
 import { Presence } from "./Presence"
 
 // 브랜드의 내 정보에 있는 요금제 (backend lib/pro.ts). 쓰고 있는 요금제, 이번
-// 달 제안 수와 무료 요금제의 한도, 무료와 캠퍼스 파트너스를 나란히 비교한 표,
+// 달 제안 수와 무료 요금제의 한도, 무료와 Growth를 나란히 비교한 표,
 // 30일(또는 30일 추가) 결제, 파트너의 1:1 섭외 요청을 운영진에게 보내는 기능을
 // 담는다.
 export function PlanCard({ onNotice }: { onNotice: (message: string) => void }) {
@@ -40,6 +40,7 @@ export function PlanCard({ onNotice }: { onNotice: (message: string) => void }) 
     {
       name: t("무료"),
       price: t("0원"),
+      withVat: "",
       current: !plan.pro,
       items: [
         t("한 달에 협찬 제안 {count}건", { count: plan.freeOffers }),
@@ -48,8 +49,9 @@ export function PlanCard({ onNotice }: { onNotice: (message: string) => void }) 
       ],
     },
     {
-      name: t("캠퍼스 파트너스"),
+      name: t("Growth"),
       price: t("{price} / {days}일", { price: fullWon(prices.pro), days: prices.proDays }),
+      withVat: t("부가세 포함 {price}", { price: fullWon(Math.round(prices.pro * (1 + prices.vatRate))) }),
       current: plan.pro,
       items: [
         t("협찬 제안 제한 없음"),
@@ -64,7 +66,7 @@ export function PlanCard({ onNotice }: { onNotice: (message: string) => void }) 
     <>
       <p className="plan-status">
         {plan.pro && plan.until
-          ? t("캠퍼스 파트너스를 쓰고 있어요 · {date}까지", { date: formatFullDate(plan.until) })
+          ? t("Growth를 쓰고 있어요 · {date}까지", { date: formatFullDate(plan.until) })
           : t("무료 요금제 · 이번 달 협찬 제안 {used}/{limit}건", { used: plan.offersThisMonth, limit: plan.freeOffers })}
       </p>
       <div className="plan-grid">
@@ -75,6 +77,7 @@ export function PlanCard({ onNotice }: { onNotice: (message: string) => void }) 
               {item.current && <em>{t("지금 요금제")}</em>}
             </header>
             <span className="plan-price">{item.price}</span>
+            {item.withVat && <small className="plan-vat">{item.withVat}</small>}
             <ul>
               {item.items.map((line) => (
                 <li key={line}>
@@ -87,7 +90,7 @@ export function PlanCard({ onNotice }: { onNotice: (message: string) => void }) 
         ))}
       </div>
       <button className="primary-button" disabled={!billing.canPay} onClick={() => setBuying(true)} type="button">
-        {plan.pro ? t("캠퍼스 파트너스 {days}일 연장하기", { days: prices.proDays }) : t("캠퍼스 파트너스 시작하기")}
+        {plan.pro ? t("Growth {days}일 연장하기", { days: prices.proDays }) : t("Growth 시작하기")}
       </button>
       {!billing.canPay && <p className="field-hint">{t("데모 계정은 테스트 결제로만 시연할 수 있어요.")}</p>}
       <p className="field-hint">{t("자동으로 결제되지 않아요. 끝나는 날이 다가오면 다시 결제해 이어서 쓸 수 있어요.")}</p>
@@ -127,16 +130,16 @@ export function PlanCard({ onNotice }: { onNotice: (message: string) => void }) 
           amount={prices.pro}
           kind="pro"
           lines={[
-            { label: t("상품"), value: t("캠퍼스 파트너스") },
+            { label: t("상품"), value: t("Growth") },
             { label: t("기간"), value: t("{days}일", { days: prices.proDays }) },
           ]}
           onClose={() => setBuying(false)}
           onTransferAsked={() => {
             setBuying(false)
-            onNotice(t("계좌 입금을 요청했어요. 입금이 확인되면 캠퍼스 파트너스가 시작돼요."))
+            onNotice(t("계좌 입금을 요청했어요. 입금이 확인되면 Growth가 시작돼요."))
           }}
           targetId=""
-          title={t("캠퍼스 파트너스 결제")}
+          title={t("Growth 결제")}
         />
       </Presence>
     </>

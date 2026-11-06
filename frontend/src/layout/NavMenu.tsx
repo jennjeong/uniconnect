@@ -28,6 +28,7 @@ export function NavMenu({
   onOpenBoard,
   onOpenProfile,
   onOpenFaq,
+  onOpenPlans,
   onLogin,
   onSignup,
   onInstall,
@@ -50,6 +51,7 @@ export function NavMenu({
   onOpenBoard: () => void
   onOpenProfile: () => void
   onOpenFaq: () => void
+  onOpenPlans: () => void
   onLogin: () => void
   onSignup: () => void
   // 앱 다운로드. 사이트를 브라우저에서 연 경우 항상 보인다 (lib/install.ts).
@@ -137,6 +139,9 @@ export function NavMenu({
               <button onClick={pick(onOpenProfile)} type="button">
                 {t("내 정보")}
               </button>
+              <button onClick={pick(onOpenPlans)} type="button">
+                {t("요금제")}
+              </button>
               <button onClick={pick(onOpenFaq)} type="button">
                 FAQ
               </button>
@@ -159,6 +164,9 @@ export function NavMenu({
               </button>
               <button onClick={pick(onSignup)} type="button">
                 {t("회원가입")}
+              </button>
+              <button onClick={pick(onOpenPlans)} type="button">
+                {t("요금제")}
               </button>
               <button onClick={pick(onOpenFaq)} type="button">
                 FAQ

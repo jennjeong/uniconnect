@@ -125,6 +125,7 @@ const PostFormModal = lazy(() => import("./modals/PostFormModal").then((module) 
 const LedgerPage = lazy(() => import("./pages/LedgerPage").then((module) => ({ default: module.LedgerPage })))
 const ExplorePage = lazy(() => import("./pages/ExplorePage").then((module) => ({ default: module.ExplorePage })))
 const EventsPage = lazy(() => import("./pages/EventsPage").then((module) => ({ default: module.EventsPage })))
+const PlansPage = lazy(() => import("./pages/PlansPage").then((module) => ({ default: module.PlansPage })))
 const FaqPage = lazy(() => import("./pages/FaqPage").then((module) => ({ default: module.FaqPage })))
 const LegalPage = lazy(() => import("./pages/LegalPage").then((module) => ({ default: module.LegalPage })))
 const GroupsPage = lazy(() => import("./pages/GroupsPage").then((module) => ({ default: module.GroupsPage })))
@@ -586,6 +587,7 @@ function App() {
   const openMessages = () => go({ page, messages: true })
 
   const openFaq = () => go({ page, faq: true })
+  const openPlans = () => go({ page, plans: true })
 
   const openLegal = (legal: LegalKind) => go({ page, legal })
 
@@ -1365,6 +1367,16 @@ function App() {
         />
       )
     }
+    if (view.plans) {
+      return (
+        <PlansPage
+          account={account}
+          onOpenProfile={openProfile}
+          onSignup={() => openAuth("signup", "브랜드")}
+          visitor={visitor}
+        />
+      )
+    }
     if (view.board) {
       return <BoardPage onOpen={openPost} onWrite={() => writePost()} reload={boardTick} role={role} visitor={visitor} />
     }
@@ -1803,7 +1815,7 @@ function App() {
   // 소개를 보는 방문자와, 데모 데이터로 보여 주는 회원 화면을 보는
   // 방문자(헤더에 예시로 표시한다).
   const landing = view.home === true && visitor
-  const demoScreen = visitor && !view.home && !view.faq && !view.legal && !view.admin && !view.invite && !view.missing
+  const demoScreen = visitor && !view.home && !view.faq && !view.plans && !view.legal && !view.admin && !view.invite && !view.missing
 
   return (
     <div className="app-shell">
@@ -1879,6 +1891,8 @@ function App() {
               ? "missing"
               : view.faq
                 ? "faq"
+                : view.plans
+                  ? "plans"
                 : view.legal
                   ? `legal-${view.legal}`
                   : view.admin
@@ -1983,6 +1997,7 @@ function App() {
           onOpenMessages={openMessages}
           onOpenProfile={openProfile}
           onOpenFaq={openFaq}
+          onOpenPlans={openPlans}
           onOpenLegal={openLegal}
           onEditProfile={() => go({ page, profile: "edit" })}
           onLogin={() => openAuth("login")}
@@ -2007,6 +2022,7 @@ function App() {
           onOpenBoard={openBoard}
           onOpenProfile={openProfile}
           onOpenFaq={openFaq}
+          onOpenPlans={openPlans}
           onLogin={() => openAuth("login")}
           onSignup={() => openAuth("signup")}
           installable={installKind !== "app"}

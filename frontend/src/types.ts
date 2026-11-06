@@ -246,6 +246,20 @@ export type BillingInfo = {
   canPayAd: boolean
 }
 
+// 공개 요금제 표 (backend lib/planTable.ts). limits의 값이 null이면 제한이 없고,
+// limits가 null이면 아직 정하지 않았다.
+export type PublicPlan = {
+  id: "free" | "local" | "growth" | "enterprise"
+  status: "open" | "soon" | "contact"
+  price: number | null
+  priceWithVat: number | null
+  days: number | null
+  orderKind: "pro" | null
+  limits: { offersPerMonth: number | null; partnerRequestsPerMonth: number; reportsIncluded: boolean } | null
+}
+
+export type PlanTable = { vatRate: number; feeRate: number; reportPrice: number; plans: PublicPlan[] }
+
 // 결제할 주문과, 결제창에 필요한 값.
 export type PaymentOrder = { order: Payment; customerKey: string; email: string }
 
@@ -1049,7 +1063,7 @@ export type InsightAnswer =
     }
   | { locked: false; report: PremiumReport; editable: boolean; shared: boolean; shareToken?: string }
 
-// 캠퍼스 포트폴리오 (backend lib/portfolio.ts): Campus Partners 브랜드의 협찬을
+// 캠퍼스 포트폴리오 (backend lib/portfolio.ts): Growth 브랜드의 협찬을
 // 모아 세 가지로 묶은 것.
 export type PortfolioGroup = { key: string; count: number; spend: number; visits: number; coupons: number; sales: number; roas: number }
 

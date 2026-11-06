@@ -50,6 +50,7 @@ export function AdCard({ role, onNotice }: { role: Role; onNotice: (message: str
                 price: fullWon(ad.price),
               })}
         </p>
+        <p className="field-hint">{t("부가세 포함 {price}", { price: fullWon(Math.round(ad.next * (1 + billing.prices.vatRate))) })}</p>
         {ad.renewing && (
           <p className="ad-card-deal">
             {t("끝나기 전에 연장하면 10% 할인돼요.")} <s>{fullWon(ad.price)}</s> <strong>{fullWon(ad.next)}</strong>

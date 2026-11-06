@@ -29,6 +29,7 @@ export function Footer({
   onOpenMessages,
   onOpenProfile,
   onOpenFaq,
+  onOpenPlans,
   onOpenLegal,
   onEditProfile,
   onLogin,
@@ -49,6 +50,7 @@ export function Footer({
   onOpenMessages: () => void
   onOpenProfile: () => void
   onOpenFaq: () => void
+  onOpenPlans: () => void
   onOpenLegal: (kind: LegalKind) => void
   onEditProfile: () => void
   onLogin: () => void
@@ -68,12 +70,14 @@ export function Footer({
         ? [
             { label: t("내 정보"), onClick: onOpenProfile },
             { label: t("메시지"), onClick: onOpenMessages },
+            { label: t("요금제"), onClick: onOpenPlans },
             { label: t("FAQ · 질문하기"), onClick: onOpenFaq },
             { label: t("로그아웃"), onClick: onLogout },
           ]
         : [
             { label: t("로그인"), onClick: onLogin },
             { label: t("회원가입"), onClick: onSignup },
+            { label: t("요금제"), onClick: onOpenPlans },
             { label: t("FAQ · 질문하기"), onClick: onOpenFaq },
           ],
     },
