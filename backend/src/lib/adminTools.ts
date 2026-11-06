@@ -137,7 +137,7 @@ export function cleanTags(values: unknown) {
 
 export const tagsOf = (database: Database, accountId: string) => database.adminTags?.[accountId] ?? []
 
-// 회원에게 며칠간 요금 없이 캠퍼스 파트너스를 준다. 지원금으로 표시한
+// 회원에게 며칠간 요금 없이 Growth를 준다. 지원금으로 표시한
 // 0원 결제 주문이며 이미 가진 기간 뒤에 이어 붙인다.
 export function grantPartners(database: Database, account: Account, days: number, now = new Date(), reason = "운영자 부여") {
   const until = proUntil(database, account.id)
@@ -148,7 +148,7 @@ export function grantPartners(database: Database, account: Account, days: number
     accountName: account.name,
     kind: "pro",
     targetId: "",
-    orderName: `캠퍼스 파트너스 ${days}일 (${reason})`,
+    orderName: `Growth ${days}일 (${reason})`,
     amount: 0,
     status: "paid",
     method: "grant",

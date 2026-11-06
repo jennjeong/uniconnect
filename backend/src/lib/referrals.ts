@@ -9,11 +9,11 @@ import { isDemoAccount } from "./reviews.js"
 import type { Account, Agreement, Database, ReferralReward } from "../types.js"
 
 // 브랜드가 자기 링크로 가입해 협찬까지 이어진 계정마다 운영자 승인을 거쳐 받는
-// 캠퍼스 파트너스 일수. 학생 단체는 무료로 쓰므로 단체의 것은 세기만 한다.
+// Growth 일수. 학생 단체는 무료로 쓰므로 단체의 것은 세기만 한다.
 export const referralRewardDays = 30
 
 // 보상받는 협찬의 조건. 협찬액이 이만큼이고 수수료를 실제로 냈어야 한다. 본인
-// 계정끼리 적은 금액으로 파트너스를 얻지 못하게 하려는 것이다.
+// 계정끼리 적은 금액으로 Growth를 얻지 못하게 하려는 것이다.
 export const referralMinValue = 300_000
 // 한 사람이 한 해에 받을 수 있는 보상 수.
 export const referralRewardsPerYear = 3
@@ -59,8 +59,8 @@ function rewardsThisYear(database: Database, referrerId: string, year: string) {
 // 협찬의 전자계약서를 양쪽이 확인하면(브랜드는 수수료를 낸 뒤) 누군가의
 // 링크로 가입했고 아직 협찬이 없던 쪽마다 보상 기록을 한 번 만든다. 조건에
 // 못 미치는 협찬은 넘어가고 다음 협찬이 다시 기회를 얻는다. 초대한 계정
-// 자신과의 협찬에는 보상이 없다. 파트너스 일수는 운영자가 승인해야 나가므로
-// 수수료를 내서 파트너스를 사는 길이 되지 않는다. 일수가 없는 학생단체의 것만
+// 자신과의 협찬에는 보상이 없다. Growth 일수는 운영자가 승인해야 나가므로
+// 수수료를 내서 Growth를 사는 길이 되지 않는다. 일수가 없는 학생단체의 것만
 // 돌려주어 바로 알린다.
 export function rewardReferrals(
   database: Database,
@@ -136,7 +136,7 @@ export function waitingReferralRewards(database: Database) {
     })
 }
 
-// 승인하면 파트너스 일수를 주고 초대자에게 알릴 것을 돌려준다.
+// 승인하면 Growth 일수를 주고 초대자에게 알릴 것을 돌려준다.
 export function approveReferralReward(database: Database, reward: ReferralReward, now = new Date()) {
   const { referrer, joined, blocked } = reviewOf(database, reward)
   if (blocked || !referrer || !joined) throw new HttpError(409, "지급 조건이 달라져 승인할 수 없어요. 거절해 주세요.")
@@ -186,7 +186,7 @@ export function tellReferrers(rewarded: ReturnType<typeof rewardReferrals>) {
       "초대한 회원의 첫 협찬이 성사됐어요",
       [
         `초대 링크로 가입한 ${joined.name}의 첫 협찬이 성사됐어요.`,
-        days ? `고마운 마음으로 캠퍼스 파트너스 ${days}일을 더해 드렸어요.` : "초대해 주셔서 고마워요.",
+        days ? `고마운 마음으로 Growth ${days}일을 더해 드렸어요.` : "초대해 주셔서 고마워요.",
       ],
       "/me",
     )

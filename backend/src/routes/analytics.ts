@@ -24,7 +24,7 @@ analyticsRouter.get("/", (req, res) => {
   })
 })
 
-// 캠퍼스 포트폴리오(lib/portfolio.ts)다. Campus Partners 브랜드는 자기 것을,
+// 캠퍼스 포트폴리오(lib/portfolio.ts)다. Growth 브랜드는 자기 것을,
 // 방문자는 예시로 데모 브랜드의 것을 보고, 나머지는 잠긴 모습을 본다.
 analyticsRouter.get("/portfolio", (req, res) => {
   const owner = brandOwner(req)

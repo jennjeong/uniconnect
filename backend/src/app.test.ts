@@ -6495,7 +6495,6 @@ test("a free brand sends five proposals a month; Pro lifts the limit for 30 days
     ["free", "open"],
     ["local", "soon"],
     ["growth", "open"],
-    ["enterprise", "contact"],
   ])
   const growth = table.plans[2]
   assert.deepEqual([growth.price, growth.priceWithVat, growth.days, growth.orderKind], [249000, 273900, 30, "pro"])
@@ -6506,7 +6505,7 @@ test("a free brand sends five proposals a month; Pro lifts the limit for 30 days
 
   // 유료 Pro는 30일이고, 그 뒤에 30일이 더 붙는다.
   const { order } = (await call("POST", "/billing/orders", { kind: "pro", targetId: "" }, brand)).data
-  assert.deepEqual([order.amount, order.orderName], [273900, "캠퍼스 파트너스 30일"])
+  assert.deepEqual([order.amount, order.orderName], [273900, "Growth 30일"])
   const { markPaid, paymentsOf } = await import("./lib/billing.js")
   markPaid(getDatabase(), paymentsOf(getDatabase()).find((item) => item.id === order.id)!, { method: "transfer" })
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date())
@@ -6520,7 +6519,7 @@ test("a free brand sends five proposals a month; Pro lifts the limit for 30 days
   const club = await signUpMember("pro-viewer@syu.ac.kr", "pro-pass-123")
   assert.equal((await call("POST", "/billing/partner-requests", { request: "파트너스가 아닌 계정의 요청이에요." }, club)).status, 403)
   const renewal = (await call("POST", "/billing/orders", { kind: "pro", targetId: "" }, brand)).data.order
-  assert.equal(renewal.orderName, "캠퍼스 파트너스 30일 연장")
+  assert.equal(renewal.orderName, "Growth 30일 연장")
   markPaid(getDatabase(), paymentsOf(getDatabase()).find((item) => item.id === renewal.id)!, { method: "transfer" })
   assert.equal((await call("GET", "/billing", undefined, brand)).data.plan.until, after(59))
 
@@ -6779,7 +6778,7 @@ test("the console's member tools, operations, content, analysis and system scree
     }
 
     // 회원은 모든 곳에서 로그아웃되고, 하나씩과 한꺼번에 태그가 붙고,
-    // 사업자로 확인되고, Campus Partners를 무료로 받는다.
+    // 사업자로 확인되고, Growth를 무료로 받는다.
     const token = await signUpMember("tools@toolscafe.kr", "tools-pass-123", "브랜드")
     const id = getDatabase().accounts.find((account) => account.email === "tools@toolscafe.kr")!.id
     assert.equal((await admin("POST", `/accounts/${id}/logout`)).data.account.sessions, 0)

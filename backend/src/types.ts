@@ -829,7 +829,7 @@ export type Payment = {
   openedAt?: string
 }
 
-// 친구 초대 보상 하나다. 파트너스 일수가 걸린 브랜드의 것은 운영자가 승인해야
+// 친구 초대 보상 하나다. Growth 일수가 걸린 브랜드의 것은 운영자가 승인해야
 // 지급된다. 일수가 없는 학생단체의 것은 세기만 하므로 바로 approved다.
 export type ReferralReward = {
   id: string

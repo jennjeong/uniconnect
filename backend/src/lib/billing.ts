@@ -12,7 +12,7 @@ export const prices = {
   feeRate: 0.15,
   // 협찬 하나의 상세 리포트.
   report: 50_000,
-  // 캠퍼스 파트너스 (Pro 포함), 30일.
+  // Growth (이전 이름 캠퍼스 파트너스, 데이터 이름 `pro`), 30일.
   pro: 249_000,
   proDays: 30,
   // 상단 광고 (lib/ads.ts) 30일. 브랜드는 학생 단체 카탈로그에, 단체는

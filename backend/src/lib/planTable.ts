@@ -5,9 +5,9 @@ import { freeOffersPerMonth, partnerRequestsPerMonth } from "./pro.js"
 // 없고, 표시 이름과 설명은 화면이 번역해 쓴다. 판매 중인 값만 싣는다. Local은
 // 결제가 열리기 전까지 가격 없이 준비 중으로 둔다(docs/LEGAL.md).
 type PlanRow = {
-  id: "free" | "local" | "growth" | "enterprise"
-  // open: 쓸 수 있다. soon: 준비 중이다. contact: 문의로 정한다.
-  status: "open" | "soon" | "contact"
+  id: "free" | "local" | "growth"
+  // open: 쓸 수 있다. soon: 준비 중이다.
+  status: "open" | "soon"
   price: number | null
   priceWithVat: number | null
   days: number | null
@@ -35,7 +35,7 @@ export const planTable = () => ({
     },
     { id: "local", status: "soon", ...unpriced },
     {
-      // 지금의 캠퍼스 파트너스다. 데이터 이름은 `pro` 그대로다.
+      // 데이터 이름은 `pro` 그대로다.
       id: "growth",
       status: "open",
       price: prices.pro,
@@ -44,6 +44,5 @@ export const planTable = () => ({
       orderKind: "pro",
       limits: { offersPerMonth: null, partnerRequestsPerMonth, reportsIncluded: true },
     },
-    { id: "enterprise", status: "contact", ...unpriced },
   ] satisfies PlanRow[],
 })

@@ -6,8 +6,8 @@ import { reportAccess } from "./premiumReport.js"
 import { isDemoAccount } from "./reviews.js"
 import type { Account, Database } from "../types.js"
 
-// 캠퍼스 파트너스(사업 계획의 브랜드 구독, 30일 249,000원, 요금제 표의 Growth;
-// 데이터의 `pro`): 30일씩 결제하고 이미 낸 일수 뒤에 이어 붙인다. 파트너스는
+// Growth(이전 이름 캠퍼스 파트너스, 사업 계획의 브랜드 구독, 30일 249,000원;
+// 데이터의 `pro`): 30일씩 결제하고 이미 낸 일수 뒤에 이어 붙인다. Growth는
 // 월 한도 없이 제안을 보내고, 모든 상세 리포트와 캠퍼스 포트폴리오
 // (lib/portfolio.ts)를 읽고, 한 달에 두 번 운영자에게 파트너를 찾아 달라고
 // 부탁하며(1:1 섭외 요청), 리스팅에 PARTNERS 마크가 붙는다. 무료
@@ -31,7 +31,7 @@ export function offersThisMonth(database: Database, accountId: string) {
 export function assertCanOffer(database: Database, account: Account) {
   if (account.role !== "브랜드" || isDemoAccount(database, account) || isPro(database, account.id)) return
   if (offersThisMonth(database, account.id) >= freeOffersPerMonth) {
-    throw new HttpError(402, `무료 요금제는 한 달에 협찬 제안 ${freeOffersPerMonth}건까지예요. 캠퍼스 파트너스로 바꾸면 제한 없이 보낼 수 있어요.`)
+    throw new HttpError(402, `무료 요금제는 한 달에 협찬 제안 ${freeOffersPerMonth}건까지예요. Growth로 바꾸면 제한 없이 보낼 수 있어요.`)
   }
 }
 
@@ -59,11 +59,11 @@ export function planOf(database: Database, account: Account) {
 sell("pro", {
   targetless: true,
   quote(database, account) {
-    if (account.role !== "브랜드") throw new HttpError(403, "캠퍼스 파트너스는 브랜드 계정만 쓸 수 있어요.")
+    if (account.role !== "브랜드") throw new HttpError(403, "Growth는 브랜드 계정만 쓸 수 있어요.")
     const until = proUntil(database, account.id)
     return {
       amount: prices.pro,
-      orderName: until ? `캠퍼스 파트너스 ${prices.proDays}일 연장` : `캠퍼스 파트너스 ${prices.proDays}일`,
+      orderName: until ? `Growth ${prices.proDays}일 연장` : `Growth ${prices.proDays}일`,
     }
   },
   // 결제됨: 내일부터, 또는 이미 낸 일수 뒤로 30일 더한다.

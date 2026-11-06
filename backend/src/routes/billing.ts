@@ -181,7 +181,7 @@ async function forget(orderId: string, paymentKey: string) {
 billingRouter.post("/partner-requests", async (req, res) => {
   const account = requireAccount(req)
   const database = getDatabase()
-  if (!isPro(database, account.id)) throw new HttpError(403, "캠퍼스 파트너스만 쓸 수 있어요.")
+  if (!isPro(database, account.id)) throw new HttpError(403, "Growth만 쓸 수 있어요.")
   const request = text(req.body?.request)
   if (request.length < 10) throw new HttpError(400, "찾고 싶은 행사와 조건을 10자 이상 적어 주세요.")
   if (request.length > 1000) throw new HttpError(400, "질문은 1,000자 이하로 적어 주세요.")

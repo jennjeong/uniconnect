@@ -1,7 +1,7 @@
 import { finishedSponsorships } from "./sponsorships.js"
 import type { Account, Database } from "../types.js"
 
-// 캠퍼스 포트폴리오(캠퍼스 파트너스 브랜드의 것, lib/pro.ts): 마친 모든
+// 캠퍼스 포트폴리오(Growth 브랜드의 것, lib/pro.ts): 마친 모든
 // 협찬을 학교별, 월별, 단체 종류별로 모으고 가장 좋은 것과 가장 약한 것,
 // 지금까지 방문 한 건에 든 비용을 보여 다음 예산을 짜게 한다.
 

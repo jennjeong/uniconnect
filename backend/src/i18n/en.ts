@@ -430,10 +430,10 @@ const en: Record<string, string> = {
   "이미 설문에 답했어요.": "You've already answered the survey.",
   "답을 하나 이상 골라 주세요.": "Please choose at least one answer.",
   // Pro (lib/pro.ts)
-  "무료 요금제는 한 달에 협찬 제안 {name}건까지예요. 캠퍼스 파트너스로 바꾸면 제한 없이 보낼 수 있어요.":
-    "The free plan sends up to {name} proposals a month. Switch to Campus Partners to send without a limit.",
-  "캠퍼스 파트너스는 브랜드 계정만 쓸 수 있어요.": "Campus Partners is for brand accounts only.",
-  "캠퍼스 파트너스만 쓸 수 있어요.": "This is for Campus Partners only.",
+  "무료 요금제는 한 달에 협찬 제안 {name}건까지예요. Growth로 바꾸면 제한 없이 보낼 수 있어요.":
+    "The free plan sends up to {name} proposals a month. Switch to Growth to send without a limit.",
+  "Growth는 브랜드 계정만 쓸 수 있어요.": "Growth is for brand accounts only.",
+  "Growth만 쓸 수 있어요.": "This is for Growth only.",
   "섭외 요청은 한 달에 {name}건까지예요.": "Up to {name} partner requests a month.",
   "찾고 싶은 행사와 조건을 10자 이상 적어 주세요.": "Please describe the events you're looking for in 10 characters or more.",
   "{name}에서 '{event}' 협찬의 협찬액을 바꿨어요. 바뀐 내용을 보고 다시 확인해 주세요.":

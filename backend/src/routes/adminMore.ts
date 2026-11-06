@@ -148,7 +148,7 @@ adminMoreRouter.post("/applications/:id/reject", async (req, res) => {
   res.json({ ok: true })
 })
 
-// 친구 초대 보상: 파트너스 일수는 운영자가 승인해야 나간다(lib/referrals.ts).
+// 친구 초대 보상: Growth 일수는 운영자가 승인해야 나간다(lib/referrals.ts).
 adminMoreRouter.get("/referrals", async (req, res) => {
   await requireAdmin(req)
   res.json({ rewards: waitingReferralRewards(getDatabase()) })
@@ -263,7 +263,7 @@ adminMoreRouter.put("/accounts/:id/business", async (req, res) => {
   res.json({ account: memberDetail(database, account) })
 })
 
-// 회원에게 Campus Partners를 1일에서 365일 동안 무료로 준다.
+// 회원에게 Growth를 1일에서 365일 동안 무료로 준다.
 adminMoreRouter.post("/accounts/:id/partners", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
