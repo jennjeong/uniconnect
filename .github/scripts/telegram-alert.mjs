@@ -125,6 +125,8 @@ export function route(event, payload, people) {
 
   if (event === "workflow_run" && payload.action === "completed" && payload.workflow_run?.conclusion === "failure") {
     const run = payload.workflow_run
+    // 포크에서 온 실행은 누구나 일으킬 수 있으므로 알리지 않는다.
+    if (run.head_repository?.full_name !== payload.repository?.full_name) return []
     return toOne(people, run.triggering_actor?.login ?? run.actor?.login, {
       kind: "error",
       todo: `${clip(run.name, 60)} 검사가 실패했어요. 로그를 확인해 주세요.`,

@@ -46,8 +46,10 @@ test("a review request, a change request and a failed check are routed", () => {
   assert.deepEqual(outsider, [])
   const approved = route("pull_request_review", { action: "submitted", sender: { login: "x" }, review: { state: "approved" }, pull_request }, people)
   assert.deepEqual(approved, [])
-  const failed = route("workflow_run", { action: "completed", sender: { login: "x" }, workflow_run: { conclusion: "failure", name: "CI", head_branch: "b", head_sha: "abcdefgh", html_url: "u", triggering_actor: { login: "Prince-Login" } } }, people)
+  const failed = route("workflow_run", { action: "completed", sender: { login: "x" }, repository: { full_name: "o/r" }, workflow_run: { conclusion: "failure", name: "CI", head_branch: "b", head_sha: "abcdefgh", html_url: "u", head_repository: { full_name: "o/r" }, triggering_actor: { login: "Prince-Login" } } }, people)
   assert.equal(failed[0].notice.kind, "error")
+  const fork = route("workflow_run", { action: "completed", sender: { login: "x" }, repository: { full_name: "o/r" }, workflow_run: { conclusion: "failure", name: "CI", head_repository: { full_name: "x/r" }, triggering_actor: { login: "x" } } }, people)
+  assert.deepEqual(fork, [])
   assert.deepEqual(route("workflow_run", { action: "completed", workflow_run: { conclusion: "success" } }, people), [])
 })
 
