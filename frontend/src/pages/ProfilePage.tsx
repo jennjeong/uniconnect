@@ -183,7 +183,7 @@ export function ProfilePage({
   const mailOff = account.mailOff ?? []
   const social = onTeam && owner ? socialProviders : []
   const together = Boolean(onTeam || onCouncil || onCouncilLink || blocked)
-  const [invite, setInvite] = useState<{ code: string; joined: number; rewarded: number; rewardDays: number } | null>(null)
+  const [invite, setInvite] = useState<{ code: string; joined: number; rewarded: number; waiting: number; rewardDays: number } | null>(null)
   useEffect(() => {
     if (!canInvite) return
     let cancelled = false
@@ -594,7 +594,7 @@ export function ProfilePage({
             <SettingsCard
               caption={
                 invite.rewardDays
-                  ? t("내 링크로 가입한 곳의 첫 협찬이 성사되면 캠퍼스 파트너스 {days}일을 더해 드려요.", { days: invite.rewardDays })
+                  ? t("내 링크로 가입한 곳의 첫 협찬이 성사되면 운영자가 확인한 뒤 캠퍼스 파트너스 {days}일을 더해 드려요.", { days: invite.rewardDays })
                   : t("내 링크로 다른 단체와 가게를 초대해 보세요. 가입하면 여기에 세어져요.")
               }
               icon="share"
@@ -609,7 +609,7 @@ export function ProfilePage({
                 />
                 <SettingsRow
                   label={t("초대한 결과")}
-                  value={t("가입 {joined}곳 · 첫 협찬 성사 {rewarded}곳", { joined: invite.joined, rewarded: invite.rewarded })}
+                  value={t("가입 {joined}곳 · 보상 {rewarded}곳 · 확인 중 {waiting}곳", { joined: invite.joined, rewarded: invite.rewarded, waiting: invite.waiting })}
                 />
               </dl>
             </SettingsCard>

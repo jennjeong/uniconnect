@@ -679,7 +679,95 @@ export function Approvals({ token, onNotice }: { token: string; onNotice: Notice
           </ul>
         )}
       </section>
+      <ReferralRewards onNotice={onNotice} token={token} />
     </div>
+  )
+}
+
+const referralBlocks = {
+  missing: "상대 계정이 없어요",
+  suspended: "정지된 계정이 있어요",
+  canceled: "협찬이 취소됐어요",
+  refunded: "수수료가 환불됐어요",
+} as const
+
+// 친구 초대 보상: 파트너스 일수는 운영자가 승인해야 나간다(backend lib/referrals.ts).
+function ReferralRewards({ token, onNotice }: { token: string; onNotice: Notice }) {
+  const [data, reload] = useAdmin(() => api.adminReferrals(token), onNotice, [token])
+  const [reasons, setReasons] = useState<Record<string, string>>({})
+  const [busy, setBusy] = useState(false)
+
+  const decide = async (run: () => Promise<void>, notice: string) => {
+    setBusy(true)
+    try {
+      await run()
+      onNotice(notice)
+      await reload()
+    } catch (error) {
+      onNotice(errorMessage(error))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (!data) return null
+  return (
+    <section className="console-card wide">
+      <div className="console-card-head">
+        <div>
+          <h2>{t("친구 초대 보상")}</h2>
+          <p>{t("초대한 쪽과 초대받은 쪽이 다른 사업자인지 확인하고 승인해 주세요. 승인해야 파트너스 일수가 나가요.")}</p>
+        </div>
+      </div>
+      {data.rewards.length === 0 ? (
+        <p className="day-empty">{t("기다리는 보상이 없어요.")}</p>
+      ) : (
+        <ul className="console-approvals">
+          {data.rewards.map((item) => {
+            const referrer = item.referrer?.name ?? t("탈퇴한 계정")
+            return (
+              <li key={item.id}>
+                <div>
+                  <strong>{t("{referrer} → {joined} · {days}일", { referrer, joined: item.joined?.name ?? t("탈퇴한 계정"), days: item.days })}</strong>
+                  <small>
+                    {t("협찬 {value} · 낸 수수료 {fee}", { value: fullWon(item.value), fee: fullWon(item.feePaid) })} · {formatDateTime(item.createdAt)}
+                  </small>
+                  <small>
+                    {t("사업자 확인: 초대자 {referrer}, 가입자 {joined}", { referrer: item.referrer?.business ? t("완료") : t("안 함"), joined: item.joined?.business ? t("완료") : t("안 함") })}
+                  </small>
+                  {item.blocked && <small>{t(referralBlocks[item.blocked])}</small>}
+                </div>
+                <button
+                  className="primary-button"
+                  disabled={busy || Boolean(item.blocked)}
+                  onClick={() => void decide(() => api.adminApproveReferral(token, item.id), t("{name}의 보상을 승인했어요.", { name: referrer }))}
+                  type="button"
+                >
+                  {t("승인")}
+                </button>
+                <label>
+                  <span className="sr-only">{t("거절 사유")}</span>
+                  <input
+                    maxLength={200}
+                    onChange={(event) => setReasons((current) => ({ ...current, [item.id]: event.target.value }))}
+                    placeholder={t("거절 사유")}
+                    value={reasons[item.id] ?? ""}
+                  />
+                </label>
+                <button
+                  className="cancel-button"
+                  disabled={busy || !reasons[item.id]?.trim()}
+                  onClick={() => void decide(() => api.adminRejectReferral(token, item.id, reasons[item.id].trim()), t("{name}의 보상을 거절했어요.", { name: referrer }))}
+                  type="button"
+                >
+                  {t("거절")}
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </section>
   )
 }
 

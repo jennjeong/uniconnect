@@ -4,6 +4,7 @@ import type {
   AccountContact,
   AdminAgreementRow,
   AdminApplication,
+  AdminReferralReward,
   AdminAnnouncement,
   AdminEventRow,
   AdminHealth,
@@ -207,7 +208,7 @@ export const api = {
   updateContact: (body: AccountContact) => request<{ account: Account }>("/auth/contact", { method: "PUT", body }),
   savePreferences: (body: { language?: "ko" | "en"; mailOff?: MailKind[] }) =>
     request<{ account: Account }>("/auth/preferences", { method: "PUT", body }),
-  referral: () => request<{ code: string; joined: number; rewarded: number; rewardDays: number }>("/auth/referral"),
+  referral: () => request<{ code: string; joined: number; rewarded: number; waiting: number; rewardDays: number }>("/auth/referral"),
   saveTerms: (terms: { name: string; from: string }[]) =>
     request<{ account: Account }>("/auth/terms", { method: "PUT", body: { terms } }),
   saveTemplates: (templates: ProposalTemplate[]) =>
@@ -534,6 +535,12 @@ export const api = {
     request<void>(`/admin/applications/${encodeURIComponent(id)}/approve`, { method: "POST", headers: { "X-Admin-Token": token } }),
   adminRejectApplication: (token: string, id: string, reason: string) =>
     request<void>(`/admin/applications/${encodeURIComponent(id)}/reject`, { method: "POST", headers: { "X-Admin-Token": token }, body: { reason } }),
+  adminReferrals: (token: string) =>
+    request<{ rewards: AdminReferralReward[] }>("/admin/referrals", { headers: { "X-Admin-Token": token } }),
+  adminApproveReferral: (token: string, id: string) =>
+    request<void>(`/admin/referrals/${encodeURIComponent(id)}/approve`, { method: "POST", headers: { "X-Admin-Token": token } }),
+  adminRejectReferral: (token: string, id: string, reason: string) =>
+    request<void>(`/admin/referrals/${encodeURIComponent(id)}/reject`, { method: "POST", headers: { "X-Admin-Token": token }, body: { reason } }),
   adminPosts: (token: string) => request<{ posts: AdminPostRow[] }>("/admin/posts", { headers: { "X-Admin-Token": token } }),
   adminPostAction: (token: string, id: string, action: "hide" | "show" | "close") =>
     request<void>(`/admin/posts/${encodeURIComponent(id)}/${action}`, { method: "POST", headers: { "X-Admin-Token": token } }),

@@ -21,6 +21,7 @@ import { cleanTags, grantPartners, logAdmin, resetExamples } from "../lib/adminT
 import { applicationFolder, applicationsOf } from "../lib/applications.js"
 import { sendMail } from "../lib/mailer.js"
 import { photos, photoType } from "../lib/photos.js"
+import { approveReferralReward, referralRewardsOf, rejectReferralReward, tellReferrers, waitingReferralRewards } from "../lib/referrals.js"
 import { linkShop, tellInviters } from "../lib/shopInvites.js"
 import { memberDetail } from "../lib/console.js"
 import { HttpError } from "../lib/errors.js"
@@ -144,6 +145,42 @@ adminMoreRouter.post("/applications/:id/reject", async (req, res) => {
   await saveDatabase()
   await photos().removeAll([applicationFolder(application.id)])
   await tellApplicant(application.email, "[uniconnect] 가입을 승인하지 못했어요", `제출한 서류를 확인하지 못했어요. 사유: ${reason}`)
+  res.json({ ok: true })
+})
+
+// 친구 초대 보상: 파트너스 일수는 운영자가 승인해야 나간다(lib/referrals.ts).
+adminMoreRouter.get("/referrals", async (req, res) => {
+  await requireAdmin(req)
+  res.json({ rewards: waitingReferralRewards(getDatabase()) })
+})
+
+function waitingReward(database: Database, id: unknown) {
+  const reward = referralRewardsOf(database).find((item) => item.id === id)
+  if (!reward) throw new HttpError(404, "찾을 수 없는 보상이에요.")
+  if (reward.status !== "waiting") throw new HttpError(409, "이미 결정한 보상이에요.")
+  return reward
+}
+
+adminMoreRouter.post("/referrals/:id/approve", async (req, res) => {
+  await requireAdmin(req)
+  const database = getDatabase()
+  const reward = waitingReward(database, req.params.id)
+  const told = approveReferralReward(database, reward)
+  logAdmin(database, "referral-approved", { kind: "account", id: reward.referrerId })
+  await saveDatabase()
+  tellReferrers([told])
+  res.json({ ok: true })
+})
+
+adminMoreRouter.post("/referrals/:id/reject", async (req, res) => {
+  await requireAdmin(req)
+  const database = getDatabase()
+  const reward = waitingReward(database, req.params.id)
+  const reason = text(req.body?.reason)
+  if (!reason || reason.length > 200) throw new HttpError(400, "거절 사유를 200자 이하로 적어 주세요.")
+  rejectReferralReward(reward)
+  logAdmin(database, "referral-rejected", { kind: "account", id: reward.referrerId }, reason)
+  await saveDatabase()
   res.json({ ok: true })
 })
 

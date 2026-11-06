@@ -416,7 +416,7 @@ const sectionInfo: { key: Section; label: string; icon: IconName; group: (typeof
   { key: "operations", label: "협찬 운영", icon: "link", group: "메뉴" },
   { key: "live", label: "현장", icon: "scan", group: "메뉴" },
   { key: "payments", label: "결제 · 매출", icon: "won", group: "메뉴" },
-  { key: "approvals", label: "가입 승인", icon: "check", group: "지원" },
+  { key: "approvals", label: "가입 · 보상 승인", icon: "check", group: "지원" },
   { key: "inquiries", label: "문의 · 섭외 요청", icon: "chat", group: "지원" },
   { key: "reports", label: "신고 · 정지", icon: "close", group: "지원" },
   { key: "content", label: "콘텐츠", icon: "edit", group: "지원" },
@@ -565,6 +565,7 @@ function Overview({ data, onGo }: { data: AdminOverview; onGo: (section: Section
     { label: t("답변을 기다리는 문의"), count: attention.inquiries, go: "inquiries" as Section, icon: "chat" as IconName },
     { label: t("처리를 기다리는 신고"), count: attention.reports, go: "reports" as Section, icon: "close" as IconName },
     { label: t("확인할 계좌 입금"), count: attention.transfers, go: "payments" as Section, icon: "won" as IconName },
+    { label: t("승인할 친구 초대 보상"), count: attention.referrals, go: "approvals" as Section, icon: "check" as IconName },
     { label: t("7일 넘게 답 없는 제안"), count: attention.stale, go: "operations" as Section, icon: "send" as IconName },
     { label: t("취소 요청된 계약서"), count: attention.cancels, go: "operations" as Section, icon: "file" as IconName },
     { label: t("현장 이상 신호"), count: attention.alerts, go: "live" as Section, icon: "scan" as IconName },
@@ -1192,7 +1193,7 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
   const shownReports = reportTab === "open" ? openReports : doneReports
   const shownPayments = payments.filter((payment) => payment.status === paymentTab)
   const badges: Partial<Record<Section, number>> = {
-    approvals: overview.attention.applications,
+    approvals: overview.attention.applications + overview.attention.referrals,
     inquiries: waiting.length,
     reports: openReports.length,
     payments: payments.filter((payment) => payment.status === "pending").length,

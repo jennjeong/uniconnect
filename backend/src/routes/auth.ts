@@ -20,7 +20,7 @@ import { freezeSponsorships } from "../lib/sponsorships.js"
 import { emailTaken, memberByEmail, memberOf, requireOwner } from "../lib/team.js"
 import { hashRecovery, matchStep, newRecoveryCodes, newSecret, otpauthUrl } from "../lib/totp.js"
 import { accountTypes, checkPassword, mailKinds, parseContact, parseRole, text } from "../lib/validation.js"
-import { referralStats, referrerOf } from "../lib/referrals.js"
+import { forgetReferralRewards, referralRewardsOf, referralStats, referrerOf } from "../lib/referrals.js"
 import { hashToken, requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { Account, Database, EmailCode, MailKind, PublicAccount, Role, Session, SocialProvider } from "../types.js"
@@ -494,6 +494,7 @@ function removeAccount(database: Database, account: Account) {
   database.accounts = database.accounts.filter((item) => item.id !== account.id)
   // 이 계정이 초대한 사람들은 더 이상 이 계정을 가리키지 않는다.
   for (const invited of database.accounts) if (invited.referredBy === account.id) delete invited.referredBy
+  forgetReferralRewards(database, account.id)
   // 총학생회의 동아리는 연결이 끊긴다.
   for (const club of database.accounts) {
     if (club.councils?.some((link) => link.accountId === account.id)) {
@@ -829,6 +830,9 @@ authRouter.get("/export", (req, res) => {
   // 총학생회의 코드와 동아리가 연결한 총학생회다.
     council: { code: account.councilCode?.code ?? null, links: account.councils ?? [] },
     listing: listing ?? null,
+    referralRewards: referralRewardsOf(database)
+      .filter((item) => item.referrerId === account.id)
+      .map(({ id, days, status, createdAt, decidedAt }) => ({ id, days, status, createdAt, decidedAt })),
     events: database.events[account.id] ?? [],
     proposalsSent: [
       ...database.requests.filter((item) => item.fromAccountId === account.id),

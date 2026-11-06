@@ -486,6 +486,8 @@ const actionLabels: Record<string, string> = {
   "account-logged-out": "강제 로그아웃",
   "account-tagged": "태그 변경",
   "application-approved": "가입 승인",
+  "referral-approved": "친구 초대 보상 승인",
+  "referral-rejected": "친구 초대 보상 거절",
   "application-rejected": "가입 거절",
   "business-set": "사업자 확인 변경",
   "partners-granted": "파트너스 부여",

@@ -362,10 +362,38 @@ test("an invitation link's code ties a sign-up to its inviter, rewarded once at 
   const first = await propose("초대 공연 2", other.listingId, other.token)
   assert.equal(grants().length, 0)
   await confirm(first, other.token)
-  assert.equal(grants().length, 1)
+  // 파트너스 일수는 운영자가 승인해야 나간다.
+  assert.equal(grants().length, 0)
+  const waiting = (await call("GET", "/auth/referral", undefined, brand)).data
+  assert.equal(waiting.rewarded, 0)
+  assert.equal(waiting.waiting, 1)
+  const { config: settings } = await import("./config.js")
+  const savedToken = settings.adminToken
+  settings.adminToken = "test-admin-token"
+  const admin = async (method: string, path: string, body?: unknown) => {
+    const response = await fetch(`${baseUrl}/admin${path}`, { method, headers: { "X-Admin-Token": "test-admin-token", "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined })
+    return { status: response.status, data: (await response.json().catch(() => null)) as { rewards: { id: string; value: number; blocked: string | null }[] } }
+  }
+  try {
+    assert.equal((await fetch(`${baseUrl}/admin/referrals`)).status, 403)
+    const { rewards } = (await admin("GET", "/referrals")).data
+    assert.equal(rewards.length, 1)
+    assert.equal(rewards[0].value, 300_000)
+    assert.equal(rewards[0].blocked, null)
+    assert.equal((await admin("POST", `/referrals/${rewards[0].id}/reject`, {})).status, 400)
+    assert.equal((await admin("POST", `/referrals/${rewards[0].id}/approve`)).status, 200)
+    assert.equal(grants().length, 1)
+    assert.equal((await admin("POST", `/referrals/${rewards[0].id}/approve`)).status, 409)
+    assert.equal(grants().length, 1)
+    assert.equal((await admin("GET", "/referrals")).data.rewards.length, 0)
+  } finally {
+    settings.adminToken = savedToken
+  }
   await confirm(await propose("초대 공연 3", other.listingId, other.token), other.token)
   assert.equal(grants().length, 1)
-  assert.equal((await call("GET", "/auth/referral", undefined, brand)).data.rewarded, 1)
+  const after = (await call("GET", "/auth/referral", undefined, brand)).data
+  assert.equal(after.rewarded, 1)
+  assert.equal(after.waiting, 0)
 
   // 한 해에 받는 보상에는 상한이 있다.
   const { referralRewardsPerYear, rewardReferrals } = await import("./lib/referrals.js")
@@ -380,6 +408,20 @@ test("an invitation link's code ties a sign-up to its inviter, rewarded once at 
   assert.deepEqual(rewardReferrals(database, { agreement, proposal }), [])
   assert.equal(groupAccount.referralRewardedAt, undefined)
   database.accounts = database.accounts.filter((account) => !fillers.includes(account as never))
+  // 초대받은 계정이 지워져도 기록이 남아 상한이 줄지 않고, 거절한 것은 세지 않는다.
+  const { forgetReferralRewards, rejectReferralReward, referralRewardsOf } = await import("./lib/referrals.js")
+  const records = Array.from({ length: referralRewardsPerYear }, (_, index) => ({ id: `cap-${index}`, referrerId: brandAccount.id, joinedId: `gone-${index}`, proposalId: first, days: 30, status: "approved" as const, createdAt: `${year}-01-01T00:00:00.000Z` }))
+  referralRewardsOf(database).push(...records)
+  forgetReferralRewards(database, "gone-0")
+  assert.equal(referralRewardsOf(database).find((item) => item.id === "cap-0")?.joinedId, undefined)
+  assert.deepEqual(rewardReferrals(database, { agreement, proposal }), [])
+  assert.equal(groupAccount.referralRewardedAt, undefined)
+  rejectReferralReward(referralRewardsOf(database).find((item) => item.id === "cap-1")!)
+  rejectReferralReward(referralRewardsOf(database).find((item) => item.id === "cap-2")!)
+  rejectReferralReward(referralRewardsOf(database).find((item) => item.id === "cap-0")!)
+  rewardReferrals(database, { agreement, proposal })
+  assert.ok(groupAccount.referralRewardedAt)
+  database.referralRewards = referralRewardsOf(database).filter((item) => !item.id.startsWith("cap-"))
   } finally {
     feeStart.since = started
     getDatabase().payments = getDatabase().payments!.filter((item) => !item.id.startsWith("fee-"))
@@ -6303,7 +6345,7 @@ test("the operators' console lists what needs them, members with their record, a
     assert.equal((await fetch(`${baseUrl}/admin/overview`)).status, 403)
     const seen = (await admin("/overview")).data
     assert.equal(seen.weekly.length, 8)
-    assert.deepEqual(Object.keys(seen.attention).sort(), ["alerts", "applications", "cancels", "inquiries", "reports", "stale", "suspended", "transfers"])
+    assert.deepEqual(Object.keys(seen.attention).sort(), ["alerts", "applications", "cancels", "inquiries", "referrals", "reports", "stale", "suspended", "transfers"])
     assert.deepEqual(Object.keys(seen.revenue.byKind).sort(), ["ad", "fee", "pro", "report"])
 
     await signUpMember("console@syu.ac.kr", "console-pass-123")

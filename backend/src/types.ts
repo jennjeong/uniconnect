@@ -827,6 +827,20 @@ export type Payment = {
   openedAt?: string
 }
 
+// 친구 초대 보상 하나다. 파트너스 일수가 걸린 브랜드의 것은 운영자가 승인해야
+// 지급된다. 일수가 없는 학생단체의 것은 세기만 하므로 바로 approved다.
+export type ReferralReward = {
+  id: string
+  referrerId: string
+  // 초대받은 계정이 탈퇴하면 비운다.
+  joinedId?: string
+  proposalId: string
+  days: number
+  status: "waiting" | "approved" | "rejected"
+  createdAt: string
+  decidedAt?: string
+}
+
 export type Database = {
   accounts: Account[]
   sessions: Session[]
@@ -857,6 +871,9 @@ export type Database = {
   invites: ShopInvite[]
   // 수락된 제안의 조건과 증빙이며 제안의 id로 구분한다.
   agreements: Agreement[]
+  // 친구 초대 보상의 기록이다. 초대받은 계정이 지워져도 한 해 상한이 줄지 않도록
+  // 계정과 따로 둔다(lib/referrals.ts).
+  referralRewards?: ReferralReward[]
   // 운영자가 보는 회원의 신고다.
   reports: AbuseReport[]
   // 계정마다 차단한 계정이며 계정 id로 구분한다. 둘은 서로의 리스팅, 제안,
@@ -934,6 +951,8 @@ export type AdminAction =
   | "account-tagged"
   | "application-approved"
   | "application-rejected"
+  | "referral-approved"
+  | "referral-rejected"
   | "business-set"
   | "partners-granted"
   | "demo-reset"

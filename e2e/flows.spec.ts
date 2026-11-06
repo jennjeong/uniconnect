@@ -687,7 +687,7 @@ test("a member finds its invitation link in 내 정보, and a visitor arriving b
   const card = page.getByRole("region", { name: "친구 초대" })
   const link = (await card.locator(".invite-link").textContent()) ?? ""
   expect(link).toMatch(/\/\?ref=[A-Z2-9]{8}$/)
-  await expect(card).toContainText("가입 0곳 · 첫 협찬 성사 0곳")
+  await expect(card).toContainText("가입 0곳 · 보상 0곳 · 확인 중 0곳")
   const visitor = await (await browser.newContext()).newPage()
   await visitor.goto(new URL(link).pathname + new URL(link).search)
   expect(await visitor.evaluate(() => sessionStorage.getItem("uniconnect-ref"))).toBe(new URL(link).searchParams.get("ref"))
