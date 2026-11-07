@@ -4022,19 +4022,6 @@ input[type="search"]::-webkit-search-cancel-button {
   margin: 72px calc(50% - 50vw) 0;
 }
 
-/* 휴대폰 Safari는 맨 위에서 상태 표시줄 뒤를 body 바탕색으로 칠한다. 화면 맨 위가 짙은
-   표면이면 바탕을 짙게 하고, 페이지 내용은 .app-shell의 흰 바탕 위에 그대로 둔다.
-   스크롤하면 그 자리에 페이지가 흐리게 비친다 (.site-header의 띄움). */
-html[data-top-dark],
-html[data-top-dark] body {
-  /* 첫 화면 그라디언트 맨 위의 평균 색이다. */
-  background-color: #5a6f9a;
-}
-
-html[data-top-dark] .app-shell {
-  background: var(--canvas);
-}
-
 .chain-stage {
   --surface-tone: dark;
   position: sticky;
