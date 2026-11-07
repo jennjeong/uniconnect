@@ -63,9 +63,13 @@ import type {
   SnsPost,
   NearbyPlaces,
   Payment,
+  LocalCampaign,
+  LocalInfo,
+  LocalReport,
   PaymentKind,
   PaymentOrder,
   PlanTable,
+  RefundQuote,
   PlatformStats,
   Portfolio,
   PostDraft,
@@ -341,6 +345,14 @@ export const api = {
   shareInsight: (id: string) => request<{ shareToken: string }>(`/insights/${encodeURIComponent(id)}/share`, { method: "POST" }),
   unshareInsight: (id: string) => request<void>(`/insights/${encodeURIComponent(id)}/share`, { method: "DELETE" }),
   plans: () => request<PlanTable>("/billing/plans"),
+  refundQuote: (id: string) => request<RefundQuote>(`/billing/payments/${encodeURIComponent(id)}/refund`),
+  refund: (id: string, amount: number) =>
+    request<{ payment: Payment }>(`/billing/payments/${encodeURIComponent(id)}/refund`, { method: "POST", body: { amount } }),
+  local: () => request<LocalInfo>("/local"),
+  openLocalCampaign: (body: { store: string; title: string }) => request<{ campaign: LocalCampaign }>("/local/campaign", { method: "POST", body }),
+  updateLocalCampaign: (body: { store: string; title: string }) => request<{ campaign: LocalCampaign }>("/local/campaign", { method: "PUT", body }),
+  rotateLocalPin: () => request<{ campaign: LocalCampaign }>("/local/campaign/pin", { method: "POST" }),
+  localReport: (month?: string) => request<LocalReport>(`/local/report${month ? `?month=${encodeURIComponent(month)}` : ""}`),
   billing: () => request<BillingInfo>("/billing"),
   portfolio: () => request<{ locked: true } | { locked: false; portfolio: Portfolio }>("/analytics/portfolio"),
   partnerRequest: (wanted: string) =>
@@ -480,6 +492,8 @@ export const api = {
       body: {},
       headers: { "X-Admin-Token": token },
     }),
+  adminRefundQuote: (token: string, id: string) =>
+    request<RefundQuote>(`/admin/payments/${encodeURIComponent(id)}/refund`, { headers: { "X-Admin-Token": token } }),
   adminCancelPayment: (token: string, id: string, reason: string) =>
     request<{ payment: AdminPayment }>(`/admin/payments/${encodeURIComponent(id)}/cancel`, {
       method: "POST",
@@ -675,7 +689,7 @@ export const api = {
       { method: "POST", body },
     ),
   checkInPass: (code: string, pass: string) =>
-    request<{ coupons: Record<string, { number: string | null; visited: boolean }> }>(
+    request<{ coupons: Record<string, { number: string | null; visited: boolean; expiresAt?: string }> }>(
       `/check-in/${encodeURIComponent(code)}/passes/${encodeURIComponent(pass)}`,
     ),
   // 매장 직원의 기기: 참여자의 쿠폰 번호와 PIN.

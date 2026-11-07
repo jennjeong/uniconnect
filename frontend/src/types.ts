@@ -202,7 +202,7 @@ export type Agreement = {
 }
 
 // 브랜드가 플랫폼에 내는 돈 (backend lib/billing.ts).
-export type PaymentKind = "fee" | "report" | "pro" | "ad"
+export type PaymentKind = "fee" | "report" | "pro" | "ad" | "local"
 
 export type Payment = {
   id: string
@@ -222,6 +222,9 @@ export type Payment = {
   paidAt?: string
   cancelledAt?: string
   cancelReason?: string
+  // 일부만 돌려준 결제는 상태가 paid로 남는다.
+  refundedAmount?: number
+  refundedAt?: string
   periodEnd?: string
   openedAt?: string
 }
@@ -246,6 +249,38 @@ export type BillingInfo = {
   canPayAd: boolean
 }
 
+// Campus Local (backend routes/local.ts).
+export type LocalCampaign = {
+  code: string
+  store: string
+  title: string
+  staffPin: string
+  pinMissesToday: number
+  open: boolean
+  couponDays: number
+  totals: { scans: number; coupons: number; visits: number }
+}
+
+export type LocalInfo = {
+  onSale: boolean
+  price: number
+  priceWithVat: number
+  days: number
+  until: string | null
+  includedInGrowth: boolean
+  campaign: LocalCampaign | null
+}
+
+export type LocalReport = {
+  month: string
+  months: string[]
+  scans: number
+  coupons: number
+  visits: number
+  couponRate: number | null
+  visitRate: number | null
+}
+
 // 공개 요금제 표 (backend lib/planTable.ts). limits의 값이 null이면 제한이 없고,
 // limits가 null이면 아직 정하지 않았다.
 export type PublicPlan = {
@@ -254,8 +289,8 @@ export type PublicPlan = {
   price: number | null
   priceWithVat: number | null
   days: number | null
-  orderKind: "pro" | null
-  limits: { offersPerMonth: number | null; partnerRequestsPerMonth: number; reportsIncluded: boolean } | null
+  orderKind: "pro" | "local" | null
+  limits: { offersPerMonth: number | null; partnerRequestsPerMonth: number; reportsIncluded: boolean; alwaysOnCoupons?: boolean } | null
 }
 
 export type PlanTable = { vatRate: number; feeRate: number; reportPrice: number; plans: PublicPlan[] }
@@ -264,6 +299,9 @@ export type PlanTable = { vatRate: number; feeRate: number; reportPrice: number;
 export type PaymentOrder = { order: Payment; customerKey: string; email: string }
 
 // 운영자가 보는 결제 한 건.
+// 지금 돌려받는 금액. days는 전액이면 null이다.
+export type RefundQuote = { amount: number; days: number | null; whole: boolean }
+
 export type AdminPayment = Payment & { accountId: string; card: boolean }
 
 // 협찬 한쪽이 행사 뒤에 상대에 대해 쓴 후기.
@@ -898,6 +936,10 @@ export type CheckInInfo = {
   groupName: string
   // 스폰서마다 하나, 스폰서가 생기기 전에는 행사 자체의 것("event").
   coupons: { id: string; store: string; title: string }[]
+  // 매장의 상시 쿠폰 캠페인. 행사 날짜 대신 새 쿠폰을 주는지와 사용 기간이 온다.
+  alwaysOn?: true
+  open?: boolean
+  couponDays?: number
 }
 
 // 학생단체와 브랜드는 각자 메뉴가 있다 (data/navigation.ts).
