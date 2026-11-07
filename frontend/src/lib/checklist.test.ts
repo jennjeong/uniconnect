@@ -31,4 +31,10 @@ describe("the new member's checklist", () => {
     expect(checklistSteps("브랜드", filled, true).every((step) => step.done)).toBe(true)
     expect(checklistSteps("브랜드", { ...filled, sns: [] }, true).filter((step) => !step.done).map((step) => step.key)).toEqual(["sns"])
   })
+
+  test("adds a first proposal step only when it's asked for", () => {
+    expect(checklistSteps("브랜드", null, false).some((step) => step.key === "proposal")).toBe(false)
+    expect(checklistSteps("브랜드", null, false, false).at(-1)).toEqual({ key: "proposal", done: false })
+    expect(checklistSteps("학생단체", null, true, true).at(-1)).toEqual({ key: "proposal", done: true })
+  })
 })

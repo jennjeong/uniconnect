@@ -1335,8 +1335,10 @@ function App() {
         role={account.role}
         listing={listing}
         hasEvent={events.length > 0}
+        hasProposal={sent.length > 0}
         onEditProfile={() => go({ page, profile: "edit" })}
         onCreate={() => openCreate()}
+        onPropose={() => go({ page: account.role === "학생단체" ? "추천 매칭" : "단체 찾기" })}
       />
     ) : undefined
 

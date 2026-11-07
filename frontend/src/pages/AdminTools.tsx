@@ -493,6 +493,7 @@ const actionLabels: Record<string, string> = {
   "operator-disabled": "운영자 끄기",
   "operator-logged-in": "운영자 로그인",
   "backup-downloaded": "백업 내려받기",
+  "backup-restored": "백업 복원",
   "application-rejected": "가입 거절",
   "business-set": "사업자 확인 변경",
   "partners-granted": "파트너스 부여",
@@ -648,6 +649,10 @@ export function ServiceHealth({ token, onNotice }: { token: string; onNotice: (m
           <div>
             <dt>{t("실행 위치")}</dt>
             <dd>{health.vercel ? `Vercel${health.region ? ` · ${health.region}` : ""}` : t("직접 실행")}</dd>
+          </div>
+          <div>
+            <dt>{t("저장 비밀값 암호화")}</dt>
+            <dd>{health.secretsSealed === undefined ? "—" : health.secretsSealed ? t("켜짐") : t("꺼짐")}</dd>
           </div>
           <div>
             <dt>{t("배포 커밋")}</dt>

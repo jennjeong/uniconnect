@@ -8,22 +8,7 @@ import { locale, t } from "../i18n"
 import { formatDateTime } from "../lib/date"
 import { saveFile } from "../lib/download"
 import { fullWon } from "../lib/sponsorships"
-import type {
-  AdminAgreementRow,
-  AdminEventRow,
-  AdminInsights,
-  AdminInvites,
-  AdminLive,
-  AdminPayment,
-  AdminPostRow,
-  AdminProposalDetail,
-  AdminReviewRow,
-  AdminStaleProposal,
-  AdminSystem,
-  AgreementState,
-  FaqTopicKey,
-  SiteFaq,
-} from "../types"
+import type { AdminAgreementRow, AdminEventRow, AdminInsights, AdminInvites, AdminLive, AdminPayment, AdminPostRow, AdminProposalDetail, AdminReviewRow, AdminStaleProposal, AdminSystem, AgreementState, BackupSummary, FaqTopicKey, SiteFaq } from "../types"
 import { CsvButton } from "./AdminTools"
 
 // 운영자 콘솔의 나머지(pages/AdminPage.tsx): 분석, 협찬 운영, 오늘의 행사,
@@ -1113,6 +1098,9 @@ export function SystemPanel({ token, onNotice }: { token: string; onNotice: Noti
   const [data, reload] = useAdmin<AdminSystem>(() => api.adminSystem(token), onNotice, [token])
   const [form, setForm] = useState({ on: false, message: "", blockSignups: false })
   const [sure, setSure] = useState(false)
+  // 복원 확인 중인 백업과 그 건수, 확인으로 다시 적은 시각.
+  const [restoring, setRestoring] = useState<{ hour: string; summary: BackupSummary }>()
+  const [typed, setTyped] = useState("")
   useEffect(() => {
     if (data) setForm({ on: data.maintenance.on, message: data.maintenance.message ?? "", blockSignups: Boolean(data.maintenance.blockSignups) })
   }, [data])
@@ -1206,6 +1194,59 @@ export function SystemPanel({ token, onNotice }: { token: string; onNotice: Noti
                 <button className="console-inline" onClick={() => void download(backup.hour)} type="button">
                   {t("내려받기")}
                 </button>
+                <button
+                  className="console-inline"
+                  onClick={() => {
+                    setTyped("")
+                    api.adminBackupSummary(token, backup.hour).then(
+                      (summary) => setRestoring({ hour: backup.hour, summary }),
+                      (error: unknown) => onNotice(errorMessage(error)),
+                    )
+                  }}
+                  type="button"
+                >
+                  {t("복원")}
+                </button>
+                {restoring?.hour === backup.hour && (
+                  <div className="backup-restore">
+                    <p>
+                      {t("지금 계정 {now} · 백업 계정 {then} · 행사 {events} · 제안 {proposals}", {
+                        now: restoring.summary.current.accounts,
+                        then: restoring.summary.backup.accounts,
+                        events: restoring.summary.backup.events,
+                        proposals: restoring.summary.backup.proposals,
+                      })}
+                    </p>
+                    <p>
+                      <strong>{t("복원하면 되살아나는 계정 {count}개", { count: restoring.summary.accountsBack })}</strong>
+                    </p>
+                    <p className="field-hint">{t("되돌릴 수 없어요. 사진, 참여 기록, 결제, 운영자는 그대로예요.")}</p>
+                    <label>
+                      {t("확인하려면 백업 시각 {hour}을 그대로 적어 주세요", { hour: backup.hour })}
+                      <input onChange={(event) => setTyped(event.target.value)} value={typed} />
+                    </label>
+                    <button
+                      className="decline-button"
+                      disabled={typed !== backup.hour}
+                      onClick={() =>
+                        api.adminRestoreBackup(token, backup.hour, typed).then(
+                          () => {
+                            setRestoring(undefined)
+                            onNotice(t("백업으로 복원했어요."))
+                            reload()
+                          },
+                          (error: unknown) => onNotice(errorMessage(error)),
+                        )
+                      }
+                      type="button"
+                    >
+                      {t("복원하기")}
+                    </button>
+                    <button className="cancel-button" onClick={() => setRestoring(undefined)} type="button">
+                      {t("취소")}
+                    </button>
+                  </div>
+                )}
               </li>
             ))}
           </ul>

@@ -1355,7 +1355,13 @@ export type AdminLogRow = {
 }
 
 // API가 어떤 서비스에 맞춰 설정됐는지, 예와 아니오로.
+// 복원 전에 보는 건수. accountsBack은 복원하면 되살아나는 계정 수다.
+export type BackupCounts = { accounts: number; events: number; measurements: number; proposals: number }
+export type BackupSummary = { backup: BackupCounts; current: BackupCounts; accountsBack: number }
+
 export type AdminHealth = {
+  // 서버가 저장하는 비밀값을 암호화하고 있는지.
+  secretsSealed?: boolean
   storage: "postgres" | "file"
   payments: "off" | "test" | "live"
   checks: { key: string; on: boolean }[]
