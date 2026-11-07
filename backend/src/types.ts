@@ -990,6 +990,7 @@ export type AdminAction =
   | "operator-disabled"
   | "operator-logged-in"
   | "backup-downloaded"
+  | "backup-restored"
   | "account-logged-out"
   | "account-tagged"
   | "application-approved"

@@ -33,6 +33,9 @@ export const config = {
   // Vercel Cron이 매일 알림에 bearer 토큰으로 보낸다(vercel.json,
   // routes/cron.ts). 설정하지 않으면 그 경로는 닫혀 있다.
   cronSecret: process.env.CRON_SECRET,
+  // 저장되는 비밀값을 암호화하는 키다(lib/secrets.ts). 잃으면 2단계 로그인과 PIN을 다시
+  // 만들어야 하니 다른 곳에 따로 보관한다. 없으면 평문으로 저장한다.
+  secretsKey: process.env.SECRETS_KEY,
   frontendDist: process.env.FRONTEND_DIST ?? path.resolve(backendRoot, "..", "frontend", "dist"),
   // 운영자가 /api/admin으로 질문을 읽고 답하게 한다(X-Admin-Token 헤더로
   // 보낸다). 설정하지 않으면 그 경로는 닫혀 있다.

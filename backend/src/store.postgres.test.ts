@@ -650,3 +650,48 @@ test("an always-on campaign keeps each coupon for 7 days in rows", async () => {
     await new Promise((resolve) => server.close(resolve))
   }
 })
+
+test("a 2FA code pushed back by another copy still logs in, and the used code doesn't work twice", async () => {
+  const { createApp } = await import("./app.js")
+  const { useSql } = await import("./lib/sql.js")
+  const { DEMO_PASSWORD } = await import("./data/seed.js")
+  const { codeAt, newSecret, stepAt } = await import("./lib/totp.js")
+  const server = createApp().listen(0)
+  await new Promise((resolve) => server.once("listening", resolve))
+  const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api`
+  const post = (route: string, body: unknown) =>
+    fetch(`${base}${route}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+  const email = "hello@afternoon-coffee.kr"
+  const secret = newSecret()
+  let rivals = 0
+  try {
+    await store.refreshDatabase({ force: true })
+    const account = store.getDatabase().accounts.find((item) => item.email === email)!
+    account.twoFactor = { secret, enabledAt: new Date().toISOString(), recoveryHashes: [] }
+    await store.saveDatabase()
+    const { ticket } = (await (await post("/auth/login", { role: "브랜드", email, password: DEMO_PASSWORD })).json()) as { ticket: string }
+    assert.ok(ticket)
+    const code = codeAt(secret, stepAt(Date.now()))
+    await store.refreshDatabase({ force: true })
+    useSql(async (text, params = []) => {
+      if (text.startsWith("update uniconnect_store set data") && rivals === 0) {
+        rivals += 1
+        await writeAsAnotherCopy(() => {})
+      }
+      return sql(text, params)
+    })
+    const opened = await post("/auth/login/code", { email, ticket, code })
+    assert.equal(opened.status, 200, await opened.clone().text())
+    assert.equal(rivals, 1)
+    const again = await post("/auth/login", { role: "브랜드", email, password: DEMO_PASSWORD })
+    const next = (await again.json()) as { ticket: string }
+    assert.equal((await post("/auth/login/code", { email, ticket: next.ticket, code })).status, 401)
+  } finally {
+    useSql(sql)
+    await store.refreshDatabase({ force: true })
+    delete store.getDatabase().accounts.find((item) => item.email === email)!.twoFactor
+    delete store.getDatabase().accounts.find((item) => item.email === email)!.loginTicket
+    await store.saveDatabase()
+    await new Promise((resolve) => server.close(resolve))
+  }
+})

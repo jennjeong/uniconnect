@@ -25,7 +25,7 @@ import { HttpError } from "../lib/errors.js"
 import { ensureMeasurement } from "../lib/measurements.js"
 import { methodsOf, parseMethods } from "../lib/methods.js"
 import { notify } from "../lib/notices.js"
-import { parsePhoto, photoName, photoType, photos } from "../lib/photos.js"
+import { forgetPhotos, parsePhoto, photoName, photoType, photos } from "../lib/photos.js"
 import { isDemoAccount } from "../lib/reviews.js"
 import { createRateLimit, senderKey } from "../lib/rateLimit.js"
 import { fetchViews, parsePostUrl, postKey, postLimits } from "../lib/snsPosts.js"
@@ -211,7 +211,7 @@ agreementsRouter.put("/:id/items", async (req, res) => {
     agreement.updatedAt = new Date().toISOString()
   }
   await saveDatabase()
-  await photos().remove(agreement.id, removed.flatMap((item) => item.photos))
+  await forgetPhotos(agreement.id, removed.flatMap((item) => item.photos))
   if (changed) {
     void notify(
       side === "group" ? proposal.brand.account : proposal.group.account,
@@ -516,7 +516,7 @@ agreementsRouter.delete("/:id/sns-posts/:postId", async (req, res) => {
   if (agreement.snsPosts.length === 0) delete agreement.snsPosts
   agreement.updatedAt = new Date().toISOString()
   await saveDatabase()
-  await photos().remove(proposal.id, post.photos)
+  await forgetPhotos(proposal.id, post.photos)
   res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 
@@ -591,7 +591,7 @@ agreementsRouter.delete("/:id/sns-posts/:postId/photos/:photo", async (req, res)
   const reopened = reopenPost(post)
   agreement.updatedAt = new Date().toISOString()
   await saveDatabase()
-  await photos().remove(proposal.id, [photo])
+  await forgetPhotos(proposal.id, [photo])
   if (reopened) tellAboutPost(opening, "확인할 SNS 게시물이 올라왔어요", "협찬 게시물을 고쳤어요. 계약서에서 다시 확인해 주세요.")
   res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
@@ -642,7 +642,7 @@ agreementsRouter.delete("/:id/items/:itemId/photos/:photo", async (req, res) => 
   item.photos = item.photos.filter((entry) => entry !== photo)
   agreement.updatedAt = new Date().toISOString()
   await saveDatabase()
-  await photos().remove(proposal.id, [photo])
+  await forgetPhotos(proposal.id, [photo])
   res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
 

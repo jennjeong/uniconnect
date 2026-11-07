@@ -7,7 +7,7 @@ import { todayInKorea, toIsoDate } from "../lib/dates.js"
 import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
 import { eventCases, exploreEvents } from "../lib/explore.js"
-import { eventPhotos, parsePdf, parsePhoto, photoName, photoType, photos } from "../lib/photos.js"
+import { eventPhotos, folderBytes, forgetPhotos, parsePdf, parsePhoto, photoName, photoType, photos } from "../lib/photos.js"
 import { isDemoAccount } from "../lib/reviews.js"
 import { isSponsored } from "../lib/sponsorships.js"
 import { audienceYears, eventKinds, handoutWays, logoSpots, parseRole, promoPosts, sponsorTypes, text } from "../lib/validation.js"
@@ -429,18 +429,23 @@ function ownEvent(req: Request) {
 // 행사 수에는 한도가 없으므로 계정 전체의 파일 수도 막는다. 공유 데모 계정은
 // 올리지 못한다.
 const maxEventFiles = 100
+export const eventFiles = { maxBytes: 50 * 1024 * 1024 }
 
-function assertCanUpload(req: Request) {
+async function assertCanUpload(req: Request) {
   const account = requireAccount(req)
   const database = getDatabase()
   if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 파일을 올릴 수 없어요.")
   const files = (database.events[account.id] ?? []).reduce((sum, event) => sum + (event.photos?.length ?? 0) + (event.plan ? 1 : 0), 0)
   if (files >= maxEventFiles) throw new HttpError(409, `행사 사진과 기획안은 계정마다 ${maxEventFiles}개까지 올릴 수 있어요.`)
+  const folders = (database.events[account.id] ?? []).map((event) => eventPhotos(event.id))
+  if ((await folderBytes(folders)) >= eventFiles.maxBytes) {
+    throw new HttpError(409, "행사 사진과 기획안의 용량이 가득 찼어요. 지난 파일을 지운 뒤 다시 올려 주세요.")
+  }
 }
 
 eventsRouter.post("/:id/photos", async (req, res) => {
   const { event } = ownEvent(req)
-  assertCanUpload(req)
+  await assertCanUpload(req)
   if ((event.photos?.length ?? 0) >= maxEventPhotos) {
     throw new HttpError(409, `행사 사진은 ${maxEventPhotos}장까지 올릴 수 있어요.`)
   }
@@ -465,7 +470,7 @@ eventsRouter.post("/:id/photos", async (req, res) => {
 // 하나씩 올리며, 사진 옆에 보관한다. 페이지를 볼 수 있는 브랜드가 내려받는다.
 eventsRouter.post("/:id/plan", async (req, res) => {
   const { event } = ownEvent(req)
-  assertCanUpload(req)
+  await assertCanUpload(req)
   const parsed = parsePdf(req.body?.file)
   if (!parsed) throw new HttpError(400, "기획안은 2MB 이하의 PDF로 올려 주세요.")
   const name = text(req.body?.name).replace(/[\\/:*?"<>|]+/g, " ").slice(0, 80) || "기획안.pdf"
@@ -492,7 +497,7 @@ eventsRouter.delete("/:id/plan", async (req, res) => {
   if (!file) throw new HttpError(404, "기획안을 찾을 수 없어요.")
   delete event.plan
   await saveDatabase()
-  await photos().remove(eventPhotos(event.id), [file])
+  await forgetPhotos(eventPhotos(event.id), [file])
   res.json({ event })
 })
 
@@ -515,6 +520,6 @@ eventsRouter.delete("/:id/photos/:photo", async (req, res) => {
   event.photos = event.photos.filter((item) => item !== photo)
   if (event.photos.length === 0) delete event.photos
   await saveDatabase()
-  await photos().remove(eventPhotos(event.id), [photo])
+  await forgetPhotos(eventPhotos(event.id), [photo])
   res.json({ event })
 })

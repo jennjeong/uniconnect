@@ -45,8 +45,13 @@ export async function readSession(req: Request, _res: Response, next: NextFuncti
       if (member) req.memberId = member.id
       if (Date.now() - (session.lastUsedAt ?? 0) > lastUseEveryMs) {
         session.lastUsedAt = Date.now()
-        // 기록일 뿐이므로 저장에 실패해도 요청은 실패시키지 않는다.
-        await saveDatabase().catch(() => undefined)
+        // 기록일 뿐이므로 저장에 실패해도 요청은 실패시키지 않는다. 다만 실패하면 데이터가
+        // 새 객체로 되돌아가니, 라우트가 옛 계정을 고치고 잃어버리지 않게 다시 찾는다.
+        await saveDatabase().catch(() => {
+          const fresh = getDatabase().accounts.find((item) => item.id === account.id && !item.suspendedAt)
+          if (fresh) req.account = fresh
+          else delete req.account
+        })
       }
     }
   }

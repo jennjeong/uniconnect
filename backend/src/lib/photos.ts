@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto"
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises"
+import { mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises"
 import path from "node:path"
 
 import { config } from "../config.js"
@@ -19,6 +19,7 @@ export type PhotoStore = {
   get(agreementId: string, name: string): Promise<Buffer | undefined>
   remove(agreementId: string, names: string[]): Promise<void>
   removeAll(agreementIds: string[]): Promise<void>
+  bytes(agreementIds: string[]): Promise<number>
 }
 
 const filePhotos: PhotoStore = {
@@ -35,6 +36,15 @@ const filePhotos: PhotoStore = {
   },
   async removeAll(agreementIds) {
     await Promise.all(agreementIds.map((id) => rm(uploadsFolder(id), { recursive: true, force: true })))
+  },
+  async bytes(agreementIds) {
+    let total = 0
+    for (const id of agreementIds) {
+      const folder = uploadsFolder(id)
+      const names = await readdir(folder).catch(() => [] as string[])
+      for (const name of names) total += (await stat(path.join(folder, name))).size
+    }
+    return total
   },
 }
 
@@ -64,6 +74,13 @@ function postgresPhotos(sql: Sql): PhotoStore {
       await ensureTables(sql)
       for (const id of agreementIds) await sql("delete from uniconnect_photos where agreement_id = $1", [id])
     },
+    async bytes(agreementIds) {
+      if (agreementIds.length === 0) return 0
+      await ensureTables(sql)
+      // base64는 4글자가 3바이트다.
+      const [row] = await sql("select coalesce(sum(length(data)), 0) as size from uniconnect_photos where agreement_id = any($1)", [agreementIds])
+      return Math.floor((Number(row.size) * 3) / 4)
+    },
   }
 }
 
@@ -74,6 +91,17 @@ export function photos(): PhotoStore {
 }
 
 // 행사의 사진을 넣는 폴더(pages/EventDetailPage.tsx).
+// 기록을 저장한 뒤에 파일을 지운다. 이미 저장된 일이므로 삭제가 실패해도 요청을 실패시키지
+// 않고 남긴다(읽는 경로는 기록에 없는 파일을 내주지 않는다).
+export async function forgetPhotos(folder: string, names: string[]) {
+  await photos()
+    .remove(folder, names)
+    .catch((error: Error) => console.error(`[photos] removing ${names.length} from ${folder}: ${error.message}`))
+}
+
+// 폴더들의 파일이 차지하는 바이트다.
+export const folderBytes = (folders: string[]) => photos().bytes(folders)
+
 export const eventPhotos = (eventId: string) => `event-${eventId}`
 
 // 브라우저가 줄인 사진(lib/image.ts). 요청 크기 제한에 들 만큼 작고, 그

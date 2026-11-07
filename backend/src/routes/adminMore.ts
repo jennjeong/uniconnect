@@ -17,7 +17,7 @@ import {
   topSearches,
 } from "../lib/adminInsights.js"
 import { config } from "../config.js"
-import { backupWithoutSecrets, cleanTags, grantPartners, logAdmin, resetExamples } from "../lib/adminTools.js"
+import { backupSummary, backupWithoutSecrets, cleanTags, keepThroughRestore, grantPartners, logAdmin, resetExamples } from "../lib/adminTools.js"
 import { applicationFolder, applicationsOf } from "../lib/applications.js"
 import { sendMail } from "../lib/mailer.js"
 import { photos, photoType } from "../lib/photos.js"
@@ -30,7 +30,7 @@ import { limitStatus } from "../lib/rateLimit.js"
 import { isDemoAccount } from "../lib/reviews.js"
 import { currentStorage } from "../lib/storage.js"
 import { text } from "../lib/validation.js"
-import { getDatabase, saveDatabase, upgradeDatabase } from "../store.js"
+import { getDatabase, restoreDatabase, saveDatabase, upgradeDatabase } from "../store.js"
 import type { Account, Database, FaqEntry } from "../types.js"
 import { requireAdmin } from "./admin.js"
 
@@ -558,4 +558,27 @@ adminMoreRouter.get("/backups/:hour", async (req, res) => {
   await saveDatabase()
   res.setHeader("Content-Disposition", `attachment; filename="uniconnect-backup-${hour}.json"`)
   res.type("application/json").send(backupWithoutSecrets(data))
+})
+
+// 복원하기 전에 백업과 지금 데이터의 건수를 비교해 본다.
+adminMoreRouter.get("/backups/:hour/summary", async (req, res) => {
+  await requireAdmin(req)
+  const data = await currentStorage().readBackup(String(req.params.hour))
+  if (!data) throw new HttpError(404, "백업을 찾을 수 없어요.")
+  res.json(backupSummary(data, getDatabase()))
+})
+
+// 백업으로 데이터를 되돌린다. 되돌릴 수 없는 일이라 몇 시 백업인지 다시 적어 보내야 한다.
+// 사진, 참여 기록 행, 결제, 운영자는 되돌리지 않는다(`keepThroughRestore`).
+adminMoreRouter.post("/backups/:hour/restore", async (req, res) => {
+  await requireAdmin(req)
+  const hour = String(req.params.hour)
+  if (text(req.body?.confirm) !== hour) throw new HttpError(400, "복원할 백업의 시각을 그대로 적어 주세요.")
+  const data = await currentStorage().readBackup(hour)
+  if (!data) throw new HttpError(404, "백업을 찾을 수 없어요.")
+  const summary = backupSummary(data, getDatabase())
+  await restoreDatabase(data, keepThroughRestore)
+  logAdmin(getDatabase(), "backup-restored", { kind: "backup", id: hour })
+  await saveDatabase()
+  res.json(summary)
 })

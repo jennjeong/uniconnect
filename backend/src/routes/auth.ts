@@ -462,52 +462,57 @@ authRouter.post("/login", async (req, res) => {
   // 다른 복사본에 밀리면 최신 데이터에서 세션을 다시 만든다. 그사이 초기화, 변경,
   // 삭제, 정지가 있었으면 그쪽이 이긴다.
   const opened = await retryConflicts(async () => {
-    const current = getDatabase().accounts.find((item) => item.id === account.id)
-    if (!current || current.passwordHash !== hashBefore) throw new HttpError(401, "이메일 또는 비밀번호가 올바르지 않아요.")
-    if (current.suspendedAt) throw new HttpError(403, suspendedMessage)
-    const token = startSession(current.id, req)
-    await saveDatabase()
-    return { token, account: current }
+      const current = getDatabase().accounts.find((item) => item.id === account.id)
+      if (!current || current.passwordHash !== hashBefore) throw new HttpError(401, "이메일 또는 비밀번호가 올바르지 않아요.")
+      if (current.suspendedAt) throw new HttpError(403, suspendedMessage)
+      const token = startSession(current.id, req)
+      await saveDatabase()
+      return { token, account: current }
+    })
+    res.json({ token: opened.token, account: toPublic(opened.account, req.memberId) })
   })
-  res.json({ token: opened.token, account: toPublic(opened.account, req.memberId) })
-})
 
-// 2단계 로그인이 켜진 로그인의 두 번째 단계다. 비밀번호 단계의 티켓과 앱의
-// 코드 또는 복구 코드를 받는다. 틀린 코드는 비밀번호 실패와 함께 세고,
-// 다섯 번이면 티켓이 끝난다.
-authRouter.post("/login/code", async (req, res) => {
-  const email = normalizeEmail(req.body?.email)
-  const limitKey = `${clientKey(req)} ${email}`
-  await loginFailures.take(limitKey)
-  const database = getDatabase()
-  const owner = database.accounts.find((item) => item.email === email)
-  const team = owner ? undefined : memberByEmail(database, email)
-  const account = owner ?? team?.account
-  // 누구의 로그인인지 정한다. 계정의 주인이거나 자기 비밀번호를 가진 공동 관리자다.
-  const holder = owner ?? team?.member
-  const ticket = holder?.loginTicket
-  if (!account || !holder || !ticket || ticket.hash !== hashToken(String(req.body?.ticket ?? "")) || ticket.expiresAt < Date.now()) {
-    throw new HttpError(401, "로그인 시간이 지났어요. 비밀번호부터 다시 입력해 주세요.")
-  }
-  if (account.suspendedAt) throw new HttpError(403, suspendedMessage)
-  const typed = String(req.body?.code ?? "")
-  const recoveryCodes = !holder.twoFactor && holder.pendingTwoFactor ? enableTwoFactor(holder, typed) : undefined
-  if (!recoveryCodes && !useCode(holder, typed)) {
-    ticket.tries += 1
-    if (ticket.tries >= ticketTries) delete holder.loginTicket
+  // 2단계 로그인이 켜진 로그인의 두 번째 단계다. 비밀번호 단계의 티켓과 앱의
+  // 코드 또는 복구 코드를 받는다. 틀린 코드는 비밀번호 실패와 함께 세고,
+  // 다섯 번이면 티켓이 끝난다. 다른 복사본에 밀리면 최신 데이터에서 코드부터 다시 확인한다.
+  // 밀린 쪽의 "썼음" 표시는 저장되지 않았으므로 정상 로그인이 실패하지 않고, 다른 복사본이 같은
+  // 코드를 먼저 썼다면 그 표시가 새 데이터에 있어 두 번 통하지 않는다.
+  authRouter.post("/login/code", async (req, res) => {
+    const email = normalizeEmail(req.body?.email)
+    const limitKey = `${clientKey(req)} ${email}`
+    await loginFailures.take(limitKey)
+    const opened = await retryConflicts(async () => {
+    const database = getDatabase()
+    const owner = database.accounts.find((item) => item.email === email)
+    const team = owner ? undefined : memberByEmail(database, email)
+    const account = owner ?? team?.account
+    // 누구의 로그인인지 정한다. 계정의 주인이거나 자기 비밀번호를 가진 공동 관리자다.
+    const holder = owner ?? team?.member
+    const ticket = holder?.loginTicket
+    if (!account || !holder || !ticket || ticket.hash !== hashToken(String(req.body?.ticket ?? "")) || ticket.expiresAt < Date.now()) {
+      throw new HttpError(401, "로그인 시간이 지났어요. 비밀번호부터 다시 입력해 주세요.")
+    }
+    if (account.suspendedAt) throw new HttpError(403, suspendedMessage)
+    const typed = String(req.body?.code ?? "")
+    const recoveryCodes = !holder.twoFactor && holder.pendingTwoFactor ? enableTwoFactor(holder, typed) : undefined
+    if (!recoveryCodes && !useCode(holder, typed)) {
+      ticket.tries += 1
+      if (ticket.tries >= ticketTries) delete holder.loginTicket
+      await saveDatabase()
+      throw new HttpError(401, ticket.tries >= ticketTries ? "코드를 너무 많이 틀렸어요. 비밀번호부터 다시 입력해 주세요." : "코드가 올바르지 않아요. 인증 앱의 6자리 코드나 복구 코드를 입력해 주세요.")
+    }
+    delete holder.loginTicket
+    const token = startSession(account.id, req, { userAgent: ticket.userAgent, ...(team ? { memberId: team.member.id } : {}) })
     await saveDatabase()
-    throw new HttpError(401, ticket.tries >= ticketTries ? "코드를 너무 많이 틀렸어요. 비밀번호부터 다시 입력해 주세요." : "코드가 올바르지 않아요. 인증 앱의 6자리 코드나 복구 코드를 입력해 주세요.")
-  }
-  await loginFailures.reset(limitKey)
-  delete holder.loginTicket
-  const token = startSession(account.id, req, { userAgent: ticket.userAgent, ...(team ? { memberId: team.member.id } : {}) })
-  await saveDatabase()
-  res.json({
-    token,
-    account: toPublic(account, team?.member.id),
-    recoveryLeft: holder.twoFactor?.recoveryHashes.length,
-    ...(recoveryCodes ? { recoveryCodes } : {}),
+    return {
+      token,
+      account: toPublic(account, team?.member.id),
+      recoveryLeft: holder.twoFactor?.recoveryHashes.length,
+      ...(recoveryCodes ? { recoveryCodes } : {}),
+    }
   })
+  await loginFailures.reset(limitKey)
+  res.json(opened)
 })
 
 // 계정이 만든 것은 모두 함께 사라진다. 리스팅과 그와의 대화, 행사, 보내거나

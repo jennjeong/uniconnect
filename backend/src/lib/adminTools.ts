@@ -5,6 +5,7 @@ import { config } from "../config.js"
 import { createSeed } from "../data/seed.js"
 import { cardReady, paymentsOf, testMode } from "./billing.js"
 import { addDays, todayInKorea } from "./dates.js"
+import { HttpError } from "./errors.js"
 import { chatFiles, eventPhotos } from "./photos.js"
 import { proUntil } from "./plan.js"
 import type { Account, AdminAction, AdminLogEntry, Announcement, Database, Payment } from "../types.js"
@@ -72,6 +73,39 @@ const secretKeys = new Set([
   "operatorSessions",
 ])
 
+// 백업에서 되돌리지 않는 것을 현재 데이터에서 옮긴다. 운영자와 그 세션이 되돌아가면 복원한
+// 사람이 잠길 수 있고, 결제는 Toss에 이미 일어난 일이다. 회원 세션도 지금 것을 두어 로그아웃한
+// 기기가 되살아나지 않게 하며, 집계 기록도 두어 같은 스캔을 두 번 세지 않는다.
+export function keepThroughRestore(current: Database, restored: Database) {
+  const accounts = new Set(restored.accounts.map((account) => account.id))
+  restored.operators = current.operators
+  restored.operatorSessions = current.operatorSessions
+  restored.payments = current.payments
+  restored.sessions = current.sessions.filter((session) => accounts.has(session.accountId))
+  restored.foldedCounts = current.foldedCounts
+  restored.adminLog = current.adminLog
+}
+
+// 백업이 복원할 수 있는 모양인지와, 지금과 얼마나 다른지다.
+export function backupSummary(data: string, current: Database) {
+  let backup: Partial<Database>
+  try {
+    backup = JSON.parse(data) as Partial<Database>
+  } catch {
+    throw new HttpError(409, "이 백업은 손상되어 복원할 수 없어요.")
+  }
+  if (!Array.isArray(backup.accounts) || !Array.isArray(backup.measurements) || typeof backup.events !== "object" || backup.events === null) {
+    throw new HttpError(409, "이 백업은 손상되어 복원할 수 없어요.")
+  }
+  const countsOf = (database: Partial<Database>) => ({
+    accounts: database.accounts?.length ?? 0,
+    events: Object.values(database.events ?? {}).reduce((sum, list) => sum + list.length, 0),
+    measurements: database.measurements?.length ?? 0,
+    proposals: (database.requests?.length ?? 0) + (database.offers?.length ?? 0),
+  })
+  return { backup: countsOf(backup), current: countsOf(current) }
+}
+
 export function backupWithoutSecrets(data: string) {
   return JSON.stringify(JSON.parse(data), (key, value: unknown) => (secretKeys.has(key) ? undefined : value))
 }
@@ -110,6 +144,7 @@ export function serviceHealth() {
   const on = (value: unknown) => Boolean(value)
   return {
     storage: config.databaseUrl ? ("postgres" as const) : ("file" as const),
+    secretsSealed: Boolean(config.secretsKey),
     payments: cardReady() ? (testMode() ? ("test" as const) : ("live" as const)) : ("off" as const),
     checks: [
       { key: "mail", on: on(config.resendApiKey && config.mailFrom) },

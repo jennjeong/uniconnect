@@ -5,7 +5,7 @@ import { Router, type Response } from "express"
 import { findListing, shownCatalog, shownTo } from "../lib/catalog.js"
 import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
-import { chatFiles, fileName, parsePdf, parsePhoto, photoType, photos } from "../lib/photos.js"
+import { chatFiles, fileName, forgetPhotos, parsePdf, parsePhoto, photoType, photos } from "../lib/photos.js"
 import { createRateLimit, senderKey } from "../lib/rateLimit.js"
 import { isDemoAccount } from "../lib/reviews.js"
 import { text } from "../lib/validation.js"
@@ -454,7 +454,7 @@ conversationsRouter.delete("/:id/messages/:messageId", async (req, res) => {
     await saveDatabase()
     changed(conversation.id)
     // 삭제가 저장된 뒤에 그 파일을 지운다.
-    if (attachment) await photos().remove(chatFiles(conversation.id), [attachment.file])
+    if (attachment) await forgetPhotos(chatFiles(conversation.id), [attachment.file])
   }
   res.json({ conversation: view(conversation, side, true) })
 })

@@ -7593,3 +7593,160 @@ test("login limits catch guesses spread across accounts, and a right password is
   // 맞는 비밀번호는 몇 번이든 세지 않는다.
   for (let index = 0; index < 12; index += 1) assert.equal((await attempt("spread@spread-cafe.kr", "spread-pass-123")).status, 200)
 })
+
+test("secrets leave the server sealed and come back the same, and a wrong key doesn't stop the service", async () => {
+  const { open, openDocument, seal, sealDocument } = await import("./lib/secrets.js")
+  const saved = config.secretsKey
+  const document = {
+    twoFactor: { secret: "TOTPSECRET" },
+    payment: { paymentKey: "pk-1" },
+    measurement: { code: "20261012", staffPin: "123456" },
+    emailCodes: [{ email: "a@b.c", code: "654321", attempts: 0, expiresAt: 1 }],
+  }
+  try {
+    config.secretsKey = undefined
+    assert.deepEqual(JSON.parse(sealDocument(document)), document)
+
+    config.secretsKey = "a-long-enough-test-key-for-sealing-values"
+    const sealed = sealDocument(document)
+    for (const secret of ["TOTPSECRET", "pk-1", "123456", "654321"]) assert.ok(!sealed.includes(secret), secret)
+    // 공개 주소에 쓰이는 행사 코드는 그대로다.
+    assert.ok(sealed.includes("20261012"))
+    assert.deepEqual(openDocument(sealed), document)
+    // 같은 값이어도 암호문은 매번 다르고, 두 번 암호화하지 않으며, 평문도 읽는다.
+    assert.notEqual(seal("x"), seal("x"))
+    assert.equal(seal(seal("x")).split("sealed:v1:").length, 2)
+    assert.deepEqual(openDocument(JSON.stringify(document)), document)
+    // 암호문을 고치면 열리지 않는다.
+    const one = seal("x")
+    assert.equal(open(`${one.slice(0, -2)}AA`), `${one.slice(0, -2)}AA`)
+
+    // 키가 달라도 멈추지 않고 암호문을 그대로 둔다.
+    config.secretsKey = "a-different-key-for-the-same-sealed-values"
+    assert.ok(openDocument<typeof document>(sealed).twoFactor.secret.startsWith("sealed:v1:"))
+
+    // 실제 저장 파일에 평문 PIN이 남지 않고, 메모리는 평문이다.
+    config.secretsKey = "a-long-enough-test-key-for-sealing-values"
+    await saveDatabase()
+    const { readFileSync } = await import("node:fs")
+    const onDisk = readFileSync(config.dataFile, "utf8")
+    const pin = getDatabase().measurements[0].staffPin
+    assert.ok(/^\d{6}$/.test(pin))
+    assert.ok(!onDisk.includes(`"staffPin": "${pin}"`))
+    assert.ok(onDisk.includes("sealed:v1:"))
+  } finally {
+    config.secretsKey = saved
+    await saveDatabase()
+  }
+})
+
+test("a backup restores with a typed confirmation and keeps payments, operators and later log-outs", async () => {
+  const { currentStorage } = await import("./lib/storage.js")
+  const { markPaid, paymentsOf } = await import("./lib/billing.js")
+  const saved = config.adminToken
+  config.adminToken = "test-admin-token"
+  const admin = (method: string, route: string, body?: unknown) =>
+    fetch(`${baseUrl}/admin${route}`, {
+      method,
+      headers: { "Content-Type": "application/json", "X-Admin-Token": "test-admin-token" },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    }).then(async (response) => ({ status: response.status, data: (await response.json()) as Record<string, any> }))
+  const storage = currentStorage()
+  const realRead = storage.readBackup
+  try {
+    const { token: brand } = await listedMember("restore@restore-cafe.kr", "restore-pass-123", "브랜드")
+    const before = JSON.stringify(getDatabase())
+    const hour = "2026-11-07T10"
+    storage.readBackup = async (asked) => (asked === hour ? before : undefined)
+
+    // 백업 뒤에 일어난 일이다.
+    const { token: later } = await listedMember("after@restore-cafe.kr", "restore-pass-123", "브랜드")
+    const order = await call("POST", "/billing/orders", { kind: "pro" }, brand)
+    const payment = paymentsOf(getDatabase()).find((item) => item.id === order.data.order.id)!
+    markPaid(getDatabase(), payment, { method: "transfer" })
+    await saveDatabase()
+    const accountsNow = getDatabase().accounts.length
+
+    assert.equal((await admin("GET", "/backups/2020-01-01T00/summary")).status, 404)
+    const summary = await admin("GET", `/backups/${hour}/summary`)
+    assert.deepEqual([summary.data.backup.accounts, summary.data.current.accounts], [accountsNow - 1, accountsNow])
+
+    // 시각을 다시 적지 않으면 되돌리지 않는다.
+    assert.equal((await admin("POST", `/backups/${hour}/restore`, {})).status, 400)
+    assert.equal(getDatabase().accounts.length, accountsNow)
+
+    const restored = await admin("POST", `/backups/${hour}/restore`, { confirm: hour })
+    assert.equal(restored.status, 200, JSON.stringify(restored.data))
+    assert.equal(getDatabase().accounts.length, accountsNow - 1)
+    assert.ok(!getDatabase().accounts.some((account) => account.email === "after@restore-cafe.kr"))
+    // 결제는 남고, 없어진 계정의 세션은 끝나고, 남은 계정은 그대로 로그인돼 있다.
+    assert.ok(paymentsOf(getDatabase()).some((item) => item.id === payment.id && item.status === "paid"))
+    assert.equal((await call("GET", "/billing", undefined, later)).status, 401)
+    assert.equal((await call("GET", "/billing", undefined, brand)).status, 200)
+    assert.equal(getDatabase().adminLog!.at(-1)!.action, "backup-restored")
+
+    // 망가진 백업은 복원하지 않는다.
+    storage.readBackup = async () => "{not json"
+    assert.equal((await admin("POST", `/backups/${hour}/restore`, { confirm: hour })).status, 409)
+    storage.readBackup = async () => JSON.stringify({ accounts: "no" })
+    assert.equal((await admin("POST", `/backups/${hour}/restore`, { confirm: hour })).status, 409)
+  } finally {
+    storage.readBackup = realRead
+    config.adminToken = saved
+  }
+})
+
+test("a failed session save hands routes the live account, and a failed file delete doesn't fail the request", async () => {
+  const { photos, forgetPhotos, folderBytes, eventPhotos } = await import("./lib/photos.js")
+  const { eventFiles } = await import("./routes/events.js")
+  const { token: group } = await listedMember("files-m@syu.ac.kr", "files-pass-123", "학생단체")
+  const account = () => getDatabase().accounts.find((item) => item.email === "files-m@syu.ac.kr")!
+  const session = () => getDatabase().sessions.find((item) => item.accountId === account().id)!
+
+  // 세션 기록 저장만 실패한 요청의 변경이 옛 객체와 함께 사라지지 않는다.
+  const { currentStorage } = await import("./lib/storage.js")
+  const storage = currentStorage()
+  const realWrite = storage.write
+  session().lastUsedAt = 0
+  await saveDatabase()
+  session().lastUsedAt = 0
+  let failed = 0
+  storage.write = (...args) => {
+    if ((failed += 1) === 1) return Promise.reject(new Error("the disk hiccuped"))
+    return realWrite.apply(storage, args)
+  }
+  try {
+    const contact = { ...account().contact, name: "새 담당자" }
+    const changed = await call("PUT", "/auth/contact", contact, group)
+    assert.equal(changed.status, 200, JSON.stringify(changed.data))
+    assert.equal(failed, 2)
+    assert.equal(account().contact!.name, "새 담당자")
+  } finally {
+    storage.write = realWrite
+  }
+
+  // 파일 삭제가 실패해도 던지지 않는다.
+  const store = photos()
+  const realRemove = store.remove
+  store.remove = async () => {
+    throw new Error("disk is gone")
+  }
+  await forgetPhotos("nowhere", ["a.png"])
+  store.remove = realRemove
+
+  // 계정의 행사 파일 용량이 차면 더 올리지 못한다.
+  const event = { id: "files-event", name: "파일 행사", date: "2027-05-01", people: "", types: [], status: "집행 예정" as const, createdAt: new Date().toISOString() }
+  getDatabase().events[account().id] = [event]
+  await saveDatabase()
+  const png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+  const upload = await call("POST", `/events/${event.id}/photos`, { image: png }, group)
+  assert.equal(upload.status, 201, JSON.stringify(upload.data))
+  assert.ok((await folderBytes([eventPhotos(event.id)])) > 0)
+  const realMax = eventFiles.maxBytes
+  eventFiles.maxBytes = 1
+  try {
+    assert.equal((await call("POST", `/events/${event.id}/photos`, { image: png }, group)).status, 409)
+  } finally {
+    eventFiles.maxBytes = realMax
+  }
+})

@@ -21,6 +21,7 @@ import { HttpError } from "./lib/errors.js"
 import { emptyMetrics, eventOf, newStaffPin, prunePasses, syncSponsors, upgradePins } from "./lib/measurements.js"
 import { upgradeMethods } from "./lib/methods.js"
 import { currentStorage, StaleWrite } from "./lib/storage.js"
+import { openDocument, sealDocument } from "./lib/secrets.js"
 import { renamedAccountTypes } from "./lib/validation.js"
 import { hashToken } from "./middleware/session.js"
 import type { Database, Metrics, MetricEntry, Report } from "./types.js"
@@ -103,7 +104,7 @@ function replace(next: Database) {
 async function reload() {
   const stored = await currentStorage().read()
   if (!stored) return false
-  replace(upgradeDatabase(JSON.parse(stored.data) as Database))
+  replace(upgradeDatabase(openDocument<Database>(stored.data)))
   durable = JSON.stringify(getDatabase())
   version = stored.version
   generation += 1
@@ -372,7 +373,7 @@ export function getDatabase() {
 // 다음 요청에 들어오고, 호출한 쪽은 retryConflicts로 다시 할 수 있다. 대기열은 계속 돌아가므로 다음 저장이 다시 시도한다.
 export function saveDatabase() {
   const storage = currentStorage()
-  const snapshot = JSON.stringify(getDatabase(), null, storage.indent)
+  const snapshot = sealDocument(getDatabase(), storage.indent)
   const at = generation
   const write = pendingWrite.then(async () => {
     if (at !== generation) throw new SaveConflict()
@@ -396,7 +397,17 @@ export function saveDatabase() {
   return write
 }
 
+// 백업으로 데이터 전체를 되돌린다. `keep`은 되돌리지 않을 것을 현재 데이터에서 옮긴다
+// (lib/adminTools.ts). 저장이 실패하면 지금 데이터로 돌아간다.
+export async function restoreDatabase(data: string, keep: (current: Database, restored: Database) => void) {
+  await pendingWrite
+  const restored = upgradeDatabase(openDocument<Database>(data))
+  keep(getDatabase(), restored)
+  replace(restored)
+  await saveDatabase()
+}
+
 // 마지막으로 쓴 데이터를 제자리에 되돌린다.
 function rollBack() {
-  replace(JSON.parse(durable) as Database)
+  replace(openDocument<Database>(durable))
 }
