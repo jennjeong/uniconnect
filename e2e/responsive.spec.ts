@@ -115,8 +115,12 @@ async function measure(page: Page) {
         const inline = el.tagName === "A" && getComputedStyle(el).display === "inline"
         if (inline || el.matches(".skip-link")) continue
         const box = el.matches("input") ? (el.closest("label, form")?.getBoundingClientRect() ?? r) : r
+        // 글 크기 버튼은 ::after로 누를 자리를 위아래로 넓힌다(index.css의 반응형 구역).
+        const after = getComputedStyle(el, "::after")
+        const reach = after.content !== "none" && after.position === "absolute" ? -2 * Math.min(0, parseFloat(after.top) || 0) : 0
+        const height = box.height + reach
         // 글자 버튼은 높이가 44px이면 폭이 좁아도 누르기 쉽다.
-        const short = box.height < 40 || (box.width < 40 && box.height < 44)
+        const short = height < 40 || (box.width < 40 && height < 44)
         if (short) smallTargets.push(`${Math.round(box.width)}x${Math.round(box.height)} ${name(el)}`)
       }
       for (const el of document.querySelectorAll("input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]), select, textarea")) {

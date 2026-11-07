@@ -23017,6 +23017,8 @@ html {
 
 .match-score-ring span,
 .match-score-ring small,
+.match-score-ring strong small,
+.ad-mark,
 .day-event {
   font-size: var(--text-2xs);
 }
@@ -23069,7 +23071,8 @@ textarea {
 
   .save-toggle,
   .calendar-nav,
-  .password-toggle {
+  .password-toggle,
+  .match-tab {
     min-width: var(--touch-target);
     min-height: var(--touch-target);
   }
@@ -23083,6 +23086,8 @@ textarea {
 
   .row-button,
   .lang-choice button,
+  .nearby-layout button,
+  .checkin-survey fieldset button,
   .footer-credit {
     min-height: var(--touch-target);
   }
@@ -23100,14 +23105,23 @@ textarea {
 
   /* 카드 이름과 제안 취소처럼 글 크기인 버튼은 자리를 그대로 두고 누를 자리만
      위아래로 넓힌다. */
-  .work-title h3 button {
+  .work-title h3 button,
+  .forgot-row button,
+  .auth-switch button {
+    position: relative;
+  }
+
+  .post-card h3 button {
     position: relative;
   }
 
   .work-title h3 button::after,
+  .post-card h3 button::after,
+  .forgot-row button::after,
+  .auth-switch button::after,
   .work-actions .proposal-cancel::after {
     position: absolute;
-    inset: -11px 0;
+    inset: -12px 0;
     content: "";
   }
 
