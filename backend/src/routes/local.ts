@@ -7,7 +7,7 @@ import { todayInKorea } from "../lib/dates.js"
 import { HttpError } from "../lib/errors.js"
 import { campaignOf, localActive, monthlyReport, openCampaign } from "../lib/local.js"
 import { couponDays, parseCoupon, pinMissesToday, rotatePin } from "../lib/measurements.js"
-import { localUntil } from "../lib/plan.js"
+import { campaignUntil, growthIncludesCampaign } from "../lib/plan.js"
 import { text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -48,7 +48,8 @@ localRouter.get("/", (req, res) => {
     price: prices.local,
     priceWithVat: withVat(prices.local),
     days: prices.localDays,
-    until: localUntil(database, account.id),
+    until: campaignUntil(database, account.id),
+    includedInGrowth: growthIncludesCampaign(database, account.id),
     campaign: campaign ? campaignView(database, account, campaign.measurement) : null,
   })
 })

@@ -16,7 +16,7 @@ import {
   settleEventCoupons,
 } from "../lib/passRows.js"
 import { HttpError } from "../lib/errors.js"
-import { localUntil } from "../lib/plan.js"
+import { campaignUntil } from "../lib/plan.js"
 import {
   assertOpen,
   checkInKinds,
@@ -91,7 +91,7 @@ checkInRouter.get("/:code", (req, res) => {
     ...(measurement.alwaysOn
       ? {
           alwaysOn: true,
-          open: isDemoEvent(getDatabase(), measurement) || localUntil(getDatabase(), measurement.accountId) !== null,
+          open: isDemoEvent(getDatabase(), measurement) || campaignUntil(getDatabase(), measurement.accountId) !== null,
           couponDays,
         }
       : {}),

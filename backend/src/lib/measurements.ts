@@ -3,7 +3,7 @@ import { randomBytes, randomInt, randomUUID } from "node:crypto"
 import { addDays, hourInKorea, todayInKorea } from "./dates.js"
 import { HttpError } from "./errors.js"
 import { activeMethodsOf, emptyVenueCounts, venueCountsOf } from "./methods.js"
-import { localUntil } from "./plan.js"
+import { campaignUntil } from "./plan.js"
 import { sponsorTypes, text } from "./validation.js"
 import type {
   Database,
@@ -444,7 +444,7 @@ export function assertOpen(database: Database, measurement: Measurement, event: 
   if (isDemoEvent(database, measurement)) return
   // 상시 캠페인에는 기간이 없다. 이용 기간에만 새 쿠폰을 주고, 사용 기한은 쿠폰마다 본다.
   if (measurement.alwaysOn) {
-    if (kind !== "visits" && !localUntil(database, measurement.accountId)) {
+    if (kind !== "visits" && !campaignUntil(database, measurement.accountId)) {
       throw new HttpError(409, "지금은 쿠폰을 받을 수 없어요. 매장에 알려 주세요.")
     }
     return

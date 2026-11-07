@@ -821,6 +821,12 @@ export type Payment = {
   // 환불되지 않았다고 하면 지운다.
   refundingAt?: string
   refundReason?: string
+  // 일부만 돌려주는 환불을 Toss에 요청한 금액과 일수다. 요청한 값으로 기록하려고 함께 저장한다.
+  refundingAmount?: number
+  refundingDays?: number
+  // 일부를 돌려준 결제의 금액과 시각이다. 결제는 paid로 남는다(`markPartlyRefunded`).
+  refundedAmount?: number
+  refundedAt?: string
   receiptUrl?: string
   requestedAt: string
   // 브랜드가 대신 계좌 이체로 결제하겠다고 했다.

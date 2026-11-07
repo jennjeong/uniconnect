@@ -7,7 +7,7 @@ const keepYears = 5
 
 // 기록의 마지막 일이 일어난 시각이다. 보존 기간은 여기서 센다.
 const settledAt = (payment: Payment) =>
-  [payment.requestedAt, payment.transferRequestedAt, payment.paidAt, payment.cancelledAt]
+  [payment.requestedAt, payment.transferRequestedAt, payment.paidAt, payment.refundedAt, payment.cancelledAt]
     .filter((at): at is string => Boolean(at))
     .sort()
     .at(-1)!

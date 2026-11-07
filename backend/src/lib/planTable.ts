@@ -15,7 +15,7 @@ type PlanRow = {
   // 결제할 때 `POST /api/billing/orders`에 보내는 kind. 결제가 없으면 null이다.
   orderKind: "pro" | "local" | null
   // 값이 null이면 그 항목의 제한이 없다. limits가 null이면 아직 정하지 않았다.
-  limits: { offersPerMonth: number | null; partnerRequestsPerMonth: number; reportsIncluded: boolean } | null
+  limits: { offersPerMonth: number | null; partnerRequestsPerMonth: number; reportsIncluded: boolean; alwaysOnCoupons: boolean } | null
 }
 
 const unpriced = { price: null, priceWithVat: null, days: null, orderKind: null, limits: null }
@@ -32,7 +32,7 @@ export const planTable = () => ({
       priceWithVat: 0,
       days: null,
       orderKind: null,
-      limits: { offersPerMonth: freeOffersPerMonth, partnerRequestsPerMonth: 0, reportsIncluded: false },
+      limits: { offersPerMonth: freeOffersPerMonth, partnerRequestsPerMonth: 0, reportsIncluded: false, alwaysOnCoupons: false },
     },
     config.localOnSale
       ? {
@@ -42,7 +42,7 @@ export const planTable = () => ({
           priceWithVat: withVat(prices.local),
           days: prices.localDays,
           orderKind: "local",
-          limits: { offersPerMonth: freeOffersPerMonth, partnerRequestsPerMonth: 0, reportsIncluded: false },
+          limits: { offersPerMonth: freeOffersPerMonth, partnerRequestsPerMonth: 0, reportsIncluded: false, alwaysOnCoupons: true },
         }
       : { id: "local", status: "soon", ...unpriced },
     {
@@ -53,7 +53,7 @@ export const planTable = () => ({
       priceWithVat: withVat(prices.pro),
       days: prices.proDays,
       orderKind: "pro",
-      limits: { offersPerMonth: null, partnerRequestsPerMonth, reportsIncluded: true },
+      limits: { offersPerMonth: null, partnerRequestsPerMonth, reportsIncluded: true, alwaysOnCoupons: config.localOnSale },
     },
   ] satisfies PlanRow[],
 })

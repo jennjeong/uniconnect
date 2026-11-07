@@ -1,3 +1,4 @@
+import { config } from "../config.js"
 import { paymentsOf } from "./billing.js"
 import { todayInKorea } from "./dates.js"
 import type { Database, PaymentKind } from "../types.js"
@@ -26,3 +27,13 @@ export const adUntil = (database: Database, accountId: string) => paidUntil(data
 
 // Campus Local(lib/local.ts가 판다). 체크인이 캠페인이 열려 있는지 볼 수 있도록 여기에 둔다.
 export const localUntil = (database: Database, accountId: string) => paidUntil(database, accountId, "local")
+
+// 상시 쿠폰이 Growth에 포함되는지다. 약관과 화면이 함께 나가도록 Local 판매를 열 때 함께 켠다.
+export const growthIncludesCampaign = (database: Database, accountId: string) => config.localOnSale && isPro(database, accountId)
+
+// 상시 쿠폰 캠페인이 새 쿠폰을 주는 마지막 한국 날짜다. Local과 Growth 중 늦은 날이다.
+export function campaignUntil(database: Database, accountId: string) {
+  const local = localUntil(database, accountId)
+  const growth = growthIncludesCampaign(database, accountId) ? proUntil(database, accountId) : null
+  return local && growth ? (local > growth ? local : growth) : (local ?? growth)
+}

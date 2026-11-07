@@ -6,19 +6,25 @@ import { prices, sell, shiftLaterPeriods } from "./billing.js"
 import { addDays, todayInKorea } from "./dates.js"
 import { HttpError } from "./errors.js"
 import { ensureMeasurement, parseCoupon } from "./measurements.js"
-import { localUntil } from "./plan.js"
+import { campaignUntil, growthIncludesCampaign, localUntil } from "./plan.js"
 import { isDemoAccount } from "./reviews.js"
 
 // Campus Local(사업 계획의 Local 요금제, 30일 79,000원): 30일씩 결제하고 이미 낸 일수
 // 뒤에 이어 붙이며 자동으로 결제되지 않는다. 이용 기간에 상시 쿠폰 캠페인 하나를 행사
 // 일정과 별개로 운영하고 월간 리포트를 본다. 끝나면 새 쿠폰만 멈추고, 이미 나간 쿠폰은
 // 7일의 사용 기간까지 쓴다(lib/measurements.ts assertOpen). 판매는 `config.localOnSale`로
-// 연다.
+// 연다. 판매가 열리면 Growth에도 포함된다(`growthIncludesCampaign`).
+//
+// 환불은 약관대로 결제하고 7일 안이거나 아직 시작하지 않은 기간이면 전액이고, 그 뒤에는
+// 내일부터 남은 날만큼 나눠 돌려주고 이용을 오늘로 끝낸다(`partialRefund`).
+const refundWholeWithinMs = 7 * 24 * 60 * 60 * 1000
+
 sell("local", {
   targetless: true,
   quote(database, account) {
     if (!config.localOnSale) throw new HttpError(404, "판매하지 않는 상품이에요.")
     if (account.role !== "브랜드") throw new HttpError(403, "Campus Local은 브랜드 계정만 쓸 수 있어요.")
+    if (growthIncludesCampaign(database, account.id)) throw new HttpError(409, "Growth에 상시 쿠폰이 포함돼 있어 따로 결제하지 않아도 돼요.")
     return {
       amount: prices.local,
       orderName: localUntil(database, account.id) ? `Campus Local ${prices.localDays}일 연장` : `Campus Local ${prices.localDays}일`,
@@ -33,11 +39,19 @@ sell("local", {
   revoke(database, payment) {
     shiftLaterPeriods(database, payment, payment.periodDays ?? prices.localDays)
   },
+  partialRefund(payment, now) {
+    if (now.getTime() - Date.parse(payment.paidAt ?? payment.requestedAt) <= refundWholeWithinMs) return null
+    const paidDays = payment.periodDays ?? prices.localDays
+    const days = Math.round((Date.parse(payment.periodEnd!) - Date.parse(todayInKorea(now))) / (24 * 60 * 60 * 1000))
+    if (days >= paidDays) return null
+    if (days <= 0) throw new HttpError(409, "이용 기간이 끝나 돌려드릴 금액이 없어요.")
+    return { amount: Math.round((payment.amount * days) / paidDays), days }
+  },
 })
 
 // 캠페인을 열고 쿠폰을 새로 줄 수 있는지다. 데모 브랜드는 판매가 열리면 결제 없이 써 본다.
 export const localActive = (database: Database, account: Account) =>
-  localUntil(database, account.id) !== null || (config.localOnSale && isDemoAccount(database, account))
+  campaignUntil(database, account.id) !== null || (config.localOnSale && isDemoAccount(database, account))
 
 export function campaignOf(database: Database, accountId: string) {
   const event = database.localCampaigns?.[accountId]

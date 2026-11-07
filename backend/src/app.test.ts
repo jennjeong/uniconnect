@@ -6223,7 +6223,7 @@ test("a card refund whose save fails is kept by its mark and recorded later, nev
     return { status: "DONE", orderId, totalAmount: amount, approvedAt: "2026-11-05T12:00:00+09:00" }
   }
   toss.lookup = async (paymentKey) => atToss.get(paymentKey)
-  const refund = async (paymentKey: string, _reason: string, idempotencyKey: string) => {
+  const refund = async (paymentKey: string, _reason: string, idempotencyKey: string, _amount?: number) => {
     asked.push(idempotencyKey)
     atToss.get(paymentKey)!.status = "CANCELED"
   }
@@ -7241,4 +7241,212 @@ test("an always-on campaign has no scan ceiling and its coupons last 7 days from
   assert.equal(measurements.couponsValidFrom(database, { accountId: "x" } as never), undefined)
   const from = measurements.couponsValidFrom(database, fake, new Date("2026-11-08T00:00:00Z"))
   assert.equal(from?.toISOString(), "2026-11-01T00:00:00.000Z")
+})
+
+test("Growth includes the always-on campaign once Local is on sale, and Local can't be bought on top of it", async () => {
+  const { markPaid, paymentsOf } = await import("./lib/billing.js")
+  const { token: brand } = await listedMember("growth-local@growth-cafe.kr", "local-pass-123", "브랜드")
+  const growth = await call("POST", "/billing/orders", { kind: "pro" }, brand)
+  const payment = paymentsOf(getDatabase()).find((item) => item.id === growth.data.order.id)!
+  markPaid(getDatabase(), payment, { method: "transfer" })
+  const coupons = async () => (await call("GET", "/billing/plans")).data.plans.map((item: { limits: { alwaysOnCoupons: boolean } | null }) => item.limits?.alwaysOnCoupons)
+
+  // 판매를 열기 전에는 Growth로도 열 수 없다.
+  assert.deepEqual(await coupons(), [false, undefined, false])
+  assert.equal((await call("POST", "/local/campaign", { store: "카페", title: "할인" }, brand)).status, 402)
+  assert.equal((await call("GET", "/local", undefined, brand)).data.includedInGrowth, false)
+
+  config.localOnSale = true
+  try {
+    assert.deepEqual(await coupons(), [false, true, true])
+    const local = (await call("GET", "/local", undefined, brand)).data
+    assert.deepEqual([local.includedInGrowth, local.until], [true, payment.periodEnd])
+    const order = await call("POST", "/billing/orders", { kind: "local" }, brand)
+    assert.equal(order.status, 409)
+
+    const opened = await call("POST", "/local/campaign", { store: "그로스 카페", title: "할인" }, brand)
+    assert.equal(opened.status, 201, JSON.stringify(opened.data))
+    const { code } = opened.data.campaign
+    assert.equal((await call("GET", `/check-in/${code}`)).data.open, true)
+    assert.equal((await call("POST", `/check-in/${code}/scans`, {})).status, 200)
+
+    // Growth가 끝나면 새 쿠폰을 멈춘다.
+    payment.status = "cancelled"
+    assert.equal((await call("GET", `/check-in/${code}`)).data.open, false)
+    assert.equal((await call("POST", `/check-in/${code}/scans`, {})).status, 409)
+    assert.equal((await call("GET", "/local", undefined, brand)).data.includedInGrowth, false)
+  } finally {
+    config.localOnSale = false
+  }
+})
+
+test("a Local refund is whole in the first 7 days or before its period starts, then the remaining days by Toss partial cancel", async () => {
+  const { markPaid, paymentsOf, toss } = await import("./lib/billing.js")
+  const { cardRecovery, reconcileRefunds } = await import("./lib/cardRecovery.js")
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const { HttpError } = await import("./lib/errors.js")
+  const { localUntil } = await import("./lib/plan.js")
+  const saved = { client: config.tossClientKey, secret: config.tossSecretKey, settle: cardRecovery.settleAfterMs, admin: config.adminToken }
+  const realToss = { confirm: toss.confirm, lookup: toss.lookup, cancel: toss.cancel }
+  config.tossClientKey = "live_ck_example"
+  config.tossSecretKey = "live_sk_example"
+  config.adminToken = "test-admin-token"
+  config.localOnSale = true
+  const atToss = new Map<string, { status: string; orderId: string; totalAmount: number; balanceAmount: number }>()
+  const asked: { key: string; amount?: number }[] = []
+  toss.confirm = async (paymentKey, orderId, amount) => {
+    atToss.set(paymentKey, { status: "DONE", orderId, totalAmount: amount, balanceAmount: amount })
+    return { status: "DONE", orderId, totalAmount: amount, approvedAt: new Date().toISOString() }
+  }
+  toss.lookup = async (paymentKey) => atToss.get(paymentKey)
+  const refund = async (paymentKey: string, _reason: string, key: string, amount?: number) => {
+    asked.push({ key, amount })
+    const found = atToss.get(paymentKey)!
+    found.balanceAmount -= amount ?? found.balanceAmount
+    found.status = found.balanceAmount === 0 ? "CANCELED" : "PARTIAL_CANCELED"
+  }
+  toss.cancel = refund
+  const admin = async (method: string, route: string, body?: unknown) => {
+    const response = await fetch(`${baseUrl}/admin${route}`, {
+      method,
+      headers: { "Content-Type": "application/json", "X-Admin-Token": "test-admin-token" },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    })
+    return { status: response.status, data: (await response.json()) as Record<string, any> }
+  }
+  const stored = (id: string) => paymentsOf(getDatabase()).find((payment) => payment.id === id)!
+  const daysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
+  try {
+    const { token: brand } = await listedMember("local-refund@refund-cafe.kr", "local-pass-123", "브랜드")
+    const accountId = getDatabase().accounts.find((item) => item.email === "local-refund@refund-cafe.kr")!.id
+    let keys = 0
+    const payByCard = async () => {
+      const made = (await call("POST", "/billing/orders", { kind: "local" }, brand)).data.order
+      const paymentKey = `pk-local-${(keys += 1)}`
+      assert.equal((await call("POST", "/billing/confirm", { orderId: made.id, paymentKey, amount: made.amount }, brand)).status, 200)
+      return made.id as string
+    }
+    const cancel = (id: string) => admin("POST", `/payments/${id}/cancel`, { reason: "테스트 환불" })
+    const today = todayInKorea()
+
+    // 7일 안이면 전액이다.
+    const early = await payByCard()
+    assert.deepEqual((await admin("GET", `/payments/${early}/refund`)).data, { amount: 86_900, days: null, whole: true })
+    assert.equal((await cancel(early)).data.payment.status, "cancelled")
+    assert.equal(asked.at(-1)!.amount, undefined)
+    assert.equal(localUntil(getDatabase(), accountId), null)
+
+    // 30일을 두 번 사고, 8일이 지나 앞 기간을 환불한다. 오늘까지 쓴 날이고 내일부터 돌려준다.
+    const first = await payByCard()
+    const second = await payByCard()
+    Object.assign(stored(first), { paidAt: daysAgo(8), periodEnd: addDays(today, 20) })
+    Object.assign(stored(second), { paidAt: daysAgo(8), periodEnd: addDays(today, 50) })
+    assert.deepEqual((await admin("GET", `/payments/${first}/refund`)).data, { amount: 57_933, days: 20, whole: false })
+    const partial = await cancel(first)
+    assert.equal(partial.status, 200, JSON.stringify(partial.data))
+    assert.equal(asked.at(-1)!.amount, 57_933)
+    assert.deepEqual(
+      [stored(first).status, stored(first).refundedAmount, stored(first).periodEnd, stored(first).periodDays, stored(first).cancelReason],
+      ["paid", 57_933, today, 10, "테스트 환불"],
+    )
+    assert.ok(stored(first).refundedAt)
+    assert.equal(stored(first).refundingAmount, undefined)
+    assert.equal(stored(second).periodEnd, addDays(today, 30))
+
+    // 일부를 돌려준 결제는 다시 환불하지 못하고, 표시는 계정에 보이지 않는다.
+    assert.equal((await cancel(first)).status, 409)
+    assert.equal((await admin("GET", `/payments/${first}/refund`)).status, 409)
+    const view = ((await call("GET", "/billing", undefined, brand)).data.payments as Record<string, unknown>[]).find((item) => item.id === first)!
+    assert.equal(view.refundedAmount, 57_933)
+    assert.ok(!("refundingAmount" in view))
+
+    // 아직 시작하지 않은 기간은 7일이 지나도 전액이다. 앞 기간이 오늘 끝나 내일 시작한다.
+    assert.deepEqual((await admin("GET", `/payments/${second}/refund`)).data, { amount: 86_900, days: null, whole: true })
+    assert.equal((await cancel(second)).data.payment.status, "cancelled")
+
+    // 끝난 기간은 돌려줄 것이 없다.
+    const over = await payByCard()
+    Object.assign(stored(over), { paidAt: daysAgo(40), periodEnd: addDays(today, -1) })
+    assert.equal((await cancel(over)).status, 409)
+    assert.equal(stored(over).refundingAt, undefined)
+    stored(over).status = "cancelled"
+
+    // 응답을 잃어도 요청한 금액으로 기록하고, 다른 잔액이면 기록하지 않는다.
+    cardRecovery.settleAfterMs = 0
+    const lost = await payByCard()
+    Object.assign(stored(lost), { paidAt: daysAgo(10), periodEnd: addDays(today, 15) })
+    toss.cancel = async (...args) => {
+      await refund(...args)
+      throw new HttpError(502, "답 없음")
+    }
+    assert.equal((await cancel(lost)).status, 502)
+    toss.cancel = refund
+    assert.deepEqual([stored(lost).status, stored(lost).refundedAmount, stored(lost).refundingAmount], ["paid", undefined, 43_450])
+    const key = stored(lost).paymentKey!
+    atToss.get(key)!.balanceAmount = 1
+    await reconcileRefunds()
+    assert.equal(stored(lost).refundedAmount, undefined)
+    atToss.get(key)!.balanceAmount = 86_900 - 43_450
+    await reconcileRefunds()
+    assert.deepEqual([stored(lost).refundedAmount, stored(lost).periodEnd, stored(lost).refundingAt], [43_450, today, undefined])
+    stored(lost).status = "cancelled"
+
+    // Toss가 전부 환불했다면 일부 요청이었어도 전액으로 기록한다.
+    const whole = await payByCard()
+    Object.assign(stored(whole), { paidAt: daysAgo(10), periodEnd: addDays(today, 15) })
+    toss.cancel = async (paymentKey) => {
+      atToss.get(paymentKey)!.status = "CANCELED"
+      throw new HttpError(502, "답 없음")
+    }
+    assert.equal((await cancel(whole)).status, 502)
+    toss.cancel = refund
+    await reconcileRefunds()
+    assert.deepEqual([stored(whole).status, stored(whole).refundedAmount], ["cancelled", undefined])
+
+    // 이체는 기록만 하고, 매출에서 돌려준 금액을 뺀다.
+    const order = await call("POST", "/billing/orders", { kind: "local" }, brand)
+    const transfer = stored(order.data.order.id)
+    markPaid(getDatabase(), transfer, { method: "transfer", paidAt: daysAgo(10) })
+    transfer.periodEnd = addDays(today, 3)
+    const asksBefore = asked.length
+    const { keptAmount } = await import("./lib/billing.js")
+    const done = await cancel(transfer.id)
+    assert.equal(done.status, 200, JSON.stringify(done.data))
+    assert.equal(asked.length, asksBefore)
+    assert.deepEqual([transfer.refundedAmount, keptAmount(transfer)], [8_690, 86_900 - 8_690])
+  } finally {
+    Object.assign(toss, realToss)
+    config.tossClientKey = saved.client
+    config.tossSecretKey = saved.secret
+    config.adminToken = saved.admin
+    config.localOnSale = false
+    cardRecovery.settleAfterMs = saved.settle
+  }
+})
+
+test("a partial cancel sends its amount to Toss and doesn't take an already-refunded answer as done", async () => {
+  const { toss } = await import("./lib/billing.js")
+  const realFetch = globalThis.fetch
+  const bodies: Record<string, unknown>[] = []
+  let answer = new Response("{}", { status: 200 })
+  globalThis.fetch = (async (_url: string, init: RequestInit) => {
+    bodies.push(JSON.parse(String(init.body)))
+    return answer
+  }) as typeof fetch
+  try {
+    await toss.cancel("pk", "사유", "key")
+    answer = new Response("{}", { status: 200 })
+    await toss.cancel("pk", "사유", "key", 57_933)
+    assert.deepEqual(bodies, [{ cancelReason: "사유" }, { cancelReason: "사유", cancelAmount: 57_933 }])
+
+    const already = () => new Response(JSON.stringify({ code: "ALREADY_CANCELED_PAYMENT" }), { status: 400 })
+    answer = already()
+    await toss.cancel("pk", "사유", "key")
+    answer = already()
+    await assert.rejects(toss.cancel("pk", "사유", "key", 57_933), (error: { status: number }) => error.status === 502)
+    answer = new Response(JSON.stringify({ code: "NOT_ALLOWED_PARTIAL_REFUND", message: "부분 환불 불가" }), { status: 403 })
+    await assert.rejects(toss.cancel("pk", "사유", "key", 57_933), (error: { status: number }) => error.status === 409)
+  } finally {
+    globalThis.fetch = realFetch
+  }
 })

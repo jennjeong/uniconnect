@@ -3,7 +3,7 @@ import { Router, type Request } from "express"
 
 import { config } from "../config.js"
 import { adminLogRows, adminRequest, isLive, logAdmin, noteLimit, serviceHealth } from "../lib/adminTools.js"
-import { cardReady, markCancelled, markPaid, paymentsOf } from "../lib/billing.js"
+import { cardReady, markCancelled, markPaid, markPartlyRefunded, partialRefundOf, paymentsOf } from "../lib/billing.js"
 import { askToss, reconcileRefunds, refundCard, settleCard, stuckRefunds } from "../lib/cardRecovery.js"
 import { memberDetail, memberRow, overview, proposalRows } from "../lib/console.js"
 import { todayInKorea } from "../lib/dates.js"
@@ -105,9 +105,19 @@ adminRouter.post("/payments/:id/paid", async (req, res) => {
   res.json({ payment })
 })
 
+// 결제된 주문을 지금 환불하면 돌려줄 금액이다. 운영자가 누르기 전에 본다.
+adminRouter.get("/payments/:id/refund", async (req, res) => {
+  await requireAdmin(req)
+  const payment = paymentFor(String(req.params.id))
+  if (payment.status !== "paid") throw new HttpError(409, "결제가 끝난 주문만 환불할 수 있어요.")
+  if (payment.refundedAmount) throw new HttpError(409, "이미 남은 날만큼 돌려드린 결제예요.")
+  const part = partialRefundOf(payment)
+  res.json({ amount: part?.amount ?? payment.amount, days: part?.days ?? null, whole: !part })
+})
+
 // 기다리는 주문을 취소하거나 결제된 주문을 환불한다. 카드 결제는 Toss
 // Payments로, 이체는 운영자가 직접 환불하며(여기서는 기록만 한다) 산 것은
-// 회수한다.
+// 회수한다. 일부만 돌려주는 상품(`partialRefund`)은 계산한 금액만 돌려준다.
 adminRouter.post("/payments/:id/cancel", async (req, res) => {
   await requireAdmin(req)
   const id = String(req.params.id)
@@ -115,13 +125,16 @@ adminRouter.post("/payments/:id/cancel", async (req, res) => {
   await settleWaiting(id)
   const payment = paymentFor(id)
   if (payment.status === "cancelled") throw new HttpError(409, "이미 취소된 결제예요.")
+  if (payment.refundedAmount) throw new HttpError(409, "이미 남은 날만큼 돌려드린 결제예요.")
   const reason = text(req.body?.reason) || (payment.status === "paid" ? "운영자 환불" : "운영자 취소")
   if (payment.status === "paid" && payment.paymentKey) {
     res.json({ payment: await refundCard(id, reason) })
     return
   }
-  markCancelled(getDatabase(), payment, reason)
-  logAdmin(getDatabase(), "payment-cancelled", { kind: "payment", id: payment.id }, reason)
+  const part = payment.status === "paid" ? partialRefundOf(payment) : null
+  if (part) markPartlyRefunded(getDatabase(), payment, part, reason)
+  else markCancelled(getDatabase(), payment, reason)
+  logAdmin(getDatabase(), "payment-cancelled", { kind: "payment", id: payment.id }, part ? `${reason} (${part.amount.toLocaleString("ko-KR")}원 환불)` : reason)
   await saveDatabase()
   res.json({ payment })
 })
