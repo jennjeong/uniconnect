@@ -15335,6 +15335,26 @@ input[type="search"]::-webkit-search-cancel-button {
   background: var(--orange-soft);
 }
 
+.suspend-reason {
+  display: grid;
+  flex-basis: 100%;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.suspend-reason input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+}
+
 .console-note label {
   display: grid;
   gap: 8px;

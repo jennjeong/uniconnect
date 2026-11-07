@@ -2255,3 +2255,17 @@ test("a visitor compares the plans, and a plan still to come names no price", as
   await growth.getByRole("button", { name: "회원가입" }).click()
   await expect(page.getByRole("dialog")).toBeVisible()
 })
+
+test("an operator gives a reason when suspending", async ({ page, request }) => {
+  const member = await signUpMember(request, "브랜드", "e2e-stop@stop-cafe.kr", "정지 카페")
+  const accounts = (await (await request.get("/api/admin/accounts?q=e2e-stop", { headers: { "X-Admin-Token": "e2e-admin-token" } })).json()) as {
+    accounts: { id: string }[]
+  }
+  await page.addInitScript(() => sessionStorage.setItem("uniconnect-admin-token", "e2e-admin-token"))
+  await page.goto(`/admin?view=members&member=${accounts.accounts[0].id}`)
+  await page.getByRole("button", { name: "계정 정지" }).click()
+  await page.getByLabel("정지 사유 (회원에게 메일로 가요)").fill("약관을 어겼어요")
+  await page.getByRole("button", { name: "정지할게요" }).click()
+  await expect(page.getByRole("button", { name: "정지 풀기" })).toBeVisible()
+  expect(member.token).toBeTruthy()
+})
