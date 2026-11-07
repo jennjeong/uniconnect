@@ -800,3 +800,13 @@ export function Operators({ token, onNotice }: { token: string; onNotice: (messa
     </div>
   )
 }
+
+// 정지하는 까닭. 정지 안내 메일에 그대로 들어간다.
+export function SuspendReason({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  return (
+    <label className="suspend-reason">
+      {t("정지 사유 (회원에게 메일로 가요)")}
+      <input maxLength={200} onChange={(event) => onChange(event.target.value)} value={value} />
+    </label>
+  )
+}

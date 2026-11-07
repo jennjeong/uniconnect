@@ -275,6 +275,8 @@ const en: Record<string, string> = {
   "매장 상시 쿠폰 QR": "Always-on coupon QR for your store",
   "직원 쿠폰 확인": "Staff coupon check",
   "월간 기본 리포트": "Basic monthly report",
+  "정지 사유 (회원에게 메일로 가요)": "Reason (goes to the member by email)",
+  "메일을 보내지 못했어요. 회원에게 직접 알려 주세요.": "The email couldn't be sent. Please tell the member yourself.",
   "예시 리포트예요. 실제 협찬의 수치가 아니에요.": "This is a sample report. The figures aren't from a real sponsorship.",
   "샘플 리포트 보기": "See a sample report",
   "돌아가기": "Go back",

@@ -29,6 +29,7 @@ import {
   useTable,
   WaitBadge,
   writeStored,
+  SuspendReason,
 } from "./AdminTools"
 import { AdminLogin } from "./AdminLogin"
 import type {
@@ -111,13 +112,14 @@ function ReportCard({
   onResolve,
 }: {
   report: AdminReport
-  onResolve: (report: AdminReport, action: ReportAction) => Promise<void>
+  onResolve: (report: AdminReport, action: ReportAction, reason?: string) => Promise<void>
 }) {
   const [busy, setBusy] = useState(false)
+  const [reason, setReason] = useState("")
   const person = (who: AdminReport["about"]) => (who ? `${who.name} · ${t(who.role)} · ${who.email}` : t("탈퇴한 회원"))
   const act = (action: ReportAction) => {
     setBusy(true)
-    void onResolve(report, action).finally(() => setBusy(false))
+    void onResolve(report, action, action === "suspend" ? reason.trim() : undefined).finally(() => setBusy(false))
   }
 
   return (
@@ -140,6 +142,7 @@ function ReportCard({
         </div>
       ) : (
         <div className="admin-report-actions">
+          {report.about && <SuspendReason onChange={setReason} value={reason} />}
           <button className="cancel-button" disabled={busy} onClick={() => act("dismiss")} type="button">
             {t("그대로 두기")}
           </button>
@@ -1139,13 +1142,13 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
     )
 
   // 신고를 처리한 뒤 신고와 정지된 계정을 다시 읽는다.
-  const resolve = async (report: AdminReport, action: ReportAction) => {
+  const resolve = async (report: AdminReport, action: ReportAction, reason?: string) => {
     try {
-      await api.resolveReport(token, report.id, action)
+      const { noticeSent } = await api.resolveReport(token, report.id, action, reason)
       const reported = await api.adminReports(token)
       setReports(reported.reports)
       setSuspended(reported.suspended)
-      onNotice(t("신고를 처리했어요."))
+      onNotice(noticeSent === false ? t("메일을 보내지 못했어요. 회원에게 직접 알려 주세요.") : t("신고를 처리했어요."))
     } catch (caught) {
       onNotice(errorMessage(caught))
     }
