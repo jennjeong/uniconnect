@@ -249,8 +249,8 @@ export type BillingInfo = {
 // 공개 요금제 표 (backend lib/planTable.ts). limits의 값이 null이면 제한이 없고,
 // limits가 null이면 아직 정하지 않았다.
 export type PublicPlan = {
-  id: "free" | "local" | "growth" | "enterprise"
-  status: "open" | "soon" | "contact"
+  id: "free" | "local" | "growth"
+  status: "open" | "soon"
   price: number | null
   priceWithVat: number | null
   days: number | null

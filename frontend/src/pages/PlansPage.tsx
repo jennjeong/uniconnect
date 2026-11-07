@@ -77,7 +77,7 @@ export function PlansPage({
     }
   }, [brand])
 
-  const plans = table?.plans.filter((plan) => plan.status !== "contact") ?? []
+  const plans = table?.plans ?? []
   const isCurrent = (plan: PublicPlan) => pro !== undefined && plan.id === (pro ? "growth" : "free")
   return (
     <section className="page-view plans-view">
