@@ -94,8 +94,6 @@
   --shell: 1240px;
   --gutter: 32px;
   --header-h: 88px;
-  /* 머리글을 화면 맨 위에서 띄우는 거리 (.site-header). */
-  --header-lift: 12px;
   /* 등장, 헤더, 호버에 쓰는 곡선. --ease-quart는 Stride의 텍스트와 카드 리빌에
      쓰인 easeOutQuart다. */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
@@ -241,17 +239,14 @@ strong {
    위에 놓인 은빛 유리 알약들이 따로따로 있다. 알약 사이 틈으로는 클릭이
    통과하고, 페이지가 스크롤되면 알약에 그림자가 생기며, 바는 인트로가 끝난 뒤에
    미끄러져 들어온다. */
-/* 휴대폰 Safari는 화면 맨 위에 붙은 고정 요소를 보면 상태 표시줄 자리를 그 색의
-   단색 띠로 채운다. 머리글을 맨 위에서 조금 띄워 두면 그 자리에 페이지가 흐리게
-   비쳐 지나간다. 위아래를 같은 만큼 줄여 버튼 자리는 그대로다. */
 .site-header {
   position: fixed;
   z-index: 40;
-  top: var(--header-lift);
+  top: 0;
   right: 0;
   left: 0;
   display: flex;
-  height: calc(var(--header-h) - 2 * var(--header-lift));
+  height: var(--header-h);
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -260,6 +255,16 @@ strong {
   transition:
     opacity 0.7s var(--ease-spring) 0.15s,
     transform 0.7s var(--ease-spring) 0.15s;
+}
+
+/* 휴대폰에서는 머리글이 페이지와 함께 올라간다. Safari는 화면 맨 위에 고정된 요소가
+   있으면 상태 표시줄 자리를 단색 띠로 채우거나, 그 요소가 시작하는 곳까지 흐림을
+   딱 끊어 선이 생긴다. 고정하지 않으면 페이지가 상태 표시줄 밑으로 부드럽게 흐려지며
+   지나간다. */
+@media (max-width: 720px) {
+  .site-header {
+    position: absolute;
+  }
 }
 
 .intro-playing .site-header {
