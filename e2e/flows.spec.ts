@@ -2411,7 +2411,7 @@ test("a declined card refund offers a refund by bank transfer", async ({ page })
     bodies.push(route.request().postDataJSON())
     tries += 1
     return tries === 1
-      ? route.fulfill({ status: 409, json: { error: "카드사가 부분 취소를 받지 않았어요." } })
+      ? route.fulfill({ status: 409, json: { error: "환불하지 못했어요. 카드사가 부분 취소를 받지 않았어요." } })
       : route.fulfill({ json: { payment: { ...payment, refundedAmount: 40000 } } })
   })
   await page.addInitScript(() => sessionStorage.setItem("uniconnect-admin-token", "e2e-admin-token"))
@@ -2424,5 +2424,22 @@ test("a declined card refund offers a refund by bank transfer", async ({ page })
   await page.getByRole("button", { name: "계좌로 직접 돌려주기" }).click()
   await expect.poll(() => bodies.length).toBe(2)
   expect(bodies[1]).toMatchObject({ outside: true })
+})
+
+test("a refund turned away for another reason doesn't ask for a bank refund", async ({ page }) => {
+  const payment = {
+    id: "pay-y", accountId: "acc-y", accountName: "환불 카페", kind: "local", targetId: "", orderName: "Campus Local 30일",
+    amount: 86900, status: "paid", method: "card", card: true, requestedAt: "2026-11-01T00:00:00.000Z", paidAt: "2026-11-01T00:00:00.000Z",
+  }
+  await page.route("**/api/admin/payments", (route) => route.fulfill({ json: { payments: [payment] } }))
+  await page.route("**/api/admin/payments/pay-y/refund", (route) => route.fulfill({ json: { amount: 86900, days: null, whole: true } }))
+  await page.route("**/api/admin/payments/pay-y/cancel", (route) => route.fulfill({ status: 409, json: { error: "이미 취소된 결제예요." } }))
+  await page.addInitScript(() => sessionStorage.setItem("uniconnect-admin-token", "e2e-admin-token"))
+  await page.goto("/admin?view=payments")
+  await page.getByRole("tab", { name: /결제 완료/ }).click()
+  await page.getByRole("button", { name: "환불", exact: true }).click()
+  await page.getByRole("button", { name: "카드 결제 환불하기" }).click()
+  await expect(page.getByText("이미 취소된 결제예요.")).toBeVisible()
+  await expect(page.getByRole("button", { name: "계좌로 직접 돌려주기" })).toHaveCount(0)
 })
 

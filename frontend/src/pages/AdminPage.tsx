@@ -311,6 +311,9 @@ const paymentKinds: Record<AdminPayment["kind"], string> = { fee: "수수료", r
 
 // 운영자가 보는 결제 하나: 누가 얼마를 어떻게 언제 냈는지와, 상태가 허용하는
 // 작업(들어온 이체 확인, 대기 중인 주문 취소, 결제된 건 환불).
+// 백엔드가 Toss의 환불 거절에만 쓰는 문구다(backend lib/billing.ts, 영어는 i18n/en.ts).
+const cardDeclined = (message: string) => /^(환불하지 못했어요|The refund didn't go through)/.test(message)
+
 function PaymentCard({
   token,
   payment,
@@ -342,8 +345,10 @@ function PaymentCard({
       onRefunded(outside ? t("계좌로 돌려준 환불을 기록했어요.") : t("환불했어요."))
     } catch (error) {
       const status = error instanceof ApiError ? error.status : 0
-      setRefundError(errorMessage(error))
-      if (status === 409 && !outside) setDeclined(true)
+      const message = errorMessage(error)
+      setRefundError(message)
+      // 409는 이미 취소되거나 환불된 결제에도 온다. Toss가 거절했을 때만 계좌로 돌려주게 한다.
+      if (status === 409 && !outside && cardDeclined(message)) setDeclined(true)
       if (status === 502 || status === 503) setUnsure(true)
     } finally {
       setBusy(false)
