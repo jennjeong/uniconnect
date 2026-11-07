@@ -2255,3 +2255,65 @@ test("a visitor compares the plans, and a plan still to come names no price", as
   await growth.getByRole("button", { name: "회원가입" }).click()
   await expect(page.getByRole("dialog")).toBeVisible()
 })
+
+test("a brand sees Campus Local only once it's on sale, and runs its coupon from 내 정보", async ({ page, request }) => {
+  const brand = await signUpMember(request, "브랜드", "e2e-local@local-cafe.kr", "로컬 카페")
+  await page.addInitScript((token) => localStorage.setItem("uniconnect-token", token), brand.token)
+  await page.goto("/me")
+  await expect(page.getByRole("button", { name: "Growth 시작하기" })).toBeVisible()
+  await expect(page.getByText("Campus Local")).toHaveCount(0)
+
+  const campaign = {
+    code: "local-code",
+    store: "로컬 카페",
+    title: "아메리카노 500원 할인",
+    staffPin: "123456",
+    pinMissesToday: 0,
+    open: true,
+    couponDays: 7,
+    totals: { scans: 10, coupons: 5, visits: 2 },
+  }
+  const info = { onSale: true, price: 79000, priceWithVat: 86900, days: 30, until: "2099-12-31", includedInGrowth: false, campaign }
+  await page.route("**/api/local", (route) => route.fulfill({ json: info }))
+  await page.route("**/api/local/report*", (route) =>
+    route.fulfill({ json: { month: "2026-11", months: ["2026-11"], scans: 10, coupons: 5, visits: 2, couponRate: 50, visitRate: 40 } }),
+  )
+  await page.reload()
+  await expect(page.getByText("아메리카노 500원 할인")).toBeVisible()
+  await expect(page.getByRole("button", { name: "Campus Local 30일 연장하기" })).toBeVisible()
+  await expect(page.getByRole("region", { name: "월간 리포트" })).toContainText("40%")
+})
+
+test("a member sees what a Local refund returns, and isn't asked to press again when it may have gone", async ({ page, request }) => {
+  const brand = await signUpMember(request, "브랜드", "e2e-refund@refund-cafe.kr", "환불 카페")
+  await page.addInitScript((token) => localStorage.setItem("uniconnect-token", token), brand.token)
+  const payment = { id: "pay-1", accountName: "환불 카페", kind: "local", targetId: "", orderName: "Campus Local 30일", amount: 86900, status: "paid", method: "card", requestedAt: "2026-11-01T00:00:00.000Z", paidAt: "2026-11-01T00:00:00.000Z" }
+  await page.route("**/api/billing", async (route) => {
+    const response = await route.fetch()
+    await route.fulfill({ response, json: { ...(await response.json()), payments: [payment] } })
+  })
+  await page.route("**/api/billing/payments/pay-1/refund", (route) =>
+    route.request().method() === "GET"
+      ? route.fulfill({ json: { amount: 40000, days: 14, whole: false } })
+      : route.fulfill({ status: 503, json: { error: "잠시 뒤에 다시 시도해 주세요." } }),
+  )
+  await page.goto("/me")
+  await page.getByRole("button", { name: "결제 내역" }).click()
+  const dialog = page.getByRole("dialog", { name: "결제 내역" })
+  await dialog.getByRole("button", { name: "환불", exact: true }).click()
+  await expect(dialog).toContainText("40,000원")
+  await expect(dialog).toContainText("환불하면 오늘로 이용이 끝나요.")
+  await dialog.getByRole("button", { name: "환불받기" }).click()
+  await expect(dialog).toContainText("몇 분 뒤에 결제 내역을 확인해 주세요.")
+  await expect(dialog.getByRole("button", { name: "환불받기" })).toHaveCount(0)
+})
+
+test("an always-on coupon shows no event date, and says when it's closed", async ({ page }) => {
+  await page.route("**/api/check-in/always", (route) =>
+    route.fulfill({ json: { eventName: "로컬 카페", eventDate: "2026-11-01", groupName: "", coupons: [], alwaysOn: true, open: false, couponDays: 7 } }),
+  )
+  await page.route("**/api/check-in/always/*", (route) => route.fulfill({ status: 409, json: { error: "새 쿠폰을 받을 수 없어요." } }))
+  await page.goto("/check-in/always")
+  await expect(page.getByText("지금은 새 쿠폰을 받을 수 없어요.")).toBeVisible()
+  await expect(page.getByText("2026")).toHaveCount(0)
+})

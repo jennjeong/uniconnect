@@ -5,6 +5,7 @@ import { api } from "../api"
 import { Icon, type IconName } from "../components/Icon"
 import { Pill } from "../components/Pill"
 import { AdCard } from "../components/AdCard"
+import { LocalCard } from "../components/LocalCard"
 import { PlanCard } from "../components/PlanCard"
 import { RevealTitle } from "../components/RevealText"
 import { ShareButton } from "../components/ShareButton"
@@ -618,6 +619,7 @@ export function ProfilePage({
           {onPlan && (
             <SettingsCard caption={t("무료로 시작하고 더 많은 제안과 분석은 Growth로 써요.")} icon="won" id="profile-plan" title={t("요금제")}>
               <PlanCard onNotice={onPlan} />
+              <LocalCard onNotice={onPlan} />
             </SettingsCard>
           )}
 

@@ -26,8 +26,11 @@ function planLines(plan: PublicPlan, reportPrice: number) {
       t("캠퍼스 포트폴리오 분석: 학교 · 시기 · 단체 종류별 성과와 다음 예산"),
       t("운영자 1:1 섭외 요청 한 달 {count}건", { count: plan.limits?.partnerRequestsPerMonth ?? 0 }),
       t("브랜드 카드에 PARTNERS 표시"),
+      ...(plan.limits?.alwaysOnCoupons ? [t("상시 쿠폰과 월간 리포트 포함")] : []),
     ]
   }
+  // 판매가 열린 뒤에만 내용을 적는다.
+  if (plan.id === "local" && plan.status === "open") return [t("매장 상시 쿠폰 QR"), t("직원 쿠폰 확인"), t("월간 기본 리포트")]
   return []
 }
 
@@ -130,7 +133,7 @@ export function PlansPage({
                       {t("회원가입")}
                     </Pill>
                   )}
-                  {plan.id === "growth" && brand && !current && pro !== undefined && (
+                  {plan.orderKind && brand && !current && pro !== undefined && (
                     <Pill onClick={onOpenProfile}>{t("내 정보에서 시작하기")}</Pill>
                   )}
                 </article>
