@@ -451,10 +451,10 @@ export const api = {
     request<{ reports: AdminReport[]; suspended: SuspendedAccount[] }>("/admin/reports", {
       headers: { "X-Admin-Token": token },
     }),
-  resolveReport: (token: string, id: string, action: ReportAction) =>
-    request<{ ok: true }>(`/admin/reports/${encodeURIComponent(id)}/resolve`, {
+  resolveReport: (token: string, id: string, action: ReportAction, reason?: string) =>
+    request<{ ok: true; noticeSent?: boolean }>(`/admin/reports/${encodeURIComponent(id)}/resolve`, {
       method: "POST",
-      body: { action },
+      body: { action, ...(reason ? { reason } : {}) },
       headers: { "X-Admin-Token": token },
     }),
   adminOverview: (token: string) => request<AdminOverview>("/admin/overview", { headers: { "X-Admin-Token": token } }),
@@ -464,10 +464,10 @@ export const api = {
   },
   adminAccount: (token: string, id: string) =>
     request<{ account: AdminMemberDetail }>(`/admin/accounts/${encodeURIComponent(id)}`, { headers: { "X-Admin-Token": token } }),
-  adminSuspend: (token: string, id: string) =>
-    request<{ account: AdminMemberDetail }>(`/admin/accounts/${encodeURIComponent(id)}/suspend`, {
+  adminSuspend: (token: string, id: string, reason?: string) =>
+    request<{ account: AdminMemberDetail; noticeSent?: boolean }>(`/admin/accounts/${encodeURIComponent(id)}/suspend`, {
       method: "POST",
-      body: {},
+      body: reason ? { reason } : {},
       headers: { "X-Admin-Token": token },
     }),
   adminProposals: (token: string) =>
