@@ -21,6 +21,7 @@ import type {
   AdminMemberDetail,
   AdminOverview,
   AdminPayment,
+  BackupSummary,
   AdminPostRow,
   AdminProposalDetail,
   AdminProposalRow,
@@ -189,7 +190,7 @@ export const api = {
   inviteMember: (body: { name: string; email: string }) =>
     request<{ team: Team; devCode?: string }>("/team/invites", { method: "POST", body }),
   cancelInvite: (id: string) => request<{ team: Team }>(`/team/invites/${encodeURIComponent(id)}`, { method: "DELETE" }),
-  removeMember: (id: string) => request<{ team: Team }>(`/team/members/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  removeMember: (id: string) => request<{ team: Team; linksStopped?: boolean }>(`/team/members/${encodeURIComponent(id)}`, { method: "DELETE" }),
   // 초대받은 사람 자신이 이메일로 받은 코드로 계정에 로그인한다.
   joinTeam: (body: { email: string; code: string; password: string; document: { file: string; name: string } }) =>
     request<Pending>("/team/join", { method: "POST", body }),
@@ -509,6 +510,14 @@ export const api = {
       headers: { "X-Admin-Token": token },
     }),
   adminLog: (token: string) => request<{ entries: AdminLogRow[] }>("/admin/log", { headers: { "X-Admin-Token": token } }),
+  adminBackupSummary: (token: string, hour: string) =>
+    request<BackupSummary>(`/admin/backups/${encodeURIComponent(hour)}/summary`, { headers: { "X-Admin-Token": token } }),
+  adminRestoreBackup: (token: string, hour: string, confirm: string) =>
+    request<BackupSummary>(`/admin/backups/${encodeURIComponent(hour)}/restore`, {
+      method: "POST",
+      body: { confirm },
+      headers: { "X-Admin-Token": token },
+    }),
   adminHealth: (token: string) => request<AdminHealth>("/admin/health", { headers: { "X-Admin-Token": token } }),
   adminAnnouncements: (token: string) =>
     request<{ announcements: AdminAnnouncement[] }>("/admin/announcements", { headers: { "X-Admin-Token": token } }),

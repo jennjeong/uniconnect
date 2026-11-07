@@ -28,6 +28,11 @@ const stepCopy = (students: boolean): Record<ChecklistKey, { title: string; why:
       : t("학생단체에 제안하려면 캠페인이 있어야 해요."),
     action: students ? t("행사 등록") : t("캠페인 등록"),
   },
+  proposal: {
+    title: t("첫 제안"),
+    why: students ? t("추천에서 잘 맞는 브랜드에 제안해 보세요. 수락되면 계약서와 측정이 열려요.") : t("단체 찾기에서 잘 맞는 단체에 제안해 보세요. 수락되면 계약서와 측정이 열려요."),
+    action: students ? t("추천 보기") : t("단체 찾기"),
+  },
 })
 
 // 리스팅이 완성되지 않은 회원에게 대시보드 히어로 아래에 보여 준다. 각 단계와
@@ -38,16 +43,21 @@ export function ProfileChecklist({
   role,
   listing,
   hasEvent,
+  hasProposal,
   onEditProfile,
   onCreate,
+  onPropose,
 }: {
   accountId: string
   role: Role
   // 계정의 리스팅. 아직 작성하지 않았으면 null.
   listing: Match | null
   hasEvent: boolean
+  // 보낸 제안이 있는지. 넘기지 않으면 이 단계를 보이지 않는다.
+  hasProposal?: boolean
   onEditProfile: () => void
   onCreate: () => void
+  onPropose?: () => void
 }) {
   const storageKey = `uniconnect-checklist:${accountId}`
   const [folded, setFolded] = useState(() => {
@@ -67,7 +77,7 @@ export function ProfileChecklist({
     }
   }
   const students = role === "학생단체"
-  const steps = checklistSteps(role, listing, hasEvent)
+  const steps = checklistSteps(role, listing, hasEvent, onPropose ? hasProposal : undefined)
   const done = steps.filter((step) => step.done).length
   if (done === steps.length) return null
   const copy = stepCopy(students)
@@ -126,7 +136,7 @@ export function ProfileChecklist({
               <small>{copy[step.key].why}</small>
             </span>
             {!step.done && (
-              <button className="cancel-button" onClick={step.key === "event" ? onCreate : onEditProfile} type="button">
+              <button className="cancel-button" onClick={step.key === "event" ? onCreate : step.key === "proposal" ? onPropose : onEditProfile} type="button">
                 {copy[step.key].action}
               </button>
             )}

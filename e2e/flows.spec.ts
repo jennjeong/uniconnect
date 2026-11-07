@@ -550,7 +550,9 @@ test("a new member's dashboard lists what to fill in, and folds it for later", a
   const checklist = page.getByRole("region", { name: "소개를 채울수록 잘 맞는 상대를 찾아 드려요" })
   const progress = checklist.getByRole("progressbar", { name: "소개 완성도" })
   await expect(progress).toHaveAttribute("aria-valuenow", "0")
-  await expect(checklist.getByRole("listitem")).toHaveCount(6)
+  // 마지막은 첫 제안이다. 누르면 추천으로 간다.
+  await expect(checklist.getByRole("listitem")).toHaveCount(7)
+  await expect(checklist.getByRole("listitem").last()).toContainText("첫 제안")
   await checklist.getByRole("button", { name: "소개 쓰기" }).click()
   await expect(page).toHaveURL(/\/me\/edit$/)
   // 등록한 행사는 그 단계를 확인한다.
@@ -561,7 +563,7 @@ test("a new member's dashboard lists what to fill in, and folds it for later", a
   // 나중에 folds it to one line, kept after a reload.
   await checklist.getByRole("button", { name: "나중에" }).click()
   const folded = page.getByRole("region", { name: "소개 완성 체크리스트" })
-  await expect(folded).toContainText("1/6 완료")
+  await expect(folded).toContainText("1/7 완료")
   await page.reload()
   await folded.getByRole("button", { name: "펼치기" }).click()
   await expect(checklist).toBeVisible()
