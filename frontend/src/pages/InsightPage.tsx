@@ -159,6 +159,7 @@ export function InsightPage({
   const [answer, setAnswer] = useState<InsightAnswer>()
   const [failed, setFailed] = useState("")
   const [buying, setBuying] = useState(false)
+  const [sample, setSample] = useState<PremiumReport>()
 
   useEffect(() => {
     let cancelled = false
@@ -193,6 +194,21 @@ export function InsightPage({
       <section className="page-view insight-page">
         {back}
         <p className="day-empty">{failed || t("리포트를 불러오고 있어요…")}</p>
+      </section>
+    )
+  }
+
+  // 사기 전에 리포트의 모습을 본다. 예시 데이터는 처음 열 때 받는다.
+  if (answer.locked && sample) {
+    return (
+      <section className="page-view insight-page">
+        <p className="insight-shared-note">
+          {t("예시 리포트예요. 실제 협찬의 수치가 아니에요.")}{" "}
+          <button className="subtle-link" onClick={() => setSample(undefined)} type="button">
+            {t("돌아가기")}
+          </button>
+        </p>
+        <ReportBody onNotice={onNotice} onOpenGroup={() => undefined} owner={false} report={sample} />
       </section>
     )
   }
@@ -244,6 +260,18 @@ export function InsightPage({
             ) : (
               <p className="field-hint">{t("행사 날부터 살 수 있어요.")}</p>
             )}
+            <button
+              className="subtle-link"
+              onClick={() =>
+                void import("../data/sampleReport.json").then(
+                  (module) => setSample(module.default as unknown as PremiumReport),
+                  (error: unknown) => onNotice(errorMessage(error)),
+                )
+              }
+              type="button"
+            >
+              {t("샘플 리포트 보기")}
+            </button>
           </aside>
         </div>
         <Presence show={buying}>

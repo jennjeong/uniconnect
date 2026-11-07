@@ -2034,6 +2034,10 @@ test("the detailed report: the demo's open from 성과 분석, a member's locked
   await member.goto(`/insights/sp-${requests[0].id}`)
   await expect(member.getByText("화면에서 보는 숫자 너머의 리포트")).toBeVisible()
   await expect(member.locator(".insight-price")).toContainText("50,000원")
+  // 사기 전에 샘플을 본다. 실제 수치가 아니라고 밝힌다.
+  await member.getByRole("button", { name: "샘플 리포트 보기" }).click()
+  await expect(member.getByText("예시 리포트예요. 실제 협찬의 수치가 아니에요.")).toBeVisible()
+  await member.getByRole("button", { name: "돌아가기" }).click()
   await member.getByRole("button", { name: "리포트 사기" }).click()
   const pay = member.getByRole("dialog", { name: "상세 성과 리포트 결제" })
   await expect(pay).toContainText("연 뒤에는 환불되지 않아요")
