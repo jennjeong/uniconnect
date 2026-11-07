@@ -2285,6 +2285,8 @@ test("pages with a code or token in the address load no analytics, and the site'
   }
   await page.goto("/faq")
   await page.waitForFunction(() => "gtag" in window)
+})
+
 test("an operator gives a reason when suspending", async ({ page, request }) => {
   const member = await signUpMember(request, "브랜드", "e2e-stop@stop-cafe.kr", "정지 카페")
   const accounts = (await (await request.get("/api/admin/accounts?q=e2e-stop", { headers: { "X-Admin-Token": "e2e-admin-token" } })).json()) as {
