@@ -19575,7 +19575,8 @@ span.odometer {
 
 @media (max-width: 720px) {
   :root {
-    --gutter: 16px;
+    /* 상자 밖 글이 화면 가장자리에 붙어 보이지 않게, 첫 화면 글과 같은 24px. */
+    --gutter: 24px;
     --header-h: 72px;
   }
 
@@ -19681,8 +19682,11 @@ span.odometer {
     margin: 48px 0 24px;
   }
 
+  /* 섹션 제목은 한 글자만 다음 줄로 넘어가지 않게 줄 길이를 고르게 나눈다. */
   .section-display {
-    font-size: 34px;
+    font-size: 30px;
+    line-height: 1.22;
+    text-wrap: balance;
   }
 
   /* 탭은 화면 전체에 걸쳐 늘어나며 라벨 다섯이 360px에 들어가도록 더 가까이
@@ -19765,6 +19769,12 @@ span.odometer {
 
   .reveal-title.statement {
     font-size: 34px;
+  }
+
+  /* 한국어 소개 문장은 네 줄로 나뉘므로, 가장 긴 줄이 화면 너비에 맞을 만큼 키운다. */
+  :lang(ko) .reveal-title.statement {
+    font-size: min(30px, 6.8cqi);
+    line-height: 1.3;
   }
 
 
