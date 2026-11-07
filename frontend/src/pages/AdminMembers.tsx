@@ -6,7 +6,7 @@ import { t } from "../i18n"
 import { formatDateTime } from "../lib/date"
 import { fullWon } from "../lib/sponsorships"
 import type { AdminMember, AdminMemberDetail } from "../types"
-import { CsvButton, NoteEditor, Pager, SortHeader, readStored, useTable, writeStored } from "./AdminTools"
+import { CsvButton, NoteEditor, Pager, SortHeader, SuspendReason, readStored, useTable, writeStored } from "./AdminTools"
 
 // 운영자의 회원 화면(pages/AdminPage.tsx). 검색하고 필터(뷰로 저장)하고
 // 정렬하고 페이지로 나누며, 여러 명에게 한 작업을 하려고 고르고, 하나는 목록
@@ -392,11 +392,20 @@ function MemberDetail({
   const [days, setDays] = useState(30)
   const [allTimeline, setAllTimeline] = useState(false)
   const [sureStop, setSureStop] = useState(false)
-  useEffect(() => setSureStop(false), [open.id])
+  const [stopReason, setStopReason] = useState("")
+  useEffect(() => {
+    setSureStop(false)
+    setStopReason("")
+  }, [open.id])
   useEffect(() => setNumber(open.businessNumber ?? ""), [open.id, open.businessNumber])
   const act = (work: Promise<{ account: AdminMemberDetail }>, message: string) =>
     void work.then(
       (result) => onChanged(result.account, message),
+      (error: unknown) => onNotice(errorMessage(error)),
+    )
+  const suspend = (message: string) =>
+    void api.adminSuspend(token, open.id, stopReason.trim() || undefined).then(
+      (result) => onChanged(result.account, result.noticeSent === false ? t("메일을 보내지 못했어요. 회원에게 직접 알려 주세요.") : message),
       (error: unknown) => onNotice(errorMessage(error)),
     )
   const saveTags = (tags: string[]) => act(api.adminTags(token, open.id, tags), t("태그를 바꿨어요."))
@@ -583,9 +592,10 @@ function MemberDetail({
           <div className="admin-report-actions">
             {sureStop ? (
               <>
+                <SuspendReason onChange={setStopReason} value={stopReason} />
                 <button
                   className="decline-button"
-                  onClick={() => act(api.adminSuspend(token, open.id), t("{name}을 정지했어요. 로그인한 기기도 모두 로그아웃됐어요.", { name: open.name }))}
+                  onClick={() => suspend(t("{name}을 정지했어요. 로그인한 기기도 모두 로그아웃됐어요.", { name: open.name }))}
                   type="button"
                 >
                   {t("정지할게요")}
