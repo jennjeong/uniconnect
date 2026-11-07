@@ -56,6 +56,15 @@ const leftAlone = (target: EventTarget | null) =>
   target.closest(fields) !== null ||
   scrollsSideways(target)
 
+// iPhone과 iPad에서는 휠 스와이프를 듣지 않는다. 그곳의 마우스·트랙패드 스크롤
+// (시뮬레이터의 스크롤 포함)은 막지 않는 휠 리스너가 페이지에 있기만 해도 멈출 수
+// 있고, 화면 사이 이동은 손가락 스와이프로 충분하다. iPadOS는 Mac으로 보이므로
+// 터치 지점 수로 가린다.
+export function wantsWheelSwipe(userAgent: string, maxTouchPoints: number) {
+  if (/iPhone|iPad|iPod/.test(userAgent)) return false
+  return !(/Macintosh/.test(userAgent) && maxTouchPoints > 1)
+}
+
 // 화면을 옮기려면 손가락이나 트랙패드 스크롤이 움직여야 하는 거리.
 const touchDistance = 90
 const wheelDistance = 220
@@ -200,7 +209,8 @@ export function installSwipeNavigation() {
   window.addEventListener("touchmove", onTouchMove, { passive: true })
   window.addEventListener("touchend", onTouchEnd, { passive: true })
   window.addEventListener("touchcancel", onTouchCancel, { passive: true })
-  window.addEventListener("wheel", onWheel, { passive: false })
+  const wheel = wantsWheelSwipe(navigator.userAgent, navigator.maxTouchPoints ?? 0)
+  if (wheel) window.addEventListener("wheel", onWheel, { passive: false })
   return () => {
     window.removeEventListener("touchstart", onTouchStart)
     window.removeEventListener("touchmove", onTouchMove)
