@@ -6073,6 +6073,121 @@ test("a brand confirms an e-contract by paying the 15% fee, by card or by transf
   }
 })
 
+test("both sides record a sponsorship payment outside the platform, and hear when it's late", async () => {
+  const { sendPayoutReminders } = await import("./lib/reminders.js")
+  const { mailTransport } = await import("./lib/mailer.js")
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const group = await signUpMember("payout-club@syu.ac.kr", "payout-pass-123")
+  const groupId = getDatabase().accounts.find((account) => account.email === "payout-club@syu.ac.kr")!.id
+  const { token: brand, listingId } = await listedMember("payout@payout-cafe.kr", "payout-pass-123", "브랜드")
+  await call("POST", "/events", { name: "지급 공연", date: addDays(todayInKorea(), 40), people: "150명", types: ["제품"] }, group)
+  await call("POST", "/proposals", { matchId: listingId }, group)
+  const { id } = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
+  await call("POST", `/requests/${id}/accept`, undefined, brand)
+  const route = `/agreements/${id}/payout`
+  const stored = () => getDatabase().agreements.find((item) => item.id === id)!
+  const today = todayInKorea()
+  const due = addDays(today, 10)
+
+  const post = mailTransport.post
+  const sent: { to: string[]; subject: string; text: string }[] = []
+  mailTransport.post = async (message) => {
+    sent.push(message)
+    return new Response(null, { status: 200 })
+  }
+  const mail = { apiKey: config.resendApiKey, from: config.mailFrom }
+  config.resendApiKey = "test-resend-key"
+  config.mailFrom = "uniconnect <no-reply@example.com>"
+  try {
+    // 현금이 없으면 기록할 것이 없다.
+    assert.equal((await call("PUT", route, { dueDate: due }, group)).status, 409)
+    await call("PUT", `/agreements/${id}/value`, { value: { cash: 0, inKind: 100000 } }, group)
+    assert.equal((await call("POST", `${route}/paid`, undefined, brand)).status, 409)
+    await call("PUT", `/agreements/${id}/value`, { value: { cash: 100000, inKind: 0 } }, group)
+
+    // 날짜를 검사하고, 바꾸면 양쪽이 다시 확인한다.
+    for (const dueDate of ["내일", "2026-02-30", 20261231, undefined, addDays(today, -1)]) {
+      assert.equal((await call("PUT", route, { dueDate }, group)).status, 400, String(dueDate))
+    }
+    stored().confirmed = { group: "2026-11-01T00:00:00.000Z" }
+    const set = await call("PUT", route, { dueDate: due }, group)
+    assert.equal(set.status, 200)
+    assert.deepEqual(set.data.agreement.payout, { dueDate: due, late: false })
+    assert.deepEqual(stored().confirmed, {})
+    stored().confirmed = { group: "2026-11-01T00:00:00.000Z" }
+    assert.equal((await call("PUT", route, { dueDate: due }, brand)).status, 200)
+    assert.deepEqual(Object.keys(stored().confirmed), ["group"])
+
+    // 각자 자기 표시만 한다.
+    assert.equal((await call("POST", `${route}/paid`, undefined, group)).status, 403)
+    assert.equal((await call("POST", `${route}/received`, undefined, brand)).status, 403)
+    const other = await signUpMember("payout-other@syu.ac.kr", "payout-pass-123")
+    assert.equal((await call("POST", `${route}/received`, undefined, other)).status, 404)
+
+    sent.length = 0
+    const paid = await call("POST", `${route}/paid`, undefined, brand)
+    assert.equal(paid.data.agreement.payout.paidAmount, 100000)
+    const paidAt = stored().payout!.paidAt
+    await new Promise((resolve) => setImmediate(resolve))
+    assert.deepEqual(sent.map((message) => message.to[0]), ["payout-club@syu.ac.kr"])
+    // 다시 눌러도 시각도 메일도 그대로다.
+    await call("POST", `${route}/paid`, undefined, brand)
+    await new Promise((resolve) => setImmediate(resolve))
+    assert.equal(stored().payout!.paidAt, paidAt)
+    assert.equal(sent.length, 1)
+    assert.equal((await call("PUT", route, { dueDate: addDays(today, 20) }, group)).status, 409)
+
+    const received = await call("POST", `${route}/received`, undefined, group)
+    assert.ok(received.data.agreement.payout.receivedAt)
+    assert.equal((await call("DELETE", `${route}/paid`, undefined, brand)).status, 409)
+    assert.ok((await call("GET", "/agreements", undefined, brand)).data.agreements.find((item: { id: string }) => item.id === id).payout.receivedAt)
+
+    // 수령을 거두면 지급도 거둘 수 있다.
+    await call("DELETE", `${route}/received`, undefined, group)
+    assert.equal((await call("DELETE", `${route}/paid`, undefined, brand)).status, 200)
+    assert.deepEqual(stored().payout, { dueDate: due })
+
+    // 예정일이 지나면 양쪽에 한 번씩이다.
+    const lateDay = new Date(`${addDays(due, 1)}T03:00:00Z`)
+    sent.length = 0
+    assert.equal(await sendPayoutReminders(getDatabase(), new Date(`${due}T03:00:00Z`)), 0)
+    assert.equal(await sendPayoutReminders(getDatabase(), lateDay), 2)
+    assert.deepEqual(sent.map((message) => message.to[0]).sort(), ["payout-club@syu.ac.kr", "payout@payout-cafe.kr"])
+    assert.equal(await sendPayoutReminders(getDatabase(), lateDay), 0)
+    // 메일이 실패하면 다음에 다시 보낸다.
+    delete stored().payout!.lateNotified
+    mailTransport.post = async () => new Response(null, { status: 500 })
+    assert.equal(await sendPayoutReminders(getDatabase(), lateDay), 0)
+    assert.equal(stored().payout!.lateNotified, undefined)
+    mailTransport.post = async () => new Response(null, { status: 200 })
+    assert.equal(await sendPayoutReminders(getDatabase(), lateDay), 2)
+    assert.equal(stored().payout!.lateNotified !== undefined, true)
+    // 표시하면 늦은 것이 아니다.
+    stored().payout = { dueDate: addDays(today, -1) }
+    assert.equal((await call("GET", `/agreements/${id}`, undefined, brand)).data.agreement.payout.late, true)
+    await call("POST", `${route}/paid`, undefined, brand)
+    assert.equal(await sendPayoutReminders(getDatabase()), 0)
+
+    // 현금이 바뀌면 앞선 표시는 다른 금액의 것이라 지운다. 메일 기록은 보이지 않는다.
+    await call("POST", `${route}/received`, undefined, group)
+    stored().payout!.lateNotified = { brand: "2026-11-01T00:00:00.000Z" }
+    assert.equal((await call("GET", `/agreements/${id}`, undefined, brand)).data.agreement.payout.lateNotified, undefined)
+    const raised = await call("PUT", `/agreements/${id}/value`, { value: { cash: 200000, inKind: 0 } }, group)
+    assert.deepEqual(raised.data.agreement.payout, { dueDate: addDays(today, -1), late: true })
+    await call("PUT", `/agreements/${id}/value`, { value: { cash: 0, inKind: 100000 } }, group)
+    assert.equal(stored().payout, undefined)
+
+    // 데모 계정은 쓰지 못한다.
+    const demo = await call("POST", "/auth/login", { role: "브랜드", email: "hello@afternoon-coffee.kr", password: "uniconnect2026" })
+    const seeded = (await call("GET", "/agreements", undefined, demo.data.token)).data.agreements[0]
+    assert.equal((await call("POST", `/agreements/${seeded.id}/payout/paid`, undefined, demo.data.token)).status, 403)
+  } finally {
+    mailTransport.post = post
+    config.resendApiKey = mail.apiKey
+    config.mailFrom = mail.from
+  }
+})
+
 test("a Toss webhook is only a hint: forged bodies change nothing, and Toss's own answer settles the order", async () => {
   const { toss } = await import("./lib/billing.js")
   const saved = { client: config.tossClientKey, secret: config.tossSecretKey, admin: config.adminToken }

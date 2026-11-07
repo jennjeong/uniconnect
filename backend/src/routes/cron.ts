@@ -8,7 +8,7 @@ import { HttpError } from "../lib/errors.js"
 import { sendDigests } from "../lib/digest.js"
 import { foldCounts, prunePassRows } from "../lib/passRows.js"
 import { prunePayments } from "../lib/paymentRetention.js"
-import { sendReminders } from "../lib/reminders.js"
+import { sendPayoutReminders, sendReminders } from "../lib/reminders.js"
 import { refreshViews } from "../lib/snsPosts.js"
 
 export const cronRouter = Router()
@@ -47,8 +47,9 @@ cronRouter.get("/reminders", async (req, res) => {
   const cards = cardReady() ? await job("cards", reconcileCards) : undefined
   const refunds = cardReady() ? await job("refunds", reconcileRefunds) : undefined
   const sent = await job("reminders", () => sendReminders())
+  const payouts = await job("payouts", () => sendPayoutReminders())
   const digests = await job("digests", () => sendDigests())
   const views = await job("views", refreshViews)
   const payments = await job("payments", prunePayments)
-  res.status(failed.length > 0 ? 500 : 200).json({ counts, passes, cards, refunds, sent, digests, views, payments, failed })
+  res.status(failed.length > 0 ? 500 : 200).json({ counts, passes, cards, refunds, sent, payouts, digests, views, payments, failed })
 })

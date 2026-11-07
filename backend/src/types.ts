@@ -697,8 +697,22 @@ export type Agreement = {
   shipments?: Shipment[]
   // 브랜드가 확인할 학생단체의 SNS 게시물(lib/snsPosts.ts).
   snsPosts?: SnsPost[]
+  // 플랫폼 밖에서 오가는 현금 협찬금의 지급 기록(lib/payouts.ts).
+  payout?: Payout
   createdAt: string
   updatedAt: string
+}
+
+export type Payout = {
+  // 지급 예정일 "YYYY-MM-DD". 계약 내용이라 바꾸면 양쪽이 다시 확인한다.
+  dueDate?: string
+  // 브랜드가 보냈다고 표시한 시각과 그때의 현금 협찬액.
+  paidAt?: string
+  paidAmount?: number
+  // 단체가 받았다고 표시한 시각.
+  receivedAt?: string
+  // 지연 메일을 보낸 시각. 쪽마다 한 번이다.
+  lateNotified?: Partial<Record<ChatSide, string>>
 }
 
 // SNS 게시물 하나. 링크, 단체가 적은 도달, 캡처 3장까지, 브랜드의 판단을 담는다.

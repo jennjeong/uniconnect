@@ -1,8 +1,10 @@
 import { noteCronRun } from "./adminTools.js"
+import { acceptedProposal } from "./agreements.js"
 import { addDays, todayInKorea } from "./dates.js"
 import { notify } from "./notices.js"
+import { payoutLate } from "./payouts.js"
 import { getDatabase, retryConflicts, saveDatabase } from "../store.js"
-import type { Account, Database } from "../types.js"
+import type { Account, ChatSide, Database } from "../types.js"
 
 // 행사 며칠 전부터 처음 알리는지.
 export const remindDaysBefore = 3
@@ -94,5 +96,44 @@ export async function sendReminders(database: Database = getDatabase(), now = ne
     noteCronRun(getDatabase(), sent, now)
     await saveDatabase()
   })
+  return sent
+}
+
+const lateLines = (side: ChatSide, partner: string, event: string, due: string) =>
+  side === "brand"
+    ? [`'${event}' 협찬금의 지급 예정일(${due})이 지났어요.`, `보냈다면 임시 전자 계약서에서 지급을 표시해 주세요. 받는 쪽: ${partner}`]
+    : [`'${event}' 협찬금의 지급 예정일(${due})이 지났어요.`, `받았다면 임시 전자 계약서에서 수령을 표시하고, 아직이면 ${partner}에 연락해 주세요.`]
+
+// 지급이 늦어진 계약서마다 양쪽에 메일을 한 번 보낸다. 보낸 뒤에 표시하므로 실패한
+// 메일은 다음 실행에서 다시 간다.
+export async function sendPayoutReminders(database: Database = getDatabase(), now = new Date()) {
+  const today = todayInKorea(now)
+  const due = database.agreements.flatMap((agreement) => {
+    if (!agreement.value?.cash || !payoutLate(agreement, today)) return []
+    const proposal = acceptedProposal(database, agreement.id)
+    if (!proposal || proposal.canceled) return []
+    return (["brand", "group"] as const)
+      .filter((side) => !agreement.payout?.lateNotified?.[side])
+      .map((side) => ({ agreement, proposal, side }))
+  })
+  let sent = 0
+  for (const { agreement, proposal, side } of due) {
+    const partner = side === "brand" ? proposal.group.name : proposal.brand.name
+    const delivered = await notify(
+      proposal[side].account,
+      "sponsorships",
+      "협찬금 지급 예정일이 지났어요",
+      lateLines(side, partner, proposal.eventName, agreement.payout!.dueDate!),
+      `/agreements/${encodeURIComponent(agreement.id)}`,
+    )
+    if (!delivered) continue
+    sent += 1
+    // 보내는 동안 데이터를 새로 읽었을 수 있어 다시 찾는다.
+    await retryConflicts(async () => {
+      const current = getDatabase().agreements.find((item) => item.id === agreement.id)
+      if (current?.payout) (current.payout.lateNotified ??= {})[side] = now.toISOString()
+      await saveDatabase()
+    })
+  }
   return sent
 }

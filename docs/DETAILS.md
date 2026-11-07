@@ -262,6 +262,10 @@ npm run dev
 - 결제 기록은 전자상거래법에 따라 탈퇴 후에도 5년 보관하고(개인정보 처리방침), 약관의 `유료 서비스와 결제`(`/terms#paid`)에 환불 규정이 있다.
 - 정식으로 받으려면 사업자등록, 통신판매업 신고, 토스페이먼츠 계약 뒤 라이브 키를 넣어야 한다(#216).
 
+### 협찬금 지급 확인
+
+현금 협찬금은 플랫폼 밖에서 오간다. 플랫폼은 돈을 다루지 않고, 계약서에 기록만 남긴다(`backend/src/lib/payouts.ts`, 지연 메일은 `lib/reminders.ts`). 현금 협찬액이 있는 계약서에 어느 쪽이든 지급 예정일을 적을 수 있고, 바꾸면 양쪽이 다시 확인한다. 브랜드는 지급을, 단체는 수령을 표시하며 상대가 메일을 받는다. 돈이 들어왔다면 브랜드의 표시 없이도 수령을 표시할 수 있다. 현금 협찬액이 바뀌면 앞선 표시는 지운다. 예정일이 지났는데 두 표시가 모두 없으면(`payout.late`) cron이 양쪽에 메일을 한 번 보낸다. 표시는 당사자의 말일 뿐이어서 플랫폼이 입금을 확인한 것은 아니다.
+
 ### 협찬 기록
 
 브랜드가 학생단체의 제안을 수락하거나 학생단체가 브랜드의 제안을 수락하면, 그 협찬이 브랜드의 협찬 기록에 남는다. 성과 분석은 행사 날이 지난 협찬을 보여 주고, 학생단체 행사에 연결된 협찬은 그 행사의 측정(쿠폰·방문·추정 매출)과 학생단체가 정한 협찬 가치·목표 ROAS를 그대로 따른다.
@@ -510,6 +514,9 @@ cp backend/.env.example backend/.env.local
 | POST | `/api/agreements/:id/confirm` | 지금 내용으로 확인, 상대에게 알림. 두 쪽이 모두 확인하면 협찬 확인 방식이 확정됨 | 필요 |
 | POST | `/api/agreements/:id/cancel` | 협찬 취소 요청 (`reason` 200자까지, 행사가 끝나면 409, 데모 계정 403), 상대에게 알림 | 필요 |
 | POST | `/api/agreements/:id/cancel/accept` | 상대의 취소 요청에 동의해 협찬 취소 | 필요 |
+| PUT | `/api/agreements/:id/payout` | 협찬금 지급 예정일 `{ dueDate }` (`YYYY-MM-DD`, 지우면 `null`). 바꾸면 두 쪽 확인을 지움. 현금 협찬액이 없으면 409, 표시 뒤에는 409, 데모 계정 403 | 필요 |
+| POST · DELETE | `/api/agreements/:id/payout/paid` | 브랜드의 지급 표시와 되돌리기, 단체에게 알림. 단체가 수령을 표시한 뒤에는 되돌릴 수 없음 | 필요 |
+| POST · DELETE | `/api/agreements/:id/payout/received` | 단체의 수령 표시와 되돌리기, 브랜드에게 알림 | 필요 |
 | DELETE | `/api/agreements/:id/cancel` | 내 취소 요청을 거두거나 상대의 요청을 거절 | 필요 |
 | PATCH | `/api/agreements/:id/items/:itemId` | 내 할 일의 완료 `{ done }`와 증빙 링크 `{ links }` | 필요 |
 | POST · DELETE | `/api/agreements/:id/items/:itemId/photos(/:photo)` | 내 할 일의 증빙 사진 올리기 `{ image }`(PNG · JPG · WebP 데이터 URL) · 지우기 | 필요 |

@@ -5,6 +5,7 @@ import { feeState } from "./fees.js"
 import { HttpError } from "./errors.js"
 import { ensureMeasurement, pinMissesToday, pinsFrom, pinsOpen, rotatePin } from "./measurements.js"
 import { activeMethodsOf, confirmsAt, isVenueKind, methodsOf, venueCountsOf } from "./methods.js"
+import { payoutView } from "./payouts.js"
 import { photos } from "./photos.js"
 import { canReview, isDemoAccount, publicReview, reviewOpen } from "./reviews.js"
 import { isSponsored } from "./sponsorships.js"
@@ -348,6 +349,7 @@ export function agreementView(database: Database, agreement: Agreement, proposal
     ...(measure && !proposal.canceled ? { measure } : {}),
     gives: proposal.gives,
     fee: feeState(database, agreement, proposal),
+    payout: payoutView(agreement),
     review: {
       open: reviewOpen(proposal),
       canWrite: canReview(database, proposal, side),

@@ -5,7 +5,7 @@ import { reconcileCards, reconcileRefunds } from "./lib/cardRecovery.js"
 import { mailConfigured } from "./lib/mailer.js"
 import { sendDigests } from "./lib/digest.js"
 import { prunePayments } from "./lib/paymentRetention.js"
-import { sendReminders } from "./lib/reminders.js"
+import { sendPayoutReminders, sendReminders } from "./lib/reminders.js"
 import { refreshViews } from "./lib/snsPosts.js"
 import { loadDatabase } from "./store.js"
 
@@ -17,6 +17,7 @@ await loadDatabase()
 const remind = () => {
   if (cardReady()) reconcileCards().then(reconcileRefunds).catch((error: Error) => console.error(`[billing] ${error.message}`))
   sendReminders().catch((error: Error) => console.error(`[reminders] ${error.message}`))
+  sendPayoutReminders().catch((error: Error) => console.error(`[payouts] ${error.message}`))
   sendDigests().catch((error: Error) => console.error(`[digests] ${error.message}`))
   refreshViews().catch((error: Error) => console.error(`[youtube] ${error.message}`))
   prunePayments().catch((error: Error) => console.error(`[payments] ${error.message}`))

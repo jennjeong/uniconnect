@@ -25,6 +25,7 @@ import { HttpError } from "../lib/errors.js"
 import { ensureMeasurement } from "../lib/measurements.js"
 import { methodsOf, parseMethods } from "../lib/methods.js"
 import { notify } from "../lib/notices.js"
+import { cashChanged, parseDueDate, payoutView } from "../lib/payouts.js"
 import { forgetPhotos, parsePhoto, photoName, photoType, photos } from "../lib/photos.js"
 import { isDemoAccount } from "../lib/reviews.js"
 import { createRateLimit, senderKey } from "../lib/rateLimit.js"
@@ -166,6 +167,7 @@ agreementsRouter.get("/", (req, res) => {
       done: items.filter((item) => item.doneAt).length,
       total: items.length,
       proof: items.reduce((sum, item) => sum + item.links.length + item.photos.length, 0),
+      ...(stored?.payout ? { payout: payoutView(stored) } : {}),
     }
   })
   res.json({ agreements })
@@ -266,6 +268,7 @@ agreementsRouter.put("/:id/value", async (req, res) => {
   if (eventOver(database, proposal)) throw new HttpError(409, "끝난 행사의 협찬액은 바꿀 수 없어요.")
   const { agreement } = agreementFor(database, proposal)
   const changed = JSON.stringify(value) !== JSON.stringify(agreement.value ?? null)
+  if (value.cash !== agreement.value?.cash) cashChanged(agreement, value.cash)
   agreement.value = value
   if (changed) {
     agreement.confirmed = {}
@@ -280,6 +283,108 @@ agreementsRouter.put("/:id/value", async (req, res) => {
       [`${account.name}에서 '${proposal.eventName}' 협찬의 협찬액을 바꿨어요. 바뀐 내용을 보고 다시 확인해 주세요.`],
       `/agreements/${encodeURIComponent(agreement.id)}`,
     )
+  }
+  res.json({ agreement: agreementView(database, agreement, proposal, side) })
+})
+
+// 플랫폼 밖에서 오가는 현금 협찬금의 기록이다(lib/payouts.ts). 공용 데모 계정은 쓰지
+// 못한다. 회원인 상대에게 메일이 가고, 모두가 같은 계약서를 쓴다.
+function openedForPayout(req: Request, actor?: AgreementItem["side"]) {
+  const opening = openedToChange(req)
+  const { account, database, proposal, side } = opening
+  if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 지급을 기록할 수 없어요.")
+  if (actor && side !== actor) {
+    throw new HttpError(403, actor === "brand" ? "지급은 브랜드가 표시해요." : "수령은 학생단체가 표시해요.")
+  }
+  const { agreement } = agreementFor(database, proposal)
+  if (!agreement.value?.cash) throw new HttpError(409, "현금 협찬액을 먼저 적어 주세요.")
+  return { ...opening, agreement }
+}
+
+const agreementPath = (id: string) => `/agreements/${encodeURIComponent(id)}`
+
+// 지급 예정일을 정하거나 지운다(`null`). 계약 내용이므로 바꾸면 양쪽이 다시 확인한다.
+agreementsRouter.put("/:id/payout", async (req, res) => {
+  const { account, agreement, database, proposal, side } = openedForPayout(req)
+  const dueDate = parseDueDate(req.body?.dueDate)
+  const payout = agreement.payout
+  if (payout?.paidAt || payout?.receivedAt) throw new HttpError(409, "지급을 표시한 뒤에는 예정일을 바꿀 수 없어요.")
+  if (dueDate !== payout?.dueDate) {
+    if (dueDate && dueDate < todayInKorea()) throw new HttpError(400, "지급 예정일은 오늘이나 그 뒤로 적어 주세요.")
+    if (dueDate) agreement.payout = { dueDate }
+    else delete agreement.payout
+    agreement.confirmed = {}
+    agreement.updatedAt = new Date().toISOString()
+    await saveDatabase()
+    void notify(
+      side === "group" ? proposal.brand.account : proposal.group.account,
+      "sponsorships",
+      "임시 전자 계약서가 바뀌었어요",
+      [`${account.name}에서 '${proposal.eventName}' 협찬금의 지급 예정일을 바꿨어요. 바뀐 내용을 보고 다시 확인해 주세요.`],
+      agreementPath(agreement.id),
+    )
+  }
+  res.json({ agreement: agreementView(database, agreement, proposal, side) })
+})
+
+// 브랜드가 협찬금을 보냈다고 표시하면 단체가 알림을 받는다. 다시 눌러도 그대로다.
+agreementsRouter.post("/:id/payout/paid", async (req, res) => {
+  const { account, agreement, database, proposal, side } = openedForPayout(req, "brand")
+  if (!agreement.payout?.paidAt) {
+    const paidAmount = agreement.value!.cash
+    agreement.payout = { ...agreement.payout, paidAt: new Date().toISOString(), paidAmount }
+    agreement.updatedAt = agreement.payout.paidAt!
+    await saveDatabase()
+    void notify(
+      proposal.group.account,
+      "sponsorships",
+      "협찬금을 보냈다고 표시했어요",
+      [`${account.name}에서 '${proposal.eventName}' 협찬금 ${paidAmount.toLocaleString("ko-KR")}원을 보냈다고 표시했어요. 받았다면 수령을 표시해 주세요.`],
+      agreementPath(agreement.id),
+    )
+  }
+  res.json({ agreement: agreementView(database, agreement, proposal, side) })
+})
+
+// 잘못 누른 지급 표시를 거둔다. 단체가 받았다고 한 뒤에는 거둘 수 없다.
+agreementsRouter.delete("/:id/payout/paid", async (req, res) => {
+  const { agreement, database, proposal, side } = openedForPayout(req, "brand")
+  if (agreement.payout?.receivedAt) throw new HttpError(409, "단체가 수령을 표시해서 거둘 수 없어요.")
+  if (agreement.payout) {
+    delete agreement.payout.paidAt
+    delete agreement.payout.paidAmount
+    if (!agreement.payout.dueDate) delete agreement.payout
+    await saveDatabase()
+  }
+  res.json({ agreement: agreementView(database, agreement, proposal, side) })
+})
+
+// 단체가 협찬금을 받았다고 표시하면 브랜드가 알림을 받는다. 브랜드가 표시하지 않았어도
+// 돈이 들어왔다면 표시할 수 있다.
+agreementsRouter.post("/:id/payout/received", async (req, res) => {
+  const { account, agreement, database, proposal, side } = openedForPayout(req, "group")
+  if (!agreement.payout?.receivedAt) {
+    agreement.payout = { ...agreement.payout, receivedAt: new Date().toISOString() }
+    agreement.updatedAt = agreement.payout.receivedAt!
+    await saveDatabase()
+    void notify(
+      proposal.brand.account,
+      "sponsorships",
+      "협찬금을 받았다고 표시했어요",
+      [`${account.name}에서 '${proposal.eventName}' 협찬금을 받았다고 표시했어요.`],
+      agreementPath(agreement.id),
+    )
+  }
+  res.json({ agreement: agreementView(database, agreement, proposal, side) })
+})
+
+// 잘못 누른 수령 표시를 거둔다.
+agreementsRouter.delete("/:id/payout/received", async (req, res) => {
+  const { agreement, database, proposal, side } = openedForPayout(req, "group")
+  if (agreement.payout) {
+    delete agreement.payout.receivedAt
+    if (!agreement.payout.dueDate && !agreement.payout.paidAt) delete agreement.payout
+    await saveDatabase()
   }
   res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })
