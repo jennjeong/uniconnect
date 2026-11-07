@@ -21,6 +21,7 @@ const refundWholeWithinMs = 7 * 24 * 60 * 60 * 1000
 
 sell("local", {
   targetless: true,
+  memberRefund: true,
   quote(database, account) {
     if (!config.localOnSale) throw new HttpError(404, "판매하지 않는 상품이에요.")
     if (account.role !== "브랜드") throw new HttpError(403, "Campus Local은 브랜드 계정만 쓸 수 있어요.")

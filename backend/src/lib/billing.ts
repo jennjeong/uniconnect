@@ -128,6 +128,8 @@ type Product = {
   revoke?: (database: Database, payment: Payment) => void
   // 지금 환불하면 일부만 돌려주는 상품의 금액과 돌려받는 일수다. null이면 전액이다.
   partialRefund?: (payment: Payment, now: Date) => PartialRefund | null
+  // 회원이 결제 내역에서 직접 환불할 수 있다(routes/billing.ts).
+  memberRefund?: true
 }
 
 export type PartialRefund = { amount: number; days: number }
@@ -214,6 +216,9 @@ export function markCancelled(database: Database, payment: Payment, reason: stri
   Object.assign(payment, { status: "cancelled", cancelledAt: new Date().toISOString(), cancelReason: reason })
   if (wasPaid) productOf(payment.kind).revoke?.(database, payment)
 }
+
+// 회원이 직접 환불한 결제의 사유. 운영자가 환불한 것과 가른다.
+export const memberRefundReason = "회원 요청"
 
 // 결제에서 지금 돌려줄 일부. 전액을 돌려줄 결제면 null이다.
 export const partialRefundOf = (payment: Payment, now = new Date()) => productOf(payment.kind).partialRefund?.(payment, now) ?? null

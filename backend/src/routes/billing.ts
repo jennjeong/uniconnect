@@ -1,9 +1,10 @@
 import { randomUUID } from "node:crypto"
 import { Router } from "express"
+import type { Request } from "express"
 
 import { config } from "../config.js"
-import { cardReady, orderFor, paymentsOf, paymentView, prices, productOf, testMode, toss, tossUnsure, withVat } from "../lib/billing.js"
-import { reconcileCards, recordApproval, settleCard, stuckCards } from "../lib/cardRecovery.js"
+import { cardReady, memberRefundReason, orderFor, partialRefundOf, paymentsOf, paymentView, prices, productOf, testMode, toss, tossUnsure, withVat } from "../lib/billing.js"
+import { reconcileCards, recordApproval, refundCard, settleCard, stuckCards } from "../lib/cardRecovery.js"
 import { HttpError } from "../lib/errors.js"
 // 브랜드가 살 수 있는 것으로, 각각 lib/billing.ts에 등록된다.
 import "../lib/feeSales.js"
@@ -14,10 +15,11 @@ import { isPro } from "../lib/plan.js"
 import { planTable } from "../lib/planTable.js"
 import { partnerRequestCategory, partnerRequestsPerMonth, partnerRequestsThisMonth, planOf } from "../lib/pro.js"
 import { isDemoAccount } from "../lib/reviews.js"
+import { requireOwner } from "../lib/team.js"
 import { text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
-import type { Account, Database } from "../types.js"
+import type { Account, Database, Payment } from "../types.js"
 
 // 계정이 내는 돈이다(lib/billing.ts). 산 것에 대한 주문을 Toss Payments의
 // 창에서 카드로 결제해 여기서 승인하거나, 운영자가 /admin에서 확인하는 계좌
@@ -176,6 +178,50 @@ async function forget(orderId: string, paymentKey: string) {
   delete payment.confirmingAt
   await saveDatabase().catch(() => {})
 }
+
+// 회원이 직접 환불하는 일은 30일에 한 번이다. 결제하고 7일 안의 전액 환불을 되풀이해
+// 쿠폰을 공짜로 돌리지 못하게 하며, 그 밖의 환불은 문의를 받아 운영자가 한다.
+const memberRefundEveryMs = 30 * 24 * 60 * 60 * 1000
+
+const refundedByMemberRecently = (database: Database, payment: Payment) => {
+  const since = new Date(Date.now() - memberRefundEveryMs).toISOString()
+  return paymentsOf(database).some(
+    (item) =>
+      item !== payment &&
+      item.accountId === payment.accountId &&
+      (item.refundReason === memberRefundReason || item.cancelReason === memberRefundReason) &&
+      (item.refundingAt ?? item.refundedAt ?? item.cancelledAt ?? "") > since,
+  )
+}
+
+// 회원이 직접 환불할 수 있는 자기 결제다. 돈이 돌아가는 일이라 계정 대표만 한다.
+function ownRefundable(req: Request) {
+  const account = requireOwner(req, requireAccount(req))
+  const database = getDatabase()
+  if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 환불할 수 없어요.")
+  const payment = paymentsOf(database).find((item) => item.id === String(req.params.id) && item.accountId === account.id)
+  if (!payment) throw new HttpError(404, "결제를 찾을 수 없어요.")
+  if (payment.status !== "paid") throw new HttpError(409, "결제가 끝난 주문만 환불할 수 있어요.")
+  if (payment.refundedAmount) throw new HttpError(409, "이미 남은 날만큼 돌려드린 결제예요.")
+  if (!productOf(payment.kind).memberRefund || !payment.paymentKey) throw new HttpError(409, "이 결제는 문의로 환불을 요청해 주세요.")
+  if (refundedByMemberRecently(database, payment)) throw new HttpError(409, "직접 환불은 30일에 한 번이에요. 문의로 요청해 주세요.")
+  return payment
+}
+
+// 지금 환불하면 돌려받는 금액이다. 회원이 확인한 뒤에 환불을 보낸다.
+billingRouter.get("/payments/:id/refund", (req, res) => {
+  const payment = ownRefundable(req)
+  const part = partialRefundOf(payment)
+  res.json({ amount: part?.amount ?? payment.amount, days: part?.days ?? null, whole: !part })
+})
+
+// 확인한 금액과 지금 금액이 같을 때만 환불한다. 날이 바뀌면 금액이 달라진다.
+billingRouter.post("/payments/:id/refund", async (req, res) => {
+  const payment = ownRefundable(req)
+  const due = partialRefundOf(payment)?.amount ?? payment.amount
+  if (Number(req.body?.amount) !== due) throw new HttpError(409, "환불 금액이 바뀌었어요. 다시 확인해 주세요.")
+  res.json({ payment: paymentView(await refundCard(payment.id, memberRefundReason)) })
+})
 
 // 파트너의 1:1 섭외 요청이다. 어떤 행사를 찾는지 적으면 운영자가 질문처럼
 // 답한다(한국 시간 기준 한 달에 두 번).
