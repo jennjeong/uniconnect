@@ -7547,3 +7547,49 @@ test("a member refunds their own Local card payment after seeing the amount, onc
     config.localOnSale = false
   }
 })
+
+test("guesses sent all at once can't slip past the PIN limit, and right PINs don't use it up", async () => {
+  const demo = new Set(Object.values(getDatabase().demoAccountIds))
+  const measurement = getDatabase().measurements.find((item) => demo.has(item.accountId))!
+  const right = measurement.sponsors[0]?.staffPin ?? measurement.staffPin
+  const session = (pin: string) => call("POST", `/check-in/${measurement.code}/staff/session`, { pin })
+  // 맞는 PIN은 한도(10번)를 넘게 써도 막히지 않는다.
+  for (let index = 0; index < 15; index += 1) assert.equal((await session(right)).status, 200)
+  // 한꺼번에 보낸 틀린 추측 중 10개만 비교되고 나머지는 429다.
+  const answers = await Promise.all(Array.from({ length: 40 }, () => session("000000")))
+  assert.equal(answers.filter((item) => item.status === 403).length, 10)
+  assert.equal(answers.filter((item) => item.status === 429).length, 30)
+  // 그 주소에서는 맞는 PIN도 막힌다.
+  assert.equal((await session(right)).status, 429)
+})
+
+test("login limits catch guesses spread across accounts, and a right password isn't counted", async () => {
+  await listedMember("spread@spread-cafe.kr", "spread-pass-123", "브랜드")
+  const attempt = (email: string, password: string) => call("POST", "/auth/login", { role: "브랜드", email, password })
+  // 주소 하나에서 계정을 바꿔 가며 시도하면 막힌다.
+  const statuses: number[] = []
+  for (let index = 0; index < 101; index += 1) statuses.push((await attempt(`nobody${index}@spread-cafe.kr`, "wrong-pass-123")).status)
+  assert.equal(statuses.filter((status) => status === 401).length, 100)
+  assert.equal(statuses.at(-1), 429)
+  await clearRateLimits()
+  // 주소를 바꿔 가며 한 계정을 노려도 막힌다.
+  const proxied = createApp()
+  proxied.set("trust proxy", true)
+  const other = proxied.listen(0)
+  await new Promise((resolve) => other.once("listening", resolve))
+  const spread: number[] = []
+  for (let index = 0; index < 101; index += 1) {
+    const response = await fetch(`http://127.0.0.1:${(other.address() as AddressInfo).port}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Forwarded-For": `10.1.0.${index}` },
+      body: JSON.stringify({ role: "브랜드", email: "nobody@spread-cafe.kr", password: "wrong-pass-123" }),
+    })
+    spread.push(response.status)
+  }
+  await new Promise((resolve) => other.close(resolve))
+  assert.equal(spread.filter((status) => status === 401).length, 100)
+  assert.equal(spread.at(-1), 429)
+  await clearRateLimits()
+  // 맞는 비밀번호는 몇 번이든 세지 않는다.
+  for (let index = 0; index < 12; index += 1) assert.equal((await attempt("spread@spread-cafe.kr", "spread-pass-123")).status, 200)
+})

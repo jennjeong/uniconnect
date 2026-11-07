@@ -139,6 +139,18 @@ export function createRateLimit({
     take: async (key: string, most = limit) => {
       if ((await hit(key)) > most) throw new HttpError(429, message)
     },
+    // `take`로 미리 센 것 중 하나를 돌려준다. 맞는 시도는 세지 않되 동시에 온 틀린 시도가
+    // 검사를 함께 빠져나가지 못하게, 먼저 세고 맞으면 돌려준다. 다른 시도의 집계는 남는다.
+    release: (key: string) =>
+      shared(
+        async (sql) => {
+          await sql("update uniconnect_limits set count = greatest(count - 1, 0) where name = $1 and key = $2 and reset_at > $3", [name, keyHash(key), Date.now()])
+        },
+        () => {
+          const bucket = live(key)
+          if (bucket) bucket.count = Math.max(bucket.count - 1, 0)
+        },
+      ),
     reset: (key: string) =>
       shared(
         async (sql) => {

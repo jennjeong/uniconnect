@@ -434,6 +434,8 @@ const en: Record<string, string> = {
     "The free plan sends up to {name} proposals a month. Switch to Growth to send without a limit.",
   "Growth는 브랜드 계정만 쓸 수 있어요.": "Growth is for brand accounts only.",
   "Campus Local은 브랜드 계정만 쓸 수 있어요.": "Campus Local is for brand accounts only.",
+  "이 계정의 로그인 시도가 너무 많아요. 15분 뒤에 다시 시도해 주세요.": "Too many login attempts on this account. Please try again in 15 minutes.",
+  "이 네트워크에서 로그인 시도가 너무 많아요. 15분 뒤에 다시 시도해 주세요.": "Too many login attempts from this network. Please try again in 15 minutes.",
   "Growth에 상시 쿠폰이 포함돼 있어 따로 결제하지 않아도 돼요.": "Growth already includes always-on coupons, so there's no need to pay separately.",
   "이용 기간이 끝나 돌려드릴 금액이 없어요.": "The paid period is over, so there's nothing left to refund.",
   "이미 남은 날만큼 돌려드린 결제예요.": "The remaining days of this payment have already been refunded.",

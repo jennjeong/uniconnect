@@ -50,6 +50,19 @@ const loginFailures = createRateLimit({
   windowMs: 15 * minute,
   message: "로그인 시도가 너무 많아요. 15분 뒤에 다시 시도해 주세요.",
 })
+// 위 한도는 주소를 바꿔 가며 한 계정을 노리거나 한 주소에서 계정을 바꿔 가며 시도하는
+// 것을 막지 못한다. 그래서 이메일과 주소에도 각각 넉넉한 한도를 둔다. 공용 와이파이의
+// 오타나 한 사람의 실수로는 닿지 않는 값이다. 성공한 로그인은 세지 않는다.
+const loginFailuresPerEmail = createRateLimit({
+  limit: 100,
+  windowMs: 15 * minute,
+  message: "이 계정의 로그인 시도가 너무 많아요. 15분 뒤에 다시 시도해 주세요.",
+})
+const loginFailuresPerClient = createRateLimit({
+  limit: 100,
+  windowMs: 15 * minute,
+  message: "이 네트워크에서 로그인 시도가 너무 많아요. 15분 뒤에 다시 시도해 주세요.",
+})
 
 // 만료된 코드는 틀린 추측이 아직 세어지는 동안 보관한다.
 const keepUntil = (entry: EmailCode) =>
@@ -398,6 +411,8 @@ authRouter.post("/login", async (req, res) => {
   // 느린 비밀번호 확인 전에 세므로, 한꺼번에 보낸 시도가 한도를 빠져나가지
   // 못한다. 성공하면 집계를 지운다.
   await loginFailures.take(limitKey)
+  await loginFailuresPerEmail.take(email)
+  await loginFailuresPerClient.take(clientKey(req))
   const database = getDatabase()
   const owner = database.accounts.find((item) => item.email === email)
   // 공동 관리자는 자기 비밀번호로 함께 운영하는 계정에 로그인한다.
@@ -416,7 +431,7 @@ authRouter.post("/login", async (req, res) => {
     if (hash && (await verifyPassword(password, hash))) throw new HttpError(403, "가입 서류를 확인하고 있어요. 승인되면 메일로 알려 드려요.")
     throw new HttpError(401, "이메일 또는 비밀번호가 올바르지 않아요.")
   }
-  await loginFailures.reset(limitKey)
+  await Promise.all([loginFailures.reset(limitKey), loginFailuresPerEmail.release(email), loginFailuresPerClient.release(clientKey(req))])
   if (account.suspendedAt) throw new HttpError(403, suspendedMessage)
   if (account.role !== role) {
     const label = account.role === "학생단체" ? "협찬 받기" : "협찬 하기"
