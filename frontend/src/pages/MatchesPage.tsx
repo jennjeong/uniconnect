@@ -150,7 +150,7 @@ export function MatchesPage({
       <ProposalControl
         done={proposals.includes(match.id)}
         status={statuses[match.id]}
-        label={t("협찬 제안 보내기")}
+        label={t("제안하기")}
         className="primary-button"
         onPropose={() => onPropose(match)}
         onCancel={() => onCancelProposal(match)}
