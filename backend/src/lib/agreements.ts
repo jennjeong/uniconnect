@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto"
 
+import { dropOrphanDisputes } from "./disputes.js"
 import { todayInKorea } from "./dates.js"
 import { feeState } from "./fees.js"
 import { HttpError } from "./errors.js"
@@ -366,12 +367,12 @@ export function agreementView(database: Database, agreement: Agreement, proposal
   }
 }
 
-// 제안이 없어진(한쪽이 탈퇴한) 계약서도 함께 지운다. 사진 폴더는 데이터를
-// 저장한 뒤 지우도록 돌려준다.
+// 제안이 없어진(한쪽이 탈퇴한) 계약서도 그 분쟁과 함께 지운다. 사진 폴더는
+// 데이터를 저장한 뒤 지우도록 돌려준다.
 export function dropOrphanAgreements(database: Database) {
   const gone = database.agreements.filter((agreement) => !acceptedProposal(database, agreement.id))
   database.agreements = database.agreements.filter((agreement) => !gone.includes(agreement))
-  return gone.map((agreement) => agreement.id)
+  return [...gone.map((agreement) => agreement.id), ...dropOrphanDisputes(database)]
 }
 
 export async function removeUploads(agreementIds: string[]) {

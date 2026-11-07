@@ -266,6 +266,18 @@ npm run dev
 
 현금 협찬금은 플랫폼 밖에서 오간다. 플랫폼은 돈을 다루지 않고, 계약서에 기록만 남긴다(`backend/src/lib/payouts.ts`, 지연 메일은 `lib/reminders.ts`). 현금 협찬액이 있는 계약서에 어느 쪽이든 지급 예정일을 적을 수 있고, 바꾸면 양쪽이 다시 확인한다. 브랜드는 지급을, 단체는 수령을 표시하며 상대가 메일을 받는다. 돈이 들어왔다면 브랜드의 표시 없이도 수령을 표시할 수 있다. 현금 협찬액이 바뀌면 앞선 표시는 지운다. 예정일이 지났는데 두 표시가 모두 없으면(`payout.late`) cron이 양쪽에 메일을 한 번 보낸다. 표시는 당사자의 말일 뿐이어서 플랫폼이 입금을 확인한 것은 아니다.
 
+### 협찬 분쟁
+
+약속이 지켜지지 않으면 어느 쪽이든 계약서에서 분쟁을 접수한다(`backend/src/routes/disputes.ts`, `lib/disputes.ts`). 접수하면 그때의 계약 내용(금액, 지급 기록, 할 일)을 그대로 남기고 상대에게 메일을 보낸다. 양쪽은 결론이 나기 전까지 말을 남기고(합쳐 20번, 고칠 수 없음) 사진이나 2MB 이하 PDF 증빙을 쪽마다 5개까지 올린다. 증빙은 양쪽 당사자와 운영자가 보며, 협찬 하나에 진행 중인 분쟁은 하나다. 접수한 쪽은 결론 전에 거둘 수 있고 기록은 남는다.
+
+운영자는 확인 시작을 알리고, 당사자에게 보이지 않는 메모를 남기며, 결론(`agreed` 합의, `opener` 접수한 쪽 입장 인정, `other` 상대 입장 인정, `undecided` 판단하지 않음)과 이유를 기록한다. 결론은 고칠 수 없고 **기록일 뿐이어서** 계정, 결제, 후기를 자동으로 바꾸지 않는다. 필요한 조치는 운영자가 따로 한다. 어떤 기준으로 결론을 낼지는 아직 정하지 않았다(#335, 사람이 정할 일).
+
+분쟁은 계약서와 함께 있다. 한쪽이 탈퇴해 계약서가 사라지면 분쟁과 증빙도 지운다. 백업을 복원해도 분쟁 기록은 되돌리지 않는다.
+
+### 학생단체 확인
+
+학생단체 대표는 대표자 이름, 재학 증명, 단체 소속 증빙을 낸다(`POST /api/groups/verification`, 사진이나 PDF, 합쳐 3MB까지). 운영자는 `/admin`의 `가입 승인`에서 서류를 보고 승인하거나 거절한다. 어느 쪽이든 서류는 그때 지우고, 승인하면 확인한 시각과 기한(365일)만 남는다(`lib/groupCheck.ts`). 기한이 남은 단체의 카드에는 `groupVerified`가 붙는다. 기한이 30일 이하로 남으면 다시 낼 수 있고, 로그인 이메일을 넘기면(대표가 바뀌면) 표시가 빠지며, 운영자가 이유를 적어 뗄 수도 있다. 표시는 서류를 본 시점의 확인이지 단체 활동을 보증하는 것이 아니다.
+
 ### 협찬 기록
 
 브랜드가 학생단체의 제안을 수락하거나 학생단체가 브랜드의 제안을 수락하면, 그 협찬이 브랜드의 협찬 기록에 남는다. 성과 분석은 행사 날이 지난 협찬을 보여 주고, 학생단체 행사에 연결된 협찬은 그 행사의 측정(쿠폰·방문·추정 매출)과 학생단체가 정한 협찬 가치·목표 ROAS를 그대로 따른다.
@@ -517,6 +529,19 @@ cp backend/.env.example backend/.env.local
 | PUT | `/api/agreements/:id/payout` | 협찬금 지급 예정일 `{ dueDate }` (`YYYY-MM-DD`, 지우면 `null`). 바꾸면 두 쪽 확인을 지움. 현금 협찬액이 없으면 409, 표시 뒤에는 409, 데모 계정 403 | 필요 |
 | POST · DELETE | `/api/agreements/:id/payout/paid` | 브랜드의 지급 표시와 되돌리기, 단체에게 알림. 단체가 수령을 표시한 뒤에는 되돌릴 수 없음 | 필요 |
 | POST · DELETE | `/api/agreements/:id/payout/received` | 단체의 수령 표시와 되돌리기, 브랜드에게 알림 | 필요 |
+| GET · POST | `/api/groups/verification` | 학생단체 확인 상태 `{ status: none·waiting·verified, verifiedAt, until, renewable }`와 신청 `{ representative, enrollment: { file, name }, membership: { file, name } }` → 202 (대표만, 데모 403, 하루 3번) | 필요 |
+| GET · POST | `/api/disputes` | 내 분쟁 목록(`?agreementId=`)과 접수 `{ agreementId, reason: payout·promise·cancel·other, detail }` → `{ dispute }` (하루 5번, 데모 403) | 필요 |
+| GET | `/api/disputes/:id` | 분쟁 하나 (당사자만) | 필요 |
+| POST | `/api/disputes/:id/statements` | 말 남기기 `{ text }` | 필요 |
+| POST | `/api/disputes/:id/evidence` | 증빙 올리기 `{ file, name }` | 필요 |
+| GET | `/api/disputes/:id/evidence/:evidenceId` | 증빙 받기 | 필요 |
+| POST | `/api/disputes/:id/withdraw` | 접수한 쪽이 거두기 | 필요 |
+| GET | `/api/admin/disputes` | 모든 분쟁(진행 중 먼저, 메모 포함) | `X-Admin-Token` |
+| GET | `/api/admin/disputes/:id/evidence/:evidenceId` | 증빙 받기 | `X-Admin-Token` |
+| POST | `/api/admin/disputes/:id/review` | 확인 시작, 양쪽에 알림 | `X-Admin-Token` |
+| POST | `/api/admin/disputes/:id/notes` | 운영자 메모 `{ text }` | `X-Admin-Token` |
+| POST | `/api/admin/disputes/:id/decision` | 결론 기록 `{ outcome: agreed·opener·other·undecided, note }` | `X-Admin-Token` |
+| DELETE | `/api/admin/accounts/:id/group-verified` | 학생단체 확인 표시 떼기 `{ reason }` | `X-Admin-Token` |
 | DELETE | `/api/agreements/:id/cancel` | 내 취소 요청을 거두거나 상대의 요청을 거절 | 필요 |
 | PATCH | `/api/agreements/:id/items/:itemId` | 내 할 일의 완료 `{ done }`와 증빙 링크 `{ links }` | 필요 |
 | POST · DELETE | `/api/agreements/:id/items/:itemId/photos(/:photo)` | 내 할 일의 증빙 사진 올리기 `{ image }`(PNG · JPG · WebP 데이터 URL) · 지우기 | 필요 |

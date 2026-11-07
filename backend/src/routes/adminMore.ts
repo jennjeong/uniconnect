@@ -25,6 +25,7 @@ import { approveReferralReward, referralRewardsOf, rejectReferralReward, tellRef
 import { linkShop, tellInviters } from "../lib/shopInvites.js"
 import { memberDetail } from "../lib/console.js"
 import { HttpError } from "../lib/errors.js"
+import { grantGroupCheck } from "../lib/groupCheck.js"
 import { notify } from "../lib/notices.js"
 import { limitStatus } from "../lib/rateLimit.js"
 import { isDemoAccount } from "../lib/reviews.js"
@@ -55,7 +56,7 @@ adminMoreRouter.get("/applications", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
   res.json({
-    applications: applicationsOf(database).map(({ id, kind, name, email, document, requestedAt, account, accountId, linkAccountId, invite }) => ({
+    applications: applicationsOf(database).map(({ id, kind, name, email, document, membership, representative, requestedAt, account, accountId, linkAccountId, invite }) => ({
       id,
       kind,
       name,
@@ -63,7 +64,16 @@ adminMoreRouter.get("/applications", async (req, res) => {
       document: { name: document.name, size: document.size },
       requestedAt,
       ...(account ? { brand: account.name, contact: account.contact } : {}),
-      ...(linkAccountId ? { brand: name } : {}),
+      ...(linkAccountId && kind !== "group" ? { brand: name } : {}),
+      // 대표자 이름과 학교를 서류와 맞춰 본다.
+      ...(kind === "group"
+        ? {
+            group: name,
+            representative,
+            school: database.accounts.find((item) => item.id === linkAccountId)?.school ?? "",
+            membership: membership && { name: membership.name, size: membership.size },
+          }
+        : {}),
       // 어느 가게를 잇는지 보고 서류와 맞춰 본다.
       ...(invite ? { placeUrl: database.invites.find((item) => item.code === invite)?.placeUrl } : {}),
       ...(accountId ? { team: database.accounts.find((item) => item.id === accountId)?.name ?? "" } : {}),
@@ -79,10 +89,13 @@ const applicationById = (database: Database, id: string) => {
 
 adminMoreRouter.get("/applications/:id/document", async (req, res) => {
   await requireAdmin(req)
-  const { id, document } = applicationById(getDatabase(), req.params.id)
-  const bytes = await photos().get(applicationFolder(id), document.file)
+  const { id, document, membership } = applicationById(getDatabase(), req.params.id)
+  // 학생단체 확인은 서류가 둘이다. ?part=membership이면 단체 소속 증빙이다.
+  const chosen = req.query.part === "membership" ? membership : document
+  if (!chosen) throw new HttpError(404, "서류를 찾을 수 없어요.")
+  const bytes = await photos().get(applicationFolder(id), chosen.file)
   if (!bytes) throw new HttpError(404, "서류를 찾을 수 없어요.")
-  res.type(photoType(document.file)).set("Cache-Control", "no-store").send(bytes)
+  res.type(photoType(chosen.file)).set("Cache-Control", "no-store").send(bytes)
 })
 
 // 답을 보낸다. 메일이 실패해도 결정을 되돌리지 않는다.
@@ -99,6 +112,17 @@ adminMoreRouter.post("/applications/:id/approve", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
   const application = applicationById(database, req.params.id)
+  if (application.kind === "group") {
+    const group = accountFor(database, application.linkAccountId ?? "")
+    group.groupVerified = grantGroupCheck()
+    database.applications = applicationsOf(database).filter((item) => item !== application)
+    logAdmin(database, "group-verified", { kind: "account", id: group.id })
+    await saveDatabase()
+    await photos().removeAll([applicationFolder(application.id)])
+    void notify(group, "account", "학생단체 확인이 끝났어요", ["서류를 확인했어요. 단체 카드와 상세 정보에 확인 표시가 붙어요. 제출한 서류는 지웠어요."], "/me")
+    res.json({ ok: true })
+    return
+  }
   let link: ReturnType<typeof linkShop> | undefined
   if (application.account) {
     const { account } = application
@@ -141,10 +165,15 @@ adminMoreRouter.post("/applications/:id/reject", async (req, res) => {
   const reason = text(req.body?.reason)
   if (!reason || reason.length > 200) throw new HttpError(400, "거절 사유를 200자 이하로 적어 주세요.")
   database.applications = applicationsOf(database).filter((item) => item !== application)
-  logAdmin(database, "application-rejected", { kind: "account", id: application.account?.id ?? application.accountId ?? "" }, application.email)
+  logAdmin(database, "application-rejected", { kind: "account", id: application.account?.id ?? application.accountId ?? application.linkAccountId ?? "" }, application.email)
   await saveDatabase()
   await photos().removeAll([applicationFolder(application.id)])
-  await tellApplicant(application.email, "[uniconnect] 가입을 승인하지 못했어요", `제출한 서류를 확인하지 못했어요. 사유: ${reason}`)
+  if (application.kind === "group") {
+    const group = database.accounts.find((item) => item.id === application.linkAccountId)
+    void notify(group, "account", "학생단체 확인을 마치지 못했어요", ["제출한 서류를 확인하지 못했어요. 서류는 지웠고, 다시 신청할 수 있어요.", `사유: ${reason}`], "/me")
+  } else {
+    await tellApplicant(application.email, "[uniconnect] 가입을 승인하지 못했어요", `제출한 서류를 확인하지 못했어요. 사유: ${reason}`)
+  }
   res.json({ ok: true })
 })
 
@@ -260,6 +289,21 @@ adminMoreRouter.put("/accounts/:id/business", async (req, res) => {
   }
   logAdmin(database, "business-set", { kind: "account", id: account.id }, req.body?.verified ? "확인" : "취소")
   await saveDatabase()
+  res.json({ account: memberDetail(database, account) })
+})
+
+// 학생단체의 확인 표시를 뗀다. 붙이는 것은 서류를 본 승인으로만 한다.
+adminMoreRouter.delete("/accounts/:id/group-verified", async (req, res) => {
+  await requireAdmin(req)
+  const database = getDatabase()
+  const account = accountFor(database, String(req.params.id))
+  const reason = text(req.body?.reason)
+  if (!reason || reason.length > 200) throw new HttpError(400, "이유를 200자 이하로 적어 주세요.")
+  if (!account.groupVerified) throw new HttpError(409, "확인 표시가 없는 단체예요.")
+  delete account.groupVerified
+  logAdmin(database, "group-unverified", { kind: "account", id: account.id }, reason)
+  await saveDatabase()
+  void notify(account, "account", "학생단체 확인 표시가 빠졌어요", ["운영자가 확인 표시를 뺐어요.", `사유: ${reason}`], "/me")
   res.json({ account: memberDetail(database, account) })
 })
 

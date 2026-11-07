@@ -1,3 +1,4 @@
+import { groupVerifiedNow } from "./groupCheck.js"
 import { todayInKorea } from "./dates.js"
 import { brandProfile } from "./brandProfile.js"
 import { distanceKm, offsetMetres, placeOf } from "./geo.js"
@@ -171,7 +172,8 @@ export function browse(database: Database, catalog: "brands" | "groups", account
       const reviews = reviewSummary(reviewsAbout(database, listing.id))
       const rated = reviews.count ? { ...scored, rating: reviews.average, reviewCount: reviews.count } : scored
       const owner = ownerOf(database, catalog, listing)
-      const verified = owner?.business ? { ...rated, businessVerified: true as const } : rated
+      const checked0 = owner?.business ? { ...rated, businessVerified: true as const } : rated
+      const verified = owner && groupVerifiedNow(owner) ? { ...checked0, groupVerified: true as const } : checked0
       // Pro 브랜드(lib/plan.ts)는 PRO 마크를 보인다.
       const pro = catalog === "brands" && owner && isPro(database, owner.id) ? { ...verified, pro: true as const } : verified
       // 진행 중인 상단 광고(lib/ads.ts)는 맨 앞에 두고 AD로 표시한다.

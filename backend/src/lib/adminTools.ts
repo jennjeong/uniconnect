@@ -39,6 +39,7 @@ export function adminLogRows(database: Database) {
     if (target.kind === "payment") return database.payments?.find((payment) => payment.id === target.id)?.orderName
     if (target.kind === "inquiry") return database.inquiries.find((inquiry) => inquiry.id === target.id)?.category
     if (target.kind === "announcement") return database.announcements?.find((item) => item.id === target.id)?.text.slice(0, 40)
+    if (target.kind === "dispute") return database.disputes?.find((item) => item.id === target.id)?.eventName
     return undefined
   }
   const actorName = (actor?: string) => database.operators?.find((operator) => operator.id === actor)?.name ?? null
@@ -81,6 +82,8 @@ export function keepThroughRestore(current: Database, restored: Database) {
   restored.operators = current.operators
   restored.operatorSessions = current.operatorSessions
   restored.payments = current.payments
+  // 분쟁은 기록이라 되돌리지 않는다. 증빙 파일도 복원되지 않는다.
+  restored.disputes = current.disputes
   restored.sessions = current.sessions.filter((session) => accounts.has(session.accountId))
   restored.foldedCounts = current.foldedCounts
   restored.adminLog = current.adminLog
@@ -114,6 +117,7 @@ const securityFields = [
   "memberInvites",
   "social",
   "calendarFeed",
+  "groupVerified",
 ] as const
 
 function keepAccountSecurity(account: Account, now: Account, restored: Database) {

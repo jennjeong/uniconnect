@@ -59,6 +59,8 @@ export type Match = {
   // 브랜드 카탈로그만. 그 계정의 사업자등록이 확인되었다는 표시로
   // (Account.business) 카탈로그를 내놓을 때 계산한다.
   businessVerified?: true
+  // 단체 카탈로그만. 운영자가 서류로 확인했고 기한이 남았다는 표시다(Account.groupVerified).
+  groupVerified?: true
   // 둘러보는 계정(캠퍼스나 매장)에서 이 리스팅까지의 km로, 카탈로그를 내놓을 때
   // 계산한다(lib/geo.ts). 어느 한쪽 위치를 모르면 없다.
   distanceKm?: number
@@ -170,6 +172,9 @@ export type Account = {
   // 번호만 두어 사업자 하나가 계정 하나만 확인하게 하며, 대표자 이름과 개업일은
   // 보관하지 않는다.
   business?: { number: string; verifiedAt: string }
+  // 운영자가 서류로 확인한 학생단체와 그 기한이다(lib/groupCheck.ts). 서류는 남기지
+  // 않는다. 로그인 이메일을 넘기면(대표가 바뀌면) 지운다.
+  groupVerified?: { verifiedAt: string; until: string }
   // 계정이 읽은 알림 벨 항목으로(앱의 lib/notifications.ts), 마지막으로 보낸 그대로다.
   // 아직 보이는 항목만 두어 목록이 벨만큼만 짧게 유지된다.
   readNotices?: string[]
@@ -237,11 +242,16 @@ export type TeamMember = {
 // 운영자를 기다리는 가입이다(lib/applications.ts).
 export type Application = {
   id: string
-  kind: "shop" | "member"
+  kind: "shop" | "member" | "group"
   name: string
   email: string
   // 신청이 보인 사진이나 PDF로, 결정될 때까지 lib/photos.ts로 보관한다.
   document: { file: string; name: string; size: number }
+  // 학생단체 확인(kind "group")에서만: document는 대표자의 재학 증명이고, 이것은
+  // 단체 소속 증빙이다. 대표자 이름은 서류와 맞춰 보는 데 쓰고 결정되면 함께 없어진다.
+  // 대상 계정은 linkAccountId다.
+  membership?: { file: string; name: string; size: number }
+  representative?: string
   requestedAt: string
   // 매장은 만들어질 계정과, 그 계정이 온 초대를 담는다.
   account?: Account
@@ -703,6 +713,48 @@ export type Agreement = {
   updatedAt: string
 }
 
+export type DisputeReason = "payout" | "promise" | "cancel" | "other"
+export type DisputeOutcome = "agreed" | "opener" | "other" | "undecided"
+
+export type DisputeEvent = {
+  at: string
+  by: ChatSide | "admin"
+  kind: "opened" | "statement" | "evidence" | "reviewing" | "withdrawn" | "decided"
+  text?: string
+  evidenceId?: string
+}
+
+// 협찬 분쟁 하나다(lib/disputes.ts). 이름은 접수할 때의 것을 남긴다.
+export type Dispute = {
+  id: string
+  // 계약서이자 제안의 id다.
+  agreementId: string
+  eventName: string
+  groupName: string
+  brandName: string
+  // 쪽마다의 계정 id다.
+  parties: Record<ChatSide, string>
+  openedBy: ChatSide
+  reason: DisputeReason
+  detail: string
+  status: "open" | "reviewing" | "closed"
+  // 접수할 때의 계약 내용이다.
+  snapshot: {
+    canceled: boolean
+    value?: { cash: number; inKind: number }
+    payout?: { dueDate?: string; paidAt?: string; paidAmount?: number; receivedAt?: string }
+    items: { side: ChatSide; label: string; doneAt?: string }[]
+  }
+  evidence: { id: string; side: ChatSide; file: string; name: string; size: number; addedAt: string }[]
+  events: DisputeEvent[]
+  // 운영자끼리만 보는 메모다.
+  notes?: { at: string; text: string }[]
+  // 끝난 까닭이다. 접수한 쪽이 거두면 note 없이 "withdrawn"이다.
+  decision?: { outcome: DisputeOutcome | "withdrawn"; note?: string; at: string }
+  createdAt: string
+  updatedAt: string
+}
+
 export type Payout = {
   // 지급 예정일 "YYYY-MM-DD". 계약 내용이라 바꾸면 양쪽이 다시 확인한다.
   dueDate?: string
@@ -910,6 +962,8 @@ export type Database = {
   referralRewards?: ReferralReward[]
   // 운영자가 보는 회원의 신고다.
   reports: AbuseReport[]
+  // 협찬 분쟁의 접수부터 결론까지의 기록이다(lib/disputes.ts).
+  disputes?: Dispute[]
   // 계정마다 차단한 계정이며 계정 id로 구분한다. 둘은 서로의 리스팅, 제안,
   // 대화를 더 이상 보지 못한다.
   blocks: Record<string, string[]>
@@ -992,7 +1046,7 @@ export type AdminLogEntry = {
   actor?: string
   action: AdminAction
   target: {
-    kind: "operator" | "backup" | "account" | "payment" | "inquiry" | "report" | "announcement" | "proposal" | "post" | "review" | "site"
+    kind: "operator" | "backup" | "account" | "payment" | "inquiry" | "report" | "announcement" | "proposal" | "post" | "review" | "site" | "dispute"
     id: string
   }
   // 신고의 처리 결과 같은, 방법에 대한 짧은 말이다.
@@ -1012,6 +1066,11 @@ export type AdminAction =
   | "referral-approved"
   | "referral-rejected"
   | "business-set"
+  | "group-verified"
+  | "group-unverified"
+  | "dispute-reviewing"
+  | "dispute-note"
+  | "dispute-decided"
   | "partners-granted"
   | "demo-reset"
   | "proposal-nudged"

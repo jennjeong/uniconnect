@@ -760,6 +760,62 @@ const en: Record<string, string> = {
   "계정 이용 제한이 풀렸어요": "Your account restriction has been lifted",
   "운영자가 계정 이용 제한을 풀었어요. 다시 로그인할 수 있어요.": "An operator lifted the restriction on your account. You can log in again.",
   "운영자가 약관을 어긴 일을 확인했어요.": "An operator found a breach of the terms.",
+
+  // routes/groups.ts, 학생단체 확인
+  "확인 신청을 너무 많이 보냈어요. 내일 다시 시도해 주세요.": "You've sent too many verification requests. Please try again tomorrow.",
+  "학생단체만 신청할 수 있어요.": "Only student groups can apply.",
+  "데모 계정은 신청할 수 없어요.": "Demo accounts can't apply.",
+  "이미 확인된 단체예요.": "This group is already verified.",
+  "대표자 이름을 40자 이하로 적어 주세요.": "Please enter the representative's name in 40 characters or fewer.",
+  "대표자의 재학 증명 서류를 올려 주세요.": "Please upload the representative's proof of enrollment.",
+  "단체 소속을 보여 주는 서류를 올려 주세요.": "Please upload a document showing membership of the group.",
+  "서류 둘을 합쳐 3MB 이하로 올려 주세요.": "The two documents must total 3MB or less.",
+  "학생단체 확인이 끝났어요": "Your student group is verified",
+  "서류를 확인했어요. 단체 카드와 상세 정보에 확인 표시가 붙어요. 제출한 서류는 지웠어요.":
+    "We checked your documents. Your group's card and details now show a verified mark. The documents you submitted have been deleted.",
+  "학생단체 확인을 마치지 못했어요": "We couldn't verify your student group",
+  "제출한 서류를 확인하지 못했어요. 서류는 지웠고, 다시 신청할 수 있어요.":
+    "We couldn't confirm the documents you submitted. They have been deleted, and you can apply again.",
+  "학생단체 확인 표시가 빠졌어요": "Your student group's verified mark was removed",
+  "운영자가 확인 표시를 뺐어요.": "An operator removed the verified mark.",
+  "이유를 200자 이하로 적어 주세요.": "Please give a reason in 200 characters or fewer.",
+  "확인 표시가 없는 단체예요.": "This group has no verified mark.",
+
+  // routes/disputes.ts
+  "분쟁을 너무 많이 접수했어요. 내일 다시 시도해 주세요.": "You've opened too many disputes. Please try again tomorrow.",
+  "데모 계정은 분쟁을 접수할 수 없어요.": "Demo accounts can't open disputes.",
+  "분쟁을 찾을 수 없어요.": "We couldn't find that dispute.",
+  "이미 끝난 분쟁이에요.": "This dispute has already ended.",
+  "1,000자 이하로 적어 주세요.": "Please keep it to 1,000 characters or fewer.",
+  "계정이 없는 상대라 분쟁을 접수할 수 없어요.": "The other side has no account, so you can't open a dispute.",
+  "어떤 일인지 골라 주세요.": "Please choose what happened.",
+  "어떤 일이 있었는지 적어 주세요.": "Please describe what happened.",
+  "이 협찬에는 진행 중인 분쟁이 있어요.": "This sponsorship already has a dispute in progress.",
+  "협찬 분쟁이 접수됐어요": "A sponsorship dispute was opened",
+  "{name}에서 '{name}' 협찬 분쟁을 접수했어요. 내용을 보고 입장을 남겨 주세요.":
+    "{name} opened a sponsorship dispute about '{name}'. Please read it and give your side.",
+  "남길 말을 적어 주세요.": "Please write what you'd like to say.",
+  "남길 수 있는 말을 모두 썼어요. 운영자의 결론을 기다려 주세요.":
+    "You've used all the statements available. Please wait for the operator's conclusion.",
+  "협찬 분쟁에 새 내용이 있어요": "There's something new in a sponsorship dispute",
+  "{name}에서 '{name}' 분쟁에 말을 남겼어요.": "{name} added a statement to the dispute about '{name}'.",
+  "{name}에서 '{name}' 분쟁에 증빙을 올렸어요.": "{name} added evidence to the dispute about '{name}'.",
+  "증빙은 한쪽마다 5개까지 올릴 수 있어요.": "Each side can upload up to 5 pieces of evidence.",
+  "증빙을 사진이나 PDF로 올려 주세요.": "Please upload evidence as a photo or PDF.",
+  "증빙을 찾을 수 없어요.": "We couldn't find that evidence.",
+  "접수한 쪽만 거둘 수 있어요.": "Only the side that opened the dispute can withdraw it.",
+  "협찬 분쟁이 거둬졌어요": "A sponsorship dispute was withdrawn",
+  "{name}에서 '{name}' 분쟁을 거뒀어요.": "{name} withdrew the dispute about '{name}'.",
+  "이미 확인 중이거나 끝난 분쟁이에요.": "This dispute is already under review or has ended.",
+  "운영자가 협찬 분쟁을 확인하고 있어요": "An operator is reviewing a sponsorship dispute",
+  "'{name}' 분쟁을 운영자가 확인하기 시작했어요.": "An operator has started reviewing the dispute about '{name}'.",
+  "메모를 적어 주세요.": "Please write a note.",
+  "메모를 더 남길 수 없어요.": "No more notes can be added.",
+  "결론을 골라 주세요.": "Please choose a conclusion.",
+  "결론의 이유를 적어 주세요.": "Please give the reason for the conclusion.",
+  "협찬 분쟁의 결론이 기록됐어요": "A conclusion was recorded for a sponsorship dispute",
+  "'{name}' 분쟁에 운영자가 결론을 기록했어요. 계약서에서 확인해 주세요.":
+    "An operator recorded a conclusion on the dispute about '{name}'. Please check it on the agreement.",
 }
 
 export default en

@@ -6,7 +6,8 @@ import { text } from "./validation.js"
 import type { Application, Database } from "../types.js"
 
 // 운영자가 세기 전에 확인하는 가입(/admin의 가입 승인): 회사 이메일이 없는
-// 가게 주인이 내는 사업 서류, 공동 관리자가 내는 재직 증빙. 운영자가
+// 가게 주인이 내는 사업 서류, 공동 관리자가 내는 재직 증빙, 학생단체가 내는
+// 대표자 재학 증명과 소속 증빙(lib/groupCheck.ts). 운영자가
 // 승인하기 전에는 아무것도 생기지 않는다. 계정이나 공동 관리자는 통째로
 // 여기서 기다리고 이메일은 사용 중으로 친다. 서류는 결정이 나면 지운다.
 export const applicationsOf = (database: Database) => (database.applications ??= [])
@@ -35,7 +36,8 @@ export async function holdApplication(
   database: Database,
   save: () => Promise<void>,
   document: ReturnType<typeof parseDocument>,
-  fields: Omit<Application, "id" | "document" | "requestedAt">,
+  fields: Omit<Application, "id" | "document" | "membership" | "requestedAt">,
+  membership?: ReturnType<typeof parseDocument>,
 ) {
   const id = randomUUID()
   // 서류를 보관하기 전에 신청부터 남긴다. 그래야 동시에 온 요청이 중복 확인을
@@ -44,10 +46,12 @@ export async function holdApplication(
     ...fields,
     id,
     document: { file: document.file, name: document.name, size: document.bytes.length },
+    ...(membership ? { membership: { file: membership.file, name: membership.name, size: membership.bytes.length } } : {}),
     requestedAt: new Date().toISOString(),
   })
   try {
     await photos().put(applicationFolder(id), document.file, document.bytes)
+    if (membership) await photos().put(applicationFolder(id), membership.file, membership.bytes)
     await save()
   } catch (error) {
     const held = applicationsOf(database)

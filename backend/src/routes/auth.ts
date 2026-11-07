@@ -844,6 +844,8 @@ authRouter.post("/email", async (req, res) => {
   const previous = account.email
   database.emailCodes = database.emailCodes.filter((item) => item !== entry)
   account.email = email
+  // 이메일을 넘기면 대표가 바뀐 것이라, 앞 대표로 받은 단체 확인은 이어지지 않는다.
+  delete account.groupVerified
   // 주인의 다른 로그인은 끝나고, 공동 관리자의 로그인은 남는다.
   const keep = req.sessionToken ? hashToken(req.sessionToken) : ""
   database.sessions = database.sessions.filter(

@@ -6962,7 +6962,7 @@ test("the operators' console lists what needs them, members with their record, a
     assert.equal((await fetch(`${baseUrl}/admin/overview`)).status, 403)
     const seen = (await admin("/overview")).data
     assert.equal(seen.weekly.length, 8)
-    assert.deepEqual(Object.keys(seen.attention).sort(), ["alerts", "applications", "cancels", "inquiries", "referrals", "reports", "stale", "suspended", "transfers"])
+    assert.deepEqual(Object.keys(seen.attention).sort(), ["alerts", "applications", "cancels", "disputes", "inquiries", "referrals", "reports", "stale", "suspended", "transfers"])
     assert.deepEqual(Object.keys(seen.revenue.byKind).sort(), ["ad", "fee", "local", "pro", "report"])
 
     await signUpMember("console@syu.ac.kr", "console-pass-123")
@@ -8384,4 +8384,216 @@ test("card confirmation refuses an approval for another order or an oversized ke
     config.tossSecretKey = saved.secret
     config.adminToken = saved.admin
   }
+})
+
+// 운영자 콘솔 호출이다.
+async function asAdmin<T>(run: (admin: (method: string, route: string, body?: unknown) => ReturnType<typeof call>) => Promise<T>) {
+  const saved = config.adminToken
+  config.adminToken = "test-admin-token"
+  try {
+    return await run(async (method, route, body) => {
+      const response = await fetch(`${baseUrl}/admin${route}`, {
+        method,
+        headers: { "X-Admin-Token": "test-admin-token", ...(body === undefined ? {} : { "Content-Type": "application/json" }) },
+        body: body === undefined ? undefined : JSON.stringify(body),
+      })
+      const raw = await response.text()
+      let data: any = null
+      try {
+        data = raw ? JSON.parse(raw) : null
+      } catch {
+        data = raw
+      }
+      return { status: response.status, data }
+    })
+  } finally {
+    config.adminToken = saved
+  }
+}
+
+test("an operator verifies a student group from its documents, which are then deleted", async () => {
+  const { photos } = await import("./lib/photos.js")
+  const { applicationFolder } = await import("./lib/applications.js")
+  const { token: group } = await listedMember("checked-club@syu.ac.kr", "checked-pass-123")
+  const account = () => getDatabase().accounts.find((item) => item.email === "checked-club@syu.ac.kr")!
+  const body = { representative: "김대표", enrollment: proofDocument, membership: { ...proofDocument, name: "소속.pdf" } }
+
+  assert.equal((await call("GET", "/groups/verification")).status, 401)
+  assert.equal((await call("GET", "/groups/verification", undefined, group)).data.status, "none")
+  assert.equal((await call("POST", "/groups/verification", { ...body, membership: undefined }, group)).status, 400)
+  assert.equal((await call("POST", "/groups/verification", { ...body, representative: "" }, group)).status, 400)
+  const { token: brand } = await listedMember("checked@checked-cafe.kr", "checked-pass-123", "브랜드")
+  assert.equal((await call("POST", "/groups/verification", body, brand)).status, 403)
+
+  assert.equal((await call("POST", "/groups/verification", body, group)).status, 202)
+  assert.equal((await call("POST", "/groups/verification", body, group)).status, 409)
+  assert.equal((await call("GET", "/groups/verification", undefined, group)).data.status, "waiting")
+  const held = () => getDatabase().applications!.find((item) => item.linkAccountId === account().id)
+  const first = held()!
+  assert.equal(account().groupVerified, undefined)
+
+  await asAdmin(async (admin) => {
+    const row = (await admin("GET", "/applications")).data.applications.find((item: { id: string }) => item.id === first.id)
+    assert.equal(row.kind, "group")
+    assert.equal(row.representative, "김대표")
+    assert.equal(row.membership.name, "소속.pdf")
+    assert.equal(row.brand, undefined)
+    assert.equal((await admin("GET", `/applications/${first.id}/document?part=membership`)).status, 200)
+    // 거절하면 서류를 지우고 다시 낼 수 있다.
+    assert.equal((await admin("POST", `/applications/${first.id}/reject`, { reason: "학교가 달라요" })).status, 200)
+    assert.equal(await photos().get(applicationFolder(first.id), first.document.file), undefined)
+    assert.equal(account().groupVerified, undefined)
+
+    assert.equal((await call("POST", "/groups/verification", body, group)).status, 202)
+    const second = held()!
+    assert.equal((await admin("POST", `/applications/${second.id}/approve`)).status, 200)
+    assert.equal(await photos().get(applicationFolder(second.id), second.document.file), undefined)
+    assert.equal(await photos().get(applicationFolder(second.id), second.membership!.file), undefined)
+  })
+
+  // 표시가 붙고, 서류의 흔적은 남지 않는다.
+  const verification = (await call("GET", "/groups/verification", undefined, group)).data
+  assert.equal(verification.status, "verified")
+  assert.equal(verification.renewable, false)
+  assert.equal(held(), undefined)
+  assert.equal((await call("POST", "/groups/verification", body, group)).status, 409)
+  const listed = () => call("GET", "/groups", undefined, brand).then(({ data }) => data.groups.find((item: { id: string }) => item.id === account().groupId))
+  assert.equal((await listed()).groupVerified, true)
+
+  // 기한이 지나면 표시가 빠지고 다시 낼 수 있다.
+  const { groupCheckRenewable, groupVerifiedNow } = await import("./lib/groupCheck.js")
+  const until = new Date(account().groupVerified!.until)
+  assert.equal(groupVerifiedNow(account(), new Date(until.getTime() + 1000)), false)
+  assert.equal(groupCheckRenewable(account(), new Date(until.getTime() - 86_400_000)), true)
+
+  // 복원해도 뗀 표시가 돌아오지 않는다.
+  const { keepThroughRestore } = await import("./lib/adminTools.js")
+  const backup = JSON.parse(JSON.stringify(getDatabase()))
+  await asAdmin(async (admin) => {
+    assert.equal((await admin("DELETE", `/accounts/${account().id}/group-verified`, {})).status, 400)
+    assert.equal((await admin("DELETE", `/accounts/${account().id}/group-verified`, { reason: "대표가 졸업했어요" })).status, 200)
+    assert.equal((await admin("DELETE", `/accounts/${account().id}/group-verified`, { reason: "다시" })).status, 409)
+  })
+  assert.equal((await listed()).groupVerified, undefined)
+  keepThroughRestore(getDatabase(), backup)
+  assert.equal(backup.accounts.find((item: { id: string }) => item.id === account().id).groupVerified, undefined)
+})
+
+test("handing over the login email drops the student group's verified mark", async () => {
+  const { grantGroupCheck } = await import("./lib/groupCheck.js")
+  const group = await signUpMember("handover-club@syu.ac.kr", "handover-pass-123")
+  const account = getDatabase().accounts.find((item) => item.email === "handover-club@syu.ac.kr")!
+  account.groupVerified = grantGroupCheck()
+  const sent = await call("POST", "/auth/email/code", { email: "handover-next@syu.ac.kr", password: "handover-pass-123" }, group)
+  assert.equal(sent.status, 200, JSON.stringify(sent.data))
+  assert.equal((await call("POST", "/auth/email", { email: "handover-next@syu.ac.kr", code: sent.data.devCode }, group)).status, 200)
+  assert.equal(account.groupVerified, undefined)
+})
+
+test("a sponsorship dispute is recorded from opening to conclusion, and only its two sides see it", async () => {
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const { photos } = await import("./lib/photos.js")
+  const { disputeFolder } = await import("./lib/disputes.js")
+  const { translate } = await import("./lib/i18n.js")
+  const group = await signUpMember("dispute-club@syu.ac.kr", "dispute-pass-123")
+  const groupId = getDatabase().accounts.find((account) => account.email === "dispute-club@syu.ac.kr")!.id
+  const { token: brand, listingId } = await listedMember("dispute@dispute-cafe.kr", "dispute-pass-123", "브랜드")
+  const { token: stranger } = await listedMember("stranger@stranger-cafe.kr", "dispute-pass-123", "브랜드")
+  await call("POST", "/events", { name: "분쟁 공연", date: addDays(todayInKorea(), 40), people: "150명", types: ["제품"] }, group)
+  await call("POST", "/proposals", { matchId: listingId }, group)
+  const { id: agreementId } = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
+  await call("POST", `/requests/${agreementId}/accept`, undefined, brand)
+  const open = { agreementId, reason: "payout", detail: "지급일이 지났는데 받지 못했어요." }
+
+  assert.equal((await call("POST", "/disputes", open)).status, 401)
+  assert.equal((await call("POST", "/disputes", open, stranger)).status, 404)
+  assert.equal((await call("POST", "/disputes", { ...open, reason: "nope" }, group)).status, 400)
+  assert.equal((await call("POST", "/disputes", { ...open, detail: " " }, group)).status, 400)
+  assert.equal((await call("POST", "/disputes", { ...open, detail: "가".repeat(1001) }, group)).status, 400)
+
+  const opened = await call("POST", "/disputes", open, group)
+  assert.equal(opened.status, 201)
+  const id = opened.data.dispute.id
+  assert.equal(opened.data.dispute.side, "group")
+  assert.equal(opened.data.dispute.canWithdraw, true)
+  assert.ok(opened.data.dispute.snapshot.items.length > 0)
+  assert.equal((await call("POST", "/disputes", open, brand)).status, 409)
+
+  // 계약서가 바뀌어도 접수할 때의 내용은 그대로다.
+  const stored = () => getDatabase().disputes!.find((item) => item.id === id)!
+  const label = stored().snapshot.items[0].label
+  getDatabase().agreements.find((item) => item.id === agreementId)!.items[0].label = "나중에 고친 일"
+  assert.equal(stored().snapshot.items[0].label, label)
+
+  // 다른 회원에게는 있는지도 보이지 않는다.
+  assert.equal((await call("GET", `/disputes/${id}`, undefined, stranger)).status, 404)
+  assert.equal((await call("POST", `/disputes/${id}/statements`, { text: "끼어들기" }, stranger)).status, 404)
+  assert.equal((await call("POST", `/disputes/${id}/evidence`, proofDocument, stranger)).status, 404)
+  assert.deepEqual((await call("GET", "/disputes", undefined, stranger)).data.disputes, [])
+  assert.equal((await call("GET", `/disputes?agreementId=${agreementId}`, undefined, brand)).data.disputes.length, 1)
+
+  // 양쪽이 말과 증빙을 더한다.
+  assert.equal((await call("POST", `/disputes/${id}/statements`, { text: "" }, brand)).status, 400)
+  assert.equal((await call("POST", `/disputes/${id}/statements`, { text: "이미 보냈어요." }, brand)).status, 201)
+  assert.equal((await call("POST", `/disputes/${id}/evidence`, { file: "data:text/html;base64,PGI+", name: "x.html" }, brand)).status, 400)
+  const added = await call("POST", `/disputes/${id}/evidence`, { ...proofDocument, name: "이체확인증.html" }, brand)
+  assert.equal(added.status, 201)
+  const evidence = added.data.dispute.evidence[0]
+  assert.equal(evidence.name, "이체확인증.pdf")
+  assert.equal(evidence.file, undefined)
+  const file = await fetch(`${baseUrl}/disputes/${id}/evidence/${evidence.id}`, { headers: { Authorization: `Bearer ${group}` } })
+  assert.equal(file.status, 200)
+  assert.equal(file.headers.get("content-type"), "application/pdf")
+  assert.equal(file.headers.get("cache-control"), "no-store")
+  assert.equal((await fetch(`${baseUrl}/disputes/${id}/evidence/${evidence.id}`, { headers: { Authorization: `Bearer ${stranger}` } })).status, 404)
+  for (let index = 1; index < 5; index += 1) {
+    assert.equal((await call("POST", `/disputes/${id}/evidence`, proofDocument, brand)).status, 201)
+  }
+  assert.equal((await call("POST", `/disputes/${id}/evidence`, proofDocument, brand)).status, 409)
+  assert.equal((await call("POST", `/disputes/${id}/withdraw`, undefined, brand)).status, 403)
+
+  // 운영자가 확인하고 메모를 남기고 결론을 기록한다. 메모는 당사자에게 보이지 않는다.
+  const reports = (await call("GET", `/disputes/${id}`, undefined, group)).data.dispute
+  assert.equal(reports.notes, undefined)
+  assert.equal(reports.parties, undefined)
+  const suspendedBefore = getDatabase().accounts.filter((item) => item.suspendedAt).length
+  await asAdmin(async (admin) => {
+    assert.equal((await fetch(`${baseUrl}/admin/disputes`)).status, 403)
+    assert.ok((await admin("GET", "/overview")).data.attention.disputes >= 1)
+    assert.equal((await admin("POST", `/disputes/${id}/review`)).status, 200)
+    assert.equal((await admin("POST", `/disputes/${id}/review`)).status, 409)
+    assert.equal((await admin("POST", `/disputes/${id}/notes`, { text: "이체 내역 확인 필요" })).status, 201)
+    const row = (await admin("GET", "/disputes")).data.disputes.find((item: { id: string }) => item.id === id)
+    assert.equal(row.notes[0].text, "이체 내역 확인 필요")
+    assert.equal(row.evidence[0].file, undefined)
+    assert.equal((await admin("GET", `/disputes/${id}/evidence/${evidence.id}`)).status, 200)
+    assert.equal((await admin("POST", `/disputes/${id}/decision`, { outcome: "bad", note: "이유" })).status, 400)
+    assert.equal((await admin("POST", `/disputes/${id}/decision`, { outcome: "agreed" })).status, 400)
+    assert.equal((await admin("POST", `/disputes/${id}/decision`, { outcome: "agreed", note: "양쪽이 다시 지급하기로 했어요." })).status, 200)
+    assert.equal((await admin("POST", `/disputes/${id}/decision`, { outcome: "other", note: "뒤집기" })).status, 409)
+  })
+  const closed = (await call("GET", `/disputes/${id}`, undefined, brand)).data.dispute
+  assert.equal(closed.status, "closed")
+  assert.equal(closed.decision.outcome, "agreed")
+  assert.equal(closed.notes, undefined)
+  assert.deepEqual(closed.events.map((event: { kind: string }) => event.kind).slice(0, 2), ["opened", "statement"])
+  assert.equal(closed.events.at(-1).kind, "decided")
+  // 결론은 기록일 뿐이다.
+  assert.equal(getDatabase().accounts.filter((item) => item.suspendedAt).length, suspendedBefore)
+  assert.equal((await call("POST", `/disputes/${id}/statements`, { text: "더" }, group)).status, 409)
+  assert.equal((await call("POST", `/disputes/${id}/evidence`, proofDocument, group)).status, 409)
+
+  // 끝나면 새로 접수할 수 있고, 접수한 쪽은 거둘 수 있다.
+  const again = await call("POST", "/disputes", open, brand)
+  assert.equal(again.status, 201)
+  const withdrawn = await call("POST", `/disputes/${again.data.dispute.id}/withdraw`, undefined, brand)
+  assert.equal(withdrawn.data.dispute.decision.outcome, "withdrawn")
+  assert.equal(translate("하나에서 '둘' 분쟁을 거뒀어요.", "en"), "하나 withdrew the dispute about '둘'.")
+
+  // 한쪽이 탈퇴해 계약서가 사라지면 분쟁과 증빙도 지운다.
+  const held = stored().evidence[0]
+  assert.ok(await photos().get(disputeFolder(id), held.file))
+  assert.equal((await call("DELETE", "/auth/account", { password: "dispute-pass-123" }, brand)).status < 300, true)
+  assert.equal(getDatabase().disputes!.some((item) => item.id === id), false)
+  assert.equal(await photos().get(disputeFolder(id), held.file), undefined)
 })

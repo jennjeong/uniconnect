@@ -1,3 +1,4 @@
+import { groupVerifiedNow } from "./groupCheck.js"
 import { agreementState, duplicateIds, duplicatesOf, fieldAlerts, staleProposals, timeline } from "./adminInsights.js"
 import { tagsOf } from "./adminTools.js"
 import { keptAmount, paymentsOf } from "./billing.js"
@@ -54,6 +55,7 @@ export function overview(database: Database, now = new Date()) {
       // 보류 중인 문의는 다른 일을 기다리므로 여기서는 세지 않는다.
       inquiries: database.inquiries.filter((inquiry) => !inquiry.answer && !database.inquiryHandling?.[inquiry.id]?.heldAt).length,
       reports: database.reports.filter((report) => !report.resolution).length,
+      disputes: (database.disputes ?? []).filter((dispute) => dispute.status !== "closed").length,
       transfers: paymentsOf(database).filter((payment) => payment.status === "pending" && payment.transferRequestedAt).length,
       suspended: database.accounts.filter((account) => account.suspendedAt).length,
       stale: staleProposals(database, now).length,
@@ -91,6 +93,7 @@ export function memberRow(database: Database, account: Account) {
     sent: [...database.requests, ...database.offers].filter((item) => item.fromAccountId === account.id).length,
     sponsorships: (database.sponsorships[account.id] ?? []).length,
     business: Boolean(account.business),
+    groupVerified: groupVerifiedNow(account),
     tags: tagsOf(database, account.id),
     duplicate: duplicateIds(database).has(account.id),
   }

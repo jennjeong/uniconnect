@@ -43,6 +43,7 @@ import { requestsRouter } from "./routes/requests.js"
 import { billingRouter } from "./routes/billing.js"
 import { localRouter } from "./routes/local.js"
 import { boardRouter } from "./routes/board.js"
+import { adminDisputesRouter, disputesRouter } from "./routes/disputes.js"
 import { blocksRouter, reportsRouter } from "./routes/reports.js"
 import { reviewsRouter } from "./routes/reviews.js"
 import { savedRouter } from "./routes/saved.js"
@@ -136,6 +137,10 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   app.use("/api/auth/signup", jsonBody("3mb"))
   app.use("/api/invites/:code/accept", jsonBody("3mb"))
   app.use("/api/team/join", jsonBody("3mb"))
+  // 학생단체 확인은 서류가 둘이고 합쳐 3MB까지다(lib/groupCheck.ts).
+  app.use("/api/groups/verification", jsonBody("4.3mb"))
+  // 분쟁의 증빙은 2MB 이하 사진이나 PDF다(routes/disputes.ts).
+  app.use("/api/disputes/:id/evidence", jsonBody("3mb"))
   // 줄인 로고가 들어갈 자리다(routes/profile.ts는 약 100KB로 제한한다).
   app.use(jsonBody("300kb"))
   // 세션이나 다른 것을 읽기 전에, 데이터가 들어와 있고 API의 다른 복사본이
@@ -199,6 +204,7 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   app.use("/api/conversations", conversationsRouter)
   app.use("/api/inquiries", inquiriesRouter)
   app.use("/api/reports", reportsRouter)
+  app.use("/api/disputes", disputesRouter)
   app.use("/api/blocks", blocksRouter)
   app.use("/api/saved", savedRouter)
   app.use("/api/calendar", calendarRouter)
@@ -210,6 +216,7 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   app.use("/api/admin", adminSessionRouter)
   app.use("/api/admin", adminRouter)
   app.use("/api/admin", adminMoreRouter)
+  app.use("/api/admin/disputes", adminDisputesRouter)
   app.use("/api/announcements", announcementsRouter)
   app.use("/api/site", siteRouter)
   app.use("/api/cron", cronRouter)
