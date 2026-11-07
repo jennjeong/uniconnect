@@ -171,6 +171,7 @@ export function BrandDashboardPage({
           About uniconnect
         </span>
         <RevealStatement
+          breaks={[1, 2]}
           lead={t("uniconnect는 브랜드와 대학 행사를 잇고,")}
           firstChip={<Icon name="link" size={18} />}
           muted={t("협찬 효과를 ROAS로 보여 주는 곳이에요")}

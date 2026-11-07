@@ -1,4 +1,4 @@
-import { useRef } from "react"
+import { type CSSProperties, useRef } from "react"
 
 import logo from "../assets/brand/uniconnect_horizontal.svg"
 import { Icon } from "../components/Icon"
@@ -99,7 +99,9 @@ export function Footer({
           <MeshBackdrop seed={7.2} />
           <ChromeScene anchor={stageRef} kind="rings" mode="enter" spinDirection={-1} />
           <div className="footer-cta">
-            <span className="eyebrow light">Let&apos;s Connect</span>
+            <span className="eyebrow light" data-reveal="rise">
+              Let&apos;s Connect
+            </span>
             <RevealTitle
               accent={1}
               as="h2"
@@ -112,7 +114,7 @@ export function Footer({
                     : [t("학생들의 현장과"), t("이어 볼까요?")]
               }
             />
-            <p className="footer-lead">
+            <p className="footer-lead" data-reveal="rise" style={{ "--reveal-delay": "0.25s" } as CSSProperties}>
               {landing
                 ? t("학생단체도 브랜드도 이메일 인증 한 번으로 가입해요. 웹에서 바로 쓰고 원하면 앱으로 설치할 수 있어요.")
                 : students

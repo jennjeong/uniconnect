@@ -48,9 +48,11 @@ export function JourneyChain({
         <MeshBackdrop seed={3.7} />
         <ChromeScene anchor={wrapRef} kind="chain" mode="pinned" scrollSpin />
         <div className="chain-overlay">
-          <span className="eyebrow light">Sponsorship Flow</span>
+          <span className="eyebrow light" data-reveal="rise">
+            Sponsorship Flow
+          </span>
           <RevealTitle accent={1} as="h2" className="chain-title" lines={[t("끊기지 않는"), t("협찬의 고리")]} />
-          <div className="chain-bottom">
+          <div className="chain-bottom" data-reveal="rise" style={{ "--reveal-delay": "0.25s" } as CSSProperties}>
             <p><Lines text={intro} /></p>
             <p aria-hidden="true" className="chain-aside">
               {t("함께라서 더 단단하게")}

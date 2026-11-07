@@ -134,6 +134,11 @@ export function Header({
         .elementsFromPoint(box.left + box.width / 2, box.top + box.height / 2)
         .find((element) => !element.closest(".site-header"))
       setOnDark(below ? getComputedStyle(below).getPropertyValue("--surface-tone").trim() === "dark" : false)
+      // 휴대폰 브라우저는 맨 위 상태 표시줄 뒤를 페이지 바탕색으로 칠한다. 화면 맨 위가
+      // 짙은 표면이면 바탕도 짙게 해서 흰 띠가 생기지 않게 한다.
+      const top = document.elementsFromPoint(window.innerWidth / 2, 1).find((element) => !element.closest(".site-header"))
+      const dark = top ? getComputedStyle(top).getPropertyValue("--surface-tone").trim() === "dark" : false
+      document.documentElement.toggleAttribute("data-top-dark", dark)
     }
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(check)
