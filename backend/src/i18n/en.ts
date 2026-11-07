@@ -356,6 +356,7 @@ const en: Record<string, string> = {
   "결제를 승인하지 못했어요. 다시 시도해 주세요.": "The payment couldn't be approved. Please try again.",
   "결제를 승인하지 못했어요. {name}": "The payment couldn't be approved. {name}",
   "환불하지 못했어요. 다시 시도해 주세요.": "The refund didn't go through. Please try again.",
+  "Toss의 결제가 이미 바뀌어 직접 환불로 기록할 수 없어요. 결제 내역을 다시 확인해 주세요.": "The payment changed at Toss, so it can't be recorded as refunded directly. Check the payment again.",
   "환불하지 못했어요. {name}": "The refund didn't go through. {name}",
   "판매하지 않는 상품이에요.": "That isn't for sale.",
   "결제할 금액이 없어요.": "There's nothing to pay.",

@@ -149,13 +149,13 @@ function clearRefundMark(payment: Payment) {
 // (recordApproval과 같다). 그래도 실패하면 `refundingAt`을 남긴 채 503을 답하고
 // `reconcileRefunds`에 맡긴다. 일부만 돌려주려던 결제도 Toss가 전부 환불했다면
 // 전액으로 기록한다(`whole`).
-async function recordRefund(id: string, whole = false) {
+async function recordRefund(id: string, whole = false, givenReason?: string) {
   for (let attempt = 1; ; attempt += 1) {
     const database = getDatabase()
     const payment = paymentById(id)
     if (!payment) throw new HttpError(404, "결제를 찾을 수 없어요.")
     if (payment.status === "cancelled" || payment.refundedAmount) return payment
-    const reason = payment.refundReason ?? "운영자 환불"
+    const reason = givenReason ?? payment.refundReason ?? "운영자 환불"
     const amount = payment.refundingAmount
     if (amount && !whole) markPartlyRefunded(database, payment, { amount, days: payment.refundingDays! }, reason)
     else markCancelled(database, payment, reason)
@@ -237,6 +237,53 @@ export async function refundCard(id: string, reason: string) {
     throw new HttpError(502, refundUnsure)
   }
   return recordRefund(id)
+}
+
+// 카드사가 부분 취소를 받지 않는 등 Toss로 돌려줄 수 없어 운영자가 계좌로 직접 돌려준
+// 결제를 기록한다(docs/DETAILS.md). Toss에서 이미 취소된 것을 또 돌려주지 않도록, Toss의
+// 결제가 그대로일 때만 기록한다. Toss에는 요청하지 않는다.
+export async function refundOutside(id: string, reason: string) {
+  if (paymentById(id)?.refundingAt) {
+    const settled = await askToss(settleRefund(id))
+    if (settled === "refunded") return paymentById(id)!
+    if (settled === "open") throw new HttpError(409, refundOpen)
+  }
+  const found = await askToss(toss.lookup(paymentById(id)?.paymentKey ?? ""))
+  const database = getDatabase()
+  const payment = paymentById(id)
+  if (!payment) throw new HttpError(404, "결제를 찾을 수 없어요.")
+  if (found?.status !== "DONE") throw new HttpError(409, "Toss의 결제가 이미 바뀌어 직접 환불로 기록할 수 없어요. 결제 내역을 다시 확인해 주세요.")
+  const part = partialRefundOf(payment)
+  if (part) markPartlyRefunded(database, payment, part, reason)
+  else markCancelled(database, payment, reason)
+  logAdmin(database, "payment-cancelled", { kind: "payment", id }, `${reason} (계좌로 ${(part?.amount ?? payment.amount).toLocaleString("ko-KR")}원 직접 환불)`)
+  await saveDatabase()
+  return payment
+}
+
+export const tossConsoleCancel = "Toss에서 취소"
+
+export type WebhookResult = "ignored" | Settled | SettledRefund
+
+// Toss 웹훅을 받은 뒤의 정리다. 웹훅 내용은 믿지 않는다. 주문에 저장한 키와 같은 키를
+// 댈 때만 움직이고(그 밖에는 Toss에 묻지도 않는다), 상태는 Toss에 직접 물어 정한다.
+// 같은 웹훅이 다시 와도 결과는 같다.
+export async function settleFromWebhook(orderId: string, paymentKey: string): Promise<WebhookResult> {
+  const payment = paymentById(orderId)
+  if (!payment?.paymentKey || payment.paymentKey !== paymentKey) return "ignored"
+  if (payment.status === "pending") return settleCard(orderId)
+  if (payment.status !== "paid" || payment.refundedAmount) return "ignored"
+  if (payment.refundingAt) return settleRefund(orderId)
+  // 우리가 요청하지 않은 취소다. Toss 관리자 화면에서 취소하면 여기로 온다.
+  const found = await toss.lookup(paymentKey)
+  if (found?.orderId !== orderId) return "ignored"
+  if (found.status === "CANCELED") {
+    await recordRefund(orderId, true, tossConsoleCancel)
+    return "refunded"
+  }
+  // 일부만 취소한 것은 며칠을 돌려준 것인지 알 수 없어 운영자가 정리한다.
+  if (found.status === "PARTIAL_CANCELED") console.error(`[billing] ${orderId}: partly cancelled outside the app, balance ${found.balanceAmount}`)
+  return "paid"
 }
 
 // 환불을 요청했고 지금쯤 끝났어야 할 결제.

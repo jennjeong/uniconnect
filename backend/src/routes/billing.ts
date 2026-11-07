@@ -4,7 +4,7 @@ import type { Request } from "express"
 
 import { config } from "../config.js"
 import { cardReady, memberRefundReason, orderFor, partialRefundOf, paymentsOf, paymentView, prices, productOf, testMode, toss, tossUnsure, withVat } from "../lib/billing.js"
-import { reconcileCards, recordApproval, refundCard, settleCard, stuckCards } from "../lib/cardRecovery.js"
+import { askToss, reconcileCards, recordApproval, refundCard, settleCard, settleFromWebhook, stuckCards } from "../lib/cardRecovery.js"
 import { HttpError } from "../lib/errors.js"
 // 브랜드가 살 수 있는 것으로, 각각 lib/billing.ts에 등록된다.
 import "../lib/feeSales.js"
@@ -30,6 +30,17 @@ export const billingRouter = Router()
 // 연다. 실제 회원이 돈을 내지 않고 결제 완료가 되는 일을 막으며, 실제 회원은
 // 그동안 계좌 이체로 낸다.
 const cardOpenTo = (database: Database, account: Account) => cardReady() && (!testMode() || isDemoAccount(database, account))
+
+// Toss Payments의 결제 상태 웹훅(PAYMENT_STATUS_CHANGED). 누구나 부를 수 있는 주소이므로
+// 내용은 믿지 않고 Toss에 다시 묻는다(lib/cardRecovery.ts). 어떤 주문이 있는지 드러나지
+// 않게 모르는 주문에도 200으로 답하고, Toss에 묻지 못했을 때만 실패로 답해 다시 받는다.
+billingRouter.post("/webhook", async (req, res) => {
+  const data = req.body?.data
+  if (cardReady() && req.body?.eventType === "PAYMENT_STATUS_CHANGED") {
+    await askToss(settleFromWebhook(text(data?.orderId), text(data?.paymentKey)))
+  }
+  res.json({ ok: true })
+})
 
 // 공개 요금제 표. 로그인하지 않아도 읽는다.
 billingRouter.get("/plans", (_req, res) => {

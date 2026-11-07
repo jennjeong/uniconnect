@@ -6073,6 +6073,155 @@ test("a brand confirms an e-contract by paying the 15% fee, by card or by transf
   }
 })
 
+test("a Toss webhook is only a hint: forged bodies change nothing, and Toss's own answer settles the order", async () => {
+  const { toss } = await import("./lib/billing.js")
+  const saved = { client: config.tossClientKey, secret: config.tossSecretKey, admin: config.adminToken }
+  const realToss = { confirm: toss.confirm, lookup: toss.lookup, cancel: toss.cancel }
+  config.tossClientKey = "live_ck_example"
+  config.tossSecretKey = "live_sk_example"
+  config.adminToken = "webhook-admin"
+  // Toss가 아는 결제 상태와 물어본 횟수.
+  const atToss = new Map<string, { status: string; orderId: string; totalAmount: number; balanceAmount?: number }>()
+  let lookups = 0
+  toss.lookup = async (paymentKey) => {
+    lookups += 1
+    return atToss.get(paymentKey)
+  }
+  const stored = (id: string) => getDatabase().payments!.find((payment) => payment.id === id)!
+  const hook = (orderId: string, paymentKey: string, status = "DONE") =>
+    call("POST", "/billing/webhook", { eventType: "PAYMENT_STATUS_CHANGED", createdAt: "2026-11-08T12:00:00.000000", data: { orderId, paymentKey, status } })
+  try {
+    const { token: brand } = await listedMember("hook@hook-cafe.kr", "hook-pass-123", "브랜드")
+    const order = async () => (await call("POST", "/billing/orders", { kind: "pro" }, brand)).data.order
+    // 승인 요청이 답을 받지 못해 키만 남은 주문.
+    toss.confirm = async () => {
+      throw new Error("timed out")
+    }
+    const first = await order()
+    assert.equal((await call("POST", "/billing/confirm", { orderId: first.id, paymentKey: "pk-hook", amount: first.amount }, brand)).status, 502)
+
+    // 다른 키, 없는 주문, 다른 이벤트, 망가진 본문은 200이지만 Toss에 묻지도 않는다.
+    for (const body of [
+      { eventType: "PAYMENT_STATUS_CHANGED", data: { orderId: first.id, paymentKey: "pk-forged", status: "DONE" } },
+      { eventType: "PAYMENT_STATUS_CHANGED", data: { orderId: "no-order", paymentKey: "pk-hook", status: "DONE" } },
+      { eventType: "DEPOSIT_CALLBACK", data: { orderId: first.id, paymentKey: "pk-hook" } },
+      { eventType: "PAYMENT_STATUS_CHANGED", data: "nothing" },
+      {},
+    ]) {
+      assert.equal((await call("POST", "/billing/webhook", body)).status, 200)
+    }
+    assert.equal(lookups, 0)
+    assert.equal(stored(first.id).status, "pending")
+
+    // 본문이 DONE이라고 해도 Toss가 아니라고 하면 그대로다.
+    atToss.set("pk-hook", { status: "IN_PROGRESS", orderId: first.id, totalAmount: first.amount })
+    assert.equal((await hook(first.id, "pk-hook")).status, 200)
+    assert.equal(stored(first.id).status, "pending")
+
+    // Toss에 묻지 못하면 실패로 답해 Toss가 다시 보내게 한다.
+    toss.lookup = async () => {
+      throw new Error("Toss is down")
+    }
+    assert.equal((await hook(first.id, "pk-hook")).status, 502)
+    toss.lookup = async (paymentKey) => atToss.get(paymentKey)
+
+    // Toss가 승인했다면 결제 완료이고, 같은 웹훅이 다시 와도 같다.
+    atToss.set("pk-hook", { status: "DONE", orderId: first.id, totalAmount: first.amount })
+    assert.equal((await hook(first.id, "pk-hook")).status, 200)
+    assert.equal(stored(first.id).status, "paid")
+    assert.equal((await hook(first.id, "pk-hook")).status, 200)
+    assert.equal(stored(first.id).status, "paid")
+
+    // 금액이 다르면 결제 완료로 치지 않는다.
+    const second = await order()
+    await call("POST", "/billing/confirm", { orderId: second.id, paymentKey: "pk-other", amount: second.amount }, brand)
+    atToss.set("pk-other", { status: "DONE", orderId: second.id, totalAmount: 1 })
+    await hook(second.id, "pk-other")
+    assert.equal(stored(second.id).status, "pending")
+    // Toss에서 만료된 주문은 키를 지워 다시 결제할 수 있게 한다.
+    atToss.set("pk-other", { status: "EXPIRED", orderId: second.id, totalAmount: second.amount })
+    await hook(second.id, "pk-other")
+    assert.equal(stored(second.id).paymentKey, undefined)
+
+    // 일부만 취소된 결제는 건드리지 않는다.
+    atToss.set("pk-hook", { status: "PARTIAL_CANCELED", orderId: first.id, totalAmount: first.amount, balanceAmount: 1000 })
+    await hook(first.id, "pk-hook")
+    assert.equal(stored(first.id).status, "paid")
+    // Toss 관리자 화면에서 전액 취소하면 산 것까지 회수한다.
+    atToss.set("pk-hook", { status: "CANCELED", orderId: first.id, totalAmount: first.amount })
+    await hook(first.id, "pk-hook")
+    assert.deepEqual([stored(first.id).status, stored(first.id).cancelReason], ["cancelled", "Toss에서 취소"])
+  } finally {
+    Object.assign(toss, realToss)
+    config.tossClientKey = saved.client
+    config.tossSecretKey = saved.secret
+    config.adminToken = saved.admin
+  }
+})
+
+test("an operator records a refund paid outside Toss only while Toss still holds the payment", async () => {
+  const { toss } = await import("./lib/billing.js")
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const saved = { client: config.tossClientKey, secret: config.tossSecretKey, admin: config.adminToken }
+  const realToss = { confirm: toss.confirm, lookup: toss.lookup, cancel: toss.cancel }
+  config.tossClientKey = "live_ck_example"
+  config.tossSecretKey = "live_sk_example"
+  config.adminToken = "outside-admin"
+  let cancels = 0
+  let status = "DONE"
+  toss.confirm = async (_key, orderId, amount) => ({ status: "DONE", totalAmount: amount, orderId, approvedAt: "2026-11-08T12:00:00+09:00" })
+  toss.cancel = async () => {
+    cancels += 1
+  }
+  toss.lookup = async () => ({ status })
+  const admin = async (id: string, body: object) => {
+    const response = await fetch(`${baseUrl}/admin/payments/${id}/cancel`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Admin-Token": "outside-admin" },
+      body: JSON.stringify(body),
+    })
+    return { status: response.status, data: await response.json() }
+  }
+  const stored = (id: string) => getDatabase().payments!.find((payment) => payment.id === id)!
+  try {
+    const { token: brand } = await listedMember("outside@out-cafe.kr", "outside-pass-123", "브랜드")
+    const { order } = (await call("POST", "/billing/orders", { kind: "pro" }, brand)).data
+    await call("POST", "/billing/confirm", { orderId: order.id, paymentKey: "pk-out", amount: order.amount }, brand)
+    assert.equal(stored(order.id).status, "paid")
+
+    // Toss에서 이미 바뀐 결제는 또 돌려주지 않게 막는다.
+    status = "PARTIAL_CANCELED"
+    assert.equal((await admin(order.id, { outside: true })).status, 409)
+    assert.equal(stored(order.id).status, "paid")
+
+    status = "DONE"
+    const done = await admin(order.id, { outside: true, reason: "카드사 거절로 계좌 환불" })
+    assert.equal(done.status, 200)
+    assert.equal((done.data as { payment: { paymentKey?: string } }).payment.paymentKey, undefined)
+    assert.deepEqual([stored(order.id).status, stored(order.id).cancelReason], ["cancelled", "카드사 거절로 계좌 환불"])
+    assert.equal(cancels, 0)
+
+    // 일부만 돌려주는 Local은 계산한 금액과 줄어든 기간을 기록한다.
+    config.localOnSale = true
+    const local = (await call("POST", "/billing/orders", { kind: "local" }, brand)).data.order
+    await call("POST", "/billing/confirm", { orderId: local.id, paymentKey: "pk-out-local", amount: local.amount }, brand)
+    const today = todayInKorea()
+    Object.assign(stored(local.id), { paidAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(), periodEnd: addDays(today, 20) })
+    assert.equal((await admin(local.id, { outside: true, reason: "부분 취소 거절" })).status, 200)
+    assert.deepEqual(
+      [stored(local.id).status, stored(local.id).refundedAmount, stored(local.id).periodEnd, cancels],
+      ["paid", 57_933, today, 0],
+    )
+    assert.equal((await admin(local.id, { outside: true })).status, 409)
+  } finally {
+    Object.assign(toss, realToss)
+    config.localOnSale = false
+    config.tossClientKey = saved.client
+    config.tossSecretKey = saved.secret
+    config.adminToken = saved.admin
+  }
+})
+
 test("a card approval whose save fails is kept by its key and recorded later, never charged twice", async () => {
   const { toss } = await import("./lib/billing.js")
   const { cardRecovery, reconcileCards } = await import("./lib/cardRecovery.js")

@@ -4,7 +4,7 @@ import { Router, type Request } from "express"
 import { config } from "../config.js"
 import { adminLogRows, adminRequest, isLive, logAdmin, noteLimit, serviceHealth } from "../lib/adminTools.js"
 import { cardReady, markCancelled, markPaid, markPartlyRefunded, partialRefundOf, paymentsOf } from "../lib/billing.js"
-import { askToss, reconcileRefunds, refundCard, settleCard, stuckRefunds } from "../lib/cardRecovery.js"
+import { askToss, reconcileRefunds, refundCard, refundOutside, settleCard, stuckRefunds } from "../lib/cardRecovery.js"
 import { memberDetail, memberRow, overview, proposalRows } from "../lib/console.js"
 import { todayInKorea } from "../lib/dates.js"
 import { recentErrors } from "../lib/errorLog.js"
@@ -131,7 +131,9 @@ adminRouter.post("/payments/:id/cancel", async (req, res) => {
   if (payment.refundedAmount) throw new HttpError(409, "이미 남은 날만큼 돌려드린 결제예요.")
   const reason = text(req.body?.reason) || (payment.status === "paid" ? "운영자 환불" : "운영자 취소")
   if (payment.status === "paid" && payment.paymentKey) {
-    res.json({ payment: paymentForOperator(await refundCard(id, reason)) })
+    // `outside`는 Toss가 거절해 계좌로 직접 돌려준 환불의 기록이다.
+    const refunded = req.body?.outside === true ? await refundOutside(id, reason) : await refundCard(id, reason)
+    res.json({ payment: paymentForOperator(refunded) })
     return
   }
   const part = payment.status === "paid" ? partialRefundOf(payment) : null
