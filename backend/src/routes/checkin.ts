@@ -4,8 +4,32 @@ import { Router } from "express"
 import type { Request } from "express"
 
 import { todayInKorea } from "../lib/dates.js"
+import {
+  countSurvey,
+  findCoupon,
+  issueCoupon,
+  issuePass,
+  markSurveyed,
+  markVisit,
+  passSql,
+  readPass,
+  settleEventCoupons,
+} from "../lib/passRows.js"
 import { HttpError } from "../lib/errors.js"
-import { assertOpen, checkInKinds, eventOf, isDemoEvent, parseKind, passLimit, recordMetric, scanCeiling } from "../lib/measurements.js"
+import { campaignUntil } from "../lib/plan.js"
+import {
+  assertOpen,
+  checkInKinds,
+  couponDays,
+  couponsValidFrom,
+  eventOf,
+  isDemoEvent,
+  metricEntry,
+  parseKind,
+  passLimit,
+  recordMetric,
+  scanCeiling,
+} from "../lib/measurements.js"
 import {
   activeMethodsOf,
   confirmsAt,
@@ -18,6 +42,7 @@ import {
 } from "../lib/methods.js"
 import { surveyOptions, text } from "../lib/validation.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
+import type { Sql } from "../lib/sql.js"
 import { getDatabase, retryConflicts, saveDatabase } from "../store.js"
 import type { ChatSide, Database, EventSponsor, Measurement, PassCoupon } from "../types.js"
 
@@ -62,6 +87,14 @@ checkInRouter.get("/:code", (req, res) => {
     eventDate: event.date,
     groupName: group?.name ?? "",
     coupons: couponsOf(measurement),
+    // 상시 캠페인이다. 행사 날짜 대신 새 쿠폰을 주는지와 쿠폰의 사용 기한을 쓴다.
+    ...(measurement.alwaysOn
+      ? {
+          alwaysOn: true,
+          open: isDemoEvent(getDatabase(), measurement) || campaignUntil(getDatabase(), measurement.accountId) !== null,
+          couponDays,
+        }
+      : {}),
   })
 })
 
@@ -86,8 +119,13 @@ const scansPerAddress = createRateLimit({
   message: "이 네트워크에서 QR 스캔이 너무 많아요. 잠시 후 다시 시도해 주세요.",
 })
 
+// 상시 캠페인에는 예상 인원이 없어 가장 낮은 값을 쓴다.
 const scansFromOneAddress = (database: Database, measurement: Measurement) =>
-  Math.max(30, Math.ceil(scanCeiling(database, measurement) / 12))
+  measurement.alwaysOn ? 30 : Math.max(30, Math.ceil(scanCeiling(database, measurement) / 12))
+
+// 쿠폰이 어디까지 쓸 수 있는지다. 상시 캠페인의 쿠폰만 기한이 쿠폰마다 있다.
+const couponExpiry = (measurement: Measurement, issuedAt: string | undefined) =>
+  measurement.alwaysOn && issuedAt ? new Date(Date.parse(issuedAt) + couponDays * 24 * 60 * 60 * 1000).toISOString() : undefined
 
 // 직원 PIN이 틀린 횟수를 주소와 행사별로, 행사 단독으로도 센다. 여섯 자리
 // 숫자는 한 곳에서도 여러 곳에서도 추측할 수 없어야 한다(행사 한도에서
@@ -103,6 +141,8 @@ const pinFailuresPerEvent = createRateLimit({
   message: "이 행사의 직원 PIN이 너무 많이 틀렸어요. 15분 뒤에 다시 시도해 주세요.",
 })
 
+const wrongCouponNumber = "쿠폰 번호를 찾을 수 없어요. 다시 확인해 주세요."
+
 // 직원이 입력하는 쿠폰 번호다. 헷갈리는 0/O와 1/I는 쓰지 않는다.
 const couponAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
@@ -112,10 +152,12 @@ function newCouponNumber(passes: Measurement["passes"]) {
   )
   let number: string
   do {
-    number = `UC-${Array.from(randomBytes(6), (byte) => couponAlphabet[byte % couponAlphabet.length]).join("")}`
+    number = couponNumber()
   } while (taken.has(number))
   return number
 }
+
+const couponNumber = () => `UC-${Array.from(randomBytes(6), (byte) => couponAlphabet[byte % couponAlphabet.length]).join("")}`
 
 // 참여자가 답해도 되는 세 가지 질문은 패스가 있어야 받는다. 행사의 집계만
 // 보관하고, 패스는 답했다는 사실만 기억한다.
@@ -128,11 +170,12 @@ checkInRouter.post("/:code/survey", async (req, res) => {
 async function recordSurvey(req: Request<{ code: string }>) {
   const { measurement } = measurementFor(req.params.code)
   const passId = text(req.body?.pass)
-  if (!Object.hasOwn(measurement.passes, passId)) {
+  const sql = passSql()
+  if (sql ? !(await readPass(sql, req.params.code, passId)) : !Object.hasOwn(measurement.passes, passId)) {
     throw new HttpError(403, "참여 기록을 찾을 수 없어요. QR을 다시 스캔해 주세요.")
   }
-  const pass = measurement.passes[passId]
-  if (pass.surveyed) throw new HttpError(409, "이미 설문에 답했어요.")
+  const pass = sql ? undefined : measurement.passes[passId]
+  if (pass?.surveyed) throw new HttpError(409, "이미 설문에 답했어요.")
   const pick = (key: keyof typeof surveyOptions) => {
     const value = text(req.body?.[key])
     return (surveyOptions[key] as readonly string[]).includes(value) ? value : undefined
@@ -140,16 +183,57 @@ async function recordSurvey(req: Request<{ code: string }>) {
   const keys = Object.keys(surveyOptions) as (keyof typeof surveyOptions)[]
   const answers = Object.fromEntries(keys.map((key) => [key, pick(key)])) as Partial<Record<keyof typeof surveyOptions, string>>
   if (!keys.some((key) => answers[key])) throw new HttpError(400, "답을 하나 이상 골라 주세요.")
-  const survey = (measurement.survey ??= { responses: 0, grade: {}, field: {}, visited: {} })
-  survey.responses += 1
-  for (const key of keys) {
-    const value = answers[key]
-    if (!value) continue
-    const counts = (survey[key] ??= {})
-    counts[value] = (counts[value] ?? 0) + 1
+  if (sql) {
+    if (!(await markSurveyed(sql, req.params.code, passId, answers))) throw new HttpError(409, "이미 설문에 답했어요.")
+    return
   }
-  pass.surveyed = true
+  countSurvey(measurement, answers)
+  pass!.surveyed = true
   await saveDatabase()
+}
+
+// Postgres에서의 스캔과 쿠폰이다. 문서를 쓰지 않고, 답의 번호는 행에서 센다.
+async function recordInRows(req: Request<{ code: string }>, sql: Sql, kind: "scans" | "coupons") {
+  const { measurement } = measurementFor(req.params.code)
+  const code = req.params.code
+  const at = new Date()
+  if (kind === "scans") {
+    const ceiling = scanCeiling(getDatabase(), measurement)
+    if (measurement.metrics.scans >= ceiling) {
+      throw new HttpError(409, "이 행사의 참여 수가 예상 인원의 3배를 넘어 더 기록하지 않아요. 행사 주최 측에 알려 주세요.")
+    }
+    const pass = randomBytes(16).toString("hex")
+    const { before, added } = await issuePass(sql, code, pass, Math.min(passLimit, ceiling))
+    if (!added) {
+      throw new HttpError(
+        409,
+        before >= passLimit
+          ? "이 행사의 참여 기록이 가득 찼어요. 행사 주최 측에 알려 주세요."
+          : "이 행사의 참여 수가 예상 인원의 3배를 넘어 더 기록하지 않아요. 행사 주최 측에 알려 주세요.",
+      )
+    }
+    return { entry: metricEntry(measurement, "scans", undefined, before + 1, at), pass }
+  }
+  await settleEventCoupons(sql, measurement)
+  const passId = text(req.body?.pass)
+  const state = await readPass(sql, code, passId)
+  if (!state) throw new HttpError(403, "참여 기록을 찾을 수 없어요. QR을 다시 스캔해 주세요.")
+  const offered = couponsOf(measurement)
+  const couponId = text(req.body?.couponId) || (offered.length === 1 ? offered[0].id : "")
+  if (!offered.some((item) => item.id === couponId)) {
+    throw new HttpError(404, "쿠폰을 찾을 수 없어요. 화면을 새로 고쳐 주세요.")
+  }
+  if (state.coupons.some((item) => item.couponId === couponId)) throw new HttpError(409, "이미 쿠폰을 받았어요.")
+  const sponsor = measurement.sponsors.find((item) => item.id === couponId)
+  // 번호가 겹치거나 같은 패스가 동시에 받으면 들어가지 않는다. 동시에 받은 것이면 위의 확인에 걸린다.
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const coupon = couponNumber()
+    const { added, total } = await issueCoupon(sql, code, passId, couponId, sponsor?.id, coupon)
+    if (added) return { entry: metricEntry(measurement, "coupons", sponsor, total, at), coupon }
+    const now = await readPass(sql, code, passId)
+    if (now?.coupons.some((item) => item.couponId === couponId)) throw new HttpError(409, "이미 쿠폰을 받았어요.")
+  }
+  throw new HttpError(503, "쿠폰을 만들지 못했어요. 다시 시도해 주세요.")
 }
 
 // 참여자의 폰이다. 스캔하면 패스가 돌아오고, 패스는 쿠폰마다 한 번씩
@@ -173,6 +257,8 @@ async function recordCheckIn(req: Request<{ code: string }>, kind: ReturnType<ty
   const { measurement, event } = measurementFor(req.params.code)
   if (kind !== "visits") assertOpen(getDatabase(), measurement, event, kind)
 
+  const sql = passSql()
+  if (sql && (kind === "scans" || kind === "coupons")) return recordInRows(req, sql, kind)
   if (kind === "scans") {
     if (Object.keys(measurement.passes).length >= passLimit) {
       throw new HttpError(409, "이 행사의 참여 기록이 가득 찼어요. 행사 주최 측에 알려 주세요.")
@@ -182,7 +268,7 @@ async function recordCheckIn(req: Request<{ code: string }>, kind: ReturnType<ty
     }
     const entry = recordMetric(measurement, kind)
     const pass = randomBytes(16).toString("hex")
-    measurement.passes[pass] = {}
+    measurement.passes[pass] = measurement.alwaysOn ? { issuedAt: new Date().toISOString() } : {}
     await saveDatabase()
     return { entry, pass }
   }
@@ -205,14 +291,30 @@ async function recordCheckIn(req: Request<{ code: string }>, kind: ReturnType<ty
   const coupon = newCouponNumber(measurement.passes)
   if (sponsor) pass.sponsors = { ...pass.sponsors, [sponsor.id]: { coupon } }
   else pass.coupon = coupon
+  // 상시 캠페인의 패스는 쿠폰과 함께 7일을 다시 시작한다.
+  if (measurement.alwaysOn) pass.issuedAt = new Date().toISOString()
   const entry = recordMetric(measurement, kind, sponsor)
   await saveDatabase()
   return { entry, coupon }
 }
 
 // 참여자의 폰이 매장이 방문을 확인했는지 묻는다.
-checkInRouter.get("/:code/passes/:pass", (req, res) => {
+checkInRouter.get("/:code/passes/:pass", async (req, res) => {
   const { measurement } = measurementFor(req.params.code)
+  const sql = passSql()
+  if (sql) {
+    await settleEventCoupons(sql, measurement)
+    const state = await readPass(sql, req.params.code, req.params.pass)
+    if (!state) throw new HttpError(404, "참여 기록을 찾을 수 없어요. QR을 다시 스캔해 주세요.")
+    const coupons = Object.fromEntries(
+      couponsOf(measurement).map(({ id }) => {
+        const taken = state.coupons.find((item) => item.couponId === id)
+        const number = taken && !taken.number.startsWith("legacy-") ? taken.number : null
+        return [id, { number, visited: Boolean(taken?.visited), expiresAt: couponExpiry(measurement, taken?.issuedAt) }]
+      }),
+    )
+    return void res.json({ coupons })
+  }
   if (!Object.hasOwn(measurement.passes, req.params.pass)) {
     throw new HttpError(404, "참여 기록을 찾을 수 없어요. QR을 다시 스캔해 주세요.")
   }
@@ -220,7 +322,8 @@ checkInRouter.get("/:code/passes/:pass", (req, res) => {
   const coupons = Object.fromEntries(
     couponsOf(measurement).map(({ id }) => {
       const taken = passCoupon(pass, id)
-      return [id, { number: typeof taken?.coupon === "string" ? taken.coupon : null, visited: Boolean(taken?.visit) }]
+      const expiresAt = typeof taken?.coupon === "string" ? couponExpiry(measurement, taken.issuedAt) : undefined
+      return [id, { number: typeof taken?.coupon === "string" ? taken.coupon : null, visited: Boolean(taken?.visit), expiresAt }]
     }),
   )
   res.json({ coupons })
@@ -244,6 +347,20 @@ async function recordVisit(req: Request<{ code: string }>) {
   }
   const couponId = sponsor?.id ?? eventCoupon
   const number = text(req.body?.coupon).toUpperCase()
+  const validFrom = couponsValidFrom(getDatabase(), measurement)
+  const sql = passSql()
+  if (sql) {
+    await settleEventCoupons(sql, measurement)
+    const { marked, total } = number ? await markVisit(sql, req.params.code, number, couponId, sponsor?.id, validFrom) : { marked: false, total: 0 }
+    if (!marked) {
+      const found = number ? await findCoupon(sql, req.params.code, number) : undefined
+      if (found?.couponId === couponId) {
+        throw new HttpError(409, validFrom && !found.visited ? "쿠폰 사용 기간이 지났어요." : "이미 방문이 확인된 쿠폰이에요.")
+      }
+      throw new HttpError(404, found ? "다른 매장의 쿠폰이에요. 쿠폰에 적힌 매장을 확인해 주세요." : wrongCouponNumber)
+    }
+    return { entry: metricEntry(measurement, "visits", sponsor, total, new Date()), store: (sponsor?.coupon ?? measurement.goals.coupon).store }
+  }
   const taken = number
     ? Object.values(measurement.passes)
         .map((pass) => passCoupon(pass, couponId))
@@ -257,22 +374,20 @@ async function recordVisit(req: Request<{ code: string }>) {
       )
     throw new HttpError(
       404,
-      elsewhere ? "다른 매장의 쿠폰이에요. 쿠폰에 적힌 매장을 확인해 주세요." : "쿠폰 번호를 찾을 수 없어요. 다시 확인해 주세요.",
+      elsewhere ? "다른 매장의 쿠폰이에요. 쿠폰에 적힌 매장을 확인해 주세요." : wrongCouponNumber,
     )
   }
   if (taken.visit) throw new HttpError(409, "이미 방문이 확인된 쿠폰이에요.")
+  if (validFrom && (taken.issuedAt ?? "") < validFrom.toISOString()) throw new HttpError(409, "쿠폰 사용 기간이 지났어요.")
   taken.visit = true
   const entry = recordMetric(measurement, "visits", sponsor)
   await saveDatabase()
   return { entry, store: (sponsor?.coupon ?? measurement.goals.coupon).store }
 }
 
-// 틀린 PIN은 주소(이 행사에서)와 행사에 세며, 운영자 경보가 읽는 오늘의
-// 집계에도 넣는다.
+// 틀린 PIN은 주소(이 행사에서)와 행사에 세며(`reservePin`이 이미 셌다), 운영자 경보가
+// 읽는 오늘의 집계에도 넣는다.
 async function refusePin(req: Request, message: string): Promise<never> {
-  const addressKey = `${clientKey(req)} ${req.params.code}`
-  await pinFailures.hit(addressKey)
-  await pinFailuresPerEvent.hit(String(req.params.code))
   const measurement = getDatabase().measurements.find((item) => item.code === req.params.code)
   if (measurement) {
     const today = todayInKorea()
@@ -283,30 +398,38 @@ async function refusePin(req: Request, message: string): Promise<never> {
   throw new HttpError(403, message)
 }
 
-async function checkPinLimits(req: Request) {
-  await pinFailures.check(`${clientKey(req)} ${req.params.code}`)
-  await pinFailuresPerEvent.check(String(req.params.code))
+// PIN을 비교하기 전에 센다. 비교한 뒤에 세면 한꺼번에 보낸 추측이 모두 한도 검사를
+// 통과한다. 맞으면 `releasePin`으로 돌려주므로 직원의 정상 확인은 한도를 쓰지 않는다.
+async function reservePin(req: Request) {
+  await pinFailures.take(`${clientKey(req)} ${req.params.code}`)
+  await pinFailuresPerEvent.take(String(req.params.code))
+}
+
+async function releasePin(req: Request) {
+  await Promise.all([pinFailures.release(`${clientKey(req)} ${req.params.code}`), pinFailuresPerEvent.release(String(req.params.code))])
 }
 
 // 브랜드의 페이지(/staff)는 받은 매장 PIN에 해당하는 몫을 연다. 협찬사의
 // 몫이거나, 협찬사가 없는 동안에는 행사 자체의 몫이다.
 async function staffShare(req: Request, measurement: Measurement): Promise<EventSponsor | undefined> {
-  await checkPinLimits(req)
+  await reservePin(req)
   const pin = text(req.body?.pin)
   const sponsor = measurement.sponsors.find((item) => item.staffPin === pin)
   if (measurement.sponsors.length ? !sponsor : pin !== measurement.staffPin) {
     await refusePin(req, "직원 PIN이 맞지 않아요. 행사 주최 측에 확인해 주세요.")
   }
+  await releasePin(req)
   return sponsor
 }
 
 // 학생단체의 페이지(/group)는 단체 자신의 PIN을 받아 행사의 모든 몫을
 // 연다.
 async function checkGroupPin(req: Request, measurement: Measurement) {
-  await checkPinLimits(req)
+  await reservePin(req)
   if (text(req.body?.pin) !== measurement.groupPin) {
     await refusePin(req, "단체 확인 PIN이 맞지 않아요. 임시 전자 계약서에서 확인해 주세요.")
   }
+  await releasePin(req)
 }
 
 // 현장 페이지가 보여 주는 몫 하나다. 누구의 것인지, 이쪽이 거기서 확정하는

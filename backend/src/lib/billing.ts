@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto"
 
 import { config } from "../config.js"
 import type { Account, Database, Payment, PaymentKind } from "../types.js"
+import { addDays } from "./dates.js"
 import { HttpError } from "./errors.js"
 
 // 사업 계획의 수익 모델(표 9)을 부가세 전 가격으로 둔 것이다. 부가세는
@@ -15,6 +16,9 @@ export const prices = {
   // Growth (이전 이름 캠퍼스 파트너스, 데이터 이름 `pro`), 30일.
   pro: 249_000,
   proDays: 30,
+  // Campus Local (lib/local.ts), 30일.
+  local: 79_000,
+  localDays: 30,
   // 상단 광고 (lib/ads.ts) 30일. 브랜드는 학생 단체 카탈로그에, 단체는
   // 브랜드 카탈로그에 낸다. 끝나기 전에 연장하면 10% 깎아 준다.
   adBrand: 99_000,
@@ -53,7 +57,7 @@ export const refundUnsure = "환불 확인이 늦어지고 있어요. 몇 분 �
 const alreadyRefunded = new Set(["ALREADY_CANCELED_PAYMENT", "ALREADY_REFUND_PAYMENT"])
 const tossAuth = () => `Basic ${Buffer.from(`${config.tossSecretKey ?? ""}:`).toString("base64")}`
 
-export type TossPayment = { status?: string; totalAmount?: number; orderId?: string; receipt?: { url?: string } | null; approvedAt?: string }
+export type TossPayment = { status?: string; totalAmount?: number; balanceAmount?: number; orderId?: string; receipt?: { url?: string } | null; approvedAt?: string }
 
 // Toss Payments 호출. 테스트에서 바꿔 쓴다.
 export const toss = {
@@ -87,19 +91,24 @@ export const toss = {
     if (!response.ok || !body) throw new Error(`Toss lookup ${response.status}: ${body?.message ?? ""}`)
     return body
   },
-  // 카드 결제를 전액 환불한다. 멱등키가 같으면 같은 요청으로 처리되고, 이미
-  // 환불된 결제는 성공으로 본다. Toss가 거절하면 409(환불되지 않았다), Toss가
-  // 실패하거나 앞선 요청을 처리 중이면 502(환불됐는지 아직 모른다)다.
-  async cancel(paymentKey: string, reason: string, idempotencyKey: string) {
+  // 카드 결제를 환불한다. 금액이 없으면 전액이다. 멱등키가 같으면 같은 요청으로
+  // 처리되고, 이미 환불된 결제는 성공으로 본다. 다만 일부만 돌려주려던 결제가 이미
+  // 환불돼 있으면 얼마가 나갔는지 모르니 502로 두고 `lookup`으로 정리한다. Toss가
+  // 거절하면 409(환불되지 않았다), Toss가 실패하거나 앞선 요청을 처리 중이면
+  // 502(환불됐는지 아직 모른다)다.
+  async cancel(paymentKey: string, reason: string, idempotencyKey: string, cancelAmount?: number) {
     const response = await fetch(`${tossApi}/${encodeURIComponent(paymentKey)}/cancel`, {
       method: "POST",
       headers: { Authorization: tossAuth(), "Content-Type": "application/json", "Idempotency-Key": idempotencyKey },
-      body: JSON.stringify({ cancelReason: reason.slice(0, 200) }),
+      body: JSON.stringify({ cancelReason: reason.slice(0, 200), ...(cancelAmount === undefined ? {} : { cancelAmount }) }),
       signal: AbortSignal.timeout(15_000),
     })
     if (response.ok) return
     const body = (await response.json().catch(() => null)) as { code?: string; message?: string } | null
-    if (alreadyRefunded.has(body?.code ?? "")) return
+    if (alreadyRefunded.has(body?.code ?? "")) {
+      if (cancelAmount === undefined) return
+      throw new HttpError(502, refundUnsure)
+    }
     console.error(`[billing] cancel ${response.status}: ${body?.code ?? ""} ${body?.message ?? ""}`)
     if (response.status >= 500 || response.status === 409 || response.status === 429) throw new HttpError(502, refundUnsure)
     throw new HttpError(409, body?.message ? `환불하지 못했어요. ${body.message}` : "환불하지 못했어요. 다시 시도해 주세요.")
@@ -117,7 +126,13 @@ type Product = {
   fulfil?: (database: Database, payment: Payment) => void
   // 결제가 환불되면 `fulfil`을 되돌린다.
   revoke?: (database: Database, payment: Payment) => void
+  // 지금 환불하면 일부만 돌려주는 상품의 금액과 돌려받는 일수다. null이면 전액이다.
+  partialRefund?: (payment: Payment, now: Date) => PartialRefund | null
+  // 회원이 결제 내역에서 직접 환불할 수 있다(routes/billing.ts).
+  memberRefund?: true
 }
+
+export type PartialRefund = { amount: number; days: number }
 
 const products = new Map<PaymentKind, Product>()
 
@@ -202,5 +217,36 @@ export function markCancelled(database: Database, payment: Payment, reason: stri
   if (wasPaid) productOf(payment.kind).revoke?.(database, payment)
 }
 
+// 회원이 직접 환불한 결제의 사유. 운영자가 환불한 것과 가른다.
+export const memberRefundReason = "회원 요청"
+
+// 결제에서 지금 돌려줄 일부. 전액을 돌려줄 결제면 null이다.
+export const partialRefundOf = (payment: Payment, now = new Date()) => productOf(payment.kind).partialRefund?.(payment, now) ?? null
+
+// 결제의 일부를 돌려준 것을 기록한다. 결제는 남고 돌려준 일수만큼 기간이 줄며, 뒤에
+// 더해진 기간도 그만큼 앞당겨진다.
+export function markPartlyRefunded(database: Database, payment: Payment, { amount, days }: PartialRefund, reason: string) {
+  shiftLaterPeriods(database, payment, days)
+  Object.assign(payment, {
+    refundedAmount: amount,
+    refundedAt: new Date().toISOString(),
+    cancelReason: reason,
+    periodEnd: addDays(payment.periodEnd!, -days),
+    periodDays: (payment.periodDays ?? days) - days,
+  })
+}
+
+// 결제에서 플랫폼에 남은 금액. 매출은 이것을 더한다.
+export const keptAmount = (payment: Payment) => payment.amount - (payment.refundedAmount ?? 0)
+
 // 계정이 보는 결제. Toss 키는 없다.
-export const paymentView = ({ paymentKey: _key, confirmingAt: _confirming, refundingAt: _refunding, refundReason: _reason, accountId: _account, ...payment }: Payment) => payment
+export const paymentView = ({
+  paymentKey: _key,
+  confirmingAt: _confirming,
+  refundingAt: _refunding,
+  refundReason: _reason,
+  refundingAmount: _amount,
+  refundingDays: _days,
+  accountId: _account,
+  ...payment
+}: Payment) => payment

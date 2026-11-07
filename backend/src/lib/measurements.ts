@@ -3,6 +3,7 @@ import { randomBytes, randomInt, randomUUID } from "node:crypto"
 import { addDays, hourInKorea, todayInKorea } from "./dates.js"
 import { HttpError } from "./errors.js"
 import { activeMethodsOf, emptyVenueCounts, venueCountsOf } from "./methods.js"
+import { campaignUntil } from "./plan.js"
 import { sponsorTypes, text } from "./validation.js"
 import type {
   Database,
@@ -44,6 +45,8 @@ export function parseKind(value: unknown, kinds = metricKinds) {
 
 // 최근 기록만 남기고 집계 숫자는 정확히 유지한다.
 const logLimit = 300
+// 상시 캠페인은 운영자의 방문 몰림 경보(lib/adminInsights.ts)에 쓸 만큼만 둔다.
+const alwaysOnLogLimit = 30
 
 // "120명" → 120. 행사에 숫자가 없으면 100으로 짐작한다. 목표 폼이 받는
 // 범위 안으로 맞춰서 기본 목표가 그대로 저장되게 한다.
@@ -103,11 +106,6 @@ export function parseGoals(body: unknown): MeasurementGoals {
   if (valueBreakdown.some((row) => !sponsorTypes.includes(row.type))) {
     throw new HttpError(400, "협찬 종류를 골라 주세요.")
   }
-  const store = text(coupon.store)
-  const title = text(coupon.title)
-  if (!store || store.length > 30 || !title || title.length > 30) {
-    throw new HttpError(400, "쿠폰의 매장과 혜택을 30자 이하로 적어 주세요.")
-  }
   return {
     expectedAudience: wholeNumber(input.expectedAudience, "예상 인원", 100_000, 1),
     averageSpend: wholeNumber(input.averageSpend, "1인 예상 지출", 10_000_000),
@@ -122,8 +120,18 @@ export function parseGoals(body: unknown): MeasurementGoals {
       visitRate: wholeNumber(targets.visitRate, "목표 방문 전환율", 100),
       roas: wholeNumber(targets.roas, "목표 ROAS", 10_000, 1),
     },
-    coupon: { store, title },
+    coupon: parseCoupon(coupon),
   }
+}
+
+export function parseCoupon(body: unknown) {
+  const coupon = (body ?? {}) as Record<string, unknown>
+  const store = text(coupon.store)
+  const title = text(coupon.title)
+  if (!store || store.length > 30 || !title || title.length > 30) {
+    throw new HttpError(400, "쿠폰의 매장과 혜택을 30자 이하로 적어 주세요.")
+  }
+  return { store, title }
 }
 
 // 목표 폼의 협찬사별 쿠폰, 가치, 직원 PIN을 검사해 측정에 반영한다.
@@ -289,6 +297,7 @@ export function syncSponsors(database: Database, measurement: Measurement) {
           metrics: { coupons: 0, visits: 0, ...emptyVenueCounts() },
         }
     if (takesOver) {
+      measurement.eventCouponsTo = sponsor.id
       for (const pass of Object.values(measurement.passes)) {
         if (!pass.coupon) continue
         pass.sponsors = { [sponsor.id]: { coupon: pass.coupon, ...(pass.visit ? { visit: true as const } : {}) } }
@@ -426,13 +435,20 @@ export const pinsOpen = (database: Database, measurement: Measurement, event: Ev
 // 않도록 예상 인원의 세 배, 최소 100으로 한다. 데모 계정의 방문자가
 // 무엇을 시도해도 같다.
 export const scanCeiling = (database: Database, measurement: Measurement) =>
-  isDemoEvent(database, measurement)
+  isDemoEvent(database, measurement) || measurement.alwaysOn
     ? Infinity
     : Math.max(100, (measurement.agreedAudience ?? measurement.goals.expectedAudience) * 3)
 
 // 행사 기간 밖의 스캔이나 쿠폰, 쿠폰이 소진된 뒤의 방문을 거절한다.
 export function assertOpen(database: Database, measurement: Measurement, event: EventItem, kind: MetricKind) {
   if (isDemoEvent(database, measurement)) return
+  // 상시 캠페인에는 기간이 없다. 이용 기간에만 새 쿠폰을 주고, 사용 기한은 쿠폰마다 본다.
+  if (measurement.alwaysOn) {
+    if (kind !== "visits" && !campaignUntil(database, measurement.accountId)) {
+      throw new HttpError(409, "지금은 쿠폰을 받을 수 없어요. 매장에 알려 주세요.")
+    }
+    return
+  }
   const today = todayInKorea()
   const { start, end, visitsEnd } = checkInWindow(event)
   if (kind === "visits") {
@@ -445,6 +461,13 @@ export function assertOpen(database: Database, measurement: Measurement, event: 
   if (today > end) throw new HttpError(409, "참여 기간이 끝난 행사예요.")
 }
 
+// 상시 캠페인의 쿠폰은 이 시각 뒤에 발급된 것만 쓸 수 있다. 행사의 쿠폰은 행사 기간으로
+// 정해져 undefined다.
+export function couponsValidFrom(database: Database, measurement: Measurement, now = new Date()) {
+  if (!measurement.alwaysOn || isDemoEvent(database, measurement)) return undefined
+  return new Date(now.getTime() - couponDays * 24 * 60 * 60 * 1000)
+}
+
 // 측정이 남기는 참여 기록의 최대 개수. 캠퍼스 행사에는 한참 넉넉하고
 // 데이터 파일이 커지지 않을 만큼 낮다.
 export const passLimit = 20_000
@@ -453,6 +476,12 @@ export const passLimit = 20_000
 // 기록을, 쿠폰이 소진되면 전부 지운다. 지운 것이 있는지 돌려준다.
 export function prunePasses(database: Database, measurement: Measurement, event: EventItem) {
   if (isDemoEvent(database, measurement)) return false
+  if (measurement.alwaysOn) {
+    const from = couponsValidFrom(database, measurement)!.toISOString()
+    const before = Object.keys(measurement.passes).length
+    measurement.passes = Object.fromEntries(Object.entries(measurement.passes).filter(([, pass]) => (pass.issuedAt ?? "") >= from))
+    return Object.keys(measurement.passes).length !== before
+  }
   const today = todayInKorea()
   const { end, visitsEnd } = checkInWindow(event)
   if (today <= end) return false
@@ -507,19 +536,26 @@ export function recordMetric(
   kind: MetricKind,
   sponsor?: EventSponsor,
   amount = 1,
+  now = new Date(),
 ): MetricEntry {
   measurement.metrics[kind] += amount
   if (sponsor && kind !== "scans") sponsor.metrics[kind] += amount
-  const now = new Date()
   // 행사가 열리는 한국 시간 기준으로 센다.
   const { date, hour } = hourInKorea(now)
-  if (kind === "scans" || kind === "coupons" || kind === "visits") {
+  // 상시 캠페인은 끝이 없어서 문서가 계속 커지지 않게 달로만 센다.
+  if (measurement.alwaysOn) {
+    if (kind === "scans" || kind === "coupons" || kind === "visits") {
+      const monthly = (measurement.monthly ??= {})
+      const month = (monthly[date.slice(0, 7)] ??= { scans: 0, coupons: 0, visits: 0 })
+      month[kind] += amount
+    }
+  } else if (kind === "scans" || kind === "coupons" || kind === "visits") {
     // 이 기록을 남기기 전에 로그에서 시작한다. 로그는 밀려나므로 그 뒤에는 여기서만 센다.
     const daily = (measurement.daily ??= dailyCounts(measurement))
     daily[date] ??= { scans: 0, coupons: 0, visits: 0 }
     daily[date][kind] += amount
   }
-  if (kind === "scans") {
+  if (kind === "scans" && !measurement.alwaysOn) {
     const slot = measurement.hourlyScans.find((item) => item.date === date && item.hour === hour)
     if (slot) slot.scans += 1
     else {
@@ -528,21 +564,34 @@ export function recordMetric(
       )
     }
   }
+  const participant =
+    amount < 0 ? `정정 ${amount}` : countedByBox.includes(kind) ? `${amount}개` : `참여자 #${measurement.metrics[kind]}`
+  const entry = metricEntry(measurement, kind, sponsor, participant, now)
+  measurement.log = [...measurement.log, entry].slice(-(measurement.alwaysOn ? alwaysOnLogLimit : logLimit))
+  return entry
+}
+
+// 기록 한 줄이다. 숫자를 넘기면 그 번호의 참여자다.
+export function metricEntry(
+  measurement: Measurement,
+  kind: MetricKind,
+  sponsor: EventSponsor | undefined,
+  participant: string | number,
+  at: Date,
+): MetricEntry {
   const coupon = sponsor?.coupon ?? measurement.goals.coupon
-  const entry: MetricEntry = {
+  return {
     id: randomUUID(),
     kind,
-    at: now.toISOString(),
-    participant:
-      amount < 0 ? `정정 ${amount}` : countedByBox.includes(kind) ? `${amount}개` : `참여자 #${measurement.metrics[kind]}`,
+    at: at.toISOString(),
+    participant: typeof participant === "number" ? `참여자 #${participant}` : participant,
     detail:
       venueDetails[kind] ?? (kind === "scans" ? "현장 QR 스캔" : kind === "coupons" ? coupon.title : coupon.store),
   }
-  measurement.log = [...measurement.log, entry].slice(-logLimit)
-  return entry
 }
 
 // 측정이 속한 행사와 그 주인의 계정 id.
 export function eventOf(database: Database, measurement: Measurement) {
+  if (measurement.alwaysOn) return database.localCampaigns?.[measurement.accountId]
   return database.events[measurement.accountId]?.find((event) => event.id === measurement.eventId)
 }

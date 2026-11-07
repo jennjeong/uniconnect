@@ -194,6 +194,7 @@ export async function resetExamples(database: Database) {
   database.posts = database.posts.filter((item) => !demo.has(item.accountId)).concat(fresh.posts)
   database.measurements = database.measurements.filter((item) => !demo.has(item.accountId)).concat(fresh.measurements)
   for (const id of demo) {
+    delete database.localCampaigns?.[id]
     database.events[id] = fresh.events[id] ?? []
     database.proposals[id] = fresh.proposals[id] ?? []
     if (fresh.sponsorships[id]) database.sponsorships[id] = fresh.sponsorships[id]

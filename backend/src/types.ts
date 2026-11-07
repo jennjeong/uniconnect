@@ -457,7 +457,7 @@ export type MeasurementGoals = {
 
 // 참여자가 체크인 페이지에서 번호로 받는 쿠폰이다. `coupon`은 번호를
 // 발급하기 전의 패스에서는 true다.
-export type PassCoupon = { coupon?: string | true; visit?: true; surveyed?: true }
+export type PassCoupon = { coupon?: string | true; visit?: true; surveyed?: true; issuedAt?: string }
 
 // 체크인 페이지에서 참여자가 선택으로 하는 설문 응답으로, 행사의 집계로만
 // 보관한다(패스나 누구의 정보와도 함께 두지 않는다).
@@ -521,9 +521,16 @@ export type Measurement = {
   // 스캔마다 패스 하나이므로 참여자는 쿠폰마다 한 번, 방문마다 한 번씩 받는다.
   // 행사의 쿠폰은 패스 자체에, 협찬사의 쿠폰은 그 id 아래에 둔다. 매장 직원이
   // 입력하는 것은 번호다.
+  // Postgres에서는 비어 있고 행으로 있다(lib/passRows.ts).
   passes: Record<string, PassCoupon & { sponsors?: Record<string, PassCoupon> }>
+  // 처음 들어온 협찬사다. 행으로 있는 행사의 쿠폰을 이 협찬사의 것으로 옮기면 지운다.
+  eventCouponsTo?: string
   // 선택 설문의 응답을 센 것이다(lib/validation.ts surveyOptions).
   survey?: SurveyCounts
+  // Campus Local의 상시 쿠폰 캠페인이다(lib/local.ts). 기간이 없어 집계를 달로 묶고,
+  // 참여 기록은 행사 기간이 아니라 기록마다 지운다.
+  alwaysOn?: true
+  monthly?: Record<string, { scans: number; coupons: number; visits: number }>
   // 한국 날짜별 스캔, 쿠폰, 방문이다(lib/measurements.ts dailyCounts).
   daily?: Record<string, { scans: number; coupons: number; visits: number }>
   // 오늘(한국 날짜) 틀린 현장 PIN으로, 운영자 경보에 쓴다.
@@ -783,13 +790,13 @@ export type ShopInvite = {
 // 계정이 플랫폼에 내는 돈이다(lib/billing.ts). 협찬이 확정될 때 브랜드가
 // 내는 15% 수수료, 상세 리포트, Pro 한 달, 양쪽이 사는 상단 광고 한 달
 // (lib/ads.ts)이 있다.
-export type PaymentKind = "fee" | "report" | "pro" | "ad"
+export type PaymentKind = "fee" | "report" | "pro" | "ad" | "local"
 
 export type Payment = {
   // Toss Payments가 보는 주문 id이기도 하다.
   id: string
   // 결제한 계정이다. 결제 기록은 5년간 보관해야 하므로 계정이 떠난 뒤에는
-  // 이름만 남긴다.
+  // 이름만 남기고, 기간이 지나면 지운다(lib/paymentRetention.ts).
   accountId: string
   accountName: string
   kind: PaymentKind
@@ -814,6 +821,12 @@ export type Payment = {
   // 환불되지 않았다고 하면 지운다.
   refundingAt?: string
   refundReason?: string
+  // 일부만 돌려주는 환불을 Toss에 요청한 금액과 일수다. 요청한 값으로 기록하려고 함께 저장한다.
+  refundingAmount?: number
+  refundingDays?: number
+  // 일부를 돌려준 결제의 금액과 시각이다. 결제는 paid로 남는다(`markPartlyRefunded`).
+  refundedAmount?: number
+  refundedAt?: string
   receiptUrl?: string
   requestedAt: string
   // 브랜드가 대신 계좌 이체로 결제하겠다고 했다.
@@ -844,6 +857,11 @@ export type ReferralReward = {
 }
 
 export type Database = {
+  // 마지막으로 문서에 합친 집계 기록의 id다. 두 번 세지 않게 한다(lib/passRows.ts).
+  foldedCounts?: string[]
+  // 브랜드 계정의 상시 쿠폰 캠페인이다(lib/local.ts). 일정, 카탈로그, 제안에 나오지
+  // 않도록 `events`와 따로 둔다.
+  localCampaigns?: Record<string, EventItem>
   accounts: Account[]
   sessions: Session[]
   emailCodes: EmailCode[]

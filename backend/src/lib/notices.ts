@@ -2,7 +2,7 @@ import { waitUntil } from "@vercel/functions"
 
 import { config } from "../config.js"
 import { translate } from "./i18n.js"
-import { sendMail } from "./mailer.js"
+import { mailConfigured, sendMail } from "./mailer.js"
 import { getDatabase } from "../store.js"
 import type { Account, MailKind } from "../types.js"
 
@@ -28,6 +28,10 @@ export function notify(
 ) {
   if (!account || isDemo(account) || account.suspendedAt) return Promise.resolve(true)
   if (kind !== "account" && account.mailOff?.includes(kind)) return Promise.resolve(true)
+  return deliver(account, kind, subject, lines, path)
+}
+
+function deliver(account: Account, kind: MailKind | "account", subject: string, lines: string[], path: string) {
   const say = (text: string) => translate(text, account.language ?? "ko")
   const site = config.siteUrl?.replace(/\/$/, "")
   const text = [
@@ -48,3 +52,24 @@ export function notify(
   waitUntil(sending)
   return sending
 }
+
+// 이용을 제한했다고 알린다(약관의 이용 제한과 탈퇴). 정지된 계정에 보내는 유일한
+// 메일이며, 저장한 뒤에 부른다. 실제로 메일을 보냈을 때만 true라서, false면
+// 운영자가 직접 알려야 한다.
+export async function notifySuspended(account: Account, reason: string) {
+  if (!mailConfigured()) return false
+  const appeal = config.supportEmail
+    ? `이의가 있으면 ${config.supportEmail}으로 알려 주세요.`
+    : "이의가 있으면 이 메일에 답장해 주세요."
+  return deliver(
+    account,
+    "account",
+    "계정 이용이 제한됐어요",
+    ["운영자가 계정 이용을 제한했어요. 로그인할 수 없고, 다른 회원에게 보이지 않아요.", `사유: ${translate(reason, account.language ?? "ko")}`, appeal],
+    "/",
+  )
+}
+
+// 제한을 풀었다고 알린다.
+export const notifyRestored = (account: Account) =>
+  notify(account, "account", "계정 이용 제한이 풀렸어요", ["운영자가 계정 이용 제한을 풀었어요. 다시 로그인할 수 있어요."], "/")

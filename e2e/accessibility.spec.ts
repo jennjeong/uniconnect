@@ -5,7 +5,7 @@ import { signUpMember } from "./members"
 
 // 주요 화면의 자동 접근성 검사(WCAG 2.1 A와 AA)다. 치명적이거나 심각한
 // 문제는 실행을 실패시키고, 나머지는 출력만 한다.
-const pages = ["/", "/dashboard", "/matches", "/groups", "/faq", "/terms", "/privacy", "/admin", "/explore", "/events", "/check-in/20261012", "/check-in/20261012/staff", "/check-in/20261012/group", "/no-such-page"]
+const pages = ["/", "/dashboard", "/matches", "/groups", "/plans", "/faq", "/terms", "/privacy", "/admin", "/explore", "/events", "/check-in/20261012", "/check-in/20261012/staff", "/check-in/20261012/group", "/no-such-page"]
 
 async function expectNoBlockingProblems(page: Page, path: string, open?: () => Promise<void>) {
   await page.goto(path)

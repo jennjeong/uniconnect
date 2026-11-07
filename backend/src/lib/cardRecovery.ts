@@ -1,7 +1,7 @@
 import { getDatabase, saveDatabase } from "../store.js"
 import type { Payment } from "../types.js"
 import { logAdmin } from "./adminTools.js"
-import { markCancelled, markPaid, paymentsOf, refundUnsure, toss, type TossPayment } from "./billing.js"
+import { markCancelled, markPaid, markPartlyRefunded, partialRefundOf, paymentsOf, refundUnsure, toss, type TossPayment } from "./billing.js"
 import { HttpError } from "./errors.js"
 
 // 카드 결제는 여기에 기록되기 전에 Toss Payments가 승인하므로, 그 사이에
@@ -138,20 +138,29 @@ export async function askToss<T>(asking: Promise<T>) {
   }
 }
 
+function clearRefundMark(payment: Payment) {
+  delete payment.refundingAt
+  delete payment.refundReason
+  delete payment.refundingAmount
+  delete payment.refundingDays
+}
+
 // Toss가 환불한 결제를 기록하고 산 것을 회수하며, 저장이 실패하면 다시 시도한다
 // (recordApproval과 같다). 그래도 실패하면 `refundingAt`을 남긴 채 503을 답하고
-// `reconcileRefunds`에 맡긴다.
-async function recordRefund(id: string) {
+// `reconcileRefunds`에 맡긴다. 일부만 돌려주려던 결제도 Toss가 전부 환불했다면
+// 전액으로 기록한다(`whole`).
+async function recordRefund(id: string, whole = false) {
   for (let attempt = 1; ; attempt += 1) {
     const database = getDatabase()
     const payment = paymentById(id)
     if (!payment) throw new HttpError(404, "결제를 찾을 수 없어요.")
-    if (payment.status === "cancelled") return payment
+    if (payment.status === "cancelled" || payment.refundedAmount) return payment
     const reason = payment.refundReason ?? "운영자 환불"
-    markCancelled(database, payment, reason)
-    delete payment.refundingAt
-    delete payment.refundReason
-    logAdmin(database, "payment-cancelled", { kind: "payment", id }, reason)
+    const amount = payment.refundingAmount
+    if (amount && !whole) markPartlyRefunded(database, payment, { amount, days: payment.refundingDays! }, reason)
+    else markCancelled(database, payment, reason)
+    clearRefundMark(payment)
+    logAdmin(database, "payment-cancelled", { kind: "payment", id }, amount && !whole ? `${reason} (${amount.toLocaleString("ko-KR")}원 환불)` : reason)
     try {
       await saveDatabase()
       return payment
@@ -166,8 +175,7 @@ async function recordRefund(id: string) {
 async function releaseRefund(id: string) {
   const payment = paymentById(id)
   if (!payment?.refundingAt) return
-  delete payment.refundingAt
-  delete payment.refundReason
+  clearRefundMark(payment)
   await saveDatabase()
 }
 
@@ -178,11 +186,16 @@ export type SettledRefund = "refunded" | "paid" | "open"
 // 그 밖에는 미정이다.
 export async function settleRefund(id: string): Promise<SettledRefund> {
   const payment = paymentById(id)
-  if (!payment || payment.status === "cancelled") return "refunded"
+  if (!payment || payment.status === "cancelled" || payment.refundedAmount) return "refunded"
   if (!payment.refundingAt || !payment.paymentKey) return "paid"
   const startedAt = Date.parse(payment.refundingAt)
   const found = await toss.lookup(payment.paymentKey)
   if (found?.status === "CANCELED") {
+    await recordRefund(id, true)
+    return "refunded"
+  }
+  // 요청한 일부가 나간 것을 잔액으로 확인한 뒤에만 기록한다.
+  if (found?.status === "PARTIAL_CANCELED" && payment.refundingAmount && found.balanceAmount === payment.amount - payment.refundingAmount) {
     await recordRefund(id)
     return "refunded"
   }
@@ -208,11 +221,12 @@ export async function refundCard(id: string, reason: string) {
   const payment = paymentById(id)
   if (!payment?.paymentKey) throw new HttpError(404, "결제를 찾을 수 없어요.")
   const refundingAt = new Date().toISOString()
-  Object.assign(payment, { refundingAt, refundReason: reason })
+  const part = partialRefundOf(payment)
+  Object.assign(payment, { refundingAt, refundReason: reason }, part ? { refundingAmount: part.amount, refundingDays: part.days } : {})
   // 이 저장이 실패하면 아직 환불하지 않은 것이다.
   await saveDatabase()
   try {
-    await toss.cancel(payment.paymentKey, reason, `refund_${id}_${Date.parse(refundingAt)}`)
+    await toss.cancel(payment.paymentKey, reason, `refund_${id}_${Date.parse(refundingAt)}`, part?.amount)
   } catch (error) {
     if (error instanceof HttpError && error.status === 409) {
       await releaseRefund(id).catch((caught: Error) => console.error(`[billing] releasing refund ${id}: ${caught.message}`))

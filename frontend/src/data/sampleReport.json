@@ -1,0 +1,433 @@
+{
+ "number": "SAMPLE",
+ "issuedAt": "2026-11-07T04:52:55.162Z",
+ "final": true,
+ "finalOn": "2026-10-21",
+ "sponsorship": {
+  "id": "sp-busking",
+  "brandName": "예시 카페",
+  "groupName": "예시 동아리",
+  "eventName": "가을 버스킹 데이"
+ },
+ "event": {
+  "date": "2026-10-12",
+  "people": "160명",
+  "window": {
+   "start": "2026-10-12",
+   "end": "2026-10-13",
+   "visitsEnd": "2026-10-20"
+  }
+ },
+ "spend": 680000,
+ "averageSpend": 40300,
+ "snsReach": 1112,
+ "sales": 1652300,
+ "grade": "S",
+ "achievement": 129,
+ "scorecard": [
+  {
+   "key": "reach",
+   "target": 1100,
+   "actual": 1240,
+   "achievement": 113
+  },
+  {
+   "key": "scans",
+   "target": 105,
+   "actual": 128,
+   "achievement": 122
+  },
+  {
+   "key": "coupons",
+   "target": 75,
+   "actual": 94,
+   "achievement": 125
+  },
+  {
+   "key": "visits",
+   "target": 26,
+   "actual": 41,
+   "achievement": 158
+  },
+  {
+   "key": "qrRate",
+   "target": 30,
+   "actual": 36.6,
+   "achievement": 122
+  },
+  {
+   "key": "visitRate",
+   "target": 25,
+   "actual": 32,
+   "achievement": 128
+  },
+  {
+   "key": "roas",
+   "target": 170,
+   "actual": 243,
+   "achievement": 143
+  }
+ ],
+ "funnel": [
+  {
+   "key": "audience",
+   "count": 350,
+   "rate": null,
+   "benchmark": null
+  },
+  {
+   "key": "scans",
+   "count": 128,
+   "rate": 36.6,
+   "benchmark": null
+  },
+  {
+   "key": "coupons",
+   "count": 94,
+   "rate": 73.4,
+   "benchmark": null
+  },
+  {
+   "key": "visits",
+   "count": 41,
+   "rate": 43.6,
+   "benchmark": null
+  }
+ ],
+ "costs": {
+  "perThousandReach": 548387,
+  "perScan": 5313,
+  "perCoupon": 7234,
+  "perVisit": 16585,
+  "perVisitBenchmark": null,
+  "roasBenchmark": null
+ },
+ "time": {
+  "hourly": [
+   {
+    "date": "2026-10-12",
+    "hour": 17,
+    "scans": 12
+   },
+   {
+    "date": "2026-10-12",
+    "hour": 18,
+    "scans": 26
+   },
+   {
+    "date": "2026-10-12",
+    "hour": 19,
+    "scans": 38
+   },
+   {
+    "date": "2026-10-12",
+    "hour": 20,
+    "scans": 29
+   },
+   {
+    "date": "2026-10-12",
+    "hour": 21,
+    "scans": 15
+   },
+   {
+    "date": "2026-10-12",
+    "hour": 22,
+    "scans": 8
+   }
+  ],
+  "peak": {
+   "date": "2026-10-12",
+   "hour": 19,
+   "scans": 38
+  },
+  "daily": [
+   {
+    "date": "2026-10-12",
+    "scans": 6,
+    "coupons": 6,
+    "visits": 0
+   },
+   {
+    "date": "2026-10-13",
+    "scans": 0,
+    "coupons": 0,
+    "visits": 2
+   },
+   {
+    "date": "2026-10-14",
+    "scans": 0,
+    "coupons": 0,
+    "visits": 2
+   },
+   {
+    "date": "2026-10-15",
+    "scans": 0,
+    "coupons": 0,
+    "visits": 1
+   },
+   {
+    "date": "2026-10-16",
+    "scans": 0,
+    "coupons": 0,
+    "visits": 1
+   },
+   {
+    "date": "2026-10-17",
+    "scans": 0,
+    "coupons": 0,
+    "visits": 0
+   },
+   {
+    "date": "2026-10-18",
+    "scans": 0,
+    "coupons": 0,
+    "visits": 0
+   },
+   {
+    "date": "2026-10-19",
+    "scans": 0,
+    "coupons": 0,
+    "visits": 0
+   },
+   {
+    "date": "2026-10-20",
+    "scans": 0,
+    "coupons": 0,
+    "visits": 0
+   }
+  ],
+  "lag": {
+   "days": [
+    0,
+    2,
+    2,
+    1,
+    1,
+    0,
+    0,
+    0
+   ],
+   "average": 2.2,
+   "sample": 6
+  },
+  "recordsKept": 18
+ },
+ "effect": {
+  "before": 38,
+  "during": 47,
+  "days": 9,
+  "lift": 23.7,
+  "extraVisitors": 81,
+  "extraSales": 3264300,
+  "incrementalRoas": 480,
+  "attributedShare": 50.6
+ },
+ "fulfillment": {
+  "items": [
+   {
+    "side": "group",
+    "label": "무대 현수막에 로고 넣기",
+    "done": true,
+    "proof": 0
+   },
+   {
+    "side": "group",
+    "label": "공연 중 쿠폰 안내 멘트 2회",
+    "done": true,
+    "proof": 0
+   },
+   {
+    "side": "group",
+    "label": "인스타그램 홍보 게시물 1회",
+    "done": true,
+    "proof": 1
+   },
+   {
+    "side": "group",
+    "label": "정문 부스에 QR 세우기",
+    "done": true,
+    "proof": 0
+   },
+   {
+    "side": "brand",
+    "label": "아메리카노 1+1 쿠폰 준비",
+    "done": true,
+    "proof": 0
+   },
+   {
+    "side": "brand",
+    "label": "현장 시음 음료 200잔 전달",
+    "done": true,
+    "proof": 0
+   }
+  ],
+  "done": 6,
+  "proof": 1
+ },
+ "venue": {
+  "samples": 0,
+  "stamps": 0,
+  "posts": 0,
+  "surveys": 0,
+  "purchases": 0,
+  "giveaways": 0,
+  "raffles": 0,
+  "signups": 0,
+  "experiences": 0
+ },
+ "methods": [
+  "qr",
+  "coupon",
+  "visit"
+ ],
+ "reviews": [],
+ "advice": [
+  {
+   "code": "peak-hour",
+   "values": {
+    "hour": 19
+   }
+  },
+  {
+   "code": "renew",
+   "values": {
+    "roas": 243
+   }
+  }
+ ],
+ "next": [
+  {
+   "id": "nowon-creators",
+   "name": "노원 크리에이터스",
+   "school": "노원구 5개 대학 연합",
+   "category": "콘텐츠 · 연합회",
+   "score": 85,
+   "event": {
+    "name": "캠퍼스 브이로그 챌린지",
+    "date": "2026-11-08"
+   }
+  },
+  {
+   "id": "dswu-council",
+   "name": "덕성여대 총학생회",
+   "school": "덕성여자대학교",
+   "category": "학생회 · 행사",
+   "score": 80,
+   "event": {
+    "name": "학생회 간식 나눔 행사",
+    "date": "2026-11-18"
+   }
+  },
+  {
+   "id": "kw-movement",
+   "name": "광운대 무브먼트",
+   "school": "광운대학교",
+   "category": "공연 · 댄스",
+   "score": 79,
+   "event": {
+    "name": "겨울 댄스 쇼케이스",
+    "date": "2026-11-21"
+   }
+  }
+ ],
+ "benchmarkCount": 0,
+ "overview": {
+  "school": "예시 대학교학교",
+  "category": "공연 · 동아리",
+  "expectedAudience": 350,
+  "valueBreakdown": [
+   {
+    "type": "협찬액",
+    "value": 680000
+   }
+  ],
+  "coupon": {
+   "store": "예시 카페 공릉점",
+   "title": "아메리카노 1+1"
+  },
+  "targets": {
+   "reach": 1100,
+   "scans": 105,
+   "coupons": 75,
+   "visits": 26,
+   "qrRate": 30,
+   "visitRate": 25,
+   "roas": 170
+  },
+  "agreedValue": null
+ },
+ "audience": {
+  "responses": 86,
+  "responseRate": 67.2,
+  "grade": {
+   "1학년": 24,
+   "2학년": 21,
+   "3학년": 18,
+   "4학년 이상": 14,
+   "대학원생": 3,
+   "졸업생 · 기타": 4
+  },
+  "field": {
+   "인문 · 사회": 19,
+   "경영 · 경제": 17,
+   "자연 · 공학": 22,
+   "의약 · 보건": 9,
+   "예체능": 12,
+   "교육": 5,
+   "기타": 2
+  },
+  "visited": {
+   "처음이에요": 51,
+   "가 본 적 있어요": 29,
+   "잘 모르겠어요": 6
+  },
+  "firstTimeShare": 59.3
+ },
+ "visitsAnalysis": {
+  "redemption": 43.6,
+  "sameDayShare": 0,
+  "weekdays": [
+   0,
+   0,
+   2,
+   2,
+   1,
+   1,
+   0
+  ],
+  "newCustomers": 24
+ },
+ "roi": {
+  "breakEvenVisits": 17,
+  "sensitivity": [
+   {
+    "factor": 0.8,
+    "spendPerVisit": 32240,
+    "roas": 194.4
+   },
+   {
+    "factor": 1,
+    "spendPerVisit": 40300,
+    "roas": 243
+   },
+   {
+    "factor": 1.2,
+    "spendPerVisit": 48360,
+    "roas": 291.6
+   }
+  ]
+ },
+ "partner": {
+  "otherEvents": 0,
+  "averageScanRate": null,
+  "rating": 5,
+  "reviewCount": 1
+ },
+ "history": {
+  "count": 3,
+  "averageRoas": 211,
+  "averagePerVisit": 11118,
+  "rank": 1
+ },
+ "groupName": "예시 동아리"
+}

@@ -6,6 +6,8 @@ import { tmpdir } from "node:os"
 import path from "node:path"
 import { after, before, beforeEach, test } from "node:test"
 
+import type { Payment } from "./types.js"
+
 // 실행할 때마다 실제 data/db.json이 아니라 임시 파일의 새 시드로 시작한다.
 const dataDir = await mkdtemp(path.join(tmpdir(), "uniconnect-api-"))
 process.env.DATA_FILE = path.join(dataDir, "db.json")
@@ -3167,7 +3169,7 @@ async function signUpMember(email: string, password: string, role: "학생단체
     over14: true,
     ...extra,
   })
-  assert.equal(signup.status, 201)
+  assert.equal(signup.status, 201, signup.data.error)
   return signup.data.token as string
 }
 
@@ -6221,7 +6223,7 @@ test("a card refund whose save fails is kept by its mark and recorded later, nev
     return { status: "DONE", orderId, totalAmount: amount, approvedAt: "2026-11-05T12:00:00+09:00" }
   }
   toss.lookup = async (paymentKey) => atToss.get(paymentKey)
-  const refund = async (paymentKey: string, _reason: string, idempotencyKey: string) => {
+  const refund = async (paymentKey: string, _reason: string, idempotencyKey: string, _amount?: number) => {
     asked.push(idempotencyKey)
     atToss.get(paymentKey)!.status = "CANCELED"
   }
@@ -6686,7 +6688,7 @@ test("the operators' console lists what needs them, members with their record, a
     const seen = (await admin("/overview")).data
     assert.equal(seen.weekly.length, 8)
     assert.deepEqual(Object.keys(seen.attention).sort(), ["alerts", "applications", "cancels", "inquiries", "referrals", "reports", "stale", "suspended", "transfers"])
-    assert.deepEqual(Object.keys(seen.revenue.byKind).sort(), ["ad", "fee", "pro", "report"])
+    assert.deepEqual(Object.keys(seen.revenue.byKind).sort(), ["ad", "fee", "local", "pro", "report"])
 
     await signUpMember("console@syu.ac.kr", "console-pass-123")
     const found = (await admin("/accounts?q=console%40syu")).data.accounts
@@ -6976,4 +6978,618 @@ test("a shop with no company email signs up by invitation with a document, and a
     settings.adminToken = saved
   }
   assert.equal((await call("POST", "/auth/email-code", { role: "브랜드", email: "second@naver.com", invite: invite.code })).status, 200)
+})
+
+test("payment records leave 5 years after their last step, unless a member still relies on them", async () => {
+  const { expiredPayments, prunePayments } = await import("./lib/paymentRetention.js")
+  const { paymentsOf } = await import("./lib/billing.js")
+  const database = getDatabase()
+  const member = database.accounts[0].id
+  const now = new Date("2031-06-15T00:00:00.000Z")
+  const old = "2026-06-14T00:00:00.000Z"
+  const row = (id: string, accountId: string, extra: object) =>
+    ({ id, accountId, accountName: "이름", kind: "pro", targetId: "", orderName: "Growth 30일", amount: 1, requestedAt: old, ...extra }) as Payment
+  const rows = [
+    row("left-paid", "left-account", { status: "paid", paidAt: old }),
+    row("left-recent", "left-account", { status: "paid", paidAt: "2026-06-16T00:00:00.000Z" }),
+    row("left-refunded-late", "left-account", { status: "cancelled", paidAt: old, cancelledAt: "2028-01-01T00:00:00.000Z" }),
+    row("left-confirming", "left-account", { status: "pending", confirmingAt: old }),
+    row("left-refunding", "left-account", { status: "paid", paidAt: old, refundingAt: old }),
+    row("member-paid", member, { status: "paid", paidAt: old }),
+    row("member-cancelled", member, { status: "cancelled", cancelledAt: old }),
+    row("member-waiting", member, { status: "pending" }),
+  ]
+  paymentsOf(database).push(...rows)
+  try {
+    assert.deepEqual(expiredPayments(database, now).map((payment) => payment.id), ["left-paid", "member-cancelled", "member-waiting"])
+    assert.equal(await prunePayments(now), 3)
+    const left = new Set(paymentsOf(getDatabase()).map((payment) => payment.id))
+    assert.deepEqual(rows.map((item) => left.has(item.id)), [false, true, true, true, true, true, false, false])
+    // 지울 것이 없으면 아무 일도 하지 않는다.
+    assert.equal(await prunePayments(now), 0)
+    // 다른 결제는 그대로 둔다.
+    assert.equal(await prunePayments(new Date("2026-11-07T00:00:00.000Z")), 0)
+  } finally {
+    const ours = new Set(rows.map((item) => item.id))
+    getDatabase().payments = paymentsOf(getDatabase()).filter((payment) => !ours.has(payment.id))
+    await saveDatabase()
+  }
+})
+
+test("a restricted member is told why and how to appeal, and the operator learns when no mail went out", async () => {
+  const { mailTransport } = await import("./lib/mailer.js")
+  const admin = async (route: string, body?: unknown) => {
+    const response = await fetch(baseUrl + route, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Admin-Token": "test-admin-token" },
+      body: JSON.stringify(body ?? {}),
+    })
+    const reply = await response.text()
+    return { status: response.status, data: reply ? JSON.parse(reply) : null }
+  }
+  const { token: group } = await listedMember("reporter@syu.ac.kr", "notice-pass-123")
+  const { token: brand, listingId: brandListing } = await listedMember("restricted@restrictcafe.kr", "notice-pass-123", "브랜드")
+  const id = (await call("GET", "/auth/me", undefined, brand)).data.account.id as string
+  const { token: other } = await listedMember("restricted@othercafe.kr", "notice-pass-123", "브랜드")
+  const otherId = (await call("GET", "/auth/me", undefined, other)).data.account.id as string
+
+  // 메일 서비스가 없으면 보내지 못했다고 알려 준다.
+  const unsent = await admin(`/admin/accounts/${id}/suspend`, { reason: "사칭" })
+  assert.deepEqual([unsent.status, unsent.data.noticeSent], [200, false])
+  assert.equal((await admin(`/admin/accounts/${id}/unsuspend`)).status, 204)
+
+  const realPost = mailTransport.post
+  const sent: { to: string[]; subject: string; text: string }[] = []
+  let answer = 200
+  mailTransport.post = async (body) => {
+    sent.push(body)
+    return new Response(null, { status: answer })
+  }
+  config.resendApiKey = "test-key"
+  config.mailFrom = "uniconnect <no-reply@example.com>"
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 20))
+  try {
+    // 정지한 계정에는 다른 메일이 가지 않지만 제한 알림은 간다.
+    const done = await admin(`/admin/accounts/${id}/suspend`, { reason: "다른 회사를 사칭했어요" })
+    assert.equal(done.data.noticeSent, true)
+    assert.equal(sent.length, 1)
+    assert.deepEqual(sent[0].to, ["restricted@restrictcafe.kr"])
+    assert.match(sent[0].text, /사유: 다른 회사를 사칭했어요/)
+    assert.match(sent[0].text, /이 메일에 답장/)
+
+    // 이미 정지된 계정을 다시 정지해도 메일을 또 보내지 않는다.
+    const again = await admin(`/admin/accounts/${id}/suspend`, {})
+    assert.equal(again.data.noticeSent, undefined)
+    assert.equal(sent.length, 1)
+
+    // 풀면 알린다.
+    assert.equal((await admin(`/admin/accounts/${id}/unsuspend`)).status, 204)
+    await settle()
+    assert.equal(sent.length, 2)
+    assert.match(sent[1].subject, /제한이 풀렸어요/)
+
+    // 사유를 안 적으면 기본 문구가 가고, 이의 주소가 있으면 그 주소를 적는다.
+    config.supportEmail = "help@example.com"
+    await admin(`/admin/accounts/${otherId}/suspend`)
+    assert.match(sent[2].text, /사유: 운영자가 약관을 어긴 일을 확인했어요/)
+    assert.match(sent[2].text, /help@example\.com으로 알려 주세요/)
+    await admin(`/admin/accounts/${otherId}/unsuspend`)
+    await settle()
+
+    // 메일이 실패하면 운영자가 알 수 있다.
+    answer = 500
+    assert.equal((await admin(`/admin/accounts/${id}/suspend`, { reason: "사칭" })).data.noticeSent, false)
+    answer = 200
+    await admin(`/admin/accounts/${id}/unsuspend`)
+    await settle()
+
+    // 신고로 정지하면 신고 종류만 가고 신고자가 쓴 글은 가지 않는다.
+    const reported = await call("POST", "/reports", { kind: "account", listingId: brandListing, reason: "사기 의심", detail: "신고자가 쓴 비밀 글" }, group)
+    assert.ok(reported.status < 300, JSON.stringify(reported.data))
+    const reports = (await fetch(`${baseUrl}/admin/reports`, { headers: { "X-Admin-Token": "test-admin-token" } }).then((item) => item.json())) as { reports: { id: string; detail: string }[] }
+    const report = reports.reports.find((item) => item.detail === "신고자가 쓴 비밀 글")!
+    sent.length = 0
+    const resolved = await admin(`/admin/reports/${report.id}/resolve`, { action: "suspend" })
+    assert.equal(resolved.data.noticeSent, true)
+    assert.match(sent[0].text, /사유: 사기 의심/)
+    assert.doesNotMatch(sent[0].text, /비밀 글/)
+    await admin(`/admin/accounts/${id}/unsuspend`)
+    await settle()
+  } finally {
+    mailTransport.post = realPost
+    config.resendApiKey = undefined
+    config.mailFrom = undefined
+    config.supportEmail = undefined
+  }
+})
+
+test("Campus Local sells a 30-day pass that runs one always-on coupon campaign and a monthly report", async () => {
+  const { markCancelled, markPaid, paymentsOf } = await import("./lib/billing.js")
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const { prunePasses } = await import("./lib/measurements.js")
+  const { config } = await import("./config.js")
+  const plans = async () => (await call("GET", "/billing/plans")).data.plans.find((item: { id: string }) => item.id === "local")
+  const { token: brand } = await listedMember("local@local-cafe.kr", "local-pass-123", "브랜드")
+  const { token: group } = await listedMember("local@syu.ac.kr", "local-pass-123", "학생단체")
+  const pay = async () => {
+    const order = await call("POST", "/billing/orders", { kind: "local" }, brand)
+    assert.ok(order.status < 300, JSON.stringify(order.data))
+    const payment = paymentsOf(getDatabase()).find((item) => item.id === order.data.order.id)!
+    markPaid(getDatabase(), payment, { method: "transfer" })
+    return payment
+  }
+
+  // 판매를 열기 전에는 가격을 보여 주지 않고 사지 못한다.
+  assert.deepEqual([(await plans()).status, (await plans()).price], ["soon", null])
+  assert.equal((await call("POST", "/billing/orders", { kind: "local" }, brand)).status, 404)
+  assert.equal((await call("POST", "/local/campaign", { store: "카페", title: "할인" }, brand)).status, 402)
+
+  config.localOnSale = true
+  try {
+    const row = await plans()
+    assert.deepEqual([row.status, row.price, row.priceWithVat, row.days, row.orderKind], ["open", 79_000, 86_900, 30, "local"])
+    assert.equal((await call("GET", "/local", undefined, group)).status, 403)
+    assert.equal((await call("POST", "/billing/orders", { kind: "local" }, group)).status, 403)
+    assert.equal((await call("POST", "/local/campaign", { store: "카페", title: "할인" }, brand)).status, 402)
+
+    // 30일을 사고, 다시 사면 남은 날 뒤에 이어진다.
+    const first = await pay()
+    const today = todayInKorea()
+    assert.equal(first.amount, 86_900)
+    assert.equal(first.periodEnd, addDays(today, 29))
+    const second = await pay()
+    assert.equal(second.periodEnd, addDays(today, 59))
+    assert.equal((await call("GET", "/local", undefined, brand)).data.until, addDays(today, 59))
+    assert.equal((await call("GET", "/billing", undefined, brand)).data.plan.localUntil, addDays(today, 59))
+
+    // 캠페인은 계정마다 하나이고 일정에는 나오지 않는다.
+    assert.equal((await call("POST", "/local/campaign", { store: "", title: "할인" }, brand)).status, 400)
+    const opened = await call("POST", "/local/campaign", { store: "로컬 카페", title: "아메리카노 1잔" }, brand)
+    assert.equal(opened.status, 201, JSON.stringify(opened.data))
+    assert.equal((await call("POST", "/local/campaign", { store: "카페", title: "할인" }, brand)).status, 409)
+    const account = getDatabase().accounts.find((item) => item.email === "local@local-cafe.kr")!
+    assert.deepEqual(getDatabase().events[account.id] ?? [], [])
+    const { code, staffPin } = opened.data.campaign
+    assert.deepEqual([opened.data.campaign.store, opened.data.campaign.open, opened.data.campaign.couponDays], ["로컬 카페", true, 7])
+
+    const page = (await call("GET", `/check-in/${code}`)).data
+    assert.deepEqual([page.eventName, page.alwaysOn, page.open, page.couponDays], ["로컬 카페", true, true, 7])
+    assert.deepEqual(page.coupons, [{ id: "event", store: "로컬 카페", title: "아메리카노 1잔" }])
+
+    // 행사와 같은 흐름으로 스캔, 쿠폰, 직원 확인이 된다.
+    const take = async () => {
+      const scan = await call("POST", `/check-in/${code}/scans`, {})
+      assert.equal(scan.status, 200, JSON.stringify(scan.data))
+      const coupon = await call("POST", `/check-in/${code}/coupons`, { pass: scan.data.pass })
+      assert.equal(coupon.status, 200, JSON.stringify(coupon.data))
+      return { pass: scan.data.pass as string, number: coupon.data.coupon as string }
+    }
+    const used = await take()
+    const old = await take()
+    const session = await call("POST", `/check-in/${code}/staff/session`, { pin: staffPin })
+    assert.equal(session.data.shares[0].store, "로컬 카페")
+    assert.equal((await call("POST", `/check-in/${code}/staff/visits`, { pin: staffPin, coupon: used.number })).status, 200)
+    assert.equal((await call("GET", `/check-in/${code}/passes/${used.pass}`)).data.coupons.event.visited, true)
+    assert.ok((await call("GET", `/check-in/${code}/passes/${used.pass}`)).data.coupons.event.expiresAt)
+
+    // 쿠폰은 발급하고 7일까지다.
+    const measurement = getDatabase().measurements.find((item) => item.code === code)!
+    measurement.passes[old.pass].issuedAt = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString()
+    const late = await call("POST", `/check-in/${code}/staff/visits`, { pin: staffPin, coupon: old.number })
+    assert.deepEqual([late.status, late.data.error], [409, "쿠폰 사용 기간이 지났어요."])
+
+    // 지우는 것도 기록마다다. 집계는 그대로다.
+    assert.equal(prunePasses(getDatabase(), measurement, getDatabase().localCampaigns![account.id]), true)
+    assert.deepEqual(Object.keys(measurement.passes), [used.pass])
+
+    // 달로만 세므로 끝이 없어도 문서가 자라지 않는다.
+    assert.deepEqual(measurement.hourlyScans, [])
+    assert.equal(measurement.daily, undefined)
+    assert.ok(measurement.log.length <= 30)
+    const report = (await call("GET", "/local/report", undefined, brand)).data
+    assert.deepEqual(
+      [report.month, report.scans, report.coupons, report.visits, report.couponRate, report.visitRate],
+      [today.slice(0, 7), 2, 2, 1, 100, 50],
+    )
+    assert.deepEqual(report.months, [today.slice(0, 7)])
+    assert.equal((await call("GET", "/local/report?month=2020-01", undefined, brand)).data.scans, 0)
+    assert.equal((await call("GET", "/local/report?month=soon", undefined, brand)).status, 400)
+    assert.equal((await call("GET", "/local/report", undefined, group)).status, 403)
+
+    // 고치고 PIN을 바꾼다.
+    assert.equal((await call("PUT", "/local/campaign", { store: "로컬 카페 2호점", title: "라떼 1잔" }, brand)).status, 200)
+    assert.equal((await call("GET", `/check-in/${code}`)).data.eventName, "로컬 카페 2호점")
+    const rotated = (await call("POST", "/local/campaign/pin", {}, brand)).data.campaign.staffPin
+    assert.notEqual(rotated, staffPin)
+    assert.equal((await call("POST", `/check-in/${code}/staff/session`, { pin: staffPin })).status, 403)
+
+    // 스캔 상한(예상 인원의 3배)이 없다.
+    measurement.metrics.scans = 5000
+    assert.equal((await call("POST", `/check-in/${code}/scans`, {})).status, 200)
+    measurement.metrics.scans = 3
+
+    // 이용 기간이 끝나면 새 쿠폰은 멈추고, 나간 쿠폰은 쓴다. 다시 사면 그대로 다시 열린다.
+    const live = await take()
+    markCancelled(getDatabase(), second, "시험")
+    markCancelled(getDatabase(), first, "시험")
+    assert.equal((await call("GET", `/check-in/${code}`)).data.open, false)
+    assert.equal((await call("POST", `/check-in/${code}/scans`, {})).status, 409)
+    assert.equal((await call("POST", `/check-in/${code}/coupons`, { pass: live.pass })).status, 409)
+    assert.equal((await call("POST", `/check-in/${code}/staff/visits`, { pin: rotated, coupon: live.number })).status, 200)
+    assert.equal((await call("GET", "/local", undefined, brand)).data.campaign.open, false)
+    assert.equal((await call("GET", "/local/report", undefined, brand)).status, 200)
+    await pay()
+    assert.equal((await call("POST", `/check-in/${code}/scans`, {})).status, 200)
+
+    // 내 데이터 내보내기에 들어 있고, 탈퇴하면 함께 지워진다.
+    const exported = await call("GET", "/auth/export", undefined, brand)
+    assert.equal(exported.data.localCampaign.name, "로컬 카페 2호점")
+    assert.equal((await call("DELETE", "/auth/account", { password: "local-pass-123" }, brand)).status < 300, true)
+    assert.equal(getDatabase().localCampaigns?.[account.id], undefined)
+    assert.equal(getDatabase().measurements.some((item) => item.code === code), false)
+    assert.equal((await call("GET", `/check-in/${code}`)).status, 404)
+  } finally {
+    config.localOnSale = false
+  }
+})
+
+test("an always-on campaign has no scan ceiling and its coupons last 7 days from issue", async () => {
+  const measurements = await import("./lib/measurements.js")
+  const database = getDatabase()
+  const fake = { alwaysOn: true, accountId: "x", metrics: { scans: 1 } } as never
+  assert.equal(measurements.scanCeiling(database, fake), Infinity)
+  assert.equal(measurements.couponsValidFrom(database, { accountId: "x" } as never), undefined)
+  const from = measurements.couponsValidFrom(database, fake, new Date("2026-11-08T00:00:00Z"))
+  assert.equal(from?.toISOString(), "2026-11-01T00:00:00.000Z")
+})
+
+test("Growth includes the always-on campaign once Local is on sale, and Local can't be bought on top of it", async () => {
+  const { markPaid, paymentsOf } = await import("./lib/billing.js")
+  const { token: brand } = await listedMember("growth-local@growth-cafe.kr", "local-pass-123", "브랜드")
+  const growth = await call("POST", "/billing/orders", { kind: "pro" }, brand)
+  const payment = paymentsOf(getDatabase()).find((item) => item.id === growth.data.order.id)!
+  markPaid(getDatabase(), payment, { method: "transfer" })
+  const coupons = async () => (await call("GET", "/billing/plans")).data.plans.map((item: { limits: { alwaysOnCoupons: boolean } | null }) => item.limits?.alwaysOnCoupons)
+
+  // 판매를 열기 전에는 Growth로도 열 수 없다.
+  assert.deepEqual(await coupons(), [false, undefined, false])
+  assert.equal((await call("POST", "/local/campaign", { store: "카페", title: "할인" }, brand)).status, 402)
+  assert.equal((await call("GET", "/local", undefined, brand)).data.includedInGrowth, false)
+
+  config.localOnSale = true
+  try {
+    assert.deepEqual(await coupons(), [false, true, true])
+    const local = (await call("GET", "/local", undefined, brand)).data
+    assert.deepEqual([local.includedInGrowth, local.until], [true, payment.periodEnd])
+    const order = await call("POST", "/billing/orders", { kind: "local" }, brand)
+    assert.equal(order.status, 409)
+
+    const opened = await call("POST", "/local/campaign", { store: "그로스 카페", title: "할인" }, brand)
+    assert.equal(opened.status, 201, JSON.stringify(opened.data))
+    const { code } = opened.data.campaign
+    assert.equal((await call("GET", `/check-in/${code}`)).data.open, true)
+    assert.equal((await call("POST", `/check-in/${code}/scans`, {})).status, 200)
+
+    // Growth가 끝나면 새 쿠폰을 멈춘다.
+    payment.status = "cancelled"
+    assert.equal((await call("GET", `/check-in/${code}`)).data.open, false)
+    assert.equal((await call("POST", `/check-in/${code}/scans`, {})).status, 409)
+    assert.equal((await call("GET", "/local", undefined, brand)).data.includedInGrowth, false)
+  } finally {
+    config.localOnSale = false
+  }
+})
+
+test("a Local refund is whole in the first 7 days or before its period starts, then the remaining days by Toss partial cancel", async () => {
+  const { markPaid, paymentsOf, toss } = await import("./lib/billing.js")
+  const { cardRecovery, reconcileRefunds } = await import("./lib/cardRecovery.js")
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const { HttpError } = await import("./lib/errors.js")
+  const { localUntil } = await import("./lib/plan.js")
+  const saved = { client: config.tossClientKey, secret: config.tossSecretKey, settle: cardRecovery.settleAfterMs, admin: config.adminToken }
+  const realToss = { confirm: toss.confirm, lookup: toss.lookup, cancel: toss.cancel }
+  config.tossClientKey = "live_ck_example"
+  config.tossSecretKey = "live_sk_example"
+  config.adminToken = "test-admin-token"
+  config.localOnSale = true
+  const atToss = new Map<string, { status: string; orderId: string; totalAmount: number; balanceAmount: number }>()
+  const asked: { key: string; amount?: number }[] = []
+  toss.confirm = async (paymentKey, orderId, amount) => {
+    atToss.set(paymentKey, { status: "DONE", orderId, totalAmount: amount, balanceAmount: amount })
+    return { status: "DONE", orderId, totalAmount: amount, approvedAt: new Date().toISOString() }
+  }
+  toss.lookup = async (paymentKey) => atToss.get(paymentKey)
+  const refund = async (paymentKey: string, _reason: string, key: string, amount?: number) => {
+    asked.push({ key, amount })
+    const found = atToss.get(paymentKey)!
+    found.balanceAmount -= amount ?? found.balanceAmount
+    found.status = found.balanceAmount === 0 ? "CANCELED" : "PARTIAL_CANCELED"
+  }
+  toss.cancel = refund
+  const admin = async (method: string, route: string, body?: unknown) => {
+    const response = await fetch(`${baseUrl}/admin${route}`, {
+      method,
+      headers: { "Content-Type": "application/json", "X-Admin-Token": "test-admin-token" },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    })
+    return { status: response.status, data: (await response.json()) as Record<string, any> }
+  }
+  const stored = (id: string) => paymentsOf(getDatabase()).find((payment) => payment.id === id)!
+  const daysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
+  try {
+    const { token: brand } = await listedMember("local-refund@refund-cafe.kr", "local-pass-123", "브랜드")
+    const accountId = getDatabase().accounts.find((item) => item.email === "local-refund@refund-cafe.kr")!.id
+    let keys = 0
+    const payByCard = async () => {
+      const made = (await call("POST", "/billing/orders", { kind: "local" }, brand)).data.order
+      const paymentKey = `pk-local-${(keys += 1)}`
+      assert.equal((await call("POST", "/billing/confirm", { orderId: made.id, paymentKey, amount: made.amount }, brand)).status, 200)
+      return made.id as string
+    }
+    const cancel = (id: string) => admin("POST", `/payments/${id}/cancel`, { reason: "테스트 환불" })
+    const today = todayInKorea()
+
+    // 7일 안이면 전액이다.
+    const early = await payByCard()
+    assert.deepEqual((await admin("GET", `/payments/${early}/refund`)).data, { amount: 86_900, days: null, whole: true })
+    assert.equal((await cancel(early)).data.payment.status, "cancelled")
+    assert.equal(asked.at(-1)!.amount, undefined)
+    assert.equal(localUntil(getDatabase(), accountId), null)
+
+    // 30일을 두 번 사고, 8일이 지나 앞 기간을 환불한다. 오늘까지 쓴 날이고 내일부터 돌려준다.
+    const first = await payByCard()
+    const second = await payByCard()
+    Object.assign(stored(first), { paidAt: daysAgo(8), periodEnd: addDays(today, 20) })
+    Object.assign(stored(second), { paidAt: daysAgo(8), periodEnd: addDays(today, 50) })
+    assert.deepEqual((await admin("GET", `/payments/${first}/refund`)).data, { amount: 57_933, days: 20, whole: false })
+    const partial = await cancel(first)
+    assert.equal(partial.status, 200, JSON.stringify(partial.data))
+    assert.equal(asked.at(-1)!.amount, 57_933)
+    assert.deepEqual(
+      [stored(first).status, stored(first).refundedAmount, stored(first).periodEnd, stored(first).periodDays, stored(first).cancelReason],
+      ["paid", 57_933, today, 10, "테스트 환불"],
+    )
+    assert.ok(stored(first).refundedAt)
+    assert.equal(stored(first).refundingAmount, undefined)
+    assert.equal(stored(second).periodEnd, addDays(today, 30))
+
+    // 일부를 돌려준 결제는 다시 환불하지 못하고, 표시는 계정에 보이지 않는다.
+    assert.equal((await cancel(first)).status, 409)
+    assert.equal((await admin("GET", `/payments/${first}/refund`)).status, 409)
+    const view = ((await call("GET", "/billing", undefined, brand)).data.payments as Record<string, unknown>[]).find((item) => item.id === first)!
+    assert.equal(view.refundedAmount, 57_933)
+    assert.ok(!("refundingAmount" in view))
+
+    // 아직 시작하지 않은 기간은 7일이 지나도 전액이다. 앞 기간이 오늘 끝나 내일 시작한다.
+    assert.deepEqual((await admin("GET", `/payments/${second}/refund`)).data, { amount: 86_900, days: null, whole: true })
+    assert.equal((await cancel(second)).data.payment.status, "cancelled")
+
+    // 끝난 기간은 돌려줄 것이 없다.
+    const over = await payByCard()
+    Object.assign(stored(over), { paidAt: daysAgo(40), periodEnd: addDays(today, -1) })
+    assert.equal((await cancel(over)).status, 409)
+    assert.equal(stored(over).refundingAt, undefined)
+    stored(over).status = "cancelled"
+
+    // 응답을 잃어도 요청한 금액으로 기록하고, 다른 잔액이면 기록하지 않는다.
+    cardRecovery.settleAfterMs = 0
+    const lost = await payByCard()
+    Object.assign(stored(lost), { paidAt: daysAgo(10), periodEnd: addDays(today, 15) })
+    toss.cancel = async (...args) => {
+      await refund(...args)
+      throw new HttpError(502, "답 없음")
+    }
+    assert.equal((await cancel(lost)).status, 502)
+    toss.cancel = refund
+    assert.deepEqual([stored(lost).status, stored(lost).refundedAmount, stored(lost).refundingAmount], ["paid", undefined, 43_450])
+    const key = stored(lost).paymentKey!
+    atToss.get(key)!.balanceAmount = 1
+    await reconcileRefunds()
+    assert.equal(stored(lost).refundedAmount, undefined)
+    atToss.get(key)!.balanceAmount = 86_900 - 43_450
+    await reconcileRefunds()
+    assert.deepEqual([stored(lost).refundedAmount, stored(lost).periodEnd, stored(lost).refundingAt], [43_450, today, undefined])
+    stored(lost).status = "cancelled"
+
+    // Toss가 전부 환불했다면 일부 요청이었어도 전액으로 기록한다.
+    const whole = await payByCard()
+    Object.assign(stored(whole), { paidAt: daysAgo(10), periodEnd: addDays(today, 15) })
+    toss.cancel = async (paymentKey) => {
+      atToss.get(paymentKey)!.status = "CANCELED"
+      throw new HttpError(502, "답 없음")
+    }
+    assert.equal((await cancel(whole)).status, 502)
+    toss.cancel = refund
+    await reconcileRefunds()
+    assert.deepEqual([stored(whole).status, stored(whole).refundedAmount], ["cancelled", undefined])
+
+    // 이체는 기록만 하고, 매출에서 돌려준 금액을 뺀다.
+    const order = await call("POST", "/billing/orders", { kind: "local" }, brand)
+    const transfer = stored(order.data.order.id)
+    markPaid(getDatabase(), transfer, { method: "transfer", paidAt: daysAgo(10) })
+    transfer.periodEnd = addDays(today, 3)
+    const asksBefore = asked.length
+    const { keptAmount } = await import("./lib/billing.js")
+    const done = await cancel(transfer.id)
+    assert.equal(done.status, 200, JSON.stringify(done.data))
+    assert.equal(asked.length, asksBefore)
+    assert.deepEqual([transfer.refundedAmount, keptAmount(transfer)], [8_690, 86_900 - 8_690])
+  } finally {
+    Object.assign(toss, realToss)
+    config.tossClientKey = saved.client
+    config.tossSecretKey = saved.secret
+    config.adminToken = saved.admin
+    config.localOnSale = false
+    cardRecovery.settleAfterMs = saved.settle
+  }
+})
+
+test("a partial cancel sends its amount to Toss and doesn't take an already-refunded answer as done", async () => {
+  const { toss } = await import("./lib/billing.js")
+  const realFetch = globalThis.fetch
+  const bodies: Record<string, unknown>[] = []
+  let answer = new Response("{}", { status: 200 })
+  globalThis.fetch = (async (_url: string, init: RequestInit) => {
+    bodies.push(JSON.parse(String(init.body)))
+    return answer
+  }) as typeof fetch
+  try {
+    await toss.cancel("pk", "사유", "key")
+    answer = new Response("{}", { status: 200 })
+    await toss.cancel("pk", "사유", "key", 57_933)
+    assert.deepEqual(bodies, [{ cancelReason: "사유" }, { cancelReason: "사유", cancelAmount: 57_933 }])
+
+    const already = () => new Response(JSON.stringify({ code: "ALREADY_CANCELED_PAYMENT" }), { status: 400 })
+    answer = already()
+    await toss.cancel("pk", "사유", "key")
+    answer = already()
+    await assert.rejects(toss.cancel("pk", "사유", "key", 57_933), (error: { status: number }) => error.status === 502)
+    answer = new Response(JSON.stringify({ code: "NOT_ALLOWED_PARTIAL_REFUND", message: "부분 환불 불가" }), { status: 403 })
+    await assert.rejects(toss.cancel("pk", "사유", "key", 57_933), (error: { status: number }) => error.status === 409)
+  } finally {
+    globalThis.fetch = realFetch
+  }
+})
+
+test("a member refunds their own Local card payment after seeing the amount, once in 30 days", async () => {
+  const { markPaid, paymentsOf, toss } = await import("./lib/billing.js")
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const { localUntil } = await import("./lib/plan.js")
+  const saved = { client: config.tossClientKey, secret: config.tossSecretKey }
+  const realToss = { confirm: toss.confirm, lookup: toss.lookup, cancel: toss.cancel }
+  config.tossClientKey = "live_ck_example"
+  config.tossSecretKey = "live_sk_example"
+  config.localOnSale = true
+  const atToss = new Map<string, { status: string; orderId: string; totalAmount: number; balanceAmount: number }>()
+  const asked: (number | undefined)[] = []
+  toss.confirm = async (paymentKey, orderId, amount) => {
+    atToss.set(paymentKey, { status: "DONE", orderId, totalAmount: amount, balanceAmount: amount })
+    return { status: "DONE", orderId, totalAmount: amount, approvedAt: new Date().toISOString() }
+  }
+  toss.lookup = async (paymentKey) => atToss.get(paymentKey)
+  toss.cancel = async (paymentKey, _reason, _key, amount) => {
+    asked.push(amount)
+    const found = atToss.get(paymentKey)!
+    found.balanceAmount -= amount ?? found.balanceAmount
+    found.status = found.balanceAmount === 0 ? "CANCELED" : "PARTIAL_CANCELED"
+  }
+  const stored = (id: string) => paymentsOf(getDatabase()).find((payment) => payment.id === id)!
+  const today = todayInKorea()
+  const daysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
+  try {
+    const { token: brand } = await listedMember("self-refund@self-cafe.kr", "local-pass-123", "브랜드")
+    const { token: other } = await listedMember("self-other@other-cafe.kr", "local-pass-123", "브랜드")
+    let keys = 0
+    const payByCard = async () => {
+      const made = (await call("POST", "/billing/orders", { kind: "local" }, brand)).data.order
+      const paymentKey = `pk-self-${(keys += 1)}`
+      assert.equal((await call("POST", "/billing/confirm", { orderId: made.id, paymentKey, amount: made.amount }, brand)).status, 200)
+      return made.id as string
+    }
+    const look = (id: string, token = brand) => call("GET", `/billing/payments/${id}/refund`, undefined, token)
+    const refund = (id: string, amount: unknown, token = brand) => call("POST", `/billing/payments/${id}/refund`, { amount }, token)
+
+    const paid = await payByCard()
+    Object.assign(stored(paid), { paidAt: daysAgo(10), periodEnd: addDays(today, 15) })
+
+    // 다른 계정과 로그인 전에는 볼 수 없다.
+    assert.equal((await look(paid, other)).status, 404)
+    assert.equal((await refund(paid, 43_450, other)).status, 404)
+    assert.equal((await call("GET", `/billing/payments/${paid}/refund`)).status, 401)
+    assert.deepEqual(asked, [])
+
+    // 확인한 금액이 지금 금액과 달라야 하면 돈이 나가지 않는다.
+    assert.deepEqual((await look(paid)).data, { amount: 43_450, days: 15, whole: false })
+    for (const wrong of [undefined, 86_900, "43450원"]) assert.equal((await refund(paid, wrong)).status, 409)
+    assert.deepEqual(asked, [])
+    assert.equal(stored(paid).refundingAt, undefined)
+
+    // 두 번 눌러도 한 번만 나간다.
+    const [one, two] = await Promise.all([refund(paid, 43_450), refund(paid, 43_450)])
+    assert.ok([one.status, two.status].includes(200), JSON.stringify([one, two]))
+    assert.deepEqual(asked, [43_450])
+    assert.deepEqual([stored(paid).status, stored(paid).refundedAmount, stored(paid).periodEnd, stored(paid).cancelReason], ["paid", 43_450, today, "회원 요청"])
+    const answered = one.status === 200 ? one.data.payment : two.data.payment
+    assert.equal(answered.refundedAmount, 43_450)
+    assert.ok(!("paymentKey" in answered))
+    assert.equal((await refund(paid, 43_450)).status, 409)
+
+    // 30일 안의 다음 환불은 문의로 간다.
+    const next = await payByCard()
+    const limited = await refund(next, 86_900)
+    assert.deepEqual([limited.status, limited.data.error], [409, "직접 환불은 30일에 한 번이에요. 문의로 요청해 주세요."])
+    assert.equal(asked.length, 1)
+
+    // 30일이 지나면 다시 된다. 7일 안이면 전액이다.
+    stored(paid).refundedAt = daysAgo(31)
+    assert.deepEqual((await look(next)).data, { amount: 86_900, days: null, whole: true })
+    assert.equal((await refund(next, 86_900)).data.payment.status, "cancelled")
+    assert.equal(asked.at(-1), undefined)
+
+    // 계좌 이체와 다른 상품은 문의로 간다.
+    stored(next).cancelledAt = daysAgo(31)
+    const transferOrder = (await call("POST", "/billing/orders", { kind: "local" }, brand)).data.order
+    markPaid(getDatabase(), stored(transferOrder.id), { method: "transfer" })
+    assert.equal((await look(transferOrder.id)).data.error, "이 결제는 문의로 환불을 요청해 주세요.")
+    stored(transferOrder.id).status = "cancelled"
+    assert.equal(localUntil(getDatabase(), stored(next).accountId), today)
+    const growth = (await call("POST", "/billing/orders", { kind: "pro" }, brand)).data.order
+    assert.equal((await call("POST", "/billing/confirm", { orderId: growth.id, paymentKey: "pk-self-growth", amount: growth.amount }, brand)).status, 200)
+    assert.equal((await look(growth.id)).data.error, "이 결제는 문의로 환불을 요청해 주세요.")
+
+    // 데모 계정은 환불하지 않는다.
+    const demo = await login("브랜드")
+    assert.equal((await look("nothing", demo)).status, 403)
+  } finally {
+    Object.assign(toss, realToss)
+    config.tossClientKey = saved.client
+    config.tossSecretKey = saved.secret
+    config.localOnSale = false
+  }
+})
+
+test("guesses sent all at once can't slip past the PIN limit, and right PINs don't use it up", async () => {
+  const demo = new Set(Object.values(getDatabase().demoAccountIds))
+  const measurement = getDatabase().measurements.find((item) => demo.has(item.accountId))!
+  const right = measurement.sponsors[0]?.staffPin ?? measurement.staffPin
+  const session = (pin: string) => call("POST", `/check-in/${measurement.code}/staff/session`, { pin })
+  // 맞는 PIN은 한도(10번)를 넘게 써도 막히지 않는다.
+  for (let index = 0; index < 15; index += 1) assert.equal((await session(right)).status, 200)
+  // 한꺼번에 보낸 틀린 추측 중 10개만 비교되고 나머지는 429다.
+  const answers = await Promise.all(Array.from({ length: 40 }, () => session("000000")))
+  assert.equal(answers.filter((item) => item.status === 403).length, 10)
+  assert.equal(answers.filter((item) => item.status === 429).length, 30)
+  // 그 주소에서는 맞는 PIN도 막힌다.
+  assert.equal((await session(right)).status, 429)
+})
+
+test("login limits catch guesses spread across accounts, and a right password isn't counted", async () => {
+  await listedMember("spread@spread-cafe.kr", "spread-pass-123", "브랜드")
+  const attempt = (email: string, password: string) => call("POST", "/auth/login", { role: "브랜드", email, password })
+  // 주소 하나에서 계정을 바꿔 가며 시도하면 막힌다.
+  const statuses: number[] = []
+  for (let index = 0; index < 101; index += 1) statuses.push((await attempt(`nobody${index}@spread-cafe.kr`, "wrong-pass-123")).status)
+  assert.equal(statuses.filter((status) => status === 401).length, 100)
+  assert.equal(statuses.at(-1), 429)
+  await clearRateLimits()
+  // 주소를 바꿔 가며 한 계정을 노려도 막힌다.
+  const proxied = createApp()
+  proxied.set("trust proxy", true)
+  const other = proxied.listen(0)
+  await new Promise((resolve) => other.once("listening", resolve))
+  const spread: number[] = []
+  for (let index = 0; index < 101; index += 1) {
+    const response = await fetch(`http://127.0.0.1:${(other.address() as AddressInfo).port}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Forwarded-For": `10.1.0.${index}` },
+      body: JSON.stringify({ role: "브랜드", email: "nobody@spread-cafe.kr", password: "wrong-pass-123" }),
+    })
+    spread.push(response.status)
+  }
+  await new Promise((resolve) => other.close(resolve))
+  assert.equal(spread.filter((status) => status === 401).length, 100)
+  assert.equal(spread.at(-1), 429)
+  await clearRateLimits()
+  // 맞는 비밀번호는 몇 번이든 세지 않는다.
+  for (let index = 0; index < 12; index += 1) assert.equal((await attempt("spread@spread-cafe.kr", "spread-pass-123")).status, 200)
 })

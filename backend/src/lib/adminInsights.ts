@@ -1,4 +1,4 @@
-import { paymentsOf } from "./billing.js"
+import { keptAmount, paymentsOf } from "./billing.js"
 import { addDays, todayInKorea } from "./dates.js"
 import { campusOf, placeOf } from "./geo.js"
 import { statusOf } from "./proposals.js"
@@ -146,7 +146,7 @@ export function monthKpi(database: Database, now = new Date()) {
     proposals: allProposals(database).filter((item) => item.fromAccountId && inMonth(item.createdAt)).length,
     revenue: paymentsOf(database)
       .filter((payment) => payment.status === "paid" && inMonth(payment.paidAt))
-      .reduce((sum, payment) => sum + payment.amount, 0),
+      .reduce((sum, payment) => sum + keptAmount(payment), 0),
   }
   return (["signups", "proposals", "revenue"] as const).map((key) => ({ key, actual: actual[key], target: targets[key] ?? null }))
 }
@@ -280,7 +280,7 @@ export function fieldAlerts(database: Database, now = new Date()) {
   const alerts: { eventId: string; event: string; kind: "pin" | "visits-over-coupons" | "visit-burst"; detail: string }[] = []
   for (const measurement of database.measurements) {
     const event = Object.values(database.events).flat().find((item) => item.id === measurement.eventId)
-    const name = event?.name ?? measurement.eventId
+    const name = event?.name ?? database.localCampaigns?.[measurement.accountId]?.name ?? measurement.eventId
     if (measurement.pinMisses?.day === today && measurement.pinMisses.count >= 5) {
       alerts.push({ eventId: measurement.eventId, event: name, kind: "pin", detail: String(measurement.pinMisses.count) })
     }
