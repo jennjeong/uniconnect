@@ -121,7 +121,13 @@ function siteDocument(config: SiteConfiguration): Plugin {
   window.dataLayer = window.dataLayer || [];
   window.gtag = function () { dataLayer.push(arguments); };
   gtag('js', new Date());
-  gtag('config', ${JSON.stringify(googleAnalyticsId)}, { page_location: location.origin + location.pathname });
+  // 이전 주소에도 토큰이 있을 수 있어, 바깥 사이트의 도메인만 남긴다.
+  var cameFrom = '';
+  try {
+    var referrer = new URL(document.referrer);
+    if (referrer.origin !== location.origin) cameFrom = referrer.origin;
+  } catch (error) {}
+  gtag('config', ${JSON.stringify(googleAnalyticsId)}, { page_location: location.origin + location.pathname, page_referrer: cameFrom });
   var tag = document.createElement('script');
   tag.async = true;
   tag.src = ${JSON.stringify(`https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`)};
