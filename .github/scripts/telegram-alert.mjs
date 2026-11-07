@@ -139,7 +139,26 @@ export function route(event, payload, people) {
   // 협업자가 댓글 첫 줄에 `/알림 왕자`, `/알림 공주`, `/알림 같이`를 쓰면 확인을 요청한다.
   if (event === "issue_comment" && payload.action === "created" && trusted.includes(payload.comment?.author_association)) {
     const asked = /^\/알림\s+(왕자|공주|같이)\s*(?:\n|$)/.exec(payload.comment.body ?? "")
-    if (!asked) return []
+    // `협업` 라벨이 붙은 이슈는 번갈아 일하는 곳이다. 한쪽이 글을 남기면 상대에게 차례를 알린다.
+    if (!asked) {
+      const from = personOf(people, sender)
+      const shared = (payload.issue?.labels ?? []).some((label) => label.name === "협업")
+      if (!shared || !from) return []
+      const partner = from === "princess" ? "prince" : "princess"
+      return [
+        {
+          person: partner,
+          notice: {
+            kind: "task",
+            todo: `#${payload.issue.number}에 새 글이 올라왔어요. 확인해 주세요.`,
+            detail: clip(payload.comment.body, 300),
+            did: `#${payload.issue.number}에 글 남김`,
+            next: "글을 읽고 내 차례인 일을 이어 가기",
+            url: payload.comment.html_url,
+          },
+        },
+      ]
+    }
     const rest = payload.comment.body.slice(asked[0].length)
     const list = askTargets[asked[1]]
       .filter((person) => people[person])
