@@ -19503,6 +19503,12 @@ span.odometer {
     --header-h: 72px;
   }
 
+  /* 큰 제목이 화면 가장자리에 붙어 보이지 않게, 첫 화면과 고리 화면은 안쪽으로 더 띄운다. */
+  .hero-overlay,
+  .chain-overlay {
+    width: calc(100% - 48px);
+  }
+
   body {
     font-size: 14px;
   }
