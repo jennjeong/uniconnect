@@ -1,3 +1,4 @@
+import { lang } from "../i18n"
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react"
 
 import { useIntroDone } from "../hooks/useIntroDone"
@@ -152,12 +153,15 @@ export function RevealStatement({
   muted,
   secondChip,
   className,
+  breaks,
 }: {
   lead: string
   firstChip: ReactNode
   muted: string
   secondChip: ReactNode
   className?: string
+  // 한국어일 때 앞 구절과 흐린 구절을 각각 몇 낱말 뒤에서 한 번 더 줄 바꿀지.
+  breaks?: [number, number]
 }) {
   const { ref, shown } = useShown()
   const still = reducedMotion()
@@ -165,8 +169,9 @@ export function RevealStatement({
     .filter(Boolean)
     .join(" ")
   // 쉼표로 끝나는 앞 구절은 거기서 줄을 끝내고 쉼표는 뺀다.
-  const breaks = /,\s*$/.test(lead)
-  const leadText = breaks ? lead.replace(/,\s*$/, "") : lead
+  const lineBreak = /,\s*$/.test(lead)
+  const leadText = lineBreak ? lead.replace(/,\s*$/, "") : lead
+  const korean = lang === "ko"
   const leadLetters = leadText.replace(/\s/g, "").length
   const total = leadLetters + 1 + muted.replace(/\s/g, "").length + 1
   let index = 0
@@ -176,11 +181,11 @@ export function RevealStatement({
     </span>
   )
   // 칩은 구절의 마지막 단어에 얹혀서 따로 한 줄로 넘어가지 않게 한다.
-  const run = (text: string, tone: string, content: ReactNode, chipTone: string) => {
+  const run = (text: string, tone: string, content: ReactNode, chipTone: string, breakAt?: number) => {
     const words = text.split(" ")
     return words.map((word, w) => (
       <span key={`${tone}-${w}`}>
-        {w > 0 && " "}
+        {w > 0 && (w === breakAt ? <br /> : " ")}
         <span className={`reveal-word ${tone}`}>
           {[...word].map((letter, l) => (
             <span className="reveal-letter" key={l} style={{ "--s": startOf(index++, total) } as CSSProperties}>
@@ -204,9 +209,9 @@ export function RevealStatement({
         {lead} {muted}
       </span>
       <span aria-hidden="true">
-        <span className="statement-line">{run(leadText, "lead", firstChip, "blue")}</span>
-        {breaks ? <br /> : " "}
-        <span className="statement-line">{run(muted, "muted", secondChip, "silver")}</span>
+        <span className="statement-line">{run(leadText, "lead", firstChip, "blue", korean ? breaks?.[0] : undefined)}</span>
+        {lineBreak ? <br /> : " "}
+        <span className="statement-line">{run(muted, "muted", secondChip, "silver", korean ? breaks?.[1] : undefined)}</span>
       </span>
     </h2>
   )

@@ -4017,6 +4017,18 @@ input[type="search"]::-webkit-search-cancel-button {
   margin: 72px calc(50% - 50vw) 0;
 }
 
+/* 휴대폰 Safari는 상태 표시줄 뒤를 body 바탕색으로 칠한다. 화면 맨 위가 짙은 표면이면
+   바탕을 짙게 하고, 페이지 내용은 .app-shell의 흰 바탕 위에 그대로 둔다. */
+html[data-top-dark],
+html[data-top-dark] body {
+  /* 첫 화면 그라디언트 맨 위의 평균 색이다. */
+  background-color: #5a6f9a;
+}
+
+html[data-top-dark] .app-shell {
+  background: var(--canvas);
+}
+
 .chain-stage {
   --surface-tone: dark;
   position: sticky;
@@ -19789,8 +19801,20 @@ span.odometer {
 
   .work-card .match-score-ring {
     grid-area: ring;
+    justify-self: end;
     width: 54px;
     height: 54px;
+  }
+
+  /* 하트와 비교가 없는 카드에서는 빈 줄과 빈 칸이 생기지 않게 한다. 안에 남는 배지는
+     휴대폰에서 숨긴다. */
+  .work-meta > .work-meta-actions:not(:has(.save-toggle, .compare-toggle)) {
+    display: none;
+  }
+
+  /* 로고도 위 여백에 맞춰 위에 붙인다. 위, 아래, 왼쪽, 오른쪽 여백이 모두 같다. */
+  .work-card .work-mark {
+    align-self: start;
   }
 
   .work-card .match-score-ring strong {
@@ -21492,6 +21516,26 @@ button:active:not(:disabled) {
   opacity: 0;
   filter: blur(12px);
   transform: translateY(24px);
+}
+
+/* 막이 걷히듯 아래에서 위로 드러나며 올라온다. 고리 화면과 푸터 카드에 쓴다. */
+.reveal-ready [data-reveal="rise"] {
+  transition:
+    clip-path 1s var(--ease-quart),
+    transform 1s var(--ease-quart),
+    opacity 0.6s ease;
+  transition-delay: var(--reveal-delay, 0s);
+}
+
+.reveal-ready [data-reveal="rise"]:not(.revealed) {
+  opacity: 0;
+  filter: none;
+  clip-path: inset(0 0 100% 0);
+  transform: translateY(48px);
+}
+
+.dashboard > .works-section {
+  margin-top: clamp(48px, 8vw, 96px);
 }
 
 /* Stride의 제목 캐스케이드 (RevealText.tsx): 각 글자(또는 단어)가 8px 블러에서

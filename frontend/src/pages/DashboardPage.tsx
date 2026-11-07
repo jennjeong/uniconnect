@@ -173,6 +173,7 @@ export function DashboardPage({
           About uniconnect
         </span>
         <RevealStatement
+          breaks={[1, 2]}
           lead={t("uniconnect는 학생단체와 브랜드를 잇고,")}
           firstChip={<Icon name="link" size={18} />}
           muted={t("협찬 성과를 숫자로 남기는 곳이에요")}

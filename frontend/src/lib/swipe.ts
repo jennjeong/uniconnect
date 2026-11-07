@@ -168,11 +168,14 @@ export function installSwipeNavigation() {
     }, 300)
     if (gesture === null) {
       if (event.deltaX === 0 && event.deltaY === 0) return
+      // 휠이나 트랙패드의 첫 움직임은 조금 비스듬할 때가 많다. 가로가 뚜렷할 때만
+      // 스와이프로 보고, 그렇지 않으면 스크롤로 넘겨 화면이 멈추지 않게 한다.
       const swipe =
         event.cancelable &&
         !event.ctrlKey &&
         !event.shiftKey &&
-        Math.abs(event.deltaX) > Math.abs(event.deltaY) &&
+        Math.abs(event.deltaX) >= 4 &&
+        Math.abs(event.deltaX) > 2 * Math.abs(event.deltaY) &&
         canGo(event.deltaX < 0 ? "back" : "forward") &&
         !leftAlone(event.target)
       gesture = swipe ? "swipe" : "other"
