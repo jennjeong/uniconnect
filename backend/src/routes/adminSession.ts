@@ -13,7 +13,7 @@ import { hashToken } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { Operator } from "../types.js"
 import { requireAdmin } from "./admin.js"
-import { enableTwoFactor, startTicket, ticketTries, useCode } from "./auth.js"
+import { enableTwoFactor, startTicket, ticketTries, twoFactorGuesses, useCode } from "./auth.js"
 
 // 운영자 로그인이다. 비밀번호 다음에 앱의 코드를 받고, 처음 로그인이면 그 자리에서
 // 2단계 로그인을 설정한다. 세션 토큰은 X-Admin-Token 헤더로 보낸다. 2단계 로그인을
@@ -26,6 +26,14 @@ const operatorLogins = createRateLimit({
   limit: 10,
   windowMs: 15 * 60 * 1000,
   message: "운영자 로그인 시도가 너무 많아요. 15분 뒤에 다시 시도해 주세요.",
+})
+
+// 여러 주소에서 나눠 보내는 추측은 이메일별로 센다. 없는 이메일도 똑같이 세므로 운영자를
+// 알아내는 데 쓸 수 없다. 맞는 비밀번호는 돌려준다.
+const operatorFailures = createRateLimit({
+  limit: 30,
+  windowMs: 15 * 60 * 1000,
+  message: "이 이메일의 운영자 로그인 시도가 너무 많아요. 15분 뒤에 다시 시도해 주세요.",
 })
 
 const wrongLogin = "이메일 또는 비밀번호가 올바르지 않아요."
@@ -45,6 +53,7 @@ const operatorView = ({ id, email, name, createdAt, disabledAt, twoFactor }: Ope
 adminSessionRouter.post("/session", async (req, res) => {
   const email = normalizeEmail(req.body?.email)
   await operatorLogins.take(clientKey(req))
+  await operatorFailures.take(email)
   const password = String(req.body?.password ?? "")
   const found = getDatabase().operators?.find((item) => item.email === email && !item.disabledAt)
   const hash = found?.passwordHash ?? (await (decoy ??= hashPassword(randomUUID())))
@@ -52,6 +61,7 @@ adminSessionRouter.post("/session", async (req, res) => {
   // 확인하는 동안 데이터를 새로 읽었을 수 있어 다시 찾고, 그사이 꺼졌으면 거절한다.
   const operator = getDatabase().operators?.find((item) => item.id === found.id && !item.disabledAt)
   if (!operator) throw new HttpError(401, wrongLogin)
+  await operatorFailures.release(email)
   const ticket = startTicket(operator, req)
   if (operator.twoFactor) {
     await saveDatabase()
@@ -73,6 +83,7 @@ adminSessionRouter.post("/session/code", async (req, res) => {
   if (!operator || !ticket || ticket.hash !== hashToken(String(req.body?.ticket ?? "")) || ticket.expiresAt <= Date.now()) {
     throw new HttpError(401, "로그인 시간이 지났어요. 비밀번호부터 다시 입력해 주세요.")
   }
+  await twoFactorGuesses.take(operator.id)
   const typed = String(req.body?.code ?? "")
   const recoveryCodes = !operator.twoFactor && operator.pendingTwoFactor ? enableTwoFactor(operator, typed) : undefined
   if (!recoveryCodes && !useCode(operator, typed)) {
@@ -91,7 +102,7 @@ adminSessionRouter.post("/session/code", async (req, res) => {
   if (request) request.actor = operator.id
   logAdmin(database, "operator-logged-in", { kind: "operator", id: operator.id })
   await saveDatabase()
-  await operatorLogins.reset(clientKey(req))
+  await Promise.all([operatorLogins.reset(clientKey(req)), twoFactorGuesses.release(operator.id)])
   res.json({ token, expiresAt: new Date(expiresAt).toISOString(), operator: operatorView(operator), ...(recoveryCodes ? { recoveryCodes } : {}) })
 })
 

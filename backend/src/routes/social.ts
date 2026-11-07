@@ -3,6 +3,7 @@ import { Router, type Request, type Response } from "express"
 
 import { config } from "../config.js"
 import { HttpError } from "../lib/errors.js"
+import { notify } from "../lib/notices.js"
 import { isDemoAccount } from "../lib/reviews.js"
 import { requireOwner } from "../lib/team.js"
 import { requireAccount } from "../middleware/session.js"
@@ -206,6 +207,17 @@ socialRouter.get("/:provider/callback", async (req, res) => {
     if (owner && owner !== account) return back("link-taken")
     account.social = { ...account.social, [provider]: { id: memberNumber, linkedAt: new Date().toISOString() } }
     await saveDatabase()
+    // 연결은 비밀번호 없이 로그인할 길을 하나 더 만드므로, 모르는 연결이면 알아챌 수 있게 한다.
+    void notify(
+      account,
+      "account",
+      "소셜 로그인이 연결됐어요",
+      [
+        "uniconnect 계정에 새 소셜 로그인이 연결됐어요.",
+        "직접 연결하지 않았다면 비밀번호 찾기로 비밀번호를 새로 정해 주세요. 연결도 함께 끊겨요.",
+      ],
+      "/faq",
+    )
     return back(`linked-${provider}`)
   }
 

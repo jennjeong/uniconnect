@@ -259,7 +259,8 @@ export function searchTerm(value: unknown) {
 // 검색어를 세고 가장 많이 검색된 300개를 둔다.
 export function countSearch(database: Database, term: string) {
   const terms = (database.searchTerms ??= {})
-  terms[term] = (terms[term] ?? 0) + 1
+  // "constructor" 같은 검색어가 객체에 물려받은 값을 읽지 않게 한다.
+  terms[term] = (Object.hasOwn(terms, term) ? terms[term] : 0) + 1
   const entries = Object.entries(terms)
   if (entries.length > 300) {
     database.searchTerms = Object.fromEntries(entries.sort((a, b) => b[1] - a[1]).slice(0, 250))

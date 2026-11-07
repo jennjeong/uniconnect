@@ -133,8 +133,15 @@ teamRouter.delete("/members/:id", async (req, res) => {
   const database = getDatabase()
   account.members = account.members!.filter((item) => item !== member)
   database.sessions = database.sessions.filter((session) => session.memberId !== member.id)
+  // 빠진 사람도 봤을 수 있는 공개 링크를 멈춘다. 링크만 있으면 로그인 없이 열리기 때문이다.
+  // 대표가 다시 만들면 새 주소가 된다.
+  const shared = (database.sponsorships[account.id] ?? []).filter((item) => item.shareToken)
+  const linksStopped = Boolean(account.calendarFeed || account.ledger?.token || shared.length)
+  delete account.calendarFeed
+  if (account.ledger) delete account.ledger.token
+  for (const sponsorship of shared) delete sponsorship.shareToken
   await saveDatabase()
-  res.json({ team: teamView(account, req.memberId) })
+  res.json({ team: teamView(account, req.memberId), linksStopped })
 })
 
 // 초대받은 사람이 이메일, 코드, 자기 비밀번호, 재직 증빙으로 합류한다. 재직

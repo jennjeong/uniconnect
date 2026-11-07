@@ -284,7 +284,8 @@ export function syncSponsors(database: Database, measurement: Measurement) {
           id: sponsorship.id,
           brandName,
           coupon: { ...measurement.goals.coupon },
-          staffPin: measurement.staffPin,
+          // 단체가 이미 본 PIN을 넘겨주면 브랜드 쪽 확인을 단체도 할 수 있다.
+          staffPin: isDemoEvent(database, measurement) ? measurement.staffPin : newSponsorPin(measurement),
           metrics: counts,
           ...(measurement.methods ? { methods: measurement.methods } : {}),
           ...(measurement.confirmedMethods ? { confirmedMethods: measurement.confirmedMethods } : {}),

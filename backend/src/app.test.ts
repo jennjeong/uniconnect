@@ -4648,10 +4648,11 @@ test("each side can replace its venue PIN during the event, and the old one stop
   // 틀린 시도는 PIN을 가진 쪽에게 보인다.
   assert.equal((await call("GET", path, undefined, brand)).data.agreement.measure.venue.misses, 1)
 
-  // 혼자인 첫 협찬사는 행사의 PIN을 넘겨받았으므로 함께 바뀐다. 협찬이 취소돼도
-  // 막은 PIN이 되살아나지 않는다.
+  // 혼자인 첫 협찬사도 단체가 본 행사 PIN을 넘겨받지 않으므로, 협찬이 취소돼도 막은 PIN이
+  // 되살아나지 않는다.
   const measurement = getDatabase().measurements.find((item) => item.code === venue.code)!
-  assert.equal(measurement.staffPin, fresh)
+  assert.notEqual(measurement.staffPin, fresh)
+  assert.notEqual(measurement.staffPin, old)
 
   // 열어 둔 목표 양식이 막은 PIN을 되돌리지 못한다.
   const goals = (await call("GET", eventPath, undefined, group)).data.report
@@ -6464,9 +6465,16 @@ test("a brand buys a sponsorship's detailed report, adds its store's counts and 
   const effect = (await call("PUT", `/insights/${id}/lift`, { before: 30, during: 45 }, brand)).data.report.effect
   assert.deepEqual([effect.lift, effect.days, effect.extraVisitors], [50, 9, 135])
 
-  // 끄기 전까지는 읽기 전용 링크다.
+  // 끄기 전까지는 읽기 전용 링크다. 공유도 산 리포트를 쓴 것이라 환불 기간이 끝난다.
+  const payment = paymentsOf(getDatabase()).find((item) => item.id === order.id)!
+  delete payment.openedAt
   const { shareToken } = (await call("POST", `/insights/${id}/share`, undefined, brand)).data
+  assert.ok(payment.openedAt)
   assert.equal((await call("GET", `/insights/shared/${shareToken}`)).data.report.sponsorship.id, id)
+  // 환불되면 링크도 멈춘다.
+  payment.status = "cancelled"
+  assert.equal((await call("GET", `/insights/shared/${shareToken}`)).status, 404)
+  payment.status = "paid"
   // 정지된 브랜드의 링크는 정지된 동안 멈춘다.
   const sharer = getDatabase().accounts.find((item) => (getDatabase().sponsorships[item.id] ?? []).some((entry) => entry.id === id))!
   sharer.suspendedAt = new Date().toISOString()
@@ -7749,4 +7757,182 @@ test("a failed session save hands routes the live account, and a failed file del
   } finally {
     eventFiles.maxBytes = realMax
   }
+})
+
+test("a known password can't keep guessing two-factor codes with new tickets, and a right code isn't counted", async () => {
+  const { codeAt, stepAt } = await import("./lib/totp.js")
+  const email = "guess-code@syu.ac.kr"
+  const password = "guess-pass-123"
+  const token = await signUpMember(email, password)
+  const { secret } = (await call("POST", "/auth/two-factor/setup", { password }, token)).data
+  const step = stepAt(Date.now())
+  assert.equal((await call("POST", "/auth/two-factor/enable", { code: codeAt(secret, step) }, token)).status, 200)
+  const ticket = async () => (await call("POST", "/auth/login", { role: "학생단체", email, password })).data.ticket as string
+  const tryCode = (given: string, code: string) => call("POST", "/auth/login/code", { email, ticket: given, code })
+
+  // 맞는 코드는 세지 않고, 맞는 티켓이 없는 시도도 세지 않는다.
+  assert.equal((await tryCode(await ticket(), codeAt(secret, step + 1))).status, 200)
+  for (let index = 0; index < 5; index += 1) assert.equal((await tryCode("nope", "111111")).status, 401)
+
+  const wrong = codeAt(secret, step + 1000)
+  let given = await ticket()
+  const statuses: number[] = []
+  for (let index = 0; index < 21; index += 1) {
+    if (index % 5 === 0) given = await ticket()
+    statuses.push((await tryCode(given, wrong)).status)
+  }
+  assert.equal(statuses.filter((status) => status === 401).length, 20)
+  assert.equal(statuses.at(-1), 429)
+  // 비밀번호를 다시 맞혀도 집계는 남는다.
+  assert.equal((await tryCode(await ticket(), codeAt(secret, stepAt(Date.now())))).status, 429)
+})
+
+test("a right PIN keeps working for staff after strangers use up the event's PIN limit, but not for new addresses", async () => {
+  const demo = new Set(Object.values(getDatabase().demoAccountIds))
+  const measurement = getDatabase().measurements.find((item) => demo.has(item.accountId))!
+  const right = measurement.sponsors[0]?.staffPin ?? measurement.staffPin
+  const proxied = createApp()
+  proxied.set("trust proxy", true)
+  const other = proxied.listen(0)
+  await new Promise((resolve) => other.once("listening", resolve))
+  const session = async (address: string, pin: string) =>
+    (
+      await fetch(`http://127.0.0.1:${(other.address() as AddressInfo).port}/api/check-in/${measurement.code}/staff/session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Forwarded-For": address },
+        body: JSON.stringify({ pin }),
+      })
+    ).status
+  try {
+    assert.equal(await session("10.2.0.1", right), 200)
+    // 처음 보는 네 주소가 행사 한도(30번)를 다 쓴다.
+    const statuses: number[] = []
+    for (let index = 0; index < 31; index += 1) statuses.push(await session(`10.2.1.${index % 4}`, "000000"))
+    assert.equal(statuses.filter((status) => status === 403).length, 30)
+    assert.equal(statuses.at(-1), 429)
+    assert.equal(await session("10.2.0.1", right), 200)
+    assert.equal(await session("10.2.0.2", right), 429)
+    // 맞힌 주소도 틀린 시도는 주소 한도(10번)에 걸린다.
+    const known: number[] = []
+    for (let index = 0; index < 11; index += 1) known.push(await session("10.2.0.1", "000000"))
+    assert.equal(known.filter((status) => status === 403).length, 10)
+    assert.equal(known.at(-1), 429)
+  } finally {
+    await new Promise((resolve) => other.close(resolve))
+  }
+})
+
+test("a student group doesn't get a sponsor's store PIN and can't set one", async () => {
+  const { todayInKorea, addDays } = await import("./lib/dates.js")
+  const group = await signUpMember("sponsor-pin@syu.ac.kr", "sponsor-pin-123")
+  const groupId = getDatabase().accounts.find((account) => account.email === "sponsor-pin@syu.ac.kr")!.id
+  const { token: brand, listingId } = await listedMember("sponsor-pin@pin-shop.kr", "sponsor-pin-123", "브랜드")
+  await call("POST", "/events", { name: "PIN 공연", date: addDays(todayInKorea(), 9), people: "100명", types: ["제품"] }, group)
+  await call("POST", "/proposals", { matchId: listingId }, group)
+  const request = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
+  const eventPath = `/measurements/${request.eventId}`
+  getDatabase().events[groupId].find((item) => item.id === request.eventId)!.date = todayInKorea()
+  // 협찬사가 없을 때 단체가 본 PIN은 협찬사에게 넘어가지 않는다.
+  const seen = (await call("GET", eventPath, undefined, group)).data.report.staffPin as string
+  assert.match(seen, /^\d{6}$/)
+  await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+  const store = (await call("GET", `/agreements/${request.id}`, undefined, brand)).data.agreement.measure.venue.pin as string
+  assert.notEqual(store, seen)
+
+  const report = (await call("GET", eventPath, undefined, group)).data.report
+  assert.equal(JSON.stringify(report).includes(store), false)
+  assert.equal(report.staffPin, undefined)
+  assert.match(report.groupPin, /^\d{6}$/)
+  assert.equal(report.sponsors[0].staffPin, undefined)
+
+  // 행사 전 목표 양식으로도 정하지 못한다.
+  getDatabase().events[groupId].find((item) => item.id === request.eventId)!.date = addDays(todayInKorea(), 9)
+  const sponsor = report.sponsors[0]
+  const measurement = getDatabase().measurements.find((item) => item.code === report.code)!
+  const saved = await call("PUT", `${eventPath}/goals`, {
+    ...report.goals,
+    expectedAudience: report.expectedAudience,
+    averageSpend: report.averageSpend,
+    snsReach: report.snsReach,
+    valueBreakdown: report.valueBreakdown,
+    targets: report.targets,
+    coupon: report.coupon,
+    staffPin: "222222",
+    sponsors: [{ id: sponsor.id, store: "가게", title: "쿠폰", staffPin: "111111" }],
+  }, group)
+  assert.equal(saved.status, 200, JSON.stringify(saved.data))
+  assert.equal(measurement.sponsors[0].staffPin, store)
+  assert.notEqual(measurement.staffPin, "222222")
+})
+
+test("resetting a password ends social links and the sign-in failures pressed on the email; linking tells the owner", async () => {
+  const email = "social-reset@syu.ac.kr"
+  await signUpMember(email, "social-pass-123")
+  const account = getDatabase().accounts.find((item) => item.email === email)!
+  account.social = { kakao: { id: "someone-else", linkedAt: new Date().toISOString() } }
+  const attempt = (password: string) => call("POST", "/auth/login", { role: "학생단체", email, password })
+  const proxied = createApp()
+  proxied.set("trust proxy", true)
+  const other = proxied.listen(0)
+  await new Promise((resolve) => other.once("listening", resolve))
+  const statuses: number[] = []
+  for (let index = 0; index < 101; index += 1) {
+    const response = await fetch(`http://127.0.0.1:${(other.address() as AddressInfo).port}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Forwarded-For": `10.3.0.${index}` },
+      body: JSON.stringify({ role: "학생단체", email, password: "wrong-pass-123" }),
+    })
+    statuses.push(response.status)
+  }
+  await new Promise((resolve) => other.close(resolve))
+  assert.equal(statuses.at(-1), 429)
+  assert.equal((await attempt("social-pass-123")).status, 429)
+
+  await call("POST", "/auth/password-reset/code", { email })
+  const code = getDatabase().emailCodes.find((item) => item.email === email && item.purpose === "reset")!.code
+  assert.equal((await call("POST", "/auth/password-reset", { email, code, password: "social-pass-456" })).status, 200)
+  assert.equal(account.social, undefined)
+  assert.equal((await attempt("social-pass-456")).status, 200)
+})
+
+test("operator sign-ins are limited by email across addresses", async () => {
+  const proxied = createApp()
+  proxied.set("trust proxy", true)
+  const other = proxied.listen(0)
+  await new Promise((resolve) => other.once("listening", resolve))
+  const statuses: number[] = []
+  for (let index = 0; index < 31; index += 1) {
+    const response = await fetch(`http://127.0.0.1:${(other.address() as AddressInfo).port}/api/admin/session`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Forwarded-For": `10.4.0.${index}` },
+      body: JSON.stringify({ email: "nobody@uniconnect.kr", password: "wrong-pass-123!" }),
+    })
+    statuses.push(response.status)
+  }
+  await new Promise((resolve) => other.close(resolve))
+  assert.equal(statuses.filter((status) => status === 401).length, 30)
+  assert.equal(statuses.at(-1), 429)
+})
+
+test("removing a team member stops the public links they may have seen", async () => {
+  const token = await signUpMember("team-links@syu.ac.kr", "team-links-123")
+  const account = getDatabase().accounts.find((item) => item.email === "team-links@syu.ac.kr")!
+  const url = (await call("POST", "/calendar/feed", undefined, token)).data.url as string
+  assert.ok(url)
+  account.ledger = { showValues: false, token: "old-ledger-link" }
+  account.members = [{ id: "member-1", email: "left@syu.ac.kr", name: "나간 사람", passwordHash: "x", joinedAt: new Date().toISOString() }] as never
+  const removed = await call("DELETE", "/team/members/member-1", undefined, token)
+  assert.equal(removed.status, 200, JSON.stringify(removed.data))
+  assert.equal(removed.data.linksStopped, true)
+  assert.equal((await call("GET", "/calendar/feed", undefined, token)).data.url, null)
+  assert.equal(account.ledger.token, undefined)
+})
+
+test("odd search terms count like any other", async () => {
+  const { countSearch } = await import("./lib/adminTools.js")
+  const database = structuredClone(getDatabase())
+  database.searchTerms = {}
+  countSearch(database, "constructor")
+  countSearch(database, "constructor")
+  assert.equal(database.searchTerms.constructor, 2)
 })

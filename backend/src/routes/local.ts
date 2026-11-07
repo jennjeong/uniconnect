@@ -8,6 +8,7 @@ import { HttpError } from "../lib/errors.js"
 import { campaignOf, localActive, monthlyReport, openCampaign } from "../lib/local.js"
 import { couponDays, parseCoupon, pinMissesToday, rotatePin } from "../lib/measurements.js"
 import { campaignUntil, growthIncludesCampaign } from "../lib/plan.js"
+import { isDemoAccount } from "../lib/reviews.js"
 import { text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -78,6 +79,7 @@ localRouter.put("/campaign", async (req, res) => {
 localRouter.post("/campaign/pin", async (req, res) => {
   const account = brandOnly(req)
   const database = getDatabase()
+  if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 PIN을 바꿀 수 없어요.")
   const { measurement } = ownCampaign(database, account)
   rotatePin(measurement, undefined, "brand")
   await saveDatabase()

@@ -132,6 +132,8 @@ export function createRateLimit({
     hit: async (key: string) => {
       await hit(key)
     },
+    // 이 윈도에서 키를 센 적이 있는지 답한다. 표시처럼 쓰는 한도용이다.
+    seen: async (key: string) => (await count(key)) > 0,
     // 모든 요청에 거는 한도용: 이 요청을 세고 한도를 넘으면 429를 던진다.
     // 한 단계로 처리해, 동시에 온 요청이 하나도 세기 전에 모두 검사를
     // 통과하지 못하게 한다.

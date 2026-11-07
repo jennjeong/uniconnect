@@ -116,6 +116,16 @@ export function startSession(
 
 // 로그인 방식을 바꾸기 전에 다시 묻는 계정의 현재 비밀번호다. 시도는 로그인
 // 실패와 함께 센다. 앱이 만료된 세션으로 읽는 401은 쓰지 않는다.
+// 틀린 2단계 코드를 사람마다 센다. 비밀번호가 맞아도 지우지 않으므로, 비밀번호를 아는
+// 사람이 티켓을 새로 받아 추측을 이어 가지 못한다. 맞는 티켓이 있을 때만 세므로 비밀번호를
+// 모르는 사람은 이 한도를 쓸 수 없다. 앱의 코드는 한 번에 셋이 통하고 100만 개 중에서
+// 고르므로, 이 한도로는 하루에 맞힐 확률이 0.2%를 넘지 않는다.
+export const twoFactorGuesses = createRateLimit({
+  limit: 20,
+  windowMs: 60 * 60 * 1000,
+  message: "2단계 인증 코드를 너무 많이 틀렸어요. 1시간 뒤에 다시 시도해 주세요.",
+})
+
 async function checkCurrentPassword(req: Request, account: Account) {
   const limitKey = `${clientKey(req)} ${account.email}`
   await loginFailures.take(limitKey)
@@ -390,7 +400,11 @@ authRouter.post("/password-reset", async (req, res) => {
   account.passwordHash = await hashPassword(password)
   // 주인의 로그인은 끝나고, 공동 관리자의 로그인은 남는다.
   database.sessions = database.sessions.filter((session) => session.accountId !== account.id || session.memberId)
-  await loginFailures.reset(`${clientKey(req)} ${email}`)
+  // 계정을 빼앗겼다가 되찾는 길이므로, 빼앗은 사람이 연결해 둔 소셜 로그인도 끊는다.
+  // 본인이 연결했던 것이면 내 정보에서 다시 연결하면 된다.
+  delete account.social
+  // 메일을 받는 사람이 맞으니, 다른 사람이 일부러 쌓은 실패로 막히지 않게 집계도 지운다.
+  await Promise.all([loginFailures.reset(`${clientKey(req)} ${email}`), loginFailuresPerEmail.reset(email)])
   // 이메일만으로는 2단계 로그인을 통과하지 못한다. 다음에 코드를 묻는다.
   if (account.twoFactor) {
     const ticket = startTicket(account, req)
@@ -481,6 +495,11 @@ authRouter.post("/login", async (req, res) => {
     const email = normalizeEmail(req.body?.email)
     const limitKey = `${clientKey(req)} ${email}`
     await loginFailures.take(limitKey)
+    // 코드를 비교하기 전에 세고 맞으면 돌려준다. 한꺼번에 보낸 추측도 모두 세기 위해서다.
+    const first = getDatabase().accounts.find((item) => item.email === email)
+    const guesser = first ?? memberByEmail(getDatabase(), email)?.member
+    const counted = guesser?.loginTicket?.hash === hashToken(String(req.body?.ticket ?? "")) ? guesser.id : undefined
+    if (counted) await twoFactorGuesses.take(counted)
     const opened = await retryConflicts(async () => {
     const database = getDatabase()
     const owner = database.accounts.find((item) => item.email === email)
@@ -512,6 +531,7 @@ authRouter.post("/login", async (req, res) => {
     }
   })
   await loginFailures.reset(limitKey)
+  if (counted) await twoFactorGuesses.release(counted)
   res.json(opened)
 })
 
@@ -943,9 +963,11 @@ authRouter.post("/two-factor/disable", async (req, res) => {
   const account = requireOwner(req, requireAccount(req))
   if (!account.twoFactor) throw new HttpError(409, "2단계 인증이 꺼져 있어요.")
   await checkCurrentPassword(req, account)
+  await twoFactorGuesses.take(account.id)
   if (!useCode(account, String(req.body?.code ?? ""))) {
     throw new HttpError(400, "코드가 올바르지 않아요. 인증 앱의 6자리 코드나 복구 코드를 입력해 주세요.")
   }
+  await twoFactorGuesses.release(account.id)
   delete account.twoFactor
   delete account.loginTicket
   await saveDatabase()

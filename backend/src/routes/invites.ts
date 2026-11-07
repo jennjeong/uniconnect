@@ -34,7 +34,8 @@ function findInvite(database: Database, code: unknown) {
 // 보여 주고, 리스팅이 아직 없으면 이름과 학교만 보여 준다.
 function inviterOf(database: Database, invite: ShopInvite) {
   const account = database.accounts.find((item) => item.id === invite.accountId)
-  if (!account) return undefined
+  // 정지된 단체는 다른 곳에서처럼 보여 주지 않는다.
+  if (!account || account.suspendedAt) return undefined
   const listing = findListing(database, account)
   if (!listing) return { name: account.name, school: account.school, category: account.type }
   const { score: _score, reasons: _reasons, ...shown } = withLiveEvent(database, listing)

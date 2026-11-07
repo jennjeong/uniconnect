@@ -6,6 +6,7 @@ import { HttpError } from "../lib/errors.js"
 import { canReadReport, premiumReport, reportOpen, sponsorshipFor } from "../lib/premiumReport.js"
 import { isDemoAccount } from "../lib/reviews.js"
 import { getDatabase, saveDatabase } from "../store.js"
+import type { Database } from "../types.js"
 import { brandOwner } from "./requests.js"
 
 // 상세 성과 리포트(lib/premiumReport.ts)다. 브랜드가 산 자기 리포트(데모
@@ -22,6 +23,14 @@ function owned(req: Parameters<typeof brandOwner>[0], id: string) {
   return { account, database, ...found }
 }
 
+// 산 리포트를 쓰면 환불 기간이 끝난다. 처음 쓴 것이면 참을 답한다.
+function markOpened(database: Database, accountId: string, sponsorshipId: string) {
+  const bought = paidFor(database, accountId, "report", sponsorshipId)
+  if (!bought || bought.openedAt) return false
+  bought.openedAt = new Date().toISOString()
+  return true
+}
+
 insightsRouter.get("/:id", async (req, res) => {
   const { account, database, sponsorship, event } = owned(req, String(req.params.id))
   if (!canReadReport(database, account, sponsorship.id, !req.account)) {
@@ -34,11 +43,7 @@ insightsRouter.get("/:id", async (req, res) => {
     return
   }
   // 산 리포트를 처음 열어 본 뒤에는 환불하지 않는다. 약관이 그 전까지만 환불해 준다.
-  const bought = req.account ? paidFor(database, account.id, "report", sponsorship.id) : undefined
-  if (bought && !bought.openedAt) {
-    bought.openedAt = new Date().toISOString()
-    await saveDatabase()
-  }
+  if (req.account && markOpened(database, account.id, sponsorship.id)) await saveDatabase()
   res.json({
     locked: false,
     report: premiumReport(database, account, sponsorship.id),
@@ -64,6 +69,7 @@ insightsRouter.put("/:id/lift", async (req, res) => {
   const during = count(req.body?.during)
   if (before === 0) throw new HttpError(400, "협찬 전 하루 방문객 수를 1 이상으로 적어 주세요.")
   sponsorship.lift = { before, during, updatedAt: new Date().toISOString() }
+  markOpened(database, account.id, sponsorship.id)
   await saveDatabase()
   res.json({ report: premiumReport(database, account, sponsorship.id) })
 })
@@ -75,6 +81,7 @@ insightsRouter.post("/:id/share", async (req, res) => {
   if (!req.account || isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 리포트를 공유할 수 없어요.")
   if (!canReadReport(database, account, sponsorship.id, !req.account)) throw new HttpError(402, "상세 리포트를 산 뒤에 공유할 수 있어요.")
   sponsorship.shareToken ??= randomBytes(18).toString("base64url")
+  markOpened(database, account.id, sponsorship.id)
   await saveDatabase()
   res.json({ shareToken: sponsorship.shareToken })
 })
@@ -95,7 +102,8 @@ insightsRouter.get("/shared/:token", (req, res) => {
     const sponsorship = list.find((item) => item.shareToken && item.shareToken === token)
     const account = sponsorship && database.accounts.find((item) => item.id === accountId)
     // 정지된 브랜드의 링크는 장부와 캘린더 링크처럼 멈춘다.
-    if (sponsorship && account && !account.suspendedAt) {
+    // 환불되거나 요금제가 끝나 볼 수 없게 된 리포트의 링크도 멈춘다.
+    if (sponsorship && account && !account.suspendedAt && canReadReport(database, account, sponsorship.id, false)) {
       res.json({ report: premiumReport(database, account, sponsorship.id) })
       return
     }
