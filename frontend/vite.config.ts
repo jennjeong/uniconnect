@@ -113,11 +113,26 @@ function siteDocument(config: SiteConfiguration): Plugin {
   }
   // Google의 gtag 설정을 인라인 스크립트가 아닌 별도 파일(/ga-init.js)로 둔다.
   // 서버의 Content-Security-Policy가 인라인 스크립트를 막기 때문이다.
+  // 체크인과 비밀 링크 화면에서는 싣지 않는다. 주소의 코드와 토큰이 밖으로
+  // 나가지 않고, 참여 코드와 쿠키 식별자가 한 브라우저에 함께 있지 않게 한다.
+  // 다른 화면도 주소의 쿼리는 보내지 않는다.
   const gaInit = googleAnalyticsId
-    ? `window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', ${JSON.stringify(googleAnalyticsId)});
+    ? `if (!/^\\/(check-in|ledger|report|invite)(\\/|$)/.test(location.pathname)) {
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = function () { dataLayer.push(arguments); };
+  gtag('js', new Date());
+  // 이전 주소에도 토큰이 있을 수 있어, 바깥 사이트의 도메인만 남긴다.
+  var cameFrom = '';
+  try {
+    var referrer = new URL(document.referrer);
+    if (referrer.origin !== location.origin) cameFrom = referrer.origin;
+  } catch (error) {}
+  gtag('config', ${JSON.stringify(googleAnalyticsId)}, { page_location: location.origin + location.pathname, page_referrer: cameFrom });
+  var tag = document.createElement('script');
+  tag.async = true;
+  tag.src = ${JSON.stringify(`https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`)};
+  document.head.appendChild(tag);
+}
 `
     : ''
 
@@ -205,21 +220,11 @@ gtag('config', ${JSON.stringify(googleAnalyticsId)});
         }
 
         if (googleAnalyticsId) {
-          tags.push(
-            {
-              tag: 'script',
-              attrs: {
-                async: true,
-                src: `https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`,
-              },
-              injectTo: 'head',
-            },
-            {
-              tag: 'script',
-              attrs: { src: '/ga-init.js' },
-              injectTo: 'head',
-            },
-          )
+          tags.push({
+            tag: 'script',
+            attrs: { src: '/ga-init.js' },
+            injectTo: 'head',
+          })
         }
 
         return {

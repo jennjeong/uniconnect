@@ -2256,6 +2256,51 @@ test("a visitor compares the plans, and a plan still to come names no price", as
   await expect(page.getByRole("dialog")).toBeVisible()
 })
 
+test("a chat can be searched, and clearing it brings every message back", async ({ page, request }) => {
+  const brand = await signUpMember(request, "브랜드", "e2e-search@search-cafe.kr", "검색 카페")
+  const group = await signUpMember(request, "학생단체", "e2e-search@syu.ac.kr", "검색 동아리")
+  const { headers } = group
+  await request.put("/api/profile", { data: { intro: "캠퍼스 동아리예요.", offer: "관객 100명" }, headers })
+  const { conversation } = await (await request.post("/api/conversations", { data: { partnerId: brand.listingId }, headers })).json()
+  for (const text of ["사과 상자를 보낼게요", "일정은 금요일이에요"]) {
+    await request.post(`/api/conversations/${conversation.id}/messages`, { data: { text }, headers })
+  }
+  await page.addInitScript((token) => localStorage.setItem("uniconnect-token", token), group.token)
+  await page.goto(`/messages/${conversation.id}`)
+  const box = page.getByRole("searchbox", { name: "대화 검색" })
+  await box.fill("금요일")
+  await expect(page.getByText("일정은 금요일이에요")).toBeVisible()
+  await expect(page.getByText("사과 상자를 보낼게요")).toHaveCount(0)
+  await box.fill("없는 말")
+  await expect(page.getByText("맞는 메시지가 없어요.")).toBeVisible()
+  await page.getByRole("button", { name: "검색어 지우기" }).click()
+  await expect(page.getByText("사과 상자를 보낼게요")).toBeVisible()
+})
+
+test("pages with a code or token in the address load no analytics, and the site's own pages do", async ({ page }) => {
+  for (const path of ["/check-in/none", "/ledger/none", "/report/none", "/invite/none"]) {
+    await page.goto(path)
+    await page.waitForLoadState("networkidle")
+    expect(await page.evaluate(() => "gtag" in window)).toBe(false)
+  }
+  await page.goto("/faq")
+  await page.waitForFunction(() => "gtag" in window)
+})
+
+test("an operator gives a reason when suspending", async ({ page, request }) => {
+  const member = await signUpMember(request, "브랜드", "e2e-stop@stop-cafe.kr", "정지 카페")
+  const accounts = (await (await request.get("/api/admin/accounts?q=e2e-stop", { headers: { "X-Admin-Token": "e2e-admin-token" } })).json()) as {
+    accounts: { id: string }[]
+  }
+  await page.addInitScript(() => sessionStorage.setItem("uniconnect-admin-token", "e2e-admin-token"))
+  await page.goto(`/admin?view=members&member=${accounts.accounts[0].id}`)
+  await page.getByRole("button", { name: "계정 정지" }).click()
+  await page.getByLabel("정지 사유 (회원에게 메일로 가요)").fill("약관을 어겼어요")
+  await page.getByRole("button", { name: "정지할게요" }).click()
+  await expect(page.getByRole("button", { name: "정지 풀기" })).toBeVisible()
+  expect(member.token).toBeTruthy()
+})
+
 test("a brand sees Campus Local only once it's on sale, and runs its coupon from 내 정보", async ({ page, request }) => {
   const brand = await signUpMember(request, "브랜드", "e2e-local@local-cafe.kr", "로컬 카페")
   await page.addInitScript((token) => localStorage.setItem("uniconnect-token", token), brand.token)
@@ -2316,18 +2361,4 @@ test("an always-on coupon shows no event date, and says when it's closed", async
   await page.goto("/check-in/always")
   await expect(page.getByText("지금은 새 쿠폰을 받을 수 없어요.")).toBeVisible()
   await expect(page.getByText("2026")).toHaveCount(0)
-})
-
-test("an operator gives a reason when suspending", async ({ page, request }) => {
-  const member = await signUpMember(request, "브랜드", "e2e-stop@stop-cafe.kr", "정지 카페")
-  const accounts = (await (await request.get("/api/admin/accounts?q=e2e-stop", { headers: { "X-Admin-Token": "e2e-admin-token" } })).json()) as {
-    accounts: { id: string }[]
-  }
-  await page.addInitScript(() => sessionStorage.setItem("uniconnect-admin-token", "e2e-admin-token"))
-  await page.goto(`/admin?view=members&member=${accounts.accounts[0].id}`)
-  await page.getByRole("button", { name: "계정 정지" }).click()
-  await page.getByLabel("정지 사유 (회원에게 메일로 가요)").fill("약관을 어겼어요")
-  await page.getByRole("button", { name: "정지할게요" }).click()
-  await expect(page.getByRole("button", { name: "정지 풀기" })).toBeVisible()
-  expect(member.token).toBeTruthy()
 })
