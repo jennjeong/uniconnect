@@ -346,6 +346,11 @@ export const api = {
   shareInsight: (id: string) => request<{ shareToken: string }>(`/insights/${encodeURIComponent(id)}/share`, { method: "POST" }),
   unshareInsight: (id: string) => request<void>(`/insights/${encodeURIComponent(id)}/share`, { method: "DELETE" }),
   plans: () => request<PlanTable>("/billing/plans"),
+  // 플랫폼 밖에서 오가는 현금 협찬금의 지급 기록 (backend lib/payouts.ts).
+  savePayoutDue: (id: string, dueDate: string | null) =>
+    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/payout`, { method: "PUT", body: { dueDate } }),
+  markPayout: (id: string, mark: "paid" | "received", on: boolean) =>
+    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/payout/${mark}`, { method: on ? "POST" : "DELETE" }),
   refundQuote: (id: string) => request<RefundQuote>(`/billing/payments/${encodeURIComponent(id)}/refund`),
   refund: (id: string, amount: number) =>
     request<{ payment: Payment }>(`/billing/payments/${encodeURIComponent(id)}/refund`, { method: "POST", body: { amount } }),
@@ -495,10 +500,11 @@ export const api = {
     }),
   adminRefundQuote: (token: string, id: string) =>
     request<RefundQuote>(`/admin/payments/${encodeURIComponent(id)}/refund`, { headers: { "X-Admin-Token": token } }),
-  adminCancelPayment: (token: string, id: string, reason: string) =>
+  // outside: Toss가 부분 취소를 거절해 운영자가 계좌로 직접 돌려준 환불을 기록만 한다.
+  adminCancelPayment: (token: string, id: string, reason: string, outside = false) =>
     request<{ payment: AdminPayment }>(`/admin/payments/${encodeURIComponent(id)}/cancel`, {
       method: "POST",
-      body: { reason },
+      body: { reason, ...(outside ? { outside: true } : {}) },
       headers: { "X-Admin-Token": token },
     }),
   adminErrors: (token: string) =>

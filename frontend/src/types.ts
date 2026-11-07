@@ -149,9 +149,13 @@ export type SnsPost = {
   addedAt: string
 }
 
+// 플랫폼 밖에서 오가는 현금 협찬금. late는 예정일이 지났는데 지급도 수령도 표시가 없을 때다.
+export type Payout = { dueDate?: string; paidAt?: string; paidAmount?: number; receivedAt?: string; late: boolean }
+
 export type Agreement = {
   id: string
   kind: "request" | "offer"
+  payout?: Payout
   shipments?: Shipment[]
   snsPosts?: SnsPost[]
   side: ChatSide

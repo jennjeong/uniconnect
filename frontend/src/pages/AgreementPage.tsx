@@ -13,7 +13,7 @@ import { methodInfo, methodKinds, sortedMethods } from "../data/methods"
 import { reviewTags } from "../data/reviews"
 import { locale, t } from "../i18n"
 import { venueLink } from "../lib/checkin"
-import { formatDateTime, formatFullDate } from "../lib/date"
+import { formatDateTime, formatFullDate, todayIso } from "../lib/date"
 import { photoFromFile } from "../lib/image"
 import { fullWon } from "../lib/sponsorships"
 import { PaymentModal } from "../modals/PaymentModal"
@@ -870,6 +870,9 @@ function ValuePanel({
             <input inputMode="numeric" onChange={(event) => setDraft({ ...draft, inKind: event.target.value })} placeholder="100000" value={draft.inKind} />
           </label>
           <p className="field-hint">{t("제품, 쿠폰, 장소처럼 현물로 주는 것은 판매가로 환산해 적어 주세요. 바꾸면 두 쪽 모두 다시 확인해요.")}</p>
+          {(agreement.payout?.paidAt || agreement.payout?.receivedAt) && (
+            <p className="field-hint">{t("현금 협찬액을 바꾸면 지급과 수령 표시가 지워져요.")}</p>
+          )}
           <div className="value-form-actions">
             <button className="cancel-button" onClick={() => setEditing(false)} type="button">
               {t("취소")}
@@ -927,6 +930,96 @@ function ValuePanel({
 // 양 당사자, 아홉 조항(목적, 협찬 대상, 시기, 각 쪽의 의무, 결과 확인 방법,
 // 수수료, 변경과 취소, 연락처, 효력 발생)과 서명으로서의 각 쪽의 확인을 담는다.
 // 이 페이지에서 합의한 내용을 말할 뿐 공인 전자서명은 아니다.
+// 현금 협찬금의 지급 기록. 돈은 플랫폼 밖에서 오가고, 예정일과 양쪽의 표시만 남긴다.
+function PayoutPanel({
+  agreement,
+  busy,
+  onDue,
+  onMark,
+}: {
+  agreement: Agreement
+  busy: boolean
+  onDue: (dueDate: string | null) => Promise<boolean>
+  onMark: (mark: "paid" | "received", on: boolean) => Promise<boolean>
+}) {
+  const payout = agreement.payout
+  const [due, setDue] = useState(payout?.dueDate ?? "")
+  useEffect(() => setDue(payout?.dueDate ?? ""), [payout?.dueDate])
+  if (!agreement.value?.cash || agreement.cancel?.canceledAt) return null
+  const marked = Boolean(payout?.paidAt || payout?.receivedAt)
+  const brand = agreement.side === "brand"
+  return (
+    <section aria-labelledby="payout-title" className="agreement-section payout-panel">
+      <h2 id="payout-title">
+        {t("협찬금 지급")}
+        {payout?.late && <em className="payout-late">{t("예정일이 지났어요")}</em>}
+      </h2>
+      <p className="field-hint">{t("입금 여부는 플랫폼이 확인하지 않아요. 양쪽이 적은 기록이에요.")}</p>
+      <form
+        className="payout-due"
+        onSubmit={(event) => {
+          event.preventDefault()
+          void onDue(due || null)
+        }}
+      >
+        <label>
+          {t("지급 예정일")}
+          <input
+            disabled={marked}
+            min={todayIso()}
+            onChange={(event) => setDue(event.target.value)}
+            type="date"
+            value={due}
+          />
+        </label>
+        {!marked && (
+          <button className="cancel-button" disabled={busy || due === (payout?.dueDate ?? "")} type="submit">
+            {due ? t("예정일 저장") : t("예정일 지우기")}
+          </button>
+        )}
+      </form>
+      {marked && <p className="field-hint">{t("지급을 표시한 뒤에는 예정일을 바꿀 수 없어요.")}</p>}
+      <dl className="payout-marks">
+        <div>
+          <dt>{t("브랜드 지급")}</dt>
+          <dd>
+            {payout?.paidAt
+              ? t("{date} 보냄 · {amount}", { date: formatFullDate(payout.paidAt.slice(0, 10)), amount: fullWon(payout.paidAmount ?? 0) })
+              : t("아직 표시 안 함")}
+          </dd>
+        </div>
+        <div>
+          <dt>{t("단체 수령")}</dt>
+          <dd>{payout?.receivedAt ? t("{date} 받음", { date: formatFullDate(payout.receivedAt.slice(0, 10)) }) : t("아직 표시 안 함")}</dd>
+        </div>
+      </dl>
+      <div className="payout-actions">
+        {brand ? (
+          payout?.paidAt ? (
+            !payout.receivedAt && (
+              <button className="cancel-button" disabled={busy} onClick={() => void onMark("paid", false)} type="button">
+                {t("지급 표시 거두기")}
+              </button>
+            )
+          ) : (
+            <button className="primary-button" disabled={busy} onClick={() => void onMark("paid", true)} type="button">
+              {t("협찬금을 보냈어요")}
+            </button>
+          )
+        ) : payout?.receivedAt ? (
+          <button className="cancel-button" disabled={busy} onClick={() => void onMark("received", false)} type="button">
+            {t("수령 표시 거두기")}
+          </button>
+        ) : (
+          <button className="primary-button" disabled={busy} onClick={() => void onMark("received", true)} type="button">
+            {t("협찬금을 받았어요")}
+          </button>
+        )}
+      </div>
+    </section>
+  )
+}
+
 function ContractTerms({ agreement }: { agreement: Agreement }) {
   const brand = agreement.brand.name
   const group = agreement.group.name
@@ -1580,6 +1673,23 @@ export function AgreementPage({
         agreement={agreement}
         busy={busy}
         onSave={(value) => run(() => api.saveAgreementValue(agreement.id, value), t("협찬액을 적었어요. 두 쪽 모두 다시 확인해 주세요."))}
+      />
+
+      <PayoutPanel
+        agreement={agreement}
+        busy={busy}
+        onDue={(dueDate) =>
+          run(
+            () => api.savePayoutDue(agreement.id, dueDate),
+            dueDate ? t("지급 예정일을 정했어요. 두 쪽 모두 다시 확인해 주세요.") : t("지급 예정일을 지웠어요. 두 쪽 모두 다시 확인해 주세요."),
+          )
+        }
+        onMark={(mark, on) =>
+          run(
+            () => api.markPayout(agreement.id, mark, on),
+            on ? (mark === "paid" ? t("보냈다고 표시했어요. 상대에게 알렸어요.") : t("받았다고 표시했어요. 상대에게 알렸어요.")) : t("표시를 거뒀어요."),
+          )
+        }
       />
 
       <Presence show={paying}>
