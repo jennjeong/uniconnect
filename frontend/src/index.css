@@ -8621,6 +8621,39 @@ input[type="search"]::-webkit-search-cancel-button {
   flex: 1;
 }
 
+.chat-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 0 14px;
+  border-radius: 14px;
+  background: var(--fill);
+  color: var(--muted);
+}
+
+.chat-search input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.chat-search:focus-within {
+  box-shadow: 0 0 0 2px var(--point);
+}
+
+.chat-search-count {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .chat-note {
   margin: 0 0 12px;
   padding: 12px 14px;
@@ -15335,6 +15368,26 @@ input[type="search"]::-webkit-search-cancel-button {
   background: var(--orange-soft);
 }
 
+.suspend-reason {
+  display: grid;
+  flex-basis: 100%;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.suspend-reason input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+}
+
 .console-note label {
   display: grid;
   gap: 8px;
@@ -16980,6 +17033,122 @@ th[aria-sort="descending"] .console-sort span {
   padding: 0 0 0 18px;
   color: var(--ink-soft);
   font-size: 14px;
+}
+
+.checkin-closed {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--fill);
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.refund-confirm {
+  display: flex;
+  flex-basis: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  grid-column: 1 / -1;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--fill);
+  font-size: 14px;
+}
+
+.refund-confirm p {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.local-card {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 20px;
+  border-radius: 20px;
+  background: var(--fill);
+}
+
+.local-card > .cancel-button {
+  justify-self: start;
+}
+
+.local-form {
+  display: grid;
+  gap: 10px;
+}
+
+.local-form label,
+.local-report label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: var(--weight-label);
+}
+
+.local-form input,
+.local-report select {
+  width: 100%;
+  height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--surface, #fff);
+  box-shadow: var(--ring);
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+}
+
+.local-campaign {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 132px;
+  gap: 16px;
+  align-items: start;
+}
+
+.local-campaign p {
+  margin: 0 0 6px;
+  overflow-wrap: anywhere;
+}
+
+.local-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.local-report dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0 0;
+}
+
+.local-report dt {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.local-report dd {
+  margin: 2px 0 0;
+  font-size: 20px;
+  font-weight: var(--weight-strong);
+}
+
+.local-report small {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: var(--weight-body);
+}
+
+@media (max-width: 480px) {
+  .local-campaign {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .plan-option .icon {

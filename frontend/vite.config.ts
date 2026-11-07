@@ -198,21 +198,11 @@ function siteDocument(config: SiteConfiguration): Plugin {
         }
 
         if (googleAnalyticsId) {
-          tags.push(
-            {
-              tag: 'script',
-              attrs: {
-                async: true,
-                src: `https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`,
-              },
-              injectTo: 'head',
-            },
-            {
-              tag: 'script',
-              attrs: { src: '/ga-init.js' },
-              injectTo: 'head',
-            },
-          )
+          tags.push({
+            tag: 'script',
+            attrs: { src: '/ga-init.js' },
+            injectTo: 'head',
+          })
         }
 
         return {

@@ -29,6 +29,7 @@ import {
   useTable,
   WaitBadge,
   writeStored,
+  SuspendReason,
 } from "./AdminTools"
 import { AdminLogin } from "./AdminLogin"
 import type {
@@ -37,6 +38,7 @@ import type {
   AdminMemberDetail,
   AdminOverview,
   AdminPayment,
+  RefundQuote,
   AdminProposalRow,
   AdminReport,
   ErrorEntry,
@@ -110,13 +112,14 @@ function ReportCard({
   onResolve,
 }: {
   report: AdminReport
-  onResolve: (report: AdminReport, action: ReportAction) => Promise<void>
+  onResolve: (report: AdminReport, action: ReportAction, reason?: string) => Promise<void>
 }) {
   const [busy, setBusy] = useState(false)
+  const [reason, setReason] = useState("")
   const person = (who: AdminReport["about"]) => (who ? `${who.name} · ${t(who.role)} · ${who.email}` : t("탈퇴한 회원"))
   const act = (action: ReportAction) => {
     setBusy(true)
-    void onResolve(report, action).finally(() => setBusy(false))
+    void onResolve(report, action, action === "suspend" ? reason.trim() : undefined).finally(() => setBusy(false))
   }
 
   return (
@@ -139,6 +142,7 @@ function ReportCard({
         </div>
       ) : (
         <div className="admin-report-actions">
+          {report.about && <SuspendReason onChange={setReason} value={reason} />}
           <button className="cancel-button" disabled={busy} onClick={() => act("dismiss")} type="button">
             {t("그대로 두기")}
           </button>
@@ -303,22 +307,36 @@ function StatsPanel({ stats }: { stats: PlatformStats }) {
   )
 }
 
-const paymentKinds: Record<AdminPayment["kind"], string> = { fee: "수수료", report: "상세 리포트", pro: "Growth", ad: "상단 광고" }
+const paymentKinds: Record<AdminPayment["kind"], string> = { fee: "수수료", report: "상세 리포트", pro: "Growth", ad: "상단 광고", local: "Campus Local" }
 
 // 운영자가 보는 결제 하나: 누가 얼마를 어떻게 언제 냈는지와, 상태가 허용하는
 // 작업(들어온 이체 확인, 대기 중인 주문 취소, 결제된 건 환불).
 function PaymentCard({
+  token,
   payment,
   onPaid,
   onCancel,
   onOpenMember,
 }: {
+  token: string
   payment: AdminPayment
   onPaid: (payment: AdminPayment) => void
   onCancel: (payment: AdminPayment) => void
   onOpenMember: (id: string) => void
 }) {
   const [sure, setSure] = useState(false)
+  const [quote, setQuote] = useState<RefundQuote>()
+  const [refundError, setRefundError] = useState("")
+  const askRefund = () => {
+    setRefundError("")
+    api.adminRefundQuote(token, payment.id).then(
+      (result) => {
+        setQuote(result)
+        setSure(true)
+      },
+      (error: unknown) => setRefundError(errorMessage(error)),
+    )
+  }
   return (
     <article className="admin-card admin-payment">
       <div className="admin-card-head">
@@ -337,6 +355,7 @@ function PaymentCard({
         {payment.accountName} · {payment.id}
         {payment.status === "paid" && ` · ${payment.method === "card" ? t("카드") : t("계좌 입금")}`}
         {payment.status === "cancelled" && ` · ${payment.cancelReason ?? ""}`}
+        {payment.refundedAmount !== undefined && ` · ${t("{amount} 환불", { amount: fullWon(payment.refundedAmount) })}`}
         {payment.kind === "report" && payment.status === "paid" && ` · ${payment.openedAt ? t("열어 봄") : t("아직 안 열어 봄")}`}{" "}
         <button className="console-inline" onClick={() => onOpenMember(payment.accountId)} type="button">
           {t("회원 보기")}
@@ -354,16 +373,26 @@ function PaymentCard({
           </>
         )}
         {payment.status === "paid" &&
+          payment.refundedAmount === undefined &&
           (sure ? (
-            <button className="decline-button" onClick={() => onCancel(payment)} type="button">
-              {payment.card ? t("카드 결제 환불하기") : t("환불했다고 기록하기")}
-            </button>
+            <>
+              {quote && (
+                <p className="admin-from">
+                  {t("돌려줄 금액")} <strong>{fullWon(quote.amount)}</strong>
+                  {!payment.card && ` · ${t("이 금액을 직접 보내 주세요.")}`}
+                </p>
+              )}
+              <button className="decline-button" onClick={() => onCancel(payment)} type="button">
+                {payment.card ? t("카드 결제 환불하기") : t("환불했다고 기록하기")}
+              </button>
+            </>
           ) : (
-            <button className="cancel-button" onClick={() => setSure(true)} type="button">
+            <button className="cancel-button" onClick={askRefund} type="button">
               {t("환불")}
             </button>
           ))}
       </div>
+      {refundError && <p className="form-error">{refundError}</p>}
     </article>
   )
 }
@@ -581,6 +610,7 @@ const revenueKinds = [
   { key: "report", label: "상세 리포트" },
   { key: "pro", label: "Growth" },
   { key: "ad", label: "상단 광고" },
+  { key: "local", label: "Campus Local" },
 ] as const
 
 // 개요: 수치 카드, 수락 게이지 옆의 주별 막대, 지금 운영자가 처리할 일과 매출,
@@ -1112,13 +1142,13 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
     )
 
   // 신고를 처리한 뒤 신고와 정지된 계정을 다시 읽는다.
-  const resolve = async (report: AdminReport, action: ReportAction) => {
+  const resolve = async (report: AdminReport, action: ReportAction, reason?: string) => {
     try {
-      await api.resolveReport(token, report.id, action)
+      const { noticeSent } = await api.resolveReport(token, report.id, action, reason)
       const reported = await api.adminReports(token)
       setReports(reported.reports)
       setSuspended(reported.suspended)
-      onNotice(t("신고를 처리했어요."))
+      onNotice(noticeSent === false ? t("메일을 보내지 못했어요. 회원에게 직접 알려 주세요.") : t("신고를 처리했어요."))
     } catch (caught) {
       onNotice(errorMessage(caught))
     }
@@ -1448,6 +1478,7 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
                 {shownPayments.map((payment) => (
                   <PaymentCard
                     key={payment.id}
+                    token={token}
                     onOpenMember={(member) => go({ section: "members", member })}
                     onCancel={(item) =>
                       void settle(

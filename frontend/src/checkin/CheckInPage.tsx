@@ -11,7 +11,7 @@ import type { CheckInInfo } from "../types"
 // 이 휴대폰이 행사에서 한 일. 새로고침해도 두 번 세지 않도록 저장해 둔다.
 // `pass`는 서버가 쿠폰을 한 번씩만 세게 하고, `coupons`는 가게 직원이 자기
 // 기기에서 방문을 확인할 때 쓰는 번호를 쿠폰 id별로(스폰서마다 하나) 담는다.
-type TakenCoupon = { number: string; visited?: boolean }
+type TakenCoupon = { number: string; visited?: boolean; expiresAt?: string }
 // 선택 설문을 이 휴대폰에서 보냈거나 건너뛰면 `surveyed`.
 type CheckIn = { participant: string; pass?: string; coupons?: Record<string, TakenCoupon>; surveyed?: true }
 
@@ -140,7 +140,7 @@ export function CheckInPage({ code }: { code: string }) {
           if (cancelled) return
           const taken = Object.fromEntries(
             Object.entries(coupons).flatMap(([id, coupon]) =>
-              coupon.number ? [[id, { number: coupon.number, visited: coupon.visited }]] : [],
+              coupon.number ? [[id, { number: coupon.number, visited: coupon.visited, expiresAt: coupon.expiresAt }]] : [],
             ),
           )
           setCheckIn((current) => {
@@ -195,9 +195,10 @@ export function CheckInPage({ code }: { code: string }) {
         {info && (
           <p className="checkin-date">
             {info.groupName && `${info.groupName} · `}
-            {formatFullDate(info.eventDate)}
+            {info.alwaysOn ? t("쿠폰은 받은 날부터 {days}일 동안 쓸 수 있어요.", { days: info.couponDays ?? 0 }) : formatFullDate(info.eventDate)}
           </p>
         )}
+        {info?.alwaysOn && info.open === false && <p className="checkin-closed">{t("지금은 새 쿠폰을 받을 수 없어요.")}</p>}
 
         {!checkIn ? (
           !error && <p className="checkin-loading">{t("참여를 기록하고 있어요…")}</p>
@@ -221,12 +222,13 @@ export function CheckInPage({ code }: { code: string }) {
                     <span className="coupon-store">{coupon.store}</span>
                     <strong className="coupon-title">{coupon.title}</strong>
                     <small>
-                      {t("행사 참여자 전용 쿠폰")} · {t(couponTerms)}
+                      {info?.alwaysOn ? t("매장 쿠폰") : t("행사 참여자 전용 쿠폰")} · {t(couponTerms)}
                     </small>
                     {mine ? (
                       <div className="coupon-code">
                         <span>{t("쿠폰 번호")}</span>
                         <strong>{mine.number}</strong>
+                        {mine.expiresAt && <small>{t("{date}까지 쓸 수 있어요", { date: formatFullDate(mine.expiresAt.slice(0, 10)) })}</small>}
                       </div>
                     ) : (
                       <button
