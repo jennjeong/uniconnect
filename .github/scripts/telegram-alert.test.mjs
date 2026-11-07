@@ -64,6 +64,24 @@ test("only collaborators can ask, and together reaches both in their own style",
   assert.doesNotMatch(second, /🎀/)
 })
 
+test("a comment on a shared issue tells the other side, in their own style", () => {
+  const comment = (login, labels) => ({
+    action: "created",
+    sender: { login },
+    issue: { ...issue, labels: labels.map((name) => ({ name })) },
+    comment: { author_association: "COLLABORATOR", body: "API를 올렸어요.\n프론트 차례예요.", html_url: "u" },
+  })
+  const [toPrincess] = route("issue_comment", comment("Prince-Login", ["협업"]), people)
+  assert.equal(toPrincess.person, "princess")
+  assert.match(format(toPrincess.person, toPrincess.notice), /왕자님이 하신 일/)
+  const [toPrince] = route("issue_comment", comment("jennjeong", ["협업"]), people)
+  assert.equal(toPrince.person, "prince")
+  assert.match(format(toPrince.person, toPrince.notice), /공주님이 하신 일/)
+  // 협업 라벨이 없거나, 모르는 사람이면 보내지 않는다.
+  assert.deepEqual(route("issue_comment", comment("jennjeong", ["bug"]), people), [])
+  assert.deepEqual(route("issue_comment", comment("stranger", ["협업"]), people), [])
+})
+
 test("a plain comment and a push-like event send nothing", () => {
   assert.deepEqual(route("issue_comment", { action: "created", sender: { login: "a" }, issue, comment: { author_association: "OWNER", body: "좋아요" } }, people), [])
   assert.deepEqual(route("push", { sender: { login: "a" } }, people), [])

@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     if: >-
-      (github.event_name != 'issue_comment' || startsWith(github.event.comment.body, '/알림 ')) &&
+      (github.event_name != 'issue_comment' || startsWith(github.event.comment.body, '/알림 ') || contains(github.event.issue.labels.*.name, '협업')) &&
       (github.event_name != 'pull_request_review' || github.event.review.state == 'changes_requested') &&
       (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'failure')
     steps:
