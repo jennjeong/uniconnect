@@ -972,7 +972,7 @@ test("a student group's proposal reaches the brand, and the answer comes back", 
 
 test("brand analytics follow the live measurement", async () => {
   // 다른 테스트가 수락한 협찬(sp-req-…)은 그 행사 날이 지나면 함께 나온다. 시드의 것만 본다.
-  const sponsorships = ((await call("GET", "/analytics")).data.sponsorships as { id: string; coupons: number; visits: number; sales: number }[]).filter(
+  const sponsorships = ((await call("GET", "/analytics")).data.sponsorships as { id: string; date: string; targetRoas: number; coupons: number; visits: number; sales: number }[]).filter(
     (sponsorship) => !sponsorship.id.startsWith("sp-req-"),
   )
   assert.equal(sponsorships.length, 3)
