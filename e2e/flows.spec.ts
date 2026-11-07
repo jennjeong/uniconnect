@@ -2273,10 +2273,12 @@ test("a chat can be searched, and clearing it brings every message back", async 
   await expect(page.getByText("사과 상자를 보낼게요")).toBeVisible()
 })
 
-test("the check-in page loads no analytics, and the site's own pages do", async ({ page }) => {
-  await page.goto("/check-in/none")
-  await page.waitForLoadState("networkidle")
-  expect(await page.evaluate(() => "gtag" in window)).toBe(false)
+test("pages with a code or token in the address load no analytics, and the site's own pages do", async ({ page }) => {
+  for (const path of ["/check-in/none", "/ledger/none", "/report/none", "/invite/none"]) {
+    await page.goto(path)
+    await page.waitForLoadState("networkidle")
+    expect(await page.evaluate(() => "gtag" in window)).toBe(false)
+  }
   await page.goto("/faq")
   await page.waitForFunction(() => "gtag" in window)
 })
