@@ -2364,3 +2364,82 @@ test("an always-on coupon shows no event date, and says when it's closed", async
   await expect(page.getByText("지금은 새 쿠폰을 받을 수 없어요.")).toBeVisible()
   await expect(page.getByText("2026")).toHaveCount(0)
 })
+
+test("both sides record a cash payment on the agreement, which says the platform doesn't check it", async ({ page, request, browser }) => {
+  const later = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date(Date.now() + 10 * 86_400_000))
+  const due = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date(Date.now() + 5 * 86_400_000))
+  const group = await signUpMember(request, "학생단체", "e2e-payout@syu.ac.kr", "지급 동아리")
+  const brand = await signUpMember(request, "브랜드", "e2e-payout@payout-cafe.kr", "지급 카페")
+  await request.post("/api/events", { data: { name: "지급 공연", date: later, people: "100명", types: ["현금"] }, headers: group.headers })
+  await request.post("/api/proposals", { data: { matchId: brand.listingId }, headers: group.headers })
+  const inbox = (await (await request.get("/api/requests", { headers: brand.headers })).json()) as { requests: { id: string; groupName: string }[] }
+  const proposal = inbox.requests.find((item) => item.groupName === "지급 동아리")!
+  await request.post(`/api/requests/${proposal.id}/accept`, { headers: brand.headers })
+  await request.put(`/api/agreements/${proposal.id}/value`, { data: { value: { cash: 100000, inKind: 0 } }, headers: group.headers })
+
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
+  await page.goto(`/agreements/${proposal.id}`)
+  const panel = page.getByRole("region", { name: "협찬금 지급" })
+  await expect(panel).toContainText("입금 여부는 플랫폼이 확인하지 않아요.")
+  await panel.getByLabel("지급 예정일").fill(due)
+  await panel.getByRole("button", { name: "예정일 저장" }).click()
+  await expect(page.getByText("지급 예정일을 정했어요. 두 쪽 모두 다시 확인해 주세요.")).toBeVisible()
+
+  const brandPage = await (await browser.newContext()).newPage()
+  await brandPage.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
+  await brandPage.goto(`/agreements/${proposal.id}`)
+  await brandPage.getByRole("button", { name: "협찬금을 보냈어요" }).click()
+  await expect(brandPage.getByRole("region", { name: "협찬금 지급" })).toContainText("100,000원")
+
+  await page.reload()
+  await expect(panel).toContainText("보냄")
+  await panel.getByRole("button", { name: "협찬금을 받았어요" }).click()
+  await expect(panel).toContainText("받음")
+  await expect(panel.getByLabel("지급 예정일")).toBeDisabled()
+})
+
+test("a declined card refund offers a refund by bank transfer", async ({ page }) => {
+  const payment = {
+    id: "pay-x", accountId: "acc-x", accountName: "환불 카페", kind: "local", targetId: "", orderName: "Campus Local 30일",
+    amount: 86900, status: "paid", method: "card", card: true, requestedAt: "2026-11-01T00:00:00.000Z", paidAt: "2026-11-01T00:00:00.000Z",
+  }
+  let tries = 0
+  const bodies: unknown[] = []
+  await page.route("**/api/admin/payments", (route) => route.fulfill({ json: { payments: [payment] } }))
+  await page.route("**/api/admin/payments/pay-x/refund", (route) => route.fulfill({ json: { amount: 40000, days: 14, whole: false } }))
+  await page.route("**/api/admin/payments/pay-x/cancel", (route) => {
+    bodies.push(route.request().postDataJSON())
+    tries += 1
+    return tries === 1
+      ? route.fulfill({ status: 409, json: { error: "환불하지 못했어요. 카드사가 부분 취소를 받지 않았어요." } })
+      : route.fulfill({ json: { payment: { ...payment, refundedAmount: 40000 } } })
+  })
+  await page.addInitScript(() => sessionStorage.setItem("uniconnect-admin-token", "e2e-admin-token"))
+  await page.goto("/admin?view=payments")
+  await page.getByRole("tab", { name: /결제 완료/ }).click()
+  await page.getByRole("button", { name: "환불", exact: true }).click()
+  await expect(page.getByText("40,000원").first()).toBeVisible()
+  await page.getByRole("button", { name: "카드 결제 환불하기" }).click()
+  await expect(page.getByText("카드 환불이 거절됐어요.", { exact: false })).toBeVisible()
+  await page.getByRole("button", { name: "계좌로 직접 돌려주기" }).click()
+  await expect.poll(() => bodies.length).toBe(2)
+  expect(bodies[1]).toMatchObject({ outside: true })
+})
+
+test("a refund turned away for another reason doesn't ask for a bank refund", async ({ page }) => {
+  const payment = {
+    id: "pay-y", accountId: "acc-y", accountName: "환불 카페", kind: "local", targetId: "", orderName: "Campus Local 30일",
+    amount: 86900, status: "paid", method: "card", card: true, requestedAt: "2026-11-01T00:00:00.000Z", paidAt: "2026-11-01T00:00:00.000Z",
+  }
+  await page.route("**/api/admin/payments", (route) => route.fulfill({ json: { payments: [payment] } }))
+  await page.route("**/api/admin/payments/pay-y/refund", (route) => route.fulfill({ json: { amount: 86900, days: null, whole: true } }))
+  await page.route("**/api/admin/payments/pay-y/cancel", (route) => route.fulfill({ status: 409, json: { error: "이미 취소된 결제예요." } }))
+  await page.addInitScript(() => sessionStorage.setItem("uniconnect-admin-token", "e2e-admin-token"))
+  await page.goto("/admin?view=payments")
+  await page.getByRole("tab", { name: /결제 완료/ }).click()
+  await page.getByRole("button", { name: "환불", exact: true }).click()
+  await page.getByRole("button", { name: "카드 결제 환불하기" }).click()
+  await expect(page.getByText("이미 취소된 결제예요.")).toBeVisible()
+  await expect(page.getByRole("button", { name: "계좌로 직접 돌려주기" })).toHaveCount(0)
+})
+

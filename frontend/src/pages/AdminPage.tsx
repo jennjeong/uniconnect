@@ -311,22 +311,49 @@ const paymentKinds: Record<AdminPayment["kind"], string> = { fee: "수수료", r
 
 // 운영자가 보는 결제 하나: 누가 얼마를 어떻게 언제 냈는지와, 상태가 허용하는
 // 작업(들어온 이체 확인, 대기 중인 주문 취소, 결제된 건 환불).
+// 백엔드가 Toss의 환불 거절에만 쓰는 문구다(backend lib/billing.ts, 영어는 i18n/en.ts).
+const cardDeclined = (message: string) => /^(환불하지 못했어요|The refund didn't go through)/.test(message)
+
 function PaymentCard({
   token,
   payment,
   onPaid,
   onCancel,
+  onRefunded,
   onOpenMember,
 }: {
   token: string
   payment: AdminPayment
   onPaid: (payment: AdminPayment) => void
   onCancel: (payment: AdminPayment) => void
+  onRefunded: (message: string) => void
   onOpenMember: (id: string) => void
 }) {
   const [sure, setSure] = useState(false)
   const [quote, setQuote] = useState<RefundQuote>()
   const [refundError, setRefundError] = useState("")
+  const [busy, setBusy] = useState(false)
+  // Toss가 카드 환불을 거절했다(409). 운영자가 계좌로 돌려준 뒤 기록할 수 있다.
+  const [declined, setDeclined] = useState(false)
+  // 502·503은 결과를 모르는 상태라 다시 돌려주는 길을 열지 않는다.
+  const [unsure, setUnsure] = useState(false)
+  const refundCard = async (outside: boolean) => {
+    setBusy(true)
+    setRefundError("")
+    try {
+      await api.adminCancelPayment(token, payment.id, outside ? "카드 환불 거절, 계좌로 직접 돌려줌" : "운영자 환불", outside)
+      onRefunded(outside ? t("계좌로 돌려준 환불을 기록했어요.") : t("환불했어요."))
+    } catch (error) {
+      const status = error instanceof ApiError ? error.status : 0
+      const message = errorMessage(error)
+      setRefundError(message)
+      // 409는 이미 취소되거나 환불된 결제에도 온다. Toss가 거절했을 때만 계좌로 돌려주게 한다.
+      if (status === 409 && !outside && cardDeclined(message)) setDeclined(true)
+      if (status === 502 || status === 503) setUnsure(true)
+    } finally {
+      setBusy(false)
+    }
+  }
   const askRefund = () => {
     setRefundError("")
     api.adminRefundQuote(token, payment.id).then(
@@ -382,9 +409,29 @@ function PaymentCard({
                   {!payment.card && ` · ${t("이 금액을 직접 보내 주세요.")}`}
                 </p>
               )}
-              <button className="decline-button" onClick={() => onCancel(payment)} type="button">
-                {payment.card ? t("카드 결제 환불하기") : t("환불했다고 기록하기")}
-              </button>
+              {!unsure && !declined && (
+                <button
+                  className="decline-button"
+                  disabled={busy}
+                  onClick={() => (payment.card ? void refundCard(false) : onCancel(payment))}
+                  type="button"
+                >
+                  {payment.card ? t("카드 결제 환불하기") : t("환불했다고 기록하기")}
+                </button>
+              )}
+              {declined && !unsure && (
+                <div className="refund-outside">
+                  <p>
+                    {t("카드 환불이 거절됐어요. {amount}을 회원 계좌로 보낸 뒤에 눌러 주세요.", {
+                      amount: fullWon(quote?.amount ?? payment.amount),
+                    })}
+                  </p>
+                  <button className="decline-button" disabled={busy} onClick={() => void refundCard(true)} type="button">
+                    {t("계좌로 직접 돌려주기")}
+                  </button>
+                </div>
+              )}
+              {unsure && <p className="form-error">{t("결과를 알 수 없어요. 몇 분 뒤 결제 목록을 새로 불러 확인해 주세요.")}</p>}
             </>
           ) : (
             <button className="cancel-button" onClick={askRefund} type="button">
@@ -1487,6 +1534,7 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
                       )
                     }
                     onPaid={(item) => void settle(() => api.adminMarkPaid(token, item.id), t("입금을 확인했어요."))}
+                    onRefunded={(message) => void settle(async () => undefined, message)}
                     payment={payment}
                   />
                 ))}
