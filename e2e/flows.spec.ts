@@ -2316,6 +2316,8 @@ test("an always-on coupon shows no event date, and says when it's closed", async
   await page.goto("/check-in/always")
   await expect(page.getByText("지금은 새 쿠폰을 받을 수 없어요.")).toBeVisible()
   await expect(page.getByText("2026")).toHaveCount(0)
+})
+
 test("an operator gives a reason when suspending", async ({ page, request }) => {
   const member = await signUpMember(request, "브랜드", "e2e-stop@stop-cafe.kr", "정지 카페")
   const accounts = (await (await request.get("/api/admin/accounts?q=e2e-stop", { headers: { "X-Admin-Token": "e2e-admin-token" } })).json()) as {
