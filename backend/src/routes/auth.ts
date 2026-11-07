@@ -18,7 +18,8 @@ import { hashPassword, verifyPassword } from "../lib/password.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { freezeSponsorships } from "../lib/sponsorships.js"
 import { emailTaken, memberByEmail, memberOf, requireOwner } from "../lib/team.js"
-import { hashRecovery, matchStep, newRecoveryCodes, newSecret, otpauthUrl } from "../lib/totp.js"
+import { hashRecovery, recoveryHashesOf } from "../lib/secrets.js"
+import { matchStep, newRecoveryCodes, newSecret, otpauthUrl } from "../lib/totp.js"
 import { accountTypes, checkPassword, mailKinds, parseContact, parseRole, text } from "../lib/validation.js"
 import { forgetReferralRewards, referralRewardsOf, referralStats, referrerOf } from "../lib/referrals.js"
 import { hashToken, requireAccount } from "../middleware/session.js"
@@ -163,9 +164,9 @@ export function useCode(account: Pick<Account, "twoFactor">, typed: string) {
     twoFactor.usedStep = step
     return true
   }
-  const hash = hashRecovery(typed)
-  if (typed.replace(/[^A-Za-z0-9]/g, "").length !== 8 || !twoFactor.recoveryHashes.includes(hash)) return false
-  twoFactor.recoveryHashes = twoFactor.recoveryHashes.filter((item) => item !== hash)
+  const hashes = recoveryHashesOf(typed)
+  if (typed.replace(/[^A-Za-z0-9]/g, "").length !== 8 || !twoFactor.recoveryHashes.some((item) => hashes.includes(item))) return false
+  twoFactor.recoveryHashes = twoFactor.recoveryHashes.filter((item) => !hashes.includes(item))
   return true
 }
 

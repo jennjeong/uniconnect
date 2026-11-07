@@ -6,3 +6,9 @@ packages:
 # blocks unless it is listed here.
 onlyBuiltDependencies:
   - esbuild
+
+# 상위 패키지가 취약한 버전에 묶여 있어 고친 버전으로 올린다(pnpm audit). 상위 패키지가
+# 올라오면 지운다.
+overrides:
+  body-parser: ^2.4.0
+  "@vercel/cli-config>zod": ^4.6.6

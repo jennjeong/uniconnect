@@ -133,7 +133,13 @@ const cookieOptions = (req: Request, maxAge: number) => ({
 function cookieOf(req: Request, name: string) {
   for (const part of (req.get("cookie") ?? "").split(";")) {
     const [key, ...rest] = part.trim().split("=")
-    if (key === name) return decodeURIComponent(rest.join("="))
+    if (key !== name) continue
+    // 깨진 쿠키는 없는 것과 같다.
+    try {
+      return decodeURIComponent(rest.join("="))
+    } catch {
+      return undefined
+    }
   }
   return undefined
 }

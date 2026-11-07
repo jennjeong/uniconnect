@@ -84,6 +84,51 @@ export function keepThroughRestore(current: Database, restored: Database) {
   restored.sessions = current.sessions.filter((session) => accounts.has(session.accountId))
   restored.foldedCounts = current.foldedCounts
   restored.adminLog = current.adminLog
+  // 쓴 재설정 코드와 끝난 소셜 로그인이 되살아나지 않게 한다.
+  restored.emailCodes = current.emailCodes
+  restored.oauth = current.oauth
+  for (const account of restored.accounts) {
+    const now = current.accounts.find((item) => item.id === account.id)
+    if (now) keepAccountSecurity(account, now, restored)
+  }
+  // 멈춘 리포트 공유 링크도 다시 열리지 않는다.
+  for (const [accountId, list] of Object.entries(restored.sponsorships)) {
+    for (const sponsorship of list) {
+      const now = current.sponsorships[accountId]?.find((item) => item.id === sponsorship.id)
+      if (!now) continue
+      if (now.shareToken) sponsorship.shareToken = now.shareToken
+      else delete sponsorship.shareToken
+    }
+  }
+}
+
+// 복원은 데이터를 되돌리는 일이지 보안 조치를 되돌리는 일이 아니다. 빼앗긴 계정의 비밀번호
+// 재설정, 계정 정지, 팀원 제거, 멈춘 공개 링크는 백업 시점으로 돌아가지 않는다.
+const securityFields = [
+  "passwordHash",
+  "twoFactor",
+  "pendingTwoFactor",
+  "loginTicket",
+  "suspendedAt",
+  "members",
+  "memberInvites",
+  "social",
+  "calendarFeed",
+] as const
+
+function keepAccountSecurity(account: Account, now: Account, restored: Database) {
+  const target = account as unknown as Record<string, unknown>
+  for (const field of securityFields) {
+    if (now[field] === undefined) delete target[field]
+    else target[field] = now[field]
+  }
+  // 이메일을 옮긴 계정은 옛 주소로 돌아가지 않는다. 지금 주소가 복원되는 다른 계정의 것이면
+  // 둘 다 로그인할 수 있도록 백업의 주소를 둔다.
+  if (!restored.accounts.some((item) => item !== account && item.email === now.email)) account.email = now.email
+  if (account.ledger) {
+    if (now.ledger?.token) account.ledger.token = now.ledger.token
+    else delete account.ledger.token
+  }
 }
 
 // 백업이 복원할 수 있는 모양인지와, 지금과 얼마나 다른지다.
@@ -103,7 +148,10 @@ export function backupSummary(data: string, current: Database) {
     measurements: database.measurements?.length ?? 0,
     proposals: (database.requests?.length ?? 0) + (database.offers?.length ?? 0),
   })
-  return { backup: countsOf(backup), current: countsOf(current) }
+  // 탈퇴 등으로 지금은 없지만 복원하면 돌아오는 계정이다. 복원 전에 알 수 있게 한다.
+  const here = new Set(current.accounts.map((account) => account.id))
+  const accountsBack = backup.accounts.filter((account) => !here.has(account.id)).length
+  return { backup: countsOf(backup), current: countsOf(current), accountsBack }
 }
 
 export function backupWithoutSecrets(data: string) {

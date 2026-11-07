@@ -113,6 +113,8 @@ billingRouter.post("/confirm", async (req, res) => {
   const account = requireAccount(req)
   const orderId = text(req.body?.orderId)
   const paymentKey = text(req.body?.paymentKey)
+  // Toss의 결제 키는 200자까지다. 승인 전에 문서에 적으므로 먼저 막는다.
+  if (paymentKey.length > 200) throw new HttpError(400, "결제 정보가 올바르지 않아요.")
   const amount = Number(req.body?.amount)
   if (!cardOpenTo(getDatabase(), account)) throw new HttpError(409, "카드 결제가 아직 준비되지 않았어요.")
   const existing = paymentsOf(getDatabase()).find((item) => item.id === orderId && item.accountId === account.id)
@@ -161,7 +163,7 @@ billingRouter.post("/confirm", async (req, res) => {
     console.error(`[billing] confirm ${orderId}: ${(error as Error).message}`)
     throw new HttpError(502, tossUnsure)
   }
-  if (approved.status !== "DONE" || approved.totalAmount !== amount) {
+  if (approved.status !== "DONE" || approved.totalAmount !== amount || approved.orderId !== orderId) {
     console.error(`[billing] ${orderId}: Toss answered ${approved.status} for ${approved.totalAmount}`)
     throw new HttpError(402, "결제가 끝나지 않았어요. 다시 시도해 주세요.")
   }

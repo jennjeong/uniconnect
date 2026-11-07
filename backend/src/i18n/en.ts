@@ -21,6 +21,7 @@ const en: Record<string, string> = {
   "2단계 인증 코드를 너무 많이 틀렸어요. 1시간 뒤에 다시 시도해 주세요.": "Too many wrong two-factor codes. Please try again in an hour.",
   "이 이메일의 운영자 로그인 시도가 너무 많아요. 15분 뒤에 다시 시도해 주세요.": "Too many operator sign-in attempts for this email. Please try again in 15 minutes.",
   "직원 PIN을 확인한 주소": "Addresses with a verified staff PIN",
+  "결제 정보가 올바르지 않아요.": "The payment details aren't right.",
   "메시지를 너무 많이 보냈어요. 1시간 뒤에 다시 보내 주세요.": "You've sent too many messages. Please send again in an hour.",
   "제안을 너무 많이 보냈어요. 1시간 뒤에 다시 보내 주세요.": "You've sent too many proposals. Please send again in an hour.",
   "인증번호 요청이 너무 많아요. 15분 뒤에 다시 시도해 주세요.":

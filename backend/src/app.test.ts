@@ -7936,3 +7936,185 @@ test("odd search terms count like any other", async () => {
   countSearch(database, "constructor")
   assert.equal(database.searchTerms.constructor, 2)
 })
+
+test("malformed cookies and bodies are the sender's mistake, not server errors kept for operators", async () => {
+  const { clearErrorLog, recentErrors, recordError } = await import("./lib/errorLog.js")
+  await clearErrorLog()
+  const cookie = await fetch(`${baseUrl}/auth/social/complete`, { method: "POST", headers: { Cookie: "uc_social_login=%E0%A4%A" } })
+  assert.equal(cookie.status, 401)
+  const body = await call("POST", "/errors", { message: { toString: 1 }, path: "/" })
+  assert.equal(body.status, 400)
+  const raw = await fetch(`${baseUrl}/errors`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: '{"message":"x","path":"/","__proto__":{"a":1}}',
+  })
+  assert.equal(raw.status, 400)
+  assert.deepEqual(await recentErrors(), [])
+
+  // 브라우저 보고가 쌓여도 서버 오류는 남는다.
+  await recordError({ source: "server", message: "진짜 오류", where: "GET /api/x", path: "/api/x" })
+  for (let index = 0; index < 205; index += 1) await recordError({ source: "browser", message: `가짜 ${index}`, where: "a.js", path: "/" })
+  const kept = await recentErrors()
+  assert.equal(kept.filter((item) => item.source === "browser").length, 200)
+  assert.equal(kept.find((item) => item.source === "server")?.message, "진짜 오류")
+  await clearErrorLog()
+})
+
+test("browser reports can't hold back the server's alert, and their text stays out of the mail", async () => {
+  const { mailTransport } = await import("./lib/mailer.js")
+  const { clearErrorLog, recordError } = await import("./lib/errorLog.js")
+  await clearErrorLog()
+  const realPost = mailTransport.post
+  const saved = { key: config.resendApiKey, from: config.mailFrom, to: config.operatorEmail }
+  const sent: { text: string }[] = []
+  mailTransport.post = async (body) => {
+    sent.push(body)
+    return new Response(null, { status: 200 })
+  }
+  config.resendApiKey = "test-key"
+  config.mailFrom = "uniconnect <no-reply@example.com>"
+  config.operatorEmail = "ops@example.com"
+  try {
+    await recordError({ source: "browser", message: "여기로 오세요 https://evil.example", where: "evil.js", path: "/evil" })
+    assert.equal(sent.length, 1)
+    assert.ok(!/evil/.test(sent[0].text))
+    await recordError({ source: "server", message: "진짜 오류", where: "GET /api/x", path: "/api/x" })
+    assert.equal(sent.length, 2)
+    assert.match(sent[1].text, /진짜 오류/)
+  } finally {
+    mailTransport.post = realPost
+    config.resendApiKey = saved.key
+    config.mailFrom = saved.from
+    config.operatorEmail = saved.to
+    await clearErrorLog()
+  }
+})
+
+test("restoring a backup doesn't undo security changes, and says which accounts come back", async () => {
+  const { backupSummary, keepThroughRestore } = await import("./lib/adminTools.js")
+  const current = structuredClone(getDatabase())
+  const [now] = current.accounts
+  now.passwordHash = "new-hash"
+  now.suspendedAt = "2026-11-07T00:00:00.000Z"
+  now.social = undefined
+  now.email = "moved@syu.ac.kr"
+  now.calendarFeed = undefined
+  current.emailCodes = []
+  const backup = structuredClone(current)
+  const [old] = backup.accounts
+  old.passwordHash = "old-hash"
+  delete old.suspendedAt
+  old.social = { kakao: { id: "someone-else", linkedAt: "2026-01-01T00:00:00.000Z" } }
+  old.email = "before@syu.ac.kr"
+  old.name = "백업의 이름"
+  old.calendarFeed = { token: "old-link", createdAt: "2026-01-01T00:00:00.000Z" }
+  backup.emailCodes = [{ email: "a@b.kr", role: "학생단체", code: "123456", expiresAt: Date.now() + 1000, attempts: 0 }]
+  keepThroughRestore(current, backup)
+  assert.deepEqual(
+    [old.passwordHash, old.suspendedAt, old.social, old.email, old.calendarFeed, backup.emailCodes.length],
+    ["new-hash", now.suspendedAt, undefined, "moved@syu.ac.kr", undefined, 0],
+  )
+  assert.equal(old.name, "백업의 이름")
+
+  // 지금은 없는 계정이 돌아오면 복원 전에 알린다.
+  const fewer = structuredClone(current)
+  fewer.accounts = fewer.accounts.slice(1)
+  assert.equal(backupSummary(JSON.stringify(current), fewer).accountsBack, 1)
+  assert.equal(backupSummary(JSON.stringify(current), current).accountsBack, 0)
+})
+
+test("public links, council codes and billing keys are sealed at rest, and recovery codes mix in the key", async () => {
+  const { hashRecovery, openDocument, recoveryHashesOf, sealDocument } = await import("./lib/secrets.js")
+  const { useCode } = await import("./routes/auth.js")
+  const saved = config.secretsKey
+  const plainHash = hashRecovery("ABCD-2345")
+  config.secretsKey = "a-long-enough-test-key-for-sealing-values"
+  try {
+    const document = {
+      calendarFeed: { token: "calendar-link", createdAt: "x" },
+      ledger: { token: "ledger-link", showValues: false },
+      councilCode: { code: "council-code", createdAt: "x" },
+      customerKey: "billing-key",
+      invite: { code: "public-invite", createdAt: "x" },
+    }
+    const sealed = sealDocument(document)
+    for (const secret of ["calendar-link", "ledger-link", "council-code", "billing-key"]) assert.ok(!sealed.includes(secret), secret)
+    assert.ok(sealed.includes("public-invite"))
+    assert.deepEqual(openDocument(sealed), document)
+
+    const keyed = hashRecovery("ABCD-2345")
+    assert.notEqual(keyed, plainHash)
+    assert.ok(recoveryHashesOf("abcd2345").includes(plainHash))
+    // 키를 켜기 전에 받은 코드도, 켠 뒤에 받은 코드도 한 번씩 통한다.
+    const holder = { twoFactor: { secret: "JBSWY3DPEHPK3PXP", enabledAt: "x", recoveryHashes: [plainHash, hashRecovery("WXYZ-6789")] } }
+    assert.equal(useCode(holder, "ABCD-2345"), true)
+    assert.equal(useCode(holder, "ABCD-2345"), false)
+    assert.equal(useCode(holder, "WXYZ-6789"), true)
+    assert.deepEqual(holder.twoFactor.recoveryHashes, [])
+  } finally {
+    config.secretsKey = saved
+  }
+})
+
+test("the geocoder queue stops growing, and production logs hold no codes or addresses", async () => {
+  const { takeTurn } = await import("./lib/geocode.js")
+  const far = Date.now() + 10 * 60 * 1000
+  assert.equal(takeTurn(far), 0)
+  assert.equal(takeTurn(far), 1100)
+  assert.equal(takeTurn(far), 2200)
+  assert.equal(takeTurn(far + 0), undefined)
+  assert.equal(takeTurn(far + 0), undefined)
+
+  const { sendMail, sendVerificationCode } = await import("./lib/mailer.js")
+  const saved = { production: config.isProduction, key: config.resendApiKey }
+  const realLog = console.log
+  const lines: string[] = []
+  console.log = (line: string) => void lines.push(line)
+  config.resendApiKey = undefined
+  config.isProduction = true
+  try {
+    await sendVerificationCode("who@syu.ac.kr", "654321", "signup", "ko")
+    await sendMail("who@syu.ac.kr", "제목", "내용")
+  } finally {
+    console.log = realLog
+    config.isProduction = saved.production
+    config.resendApiKey = saved.key
+  }
+  assert.equal(lines.length, 2)
+  assert.ok(!/654321|who@/.test(lines.join("\n")))
+})
+
+test("card confirmation refuses an approval for another order or an oversized key, and operators don't see payment keys", async () => {
+  const { paymentsOf, toss } = await import("./lib/billing.js")
+  const saved = { client: config.tossClientKey, secret: config.tossSecretKey, admin: config.adminToken, confirm: toss.confirm }
+  config.tossClientKey = "live_ck_example"
+  config.tossSecretKey = "live_sk_example"
+  config.adminToken = "test-admin-token"
+  try {
+    const { token: brand } = await listedMember("other-order@order-cafe.kr", "order-pass-123", "브랜드")
+    const { order } = (await call("POST", "/billing/orders", { kind: "pro" }, brand)).data
+    const confirm = (paymentKey: string) => call("POST", "/billing/confirm", { orderId: order.id, paymentKey, amount: order.amount }, brand)
+    assert.equal((await confirm("k".repeat(201))).status, 400)
+
+    toss.confirm = async (_key, _order, amount) => ({ status: "DONE", orderId: "someone-elses-order", totalAmount: amount })
+    assert.equal((await confirm("pk-other")).status, 402)
+    // 남은 키는 원래 Toss에 물어 정리한다. 여기서는 다시 승인하는 길만 본다.
+    delete paymentsOf(getDatabase()).find((item) => item.id === order.id)!.paymentKey
+
+    toss.confirm = async (_key, orderId, amount) => ({ status: "DONE", orderId, totalAmount: amount, approvedAt: new Date().toISOString() })
+    assert.equal((await confirm("pk-right")).status, 200)
+    assert.equal(paymentsOf(getDatabase()).find((item) => item.id === order.id)!.paymentKey, "pk-right")
+
+    const pending = (await call("POST", "/billing/orders", { kind: "ad" }, brand)).data.order
+    const paid = await fetch(`${baseUrl}/admin/payments/${pending.id}/paid`, { method: "POST", headers: { "X-Admin-Token": "test-admin-token" } })
+    const answer = (await paid.json()) as { payment?: Record<string, unknown> }
+    assert.equal(paid.status, 200, JSON.stringify(answer))
+    assert.ok(answer.payment && !("paymentKey" in answer.payment))
+  } finally {
+    toss.confirm = saved.confirm
+    config.tossClientKey = saved.client
+    config.tossSecretKey = saved.secret
+    config.adminToken = saved.admin
+  }
+})

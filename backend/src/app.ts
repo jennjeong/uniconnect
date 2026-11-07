@@ -65,6 +65,18 @@ const writesPerAddress = createRateLimit({
   message: "요청이 너무 많아요. 잠시 후 다시 시도해 주세요.",
 })
 
+// 본문의 값은 `String()`으로 읽는 곳이 많다. `{"toString": 1}` 같은 값은 거기서 예외를 내
+// 서버 오류로 남으므로, 쓰는 곳이 없는 이런 이름은 본문을 읽을 때 400으로 거절한다.
+const unsafeBodyKeys = new Set(["toString", "valueOf", "__proto__"])
+const jsonBody = (limit: string) =>
+  express.json({
+    limit,
+    reviver(key, value: unknown) {
+      if (unsafeBodyKeys.has(key)) throw new SyntaxError("unsafe key")
+      return value
+    },
+  })
+
 export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   const app = express()
   app.disable("x-powered-by")
@@ -117,15 +129,15 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
 
   // 대화에서 보낸 파일(base64로 된 2MB 이하의 PDF)은 나머지보다 큰 본문이
   // 필요하므로 여기서 먼저 파싱한다.
-  app.use("/api/conversations/:id/attachments", express.json({ limit: "3mb" }))
+  app.use("/api/conversations/:id/attachments", jsonBody("3mb"))
   // 행사의 기획안도 마찬가지다(2MB 이하의 PDF, routes/events.ts).
-  app.use("/api/events/:id/plan", express.json({ limit: "3mb" }))
+  app.use("/api/events/:id/plan", jsonBody("3mb"))
   // 운영자를 기다리는 가입이 보이는 서류도 마찬가지다(lib/applications.ts).
-  app.use("/api/auth/signup", express.json({ limit: "3mb" }))
-  app.use("/api/invites/:code/accept", express.json({ limit: "3mb" }))
-  app.use("/api/team/join", express.json({ limit: "3mb" }))
+  app.use("/api/auth/signup", jsonBody("3mb"))
+  app.use("/api/invites/:code/accept", jsonBody("3mb"))
+  app.use("/api/team/join", jsonBody("3mb"))
   // 줄인 로고가 들어갈 자리다(routes/profile.ts는 약 100KB로 제한한다).
-  app.use(express.json({ limit: "300kb" }))
+  app.use(jsonBody("300kb"))
   // 세션이나 다른 것을 읽기 전에, 데이터가 들어와 있고 API의 다른 복사본이
   // 남긴 상태여야 한다(store.ts).
   app.use("/api", async (req, _res, next) => {

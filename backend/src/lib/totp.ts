@@ -1,4 +1,4 @@
-import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from "node:crypto"
+import { createHmac, randomBytes, randomInt, timingSafeEqual } from "node:crypto"
 
 // 인증 앱을 쓰는 2단계 로그인(RFC 6238: 6자리, 30초 단위, HMAC-SHA1).
 // Google Authenticator 같은 앱이 otpauth:// 주소에서 읽는 방식이다.
@@ -82,7 +82,3 @@ export function newRecoveryCodes() {
     return `${chars.slice(0, 4)}-${chars.slice(4)}`
   })
 }
-
-// 보관하는 복구 코드: 대소문자 구분 없이, 대시는 있어도 없어도 된다.
-export const hashRecovery = (code: string) =>
-  createHash("sha256").update(code.toUpperCase().replace(/[^A-Z0-9]/g, "")).digest("hex")

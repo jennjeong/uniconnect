@@ -5,6 +5,7 @@ import path from 'node:path'
 
 import siteConfiguration from './site.config.json'
 import { sitemapXml } from './src/lib/sitemap'
+import { gaInitScript } from './src/lib/gaInit'
 
 
 // Vite 설정 — https://vitejs.dev/config/
@@ -111,15 +112,7 @@ function siteDocument(config: SiteConfiguration): Plugin {
     'google-site-verification': sanitizeHtmlValue(config.verification?.google),
     'naver-site-verification': sanitizeHtmlValue(config.verification?.naver),
   }
-  // Google의 gtag 설정을 인라인 스크립트가 아닌 별도 파일(/ga-init.js)로 둔다.
-  // 서버의 Content-Security-Policy가 인라인 스크립트를 막기 때문이다.
-  const gaInit = googleAnalyticsId
-    ? `window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', ${JSON.stringify(googleAnalyticsId)});
-`
-    : ''
+  const gaInit = googleAnalyticsId ? gaInitScript(googleAnalyticsId) : ''
 
   return {
     name: 'site-document',

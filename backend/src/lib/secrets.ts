@@ -1,4 +1,4 @@
-import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto"
+import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes } from "node:crypto"
 
 import { config } from "../config.js"
 
@@ -9,7 +9,17 @@ import { config } from "../config.js"
 const prefix = "sealed:v1:"
 
 // 문서 어디에 있든 이 이름의 문자열 값을 암호화한다.
-const sealedKeys = new Set(["secret", "paymentKey", "verificationToken", "staffPin", "groupPin", "shareToken"])
+const sealedKeys = new Set(["secret", "paymentKey", "verificationToken", "staffPin", "groupPin", "shareToken", "customerKey"])
+
+// 이름이 흔해서 그 이름만으로 고르지 못하는 값이다. 어느 객체의 어느 값인지로 고른다.
+const sealedInside: Record<string, string> = { calendarFeed: "token", ledger: "token", councilCode: "code" }
+
+function mapInside(key: string, value: unknown, change: (text: string) => string) {
+  const field = Object.hasOwn(sealedInside, key) ? sealedInside[key] : undefined
+  if (!field || typeof value !== "object" || value === null) return value
+  const inner = (value as Record<string, unknown>)[field]
+  return typeof inner === "string" ? { ...value, [field]: change(inner) } : value
+}
 
 // 이메일 코드의 `code`만이다. 행사와 초대의 `code`는 공개 주소에 쓰이는 값이다.
 const isEmailCode = (holder: unknown) => typeof holder === "object" && holder !== null && "attempts" in holder && "expiresAt" in holder
@@ -50,7 +60,7 @@ export function sealDocument(document: unknown, indent?: number) {
   return JSON.stringify(
     document,
     function (this: unknown, key, value: unknown) {
-      return typeof value === "string" && sensitive(this, key) ? seal(value) : value
+      return typeof value === "string" && sensitive(this, key) ? seal(value) : mapInside(key, value, seal)
     },
     indent,
   )
@@ -58,6 +68,17 @@ export function sealDocument(document: unknown, indent?: number) {
 
 export function openDocument<T>(text: string) {
   return JSON.parse(text, function (this: unknown, key, value: unknown) {
-    return typeof value === "string" && sensitive(this, key) ? open(value) : value
+    return typeof value === "string" && sensitive(this, key) ? open(value) : mapInside(key, value, open)
   }) as T
 }
+
+// 보관하는 복구 코드: 대소문자 구분 없이, 대시는 있어도 없어도 된다. 코드의 경우의 수가
+// 많지 않아 해시만으로는 유출된 값을 맞춰 볼 수 있으므로, `SECRETS_KEY`가 있으면 키를 섞는다.
+const plainRecovery = (code: string) => code.toUpperCase().replace(/[^A-Z0-9]/g, "")
+const oldRecoveryHash = (code: string) => createHash("sha256").update(plainRecovery(code)).digest("hex")
+
+export const hashRecovery = (code: string) =>
+  config.secretsKey ? createHmac("sha256", config.secretsKey).update(plainRecovery(code)).digest("hex") : oldRecoveryHash(code)
+
+// 키를 켜기 전에 받은 복구 코드도 계속 통한다.
+export const recoveryHashesOf = (code: string) => [hashRecovery(code), oldRecoveryHash(code)]

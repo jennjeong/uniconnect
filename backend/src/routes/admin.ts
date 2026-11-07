@@ -16,7 +16,7 @@ import { isDemoAccount } from "../lib/reviews.js"
 import { platformStats } from "../lib/stats.js"
 import { text } from "../lib/validation.js"
 import { getDatabase, refreshDatabase, saveDatabase } from "../store.js"
-import type { Account, Announcement, ReportAction } from "../types.js"
+import type { Account, Announcement, Payment, ReportAction } from "../types.js"
 
 // 운영자는 FAQ 페이지에서 온 질문을 읽고 답하며 플랫폼의 수치를 본다.
 // X-Admin-Token 헤더로 운영자 세션 토큰을 보낸다(routes/adminSession.ts). 2단계
@@ -65,13 +65,16 @@ export async function requireAdmin(req: Request) {
 
 // 모든 결제를 최신순으로 보여 준다. 확인을 기다리는 계좌 이체, 결제된 것,
 // 환불된 것이다.
+// 운영자 화면에도 결제 키는 보내지 않는다. 카드 결제인지만 알린다.
+const paymentForOperator = ({ paymentKey, ...payment }: Payment) => ({ ...payment, card: Boolean(paymentKey) })
+
 adminRouter.get("/payments", async (req, res) => {
   await requireAdmin(req)
   // 기록되지 못한 환불을 먼저 Toss의 답으로 정리해 목록이 맞게 보이게 한다.
   if (cardReady() && stuckRefunds().length > 0) await reconcileRefunds()
   const payments = [...paymentsOf(getDatabase())]
     .reverse()
-    .map(({ paymentKey, ...payment }) => ({ ...payment, card: Boolean(paymentKey) }))
+    .map(paymentForOperator)
   res.json({ payments })
 })
 
@@ -102,7 +105,7 @@ adminRouter.post("/payments/:id/paid", async (req, res) => {
   markPaid(getDatabase(), payment, { method: "transfer" })
   logAdmin(getDatabase(), "payment-paid", { kind: "payment", id: payment.id })
   await saveDatabase()
-  res.json({ payment })
+  res.json({ payment: paymentForOperator(payment) })
 })
 
 // 결제된 주문을 지금 환불하면 돌려줄 금액이다. 운영자가 누르기 전에 본다.
@@ -128,7 +131,7 @@ adminRouter.post("/payments/:id/cancel", async (req, res) => {
   if (payment.refundedAmount) throw new HttpError(409, "이미 남은 날만큼 돌려드린 결제예요.")
   const reason = text(req.body?.reason) || (payment.status === "paid" ? "운영자 환불" : "운영자 취소")
   if (payment.status === "paid" && payment.paymentKey) {
-    res.json({ payment: await refundCard(id, reason) })
+    res.json({ payment: paymentForOperator(await refundCard(id, reason)) })
     return
   }
   const part = payment.status === "paid" ? partialRefundOf(payment) : null
@@ -136,7 +139,7 @@ adminRouter.post("/payments/:id/cancel", async (req, res) => {
   else markCancelled(getDatabase(), payment, reason)
   logAdmin(getDatabase(), "payment-cancelled", { kind: "payment", id: payment.id }, part ? `${reason} (${part.amount.toLocaleString("ko-KR")}원 환불)` : reason)
   await saveDatabase()
-  res.json({ payment })
+  res.json({ payment: paymentForOperator(payment) })
 })
 
 // 플랫폼의 수치로, 실제 회원 기준과 데모 데이터를 더한 것을 보여 준다(lib/stats.ts).

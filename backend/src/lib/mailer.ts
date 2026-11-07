@@ -19,7 +19,7 @@ export const mailConfigured = () => Boolean(config.resendApiKey && config.mailFr
 // 남긴다. Resend가 거절하면 던진다.
 export async function sendMail(to: string, subject: string, text: string) {
   if (!mailConfigured()) {
-    console.log(`[mail] ${to} · ${subject}`)
+    console.log(config.isProduction ? "[mail] not configured: a mail wasn't sent" : `[mail] ${to} · ${subject}`)
     return
   }
   const response = await mailTransport
@@ -46,7 +46,8 @@ export async function sendVerificationCode(
   lang: Lang = "ko",
 ) {
   if (!mailConfigured()) {
-    console.log(`[mail] ${email} 인증번호 ${code}`)
+    // 운영 환경의 로그에는 코드를 남기지 않는다. 로그를 읽는 사람이 쓸 수 있다.
+    console.log(config.isProduction ? "[mail] not configured: a verification code wasn't sent" : `[mail] ${email} 인증번호 ${code}`)
     return
   }
   const say = (text: string) => translate(text, lang)
