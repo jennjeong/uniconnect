@@ -1,14 +1,19 @@
 // 이 영역의 한국어 카피에 대한 영어 (i18n/index.ts 참고).
 const en: Record<string, string> = {
   // 초안 안내
-  "이 문서는 서비스 시연을 위한 초안이에요. 정식 출시 전에 운영 주체와 연락처, 개인정보 보호책임자를 정하고 법률 검토를 받아 고칠 예정이에요.":
-    "This document is a draft for demonstrating the service. Before the official launch, the operator, contact details and privacy officer will be designated, and the document will be revised after legal review.",
+  "이 문서는 법률 검토를 받기 전의 초안이에요. 정식 출시 전에 검토를 받아 고칠 예정이에요.":
+    "This document is a draft that has not yet been legally reviewed. It will be reviewed and revised before the official launch.",
 
   // 이용약관
   "서비스 이용약관": "Terms of Service",
   "uniconnect를 쓰는 학생단체와 브랜드가 지킬 약속과, 서비스가 맡는 일과 맡지 않는 일을 적었어요.":
     "These terms set out the commitments that student groups and brands using uniconnect must keep, and what the service is and is not responsible for.",
   "목적": "Purpose",
+  "운영자": "Operator",
+  "운영자: {name}": "Operator: {name}",
+  "전화: {phone}": "Phone: {phone}",
+  "서비스에 관한 문의는 위 전화나 도움말 센터의 '관리자에게 질문하기'로 받아요.":
+    "Inquiries about the service are received at the phone number above or through 'Ask the Administrators' in the Help Center.",
   "이 약관은 uniconnect(이하 '서비스')가 학생단체와 브랜드의 캠퍼스 협찬을 연결하고 그 성과를 보여 주는 서비스를 이용하는 데 필요한 조건과 절차, 회원과 서비스의 권리와 의무를 정해요.":
     "These terms set out the conditions and procedures for using uniconnect (the 'Service'), which connects student groups and brands for campus sponsorships and shows the results, as well as the rights and obligations of members and the Service.",
   "회원과 가입": "Members and Sign-Up",
@@ -206,8 +211,9 @@ const en: Record<string, string> = {
   "로그인과 인증번호, 관리자 기능은 시도 횟수를 제한해요.":
     "The number of attempts is limited for login, verification codes and administrator functions.",
   "문의": "Contact",
-  "개인정보에 관한 문의와 요청은 도움말 센터의 '관리자에게 질문하기'로 보내 주세요. 개인정보 침해에 대한 상담은 개인정보침해신고센터(국번 없이 118)에서도 받을 수 있어요.":
-    "Please send inquiries and requests about personal information through 'Ask the Administrators' in the Help Center. Counseling on privacy infringement is also available from the Personal Information Infringement Report Center (dial 118 without an area code).",
+  "개인정보 보호책임자: 운영자 {name} · 전화 {phone}": "Privacy officer: the operator, {name} · Phone: {phone}",
+  "개인정보에 관한 문의와 요청은 위 전화나 도움말 센터의 '관리자에게 질문하기'로 보내 주세요. 개인정보 침해에 대한 상담은 개인정보침해신고센터(국번 없이 118)에서도 받을 수 있어요.":
+    "Please send inquiries and requests about personal information to the phone number above or through 'Ask the Administrators' in the Help Center. Counseling on privacy infringement is also available from the Personal Information Infringement Report Center (dial 118 without an area code).",
   "학교와의 거리를 계산하기 위해, 브랜드가 적은 매장 주소를 오픈스트리트맵 재단(영국)의 주소 검색(Nominatim)에 보내 좌표로 바꿔요. 학생단체에게 학교 근처 가게를 보여 줄 때는 학교 위치만 카카오(대한민국)에 보내고, 받은 가게 정보는 저장하지 않아요. 가게를 초대하면 카카오가 허락한 가게 번호와 카카오맵 주소만 남겨요. 가게 지도는 카카오맵(대한민국)의 지도 화면을 불러와 그려요.":
     "To calculate the distance from schools, the store address a brand enters is sent to the OpenStreetMap Foundation's address search (Nominatim, United Kingdom) to turn it into coordinates. To show student groups the shops near their school, only the school's location is sent to Kakao (Korea), and the shop details that come back are not stored. When a group invites a shop, only the shop's number and Kakao Map address, which Kakao allows, are kept. The shop map loads its map view from Kakao Map (Republic of Korea).",
   "내 정보의 '내 데이터 내려받기'로 계정 정보, 소개, 행사, 협찬 제안, 메시지, 질문, 가게 초대, 임시 전자 계약서, 남기고 받은 후기, 보낸 신고와 차단한 상대를 파일 하나로 내려받을 수 있어요.":
