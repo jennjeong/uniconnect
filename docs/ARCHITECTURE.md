@@ -16,6 +16,10 @@ Run these from the repo root:
   - Why it exists: Vercel's Neon integration (`neon-lime-lever`) makes one such branch per previewed Git branch, and keeps it until that branch's last preview deployment is deleted.
   - Neon's free plan holds 10 branches. Once they are used up, every preview fails at "Provisioning Integrations" with "Branch limit reached".
 - `npm run build`, then `npm start`, builds both packages and serves the API plus the built frontend from Express.
+- `.github/workflows/telegram-alerts.yml` sends the two collaborators a Telegram message, each in their own style, when something waits on them: an issue assigned, a review requested, changes requested, CI failed (to whoever triggered the run), or a collaborator's comment starting `/알림 왕자`, `/알림 공주` or `/알림 같이`.
+  - `.github/scripts/telegram-alert.mjs` decides and formats; its tests are `telegram-alert.test.mjs`. The code always comes from the default branch, and a PR's code is never run.
+  - Secrets: `TELEGRAM_BOT_TOKEN`, `PRINCESS_TELEGRAM_CHAT_ID`, `PRINCE_TELEGRAM_CHAT_ID`. Variables: `PRINCESS_GITHUB_LOGIN`, `PRINCE_GITHUB_LOGIN`. Without them it sends nothing and passes with a notice.
+  - An unknown account goes to the admin to sort out. Merge conflicts aren't detected, as GitHub has no event for them.
 
 ## Project Structure
 

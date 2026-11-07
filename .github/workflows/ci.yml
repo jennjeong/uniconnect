@@ -32,6 +32,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: npm run typecheck
       - run: npm test
+      - run: node --test .github/scripts/telegram-alert.test.mjs
       - run: npm run build
       # Browser flows and accessibility checks on the built app, in the
       # runner's installed Chrome.
