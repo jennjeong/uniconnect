@@ -185,7 +185,7 @@ export function GroupsPage({
       <ProposalControl
         done={proposals.includes(group.id)}
         status={statuses[group.id]}
-        label={t("협찬 제안하기")}
+        label={t("제안하기")}
         className="primary-button"
         onPropose={() => onPropose(group)}
         onCancel={() => onCancelProposal(group)}
