@@ -365,7 +365,7 @@ function SponsorHistory({
               <dd>{record.scans.toLocaleString("ko-KR")}</dd>
             </div>
             <div>
-              <dt>{t("평균 ROAS")}</dt>
+              <dt>{t("추정 ROAS 평균")}</dt>
               <dd>{record.roas === null ? "—" : `${record.roas}%`}</dd>
             </div>
           </dl>

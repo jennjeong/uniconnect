@@ -2046,6 +2046,7 @@ function App() {
               logKind === "all" ? metrics.scans + metrics.coupons + metrics.visits : metrics[logKind]
             }
             startsOn={measureState(report) === "진행 전" ? report.eventDate : undefined}
+            example={!member}
             onClose={closeModal}
           />
         </Presence>

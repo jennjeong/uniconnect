@@ -139,7 +139,7 @@ export function BrandDashboardPage({
         stats={[
           { value: t("{count}건", { count: pending.length }), label: t("검토할 제안") },
           { value: t("{count}건", { count: confirmed.length }), label: t("확정된 협찬") },
-          { value: `${totals.roas}%`, label: t("평균 ROAS") },
+          { value: `${totals.roas}%`, label: t("추정 ROAS(전체 집행액 기준)") },
         ]}
         insight={
           paused
@@ -261,7 +261,7 @@ export function BrandDashboardPage({
             title: t("다시 쓸 곳을 데이터로 정해요"),
             text: t("협찬마다 ROAS를 보고, 다음 예산을 어디에 쓸지 정해요."),
             figure: `${totals.roas}%`,
-            figureLabel: t("평균 ROAS · 누적 집행액 {spend}", { spend: fullWon(totals.spend) }),
+            figureLabel: t("전체 집행액 기준 추정 ROAS · 누적 집행액 {spend}", { spend: fullWon(totals.spend) }),
             action: t("성과 분석 보기"),
             onClick: () => onNavigate("성과 분석"),
           },
@@ -417,9 +417,9 @@ export function BrandDashboardPage({
           </div>
           <div className="report-highlight" data-reveal style={delay(0.12)}>
             <div>
-              <span>{t("평균 ROAS")}</span>
+              <span>{t("추정 ROAS(전체 집행액 기준)")}</span>
               <strong>{totals.roas}%</strong>
-              <small>{t("학생단체와 함께한 협찬의 평균이에요.")}</small>
+              <small>{t("추정 매출 합계 ÷ 집행액 합계(현금 + 현물, 수수료 제외)예요.")}</small>
             </div>
             <div className="report-highlight-actions">
               <button className="pill white" onClick={() => onNavigate("성과 분석")} type="button">

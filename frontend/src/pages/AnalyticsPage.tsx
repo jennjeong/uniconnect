@@ -101,7 +101,7 @@ export function AnalyticsPage({
       note: t("쿠폰 받은 학생의 {rate}%가 방문", { rate: visitRate }),
     },
     {
-      label: t("평균 ROAS"),
+      label: t("추정 ROAS(전체 집행액 기준)"),
       value: String(totals.roas),
       unit: "%",
       note: t("추정 매출 {sales}", { sales: formatWon(totals.sales) }),

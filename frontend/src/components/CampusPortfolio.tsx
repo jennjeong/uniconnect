@@ -118,7 +118,7 @@ export function CampusPortfolio({ onOpenPlan }: { onOpenPlan: () => void }) {
               <dd>{t("{count}건", { count: answer.portfolio.count })}</dd>
             </div>
             <div>
-              <dt>{t("누적 ROAS")}</dt>
+              <dt>{t("추정 ROAS(전체 집행액 기준)")}</dt>
               <dd>{answer.portfolio.totals.roas}%</dd>
             </div>
             <div>

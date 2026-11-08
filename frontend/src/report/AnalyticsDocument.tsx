@@ -112,7 +112,7 @@ export function AnalyticsDocument({
             })}
           </strong>
           <p>
-            {t("평균 ROAS {roas}% · 누적 집행액 {spend} · 추정 매출 {sales}", {
+            {t("전체 집행액 기준 추정 ROAS {roas}% · 누적 집행액 {spend} · 추정 매출 {sales}", {
               roas: totals.roas,
               spend: formatWon(totals.spend),
               sales: formatWon(totals.sales),
@@ -139,7 +139,7 @@ export function AnalyticsDocument({
               <small className="good">{t("쿠폰 받은 학생의 {rate}%", { rate: visitRate })}</small>
             </div>
             <div className="pdf-kpi">
-              <span>{t("평균 ROAS")}</span>
+              <span>{t("추정 ROAS(전체 집행액 기준)")}</span>
               <strong>{totals.roas}%</strong>
               <small className={totals.roas >= 100 ? "good" : ""}>
                 {t("추정 매출 {sales}", { sales: formatWon(totals.sales) })}

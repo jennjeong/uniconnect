@@ -541,6 +541,9 @@ const en: Record<string, string> = {
     "Staff record a visit by entering the participant's coupon number on their own device.",
   "임시 전자 계약서에서 우리 단체가 확인하기로 한 협찬 확인 방식(부스 스탬프, SNS 인증 등)을 행사 날 이 주소에서 기록해요.":
     "On the event day, record here the confirmation methods your group took on in the e-agreement (booth stamps, SNS posts and so on).",
+  "참여 내역을 불러오는 중이에요.": "Loading the participation log…",
+  "예시 집계이며 상세 기록은 제공되지 않아요.": "These are example totals; the detailed log isn't provided.",
+  "누적 숫자는 집계됐지만, 상세 기록은 보관 기간이 지나 남아 있지 않아요.": "The totals were counted, but the detailed log is past its keeping period.",
 }
 
 export default en
