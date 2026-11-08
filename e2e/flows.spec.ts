@@ -2508,6 +2508,14 @@ test("the venue QR opens on the participants' view, and PINs only behind 운영�
   await expect(operators).toContainText("단체 확인 PIN")
   await expect(operators).toContainText("협찬 브랜드만 계약서에서 확인해요")
   await expect(operators).not.toContainText("101234")
+  // 운영자용 칸은 휴대폰에서도 시트 안에 들어간다(긴 주소에 밀려 넓어지지 않는다).
+  await page.setViewportSize({ width: 390, height: 844 })
+  const sheet = await page.getByRole("dialog", { name: "현장 참여 QR" }).boundingBox()
+  for (const box of await operators.locator(".qr-pin").all()) {
+    const rect = (await box.boundingBox())!
+    expect(rect.x).toBeGreaterThanOrEqual(sheet!.x)
+    expect(rect.x + rect.width).toBeLessThanOrEqual(sheet!.x + sheet!.width + 0.5)
+  }
 })
 
 for (const [role, email] of [["학생단체", "muse@syu.ac.kr"], ["브랜드", "hello@afternoon-coffee.kr"]] as const) {
