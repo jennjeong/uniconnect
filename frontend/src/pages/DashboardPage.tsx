@@ -114,7 +114,7 @@ export function DashboardPage({
             detail: t("양쪽이 계약서를 확인해야 협찬이 확정돼요."),
             primary: { label: t("계약서 확인"), onClick: onOpenAgreements },
           }
-        : !next
+        : !next && !noBrands
           ? {
               insight: t("행사를 등록하면 잘 맞는 브랜드를 찾아 드려요."),
               detail: t("행사 이름과 날짜만 있어도 추천을 시작해요."),

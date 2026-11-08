@@ -158,7 +158,7 @@ test("a member who opens the introduction goes on to the dashboard", async ({ pa
   await expect(page).toHaveURL(/\/dashboard$/)
   await page.goto("/")
   await expect(page).toHaveURL(/\/dashboard$/)
-  await expect(page.locator(".hero-eyebrow")).toContainText("반가워요")
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("반가워요")
   await expect(page.locator(".demo-chip")).toHaveCount(0)
 })
 
@@ -169,7 +169,7 @@ test("the login popup logs into a demo account with one press, with nothing to t
   await dialog.getByRole("button", { name: /오후의 커피/ }).click()
   await expect(dialog).toBeHidden()
   await expect(page).toHaveURL(/\/dashboard$/)
-  await expect(page.locator(".hero-eyebrow")).toContainText("반가워요, 오후의 커피")
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("반가워요, 오후의 커피")
 })
 
 test("a password can be shown while it is typed, and hidden again", async ({ page }) => {
