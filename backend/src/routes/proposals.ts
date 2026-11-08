@@ -87,8 +87,8 @@ function proposalState(account: Account) {
   const unanswerable = proposals
     .filter((id) => !recorded.has(id))
     .map((partnerId) => {
+      // 답할 수 없는 상대이므로 statuses에는 넣지 않는다(카드에 보여 줄 답이 없다).
       const partner = listings.find((listing) => listing.id === partnerId)
-      statuses[partnerId] = "검토 중"
       return {
         id: `listing-${partnerId}`,
         partnerId,

@@ -110,7 +110,7 @@ test("every partner a card shows as proposed is in the sent list, even one witho
   )
   assert.equal(moment?.noInbox, true)
   assert.equal(moment?.status, "검토 중")
-  assert.equal(data.statuses["moment-studio"], "검토 중")
+  assert.equal(data.statuses["moment-studio"], undefined)
 })
 
 test("an accepted proposal waits for the agreement, and is confirmed only once both sides confirm it", async () => {
