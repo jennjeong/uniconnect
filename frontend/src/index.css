@@ -11411,6 +11411,145 @@ input[type="search"]::-webkit-search-cancel-button {
   resize: vertical;
 }
 
+/* 협찬 분쟁 (components/DisputePanel.tsx): 접수 양식, 그리고 분쟁마다 이유와 상태,
+   시간순 기록(말, 증빙, 운영자의 확인과 결론), 진행 중이면 말 · 증빙 · 거두기. */
+.agreement-dispute :is(textarea, select) {
+  width: 100%;
+}
+
+.agreement-dispute textarea {
+  resize: vertical;
+}
+
+.dispute-form {
+  display: grid;
+  gap: 12px;
+}
+
+.dispute-list {
+  display: grid;
+  gap: 16px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dispute-record {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 16px;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.dispute-record header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+}
+
+.dispute-record header small {
+  flex-basis: 100%;
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.dispute-status {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--fill-strong);
+  color: var(--ink-soft);
+  font-size: 0.75rem;
+  font-weight: var(--weight-badge);
+}
+
+.dispute-status.live {
+  background: var(--point);
+  color: var(--on-point);
+}
+
+.dispute-detail {
+  margin: 0;
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.dispute-events {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0 0 0 14px;
+  border-left: 2px solid var(--line);
+  list-style: none;
+}
+
+.dispute-events li {
+  display: grid;
+  gap: 4px;
+  font-size: 0.875rem;
+}
+
+.dispute-events li.admin strong {
+  color: var(--point-strong);
+}
+
+.dispute-event-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  color: var(--ink-soft);
+}
+
+.dispute-event-head time {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.dispute-events p {
+  margin: 0;
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.dispute-events .underline-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-self: start;
+  overflow-wrap: anywhere;
+}
+
+.dispute-decision {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--fill);
+  white-space: pre-wrap;
+}
+
+.dispute-tools {
+  display: grid;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.dispute-upload {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.dispute-upload:focus-within .cancel-button {
+  outline: 2px solid var(--point);
+  outline-offset: 2px;
+}
+
 /* 신고와 차단 (modals/SafetyModal.tsx)과 그 시작점: 프로필의 액션, 후기, 채팅
    메시지 아래의 조용한 링크. */
 .profile-safety {
@@ -16968,6 +17107,50 @@ input[type="search"]::-webkit-search-cancel-button {
   color: var(--muted);
 }
 
+/* 운영자의 협찬 분쟁 화면 (pages/AdminMore.tsx의 Disputes). */
+.console-dispute {
+  display: grid;
+  gap: 12px;
+}
+
+.console-dispute h3 {
+  margin: 8px 0 0;
+  font-size: 0.9375rem;
+}
+
+.console-dispute-items,
+.console-dispute-notes {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.875rem;
+}
+
+.console-dispute-items span {
+  color: var(--muted);
+}
+
+.console-dispute-items small,
+.console-dispute-notes small {
+  color: var(--muted);
+}
+
+.console-dispute-decision {
+  display: grid;
+  gap: 10px;
+}
+
+.console-dispute-decision label:not(.console-check) {
+  display: grid;
+  gap: 4px;
+}
+
+.console-dispute-decision :is(select, textarea) {
+  width: 100%;
+}
+
 .console-live {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -19121,6 +19304,14 @@ span.odometer {
   gap: 4px;
   color: var(--point-strong);
   font-weight: var(--weight-label);
+}
+
+.profile-verified-note {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
 }
 
 .profile-verified {

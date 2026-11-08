@@ -36,6 +36,11 @@ import type {
   BlockedListing,
   BoardPost,
   BusinessStatus,
+  Dispute,
+  DisputeOutcome,
+  DisputeReason,
+  GroupVerification,
+  UploadDocument,
   CheckInInfo,
   CodeTicket,
   Conversation,
@@ -458,6 +463,21 @@ export const api = {
     ) & { reason: string; detail: string },
   ) => request<{ ok: true }>("/reports", { method: "POST", body }),
   business: () => request<BusinessStatus>("/profile/business"),
+  // 학생단체 확인(#334): 대표가 대표자 이름과 서류 둘을 낸다.
+  groupVerification: () => request<GroupVerification>("/groups/verification"),
+  requestGroupVerification: (body: { representative: string; enrollment: UploadDocument; membership: UploadDocument }) =>
+    request<{ pending: true }>("/groups/verification", { method: "POST", body }),
+  // 협찬 분쟁(#335). 계약 양쪽 당사자만 본다.
+  disputes: (agreementId: string) => request<{ disputes: Dispute[] }>(`/disputes?agreementId=${encodeURIComponent(agreementId)}`),
+  openDispute: (body: { agreementId: string; reason: DisputeReason; detail: string }) =>
+    request<{ dispute: Dispute }>("/disputes", { method: "POST", body }),
+  addDisputeStatement: (id: string, text: string) =>
+    request<{ dispute: Dispute }>(`/disputes/${encodeURIComponent(id)}/statements`, { method: "POST", body: { text } }),
+  addDisputeEvidence: (id: string, document: UploadDocument) =>
+    request<{ dispute: Dispute }>(`/disputes/${encodeURIComponent(id)}/evidence`, { method: "POST", body: document }),
+  disputeEvidence: (id: string, evidenceId: string) =>
+    requestBlob(`/disputes/${encodeURIComponent(id)}/evidence/${encodeURIComponent(evidenceId)}`),
+  withdrawDispute: (id: string) => request<{ dispute: Dispute }>(`/disputes/${encodeURIComponent(id)}/withdraw`, { method: "POST" }),
   verifyBusiness: (body: { number: string; startDate: string; owner: string }) =>
     request<{ business: NonNullable<BusinessStatus["business"]> }>("/profile/business", { method: "POST", body }),
   blocks: () => request<{ blocked: BlockedListing[] }>("/blocks"),
@@ -578,8 +598,27 @@ export const api = {
     request<{ operator: AdminOperator }>(`/admin/operators/${encodeURIComponent(id)}`, { method: "DELETE", headers: { "X-Admin-Token": token } }),
   adminApplications: (token: string) =>
     request<{ applications: AdminApplication[] }>("/admin/applications", { headers: { "X-Admin-Token": token } }),
-  adminApplicationDocument: (token: string, id: string) =>
-    requestBlob(`/admin/applications/${encodeURIComponent(id)}/document`, { headers: { "X-Admin-Token": token } }),
+  adminApplicationDocument: (token: string, id: string, part?: "membership") =>
+    requestBlob(`/admin/applications/${encodeURIComponent(id)}/document${part ? `?part=${part}` : ""}`, { headers: { "X-Admin-Token": token } }),
+  adminUnverifyGroup: (token: string, id: string, reason: string) =>
+    request<{ account: AdminMemberDetail }>(`/admin/accounts/${encodeURIComponent(id)}/group-verified`, {
+      method: "DELETE",
+      headers: { "X-Admin-Token": token },
+      body: { reason },
+    }),
+  adminDisputes: (token: string) => request<{ disputes: Dispute[] }>("/admin/disputes", { headers: { "X-Admin-Token": token } }),
+  adminDisputeEvidence: (token: string, id: string, evidenceId: string) =>
+    requestBlob(`/admin/disputes/${encodeURIComponent(id)}/evidence/${encodeURIComponent(evidenceId)}`, { headers: { "X-Admin-Token": token } }),
+  adminReviewDispute: (token: string, id: string) =>
+    request<{ dispute: Dispute }>(`/admin/disputes/${encodeURIComponent(id)}/review`, { method: "POST", headers: { "X-Admin-Token": token } }),
+  adminDisputeNote: (token: string, id: string, text: string) =>
+    request<{ dispute: Dispute }>(`/admin/disputes/${encodeURIComponent(id)}/notes`, { method: "POST", headers: { "X-Admin-Token": token }, body: { text } }),
+  adminDecideDispute: (token: string, id: string, outcome: DisputeOutcome, note: string) =>
+    request<{ dispute: Dispute }>(`/admin/disputes/${encodeURIComponent(id)}/decision`, {
+      method: "POST",
+      headers: { "X-Admin-Token": token },
+      body: { outcome, note },
+    }),
   adminApproveApplication: (token: string, id: string) =>
     request<void>(`/admin/applications/${encodeURIComponent(id)}/approve`, { method: "POST", headers: { "X-Admin-Token": token } }),
   adminRejectApplication: (token: string, id: string, reason: string) =>

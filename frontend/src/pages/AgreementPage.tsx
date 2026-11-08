@@ -10,6 +10,7 @@ import { ReviewCard, ReviewReply } from "../components/ReviewCard"
 import { starPath } from "../components/Stars"
 import { TermsList } from "../components/TermsList"
 import { AgreementStatus } from "../components/AgreementStatus"
+import { DisputePanel } from "../components/DisputePanel"
 import { carriers, trackingLink } from "../data/carriers"
 import { methodInfo, methodKinds, sortedMethods } from "../data/methods"
 import { reviewTags } from "../data/reviews"
@@ -1446,6 +1447,7 @@ export function AgreementPage({
   onError,
   onNotice,
   onEditGoals,
+  canDispute = false,
 }: {
   id: string
   loggedIn: boolean
@@ -1459,6 +1461,8 @@ export function AgreementPage({
   onNotice: (message: string) => void
   // 계정 자신의 행사에 대한 목표 폼을 연다.
   onEditGoals?: (eventId: string) => void
+  // 협찬 분쟁(#335)을 접수하고 볼 수 있다. 공용 데모 계정은 아니다.
+  canDispute?: boolean
 }) {
   const [agreement, setAgreement] = useState<Agreement>()
   const [failed, setFailed] = useState("")
@@ -1846,6 +1850,7 @@ export function AgreementPage({
             </>
           )}
           <ContractTerms agreement={agreement} />
+          {canDispute && agreement[other].member && <DisputePanel agreement={agreement} onNotice={onNotice} />}
           <CancelPanel
             agreement={agreement}
             busy={busy}

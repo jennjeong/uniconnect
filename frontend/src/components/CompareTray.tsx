@@ -147,6 +147,7 @@ export function CompareTray({
                 {kind === "group" && row(t("예상 인원"), (item) => (item.audience ? t("{count}명", { count: item.audience }) : "—"))}
                 {row(kind === "brand" ? t("제공하는 협찬") : t("내세우는 점"), (item) => item.offer || "—")}
                 {kind === "brand" && row(t("사업자 확인"), (item) => (item.businessVerified ? t("확인됨") : "—"))}
+                {kind === "group" && row(t("단체 확인"), (item) => (item.groupVerified ? t("확인됨") : "—"))}
                 {row(t("태그"), (item) => item.tags.slice(0, 4).join(", ") || "—")}
                 <tr>
                   <td />

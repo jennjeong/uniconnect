@@ -131,6 +131,12 @@ export function WorkCard({
               {t("사업자 확인")}
             </span>
           )}
+          {match.groupVerified && (
+            <span className="tag-verified" title={t("운영자가 대표자의 재학과 단체 소속을 서류로 확인했어요.")}>
+              <Icon name="check" size={12} />
+              {t("단체 확인")}
+            </span>
+          )}
           {match.reviewCount ? (
             <span className="tag-rating">
               <Stars rating={match.rating ?? 0} size={12} />

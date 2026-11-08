@@ -971,6 +971,11 @@ test("brands answer the proposals in their inbox", async () => {
   assert.equal(preview.length, 4)
   assert.equal(preview[0].id, "req-nowon")
 
+  // 예시 제안의 행사일은 고정된 날짜라, 그날이 지나면 마감되어 답할 수 없다.
+  // 오늘과 상관없이 답하는 흐름을 보도록 행사일을 앞으로 옮긴다.
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  getDatabase().requests.find((item) => item.id === "req-nowon")!.eventDate = addDays(todayInKorea(), 14)
+
   const brand = await login("브랜드")
   const accepted = await call("POST", "/requests/req-nowon/accept", undefined, brand)
   assert.equal(accepted.status, 200)
@@ -6013,7 +6018,10 @@ test("a reminder or digest whose mail failed goes again on the next run, and one
     config.dataFile = dataFile
     assert.equal(ran.status, 500)
     const answer = (await ran.json()) as { failed: string[]; views: unknown }
-    assert.deepEqual(answer.failed, ["reminders"])
+    // 한국 시각으로 월요일이면 주간 추천 메일도 같은 이유로 실패한다.
+    const { todayInKorea } = await import("./lib/dates.js")
+    const koreanMonday = new Date(`${todayInKorea()}T00:00:00Z`).getUTCDay() === 1
+    assert.deepEqual(answer.failed, koreanMonday ? ["reminders", "digests"] : ["reminders"])
     assert.equal(answer.views, 0)
   } finally {
     config.dataFile = dataFile

@@ -67,6 +67,7 @@ import type {
   BlockedListing,
   BoardPost,
   BusinessStatus,
+  GroupVerification,
   CodeTicket,
   Conversation,
   EventItem,
@@ -100,6 +101,7 @@ const GoalsModal = lazy(() => import("./modals/GoalsModal").then((module) => ({ 
 const InstallGuideModal = lazy(() => import("./modals/InstallGuideModal").then((module) => ({ default: module.InstallGuideModal })))
 const LeaveModal = lazy(() => import("./modals/LeaveModal").then((module) => ({ default: module.LeaveModal })))
 const BusinessModal = lazy(() => import("./modals/BusinessModal").then((module) => ({ default: module.BusinessModal })))
+const GroupCheckModal = lazy(() => import("./modals/GroupCheckModal").then((module) => ({ default: module.GroupCheckModal })))
 const ContactModal = lazy(() => import("./modals/ContactModal").then((module) => ({ default: module.ContactModal })))
 const EmailChangeModal = lazy(() => import("./modals/EmailChangeModal").then((module) => ({ default: module.EmailChangeModal })))
 const InviteShopModal = lazy(() => import("./modals/InviteShopModal").then((module) => ({ default: module.InviteShopModal })))
@@ -194,6 +196,8 @@ function App() {
   const [boardTick, setBoardTick] = useState(0)
   // A brand's business check, read when 내 정보 opens.
   const [business, setBusiness] = useState<BusinessStatus | null>(null)
+  // A member group's document check (#334), read when 내 정보 opens.
+  const [groupCheck, setGroupCheck] = useState<GroupVerification | null>(null)
   const [account, setAccount] = useState<Account | null>(null)
   // 저장된 토큰이 있으면 /auth/me가 답할 때까지 역할별 데이터를 기다린다.
   const [authReady, setAuthReady] = useState(() => getToken() === null)
@@ -1099,6 +1103,22 @@ function App() {
     }
   }, [profileOpen, checksBusiness, accountId])
 
+  // A member group's document check (#334), for its 내 정보.
+  const checksGroup = member && account?.role === "학생단체"
+  useEffect(() => {
+    if (!profileOpen || !checksGroup) return
+    let cancelled = false
+    api
+      .groupVerification()
+      .then((result) => {
+        if (!cancelled) setGroupCheck(result)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [profileOpen, checksGroup, accountId])
+
   const unblock = async (item: BlockedListing) => {
     try {
       await api.unblock(item.listingId)
@@ -1476,6 +1496,7 @@ function App() {
           goalsSaved={goalsSaved}
           paid={paid}
           onBack={() => goBack({ page, agreements: true })}
+          canDispute={member}
           onEditGoals={account ? editGoals : undefined}
           onError={handleError}
           onLogin={() => openAuth("login")}
@@ -1619,6 +1640,8 @@ function App() {
           onUnblock={unblock}
           business={checksBusiness && business ? business : undefined}
           onVerifyBusiness={() => setActiveModal("business")}
+          groupCheck={checksGroup && groupCheck ? groupCheck : undefined}
+          onVerifyGroup={() => setActiveModal("group-check")}
           onPause={member ? pauseListing : undefined}
           onMail={member ? saveMailOff : undefined}
         />
@@ -2252,6 +2275,18 @@ function App() {
               setBusiness({ ready: true, business: verified })
               closeModal()
               showNotice(t("사업자 확인을 마쳤어요. 소개에 '사업자 확인'이 붙어요."))
+            }}
+          />
+        </Presence>
+      )}
+      {account && (
+        <Presence show={activeModal === "group-check"}>
+          <GroupCheckModal
+            onClose={closeModal}
+            onSent={() => {
+              setGroupCheck((last) => ({ ...last, status: "waiting", renewable: false }))
+              closeModal()
+              showNotice(t("서류를 보냈어요. 운영자가 확인하면 메일로 알려 드려요."))
             }}
           />
         </Presence>

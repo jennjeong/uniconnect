@@ -494,6 +494,11 @@ const actionLabels: Record<string, string> = {
   "operator-logged-in": "운영자 로그인",
   "backup-downloaded": "백업 내려받기",
   "backup-restored": "백업 복원",
+  "group-verified": "학생단체 확인",
+  "group-unverified": "학생단체 확인 표시 뗌",
+  "dispute-reviewing": "분쟁 확인 시작",
+  "dispute-note": "분쟁 메모",
+  "dispute-decided": "분쟁 결론",
   "application-rejected": "가입 거절",
   "business-set": "사업자 확인 변경",
   "partners-granted": "파트너스 부여",
@@ -532,6 +537,7 @@ const kindLabels: Record<string, string> = {
   announcement: "공지",
   operator: "운영자",
   backup: "백업",
+  dispute: "분쟁",
 }
 
 // 공유 토큰으로 한 일은 이름이 없다.

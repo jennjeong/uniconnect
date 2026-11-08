@@ -3,11 +3,13 @@ import { useCallback, useEffect, useState } from "react"
 import { api, errorMessage } from "../api"
 import { Icon } from "../components/Icon"
 import { TabBar } from "../components/TabBar"
+import { disputeEventLabels, disputeOutcomeLabel, disputeOutcomes, disputeReasonLabel, disputeStatusLabels } from "../data/disputes"
 import { faqs, faqTopics } from "../data/faq"
 import { locale, t } from "../i18n"
 import { formatDateTime } from "../lib/date"
 import { saveFile } from "../lib/download"
 import { fullWon } from "../lib/sponsorships"
+import type { Dispute, DisputeEvent, DisputeOutcome } from "../types"
 import type { AdminAgreementRow, AdminEventRow, AdminInsights, AdminInvites, AdminLive, AdminPayment, AdminPostRow, AdminProposalDetail, AdminReviewRow, AdminStaleProposal, AdminSystem, AgreementState, BackupSummary, FaqTopicKey, SiteFaq } from "../types"
 import { CsvButton } from "./AdminTools"
 
@@ -599,7 +601,7 @@ export function Approvals({ token, onNotice }: { token: string; onNotice: Notice
         <div className="console-card-head">
           <div>
             <h2>{t("가입 승인")}</h2>
-            <p>{t("서류를 확인하고 승인해야 가입이 끝나요. 서류는 결정하면 바로 지워져요.")}</p>
+            <p>{t("서류를 확인하고 승인해야 가입이 끝나요. 학생단체 확인 신청도 여기 와요. 서류는 결정하면 바로 지워져요.")}</p>
           </div>
         </div>
         {data.applications.length === 0 ? (
@@ -609,11 +611,22 @@ export function Approvals({ token, onNotice }: { token: string; onNotice: Notice
             {data.applications.map((item) => (
               <li key={item.id}>
                 <div>
-                  <strong>{item.kind === "shop" ? t("{name} · 초대받은 가게", { name: item.name }) : t("{name} · {team} 공동 관리자", { name: item.name, team: item.team ?? "" })}</strong>
+                  <strong>
+                    {item.kind === "shop"
+                      ? t("{name} · 초대받은 가게", { name: item.name })
+                      : item.kind === "group"
+                        ? t("{name} · 학생단체 확인", { name: item.group ?? item.name })
+                        : t("{name} · {team} 공동 관리자", { name: item.name, team: item.team ?? "" })}
+                  </strong>
                   <small>
                     {item.email} · {formatDateTime(item.requestedAt)}
                     {item.contact && ` · ${item.contact.name} ${item.contact.phone}`}
                   </small>
+                  {item.kind === "group" && (
+                    <small>
+                      {t("대표자 {name} · {school}", { name: item.representative ?? "—", school: item.school || "—" })}
+                    </small>
+                  )}
                   {item.placeUrl && (
                     <a href={item.placeUrl} rel="noreferrer" target="_blank">
                       {t("연결할 가게 보기")}
@@ -632,12 +645,35 @@ export function Approvals({ token, onNotice }: { token: string; onNotice: Notice
                   }}
                   type="button"
                 >
-                  {t("서류 내려받기")}
+                  {item.kind === "group" ? t("재학 증명 내려받기") : t("서류 내려받기")}
                 </button>
+                {item.kind === "group" && item.membership && (
+                  <button
+                    className="cancel-button"
+                    onClick={async () => {
+                      try {
+                        const blob = await api.adminApplicationDocument(token, item.id, "membership")
+                        saveFile(item.membership!.name, blob, blob.type)
+                      } catch (error) {
+                        onNotice(errorMessage(error))
+                      }
+                    }}
+                    type="button"
+                  >
+                    {t("소속 증빙 내려받기")}
+                  </button>
+                )}
                 <button
                   className="primary-button"
                   disabled={busy}
-                  onClick={() => void decide(() => api.adminApproveApplication(token, item.id), t("{name} 가입을 승인했어요.", { name: item.name }))}
+                  onClick={() =>
+                    void decide(
+                      () => api.adminApproveApplication(token, item.id),
+                      item.kind === "group"
+                        ? t("{name}의 학생단체 확인을 승인했어요.", { name: item.group ?? item.name })
+                        : t("{name} 가입을 승인했어요.", { name: item.name }),
+                    )
+                  }
                   type="button"
                 >
                   {t("승인")}
@@ -654,7 +690,14 @@ export function Approvals({ token, onNotice }: { token: string; onNotice: Notice
                 <button
                   className="cancel-button"
                   disabled={busy || !reasons[item.id]?.trim()}
-                  onClick={() => void decide(() => api.adminRejectApplication(token, item.id, reasons[item.id].trim()), t("{name} 가입을 거절했어요.", { name: item.name }))}
+                  onClick={() =>
+                    void decide(
+                      () => api.adminRejectApplication(token, item.id, reasons[item.id].trim()),
+                      item.kind === "group"
+                        ? t("{name}의 단체 확인 신청을 거절했어요.", { name: item.group ?? item.name })
+                        : t("{name} 가입을 거절했어요.", { name: item.name }),
+                    )
+                  }
                   type="button"
                 >
                   {t("거절")}
@@ -1290,6 +1333,264 @@ export function SystemPanel({ token, onNotice }: { token: string; onNotice: Noti
           </ul>
         )}
       </section>
+    </div>
+  )
+}
+
+// 협찬 분쟁(#335, backend routes/disputes.ts): 진행 중인 것이 먼저, 오래된 순서다.
+// 운영자는 확인을 시작하고, 당사자에게 보이지 않는 메모를 남기며, 결론과 이유를
+// 기록한다. 결론은 고칠 수 없고 기록일 뿐이라 계정, 결제, 후기는 따로 처리한다.
+export function Disputes({ token, onNotice }: { token: string; onNotice: Notice }) {
+  const [data, reload, setData] = useAdmin(() => api.adminDisputes(token), onNotice, [token])
+  const [tab, setTab] = useState<"open" | "closed">("open")
+  const [openId, setOpenId] = useState<string>()
+  const [note, setNote] = useState("")
+  const [outcome, setOutcome] = useState<DisputeOutcome | "">("")
+  const [reason, setReason] = useState("")
+  const [sure, setSure] = useState(false)
+  const [busy, setBusy] = useState(false)
+  useEffect(() => {
+    setNote("")
+    setOutcome("")
+    setReason("")
+    setSure(false)
+  }, [openId])
+
+  if (!data) return <p className="field-hint">{t("불러오고 있어요…")}</p>
+  const live = data.disputes.filter((item) => item.status !== "closed")
+  const done = data.disputes.filter((item) => item.status === "closed")
+  const list = tab === "open" ? live : done
+  const open = data.disputes.find((item) => item.id === openId)
+
+  const act = async (work: () => Promise<{ dispute: Dispute }>, message: string) => {
+    if (busy) return false
+    setBusy(true)
+    try {
+      const { dispute } = await work()
+      setData((current) => current && { disputes: current.disputes.map((item) => (item.id === dispute.id ? dispute : item)) })
+      onNotice(message)
+      return true
+    } catch (error) {
+      onNotice(errorMessage(error))
+      await reload()
+      return false
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const sideName = (dispute: Dispute, by: DisputeEvent["by"]) =>
+    by === "admin" ? t("운영자") : by === "group" ? dispute.groupName : dispute.brandName
+
+  return (
+    <div className="console-grid">
+      <section className="console-card wide">
+        <div className="console-card-head">
+          <div>
+            <h2>{t("협찬 분쟁")}</h2>
+            <p>{t("결론은 고칠 수 없고 기록일 뿐이에요. 계정, 결제, 후기는 따로 처리해요.")}</p>
+          </div>
+        </div>
+        <TabBar
+          items={[
+            { value: "open" as const, label: t("진행 중 {count}", { count: live.length }) },
+            { value: "closed" as const, label: t("끝남 {count}", { count: done.length }) },
+          ]}
+          label={t("분쟁 상태")}
+          onChange={(value) => setTab(value)}
+          value={tab}
+        />
+        {list.length === 0 ? (
+          <p className="day-empty">{tab === "open" ? t("진행 중인 분쟁이 없어요.") : t("끝난 분쟁이 없어요.")}</p>
+        ) : (
+          <ul className="console-approvals">
+            {list.map((item) => (
+              <li key={item.id}>
+                <div>
+                  <strong>
+                    {item.eventName} · {t(disputeReasonLabel(item.reason))}
+                  </strong>
+                  <small>
+                    {t("{group} ↔ {brand}", { group: item.groupName, brand: item.brandName })} ·{" "}
+                    {t("{name}에서 접수", { name: item.openedBy === "group" ? item.groupName : item.brandName })} ·{" "}
+                    {formatDateTime(item.createdAt)}
+                  </small>
+                </div>
+                <span className={item.status === "closed" ? "dispute-status" : "dispute-status live"}>
+                  {item.decision ? t(disputeOutcomeLabel(item.decision.outcome)) : t(disputeStatusLabels[item.status])}
+                </span>
+                <button className="cancel-button" onClick={() => setOpenId(item.id === openId ? undefined : item.id)} type="button">
+                  {item.id === openId ? t("닫기") : t("열기")}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {open && (
+        <section aria-label={t("분쟁 {name}", { name: open.eventName })} className="console-card wide console-dispute">
+          <div className="console-card-head">
+            <div>
+              <h2>
+                {open.eventName} · {t(disputeReasonLabel(open.reason))}
+              </h2>
+              <p>{t("{group} ↔ {brand}", { group: open.groupName, brand: open.brandName })}</p>
+            </div>
+            {open.status === "open" && (
+              <button
+                className="primary-button"
+                disabled={busy}
+                onClick={() => void act(() => api.adminReviewDispute(token, open.id), t("확인을 시작했어요. 양쪽에 알렸어요."))}
+                type="button"
+              >
+                {t("확인 시작")}
+              </button>
+            )}
+          </div>
+          <p className="dispute-detail">{open.detail}</p>
+
+          <h3>{t("접수할 때의 계약")}</h3>
+          <dl className="console-facts">
+            <div>
+              <dt>{t("협찬액")}</dt>
+              <dd>
+                {open.snapshot.value
+                  ? t("현금 {cash} · 현물 {inKind}", { cash: fullWon(open.snapshot.value.cash), inKind: fullWon(open.snapshot.value.inKind) })
+                  : "—"}
+              </dd>
+            </div>
+            <div>
+              <dt>{t("지급 기록")}</dt>
+              <dd>
+                {open.snapshot.payout
+                  ? [
+                      open.snapshot.payout.dueDate && t("예정일 {date}", { date: open.snapshot.payout.dueDate }),
+                      open.snapshot.payout.paidAt && t("보냄 {date}", { date: formatDateTime(open.snapshot.payout.paidAt) }),
+                      open.snapshot.payout.receivedAt && t("받음 {date}", { date: formatDateTime(open.snapshot.payout.receivedAt) }),
+                    ]
+                      .filter(Boolean)
+                      .join(" · ") || "—"
+                  : "—"}
+              </dd>
+            </div>
+            <div>
+              <dt>{t("취소")}</dt>
+              <dd>{open.snapshot.canceled ? t("취소된 협찬") : "—"}</dd>
+            </div>
+          </dl>
+          <ul className="console-dispute-items">
+            {open.snapshot.items.map((item, index) => (
+              <li key={`${item.label}-${index}`}>
+                <span>{item.side === "group" ? open.groupName : open.brandName}</span> {item.label}{" "}
+                <small>{item.doneAt ? t("끝남 {date}", { date: formatDateTime(item.doneAt) }) : t("안 끝남")}</small>
+              </li>
+            ))}
+          </ul>
+
+          <h3>{t("기록")}</h3>
+          <ol className="dispute-events">
+            {open.events.map((event, index) => {
+              const evidence = event.evidenceId ? open.evidence.find((item) => item.id === event.evidenceId) : undefined
+              return (
+                <li className={event.by === "admin" ? "admin" : undefined} key={`${event.at}-${index}`}>
+                  <span className="dispute-event-head">
+                    <strong>{sideName(open, event.by)}</strong> {t(disputeEventLabels[event.kind])}
+                    <time dateTime={event.at}>{formatDateTime(event.at)}</time>
+                  </span>
+                  {event.text && <p>{event.text}</p>}
+                  {evidence && (
+                    <button
+                      className="underline-link"
+                      onClick={async () => {
+                        try {
+                          const blob = await api.adminDisputeEvidence(token, open.id, evidence.id)
+                          saveFile(evidence.name, blob, blob.type)
+                        } catch (error) {
+                          onNotice(errorMessage(error))
+                        }
+                      }}
+                      type="button"
+                    >
+                      <Icon name="file" size={14} /> {evidence.name}
+                    </button>
+                  )}
+                </li>
+              )
+            })}
+          </ol>
+
+          <h3>{t("운영자 메모 {count}", { count: open.notes?.length ?? 0 })}</h3>
+          {open.notes && open.notes.length > 0 && (
+            <ul className="console-dispute-notes">
+              {open.notes.map((item, index) => (
+                <li key={`${item.at}-${index}`}>
+                  <small>{formatDateTime(item.at)}</small> {item.text}
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="console-tool">
+            <input
+              aria-label={t("운영자 메모")}
+              maxLength={1000}
+              onChange={(event) => setNote(event.target.value)}
+              placeholder={t("당사자에게 보이지 않아요")}
+              value={note}
+            />
+            <button
+              className="console-text-button"
+              disabled={busy || !note.trim()}
+              onClick={() =>
+                void act(() => api.adminDisputeNote(token, open.id, note.trim()), t("메모를 남겼어요.")).then((saved) => saved && setNote(""))
+              }
+              type="button"
+            >
+              {t("메모 남기기")}
+            </button>
+          </div>
+
+          {open.decision ? (
+            <p className="dispute-decision">
+              <strong>{t(disputeOutcomeLabel(open.decision.outcome))}</strong> {open.decision.note ?? ""} ·{" "}
+              {formatDateTime(open.decision.at)}
+            </p>
+          ) : (
+            <form
+              className="console-dispute-decision"
+              onSubmit={(event) => {
+                event.preventDefault()
+                if (!outcome || !reason.trim() || !sure) return
+                void act(() => api.adminDecideDispute(token, open.id, outcome, reason.trim()), t("결론을 기록했어요. 양쪽에 알렸어요."))
+              }}
+            >
+              <h3>{t("결론")}</h3>
+              <label>
+                <span>{t("결론")}</span>
+                <select onChange={(event) => setOutcome(event.target.value as DisputeOutcome)} value={outcome}>
+                  <option value="">{t("골라 주세요")}</option>
+                  {disputeOutcomes.map((item) => (
+                    <option key={item.value} value={item.value}>
+                      {t(item.label)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span>{t("결론의 이유")}</span>
+                <textarea maxLength={1000} onChange={(event) => setReason(event.target.value)} rows={3} value={reason} />
+              </label>
+              <label className="console-check">
+                <input checked={sure} onChange={(event) => setSure(event.target.checked)} type="checkbox" />
+                {t("결론은 고칠 수 없어요. 양쪽에 알림이 가요.")}
+              </label>
+              <button className="primary-button" disabled={busy || !outcome || !reason.trim() || !sure} type="submit">
+                {t("결론 기록하기")}
+              </button>
+            </form>
+          )}
+        </section>
+      )}
     </div>
   )
 }
