@@ -9,8 +9,9 @@ export const roleOptions: {
   caption: string
 }[] = [
   // 각각 로고의 심벌과 함께 보인다 (components/RoleMark.tsx).
-  { value: "학생단체", title: t("협찬 받기"), caption: t("학생단체 · 동아리") },
-  { value: "브랜드", title: t("협찬 하기"), caption: t("스폰서 · 브랜드") },
+  // 누구인지(학생단체·기업)를 제목으로, 하는 일(협찬 받기·하기)을 설명으로 둔다.
+  { value: "학생단체", title: t("학생단체"), caption: t("협찬 받기 · 동아리 · 학생회") },
+  { value: "브랜드", title: t("기업 · 브랜드"), caption: t("협찬 하기 · 스폰서") },
 ]
 
 // 가입·프로필 양식이 보여주는 묶음대로의 계정 유형. 순서까지

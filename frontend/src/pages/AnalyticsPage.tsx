@@ -44,7 +44,7 @@ function ReportButton({ state, onOpen }: { state?: Sponsorship["report"]; onOpen
   return (
     <button className={state === "open" ? "report-button open" : "report-button"} onClick={onOpen} type="button">
       <Icon name={state === "open" ? "file" : "lock"} size={13} />
-      {state === "open" ? t("리포트 보기") : t("리포트 사기")}
+      {state === "open" ? t("상세 리포트 보기") : t("유료 상세 리포트 사기")}
     </button>
   )
 }
@@ -117,7 +117,7 @@ export function AnalyticsPage({
         actions={
           <>
             <Pill arrow="up-right" disabled={rows.length === 0 || exporting} onClick={onDownload}>
-              {exporting ? t("PDF 만드는 중…") : t("분석 보고서 다운로드")}
+              {exporting ? t("PDF 만드는 중…") : t("요약 PDF 다운로드")}
             </Pill>
             {/* 표를 스프레드시트로(lib/csv.ts). 페이지에서 만든다. */}
             <Pill

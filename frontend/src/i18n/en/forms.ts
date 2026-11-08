@@ -1078,6 +1078,9 @@ const en: Record<string, string> = {
   "아직 다가오는 행사가 없어요": "No coming event yet",
   "아직 다가오는 캠페인이 없어요": "No coming campaign yet",
   "지금 등록하기": "Register now",
+  "기업 · 브랜드": "Business · brand",
+  "협찬 받기 · 동아리 · 학생회": "Get sponsored · clubs · councils",
+  "협찬 하기 · 스폰서": "Sponsor · brands",
 }
 
 export default en

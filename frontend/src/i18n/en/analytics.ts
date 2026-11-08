@@ -174,6 +174,9 @@ const en: Record<string, string> = {
   "추정 ROAS 평균": "Average estimated ROAS",
   "전체 집행액 기준 추정 ROAS {roas}% · 누적 집행액 {spend} · 추정 매출 {sales}":
     "Estimated ROAS on total spend {roas}% · {spend} spent · {sales} estimated sales",
+  "요약 PDF 다운로드": "Download the summary PDF",
+  "상세 리포트 보기": "Open the detailed report",
+  "유료 상세 리포트 사기": "Buy the paid detailed report",
 }
 
 export default en
