@@ -1223,12 +1223,22 @@ test("a student group proposes and the brand accepts", async ({ browser }) => {
   await brand.goto("/inbox")
   const card = brand.locator(".request-card", { hasText: "삼육대 뮤즈" }).first()
   await expect(card).toContainText("현장 부스와 SNS로 브랜드를 알릴게요.")
+  // 수락은 확인창을 거친다. Escape로 닫으면 아무것도 바뀌지 않는다.
   await card.getByRole("button", { name: /수락하기/ }).click()
+  const accept = brand.getByRole("dialog", { name: "이 제안을 수락할까요?" })
+  await expect(accept).toContainText("삼육대 뮤즈")
+  await expect(accept).toContainText("15%")
+  await brand.keyboard.press("Escape")
+  await expect(accept).toBeHidden()
+  await expect(card.getByRole("button", { name: /수락하기/ })).toBeVisible()
+  await card.getByRole("button", { name: /수락하기/ }).click()
+  await accept.getByRole("button", { name: "수락하기" }).click()
   await expect(brand.locator(".request-card", { hasText: "삼육대 뮤즈" }).first()).toBeHidden()
   await brand.getByRole("tab", { name: /수락함/ }).click()
-  // 수락되면 결과와 진행 단계가 카드에 보인다.
+  // 수락만 된 협찬은 계약 확인 대기이고, 계약서로 바로 간다.
   const accepted = brand.locator(".request-card", { hasText: "삼육대 뮤즈" })
-  await expect(accepted.locator(".request-result.confirmed")).toBeVisible()
+  await expect(accepted.locator(".request-result")).toContainText("제안 수락 · 계약 확인 대기")
+  await expect(accepted.getByRole("button", { name: "계약서 열기" })).toBeVisible()
   await expect(accepted.getByRole("list", { name: "협찬 진행 상황" })).toBeVisible()
 })
 

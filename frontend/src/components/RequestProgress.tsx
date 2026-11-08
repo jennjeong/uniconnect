@@ -4,13 +4,15 @@ import { fromIsoDate, shortDay, toIsoDate, todayIso } from "../lib/date"
 type Progress = {
   createdAt: string
   respondedAt?: string
+  // 양쪽이 계약서를 확인해 협찬이 확정된 시각. 없으면 아직 계약 확인 대기다.
+  contractAt?: string
   // 행사나 캠페인 날짜. "YYYY-MM-DD" 또는 "".
   day: string
 }
 
 // 수락한 협찬을 제안부터 리포트까지 단계별로 날짜와 함께 보여 준다. 오늘까지는
 // 완료로, 다음 단계는 진행 중으로 표시한다.
-function progressSteps({ createdAt, respondedAt, day }: Progress) {
+function progressSteps({ createdAt, respondedAt, contractAt, day }: Progress) {
   const dayOf = (timestamp?: string) => (timestamp ? toIsoDate(new Date(timestamp)) : "")
   const event = fromIsoDate(day)
   const afterEvent = (days: number) =>
@@ -18,7 +20,8 @@ function progressSteps({ createdAt, respondedAt, day }: Progress) {
   const today = todayIso()
   const steps = [
     { label: t("제안 받음"), day: dayOf(createdAt) },
-    { label: t("협찬 확정"), day: dayOf(respondedAt) },
+    { label: t("제안 수락"), day: dayOf(respondedAt) },
+    { label: t("협찬 확정"), day: dayOf(contractAt) },
     { label: t("행사 당일"), day },
     { label: tc("step", "성과 리포트"), day: afterEvent(7) },
   ]

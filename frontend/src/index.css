@@ -23205,3 +23205,63 @@ textarea {
     width: calc(100% - 32px);
   }
 }
+
+/* 받은 제안의 수락 확인창 (modals/AcceptModal.tsx). */
+.accept-facts {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--fill);
+}
+
+.accept-facts div {
+  display: grid;
+  grid-template-columns: 6.5em minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.accept-facts dt {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.accept-facts dd {
+  display: grid;
+  margin: 0;
+  color: var(--ink);
+  font-weight: var(--weight-label);
+}
+
+.accept-facts dd small {
+  color: var(--ink-soft);
+  font-size: 0.8125rem;
+  font-weight: var(--weight-body);
+}
+
+.accept-cost {
+  margin: 0 0 var(--space-3);
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+.accept-steps {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0 0 var(--space-6);
+  padding-left: 1.25em;
+  color: var(--ink);
+  font-size: var(--text-sm);
+}
+
+.modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.modal-actions > button {
+  min-height: var(--control-h);
+}

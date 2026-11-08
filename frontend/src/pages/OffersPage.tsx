@@ -3,11 +3,13 @@ import { useState } from "react"
 import { BrandMark } from "../components/BrandMark"
 import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
+import { Presence } from "../components/Presence"
 import { RequestProgress } from "../components/RequestProgress"
 import { PendingBothWays } from "../components/SentProposals"
 import { TabBar } from "../components/TabBar"
 import { t } from "../i18n"
 import { dDayLabel, formatDateTime, formatDay } from "../lib/date"
+import { AcceptModal } from "../modals/AcceptModal"
 import type { Match, RequestStatus, SentProposal, SponsorOffer } from "../types"
 
 // 상태별 카드 클래스(브랜드 받은함의 카드).
@@ -38,11 +40,13 @@ function OfferCard({
   offer: SponsorOffer
   // 로고를 위한 브랜드의 리스팅.
   brand?: Match
-  onAnswer: (offer: SponsorOffer, decision: "accept" | "decline") => void
+  onAnswer: (offer: SponsorOffer, decision: "accept" | "decline") => void | Promise<void>
   onOpenAgreement: (id: string) => void
 }) {
   // 거절은 되돌릴 수 없으므로 한 번 더 묻는다.
   const [confirming, setConfirming] = useState(false)
+  // 수락은 무엇을 수락하는지와 그다음 순서를 보여 주는 확인창을 거친다.
+  const [accepting, setAccepting] = useState(false)
 
   return (
     <article className={`request-card ${cardState[offer.status]}`}>
@@ -99,7 +103,7 @@ function OfferCard({
               <button className="cancel-button" onClick={() => setConfirming(true)} type="button">
                 {t("거절하기")}
               </button>
-              <button className="primary-button" onClick={() => onAnswer(offer, "accept")} type="button">
+              <button className="primary-button" onClick={() => setAccepting(true)} type="button">
                 <Icon name="check" size={16} /> {t("수락하기")}
               </button>
             </>
@@ -109,7 +113,9 @@ function OfferCard({
             <span className={offer.status === "수락" ? "request-result confirmed" : "request-result"}>
               {offer.status === "수락" && <Icon name="check" size={15} />}
               {offer.status === "수락"
-                ? t("협찬 확정")
+                ? offer.contract === "confirmed"
+                  ? t("협찬 확정")
+                  : t("제안 수락 · 계약 확인 대기")
                 : offer.status === "취소됨"
                   ? t("취소된 협찬")
                   : offer.status === "마감"
@@ -124,16 +130,42 @@ function OfferCard({
               )}
             </span>
             {(offer.status === "수락" || offer.status === "취소됨") && (
-              <button className="detail-button" onClick={() => onOpenAgreement(offer.id)} type="button">
-                <Icon name="file" size={15} /> {t("계약서")}
+              <button
+                className={offer.status === "수락" && offer.contract !== "confirmed" ? "primary-button" : "detail-button"}
+                onClick={() => onOpenAgreement(offer.id)}
+                type="button"
+              >
+                <Icon name="file" size={15} /> 
+                {offer.status === "수락" && offer.contract !== "confirmed" ? t("계약서 열기") : t("계약서")}
               </button>
             )}
           </>
         )}
       </div>
       {offer.status === "수락" && (
-        <RequestProgress createdAt={offer.createdAt} day={offer.campaignDate} respondedAt={offer.respondedAt} />
+        <RequestProgress
+          contractAt={offer.contractAt}
+          createdAt={offer.createdAt}
+          day={offer.campaignDate}
+          respondedAt={offer.respondedAt}
+        />
       )}
+      <Presence show={accepting}>
+        {accepting && (
+          <AcceptModal
+            side="학생단체"
+            partner={offer.brandName}
+            eventName={offer.campaignName}
+            eventDate={offer.campaignDate || undefined}
+            terms={offer.offer}
+            onClose={() => setAccepting(false)}
+            onConfirm={async () => {
+              await onAnswer(offer, "accept")
+              setAccepting(false)
+            }}
+          />
+        )}
+      </Presence>
     </article>
   )
 }
@@ -151,7 +183,7 @@ export function OffersPage({
   offers: SponsorOffer[]
   brands: Match[]
   sent: SentProposal[]
-  onAnswer: (offer: SponsorOffer, decision: "accept" | "decline") => void
+  onAnswer: (offer: SponsorOffer, decision: "accept" | "decline") => void | Promise<void>
   onWithdraw: (proposal: SentProposal) => void
   // 수락된 제안의 계약서(pages/AgreementPage.tsx).
   onOpenAgreement: (id: string) => void

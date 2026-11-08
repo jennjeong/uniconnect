@@ -1272,7 +1272,7 @@ function App() {
         ...confirmedRequests.map((request) => ({
           name: request.eventName,
           date: request.eventDate,
-          status: "협찬 확정",
+          status: request.contract === "waiting" ? "계약 확인 대기" : "협찬 확정",
         })),
       ]
 

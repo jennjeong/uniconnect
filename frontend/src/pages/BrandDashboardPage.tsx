@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react"
+import { useState, type CSSProperties, type ReactNode } from "react"
 
 import { BrandMark } from "../components/BrandMark"
 import { CatalogEmpty } from "../components/CatalogEmpty"
@@ -6,6 +6,7 @@ import { DateLine } from "../components/DateLine"
 import { Icon } from "../components/Icon"
 import { JourneyChain, type JourneyStep } from "../components/JourneyChain"
 import { MeetingHero } from "../components/MeetingHero"
+import { Presence } from "../components/Presence"
 import { ProposalControl } from "../components/ProposalControl"
 import { RevealStatement, RevealTitle } from "../components/RevealText"
 import { ValuePoints } from "../components/ValuePoints"
@@ -15,6 +16,7 @@ import { t } from "../i18n"
 import { dDayLabel, nextEvent, semesterLabel, shortDay } from "../lib/date"
 import { shownTags } from "../lib/distance"
 import { formatWon } from "../lib/kpis"
+import { AcceptModal } from "../modals/AcceptModal"
 import { fullWon, roasMet, roasOf, sponsorshipTotals } from "../lib/sponsorships"
 import type { Match, NavLabel, RequestStatus, SponsorRequest, Sponsorship } from "../types"
 
@@ -65,7 +67,7 @@ export function BrandDashboardPage({
   updatedAt: Date | null
   onNavigate: (label: NavLabel) => void
   onOpenDetail: (match: Match) => void
-  onAccept: (request: SponsorRequest) => void
+  onAccept: (request: SponsorRequest) => void | Promise<void>
   onPropose: (match: Match) => void
   onCancelProposal: (match: Match) => void
   // 히어로의 앱 다운로드. 설치된 앱 안에서는 없다.
@@ -119,6 +121,9 @@ export function BrandDashboardPage({
     },
     { label: t("재집행"), status: t("대기"), detail: t("ROAS가 좋았던 단체에 다음 학기에도 먼저 제안해요.") },
   ]
+
+  // 수락은 확인창을 거친다(modals/AcceptModal.tsx).
+  const [accepting, setAccepting] = useState<SponsorRequest | null>(null)
 
   return (
     <div className="dashboard">
@@ -211,7 +216,7 @@ export function BrandDashboardPage({
                   {t("요청 · {ask} · {people}", { ask: request.ask, people: request.people })}
                 </p>
                 <div className="pending-actions">
-                  <button className="proposal-button accept" onClick={() => onAccept(request)} type="button">
+                  <button className="proposal-button accept" onClick={() => setAccepting(request)} type="button">
                     {t("수락하기")}
                   </button>
                   <button className="proposal-cancel" onClick={() => onNavigate("받은 제안")} type="button">
@@ -425,6 +430,22 @@ export function BrandDashboardPage({
         </div>
       </section>
 
+      <Presence show={accepting !== null}>
+        {accepting && (
+          <AcceptModal
+            side="브랜드"
+            partner={accepting.groupName}
+            eventName={accepting.eventName}
+            eventDate={accepting.eventDate || undefined}
+            terms={accepting.ask}
+            onClose={() => setAccepting(null)}
+            onConfirm={async () => {
+              await onAccept(accepting)
+              setAccepting(null)
+            }}
+          />
+        )}
+      </Presence>
     </div>
   )
 }

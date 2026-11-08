@@ -113,6 +113,29 @@ test("every partner a card shows as proposed is in the sent list, even one witho
   assert.equal(data.statuses["moment-studio"], "검토 중")
 })
 
+test("an accepted proposal waits for the agreement, and is confirmed only once both sides confirm it", async () => {
+  const { token: brand, listingId } = await listedMember("contract@contract-cafe.kr", "contract-pass-123", "브랜드")
+  const group = await signUpMember("contract@syu.ac.kr", "contract-pass-123")
+  await call("POST", "/events", { name: "계약 공연", date: "2026-12-20", people: "100명", types: ["제품"] }, group)
+  assert.equal((await call("POST", "/proposals", { matchId: listingId }, group)).status, 201)
+  const waiting = (await call("GET", "/requests", undefined, brand)).data.requests[0]
+  assert.equal(waiting.contract, undefined)
+  assert.equal((await call("POST", `/requests/${waiting.id}/accept`, undefined, brand)).status, 200)
+  const view = async () => (await call("GET", "/requests", undefined, brand)).data.requests[0]
+  assert.equal((await view()).contract, "waiting")
+  // 한쪽만 확인해서는 확정이 아니다.
+  const { acceptedProposal, agreementFor } = await import("./lib/agreements.js")
+  const database = getDatabase()
+  agreementFor(database, acceptedProposal(database, waiting.id)!).agreement.value = { cash: 100_000, inKind: 0 }
+  await call("POST", `/agreements/${waiting.id}/confirm`, undefined, group)
+  assert.equal((await view()).contract, "waiting")
+  assert.equal((await view()).contractAt, undefined)
+  await call("POST", `/agreements/${waiting.id}/confirm`, undefined, brand)
+  const confirmed = await view()
+  assert.equal(confirmed.contract, "confirmed")
+  assert.ok(confirmed.contractAt)
+})
+
 test("the site hands out the Kakao map key only once it is set", async () => {
   assert.equal((await call("GET", "/site")).data.maps, undefined)
   config.kakaoMapKey = "test-map-key"
