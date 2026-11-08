@@ -186,11 +186,11 @@ export function NearbyPlaces(partnering: Partnering) {
         chips
         items={kinds.map((item) => ({ value: item.code, label: t(item.label) }))}
         label={t("가게 종류")}
-        onChange={(value, event) => {
+        onChange={(value, button) => {
           setCategory(value)
           setSelected(undefined)
           // 칩 행은 폰에서 옆으로 스크롤되므로 고른 칩이 보이게 한다.
-          event.currentTarget.scrollIntoView({ block: "nearest", inline: "center" })
+          button.scrollIntoView({ block: "nearest", inline: "center" })
         }}
         value={category}
       />

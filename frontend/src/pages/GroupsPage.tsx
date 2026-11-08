@@ -234,11 +234,11 @@ export function GroupsPage({
               ),
             }))}
             label={t("분야")}
-            onChange={(value, event) => {
+            onChange={(value, button) => {
               const order = fields.map(([item]) => item)
               setDirection(order.indexOf(value) >= order.indexOf(field) ? "forward" : "back")
               setField(value)
-              event.currentTarget.scrollIntoView({ block: "nearest", inline: "center" })
+              button.scrollIntoView({ block: "nearest", inline: "center" })
             }}
             value={field}
           />

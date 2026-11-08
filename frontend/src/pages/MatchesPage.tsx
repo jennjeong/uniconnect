@@ -196,12 +196,12 @@ export function MatchesPage({
               ),
             }))}
             label={t("업종")}
-            onChange={(value, event) => {
+            onChange={(value, button) => {
               const order = industries.map(([item]) => item)
               setDirection(order.indexOf(value) >= order.indexOf(industry) ? "forward" : "back")
               setIndustry(value)
               // 칩 줄은 휴대폰에서 옆으로 스크롤된다. 고른 칩이 보이게 한다.
-              event.currentTarget.scrollIntoView({ block: "nearest", inline: "center" })
+              button.scrollIntoView({ block: "nearest", inline: "center" })
             }}
             value={industry}
           />

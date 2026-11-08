@@ -149,3 +149,27 @@ for (const width of [1280, 390]) {
     })
   })
 }
+
+// 탭 줄은 Tab 키로 고른 탭 하나에만 들어오고, 안에서는 화살표 · Home · End로 옮기며 고른다.
+test("a tab row moves with the arrow, Home and End keys", async ({ page }) => {
+  await page.goto("/matches")
+  const tabs = page.getByRole("tablist", { name: "브랜드 보기" }).getByRole("tab")
+  await expect(tabs.first()).toHaveAttribute("aria-selected", "true")
+  const count = await tabs.count()
+  expect(count).toBeGreaterThan(2)
+  // 고르지 않은 탭은 Tab 키 순서에서 빠진다.
+  await expect(tabs.nth(1)).toHaveAttribute("tabindex", "-1")
+  await tabs.first().focus()
+  await page.keyboard.press("ArrowRight")
+  await expect(tabs.nth(1)).toBeFocused()
+  await expect(tabs.nth(1)).toHaveAttribute("aria-selected", "true")
+  await page.keyboard.press("End")
+  await expect(tabs.nth(count - 1)).toHaveAttribute("aria-selected", "true")
+  await page.keyboard.press("ArrowRight")
+  await expect(tabs.first()).toBeFocused()
+  await expect(tabs.first()).toHaveAttribute("aria-selected", "true")
+  await page.keyboard.press("ArrowLeft")
+  await expect(tabs.nth(count - 1)).toBeFocused()
+  await page.keyboard.press("Home")
+  await expect(tabs.first()).toHaveAttribute("aria-selected", "true")
+})
