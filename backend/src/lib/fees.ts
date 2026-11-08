@@ -15,7 +15,7 @@ import type { Agreement, Database } from "../types.js"
 // FEES_SINCE로, 서버 테스트는 여기서 옮긴다.
 export const feeStart = { since: process.env.FEES_SINCE ?? "2026-11-01" }
 
-const maxValue = 100_000_000
+export const maxValue = 100_000_000
 // 협찬이 가질 수 있는 가장 작은 값. 형식적인 값이 수수료를 반올림으로
 // 없애지 못하게 한다.
 export const minValue = 10_000

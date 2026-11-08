@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto"
 
 import { dropOrphanDisputes } from "./disputes.js"
 import { todayInKorea } from "./dates.js"
-import { feeState } from "./fees.js"
+import { feeState, parseValue } from "./fees.js"
 import { HttpError } from "./errors.js"
 import { ensureMeasurement, pinMissesToday, pinsFrom, pinsOpen, rotatePin } from "./measurements.js"
 import { activeMethodsOf, confirmsAt, isVenueKind, methodsOf, venueCountsOf } from "./methods.js"
@@ -279,6 +279,16 @@ export function defaultItems(proposal: AcceptedProposal, promo?: EventItem["prom
 export const promoOf = (database: Database, proposal: AcceptedProposal) =>
   proposal.eventOwner === "group" ? sponsoredEvent(database, proposal)?.event.promo : undefined
 
+// 제안 조건의 금액으로 시작하는 협찬액. 범위를 벗어나면(예전 데이터 등) 비워 둔다.
+function seededValue(terms: ProposalTerms | undefined) {
+  if (!terms?.amount) return undefined
+  try {
+    return parseValue({ cash: terms.amount, inKind: 0 })
+  } catch {
+    return undefined
+  }
+}
+
 // 저장된 계약서, 없으면 보통의 항목으로 새로 만든 것(저장은 호출한 쪽이 한다).
 export function agreementFor(database: Database, proposal: AcceptedProposal) {
   const stored = database.agreements.find((agreement) => agreement.id === proposal.id)
@@ -289,7 +299,8 @@ export function agreementFor(database: Database, proposal: AcceptedProposal) {
     kind: proposal.kind,
     items: defaultItems(proposal, promoOf(database, proposal)),
     // 제안에 금액을 적었으면 계약서의 협찬액이 그 값(현금)으로 시작한다. 양쪽이 고칠 수 있다.
-    ...(proposal.terms?.amount ? { value: { cash: proposal.terms.amount, inKind: 0 } } : {}),
+    // 협찬액을 직접 적을 때와 같은 검사(parseValue)를 통과한 값만 쓴다.
+    ...(seededValue(proposal.terms) ? { value: seededValue(proposal.terms)! } : {}),
     confirmed: {},
     createdAt: now,
     updatedAt: now,

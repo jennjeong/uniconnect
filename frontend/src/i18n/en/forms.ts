@@ -571,6 +571,7 @@ const en: Record<string, string> = {
   "우리 단체용 주소를 복사했어요.": "Copied your group's address.",
   "협찬 형태": "Kind of sponsorship",
   "협찬 제안함": "Proposals",
+  "1만 원 ~ 1억 원 · 계약서의 협찬액이 돼요": "₩10,000 to ₩100,000,000 · becomes the e-contract's value",
   "취소된 협찬이에요. 기록으로만 남아요.": "This sponsorship was called off. It stays as a record.",
   "협찬이 확정됐어요.": "The sponsorship is confirmed.",
   "내 확인이 필요해요.": "Your confirmation is needed.",

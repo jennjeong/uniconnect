@@ -543,7 +543,7 @@ const en: Record<string, string> = {
   "일정 조정 요청: {date}": "Asks to move the date to: {date}",
   "제안 조건을 확인해 주세요.": "Please check the proposal's terms.",
   "협찬 형태를 목록에서 골라 주세요.": "Pick the kind of sponsorship from the list.",
-  "금액은 0원 이상 10억 원 이하의 정수로 적어 주세요.": "Enter the amount as a whole number from 0 to 1,000,000,000 won.",
+  "금액은 1만 원 이상 1억 원 이하의 원 단위로 적어 주세요.": "Enter the amount in won, from 10,000 to 100,000,000.",
   "수량은 40자 이하로 적어 주세요.": "Keep the quantity to 40 characters.",
   "제공 혜택은 200자 이하로 적어 주세요.": "Keep what you offer in return to 200 characters.",
   "기한과 날짜는 달력의 날짜로 골라 주세요.": "Pick deadlines and dates from the calendar.",

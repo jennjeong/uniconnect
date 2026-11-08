@@ -8850,6 +8850,10 @@ test("a proposal's terms are kept apart from its message and reach the inbox and
   // 잘못된 조건은 막는다: 목록에 없는 형태, 음수 금액, 행사 뒤의 기한, 날짜 없는 일정 조정.
   assert.equal((await send({ kinds: ["주식"] })).status, 400)
   assert.equal((await send({ amount: -1 })).status, 400)
+  // 금액은 계약서의 협찬액과 같은 범위만: 수수료 하한(1만 원)을 피할 수 없다.
+  assert.equal((await send({ amount: 1 })).status, 400)
+  assert.equal((await send({ amount: 9999 })).status, 400)
+  assert.equal((await send({ amount: 100_000_001 })).status, 400)
   assert.equal((await send({ deliverBy: plus(day, 3) })).status, 400)
   assert.equal((await send({ schedule: { adjust: true } })).status, 400)
   const terms = {

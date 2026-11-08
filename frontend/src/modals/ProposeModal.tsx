@@ -73,7 +73,10 @@ export function ProposeModal({
 
   // 제안 조건. 고른 행사 · 캠페인의 협찬 형태와 예산으로 시작하고 이 제안에서 고친다.
   const [kinds, setKinds] = useState<string[]>(chosen?.types ?? [])
-  const [amount, setAmount] = useState(chosen?.budget ? String(chosen.budget) : "")
+  // 예산이 협찬액의 범위(1만 원 ~ 1억 원) 안일 때만 금액으로 가져온다.
+  const budgetAmount = (event?: EventItem) =>
+    event?.budget && event.budget >= 10_000 && event.budget <= 100_000_000 ? String(event.budget) : ""
+  const [amount, setAmount] = useState(budgetAmount(chosen))
   const [quantity, setQuantity] = useState("")
   const [deliverBy, setDeliverBy] = useState("")
   const [benefits, setBenefits] = useState("")
@@ -82,7 +85,7 @@ export function ProposeModal({
     setEventId(id)
     const next = upcoming.find((event) => event.id === id)
     setKinds(next?.types ?? [])
-    setAmount(next?.budget ? String(next.budget) : "")
+    setAmount(budgetAmount(next))
     setDateChoice("")
   }
   const terms: ProposalTermsDraft = {
@@ -229,7 +232,16 @@ export function ProposeModal({
             <div className="propose-terms-grid">
               <label>
                 {t("금액(원)")}
-                <input inputMode="numeric" onChange={(event) => setAmount(event.target.value.replace(/[^\d]/g, ""))} placeholder="300000" value={amount} />
+                <input
+                  aria-describedby="propose-amount-hint"
+                  inputMode="numeric"
+                  onChange={(event) => setAmount(event.target.value.replace(/[^\d]/g, ""))}
+                  placeholder="300000"
+                  value={amount}
+                />
+                <small className="field-hint" id="propose-amount-hint">
+                  {t("1만 원 ~ 1억 원 · 계약서의 협찬액이 돼요")}
+                </small>
               </label>
               <label>
                 {t("내용 · 수량")}
