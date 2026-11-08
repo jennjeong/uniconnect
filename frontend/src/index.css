@@ -23348,6 +23348,23 @@ textarea {
   color: var(--on-point);
 }
 
+/* 운영자용 탭의 칸은 시트 너비에 맞춘다. 가운데 정렬된 세로 flex 안에서는 줄바꿈
+   없는 주소(.qr-link) 길이만큼 칸이 늘어나 시트 밖으로 잘렸다. 주소는 말줄임으로,
+   안내는 줄바꿈으로 칸 안에 둔다. */
+.qr-content.operators > * {
+  align-self: stretch;
+  min-width: 0;
+}
+
+.qr-content.operators .qr-pin {
+  text-align: center;
+}
+
+.qr-content.operators .qr-pin small {
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
 .qr-warning {
   margin: 0 0 var(--space-3);
   padding: var(--space-3) var(--space-4);
