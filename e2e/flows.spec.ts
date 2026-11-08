@@ -2770,7 +2770,8 @@ test("a member's dashboard opens on the work waiting for them, and each row lead
   await logIn(page, "브랜드", "hello@afternoon-coffee.kr")
   await page.goto("/dashboard")
   const board = page.getByRole("region", { name: "지금 확인할 일" })
-  await expect(board.getByRole("listitem")).toHaveCount(4)
+  await expect(board.getByRole("listitem")).toHaveCount(5)
+  await expect(board.getByRole("button", { name: /증빙 남은 할 일/ })).toBeVisible()
   // 소개 구역은 회원 대시보드에 없다.
   await expect(page.locator(".about-statement-section")).toHaveCount(0)
   await expect(page.locator(".why-uniconnect, .value-points")).toHaveCount(0)

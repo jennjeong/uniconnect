@@ -9,6 +9,7 @@ import {
   setToken,
   tokenPersists,
   type EventDraft,
+  type OpenTasks,
   type ProposalState,
 } from "./api"
 import { Loader } from "./components/Loader"
@@ -216,6 +217,7 @@ function App() {
   const [confirmedCount, setConfirmedCount] = useState(0)
   // 계정이 보낸 제안. 받은 제안 옆의 받은함 검토 중에 보여 준다.
   const [sent, setSent] = useState<SentProposal[]>([])
+  const [openTasks, setOpenTasks] = useState<OpenTasks>({ tasks: 0, agreements: 0 })
   // 받은편지함이 없는 상대에게 보낸 제안(카드의 '전달 대기').
   const undelivered = sent.filter((item) => item.noInbox).map((item) => item.partnerId)
   // 1분마다, 그리고 창이 다시 보일 때 올라가서 상대의 답이 새로고침 없이
@@ -308,6 +310,7 @@ function App() {
     setStatuses({})
     setConfirmedCount(0)
     setSent([])
+    setOpenTasks({ tasks: 0, agreements: 0 })
     setUpdatedAt(null)
     setInquiries([])
     setBlocked([])
@@ -886,6 +889,7 @@ function App() {
     setStatuses(result.statuses)
     setConfirmedCount(result.confirmed)
     setSent(result.sent ?? [])
+    setOpenTasks(result.openTasks ?? { tasks: 0, agreements: 0 })
   }
 
   // 클릭과 서버의 수락은 따로 추적한다(lib/analytics.ts). 클릭은 폼을 열고,
@@ -1822,6 +1826,7 @@ function App() {
             checklist={checklist}
             offers={offers}
             sent={sent}
+            openTasks={openTasks}
             onOpenAgreements={openAgreements}
           />
         ) : (
@@ -1846,6 +1851,7 @@ function App() {
             onResume={() => pauseListing(false)}
             checklist={checklist}
             sent={sent}
+            openTasks={openTasks}
             onOpenAgreements={openAgreements}
           />
         )
