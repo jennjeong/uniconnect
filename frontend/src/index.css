@@ -5957,6 +5957,8 @@ input[type="search"]::-webkit-search-cancel-button {
 
 .ledger-list {
   display: grid;
+  /* 메모 입력창의 기본 너비가 줄의 최소 폭을 밀어 올려 카드 밖으로 나가지 않게 한다. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
   margin: 0;
   padding: 0;
@@ -6016,6 +6018,7 @@ input[type="search"]::-webkit-search-cancel-button {
 
 .ledger-note-form input {
   flex: 1 1 auto;
+  width: 100%;
   min-width: 0;
   height: 40px;
   padding: 0 12px;
