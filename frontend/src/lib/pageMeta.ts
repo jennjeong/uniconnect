@@ -231,7 +231,7 @@ export function pageMeta(
   if (detail) {
     return {
       title: titled(detail.name),
-      description: t("{name}({category})의 소개와 협찬 조건, 일치율 {score}%를 확인하고 제안하거나 문의해요.", {
+      description: t("{name}({category})의 소개와 협찬 조건, 추천 지수 {score}를 확인하고 제안하거나 문의해요.", {
         name: detail.name,
         category: t(detail.category),
         score: detail.score,

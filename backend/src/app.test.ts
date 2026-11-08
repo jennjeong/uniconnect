@@ -1110,7 +1110,7 @@ test("proposals are about an upcoming event, and a sponsor can be asked again fo
   )
   const again = await call("POST", "/proposals", { matchId: brandId }, student)
   assert.equal(again.status, 409)
-  assert.match(again.data.error, /이미 협찬이 확정/)
+  assert.match(again.data.error, /이미 수락된 제안/)
 
   // 첫 행사가 끝나면 다음 행사로 제안할 수 있다.
   Object.values(getDatabase().events).flat().find((item) => item.id === first.id)!.date = addDays(today, -2)
@@ -3636,7 +3636,7 @@ test("proposals, answers and new messages are emailed to the other side, never t
     await call("POST", `/requests/${request.id}/accept`, undefined, brand)
     await settle()
     const answerMail = sent.find((mail) => mail.to[0] === email)
-    assert.equal(answerMail?.subject, "[uniconnect] 협찬이 확정됐어요")
+    assert.equal(answerMail?.subject, "[uniconnect] 제안이 수락됐어요")
     assert.match(answerMail?.text ?? "", /notice 카페에서 '알림 공연' 제안을 수락했어요/)
 
     // 브랜드의 캠페인에 대한 제안도 같은 방식으로 단체에 닿는다.
@@ -3653,7 +3653,7 @@ test("proposals, answers and new messages are emailed to the other side, never t
     await call("POST", `/offers/${offer.id}/accept`, undefined, brand) // 브랜드는 답할 수 없다
     await call("POST", `/offers/${offer.id}/accept`, undefined, group)
     await settle()
-    assert.ok(sent.some((mail) => mail.to[0] === brandEmail && mail.subject === "[uniconnect] 협찬이 확정됐어요"))
+    assert.ok(sent.some((mail) => mail.to[0] === brandEmail && mail.subject === "[uniconnect] 제안이 수락됐어요"))
 
     // 메시지는 읽지 않은 묶음마다 메일 한 통이다.
     sent.length = 0
@@ -5368,7 +5368,7 @@ test("members choose which notice emails they get, in the language they use the 
     const request = (await call("GET", "/requests", undefined, brand)).data.requests[0]
     await call("POST", `/requests/${request.id}/accept`, undefined, brand)
     await settle()
-    assert.equal(sent[0].subject, "[uniconnect] Your sponsorship is confirmed")
+    assert.equal(sent[0].subject, "[uniconnect] Your proposal was accepted")
     assert.match(sent[0].text, /accepted the proposal for '메일 공연'\./)
     assert.match(sent[0].text, /Open: https:\/\/uniconnect\.example\/matches/)
     assert.match(sent[0].text, /Choose which emails you get: https:\/\/uniconnect\.example\/me/)
@@ -8777,4 +8777,62 @@ test("a sponsorship dispute is recorded from opening to conclusion, and only its
   assert.equal(getDatabase().disputes!.some((item) => item.id === "unrelated-dispute"), true)
   getDatabase().disputes = getDatabase().disputes!.filter((item) => item.id !== "unrelated-dispute")
   await saveDatabase()
+})
+
+test("a sponsorship's delivery follows the event's records, not its date", async () => {
+  const { deliveryProgress } = await import("./lib/progress.js")
+  const database = getDatabase()
+  assert.deepEqual(deliveryProgress(database, undefined), {})
+  // 기록이 있는 행사: 기록이 생긴 날 진행, 방문 집계가 끝난 뒤에야 결과가 굳는다.
+  const busking = Object.values(database.events).flat().find((item) => item.id === "event-busking-day")!
+  const during = deliveryProgress(database, busking.id, addDaysTo(busking.date, 3))
+  assert.ok(during.executedAt)
+  assert.equal(during.reportedAt, undefined)
+  const after = deliveryProgress(database, busking.id, addDaysTo(busking.date, 30))
+  assert.equal(after.reportedAt, addDaysTo(busking.endDate ?? busking.date, 8))
+  // 아무것도 기록되지 않은 행사는 날짜가 지나도 진행으로 치지 않는다.
+  const measurement = database.measurements.find((item) => item.eventId === busking.id)!
+  const saved = measurement.metrics
+  measurement.metrics = Object.fromEntries(Object.keys(saved).map((key) => [key, 0])) as typeof saved
+  try {
+    assert.deepEqual(deliveryProgress(database, busking.id, addDaysTo(busking.date, 30)), {})
+  } finally {
+    measurement.metrics = saved
+  }
+})
+
+function addDaysTo(day: string, days: number) {
+  const date = new Date(`${day}T00:00:00Z`)
+  date.setUTCDate(date.getUTCDate() + days)
+  return date.toISOString().slice(0, 10)
+}
+
+test("groups without an upcoming event aren't recommended, though they stay in the list", async () => {
+  const database = getDatabase()
+  const { matches } = (await call("GET", "/matches?role=브랜드")).data as { matches: { id: string; eventDate?: string }[] }
+  assert.ok(matches.length > 0)
+  assert.ok(matches.every((match) => match.eventDate))
+  // 다가오는 행사를 모두 지난날로 옮기면 그 단체는 추천에서 빠진다.
+  const top = matches[0]
+  const listing = [...database.groups].find((group) => group.id === top.id)!
+  const owner = database.accounts.find((account) => account.groupId === listing.id)
+  if (owner) {
+    const events = database.events[owner.id] ?? []
+    const dates = events.map((event) => [event.date, event.endDate] as const)
+    for (const event of events) {
+      event.date = "2020-01-01"
+      delete event.endDate
+    }
+    try {
+      const again = (await call("GET", "/matches?role=브랜드")).data.matches as { id: string }[]
+      assert.ok(!again.some((match) => match.id === top.id))
+      const all = (await call("GET", "/groups")).data
+      assert.ok(JSON.stringify(all).includes(top.id))
+    } finally {
+      events.forEach((event, index) => {
+        event.date = dates[index][0]
+        if (dates[index][1]) event.endDate = dates[index][1]
+      })
+    }
+  }
 })

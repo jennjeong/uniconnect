@@ -657,6 +657,9 @@ export type SponsorRequest = {
   contract?: "waiting" | "confirmed"
   // 양쪽 확인이 끝나 협찬이 확정된 시각.
   contractAt?: string
+  // 실제 진행(서버 lib/progress.ts): 행사에서 처음 기록된 날, 결과가 굳은 날.
+  executedAt?: string
+  reportedAt?: string
 }
 
 // 브랜드가 학생단체에 보낸 협찬 제안.
@@ -680,6 +683,9 @@ export type SponsorOffer = {
   contract?: "waiting" | "confirmed"
   // 양쪽 확인이 끝나 협찬이 확정된 시각.
   contractAt?: string
+  // 실제 진행(서버 lib/progress.ts): 행사에서 처음 기록된 날, 결과가 굳은 날.
+  executedAt?: string
+  reportedAt?: string
 }
 
 // 계정이 보낸 제안(단체의 요청, 브랜드의 제안). 받은 제안 옆에 받은편지함이

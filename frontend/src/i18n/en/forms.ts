@@ -290,8 +290,8 @@ const en: Record<string, string> = {
   "내 정보의 ‘소개 편집’에서 고쳐요. 여기서 쓴 소개가 브랜드·학생단체 목록과 상세 페이지에 그대로 보여요.":
     "Under ‘Edit Profile’ in My Account. What you write there appears as-is in the brand and student group listings and on your detail page.",
   "협찬 제안은 어떻게 주고받나요?": "How do proposals work?",
-  "학생단체는 추천 매칭에서, 브랜드는 단체 찾기에서 상대에게 협찬을 제안해요. 학생단체가 보낸 제안은 계정이 있는 브랜드의 받은 제안에, 브랜드가 보낸 제안은 계정이 있는 학생단체의 받은 협찬에 도착해요. 받은 쪽이 수락하거나 거절하면 그 결과가 제안한 쪽 카드에 표시돼요.":
-    "Student groups propose from Matches, brands from Find Groups. A group's proposal lands in the brand's Proposals, and a brand's lands in the group's Offers, as long as the other side has an account. Once they accept or decline, the result shows on the sender's card.",
+  "학생단체는 추천 매칭에서, 브랜드는 단체 찾기에서 상대에게 협찬을 제안해요. 학생단체가 보낸 제안은 계정이 있는 브랜드의 받은 제안에, 브랜드가 보낸 제안은 계정이 있는 학생단체의 받은 협찬에 도착해요. 받은 쪽이 수락하거나 거절하면 그 결과가 제안한 쪽 카드에 표시돼요. 수락하면 임시 전자 계약서가 생기고, 양쪽이 계약서를 확인해야 협찬이 확정돼요.":
+    "Student groups propose from Matches, brands from Find Groups. A group's proposal lands in the brand's Proposals, and a brand's lands in the group's Offers, as long as the other side has an account. Once they accept or decline, the result shows on the sender's card. Accepting opens an e-contract, and the sponsorship is confirmed once both sides confirm it.",
   "보낸 제안을 거둘 수 있나요?": "Can I withdraw a proposal?",
   "네. 제안을 보낸 카드의 ‘제안 완료’ 아래 ‘제안 취소’를 누르면 거둘 수 있어요. 거절된 제안은 ‘다시 제안하기’로 한 번 더 보낼 수 있어요.":
     "Yes. On the card you proposed to, tap ‘Withdraw’ under ‘Proposed’. If a proposal is declined, you can send it once more with ‘Propose again’.",

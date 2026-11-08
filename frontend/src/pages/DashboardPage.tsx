@@ -235,9 +235,9 @@ export function DashboardPage({
             icon: "spark",
             need: t("협찬처 찾기"),
             title: t("제안할 곳부터 정해 드려요"),
-            text: t("일치율로 골라 주고, 학교 앞 가게까지 보여 줘요."),
+            text: t("추천 지수로 골라 주고, 학교 앞 가게까지 보여 줘요."),
             figure: t("{count}곳", { count: candidates.length }),
-            figureLabel: t("추천 브랜드 · 일치율 {cut}% 이상 {count}곳", { cut: strongCut, count: strong }),
+            figureLabel: t("추천 브랜드 · 추천 지수 {cut} 이상 {count}곳", { cut: strongCut, count: strong }),
             action: t("추천 매칭 보기"),
             onClick: () => onNavigate("추천 매칭"),
           },
@@ -276,7 +276,7 @@ export function DashboardPage({
           t("운영진이 바뀌면 협찬 기록도 같이 사라져요"),
         ]}
         after={[
-          t("일치율과 거리로 제안할 브랜드부터 골라 드려요"),
+          t("추천 지수와 거리로 제안할 브랜드부터 골라 드려요"),
           t("전자 계약서에 물품 · 할 일 · 확인 방식을 남겨요"),
           t("QR · 쿠폰 · 매장 방문이 저절로 집계돼 리포트가 돼요"),
           t("제안서와 협찬 기록이 다음 운영진에게 그대로 이어져요"),
@@ -284,7 +284,7 @@ export function DashboardPage({
         pillars={[
           {
             icon: "spark",
-            title: t("이유가 보이는 일치율"),
+            title: t("이유가 보이는 추천 지수"),
             text: t("다섯 가지 기준으로 점수를 매기고, 왜 맞는지 보여 줘요."),
             proof: t("추천 브랜드 {count}곳", { count: candidates.length }),
           },

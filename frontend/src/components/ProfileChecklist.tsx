@@ -10,21 +10,21 @@ const stepCopy = (students: boolean): Record<ChecklistKey, { title: string; why:
   intro: { title: t("소개"), why: t("상대가 카드와 상세 페이지에서 가장 먼저 읽어요."), action: t("소개 쓰기") },
   logo: { title: t("로고"), why: t("카드와 상세 페이지에서 업종 그림 대신 보여요."), action: t("로고 올리기") },
   address: { title: t("매장 주소"), why: t("학생단체의 학교까지 거리가 카드에 보여요."), action: t("주소 적기") },
-  tags: { title: t("태그"), why: t("상대와 겹치는 낱말이 일치율에 들어가요."), action: t("태그 달기") },
+  tags: { title: t("태그"), why: t("상대와 겹치는 낱말이 추천 지수에 들어가요."), action: t("태그 달기") },
   sns: {
     title: "SNS",
-    why: students ? t("브랜드가 홍보 효과를 가늠할 수 있어요.") : t("학생단체에게 보이는 일치율의 응답 준비에 들어가요."),
+    why: students ? t("브랜드가 홍보 효과를 가늠할 수 있어요.") : t("학생단체에게 보이는 추천 지수의 응답 준비에 들어가요."),
     action: t("SNS 적기"),
   },
   portfolio: {
     title: students ? t("지난 활동") : t("포트폴리오"),
-    why: students ? t("지난 행사의 인원과 성과가 브랜드의 결정을 도와요.") : t("학생단체에게 보이는 일치율의 응답 준비에 들어가요."),
+    why: students ? t("지난 행사의 인원과 성과가 브랜드의 결정을 도와요.") : t("학생단체에게 보이는 추천 지수의 응답 준비에 들어가요."),
     action: students ? t("실적 적기") : t("포트폴리오 적기"),
   },
   event: {
     title: students ? t("첫 행사") : t("첫 캠페인"),
     why: students
-      ? t("브랜드에 제안하려면 행사가 있어야 하고 45일 안의 행사는 일치율을 올려요.")
+      ? t("브랜드에 제안하려면 행사가 있어야 하고 45일 안의 행사는 추천 지수를 올려요.")
       : t("학생단체에 제안하려면 캠페인이 있어야 해요."),
     action: students ? t("행사 등록") : t("캠페인 등록"),
   },

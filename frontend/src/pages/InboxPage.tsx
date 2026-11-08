@@ -163,6 +163,8 @@ function RequestCard({
           contractAt={request.contractAt}
           createdAt={request.createdAt}
           day={request.eventDate}
+          executedAt={request.executedAt}
+          reportedAt={request.reportedAt}
           respondedAt={request.respondedAt}
         />
       )}

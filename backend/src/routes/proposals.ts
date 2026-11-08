@@ -167,7 +167,7 @@ function canPropose(sent: { status: RequestStatus; eventId?: string }[], event: 
   if (sent.some((item) => item.status === "수락" && item.eventId === event.id)) {
     throw new HttpError(
       409,
-      `${event.name}은 이미 협찬이 확정됐어요. 다음 ${students ? "행사" : "캠페인"}를 등록하면 다시 제안할 수 있어요.`,
+      `${event.name}은 이미 수락된 제안이 있어요. 다음 ${students ? "행사" : "캠페인"}를 등록하면 다시 제안할 수 있어요.`,
     )
   }
   return true

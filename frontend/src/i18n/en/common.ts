@@ -197,6 +197,8 @@ const en: Record<string, string> = {
   "수락하지 못했어요. 연결을 확인하고 다시 눌러 주세요. 제안은 그대로 남아 있어요.": "Couldn't accept it. Check your connection and press again — the proposal is unchanged.",
   "다시 수락하기": "Accept again",
   "확정 대기": "Awaiting confirmation",
+  "확인 필요": "Needs a check",
+  "행사 진행": "Event held",
   "선택한 날의 일정": "On the selected day",
   "예정": "Upcoming",
 }

@@ -147,6 +147,8 @@ function OfferCard({
           contractAt={offer.contractAt}
           createdAt={offer.createdAt}
           day={offer.campaignDate}
+          executedAt={offer.executedAt}
+          reportedAt={offer.reportedAt}
           respondedAt={offer.respondedAt}
         />
       )}

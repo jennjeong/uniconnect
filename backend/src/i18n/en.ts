@@ -225,8 +225,8 @@ const en: Record<string, string> = {
     "Please register the event you want sponsored in My Events first. Proposals are sent about your upcoming event.",
   "제안할 캠페인을 먼저 행사 일정에 등록해 주세요. 제안은 다가오는 캠페인으로 보내져요.":
     "Please register the campaign you want to propose in Event Schedule first. Proposals are sent about your upcoming campaign.",
-  "{name}은 이미 협찬이 확정됐어요. 다음 {kind}를 등록하면 다시 제안할 수 있어요.":
-    "Sponsorship for {name} is already confirmed. Register your next {kind} to propose again.",
+  "{name}은 이미 수락된 제안이 있어요. 다음 {kind}를 등록하면 다시 제안할 수 있어요.":
+    "A proposal about {name} was already accepted. Register your next {kind} to propose again.",
   "행사": "event",
   "캠페인": "campaign",
   "목록에 없는 상대예요.": "This partner isn't in the list.",
@@ -526,6 +526,8 @@ const en: Record<string, string> = {
   "로그인 이메일 변경": "login email change",
   "3분 안에 입력해 주세요. 요청한 적이 없다면 이 메일은 무시해 주세요.": "Enter it within 3 minutes. If you didn't ask for it, ignore this email.",
   "협찬이 확정됐어요": "Your sponsorship is confirmed",
+  "제안이 수락됐어요": "Your proposal was accepted",
+  "양쪽이 임시 전자 계약서를 확인하면 협찬이 확정돼요.": "The sponsorship is confirmed once both sides confirm the e-contract.",
   "협찬 제안에 답이 왔어요": "Your proposal got an answer",
   "{name}에서 '{event}' 제안을 수락했어요.": "{name} accepted the proposal for '{event}'.",
   "{name}에서 '{event}' 제안을 거절했어요.": "{name} declined the proposal for '{event}'.",
