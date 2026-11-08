@@ -11,12 +11,12 @@ import { ValuePoints } from "../components/ValuePoints"
 import { WhyUniconnect } from "../components/WhyUniconnect"
 import { WorkCard } from "../components/WorkCard"
 import { locale, t } from "../i18n"
-import { formatFullDate, fromIsoDate, nextEvent, semesterLabel } from "../lib/date"
+import { dDayLabel, formatFullDate, fromIsoDate, nextEvent, semesterLabel } from "../lib/date"
 import { percent } from "../lib/format"
 import { hasRoas, roasText } from "../lib/kpis"
 import { measureState } from "../lib/measurements"
 import { fullWon } from "../lib/sponsorships"
-import type { EventItem, Match, Metrics, NavLabel, Report, RequestStatus } from "../types"
+import type { EventItem, Match, Metrics, NavLabel, Report, RequestStatus, SponsorOffer } from "../types"
 
 const pad = (value: number) => String(value).padStart(2, "0")
 
@@ -50,6 +50,8 @@ export function DashboardPage({
   paused = false,
   onResume,
   checklist,
+  offers = [],
+  onOpenAgreements,
 }: {
   // 인사말에 쓰는, 로그인한 단체의 이름.
   accountName?: string
@@ -83,6 +85,9 @@ export function DashboardPage({
   onResume?: () => void
   // 히어로 아래의 새 회원 체크리스트(components/ProfileChecklist.tsx).
   checklist?: ReactNode
+  // 받은 협찬 제안. 답할 것과 계약 확인할 것이 첫 화면의 '지금 할 일'이 된다.
+  offers?: SponsorOffer[]
+  onOpenAgreements?: () => void
 }) {
   const next = nextEvent(events)
   const nextDay = next ? fromIsoDate(next.date) : undefined
@@ -92,6 +97,30 @@ export function DashboardPage({
   const strongCut = 80
   const strong = candidates.filter((match) => match.score >= strongCut).length
   const running = events.filter((event) => event.status !== "측정 완료").length
+  // 로그인한 회원의 첫 화면에서 먼저 보여 줄 일: 답할 제안, 확인할 계약서, 등록할 행사.
+  const member = Boolean(accountName) && !demo
+  const toAnswer = offers.filter((offer) => offer.status === "검토 중").length
+  const toConfirm = offers.filter((offer) => offer.status === "수락" && offer.contract === "waiting").length
+  const todo =
+    toAnswer > 0
+      ? {
+          insight: t("받은 협찬 제안 {count}건이 답을 기다려요.", { count: toAnswer }),
+          detail: t("조건을 보고 수락하거나 거절해 주세요."),
+          primary: { label: t("받은 협찬 확인"), onClick: () => onNavigate("받은 협찬") },
+        }
+      : toConfirm > 0 && onOpenAgreements
+        ? {
+            insight: t("계약서 확인이 필요한 협찬이 {count}건 있어요.", { count: toConfirm }),
+            detail: t("양쪽이 계약서를 확인해야 협찬이 확정돼요."),
+            primary: { label: t("계약서 확인"), onClick: onOpenAgreements },
+          }
+        : !next
+          ? {
+              insight: t("행사를 등록하면 잘 맞는 브랜드를 찾아 드려요."),
+              detail: t("행사 이름과 날짜만 있어도 추천을 시작해요."),
+              primary: { label: t("행사 등록하기"), onClick: () => onNavigate("내 행사") },
+            }
+          : null
 
   // 다음 행사가 협찬 흐름 어디에 있는지.
   const currentStep = !next ? 0 : next.status === "매칭 중" ? 1 : next.status === "집행 예정" ? 2 : 3
@@ -132,7 +161,11 @@ export function DashboardPage({
     <div className="dashboard">
       <MeetingHero
         eyebrow={
-          accountName
+          member && !paused
+            ? next
+              ? t("다음 일정 · {name} · {dday}", { name: next.name, dday: dDayLabel(next.date) })
+              : t("다가오는 행사가 없어요")
+            : accountName
             ? t("반가워요, {name}", { name: accountName })
             : demo
               ? t("예시 화면 · {semester}", { semester: semesterLabel() })
@@ -164,6 +197,19 @@ export function DashboardPage({
             : { label: t("추천 매칭 확인하기"), onClick: () => onNavigate("추천 매칭") }
         }
         onInstall={onInstall}
+        {...(member && !paused
+          ? {
+              greeting: t("반가워요, {name}", { name: accountName! }),
+              ...(todo
+                ? {
+                    insight: todo.insight,
+                    detail: todo.detail,
+                    primary: todo.primary,
+                    secondary: { label: t("추천 매칭 보기"), onClick: () => onNavigate("추천 매칭") },
+                  }
+                : { secondary: { label: t("내 행사 보기"), onClick: () => onNavigate("내 행사") } }),
+            }
+          : {})}
       />
 
       {checklist}

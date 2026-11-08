@@ -1780,6 +1780,8 @@ function App() {
             paused={listing?.pausedAt !== undefined}
             onResume={() => pauseListing(false)}
             checklist={checklist}
+            offers={offers}
+            onOpenAgreements={openAgreements}
           />
         ) : (
           <BrandDashboardPage
@@ -1802,6 +1804,7 @@ function App() {
             paused={listing?.pausedAt !== undefined}
             onResume={() => pauseListing(false)}
             checklist={checklist}
+            onOpenAgreements={openAgreements}
           />
         )
     }

@@ -15,11 +15,20 @@ function readDismissed(): string[] {
   }
 }
 
-// 페이지 맨 위에 보이는 운영진 공지 (/admin에서 올린다). 보는 사람이 바뀌면
-// 다시 읽고, 공지마다 이 브라우저에서는 영구히 닫을 수 있다.
+// 공지의 판: 운영진이 글을 고치면 판이 바뀌어, 닫았던 공지도 다시 보인다.
+const versionOf = (notice: SiteNotice) => {
+  let hash = 0
+  for (const char of notice.text) hash = (hash * 31 + char.charCodeAt(0)) | 0
+  return `${notice.id}:${(hash >>> 0).toString(36)}`
+}
+
+// 페이지 맨 위에 보이는 운영진 공지 (/admin에서 올린다). 첫 화면을 덜 차지하도록
+// 한 줄로 보이고 '자세히'로 펼친다. 보는 사람이 바뀌면 다시 읽고, 공지의 판마다
+// 이 브라우저에서는 닫아 둘 수 있다.
 export function SiteNotices({ viewer }: { viewer: string }) {
   const [notices, setNotices] = useState<SiteNotice[]>([])
   const [dismissed, setDismissed] = useState(readDismissed)
+  const [open, setOpen] = useState<string[]>([])
   useEffect(() => {
     let cancelled = false
     api.announcements().then(
@@ -33,18 +42,27 @@ export function SiteNotices({ viewer }: { viewer: string }) {
       cancelled = true
     }
   }, [viewer])
-  const shown = notices.filter((notice) => !dismissed.includes(notice.id))
+  const shown = notices.filter((notice) => !dismissed.includes(versionOf(notice)))
   if (shown.length === 0) return null
   return (
     <div className="site-notices">
       {shown.map((notice) => (
-        <p className={`site-notice ${notice.tone}`} key={notice.id} role={notice.tone === "warning" ? "alert" : "status"}>
+        <p
+          className={`site-notice ${notice.tone}${open.includes(notice.id) ? " open" : ""}`}
+          key={notice.id}
+          role={notice.tone === "warning" ? "alert" : "status"}
+        >
           <Icon name={notice.tone === "warning" ? "bell" : "spark"} size={16} />
-          <span>{notice.text}</span>
+          <span className="site-notice-text">{notice.text}</span>
+          {!open.includes(notice.id) && (
+            <button className="site-notice-more" onClick={() => setOpen([...open, notice.id])} type="button">
+              {t("자세히")}
+            </button>
+          )}
           <button
             aria-label={t("공지 닫기")}
             onClick={() => {
-              const next = [...dismissed, notice.id]
+              const next = [...dismissed, versionOf(notice)]
               setDismissed(next)
               void api.dismissAnnouncement(notice.id).catch(() => undefined)
               try {

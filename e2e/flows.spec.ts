@@ -2474,3 +2474,18 @@ test("the venue QR opens on the participants' view, and PINs only behind 운영�
   await page.getByRole("dialog", { name: "현장 참여 QR" }).getByRole("tab", { name: "운영자용 PIN" }).click()
   await expect(page.getByText("이 화면은 행사장에 띄우지 마세요.", { exact: false })).toBeVisible()
 })
+
+for (const [role, email] of [["학생단체", "muse@syu.ac.kr"], ["브랜드", "hello@afternoon-coffee.kr"]] as const) {
+  test(`a logged-in ${role} sees its main action on the first 390x844 screen`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto("/")
+    await logIn(page, role, email)
+    await page.goto("/dashboard")
+    const hero = page.locator(".meeting-hero.compact")
+    await expect(hero.getByRole("heading", { level: 1 })).toContainText("반가워요")
+    const main = hero.locator(".hero-cta .pill").first()
+    await expect(main).toBeVisible()
+    const box = (await main.boundingBox())!
+    expect(box.y + box.height).toBeLessThanOrEqual(844)
+  })
+}
