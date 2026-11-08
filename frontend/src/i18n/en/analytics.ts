@@ -181,7 +181,7 @@ const en: Record<string, string> = {
     "Estimated ROAS on total spend {roas}% · {spend} spent · {sales} estimated sales",
   "요약 PDF 다운로드": "Download the summary PDF",
   "상세 리포트 보기": "Open the detailed report",
-  "유료 상세 리포트 사기": "Buy the paid detailed report",
+  "상세 리포트 구매": "Buy the detailed report",
   "비용 미확정 · 계약서에 협찬액을 적으면 계산돼요": "Cost not set · Add the sponsorship value to the e-contract to calculate it",
   "집계 중 · {date}까지 방문이 더 들어와요": "Still counting · visits come in until {date}",
   "집계 중": "Still counting",

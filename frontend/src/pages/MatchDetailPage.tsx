@@ -112,9 +112,13 @@ export function MatchDetailPage({
       : nearby
   const figures: ProfileFigure[] = [
     {
-      value: `${match.score}%`,
-      label: t("일치율"),
-      note: match.reasons?.length ? match.reasons.map((reason) => t(reason)).join(" · ") : undefined,
+      value: String(match.score),
+      label: t("추천 지수"),
+      // 성사 확률이 아니라 추천 순서다. 근거(이유와 아래의 항목별 막대)를 함께 보인다.
+      note: [
+        ...(match.reasons ?? []).map((reason) => t(reason)),
+        t("성사 확률이 아니라 추천 순서예요"),
+      ].join(" · "),
     },
     ...(beside ? [beside] : []),
   ]

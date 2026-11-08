@@ -108,7 +108,7 @@ export function CompareTray({
                 </tr>
               </thead>
               <tbody>
-                {row(t("일치율"), (item) => <b className={item.score === topScore ? "best" : undefined}>{item.score}%</b>)}
+                {row(t("추천 지수"), (item) => <b className={item.score === topScore ? "best" : undefined}>{item.score}</b>)}
                 {parts.map((label) =>
                   row(t(label), (item) => {
                     const part = item.scoreParts?.find((entry) => entry.label === label)

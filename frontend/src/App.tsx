@@ -5,7 +5,9 @@ import {
   ApiError,
   errorMessage,
   getToken,
+  isAborted,
   setToken,
+  tokenPersists,
   type EventDraft,
   type ProposalState,
 } from "./api"
@@ -46,6 +48,7 @@ import { installReveal } from "./lib/reveal"
 import { installRipple } from "./lib/ripple"
 import { entryView, menuPageOf, roleOfPage, viewPath, type HistoryEntry, type View } from "./lib/route"
 import { clearEntryState, forgetEntriesFrom } from "./hooks/useEntryState"
+import { clearDraftsOf, draftKey } from "./lib/drafts"
 import { applyPendingScroll, keepPosition, queueRestore, queueTop, trackScroll } from "./lib/scroll"
 import { installSwipeNavigation, noteHistoryEnd } from "./lib/swipe"
 import { LoginModal } from "./modals/LoginModal"
@@ -58,6 +61,8 @@ import { LandingPage } from "./pages/LandingPage"
 import { NotFoundPage } from "./pages/NotFoundPage"
 import type { ActivityItem } from "./pages/ProfilePage"
 import type {
+  AnswerResult,
+  ProposalTermsDraft,
   Account,
   BlockedListing,
   BoardPost,
@@ -211,6 +216,8 @@ function App() {
   const [confirmedCount, setConfirmedCount] = useState(0)
   // 계정이 보낸 제안. 받은 제안 옆의 받은함 검토 중에 보여 준다.
   const [sent, setSent] = useState<SentProposal[]>([])
+  // 받은편지함이 없는 상대에게 보낸 제안(카드의 '전달 대기').
+  const undelivered = sent.filter((item) => item.noInbox).map((item) => item.partnerId)
   // 1분마다, 그리고 창이 다시 보일 때 올라가서 상대의 답이 새로고침 없이
   // 나타나게 한다.
   const [refreshTick, setRefreshTick] = useState(0)
@@ -662,10 +669,12 @@ function App() {
     go(view.invite || view.agreement || view.agreements ? view : { page: "대시보드" }, true)
     setActiveModal(null)
     const left = session.recoveryLeft
+    // 이 브라우저가 저장소를 막아 두었으면 로그인은 이 탭에서만 유지된다.
+    const kept = tokenPersists() ? "" : ` ${t("이 브라우저는 로그인을 저장하지 못해요. 새로고침하면 다시 로그인해야 해요.")}`
     showNotice(
-      left !== undefined && left <= 3
+      (left !== undefined && left <= 3
         ? `${message} ${t("남은 복구 코드가 {count}개예요. 2단계 인증을 껐다 다시 켜면 새 코드를 받아요.", { count: left })}`
-        : message,
+        : message) + kept,
     )
   }
 
@@ -758,6 +767,8 @@ function App() {
   }
 
   const handleError = (error: unknown) => {
+    // 페이지가 스스로 멈춘 요청은 알릴 것이 없다.
+    if (isAborted(error)) return
     if (error instanceof ApiError && error.status === 401 && account) {
       endSession()
       openAuth("login", account.role)
@@ -773,6 +784,9 @@ function App() {
   const handleSessionEnd = useCallback((error: unknown) => latestHandleError.current(error), [])
 
   const logout = async () => {
+    // 직접 로그아웃하면 같은 기기의 다음 사람이 보지 않게 이 계정의 양식 초안도 지운다.
+    // (로그인이 만료된 것은 지우지 않는다: 다시 로그인하면 이어서 쓴다.)
+    if (account) clearDraftsOf(account.id)
     try {
       await api.logout()
     } catch {
@@ -888,7 +902,7 @@ function App() {
   }
 
   // 제안을 보낸다. 세션 종료가 아닌 문제는 폼에 남는다.
-  const sendProposal = async (draft: { eventId?: string; message: string }) => {
+  const sendProposal = async (draft: { eventId?: string; message: string; terms?: ProposalTermsDraft }) => {
     if (!proposing) return
     try {
       applyProposals(await api.propose(proposing.id, { ...draft, ...(applyingPost ? { postId: applyingPost } : {}) }))
@@ -918,7 +932,7 @@ function App() {
   // 하나씩 차례로 보내며 {상대}를 그 이름으로 채운다. 보내진 단체는 선택에서
   // 빠진다. 하나도 보내지 못했으면 이유와 함께 폼이 열려 있고, 아니면 닫으면서
   // 어느 단체에 보내지 못했는지 알린다.
-  const sendMany = async (draft: { eventId?: string; message: string }) => {
+  const sendMany = async (draft: { eventId?: string; message: string; terms?: ProposalTermsDraft }) => {
     if (!proposingMany) return
     const failed: string[] = []
     let sentCount = 0
@@ -1179,10 +1193,12 @@ function App() {
   }
 
   // 브랜드가 학생단체의 제안을 수락하거나 거절한다.
-  const answerRequest = async (request: SponsorRequest, decision: "accept" | "decline") => {
+  // 받은 제안에 답한다. 결과를 돌려주어 확인창이 실패하면 열린 채로 남는다.
+  // 수락은 협찬 확정이 아니다: 양쪽이 계약서를 확인해야 확정된다.
+  const answerRequest = async (request: SponsorRequest, decision: "accept" | "decline"): Promise<AnswerResult> => {
     if (!account) {
       requireLogin(t("로그인하면 받은 제안에 답할 수 있어요."))
-      return
+      return "failed"
     }
     try {
       const result = await api.answerRequest(request.id, decision)
@@ -1192,9 +1208,10 @@ function App() {
       api.proposals().then(applyProposals).catch(() => {})
       showNotice(
         decision === "accept"
-          ? t("{name} 협찬을 확정했어요.", { name: request.eventName })
+          ? t("{name} 제안을 수락했어요. 양쪽이 계약서를 확인하면 협찬이 확정돼요.", { name: request.eventName })
           : t("{name}의 제안을 거절했어요.", { name: request.groupName }),
       )
+      return "done"
     } catch (error) {
       handleError(error)
       // 그 사이 다른 곳에서 답했거나 철회했다면 현재 상태를 보여 준다.
@@ -1203,15 +1220,17 @@ function App() {
           .requests()
           .then((result) => setRequests(result.requests))
           .catch(() => {})
+        return "stale"
       }
+      return "failed"
     }
   }
 
   // 학생단체가 브랜드의 제안을 수락하거나 거절한다.
-  const answerOffer = async (offer: SponsorOffer, decision: "accept" | "decline") => {
+  const answerOffer = async (offer: SponsorOffer, decision: "accept" | "decline"): Promise<AnswerResult> => {
     if (!account) {
       requireLogin(t("로그인하면 받은 협찬 제안에 답할 수 있어요."))
-      return
+      return "failed"
     }
     try {
       const result = await api.answerOffer(offer.id, decision)
@@ -1219,9 +1238,10 @@ function App() {
       api.proposals().then(applyProposals).catch(() => {})
       showNotice(
         decision === "accept"
-          ? t("{name}의 협찬을 확정했어요.", { name: offer.brandName })
+          ? t("{name}의 제안을 수락했어요. 양쪽이 계약서를 확인하면 협찬이 확정돼요.", { name: offer.brandName })
           : t("{name}의 제안을 거절했어요.", { name: offer.brandName }),
       )
+      return "done"
     } catch (error) {
       handleError(error)
       // 그 사이 다른 곳에서 답했거나 철회했다면 현재 상태를 보여 준다.
@@ -1230,7 +1250,9 @@ function App() {
           .offers()
           .then((result) => setOffers(result.offers))
           .catch(() => {})
+        return "stale"
       }
+      return "failed"
     }
   }
 
@@ -1513,10 +1535,11 @@ function App() {
       if (!event) return eventsFor === viewer ? <NotFoundPage onHome={goHome} onNavigate={navigate} role={role} /> : null
       return (
         <EventCreatePage
-          key={event.id}
+          key={`${event.id}:${account?.id ?? ""}`}
           role={role}
           event={event}
           initialDate={event.date}
+          draftStorageKey={account ? draftKey(account.id, `edit:${event.id}`) : undefined}
           onCancel={() => goBack({ page })}
           onSubmit={updateEvent}
         />
@@ -1528,10 +1551,12 @@ function App() {
         <EventCreatePage
           // 폼은 복사한 행사를 한 번만 받는다. 주소로 바로 열어 행사가 나중에
           // 도착하면 다시 시작한다.
-          key={copySource?.id ?? "new"}
+          // 계정이 확인되면 그 계정의 초안으로 다시 시작한다(새로고침 직후에는 아직 없다).
+          key={`${copySource?.id ?? "new"}:${account?.id ?? ""}`}
           role={role}
           copyFrom={copySource}
           initialDate={creating}
+          draftStorageKey={account ? draftKey(account.id, copySource ? `copy:${copySource.id}` : "new") : undefined}
           onCancel={() => goBack({ page })}
           onSubmit={createEvent}
         />
@@ -1649,6 +1674,7 @@ function App() {
             loaded={catalogReady}
             proposals={proposals}
             statuses={statuses}
+            undelivered={undelivered}
             saved={saved}
             onToggleSave={toggleSaved}
             onOpenDetail={openDetail}
@@ -1714,6 +1740,7 @@ function App() {
             onEditProfile={() => go({ page, profile: "edit" })}
             proposals={proposals}
             statuses={statuses}
+            undelivered={undelivered}
             saved={saved}
             onToggleSave={toggleSaved}
             onOpenDetail={openDetail}
@@ -1794,6 +1821,7 @@ function App() {
             onResume={() => pauseListing(false)}
             checklist={checklist}
             offers={offers}
+            sent={sent}
             onOpenAgreements={openAgreements}
           />
         ) : (
@@ -1817,6 +1845,7 @@ function App() {
             paused={listing?.pausedAt !== undefined}
             onResume={() => pauseListing(false)}
             checklist={checklist}
+            sent={sent}
             onOpenAgreements={openAgreements}
           />
         )
@@ -2006,7 +2035,8 @@ function App() {
         <Footer
           role={role}
           account={account}
-          invite={landing || viewPath(view) === viewPath({ page: "대시보드" })}
+          // 등록을 권하는 큰 카드는 소개와 방문자의 예시 대시보드에만. 회원의 대시보드는 업무 화면이다.
+          invite={landing || (!account && viewPath(view) === viewPath({ page: "대시보드" }))}
           landing={landing}
           onInstall={installKind === "app" ? undefined : startInstall}
           onNavigate={navigate}

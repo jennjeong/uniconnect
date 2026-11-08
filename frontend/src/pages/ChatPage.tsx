@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react"
 
-import { ApiError, api, errorMessage } from "../api"
+import { ApiError, api, errorMessage, isAborted } from "../api"
 import { Icon } from "../components/Icon"
 import { SearchClear } from "../components/SearchClear"
 import { PageIntro } from "../components/PageIntro"
@@ -340,7 +340,7 @@ export function ChatPage({
           onChange(loaded)
           setError("")
         } catch (problem) {
-          if (cancelled) return
+          if (cancelled || isAborted(problem)) return
           if (problem instanceof ApiError && problem.status === 401) {
             onSessionEnd(problem)
             return

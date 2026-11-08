@@ -9,14 +9,15 @@ import { ProposalControl } from "../components/ProposalControl"
 import { RevealStatement, RevealTitle } from "../components/RevealText"
 import { ValuePoints } from "../components/ValuePoints"
 import { WhyUniconnect } from "../components/WhyUniconnect"
+import { WorkBoard, type WorkRow } from "../components/WorkBoard"
 import { WorkCard } from "../components/WorkCard"
 import { locale, t } from "../i18n"
-import { dDayLabel, formatFullDate, fromIsoDate, nextEvent, semesterLabel } from "../lib/date"
+import { dDayLabel, formatFullDate, fromIsoDate, nextEvent, semesterLabel, todayIso } from "../lib/date"
 import { percent } from "../lib/format"
 import { hasRoas, roasText } from "../lib/kpis"
 import { measureState } from "../lib/measurements"
 import { fullWon } from "../lib/sponsorships"
-import type { EventItem, Match, Metrics, NavLabel, Report, RequestStatus, SponsorOffer } from "../types"
+import type { EventItem, Match, Metrics, NavLabel, Report, RequestStatus, SentProposal, SponsorOffer } from "../types"
 
 const pad = (value: number) => String(value).padStart(2, "0")
 
@@ -51,6 +52,7 @@ export function DashboardPage({
   onResume,
   checklist,
   offers = [],
+  sent = [],
   onOpenAgreements,
 }: {
   // 인사말에 쓰는, 로그인한 단체의 이름.
@@ -87,6 +89,8 @@ export function DashboardPage({
   checklist?: ReactNode
   // 받은 협찬 제안. 답할 것과 계약 확인할 것이 첫 화면의 '지금 할 일'이 된다.
   offers?: SponsorOffer[]
+  // 이 계정이 보낸 제안(업무 보드의 답변 대기와 계약 확인 대기).
+  sent?: SentProposal[]
   onOpenAgreements?: () => void
 }) {
   const next = nextEvent(events)
@@ -121,6 +125,42 @@ export function DashboardPage({
               primary: { label: t("행사 등록하기"), onClick: () => onNavigate("내 행사") },
             }
           : null
+
+  // 업무 보드(회원): 실제 데이터의 건수만. 줄을 누르면 그 일로 간다.
+  const sentWaiting = sent.filter((item) => !item.noInbox && item.status === "검토 중").length
+  const contractsWaiting =
+    toConfirm + sent.filter((item) => item.status === "수락" && item.contract === "waiting").length
+  const upcomingEvents = events.filter((event) => (event.endDate ?? event.date) >= todayIso())
+  const workRows: WorkRow[] = [
+    {
+      key: "answer",
+      label: t("답할 협찬 제안"),
+      count: toAnswer,
+      detail: toAnswer > 0 ? t("조건을 보고 수락하거나 거절해요") : t("새로 온 제안이 없어요"),
+      onOpen: () => onNavigate("받은 협찬"),
+    },
+    {
+      key: "contract",
+      label: t("계약 확인 대기"),
+      count: contractsWaiting,
+      detail: contractsWaiting > 0 ? t("양쪽이 계약서를 확인해야 협찬이 확정돼요") : t("확인할 계약서가 없어요"),
+      onOpen: () => (onOpenAgreements ? onOpenAgreements() : onNavigate("받은 협찬")),
+    },
+    {
+      key: "sent",
+      label: t("보낸 제안 답변 대기"),
+      count: sentWaiting,
+      detail: sentWaiting > 0 ? t("브랜드의 답을 기다려요") : t("답을 기다리는 보낸 제안이 없어요"),
+      onOpen: () => onNavigate("받은 협찬"),
+    },
+    {
+      key: "events",
+      label: t("다가오는 행사"),
+      count: upcomingEvents.length,
+      detail: next ? `${next.name} · ${dDayLabel(next.date)}` : t("등록한 다가오는 행사가 없어요"),
+      onOpen: () => onNavigate("내 행사"),
+    },
+  ]
 
   // 다음 행사가 협찬 흐름 어디에 있는지.
   const currentStep = !next ? 0 : next.status === "매칭 중" ? 1 : next.status === "집행 예정" ? 2 : 3
@@ -214,100 +254,107 @@ export function DashboardPage({
 
       {checklist}
 
-      <section className="about-statement-section">
-        <span className="eyebrow" data-reveal>
-          About uniconnect
-        </span>
-        <RevealStatement
-          breaks={[1, 2]}
-          lead={t("uniconnect는 학생단체와 브랜드를 잇고,")}
-          firstChip={<Icon name="link" size={18} />}
-          muted={t("협찬 성과를 숫자로 남기는 곳이에요")}
-          secondChip={<Icon name="chart" size={18} />}
+      {/* 회원은 업무부터: 지금 답하거나 확인할 일. 서비스 소개는 방문자에게만(예시 화면). */}
+      {member ? (
+        <WorkBoard rows={workRows} title={t("지금 확인할 일")} />
+      ) : (
+        <>
+        <section className="about-statement-section">
+          <span className="eyebrow" data-reveal>
+            About uniconnect
+          </span>
+          <RevealStatement
+            breaks={[1, 2]}
+            lead={t("uniconnect는 학생단체와 브랜드를 잇고,")}
+            firstChip={<Icon name="link" size={18} />}
+            muted={t("협찬 성과를 숫자로 남기는 곳이에요")}
+            secondChip={<Icon name="chart" size={18} />}
+          />
+        </section>
+
+        <ValuePoints
+          eyebrow="What We Do"
+          heading={t("학생단체가 여기서 하는 일")}
+          points={[
+            {
+              icon: "spark",
+              need: t("협찬처 찾기"),
+              title: t("제안할 곳부터 정해 드려요"),
+              text: t("추천 지수로 골라 주고, 학교 앞 가게까지 보여 줘요."),
+              figure: t("{count}곳", { count: candidates.length }),
+              figureLabel: t("추천 브랜드 · 추천 지수 {cut} 이상 {count}곳", { cut: strongCut, count: strong }),
+              action: t("추천 매칭 보기"),
+              onClick: () => onNavigate("추천 매칭"),
+            },
+            {
+              icon: "file",
+              need: t("준비와 증빙"),
+              title: t("약속한 일을 계약서 하나로 챙겨요"),
+              text: t("제안부터 계약서 · 증빙까지 한 화면에서 끝내요."),
+              figure: t("{count}건", { count: running }),
+              figureLabel:
+                confirmedCount > 0
+                  ? t("진행 중 · 확정 {confirmed}건, 보낸 제안 {sent}건", { confirmed: confirmedCount, sent: proposals.length })
+                  : t("진행 중 · 보낸 제안 {sent}건", { sent: proposals.length }),
+              action: t("내 행사 보기"),
+              onClick: () => onNavigate("내 행사"),
+            },
+            {
+              icon: "chart",
+              need: t("성과 증명"),
+              title: t("다음 제안서에 넣을 숫자가 남아요"),
+              text: t("현장 숫자가 리포트로 쌓이고, 다음 브랜드를 설득해요."),
+              figure: metrics.scans.toLocaleString(locale),
+              figureLabel: t("누적 QR 참여 · 예상 협찬 가치 {value}", { value: report ? fullWon(report.sponsorValue) : "-" }),
+              action: t("리포트 보기"),
+              onClick: () => onNavigate("리포트"),
+            },
+          ]}
         />
-      </section>
 
-      <ValuePoints
-        eyebrow="What We Do"
-        heading={t("학생단체가 여기서 하는 일")}
-        points={[
-          {
-            icon: "spark",
-            need: t("협찬처 찾기"),
-            title: t("제안할 곳부터 정해 드려요"),
-            text: t("일치율로 골라 주고, 학교 앞 가게까지 보여 줘요."),
-            figure: t("{count}곳", { count: candidates.length }),
-            figureLabel: t("추천 브랜드 · 일치율 {cut}% 이상 {count}곳", { cut: strongCut, count: strong }),
-            action: t("추천 매칭 보기"),
-            onClick: () => onNavigate("추천 매칭"),
-          },
-          {
-            icon: "file",
-            need: t("준비와 증빙"),
-            title: t("약속한 일을 계약서 하나로 챙겨요"),
-            text: t("제안부터 계약서 · 증빙까지 한 화면에서 끝내요."),
-            figure: t("{count}건", { count: running }),
-            figureLabel:
-              confirmedCount > 0
-                ? t("진행 중 · 확정 {confirmed}건, 보낸 제안 {sent}건", { confirmed: confirmedCount, sent: proposals.length })
-                : t("진행 중 · 보낸 제안 {sent}건", { sent: proposals.length }),
-            action: t("내 행사 보기"),
-            onClick: () => onNavigate("내 행사"),
-          },
-          {
-            icon: "chart",
-            need: t("성과 증명"),
-            title: t("다음 제안서에 넣을 숫자가 남아요"),
-            text: t("현장 숫자가 리포트로 쌓이고, 다음 브랜드를 설득해요."),
-            figure: metrics.scans.toLocaleString(locale),
-            figureLabel: t("누적 QR 참여 · 예상 협찬 가치 {value}", { value: report ? fullWon(report.sponsorValue) : "-" }),
-            action: t("리포트 보기"),
-            onClick: () => onNavigate("리포트"),
-          },
-        ]}
-      />
-
-      <WhyUniconnect
-        heading={t("연결에서 끝나지 않고 협찬을 끝까지 함께해요")}
-        before={[
-          t("아는 가게마다 메일과 DM을 돌리고 답을 기다려요"),
-          t("말로 정한 약속이 행사 날 엇갈려요"),
-          t("결과 보고는 사진 몇 장이 전부예요"),
-          t("운영진이 바뀌면 협찬 기록도 같이 사라져요"),
-        ]}
-        after={[
-          t("일치율과 거리로 제안할 브랜드부터 골라 드려요"),
-          t("전자 계약서에 물품 · 할 일 · 확인 방식을 남겨요"),
-          t("QR · 쿠폰 · 매장 방문이 저절로 집계돼 리포트가 돼요"),
-          t("제안서와 협찬 기록이 다음 운영진에게 그대로 이어져요"),
-        ]}
-        pillars={[
-          {
-            icon: "spark",
-            title: t("이유가 보이는 일치율"),
-            text: t("다섯 가지 기준으로 점수를 매기고, 왜 맞는지 보여 줘요."),
-            proof: t("추천 브랜드 {count}곳", { count: candidates.length }),
-          },
-          {
-            icon: "pin",
-            title: t("캠퍼스 앞 가게까지"),
-            text: t("학교 앞 실제 가게를 찾고, 초대장까지 보내요."),
-            proof: t("가까운 순 · 초대장"),
-          },
-          {
-            icon: "scan",
-            title: t("현장에서 세는 성과"),
-            text: t("QR · 쿠폰 · 직원 PIN 확인으로, 약속한 방식대로만 세요."),
-            proof: t("누적 QR 참여 {count}", { count: metrics.scans.toLocaleString(locale) }),
-          },
-          {
-            icon: "file",
-            title: t("숫자로 쓰는 다음 제안서"),
-            text: t("숫자가 담긴 제안서를 만들고, 기록은 다음 운영진에게 넘겨요."),
-            proof: t("제안서 PDF · 협찬 기록"),
-          },
-        ]}
-      />
+        <WhyUniconnect
+          heading={t("연결에서 끝나지 않고 협찬을 끝까지 함께해요")}
+          before={[
+            t("아는 가게마다 메일과 DM을 돌리고 답을 기다려요"),
+            t("말로 정한 약속이 행사 날 엇갈려요"),
+            t("결과 보고는 사진 몇 장이 전부예요"),
+            t("운영진이 바뀌면 협찬 기록도 같이 사라져요"),
+          ]}
+          after={[
+            t("추천 지수와 거리로 제안할 브랜드부터 골라 드려요"),
+            t("전자 계약서에 물품 · 할 일 · 확인 방식을 남겨요"),
+            t("QR · 쿠폰 · 매장 방문이 저절로 집계돼 리포트가 돼요"),
+            t("제안서와 협찬 기록이 다음 운영진에게 그대로 이어져요"),
+          ]}
+          pillars={[
+            {
+              icon: "spark",
+              title: t("이유가 보이는 추천 지수"),
+              text: t("다섯 가지 기준으로 점수를 매기고, 왜 맞는지 보여 줘요."),
+              proof: t("추천 브랜드 {count}곳", { count: candidates.length }),
+            },
+            {
+              icon: "pin",
+              title: t("캠퍼스 앞 가게까지"),
+              text: t("학교 앞 실제 가게를 찾고, 초대장까지 보내요."),
+              proof: t("가까운 순 · 초대장"),
+            },
+            {
+              icon: "scan",
+              title: t("현장에서 세는 성과"),
+              text: t("QR · 쿠폰 · 직원 PIN 확인으로, 약속한 방식대로만 세요."),
+              proof: t("누적 QR 참여 {count}", { count: metrics.scans.toLocaleString(locale) }),
+            },
+            {
+              icon: "file",
+              title: t("숫자로 쓰는 다음 제안서"),
+              text: t("숫자가 담긴 제안서를 만들고, 기록은 다음 운영진에게 넘겨요."),
+              proof: t("제안서 PDF · 협찬 기록"),
+            },
+          ]}
+        />
+        </>
+      )}
 
       <section className="works-section" id="matches">
         <div className="section-head centered">
@@ -348,23 +395,27 @@ export function DashboardPage({
         </ul>
       </section>
 
-      <JourneyChain
-        intro={
-          next
-            ? t("다음 행사 ‘{name}’은 {date}이에요. 지금은 ‘{step}’ 단계예요.", {
-                name: next.name,
-                date: formatFullDate(next.date),
-                step: journey[currentStep].label,
-              })
-            : t("행사 하나를 등록하면 제안 · 계약 · 측정 · 리포트가 차례로 이어져요.")
-        }
-        heading={t("지금은 ‘{step}’ 차례예요", { step: journey[currentStep].label })}
-        steps={journey}
-        current={currentStep}
-        scheduleLabel={t("전체 일정 보기")}
-        onOpenSchedule={() => onNavigate("내 행사")}
-        tour={demo}
-      />
+      {!member && (
+        <>
+        <JourneyChain
+          intro={
+            next
+              ? t("다음 행사 ‘{name}’은 {date}이에요. 지금은 ‘{step}’ 단계예요.", {
+                  name: next.name,
+                  date: formatFullDate(next.date),
+                  step: journey[currentStep].label,
+                })
+              : t("행사 하나를 등록하면 제안 · 계약 · 측정 · 리포트가 차례로 이어져요.")
+          }
+          heading={t("지금은 ‘{step}’ 차례예요", { step: journey[currentStep].label })}
+          steps={journey}
+          current={currentStep}
+          scheduleLabel={t("전체 일정 보기")}
+          onOpenSchedule={() => onNavigate("내 행사")}
+          tour={demo}
+        />
+        </>
+      )}
 
       <section className="results-section">
         <div className="section-head">

@@ -6,8 +6,9 @@ import { scoreColors } from "../lib/score"
 const radius = 15.5
 const circumference = 2 * Math.PI * radius
 
-// 매치 점수를 링으로 나타낸다. 링은 12시 방향에서 시계 방향으로 점수에 맞는
-// 파랑으로 차오르고, 바탕은 은색 트랙이며 가운데에 흰 바탕의 숫자가 놓인다.
+// 추천 지수를 링으로 나타낸다(백엔드 lib/matchScore.ts). 업종 적합, 겹치는 태그, 실적,
+// 함께한 이력, 응답 준비를 가중해 더한 추천 순서용 값이고 성사 확률이 아니라서, 퍼센트를
+// 붙이지 않고 읽는 사람에게도 그렇게 말한다.
 export function ScoreRing({ score }: { score: number }) {
   const colors = scoreColors(score)
   const value = Math.min(Math.max(score, 0), 100)
@@ -16,7 +17,7 @@ export function ScoreRing({ score }: { score: number }) {
     <div
       className="match-score-ring"
       role="img"
-      aria-label={t("매칭 일치율 {score}%", { score })}
+      aria-label={t("추천 지수 {score}. 성사 확률이 아니라 업종 · 태그 · 실적 · 함께한 이력 · 응답 준비로 매긴 추천 순서예요.", { score })}
       style={{ "--ring-color": colors.ring, "--ring-text": colors.text } as CSSProperties}
     >
       <svg aria-hidden="true" viewBox="0 0 36 36">
@@ -31,11 +32,8 @@ export function ScoreRing({ score }: { score: number }) {
           transform="rotate(-90 18 18)"
         />
       </svg>
-      <strong>
-        {score}
-        <small>%</small>
-      </strong>
-      <span>{t("일치율")}</span>
+      <strong>{score}</strong>
+      <span>{t("추천 지수")}</span>
     </div>
   )
 }

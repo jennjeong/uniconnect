@@ -2,6 +2,7 @@ import type { Request } from "express"
 import { Router } from "express"
 
 import { contractConfirmedAt, contractState } from "../lib/agreements.js"
+import { deliveryProgress } from "../lib/progress.js"
 import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
 import { statusOf } from "../lib/proposals.js"
@@ -42,7 +43,9 @@ requestsRouter.get("/", (req, res) => {
               ? contractState(database, request.id, { group: Boolean(request.fromAccountId), brand: true })
               : undefined
           const contractAt = contract === "confirmed" ? contractConfirmedAt(database, request.id, { group: Boolean(request.fromAccountId), brand: true }) : undefined
-          return { ...request, status, ...(contract ? { contract } : {}), ...(contractAt ? { contractAt } : {}) }
+          // 계약 뒤의 실제 진행(행사 기록, 결과 집계 완료). 날짜가 아니라 기록으로.
+          const progress = status === "수락" ? deliveryProgress(database, request.eventId) : {}
+          return { ...request, status, ...(contract ? { contract } : {}), ...(contractAt ? { contractAt } : {}), ...progress }
         })
     : []
   res.json({ requests })
@@ -97,8 +100,8 @@ requestsRouter.post("/:id/:decision", async (req, res) => {
   void notify(
     database.accounts.find((item) => item.id === request.fromAccountId),
     "proposals",
-    decision === "수락" ? "협찬이 확정됐어요" : "협찬 제안에 답이 왔어요",
-    [`${account.name}에서 '${request.eventName}' 제안을 ${decision === "수락" ? "수락했어요" : "거절했어요"}.`],
+    decision === "수락" ? "제안이 수락됐어요" : "협찬 제안에 답이 왔어요",
+    [`${account.name}에서 '${request.eventName}' 제안을 ${decision === "수락" ? "수락했어요" : "거절했어요"}.`, ...(decision === "수락" ? ["양쪽이 임시 전자 계약서를 확인하면 협찬이 확정돼요."] : [])],
     "/matches",
   )
   res.json({ request })

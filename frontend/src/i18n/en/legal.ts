@@ -38,7 +38,7 @@ const en: Record<string, string> = {
   "협찬 계약": "Sponsorship Agreements",
   "서비스는 학생단체와 브랜드가 만나도록 돕는 곳이고, 두 회원 사이의 협찬 계약 당사자가 아니에요.":
     "The Service helps student groups and brands connect and is not a party to any sponsorship agreement between two members.",
-  "추천 일치율과 예상 협찬 가치, ROAS 같은 수치는 참고용 추정치이고 결과를 보장하지 않아요.":
+  "추천 지수와 예상 협찬 가치, ROAS 같은 수치는 참고용 추정치이고 결과를 보장하지 않아요.":
     "Figures such as the recommendation match rate, estimated sponsorship value and ROAS are estimates for reference only and do not guarantee any result.",
   "회원이 지킬 것": "Member Obligations",
   "다른 회원의 개인정보를 허락 없이 모으거나 쓰지 않아요.":

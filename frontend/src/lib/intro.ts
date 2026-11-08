@@ -6,8 +6,11 @@ const storageKey = "uniconnect:intro-played"
 const eventName = "uniconnect:intro-done"
 let done = false
 
-// 이번 로드에서 로더를 재생해야 하는지 여부.
+// 이번 로드에서 로더를 재생해야 하는지 여부. 첫 화면의 제목 · 설명 · 버튼이 2.5초
+// 로더를 기다리지 않고 바로 읽혀야 해서, 지금은 재생하지 않는다(?intro로 열면 확인용으로
+// 재생한다). 장면들은 여전히 onIntroDone을 기다리므로 바로 시작한다.
 export function shouldPlayIntro() {
+  if (!new URLSearchParams(window.location.search).has("intro")) return false
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false
   try {
     return localStorage.getItem(storageKey) !== "1"

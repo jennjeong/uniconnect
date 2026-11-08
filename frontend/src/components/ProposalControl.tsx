@@ -7,6 +7,7 @@ export function ProposalControl({
   status,
   label,
   className,
+  undelivered = false,
   onPropose,
   onCancel,
 }: {
@@ -15,6 +16,8 @@ export function ProposalControl({
   status?: RequestStatus
   label: string
   className: string
+  // 상대가 아직 가입하지 않아 받은편지함이 없다: 보냈지만 전달되지 않았다.
+  undelivered?: boolean
   onPropose: () => void
   onCancel: () => void
 }) {
@@ -51,10 +54,11 @@ export function ProposalControl({
       </div>
     )
   }
+  // 보낸 제안: 상대의 받은편지함에 닿았으면 답을 기다리고, 아니면 가입하면 전달된다.
   return (
     <div className="proposal-actions">
-      <span className="proposal-button done">
-        <Icon name="check" size={16} /> {t("제안 완료")}
+      <span className={undelivered ? "proposal-button done undelivered" : "proposal-button done"}>
+        <Icon name={undelivered ? "send" : "check"} size={16} /> {undelivered ? t("전달 대기") : t("제안 보냄")}
       </span>
       <button className="proposal-cancel" onClick={onCancel} type="button">
         {t("제안 취소")}

@@ -371,8 +371,9 @@ const en: Record<string, string> = {
 
   // 컴포넌트
   "회원 유형": "Account type",
-  "매칭 일치율 {score}%": "Match score {score}%",
-  일치율: "Match",
+  "추천 지수 {score}. 성사 확률이 아니라 업종 · 태그 · 실적 · 함께한 이력 · 응답 준비로 매긴 추천 순서예요.": "Recommendation score {score}. Not a chance of success: an ordering from industry, tags, track record, past work together and readiness to answer.",
+  "성사 확률이 아니라 추천 순서예요": "an ordering, not a chance of success",
+  "추천 지수": "Recommendation score",
   "끊기지 않는": "An unbroken",
   "협찬의 고리": "chain of sponsors",
   "함께라서 더 단단하게": "Stronger together",
@@ -412,6 +413,8 @@ const en: Record<string, string> = {
   "새 협찬 제안 {count}건": "New proposals ({count})",
   "{names} · 답을 기다리고 있어요": "{names} · Waiting for your answer",
   "협찬이 확정됐어요": "Sponsorship confirmed",
+  "제안이 수락됐어요": "Proposal accepted",
+  "{names} · 계약서를 확인해 주세요": "{names} · please confirm the e-contract",
   "{names} · 제안 수락": "{names} · Proposal accepted",
   "거절된 제안 {count}건": "Declined proposals ({count})",
   "다른 브랜드에도 제안해 보세요.": "Try proposing to other brands.",
@@ -427,7 +430,7 @@ const en: Record<string, string> = {
   "이미지가 너무 커요. 더 작은 이미지를 골라 주세요.": "That image is too large. Please choose a smaller one.",
 
   // 페이지 제목과 설명 (lib/pageMeta.ts)
-  "행사와 잘 맞는 브랜드를 일치율 순으로 보고, 마음에 드는 브랜드에 협찬을 제안해요.":
+  "행사와 잘 맞는 브랜드를 추천 지수 순으로 보고, 마음에 드는 브랜드에 협찬을 제안해요.":
     "See the brands that fit your event, best match first, and propose a sponsorship to the ones you like.",
   "브랜드가 보낸 협찬 제안을 수락하거나 거절하고 수락한 협찬의 진행 단계를 날짜별로 봐요.":
     "Accept or decline the offers brands send you, and follow each accepted sponsorship step by step.",
@@ -468,7 +471,7 @@ const en: Record<string, string> = {
   "운영자 화면": "Operator Console",
   "도움말 센터로 들어온 질문을 확인하고 답해요.": "Read and answer the questions sent to the help center.",
   "학생단체와 브랜드가 주고받은 대화 목록이에요.": "Your conversations between student groups and brands.",
-  "{name}({category})의 소개와 협찬 조건, 일치율 {score}%를 확인하고 제안하거나 문의해요.":
+  "{name}({category})의 소개와 협찬 조건, 추천 지수 {score}를 확인하고 제안하거나 문의해요.":
     "See {name} ({category}): their profile, sponsorship terms and {score}% match, then propose or send a message.",
   "{site} · 학생단체와 브랜드를 잇는 협찬 매칭": "{site} · Sponsorship matching for student groups and brands",
   "학생단체가 행사와 잘 맞는 브랜드를 찾고 협찬 제안부터 성과 리포트까지 한곳에서 관리해요.":
@@ -534,7 +537,7 @@ const en: Record<string, string> = {
   "하트로 모아 둔 학생단체예요. 최근 순으로 보여요.": "Groups you hearted, latest first.",
   "학교 · 회사 이메일로 가입하고, 소개와 행사를 올려요.": "Sign up with a school or work email, and post your profile and events.",
   "다섯 가지 기준으로 점수를 매겨, 잘 맞는 상대부터 보여 드려요.": "Scored on five things, so the best fits come first.",
-  "누구든 먼저 제안할 수 있어요. 수락하면 바로 협찬이 확정돼요.": "Either side can propose first. Once accepted, it's a sponsorship.",
+  "누구든 먼저 제안할 수 있어요. 수락하면 계약서가 생기고, 양쪽이 확인하면 협찬이 확정돼요.": "Either side can propose first. Accepting opens an e-contract, and it's a sponsorship once both sides confirm it.",
   "할 일은 계약서에 함께 적고, 끝낸 일은 사진으로 남겨요.": "Write the tasks into the contract together, and leave photos when done.",
   "행사 날 QR · 쿠폰 · 방문이 저절로 세지고, 끝나면 리포트가 돼요.": "On the day QR, coupons and visits count themselves, and become a report.",
   "잘 맞는 브랜드를 골라 보고 바로 협찬을 제안해요.": "Browse the brands that fit, and propose right away.",
@@ -552,7 +555,7 @@ const en: Record<string, string> = {
   "새 제안은 받지 않아요. 진행 중인 대화와 협찬은 그대로예요.": "No new proposals come in. Ongoing talks and sponsorships stay.",
   "학교 앞 가게에 초대장을 보내 보세요. 가입하면 바로 추천해 드려요.": "Send invitations to shops near campus. Once they join, we'll suggest them.",
   "잘 맞는 브랜드부터 제안해 보세요. 수락되면 계약부터 리포트까지 여기서 이어져요.": "Start with the brands that fit best. Once accepted, contract to report happens here.",
-  "일치율로 골라 주고, 학교 앞 가게까지 보여 줘요.": "We pick by match, and show shops near campus too.",
+  "추천 지수로 골라 주고, 학교 앞 가게까지 보여 줘요.": "We pick by match, and show shops near campus too.",
   "제안부터 계약서 · 증빙까지 한 화면에서 끝내요.": "Proposal, contract and proof, all on one screen.",
   "현장 숫자가 리포트로 쌓이고, 다음 브랜드를 설득해요.": "On-site numbers build a report, which wins the next brand.",
   "다섯 가지 기준으로 점수를 매기고, 왜 맞는지 보여 줘요.": "Scored on five things, with why each fits.",
@@ -582,6 +585,28 @@ const en: Record<string, string> = {
   "지금은 예시 가게예요. 로그인하면 우리 학교 앞 실제 가게가 보여요.": "These are example shops. Log in to see real ones near your campus.",
   "가까운 순에서 학교 앞 가게에 초대장을 보내 보세요. 가입하면 여기서 제안할 수 있어요.": "Invite shops near campus from Nearest. Once they join, propose here.",
   "무료로 시작하고 더 많은 제안과 분석은 Growth로 써요.": "Start free, and use Growth for more proposals and analysis.",
+  "대학 학생단체 × 브랜드 협찬": "University student groups × brand sponsorships",
+  "캠퍼스 행사 협찬을": "Campus event sponsorships,",
+  "제안부터 성과까지": "from proposal to results,",
+  "한 장의 기록으로": "kept as one record",
+  "학생단체는 행사에 맞는 브랜드를 찾고, 브랜드는 쿠폰과 매장 방문으로 결과가 남는 학생 행사를 협찬해요.": "Student groups find brands that fit their events, and brands sponsor student events whose results show up as coupons and store visits.",
+  "학생단체로 시작": "Start as a student group",
+  "행사 협찬 받기": "Get your event sponsored",
+  "브랜드로 시작": "Start as a brand",
+  "학생 행사 협찬하기": "Sponsor student events",
+  "가입 전에 예시 화면 둘러보기": "Look around the example screens first",
+  "예시 협찬 기록": "An example sponsorship record",
+  "협찬 기록": "Sponsorship record",
+  "예시": "Example",
+  "가을 버스킹 데이": "Autumn Busking Day",
+  "삼육대 뮤즈 · 11월 12일 · 예상 120명": "Sahmyook Muse · Nov 12 · 120 expected",
+  "지원 조건": "Support",
+  "아메리카노 쿠폰 150장 + 현금 20만 원": "150 Americano coupons + ₩200,000 cash",
+  "오후의 커피 · 행사 3일 전까지 전달": "Afternoon Coffee · delivered 3 days before",
+  "합의": "Agreed",
+  "양쪽 계약 확인 · 협찬액 68만 원": "Both confirmed · ₩680,000 in value",
+  "할 일 6개 · 부스 로고 · SNS 게시물 1회": "6 tasks · booth logo · one SNS post",
+  "현장에서 센 실측값 · 매출은 추정": "Counted on site · sales are an estimate",
 }
 
 export default en

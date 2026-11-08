@@ -56,6 +56,7 @@ export function MatchesPage({
   loaded,
   proposals,
   statuses,
+  undelivered = [],
   saved,
   onToggleSave,
   onOpenDetail,
@@ -74,6 +75,8 @@ export function MatchesPage({
   loaded: boolean
   proposals: string[]
   statuses: Partial<Record<string, RequestStatus>>
+  // 받은편지함이 없는(가입하지 않은) 상대에게 보낸 제안. 카드는 "전달 대기"로 보인다.
+  undelivered?: string[]
   // 계정이 저장한 브랜드(찜)를 최신순으로, 그리고 각 카드의 하트.
   saved: string[]
   onToggleSave: (match: Match) => void
@@ -151,6 +154,7 @@ export function MatchesPage({
       <ProposalControl
         done={proposals.includes(match.id)}
         status={statuses[match.id]}
+        undelivered={undelivered.includes(match.id)}
         label={t("제안하기")}
         className="primary-button"
         onPropose={() => onPropose(match)}

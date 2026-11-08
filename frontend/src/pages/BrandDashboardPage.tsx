@@ -11,6 +11,7 @@ import { ProposalControl } from "../components/ProposalControl"
 import { RevealStatement, RevealTitle } from "../components/RevealText"
 import { ValuePoints } from "../components/ValuePoints"
 import { WhyUniconnect } from "../components/WhyUniconnect"
+import { WorkBoard, type WorkRow } from "../components/WorkBoard"
 import { WorkCard } from "../components/WorkCard"
 import { t } from "../i18n"
 import { dDayLabel, nextEvent, semesterLabel, shortDay, todayIso } from "../lib/date"
@@ -19,7 +20,7 @@ import { formatWon } from "../lib/kpis"
 import { AcceptModal } from "../modals/AcceptModal"
 import { roasText, roasVerdict } from "../lib/roasLabels"
 import { analyzeSponsorships, fullWon } from "../lib/sponsorships"
-import type { Match, NavLabel, RequestStatus, SponsorRequest, Sponsorship } from "../types"
+import type { AnswerResult, Match, NavLabel, RequestStatus, SentProposal, SponsorRequest, Sponsorship } from "../types"
 
 const pad = (value: number) => String(value).padStart(2, "0")
 
@@ -49,6 +50,7 @@ export function BrandDashboardPage({
   onResume,
   checklist,
   onOpenAgreements,
+  sent = [],
 }: {
   // 인사말에 쓰는, 로그인한 브랜드의 이름.
   accountName?: string
@@ -69,7 +71,7 @@ export function BrandDashboardPage({
   updatedAt: Date | null
   onNavigate: (label: NavLabel) => void
   onOpenDetail: (match: Match) => void
-  onAccept: (request: SponsorRequest) => void | Promise<void>
+  onAccept: (request: SponsorRequest) => Promise<AnswerResult>
   onPropose: (match: Match) => void
   onCancelProposal: (match: Match) => void
   // 히어로의 앱 다운로드. 설치된 앱 안에서는 없다.
@@ -84,6 +86,8 @@ export function BrandDashboardPage({
   checklist?: ReactNode
   // 계약서 목록. 확인할 계약서가 있으면 첫 화면의 '지금 할 일'이 된다.
   onOpenAgreements?: () => void
+  // 이 계정이 보낸 제안(업무 보드의 답변 대기와 계약 확인 대기).
+  sent?: SentProposal[]
 }) {
   const pending = requests.filter((request) => request.status === "검토 중")
   // 로그인한 회원의 첫 화면: 인사, 다음 일정, 지금 할 일(답할 제안 → 확인할 계약서).
@@ -93,6 +97,40 @@ export function BrandDashboardPage({
     .filter((request) => request.status === "수락" && request.eventDate >= todayIso())
     .sort((a, b) => a.eventDate.localeCompare(b.eventDate))[0]
   const memberHero = member && !paused
+  // 업무 보드(회원): 실제 데이터의 건수만. 줄을 누르면 그 일로 간다.
+  const sentWaiting = sent.filter((item) => !item.noInbox && item.status === "검토 중").length
+  const contractsWaiting = toConfirm + sent.filter((item) => item.status === "수락" && item.contract === "waiting").length
+  const upcomingCount = requests.filter((request) => request.status === "수락" && request.eventDate >= todayIso()).length
+  const workRows: WorkRow[] = [
+    {
+      key: "review",
+      label: t("검토할 제안"),
+      count: pending.length,
+      detail: pending.length > 0 ? t("조건을 보고 수락하거나 거절해요") : t("새로 온 제안이 없어요"),
+      onOpen: () => onNavigate("받은 제안"),
+    },
+    {
+      key: "contract",
+      label: t("계약 확인 대기"),
+      count: contractsWaiting,
+      detail: contractsWaiting > 0 ? t("확인할 때 성사 수수료를 결제해요") : t("확인할 계약서가 없어요"),
+      onOpen: () => (onOpenAgreements ? onOpenAgreements() : onNavigate("받은 제안")),
+    },
+    {
+      key: "sent",
+      label: t("보낸 제안 답변 대기"),
+      count: sentWaiting,
+      detail: sentWaiting > 0 ? t("단체의 답을 기다려요") : t("답을 기다리는 보낸 제안이 없어요"),
+      onOpen: () => onNavigate("받은 제안"),
+    },
+    {
+      key: "schedule",
+      label: t("다가오는 협찬 일정"),
+      count: upcomingCount,
+      detail: upcoming ? `${upcoming.groupName} · ${upcoming.eventName} · ${dDayLabel(upcoming.eventDate)}` : t("다가오는 협찬이 없어요"),
+      onOpen: () => onNavigate("행사 일정"),
+    },
+  ]
   const confirmed = requests.filter((request) => request.status === "수락")
   const nextConfirmed = nextEvent(confirmed.map((request) => ({ date: request.eventDate })))
   // 0원·집계 중인 협찬은 목표와 견주지 않는다(lib/sponsorships.ts roasState).
@@ -186,18 +224,25 @@ export function BrandDashboardPage({
 
       {checklist}
 
-      <section className="about-statement-section">
-        <span className="eyebrow" data-reveal>
-          About uniconnect
-        </span>
-        <RevealStatement
-          breaks={[1, 2]}
-          lead={t("uniconnect는 브랜드와 대학 행사를 잇고,")}
-          firstChip={<Icon name="link" size={18} />}
-          muted={t("협찬 효과를 ROAS로 보여 주는 곳이에요")}
-          secondChip={<Icon name="chart" size={18} />}
-        />
-      </section>
+      {/* 회원은 업무부터: 검토할 제안, 계약, 보낸 제안, 다가오는 협찬. 소개는 방문자에게만. */}
+      {member ? (
+        <WorkBoard rows={workRows} title={t("지금 확인할 일")} />
+      ) : (
+        <>
+        <section className="about-statement-section">
+          <span className="eyebrow" data-reveal>
+            About uniconnect
+          </span>
+          <RevealStatement
+            breaks={[1, 2]}
+            lead={t("uniconnect는 브랜드와 대학 행사를 잇고,")}
+            firstChip={<Icon name="link" size={18} />}
+            muted={t("협찬 효과를 ROAS로 보여 주는 곳이에요")}
+            secondChip={<Icon name="chart" size={18} />}
+          />
+        </section>
+        </>
+      )}
 
       <section className="inbox-section">
         <div className="section-head">
@@ -244,86 +289,90 @@ export function BrandDashboardPage({
         )}
       </section>
 
-      <ValuePoints
-        eyebrow="What We Do"
-        heading={t("브랜드가 여기서 하는 일")}
-        points={[
-          {
-            icon: "users",
-            need: t("대학생 접점"),
-            title: t("매장 가까운 캠퍼스 행사를 골라요"),
-            text: t("규모 · 시기 · 학교로 거르고, 가까운 캠퍼스부터 만나요."),
-            figure: t("{count}곳", { count: catalog.length }),
-            figureLabel: t("함께할 수 있는 학생단체"),
-            action: t("단체 찾기"),
-            onClick: () => onNavigate("단체 찾기"),
-          },
-          {
-            icon: "won",
-            need: t("소액 · 측정형 협찬"),
-            title: t("작게 시작해도 효과가 숫자로 남아요"),
-            text: t("현금 · 현물 · 쿠폰 중에 고르고, 방문은 매장에서 직접 확인해요."),
-            figure: t("{count}건", { count: confirmed.length }),
-            figureLabel: nextConfirmed
-              ? t("확정된 협찬 · 다음 일정 {date}", { date: shortDay(nextConfirmed.date) })
-              : t("확정된 협찬 · 받은 제안 {count}건", { count: requests.length }),
-            action: t("받은 제안 보기"),
-            onClick: () => onNavigate("받은 제안"),
-          },
-          {
-            icon: "chart",
-            need: t("다음 예산 결정"),
-            title: t("다시 쓸 곳을 데이터로 정해요"),
-            text: t("협찬마다 ROAS를 보고, 다음 예산을 어디에 쓸지 정해요."),
-            figure: totalRoas,
-            figureLabel: t("전체 집행액 기준 추정 ROAS · 누적 집행액 {spend}", { spend: fullWon(totals.spend) }),
-            action: t("성과 분석 보기"),
-            onClick: () => onNavigate("성과 분석"),
-          },
-        ]}
-      />
+      {!member && (
+        <>
+        <ValuePoints
+          eyebrow="What We Do"
+          heading={t("브랜드가 여기서 하는 일")}
+          points={[
+            {
+              icon: "users",
+              need: t("대학생 접점"),
+              title: t("매장 가까운 캠퍼스 행사를 골라요"),
+              text: t("규모 · 시기 · 학교로 거르고, 가까운 캠퍼스부터 만나요."),
+              figure: t("{count}곳", { count: catalog.length }),
+              figureLabel: t("함께할 수 있는 학생단체"),
+              action: t("단체 찾기"),
+              onClick: () => onNavigate("단체 찾기"),
+            },
+            {
+              icon: "won",
+              need: t("소액 · 측정형 협찬"),
+              title: t("작게 시작해도 효과가 숫자로 남아요"),
+              text: t("현금 · 현물 · 쿠폰 중에 고르고, 방문은 매장에서 직접 확인해요."),
+              figure: t("{count}건", { count: confirmed.length }),
+              figureLabel: nextConfirmed
+                ? t("확정된 협찬 · 다음 일정 {date}", { date: shortDay(nextConfirmed.date) })
+                : t("확정된 협찬 · 받은 제안 {count}건", { count: requests.length }),
+              action: t("받은 제안 보기"),
+              onClick: () => onNavigate("받은 제안"),
+            },
+            {
+              icon: "chart",
+              need: t("다음 예산 결정"),
+              title: t("다시 쓸 곳을 데이터로 정해요"),
+              text: t("협찬마다 ROAS를 보고, 다음 예산을 어디에 쓸지 정해요."),
+              figure: totalRoas,
+              figureLabel: t("전체 집행액 기준 추정 ROAS · 누적 집행액 {spend}", { spend: fullWon(totals.spend) }),
+              action: t("성과 분석 보기"),
+              onClick: () => onNavigate("성과 분석"),
+            },
+          ]}
+        />
 
-      <WhyUniconnect
-        heading={t("캠퍼스 협찬, 보낸 만큼 돌아왔는지 확인하세요")}
-        before={[
-          t("쏟아지는 제안 메일 중 어디가 맞는지 알 수 없어요"),
-          t("보낸 물품이 행사에서 어떻게 쓰였는지 몰라요"),
-          t("효과는 사진 몇 장으로 짐작할 뿐이에요"),
-          t("학교마다 담당자를 따로 찾아 연락해요"),
-        ]}
-        after={[
-          t("우리 업종과 맞는 단체를 일치율 순으로 받아 봐요"),
-          t("계약서의 할 일과 사진 증빙으로 집행을 확인해요"),
-          t("쿠폰 · 매장 방문 · 추정 매출로 ROAS를 계산해요"),
-          t("여러 학교 행사를 한 캘린더와 한 화면에서 관리해요"),
-        ]}
-        pillars={[
-          {
-            icon: "spark",
-            title: t("이유가 보이는 일치율"),
-            text: t("다섯 가지 기준으로 단체를 줄 세우고, 왜 맞는지 보여 줘요."),
-            proof: t("단체 찾기 · 추천"),
-          },
-          {
-            icon: "store",
-            title: t("매장에서 확인하는 방문"),
-            text: t("손님이 오면 직원이 PIN으로 확인해요. 단체가 대신 셀 수 없어요."),
-            proof: t("직원 PIN 확인"),
-          },
-          {
-            icon: "chart",
-            title: t("협찬별 ROAS"),
-            text: t("협찬마다 매출을 목표와 비교하고, 분석을 PDF로 받아요."),
-            proof: t("성과 분석 PDF"),
-          },
-          {
-            icon: "heart",
-            title: t("공개된 파트너 후기"),
-            text: t("행사가 끝나면 서로 평가해요. 다음 파트너는 별점부터 보고 골라요."),
-            proof: t("파트너 후기"),
-          },
-        ]}
-      />
+        <WhyUniconnect
+          heading={t("캠퍼스 협찬, 보낸 만큼 돌아왔는지 확인하세요")}
+          before={[
+            t("쏟아지는 제안 메일 중 어디가 맞는지 알 수 없어요"),
+            t("보낸 물품이 행사에서 어떻게 쓰였는지 몰라요"),
+            t("효과는 사진 몇 장으로 짐작할 뿐이에요"),
+            t("학교마다 담당자를 따로 찾아 연락해요"),
+          ]}
+          after={[
+            t("우리 업종과 맞는 단체를 추천 지수 순으로 받아 봐요"),
+            t("계약서의 할 일과 사진 증빙으로 집행을 확인해요"),
+            t("쿠폰 · 매장 방문 · 추정 매출로 ROAS를 계산해요"),
+            t("여러 학교 행사를 한 캘린더와 한 화면에서 관리해요"),
+          ]}
+          pillars={[
+            {
+              icon: "spark",
+              title: t("이유가 보이는 추천 지수"),
+              text: t("다섯 가지 기준으로 단체를 줄 세우고, 왜 맞는지 보여 줘요."),
+              proof: t("단체 찾기 · 추천"),
+            },
+            {
+              icon: "store",
+              title: t("매장에서 확인하는 방문"),
+              text: t("손님이 오면 직원이 PIN으로 확인해요. 단체가 대신 셀 수 없어요."),
+              proof: t("직원 PIN 확인"),
+            },
+            {
+              icon: "chart",
+              title: t("협찬별 ROAS"),
+              text: t("협찬마다 매출을 목표와 비교하고, 분석을 PDF로 받아요."),
+              proof: t("성과 분석 PDF"),
+            },
+            {
+              icon: "heart",
+              title: t("공개된 파트너 후기"),
+              text: t("행사가 끝나면 서로 평가해요. 다음 파트너는 별점부터 보고 골라요."),
+              proof: t("파트너 후기"),
+            },
+          ]}
+        />
+        </>
+      )}
 
       <section className="works-section">
         <div className="section-head centered">
@@ -377,15 +426,19 @@ export function BrandDashboardPage({
         </ul>
       </section>
 
-      <JourneyChain
-        intro={t("캠페인 하나를 등록하면 제안 검토 · 확정 · 성과 분석이 차례로 이어져요.")}
-        heading={t("지금은 ‘{step}’ 차례예요", { step: journey[currentStep].label })}
-        steps={journey}
-        current={currentStep}
-        scheduleLabel={t("행사 일정 보기")}
-        onOpenSchedule={() => onNavigate("행사 일정")}
-        tour={demo}
-      />
+      {!member && (
+        <>
+        <JourneyChain
+          intro={t("캠페인 하나를 등록하면 제안 검토 · 확정 · 성과 분석이 차례로 이어져요.")}
+          heading={t("지금은 ‘{step}’ 차례예요", { step: journey[currentStep].label })}
+          steps={journey}
+          current={currentStep}
+          scheduleLabel={t("행사 일정 보기")}
+          onOpenSchedule={() => onNavigate("행사 일정")}
+          tour={demo}
+        />
+        </>
+      )}
 
       <section className="results-section">
         <div className="section-head">
@@ -464,10 +517,12 @@ export function BrandDashboardPage({
             eventName={accepting.eventName}
             eventDate={accepting.eventDate || undefined}
             terms={accepting.ask}
+            details={accepting.terms}
             onClose={() => setAccepting(null)}
             onConfirm={async () => {
-              await onAccept(accepting)
-              setAccepting(null)
+              const result = await onAccept(accepting)
+              if (result !== "failed") setAccepting(null)
+              return result
             }}
           />
         )}

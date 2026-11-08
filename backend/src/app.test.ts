@@ -206,6 +206,7 @@ test("a group's promotion plan needs its agreement, and becomes its items on the
     .filter((item: { side: string }) => item.side === "group")
     .map((item: { label: string }) => item.label)
   assert.deepEqual(labels, [
+    "협찬 물품 수령 확인",
     "로고 노출: 현수막, SNS 카드뉴스",
     "현장 배포: 선착순 배포",
     "SNS 홍보: 협찬 게시물 1회",
@@ -1110,7 +1111,7 @@ test("proposals are about an upcoming event, and a sponsor can be asked again fo
   )
   const again = await call("POST", "/proposals", { matchId: brandId }, student)
   assert.equal(again.status, 409)
-  assert.match(again.data.error, /이미 협찬이 확정/)
+  assert.match(again.data.error, /이미 수락된 제안/)
 
   // 첫 행사가 끝나면 다음 행사로 제안할 수 있다.
   Object.values(getDatabase().events).flat().find((item) => item.id === first.id)!.date = addDays(today, -2)
@@ -3636,7 +3637,7 @@ test("proposals, answers and new messages are emailed to the other side, never t
     await call("POST", `/requests/${request.id}/accept`, undefined, brand)
     await settle()
     const answerMail = sent.find((mail) => mail.to[0] === email)
-    assert.equal(answerMail?.subject, "[uniconnect] 협찬이 확정됐어요")
+    assert.equal(answerMail?.subject, "[uniconnect] 제안이 수락됐어요")
     assert.match(answerMail?.text ?? "", /notice 카페에서 '알림 공연' 제안을 수락했어요/)
 
     // 브랜드의 캠페인에 대한 제안도 같은 방식으로 단체에 닿는다.
@@ -3653,7 +3654,7 @@ test("proposals, answers and new messages are emailed to the other side, never t
     await call("POST", `/offers/${offer.id}/accept`, undefined, brand) // 브랜드는 답할 수 없다
     await call("POST", `/offers/${offer.id}/accept`, undefined, group)
     await settle()
-    assert.ok(sent.some((mail) => mail.to[0] === brandEmail && mail.subject === "[uniconnect] 협찬이 확정됐어요"))
+    assert.ok(sent.some((mail) => mail.to[0] === brandEmail && mail.subject === "[uniconnect] 제안이 수락됐어요"))
 
     // 메시지는 읽지 않은 묶음마다 메일 한 통이다.
     sent.length = 0
@@ -4943,12 +4944,13 @@ test("both sides of an accepted proposal keep an agreement, confirm it and prove
   // 계정이 없는 단체의 제안을 수락한 데모 브랜드의 것이다.
   const listed = (await call("GET", "/agreements", undefined, brand)).data.agreements as { id: string; side: string; partner: string; total: number }[]
   const runners = listed.find((item) => item.id === "req-runners")!
-  assert.deepEqual([runners.side, runners.partner, runners.total], ["brand", "서울여대 러너스", 6])
+  // 음료 협찬이라 쿠폰 할 일은 없고, 물품 수령 확인이 들어간다.
+  assert.deepEqual([runners.side, runners.partner, runners.total], ["brand", "서울여대 러너스", 5])
   const opened = (await call("GET", "/agreements/req-runners", undefined, brand)).data.agreement
   assert.equal(opened.items[0].label, "협찬 전달: 완주 기념 음료 80잔")
   assert.deepEqual(
     opened.items.map((item: { side: string }) => item.side),
-    ["brand", "brand", "group", "group", "group", "group"],
+    ["brand", "group", "group", "group", "group"],
   )
   assert.deepEqual([opened.group.member, opened.brand.member, opened.side], [false, true, "brand"])
   // 양쪽만 보며, 수락된 제안만 본다.
@@ -5051,7 +5053,7 @@ test("both sides of an accepted proposal keep an agreement, confirm it and prove
     await call("PUT", `/agreements/${request.id}/items`, { items: [...items, { side: "brand", label: "공연 당일 커피 트럭 보내기" }] }, partner)
   ).data.agreement
   assert.deepEqual(edited.confirmed, {})
-  assert.equal(edited.items.length, 7)
+  assert.equal(edited.items.length, items.length + 1)
   assert.deepEqual(edited.items.find((item: { id: string }) => item.id === groupItem.id).links, [link])
   // 같은 항목을 다시 써도 달라지는 것이 없다.
   const reconfirmed = (await call("POST", `/agreements/${request.id}/confirm`, undefined, group)).data.agreement
@@ -5061,7 +5063,7 @@ test("both sides of an accepted proposal keep an agreement, confirm it and prove
 
   // 목록은 진행 정도를 보여 주고 데이터 다운로드가 그것을 담는다.
   const summary = (await call("GET", "/agreements", undefined, group)).data.agreements[0]
-  assert.deepEqual([summary.id, summary.partner, summary.done, summary.total, summary.proof], [request.id, "agreement 카페", 1, 7, 3])
+  assert.deepEqual([summary.id, summary.partner, summary.done, summary.total, summary.proof], [request.id, "agreement 카페", 1, edited.items.length, 3])
   const exported = (await call("GET", "/auth/export", undefined, group)).data
   assert.deepEqual(exported.agreements.map((item: { id: string }) => item.id), [request.id])
 
@@ -5368,7 +5370,7 @@ test("members choose which notice emails they get, in the language they use the 
     const request = (await call("GET", "/requests", undefined, brand)).data.requests[0]
     await call("POST", `/requests/${request.id}/accept`, undefined, brand)
     await settle()
-    assert.equal(sent[0].subject, "[uniconnect] Your sponsorship is confirmed")
+    assert.equal(sent[0].subject, "[uniconnect] Your proposal was accepted")
     assert.match(sent[0].text, /accepted the proposal for '메일 공연'\./)
     assert.match(sent[0].text, /Open: https:\/\/uniconnect\.example\/matches/)
     assert.match(sent[0].text, /Choose which emails you get: https:\/\/uniconnect\.example\/me/)
@@ -8777,4 +8779,115 @@ test("a sponsorship dispute is recorded from opening to conclusion, and only its
   assert.equal(getDatabase().disputes!.some((item) => item.id === "unrelated-dispute"), true)
   getDatabase().disputes = getDatabase().disputes!.filter((item) => item.id !== "unrelated-dispute")
   await saveDatabase()
+})
+
+test("a sponsorship's delivery follows the event's records, not its date", async () => {
+  const { deliveryProgress } = await import("./lib/progress.js")
+  const database = getDatabase()
+  assert.deepEqual(deliveryProgress(database, undefined), {})
+  // 기록이 있는 행사: 기록이 생긴 날 진행, 방문 집계가 끝난 뒤에야 결과가 굳는다.
+  const busking = Object.values(database.events).flat().find((item) => item.id === "event-busking-day")!
+  const during = deliveryProgress(database, busking.id, addDaysTo(busking.date, 3))
+  assert.ok(during.executedAt)
+  assert.equal(during.reportedAt, undefined)
+  const after = deliveryProgress(database, busking.id, addDaysTo(busking.date, 30))
+  assert.equal(after.reportedAt, addDaysTo(busking.endDate ?? busking.date, 8))
+  // 아무것도 기록되지 않은 행사는 날짜가 지나도 진행으로 치지 않는다.
+  const measurement = database.measurements.find((item) => item.eventId === busking.id)!
+  const saved = measurement.metrics
+  measurement.metrics = Object.fromEntries(Object.keys(saved).map((key) => [key, 0])) as typeof saved
+  try {
+    assert.deepEqual(deliveryProgress(database, busking.id, addDaysTo(busking.date, 30)), {})
+  } finally {
+    measurement.metrics = saved
+  }
+})
+
+function addDaysTo(day: string, days: number) {
+  const date = new Date(`${day}T00:00:00Z`)
+  date.setUTCDate(date.getUTCDate() + days)
+  return date.toISOString().slice(0, 10)
+}
+
+test("groups without an upcoming event aren't recommended, though they stay in the list", async () => {
+  const database = getDatabase()
+  const { matches } = (await call("GET", "/matches?role=브랜드")).data as { matches: { id: string; eventDate?: string }[] }
+  assert.ok(matches.length > 0)
+  assert.ok(matches.every((match) => match.eventDate))
+  // 다가오는 행사를 모두 지난날로 옮기면 그 단체는 추천에서 빠진다.
+  const top = matches[0]
+  const listing = [...database.groups].find((group) => group.id === top.id)!
+  const owner = database.accounts.find((account) => account.groupId === listing.id)
+  if (owner) {
+    const events = database.events[owner.id] ?? []
+    const dates = events.map((event) => [event.date, event.endDate] as const)
+    for (const event of events) {
+      event.date = "2020-01-01"
+      delete event.endDate
+    }
+    try {
+      const again = (await call("GET", "/matches?role=브랜드")).data.matches as { id: string }[]
+      assert.ok(!again.some((match) => match.id === top.id))
+      const all = (await call("GET", "/groups")).data
+      assert.ok(JSON.stringify(all).includes(top.id))
+    } finally {
+      events.forEach((event, index) => {
+        event.date = dates[index][0]
+        if (dates[index][1]) event.endDate = dates[index][1]
+      })
+    }
+  }
+})
+
+test("a proposal's terms are kept apart from its message and reach the inbox and the agreement", async () => {
+  const { token: group } = await listedMember("proposal-terms-club@syu.ac.kr", "terms-pass-123")
+  const groupId = getDatabase().accounts.find((account) => account.email === "proposal-terms-club@syu.ac.kr")!.id
+  const { token: brand, listingId } = await listedMember("proposal-terms@terms-cafe.kr", "terms-pass-123", "브랜드")
+  const { addDays: plus, todayInKorea: today } = await import("./lib/dates.js")
+  const day = plus(today(), 30)
+  const event = (await call("POST", "/events", { name: "조건 공연", date: day, people: "120명", types: ["제품"] }, group)).data.event
+  const send = (terms: unknown) => call("POST", "/proposals", { matchId: listingId, eventId: event.id, message: "함께해요", terms }, group)
+  // 잘못된 조건은 막는다: 목록에 없는 형태, 음수 금액, 행사 뒤의 기한, 날짜 없는 일정 조정.
+  assert.equal((await send({ kinds: ["주식"] })).status, 400)
+  assert.equal((await send({ amount: -1 })).status, 400)
+  // 금액은 계약서의 협찬액과 같은 범위만: 수수료 하한(1만 원)을 피할 수 없다.
+  assert.equal((await send({ amount: 1 })).status, 400)
+  assert.equal((await send({ amount: 9999 })).status, 400)
+  assert.equal((await send({ amount: 100_000_001 })).status, 400)
+  assert.equal((await send({ deliverBy: plus(day, 3) })).status, 400)
+  assert.equal((await send({ schedule: { adjust: true } })).status, 400)
+  const terms = {
+    kinds: ["제품"],
+    amount: 300000,
+    quantity: "립밤 샘플 200개",
+    deliverBy: plus(day, -3),
+    benefits: "부스 로고와 SNS 게시물 1회",
+    respondBy: plus(today(), 7),
+    schedule: { adjust: false, date: day },
+  }
+  const sent = await send(terms)
+  assert.ok(sent.status < 300, JSON.stringify(sent.data))
+  const request = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
+  // 메시지와 따로 남고, 고르지 않은 일정 조정은 남지 않는다.
+  assert.equal(request.message, "함께해요")
+  assert.deepEqual(request.terms, {
+    kinds: ["제품"],
+    amount: 300000,
+    quantity: "립밤 샘플 200개",
+    deliverBy: plus(day, -3),
+    benefits: "부스 로고와 SNS 게시물 1회",
+    respondBy: plus(today(), 7),
+  })
+  const inbox = (await call("GET", "/requests", undefined, brand)).data.requests as { id: string; terms?: { amount?: number } }[]
+  assert.equal(inbox.find((item) => item.id === request.id)?.terms?.amount, 300000)
+  // 수락하면 계약서가 같은 조건과 금액으로 시작하고, 쿠폰 없는 물품 협찬이라 쿠폰 할 일은 없다.
+  await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+  const agreement = (await call("GET", `/agreements/${request.id}`, undefined, group)).data.agreement
+  assert.equal(agreement.terms.quantity, "립밤 샘플 200개")
+  assert.deepEqual(agreement.value, { cash: 300000, inKind: 0 })
+  const labels = agreement.items.map((item: { label: string }) => item.label)
+  assert.equal(labels[0], `협찬 전달: 립밤 샘플 200개 (${plus(day, -3)}까지)`)
+  assert.ok(labels.includes("협찬 물품 수령 확인"))
+  assert.ok(labels.includes("약속한 혜택: 부스 로고와 SNS 게시물 1회"))
+  assert.ok(!labels.some((label: string) => label.includes("쿠폰")))
 })

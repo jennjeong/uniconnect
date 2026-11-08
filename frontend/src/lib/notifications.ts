@@ -144,8 +144,8 @@ export function studentNotifications({
       key: "accepted",
       icon: "check",
       good: true,
-      title: t("협찬이 확정됐어요"),
-      caption: t("{names} · 제안 수락", { names: nameList(names(accepted)) }),
+      title: t("제안이 수락됐어요"),
+      caption: t("{names} · 계약서를 확인해 주세요", { names: nameList(names(accepted)) }),
       target: "추천 매칭",
       parts: accepted.map((id) => `accepted:${id}`),
     })

@@ -5,12 +5,14 @@ import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { Presence } from "../components/Presence"
 import { RequestProgress } from "../components/RequestProgress"
-import { PendingBothWays } from "../components/SentProposals"
+import { InboxDirection, SentList } from "../components/SentProposals"
 import { TabBar } from "../components/TabBar"
+import { TermsList } from "../components/TermsList"
+import { useEntryState } from "../hooks/useEntryState"
 import { t } from "../i18n"
 import { dDayLabel, formatDateTime, formatDay } from "../lib/date"
 import { AcceptModal } from "../modals/AcceptModal"
-import type { RequestStatus, SentProposal, SponsorRequest } from "../types"
+import type { AnswerResult, RequestStatus, SentProposal, SponsorRequest } from "../types"
 
 // 상태별 카드 클래스.
 const cardState: Record<RequestStatus, string> = {
@@ -38,7 +40,7 @@ function RequestCard({
   onOpenEvent,
 }: {
   request: SponsorRequest
-  onAnswer: (request: SponsorRequest, decision: "accept" | "decline") => void | Promise<void>
+  onAnswer: (request: SponsorRequest, decision: "accept" | "decline") => Promise<AnswerResult>
   onOpenAgreement: (id: string) => void
   // 제안이 행사에 관한 것이면 그 단체의 행사 페이지.
   onOpenEvent?: (eventId: string) => void
@@ -85,10 +87,15 @@ function RequestCard({
         </div>
       </dl>
 
-      <div className="request-ask">
-        <span>{t("요청 협찬")}</span>
-        <strong>{request.ask}</strong>
-      </div>
+      {/* 제안할 때 적은 조건(형태, 금액, 수량, 기한, 혜택). 없으면 예전처럼 협찬 문구만. */}
+      {request.terms ? (
+        <TermsList terms={request.terms} />
+      ) : (
+        <div className="request-ask">
+          <span>{t("요청 협찬")}</span>
+          <strong>{request.ask}</strong>
+        </div>
+      )}
       <p className="request-message">{request.message}</p>
 
       <div className="request-actions">
@@ -163,6 +170,8 @@ function RequestCard({
           contractAt={request.contractAt}
           createdAt={request.createdAt}
           day={request.eventDate}
+          executedAt={request.executedAt}
+          reportedAt={request.reportedAt}
           respondedAt={request.respondedAt}
         />
       )}
@@ -174,10 +183,13 @@ function RequestCard({
             eventName={request.eventName}
             eventDate={request.eventDate || undefined}
             terms={request.ask}
+            details={request.terms}
             onClose={() => setAccepting(false)}
             onConfirm={async () => {
-              await onAnswer(request, "accept")
-              setAccepting(false)
+              const result = await onAnswer(request, "accept")
+              // 처리되지 않았으면 확인창을 열어 두어 다시 시도하게 한다.
+              if (result !== "failed") setAccepting(false)
+              return result
             }}
           />
         )}
@@ -198,7 +210,7 @@ export function InboxPage({
 }: {
   requests: SponsorRequest[]
   sent: SentProposal[]
-  onAnswer: (request: SponsorRequest, decision: "accept" | "decline") => void | Promise<void>
+  onAnswer: (request: SponsorRequest, decision: "accept" | "decline") => Promise<AnswerResult>
   onWithdraw: (proposal: SentProposal) => void
   // 수락된 제안의 계약서(pages/AgreementPage.tsx).
   onOpenAgreement: (id: string) => void
@@ -207,7 +219,9 @@ export function InboxPage({
   const [tab, setTab] = useState<RequestStatus>("검토 중")
   const current = tabs.find((item) => item.status === tab) ?? tabs[0]
   const list = requests.filter((request) => inTab(request.status, tab))
-  const waitingSent = sent.filter((item) => item.status === "검토 중").length
+  // 받은 제안과 보낸 제안은 위에서 나눈다(보낸 제안은 components/SentProposals.tsx).
+  const [direction, setDirection] = useEntryState<"received" | "sent">("pages/InboxPage.tsx:direction", "received")
+  const receivedWaiting = requests.filter((item) => inTab(item.status, "검토 중")).length
 
   const received =
     list.length === 0 ? (
@@ -230,38 +244,32 @@ export function InboxPage({
     <section className="page-view">
       <PageIntro
         eyebrow="Proposal Inbox"
-        title={t("받은 협찬 제안")}
-        description={t("학생단체가 보낸 제안이 도착했어요. 내가 보낸 제안은 검토 중에서 봐요.")}
+        title={t("협찬 제안함")}
+        description={t("받은 제안에 답하고, 보낸 제안이 어디까지 갔는지 봐요.")}
       />
 
-      <TabBar
-        items={tabs.map((item) => ({
-          value: item.status,
-          label: (
-            <>
-              {t(item.label)}
-              <em>
-                {requests.filter((request) => inTab(request.status, item.status)).length +
-                  (item.status === "검토 중" ? waitingSent : 0)}
-              </em>
-            </>
-          ),
-        }))}
-        label={t("제안 상태")}
-        onChange={setTab}
-        value={tab}
-      />
+      <InboxDirection onChange={setDirection} receivedWaiting={receivedWaiting} sent={sent} value={direction} />
 
-      {tab === "검토 중" ? (
-        <PendingBothWays
-          key={tab}
-          received={received}
-          receivedCount={list.length}
-          sent={sent}
-          onWithdraw={onWithdraw}
-        />
+      {direction === "sent" ? (
+        <SentList onWithdraw={onWithdraw} sent={sent} />
       ) : (
-        <div key={tab}>{received}</div>
+        <>
+          <TabBar
+            items={tabs.map((item) => ({
+              value: item.status,
+              label: (
+                <>
+                  {t(item.label)}
+                  <em>{requests.filter((entry) => inTab(entry.status, item.status)).length}</em>
+                </>
+              ),
+            }))}
+            label={t("받은 제안 상태")}
+            onChange={setTab}
+            value={tab}
+          />
+          <div key={tab}>{received}</div>
+        </>
       )}
     </section>
   )

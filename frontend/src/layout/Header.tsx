@@ -16,7 +16,7 @@ import { NotificationsPanel } from "./NotificationsPanel"
 
 // 소개 페이지의 섹션. 헤더의 링크용.
 const sections: { id: string; label: string }[] = [
-  { id: "sides", label: t("서비스 소개") },
+  { id: "landing-title", label: t("서비스 소개") },
   { id: "how", label: t("이용 방법") },
   { id: "examples", label: t("예시 화면") },
   { id: "faq", label: "FAQ" },

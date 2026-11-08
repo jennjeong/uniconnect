@@ -8,6 +8,8 @@ import { Pill } from "../components/Pill"
 import { RotatePin } from "../components/RotatePin"
 import { ReviewCard, ReviewReply } from "../components/ReviewCard"
 import { starPath } from "../components/Stars"
+import { TermsList } from "../components/TermsList"
+import { AgreementStatus } from "../components/AgreementStatus"
 import { carriers, trackingLink } from "../data/carriers"
 import { methodInfo, methodKinds, sortedMethods } from "../data/methods"
 import { reviewTags } from "../data/reviews"
@@ -1581,14 +1583,17 @@ export function AgreementPage({
       <PageIntro
         onBack={onBack}
         eyebrow="Agreement"
-        title={t("{name} 임시 전자 계약서", { name: agreement.eventName })}
-        description={`${agreement.group.name} × ${agreement.brand.name}`}
+        title={agreement.eventName}
+        description={`${t("임시 전자 계약서")} · ${agreement.group.name} × ${agreement.brand.name}`}
         actions={
           <Pill onClick={() => window.print()} variant="outline">
             {t("인쇄 · PDF 저장")}
           </Pill>
         }
       />
+
+      {/* 지금 상태와 다음 행동이 맨 위에. 당사자와 조항은 그 아래. */}
+      <AgreementStatus agreement={agreement} />
 
       <article className="agreement-sheet">
         <dl className="agreement-facts">
@@ -1619,6 +1624,13 @@ export function AgreementPage({
             <dd>{agreement.gives}</dd>
           </div>
         </dl>
+        {/* 제안할 때 적은 조건. 받은 제안에서 본 것과 같다. */}
+        {agreement.terms && (
+          <section aria-label={t("제안 조건")} className="agreement-terms">
+            <h3>{t("제안 조건")}</h3>
+            <TermsList terms={agreement.terms} />
+          </section>
+        )}
 
         {canceledAt ? (
           <div className="agreement-confirm">
@@ -1627,7 +1639,7 @@ export function AgreementPage({
             <p className="field-hint">{t("이유: {reason}", { reason: agreement.cancel!.reason })}</p>
           </div>
         ) : (
-        <div className="agreement-confirm">
+        <div className="agreement-confirm" id="agreement-confirm">
           <span className={`agreement-state ${state.className}`}>{t(state.label)}</span>
           <ul>
             {parties.map((party) => (
@@ -1783,7 +1795,11 @@ export function AgreementPage({
           {sections.map((party) => {
             const items = agreement.items.filter((item) => item.side === party.side)
             return (
-              <section className="agreement-section" key={party.side}>
+              <section
+                className="agreement-section"
+                id={party.side === sections[0].side ? "agreement-items" : undefined}
+                key={party.side}
+              >
                 <h2>
                   {t("{name} 할 일", { name: party.name })}
                   <small>{t("{done}/{total} 완료", { done: items.filter((item) => item.doneAt).length, total: items.length })}</small>
