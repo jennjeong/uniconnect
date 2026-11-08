@@ -16,6 +16,12 @@ export function forgetEntriesFrom(index: number) {
   }
 }
 
+// 계정이 바뀌면(로그아웃, 다른 계정으로 로그인) 모두 잊는다. 같은 탭에서 다음
+// 사람이 뒤로 가기로 앞 계정의 검색어나 필터를 보지 않게 한다.
+export function clearEntryState() {
+  store.clear()
+}
+
 export function useEntryState<T>(key: string, initial: T) {
   const [slot] = useState(() => `${entryIndex()}:${key}`)
   const [value, setValue] = useState<T>(() => (store.has(slot) ? (store.get(slot) as T) : initial))

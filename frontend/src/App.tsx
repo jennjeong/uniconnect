@@ -45,7 +45,7 @@ import { install } from "./lib/install"
 import { installReveal } from "./lib/reveal"
 import { installRipple } from "./lib/ripple"
 import { entryView, menuPageOf, roleOfPage, viewPath, type HistoryEntry, type View } from "./lib/route"
-import { forgetEntriesFrom } from "./hooks/useEntryState"
+import { clearEntryState, forgetEntriesFrom } from "./hooks/useEntryState"
 import { applyPendingScroll, keepPosition, queueRestore, queueTop, trackScroll } from "./lib/scroll"
 import { installSwipeNavigation, noteHistoryEnd } from "./lib/swipe"
 import { LoginModal } from "./modals/LoginModal"
@@ -265,6 +265,8 @@ function App() {
 
   const role = account?.role ?? previewRole
   const accountId = account?.id
+  // 계정이 바뀌면 화면마다 기억한 탭·검색어·필터를 잊는다(hooks/useEntryState.ts).
+  useEffect(() => clearEntryState(), [accountId])
   // 로그아웃이 확인된 상태. 저장된 세션을 확인하는 동안은 아니다.
   const visitor = authReady && account === null
   const students = role === "학생단체"
@@ -747,6 +749,7 @@ function App() {
 
   const endSession = () => {
     setToken(null)
+    clearEntryState()
     // 로그아웃한 뒤에도 같은 쪽을 계속 보여 준다.
     if (account) setPreviewRole(account.role)
     setAccount(null)
