@@ -45,8 +45,14 @@ export function clearDraft(key: string) {
   }
 }
 
+// 로그아웃 때마다 하나씩 는다. 열려 있던 양식이 내려가며 기다리던 초안을 저장할 때,
+// 그 사이에 초안을 지웠다면(로그아웃) 다시 쓰지 않게 비교한다.
+let generation = 0
+export const draftGeneration = () => generation
+
 // 로그아웃할 때 그 계정의 초안을 모두 지운다(같은 기기의 다음 사람이 보지 않게).
 export function clearDraftsOf(accountId: string) {
+  generation += 1
   try {
     const mine = `${prefix}${accountId}:`
     for (const key of Object.keys(localStorage)) if (key.startsWith(mine)) localStorage.removeItem(key)

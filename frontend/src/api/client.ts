@@ -129,24 +129,44 @@ function failure(path: string, kind: ApiErrorKind, status = 0, message?: string)
   return new ApiError(status, message ?? (kind === "server" ? serverTrouble() : messages[kind]()), kind)
 }
 
-// 로그인한 계정에게만 API가 내주는 파일(합의서의 사진)을 object URL용 blob으로
-// 받는다. <img>는 토큰을 보낼 수 없기 때문이다.
-export async function requestBlob(path: string, { headers = {} }: { headers?: Record<string, string> } = {}): Promise<Blob> {
+// 로그인한 계정에게만 API가 내주는 파일(합의서의 사진, 기획안 PDF)을 object URL용
+// blob으로 받는다. <img>는 토큰을 보낼 수 없기 때문이다. 시간 제한은 헤더가 온 뒤
+// 본문을 다 읽을 때까지 걸린다. 헤더만 빨리 오고 본문이 멈추면 그대로 기다리게 되기
+// 때문이다. 읽기만 하므로 다시 보내지 않는다(다시 받을지는 화면이 정한다).
+export async function requestBlob(
+  path: string,
+  { headers = {}, signal, timeoutMs = defaultTimeoutMs }: { headers?: Record<string, string>; signal?: AbortSignal; timeoutMs?: number } = {},
+): Promise<Blob> {
   const token = getToken()
-  const limit = withTimeout(undefined, defaultTimeoutMs)
+  const limit = withTimeout(signal, timeoutMs)
   let response: Response
+  let body: Blob | string
   try {
     response = await fetch(`${API_BASE}/api${path}`, {
-      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...headers },
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        "Accept-Language": lang,
+        ...headers,
+      },
       signal: limit.signal,
     })
+    // 실패한 답은 { error } 문장을 읽고, 성공한 답은 파일을 읽는다.
+    body = response.ok ? await response.blob() : await response.text()
   } catch {
-    throw failure(path, failureKind(undefined, limit.timedOut()))
+    throw failure(path, failureKind(signal, limit.timedOut()))
   } finally {
     limit.done()
   }
-  if (!response.ok) throw failure(path, "server", response.status)
-  return response.blob()
+  if (!response.ok) {
+    let apiMessage: unknown
+    try {
+      apiMessage = (JSON.parse(body as string) as { error?: unknown }).error
+    } catch {
+      apiMessage = undefined
+    }
+    throw failure(path, "server", response.status, typeof apiMessage === "string" ? apiMessage : undefined)
+  }
+  return body as Blob
 }
 
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {

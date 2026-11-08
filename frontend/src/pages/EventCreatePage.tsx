@@ -8,7 +8,7 @@ import { audienceYears, eventKinds, handoutWays, logoSpots, promoPosts } from ".
 import { sponsorOptions } from "../data/sponsorTypes"
 import { t, tc } from "../i18n"
 import { formatDateTime, formatPeriod, todayIso } from "../lib/date"
-import { clearDraft, loadDraft, saveDraft } from "../lib/drafts"
+import { clearDraft, draftGeneration, loadDraft, saveDraft } from "../lib/drafts"
 import type { EventItem, Role, SponsorPackage } from "../types"
 
 // 행사나 캠페인을 등록하거나 고치는 전체 페이지.
@@ -30,7 +30,8 @@ export function EventCreatePage({
   // "YYYY-MM-DD". 보통 캘린더에서 고른 날.
   initialDate: string
   onCancel: () => void
-  onSubmit: (draft: EventDraft) => Promise<void>
+  // 서버가 받아들였으면 true. 거절이나 연결 실패면 false이고, 그때는 초안을 남긴다.
+  onSubmit: (draft: EventDraft) => Promise<boolean>
   // 이 양식의 초안이 저장되는 곳(lib/drafts.ts). 계정과 양식마다 다르다. 없으면 저장하지 않는다.
   draftStorageKey?: string
 }) {
@@ -106,6 +107,15 @@ export function EventCreatePage({
   const dirty = currentJson !== JSON.stringify(initial)
   const [savedAt, setSavedAt] = useState<string | null>(restored?.savedAt ?? null)
   const submitted = useRef(false)
+  // 이 양식이 화면에서 내려가는 중인지. 아래 초안 효과보다 먼저 선언해야 정리 함수가
+  // 먼저 돈다(React는 선언한 순서대로 정리한다). 개발 모드의 두 번째 마운트에서 되돌린다.
+  const unmounting = useRef(false)
+  useEffect(() => {
+    unmounting.current = false
+    return () => {
+      unmounting.current = true
+    }
+  }, [])
   useEffect(() => {
     if (!draftStorageKey || submitted.current) return
     if (!dirty) {
@@ -113,8 +123,29 @@ export function EventCreatePage({
       setSavedAt(null)
       return
     }
-    const timer = window.setTimeout(() => setSavedAt(saveDraft(draftStorageKey, JSON.parse(currentJson) as EventForm)), 500)
-    return () => window.clearTimeout(timer)
+    // 입력이 잦을 때는 0.5초 쉬었다 저장한다. 그 사이에 새로고침하거나 다른 화면으로
+    // 가면 기다리던 것을 바로 저장한다(아래 pagehide와 정리 함수).
+    const generation = draftGeneration()
+    const flush = () => {
+      if (submitted.current || draftGeneration() !== generation) return
+      setSavedAt(saveDraft(draftStorageKey, JSON.parse(currentJson) as EventForm))
+    }
+    let pending = true
+    const timer = window.setTimeout(() => {
+      pending = false
+      flush()
+    }, 500)
+    const leave = () => {
+      if (pending) flush()
+    }
+    window.addEventListener("pagehide", leave)
+    return () => {
+      window.clearTimeout(timer)
+      window.removeEventListener("pagehide", leave)
+      // 화면을 떠나며 정리될 때(새 입력으로 다시 도는 때가 아니라) 기다리던 것을 저장한다.
+      // 로그아웃으로 그 계정의 초안을 지운 뒤라면 draftGeneration이 바뀌어 저장하지 않는다.
+      if (pending && unmounting.current) flush()
+    }
   }, [currentJson, dirty, draftStorageKey])
   // 저장하지 않은 변경이 있는 채로 페이지를 떠나면 브라우저가 한 번 묻는다(초안은 남는다).
   useEffect(() => {
@@ -194,7 +225,7 @@ export function EventCreatePage({
     setError("")
     setBusy(true)
     try {
-      await onSubmit({
+      const accepted = await onSubmit({
         name: name.trim(),
         people: people ? `${Number(people).toLocaleString("ko-KR")}명` : "",
         date,
@@ -216,9 +247,11 @@ export function EventCreatePage({
             }
           : {}),
       })
-      // 등록 · 저장에 성공했다: 초안은 더 필요 없다.
-      submitted.current = true
-      if (draftStorageKey) clearDraft(draftStorageKey)
+      // 등록 · 저장에 성공했을 때만 초안을 지운다. 실패하면 초안을 남기고 계속 저장한다.
+      if (accepted) {
+        submitted.current = true
+        if (draftStorageKey) clearDraft(draftStorageKey)
+      }
     } finally {
       setBusy(false)
     }

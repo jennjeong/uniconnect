@@ -839,8 +839,10 @@ function App() {
           ? t("행사가 등록되었어요. 추천 매칭을 시작합니다.")
           : t("캠페인이 등록되었어요. 적합한 단체를 찾습니다."),
       )
+      return true
     } catch (error) {
       handleError(error)
+      return false
     }
   }
 
@@ -867,7 +869,7 @@ function App() {
   }
 
   const updateEvent = async (draft: EventDraft) => {
-    if (editing === null) return
+    if (editing === null) return false
     try {
       const { event } = await api.updateEvent(editing, draft)
       setEvents((current) => current.map((item) => (item.id === event.id ? event : item)))
@@ -876,8 +878,10 @@ function App() {
       setRefreshTick((tick) => tick + 1)
       goBack({ page: calendarPage })
       showNotice(students ? t("행사 정보를 고쳤어요.") : t("캠페인 정보를 고쳤어요."))
+      return true
     } catch (error) {
       handleError(error)
+      return false
     }
   }
 

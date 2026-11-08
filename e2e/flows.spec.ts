@@ -2765,6 +2765,63 @@ test("an event being registered survives a reload as a draft, and goes once it i
   expect(left.status()).toBe(204)
 })
 
+test("a draft keeps what was typed just before leaving, waits out a slow session check, and stays when registering fails", async ({ page, request }) => {
+  const group = await signUpMember(request, "학생단체", "e2e-draft-edge@syu.ac.kr", "경계 동아리")
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
+  const drafts = () => page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith("uniconnect-draft:")))
+  await page.goto("/events")
+  await page.getByRole("button", { name: "새로 등록" }).click()
+  // 0.5초 저장 대기가 끝나기 전에 바로 새로고침해도 쓰던 이름이 남는다.
+  await page.getByLabel("행사명").fill("바로 새로고침한 공연")
+  page.once("dialog", (dialog) => void dialog.accept())
+  await page.reload()
+  await expect(page.getByLabel("행사명")).toHaveValue("바로 새로고침한 공연")
+
+  // 다른 화면으로 바로 가도(앱 안의 이동) 남는다.
+  await page.getByLabel("행사명").fill("바로 떠난 공연")
+  await page.goBack()
+  await expect(page).not.toHaveURL(/\/new/)
+  await page.goForward()
+  await expect(page.getByLabel("행사명")).toHaveValue("바로 떠난 공연")
+
+  // 세션 확인이 늦은 채로 등록 주소를 바로 열어도 그 계정의 초안이 돌아온다.
+  const url = page.url()
+  await page.route("**/api/auth/me", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 1500))
+    await route.continue()
+  })
+  await page.goto(url)
+  await expect(page.getByLabel("행사명")).toHaveValue("바로 떠난 공연")
+  await page.unroute("**/api/auth/me")
+
+  // 서버가 등록을 받지 않으면 초안은 그대로 남고, 고친 것도 계속 저장된다.
+  await page.route("**/api/events", (route) =>
+    route.request().method() === "POST"
+      ? route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ error: "잠시 후 다시 시도해 주세요." }) })
+      : route.continue(),
+  )
+  await page.getByText("현금", { exact: true }).first().click()
+  await page.getByRole("button", { name: "등록하고 매칭 받기" }).click()
+  await expect(page.getByText("잠시 후 다시 시도해 주세요.").first()).toBeVisible()
+  await expect(page).toHaveURL(/\/new/)
+  expect(await drafts()).toHaveLength(1)
+  await page.getByLabel("행사명").fill("다시 보내는 공연")
+  await expect(page.locator(".draft-status")).toContainText("임시 저장됨")
+  await page.unroute("**/api/events")
+
+  // 로그아웃하면 이 계정의 초안이 지워지고, 내려가던 양식이 다시 쓰지 않는다.
+  await page.getByLabel("행사명").fill("로그아웃 직전의 공연")
+  await page.getByRole("button", { name: "내 계정" }).click()
+  await page.getByRole("region", { name: "내 계정" }).getByRole("button", { name: "로그아웃" }).click()
+  await expect(page.getByText("로그아웃했어요.")).toBeVisible()
+  expect(await drafts()).toHaveLength(0)
+  // 로그아웃으로 그 토큰은 끝났으니 다시 로그인해서 정리한다.
+  const again = await request.post("/api/auth/login", { data: { role: "학생단체", email: "e2e-draft-edge@syu.ac.kr", password: "e2e-pass-123" } })
+  const { token } = (await again.json()) as { token: string }
+  const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: { Authorization: `Bearer ${token}` } })
+  expect(left.status()).toBe(204)
+})
+
 test("a member's dashboard opens on the work waiting for them, and each row leads to it", async ({ page }) => {
   await page.goto("/")
   await logIn(page, "브랜드", "hello@afternoon-coffee.kr")

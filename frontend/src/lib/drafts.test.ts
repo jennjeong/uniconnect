@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
 
-import { clearDraft, clearDraftsOf, draftKey, loadDraft, saveDraft } from "./drafts"
+import { clearDraft, clearDraftsOf, draftGeneration, draftKey, loadDraft, saveDraft } from "./drafts"
 
 describe("form drafts", () => {
   let storage: Map<string, string>
@@ -35,7 +35,10 @@ describe("form drafts", () => {
   test("logging out clears that account's drafts only", () => {
     saveDraft(draftKey("a", "new"), { name: "A" })
     saveDraft(draftKey("b", "new"), { name: "B" })
+    const before = draftGeneration()
     clearDraftsOf("a")
+    // 열려 있던 양식은 이 값이 바뀐 것을 보고 내려가며 다시 저장하지 않는다.
+    expect(draftGeneration()).toBe(before + 1)
     expect(loadDraft(draftKey("a", "new"))).toBeNull()
     expect(loadDraft(draftKey("b", "new"))).not.toBeNull()
   })
