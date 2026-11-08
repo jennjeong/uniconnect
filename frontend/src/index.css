@@ -3868,7 +3868,6 @@ input[type="search"]::-webkit-search-cancel-button {
 }
 
 .work-actions .proposal-button {
-  height: 40px;
   padding: 0 18px;
 }
 
@@ -3925,6 +3924,18 @@ input[type="search"]::-webkit-search-cancel-button {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: start;
+  gap: 6px 10px;
+}
+
+/* 행동 줄의 버튼과 상태는 모두 같은 높이(누를 자리 44px)에, 글과 아이콘은 가운데. */
+.work-actions .cancel-button,
+.work-actions .primary-button,
+.work-actions .proposal-button {
+  display: inline-flex;
+  min-height: var(--touch-target);
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 .work-actions:has(> :nth-child(2)) > *,
@@ -3940,22 +3951,28 @@ input[type="search"]::-webkit-search-cancel-button {
   align-items: stretch;
 }
 
-/* 이런 링크를 보여주는 목록의 모든 카드는 버튼 아래에 그 자리를 남겨 둔다.
-   버튼의 높이가 맞고, 링크는 카드 가장자리에 붙지 않고 카드 패딩을 그 아래에
-   유지한다. */
-.work-grid:has(.proposal-cancel) .work-actions:has(> :nth-child(2)) {
-  padding-bottom: 26px;
+/* 제안 완료 같은 상태는 둘째 칸의 버튼 자리에 서고, 제안 취소 같은 링크는 그 아래
+   둘째 줄에 따로 놓인다(.proposal-actions는 칸을 만들지 않는다). 그래서 두 버튼의
+   기준선은 링크가 있든 없든 같다. 링크가 있는 목록의 모든 카드는 그 줄의 높이를
+   남겨 두어 이웃 카드의 버튼과 높이가 맞는다. */
+.work-actions:has(> :nth-child(2)) .proposal-actions {
+  display: contents;
 }
 
 .work-actions:has(> :nth-child(2)) .proposal-cancel {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 50%;
+  position: relative;
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: center;
+  width: auto;
   padding: 0;
   font-size: 0.75rem;
   line-height: 1.4;
-  transform: translateX(-50%);
   white-space: nowrap;
+}
+
+.work-grid:has(.proposal-cancel) .work-actions:has(> :nth-child(2)) {
+  grid-template-rows: auto minmax(1.05rem, auto);
 }
 
 /* 브랜드의 답을 기다리는 제안 (pages/BrandDashboardPage.tsx). */
@@ -19115,52 +19132,66 @@ span.odometer {
   opacity: 0.75;
 }
 
-/* 수락된 협찬의 단계를 상태 아래에: 선 위의 점들, 오늘까지는 진한 파랑, 진행
-   중인 단계는 링이 둘린 점, 그 뒤는 은색. */
-.request-progress {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+/* 수락된 협찬의 단계를 상태 아래에. 완료한 단계는 채운 파란 점, 진행 중인 단계는
+   파란 테두리 점과 '진행 중', 예정은 연한 점. 감싼 div가 카드 안의 폭을 재는
+   container라, 기기 종류가 아니라 카드가 가진 폭으로 모양을 바꾼다.
+   - 좁으면 세로: 왼쪽 칸에 점과 그 아래로 이어지는 선, 오른쪽에 단계명과 날짜.
+     선은 각 단계의 점 아래 칸을 채워 다음 점에서 끝나고, 마지막 단계에는 없다.
+   - 다섯 단계가 들어가는 폭(520px)부터 가로: 같은 너비 5열, 선은 점에서 다음 점까지. */
+.request-progress-wrap {
+  container: progress / inline-size;
   margin: 18px 0 0;
   padding: 16px 0 0;
   border-top: 1px solid var(--line);
+}
+
+.request-progress {
+  display: grid;
+  margin: 0;
+  padding: 0;
   list-style: none;
 }
 
 .request-progress li {
-  position: relative;
-  display: flex;
+  display: grid;
   min-width: 0;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  text-align: center;
+  grid-template-areas:
+    "dot text"
+    "line text";
+  grid-template-columns: 14px minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  column-gap: 12px;
 }
 
-/* 이전 단계로 가는 선: 그 점에서 이 점까지. */
-.request-progress li + li::before {
-  position: absolute;
-  top: 6px;
-  right: 50%;
-  left: -50%;
-  height: 2px;
+/* 단계 사이의 간격은 글 칸의 아래 여백으로 둔다. 선이 놓인 칸이 그만큼 길어져
+   다음 점까지 이어진다. */
+.request-progress li:not(:last-child) .step-text {
+  padding-bottom: 14px;
+}
+
+.request-progress i {
+  grid-area: dot;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+  border-radius: 50%;
+  background: var(--fill-strong);
+}
+
+/* 이 점에서 다음 점까지의 선. 다음 단계가 완료나 진행 중이면 파랗다. */
+.request-progress li:not(:last-child)::before {
+  grid-area: line;
+  justify-self: center;
+  width: 2px;
+  margin-top: 4px;
+  border-radius: 1px;
   background: var(--line-strong);
   content: "";
 }
 
-.request-progress li.step-done::before,
-.request-progress li.step-current::before {
+.request-progress li:has(+ .step-done)::before,
+.request-progress li:has(+ .step-current)::before {
   background: var(--point);
-}
-
-.request-progress i {
-  position: relative;
-  z-index: 1;
-  width: 14px;
-  height: 14px;
-  margin-bottom: 4px;
-  border-radius: 50%;
-  background: var(--fill-strong);
-  box-shadow: 0 0 0 3px #fff;
 }
 
 .request-progress .step-done i {
@@ -19169,30 +19200,105 @@ span.odometer {
 
 .request-progress .step-current i {
   background: #fff;
-  box-shadow:
-    inset 0 0 0 4px var(--point),
-    0 0 0 3px #fff;
+  box-shadow: inset 0 0 0 4px var(--point);
+}
+
+/* 단계명과 날짜는 한 줄에, 자리가 모자라면 날짜가 단계명 아래로 내려간다. */
+.request-progress .step-text {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  grid-area: text;
 }
 
 .request-progress strong {
   color: var(--ink);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: var(--weight-label);
+  word-break: keep-all;
 }
 
 .request-progress .step-next strong {
-  color: var(--muted);
+  color: var(--ink-soft);
 }
 
 .request-progress time {
   color: var(--muted);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
 }
 
 .request-progress .step-current time {
   color: var(--point-strong);
   font-weight: var(--weight-label);
+}
+
+.request-progress .step-state {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--point-tint);
+  color: var(--point-strong);
+  font-size: 0.75rem;
+  font-style: normal;
+  font-weight: var(--weight-label);
+}
+
+@container progress (min-width: 520px) {
+  .request-progress {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  /* 점 줄 아래에 단계명과 날짜. 선은 점 줄에서 이 점의 가운데부터 다음 점의
+     가운데까지 이어진다(왼쪽 반칸 + 오른쪽 반칸). */
+  .request-progress li {
+    grid-template-areas:
+      "line-in dot line-out"
+      "text text text";
+    grid-template-columns: minmax(0, 1fr) 14px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    column-gap: 0;
+    row-gap: 8px;
+  }
+
+  .request-progress li:not(:last-child) .step-text {
+    padding-bottom: 0;
+  }
+
+  .request-progress i {
+    margin-top: 0;
+  }
+
+  .request-progress li:not(:last-child)::before {
+    grid-area: line-out;
+    align-self: center;
+    justify-self: stretch;
+    width: auto;
+    height: 2px;
+    margin-top: 0;
+  }
+
+  .request-progress li:not(:first-child)::after {
+    grid-area: line-in;
+    align-self: center;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--line-strong);
+    content: "";
+  }
+
+  .request-progress li.step-done:not(:first-child)::after,
+  .request-progress li.step-current:not(:first-child)::after {
+    background: var(--point);
+  }
+
+  .request-progress .step-text {
+    flex-direction: column;
+    align-items: center;
+    padding-inline: 4px;
+    text-align: center;
+  }
 }
 
 .analytics-grid {
@@ -19869,34 +19975,29 @@ span.odometer {
     display: none;
   }
 
-  /* 하트와 비교는 액션 줄의 끝에 놓인다. 링은 자기 폭의 칸을 따로 두어,
-     그 둘이 넓어도 카드의 오른쪽 간격에 맞춰 선다. */
-  .work-card:has(.save-toggle) {
+  /* 찜과 비교는 보조 행동이라 카드 맨 위 줄의 오른쪽에 두고, 카테고리는 그 줄의
+     왼쪽에 둔다. 로고, 이름, 링은 그 아래 줄이라 겹치지 않는다. 아래의 행동 줄에는
+     상세 정보와 제안하기 두 버튼만 남는다. 셋째 칸(auto)은 찜·비교가 링보다
+     넓을 때만 늘어나고, 이름은 둘째와 셋째 칸을 함께 쓴다. */
+  .work-card:has(.save-toggle, .compare-toggle) {
     grid-template-areas:
-      "mark meta meta ring"
+      "meta meta util util"
       "mark name name ring"
       "tags tags tags tags"
-      "actions actions save save";
+      "actions actions actions actions";
     grid-template-columns: 56px minmax(0, 1fr) auto 54px;
+    row-gap: 8px;
   }
 
-  /* 영어 버튼은 글자가 길어 줄의 반에 들어가지 않는다. 하트와 비교는 그 아래
-     줄로 내린다. */
-  :root:lang(en) .work-card:has(.save-toggle) {
-    grid-template-areas:
-      "mark meta meta ring"
-      "mark name name ring"
-      "tags tags tags tags"
-      "actions actions actions actions"
-      "save save save save";
+  .work-card:has(.save-toggle, .compare-toggle) .work-meta > span:first-child {
+    align-self: center;
   }
 
   .work-meta > .work-meta-actions {
-    grid-area: save;
+    grid-area: util;
     align-self: center;
     justify-self: end;
     margin-left: 0;
-    padding-top: 10px;
   }
 
   .work-mark {
@@ -19942,12 +20043,12 @@ span.odometer {
 
   .work-tags {
     grid-area: tags;
-    margin-top: 10px;
+    margin-top: 8px;
   }
 
   .work-actions {
     grid-area: actions;
-    padding-top: 10px;
+    padding-top: 12px;
   }
 
   .work-mark .match-logo.large {
@@ -23148,12 +23249,18 @@ textarea {
     min-height: var(--touch-target);
   }
 
-  /* 카드의 버튼 넷(상세, 제안, 찜, 비교)이 한 줄에 들어가게 버튼 옆 여백만 줄인다. */
+  /* 카드 아래의 두 버튼(상세 정보, 제안하기)은 반씩 나눠 쓰므로 옆 여백만 줄인다. */
   .work-actions .cancel-button,
   .work-actions .proposal-button,
   .work-actions .primary-button {
     height: var(--touch-target);
-    padding-inline: 16px;
+    padding-inline: 12px;
+  }
+
+  /* 맨 위 줄의 찜과 비교도 누를 자리 44px. */
+  .work-meta-actions .save-toggle {
+    width: var(--touch-target);
+    height: var(--touch-target);
   }
 
   .intro-title {

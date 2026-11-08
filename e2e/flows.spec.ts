@@ -2545,3 +2545,46 @@ for (const [role, email] of [["학생단체", "muse@syu.ac.kr"], ["브랜드", "
     expect(box.y + box.height).toBeLessThanOrEqual(844)
   })
 }
+
+test("the sponsorship steps stack on phones and sit in one row of five on wide cards", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await page.goto("/")
+  await logIn(page, "브랜드", "hello@afternoon-coffee.kr")
+  await page.goto("/inbox")
+  await page.getByRole("tab", { name: /수락/ }).first().click()
+  const steps = page.locator(".request-progress").first()
+  await expect(steps.locator("li")).toHaveCount(5)
+  await expect(steps.locator('li[aria-current="step"]')).toHaveCount(1)
+  const tops = async () => Promise.all((await steps.locator("li i").all()).map(async (dot) => (await dot.boundingBox())!.y))
+  // 넓은 카드: 다섯 점이 한 줄에 있다(4개 + 1개로 꺾이지 않는다).
+  expect(new Set((await tops()).map(Math.round)).size).toBe(1)
+  // 휴대폰: 위에서 아래로 쌓이고 카드 밖으로 나가지 않는다.
+  await page.setViewportSize({ width: 320, height: 800 })
+  const stacked = await tops()
+  expect(stacked.every((y, index) => index === 0 || y > stacked[index - 1])).toBe(true)
+  const card = (await page.locator(".request-card", { has: steps }).first().boundingBox())!
+  for (const dot of await steps.locator("li").all()) {
+    const box = (await dot.boundingBox())!
+    expect(box.x).toBeGreaterThanOrEqual(card.x)
+    expect(box.x + box.width).toBeLessThanOrEqual(card.x + card.width + 0.5)
+  }
+})
+
+test("a match card keeps two equal actions at the bottom and save and compare at the top", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 800 })
+  await page.goto("/")
+  await logIn(page, "학생단체", "muse@syu.ac.kr")
+  await page.goto("/matches")
+  const card = page.locator(".work-card").first()
+  const detail = (await card.getByRole("button", { name: "상세 정보" }).boundingBox())!
+  const propose = (await card.locator(".work-actions > :nth-child(2)").boundingBox())!
+  expect(Math.round(detail.y)).toBe(Math.round(propose.y))
+  expect(Math.round(detail.height)).toBe(Math.round(propose.height))
+  expect(detail.height).toBeGreaterThanOrEqual(44)
+  expect(Math.abs(detail.width - propose.width)).toBeLessThanOrEqual(1)
+  // 찜과 비교는 위쪽, 이름보다 위에 있다.
+  const heart = (await card.locator(".save-toggle").boundingBox())!
+  const name = (await card.locator(".work-title h3").boundingBox())!
+  expect(heart.y + heart.height).toBeLessThanOrEqual(name.y + 1)
+  expect(heart.width).toBeGreaterThanOrEqual(44)
+})

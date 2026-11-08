@@ -28,21 +28,44 @@ function progressSteps({ createdAt, respondedAt, contractAt, day }: Progress) {
   const next = steps.findIndex((step) => !step.day || step.day > today)
   return steps.map((step, index) => ({
     ...step,
-    state: next === -1 || index < next ? "step-done" : index === next ? "step-current" : "step-next",
+    state: (next === -1 || index < next ? "step-done" : index === next ? "step-current" : "step-next") as StepState,
   }))
 }
 
-// 수락한 제안의 단계. 양쪽 받은 편지함에서 쓴다.
+type StepState = "step-done" | "step-current" | "step-next"
+
+// 단계의 상태를 글로도 알린다(색만으로 구분하지 않는다).
+const stateText = (state: StepState) =>
+  state === "step-done" ? t("완료") : state === "step-current" ? t("진행 중") : t("예정")
+
+// 수락한 제안의 단계. 양쪽 받은 편지함에서 쓴다. 감싼 div가 카드 안에서 쓸 수 있는
+// 폭을 재는 container라, 다섯 단계가 들어가는 폭에서만 가로 5열로, 그보다 좁으면
+// 세로로 놓인다(index.css의 request-progress).
 export function RequestProgress(props: Progress) {
   return (
-    <ol aria-label={t("협찬 진행 상황")} className="request-progress">
-      {progressSteps(props).map((step) => (
-        <li className={step.state} key={step.label}>
-          <i aria-hidden="true" />
-          <strong>{step.label}</strong>
-          <time dateTime={step.day || undefined}>{step.day ? shortDay(step.day) : t("미정")}</time>
-        </li>
-      ))}
-    </ol>
+    <div className="request-progress-wrap">
+      <ol aria-label={t("협찬 진행 상황")} className="request-progress">
+        {progressSteps(props).map((step, index) => {
+          // 협찬 확정은 양쪽이 계약서를 확인한 날이 생길 때까지 날짜가 없다.
+          const waiting = index === 2 && !step.day
+          return (
+            <li aria-current={step.state === "step-current" ? "step" : undefined} className={step.state} key={step.label}>
+              <i aria-hidden="true" />
+              <span className="step-text">
+                <strong>{step.label}</strong>
+                <time dateTime={step.day || undefined}>
+                  {step.day ? shortDay(step.day) : waiting ? t("확정 대기") : t("미정")}
+                </time>
+                {step.state === "step-current" ? (
+                  <em className="step-state">{stateText(step.state)}</em>
+                ) : (
+                  <span className="sr-only">{stateText(step.state)}</span>
+                )}
+              </span>
+            </li>
+          )
+        })}
+      </ol>
+    </div>
   )
 }
