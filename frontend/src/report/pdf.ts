@@ -1,6 +1,8 @@
 import type { jsPDF as JsPdf } from "jspdf"
 import fontUrl from "pretendard/dist/public/variable/PretendardVariable.ttf?url"
 
+import { safeFileName } from "../lib/download"
+
 // A4 크기의 페이지 요소를 하나의 PDF로 저장한다. 페이지마다 보이는 모습은 지금처럼
 // 이미지로 넣고(차트 · 막대 · 색이 화면과 같게), 그 위에 같은 자리에 보이지 않는 글자
 // 층을 얹는다. 그래서 PDF 보기 프로그램에서 한글을 검색하고 고르고 복사할 수 있다.
@@ -26,17 +28,13 @@ export async function exportPdf(pages: HTMLElement[], fileName: string) {
   pdf.save(fileName)
 }
 
-// 파일 이름: 무엇(성과 리포트 등) · 행사나 캠페인 이름 · 만든 날. 파일 이름에 쓸 수 없는
-// 글자는 빼고, 너무 긴 이름은 줄인다.
+// 파일 이름: 무엇(성과 리포트 등) · 행사나 캠페인 이름 · 만든 날. 이름은 다른 회원이 쓴
+// 것일 수 있으므로, 파일 이름에 쓸 수 없는 글자는 빈칸으로 바꾸고, 보이는 순서나 모양을
+// 바꾸는 제어 · 서식 문자(방향 바꿈 U+202E 같은 것, 폭 없는 문자, C0 · C1 제어 문자)는
+// 지운다(lib/download.ts safeFileName). 저장 창에서 이름이 다른 파일처럼 보이지 않게.
 export function pdfFileName(kind: string, name: string, day: string) {
-  const clean = (text: string) =>
-    text
-      .replace(/[\\/:*?"<>|\u0000-\u001f]/g, " ")
-      .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, 60)
-      .trim()
-  return `${["uniconnect", clean(kind), clean(name), day].filter(Boolean).join("-")}.pdf`
+  const parts = ["uniconnect", safeFileName(kind, 60), safeFileName(name, 60), day]
+  return `${parts.filter(Boolean).join("-")}.pdf`
 }
 
 // 한글 글꼴 파일을 base64로. 실패하면 null(글자 층 없이 이미지로만 만든다).

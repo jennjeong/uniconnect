@@ -14,6 +14,18 @@ describe("PDF file names", () => {
     expect(long).toBe(`uniconnect-성과 분석-${"가".repeat(60)}-2026-11-09.pdf`)
   })
 
+  test("drop characters that change how the name reads, such as a right-to-left override", () => {
+    // 'gpj.exe' 앞의 U+202E는 이름 뒤쪽을 거꾸로 보이게 한다. 폭 없는 문자와 C1 제어 문자도 지운다.
+    const name = pdfFileName("성과 리포트", "공연\u202Egpj.exe\u200B\u2066\u0085\uFEFF", "2026-11-09")
+    expect(name).toBe("uniconnect-성과 리포트-공연gpj.exe-2026-11-09.pdf")
+    expect(name).not.toMatch(/[\u0080-\u009f\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]/)
+  })
+
+  test("cut a long name by characters, never inside an emoji", () => {
+    const name = pdfFileName("성과 분석", `${"가".repeat(59)}🎉🎉`, "2026-11-09")
+    expect(name).toBe(`uniconnect-성과 분석-${"가".repeat(59)}🎉-2026-11-09.pdf`)
+  })
+
   test("leave out an empty name instead of a double dash", () => {
     expect(pdfFileName("성과 분석", "  ", "2026-11-09")).toBe("uniconnect-성과 분석-2026-11-09.pdf")
   })
