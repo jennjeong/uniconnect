@@ -2576,8 +2576,10 @@ test("a match card keeps two equal actions at the bottom and save and compare at
   await logIn(page, "학생단체", "muse@syu.ac.kr")
   await page.goto("/matches")
   const card = page.locator(".work-card").first()
+  await expect(card.getByRole("button", { name: "상세 정보" })).toBeVisible()
   const detail = (await card.getByRole("button", { name: "상세 정보" }).boundingBox())!
-  const propose = (await card.locator(".work-actions > :nth-child(2)").boundingBox())!
+  // 둘째 칸은 제안하기 버튼이거나, 보낸 뒤에는 그 자리의 상태(제안 완료, 협찬 확정)다.
+  const propose = (await card.locator(".work-actions .primary-button, .work-actions .proposal-button").first().boundingBox())!
   expect(Math.round(detail.y)).toBe(Math.round(propose.y))
   expect(Math.round(detail.height)).toBe(Math.round(propose.height))
   expect(detail.height).toBeGreaterThanOrEqual(44)
