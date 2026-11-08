@@ -11,13 +11,14 @@ import { ValuePoints } from "../components/ValuePoints"
 import { WhyUniconnect } from "../components/WhyUniconnect"
 import { WorkBoard, type WorkRow } from "../components/WorkBoard"
 import { WorkCard } from "../components/WorkCard"
-import { locale, t } from "../i18n"
+import { locale, t, tc } from "../i18n"
 import { dDayLabel, formatFullDate, fromIsoDate, nextEvent, semesterLabel, todayIso } from "../lib/date"
 import { percent } from "../lib/format"
 import { hasRoas, roasText } from "../lib/kpis"
 import { measureState } from "../lib/measurements"
 import { fullWon } from "../lib/sponsorships"
 import type { EventItem, Match, Metrics, NavLabel, Report, RequestStatus, SentProposal, SponsorOffer } from "../types"
+import type { OpenTasks } from "../api"
 
 const pad = (value: number) => String(value).padStart(2, "0")
 
@@ -53,6 +54,7 @@ export function DashboardPage({
   checklist,
   offers = [],
   sent = [],
+  openTasks,
   onOpenAgreements,
 }: {
   // 인사말에 쓰는, 로그인한 단체의 이름.
@@ -91,6 +93,8 @@ export function DashboardPage({
   offers?: SponsorOffer[]
   // 이 계정이 보낸 제안(업무 보드의 답변 대기와 계약 확인 대기).
   sent?: SentProposal[]
+  // 자기 쪽에 남은 계약서 할 일(App이 /api/proposals에서 받는다).
+  openTasks?: OpenTasks
   onOpenAgreements?: () => void
 }) {
   const next = nextEvent(events)
@@ -152,6 +156,16 @@ export function DashboardPage({
       count: sentWaiting,
       detail: sentWaiting > 0 ? t("브랜드의 답을 기다려요") : t("답을 기다리는 보낸 제안이 없어요"),
       onOpen: () => onNavigate("받은 협찬"),
+    },
+    {
+      key: "tasks",
+      label: t("증빙 남은 할 일"),
+      count: openTasks?.tasks ?? 0,
+      detail:
+        openTasks && openTasks.tasks > 0
+          ? t("계약서 {count}건에서 끝내고 증빙을 붙여요", { count: openTasks.agreements })
+          : t("남은 할 일이 없어요"),
+      onOpen: () => (onOpenAgreements ? onOpenAgreements() : onNavigate("받은 협찬")),
     },
     {
       key: "events",
@@ -273,7 +287,7 @@ export function DashboardPage({
         </section>
 
         <ValuePoints
-          eyebrow="What We Do"
+          eyebrow={tc("eyebrow", "하는 일")}
           heading={t("학생단체가 여기서 하는 일")}
           points={[
             {

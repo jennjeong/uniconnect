@@ -8,7 +8,7 @@ import { Pager } from "../components/Pager"
 import { Pill } from "../components/Pill"
 import { RevealTitle } from "../components/RevealText"
 import { venueSummary } from "../data/methods"
-import { lang, t } from "../i18n"
+import { lang, t, tc } from "../i18n"
 import { analyticsCsv } from "../lib/csv"
 import { formatFullDate, todayIso } from "../lib/date"
 import { saveFile } from "../lib/download"
@@ -116,7 +116,7 @@ export function AnalyticsPage({
   return (
     <section className="page-view">
       <PageIntro
-        eyebrow="Sponsorship Analytics"
+        eyebrow={tc("eyebrow", "협찬 분석")}
         title={t("협찬 성과 분석")}
         description={t("협찬마다 쓴 돈과 돌아온 손님을 한눈에 비교해요.")}
         actions={
@@ -145,7 +145,7 @@ export function AnalyticsPage({
           <section className="power-panel" data-reveal>
             <LayersGradient shader={INTERFERENCE} />
             <div className="power-content">
-              <span className="eyebrow light">By the Numbers</span>
+              <span className="eyebrow light">{tc("eyebrow", "숫자로 보기")}</span>
               <RevealTitle as="h2" className="power-title">
                 {t("지금까지의 협찬을 모아 보면")}
               </RevealTitle>

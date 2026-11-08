@@ -8,6 +8,7 @@ import { useDialogFocus } from "../hooks/useDialogFocus"
 import { t } from "../i18n"
 import { checkInLink, staffCheckInLink, venueLink } from "../lib/checkin"
 import { formatFullDate } from "../lib/date"
+import { nextTabIndex } from "../lib/tabKeys"
 import type { Report, VenuePage } from "../types"
 
 // 행사의 체크인 QR. 처음에는 참여자용(QR, 행사명, 안내)만 보여서 그대로 행사장에
@@ -106,12 +107,25 @@ export function QrModal({
       {/* 제목과 닫기는 그대로 두고 이 안만 세로로 스크롤한다. */}
       <div className="qr-body">
       {hasOperatorInfo && (
-        <div aria-label={t("보기")} className="qr-views" role="tablist">
+        <div
+          aria-label={t("보기")}
+          className="qr-views"
+          onKeyDown={(event) => {
+            const views = ["public", "operators"] as const
+            const next = nextTabIndex(event.key, views.indexOf(view), views.length)
+            if (next === null) return
+            event.preventDefault()
+            setView(views[next])
+            event.currentTarget.querySelectorAll<HTMLButtonElement>("[role='tab']")[next]?.focus()
+          }}
+          role="tablist"
+        >
           <button
             aria-selected={view === "public"}
             className={view === "public" ? "active" : undefined}
             onClick={() => setView("public")}
             role="tab"
+            tabIndex={view === "public" ? undefined : -1}
             type="button"
           >
             {t("참여자용")}
@@ -121,6 +135,7 @@ export function QrModal({
             className={view === "operators" ? "active" : undefined}
             onClick={() => setView("operators")}
             role="tab"
+            tabIndex={view === "operators" ? undefined : -1}
             type="button"
           >
             {t("운영자용 PIN")}

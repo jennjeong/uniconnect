@@ -3,7 +3,7 @@ import { useEffect, useState, type CSSProperties } from "react"
 import { api, errorMessage } from "../api"
 import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
-import { t } from "../i18n"
+import { t, tc } from "../i18n"
 import { formatFullDate } from "../lib/date"
 import type { AgreementSummary, ChatSide } from "../types"
 
@@ -50,7 +50,7 @@ export function AgreementsPage({
     <section className="page-view agreements-view">
       <PageIntro
         onBack={onBack}
-        eyebrow="Agreements"
+        eyebrow={tc("eyebrow", "계약서 목록")}
         title={t("임시 전자 계약서")}
         description={t("협찬마다 할 일을 함께 정하고, 끝낸 일은 사진으로 남겨요.")}
       />

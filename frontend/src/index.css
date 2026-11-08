@@ -1291,7 +1291,7 @@ button.nav-pill:hover {
   color: var(--point);
   font-size: 0.8125rem;
   font-weight: var(--weight-label);
-  letter-spacing: 0.02em;
+  letter-spacing: 0;
 }
 
 .eyebrow::before {

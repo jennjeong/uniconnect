@@ -1,7 +1,7 @@
 import { DateLine } from "../components/DateLine"
 import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
-import { t } from "../i18n"
+import { t, tc } from "../i18n"
 import { formatPeriod } from "../lib/date"
 import { formatWon } from "../lib/kpis"
 import type { EventItem } from "../types"
@@ -29,7 +29,7 @@ export function CampaignDetailPage({
     <section className="page-view event-page">
       <PageIntro
         onBack={onBack}
-        eyebrow="Campaign"
+        eyebrow={tc("eyebrow", "캠페인")}
         title={campaign.name}
         description={formatPeriod(campaign.date, campaign.endDate)}
         actions={

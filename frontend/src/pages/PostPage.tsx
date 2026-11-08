@@ -6,7 +6,7 @@ import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { Pill } from "../components/Pill"
 import { ShareButton } from "../components/ShareButton"
-import { t } from "../i18n"
+import { t, tc } from "../i18n"
 import { dDayLabel, formatDay, formatFullDate, formatPeriod } from "../lib/date"
 import type { BoardPost, Role } from "../types"
 
@@ -80,7 +80,7 @@ export function PostPage({
       <section className="page-view post-page">
         <PageIntro
           onBack={onBack}
-          eyebrow="Recruit Board"
+          eyebrow={tc("eyebrow", "모집 게시판")}
           title={t("모집 글")}
           description={failed || t("모집 글을 불러오고 있어요…")}
         />
@@ -93,7 +93,7 @@ export function PostPage({
     <section className="page-view post-page">
       <PageIntro
         onBack={onBack}
-        eyebrow={post.role === "학생단체" ? "Sponsors Wanted" : "Events Wanted"}
+        eyebrow={post.role === "학생단체" ? tc("eyebrow", "협찬을 찾아요") : tc("eyebrow", "행사를 찾아요")}
         title={post.title}
         description={
           post.open

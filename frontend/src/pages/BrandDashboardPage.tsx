@@ -13,7 +13,7 @@ import { ValuePoints } from "../components/ValuePoints"
 import { WhyUniconnect } from "../components/WhyUniconnect"
 import { WorkBoard, type WorkRow } from "../components/WorkBoard"
 import { WorkCard } from "../components/WorkCard"
-import { t } from "../i18n"
+import { t, tc } from "../i18n"
 import { dDayLabel, nextEvent, semesterLabel, shortDay, todayIso } from "../lib/date"
 import { shownTags } from "../lib/distance"
 import { formatWon } from "../lib/kpis"
@@ -21,6 +21,7 @@ import { AcceptModal } from "../modals/AcceptModal"
 import { roasText, roasVerdict } from "../lib/roasLabels"
 import { analyzeSponsorships, fullWon } from "../lib/sponsorships"
 import type { AnswerResult, Match, NavLabel, RequestStatus, SentProposal, SponsorRequest, Sponsorship } from "../types"
+import type { OpenTasks } from "../api"
 
 const pad = (value: number) => String(value).padStart(2, "0")
 
@@ -51,6 +52,7 @@ export function BrandDashboardPage({
   checklist,
   onOpenAgreements,
   sent = [],
+  openTasks,
 }: {
   // 인사말에 쓰는, 로그인한 브랜드의 이름.
   accountName?: string
@@ -88,6 +90,8 @@ export function BrandDashboardPage({
   onOpenAgreements?: () => void
   // 이 계정이 보낸 제안(업무 보드의 답변 대기와 계약 확인 대기).
   sent?: SentProposal[]
+  // 자기 쪽에 남은 계약서 할 일(App이 /api/proposals에서 받는다).
+  openTasks?: OpenTasks
 }) {
   const pending = requests.filter((request) => request.status === "검토 중")
   // 로그인한 회원의 첫 화면: 인사, 다음 일정, 지금 할 일(답할 제안 → 확인할 계약서).
@@ -122,6 +126,16 @@ export function BrandDashboardPage({
       count: sentWaiting,
       detail: sentWaiting > 0 ? t("단체의 답을 기다려요") : t("답을 기다리는 보낸 제안이 없어요"),
       onOpen: () => onNavigate("받은 제안"),
+    },
+    {
+      key: "tasks",
+      label: t("증빙 남은 할 일"),
+      count: openTasks?.tasks ?? 0,
+      detail:
+        openTasks && openTasks.tasks > 0
+          ? t("계약서 {count}건에서 끝내고 증빙을 붙여요", { count: openTasks.agreements })
+          : t("남은 할 일이 없어요"),
+      onOpen: () => (onOpenAgreements ? onOpenAgreements() : onNavigate("받은 제안")),
     },
     {
       key: "schedule",
@@ -292,7 +306,7 @@ export function BrandDashboardPage({
       {!member && (
         <>
         <ValuePoints
-          eyebrow="What We Do"
+          eyebrow={tc("eyebrow", "하는 일")}
           heading={t("브랜드가 여기서 하는 일")}
           points={[
             {

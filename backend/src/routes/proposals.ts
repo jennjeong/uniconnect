@@ -4,7 +4,7 @@ import { Router } from "express"
 import { brandIndustries, groupIndustries, shownCatalog, shownTo } from "../lib/catalog.js"
 import { todayInKorea } from "../lib/dates.js"
 import { HttpError } from "../lib/errors.js"
-import { contractState } from "../lib/agreements.js"
+import { contractState, openTasksOf } from "../lib/agreements.js"
 import { parseTerms, termLines } from "../lib/terms.js"
 import { text } from "../lib/validation.js"
 import { notify } from "../lib/notices.js"
@@ -119,7 +119,7 @@ function proposalState(account: Account) {
         noInbox: true,
       }
     })
-  return { proposals, statuses, confirmed, sent: [...sentList, ...unanswerable] }
+  return { proposals, statuses, confirmed, sent: [...sentList, ...unanswerable], openTasks: openTasksOf(database, account) }
 }
 
 // 제안이 파트너에게 전하는 메모의 최대 길이다.
@@ -189,7 +189,7 @@ function canPropose(sent: { status: RequestStatus; eventId?: string }[], event: 
 }
 
 proposalsRouter.get("/", (req, res) => {
-  res.json(req.account ? proposalState(req.account) : { proposals: [], statuses: {}, confirmed: 0, sent: [] })
+  res.json(req.account ? proposalState(req.account) : { proposals: [], statuses: {}, confirmed: 0, sent: [], openTasks: { tasks: 0, agreements: 0 } })
 })
 
 // 단체나 브랜드가 한 시간에 제안하는 수보다 많은 수다. 제안마다 파트너에게 메일이 간다.

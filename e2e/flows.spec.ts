@@ -1389,7 +1389,7 @@ test("the e-contract sets how the sponsorship is confirmed, and once both sides 
   // 끝난 행사는 그렇다고 알린다.
   await student.getByLabel("행사 고르기").selectOption("event-busking-day")
   await expect(student.locator(".measure-bar .measure-state")).toHaveText("진행 완료")
-  await expect(student.locator(".live-panel .eyebrow")).toHaveText("Event Ended")
+  await expect(student.locator(".live-panel .eyebrow")).toHaveText("진행 완료")
 })
 
 test("a participant takes the coupon and the store's staff confirm the visit on their own page", async ({ browser }) => {
@@ -2770,7 +2770,8 @@ test("a member's dashboard opens on the work waiting for them, and each row lead
   await logIn(page, "브랜드", "hello@afternoon-coffee.kr")
   await page.goto("/dashboard")
   const board = page.getByRole("region", { name: "지금 확인할 일" })
-  await expect(board.getByRole("listitem")).toHaveCount(4)
+  await expect(board.getByRole("listitem")).toHaveCount(5)
+  await expect(board.getByRole("button", { name: /증빙 남은 할 일/ })).toBeVisible()
   // 소개 구역은 회원 대시보드에 없다.
   await expect(page.locator(".about-statement-section")).toHaveCount(0)
   await expect(page.locator(".why-uniconnect, .value-points")).toHaveCount(0)

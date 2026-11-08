@@ -271,6 +271,10 @@ const en: Record<string, string> = {
   "단체의 답을 기다려요": "Waiting on the group",
   "다가오는 협찬 일정": "Upcoming sponsorships",
   "다가오는 협찬이 없어요": "No upcoming sponsorships",
+  // 업무 보드의 남은 할 일 줄
+  "증빙 남은 할 일": "Tasks left to prove",
+  "계약서 {count}건에서 끝내고 증빙을 붙여요": "Finish them and add proof on {count:agreement|agreements}",
+  "남은 할 일이 없어요": "Nothing left to do",
 }
 
 export default en
