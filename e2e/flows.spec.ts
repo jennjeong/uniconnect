@@ -2492,7 +2492,7 @@ test("the venue QR opens on the participants' view, and PINs only behind 운영�
   const dialog = page.getByRole("dialog", { name: "현장 참여 QR" })
   await expect(dialog.getByRole("tab", { name: "참여자용" })).toHaveAttribute("aria-selected", "true")
   await expect(dialog.locator(".qr-content")).not.toContainText("PIN")
-  await expect(dialog.locator(".qr-pin")).toHaveCount(0)
+  await expect(dialog.locator(".qr-op-card")).toHaveCount(0)
   // 행사장에 띄우면 QR과 안내뿐이다.
   await dialog.getByRole("button", { name: "행사장에 띄우기" }).click()
   const shown = page.getByRole("dialog", { name: "행사장에 띄운 참여 QR" })
@@ -2508,14 +2508,27 @@ test("the venue QR opens on the participants' view, and PINs only behind 운영�
   await expect(operators).toContainText("단체 확인 PIN")
   await expect(operators).toContainText("협찬 브랜드만 계약서에서 확인해요")
   await expect(operators).not.toContainText("101234")
-  // 운영자용 칸은 휴대폰에서도 시트 안에 들어간다(긴 주소에 밀려 넓어지지 않는다).
-  await page.setViewportSize({ width: 390, height: 844 })
-  const sheet = await page.getByRole("dialog", { name: "현장 참여 QR" }).boundingBox()
-  for (const box of await operators.locator(".qr-pin").all()) {
-    const rect = (await box.boundingBox())!
-    expect(rect.x).toBeGreaterThanOrEqual(sheet!.x)
-    expect(rect.x + rect.width).toBeLessThanOrEqual(sheet!.x + sheet!.width + 0.5)
+  // 매장 직원용과 우리 단체용은 각자의 카드이고, 주소를 복사하면 결과를 알려 준다.
+  await expect(operators.locator(".qr-op-card")).toHaveCount(2)
+  await operators.getByRole("button", { name: "단체용 주소 복사" }).click()
+  await expect(page.getByText(/주소를 복사했어요|복사하지 못했어요/)).toBeVisible()
+  // 운영자용 카드는 휴대폰 폭마다 시트 안에 들어가고, 긴 주소는 카드 안에서 줄바꿈한다.
+  for (const width of [320, 375, 390, 430]) {
+    await page.setViewportSize({ width, height: 800 })
+    const sheet = (await page.getByRole("dialog", { name: "현장 참여 QR" }).boundingBox())!
+    expect(sheet.x).toBeGreaterThanOrEqual(0)
+    expect(sheet.x + sheet.width).toBeLessThanOrEqual(width + 0.5)
+    for (const box of await operators.locator(".qr-op-card, .qr-op-card .qr-link").all()) {
+      const rect = (await box.boundingBox())!
+      expect(rect.x).toBeGreaterThanOrEqual(sheet.x)
+      expect(rect.x + rect.width).toBeLessThanOrEqual(sheet.x + sheet.width + 0.5)
+    }
+    const body = page.locator(".qr-body")
+    expect(await body.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(0)
   }
+  // 참여자용으로 돌아가도 넘치지 않는다.
+  await page.getByRole("dialog", { name: "현장 참여 QR" }).getByRole("tab", { name: "참여자용" }).click()
+  expect(await page.locator(".qr-body").evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(0)
 })
 
 for (const [role, email] of [["학생단체", "muse@syu.ac.kr"], ["브랜드", "hello@afternoon-coffee.kr"]] as const) {

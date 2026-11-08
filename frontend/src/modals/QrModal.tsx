@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 
 import { Icon } from "../components/Icon"
 import { Modal } from "../components/Modal"
@@ -25,14 +25,17 @@ export function QrModal({
   onRotatePin: (page: VenuePage) => Promise<unknown>
 }) {
   const link = checkInLink(report)
+  const staffLink = staffCheckInLink(report)
+  const groupLink = venueLink(report.code, "group")
   const [view, setView] = useState<"public" | "operators">("public")
   const [presenting, setPresenting] = useState(false)
   const hasOperatorInfo = Boolean(report.staffPin || report.groupPin || report.pinsFrom)
 
-  const copy = async () => {
+  // 주소를 그대로 복사하고 결과를 알린다(보이는 줄바꿈은 복사에 들어가지 않는다).
+  const copy = async (value: string, done: string) => {
     try {
-      await navigator.clipboard.writeText(link)
-      onCopied(t("참여 링크를 복사했어요."))
+      await navigator.clipboard.writeText(value)
+      onCopied(done)
     } catch {
       onCopied(t("링크를 복사하지 못했어요. 직접 선택해서 복사해 주세요."))
     }
@@ -71,6 +74,8 @@ export function QrModal({
 
   return (
     <Modal name="qr" kicker="Live QR" title={t("현장 참여 QR")} onClose={onClose}>
+      {/* 제목과 닫기는 그대로 두고 이 안만 세로로 스크롤한다. */}
+      <div className="qr-body">
       {hasOperatorInfo && (
         <div aria-label={t("보기")} className="qr-views" role="tablist">
           <button
@@ -102,8 +107,8 @@ export function QrModal({
           </small>
           <code className="qr-link">{link}</code>
           <div className="qr-actions">
-            <button className="cancel-button" onClick={copy} type="button">
-              {t("링크 복사")}
+            <button className="cancel-button" onClick={() => copy(link, t("참여 링크를 복사했어요."))} type="button">
+              {t("참여 링크 복사")}
             </button>
             <button className="primary-button" onClick={() => setPresenting(true)} type="button">
               {t("행사장에 띄우기")}
@@ -118,63 +123,102 @@ export function QrModal({
           <p className="qr-warning">
             {t("이 화면은 행사장에 띄우지 마세요. 주소와 PIN은 매장 직원과 우리 단체 담당자에게만 따로 알려 주세요.")}
           </p>
-          {report.staffPin && (
-            <div className="qr-pin">
-              {t("매장 직원용 방문 확인")}
-              <code className="qr-link">{staffCheckInLink(report)}</code>
-              {report.sponsors?.length ? (
-                <ul className="qr-pins">
-                  {report.sponsors.map((sponsor) => (
-                    <li key={sponsor.id}>
-                      {sponsor.brandName} · {sponsor.coupon.store} {t("직원 PIN")} <strong>{sponsor.staffPin}</strong>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <span>
-                  {t("직원 PIN")} <strong>{report.staffPin}</strong>
-                </span>
-              )}
-              {report.canRotatePin && !report.sponsors?.length && (
-                <RotatePin misses={report.pinMisses} onRotate={() => onRotatePin("staff")} />
-              )}
-              <small>
-                {t("직원이 자기 기기에서 참여자의 쿠폰 번호를 넣으면 방문이 기록돼요.")}
-                {report.sponsors &&
-                  report.sponsors.length > 1 &&
-                  ` ${t("매장마다 PIN이 달라서, 각 매장은 자기 쿠폰만 확인할 수 있어요.")}`}
-              </small>
-            </div>
-          )}
-          {!report.staffPin && report.groupPin && report.sponsors?.length ? (
-            <div className="qr-pin">
-              {t("매장 직원용 방문 확인")}
-              <code className="qr-link">{staffCheckInLink(report)}</code>
-              <small>
-                {t("매장 직원 PIN은 협찬 브랜드만 계약서에서 확인해요. 방문 확인은 매장이 직접 해서, 우리 단체에는 보이지 않아요.")}
-              </small>
-            </div>
-          ) : null}
           {report.pinsFrom && (
             <p className="field-hint">
               {t("직원 PIN과 단체 확인 PIN은 행사 하루 전인 {date}부터 여기에 보여요.", { date: formatFullDate(report.pinsFrom) })}
             </p>
           )}
+          {(report.staffPin || (report.groupPin && report.sponsors?.length)) && (
+            <OperatorCard
+              title={t("매장 직원용 방문 확인")}
+              address={staffLink}
+              copyLabel={t("직원용 주소 복사")}
+              onCopy={() => copy(staffLink, t("매장 직원용 주소를 복사했어요."))}
+            >
+              {report.staffPin &&
+                (report.sponsors?.length ? (
+                  <ul className="qr-pins">
+                    {report.sponsors.map((sponsor) => (
+                      <li key={sponsor.id}>
+                        <span>
+                          {sponsor.brandName} · {sponsor.coupon.store}
+                        </span>
+                        <span className="qr-pin-value">
+                          {t("직원 PIN")} <strong>{sponsor.staffPin}</strong>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="qr-pin-value">
+                    {t("직원 PIN")} <strong>{report.staffPin}</strong>
+                  </p>
+                ))}
+              {report.staffPin && report.canRotatePin && !report.sponsors?.length && (
+                <RotatePin misses={report.pinMisses} onRotate={() => onRotatePin("staff")} />
+              )}
+              <small>
+                {report.staffPin
+                  ? t("직원이 자기 기기에서 참여자의 쿠폰 번호를 넣으면 방문이 기록돼요.")
+                  : t("매장 직원 PIN은 협찬 브랜드만 계약서에서 확인해요. 방문 확인은 매장이 직접 해서, 우리 단체에는 보이지 않아요.")}
+                {report.staffPin &&
+                  report.sponsors &&
+                  report.sponsors.length > 1 &&
+                  ` ${t("매장마다 PIN이 달라서, 각 매장은 자기 쿠폰만 확인할 수 있어요.")}`}
+              </small>
+            </OperatorCard>
+          )}
           {report.groupPin && (
-            <div className="qr-pin">
-              {t("우리 단체 현장 확인")}
-              <code className="qr-link">{venueLink(report.code, "group")}</code>
-              <span>
+            <OperatorCard
+              title={t("우리 단체 현장 확인")}
+              address={groupLink}
+              copyLabel={t("단체용 주소 복사")}
+              onCopy={() => copy(groupLink, t("우리 단체용 주소를 복사했어요."))}
+            >
+              <p className="qr-pin-value">
                 {t("단체 확인 PIN")} <strong>{report.groupPin}</strong>
-              </span>
+              </p>
               {report.canRotatePin && <RotatePin misses={report.pinMisses} onRotate={() => onRotatePin("group")} />}
               <small>
                 {t("임시 전자 계약서에서 우리 단체가 확인하기로 한 협찬 확인 방식(부스 스탬프, SNS 인증 등)을 행사 날 이 주소에서 기록해요.")}
               </small>
-            </div>
+            </OperatorCard>
           )}
         </div>
       )}
+      </div>
     </Modal>
+  )
+}
+
+// 운영자용 탭의 카드 하나: 제목, 주소(칸 안에서 줄바꿈), 주소 복사·열기, 그 아래
+// PIN과 설명(children).
+function OperatorCard({
+  title,
+  address,
+  copyLabel,
+  onCopy,
+  children,
+}: {
+  title: string
+  address: string
+  copyLabel: string
+  onCopy: () => void
+  children: ReactNode
+}) {
+  return (
+    <section className="qr-op-card" aria-label={title}>
+      <h3>{title}</h3>
+      <code className="qr-link wrap">{address}</code>
+      <div className="qr-op-actions">
+        <button className="cancel-button" onClick={onCopy} type="button">
+          <Icon name="copy" size={15} /> {copyLabel}
+        </button>
+        <a className="detail-button" href={address} rel="noreferrer" target="_blank">
+          {t("열기")} <Icon name="arrowUpRight" size={15} />
+        </a>
+      </div>
+      {children}
+    </section>
   )
 }
