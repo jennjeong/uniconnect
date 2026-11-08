@@ -8,6 +8,12 @@ import { signUpMember } from "./members"
 // 데모 계정의 비밀번호다(backend/src/data/seed.ts의 DEMO_PASSWORD).
 const demoPassword = "uniconnect2026"
 
+// 학생단체 찾기 쪽의 '가까운 순'은 조건 칸의 정렬이다(components/CatalogControls.tsx).
+async function sortNearest(page: Page) {
+  await page.locator(".catalog-conditions-toggle").click()
+  await page.locator(".sort-choice label", { hasText: "가까운 순" }).click()
+}
+
 async function logIn(page: Page, role: "학생단체" | "브랜드", email: string) {
   await page.getByRole("button", { name: "로그인", exact: true }).first().click()
   const dialog = page.getByRole("dialog")
@@ -56,7 +62,7 @@ test("a visitor sees made-up shops and the example groups on the nearby tabs", a
   // 안내문 아래에 예시를 전부 본다. 테스트 서버에는 지도 키가 없고, 만들어진
   // 매장은 키가 필요 없다.
   await page.goto("/matches")
-  await page.getByRole("tab", { name: "가까운 순" }).click()
+  await page.getByRole("tab", { name: "학교 앞 가게" }).click()
   await expect(page.getByRole("note")).toContainText("학교마다 근처 가게가 달라요")
   await expect(page.getByText("삼육대학교 근처에 있다고 가정해 만든 예시 가게예요. 가까운 순서예요.")).toBeVisible()
   await expect(page.getByText("예시로 만든 가게예요. 실제 가게나 카카오의 정보가 아니에요.")).toBeVisible()
@@ -70,7 +76,8 @@ test("a visitor sees made-up shops and the example groups on the nearby tabs", a
   await expect(page.getByRole("dialog")).toBeVisible()
 
   await page.goto("/groups")
-  await page.getByRole("tab", { name: "가까운 순" }).click()
+  await page.getByRole("tab", { name: "전체" }).click()
+  await sortNearest(page)
   await expect(page.getByRole("note")).toContainText("매장마다 가까운 학생단체가 달라요")
   // 예시 단체를 데모 브랜드의 매장에서 가까운 순으로 본다.
   await expect(page.locator(".work-card").first()).toContainText("과기대 소리샘")
@@ -158,7 +165,8 @@ test("a member who opens the introduction goes on to the dashboard", async ({ pa
   await expect(page).toHaveURL(/\/dashboard$/)
   await page.goto("/")
   await expect(page).toHaveURL(/\/dashboard$/)
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("반가워요")
+  // 회원의 첫머리는 누구의 화면인지 한 줄과 지금 할 일이다.
+  await expect(page.locator(".dash-top-who")).toHaveText("삼육대 뮤즈 · 학생단체")
   await expect(page.locator(".demo-chip")).toHaveCount(0)
 })
 
@@ -169,7 +177,7 @@ test("the login popup logs into a demo account with one press, with nothing to t
   await dialog.getByRole("button", { name: /오후의 커피/ }).click()
   await expect(dialog).toBeHidden()
   await expect(page).toHaveURL(/\/dashboard$/)
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("반가워요, 오후의 커피")
+  await expect(page.locator(".dash-top-who")).toHaveText("오후의 커피 · 브랜드")
 })
 
 test("a password can be shown while it is typed, and hidden again", async ({ page }) => {
@@ -816,7 +824,14 @@ test("a group writes its event page on the form, adds a photo, and a brand reads
   // 단체는 페이지에서 제안서 PDF를 만든다.
   const proposal = page.waitForEvent("download")
   await page.getByRole("button", { name: "제안서 PDF" }).click()
-  expect((await proposal).suggestedFilename()).toBe(`uniconnect-proposal-${day}.pdf`)
+  // 파일 이름에 행사 이름과 만든 날이 들어가고, 페이지 그림 위에 한글 글꼴로 쓴 글자 층이
+  // 있어 PDF에서 검색 · 복사할 수 있다(글꼴 파일이 들어 있다).
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date())
+  const proposalFile = await proposal
+  expect(proposalFile.suggestedFilename()).toBe(`uniconnect-협찬 제안서-페이지 공연-${today}.pdf`)
+  const pdfBytes = await readFile(await proposalFile.path())
+  expect(pdfBytes.subarray(0, 5).toString()).toBe("%PDF-")
+  expect(pdfBytes.includes("/FontFile2")).toBe(true)
   await expect(page.getByText("제안서를 PDF로 저장했어요.")).toBeVisible()
   // 복제 opens the form with everything but the dates filled in.
   await page.getByRole("button", { name: "복제해서 새로 등록" }).click()
@@ -1452,15 +1467,16 @@ test("a new group signs up with the code shown on screen", async ({ page }) => {
   // 회원은 회원만 보므로, 가입한 브랜드가 아직 없으면 대시보드와 추천 매칭이
   // 예시 브랜드를 보여 주는 대신 그렇다고 알리고 근처 매장을 초대하라고
   // 안내한다.
-  await expect(page.locator(".insight-title")).toHaveText("아직 가입한 브랜드가 없어요.")
+  // 행사가 아직 없으니 첫 할 일은 행사 등록이다.
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("행사를 등록하면 잘 맞는 브랜드를 찾아 드려요.")
   await expect(page.locator(".catalog-empty")).toContainText("아직 추천할 브랜드가 없어요")
   await expect(page.getByText("오후의 커피")).toHaveCount(0)
   expect(await page.evaluate(() => (window as unknown as { exampleShown: boolean }).exampleShown)).toBe(false)
   await page.goto("/matches")
   const empty = page.locator(".catalog-empty")
   await expect(empty).toContainText("아직 가입한 브랜드가 없어요")
-  await empty.getByRole("button", { name: "가까운 가게 보기" }).click()
-  await expect(page.getByRole("tab", { name: "가까운 순" })).toHaveAttribute("aria-selected", "true")
+  await empty.getByRole("button", { name: "학교 앞 가게 보기" }).click()
+  await expect(page.getByRole("tab", { name: "학교 앞 가게" })).toHaveAttribute("aria-selected", "true")
 })
 
 test("brands show how far their store is from the school, and a brand keeps its store address", async ({ browser }) => {
@@ -1516,7 +1532,7 @@ test("brands show how far their store is from the school, and a brand keeps its 
   // 여기서는 서버에 지도 키가 없으므로 새 주소에는 아직 위치가 없고 단체에는
   // 거리가 나오지 않는다.
   await brand.goto("/groups")
-  await brand.getByRole("tab", { name: "가까운 순" }).click()
+  await sortNearest(brand)
   await expect(brand.locator(".work-card").first()).toBeVisible()
   await expect(brand.locator(".tag-distance")).toHaveCount(0)
   await brand.goto("/me/edit")
@@ -1543,7 +1559,7 @@ test("가까운 순 looks around the group's school for real shops, and says so 
   await page.goto("/")
   await logIn(page, "학생단체", "muse@syu.ac.kr")
   await page.goto("/matches")
-  await page.getByRole("tab", { name: "가까운 순" }).click()
+  await page.getByRole("tab", { name: "학교 앞 가게" }).click()
   // 처음에는 모든 종류다.
   await expect(page.getByRole("button", { name: "전체", exact: true })).toHaveAttribute("aria-pressed", "true")
   // 테스트 서버에는 지도 키가 없다.
@@ -1573,7 +1589,7 @@ test("가까운 순's map sits on Kakao's map once a key is set, and on the sket
     sdk === "ok" ? route.fulfill({ contentType: "text/javascript", body: fakeKakaoSdk }) : route.abort(),
   )
   await page.goto("/matches")
-  await page.getByRole("tab", { name: "가까운 순" }).click()
+  await page.getByRole("tab", { name: "학교 앞 가게" }).click()
   await page.getByRole("group", { name: "보기 방식" }).getByRole("button", { name: "지도" }).click()
   const map = page.locator(".kakao-map")
   await expect(map.locator(".kakao-campus")).toBeVisible()
@@ -1584,7 +1600,7 @@ test("가까운 순's map sits on Kakao's map once a key is set, and on the sket
   // Kakao가 없으면 같은 매장을 스케치에 보여 준다.
   sdk = "down"
   await page.reload()
-  await page.getByRole("tab", { name: "가까운 순" }).click()
+  await page.getByRole("tab", { name: "학교 앞 가게" }).click()
   await page.getByRole("group", { name: "보기 방식" }).getByRole("button", { name: "지도" }).click()
   await expect(page.locator(".place-map")).toBeVisible()
   await expect(page.locator(".kakao-map")).toHaveCount(0)
@@ -1611,7 +1627,7 @@ test("on Kakao's map the campus label lets the shops beside it be pressed, and a
   })
   await page.route("https://dapi.kakao.com/**", (route) => route.fulfill({ contentType: "text/javascript", body: edgeKakaoSdk }))
   await page.goto("/matches")
-  await page.getByRole("tab", { name: "가까운 순" }).click()
+  await page.getByRole("tab", { name: "학교 앞 가게" }).click()
   await page.getByRole("group", { name: "보기 방식" }).getByRole("button", { name: "지도" }).click()
   const map = page.locator(".kakao-map")
   await expect(map.locator(".kakao-campus")).toBeVisible()
@@ -1636,13 +1652,26 @@ test("brands and student groups can be searched and filtered", async ({ page }) 
   await expect(page.locator(".work-card", { hasText: "오후의 커피" })).toBeVisible()
   await expect(page.locator(".work-card", { hasText: "그린데이 샐러드" })).toHaveCount(0)
   await brandSearch.fill("없는낱말")
-  await expect(page.getByText("찾는 브랜드가 없어요.", { exact: false })).toBeVisible()
+  await expect(page.getByText("조건에 맞는 브랜드가 없어요")).toBeVisible()
+  // 걸린 조건은 칩으로 보이고, 빈 결과에서 한 번에 지운다.
+  await expect(page.getByRole("list", { name: "걸린 조건" })).toContainText("‘없는낱말’ 검색")
+  await page.getByRole("button", { name: "조건 모두 지우기" }).click()
+  await expect(brandSearch).toHaveValue("")
+  // 업종은 조건 칸에서 고르고, 정렬과 따로 걸린다.
+  await page.locator(".catalog-conditions-toggle").click()
+  await page.getByLabel("업종", { exact: true }).selectOption("cafe")
+  await page.locator(".sort-choice label", { hasText: "인기순" }).click()
+  await expect(page.locator(".work-card").first().locator(".work-rank")).toHaveText("1위")
+  await expect(page.locator(".catalog-conditions-toggle")).toHaveAttribute("aria-expanded", "true")
+  await expect(page.getByRole("list", { name: "걸린 조건" }).getByRole("listitem")).toHaveCount(3)
 
   await page.goto("/groups")
   await page.getByRole("tab", { name: "전체" }).click()
+  await page.locator(".catalog-conditions-toggle").click()
   await page.getByLabel("학교", { exact: true }).selectOption("광운대학교")
   await expect(page.locator(".work-card")).toHaveCount(2)
-  await page.getByRole("button", { name: "조건 지우기" }).click()
+  await expect(page.locator(".catalog-count")).toHaveText("학생단체 2곳")
+  await page.getByRole("button", { name: "학교: 광운대학교 조건 지우기" }).click()
   await expect(page.locator(".work-card")).toHaveCount(8)
 })
 
@@ -2009,10 +2038,11 @@ test("a group's profile shows a brand the deal in three boxes", async ({ page })
   await expect(deal.getByRole("heading", { name: "다음 행사" })).toBeVisible()
 })
 
-test("추천 매칭 opens on 전체, its tabs in the order 전체 · 추천 · 인기 · 가까운 순 · 업종별 · 찜", async ({ page }) => {
+test("추천 매칭 opens on 전체, its scopes 전체 · 추천 · 찜 · 학교 앞 가게 apart from sort and filter", async ({ page }) => {
   await page.goto("/matches")
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("브랜드 찾기")
   const tabs = page.getByRole("tablist", { name: "브랜드 보기" }).getByRole("tab")
-  await expect(tabs).toHaveText(["전체", "추천", "인기", "가까운 순", "업종별", "찜"])
+  await expect(tabs).toHaveText(["전체", "추천", "찜", "학교 앞 가게"])
   await expect(tabs.first()).toHaveAttribute("aria-selected", "true")
 })
 
@@ -2576,9 +2606,11 @@ for (const [role, email] of [["학생단체", "muse@syu.ac.kr"], ["브랜드", "
     await page.goto("/")
     await logIn(page, role, email)
     await page.goto("/dashboard")
-    const hero = page.locator(".meeting-hero.compact")
-    await expect(hero.getByRole("heading", { level: 1 })).toContainText("반가워요")
-    const main = hero.locator(".hero-cta .pill").first()
+    // 회원의 첫머리는 그라데이션 히어로가 아니라 지금 할 일과 다음 행동이다.
+    await expect(page.locator(".meeting-hero")).toHaveCount(0)
+    const top = page.locator(".dash-top")
+    await expect(top.getByRole("heading", { level: 1 })).toBeVisible()
+    const main = top.locator(".dash-top-actions .pill").first()
     await expect(main).toBeVisible()
     const box = (await main.boundingBox())!
     expect(box.y + box.height).toBeLessThanOrEqual(844)
@@ -2665,8 +2697,9 @@ test("a new screen starts at the top, back returns to where the list was, and in
   await page.goto("/")
   await logIn(page, "학생단체", "muse@syu.ac.kr")
   await page.goto("/matches")
-  // 탭은 같은 화면 안의 조작이고, 뒤로 돌아와도 그 탭이다.
-  await page.getByRole("tab", { name: "인기" }).click()
+  // 정렬은 같은 화면 안의 조작이고, 뒤로 돌아와도 그 정렬이다.
+  await page.locator(".catalog-conditions-toggle").click()
+  await page.locator(".sort-choice label", { hasText: "인기순" }).click()
   const cards = page.locator(".work-card")
   await expect(cards.nth(5)).toBeVisible()
   const last = cards.last()
@@ -2690,7 +2723,7 @@ test("a new screen starts at the top, back returns to where the list was, and in
 
   // 뒤로 가면 목록의 그 자리로 돌아온다.
   await page.goBack()
-  await expect(page.getByRole("tab", { name: "인기" })).toHaveAttribute("aria-selected", "true")
+  await expect(page.getByRole("list", { name: "걸린 조건" })).toContainText("인기순")
   await expect(last).toBeVisible()
   await expect.poll(scrollY).toBeGreaterThan(leaving - 4)
   expect(Math.abs((await scrollY()) - leaving)).toBeLessThan(4)
@@ -2827,7 +2860,11 @@ test("a member's dashboard opens on the work waiting for them, and each row lead
   await logIn(page, "브랜드", "hello@afternoon-coffee.kr")
   await page.goto("/dashboard")
   const board = page.getByRole("region", { name: "지금 확인할 일" })
-  await expect(board.getByRole("listitem")).toHaveCount(5)
+  // 내가 할 일, 상대를 기다리는 일, 일정 · 결과로 나뉜다. 상대만 할 일이 남은 것은
+  // 내 할 일에 들지 않는다.
+  await expect(board.getByRole("listitem")).toHaveCount(7)
+  await expect(board.getByRole("list", { name: "내가 할 일" }).getByRole("listitem")).toHaveCount(3)
+  await expect(board.getByRole("list", { name: "상대를 기다리는 일" })).toContainText("상대 확인 대기")
   await expect(board.getByRole("button", { name: /증빙 남은 할 일/ })).toBeVisible()
   // 소개 구역은 회원 대시보드에 없다.
   await expect(page.locator(".about-statement-section")).toHaveCount(0)

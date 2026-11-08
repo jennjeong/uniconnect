@@ -1832,6 +1832,7 @@ function App() {
             sent={sent}
             openTasks={openTasks}
             onOpenAgreements={openAgreements}
+            onOpenAgreement={openAgreement}
           />
         ) : (
           <BrandDashboardPage
@@ -1857,6 +1858,9 @@ function App() {
             sent={sent}
             openTasks={openTasks}
             onOpenAgreements={openAgreements}
+            onOpenAgreement={openAgreement}
+            campaigns={eventsFor === viewer ? events : []}
+            confirmedCount={visitor ? undefined : confirmedCount}
           />
         )
     }
@@ -1936,7 +1940,17 @@ function App() {
       />
 
       <main className="main-content" id="main" tabIndex={-1}>
-        <SiteNotices viewer={account?.id ?? ""} />
+        {/* 안내 공지는 처음 닿는 화면에서만(components/SiteNotices.tsx). */}
+        <SiteNotices
+          infoShown={Boolean(
+            view.home ||
+              view.faq ||
+              view.legal ||
+              view.plans ||
+              (view.page === "대시보드" && Object.keys(view).every((key) => key === "page")),
+          )}
+          viewer={account?.id ?? ""}
+        />
         {/* 페이지가 바뀔 때마다 새 key를 주어 페이지의 등장 효과를 다시
            재생한다. 상세 페이지는 목록을 덮으며, 목록은 마운트된 채(탭과
            스크롤을 유지) 남아 있다가 돌아올 때 다시 보인다. */}

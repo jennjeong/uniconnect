@@ -14,15 +14,18 @@ export function PageIntro({
   description,
   actions,
   onBack,
+  compact = false,
 }: {
   eyebrow: string
   title: string
   description?: ReactNode
   actions?: ReactNode
   onBack?: () => void
+  // 찾기 화면처럼 바로 목록을 보여야 하는 페이지: 위아래 여백과 제목을 줄인다.
+  compact?: boolean
 }) {
   return (
-    <header className="page-intro">
+    <header className={compact ? "page-intro compact" : "page-intro"}>
       <div className="intro-top">
         {onBack && (
           <button aria-label={t("뒤로")} className="back-pill" onClick={onBack} type="button">

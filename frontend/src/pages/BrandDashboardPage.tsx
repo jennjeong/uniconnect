@@ -2,6 +2,7 @@ import { useState, type CSSProperties, type ReactNode } from "react"
 
 import { BrandMark } from "../components/BrandMark"
 import { CatalogEmpty } from "../components/CatalogEmpty"
+import { DashSectionHead, DashboardTop, type DashboardFact } from "../components/DashboardTop"
 import { DateLine } from "../components/DateLine"
 import { Icon } from "../components/Icon"
 import { JourneyChain, type JourneyStep } from "../components/JourneyChain"
@@ -14,13 +15,13 @@ import { WhyUniconnect } from "../components/WhyUniconnect"
 import { WorkBoard, type WorkRow } from "../components/WorkBoard"
 import { WorkCard } from "../components/WorkCard"
 import { t, tc } from "../i18n"
-import { dDayLabel, nextEvent, semesterLabel, shortDay, todayIso } from "../lib/date"
+import { dDayLabel, formatFullDate, nextEvent, semesterLabel, shortDay, todayIso } from "../lib/date"
 import { shownTags } from "../lib/distance"
 import { formatWon } from "../lib/kpis"
 import { AcceptModal } from "../modals/AcceptModal"
 import { roasText, roasVerdict } from "../lib/roasLabels"
 import { analyzeSponsorships, fullWon } from "../lib/sponsorships"
-import type { AnswerResult, Match, NavLabel, RequestStatus, SentProposal, SponsorRequest, Sponsorship } from "../types"
+import type { AnswerResult, EventItem, Match, NavLabel, RequestStatus, SentProposal, SponsorRequest, Sponsorship } from "../types"
 import type { OpenTasks } from "../api"
 
 const pad = (value: number) => String(value).padStart(2, "0")
@@ -53,6 +54,9 @@ export function BrandDashboardPage({
   onOpenAgreements,
   sent = [],
   openTasks,
+  onOpenAgreement,
+  campaigns = [],
+  confirmedCount,
 }: {
   // 인사말에 쓰는, 로그인한 브랜드의 이름.
   accountName?: string
@@ -92,22 +96,38 @@ export function BrandDashboardPage({
   sent?: SentProposal[]
   // 자기 쪽에 남은 계약서 할 일(App이 /api/proposals에서 받는다).
   openTasks?: OpenTasks
+  // 계약서 하나를 연다(업무 보드에서 그런 계약서가 하나뿐일 때).
+  onOpenAgreement?: (id: string) => void
+  // 브랜드 자신의 캠페인(회원 첫머리의 '운영 중 캠페인').
+  campaigns?: EventItem[]
+  // 양쪽이 계약서를 확인한 협찬(서버가 센 것). 없으면 받은 제안에서 센다.
+  confirmedCount?: number
 }) {
   const pending = requests.filter((request) => request.status === "검토 중")
   // 로그인한 회원의 첫 화면: 인사, 다음 일정, 지금 할 일(답할 제안 → 확인할 계약서).
   const member = Boolean(accountName) && !demo
-  const toConfirm = requests.filter((request) => request.status === "수락" && request.contract === "waiting").length
+  // 내가 확인할 계약서(받은 제안과 보낸 제안 모두, 내 쪽이 아직 확인하지 않은 것). 단체만
+  // 확인하면 되는 계약서는 '상대 확인 대기'로 따로 센다. 방문자의 예시는 받은 제안에서 센다.
+  const toConfirm =
+    openTasks?.toConfirm ?? requests.filter((request) => request.status === "수락" && request.contract === "waiting").length
+  const openContract = (count: number, id?: string) =>
+    count === 1 && id && onOpenAgreement ? onOpenAgreement(id) : onOpenAgreements ? onOpenAgreements() : onNavigate("받은 제안")
   const upcoming = requests
     .filter((request) => request.status === "수락" && request.eventDate >= todayIso())
     .sort((a, b) => a.eventDate.localeCompare(b.eventDate))[0]
   const memberHero = member && !paused
-  // 업무 보드(회원): 실제 데이터의 건수만. 줄을 누르면 그 일로 간다.
+  // 업무 보드(회원): 실제 데이터의 건수만. 내가 할 일, 상대를 기다리는 일, 일정 · 결과로
+  // 나눠 단체만 할 일이 남은 것을 내 급한 일처럼 보이지 않는다.
   const sentWaiting = sent.filter((item) => !item.noInbox && item.status === "검토 중").length
-  const contractsWaiting = toConfirm + sent.filter((item) => item.status === "수락" && item.contract === "waiting").length
+  const awaitingPartner = openTasks?.awaitingPartner ?? 0
   const upcomingCount = requests.filter((request) => request.status === "수락" && request.eventDate >= todayIso()).length
+  const resultRows = analyzeSponsorships(sponsorships).rows
+  const resultsDone = resultRows.filter((row) => row.state === "done").length
+  const resultsCounting = resultRows.filter((row) => row.state === "counting").length
   const workRows: WorkRow[] = [
     {
       key: "review",
+      kind: "mine",
       label: t("검토할 제안"),
       count: pending.length,
       detail: pending.length > 0 ? t("조건을 보고 수락하거나 거절해요") : t("새로 온 제안이 없어요"),
@@ -115,38 +135,85 @@ export function BrandDashboardPage({
     },
     {
       key: "contract",
-      label: t("계약 확인 대기"),
-      count: contractsWaiting,
-      detail: contractsWaiting > 0 ? t("확인할 때 성사 수수료를 결제해요") : t("확인할 계약서가 없어요"),
-      onOpen: () => (onOpenAgreements ? onOpenAgreements() : onNavigate("받은 제안")),
-    },
-    {
-      key: "sent",
-      label: t("보낸 제안 답변 대기"),
-      count: sentWaiting,
-      detail: sentWaiting > 0 ? t("단체의 답을 기다려요") : t("답을 기다리는 보낸 제안이 없어요"),
-      onOpen: () => onNavigate("받은 제안"),
+      kind: "mine",
+      label: t("내가 확인할 계약서"),
+      count: toConfirm,
+      detail: toConfirm > 0 ? t("확인할 때 성사 수수료를 결제해요") : t("확인할 계약서가 없어요"),
+      onOpen: () => openContract(toConfirm, openTasks?.confirmId),
     },
     {
       key: "tasks",
+      kind: "mine",
       label: t("증빙 남은 할 일"),
       count: openTasks?.tasks ?? 0,
       detail:
         openTasks && openTasks.tasks > 0
           ? t("계약서 {count}건에서 끝내고 증빙을 붙여요", { count: openTasks.agreements })
           : t("남은 할 일이 없어요"),
+      onOpen: () => openContract(openTasks?.agreements ?? 0, openTasks?.taskId),
+    },
+    {
+      key: "sent",
+      kind: "waiting",
+      label: t("보낸 제안 답변 대기"),
+      count: sentWaiting,
+      detail: sentWaiting > 0 ? t("단체의 답을 기다려요") : t("답을 기다리는 보낸 제안이 없어요"),
+      onOpen: () => onNavigate("받은 제안"),
+    },
+    {
+      key: "partner",
+      kind: "waiting",
+      label: t("상대 확인 대기"),
+      count: awaitingPartner,
+      detail: awaitingPartner > 0 ? t("우리는 확인했고 단체의 확인을 기다려요") : t("상대를 기다리는 계약서가 없어요"),
       onOpen: () => (onOpenAgreements ? onOpenAgreements() : onNavigate("받은 제안")),
     },
     {
       key: "schedule",
+      kind: "info",
       label: t("다가오는 협찬 일정"),
       count: upcomingCount,
       detail: upcoming ? `${upcoming.groupName} · ${upcoming.eventName} · ${dDayLabel(upcoming.eventDate)}` : t("다가오는 협찬이 없어요"),
       onOpen: () => onNavigate("행사 일정"),
     },
+    {
+      key: "results",
+      kind: "info",
+      label: t("결과가 나온 협찬"),
+      count: resultsDone,
+      detail:
+        resultsCounting > 0
+          ? t("{count}건은 아직 방문을 세는 중이에요", { count: resultsCounting })
+          : resultsDone > 0
+            ? t("돌아온 만큼을 성과 분석에서 봐요")
+            : t("끝난 협찬이 아직 없어요"),
+      onOpen: () => onNavigate("성과 분석"),
+    },
   ]
-  const confirmed = requests.filter((request) => request.status === "수락")
+  // 확정은 수락이 아니라 양쪽이 계약서를 확인한 것이다.
+  const accepted = requests.filter((request) => request.status === "수락")
+  const confirmed = accepted.filter((request) => request.contract === "confirmed")
+  const confirmedTotal = confirmedCount ?? confirmed.length
   const nextConfirmed = nextEvent(confirmed.map((request) => ({ date: request.eventDate })))
+  const nextConfirmedRequest = confirmed
+    .filter((request) => request.eventDate >= todayIso())
+    .sort((a, b) => a.eventDate.localeCompare(b.eventDate))[0]
+  const liveCampaigns = campaigns.filter((campaign) => (campaign.endDate ?? campaign.date) >= todayIso())
+  const nextCampaign = nextEvent(liveCampaigns)
+  const topFacts: DashboardFact[] = [
+    {
+      label: t("운영 중 캠페인"),
+      value: t("{count}개", { count: liveCampaigns.length }),
+      note: nextCampaign ? `${nextCampaign.name} · ${formatFullDate(nextCampaign.date)}` : t("캠페인을 등록하면 단체 추천이 정확해져요"),
+    },
+    {
+      label: t("확정된 협찬"),
+      value: t("{count}건", { count: confirmedTotal }),
+      note: nextConfirmedRequest
+        ? t("다음 · {name} {dday}", { name: nextConfirmedRequest.eventName, dday: dDayLabel(nextConfirmedRequest.eventDate) })
+        : t("양쪽이 계약서를 확인한 것"),
+    },
+  ]
   // 0원·집계 중인 협찬은 목표와 견주지 않는다(lib/sponsorships.ts roasState).
   const { totals, rows: results, roasScale } = analyzeSponsorships(sponsorships)
   const totalRoas = totals.roasMissing ? "—" : `${totals.roas}%`
@@ -184,57 +251,92 @@ export function BrandDashboardPage({
 
   return (
     <div className="dashboard">
-      <MeetingHero
-        {...(memberHero ? { greeting: t("반가워요, {name}", { name: accountName! }) } : {})}
-        eyebrow={
-          memberHero
-            ? upcoming
-              ? t("다음 일정 · {name} · {dday}", { name: upcoming.eventName, dday: dDayLabel(upcoming.eventDate) })
-              : t("다가오는 협찬 일정이 없어요")
-            : accountName
-            ? t("반가워요, {name}", { name: accountName })
-            : demo
-              ? t("예시 화면 · {semester}", { semester: semesterLabel() })
-              : semesterLabel()
-        }
-        lines={[t("대학생에게 닿는"), t("가장 확실한 길,"), t("숫자로 확인하세요.")]}
-        stats={[
-          { value: t("{count}건", { count: pending.length }), label: t("검토할 제안") },
-          { value: t("{count}건", { count: confirmed.length }), label: t("확정된 협찬") },
-          { value: totalRoas, label: t("추정 ROAS(전체 집행액 기준)") },
-        ]}
-        insight={
-          paused
-            ? t("내 소개를 숨기는 중이에요.")
-            : pending.length > 0
-            ? t("새로 받은 협찬 제안 {count}건이 답을 기다리고 있어요.", { count: pending.length })
-            : memberHero && toConfirm > 0
-              ? t("계약서 확인이 필요한 협찬이 {count}건 있어요.", { count: toConfirm })
-            : noGroups
-              ? t("아직 가입한 학생단체가 없어요.")
-              : t("캠페인과 잘 맞는 학생단체 {count}곳을 찾았어요.", { count: matches.length })
-        }
-        detail={
-          paused
-            ? t("새 제안은 받지 않아요. 진행 중인 대화와 협찬은 그대로예요.")
-            : memberHero && pending.length === 0 && toConfirm > 0
-              ? t("양쪽이 계약서를 확인해야 협찬이 확정돼요. 수수료는 확인할 때 결제해요.")
-            : noGroups && pending.length === 0
-              ? t("소개와 캠페인을 먼저 올려 두세요. 학생단체가 가입하면 바로 추천해 드려요.")
-              : t("학생 행사에서 쿠폰을 나누고, 매장에 온 손님까지 ROAS로 보여 드려요.")
-        }
-        primary={
-          paused && onResume
-            ? { label: t("다시 보이게 하기"), onClick: onResume }
-            : pending.length > 0
-              ? { label: t("받은 제안 확인하기"), onClick: () => onNavigate("받은 제안") }
-              : memberHero && toConfirm > 0 && onOpenAgreements
-                ? { label: t("계약서 확인"), onClick: onOpenAgreements }
-                : { label: t("학생단체 찾아보기"), onClick: () => onNavigate("단체 찾기") }
-        }
-        secondary={{ label: t("행사 일정 보기"), onClick: () => onNavigate("행사 일정") }}
-        onInstall={onInstall}
-      />
+      {member ? (
+        <DashboardTop
+          who={t("{name} · 브랜드", { name: accountName! })}
+          title={
+            paused
+              ? t("내 소개를 숨기는 중이에요.")
+              : pending.length > 0
+                ? t("새로 받은 협찬 제안 {count}건이 답을 기다리고 있어요.", { count: pending.length })
+                : toConfirm > 0
+                  ? t("내가 확인할 계약서가 {count}건 있어요.", { count: toConfirm })
+                  : t("지금 바로 할 일은 없어요.")
+          }
+          lead={
+            paused
+              ? t("새 제안은 받지 않아요. 진행 중인 대화와 협찬은 그대로예요.")
+              : pending.length > 0
+                ? t("조건을 보고 수락하거나 거절해 주세요.")
+                : toConfirm > 0
+                  ? t("양쪽이 계약서를 확인해야 협찬이 확정돼요. 수수료는 확인할 때 결제해요.")
+                  : t("잘 맞는 학생단체에 먼저 제안하거나 캠페인을 등록해 두세요.")
+          }
+          facts={topFacts}
+          primary={
+            paused && onResume
+              ? { label: t("다시 보이게 하기"), onClick: onResume }
+              : pending.length > 0
+                ? { label: t("받은 제안 확인하기"), onClick: () => onNavigate("받은 제안") }
+                : toConfirm > 0
+                  ? { label: t("계약서 확인"), onClick: () => openContract(toConfirm, openTasks?.confirmId) }
+                  : { label: t("학생단체 찾아보기"), onClick: () => onNavigate("단체 찾기") }
+          }
+          secondary={{ label: t("행사 일정 보기"), onClick: () => onNavigate("행사 일정") }}
+        />
+      ) : (
+        <MeetingHero
+          {...(memberHero ? { greeting: t("반가워요, {name}", { name: accountName! }) } : {})}
+          eyebrow={
+            memberHero
+              ? upcoming
+                ? t("다음 일정 · {name} · {dday}", { name: upcoming.eventName, dday: dDayLabel(upcoming.eventDate) })
+                : t("다가오는 협찬 일정이 없어요")
+              : accountName
+              ? t("반가워요, {name}", { name: accountName })
+              : demo
+                ? t("예시 화면 · {semester}", { semester: semesterLabel() })
+                : semesterLabel()
+          }
+          lines={[t("대학생에게 닿는"), t("가장 확실한 길,"), t("숫자로 확인하세요.")]}
+          stats={[
+            { value: t("{count}건", { count: pending.length }), label: t("검토할 제안") },
+            { value: t("{count}건", { count: confirmed.length }), label: t("확정된 협찬") },
+            { value: totalRoas, label: t("추정 ROAS(전체 집행액 기준)") },
+          ]}
+          insight={
+            paused
+              ? t("내 소개를 숨기는 중이에요.")
+              : pending.length > 0
+              ? t("새로 받은 협찬 제안 {count}건이 답을 기다리고 있어요.", { count: pending.length })
+              : memberHero && toConfirm > 0
+                ? t("계약서 확인이 필요한 협찬이 {count}건 있어요.", { count: toConfirm })
+              : noGroups
+                ? t("아직 가입한 학생단체가 없어요.")
+                : t("캠페인과 잘 맞는 학생단체 {count}곳을 찾았어요.", { count: matches.length })
+          }
+          detail={
+            paused
+              ? t("새 제안은 받지 않아요. 진행 중인 대화와 협찬은 그대로예요.")
+              : memberHero && pending.length === 0 && toConfirm > 0
+                ? t("양쪽이 계약서를 확인해야 협찬이 확정돼요. 수수료는 확인할 때 결제해요.")
+              : noGroups && pending.length === 0
+                ? t("소개와 캠페인을 먼저 올려 두세요. 학생단체가 가입하면 바로 추천해 드려요.")
+                : t("학생 행사에서 쿠폰을 나누고, 매장에 온 손님까지 ROAS로 보여 드려요.")
+          }
+          primary={
+            paused && onResume
+              ? { label: t("다시 보이게 하기"), onClick: onResume }
+              : pending.length > 0
+                ? { label: t("받은 제안 확인하기"), onClick: () => onNavigate("받은 제안") }
+                : memberHero && toConfirm > 0 && onOpenAgreements
+                  ? { label: t("계약서 확인"), onClick: onOpenAgreements }
+                  : { label: t("학생단체 찾아보기"), onClick: () => onNavigate("단체 찾기") }
+          }
+          secondary={{ label: t("행사 일정 보기"), onClick: () => onNavigate("행사 일정") }}
+          onInstall={onInstall}
+        />
+      )}
 
       {checklist}
 
@@ -258,22 +360,37 @@ export function BrandDashboardPage({
         </>
       )}
 
-      <section className="inbox-section">
-        <div className="section-head">
-          <span className="eyebrow" data-reveal>
-            Proposal Inbox
-          </span>
-          <RevealTitle as="h2" className="section-display">
-            {pending.length > 0 ? t("답을 기다리는 제안") : t("새 제안을 기다리고 있어요")}
-          </RevealTitle>
-        </div>
+      {/* 업무 보드는 건수와 길을, 이 구역은 그 자리에서 수락하는 일을 맡는다. 회원에게는
+         답할 제안이 있을 때만 최신 3건을 보인다. */}
+      {(!member || pending.length > 0) && (
+      <section
+        aria-labelledby={member ? "dash-inbox-title" : undefined}
+        className={member ? "inbox-section dash-section" : "inbox-section"}
+      >
+        {member ? (
+          <DashSectionHead
+            action={{ label: t("받은 제안 전체"), onClick: () => onNavigate("받은 제안") }}
+            id="dash-inbox-title"
+            note={pending.length > 3 ? t("최근 3건") : undefined}
+            title={t("답을 기다리는 제안")}
+          />
+        ) : (
+          <div className="section-head">
+            <span className="eyebrow" data-reveal>
+              Proposal Inbox
+            </span>
+            <RevealTitle as="h2" className="section-display">
+              {pending.length > 0 ? t("답을 기다리는 제안") : t("새 제안을 기다리고 있어요")}
+            </RevealTitle>
+          </div>
+        )}
         {pending.length === 0 ? (
           <p className="day-empty inbox-empty" data-reveal>
             {t("새로 받은 제안이 없어요. 단체 찾기에서 먼저 제안해 보세요.")}
           </p>
         ) : (
           <ul className="pending-list">
-            {pending.map((request, index) => (
+            {(member ? pending.slice(0, 3) : pending).map((request, index) => (
               <li className="pending-card" data-reveal key={request.id} style={delay(index * 0.08)}>
                 <div className="pending-head">
                   <BrandMark match={request} />
@@ -302,6 +419,7 @@ export function BrandDashboardPage({
           </ul>
         )}
       </section>
+      )}
 
       {!member && (
         <>
@@ -388,20 +506,32 @@ export function BrandDashboardPage({
         </>
       )}
 
-      <section className="works-section">
-        <div className="section-head centered">
-          <span className="eyebrow" data-reveal>
-            Smart Match
-          </span>
-          <RevealTitle as="h2" className="section-display">
-            {t("추천 학생단체")}
-          </RevealTitle>
-          {updatedAt && (
-            <small className="section-note" data-reveal>
-              {t("오늘 {time} 업데이트", { time: `${pad(updatedAt.getHours())}:${pad(updatedAt.getMinutes())}` })}
-            </small>
-          )}
-        </div>
+      <section
+        aria-labelledby={member ? "dash-matches-title" : undefined}
+        className={member ? "works-section dash-section" : "works-section"}
+      >
+        {member ? (
+          <DashSectionHead
+            action={{ label: t("단체 찾기"), onClick: () => onNavigate("단체 찾기") }}
+            id="dash-matches-title"
+            note={t("추천 지수가 높은 3곳")}
+            title={t("추천 학생단체")}
+          />
+        ) : (
+          <div className="section-head centered">
+            <span className="eyebrow" data-reveal>
+              Smart Match
+            </span>
+            <RevealTitle as="h2" className="section-display">
+              {t("추천 학생단체")}
+            </RevealTitle>
+            {updatedAt && (
+              <small className="section-note" data-reveal>
+                {t("오늘 {time} 업데이트", { time: `${pad(updatedAt.getHours())}:${pad(updatedAt.getMinutes())}` })}
+              </small>
+            )}
+          </div>
+        )}
         {noGroups && (
           <CatalogEmpty
             title={t("아직 추천할 학생단체가 없어요")}
@@ -454,15 +584,26 @@ export function BrandDashboardPage({
         </>
       )}
 
-      <section className="results-section">
-        <div className="section-head">
-          <span className="eyebrow" data-reveal>
-            Performance
-          </span>
-          <RevealTitle as="h2" className="section-display">
-            {t("협찬마다 돌아온 만큼")}
-          </RevealTitle>
-        </div>
+      <section
+        aria-labelledby={member ? "dash-results-title" : undefined}
+        className={member ? "results-section dash-section" : "results-section"}
+      >
+        {member ? (
+          <DashSectionHead
+            action={{ label: t("성과 분석"), onClick: () => onNavigate("성과 분석") }}
+            id="dash-results-title"
+            title={t("협찬별 성과")}
+          />
+        ) : (
+          <div className="section-head">
+            <span className="eyebrow" data-reveal>
+              Performance
+            </span>
+            <RevealTitle as="h2" className="section-display">
+              {t("협찬마다 돌아온 만큼")}
+            </RevealTitle>
+          </div>
+        )}
         <div className="results-grid">
           <div className="silver-panel" data-reveal>
             {results.length === 0 && (

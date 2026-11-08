@@ -24,8 +24,10 @@ const versionOf = (notice: SiteNotice) => {
 
 // 페이지 맨 위에 보이는 운영진 공지 (/admin에서 올린다). 첫 화면을 덜 차지하도록
 // 한 줄로 보이고 '자세히'로 펼친다. 보는 사람이 바뀌면 다시 읽고, 공지의 판마다
-// 이 브라우저에서는 닫아 둘 수 있다.
-export function SiteNotices({ viewer }: { viewer: string }) {
+// 이 브라우저에서는 닫아 둘 수 있다. 안내(info) 공지는 사람이 처음 닿는 화면(소개,
+// 대시보드, FAQ, 약관, 요금제)에서만 보이고, 찾기 · 제안 · 계약 같은 일하는 화면에서는
+// 경고(warning) 공지만 보인다. 같은 띠가 모든 화면 맨 위에서 할 일을 밀어내지 않게.
+export function SiteNotices({ viewer, infoShown = true }: { viewer: string; infoShown?: boolean }) {
   const [notices, setNotices] = useState<SiteNotice[]>([])
   const [dismissed, setDismissed] = useState(readDismissed)
   const [open, setOpen] = useState<string[]>([])
@@ -42,7 +44,9 @@ export function SiteNotices({ viewer }: { viewer: string }) {
       cancelled = true
     }
   }, [viewer])
-  const shown = notices.filter((notice) => !dismissed.includes(versionOf(notice)))
+  const shown = notices.filter(
+    (notice) => !dismissed.includes(versionOf(notice)) && (infoShown || notice.tone === "warning"),
+  )
   if (shown.length === 0) return null
   return (
     <div className="site-notices">
