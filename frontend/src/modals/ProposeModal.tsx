@@ -3,7 +3,7 @@ import { useState } from "react"
 import { errorMessage } from "../api"
 import { Modal } from "../components/Modal"
 import { t } from "../i18n"
-import { formatPeriod, todayIso } from "../lib/date"
+import { formatFullDate, formatPeriod, todayIso } from "../lib/date"
 import type { EventItem, Match, ProposalTemplate, Role } from "../types"
 
 // 서버가 받는 형식(routes/proposals.ts, routes/auth.ts).
@@ -57,8 +57,26 @@ export function ProposeModal({
   // 목록에서 고른 템플릿과, 그 칸이 열려 있는 동안 새 템플릿으로 저장할 이름.
   const [picked, setPicked] = useState("")
   const [naming, setNaming] = useState<string | null>(null)
-  const eventName = upcoming.find((event) => event.id === eventId)?.name ?? ""
+  const chosen = upcoming.find((event) => event.id === eventId)
+  const eventName = chosen?.name ?? ""
   const partnerName = targets ? "{상대}" : match.name
+  // 브랜드가 한 단체에 제안할 때, 그 단체의 다음 행사가 고른 캠페인 기간 밖이면
+  // 알린다. 날짜를 맞추기로 하면 그 사실을 메시지 끝에 적어 보내, 양쪽 제안함과
+  // 메일에 남는다(계약서에서 날짜를 정한다).
+  const partnerEvent = !students && !targets && match.eventDate ? { name: match.eventName ?? "", date: match.eventDate } : null
+  const mismatch = Boolean(
+    partnerEvent && chosen && (partnerEvent.date < chosen.date || partnerEvent.date > (chosen.endDate ?? chosen.date)),
+  )
+  const [adjust, setAdjust] = useState(true)
+  const adjustLine =
+    mismatch && chosen && partnerEvent
+      ? t("일정 조율: 우리 캠페인 {period}, {event} {date}. 날짜는 계약서에서 맞춰요.", {
+          period: formatPeriod(chosen.date, chosen.endDate),
+          event: partnerEvent.name || t("상대 행사"),
+          date: formatFullDate(partnerEvent.date),
+        })
+      : ""
+  const outgoing = [message.trim(), mismatch && adjust ? adjustLine : ""].filter(Boolean).join("\n")
 
   const saveTemplates = async (next: ProposalTemplate[]) => {
     if (!onSaveTemplates) return
@@ -74,10 +92,14 @@ export function ProposeModal({
 
   const send = async () => {
     if (busy) return
+    if (outgoing.length > maxMessage) {
+      setError(t("일정 조율 문장을 더하면 {max}자를 넘어요. 메시지를 줄여 주세요.", { max: maxMessage }))
+      return
+    }
     setBusy(true)
     setError("")
     try {
-      await onSend({ ...(eventId ? { eventId } : {}), message: message.trim() })
+      await onSend({ ...(eventId ? { eventId } : {}), message: outgoing })
     } catch (problem) {
       setError(errorMessage(problem))
     } finally {
@@ -122,6 +144,32 @@ export function ProposeModal({
             <button className="cancel-button" onClick={onCreate} type="button">
               {students ? t("행사 등록하기") : t("캠페인 등록하기")}
             </button>
+          </div>
+        )}
+        {chosen && partnerEvent && (
+          <div className={mismatch ? "propose-dates mismatch" : "propose-dates"}>
+            <dl>
+              <div>
+                <dt>{t("우리 캠페인")}</dt>
+                <dd>{formatPeriod(chosen.date, chosen.endDate)}</dd>
+              </div>
+              <div>
+                <dt>{t("상대 행사")}</dt>
+                <dd>
+                  {partnerEvent.name && `${partnerEvent.name} · `}
+                  {formatFullDate(partnerEvent.date)}
+                </dd>
+              </div>
+            </dl>
+            {mismatch && (
+              <>
+                <p role="status">{t("캠페인 기간과 행사 날짜가 달라요. 보내기 전에 맞는 캠페인인지 확인해 주세요.")}</p>
+                <label className="check-row">
+                  <input checked={adjust} onChange={(event) => setAdjust(event.target.checked)} type="checkbox" />
+                  {t("날짜는 계약서에서 맞추기로 하고, 메시지에 적어 보내요")}
+                </label>
+              </>
+            )}
           </div>
         )}
         {(templates.length > 0 || onSaveTemplates) && (
