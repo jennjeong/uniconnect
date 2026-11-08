@@ -127,10 +127,16 @@ export async function refreshDatabase({ force = false }: { force?: boolean } = {
     await pendingWrite
     const latest = await withinTime(storage.version(), freshness.timeoutMs)
     if (latest !== undefined && latest !== version) await reload()
+    storeHealth.failingSince = undefined
   } catch (error) {
+    storeHealth.failingSince ??= new Date().toISOString()
     console.error(`[store] ${(error as Error).message}`)
   }
 }
+
+// 위의 확인이 데이터베이스에 닿지 못한 뒤로의 시각이다. 그동안에도 읽기는 가진
+// 데이터로 답하므로, 외부 상태 감시(/api/health)가 장애를 알 수 있게 남긴다.
+export const storeHealth: { failingSince?: string } = {}
 
 function withinTime<T>(work: Promise<T>, ms: number) {
   let timer: NodeJS.Timeout

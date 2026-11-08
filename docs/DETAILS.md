@@ -385,7 +385,22 @@ Vercel에서 달라지는 점:
   - Vercel은 주소 규칙을 엄격하게 비교해서, 끝에 `/`가 붙은 주소(`/faq/`)는 규칙에 맞지 않는다. 그래서 `trailingSlash: false`로 `/`를 뺀 주소로 308 리디렉트한다.
 - 요청 제한(로그인 실패, 인증번호 등)과 OpenStreetMap 주소 검색 간격은 서버 인스턴스마다 따로 센다. 사용자가 적을 때는 인스턴스가 하나라 그대로지만, 붐벼서 인스턴스가 늘면 제한이 느슨해질 수 있다.
 - 사용자의 주소는 Vercel이 앞단에서 넣어 주는 값으로 읽는다(`TRUST_PROXY`를 따로 두지 않으면 1).
-- 데이터를 되돌릴 때는 Neon의 복원 기능이나 `uniconnect_backups` 표의 백업을 쓴다.
+- 데이터를 되돌릴 때는 Neon의 복원 기능이나 `uniconnect_backups` 표의 백업을 쓴다. 표의 백업으로 되돌리는 절차(#328):
+  1. 운영 콘솔의 시스템 화면(`GET /api/admin/system`)에서 되돌릴 시각(UTC, `YYYY-MM-DDTHH`)을 고른다. 백업은 그 시간에 처음 저장한 데이터이고 24시간 남는다.
+  2. `GET /api/admin/backups/<시각>/summary`로 백업과 지금의 건수, 돌아올 계정 수(`accountsBack`)를 본다.
+  3. `POST /api/admin/backups/<시각>/restore`에 `{ "confirm": "<시각>" }`을 보낸다. 시각이 다르면 400이고 아무것도 바뀌지 않는다.
+  4. 운영 기록에 `backup-restored`가 남았는지, 잃었던 회원이 로그인되는지 확인한다. 다른 서버 인스턴스는 다음 요청에서 버전을 확인해 새 데이터를 읽는다.
+  - 결제, 운영자, 운영 기록, 지금의 로그인과 보안 설정, 분쟁, 사진, 참여 기록 행은 되돌리지 않는다(`keepThroughRestore`, `docs/ARCHITECTURE.md`).
+  - 훈련: `cd backend && npx tsx loadtest/restore-drill.ts`가 위 절차를 실제 API로 돈다. 계정 하나를 잃게 한 뒤 복원하고, 데이터베이스에서 다시 읽어 그 회원으로 로그인한다. 인자 없이는 프로세스 안의 Postgres(PGlite)를 쓰고, 연결 문자열을 담은 파일을 주면 그 데이터베이스를 덮어쓴다. 그래서 데이터가 있는 데이터베이스는 이 스크립트가 남긴 표시가 없으면 멈춘다. 운영 브랜치의 복사본이 아니라 빈 측정용 브랜치를 쓴다.
+  - 2026-11-08 PGlite 결과(노트북). 세 경우 모두 계정이 돌아왔고, 틀린 시각은 400, 복원 뒤 로그인은 200이었다.
+
+    | 데이터 | 백업 크기 | 백업 저장 | 요약 | 복원 | 다시 읽기 |
+    |---|---|---|---|---|---|
+    | 시드 | 25KB | 2ms | 4ms | 8ms | 1ms |
+    | 회원 2,000명 추가 | 1.4MB | 54ms | 9ms | 0.13초 | 13ms |
+    | 회원 10,000명 추가 | 6.8MB | 0.25초 | 31ms | 1.5초 | 48ms |
+
+    Neon에서는 백업을 읽고 새 문서를 쓰는 데 네트워크 왕복이 더해져 더 걸린다. Neon에서는 재지 않았다.
 - PR마다 미리보기 배포가 생기고, Neon 연결이 미리보기마다 데이터베이스 브랜치(`preview/<PR 브랜치>`, 운영 DB의 복사본)를 만든다.
   - Neon 무료 플랜은 운영 브랜치를 포함해 브랜치를 10개까지만 둘 수 있다.
   - Vercel 쪽 연결은 그 브랜치의 마지막 미리보기 배포가 지워질 때만 브랜치를 지우고, 미리보기 배포는 기본 180일 보관된다.
@@ -465,7 +480,7 @@ cp backend/.env.example backend/.env.local
 
 | 메서드 | 경로 | 설명 | 로그인 |
 | --- | --- | --- | --- |
-| GET | `/api/health` | 상태 확인 | |
+| GET | `/api/health` | 상태 확인. 외부 상태 감시(#327)가 부르는 주소. 데이터베이스에 닿지 않는 동안은 503과 `{ ok: false, failingSince }` | |
 | POST | `/api/auth/email-code` | 가입 인증번호 발송 `{ role, email }` | |
 | POST | `/api/auth/email-code/verify` | 인증번호 확인 `{ email, code }` → `verificationToken` | |
 | POST | `/api/auth/signup` | 회원가입 → `{ token, account }` | |

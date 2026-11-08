@@ -48,7 +48,7 @@ import { blocksRouter, reportsRouter } from "./routes/reports.js"
 import { reviewsRouter } from "./routes/reviews.js"
 import { savedRouter } from "./routes/saved.js"
 import { foldCounts, foldInBackground, movePassesToRows, passSql } from "./lib/passRows.js"
-import { getDatabase, refreshDatabase } from "./store.js"
+import { getDatabase, refreshDatabase, storeHealth } from "./store.js"
 
 // `loaded`: Vercel(vercel.ts)에서는 API의 각 복사본이 시작할 때가 아니라 첫
 // 요청에서 데이터를 읽는다.
@@ -177,7 +177,13 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
     next()
   })
 
+  // 외부 상태 감시가 부르는 주소다(#327). 데이터베이스에 닿지 않는 동안에는 503으로
+  // 답한다. 오류 내용은 보이지 않는다.
   app.get("/api/health", (_req, res) => {
+    if (storeHealth.failingSince) {
+      res.status(503).json({ ok: false, failingSince: storeHealth.failingSince })
+      return
+    }
     res.json({ ok: true })
   })
   app.use("/api/auth/social", socialRouter)

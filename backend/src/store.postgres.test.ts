@@ -348,6 +348,36 @@ test("through the API, an agreement photo goes into the database, is served to i
 // 동시에 시작한 API 복사본이 모두 테이블을 만든다. Postgres는 지는 쪽에
 // 카탈로그의 중복 키(23505)나 이미 있는 테이블(42P07)로 답하는데, 그때쯤에는
 // 테이블이 이미 있다.
+test("the health check fails while the database doesn't answer, and recovers with it", async () => {
+  const { createApp } = await import("./app.js")
+  const server = createApp().listen(0)
+  await new Promise((resolve) => server.once("listening", resolve))
+  const health = async () => {
+    const response = await fetch(`http://127.0.0.1:${(server.address() as AddressInfo).port}/api/health`)
+    return { status: response.status, data: (await response.json()) as { ok: boolean; failingSince?: string } }
+  }
+  const everyMs = store.freshness.everyMs
+  store.freshness.everyMs = 0
+  try {
+    assert.deepEqual(await health(), { status: 200, data: { ok: true } })
+    useSql(async () => {
+      throw new Error("connection refused")
+    })
+    const down = await health()
+    assert.equal(down.status, 503)
+    assert.equal(down.data.ok, false)
+    assert.ok(down.data.failingSince)
+    // 실패가 이어지는 동안 처음 실패한 시각을 그대로 둔다.
+    assert.equal((await health()).data.failingSince, down.data.failingSince)
+    useSql(sql)
+    assert.deepEqual(await health(), { status: 200, data: { ok: true } })
+  } finally {
+    useSql(sql)
+    store.freshness.everyMs = everyMs
+    server.close()
+  }
+})
+
 test("errors for the operators are rows of their own, never written beside the data", async () => {
   const { clearErrorLog, recentErrors, recordError } = await import("./lib/errorLog.js")
   await clearErrorLog()
