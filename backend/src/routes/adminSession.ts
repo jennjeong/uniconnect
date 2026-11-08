@@ -5,7 +5,7 @@ import { adminRequest, logAdmin } from "../lib/adminTools.js"
 import { normalizeEmail } from "../lib/email.js"
 import { HttpError } from "../lib/errors.js"
 import { activeOperators, operatorFor, tokenClosed } from "../lib/operators.js"
-import { hashPassword, verifyPassword } from "../lib/password.js"
+import { decoyPasswordHash, hashPassword, upgradePasswordHash, verifyPassword } from "../lib/password.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { newSecret, otpauthUrl } from "../lib/totp.js"
 import { checkPassword, text } from "../lib/validation.js"
@@ -38,8 +38,6 @@ const operatorFailures = createRateLimit({
 
 const wrongLogin = "이메일 또는 비밀번호가 올바르지 않아요."
 
-// 없는 이메일에도 비밀번호를 확인해 응답 시간으로 운영자를 알아내지 못하게 한다.
-let decoy: Promise<string> | undefined
 
 const operatorView = ({ id, email, name, createdAt, disabledAt, twoFactor }: Operator) => ({
   id,
@@ -56,12 +54,15 @@ adminSessionRouter.post("/session", async (req, res) => {
   await operatorFailures.take(email)
   const password = String(req.body?.password ?? "")
   const found = getDatabase().operators?.find((item) => item.email === email && !item.disabledAt)
-  const hash = found?.passwordHash ?? (await (decoy ??= hashPassword(randomUUID())))
+  // 없는 이메일에도 비밀번호를 확인해 응답 시간으로 운영자를 알아내지 못하게 한다.
+  const hash = found?.passwordHash ?? (await decoyPasswordHash())
   if (!(await verifyPassword(password, hash)) || !found) throw new HttpError(401, wrongLogin)
   // 확인하는 동안 데이터를 새로 읽었을 수 있어 다시 찾고, 그사이 꺼졌으면 거절한다.
   const operator = getDatabase().operators?.find((item) => item.id === found.id && !item.disabledAt)
   if (!operator) throw new HttpError(401, wrongLogin)
   await operatorFailures.release(email)
+  // 예전 강도로 저장된 비밀번호는 다시 만든다. 아래의 저장이 함께 남긴다.
+  await upgradePasswordHash(operator, password)
   const ticket = startTicket(operator, req)
   if (operator.twoFactor) {
     await saveDatabase()

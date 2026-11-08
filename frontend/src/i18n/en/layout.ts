@@ -254,7 +254,8 @@ const en: Record<string, string> = {
   "협찬금을 보냈어요": "We sent the payment",
   "수령 표시 거두기": "Take back the receipt mark",
   "협찬금을 받았어요": "We received the payment",
-  "현금 협찬액을 바꾸면 지급과 수령 표시가 지워져요.": "Changing the cash amount clears the payment and receipt marks.",
+  "지급이나 수령을 표시한 뒤에는 현금 협찬액을 바꿀 수 없어요. 표시를 거둔 뒤 바꿔 주세요.":
+    "The cash amount can't change once payment or receipt is marked. Take the mark back first.",
   "지급 예정일을 정했어요. 두 쪽 모두 다시 확인해 주세요.": "Set the payment date. Both sides need to confirm again.",
   "지급 예정일을 지웠어요. 두 쪽 모두 다시 확인해 주세요.": "Cleared the payment date. Both sides need to confirm again.",
   "보냈다고 표시했어요. 상대에게 알렸어요.": "Marked as sent. We told the other side.",

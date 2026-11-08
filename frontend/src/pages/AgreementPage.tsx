@@ -871,7 +871,7 @@ function ValuePanel({
           </label>
           <p className="field-hint">{t("제품, 쿠폰, 장소처럼 현물로 주는 것은 판매가로 환산해 적어 주세요. 바꾸면 두 쪽 모두 다시 확인해요.")}</p>
           {(agreement.payout?.paidAt || agreement.payout?.receivedAt) && (
-            <p className="field-hint">{t("현금 협찬액을 바꾸면 지급과 수령 표시가 지워져요.")}</p>
+            <p className="field-hint">{t("지급이나 수령을 표시한 뒤에는 현금 협찬액을 바꿀 수 없어요. 표시를 거둔 뒤 바꿔 주세요.")}</p>
           )}
           <div className="value-form-actions">
             <button className="cancel-button" onClick={() => setEditing(false)} type="button">

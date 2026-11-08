@@ -14,6 +14,7 @@ import {
   disputeReasons,
   disputesOf,
   disputeView,
+  evidenceBytesOf,
 } from "../lib/disputes.js"
 import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
@@ -134,7 +135,7 @@ disputesRouter.post("/:id/statements", async (req, res) => {
   const { account, database, dispute, side } = own(req)
   stillOpen(dispute)
   const said = statementOf(req.body?.text, "남길 말을 적어 주세요.")
-  const count = dispute.events.filter((event) => event.kind === "statement").length
+  const count = dispute.events.filter((event) => event.kind === "statement" && event.by === side).length
   if (count >= disputeLimits.statements) throw new HttpError(409, "남길 수 있는 말을 모두 썼어요. 운영자의 결론을 기다려 주세요.")
   addDisputeEvent(dispute, { by: side, kind: "statement", text: said })
   await saveDatabase()
@@ -149,6 +150,8 @@ disputesRouter.post("/:id/evidence", async (req, res) => {
   const full = (item: Dispute) => item.evidence.filter((entry) => entry.side === side).length >= disputeLimits.evidencePerSide
   if (full(dispute)) throw new HttpError(409, "증빙은 한쪽마다 5개까지 올릴 수 있어요.")
   const document = parseDocument(req.body, "증빙을 사진이나 PDF로 올려 주세요.")
+  const noRoom = () => evidenceBytesOf(getDatabase(), account.id) + document.bytes.length > disputeLimits.evidenceBytes
+  if (noRoom()) throw new HttpError(409, "분쟁 증빙을 더 올릴 공간이 없어요(계정마다 모두 합쳐 20MB).")
   const folder = disputeFolder(dispute.id)
   const store = photos()
   await store.put(folder, document.file, document.bytes)
@@ -159,6 +162,7 @@ disputesRouter.post("/:id/evidence", async (req, res) => {
     if (!fresh) throw new HttpError(404, "분쟁을 찾을 수 없어요.")
     stillOpen(fresh)
     if (full(fresh)) throw new HttpError(409, "증빙은 한쪽마다 5개까지 올릴 수 있어요.")
+    if (noRoom()) throw new HttpError(409, "분쟁 증빙을 더 올릴 공간이 없어요(계정마다 모두 합쳐 20MB).")
     const id = randomUUID()
     const now = new Date()
     fresh.evidence.push({ id, side, file: document.file, name: document.name, size: document.bytes.length, addedAt: now.toISOString() })

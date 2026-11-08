@@ -4,6 +4,7 @@ import { Router, type Request } from "express"
 import { config } from "../config.js"
 import { paymentView } from "../lib/billing.js"
 import { acceptedProposalsOf, dropOrphanAgreements, removeUploads } from "../lib/agreements.js"
+import { inOpenDispute } from "../lib/disputes.js"
 import { findListing } from "../lib/catalog.js"
 import { deviceLabel } from "../lib/devices.js"
 import { applicationFolder, applicationFor, applicationsOf, holdApplication, parseDocument } from "../lib/applications.js"
@@ -12,9 +13,9 @@ import { forgetAdminRecords } from "../lib/adminTools.js"
 import { HttpError } from "../lib/errors.js"
 import { sendVerificationCode } from "../lib/mailer.js"
 import { notify } from "../lib/notices.js"
-import { chatFiles, eventPhotos } from "../lib/photos.js"
+import { chatFiles, eventPhotos, photos } from "../lib/photos.js"
 import { langOf, type Lang } from "../lib/i18n.js"
-import { hashPassword, verifyPassword } from "../lib/password.js"
+import { decoyPasswordHash, hashPassword, samePasswordHash, upgradePasswordHash, verifyPassword } from "../lib/password.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { freezeSponsorships } from "../lib/sponsorships.js"
 import { emailTaken, memberByEmail, memberOf, requireOwner } from "../lib/team.js"
@@ -435,11 +436,13 @@ authRouter.post("/login", async (req, res) => {
   const account = owner ?? team?.account
   const hashBefore = team ? team.member.passwordHash : account?.passwordHash
 
-  const matches = account && hashBefore ? await verifyPassword(password, hashBefore) : false
+  // 없는 이메일도 같은 시간이 걸리게 미끼 해시를 확인한다.
+  const verified = await verifyPassword(password, hashBefore ?? (await decoyPasswordHash()))
+  const matches = Boolean(account && hashBefore && verified)
   // 확인 도중 초기화, 변경, 삭제가 있으면 그쪽이 이기며, 옛 비밀번호로는 더
   // 이상 세션이 열리지 않는다.
   const hashAfter = team ? memberOf(account!, team.member.id)?.passwordHash : account?.passwordHash
-  if (!account || !matches || hashAfter !== hashBefore || !database.accounts.includes(account)) {
+  if (!account || !matches || !samePasswordHash(hashBefore, hashAfter) || !database.accounts.includes(account)) {
     // 운영자를 기다리는 중이면 맞는 비밀번호에 그렇다고 알려 준다.
     const waiting = applicationFor(database, email)
     const hash = waiting?.account?.passwordHash ?? waiting?.member?.passwordHash
@@ -452,6 +455,8 @@ authRouter.post("/login", async (req, res) => {
     const label = account.role === "학생단체" ? "협찬 받기" : "협찬 하기"
     throw new HttpError(403, `'${label}' 회원으로 가입된 계정이에요. 유형을 바꿔 로그인해 주세요.`)
   }
+  // 예전 강도로 저장된 비밀번호는 맞는 비밀번호를 받은 지금 다시 만든다. 아래의 저장이 함께 남긴다.
+  await upgradePasswordHash(team ? memberOf(account, team.member.id) ?? team.member : account, password)
   // 공동 관리자는 2단계 로그인이 있어야 한다. 승인 뒤 첫 로그인에서 설정하며,
   // 첫 코드가 둘을 함께 끝낸다.
   if (team) {
@@ -478,7 +483,7 @@ authRouter.post("/login", async (req, res) => {
   // 삭제, 정지가 있었으면 그쪽이 이긴다.
   const opened = await retryConflicts(async () => {
       const current = getDatabase().accounts.find((item) => item.id === account.id)
-      if (!current || current.passwordHash !== hashBefore) throw new HttpError(401, "이메일 또는 비밀번호가 올바르지 않아요.")
+      if (!current || !samePasswordHash(hashBefore, current.passwordHash)) throw new HttpError(401, "이메일 또는 비밀번호가 올바르지 않아요.")
       if (current.suspendedAt) throw new HttpError(403, suspendedMessage)
       const token = startSession(current.id, req)
       await saveDatabase()
@@ -569,7 +574,7 @@ function removeAccount(database: Database, account: Account) {
       offer.fromAccountId !== account.id && (!account.groupId || offer.groupId !== account.groupId),
   )
   // 그 제안에 대한 계약서도 사라지고, 저장된 사진도 그때 지운다.
-  const droppedAgreements = dropOrphanAgreements(database)
+  const droppedAgreements = dropOrphanAgreements(database, account.id)
   // 이 계정이 쓴 후기와 이 계정에 대한 후기다.
   database.reviews = database.reviews.filter(
     (review) => review.authorAccountId !== account.id && (!listingId || review.aboutId !== listingId),
@@ -640,6 +645,10 @@ authRouter.delete("/account", async (req, res) => {
   const account = requireOwner(req, requireAccount(req))
   const database = getDatabase()
   if (isDemo(account)) throw new HttpError(403, "데모 계정은 탈퇴할 수 없어요.")
+  // 탈퇴하면 분쟁과 증빙도 지워지므로, 결론 전에 탈퇴해 기록을 없애지 못하게 한다.
+  if (inOpenDispute(database, account.id)) {
+    throw new HttpError(409, "진행 중인 협찬 분쟁이 있어 지금은 탈퇴할 수 없어요. 분쟁이 끝나거나 거둔 뒤에 탈퇴해 주세요.")
+  }
   const limitKey = `${clientKey(req)} ${account.email}`
   await loginFailures.take(limitKey)
   if (!(await verifyPassword(String(req.body?.password ?? ""), account.passwordHash))) {
@@ -845,7 +854,10 @@ authRouter.post("/email", async (req, res) => {
   database.emailCodes = database.emailCodes.filter((item) => item !== entry)
   account.email = email
   // 이메일을 넘기면 대표가 바뀐 것이라, 앞 대표로 받은 단체 확인은 이어지지 않는다.
+  // 기다리던 확인 신청과 앞 대표의 서류도 지운다.
   delete account.groupVerified
+  const handedOver = applicationsOf(database).filter((item) => item.kind === "group" && item.linkAccountId === account.id)
+  database.applications = applicationsOf(database).filter((item) => !handedOver.includes(item))
   // 주인의 다른 로그인은 끝나고, 공동 관리자의 로그인은 남는다.
   const keep = req.sessionToken ? hashToken(req.sessionToken) : ""
   database.sessions = database.sessions.filter(
@@ -862,6 +874,7 @@ authRouter.post("/email", async (req, res) => {
     ],
     "/faq",
   )
+  if (handedOver.length) await photos().removeAll(handedOver.map((item) => applicationFolder(item.id)))
   res.json({ account: toPublic(account, req.memberId) })
 })
 

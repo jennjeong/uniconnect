@@ -268,6 +268,10 @@ agreementsRouter.put("/:id/value", async (req, res) => {
   if (eventOver(database, proposal)) throw new HttpError(409, "끝난 행사의 협찬액은 바꿀 수 없어요.")
   const { agreement } = agreementFor(database, proposal)
   const changed = JSON.stringify(value) !== JSON.stringify(agreement.value ?? null)
+  // 표시는 그 금액에 대한 양쪽의 기록이라, 금액을 바꿔 상대의 표시를 지우지 못하게 한다.
+  if (value.cash !== agreement.value?.cash && (agreement.payout?.paidAt || agreement.payout?.receivedAt)) {
+    throw new HttpError(409, "지급이나 수령을 표시한 뒤에는 현금 협찬액을 바꿀 수 없어요. 표시를 거둔 뒤 바꿔 주세요.")
+  }
   if (value.cash !== agreement.value?.cash) cashChanged(agreement, value.cash)
   agreement.value = value
   if (changed) {

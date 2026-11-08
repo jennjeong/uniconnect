@@ -816,6 +816,16 @@ const en: Record<string, string> = {
   "협찬 분쟁의 결론이 기록됐어요": "A conclusion was recorded for a sponsorship dispute",
   "'{name}' 분쟁에 운영자가 결론을 기록했어요. 계약서에서 확인해 주세요.":
     "An operator recorded a conclusion on the dispute about '{name}'. Please check it on the agreement.",
+  "진행 중인 협찬 분쟁이 있어 지금은 탈퇴할 수 없어요. 분쟁이 끝나거나 거둔 뒤에 탈퇴해 주세요.":
+    "You have a sponsorship dispute in progress, so you can't delete your account yet. Please delete it once the dispute is concluded or withdrawn.",
+  "그사이 이 결제의 환불이 기록됐어요. 결제 내역을 다시 확인해 주세요.":
+    "A refund was recorded for this payment in the meantime. Please check the payment again.",
+  "지급이나 수령을 표시한 뒤에는 현금 협찬액을 바꿀 수 없어요. 표시를 거둔 뒤 바꿔 주세요.":
+    "The cash amount can't change once payment or receipt is marked. Take the mark back first.",
+  "웹훅이 너무 많아요.": "Too many webhooks.",
+  "같은 알림이 너무 많아요.": "Too many of the same notice.",
+  "분쟁 증빙을 더 올릴 공간이 없어요(계정마다 모두 합쳐 20MB).":
+    "There's no room for more dispute evidence (20MB in total per account).",
 }
 
 export default en

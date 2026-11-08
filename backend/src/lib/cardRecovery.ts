@@ -3,6 +3,7 @@ import type { Payment } from "../types.js"
 import { logAdmin } from "./adminTools.js"
 import { markCancelled, markPaid, markPartlyRefunded, partialRefundOf, paymentsOf, refundUnsure, toss, type TossPayment } from "./billing.js"
 import { HttpError } from "./errors.js"
+import { createRateLimit } from "./rateLimit.js"
 
 // 카드 결제는 여기에 기록되기 전에 Toss Payments가 승인하므로, 그 사이에
 // 저장이 실패하면 카드는 청구됐는데 주문은 대기로 남는다. 이를 복구하려고
@@ -253,6 +254,10 @@ export async function refundOutside(id: string, reason: string) {
   const payment = paymentById(id)
   if (!payment) throw new HttpError(404, "결제를 찾을 수 없어요.")
   if (found?.status !== "DONE") throw new HttpError(409, "Toss의 결제가 이미 바뀌어 직접 환불로 기록할 수 없어요. 결제 내역을 다시 확인해 주세요.")
+  // Toss에 묻는 동안 웹훅이나 다른 운영자가 먼저 환불했을 수 있다. 그러면 두 번 돌려주지 않는다.
+  if (payment.status !== "paid" || payment.refundedAmount || payment.refundingAt) {
+    throw new HttpError(409, "그사이 이 결제의 환불이 기록됐어요. 결제 내역을 다시 확인해 주세요.")
+  }
   const part = partialRefundOf(payment)
   if (part) markPartlyRefunded(database, payment, part, reason)
   else markCancelled(database, payment, reason)
@@ -263,6 +268,8 @@ export async function refundOutside(id: string, reason: string) {
 
 export const tossConsoleCancel = "Toss에서 취소"
 
+const webhookLookups = createRateLimit({ limit: 20, windowMs: 60 * 60 * 1000, message: "웹훅이 너무 많아요." })
+
 export type WebhookResult = "ignored" | Settled | SettledRefund
 
 // Toss 웹훅을 받은 뒤의 정리다. 웹훅 내용은 믿지 않는다. 주문에 저장한 키와 같은 키를
@@ -271,6 +278,10 @@ export type WebhookResult = "ignored" | Settled | SettledRefund
 export async function settleFromWebhook(orderId: string, paymentKey: string): Promise<WebhookResult> {
   const payment = paymentById(orderId)
   if (!payment?.paymentKey || payment.paymentKey !== paymentKey) return "ignored"
+  // 결제한 사람은 주문 번호와 키를 알므로 같은 웹훅을 되풀이해 Toss 조회를 쏟아낼 수 있다.
+  // 실제 Toss의 웹훅은 주문 하나에 몇 번이면 끝난다. 넘치면 무시하지 않고 429로 답해
+  // Toss가 나중에 다시 보내게 한다. 그사이 온 진짜 상태 변경을 잃지 않는다.
+  await webhookLookups.take(orderId)
   if (payment.status === "pending") return settleCard(orderId)
   if (payment.status !== "paid" || payment.refundedAmount) return "ignored"
   if (payment.refundingAt) return settleRefund(orderId)

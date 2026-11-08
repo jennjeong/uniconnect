@@ -527,6 +527,33 @@ test("security: tokens, stale prices, refunds, late edits, codes and invitations
   assert.equal(joinedAccount.email, "sec-b@syu.ac.kr")
 })
 
+test("a password kept at the old strength is made again on the next login, and still works", async () => {
+  const { scryptSync } = await import("node:crypto")
+  const { needsRehash, verifyPassword } = await import("./lib/password.js")
+  await signUpMember("old-hash@syu.ac.kr", "old-hash-123")
+  const account = () => getDatabase().accounts.find((item) => item.email === "old-hash@syu.ac.kr")!
+  assert.match(account().passwordHash, /^scrypt:32768:8:3:/)
+  // 예전 형식은 Node 기본값의 "salt:hash"다.
+  const salt = "0123456789abcdef0123456789abcdef"
+  account().passwordHash = `${salt}:${scryptSync("old-hash-123", salt, 64).toString("hex")}`
+  await saveDatabase()
+  assert.equal(needsRehash(account().passwordHash), true)
+
+  const wrong = await call("POST", "/auth/login", { role: "학생단체", email: "old-hash@syu.ac.kr", password: "wrong-pass-1" })
+  assert.equal(wrong.status, 401)
+  assert.equal(needsRehash(account().passwordHash), true)
+  const first = await call("POST", "/auth/login", { role: "학생단체", email: "old-hash@syu.ac.kr", password: "old-hash-123" })
+  assert.equal(first.status, 200)
+  assert.equal(needsRehash(account().passwordHash), false)
+  const again = await call("POST", "/auth/login", { role: "학생단체", email: "old-hash@syu.ac.kr", password: "old-hash-123" })
+  assert.equal(again.status, 200)
+
+  // 저장된 값이 터무니없는 강도를 적어도 계산하지 않고 거절한다.
+  assert.equal(await verifyPassword("x", `scrypt:${2 ** 30}:8:1:${salt}:00`), false)
+  assert.equal(await verifyPassword("x", "scrypt:3:8:1:aa:00"), false)
+  assert.equal(await verifyPassword("x", "garbage"), false)
+})
+
 test("health check and unknown routes", async () => {
   assert.deepEqual((await call("GET", "/health")).data, { ok: true })
   assert.equal((await call("GET", "/nope")).status, 404)
@@ -5655,6 +5682,8 @@ test("an account downloads everything it made, without its password or participa
 test("the data is backed up at most hourly beside the data file, for 24 hours", async () => {
   const { backups, backupFolder } = await import("./store.js")
   const folder = backupFolder()
+  // 앞선 테스트가 정시를 넘겨 찍은 복사가 있을 수 있어 비우고 시작한다.
+  await rm(folder, { recursive: true, force: true })
   await mkdir(folder, { recursive: true })
   const named = (hours: number) => `db-${new Date(Date.now() - hours * 3_600_000).toISOString().slice(0, 13).replace("T", "-")}.json`
   await writeFile(path.join(folder, "db-2000-01-01-00.json"), "{}")
@@ -6147,6 +6176,16 @@ test("both sides record a sponsorship payment outside the platform, and hear whe
     assert.equal((await call("DELETE", `${route}/paid`, undefined, brand)).status, 200)
     assert.deepEqual(stored().payout, { dueDate: due })
 
+    // 표시를 켰다 껐다 해도 같은 메일은 한 시간에 5통까지만 간다.
+    sent.length = 0
+    for (let index = 0; index < 8; index += 1) {
+      await call("POST", `${route}/paid`, undefined, brand)
+      await call("DELETE", `${route}/paid`, undefined, brand)
+    }
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    assert.equal(sent.filter((message) => message.to[0] === "payout-club@syu.ac.kr").length, 4)
+    assert.deepEqual(stored().payout, { dueDate: due })
+
     // 예정일이 지나면 양쪽에 한 번씩이다.
     const lateDay = new Date(`${addDays(due, 1)}T03:00:00Z`)
     sent.length = 0
@@ -6168,10 +6207,18 @@ test("both sides record a sponsorship payment outside the platform, and hear whe
     await call("POST", `${route}/paid`, undefined, brand)
     assert.equal(await sendPayoutReminders(getDatabase()), 0)
 
-    // 현금이 바뀌면 앞선 표시는 다른 금액의 것이라 지운다. 메일 기록은 보이지 않는다.
+    // 표시가 있으면 금액을 바꿔 상대의 표시를 지울 수 없다. 메일 기록은 보이지 않는다.
     await call("POST", `${route}/received`, undefined, group)
     stored().payout!.lateNotified = { brand: "2026-11-01T00:00:00.000Z" }
     assert.equal((await call("GET", `/agreements/${id}`, undefined, brand)).data.agreement.payout.lateNotified, undefined)
+    for (const token of [group, brand]) {
+      assert.equal((await call("PUT", `/agreements/${id}/value`, { value: { cash: 200000, inKind: 0 } }, token)).status, 409)
+    }
+    assert.ok(stored().payout!.paidAt && stored().payout!.receivedAt)
+    // 현물만 바꾸는 것은 된다. 표시를 거두면 금액도 바꿀 수 있고, 앞선 기록은 지운다.
+    assert.equal((await call("PUT", `/agreements/${id}/value`, { value: { cash: 100000, inKind: 5000 } }, group)).status, 200)
+    await call("DELETE", `${route}/received`, undefined, group)
+    await call("DELETE", `${route}/paid`, undefined, brand)
     const raised = await call("PUT", `/agreements/${id}/value`, { value: { cash: 200000, inKind: 0 } }, group)
     assert.deepEqual(raised.data.agreement.payout, { dueDate: addDays(today, -1), late: true })
     await call("PUT", `/agreements/${id}/value`, { value: { cash: 0, inKind: 100000 } }, group)
@@ -6247,6 +6294,20 @@ test("a Toss webhook is only a hint: forged bodies change nothing, and Toss's ow
     assert.equal((await hook(first.id, "pk-hook")).status, 200)
     assert.equal(stored(first.id).status, "paid")
 
+    // 키를 아는 결제자가 같은 웹훅을 되풀이해도 Toss 조회는 주문마다 한 시간에 20번까지다.
+    let asked = 0
+    toss.lookup = async (paymentKey) => {
+      asked += 1
+      return atToss.get(paymentKey)
+    }
+    const answers = new Set<number>()
+    for (let index = 0; index < 30; index += 1) answers.add((await hook(first.id, "pk-hook")).status)
+    // 넘친 것은 429라 Toss가 나중에 다시 보낸다.
+    assert.deepEqual([...answers].sort(), [200, 429])
+    assert.ok(asked > 0 && asked <= 20, String(asked))
+    toss.lookup = async (paymentKey) => atToss.get(paymentKey)
+    clearRateLimits()
+
     // 금액이 다르면 결제 완료로 치지 않는다.
     const second = await order()
     await call("POST", "/billing/confirm", { orderId: second.id, paymentKey: "pk-other", amount: second.amount }, brand)
@@ -6303,6 +6364,17 @@ test("an operator records a refund paid outside Toss only while Toss still holds
     const { order } = (await call("POST", "/billing/orders", { kind: "pro" }, brand)).data
     await call("POST", "/billing/confirm", { orderId: order.id, paymentKey: "pk-out", amount: order.amount }, brand)
     assert.equal(stored(order.id).status, "paid")
+
+    // Toss에 묻는 동안 웹훅이 먼저 전액 취소를 기록하면 계좌로 또 돌려주지 않는다.
+    toss.lookup = async () => {
+      Object.assign(stored(order.id), { status: "cancelled", cancelReason: "Toss에서 취소" })
+      return { status: "DONE" }
+    }
+    assert.equal((await admin(order.id, { outside: true, reason: "겹친 환불" })).status, 409)
+    assert.equal(stored(order.id).cancelReason, "Toss에서 취소")
+    Object.assign(stored(order.id), { status: "paid" })
+    delete stored(order.id).cancelReason
+    toss.lookup = async () => ({ status })
 
     // Toss에서 이미 바뀐 결제는 또 돌려주지 않게 막는다.
     status = "PARTIAL_CANCELED"
@@ -8491,11 +8563,21 @@ test("handing over the login email drops the student group's verified mark", asy
   const { grantGroupCheck } = await import("./lib/groupCheck.js")
   const group = await signUpMember("handover-club@syu.ac.kr", "handover-pass-123")
   const account = getDatabase().accounts.find((item) => item.email === "handover-club@syu.ac.kr")!
+  const { applicationFolder } = await import("./lib/applications.js")
+  const { photos } = await import("./lib/photos.js")
+  // 앞 대표가 낸 확인 신청이 기다리는 중이면, 넘긴 뒤 승인되어 새 대표가 표시를 받지 않게 지운다.
+  const body = { representative: "앞대표", enrollment: proofDocument, membership: proofDocument }
+  assert.equal((await call("POST", "/groups/verification", body, group)).status, 202)
+  const pending = getDatabase().applications!.find((item) => item.kind === "group" && item.linkAccountId === account.id)!
+  assert.ok(await photos().get(applicationFolder(pending.id), pending.document.file))
   account.groupVerified = grantGroupCheck()
   const sent = await call("POST", "/auth/email/code", { email: "handover-next@syu.ac.kr", password: "handover-pass-123" }, group)
   assert.equal(sent.status, 200, JSON.stringify(sent.data))
   assert.equal((await call("POST", "/auth/email", { email: "handover-next@syu.ac.kr", code: sent.data.devCode }, group)).status, 200)
   assert.equal(account.groupVerified, undefined)
+  assert.equal(getDatabase().applications!.some((item) => item.linkAccountId === account.id), false)
+  assert.equal(await photos().get(applicationFolder(pending.id), pending.document.file), undefined)
+  assert.equal((await call("GET", "/groups/verification", undefined, group)).data.status, "none")
 })
 
 test("a sponsorship dispute is recorded from opening to conclusion, and only its two sides see it", async () => {
@@ -8559,6 +8641,21 @@ test("a sponsorship dispute is recorded from opening to conclusion, and only its
   }
   assert.equal((await call("POST", `/disputes/${id}/evidence`, proofDocument, brand)).status, 409)
   assert.equal((await call("POST", `/disputes/${id}/withdraw`, undefined, brand)).status, 403)
+  // 한 계정이 모든 분쟁에 올리는 증빙에는 용량 한도가 있다.
+  const { disputeLimits } = await import("./lib/disputes.js")
+  const roomy = disputeLimits.evidenceBytes
+  disputeLimits.evidenceBytes = 1
+  try {
+    assert.equal((await call("POST", `/disputes/${id}/evidence`, proofDocument, group)).status, 409)
+  } finally {
+    disputeLimits.evidenceBytes = roomy
+  }
+  // 말의 한도는 쪽마다 센다. 한쪽이 채워도 상대는 답할 수 있다.
+  for (let index = 0; index < 20; index += 1) {
+    assert.equal((await call("POST", `/disputes/${id}/statements`, { text: `말 ${index}` }, group)).status, 201)
+  }
+  assert.equal((await call("POST", `/disputes/${id}/statements`, { text: "하나 더" }, group)).status, 409)
+  assert.equal((await call("POST", `/disputes/${id}/statements`, { text: "답할게요." }, brand)).status, 201)
 
   // 운영자가 확인하고 메모를 남기고 결론을 기록한다. 메모는 당사자에게 보이지 않는다.
   const reports = (await call("GET", `/disputes/${id}`, undefined, group)).data.dispute
@@ -8594,6 +8691,9 @@ test("a sponsorship dispute is recorded from opening to conclusion, and only its
   // 끝나면 새로 접수할 수 있고, 접수한 쪽은 거둘 수 있다.
   const again = await call("POST", "/disputes", open, brand)
   assert.equal(again.status, 201)
+  // 결론 전에는 어느 쪽도 탈퇴로 기록을 지울 수 없다.
+  assert.equal((await call("DELETE", "/auth/account", { password: "dispute-pass-123" }, brand)).status, 409)
+  assert.equal((await call("DELETE", "/auth/account", { password: "dispute-pass-123" }, group)).status, 409)
   const withdrawn = await call("POST", `/disputes/${again.data.dispute.id}/withdraw`, undefined, brand)
   assert.equal(withdrawn.data.dispute.decision.outcome, "withdrawn")
   assert.equal(translate("하나에서 '둘' 분쟁을 거뒀어요.", "en"), "하나 withdrew the dispute about '둘'.")
@@ -8601,7 +8701,13 @@ test("a sponsorship dispute is recorded from opening to conclusion, and only its
   // 한쪽이 탈퇴해 계약서가 사라지면 분쟁과 증빙도 지운다.
   const held = stored().evidence[0]
   assert.ok(await photos().get(disputeFolder(id), held.file))
+  // 백업 복원으로 계약서가 사라진 다른 계정들의 분쟁은 이 탈퇴와 상관없이 남는다.
+  const unrelated = { ...structuredClone(stored()), id: "unrelated-dispute", agreementId: "restored-away", parties: { group: "someone", brand: "someone-else" } }
+  getDatabase().disputes!.push(unrelated)
   assert.equal((await call("DELETE", "/auth/account", { password: "dispute-pass-123" }, brand)).status < 300, true)
   assert.equal(getDatabase().disputes!.some((item) => item.id === id), false)
   assert.equal(await photos().get(disputeFolder(id), held.file), undefined)
+  assert.equal(getDatabase().disputes!.some((item) => item.id === "unrelated-dispute"), true)
+  getDatabase().disputes = getDatabase().disputes!.filter((item) => item.id !== "unrelated-dispute")
+  await saveDatabase()
 })

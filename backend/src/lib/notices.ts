@@ -2,6 +2,7 @@ import { waitUntil } from "@vercel/functions"
 
 import { config } from "../config.js"
 import { translate } from "./i18n.js"
+import { createRateLimit } from "./rateLimit.js"
 import { mailConfigured, sendMail } from "./mailer.js"
 import { getDatabase } from "../store.js"
 import type { Account, MailKind } from "../types.js"
@@ -28,8 +29,18 @@ export function notify(
 ) {
   if (!account || isDemo(account) || account.suspendedAt) return Promise.resolve(true)
   if (kind !== "account" && account.mailOff?.includes(kind)) return Promise.resolve(true)
-  return deliver(account, kind, subject, lines, path)
+  const sending = repeatedNotices.take(`${account.id} ${subject} ${path}`).then(
+    () => deliver(account, kind, subject, lines, path),
+    // 같은 알림이 몰리면 메일만 건너뛴다. 일 자체는 이미 기록됐다.
+    () => true,
+  )
+  waitUntil(sending)
+  return sending
 }
+
+// 상대가 표시를 켰다 껐다 하거나 말을 잇달아 남겨 같은 메일을 쏟아내지 못하게 한다.
+// 같은 계정에 같은 제목과 같은 화면의 메일은 한 시간에 5통까지다. 키는 해시로만 남는다.
+const repeatedNotices = createRateLimit({ limit: 5, windowMs: 60 * 60 * 1000, message: "같은 알림이 너무 많아요." })
 
 function deliver(account: Account, kind: MailKind | "account", subject: string, lines: string[], path: string) {
   const say = (text: string) => translate(text, account.language ?? "ko")
