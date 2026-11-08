@@ -45,7 +45,7 @@ function ReportButton({ state, onOpen }: { state?: Sponsorship["report"]; onOpen
   return (
     <button className={state === "open" ? "report-button open" : "report-button"} onClick={onOpen} type="button">
       <Icon name={state === "open" ? "file" : "lock"} size={13} />
-      {state === "open" ? t("상세 리포트 보기") : t("유료 상세 리포트 사기")}
+      {state === "open" ? t("상세 리포트 보기") : t("상세 리포트 구매")}
     </button>
   )
 }

@@ -1306,7 +1306,11 @@ test("the e-contract sets how the sponsorship is confirmed, and once both sides 
   await logIn(student, "학생단체", "muse@syu.ac.kr")
   await student.goto("/agreements")
   await student.locator(".agreement-row", { hasText: "2026 뮤즈 종강 공연" }).click()
-  await expect(student.getByRole("heading", { name: "2026 뮤즈 종강 공연 임시 전자 계약서" })).toBeVisible()
+  await expect(student.getByRole("heading", { level: 1, name: "2026 뮤즈 종강 공연" })).toBeVisible()
+  // 계약서는 지금 상태와 다음 행동부터 보인다.
+  await expect(student.getByRole("region", { name: "계약 상태" })).toContainText(
+    /내 확인이 필요해요|상대의 확인을 기다려요|협찬이 확정됐어요/,
+  )
   const methods = student.locator(".methods-panel")
   const status = methods.getByRole("heading", { name: /협찬 확인 방식/ })
   // 처음에는 QR, 그 쿠폰, 매장 방문이며 아직 확정되지 않았다.
@@ -1769,7 +1773,7 @@ test("a brand opens an accepted proposal's agreement, confirms it and proves wha
   await page.goto("/inbox")
   await page.getByRole("tab", { name: /수락함/ }).click()
   await page.locator(".request-card", { hasText: "서울여대 러너스" }).getByRole("button", { name: "계약서" }).click()
-  await expect(page.getByRole("heading", { name: "가을 캠퍼스 런 5K 임시 전자 계약서" })).toBeVisible()
+  await expect(page.getByRole("heading", { level: 1, name: "가을 캠퍼스 런 5K" })).toBeVisible()
   await expect(page.getByText("아직 uniconnect 계정이 없어요")).toBeVisible()
   // 자기 쪽은 운영하는 사람을 연락할 전화번호와 함께 보여 준다.
   await expect(page.locator(".agreement-contact")).toContainText("이오후 · 점장")
@@ -2759,4 +2763,18 @@ test("an event being registered survives a reload as a draft, and goes once it i
   expect(await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith("uniconnect-draft:")))).toHaveLength(0)
   const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: group.headers })
   expect(left.status()).toBe(204)
+})
+
+test("a member's dashboard opens on the work waiting for them, and each row leads to it", async ({ page }) => {
+  await page.goto("/")
+  await logIn(page, "브랜드", "hello@afternoon-coffee.kr")
+  await page.goto("/dashboard")
+  const board = page.getByRole("region", { name: "지금 확인할 일" })
+  await expect(board.getByRole("listitem")).toHaveCount(4)
+  // 소개 구역은 회원 대시보드에 없다.
+  await expect(page.locator(".about-statement-section")).toHaveCount(0)
+  await expect(page.locator(".why-uniconnect, .value-points")).toHaveCount(0)
+  await board.getByRole("button", { name: /검토할 제안/ }).click()
+  await expect(page).toHaveURL(/\/inbox$/)
+  expect(await page.evaluate(() => window.scrollY)).toBe(0)
 })

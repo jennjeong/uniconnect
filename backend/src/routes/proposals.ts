@@ -4,6 +4,7 @@ import { Router } from "express"
 import { brandIndustries, groupIndustries, shownCatalog, shownTo } from "../lib/catalog.js"
 import { todayInKorea } from "../lib/dates.js"
 import { HttpError } from "../lib/errors.js"
+import { contractState } from "../lib/agreements.js"
 import { parseTerms, termLines } from "../lib/terms.js"
 import { text } from "../lib/validation.js"
 import { notify } from "../lib/notices.js"
@@ -73,6 +74,18 @@ function proposalState(account: Account) {
         message: item.message,
         ...(item.terms ? { terms: item.terms } : {}),
         status: item.status,
+        // 수락된 것은 계약서까지 왔는지(대시보드의 '계약 확인 대기'가 센다).
+        ...(item.status === "수락"
+          ? {
+              contract: contractState(
+                database,
+                item.id,
+                account.role === "학생단체"
+                  ? { group: true, brand: database.accounts.some((owner) => owner.brandId === item.partnerId) }
+                  : { group: database.accounts.some((owner) => owner.groupId === item.partnerId), brand: true },
+              ),
+            }
+          : {}),
         createdAt: item.createdAt,
         ...(item.respondedAt ? { respondedAt: item.respondedAt } : {}),
       }

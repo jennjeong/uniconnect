@@ -714,6 +714,8 @@ export type SentProposal = {
   createdAt: string
   // 상대가 아직 가입하지 않아 받은편지함이 없다. 답이 오지 않는다.
   noInbox?: boolean
+  // 수락된 것의 계약 상태(양쪽이 계약서를 확인했는지).
+  contract?: "waiting" | "confirmed"
   respondedAt?: string
 }
 

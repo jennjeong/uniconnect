@@ -254,6 +254,23 @@ const en: Record<string, string> = {
   "양쪽이 계약서를 확인해야 협찬이 확정돼요.": "A sponsorship is confirmed once both sides confirm the agreement.",
   "행사를 등록하면 잘 맞는 브랜드를 찾아 드려요.": "Add an event and we'll find brands that fit.",
   "행사 이름과 날짜만 있어도 추천을 시작해요.": "A name and a date are enough to start.",
+  "지금 확인할 일": "To check now",
+  "확인할 일 {count}가지": "{count:thing|things} to check",
+  "지금 기다리는 일이 없어요": "Nothing is waiting on you",
+  "답할 협찬 제안": "Proposals to answer",
+  "조건을 보고 수락하거나 거절해요": "Look at the terms, then accept or decline",
+  "새로 온 제안이 없어요": "No new proposals",
+  "양쪽이 계약서를 확인해야 협찬이 확정돼요": "It's confirmed once both sides confirm the e-contract",
+  "확인할 계약서가 없어요": "No e-contracts to confirm",
+  "보낸 제안 답변 대기": "Sent, awaiting an answer",
+  "브랜드의 답을 기다려요": "Waiting on the brand",
+  "답을 기다리는 보낸 제안이 없어요": "Nothing you sent is waiting",
+  "다가오는 행사": "Upcoming events",
+  "등록한 다가오는 행사가 없어요": "No upcoming events registered",
+  "확인할 때 성사 수수료를 결제해요": "You pay the success fee when you confirm",
+  "단체의 답을 기다려요": "Waiting on the group",
+  "다가오는 협찬 일정": "Upcoming sponsorships",
+  "다가오는 협찬이 없어요": "No upcoming sponsorships",
 }
 
 export default en

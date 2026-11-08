@@ -12098,6 +12098,237 @@ input[type="search"]::-webkit-search-cancel-button {
   flex: 1 1 200px;
 }
 
+/* 페이지 제목 옆의 보조 도구: 주 버튼 옆에 작은 아이콘 + 글. 누를 자리는 44px. */
+.page-tools {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+}
+
+.page-tool {
+  display: inline-flex;
+  min-height: var(--touch-target);
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-label);
+}
+
+.page-tool:hover {
+  color: var(--point-strong);
+}
+
+.page-tool .icon {
+  stroke: currentColor;
+}
+
+/* 계약서 맨 위의 지금 상태(components/AgreementStatus.tsx): 한 줄의 상태, 누가 무엇을
+   할지의 목록, 기한. 왼쪽 띠의 색이 상태를 말하고, 글로도 같은 것을 쓴다. */
+.agreement-status {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-6);
+  padding: var(--space-4) var(--space-5);
+  border-left: 4px solid var(--point);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--point-soft);
+}
+
+.agreement-status.todo {
+  border-left-color: var(--orange);
+  background: var(--orange-soft);
+}
+
+.agreement-status.done {
+  border-left-color: var(--green);
+  background: var(--green-soft);
+}
+
+.agreement-status.canceled {
+  border-left-color: var(--muted);
+  background: var(--fill);
+}
+
+.agreement-status-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+}
+
+.agreement-status-line strong {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-display);
+}
+
+.agreement-status-line small {
+  color: var(--ink-soft);
+  font-size: 0.8125rem;
+}
+
+.agreement-actions-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.agreement-actions-list li {
+  display: grid;
+  grid-template-columns: 2.75rem minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.agreement-actions-list .who {
+  color: var(--ink-soft);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-badge);
+}
+
+.agreement-actions-list .who.me {
+  color: var(--point-strong);
+}
+
+.agreement-actions-list a {
+  color: var(--ink);
+  font-weight: var(--weight-label);
+  text-underline-offset: 3px;
+}
+
+.agreement-deadlines {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-6);
+  margin: 0;
+}
+
+.agreement-deadlines div {
+  display: flex;
+  gap: var(--space-2);
+  align-items: baseline;
+}
+
+.agreement-deadlines dt {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-label);
+}
+
+.agreement-deadlines dd {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-label);
+}
+
+.agreement-deadlines em {
+  margin-left: 4px;
+  color: var(--point-strong);
+  font-style: normal;
+}
+
+/* 대시보드의 업무 보드(components/WorkBoard.tsx): 회원이 지금 답하거나 확인할 일.
+   카드 대신 한 줄씩, 왼쪽에 건수, 가운데 일과 설명, 오른쪽 화살표. 일이 있는 줄만
+   건수가 진한 파랑이고, 없는 줄은 흐리게 남아 무엇을 확인했는지 보인다. */
+.work-board {
+  width: min(var(--content-max), calc(100% - var(--gutter) * 2));
+  margin: var(--space-8) auto 0;
+}
+
+.work-board-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 2px solid var(--ink);
+}
+
+.work-board-head h2 {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: var(--weight-display);
+}
+
+.work-board-head p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+.work-board ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.work-board li {
+  border-bottom: 1px solid var(--line);
+}
+
+.work-board button {
+  display: grid;
+  width: 100%;
+  min-height: 72px;
+  grid-template-columns: 3.25rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-2);
+  border: 0;
+  background: none;
+  color: var(--ink);
+  text-align: left;
+}
+
+.work-board button:hover {
+  background: var(--point-soft);
+}
+
+.work-board-count {
+  color: var(--faint);
+  font-size: 1.75rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-display);
+  line-height: 1;
+}
+
+.work-board .has-work .work-board-count {
+  color: var(--point-strong);
+}
+
+.work-board-copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.work-board-label {
+  font-size: var(--text-base);
+  font-weight: var(--weight-label);
+}
+
+.work-board-copy small {
+  color: var(--muted);
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+}
+
+.work-board button .icon {
+  color: var(--muted);
+  stroke: currentColor;
+}
+
 /* 등록 양식의 칸이 꼭 써야 하는지, 나중에 채워도 되는지. */
 .form-need {
   margin: -4px 0 var(--space-2);

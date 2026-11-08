@@ -1820,6 +1820,7 @@ function App() {
             onResume={() => pauseListing(false)}
             checklist={checklist}
             offers={offers}
+            sent={sent}
             onOpenAgreements={openAgreements}
           />
         ) : (
@@ -1843,6 +1844,7 @@ function App() {
             paused={listing?.pausedAt !== undefined}
             onResume={() => pauseListing(false)}
             checklist={checklist}
+            sent={sent}
             onOpenAgreements={openAgreements}
           />
         )
@@ -2032,7 +2034,8 @@ function App() {
         <Footer
           role={role}
           account={account}
-          invite={landing || viewPath(view) === viewPath({ page: "대시보드" })}
+          // 등록을 권하는 큰 카드는 소개와 방문자의 예시 대시보드에만. 회원의 대시보드는 업무 화면이다.
+          invite={landing || (!account && viewPath(view) === viewPath({ page: "대시보드" }))}
           landing={landing}
           onInstall={installKind === "app" ? undefined : startInstall}
           onNavigate={navigate}

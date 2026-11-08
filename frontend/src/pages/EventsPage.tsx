@@ -280,17 +280,22 @@ export function EventsPage({
         description={t("날짜를 누르면 그날 일정이 보이고, 두 번 누르면 바로 등록해요.")}
         actions={
           <>
-            {onExplore && (
-              <Pill onClick={onExplore} variant="outline">
-                {t("다른 단체 행사 보기")}
-              </Pill>
-            )}
-            <Pill onClick={exportCalendar} variant="outline">
-              {t("캘린더에 추가")}
-            </Pill>
+            {/* 주 행동은 등록 하나. 나머지는 작은 보조 도구로 묶는다. */}
             <Pill arrow="right" onClick={() => onCreate(selected)}>
               {t("새로 등록")}
             </Pill>
+            <span className="page-tools">
+              <button className="page-tool" onClick={exportCalendar} type="button">
+                <Icon name="calendar" size={16} />
+                {t("캘린더에 추가")}
+              </button>
+              {onExplore && (
+                <button className="page-tool" onClick={onExplore} type="button">
+                  <Icon name="users" size={16} />
+                  {t("다른 단체 행사 보기")}
+                </button>
+              )}
+            </span>
           </>
         }
       />
