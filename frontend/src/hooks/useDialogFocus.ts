@@ -53,7 +53,7 @@ export function useDialogFocus(
       document.removeEventListener("keydown", keepInside)
       const current = document.activeElement
       const lost = !current || current === document.body || dialog.current?.contains(current)
-      if (lost && previous?.isConnected) previous.focus()
+      if (lost && previous?.isConnected) previous.focus({ preventScroll: true })
     }
   }, [active, dialog, initial])
 }

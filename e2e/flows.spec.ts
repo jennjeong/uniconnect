@@ -2619,3 +2619,49 @@ test("on phones the calendar is a compact date picker and the chosen day lists i
   const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: group.headers })
   expect(left.status()).toBe(204)
 })
+
+test("a new screen starts at the top, back returns to where the list was, and in-page actions keep the place", async ({ page }) => {
+  await page.goto("/")
+  await logIn(page, "학생단체", "muse@syu.ac.kr")
+  await page.goto("/matches")
+  // 탭은 같은 화면 안의 조작이고, 뒤로 돌아와도 그 탭이다.
+  await page.getByRole("tab", { name: "인기" }).click()
+  const cards = page.locator(".work-card")
+  await expect(cards.nth(5)).toBeVisible()
+  const last = cards.last()
+  const scrollY = () => page.evaluate(() => window.scrollY)
+
+  // 찜은 같은 화면 안의 조작이라 위치가 그대로다.
+  await last.locator(".save-toggle").scrollIntoViewIfNeeded()
+  const atHeart = await scrollY()
+  expect(atHeart).toBeGreaterThan(500)
+  await last.locator(".save-toggle").click()
+  await expect(last.locator(".save-toggle")).toHaveAttribute("aria-pressed", "true")
+  expect(Math.abs((await scrollY()) - atHeart)).toBeLessThan(4)
+
+  // 카드 상세는 맨 위에서 시작한다.
+  const detail = last.getByRole("button", { name: "상세 정보" })
+  await detail.scrollIntoViewIfNeeded()
+  const leaving = await scrollY()
+  await detail.click()
+  await expect(page.locator(".profile-actions")).toBeVisible()
+  expect(await scrollY()).toBe(0)
+
+  // 뒤로 가면 목록의 그 자리로 돌아온다.
+  await page.goBack()
+  await expect(page.getByRole("tab", { name: "인기" })).toHaveAttribute("aria-selected", "true")
+  await expect(last).toBeVisible()
+  await expect.poll(scrollY).toBeGreaterThan(leaving - 4)
+  expect(Math.abs((await scrollY()) - leaving)).toBeLessThan(4)
+
+  // 아래쪽에서 다른 메뉴로 가면 새 화면의 맨 위에서 시작한다.
+  await page.locator("footer").getByRole("button", { name: "받은 협찬" }).click()
+  await expect(page).toHaveURL(/\/offers/)
+  expect(await scrollY()).toBe(0)
+  // 뒤로는 목록의 자리로, 다시 앞으로는 받은 협찬의 맨 위로.
+  await page.goBack()
+  await expect.poll(scrollY).toBeGreaterThan(500)
+  await page.goForward()
+  await expect(page).toHaveURL(/\/offers/)
+  await expect.poll(scrollY).toBe(0)
+})

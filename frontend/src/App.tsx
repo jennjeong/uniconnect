@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from "react"
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react"
 
 import {
   api,
@@ -45,6 +45,8 @@ import { install } from "./lib/install"
 import { installReveal } from "./lib/reveal"
 import { installRipple } from "./lib/ripple"
 import { entryView, menuPageOf, roleOfPage, viewPath, type HistoryEntry, type View } from "./lib/route"
+import { forgetEntriesFrom } from "./hooks/useEntryState"
+import { applyPendingScroll, keepPosition, queueRestore, queueTop, trackScroll } from "./lib/scroll"
 import { installSwipeNavigation, noteHistoryEnd } from "./lib/swipe"
 import { LoginModal } from "./modals/LoginModal"
 import { councilTypes } from "./data/roles"
@@ -254,8 +256,6 @@ function App() {
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   // 전체 화면 메뉴(헤더의 Menu 버튼).
   const [menuOpen, setMenuOpen] = useState(false)
-  // 히스토리의 화면이 그려진 뒤 스크롤할 위치.
-  const restoreScroll = useRef<number | null>(null)
   // 매칭과 행사를 마지막으로 불러온 때. 대시보드에 보인다.
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null)
   const { notice, noticeId, showNotice, hideNotice, pauseNotice } = useNotice()
@@ -348,16 +348,21 @@ function App() {
       // 방문자는 그 항목이 속한 쪽을 따라간다.
       const side = roleOfPage(next.page)
       if (side && !getToken()) setPreviewRole(side)
-      restoreScroll.current = entry?.scrollY ?? 0
+      // 뒤로·앞으로는 그 항목을 떠날 때의 위치로 돌아간다(lib/scroll.ts).
+      queueRestore(entry?.index ?? 0, entry?.scrollY)
     }
     window.addEventListener("popstate", showEntry)
-    return () => window.removeEventListener("popstate", showEntry)
+    const untrack = trackScroll((history.state as HistoryEntry | null)?.index ?? 0)
+    return () => {
+      window.removeEventListener("popstate", showEntry)
+      untrack()
+    }
   }, [])
 
-  useEffect(() => {
-    if (restoreScroll.current === null) return
-    window.scrollTo(0, restoreScroll.current)
-    restoreScroll.current = null
+  // 새 화면은 맨 위에서, 뒤로·앞으로는 저장한 위치에서. 그림이 그려지기 전에 맞춰
+  // 이전 화면의 위치가 한 번도 보이지 않는다.
+  useLayoutEffect(() => {
+    applyPendingScroll(document.getElementById("main"))
   }, [view])
 
   // 계정이 확인되면, 쓸 수 없는 주소(반대편의 페이지, 로그아웃 상태의 내 정보와
@@ -547,21 +552,26 @@ function App() {
   }, [])
 
   // 화면을 새 히스토리 항목으로(또는 현재 항목을 대체해) 보여 준다. 떠나는
-  // 페이지의 스크롤 위치를 기억한다.
+  // 페이지의 스크롤 위치를 기억한다. 주소의 경로가 바뀌는 이동만 새 화면이라 맨
+  // 위에서 시작하고, 같은 화면 안의 변화(같은 경로)는 위치를 그대로 둔다.
   const go = (next: View, replace = false) => {
     const current = history.state as HistoryEntry | null
     const index = current?.index ?? 0
     const sameView = viewPath(next) === viewPath(view)
+    const newScreen = viewPath(next).split("?")[0] !== viewPath(view).split("?")[0]
     if (replace || sameView) {
       history.replaceState({ view: next, index } satisfies HistoryEntry, "", viewPath(next))
+      if (newScreen) queueTop(index)
     } else {
       history.replaceState({ view, index, scrollY: window.scrollY } satisfies HistoryEntry, "")
       history.pushState({ view: next, index: index + 1 } satisfies HistoryEntry, "", viewPath(next))
       noteHistoryEnd(index + 1)
+      forgetEntriesFrom(index + 1)
+      if (newScreen) queueTop(index + 1)
+      else keepPosition(index + 1)
     }
     setView(next)
     setFromHistory(false)
-    window.scrollTo(0, 0)
   }
 
   // 페이지의 뒤로 화살표. 이 앱의 히스토리에서 한 단계 뒤로 가고, 페이지를 바로

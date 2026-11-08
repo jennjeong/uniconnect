@@ -13,6 +13,7 @@ import { WorkCard } from "../components/WorkCard"
 import { eventKinds } from "../data/eventDetails"
 import { groupFields } from "../data/industries"
 import { regions, universities, type Region } from "../data/universities"
+import { useEntryState } from "../hooks/useEntryState"
 import { t } from "../i18n"
 import { todayIso } from "../lib/date"
 import { nearestFirst, shownTags } from "../lib/distance"
@@ -96,7 +97,7 @@ export function GroupsPage({
   onLogin: () => void
   onSignup: () => void
 }) {
-  const [tab, setTab] = useState<Tab>("추천")
+  const [tab, setTab] = useEntryState<Tab>("groups:tab", "추천")
   // 비교: 카드를 나란히 놓는다(components/CompareTray.tsx).
   const compare = useCompare()
   // 여러 곳에 제안: 카드에서 단체를 고르는 일과 고른 단체. 제안이 한 곳에
@@ -106,7 +107,7 @@ export function GroupsPage({
   const picked = picks.filter((id) => !proposals.includes(id))
   const togglePick = (id: string) =>
     setPicks((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]))
-  const [field, setField] = useState<Industry>("performance")
+  const [field, setField] = useEntryState<Industry>("groups:field", "performance")
   // 카드는 고른 탭이나 칩이 있는 쪽에서 미끄러져 들어온다.
   const [direction, setDirection] = useState<"forward" | "back">("forward")
   const pickTab = (next: Tab) => {
@@ -116,10 +117,10 @@ export function GroupsPage({
   const fields = groupFields.filter(([value]) => groups.some((group) => group.industry === value))
   const today = todayIso()
   // 찾을 단어와 필터. 탭을 바꿔도 유지한다.
-  const [query, setQuery] = useState("")
-  const [filters, setFilters] = useState<GroupFilters>(noGroupFilters)
+  const [query, setQuery] = useEntryState("groups:query", "")
+  const [filters, setFilters] = useEntryState<GroupFilters>("groups:filters", noGroupFilters)
   // 카드를 목록으로, 또는 가게 둘레 지도의 점으로 보여 준다.
-  const [layout, setLayout] = useState<Layout>("list")
+  const [layout, setLayout] = useEntryState<Layout>("groups:layout", "list")
   // 고른 지역의 모든 학교. 모든 지역이면 목록에 오른 단체가 속한 학교.
   const schools = filters.region
     ? universities[filters.region]
