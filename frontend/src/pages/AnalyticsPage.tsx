@@ -13,6 +13,7 @@ import { analyticsCsv } from "../lib/csv"
 import { formatFullDate, todayIso } from "../lib/date"
 import { saveFile } from "../lib/download"
 import { formatWon } from "../lib/kpis"
+import { roasText, roasVerdict } from "../lib/roasLabels"
 import { analyzeSponsorships, manWon, wonUnit } from "../lib/sponsorships"
 import { LayersGradient } from "../scenes/LayersGradient"
 import { INTERFERENCE } from "../scenes/shaders"
@@ -70,7 +71,7 @@ export function AnalyticsPage({
   // 브랜드 자신의 캠페인에 대한 현장 측정. 맨 끝에 둔다.
   campaign?: ReactNode
 }) {
-  const { totals, rows, best, furthestBelow, cheapest, metCount, visitRate, roasScale } =
+  const { totals, rows, best, furthestBelow, cheapest, doneCount, metCount, visitRate, roasScale } =
     analyzeSponsorships(sponsorships)
   // 표의 페이지. 한 번에 협찬 다섯 개.
   const [page, setPage] = useState(0)
@@ -102,9 +103,13 @@ export function AnalyticsPage({
     },
     {
       label: t("추정 ROAS(전체 집행액 기준)"),
-      value: String(totals.roas),
-      unit: "%",
-      note: t("추정 매출 {sales}", { sales: formatWon(totals.sales) }),
+      value: totals.roasMissing ? "—" : String(totals.roas),
+      unit: totals.roasMissing ? "" : "%",
+      note: totals.roasMissing
+        ? t("협찬액이 정해진 협찬이 아직 없어요")
+        : totals.roasCounting
+          ? t("집계 중 · 추정 매출 {sales}", { sales: formatWon(totals.sales) })
+          : t("추정 매출 {sales}", { sales: formatWon(totals.sales) }),
     },
   ]
 
@@ -172,23 +177,19 @@ export function AnalyticsPage({
               </div>
               <div className="roas-list large stagger">
                 {rows.map((row) => (
-                  <div className={row.met ? "roas-row met" : "roas-row"} key={row.id}>
+                  <div className={["roas-row", row.met && "met", row.state !== "done" && row.state].filter(Boolean).join(" ")} key={row.id}>
                     <div className="roas-row-head">
                       <strong>
                         {row.eventName}
                         <small>{row.groupName}</small>
                       </strong>
-                      <span>{row.roas}%</span>
+                      <span>{roasText(row)}</span>
                     </div>
                     <div className="roas-track">
                       <i style={{ width: `${(row.roas / roasScale) * 100}%` }} />
                       <b style={{ left: `${(row.targetRoas / roasScale) * 100}%` }} />
                     </div>
-                    <small>
-                      {row.met
-                        ? t("목표 {target}% 달성", { target: row.targetRoas })
-                        : t("목표 {target}% · {gap}%p 부족", { target: row.targetRoas, gap: row.targetRoas - row.roas })}
-                    </small>
+                    <small>{roasVerdict(row)}</small>
                   </div>
                 ))}
               </div>
@@ -202,15 +203,21 @@ export function AnalyticsPage({
                     <Icon name="check" size={16} />
                   </span>
                   <p>
-                    {rich(t("목표 ROAS를 달성한 협찬은 {total}건 중 {met}이에요.", { total: rows.length }), {
-                      met: <b>{t("{met}건", { met: metCount })}</b>,
-                    })}{" "}
-                    {furthestBelow
-                      ? rich(t("{event} 협찬은 목표보다 {gap}%p 낮았어요."), {
-                          event: <b>{furthestBelow.eventName}</b>,
-                          gap: furthestBelow.targetRoas - furthestBelow.roas,
-                        })
-                      : t("모든 협찬이 목표를 넘었어요.")}
+                    {doneCount === 0 ? (
+                      t("아직 집계가 끝난 협찬이 없어요. 방문 집계가 끝나면 목표와 견줘 볼 수 있어요.")
+                    ) : (
+                      <>
+                        {rich(t("집계가 끝난 협찬 {total}건 중 {met}이 목표 ROAS를 달성했어요.", { total: doneCount }), {
+                          met: <b>{t("{met}건", { met: metCount })}</b>,
+                        })}{" "}
+                        {furthestBelow
+                          ? rich(t("{event} 협찬은 목표보다 {gap}%p 낮았어요."), {
+                              event: <b>{furthestBelow.eventName}</b>,
+                              gap: furthestBelow.targetRoas - furthestBelow.roas,
+                            })
+                          : t("집계가 끝난 협찬은 모두 목표를 넘었어요.")}
+                      </>
+                    )}
                   </p>
                 </li>
                 {best && (
@@ -284,14 +291,17 @@ export function AnalyticsPage({
                     {t("{visits}명", { visits: row.visits.toLocaleString("ko-KR") })}
                   </span>
                   <span role="cell" data-label={t("방문당 비용")}>
-                    {formatWon(row.perVisit)}
+                    {row.state === "cost" || row.visits === 0 ? "—" : formatWon(row.perVisit)}
                   </span>
                   <span
                     role="cell"
                     data-label="ROAS"
                     className={row.met ? "analytics-roas met" : "analytics-roas"}
                   >
-                    {row.roas}%<small>{t("목표 {target}%", { target: row.targetRoas })}</small>
+                    {roasText(row)}
+                    <small>
+                      {row.state === "done" ? t("목표 {target}%", { target: row.targetRoas }) : roasVerdict(row)}
+                    </small>
                   </span>
                   <span className="analytics-report" role="cell">
                     <ReportButton onOpen={() => onOpenReport(row.id)} state={sponsorships.find((item) => item.id === row.id)?.report} />

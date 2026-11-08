@@ -6,6 +6,7 @@ import { t } from "../i18n"
 import { formatFullDate } from "../lib/date"
 import { percent } from "../lib/format"
 import { formatWon } from "../lib/kpis"
+import { roasText, roasVerdict } from "../lib/roasLabels"
 import { analyzeSponsorships } from "../lib/sponsorships"
 import type { MetricKind, Sponsorship } from "../types"
 import { PageFooter, PageHeader, VenueCounts } from "./ReportDocument"
@@ -35,7 +36,8 @@ function RoasBar({ row, scale }: { row: Row; scale: number }) {
         <b style={{ left: `${(row.targetRoas / scale) * 100}%` }} />
       </div>
       <span className="pdf-roas-value">
-        {row.roas}%<small>{t("목표 {target}%", { target: row.targetRoas })}</small>
+        {roasText(row)}
+        <small>{row.state === "done" ? t("목표 {target}%", { target: row.targetRoas }) : roasVerdict(row)}</small>
       </span>
     </div>
   )
@@ -50,21 +52,24 @@ export function AnalyticsDocument({
   sponsorships: Sponsorship[]
   author: string
 }) {
-  const { totals, rows, best, furthestBelow, cheapest, metCount, visitRate, roasScale } =
+  const { totals, rows, best, furthestBelow, cheapest, doneCount, metCount, visitRate, roasScale } =
     analyzeSponsorships(sponsorships)
+  const totalRoas = totals.roasMissing ? "—" : `${totals.roas}%`
   const total = rows.length + 1
   const days = rows.map((row) => row.date).sort()
   const averagePerVisit = totals.visits > 0 ? Math.round(totals.spend / totals.visits) : 0
 
   const insights = [
-    `${t("목표 ROAS를 달성한 협찬은 {total}건 중 {met}건이에요.", { total: rows.length, met: metCount })} ${
-      furthestBelow
-        ? t("{event}은 목표보다 {gap}%p 낮았어요.", {
-            event: furthestBelow.eventName,
-            gap: furthestBelow.targetRoas - furthestBelow.roas,
-          })
-        : t("모든 협찬이 목표를 넘었어요.")
-    }`,
+    doneCount === 0
+      ? t("아직 집계가 끝난 협찬이 없어요. 방문 집계가 끝나면 목표와 견줘 볼 수 있어요.")
+      : `${t("집계가 끝난 협찬 {total}건 중 {met}건이 목표 ROAS를 달성했어요.", { total: doneCount, met: metCount })} ${
+          furthestBelow
+            ? t("{event}은 목표보다 {gap}%p 낮았어요.", {
+                event: furthestBelow.eventName,
+                gap: furthestBelow.targetRoas - furthestBelow.roas,
+              })
+            : t("집계가 끝난 협찬은 모두 목표를 넘었어요.")
+        }`,
     ...(best
       ? [
           t("{event} 협찬의 효율이 가장 좋았어요. 추정 매출이 집행액의 {times}배예요.", {
@@ -107,13 +112,15 @@ export function AnalyticsDocument({
 
         <div className="pdf-summary">
           <strong>
-            {rich(t("협찬 {total}건 중 {met}했어요", { total: rows.length }), {
-              met: <em>{t("{met}건이 목표 ROAS를 달성", { met: metCount })}</em>,
-            })}
+            {doneCount === 0
+              ? t("아직 집계가 끝난 협찬이 없어요")
+              : rich(t("집계가 끝난 협찬 {total}건 중 {met}했어요", { total: doneCount }), {
+                  met: <em>{t("{met}건이 목표 ROAS를 달성", { met: metCount })}</em>,
+                })}
           </strong>
           <p>
-            {t("전체 집행액 기준 추정 ROAS {roas}% · 누적 집행액 {spend} · 추정 매출 {sales}", {
-              roas: totals.roas,
+            {t("전체 집행액 기준 추정 ROAS {roas} · 누적 집행액 {spend} · 추정 매출 {sales}", {
+              roas: totalRoas,
               spend: formatWon(totals.spend),
               sales: formatWon(totals.sales),
             })}
@@ -140,9 +147,13 @@ export function AnalyticsDocument({
             </div>
             <div className="pdf-kpi">
               <span>{t("추정 ROAS(전체 집행액 기준)")}</span>
-              <strong>{totals.roas}%</strong>
-              <small className={totals.roas >= 100 ? "good" : ""}>
-                {t("추정 매출 {sales}", { sales: formatWon(totals.sales) })}
+              <strong>{totalRoas}</strong>
+              <small className={!totals.roasMissing && totals.roas >= 100 ? "good" : ""}>
+                {totals.roasMissing
+                  ? t("협찬액이 정해진 협찬이 아직 없어요")
+                  : totals.roasCounting
+                    ? t("집계 중 · 추정 매출 {sales}", { sales: formatWon(totals.sales) })
+                    : t("추정 매출 {sales}", { sales: formatWon(totals.sales) })}
               </small>
             </div>
           </div>
@@ -179,9 +190,14 @@ export function AnalyticsDocument({
       {rows.map((row, index) => {
         const salesScale = Math.max(row.spend, row.sales, 1)
         const rowVisitRate = percent(row.visits, row.coupons)
-        const verdict = row.met
-          ? t("목표 ROAS {target}%를 {gap}%p 넘겼어요.", { target: row.targetRoas, gap: row.roas - row.targetRoas })
-          : t("목표 ROAS {target}%까지 {gap}%p 남았어요.", { target: row.targetRoas, gap: row.targetRoas - row.roas })
+        const verdict =
+          row.state === "cost"
+            ? t("협찬액이 아직 정해지지 않아 ROAS를 계산하지 않았어요.")
+            : row.state === "counting"
+              ? t("아직 방문을 집계하는 중이라 목표와 견주지 않았어요.")
+              : row.met
+                ? t("목표 ROAS {target}%를 {gap}%p 넘겼어요.", { target: row.targetRoas, gap: row.roas - row.targetRoas })
+                : t("목표 ROAS {target}%까지 {gap}%p 남았어요.", { target: row.targetRoas, gap: row.targetRoas - row.roas })
         const perVisit = { cost: formatWon(row.perVisit), average: formatWon(averagePerVisit) }
         // 가진 현장 집계. 어떤 방식이 하나라도 센 경우에만 보인다.
         const counted: Partial<Record<MetricKind, number>> = Object.fromEntries(venueKinds.map((kind) => [kind, row[kind as keyof typeof row] ?? 0]))
@@ -217,16 +233,20 @@ export function AnalyticsDocument({
 
             <div className="pdf-summary">
               <strong>
-                ROAS {row.roas}% ·{" "}
+                ROAS {roasText(row)} ·{" "}
                 <em>
-                  {row.met ? t("목표 달성") : t("목표까지 {gap}%p", { gap: row.targetRoas - row.roas })}
+                  {row.state !== "done"
+                    ? roasVerdict(row)
+                    : row.met
+                      ? t("목표 달성")
+                      : t("목표까지 {gap}%p", { gap: row.targetRoas - row.roas })}
                 </em>
               </strong>
               <p>
                 {t("집행액 {spend} · 추정 매출 {sales} · 방문당 비용 {cost}", {
                   spend: formatWon(row.spend),
                   sales: formatWon(row.sales),
-                  cost: row.visits > 0 ? formatWon(row.perVisit) : "-",
+                  cost: row.visits > 0 && row.state !== "cost" ? formatWon(row.perVisit) : "—",
                 })}
               </p>
 
@@ -252,16 +272,20 @@ export function AnalyticsDocument({
                 </div>
                 <div className="pdf-kpi">
                   <span>ROAS</span>
-                  <strong>{row.roas}%</strong>
+                  <strong>{roasText(row)}</strong>
                   <small className={row.met ? "good" : ""}>
-                    {t("목표 {target} · {rate}% 달성", {
-                      target: `${row.targetRoas}%`,
-                      rate: percent(row.roas, row.targetRoas),
-                    })}
+                    {row.state === "done"
+                      ? t("목표 {target} 대비 {rate}%", {
+                          target: `${row.targetRoas}%`,
+                          rate: percent(row.roas, row.targetRoas),
+                        })
+                      : roasVerdict(row)}
                   </small>
-                  <div className="pdf-kpi-track">
-                    <i style={{ width: `${Math.min(percent(row.roas, row.targetRoas), 100)}%` }} />
-                  </div>
+                  {row.state === "done" && (
+                    <div className="pdf-kpi-track">
+                      <i style={{ width: `${Math.min(percent(row.roas, row.targetRoas), 100)}%` }} />
+                    </div>
+                  )}
                 </div>
               </div>
             </section>

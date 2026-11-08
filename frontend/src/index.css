@@ -10906,6 +10906,21 @@ input[type="search"]::-webkit-search-cancel-button {
   background: var(--goal-met);
 }
 
+/* 집계 중인 협찬은 막대를 줄무늬로 두어 중간값임을 보이고, 비용이 정해지지 않은
+   협찬은 막대와 목표 마커를 감춘다(목표와 견주지 않는다). */
+.roas-row.counting .roas-track i {
+  background: repeating-linear-gradient(135deg, var(--goal-short) 0 6px, var(--fill-strong) 6px 10px);
+}
+
+.roas-row.cost .roas-track i,
+.roas-row.cost .roas-track b {
+  display: none;
+}
+
+.roas-row.cost .roas-row-head span {
+  color: var(--muted);
+}
+
 /* 목표 ROAS 마커. 막대를 가로지르는 곳에서 흰 테두리를 두른다. */
 .roas-track b,
 .roas-legend b {

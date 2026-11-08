@@ -177,6 +177,22 @@ const en: Record<string, string> = {
   "요약 PDF 다운로드": "Download the summary PDF",
   "상세 리포트 보기": "Open the detailed report",
   "유료 상세 리포트 사기": "Buy the paid detailed report",
+  "비용 미확정 · 계약서에 협찬액을 적으면 계산돼요": "Cost not set · Add the sponsorship value to the e-contract to calculate it",
+  "집계 중 · {date}까지 방문이 더 들어와요": "Still counting · visits come in until {date}",
+  "집계 중": "Still counting",
+  "협찬액이 정해진 협찬이 아직 없어요": "No sponsorship has a value set yet",
+  "집계 중 · 추정 매출 {sales}": "Still counting · estimated sales {sales}",
+  "아직 집계가 끝난 협찬이 없어요. 방문 집계가 끝나면 목표와 견줘 볼 수 있어요.": "No sponsorship has finished counting yet. Once visits are counted, you can compare it with its goal.",
+  "집계가 끝난 협찬 {total}건 중 {met}이 목표 ROAS를 달성했어요.": "{met} of {total:finished sponsorship|finished sponsorships} met their ROAS goal.",
+  "집계가 끝난 협찬은 모두 목표를 넘었어요.": "Every finished sponsorship beat its goal.",
+  "집계 중인 협찬이 있어 바뀔 수 있어요.": "Some sponsorships are still counting, so this may change.",
+  "집계가 끝난 협찬 {total}건 중 {met}건이 목표 ROAS를 달성했어요.": "{met} of {total:finished sponsorship|finished sponsorships} met their ROAS goal.",
+  "아직 집계가 끝난 협찬이 없어요": "No sponsorship has finished counting yet",
+  "집계가 끝난 협찬 {total}건 중 {met}했어요": "Of {total:finished sponsorship|finished sponsorships}, {met}",
+  "전체 집행액 기준 추정 ROAS {roas} · 누적 집행액 {spend} · 추정 매출 {sales}": "Estimated ROAS on total spend {roas} · total spend {spend} · estimated sales {sales}",
+  "협찬액이 아직 정해지지 않아 ROAS를 계산하지 않았어요.": "The sponsorship value isn't set yet, so ROAS wasn't calculated.",
+  "아직 방문을 집계하는 중이라 목표와 견주지 않았어요.": "Visits are still being counted, so it isn't compared with the goal yet.",
+  "목표 {target} 대비 {rate}%": "{rate}% of the {target} goal",
 }
 
 export default en

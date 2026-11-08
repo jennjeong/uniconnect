@@ -1066,6 +1066,13 @@ test("brand analytics follow the live measurement", async () => {
   assert.equal(sponsorships[0].coupons, metrics.coupons)
   assert.equal(sponsorships[0].visits, metrics.visits)
   assert.equal(sponsorships[0].sales, metrics.visits * report.averageSpend)
+  // 방문이 들어오는 마지막 날(행사 끝 다음 날 + 쿠폰 7일). 그날까지 화면은 집계 중으로 보인다.
+  const { addDays } = await import("./lib/dates.js")
+  const event = Object.values(getDatabase().events).flat().find((item) => item.id === "event-busking-day")!
+  assert.equal(
+    (sponsorships[0] as unknown as { countingUntil: string }).countingUntil,
+    addDays(addDays(event.endDate ?? event.date, 1), 7),
+  )
 
   const student = await login("학생단체")
   assert.deepEqual((await call("GET", "/analytics", undefined, student)).data.sponsorships, [])
