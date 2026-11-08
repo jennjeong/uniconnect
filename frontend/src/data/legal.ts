@@ -6,7 +6,7 @@
 // 한국어 원문이 우선한다.
 // 근거 조문, 아직 팔지 않는 상품의 문안, 사람이 정할 값은 docs/LEGAL.md에 있다.
 
-import { lang, t } from "../i18n"
+import { lang, t, tc } from "../i18n"
 
 export type LegalKind = "terms" | "privacy"
 
@@ -44,7 +44,7 @@ const translationNotice =
 export const legalDocs: Record<LegalKind, LegalDoc> = {
   terms: {
     title: t("서비스 이용약관"),
-    eyebrow: "Terms of Service",
+    eyebrow: tc("eyebrow", "이용약관"),
     notice: translationNotice,
     summary: t("uniconnect를 쓰는 학생단체와 브랜드가 지킬 약속과, 서비스가 맡는 일과 맡지 않는 일을 적었어요."),
     sections: [
@@ -149,7 +149,7 @@ export const legalDocs: Record<LegalKind, LegalDoc> = {
   },
   privacy: {
     title: t("개인정보 처리방침"),
-    eyebrow: "Privacy Policy",
+    eyebrow: tc("eyebrow", "개인정보 처리방침"),
     notice: translationNotice,
     summary: t("uniconnect가 어떤 개인정보를 왜 받고, 얼마나 보관하며, 어떻게 지우는지 적었어요."),
     sections: [

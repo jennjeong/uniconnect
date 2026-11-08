@@ -9,7 +9,7 @@ import { InboxDirection, SentList } from "../components/SentProposals"
 import { TabBar } from "../components/TabBar"
 import { TermsList } from "../components/TermsList"
 import { useEntryState } from "../hooks/useEntryState"
-import { t } from "../i18n"
+import { t, tc } from "../i18n"
 import { dDayLabel, formatDateTime, formatDay } from "../lib/date"
 import { AcceptModal } from "../modals/AcceptModal"
 import type { AnswerResult, Match, RequestStatus, SentProposal, SponsorOffer } from "../types"
@@ -225,7 +225,7 @@ export function OffersPage({
   return (
     <section className="page-view">
       <PageIntro
-        eyebrow="Offer Inbox"
+        eyebrow={tc("eyebrow", "받은 협찬 관리")}
         title={t("협찬 제안함")}
         description={t("받은 제안에 답하고, 보낸 제안이 어디까지 갔는지 봐요.")}
       />

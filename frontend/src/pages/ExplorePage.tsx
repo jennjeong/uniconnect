@@ -7,7 +7,7 @@ import { TabBar } from "../components/TabBar"
 import { eventKinds } from "../data/eventDetails"
 import { brandIndustries } from "../data/industries"
 import { accountTypeGroups } from "../data/roles"
-import { t } from "../i18n"
+import { t, tc } from "../i18n"
 import { formatPeriod } from "../lib/date"
 import type { EventCase, ExploreEvent } from "../types"
 
@@ -38,7 +38,7 @@ export function ExplorePage({ onBack, onOpenEvent }: { onBack: () => void; onOpe
     <section className="page-view board-page explore-page">
       <PageIntro
         onBack={onBack}
-        eyebrow="Explore Events"
+        eyebrow={tc("eyebrow", "행사 둘러보기")}
         title={t("다른 단체 행사 둘러보기")}
         description={t("다른 단체는 어떻게 협찬받았을까요? 행사와 혜택을 보고 우리 기획에 참고해요.")}
       />

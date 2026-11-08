@@ -4,7 +4,7 @@ import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { Pill } from "../components/Pill"
 import { Presence } from "../components/Presence"
-import { locale, t } from "../i18n"
+import { locale, t, tc } from "../i18n"
 import { formatWon } from "../lib/kpis"
 import {
   calendarDays,
@@ -275,7 +275,7 @@ export function EventsPage({
   return (
     <section className="page-view">
       <PageIntro
-        eyebrow={role === "학생단체" ? "My Events" : "Event Calendar"}
+        eyebrow={role === "학생단체" ? tc("eyebrow", "내 행사") : tc("eyebrow", "행사 일정")}
         title={t("행사 일정")}
         description={t("날짜를 누르면 그날 일정이 보이고, 두 번 누르면 바로 등록해요.")}
         actions={

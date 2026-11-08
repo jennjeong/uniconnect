@@ -1,6 +1,6 @@
 import { BrandMark } from "../components/BrandMark"
 import { PageIntro } from "../components/PageIntro"
-import { t } from "../i18n"
+import { t, tc } from "../i18n"
 import { formatDateTime } from "../lib/date"
 import type { Conversation } from "../types"
 
@@ -32,7 +32,7 @@ export function MessagesPage({
     <section className="page-view messages-view">
       <PageIntro
         onBack={onBack}
-        eyebrow="Messages"
+        eyebrow={tc("eyebrow", "메시지")}
         title={t("메시지")}
         description={t("협찬 상대와 나눈 대화를 최근 순으로 모았어요.")}
       />

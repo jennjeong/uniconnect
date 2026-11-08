@@ -156,7 +156,11 @@ export type ProposalState = {
   confirmed: number
   // 계정이 보낸 것을 최신 순으로, 받은편지함용.
   sent: SentProposal[]
+  // 자기 쪽에 남은 계약서 할 일(끝내고 증빙을 붙일 것)과 그런 계약서 수.
+  openTasks?: OpenTasks
 }
+
+export type OpenTasks = { tasks: number; agreements: number }
 
 // 백엔드 엔드포인트마다 함수 하나 (backend/src/routes 참고).
 export const api = {

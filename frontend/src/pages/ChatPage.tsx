@@ -4,7 +4,7 @@ import { ApiError, api, errorMessage, isAborted } from "../api"
 import { Icon } from "../components/Icon"
 import { SearchClear } from "../components/SearchClear"
 import { PageIntro } from "../components/PageIntro"
-import { locale, t } from "../i18n"
+import { locale, t, tc } from "../i18n"
 import { formatDay, todayIso, toIsoDate } from "../lib/date"
 import { saveFile } from "../lib/download"
 import { photoFromFile } from "../lib/image"
@@ -588,7 +588,7 @@ export function ChatPage({
     <section className="page-view chat-view">
       <PageIntro
         onBack={onBack}
-        eyebrow={partner?.school ?? (partner?.category ? t(partner.category) : "Chat")}
+        eyebrow={partner?.school ?? (partner?.category ? t(partner.category) : tc("eyebrow", "대화"))}
         title={partner?.name ?? t("대화")}
         actions={
           partner &&

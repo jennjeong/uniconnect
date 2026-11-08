@@ -10,7 +10,7 @@ import { TabBar } from "../components/TabBar"
 import { RevealTitle } from "../components/RevealText"
 import { metricInfo } from "../data/metrics"
 import { venueSummary } from "../data/methods"
-import { t } from "../i18n"
+import { t, tc } from "../i18n"
 import { reportCsv } from "../lib/csv"
 import { formatFullDate } from "../lib/date"
 import { saveFile } from "../lib/download"
@@ -81,7 +81,7 @@ export function ReportsPage({
   return (
     <section className="page-view">
       <PageIntro
-        eyebrow="Performance Reports"
+        eyebrow={tc("eyebrow", "성과 리포트")}
         title={t("성과 리포트")}
         description={t("행사가 끝나면, 참여와 협찬 효과를 한 장으로 정리해 드려요.")}
         actions={

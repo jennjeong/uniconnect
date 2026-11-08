@@ -279,11 +279,36 @@ export function defaultItems(proposal: AcceptedProposal, promo?: EventItem["prom
 export const promoOf = (database: Database, proposal: AcceptedProposal) =>
   proposal.eventOwner === "group" ? sponsoredEvent(database, proposal)?.event.promo : undefined
 
-// 제안 조건의 금액으로 시작하는 협찬액. 범위를 벗어나면(예전 데이터 등) 비워 둔다.
+// 계정 쪽에 남은 계약서 할 일: 취소되지 않은 협찬마다 아직 끝냈다고 표시하지 않은
+// 자기 쪽 항목 수(끝내면 증빙을 붙인다). 대시보드의 '증빙 남은 할 일'이 센다.
+// 아직 열지 않은 계약서는 처음 열 때 생길 기본 할 일로 센다.
+export function openTasksOf(database: Database, account: Account) {
+  let tasks = 0
+  let agreements = 0
+  for (const proposal of acceptedProposalsOf(database, account)) {
+    if (proposal.canceled) continue
+    const side = sideIn(proposal, account)!
+    const stored = database.agreements.find((agreement) => agreement.id === proposal.id)
+    const items = stored?.items ?? defaultItems(proposal, promoOf(database, proposal))
+    const open = items.filter((item) => item.side === side && !item.doneAt).length
+    tasks += open
+    if (open > 0) agreements += 1
+  }
+  return { tasks, agreements }
+}
+
+// 제안 조건의 금액으로 시작하는 협찬액. 금액은 "현금 또는 현물 환산"이라 형태를 따라
+// 나눈다. 현금만(또는 형태를 고르지 않음)이면 현금, 현금이 없으면 현물 환산이다. 현금이
+// 현물과 섞여 있으면 얼마가 현금인지 모르므로 비워 두고 양쪽이 나눠 적게 한다. 현금은
+// 지급 확인과 늦음 알림의 대상이라, 물품 협찬이 현금으로 잡히면 안 된다.
+// 범위를 벗어나면(예전 데이터 등) 비워 둔다.
 function seededValue(terms: ProposalTerms | undefined) {
   if (!terms?.amount) return undefined
+  const kinds = terms.kinds ?? []
+  const cash = kinds.includes("현금")
+  if (cash && kinds.length > 1) return undefined
   try {
-    return parseValue({ cash: terms.amount, inKind: 0 })
+    return parseValue(cash || kinds.length === 0 ? { cash: terms.amount, inKind: 0 } : { cash: 0, inKind: terms.amount })
   } catch {
     return undefined
   }
@@ -298,7 +323,8 @@ export function agreementFor(database: Database, proposal: AcceptedProposal) {
     id: proposal.id,
     kind: proposal.kind,
     items: defaultItems(proposal, promoOf(database, proposal)),
-    // 제안에 금액을 적었으면 계약서의 협찬액이 그 값(현금)으로 시작한다. 양쪽이 고칠 수 있다.
+    // 제안에 금액을 적었으면 계약서의 협찬액이 그 값(형태에 따라 현금이나 현물 환산)으로
+    // 시작한다. 양쪽이 고칠 수 있다.
     // 협찬액을 직접 적을 때와 같은 검사(parseValue)를 통과한 값만 쓴다.
     ...(seededValue(proposal.terms) ? { value: seededValue(proposal.terms)! } : {}),
     confirmed: {},

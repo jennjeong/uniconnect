@@ -1,6 +1,6 @@
 import { useState } from "react"
 
-import { t } from "../i18n"
+import { t, tc } from "../i18n"
 import { checklistSteps, type ChecklistKey } from "../lib/checklist"
 import type { Match, Role } from "../types"
 import { Icon } from "./Icon"
@@ -112,7 +112,7 @@ export function ProfileChecklist({
     <section aria-labelledby="checklist-title" className="checklist-section">
       <div className="checklist-head">
         <div>
-          <span className="eyebrow">Getting Started</span>
+          <span className="eyebrow">{tc("eyebrow", "시작하기")}</span>
           <h2 className="checklist-title" id="checklist-title">
             {t("소개를 채울수록 잘 맞는 상대를 찾아 드려요")}
           </h2>

@@ -14,7 +14,7 @@ import { DisputePanel } from "../components/DisputePanel"
 import { carriers, trackingLink } from "../data/carriers"
 import { methodInfo, methodKinds, sortedMethods } from "../data/methods"
 import { reviewTags } from "../data/reviews"
-import { locale, t } from "../i18n"
+import { locale, t, tc } from "../i18n"
 import { venueLink } from "../lib/checkin"
 import { formatDateTime, formatFullDate, todayIso } from "../lib/date"
 import { photoFromFile } from "../lib/image"
@@ -1554,7 +1554,7 @@ export function AgreementPage({
       <section className="page-view agreement-view">
         <PageIntro
           onBack={onBack}
-          eyebrow="Agreement"
+          eyebrow={tc("eyebrow", "전자 계약서")}
           title={t("임시 전자 계약서")}
           description={!loggedIn ? undefined : failed || t("계약서를 불러오고 있어요…")}
         />
@@ -1586,7 +1586,7 @@ export function AgreementPage({
     <section className="page-view agreement-view">
       <PageIntro
         onBack={onBack}
-        eyebrow="Agreement"
+        eyebrow={tc("eyebrow", "전자 계약서")}
         title={agreement.eventName}
         description={`${t("임시 전자 계약서")} · ${agreement.group.name} × ${agreement.brand.name}`}
         actions={

@@ -13,7 +13,7 @@ import { TabBar } from "../components/TabBar"
 import { WorkCard } from "../components/WorkCard"
 import { brandIndustries } from "../data/industries"
 import { useEntryState } from "../hooks/useEntryState"
-import { t } from "../i18n"
+import { t, tc } from "../i18n"
 import { shownTags } from "../lib/distance"
 import { matchesQuery } from "../lib/search"
 import type { Industry, Match, NearbyPlace, RequestStatus } from "../types"
@@ -166,7 +166,7 @@ export function MatchesPage({
   return (
     <section className="page-view">
       <PageIntro
-        eyebrow="Smart Match"
+        eyebrow={tc("eyebrow", "추천 매칭")}
         title={waiting ? t("브랜드가 가입하면 여기에 추천해 드려요") : t(intro.title)}
         description={
           waiting
@@ -196,12 +196,12 @@ export function MatchesPage({
               ),
             }))}
             label={t("업종")}
-            onChange={(value, event) => {
+            onChange={(value, button) => {
               const order = industries.map(([item]) => item)
               setDirection(order.indexOf(value) >= order.indexOf(industry) ? "forward" : "back")
               setIndustry(value)
               // 칩 줄은 휴대폰에서 옆으로 스크롤된다. 고른 칩이 보이게 한다.
-              event.currentTarget.scrollIntoView({ block: "nearest", inline: "center" })
+              button.scrollIntoView({ block: "nearest", inline: "center" })
             }}
             value={industry}
           />

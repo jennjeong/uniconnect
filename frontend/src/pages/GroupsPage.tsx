@@ -14,7 +14,7 @@ import { eventKinds } from "../data/eventDetails"
 import { groupFields } from "../data/industries"
 import { regions, universities, type Region } from "../data/universities"
 import { useEntryState } from "../hooks/useEntryState"
-import { t } from "../i18n"
+import { t, tc } from "../i18n"
 import { todayIso } from "../lib/date"
 import { nearestFirst, shownTags } from "../lib/distance"
 import { matchesGroupFilters, matchesQuery, noGroupFilters, type GroupFilters } from "../lib/search"
@@ -202,7 +202,7 @@ export function GroupsPage({
     <section className="page-view">
       {/* 가입한 단체가 아직 없으면 추천은 찾았다고 말할 수 없다. */}
       <PageIntro
-        eyebrow="Find Student Groups"
+        eyebrow={tc("eyebrow", "단체 찾기")}
         title={
           loaded && groups.length === 0 && tab === "추천"
             ? t("학생단체가 가입하면 여기에 추천해 드려요")
@@ -234,11 +234,11 @@ export function GroupsPage({
               ),
             }))}
             label={t("분야")}
-            onChange={(value, event) => {
+            onChange={(value, button) => {
               const order = fields.map(([item]) => item)
               setDirection(order.indexOf(value) >= order.indexOf(field) ? "forward" : "back")
               setField(value)
-              event.currentTarget.scrollIntoView({ block: "nearest", inline: "center" })
+              button.scrollIntoView({ block: "nearest", inline: "center" })
             }}
             value={field}
           />

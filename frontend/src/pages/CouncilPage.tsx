@@ -4,7 +4,7 @@ import { api, errorMessage } from "../api"
 import { BrandMark } from "../components/BrandMark"
 import { CatalogEmpty } from "../components/CatalogEmpty"
 import { PageIntro } from "../components/PageIntro"
-import { t } from "../i18n"
+import { t, tc } from "../i18n"
 import { formatDay, formatPeriod, toIsoDate } from "../lib/date"
 import type { CouncilClub } from "../types"
 
@@ -32,7 +32,7 @@ export function CouncilPage({ onBack, onNotice }: { onBack: () => void; onNotice
   if (!data) {
     return (
       <section className="page-view council-page">
-        <PageIntro onBack={onBack} eyebrow="Council" title={t("소속 단체")} description={failed || t("불러오고 있어요…")} />
+        <PageIntro onBack={onBack} eyebrow={tc("eyebrow", "학생회")} title={t("소속 단체")} description={failed || t("불러오고 있어요…")} />
       </section>
     )
   }
@@ -41,7 +41,7 @@ export function CouncilPage({ onBack, onNotice }: { onBack: () => void; onNotice
     <section className="page-view council-page">
       <PageIntro
         onBack={onBack}
-        eyebrow="Council"
+        eyebrow={tc("eyebrow", "학생회")}
         title={t("소속 단체")}
         description={t("소속 동아리의 행사와 협찬을 한곳에서 봐요. 메시지와 연락처는 동아리만 봐요.")}
       />
