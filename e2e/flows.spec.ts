@@ -188,7 +188,7 @@ test("a password can be shown while it is typed, and hidden again", async ({ pag
   await expect(password).toHaveAttribute("type", "password")
 })
 
-test("a proposal sent waits under 검토 중 beside those received, and is taken back there", async ({ page, request }) => {
+test("sent proposals sit apart from received ones, by how far they got, and are taken back there", async ({ page, request }) => {
   const group = await signUpMember(request, "학생단체", "e2e-sender@syu.ac.kr", "보내는 동아리")
   const brand = await signUpMember(request, "브랜드", "e2e-receiver@receiver-cafe.kr", "받는 카페")
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date())
@@ -197,9 +197,15 @@ test("a proposal sent waits under 검토 중 beside those received, and is taken
 
   await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
   await page.goto("/offers")
-  const sentPart = page.locator(".inbox-part", { has: page.getByRole("heading", { name: /보낸 제안/ }) })
+  // 받은 제안의 건수에는 보낸 것이 섞이지 않는다.
+  const direction = page.getByRole("group", { name: "제안 방향" })
+  await expect(direction.getByRole("button", { name: /받은 제안/ })).toContainText("0")
+  await expect(direction.getByRole("button", { name: /보낸 제안/ })).toContainText("1")
+  await direction.getByRole("button", { name: /보낸 제안/ }).click()
+  const sentPart = page.locator(".inbox-part", { has: page.getByRole("heading", { name: /답변 대기/ }) })
   const card = sentPart.locator(".request-card", { hasText: "받는 카페" })
   await expect(card).toContainText("보내는 공연")
+  await expect(card).toContainText("상대에게 전달됐어요")
   // 한 번 더 묻고 나면 사라진다.
   await card.getByRole("button", { name: "제안 취소" }).click()
   await card.getByRole("button", { name: "제안 취소" }).click()
@@ -1202,7 +1208,7 @@ test("a brand offers one campaign to several groups at once", async ({ page, req
   }
 })
 
-test("a brand sees its campaign and the group's event dates side by side, and a mismatch goes into the message", async ({ page, request }) => {
+test("a brand sees its campaign and the group's event dates side by side, chooses what to do, and sends structured terms", async ({ page, request }) => {
   const kst = (days: number) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date(Date.now() + days * 86_400_000))
   const group = await signUpMember(request, "학생단체", "e2e-dates@syu.ac.kr", "날짜 밴드")
   const listed = await request.put("/api/profile", { data: { intro: "캠퍼스에서 공연하는 밴드예요.", offer: "관객 100명" }, headers: group.headers })
@@ -1219,13 +1225,34 @@ test("a brand sees its campaign and the group's event dates side by side, and a 
   const dates = form.locator(".propose-dates")
   await expect(dates).toContainText("우리 캠페인")
   await expect(dates).toContainText("가을 정기공연")
-  await expect(dates.getByRole("status")).toContainText("캠페인 기간과 행사 날짜가 달라요")
-  await expect(form.getByRole("checkbox", { name: /날짜는 계약서에서 맞추기로/ })).toBeChecked()
+  // 날짜가 다르면 고르기 전에는 보낼 수 없다(미리 골라 두지 않는다).
+  const choice = form.getByRole("group", { name: /날짜가 달라요/ })
+  await expect(choice.getByRole("radio")).toHaveCount(2)
+  await expect(choice.getByRole("radio", { checked: true })).toHaveCount(0)
   await form.getByLabel("전할 메시지").fill("함께해요.")
   await form.getByRole("button", { name: "제안 보내기" }).click()
+  await expect(form.getByText("이 날짜로 진행할지, 날짜 조정을 요청할지 골라 주세요")).toBeVisible()
+  await choice.getByText("날짜 조정을 요청해요").click()
+  await expect(choice.getByRole("radio", { name: "날짜 조정을 요청해요" })).toBeChecked()
+  await choice.getByLabel("바꾸고 싶은 날짜").fill(kst(25))
+  // 조건은 캠페인에서 가져오고 고칠 수 있다.
+  await form.getByLabel("내용 · 수량").fill("시음 쿠폰 100장")
+  await form.getByRole("button", { name: "제안 보내기" }).click()
   await expect(form).toBeHidden()
-  const sent = (await (await request.get("/api/offers", { headers: group.headers })).json()) as { offers: { message?: string }[] }
-  expect(sent.offers[0]?.message).toContain("일정 조율: 우리 캠페인")
+  const sent = (await (await request.get("/api/offers", { headers: group.headers })).json()) as {
+    offers: { message?: string; terms?: { quantity?: string; kinds?: string[]; schedule?: { date: string } } }[]
+  }
+  // 일정 조정은 메시지가 아니라 조건으로 남는다.
+  expect(sent.offers[0]?.message).toBe("함께해요.")
+  expect(sent.offers[0]?.terms?.schedule?.date).toBe(kst(25))
+  expect(sent.offers[0]?.terms?.quantity).toBe("시음 쿠폰 100장")
+  expect(sent.offers[0]?.terms?.kinds).toEqual(["제품"])
+  // 받는 단체의 제안함에 같은 조건이 보인다.
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
+  await page.goto("/offers")
+  const offerCard = page.locator(".request-card", { hasText: "날짜 카페" })
+  await expect(offerCard.locator(".terms-list")).toContainText("시음 쿠폰 100장")
+  await expect(offerCard.locator(".terms-list")).toContainText("일정 조정 요청")
   for (const member of [group, brand]) {
     const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: member.headers })
     expect(left.status()).toBe(204)
@@ -1245,7 +1272,7 @@ test("a student group proposes and the brand accepts", async ({ browser }) => {
   await form.getByLabel("전할 메시지").fill("현장 부스와 SNS로 브랜드를 알릴게요.")
   await form.getByRole("button", { name: "제안 보내기" }).click()
   await expect(form).toBeHidden()
-  await expect(student.locator(".profile-actions").getByText("제안 완료")).toBeVisible()
+  await expect(student.locator(".profile-actions").getByText("제안 보냄")).toBeVisible()
 
   const brand = await (await browser.newContext()).newPage()
   await brand.goto("/")
@@ -2586,7 +2613,7 @@ test("a match card keeps two equal actions at the bottom and save and compare at
   const card = page.locator(".work-card").first()
   await expect(card.getByRole("button", { name: "상세 정보" })).toBeVisible()
   const detail = (await card.getByRole("button", { name: "상세 정보" }).boundingBox())!
-  // 둘째 칸은 제안하기 버튼이거나, 보낸 뒤에는 그 자리의 상태(제안 완료, 협찬 확정)다.
+  // 둘째 칸은 제안하기 버튼이거나, 보낸 뒤에는 그 자리의 상태(제안 보냄, 협찬 확정)다.
   const propose = (await card.locator(".work-actions .primary-button, .work-actions .proposal-button").first().boundingBox())!
   expect(Math.round(detail.y)).toBe(Math.round(propose.y))
   expect(Math.round(detail.height)).toBe(Math.round(propose.height))

@@ -464,6 +464,7 @@ export function BrandDashboardPage({
             eventName={accepting.eventName}
             eventDate={accepting.eventDate || undefined}
             terms={accepting.ask}
+            details={accepting.terms}
             onClose={() => setAccepting(null)}
             onConfirm={async () => {
               const result = await onAccept(accepting)

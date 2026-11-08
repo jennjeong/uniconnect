@@ -5,8 +5,10 @@ import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { Presence } from "../components/Presence"
 import { RequestProgress } from "../components/RequestProgress"
-import { PendingBothWays } from "../components/SentProposals"
+import { InboxDirection, SentList } from "../components/SentProposals"
 import { TabBar } from "../components/TabBar"
+import { TermsList } from "../components/TermsList"
+import { useEntryState } from "../hooks/useEntryState"
 import { t } from "../i18n"
 import { dDayLabel, formatDateTime, formatDay } from "../lib/date"
 import { AcceptModal } from "../modals/AcceptModal"
@@ -73,10 +75,14 @@ function OfferCard({
         </div>
       </dl>
 
-      <div className="request-ask">
-        <span>{t("제공 협찬")}</span>
-        <strong>{offer.offer}</strong>
-      </div>
+      {offer.terms ? (
+        <TermsList terms={offer.terms} />
+      ) : (
+        <div className="request-ask">
+          <span>{t("제공 협찬")}</span>
+          <strong>{offer.offer}</strong>
+        </div>
+      )}
       <p className="request-message">{offer.message}</p>
 
       <div className="request-actions">
@@ -160,6 +166,7 @@ function OfferCard({
             eventName={offer.campaignName}
             eventDate={offer.campaignDate || undefined}
             terms={offer.offer}
+            details={offer.terms}
             onClose={() => setAccepting(false)}
             onConfirm={async () => {
               const result = await onAnswer(offer, "accept")
@@ -195,7 +202,9 @@ export function OffersPage({
   const [tab, setTab] = useState<RequestStatus>("검토 중")
   const current = tabs.find((item) => item.status === tab) ?? tabs[0]
   const list = offers.filter((offer) => inTab(offer.status, tab))
-  const waitingSent = sent.filter((item) => item.status === "검토 중").length
+  // 받은 제안과 보낸 제안은 위에서 나눈다(보낸 제안은 components/SentProposals.tsx).
+  const [direction, setDirection] = useEntryState<"received" | "sent">("pages/OffersPage.tsx:direction", "received")
+  const receivedWaiting = offers.filter((item) => inTab(item.status, "검토 중")).length
   const received =
     list.length === 0 ? (
       <p className="day-empty inbox-empty">{t(current.empty)}</p>
@@ -217,38 +226,32 @@ export function OffersPage({
     <section className="page-view">
       <PageIntro
         eyebrow="Offer Inbox"
-        title={t("받은 협찬 제안")}
-        description={t("브랜드가 보낸 협찬 제안이 도착했어요. 내가 보낸 제안은 검토 중에서 봐요.")}
+        title={t("협찬 제안함")}
+        description={t("받은 제안에 답하고, 보낸 제안이 어디까지 갔는지 봐요.")}
       />
 
-      <TabBar
-        items={tabs.map((item) => ({
-          value: item.status,
-          label: (
-            <>
-              {t(item.label)}
-              <em>
-                {offers.filter((offer) => inTab(offer.status, item.status)).length +
-                  (item.status === "검토 중" ? waitingSent : 0)}
-              </em>
-            </>
-          ),
-        }))}
-        label={t("제안 상태")}
-        onChange={setTab}
-        value={tab}
-      />
+      <InboxDirection onChange={setDirection} receivedWaiting={receivedWaiting} sent={sent} value={direction} />
 
-      {tab === "검토 중" ? (
-        <PendingBothWays
-          key={tab}
-          received={received}
-          receivedCount={list.length}
-          sent={sent}
-          onWithdraw={onWithdraw}
-        />
+      {direction === "sent" ? (
+        <SentList onWithdraw={onWithdraw} sent={sent} />
       ) : (
-        <div key={tab}>{received}</div>
+        <>
+          <TabBar
+            items={tabs.map((item) => ({
+              value: item.status,
+              label: (
+                <>
+                  {t(item.label)}
+                  <em>{offers.filter((entry) => inTab(entry.status, item.status)).length}</em>
+                </>
+              ),
+            }))}
+            label={t("받은 제안 상태")}
+            onChange={setTab}
+            value={tab}
+          />
+          <div key={tab}>{received}</div>
+        </>
       )}
     </section>
   )

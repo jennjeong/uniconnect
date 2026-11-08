@@ -1,5 +1,6 @@
 import type {
   Account,
+  ProposalTermsDraft,
   HistoryItem,
   AccountContact,
   AdminAgreementRow,
@@ -259,7 +260,10 @@ export const api = {
     request<{ post: BoardPost }>(`/board/${encodeURIComponent(id)}`, { method: "PUT", body: draft }),
   closePost: (id: string) => request<{ post: BoardPost }>(`/board/${encodeURIComponent(id)}/close`, { method: "POST" }),
   deletePost: (id: string) => request<void>(`/board/${encodeURIComponent(id)}`, { method: "DELETE" }),
-  propose: (matchId: string, draft: { eventId?: string; message?: string; postId?: string } = {}) =>
+  propose: (
+    matchId: string,
+    draft: { eventId?: string; message?: string; postId?: string; terms?: ProposalTermsDraft } = {},
+  ) =>
     request<ProposalState>("/proposals", {
       method: "POST",
       body: { matchId, ...draft },

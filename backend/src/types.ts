@@ -363,6 +363,21 @@ export type MetricEntry = {
 export type RequestStatus = "검토 중" | "수락" | "거절" | "취소됨" | "마감"
 
 // 학생단체가 브랜드에 보낸 협찬 제안이다.
+// 제안의 조건. 메시지와 따로 저장하고, 받은 화면과 계약서가 그대로 보인다
+// (lib/terms.ts). 모두 선택이다. 예전 제안에는 없다.
+export type ProposalTerms = {
+  kinds?: string[]
+  // 현금 또는 현물 환산 금액(원)이다.
+  amount?: number
+  quantity?: string
+  // "YYYY-MM-DD": 협찬 물품·금액을 전달할 기한과 이 제안에 답해 달라는 기한이다.
+  deliverBy?: string
+  respondBy?: string
+  benefits?: string
+  // 보내는 쪽이 일정 조정을 직접 고른 경우: 바꾸고 싶은 날짜다.
+  schedule?: { adjust: true; date: string }
+}
+
 export type SponsorRequest = {
   id: string
   brandId: string
@@ -381,6 +396,7 @@ export type SponsorRequest = {
   message: string
   // 게시판 글에서 왔다면 그 지원 대상인 브랜드의 글이다.
   postId?: string
+  terms?: ProposalTerms
   status: RequestStatus
   createdAt: string
   respondedAt?: string
@@ -409,6 +425,7 @@ export type SponsorOffer = {
   message: string
   // 게시판 글에서 왔다면 그 지원 대상인 단체의 글이다.
   postId?: string
+  terms?: ProposalTerms
   status: RequestStatus
   createdAt: string
   respondedAt?: string

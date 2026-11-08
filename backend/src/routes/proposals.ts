@@ -4,6 +4,7 @@ import { Router } from "express"
 import { brandIndustries, groupIndustries, shownCatalog, shownTo } from "../lib/catalog.js"
 import { todayInKorea } from "../lib/dates.js"
 import { HttpError } from "../lib/errors.js"
+import { parseTerms, termLines } from "../lib/terms.js"
 import { text } from "../lib/validation.js"
 import { notify } from "../lib/notices.js"
 import { createRateLimit, senderKey } from "../lib/rateLimit.js"
@@ -70,6 +71,7 @@ function proposalState(account: Account) {
         ...(date ? { eventDate: date } : {}),
         offer: "ask" in item ? item.ask : item.offer,
         message: item.message,
+        ...(item.terms ? { terms: item.terms } : {}),
         status: item.status,
         createdAt: item.createdAt,
         ...(item.respondedAt ? { respondedAt: item.respondedAt } : {}),
@@ -205,6 +207,8 @@ proposalsRouter.post("/", async (req, res) => {
   const note = text(req.body?.message)
   if (note.length > maxMessage) throw new HttpError(400, `메시지는 ${maxMessage}자 이하로 적어 주세요.`)
   const event = proposedEvent(account, text(req.body?.eventId))
+  // 조건은 메시지와 따로(금액, 수량, 기한, 혜택, 일정 조정). 없으면 예전처럼 메시지만.
+  const terms = parseTerms(req.body?.terms, event)
   assertCanOffer(database, account)
   await proposalsPerHour.take(senderKey(req, database, account))
 
@@ -237,7 +241,7 @@ proposalsRouter.post("/", async (req, res) => {
   if (!current.includes(matchId)) database.proposals[account.id] = [...current, matchId]
 
   if (!students && send && event) {
-    const offer = { ...brandOffer(account, matchId, event, note), ...applying }
+    const offer = { ...brandOffer(account, matchId, event, note), ...applying, ...(terms ? { terms } : {}) }
     database.offers.push(offer)
     void notify(
       database.accounts.find((item) => item.groupId === matchId),
@@ -246,6 +250,7 @@ proposalsRouter.post("/", async (req, res) => {
       [
         `${account.name}에서 '${offer.campaignName}' 협찬을 제안했어요.`,
         `제공 협찬: ${offer.offer}`,
+        ...termLines(terms),
         ...postLine,
         ...(note ? [`메시지: ${note}`] : []),
       ],
@@ -268,6 +273,7 @@ proposalsRouter.post("/", async (req, res) => {
       ask: partner.offer,
       message: note || `${event.name}에 함께해 주세요! 현장과 SNS에서 브랜드를 알릴게요.`,
       ...applying,
+      ...(terms ? { terms } : {}),
       status: "검토 중",
       createdAt: new Date().toISOString(),
     })
@@ -275,7 +281,7 @@ proposalsRouter.post("/", async (req, res) => {
       database.accounts.find((item) => item.brandId === matchId),
       "proposals",
       "새 협찬 제안이 왔어요",
-      [`${account.name}에서 '${event.name}' 협찬을 제안했어요.`, ...postLine, ...(note ? [`메시지: ${note}`] : [])],
+      [`${account.name}에서 '${event.name}' 협찬을 제안했어요.`, ...termLines(terms), ...postLine, ...(note ? [`메시지: ${note}`] : [])],
       "/inbox",
     )
   }

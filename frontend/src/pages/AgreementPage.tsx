@@ -8,6 +8,7 @@ import { Pill } from "../components/Pill"
 import { RotatePin } from "../components/RotatePin"
 import { ReviewCard, ReviewReply } from "../components/ReviewCard"
 import { starPath } from "../components/Stars"
+import { TermsList } from "../components/TermsList"
 import { carriers, trackingLink } from "../data/carriers"
 import { methodInfo, methodKinds, sortedMethods } from "../data/methods"
 import { reviewTags } from "../data/reviews"
@@ -1619,6 +1620,13 @@ export function AgreementPage({
             <dd>{agreement.gives}</dd>
           </div>
         </dl>
+        {/* 제안할 때 적은 조건. 받은 제안에서 본 것과 같다. */}
+        {agreement.terms && (
+          <section aria-label={t("제안 조건")} className="agreement-terms">
+            <h3>{t("제안 조건")}</h3>
+            <TermsList terms={agreement.terms} />
+          </section>
+        )}
 
         {canceledAt ? (
           <div className="agreement-confirm">

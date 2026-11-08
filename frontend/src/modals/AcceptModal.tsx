@@ -1,8 +1,9 @@
 import { useState } from "react"
 
 import { Modal } from "../components/Modal"
+import { TermsList } from "../components/TermsList"
 import { t } from "../i18n"
-import type { AnswerResult } from "../types"
+import type { AnswerResult, ProposalTerms } from "../types"
 import { dDayLabel, formatDay } from "../lib/date"
 
 // 받은 제안을 수락하기 전에 한 번 더 보여 주는 확인창. 무엇을 수락하는지와
@@ -14,6 +15,7 @@ export function AcceptModal({
   eventName,
   eventDate,
   terms,
+  details,
   onConfirm,
   onClose,
 }: {
@@ -24,6 +26,8 @@ export function AcceptModal({
   eventDate?: string
   // 요청받은 협찬(브랜드가 수락할 때) 또는 제안받은 협찬(단체가 수락할 때).
   terms: string
+  // 제안할 때 적은 조건. 있으면 협찬 문구 대신 조건 표를 보인다.
+  details?: ProposalTerms
   // 결과가 failed면 확인창을 열어 둔 채 다시 시도하게 한다.
   onConfirm: () => Promise<AnswerResult>
   onClose: () => void
@@ -53,11 +57,14 @@ export function AcceptModal({
             )}
           </dd>
         </div>
-        <div>
-          <dt>{side === "브랜드" ? t("요청 협찬") : t("제안받은 협찬")}</dt>
-          <dd>{terms}</dd>
-        </div>
+        {!details && (
+          <div>
+            <dt>{side === "브랜드" ? t("요청 협찬") : t("제안받은 협찬")}</dt>
+            <dd>{terms}</dd>
+          </div>
+        )}
       </dl>
+      {details && <TermsList terms={details} />}
 
       <p className="accept-cost">
         {side === "브랜드"

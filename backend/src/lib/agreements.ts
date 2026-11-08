@@ -10,7 +10,7 @@ import { payoutView } from "./payouts.js"
 import { photos } from "./photos.js"
 import { canReview, isDemoAccount, publicReview, reviewOpen } from "./reviews.js"
 import { isSponsored } from "./sponsorships.js"
-import type { Account, Agreement, AgreementItem, ChatSide, Database, EventItem } from "../types.js"
+import type { Account, Agreement, AgreementItem, ChatSide, Database, EventItem, ProposalTerms } from "../types.js"
 
 export { uploadsFolder } from "./photos.js"
 
@@ -30,6 +30,8 @@ export type AcceptedProposal = {
   eventId?: string
   eventOwner: ChatSide
   gives: string
+  // 제안할 때 따로 적은 조건(lib/terms.ts). 계약서가 그대로 보인다.
+  terms?: ProposalTerms
   respondedAt?: string
 }
 
@@ -54,6 +56,7 @@ export function acceptedProposal(database: Database, id: string): AcceptedPropos
       eventId: request.eventId,
       eventOwner: "group",
       gives: request.ask,
+      ...(request.terms ? { terms: request.terms } : {}),
       respondedAt: request.respondedAt,
     }
   }
@@ -75,6 +78,7 @@ export function acceptedProposal(database: Database, id: string): AcceptedPropos
     eventId: offer.campaignId,
     eventOwner: "brand",
     gives: offer.offer,
+    ...(offer.terms ? { terms: offer.terms } : {}),
     respondedAt: offer.respondedAt,
   }
 }
@@ -248,13 +252,25 @@ export function defaultItems(proposal: AcceptedProposal, promo?: EventItem["prom
         ...promo.posts.slice(0, 5).map((post) => item("group", `SNS 홍보: ${post}`)),
       ]
     : []
+  const terms = proposal.terms
+  // 할 일은 협찬의 종류에 맞춘다. 쿠폰·할인이 들어간 협찬에만 쿠폰 준비와 배포가,
+  // 물품이 오가는 협찬에만 수령 확인이 들어간다(샘플·부스 협찬에 쿠폰 할 일이
+  // 생기지 않게). 제안 조건의 전달 기한과 약속한 혜택도 할 일에 들어간다.
+  // 조건을 적은 제안은 그 조건으로(수량·혜택·형태), 아니면 상대 소개의 협찬 문구로 판단한다.
+  const given = terms?.quantity || proposal.gives
+  const deal = terms ? `${terms.quantity ?? ""} ${terms.benefits ?? ""} ${(terms.kinds ?? []).join(" ")}` : proposal.gives
+  const coupons = /쿠폰|할인/.test(deal)
+  const goods = Boolean(terms?.kinds?.includes("제품")) || /샘플|제품|물품|굿즈|음료|키트|증정|\d+\s*(개|장|병|잔|박스)/.test(deal)
+  const deadline = terms?.deliverBy ? ` (${terms.deliverBy}까지)` : ""
   return [
-    item("brand", `협찬 전달: ${proposal.gives}`.slice(0, 80)),
-    item("brand", "행사용 쿠폰과 매장 직원 안내 준비"),
+    item("brand", `협찬 전달: ${given}${deadline}`.slice(0, 80)),
+    ...(coupons ? [item("brand", "행사용 쿠폰과 매장 직원 안내 준비")] : []),
+    ...(goods ? [item("group", "협찬 물품 수령 확인")] : []),
+    ...(terms?.benefits ? [item("group", `약속한 혜택: ${terms.benefits}`.slice(0, 80))] : []),
     ...(promised.length
       ? promised
       : [item("group", "행사 전 SNS 홍보 게시물 올리기"), item("group", "행사장에 브랜드 보여 주기(현수막·부스·무대 소개)")]),
-    item("group", "참여자에게 쿠폰 나눠 주기"),
+    ...(coupons ? [item("group", "참여자에게 쿠폰 나눠 주기")] : []),
     item("group", "행사 후 사진과 성과 리포트 공유하기"),
   ]
 }
@@ -272,6 +288,8 @@ export function agreementFor(database: Database, proposal: AcceptedProposal) {
     id: proposal.id,
     kind: proposal.kind,
     items: defaultItems(proposal, promoOf(database, proposal)),
+    // 제안에 금액을 적었으면 계약서의 협찬액이 그 값(현금)으로 시작한다. 양쪽이 고칠 수 있다.
+    ...(proposal.terms?.amount ? { value: { cash: proposal.terms.amount, inKind: 0 } } : {}),
     confirmed: {},
     createdAt: now,
     updatedAt: now,
@@ -349,6 +367,7 @@ export function agreementView(database: Database, agreement: Agreement, proposal
       : {}),
     ...(measure && !proposal.canceled ? { measure } : {}),
     gives: proposal.gives,
+    ...(proposal.terms ? { terms: proposal.terms } : {}),
     fee: feeState(database, agreement, proposal),
     payout: payoutView(agreement),
     review: {

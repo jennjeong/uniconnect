@@ -1,9 +1,10 @@
-import { useState, type ReactNode } from "react"
+import { useState } from "react"
 
 import { t } from "../i18n"
 import { dDayLabel, formatDateTime, formatDay } from "../lib/date"
 import type { SentProposal } from "../types"
 import { BrandMark } from "./BrandMark"
+import { TermsList } from "./TermsList"
 
 // 계정이 보냈고 파트너가 아직 답하지 않은 제안 하나. 누구에게, 어떤 행사에
 // 대해, 무엇을 제안했는지와 회수하는 방법(받은 제안에서 거절할 때처럼 한 번 더
@@ -40,10 +41,14 @@ function SentCard({ item, onWithdraw }: { item: SentProposal; onWithdraw: (item:
         </div>
       </dl>
 
-      <div className="request-ask">
-        <span>{t("제안한 협찬")}</span>
-        <strong>{item.offer}</strong>
-      </div>
+      {item.terms ? (
+        <TermsList terms={item.terms} />
+      ) : (
+        <div className="request-ask">
+          <span>{t("제안한 협찬")}</span>
+          <strong>{item.offer}</strong>
+        </div>
+      )}
       {item.message && <p className="request-message">{item.message}</p>}
 
       <div className="request-actions">
@@ -64,10 +69,20 @@ function SentCard({ item, onWithdraw }: { item: SentProposal; onWithdraw: (item:
               {t("제안 취소")}
             </button>
           </>
+        ) : sentStage(item) === "accepted" || sentStage(item) === "closed" ? (
+          <span className="request-result">
+            {item.status === "수락"
+              ? t("상대가 수락했어요 · 계약서를 확인해 주세요")
+              : item.status === "거절"
+                ? t("상대가 거절했어요")
+                : item.status === "취소됨"
+                  ? t("취소된 협찬")
+                  : t("행사가 끝나 마감됐어요")}
+          </span>
         ) : (
           <>
             <span className="request-result">
-              {item.noInbox ? t("가입하면 제안이 전달돼요") : t("답을 기다리고 있어요")}
+              {item.noInbox ? t("상대가 가입하면 전달돼요") : t("상대에게 전달됐어요 · 답을 기다려요")}
             </span>
             <button className="cancel-button" onClick={() => setConfirming(true)} type="button">
               {t("제안 취소")}
@@ -79,43 +94,73 @@ function SentCard({ item, onWithdraw }: { item: SentProposal; onWithdraw: (item:
   )
 }
 
-// 받은 편지함의 검토 중. 양방향 모두 보인다. 이 계정의 답을 기다리는 제안
-// (`received`, 페이지 자체의 카드)과, 이 계정이 보내서 파트너의 답을 기다리는
-// 제안이다. 각각 제안 취소 버튼이 붙는다.
-export function PendingBothWays({
-  received,
-  receivedCount,
+// 보낸 제안이 어디까지 갔는지. 상대에게 실제로 닿았는지(전달됨)와 답을 구분한다.
+// - 답변 대기: 상대의 받은편지함에 도착해 답을 기다린다.
+// - 전달 대기: 상대가 아직 가입하지 않아 받은편지함이 없다. 가입하면 전달된다.
+// - 수락 · 거절 · 마감 · 취소됨: 상대가 답했거나 행사가 끝났다.
+export type SentStage = "waiting" | "undelivered" | "accepted" | "closed"
+
+export const sentStage = (item: SentProposal): SentStage =>
+  item.noInbox ? "undelivered" : item.status === "검토 중" ? "waiting" : item.status === "수락" ? "accepted" : "closed"
+
+const stages: { stage: SentStage; title: string; empty: string }[] = [
+  { stage: "waiting", title: "답변 대기", empty: "답을 기다리는 보낸 제안이 없어요." },
+  { stage: "undelivered", title: "전달 대기 · 상대 미가입", empty: "" },
+  { stage: "accepted", title: "수락됨", empty: "" },
+  { stage: "closed", title: "거절 · 마감 · 취소", empty: "" },
+]
+
+// 받은 제안과 보낸 제안을 나누는 위쪽의 고르기. 건수는 지금 답이 필요한 것만 센다:
+// 받은 쪽은 내 답을 기다리는 것, 보낸 쪽은 상대에게 닿아 답을 기다리는 것.
+export function InboxDirection({
+  value,
+  onChange,
+  receivedWaiting,
   sent,
-  onWithdraw,
 }: {
-  received: ReactNode
-  receivedCount: number
+  value: "received" | "sent"
+  onChange: (value: "received" | "sent") => void
+  receivedWaiting: number
   sent: SentProposal[]
-  onWithdraw: (item: SentProposal) => void
 }) {
-  const waiting = sent.filter((item) => item.status === "검토 중")
+  const sentWaiting = sent.filter((item) => sentStage(item) === "waiting").length
+  return (
+    <div aria-label={t("제안 방향")} className="inbox-direction" role="group">
+      <button aria-pressed={value === "received"} onClick={() => onChange("received")} type="button">
+        {t("받은 제안")} <em>{receivedWaiting}</em>
+      </button>
+      <button aria-pressed={value === "sent"} onClick={() => onChange("sent")} type="button">
+        {t("보낸 제안")} <em>{sentWaiting}</em>
+      </button>
+    </div>
+  )
+}
+
+// 보낸 제안을 단계별로. 답을 기다리는 것만 거둘 수 있다.
+export function SentList({ sent, onWithdraw }: { sent: SentProposal[]; onWithdraw: (item: SentProposal) => void }) {
+  if (sent.length === 0) return <p className="day-empty inbox-empty">{t("아직 보낸 제안이 없어요.")}</p>
   return (
     <div className="inbox-both stagger">
-      <section aria-labelledby="inbox-received" className="inbox-part">
-        <h2 className="inbox-subhead" id="inbox-received">
-          {t("받은 제안")} <em>{receivedCount}</em>
-        </h2>
-        {received}
-      </section>
-      <section aria-labelledby="inbox-sent" className="inbox-part">
-        <h2 className="inbox-subhead" id="inbox-sent">
-          {t("보낸 제안")} <em>{waiting.length}</em>
-        </h2>
-        {waiting.length === 0 ? (
-          <p className="day-empty inbox-empty">{t("답을 기다리는 보낸 제안이 없어요.")}</p>
-        ) : (
-          <div className="request-grid">
-            {waiting.map((item) => (
-              <SentCard item={item} key={item.id} onWithdraw={onWithdraw} />
-            ))}
-          </div>
-        )}
-      </section>
+      {stages.map(({ stage, title, empty }) => {
+        const items = sent.filter((item) => sentStage(item) === stage)
+        if (items.length === 0 && !empty) return null
+        return (
+          <section aria-labelledby={`sent-${stage}`} className="inbox-part" key={stage}>
+            <h2 className="inbox-subhead" id={`sent-${stage}`}>
+              {t(title)} <em>{items.length}</em>
+            </h2>
+            {items.length === 0 ? (
+              <p className="day-empty inbox-empty">{t(empty)}</p>
+            ) : (
+              <div className="request-grid">
+                {items.map((item) => (
+                  <SentCard item={item} key={item.id} onWithdraw={onWithdraw} />
+                ))}
+              </div>
+            )}
+          </section>
+        )
+      })}
     </div>
   )
 }

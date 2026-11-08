@@ -170,6 +170,8 @@ export type Agreement = {
   event?: { id: string; owner: ChatSide; started: boolean }
   goals?: { expectedAudience: number; targets: Report["targets"] }
   gives: string
+  // 제안할 때 적은 조건(백엔드 lib/terms.ts). 예전 계약에는 없다.
+  terms?: ProposalTerms
   items: AgreementItem[]
   confirmed: Partial<Record<ChatSide, string>>
   createdAt: string
@@ -657,6 +659,7 @@ export type SponsorRequest = {
   contract?: "waiting" | "confirmed"
   // 양쪽 확인이 끝나 협찬이 확정된 시각.
   contractAt?: string
+  terms?: ProposalTerms
   // 실제 진행(서버 lib/progress.ts): 행사에서 처음 기록된 날, 결과가 굳은 날.
   executedAt?: string
   reportedAt?: string
@@ -683,6 +686,7 @@ export type SponsorOffer = {
   contract?: "waiting" | "confirmed"
   // 양쪽 확인이 끝나 협찬이 확정된 시각.
   contractAt?: string
+  terms?: ProposalTerms
   // 실제 진행(서버 lib/progress.ts): 행사에서 처음 기록된 날, 결과가 굳은 날.
   executedAt?: string
   reportedAt?: string
@@ -705,6 +709,7 @@ export type SentProposal = {
   offer: string
   // 함께 보낸 메모.
   message?: string
+  terms?: ProposalTerms
   status: RequestStatus
   createdAt: string
   // 상대가 아직 가입하지 않아 받은편지함이 없다. 답이 오지 않는다.
@@ -713,6 +718,21 @@ export type SentProposal = {
 }
 
 // 브랜드의 끝난 협찬 한 건. 분석에 쓴다.
+// 제안의 조건(백엔드 lib/terms.ts). 메시지와 따로 오가며 받은 화면과 계약서가
+// 그대로 보인다. 예전 제안에는 없다.
+export type ProposalTerms = {
+  kinds?: string[]
+  amount?: number
+  quantity?: string
+  deliverBy?: string
+  respondBy?: string
+  benefits?: string
+  schedule?: { adjust: true; date: string }
+}
+
+// 제안을 보낼 때의 조건. 일정 조정은 고른 경우에만 날짜와 함께 보낸다.
+export type ProposalTermsDraft = Omit<ProposalTerms, "schedule"> & { schedule?: { adjust: boolean; date?: string } }
+
 // 받은 제안에 답한 결과. done: 처리됐다. stale: 그사이 다른 곳에서 답했거나
 // 철회돼(409·404) 최신 상태를 다시 불러왔다. failed: 처리되지 않았다(네트워크,
 // 서버 오류) — 확인창은 열린 채 다시 시도할 수 있다.

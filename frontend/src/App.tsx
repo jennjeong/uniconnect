@@ -61,6 +61,7 @@ import { NotFoundPage } from "./pages/NotFoundPage"
 import type { ActivityItem } from "./pages/ProfilePage"
 import type {
   AnswerResult,
+  ProposalTermsDraft,
   Account,
   BlockedListing,
   BoardPost,
@@ -214,6 +215,8 @@ function App() {
   const [confirmedCount, setConfirmedCount] = useState(0)
   // 계정이 보낸 제안. 받은 제안 옆의 받은함 검토 중에 보여 준다.
   const [sent, setSent] = useState<SentProposal[]>([])
+  // 받은편지함이 없는 상대에게 보낸 제안(카드의 '전달 대기').
+  const undelivered = sent.filter((item) => item.noInbox).map((item) => item.partnerId)
   // 1분마다, 그리고 창이 다시 보일 때 올라가서 상대의 답이 새로고침 없이
   // 나타나게 한다.
   const [refreshTick, setRefreshTick] = useState(0)
@@ -895,7 +898,7 @@ function App() {
   }
 
   // 제안을 보낸다. 세션 종료가 아닌 문제는 폼에 남는다.
-  const sendProposal = async (draft: { eventId?: string; message: string }) => {
+  const sendProposal = async (draft: { eventId?: string; message: string; terms?: ProposalTermsDraft }) => {
     if (!proposing) return
     try {
       applyProposals(await api.propose(proposing.id, { ...draft, ...(applyingPost ? { postId: applyingPost } : {}) }))
@@ -925,7 +928,7 @@ function App() {
   // 하나씩 차례로 보내며 {상대}를 그 이름으로 채운다. 보내진 단체는 선택에서
   // 빠진다. 하나도 보내지 못했으면 이유와 함께 폼이 열려 있고, 아니면 닫으면서
   // 어느 단체에 보내지 못했는지 알린다.
-  const sendMany = async (draft: { eventId?: string; message: string }) => {
+  const sendMany = async (draft: { eventId?: string; message: string; terms?: ProposalTermsDraft }) => {
     if (!proposingMany) return
     const failed: string[] = []
     let sentCount = 0
@@ -1664,6 +1667,7 @@ function App() {
             loaded={catalogReady}
             proposals={proposals}
             statuses={statuses}
+            undelivered={undelivered}
             saved={saved}
             onToggleSave={toggleSaved}
             onOpenDetail={openDetail}
@@ -1729,6 +1733,7 @@ function App() {
             onEditProfile={() => go({ page, profile: "edit" })}
             proposals={proposals}
             statuses={statuses}
+            undelivered={undelivered}
             saved={saved}
             onToggleSave={toggleSaved}
             onOpenDetail={openDetail}
