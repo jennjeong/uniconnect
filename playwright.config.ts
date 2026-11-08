@@ -24,6 +24,9 @@ export default defineConfig({
     timezoneId: "Asia/Seoul",
     // 애니메이션을 멈춰 화면이 바로 안정되게 한다.
     reducedMotion: "reduce",
+    // CI에서는 멈춘 클릭이나 입력이 테스트 전체 시간을 다 쓰지 않고, 어느
+    // 요소에서 멈췄는지 알려 주게 한다.
+    actionTimeout: process.env.CI ? 30_000 : 0,
     viewport: { width: 390, height: 844 },
   },
   webServer: {
