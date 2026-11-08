@@ -4,16 +4,13 @@ import analyticsExample from "../assets/examples/analytics.jpg"
 import groupsExample from "../assets/examples/groups.jpg"
 import matchesExample from "../assets/examples/matches.jpg"
 import measurementExample from "../assets/examples/measurement.jpg"
-import { BrandMark } from "../components/BrandMark"
 import { FaqSection } from "../components/FaqSection"
 import { Icon } from "../components/Icon"
+import { LandingHero } from "../components/LandingHero"
 import { Lines } from "../components/Lines"
-import { LogoMarquee } from "../components/LogoMarquee"
-import { MeetingHero } from "../components/MeetingHero"
 import { Pill } from "../components/Pill"
-import { RevealStatement, RevealTitle } from "../components/RevealText"
+import { RevealTitle } from "../components/RevealText"
 import { RoleMark } from "../components/RoleMark"
-import { brandIndustries, groupFields } from "../data/industries"
 import { t } from "../i18n"
 import type { NavLabel, Role } from "../types"
 
@@ -21,31 +18,6 @@ const pad = (value: number) => String(value).padStart(2, "0")
 
 const delay = (seconds: number) => ({ "--reveal-delay": `${seconds}s` }) as CSSProperties
 
-// 각 쪽이 여기서 하는 일.
-const sides: { role: Role; eyebrow: string; title: string; points: string[]; signup: string }[] = [
-  {
-    role: "학생단체",
-    eyebrow: "For Student Groups",
-    title: t("행사에 꼭 맞는 브랜드를 만나요"),
-    points: [
-      t("업종 적합도와 실적으로 잘 맞는 브랜드를 추천해요"),
-      t("제안부터 임시 전자 계약서까지 한곳에서 주고받아요"),
-      t("현장 QR로 모은 성과를 리포트로 정리해요"),
-    ],
-    signup: t("학생단체로 가입하기"),
-  },
-  {
-    role: "브랜드",
-    eyebrow: "For Brands",
-    title: t("캠퍼스 현장에서 브랜드 팬을 만나요"),
-    points: [
-      t("학교 · 거리 · 행사 규모로 학생단체를 찾아요"),
-      t("받은 제안을 수락하고 계약서로 할 일을 정해요"),
-      t("쿠폰과 매장 방문으로 협찬마다 ROAS를 확인해요"),
-    ],
-    signup: t("브랜드로 가입하기"),
-  },
-]
 
 // 첫 매칭부터 결과까지의 협찬 하나.
 const steps: { title: string; detail: string }[] = [
@@ -122,92 +94,9 @@ export function LandingPage({
 }) {
   return (
     <div className="landing">
-      <MeetingHero
-        eyebrow="Campus Sponsorship Matching"
-        lines={[t("좋은 행사와"), t("좋은 브랜드가"), t("만나는 곳")]}
-        lead={t("브랜드 추천부터 계약 · 현장 측정 · 리포트까지, 협찬의 모든 과정을 한곳에서.")}
-        insight={t("가입은 이메일 인증 한 번이면 돼요.")}
-        detail={t("학교 · 회사 이메일로 가입해요. 가입 전에 예시 화면부터 둘러보세요.")}
-        primary={{ label: t("지금 시작하기"), onClick: () => onSignup() }}
-        secondary={{ label: t("예시 화면 둘러보기"), onClick: () => onBrowse("학생단체") }}
-        onInstall={onInstall}
-      />
-
-      <LogoMarquee
-        label={t("이런 브랜드와 학생단체가 만나요")}
-        rows={[
-          brandIndustries.map(([industry, label]) => ({
-            key: industry,
-            mark: <BrandMark match={{ industry }} />,
-            label: t(label),
-          })),
-          groupFields.map(([industry, label]) => ({
-            key: industry,
-            mark: <BrandMark match={{ industry }} />,
-            label: t(label),
-          })),
-        ]}
-      />
-
-      <section className="about-statement-section">
-        <span className="eyebrow" data-reveal>
-          About uniconnect
-        </span>
-        <RevealStatement
-          lead={t("학생단체와 브랜드를 잇고,")}
-          firstChip={<Icon name="link" size={18} />}
-          muted={t("협찬의 성과를 숫자로 증명해요")}
-          secondChip={<Icon name="chart" size={18} />}
-        />
-      </section>
-
-      <section className="landing-section" id="sides">
-        <div className="section-head centered">
-          <span className="eyebrow" data-reveal>
-            Who It&apos;s For
-          </span>
-          <RevealTitle as="h2" className="section-display">
-            {t("학생단체도 브랜드도, 협찬은 여기서")}
-          </RevealTitle>
-        </div>
-        <div className="landing-sides">
-          {sides.map((side, index) => (
-            <article
-              className={side.role === "브랜드" ? "landing-side blue" : "landing-side"}
-              data-reveal
-              key={side.role}
-              style={delay(index * 0.1)}
-            >
-              <div className="landing-side-head">
-                <RoleMark role={side.role} size={40} />
-                <span className={side.role === "브랜드" ? "eyebrow light" : "eyebrow"}>{side.eyebrow}</span>
-              </div>
-              <h3>{side.title}</h3>
-              <ul className="landing-points">
-                {side.points.map((point) => (
-                  <li key={point}>
-                    <Icon name="check" size={16} />
-                    {point}
-                  </li>
-                ))}
-              </ul>
-              <div className="landing-side-actions">
-                <Pill onClick={() => onSignup(side.role)} variant={side.role === "브랜드" ? "white" : "primary"}>
-                  {side.signup}
-                </Pill>
-                <button className="underline-link" onClick={() => onBrowse(side.role)} type="button">
-                  {t("{role} 화면 보기", { role: t(side.role) })}
-                </button>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
+      <LandingHero onBrowse={() => onBrowse("학생단체")} onInstall={onInstall} onSignup={onSignup} />
 
       <section className="service-section landing-section" id="how">
-        <span className="eyebrow" data-reveal>
-          How It Works
-        </span>
         <RevealTitle as="h2" className="section-display">
           {t("협찬이 이어지는 다섯 단계")}
         </RevealTitle>
@@ -226,9 +115,6 @@ export function LandingPage({
 
       <section className="landing-section" id="examples">
         <div className="section-head centered">
-          <span className="eyebrow" data-reveal>
-            Preview
-          </span>
           <RevealTitle as="h2" className="section-display">
             {t("가입하기 전에 예시 화면으로 둘러보세요")}
           </RevealTitle>
