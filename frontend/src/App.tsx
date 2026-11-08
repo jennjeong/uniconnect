@@ -48,6 +48,7 @@ import { installReveal } from "./lib/reveal"
 import { installRipple } from "./lib/ripple"
 import { entryView, menuPageOf, roleOfPage, viewPath, type HistoryEntry, type View } from "./lib/route"
 import { clearEntryState, forgetEntriesFrom } from "./hooks/useEntryState"
+import { clearDraftsOf, draftKey } from "./lib/drafts"
 import { applyPendingScroll, keepPosition, queueRestore, queueTop, trackScroll } from "./lib/scroll"
 import { installSwipeNavigation, noteHistoryEnd } from "./lib/swipe"
 import { LoginModal } from "./modals/LoginModal"
@@ -783,6 +784,9 @@ function App() {
   const handleSessionEnd = useCallback((error: unknown) => latestHandleError.current(error), [])
 
   const logout = async () => {
+    // 직접 로그아웃하면 같은 기기의 다음 사람이 보지 않게 이 계정의 양식 초안도 지운다.
+    // (로그인이 만료된 것은 지우지 않는다: 다시 로그인하면 이어서 쓴다.)
+    if (account) clearDraftsOf(account.id)
     try {
       await api.logout()
     } catch {
@@ -1535,6 +1539,7 @@ function App() {
           role={role}
           event={event}
           initialDate={event.date}
+          draftStorageKey={account ? draftKey(account.id, `edit:${event.id}`) : undefined}
           onCancel={() => goBack({ page })}
           onSubmit={updateEvent}
         />
@@ -1550,6 +1555,7 @@ function App() {
           role={role}
           copyFrom={copySource}
           initialDate={creating}
+          draftStorageKey={account ? draftKey(account.id, copySource ? `copy:${copySource.id}` : "new") : undefined}
           onCancel={() => goBack({ page })}
           onSubmit={createEvent}
         />

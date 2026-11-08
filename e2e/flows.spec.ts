@@ -2735,3 +2735,28 @@ test("when accepting fails the confirmation stays open to try again, and a retry
     expect(left.status()).toBe(204)
   }
 })
+
+test("an event being registered survives a reload as a draft, and goes once it is registered", async ({ page, request }) => {
+  const group = await signUpMember(request, "학생단체", "e2e-draft@syu.ac.kr", "초안 동아리")
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
+  await page.goto("/events")
+  await page.getByRole("button", { name: "새로 등록" }).click()
+  await page.getByLabel("행사명").fill("초안으로 남는 공연")
+  await expect(page.locator(".draft-status")).toContainText("임시 저장됨")
+  // 새로고침해도 쓰던 이름이 돌아오고, 불러왔다고 알린다.
+  page.once("dialog", (dialog) => void dialog.accept())
+  await page.reload()
+  await expect(page.getByLabel("행사명")).toHaveValue("초안으로 남는 공연")
+  await expect(page.locator(".draft-banner")).toContainText("초안을 불러왔어요")
+  // 다른 계정에는 이 초안이 보이지 않는다.
+  const keys = await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith("uniconnect-draft:")))
+  expect(keys).toHaveLength(1)
+  expect(keys[0]).toContain(":new")
+  // 등록하면 초안이 사라진다.
+  await page.getByText("현금", { exact: true }).first().click()
+  await page.getByRole("button", { name: "등록하고 매칭 받기" }).click()
+  await expect(page).not.toHaveURL(/\/new/)
+  expect(await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith("uniconnect-draft:")))).toHaveLength(0)
+  const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: group.headers })
+  expect(left.status()).toBe(204)
+})

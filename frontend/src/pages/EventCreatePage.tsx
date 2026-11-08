@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import type { EventDraft } from "../api"
 import { DatePicker } from "../components/DatePicker"
@@ -7,7 +7,8 @@ import { PageIntro } from "../components/PageIntro"
 import { audienceYears, eventKinds, handoutWays, logoSpots, promoPosts } from "../data/eventDetails"
 import { sponsorOptions } from "../data/sponsorTypes"
 import { t, tc } from "../i18n"
-import { formatPeriod, todayIso } from "../lib/date"
+import { formatDateTime, formatPeriod, todayIso } from "../lib/date"
+import { clearDraft, loadDraft, saveDraft } from "../lib/drafts"
 import type { EventItem, Role, SponsorPackage } from "../types"
 
 // 행사나 캠페인을 등록하거나 고치는 전체 페이지.
@@ -18,6 +19,7 @@ export function EventCreatePage({
   initialDate,
   onCancel,
   onSubmit,
+  draftStorageKey,
 }: {
   role: Role
   // 고치는 행사나 캠페인. 없으면 새로 만든다.
@@ -29,38 +31,128 @@ export function EventCreatePage({
   initialDate: string
   onCancel: () => void
   onSubmit: (draft: EventDraft) => Promise<void>
+  // 이 양식의 초안이 저장되는 곳(lib/drafts.ts). 계정과 양식마다 다르다. 없으면 저장하지 않는다.
+  draftStorageKey?: string
 }) {
   const students = role === "학생단체"
   const editing = event !== undefined
   // 시작한 뒤에는 그 날짜로 결과를 센 것이므로 날짜를 그대로 둔다.
   const datesLocked = editing && event.date <= todayIso()
   const source = event ?? copyFrom
-  const [name, setName] = useState(source?.name ?? "")
-  // Digits only, from "1,234명".
-  const [people, setPeople] = useState(source?.people.replace(/\D/g, "") ?? "")
-  // 숫자만. 행사나 캠페인의 예산(원).
-  const [budget, setBudget] = useState(source?.budget === undefined ? "" : String(source.budget))
-  // 첫날, 그리고 여러 날이면 마지막 날.
-  const [date, setDate] = useState(event?.date ?? initialDate)
-  const [endDate, setEndDate] = useState<string | undefined>(event?.endDate)
-  const [types, setTypes] = useState<string[]>(source?.types ?? [])
-  const [typeNote, setTypeNote] = useState(source?.typeNote ?? "")
-  // 단체의 행사 페이지: 장소, 내용, 제공하는 패키지.
-  const [venue, setVenue] = useState(source?.venue ?? "")
-  const [intro, setIntro] = useState(source?.intro ?? "")
-  const [packages, setPackages] = useState<SponsorPackage[]>(source?.packages ?? [])
-  // 어떤 행사인지, 날마다 언제 열리는지, 누가 오는지.
-  const [kind, setKind] = useState(source?.kind ?? "")
-  const [startTime, setStartTime] = useState(source?.startTime ?? "")
-  const [endTime, setEndTime] = useState(source?.endTime ?? "")
-  const [years, setYears] = useState<string[]>(source?.makeup?.years ?? [])
-  const [majors, setMajors] = useState(source?.makeup?.majors ?? "")
-  // 홍보 · 배포 계획: 단체가 브랜드에 제공하는 것과 이를 실행하겠다는 동의(고칠
-  // 때는 유지하고, 복제하면 다시 묻는다).
-  const [spots, setSpots] = useState<string[]>(source?.promo?.spots ?? [])
-  const [handouts, setHandouts] = useState<string[]>(source?.promo?.handouts ?? [])
-  const [posts, setPosts] = useState<string[]>(source?.promo?.posts ?? [])
-  const [promoAgreed, setPromoAgreed] = useState(Boolean(event?.promo))
+  // 처음 값: 고치거나 복제하는 행사, 아니면 빈 양식. 저장된 초안이 있으면 그것으로
+  // 시작한다(시작한 행사의 날짜는 바꿀 수 없으므로 초안의 날짜는 쓰지 않는다).
+  const initial: EventForm = useMemo(
+    () => ({
+      name: source?.name ?? "",
+      // Digits only, from "1,234명".
+      people: source?.people.replace(/\D/g, "") ?? "",
+      // 숫자만. 행사나 캠페인의 예산(원).
+      budget: source?.budget === undefined ? "" : String(source.budget),
+      // 첫날, 그리고 여러 날이면 마지막 날.
+      date: event?.date ?? initialDate,
+      endDate: event?.endDate,
+      types: source?.types ?? [],
+      typeNote: source?.typeNote ?? "",
+      // 단체의 행사 페이지: 장소, 내용, 제공하는 패키지.
+      venue: source?.venue ?? "",
+      intro: source?.intro ?? "",
+      packages: source?.packages ?? [],
+      // 어떤 행사인지, 날마다 언제 열리는지, 누가 오는지.
+      kind: source?.kind ?? "",
+      startTime: source?.startTime ?? "",
+      endTime: source?.endTime ?? "",
+      years: source?.makeup?.years ?? [],
+      majors: source?.makeup?.majors ?? "",
+      // 홍보 · 배포 계획: 단체가 브랜드에 제공하는 것과 이를 실행하겠다는 동의(고칠
+      // 때는 유지하고, 복제하면 다시 묻는다).
+      spots: source?.promo?.spots ?? [],
+      handouts: source?.promo?.handouts ?? [],
+      posts: source?.promo?.posts ?? [],
+      promoAgreed: Boolean(event?.promo),
+    }),
+    // 양식은 처음 열 때의 행사로 한 번만 시작한다(App이 key로 다시 연다).
+    [],
+  )
+  const [restored] = useState(() => (draftStorageKey ? loadDraft<EventForm>(draftStorageKey) : null))
+  const start = restored
+    ? { ...initial, ...restored.data, ...(datesLocked ? { date: initial.date, endDate: initial.endDate } : {}) }
+    : initial
+  const [name, setName] = useState(start.name)
+  const [people, setPeople] = useState(start.people)
+  const [budget, setBudget] = useState(start.budget)
+  const [date, setDate] = useState(start.date)
+  const [endDate, setEndDate] = useState<string | undefined>(start.endDate)
+  const [types, setTypes] = useState<string[]>(start.types)
+  const [typeNote, setTypeNote] = useState(start.typeNote)
+  const [venue, setVenue] = useState(start.venue)
+  const [intro, setIntro] = useState(start.intro)
+  const [packages, setPackages] = useState<SponsorPackage[]>(start.packages)
+  const [kind, setKind] = useState(start.kind)
+  const [startTime, setStartTime] = useState(start.startTime)
+  const [endTime, setEndTime] = useState(start.endTime)
+  const [years, setYears] = useState<string[]>(start.years)
+  const [majors, setMajors] = useState(start.majors)
+  const [spots, setSpots] = useState<string[]>(start.spots)
+  const [handouts, setHandouts] = useState<string[]>(start.handouts)
+  const [posts, setPosts] = useState<string[]>(start.posts)
+  const [promoAgreed, setPromoAgreed] = useState(start.promoAgreed)
+
+  // 지금 양식의 값. 처음 값과 다르면 초안으로 저장하고, 같아지면 지운다.
+  const current: EventForm = {
+    name, people, budget, date, endDate, types, typeNote, venue, intro, packages, kind,
+    startTime, endTime, years, majors, spots, handouts, posts, promoAgreed,
+  }
+  const currentJson = JSON.stringify(current)
+  const dirty = currentJson !== JSON.stringify(initial)
+  const [savedAt, setSavedAt] = useState<string | null>(restored?.savedAt ?? null)
+  const submitted = useRef(false)
+  useEffect(() => {
+    if (!draftStorageKey || submitted.current) return
+    if (!dirty) {
+      clearDraft(draftStorageKey)
+      setSavedAt(null)
+      return
+    }
+    const timer = window.setTimeout(() => setSavedAt(saveDraft(draftStorageKey, JSON.parse(currentJson) as EventForm)), 500)
+    return () => window.clearTimeout(timer)
+  }, [currentJson, dirty, draftStorageKey])
+  // 저장하지 않은 변경이 있는 채로 페이지를 떠나면 브라우저가 한 번 묻는다(초안은 남는다).
+  useEffect(() => {
+    if (!dirty) return
+    const warn = (leaving: BeforeUnloadEvent) => {
+      if (submitted.current) return
+      leaving.preventDefault()
+      leaving.returnValue = ""
+    }
+    window.addEventListener("beforeunload", warn)
+    return () => window.removeEventListener("beforeunload", warn)
+  }, [dirty])
+  // 불러온 초안을 버리고 처음 값으로 돌아간다.
+  const discardDraft = () => {
+    if (draftStorageKey) clearDraft(draftStorageKey)
+    setName(initial.name)
+    setPeople(initial.people)
+    setBudget(initial.budget)
+    setDate(initial.date)
+    setEndDate(initial.endDate)
+    setTypes(initial.types)
+    setTypeNote(initial.typeNote)
+    setVenue(initial.venue)
+    setIntro(initial.intro)
+    setPackages(initial.packages)
+    setKind(initial.kind)
+    setStartTime(initial.startTime)
+    setEndTime(initial.endTime)
+    setYears(initial.years)
+    setMajors(initial.majors)
+    setSpots(initial.spots)
+    setHandouts(initial.handouts)
+    setPosts(initial.posts)
+    setPromoAgreed(initial.promoAgreed)
+    setSavedAt(null)
+    setShowRestored(false)
+  }
+  const [showRestored, setShowRestored] = useState(Boolean(restored))
   const promoChosen = spots.length + handouts.length + posts.length > 0
   const changePackage = (index: number, part: keyof SponsorPackage, value: string) =>
     setPackages((current) => current.map((item, at) => (at === index ? { ...item, [part]: value } : item)))
@@ -124,6 +216,9 @@ export function EventCreatePage({
             }
           : {}),
       })
+      // 등록 · 저장에 성공했다: 초안은 더 필요 없다.
+      submitted.current = true
+      if (draftStorageKey) clearDraft(draftStorageKey)
     } finally {
       setBusy(false)
     }
@@ -175,10 +270,20 @@ export function EventCreatePage({
         }
       />
 
+      {showRestored && restored && (
+        <div className="draft-banner" role="status">
+          <span>{t("{time}에 쓰던 초안을 불러왔어요.", { time: formatDateTime(restored.savedAt) })}</span>
+          <button className="underline-link" onClick={discardDraft} type="button">
+            {t("초안 버리고 처음부터")}
+          </button>
+        </div>
+      )}
+
       <div className="create-layout">
         <div className="create-column">
           <div className="form-card">
             <h3 className="form-card-title">{t("기본 정보")}</h3>
+            <p className="form-need required">{t("필수")}</p>
             <label className="field">
               <span>{students ? t("행사명") : t("캠페인명")}</span>
               <input
@@ -220,6 +325,7 @@ export function EventCreatePage({
             <h3 className="form-card-title" id="sponsor-type-title">
               {students ? t("원하는 협찬 유형") : t("제공할 협찬 형태")}
             </h3>
+            <p className="form-need required">{t("필수")}</p>
             <p className="form-card-caption">{t("여러 개를 고를 수 있어요.")}</p>
             <div className="check-list stagger">
               {sponsorOptions[role].map((option) => {
@@ -257,6 +363,7 @@ export function EventCreatePage({
           {students && (
             <div className="form-card event-page-card">
               <h3 className="form-card-title">{t("행사 페이지")}</h3>
+              <p className="form-need">{t("선택 · 나중에 채워도 돼요")}</p>
               <p className="form-card-caption">{t("브랜드가 행사를 판단하도록 장소와 소개, 협찬 혜택 묶음을 적어 주세요. 사진은 행사 상세에서 올려요.")}</p>
               <label className="field">
                 <span>{t("행사 유형")}</span>
@@ -359,7 +466,8 @@ export function EventCreatePage({
               <h3 className="form-card-title" id="promo-title">
                 {t("홍보 · 배포 계획")}
               </h3>
-              <p className="form-card-caption">{t("브랜드가 무엇을 받는지 고르면, 협찬이 확정될 때 계약서의 할 일로 그대로 들어가요.")}</p>
+              <p className="form-need">{t("선택 · 나중에 채워도 돼요")}</p>
+              <p className="form-card-caption">{t("브랜드가 무엇을 받는지 고르면, 제안이 수락될 때 계약서의 할 일로 그대로 들어가요.")}</p>
               {choices(t("로고가 보이는 곳"), logoSpots, spots, setSpots)}
               {choices(t("현장 배포 방식"), handoutWays, handouts, setHandouts)}
               {choices(t("SNS 홍보"), promoPosts, posts, setPosts)}
@@ -382,6 +490,7 @@ export function EventCreatePage({
               <h3 className="form-card-title" id="makeup-title">
                 {t("참가자 구성")}
               </h3>
+              <p className="form-need">{t("선택 · 나중에 채워도 돼요")}</p>
               <p className="form-card-caption">{t("정확하지 않아도 괜찮아요. 브랜드가 맞는 제품을 고르는 데 써요.")}</p>
               <span className="field-label">{t("오는 사람")}</span>
               <div className="check-list compact stagger">
@@ -414,6 +523,7 @@ export function EventCreatePage({
 
         <div className="form-card date-card">
           <h3 className="form-card-title">{tc("heading", "일정")}</h3>
+          <p className="form-need required">{t("필수")}</p>
           <p className="form-card-caption">
             {datesLocked
               ? students
@@ -441,6 +551,13 @@ export function EventCreatePage({
       {error && (
         <p className="form-error create-error" role="alert">
           {error}
+        </p>
+      )}
+      {draftStorageKey && (
+        <p aria-live="polite" className="draft-status">
+          {savedAt
+            ? t("임시 저장됨 · {time}", { time: formatDateTime(savedAt) })
+            : t("쓰는 내용은 이 브라우저에 자동으로 임시 저장돼요.")}
         </p>
       )}
       <div className="create-actions">
@@ -487,4 +604,27 @@ function TimeSelect({
       ))}
     </select>
   )
+}
+
+// 양식의 값 전체. 초안으로 저장하고 불러온다.
+type EventForm = {
+  name: string
+  people: string
+  budget: string
+  date: string
+  endDate?: string
+  types: string[]
+  typeNote: string
+  venue: string
+  intro: string
+  packages: SponsorPackage[]
+  kind: string
+  startTime: string
+  endTime: string
+  years: string[]
+  majors: string
+  spots: string[]
+  handouts: string[]
+  posts: string[]
+  promoAgreed: boolean
 }
