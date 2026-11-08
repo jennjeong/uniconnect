@@ -19,6 +19,7 @@ import {
   achievement,
   formatKpi,
   formatWon,
+  goalStatus,
   hasRoas,
   kpiValue,
   reportKpis,
@@ -174,7 +175,7 @@ export function ReportsPage({
                     </span>
                     <span className={rate >= 100 ? "kpi-status good" : "kpi-status"}>
                       {t("목표 {target}", { target: formatKpi(kpi.target, kpi.unit) })}
-                      <b>{t("{rate}% 달성", { rate })}</b>
+                      <b>{goalStatus(kpi)}</b>
                     </span>
                     <span className="kpi-note">{kpi.note}</span>
                   </button>

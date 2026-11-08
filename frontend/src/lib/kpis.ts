@@ -114,9 +114,19 @@ export function kpiGap(kpi: Kpi) {
   return kpi.unit === "%" ? t("{gap}%p", { gap: gapText }) : t("{gap}명", { gap: gapText })
 }
 
-// 목표 대비 ROAS로 만든 "목표보다 43% 높았어요".
+// 목표와 견준 한 줄. 비율 지표(QR 참여율, 방문율, ROAS)는 목표와의 차이를 %p로,
+// 사람 수 지표는 목표의 몇 %인지(달성률)로 말한다. 70% 목표에 35%를 두고
+// "50% 달성"이라 하면 헷갈리기 때문이다. 값이 없으면 "집계 없음".
+export function goalStatus(kpi: Kpi) {
+  if (kpi.missing) return t("집계 없음")
+  if (kpi.unit === "%") return t("목표 대비 {gap}", { gap: kpiGap(kpi) })
+  const rate = achievement(kpi)
+  return rate > 100 ? t("달성률 {rate}% · {over}% 초과", { rate, over: rate - 100 }) : t("달성률 {rate}%", { rate })
+}
+
+// 목표 ROAS와의 차이로 만든 "목표보다 73%p 높았어요". ROAS가 이미 퍼센트라
+// 상대 비율(%)이 아니라 %p로 말한다.
 export function roasSummary(report: Report) {
-  // 목표는 1%에서 시작한다. 예전의 0은 그것으로 나누지 않고 1로 센다.
-  const gain = Math.round((report.roas / Math.max(1, report.targets.roas) - 1) * 100)
-  return gain >= 0 ? t("{gain}% 높았어요.", { gain }) : t("{gain}% 낮았어요.", { gain: -gain })
+  const gap = report.roas - report.targets.roas
+  return gap >= 0 ? t("{gap}%p 높았어요.", { gap }) : t("{gap}%p 낮았어요.", { gap: -gap })
 }

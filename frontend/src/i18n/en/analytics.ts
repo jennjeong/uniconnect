@@ -20,6 +20,11 @@ const en: Record<string, string> = {
   "{gap}%p": "{gap:pt|pts}",
   "{gap}명": "{gap}",
   "{gain}% 높았어요.": "{gain}% above goal.",
+  "{gap}%p 높았어요.": "{gap} pts above goal.",
+  "{gap}%p 낮았어요.": "{gap} pts below goal.",
+  "집계 없음": "Not counted yet",
+  "달성률 {rate}%": "{rate}% of goal",
+  "달성률 {rate}% · {over}% 초과": "{rate}% of goal · {over}% over",
   "{gain}% 낮았어요.": "{gain}% below goal.",
 
   // 분석 페이지 (pages/AnalyticsPage.tsx)
