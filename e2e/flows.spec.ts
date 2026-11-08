@@ -628,7 +628,7 @@ test("a visitor lays two brands side by side, and opens one from the table", asy
   await toggles.nth(1).click()
   await tray.getByRole("button", { name: "나란히 비교하기" }).click()
   const table = page.getByRole("dialog", { name: "브랜드 2곳 비교" })
-  await expect(table.getByRole("rowheader", { name: "일치율" })).toBeVisible()
+  await expect(table.getByRole("rowheader", { name: "추천 지수" })).toBeVisible()
   await expect(table.getByRole("columnheader")).toHaveCount(2)
   await table.getByRole("button", { name: "상세 보기" }).first().click()
   await expect(page).toHaveURL(/\/matches\/[^/]+$/)

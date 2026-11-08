@@ -1535,7 +1535,7 @@ function App() {
       if (!event) return eventsFor === viewer ? <NotFoundPage onHome={goHome} onNavigate={navigate} role={role} /> : null
       return (
         <EventCreatePage
-          key={event.id}
+          key={`${event.id}:${account?.id ?? ""}`}
           role={role}
           event={event}
           initialDate={event.date}
@@ -1551,7 +1551,8 @@ function App() {
         <EventCreatePage
           // 폼은 복사한 행사를 한 번만 받는다. 주소로 바로 열어 행사가 나중에
           // 도착하면 다시 시작한다.
-          key={copySource?.id ?? "new"}
+          // 계정이 확인되면 그 계정의 초안으로 다시 시작한다(새로고침 직후에는 아직 없다).
+          key={`${copySource?.id ?? "new"}:${account?.id ?? ""}`}
           role={role}
           copyFrom={copySource}
           initialDate={creating}
