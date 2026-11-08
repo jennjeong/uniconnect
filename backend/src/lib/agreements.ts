@@ -279,22 +279,39 @@ export function defaultItems(proposal: AcceptedProposal, promo?: EventItem["prom
 export const promoOf = (database: Database, proposal: AcceptedProposal) =>
   proposal.eventOwner === "group" ? sponsoredEvent(database, proposal)?.event.promo : undefined
 
-// 계정 쪽에 남은 계약서 할 일: 취소되지 않은 협찬마다 아직 끝냈다고 표시하지 않은
-// 자기 쪽 항목 수(끝내면 증빙을 붙인다). 대시보드의 '증빙 남은 할 일'이 센다.
+// 계정 쪽에 남은 계약서 일. 대시보드의 업무 보드가 센다. 수락된 제안 하나에 계약서가
+// 하나라서 보낸 쪽과 받은 쪽에서 같은 계약을 두 번 세지 않는다. 취소된 협찬은 빼고,
 // 아직 열지 않은 계약서는 처음 열 때 생길 기본 할 일로 센다.
+// - tasks, agreements: 아직 끝냈다고 표시하지 않은 자기 쪽 항목 수와 그런 계약서 수
+// - toConfirm: 자기 쪽이 아직 확인하지 않은 계약서(내가 할 일)
+// - awaitingPartner: 자기 쪽은 확인했고 상대(계정이 있는 쪽)의 확인을 기다리는 계약서
+// - confirmId, taskId: 그런 계약서가 하나뿐일 때 업무 보드가 목록 대신 그 계약서를 열게
+//   첫 것의 id(최근에 답한 순서)
 export function openTasksOf(database: Database, account: Account) {
   let tasks = 0
   let agreements = 0
+  let toConfirm = 0
+  let awaitingPartner = 0
+  let confirmId: string | undefined
+  let taskId: string | undefined
   for (const proposal of acceptedProposalsOf(database, account)) {
     if (proposal.canceled) continue
     const side = sideIn(proposal, account)!
+    const other = side === "group" ? "brand" : "group"
     const stored = database.agreements.find((agreement) => agreement.id === proposal.id)
     const items = stored?.items ?? defaultItems(proposal, promoOf(database, proposal))
     const open = items.filter((item) => item.side === side && !item.doneAt).length
     tasks += open
-    if (open > 0) agreements += 1
+    if (open > 0) {
+      agreements += 1
+      taskId ??= proposal.id
+    }
+    if (!stored?.confirmed[side]) {
+      toConfirm += 1
+      confirmId ??= proposal.id
+    } else if (proposal[other].account && !stored.confirmed[other]) awaitingPartner += 1
   }
-  return { tasks, agreements }
+  return { tasks, agreements, toConfirm, awaitingPartner, ...(confirmId ? { confirmId } : {}), ...(taskId ? { taskId } : {}) }
 }
 
 // 제안 조건의 금액으로 시작하는 협찬액. 금액은 "현금 또는 현물 환산"이라 형태를 따라

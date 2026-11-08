@@ -8903,7 +8903,7 @@ test("the proposal state counts each side's agreement tasks still to finish", as
   const group = await signUpMember("tasks-club@syu.ac.kr", "tasks-pass-123")
   const groupId = getDatabase().accounts.find((account) => account.email === "tasks-club@syu.ac.kr")!.id
   const { token: brand, listingId } = await listedMember("tasks@tasks-cafe.kr", "tasks-pass-123", "브랜드")
-  assert.deepEqual((await call("GET", "/proposals", undefined, group)).data.openTasks, { tasks: 0, agreements: 0 })
+  assert.deepEqual((await call("GET", "/proposals", undefined, group)).data.openTasks, { tasks: 0, agreements: 0, toConfirm: 0, awaitingPartner: 0 })
   const made = await call("POST", "/events", { name: "할 일 축제", date: "2026-12-19", people: "200명", types: ["제품"] }, group)
   await call("POST", "/proposals", { matchId: listingId, eventId: made.data.event.id }, group)
   const request = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
@@ -8914,15 +8914,35 @@ test("the proposal state counts each side's agreement tasks still to finish", as
   const before = (await call("GET", "/proposals", undefined, group)).data.openTasks
   const items = (await call("GET", `/agreements/${request.id}`, undefined, group)).data.agreement.items as { id: string; side: string }[]
   const mine = items.filter((item) => item.side === "group")
-  assert.deepEqual(before, { tasks: mine.length, agreements: 1 })
+  // 양쪽 모두 아직 계약서를 확인하지 않았다: 둘 다 내가 확인할 계약서가 하나다.
+  // 하나뿐이라 업무 보드가 바로 그 계약서를 열 수 있게 id도 온다.
+  assert.deepEqual(before, { tasks: mine.length, agreements: 1, toConfirm: 1, awaitingPartner: 0, confirmId: request.id, taskId: request.id })
   assert.deepEqual((await call("GET", "/proposals", undefined, brand)).data.openTasks, {
     tasks: items.length - mine.length,
     agreements: 1,
+    toConfirm: 1,
+    awaitingPartner: 0,
+    confirmId: request.id,
+    taskId: request.id,
   })
   // 끝낸 항목은 빠지고, 상대가 끝낸 것은 내 수에 영향이 없다.
   await call("PATCH", `/agreements/${request.id}/items/${mine[0].id}`, { done: true }, group)
   assert.equal((await call("GET", "/proposals", undefined, group)).data.openTasks.tasks, mine.length - 1)
   assert.equal((await call("GET", "/proposals", undefined, brand)).data.openTasks.tasks, items.length - mine.length)
+
+  // 단체가 확인하면 단체에게는 상대 확인 대기가 되고, 브랜드에게는 여전히 내가 할 일이다.
+  // 같은 계약을 보낸 쪽과 받은 쪽에서 두 번 세지 않는다.
+  assert.equal((await call("POST", `/agreements/${request.id}/confirm`, undefined, group)).status, 200)
+  const confirmCounts = async (token: string) => {
+    const { toConfirm, awaitingPartner } = (await call("GET", "/proposals", undefined, token)).data.openTasks
+    return { toConfirm, awaitingPartner }
+  }
+  assert.deepEqual(await confirmCounts(group), { toConfirm: 0, awaitingPartner: 1 })
+  assert.deepEqual(await confirmCounts(brand), { toConfirm: 1, awaitingPartner: 0 })
+  // 양쪽이 확인하면 계약 확인 일은 어느 쪽에도 남지 않는다.
+  assert.equal((await call("POST", `/agreements/${request.id}/confirm`, undefined, brand)).status, 200)
+  assert.deepEqual(await confirmCounts(group), { toConfirm: 0, awaitingPartner: 0 })
+  assert.deepEqual(await confirmCounts(brand), { toConfirm: 0, awaitingPartner: 0 })
 })
 
 test("a proposal's amount starts the agreement as cash or in kind by its kinds", async () => {
