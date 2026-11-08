@@ -34,13 +34,14 @@ function measurementOwner(req: Request) {
 
 // PIN은 행사 전날부터 로그인한 주인에게만 준다. 협찬사가 없는 행사의 직원 PIN이 있고,
 // 주인이 학생단체이면 단체의 현장 PIN도 있다. 협찬사의 매장 PIN은 협찬사가 계약서에서만
-// 본다. 단체가 알면 브랜드 쪽 확인을 대신 눌러 방문 수를 부풀릴 수 있다. 체험하는 모두가
-// 쓰는 데모 행사는 예외다. 그 전에는 리포트가 언제 보일지 알려 준다.
+// 본다. 단체가 알면 브랜드 쪽 확인을 대신 눌러 방문 수를 부풀릴 수 있다. 데모 단체도
+// 같다(체험하는 사람은 데모 브랜드의 계약서에서 매장 PIN을 본다). 그 전에는 리포트가
+// 언제 보일지 알려 준다.
 function pinsFor(req: Request, measurement: Measurement, event: EventItem) {
   if (!req.account) return {}
   if (!pinsOpen(getDatabase(), measurement, event)) return { pinsDay: pinsFrom(event) }
   return {
-    withPin: !measurement.sponsors.length || isDemoAccount(getDatabase(), req.account),
+    withPin: !measurement.sponsors.length,
     withGroupPin: req.account.role === "학생단체",
     canRotatePin: !isDemoAccount(getDatabase(), req.account),
   }
@@ -125,8 +126,9 @@ measurementsRouter.put("/:eventId/goals", async (req, res) => {
   if (!demo && event.date <= todayInKorea()) throw new HttpError(409, "시작한 행사의 목표는 바꿀 수 없어요.")
   const goals = parseGoals(req.body)
   // PIN은 서버가 만들고 PIN 바꾸기로만 바꾼다. 열어 둔 양식이 막은 PIN을 되돌리거나, 단체가
-  // 협찬사의 PIN을 정해 두지 못하게 하려는 것이다. 체험용 데모 행사만 양식으로 바꾼다.
-  const keepPins = !demo
+  // 협찬사의 PIN을 정해 두지 못하게 하려는 것이다. 체험용 데모 행사도 협찬사가 있으면 같고,
+  // 협찬사가 없을 때만 양식으로 바꾼다.
+  const keepPins = !demo || measurement.sponsors.length > 0
   const staffPin = keepPins ? undefined : parseStaffPin(req.body?.staffPin)
   applySponsorGoals(measurement, goals, req.body?.sponsors, keepPins)
   measurement.goals = goals

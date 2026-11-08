@@ -2473,6 +2473,11 @@ test("the venue QR opens on the participants' view, and PINs only behind 운영�
   // 운영자용은 띄우지 말라는 안내와 함께 따로 열린다.
   await page.getByRole("dialog", { name: "현장 참여 QR" }).getByRole("tab", { name: "운영자용 PIN" }).click()
   await expect(page.getByText("이 화면은 행사장에 띄우지 마세요.", { exact: false })).toBeVisible()
+  // 협찬사의 매장 PIN은 단체에게 오지 않는다. 단체 PIN과 매장 PIN이 있는 곳만 보인다.
+  const operators = page.getByRole("dialog", { name: "현장 참여 QR" }).locator(".qr-content.operators")
+  await expect(operators).toContainText("단체 확인 PIN")
+  await expect(operators).toContainText("협찬 브랜드만 계약서에서 확인해요")
+  await expect(operators).not.toContainText("101234")
 })
 
 for (const [role, email] of [["학생단체", "muse@syu.ac.kr"], ["브랜드", "hello@afternoon-coffee.kr"]] as const) {

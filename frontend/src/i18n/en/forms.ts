@@ -556,6 +556,8 @@ const en: Record<string, string> = {
   "오늘 틀린 PIN 시도 {count}회": "{count} wrong PIN tries today",
   "새 PIN을 만들었어요. 지금까지 쓰던 PIN은 막혔어요.": "New PIN made. The old one no longer works.",
   "PIN은 행사 하루 전인 {date}부터 여기에 보여요.": "The PIN shows here from {date}, the day before the event.",
+  "매장 직원 PIN은 협찬 브랜드만 계약서에서 확인해요. 방문 확인은 매장이 직접 해서, 우리 단체에는 보이지 않아요.":
+    "Only the sponsoring brand sees its store staff PIN, on its e-contract. The store confirms visits itself, so the PIN isn't shown to your group.",
   "직원 PIN과 단체 확인 PIN은 행사 하루 전인 {date}부터 여기에 보여요.": "Staff and group PINs show here from {date}, the day before the event.",
   "부가세 ({rate}%)": "VAT ({rate}%)",
   "결제 내용을 확인했고 ": "I checked the payment details and agree to the ",
