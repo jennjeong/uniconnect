@@ -2498,8 +2498,16 @@ test("the venue QR opens on the participants' view, and PINs only behind 운영�
   const shown = page.getByRole("dialog", { name: "행사장에 띄운 참여 QR" })
   await expect(shown).toBeVisible()
   await expect(shown).not.toContainText("PIN")
+  // 띄운 화면 안에서만 초점이 돈다(뒤의 '행사 고르기'로 빠지지 않는다).
+  for (let step = 0; step < 4; step++) {
+    await page.keyboard.press("Tab")
+    expect(await shown.evaluate((layer) => layer.contains(document.activeElement))).toBe(true)
+  }
+  // Esc는 띄우기만 끝내고 QR 창으로, 초점은 '행사장에 띄우기'로 돌아온다.
   await page.keyboard.press("Escape")
   await expect(shown).toBeHidden()
+  await expect(page.getByRole("dialog", { name: "현장 참여 QR" })).toBeVisible()
+  await expect(page.getByRole("button", { name: "행사장에 띄우기" })).toBeFocused()
   // 운영자용은 띄우지 말라는 안내와 함께 따로 열린다.
   await page.getByRole("dialog", { name: "현장 참여 QR" }).getByRole("tab", { name: "운영자용 PIN" }).click()
   await expect(page.getByText("이 화면은 행사장에 띄우지 마세요.", { exact: false })).toBeVisible()
@@ -2666,4 +2674,37 @@ test("a new screen starts at the top, back returns to where the list was, and in
   await page.goForward()
   await expect(page).toHaveURL(/\/offers/)
   await expect.poll(scrollY).toBe(0)
+})
+
+test("when accepting fails the confirmation stays open to try again, and a retry accepts once", async ({ page, request }) => {
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date(Date.now() + 10 * 86_400_000))
+  const group = await signUpMember(request, "학생단체", "e2e-accept-fail@syu.ac.kr", "수락 실패 밴드")
+  const brand = await signUpMember(request, "브랜드", "e2e-accept-fail@fail-cafe.kr", "수락 실패 카페")
+  await request.post("/api/events", { data: { name: "실패 공연", date: today, people: "100명", types: ["제품"] }, headers: group.headers })
+  expect((await request.post("/api/proposals", { data: { matchId: brand.listingId }, headers: group.headers })).status()).toBeLessThan(300)
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
+  await page.goto("/inbox")
+  const card = page.locator(".request-card", { hasText: "수락 실패 밴드" })
+  await card.getByRole("button", { name: "수락하기" }).click()
+  const dialog = page.getByRole("dialog", { name: "이 제안을 수락할까요?" })
+  // 서버에 닿지 못하면 확인창은 열린 채 이유를 말한다.
+  await page.route("**/api/requests/*/accept", (route) => route.abort("internetdisconnected"))
+  await dialog.getByRole("button", { name: "수락하기" }).click()
+  await expect(dialog.getByRole("alert")).toContainText("수락하지 못했어요")
+  await expect(dialog).toBeVisible()
+  // 연결이 돌아오면 다시 눌러 한 번만 수락된다.
+  await page.unroute("**/api/requests/*/accept")
+  let calls = 0
+  page.on("request", (sent) => {
+    if (sent.url().includes("/accept")) calls++
+  })
+  await dialog.getByRole("button", { name: "다시 수락하기" }).click()
+  await expect(dialog).toBeHidden()
+  await page.getByRole("tab", { name: /수락함/ }).click()
+  await expect(page.locator(".request-card", { hasText: "수락 실패 밴드" })).toContainText("계약 확인 대기")
+  expect(calls).toBe(1)
+  for (const member of [group, brand]) {
+    const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: member.headers })
+    expect(left.status()).toBe(204)
+  }
 })

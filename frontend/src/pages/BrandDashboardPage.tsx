@@ -19,7 +19,7 @@ import { formatWon } from "../lib/kpis"
 import { AcceptModal } from "../modals/AcceptModal"
 import { roasText, roasVerdict } from "../lib/roasLabels"
 import { analyzeSponsorships, fullWon } from "../lib/sponsorships"
-import type { Match, NavLabel, RequestStatus, SponsorRequest, Sponsorship } from "../types"
+import type { AnswerResult, Match, NavLabel, RequestStatus, SponsorRequest, Sponsorship } from "../types"
 
 const pad = (value: number) => String(value).padStart(2, "0")
 
@@ -69,7 +69,7 @@ export function BrandDashboardPage({
   updatedAt: Date | null
   onNavigate: (label: NavLabel) => void
   onOpenDetail: (match: Match) => void
-  onAccept: (request: SponsorRequest) => void | Promise<void>
+  onAccept: (request: SponsorRequest) => Promise<AnswerResult>
   onPropose: (match: Match) => void
   onCancelProposal: (match: Match) => void
   // 히어로의 앱 다운로드. 설치된 앱 안에서는 없다.
@@ -466,8 +466,9 @@ export function BrandDashboardPage({
             terms={accepting.ask}
             onClose={() => setAccepting(null)}
             onConfirm={async () => {
-              await onAccept(accepting)
-              setAccepting(null)
+              const result = await onAccept(accepting)
+              if (result !== "failed") setAccepting(null)
+              return result
             }}
           />
         )}

@@ -10,7 +10,7 @@ import { TabBar } from "../components/TabBar"
 import { t } from "../i18n"
 import { dDayLabel, formatDateTime, formatDay } from "../lib/date"
 import { AcceptModal } from "../modals/AcceptModal"
-import type { Match, RequestStatus, SentProposal, SponsorOffer } from "../types"
+import type { AnswerResult, Match, RequestStatus, SentProposal, SponsorOffer } from "../types"
 
 // 상태별 카드 클래스(브랜드 받은함의 카드).
 const cardState: Record<RequestStatus, string> = {
@@ -40,7 +40,7 @@ function OfferCard({
   offer: SponsorOffer
   // 로고를 위한 브랜드의 리스팅.
   brand?: Match
-  onAnswer: (offer: SponsorOffer, decision: "accept" | "decline") => void | Promise<void>
+  onAnswer: (offer: SponsorOffer, decision: "accept" | "decline") => Promise<AnswerResult>
   onOpenAgreement: (id: string) => void
 }) {
   // 거절은 되돌릴 수 없으므로 한 번 더 묻는다.
@@ -160,8 +160,10 @@ function OfferCard({
             terms={offer.offer}
             onClose={() => setAccepting(false)}
             onConfirm={async () => {
-              await onAnswer(offer, "accept")
-              setAccepting(false)
+              const result = await onAnswer(offer, "accept")
+              // 처리되지 않았으면 확인창을 열어 두어 다시 시도하게 한다.
+              if (result !== "failed") setAccepting(false)
+              return result
             }}
           />
         )}
@@ -183,7 +185,7 @@ export function OffersPage({
   offers: SponsorOffer[]
   brands: Match[]
   sent: SentProposal[]
-  onAnswer: (offer: SponsorOffer, decision: "accept" | "decline") => void | Promise<void>
+  onAnswer: (offer: SponsorOffer, decision: "accept" | "decline") => Promise<AnswerResult>
   onWithdraw: (proposal: SentProposal) => void
   // 수락된 제안의 계약서(pages/AgreementPage.tsx).
   onOpenAgreement: (id: string) => void

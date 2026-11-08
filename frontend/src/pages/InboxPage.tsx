@@ -10,7 +10,7 @@ import { TabBar } from "../components/TabBar"
 import { t } from "../i18n"
 import { dDayLabel, formatDateTime, formatDay } from "../lib/date"
 import { AcceptModal } from "../modals/AcceptModal"
-import type { RequestStatus, SentProposal, SponsorRequest } from "../types"
+import type { AnswerResult, RequestStatus, SentProposal, SponsorRequest } from "../types"
 
 // 상태별 카드 클래스.
 const cardState: Record<RequestStatus, string> = {
@@ -38,7 +38,7 @@ function RequestCard({
   onOpenEvent,
 }: {
   request: SponsorRequest
-  onAnswer: (request: SponsorRequest, decision: "accept" | "decline") => void | Promise<void>
+  onAnswer: (request: SponsorRequest, decision: "accept" | "decline") => Promise<AnswerResult>
   onOpenAgreement: (id: string) => void
   // 제안이 행사에 관한 것이면 그 단체의 행사 페이지.
   onOpenEvent?: (eventId: string) => void
@@ -176,8 +176,10 @@ function RequestCard({
             terms={request.ask}
             onClose={() => setAccepting(false)}
             onConfirm={async () => {
-              await onAnswer(request, "accept")
-              setAccepting(false)
+              const result = await onAnswer(request, "accept")
+              // 처리되지 않았으면 확인창을 열어 두어 다시 시도하게 한다.
+              if (result !== "failed") setAccepting(false)
+              return result
             }}
           />
         )}
@@ -198,7 +200,7 @@ export function InboxPage({
 }: {
   requests: SponsorRequest[]
   sent: SentProposal[]
-  onAnswer: (request: SponsorRequest, decision: "accept" | "decline") => void | Promise<void>
+  onAnswer: (request: SponsorRequest, decision: "accept" | "decline") => Promise<AnswerResult>
   onWithdraw: (proposal: SentProposal) => void
   // 수락된 제안의 계약서(pages/AgreementPage.tsx).
   onOpenAgreement: (id: string) => void

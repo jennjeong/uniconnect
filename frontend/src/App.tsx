@@ -5,7 +5,9 @@ import {
   ApiError,
   errorMessage,
   getToken,
+  isAborted,
   setToken,
+  tokenPersists,
   type EventDraft,
   type ProposalState,
 } from "./api"
@@ -58,6 +60,7 @@ import { LandingPage } from "./pages/LandingPage"
 import { NotFoundPage } from "./pages/NotFoundPage"
 import type { ActivityItem } from "./pages/ProfilePage"
 import type {
+  AnswerResult,
   Account,
   BlockedListing,
   BoardPost,
@@ -662,10 +665,12 @@ function App() {
     go(view.invite || view.agreement || view.agreements ? view : { page: "대시보드" }, true)
     setActiveModal(null)
     const left = session.recoveryLeft
+    // 이 브라우저가 저장소를 막아 두었으면 로그인은 이 탭에서만 유지된다.
+    const kept = tokenPersists() ? "" : ` ${t("이 브라우저는 로그인을 저장하지 못해요. 새로고침하면 다시 로그인해야 해요.")}`
     showNotice(
-      left !== undefined && left <= 3
+      (left !== undefined && left <= 3
         ? `${message} ${t("남은 복구 코드가 {count}개예요. 2단계 인증을 껐다 다시 켜면 새 코드를 받아요.", { count: left })}`
-        : message,
+        : message) + kept,
     )
   }
 
@@ -758,6 +763,8 @@ function App() {
   }
 
   const handleError = (error: unknown) => {
+    // 페이지가 스스로 멈춘 요청은 알릴 것이 없다.
+    if (isAborted(error)) return
     if (error instanceof ApiError && error.status === 401 && account) {
       endSession()
       openAuth("login", account.role)
@@ -1179,10 +1186,12 @@ function App() {
   }
 
   // 브랜드가 학생단체의 제안을 수락하거나 거절한다.
-  const answerRequest = async (request: SponsorRequest, decision: "accept" | "decline") => {
+  // 받은 제안에 답한다. 결과를 돌려주어 확인창이 실패하면 열린 채로 남는다.
+  // 수락은 협찬 확정이 아니다: 양쪽이 계약서를 확인해야 확정된다.
+  const answerRequest = async (request: SponsorRequest, decision: "accept" | "decline"): Promise<AnswerResult> => {
     if (!account) {
       requireLogin(t("로그인하면 받은 제안에 답할 수 있어요."))
-      return
+      return "failed"
     }
     try {
       const result = await api.answerRequest(request.id, decision)
@@ -1192,9 +1201,10 @@ function App() {
       api.proposals().then(applyProposals).catch(() => {})
       showNotice(
         decision === "accept"
-          ? t("{name} 협찬을 확정했어요.", { name: request.eventName })
+          ? t("{name} 제안을 수락했어요. 양쪽이 계약서를 확인하면 협찬이 확정돼요.", { name: request.eventName })
           : t("{name}의 제안을 거절했어요.", { name: request.groupName }),
       )
+      return "done"
     } catch (error) {
       handleError(error)
       // 그 사이 다른 곳에서 답했거나 철회했다면 현재 상태를 보여 준다.
@@ -1203,15 +1213,17 @@ function App() {
           .requests()
           .then((result) => setRequests(result.requests))
           .catch(() => {})
+        return "stale"
       }
+      return "failed"
     }
   }
 
   // 학생단체가 브랜드의 제안을 수락하거나 거절한다.
-  const answerOffer = async (offer: SponsorOffer, decision: "accept" | "decline") => {
+  const answerOffer = async (offer: SponsorOffer, decision: "accept" | "decline"): Promise<AnswerResult> => {
     if (!account) {
       requireLogin(t("로그인하면 받은 협찬 제안에 답할 수 있어요."))
-      return
+      return "failed"
     }
     try {
       const result = await api.answerOffer(offer.id, decision)
@@ -1219,9 +1231,10 @@ function App() {
       api.proposals().then(applyProposals).catch(() => {})
       showNotice(
         decision === "accept"
-          ? t("{name}의 협찬을 확정했어요.", { name: offer.brandName })
+          ? t("{name}의 제안을 수락했어요. 양쪽이 계약서를 확인하면 협찬이 확정돼요.", { name: offer.brandName })
           : t("{name}의 제안을 거절했어요.", { name: offer.brandName }),
       )
+      return "done"
     } catch (error) {
       handleError(error)
       // 그 사이 다른 곳에서 답했거나 철회했다면 현재 상태를 보여 준다.
@@ -1230,7 +1243,9 @@ function App() {
           .offers()
           .then((result) => setOffers(result.offers))
           .catch(() => {})
+        return "stale"
       }
+      return "failed"
     }
   }
 

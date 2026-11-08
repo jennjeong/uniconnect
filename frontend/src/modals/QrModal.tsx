@@ -1,9 +1,10 @@
-import { useEffect, useState, type ReactNode } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 
 import { Icon } from "../components/Icon"
 import { Modal } from "../components/Modal"
 import { QrCode } from "../components/QrCode"
 import { RotatePin } from "../components/RotatePin"
+import { useDialogFocus } from "../hooks/useDialogFocus"
 import { t } from "../i18n"
 import { checkInLink, staffCheckInLink, venueLink } from "../lib/checkin"
 import { formatFullDate } from "../lib/date"
@@ -29,6 +30,27 @@ export function QrModal({
   const groupLink = venueLink(report.code, "group")
   const [view, setView] = useState<"public" | "operators">("public")
   const [presenting, setPresenting] = useState(false)
+  // 띄운 화면은 그 자체가 대화창이다: 초점이 안으로 들어가 Tab이 바깥(행사 고르기
+  // 등)으로 빠지지 않고, 끝내면 '행사장에 띄우기' 버튼으로 돌아온다.
+  const presentLayer = useRef<HTMLDivElement>(null)
+  const presentButton = useRef<HTMLButtonElement>(null)
+  const stopButton = useRef<HTMLButtonElement>(null)
+  const wasPresenting = useRef(false)
+  // 띄웠다 돌아오면 팝업이 다시 그려져, 팝업이 기억한 '돌아갈 곳'이 바뀐다. QR 창을
+  // 처음 연 버튼은 여기서 기억해 두었다가 창을 아주 닫을 때 그리로 돌려준다.
+  const [opener] = useState(() => (document.activeElement instanceof HTMLElement ? document.activeElement : null))
+  useEffect(
+    () => () => {
+      const current = document.activeElement
+      if ((!current || current === document.body) && opener?.isConnected) opener.focus({ preventScroll: true })
+    },
+    [opener],
+  )
+  useDialogFocus(presentLayer, presenting, stopButton)
+  useEffect(() => {
+    if (wasPresenting.current && !presenting) presentButton.current?.focus()
+    wasPresenting.current = presenting
+  }, [presenting])
   const hasOperatorInfo = Boolean(report.staffPin || report.groupPin || report.pinsFrom)
 
   // 주소를 그대로 복사하고 결과를 알린다(보이는 줄바꿈은 복사에 들어가지 않는다).
@@ -63,9 +85,16 @@ export function QrModal({
 
   if (presenting) {
     return (
-      <div className="qr-present" role="dialog" aria-modal="true" aria-label={t("행사장에 띄운 참여 QR")}>
+      <div
+        aria-label={t("행사장에 띄운 참여 QR")}
+        aria-modal="true"
+        className="qr-present"
+        ref={presentLayer}
+        role="dialog"
+        tabIndex={-1}
+      >
         <div className="qr-present-body">{participantQr}</div>
-        <button className="cancel-button" onClick={() => setPresenting(false)} type="button">
+        <button className="cancel-button" onClick={() => setPresenting(false)} ref={stopButton} type="button">
           {t("띄우기 끝내기")}
         </button>
       </div>
@@ -110,7 +139,7 @@ export function QrModal({
             <button className="cancel-button" onClick={() => copy(link, t("참여 링크를 복사했어요."))} type="button">
               {t("참여 링크 복사")}
             </button>
-            <button className="primary-button" onClick={() => setPresenting(true)} type="button">
+            <button className="primary-button" onClick={() => setPresenting(true)} ref={presentButton} type="button">
               {t("행사장에 띄우기")}
             </button>
             <a className="detail-button" href={link} rel="noreferrer" target="_blank">

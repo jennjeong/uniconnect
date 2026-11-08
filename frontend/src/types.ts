@@ -707,6 +707,11 @@ export type SentProposal = {
 }
 
 // 브랜드의 끝난 협찬 한 건. 분석에 쓴다.
+// 받은 제안에 답한 결과. done: 처리됐다. stale: 그사이 다른 곳에서 답했거나
+// 철회돼(409·404) 최신 상태를 다시 불러왔다. failed: 처리되지 않았다(네트워크,
+// 서버 오류) — 확인창은 열린 채 다시 시도할 수 있다.
+export type AnswerResult = "done" | "stale" | "failed"
+
 export type Sponsorship = {
   id: string
   // 협찬한 학생 행사(측정된 경우). 상세 리포트는 /insights/<id>에 있으며, 읽을

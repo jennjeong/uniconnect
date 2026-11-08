@@ -2,6 +2,7 @@ import { useState } from "react"
 
 import { Modal } from "../components/Modal"
 import { t } from "../i18n"
+import type { AnswerResult } from "../types"
 import { dDayLabel, formatDay } from "../lib/date"
 
 // 받은 제안을 수락하기 전에 한 번 더 보여 주는 확인창. 무엇을 수락하는지와
@@ -23,13 +24,19 @@ export function AcceptModal({
   eventDate?: string
   // 요청받은 협찬(브랜드가 수락할 때) 또는 제안받은 협찬(단체가 수락할 때).
   terms: string
-  onConfirm: () => Promise<void> | void
+  // 결과가 failed면 확인창을 열어 둔 채 다시 시도하게 한다.
+  onConfirm: () => Promise<AnswerResult>
   onClose: () => void
 }) {
   const [busy, setBusy] = useState(false)
+  const [failed, setFailed] = useState(false)
+  // 처리하는 동안은 닫히지 않는다(닫기, 배경, Escape 모두). 결과를 기다린다.
+  const close = () => {
+    if (!busy) onClose()
+  }
 
   return (
-    <Modal kicker={t("제안 수락")} name="accept" title={t("이 제안을 수락할까요?")} onClose={onClose}>
+    <Modal kicker={t("제안 수락")} name="accept" title={t("이 제안을 수락할까요?")} onClose={close}>
       <dl className="accept-facts">
         <div>
           <dt>{t("보낸 곳")}</dt>
@@ -64,24 +71,34 @@ export function AcceptModal({
         <li>{t("둘 다 확인하면 협찬 확정이 돼요.")}</li>
       </ol>
 
+      {failed && (
+        <p className="form-error" role="alert">
+          {t("수락하지 못했어요. 연결을 확인하고 다시 눌러 주세요. 제안은 그대로 남아 있어요.")}
+        </p>
+      )}
+
       <div className="modal-actions">
-        <button className="cancel-button" disabled={busy} onClick={onClose} type="button">
+        <button className="cancel-button" disabled={busy} onClick={close} type="button">
           {t("취소")}
         </button>
         <button
           className="primary-button"
           disabled={busy}
           onClick={async () => {
+            if (busy) return
             setBusy(true)
+            setFailed(false)
             try {
-              await onConfirm()
+              setFailed((await onConfirm()) === "failed")
+            } catch {
+              setFailed(true)
             } finally {
               setBusy(false)
             }
           }}
           type="button"
         >
-          {busy ? t("수락하는 중") : t("수락하기")}
+          {busy ? t("수락하는 중") : failed ? t("다시 수락하기") : t("수락하기")}
         </button>
       </div>
     </Modal>

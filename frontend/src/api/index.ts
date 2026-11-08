@@ -100,7 +100,7 @@ import type {
 } from "../types"
 import { request, requestBlob } from "./client"
 
-export { ApiError, errorMessage, getToken, setToken } from "./client"
+export { ApiError, errorMessage, getToken, isAborted, setToken, tokenPersists } from "./client"
 
 export type SignupPayload = {
   role: Role

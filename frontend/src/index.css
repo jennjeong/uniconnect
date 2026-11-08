@@ -20354,6 +20354,13 @@ span.odometer {
     justify-content: center;
   }
 
+  /* 아래에서 올라온 팝업이 열려 있으면 토스트는 화면 위에 뜬다. 팝업의 버튼(다시
+     시도 등)을 가리지 않게. */
+  body:has(.modal-backdrop:not(.closing)) .toast {
+    top: calc(16px + env(safe-area-inset-top));
+    bottom: auto;
+  }
+
   .modal-backdrop {
     align-items: end;
     padding: 0;
