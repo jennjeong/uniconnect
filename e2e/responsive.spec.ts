@@ -8,7 +8,7 @@ import { expect, test, type Page } from "@playwright/test"
 //   화면 밖으로 나간 팝업.
 // - 알리는 것(출력과 test-results/responsive.json): 잘린 글, 44px보다 작은 터치 영역,
 //   12px보다 작은 글자.
-// RESPONSIVE_SIZES=375x812,1280x800 처럼 크기를 줄여 돌릴 수 있다.
+// RESPONSIVE_SIZES=375x812,1280x800 처럼 크기를 골라 돌릴 수 있다.
 
 const allSizes = [
   [320, 700],
@@ -25,9 +25,17 @@ const allSizes = [
   [1920, 1080],
 ] as const
 
-const sizes = process.env.RESPONSIVE_SIZES
-  ? process.env.RESPONSIVE_SIZES.split(",").map((size) => size.split("x").map(Number) as [number, number])
-  : allSizes
+// CI는 느려서 대표 크기 넷만 돈다(작은 휴대폰, 휴대폰, 태블릿, 데스크톱).
+// RESPONSIVE_SIZES=all 이면 열두 크기를 모두 돈다.
+const ciSizes = allSizes.filter(([width]) => [320, 390, 768, 1280].includes(width))
+const sizes =
+  process.env.RESPONSIVE_SIZES === "all"
+    ? allSizes
+    : process.env.RESPONSIVE_SIZES
+      ? process.env.RESPONSIVE_SIZES.split(",").map((size) => size.split("x").map(Number) as [number, number])
+      : process.env.CI
+        ? ciSizes
+        : allSizes
 
 // 방문자가 볼 수 있는 화면(예시 데이터)과 브랜드 쪽 화면이다.
 const visitorPages = [

@@ -8,6 +8,7 @@
   - 실패로 막는 것: 가로 스크롤, 휴대폰의 16px 미만 입력창, 화면 밖으로 나간 팝업
   - 알리는 것: 잘린 글, 11px 미만 글, 44px 미만 터치 영역(`test-results/responsive-*.json`)
   - 크기를 골라 돌리기: `RESPONSIVE_SIZES=375x812,1280x800 npx playwright test e2e/responsive.spec.ts`
+  - CI(`CI=true`)는 대표 크기 넷(320·390·768·1280)만 돈다. 열두 크기 전부: `RESPONSIVE_SIZES=all`
 - **눈으로 본 것**: 휴대폰·태블릿·데스크톱 전체 화면 스크린샷(대시보드, 추천 매칭, 행사, 성과 분석, 회원가입 팝업)
 - **실제 WebKit**: iOS 시뮬레이터(iPhone 18 Pro Max, iOS 27)의 Safari로 이 Mac의 빌드를 열어 확인
 
