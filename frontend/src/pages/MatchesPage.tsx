@@ -12,6 +12,7 @@ import { ProposalControl } from "../components/ProposalControl"
 import { TabBar } from "../components/TabBar"
 import { WorkCard } from "../components/WorkCard"
 import { brandIndustries } from "../data/industries"
+import { useEntryState } from "../hooks/useEntryState"
 import { t } from "../i18n"
 import { shownTags } from "../lib/distance"
 import { matchesQuery } from "../lib/search"
@@ -87,7 +88,7 @@ export function MatchesPage({
   onLogin: () => void
   onSignup: () => void
 }) {
-  const [tab, setTab] = useState<Tab>("전체")
+  const [tab, setTab] = useEntryState<Tab>("matches:tab", "전체")
   // 비교: 카드를 나란히 놓는다(components/CompareTray.tsx).
   const compare = useCompare()
   // 카드는 고른 탭이나 칩이 있는 쪽에서 미끄러져 들어온다.
@@ -99,11 +100,11 @@ export function MatchesPage({
   const industries = brandIndustries.filter(([industry]) =>
     brands.some((brand) => brand.industry === industry),
   )
-  const [industry, setIndustry] = useState<Industry>("cafe")
+  const [industry, setIndustry] = useEntryState<Industry>("matches:industry", "cafe")
   // 찾을 단어. 브랜드 탭을 바꿔도 유지한다.
-  const [query, setQuery] = useState("")
+  const [query, setQuery] = useEntryState("matches:query", "")
   // 카드를 목록으로, 또는 캠퍼스 둘레 지도의 점으로 보여 준다.
-  const [layout, setLayout] = useState<Layout>("list")
+  const [layout, setLayout] = useEntryState<Layout>("matches:layout", "list")
 
   const list =
     tab === "추천"

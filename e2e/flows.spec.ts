@@ -2492,7 +2492,7 @@ test("the venue QR opens on the participants' view, and PINs only behind 운영�
   const dialog = page.getByRole("dialog", { name: "현장 참여 QR" })
   await expect(dialog.getByRole("tab", { name: "참여자용" })).toHaveAttribute("aria-selected", "true")
   await expect(dialog.locator(".qr-content")).not.toContainText("PIN")
-  await expect(dialog.locator(".qr-pin")).toHaveCount(0)
+  await expect(dialog.locator(".qr-op-card")).toHaveCount(0)
   // 행사장에 띄우면 QR과 안내뿐이다.
   await dialog.getByRole("button", { name: "행사장에 띄우기" }).click()
   const shown = page.getByRole("dialog", { name: "행사장에 띄운 참여 QR" })
@@ -2508,14 +2508,27 @@ test("the venue QR opens on the participants' view, and PINs only behind 운영�
   await expect(operators).toContainText("단체 확인 PIN")
   await expect(operators).toContainText("협찬 브랜드만 계약서에서 확인해요")
   await expect(operators).not.toContainText("101234")
-  // 운영자용 칸은 휴대폰에서도 시트 안에 들어간다(긴 주소에 밀려 넓어지지 않는다).
-  await page.setViewportSize({ width: 390, height: 844 })
-  const sheet = await page.getByRole("dialog", { name: "현장 참여 QR" }).boundingBox()
-  for (const box of await operators.locator(".qr-pin").all()) {
-    const rect = (await box.boundingBox())!
-    expect(rect.x).toBeGreaterThanOrEqual(sheet!.x)
-    expect(rect.x + rect.width).toBeLessThanOrEqual(sheet!.x + sheet!.width + 0.5)
+  // 매장 직원용과 우리 단체용은 각자의 카드이고, 주소를 복사하면 결과를 알려 준다.
+  await expect(operators.locator(".qr-op-card")).toHaveCount(2)
+  await operators.getByRole("button", { name: "단체용 주소 복사" }).click()
+  await expect(page.getByText(/주소를 복사했어요|복사하지 못했어요/)).toBeVisible()
+  // 운영자용 카드는 휴대폰 폭마다 시트 안에 들어가고, 긴 주소는 카드 안에서 줄바꿈한다.
+  for (const width of [320, 375, 390, 430]) {
+    await page.setViewportSize({ width, height: 800 })
+    const sheet = (await page.getByRole("dialog", { name: "현장 참여 QR" }).boundingBox())!
+    expect(sheet.x).toBeGreaterThanOrEqual(0)
+    expect(sheet.x + sheet.width).toBeLessThanOrEqual(width + 0.5)
+    for (const box of await operators.locator(".qr-op-card, .qr-op-card .qr-link").all()) {
+      const rect = (await box.boundingBox())!
+      expect(rect.x).toBeGreaterThanOrEqual(sheet.x)
+      expect(rect.x + rect.width).toBeLessThanOrEqual(sheet.x + sheet.width + 0.5)
+    }
+    const body = page.locator(".qr-body")
+    expect(await body.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(0)
   }
+  // 참여자용으로 돌아가도 넘치지 않는다.
+  await page.getByRole("dialog", { name: "현장 참여 QR" }).getByRole("tab", { name: "참여자용" }).click()
+  expect(await page.locator(".qr-body").evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(0)
 })
 
 for (const [role, email] of [["학생단체", "muse@syu.ac.kr"], ["브랜드", "hello@afternoon-coffee.kr"]] as const) {
@@ -2532,3 +2545,125 @@ for (const [role, email] of [["학생단체", "muse@syu.ac.kr"], ["브랜드", "
     expect(box.y + box.height).toBeLessThanOrEqual(844)
   })
 }
+
+test("the sponsorship steps stack on phones and sit in one row of five on wide cards", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await page.goto("/")
+  await logIn(page, "브랜드", "hello@afternoon-coffee.kr")
+  await page.goto("/inbox")
+  await page.getByRole("tab", { name: /수락/ }).first().click()
+  const steps = page.locator(".request-progress").first()
+  await expect(steps.locator("li")).toHaveCount(5)
+  await expect(steps.locator('li[aria-current="step"]')).toHaveCount(1)
+  const tops = async () => Promise.all((await steps.locator("li i").all()).map(async (dot) => (await dot.boundingBox())!.y))
+  // 넓은 카드: 다섯 점이 한 줄에 있다(4개 + 1개로 꺾이지 않는다).
+  expect(new Set((await tops()).map(Math.round)).size).toBe(1)
+  // 휴대폰: 위에서 아래로 쌓이고 카드 밖으로 나가지 않는다.
+  await page.setViewportSize({ width: 320, height: 800 })
+  const stacked = await tops()
+  expect(stacked.every((y, index) => index === 0 || y > stacked[index - 1])).toBe(true)
+  const card = (await page.locator(".request-card", { has: steps }).first().boundingBox())!
+  for (const dot of await steps.locator("li").all()) {
+    const box = (await dot.boundingBox())!
+    expect(box.x).toBeGreaterThanOrEqual(card.x)
+    expect(box.x + box.width).toBeLessThanOrEqual(card.x + card.width + 0.5)
+  }
+})
+
+test("a match card keeps two equal actions at the bottom and save and compare at the top", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 800 })
+  await page.goto("/")
+  await logIn(page, "학생단체", "muse@syu.ac.kr")
+  await page.goto("/matches")
+  const card = page.locator(".work-card").first()
+  await expect(card.getByRole("button", { name: "상세 정보" })).toBeVisible()
+  const detail = (await card.getByRole("button", { name: "상세 정보" }).boundingBox())!
+  // 둘째 칸은 제안하기 버튼이거나, 보낸 뒤에는 그 자리의 상태(제안 완료, 협찬 확정)다.
+  const propose = (await card.locator(".work-actions .primary-button, .work-actions .proposal-button").first().boundingBox())!
+  expect(Math.round(detail.y)).toBe(Math.round(propose.y))
+  expect(Math.round(detail.height)).toBe(Math.round(propose.height))
+  expect(detail.height).toBeGreaterThanOrEqual(44)
+  expect(Math.abs(detail.width - propose.width)).toBeLessThanOrEqual(1)
+  // 찜과 비교는 위쪽, 이름보다 위에 있다.
+  const heart = (await card.locator(".save-toggle").boundingBox())!
+  const name = (await card.locator(".work-title h3").boundingBox())!
+  expect(heart.y + heart.height).toBeLessThanOrEqual(name.y + 1)
+  expect(heart.width).toBeGreaterThanOrEqual(44)
+})
+
+test("on phones the calendar is a compact date picker and the chosen day lists its events", async ({ page, request }) => {
+  const group = await signUpMember(request, "학생단체", "e2e-picker@syu.ac.kr", "달력 밴드")
+  const day = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date())
+  for (const name of ["아주 긴 이름을 가진 첫 번째 정기 공연", "두 번째 공연", "세 번째 공연", "네 번째 공연"]) {
+    await request.post("/api/events", { data: { name, date: day, people: "100명", types: ["제품"] }, headers: group.headers })
+  }
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
+  await page.setViewportSize({ width: 320, height: 800 })
+  await page.goto("/events")
+  const busy = page.locator(".calendar-day.has-events").first()
+  // 칸에는 이름이 없고 점 둘과 남은 개수만 있다.
+  await expect(busy.locator(".day-event").first()).toBeHidden()
+  await expect(busy.locator(".day-dots i")).toHaveCount(2)
+  await expect(busy.locator(".day-dots small")).toHaveText("+2")
+  for (const cell of await page.locator(".calendar-day").all()) {
+    const box = (await cell.boundingBox())!
+    expect(box.height).toBeLessThanOrEqual(56)
+    expect(box.height).toBeGreaterThanOrEqual(44)
+  }
+  // 다른 날을 고르면 그날의 목록으로 바뀌고, 그날을 다시 고르면 네 행사가 보인다.
+  const other = page.locator(".calendar-day:not(.has-events):not(.outside)").first()
+  await other.click()
+  await expect(other).toHaveAttribute("aria-pressed", "true")
+  await expect(page.locator(".day-panel .day-empty")).toBeVisible()
+  await busy.click()
+  await expect(page.locator(".day-panel .day-event-card")).toHaveCount(4)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBe(0)
+  const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: group.headers })
+  expect(left.status()).toBe(204)
+})
+
+test("a new screen starts at the top, back returns to where the list was, and in-page actions keep the place", async ({ page }) => {
+  await page.goto("/")
+  await logIn(page, "학생단체", "muse@syu.ac.kr")
+  await page.goto("/matches")
+  // 탭은 같은 화면 안의 조작이고, 뒤로 돌아와도 그 탭이다.
+  await page.getByRole("tab", { name: "인기" }).click()
+  const cards = page.locator(".work-card")
+  await expect(cards.nth(5)).toBeVisible()
+  const last = cards.last()
+  const scrollY = () => page.evaluate(() => window.scrollY)
+
+  // 찜은 같은 화면 안의 조작이라 위치가 그대로다.
+  await last.locator(".save-toggle").scrollIntoViewIfNeeded()
+  const atHeart = await scrollY()
+  expect(atHeart).toBeGreaterThan(500)
+  await last.locator(".save-toggle").click()
+  await expect(last.locator(".save-toggle")).toHaveAttribute("aria-pressed", "true")
+  expect(Math.abs((await scrollY()) - atHeart)).toBeLessThan(4)
+
+  // 카드 상세는 맨 위에서 시작한다.
+  const detail = last.getByRole("button", { name: "상세 정보" })
+  await detail.scrollIntoViewIfNeeded()
+  const leaving = await scrollY()
+  await detail.click()
+  await expect(page.locator(".profile-actions")).toBeVisible()
+  expect(await scrollY()).toBe(0)
+
+  // 뒤로 가면 목록의 그 자리로 돌아온다.
+  await page.goBack()
+  await expect(page.getByRole("tab", { name: "인기" })).toHaveAttribute("aria-selected", "true")
+  await expect(last).toBeVisible()
+  await expect.poll(scrollY).toBeGreaterThan(leaving - 4)
+  expect(Math.abs((await scrollY()) - leaving)).toBeLessThan(4)
+
+  // 아래쪽에서 다른 메뉴로 가면 새 화면의 맨 위에서 시작한다.
+  await page.locator("footer").getByRole("button", { name: "받은 협찬" }).click()
+  await expect(page).toHaveURL(/\/offers/)
+  expect(await scrollY()).toBe(0)
+  // 뒤로는 목록의 자리로, 다시 앞으로는 받은 협찬의 맨 위로.
+  await page.goBack()
+  await expect.poll(scrollY).toBeGreaterThan(500)
+  await page.goForward()
+  await expect(page).toHaveURL(/\/offers/)
+  await expect.poll(scrollY).toBe(0)
+})

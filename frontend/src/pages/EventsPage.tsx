@@ -331,15 +331,15 @@ export function EventsPage({
             <dt>{t("{month} 일정", { month: month.toLocaleDateString(locale, { month: "long" }) })}</dt>
             <dd>{monthEntries.length}</dd>
           </div>
-          <div>
+          <div className="count-matching">
             <dt>{t("매칭 중")}</dt>
             <dd>{countOf("매칭 중")}</dd>
           </div>
-          <div>
+          <div className="count-scheduled">
             <dt>{t("집행 예정")}</dt>
             <dd>{countOf("집행 예정")}</dd>
           </div>
-          <div>
+          <div className="count-done">
             <dt>{t("측정 완료")}</dt>
             <dd>{countOf("측정 완료")}</dd>
           </div>
@@ -417,6 +417,16 @@ export function EventsPage({
                       <span className="day-more">+{dayEntries.length - 2}</span>
                     )}
                   </span>
+                  {/* 휴대폰의 좁은 칸에는 이름 대신 상태 점을 셋까지, 더 있으면 개수로.
+                      이름과 상태는 아래 '선택한 날'의 목록이 보여 준다. */}
+                  {dayEntries.length > 0 && (
+                    <span aria-hidden="true" className="day-dots">
+                      {dayEntries.slice(0, dayEntries.length > 3 ? 2 : 3).map((entry) => (
+                        <i className={statusClass(entry)} key={entry.id} />
+                      ))}
+                      {dayEntries.length > 3 && <small>+{dayEntries.length - 2}</small>}
+                    </span>
+                  )}
                 </button>
               )
             })}
@@ -433,7 +443,7 @@ export function EventsPage({
 
         <aside className="day-panel">
           <div className="day-panel-head">
-            <span className="eyebrow">Selected Day</span>
+            <span className="eyebrow">{t("선택한 날의 일정")}</span>
             <p className="day-title" key={selected}>
               {formatDay(selected)}
             </p>

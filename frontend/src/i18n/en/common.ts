@@ -186,6 +186,9 @@ const en: Record<string, string> = {
   울산: "Ulsan",
   경남: "South Gyeongsang",
   제주: "Jeju",
+  "확정 대기": "Awaiting confirmation",
+  "선택한 날의 일정": "On the selected day",
+  "예정": "Upcoming",
 }
 
 export default en

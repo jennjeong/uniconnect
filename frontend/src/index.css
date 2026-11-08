@@ -3868,7 +3868,6 @@ input[type="search"]::-webkit-search-cancel-button {
 }
 
 .work-actions .proposal-button {
-  height: 40px;
   padding: 0 18px;
 }
 
@@ -3925,6 +3924,18 @@ input[type="search"]::-webkit-search-cancel-button {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: start;
+  gap: 6px 10px;
+}
+
+/* 행동 줄의 버튼과 상태는 모두 같은 높이(누를 자리 44px)에, 글과 아이콘은 가운데. */
+.work-actions .cancel-button,
+.work-actions .primary-button,
+.work-actions .proposal-button {
+  display: inline-flex;
+  min-height: var(--touch-target);
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 .work-actions:has(> :nth-child(2)) > *,
@@ -3940,22 +3951,28 @@ input[type="search"]::-webkit-search-cancel-button {
   align-items: stretch;
 }
 
-/* 이런 링크를 보여주는 목록의 모든 카드는 버튼 아래에 그 자리를 남겨 둔다.
-   버튼의 높이가 맞고, 링크는 카드 가장자리에 붙지 않고 카드 패딩을 그 아래에
-   유지한다. */
-.work-grid:has(.proposal-cancel) .work-actions:has(> :nth-child(2)) {
-  padding-bottom: 26px;
+/* 제안 완료 같은 상태는 둘째 칸의 버튼 자리에 서고, 제안 취소 같은 링크는 그 아래
+   둘째 줄에 따로 놓인다(.proposal-actions는 칸을 만들지 않는다). 그래서 두 버튼의
+   기준선은 링크가 있든 없든 같다. 링크가 있는 목록의 모든 카드는 그 줄의 높이를
+   남겨 두어 이웃 카드의 버튼과 높이가 맞는다. */
+.work-actions:has(> :nth-child(2)) .proposal-actions {
+  display: contents;
 }
 
 .work-actions:has(> :nth-child(2)) .proposal-cancel {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 50%;
+  position: relative;
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: center;
+  width: auto;
   padding: 0;
   font-size: 0.75rem;
   line-height: 1.4;
-  transform: translateX(-50%);
   white-space: nowrap;
+}
+
+.work-grid:has(.proposal-cancel) .work-actions:has(> :nth-child(2)) {
+  grid-template-rows: auto minmax(1.05rem, auto);
 }
 
 /* 브랜드의 답을 기다리는 제안 (pages/BrandDashboardPage.tsx). */
@@ -6920,37 +6937,95 @@ input[type="search"]::-webkit-search-cancel-button {
   stroke: currentColor;
 }
 
-/* 다음 행사 옆에 두 줄 두 칸으로, 각 타일은 라벨과 숫자만큼만 높다. */
+/* 단계별 건수는 낮은 패널 하나에 네 칸으로, 칸 사이는 얇은 선만. 라벨 위, 숫자
+   아래로 네 칸의 기준선이 같다. 상태 색은 라벨 앞의 작은 점에만 쓴다(범례와 같은
+   색, 글로도 쓰여 있다). 패널이 좁으면(340px 미만) 같은 패널 안에서 2×2가 된다. */
+.events-summary {
+  container: summary / inline-size;
+}
+
 .events-counts {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-content: center;
   margin: 0;
+  padding: var(--space-4) 0;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
 }
 
 .events-counts div {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 16px 20px;
-  border-radius: 24px;
-  background: var(--silver-gradient);
-  box-shadow: var(--silver-ring);
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 var(--space-4);
+}
+
+.events-counts div + div {
+  border-left: 1px solid var(--line);
 }
 
 .events-counts dt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   color: var(--ink-soft);
   font-size: 0.8125rem;
   font-weight: var(--weight-label);
+  white-space: nowrap;
+}
+
+.events-counts :is(.count-matching, .count-scheduled, .count-done) dt::before {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 50%;
+  background: #8a94a6;
+  content: "";
+}
+
+.events-counts .count-scheduled dt::before {
+  background: var(--blue);
+}
+
+.events-counts .count-done dt::before {
+  background: var(--green);
 }
 
 .events-counts dd {
   margin: 0;
   color: var(--ink);
-  font-size: 2.125rem;
+  font-size: 1.5rem;
   font-weight: var(--weight-display);
+  font-variant-numeric: tabular-nums;
   line-height: 1;
+}
+
+@container summary (max-width: 520px) {
+  .events-counts div {
+    padding: 0 var(--space-3);
+  }
+
+  .events-counts dt {
+    font-size: 0.75rem;
+  }
+
+  .events-counts dd {
+    font-size: 1.25rem;
+  }
+}
+
+@container summary (max-width: 340px) {
+  .events-counts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: var(--space-4);
+  }
+
+  .events-counts div:nth-child(3) {
+    border-left: 0;
+  }
 }
 
 @media (max-width: 960px) {
@@ -6976,33 +7051,48 @@ input[type="search"]::-webkit-search-cancel-button {
   background: var(--surface);
 }
 
+/* 달 이름이 왼쪽에, 오른쪽에 '오늘'과 이전·다음. 이동 버튼은 배경 없이 작은
+   화살표만 보이고, 누를 자리는 44px이다. */
 .calendar-head {
-  display: flex;
+  display: grid;
+  grid-template-areas: "title today previous next";
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 14px;
+  gap: 2px;
+  margin-bottom: 10px;
 }
 
 .calendar-head strong {
-  min-width: 112px;
+  grid-area: title;
+  padding-left: 4px;
   font-size: 1.0625rem;
-  text-align: center;
+}
+
+.calendar-nav.previous {
+  grid-area: previous;
+}
+
+.calendar-nav:not(.previous) {
+  grid-area: next;
 }
 
 .calendar-nav,
 .calendar-today {
   display: grid;
-  height: 32px;
+  height: 36px;
   place-items: center;
   border: 0;
-  border-radius: 10px;
-  background: var(--fill);
+  border-radius: 999px;
+  background: transparent;
   color: var(--ink-soft);
-  box-shadow: var(--ring);
 }
 
 .calendar-nav {
-  width: 32px;
+  width: 36px;
+}
+
+.calendar-nav:hover {
+  background: var(--fill);
 }
 
 .calendar-nav .icon {
@@ -7017,8 +7107,11 @@ input[type="search"]::-webkit-search-cancel-button {
 }
 
 .calendar-today {
-  margin-left: auto;
-  padding: 0 14px;
+  grid-area: today;
+  margin-right: 4px;
+  padding: 0 12px;
+  color: var(--point-strong);
+  box-shadow: inset 0 0 0 1px var(--line);
   font-size: 0.8125rem;
   font-weight: var(--weight-label);
 }
@@ -7144,6 +7237,10 @@ input[type="search"]::-webkit-search-cancel-button {
 .day-event.status-집행예정 {
   background: var(--blue-soft);
   color: var(--blue);
+}
+
+.day-dots {
+  display: none;
 }
 
 .day-more {
@@ -10334,48 +10431,6 @@ input[type="search"]::-webkit-search-cancel-button {
   line-height: 1.6;
 }
 
-/* 체크인 링크 아래의 매장 직원 PIN: 단체가 매장에 건네 준다. */
-.qr-pin {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  margin: 14px 0 0;
-  padding: 12px 16px;
-  border-radius: var(--radius-sm);
-  background: var(--fill);
-  color: var(--ink-soft);
-  font-size: 0.8125rem;
-  text-align: center;
-}
-
-.qr-pin strong {
-  color: var(--point-strong);
-  font-size: 1.375rem;
-  font-weight: var(--weight-badge);
-  letter-spacing: 0.2em;
-}
-
-.qr-pin small {
-  color: var(--muted);
-  font-size: 0.75rem;
-}
-
-/* 브랜드가 행사를 협찬하면 스폰서 매장마다 PIN 하나. */
-.qr-pins {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin: 4px 0;
-  padding: 0;
-  list-style: none;
-}
-
-.qr-pins strong {
-  margin-left: 4px;
-  font-size: 1rem;
-}
-
 /* 매장 직원 페이지 (checkin/StaffCheckInPage.tsx): PIN과 쿠폰 번호, 그다음 방금
    확인한 방문. */
 .staff-form {
@@ -10562,16 +10617,20 @@ input[type="search"]::-webkit-search-cancel-button {
   word-break: keep-all;
 }
 
+/* 체크인 주소. 길면 칸 안에서 줄바꿈한다(복사·링크의 주소는 그대로). 줄바꿈하지
+   않는 주소가 부모 칸을 넓혀 팝업 밖으로 밀어내던 것을 막는다. */
 .qr-link {
+  display: block;
   max-width: 100%;
-  overflow: hidden;
+  min-width: 0;
   padding: 8px 12px;
   border-radius: 10px;
   background: var(--fill);
   color: var(--ink-soft);
   font-size: 0.8125rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.5;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .qr-actions {
@@ -19153,52 +19212,66 @@ span.odometer {
   opacity: 0.75;
 }
 
-/* 수락된 협찬의 단계를 상태 아래에: 선 위의 점들, 오늘까지는 진한 파랑, 진행
-   중인 단계는 링이 둘린 점, 그 뒤는 은색. */
-.request-progress {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+/* 수락된 협찬의 단계를 상태 아래에. 완료한 단계는 채운 파란 점, 진행 중인 단계는
+   파란 테두리 점과 '진행 중', 예정은 연한 점. 감싼 div가 카드 안의 폭을 재는
+   container라, 기기 종류가 아니라 카드가 가진 폭으로 모양을 바꾼다.
+   - 좁으면 세로: 왼쪽 칸에 점과 그 아래로 이어지는 선, 오른쪽에 단계명과 날짜.
+     선은 각 단계의 점 아래 칸을 채워 다음 점에서 끝나고, 마지막 단계에는 없다.
+   - 다섯 단계가 들어가는 폭(520px)부터 가로: 같은 너비 5열, 선은 점에서 다음 점까지. */
+.request-progress-wrap {
+  container: progress / inline-size;
   margin: 18px 0 0;
   padding: 16px 0 0;
   border-top: 1px solid var(--line);
+}
+
+.request-progress {
+  display: grid;
+  margin: 0;
+  padding: 0;
   list-style: none;
 }
 
 .request-progress li {
-  position: relative;
-  display: flex;
+  display: grid;
   min-width: 0;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  text-align: center;
+  grid-template-areas:
+    "dot text"
+    "line text";
+  grid-template-columns: 14px minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  column-gap: 12px;
 }
 
-/* 이전 단계로 가는 선: 그 점에서 이 점까지. */
-.request-progress li + li::before {
-  position: absolute;
-  top: 6px;
-  right: 50%;
-  left: -50%;
-  height: 2px;
+/* 단계 사이의 간격은 글 칸의 아래 여백으로 둔다. 선이 놓인 칸이 그만큼 길어져
+   다음 점까지 이어진다. */
+.request-progress li:not(:last-child) .step-text {
+  padding-bottom: 14px;
+}
+
+.request-progress i {
+  grid-area: dot;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+  border-radius: 50%;
+  background: var(--fill-strong);
+}
+
+/* 이 점에서 다음 점까지의 선. 다음 단계가 완료나 진행 중이면 파랗다. */
+.request-progress li:not(:last-child)::before {
+  grid-area: line;
+  justify-self: center;
+  width: 2px;
+  margin-top: 4px;
+  border-radius: 1px;
   background: var(--line-strong);
   content: "";
 }
 
-.request-progress li.step-done::before,
-.request-progress li.step-current::before {
+.request-progress li:has(+ .step-done)::before,
+.request-progress li:has(+ .step-current)::before {
   background: var(--point);
-}
-
-.request-progress i {
-  position: relative;
-  z-index: 1;
-  width: 14px;
-  height: 14px;
-  margin-bottom: 4px;
-  border-radius: 50%;
-  background: var(--fill-strong);
-  box-shadow: 0 0 0 3px #fff;
 }
 
 .request-progress .step-done i {
@@ -19207,30 +19280,105 @@ span.odometer {
 
 .request-progress .step-current i {
   background: #fff;
-  box-shadow:
-    inset 0 0 0 4px var(--point),
-    0 0 0 3px #fff;
+  box-shadow: inset 0 0 0 4px var(--point);
+}
+
+/* 단계명과 날짜는 한 줄에, 자리가 모자라면 날짜가 단계명 아래로 내려간다. */
+.request-progress .step-text {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  grid-area: text;
 }
 
 .request-progress strong {
   color: var(--ink);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: var(--weight-label);
+  word-break: keep-all;
 }
 
 .request-progress .step-next strong {
-  color: var(--muted);
+  color: var(--ink-soft);
 }
 
 .request-progress time {
   color: var(--muted);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
 }
 
 .request-progress .step-current time {
   color: var(--point-strong);
   font-weight: var(--weight-label);
+}
+
+.request-progress .step-state {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--point-tint);
+  color: var(--point-strong);
+  font-size: 0.75rem;
+  font-style: normal;
+  font-weight: var(--weight-label);
+}
+
+@container progress (min-width: 520px) {
+  .request-progress {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  /* 점 줄 아래에 단계명과 날짜. 선은 점 줄에서 이 점의 가운데부터 다음 점의
+     가운데까지 이어진다(왼쪽 반칸 + 오른쪽 반칸). */
+  .request-progress li {
+    grid-template-areas:
+      "line-in dot line-out"
+      "text text text";
+    grid-template-columns: minmax(0, 1fr) 14px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    column-gap: 0;
+    row-gap: 8px;
+  }
+
+  .request-progress li:not(:last-child) .step-text {
+    padding-bottom: 0;
+  }
+
+  .request-progress i {
+    margin-top: 0;
+  }
+
+  .request-progress li:not(:last-child)::before {
+    grid-area: line-out;
+    align-self: center;
+    justify-self: stretch;
+    width: auto;
+    height: 2px;
+    margin-top: 0;
+  }
+
+  .request-progress li:not(:first-child)::after {
+    grid-area: line-in;
+    align-self: center;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--line-strong);
+    content: "";
+  }
+
+  .request-progress li.step-done:not(:first-child)::after,
+  .request-progress li.step-current:not(:first-child)::after {
+    background: var(--point);
+  }
+
+  .request-progress .step-text {
+    flex-direction: column;
+    align-items: center;
+    padding-inline: 4px;
+    text-align: center;
+  }
 }
 
 .analytics-grid {
@@ -19907,34 +20055,29 @@ span.odometer {
     display: none;
   }
 
-  /* 하트와 비교는 액션 줄의 끝에 놓인다. 링은 자기 폭의 칸을 따로 두어,
-     그 둘이 넓어도 카드의 오른쪽 간격에 맞춰 선다. */
-  .work-card:has(.save-toggle) {
+  /* 찜과 비교는 보조 행동이라 카드 맨 위 줄의 오른쪽에 두고, 카테고리는 그 줄의
+     왼쪽에 둔다. 로고, 이름, 링은 그 아래 줄이라 겹치지 않는다. 아래의 행동 줄에는
+     상세 정보와 제안하기 두 버튼만 남는다. 셋째 칸(auto)은 찜·비교가 링보다
+     넓을 때만 늘어나고, 이름은 둘째와 셋째 칸을 함께 쓴다. */
+  .work-card:has(.save-toggle, .compare-toggle) {
     grid-template-areas:
-      "mark meta meta ring"
+      "meta meta util util"
       "mark name name ring"
       "tags tags tags tags"
-      "actions actions save save";
+      "actions actions actions actions";
     grid-template-columns: 56px minmax(0, 1fr) auto 54px;
+    row-gap: 8px;
   }
 
-  /* 영어 버튼은 글자가 길어 줄의 반에 들어가지 않는다. 하트와 비교는 그 아래
-     줄로 내린다. */
-  :root:lang(en) .work-card:has(.save-toggle) {
-    grid-template-areas:
-      "mark meta meta ring"
-      "mark name name ring"
-      "tags tags tags tags"
-      "actions actions actions actions"
-      "save save save save";
+  .work-card:has(.save-toggle, .compare-toggle) .work-meta > span:first-child {
+    align-self: center;
   }
 
   .work-meta > .work-meta-actions {
-    grid-area: save;
+    grid-area: util;
     align-self: center;
     justify-self: end;
     margin-left: 0;
-    padding-top: 10px;
   }
 
   .work-mark {
@@ -19980,12 +20123,12 @@ span.odometer {
 
   .work-tags {
     grid-area: tags;
-    margin-top: 10px;
+    margin-top: 8px;
   }
 
   .work-actions {
     grid-area: actions;
-    padding-top: 10px;
+    padding-top: 12px;
   }
 
   .work-mark .match-logo.large {
@@ -20219,6 +20362,7 @@ span.odometer {
   .modal {
     width: 100%;
     max-height: 92vh;
+    max-height: calc(100dvh - env(safe-area-inset-top) - 24px);
     padding: 28px 20px calc(28px + env(safe-area-inset-bottom));
     border-radius: 28px 28px 0 0;
   }
@@ -20273,72 +20417,131 @@ span.odometer {
     padding: 0;
   }
 
-  /* 캘린더가 먼저, 날짜 세부 정보는 그 아래에. 캘린더가 너비를 더 차지하고,
-     날짜 칸이 높아져서 행사를 상태 색의 작은 라벨로 두 개까지 이름을 보이고,
-     그다음 "+n". */
+  /* 휴대폰의 달력은 날짜를 고르는 7열 격자다. 칸은 테두리 없이 숫자 원과 그 아래
+     상태 점만 두고(이름은 칸에 넣지 않는다), 행사 이름·상태·상세 보기는 바로 아래
+     '선택한 날의 일정' 목록이 보여 준다. 오늘은 숫자의 테두리, 고른 날은 채운
+     파란 원, 오늘이면서 고른 날은 채운 원에 바깥 테두리. 칸의 높이는 숫자 원과
+     점만큼(약 48px)이고, 5주든 6주든 그대로 다 보인다. */
   .calendar-card {
-    padding: 18px 10px;
+    padding: 14px 10px;
   }
 
   .calendar-head,
   .calendar-legend,
   .month-agenda {
-    margin-inline: 6px;
+    margin-inline: 4px;
   }
 
   .calendar-grid {
-    gap: 3px;
+    gap: 2px 0;
   }
 
-  .calendar-day {
-    min-height: 74px;
-    align-items: stretch;
+  .calendar-day,
+  .calendar-day.outside,
+  .calendar-day.has-events,
+  .calendar-day.selected {
+    min-height: 48px;
+    align-items: center;
     gap: 3px;
-    padding: 4px 2px;
-    border-radius: 10px;
+    padding: 4px 0;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .calendar-day:hover {
+    background: var(--fill);
   }
 
   .day-number {
-    align-self: center;
-    min-width: 20px;
-    height: 20px;
-    font-size: 0.75rem;
+    min-width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 0.875rem;
+  }
+
+  .calendar-day.today .day-number {
+    background: transparent;
+    color: var(--point-strong);
+    box-shadow: inset 0 0 0 1.5px var(--point);
+  }
+
+  .calendar-day.selected .day-number,
+  .calendar-day.selected.sunday .day-number,
+  .calendar-day.selected.saturday .day-number {
+    background: var(--point);
+    color: var(--on-point);
+  }
+
+  .calendar-day.selected.today .day-number {
+    box-shadow:
+      0 0 0 2px var(--surface),
+      0 0 0 3.5px var(--point);
+  }
+
+  /* '오늘'은 테두리 없는 글자 버튼(누를 자리는 44px 그대로). */
+  .calendar-today {
+    box-shadow: none;
   }
 
   .day-events {
-    gap: 2px;
+    display: none;
   }
 
-  /* 이름은 세 줄까지 줄바꿈한다 (그날 행사가 둘이면 두 줄). 비슷하게 시작하는
-     행사도 구별되어 읽힌다. */
-  .day-event {
-    display: -webkit-box;
-    padding: 2px;
-    border-radius: 4px;
-    font-size: 0.5938rem;
-    letter-spacing: 0;
-    line-height: 1.25;
-    text-align: center;
-    white-space: normal;
+  .day-dots {
+    display: flex;
+    height: 6px;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .day-dots i {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #8a94a6;
+  }
+
+  .day-dots i.status-집행예정 {
+    background: var(--blue);
+  }
+
+  .day-dots i.status-측정완료 {
+    background: var(--green);
+  }
+
+  .day-dots i.status-협찬확정 {
+    background: var(--violet);
+  }
+
+  .day-dots small {
+    color: var(--muted);
+    font-size: 0.625rem;
+    font-weight: var(--weight-label);
+    line-height: 1;
+  }
+
+  /* 달력과 그날의 일정은 한 흐름으로 읽힌다: 그날의 목록은 상자 없이 달력 아래에. */
+  .calendar-layout > .day-panel {
+    padding: 20px 4px 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  /* 다음 행사 카드는 이름, 날짜와 D-day, 상태와 상세 보기 순으로 촘촘하게. */
+  .events-next {
+    gap: 6px;
+    padding: 18px 20px;
+  }
+
+  .events-next strong {
+    font-size: 1.1875rem;
     overflow-wrap: anywhere;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3;
   }
 
-  .day-events:has(> .day-event + .day-event) .day-event {
-    -webkit-line-clamp: 2;
-  }
-
-  .day-event.status-매칭중 {
-    background: #fff;
-    box-shadow: inset 0 0 0 1px var(--line-strong);
-  }
-
-  .day-more {
-    padding: 0;
-    font-size: 0.5938rem;
-    line-height: 1.2;
-    text-align: center;
+  .events-next-actions {
+    margin-top: 4px;
   }
 
   .measure-grid {
@@ -23185,12 +23388,18 @@ textarea {
     min-height: var(--touch-target);
   }
 
-  /* 카드의 버튼 넷(상세, 제안, 찜, 비교)이 한 줄에 들어가게 버튼 옆 여백만 줄인다. */
+  /* 카드 아래의 두 버튼(상세 정보, 제안하기)은 반씩 나눠 쓰므로 옆 여백만 줄인다. */
   .work-actions .cancel-button,
   .work-actions .proposal-button,
   .work-actions .primary-button {
     height: var(--touch-target);
-    padding-inline: 16px;
+    padding-inline: 12px;
+  }
+
+  /* 맨 위 줄의 찜과 비교도 누를 자리 44px. */
+  .work-meta-actions .save-toggle {
+    width: var(--touch-target);
+    height: var(--touch-target);
   }
 
   .intro-title {
@@ -23214,14 +23423,9 @@ textarea {
   }
 
   /* 휴대폰 상자는 안쪽 여백을 위아래와 좌우가 같게 둔다. */
-  .events-counts div,
   .power-stat,
   .profile-facts > div {
     padding: var(--space-4);
-  }
-
-  .calendar-card {
-    padding: 14px;
   }
 
   .power-roas {
@@ -23348,21 +23552,109 @@ textarea {
   color: var(--on-point);
 }
 
-/* 운영자용 탭의 칸은 시트 너비에 맞춘다. 가운데 정렬된 세로 flex 안에서는 줄바꿈
-   없는 주소(.qr-link) 길이만큼 칸이 늘어나 시트 밖으로 잘렸다. 주소는 말줄임으로,
-   안내는 줄바꿈으로 칸 안에 둔다. */
+/* 운영자용 탭: 경고, 그다음 매장 직원용과 우리 단체용 카드. 카드는 제목, 주소,
+   주소 복사·열기, PIN, 설명 순이고 왼쪽 정렬이다. 탭과 경고와 같은 좌우 기준선에
+   서고(늘어나되 min-width 0), 주소는 카드 안에서 줄바꿈한다. */
+.qr-content.operators {
+  align-items: stretch;
+  gap: var(--space-3);
+}
+
 .qr-content.operators > * {
-  align-self: stretch;
   min-width: 0;
 }
 
-.qr-content.operators .qr-pin {
-  text-align: center;
+.qr-content.operators .qr-warning,
+.qr-content.operators .field-hint {
+  margin: 0;
 }
 
-.qr-content.operators .qr-pin small {
+.qr-op-card {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ink-soft);
+  font-size: 0.8125rem;
+}
+
+.qr-op-card h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-label);
+}
+
+.qr-op-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.qr-op-actions > * {
+  display: inline-flex;
+  min-width: 0;
+  min-height: var(--touch-target);
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding-inline: 12px;
+  text-decoration: none;
+}
+
+/* PIN은 크게 읽히게 하되 자간은 좁은 화면에 들어갈 만큼만. */
+.qr-pin-value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  margin: 0;
+}
+
+.qr-pin-value strong {
+  color: var(--point-strong);
+  font-size: 1.375rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-badge);
+  letter-spacing: 0.06em;
+}
+
+.qr-pins {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.qr-pins li {
+  display: grid;
+  gap: 2px;
+  overflow-wrap: anywhere;
+}
+
+.qr-op-card small {
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
   word-break: keep-all;
   overflow-wrap: anywhere;
+}
+
+/* QR 팝업은 제목과 닫기를 그대로 두고 본문(.qr-body)만 세로로 스크롤한다. */
+.modal-qr {
+  display: flex;
+  flex-direction: column;
+  overflow-y: hidden;
+}
+
+.qr-body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .qr-warning {
