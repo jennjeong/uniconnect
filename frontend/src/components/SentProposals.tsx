@@ -19,7 +19,11 @@ function SentCard({ item, onWithdraw }: { item: SentProposal; onWithdraw: (item:
           <strong>{item.partnerName}</strong>
           {item.school && <span>{item.school}</span>}
         </div>
-        <time dateTime={item.createdAt}>{t("{date} 보냄", { date: formatDateTime(item.createdAt) })}</time>
+        {item.noInbox ? (
+          <span className="request-note">{t("아직 가입하지 않은 곳")}</span>
+        ) : (
+          <time dateTime={item.createdAt}>{t("{date} 보냄", { date: formatDateTime(item.createdAt) })}</time>
+        )}
       </div>
 
       <dl className="request-facts">
@@ -62,7 +66,9 @@ function SentCard({ item, onWithdraw }: { item: SentProposal; onWithdraw: (item:
           </>
         ) : (
           <>
-            <span className="request-result">{t("답을 기다리고 있어요")}</span>
+            <span className="request-result">
+              {item.noInbox ? t("가입하면 제안이 전달돼요") : t("답을 기다리고 있어요")}
+            </span>
             <button className="cancel-button" onClick={() => setConfirming(true)} type="button">
               {t("제안 취소")}
             </button>

@@ -75,7 +75,36 @@ function proposalState(account: Account) {
         ...(item.respondedAt ? { respondedAt: item.respondedAt } : {}),
       }
     })
-  return { proposals, statuses, confirmed, sent: sentList }
+  // 받은편지함이 없는 상대(아직 가입하지 않은 예시 리스팅이나, 기록이 생기기 전에
+  // 보낸 제안)에게 보낸 것도 보낸 제안에 넣는다. 카드의 '제안 완료', 보낸 제안함,
+  // 대시보드의 건수가 같은 목록을 읽게 한다. 답이 오지 않으므로 그렇게 표시한다.
+  const recorded = new Set(sent.map((item) => item.partnerId))
+  const nextEvent = (database.events[account.id] ?? [])
+    .filter((item) => (item.endDate ?? item.date) >= todayInKorea())
+    .sort((a, b) => a.date.localeCompare(b.date))[0]
+  const ownListing =
+    account.role === "브랜드" ? database.brands.find((brand) => brand.id === account.brandId) : undefined
+  const unanswerable = proposals
+    .filter((id) => !recorded.has(id))
+    .map((partnerId) => {
+      const partner = listings.find((listing) => listing.id === partnerId)
+      statuses[partnerId] = "검토 중"
+      return {
+        id: `listing-${partnerId}`,
+        partnerId,
+        partnerName: partner?.name ?? "알 수 없는 상대",
+        industry: partner?.industry ?? "cafe",
+        ...(partner?.logo ? { logo: partner.logo } : {}),
+        ...(partner?.school ? { school: partner.school } : {}),
+        eventName: nextEvent?.name ?? "다가오는 행사",
+        ...(nextEvent ? { eventDate: nextEvent.date } : {}),
+        offer: (account.role === "학생단체" ? partner?.offer : ownListing?.offer) || "협찬 내용 협의",
+        status: "검토 중" as RequestStatus,
+        createdAt: account.createdAt,
+        noInbox: true,
+      }
+    })
+  return { proposals, statuses, confirmed, sent: [...sentList, ...unanswerable] }
 }
 
 // 제안이 파트너에게 전하는 메모의 최대 길이다.

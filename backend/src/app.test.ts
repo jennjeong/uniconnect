@@ -99,6 +99,20 @@ async function call(method: string, route: string, body?: unknown, token?: strin
   return { status: response.status, data: text ? JSON.parse(text) : null }
 }
 
+test("every partner a card shows as proposed is in the sent list, even one without an inbox", async () => {
+  const token = await login("학생단체")
+  const { data } = await call("GET", "/proposals", undefined, token)
+  const sentIds = (data.sent as { partnerId: string }[]).map((item) => item.partnerId)
+  for (const id of data.proposals as string[]) assert.ok(sentIds.includes(id), `${id} is missing from sent`)
+  // 시드의 모먼트 스튜디오는 받은편지함이 없어 답이 오지 않는다고 표시된다.
+  const moment = (data.sent as { partnerId: string; noInbox?: boolean; status: string }[]).find(
+    (item) => item.partnerId === "moment-studio",
+  )
+  assert.equal(moment?.noInbox, true)
+  assert.equal(moment?.status, "검토 중")
+  assert.equal(data.statuses["moment-studio"], "검토 중")
+})
+
 test("the site hands out the Kakao map key only once it is set", async () => {
   assert.equal((await call("GET", "/site")).data.maps, undefined)
   config.kakaoMapKey = "test-map-key"

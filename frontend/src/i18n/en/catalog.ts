@@ -506,6 +506,8 @@ const en: Record<string, string> = {
   "제안한 협찬": "Offered",
   "이 제안을 취소할까요?": "Withdraw this proposal?",
   "답을 기다리고 있어요": "Waiting for an answer",
+  "아직 가입하지 않은 곳": "Not on uniconnect yet",
+  "가입하면 제안이 전달돼요": "Delivered once they join",
   "답을 기다리는 보낸 제안이 없어요.": "None of your proposals is waiting for an answer.",
   아니요: "No",
   거절하기: "Decline",

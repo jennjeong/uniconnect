@@ -693,6 +693,8 @@ export type SentProposal = {
   message?: string
   status: RequestStatus
   createdAt: string
+  // 상대가 아직 가입하지 않아 받은편지함이 없다. 답이 오지 않는다.
+  noInbox?: boolean
   respondedAt?: string
 }
 
