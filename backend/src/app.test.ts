@@ -136,6 +136,18 @@ test("an accepted proposal waits for the agreement, and is confirmed only once b
   assert.ok(confirmed.contractAt)
 })
 
+test("the public check-in page carries no staff or group PIN", async () => {
+  const database = getDatabase()
+  const measurement = database.measurements.find((item) => item.code === "20261012")!
+  const { data, status } = await call("GET", "/check-in/20261012")
+  assert.equal(status, 200)
+  const body = JSON.stringify(data)
+  const pins = [measurement.staffPin, measurement.groupPin, ...measurement.sponsors.map((sponsor) => sponsor.staffPin)].filter(Boolean)
+  assert.ok(pins.length > 0)
+  for (const pin of pins) assert.ok(!body.includes(`"${pin}"`), "a PIN leaked into the public check-in page")
+  assert.ok(!/pin/i.test(Object.keys(data).join(",")))
+})
+
 test("the site hands out the Kakao map key only once it is set", async () => {
   assert.equal((await call("GET", "/site")).data.maps, undefined)
   config.kakaoMapKey = "test-map-key"

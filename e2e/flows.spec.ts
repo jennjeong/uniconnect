@@ -2453,3 +2453,24 @@ test("a refund turned away for another reason doesn't ask for a bank refund", as
   await expect(page.getByRole("button", { name: "계좌로 직접 돌려주기" })).toHaveCount(0)
 })
 
+
+test("the venue QR opens on the participants' view, and PINs only behind 운영자용 PIN", async ({ page }) => {
+  await page.goto("/")
+  await logIn(page, "학생단체", "muse@syu.ac.kr")
+  await page.goto("/measurement")
+  await page.getByRole("button", { name: "현장 QR 열기" }).click()
+  const dialog = page.getByRole("dialog", { name: "현장 참여 QR" })
+  await expect(dialog.getByRole("tab", { name: "참여자용" })).toHaveAttribute("aria-selected", "true")
+  await expect(dialog.locator(".qr-content")).not.toContainText("PIN")
+  await expect(dialog.locator(".qr-pin")).toHaveCount(0)
+  // 행사장에 띄우면 QR과 안내뿐이다.
+  await dialog.getByRole("button", { name: "행사장에 띄우기" }).click()
+  const shown = page.getByRole("dialog", { name: "행사장에 띄운 참여 QR" })
+  await expect(shown).toBeVisible()
+  await expect(shown).not.toContainText("PIN")
+  await page.keyboard.press("Escape")
+  await expect(shown).toBeHidden()
+  // 운영자용은 띄우지 말라는 안내와 함께 따로 열린다.
+  await page.getByRole("dialog", { name: "현장 참여 QR" }).getByRole("tab", { name: "운영자용 PIN" }).click()
+  await expect(page.getByText("이 화면은 행사장에 띄우지 마세요.", { exact: false })).toBeVisible()
+})

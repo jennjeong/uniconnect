@@ -529,6 +529,18 @@ const en: Record<string, string> = {
   "예상 참여 {years}": "Expected {years}",
   "주요 전공 {majors}": "Main fields {majors}",
   "다음 행사에 이렇게 반영해요": "What to change next time",
+  "휴대폰 카메라로 QR을 찍고 참여해 주세요": "Scan the QR with your phone camera to join",
+  "행사장에 띄운 참여 QR": "Participant QR on display",
+  "띄우기 끝내기": "Stop showing",
+  "참여자용": "For participants",
+  "운영자용 PIN": "Operator PINs",
+  "행사장에 띄우기": "Show at the venue",
+  "이 화면은 행사장에 띄우지 마세요. 주소와 PIN은 매장 직원과 우리 단체 담당자에게만 따로 알려 주세요.":
+    "Don't show this screen at the venue. Share these addresses and PINs only with the store staff and your own team.",
+  "직원이 자기 기기에서 참여자의 쿠폰 번호를 넣으면 방문이 기록돼요.":
+    "Staff record a visit by entering the participant's coupon number on their own device.",
+  "임시 전자 계약서에서 우리 단체가 확인하기로 한 협찬 확인 방식(부스 스탬프, SNS 인증 등)을 행사 날 이 주소에서 기록해요.":
+    "On the event day, record here the confirmation methods your group took on in the e-agreement (booth stamps, SNS posts and so on).",
 }
 
 export default en
