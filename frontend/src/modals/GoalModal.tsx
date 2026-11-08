@@ -1,7 +1,7 @@
 import { Icon } from "../components/Icon"
 import { Modal } from "../components/Modal"
 import { t } from "../i18n"
-import { achievement, formatKpi, kpiGap, kpiValue, type Kpi } from "../lib/kpis"
+import { achievement, formatKpi, goalStatus, kpiGap, kpiValue, type Kpi } from "../lib/kpis"
 
 // 행사 전에 정한 목표를 리포트 숫자 하나의 현재 값과 견준다. 목표를 달성하면
 // 모두 초록으로 바뀐다.
@@ -37,8 +37,8 @@ export function GoalModal({ kpi, onClose }: { kpi: Kpi; onClose: () => void }) {
           </div>
           <p className="goal-result">
             {achieved && <Icon name="check" size={15} />}
-            <strong>{t("{rate}% 달성", { rate })}</strong>
-            <span>{t("목표 대비 {gap}", { gap: kpiGap(kpi) })}</span>
+            <strong>{goalStatus(kpi)}</strong>
+            {kpi.unit !== "%" && !kpi.missing && <span>{t("목표 대비 {gap}", { gap: kpiGap(kpi) })}</span>}
           </p>
         </div>
 

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest"
 
 import type { Metrics, Report } from "../types"
-import { hasRoas, kpiValue, reportKpis, roasSummary, roasText } from "./kpis"
+import { goalStatus, hasRoas, kpiValue, reportKpis, roasSummary, roasText } from "./kpis"
 
 const metrics: Metrics = {
   scans: 128,
@@ -43,7 +43,7 @@ describe("report figures", () => {
   })
 
   test("never divide by a goal of 0", () => {
-    expect(roasSummary(report(680000, 243, 170))).toBe("43% 높았어요.")
+    expect(roasSummary(report(680000, 243, 170))).toBe("73%p 높았어요.")
     expect(roasSummary(report(680000, 120, 0))).not.toMatch(/Infinity|NaN/)
   })
 
@@ -70,5 +70,14 @@ describe("visit rates", () => {
     const kpis = reportKpis({ ...report(680000, 0, 170), expectedAudience: 0 }, empty)
     expect(kpiValue(kpis.find((kpi) => kpi.key === "visitRate")!)).toBe("—")
     expect(kpiValue(kpis.find((kpi) => kpi.key === "qrRate")!)).toBe("—")
+  })
+
+  test("rates compare in %p, head counts as a share of the goal", () => {
+    const base = { key: "reach" as const, label: "", note: "", formula: "" }
+    expect(goalStatus({ ...base, unit: "%", current: 35, target: 70 })).toBe("목표 대비 −35%p")
+    expect(goalStatus({ ...base, unit: "%", current: 80, target: 70 })).toBe("목표 대비 +10%p")
+    expect(goalStatus({ ...base, unit: "명", current: 450, target: 900 })).toBe("달성률 50%")
+    expect(goalStatus({ ...base, unit: "명", current: 1080, target: 900 })).toBe("달성률 120% · 20% 초과")
+    expect(goalStatus({ ...base, unit: "%", current: 0, target: 70, missing: true })).toBe("집계 없음")
   })
 })

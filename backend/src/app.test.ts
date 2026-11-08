@@ -855,12 +855,14 @@ test("each event counts its own QR scans, coupons and visits", async () => {
   assert.equal((await staff({ pin: "101234", coupon: coupon.coupon.toLowerCase() })).status, 200)
   assert.equal((await staff({ pin: "101234", coupon: coupon.coupon })).status, 409)
   assert.deepEqual((await passState()).data, { coupons: { "sp-busking": { number: coupon.coupon, visited: true } } })
-  // PIN은 방문자가 아니라 행사를 가진 단체를 위한 것이다.
+  // 매장 PIN은 방문자에게도, 행사를 가진 단체에게도 가지 않는다. 협찬한 브랜드가 계약서에서만 본다.
   assert.equal((await call("GET", busking)).data.report.staffPin, undefined)
   const owner = await login("학생단체")
   const owned = (await call("GET", busking, undefined, owner)).data.report
-  assert.equal(owned.staffPin, "101234")
-  assert.equal(owned.sponsors[0].staffPin, "101234")
+  assert.equal(owned.staffPin, undefined)
+  assert.equal(owned.sponsors[0].staffPin, undefined)
+  assert.equal(/101234/.test(JSON.stringify(owned)), false)
+  assert.match(owned.groupPin, /^\d{6}$/)
 
   const scans = (await call("GET", `${busking}/log?kind=scans`)).data.entries
   assert.equal(scans[0].id, recorded.entry.id)
@@ -1064,6 +1066,13 @@ test("brand analytics follow the live measurement", async () => {
   assert.equal(sponsorships[0].coupons, metrics.coupons)
   assert.equal(sponsorships[0].visits, metrics.visits)
   assert.equal(sponsorships[0].sales, metrics.visits * report.averageSpend)
+  // 방문이 들어오는 마지막 날(행사 끝 다음 날 + 쿠폰 7일). 그날까지 화면은 집계 중으로 보인다.
+  const { addDays } = await import("./lib/dates.js")
+  const event = Object.values(getDatabase().events).flat().find((item) => item.id === "event-busking-day")!
+  assert.equal(
+    (sponsorships[0] as unknown as { countingUntil: string }).countingUntil,
+    addDays(addDays(event.endDate ?? event.date, 1), 7),
+  )
 
   const student = await login("학생단체")
   assert.deepEqual((await call("GET", "/analytics", undefined, student)).data.sponsorships, [])
@@ -2155,7 +2164,11 @@ test("each sponsor of an event gets its own coupon, staff PIN and share of the r
     )
     const owner = await login("학생단체")
     const report = (await call("GET", "/measurements/event-busking-day", undefined, owner)).data.report
-    const [mine, theirs] = report.sponsors
+    // 단체는 두 협찬사의 매장 PIN을 받지 않는다. 각 매장의 PIN은 그 브랜드의 계약서에만 있다.
+    assert.ok(report.sponsors.every((sponsor: { staffPin?: string }) => sponsor.staffPin === undefined))
+    const pinOf = (id: string) =>
+      getDatabase().measurements.find((item) => item.eventId === "event-busking-day")!.sponsors.find((item) => item.id === id)!.staffPin
+    const [mine, theirs] = report.sponsors.map((sponsor: { id: string }) => ({ ...sponsor, staffPin: pinOf(sponsor.id) }))
     assert.match(theirs.staffPin, /^\d{6}$/)
     assert.notEqual(theirs.staffPin, mine.staffPin)
     assert.deepEqual([mine.value, theirs.value], [340000, 340000])
@@ -2203,7 +2216,9 @@ test("each sponsor of an event gets its own coupon, staff PIN and share of the r
     const uneven = await call("PUT", route, shares(500000, 100000), owner)
     assert.equal(uneven.status, 400)
     assert.match(uneven.data.error, /680,000원/)
-    assert.equal((await call("PUT", route, shares(500000, 180000, mine.staffPin), owner)).status, 400)
+    // 단체가 양식에 PIN을 적어 보내도 협찬사의 PIN은 바뀌지 않는다(데모 행사도).
+    assert.equal((await call("PUT", route, shares(500000, 180000, "777777"), owner)).status, 200)
+    assert.equal(pinOf("sp-another"), theirs.staffPin)
     const saved = await call("PUT", route, shares(500000, 180000), owner)
     assert.equal(saved.status, 200)
     assert.deepEqual(saved.data.report.sponsors.map((item: { value: number }) => item.value), [500000, 180000])
@@ -3492,7 +3507,9 @@ test("a student group sets its event's goals, and the report follows", async () 
   const badType = { ...goals, valueBreakdown: [{ type: "주식", value: 1000 }] }
   assert.equal((await call("PUT", route, badType, student)).status, 400)
   assert.equal((await call("PUT", route, { ...goals, coupon: { store: "", title: "x" } }, student)).status, 400)
-  assert.equal((await call("PUT", route, { ...goals, staffPin: "12a456" }, student)).status, 400)
+  // 협찬사가 있는 행사는 데모라도 단체가 매장 PIN을 정하지 못한다. 보낸 PIN은 읽지 않는다.
+  const pinBefore = getDatabase().measurements.find((item) => item.eventId === "event-muse-concert")!.staffPin
+  assert.equal((await call("PUT", route, { ...goals, staffPin: "12a456" }, student)).status, 200)
   // ROAS 목표 0은 나누게 된다.
   const noGoal = await call("PUT", route, { ...goals, targets: { ...goals.targets, roas: 0 } }, student)
   assert.equal(noGoal.status, 400)
@@ -3510,7 +3527,8 @@ test("a student group sets its event's goals, and the report follows", async () 
   assert.equal(report.reach, metrics.scans + 500)
   assert.equal(report.roas, Math.round(((metrics.visits * 12000) / 400000) * 100))
   assert.equal(report.targets.roas, 160)
-  assert.equal(report.staffPin, "654321")
+  assert.equal(report.staffPin, undefined)
+  assert.equal(getDatabase().measurements.find((item) => item.eventId === "event-muse-concert")!.staffPin, pinBefore)
   const code = report.code as string
   const offered = (await call("GET", `/check-in/${code}`)).data.coupons
   assert.deepEqual(offered.map((coupon: { title: string }) => coupon.title), ["음료 1잔 무료"])

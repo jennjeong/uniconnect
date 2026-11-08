@@ -11,7 +11,8 @@ import type { Report, VenuePage } from "../types"
 
 // 행사의 체크인 QR. 처음에는 참여자용(QR, 행사명, 안내)만 보여서 그대로 행사장에
 // 띄워도 된다. 매장 직원용·단체용 주소와 PIN은 '운영자용'을 따로 눌러야 보이고,
-// '행사장에 띄우기'는 QR과 안내만 화면 가득 보여 준다.
+// '행사장에 띄우기'는 QR과 안내만 화면 가득 보여 준다. 협찬사의 매장 PIN은 서버가
+// 단체에게 보내지 않으므로, 단체에게는 그 PIN이 어디 있는지만 알려 준다.
 export function QrModal({
   report,
   onClose,
@@ -145,6 +146,15 @@ export function QrModal({
               </small>
             </div>
           )}
+          {!report.staffPin && report.groupPin && report.sponsors?.length ? (
+            <div className="qr-pin">
+              {t("매장 직원용 방문 확인")}
+              <code className="qr-link">{staffCheckInLink(report)}</code>
+              <small>
+                {t("매장 직원 PIN은 협찬 브랜드만 계약서에서 확인해요. 방문 확인은 매장이 직접 해서, 우리 단체에는 보이지 않아요.")}
+              </small>
+            </div>
+          ) : null}
           {report.pinsFrom && (
             <p className="field-hint">
               {t("직원 PIN과 단체 확인 PIN은 행사 하루 전인 {date}부터 여기에 보여요.", { date: formatFullDate(report.pinsFrom) })}

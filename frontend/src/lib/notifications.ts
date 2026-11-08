@@ -14,7 +14,7 @@ import { t } from "../i18n"
 import { daysUntil, todayIso } from "./date"
 import { roasText } from "./kpis"
 import { measureState } from "./measurements"
-import { roasOf } from "./sponsorships"
+import { roasFigure } from "./sponsorships"
 
 export type NotificationItem = {
   key: string
@@ -230,7 +230,7 @@ export function brandNotifications({
       icon: "chart",
       good: true,
       title: t("협찬 성과가 집계됐어요"),
-      caption: `${latest.eventName} · ROAS ${roasOf(latest)}%`,
+      caption: `${latest.eventName} · ROAS ${roasFigure(latest) === null ? "—" : `${roasFigure(latest)}%`}`,
       target: "성과 분석",
       parts: [`analytics:${latest.id}`],
     })

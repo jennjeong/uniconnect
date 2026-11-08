@@ -3,7 +3,7 @@ import { t } from "../i18n"
 import type { Metrics, MetricKind, Report, Sponsorship } from "../types"
 import { achievement, reportKpis } from "./kpis"
 import { venueKindsOf } from "./measurements"
-import { costPerVisit, roasOf } from "./sponsorships"
+import { costPerVisit, roasFigure } from "./sponsorships"
 
 type Cell = string | number
 
@@ -83,7 +83,8 @@ export function analyticsCsv(sponsorships: Sponsorship[]): string {
       item.coupons,
       item.visits,
       item.sales,
-      roasOf(item),
+      // 비용 미확정이면 비워 둔다(0%로 읽히지 않게).
+      roasFigure(item) ?? "",
       item.targetRoas,
       costPerVisit(item),
       ...counted.map((kind) => Number(item[kind as keyof Sponsorship] ?? 0)),

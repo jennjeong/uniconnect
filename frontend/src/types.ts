@@ -733,6 +733,8 @@ export type Sponsorship = {
   experiences?: number
   // ROAS 목표(퍼센트).
   targetRoas: number
+  // 방문이 마지막으로 들어올 수 있는 날. 그날까지는 집계 중이다.
+  countingUntil?: string
 }
 
 export type ChatMessage = {

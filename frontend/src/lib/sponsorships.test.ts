@@ -8,6 +8,7 @@ import {
   manWon,
   roasMet,
   roasOf,
+  roasState,
   sponsorshipTotals,
 } from "./sponsorships"
 
@@ -60,6 +61,8 @@ describe("sponsorship results", () => {
       signups: 0,
       experiences: 0,
       roas: 130,
+      roasMissing: false,
+      roasCounting: false,
     })
   })
 
@@ -88,5 +91,27 @@ describe("sponsorship results", () => {
     expect(analysis.furthestBelow).toBeUndefined()
     expect(analysis.metCount).toBe(0)
     expect(analysis.roasScale).toBeCloseTo(110)
+  })
+
+  test("a 0-won or still-counting sponsorship is not judged against its goal", () => {
+    expect(roasState(sponsorship({ id: "free" }))).toBe("cost")
+    expect(roasState(list[0], "2026-10-20")).toBe("done")
+    expect(roasState({ ...list[0], countingUntil: "2026-10-20" }, "2026-10-20")).toBe("counting")
+    expect(roasState({ ...list[0], countingUntil: "2026-10-20" }, "2026-10-21")).toBe("done")
+
+    const free = sponsorship({ id: "free", sales: 120000, visits: 10, coupons: 10, targetRoas: 150 })
+    const counting = sponsorship({ id: "live", spend: 100000, sales: 0, targetRoas: 150, countingUntil: "2999-01-01" })
+    const analysis = analyzeSponsorships([free, counting, list[1]])
+    const row = (id: string) => analysis.rows.find((item) => item.id === id)!
+    expect([row("free").state, row("free").met, row("free").perVisit]).toEqual(["cost", false, 0])
+    expect([row("live").state, row("live").met]).toEqual(["counting", false])
+    // 집계가 끝난 b만 목표와 견준다.
+    expect(analysis.doneCount).toBe(1)
+    expect(analysis.furthestBelow?.id).toBe("b")
+    // 0원 협찬의 매출은 전체 ROAS에 들어가지 않는다: 240,000 ÷ 400,000.
+    const totals = sponsorshipTotals([free, counting, list[1]])
+    expect(totals.roas).toBe(60)
+    expect(totals.roasCounting).toBe(true)
+    expect(sponsorshipTotals([free]).roasMissing).toBe(true)
   })
 })

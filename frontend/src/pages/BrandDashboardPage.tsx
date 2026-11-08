@@ -17,7 +17,8 @@ import { dDayLabel, nextEvent, semesterLabel, shortDay, todayIso } from "../lib/
 import { shownTags } from "../lib/distance"
 import { formatWon } from "../lib/kpis"
 import { AcceptModal } from "../modals/AcceptModal"
-import { fullWon, roasMet, roasOf, sponsorshipTotals } from "../lib/sponsorships"
+import { roasText, roasVerdict } from "../lib/roasLabels"
+import { analyzeSponsorships, fullWon } from "../lib/sponsorships"
 import type { Match, NavLabel, RequestStatus, SponsorRequest, Sponsorship } from "../types"
 
 const pad = (value: number) => String(value).padStart(2, "0")
@@ -94,15 +95,9 @@ export function BrandDashboardPage({
   const memberHero = member && !paused
   const confirmed = requests.filter((request) => request.status === "수락")
   const nextConfirmed = nextEvent(confirmed.map((request) => ({ date: request.eventDate })))
-  const totals = sponsorshipTotals(sponsorships)
-  const results = sponsorships.map((sponsorship) => ({
-    ...sponsorship,
-    roas: roasOf(sponsorship),
-    met: roasMet(sponsorship),
-  }))
-  // 가장 좋은 결과와 모든 목표 표시보다 여유를 둔 막대 눈금.
-  const roasScale =
-    Math.max(100, ...results.map((result) => Math.max(result.roas, result.targetRoas))) * 1.1
+  // 0원·집계 중인 협찬은 목표와 견주지 않는다(lib/sponsorships.ts roasState).
+  const { totals, rows: results, roasScale } = analyzeSponsorships(sponsorships)
+  const totalRoas = totals.roasMissing ? "—" : `${totals.roas}%`
   const catalog = groups.length > 0 ? groups : matches
   // 아직 가입한 학생단체가 없다(회원은 가입한 단체만 본다).
   const noGroups = loaded && catalog.length === 0
@@ -154,7 +149,7 @@ export function BrandDashboardPage({
         stats={[
           { value: t("{count}건", { count: pending.length }), label: t("검토할 제안") },
           { value: t("{count}건", { count: confirmed.length }), label: t("확정된 협찬") },
-          { value: `${totals.roas}%`, label: t("추정 ROAS(전체 집행액 기준)") },
+          { value: totalRoas, label: t("추정 ROAS(전체 집행액 기준)") },
         ]}
         insight={
           paused
@@ -280,7 +275,7 @@ export function BrandDashboardPage({
             need: t("다음 예산 결정"),
             title: t("다시 쓸 곳을 데이터로 정해요"),
             text: t("협찬마다 ROAS를 보고, 다음 예산을 어디에 쓸지 정해요."),
-            figure: `${totals.roas}%`,
+            figure: totalRoas,
             figureLabel: t("전체 집행액 기준 추정 ROAS · 누적 집행액 {spend}", { spend: fullWon(totals.spend) }),
             action: t("성과 분석 보기"),
             onClick: () => onNavigate("성과 분석"),
@@ -408,22 +403,28 @@ export function BrandDashboardPage({
             )}
             <div className="roas-list stagger">
               {results.map((result) => (
-                <div className={result.met ? "roas-row met" : "roas-row"} key={result.id}>
+                <div className={["roas-row", result.met && "met", result.state !== "done" && result.state].filter(Boolean).join(" ")} key={result.id}>
                   <div className="roas-row-head">
                     <strong>{result.eventName}</strong>
-                    <span>{result.roas}%</span>
+                    <span>{roasText(result)}</span>
                   </div>
                   <div className="roas-track">
                     <i style={{ width: `${(result.roas / roasScale) * 100}%` }} />
                     <b style={{ left: `${(result.targetRoas / roasScale) * 100}%` }} />
                   </div>
                   <small>
-                    {t("{group} · {spend} 집행 · 목표 {target}%", {
-                      group: result.groupName,
-                      spend: formatWon(result.spend),
-                      target: result.targetRoas,
-                    })}
-                    {result.met && ` ${t("달성")}`}
+                    {result.state === "done" ? (
+                      <>
+                        {t("{group} · {spend} 집행 · 목표 {target}%", {
+                          group: result.groupName,
+                          spend: formatWon(result.spend),
+                          target: result.targetRoas,
+                        })}
+                        {result.met && ` ${t("달성")}`}
+                      </>
+                    ) : (
+                      `${result.groupName} · ${roasVerdict(result)}`
+                    )}
                   </small>
                 </div>
               ))}
@@ -438,8 +439,13 @@ export function BrandDashboardPage({
           <div className="report-highlight" data-reveal style={delay(0.12)}>
             <div>
               <span>{t("추정 ROAS(전체 집행액 기준)")}</span>
-              <strong>{totals.roas}%</strong>
-              <small>{t("추정 매출 합계 ÷ 집행액 합계(현금 + 현물, 수수료 제외)예요.")}</small>
+              <strong>{totalRoas}</strong>
+              <small>
+                {totals.roasMissing
+                  ? t("협찬액이 정해진 협찬이 아직 없어요")
+                  : t("추정 매출 합계 ÷ 집행액 합계(현금 + 현물, 수수료 제외)예요.")}
+                {totals.roasCounting && ` ${t("집계 중인 협찬이 있어 바뀔 수 있어요.")}`}
+              </small>
             </div>
             <div className="report-highlight-actions">
               <button className="pill white" onClick={() => onNavigate("성과 분석")} type="button">

@@ -1202,6 +1202,36 @@ test("a brand offers one campaign to several groups at once", async ({ page, req
   }
 })
 
+test("a brand sees its campaign and the group's event dates side by side, and a mismatch goes into the message", async ({ page, request }) => {
+  const kst = (days: number) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date(Date.now() + days * 86_400_000))
+  const group = await signUpMember(request, "학생단체", "e2e-dates@syu.ac.kr", "날짜 밴드")
+  const listed = await request.put("/api/profile", { data: { intro: "캠퍼스에서 공연하는 밴드예요.", offer: "관객 100명" }, headers: group.headers })
+  expect(listed.status(), await listed.text()).toBe(200)
+  const { profile } = (await listed.json()) as { profile: { id: string } }
+  const registered = await request.post("/api/events", { data: { name: "가을 정기공연", date: kst(30), expectedAudience: 100, types: ["제품"] }, headers: group.headers })
+  expect(registered.status(), await registered.text()).toBeLessThan(300)
+  const brand = await signUpMember(request, "브랜드", "e2e-dates@date-cafe.kr", "날짜 카페")
+  await request.post("/api/events", { data: { name: "신메뉴 시음", date: kst(20), types: ["제품"] }, headers: brand.headers })
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
+  await page.goto(`/groups/${profile.id}`)
+  await page.locator(".profile-actions").getByRole("button", { name: "협찬 제안하기" }).click()
+  const form = page.getByRole("dialog")
+  const dates = form.locator(".propose-dates")
+  await expect(dates).toContainText("우리 캠페인")
+  await expect(dates).toContainText("가을 정기공연")
+  await expect(dates.getByRole("status")).toContainText("캠페인 기간과 행사 날짜가 달라요")
+  await expect(form.getByRole("checkbox", { name: /날짜는 계약서에서 맞추기로/ })).toBeChecked()
+  await form.getByLabel("전할 메시지").fill("함께해요.")
+  await form.getByRole("button", { name: "제안 보내기" }).click()
+  await expect(form).toBeHidden()
+  const sent = (await (await request.get("/api/offers", { headers: group.headers })).json()) as { offers: { message?: string }[] }
+  expect(sent.offers[0]?.message).toContain("일정 조율: 우리 캠페인")
+  for (const member of [group, brand]) {
+    const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: member.headers })
+    expect(left.status()).toBe(204)
+  }
+})
+
 test("a student group proposes and the brand accepts", async ({ browser }) => {
   const student = await (await browser.newContext()).newPage()
   await student.goto("/")
@@ -2473,6 +2503,11 @@ test("the venue QR opens on the participants' view, and PINs only behind 운영�
   // 운영자용은 띄우지 말라는 안내와 함께 따로 열린다.
   await page.getByRole("dialog", { name: "현장 참여 QR" }).getByRole("tab", { name: "운영자용 PIN" }).click()
   await expect(page.getByText("이 화면은 행사장에 띄우지 마세요.", { exact: false })).toBeVisible()
+  // 협찬사의 매장 PIN은 단체에게 오지 않는다. 단체 PIN과 매장 PIN이 있는 곳만 보인다.
+  const operators = page.getByRole("dialog", { name: "현장 참여 QR" }).locator(".qr-content.operators")
+  await expect(operators).toContainText("단체 확인 PIN")
+  await expect(operators).toContainText("협찬 브랜드만 계약서에서 확인해요")
+  await expect(operators).not.toContainText("101234")
 })
 
 for (const [role, email] of [["학생단체", "muse@syu.ac.kr"], ["브랜드", "hello@afternoon-coffee.kr"]] as const) {

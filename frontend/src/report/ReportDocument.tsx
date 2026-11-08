@@ -6,7 +6,7 @@ import { metricInfo, metricKinds } from "../data/metrics"
 import { t, tc } from "../i18n"
 import { formatDateTime, formatFullDate, todayIso } from "../lib/date"
 import { percent } from "../lib/format"
-import { achievement, formatKpi, formatWon, hasRoas, kpiGap, kpiValue, reportKpis, roasSummary, roasText } from "../lib/kpis"
+import { achievement, formatKpi, formatWon, goalStatus, hasRoas, kpiGap, kpiValue, reportKpis, roasSummary, roasText } from "../lib/kpis"
 import { venueKindsOf } from "../lib/measurements"
 import { shares, studentInsights } from "../lib/studentInsights"
 import type { MetricEntry, Metrics, MetricKind, Report } from "../types"
@@ -207,7 +207,7 @@ export function ReportDocument({
                   <span>{kpi.label}</span>
                   <strong>{kpiValue(kpi)}</strong>
                   <small className={rate >= 100 ? "good" : ""}>
-                    {t("목표 {target} · {rate}% 달성", { target: formatKpi(kpi.target, kpi.unit), rate })}
+                    {t("목표 {target}", { target: formatKpi(kpi.target, kpi.unit) })} · {goalStatus(kpi)}
                   </small>
                   <div className="pdf-kpi-track">
                     <i style={{ width: `${Math.min(rate, 100)}%` }} />
