@@ -6937,37 +6937,95 @@ input[type="search"]::-webkit-search-cancel-button {
   stroke: currentColor;
 }
 
-/* 다음 행사 옆에 두 줄 두 칸으로, 각 타일은 라벨과 숫자만큼만 높다. */
+/* 단계별 건수는 낮은 패널 하나에 네 칸으로, 칸 사이는 얇은 선만. 라벨 위, 숫자
+   아래로 네 칸의 기준선이 같다. 상태 색은 라벨 앞의 작은 점에만 쓴다(범례와 같은
+   색, 글로도 쓰여 있다). 패널이 좁으면(340px 미만) 같은 패널 안에서 2×2가 된다. */
+.events-summary {
+  container: summary / inline-size;
+}
+
 .events-counts {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-content: center;
   margin: 0;
+  padding: var(--space-4) 0;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
 }
 
 .events-counts div {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 16px 20px;
-  border-radius: 24px;
-  background: var(--silver-gradient);
-  box-shadow: var(--silver-ring);
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 var(--space-4);
+}
+
+.events-counts div + div {
+  border-left: 1px solid var(--line);
 }
 
 .events-counts dt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   color: var(--ink-soft);
   font-size: 0.8125rem;
   font-weight: var(--weight-label);
+  white-space: nowrap;
+}
+
+.events-counts :is(.count-matching, .count-scheduled, .count-done) dt::before {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 50%;
+  background: #8a94a6;
+  content: "";
+}
+
+.events-counts .count-scheduled dt::before {
+  background: var(--blue);
+}
+
+.events-counts .count-done dt::before {
+  background: var(--green);
 }
 
 .events-counts dd {
   margin: 0;
   color: var(--ink);
-  font-size: 2.125rem;
+  font-size: 1.5rem;
   font-weight: var(--weight-display);
+  font-variant-numeric: tabular-nums;
   line-height: 1;
+}
+
+@container summary (max-width: 520px) {
+  .events-counts div {
+    padding: 0 var(--space-3);
+  }
+
+  .events-counts dt {
+    font-size: 0.75rem;
+  }
+
+  .events-counts dd {
+    font-size: 1.25rem;
+  }
+}
+
+@container summary (max-width: 340px) {
+  .events-counts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: var(--space-4);
+  }
+
+  .events-counts div:nth-child(3) {
+    border-left: 0;
+  }
 }
 
 @media (max-width: 960px) {
@@ -6993,33 +7051,48 @@ input[type="search"]::-webkit-search-cancel-button {
   background: var(--surface);
 }
 
+/* 달 이름이 왼쪽에, 오른쪽에 '오늘'과 이전·다음. 이동 버튼은 배경 없이 작은
+   화살표만 보이고, 누를 자리는 44px이다. */
 .calendar-head {
-  display: flex;
+  display: grid;
+  grid-template-areas: "title today previous next";
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 14px;
+  gap: 2px;
+  margin-bottom: 10px;
 }
 
 .calendar-head strong {
-  min-width: 112px;
+  grid-area: title;
+  padding-left: 4px;
   font-size: 1.0625rem;
-  text-align: center;
+}
+
+.calendar-nav.previous {
+  grid-area: previous;
+}
+
+.calendar-nav:not(.previous) {
+  grid-area: next;
 }
 
 .calendar-nav,
 .calendar-today {
   display: grid;
-  height: 32px;
+  height: 36px;
   place-items: center;
   border: 0;
-  border-radius: 10px;
-  background: var(--fill);
+  border-radius: 999px;
+  background: transparent;
   color: var(--ink-soft);
-  box-shadow: var(--ring);
 }
 
 .calendar-nav {
-  width: 32px;
+  width: 36px;
+}
+
+.calendar-nav:hover {
+  background: var(--fill);
 }
 
 .calendar-nav .icon {
@@ -7034,8 +7107,11 @@ input[type="search"]::-webkit-search-cancel-button {
 }
 
 .calendar-today {
-  margin-left: auto;
-  padding: 0 14px;
+  grid-area: today;
+  margin-right: 4px;
+  padding: 0 12px;
+  color: var(--point-strong);
+  box-shadow: inset 0 0 0 1px var(--line);
   font-size: 0.8125rem;
   font-weight: var(--weight-label);
 }
@@ -7161,6 +7237,10 @@ input[type="search"]::-webkit-search-cancel-button {
 .day-event.status-집행예정 {
   background: var(--blue-soft);
   color: var(--blue);
+}
+
+.day-dots {
+  display: none;
 }
 
 .day-more {
@@ -20337,72 +20417,131 @@ span.odometer {
     padding: 0;
   }
 
-  /* 캘린더가 먼저, 날짜 세부 정보는 그 아래에. 캘린더가 너비를 더 차지하고,
-     날짜 칸이 높아져서 행사를 상태 색의 작은 라벨로 두 개까지 이름을 보이고,
-     그다음 "+n". */
+  /* 휴대폰의 달력은 날짜를 고르는 7열 격자다. 칸은 테두리 없이 숫자 원과 그 아래
+     상태 점만 두고(이름은 칸에 넣지 않는다), 행사 이름·상태·상세 보기는 바로 아래
+     '선택한 날의 일정' 목록이 보여 준다. 오늘은 숫자의 테두리, 고른 날은 채운
+     파란 원, 오늘이면서 고른 날은 채운 원에 바깥 테두리. 칸의 높이는 숫자 원과
+     점만큼(약 48px)이고, 5주든 6주든 그대로 다 보인다. */
   .calendar-card {
-    padding: 18px 10px;
+    padding: 14px 10px;
   }
 
   .calendar-head,
   .calendar-legend,
   .month-agenda {
-    margin-inline: 6px;
+    margin-inline: 4px;
   }
 
   .calendar-grid {
-    gap: 3px;
+    gap: 2px 0;
   }
 
-  .calendar-day {
-    min-height: 74px;
-    align-items: stretch;
+  .calendar-day,
+  .calendar-day.outside,
+  .calendar-day.has-events,
+  .calendar-day.selected {
+    min-height: 48px;
+    align-items: center;
     gap: 3px;
-    padding: 4px 2px;
-    border-radius: 10px;
+    padding: 4px 0;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .calendar-day:hover {
+    background: var(--fill);
   }
 
   .day-number {
-    align-self: center;
-    min-width: 20px;
-    height: 20px;
-    font-size: 0.75rem;
+    min-width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 0.875rem;
+  }
+
+  .calendar-day.today .day-number {
+    background: transparent;
+    color: var(--point-strong);
+    box-shadow: inset 0 0 0 1.5px var(--point);
+  }
+
+  .calendar-day.selected .day-number,
+  .calendar-day.selected.sunday .day-number,
+  .calendar-day.selected.saturday .day-number {
+    background: var(--point);
+    color: var(--on-point);
+  }
+
+  .calendar-day.selected.today .day-number {
+    box-shadow:
+      0 0 0 2px var(--surface),
+      0 0 0 3.5px var(--point);
+  }
+
+  /* '오늘'은 테두리 없는 글자 버튼(누를 자리는 44px 그대로). */
+  .calendar-today {
+    box-shadow: none;
   }
 
   .day-events {
-    gap: 2px;
+    display: none;
   }
 
-  /* 이름은 세 줄까지 줄바꿈한다 (그날 행사가 둘이면 두 줄). 비슷하게 시작하는
-     행사도 구별되어 읽힌다. */
-  .day-event {
-    display: -webkit-box;
-    padding: 2px;
-    border-radius: 4px;
-    font-size: 0.5938rem;
-    letter-spacing: 0;
-    line-height: 1.25;
-    text-align: center;
-    white-space: normal;
+  .day-dots {
+    display: flex;
+    height: 6px;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .day-dots i {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #8a94a6;
+  }
+
+  .day-dots i.status-집행예정 {
+    background: var(--blue);
+  }
+
+  .day-dots i.status-측정완료 {
+    background: var(--green);
+  }
+
+  .day-dots i.status-협찬확정 {
+    background: var(--violet);
+  }
+
+  .day-dots small {
+    color: var(--muted);
+    font-size: 0.625rem;
+    font-weight: var(--weight-label);
+    line-height: 1;
+  }
+
+  /* 달력과 그날의 일정은 한 흐름으로 읽힌다: 그날의 목록은 상자 없이 달력 아래에. */
+  .calendar-layout > .day-panel {
+    padding: 20px 4px 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  /* 다음 행사 카드는 이름, 날짜와 D-day, 상태와 상세 보기 순으로 촘촘하게. */
+  .events-next {
+    gap: 6px;
+    padding: 18px 20px;
+  }
+
+  .events-next strong {
+    font-size: 1.1875rem;
     overflow-wrap: anywhere;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3;
   }
 
-  .day-events:has(> .day-event + .day-event) .day-event {
-    -webkit-line-clamp: 2;
-  }
-
-  .day-event.status-매칭중 {
-    background: #fff;
-    box-shadow: inset 0 0 0 1px var(--line-strong);
-  }
-
-  .day-more {
-    padding: 0;
-    font-size: 0.5938rem;
-    line-height: 1.2;
-    text-align: center;
+  .events-next-actions {
+    margin-top: 4px;
   }
 
   .measure-grid {
@@ -23284,14 +23423,9 @@ textarea {
   }
 
   /* 휴대폰 상자는 안쪽 여백을 위아래와 좌우가 같게 둔다. */
-  .events-counts div,
   .power-stat,
   .profile-facts > div {
     padding: var(--space-4);
-  }
-
-  .calendar-card {
-    padding: 14px;
   }
 
   .power-roas {

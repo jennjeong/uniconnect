@@ -2588,3 +2588,34 @@ test("a match card keeps two equal actions at the bottom and save and compare at
   expect(heart.y + heart.height).toBeLessThanOrEqual(name.y + 1)
   expect(heart.width).toBeGreaterThanOrEqual(44)
 })
+
+test("on phones the calendar is a compact date picker and the chosen day lists its events", async ({ page, request }) => {
+  const group = await signUpMember(request, "학생단체", "e2e-picker@syu.ac.kr", "달력 밴드")
+  const day = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date())
+  for (const name of ["아주 긴 이름을 가진 첫 번째 정기 공연", "두 번째 공연", "세 번째 공연", "네 번째 공연"]) {
+    await request.post("/api/events", { data: { name, date: day, people: "100명", types: ["제품"] }, headers: group.headers })
+  }
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
+  await page.setViewportSize({ width: 320, height: 800 })
+  await page.goto("/events")
+  const busy = page.locator(".calendar-day.has-events").first()
+  // 칸에는 이름이 없고 점 둘과 남은 개수만 있다.
+  await expect(busy.locator(".day-event").first()).toBeHidden()
+  await expect(busy.locator(".day-dots i")).toHaveCount(2)
+  await expect(busy.locator(".day-dots small")).toHaveText("+2")
+  for (const cell of await page.locator(".calendar-day").all()) {
+    const box = (await cell.boundingBox())!
+    expect(box.height).toBeLessThanOrEqual(56)
+    expect(box.height).toBeGreaterThanOrEqual(44)
+  }
+  // 다른 날을 고르면 그날의 목록으로 바뀌고, 그날을 다시 고르면 네 행사가 보인다.
+  const other = page.locator(".calendar-day:not(.has-events):not(.outside)").first()
+  await other.click()
+  await expect(other).toHaveAttribute("aria-pressed", "true")
+  await expect(page.locator(".day-panel .day-empty")).toBeVisible()
+  await busy.click()
+  await expect(page.locator(".day-panel .day-event-card")).toHaveCount(4)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBe(0)
+  const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: group.headers })
+  expect(left.status()).toBe(204)
+})
