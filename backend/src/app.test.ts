@@ -8840,9 +8840,9 @@ test("groups without an upcoming event aren't recommended, though they stay in t
 })
 
 test("a proposal's terms are kept apart from its message and reach the inbox and the agreement", async () => {
-  const { token: group } = await listedMember("terms-club@syu.ac.kr", "terms-pass-123")
-  const groupId = getDatabase().accounts.find((account) => account.email === "terms-club@syu.ac.kr")!.id
-  const { token: brand, listingId } = await listedMember("terms@terms-cafe.kr", "terms-pass-123", "브랜드")
+  const { token: group } = await listedMember("proposal-terms-club@syu.ac.kr", "terms-pass-123")
+  const groupId = getDatabase().accounts.find((account) => account.email === "proposal-terms-club@syu.ac.kr")!.id
+  const { token: brand, listingId } = await listedMember("proposal-terms@terms-cafe.kr", "terms-pass-123", "브랜드")
   const { addDays: plus, todayInKorea: today } = await import("./lib/dates.js")
   const day = plus(today(), 30)
   const event = (await call("POST", "/events", { name: "조건 공연", date: day, people: "120명", types: ["제품"] }, group)).data.event
