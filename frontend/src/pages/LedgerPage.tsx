@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 
 import { api, errorMessage } from "../api"
 import { PageIntro } from "../components/PageIntro"
-import { t } from "../i18n"
+import { t, tc } from "../i18n"
 import { formatFullDate } from "../lib/date"
 import { formatWon } from "../lib/kpis"
 import type { PublicLedger } from "../types"
@@ -21,7 +21,7 @@ export function LedgerPage({ token }: { token: string }) {
   if (!data) {
     return (
       <section className="page-view">
-        <PageIntro eyebrow="Sponsorship Ledger" title={t("협찬 결산")} description={failed || t("결산을 불러오고 있어요…")} />
+        <PageIntro eyebrow={tc("eyebrow", "공개 결산")} title={t("협찬 결산")} description={failed || t("결산을 불러오고 있어요…")} />
       </section>
     )
   }
@@ -29,7 +29,7 @@ export function LedgerPage({ token }: { token: string }) {
   return (
     <section className="page-view ledger-page">
       <PageIntro
-        eyebrow="Sponsorship Ledger"
+        eyebrow={tc("eyebrow", "공개 결산")}
         title={t("{name} 협찬 결산", { name: data.group.name })}
         description={t("{school} · 학생들에게 공개하는 협찬 내역이에요.", { school: data.group.school })}
       />

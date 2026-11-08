@@ -13,7 +13,7 @@ import { ValuePoints } from "../components/ValuePoints"
 import { WhyUniconnect } from "../components/WhyUniconnect"
 import { WorkBoard, type WorkRow } from "../components/WorkBoard"
 import { WorkCard } from "../components/WorkCard"
-import { t } from "../i18n"
+import { t, tc } from "../i18n"
 import { dDayLabel, nextEvent, semesterLabel, shortDay, todayIso } from "../lib/date"
 import { shownTags } from "../lib/distance"
 import { formatWon } from "../lib/kpis"
@@ -292,7 +292,7 @@ export function BrandDashboardPage({
       {!member && (
         <>
         <ValuePoints
-          eyebrow="What We Do"
+          eyebrow={tc("eyebrow", "하는 일")}
           heading={t("브랜드가 여기서 하는 일")}
           points={[
             {

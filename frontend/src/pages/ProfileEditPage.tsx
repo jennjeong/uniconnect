@@ -5,7 +5,7 @@ import { BrandMark } from "../components/BrandMark"
 import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { brandOffers, factFields, profileLabels, snsPlatforms } from "../data/profile"
-import { t } from "../i18n"
+import { t, tc } from "../i18n"
 import { logoFromFile } from "../lib/image"
 import { embedPostcode } from "../lib/postcode"
 import { Modal } from "../components/Modal"
@@ -116,7 +116,7 @@ export function ProfileEditPage({
     <section className="page-view create-view profile-edit">
       <PageIntro
         onBack={onCancel}
-        eyebrow="Edit Profile"
+        eyebrow={tc("eyebrow", "소개 편집")}
         title={t("소개 편집")}
         description={
           role === "학생단체"

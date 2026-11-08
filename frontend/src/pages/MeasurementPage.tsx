@@ -8,7 +8,7 @@ import { Pill } from "../components/Pill"
 import { RevealTitle } from "../components/RevealText"
 import { isCheckInKind, metricInfo, metricKinds } from "../data/metrics"
 import { useLiveMeasurement } from "../hooks/useLiveMeasurement"
-import { t } from "../i18n"
+import { t, tc } from "../i18n"
 import { formatDateTime, formatFullDate } from "../lib/date"
 import { measureState, shownKindsOf } from "../lib/measurements"
 import { percent } from "../lib/format"
@@ -64,7 +64,7 @@ export function MeasurementPage({
   return (
     <section className="page-view measurement-view">
       <PageIntro
-        eyebrow="Live Attribution"
+        eyebrow={tc("eyebrow", "실시간 성과")}
         title={t("현장 반응을 실시간으로 측정해요")}
         description={t("QR과 쿠폰으로 행사 성과를 실시간으로 세요.")}
         actions={
@@ -101,7 +101,7 @@ export function MeasurementPage({
       <section className="power-panel live-panel" data-reveal>
         <LayersGradient shader={INTERFERENCE} />
         <div className="power-content">
-          <span className="eyebrow light">{upcoming ? "Before the Event" : ended ? "Event Ended" : "Live Now"}</span>
+          <span className="eyebrow light">{upcoming ? tc("eyebrow", "진행 전") : ended ? tc("eyebrow", "진행 완료") : tc("eyebrow", "진행 중")}</span>
           <RevealTitle as="h2" className="power-title">
             {upcoming
               ? t("행사가 시작되면 현장 반응이 여기에 떠요")

@@ -13,7 +13,7 @@ import { TabBar } from "../components/TabBar"
 import { WorkCard } from "../components/WorkCard"
 import { brandIndustries } from "../data/industries"
 import { useEntryState } from "../hooks/useEntryState"
-import { t } from "../i18n"
+import { t, tc } from "../i18n"
 import { shownTags } from "../lib/distance"
 import { matchesQuery } from "../lib/search"
 import type { Industry, Match, NearbyPlace, RequestStatus } from "../types"
@@ -166,7 +166,7 @@ export function MatchesPage({
   return (
     <section className="page-view">
       <PageIntro
-        eyebrow="Smart Match"
+        eyebrow={tc("eyebrow", "추천 매칭")}
         title={waiting ? t("브랜드가 가입하면 여기에 추천해 드려요") : t(intro.title)}
         description={
           waiting

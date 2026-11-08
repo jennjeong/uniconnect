@@ -6,7 +6,7 @@ import { DocumentField, type PickedDocument } from "../components/DocumentField"
 import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { Pill } from "../components/Pill"
-import { t } from "../i18n"
+import { t, tc } from "../i18n"
 import { formatFullDate } from "../lib/date"
 import type { Account, InvitePageData, NavLabel } from "../types"
 
@@ -82,7 +82,7 @@ export function InvitePage({
   if (failed || !data) {
     return (
       <section className="page-view invite-page">
-        <PageIntro eyebrow="Invitation" title={t("uniconnect 초대장")} description={failed || t("초대장을 불러오고 있어요…")} />
+        <PageIntro eyebrow={tc("eyebrow", "초대")} title={t("uniconnect 초대장")} description={failed || t("초대장을 불러오고 있어요…")} />
         {failed && (
           <div className="invite-actions">
             <Pill onClick={onHome} variant="outline">
@@ -101,7 +101,7 @@ export function InvitePage({
   return (
     <section className="page-view invite-page">
       <PageIntro
-        eyebrow="Invitation"
+        eyebrow={tc("eyebrow", "초대")}
         title={t("{name}에서 초대했어요", { name })}
         description={t("학교 앞 가게와 협찬하고 싶어 해요. 가게로 가입하면 바로 제안을 받아요.")}
       />

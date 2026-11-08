@@ -6,7 +6,7 @@ import { Icon } from "../components/Icon"
 import { Presence } from "../components/Presence"
 import { navItems } from "../data/navigation"
 import { roles } from "../data/roles"
-import { t } from "../i18n"
+import { t, tc } from "../i18n"
 import { daysUntil, formatDay, nextEvent } from "../lib/date"
 import { initialOf } from "../lib/format"
 import type { NotificationItem } from "../lib/notifications"
@@ -319,7 +319,7 @@ export function Header({
           type="button"
         >
           <Icon name="menu" size={15} />
-          <span>Menu</span>
+          <span>{tc("button", "메뉴")}</span>
         </button>
 
       </div>

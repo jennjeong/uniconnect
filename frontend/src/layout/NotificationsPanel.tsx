@@ -3,7 +3,7 @@ import { useContext, useRef, type RefObject } from "react"
 import { Icon } from "../components/Icon"
 import { ClosingContext } from "../components/Presence"
 import { useDismiss } from "../hooks/useDismiss"
-import { t } from "../i18n"
+import { t, tc } from "../i18n"
 import type { NotificationItem } from "../lib/notifications"
 
 // 상단 바의 종 아래로 내려오고, 닫으면 다시 올라간다. Escape나 패널과 종 바깥을
@@ -39,7 +39,7 @@ export function NotificationsPanel({
     >
       <div className="notify-head">
         <div>
-          <span className="eyebrow">Notifications</span>
+          <span className="eyebrow">{tc("eyebrow", "알림")}</span>
           <p className="notify-title">{t("새로운 소식")}</p>
         </div>
         {items.some(unread) && (

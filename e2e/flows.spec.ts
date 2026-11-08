@@ -1389,7 +1389,7 @@ test("the e-contract sets how the sponsorship is confirmed, and once both sides 
   // 끝난 행사는 그렇다고 알린다.
   await student.getByLabel("행사 고르기").selectOption("event-busking-day")
   await expect(student.locator(".measure-bar .measure-state")).toHaveText("진행 완료")
-  await expect(student.locator(".live-panel .eyebrow")).toHaveText("Event Ended")
+  await expect(student.locator(".live-panel .eyebrow")).toHaveText("진행 완료")
 })
 
 test("a participant takes the coupon and the store's staff confirm the visit on their own page", async ({ browser }) => {

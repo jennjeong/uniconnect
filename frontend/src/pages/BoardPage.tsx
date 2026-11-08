@@ -6,7 +6,7 @@ import { CatalogEmpty } from "../components/CatalogEmpty"
 import { PageIntro } from "../components/PageIntro"
 import { Pill } from "../components/Pill"
 import { TabBar } from "../components/TabBar"
-import { t } from "../i18n"
+import { t, tc } from "../i18n"
 import { dDayLabel, formatDay, formatPeriod } from "../lib/date"
 import type { BoardPost, Role } from "../types"
 
@@ -95,7 +95,7 @@ export function BoardPage({
   return (
     <section className="page-view board-page">
       <PageIntro
-        eyebrow="Recruit Board"
+        eyebrow={tc("eyebrow", "모집 게시판")}
         title={t("모집 게시판")}
         description={
           students

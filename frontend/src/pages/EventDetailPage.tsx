@@ -6,7 +6,7 @@ import { DateLine } from "../components/DateLine"
 import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { ShareButton } from "../components/ShareButton"
-import { t } from "../i18n"
+import { t, tc } from "../i18n"
 import { formatPeriod } from "../lib/date"
 import { saveFile } from "../lib/download"
 import { formatWon } from "../lib/kpis"
@@ -144,7 +144,7 @@ export function EventDetailPage({
       <section className="page-view event-page">
         <PageIntro
           onBack={onBack}
-          eyebrow="Event"
+          eyebrow={tc("eyebrow", "행사")}
           title={t("행사 상세")}
           description={failed || t("행사를 불러오고 있어요…")}
         />
@@ -159,7 +159,7 @@ export function EventDetailPage({
     <section className="page-view event-page">
       <PageIntro
         onBack={onBack}
-        eyebrow="Event"
+        eyebrow={tc("eyebrow", "행사")}
         title={event.name}
         description={`${group.name} · ${formatPeriod(event.date, event.endDate)}`}
         actions={

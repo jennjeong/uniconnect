@@ -2,7 +2,7 @@ import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { Pill } from "../components/Pill"
 import { navItems } from "../data/navigation"
-import { t } from "../i18n"
+import { t, tc } from "../i18n"
 import type { NavLabel, Role } from "../types"
 
 // 어떤 화면에도 없는 주소(서버가 404로 답한다). 그렇다고 알리고 홈으로 가는
@@ -19,7 +19,7 @@ export function NotFoundPage({
   return (
     <section className="page-view not-found">
       <PageIntro
-        eyebrow="404 · Page not found"
+        eyebrow={tc("eyebrow", "404 · 없는 페이지")}
         title={t("페이지를 찾을 수 없어요")}
         description={t("없거나 옮겨진 페이지예요. 홈에서 다시 시작해 보세요.")}
         actions={

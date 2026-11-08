@@ -7,7 +7,7 @@ import { RevealTitle } from "../components/RevealText"
 import { SearchClear } from "../components/SearchClear"
 import { faqTopics, type FaqTopic } from "../data/faq"
 import { useFaqs } from "../hooks/useSiteState"
-import { t } from "../i18n"
+import { t, tc } from "../i18n"
 import { AskModal } from "../modals/AskModal"
 import { MeshBackdrop } from "../scenes/MeshBackdrop"
 import type { Account, Inquiry } from "../types"
@@ -115,7 +115,7 @@ export function FaqPage({
       <header className="help-hero">
         <MeshBackdrop seed={5.3} />
         <div className="help-hero-top">
-          <span className="eyebrow light">Help Center</span>
+          <span className="eyebrow light">{tc("eyebrow", "고객센터")}</span>
           <button className="help-contact" onClick={goAsk} type="button">
             {t("관리자에게 질문하기")} <Icon name="arrowUpRight" size={15} />
           </button>

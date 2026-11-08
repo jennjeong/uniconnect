@@ -11,7 +11,7 @@ import { ValuePoints } from "../components/ValuePoints"
 import { WhyUniconnect } from "../components/WhyUniconnect"
 import { WorkBoard, type WorkRow } from "../components/WorkBoard"
 import { WorkCard } from "../components/WorkCard"
-import { locale, t } from "../i18n"
+import { locale, t, tc } from "../i18n"
 import { dDayLabel, formatFullDate, fromIsoDate, nextEvent, semesterLabel, todayIso } from "../lib/date"
 import { percent } from "../lib/format"
 import { hasRoas, roasText } from "../lib/kpis"
@@ -273,7 +273,7 @@ export function DashboardPage({
         </section>
 
         <ValuePoints
-          eyebrow="What We Do"
+          eyebrow={tc("eyebrow", "하는 일")}
           heading={t("학생단체가 여기서 하는 일")}
           points={[
             {

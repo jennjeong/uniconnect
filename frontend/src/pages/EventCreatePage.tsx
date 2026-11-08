@@ -255,7 +255,7 @@ export function EventCreatePage({
     <section className="page-view create-view">
       <PageIntro
         onBack={onCancel}
-        eyebrow={editing ? (students ? "Edit Event" : "Edit Campaign") : students ? "New Event" : "New Campaign"}
+        eyebrow={editing ? (students ? tc("eyebrow", "행사 수정") : tc("eyebrow", "캠페인 수정")) : students ? tc("eyebrow", "새 행사") : tc("eyebrow", "새 캠페인")}
         title={
           editing ? (students ? t("행사 수정") : t("캠페인 수정")) : students ? t("새 행사 등록") : t("새 캠페인 등록")
         }
