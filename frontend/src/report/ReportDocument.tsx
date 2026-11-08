@@ -417,7 +417,7 @@ function StudentPage({ report, metrics, author }: { report: Report; metrics: Met
             <small className="good">{t("QR 참여 중 쿠폰 수령")}</small>
           </div>
           <div className="pdf-kpi">
-            <span>{t("방문 전환")}</span>
+            <span>{t("쿠폰 수령자 대비 방문율")}</span>
             <strong>{metrics.coupons > 0 ? `${insight.visitRate}%` : "—"}</strong>
             <small className="good">{t("쿠폰 수령 중 매장 방문")}</small>
           </div>

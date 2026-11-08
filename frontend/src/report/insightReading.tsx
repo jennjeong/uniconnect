@@ -24,7 +24,7 @@ export function readings(report: PremiumReport): Record<string, Reading> {
     coupons: "쿠폰 수령",
     visits: "매장 방문",
     qrRate: "QR 참여율",
-    visitRate: "방문 전환율",
+    visitRate: "QR 참여자 대비 방문율",
     roas: "추정 ROAS",
   }
 

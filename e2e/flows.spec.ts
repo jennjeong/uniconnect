@@ -158,7 +158,7 @@ test("a member who opens the introduction goes on to the dashboard", async ({ pa
   await expect(page).toHaveURL(/\/dashboard$/)
   await page.goto("/")
   await expect(page).toHaveURL(/\/dashboard$/)
-  await expect(page.locator(".hero-eyebrow")).toContainText("반가워요")
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("반가워요")
   await expect(page.locator(".demo-chip")).toHaveCount(0)
 })
 
@@ -169,7 +169,7 @@ test("the login popup logs into a demo account with one press, with nothing to t
   await dialog.getByRole("button", { name: /오후의 커피/ }).click()
   await expect(dialog).toBeHidden()
   await expect(page).toHaveURL(/\/dashboard$/)
-  await expect(page.locator(".hero-eyebrow")).toContainText("반가워요, 오후의 커피")
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("반가워요, 오후의 커피")
 })
 
 test("a password can be shown while it is typed, and hidden again", async ({ page }) => {
@@ -1223,12 +1223,22 @@ test("a student group proposes and the brand accepts", async ({ browser }) => {
   await brand.goto("/inbox")
   const card = brand.locator(".request-card", { hasText: "삼육대 뮤즈" }).first()
   await expect(card).toContainText("현장 부스와 SNS로 브랜드를 알릴게요.")
+  // 수락은 확인창을 거친다. Escape로 닫으면 아무것도 바뀌지 않는다.
   await card.getByRole("button", { name: /수락하기/ }).click()
+  const accept = brand.getByRole("dialog", { name: "이 제안을 수락할까요?" })
+  await expect(accept).toContainText("삼육대 뮤즈")
+  await expect(accept).toContainText("15%")
+  await brand.keyboard.press("Escape")
+  await expect(accept).toBeHidden()
+  await expect(card.getByRole("button", { name: /수락하기/ })).toBeVisible()
+  await card.getByRole("button", { name: /수락하기/ }).click()
+  await accept.getByRole("button", { name: "수락하기" }).click()
   await expect(brand.locator(".request-card", { hasText: "삼육대 뮤즈" }).first()).toBeHidden()
   await brand.getByRole("tab", { name: /수락함/ }).click()
-  // 수락되면 결과와 진행 단계가 카드에 보인다.
+  // 수락만 된 협찬은 계약 확인 대기이고, 계약서로 바로 간다.
   const accepted = brand.locator(".request-card", { hasText: "삼육대 뮤즈" })
-  await expect(accepted.locator(".request-result.confirmed")).toBeVisible()
+  await expect(accepted.locator(".request-result")).toContainText("제안 수락 · 계약 확인 대기")
+  await expect(accepted.getByRole("button", { name: "계약서 열기" })).toBeVisible()
   await expect(accepted.getByRole("list", { name: "협찬 진행 상황" })).toBeVisible()
 })
 
@@ -2443,3 +2453,39 @@ test("a refund turned away for another reason doesn't ask for a bank refund", as
   await expect(page.getByRole("button", { name: "계좌로 직접 돌려주기" })).toHaveCount(0)
 })
 
+
+test("the venue QR opens on the participants' view, and PINs only behind 운영자용 PIN", async ({ page }) => {
+  await page.goto("/")
+  await logIn(page, "학생단체", "muse@syu.ac.kr")
+  await page.goto("/measurement")
+  await page.getByRole("button", { name: "현장 QR 열기" }).click()
+  const dialog = page.getByRole("dialog", { name: "현장 참여 QR" })
+  await expect(dialog.getByRole("tab", { name: "참여자용" })).toHaveAttribute("aria-selected", "true")
+  await expect(dialog.locator(".qr-content")).not.toContainText("PIN")
+  await expect(dialog.locator(".qr-pin")).toHaveCount(0)
+  // 행사장에 띄우면 QR과 안내뿐이다.
+  await dialog.getByRole("button", { name: "행사장에 띄우기" }).click()
+  const shown = page.getByRole("dialog", { name: "행사장에 띄운 참여 QR" })
+  await expect(shown).toBeVisible()
+  await expect(shown).not.toContainText("PIN")
+  await page.keyboard.press("Escape")
+  await expect(shown).toBeHidden()
+  // 운영자용은 띄우지 말라는 안내와 함께 따로 열린다.
+  await page.getByRole("dialog", { name: "현장 참여 QR" }).getByRole("tab", { name: "운영자용 PIN" }).click()
+  await expect(page.getByText("이 화면은 행사장에 띄우지 마세요.", { exact: false })).toBeVisible()
+})
+
+for (const [role, email] of [["학생단체", "muse@syu.ac.kr"], ["브랜드", "hello@afternoon-coffee.kr"]] as const) {
+  test(`a logged-in ${role} sees its main action on the first 390x844 screen`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto("/")
+    await logIn(page, role, email)
+    await page.goto("/dashboard")
+    const hero = page.locator(".meeting-hero.compact")
+    await expect(hero.getByRole("heading", { level: 1 })).toContainText("반가워요")
+    const main = hero.locator(".hero-cta .pill").first()
+    await expect(main).toBeVisible()
+    const box = (await main.boundingBox())!
+    expect(box.y + box.height).toBeLessThanOrEqual(844)
+  })
+}

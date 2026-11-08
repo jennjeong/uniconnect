@@ -240,6 +240,20 @@ const en: Record<string, string> = {
   "숫자로 쓰는 다음 제안서": "A next proposal written in numbers",
   "지난 행사의 참여 · 방문 · ROAS가 담긴 제안서를 PDF로 만들고, 협찬 기록은 다음 운영진에게 넘겨요.": "Make a proposal PDF with past turnout, visits and ROAS, and hand the sponsorship record to the next team.",
   "제안서 PDF · 협찬 기록": "Proposal PDF · record",
+  자세히: "More",
+  "다음 일정 · {name} · {dday}": "Next · {name} · {dday}",
+  "다가오는 협찬 일정이 없어요": "No sponsorship coming up",
+  "다가오는 행사가 없어요": "No event coming up",
+  "계약서 확인이 필요한 협찬이 {count}건 있어요.": "{count} sponsorships need their agreement confirmed.",
+  "양쪽이 계약서를 확인해야 협찬이 확정돼요. 수수료는 확인할 때 결제해요.":
+    "A sponsorship is confirmed once both sides confirm the agreement. The fee is paid when you confirm.",
+  "계약서 확인": "Confirm agreements",
+  "받은 협찬 제안 {count}건이 답을 기다려요.": "{count} sponsorship offers are waiting for your answer.",
+  "조건을 보고 수락하거나 거절해 주세요.": "Look at the terms and accept or decline.",
+  "받은 협찬 확인": "See offers",
+  "양쪽이 계약서를 확인해야 협찬이 확정돼요.": "A sponsorship is confirmed once both sides confirm the agreement.",
+  "행사를 등록하면 잘 맞는 브랜드를 찾아 드려요.": "Add an event and we'll find brands that fit.",
+  "행사 이름과 날짜만 있어도 추천을 시작해요.": "A name and a date are enough to start.",
 }
 
 export default en

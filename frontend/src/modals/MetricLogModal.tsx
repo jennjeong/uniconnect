@@ -15,6 +15,7 @@ export function MetricLogModal({
   role,
   kind,
   total,
+  example = false,
   startsOn,
   onClose,
 }: {
@@ -22,6 +23,8 @@ export function MetricLogModal({
   role: Role
   kind?: MetricKind
   total: number
+  // 예시(데모) 데이터다. 집계는 있지만 상세 기록은 없다.
+  example?: boolean
   // 행사가 아직 오지 않았을 때(진행 전) 행사의 첫날.
   startsOn?: string
   onClose: () => void
@@ -71,7 +74,16 @@ export function MetricLogModal({
               {error}
             </p>
           )}
-          {entries && entries.length === 0 && <p className="day-empty">{t("아직 기록이 없어요.")}</p>}
+          {!entries && !error && <p className="day-empty">{t("참여 내역을 불러오는 중이에요.")}</p>}
+          {entries && entries.length === 0 && (
+            <p className="day-empty">
+              {total === 0
+                ? t("아직 기록이 없어요.")
+                : example
+                  ? t("예시 집계이며 상세 기록은 제공되지 않아요.")
+                  : t("누적 숫자는 집계됐지만, 상세 기록은 보관 기간이 지나 남아 있지 않아요.")}
+            </p>
+          )}
           <ol className="log-list">
             {entries?.map((entry) => (
               <li key={entry.id}>

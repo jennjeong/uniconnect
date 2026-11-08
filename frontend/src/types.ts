@@ -653,6 +653,10 @@ export type SponsorRequest = {
   respondedAt?: string
   // 양쪽이 취소한 시각 (취소).
   canceledAt?: string
+  // 수락된 것의 계약 상태. 계정이 있는 쪽이 모두 전자 계약서를 확인해야 확정이다.
+  contract?: "waiting" | "confirmed"
+  // 양쪽 확인이 끝나 협찬이 확정된 시각.
+  contractAt?: string
 }
 
 // 브랜드가 학생단체에 보낸 협찬 제안.
@@ -672,6 +676,10 @@ export type SponsorOffer = {
   respondedAt?: string
   // 양쪽이 취소한 시각 (취소).
   canceledAt?: string
+  // 수락된 것의 계약 상태. 계정이 있는 쪽이 모두 전자 계약서를 확인해야 확정이다.
+  contract?: "waiting" | "confirmed"
+  // 양쪽 확인이 끝나 협찬이 확정된 시각.
+  contractAt?: string
 }
 
 // 계정이 보낸 제안(단체의 요청, 브랜드의 제안). 받은 제안 옆에 받은편지함이
@@ -693,6 +701,8 @@ export type SentProposal = {
   message?: string
   status: RequestStatus
   createdAt: string
+  // 상대가 아직 가입하지 않아 받은편지함이 없다. 답이 오지 않는다.
+  noInbox?: boolean
   respondedAt?: string
 }
 
@@ -965,6 +975,7 @@ export type ModalName =
   | "compare"
   | "propose-many"
   | "report"
+  | "accept"
   | "qr"
   | "login"
   | "signup"

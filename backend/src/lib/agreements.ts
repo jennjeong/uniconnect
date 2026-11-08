@@ -378,3 +378,27 @@ export function dropOrphanAgreements(database: Database, leavingAccountId: strin
 export async function removeUploads(agreementIds: string[]) {
   await photos().removeAll(agreementIds)
 }
+
+// 수락된 제안의 계약 상태. 계정이 있는 쪽은 모두 전자 계약서를 확인해야 하고
+// (브랜드는 수수료를 낸 뒤에 확인된다), 계정이 없는 쪽은 확인할 수 없으므로 빼고 센다.
+// 이것이 '협찬 확정'의 기준이다. 수락만 된 것은 '계약 확인 대기'로 보인다.
+export function contractState(
+  database: Database,
+  proposalId: string,
+  accounts: { group: boolean; brand: boolean },
+): "waiting" | "confirmed" {
+  const agreement = database.agreements.find((item) => item.id === proposalId)
+  const needed = (["group", "brand"] as const).filter((side) => accounts[side])
+  return needed.every((side) => agreement?.confirmed[side]) ? "confirmed" : "waiting"
+}
+
+// 계약이 확정된 시각: 확인해야 하는 쪽 중 마지막으로 확인한 때.
+export function contractConfirmedAt(
+  database: Database,
+  proposalId: string,
+  accounts: { group: boolean; brand: boolean },
+) {
+  const agreement = database.agreements.find((item) => item.id === proposalId)
+  const times = (["group", "brand"] as const).filter((side) => accounts[side]).map((side) => agreement?.confirmed[side])
+  return times.length > 0 && times.every(Boolean) ? (times as string[]).sort().at(-1) : undefined
+}

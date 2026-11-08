@@ -1,6 +1,7 @@
 import type { Request } from "express"
 import { Router } from "express"
 
+import { contractConfirmedAt, contractState } from "../lib/agreements.js"
 import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
 import { statusOf } from "../lib/proposals.js"
@@ -34,7 +35,15 @@ offersRouter.get("/", (req, res) => {
             !(offer.fromAccountId && blockedBetween(database, owner.id, offer.fromAccountId)),
         )
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-        .map((offer) => ({ ...offer, status: statusOf(database, offer) }))
+        .map((offer) => {
+          const status = statusOf(database, offer)
+          const contract =
+            status === "수락"
+              ? contractState(database, offer.id, { group: true, brand: Boolean(offer.fromAccountId) })
+              : undefined
+          const contractAt = contract === "confirmed" ? contractConfirmedAt(database, offer.id, { group: true, brand: Boolean(offer.fromAccountId) }) : undefined
+          return { ...offer, status, ...(contract ? { contract } : {}), ...(contractAt ? { contractAt } : {}) }
+        })
     : []
   res.json({ offers })
 })

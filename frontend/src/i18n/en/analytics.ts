@@ -164,6 +164,19 @@ const en: Record<string, string> = {
   "다음 페이지": "Next page",
   "협찬별 상세 페이지": "Sponsorship detail pages",
   "요금제 고르기": "Choose a plan",
+  "추정 ROAS(전체 집행액 기준)": "Estimated ROAS (on total spend)",
+  "QR 참여자 대비 방문율": "Visits per QR participant",
+  "쿠폰 수령자 대비 방문율": "Visits per coupon taken",
+  "QR 참여자 대비 방문율 (%)": "Visits per QR participant (%)",
+  "매장 방문 {visits}건 ÷ QR 참여 {scans}명": "{visits} store visits ÷ {scans} QR participants",
+  "전체 집행액 기준 추정 ROAS · 누적 집행액 {spend}": "Estimated ROAS on total spend · {spend} spent in all",
+  "추정 매출 합계 ÷ 집행액 합계(현금 + 현물, 수수료 제외)예요.": "Total estimated sales ÷ total spend (cash plus goods, fee excluded).",
+  "추정 ROAS 평균": "Average estimated ROAS",
+  "전체 집행액 기준 추정 ROAS {roas}% · 누적 집행액 {spend} · 추정 매출 {sales}":
+    "Estimated ROAS on total spend {roas}% · {spend} spent · {sales} estimated sales",
+  "요약 PDF 다운로드": "Download the summary PDF",
+  "상세 리포트 보기": "Open the detailed report",
+  "유료 상세 리포트 사기": "Buy the paid detailed report",
 }
 
 export default en

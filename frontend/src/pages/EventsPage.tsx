@@ -28,10 +28,22 @@ type Entry =
   | { kind: "event"; id: string; date: string; end?: string; name: string; event: EventItem }
   | { kind: "sponsorship"; id: string; date: string; end?: string; name: string; request: SponsorRequest }
 
-const statusClass = (entry: Entry) =>
-  entry.kind === "event" ? `status-${entry.event.status.replace(" ", "")}` : "status-협찬확정"
+// 수락만 되고 계약서를 양쪽이 아직 확인하지 않은 협찬은 '계약 확인 대기'다.
+const sponsorshipConfirmed = (request: SponsorRequest) => request.contract !== "waiting"
 
-const statusLabel = (entry: Entry) => (entry.kind === "event" ? t(entry.event.status) : t("협찬 확정"))
+const statusClass = (entry: Entry) =>
+  entry.kind === "event"
+    ? `status-${entry.event.status.replace(" ", "")}`
+    : sponsorshipConfirmed(entry.request)
+      ? "status-협찬확정"
+      : "status-매칭중"
+
+const statusLabel = (entry: Entry) =>
+  entry.kind === "event"
+    ? t(entry.event.status)
+    : sponsorshipConfirmed(entry.request)
+      ? t("협찬 확정")
+      : t("계약 확인 대기")
 
 // 인원수는 "120명"처럼 쓴 대로 저장된다. 영어로는 "120 people"로 읽는다.
 const peopleLabel = (people: string) => {
@@ -127,7 +139,9 @@ function SponsorshipRow({
   return (
     <article className="day-event-card">
       <div className="day-event-copy">
-        <span className="status-chip status-협찬확정">{t("협찬 확정")}</span>
+        <span className={sponsorshipConfirmed(request) ? "status-chip status-협찬확정" : "status-chip status-매칭중"}>
+          {sponsorshipConfirmed(request) ? t("협찬 확정") : t("계약 확인 대기")}
+        </span>
         <strong>{request.eventName}</strong>
         <p>
           {request.groupName} · {peopleLabel(request.people)} · {request.ask}

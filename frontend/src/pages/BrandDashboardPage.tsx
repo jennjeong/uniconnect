@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react"
+import { useState, type CSSProperties, type ReactNode } from "react"
 
 import { BrandMark } from "../components/BrandMark"
 import { CatalogEmpty } from "../components/CatalogEmpty"
@@ -6,15 +6,17 @@ import { DateLine } from "../components/DateLine"
 import { Icon } from "../components/Icon"
 import { JourneyChain, type JourneyStep } from "../components/JourneyChain"
 import { MeetingHero } from "../components/MeetingHero"
+import { Presence } from "../components/Presence"
 import { ProposalControl } from "../components/ProposalControl"
 import { RevealStatement, RevealTitle } from "../components/RevealText"
 import { ValuePoints } from "../components/ValuePoints"
 import { WhyUniconnect } from "../components/WhyUniconnect"
 import { WorkCard } from "../components/WorkCard"
 import { t } from "../i18n"
-import { dDayLabel, nextEvent, semesterLabel, shortDay } from "../lib/date"
+import { dDayLabel, nextEvent, semesterLabel, shortDay, todayIso } from "../lib/date"
 import { shownTags } from "../lib/distance"
 import { formatWon } from "../lib/kpis"
+import { AcceptModal } from "../modals/AcceptModal"
 import { fullWon, roasMet, roasOf, sponsorshipTotals } from "../lib/sponsorships"
 import type { Match, NavLabel, RequestStatus, SponsorRequest, Sponsorship } from "../types"
 
@@ -45,6 +47,7 @@ export function BrandDashboardPage({
   paused = false,
   onResume,
   checklist,
+  onOpenAgreements,
 }: {
   // 인사말에 쓰는, 로그인한 브랜드의 이름.
   accountName?: string
@@ -65,7 +68,7 @@ export function BrandDashboardPage({
   updatedAt: Date | null
   onNavigate: (label: NavLabel) => void
   onOpenDetail: (match: Match) => void
-  onAccept: (request: SponsorRequest) => void
+  onAccept: (request: SponsorRequest) => void | Promise<void>
   onPropose: (match: Match) => void
   onCancelProposal: (match: Match) => void
   // 히어로의 앱 다운로드. 설치된 앱 안에서는 없다.
@@ -78,8 +81,17 @@ export function BrandDashboardPage({
   onResume?: () => void
   // 히어로 아래의 새 회원 체크리스트(components/ProfileChecklist.tsx).
   checklist?: ReactNode
+  // 계약서 목록. 확인할 계약서가 있으면 첫 화면의 '지금 할 일'이 된다.
+  onOpenAgreements?: () => void
 }) {
   const pending = requests.filter((request) => request.status === "검토 중")
+  // 로그인한 회원의 첫 화면: 인사, 다음 일정, 지금 할 일(답할 제안 → 확인할 계약서).
+  const member = Boolean(accountName) && !demo
+  const toConfirm = requests.filter((request) => request.status === "수락" && request.contract === "waiting").length
+  const upcoming = requests
+    .filter((request) => request.status === "수락" && request.eventDate >= todayIso())
+    .sort((a, b) => a.eventDate.localeCompare(b.eventDate))[0]
+  const memberHero = member && !paused
   const confirmed = requests.filter((request) => request.status === "수락")
   const nextConfirmed = nextEvent(confirmed.map((request) => ({ date: request.eventDate })))
   const totals = sponsorshipTotals(sponsorships)
@@ -120,11 +132,19 @@ export function BrandDashboardPage({
     { label: t("재집행"), status: t("대기"), detail: t("ROAS가 좋았던 단체에 다음 학기에도 먼저 제안해요.") },
   ]
 
+  // 수락은 확인창을 거친다(modals/AcceptModal.tsx).
+  const [accepting, setAccepting] = useState<SponsorRequest | null>(null)
+
   return (
     <div className="dashboard">
       <MeetingHero
+        {...(memberHero ? { greeting: t("반가워요, {name}", { name: accountName! }) } : {})}
         eyebrow={
-          accountName
+          memberHero
+            ? upcoming
+              ? t("다음 일정 · {name} · {dday}", { name: upcoming.eventName, dday: dDayLabel(upcoming.eventDate) })
+              : t("다가오는 협찬 일정이 없어요")
+            : accountName
             ? t("반가워요, {name}", { name: accountName })
             : demo
               ? t("예시 화면 · {semester}", { semester: semesterLabel() })
@@ -134,13 +154,15 @@ export function BrandDashboardPage({
         stats={[
           { value: t("{count}건", { count: pending.length }), label: t("검토할 제안") },
           { value: t("{count}건", { count: confirmed.length }), label: t("확정된 협찬") },
-          { value: `${totals.roas}%`, label: t("평균 ROAS") },
+          { value: `${totals.roas}%`, label: t("추정 ROAS(전체 집행액 기준)") },
         ]}
         insight={
           paused
             ? t("내 소개를 숨기는 중이에요.")
             : pending.length > 0
             ? t("새로 받은 협찬 제안 {count}건이 답을 기다리고 있어요.", { count: pending.length })
+            : memberHero && toConfirm > 0
+              ? t("계약서 확인이 필요한 협찬이 {count}건 있어요.", { count: toConfirm })
             : noGroups
               ? t("아직 가입한 학생단체가 없어요.")
               : t("캠페인과 잘 맞는 학생단체 {count}곳을 찾았어요.", { count: matches.length })
@@ -148,6 +170,8 @@ export function BrandDashboardPage({
         detail={
           paused
             ? t("새 제안은 받지 않아요. 진행 중인 대화와 협찬은 그대로예요.")
+            : memberHero && pending.length === 0 && toConfirm > 0
+              ? t("양쪽이 계약서를 확인해야 협찬이 확정돼요. 수수료는 확인할 때 결제해요.")
             : noGroups && pending.length === 0
               ? t("소개와 캠페인을 먼저 올려 두세요. 학생단체가 가입하면 바로 추천해 드려요.")
               : t("학생 행사에서 쿠폰을 나누고, 매장에 온 손님까지 ROAS로 보여 드려요.")
@@ -155,10 +179,11 @@ export function BrandDashboardPage({
         primary={
           paused && onResume
             ? { label: t("다시 보이게 하기"), onClick: onResume }
-            : {
-                label: pending.length > 0 ? t("받은 제안 확인하기") : t("학생단체 찾아보기"),
-                onClick: () => onNavigate(pending.length > 0 ? "받은 제안" : "단체 찾기"),
-              }
+            : pending.length > 0
+              ? { label: t("받은 제안 확인하기"), onClick: () => onNavigate("받은 제안") }
+              : memberHero && toConfirm > 0 && onOpenAgreements
+                ? { label: t("계약서 확인"), onClick: onOpenAgreements }
+                : { label: t("학생단체 찾아보기"), onClick: () => onNavigate("단체 찾기") }
         }
         secondary={{ label: t("행사 일정 보기"), onClick: () => onNavigate("행사 일정") }}
         onInstall={onInstall}
@@ -211,7 +236,7 @@ export function BrandDashboardPage({
                   {t("요청 · {ask} · {people}", { ask: request.ask, people: request.people })}
                 </p>
                 <div className="pending-actions">
-                  <button className="proposal-button accept" onClick={() => onAccept(request)} type="button">
+                  <button className="proposal-button accept" onClick={() => setAccepting(request)} type="button">
                     {t("수락하기")}
                   </button>
                   <button className="proposal-cancel" onClick={() => onNavigate("받은 제안")} type="button">
@@ -256,7 +281,7 @@ export function BrandDashboardPage({
             title: t("다시 쓸 곳을 데이터로 정해요"),
             text: t("협찬마다 ROAS를 보고, 다음 예산을 어디에 쓸지 정해요."),
             figure: `${totals.roas}%`,
-            figureLabel: t("평균 ROAS · 누적 집행액 {spend}", { spend: fullWon(totals.spend) }),
+            figureLabel: t("전체 집행액 기준 추정 ROAS · 누적 집행액 {spend}", { spend: fullWon(totals.spend) }),
             action: t("성과 분석 보기"),
             onClick: () => onNavigate("성과 분석"),
           },
@@ -412,9 +437,9 @@ export function BrandDashboardPage({
           </div>
           <div className="report-highlight" data-reveal style={delay(0.12)}>
             <div>
-              <span>{t("평균 ROAS")}</span>
+              <span>{t("추정 ROAS(전체 집행액 기준)")}</span>
               <strong>{totals.roas}%</strong>
-              <small>{t("학생단체와 함께한 협찬의 평균이에요.")}</small>
+              <small>{t("추정 매출 합계 ÷ 집행액 합계(현금 + 현물, 수수료 제외)예요.")}</small>
             </div>
             <div className="report-highlight-actions">
               <button className="pill white" onClick={() => onNavigate("성과 분석")} type="button">
@@ -425,6 +450,22 @@ export function BrandDashboardPage({
         </div>
       </section>
 
+      <Presence show={accepting !== null}>
+        {accepting && (
+          <AcceptModal
+            side="브랜드"
+            partner={accepting.groupName}
+            eventName={accepting.eventName}
+            eventDate={accepting.eventDate || undefined}
+            terms={accepting.ask}
+            onClose={() => setAccepting(null)}
+            onConfirm={async () => {
+              await onAccept(accepting)
+              setAccepting(null)
+            }}
+          />
+        )}
+      </Presence>
     </div>
   )
 }

@@ -86,7 +86,7 @@ export function ReportsPage({
         actions={
           <>
             <Pill arrow="up-right" disabled={!report || exporting} onClick={onDownload}>
-              {exporting ? t("PDF 만드는 중…") : t("PDF 리포트 다운로드")}
+              {exporting ? t("PDF 만드는 중…") : t("요약 PDF 다운로드")}
             </Pill>
             {/* 같은 수치를 스프레드시트로(lib/csv.ts). 페이지에서 만든다. */}
             <Pill
@@ -365,7 +365,7 @@ function SponsorHistory({
               <dd>{record.scans.toLocaleString("ko-KR")}</dd>
             </div>
             <div>
-              <dt>{t("평균 ROAS")}</dt>
+              <dt>{t("추정 ROAS 평균")}</dt>
               <dd>{record.roas === null ? "—" : `${record.roas}%`}</dd>
             </div>
           </dl>

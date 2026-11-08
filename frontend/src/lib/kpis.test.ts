@@ -54,3 +54,21 @@ describe("report figures", () => {
     expect(roas.formula).toContain("68만원")
   })
 })
+
+// 같은 이름에 다른 분모를 쓰지 않는다: QR 참여자 대비와 쿠폰 수령자 대비 방문율은
+// 이름부터 다르다. 분모가 0이면 0%가 아니라 집계 없음("—")이다.
+describe("visit rates", () => {
+  test("name the visit rate after its denominator, QR participants", () => {
+    const visit = reportKpis(report(680000, 243, 170), metrics).find((kpi) => kpi.key === "visitRate")!
+    expect(visit.label).toBe("QR 참여자 대비 방문율")
+    expect(visit.current).toBe(32)
+    expect(visit.formula).toBe("매장 방문 41건 ÷ QR 참여 128명")
+  })
+
+  test("show no data rather than 0% when the denominator is empty", () => {
+    const empty = { ...metrics, scans: 0, coupons: 0, visits: 0 }
+    const kpis = reportKpis({ ...report(680000, 0, 170), expectedAudience: 0 }, empty)
+    expect(kpiValue(kpis.find((kpi) => kpi.key === "visitRate")!)).toBe("—")
+    expect(kpiValue(kpis.find((kpi) => kpi.key === "qrRate")!)).toBe("—")
+  })
+})

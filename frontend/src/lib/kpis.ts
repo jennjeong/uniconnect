@@ -54,15 +54,19 @@ export function reportKpis(report: Report, metrics: Metrics): Kpi[] {
         scans: metrics.scans,
         audience: report.expectedAudience,
       }),
+      // 예상 관객을 정하지 않았으면 0%가 아니라 집계 없음이다.
+      missing: report.expectedAudience <= 0,
     },
     {
       key: "visitRate",
-      label: t("방문 전환율"),
+      // 분모는 QR 참여자(한 휴대폰은 한 번만 센다)다. 쿠폰 수령자 대비 방문율과 다르다.
+      label: t("QR 참여자 대비 방문율"),
       unit: "%",
       current: percent(metrics.visits, metrics.scans),
       target: report.targets.visitRate,
       note: t("{visits}명 방문", { visits: metrics.visits }),
-      formula: t("매장 방문 {visits}건 ÷ QR 스캔 {scans}건", { visits: metrics.visits, scans: metrics.scans }),
+      formula: t("매장 방문 {visits}건 ÷ QR 참여 {scans}명", { visits: metrics.visits, scans: metrics.scans }),
+      missing: metrics.scans <= 0,
     },
     {
       key: "roas",

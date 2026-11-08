@@ -18,7 +18,7 @@ const scoreLabels: Record<ScoreKey, { label: string; unit: "명" | "건" | "장"
   coupons: { label: "쿠폰 수령", unit: "장" },
   visits: { label: "매장 방문", unit: "명" },
   qrRate: { label: "QR 참여율", unit: "%" },
-  visitRate: { label: "방문 전환율", unit: "%" },
+  visitRate: { label: "QR 참여자 대비 방문율", unit: "%" },
   roas: { label: "추정 ROAS", unit: "%" },
 }
 
@@ -187,7 +187,7 @@ export function Scorecard({ report }: { report: PremiumReport }) {
 // 옆에 둔다.
 export function Funnel({ report }: { report: PremiumReport }) {
   const names = { audience: "예상 관객", scans: "QR 스캔", coupons: "쿠폰 수령", visits: "매장 방문" }
-  const rateNames = { audience: "", scans: "참여율", coupons: "수령률", visits: "방문율" }
+  const rateNames = { audience: "", scans: "참여율", coupons: "수령률", visits: "쿠폰 수령자 대비 방문율" }
   const top = Math.max(1, ...report.funnel.map((step) => step.count))
   return (
     <ol className="insight-funnel">

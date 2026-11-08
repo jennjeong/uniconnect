@@ -23205,3 +23205,242 @@ textarea {
     width: calc(100% - 32px);
   }
 }
+
+/* 받은 제안의 수락 확인창 (modals/AcceptModal.tsx). */
+.accept-facts {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--fill);
+}
+
+.accept-facts div {
+  display: grid;
+  grid-template-columns: 6.5em minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.accept-facts dt {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.accept-facts dd {
+  display: grid;
+  margin: 0;
+  color: var(--ink);
+  font-weight: var(--weight-label);
+}
+
+.accept-facts dd small {
+  color: var(--ink-soft);
+  font-size: 0.8125rem;
+  font-weight: var(--weight-body);
+}
+
+.accept-cost {
+  margin: 0 0 var(--space-3);
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+.accept-steps {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0 0 var(--space-6);
+  padding-left: 1.25em;
+  color: var(--ink);
+  font-size: var(--text-sm);
+}
+
+.modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.modal-actions > button {
+  min-height: var(--control-h);
+}
+
+/* 현장 QR 팝업 (modals/QrModal.tsx): 참여자용과 운영자용 PIN을 나누고, 참여자용만
+   화면 가득 띄운다. */
+.qr-views {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+  padding: var(--space-1);
+  border-radius: 999px;
+  background: var(--fill);
+}
+
+.qr-views button {
+  min-height: var(--touch-target);
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-label);
+  cursor: pointer;
+}
+
+.qr-views button.active {
+  background: var(--point);
+  color: var(--on-point);
+}
+
+.qr-warning {
+  margin: 0 0 var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--orange-soft);
+  color: var(--orange);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-label);
+}
+
+.qr-date {
+  color: var(--ink-soft);
+  font-size: 0.8125rem;
+}
+
+.qr-present {
+  position: fixed;
+  z-index: 200;
+  inset: 0;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: var(--space-6);
+  padding: var(--space-6);
+  background: #fff;
+}
+
+.qr-present-body {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  text-align: center;
+}
+
+.qr-present-body .qr-frame {
+  width: min(78vw, 60vh, 520px);
+}
+
+.qr-present-body .qr-frame svg,
+.qr-present-body .qr-frame canvas,
+.qr-present-body .qr-frame img {
+  width: 100%;
+  height: auto;
+}
+
+.qr-present-body strong {
+  color: var(--ink);
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.qr-present-body span {
+  color: var(--ink-soft);
+  font-size: clamp(1rem, 2.4vw, 1.375rem);
+}
+
+/* 로그인한 회원의 대시보드 첫 화면 (MeetingHero의 greeting): 인사 → 다음 일정 →
+   지금 할 일과 버튼 → 핵심 지표. 화면 높이를 다 쓰지 않아, 휴대폰 첫 화면 안에
+   주요 버튼이 들어온다. */
+.meeting-hero.compact {
+  min-height: 0;
+}
+
+.meeting-hero.compact .hero-overlay {
+  gap: var(--space-4);
+  padding: calc(var(--header-h) + var(--space-4)) 0 var(--space-8);
+}
+
+.hero-greeting {
+  margin: 0;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: var(--weight-display);
+  letter-spacing: -0.02em;
+  line-height: var(--leading-heading);
+}
+
+.meeting-hero.compact .hero-insight {
+  max-width: 40rem;
+  justify-self: start;
+  width: 100%;
+}
+
+.meeting-hero.compact .hero-stats {
+  gap: var(--space-4) var(--space-8);
+}
+
+.meeting-hero.compact .hero-stats strong {
+  font-size: 1.75rem;
+}
+
+@media (max-width: 720px) {
+  .meeting-hero.compact .hero-overlay {
+    width: calc(100% - 2 * var(--gutter));
+    padding-bottom: var(--space-6);
+  }
+
+  .meeting-hero.compact .hero-insight {
+    padding: var(--space-4);
+  }
+
+  .meeting-hero.compact .hero-cta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .meeting-hero.compact .hero-stats {
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-3);
+  }
+
+  .meeting-hero.compact .hero-stats strong {
+    font-size: 1.375rem;
+  }
+
+  .meeting-hero.compact .hero-stats span {
+    font-size: var(--text-xs);
+  }
+}
+
+/* 운영진 공지는 한 줄로 보이고 '자세히'로 펼친다 (components/SiteNotices.tsx). */
+.site-notice .site-notice-text {
+  display: -webkit-box;
+  overflow: hidden;
+  min-width: 0;
+  flex: 1;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.site-notice.open .site-notice-text {
+  display: block;
+}
+
+.site-notice-more {
+  flex: none;
+  min-height: var(--touch-target);
+  padding: 0 var(--space-2);
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-label);
+  text-decoration: underline;
+  cursor: pointer;
+}

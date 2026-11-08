@@ -26,6 +26,7 @@ export function MeetingHero({
   primary,
   secondary,
   onInstall,
+  greeting,
 }: {
   eyebrow: string
   // 헤드라인의 줄들. 어두운 쪽에 머물 만큼 짧게 하고, 둘째 줄은 포인트 파랑으로
@@ -41,11 +42,62 @@ export function MeetingHero({
   secondary?: { label: string; onClick: () => void }
   // 앱 다운로드. 브라우저에서 연 사이트를 위한 것이다 (앱 안에서는 없다).
   onInstall?: () => void
+  // 로그인한 회원의 첫 화면. 큰 홍보 문구 대신 인사를 제목으로 두고, 지금 할 일과
+  // 버튼을 수치보다 먼저 보여 줘서 휴대폰 첫 화면 안에 들어오게 한다.
+  greeting?: string
 }) {
   const sectionRef = useRef<HTMLElement>(null)
   const clipRef = useRef<HTMLDivElement>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
   useHeroInset(sectionRef, clipRef, overlayRef)
+
+  const cta = (
+    <div className="hero-cta">
+      <Pill onClick={primary.onClick} variant="white">
+        {primary.label}
+      </Pill>
+      {secondary && (
+        <button className="underline-link" onClick={secondary.onClick} type="button">
+          {secondary.label}
+        </button>
+      )}
+      {onInstall && !greeting && (
+        <Pill className="hero-install" onClick={onInstall} variant="outline-light">
+          <Icon name="download" size={16} />
+          {t("앱 다운로드")}
+        </Pill>
+      )}
+    </div>
+  )
+
+  if (greeting) {
+    return (
+      <section className="meeting-hero compact" ref={sectionRef}>
+        <div className="hero-clip" ref={clipRef}>
+          <LayersGradient shader={ANTIPODE} />
+          <div className="hero-overlay" ref={overlayRef}>
+            <h1 className="hero-greeting">{greeting}</h1>
+            <span className="hero-eyebrow">{eyebrow}</span>
+            <div className="hero-insight">
+              <p className="insight-title">{insight}</p>
+              <p className="insight-detail">{detail}</p>
+              {cta}
+            </div>
+            {stats && (
+              <ul className="hero-stats" aria-label={t("핵심 지표")}>
+                {stats.map((stat) => (
+                  <li key={stat.label}>
+                    <strong>{stat.value}</strong>
+                    <span>{stat.label}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section className="meeting-hero" ref={sectionRef}>
@@ -72,22 +124,7 @@ export function MeetingHero({
             <div className="hero-insight">
               <p className="insight-title"><Lines text={insight} /></p>
               <p className="insight-detail"><Lines text={detail} /></p>
-              <div className="hero-cta">
-                <Pill onClick={primary.onClick} variant="white">
-                  {primary.label}
-                </Pill>
-                {secondary && (
-                  <button className="underline-link" onClick={secondary.onClick} type="button">
-                    {secondary.label}
-                  </button>
-                )}
-                {onInstall && (
-                  <Pill className="hero-install" onClick={onInstall} variant="outline-light">
-                    <Icon name="download" size={16} />
-                    {t("앱 다운로드")}
-                  </Pill>
-                )}
-              </div>
+              {cta}
             </div>
           </div>
         </div>

@@ -133,7 +133,7 @@ export function ProposalDocument({ page, history }: { page: EventPage; history: 
               <strong>{record.scans.toLocaleString("ko-KR")}</strong>
             </div>
             <div className="pdf-kpi">
-              <span>{t("평균 ROAS")}</span>
+              <span>{t("추정 ROAS 평균")}</span>
               <strong>{record.roas === null ? "—" : `${record.roas}%`}</strong>
             </div>
           </div>

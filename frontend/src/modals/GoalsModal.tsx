@@ -37,7 +37,7 @@ const targetFields: { key: keyof Report["targets"]; label: string }[] = [
   { key: "coupons", label: "쿠폰 수령 (건)" },
   { key: "visits", label: "매장 방문 (건)" },
   { key: "qrRate", label: "QR 참여율 (%)" },
-  { key: "visitRate", label: "방문 전환율 (%)" },
+  { key: "visitRate", label: "QR 참여자 대비 방문율 (%)" },
   { key: "roas", label: "추정 ROAS (%)" },
 ]
 

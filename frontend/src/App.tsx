@@ -1272,7 +1272,7 @@ function App() {
         ...confirmedRequests.map((request) => ({
           name: request.eventName,
           date: request.eventDate,
-          status: "협찬 확정",
+          status: request.contract === "waiting" ? "계약 확인 대기" : "협찬 확정",
         })),
       ]
 
@@ -1780,6 +1780,8 @@ function App() {
             paused={listing?.pausedAt !== undefined}
             onResume={() => pauseListing(false)}
             checklist={checklist}
+            offers={offers}
+            onOpenAgreements={openAgreements}
           />
         ) : (
           <BrandDashboardPage
@@ -1802,6 +1804,7 @@ function App() {
             paused={listing?.pausedAt !== undefined}
             onResume={() => pauseListing(false)}
             checklist={checklist}
+            onOpenAgreements={openAgreements}
           />
         )
     }
@@ -2046,6 +2049,7 @@ function App() {
               logKind === "all" ? metrics.scans + metrics.coupons + metrics.visits : metrics[logKind]
             }
             startsOn={measureState(report) === "진행 전" ? report.eventDate : undefined}
+            example={!member}
             onClose={closeModal}
           />
         </Presence>
