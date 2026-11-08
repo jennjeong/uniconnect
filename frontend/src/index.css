@@ -12923,6 +12923,7 @@ input[type="search"]::-webkit-search-cancel-button {
 
 .dash-top-facts > div {
   display: grid;
+  align-content: start;
   gap: 2px;
   min-width: 0;
   padding-left: var(--space-3);
