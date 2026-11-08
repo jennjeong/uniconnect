@@ -8424,6 +8424,14 @@ test("an operator verifies a student group from its documents, which are then de
   assert.equal((await call("POST", "/groups/verification", { ...body, representative: "" }, group)).status, 400)
   const { token: brand } = await listedMember("checked@checked-cafe.kr", "checked-pass-123", "브랜드")
   assert.equal((await call("POST", "/groups/verification", body, brand)).status, 403)
+  // 서류에 대표의 개인정보가 들어가므로 공동 관리자는 대신 낼 수 없다.
+  const invite = await call("POST", "/team/invites", { name: "부회장", email: "checked-vice@syu.ac.kr" }, group)
+  const joined = await call("POST", "/team/join", { email: "checked-vice@syu.ac.kr", code: invite.data.devCode, password: "Vice-pass-123!", document: proofDocument })
+  assert.equal(joined.status, 202)
+  await approveApplication("checked-vice@syu.ac.kr")
+  const { token: vice } = await logInCoAdmin("checked-vice@syu.ac.kr", "Vice-pass-123!")
+  assert.equal((await call("POST", "/groups/verification", body, vice)).status, 403)
+  assert.equal((await call("GET", "/groups/verification", undefined, vice)).data.status, "none")
 
   assert.equal((await call("POST", "/groups/verification", body, group)).status, 202)
   assert.equal((await call("POST", "/groups/verification", body, group)).status, 409)
