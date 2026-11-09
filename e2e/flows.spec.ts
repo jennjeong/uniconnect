@@ -2293,7 +2293,7 @@ test("the operators' console stands on its own: token, side menu, members and a 
   // 기록은 로그에 남는다.
   await openMenu()
   await menu.getByRole("button", { name: "공지" }).click()
-  await page.getByLabel("내용").fill("오늘 밤 점검이 있어요")
+  await page.getByLabel("내용", { exact: true }).fill("오늘 밤 점검이 있어요")
   // 보이는 기간은 팝오버로 사이트의 캘린더를 열고, 고른 날은 입력칸에 보이며
   // 지우면 지금부터로 돌아간다.
   const period = page.getByRole("button", { name: /게시 기간/ })
