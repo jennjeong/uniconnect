@@ -59,14 +59,13 @@ export const renamedAccountTypes: Record<string, string> = {
   교육: "교육 · 학원",
 }
 
-// 새 비밀번호(가입, 재설정, 변경)는 8~64자에 영문, 숫자, 기호가 들어가고
-// 공백이 없어야 한다. 입력하는 동안 폼이 같은 규칙을 보여 준다(frontend
-// lib/password.ts, lists.sync.test.ts가 둘이 같은지 검사한다).
+// 새 비밀번호(가입, 재설정, 변경)는 8자 이상에 영문, 숫자, 기호가 들어가야
+// 한다. 입력하는 동안 폼이 같은 규칙을 보여 준다(frontend lib/password.ts,
+// lists.sync.test.ts가 둘이 같은지 검사한다). 128자 위는 scrypt 비용을 묶으려고
+// 받지 않지만 조건으로 내걸지는 않는다.
 export function checkPassword(password: string) {
-  if (password.length < 8 || password.length > 64) {
-    throw new HttpError(400, "비밀번호는 8자에서 64자 사이로 정해 주세요.")
-  }
-  if (/\s/.test(password)) throw new HttpError(400, "비밀번호에는 공백을 넣을 수 없어요.")
+  if (password.length < 8) throw new HttpError(400, "비밀번호는 8자 이상으로 정해 주세요.")
+  if (password.length > 128) throw new HttpError(400, "비밀번호가 너무 길어요.")
   if (!/[A-Za-z]/.test(password) || !/\d/.test(password) || !/[!-/:-@[-`{-~]/.test(password)) {
     throw new HttpError(400, "비밀번호에 영문, 숫자, 특수문자를 모두 넣어 주세요.")
   }

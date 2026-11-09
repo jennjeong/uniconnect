@@ -67,7 +67,7 @@ describe("the screens offer the choices the server takes", () => {
 
   // 양식이 나열하는 비밀번호 규칙은 서버가 말하는 것과 같다.
   test("password rules", () => {
-    const samples = ["", "sh-1!", "club pass-123", "clubpass123", "12345678-!", "Club-pass-1", "a".repeat(62) + "1!", "a".repeat(63) + "1!"]
+    const samples = ["", "sh-1!", "club pass-123", "clubpass123", "12345678-!", "Club-pass-1", "a".repeat(126) + "1!", "a".repeat(127) + "1!"]
     for (const password of samples) {
       let refused = ""
       try {
