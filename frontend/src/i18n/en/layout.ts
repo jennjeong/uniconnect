@@ -606,7 +606,7 @@ const en: Record<string, string> = {
   "합의": "Agreed",
   "양쪽 계약 확인 · 협찬액 68만 원": "Both confirmed · ₩680,000 in value",
   "할 일 6개 · 부스 로고 · SNS 게시물 1회": "6 tasks · booth logo · one SNS post",
-  "현장에서 센 실측값 · 매출은 추정": "Counted on site · sales are an estimate",
+  "현장에서 집계한 수치예요.": "Counted on site.",
 }
 
 export default en
