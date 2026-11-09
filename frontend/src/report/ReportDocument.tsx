@@ -61,11 +61,12 @@ export function VenueCounts({
 }
 
 // PDF 모든 페이지의 위쪽: 로고, 날짜, 누구를 위해 만들었는지.
-export function PageHeader({ author }: { author: string }) {
+export function PageHeader({ author, sample = false }: { author: string; sample?: boolean }) {
   return (
     <header className="pdf-header">
       <img alt="uniconnect" src={logo} />
       <div>
+        {sample && <strong className="pdf-sample">{t("예시 데이터")}</strong>}
         <span>{t("발행 {date}", { date: formatFullDate(todayIso()) })}</span>
         <span>{t("작성 {author}", { author })}</span>
       </div>

@@ -13,7 +13,10 @@ export function AnalyticsExport({
   sponsorships,
   author,
   onDone,
+  sample = false,
 }: {
+  // 예시 자료: 파일 이름에 sample, 페이지마다 '예시 데이터'.
+  sample?: boolean
   sponsorships: Sponsorship[]
   author: string
   onDone: (failed: boolean) => void
@@ -26,17 +29,18 @@ export function AnalyticsExport({
     if (started.current || !container.current) return
     started.current = true
     const pages = [...container.current.querySelectorAll<HTMLElement>(".pdf-page")]
-    exportPdf(pages, pdfFileName(t("성과 분석"), author, todayIso()))
+    const name = pdfFileName(t("성과 분석"), author, todayIso())
+    exportPdf(pages, sample ? name.replace(/^uniconnect-/, "uniconnect-sample-") : name)
       .then(() => onDone(false))
       .catch((error) => {
         console.error(error)
         onDone(true)
       })
-  }, [author, onDone])
+  }, [author, onDone, sample])
 
   return createPortal(
     <div aria-hidden="true" className="pdf-export" ref={container}>
-      <AnalyticsDocument author={author} sponsorships={sponsorships} />
+      <AnalyticsDocument author={author} sample={sample} sponsorships={sponsorships} />
     </div>,
     document.body,
   )

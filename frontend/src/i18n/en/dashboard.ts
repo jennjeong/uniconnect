@@ -123,7 +123,7 @@ const en: Record<string, string> = {
   "숫자로 확인하세요.": "and see it in numbers.",
   "검토할 제안": "To review",
   "새로 받은 협찬 제안 {count}건이 답을 기다리고 있어요.": "{count} new proposals are waiting for your answer.",
-  "캠페인과 잘 맞는 학생단체 {count}곳을 찾았어요.": "We found {count} student groups that fit your campaign.",
+  "캠페인과 잘 맞는 학생단체 {count}곳을 찾았어요.": "We found {count:student group|student groups} that fit your campaign.",
   "아직 가입한 학생단체가 없어요.": "No student groups have joined yet.",
   "브랜드 소개를 써 두고 캠페인을 행사 일정에 등록해 두세요. 학생단체가 가입하면 캠페인과 잘 맞는 순서로 추천해 드려요.":
     "Write your introduction and add your campaigns to the calendar. Once student groups join, we'll recommend them by how well they fit your campaign.",

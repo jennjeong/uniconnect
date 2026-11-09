@@ -58,9 +58,11 @@ export function reportCsv(report: Report, metrics: Metrics): string {
 
 // 분석 표가 보여주는 그대로, 한 줄에 하나씩 최신 순으로 담은 브랜드의 협찬.
 // 협찬 중 하나라도 가진 현장 집계마다 열이 붙는다.
-export function analyticsCsv(sponsorships: Sponsorship[]): string {
+// 예시 자료(`sample`)에는 맨 앞에 '데이터 구분' 열을 두고 줄마다 '예시'라고 적는다.
+export function analyticsCsv(sponsorships: Sponsorship[], { sample = false } = {}): string {
   const counted = venueKinds.filter((kind) => sponsorships.some((item) => (item[kind as keyof Sponsorship] ?? 0) !== 0))
   const head: Cell[] = [
+    ...(sample ? [t("데이터 구분")] : []),
     t("단체"),
     t("행사"),
     t("날짜"),
@@ -76,6 +78,7 @@ export function analyticsCsv(sponsorships: Sponsorship[]): string {
   return toCsv([
     head,
     ...sponsorships.map((item) => [
+      ...(sample ? [t("예시")] : []),
       item.groupName,
       item.eventName,
       item.date,

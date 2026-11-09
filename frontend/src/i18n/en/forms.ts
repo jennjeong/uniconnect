@@ -1227,6 +1227,24 @@ const en: Record<string, string> = {
   "운영자가 확인을 시작했어요": "started reviewing",
   "분쟁을 거뒀어요": "withdrew the dispute",
   "운영자가 결론을 기록했어요": "recorded a conclusion",
+  // 예시 카드에서 연 로그인 창, 가입 양식의 역할별 안내, 예시 내보내기, 카탈로그의 필터 버튼
+  "예시 상대인 {name}에는 데모 계정으로만 제안해 볼 수 있어요.": "{name} is an example, so you can propose to it only with a demo account.",
+  "이 제안 데모로 체험하기": "Try this proposal with a demo account",
+  "로그인하거나 가입하면 실제 회원 목록에서 협찬 상대를 찾을 수 있어요.": "Log in or sign up to find sponsorship partners among real members.",
+  "고른 예시 상대를 지금은 열 수 없어 목록으로 왔어요. 다른 상대를 골라 제안해 보세요.": "We couldn't open the example you picked, so here's the list. Pick another partner to propose to.",
+  "학교 이메일(ac.kr)과 담당자 이름 · 직책 · 휴대폰 번호가 필요해요.": "You'll need a school email (ac.kr) and the contact person's name · position · mobile number.",
+  "초대받은 가게는 개인 메일로도 가입할 수 있어요.": "An invited shop can sign up with a personal email too.",
+  "담당자 정보와 사업자등록증 또는 재직 서류가 필요하고, 운영자가 확인하면 가입이 끝나요.": "You'll need the contact person's details and a business registration or proof of employment, and sign-up finishes once an operator checks them.",
+  "개인 메일(gmail, naver 등)로는 가입할 수 없어요.": "Personal email (gmail, naver, etc.) can't be used to sign up.",
+  "회사 이메일과 담당자 이름 · 직책 · 휴대폰 번호가 필요해요.": "You'll need a company email and the contact person's name · position · mobile number.",
+  "회사 이메일이 없는 가게는 근처 학생단체가 보낸 초대 링크로 가입할 수 있어요.": "A shop without a company email can sign up through an invitation link from a nearby student group.",
+  "가입 문의는 도움말 센터로": "Questions? See the help center",
+  "초대받은 가게는 개인 메일로도 인증할 수 있어요.": "An invited shop can verify a personal email too.",
+  "예시 PDF 다운로드": "Download sample PDF",
+  "예시 CSV 다운로드": "Download sample CSV",
+  "데이터 구분": "Data",
+  "예시 데이터": "Sample data",
+  "조건@catalog": "Filters",
 }
 
 export default en
