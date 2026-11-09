@@ -843,8 +843,10 @@ function App() {
           ? t("행사가 등록되었어요. 추천 매칭을 시작합니다.")
           : t("캠페인이 등록되었어요. 적합한 단체를 찾습니다."),
       )
+      return true
     } catch (error) {
       handleError(error)
+      return false
     }
   }
 
@@ -871,7 +873,7 @@ function App() {
   }
 
   const updateEvent = async (draft: EventDraft) => {
-    if (editing === null) return
+    if (editing === null) return false
     try {
       const { event } = await api.updateEvent(editing, draft)
       setEvents((current) => current.map((item) => (item.id === event.id ? event : item)))
@@ -880,8 +882,10 @@ function App() {
       setRefreshTick((tick) => tick + 1)
       goBack({ page: calendarPage })
       showNotice(students ? t("행사 정보를 고쳤어요.") : t("캠페인 정보를 고쳤어요."))
+      return true
     } catch (error) {
       handleError(error)
+      return false
     }
   }
 
@@ -1851,6 +1855,7 @@ function App() {
             sent={sent}
             openTasks={openTasks}
             onOpenAgreements={openAgreements}
+            onOpenAgreement={openAgreement}
           />
         ) : (
           <BrandDashboardPage
@@ -1876,6 +1881,9 @@ function App() {
             sent={sent}
             openTasks={openTasks}
             onOpenAgreements={openAgreements}
+            onOpenAgreement={openAgreement}
+            campaigns={eventsFor === viewer ? events : []}
+            confirmedCount={visitor ? undefined : confirmedCount}
           />
         )
     }
@@ -1955,7 +1963,17 @@ function App() {
       />
 
       <main className="main-content" id="main" tabIndex={-1}>
-        <SiteNotices viewer={account?.id ?? ""} />
+        {/* 안내 공지는 처음 닿는 화면에서만(components/SiteNotices.tsx). */}
+        <SiteNotices
+          infoShown={Boolean(
+            view.home ||
+              view.faq ||
+              view.legal ||
+              view.plans ||
+              (view.page === "대시보드" && Object.keys(view).every((key) => key === "page")),
+          )}
+          viewer={account?.id ?? ""}
+        />
         {/* 페이지가 바뀔 때마다 새 key를 주어 페이지의 등장 효과를 다시
            재생한다. 상세 페이지는 목록을 덮으며, 목록은 마운트된 채(탭과
            스크롤을 유지) 남아 있다가 돌아올 때 다시 보인다. */}

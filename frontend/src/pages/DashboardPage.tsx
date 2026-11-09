@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode } from "react"
 
 import { BrandMark } from "../components/BrandMark"
 import { CatalogEmpty } from "../components/CatalogEmpty"
+import { DashSectionHead, DashboardTop, type DashboardFact } from "../components/DashboardTop"
 import { Icon } from "../components/Icon"
 import { JourneyChain, type JourneyStep } from "../components/JourneyChain"
 import { MeetingHero } from "../components/MeetingHero"
@@ -56,6 +57,7 @@ export function DashboardPage({
   sent = [],
   openTasks,
   onOpenAgreements,
+  onOpenAgreement,
 }: {
   // 인사말에 쓰는, 로그인한 단체의 이름.
   accountName?: string
@@ -96,6 +98,8 @@ export function DashboardPage({
   // 자기 쪽에 남은 계약서 할 일(App이 /api/proposals에서 받는다).
   openTasks?: OpenTasks
   onOpenAgreements?: () => void
+  // 계약서 하나를 연다(업무 보드에서 그런 계약서가 하나뿐일 때).
+  onOpenAgreement?: (id: string) => void
 }) {
   const next = nextEvent(events)
   const nextDay = next ? fromIsoDate(next.date) : undefined
@@ -108,7 +112,12 @@ export function DashboardPage({
   // 로그인한 회원의 첫 화면에서 먼저 보여 줄 일: 답할 제안, 확인할 계약서, 등록할 행사.
   const member = Boolean(accountName) && !demo
   const toAnswer = offers.filter((offer) => offer.status === "검토 중").length
-  const toConfirm = offers.filter((offer) => offer.status === "수락" && offer.contract === "waiting").length
+  // 내가 확인할 계약서(받은 협찬과 보낸 제안 모두, 내 쪽이 아직 확인하지 않은 것). 상대만
+  // 확인하면 되는 계약서는 여기 들지 않는다(업무 보드의 '상대 확인 대기').
+  const toConfirm = openTasks?.toConfirm ?? 0
+  // 그런 계약서가 하나뿐이면 목록 대신 그 계약서를 연다.
+  const openContract = (count: number, id?: string) =>
+    count === 1 && id && onOpenAgreement ? onOpenAgreement(id) : onOpenAgreements ? onOpenAgreements() : onNavigate("받은 협찬")
   const todo =
     toAnswer > 0
       ? {
@@ -118,11 +127,11 @@ export function DashboardPage({
         }
       : toConfirm > 0 && onOpenAgreements
         ? {
-            insight: t("계약서 확인이 필요한 협찬이 {count}건 있어요.", { count: toConfirm }),
+            insight: t("내가 확인할 계약서가 {count}건 있어요.", { count: toConfirm }),
             detail: t("양쪽이 계약서를 확인해야 협찬이 확정돼요."),
-            primary: { label: t("계약서 확인"), onClick: onOpenAgreements },
+            primary: { label: t("계약서 확인"), onClick: () => openContract(toConfirm, openTasks?.confirmId) },
           }
-        : !next && !noBrands
+        : !next
           ? {
               insight: t("행사를 등록하면 잘 맞는 브랜드를 찾아 드려요."),
               detail: t("행사 이름과 날짜만 있어도 추천을 시작해요."),
@@ -130,14 +139,15 @@ export function DashboardPage({
             }
           : null
 
-  // 업무 보드(회원): 실제 데이터의 건수만. 줄을 누르면 그 일로 간다.
+  // 업무 보드(회원): 실제 데이터의 건수만. 줄을 누르면 그 일로 간다. 내가 할 일, 상대를
+  // 기다리는 일, 일정 · 결과를 나눠 상대만 할 일이 남은 것을 내 급한 일처럼 보이지 않는다.
   const sentWaiting = sent.filter((item) => !item.noInbox && item.status === "검토 중").length
-  const contractsWaiting =
-    toConfirm + sent.filter((item) => item.status === "수락" && item.contract === "waiting").length
+  const awaitingPartner = openTasks?.awaitingPartner ?? 0
   const upcomingEvents = events.filter((event) => (event.endDate ?? event.date) >= todayIso())
   const workRows: WorkRow[] = [
     {
       key: "answer",
+      kind: "mine",
       label: t("답할 협찬 제안"),
       count: toAnswer,
       detail: toAnswer > 0 ? t("조건을 보고 수락하거나 거절해요") : t("새로 온 제안이 없어요"),
@@ -145,34 +155,60 @@ export function DashboardPage({
     },
     {
       key: "contract",
-      label: t("계약 확인 대기"),
-      count: contractsWaiting,
-      detail: contractsWaiting > 0 ? t("양쪽이 계약서를 확인해야 협찬이 확정돼요") : t("확인할 계약서가 없어요"),
-      onOpen: () => (onOpenAgreements ? onOpenAgreements() : onNavigate("받은 협찬")),
-    },
-    {
-      key: "sent",
-      label: t("보낸 제안 답변 대기"),
-      count: sentWaiting,
-      detail: sentWaiting > 0 ? t("브랜드의 답을 기다려요") : t("답을 기다리는 보낸 제안이 없어요"),
-      onOpen: () => onNavigate("받은 협찬"),
+      kind: "mine",
+      label: t("내가 확인할 계약서"),
+      count: toConfirm,
+      detail: toConfirm > 0 ? t("내용을 보고 확인하면 상대 확인 뒤 협찬이 확정돼요") : t("확인할 계약서가 없어요"),
+      onOpen: () => openContract(toConfirm, openTasks?.confirmId),
     },
     {
       key: "tasks",
+      kind: "mine",
       label: t("증빙 남은 할 일"),
       count: openTasks?.tasks ?? 0,
       detail:
         openTasks && openTasks.tasks > 0
           ? t("계약서 {count}건에서 끝내고 증빙을 붙여요", { count: openTasks.agreements })
           : t("남은 할 일이 없어요"),
+      onOpen: () => openContract(openTasks?.agreements ?? 0, openTasks?.taskId),
+    },
+    {
+      key: "sent",
+      kind: "waiting",
+      label: t("보낸 제안 답변 대기"),
+      count: sentWaiting,
+      detail: sentWaiting > 0 ? t("브랜드의 답을 기다려요") : t("답을 기다리는 보낸 제안이 없어요"),
+      onOpen: () => onNavigate("받은 협찬"),
+    },
+    {
+      key: "partner",
+      kind: "waiting",
+      label: t("상대 확인 대기"),
+      count: awaitingPartner,
+      detail: awaitingPartner > 0 ? t("우리는 확인했고 브랜드의 확인을 기다려요") : t("상대를 기다리는 계약서가 없어요"),
       onOpen: () => (onOpenAgreements ? onOpenAgreements() : onNavigate("받은 협찬")),
     },
     {
       key: "events",
+      kind: "info",
       label: t("다가오는 행사"),
       count: upcomingEvents.length,
       detail: next ? `${next.name} · ${dDayLabel(next.date)}` : t("등록한 다가오는 행사가 없어요"),
       onOpen: () => onNavigate("내 행사"),
+    },
+  ]
+
+  // 회원 첫머리: 지금 할 일을 제목으로, 다음 행사와 확정된 협찬을 사실로.
+  const topFacts: DashboardFact[] = [
+    {
+      label: t("다음 행사"),
+      value: next ? next.name : t("없음"),
+      note: next ? `${formatFullDate(next.date)} · ${dDayLabel(next.date)} · ${t(next.status)}` : t("행사를 등록하면 추천이 시작돼요"),
+    },
+    {
+      label: t("확정된 협찬"),
+      value: t("{count}건", { count: confirmedCount }),
+      note: t("양쪽이 계약서를 확인한 것"),
     },
   ]
 
@@ -213,58 +249,87 @@ export function DashboardPage({
 
   return (
     <div className="dashboard">
-      <MeetingHero
-        eyebrow={
-          member && !paused
-            ? next
-              ? t("다음 일정 · {name} · {dday}", { name: next.name, dday: dDayLabel(next.date) })
-              : t("다가오는 행사가 없어요")
-            : accountName
-            ? t("반가워요, {name}", { name: accountName })
-            : demo
-              ? t("예시 화면 · {semester}", { semester: semesterLabel() })
-              : semesterLabel()
-        }
-        lines={[t("협찬 구하느라"), t("밤새던 날은"), t("이제 끝.")]}
-        stats={[
-          { value: t("{count}곳", { count: candidates.length }), label: t("추천 브랜드") },
-          { value: t("{count}건", { count: running }), label: t("진행 중 협찬") },
-          { value: metrics.scans.toLocaleString(locale), label: t("누적 QR 참여") },
-        ]}
-        insight={
-          paused
-            ? t("내 소개를 숨기는 중이에요.")
-            : noBrands
-              ? t("아직 가입한 브랜드가 없어요.")
-              : t("다가오는 행사와 잘 맞는 브랜드 {count}곳을 찾았어요.", { count: matches.length })
-        }
-        detail={
-          paused
-            ? t("새 제안은 받지 않아요. 진행 중인 대화와 협찬은 그대로예요.")
-            : noBrands
-              ? t("학교 앞 가게에 초대장을 보내 보세요. 가입하면 바로 추천해 드려요.")
-              : t("잘 맞는 브랜드부터 제안해 보세요. 수락되면 계약부터 리포트까지 여기서 이어져요.")
-        }
-        primary={
-          paused && onResume
-            ? { label: t("다시 보이게 하기"), onClick: onResume }
-            : { label: t("추천 매칭 확인하기"), onClick: () => onNavigate("추천 매칭") }
-        }
-        onInstall={onInstall}
-        {...(member && !paused
-          ? {
-              greeting: t("반가워요, {name}", { name: accountName! }),
-              ...(todo
-                ? {
-                    insight: todo.insight,
-                    detail: todo.detail,
-                    primary: todo.primary,
-                    secondary: { label: t("추천 매칭 보기"), onClick: () => onNavigate("추천 매칭") },
-                  }
-                : { secondary: { label: t("내 행사 보기"), onClick: () => onNavigate("내 행사") } }),
-            }
-          : {})}
-      />
+      {member ? (
+        <DashboardTop
+          who={t("{name} · 학생단체", { name: accountName! })}
+          title={
+            paused
+              ? t("내 소개를 숨기는 중이에요.")
+              : todo
+                ? todo.insight
+                : t("지금 바로 할 일은 없어요.")
+          }
+          lead={
+            paused
+              ? t("새 제안은 받지 않아요. 진행 중인 대화와 협찬은 그대로예요.")
+              : todo
+                ? todo.detail
+                : t("추천 브랜드에 제안하거나 다음 행사 준비를 이어 가요.")
+          }
+          facts={topFacts}
+          primary={
+            paused && onResume
+              ? { label: t("다시 보이게 하기"), onClick: onResume }
+              : todo
+                ? todo.primary
+                : { label: t("추천 매칭 보기"), onClick: () => onNavigate("추천 매칭") }
+          }
+          secondary={{ label: t("내 행사 보기"), onClick: () => onNavigate("내 행사") }}
+        />
+      ) : (
+        <MeetingHero
+          eyebrow={
+            member && !paused
+              ? next
+                ? t("다음 일정 · {name} · {dday}", { name: next.name, dday: dDayLabel(next.date) })
+                : t("다가오는 행사가 없어요")
+              : accountName
+              ? t("반가워요, {name}", { name: accountName })
+              : demo
+                ? t("예시 화면 · {semester}", { semester: semesterLabel() })
+                : semesterLabel()
+          }
+          lines={[t("협찬 구하느라"), t("밤새던 날은"), t("이제 끝.")]}
+          stats={[
+            { value: t("{count}곳", { count: candidates.length }), label: t("추천 브랜드") },
+            { value: t("{count}건", { count: running }), label: t("진행 중 협찬") },
+            { value: metrics.scans.toLocaleString(locale), label: t("누적 QR 참여") },
+          ]}
+          insight={
+            paused
+              ? t("내 소개를 숨기는 중이에요.")
+              : noBrands
+                ? t("아직 가입한 브랜드가 없어요.")
+                : t("다가오는 행사와 잘 맞는 브랜드 {count}곳을 찾았어요.", { count: matches.length })
+          }
+          detail={
+            paused
+              ? t("새 제안은 받지 않아요. 진행 중인 대화와 협찬은 그대로예요.")
+              : noBrands
+                ? t("학교 앞 가게에 초대장을 보내 보세요. 가입하면 바로 추천해 드려요.")
+                : t("잘 맞는 브랜드부터 제안해 보세요. 수락되면 계약부터 리포트까지 여기서 이어져요.")
+          }
+          primary={
+            paused && onResume
+              ? { label: t("다시 보이게 하기"), onClick: onResume }
+              : { label: t("추천 매칭 확인하기"), onClick: () => onNavigate("추천 매칭") }
+          }
+          onInstall={onInstall}
+          {...(member && !paused
+            ? {
+                greeting: t("반가워요, {name}", { name: accountName! }),
+                ...(todo
+                  ? {
+                      insight: todo.insight,
+                      detail: todo.detail,
+                      primary: todo.primary,
+                      secondary: { label: t("추천 매칭 보기"), onClick: () => onNavigate("추천 매칭") },
+                    }
+                  : { secondary: { label: t("내 행사 보기"), onClick: () => onNavigate("내 행사") } }),
+              }
+            : {})}
+        />
+      )}
 
       {checklist}
 
@@ -370,20 +435,33 @@ export function DashboardPage({
         </>
       )}
 
-      <section className="works-section" id="matches">
-        <div className="section-head centered">
-          <span className="eyebrow" data-reveal>
-            Smart Match
-          </span>
-          <RevealTitle as="h2" className="section-display">
-            {t("맞춤 추천 매칭")}
-          </RevealTitle>
-          {updatedAt && (
-            <small className="section-note" data-reveal>
-              {t("오늘 {time} 업데이트", { time: `${pad(updatedAt.getHours())}:${pad(updatedAt.getMinutes())}` })}
-            </small>
-          )}
-        </div>
+      <section
+        aria-labelledby={member ? "dash-matches-title" : undefined}
+        className={member ? "works-section dash-section" : "works-section"}
+        id="matches"
+      >
+        {member ? (
+          <DashSectionHead
+            action={{ label: t("브랜드 찾기"), onClick: () => onNavigate("추천 매칭") }}
+            id="dash-matches-title"
+            note={t("추천 지수가 높은 3곳")}
+            title={t("추천 브랜드")}
+          />
+        ) : (
+          <div className="section-head centered">
+            <span className="eyebrow" data-reveal>
+              Smart Match
+            </span>
+            <RevealTitle as="h2" className="section-display">
+              {t("맞춤 추천 매칭")}
+            </RevealTitle>
+            {updatedAt && (
+              <small className="section-note" data-reveal>
+                {t("오늘 {time} 업데이트", { time: `${pad(updatedAt.getHours())}:${pad(updatedAt.getMinutes())}` })}
+              </small>
+            )}
+          </div>
+        )}
         {noBrands && (
           <CatalogEmpty
             title={t("아직 추천할 브랜드가 없어요")}
@@ -431,15 +509,35 @@ export function DashboardPage({
         </>
       )}
 
-      <section className="results-section">
-        <div className="section-head">
-          <span className="eyebrow" data-reveal>
-            Last Event
-          </span>
-          <RevealTitle as="h2" className="section-display">
-            {t("지난 행사가 남긴 숫자")}
-          </RevealTitle>
-        </div>
+      <section
+        aria-labelledby={member ? "dash-results-title" : undefined}
+        className={member ? "results-section dash-section" : "results-section"}
+      >
+        {member ? (
+          <DashSectionHead
+            action={{ label: t("리포트 보기"), onClick: () => onNavigate("리포트") }}
+            id="dash-results-title"
+            note={
+              report && measureState(report) !== "진행 전"
+                ? t("{name} · {date}", { name: report.eventName, date: formatFullDate(report.eventDate) })
+                : undefined
+            }
+            title={t("지난 행사 결과")}
+          />
+        ) : (
+          <div className="section-head">
+            <span className="eyebrow" data-reveal>
+              Last Event
+            </span>
+            <RevealTitle as="h2" className="section-display">
+              {t("지난 행사가 남긴 숫자")}
+            </RevealTitle>
+          </div>
+        )}
+        {member && (!report || measureState(report) === "진행 전") ? (
+          // 시작한 행사가 없으면 0으로 채운 그래프 대신 무엇이 언제 생기는지 말한다.
+          <p className="day-empty">{t("행사 날 QR을 띄우면 참여 · 쿠폰 · 방문이 여기에 쌓여요.")}</p>
+        ) : (
         <div className="results-grid">
           <div className="silver-panel results-chart" data-reveal>
             <div className="event-summary">
@@ -489,6 +587,7 @@ export function DashboardPage({
             </div>
           </div>
         </div>
+        )}
       </section>
 
     </div>

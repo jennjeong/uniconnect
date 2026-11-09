@@ -160,7 +160,18 @@ export type ProposalState = {
   openTasks?: OpenTasks
 }
 
-export type OpenTasks = { tasks: number; agreements: number }
+// 자기 쪽에 남은 계약서 일(backend lib/agreements.ts openTasksOf). 예전 서버는
+// tasks와 agreements만 보낸다.
+export type OpenTasks = {
+  tasks: number
+  agreements: number
+  // 내가 아직 확인하지 않은 계약서, 내 쪽은 확인했고 상대를 기다리는 계약서.
+  toConfirm?: number
+  awaitingPartner?: number
+  // 그런 계약서가 하나뿐일 때 바로 열 첫 계약서.
+  confirmId?: string
+  taskId?: string
+}
 
 // 백엔드 엔드포인트마다 함수 하나 (backend/src/routes 참고).
 export const api = {

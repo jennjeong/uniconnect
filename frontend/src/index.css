@@ -1694,66 +1694,347 @@ button.nav-pill:hover {
   object-fit: contain;
 }
 
-/* 점수를 그 점수 자신의 파랑 음영으로 그린 링 (ScoreRing.tsx). 은색 트랙 위에
-   놓이고, 가운데에 흰 바탕의 숫자가 있다. */
-.match-score-ring {
-  position: relative;
+/* 찾기 화면의 짧은 머리(PageIntro compact): 목록이 첫 화면에 바로 오도록 위아래
+   여백과 제목을 줄인다. 클래스 둘이라 휴대폰용 .page-intro 규칙보다 앞선다. */
+.page-intro.compact {
+  gap: var(--space-3);
+  padding: var(--space-8) 0 var(--space-5);
+}
+
+.page-intro.compact .intro-row {
+  gap: var(--space-3);
+}
+
+.page-intro.compact .intro-copy {
+  gap: var(--space-2);
+}
+
+.page-intro.compact .intro-title {
+  font-size: clamp(1.625rem, 1.2rem + 1.8vw, 2.5rem);
+  line-height: 1.2;
+}
+
+.page-intro.compact .intro-description {
+  font-size: var(--text-sm);
+}
+
+@media (max-width: 720px) {
+  .page-intro.compact {
+    padding: var(--space-5) 0 var(--space-4);
+  }
+}
+
+/* 카탈로그 조작부(components/CatalogControls.tsx): 범위 탭, 검색과 '조건' 버튼, 펼치는
+   정렬 · 필터 칸, 결과 수와 걸린 조건 칩, 보기 전환. */
+.catalog-controls {
+  display: grid;
+  /* 칸이 내용의 최소 폭(탭 넷, 검색창)보다 좁아질 수 있게: 320px에서 넘치지 않는다. */
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+
+.catalog-controls-row {
   display: flex;
-  width: 74px;
-  height: 74px;
-  flex: 0 0 auto;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  gap: var(--space-2);
 }
 
-.match-score-ring svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+.catalog-controls-row .catalog-search {
+  width: min(100%, 420px);
+  min-width: 0;
+  height: var(--touch-target);
+  flex: 1 1 auto;
 }
 
-.ring-fill {
-  fill: #fff;
+.catalog-conditions-toggle {
+  display: inline-flex;
+  height: var(--touch-target);
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-label);
 }
 
-.ring-track,
-.ring-value {
-  fill: none;
-  stroke-width: 3;
+.catalog-conditions-toggle[aria-expanded="true"] {
+  box-shadow: inset 0 0 0 2px var(--point);
 }
 
-.ring-track {
-  stroke: #dfe4ec;
+.catalog-conditions-toggle .icon {
+  stroke: currentColor;
 }
 
-.ring-value {
-  stroke: var(--ring-color);
-  stroke-linecap: round;
+.catalog-conditions-toggle em {
+  display: inline-grid;
+  min-width: 20px;
+  height: 20px;
+  place-items: center;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--point);
+  color: var(--on-point);
+  font-size: var(--text-xs);
+  font-style: normal;
+  font-weight: var(--weight-badge);
 }
 
-.match-score-ring strong {
+.catalog-conditions {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--fill);
+}
+
+.catalog-conditions[hidden] {
+  display: none;
+}
+
+.sort-choice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.sort-choice legend,
+.catalog-filter-fields .catalog-select > span {
+  margin-bottom: var(--space-2);
+  padding: 0;
+  color: var(--ink-soft);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-label);
+}
+
+.sort-choice label {
   position: relative;
-  color: var(--ring-text);
-  font-size: 1rem;
-  font-weight: var(--weight-strong);
-  letter-spacing: 0;
+}
+
+.sort-choice input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sort-choice span {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-label);
+  cursor: pointer;
+}
+
+.sort-choice input:checked + span {
+  background: var(--point);
+  box-shadow: none;
+  color: var(--on-point);
+}
+
+.sort-choice input:focus-visible + span {
+  outline: 2px solid var(--point);
+  outline-offset: 2px;
+}
+
+.catalog-filter-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr));
+  gap: var(--space-3);
+}
+
+.catalog-filter-fields .catalog-select {
+  display: grid;
+}
+
+.catalog-filter-fields .catalog-select select {
+  width: 100%;
+  height: var(--touch-target);
+  background-color: var(--surface);
+}
+
+.catalog-result-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.catalog-count {
+  order: 0;
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-label);
+}
+
+.catalog-result-line .nearby-layout {
+  margin-left: auto;
+}
+
+.catalog-result-line .nearby-layout button {
+  height: 36px;
+}
+
+/* 결과 줄 안의 '추천 지수란?': 버튼은 결과 수 옆에, 펼친 설명은 줄 아래 전체 폭에. */
+.catalog-result-line .score-note {
+  display: contents;
+}
+
+.catalog-result-line .score-note-toggle {
+  order: 1;
+}
+
+.catalog-result-line .condition-chips {
+  order: 2;
+}
+
+.catalog-result-line .bulk-toggle {
+  order: 3;
+}
+
+.catalog-result-line .nearby-layout {
+  order: 4;
+}
+
+.catalog-result-line .score-note-body {
+  flex-basis: 100%;
+  order: 5;
+}
+
+.condition-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.condition-chips li {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 2px;
+  padding-left: 12px;
+  border-radius: 999px;
+  background: var(--point-tint);
+  color: var(--point-strong);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-label);
+}
+
+.condition-chips li > span {
+  overflow: hidden;
+  max-width: 22ch;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.condition-chips li button {
+  display: inline-grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: inherit;
+}
+
+.condition-chips .condition-clear-all {
+  padding: 0;
+  background: none;
+}
+
+.condition-chips .condition-clear-all button {
+  width: auto;
+  padding: 0 8px;
+  color: var(--ink-soft);
+  font: inherit;
+  text-decoration: underline;
+}
+
+/* 추천 지수 배지(components/ScoreBadge.tsx): '추천 지수 90'을 한 줄로. 링 안에 작은
+   글자를 넣지 않는다. 파랑은 행동과 선택에 쓰므로 중립색이다. */
+.score-badge {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: baseline;
+  align-self: flex-start;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--fill);
+  box-shadow: var(--ring);
+  color: var(--ink-soft);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-label);
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.score-badge strong {
+  color: var(--ink);
+  font-size: var(--text-base);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-display);
   line-height: 1;
 }
 
-.match-score-ring strong small {
-  margin-left: 1px;
-  font-size: 0.625rem;
-  font-weight: var(--weight-strong);
+/* 목록 위의 '추천 지수란?' 설명(ScoreNote). */
+.score-note {
+  display: grid;
+  gap: var(--space-2);
 }
 
-.match-score-ring span {
-  position: relative;
-  margin-top: 2px;
-  color: var(--muted);
-  font-size: 0.625rem;
+.score-note-toggle {
+  justify-self: start;
+  min-height: var(--touch-target);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: var(--text-sm);
   font-weight: var(--weight-label);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.score-note-body {
+  display: grid;
+  gap: var(--space-1);
+  max-width: 64ch;
+  padding: var(--space-3) var(--space-4);
+  border-left: 3px solid var(--line-strong);
+  background: var(--fill);
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  word-break: keep-all;
+}
+
+.score-note-body[hidden] {
+  display: none;
+}
+
+.score-note-body p {
+  margin: 0;
 }
 
 /* 은색 트랙에 고른 곳이 진한 파랑 알약이 되는 탭, 고른 것이 옅은 파랑이 되는
@@ -3752,14 +4033,6 @@ input[type="search"]::-webkit-search-cancel-button {
 }
 
 /* 카드 안의 점수 링은 이름에 맞춰 조금 작게. */
-.work-card .match-score-ring {
-  width: 62px;
-  height: 62px;
-}
-
-.work-card .match-score-ring strong {
-  font-size: 0.9375rem;
-}
 
 /* 점수 링은 그 옆의 이름과 제공 내용과 같은 높이에 앉는다. */
 .work-title {
@@ -4010,6 +4283,13 @@ input[type="search"]::-webkit-search-cancel-button {
   display: flex;
   align-items: center;
   gap: 14px;
+}
+
+/* 마크는 48px로 둔다. 크기가 없으면 휴대폰에서 마크가 늘어나 행사 이름이 줄마다 끊긴다. */
+.pending-head > .match-logo {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
 }
 
 .pending-head > div {
@@ -4761,7 +5041,6 @@ input[type="search"]::-webkit-search-cancel-button {
 }
 
 /* 탈퇴는 내 정보 맨 끝에 조용히 놓인다 (modals/LeaveModal.tsx). */
-
 
 .leave-list {
   display: flex;
@@ -12624,7 +12903,8 @@ input[type="search"]::-webkit-search-cancel-button {
    카드 대신 한 줄씩, 왼쪽에 건수, 가운데 일과 설명, 오른쪽 화살표. 일이 있는 줄만
    건수가 진한 파랑이고, 없는 줄은 흐리게 남아 무엇을 확인했는지 보인다. */
 .work-board {
-  width: min(var(--content-max), calc(100% - var(--gutter) * 2));
+  /* 페이지(.page-enter)가 이미 바깥 여백을 둔다. 여기서 또 빼면 휴대폰에서 폭이 줄어든다. */
+  width: 100%;
   margin: var(--space-8) auto 0;
 }
 
@@ -12712,6 +12992,154 @@ input[type="search"]::-webkit-search-cancel-button {
 .work-board button .icon {
   color: var(--muted);
   stroke: currentColor;
+}
+
+/* 업무 보드의 묶음: 내가 할 일만 진한 파랑 건수와 왼쪽 선으로 강조하고, 상대를
+   기다리는 일과 일정 · 결과는 건수가 있어도 회색으로 조용히 둔다. */
+.work-board-group h3 {
+  margin: var(--space-5) 0 0;
+  padding: 0 var(--space-2) var(--space-2);
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-label);
+}
+
+.work-board-group.mine .has-work button {
+  box-shadow: inset 3px 0 0 var(--point);
+}
+
+.work-board-group:not(.mine) .has-work .work-board-count {
+  color: var(--ink-soft);
+}
+
+/* 회원 대시보드의 첫머리(components/DashboardTop.tsx). 공개 소개 페이지처럼 밝은
+   바탕에 글자로 위계를 만든다: 누구의 화면인지, 지금 할 일(제목), 사실 두세 개,
+   다음 행동. 그라데이션 · 큰 둥근 상자 · 영문 장식 라벨 없이. */
+.dash-top {
+  display: grid;
+  gap: var(--space-3);
+  width: 100%;
+  margin: var(--space-8) auto 0;
+  padding-bottom: var(--space-6);
+  border-bottom: 1px solid var(--line);
+}
+
+.dash-top-who {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-label);
+}
+
+.dash-top-title {
+  max-width: 30ch;
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(1.5rem, 1.15rem + 1.4vw, 2.25rem);
+  font-weight: var(--weight-display);
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  word-break: keep-all;
+}
+
+.dash-top-lead {
+  max-width: 56ch;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: var(--text-base);
+  line-height: 1.6;
+  word-break: keep-all;
+}
+
+.dash-top-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 136px), 1fr));
+  gap: var(--space-3) var(--space-6);
+  max-width: 720px;
+  margin: var(--space-2) 0 0;
+}
+
+.dash-top-facts > div {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  min-width: 0;
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--line-strong);
+}
+
+.dash-top-facts dt {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-label);
+}
+
+.dash-top-facts dd {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  margin: 0;
+}
+
+.dash-top-facts strong {
+  color: var(--ink);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-display);
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+}
+
+.dash-top-facts small {
+  color: var(--muted);
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+}
+
+.dash-top-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-5);
+  margin-top: var(--space-2);
+}
+
+.dash-top-actions .underline-link,
+.dash-section-head .underline-link {
+  min-height: var(--touch-target);
+}
+
+/* 회원 대시보드의 구역: 서비스 용어로 된 제목 한 줄과 전체로 가는 링크. 소개용 큰
+   제목과 영문 라벨은 방문자의 예시 화면에만 남는다. */
+.dash-section {
+  width: 100%;
+  margin-inline: auto;
+  padding: var(--space-10) 0 0;
+}
+
+.dash-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-4);
+  margin: 0 0 var(--space-4);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.dash-section-head h2 {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: var(--weight-display);
+}
+
+.dash-section-head small {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.dash-section-head .underline-link {
+  margin-left: auto;
 }
 
 /* 등록 양식의 칸이 꼭 써야 하는지, 나중에 채워도 되는지. */
@@ -20627,7 +21055,6 @@ span.odometer {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-
   .results-grid {
     grid-template-columns: 1fr;
   }
@@ -20675,10 +21102,6 @@ span.odometer {
     grid-template-columns: 1fr;
   }
 
-  .match-score-ring {
-    width: 70px;
-    height: 70px;
-  }
 }
 
 @media (max-width: 720px) {
@@ -20885,29 +21308,29 @@ span.odometer {
     line-height: 1.3;
   }
 
-
   .works-section {
     padding: 24px 0 48px;
   }
 
   .work-grid,
   .work-grid.three {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 16px;
   }
 
-  /* 휴대폰에서 카드는 컴팩트한 한 줄이다: 로고와 그 옆의 카테고리와 이름, 끝에
-     점수, 그다음 태그와 액션이어서, 한 화면에 셋쯤 들어간다. 이름이 상세를
-     열므로 화살표 버튼은 쓰지 않는다. */
+  /* 휴대폰에서 카드는 컴팩트하다: 로고 옆에 카테고리, 이름, 그 아래 '추천 지수'
+     배지, 그다음 태그와 액션이어서, 한 화면에 셋쯤 들어간다. 배지가 이름 옆이 아닌
+     아래라서 긴 이름도 줄 전체를 쓴다. 이름이 상세를 열므로 화살표 버튼은 쓰지 않는다. */
   .work-card {
     display: grid;
     min-height: 0;
     grid-template-areas:
-      "mark meta ring"
-      "mark name ring"
-      "tags tags tags"
-      "actions actions actions";
-    grid-template-columns: 56px minmax(0, 1fr) auto;
+      "mark meta"
+      "mark name"
+      "mark score"
+      "tags tags"
+      "actions actions";
+    grid-template-columns: 56px minmax(0, 1fr);
     align-items: center;
     gap: 4px 12px;
     padding: 18px;
@@ -20933,17 +21356,23 @@ span.odometer {
   }
 
   /* 찜과 비교는 보조 행동이라 카드 맨 위 줄의 오른쪽에 두고, 카테고리는 그 줄의
-     왼쪽에 둔다. 로고, 이름, 링은 그 아래 줄이라 겹치지 않는다. 아래의 행동 줄에는
-     상세 정보와 제안하기 두 버튼만 남는다. 셋째 칸(auto)은 찜·비교가 링보다
-     넓을 때만 늘어나고, 이름은 둘째와 셋째 칸을 함께 쓴다. */
+     왼쪽에 둔다. 로고, 이름, 배지는 그 아래 줄이라 겹치지 않는다. 아래의 행동 줄에는
+     상세 정보와 제안하기 두 버튼만 남는다. */
   .work-card:has(.save-toggle, .compare-toggle) {
     grid-template-areas:
-      "meta meta util util"
-      "mark name name ring"
-      "tags tags tags tags"
-      "actions actions actions actions";
-    grid-template-columns: 56px minmax(0, 1fr) auto 54px;
-    row-gap: 8px;
+      "meta meta util"
+      "mark name name"
+      "mark score score"
+      "tags tags tags"
+      "actions actions actions";
+    grid-template-columns: 56px minmax(0, 1fr) auto;
+    row-gap: 6px;
+  }
+
+  .work-card .score-badge {
+    grid-area: score;
+    justify-self: start;
+    align-self: start;
   }
 
   .work-card:has(.save-toggle, .compare-toggle) .work-meta > span:first-child {
@@ -20976,13 +21405,6 @@ span.odometer {
     font-size: 0.8125rem;
   }
 
-  .work-card .match-score-ring {
-    grid-area: ring;
-    justify-self: end;
-    width: 54px;
-    height: 54px;
-  }
-
   /* 하트와 비교가 없는 카드에서는 빈 줄과 빈 칸이 생기지 않게 한다. 안에 남는 배지는
      휴대폰에서 숨긴다. */
   .work-meta > .work-meta-actions:not(:has(.save-toggle, .compare-toggle)) {
@@ -20992,10 +21414,6 @@ span.odometer {
   /* 로고도 위 여백에 맞춰 위에 붙인다. 위, 아래, 왼쪽, 오른쪽 여백이 모두 같다. */
   .work-card .work-mark {
     align-self: start;
-  }
-
-  .work-card .match-score-ring strong {
-    font-size: 0.875rem;
   }
 
   .work-tags {
@@ -21015,15 +21433,6 @@ span.odometer {
     box-shadow:
       0 0 0 4px rgba(255, 255, 255, 0.7),
       0 12px 24px -12px rgba(19, 48, 111, 0.4);
-  }
-
-  .match-score-ring {
-    width: 64px;
-    height: 64px;
-  }
-
-  .match-score-ring strong {
-    font-size: 0.9375rem;
   }
 
   .chain-wrap {
@@ -21560,18 +21969,6 @@ span.odometer {
     height: 64px;
   }
 
-  .match-score-ring {
-    width: 62px;
-    height: 62px;
-  }
-
-  .match-score-ring strong {
-    font-size: 0.875rem;
-  }
-
-  .match-score-ring span {
-    font-size: 0.5625rem;
-  }
 }
 
 /* 대시보드의 FAQ (components/FaqSection.tsx): 질문을 은색 줄로. 답이 그
@@ -22634,16 +23031,6 @@ button:active:not(:disabled) {
 @keyframes grow-height {
   from {
     height: 0;
-  }
-}
-
-.ring-value {
-  animation: ring-draw 1s var(--ease-out) backwards;
-}
-
-@keyframes ring-draw {
-  from {
-    stroke-dasharray: 0 100;
   }
 }
 
@@ -24154,9 +24541,6 @@ html {
   font-size: 0.8125rem;
 }
 
-.match-score-ring span,
-.match-score-ring small,
-.match-score-ring strong small,
 .ad-mark,
 .day-event {
   font-size: var(--text-2xs);

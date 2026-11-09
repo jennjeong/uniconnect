@@ -189,7 +189,7 @@ function canPropose(sent: { status: RequestStatus; eventId?: string }[], event: 
 }
 
 proposalsRouter.get("/", (req, res) => {
-  res.json(req.account ? proposalState(req.account) : { proposals: [], statuses: {}, confirmed: 0, sent: [], openTasks: { tasks: 0, agreements: 0 } })
+  res.json(req.account ? proposalState(req.account) : { proposals: [], statuses: {}, confirmed: 0, sent: [], openTasks: { tasks: 0, agreements: 0, toConfirm: 0, awaitingPartner: 0 } })
 })
 
 // 단체나 브랜드가 한 시간에 제안하는 수보다 많은 수다. 제안마다 파트너에게 메일이 간다.
