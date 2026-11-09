@@ -48,7 +48,8 @@ export function DocumentField({
   return (
     <div className="document-field">
       <span>{label}</span>
-      <label className="cancel-button">
+      <small className="field-hint">{hint}</small>
+      <label className="cancel-button document-upload">
         <Icon name="plus" size={15} /> {name ? t("다른 파일로 바꾸기") : t("파일 올리기")}
         <input
           accept="image/*,application/pdf,.pdf"
@@ -62,7 +63,6 @@ export function DocumentField({
         />
       </label>
       {name && <small>{name}</small>}
-      <small className="field-hint">{hint}</small>
       {error && (
         <p className="form-error" role="alert">
           {error}

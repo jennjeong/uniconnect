@@ -7,9 +7,15 @@ import { Icon } from "./Icon"
 // 수 있다 (aria-describedby).
 export function PasswordRules({ id, password }: { id: string; password: string }) {
   const rules = passwordRules(password)
+  const met = rules.filter((rule) => rule.ok).length
   return (
     <div className="password-rules" id={id}>
-      <span>{t("비밀번호 조건")}</span>
+      <div className="password-rules-heading">
+        <span>{t("비밀번호 조건")}</span>
+        <span className={met === rules.length ? "complete" : undefined} role="status">
+          {t("조건 {met}/{total} 충족", { met, total: rules.length })}
+        </span>
+      </div>
       <ul>
         {rules.map((rule) => (
           <li className={rule.ok ? "met" : ""} key={rule.label}>

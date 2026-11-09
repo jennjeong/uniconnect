@@ -68,6 +68,7 @@ const en: Record<string, string> = {
 
   // 새 비밀번호 (lib/password.ts, components/PasswordRules.tsx)
   "비밀번호 조건": "Password rules",
+  "조건 {met}/{total} 충족": "{met}/{total} rules met",
   "8~64자": "8–64 characters",
   영문: "A letter",
   숫자: "A number",
