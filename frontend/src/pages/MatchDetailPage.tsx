@@ -153,6 +153,17 @@ export function MatchDetailPage({
                 {t("사업자 확인")}
               </span>
             )}
+            {match.groupVerified && (
+              <span className="tag-verified profile-verified">
+                <Icon name="check" size={13} />
+                {t("단체 확인")}
+              </span>
+            )}
+            {match.groupVerified && (
+              <small className="profile-verified-note">
+                {t("운영자가 대표자의 재학과 단체 소속을 서류로 확인했어요. 단체의 활동을 보증하지는 않아요.")}
+              </small>
+            )}
             <p className="profile-offer">
               <small>{labels.offer}</small>
               {match.offer}

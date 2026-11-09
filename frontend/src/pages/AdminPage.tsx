@@ -14,7 +14,7 @@ import { formatDateTime } from "../lib/date"
 import { fullWon } from "../lib/sponsorships"
 import { useNotice } from "../hooks/useNotice"
 import { Members } from "./AdminMembers"
-import { Approvals, Content, Insights, Live, Operations, ProposalDrawer, RevenuePanel, SystemPanel } from "./AdminMore"
+import { Approvals, Content, Disputes, Insights, Live, Operations, ProposalDrawer, RevenuePanel, SystemPanel } from "./AdminMore"
 import {
   ActivityLog,
   CsvButton,
@@ -456,6 +456,7 @@ type Section =
   | "live"
   | "payments"
   | "approvals"
+  | "disputes"
   | "inquiries"
   | "reports"
   | "content"
@@ -475,6 +476,7 @@ const sections: Section[] = [
   "live",
   "payments",
   "approvals",
+  "disputes",
   "inquiries",
   "reports",
   "content",
@@ -518,6 +520,7 @@ const sectionInfo: { key: Section; label: string; icon: IconName; group: (typeof
   { key: "live", label: "현장", icon: "scan", group: "메뉴" },
   { key: "payments", label: "결제 · 매출", icon: "won", group: "메뉴" },
   { key: "approvals", label: "가입 · 보상 승인", icon: "check", group: "지원" },
+  { key: "disputes", label: "협찬 분쟁", icon: "file", group: "지원" },
   { key: "inquiries", label: "문의 · 섭외 요청", icon: "chat", group: "지원" },
   { key: "reports", label: "신고 · 정지", icon: "close", group: "지원" },
   { key: "content", label: "콘텐츠", icon: "edit", group: "지원" },
@@ -671,6 +674,7 @@ function Overview({ data, onGo }: { data: AdminOverview; onGo: (section: Section
     { label: t("승인할 친구 초대 보상"), count: attention.referrals, go: "approvals" as Section, icon: "check" as IconName },
     { label: t("7일 넘게 답 없는 제안"), count: attention.stale, go: "operations" as Section, icon: "send" as IconName },
     { label: t("취소 요청된 계약서"), count: attention.cancels, go: "operations" as Section, icon: "file" as IconName },
+    { label: t("결론을 기다리는 분쟁"), count: attention.disputes ?? 0, go: "disputes" as Section, icon: "file" as IconName },
     { label: t("현장 이상 신호"), count: attention.alerts, go: "live" as Section, icon: "scan" as IconName },
     { label: t("정지된 계정"), count: attention.suspended, go: "reports" as Section, icon: "lock" as IconName },
   ]
@@ -1325,6 +1329,7 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
     payments: payments.filter((payment) => payment.status === "pending").length,
     operations: overview.attention.stale + overview.attention.cancels,
     live: overview.attention.alerts,
+    disputes: overview.attention.disputes ?? 0,
   }
   const current = sectionInfo.find((item) => item.key === section)!
   const todoCount = waiting.length + openReports.length + (badges.payments ?? 0)
@@ -1635,6 +1640,7 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
         {section === "live" && <Live onNotice={onNotice} token={token} />}
 
         {section === "approvals" && <Approvals onNotice={onNotice} token={token} />}
+        {section === "disputes" && <Disputes onNotice={onNotice} token={token} />}
 
         {section === "content" && <Content onNotice={onNotice} token={token} />}
 

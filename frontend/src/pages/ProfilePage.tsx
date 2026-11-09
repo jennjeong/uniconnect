@@ -17,7 +17,7 @@ import { formatFullDate, toIsoDate } from "../lib/date"
 import { initialOf } from "../lib/format"
 import { referralLink } from "../lib/referral"
 import { MeshBackdrop } from "../scenes/MeshBackdrop"
-import type { Account, BlockedListing, BusinessStatus, MailKind, Match, NavLabel, SocialProvider } from "../types"
+import type { Account, BlockedListing, BusinessStatus, MailKind, Match, NavLabel, SocialProvider, GroupVerification } from "../types"
 
 export type ActivityItem = {
   label: string
@@ -124,6 +124,8 @@ export function ProfilePage({
   onUnblock,
   business,
   onVerifyBusiness,
+  groupCheck,
+  onVerifyGroup,
   onPause,
   onMail,
   canInvite = false,
@@ -168,6 +170,9 @@ export function ProfilePage({
   // 브랜드의 사업자 확인. 단체와 데모 브랜드에는 없다.
   business?: BusinessStatus
   onVerifyBusiness?: () => void
+  // 학생단체의 서류 확인(#334). 브랜드와 데모 단체에는 없다. 서류는 대표만 낸다.
+  groupCheck?: GroupVerification
+  onVerifyGroup?: () => void
   // 목록에서 숨기기: 리스팅을 당분간 상대편의 목록에서 빼거나 다시 보이게 한다.
   // 데모 계정에는 없다.
   onPause?: (paused: boolean) => void
@@ -382,6 +387,38 @@ export function ProfilePage({
                       t("아직 확인하지 않았어요")
                     ) : (
                       t("아직 준비 중이에요")
+                    )
+                  }
+                />
+              )}
+              {groupCheck && (
+                <SettingsRow
+                  action={
+                    owner &&
+                    groupCheck.status !== "waiting" &&
+                    groupCheck.renewable && (
+                      <RowButton
+                        label={groupCheck.status === "verified" ? t("단체 확인 다시 신청하기") : t("단체 확인 신청하기")}
+                        onClick={onVerifyGroup}
+                        tone="point"
+                      >
+                        {groupCheck.status === "verified" ? t("다시 신청") : t("신청하기")}
+                      </RowButton>
+                    )
+                  }
+                  label={t("단체 확인")}
+                  value={
+                    groupCheck.status === "verified" && groupCheck.until ? (
+                      <span className="settings-ok">
+                        <Icon name="check" size={14} />
+                        {t("확인됨 · {date}까지", { date: formatFullDate(toIsoDate(new Date(groupCheck.until))) })}
+                      </span>
+                    ) : groupCheck.status === "waiting" ? (
+                      t("운영자가 서류를 보고 있어요")
+                    ) : owner ? (
+                      t("아직 확인하지 않았어요")
+                    ) : (
+                      t("대표가 신청할 수 있어요")
                     )
                   }
                 />

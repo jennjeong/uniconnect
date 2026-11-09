@@ -50,6 +50,8 @@ export type Match = {
   reviewCount?: number
   // 브랜드 카탈로그 전용: 사업자 등록이 확인됐다.
   businessVerified?: true
+  // 운영자가 서류로 확인한 학생단체(기한 안). backend lib/groupCheck.ts.
+  groupVerified?: true
   // Pro 요금제를 쓰는 브랜드 (backend lib/plan.ts).
   pro?: true
   // 진행 중인 상단 광고 (backend lib/ads.ts): 카탈로그 맨 위에 AD 표시와 함께
@@ -534,7 +536,7 @@ export type AdminLoginDone = { token: string; expiresAt: string; operator: Admin
 
 export type AdminApplication = {
   id: string
-  kind: "shop" | "member"
+  kind: "shop" | "member" | "group"
   name: string
   email: string
   document: { name: string; size: number }
@@ -544,6 +546,11 @@ export type AdminApplication = {
   placeUrl?: string
   contact?: AccountContact
   team?: string
+  // 학생단체 확인 신청(kind: "group"): 단체, 대표자, 학교와 두 번째 서류(단체 소속 증빙).
+  group?: string
+  representative?: string
+  school?: string
+  membership?: { name: string; size: number }
 }
 
 // 연결한 뒤 로그인에 쓸 수 있는 제공자 (routes/social.ts).
@@ -1030,6 +1037,7 @@ export type ModalName =
   | "post"
   | "safety"
   | "business"
+  | "group-check"
   | "two-factor"
   | "devices"
   | "team"
@@ -1201,6 +1209,8 @@ export type AdminOverview = {
     stale: number
     cancels: number
     alerts: number
+    // 결론이 나지 않은 협찬 분쟁(#335).
+    disputes?: number
   }
 }
 
@@ -1475,3 +1485,58 @@ export type PublicLedger = {
 }
 
 export type OwnLedger = { token: string | null; showValues: boolean; entries: LedgerEntry[] }
+
+// 학생단체 확인(GET /api/groups/verification). 서류는 돌려주지 않는다.
+export type GroupVerification = {
+  status: "none" | "waiting" | "verified"
+  verifiedAt?: string
+  until?: string
+  // 확인이 없거나 기한이 30일 이하로 남아 다시 낼 수 있다.
+  renewable: boolean
+}
+
+// 올리는 서류나 증빙: 사진(줄인 것)이나 PDF의 data URL과 보낸 이름.
+export type UploadDocument = { file: string; name: string }
+
+export type DisputeReason = "payout" | "promise" | "cancel" | "other"
+export type DisputeOutcome = "agreed" | "opener" | "other" | "undecided"
+
+export type DisputeEvent = {
+  at: string
+  by: ChatSide | "admin"
+  kind: "opened" | "statement" | "evidence" | "reviewing" | "withdrawn" | "decided"
+  text?: string
+  evidenceId?: string
+}
+
+// 협찬 분쟁(backend lib/disputes.ts). 당사자는 운영자 메모 없이 보고(side, canWithdraw,
+// canAddEvidence), 운영자는 메모와 parties까지 본다.
+export type Dispute = {
+  id: string
+  agreementId: string
+  eventName: string
+  groupName: string
+  brandName: string
+  openedBy: ChatSide
+  reason: DisputeReason
+  detail: string
+  status: "open" | "reviewing" | "closed"
+  snapshot: {
+    canceled: boolean
+    value?: { cash: number; inKind: number }
+    payout?: { dueDate?: string; paidAt?: string; paidAmount?: number; receivedAt?: string }
+    items: { side: ChatSide; label: string; doneAt?: string }[]
+    // 접수할 때 각 쪽이 계약서를 확인한 시각(backend lib/disputes.ts agreementSnapshot).
+    confirmed?: Partial<Record<ChatSide, string>>
+  }
+  evidence: { id: string; side: ChatSide; name: string; size: number; addedAt: string }[]
+  events: DisputeEvent[]
+  decision?: { outcome: DisputeOutcome | "withdrawn"; note?: string; at: string }
+  createdAt: string
+  updatedAt: string
+  side?: ChatSide
+  canWithdraw?: boolean
+  canAddEvidence?: boolean
+  notes?: { at: string; text: string }[]
+  parties?: Record<ChatSide, string>
+}

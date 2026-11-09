@@ -18,9 +18,12 @@ export function addDisputeEvent(dispute: Dispute, event: Omit<DisputeEvent, "at"
   dispute.updatedAt = now.toISOString()
 }
 
-// 접수할 때의 계약 내용이다. 계약서는 그 뒤로도 바뀔 수 있어 그대로 남긴다.
+// 접수할 때의 계약 내용이다. 계약서는 그 뒤로도 바뀔 수 있어 그대로 남긴다. 어느 쪽이든
+// 계약서를 고칠 수 있으므로, 그때 양쪽이 확인했는지(confirmed)도 함께 남겨 운영자가
+// 양쪽이 합의한 조건인지 한쪽이 고친 내용인지 구분하게 한다.
 export const agreementSnapshot = (agreement: Agreement, canceled: boolean): Dispute["snapshot"] => ({
   canceled,
+  ...(Object.keys(agreement.confirmed ?? {}).length ? { confirmed: { ...agreement.confirmed } } : {}),
   ...(agreement.value ? { value: { ...agreement.value } } : {}),
   ...(agreement.payout
     ? {

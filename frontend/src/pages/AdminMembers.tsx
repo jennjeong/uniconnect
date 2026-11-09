@@ -393,9 +393,12 @@ function MemberDetail({
   const [allTimeline, setAllTimeline] = useState(false)
   const [sureStop, setSureStop] = useState(false)
   const [stopReason, setStopReason] = useState("")
+  // 학생단체 확인 표시를 뗄 때의 이유. 표시가 없으면 서버가 409로 알린다.
+  const [unverifyReason, setUnverifyReason] = useState("")
   useEffect(() => {
     setSureStop(false)
     setStopReason("")
+    setUnverifyReason("")
   }, [open.id])
   useEffect(() => setNumber(open.businessNumber ?? ""), [open.id, open.businessNumber])
   const act = (work: Promise<{ account: AdminMemberDetail }>, message: string) =>
@@ -538,6 +541,25 @@ function MemberDetail({
                 {t("사업자 확인")}
               </button>
             )}
+          </span>
+        )}
+        {open.role === "학생단체" && (
+          <span className="console-tool">
+            <input
+              aria-label={t("단체 확인 표시를 떼는 이유")}
+              maxLength={200}
+              onChange={(event) => setUnverifyReason(event.target.value)}
+              placeholder={t("표시를 떼는 이유")}
+              value={unverifyReason}
+            />
+            <button
+              className="console-text-button"
+              disabled={!unverifyReason.trim()}
+              onClick={() => act(api.adminUnverifyGroup(token, open.id, unverifyReason.trim()), t("학생단체 확인 표시를 뗐어요. 단체에 알렸어요."))}
+              type="button"
+            >
+              {t("단체 확인 떼기")}
+            </button>
           </span>
         )}
       </div>

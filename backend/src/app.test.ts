@@ -8669,6 +8669,8 @@ test("a sponsorship dispute is recorded from opening to conclusion, and only its
   const { id: agreementId } = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
   await call("POST", `/requests/${agreementId}/accept`, undefined, brand)
   const open = { agreementId, reason: "payout", detail: "지급일이 지났는데 받지 못했어요." }
+  // 단체만 계약서를 확인한 채로 접수한다. 사본은 한쪽만 확인한 조건이라고 남긴다.
+  assert.equal((await call("POST", `/agreements/${agreementId}/confirm`, undefined, group)).status, 200)
 
   assert.equal((await call("POST", "/disputes", open)).status, 401)
   assert.equal((await call("POST", "/disputes", open, stranger)).status, 404)
@@ -8682,6 +8684,8 @@ test("a sponsorship dispute is recorded from opening to conclusion, and only its
   assert.equal(opened.data.dispute.side, "group")
   assert.equal(opened.data.dispute.canWithdraw, true)
   assert.ok(opened.data.dispute.snapshot.items.length > 0)
+  assert.ok(opened.data.dispute.snapshot.confirmed.group)
+  assert.equal(opened.data.dispute.snapshot.confirmed.brand, undefined)
   assert.equal((await call("POST", "/disputes", open, brand)).status, 409)
 
   // 계약서가 바뀌어도 접수할 때의 내용은 그대로다.
