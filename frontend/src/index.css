@@ -1969,28 +1969,25 @@ button.nav-pill:hover {
   text-decoration: underline;
 }
 
-/* 추천 지수 배지(components/ScoreBadge.tsx): '추천 지수 90'을 한 줄로. 링 안에 작은
-   글자를 넣지 않는다. 파랑은 행동과 선택에 쓰므로 중립색이다. */
+/* 추천 지수(components/ScoreBadge.tsx): 카드 오른쪽 위의 따로 선 칸. 작은 라벨 아래
+   굵은 파란 숫자 하나로만 강조한다. 배경 · 그림자 · 아이콘 · %는 없다. */
 .score-badge {
-  display: inline-flex;
+  display: inline-grid;
   flex: 0 0 auto;
-  align-items: baseline;
   align-self: flex-start;
-  gap: 6px;
-  padding: 5px 12px;
-  border-radius: 999px;
-  background: var(--fill);
-  box-shadow: var(--ring);
+  justify-items: end;
+  gap: 2px;
   color: var(--ink-soft);
   font-size: var(--text-xs);
   font-weight: var(--weight-label);
-  line-height: 1.4;
+  line-height: 1.2;
+  text-align: right;
   white-space: nowrap;
 }
 
 .score-badge strong {
-  color: var(--ink);
-  font-size: var(--text-base);
+  color: var(--point-strong);
+  font-size: 1.75rem;
   font-variant-numeric: tabular-nums;
   font-weight: var(--weight-display);
   line-height: 1;
@@ -3689,9 +3686,12 @@ input[type="search"]::-webkit-search-cancel-button {
   display: flex;
   height: 100%;
   flex-direction: column;
+  /* 카드 안의 좌우 기준선. 업종, 이름, 태그, 버튼 줄이 모두 이 안쪽에서 시작하고 끝난다. */
+  --card-pad: 22px;
   gap: 14px;
   overflow: hidden;
-  padding: 22px;
+  /* 맨 윗줄(업종과 작은 버튼)은 위로만 붙고, 좌우는 아래 내용과 같은 간격이다. */
+  padding: calc(var(--card-pad) - 10px) var(--card-pad) var(--card-pad);
   border-radius: var(--radius-lg);
   background:
     radial-gradient(70% 46% at 50% 30%, #ffffff 0%, rgba(255, 255, 255, 0) 72%),
@@ -3730,11 +3730,6 @@ input[type="search"]::-webkit-search-cancel-button {
   align-content: flex-start;
   row-gap: 4px;
   padding-top: 7px;
-}
-
-/* 윗줄은 위로만 뻗어 좌우는 아래 내용과 같은 간격에 선다. 버튼은 작다. */
-.work-card > .work-meta {
-  margin-top: -10px;
 }
 
 .work-meta-actions .save-toggle,
@@ -4032,12 +4027,10 @@ input[type="search"]::-webkit-search-cancel-button {
   gap: 8px;
 }
 
-/* 카드 안의 점수 링은 이름에 맞춰 조금 작게. */
-
-/* 점수 링은 그 옆의 이름과 제공 내용과 같은 높이에 앉는다. */
+/* 추천 지수는 이름 줄의 오른쪽 위, 이름과 같은 높이에서 시작한다. */
 .work-title {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
 }
@@ -4131,13 +4124,17 @@ input[type="search"]::-webkit-search-cancel-button {
   stroke-width: 2;
 }
 
+/* 행동 줄은 카드 맨 아래, 오른쪽 패딩 선에 붙는다(제안하기가 맨 오른쪽). 카드
+   높이를 고정하지 않고, 짧은 카드에서는 margin-top: auto가 남는 높이를 채운다. */
 .work-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
   margin-top: auto;
-  padding-top: 6px;
+  /* 태그와 버튼 사이 18px(.work-bottom의 간격 8px과 함께). */
+  padding-top: 10px;
 }
 
 .work-actions .proposal-button {
@@ -4195,7 +4192,8 @@ input[type="search"]::-webkit-search-cancel-button {
    카드와 같은 높이를 유지한다. */
 .work-actions:has(> :nth-child(2)) {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(2, auto);
+  justify-content: end;
   align-items: start;
   gap: 6px 10px;
 }
@@ -12527,7 +12525,10 @@ input[type="search"]::-webkit-search-cancel-button {
   align-items: center;
   gap: clamp(32px, 5vw, 72px);
   margin: 0 auto;
-  padding: calc(var(--header-h) + clamp(32px, 6vw, 72px)) 0 clamp(48px, 7vw, 96px);
+  /* 고정 헤더 높이는 .main-content가 이미 띄운다. 여기서 한 번 더 더하면 휴대폰에서
+     헤더 아래가 100px 넘게 빈다. 화면 높이가 아니라 너비를 따라 휴대폰 40px 남짓에서
+     넓은 화면 160px까지 늘어난다. */
+  padding: clamp(40px, 11vw, 160px) 0 clamp(48px, 7vw, 96px);
 }
 
 .landing-kicker {
@@ -12661,16 +12662,25 @@ input[type="search"]::-webkit-search-cancel-button {
   list-style: none;
 }
 
-/* 행사와 지원 조건을 합의와 성과로 잇는 선. */
-.landing-record ol::before {
+/* 행사와 지원 조건을 합의와 성과로 잇는 선. 점과 다음 점 사이에만 그어서
+   마지막 단계(성과)의 목록과 설명 옆으로는 내려가지 않는다. */
+.landing-record li:not(:last-child)::after {
   position: absolute;
-  top: 8px;
-  bottom: 8px;
-  left: 6px;
+  top: 21px;
+  bottom: calc(var(--space-4) * -1 - 3px);
+  left: calc(var(--space-6) * -1 + 6px);
   width: 2px;
   border-radius: 1px;
-  background: linear-gradient(var(--fill-strong), var(--point));
+  background: var(--fill-strong);
   content: "";
+}
+
+.landing-record .from-brand::after {
+  background: linear-gradient(var(--point-bright), var(--point));
+}
+
+.landing-record .agreed::after {
+  background: var(--point);
 }
 
 .landing-record li {
@@ -12722,24 +12732,57 @@ input[type="search"]::-webkit-search-cancel-button {
   font-size: 0.8125rem;
 }
 
+/* 성과: 지표명은 왼쪽, 숫자는 오른쪽 한 기준선에 맞춘 세로 목록. 행 사이에만 선. */
 .record-figures {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2) var(--space-5);
+  display: grid;
+  margin: var(--space-1) 0 0;
 }
 
-.record-figures span {
+.record-figures > div {
   display: grid;
-  font-size: 1.75rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.record-figures > div:first-child {
+  padding-top: 2px;
+}
+
+.record-figures > div:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.record-figures dt {
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-label);
+  word-break: keep-all;
+}
+
+.record-figures dd {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1.5rem;
   font-variant-numeric: tabular-nums;
   font-weight: var(--weight-display);
-  line-height: 1.1;
+  line-height: 1.15;
+  text-align: right;
 }
 
-.record-figures small {
+.landing-record li > .record-note {
+  margin-top: var(--space-3);
   color: var(--muted);
   font-size: var(--text-xs);
-  font-weight: var(--weight-label);
+}
+
+@media (min-width: 721px) {
+  .record-figures dd {
+    font-size: 1.625rem;
+  }
 }
 
 @media (max-width: 900px) {
@@ -21318,33 +21361,37 @@ span.odometer {
     gap: 16px;
   }
 
-  /* 휴대폰에서 카드는 컴팩트하다: 로고 옆에 카테고리, 이름, 그 아래 '추천 지수'
-     배지, 그다음 태그와 액션이어서, 한 화면에 셋쯤 들어간다. 배지가 이름 옆이 아닌
-     아래라서 긴 이름도 줄 전체를 쓴다. 이름이 상세를 열므로 화살표 버튼은 쓰지 않는다. */
+  /* 휴대폰에서 카드는 컴팩트하다. 맨 윗줄은 왼쪽에 업종, 오른쪽에 찜과 비교.
+     그 아래 로고 / 이름 · 제안(로고 오른쪽의 두 번째 기준선) / 오른쪽 위의 추천 지수,
+     그다음 태그와 행동 줄이 카드 전체 폭을 쓴다. 왼쪽 기준선은 업종, 로고 상자의
+     바깥선, 태그 첫 칩이 함께 쓰고, 오른쪽 기준선은 찜 · 비교, 추천 지수, 제안하기가
+     쓴다. 둘 다 카드의 좌우 패딩(--card-pad) 하나에서 나온다. 세로 간격은
+     12px 하나로 두고, 행동 줄만 4px 더 띄운다. 이름이 상세를 열므로 화살표 버튼은
+     쓰지 않는다. */
   .work-card {
+    --card-pad: 18px;
     display: grid;
     min-height: 0;
     grid-template-areas:
-      "mark meta"
-      "mark name"
-      "mark score"
-      "tags tags"
-      "actions actions";
-    grid-template-columns: 56px minmax(0, 1fr);
+      "meta meta meta"
+      "mark name score"
+      "tags tags tags"
+      "actions actions actions";
+    grid-template-columns: 56px minmax(0, 1fr) auto;
     align-items: center;
-    gap: 4px 12px;
-    padding: 18px;
+    gap: var(--space-3);
+    padding: var(--card-pad);
   }
 
-  .work-meta,
   .work-bottom,
   .work-title {
     display: contents;
   }
 
-  .work-meta > span {
+  /* 윗줄(업종, 찜 · 비교)은 카드 전체 폭의 한 줄이라, 아래 칸들의 너비에 끼지 않는다. */
+  .work-meta {
     grid-area: meta;
-    align-self: end;
+    align-items: center;
   }
 
   .work-meta > span:first-child {
@@ -21355,40 +21402,35 @@ span.odometer {
     display: none;
   }
 
-  /* 찜과 비교는 보조 행동이라 카드 맨 위 줄의 오른쪽에 두고, 카테고리는 그 줄의
-     왼쪽에 둔다. 로고, 이름, 배지는 그 아래 줄이라 겹치지 않는다. 아래의 행동 줄에는
-     상세 정보와 제안하기 두 버튼만 남는다. */
-  .work-card:has(.save-toggle, .compare-toggle) {
-    grid-template-areas:
-      "meta meta util"
-      "mark name name"
-      "mark score score"
-      "tags tags tags"
-      "actions actions actions";
-    grid-template-columns: 56px minmax(0, 1fr) auto;
-    row-gap: 6px;
-  }
-
   .work-card .score-badge {
     grid-area: score;
-    justify-self: start;
+    justify-self: end;
     align-self: start;
   }
 
-  .work-card:has(.save-toggle, .compare-toggle) .work-meta > span:first-child {
-    align-self: center;
+  /* 하트와 비교가 없는 카드에서는 빈 칸이 생기지 않게 한다. 안에 남는 배지는
+     휴대폰에서 숨긴다. */
+  .work-meta > .work-meta-actions:not(:has(.save-toggle, .compare-toggle)) {
+    display: none;
   }
 
-  .work-meta > .work-meta-actions {
-    grid-area: util;
-    align-self: center;
-    justify-self: end;
-    margin-left: 0;
-  }
-
-  .work-mark {
+  /* 로고 상자: 흰 테두리를 그림자 번짐이 아니라 상자 자체의 안쪽 여백으로 그려서,
+     눈에 보이는 바깥선이 상자의 경계와 같다. 그래서 업종과 같은 왼쪽 기준선에 선다. */
+  .work-card .work-mark {
     grid-area: mark;
     min-height: 0;
+    align-self: start;
+    padding: 4px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.7);
+    box-shadow: 0 12px 24px -12px rgba(19, 48, 111, 0.4);
+  }
+
+  .work-mark .match-logo.large {
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    box-shadow: none;
   }
 
   .work-name {
@@ -21405,34 +21447,18 @@ span.odometer {
     font-size: 0.8125rem;
   }
 
-  /* 하트와 비교가 없는 카드에서는 빈 줄과 빈 칸이 생기지 않게 한다. 안에 남는 배지는
-     휴대폰에서 숨긴다. */
-  .work-meta > .work-meta-actions:not(:has(.save-toggle, .compare-toggle)) {
-    display: none;
-  }
-
-  /* 로고도 위 여백에 맞춰 위에 붙인다. 위, 아래, 왼쪽, 오른쪽 여백이 모두 같다. */
-  .work-card .work-mark {
-    align-self: start;
-  }
-
   .work-tags {
     grid-area: tags;
-    margin-top: 8px;
+    margin-top: 0;
   }
 
   .work-actions {
     grid-area: actions;
-    padding-top: 12px;
+    padding-top: var(--space-1);
   }
 
-  .work-mark .match-logo.large {
-    width: 56px;
-    height: 56px;
-    border-radius: 18px;
-    box-shadow:
-      0 0 0 4px rgba(255, 255, 255, 0.7),
-      0 12px 24px -12px rgba(19, 48, 111, 0.4);
+  .work-card .score-badge strong {
+    font-size: 1.625rem;
   }
 
   .chain-wrap {
@@ -21964,6 +21990,21 @@ span.odometer {
 
 /* 작은 휴대폰. */
 @media (max-width: 380px) {
+  /* 좁은 휴대폰: 이름과 추천 지수가 부딪치지 않게 로고부터 줄인다. */
+  .work-card {
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+  }
+
+  .work-mark .match-logo.large {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+  }
+
+  .work-card .work-mark {
+    border-radius: 16px;
+  }
+
   .match-logo.large {
     width: 64px;
     height: 64px;

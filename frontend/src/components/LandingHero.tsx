@@ -8,6 +8,13 @@ import { RoleMark } from "./RoleMark"
 // 학생 행사와 브랜드의 지원 조건이 합의를 거쳐 하나의 협찬 기록이 되는 장면 — 을
 // 예시 데이터로 보인다. U자 선이 두 쪽을 잇는다(로고의 U와 연결). 장식 없이 바로
 // 읽힌다.
+// 예시 협찬 기록의 성과. 학생 행사 한 번에서 현장에서 센 값이다.
+const resultFigures = [
+  { label: "QR 참여", value: 128 },
+  { label: "쿠폰 수령", value: 94 },
+  { label: "매장 방문", value: 41 },
+]
+
 export function LandingHero({
   onSignup,
   onBrowse,
@@ -82,18 +89,17 @@ export function LandingHero({
           </li>
           <li className="result">
             <span className="record-step">{t("성과")}</span>
-            <strong className="record-figures">
-              <span>
-                128<small>{t("QR 참여")}</small>
-              </span>
-              <span>
-                94<small>{t("쿠폰 수령")}</small>
-              </span>
-              <span>
-                41<small>{t("매장 방문")}</small>
-              </span>
-            </strong>
-            <small>{t("현장에서 센 실측값 · 매출은 추정")}</small>
+            {/* 지표명은 왼쪽, 숫자는 오른쪽 한 기준선에. 행 사이에만 얇은 선. */}
+            <dl className="record-figures">
+              {resultFigures.map((figure) => (
+                <div key={figure.label}>
+                  <dt>{t(figure.label)}</dt>
+                  <dd>{figure.value}</dd>
+                </div>
+              ))}
+            </dl>
+            {/* 이 카드에는 매출 수치가 없어 추정 안내는 매출을 보여 주는 리포트에 둔다. */}
+            <small className="record-note">{t("현장에서 집계한 수치예요.")}</small>
           </li>
         </ol>
       </figure>
