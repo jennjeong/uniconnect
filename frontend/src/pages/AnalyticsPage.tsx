@@ -57,7 +57,10 @@ export function AnalyticsPage({
   onOpenReport,
   onOpenPlan,
   campaign,
+  sample = false,
 }: {
+  // 방문자와 데모 계정이 보는 예시 자료. 버튼과 파일에 예시라고 적는다.
+  sample?: boolean
   // 최신순.
   sponsorships: Sponsorship[]
   // PDF 리포트를 만드는 동안.
@@ -122,17 +125,21 @@ export function AnalyticsPage({
         actions={
           <>
             <Pill arrow="up-right" disabled={rows.length === 0 || exporting} onClick={onDownload}>
-              {exporting ? t("PDF 만드는 중…") : t("요약 PDF 다운로드")}
+              {exporting ? t("PDF 만드는 중…") : sample ? t("예시 PDF 다운로드") : t("요약 PDF 다운로드")}
             </Pill>
             {/* 표를 스프레드시트로(lib/csv.ts). 페이지에서 만든다. */}
             <Pill
               disabled={rows.length === 0}
               onClick={() =>
-                saveFile(`uniconnect-analytics-${todayIso()}.csv`, analyticsCsv(sponsorships), "text/csv;charset=utf-8")
+                saveFile(
+                  `uniconnect-analytics-${sample ? "sample-" : ""}${todayIso()}.csv`,
+                  analyticsCsv(sponsorships, { sample }),
+                  "text/csv;charset=utf-8",
+                )
               }
               variant="outline"
             >
-              {t("CSV로 내보내기")}
+              {sample ? t("예시 CSV 다운로드") : t("CSV로 내보내기")}
             </Pill>
           </>
         }

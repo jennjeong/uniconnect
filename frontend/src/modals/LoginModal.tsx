@@ -15,6 +15,7 @@ import type { CodeTicket, Role, Session, SocialProvider } from "../types"
 
 export function LoginModal({
   initialRole,
+  example,
   onClose,
   onLoggedIn,
   onSignup,
@@ -24,10 +25,13 @@ export function LoginModal({
   initialTicket,
 }: {
   initialRole: Role
+  // 방문자가 예시 카드의 제안하기로 연 경우 그 상대. 그 역할의 데모 로그인만
+  // 이어받는다(`fromExample`).
+  example?: { name: string; role: Role }
   onClose: () => void
   // 2단계 인증이 켜져 있으면 코드 다음에. `recoveryLeft`가 남은 복구 코드 수를
   // 알려 준다.
-  onLoggedIn: (session: Session & { recoveryLeft?: number }) => void
+  onLoggedIn: (session: Session & { recoveryLeft?: number }, fromExample?: boolean) => void
   onSignup: (role: Role) => void
   onForgot: (email: string) => void
   // 초대받은 공동 관리자의 첫 방문(modals/JoinTeamModal.tsx).
@@ -63,7 +67,7 @@ export function LoginModal({
   }
 
   // 입력한 그대로의 폼, 또는 데모 계정의 공개된 로그인.
-  const submit = async (form = draft) => {
+  const submit = async (form = draft, fromExample = false) => {
     if (!form.email.trim() || !form.password) {
       setError(t("이메일과 비밀번호를 입력해 주세요."))
       return
@@ -73,7 +77,7 @@ export function LoginModal({
     try {
       const answer = await api.login(form)
       if ("ticket" in answer) setTicket({ email: form.email, ticket: answer })
-      else onLoggedIn(answer)
+      else onLoggedIn(answer, fromExample)
     } catch (caught) {
       setError(errorMessage(caught))
     } finally {
@@ -116,6 +120,22 @@ export function LoginModal({
             void submit()
           }}
         >
+          {example && (
+            <div className="example-resume">
+              <p>{t("예시 상대인 {name}에는 데모 계정으로만 제안해 볼 수 있어요.", { name: example.name })}</p>
+              <button
+                className="primary-button wide"
+                disabled={busy}
+                onClick={() =>
+                  void submit({ role: example.role, email: demoAccounts[example.role].email, password: demoPassword }, true)
+                }
+                type="button"
+              >
+                {t("이 제안 데모로 체험하기")}
+              </button>
+              <small>{t("로그인하거나 가입하면 실제 회원 목록에서 협찬 상대를 찾을 수 있어요.")}</small>
+            </div>
+          )}
           <RolePicker
             name="login-role"
             value={draft.role}

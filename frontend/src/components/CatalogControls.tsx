@@ -1,6 +1,6 @@
 import { useId, useState, type ReactNode } from "react"
 
-import { t } from "../i18n"
+import { t, tc } from "../i18n"
 import { type Layout, LayoutSwitch } from "./CatalogMap"
 import { CatalogSearch } from "./CatalogSearch"
 import { Icon } from "./Icon"
@@ -66,7 +66,7 @@ export function CatalogControls<S extends string, O extends string>({
               type="button"
             >
               <Icon name="filter" size={16} />
-              <span>{t("조건")}</span>
+              <span>{tc("catalog", "조건")}</span>
               {active.length > 0 && (
                 <em aria-label={t("걸린 조건 {count}개", { count: active.length })}>{active.length}</em>
               )}

@@ -72,4 +72,16 @@ describe("CSV files", () => {
     expect(file[1]).toBe("삼육대 뮤즈,가을 버스킹,2026-10-12,300000,40,12,729000,243,200,25000,30")
     expect(file[2].startsWith("'=cmd,")).toBe(true)
   })
+
+  // 예시 자료는 맨 앞 열로 예시임을 밝힌다.
+  test("sample analytics say so on every row", () => {
+    const row = {
+      id: "p1", groupName: "삼육대 뮤즈", eventName: "가을 버스킹", date: "2026-10-12",
+      spend: 300000, coupons: 40, visits: 12, sales: 729000, targetRoas: 200,
+    } as unknown as Parameters<typeof analyticsCsv>[0][number]
+    const file = lines(analyticsCsv([row], { sample: true }))
+    expect(file[0].startsWith("데이터 구분,단체,")).toBe(true)
+    expect(file[1].startsWith("예시,삼육대 뮤즈,")).toBe(true)
+    expect(lines(analyticsCsv([row]))[0].startsWith("단체,")).toBe(true)
+  })
 })

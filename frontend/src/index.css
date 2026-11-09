@@ -10371,6 +10371,55 @@ input[type="search"]::-webkit-search-cancel-button {
 
 /* 한 번 누르면 공유 데모 계정 (data/demo.ts)으로 로그인하므로, 공개된
    비밀번호를 칠 필요가 없다. 헤어라인 아래의 은색 알약. */
+/* 예시 카드의 제안하기로 연 로그인 창: 같은 상대를 데모 계정으로 이어 간다. */
+.example-resume {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--fill);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.example-resume p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.875rem;
+  font-weight: var(--weight-body);
+  word-break: keep-all;
+}
+
+.example-resume small {
+  color: var(--ink-soft);
+  font-size: 0.8125rem;
+  word-break: keep-all;
+}
+
+/* 가입 양식의 역할 선택 아래: 그 역할이 가입에 필요한 것. */
+.signup-needs {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--fill);
+  color: var(--ink-soft);
+  font-size: 0.8125rem;
+  word-break: keep-all;
+}
+
+.signup-needs p {
+  margin: 0;
+}
+
+.signup-needs strong {
+  color: var(--ink);
+  font-weight: var(--weight-label);
+}
+
+.signup-needs .text-link {
+  font-size: inherit;
+}
+
 .demo-login {
   display: grid;
   gap: 10px;
@@ -23544,6 +23593,15 @@ button:active:not(:disabled) {
   justify-content: space-between;
   padding-bottom: 14px;
   border-bottom: 2px solid var(--ink);
+}
+
+.pdf-header .pdf-sample {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--goal-mark);
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: var(--weight-badge);
 }
 
 .pdf-header img {

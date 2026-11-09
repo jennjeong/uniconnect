@@ -66,6 +66,7 @@ export function SignupModal({
   onPending,
   onLogin,
   onNotice,
+  onHelp,
 }: {
   initialRole: Role
   // 방문자가 가입하는 가게의 초대(/invite/<code>).
@@ -76,6 +77,8 @@ export function SignupModal({
   onPending: () => void
   onLogin: (role: Role) => void
   onNotice: (message: string) => void
+  // 가입 조건을 묻고 싶을 때 도움말 센터(/faq)로.
+  onHelp: () => void
 }) {
   const [draft, setDraft] = useState(() => emptyDraft(initialRole))
   const [verification, setVerification] = useState<Verification | null>(null)
@@ -187,6 +190,30 @@ export function SignupModal({
             resetVerification()
           }}
         />
+        {/* 역할마다 가입에 필요한 것. 서버의 이메일 규칙(lib/email.ts)과 같다. */}
+        <div aria-live="polite" className="signup-needs">
+          {draft.role === "학생단체" ? (
+            <p>{t("학교 이메일(ac.kr)과 담당자 이름 · 직책 · 휴대폰 번호가 필요해요.")}</p>
+          ) : invitedShop ? (
+            <>
+              <p>{t("초대받은 가게는 개인 메일로도 가입할 수 있어요.")}</p>
+              <p>{t("담당자 정보와 사업자등록증 또는 재직 서류가 필요하고, 운영자가 확인하면 가입이 끝나요.")}</p>
+            </>
+          ) : (
+            <>
+              <p>
+                <strong>{t("개인 메일(gmail, naver 등)로는 가입할 수 없어요.")}</strong>
+              </p>
+              <p>{t("회사 이메일과 담당자 이름 · 직책 · 휴대폰 번호가 필요해요.")}</p>
+              <p>
+                {t("회사 이메일이 없는 가게는 근처 학생단체가 보낸 초대 링크로 가입할 수 있어요.")}{" "}
+                <button className="text-link" onClick={onHelp} type="button">
+                  {t("가입 문의는 도움말 센터로")}
+                </button>
+              </p>
+            </>
+          )}
+        </div>
         <div className="form-row">
           <label>
             {draft.role === "학생단체" ? t("단체명") : t("브랜드명")}
@@ -340,7 +367,9 @@ export function SignupModal({
             <small className="field-hint">
               {draft.role === "학생단체"
                 ? t("학교 이메일(ac.kr)로 인증해야 가입할 수 있어요.")
-                : t("회사 이메일로 인증해야 가입할 수 있어요. 개인 메일(gmail, naver 등)은 사용할 수 없어요.")}
+                : invitedShop
+                  ? t("초대받은 가게는 개인 메일로도 인증할 수 있어요.")
+                  : t("회사 이메일로 인증해야 가입할 수 있어요. 개인 메일(gmail, naver 등)은 사용할 수 없어요.")}
             </small>
           )}
         </div>

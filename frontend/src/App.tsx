@@ -209,6 +209,11 @@ function App() {
   )
   // 로그인이나 가입 폼이 열릴 때 미리 골라 둔 역할.
   const [authRole, setAuthRole] = useState<Role>("학생단체")
+  // 방문자가 예시 카드의 제안하기로 고른 상대. 로그인 창의 '이 제안 데모로
+  // 체험하기'만 이어받고, 창을 닫거나 다른 길로 로그인·가입하면 잊는다.
+  const [exampleTarget, setExampleTarget] = useState<{ match: Match; role: Role } | null>(null)
+  // 그 버튼으로 데모 로그인한 뒤 열 제안. 데모 계정의 목록이 도착하면 폼을 연다.
+  const [resumeTarget, setResumeTarget] = useState<string | null>(null)
   // 비밀번호 찾기를 열 때 로그인 폼에 있던 이메일.
   const [resetEmail, setResetEmail] = useState("")
   // 학생단체가 초대하려는 가게와 그 초대 코드.
@@ -649,6 +654,7 @@ function App() {
   const closeMenu = useCallback(() => setMenuOpen(false), [])
 
   const openAuth = (modal: "login" | "signup", nextRole: Role = role) => {
+    setExampleTarget(null)
     setAuthRole(nextRole)
     setActiveModal(modal)
   }
@@ -670,10 +676,10 @@ function App() {
 
   // `recoveryLeft`는 2단계 인증으로 로그인할 때 함께 온다. 복구 코드가 몇 개
   // 남지 않았다면 알려 줄 만하다.
-  const startSession = (session: Session & { recoveryLeft?: number }, message: string) => {
+  const startSession = (session: Session & { recoveryLeft?: number }, message: string, next?: View) => {
     setToken(session.token)
     setAccount(session.account)
-    go(view.invite || view.agreement || view.agreements ? view : { page: "대시보드" }, true)
+    go(next ?? (view.invite || view.agreement || view.agreements ? view : { page: "대시보드" }), true)
     setActiveModal(null)
     const left = session.recoveryLeft
     // 이 브라우저가 저장소를 막아 두었으면 로그인은 이 탭에서만 유지된다.
@@ -906,12 +912,34 @@ function App() {
     track("contact_click", { method: "proposal", role })
     if (!account) {
       requireLogin(t("로그인하면 협찬 제안을 보낼 수 있어요."))
+      // 방문자가 보는 카드는 예시라서 데모 계정만 그 상대에게 제안할 수 있다.
+      setExampleTarget({ match, role })
       return
     }
     setApplyingPost(null)
     setProposing(match)
     setActiveModal("propose")
   }
+
+  // 예시 카드에서 데모 로그인했다면 같은 상대의 제안 폼을 연다(보내는 건 사용자).
+  // 데모 계정의 목록에 그 상대가 없으면 목록에 남기고 이유를 알린다.
+  useEffect(() => {
+    if (!resumeTarget) return
+    if (!account) {
+      setResumeTarget(null)
+      return
+    }
+    if (!catalogReady || eventsFor !== viewer) return
+    setResumeTarget(null)
+    const found = catalog.find((match) => match.id === resumeTarget)
+    if (!found) {
+      showNotice(t("고른 예시 상대를 지금은 열 수 없어 목록으로 왔어요. 다른 상대를 골라 제안해 보세요."))
+      return
+    }
+    setApplyingPost(null)
+    setProposing(found)
+    setActiveModal("propose")
+  }, [resumeTarget, account, catalogReady, eventsFor, viewer, catalog, showNotice])
 
   // 제안을 보낸다. 세션 종료가 아닌 문제는 폼에 남는다.
   const sendProposal = async (draft: { eventId?: string; message: string; terms?: ProposalTermsDraft }) => {
@@ -1811,6 +1839,7 @@ function App() {
             onOpenPlan={() => (account ? setActiveModal("plan") : openAuth("signup", "브랜드"))}
             exporting={exportingAnalytics}
             onDownload={() => setExportingAnalytics(true)}
+            sample={!member}
             sponsorships={sponsorships}
             campaign={
               <CampaignMeasurement
@@ -2195,16 +2224,32 @@ function App() {
       <Presence show={activeModal === "login"}>
         <LoginModal
           initialRole={authRole}
-          onClose={closeModal}
-          onLoggedIn={(session) =>
-            startSession(session, t("{name} 계정으로 로그인했어요.", { name: session.account.name }))
-          }
+          example={exampleTarget ? { name: exampleTarget.match.name, role: exampleTarget.role } : undefined}
+          onClose={() => {
+            setExampleTarget(null)
+            closeModal()
+          }}
+          onLoggedIn={(session, fromExample) => {
+            // 예시 상대는 그 역할의 데모 로그인에만 넘긴다.
+            const target = fromExample && exampleTarget?.role === session.account.role ? exampleTarget : null
+            setExampleTarget(null)
+            startSession(
+              session,
+              t("{name} 계정으로 로그인했어요.", { name: session.account.name }),
+              target ? { page: target.role === "학생단체" ? "추천 매칭" : "단체 찾기" } : undefined,
+            )
+            if (target) setResumeTarget(target.match.id)
+          }}
           onSignup={(next) => openAuth("signup", next)}
           onForgot={(email) => {
+            setExampleTarget(null)
             setResetEmail(email)
             setActiveModal("reset")
           }}
-          onJoin={() => setActiveModal("join")}
+          onJoin={() => {
+            setExampleTarget(null)
+            setActiveModal("join")
+          }}
           providers={socialProviders}
           initialTicket={socialTicket ?? undefined}
         />
@@ -2418,6 +2463,10 @@ function App() {
           }}
           onLogin={(next) => openAuth("login", next)}
           onNotice={showNotice}
+          onHelp={() => {
+            closeModal()
+            openFaq()
+          }}
         />
       </Presence>
 
@@ -2435,6 +2484,7 @@ function App() {
 
       {exportingAnalytics && (
         <AnalyticsExport
+          sample={!member}
           sponsorships={sponsorships}
           author={account?.name ?? "uniconnect"}
           onDone={finishAnalyticsExport}

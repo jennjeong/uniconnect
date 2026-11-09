@@ -48,9 +48,12 @@ function RoasBar({ row, scale }: { row: Row; scale: number }) {
 export function AnalyticsDocument({
   sponsorships,
   author,
+  sample = false,
 }: {
   sponsorships: Sponsorship[]
   author: string
+  // 예시 자료면 페이지마다 '예시 데이터'라고 적는다.
+  sample?: boolean
 }) {
   const { totals, rows, best, furthestBelow, cheapest, doneCount, metCount, visitRate, roasScale } =
     analyzeSponsorships(sponsorships)
@@ -98,7 +101,7 @@ export function AnalyticsDocument({
   return (
     <>
       <div className="pdf-page">
-        <PageHeader author={author} />
+        <PageHeader author={author} sample={sample} />
 
         <div className="pdf-title">
           <span>SPONSORSHIP ANALYTICS REPORT</span>
@@ -221,7 +224,7 @@ export function AnalyticsDocument({
         ]
         return (
           <div className="pdf-page" key={row.id}>
-            <PageHeader author={author} />
+            <PageHeader author={author} sample={sample} />
 
             <div className="pdf-title">
               <span>SPONSORSHIP REPORT {String(index + 1).padStart(2, "0")}</span>
