@@ -8,6 +8,7 @@ import {
   disputeReasonLabel,
   disputeReasons,
   disputeStatusLabels,
+  snapshotAgreement,
 } from "../data/disputes"
 import { t } from "../i18n"
 import { formatDateTime } from "../lib/date"
@@ -235,8 +236,8 @@ function DisputeRecord({
           말과 증빙으로 답할 수 있다. */}
       <details className="dispute-snapshot">
         <summary>{t("접수할 때의 계약 보기")}</summary>
-        <p className="field-hint">
-          {t("접수한 순간의 계약서 내용이에요. 양쪽이 확인한 조건이 아닐 수 있어요. 다르면 말과 증빙으로 알려 주세요.")}
+        <p className="dispute-snapshot-state">
+          <strong>{t(snapshotAgreement(dispute.snapshot))}</strong> {t("다르면 말과 증빙으로 알려 주세요.")}
         </p>
         <dl>
           <div>

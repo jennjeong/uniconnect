@@ -2979,7 +2979,7 @@ test("either side of an agreement opens a dispute, both add to it, and an operat
   await expect(brandRecord.getByRole("button", { name: "분쟁 거두기" })).toHaveCount(0)
   // 상대가 접수했어도 운영자가 판단할 '접수할 때의 계약'을 같이 본다.
   await brandRecord.getByText("접수할 때의 계약 보기").click()
-  await expect(brandRecord.locator(".dispute-snapshot")).toContainText("양쪽이 확인한 조건이 아닐 수 있어요")
+  await expect(brandRecord.locator(".dispute-snapshot")).toContainText("양쪽 모두 확인하기 전이었어요")
   await expect(brandRecord.locator(".dispute-snapshot li").first()).toBeVisible()
   await brandRecord.getByLabel("남길 말").fill("이번 주 안에 보낼게요.")
   await brandRecord.getByRole("button", { name: "남기기" }).click()
@@ -2997,7 +2997,7 @@ test("either side of an agreement opens a dispute, both add to it, and an operat
   await row.getByRole("button", { name: "열기" }).click()
   const detail = console.getByRole("region", { name: "분쟁 분쟁 공연" })
   await expect(detail).toContainText("이번 주 안에 보낼게요.")
-  await expect(detail).toContainText("양쪽이 확인한 조건이 아닐 수 있으니")
+  await expect(detail).toContainText("양쪽 모두 확인하기 전이었어요")
   await detail.getByRole("button", { name: "확인 시작" }).click()
   await expect(console.getByText("확인을 시작했어요. 양쪽에 알렸어요.")).toBeVisible()
   await detail.getByLabel("운영자 메모").fill("양쪽에 입금 일정을 물어볼 것")

@@ -11753,6 +11753,19 @@ input[type="search"]::-webkit-search-cancel-button {
   overflow-wrap: anywhere;
 }
 
+/* 접수할 때 양쪽이 확인한 조건이었는지(snapshotAgreement)와 그 뒤의 안내. */
+.dispute-snapshot-state {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.dispute-snapshot-state strong {
+  color: var(--ink);
+  font-weight: var(--weight-label);
+}
+
 /* 접수할 때의 계약(운영자가 판단하는 사본). 접어 두고 필요할 때 연다. */
 .dispute-snapshot {
   display: grid;

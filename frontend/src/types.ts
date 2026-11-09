@@ -1526,6 +1526,8 @@ export type Dispute = {
     value?: { cash: number; inKind: number }
     payout?: { dueDate?: string; paidAt?: string; paidAmount?: number; receivedAt?: string }
     items: { side: ChatSide; label: string; doneAt?: string }[]
+    // 접수할 때 각 쪽이 계약서를 확인한 시각(backend lib/disputes.ts agreementSnapshot).
+    confirmed?: Partial<Record<ChatSide, string>>
   }
   evidence: { id: string; side: ChatSide; name: string; size: number; addedAt: string }[]
   events: DisputeEvent[]

@@ -1,4 +1,4 @@
-import type { DisputeEvent, DisputeOutcome, DisputeReason } from "../types"
+import type { Dispute, DisputeEvent, DisputeOutcome, DisputeReason } from "../types"
 
 // 협찬 분쟁의 이유와 결론(backend lib/disputes.ts의 disputeReasons, disputeOutcomes와
 // 같은 값). 값은 그대로 보내고, 이름은 t()로 보인다.
@@ -35,3 +35,12 @@ export const disputeEventLabels: Record<DisputeEvent["kind"], string> = {
 
 // 서버의 한도(backend lib/disputes.ts의 disputeLimits).
 export const disputeLimits = { detail: 1000, statements: 20, evidencePerSide: 5 }
+
+// 접수할 때의 계약이 양쪽이 확인한 조건이었는지. 두 쪽 모두 확인했으면 그 조건에
+// 합의한 것이고, 아니면 한쪽이 마지막으로 고친 내용일 수 있다.
+export function snapshotAgreement(snapshot: Dispute["snapshot"]) {
+  const confirmed = snapshot.confirmed ?? {}
+  if (confirmed.group && confirmed.brand) return "양쪽이 확인한 조건이었어요."
+  if (confirmed.group || confirmed.brand) return "한쪽만 확인한 조건이었어요. 다른 쪽이 합의했는지는 알 수 없어요."
+  return "양쪽 모두 확인하기 전이었어요. 한쪽이 마지막으로 고친 내용일 수 있어요."
+}

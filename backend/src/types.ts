@@ -761,6 +761,9 @@ export type Dispute = {
     value?: { cash: number; inKind: number }
     payout?: { dueDate?: string; paidAt?: string; paidAmount?: number; receivedAt?: string }
     items: { side: ChatSide; label: string; doneAt?: string }[]
+    // 접수할 때 각 쪽이 계약서를 확인한 시각. 항목이나 협찬액을 고치면 확인이 지워지므로,
+    // 두 쪽 모두 있으면 양쪽이 확인한 조건이고, 아니면 한쪽이 마지막으로 고친 내용일 수 있다.
+    confirmed?: Partial<Record<ChatSide, string>>
   }
   evidence: { id: string; side: ChatSide; file: string; name: string; size: number; addedAt: string }[]
   events: DisputeEvent[]
