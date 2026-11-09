@@ -2648,6 +2648,16 @@ test("a match card puts its score at the top right, its actions at the bottom ri
   await page.goto("/matches")
   const card = page.locator(".work-card").first()
   await expect(card.getByRole("button", { name: "상세 정보" })).toBeVisible()
+  // 카드는 차례로 미끄러져 들어오므로, 움직임이 끝난 뒤에 잰다.
+  // 끝없이 도는 움직임은 기다리지 않는다.
+  await page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((animation) => animation.effect?.getComputedTiming().endTime !== Infinity)
+        .map((animation) => animation.finished.catch(() => undefined)),
+    ),
+  )
   const detail = (await card.getByRole("button", { name: "상세 정보" }).boundingBox())!
   // 둘째 칸은 제안하기 버튼이거나, 보낸 뒤에는 그 자리의 상태(제안 보냄, 협찬 확정)다.
   const propose = (await card.locator(".work-actions .primary-button, .work-actions .proposal-button").first().boundingBox())!
