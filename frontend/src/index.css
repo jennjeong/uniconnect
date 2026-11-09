@@ -12578,10 +12578,11 @@ input[type="search"]::-webkit-search-cancel-button {
   align-items: center;
   gap: clamp(32px, 5vw, 72px);
   margin: 0 auto;
-  /* 고정 헤더 높이는 .main-content가 이미 띄운다. 여기서 한 번 더 더하면 휴대폰에서
-     헤더 아래가 100px 넘게 빈다. 화면 높이가 아니라 너비를 따라 휴대폰 40px 남짓에서
-     넓은 화면 160px까지 늘어난다. */
-  padding: clamp(40px, 11vw, 160px) 0 clamp(48px, 7vw, 96px);
+  padding: clamp(40px, 4vw, 64px) 0 clamp(48px, 7vw, 96px);
+}
+
+.landing #examples {
+  scroll-margin-top: calc(var(--header-h) + 24px);
 }
 
 .landing-kicker {
@@ -12600,6 +12601,10 @@ input[type="search"]::-webkit-search-cancel-button {
   letter-spacing: -0.03em;
   line-height: 1.12;
   word-break: keep-all;
+}
+
+.landing-hero h1:lang(en) {
+  font-size: clamp(2rem, 4.2vw, 3.5rem);
 }
 
 .landing-hero h1 .accent {
@@ -16917,6 +16922,25 @@ input[type="search"]::-webkit-search-cancel-button {
 
 .refund-outside p {
   margin: 0;
+}
+
+.console-list .backup-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.backup-row > span {
+  margin-inline-end: auto;
+}
+
+.backup-actions {
+  font-size: var(--text-xs);
+}
+
+.backup-actions summary {
+  cursor: pointer;
 }
 
 .backup-restore {

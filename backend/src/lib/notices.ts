@@ -40,7 +40,7 @@ export function notify(
 
 // 상대가 표시를 켰다 껐다 하거나 말을 잇달아 남겨 같은 메일을 쏟아내지 못하게 한다.
 // 같은 계정에 같은 제목과 같은 화면의 메일은 한 시간에 5통까지다. 키는 해시로만 남는다.
-const repeatedNotices = createRateLimit({ limit: 5, windowMs: 60 * 60 * 1000, message: "같은 알림이 너무 많아요." })
+const repeatedNotices = createRateLimit({ label: "동일 알림 발송", limit: 5, windowMs: 60 * 60 * 1000, message: "같은 알림이 너무 많아요." })
 
 function deliver(account: Account, kind: MailKind | "account", subject: string, lines: string[], path: string) {
   const say = (text: string) => translate(text, account.language ?? "ko")

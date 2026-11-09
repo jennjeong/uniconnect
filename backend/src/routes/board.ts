@@ -22,6 +22,7 @@ const maxOpenPosts = 5
 
 // 하루에 누구나 올리는 수보다 많은 수다.
 const postsPerDay = createRateLimit({
+  label: "모집 글 등록",
   limit: 10,
   windowMs: 24 * 60 * 60 * 1000,
   message: "모집 글을 너무 많이 올렸어요. 내일 다시 올려 주세요.",

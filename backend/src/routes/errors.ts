@@ -9,6 +9,7 @@ export const errorsRouter = Router()
 
 // 페이지 하나가 보내는 오류는 많아야 몇 건이다. 한 주소에서 더 오면 폭주로 본다.
 const reportsPerClient = createRateLimit({
+  label: "오류 보고 접수",
   limit: 30,
   windowMs: 10 * 60 * 1000,
   message: "오류 보고가 너무 많아요. 잠시 후 다시 시도해 주세요.",

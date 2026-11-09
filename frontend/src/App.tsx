@@ -1414,7 +1414,6 @@ function App() {
       return (
         <LandingPage
           onSignup={(side) => openAuth("signup", side)}
-          onBrowse={(side) => openExample(side)}
           onOpenExample={openExample}
           onOpenFaq={openFaq}
           onInstall={installKind === "app" ? undefined : startInstall}

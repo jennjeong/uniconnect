@@ -194,6 +194,7 @@ proposalsRouter.get("/", (req, res) => {
 
 // 단체나 브랜드가 한 시간에 제안하는 수보다 많은 수다. 제안마다 파트너에게 메일이 간다.
 const proposalsPerHour = createRateLimit({
+  label: "협찬 제안 발송",
   limit: 30,
   windowMs: 60 * 60 * 1000,
   message: "제안을 너무 많이 보냈어요. 1시간 뒤에 다시 보내 주세요.",

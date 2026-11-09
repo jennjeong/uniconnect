@@ -135,6 +135,7 @@ const shownProfile = (database: ReturnType<typeof getDatabase>, listing: Match) 
 
 // 확인할 때마다 정부 서비스에 묻기 때문에 브랜드는 한 시간에 몇 번만 할 수 있다.
 const businessChecksPerHour = createRateLimit({
+  label: "사업자 등록 확인",
   limit: 10,
   windowMs: 60 * 60 * 1000,
   message: "사업자 확인을 너무 많이 했어요. 1시간 뒤에 다시 시도해 주세요.",

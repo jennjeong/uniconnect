@@ -568,7 +568,7 @@ export const api = {
     request<{ announcements: AdminAnnouncement[] }>("/admin/announcements", { headers: { "X-Admin-Token": token } }),
   adminPostAnnouncement: (
     token: string,
-    body: { text: string; tone: SiteNotice["tone"]; audience: AdminAnnouncement["audience"]; from?: string; until?: string },
+    body: { text: string; textEn?: string; tone: SiteNotice["tone"]; audience: AdminAnnouncement["audience"]; from?: string; until?: string },
   ) => request<{ announcement: AdminAnnouncement }>("/admin/announcements", { method: "POST", body, headers: { "X-Admin-Token": token } }),
   adminEndAnnouncement: (token: string, id: string) =>
     request<{ announcement: AdminAnnouncement }>(`/admin/announcements/${encodeURIComponent(id)}/end`, {

@@ -15,7 +15,7 @@ type Bucket = { count: number; resetAt: number }
 const limiters = new Set<Map<string, Bucket>>()
 
 // 운영자 상태 화면용으로 이름별로 모은 모든 한도.
-const registry = new Map<string, { limit: number; windowMs: number; message: string; buckets: Map<string, Bucket> }>()
+const registry = new Map<string, { limit: number; windowMs: number; message: string; label: string; buckets: Map<string, Bucket> }>()
 
 // 메모리로 넘어가기 전에 데이터베이스를 기다릴 수 있는 시간.
 export const sharedLimits = { waitMs: 1500 }
@@ -42,16 +42,18 @@ export function createRateLimit({
   limit,
   windowMs,
   message,
+  label = message,
 }: {
   limit: number
   windowMs: number
   message: string
+  label?: string
 }) {
   const buckets = new Map<string, Bucket>()
   limiters.add(buckets)
   // 테이블에서의 한도 이름. 다른 한도와 구분하는 값이다.
   const name = createHash("sha256").update(`${limit} ${windowMs} ${message}`).digest("hex").slice(0, 16)
-  registry.set(name, { limit, windowMs, message, buckets })
+  registry.set(name, { limit, windowMs, message, label, buckets })
   const keyHash = (key: string) => createHash("sha256").update(key).digest("hex")
 
   const live = (key: string) => {
@@ -185,6 +187,8 @@ export async function limitStatus() {
       ? rows.filter((row) => row.name === name).map((row) => row.count)
       : [...entry.buckets.values()].filter((bucket) => bucket.resetAt > now).map((bucket) => bucket.count)
     return {
+      id: name,
+      label: entry.label,
       message: entry.message,
       limit: entry.limit,
       minutes: Math.round(entry.windowMs / 60000),

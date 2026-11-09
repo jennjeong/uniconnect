@@ -100,6 +100,7 @@ invitesRouter.get("/:code", (req, res) => {
 // 그 매장이 되어, 근처 단체가 합류를 보고 제안을 보낼 수 있다. 그 매장을
 // 초대한 모든 단체가 합류 소식을 받는다.
 const linksPerDay = createRateLimit({
+  label: "가게 연결 신청",
   limit: 5,
   windowMs: 24 * 60 * 60 * 1000,
   message: "가게 연결 신청을 너무 많이 보냈어요. 내일 다시 보내 주세요.",

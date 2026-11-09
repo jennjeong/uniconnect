@@ -39,13 +39,16 @@ test("search engines find the sitemap from robots.txt", async ({ request }) => {
 test("visitors browse the site, its help and its 404 page", async ({ page }) => {
   await page.goto("/")
   await expect(page).toHaveTitle(/uniconnect/)
-  // 소개 페이지는 예시로 표시된 예시 대시보드로 이어지고, 다시 돌아온다.
+  // 소개 페이지의 예시 영역에서 각 역할의 화면을 고른다.
   await expect(page.getByRole("heading", { level: 1 })).toContainText("캠퍼스 행사 협찬을")
-  await page.getByRole("button", { name: "가입 전에 예시 화면 둘러보기" }).click()
-  await expect(page).toHaveURL(/\/dashboard$/)
+  await page.getByRole("link", { name: "가입 전에 예시 화면 둘러보기" }).click()
+  await expect(page).toHaveURL(/#examples$/)
+  const examples = page.locator("#examples")
+  await expect(examples.getByRole("heading", { name: "추천 매칭" })).toBeVisible()
+  await examples.getByRole("article").filter({ has: page.getByRole("heading", { name: "단체 찾기" }) }).getByRole("button", { name: "예시 보기" }).click()
   await expect(page.locator(".demo-chip")).toHaveText("예시 화면")
   await page.goBack()
-  await expect(page).toHaveURL(/\/$/)
+  await expect(page).toHaveURL(/\/#examples$/)
   await expect(page.getByRole("heading", { level: 1 })).toContainText("캠퍼스 행사 협찬을")
   await page.goto("/matches")
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
@@ -55,6 +58,57 @@ test("visitors browse the site, its help and its 404 page", async ({ page }) => 
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
   await page.goto("/no-such-page")
   await expect(page.getByText("페이지를 찾을 수 없어요").first()).toBeVisible()
+})
+
+test("the landing starts for both roles fit with a bilingual notice", async ({ page }) => {
+  await page.route("**/api/announcements", (route) => route.fulfill({ json: { announcements: [
+    { id: "landing-notice", text: "테스트 공지", textEn: "Test notice", tone: "info" },
+  ] } }))
+  await page.goto("/")
+  for (const lang of ["ko", "en"] as const) {
+    const notice = lang === "ko" ? "테스트 공지" : "Test notice"
+    await expect(page.getByText(notice, { exact: true })).toBeVisible()
+    for (const viewport of [{ width: 1200, height: 702 }, { width: 390, height: 844 }]) {
+      await page.setViewportSize(viewport)
+      const buttons = page.locator(".landing-entry")
+      await expect(buttons).toHaveCount(2)
+      for (const button of await buttons.all()) {
+        await expect(button).toBeInViewport({ ratio: 1 })
+      }
+    }
+    if (lang === "ko") {
+      await page.getByRole("button", { name: "전체 메뉴", exact: true }).click()
+      await page.getByRole("dialog").getByRole("button", { name: "English", exact: true }).click()
+    }
+  }
+})
+
+test("backup restore is disclosed separately and requires the selected timestamp", async ({ page }) => {
+  const hour = "2026-11-09T02"
+  const counts = { accounts: 2, events: 1, measurements: 0, proposals: 1 }
+  await page.addInitScript(() => sessionStorage.setItem("uniconnect-admin-token", "e2e-admin-token"))
+  await page.route("**/api/admin/system", (route) => route.fulfill({ json: {
+    limits: [], backups: [{ hour, bytes: 2048 }], cronRuns: [], maintenance: { on: false },
+  } }))
+  await page.route("**/api/admin/backups/*/summary", (route) => route.fulfill({ json: {
+    backup: counts, current: { ...counts, accounts: 3 }, accountsBack: 0,
+  } }))
+  await page.route("**/api/admin/backups/*/restore", (route) => {
+    expect(route.request().postDataJSON()).toEqual({ confirm: hour })
+    return route.fulfill({ json: { ok: true } })
+  })
+  await page.goto("/admin?view=system")
+  await expect(page.getByRole("button", { name: "내려받기", exact: true })).toBeVisible()
+  await expect(page.getByRole("button", { name: "복원", exact: true })).toBeHidden()
+  await page.getByText("백업 작업", { exact: true }).click()
+  await page.getByRole("button", { name: "복원", exact: true }).click()
+  await expect(page.getByText(/복원할 백업:/)).toBeVisible()
+  await expect(page.getByText(/백업 이후에 추가하거나 변경한 계정/)).toBeVisible()
+  const restore = page.getByRole("button", { name: "복원하기", exact: true })
+  await expect(restore).toBeDisabled()
+  await page.getByLabel(/확인하려면 백업 시각/).fill(hour)
+  await restore.click()
+  await expect(page.getByText("백업으로 복원했어요.")).toBeVisible()
 })
 
 test("a visitor sees made-up shops and the example groups on the nearby tabs", async ({ page }) => {
@@ -720,10 +774,10 @@ test("an operator logs in with a password and a code, sees its recovery codes on
   await page.goto("/admin")
   await page.getByLabel("이메일").fill(email)
   await page.getByLabel("비밀번호", { exact: true }).fill("wrong-pass-123!")
-  await page.getByRole("button", { name: "다음" }).click()
+  await page.getByRole("button", { name: "2단계 인증으로" }).click()
   await expect(page.getByRole("alert")).toBeVisible()
   await page.getByLabel("비밀번호", { exact: true }).fill("Operator-pass-1!")
-  await page.getByRole("button", { name: "다음" }).click()
+  await page.getByRole("button", { name: "2단계 인증으로" }).click()
   await expect(page.getByRole("img", { name: "인증 앱에 등록할 QR 코드" })).toBeVisible()
   // 2단계를 실제로 마치면 공유 토큰이 닫혀 다른 테스트가 막히므로 그 답만 흉내 낸다.
   await page.route("**/api/admin/session/code", (route) =>
@@ -2287,17 +2341,23 @@ test("the console's command palette opens screens, and maintenance covers the si
   await page.keyboard.press("Escape")
   await expect(page.getByRole("dialog", { name: "키보드 단축키" })).toHaveCount(0)
 
+  await page.route("**/api/admin/system", (route) => route.fulfill({ status: 503, json: { message: "일시적인 오류" } }), { times: 1 })
   await page.getByRole("navigation", { name: "운영자 메뉴" }).getByRole("button", { name: "시스템" }).click()
+  await expect(page.getByText("시스템 정보를 불러오지 못했어요.")).toBeVisible()
+  await page.getByRole("button", { name: "다시 시도", exact: true }).click()
+  await expect(page.getByText("현재 상태: 정상 운영")).toBeVisible()
   await page.getByLabel("점검 중: 회원 화면 대신 안내를 보여 주고 저장을 막아요").check()
   await page.getByLabel("안내 문구").fill("오늘 밤 점검이에요")
-  await page.getByRole("button", { name: "저장" }).first().click()
+  await expect(page.getByText("현재 상태: 정상 운영")).toBeVisible()
+  await page.getByRole("button", { name: "점검 모드 켜기" }).click()
+  await expect(page.getByText("현재 상태: 전체 점검")).toBeVisible()
   await expect(page.getByText("점검 모드를 켰어요.")).toBeVisible()
   await page.goto("/faq")
   await expect(page.getByRole("alert").filter({ hasText: "잠시 점검하고 있어요" })).toContainText("오늘 밤 점검이에요")
 
   await page.goto("/admin?view=system")
   await page.getByLabel("점검 중: 회원 화면 대신 안내를 보여 주고 저장을 막아요").uncheck()
-  await page.getByRole("button", { name: "저장" }).first().click()
+  await page.getByRole("button", { name: "점검 모드 끄기" }).click()
   await expect(page.getByText("점검 설정을 저장했어요.")).toBeVisible()
   await page.goto("/faq")
   await expect(page.getByText("잠시 점검하고 있어요")).toHaveCount(0)

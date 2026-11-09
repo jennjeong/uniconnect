@@ -31,16 +31,19 @@ export const authRouter = Router()
 
 const minute = 60 * 1000
 const codesPerClient = createRateLimit({
+  label: "인증번호 발급 · 주소별",
   limit: config.codesPerClient,
   windowMs: 15 * minute,
   message: "인증번호 요청이 너무 많아요. 15분 뒤에 다시 시도해 주세요.",
 })
 const codesPerEmail = createRateLimit({
+  label: "인증번호 발급 · 이메일별",
   limit: 5,
   windowMs: 30 * minute,
   message: "이 이메일로 인증번호를 너무 자주 받았어요. 30분 뒤에 다시 시도해 주세요.",
 })
 const verifyPerClient = createRateLimit({
+  label: "이메일 인증 시도",
   limit: config.codesPerClient + 10,
   windowMs: 15 * minute,
   message: "인증 시도가 너무 많아요. 15분 뒤에 다시 시도해 주세요.",
@@ -48,6 +51,7 @@ const verifyPerClient = createRateLimit({
 // 실패한 로그인만 주소와 이메일별로 센다. 한 사람의 오타가 다른 사람을
 // 잠그지 않고, 다른 곳에서 맞는 비밀번호로 들어오는 것도 막지 않는다.
 const loginFailures = createRateLimit({
+  label: "회원 로그인 · 주소와 이메일별",
   limit: 10,
   windowMs: 15 * minute,
   message: "로그인 시도가 너무 많아요. 15분 뒤에 다시 시도해 주세요.",
@@ -56,11 +60,13 @@ const loginFailures = createRateLimit({
 // 것을 막지 못한다. 그래서 이메일과 주소에도 각각 넉넉한 한도를 둔다. 공용 와이파이의
 // 오타나 한 사람의 실수로는 닿지 않는 값이다. 성공한 로그인은 세지 않는다.
 const loginFailuresPerEmail = createRateLimit({
+  label: "회원 로그인 · 이메일별",
   limit: 100,
   windowMs: 15 * minute,
   message: "이 계정의 로그인 시도가 너무 많아요. 15분 뒤에 다시 시도해 주세요.",
 })
 const loginFailuresPerClient = createRateLimit({
+  label: "회원 로그인 · 주소별",
   limit: 100,
   windowMs: 15 * minute,
   message: "이 네트워크에서 로그인 시도가 너무 많아요. 15분 뒤에 다시 시도해 주세요.",
@@ -123,6 +129,7 @@ export function startSession(
 // 모르는 사람은 이 한도를 쓸 수 없다. 앱의 코드는 한 번에 셋이 통하고 100만 개 중에서
 // 고르므로, 이 한도로는 하루에 맞힐 확률이 0.2%를 넘지 않는다.
 export const twoFactorGuesses = createRateLimit({
+  label: "2단계 인증 코드 시도",
   limit: 20,
   windowMs: 60 * 60 * 1000,
   message: "2단계 인증 코드를 너무 많이 틀렸어요. 1시간 뒤에 다시 시도해 주세요.",

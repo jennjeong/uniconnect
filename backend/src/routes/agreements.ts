@@ -120,6 +120,7 @@ function assertNewPost(posts: SnsPost[], url: string, except?: SnsPost) {
 // 게시물을 올리거나 고칠 때마다 유튜브 조회수를 읽는다. 지우고 다시 올리기를
 // 되풀이해 API 할당량을 다 쓰지 못하게 계정별로 센다.
 const postsPerHour = createRateLimit({
+  label: "계약 이행 게시물 수정",
   limit: 30,
   windowMs: 60 * 60 * 1000,
   message: "게시물을 너무 자주 고쳤어요. 1시간 뒤에 다시 해 주세요.",

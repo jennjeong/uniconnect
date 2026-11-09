@@ -7165,8 +7165,10 @@ test("operators keep notes on members, post notices and read their own log and t
     assert.equal((await admin("POST", "/announcements", { text: "점검", tone: "loud", audience: "all" })).status, 400)
     assert.equal((await admin("POST", "/announcements", { text: "점검", tone: "info", audience: "all", until: "2000-01-01" })).status, 400)
     const brands = (await admin("POST", "/announcements", { text: "브랜드 정산 안내", tone: "info", audience: "브랜드" })).data.announcement
-    const all = (await admin("POST", "/announcements", { text: "오늘 밤 점검이 있어요", tone: "warning", audience: "all" })).data.announcement
-    const seen = (await call("GET", "/announcements")).data.announcements.map((item: { id: string }) => item.id)
+    const all = (await admin("POST", "/announcements", { text: "오늘 밤 점검이 있어요", textEn: "Maintenance tonight", tone: "warning", audience: "all" })).data.announcement
+    const notices = (await call("GET", "/announcements")).data.announcements
+    assert.equal(notices.find((item: { id: string }) => item.id === all.id)?.textEn, "Maintenance tonight")
+    const seen = notices.map((item: { id: string }) => item.id)
     assert.ok(seen.includes(all.id))
     assert.ok(!seen.includes(brands.id))
     assert.equal((await admin("POST", `/announcements/${all.id}/end`)).status, 200)
@@ -7281,7 +7283,7 @@ test("the console's member tools, operations, content, analysis and system scree
     // 시스템 화면은 주소 없이 제한을 센다.
     const system = (await admin("GET", "/system")).data
     assert.ok(system.limits.length > 0)
-    assert.ok(system.limits.every((limit: Record<string, unknown>) => Object.keys(limit).sort().join() === "blocked,counting,limit,message,minutes"))
+    assert.ok(system.limits.every((limit: Record<string, unknown>) => Object.keys(limit).sort().join() === "blocked,counting,id,label,limit,message,minutes"))
     assert.ok(Array.isArray(system.backups) && Array.isArray(system.cronRuns))
     assert.equal((await admin("GET", "/backups/../../etc")).status, 404)
 

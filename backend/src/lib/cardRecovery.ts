@@ -268,7 +268,7 @@ export async function refundOutside(id: string, reason: string) {
 
 export const tossConsoleCancel = "Toss에서 취소"
 
-const webhookLookups = createRateLimit({ limit: 20, windowMs: 60 * 60 * 1000, message: "웹훅이 너무 많아요." })
+const webhookLookups = createRateLimit({ label: "결제 웹훅 조회", limit: 20, windowMs: 60 * 60 * 1000, message: "웹훅이 너무 많아요." })
 
 export type WebhookResult = "ignored" | Settled | SettledRefund
 

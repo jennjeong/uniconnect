@@ -15,6 +15,7 @@ export const placesRouter = Router()
 // 물을 수 있는 횟수를 제한하고, 묻는 종류마다 센다. 종류를 가끔 골라 보는
 // 정도는 한도에 훨씬 못 미친다.
 const asksPerClient = createRateLimit({
+  label: "주변 가게 검색",
   limit: 30,
   windowMs: 60 * 1000,
   message: "가게 검색이 너무 많아요. 잠시 후 다시 시도해 주세요.",

@@ -13,6 +13,7 @@ announcementsRouter.get("/", (req, res) => {
 })
 
 const dismissals = createRateLimit({
+  label: "공지 닫기 집계",
   limit: 30,
   windowMs: 15 * 60 * 1000,
   message: "요청이 너무 많아요. 잠시 뒤에 다시 시도해 주세요.",

@@ -25,6 +25,7 @@ export const teamRouter = Router()
 const inviteMs = 7 * 24 * 60 * 60 * 1000
 
 const invitesPerDay = createRateLimit({
+  label: "팀원 초대",
   limit: 10,
   windowMs: 24 * 60 * 60 * 1000,
   message: "초대를 너무 많이 보냈어요. 내일 다시 보내 주세요.",
@@ -34,12 +35,14 @@ const invitesPerDay = createRateLimit({
 // 잠시 막는다. 로그인 없이 부르는 경로라, 지우면 이메일만 아는 사람이 남의
 // 초대를 없앨 수 있다.
 const joinTriesPerEmail = createRateLimit({
+  label: "팀 가입 코드 · 이메일별",
   limit: 5,
   windowMs: 15 * 60 * 1000,
   message: "초대 코드를 너무 많이 틀렸어요. 15분 뒤에 다시 시도해 주세요.",
 })
 
 const joinFailures = createRateLimit({
+  label: "팀 가입 코드 입력",
   limit: 10,
   windowMs: 15 * 60 * 1000,
   message: "초대 코드 입력이 너무 많아요. 15분 뒤에 다시 시도해 주세요.",

@@ -227,11 +227,13 @@ conversationsRouter.get("/:id", async (req, res) => {
 // 사람이 입력하는 속도보다 빠르거나 하루치 대화보다 많으면 폭주다. 메시지마다
 // 상대편에게 메일이 갈 수 있다.
 const messagesPerMinute = createRateLimit({
+  label: "채팅 발송 · 분당",
   limit: 20,
   windowMs: 60 * 1000,
   message: "메시지를 너무 빨리 보내고 있어요. 1분 뒤에 다시 보내 주세요.",
 })
 const messagesPerHour = createRateLimit({
+  label: "채팅 발송 · 시간당",
   limit: 300,
   windowMs: 60 * 60 * 1000,
   message: "메시지를 너무 많이 보냈어요. 1시간 뒤에 다시 보내 주세요.",

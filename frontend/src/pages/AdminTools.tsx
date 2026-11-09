@@ -351,7 +351,7 @@ function PeriodField({ from, until, onChange }: { from: string; until: string; o
 // 사이트 공지: 새 공지 폼, 지금 보이는 공지(눌러서 내린다), 끝난 공지.
 export function Notices({ token, onNotice }: { token: string; onNotice: (message: string) => void }) {
   const [items, setItems] = useState<AdminAnnouncement[]>()
-  const [form, setForm] = useState({ text: "", tone: "info" as AdminAnnouncement["tone"], audience: "all" as AdminAnnouncement["audience"], from: "", until: "" })
+  const [form, setForm] = useState({ text: "", textEn: "", tone: "info" as AdminAnnouncement["tone"], audience: "all" as AdminAnnouncement["audience"], from: "", until: "" })
   const [busy, setBusy] = useState(false)
   const load = () =>
     api.adminAnnouncements(token).then(
@@ -377,7 +377,7 @@ export function Notices({ token, onNotice }: { token: string; onNotice: (message
               .adminPostAnnouncement(token, { ...form, text: form.text.trim(), from: form.from || undefined, until: form.until || undefined })
               .then(
                 () => {
-                  setForm({ ...form, text: "", from: "", until: "" })
+                  setForm({ ...form, text: "", textEn: "", from: "", until: "" })
                   onNotice(t("공지를 올렸어요."))
                   return load()
                 },
@@ -394,6 +394,16 @@ export function Notices({ token, onNotice }: { token: string; onNotice: (message
               placeholder={t("예: 11월 2일 새벽 2시부터 30분 동안 점검해요.")}
               rows={3}
               value={form.text}
+            />
+          </label>
+          <label>
+            {t("영어 내용 (선택)")}
+            <textarea
+              lang="en"
+              maxLength={600}
+              onChange={(event) => setForm({ ...form, textEn: event.target.value })}
+              rows={3}
+              value={form.textEn}
             />
           </label>
           {form.text.trim() && (

@@ -16,6 +16,7 @@ export const councilRouter = Router()
 
 // 주소별로 틀린 코드를 센다.
 const codeFailures = createRateLimit({
+  label: "학생회 인증 코드 시도",
   limit: 10,
   windowMs: 15 * 60 * 1000,
   message: "코드를 너무 많이 틀렸어요. 15분 뒤에 다시 시도해 주세요.",

@@ -17,11 +17,9 @@ const resultFigures = [
 
 export function LandingHero({
   onSignup,
-  onBrowse,
   onInstall,
 }: {
   onSignup: (role: Role) => void
-  onBrowse: () => void
   onInstall?: () => void
 }) {
   return (
@@ -55,9 +53,9 @@ export function LandingHero({
           </button>
         </div>
         <p className="landing-hero-tools">
-          <button className="underline-link" onClick={onBrowse} type="button">
+          <a className="underline-link" href="#examples">
             {t("가입 전에 예시 화면 둘러보기")}
-          </button>
+          </a>
           {onInstall && (
             <button className="underline-link quiet" onClick={onInstall} type="button">
               {t("앱 다운로드")}

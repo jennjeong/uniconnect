@@ -6,7 +6,7 @@ import { ClosingContext } from "../components/Presence"
 import { navItems } from "../data/navigation"
 import { createLabel, roles } from "../data/roles"
 import { useDialogFocus } from "../hooks/useDialogFocus"
-import { t } from "../i18n"
+import { lang, setLang, t } from "../i18n"
 import type { Account, NavLabel, Role } from "../types"
 
 // Menu 뒤의 전체 화면 메뉴. 은색 패널에 역할별 페이지가 큰 글자로 번호와 함께
@@ -191,6 +191,9 @@ export function NavMenu({
               </span>
             </>
           )}
+          <button lang={lang === "ko" ? "en" : "ko"} onClick={pick(() => setLang(lang === "ko" ? "en" : "ko"))} type="button">
+            {lang === "ko" ? "English" : "한국어"}
+          </button>
         </div>
       </nav>
 

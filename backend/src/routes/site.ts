@@ -22,6 +22,7 @@ siteRouter.get("/", (_req, res) => {
 })
 
 const searches = createRateLimit({
+  label: "카탈로그 검색어 집계",
   limit: 60,
   windowMs: 15 * 60 * 1000,
   message: "요청이 너무 많아요. 잠시 뒤에 다시 시도해 주세요.",

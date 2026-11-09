@@ -23,6 +23,7 @@ export const adminSessionRouter = Router()
 export const operatorSessionMs = 8 * 60 * 60 * 1000
 
 const operatorLogins = createRateLimit({
+  label: "운영자 로그인 · 주소별",
   limit: 10,
   windowMs: 15 * 60 * 1000,
   message: "운영자 로그인 시도가 너무 많아요. 15분 뒤에 다시 시도해 주세요.",
@@ -31,6 +32,7 @@ const operatorLogins = createRateLimit({
 // 여러 주소에서 나눠 보내는 추측은 이메일별로 센다. 없는 이메일도 똑같이 세므로 운영자를
 // 알아내는 데 쓸 수 없다. 맞는 비밀번호는 돌려준다.
 const operatorFailures = createRateLimit({
+  label: "운영자 로그인 · 이메일별",
   limit: 30,
   windowMs: 15 * 60 * 1000,
   message: "이 이메일의 운영자 로그인 시도가 너무 많아요. 15분 뒤에 다시 시도해 주세요.",
