@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
 
-import { ApiError, getToken, request, setToken, tokenPersists } from "./client"
+import { ApiError, getToken, request, requestBlob, setToken, tokenPersists } from "./client"
 
 const respond = (status: number, body: string) =>
   Promise.resolve(new Response(status === 204 ? null : body, { status, headers: { "Content-Type": "application/json" } }))
@@ -108,5 +108,48 @@ describe("api client", () => {
     expect((fetcher.mock.calls[0][1].headers as Record<string, string>).Authorization).toBe("Bearer token-1")
     setToken(null)
     expect(getToken()).toBeNull()
+  })
+
+  // 파일 본문을 흘려보내는 응답. 첫 조각을 보낸 뒤 멈추거나(stall) 끊긴다(break).
+  // 실제 fetch처럼 요청의 signal이 멈추면 본문 읽기도 실패한다.
+  const streaming = (mode: "stall" | "break") => (_url: string, init: RequestInit) => {
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new Uint8Array([37, 80, 68, 70]))
+        if (mode === "break") controller.error(new TypeError("network error"))
+        init.signal?.addEventListener("abort", () => controller.error(new DOMException("aborted", "AbortError")))
+      },
+    })
+    return Promise.resolve(new Response(body, { status: 200, headers: { "Content-Type": "application/pdf" } }))
+  }
+
+  test("a file whose body stalls after the headers times out instead of waiting forever", async () => {
+    vi.stubGlobal("fetch", streaming("stall"))
+    const error = await failure(requestBlob("/events/e1/plan", { timeoutMs: 30 }))
+    expect([error.kind, error.message]).toEqual(["timeout", "응답이 늦어지고 있어요. 잠시 후 다시 시도해 주세요."])
+  })
+
+  test("a file whose body breaks off is a readable network failure", async () => {
+    vi.stubGlobal("fetch", streaming("break"))
+    const error = await failure(requestBlob("/events/e1/plan"))
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error.kind).toBe("network")
+  })
+
+  test("a file the page stops waiting for is aborted, not a network failure", async () => {
+    vi.stubGlobal("fetch", streaming("stall"))
+    const controller = new AbortController()
+    const pending = failure(requestBlob("/events/e1/plan", { signal: controller.signal }))
+    controller.abort()
+    expect((await pending).kind).toBe("aborted")
+  })
+
+  test("a refused file carries the API's own message, and a whole file comes back", async () => {
+    vi.stubGlobal("fetch", () => respond(404, JSON.stringify({ error: "기획안이 없어요." })))
+    const error = await failure(requestBlob("/events/e1/plan"))
+    expect([error.status, error.kind, error.message]).toEqual([404, "server", "기획안이 없어요."])
+
+    vi.stubGlobal("fetch", () => Promise.resolve(new Response(new Uint8Array([1, 2, 3]), { status: 200 })))
+    expect((await requestBlob("/events/e1/plan")).size).toBe(3)
   })
 })

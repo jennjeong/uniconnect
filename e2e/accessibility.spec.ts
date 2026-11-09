@@ -30,7 +30,11 @@ for (const path of pages) {
 for (const path of ["/matches", "/groups"]) {
   test(`${path}'s 가까운 순 shows a visitor examples without critical or serious accessibility problems`, async ({ page }) => {
     await expectNoBlockingProblems(page, path, async () => {
-      await page.getByRole("tab", { name: "가까운 순" }).click()
+      if (path === "/matches") await page.getByRole("tab", { name: "학교 앞 가게" }).click()
+      else {
+        await page.locator(".catalog-conditions-toggle").click()
+        await page.locator(".sort-choice label", { hasText: "가까운 순" }).click()
+      }
       await expect(page.getByRole("note")).toBeVisible()
       await expect(page.locator(".work-card").first()).toBeVisible()
       await page.waitForFunction(() =>
