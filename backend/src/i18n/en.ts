@@ -427,6 +427,7 @@ const en: Record<string, string> = {
   "메모는 1,000자 이하로 적어 주세요.": "Keep the note to 1,000 characters.",
   "공지 내용을 적어 주세요.": "Write the notice.",
   "공지는 200자 이하로 적어 주세요.": "Keep the notice to 200 characters.",
+  "영어 공지는 600자 이하로 적어 주세요.": "Keep the English notice to 600 characters or fewer.",
   "공지 종류와 대상을 골라 주세요.": "Choose the notice's kind and who sees it.",
   "끝나는 날을 오늘 이후로 골라 주세요.": "Choose an end date from today on.",
   "공지를 찾을 수 없어요.": "We couldn't find that notice.",

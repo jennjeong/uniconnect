@@ -27,8 +27,10 @@ export function RolePicker({
             value={option.value}
           />
           <RoleMark role={option.value} />
-          <strong>{option.title}</strong>
-          <span>{option.caption}</span>
+          <span className="role-option-copy">
+            <strong>{option.title}</strong>
+            <span>{option.caption}</span>
+          </span>
         </label>
       ))}
     </div>

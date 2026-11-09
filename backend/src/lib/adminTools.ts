@@ -187,7 +187,7 @@ export function liveAnnouncements(database: Database, account?: Account) {
   return (database.announcements ?? [])
     .filter((item) => isLive(item))
     .filter((item) => item.audience === "all" || item.audience === account?.role)
-    .map(({ id, text, tone }) => ({ id, text, tone }))
+    .map(({ id, text, textEn, tone }) => ({ id, text, textEn, tone }))
 }
 
 // API의 이 복사본이 어떤 서비스에 맞춰 설정됐는지. 값은 담지 않는다.

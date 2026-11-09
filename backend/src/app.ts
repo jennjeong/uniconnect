@@ -56,11 +56,13 @@ import { getDatabase, refreshDatabase, storeHealth } from "./store.js"
 // 주소로 세는데, 캠퍼스나 행사장 와이파이에서는 많은 사람이 한 주소로 보이므로
 // 현장 기록과 같은 수까지 받는다. 메시지가 같아도 한도가 달라 따로 센다.
 const writesPerAccount = createRateLimit({
+  label: "API 쓰기 · 계정별",
   limit: 120,
   windowMs: 60 * 1000,
   message: "요청이 너무 많아요. 잠시 후 다시 시도해 주세요.",
 })
 const writesPerAddress = createRateLimit({
+  label: "API 쓰기 · 주소별",
   limit: 600,
   windowMs: 60 * 1000,
   message: "요청이 너무 많아요. 잠시 후 다시 시도해 주세요.",

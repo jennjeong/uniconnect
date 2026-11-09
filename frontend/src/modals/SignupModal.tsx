@@ -272,7 +272,7 @@ export function SignupModal({
             <input
               autoComplete="email"
               id="signup-email"
-              placeholder={draft.role === "학생단체" ? "name@syu.ac.kr" : "name@company.com"}
+              placeholder={draft.role === "학생단체" ? "name@example.ac.kr" : "name@company.com"}
               readOnly={verified}
               type="email"
               value={draft.email}

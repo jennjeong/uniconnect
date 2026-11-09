@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 
 import { api } from "../api"
-import { t } from "../i18n"
+import { lang, t } from "../i18n"
 import type { SiteNotice } from "../types"
 import { Icon } from "./Icon"
 
@@ -57,7 +57,7 @@ export function SiteNotices({ viewer, infoShown = true }: { viewer: string; info
           role={notice.tone === "warning" ? "alert" : "status"}
         >
           <Icon name={notice.tone === "warning" ? "bell" : "spark"} size={16} />
-          <span className="site-notice-text">{notice.text}</span>
+          <span className="site-notice-text">{lang === "en" ? notice.textEn || t(notice.text) : notice.text}</span>
           {!open.includes(notice.id) && (
             <button className="site-notice-more" onClick={() => setOpen([...open, notice.id])} type="button">
               {t("자세히")}

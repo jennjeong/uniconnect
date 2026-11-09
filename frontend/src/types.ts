@@ -1395,7 +1395,7 @@ export type AdminInsights = {
 }
 
 export type AdminSystem = {
-  limits: { message: string; limit: number; minutes: number; counting: number; blocked: number }[]
+  limits: { id: string; label: string; message: string; limit: number; minutes: number; counting: number; blocked: number }[]
   backups: { hour: string; bytes: number }[]
   cronRuns: { at: string; sent: number }[]
   maintenance: { on: boolean; message?: string; blockSignups?: boolean }
@@ -1432,7 +1432,7 @@ export type AdminHealth = {
 }
 
 // 운영자가 사이트 맨 위에 띄우는 공지.
-export type SiteNotice = { id: string; text: string; tone: "info" | "warning" }
+export type SiteNotice = { id: string; text: string; textEn?: string; tone: "info" | "warning" }
 
 export type AdminAnnouncement = SiteNotice & {
   audience: "all" | Role

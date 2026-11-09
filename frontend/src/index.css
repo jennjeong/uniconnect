@@ -9568,7 +9568,12 @@ input[type="search"]::-webkit-search-cancel-button {
 }
 
 .auth-form .primary-button {
+  min-height: 44px;
+  height: auto;
   margin-top: 22px;
+  padding-block: 10px;
+  line-height: 1.3;
+  white-space: normal;
 }
 
 /* 로그인 양식 아래의 Kakao와 Naver (modals/LoginModal.tsx). */
@@ -9722,11 +9727,12 @@ input[type="search"]::-webkit-search-cancel-button {
 .modal .role-option {
   position: relative;
   display: grid;
-  grid-template-columns: 28px 1fr;
+  grid-template-columns: 28px minmax(0, 1fr);
   align-items: center;
-  gap: 2px 10px;
+  gap: 10px;
   margin: 0;
-  padding: 14px;
+  padding: 12px 14px;
+  letter-spacing: normal;
   border: 1px solid var(--line);
   border-radius: 14px;
   background: var(--fill);
@@ -9752,7 +9758,6 @@ input[type="search"]::-webkit-search-cancel-button {
 
 /* 로고의 학교와 회사 심벌은 고르기 전까지 흐리게. */
 .role-option .role-mark {
-  grid-row: span 2;
   opacity: 0.55;
   transition: opacity 0.2s ease;
 }
@@ -9761,11 +9766,17 @@ input[type="search"]::-webkit-search-cancel-button {
   opacity: 1;
 }
 
-.role-option strong {
+.role-option-copy {
+  display: grid;
+  gap: 3px;
+  line-height: 1.35;
+}
+
+.role-option-copy strong {
   font-size: 0.875rem;
 }
 
-.role-option span {
+.role-option-copy > span {
   color: var(--muted);
   font-size: 0.75rem;
   font-weight: var(--weight-body);
@@ -10193,10 +10204,17 @@ input[type="search"]::-webkit-search-cancel-button {
 }
 
 .modal .terms-check + .terms-check {
-  margin-top: 10px;
+  margin-top: 4px;
+}
+
+@media (pointer: coarse) {
+  .modal .terms-check + .terms-check {
+    margin-top: 0;
+  }
 }
 
 .terms-check input {
+  flex: 0 0 auto;
   width: 16px;
   height: 16px;
   margin: 0;
@@ -10209,6 +10227,7 @@ input[type="search"]::-webkit-search-cancel-button {
 
 .field-with-action {
   display: flex;
+  align-items: center;
   gap: 8px;
 }
 
@@ -10218,9 +10237,13 @@ input[type="search"]::-webkit-search-cancel-button {
 }
 
 .field-action {
+  display: inline-flex;
   flex: 0 0 auto;
-  height: 43px;
-  padding: 0 14px;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;
+  line-height: 1.3;
   border: 0;
   border-radius: 11px;
   background: var(--point);
@@ -10258,6 +10281,17 @@ input[type="search"]::-webkit-search-cancel-button {
   font-weight: var(--weight-label);
 }
 
+.password-rules-heading {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+
+.password-rules-heading .complete {
+  color: var(--green);
+}
+
 .password-rules ul {
   display: flex;
   flex-wrap: wrap;
@@ -10280,6 +10314,7 @@ input[type="search"]::-webkit-search-cancel-button {
 
 .password-rules li.met {
   background: var(--green-soft);
+  box-shadow: inset 0 0 0 1px currentColor;
   color: var(--green);
 }
 
@@ -12578,10 +12613,11 @@ input[type="search"]::-webkit-search-cancel-button {
   align-items: center;
   gap: clamp(32px, 5vw, 72px);
   margin: 0 auto;
-  /* 고정 헤더 높이는 .main-content가 이미 띄운다. 여기서 한 번 더 더하면 휴대폰에서
-     헤더 아래가 100px 넘게 빈다. 화면 높이가 아니라 너비를 따라 휴대폰 40px 남짓에서
-     넓은 화면 160px까지 늘어난다. */
-  padding: clamp(40px, 11vw, 160px) 0 clamp(48px, 7vw, 96px);
+  padding: clamp(40px, 4vw, 64px) 0 clamp(48px, 7vw, 96px);
+}
+
+.landing #examples {
+  scroll-margin-top: calc(var(--header-h) + 24px);
 }
 
 .landing-kicker {
@@ -12600,6 +12636,10 @@ input[type="search"]::-webkit-search-cancel-button {
   letter-spacing: -0.03em;
   line-height: 1.12;
   word-break: keep-all;
+}
+
+.landing-hero h1:lang(en) {
+  font-size: clamp(2rem, 4.2vw, 3.5rem);
 }
 
 .landing-hero h1 .accent {
@@ -12785,57 +12825,9 @@ input[type="search"]::-webkit-search-cancel-button {
   font-size: 0.8125rem;
 }
 
-/* 성과: 지표명은 왼쪽, 숫자는 오른쪽 한 기준선에 맞춘 세로 목록. 행 사이에만 선. */
-.record-figures {
-  display: grid;
-  margin: var(--space-1) 0 0;
-}
-
-.record-figures > div {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: baseline;
-  gap: var(--space-3);
-  padding: 10px 0;
-  border-bottom: 1px solid var(--line);
-}
-
-.record-figures > div:first-child {
-  padding-top: 2px;
-}
-
-.record-figures > div:last-child {
-  padding-bottom: 0;
-  border-bottom: 0;
-}
-
-.record-figures dt {
-  color: var(--ink-soft);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-label);
-  word-break: keep-all;
-}
-
-.record-figures dd {
-  margin: 0;
-  color: var(--ink);
-  font-size: 1.5rem;
-  font-variant-numeric: tabular-nums;
-  font-weight: var(--weight-display);
-  line-height: 1.15;
-  text-align: right;
-}
-
-.landing-record li > .record-note {
-  margin-top: var(--space-3);
-  color: var(--muted);
-  font-size: var(--text-xs);
-}
-
-@media (min-width: 721px) {
-  .record-figures dd {
-    font-size: 1.625rem;
-  }
+.record-results > span {
+  display: inline-block;
+  white-space: nowrap;
 }
 
 @media (max-width: 900px) {
@@ -16919,6 +16911,25 @@ input[type="search"]::-webkit-search-cancel-button {
   margin: 0;
 }
 
+.console-list .backup-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.backup-row > span {
+  margin-inline-end: auto;
+}
+
+.backup-actions {
+  font-size: var(--text-xs);
+}
+
+.backup-actions summary {
+  cursor: pointer;
+}
+
 .backup-restore {
   display: grid;
   flex-basis: 100%;
@@ -17599,6 +17610,33 @@ input[type="search"]::-webkit-search-cancel-button {
 
 .document-field small {
   font-weight: var(--weight-copy);
+  overflow-wrap: anywhere;
+}
+
+.auth-form .document-field {
+  margin-top: 14px;
+}
+
+.document-field .document-upload {
+  display: inline-flex;
+  flex-direction: row;
+  min-height: 44px;
+  height: auto;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 8px 14px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-label);
+  letter-spacing: normal;
+  line-height: 1.3;
+}
+
+.document-upload:has(input:focus-visible) {
+  outline: 2px solid var(--point-strong);
+  outline-offset: 2px;
 }
 
 .console-approvals {

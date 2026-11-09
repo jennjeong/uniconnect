@@ -1122,6 +1122,7 @@ export type AdminNote = { text: string; at: string }
 export type Announcement = {
   id: string
   text: string
+  textEn?: string
   tone: "info" | "warning"
   audience: "all" | Role
   // 보이기 시작하는 첫날("YYYY-MM-DD")이며, 없으면 바로 보인다.

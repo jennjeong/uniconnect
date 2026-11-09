@@ -162,7 +162,7 @@ export function AdminLogin({
         <PasswordField autoComplete="current-password" label={t("비밀번호")} onChange={(event) => setPassword(event.target.value)} value={password} />
         {message}
         <button className="primary-button wide" disabled={busy || checking || !email.trim() || !password} type="submit">
-          {busy || checking ? t("확인하고 있어요…") : t("다음")}
+          {busy || checking ? t("확인하고 있어요…") : t("2단계 인증으로")}
         </button>
       </form>
       <details className="console-login-token">

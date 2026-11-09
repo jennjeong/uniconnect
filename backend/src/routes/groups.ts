@@ -20,6 +20,7 @@ groupsRouter.get("/", (req, res) => {
 })
 
 const checksPerDay = createRateLimit({
+  label: "학생단체 확인 신청",
   limit: 3,
   windowMs: 24 * 60 * 60 * 1000,
   message: "확인 신청을 너무 많이 보냈어요. 내일 다시 시도해 주세요.",

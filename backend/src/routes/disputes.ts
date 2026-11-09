@@ -32,6 +32,7 @@ export const disputesRouter = Router()
 export const adminDisputesRouter = Router()
 
 const opensPerDay = createRateLimit({
+  label: "협찬 분쟁 접수",
   limit: 5,
   windowMs: 24 * 60 * 60 * 1000,
   message: "분쟁을 너무 많이 접수했어요. 내일 다시 시도해 주세요.",

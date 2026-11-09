@@ -24,6 +24,7 @@ import type { Account, Announcement, Payment, ReportAction } from "../types.js"
 export const adminRouter = Router()
 
 const adminFailures = createRateLimit({
+  label: "공유 관리자 토큰 인증",
   limit: 10,
   windowMs: 15 * 60 * 1000,
   message: "관리자 인증 실패가 너무 많아요. 15분 뒤에 다시 시도해 주세요.",
@@ -405,6 +406,8 @@ adminRouter.post("/announcements", async (req, res) => {
   const message = text(req.body?.text)
   if (!message) throw new HttpError(400, "공지 내용을 적어 주세요.")
   if (message.length > 200) throw new HttpError(400, "공지는 200자 이하로 적어 주세요.")
+  const textEn = text(req.body?.textEn)
+  if (textEn.length > 600) throw new HttpError(400, "영어 공지는 600자 이하로 적어 주세요.")
   const tone = text(req.body?.tone) as Announcement["tone"]
   const audience = text(req.body?.audience) as Announcement["audience"]
   if (!tones.includes(tone) || !audiences.includes(audience)) throw new HttpError(400, "공지 종류와 대상을 골라 주세요.")
@@ -417,6 +420,7 @@ adminRouter.post("/announcements", async (req, res) => {
   const item: Announcement = {
     id: randomUUID(),
     text: message,
+    ...(textEn ? { textEn } : {}),
     tone,
     audience,
     ...(from ? { from } : {}),

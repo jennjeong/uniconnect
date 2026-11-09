@@ -102,6 +102,7 @@ checkInRouter.get("/:code", (req, res) => {
 // 것을 기준으로 잡았다. 가장 붐빌 때 1분에 200명(#315)이 스캔, 쿠폰, 설문을 한
 // 번씩 하면 600건이다.
 const recordsPerClient = createRateLimit({
+  label: "현장 성과 기록",
   limit: 600,
   windowMs: 60 * 1000,
   message: "기록 요청이 너무 많아요. 잠시 후 다시 시도해 주세요.",
@@ -114,6 +115,7 @@ const recordsPerClient = createRateLimit({
 // 1/4이다(9,000명이면 2,250번으로, 가장 붐비는 10분의 2,000명을 받는다). 여기
 // `limit`은 어떤 행사도 넘지 못하는 값이다.
 const scansPerAddress = createRateLimit({
+  label: "현장 QR 스캔",
   limit: passLimit,
   windowMs: 10 * 60 * 1000,
   message: "이 네트워크에서 QR 스캔이 너무 많아요. 잠시 후 다시 시도해 주세요.",
@@ -131,11 +133,13 @@ const couponExpiry = (measurement: Measurement, issuedAt: string | undefined) =>
 // 숫자는 한 곳에서도 여러 곳에서도 추측할 수 없어야 한다(행사 한도에서
 // 100만 개를 모두 시도하는 데 약 8,000시간이 걸린다).
 const pinFailures = createRateLimit({
+  label: "직원 PIN · 주소별",
   limit: 10,
   windowMs: 15 * 60 * 1000,
   message: "직원 PIN을 너무 많이 틀렸어요. 15분 뒤에 다시 시도해 주세요.",
 })
 const pinFailuresPerEvent = createRateLimit({
+  label: "직원 PIN · 행사별",
   limit: 30,
   windowMs: 15 * 60 * 1000,
   message: "이 행사의 직원 PIN이 너무 많이 틀렸어요. 15분 뒤에 다시 시도해 주세요.",
@@ -144,6 +148,7 @@ const pinFailuresPerEvent = createRateLimit({
 // PIN을 맞힌 주소를 표시한다. 행사 한도는 PIN을 모르는 사람도 채울 수 있으므로, 이미 맞힌
 // 직원은 그 한도에 막히지 않게 한다. 주소와 행사별 한도는 그대로 걸린다.
 const pinVerified = createRateLimit({
+  label: "직원 PIN 확인 기록",
   limit: 1_000_000,
   windowMs: 12 * 60 * 60 * 1000,
   message: "직원 PIN을 확인한 주소",

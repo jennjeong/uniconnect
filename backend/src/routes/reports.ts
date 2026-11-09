@@ -22,6 +22,7 @@ const ownerOfListing = (database: Database, listingId: string) =>
 
 // 한 시간에 누구나 신고하는 횟수보다 많은 수다.
 const reportsPerHour = createRateLimit({
+  label: "신고 접수",
   limit: 20,
   windowMs: 60 * 60 * 1000,
   message: "신고를 너무 많이 보냈어요. 1시간 뒤에 다시 보내 주세요.",

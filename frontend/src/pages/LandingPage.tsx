@@ -78,15 +78,12 @@ const examples: { page: NavLabel; role: Role; image: string; description: string
 // 않는다.
 export function LandingPage({
   onSignup,
-  onBrowse,
   onOpenExample,
   onOpenFaq,
   onInstall,
 }: {
   // 고른 쪽이 있으면 그 쪽으로 가입을 연다.
   onSignup: (role?: Role) => void
-  // 한쪽의 예시 대시보드.
-  onBrowse: (role: Role) => void
   onOpenExample: (role: Role, page: NavLabel) => void
   onOpenFaq: () => void
   // 브라우저에서 연 사이트용 앱 다운로드(앱 안에서는 없다).
@@ -94,7 +91,7 @@ export function LandingPage({
 }) {
   return (
     <div className="landing">
-      <LandingHero onBrowse={() => onBrowse("학생단체")} onInstall={onInstall} onSignup={onSignup} />
+      <LandingHero onInstall={onInstall} onSignup={onSignup} />
 
       <section className="service-section landing-section" id="how">
         <RevealTitle as="h2" className="section-display">
@@ -113,7 +110,7 @@ export function LandingPage({
         </ol>
       </section>
 
-      <section className="landing-section" id="examples">
+      <section className="landing-section" id="examples" tabIndex={-1}>
         <div className="section-head centered">
           <RevealTitle as="h2" className="section-display">
             {t("가입하기 전에 예시 화면으로 둘러보세요")}
