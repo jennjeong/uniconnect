@@ -2641,7 +2641,7 @@ test("the sponsorship steps stack on phones and sit in one row of five on wide c
   }
 })
 
-test("a match card keeps two equal actions at the bottom and save and compare at the top", async ({ page }) => {
+test("a match card puts its score at the top right, its actions at the bottom right and save and compare at the top", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 })
   await page.goto("/")
   await logIn(page, "학생단체", "muse@syu.ac.kr")
@@ -2654,7 +2654,17 @@ test("a match card keeps two equal actions at the bottom and save and compare at
   expect(Math.round(detail.y)).toBe(Math.round(propose.y))
   expect(Math.round(detail.height)).toBe(Math.round(propose.height))
   expect(detail.height).toBeGreaterThanOrEqual(44)
-  expect(Math.abs(detail.width - propose.width)).toBeLessThanOrEqual(1)
+  // 행동 줄은 오른쪽 아래: 제안하기가 카드의 오른쪽 패딩 선에 붙고, 상세 정보는 그 왼쪽이다.
+  const box = (await card.boundingBox())!
+  const pad = await card.evaluate((element) => parseFloat(getComputedStyle(element).paddingRight))
+  expect(Math.abs(box.x + box.width - pad - (propose.x + propose.width))).toBeLessThanOrEqual(1)
+  expect(detail.x + detail.width).toBeLessThanOrEqual(propose.x)
+  // 추천 지수는 이름 줄의 오른쪽 위, 같은 오른쪽 선에 서고 이름과 겹치지 않는다.
+  const score = (await card.locator(".score-badge").boundingBox())!
+  expect(Math.abs(box.x + box.width - pad - (score.x + score.width))).toBeLessThanOrEqual(1)
+  const title = (await card.locator(".work-name").boundingBox())!
+  expect(title.x + title.width).toBeLessThanOrEqual(score.x)
+  expect(Math.abs(score.y - title.y)).toBeLessThanOrEqual(2)
   // 찜과 비교는 위쪽, 이름보다 위에 있다.
   const heart = (await card.locator(".save-toggle").boundingBox())!
   const name = (await card.locator(".work-title h3").boundingBox())!
