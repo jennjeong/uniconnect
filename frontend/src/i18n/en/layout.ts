@@ -606,6 +606,9 @@ const en: Record<string, string> = {
   "합의": "Agreed",
   "양쪽 계약 확인 · 협찬액 68만 원": "Both confirmed · ₩680,000 in value",
   "할 일 6개 · 부스 로고 · SNS 게시물 1회": "6 tasks · booth logo · one SNS post",
+  "QR 참여 {count}회": "{count} QR check-ins",
+  "쿠폰 수령 {count}건": "{count} coupons claimed",
+  "매장 방문 {count}회": "{count} store visits",
   "현장에서 집계한 수치예요.": "Counted on site.",
   // 운영자 콘솔: 학생단체 확인과 협찬 분쟁
   "단체 확인 표시를 떼는 이유": "Reason for removing the group verification",

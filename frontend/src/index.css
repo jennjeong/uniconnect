@@ -12790,57 +12790,9 @@ input[type="search"]::-webkit-search-cancel-button {
   font-size: 0.8125rem;
 }
 
-/* 성과: 지표명은 왼쪽, 숫자는 오른쪽 한 기준선에 맞춘 세로 목록. 행 사이에만 선. */
-.record-figures {
-  display: grid;
-  margin: var(--space-1) 0 0;
-}
-
-.record-figures > div {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: baseline;
-  gap: var(--space-3);
-  padding: 10px 0;
-  border-bottom: 1px solid var(--line);
-}
-
-.record-figures > div:first-child {
-  padding-top: 2px;
-}
-
-.record-figures > div:last-child {
-  padding-bottom: 0;
-  border-bottom: 0;
-}
-
-.record-figures dt {
-  color: var(--ink-soft);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-label);
-  word-break: keep-all;
-}
-
-.record-figures dd {
-  margin: 0;
-  color: var(--ink);
-  font-size: 1.5rem;
-  font-variant-numeric: tabular-nums;
-  font-weight: var(--weight-display);
-  line-height: 1.15;
-  text-align: right;
-}
-
-.landing-record li > .record-note {
-  margin-top: var(--space-3);
-  color: var(--muted);
-  font-size: var(--text-xs);
-}
-
-@media (min-width: 721px) {
-  .record-figures dd {
-    font-size: 1.625rem;
-  }
+.record-results > span {
+  display: inline-block;
+  white-space: nowrap;
 }
 
 @media (max-width: 900px) {
