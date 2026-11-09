@@ -8,6 +8,23 @@ import { after, before, beforeEach, test } from "node:test"
 
 import type { Payment } from "./types.js"
 
+// 시드의 행사와 제안은 2026년 11~12월의 정해진 날짜다. 실제 오늘이 그 날들을 지나면
+// 제안이 마감되고 행사가 지난 것이 되어 테스트가 깨진다(12월 20일이면 14개). 그래서
+// 시계를 테스트가 모두 통과한 날(2026-11-09 월요일 12시, 한국)로 옮겨 돌린다. 시간은
+// 그대로 흘러서 걸린 시간을 재는 테스트도 맞고, 요일도 늘 같다.
+const RealDate = Date
+const clockShift = RealDate.parse("2026-11-09T03:00:00Z") - RealDate.now()
+class TestDate extends RealDate {
+  constructor(...args: [] | [string | number | Date] | number[]) {
+    if (args.length === 0) super(RealDate.now() + clockShift)
+    else super(...(args as [string | number | Date]))
+  }
+  static now() {
+    return RealDate.now() + clockShift
+  }
+}
+globalThis.Date = TestDate as DateConstructor
+
 // 실행할 때마다 실제 data/db.json이 아니라 임시 파일의 새 시드로 시작한다.
 const dataDir = await mkdtemp(path.join(tmpdir(), "uniconnect-api-"))
 process.env.DATA_FILE = path.join(dataDir, "db.json")
