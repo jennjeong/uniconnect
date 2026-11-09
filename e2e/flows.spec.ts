@@ -640,14 +640,15 @@ test("a new member's dashboard lists what to fill in, and folds it for later", a
 })
 
 test("the report and the analytics download as CSV files that Excel opens", async ({ page }) => {
-  // 방문자는 데모 단체의 리포트와 데모 브랜드의 분석을 본다.
-  for (const [path, name, first] of [
-    ["/reports", /^uniconnect-report-\d{4}-\d{2}-\d{2}\.csv$/, "행사,"],
-    ["/analytics", /^uniconnect-analytics-\d{4}-\d{2}-\d{2}\.csv$/, "단체,행사,날짜,"],
+  // 방문자는 데모 단체의 리포트와 데모 브랜드의 분석을 본다. 분석은 예시라고
+  // 적힌 파일로 내려받는다(e2e/examples.spec.ts).
+  for (const [path, button, name, first] of [
+    ["/reports", "CSV로 내보내기", /^uniconnect-report-\d{4}-\d{2}-\d{2}\.csv$/, "행사,"],
+    ["/analytics", "예시 CSV 다운로드", /^uniconnect-analytics-sample-\d{4}-\d{2}-\d{2}\.csv$/, "데이터 구분,단체,행사,날짜,"],
   ] as const) {
     await page.goto(path)
     const download = page.waitForEvent("download")
-    await page.getByRole("button", { name: "CSV로 내보내기" }).click()
+    await page.getByRole("button", { name: button }).click()
     const file = await download
     expect(file.suggestedFilename()).toMatch(name)
     const text = await readFile(await file.path(), "utf8")
