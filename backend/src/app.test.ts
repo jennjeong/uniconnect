@@ -747,10 +747,10 @@ test("sign-up requires a verified school or company email", async () => {
   })
   assert.equal(verified.status, 200)
 
-  // 비밀번호는 8자에서 64자이며 글자, 숫자, 기호가 있어야 한다.
+  // 비밀번호는 8자 이상이며 글자, 숫자, 기호가 있어야 한다.
   for (const [password, error] of [
-    ["club-1!", /8자에서 64자/],
-    ["club pass-123", /공백/],
+    ["club-1!", /8자 이상/],
+    ["a".repeat(127) + "1!", /너무 길어요/],
     ["clubpass123", /영문, 숫자, 특수문자/],
   ] as const) {
     const weak = await call("POST", "/auth/signup", { ...form, password, verificationToken: verified.data.verificationToken })
@@ -3350,7 +3350,7 @@ test("a forgotten password is reset with a code sent to the account's email", as
   // 가입 확인은 초기화 코드를 쓸 수 없다.
   assert.equal((await call("POST", "/auth/email-code/verify", { email, code })).status, 400)
   // 새 비밀번호는 가입과 같은 규칙을 따르며, 코드보다 먼저 확인한다.
-  for (const password of ["sh-1!", "no-digits-here", "nosymbols123", "12345678-!", "has space-1", "x".repeat(60) + "-1234"]) {
+  for (const password of ["sh-1!", "no-digits-here", "nosymbols123", "12345678-!", "x".repeat(124) + "-1234"]) {
     const weak = await call("POST", "/auth/password-reset", { email, code, password })
     assert.equal(weak.status, 400, password)
   }
