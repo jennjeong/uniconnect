@@ -21,12 +21,9 @@ logs/
 .env.*.local
 
 # Local tool settings
-/.claude/
-/.claude-flow/
 /.swarm/
 /.mcp.json
 /ruvector.db
-/CLAUDE.md
 /AGENTS.md
 /.plugins/
 /.opencode-skills/
