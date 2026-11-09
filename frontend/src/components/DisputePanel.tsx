@@ -13,6 +13,7 @@ import { t } from "../i18n"
 import { formatDateTime } from "../lib/date"
 import { documentFromFile, fileSize } from "../lib/documents"
 import { saveFile } from "../lib/download"
+import { fullWon } from "../lib/sponsorships"
 import type { Agreement, Dispute, DisputeEvent, DisputeReason } from "../types"
 import { Icon } from "./Icon"
 
@@ -230,6 +231,41 @@ function DisputeRecord({
         </small>
       </header>
       <p className="dispute-detail">{dispute.detail}</p>
+      {/* 운영자가 보는 것과 같은 사본. 상대가 접수했어도 무엇을 두고 판단하는지 보고
+          말과 증빙으로 답할 수 있다. */}
+      <details className="dispute-snapshot">
+        <summary>{t("접수할 때의 계약 보기")}</summary>
+        <p className="field-hint">
+          {t("접수한 순간의 계약서 내용이에요. 양쪽이 확인한 조건이 아닐 수 있어요. 다르면 말과 증빙으로 알려 주세요.")}
+        </p>
+        <dl>
+          <div>
+            <dt>{t("협찬액")}</dt>
+            <dd>
+              {dispute.snapshot.value
+                ? t("현금 {cash} · 현물 {inKind}", {
+                    cash: fullWon(dispute.snapshot.value.cash),
+                    inKind: fullWon(dispute.snapshot.value.inKind),
+                  })
+                : t("미입력")}
+            </dd>
+          </div>
+          {dispute.snapshot.canceled && (
+            <div>
+              <dt>{t("취소")}</dt>
+              <dd>{t("취소된 협찬")}</dd>
+            </div>
+          )}
+        </dl>
+        <ul>
+          {dispute.snapshot.items.map((item, index) => (
+            <li key={`${item.label}-${index}`}>
+              <span>{item.side === dispute.side ? t("우리") : partner}</span> {item.label}{" "}
+              <small>{item.doneAt ? t("끝남 {date}", { date: formatDateTime(item.doneAt) }) : t("안 끝남")}</small>
+            </li>
+          ))}
+        </ul>
+      </details>
       <ol className="dispute-events">
         {dispute.events.map((event, index) => {
           const evidence = event.evidenceId ? dispute.evidence.find((item) => item.id === event.evidenceId) : undefined

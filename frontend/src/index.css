@@ -11753,6 +11753,46 @@ input[type="search"]::-webkit-search-cancel-button {
   overflow-wrap: anywhere;
 }
 
+/* 접수할 때의 계약(운영자가 판단하는 사본). 접어 두고 필요할 때 연다. */
+.dispute-snapshot {
+  display: grid;
+  gap: 8px;
+  font-size: 0.875rem;
+}
+
+.dispute-snapshot summary {
+  min-height: var(--touch-target);
+  display: flex;
+  align-items: center;
+  color: var(--point-strong);
+  font-weight: var(--weight-label);
+  cursor: pointer;
+}
+
+.dispute-snapshot dl,
+.dispute-snapshot ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dispute-snapshot dl div {
+  display: flex;
+  gap: 8px;
+}
+
+.dispute-snapshot dt,
+.dispute-snapshot li span,
+.dispute-snapshot small {
+  color: var(--muted);
+}
+
+.dispute-snapshot dd {
+  margin: 0;
+}
+
 .dispute-events {
   display: grid;
   gap: 10px;

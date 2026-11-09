@@ -1451,6 +1451,11 @@ export function Disputes({ token, onNotice }: { token: string; onNotice: Notice 
           <p className="dispute-detail">{open.detail}</p>
 
           <h3>{t("접수할 때의 계약")}</h3>
+          {/* 접수 순간의 계약서 사본이다. 어느 쪽이든 고칠 수 있는 계약서에서 떠 온 것이라
+              양쪽이 확인한 조건이라는 보장이 없다. 당사자도 같은 사본을 본다. */}
+          <p className="field-hint">
+            {t("접수한 순간의 계약서 내용이에요. 양쪽이 확인한 조건이 아닐 수 있으니, 결론 전에 양쪽의 말과 증빙을 함께 보세요. 양쪽 모두 이 내용을 볼 수 있어요.")}
+          </p>
           <dl className="console-facts">
             <div>
               <dt>{t("협찬액")}</dt>
