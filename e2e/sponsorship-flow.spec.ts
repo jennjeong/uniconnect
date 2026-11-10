@@ -3,6 +3,7 @@ import { expect, test, type APIRequestContext, type Page } from "@playwright/tes
 import { signUpMember } from "./members"
 
 // 첫 협찬의 흐름: 대시보드의 협찬 일정, 제안의 응답 기한, 운영자의 단계별 도달 회원 수.
+// 회원 브랜드와 단체를 여럿 만들므로, 회원이 아직 없는 화면을 보는 flows.spec.ts 뒤에 돈다(파일 이름 순).
 
 const kst = (days = 0) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date(Date.now() + days * 86_400_000))
 const admin = { "X-Admin-Token": "e2e-admin-token" }
