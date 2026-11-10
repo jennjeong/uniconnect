@@ -5,6 +5,8 @@ import { Modal } from "../components/Modal"
 import { sponsorOptions } from "../data/sponsorTypes"
 import { t } from "../i18n"
 import { formatFullDate, formatPeriod, todayIso } from "../lib/date"
+import { feeEstimate } from "../lib/fees"
+import { fullWon } from "../lib/sponsorships"
 import type { EventItem, Match, ProposalTemplate, ProposalTermsDraft, Role } from "../types"
 
 // 서버가 받는 형식(routes/proposals.ts, routes/auth.ts).
@@ -77,6 +79,7 @@ export function ProposeModal({
   const budgetAmount = (event?: EventItem) =>
     event?.budget && event.budget >= 10_000 && event.budget <= 100_000_000 ? String(event.budget) : ""
   const [amount, setAmount] = useState(budgetAmount(chosen))
+  const estimate = amount ? feeEstimate(Number(amount)) : null
   const [quantity, setQuantity] = useState("")
   const [deliverBy, setDeliverBy] = useState("")
   const [benefits, setBenefits] = useState("")
@@ -242,6 +245,14 @@ export function ProposeModal({
                 <small className="field-hint" id="propose-amount-hint">
                   {t("1만 원 ~ 1억 원 · 계약서의 협찬액이 돼요")}
                 </small>
+                {/* 수수료는 브랜드가 낸다. 결제창과 같은 계산(lib/fees.ts)이다. */}
+                {!students && estimate && (
+                  <small className="fee-estimate" role="status">
+                    {t("예상 성사 수수료 {fee} · 부가세 포함 {total}", { fee: fullWon(estimate.fee), total: fullWon(estimate.total) })}
+                    <br />
+                    {t("양쪽이 계약서를 확인할 때 결제해요. 계약서의 협찬액이 바뀌면 함께 바뀌어요.")}
+                  </small>
+                )}
               </label>
               <label>
                 {t("내용 · 수량")}

@@ -1,5 +1,6 @@
 import { t } from "../i18n"
 import { dDayLabel, formatDateTime, formatDay } from "../lib/date"
+import { preEventCheck } from "../lib/preEventCheck"
 import type { Agreement, ChatSide } from "../types"
 
 type Action = { who: "me" | "them" | "both"; text: string; href?: string }
@@ -25,9 +26,18 @@ export function AgreementStatus({ agreement }: { agreement: Agreement }) {
         : t("상대의 확인을 기다려요.")
   const tone = canceled ? "canceled" : confirmed ? "done" : !mine ? "todo" : "waiting"
 
+  // 취소 요청에 답할 쪽, 행사 전 점검, 후기. 확정된 뒤 남은 일이 없으면 그렇게 말한다.
+  const cancelAsked = !canceled && agreement.cancel ? agreement.cancel.by : undefined
+  const check = confirmed ? preEventCheck(agreement) : null
+  const checkDue = check !== null && check.days <= 7 && check.items.some((item) => item.state !== "ok")
+  const reviewDue = confirmed && agreement.review.open && agreement.review.canWrite && !agreement.review.mine
   const actions: Action[] = canceled
     ? []
     : [
+        ...(cancelAsked && cancelAsked !== side
+          ? [{ who: "me" as const, text: t("상대가 협찬 취소를 요청했어요. 동의하거나 거절해 주세요."), href: "#agreement-cancel-title" }]
+          : []),
+        ...(cancelAsked === side && otherMember ? [{ who: "them" as const, text: t("상대가 취소 요청에 답해야 해요.") }] : []),
         ...(agreement.fee.needsValue
           ? [{ who: "both" as const, text: t("협찬액(현금 + 현물)이 비어 있어요. 확인하기 전에 적어 주세요."), href: "#value-title" }]
           : []),
@@ -49,7 +59,12 @@ export function AgreementStatus({ agreement }: { agreement: Agreement }) {
           ? [{ who: "me" as const, text: t("내 할 일 {count}개가 남았어요.", { count: left(side) }), href: "#agreement-items" }]
           : []),
         ...(confirmed && left(other) > 0 ? [{ who: "them" as const, text: t("상대의 할 일 {count}개가 남았어요.", { count: left(other) }) }] : []),
+        ...(checkDue
+          ? [{ who: "me" as const, text: t("행사가 {dday}예요. 행사 전 점검을 확인해 주세요.", { dday: dDayLabel(agreement.eventDate) }), href: "#agreement-precheck-title" }]
+          : []),
+        ...(reviewDue ? [{ who: "me" as const, text: t("행사가 끝났다면 상대에게 후기를 남겨 주세요."), href: "#agreement-review-title" }] : []),
       ]
+  const allDone = confirmed && !canceled && !cancelAsked && actions.length === 0
 
   const deliverBy = agreement.terms?.deliverBy
   return (
@@ -60,6 +75,7 @@ export function AgreementStatus({ agreement }: { agreement: Agreement }) {
           <small>{t("{date} 확인", { date: formatDateTime(theirs && theirs > mine ? theirs : mine) })}</small>
         )}
       </p>
+      {allDone && <p className="field-hint">{t("지금 남은 할 일이 없어요.")}</p>}
       {actions.length > 0 && (
         <ul className="agreement-actions-list">
           {actions.map((action) => (

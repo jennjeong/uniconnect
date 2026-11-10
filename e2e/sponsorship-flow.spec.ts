@@ -102,11 +102,64 @@ test("a reply deadline shows on both sides, sorts the inbox and the dashboard op
   await expect(page.locator(".respond-by.today")).toHaveText("오늘이 상대 응답 기한이에요")
   await page.goBack()
   await expect(page).toHaveURL(/\/dashboard$/)
-  // '답할 협찬 제안'은 받은 제안 쪽을 연다.
-  await page.locator(".work-board li", { hasText: "답할 협찬 제안" }).getByRole("button").click()
+  // '답할 협찬 제안'은 받은 제안 쪽을 연다. 0건이라 맨 아래 '0건인 일'에 접혀 있다.
+  const quiet = page.locator(".work-board-quiet")
+  await expect(quiet.locator("li", { hasText: "답할 협찬 제안" })).toBeHidden()
+  await quiet.locator("summary").click()
+  await quiet.locator("li", { hasText: "답할 협찬 제안" }).getByRole("button").click()
   await expect(page).toHaveURL(/\/offers$/)
   await expect(page.getByRole("button", { name: /받은 제안/ })).toHaveAttribute("aria-pressed", "true")
   await context.close()
+})
+
+test("the fee a brand sees while proposing is what it pays at checkout", async ({ page, request }) => {
+  const brand = await signUpMember(request, "브랜드", "e2e-fee@fee-cafe.kr", "수수료 카페")
+  const group = await signUpMember(request, "학생단체", "e2e-fee@syu.ac.kr", "수수료 동아리")
+  const listed = (await (
+    await request.put("/api/profile", { data: { intro: "캠퍼스 동아리예요.", offer: "관객 100명" }, headers: group.headers })
+  ).json()) as { profile: { id: string } }
+  await request.post("/api/events", { data: { name: "수수료 시음회", date: kst(10), types: ["현금"] }, headers: brand.headers })
+
+  // 제안 폼: 금액을 적으면 예상 수수료와 부가세 포함 금액이 보인다.
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
+  await page.goto(`/groups/${listed.profile.id}`)
+  await page.getByRole("button", { name: "제안하기" }).first().click()
+  const form = page.getByRole("dialog", { name: /협찬 제안/ })
+  await form.getByLabel("금액(원)").fill("300000")
+  await expect(form.locator(".fee-estimate")).toContainText("예상 성사 수수료 45,000원 · 부가세 포함 49,500원")
+
+  // 같은 금액으로 수락된 협찬의 수수료 주문은 그 금액이다.
+  await request.post("/api/proposals", { data: { matchId: listed.profile.id, terms: { amount: 300000, kinds: ["현금"] } }, headers: brand.headers })
+  const { offers } = (await (await request.get("/api/offers", { headers: group.headers })).json()) as { offers: { id: string }[] }
+  await request.post(`/api/offers/${offers[0].id}/accept`, { headers: group.headers })
+  const order = (await (
+    await request.post("/api/billing/orders", { data: { kind: "fee", targetId: offers[0].id }, headers: brand.headers })
+  ).json()) as { order: { amount: number; supply: number } }
+  expect(order.order).toMatchObject({ amount: 49_500, supply: 45_000 })
+})
+
+test("a confirmed sponsorship's contract says what is next and checks the event day ahead", async ({ page, request }) => {
+  const brand = await signUpMember(request, "브랜드", "e2e-precheck@precheck-cafe.kr", "점검 카페")
+  const group = await signUpMember(request, "학생단체", "e2e-precheck@syu.ac.kr", "점검 동아리")
+  await request.post("/api/events", { data: { name: "점검 공연", date: kst(3), people: "80명", types: ["현금"] }, headers: group.headers })
+  await request.post("/api/proposals", { data: { matchId: brand.listingId }, headers: group.headers })
+  const { requests } = (await (await request.get("/api/requests", { headers: brand.headers })).json()) as { requests: { id: string }[] }
+  const id = requests[0].id
+  await request.post(`/api/requests/${id}/accept`, { headers: brand.headers })
+  await request.get(`/api/agreements/${id}`, { headers: brand.headers })
+  await confirmBoth(request, id, group, brand)
+
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
+  await page.goto(`/agreements/${id}`)
+  const status = page.getByRole("region", { name: "계약 상태" })
+  await expect(status).toContainText("협찬이 확정됐어요.")
+  await expect(status.getByRole("link", { name: "행사가 D-3예요. 행사 전 점검을 확인해 주세요." })).toBeVisible()
+  const check = page.getByRole("region", { name: "행사 전 점검" })
+  await expect(check.locator("li.ok", { hasText: "양쪽이 계약서를 확인했어요" })).toBeVisible()
+  await expect(check.locator("li.ok", { hasText: "협찬 확인 방식이 확정됐어요" })).toBeVisible()
+  await expect(check.getByRole("link", { name: "체크인 페이지 열기" })).toHaveAttribute("href", /\/check-in\//)
+  // 브랜드의 매장 PIN은 행사 하루 전부터 보인다.
+  await expect(check.locator("li.pending")).toContainText("PIN은 행사 하루 전부터 이 계약서에 보여요")
 })
 
 test.describe("in English", () => {

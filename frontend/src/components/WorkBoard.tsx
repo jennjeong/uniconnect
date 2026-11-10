@@ -17,6 +17,25 @@ export type WorkRow = {
   // 건수 옆의 짧은 설명(무엇을 하면 되는지, 가장 가까운 날 등).
   detail: string
   onOpen: () => void
+  // 0건이어도 위에 둔다(설명에 알릴 것이 있을 때, 예: 계약서 확인을 기다리는 협찬).
+  keepEmpty?: boolean
+}
+
+const shown = (row: WorkRow) => row.count > 0 || row.keepEmpty === true
+
+function Row({ row }: { row: WorkRow }) {
+  return (
+    <li className={row.count > 0 ? "has-work" : undefined}>
+      <button onClick={row.onOpen} type="button">
+        <strong className="work-board-count">{row.count.toLocaleString("ko-KR")}</strong>
+        <span className="work-board-copy">
+          <span className="work-board-label">{row.label}</span>
+          <small>{row.detail}</small>
+        </span>
+        <Icon name="chevron" size={18} />
+      </button>
+    </li>
+  )
 }
 
 const groups: { kind: WorkKind; title: string }[] = [
@@ -27,9 +46,11 @@ const groups: { kind: WorkKind; title: string }[] = [
 
 // 로그인한 회원의 대시보드 첫머리의 '업무 보드'. 지금 답하거나 확인해야 하는 일을
 // 실제 데이터의 건수로 한 줄씩 보여 주고 줄을 누르면 그 일로 간다. 카드 묶음 대신
-// 줄과 구분선이다. 근거 없는 '오늘 할 일 N개'를 만들지 않는다.
+// 줄과 구분선이다. 근거 없는 '오늘 할 일 N개'를 만들지 않는다. 0건인 줄은 맨 아래
+// '0건인 일'로 접어 두어 할 일이 있는 줄이 먼저 읽힌다.
 export function WorkBoard({ title, rows }: { title: string; rows: WorkRow[] }) {
   const open = rows.filter((row) => row.kind === "mine" && row.count > 0).length
+  const quiet = rows.filter((row) => !shown(row))
   return (
     <section aria-labelledby="work-board-title" className="work-board">
       <div className="work-board-head">
@@ -37,7 +58,7 @@ export function WorkBoard({ title, rows }: { title: string; rows: WorkRow[] }) {
         <p>{open > 0 ? t("내가 할 일 {count}가지", { count: open }) : t("지금 내가 할 일은 없어요")}</p>
       </div>
       {groups.map((group) => {
-        const list = rows.filter((row) => row.kind === group.kind)
+        const list = rows.filter((row) => row.kind === group.kind && shown(row))
         if (list.length === 0) return null
         const id = `work-board-${group.kind}`
         return (
@@ -45,21 +66,22 @@ export function WorkBoard({ title, rows }: { title: string; rows: WorkRow[] }) {
             <h3 id={id}>{t(group.title)}</h3>
             <ul aria-labelledby={id}>
               {list.map((row) => (
-                <li className={row.count > 0 ? "has-work" : undefined} key={row.key}>
-                  <button onClick={row.onOpen} type="button">
-                    <strong className="work-board-count">{row.count.toLocaleString("ko-KR")}</strong>
-                    <span className="work-board-copy">
-                      <span className="work-board-label">{row.label}</span>
-                      <small>{row.detail}</small>
-                    </span>
-                    <Icon name="chevron" size={18} />
-                  </button>
-                </li>
+                <Row key={row.key} row={row} />
               ))}
             </ul>
           </div>
         )
       })}
+      {quiet.length > 0 && (
+        <details className="work-board-quiet">
+          <summary>{t("0건인 일 {count}가지", { count: quiet.length })}</summary>
+          <ul>
+            {quiet.map((row) => (
+              <Row key={row.key} row={row} />
+            ))}
+          </ul>
+        </details>
+      )}
     </section>
   )
 }

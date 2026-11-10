@@ -10,6 +10,7 @@ import { ReviewCard, ReviewReply } from "../components/ReviewCard"
 import { starPath } from "../components/Stars"
 import { TermsList } from "../components/TermsList"
 import { AgreementStatus } from "../components/AgreementStatus"
+import { PreEventCheck } from "../components/PreEventCheck"
 import { DisputePanel } from "../components/DisputePanel"
 import { carriers, trackingLink } from "../data/carriers"
 import { methodInfo, methodKinds, sortedMethods } from "../data/methods"
@@ -620,8 +621,8 @@ function ReviewPanel({
     setTags(tags.includes(tag) ? tags.filter((item) => item !== tag) : tags.length < 3 ? [...tags, tag] : tags)
 
   return (
-    <section className="agreement-section review-panel">
-      <h2>{t("협찬 후기")}</h2>
+    <section aria-labelledby="agreement-review-title" className="agreement-section review-panel">
+      <h2 id="agreement-review-title">{t("협찬 후기")}</h2>
       {!review.open ? (
         <p className="field-hint">{t("행사 날부터 서로 후기를 남길 수 있어요. 남긴 후기는 상대의 상세 정보에 보여요.")}</p>
       ) : !review.canWrite ? (
@@ -1727,6 +1728,8 @@ export function AgreementPage({
           title={t("플랫폼 수수료 결제")}
         />
       </Presence>
+
+      <PreEventCheck agreement={agreement} />
 
       <MethodsPanel
         agreement={agreement}

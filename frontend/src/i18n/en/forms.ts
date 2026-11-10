@@ -1261,6 +1261,31 @@ const en: Record<string, string> = {
   "수락된 협찬": "Has an accepted sponsorship",
   "유료 결제": "Paid",
   "가입 {count}명 중": "of {count} who joined",
+  // 제안 폼의 예상 수수료, 업무 보드의 0건 줄
+  "예상 성사 수수료 {fee} · 부가세 포함 {total}": "Estimated success fee {fee} · {total} with VAT",
+  "양쪽이 계약서를 확인할 때 결제해요. 계약서의 협찬액이 바뀌면 함께 바뀌어요.": "Paid when both sides confirm the contract. It changes with the contract's sponsorship value.",
+  "0건인 일 {count}가지": "{count:item|items} with nothing to do",
+  // 계약서의 다음 할 일과 행사 전 점검
+  "상대가 협찬 취소를 요청했어요. 동의하거나 거절해 주세요.": "The other side asked to call off the sponsorship. Agree or decline it.",
+  "상대가 취소 요청에 답해야 해요.": "The other side needs to answer your cancel request.",
+  "행사가 {dday}예요. 행사 전 점검을 확인해 주세요.": "The event is {dday}. Go through the pre-event check.",
+  "행사가 끝났다면 상대에게 후기를 남겨 주세요.": "Once the event is over, leave the other side a review.",
+  "지금 남은 할 일이 없어요.": "Nothing left to do right now.",
+  "행사 전 점검": "Pre-event check",
+  "행사 {date} · {dday}": "Event {date} · {dday}",
+  "준비됨": "Ready",
+  "할 일@precheck": "To do",
+  "기다리는 중": "Waiting",
+  "양쪽이 계약서를 확인했어요": "Both sides confirmed the contract",
+  "양쪽이 계약서를 확인해야 현장 기록이 집계돼요": "Records at the event count once both sides confirm the contract",
+  "협찬 확인 방식이 확정됐어요": "How the sponsorship is confirmed is settled",
+  "확인 방식을 바꿨어요. 양쪽이 다시 확인해야 바뀐 방식으로 집계돼요": "The confirmation methods changed. They count once both sides confirm again",
+  "확인 방식은 양쪽이 계약서를 확인하면 확정돼요": "The confirmation methods are settled once both sides confirm the contract",
+  "참여자 QR 체크인 페이지를 미리 열어 볼 수 있어요": "You can open the participants' QR check-in page ahead of time",
+  "체크인 페이지 열기": "Open the check-in page",
+  "현장 기록 페이지와 PIN이 준비됐어요. 현장 담당자에게 PIN을 전해 주세요": "The on-site page and PIN are ready. Give the PIN to whoever records on site",
+  "현장 기록 페이지 열기": "Open the on-site page",
+  "PIN은 행사 하루 전부터 이 계약서에 보여요": "The PIN shows on this contract from the day before the event",
 }
 
 export default en

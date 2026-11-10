@@ -2943,9 +2943,20 @@ test("a member's dashboard opens on the work waiting for them, and each row lead
   const board = page.getByRole("region", { name: "지금 확인할 일" })
   // 내가 할 일, 상대를 기다리는 일, 일정 · 결과로 나뉜다. 상대만 할 일이 남은 것은
   // 내 할 일에 들지 않는다.
+  // 건수가 있는 줄이 먼저 보이고, 0건인 줄은 맨 아래 '0건인 일'에 접혀 있다(데모 데이터는
+  // 다른 테스트가 바꾸므로 어느 줄이 0건인지는 정하지 않는다. 계약서 확인을 기다리는 협찬이
+  // 있으면 '다가오는 협찬 일정'은 0건이어도 위에 남는다).
+  await expect(board.locator(".work-board-group .work-board-count").first()).toBeVisible()
+  const shown = await board.getByRole("listitem").count()
+  const quiet = board.locator(".work-board-quiet summary")
+  if (shown < 7) {
+    await expect(quiet).toHaveText(`0건인 일 ${7 - shown}가지`)
+    await quiet.click()
+  }
   await expect(board.getByRole("listitem")).toHaveCount(7)
-  await expect(board.getByRole("list", { name: "내가 할 일" }).getByRole("listitem")).toHaveCount(3)
-  await expect(board.getByRole("list", { name: "상대를 기다리는 일" })).toContainText("상대 확인 대기")
+  // 상대만 할 일이 남은 '상대 확인 대기'는 내 할 일 목록에 들지 않는다.
+  await expect(board).toContainText("상대 확인 대기")
+  await expect(board.getByRole("list", { name: "내가 할 일" })).not.toContainText("상대 확인 대기")
   await expect(board.getByRole("button", { name: /증빙 남은 할 일/ })).toBeVisible()
   // 소개 구역은 회원 대시보드에 없다.
   await expect(page.locator(".about-statement-section")).toHaveCount(0)
