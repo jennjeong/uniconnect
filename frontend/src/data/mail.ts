@@ -5,7 +5,7 @@ import type { MailKind } from "../types"
 // 함께. 서버가 같은 종류를 가진다 (backend lib/validation.ts의 mailKinds,
 // lib/lists.sync.test.ts가 검사한다).
 export const mailKinds: { kind: MailKind; label: string; caption: string }[] = [
-  { kind: "proposals", label: t("협찬 제안과 답"), caption: t("새 제안, 보낸 제안의 답, 초대한 가게의 가입") },
+  { kind: "proposals", label: t("협찬 제안과 답"), caption: t("새 제안, 보낸 제안의 답, 답을 기다리는 제안, 초대한 가게의 가입") },
   {
     kind: "sponsorships",
     label: t("확정된 협찬 소식"),

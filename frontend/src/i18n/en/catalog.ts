@@ -435,7 +435,7 @@ const en: Record<string, string> = {
   "단체 프로필 보기": "See the group's profile",
   "받을 메일": "Emails",
   "협찬 제안과 답": "Proposals and answers",
-  "새 제안, 보낸 제안의 답, 초대한 가게의 가입": "New proposals, answers to yours, invited shops joining",
+  "새 제안, 보낸 제안의 답, 답을 기다리는 제안, 초대한 가게의 가입": "New proposals, answers to yours, proposals waiting for your answer, invited shops joining",
   "확정된 협찬 소식": "Confirmed sponsorships",
   "계약서 변경과 확인, 협찬 취소, 행사 변경, 후기와 답글": "Agreement changes and confirmations, calling off, event changes, reviews and replies",
   "새 메시지": "New messages",
