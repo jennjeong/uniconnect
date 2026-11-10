@@ -119,7 +119,6 @@ export function Insights({ token, onNotice }: { token: string; onNotice: Notice 
   const [editing, setEditing] = useState(false)
   const [targets, setTargets] = useState({ signups: "", proposals: "", revenue: "" })
   if (!data) return <p className="field-hint">{t("불러오고 있어요…")}</p>
-  const first = data.funnel[0]?.count ?? 0
   return (
     <div className="console-grid">
       <section className="console-card wide">
@@ -195,21 +194,28 @@ export function Insights({ token, onNotice }: { token: string; onNotice: Notice 
       </section>
 
       <section className="console-card span-2">
-        <h2>{t("전환 퍼널")}</h2>
-        <ol className="console-funnel">
-          {data.funnel.map((step, index) => (
-            <li key={step.step}>
-              <span>{t(step.step)}</span>
-              <i style={{ width: `${Math.max(2, percent(step.count, Math.max(1, first)))}%` }} />
-              <strong>{step.count.toLocaleString(locale)}</strong>
-              <small>
-                {index === 0
-                  ? "100%"
-                  : t("앞 단계의 {share}%", { share: percent(step.count, data.funnel[index - 1].count) })}
-              </small>
-            </li>
-          ))}
-        </ol>
+        <h2>{t("단계별 도달 회원 수")}</h2>
+        <p className="field-hint">
+          {t("지금까지 각 단계에 닿은 실제 회원 수예요. 데모 계정과 권한 지급은 빼요. 단계가 이어진 길이 아니라 앞 단계 대비 전환율로 읽지 않아요.")}
+        </p>
+        {data.funnel.map((row) => {
+          const joined = row.steps[0]?.count ?? 0
+          return (
+            <div className="console-funnel-group" key={row.role}>
+              <h3>{t(row.role)}</h3>
+              <ol className="console-funnel">
+                {row.steps.map((step) => (
+                  <li key={step.step}>
+                    <span>{t(step.step)}</span>
+                    <i style={{ width: `${Math.max(2, percent(step.count, Math.max(1, joined)))}%` }} />
+                    <strong>{step.count.toLocaleString(locale)}</strong>
+                    <small>{t("가입 {count}명 중", { count: joined.toLocaleString(locale) })}</small>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )
+        })}
       </section>
 
       <section className="console-card span-2">

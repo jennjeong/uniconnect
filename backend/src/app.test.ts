@@ -7280,7 +7280,13 @@ test("the console's member tools, operations, content, analysis and system scree
     await call("POST", "/site/searches", { q: "a" })
     const insights = (await admin("GET", "/insights")).data
     assert.deepEqual(insights.searches.find((item: { term: string }) => item.term === "카페 쿠폰"), { term: "카페 쿠폰", count: 1 })
-    assert.deepEqual(insights.funnel.map((step: { step: string }) => step.step), ["가입", "소개 작성", "첫 제안", "첫 수락", "첫 결제"])
+    // 퍼널은 역할별 도달 회원 수다. 결제는 브랜드만 센다.
+    type Funnel = { role: string; steps: { step: string; count: number }[] }[]
+    const funnel = insights.funnel as Funnel
+    assert.deepEqual(funnel.map((row) => row.role), ["학생단체", "브랜드"])
+    assert.deepEqual(funnel[0].steps.map((step) => step.step), ["가입", "소개 작성", "제안 보냄", "제안 받음", "수락된 협찬"])
+    assert.deepEqual(funnel[1].steps.map((step) => step.step), ["가입", "소개 작성", "제안 보냄", "제안 받음", "수락된 협찬", "유료 결제"])
+    for (const row of funnel) for (const step of row.steps) assert.ok(step.count <= row.steps[0].count, `${row.role} ${step.step}`)
     assert.equal(insights.cohorts.length, 8)
     assert.equal((await admin("PUT", "/settings/kpi", { signups: -1 })).status, 400)
     const kpi = (await admin("PUT", "/settings/kpi", { signups: 20 })).data.kpi

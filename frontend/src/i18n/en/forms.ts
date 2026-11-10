@@ -1245,6 +1245,22 @@ const en: Record<string, string> = {
   "데이터 구분": "Data",
   "예시 데이터": "Sample data",
   "조건@catalog": "Filters",
+  // 브랜드 대시보드의 협찬 일정, 제안의 응답 기한
+  "계약서 확인을 기다리는 {count}건은 양쪽이 확인하면 일정에 들어가요": "{count:sponsorship waits|sponsorships wait} for the contract and join the schedule once both sides confirm",
+  "답할 기한이 {days}일 지났어요 · {date}": "Reply deadline passed {days:day|days} ago · {date}",
+  "오늘까지 답해 주세요": "Please reply by today",
+  "답할 기한 D-{days} · {date}": "Reply by D-{days} · {date}",
+  "상대 응답 기한이 {days}일 지났어요 · {date}": "Their reply deadline passed {days:day|days} ago · {date}",
+  "오늘이 상대 응답 기한이에요": "Their reply is due today",
+  "상대 응답 기한 D-{days} · {date}": "Their reply by D-{days} · {date}",
+  "받은 순": "Newest first",
+  "응답 기한 순": "By reply deadline",
+  // 운영자 분석의 단계별 도달 회원 수
+  "단계별 도달 회원 수": "Members reaching each step",
+  "지금까지 각 단계에 닿은 실제 회원 수예요. 데모 계정과 권한 지급은 빼요. 단계가 이어진 길이 아니라 앞 단계 대비 전환율로 읽지 않아요.": "Real members who have reached each step so far, without the demo accounts or granted plans. The steps aren't a path one follows another, so don't read them as conversion from the step before.",
+  "수락된 협찬": "Has an accepted sponsorship",
+  "유료 결제": "Paid",
+  "가입 {count}명 중": "of {count} who joined",
 }
 
 export default en

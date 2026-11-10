@@ -20,6 +20,7 @@ import { shownTags } from "../lib/distance"
 import { formatWon } from "../lib/kpis"
 import { AcceptModal } from "../modals/AcceptModal"
 import { roasText, roasVerdict } from "../lib/roasLabels"
+import { upcomingAwaitingContract, upcomingSponsorships } from "../lib/brandSchedule"
 import { analyzeSponsorships, fullWon } from "../lib/sponsorships"
 import type { AnswerResult, EventItem, Match, NavLabel, RequestStatus, SentProposal, SponsorRequest, Sponsorship } from "../types"
 import type { OpenTasks } from "../api"
@@ -42,6 +43,7 @@ export function BrandDashboardPage({
   statuses,
   updatedAt,
   onNavigate,
+  onOpenInbox,
   onOpenDetail,
   onAccept,
   onPropose,
@@ -76,6 +78,8 @@ export function BrandDashboardPage({
   // 추천을 마지막으로 불러온 때.
   updatedAt: Date | null
   onNavigate: (label: NavLabel) => void
+  // 받은편지함의 받은 제안 쪽이나 보낸 제안 쪽(업무 보드의 답할 제안 · 보낸 제안 답변 대기).
+  onOpenInbox?: (box: "received" | "sent") => void
   onOpenDetail: (match: Match) => void
   onAccept: (request: SponsorRequest) => Promise<AnswerResult>
   onPropose: (match: Match) => void
@@ -112,15 +116,17 @@ export function BrandDashboardPage({
     openTasks?.toConfirm ?? requests.filter((request) => request.status === "수락" && request.contract === "waiting").length
   const openContract = (count: number, id?: string) =>
     count === 1 && id && onOpenAgreement ? onOpenAgreement(id) : onOpenAgreements ? onOpenAgreements() : onNavigate("받은 제안")
-  const upcoming = requests
-    .filter((request) => request.status === "수락" && request.eventDate >= todayIso())
-    .sort((a, b) => a.eventDate.localeCompare(b.eventDate))[0]
+  // 다가오는 협찬 일정: 받은 제안과 브랜드가 먼저 보낸 제안 중 양쪽이 계약서를 확인한
+  // 것(lib/brandSchedule.ts). 건수와 가장 가까운 일정이 같은 목록에서 나온다. 수락했지만
+  // 계약서 확인이 남은 건은 일정에 넣지 않고 계약 대기로 안내한다.
+  const schedule = upcomingSponsorships(requests, sent, campaigns)
+  const upcoming = schedule[0]
+  const awaitingContract = upcomingAwaitingContract(requests, sent, campaigns).length
   const memberHero = member && !paused
   // 업무 보드(회원): 실제 데이터의 건수만. 내가 할 일, 상대를 기다리는 일, 일정 · 결과로
   // 나눠 단체만 할 일이 남은 것을 내 급한 일처럼 보이지 않는다.
   const sentWaiting = sent.filter((item) => !item.noInbox && item.status === "검토 중").length
   const awaitingPartner = openTasks?.awaitingPartner ?? 0
-  const upcomingCount = requests.filter((request) => request.status === "수락" && request.eventDate >= todayIso()).length
   const resultRows = analyzeSponsorships(sponsorships).rows
   const resultsDone = resultRows.filter((row) => row.state === "done").length
   const resultsCounting = resultRows.filter((row) => row.state === "counting").length
@@ -131,7 +137,7 @@ export function BrandDashboardPage({
       label: t("검토할 제안"),
       count: pending.length,
       detail: pending.length > 0 ? t("조건을 보고 수락하거나 거절해요") : t("새로 온 제안이 없어요"),
-      onOpen: () => onNavigate("받은 제안"),
+      onOpen: () => (onOpenInbox ? onOpenInbox("received") : onNavigate("받은 제안")),
     },
     {
       key: "contract",
@@ -158,7 +164,7 @@ export function BrandDashboardPage({
       label: t("보낸 제안 답변 대기"),
       count: sentWaiting,
       detail: sentWaiting > 0 ? t("단체의 답을 기다려요") : t("답을 기다리는 보낸 제안이 없어요"),
-      onOpen: () => onNavigate("받은 제안"),
+      onOpen: () => (onOpenInbox ? onOpenInbox("sent") : onNavigate("받은 제안")),
     },
     {
       key: "partner",
@@ -172,9 +178,14 @@ export function BrandDashboardPage({
       key: "schedule",
       kind: "info",
       label: t("다가오는 협찬 일정"),
-      count: upcomingCount,
-      detail: upcoming ? `${upcoming.groupName} · ${upcoming.eventName} · ${dDayLabel(upcoming.eventDate)}` : t("다가오는 협찬이 없어요"),
-      onOpen: () => onNavigate("행사 일정"),
+      count: schedule.length,
+      detail: upcoming
+        ? `${upcoming.partner} · ${upcoming.eventName} · ${dDayLabel(upcoming.date)}`
+        : awaitingContract > 0
+          ? t("계약서 확인을 기다리는 {count}건은 양쪽이 확인하면 일정에 들어가요", { count: awaitingContract })
+          : t("다가오는 협찬이 없어요"),
+      onOpen: () =>
+        schedule.length === 0 && awaitingContract > 0 && onOpenAgreements ? onOpenAgreements() : onNavigate("행사 일정"),
     },
     {
       key: "results",
@@ -194,10 +205,8 @@ export function BrandDashboardPage({
   const accepted = requests.filter((request) => request.status === "수락")
   const confirmed = accepted.filter((request) => request.contract === "confirmed")
   const confirmedTotal = confirmedCount ?? confirmed.length
-  const nextConfirmed = nextEvent(confirmed.map((request) => ({ date: request.eventDate })))
-  const nextConfirmedRequest = confirmed
-    .filter((request) => request.eventDate >= todayIso())
-    .sort((a, b) => a.eventDate.localeCompare(b.eventDate))[0]
+  // 다음 확정 일정은 업무 보드의 '다가오는 협찬 일정'과 같은 목록에서 고른다.
+  const nextConfirmed = upcoming
   const liveCampaigns = campaigns.filter((campaign) => (campaign.endDate ?? campaign.date) >= todayIso())
   const nextCampaign = nextEvent(liveCampaigns)
   const topFacts: DashboardFact[] = [
@@ -209,8 +218,8 @@ export function BrandDashboardPage({
     {
       label: t("확정된 협찬"),
       value: t("{count}건", { count: confirmedTotal }),
-      note: nextConfirmedRequest
-        ? t("다음 · {name} {dday}", { name: nextConfirmedRequest.eventName, dday: dDayLabel(nextConfirmedRequest.eventDate) })
+      note: upcoming
+        ? t("다음 · {name} {dday}", { name: upcoming.eventName, dday: dDayLabel(upcoming.date) })
         : t("양쪽이 계약서를 확인한 것"),
     },
   ]
@@ -290,7 +299,7 @@ export function BrandDashboardPage({
           eyebrow={
             memberHero
               ? upcoming
-                ? t("다음 일정 · {name} · {dday}", { name: upcoming.eventName, dday: dDayLabel(upcoming.eventDate) })
+                ? t("다음 일정 · {name} · {dday}", { name: upcoming.eventName, dday: dDayLabel(upcoming.date) })
                 : t("다가오는 협찬 일정이 없어요")
               : accountName
               ? t("반가워요, {name}", { name: accountName })
