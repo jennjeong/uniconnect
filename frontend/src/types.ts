@@ -1382,7 +1382,8 @@ export type SiteState = {
 }
 
 export type AdminInsights = {
-  funnel: { step: string; count: number }[]
+  // 역할별로 각 단계에 닿은 실제 회원 수. 이어진 단계가 아니라 전환율로 읽지 않는다.
+  funnel: { role: Role; steps: { step: string; count: number }[] }[]
   cohorts: { week: string; size: number; active: (number | null)[] }[]
   distribution: {
     schools: { label: string; count: number }[]

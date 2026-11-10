@@ -3,7 +3,9 @@ import { useState } from "react"
 import { t } from "../i18n"
 import { dDayLabel, formatDateTime, formatDay } from "../lib/date"
 import type { SentProposal } from "../types"
+import { byDeadline } from "../lib/respondBy"
 import { BrandMark } from "./BrandMark"
+import { RespondBy } from "./RespondBy"
 import { TermsList } from "./TermsList"
 
 // 계정이 보냈고 파트너가 아직 답하지 않은 제안 하나. 누구에게, 어떤 행사에
@@ -27,6 +29,7 @@ function SentCard({ item, onWithdraw }: { item: SentProposal; onWithdraw: (item:
         )}
       </div>
 
+      <RespondBy side="sent" status={item.status} terms={item.terms} />
       <dl className="request-facts">
         <div>
           <dt>{t("행사")}</dt>
@@ -142,7 +145,9 @@ export function SentList({ sent, onWithdraw }: { sent: SentProposal[]; onWithdra
   return (
     <div className="inbox-both stagger">
       {stages.map(({ stage, title, empty }) => {
-        const items = sent.filter((item) => sentStage(item) === stage)
+        // 답변 대기는 응답 기한이 가까운(지난) 것부터.
+        const filtered = sent.filter((item) => sentStage(item) === stage)
+        const items = stage === "waiting" ? byDeadline(filtered) : filtered
         if (items.length === 0 && !empty) return null
         return (
           <section aria-labelledby={`sent-${stage}`} className="inbox-part" key={stage}>

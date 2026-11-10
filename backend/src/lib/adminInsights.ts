@@ -31,28 +31,50 @@ const toName = (database: Database, proposal: SponsorRequest | SponsorOffer) =>
     ? (database.brands.find((brand) => brand.id === proposal.brandId)?.name ?? "")
     : (database.groups.find((group) => group.id === proposal.groupId)?.name ?? "")
 
-// 가입부터 결제까지의 단계. 단계마다 거기까지 간 회원 수를 센다(실제
-// 회원만).
+// 역할별로 각 단계에 닿은 실제 회원 수(데모 계정 제외). 단계는 이어진 길이
+// 아니다: '제안 받음'에는 소개를 쓰지 않았거나 제안을 보내지 않은 회원도 있고,
+// '수락된 협찬'은 보낸 쪽이든 받은 쪽이든 센다. 그래서 앞 단계 대비 전환율로
+// 읽지 않고 같은 역할의 가입 회원 중 몇 명이 닿았는지만 센다. 결제는 브랜드만
+// 센다(학생단체는 상단 광고만 사며 전환 대상이 아니다). 권한 지급(grant)은 결제가
+// 아니다.
 export function funnel(database: Database) {
   const members = realAccounts(database)
-  const ids = new Set(members.map((account) => account.id))
-  const listed = members.filter((account) => (account.role === "학생단체" ? database.groups : database.brands).some((item) => item.id === (account.groupId ?? account.brandId)))
-  const proposers = new Set(allProposals(database).map((item) => item.fromAccountId).filter((id): id is string => Boolean(id && ids.has(id))))
+  const proposals = allProposals(database)
+  const sent = new Set<string>()
+  const received = new Set<string>()
   const accepted = new Set<string>()
-  for (const proposal of allProposals(database)) {
+  for (const proposal of proposals) {
+    const from = proposal.fromAccountId
+    const to = recipientOf(database, proposal)?.id
+    if (from) sent.add(from)
+    if (to) received.add(to)
     if (proposal.status !== "수락") continue
-    if (proposal.fromAccountId && ids.has(proposal.fromAccountId)) accepted.add(proposal.fromAccountId)
-    const to = recipientOf(database, proposal)
-    if (to && ids.has(to.id)) accepted.add(to.id)
+    if (from) accepted.add(from)
+    if (to) accepted.add(to)
   }
-  const payers = new Set(paymentsOf(database).filter((payment) => payment.status === "paid" && payment.method !== "grant" && ids.has(payment.accountId)).map((payment) => payment.accountId))
-  return [
-    { step: "가입", count: members.length },
-    { step: "소개 작성", count: listed.length },
-    { step: "첫 제안", count: proposers.size },
-    { step: "첫 수락", count: accepted.size },
-    { step: "첫 결제", count: payers.size },
-  ]
+  const payers = new Set(
+    paymentsOf(database)
+      .filter((payment) => payment.status === "paid" && payment.method !== "grant")
+      .map((payment) => payment.accountId),
+  )
+  return (["학생단체", "브랜드"] as const).map((role) => {
+    const joined = members.filter((account) => account.role === role)
+    const listed = joined.filter((account) =>
+      (role === "학생단체" ? database.groups : database.brands).some((item) => item.id === (account.groupId ?? account.brandId)),
+    )
+    const count = (set: Set<string>) => joined.filter((account) => set.has(account.id)).length
+    return {
+      role,
+      steps: [
+        { step: "가입", count: joined.length },
+        { step: "소개 작성", count: listed.length },
+        { step: "제안 보냄", count: count(sent) },
+        { step: "제안 받음", count: count(received) },
+        { step: "수락된 협찬", count: count(accepted) },
+        ...(role === "브랜드" ? [{ step: "유료 결제", count: count(payers) }] : []),
+      ],
+    }
+  })
 }
 
 // 날짜가 속한 주의 월요일, "YYYY-MM-DD".

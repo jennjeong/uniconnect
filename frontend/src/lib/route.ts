@@ -7,6 +7,8 @@ import { fromIsoDate, todayIso } from "./date"
 // 동작한다.
 export type View = {
   page: NavLabel
+  // 받은 제안 · 받은 협찬에서 처음 여는 쪽: 보낸 제안(?box=sent). 없으면 받은 제안.
+  box?: "sent"
   // 방문자가 처음 닿는 소개(/). 대시보드는 /dashboard에 있다.
   home?: true
   // 등록 페이지가 열릴 때, 열려 있는 동안의 날짜.
@@ -119,6 +121,7 @@ export function viewPath(view: View) {
   if (view.sharedReport) return `${base}/report/${encodeURIComponent(view.sharedReport)}`
   if (view.ledger) return `${base}/ledger/${encodeURIComponent(view.ledger)}`
   const path = pagePaths[view.page]
+  if (view.box && inboxPages.includes(view.page)) return `${base}/${path}?box=${view.box}`
   return `${base}/${view.detail ? `${path}/${encodeURIComponent(view.detail)}` : path}`
 }
 
@@ -139,6 +142,9 @@ function decodeSegment(segment: string) {
     return undefined
   }
 }
+
+// 보낸 제안 쪽을 주소로 열 수 있는 받은편지함.
+const inboxPages: NavLabel[] = ["받은 제안", "받은 협찬"]
 
 // 주소가 뒤에 브랜드나 단체를 붙여 가리킬 수 있는 페이지.
 const detailPaths = [pagePaths["추천 매칭"], pagePaths["단체 찾기"]]
@@ -183,5 +189,6 @@ export function readView(location: Location = window.location): View {
   }
   const page = (Object.keys(pagePaths) as NavLabel[]).find((label) => pagePaths[label] === first)
   if (!page || (second && !detailPaths.includes(first))) return missing
+  if (!named && inboxPages.includes(page) && new URLSearchParams(location.search).get("box") === "sent") return { page, box: "sent" }
   return named ? { page, detail: named } : { page }
 }

@@ -5,12 +5,14 @@ import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { Presence } from "../components/Presence"
 import { RequestProgress } from "../components/RequestProgress"
+import { RespondBy } from "../components/RespondBy"
 import { InboxDirection, SentList } from "../components/SentProposals"
 import { TabBar } from "../components/TabBar"
 import { TermsList } from "../components/TermsList"
 import { useEntryState } from "../hooks/useEntryState"
 import { t, tc } from "../i18n"
 import { dDayLabel, formatDateTime, formatDay } from "../lib/date"
+import { byDeadline, deadlineOf } from "../lib/respondBy"
 import { AcceptModal } from "../modals/AcceptModal"
 import type { AnswerResult, Match, RequestStatus, SentProposal, SponsorOffer } from "../types"
 
@@ -61,6 +63,7 @@ function OfferCard({
         <time dateTime={offer.createdAt}>{t("{date} 받음", { date: formatDateTime(offer.createdAt) })}</time>
       </div>
 
+      <RespondBy side="received" status={offer.status} terms={offer.terms} />
       <dl className="request-facts">
         <div>
           <dt>{t("캠페인")}</dt>
@@ -190,6 +193,7 @@ export function OffersPage({
   onAnswer,
   onWithdraw,
   onOpenAgreement,
+  initialDirection = "received",
 }: {
   offers: SponsorOffer[]
   brands: Match[]
@@ -198,12 +202,18 @@ export function OffersPage({
   onWithdraw: (proposal: SentProposal) => void
   // 수락된 제안의 계약서(pages/AgreementPage.tsx).
   onOpenAgreement: (id: string) => void
+  // 처음 여는 쪽. 대시보드의 '보낸 제안 답변 대기'는 보낸 제안을 연다(주소의 ?box=sent).
+  initialDirection?: "received" | "sent"
 }) {
   const [tab, setTab] = useState<RequestStatus>("검토 중")
   const current = tabs.find((item) => item.status === tab) ?? tabs[0]
-  const list = offers.filter((offer) => inTab(offer.status, tab))
+  // 검토 중인 받은 제안은 응답 기한이 가까운 순으로도 본다(lib/respondBy.ts).
+  const [order, setOrder] = useEntryState<"recent" | "deadline">("pages/OffersPage.tsx:order", "recent")
+  const filtered = offers.filter((offer) => inTab(offer.status, tab))
+  const hasDeadline = tab === "검토 중" && filtered.some((offer) => deadlineOf(offer))
+  const list = hasDeadline && order === "deadline" ? byDeadline(filtered) : filtered
   // 받은 제안과 보낸 제안은 위에서 나눈다(보낸 제안은 components/SentProposals.tsx).
-  const [direction, setDirection] = useEntryState<"received" | "sent">("pages/OffersPage.tsx:direction", "received")
+  const [direction, setDirection] = useEntryState<"received" | "sent">("pages/OffersPage.tsx:direction", initialDirection)
   const receivedWaiting = offers.filter((item) => inTab(item.status, "검토 중")).length
   const received =
     list.length === 0 ? (
@@ -250,6 +260,16 @@ export function OffersPage({
             onChange={setTab}
             value={tab}
           />
+          {hasDeadline && (
+            <div aria-label={t("정렬")} className="inbox-order" role="group">
+              <button aria-pressed={order === "recent"} onClick={() => setOrder("recent")} type="button">
+                {t("받은 순")}
+              </button>
+              <button aria-pressed={order === "deadline"} onClick={() => setOrder("deadline")} type="button">
+                {t("응답 기한 순")}
+              </button>
+            </div>
+          )}
           <div key={tab}>{received}</div>
         </>
       )}

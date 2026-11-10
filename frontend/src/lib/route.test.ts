@@ -33,6 +33,15 @@ describe("addresses", () => {
     expect(readView(at("/new")).create).toBe("2026-10-22")
   })
 
+  // 대시보드의 '보낸 제안 답변 대기'는 받은편지함의 보낸 제안 쪽을 연다.
+  test("an inbox opens on the sent side by its address", () => {
+    expect(viewPath({ page: "받은 제안", box: "sent" })).toBe("/inbox?box=sent")
+    expect(readView(at("/inbox?box=sent"))).toEqual({ page: "받은 제안", box: "sent" })
+    expect(readView(at("/offers?box=sent"))).toEqual({ page: "받은 협찬", box: "sent" })
+    expect(readView(at("/inbox?box=other"))).toEqual({ page: "받은 제안" })
+    expect(readView(at("/matches?box=sent"))).toEqual({ page: "추천 매칭" })
+  })
+
   test("visitors land on the introduction at /, and the dashboard has its own address", () => {
     expect(readView(at("/"))).toEqual({ page: "대시보드", home: true })
     expect(viewPath({ page: "대시보드" })).toBe("/dashboard")

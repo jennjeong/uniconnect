@@ -2334,7 +2334,7 @@ test("the console's command palette opens screens, and maintenance covers the si
   await palette.getByRole("combobox").fill("분석")
   await page.keyboard.press("Enter")
   await expect(page.getByRole("heading", { level: 1, name: "분석" })).toBeVisible()
-  await expect(page.getByRole("heading", { level: 2, name: "전환 퍼널" })).toBeVisible()
+  await expect(page.getByRole("heading", { level: 2, name: "단계별 도달 회원 수" })).toBeVisible()
 
   // "?"는 키보드 단축키를 보여 주고 Escape가 닫는다.
   await page.keyboard.press("?")

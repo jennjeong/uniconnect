@@ -633,6 +633,10 @@ function App() {
 
   const openAgreement = (id: string) => go({ page, agreement: id })
 
+  // 받은편지함의 받은 제안 쪽이나 보낸 제안 쪽(주소의 ?box=sent)을 바로 연다.
+  const openInbox = (box: "received" | "sent") =>
+    go({ page: students ? "받은 협찬" : "받은 제안", ...(box === "sent" ? { box } : {}) })
+
   // 열린 대화에 맞춰 대화 목록(최신 메시지 순)을 맞춘다.
   const updateConversation = useCallback((updated: Conversation) => {
     setConversations((current) =>
@@ -1813,6 +1817,7 @@ function App() {
       case "받은 제안":
         return (
           <InboxPage
+            initialDirection={view.box === "sent" ? "sent" : "received"}
             requests={requests}
             sent={sent}
             onAnswer={answerRequest}
@@ -1824,6 +1829,7 @@ function App() {
       case "받은 협찬":
         return (
           <OffersPage
+            initialDirection={view.box === "sent" ? "sent" : "received"}
             brands={brands}
             offers={offers}
             sent={sent}
@@ -1858,6 +1864,7 @@ function App() {
       default:
         return students ? (
           <DashboardPage
+            onOpenInbox={openInbox}
             accountName={account?.name}
             matches={matches}
             brands={brands}
@@ -1887,6 +1894,7 @@ function App() {
           />
         ) : (
           <BrandDashboardPage
+            onOpenInbox={openInbox}
             accountName={account?.name}
             demo={visitor}
             matches={matches}

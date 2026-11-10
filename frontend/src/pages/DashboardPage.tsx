@@ -44,6 +44,7 @@ export function DashboardPage({
   report,
   updatedAt,
   onNavigate,
+  onOpenInbox,
   onOpenDetail,
   onPropose,
   onCancelProposal,
@@ -77,6 +78,8 @@ export function DashboardPage({
   // 매칭을 마지막으로 불러온 때.
   updatedAt: Date | null
   onNavigate: (label: NavLabel) => void
+  // 받은편지함의 받은 제안 쪽이나 보낸 제안 쪽(업무 보드의 답할 제안 · 보낸 제안 답변 대기).
+  onOpenInbox?: (box: "received" | "sent") => void
   onOpenDetail: (match: Match) => void
   onPropose: (match: Match) => void
   onCancelProposal: (match: Match) => void
@@ -151,7 +154,7 @@ export function DashboardPage({
       label: t("답할 협찬 제안"),
       count: toAnswer,
       detail: toAnswer > 0 ? t("조건을 보고 수락하거나 거절해요") : t("새로 온 제안이 없어요"),
-      onOpen: () => onNavigate("받은 협찬"),
+      onOpen: () => (onOpenInbox ? onOpenInbox("received") : onNavigate("받은 협찬")),
     },
     {
       key: "contract",
@@ -178,7 +181,7 @@ export function DashboardPage({
       label: t("보낸 제안 답변 대기"),
       count: sentWaiting,
       detail: sentWaiting > 0 ? t("브랜드의 답을 기다려요") : t("답을 기다리는 보낸 제안이 없어요"),
-      onOpen: () => onNavigate("받은 협찬"),
+      onOpen: () => (onOpenInbox ? onOpenInbox("sent") : onNavigate("받은 협찬")),
     },
     {
       key: "partner",

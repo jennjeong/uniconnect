@@ -89,10 +89,15 @@ export function dDayLabel(iso: string) {
 
 // 오늘부터 가장 가까운 행사. 여러 날에 걸친 행사는 마지막 날까지 센다.
 export function nextEvent<T extends { date: string; endDate?: string }>(events: T[]) {
-  const today = todayIso()
+  return upcomingEvents(events)[0]
+}
+
+// 아직 끝나지 않은(오늘이 마지막 날 이전이거나 그날인) 일정, 가까운 순. 날짜는
+// 한국 날짜(todayIso)로 비교하고 기간 일정은 마지막 날까지 다가오는 일정이다.
+export function upcomingEvents<T extends { date: string; endDate?: string }>(events: T[], today = todayIso()) {
   return events
     .filter((event) => fromIsoDate(event.date) && (event.endDate ?? event.date) >= today)
-    .sort((a, b) => a.date.localeCompare(b.date))[0]
+    .sort((a, b) => a.date.localeCompare(b.date))
 }
 
 // `start`부터 `end`까지 양 끝을 포함한 모든 "YYYY-MM-DD" 날짜.
