@@ -400,6 +400,9 @@ export type SponsorRequest = {
   status: RequestStatus
   createdAt: string
   respondedAt?: string
+  // 답이 없어 받은 쪽에 다시 알린 단계(1: 3일, 2: 7일)와 마지막으로 알린 때(lib/nudges.ts).
+  nudgeStage?: 1 | 2
+  nudgedAt?: string
   // When both sides called the sponsorship off (취소).
   canceledAt?: string
 }
@@ -429,6 +432,9 @@ export type SponsorOffer = {
   status: RequestStatus
   createdAt: string
   respondedAt?: string
+  // 답이 없어 받은 쪽에 다시 알린 단계(1: 3일, 2: 7일)와 마지막으로 알린 때(lib/nudges.ts).
+  nudgeStage?: 1 | 2
+  nudgedAt?: string
   // When both sides called the sponsorship off (취소).
   canceledAt?: string
 }

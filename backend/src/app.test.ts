@@ -8992,3 +8992,91 @@ test("a proposal's amount starts the agreement as cash or in kind by its kinds",
   // 현금과 물품이 섞이면 나눌 수 없어 비워 두고, 양쪽이 직접 적는다.
   assert.equal(await valueFor(["현금", "제품"], 4), undefined)
 })
+
+test("a proposal left unanswered is nudged to its recipient on day 3 and day 7, never more than twice", async () => {
+  const { sendProposalNudges } = await import("./lib/nudges.js")
+  const { mailTransport } = await import("./lib/mailer.js")
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const database = getDatabase()
+  const realPost = mailTransport.post
+  const mail = { apiKey: config.resendApiKey, from: config.mailFrom }
+  const sent: { to: string[]; subject: string; text: string }[] = []
+  let up = true
+  mailTransport.post = async (body) => {
+    if (up) sent.push(body)
+    return new Response(null, { status: up ? 200 : 500 })
+  }
+  config.resendApiKey = "test-key"
+  config.mailFrom = "uniconnect <no-reply@example.com>"
+  try {
+    const { token: group } = await listedMember("nudge-club@syu.ac.kr", "nudge-pass-123")
+    const { token: brand, listingId } = await listedMember("nudge@nudge-cafe.kr", "nudge-pass-123", "브랜드")
+    const { listingId: other } = await listedMember("nudge-two@nudge-cafe.kr", "nudge-pass-123", "브랜드")
+    const today = todayInKorea()
+    const event = (await call("POST", "/events", { name: "재촉 공연", date: addDays(today, 30), people: "80명", types: ["현금"] }, group)).data.event
+    const propose = (matchId: string, terms?: unknown) => call("POST", "/proposals", { matchId, eventId: event.id, message: "함께해요", terms }, group)
+    assert.ok((await propose(listingId)).status < 300)
+    const request = database.requests.find((item) => item.brandId === listingId)!
+    const at = (days: number) => new Date(Date.parse(request.createdAt) + days * 24 * 60 * 60 * 1000)
+    // 앞의 테스트들이 남긴 제안도 날이 지나면 대상이 되므로, 여기서 만든 것만 보게 한다.
+    for (const item of [...database.requests, ...database.offers]) if (item !== request) item.nudgeStage = 2
+    // 새 제안 메일은 응답 뒤에 나가므로 기다렸다가 비운다.
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    sent.length = 0
+
+    // 이틀까지는 알리지 않는다.
+    assert.equal(await sendProposalNudges(database, at(2)), 0)
+    // 3일째: 메일이 실패하면 표시하지 않고 다음 실행에서 다시 보낸다.
+    up = false
+    assert.equal(await sendProposalNudges(database, at(3)), 0)
+    assert.equal(request.nudgeStage, undefined)
+    up = true
+    assert.equal(await sendProposalNudges(database, at(3)), 1)
+    assert.equal(request.nudgeStage, 1)
+    assert.deepEqual(sent.map((item) => item.to[0]), ["nudge@nudge-cafe.kr"])
+    assert.match(sent[0].subject, /답을 기다리는 협찬 제안이 있어요/)
+    assert.match(sent[0].text, /재촉 공연' 제안: 3일째 기다리고 있어요/)
+    // 같은 날 다시 돌거나, 7일 전에는 더 보내지 않는다.
+    assert.equal(await sendProposalNudges(database, at(3)), 0)
+    assert.equal(await sendProposalNudges(database, at(6)), 0)
+    assert.equal(await sendProposalNudges(database, at(7)), 1)
+    assert.equal(request.nudgeStage, 2)
+    // 그 뒤로는 답이 없어도 다시 알리지 않는다.
+    assert.equal(await sendProposalNudges(database, at(20)), 0)
+    assert.equal(sent.length, 2)
+    assert.match(sent[1].text, /7일째 기다리고 있어요/)
+
+    // 크론이 며칠 멈췄다가 8일째에 돌면 한 번만 보낸다. 보낸 쪽이 적은 응답 기한이
+    // 지났거나, 답한 제안은 알리지 않는다.
+    assert.ok((await propose(other, { respondBy: addDays(today, 5) })).status < 300)
+    const late = database.requests.find((item) => item.brandId === other)!
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    sent.length = 0
+    assert.equal(await sendProposalNudges(database, at(3)), 1)
+    assert.deepEqual(sent.map((item) => item.to[0]), ["nudge-two@nudge-cafe.kr"])
+    assert.match(sent[0].text, /응답 기한은 \d{4}-\d{2}-\d{2}예요/)
+    assert.equal(await sendProposalNudges(database, at(8)), 0)
+    assert.equal(late.nudgeStage, 1)
+    delete late.nudgeStage
+    delete late.terms
+    assert.equal(await sendProposalNudges(database, at(8)), 1)
+    assert.equal(late.nudgeStage, 2)
+    assert.equal(await sendProposalNudges(database, at(9)), 0)
+
+    // 답한 제안, 막은 상대는 알리지 않는다.
+    delete request.nudgeStage
+    await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+    delete late.nudgeStage
+    const groupId = database.accounts.find((account) => account.email === "nudge-club@syu.ac.kr")!.id
+    const otherId = database.accounts.find((account) => account.email === "nudge-two@nudge-cafe.kr")!.id
+    database.blocks[otherId] = [groupId]
+    const before = sent.length
+    assert.equal(await sendProposalNudges(database, at(9)), 0)
+    assert.equal(sent.length, before)
+    delete database.blocks[otherId]
+  } finally {
+    mailTransport.post = realPost
+    config.resendApiKey = mail.apiKey
+    config.mailFrom = mail.from
+  }
+})

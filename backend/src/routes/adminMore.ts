@@ -365,7 +365,8 @@ adminMoreRouter.post("/proposals/:id/nudge", async (req, res) => {
     "proposals",
     "답을 기다리는 협찬 제안이 있어요",
     [`'${name}' 협찬 제안이 답을 기다리고 있어요.`, "수락하거나 거절해 주시면 상대가 다음 준비를 할 수 있어요."],
-    to.role === "브랜드" ? "/requests" : "/offers",
+    // 새 제안 메일과 같은 화면이다(브랜드의 받은 제안은 /inbox, 단체는 /offers).
+    to.role === "브랜드" ? "/inbox" : "/offers",
   )
   res.json({ ok: true })
 })
