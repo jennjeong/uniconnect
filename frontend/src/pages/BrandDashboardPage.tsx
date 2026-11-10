@@ -186,6 +186,7 @@ export function BrandDashboardPage({
           : t("다가오는 협찬이 없어요"),
       onOpen: () =>
         schedule.length === 0 && awaitingContract > 0 && onOpenAgreements ? onOpenAgreements() : onNavigate("행사 일정"),
+      keepEmpty: awaitingContract > 0,
     },
     {
       key: "results",
