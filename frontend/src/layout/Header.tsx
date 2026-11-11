@@ -111,11 +111,16 @@ export function Header({
   const next = nextEvent(events)
   const dDay = next ? daysUntil(next.date) : 0
 
+  // 첫 확인은 첫 화면을 그린 뒤에 한다. 그리기 전에 scrollY를 읽으면 브라우저가 레이아웃을
+  // 앞당겨 계산해야 한다(강제 리플로우).
   useEffect(() => {
     const update = () => setScrolled(window.scrollY > 8)
-    update()
+    const first = window.setTimeout(update, 0)
     window.addEventListener("scroll", update, { passive: true })
-    return () => window.removeEventListener("scroll", update)
+    return () => {
+      window.clearTimeout(first)
+      window.removeEventListener("scroll", update)
+    }
   }, [])
 
   // 로고에는 자기 알약이 없어서 짙은 파랑 표면 위에 떠 있을 때는 밝게 바뀌고
@@ -124,9 +129,11 @@ export function Header({
   // 그리는 동안 몰려오므로 잠잠해질 때를 기다린다.
   useEffect(() => {
     let frame = 0
+    let after = 0
     let pause = 0
     const check = () => {
       frame = 0
+      after = 0
       const brand = brandRef.current
       if (!brand) return
       const box = brand.getBoundingClientRect()
@@ -135,8 +142,13 @@ export function Header({
         .find((element) => !element.closest(".site-header"))
       setOnDark(below ? getComputedStyle(below).getPropertyValue("--surface-tone").trim() === "dark" : false)
     }
+    // 다음 화면을 그린 직후에 잰다. 그리기 전(requestAnimationFrame 안)에 재면 바뀐 스타일과
+    // 레이아웃을 그 자리에서 다시 계산하게 된다.
     const schedule = () => {
-      if (!frame) frame = requestAnimationFrame(check)
+      if (!frame && !after) frame = requestAnimationFrame(() => {
+        frame = 0
+        after = window.setTimeout(check, 0)
+      })
     }
     schedule()
     window.addEventListener("scroll", schedule, { passive: true })
@@ -148,6 +160,7 @@ export function Header({
     pages.observe(document.body, { childList: true, subtree: true })
     return () => {
       cancelAnimationFrame(frame)
+      window.clearTimeout(after)
       window.clearTimeout(pause)
       window.removeEventListener("scroll", schedule)
       window.removeEventListener("resize", schedule)

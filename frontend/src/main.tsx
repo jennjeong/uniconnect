@@ -1,9 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
-import { CheckInPage } from './checkin/CheckInPage'
-import { GroupCheckInPage } from './checkin/GroupCheckInPage'
-import { StaffCheckInPage } from './checkin/StaffCheckInPage'
 import { lang } from './i18n'
 import { currentCheckIn } from './lib/checkin'
 import { installErrorReports } from './lib/errorReports'
@@ -48,19 +45,30 @@ if (adminConsole) {
   keepOutOfSearch()
 }
 
+// 체크인 페이지들은 QR로 들어온 사람만 쓰므로 따로 받는다. 첫 화면의 번들이 그만큼 가볍다.
+const CheckInPage = React.lazy(() => import('./checkin/CheckInPage').then((module) => ({ default: module.CheckInPage })))
+const GroupCheckInPage = React.lazy(() =>
+  import('./checkin/GroupCheckInPage').then((module) => ({ default: module.GroupCheckInPage })),
+)
+const StaffCheckInPage = React.lazy(() =>
+  import('./checkin/StaffCheckInPage').then((module) => ({ default: module.StaffCheckInPage })),
+)
+
 // 거기서만 불러오므로 회원은 내려받지 않는다.
 const AdminConsole = React.lazy(() => import('./pages/AdminPage').then((module) => ({ default: module.AdminConsole })))
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     {checkIn ? (
-      checkIn.page === 'staff' ? (
-        <StaffCheckInPage code={checkIn.code} />
-      ) : checkIn.page === 'group' ? (
-        <GroupCheckInPage code={checkIn.code} />
-      ) : (
-        <CheckInPage code={checkIn.code} />
-      )
+      <React.Suspense fallback={null}>
+        {checkIn.page === 'staff' ? (
+          <StaffCheckInPage code={checkIn.code} />
+        ) : checkIn.page === 'group' ? (
+          <GroupCheckInPage code={checkIn.code} />
+        ) : (
+          <CheckInPage code={checkIn.code} />
+        )}
+      </React.Suspense>
     ) : adminConsole ? (
       <React.Suspense fallback={null}>
         <AdminConsole />

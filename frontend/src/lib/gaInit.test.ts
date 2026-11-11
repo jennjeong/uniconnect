@@ -19,6 +19,7 @@ function run(path: string, referrer = "") {
   }
   const window = {
     addEventListener: (name: string, listener: () => void) => void (listeners[name] = listener),
+    requestIdleCallback: (callback: () => void) => callback(),
   } as Record<string, unknown> & { dataLayer?: IArguments[] }
   const document = {
     referrer,
@@ -27,7 +28,9 @@ function run(path: string, referrer = "") {
   }
   new Function("window", "location", "history", "document", gaInitScript("G-TEST"))(window, location, history, document)
   const calls = () => (window.dataLayer ?? []).map((entry) => Array.from(entry))
-  return { window, history, loaded, calls, config: () => calls().find((call) => call[0] === "config") }
+  // 태그 본체는 페이지가 다 뜬 뒤(load) 받는다.
+  listeners.load?.()
+  return { window, history, loaded, listeners, calls, config: () => calls().find((call) => call[0] === "config") }
 }
 
 const off = "ga-disable-G-TEST"
@@ -40,6 +43,22 @@ describe("Google Analytics on pages with tokens in their address", () => {
       expect(page.loaded).toEqual([])
       expect(page.calls()).toEqual([])
     }
+  })
+
+  it("waits for the page to finish loading before fetching the tag", () => {
+    const listeners: Record<string, () => void> = {}
+    const loaded: unknown[] = []
+    const window = {
+      addEventListener: (name: string, listener: () => void) => void (listeners[name] = listener),
+      requestIdleCallback: (callback: () => void) => callback(),
+    }
+    const document = { referrer: "", readyState: "interactive", createElement: () => ({}), head: { appendChild: (tag: unknown) => void loaded.push(tag) } }
+    const location = { origin: "https://example.com", href: "https://example.com/", pathname: "/" }
+    const history = { pushState() {}, replaceState() {} }
+    new Function("window", "location", "history", "document", gaInitScript("G-TEST"))(window, location, history, document)
+    expect(loaded).toEqual([])
+    listeners.load()
+    expect(loaded).toHaveLength(1)
   })
 
   it("loads elsewhere, including addresses that only start alike", () => {
