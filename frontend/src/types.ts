@@ -22,6 +22,27 @@ export type HistoryItem = { id: string; date: string; title: string; detail: str
 // 브랜드가 제공하는 것 하나: 종류(brandOffers)와 그 양.
 export type BrandOffer = { kind: string; detail?: string }
 
+// 응답률(받은 제안 중 마감 전에 답한 비율)과 브랜드의 이행률(지급 예정일까지 수령이
+// 표시된 현금 협찬 비율). rate는 0~100의 정수(%)다.
+export type Trust = { response: { count: number; rate?: number }; fulfilment?: { count: number; rate?: number } }
+
+// 계약서의 표준 조항 하나(backend lib/contractTemplates.ts). kind는 협찬 형태이거나 "공통"이다.
+export type AgreementClause = { id: string; kind: string; title: string; text: string }
+
+// 저장한 관심 조건(backend lib/savedSearches.ts). fresh는 저장한 뒤 새로 맞아 아직 보지 않은 상대다.
+export type SavedSearch = {
+  id: string
+  name?: string
+  query?: string
+  industry?: string
+  kind?: string
+  school?: string
+  matchCount: number
+  fresh: string[]
+  createdAt: string
+  notifiedAt?: string
+}
+
 export type Match = {
   id: string
   name: string
@@ -48,6 +69,8 @@ export type Match = {
   // 협찬 후기: 평균 별점과 후기 수 (후기가 있을 때만).
   rating?: number
   reviewCount?: number
+  // 회원의 응답률과(브랜드는) 이행률(backend lib/trust.ts). 건수가 3보다 적으면 rate가 없다.
+  trust?: Trust
   // 브랜드 카탈로그 전용: 사업자 등록이 확인됐다.
   businessVerified?: true
   // 운영자가 서류로 확인한 학생단체(기한 안). backend lib/groupCheck.ts.
@@ -175,6 +198,9 @@ export type Agreement = {
   // 제안할 때 적은 조건(백엔드 lib/terms.ts). 예전 계약에는 없다.
   terms?: ProposalTerms
   items: AgreementItem[]
+  // 협찬 형태별 표준 조항과 고른 형태(#333). draft는 법률 검토 전 초안이라는 표시다.
+  clauses?: AgreementClause[]
+  template?: { kinds: string[]; draft: boolean; appliedAt: string }
   confirmed: Partial<Record<ChatSide, string>>
   createdAt: string
   updatedAt: string
@@ -1527,12 +1553,16 @@ export type Dispute = {
     value?: { cash: number; inKind: number }
     payout?: { dueDate?: string; paidAt?: string; paidAmount?: number; receivedAt?: string }
     items: { side: ChatSide; label: string; doneAt?: string }[]
+    clauses?: AgreementClause[]
     // 접수할 때 각 쪽이 계약서를 확인한 시각(backend lib/disputes.ts agreementSnapshot).
     confirmed?: Partial<Record<ChatSide, string>>
   }
   evidence: { id: string; side: ChatSide; name: string; size: number; addedAt: string }[]
   events: DisputeEvent[]
   decision?: { outcome: DisputeOutcome | "withdrawn"; note?: string; at: string }
+  // 결론 난 뒤 탈퇴한 쪽과 그 시각, 그리고 통째로 지워지는 때(처음 떠난 때부터 3년).
+  left?: Partial<Record<ChatSide, string>>
+  keepUntil?: string
   createdAt: string
   updatedAt: string
   side?: ChatSide

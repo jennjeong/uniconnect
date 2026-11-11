@@ -3,6 +3,7 @@ import { useState, type CSSProperties } from "react"
 import { CatalogEmpty } from "../components/CatalogEmpty"
 import { CatalogSkeleton } from "../components/CatalogSkeleton"
 import { type ActiveCondition, CatalogControls } from "../components/CatalogControls"
+import { SavedSearches } from "../components/SavedSearches"
 import { CatalogMap, type Layout } from "../components/CatalogMap"
 import { CompareTray, useCompare } from "../components/CompareTray"
 import { DemoPreview } from "../components/DemoPreview"
@@ -65,6 +66,7 @@ export function GroupsPage({
   onPropose,
   onCancelProposal,
   onProposeMany,
+  onSearchNotice,
   visitor,
   onLogin,
   onSignup,
@@ -92,6 +94,8 @@ export function GroupsPage({
   onProposeMany?: (groups: Match[]) => void
   // 로그아웃 상태: 가까운 순은 데모 브랜드의 가게를 기준으로 재므로 예시로
   // 읽힌다.
+  // 회원만: 관심 조건 저장(components/SavedSearches.tsx)의 알림.
+  onSearchNotice?: (message: string) => void
   visitor: boolean
   onLogin: () => void
   onSignup: () => void
@@ -344,6 +348,18 @@ export function GroupsPage({
           onChange: setSort,
         }}
       />
+      {onSearchNotice && (
+        <SavedSearches
+          criteria={{ query, industry: field, kind: filters.kind, school: filters.school }}
+          industryLabel={(value) => t(groupFields.find(([key]) => key === value)?.[1] ?? value)}
+          onApply={(next) => {
+            setQuery(next.query)
+            setField(next.industry as Industry | "")
+            setFilters({ ...noGroupFilters, kind: next.kind ?? "", school: next.school ?? "" })
+          }}
+          onNotice={onSearchNotice}
+        />
+      )}
 
       <DemoPreview
         active={visitor && sort === "near"}

@@ -1,11 +1,12 @@
 import { useEffect, useState, type CSSProperties } from "react"
 
 import { api, errorMessage } from "../api"
+import { DisputeRecord } from "../components/DisputePanel"
 import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
 import { t, tc } from "../i18n"
 import { formatFullDate } from "../lib/date"
-import type { AgreementSummary, ChatSide } from "../types"
+import type { AgreementSummary, ChatSide, Dispute } from "../types"
 
 // 보는 쪽에서 본 계약서의 진행 상태.
 export function agreementState(confirmed: Partial<Record<ChatSide, string>>, side: ChatSide) {
@@ -21,21 +22,34 @@ export function AgreementsPage({
   onBack,
   onLogin,
   onOpen,
+  onNotice,
 }: {
   loggedIn: boolean
   onBack: () => void
   onLogin: () => void
   onOpen: (id: string) => void
+  onNotice: (message: string) => void
 }) {
   const [list, setList] = useState<AgreementSummary[]>()
   const [failed, setFailed] = useState("")
+  // 상대가 탈퇴해 계약서가 사라진 협찬의 분쟁(결론 난 뒤 3년 보관). 계약서 화면에서는 볼 수
+  // 없어서 여기에 남긴다.
+  const [orphans, setOrphans] = useState<Dispute[]>([])
 
   useEffect(() => {
     if (!loggedIn) return
     let cancelled = false
     api.agreements().then(
       (result) => {
-        if (!cancelled) setList(result.agreements)
+        if (cancelled) return
+        setList(result.agreements)
+        const open = new Set(result.agreements.map((item) => item.id))
+        api.allDisputes().then(
+          (found) => {
+            if (!cancelled) setOrphans(found.disputes.filter((dispute) => !open.has(dispute.agreementId)))
+          },
+          () => undefined,
+        )
       },
       (error) => {
         if (!cancelled) setFailed(errorMessage(error))
@@ -97,6 +111,23 @@ export function AgreementsPage({
             )
           })}
         </ul>
+      )}
+      {orphans.length > 0 && (
+        <section aria-labelledby="agreements-disputes-title" className="agreements-disputes">
+          <h2 id="agreements-disputes-title">{t("계약서가 없어진 협찬의 분쟁 기록")}</h2>
+          <p className="field-hint">{t("상대가 탈퇴해 계약서는 지워졌지만, 결론이 난 분쟁 기록은 정해진 기간 동안 남아요.")}</p>
+          <ol className="dispute-list">
+            {orphans.map((dispute) => (
+              <DisputeRecord
+                dispute={dispute}
+                key={dispute.id}
+                onChange={(next) => setOrphans((items) => items.map((item) => (item.id === next.id ? next : item)))}
+                onNotice={onNotice}
+                partner={t(dispute.side === "group" ? dispute.brandName : dispute.groupName)}
+              />
+            ))}
+          </ol>
+        </section>
       )}
     </section>
   )

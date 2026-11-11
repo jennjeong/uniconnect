@@ -11,7 +11,7 @@ import {
   snapshotAgreement,
 } from "../data/disputes"
 import { t } from "../i18n"
-import { formatDateTime } from "../lib/date"
+import { formatDateTime, formatFullDate } from "../lib/date"
 import { documentFromFile, fileSize } from "../lib/documents"
 import { saveFile } from "../lib/download"
 import { fullWon } from "../lib/sponsorships"
@@ -171,7 +171,7 @@ export function DisputePanel({
   )
 }
 
-function DisputeRecord({
+export function DisputeRecord({
   dispute,
   partner,
   onChange,
@@ -231,7 +231,14 @@ function DisputeRecord({
           {formatDateTime(dispute.createdAt)}
         </small>
       </header>
-      <p className="dispute-detail">{dispute.detail}</p>
+      {dispute.left && (
+        <p className="dispute-left">
+          {dispute.keepUntil
+            ? t("탈퇴한 회원이 남긴 내용은 지웠어요. 이 기록은 {date}까지 보관해요.", { date: formatFullDate(dispute.keepUntil.slice(0, 10)) })
+            : t("탈퇴한 회원이 남긴 내용은 지웠어요.")}
+        </p>
+      )}
+      {dispute.detail && <p className="dispute-detail">{dispute.detail}</p>}
       {/* 운영자가 보는 것과 같은 사본. 상대가 접수했어도 무엇을 두고 판단하는지 보고
           말과 증빙으로 답할 수 있다. */}
       <details className="dispute-snapshot">
@@ -255,6 +262,12 @@ function DisputeRecord({
             <div>
               <dt>{t("취소")}</dt>
               <dd>{t("취소된 협찬")}</dd>
+            </div>
+          )}
+          {dispute.snapshot.clauses && dispute.snapshot.clauses.length > 0 && (
+            <div>
+              <dt>{t("표준 조항")}</dt>
+              <dd>{dispute.snapshot.clauses.map((clause) => t(clause.title)).join(" · ")}</dd>
             </div>
           )}
         </dl>

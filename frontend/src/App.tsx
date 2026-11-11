@@ -1571,6 +1571,7 @@ function App() {
           onBack={() => goBack({ page })}
           onLogin={() => openAuth("login")}
           onOpen={openAgreement}
+          onNotice={showNotice}
         />
       )
     }
@@ -1743,6 +1744,7 @@ function App() {
             onPropose={propose}
             onCancelProposal={cancelProposal}
             onInvite={inviteShop}
+            onSearchNotice={member ? showNotice : undefined}
             visitor={visitor}
             onLogin={() => openAuth("login")}
             onSignup={() => openAuth("signup")}
@@ -1809,6 +1811,7 @@ function App() {
             onPropose={propose}
             onCancelProposal={cancelProposal}
             onProposeMany={member ? proposeMany : undefined}
+            onSearchNotice={member ? showNotice : undefined}
             visitor={visitor}
             onLogin={() => openAuth("login")}
             onSignup={() => openAuth("signup")}

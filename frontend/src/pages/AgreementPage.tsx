@@ -12,6 +12,7 @@ import { TermsList } from "../components/TermsList"
 import { AgreementStatus } from "../components/AgreementStatus"
 import { PreEventCheck } from "../components/PreEventCheck"
 import { DisputePanel } from "../components/DisputePanel"
+import { ContractClauses } from "../components/ContractClauses"
 import { carriers, trackingLink } from "../data/carriers"
 import { methodInfo, methodKinds, sortedMethods } from "../data/methods"
 import { reviewTags } from "../data/reviews"
@@ -1078,6 +1079,16 @@ function ContractTerms({ agreement }: { agreement: Agreement }) {
         ? t("{methods} 방식으로 확인하고 양쪽이 모두 확인한 방식만 성과로 세요.", { methods: methods.join(", ") })
         : t("현장 QR 체크인과 쿠폰, 매장 방문으로 확인해요."),
     },
+    ...(agreement.clauses?.length
+      ? [
+          {
+            title: t("표준 조항"),
+            body: t("위의 ‘협찬 형태별 표준 조항’에 붙은 {count}개 조항도 이 계약의 내용이에요. 법률 검토 전 초안이에요.", {
+              count: agreement.clauses.length,
+            }),
+          },
+        ]
+      : []),
     {
       title: t("수수료"),
       body: agreement.fee.exempt
@@ -1690,6 +1701,17 @@ export function AgreementPage({
         agreement={agreement}
         busy={busy}
         onSave={(value) => run(() => api.saveAgreementValue(agreement.id, value), t("협찬액을 적었어요. 두 쪽 모두 다시 확인해 주세요."))}
+      />
+
+      <ContractClauses
+        agreement={agreement}
+        busy={busy}
+        onApply={(kinds) =>
+          run(
+            () => api.applyContractTemplate(agreement.id, kinds),
+            kinds.length ? t("표준 조항을 붙였어요. 두 쪽 모두 다시 확인해 주세요.") : t("표준 조항을 뗐어요. 두 쪽 모두 다시 확인해 주세요."),
+          )
+        }
       />
 
       <PayoutPanel
