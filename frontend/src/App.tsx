@@ -13,7 +13,6 @@ import {
   type ProposalState,
 } from "./api"
 import { Loader } from "./components/Loader"
-import { CampaignMeasurement } from "./components/CampaignMeasurement"
 import { Presence } from "./components/Presence"
 import { SiteNotices } from "./components/SiteNotices"
 import { useSiteState } from "./hooks/useSiteState"
@@ -97,6 +96,10 @@ const confirmRetryMs = [1500, 4000]
 
 // 첫 화면에 필요 없는 화면과 팝업은 처음 열릴 때 불러와서 첫 페이지의
 // 다운로드를 줄인다(지연 청크, 아래의 Suspense).
+// 브랜드의 성과 분석 끝에서만 쓴다.
+const CampaignMeasurement = lazy(() =>
+  import("./components/CampaignMeasurement").then((module) => ({ default: module.CampaignMeasurement })),
+)
 const GoalModal = lazy(() => import("./modals/GoalModal").then((module) => ({ default: module.GoalModal })))
 const GoalsModal = lazy(() => import("./modals/GoalsModal").then((module) => ({ default: module.GoalsModal })))
 const InstallGuideModal = lazy(() => import("./modals/InstallGuideModal").then((module) => ({ default: module.InstallGuideModal })))

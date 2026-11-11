@@ -1,5 +1,7 @@
 // Google 태그 설정 파일(/ga-init.js)의 내용이다. 서버의 CSP가 인라인 스크립트를 막아 따로 둔다.
 //
+// 이 파일은 defer로 불러 첫 화면을 막지 않는다(앱의 모듈보다 먼저 돌아 history를 감싼다).
+//
 // 체크인, 공유 리포트, 공개 장부, 초대 주소에는 코드나 토큰이 들어 있다. 이 주소로 바로 들어오면
 // 태그를 아예 싣지 않아, 주소가 밖으로 나가지 않고 참여 코드와 쿠키 식별자가 한 브라우저에 함께
 // 있지 않게 한다. 다른 화면에서 앱 안으로 옮겨 올 때는 GA가 보내기 전에 전송을 끈다
@@ -42,10 +44,20 @@ export function gaInitScript(id: string) {
     if (referrer.origin !== location.origin) cameFrom = referrer.origin;
   } catch (error) {}
   window.gtag('config', ${JSON.stringify(id)}, { page_location: location.origin + location.pathname, page_referrer: cameFrom });
-  var tag = document.createElement('script');
-  tag.async = true;
-  tag.src = ${loader};
-  document.head.appendChild(tag);
+  // 태그 본체(약 180KB)는 첫 화면을 그리고 페이지가 다 뜬 뒤 브라우저가 한가할 때 받는다.
+  // 그전의 이벤트는 dataLayer에 쌓였다가 함께 나간다.
+  function load() {
+    var tag = document.createElement('script');
+    tag.async = true;
+    tag.src = ${loader};
+    document.head.appendChild(tag);
+  }
+  function later() {
+    if (window.requestIdleCallback) window.requestIdleCallback(load, { timeout: 4000 });
+    else setTimeout(load, 1500);
+  }
+  if (document.readyState === 'complete') later();
+  else window.addEventListener('load', later);
 })();
 `
 }

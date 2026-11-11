@@ -200,7 +200,7 @@ function siteDocument(config: SiteConfiguration): Plugin {
         if (googleAnalyticsId) {
           tags.push({
             tag: 'script',
-            attrs: { src: '/ga-init.js' },
+            attrs: { src: '/ga-init.js', defer: true },
             injectTo: 'head',
           })
         }

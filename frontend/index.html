@@ -15,9 +15,8 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="theme-color" content="#1b3f8f" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-    <!-- 시작 화면의 이름(components/Loader.tsx)이 처음 그려지는 큰 요소이므로,
-         스크립트가 아니라 페이지와 함께 불러온다. -->
-    <link rel="preload" as="image" href="/src/assets/brand/uniconnect_wordmark.svg" fetchpriority="high" />
+    <!-- 인트로 로더(components/Loader.tsx)는 ?intro로 열 때만 재생하므로, 그 워드마크를
+         미리 받지 않는다. 느린 회선에서 첫 화면의 CSS와 스크립트를 먼저 받는다. -->
     <title><!-- site:title --></title>
     <!-- site:head-end -->
   </head>
