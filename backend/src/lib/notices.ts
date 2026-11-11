@@ -3,7 +3,7 @@ import { waitUntil } from "@vercel/functions"
 import { config } from "../config.js"
 import { translate } from "./i18n.js"
 import { createRateLimit } from "./rateLimit.js"
-import { mailConfigured, sendMail } from "./mailer.js"
+import { mailConfigured, oneLine, sendMail } from "./mailer.js"
 import { getDatabase } from "../store.js"
 import type { Account, MailKind } from "../types.js"
 
@@ -46,7 +46,7 @@ function deliver(account: Account, kind: MailKind | "account", subject: string, 
   const say = (text: string) => translate(text, account.language ?? "ko")
   const site = config.siteUrl?.replace(/\/$/, "")
   const text = [
-    ...lines.map(say),
+    ...lines.map((line) => oneLine(say(line))),
     ...(site ? ["", `${say("바로 가기")}: ${site}${path}`] : []),
     // 이 종류를 끄는 곳.
     ...(site && kind !== "account" ? [`${say("받을 메일 바꾸기")}: ${site}/me`] : []),

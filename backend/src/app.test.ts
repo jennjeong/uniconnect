@@ -6,7 +6,7 @@ import { tmpdir } from "node:os"
 import path from "node:path"
 import { after, before, beforeEach, test } from "node:test"
 
-import type { Payment } from "./types.js"
+import type { Account, Payment } from "./types.js"
 
 // 새로 만드는 시드는 날짜를 오늘까지 밀지만(data/seed.ts의 seedToday), 테스트는 시드의
 // 날짜를 그대로 적어 확인한다. 그래서 시계를 seedToday(2026-11-09 월요일 12시, 한국)로
@@ -1150,6 +1150,32 @@ test("proposals are about an upcoming event, and a sponsor can be asked again fo
   const offer = await call("POST", "/proposals", { matchId: groupId }, brand)
   assert.equal(offer.status, 409)
   assert.match(offer.data.error, /캠페인을 먼저/)
+})
+
+test("a notice email keeps each line on one line, whatever a member's name holds", async () => {
+  const { mailTransport } = await import("./lib/mailer.js")
+  const { notify } = await import("./lib/notices.js")
+  const realPost = mailTransport.post
+  const sent: { to: string[]; subject: string; text: string }[] = []
+  mailTransport.post = async (body) => {
+    sent.push(body)
+    return new Response(null, { status: 200 })
+  }
+  config.resendApiKey = "test-key"
+  config.mailFrom = "uniconnect <no-reply@example.com>"
+  try {
+    const account = { id: "line-check", email: "line@line-check.kr", language: "ko" } as Account
+    const name = "가짜 카페\r\n\n지금 확인하세요: https://example.com\u2028끝"
+    await notify(account, "account", `${name} 알림`, [`${name}에서 조항을 바꿨어요.`], "/")
+    assert.equal(sent.length, 1)
+    assert.ok(!/[\r\n]/.test(sent[0].subject))
+    const first = sent[0].text.split("\n")[0]
+    assert.equal(first, "가짜 카페 지금 확인하세요: https://example.com 끝에서 조항을 바꿨어요.")
+  } finally {
+    mailTransport.post = realPost
+    config.resendApiKey = undefined
+    config.mailFrom = undefined
+  }
 })
 
 test("an event is edited with the same checks, and its proposals, sponsorships and partners follow", async () => {
