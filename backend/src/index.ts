@@ -2,10 +2,12 @@ import { createApp } from "./app.js"
 import { config } from "./config.js"
 import { cardReady } from "./lib/billing.js"
 import { reconcileCards, reconcileRefunds } from "./lib/cardRecovery.js"
+import { purgeDisputes } from "./lib/disputeRetention.js"
 import { mailConfigured } from "./lib/mailer.js"
 import { sendDigests } from "./lib/digest.js"
 import { prunePayments } from "./lib/paymentRetention.js"
 import { sendProposalNudges } from "./lib/nudges.js"
+import { sendSearchAlerts } from "./lib/savedSearches.js"
 import { sendPayoutReminders, sendReminders } from "./lib/reminders.js"
 import { refreshViews } from "./lib/snsPosts.js"
 import { loadDatabase } from "./store.js"
@@ -20,9 +22,11 @@ const remind = () => {
   sendReminders().catch((error: Error) => console.error(`[reminders] ${error.message}`))
   sendPayoutReminders().catch((error: Error) => console.error(`[payouts] ${error.message}`))
   sendProposalNudges().catch((error: Error) => console.error(`[nudges] ${error.message}`))
+  sendSearchAlerts().catch((error: Error) => console.error(`[searches] ${error.message}`))
   sendDigests().catch((error: Error) => console.error(`[digests] ${error.message}`))
   refreshViews().catch((error: Error) => console.error(`[youtube] ${error.message}`))
   prunePayments().catch((error: Error) => console.error(`[payments] ${error.message}`))
+  purgeDisputes().catch((error: Error) => console.error(`[disputes] ${error.message}`))
 }
 void remind()
 setInterval(remind, 60 * 60 * 1000).unref()

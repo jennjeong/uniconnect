@@ -7,6 +7,7 @@ import { geocode } from "../lib/geocode.js"
 import { createRateLimit } from "../lib/rateLimit.js"
 import { isDemoAccount } from "../lib/reviews.js"
 import { brandProfile } from "../lib/brandProfile.js"
+import { trustOf } from "../lib/trust.js"
 import { portfolioHistory } from "../lib/portfolioHistory.js"
 import { brandOffers, factLabels, snsPlatforms, text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
@@ -130,8 +131,13 @@ function parseProfile(body: unknown, role: Role) {
 
 // 주인이 보는 리스팅이다. 브랜드의 것은 계산한 기본 정보와 태그를 함께
 // 보여 준다.
-const shownProfile = (database: ReturnType<typeof getDatabase>, listing: Match) =>
-  database.accounts.some((account) => account.brandId === listing.id) ? brandProfile(database, listing) : listing
+// 응답률과 이행률(lib/trust.ts)도 담는다.
+function shownProfile(database: ReturnType<typeof getDatabase>, listing: Match) {
+  const owner = database.accounts.find((account) => account.brandId === listing.id || account.groupId === listing.id)
+  const shown = owner?.brandId === listing.id ? brandProfile(database, listing) : listing
+  const trust = trustOf(database, owner)
+  return trust ? { ...shown, trust } : shown
+}
 
 // 확인할 때마다 정부 서비스에 묻기 때문에 브랜드는 한 시간에 몇 번만 할 수 있다.
 const businessChecksPerHour = createRateLimit({

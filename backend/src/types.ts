@@ -18,6 +18,22 @@ export type PortfolioItem = { title: string; detail: string }
 
 // 반대편이 둘러보는 브랜드나 학생단체의 리스팅이다. 계정은 내 정보에서 자기
 // 리스팅을 고친다.
+// 저장한 관심 조건 하나다(lib/savedSearches.ts). known은 이미 맞았던 상대(다시 알리지 않음),
+// fresh는 저장한 뒤 새로 맞아 아직 보지 않은 상대다.
+export type SavedSearch = {
+  id: string
+  name?: string
+  query?: string
+  industry?: Industry
+  // 단체 목록만: 다음 행사의 종류와 학교.
+  kind?: string
+  school?: string
+  known: string[]
+  fresh: string[]
+  createdAt: string
+  notifiedAt?: string
+}
+
 // 브랜드가 내놓는 것 하나다. 종류(brandOffers)와 그 양을 담는다.
 export type BrandOffer = { kind: string; detail?: string }
 
@@ -56,6 +72,8 @@ export type Match = {
   // 개수다.
   rating?: number
   reviewCount?: number
+  // 회원의 응답률과(브랜드는) 이행률이다(lib/trust.ts, #343). 건수가 3보다 적으면 rate가 없다.
+  trust?: { response: { count: number; rate?: number }; fulfilment?: { count: number; rate?: number } }
   // 브랜드 카탈로그만. 그 계정의 사업자등록이 확인되었다는 표시로
   // (Account.business) 카탈로그를 내놓을 때 계산한다.
   businessVerified?: true
@@ -707,6 +725,15 @@ export type AgreementItem = {
   photos: string[]
 }
 
+// 계약서의 조항 하나다(lib/contractTemplates.ts). 붙일 때의 문구를 그대로 둔다. kind는
+// 협찬 형태(현금 · 제품 · 서비스 · 기타)이거나 "공통"이다.
+export type AgreementClause = {
+  id: string
+  kind: string
+  title: string
+  text: string
+}
+
 // 수락된 제안의 조건(임시 전자 계약서)이며 제안의 id를 쓴다. 각 쪽이 하는 일,
 // 각 쪽이 지금 조건을 확정한 시각, 이행된 만큼의 증빙을 담는다. 어느 쪽이든
 // 처음 열 때 만든다.
@@ -717,6 +744,10 @@ export type Agreement = {
   // 브랜드가 답한 학생단체의 제안이거나 브랜드의 제안이다.
   kind: "request" | "offer"
   items: AgreementItem[]
+  // 협찬 형태별 표준 조항(#333)과 고른 형태다. 바꾸면 양쪽의 확인을 지운다. draft는 법률
+  // 검토 전의 초안 문구라는 표시다.
+  clauses?: AgreementClause[]
+  template?: { kinds: string[]; draft: boolean; appliedAt: string }
   // 항목을 바꾸면 둘 다 지운다.
   confirmed: Partial<Record<ChatSide, string>>
   // 현금과 현물을 합한 협찬의 가치(현물 환산)이며 원 단위다. 15% 수수료를 이것으로
@@ -767,6 +798,8 @@ export type Dispute = {
     value?: { cash: number; inKind: number }
     payout?: { dueDate?: string; paidAt?: string; paidAmount?: number; receivedAt?: string }
     items: { side: ChatSide; label: string; doneAt?: string }[]
+    // 접수할 때 계약서에 붙어 있던 조항이다.
+    clauses?: AgreementClause[]
     // 접수할 때 각 쪽이 계약서를 확인한 시각. 항목이나 협찬액을 고치면 확인이 지워지므로,
     // 두 쪽 모두 있으면 양쪽이 확인한 조건이고, 아니면 한쪽이 마지막으로 고친 내용일 수 있다.
     confirmed?: Partial<Record<ChatSide, string>>
@@ -777,6 +810,11 @@ export type Dispute = {
   notes?: { at: string; text: string }[]
   // 끝난 까닭이다. 접수한 쪽이 거두면 note 없이 "withdrawn"이다.
   decision?: { outcome: DisputeOutcome | "withdrawn"; note?: string; at: string }
+  // 결론 난 뒤 탈퇴한 쪽과 그 시각이다. 그쪽의 parties는 ""이고 이름은 "탈퇴한 회원"이며, 그쪽이 쓴 말과
+  // 증빙은 지워졌다(접수한 쪽이면 detail도 ""). lib/disputes.ts의 retireDisputes.
+  left?: Partial<Record<ChatSide, string>>
+  // 처음 한쪽이 탈퇴한 때부터 3년 뒤다. 이 시각이 지나면 분쟁을 통째로 지운다.
+  keepUntil?: string
   createdAt: string
   updatedAt: string
 }
@@ -996,6 +1034,8 @@ export type Database = {
   reviews: Review[]
   // The listings each account saved (찜), newest first, by account id.
   saved: Record<string, string[]>
+  // 계정 id마다 저장한 관심 조건이다(lib/savedSearches.ts, #338).
+  savedSearches?: Record<string, SavedSearch[]>
   // 모집 게시판이다(routes/board.ts).
   posts: BoardPost[]
   // 브랜드가 냈거나 내라고 요청받은 돈이다(lib/billing.ts).

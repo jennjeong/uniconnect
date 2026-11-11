@@ -47,6 +47,7 @@ import { adminDisputesRouter, disputesRouter } from "./routes/disputes.js"
 import { blocksRouter, reportsRouter } from "./routes/reports.js"
 import { reviewsRouter } from "./routes/reviews.js"
 import { savedRouter } from "./routes/saved.js"
+import { searchesRouter } from "./routes/searches.js"
 import { foldCounts, foldInBackground, movePassesToRows, passSql } from "./lib/passRows.js"
 import { getDatabase, refreshDatabase, storeHealth } from "./store.js"
 
@@ -215,6 +216,7 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   app.use("/api/disputes", disputesRouter)
   app.use("/api/blocks", blocksRouter)
   app.use("/api/saved", savedRouter)
+  app.use("/api/saved-searches", searchesRouter)
   app.use("/api/calendar", calendarRouter)
   app.use("/api/board", boardRouter)
   app.use("/api/errors", errorsRouter)

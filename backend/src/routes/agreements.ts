@@ -6,6 +6,7 @@ import {
   acceptedProposalsOf,
   type AcceptedProposal,
   agreementFor,
+  agreementItemLimit,
   agreementShare,
   rotateCampaignGroupPin,
   rotateVenuePin,
@@ -18,6 +19,7 @@ import {
   sideIn,
   sponsoredEvent,
 } from "../lib/agreements.js"
+import { applyTemplate, parseTemplateKinds, templatesView } from "../lib/contractTemplates.js"
 import { todayInKorea } from "../lib/dates.js"
 import { feeState, parseValue } from "../lib/fees.js"
 import { rewardReferrals, tellReferrers } from "../lib/referrals.js"
@@ -38,7 +40,7 @@ import type { AgreementItem, Database, SnsPost } from "../types.js"
 export const agreementsRouter = Router()
 
 // 계약서 하나가 담을 수 있는 양이다.
-export const agreementLimits = { items: 12, links: 5, photos: 3, shipments: 10 }
+export const agreementLimits = { items: agreementItemLimit, links: 5, photos: 3, shipments: 10 }
 
 // 증빙 링크는 http나 https 주소만 받는다.
 function parseLinks(value: unknown) {
@@ -174,6 +176,12 @@ agreementsRouter.get("/", (req, res) => {
   res.json({ agreements })
 })
 
+// 협찬 형태별 표준 계약 템플릿(#333)이다. 문구는 법률 검토 전의 초안이다(draft).
+agreementsRouter.get("/templates", (req, res) => {
+  requireAccount(req)
+  res.json(templatesView())
+})
+
 agreementsRouter.get("/:id", async (req, res) => {
   const { database, proposal, side } = opened(req)
   const { agreement, created } = agreementFor(database, proposal)
@@ -221,6 +229,31 @@ agreementsRouter.put("/:id/items", async (req, res) => {
       "sponsorships",
       "임시 전자 계약서가 바뀌었어요",
       [`${account.name}에서 '${proposal.eventName}' 임시 전자 계약서를 고쳤어요. 바뀐 내용을 보고 다시 확인해 주세요.`],
+      `/agreements/${encodeURIComponent(agreement.id)}`,
+    )
+  }
+  res.json({ agreement: agreementView(database, agreement, proposal, side) })
+})
+
+// 어느 쪽이든 협찬 형태를 골라 표준 조항을 붙인다(#333). 조항은 고른 형태의 것으로
+// 바뀌고, 형태의 기본 할 일 중 없는 것이 더해진다. 비우면 조항을 뗀다. 할 일처럼 바뀌면
+// 양쪽이 다시 확인한다.
+agreementsRouter.put("/:id/template", async (req, res) => {
+  const { account, database, proposal, side } = openedToChange(req)
+  const kinds = parseTemplateKinds(req.body?.kinds)
+  const { agreement } = agreementFor(database, proposal)
+  const changed = applyTemplate(agreement, kinds, agreementLimits.items)
+  if (changed) {
+    agreement.confirmed = {}
+    agreement.updatedAt = new Date().toISOString()
+  }
+  await saveDatabase()
+  if (changed) {
+    void notify(
+      side === "group" ? proposal.brand.account : proposal.group.account,
+      "sponsorships",
+      "임시 전자 계약서가 바뀌었어요",
+      [`${account.name}에서 '${proposal.eventName}' 임시 전자 계약서의 조항을 바꿨어요. 바뀐 내용을 보고 다시 확인해 주세요.`],
       `/agreements/${encodeURIComponent(agreement.id)}`,
     )
   }

@@ -1,5 +1,7 @@
 import {
   createSeed,
+  seedShift,
+  shiftSeedDates,
   demoContacts,
   museConcertPage,
   seedBrands,
@@ -71,9 +73,13 @@ export async function loadDatabase() {
     }
     return getDatabase()
   }
-  const seed = await createSeed()
-  for (const measurement of seed.measurements) syncSponsors(seed, measurement)
-  freshenDemoReport(seed)
+  // 시드를 seedToday에 만든 것처럼 만들고 날짜를 오늘까지 민다(data/seed.ts).
+  const now = new Date()
+  const shift = seedShift(now)
+  const made = await createSeed(new Date(now.getTime() - shift * 24 * 60 * 60 * 1000))
+  for (const measurement of made.measurements) syncSponsors(made, measurement)
+  freshenDemoReport(made)
+  const seed = shiftSeedDates(made, shift)
   replace(seed)
   durable = JSON.stringify(seed)
   version = 0

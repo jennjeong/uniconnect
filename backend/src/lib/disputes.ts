@@ -36,6 +36,7 @@ export const agreementSnapshot = (agreement: Agreement, canceled: boolean): Disp
       }
     : {}),
   items: agreement.items.map(({ side, label, doneAt }) => ({ side, label, ...(doneAt ? { doneAt } : {}) })),
+  ...(agreement.clauses?.length ? { clauses: agreement.clauses.map((clause) => ({ ...clause })) } : {}),
 })
 
 // 당사자가 보는 기록이다. 운영자 메모와 저장된 파일 이름은 뺀다.
@@ -50,15 +51,52 @@ export function disputeView(dispute: Dispute, side: ChatSide) {
   }
 }
 
-// 탈퇴하는 계정이 당사자인 분쟁 중 계약서가 사라진 것을 지우고, 증빙 폴더를 돌려준다.
-// 다른 계정의 분쟁은 계약서가 없어도(예를 들어 백업을 복원한 뒤) 남긴다.
-export function dropOrphanDisputes(database: Database, leavingAccountId: string) {
-  const kept = new Set(database.agreements.map((agreement) => agreement.id))
-  const gone = disputesOf(database).filter(
-    (dispute) => !kept.has(dispute.agreementId) && Object.values(dispute.parties).includes(leavingAccountId),
-  )
-  database.disputes = disputesOf(database).filter((dispute) => !gone.includes(dispute))
-  return gone.map((dispute) => disputeFolder(dispute.id))
+// 결론 난 분쟁은 당사자가 탈퇴한 뒤에도 이만큼 둔다(#315 결정). 남은 쪽과 운영자가
+// 나중에 다툼을 확인할 수 있게 하려는 것이다.
+export const keepYearsAfterLeaving = 3
+// 탈퇴한 쪽의 이름 자리에 남기는 말이다.
+export const leftName = "탈퇴한 회원"
+
+export type DisputeFiles = { folder: string; names: string[] }
+
+const sideOf = (dispute: Dispute, accountId: string) =>
+  (Object.keys(dispute.parties) as ChatSide[]).find((side) => dispute.parties[side] === accountId)
+
+// 탈퇴하는 계정이 당사자인 분쟁을 정리한다.
+// - 결론이 났거나 거둔 분쟁은 남기고, 떠나는 쪽의 이름, 계정, 그쪽이 쓴 말(접수한 쪽이면
+//   접수 설명도)과 올린 증빙을 지운다. 상대의 말과 증빙, 접수할 때의 계약 내용, 운영자의
+//   결론과 메모는 남는다. 처음 한쪽이 떠난 때부터 3년 뒤에 통째로 지운다(lib/disputeRetention.ts).
+// - 결론이 나지 않은 분쟁은 탈퇴를 막으므로(routes/auth.ts) 여기 오지 않는다. 온다면 예전처럼
+//   계약서가 사라진 것만 통째로 지운다.
+// 다른 계정의 분쟁은 계약서가 없어도(예를 들어 백업을 복원한 뒤) 남긴다. 데이터를 저장한
+// 뒤 지울 증빙 폴더와 파일을 돌려준다.
+export function retireDisputes(database: Database, leavingAccountId: string, now = new Date()) {
+  const agreements = new Set(database.agreements.map((agreement) => agreement.id))
+  const folders: string[] = []
+  const files: DisputeFiles[] = []
+  const stamp = now.toISOString()
+  const keepUntil = new Date(now)
+  keepUntil.setUTCFullYear(keepUntil.getUTCFullYear() + keepYearsAfterLeaving)
+  database.disputes = disputesOf(database).filter((dispute) => {
+    const side = sideOf(dispute, leavingAccountId)
+    if (!side) return true
+    if (disputeOpen(dispute)) {
+      if (agreements.has(dispute.agreementId)) return true
+      folders.push(disputeFolder(dispute.id))
+      return false
+    }
+    const theirs = dispute.evidence.filter((item) => item.side === side)
+    if (theirs.length) files.push({ folder: disputeFolder(dispute.id), names: theirs.map((item) => item.file) })
+    dispute.evidence = dispute.evidence.filter((item) => item.side !== side)
+    dispute.events = dispute.events.filter((event) => event.by !== side || (event.kind !== "statement" && event.kind !== "evidence"))
+    if (dispute.openedBy === side) dispute.detail = ""
+    dispute[side === "group" ? "groupName" : "brandName"] = leftName
+    dispute.parties[side] = ""
+    dispute.left = { ...dispute.left, [side]: stamp }
+    dispute.keepUntil ??= keepUntil.toISOString()
+    return true
+  })
+  return { folders, files }
 }
 
 // 결론이 나지 않은 분쟁의 당사자인지. 그동안은 스스로 탈퇴할 수 없다.

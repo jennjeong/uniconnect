@@ -1,6 +1,7 @@
 import { groupVerifiedNow } from "./groupCheck.js"
 import { todayInKorea } from "./dates.js"
 import { brandProfile } from "./brandProfile.js"
+import { trustOf } from "./trust.js"
 import { distanceKm, offsetMetres, placeOf } from "./geo.js"
 import { scoreMatch, type Viewer } from "./matchScore.js"
 import { isDemoAccount, reviewSummary, reviewsAbout } from "./reviews.js"
@@ -177,7 +178,10 @@ export function browse(database: Database, catalog: "brands" | "groups", account
       // Pro 브랜드(lib/plan.ts)는 PRO 마크를 보인다.
       const pro = catalog === "brands" && owner && isPro(database, owner.id) ? { ...verified, pro: true as const } : verified
       // 진행 중인 상단 광고(lib/ads.ts)는 맨 앞에 두고 AD로 표시한다.
-      const checked = owner && adUntil(database, owner.id) ? { ...pro, ad: true as const } : pro
+      const advertised = owner && adUntil(database, owner.id) ? { ...pro, ad: true as const } : pro
+      // 회원의 응답률과 이행률(lib/trust.ts)이다. 예시와 데모 계정에는 없다.
+      const trust = trustOf(database, owner)
+      const checked = trust ? { ...advertised, trust } : advertised
       const there = placeOf(listing, owner)
       return here && there
         ? { ...checked, distanceKm: distanceKm(here, there), mapOffset: offsetMetres(here, there), mapPoint: { lat: there.lat, lng: there.lng } }

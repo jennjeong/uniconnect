@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto"
 
-import { dropOrphanDisputes } from "./disputes.js"
+import { applyTemplate } from "./contractTemplates.js"
+import type { DisputeFiles } from "./disputes.js"
 import { todayInKorea } from "./dates.js"
 import { feeState, parseValue } from "./fees.js"
 import { HttpError } from "./errors.js"
@@ -10,6 +11,7 @@ import { payoutView } from "./payouts.js"
 import { photos } from "./photos.js"
 import { canReview, isDemoAccount, publicReview, reviewOpen } from "./reviews.js"
 import { isSponsored } from "./sponsorships.js"
+import { sponsorTypes } from "./validation.js"
 import type { Account, Agreement, AgreementItem, ChatSide, Database, EventItem, ProposalTerms } from "../types.js"
 
 export { uploadsFolder } from "./photos.js"
@@ -237,6 +239,9 @@ export function acceptedProposalsOf(database: Database, account: Account) {
     .sort((a, b) => (b.respondedAt ?? "").localeCompare(a.respondedAt ?? ""))
 }
 
+// 계약서 하나가 담을 수 있는 할 일의 수다(routes/agreements.ts의 agreementLimits.items).
+export const agreementItemLimit = 12
+
 const item = (side: ChatSide, label: string): AgreementItem => ({ id: randomUUID(), side, label, links: [], photos: [] })
 
 // 협찬이 보통 거치는 일, 시작점으로 쓴다. 브랜드는 주는 것을 넘기고 쿠폰을
@@ -348,6 +353,10 @@ export function agreementFor(database: Database, proposal: AcceptedProposal) {
     createdAt: now,
     updatedAt: now,
   }
+  // 제안에서 협찬 형태를 골랐으면 그 형태의 표준 조항으로 시작한다(#333). 할 일은 위의
+  // 기본 할 일에 형태의 할 일 중 없는 것만 더한다.
+  const kinds = (proposal.terms?.kinds ?? []).filter((kind) => sponsorTypes.includes(kind))
+  if (kinds.length) applyTemplate(agreement, sponsorTypes.filter((kind) => kinds.includes(kind)), agreementItemLimit, new Date(now))
   database.agreements.push(agreement)
   return { agreement, created: true }
 }
@@ -440,16 +449,19 @@ export function agreementView(database: Database, agreement: Agreement, proposal
   }
 }
 
-// 제안이 없어진(한쪽이 탈퇴한) 계약서도 떠나는 계정의 분쟁과 함께 지운다. 사진 폴더는
-// 데이터를 저장한 뒤 지우도록 돌려준다.
-export function dropOrphanAgreements(database: Database, leavingAccountId: string) {
+// 제안이 없어진(한쪽이 탈퇴한) 계약서도 지운다. 사진 폴더는 데이터를 저장한 뒤 지우도록
+// 돌려준다. 떠나는 계정의 분쟁은 lib/disputes.ts의 retireDisputes가 정리한다.
+export function dropOrphanAgreements(database: Database) {
   const gone = database.agreements.filter((agreement) => !acceptedProposal(database, agreement.id))
   database.agreements = database.agreements.filter((agreement) => !gone.includes(agreement))
-  return [...gone.map((agreement) => agreement.id), ...dropOrphanDisputes(database, leavingAccountId)]
+  return gone.map((agreement) => agreement.id)
 }
 
-export async function removeUploads(agreementIds: string[]) {
-  await photos().removeAll(agreementIds)
+// 폴더를 통째로 지우고, 남기는 분쟁에서는 떠난 쪽의 증빙 파일만 지운다.
+export async function removeUploads(folders: string[], files: DisputeFiles[] = []) {
+  const store = photos()
+  await store.removeAll(folders)
+  await Promise.all(files.map(({ folder, names }) => store.remove(folder, names)))
 }
 
 // 수락된 제안의 계약 상태. 계정이 있는 쪽은 모두 전자 계약서를 확인해야 하고

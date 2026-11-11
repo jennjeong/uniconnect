@@ -4,7 +4,7 @@ import { Router, type Request } from "express"
 import { config } from "../config.js"
 import { paymentView } from "../lib/billing.js"
 import { acceptedProposalsOf, dropOrphanAgreements, removeUploads } from "../lib/agreements.js"
-import { inOpenDispute } from "../lib/disputes.js"
+import { inOpenDispute, retireDisputes } from "../lib/disputes.js"
 import { findListing } from "../lib/catalog.js"
 import { deviceLabel } from "../lib/devices.js"
 import { applicationFolder, applicationFor, applicationsOf, holdApplication, parseDocument } from "../lib/applications.js"
@@ -581,7 +581,10 @@ function removeAccount(database: Database, account: Account) {
       offer.fromAccountId !== account.id && (!account.groupId || offer.groupId !== account.groupId),
   )
   // 그 제안에 대한 계약서도 사라지고, 저장된 사진도 그때 지운다.
-  const droppedAgreements = dropOrphanAgreements(database, account.id)
+  const droppedAgreements = dropOrphanAgreements(database)
+  // 결론 난 분쟁은 떠나는 쪽의 이름과 몫만 지우고 3년 둔다.
+  const disputes = retireDisputes(database, account.id)
+  droppedAgreements.push(...disputes.folders)
   // 이 계정이 쓴 후기와 이 계정에 대한 후기다.
   database.reviews = database.reviews.filter(
     (review) => review.authorAccountId !== account.id && (!listingId || review.aboutId !== listingId),
@@ -601,6 +604,7 @@ function removeAccount(database: Database, account: Account) {
   forgetAdminRecords(database, account.id)
   // Its 찜 list, and its listing in everyone else's.
   delete database.saved[account.id]
+  delete database.savedSearches?.[account.id]
   for (const [saver, saved] of Object.entries(database.saved)) {
     database.saved[saver] = saved.filter((id) => id !== listingId)
     if (database.saved[saver].length === 0) delete database.saved[saver]
@@ -628,7 +632,7 @@ function removeAccount(database: Database, account: Account) {
   delete database.events[account.id]
   delete database.proposals[account.id]
   delete database.sponsorships[account.id]
-  if (!listingId) return droppedAgreements
+  if (!listingId) return { folders: droppedAgreements, files: disputes.files }
   database.brands = database.brands.filter((listing) => listing.id !== listingId)
   database.groups = database.groups.filter((listing) => listing.id !== listingId)
   // 이 계정의 대화는 사라지고, 그 파일은 데이터를 저장한 뒤 지운다.
@@ -643,7 +647,7 @@ function removeAccount(database: Database, account: Account) {
   for (const [owner, brandIds] of Object.entries(database.proposals)) {
     database.proposals[owner] = brandIds.filter((brandId) => brandId !== listingId)
   }
-  return droppedAgreements
+  return { folders: droppedAgreements, files: disputes.files }
 }
 
 // 탈퇴는 비밀번호를 다시 입력하면 계정과 계정이 만든 모든 것을 영구히
@@ -652,7 +656,7 @@ authRouter.delete("/account", async (req, res) => {
   const account = requireOwner(req, requireAccount(req))
   const database = getDatabase()
   if (isDemo(account)) throw new HttpError(403, "데모 계정은 탈퇴할 수 없어요.")
-  // 탈퇴하면 분쟁과 증빙도 지워지므로, 결론 전에 탈퇴해 기록을 없애지 못하게 한다.
+  // 탈퇴하면 그쪽의 말과 증빙이 지워지므로, 결론 전에 탈퇴해 기록을 없애지 못하게 한다.
   if (inOpenDispute(database, account.id)) {
     throw new HttpError(409, "진행 중인 협찬 분쟁이 있어 지금은 탈퇴할 수 없어요. 분쟁이 끝나거나 거둔 뒤에 탈퇴해 주세요.")
   }
@@ -663,9 +667,9 @@ authRouter.delete("/account", async (req, res) => {
     throw new HttpError(400, "비밀번호가 올바르지 않아요.")
   }
   await loginFailures.reset(limitKey)
-  const droppedAgreements = removeAccount(database, account)
+  const dropped = removeAccount(database, account)
   await saveDatabase()
-  await removeUploads(droppedAgreements)
+  await removeUploads(dropped.folders, dropped.files)
   res.status(204).end()
 })
 
@@ -915,6 +919,7 @@ authRouter.get("/export", (req, res) => {
       ...(account.groupId ? database.offers.filter((item) => item.groupId === account.groupId) : []),
     ],
     sponsorships: database.sponsorships[account.id] ?? [],
+    savedSearches: (database.savedSearches?.[account.id] ?? []).map(({ known: _known, ...search }) => search),
     localCampaign: database.localCampaigns?.[account.id] ?? null,
     measurements: database.measurements
       .filter((item) => item.accountId === account.id)

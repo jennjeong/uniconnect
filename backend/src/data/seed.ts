@@ -22,6 +22,35 @@ import type {
 // 앱을 써 보는 데모 계정. 둘 다 DEMO_PASSWORD를 쓴다(README 참고).
 export const DEMO_PASSWORD = "uniconnect2026"
 
+// 시드의 날짜는 이 날(한국)을 오늘로 삼아 적었다. 새로 만드는 데이터베이스(로컬, 테스트,
+// e2e)는 모든 날짜를 실제 오늘까지 같은 날 수만큼 민다(store.ts의 loadDatabase). 그래서
+// 언제 만들어도 다가오는 행사와 답을 기다리는 제안이 이 날과 같은 모습이다. 이미 있는
+// 데이터베이스(운영)와 운영자의 예시 되돌리기(resetExamples)는 그대로 둔다.
+export const seedToday = "2026-11-09"
+
+// 오늘이 seedToday에서 며칠 지났는지.
+export const seedShift = (now = new Date()) =>
+  Math.round((Date.parse(`${todayInKorea(now)}T00:00:00Z`) - Date.parse(`${seedToday}T00:00:00Z`)) / (24 * 60 * 60 * 1000))
+
+// "YYYY-MM-DD"와 그 날의 시각(Z나 +09:00 같은 시간대가 붙은 것)이다.
+const datedValue = /^(\d{4}-\d{2}-\d{2})(T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2}))?$/
+
+// 시드 안의 모든 날짜와 시각을 days일 민다. 날짜 부분만 바꾸므로 시각과 시간대는 그대로다.
+// 날짜가 아닌 글(이름, 설명)은 건드리지 않으므로 시드의 글에는 날짜를 적지 않는다.
+export function shiftSeedDates<T>(value: T, days: number): T {
+  if (days === 0) return value
+  const walk = (item: unknown): unknown => {
+    if (typeof item === "string") {
+      const match = datedValue.exec(item)
+      return match ? addDays(match[1], days) + (match[2] ?? "") : item
+    }
+    if (Array.isArray(item)) return item.map(walk)
+    if (item && typeof item === "object") return Object.fromEntries(Object.entries(item).map(([key, entry]) => [key, walk(entry)]))
+    return item
+  }
+  return walk(value) as T
+}
+
 // 데모 계정의 연락처. 계약서에 나온다. 010-0000 번호는 누구에게도 배정되지
 // 않은 번호다.
 export const demoContacts: Record<"학생단체" | "브랜드", AccountContact> = {
@@ -582,7 +611,7 @@ export function seedConversations(): Conversation[] {
         {
           id: "msg-muse-1",
           from: "group",
-          text: "안녕하세요! 11월 27일 종강 공연에 협찬을 제안드리고 싶어요. 쿠폰은 공연 당일 현장에서 나눠 드리면 될까요?",
+          text: "안녕하세요! 이번 종강 공연에 협찬을 제안드리고 싶어요. 쿠폰은 공연 당일 현장에서 나눠 드리면 될까요?",
           at: at("2026-10-19T13:10:00+09:00"),
         },
         {
@@ -928,8 +957,7 @@ export function seedMeasurements(accountId: string): Measurement[] {
 
 // 채용 게시판의 예시 게시물. 데모 계정마다 하나씩이며 만든 때부터 한 달
 // 열려 있다(freshenExamplePosts가 유지한다).
-export function seedPosts(demoAccountIds: Partial<Record<Role, string>>): BoardPost[] {
-  const now = new Date()
+export function seedPosts(demoAccountIds: Partial<Record<Role, string>>, now = new Date()): BoardPost[] {
   const deadline = addDays(todayInKorea(now), 30)
   const posts: BoardPost[] = []
   const brand = demoAccountIds.브랜드
@@ -1021,8 +1049,9 @@ export const museConcertPage = {
   ],
 }
 
-export async function createSeed(): Promise<Database> {
-  const createdAt = new Date().toISOString()
+// now는 만든 시각이다. 날짜를 밀 시드는 그만큼 앞선 시각으로 만든다(store.ts).
+export async function createSeed(now = new Date()): Promise<Database> {
+  const createdAt = now.toISOString()
   const passwordHash = await hashPassword(DEMO_PASSWORD)
 
   const muse: Account = {
@@ -1111,6 +1140,6 @@ export async function createSeed(): Promise<Database> {
     reports: [],
     blocks: {},
     saved: {},
-    posts: seedPosts({ 학생단체: muse.id, 브랜드: coffee.id }),
+    posts: seedPosts({ 학생단체: muse.id, 브랜드: coffee.id }, now),
   }
 }
