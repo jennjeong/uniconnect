@@ -5,6 +5,7 @@ import { DateLine } from "../components/DateLine"
 import { GroupDeal } from "../components/GroupDeal"
 import { Icon } from "../components/Icon"
 import { MatchBeam } from "../components/MatchBeam"
+import { TrustSignals } from "../components/TrustSignals"
 import { ShareButton } from "../components/ShareButton"
 import { Pill } from "../components/Pill"
 import { ProfileBars, ProfileFigures, type ProfileFigure } from "../components/ProfileStats"
@@ -253,6 +254,7 @@ export function MatchDetailPage({
               {match.scoreParts && match.scoreParts.length > 0 && (
                 <ProfileBars rows={match.scoreParts.map((part) => ({ label: t(part.label), share: part.value }))} />
               )}
+              <TrustSignals trust={match.trust} />
 
               <h3 className="profile-heading">{group ? t("단체 소개") : t("브랜드 소개")}</h3>
               <p className="profile-intro">{match.intro || t("아직 소개를 쓰지 않았어요.")}</p>

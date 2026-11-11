@@ -746,6 +746,22 @@ const en: Record<string, string> = {
   "행사 임박순": "Event soonest",
   // PDF 파일 이름(report/pdf.ts pdfFileName)
   "협찬 제안서": "Sponsorship proposal",
+  "응답률": "Response rate",
+  "이행률": "Fulfilment rate",
+  "받은 제안 중 마감 전에 답한 비율": "Share of received proposals answered before they closed",
+  "지급 예정일까지 단체가 수령을 표시한 현금 협찬 비율": "Share of cash sponsorships the group marked received by the due date",
+  "약속을 지킨 기록": "Track record",
+  "아직 기록이 적어요": "Not enough records yet",
+  "{count}건 기준": "based on {count}",
+  "응답률 {rate}%": "{rate}% response",
+  "관심 조건을 저장했어요. 맞는 새 상대가 생기면 알려 드려요.": "Saved. We'll tell you when a new match for it joins.",
+  "관심 조건을 지웠어요.": "Saved search removed.",
+  "관심 조건은 5개까지 저장해요": "You can save up to 5 searches",
+  "이 조건 저장": "Save this search",
+  "저장한 관심 조건": "Saved searches",
+  "관심 조건 {name} 다시 걸기": "Apply saved search {name}",
+  "관심 조건 {name} 지우기": "Remove saved search {name}",
+  "새 상대 {count}": "{count} new",
 }
 
 export default en

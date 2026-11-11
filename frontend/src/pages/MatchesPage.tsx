@@ -3,6 +3,7 @@ import { useState, type CSSProperties } from "react"
 import { CatalogEmpty } from "../components/CatalogEmpty"
 import { CatalogSkeleton } from "../components/CatalogSkeleton"
 import { type ActiveCondition, CatalogControls } from "../components/CatalogControls"
+import { SavedSearches } from "../components/SavedSearches"
 import { CatalogMap, type Layout } from "../components/CatalogMap"
 import { CompareTray, useCompare } from "../components/CompareTray"
 import { DemoPreview } from "../components/DemoPreview"
@@ -44,6 +45,7 @@ export function MatchesPage({
   onPropose,
   onCancelProposal,
   onInvite,
+  onSearchNotice,
   visitor,
   onLogin,
   onSignup,
@@ -68,6 +70,8 @@ export function MatchesPage({
   onInvite: (place: NearbyPlace) => Promise<boolean>
   // 로그아웃 상태: 가까운 순은 데모 단체의 캠퍼스 둘레에 꾸며 낸 가게를 예시로
   // 표시해 보여 준다.
+  // 회원만: 관심 조건 저장(components/SavedSearches.tsx)의 알림.
+  onSearchNotice?: (message: string) => void
   visitor: boolean
   onLogin: () => void
   onSignup: () => void
@@ -211,6 +215,17 @@ export function MatchesPage({
               }
         }
       />
+      {onSearchNotice && !nearby && (
+        <SavedSearches
+          criteria={{ query, industry }}
+          industryLabel={(value) => t(brandIndustries.find(([key]) => key === value)?.[1] ?? value)}
+          onApply={(next) => {
+            setQuery(next.query)
+            setIndustry(next.industry as Industry | "")
+          }}
+          onNotice={onSearchNotice}
+        />
+      )}
 
       {/* 가장 가까운 곳은 카카오의 실제 가게로 대부분 아직 uniconnect에 없고 별도 목록에
          둔다(방문자에게는 꾸며 낸 가게). */}

@@ -13,6 +13,14 @@ export const mailTransport = {
     }),
 }
 
+// 메일 본문의 한 줄과 제목에 넣기 전에, 회원이 쓴 값(이름 등)의 줄바꿈과 제어 문자를 공백으로
+// 바꾼다. 줄을 끼워 넣어 서비스가 보낸 안내처럼 보이게 하지 못하게 한다.
+export const oneLine = (text: string) =>
+  text
+    .replace(/[\u0000-\u001f\u007f-\u009f\u2028\u2029]+/g, " ")
+    .replace(/ {2,}/g, " ")
+    .trim()
+
 export const mailConfigured = () => Boolean(config.resendApiKey && config.mailFrom)
 
 // RESEND_API_KEY와 MAIL_FROM이 있으면 이메일을 보낸다. 없으면 서버 로그에만
@@ -23,7 +31,7 @@ export async function sendMail(to: string, subject: string, text: string) {
     return
   }
   const response = await mailTransport
-    .post({ from: config.mailFrom!, to: [to], subject, text })
+    .post({ from: config.mailFrom!, to: [to], subject: oneLine(subject), text })
     .catch(() => undefined)
   if (!response?.ok) throw new Error(`Resend answered ${response?.status ?? "no response"}`)
 }

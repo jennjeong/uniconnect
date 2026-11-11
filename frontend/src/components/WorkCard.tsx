@@ -137,6 +137,11 @@ export function WorkCard({
               {t("단체 확인")}
             </span>
           )}
+          {match.trust?.response.rate !== undefined && (
+            <span className="tag-trust" title={t("받은 제안 중 마감 전에 답한 비율")}>
+              {t("응답률 {rate}%", { rate: match.trust.response.rate })}
+            </span>
+          )}
           {match.reviewCount ? (
             <span className="tag-rating">
               <Stars rating={match.rating ?? 0} size={12} />

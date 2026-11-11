@@ -32,6 +32,7 @@ import type {
   AdminSystem,
   Agreement,
   AgreementSummary,
+  SavedSearch,
   BillingInfo,
   BlockedListing,
   BoardPost,
@@ -316,6 +317,8 @@ export const api = {
     request<NearbyPlaces>(`/places?category=${encodeURIComponent(category)}`),
   agreements: () => request<{ agreements: AgreementSummary[] }>("/agreements"),
   agreement: (id: string) => request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}`),
+  applyContractTemplate: (id: string, kinds: string[]) =>
+    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/template`, { method: "PUT", body: { kinds } }),
   saveMeasureMethods: (id: string, methods: MeasureMethod[]) =>
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/methods`, { method: "PUT", body: { methods } }),
   saveAgreementItems: (id: string, items: { id?: string; side: Agreement["side"]; label: string }[]) =>
@@ -483,6 +486,7 @@ export const api = {
   requestGroupVerification: (body: { representative: string; enrollment: UploadDocument; membership: UploadDocument }) =>
     request<{ pending: true }>("/groups/verification", { method: "POST", body }),
   // 협찬 분쟁(#335). 계약 양쪽 당사자만 본다.
+  allDisputes: () => request<{ disputes: Dispute[] }>("/disputes"),
   disputes: (agreementId: string) => request<{ disputes: Dispute[] }>(`/disputes?agreementId=${encodeURIComponent(agreementId)}`),
   openDispute: (body: { agreementId: string; reason: DisputeReason; detail: string }) =>
     request<{ dispute: Dispute }>("/disputes", { method: "POST", body }),
@@ -499,6 +503,11 @@ export const api = {
   block: (listingId: string) => request<{ ok: true }>("/blocks", { method: "POST", body: { listingId } }),
   unblock: (listingId: string) => request<void>(`/blocks/${encodeURIComponent(listingId)}`, { method: "DELETE" }),
   saved: () => request<{ saved: string[] }>("/saved"),
+  savedSearches: () => request<{ searches: SavedSearch[] }>("/saved-searches"),
+  saveSearch: (body: { name?: string; query?: string; industry?: string; kind?: string; school?: string }) =>
+    request<{ search: SavedSearch }>("/saved-searches", { method: "POST", body }),
+  readSavedSearch: (id: string) => request<{ search: SavedSearch }>(`/saved-searches/${encodeURIComponent(id)}/read`, { method: "POST" }),
+  deleteSavedSearch: (id: string) => request<void>(`/saved-searches/${encodeURIComponent(id)}`, { method: "DELETE" }),
   calendarFeed: () => request<{ url: string | null }>("/calendar/feed"),
   createCalendarFeed: () => request<{ url: string }>("/calendar/feed", { method: "POST" }),
   deleteCalendarFeed: () => request<void>("/calendar/feed", { method: "DELETE" }),

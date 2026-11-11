@@ -6,7 +6,7 @@ import { applicationsOf, holdApplication, parseDocument } from "../lib/applicati
 import { emailRuleError, normalizeEmail } from "../lib/email.js"
 import { HttpError } from "../lib/errors.js"
 import { translate } from "../lib/i18n.js"
-import { sendMail } from "../lib/mailer.js"
+import { oneLine, sendMail } from "../lib/mailer.js"
 import { hashPassword } from "../lib/password.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { isDemoAccount } from "../lib/reviews.js"
@@ -102,7 +102,7 @@ teamRouter.post("/invites", async (req, res) => {
   }
   account.memberInvites = [...open, invite]
   await saveDatabase()
-  const say = (line: string) => translate(line, account.language ?? "ko")
+  const say = (line: string) => oneLine(translate(line, account.language ?? "ko"))
   try {
     await sendMail(
       email,
