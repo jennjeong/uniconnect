@@ -15831,16 +15831,18 @@ input[type="search"]::-webkit-search-cancel-button {
   line-height: 1.6;
 }
 
-/* 사이트 맨 위에 걸리는 운영자의 공지 (components/SiteNotices.tsx): 옅게 물든
-   얇은 띠가 하나씩, 십자로 닫는다. 페이지 위에 놓이므로, 헤더 아래까지
-   끌어올려진 히어로(대시보드의 것)는 그 뒤로 이어진다. */
+/* 운영자의 공지 (components/SiteNotices.tsx): 옅게 물든 얇은 띠가 하나씩, 십자로 닫는다.
+   공지는 페이지를 그린 뒤에 받아 오므로, 본문 위에 끼우면 화면 전체가 밀린다(CLS).
+   그래서 화면 아래 왼쪽에 떠 있게 둔다. 알림 토스트(오른쪽 아래)가 그 위에 온다. */
 .site-notices {
-  position: relative;
-  z-index: 5;
+  position: fixed;
+  z-index: 90;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  left: var(--gutter);
   display: grid;
   gap: 8px;
-  width: min(var(--shell), 100% - 2 * var(--gutter));
-  margin: 14px auto 0;
+  width: min(36rem, 100% - 2 * var(--gutter));
+  margin: 0;
 }
 
 .site-notice {
