@@ -1,7 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
-import { lang } from './i18n'
+import { lang, loadEnglish } from './i18n'
 import { currentCheckIn } from './lib/checkin'
 import { installErrorReports } from './lib/errorReports'
 import { watchInstall } from './lib/install'
@@ -83,4 +83,4 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 
 // 첫 화면이 그려지고 한가해지면 나머지 화면의 스타일을 미리 받아 둔다.
 // 그래서 다른 페이지로 갈 때는 이미 와 있다.
-whenIdle(() => void loadPageStyles())
+whenIdle(() => void Promise.all([loadPageStyles(), loadEnglish()]))
