@@ -6,6 +6,7 @@ import { findListing, shownTo } from "../lib/catalog.js"
 import { todayInKorea, toIsoDate } from "../lib/dates.js"
 import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
+import { eventDemand } from "../lib/demand.js"
 import { eventCases, exploreEvents } from "../lib/explore.js"
 import { eventPhotos, folderBytes, forgetPhotos, parsePdf, parsePhoto, photoName, photoType, photos } from "../lib/photos.js"
 import { isDemoAccount } from "../lib/reviews.js"
@@ -383,6 +384,12 @@ function eventPage(database: Database, eventId: string, viewer?: Account) {
 eventsRouter.get("/explore", (req, res) => {
   const database = getDatabase()
   res.json({ events: exploreEvents(database, req.account), cases: eventCases(database, req.account) })
+})
+
+// 대학별 · 시기별 행사 수요(#344, lib/demand.ts). 로그인한 회원이면 누구나 본다.
+eventsRouter.get("/demand", (req, res) => {
+  requireAccount(req)
+  res.json(eventDemand(getDatabase()))
 })
 
 // 행사의 예산은 그 행사에 대한 제안의 두 쪽, 곧 단체와 단체가 제안을 보낸
