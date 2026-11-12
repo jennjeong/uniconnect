@@ -5,7 +5,9 @@ import { lang } from './i18n'
 import { currentCheckIn } from './lib/checkin'
 import { installErrorReports } from './lib/errorReports'
 import { watchInstall } from './lib/install'
+import { whenIdle } from './lib/lite'
 import { keepOutOfSearch } from './lib/pageMeta'
+import { lazyPage, loadPageStyles } from './lib/pageStyles'
 import { keepReferral } from './lib/referral'
 import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css'
 import './index.css'
@@ -46,16 +48,16 @@ if (adminConsole) {
 }
 
 // 체크인 페이지들은 QR로 들어온 사람만 쓰므로 따로 받는다. 첫 화면의 번들이 그만큼 가볍다.
-const CheckInPage = React.lazy(() => import('./checkin/CheckInPage').then((module) => ({ default: module.CheckInPage })))
-const GroupCheckInPage = React.lazy(() =>
+const CheckInPage = lazyPage(() => import('./checkin/CheckInPage').then((module) => ({ default: module.CheckInPage })))
+const GroupCheckInPage = lazyPage(() =>
   import('./checkin/GroupCheckInPage').then((module) => ({ default: module.GroupCheckInPage })),
 )
-const StaffCheckInPage = React.lazy(() =>
+const StaffCheckInPage = lazyPage(() =>
   import('./checkin/StaffCheckInPage').then((module) => ({ default: module.StaffCheckInPage })),
 )
 
 // 거기서만 불러오므로 회원은 내려받지 않는다.
-const AdminConsole = React.lazy(() => import('./pages/AdminPage').then((module) => ({ default: module.AdminConsole })))
+const AdminConsole = lazyPage(() => import('./pages/AdminPage').then((module) => ({ default: module.AdminConsole })))
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
@@ -78,3 +80,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     )}
   </React.StrictMode>,
 )
+
+// 첫 화면이 그려지고 한가해지면 나머지 화면의 스타일을 미리 받아 둔다.
+// 그래서 다른 페이지로 갈 때는 이미 와 있다.
+whenIdle(() => void loadPageStyles())
