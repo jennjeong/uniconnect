@@ -8,10 +8,14 @@ import type { Database } from "../types.js"
 // - 기간: 지난 6달부터 이번 달 뒤 11달까지(18달).
 // - 목록에서 숨긴 단체의 행사도 센다. 수만 나가므로 숨긴 단체가 드러나지 않는다.
 // - 데모 계정과 정지된 계정의 행사는 세지 않는다. 브랜드의 캠페인도 세지 않는다.
-// - 한 칸이 demandMinimum보다 적으면 어느 단체인지 짐작될 수 있어 그 칸을 보내지 않는다.
-//   합계도 보내지 않는다(합계에서 보인 칸을 빼면 숨긴 칸이 드러나므로).
+// - 한 칸에 행사를 연 단체가 demandMinimum곳보다 적으면 어느 단체인지 짐작될 수 있어 그 칸을
+//   보내지 않는다. 행사 수가 아니라 단체 수로 정해서, 한 단체가 행사를 여러 개 올려 칸을 채울 수
+//   없다. 합계도 보내지 않는다(합계에서 보인 칸을 빼면 숨긴 칸이 드러나므로).
+// - 보는 계정 자신의 행사는 세지 않는다. 자기 행사를 더해 숨긴 칸을 열고 빼는 식으로 다른
+//   단체의 수를 알아낼 수 없게 한다.
 export const demandWindow = { past: 6, ahead: 11 }
 export const demandMinimum = 3
+const maxSchool = 40
 
 // "YYYY-MM"에서 by달 옮긴 달.
 export function shiftMonth(month: string, by: number) {
@@ -20,27 +24,32 @@ export function shiftMonth(month: string, by: number) {
   return `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, "0")}`
 }
 
-export function eventDemand(database: Database, today = todayInKorea()) {
+// 보는 계정(viewer)의 행사만 빼고 누가 보든 같은 수다. 보는 사람마다 더 다르게(예: 차단한
+// 단체를 빼고) 세면, 차단 전후를 견주어 한 단체의 행사 수를 알아낼 수 있다.
+export function eventDemand(database: Database, viewer?: string, today = todayInKorea()) {
   const current = today.slice(0, 7)
   const from = shiftMonth(current, -demandWindow.past)
   const to = shiftMonth(current, demandWindow.ahead)
-  const tally = new Map<string, { school: string; month: string; count: number }>()
+  const tally = new Map<string, { school: string; month: string; count: number; groups: Set<string> }>()
   for (const owner of database.accounts) {
-    if (owner.role !== "학생단체" || isDemoAccount(database, owner) || owner.suspendedAt) continue
+    if (owner.role !== "학생단체" || owner.id === viewer || isDemoAccount(database, owner) || owner.suspendedAt) continue
     // 목록의 학교가 먼저다. 소개를 아직 쓰지 않은 단체는 가입할 때의 학교다.
     const school = (findListing(database, owner)?.school ?? owner.school ?? "").trim()
-    if (!school) continue
+    // 가입에서 40자까지만 받는다. 그 전에 들어온 더 긴 값은 칸마다 되풀이되지 않게 뺀다.
+    if (!school || school.length > maxSchool) continue
     for (const event of database.events[owner.id] ?? []) {
       const month = event.date.slice(0, 7)
       if (month < from || month > to) continue
       const key = `${school}\u0000${month}`
-      const cell = tally.get(key) ?? { school, month, count: 0 }
+      const cell = tally.get(key) ?? { school, month, count: 0, groups: new Set<string>() }
       cell.count += 1
+      cell.groups.add(owner.id)
       tally.set(key, cell)
     }
   }
   const cells = [...tally.values()]
-    .filter((cell) => cell.count >= demandMinimum)
+    .filter((cell) => cell.groups.size >= demandMinimum)
+    .map(({ school, month, count }) => ({ school, month, count }))
     .sort((a, b) => a.school.localeCompare(b.school, "ko") || a.month.localeCompare(b.month))
   return { from, to, current, minimum: demandMinimum, cells }
 }

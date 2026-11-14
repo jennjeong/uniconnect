@@ -292,7 +292,7 @@ export function EventsPage({
               {onExplore && (
                 <button className="page-tool" onClick={onExplore} type="button">
                   <Icon name="users" size={16} />
-                  {t("다른 단체 행사 보기")}
+                  {role === "브랜드" ? t("학생 행사 · 수요 보기") : t("다른 단체 행사 보기")}
                 </button>
               )}
             </span>

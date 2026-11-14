@@ -9013,3 +9013,82 @@ th[aria-sort="descending"] .console-sort span {
   color: var(--ink-soft);
   font-size: clamp(1rem, 2.4vw, 1.375rem);
 }
+
+/* 학교 · 달별 행사 수 (components/DemandTable.tsx, 행사 둘러보기). 달이 18개라 표는
+   옆으로 넘긴다. 이번 달은 옅은 칠로 표시한다. */
+.demand {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.demand h2 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: var(--weight-display);
+}
+
+.demand .field-hint {
+  margin: 0;
+}
+
+.demand-scroll {
+  overflow-x: auto;
+  border-radius: 18px;
+  box-shadow: var(--ring);
+}
+
+.demand-scroll:focus-visible {
+  outline: 2px solid var(--point);
+  outline-offset: 2px;
+}
+
+.demand table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.demand th,
+.demand td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.demand thead th {
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: var(--weight-label);
+}
+
+/* 학교 칸은 표를 넘겨도 왼쪽에 남는다. */
+.demand th:first-child {
+  position: sticky;
+  left: 0;
+  background: var(--surface);
+  text-align: left;
+}
+
+.demand tbody th {
+  font-weight: var(--weight-label);
+}
+
+.demand td {
+  color: var(--ink);
+  font-weight: var(--weight-label);
+}
+
+.demand td span {
+  color: var(--muted);
+}
+
+.demand .current {
+  background: var(--fill);
+}
+
+.demand tbody tr:last-child > * {
+  border-bottom: 0;
+}

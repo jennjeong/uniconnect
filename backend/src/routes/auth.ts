@@ -308,6 +308,7 @@ authRouter.post("/signup", async (req, res) => {
   if (name.length > 40) throw new HttpError(400, "이름은 40자 이하로 입력해 주세요.")
   if (!accountTypes[role].includes(type)) throw new HttpError(400, "분류를 다시 선택해 주세요.")
   if (role === "학생단체" && !school) throw new HttpError(400, "학교를 입력해 주세요.")
+  if (school.length > 40) throw new HttpError(400, "학교는 40자 이하로 입력해 주세요.")
   const contact = parseContact(body.contact)
   const database = getDatabase()
   const shopInvite = role === "브랜드" && invited(database, body.invite)

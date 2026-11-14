@@ -290,16 +290,18 @@ test("groups explore each other's coming events, and similar events' sponsorship
   assert.equal(own.own, true)
 })
 
-test("members see how many events each school holds by month, counts only, hiding small cells", async () => {
+test("members see how many events each school holds by month, counts only, hiding cells with few groups", async () => {
   const school = "수요대학교"
   const { token: listed } = await listedMember("demand-listed@syu.ac.kr", "demand-pass-123")
   await signUpMember("demand-new@syu.ac.kr", "demand-pass-123")
   await signUpMember("demand-gone@syu.ac.kr", "demand-pass-123")
+  await signUpMember("demand-fourth@syu.ac.kr", "demand-pass-123")
+  const probe = await signUpMember("demand-probe@syu.ac.kr", "demand-pass-123")
   const { token: brand } = await listedMember("demand@demand-cafe.kr", "demand-pass-123", "브랜드")
   const database = getDatabase()
   const accountOf = (email: string) => database.accounts.find((account) => account.email === email)!
-  const [hidden, fresh, gone] = ["demand-listed@syu.ac.kr", "demand-new@syu.ac.kr", "demand-gone@syu.ac.kr"].map(accountOf)
-  for (const account of [hidden, fresh, gone]) account.school = school
+  const [hidden, fresh, gone, fourth, prober] = ["demand-listed", "demand-new", "demand-gone", "demand-fourth", "demand-probe"].map((name) => accountOf(`${name}@syu.ac.kr`))
+  for (const account of [hidden, fresh, gone, fourth, prober]) account.school = school
   // 목록에서 숨긴 단체의 행사도 센다.
   const listing = database.groups.find((item) => item.id === hidden.groupId)!
   listing.school = school
@@ -309,9 +311,10 @@ test("members see how many events each school holds by month, counts only, hidin
       ...(database.events[account.id] ?? []),
       ...dates.map((date, index) => ({ id: `demand-${account.id}-${date}-${index}`, name: "수요 행사", date, people: "", types: ["제품"], status: "매칭 중" as const, createdAt: "2026-11-01T00:00:00.000Z" })),
     ])
-  add(hidden, "2026-12-03", "2026-12-20", "2026-06-10", "2026-04-30", "2027-11-02")
-  add(fresh, "2026-12-05", "2026-06-01", "2026-06-15", "2026-04-01", "2026-04-02", "2027-11-03", "2027-11-04", "2027-01-10", "2027-01-11", "2026-07-07", "2026-07-08")
-  add(gone, "2027-01-20")
+  add(hidden, "2026-06-10", "2026-12-03", "2026-12-20", "2027-02-01", "2026-04-30", "2027-11-02")
+  add(fresh, "2026-06-01", "2026-06-15", "2026-12-05", "2027-02-02", "2027-01-10", "2027-01-11", "2027-01-12", "2027-01-13", "2027-01-14", "2026-04-01", "2027-11-03")
+  add(gone, "2026-06-20", "2027-02-03", "2026-04-02")
+  add(fourth, "2026-12-07", "2027-02-04", "2026-04-03")
 
   const shown = async (token: string) => {
     const answer = await call("GET", "/events/demand", undefined, token)
@@ -322,25 +325,58 @@ test("members see how many events each school holds by month, counts only, hidin
   assert.deepEqual([seen.from, seen.to, seen.current, seen.minimum], ["2026-05", "2027-10", "2026-11", 3])
   const ours = (data: { cells: { school: string; month: string; count: number }[] }) =>
     data.cells.filter((cell) => cell.school === school).map((cell) => [cell.month, cell.count])
-  // 6달 전(2026-04)과 11달 뒤 너머(2027-11)는 빠지고, 2건인 2026-07은 보내지 않는다.
-  assert.deepEqual(ours(seen), [["2026-06", 3], ["2026-12", 3], ["2027-01", 3]])
-  // 학생단체도 같은 것을 본다.
-  assert.deepEqual(ours(await shown(listed)), ours(seen))
+  // 6달 전(2026-04)과 11달 뒤 너머(2027-11)는 빠지고, 한 단체가 행사 5개를 연 2027-01은 단체가
+  // 3곳이 안 되어 보내지 않는다. 칸의 수는 행사 수다.
+  assert.deepEqual(ours(seen), [["2026-06", 4], ["2026-12", 4], ["2027-02", 4]])
+  // 학생단체는 자기 행사를 빼고 본다: 2026-06과 2026-12는 다른 단체가 2곳뿐이다.
+  assert.deepEqual(ours(await shown(listed)), [["2027-02", 3]])
+  // 자기 행사를 더해 숨긴 칸을 열 수 없다.
+  add(prober, "2027-01-20", "2027-01-21", "2027-01-22")
+  assert.deepEqual(ours(await shown(probe)), [["2026-06", 4], ["2026-12", 4], ["2027-02", 4]])
+  delete database.events[prober.id]
 
   // 정지된 계정과 데모 계정의 행사는 세지 않는다.
   gone.suspendedAt = "2026-11-08T00:00:00.000Z"
-  assert.deepEqual(ours(await shown(brand)), [["2026-06", 3], ["2026-12", 3]])
+  assert.deepEqual(ours(await shown(brand)), [["2026-12", 4], ["2027-02", 3]])
   delete gone.suspendedAt
   const demoIds = database.demoAccountIds
   database.demoAccountIds = { ...demoIds, extra: gone.id } as typeof demoIds
   try {
-    assert.deepEqual(ours(await shown(brand)), [["2026-06", 3], ["2026-12", 3]])
+    assert.deepEqual(ours(await shown(brand)), [["2026-12", 4], ["2027-02", 3]])
   } finally {
     database.demoAccountIds = demoIds
   }
 
-  // 로그인해야 본다.
+  // 차단해도 수는 바뀌지 않는다(바뀌면 한 단체의 수가 드러난다).
+  const brandId = accountOf("demand@demand-cafe.kr").id
+  database.blocks[brandId] = [gone.id]
+  try {
+    assert.deepEqual(ours(await shown(brand)), ours(seen))
+  } finally {
+    delete database.blocks[brandId]
+  }
+
+  // 학교는 가입에서 40자까지만 받는다.
+  const longEmail = "demand-long@syu.ac.kr"
+  const sent = await call("POST", "/auth/email-code", { role: "학생단체", email: longEmail })
+  const verified = await call("POST", "/auth/email-code/verify", { email: longEmail, code: sent.data.devCode })
+  const long = await call("POST", "/auth/signup", {
+    role: "학생단체",
+    name: "긴 학교 동아리",
+    type: "공연 동아리",
+    school: "가".repeat(41),
+    email: longEmail,
+    password: "long-pass-123!",
+    verificationToken: verified.data.verificationToken,
+    agreedToTerms: true,
+    contact: testContact,
+    over14: true,
+  })
+  assert.equal(long.status, 400)
+
+  // 로그인해야 보고, 예시만 만나는 공용 데모 계정은 보지 않는다.
   assert.equal((await call("GET", "/events/demand")).status, 401)
+  assert.equal((await call("GET", "/events/demand", undefined, await login("브랜드"))).status, 403)
 })
 
 test("a group publishes its sponsorship ledger by a link, amounts only when it chooses, and can stop", async () => {

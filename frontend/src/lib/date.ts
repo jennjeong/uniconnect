@@ -27,6 +27,13 @@ export function fromIsoDate(iso: string) {
 
 export const todayIso = () => toIsoDate(new Date())
 
+// "YYYY-MM"의 짧은 이름: "5월" · "May", withYear면 "2026년 5월" · "May 2026".
+export function monthLabel(month: string, withYear = false) {
+  const [year, value] = month.split("-").map(Number)
+  if (lang === "en") return withYear ? `${monthNames[value - 1]}${nbsp}${year}` : monthNames[value - 1]
+  return withYear ? `${year}년${nbsp}${value}월` : `${value}월`
+}
+
 // "YYYY-MM-DD" 날짜에서 며칠 뒤의 "YYYY-MM-DD".
 export function addDaysIso(iso: string, days: number) {
   const day = fromIsoDate(iso) ?? new Date()
