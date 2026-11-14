@@ -1422,7 +1422,7 @@ function App() {
       onOpenSponsorship={(request) => (request?.eventId ? openEventPage(request.eventId) : navigate("받은 제안"))}
       onNotice={showNotice}
       canSubscribe={member}
-      onExplore={students ? () => go({ page, explore: true }) : undefined}
+      onExplore={() => go({ page, explore: true })}
     />
   )
 
@@ -1553,7 +1553,14 @@ function App() {
     }
     if (view.ledger) return <LedgerPage token={view.ledger} />
     if (view.explore) {
-      return <ExplorePage onBack={() => goBack({ page: "내 행사" })} onOpenEvent={(eventId) => go({ page, eventPage: eventId })} />
+      return (
+        <ExplorePage
+          role={role}
+          member={member}
+          onBack={() => goBack({ page: students ? "내 행사" : "행사 일정" })}
+          onOpenEvent={(eventId) => go({ page, eventPage: eventId })}
+        />
+      )
     }
     if (view.insight || view.sharedReport) {
       return (

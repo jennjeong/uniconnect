@@ -154,6 +154,7 @@ const en: Record<string, string> = {
   "이미 결정한 보상이에요.": "This reward has already been decided.",
   "이미 신고했어요. 운영자가 확인하고 있어요.": "You've already reported this. The operators are looking into it.",
   "데모 계정은 차단할 수 없어요.": "The demo accounts can't block anyone.",
+  "데모 계정은 행사 수요를 볼 수 없어요.": "The demo accounts can't see event demand.",
   "차단할 상대를 찾을 수 없어요.": "We couldn't find whom to block.",
   "차단한 상대가 아니에요.": "You haven't blocked this one.",
   "신고를 찾을 수 없어요.": "We couldn't find the report.",

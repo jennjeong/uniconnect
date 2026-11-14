@@ -1,9 +1,10 @@
+import AxeBuilder from "@axe-core/playwright"
 import { expect, test } from "@playwright/test"
 
 import { signUpMember } from "./members"
 
 // #315에서 백엔드가 올린 기능의 화면: 계약서의 협찬 형태별 표준 조항(#333), 응답률과 이행률(#343),
-// 관심 조건 저장(#338). 회원을 만들므로 flows.spec.ts 뒤에 돈다(파일 이름 순).
+// 관심 조건 저장(#338), 학교 · 달별 행사 수(#344). 회원을 만들므로 flows.spec.ts 뒤에 돈다(파일 이름 순).
 
 const kst = (days = 0) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date(Date.now() + days * 86_400_000))
 
@@ -61,4 +62,25 @@ test("a member brand's profile shows its track record and a group saves, reappli
   await saved.getByRole("button", { name: "관심 조건 “신뢰 베이커리” 지우기" }).click()
   await expect(page.getByText("관심 조건을 지웠어요.")).toBeVisible()
   await expect(page.getByRole("list", { name: "저장한 관심 조건" })).toHaveCount(0)
+})
+
+test("a brand sees events by school and month on the explore page, without names or small cells", async ({ page, request }) => {
+  const group = await signUpMember(request, "학생단체", "e2e-demand@syu.ac.kr", "수요 동아리")
+  for (const name of ["수요 공연 1", "수요 공연 2", "수요 공연 3"]) {
+    await request.post("/api/events", { data: { name, date: kst(45), people: "80명", types: ["현금"] }, headers: group.headers })
+  }
+  const brand = await signUpMember(request, "브랜드", "e2e-demand@demand-cafe.kr", "수요 카페")
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
+  await page.goto("/explore")
+
+  const table = page.getByRole("region", { name: "학교 · 달별 행사 수" })
+  const row = table.getByRole("row", { name: /삼육대학교/ })
+  await expect(row).toBeVisible()
+  const counts = (await row.getByRole("cell").allInnerTexts()).filter((text) => /^\d+$/.test(text)).map(Number)
+  expect(counts.length).toBeGreaterThan(0)
+  expect(Math.min(...counts)).toBeGreaterThanOrEqual(3)
+  await expect(page.getByText("행사가 3건 미만인 칸은 비워 두었어요", { exact: false })).toBeVisible()
+
+  const results = await new AxeBuilder({ page }).include(".demand").withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze()
+  expect(results.violations.filter((item) => item.impact === "critical" || item.impact === "serious")).toEqual([])
 })

@@ -58,6 +58,7 @@ import type {
   InvitePageData,
   MailKind,
   EventCase,
+  EventDemand,
   OwnLedger,
   PublicLedger,
   ExploreEvent,
@@ -427,6 +428,7 @@ export const api = {
   stopLedgerLink: () => request<OwnLedger>("/ledger/link", { method: "DELETE" }),
   publicLedger: (token: string) => request<PublicLedger>(`/ledger/public/${encodeURIComponent(token)}`),
   exploreEvents: () => request<{ events: ExploreEvent[]; cases: EventCase[] }>("/events/explore"),
+  eventDemand: () => request<EventDemand>("/events/demand"),
   addEventPlan: (id: string, file: string, name: string) =>
     request<{ event: EventItem }>(`/events/${encodeURIComponent(id)}/plan`, { method: "POST", body: { file, name } }),
   deleteEventPlan: (id: string) => request<{ event: EventItem }>(`/events/${encodeURIComponent(id)}/plan`, { method: "DELETE" }),
