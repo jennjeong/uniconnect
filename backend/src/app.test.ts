@@ -339,8 +339,9 @@ test("members see how many events each school holds by month, counts only, hidin
     database.demoAccountIds = demoIds
   }
 
-  // 로그인해야 본다.
+  // 로그인해야 보고, 예시만 만나는 공용 데모 계정은 보지 않는다.
   assert.equal((await call("GET", "/events/demand")).status, 401)
+  assert.equal((await call("GET", "/events/demand", undefined, await login("브랜드"))).status, 403)
 })
 
 test("a group publishes its sponsorship ledger by a link, amounts only when it chooses, and can stop", async () => {

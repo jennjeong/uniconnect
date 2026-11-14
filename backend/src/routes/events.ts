@@ -386,10 +386,13 @@ eventsRouter.get("/explore", (req, res) => {
   res.json({ events: exploreEvents(database, req.account), cases: eventCases(database, req.account) })
 })
 
-// 대학별 · 시기별 행사 수요(#344, lib/demand.ts). 로그인한 회원이면 누구나 본다.
+// 대학별 · 시기별 행사 수요(#344, lib/demand.ts). 로그인한 회원이면 누구나 본다. 실제 회원의
+// 수이므로, 예시만 만나는 공용 데모 계정에는 보이지 않는다.
 eventsRouter.get("/demand", (req, res) => {
-  requireAccount(req)
-  res.json(eventDemand(getDatabase()))
+  const account = requireAccount(req)
+  const database = getDatabase()
+  if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 행사 수요를 볼 수 없어요.")
+  res.json(eventDemand(database))
 })
 
 // 행사의 예산은 그 행사에 대한 제안의 두 쪽, 곧 단체와 단체가 제안을 보낸
