@@ -2,6 +2,7 @@ import { useEffect, useState, type CSSProperties } from "react"
 
 import { api, errorMessage } from "../api"
 import { BrandMark } from "../components/BrandMark"
+import { DemandTable } from "../components/DemandTable"
 import { PageIntro } from "../components/PageIntro"
 import { TabBar } from "../components/TabBar"
 import { eventKinds } from "../data/eventDetails"
@@ -9,15 +10,27 @@ import { brandIndustries } from "../data/industries"
 import { accountTypeGroups } from "../data/roles"
 import { t, tc } from "../i18n"
 import { formatPeriod } from "../lib/date"
-import type { EventCase, ExploreEvent } from "../types"
+import type { EventCase, ExploreEvent, Role } from "../types"
 
 const industryName = (industry: string) => brandIndustries.find(([value]) => value === industry)?.[1] ?? industry
 
 // 행사 둘러보기(/explore): 계정이 볼 수 있는 다른 학생단체의 다가오는 행사를
 // 종류와 단체의 종류로 나눠 보여 주며 각각 자기 페이지를 연다. 그 위에는 비슷한
 // 행사가 받은 협찬이 있어서 단체가 다른 단체에서 통한 것을 보고 자기 행사를
-// 계획한다.
-export function ExplorePage({ onBack, onOpenEvent }: { onBack: () => void; onOpenEvent: (eventId: string) => void }) {
+// 계획한다. 로그인한 계정에는 맨 위에 학교 · 달별 행사 수(DemandTable)가 있어서, 브랜드가
+// 언제 어느 학교에 협찬할지 정한다(#344). 브랜드는 행사 일정에서 연다.
+export function ExplorePage({
+  role,
+  loggedIn,
+  onBack,
+  onOpenEvent,
+}: {
+  role: Role
+  loggedIn: boolean
+  onBack: () => void
+  onOpenEvent: (eventId: string) => void
+}) {
+  const brand = role === "브랜드"
   const [data, setData] = useState<{ events: ExploreEvent[]; cases: EventCase[] } | null>(null)
   const [failed, setFailed] = useState("")
   const [kind, setKind] = useState("전체")
@@ -39,9 +52,15 @@ export function ExplorePage({ onBack, onOpenEvent }: { onBack: () => void; onOpe
       <PageIntro
         onBack={onBack}
         eyebrow={tc("eyebrow", "행사 둘러보기")}
-        title={t("다른 단체 행사 둘러보기")}
-        description={t("다른 단체는 어떻게 협찬받았을까요? 행사와 혜택을 보고 우리 기획에 참고해요.")}
+        title={brand ? t("학생 행사 둘러보기") : t("다른 단체 행사 둘러보기")}
+        description={
+          brand
+            ? t("언제 어느 학교에서 행사가 많은지 보고, 다가오는 행사와 혜택을 살펴요.")
+            : t("다른 단체는 어떻게 협찬받았을까요? 행사와 혜택을 보고 우리 기획에 참고해요.")
+        }
       />
+
+      {loggedIn && <DemandTable />}
 
       {cases.length > 0 && (
         <section aria-labelledby="explore-cases-title" className="explore-cases">
