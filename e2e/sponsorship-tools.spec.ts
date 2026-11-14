@@ -64,10 +64,11 @@ test("a member brand's profile shows its track record and a group saves, reappli
   await expect(page.getByRole("list", { name: "저장한 관심 조건" })).toHaveCount(0)
 })
 
-test("a brand sees events by school and month on the explore page, without names or small cells", async ({ page, request }) => {
-  const group = await signUpMember(request, "학생단체", "e2e-demand@syu.ac.kr", "수요 동아리")
-  for (const name of ["수요 공연 1", "수요 공연 2", "수요 공연 3"]) {
-    await request.post("/api/events", { data: { name, date: kst(45), people: "80명", types: ["현금"] }, headers: group.headers })
+test("a brand sees events by school and month on the explore page, without names or cells with few groups", async ({ page, request }) => {
+  // 칸은 행사를 연 단체가 3곳 이상일 때만 보인다.
+  for (const index of [1, 2, 3]) {
+    const group = await signUpMember(request, "학생단체", `e2e-demand-${index}@syu.ac.kr`, `수요 동아리 ${index}`)
+    await request.post("/api/events", { data: { name: `수요 공연 ${index}`, date: kst(45), people: "80명", types: ["현금"] }, headers: group.headers })
   }
   const brand = await signUpMember(request, "브랜드", "e2e-demand@demand-cafe.kr", "수요 카페")
   await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
@@ -79,7 +80,7 @@ test("a brand sees events by school and month on the explore page, without names
   const counts = (await row.getByRole("cell").allInnerTexts()).filter((text) => /^\d+$/.test(text)).map(Number)
   expect(counts.length).toBeGreaterThan(0)
   expect(Math.min(...counts)).toBeGreaterThanOrEqual(3)
-  await expect(page.getByText("행사가 3건 미만인 칸은 비워 두었어요", { exact: false })).toBeVisible()
+  await expect(page.getByText("단체 3곳 이상이 행사를 연 칸만 보이고", { exact: false })).toBeVisible()
 
   const results = await new AxeBuilder({ page }).include(".demand").withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze()
   expect(results.violations.filter((item) => item.impact === "critical" || item.impact === "serious")).toEqual([])

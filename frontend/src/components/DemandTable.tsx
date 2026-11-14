@@ -20,8 +20,9 @@ export function monthsBetween(from: string, to: string) {
 }
 
 // 대학별 · 시기별 행사 수요(#344, GET /api/events/demand): 학생단체의 행사 수를 학교와
-// 달로 묶은 표. 한 칸이 기준(minimum)보다 적으면 서버가 보내지 않으므로, 빈칸은 0건이
-// 아니라 "기준 미만이거나 없음"이다. 합계는 숨긴 칸을 드러낼 수 있어 보여 주지 않는다.
+// 달로 묶은 표. 한 칸에 행사를 연 단체가 기준(minimum)보다 적으면 서버가 보내지 않으므로,
+// 빈칸은 0건이 아니라 "기준 미만이거나 없음"이다. 보는 계정의 행사는 세지 않는다. 합계는 숨긴
+// 칸을 드러낼 수 있어 보여 주지 않는다.
 // 실제 회원의 수이므로 회원만 본다. 방문자와 공용 데모 계정은 예시만 만나므로 보지 않는다.
 export function DemandTable() {
   const [demand, setDemand] = useState<EventDemand | null>(null)
@@ -54,7 +55,7 @@ export function DemandTable() {
       {!demand ? (
         <p className="day-empty">{failed || t("행사 수를 불러오고 있어요…")}</p>
       ) : schools.length === 0 ? (
-        <p className="day-empty">{t("아직 행사가 {count}건 이상 모인 학교와 달이 없어요.", { count: demand.minimum })}</p>
+        <p className="day-empty">{t("아직 단체 {count}곳 이상이 행사를 연 학교와 달이 없어요.", { count: demand.minimum })}</p>
       ) : (
         <div aria-labelledby="demand-title" className="demand-scroll" ref={scroller} role="region" tabIndex={0}>
           <table>
@@ -76,7 +77,7 @@ export function DemandTable() {
                     const value = count(school, month)
                     return (
                       <td className={month === demand.current ? "current" : undefined} key={month}>
-                        {value === undefined ? <span aria-label={t("{count}건 미만이거나 없음", { count: demand.minimum })}>·</span> : value}
+                        {value === undefined ? <span aria-label={t("단체 {count}곳 미만이거나 없음", { count: demand.minimum })}>·</span> : value}
                       </td>
                     )
                   })}
@@ -88,7 +89,7 @@ export function DemandTable() {
       )}
       {demand && schools.length > 0 && (
         <p className="field-hint">
-          {t("이름 없이 숫자로만 모았어요. 행사가 {count}건 미만인 칸은 비워 두었어요.", { count: demand.minimum })}
+          {t("이름 없이 행사 수만 모았어요. 단체 {count}곳 이상이 행사를 연 칸만 보이고, 우리 행사는 세지 않아요.", { count: demand.minimum })}
         </p>
       )}
     </section>

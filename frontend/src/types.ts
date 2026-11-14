@@ -1489,8 +1489,8 @@ export type ExploreEvent = {
 }
 
 // 한 종류의 행사가 확정한 협찬을 건수로 센 것.
-// 대학별 · 시기별 행사 수요 (GET /api/events/demand, 백엔드 lib/demand.ts). 기준(minimum)보다
-// 적은 칸은 오지 않는다. 달은 "YYYY-MM".
+// 대학별 · 시기별 행사 수요 (GET /api/events/demand, 백엔드 lib/demand.ts). 행사를 연 단체가
+// 기준(minimum)보다 적은 칸은 오지 않고, 보는 계정의 행사는 세지 않는다. 달은 "YYYY-MM".
 export type EventDemand = { from: string; to: string; current: string; minimum: number; cells: { school: string; month: string; count: number }[] }
 
 export type EventCase = { kind: string; sponsorships: number; averagePeople?: number; industries: string[]; asks: string[] }
