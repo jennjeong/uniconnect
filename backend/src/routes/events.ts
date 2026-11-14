@@ -392,7 +392,7 @@ eventsRouter.get("/demand", (req, res) => {
   const account = requireAccount(req)
   const database = getDatabase()
   if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 행사 수요를 볼 수 없어요.")
-  res.json(eventDemand(database))
+  res.json(eventDemand(database, account.id))
 })
 
 // 행사의 예산은 그 행사에 대한 제안의 두 쪽, 곧 단체와 단체가 제안을 보낸

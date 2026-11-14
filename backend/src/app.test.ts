@@ -339,6 +339,34 @@ test("members see how many events each school holds by month, counts only, hidin
     database.demoAccountIds = demoIds
   }
 
+  // 보는 사람과 어느 쪽이든 차단한 단체의 행사는 빼고 센다.
+  const brandId = accountOf("demand@demand-cafe.kr").id
+  database.blocks[brandId] = [gone.id]
+  try {
+    assert.deepEqual(ours(await shown(brand)), [["2026-06", 3], ["2026-12", 3]])
+    assert.deepEqual(ours(await shown(listed)), [["2026-06", 3], ["2026-12", 3], ["2027-01", 3]])
+  } finally {
+    delete database.blocks[brandId]
+  }
+
+  // 학교는 가입에서 40자까지만 받는다.
+  const longEmail = "demand-long@syu.ac.kr"
+  const sent = await call("POST", "/auth/email-code", { role: "학생단체", email: longEmail })
+  const verified = await call("POST", "/auth/email-code/verify", { email: longEmail, code: sent.data.devCode })
+  const long = await call("POST", "/auth/signup", {
+    role: "학생단체",
+    name: "긴 학교 동아리",
+    type: "공연 동아리",
+    school: "가".repeat(41),
+    email: longEmail,
+    password: "long-pass-123!",
+    verificationToken: verified.data.verificationToken,
+    agreedToTerms: true,
+    contact: testContact,
+    over14: true,
+  })
+  assert.equal(long.status, 400)
+
   // 로그인해야 보고, 예시만 만나는 공용 데모 계정은 보지 않는다.
   assert.equal((await call("GET", "/events/demand")).status, 401)
   assert.equal((await call("GET", "/events/demand", undefined, await login("브랜드"))).status, 403)

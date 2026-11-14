@@ -246,6 +246,7 @@ export function SignupModal({
           <label>
             {t("학교")}
             <input
+              maxLength={40}
               placeholder={t("예) 삼육대학교")}
               value={draft.school}
               onChange={(event) => update({ school: event.target.value })}

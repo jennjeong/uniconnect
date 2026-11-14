@@ -75,6 +75,7 @@ const en: Record<string, string> = {
   "이미 가입된 이메일이에요. 로그인해 주세요.": "This email is already registered. Please log in.",
   "이미 가입된 이메일이에요. 다른 이메일을 입력해 주세요.": "This email is already registered. Please enter another one.",
   "이름은 40자 이하로 입력해 주세요.": "Please keep the name to 40 characters or fewer.",
+  "학교는 40자 이하로 입력해 주세요.": "Please keep the school to 40 characters or fewer.",
   "분류를 다시 선택해 주세요.": "Please choose the category again.",
   "학교를 입력해 주세요.": "Please enter your school.",
   "이메일 인증을 완료해 주세요.": "Please complete email verification.",
