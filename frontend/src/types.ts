@@ -1422,11 +1422,29 @@ export type AdminInsights = {
 }
 
 export type AdminSystem = {
-  limits: { id: string; label: string; message: string; limit: number; minutes: number; counting: number; blocked: number }[]
+  // counting · blocked는 그 제한이 세는 대상(주소, 계정, 이메일, 행사 등 제한마다 다르다)의 수다.
+  // shared면 모든 API 복사본의 합, 아니면 이 복사본만이다.
+  limits: { id: string; label: string; message: string; limit: number; minutes: number; shared: boolean; counting: number; blocked: number }[]
   backups: { hour: string; bytes: number }[]
-  cronRuns: { at: string; sent: number }[]
+  backup: BackupStatus
+  cronRuns: CronRun[]
   maintenance: { on: boolean; message?: string; blockSignups?: boolean }
 }
+
+// 백업 상태 (backend lib/backupStatus.ts). 시각은 ISO(UTC)다. schedule "cron"이면 cronUtcHours(UTC
+// 시)마다, "hourly"면 한 시간마다 정기 백업을 찍고, "none"이면 정기 백업이 없다.
+export type BackupStatus = {
+  state: "ok" | "delayed" | "failed" | "unknown" | "none"
+  lastSuccess?: string
+  lastFailure?: string
+  next?: string
+  schedule: "cron" | "hourly" | "none"
+  cronUtcHours: number[]
+  keptHours: number
+}
+
+// 일정 알림의 실행 한 번 (backend types.ts의 CronRun). targets · failed · mail · error는 예전 기록에 없다.
+export type CronRun = { at: string; sent: number; targets?: number; failed?: number; mail?: boolean; error?: true }
 
 // 운영자가 콘솔에서 한 일과, 지금의 이름으로 적은 대상.
 export type AdminLogRow = {

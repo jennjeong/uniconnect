@@ -8,7 +8,7 @@ import { addDays, todayInKorea } from "./dates.js"
 import { HttpError } from "./errors.js"
 import { chatFiles, eventPhotos } from "./photos.js"
 import { proUntil } from "./plan.js"
-import type { Account, AdminAction, AdminLogEntry, Announcement, Database, Payment } from "../types.js"
+import type { Account, AdminAction, AdminLogEntry, Announcement, CronRun, Database, Payment } from "../types.js"
 
 // 콘솔은 최근 항목만 둔다.
 export const adminLogLimit = 500
@@ -328,9 +328,9 @@ export function siteState(database: Database) {
   }
 }
 
-// 날짜 알림 실행을 기록하고 최근 30개를 둔다.
-export function noteCronRun(database: Database, sent: number, now = new Date()) {
+// 날짜 알림 실행을 기록하고 최근 30개를 둔다(types.ts의 CronRun).
+export function noteCronRun(database: Database, run: Omit<CronRun, "at">, now = new Date()) {
   const runs = (database.cronRuns ??= [])
-  runs.push({ at: now.toISOString(), sent })
+  runs.push({ at: now.toISOString(), ...run })
   if (runs.length > 30) runs.splice(0, runs.length - 30)
 }

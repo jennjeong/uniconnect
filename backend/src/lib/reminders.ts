@@ -1,11 +1,12 @@
 import { noteCronRun } from "./adminTools.js"
 import { acceptedProposal } from "./agreements.js"
 import { addDays, todayInKorea } from "./dates.js"
+import { mailConfigured } from "./mailer.js"
 import { notify } from "./notices.js"
 import { payoutLate } from "./payouts.js"
 import { isDemoAccount } from "./reviews.js"
 import { getDatabase, retryConflicts, saveDatabase } from "../store.js"
-import type { Account, ChatSide, Database } from "../types.js"
+import type { Account, ChatSide, CronRun, Database } from "../types.js"
 
 // 행사 며칠 전부터 처음 알리는지.
 export const remindDaysBefore = 3
@@ -14,15 +15,22 @@ export const remindDaysBefore = 3
 export const mailBatch = 20
 
 // 메일을 mailBatch통씩 함께 보낸다. send는 보냈으면 true를 답한다. after가 있으면 묶음마다
-// 보낸 것으로 부른다(보낸 것을 표시하고 저장하는 곳). 보낸 수를 답한다. 한 통씩 기다리며
+// 보낸 것으로 부른다(보낸 것을 표시하고 저장하는 곳). progress는 묶음마다 보낸 수로 부른다(도중에
+// 실패해도 그때까지 보낸 수를 알 수 있다). 보낸 수를 답한다. 한 통씩 기다리며
 // 보내고 저장하면 크론의 시간 한도(vercel.json의 maxDuration) 안에 다른 일이 돌지 못한다.
-export async function sendInBatches<T>(items: T[], send: (item: T) => Promise<boolean>, after?: (delivered: T[]) => Promise<unknown>) {
+export async function sendInBatches<T>(
+  items: T[],
+  send: (item: T) => Promise<boolean>,
+  after?: (delivered: T[]) => Promise<unknown>,
+  progress?: (count: number) => void,
+) {
   let sent = 0
   for (let start = 0; start < items.length; start += mailBatch) {
     const batch = items.slice(start, start + mailBatch)
     const answers = await Promise.all(batch.map(send))
     const delivered = batch.filter((_, index) => answers[index])
     sent += delivered.length
+    progress?.(delivered.length)
     if (after) await after(delivered)
   }
   return sent
@@ -88,26 +96,41 @@ export async function sendReminders(database: Database = getDatabase(), now = ne
       })
     }
   }
-  const sent = await sendInBatches(
-    due,
-    (reminder) => notify(reminder.account, "reminders", reminder.subject, reminder.lines, reminder.path),
-    // 보내는 동안 데이터를 새로 읽었을 수 있어 다시 찾는다.
-    (delivered) =>
-      retryConflicts(async () => {
-        const current = getDatabase()
-        for (const { account, mark } of delivered) {
-          const owned: { id: string; remindedAt?: string }[] = current[mark.list][account.id] ?? []
-          const item = owned.find((entry) => entry.id === mark.id)
-          if (item) item.remindedAt = stamp
-        }
-        await saveDatabase()
-      }),
-  )
-  await retryConflicts(async () => {
-    noteCronRun(getDatabase(), sent, now)
-    await saveDatabase()
-  })
-  return sent
+  // 운영자 콘솔이 대상이 없던 실행과 메일이 실패한 실행을 가를 수 있게, 대상 수와 실패 수,
+  // 메일 서비스가 있었는지, 도중에 실패했는지를 남긴다. 도중에 던지면 그때까지 보낸 수와 함께
+  // 실패로 남기고 다시 던진다(크론은 500으로 답한다).
+  const mail = mailConfigured()
+  let delivered = 0
+  const record = (run: Omit<CronRun, "at">) =>
+    retryConflicts(async () => {
+      noteCronRun(getDatabase(), run, now)
+      await saveDatabase()
+    })
+  try {
+    await sendInBatches(
+      due,
+      (reminder) => notify(reminder.account, "reminders", reminder.subject, reminder.lines, reminder.path),
+      // 보내는 동안 데이터를 새로 읽었을 수 있어 다시 찾는다.
+      (delivered) =>
+        retryConflicts(async () => {
+          const current = getDatabase()
+          for (const { account, mark } of delivered) {
+            const owned: { id: string; remindedAt?: string }[] = current[mark.list][account.id] ?? []
+            const item = owned.find((entry) => entry.id === mark.id)
+            if (item) item.remindedAt = stamp
+          }
+          await saveDatabase()
+        }),
+      (count) => {
+        delivered += count
+      },
+    )
+  } catch (error) {
+    await record({ sent: delivered, targets: due.length, mail, error: true }).catch(() => {})
+    throw error
+  }
+  await record({ sent: delivered, targets: due.length, failed: due.length - delivered, mail })
+  return delivered
 }
 
 const lateLines = (side: ChatSide, partner: string, event: string, due: string) =>

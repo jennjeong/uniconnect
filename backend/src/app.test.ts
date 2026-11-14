@@ -5795,6 +5795,18 @@ test("members are emailed once when an event or a sponsored event is three days 
     assert.equal(await sendReminders(database, new Date("2026-11-27T03:00:00Z")), 1)
     assert.match(sent[0].subject, /'닷새 뒤 공연'까지 3일 남았어요/)
     assert.equal(database.events[group.id].find((item) => item.id === "past")!.remindedAt, undefined)
+
+    // 실행마다 대상 수와 실패 수를 남겨, 콘솔이 대상이 없던 실행과 실패한 실행을 가른다.
+    const runs = () => database.cronRuns!.slice(-3).map(({ at: _at, ...run }) => run)
+    assert.deepEqual(runs(), [
+      { sent: 3, targets: 3, failed: 0, mail: true },
+      { sent: 0, targets: 0, failed: 0, mail: true },
+      { sent: 1, targets: 1, failed: 0, mail: true },
+    ])
+    database.events[group.id].push(event("failing", "실패할 공연", "2026-11-28"))
+    mailTransport.post = async () => new Response(null, { status: 500 })
+    assert.equal(await sendReminders(database, new Date("2026-11-27T04:00:00Z")), 0)
+    assert.deepEqual(runs().at(-1), { sent: 0, targets: 1, failed: 1, mail: true })
   } finally {
     mailTransport.post = post
     config.resendApiKey = mail.apiKey
@@ -5903,6 +5915,25 @@ test("the data is backed up at most hourly beside the data file, for 24 hours", 
   // 한 시간 안에는 새 복사를 만들지 않는다.
   await saveDatabase()
   assert.deepEqual(await copies(), kept)
+
+  // 정기 백업(크론, 한 시간 타이머)은 그 간격과 상관없이 찍는다.
+  const { backUpNow } = await import("./store.js")
+  await rm(path.join(folder, kept.at(-1)!))
+  await backUpNow()
+  assert.deepEqual(await copies(), kept)
+  // 실패하면 던지고, 콘솔이 볼 수 있게 오류 기록에 남긴다.
+  const { clearErrorLog, recentErrors } = await import("./lib/errorLog.js")
+  await clearErrorLog()
+  await rm(folder, { recursive: true, force: true })
+  await writeFile(folder, "not a folder")
+  try {
+    await assert.rejects(backUpNow())
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    assert.ok((await recentErrors()).some((entry) => entry.where === "backup" && entry.message.startsWith("Backup failed")))
+  } finally {
+    await rm(folder, { force: true })
+    await clearErrorLog()
+  }
 })
 
 
@@ -7421,8 +7452,12 @@ test("the console's member tools, operations, content, analysis and system scree
     // 시스템 화면은 주소 없이 제한을 센다.
     const system = (await admin("GET", "/system")).data
     assert.ok(system.limits.length > 0)
-    assert.ok(system.limits.every((limit: Record<string, unknown>) => Object.keys(limit).sort().join() === "blocked,counting,id,label,limit,message,minutes"))
+    assert.ok(system.limits.every((limit: Record<string, unknown>) => Object.keys(limit).sort().join() === "blocked,counting,id,label,limit,message,minutes,shared"))
     assert.ok(Array.isArray(system.backups) && Array.isArray(system.cronRuns))
+    // 테스트의 앱에는 정기 백업이 없어 다음 예정을 알 수 없다.
+    assert.equal(system.backup.schedule, "none")
+    assert.equal(system.backup.next, undefined)
+    assert.equal(system.backup.keptHours, 24)
     assert.equal((await admin("GET", "/backups/../../etc")).status, 404)
 
     // 예시를 초기화하면 이름이 바뀐 데모 행사가 돌아오고 회원의 데이터는 건드리지 않는다.
@@ -9459,4 +9494,36 @@ test("a saved search tells its member once about each new partner that fits it",
     config.resendApiKey = mail.apiKey
     config.mailFrom = mail.from
   }
+})
+
+test("the console tells a backup's last success, next run and whether it is late or failed", async () => {
+  const { backupStatus, cronUtcHours } = await import("./lib/backupStatus.js")
+  const { fileURLToPath } = await import("node:url")
+  // vercel.json의 크론 시각과 같아야 한다.
+  const vercel = JSON.parse(await readFile(path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "vercel.json"), "utf8")) as { crons: { path: string; schedule: string }[] }
+  const hours = vercel.crons.filter((cron) => cron.path === "/api/cron/reminders").map((cron) => Number(/^0 (\d+) \* \* \*$/.exec(cron.schedule)?.[1]))
+  assert.deepEqual(hours.sort((a, b) => a - b), cronUtcHours)
+
+  const cron = { kind: "cron" as const }
+  const failure = (at: string) => ({ id: "x", at, source: "server" as const, message: "Backup failed: boom", where: "backup", path: "/backup" })
+  // 11월 15일 08:31(한국) = 14일 23:31(UTC). 14일 00시와 06시(UTC)에 찍혔으니 제때다.
+  const now = Date.parse("2026-11-14T23:31:00Z")
+  const list = [{ hour: "2026-11-14T06" }, { hour: "2026-11-14T00" }]
+  const ok = backupStatus(list, [], now, cron)
+  assert.deepEqual([ok.state, ok.lastSuccess, ok.next], ["ok", "2026-11-14T06:00:00.000Z", "2026-11-15T00:00:00.000Z"])
+  // 15일 06시 크론이 한 시간 넘게 지나도록 새 백업이 없으면 늦었다.
+  assert.equal(backupStatus([{ hour: "2026-11-15T00" }], [], Date.parse("2026-11-15T07:30:00Z"), cron).state, "delayed")
+  // 정한 시의 한 시간 안에는 아직 늦지 않았다(무료 요금제의 크론은 그 시 안 어느 때에 돈다).
+  assert.equal(backupStatus([{ hour: "2026-11-15T00" }], [], Date.parse("2026-11-15T06:40:00Z"), cron).state, "ok")
+  // 마지막 성공 뒤의 실패는 실패다. 성공보다 앞선 실패는 지난 일이다.
+  const failed = backupStatus(list, [failure("2026-11-14T08:00:00Z")], now, cron)
+  assert.deepEqual([failed.state, failed.lastFailure], ["failed", "2026-11-14T08:00:00.000Z"])
+  assert.equal(backupStatus(list, [failure("2026-11-13T08:00:00Z")], now, cron).state, "ok")
+  // 정기 백업이 없으면 다음 예정을 알 수 없다.
+  const unscheduled = backupStatus(list, [], now, { kind: "none" })
+  assert.deepEqual([unscheduled.state, unscheduled.next], ["unknown", undefined])
+  assert.equal(backupStatus([], [], now, { kind: "none" }).state, "none")
+  // 오래 떠 있는 서버는 한 시간마다다.
+  const hourly = backupStatus([{ hour: "2026-11-14T21" }], [], now, { kind: "hourly", lastRunAt: Date.parse("2026-11-14T23:00:00Z") })
+  assert.deepEqual([hourly.state, hourly.next], ["delayed", "2026-11-15T00:00:00.000Z"])
 })

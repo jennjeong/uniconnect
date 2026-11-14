@@ -24,6 +24,8 @@ import { photos, photoType } from "../lib/photos.js"
 import { approveReferralReward, referralRewardsOf, rejectReferralReward, tellReferrers, waitingReferralRewards } from "../lib/referrals.js"
 import { linkShop, tellInviters } from "../lib/shopInvites.js"
 import { memberDetail } from "../lib/console.js"
+import { backupStatus } from "../lib/backupStatus.js"
+import { recentErrors } from "../lib/errorLog.js"
 import { HttpError } from "../lib/errors.js"
 import { grantGroupCheck } from "../lib/groupCheck.js"
 import { notify } from "../lib/notices.js"
@@ -579,14 +581,16 @@ adminMoreRouter.put("/settings/maintenance", async (req, res) => {
   res.json({ maintenance: database.settings.maintenance })
 })
 
-// 시스템 화면이다. 요청 제한, 보관 중인 백업, 알림의 실행 기록, 점검 스위치를
-// 보여 준다.
+// 시스템 화면이다. 요청 제한, 보관 중인 백업과 그 상태(lib/backupStatus.ts), 알림의 실행
+// 기록, 점검 스위치를 보여 준다.
 adminMoreRouter.get("/system", async (req, res) => {
   await requireAdmin(req)
   const database = getDatabase()
+  const backups = await currentStorage().listBackups()
   res.json({
     limits: await limitStatus(),
-    backups: await currentStorage().listBackups(),
+    backups,
+    backup: backupStatus(backups, await recentErrors().catch(() => [])),
     cronRuns: [...(database.cronRuns ?? [])].reverse(),
     maintenance: database.settings?.maintenance ?? { on: false, blockSignups: false },
   })
