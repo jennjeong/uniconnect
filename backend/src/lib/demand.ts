@@ -1,7 +1,6 @@
 import { findListing } from "./catalog.js"
 import { todayInKorea } from "./dates.js"
 import { isDemoAccount } from "./reviews.js"
-import { blockedBetween } from "./safety.js"
 import type { Database } from "../types.js"
 
 // 대학별 · 시기별 행사 수요다(#344). 브랜드가 언제 어느 학교에 협찬할지 정하도록, 학생단체의
@@ -22,15 +21,15 @@ export function shiftMonth(month: string, by: number) {
   return `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, "0")}`
 }
 
-// viewer와 어느 쪽이든 차단한 단체의 행사는 그 사람의 수에서 뺀다(lib/safety.ts).
-export function eventDemand(database: Database, viewer?: string, today = todayInKorea()) {
+// 누가 보든 같은 수다. 보는 사람마다(예: 차단한 단체를 빼고) 다르게 세면, 차단 전후를
+// 견주어 한 단체의 행사 수를 알아낼 수 있다.
+export function eventDemand(database: Database, today = todayInKorea()) {
   const current = today.slice(0, 7)
   const from = shiftMonth(current, -demandWindow.past)
   const to = shiftMonth(current, demandWindow.ahead)
   const tally = new Map<string, { school: string; month: string; count: number }>()
   for (const owner of database.accounts) {
     if (owner.role !== "학생단체" || isDemoAccount(database, owner) || owner.suspendedAt) continue
-    if (viewer && blockedBetween(database, viewer, owner.id)) continue
     // 목록의 학교가 먼저다. 소개를 아직 쓰지 않은 단체는 가입할 때의 학교다.
     const school = (findListing(database, owner)?.school ?? owner.school ?? "").trim()
     // 가입에서 40자까지만 받는다. 그 전에 들어온 더 긴 값은 칸마다 되풀이되지 않게 뺀다.

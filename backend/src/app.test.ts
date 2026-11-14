@@ -339,12 +339,11 @@ test("members see how many events each school holds by month, counts only, hidin
     database.demoAccountIds = demoIds
   }
 
-  // 보는 사람과 어느 쪽이든 차단한 단체의 행사는 빼고 센다.
+  // 누가 보든 같은 수다: 차단해도 바뀌지 않는다(바뀌면 한 단체의 수가 드러난다).
   const brandId = accountOf("demand@demand-cafe.kr").id
   database.blocks[brandId] = [gone.id]
   try {
-    assert.deepEqual(ours(await shown(brand)), [["2026-06", 3], ["2026-12", 3]])
-    assert.deepEqual(ours(await shown(listed)), [["2026-06", 3], ["2026-12", 3], ["2027-01", 3]])
+    assert.deepEqual(ours(await shown(brand)), ours(await shown(listed)))
   } finally {
     delete database.blocks[brandId]
   }
