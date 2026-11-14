@@ -1536,7 +1536,7 @@ function App() {
       return (
         <AgreementPage
           id={view.agreement}
-          member={member}
+          loggedIn={account !== null}
           goalsSaved={goalsSaved}
           paid={paid}
           onBack={() => goBack({ page, agreements: true })}
@@ -1556,7 +1556,7 @@ function App() {
       return (
         <ExplorePage
           role={role}
-          loggedIn={account !== null}
+          member={member}
           onBack={() => goBack({ page: students ? "내 행사" : "행사 일정" })}
           onOpenEvent={(eventId) => go({ page, eventPage: eventId })}
         />
