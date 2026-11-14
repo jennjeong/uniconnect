@@ -1,4 +1,3 @@
-import { createHash, timingSafeEqual } from "node:crypto"
 import { Router } from "express"
 
 import { config } from "../config.js"
@@ -13,11 +12,9 @@ import { sendProposalNudges } from "../lib/nudges.js"
 import { sendSearchAlerts } from "../lib/savedSearches.js"
 import { sendPayoutReminders, sendReminders } from "../lib/reminders.js"
 import { refreshViews } from "../lib/snsPosts.js"
+import { sameSecret } from "../lib/secrets.js"
 
 export const cronRouter = Router()
-
-// 양쪽을 해시하면 길이가 같아져 timingSafeEqual을 쓸 수 있다.
-const digest = (value: string) => createHash("sha256").update(value).digest()
 
 // Vercel은 요청 사이에 아무것도 돌지 않으므로, 오래 떠 있는 서버가 쓰는 한
 // 시간 간격 타이머(index.ts) 대신 Vercel Cron이 하루에 두 번(vercel.json, 한국
@@ -29,7 +26,7 @@ const digest = (value: string) => createHash("sha256").update(value).digest()
 cronRouter.get("/reminders", async (req, res) => {
   const expected = config.cronSecret
   const given = req.get("authorization") ?? ""
-  if (!expected || !timingSafeEqual(digest(given), digest(`Bearer ${expected}`))) {
+  if (!expected || !sameSecret(given, `Bearer ${expected}`)) {
     throw new HttpError(404, "없는 API 경로예요.")
   }
   // 작업마다 따로 실패한다. 하나가 던져도 나머지는 돈다. 실패가 있으면 Vercel의

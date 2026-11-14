@@ -1,4 +1,5 @@
 import { todayInKorea } from "./dates.js"
+import { isDemoId } from "./reviews.js"
 import type { Database } from "../types.js"
 
 // 같은 수치를 두 가지로: 실제 회원만 센 것, 그리고 데모 계정과 함께 온
@@ -27,8 +28,7 @@ export type PlatformStats = Record<
 // 현장 측정, 메시지, 대기 중인 문의. "real"은 데모 계정과 회원이 만들지
 // 않은 것(시드의 제안)을 빼서 실제 회원이 한 일만 센다.
 export function platformStats(database: Database, now = new Date()): PlatformStats {
-  const demo = new Set(Object.values(database.demoAccountIds))
-  const isReal = (accountId: string | undefined) => accountId !== undefined && !demo.has(accountId)
+  const isReal = (accountId: string | undefined) => accountId !== undefined && !isDemoId(database, accountId)
   const count = <T>(items: T[], real: (item: T) => boolean): Figure => ({
     real: items.filter(real).length,
     total: items.length,
@@ -75,15 +75,14 @@ export function platformStats(database: Database, now = new Date()): PlatformSta
 // 대시보드가 누구에게나 보여 줄 수 있는 것(GET /api/site): 양쪽에 가입한
 // 회원 수, 학교 수, 이들이 맺은 협찬. 데모 계정과 시드는 세지 않는다.
 export function publicCounts(database: Database) {
-  const demo = new Set(Object.values(database.demoAccountIds))
-  const members = database.accounts.filter((account) => !demo.has(account.id))
+  const members = database.accounts.filter((account) => !isDemoId(database, account.id))
   const groups = members.filter((account) => account.role === "학생단체")
   return {
     groups: groups.length,
     brands: members.filter((account) => account.role === "브랜드").length,
     schools: new Set(groups.map((account) => account.school.trim()).filter(Boolean)).size,
     sponsorships: Object.entries(database.sponsorships)
-      .filter(([accountId]) => !demo.has(accountId))
+      .filter(([accountId]) => !isDemoId(database, accountId))
       .reduce((total, [, list]) => total + list.length, 0),
   }
 }

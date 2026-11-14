@@ -2,7 +2,7 @@ import { Router } from "express"
 
 import { HttpError } from "../lib/errors.js"
 import { isDemoAccount } from "../lib/reviews.js"
-import { addSearch, parseCriteria, searchesOf, searchView } from "../lib/savedSearches.js"
+import { addSearch, parseCriteria, partnersOf, searchesOf, searchView } from "../lib/savedSearches.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 
@@ -13,7 +13,8 @@ export const searchesRouter = Router()
 searchesRouter.get("/", (req, res) => {
   const account = requireAccount(req)
   const database = getDatabase()
-  res.json({ searches: searchesOf(database, account.id).map((search) => searchView(database, account, search)) })
+  const listed = partnersOf(database, account)
+  res.json({ searches: searchesOf(database, account.id).map((search) => searchView(database, account, search, listed)) })
 })
 
 // 여러 방문자가 함께 쓰는 데모 계정은 저장하지 못한다.
@@ -21,9 +22,11 @@ searchesRouter.post("/", async (req, res) => {
   const account = requireAccount(req)
   const database = getDatabase()
   if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 관심 조건을 저장할 수 없어요.")
-  const search = addSearch(database, account, parseCriteria(req.body, account))
+  const criteria = parseCriteria(req.body, account)
+  const listed = partnersOf(database, account)
+  const search = addSearch(database, account, criteria, new Date(), listed)
   await saveDatabase()
-  res.status(201).json({ search: searchView(database, account, search) })
+  res.status(201).json({ search: searchView(database, account, search, listed) })
 })
 
 const ownSearch = (accountId: string, id: unknown) => {

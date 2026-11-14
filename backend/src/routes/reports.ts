@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto"
 import { Router } from "express"
 
-import { findListing, shownTo } from "../lib/catalog.js"
+import { findListing, listingOwner, partnerCatalogOf, shownTo } from "../lib/catalog.js"
 import { HttpError } from "../lib/errors.js"
 import { createRateLimit } from "../lib/rateLimit.js"
 import { isDemoAccount, reviewKey } from "../lib/reviews.js"
@@ -12,13 +12,6 @@ import type { AbuseReport, Account, ChatSide, Database } from "../types.js"
 
 export const reportsRouter = Router()
 export const blocksRouter = Router()
-
-// 계정이 만나는 쪽의 카탈로그다. 학생단체에게는 브랜드다.
-const partnerCatalog = (account: Account) => (account.role === "학생단체" ? "brands" : "groups")
-
-// 리스팅 뒤에 있는 계정이다. 리스팅에 계정이 있을 때만 있다(예시에는 없다).
-const ownerOfListing = (database: Database, listingId: string) =>
-  database.accounts.find((account) => account.groupId === listingId || account.brandId === listingId)
 
 // 한 시간에 누구나 신고하는 횟수보다 많은 수다.
 const reportsPerHour = createRateLimit({
@@ -35,10 +28,10 @@ const reportsPerHour = createRateLimit({
 function reportedThing(database: Database, account: Account, body: Record<string, unknown> | undefined) {
   const kind = text(body?.kind)
   if (kind === "account") {
-    const catalog = partnerCatalog(account)
+    const catalog = partnerCatalogOf(account.role)
     const listing = database[catalog].find((item) => item.id === text(body?.listingId))
     if (!listing || !shownTo(database, catalog, listing, account)) throw new HttpError(404, "신고할 상대를 찾을 수 없어요.")
-    return { accountId: ownerOfListing(database, listing.id)?.id, target: { kind } as AbuseReport["target"] }
+    return { accountId: listingOwner(database, listing.id)?.id, target: { kind } as AbuseReport["target"] }
   }
   if (kind === "message") {
     const side: ChatSide = account.role === "학생단체" ? "group" : "brand"
@@ -49,7 +42,7 @@ function reportedThing(database: Database, account: Account, body: Record<string
       throw new HttpError(404, "신고할 메시지를 찾을 수 없어요.")
     }
     return {
-      accountId: ownerOfListing(database, side === "group" ? conversation.brandId : conversation.groupId)?.id,
+      accountId: listingOwner(database, side === "group" ? conversation.brandId : conversation.groupId)?.id,
       target: { kind, conversationId: conversation.id, messageId: message.id } as AbuseReport["target"],
       // 파일은 보낼 때의 이름으로 보인다.
       excerpt: message.deletedAt ? undefined : message.text || message.attachment?.name,
@@ -71,7 +64,7 @@ function reportedThing(database: Database, account: Account, body: Record<string
     if (!review?.reply) throw new HttpError(404, "신고할 답글을 찾을 수 없어요.")
     return {
       // 답글의 작성자는 후기가 가리키는 리스팅 뒤의 계정이다.
-      accountId: ownerOfListing(database, review.aboutId)?.id,
+      accountId: listingOwner(database, review.aboutId)?.id,
       target: { kind, reviewId: review.id } as AbuseReport["target"],
       excerpt: review.reply.text,
     }
@@ -139,9 +132,9 @@ blocksRouter.post("/", async (req, res) => {
   const account = requireAccount(req)
   const database = getDatabase()
   if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 차단할 수 없어요.")
-  const catalog = partnerCatalog(account)
+  const catalog = partnerCatalogOf(account.role)
   const listing = database[catalog].find((item) => item.id === text(req.body?.listingId))
-  const other = listing && shownTo(database, catalog, listing, account) ? ownerOfListing(database, listing.id) : undefined
+  const other = listing && shownTo(database, catalog, listing, account) ? listingOwner(database, listing.id) : undefined
   if (!other) throw new HttpError(404, "차단할 상대를 찾을 수 없어요.")
   const blocked = (database.blocks[account.id] ??= [])
   if (!blocked.includes(other.id)) blocked.push(other.id)
@@ -152,7 +145,7 @@ blocksRouter.post("/", async (req, res) => {
 blocksRouter.delete("/:listingId", async (req, res) => {
   const account = requireAccount(req)
   const database = getDatabase()
-  const other = ownerOfListing(database, String(req.params.listingId))
+  const other = listingOwner(database, String(req.params.listingId))
   const blocked = database.blocks[account.id] ?? []
   if (!other || !blocked.includes(other.id)) throw new HttpError(404, "차단한 상대가 아니에요.")
   const left = blocked.filter((id) => id !== other.id)

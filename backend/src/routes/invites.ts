@@ -8,14 +8,13 @@ import { createRateLimit } from "../lib/rateLimit.js"
 import { assertLinkable } from "../lib/shopInvites.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
-import type { Account, Database, ShopInvite } from "../types.js"
+import { isDemoAccount } from "../lib/reviews.js"
+import type { Database, ShopInvite } from "../types.js"
 
 export const invitesRouter = Router()
 
 // 학생단체 하나가 초대할 수 있는 매장의 최대 수다(409 응답에는 100이라고 나온다).
 export const inviteLimit = 100
-
-const isDemo = (database: Database, account: Account) => Object.values(database.demoAccountIds).includes(account.id)
 
 function newCode(database: Database) {
   let code: string
@@ -65,7 +64,7 @@ invitesRouter.post("/", async (req, res) => {
   if (account.role !== "학생단체") throw new HttpError(403, "학생단체 계정으로 가게를 초대할 수 있어요.")
   const database = getDatabase()
   // 초대는 실제 매장 주인에게 가므로 회원이 보낸 것이어야 한다.
-  if (isDemo(database, account)) {
+  if (isDemoAccount(database, account)) {
     throw new HttpError(403, "데모 계정으로는 실제 가게를 초대할 수 없어요. 가입하면 우리 단체 이름으로 초대할 수 있어요.")
   }
   const placeId = String(req.body?.placeId ?? "")
@@ -110,7 +109,7 @@ invitesRouter.post("/:code/accept", async (req, res) => {
   const account = requireAccount(req)
   if (account.role !== "브랜드") throw new HttpError(403, "브랜드 계정으로 가게를 연결할 수 있어요.")
   const database = getDatabase()
-  if (isDemo(database, account)) throw new HttpError(403, "데모 계정은 가게를 연결할 수 없어요.")
+  if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 가게를 연결할 수 없어요.")
   const invite = findInvite(database, req.params.code)
   const listing = assertLinkable(database, account, invite)
   // 두 번 받아도 달라지는 것이 없다.

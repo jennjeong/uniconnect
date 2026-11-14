@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto"
 import { Router } from "express"
 
-import { brandIndustries, groupIndustries, shownCatalog, shownTo } from "../lib/catalog.js"
+import { industryOf, ownerOf, partnerCatalogOf, shownCatalog, shownTo } from "../lib/catalog.js"
 import { todayInKorea } from "../lib/dates.js"
 import { HttpError } from "../lib/errors.js"
 import { contractState, openTasksOf } from "../lib/agreements.js"
@@ -26,8 +26,8 @@ function proposalState(account: Account) {
   const database = getDatabase()
   // 계정이 더 이상 볼 수 없는 리스팅에 보낸 제안(예시를 분리하기 전에 회원이
   // 예시에 보낸 것)은 빠지고, 떠난 파트너에게 보낸 제안은 남는다.
-  const catalog = account.role === "학생단체" ? "brands" : "groups"
-  const listings = catalog === "brands" ? database.brands : database.groups
+  const catalog = partnerCatalogOf(account.role)
+  const listings = database[catalog]
   const proposals = (database.proposals[account.id] ?? []).filter((id) => {
     const listing = listings.find((item) => item.id === id)
     return !listing || shownTo(database, catalog, listing, account)
@@ -81,8 +81,8 @@ function proposalState(account: Account) {
                 database,
                 item.id,
                 account.role === "학생단체"
-                  ? { group: true, brand: database.accounts.some((owner) => owner.brandId === item.partnerId) }
-                  : { group: database.accounts.some((owner) => owner.groupId === item.partnerId), brand: true },
+                  ? { group: true, brand: Boolean(ownerOf(database, "brands", item.partnerId)) }
+                  : { group: Boolean(ownerOf(database, "groups", item.partnerId)), brand: true },
               ),
             }
           : {}),
@@ -155,7 +155,7 @@ function brandOffer(account: Account, groupId: string, campaign: EventItem, note
     campaignId: campaign.id,
     ...(listing ? { brandId: listing.id } : {}),
     brandName: account.name,
-    industry: listing?.industry ?? brandIndustries[account.type] ?? "cafe",
+    industry: listing?.industry ?? industryOf(account),
     campaignName: campaign.name,
     campaignDate: campaign.date,
     offer: listing?.offer || "협찬 내용 협의",
@@ -206,7 +206,7 @@ proposalsRouter.post("/", async (req, res) => {
   const database = getDatabase()
   // 학생단체는 자기가 보는 모든 브랜드에, 브랜드는 모든 단체에 제안한다.
   // 회원은 회원에게, 데모 계정은 예시 안에서만이다.
-  const partner = shownCatalog(database, account.role === "학생단체" ? "brands" : "groups", account).find(
+  const partner = shownCatalog(database, partnerCatalogOf(account.role), account).find(
     (match) => match.id === matchId,
   )
   if (!partner) throw new HttpError(404, "목록에 없는 상대예요.")
@@ -258,7 +258,7 @@ proposalsRouter.post("/", async (req, res) => {
     const offer = { ...brandOffer(account, matchId, event, note), ...applying, ...(terms ? { terms } : {}) }
     database.offers.push(offer)
     void notify(
-      database.accounts.find((item) => item.groupId === matchId),
+      ownerOf(database, "groups", matchId),
       "proposals",
       "새 협찬 제안이 왔어요",
       [
@@ -280,7 +280,7 @@ proposalsRouter.post("/", async (req, res) => {
       eventId: event.id,
       groupName: account.name,
       school: account.school,
-      industry: groupIndustries[account.type] ?? "performance",
+      industry: industryOf(account),
       eventName: event.name,
       eventDate: event.date,
       people: event.people ? `예상 인원 ${event.people}` : "인원 협의",
@@ -292,7 +292,7 @@ proposalsRouter.post("/", async (req, res) => {
       createdAt: new Date().toISOString(),
     })
     void notify(
-      database.accounts.find((item) => item.brandId === matchId),
+      ownerOf(database, "brands", matchId),
       "proposals",
       "새 협찬 제안이 왔어요",
       [`${account.name}에서 '${event.name}' 협찬을 제안했어요.`, ...termLines(terms), ...postLine, ...(note ? [`메시지: ${note}`] : [])],

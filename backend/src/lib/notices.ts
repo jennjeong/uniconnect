@@ -1,16 +1,17 @@
 import { waitUntil } from "@vercel/functions"
 
-import { config } from "../config.js"
 import { translate } from "./i18n.js"
 import { createRateLimit } from "./rateLimit.js"
 import { mailConfigured, oneLine, sendMail } from "./mailer.js"
+import { isDemoAccount } from "./reviews.js"
+import { config } from "../config.js"
 import { getDatabase } from "../store.js"
 import type { Account, MailKind } from "../types.js"
 
 // 공용 데모 계정에는 이메일을 보내지 않는다. 데모를 써 보는 모두가 쓰므로
 // 주소가 누구도 가리키지 않고, 하나는 실제 대학교 도메인에 있다. 운영자가
 // 정지한 계정에도 보내지 않는다.
-const isDemo = (account: Account) => Object.values(getDatabase().demoAccountIds).includes(account.id)
+const isDemo = (account: Account) => isDemoAccount(getDatabase(), account)
 
 // 계정에 처리할 일이 있다고 이메일로 알린다: 제안, 답, 메시지. SITE_URL이
 // 있으면 페이지 링크를 붙인다. 계정이 내 정보에서 끈 종류는 보내지 않지만

@@ -1,5 +1,6 @@
 import { findListing } from "./catalog.js"
 import { todayInKorea } from "./dates.js"
+import { isDemoAccount } from "./reviews.js"
 import type { Database } from "../types.js"
 
 // 대학별 · 시기별 행사 수요다(#344). 브랜드가 언제 어느 학교에 협찬할지 정하도록, 학생단체의
@@ -23,10 +24,9 @@ export function eventDemand(database: Database, today = todayInKorea()) {
   const current = today.slice(0, 7)
   const from = shiftMonth(current, -demandWindow.past)
   const to = shiftMonth(current, demandWindow.ahead)
-  const demo = new Set(Object.values(database.demoAccountIds))
   const tally = new Map<string, { school: string; month: string; count: number }>()
   for (const owner of database.accounts) {
-    if (owner.role !== "학생단체" || demo.has(owner.id) || owner.suspendedAt) continue
+    if (owner.role !== "학생단체" || isDemoAccount(database, owner) || owner.suspendedAt) continue
     // 목록의 학교가 먼저다. 소개를 아직 쓰지 않은 단체는 가입할 때의 학교다.
     const school = (findListing(database, owner)?.school ?? owner.school ?? "").trim()
     if (!school) continue

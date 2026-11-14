@@ -1,5 +1,5 @@
 import { prices, sell, shiftLaterPeriods } from "./billing.js"
-import { addDays, todayInKorea } from "./dates.js"
+import { addDays, koreanDay, todayInKorea } from "./dates.js"
 import { HttpError } from "./errors.js"
 import { isPro, localUntil, proUntil } from "./plan.js"
 import { reportAccess } from "./premiumReport.js"
@@ -19,7 +19,7 @@ export const freeOffersPerMonth = 5
 export const partnerRequestsPerMonth = 2
 export const partnerRequestCategory = "파트너스 섭외 요청"
 
-const koreanMonth = (at: string) => new Date(new Date(at).getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 7)
+const koreanMonth = (at: string) => koreanDay(at).slice(0, 7)
 
 // 브랜드가 이번 달에 보낸 제안.
 export function offersThisMonth(database: Database, accountId: string) {

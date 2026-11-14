@@ -1,10 +1,11 @@
-import { createHash, randomUUID, timingSafeEqual } from "node:crypto"
+import { randomUUID } from "node:crypto"
 import { Router, type Request } from "express"
 
 import { config } from "../config.js"
 import { adminLogRows, adminRequest, isLive, logAdmin, noteLimit, serviceHealth } from "../lib/adminTools.js"
 import { cardReady, markCancelled, markPaid, markPartlyRefunded, partialRefundOf, paymentsOf } from "../lib/billing.js"
 import { askToss, reconcileRefunds, refundCard, refundOutside, settleCard, stuckRefunds } from "../lib/cardRecovery.js"
+import { duplicateIds } from "../lib/adminInsights.js"
 import { memberDetail, memberRow, overview, proposalRows } from "../lib/console.js"
 import { todayInKorea } from "../lib/dates.js"
 import { recentErrors } from "../lib/errorLog.js"
@@ -16,6 +17,7 @@ import { isDemoAccount } from "../lib/reviews.js"
 import { platformStats } from "../lib/stats.js"
 import { text } from "../lib/validation.js"
 import { getDatabase, refreshDatabase, saveDatabase } from "../store.js"
+import { sameSecret } from "../lib/secrets.js"
 import type { Account, Announcement, Payment, ReportAction } from "../types.js"
 
 // 운영자는 FAQ 페이지에서 온 질문을 읽고 답하며 플랫폼의 수치를 본다.
@@ -30,10 +32,6 @@ const adminFailures = createRateLimit({
   message: "관리자 인증 실패가 너무 많아요. 15분 뒤에 다시 시도해 주세요.",
 })
 
-// 양쪽을 해시하면 무엇을 보냈든(한글이어도) 길이가 같아져 timingSafeEqual을
-// 쓸 수 있다.
-const digest = (value: string) => createHash("sha256").update(value).digest()
-
 export async function requireAdmin(req: Request) {
   const given = req.get("x-admin-token") ?? ""
   const request = adminRequest.getStore()
@@ -44,7 +42,7 @@ export async function requireAdmin(req: Request) {
     const key = clientKey(req)
     await adminFailures.check(key)
     const expected = config.adminToken
-    if (expected && timingSafeEqual(digest(given), digest(expected))) {
+    if (expected && sameSecret(given, expected)) {
       // 맞는 토큰이 닫힌 것은 추측이 아니므로 실패로 세지 않는다. 콘솔을 한 번 열 때
       // 요청이 여러 개라, 세면 열려 있던 탭 하나로 같은 주소의 운영자가 함께 막힌다.
       if (tokenClosed(getDatabase())) throw new HttpError(403, "관리자만 쓸 수 있어요.")
@@ -301,8 +299,9 @@ adminRouter.get("/accounts", async (req, res) => {
   const role = text(req.query.role)
   const state = text(req.query.state)
   const tag = text(req.query.tag)
+  const duplicates = duplicateIds(database)
   const rows = database.accounts
-    .map((account) => memberRow(database, account))
+    .map((account) => memberRow(database, account, duplicates))
     .filter((row) => !query || [row.name, row.email, row.school].some((value) => value.toLowerCase().includes(query)))
     .filter((row) => !role || row.role === role)
     .filter((row) => {

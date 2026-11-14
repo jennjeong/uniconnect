@@ -23,6 +23,13 @@ export function todayInKorea(now = new Date()) {
   return new Date(now.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
 }
 
+// 어떤 시각(ISO 문자열)이 한국에서 무슨 날인지 "YYYY-MM-DD".
+export const koreanDay = (at: string) => todayInKorea(new Date(at))
+
+// 두 "YYYY-MM-DD" 사이의 일수(뒤가 앞보다 이르면 음수).
+export const daysBetween = (from: string, to: string) =>
+  Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000)
+
 // 한국 시계의 날짜와 시각.
 export function hourInKorea(now = new Date()) {
   const korea = new Date(now.getTime() + 9 * 60 * 60 * 1000)

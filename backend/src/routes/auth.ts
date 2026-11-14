@@ -25,6 +25,7 @@ import { accountTypes, checkPassword, mailKinds, parseContact, parseRole, text }
 import { forgetReferralRewards, referralRewardsOf, referralStats, referrerOf } from "../lib/referrals.js"
 import { hashToken, requireAccount } from "../middleware/session.js"
 import { getDatabase, retryConflicts, saveDatabase } from "../store.js"
+import { isDemoAccount } from "../lib/reviews.js"
 import type { Account, Database, EmailCode, MailKind, PublicAccount, Role, Session, SocialProvider } from "../types.js"
 
 export const authRouter = Router()
@@ -79,7 +80,7 @@ const keepUntil = (entry: EmailCode) =>
 
 // 데모 계정의 비밀번호는 데모를 써 보는 모두에게 공개되어 있으므로, 아무도
 // 바꾸거나 삭제하거나 초기화할 수 없다.
-const isDemo = (account: Account) => Object.values(getDatabase().demoAccountIds).includes(account.id)
+const isDemo = (account: Account) => isDemoAccount(getDatabase(), account)
 const demoLocked = "데모 계정은 비밀번호를 바꾸거나 탈퇴할 수 없어요."
 // 신고 때문에 운영자가 정지한 계정이다.
 const suspendedMessage = "운영 정책에 따라 이용이 정지된 계정이에요."

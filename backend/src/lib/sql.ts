@@ -52,41 +52,25 @@ async function createTable(sql: Sql, text: string) {
 // JSON 문서 하나의 데이터, 시간별 복사본, 계약서 사진, 운영자용 최근 오류,
 // 모든 복사본이 공유하는 한도 카운트(lib/rateLimit.ts).
 export function ensureTables(sql: Sql) {
-  tables ??= (async () => {
-    await createTable(
-      sql,
+  // 서로 기대지 않는 테이블이라 함께 만든다(콜드 스타트의 첫 요청이 아홉 번 오가지 않게).
+  tables ??= Promise.all(
+    [
       "create table if not exists uniconnect_store (id smallint primary key, data text not null, version integer not null, saved_at timestamptz not null default now())",
-    )
-    await createTable(sql, "create table if not exists uniconnect_backups (taken_at timestamptz primary key, data text not null)")
-    await createTable(
-      sql,
+      "create table if not exists uniconnect_backups (taken_at timestamptz primary key, data text not null)",
       "create table if not exists uniconnect_photos (agreement_id text not null, name text not null, data text not null, primary key (agreement_id, name))",
-    )
-    await createTable(
-      sql,
       "create table if not exists uniconnect_errors (id text primary key, at timestamptz not null, entry text not null)",
-    )
-    // 참여 기록과 쌓이는 집계다(lib/passRows.ts).
-    await createTable(
-      sql,
+      // 참여 기록과 쌓이는 집계다(lib/passRows.ts).
       "create table if not exists uniconnect_passes (code text not null, pass text not null, surveyed boolean not null default false, issued_at timestamptz not null default now(), primary key (code, pass))",
-    )
-    await createTable(
-      sql,
       "create table if not exists uniconnect_coupons (code text not null, number text not null, pass text not null, coupon_id text not null, visited boolean not null default false, issued_at timestamptz not null default now(), primary key (code, number), unique (code, pass, coupon_id))",
-    )
-    await createTable(
-      sql,
       "create table if not exists uniconnect_counts (id bigserial primary key, code text not null, kind text not null, sponsor_id text, answers text, at timestamptz not null default now())",
-    )
-    await createTable(sql, "create table if not exists uniconnect_fold (id smallint primary key, at timestamptz not null)")
-    await createTable(
-      sql,
+      "create table if not exists uniconnect_fold (id smallint primary key, at timestamptz not null)",
       "create table if not exists uniconnect_limits (name text not null, key text not null, count integer not null, reset_at bigint not null, primary key (name, key))",
-    )
-  })().catch((error: unknown) => {
-    tables = undefined
-    throw error
-  })
+    ].map((text) => createTable(sql, text)),
+  )
+    .then(() => undefined)
+    .catch((error: unknown) => {
+      tables = undefined
+      throw error
+    })
   return tables
 }

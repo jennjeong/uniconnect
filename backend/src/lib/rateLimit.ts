@@ -3,6 +3,7 @@ import type { Request } from "express"
 
 import { HttpError } from "./errors.js"
 import { databaseSql, ensureTables, type Sql } from "./sql.js"
+import { isDemoAccount } from "./reviews.js"
 import type { Account, Database } from "../types.js"
 
 // 키(IP, 또는 IP와 이메일)별 요청을 고정 윈도로 센다. 데이터베이스
@@ -205,8 +206,7 @@ export const clientKey = (req: Request) => req.ip ?? req.socket.remoteAddress ??
 // 계정이 보내는 요청은 주소와 상관없이 계정별로 센다. 공용 데모 계정은
 // 주소별로도 세어서 한 방문자가 모두의 몫을 다 쓰지 못하게 한다.
 export function senderKey(req: Request, database: Database, account: Account) {
-  const demo = Object.values(database.demoAccountIds).includes(account.id)
-  return demo ? `${account.id} ${clientKey(req)}` : account.id
+  return isDemoAccount(database, account) ? `${account.id} ${clientKey(req)}` : account.id
 }
 
 // 테스트는 메모리와 테이블 모두 새 카운트로 각 케이스를 시작한다.

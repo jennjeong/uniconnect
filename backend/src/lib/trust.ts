@@ -1,5 +1,5 @@
 import { acceptedProposalsOf } from "./agreements.js"
-import { todayInKorea } from "./dates.js"
+import { koreanDay, todayInKorea } from "./dates.js"
 import { statusOf } from "./proposals.js"
 import type { Account, Database, SponsorOffer, SponsorRequest } from "../types.js"
 
@@ -18,15 +18,24 @@ export type TrustSignals = { response: TrustRate; fulfilment?: TrustRate }
 const rateOf = (kept: number, count: number): TrustRate =>
   count >= trustMinimum ? { count, rate: Math.round((kept / count) * 100) } : { count }
 
-const dayOf = (at: string) => todayInKorea(new Date(at))
-
-// 리스팅 주인의 지표. 주인이 없거나 데모 계정이면 undefined다.
-export function trustOf(database: Database, owner: Account | undefined, today = todayInKorea()): TrustSignals | undefined {
+// 여러 리스팅의 지표를 셀 때 한 번만 만드는 것: 데모 계정과 회원(데모가 아닌 계정)의 id.
+export function trustContext(database: Database) {
   const demo = new Set(Object.values(database.demoAccountIds))
+  const members = new Set(database.accounts.filter((account) => !demo.has(account.id)).map((account) => account.id))
+  return { demo, members }
+}
+
+// 리스팅 주인의 지표. 주인이 없거나 데모 계정이면 undefined다. 목록(lib/catalog.ts의
+// browse)은 context를 한 번 만들어 넘긴다.
+export function trustOf(
+  database: Database,
+  owner: Account | undefined,
+  today = todayInKorea(),
+  { demo, members } = trustContext(database),
+): TrustSignals | undefined {
   if (!owner || demo.has(owner.id)) return undefined
   const listingId = owner.role === "브랜드" ? owner.brandId : owner.groupId
   if (!listingId) return undefined
-  const members = new Set(database.accounts.filter((account) => !demo.has(account.id)).map((account) => account.id))
   const received: (SponsorRequest | SponsorOffer)[] =
     owner.role === "브랜드"
       ? database.requests.filter((request) => request.brandId === listingId)
@@ -36,7 +45,7 @@ export function trustOf(database: Database, owner: Account | undefined, today = 
   for (const proposal of received) {
     if (!proposal.fromAccountId || !members.has(proposal.fromAccountId)) continue
     const respondBy = proposal.terms?.respondBy
-    const inTime = Boolean(proposal.respondedAt) && (!respondBy || dayOf(proposal.respondedAt!) <= respondBy)
+    const inTime = Boolean(proposal.respondedAt) && (!respondBy || koreanDay(proposal.respondedAt!) <= respondBy)
     const over = statusOf(database, proposal, today) === "마감" || Boolean(respondBy && respondBy < today)
     if (!proposal.respondedAt && !over) continue
     closed += 1
@@ -52,7 +61,7 @@ export function trustOf(database: Database, owner: Account | undefined, today = 
     if (!payout?.dueDate) continue
     if (!payout.receivedAt && payout.dueDate >= today) continue
     due += 1
-    if (payout.receivedAt && dayOf(payout.receivedAt) <= payout.dueDate) kept += 1
+    if (payout.receivedAt && koreanDay(payout.receivedAt) <= payout.dueDate) kept += 1
   }
   return { response, fulfilment: rateOf(kept, due) }
 }

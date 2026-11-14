@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto"
 import type { Request } from "express"
 import { Router } from "express"
 
-import { findListing, shownTo } from "../lib/catalog.js"
+import { findListing, ownerOf, shownTo } from "../lib/catalog.js"
 import { todayInKorea, toIsoDate } from "../lib/dates.js"
 import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
@@ -248,7 +248,7 @@ function followEvent(database: Database, account: Account, event: EventItem, dat
       request.eventName = event.name
       request.eventDate = event.date
       request.people = event.people ? `예상 인원 ${event.people}` : "인원 협의"
-      const brand = database.accounts.find((item) => item.brandId === request.brandId)
+      const brand = ownerOf(database, "brands", request.brandId)
       if (brand) partners.set(brand.id, request.status === "수락" ? `/agreements/${request.id}` : "/inbox")
     }
     for (const list of Object.values(database.sponsorships)) {
@@ -261,7 +261,7 @@ function followEvent(database: Database, account: Account, event: EventItem, dat
       offer.campaignDate = event.date
       const sponsorship = (database.sponsorships[account.id] ?? []).find((item) => item.id === `sp-${offer.id}`)
       if (sponsorship) follow(sponsorship)
-      const group = database.accounts.find((item) => item.groupId === offer.groupId)
+      const group = ownerOf(database, "groups", offer.groupId)
       if (group) partners.set(group.id, offer.status === "수락" ? `/agreements/${offer.id}` : "/offers")
     }
   }

@@ -1,7 +1,8 @@
 import { addDays, todayInKorea } from "./dates.js"
 import { couponDays, estimatedSales, shareValue, syncSponsors } from "./measurements.js"
 import { venueCountsOf } from "./methods.js"
-import type { Database, Sponsorship } from "../types.js"
+import { eventsById } from "./eventIndex.js"
+import type { Database, EventItem, Sponsorship } from "../types.js"
 
 // 수락된 제안은 브랜드의 협찬 하나가 된다. 제안이 다루는 행사가 학생 행사면
 // id로 이어져, 집계, 가치, 목표가 그 행사의 측정에서 나오고 거기서 자기
@@ -51,10 +52,8 @@ function withLiveFigures(database: Database, sponsorship: Sponsorship): Sponsors
 
 // 협찬의 방문이 마지막으로 들어올 수 있는 날. 행사의 마지막 날 다음 날부터
 // 쿠폰 기간이 지나야 집계가 끝난다(measurements.ts checkInWindow와 같다).
-function countingUntil(database: Database, sponsorship: Sponsorship) {
-  const event = sponsorship.eventId
-    ? Object.values(database.events).flat().find((item) => item.id === sponsorship.eventId)
-    : undefined
+function countingUntil(events: Map<string, EventItem>, sponsorship: Sponsorship) {
+  const event = sponsorship.eventId ? events.get(sponsorship.eventId) : undefined
   return addDays(addDays(event?.endDate ?? sponsorship.date, 1), couponDays)
 }
 
@@ -62,9 +61,10 @@ function countingUntil(database: Database, sponsorship: Sponsorship) {
 // countingUntil까지는 집계 중이라, 화면은 ROAS를 목표와 견주지 않는다.
 export function finishedSponsorships(database: Database, brandAccountId: string) {
   const today = todayInKorea()
+  const events = eventsById(database)
   return (database.sponsorships[brandAccountId] ?? [])
     .filter((sponsorship) => sponsorship.date && sponsorship.date <= today)
-    .map((sponsorship) => ({ ...withLiveFigures(database, sponsorship), countingUntil: countingUntil(database, sponsorship) }))
+    .map((sponsorship) => ({ ...withLiveFigures(database, sponsorship), countingUntil: countingUntil(events, sponsorship) }))
     .sort((a, b) => b.date.localeCompare(a.date))
 }
 

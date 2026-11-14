@@ -1,6 +1,6 @@
 import { Router } from "express"
 
-import { browse } from "../lib/catalog.js"
+import { browse, partnerCatalogOf } from "../lib/catalog.js"
 import { parseRole } from "../lib/validation.js"
 import { getDatabase } from "../store.js"
 
@@ -12,7 +12,7 @@ export const matchesRouter = Router()
 // 없다)를 빼고, 목록(단체 찾기)에서는 그대로 보인다.
 matchesRouter.get("/", (req, res) => {
   const role = req.account?.role ?? parseRole(req.query.role)
-  const catalog = role === "학생단체" ? "brands" : "groups"
+  const catalog = partnerCatalogOf(role)
   const listed = browse(getDatabase(), catalog, req.account)
   const proposable = catalog === "groups" ? listed.filter((group) => "eventDate" in group && group.eventDate) : listed
   res.json({ matches: proposable.slice(0, 3) })

@@ -2,10 +2,10 @@ import { createHash } from "node:crypto"
 
 import { paidFor } from "./billing.js"
 import { browse } from "./catalog.js"
-import { addDays, todayInKorea } from "./dates.js"
+import { addDays, daysBetween, koreanDay, todayInKorea } from "./dates.js"
 import { checkInWindow, dailyCounts, defaultGoals, emptyMetrics, eventOf, shareValue } from "./measurements.js"
 import { activeMethodsOf, venueCountsOf } from "./methods.js"
-import { isDemoAccount } from "./reviews.js"
+import { isDemoAccount, isDemoId } from "./reviews.js"
 import { postedReach } from "./snsPosts.js"
 import { finishedSponsorships } from "./sponsorships.js"
 import type { Account, Database, EventItem, Measurement, Sponsorship, VenueCounts } from "../types.js"
@@ -52,20 +52,14 @@ function eventFigures(measurement: Measurement) {
 // 회원의 행사와, 데모는 예시까지 모든 행사와 비교한다.
 function comparable(database: Database, measurement: Measurement, demo: boolean) {
   const today = todayInKorea()
-  const demoIds = new Set(Object.values(database.demoAccountIds))
   return database.measurements.filter((other) => {
     if (other === measurement || other.metrics.scans === 0 || other.alwaysOn) return false
-    if (!demo && demoIds.has(other.accountId)) return false
+    if (!demo && isDemoId(database, other.accountId)) return false
     const event = eventOf(database, other)
     return Boolean(event && (event.endDate ?? event.date) < today)
   })
 }
 
-// 두 한국 날짜 사이의 일수.
-const daysBetween = (from: string, to: string) =>
-  Math.round((new Date(`${to}T00:00:00Z`).getTime() - new Date(`${from}T00:00:00Z`).getTime()) / 86_400_000)
-
-const koreanDate = (at: string) => new Date(new Date(at).getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
 
 // 사람이 온 시간. 시간대별 스캔, 기간 중 날짜별 스캔, 쿠폰, 방문, 그리고
 // 쿠폰을 받은 지 며칠 뒤에 방문했는지(이것만 남아 있는 최근 300건 기준).
@@ -77,11 +71,14 @@ export function timing(measurement: Measurement, event: EventItem) {
   const lags = new Map<number, number>()
   for (const entry of [...measurement.log].sort((a, b) => a.at.localeCompare(b.at))) {
     if (entry.kind !== "scans" && entry.kind !== "coupons" && entry.kind !== "visits") continue
-    const date = koreanDate(entry.at)
+    const date = koreanDay(entry.at)
     if (entry.kind === "coupons") couponDay.set(entry.participant, date)
     if (entry.kind === "visits") {
       const took = couponDay.get(entry.participant)
-      if (took) lags.set(Math.max(0, daysBetween(took, date)), (lags.get(Math.max(0, daysBetween(took, date))) ?? 0) + 1)
+      if (took) {
+        const lag = Math.max(0, daysBetween(took, date))
+        lags.set(lag, (lags.get(lag) ?? 0) + 1)
+      }
     }
   }
   const counted = dailyCounts(measurement)
@@ -340,7 +337,7 @@ export function premiumReport(database: Database, account: Account, id: string) 
   const weekdays = Array.from({ length: 7 }, () => 0)
   for (const entry of measurement.log) {
     if (entry.kind !== "visits") continue
-    weekdays[new Date(`${koreanDate(entry.at)}T00:00:00Z`).getUTCDay()] += 1
+    weekdays[new Date(`${koreanDay(entry.at)}T00:00:00Z`).getUTCDay()] += 1
   }
   const visitsAnalysis = {
     redemption: percent(visits, coupons),

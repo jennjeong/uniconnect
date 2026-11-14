@@ -1,10 +1,11 @@
 import { randomUUID } from "node:crypto"
 
-import { browse } from "./catalog.js"
+import { browse, partnerCatalogOf } from "./catalog.js"
 import { HttpError } from "./errors.js"
 import { notify } from "./notices.js"
-import { mailBatch } from "./reminders.js"
-import { eventKinds, text } from "./validation.js"
+import { sendInBatches } from "./reminders.js"
+import { eventKinds, industries, text } from "./validation.js"
+import { isDemoAccount } from "./reviews.js"
 import { getDatabase, retryConflicts, saveDatabase } from "../store.js"
 import type { Account, Database, Industry, Match, SavedSearch } from "../types.js"
 
@@ -13,9 +14,7 @@ import type { Account, Database, Industry, Match, SavedSearch } from "../types.j
 // 조건만 저장한다: 검색어, 업종, (단체 목록이면) 다음 행사의 종류와 학교.
 export const searchLimits = { perAccount: 5, name: 30, query: 50, known: 1000, listed: 5 }
 
-const industries: Industry[] = ["cafe", "photo", "wellness", "performance", "content", "sports", "beauty", "education"]
-
-export const searchCatalog = (account: Account) => (account.role === "학생단체" ? ("brands" as const) : ("groups" as const))
+export const searchCatalog = (account: Account) => partnerCatalogOf(account.role)
 
 type Criteria = Pick<SavedSearch, "query" | "industry" | "kind" | "school">
 
@@ -58,15 +57,24 @@ export function matchesCriteria(listing: Match, criteria: Criteria) {
   return words.every((word) => haystack.includes(word))
 }
 
-// 계정이 지금 찾을 수 있는 상대 중 조건에 맞는 것(lib/catalog.ts의 browse: 회원은 회원만,
-// 멈추거나 막은 상대는 빼고 잘 맞는 순).
-export const matchingListings = (database: Database, account: Account, criteria: Criteria) =>
-  browse(database, searchCatalog(account), account).filter((listing) => matchesCriteria(listing, criteria))
+// 계정이 지금 찾을 수 있는 상대(lib/catalog.ts의 browse: 회원은 회원만, 멈추거나 막은 상대는
+// 빼고 잘 맞는 순). 목록을 만드는 데 드는 일이 커서, 조건 여럿을 볼 때는 한 번 만들어 넘긴다.
+export const partnersOf = (database: Database, account: Account) => browse(database, searchCatalog(account), account)
+
+// 상대 중 조건에 맞는 것.
+export const matchingListings = (database: Database, account: Account, criteria: Criteria, listed = partnersOf(database, account)) =>
+  listed.filter((listing) => matchesCriteria(listing, criteria))
 
 export const searchesOf = (database: Database, accountId: string) => (database.savedSearches ??= {})[accountId] ?? []
 
 // 저장할 때 지금 맞는 상대는 이미 아는 것으로 둔다. 그 뒤에 새로 보이는 상대만 알린다.
-export function addSearch(database: Database, account: Account, criteria: Criteria & { name?: string }, now = new Date()) {
+export function addSearch(
+  database: Database,
+  account: Account,
+  criteria: Criteria & { name?: string },
+  now = new Date(),
+  listed = partnersOf(database, account),
+) {
   const list = searchesOf(database, account.id)
   if (list.length >= searchLimits.perAccount) throw new HttpError(409, "관심 조건은 5개까지 저장할 수 있어요. 쓰지 않는 조건을 지워 주세요.")
   const same = (item: SavedSearch) =>
@@ -75,7 +83,7 @@ export function addSearch(database: Database, account: Account, criteria: Criter
   const search: SavedSearch = {
     id: randomUUID(),
     ...criteria,
-    known: matchingListings(database, account, criteria).map((listing) => listing.id).slice(0, searchLimits.known),
+    known: matchingListings(database, account, criteria, listed).map((listing) => listing.id).slice(0, searchLimits.known),
     fresh: [],
     createdAt: now.toISOString(),
   }
@@ -84,8 +92,8 @@ export function addSearch(database: Database, account: Account, criteria: Criter
 }
 
 // 화면에 보이는 모양이다. 지금 맞는 수와, 아직 보지 않은 새 상대 중 지금도 찾을 수 있는 것.
-export function searchView(database: Database, account: Account, search: SavedSearch) {
-  const matches = matchingListings(database, account, search)
+export function searchView(database: Database, account: Account, search: SavedSearch, listed = partnersOf(database, account)) {
+  const matches = matchingListings(database, account, search, listed)
   const ids = new Set(matches.map((listing) => listing.id))
   const { known: _known, fresh, ...shown } = search
   return { ...shown, matchCount: matches.length, fresh: fresh.filter((id) => ids.has(id)) }
@@ -99,16 +107,16 @@ export function searchView(database: Database, account: Account, search: SavedSe
 export async function sendSearchAlerts(now = new Date()) {
   const found = await retryConflicts(async () => {
     const database = getDatabase()
-    const demo = new Set(Object.values(database.demoAccountIds))
     const due: { account: Account; lines: string[]; count: number }[] = []
     for (const [accountId, list] of Object.entries(database.savedSearches ?? {})) {
       const account = database.accounts.find((item) => item.id === accountId)
-      if (!account || demo.has(account.id) || account.suspendedAt) continue
+      if (!account || isDemoAccount(database, account) || account.suspendedAt) continue
       const lines: string[] = []
       let count = 0
+      const listed = partnersOf(database, account)
       for (const search of list) {
         const known = new Set(search.known)
-        const fresh = matchingListings(database, account, search).filter((listing) => !known.has(listing.id))
+        const fresh = matchingListings(database, account, search, listed).filter((listing) => !known.has(listing.id))
         if (fresh.length === 0) continue
         search.known = [...search.known, ...fresh.map((listing) => listing.id)].slice(-searchLimits.known)
         search.fresh = [...new Set([...search.fresh, ...fresh.map((listing) => listing.id)])].slice(-searchLimits.known)
@@ -122,23 +130,15 @@ export async function sendSearchAlerts(now = new Date()) {
     if (due.length > 0) await saveDatabase()
     return due
   })
-  let sent = 0
-  for (let start = 0; start < found.length; start += mailBatch) {
-    const batch = found.slice(start, start + mailBatch)
-    const answers = await Promise.all(
-      batch.map(({ account, lines, count }) =>
-        notify(
-          account,
-          "digest",
-          "관심 조건에 맞는 새 상대가 있어요",
-          [`저장한 관심 조건에 맞는 새 상대가 ${count}곳 있어요.`, ...lines],
-          searchCatalog(account) === "brands" ? "/matches" : "/groups",
-        ),
-      ),
-    )
-    sent += answers.filter(Boolean).length
-  }
-  return sent
+  return sendInBatches(found, ({ account, lines, count }) =>
+    notify(
+      account,
+      "digest",
+      "관심 조건에 맞는 새 상대가 있어요",
+      [`저장한 관심 조건에 맞는 새 상대가 ${count}곳 있어요.`, ...lines],
+      searchCatalog(account) === "brands" ? "/matches" : "/groups",
+    ),
+  )
 }
 
 // 메일에 적는 조건의 이름: 붙인 이름, 없으면 검색어.

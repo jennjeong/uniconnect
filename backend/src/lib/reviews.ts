@@ -13,8 +13,11 @@ export const reviewOpen = (proposal: AcceptedProposal) =>
 export const reviewTarget = (proposal: AcceptedProposal, side: ChatSide) =>
   (side === "group" ? proposal.brand : proposal.group).listingId
 
-export const isDemoAccount = (database: Database, account: Account | undefined) =>
-  account !== undefined && Object.values(database.demoAccountIds).includes(account.id)
+// 공용 데모 계정인지. 데모 계정은 둘뿐이라 매번 찾아도 싸다.
+export const isDemoId = (database: Database, id: string | undefined) =>
+  id !== undefined && Object.values(database.demoAccountIds).includes(id)
+
+export const isDemoAccount = (database: Database, account: Account | undefined) => isDemoId(database, account?.id)
 
 // 양쪽이 협찬의 전자계약서를 확인했는지(브랜드는 수수료를 낸 뒤). 계정이
 // 없는 상대는 확인할 수 없으므로 그때는 필요 없다.

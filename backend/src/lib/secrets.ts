@@ -1,4 +1,4 @@
-import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes } from "node:crypto"
+import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto"
 
 import { config } from "../config.js"
 
@@ -26,7 +26,14 @@ const isEmailCode = (holder: unknown) => typeof holder === "object" && holder !=
 
 const sensitive = (holder: unknown, key: string) => sealedKeys.has(key) || (key === "code" && isEmailCode(holder))
 
-const keyBytes = () => createHash("sha256").update(config.secretsKey!).digest()
+// 저장할 때마다 문서의 모든 비밀 값을 봉하므로, 키에서 만든 바이트를 키가 바뀔 때까지 다시 쓴다.
+let derived: { secret: string; key: Buffer } | undefined
+const keyBytes = () => {
+  const secret = config.secretsKey!
+  if (derived?.secret === secret) return derived.key
+  derived = { secret, key: createHash("sha256").update(secret).digest() }
+  return derived.key
+}
 
 export function seal(value: string) {
   if (!config.secretsKey || value.startsWith(prefix)) return value
@@ -76,6 +83,11 @@ export function openDocument<T>(text: string) {
 // 많지 않아 해시만으로는 유출된 값을 맞춰 볼 수 있으므로, `SECRETS_KEY`가 있으면 키를 섞는다.
 const plainRecovery = (code: string) => code.toUpperCase().replace(/[^A-Z0-9]/g, "")
 const oldRecoveryHash = (code: string) => createHash("sha256").update(plainRecovery(code)).digest("hex")
+
+// 비밀 값이 같은지 시간 차 없이 견준다. 양쪽을 해시하면 무엇을 보냈든(한글이어도) 길이가
+// 같아져 timingSafeEqual을 쓸 수 있다.
+export const sameSecret = (given: string, expected: string) =>
+  timingSafeEqual(createHash("sha256").update(given).digest(), createHash("sha256").update(expected).digest())
 
 export const hashRecovery = (code: string) =>
   config.secretsKey ? createHmac("sha256", config.secretsKey).update(plainRecovery(code)).digest("hex") : oldRecoveryHash(code)

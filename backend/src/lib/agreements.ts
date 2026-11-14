@@ -12,6 +12,7 @@ import { photos } from "./photos.js"
 import { canReview, isDemoAccount, publicReview, reviewOpen } from "./reviews.js"
 import { isSponsored } from "./sponsorships.js"
 import { sponsorTypes } from "./validation.js"
+import { ownerOf } from "./owners.js"
 import type { Account, Agreement, AgreementItem, ChatSide, Database, EventItem, ProposalTerms } from "../types.js"
 
 export { uploadsFolder } from "./photos.js"
@@ -50,7 +51,7 @@ export function acceptedProposal(database: Database, id: string): AcceptedPropos
       group: { name: request.groupName, account: groupAccount, listingId: groupAccount?.groupId },
       brand: {
         name: database.brands.find((brand) => brand.id === request.brandId)?.name ?? "",
-        account: database.accounts.find((account) => account.brandId === request.brandId),
+        account: ownerOf(database, "brands", request.brandId),
         listingId: request.brandId,
       },
       eventName: request.eventName,
@@ -71,7 +72,7 @@ export function acceptedProposal(database: Database, id: string): AcceptedPropos
     canceled: offer.status === "취소됨",
     group: {
       name: database.groups.find((group) => group.id === offer.groupId)?.name ?? "",
-      account: database.accounts.find((account) => account.groupId === offer.groupId),
+      account: ownerOf(database, "groups", offer.groupId),
       listingId: offer.groupId,
     },
     brand: { name: offer.brandName, account: brandAccount, listingId: offer.brandId ?? brandAccount?.brandId },
@@ -225,11 +226,17 @@ export function sideIn(proposal: AcceptedProposal, account: Account): ChatSide |
   return undefined
 }
 
-// 계정이 속한 수락된 제안. 최근에 답한 순서다.
+// 계정이 속한 수락된 제안. 최근에 답한 순서다. 계정이 쪽이 될 수 없는 제안(보낸 사람도,
+// 받는 리스팅의 주인도 아닌 것)은 만들기 전에 거른다. sideIn이 보는 계정은 보낸 사람이거나
+// 그 리스팅을 가진 계정이라서 결과는 같다.
 export function acceptedProposalsOf(database: Database, account: Account) {
   const ids = [
-    ...database.requests.filter((item) => accepted(item.status)).map((item) => item.id),
-    ...database.offers.filter((item) => accepted(item.status)).map((item) => item.id),
+    ...database.requests
+      .filter((item) => accepted(item.status) && (item.fromAccountId === account.id || (account.brandId !== undefined && item.brandId === account.brandId)))
+      .map((item) => item.id),
+    ...database.offers
+      .filter((item) => accepted(item.status) && (item.fromAccountId === account.id || (account.groupId !== undefined && item.groupId === account.groupId)))
+      .map((item) => item.id),
   ]
   return ids
     .flatMap((id) => {

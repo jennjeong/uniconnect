@@ -1,6 +1,6 @@
 import { Router } from "express"
 
-import { listedTo } from "../lib/catalog.js"
+import { listedTo, partnerCatalogOf } from "../lib/catalog.js"
 import { HttpError } from "../lib/errors.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -11,12 +11,9 @@ export const savedRouter = Router()
 // 한 계정이 저장해 둘 수 있는 리스팅의 최대 수다.
 const maxSaved = 200
 
-// 계정이 만나는 쪽의 카탈로그다. 학생단체에게는 브랜드다.
-const partnerCatalog = (account: Account) => (account.role === "학생단체" ? "brands" : "groups")
-
 // 이 계정이 목록에서 찾을 수 있는 반대편의 리스팅을 id로 찾는다.
 function seenListing(database: Database, account: Account, id: string) {
-  const catalog = partnerCatalog(account)
+  const catalog = partnerCatalogOf(account.role)
   const listing = database[catalog].find((item) => item.id === id)
   return listing && listedTo(database, catalog, listing, account) ? listing : undefined
 }

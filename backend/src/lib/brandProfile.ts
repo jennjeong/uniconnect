@@ -1,3 +1,4 @@
+import { ownerOf } from "./owners.js"
 import type { Database, Match } from "../types.js"
 
 // 회원 브랜드의 기본 정보와 태그는 입력이 아니라 한 일로 계산한다: 위치는
@@ -7,7 +8,7 @@ import type { Database, Match } from "../types.js"
 // 적힌 대로 둔다. 팔로워 수는 어느 브랜드에도 보이지 않는다.
 export function brandProfile(database: Database, stored: Match): Match {
   const listing = stored.sns ? { ...stored, sns: stored.sns.map(({ followers, ...row }) => row) } : stored
-  const owner = database.accounts.find((account) => account.brandId === listing.id)
+  const owner = ownerOf(database, "brands", listing.id)
   if (!owner) return listing
   const place = district(listing.location?.address)
   const offers = (listing.offers ?? []).map((item) => item.kind)

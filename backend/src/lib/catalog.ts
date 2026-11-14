@@ -1,12 +1,13 @@
 import { groupVerifiedNow } from "./groupCheck.js"
 import { todayInKorea } from "./dates.js"
 import { brandProfile } from "./brandProfile.js"
-import { trustOf } from "./trust.js"
+import { trustContext, trustOf } from "./trust.js"
 import { distanceKm, offsetMetres, placeOf } from "./geo.js"
 import { scoreMatch, type Viewer } from "./matchScore.js"
 import { isDemoAccount, reviewSummary, reviewsAbout } from "./reviews.js"
 import { blockedBetween } from "./safety.js"
 import { adUntil, isPro } from "./plan.js"
+import { ownerOf, ownersOf } from "./owners.js"
 import type { Account, Database, Industry, Match, Role } from "../types.js"
 
 // 계정 유형(validation.ts)을 매칭과 마크가 쓰는 업종 중 어디에 넣는지.
@@ -64,9 +65,6 @@ export const brandIndustries: Record<string, Industry> = {
 export const ownCatalog = (database: Database, role: Role) =>
   role === "학생단체" ? database.groups : database.brands
 
-export const partnerCatalog = (database: Database, role: Role) =>
-  role === "학생단체" ? database.brands : database.groups
-
 export const listingIdOf = (account: Account) =>
   account.role === "학생단체" ? account.groupId : account.brandId
 
@@ -75,15 +73,14 @@ export function findListing(database: Database, account: Account) {
   return id ? ownCatalog(database, account.role).find((listing) => listing.id === id) : undefined
 }
 
-// 리스팅이 속한 계정. 시드 카탈로그는 어느 계정에도 속하지 않는다.
-export const ownerOf = (database: Database, catalog: "brands" | "groups", listing: Match) =>
-  database.accounts.find((item) => (catalog === "brands" ? item.brandId : item.groupId) === listing.id)
+// 리스팅의 주인 찾기는 lib/owners.ts에 있다.
+export { listingOwner, ownerOf, ownersOf, partnerCatalogOf } from "./owners.js"
 
 // 회원(가입한 계정)은 다른 회원의 리스팅만 본다. 시드 카탈로그와 데모
 // 계정의 리스팅은 예시로, 방문자와 공용 데모 계정이 본다. 둘은 만나지 않는다.
 // 만든 것이 회원에게 닿지 않고 데모 계정도 회원에게 닿지 않는다.
 export function shownTo(database: Database, catalog: "brands" | "groups", listing: Match, account?: Account) {
-  const owner = ownerOf(database, catalog, listing)
+  const owner = ownerOf(database, catalog, listing.id)
   // 정지된 계정은 누구에게도 보이지 않고, 한쪽이 상대를 차단한 두 계정은
   // 서로 보이지 않는다.
   if (owner?.suspendedAt) return false
@@ -109,6 +106,10 @@ export const listedTo = (database: Database, catalog: "brands" | "groups", listi
 export const listedCatalog = (database: Database, catalog: "brands" | "groups", account?: Account) =>
   shownCatalog(database, catalog, account).filter((listing) => !listing.pausedAt)
 
+// 계정 유형으로 정하는 업종. 표에 없는 유형은 단체면 공연, 브랜드면 카페다.
+export const industryOf = (account: Account): Industry =>
+  account.role === "학생단체" ? (groupIndustries[account.type] ?? "performance") : (brandIndustries[account.type] ?? "cafe")
+
 // 새 계정이 소개를 쓰면 상대편이 찾을 수 있게 리스팅을 올린다. 매칭
 // 데이터가 생기기 전까지 점수는 70에서 시작한다.
 export function createListing(database: Database, account: Account): Match {
@@ -117,7 +118,7 @@ export function createListing(database: Database, account: Account): Match {
     id: `${students ? "group" : "brand"}-${account.id}`,
     name: account.name,
     category: account.type,
-    industry: (students ? groupIndustries : brandIndustries)[account.type] ?? (students ? "performance" : "cafe"),
+    industry: industryOf(account),
     offer: "",
     score: 70,
     tags: [],
@@ -131,7 +132,7 @@ export function createListing(database: Database, account: Account): Match {
 
 // 계정이 있는 단체는 그 계정 캘린더의 다음 행사를 보여 준다.
 export function withLiveEvent(database: Database, group: Match): Match {
-  const account = database.accounts.find((item) => item.groupId === group.id)
+  const account = ownerOf(database, "groups", group.id)
   if (!account) return group
   const today = todayInKorea()
   const next = (database.events[account.id] ?? [])
@@ -164,28 +165,34 @@ export function browse(database: Database, catalog: "brands" | "groups", account
   const listings =
     catalog === "brands" ? shown.map((brand) => brandProfile(database, brand)) : shown.map((group) => withLiveEvent(database, group))
   const viewer = viewerFor(database, account, catalog)
-  // 브랜드의 실적은 함께 보이는 브랜드와 견주어 센다.
-  const maxPopularity = Math.max(1, ...listedCatalog(database, "brands", account).map((brand) => brand.popularity ?? 0))
+  // 브랜드의 실적은 함께 보이는 브랜드와 견주어 센다. 브랜드 목록이면 shown이 바로 그것이다.
+  const brands = catalog === "brands" ? shown : listedCatalog(database, "brands", account)
+  const maxPopularity = Math.max(1, ...brands.map((brand) => brand.popularity ?? 0))
   const here = viewer && placeOf(viewer.listing, viewer.account)
+  // 리스팅마다 계정 전체를 다시 훑지 않도록 주인과 지표의 재료를 한 번 만든다.
+  const owners = ownersOf(database, catalog)
+  const today = todayInKorea()
+  const trusted = trustContext(database)
   return listings
     .map((listing) => {
-      const scored = viewer ? { ...listing, ...scoreMatch(database, viewer, listing, maxPopularity) } : listing
       const reviews = reviewSummary(reviewsAbout(database, listing.id))
-      const rated = reviews.count ? { ...scored, rating: reviews.average, reviewCount: reviews.count } : scored
-      const owner = ownerOf(database, catalog, listing)
-      const checked0 = owner?.business ? { ...rated, businessVerified: true as const } : rated
-      const verified = owner && groupVerifiedNow(owner) ? { ...checked0, groupVerified: true as const } : checked0
-      // Pro 브랜드(lib/plan.ts)는 PRO 마크를 보인다.
-      const pro = catalog === "brands" && owner && isPro(database, owner.id) ? { ...verified, pro: true as const } : verified
-      // 진행 중인 상단 광고(lib/ads.ts)는 맨 앞에 두고 AD로 표시한다.
-      const advertised = owner && adUntil(database, owner.id) ? { ...pro, ad: true as const } : pro
+      const owner = owners.get(listing.id)
       // 회원의 응답률과 이행률(lib/trust.ts)이다. 예시와 데모 계정에는 없다.
-      const trust = trustOf(database, owner)
-      const checked = trust ? { ...advertised, trust } : advertised
+      const trust = trustOf(database, owner, today, trusted)
       const there = placeOf(listing, owner)
-      return here && there
-        ? { ...checked, distanceKm: distanceKm(here, there), mapOffset: offsetMetres(here, there), mapPoint: { lat: there.lat, lng: there.lng } }
-        : checked
+      return {
+        ...listing,
+        ...(viewer ? scoreMatch(database, viewer, listing, maxPopularity) : {}),
+        ...(reviews.count ? { rating: reviews.average, reviewCount: reviews.count } : {}),
+        ...(owner?.business ? { businessVerified: true as const } : {}),
+        ...(owner && groupVerifiedNow(owner) ? { groupVerified: true as const } : {}),
+        // Pro 브랜드(lib/plan.ts)는 PRO 마크를 보인다.
+        ...(catalog === "brands" && owner && isPro(database, owner.id) ? { pro: true as const } : {}),
+        // 진행 중인 상단 광고(lib/ads.ts)는 맨 앞에 두고 AD로 표시한다.
+        ...(owner && adUntil(database, owner.id) ? { ad: true as const } : {}),
+        ...(trust ? { trust } : {}),
+        ...(here && there ? { distanceKm: distanceKm(here, there), mapOffset: offsetMetres(here, there), mapPoint: { lat: there.lat, lng: there.lng } } : {}),
+      }
     })
     .sort((a, b) => Number(b.ad === true) - Number(a.ad === true) || b.score - a.score)
 }

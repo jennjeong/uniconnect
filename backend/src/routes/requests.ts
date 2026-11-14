@@ -2,6 +2,8 @@ import type { Request } from "express"
 import { Router } from "express"
 
 import { contractConfirmedAt, contractState } from "../lib/agreements.js"
+import { todayInKorea } from "../lib/dates.js"
+import { eventsById } from "../lib/eventIndex.js"
 import { deliveryProgress } from "../lib/progress.js"
 import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
@@ -27,6 +29,9 @@ export function brandOwner(req: Request) {
 requestsRouter.get("/", (req, res) => {
   const owner = brandOwner(req)
   const database = getDatabase()
+  const today = todayInKorea()
+  // 행마다 모든 행사를 훑지 않도록 행사 색인을 한 번 만든다.
+  const events = eventsById(database)
   const requests = owner?.brandId
     ? database.requests
         // 어느 한쪽이 차단한 단체의 제안은 제외한다.
@@ -44,7 +49,7 @@ requestsRouter.get("/", (req, res) => {
               : undefined
           const contractAt = contract === "confirmed" ? contractConfirmedAt(database, request.id, { group: Boolean(request.fromAccountId), brand: true }) : undefined
           // 계약 뒤의 실제 진행(행사 기록, 결과 집계 완료). 날짜가 아니라 기록으로.
-          const progress = status === "수락" ? deliveryProgress(database, request.eventId) : {}
+          const progress = status === "수락" ? deliveryProgress(database, request.eventId, today, events) : {}
           return { ...request, status, ...(contract ? { contract } : {}), ...(contractAt ? { contractAt } : {}), ...progress }
         })
     : []

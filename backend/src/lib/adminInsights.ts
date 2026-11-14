@@ -1,8 +1,10 @@
 import { keptAmount, paymentsOf } from "./billing.js"
 import { addDays, todayInKorea } from "./dates.js"
+import { eventsById } from "./eventIndex.js"
 import { campusOf, placeOf } from "./geo.js"
 import { statusOf } from "./proposals.js"
 import { isDemoAccount } from "./reviews.js"
+import { listingOwner } from "./owners.js"
 import type { Account, Agreement, Database, SponsorOffer, SponsorRequest } from "../types.js"
 
 // 운영자 콘솔이 분석 화면과 운영 화면(routes/adminMore.ts)을 위해 데이터로
@@ -12,15 +14,11 @@ const dayMs = 24 * 60 * 60 * 1000
 
 const realAccounts = (database: Database) => database.accounts.filter((account) => !isDemoAccount(database, account))
 
-// 리스팅을 가진 계정. 회원이 가졌을 때만 있다.
-export const ownerOf = (database: Database, listingId: string | undefined) =>
-  listingId ? database.accounts.find((account) => account.brandId === listingId || account.groupId === listingId) : undefined
-
 const allProposals = (database: Database) => [...database.requests, ...database.offers]
 
 // 제안이 간 곳: 요청이면 브랜드, 제안이면 단체.
 export const recipientOf = (database: Database, proposal: SponsorRequest | SponsorOffer) =>
-  ownerOf(database, "groupName" in proposal ? proposal.brandId : proposal.groupId)
+  listingOwner(database, "groupName" in proposal ? proposal.brandId : proposal.groupId)
 
 const proposalName = (proposal: SponsorRequest | SponsorOffer) => ("eventName" in proposal ? proposal.eventName : proposal.campaignName)
 const proposalDate = (proposal: SponsorRequest | SponsorOffer) => ("eventDate" in proposal ? proposal.eventDate : proposal.campaignDate)
@@ -300,8 +298,9 @@ export function liveEvents(database: Database, now = new Date()) {
 export function fieldAlerts(database: Database, now = new Date()) {
   const today = todayInKorea(now)
   const alerts: { eventId: string; event: string; kind: "pin" | "visits-over-coupons" | "visit-burst"; detail: string }[] = []
+  const events = eventsById(database)
   for (const measurement of database.measurements) {
-    const event = Object.values(database.events).flat().find((item) => item.id === measurement.eventId)
+    const event = events.get(measurement.eventId)
     const name = event?.name ?? database.localCampaigns?.[measurement.accountId]?.name ?? measurement.eventId
     if (measurement.pinMisses?.day === today && measurement.pinMisses.count >= 5) {
       alerts.push({ eventId: measurement.eventId, event: name, kind: "pin", detail: String(measurement.pinMisses.count) })

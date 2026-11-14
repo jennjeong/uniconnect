@@ -1,7 +1,7 @@
 import { Router } from "express"
 
 import { businessCheck } from "../lib/business.js"
-import { createListing, findListing } from "../lib/catalog.js"
+import { createListing, findListing, listingOwner } from "../lib/catalog.js"
 import { HttpError } from "../lib/errors.js"
 import { geocode } from "../lib/geocode.js"
 import { createRateLimit } from "../lib/rateLimit.js"
@@ -133,7 +133,7 @@ function parseProfile(body: unknown, role: Role) {
 // 보여 준다.
 // 응답률과 이행률(lib/trust.ts)도 담는다.
 function shownProfile(database: ReturnType<typeof getDatabase>, listing: Match) {
-  const owner = database.accounts.find((account) => account.brandId === listing.id || account.groupId === listing.id)
+  const owner = listingOwner(database, listing.id)
   const shown = owner?.brandId === listing.id ? brandProfile(database, listing) : listing
   const trust = trustOf(database, owner)
   return trust ? { ...shown, trust } : shown

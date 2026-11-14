@@ -2,10 +2,10 @@ import { groupVerifiedNow } from "./groupCheck.js"
 import { agreementState, duplicateIds, duplicatesOf, fieldAlerts, staleProposals, timeline } from "./adminInsights.js"
 import { tagsOf } from "./adminTools.js"
 import { keptAmount, paymentsOf } from "./billing.js"
-import { addDays, todayInKorea } from "./dates.js"
+import { addDays, koreanDay, todayInKorea } from "./dates.js"
 import { proUntil } from "./plan.js"
 import { statusOf } from "./proposals.js"
-import { isDemoAccount } from "./reviews.js"
+import { isDemoAccount, isDemoId } from "./reviews.js"
 import { platformStats } from "./stats.js"
 import type { Account, Database, PaymentKind } from "../types.js"
 
@@ -13,7 +13,6 @@ import type { Account, Database, PaymentKind } from "../types.js"
 // 담은 플랫폼 수치, 회원별 활동, 모든 제안. 비밀번호, 토큰, PIN, 메시지는
 // 절대 담지 않는다.
 
-const koreanDate = (at: string) => new Date(new Date(at).getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
 
 export function overview(database: Database, now = new Date()) {
   const today = todayInKorea(now)
@@ -21,17 +20,16 @@ export function overview(database: Database, now = new Date()) {
   const monday = addDays(today, -((new Date(`${today}T00:00:00Z`).getUTCDay() + 6) % 7))
   const weeks = Array.from({ length: 8 }, (_, index) => addDays(monday, (index - 7) * 7))
   const weekOf = (date: string) => [...weeks].reverse().find((start) => start <= date)
-  const demo = new Set(Object.values(database.demoAccountIds))
   const weekly = weeks.map((week) => ({ week, signups: 0, proposals: 0, accepted: 0 }))
   for (const account of database.accounts) {
-    if (demo.has(account.id)) continue
-    const week = weekOf(koreanDate(account.createdAt))
+    if (isDemoId(database, account.id)) continue
+    const week = weekOf(koreanDay(account.createdAt))
     const row = weekly.find((item) => item.week === week)
     if (row) row.signups += 1
   }
   for (const proposal of [...database.requests, ...database.offers]) {
-    if (!proposal.fromAccountId || demo.has(proposal.fromAccountId)) continue
-    const row = weekly.find((item) => item.week === weekOf(koreanDate(proposal.createdAt)))
+    if (!proposal.fromAccountId || isDemoId(database, proposal.fromAccountId)) continue
+    const row = weekly.find((item) => item.week === weekOf(koreanDay(proposal.createdAt)))
     if (!row) continue
     row.proposals += 1
     if (proposal.status === "수락") row.accepted += 1
@@ -40,7 +38,7 @@ export function overview(database: Database, now = new Date()) {
   const month = today.slice(0, 7)
   const revenue = {
     total: paid.reduce((sum, payment) => sum + keptAmount(payment), 0),
-    thisMonth: paid.filter((payment) => koreanDate(payment.paidAt ?? payment.requestedAt).slice(0, 7) === month).reduce((sum, payment) => sum + keptAmount(payment), 0),
+    thisMonth: paid.filter((payment) => koreanDay(payment.paidAt ?? payment.requestedAt).slice(0, 7) === month).reduce((sum, payment) => sum + keptAmount(payment), 0),
     byKind: { fee: 0, report: 0, pro: 0, ad: 0, local: 0 } as Record<PaymentKind, number>,
     partners: database.accounts.filter((account) => proUntil(database, account.id) !== null).length,
   }
@@ -65,8 +63,8 @@ export function overview(database: Database, now = new Date()) {
   }
 }
 
-// 목록에 보이는 회원 한 명.
-export function memberRow(database: Database, account: Account) {
+// 목록에 보이는 회원 한 명. 목록은 겹치는 계정(duplicateIds)을 한 번만 구해 넘긴다.
+export function memberRow(database: Database, account: Account, duplicates = duplicateIds(database)) {
   const listing = account.role === "학생단체"
     ? database.groups.find((item) => item.id === account.groupId)
     : database.brands.find((item) => item.id === account.brandId)
@@ -95,7 +93,7 @@ export function memberRow(database: Database, account: Account) {
     business: Boolean(account.business),
     groupVerified: groupVerifiedNow(account),
     tags: tagsOf(database, account.id),
-    duplicate: duplicateIds(database).has(account.id),
+    duplicate: duplicates.has(account.id),
   }
 }
 

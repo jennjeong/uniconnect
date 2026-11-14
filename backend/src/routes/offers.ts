@@ -2,6 +2,8 @@ import type { Request } from "express"
 import { Router } from "express"
 
 import { contractConfirmedAt, contractState } from "../lib/agreements.js"
+import { todayInKorea } from "../lib/dates.js"
+import { eventsById } from "../lib/eventIndex.js"
 import { deliveryProgress } from "../lib/progress.js"
 import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
@@ -27,6 +29,9 @@ function groupOwner(req: Request) {
 offersRouter.get("/", (req, res) => {
   const owner = groupOwner(req)
   const database = getDatabase()
+  const today = todayInKorea()
+  // 행마다 모든 행사를 훑지 않도록 행사 색인을 한 번 만든다.
+  const events = eventsById(database)
   const offers = owner?.groupId
     ? database.offers
         // 어느 한쪽이 차단한 브랜드의 제안은 제외한다.
@@ -44,7 +49,7 @@ offersRouter.get("/", (req, res) => {
               : undefined
           const contractAt = contract === "confirmed" ? contractConfirmedAt(database, offer.id, { group: true, brand: Boolean(offer.fromAccountId) }) : undefined
           // 계약 뒤의 실제 진행(행사 기록, 결과 집계 완료). 날짜가 아니라 기록으로.
-          const progress = status === "수락" ? deliveryProgress(database, offer.campaignId) : {}
+          const progress = status === "수락" ? deliveryProgress(database, offer.campaignId, today, events) : {}
           return { ...offer, status, ...(contract ? { contract } : {}), ...(contractAt ? { contractAt } : {}), ...progress }
         })
     : []

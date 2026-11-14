@@ -1,5 +1,6 @@
-import { brandIndustries, groupIndustries } from "./catalog.js"
-import { todayInKorea } from "./dates.js"
+import { industryOf } from "./catalog.js"
+import { daysBetween, todayInKorea } from "./dates.js"
+import { ownerOf } from "./owners.js"
 import type { Account, Database, Industry, Match } from "../types.js"
 
 // 학생 단체의 분야와 브랜드 업종이 얼마나 어울리는지 0부터 1까지로 낸다.
@@ -26,8 +27,8 @@ const words = (listing: Pick<Match, "tags" | "category">) =>
 // 이 둘이 이미 함께 협찬한 적이 있는지: 브랜드가 그 단체에 마친 협찬이나
 // 어느 쪽이든 수락한 제안.
 function workedTogether(database: Database, brand: Match, group: Match) {
-  const brandAccount = database.accounts.find((account) => account.brandId === brand.id)
-  const groupAccount = database.accounts.find((account) => account.groupId === group.id)
+  const brandAccount = ownerOf(database, "brands", brand.id)
+  const groupAccount = ownerOf(database, "groups", group.id)
   const sponsored = brandAccount
     ? (database.sponsorships[brandAccount.id] ?? []).some((item) => item.groupName === group.name)
     : false
@@ -46,8 +47,6 @@ function workedTogether(database: Database, brand: Match, group: Match) {
   return sponsored || request || offer
 }
 
-const daysBetween = (from: string, to: string) =>
-  Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000)
 
 export type Viewer = { account: Account; listing?: Match }
 
@@ -55,12 +54,11 @@ export type Viewer = { account: Account; listing?: Match }
 // 유형으로 만든 가상의 것.
 function viewerListing({ account, listing }: Viewer): Match {
   if (listing) return listing
-  const students = account.role === "학생단체"
   return {
     id: "",
     name: account.name,
     category: account.type,
-    industry: (students ? groupIndustries : brandIndustries)[account.type] ?? (students ? "performance" : "cafe"),
+    industry: industryOf(account),
     offer: "",
     score: 0,
     tags: [],

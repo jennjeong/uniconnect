@@ -5,6 +5,7 @@ import { HttpError } from "./errors.js"
 import { activeMethodsOf, emptyVenueCounts, venueCountsOf } from "./methods.js"
 import { campaignUntil } from "./plan.js"
 import { sponsorTypes, text } from "./validation.js"
+import { isDemoId } from "./reviews.js"
 import type {
   Database,
   EventItem,
@@ -422,8 +423,7 @@ export function checkInWindow(event: EventItem) {
   return { start: event.date, end, visitsEnd: addDays(end, couponDays) }
 }
 
-export const isDemoEvent = (database: Database, measurement: Measurement) =>
-  Object.values(database.demoAccountIds).includes(measurement.accountId)
+export const isDemoEvent = (database: Database, measurement: Measurement) => isDemoId(database, measurement.accountId)
 
 // 행사를 운영하는 쪽에게 PIN이 보이기 시작하는 날은 행사 하루 전이다.
 // 데모 계정은 방문자가 체험하도록 바로 보인다.

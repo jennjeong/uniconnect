@@ -1,4 +1,4 @@
-import type { AccountContact, MailKind, Role } from "../types.js"
+import type { AccountContact, Industry, MailKind, Role } from "../types.js"
 import { HttpError } from "./errors.js"
 
 // frontend/src/data/roles.ts의 accountTypeGroups와 맞춰 둔다. 거기서
@@ -115,6 +115,9 @@ export const brandOffers = [
 
 // "기타"에는 행사의 자유 입력 typeNote가 따른다.
 export const sponsorTypes = ["현금", "제품", "서비스", "기타"]
+
+// 리스팅의 업종(types.ts의 Industry)이다.
+export const industries: readonly Industry[] = ["cafe", "photo", "wellness", "performance", "content", "sports", "beauty", "education"]
 
 // 운영자에게 하는 문의의 종류. frontend/src/data/inquiries.ts와 맞춰 둔다.
 // 회원이 다른 회원을 신고하는 이유(routes/reports.ts), frontend/src/data/reports.ts.

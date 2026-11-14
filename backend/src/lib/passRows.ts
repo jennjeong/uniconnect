@@ -262,6 +262,11 @@ export async function prunePassRows(now = todayInKorea()) {
   const database = getDatabase()
   let removed = 0
   const codes: string[] = []
+  // 지우는 기준별로 측정의 코드를 모아 기준마다 한 번에 지운다. 측정마다 따로 보내면 지난
+  // 행사가 쌓일수록 크론이 Neon을 수백 번 오가게 된다.
+  const alwaysOn: string[] = []
+  const finished: string[] = []
+  const visiting: string[] = []
   for (const measurement of database.measurements) {
     const event = eventOf(database, measurement)
     if (!event) continue
@@ -269,32 +274,39 @@ export async function prunePassRows(now = todayInKorea()) {
     if (isDemoEvent(database, measurement)) continue
     // 상시 캠페인은 기록마다 발급하고 7일 뒤에 지운다. 쿠폰이 지워진 패스도 그때 함께 간다.
     if (measurement.alwaysOn) {
-      await sql("delete from uniconnect_coupons where code = $1 and issued_at < now() - make_interval(days => $2::int)", [measurement.code, couponDays])
-      removed += (
-        await sql(
-          `delete from uniconnect_passes as item where code = $1 and issued_at < now() - make_interval(days => $2::int)
-           and not exists (select 1 from uniconnect_coupons as coupon where coupon.code = item.code and coupon.pass = item.pass)
-           returning pass`,
-          [measurement.code, couponDays],
-        )
-      ).length
+      alwaysOn.push(measurement.code)
       continue
     }
     const { end, visitsEnd } = checkInWindow(event)
     if (now <= end) continue
-    if (now > visitsEnd) {
-      await sql("delete from uniconnect_coupons where code = $1", [measurement.code])
-      removed += (await sql("delete from uniconnect_passes where code = $1 returning pass", [measurement.code])).length
-    } else {
-      removed += (
-        await sql(
-          `delete from uniconnect_passes as item where code = $1
-           and not exists (select 1 from uniconnect_coupons as coupon where coupon.code = item.code and coupon.pass = item.pass)
-           returning pass`,
-          [measurement.code],
-        )
-      ).length
-    }
+    // 방문 기간이 지나면 모두, 그 전이면 쿠폰이 없는 패스만 지운다.
+    if (now > visitsEnd) finished.push(measurement.code)
+    else visiting.push(measurement.code)
+  }
+  if (alwaysOn.length) {
+    await sql("delete from uniconnect_coupons where code = any($1::text[]) and issued_at < now() - make_interval(days => $2::int)", [alwaysOn, couponDays])
+    removed += (
+      await sql(
+        `delete from uniconnect_passes as item where code = any($1::text[]) and issued_at < now() - make_interval(days => $2::int)
+         and not exists (select 1 from uniconnect_coupons as coupon where coupon.code = item.code and coupon.pass = item.pass)
+         returning pass`,
+        [alwaysOn, couponDays],
+      )
+    ).length
+  }
+  if (finished.length) {
+    await sql("delete from uniconnect_coupons where code = any($1::text[])", [finished])
+    removed += (await sql("delete from uniconnect_passes where code = any($1::text[]) returning pass", [finished])).length
+  }
+  if (visiting.length) {
+    removed += (
+      await sql(
+        `delete from uniconnect_passes as item where code = any($1::text[])
+         and not exists (select 1 from uniconnect_coupons as coupon where coupon.code = item.code and coupon.pass = item.pass)
+         returning pass`,
+        [visiting],
+      )
+    ).length
   }
   await sql("delete from uniconnect_coupons where code <> all($1::text[])", [codes])
   removed += (await sql("delete from uniconnect_passes where code <> all($1::text[]) returning pass", [codes])).length
