@@ -15522,6 +15522,11 @@ span.odometer {
   animation: rise-in 0.45s var(--ease-out) backwards;
 }
 
+/* 사이트를 연 첫 화면은 바로 보인다 (components/PageEnter.tsx). */
+.page-enter.first-view {
+  animation: none;
+}
+
 .day-title {
   animation: rise-in 0.4s var(--ease-out) backwards;
 }

@@ -6,6 +6,9 @@ import path from 'node:path'
 import siteConfiguration from './site.config.json'
 import { sitemapXml } from './src/lib/sitemap'
 import { gaInitScript } from './src/lib/gaInit'
+import { en } from './src/i18n/en'
+import common from './src/i18n/en/common'
+import { firstScreenEnglish } from './src/i18n/firstScreen'
 
 
 // Vite 설정 — https://vitejs.dev/config/
@@ -28,6 +31,7 @@ export default defineConfig(({ mode }) => {
       react(),
       tailwindcss(),
       siteDocument(siteConfiguration),
+      englishFirst(),
     ],
     resolve: {
       alias: {
@@ -210,6 +214,22 @@ function siteDocument(config: SiteConfiguration): Plugin {
           tags,
         }
       },
+    },
+  }
+}
+
+// 빌드에서 i18n/en/first.ts를 첫 다운로드의 소스에 나오는 영어만으로 바꾼다
+// (i18n/firstScreen.ts). 영어로 보는 사람이 첫 화면을 그리기 전에 사전 전체를
+// 기다리지 않게 한다. 개발 서버는 사전 전체를 그대로 쓴다.
+function englishFirst(): Plugin {
+  const file = path.resolve(__dirname, 'src/i18n/en/first.ts')
+  return {
+    name: 'english-first',
+    apply: 'build',
+    load(id) {
+      if (id !== file) return
+      const first = firstScreenEnglish(path.resolve(__dirname, 'src/main.tsx'), en, common)
+      return `export const first = ${JSON.stringify(first)}`
     },
   }
 }

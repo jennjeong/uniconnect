@@ -59,6 +59,7 @@ import { SignupModal } from "./modals/SignupModal"
 import { BrandDashboardPage } from "./pages/BrandDashboardPage"
 import { DashboardPage } from "./pages/DashboardPage"
 import { LandingPage } from "./pages/LandingPage"
+import { PageEnter } from "./components/PageEnter"
 import { NotFoundPage } from "./pages/NotFoundPage"
 import type { ActivityItem } from "./pages/ProfilePage"
 import type {
@@ -2020,8 +2021,8 @@ function App() {
         {/* 페이지가 바뀔 때마다 새 key를 주어 페이지의 등장 효과를 다시
            재생한다. 상세 페이지는 목록을 덮으며, 목록은 마운트된 채(탭과
            스크롤을 유지) 남아 있다가 돌아올 때 다시 보인다. */}
-        <div
-          className={fromHistory ? "page-enter from-history" : "page-enter"}
+        <PageEnter
+          fromHistory={fromHistory}
           hidden={detailMatch !== undefined}
           key={`${role}:${
             view.missing
@@ -2062,11 +2063,9 @@ function App() {
           }`}
         >
           <Suspense fallback={<PageLoading />}>{renderPage()}</Suspense>
-        </div>
+        </PageEnter>
         {detailMatch && (
-          <div
-            className={fromHistory ? "page-enter from-history" : "page-enter"}
-            key={`detail:${detailMatch.id}`}
+          <PageEnter fromHistory={fromHistory} key={`detail:${detailMatch.id}`}
           >
             <Suspense fallback={<PageLoading />}>
             <MatchDetailPage
@@ -2115,7 +2114,7 @@ function App() {
               }
             />
             </Suspense>
-          </div>
+          </PageEnter>
         )}
       </main>
 
