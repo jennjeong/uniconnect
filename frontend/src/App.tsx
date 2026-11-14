@@ -1536,7 +1536,7 @@ function App() {
       return (
         <AgreementPage
           id={view.agreement}
-          loggedIn={account !== null}
+          member={member}
           goalsSaved={goalsSaved}
           paid={paid}
           onBack={() => goBack({ page, agreements: true })}

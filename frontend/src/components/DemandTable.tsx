@@ -22,7 +22,7 @@ export function monthsBetween(from: string, to: string) {
 // 대학별 · 시기별 행사 수요(#344, GET /api/events/demand): 학생단체의 행사 수를 학교와
 // 달로 묶은 표. 한 칸이 기준(minimum)보다 적으면 서버가 보내지 않으므로, 빈칸은 0건이
 // 아니라 "기준 미만이거나 없음"이다. 합계는 숨긴 칸을 드러낼 수 있어 보여 주지 않는다.
-// 로그인한 회원만 본다.
+// 실제 회원의 수이므로 회원만 본다. 방문자와 공용 데모 계정은 예시만 만나므로 보지 않는다.
 export function DemandTable() {
   const [demand, setDemand] = useState<EventDemand | null>(null)
   const [failed, setFailed] = useState("")

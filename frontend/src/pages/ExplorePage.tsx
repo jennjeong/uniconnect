@@ -17,16 +17,16 @@ const industryName = (industry: string) => brandIndustries.find(([value]) => val
 // 행사 둘러보기(/explore): 계정이 볼 수 있는 다른 학생단체의 다가오는 행사를
 // 종류와 단체의 종류로 나눠 보여 주며 각각 자기 페이지를 연다. 그 위에는 비슷한
 // 행사가 받은 협찬이 있어서 단체가 다른 단체에서 통한 것을 보고 자기 행사를
-// 계획한다. 로그인한 계정에는 맨 위에 학교 · 달별 행사 수(DemandTable)가 있어서, 브랜드가
+// 계획한다. 회원(공용 데모 계정 말고)에게는 맨 위에 학교 · 달별 행사 수(DemandTable)가 있어서, 브랜드가
 // 언제 어느 학교에 협찬할지 정한다(#344). 브랜드는 행사 일정에서 연다.
 export function ExplorePage({
   role,
-  loggedIn,
+  member,
   onBack,
   onOpenEvent,
 }: {
   role: Role
-  loggedIn: boolean
+  member: boolean
   onBack: () => void
   onOpenEvent: (eventId: string) => void
 }) {
@@ -60,7 +60,7 @@ export function ExplorePage({
         }
       />
 
-      {loggedIn && <DemandTable />}
+      {member && <DemandTable />}
 
       {cases.length > 0 && (
         <section aria-labelledby="explore-cases-title" className="explore-cases">
