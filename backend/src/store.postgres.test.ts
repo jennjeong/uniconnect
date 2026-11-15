@@ -268,18 +268,18 @@ test("a login pushed back by another copy still opens a session that's stored", 
   }
 })
 
-test("an hourly copy is kept for 24 hours, whatever their number, and another copy doesn't overwrite it", async () => {
+test("the latest 20 hourly copies are kept, however old, and another copy doesn't overwrite one", async () => {
   await sql("delete from uniconnect_backups")
   const hoursAgo = (hours: number) => new Date(Math.floor(Date.now() / 3_600_000 - hours) * 3_600_000).toISOString()
-  for (const hours of [30, 26, 5, 2]) {
-    await sql("insert into uniconnect_backups (taken_at, data) values ($1, '{}')", [hoursAgo(hours)])
+  for (let copy = 1; copy <= 21; copy += 1) {
+    await sql("insert into uniconnect_backups (taken_at, data) values ($1, '{}')", [hoursAgo(copy * 12)])
   }
   store.backups.lastAt = 0
   await store.saveDatabase()
   const rows = await sql("select taken_at, data from uniconnect_backups order by taken_at")
-  // 스물네 시간이 지난 것만 지운다.
-  assert.equal(rows.length, 3)
-  assert.equal(new Date(rows[0].taken_at as string).toISOString(), hoursAgo(5))
+  // 새 복사를 더하고 최근 20개만 남는다. 열흘(19 × 12시간)이 넘은 것도 20개 안이면 남는다.
+  assert.equal(rows.length, 20)
+  assert.equal(new Date(rows[0].taken_at as string).toISOString(), hoursAgo(19 * 12))
   const newest = String(rows.at(-1)!.data)
   assert.ok(newest.includes("accounts"))
   // 같은 시간에 다른 복사본이 찍어도 그 시간의 첫 복사본이 남는다.

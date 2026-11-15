@@ -21,7 +21,7 @@ export function localHour(utcHour: number) {
 
 // 백업이 어떻게 도는지 한 줄: 정기 백업, 저장할 때의 백업, 보관 기간.
 export function backupPolicy(status: BackupStatus) {
-  const kept = t("찍은 지 {hours}시간이 지난 백업은 지워요.", { hours: status.keptHours })
+  const kept = t("최근 {count}개만 남기고 오래된 백업은 지워요.", { count: status.keptCount })
   const onSave = t("그 밖에도 데이터가 바뀌면 한 시간에 한 번까지 찍어요.")
   if (status.schedule === "cron") {
     return [t("정기 백업은 매일 {times}에 찍어요.", { times: status.cronUtcHours.map(localHour).join(", ") }), onSave, kept]

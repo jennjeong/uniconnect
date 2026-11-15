@@ -22,8 +22,8 @@ export type Storage = {
   read(): Promise<Stored | undefined>
   version(): Promise<number | undefined>
   write(data: string, version: number): Promise<number>
-  // 저장할 때마다 부르지만 복사본은 한 시간에 한 번 이하로 만들고, 찍은 지 24시간이
-  // 지난 것은 지운다(개수가 아니라 시각이다). 정기 백업(store.ts의 backUpNow: 크론과
+  // 저장할 때마다 부르지만 복사본은 한 시간에 한 번 이하로 만들고, 최근 keptCount(20)개만
+  // 남긴다(시각이 아니라 개수다. 정기 백업이 하루 두 번이라 길어야 10일쯤 남는다). 정기 백업(store.ts의 backUpNow: 크론과
   // 한 시간 타이머)은 force로 그 간격과 상관없이 찍는다. 잘못된 변경을 되돌릴 수
   // 있게 한다(README에 방법이 있다). 실패는 운영자의 오류 기록에 남기며(where
   // "backup"), 저장할 때의 백업이 실패해도 저장은 실패하지 않는다. force일 때는
@@ -38,7 +38,7 @@ export type Storage = {
 const backupHour = /^\d{4}-\d{2}-\d{2}T\d{2}$/
 
 // 테스트는 lastAt을 초기화해 곧바로 복사본을 만든다.
-export const backups = { lastAt: 0, everyMs: 60 * 60 * 1000, keptHours: 24 }
+export const backups = { lastAt: 0, everyMs: 60 * 60 * 1000, keptCount: 20 }
 
 const backupDue = (force = false) => {
   if (!force && Date.now() - backups.lastAt < backups.everyMs) return false
@@ -90,9 +90,8 @@ const fileStorage: Storage = {
       await mkdir(folder, { recursive: true })
       await writeFile(path.join(folder, `db-${new Date().toISOString().slice(0, 13).replace("T", "-")}.json`), data)
       const files = (await readdir(folder)).filter((file) => /^db-.+\.json$/.test(file)).sort()
-      // 개수가 아니라 찍은 시각으로 지운다. 쓰기가 적어도 처리방침의 보관 기간을 넘기지 않는다.
-      const oldest = new Date(Date.now() - backups.keptHours * 60 * 60 * 1000).toISOString().slice(0, 13).replace("T", "-")
-      await Promise.all(files.filter((file) => file.slice(3, 16) < oldest).map((file) => unlink(path.join(folder, file))))
+      // 최근 keptCount개만 남긴다(이름이 찍은 시각이라 이름순이 시각순이다).
+      await Promise.all(files.slice(0, Math.max(0, files.length - backups.keptCount)).map((file) => unlink(path.join(folder, file))))
     } catch (error) {
       backupFailed(error, force)
     }
@@ -152,8 +151,8 @@ function postgresStorage(sql: Sql): Storage {
       return Number(rows[0].version)
     },
     // 시간(UTC)마다 한 행이며 그 시간에 처음 찍은 것을 둔다. 복사본마다 시계를
-    // 따로 재므로 같은 시간에 다시 와도 덮어쓰지 않는다. 처리방침의 보관 기간이
-    // 지난 행은 찍은 시각으로 지운다.
+    // 따로 재므로 같은 시간에 다시 와도 덮어쓰지 않는다. 최근 keptCount개만 남기고
+    // 나머지 행은 지운다.
     async backUp(data, force = false) {
       if (!backupDue(force)) return
       try {
@@ -162,8 +161,8 @@ function postgresStorage(sql: Sql): Storage {
           [data],
         )
         await sql(
-          "delete from uniconnect_backups where taken_at < now() - make_interval(hours => $1::int)",
-          [backups.keptHours],
+          "delete from uniconnect_backups where taken_at not in (select taken_at from uniconnect_backups order by taken_at desc limit $1)",
+          [backups.keptCount],
         )
       } catch (error) {
         backupFailed(error, force)

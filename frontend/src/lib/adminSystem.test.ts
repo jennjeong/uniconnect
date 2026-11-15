@@ -59,10 +59,10 @@ describe("maintenance", () => {
 })
 
 describe("backup policy", () => {
-  test("names the scheduled times and the 24 hours kept", () => {
-    const lines = backupPolicy({ state: "ok", schedule: "cron", cronUtcHours: [0, 6], keptHours: 24 })
+  test("names the scheduled times and the 20 copies kept", () => {
+    const lines = backupPolicy({ state: "ok", schedule: "cron", cronUtcHours: [0, 6], keptCount: 20 })
     expect(lines[0]).toMatch(/^정기 백업은 매일 .+, .+에 찍어요\.$/)
-    expect(lines.at(-1)).toBe("찍은 지 24시간이 지난 백업은 지워요.")
+    expect(lines.at(-1)).toBe("최근 20개만 남기고 오래된 백업은 지워요.")
   })
 })
 

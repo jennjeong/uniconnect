@@ -1440,7 +1440,7 @@ export type BackupStatus = {
   next?: string
   schedule: "cron" | "hourly" | "none"
   cronUtcHours: number[]
-  keptHours: number
+  keptCount: number
 }
 
 // 일정 알림의 실행 한 번 (backend types.ts의 CronRun). targets · failed · mail · error는 예전 기록에 없다.

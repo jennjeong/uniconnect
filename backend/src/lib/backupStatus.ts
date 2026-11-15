@@ -9,8 +9,8 @@ import { backups, backupWhere } from "./storage.js"
 //   한 시간 안 어느 때에 돌 수 있어 graceMs를 넉넉히 둔다.
 // - "hourly": 오래 떠 있는 서버(index.ts). 한 시간 타이머가 찍는다.
 // - "none": 정기 백업이 없다(테스트의 createApp). 다음 예정을 알 수 없다.
-// 그 밖에도 데이터를 저장할 때 한 시간에 한 번 이하로 찍는다(lib/storage.ts). 보관은 찍은
-// 지 backups.keptHours(24)시간까지다.
+// 그 밖에도 데이터를 저장할 때 한 시간에 한 번 이하로 찍는다(lib/storage.ts). 보관은 최근
+// backups.keptCount(20)개다.
 export const cronUtcHours = [0, 6]
 
 export const backupSchedule: { kind: "cron" | "hourly" | "none"; lastRunAt?: number } = {
@@ -76,6 +76,6 @@ export function backupStatus(
     next: iso(next),
     schedule: schedule.kind,
     cronUtcHours,
-    keptHours: backups.keptHours,
+    keptCount: backups.keptCount,
   }
 }

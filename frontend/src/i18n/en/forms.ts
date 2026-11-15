@@ -1042,7 +1042,7 @@ const en: Record<string, string> = {
   "마지막 성공 뒤로 예정된 정기 백업이 찍히지 않았어요. 오류 기록과 크론 실행 기록을 확인해 주세요.": "A scheduled backup since the last success hasn't been taken. Check the error log and the cron runs.",
   "마지막 백업 시도가 실패했어요. 오류 기록에서 원인을 확인해 주세요.": "The last backup attempt failed. See the error log for why.",
   "백업 시각은 시 단위예요. 모든 회원의 데이터가 들어 있으니 안전한 곳에만 저장하세요.": "Backup times are to the hour. They hold every member's data, so save them somewhere safe.",
-  "찍은 지 {hours}시간이 지난 백업은 지워요.": "Backups older than {hours} hours are deleted.",
+  "최근 {count}개만 남기고 오래된 백업은 지워요.": "Only the latest {count} backups are kept; older ones are deleted.",
   "그 밖에도 데이터가 바뀌면 한 시간에 한 번까지 찍어요.": "Changes to the data also take one at most once an hour.",
   "정기 백업은 매일 {times}에 찍어요.": "Scheduled backups run daily at {times}.",
   "정기 백업은 한 시간마다 찍어요.": "Scheduled backups run every hour.",

@@ -89,7 +89,7 @@ test("backup restore is disclosed separately and requires the selected timestamp
   await page.addInitScript(() => sessionStorage.setItem("uniconnect-admin-token", "e2e-admin-token"))
   await page.route("**/api/admin/system", (route) => route.fulfill({ json: {
     limits: [], backups: [{ hour, bytes: 2048 }], cronRuns: [], maintenance: { on: false },
-    backup: { state: "ok", lastSuccess: `${hour}:00:00.000Z`, schedule: "cron", cronUtcHours: [0, 6], keptHours: 24 },
+    backup: { state: "ok", lastSuccess: `${hour}:00:00.000Z`, schedule: "cron", cronUtcHours: [0, 6], keptCount: 20 },
   } }))
   await page.route("**/api/admin/backups/*/summary", (route) => route.fulfill({ json: {
     backup: counts, current: { ...counts, accounts: 3 }, accountsBack: 0,
@@ -124,7 +124,7 @@ test("the system screen tells backup, reminder and limit states and keeps mainte
         { id: "b", label: "인증번호 발급 · 이메일별", message: "", limit: 5, minutes: 60, shared: true, counting: 3, blocked: 2 },
       ],
       backups: [{ hour: "2026-11-14T06", bytes: 2048 }],
-      backup: { state: "delayed", lastSuccess: "2026-11-14T06:00:00.000Z", schedule: "cron", cronUtcHours: [0, 6], keptHours: 24 },
+      backup: { state: "delayed", lastSuccess: "2026-11-14T06:00:00.000Z", schedule: "cron", cronUtcHours: [0, 6], keptCount: 20 },
       cronRuns: [
         { at: "2026-11-15T00:05:00.000Z", sent: 2, targets: 3, failed: 1, mail: true },
         { at: "2026-11-14T06:05:00.000Z", sent: 0, targets: 0, failed: 0, mail: true },

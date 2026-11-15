@@ -185,8 +185,8 @@ const en: Record<string, string> = {
     "Members' personal information is not provided to other companies.",
   "메일 발송 서비스를 연결하면, 인증 메일과 알림 메일(새 협찬 제안과 답, 답을 기다리는 제안, 새 메시지, 다가오는 일정, 임시 전자 계약서와 후기, 문의 답변, 주간 추천 요약)을 보내기 위해 이메일 주소와 메일 내용을 메일 발송 업체 Resend(미국)에 맡겨요. 메일을 보낸 뒤에는 그 업체의 보관 정책을 따르고, 지금은 연결되어 있지 않아요.":
     "Once a mail service is connected, email addresses and the content of the emails are entrusted to the mail delivery company Resend (United States) to send verification emails and notices (new sponsorship proposals and answers, proposals waiting for an answer, new messages, upcoming dates, provisional e-contracts and reviews, answers to questions, weekly picks). After sending, that company's retention policy applies. It is not connected at the moment.",
-  "서비스를 운영하기 위해 회원 정보와 서비스의 모든 데이터(계정, 소개, 행사, 협찬 제안, 메시지, 임시 전자 계약서와 증빙 사진, 후기)를 서버 호스팅 업체 Vercel(미국, 서버는 싱가포르)과 데이터베이스 업체 Neon(미국, 저장 위치는 싱가포르)에 맡겨요. 회원이 탈퇴하거나 서비스를 마칠 때까지 맡기고, 백업은 아래처럼 최대 24시간 남아요.":
-    "To run the service, member information and all of the service's data (accounts, introductions, events, sponsorship proposals, messages, provisional e-contracts and proof photos, reviews) are entrusted to the hosting provider Vercel (USA; servers in Singapore) and the database provider Neon (USA; stored in Singapore). They are entrusted until a member leaves or the service ends, and backups remain for up to 24 hours as described below.",
+  "서비스를 운영하기 위해 회원 정보와 서비스의 모든 데이터(계정, 소개, 행사, 협찬 제안, 메시지, 임시 전자 계약서와 증빙 사진, 후기)를 서버 호스팅 업체 Vercel(미국, 서버는 싱가포르)과 데이터베이스 업체 Neon(미국, 저장 위치는 싱가포르)에 맡겨요. 회원이 탈퇴하거나 서비스를 마칠 때까지 맡기고, 백업은 아래처럼 최대 10일 남아요.":
+    "To run the service, member information and all of the service's data (accounts, introductions, events, sponsorship proposals, messages, provisional e-contracts and proof photos, reviews) are entrusted to the hosting provider Vercel (USA; servers in Singapore) and the database provider Neon (USA; stored in Singapore). They are entrusted until a member leaves or the service ends, and backups remain for up to 10 days as described below.",
   "SNS 게시물이 유튜브 영상이면, 공개 조회수를 가져오기 위해 영상 ID를 Google(미국)의 YouTube Data API에 보내요. 회원 정보는 보내지 않아요.":
     "When an SNS post is a YouTube video, we send its video ID to Google's (USA) YouTube Data API to read the public view count. No member information is sent.",
   "방문 통계를 내기 위해 본 화면의 주소, 버튼 사용 같은 이용 기록, 쿠키 식별자와 기기 정보를 Google(미국)의 Google Analytics에 맡겨요. Google은 이 기록을 최대 14개월 보관하고, 이름, 이메일, 메시지 내용은 보내지 않아요.":
@@ -218,8 +218,8 @@ const en: Record<string, string> = {
     "To calculate the distance from schools, the store address a brand enters is sent to the OpenStreetMap Foundation's address search (Nominatim, United Kingdom) to turn it into coordinates. To show student groups the shops near their school, only the school's location is sent to Kakao (Korea), and the shop details that come back are not stored. When a group invites a shop, only the shop's number and Kakao Map address, which Kakao allows, are kept. The shop map loads its map view from Kakao Map (Republic of Korea).",
   "내 정보의 '내 데이터 내려받기'로 계정 정보, 소개, 행사, 협찬 제안, 메시지, 질문, 가게 초대, 임시 전자 계약서, 남기고 받은 후기, 보낸 신고와 차단한 상대를 파일 하나로 내려받을 수 있어요.":
     "With 'Download my data' under My Account, you can download your account details, introduction, events, proposals, messages, questions, shop invitations, provisional e-contracts and the reviews you wrote and got, the reports you sent and the accounts you blocked as one file.",
-  "서버 장애에 대비한 백업에는 지운 내용이 최대 24시간 남아 있다가 새 백업으로 바뀌며 사라져요.":
-    "Backups kept against server failures may hold deleted data for up to 24 hours, until newer backups replace them.",
+  "서버 장애에 대비한 백업은 최근 20개까지 남겨요. 백업은 하루 두 번 이상 새로 찍혀서, 지운 내용도 최대 10일 남아 있다가 새 백업으로 바뀌며 사라져요.":
+    "Backups kept against server failures are limited to the latest 20. New ones are taken at least twice a day, so deleted data may remain for up to 10 days until newer backups replace them.",
   // 유료 서비스 (사업계획서의 수익 모델)
   "학생단체는 상단 광고 말고는 서비스를 무료로 써요. 브랜드는 아래 유료 서비스를 이용할 때 결제해요. 아래 금액은 부가세 별도이고, 결제할 때 부가세 10%를 더해요.":
     "Student groups use the service for free, except for top ads. Brands pay for the paid services below. The amounts below exclude VAT, and 10% VAT is added at checkout.",
@@ -317,8 +317,8 @@ const en: Record<string, string> = {
     "United States (stored in Singapore)",
   "데이터베이스 보관":
     "Database storage",
-  "탈퇴하거나 서비스를 마칠 때까지, 백업은 최대 24시간 더":
-    "Until you leave or the Service ends, with backups for up to 24 hours more",
+  "탈퇴하거나 서비스를 마칠 때까지, 백업은 최대 10일 더":
+    "Until you leave or the Service ends, with backups for up to 10 days more",
   "미국":
     "United States",
   "이메일 주소와 메일 내용":
