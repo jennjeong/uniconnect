@@ -4721,6 +4721,12 @@
   color: var(--red);
 }
 
+/* 늦었거나 일부만 된 것(백업 지연, 알림 일부 실패). */
+.console-badge.late {
+  background: var(--orange-soft);
+  color: var(--orange);
+}
+
 .console-legend {
   display: flex;
   gap: 14px;
@@ -5135,6 +5141,88 @@
 
 .backup-actions {
   font-size: var(--text-xs);
+}
+
+/* 시스템 화면(AdminMore.tsx의 SystemPanel): 백업 상태, 점검 변경 요약, 요청 제한, 알림 실행. */
+.backup-status {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.backup-status > div {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--fill);
+}
+
+.backup-status dt {
+  color: var(--ink-soft);
+  font-size: var(--text-xs);
+}
+
+.backup-status dd {
+  margin: 2px 0 0;
+  font-weight: var(--weight-label);
+  overflow-wrap: anywhere;
+}
+
+.maintenance-pending {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--orange-soft);
+  color: var(--orange);
+  font-size: 0.8125rem;
+}
+
+.maintenance-pending p,
+.maintenance-pending ul {
+  margin: 0;
+}
+
+.maintenance-pending ul {
+  padding-inline-start: 18px;
+}
+
+.limit-blocked {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.limit-blocked li {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--red-soft);
+  color: var(--red);
+  font-size: var(--text-xs);
+}
+
+.limit-details > summary {
+  cursor: pointer;
+  font-weight: var(--weight-label);
+}
+
+.limit-details > summary:focus-visible {
+  outline: 2px solid var(--point);
+  outline-offset: 2px;
+}
+
+.console-list .cron-run {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.cron-run small {
+  color: var(--ink-soft);
 }
 
 .backup-restore {

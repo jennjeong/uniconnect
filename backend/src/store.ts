@@ -409,6 +409,17 @@ export function saveDatabase() {
   return write
 }
 
+// 정기 백업(routes/cron.ts, index.ts의 한 시간 타이머): 마지막으로 쓴 데이터를 저장할 때의
+// 한 시간 간격과 상관없이 찍는다. 실패하면 던진다(오류 기록에도 남는다). durable은 저장한
+// 뒤에는 봉인된 문서지만 읽은 뒤(reload)에는 평문이라, 한 번 열고 다시 봉인해 데이터 파일처럼
+// 비밀값이 봉인된 채로 남게 한다.
+export async function backUpNow() {
+  await pendingWrite
+  const storage = currentStorage()
+  const last = durable ? openDocument<Database>(durable) : getDatabase()
+  await storage.backUp(sealDocument(last, storage.indent), true)
+}
+
 // 백업으로 데이터 전체를 되돌린다. `keep`은 되돌리지 않을 것을 현재 데이터에서 옮긴다
 // (lib/adminTools.ts). 저장이 실패하면 지금 데이터로 돌아간다.
 export async function restoreDatabase(data: string, keep: (current: Database, restored: Database) => void) {

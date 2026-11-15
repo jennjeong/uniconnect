@@ -10,7 +10,8 @@ import { sendProposalNudges } from "./lib/nudges.js"
 import { sendSearchAlerts } from "./lib/savedSearches.js"
 import { sendPayoutReminders, sendReminders } from "./lib/reminders.js"
 import { refreshViews } from "./lib/snsPosts.js"
-import { loadDatabase } from "./store.js"
+import { backupSchedule } from "./lib/backupStatus.js"
+import { backUpNow, loadDatabase } from "./store.js"
 
 await loadDatabase()
 
@@ -27,7 +28,11 @@ const remind = () => {
   refreshViews().catch((error: Error) => console.error(`[youtube] ${error.message}`))
   prunePayments().catch((error: Error) => console.error(`[payments] ${error.message}`))
   purgeDisputes().catch((error: Error) => console.error(`[disputes] ${error.message}`))
+  // 정기 백업. 실패는 오류 기록에 남는다(lib/storage.ts).
+  backupSchedule.lastRunAt = Date.now()
+  backUpNow().catch(() => {})
 }
+backupSchedule.kind = "hourly"
 void remind()
 setInterval(remind, 60 * 60 * 1000).unref()
 

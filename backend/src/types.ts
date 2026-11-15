@@ -986,6 +986,8 @@ export type ReferralReward = {
   decidedAt?: string
 }
 
+export type CronRun = { at: string; sent: number; targets?: number; failed?: number; mail?: boolean; error?: true }
+
 export type Database = {
   // 마지막으로 문서에 합친 집계 기록의 id다. 두 번 세지 않게 한다(lib/passRows.ts).
   foldedCounts?: string[]
@@ -1067,8 +1069,10 @@ export type Database = {
   faq?: { added: FaqEntry[]; hidden: string[] }
   // 방문자가 카탈로그 검색에 입력한 것을 누가 입력했는지는 빼고 센 것이다.
   searchTerms?: Record<string, number>
-  // 날짜 알림의 최근 실행이다(lib/reminders.ts).
-  cronRuns?: { at: string; sent: number }[]
+  // 날짜 알림의 최근 실행이다(lib/reminders.ts). sent는 보낸 수이고, 그 뒤에 더한 값들은
+  // 예전 기록에 없다: targets(보낼 대상), failed(메일이 실패한 수), mail(메일 서비스가 설정돼
+  // 있었는지, 없으면 아무것도 나가지 않는다), error(실행이 도중에 실패함).
+  cronRuns?: CronRun[]
 }
 
 export type SiteSettings = {

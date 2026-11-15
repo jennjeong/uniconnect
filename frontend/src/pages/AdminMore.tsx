@@ -13,6 +13,20 @@ import {
 } from "../data/disputes"
 import { faqs, faqTopics } from "../data/faq"
 import { locale, t } from "../i18n"
+import {
+  backupPolicy,
+  backupStateLabel,
+  backupStateTone,
+  cronCounts,
+  cronOutcome,
+  cronOutcomeLabel,
+  cronOutcomeTone,
+  limitRule,
+  type Maintenance,
+  maintenanceEffects,
+  sameMaintenance,
+  timeZoneLabel,
+} from "../lib/adminSystem"
 import { formatDateTime } from "../lib/date"
 import { saveFile } from "../lib/download"
 import { fullWon } from "../lib/sponsorships"
@@ -1154,19 +1168,20 @@ function FaqEditor({ token, onNotice }: { token: string; onNotice: Notice }) {
   )
 }
 
-// 시스템: 점검, 예시 초기화, 백업, 요청 제한, 리마인더 실행.
-export function SystemPanel({ token, onNotice }: { token: string; onNotice: Notice }) {
-  const [data, reload, setData, failed] = useAdmin<AdminSystem>(() => api.adminSystem(token), onNotice, [token])
-  const [form, setForm] = useState({ on: false, message: "", blockSignups: false })
+// 시스템: 점검, 예시 초기화, 백업, 요청 제한, 리마인더 실행. `refresh`가 바뀌면(콘솔의 1분 자동
+// 새로고침, 새로고침 명령) 다시 읽으며, 점검 설정을 고치는 중이면 그 값은 그대로 둔다.
+export function SystemPanel({ token, onNotice, refresh = 0 }: { token: string; onNotice: Notice; refresh?: number }) {
+  const [data, reload, setData, failed] = useAdmin<AdminSystem>(() => api.adminSystem(token), onNotice, [token, refresh])
+  // 고치는 중인 점검 설정. 없으면 서버에 반영된 값 그대로다.
+  const [edited, setEdited] = useState<Maintenance>()
+  const [confirming, setConfirming] = useState(false)
+  const [saveFailed, setSaveFailed] = useState("")
   const [saving, setSaving] = useState(false)
   const [backupBusy, setBackupBusy] = useState(false)
   const [sure, setSure] = useState(false)
   // 복원 확인 중인 백업과 그 건수, 확인으로 다시 적은 시각.
   const [restoring, setRestoring] = useState<{ hour: string; summary: BackupSummary }>()
   const [typed, setTyped] = useState("")
-  useEffect(() => {
-    if (data) setForm({ on: data.maintenance.on, message: data.maintenance.message ?? "", blockSignups: Boolean(data.maintenance.blockSignups) })
-  }, [data?.maintenance])
   if (!data) {
     return failed ? (
       <section className="console-card">
@@ -1175,12 +1190,34 @@ export function SystemPanel({ token, onNotice }: { token: string; onNotice: Noti
       </section>
     ) : <p className="field-hint" role="status">{t("불러오고 있어요…")}</p>
   }
-  const applied = data.maintenance
-  const status = applied.on ? t("전체 점검") : applied.blockSignups ? t("신규 가입 제한") : t("정상 운영")
+  const applied: Maintenance = { on: data.maintenance.on, message: data.maintenance.message ?? "", blockSignups: Boolean(data.maintenance.blockSignups) }
+  const form = edited ?? applied
+  const changed = !sameMaintenance(form, applied)
+  const statusOf = (value: Maintenance) => (value.on ? t("전체 점검") : value.blockSignups ? t("신규 가입 제한") : t("정상 운영"))
   const enabling = form.on && !applied.on
   const disabling = !form.on && applied.on
   const maintenanceAction = enabling ? t("점검 모드 켜기") : disabling ? t("점검 모드 끄기") : t("저장")
-  const changed = form.on !== applied.on || form.blockSignups !== Boolean(applied.blockSignups) || form.message !== (applied.message ?? "")
+  // 원래 값으로 되돌리면 고친 것이 없는 것으로 본다.
+  const edit = (next: Partial<Maintenance>) => {
+    const value = { ...form, ...next }
+    setEdited(sameMaintenance(value, applied) ? undefined : value)
+    setConfirming(false)
+    setSaveFailed("")
+  }
+  const save = () => {
+    if (saving || !changed) return
+    setSaving(true)
+    setSaveFailed("")
+    void api.adminSetMaintenance(token, form).then(
+      ({ maintenance }) => {
+        setData((current) => current && { ...current, maintenance })
+        setEdited(undefined)
+        setConfirming(false)
+        onNotice(enabling ? t("점검 모드를 켰어요.") : disabling ? t("점검 모드를 껐어요.") : t("점검 설정을 저장했어요."))
+      },
+      (error: unknown) => setSaveFailed(errorMessage(error)),
+    ).finally(() => setSaving(false))
+  }
   const download = (hour: string) =>
     fetch(`/api/admin/backups/${encodeURIComponent(hour)}`, { headers: { "X-Admin-Token": token } })
       .then(async (response) => {
@@ -1188,13 +1225,18 @@ export function SystemPanel({ token, onNotice }: { token: string; onNotice: Noti
         saveFile(`uniconnect-backup-${hour}.json`, await response.blob(), "application/json")
       })
       .catch((error: unknown) => onNotice(errorMessage(error)))
+  const backup = data.backup
+  const zone = timeZoneLabel()
+  // 막힌 제한이 위로, 그다음 세는 대상이 많은 순이다.
+  const limits = [...data.limits].sort((a, b) => Number(b.blocked > 0) - Number(a.blocked > 0) || b.blocked - a.blocked || b.counting - a.counting)
+  const blockedLimits = limits.filter((limit) => limit.blocked > 0)
   return (
     <div className="console-grid">
       <section className="console-card span-2">
         <div className="console-card-head">
           <h2>{t("점검 모드")}</h2>
           <span className={`console-badge${applied.on ? " down" : applied.blockSignups ? "" : " up"}`} role="status">
-            {t("현재 상태: {status}", { status })}
+            {t("서버에 반영된 상태: {status}", { status: statusOf(applied) })}
           </span>
         </div>
         <form
@@ -1202,22 +1244,20 @@ export function SystemPanel({ token, onNotice }: { token: string; onNotice: Noti
           onSubmit={(event) => {
             event.preventDefault()
             if (saving || !changed) return
-            setSaving(true)
-            void api.adminSetMaintenance(token, form).then(
-              ({ maintenance }) => {
-                setData((current) => current && { ...current, maintenance })
-                onNotice(enabling ? t("점검 모드를 켰어요.") : t("점검 설정을 저장했어요."))
-              },
-              (error: unknown) => onNotice(errorMessage(error)),
-            ).finally(() => setSaving(false))
+            // 전체 점검을 켜거나 끄는 것은 저장하기 전에 한 번 더 묻는다.
+            if (form.on !== applied.on && !confirming) {
+              setConfirming(true)
+              return
+            }
+            save()
           }}
         >
           <label className="console-check">
-            <input checked={form.on} disabled={saving} onChange={(event) => setForm({ ...form, on: event.target.checked })} type="checkbox" />
+            <input checked={form.on} disabled={saving} onChange={(event) => edit({ on: event.target.checked })} type="checkbox" />
             {t("점검 중: 회원 화면 대신 안내를 보여 주고 저장을 막아요")}
           </label>
           <label className="console-check">
-            <input checked={form.blockSignups} disabled={saving} onChange={(event) => setForm({ ...form, blockSignups: event.target.checked })} type="checkbox" />
+            <input checked={form.blockSignups} disabled={saving} onChange={(event) => edit({ blockSignups: event.target.checked })} type="checkbox" />
             {t("새 가입만 막기")}
           </label>
           <label>
@@ -1225,14 +1265,43 @@ export function SystemPanel({ token, onNotice }: { token: string; onNotice: Noti
             <input
               disabled={saving}
               maxLength={200}
-              onChange={(event) => setForm({ ...form, message: event.target.value })}
+              onChange={(event) => edit({ message: event.target.value })}
               placeholder={t("예: 오늘 밤 12시까지 점검해요.")}
               value={form.message}
             />
           </label>
-          <button className={enabling ? "decline-button" : "primary-button"} disabled={saving || !changed} type="submit">
-            {maintenanceAction}
-          </button>
+          {changed && (
+            <div className="maintenance-pending" role="status">
+              <strong>{t("저장되지 않은 변경사항")}</strong>
+              <p>{t("저장하면 상태가 '{from}'에서 '{to}'(으)로 바뀌어요.", { from: statusOf(applied), to: statusOf(form) })}</p>
+              <ul>
+                {maintenanceEffects(form).map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {confirming && (
+            <div className="console-warnbox" role="alert">
+              <strong>{enabling ? t("전체 점검을 켤까요?") : t("전체 점검을 끌까요?")}</strong>
+              {enabling ? t("저장하는 즉시 회원과 방문자가 사이트를 쓸 수 없어요.") : t("저장하는 즉시 회원과 방문자가 사이트를 다시 써요.")}
+            </div>
+          )}
+          {saveFailed && (
+            <p className="console-warn" role="alert">
+              {t("저장하지 못했어요. 입력한 값은 그대로예요. 다시 시도해 주세요.")} ({saveFailed})
+            </p>
+          )}
+          <div className="admin-report-actions">
+            <button className={enabling || confirming ? "decline-button" : "primary-button"} disabled={saving || !changed} type="submit">
+              {saving ? t("저장하고 있어요…") : saveFailed ? t("다시 시도") : confirming ? t("확인하고 {action}", { action: maintenanceAction }) : maintenanceAction}
+            </button>
+            {changed && (
+              <button className="cancel-button" disabled={saving} onClick={() => edit(applied)} type="button">
+                {t("되돌리기")}
+              </button>
+            )}
+          </div>
         </form>
       </section>
       <section className="console-card span-2">
@@ -1266,8 +1335,37 @@ export function SystemPanel({ token, onNotice }: { token: string; onNotice: Noti
         )}
       </section>
       <section className="console-card span-2">
-        <h2>{t("백업")}</h2>
-        <p className="field-hint">{t("한 시간마다 최근 24개를 남겨요. 모든 회원의 데이터가 들어 있으니 안전한 곳에만 저장하세요.")}</p>
+        <div className="console-card-head">
+          <h2>{t("백업")}</h2>
+          <span className={`console-badge${backupStateTone[backup.state] ? ` ${backupStateTone[backup.state]}` : ""}`} role="status">
+            {t("현재 상태: {status}", { status: t(backupStateLabel[backup.state]) })}
+          </span>
+        </div>
+        <dl className="backup-status">
+          <div>
+            <dt>{t("최근 성공")}</dt>
+            <dd>{backup.lastSuccess ? formatDateTime(backup.lastSuccess) : t("없음")}</dd>
+          </div>
+          <div>
+            <dt>{t("다음 예정")}</dt>
+            <dd>{backup.next ? formatDateTime(backup.next) : t("확인할 수 없음")}</dd>
+          </div>
+          {backup.lastFailure && (
+            <div>
+              <dt>{t("최근 실패")}</dt>
+              <dd className={backup.state === "failed" ? "console-warn" : undefined}>{formatDateTime(backup.lastFailure)}</dd>
+            </div>
+          )}
+          <div>
+            <dt>{t("표시 시간대")}</dt>
+            <dd>{zone}</dd>
+          </div>
+        </dl>
+        {backup.state === "delayed" && <p className="console-warn">{t("마지막 성공 뒤로 예정된 정기 백업이 찍히지 않았어요. 오류 기록과 크론 실행 기록을 확인해 주세요.")}</p>}
+        {backup.state === "failed" && <p className="console-warn">{t("마지막 백업 시도가 실패했어요. 오류 기록에서 원인을 확인해 주세요.")}</p>}
+        <p className="field-hint">
+          {backupPolicy(backup).join(" ")} {t("백업 시각은 시 단위예요. 모든 회원의 데이터가 들어 있으니 안전한 곳에만 저장하세요.")}
+        </p>
         {data.backups.length === 0 ? (
           <p className="day-empty">{t("아직 백업이 없어요.")}</p>
         ) : (
@@ -1347,27 +1445,47 @@ export function SystemPanel({ token, onNotice }: { token: string; onNotice: Noti
       </section>
       <section className="console-card span-2">
         <h2>{t("요청 제한")}</h2>
-        <p className="field-hint">{t("주소는 보여 주지 않고 세는 중인 곳과 막힌 곳의 수만 보여요.")}</p>
-        <table className="console-table plain">
-          <thead>
-            <tr>
-              <th scope="col">{t("제한")}</th>
-              <th scope="col">{t("기준")}</th>
-              <th scope="col">{t("세는 중")}</th>
-              <th scope="col">{t("막힘")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.limits.map((limit) => (
-              <tr key={limit.id}>
-                <th scope="row">{t(limit.label)}</th>
-                <td>{t("{minutes}분에 {limit}번", { minutes: limit.minutes, limit: limit.limit })}</td>
-                <td>{limit.counting}</td>
-                <td className={limit.blocked > 0 ? "console-warn" : undefined}>{limit.blocked}</td>
-              </tr>
+        <p className={blockedLimits.length > 0 ? "console-warn" : "field-hint"} role="status">
+          {blockedLimits.length > 0
+            ? t("지금 막힌 제한 {count}개", { count: blockedLimits.length })
+            : t("지금 막힌 곳은 없어요.")}
+        </p>
+        {blockedLimits.length > 0 && (
+          <ul className="limit-blocked">
+            {blockedLimits.map((limit) => (
+              <li key={limit.id}>
+                {t(limit.label)} <strong>{t("막힌 대상 {count}", { count: limit.blocked })}</strong>
+              </li>
             ))}
-          </tbody>
-        </table>
+          </ul>
+        )}
+        <details className="limit-details">
+          <summary>{t("전체 제한 {count}개 보기", { count: limits.length })}</summary>
+          <p className="field-hint">
+            {t("주소는 보여 주지 않아요. 세는 대상은 제한마다 달라요(주소, 계정, 이메일, 행사 등). 같은 사람이 여러 제한에 들어갈 수 있어서 제한끼리 더한 수는 사람 수가 아니에요.")}
+            {limits.some((limit) => !limit.shared) && ` ${t("이 서버 복사본 하나에서 센 수예요.")}`}
+          </p>
+          <table className="console-table plain">
+            <thead>
+              <tr>
+                <th scope="col">{t("제한")}</th>
+                <th scope="col">{t("기준")}</th>
+                <th scope="col">{t("세는 대상")}</th>
+                <th scope="col">{t("막힌 대상")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {limits.map((limit) => (
+                <tr key={limit.id}>
+                  <th scope="row">{t(limit.label)}</th>
+                  <td>{limitRule(limit.minutes, limit.limit)}</td>
+                  <td>{limit.counting}</td>
+                  <td className={limit.blocked > 0 ? "console-warn" : undefined}>{limit.blocked}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </details>
       </section>
       <section className="console-card wide">
         <h2>{t("일정 알림 실행 기록")}</h2>
@@ -1375,13 +1493,19 @@ export function SystemPanel({ token, onNotice }: { token: string; onNotice: Noti
           <p className="day-empty">{t("아직 실행 기록이 없어요.")}</p>
         ) : (
           <ul className="console-list">
-            {data.cronRuns.map((run) => (
-              <li key={run.at}>
-                {formatDateTime(run.at)} <em>{t("{count}통 보냄", { count: run.sent })}</em>
-              </li>
-            ))}
+            {data.cronRuns.map((run) => {
+              const outcome = cronOutcome(run)
+              return (
+                <li className="cron-run" key={run.at}>
+                  <span>{formatDateTime(run.at)}</span>
+                  <span className={`console-badge${cronOutcomeTone[outcome] ? ` ${cronOutcomeTone[outcome]}` : ""}`}>{t(cronOutcomeLabel[outcome])}</span>
+                  <small>{cronCounts(run)}</small>
+                </li>
+              )
+            })}
           </ul>
         )}
+        <p className="field-hint">{t("시각은 {zone} 기준이에요.", { zone })}</p>
       </section>
     </div>
   )

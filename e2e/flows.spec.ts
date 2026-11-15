@@ -89,6 +89,7 @@ test("backup restore is disclosed separately and requires the selected timestamp
   await page.addInitScript(() => sessionStorage.setItem("uniconnect-admin-token", "e2e-admin-token"))
   await page.route("**/api/admin/system", (route) => route.fulfill({ json: {
     limits: [], backups: [{ hour, bytes: 2048 }], cronRuns: [], maintenance: { on: false },
+    backup: { state: "ok", lastSuccess: `${hour}:00:00.000Z`, schedule: "cron", cronUtcHours: [0, 6], keptHours: 24 },
   } }))
   await page.route("**/api/admin/backups/*/summary", (route) => route.fulfill({ json: {
     backup: counts, current: { ...counts, accounts: 3 }, accountsBack: 0,
@@ -109,6 +110,79 @@ test("backup restore is disclosed separately and requires the selected timestamp
   await page.getByLabel(/확인하려면 백업 시각/).fill(hour)
   await restore.click()
   await expect(page.getByText("백업으로 복원했어요.")).toBeVisible()
+})
+
+test("the system screen tells backup, reminder and limit states and keeps maintenance edits through a refresh", async ({ page }) => {
+  await page.addInitScript(() => sessionStorage.setItem("uniconnect-admin-token", "e2e-admin-token"))
+  let loads = 0
+  let maintenance = { on: false, blockSignups: false }
+  await page.route("**/api/admin/system", (route) => {
+    loads += 1
+    return route.fulfill({ json: {
+      limits: [
+        { id: "a", label: "회원 로그인 · 주소별", message: "", limit: 10, minutes: 1440, shared: true, counting: 4, blocked: 0 },
+        { id: "b", label: "인증번호 발급 · 이메일별", message: "", limit: 5, minutes: 60, shared: true, counting: 3, blocked: 2 },
+      ],
+      backups: [{ hour: "2026-11-14T06", bytes: 2048 }],
+      backup: { state: "delayed", lastSuccess: "2026-11-14T06:00:00.000Z", schedule: "cron", cronUtcHours: [0, 6], keptHours: 24 },
+      cronRuns: [
+        { at: "2026-11-15T00:05:00.000Z", sent: 2, targets: 3, failed: 1, mail: true },
+        { at: "2026-11-14T06:05:00.000Z", sent: 0, targets: 0, failed: 0, mail: true },
+        { at: "2026-11-14T00:05:00.000Z", sent: 0, targets: 2, failed: 0, mail: true, error: true },
+        { at: "2026-11-13T06:05:00.000Z", sent: 0 },
+      ],
+      maintenance,
+    } })
+  })
+  let puts = 0
+  await page.route("**/api/admin/settings/maintenance", (route) => {
+    puts += 1
+    if (puts === 1) return route.fulfill({ status: 503, json: { message: "일시적인 오류" } })
+    maintenance = route.request().postDataJSON()
+    return route.fulfill({ json: { maintenance } })
+  })
+  await page.goto("/admin?view=system")
+
+  // 백업: 지연, 최근 성공, 다음 예정을 알 수 없을 때, 시간대.
+  await expect(page.getByText("현재 상태: 지연")).toBeVisible()
+  await expect(page.getByText("다음 예정")).toBeVisible()
+  await expect(page.getByText("확인할 수 없음")).toBeVisible()
+  await expect(page.getByText("표시 시간대")).toBeVisible()
+  // 알림: 일부 실패, 대상 없음, 실행 실패, 예전 기록은 대상 없음으로 보지 않는다.
+  await expect(page.getByText("일부 실패", { exact: true })).toBeVisible()
+  await expect(page.getByText("발송 대상 없음", { exact: true })).toBeVisible()
+  await expect(page.getByText("실행 실패", { exact: true })).toBeVisible()
+  await expect(page.getByText("결과 구분 전 기록", { exact: true })).toBeVisible()
+  // 요청 제한: 접혀 있어도 막힌 제한과 수가 보이고, 펼치면 막힌 것이 위로 온다.
+  await expect(page.getByText("지금 막힌 제한 1개")).toBeVisible()
+  await expect(page.locator(".limit-blocked")).toContainText("인증번호 발급 · 이메일별")
+  await page.getByText("전체 제한 2개 보기").click()
+  await expect(page.locator(".limit-details tbody tr").first()).toContainText("1시간에 5회")
+  await expect(page.locator(".limit-details tbody tr").last()).toContainText("24시간에 10회")
+
+  // 점검: 고치면 저장되지 않은 변경, 되돌리면 사라진다.
+  const message = page.getByLabel("안내 문구")
+  await message.fill("오늘 밤 점검")
+  await expect(page.getByText("저장되지 않은 변경사항")).toBeVisible()
+  await message.fill("")
+  await expect(page.getByText("저장되지 않은 변경사항")).toBeHidden()
+  // 새로고침해도 고치는 중인 값은 남는다.
+  await page.getByLabel(/점검 중: 회원 화면 대신/).check()
+  await message.fill("오늘 밤 점검")
+  const before = loads
+  await page.getByRole("button", { name: "새로고침", exact: true }).click()
+  await expect.poll(() => loads).toBeGreaterThan(before)
+  await expect(message).toHaveValue("오늘 밤 점검")
+  await expect(page.getByLabel(/점검 중: 회원 화면 대신/)).toBeChecked()
+  // 전체 점검은 저장 전에 묻고, 실패하면 입력값을 두고 다시 시도한다.
+  await page.getByRole("button", { name: "점검 모드 켜기" }).click()
+  await expect(page.getByText("전체 점검을 켤까요?")).toBeVisible()
+  await page.getByRole("button", { name: "확인하고 점검 모드 켜기" }).click()
+  await expect(page.getByText(/저장하지 못했어요. 입력한 값은 그대로예요/)).toBeVisible()
+  await expect(message).toHaveValue("오늘 밤 점검")
+  await page.getByRole("button", { name: "다시 시도" }).click()
+  await expect(page.getByText("서버에 반영된 상태: 전체 점검")).toBeVisible()
+  await expect(page.getByText("저장되지 않은 변경사항")).toBeHidden()
 })
 
 test("a visitor sees made-up shops and the example groups on the nearby tabs", async ({ page }) => {
@@ -2346,12 +2420,15 @@ test("the console's command palette opens screens, and maintenance covers the si
   await page.getByRole("navigation", { name: "운영자 메뉴" }).getByRole("button", { name: "시스템" }).click()
   await expect(page.getByText("시스템 정보를 불러오지 못했어요.")).toBeVisible()
   await page.getByRole("button", { name: "다시 시도", exact: true }).click()
-  await expect(page.getByText("현재 상태: 정상 운영")).toBeVisible()
+  await expect(page.getByText("서버에 반영된 상태: 정상 운영")).toBeVisible()
   await page.getByLabel("점검 중: 회원 화면 대신 안내를 보여 주고 저장을 막아요").check()
   await page.getByLabel("안내 문구").fill("오늘 밤 점검이에요")
-  await expect(page.getByText("현재 상태: 정상 운영")).toBeVisible()
+  // 저장하기 전에는 서버의 상태가 그대로이고, 바뀔 것이 보인다.
+  await expect(page.getByText("서버에 반영된 상태: 정상 운영")).toBeVisible()
+  await expect(page.getByText("저장되지 않은 변경사항")).toBeVisible()
   await page.getByRole("button", { name: "점검 모드 켜기" }).click()
-  await expect(page.getByText("현재 상태: 전체 점검")).toBeVisible()
+  await page.getByRole("button", { name: "확인하고 점검 모드 켜기" }).click()
+  await expect(page.getByText("서버에 반영된 상태: 전체 점검")).toBeVisible()
   await expect(page.getByText("점검 모드를 켰어요.")).toBeVisible()
   await page.goto("/faq")
   await expect(page.getByRole("alert").filter({ hasText: "잠시 점검하고 있어요" })).toContainText("오늘 밤 점검이에요")
@@ -2359,7 +2436,8 @@ test("the console's command palette opens screens, and maintenance covers the si
   await page.goto("/admin?view=system")
   await page.getByLabel("점검 중: 회원 화면 대신 안내를 보여 주고 저장을 막아요").uncheck()
   await page.getByRole("button", { name: "점검 모드 끄기" }).click()
-  await expect(page.getByText("점검 설정을 저장했어요.")).toBeVisible()
+  await page.getByRole("button", { name: "확인하고 점검 모드 끄기" }).click()
+  await expect(page.getByText("점검 모드를 껐어요.")).toBeVisible()
   await page.goto("/faq")
   await expect(page.getByText("잠시 점검하고 있어요")).toHaveCount(0)
 })

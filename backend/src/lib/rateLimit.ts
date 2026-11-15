@@ -193,6 +193,8 @@ export async function limitStatus() {
       message: entry.message,
       limit: entry.limit,
       minutes: Math.round(entry.windowMs / 60000),
+      // 공유 테이블에서 셌는지(모든 API 복사본의 합). 아니면 이 복사본의 메모리만이다.
+      shared: rows !== undefined,
       counting: counts.length,
       blocked: counts.filter((count) => count >= entry.limit).length,
     }

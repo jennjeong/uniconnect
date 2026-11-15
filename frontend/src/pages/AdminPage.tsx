@@ -1644,7 +1644,7 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
 
         {section === "content" && <Content onNotice={onNotice} token={token} />}
 
-        {section === "system" && <SystemPanel onNotice={onNotice} token={token} />}
+        {section === "system" && <SystemPanel onNotice={onNotice} refresh={reload} token={token} />}
 
         {section === "notices" && <Notices onNotice={onNotice} token={token} />}
 
