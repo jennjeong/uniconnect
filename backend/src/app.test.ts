@@ -8231,6 +8231,15 @@ test("secrets leave the server sealed and come back the same, and a wrong key do
     assert.ok(/^\d{6}$/.test(pin))
     assert.ok(!onDisk.includes(`"staffPin": "${pin}"`))
     assert.ok(onDisk.includes("sealed:v1:"))
+    // 정기 백업도 봉인된다. 데이터를 다시 읽은 뒤(마지막 문서가 평문일 때)에도 그렇다.
+    const { backUpNow, backupFolder, loadDatabase } = await import("./store.js")
+    await loadDatabase()
+    await rm(backupFolder(), { recursive: true, force: true })
+    await backUpNow()
+    const [copy] = await readdir(backupFolder())
+    const backedUp = readFileSync(path.join(backupFolder(), copy), "utf8")
+    assert.ok(!backedUp.includes(`"staffPin": "${pin}"`))
+    assert.ok(backedUp.includes("sealed:v1:"))
   } finally {
     config.secretsKey = saved
     await saveDatabase()
