@@ -5895,22 +5895,23 @@ test("an account downloads everything it made, without its password or participa
   assert.ok(measured.every((item: object) => !("passes" in item) && !("log" in item)))
 })
 
-test("the data is backed up at most hourly beside the data file, for 24 hours", async () => {
+test("the data is backed up at most hourly beside the data file, keeping the latest 20", async () => {
   const { backups, backupFolder } = await import("./store.js")
   const folder = backupFolder()
   // 앞선 테스트가 정시를 넘겨 찍은 복사가 있을 수 있어 비우고 시작한다.
   await rm(folder, { recursive: true, force: true })
   await mkdir(folder, { recursive: true })
   const named = (hours: number) => `db-${new Date(Date.now() - hours * 3_600_000).toISOString().slice(0, 13).replace("T", "-")}.json`
+  // 오래된 복사 21개(그중 하나는 아주 오래전)가 있으면, 새 복사를 더하고 최근 20개만 남는다.
   await writeFile(path.join(folder, "db-2000-01-01-00.json"), "{}")
-  await writeFile(path.join(folder, named(30)), "{}")
-  await writeFile(path.join(folder, named(5)), "{}")
+  for (let hours = 2; hours <= 21; hours += 1) await writeFile(path.join(folder, named(hours * 30)), "{}")
   backups.lastAt = 0
   await saveDatabase()
   const copies = async () => (await readdir(folder)).filter((file) => file.startsWith("db-")).sort()
   const kept = await copies()
-  assert.equal(kept.length, 2)
-  assert.ok(kept.includes(named(5)) && !kept.includes(named(30)) && !kept.includes("db-2000-01-01-00.json"))
+  assert.equal(kept.length, 20)
+  // 시각이 아니라 개수다: 열흘 넘은 복사도 최근 20개에 들면 남고, 그 밖은 지운다.
+  assert.ok(kept.includes(named(20 * 30)) && !kept.includes(named(21 * 30)) && !kept.includes("db-2000-01-01-00.json"))
   assert.ok(JSON.parse(await readFile(path.join(folder, kept.at(-1)!), "utf8")).accounts.length > 0)
   // 한 시간 안에는 새 복사를 만들지 않는다.
   await saveDatabase()
@@ -7457,7 +7458,7 @@ test("the console's member tools, operations, content, analysis and system scree
     // 테스트의 앱에는 정기 백업이 없어 다음 예정을 알 수 없다.
     assert.equal(system.backup.schedule, "none")
     assert.equal(system.backup.next, undefined)
-    assert.equal(system.backup.keptHours, 24)
+    assert.equal(system.backup.keptCount, 20)
     assert.equal((await admin("GET", "/backups/../../etc")).status, 404)
 
     // 예시를 초기화하면 이름이 바뀐 데모 행사가 돌아오고 회원의 데이터는 건드리지 않는다.
