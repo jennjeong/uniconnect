@@ -203,6 +203,8 @@ const en: Record<string, string> = {
   "소개는 10자 이상 300자 이하로 적어 주세요.": "Please write an introduction of 10 to 300 characters.",
   "{label}을 60자 이하로 적어 주세요.": "Please keep {label} to 60 characters or fewer.",
   "제공하는 협찬을 하나 이상 골라 주세요.": "Pick at least one thing you offer.",
+  "사업자 확인을 마친 브랜드와 단체 확인을 마친 학생단체 사이의 협찬에만 후기를 남길 수 있어요.":
+    "Reviews can be left only on sponsorships between a brand with a verified business and a verified student group.",
   "양쪽이 임시 전자 계약서를 확인한 협찬에만 후기를 남길 수 있어요.": "Reviews are for sponsorships both sides confirmed on the e-contract.",
   "시작한 행사의 목표는 바꿀 수 없어요.": "An event's goals can't change once it has begun.",
   "날짜는 오늘이나 그 뒤로 옮겨 주세요.": "Move the date to today or later.",
@@ -409,20 +411,18 @@ const en: Record<string, string> = {
   "이미 취소된 결제예요.": "That payment was already canceled.",
   "협찬액은 0원부터 1억 원까지 원 단위로 적어 주세요.": "Please write the value in whole won, from 0 to 100,000,000.",
   "현금이나 현물 환산 금액을 적어 주세요.": "Please write a cash or in-kind amount.",
-  "협찬액(현금과 현물 환산)을 먼저 적어 주세요. 수수료는 그 금액으로 정해져요.":
-    "Please write the sponsorship value (cash and in-kind) first. The fee is set from it.",
-  "플랫폼 수수료를 결제하면 확인돼요.": "Pay the platform fee to confirm.",
-  "낼 수수료가 없어요.": "There's no fee to pay.",
+  "협찬 수수료는 더 이상 받지 않아요. 결제 없이 계약서를 확인할 수 있어요.":
+    "We no longer charge a sponsorship fee. You can confirm the contract without paying.",
   "끝난 행사의 협찬액은 바꿀 수 없어요.": "The value can't change after the event is over.",
   // 상세 리포트 (routes/insights.ts)
   "측정한 협찬을 찾을 수 없어요.": "We couldn't find that measured sponsorship.",
-  "상세 리포트는 행사 날부터 살 수 있어요.": "The detailed report can be bought from the event's day.",
+  "상세 리포트는 이제 무료예요. 행사 날부터 바로 볼 수 있어요.": "The detailed report is free now. It opens from the event's day.",
+  "상세 리포트는 행사 날부터 열려요.": "The detailed report opens from the event's day.",
   "데모 계정은 매장 방문 수를 적을 수 없어요.": "The demo accounts can't write store visits.",
-  "상세 리포트를 산 뒤에 적을 수 있어요.": "Buy the detailed report to write this.",
   "하루 방문객 수는 0부터 100,000까지의 숫자로 적어 주세요.": "Please write daily visitors as a number from 0 to 100,000.",
   "협찬 전 하루 방문객 수를 1 이상으로 적어 주세요.": "Please write at least 1 daily visitor before the sponsorship.",
   "데모 계정은 리포트를 공유할 수 없어요.": "The demo accounts can't share reports.",
-  "상세 리포트를 산 뒤에 공유할 수 있어요.": "Buy the detailed report to share it.",
+  "상세 리포트는 행사 날부터 공유할 수 있어요.": "The detailed report can be shared from the event's day.",
   "공유가 끝났거나 없는 리포트예요.": "This report is no longer shared, or doesn't exist.",
   // 운영자 콘솔 (routes/admin.ts)
   "회원을 찾을 수 없어요.": "We couldn't find that member.",

@@ -229,10 +229,6 @@ export type Agreement = {
   cancelable: boolean
   // 협찬의 가치. 현금과 현물이며, 적은 뒤에만 있다.
   value?: { cash: number; inKind: number }
-  // 브랜드가 확정하려고 내는 플랫폼 수수료 (backend lib/fees.ts): 면제이면(데모
-  // 계정, 수수료 도입 전 협찬) 없고, 아니면 가치에서 정한 비율과 낸 금액, 아직
-  // 낼 금액이다.
-  fee: { rate: number; exempt: boolean; amount: number; paid: number; due: number; needsValue: boolean }
 }
 
 // 브랜드가 플랫폼에 내는 돈 (backend lib/billing.ts).
@@ -265,7 +261,7 @@ export type Payment = {
 
 // 가격, 카드 결제 사용 여부, 계정의 결제 내역.
 export type BillingInfo = {
-  prices: { feeRate: number; report: number; pro: number; proDays: number; adBrand: number; adGroup: number; adDays: number; adRenewalDiscount: number; vatRate: number }
+  prices: { pro: number; proDays: number; adBrand: number; adGroup: number; adDays: number; adRenewalDiscount: number; vatRate: number }
   card: { clientKey: string } | null
   // Toss 테스트 키: 돈은 오가지 않으며, 데모 계정도 시연을 위해 결제해 볼 수
   // 있다.
@@ -324,10 +320,10 @@ export type PublicPlan = {
   priceWithVat: number | null
   days: number | null
   orderKind: "pro" | "local" | null
-  limits: { offersPerMonth: number | null; partnerRequestsPerMonth: number; reportsIncluded: boolean; alwaysOnCoupons?: boolean } | null
+  limits: { offersPerMonth: number | null; partnerRequestsPerMonth: number; alwaysOnCoupons?: boolean } | null
 }
 
-export type PlanTable = { vatRate: number; feeRate: number; reportPrice: number; plans: PublicPlan[] }
+export type PlanTable = { vatRate: number; plans: PublicPlan[] }
 
 // 결제할 주문과, 결제창에 필요한 값.
 export type PaymentOrder = { order: Payment; customerKey: string; email: string }
@@ -537,8 +533,7 @@ export type AdminReferralReward = {
   referrer: { id: string; name: string; business: boolean } | null
   joined: { id: string; name: string; business: boolean; createdAt: string } | null
   value: number
-  feePaid: number
-  blocked: "missing" | "suspended" | "canceled" | "refunded" | null
+  blocked: "missing" | "suspended" | "canceled" | "value" | null
 }
 
 // 운영자 계정과 로그인 (backend routes/adminSession.ts).
@@ -1179,11 +1174,10 @@ export type PremiumReport = {
   history: { count: number; averageRoas: number | null; averagePerVisit: number | null; rank: number | null }
 }
 
-// 페이지가 불러오는 리포트: 구매하기 전에는 가격이 붙은 미리보기다.
+// 페이지가 불러오는 리포트: 행사 날 전에는(방문자는 샘플 밖의 것도) 잠긴 미리보기다.
 export type InsightAnswer =
   | {
       locked: true
-      price: number
       open: boolean
       sponsorship: { id: string; groupName: string; eventName: string; date: string }
     }

@@ -19,7 +19,7 @@ export function AcceptModal({
   onConfirm,
   onClose,
 }: {
-  // 수락하는 쪽. 브랜드는 계약서를 확인할 때 성사 수수료를 낸다.
+  // 수락하는 쪽.
   side: "브랜드" | "학생단체"
   partner: string
   eventName: string
@@ -67,9 +67,7 @@ export function AcceptModal({
       {details && <TermsList terms={details} />}
 
       <p className="accept-cost">
-        {side === "브랜드"
-          ? t("수락해도 아직 결제되지 않아요. 계약서에 협찬액(현금 + 현물 환산)을 적고 확인할 때, 협찬액의 15%를 성사 수수료로 내요.")
-          : t("학생단체는 수수료를 내지 않아요. 수락해도 계약서를 양쪽이 확인하기 전까지는 협찬이 확정되지 않아요.")}
+        {t("수수료는 없어요. 수락해도 계약서를 양쪽이 확인하기 전까지는 협찬이 확정되지 않아요.")}
       </p>
 
       <ol className="accept-steps">

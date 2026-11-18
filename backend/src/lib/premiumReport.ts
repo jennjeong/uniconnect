@@ -101,19 +101,16 @@ export function timing(measurement: Measurement, event: EventItem) {
 }
 
 // 데모 브랜드의 샘플 리포트. 로그인하지 않은 방문자에게 열어 전체를 볼 수
-// 있게 한다. 데모 브랜드로 로그인하면 다른 계정처럼 잠겨 있어 구매 과정을
-// 보여 준다(Toss 테스트 키 사용).
+// 있게 한다.
 export const sampleReportId = "sp-busking"
 
-// 계정이 협찬의 리포트를 읽을 수 있는지. 구매했으면 가능하다(Pro는
-// lib/pro.ts가 스스로 더한다).
-export const reportAccess: ((database: Database, account: Account, sponsorshipId: string) => boolean)[] = [
-  (database, account, id) => Boolean(paidFor(database, account.id, "report", id)),
-]
-
-export const canReadReport = (database: Database, account: Account, id: string, visitor: boolean) =>
-  (visitor && isDemoAccount(database, account) && id === sampleReportId) ||
-  reportAccess.some((allows) => allows(database, account, id))
+// 계정이 협찬의 리포트를 읽을 수 있는지. 상세 리포트는 무료라서, 협찬의 주인 브랜드는
+// 행사 날부터 읽는다(공유 링크도 그 브랜드의 것으로 연다). 방문자는 데모 브랜드의 샘플만 본다.
+export const canReadReport = (database: Database, account: Account, id: string, visitor: boolean) => {
+  if (visitor) return isDemoAccount(database, account) && id === sampleReportId
+  const found = sponsorshipFor(database, account, id)
+  return Boolean(found && reportOpen(found.event))
+}
 
 // 리포트 번호: 행사 날짜와 협찬의 짧은 해시.
 export const reportNumber = (sponsorship: Sponsorship) =>
@@ -165,11 +162,11 @@ function fromRecord(sponsorship: Sponsorship) {
   return { sponsorship, measurement, event }
 }
 
-// 행사 날이 되면 살 수 있다.
+// 행사 날이 되면 열린다.
 export const reportOpen = (event: EventItem) => event.date <= todayInKorea()
 
-// 계정 기준으로 협찬 리포트의 상태. 읽을 수 있음, 살 수 있음, 아직 아님
-// (행사 날 전), 없음(측정된 행사 없음) 중 하나다.
+// 계정 기준으로 협찬 리포트의 상태. 읽을 수 있음, 잠김(방문자가 샘플 밖의 것을 볼 때), 아직
+// 아님(행사 날 전), 없음(측정된 행사 없음) 중 하나다.
 export function reportState(database: Database, account: Account, sponsorshipId: string, visitor: boolean) {
   const found = sponsorshipFor(database, account, sponsorshipId)
   if (!found) return "none" as const

@@ -21,7 +21,7 @@ import {
 } from "../lib/agreements.js"
 import { applyTemplate, parseTemplateKinds, templatesView } from "../lib/contractTemplates.js"
 import { todayInKorea } from "../lib/dates.js"
-import { feeState, parseValue } from "../lib/fees.js"
+import { parseValue } from "../lib/fees.js"
 import { rewardReferrals, tellReferrers } from "../lib/referrals.js"
 import { HttpError } from "../lib/errors.js"
 import { ensureMeasurement } from "../lib/measurements.js"
@@ -474,11 +474,6 @@ agreementsRouter.post("/:id/confirm", async (req, res) => {
   const audience = agreementShare(database, proposal)?.measurement.goals.expectedAudience
   if (req.body?.audience !== undefined && req.body.audience !== audience) {
     throw new HttpError(409, "행사 목표가 바뀌었어요. 화면을 새로 고쳐 다시 확인해 주세요.")
-  }
-  if (side === "brand") {
-    const fee = feeState(database, agreement, proposal)
-    if (fee.needsValue) throw new HttpError(409, "협찬액(현금과 현물 환산)을 먼저 적어 주세요. 수수료는 그 금액으로 정해져요.")
-    if (fee.due > 0) throw new HttpError(402, "플랫폼 수수료를 결제하면 확인돼요.")
   }
   const both = confirmAgreement(database, agreement, proposal, side)
   // 각 측의 첫 확정 협찬은 초대한 사람에게 보상이 된다(친구 초대).

@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto"
 import { applyTemplate } from "./contractTemplates.js"
 import type { DisputeFiles } from "./disputes.js"
 import { todayInKorea } from "./dates.js"
-import { feeState, parseValue } from "./fees.js"
+import { parseValue } from "./fees.js"
 import { HttpError } from "./errors.js"
 import { ensureMeasurement, pinMissesToday, pinsFrom, pinsOpen, rotatePin } from "./measurements.js"
 import { activeMethodsOf, confirmsAt, isVenueKind, methodsOf, venueCountsOf } from "./methods.js"
@@ -438,7 +438,6 @@ export function agreementView(database: Database, agreement: Agreement, proposal
     ...(measure && !proposal.canceled ? { measure } : {}),
     gives: proposal.gives,
     ...(proposal.terms ? { terms: proposal.terms } : {}),
-    fee: feeState(database, agreement, proposal),
     payout: payoutView(agreement),
     review: {
       open: reviewOpen(proposal),

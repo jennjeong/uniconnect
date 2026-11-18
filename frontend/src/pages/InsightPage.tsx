@@ -3,11 +3,8 @@ import { useCallback, useEffect, useState } from "react"
 import { api, errorMessage } from "../api"
 import { Icon, type IconName } from "../components/Icon"
 import { Pill } from "../components/Pill"
-import { Presence } from "../components/Presence"
 import { t } from "../i18n"
 import { formatFullDate, formatPeriod } from "../lib/date"
-import { fullWon } from "../lib/sponsorships"
-import { PaymentModal } from "../modals/PaymentModal"
 import { GradeRing, HeadlineFigures, Section, sections } from "../report/insightSections"
 import { InsightExport } from "../report/InsightExport"
 import { MeshBackdrop } from "../scenes/MeshBackdrop"
@@ -158,7 +155,6 @@ export function InsightPage({
 }) {
   const [answer, setAnswer] = useState<InsightAnswer>()
   const [failed, setFailed] = useState("")
-  const [buying, setBuying] = useState(false)
   const [sample, setSample] = useState<PremiumReport>()
 
   useEffect(() => {
@@ -251,14 +247,16 @@ export function InsightPage({
           </div>
           <aside className="insight-price">
             <span>{t("협찬 1건")}</span>
-            <strong>{fullWon(answer.price)}</strong>
-            <small>{t("부가세 별도 · 한 번 사면 계속 볼 수 있어요")}</small>
+            <strong>{t("무료")}</strong>
             {answer.open ? (
-              <button className="primary-button wide" onClick={() => (loggedIn ? setBuying(true) : onLogin())} type="button">
-                {loggedIn ? t("리포트 사기") : t("로그인하고 리포트 사기")}
-              </button>
+              <>
+                <small>{t("협찬한 브랜드라면 누구나 볼 수 있어요.")}</small>
+                <button className="primary-button wide" onClick={onLogin} type="button">
+                  {t("로그인하고 리포트 보기")}
+                </button>
+              </>
             ) : (
-              <p className="field-hint">{t("행사 날부터 살 수 있어요.")}</p>
+              <small>{t("행사 날부터 열려요.")}</small>
             )}
             <button
               className="subtle-link"
@@ -274,24 +272,6 @@ export function InsightPage({
             </button>
           </aside>
         </div>
-        <Presence show={buying}>
-          <PaymentModal
-            amount={answer.price}
-            kind="report"
-            lines={[
-              { label: t("상품"), value: t("상세 성과 리포트") },
-              { label: t("환불"), value: t("연 뒤에는 환불되지 않아요") },
-              { label: t("협찬"), value: `${sponsorship.eventName} · ${sponsorship.groupName}` },
-            ]}
-            onClose={() => setBuying(false)}
-            onTransferAsked={() => {
-              setBuying(false)
-              onNotice(t("계좌 입금을 요청했어요. 입금이 확인되면 리포트가 열려요."))
-            }}
-            targetId={sponsorship.id}
-            title={t("상세 성과 리포트 결제")}
-          />
-        </Presence>
       </section>
     )
   }

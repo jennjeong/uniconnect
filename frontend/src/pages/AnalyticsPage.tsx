@@ -37,15 +37,15 @@ const countUnit = (unit: string) => (lang === "en" ? "" : unit)
 
 // 브랜드가 한 협찬마다의 지출, 쿠폰, 방문, ROAS. getlayers.ai의 Interference
 // 그라디언트 위에 총계를 놓고, 이어서 ROAS, 인사이트, 표를 보여 준다. 협찬마다
-// 리포트 페이지를 붙인 전체 분석은 PDF로 내려받는다. 협찬의 상세 리포트는 그
-// 행의 끝에서 읽거나 사거나, 행사 당일부터 열 수 있다.
+// 리포트 페이지를 붙인 전체 분석은 PDF로 내려받는다. 협찬의 상세 리포트는 무료로, 그
+// 행의 끝에서 행사 당일부터 연다(방문자는 샘플 밖의 것은 로그인해야 본다).
 function ReportButton({ state, onOpen }: { state?: Sponsorship["report"]; onOpen: () => void }) {
   if (!state || state === "none") return <small className="analytics-report-none">—</small>
   if (state === "soon") return <small className="analytics-report-none">{t("행사 날부터")}</small>
   return (
     <button className={state === "open" ? "report-button open" : "report-button"} onClick={onOpen} type="button">
       <Icon name={state === "open" ? "file" : "lock"} size={13} />
-      {state === "open" ? t("상세 리포트 보기") : t("상세 리포트 구매")}
+      {state === "open" ? t("상세 리포트 보기") : t("로그인하고 리포트 보기")}
     </button>
   )
 }

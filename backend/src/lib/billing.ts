@@ -9,10 +9,6 @@ import { HttpError } from "./errors.js"
 // 주문을 만들 때 위에 더한다(vatOf). 브랜드가 내고 학생 단체는 자기 광고만
 // 낸다.
 export const prices = {
-  // 협찬 가치(현금과 현물)의 일부. 양쪽이 확인할 때 낸다.
-  feeRate: 0.15,
-  // 협찬 하나의 상세 리포트.
-  report: 50_000,
   // Growth (이전 이름 캠퍼스 파트너스, 데이터 이름 `pro`), 30일.
   pro: 249_000,
   proDays: 30,

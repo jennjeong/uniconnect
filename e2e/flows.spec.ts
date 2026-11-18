@@ -1428,7 +1428,7 @@ test("a student group proposes and the brand accepts", async ({ browser }) => {
   await card.getByRole("button", { name: /수락하기/ }).click()
   const accept = brand.getByRole("dialog", { name: "이 제안을 수락할까요?" })
   await expect(accept).toContainText("삼육대 뮤즈")
-  await expect(accept).toContainText("15%")
+  await expect(accept).toContainText("수수료는 없어요")
   await brand.keyboard.press("Escape")
   await expect(accept).toBeHidden()
   await expect(card.getByRole("button", { name: /수락하기/ })).toBeVisible()
@@ -1983,13 +1983,23 @@ test("visitors see a partner's reviews, a group reviews the brand after its even
   }
   const proposal = inbox.requests.find((item) => item.groupName === "후기 동아리")!
   await request.post(`/api/requests/${proposal.id}/accept`, { headers: brand.headers })
-  // 후기는 확정된 e-contract 뒤에 쓴다. 가치, 단체의 확인, 수수료를 내는
-  // 브랜드의 확인이 필요하다(이체이며 운영자가 확인한다).
+  // 후기는 확정된 e-contract 뒤에 쓴다. 가치, 단체의 확인, 브랜드의 확인이 필요하다.
   await request.put(`/api/agreements/${proposal.id}/value`, { data: { value: { cash: 100000, inKind: 0 } }, headers: group.headers })
   await request.post(`/api/agreements/${proposal.id}/confirm`, { headers: group.headers })
-  const order = (await (await request.post("/api/billing/orders", { data: { kind: "fee", targetId: proposal.id }, headers: brand.headers })).json()) as { order: { id: string } }
-  const paid = await request.post(`/api/admin/payments/${order.order.id}/paid`, { headers: { "X-Admin-Token": "e2e-admin-token" } })
-  expect(paid.ok()).toBe(true)
+  expect((await request.post(`/api/agreements/${proposal.id}/confirm`, { headers: brand.headers })).ok()).toBe(true)
+  // 후기는 확인된 계정끼리만 주고받는다: 단체는 서류를 보내 운영자가 승인하고, 브랜드는 사업자 확인을 마친다.
+  const consoleHeaders = { "X-Admin-Token": "e2e-admin-token" }
+  const pdf = (name: string) => ({ file: `data:application/pdf;base64,${Buffer.from("%PDF-1.4 proof").toString("base64")}`, name })
+  expect(
+    (await request.post("/api/groups/verification", { data: { representative: "후기 대표", enrollment: pdf("재학증명서.pdf"), membership: pdf("임명장.pdf") }, headers: group.headers })).status(),
+  ).toBe(202)
+  const { applications } = (await (await request.get("/api/admin/applications", { headers: consoleHeaders })).json()) as { applications: { id: string; email: string }[] }
+  const groupApplication = applications.find((item) => item.email === "e2e-reviewer@syu.ac.kr")!
+  expect((await request.post(`/api/admin/applications/${groupApplication.id}/approve`, { headers: consoleHeaders })).status()).toBe(200)
+  const brandAccount = (await (await request.get("/api/auth/me", { headers: brand.headers })).json()) as { account: { id: string } }
+  expect(
+    (await request.put(`/api/admin/accounts/${brandAccount.account.id}/business`, { data: { verified: true, number: "1234567890" }, headers: consoleHeaders })).ok(),
+  ).toBe(true)
 
   // 계약서에서 단체가 후기를 남긴다.
   await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
@@ -2141,11 +2151,11 @@ test("every sponsorship on 성과 분석 has its detailed report, and 요금제 
   await expect(rows.nth(1)).toBeVisible()
   const count = await rows.count()
   await expect(page.locator(".analytics-table .report-button")).toHaveCount(count)
-  // 측정한 행사가 없는 것도 기록에서 계산해 살 수 있다.
+  // 측정한 행사가 없는 것도 기록에서 계산한 리포트가 있고, 방문자는 로그인하면 무료로 본다.
   await rows.last().locator(".report-button").click()
   await expect(page).toHaveURL(/\/insights\/[^/]+$/)
   await expect(page.getByText("화면에서 보는 숫자 너머의 리포트")).toBeVisible()
-  await expect(page.getByRole("button", { name: "로그인하고 리포트 사기" })).toBeVisible()
+  await expect(page.getByRole("button", { name: "로그인하고 리포트 보기" })).toBeVisible()
 
   const brand = await signUpMember(request, "브랜드", "e2e-plan@plan-cafe.kr", "요금제 카페")
   await page.evaluate((value) => localStorage.setItem("uniconnect-token", value), brand.token)
@@ -2175,7 +2185,7 @@ test("추천 매칭 opens on 전체, its scopes 전체 · 추천 · 찜 · 학�
   await expect(tabs.first()).toHaveAttribute("aria-selected", "true")
 })
 
-test("a brand writes the value, pays the 15% fee to confirm, and finds it under 결제 내역", async ({ page, request, browser }) => {
+test("a brand writes the value and confirms the contract without paying any fee", async ({ page, request, browser }) => {
   const group = await signUpMember(request, "학생단체", "e2e-fee@syu.ac.kr", "수수료 동아리")
   const brand = await signUpMember(request, "브랜드", "e2e-fee@fee-cafe.kr", "수수료 카페")
   const date = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date(Date.now() + 10 * 86_400_000))
@@ -2187,45 +2197,30 @@ test("a brand writes the value, pays the 15% fee to confirm, and finds it under 
 
   await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
   await page.goto(`/agreements/${id}`)
-  const panel = page.getByRole("region", { name: "협찬액과 수수료" })
+  const panel = page.getByRole("region", { name: "협찬액" })
   await expect(panel).toContainText("아직 적지 않았어요")
-  await expect(page.getByText("협찬액을 적으면 수수료를 결제하고 확인할 수 있어요.")).toBeVisible()
   await panel.getByRole("button", { name: "적기" }).click()
   await panel.getByLabel("현금").fill("200000")
   await panel.getByLabel("현물 환산").fill("133,333")
   await panel.getByRole("button", { name: "저장하기" }).click()
   await expect(panel).toContainText("333,333원")
-  await expect(panel).toContainText("50,000원")
+  // 계약서에는 수수료가 없다는 조항만 있고, 결제 없이 확인한다.
+  await expect(panel).not.toContainText("수수료")
+  await expect(page.getByText("이 협찬에는 플랫폼 수수료가 없어요.", { exact: false })).toBeVisible()
+  await page.getByRole("button", { name: "이 내용으로 확인하기" }).click()
+  await expect(page.getByText("확인했어요. 수수료 동아리에 알렸어요.")).toBeVisible()
 
-  // Toss 키가 없으면 이체가 결제 방법이며, 약관이 먼저 나온다.
-  await page.getByRole("button", { name: "수수료 50,000원 결제하고 확인하기" }).click()
-  const pay = page.getByRole("dialog", { name: "플랫폼 수수료 결제" })
-  await expect(pay).toContainText("카드 결제는 준비 중이에요")
-  await pay.getByRole("button", { name: "계좌 입금으로 요청하기" }).click()
-  await expect(pay.getByRole("alert")).toHaveText("결제 내용과 환불 규정에 동의해 주세요.")
-  await pay.getByText("결제 내용을 확인했고").click()
-  await expect(pay.getByRole("checkbox")).toBeChecked()
-  await pay.getByRole("button", { name: "계좌 입금으로 요청하기" }).click()
-  await expect(page.getByText("계좌 입금을 요청했어요. 입금이 확인되면 계약서가 확인돼요.")).toBeVisible()
-  await expect(pay).toBeHidden()
-
-  await page.goto("/me")
-  await page.getByRole("button", { name: "결제 내역" }).click()
-  const history = page.getByRole("dialog", { name: "결제 내역" })
-  await expect(history).toContainText("수수료 공연 협찬 수수료")
-  await expect(history).toContainText("입금 확인 중")
-
-  // 단체는 아무것도 내지 않는 것을 본다.
+  // 단체도 수수료 없이 같은 계약서를 본다.
   const groupPage = await (await browser.newContext()).newPage()
   await groupPage.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)
   await groupPage.goto(`/agreements/${id}`)
-  await expect(groupPage.getByRole("region", { name: "협찬액과 수수료" })).toContainText("학생단체는 무료예요")
+  await expect(groupPage.getByRole("region", { name: "협찬액" })).toContainText("333,333원")
   for (const member of [group, brand]) {
     expect((await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: member.headers })).status()).toBe(204)
   }
 })
 
-test("the detailed report: the demo's open from 성과 분석, a member's locked behind its price", async ({ page, request, browser }) => {
+test("the detailed report: the demo's open from 성과 분석, and a member's is free from the event day", async ({ page, request, browser }) => {
   // 방문자는 데모 브랜드의 것을 분석에서 읽는다.
   await page.goto("/analytics?role=브랜드")
   await page.getByRole("button", { name: "리포트 보기" }).first().click()
@@ -2252,7 +2247,7 @@ test("the detailed report: the demo's open from 성과 분석, a member's locked
   await expect(page.getByRole("button", { name: "공유 링크 만들기" })).toHaveCount(0)
   await expect(page.getByRole("button", { name: "효과 계산하기" })).toHaveCount(0)
 
-  // 회원이 오늘 행사를 협찬하면 가격이 붙은 미리보기가 나온다.
+  // 회원이 오늘 행사를 협찬하면 리포트가 바로 무료로 열린다.
   const group = await signUpMember(request, "학생단체", "e2e-insight@syu.ac.kr", "리포트 동아리")
   const brand = await signUpMember(request, "브랜드", "e2e-insight@insight-cafe.kr", "리포트 카페")
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date())
@@ -2264,18 +2259,9 @@ test("the detailed report: the demo's open from 성과 분석, a member's locked
   const member = await (await browser.newContext()).newPage()
   await member.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
   await member.goto(`/insights/sp-${requests[0].id}`)
-  await expect(member.getByText("화면에서 보는 숫자 너머의 리포트")).toBeVisible()
-  await expect(member.locator(".insight-price")).toContainText("50,000원")
-  // 사기 전에 샘플을 본다. 실제 수치가 아니라고 밝힌다.
-  await member.getByRole("button", { name: "샘플 리포트 보기" }).click()
-  await expect(member.getByText("예시 리포트예요. 실제 협찬의 수치가 아니에요.")).toBeVisible()
-  await member.getByRole("button", { name: "돌아가기" }).click()
-  await member.getByRole("button", { name: "리포트 사기" }).click()
-  const pay = member.getByRole("dialog", { name: "상세 성과 리포트 결제" })
-  await expect(pay).toContainText("연 뒤에는 환불되지 않아요")
-  await pay.getByText("결제 내용을 확인했고").click()
-  await pay.getByRole("button", { name: "계좌 입금으로 요청하기" }).click()
-  await expect(member.getByText("계좌 입금을 요청했어요. 입금이 확인되면 리포트가 열려요.")).toBeVisible()
+  await expect(member.getByRole("region", { name: "핵심 요약" })).toBeVisible()
+  await expect(member.getByRole("button", { name: "공유 링크 만들기" })).toBeVisible()
+  await expect(member.getByText("리포트 사기")).toHaveCount(0)
   for (const account of [group, brand]) {
     expect((await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: account.headers })).status()).toBe(204)
   }
@@ -2287,7 +2273,7 @@ test("a brand sees its plan in 내 정보 and asks to start Growth", async ({ pa
   await page.goto("/me")
   const card = page.getByRole("region", { name: "요금제" })
   await expect(card).toContainText("무료 요금제 · 이번 달 협찬 제안 0/5건")
-  await expect(card).toContainText("상세 분석 리포트 모두 포함")
+  await expect(card).toContainText("협찬 제안 제한 없음")
   await card.getByRole("button", { name: "Growth 시작하기" }).click()
   const pay = page.getByRole("dialog", { name: "Growth 결제" })
   await expect(pay).toContainText("249,000원")

@@ -9,14 +9,11 @@ const kst = (days = 0) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seo
 const admin = { "X-Admin-Token": "e2e-admin-token" }
 type Member = Awaited<ReturnType<typeof signUpMember>>
 
-// 계약서를 양쪽이 확인한다: 단체가 가치를 적고 확인하고, 브랜드는 수수료를 내면 확인된다(이체를 운영자가 확인).
+// 계약서를 양쪽이 확인한다: 단체가 가치를 적고 확인하고, 브랜드도 확인한다(수수료는 없다).
 async function confirmBoth(request: APIRequestContext, id: string, group: Member, brand: Member) {
   await request.put(`/api/agreements/${id}/value`, { data: { value: { cash: 100000, inKind: 0 } }, headers: group.headers })
   await request.post(`/api/agreements/${id}/confirm`, { headers: group.headers })
-  const order = (await (await request.post("/api/billing/orders", { data: { kind: "fee", targetId: id }, headers: brand.headers })).json()) as {
-    order: { id: string }
-  }
-  expect((await request.post(`/api/admin/payments/${order.order.id}/paid`, { headers: admin })).ok()).toBe(true)
+  expect((await request.post(`/api/agreements/${id}/confirm`, { headers: brand.headers })).ok()).toBe(true)
 }
 
 const scheduleRow = (page: Page) => page.locator(".work-board li", { hasText: "다가오는 협찬 일정" })
@@ -112,7 +109,7 @@ test("a reply deadline shows on both sides, sorts the inbox and the dashboard op
   await context.close()
 })
 
-test("the fee a brand sees while proposing is what it pays at checkout", async ({ page, request }) => {
+test("a brand's proposal form shows no fee, and a new fee order is refused", async ({ page, request }) => {
   const brand = await signUpMember(request, "브랜드", "e2e-fee@fee-cafe.kr", "수수료 카페")
   const group = await signUpMember(request, "학생단체", "e2e-fee@syu.ac.kr", "수수료 동아리")
   const listed = (await (
@@ -120,22 +117,21 @@ test("the fee a brand sees while proposing is what it pays at checkout", async (
   ).json()) as { profile: { id: string } }
   await request.post("/api/events", { data: { name: "수수료 시음회", date: kst(10), types: ["현금"] }, headers: brand.headers })
 
-  // 제안 폼: 금액을 적으면 예상 수수료와 부가세 포함 금액이 보인다.
+  // 제안 폼: 금액을 적어도 수수료 안내가 없다.
   await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
   await page.goto(`/groups/${listed.profile.id}`)
   await page.getByRole("button", { name: "제안하기" }).first().click()
   const form = page.getByRole("dialog", { name: /협찬 제안/ })
   await form.getByLabel("금액(원)").fill("300000")
-  await expect(form.locator(".fee-estimate")).toContainText("예상 성사 수수료 45,000원 · 부가세 포함 49,500원")
+  await expect(form.getByText("예상 성사 수수료", { exact: false })).toHaveCount(0)
 
-  // 같은 금액으로 수락된 협찬의 수수료 주문은 그 금액이다.
+  // 수락된 협찬의 계약서는 결제 없이 확인되고, 수수료 주문은 받지 않는다.
   await request.post("/api/proposals", { data: { matchId: listed.profile.id, terms: { amount: 300000, kinds: ["현금"] } }, headers: brand.headers })
   const { offers } = (await (await request.get("/api/offers", { headers: group.headers })).json()) as { offers: { id: string }[] }
   await request.post(`/api/offers/${offers[0].id}/accept`, { headers: group.headers })
-  const order = (await (
-    await request.post("/api/billing/orders", { data: { kind: "fee", targetId: offers[0].id }, headers: brand.headers })
-  ).json()) as { order: { amount: number; supply: number } }
-  expect(order.order).toMatchObject({ amount: 49_500, supply: 45_000 })
+  const ordered = await request.post("/api/billing/orders", { data: { kind: "fee", targetId: offers[0].id }, headers: brand.headers })
+  expect(ordered.status()).toBe(410)
+  expect((await request.post(`/api/agreements/${offers[0].id}/confirm`, { headers: brand.headers })).ok()).toBe(true)
 })
 
 test("a confirmed sponsorship's contract says what is next and checks the event day ahead", async ({ page, request }) => {
