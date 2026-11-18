@@ -6207,7 +6207,7 @@ test("Vercel Cron sends the reminders with its secret, and nobody else can", asy
   }
 })
 
-test("a brand confirms an e-contract without paying, no new fee is ordered, and an old fee payment still refunds", async () => {
+test("a brand confirms an e-contract without paying, no new fee is ordered, and an old fee payment still refunds apart from it", async () => {
   const { paymentsOf, toss } = await import("./lib/billing.js")
   const saved = { admin: config.adminToken }
   const realCancel = toss.cancel
@@ -6240,7 +6240,7 @@ test("a brand confirms an e-contract without paying, no new fee is ordered, and 
     assert.equal(listed.prices.feeRate, undefined)
     assert.equal(listed.prices.report, undefined)
 
-    // 그 전에 카드로 낸 수수료는 기록으로 남고, 환불하면 그 결제로 이뤄진 브랜드의 확인을 거둔다.
+    // 그 전에 카드로 낸 수수료는 기록으로 남고 환불할 수 있다. 확인은 결제와 상관없어 그대로다.
     const old = {
       id: "old-fee",
       accountId: brandAccount.id,
@@ -6263,7 +6263,7 @@ test("a brand confirms an e-contract without paying, no new fee is ordered, and 
     }
     assert.equal((await admin(`/payments/${old.id}/cancel`, { reason: "테스트 환불" })).status, 200)
     assert.deepEqual(refunded, ["pk-old"])
-    assert.equal((await call("GET", `/agreements/${request.id}`, undefined, brand)).data.agreement.confirmed.brand, undefined)
+    assert.ok((await call("GET", `/agreements/${request.id}`, undefined, brand)).data.agreement.confirmed.brand)
     // 계정의 내보내기는 결제를 담되 Toss의 키는 담지 않는다.
     const exported = (await call("GET", "/auth/export", undefined, brand)).data
     assert.equal(exported.payments.length, 1)
@@ -8139,7 +8139,9 @@ test("secrets leave the server sealed and come back the same, and a wrong key do
     assert.deepEqual(openDocument(JSON.stringify(document)), document)
     // 암호문을 고치면 열리지 않는다.
     const one = seal("x")
-    assert.equal(open(`${one.slice(0, -2)}AA`), `${one.slice(0, -2)}AA`)
+    // 끝 두 글자를 늘 다른 것으로 바꾼다(원래 "AA"였으면 그대로라 우연히 열리지 않게).
+    const tampered = `${one.slice(0, -2)}${one.endsWith("AA") ? "BB" : "AA"}`
+    assert.equal(open(tampered), tampered)
 
     // 키가 달라도 멈추지 않고 암호문을 그대로 둔다.
     config.secretsKey = "a-different-key-for-the-same-sealed-values"
