@@ -203,6 +203,8 @@ const en: Record<string, string> = {
   "소개는 10자 이상 300자 이하로 적어 주세요.": "Please write an introduction of 10 to 300 characters.",
   "{label}을 60자 이하로 적어 주세요.": "Please keep {label} to 60 characters or fewer.",
   "제공하는 협찬을 하나 이상 골라 주세요.": "Pick at least one thing you offer.",
+  "사업자 확인을 마친 브랜드와 단체 확인을 마친 학생단체 사이의 협찬에만 후기를 남길 수 있어요.":
+    "Reviews can be left only on sponsorships between a brand with a verified business and a verified student group.",
   "양쪽이 임시 전자 계약서를 확인한 협찬에만 후기를 남길 수 있어요.": "Reviews are for sponsorships both sides confirmed on the e-contract.",
   "시작한 행사의 목표는 바꿀 수 없어요.": "An event's goals can't change once it has begun.",
   "날짜는 오늘이나 그 뒤로 옮겨 주세요.": "Move the date to today or later.",

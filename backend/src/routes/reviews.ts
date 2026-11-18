@@ -4,7 +4,7 @@ import { acceptedProposal, sideIn } from "../lib/agreements.js"
 import { findListing } from "../lib/catalog.js"
 import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
-import { agreementHeld, isDemoAccount, publicReview, reviewOpen, reviewsAbout, reviewSummary, reviewTarget } from "../lib/reviews.js"
+import { agreementHeld, reviewersVerified, isDemoAccount, publicReview, reviewOpen, reviewsAbout, reviewSummary, reviewTarget } from "../lib/reviews.js"
 import { reviewTags, text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -39,6 +39,9 @@ reviewsRouter.put("/:proposalId", async (req, res) => {
   // 못하게 하려는 것이다.
   if (!agreementHeld(database, proposal)) {
     throw new HttpError(409, "양쪽이 임시 전자 계약서를 확인한 협찬에만 후기를 남길 수 있어요.")
+  }
+  if (!reviewersVerified(proposal)) {
+    throw new HttpError(409, "사업자 확인을 마친 브랜드와 단체 확인을 마친 학생단체 사이의 협찬에만 후기를 남길 수 있어요.")
   }
   const aboutId = reviewTarget(proposal, side)
   const listings = side === "group" ? database.brands : database.groups

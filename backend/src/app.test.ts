@@ -3338,6 +3338,15 @@ test("sign-up codes stay off the response unless turned on", () => {
 
 // 테스트를 위해 가입해 로그인한 회원과 그 토큰이다. 브랜드를 요청하지
 // 않으면 학생단체다.
+// 후기는 확인된 계정끼리만 주고받는다(lib/reviews.ts reviewersVerified). 테스트에서는 브랜드의
+// 사업자 확인과 단체의 운영자 확인을 바로 표시한다.
+async function verifyForReviews(groupEmail: string, brandEmail: string) {
+  const { grantGroupCheck } = await import("./lib/groupCheck.js")
+  const accounts = getDatabase().accounts
+  accounts.find((account) => account.email === groupEmail)!.groupVerified = grantGroupCheck()
+  accounts.find((account) => account.email === brandEmail)!.business = { number: "1234567890", verifiedAt: new Date().toISOString() }
+}
+
 async function signUpMember(email: string, password: string, role: "학생단체" | "브랜드" = "학생단체", extra: Record<string, unknown> = {}) {
   const students = role === "학생단체"
   const sent = await call("POST", "/auth/email-code", { role, email })
@@ -5200,6 +5209,10 @@ test("after the event each side reviews the other, and the reviews show on the l
   assert.equal((await call("GET", `/agreements/${request.id}`, undefined, group)).data.agreement.review.canWrite, false)
   await call("POST", `/agreements/${request.id}/confirm`, undefined, group)
   await call("POST", `/agreements/${request.id}/confirm`, undefined, brand)
+  // 확인되지 않은 계정끼리는 후기를 남기지 못한다(수수료가 없어 협찬을 꾸미기 쉬우므로).
+  assert.equal((await call("PUT", route, { rating: 5 }, group)).status, 409)
+  assert.equal((await call("GET", `/agreements/${request.id}`, undefined, group)).data.agreement.review.canWrite, false)
+  await verifyForReviews("review-club@syu.ac.kr", "review@review-cafe.kr")
 
   assert.equal((await call("PUT", route, { rating: 5 })).status, 401)
   assert.equal((await call("PUT", "/reviews/req-movement", { rating: 5 }, group)).status, 404)
@@ -5286,6 +5299,7 @@ test("the reviewed side answers a review once, shown under it, and a report can 
     await call("POST", `/requests/${request.id}/accept`, undefined, brand)
     await call("POST", `/agreements/${request.id}/confirm`, undefined, group)
     await call("POST", `/agreements/${request.id}/confirm`, undefined, brand)
+    await verifyForReviews("reply-club@syu.ac.kr", "reply@reply-cafe.kr")
     const reply = `/reviews/${request.id}/reply`
     // 단체의 후기 전에는 답할 것이 없다.
     assert.equal((await call("PUT", reply, { text: "감사해요" }, brand)).status, 404)

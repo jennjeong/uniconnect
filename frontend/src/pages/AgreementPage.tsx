@@ -626,7 +626,7 @@ function ReviewPanel({
       {!review.open ? (
         <p className="field-hint">{t("행사 날부터 서로 후기를 남길 수 있어요. 남긴 후기는 상대의 상세 정보에 보여요.")}</p>
       ) : !review.canWrite ? (
-        <p className="field-hint">{t("이 협찬에는 후기를 남길 수 없어요. 데모 계정이거나 상대의 소개가 아직 없어요.")}</p>
+        <p className="field-hint">{t("이 협찬에는 후기를 남길 수 없어요. 후기는 사업자 확인을 마친 브랜드와 단체 확인을 마친 학생단체 사이에만 남겨요. 데모 계정이거나 상대의 소개가 없을 때도 쓸 수 없어요.")}</p>
       ) : review.mine && !writing ? (
         <ReviewCard
           actions={

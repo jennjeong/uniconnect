@@ -1072,6 +1072,7 @@ const en: Record<string, string> = {
   "대상 {targets} · 성공 {sent} · 실패 {failed}": "{targets} due · {sent} sent · {failed} failed",
   "시각은 {zone} 기준이에요.": "Times are in {zone}.",
   "보류 풀기": "Unhold",
+  "이 협찬에는 후기를 남길 수 없어요. 후기는 사업자 확인을 마친 브랜드와 단체 확인을 마친 학생단체 사이에만 남겨요. 데모 계정이거나 상대의 소개가 없을 때도 쓸 수 없어요.": "You can't review this sponsorship. Reviews are only between a brand with a verified business and a verified student group, and not for demo accounts or a partner without a profile.",
   "수수료는 없어요. 수락해도 계약서를 양쪽이 확인하기 전까지는 협찬이 확정되지 않아요.": "There's no fee. Accepting doesn't confirm the sponsorship until both sides confirm the contract.",
   "협찬 {value}": "Sponsorship {value}",
   "이 협찬에는 플랫폼 수수료가 없어요. 협찬사와 단체 모두 uniconnect에 수수료를 내지 않아요.": "This sponsorship has no platform fee. Neither the sponsor nor the group pays uniconnect a fee.",

@@ -1987,6 +1987,19 @@ test("visitors see a partner's reviews, a group reviews the brand after its even
   await request.put(`/api/agreements/${proposal.id}/value`, { data: { value: { cash: 100000, inKind: 0 } }, headers: group.headers })
   await request.post(`/api/agreements/${proposal.id}/confirm`, { headers: group.headers })
   expect((await request.post(`/api/agreements/${proposal.id}/confirm`, { headers: brand.headers })).ok()).toBe(true)
+  // 후기는 확인된 계정끼리만 주고받는다: 단체는 서류를 보내 운영자가 승인하고, 브랜드는 사업자 확인을 마친다.
+  const consoleHeaders = { "X-Admin-Token": "e2e-admin-token" }
+  const pdf = (name: string) => ({ file: `data:application/pdf;base64,${Buffer.from("%PDF-1.4 proof").toString("base64")}`, name })
+  expect(
+    (await request.post("/api/groups/verification", { data: { representative: "후기 대표", enrollment: pdf("재학증명서.pdf"), membership: pdf("임명장.pdf") }, headers: group.headers })).status(),
+  ).toBe(202)
+  const { applications } = (await (await request.get("/api/admin/applications", { headers: consoleHeaders })).json()) as { applications: { id: string; email: string }[] }
+  const groupApplication = applications.find((item) => item.email === "e2e-reviewer@syu.ac.kr")!
+  expect((await request.post(`/api/admin/applications/${groupApplication.id}/approve`, { headers: consoleHeaders })).status()).toBe(200)
+  const brandAccount = (await (await request.get("/api/auth/me", { headers: brand.headers })).json()) as { account: { id: string } }
+  expect(
+    (await request.put(`/api/admin/accounts/${brandAccount.account.id}/business`, { data: { verified: true, number: "1234567890" }, headers: consoleHeaders })).ok(),
+  ).toBe(true)
 
   // 계약서에서 단체가 후기를 남긴다.
   await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), group.token)

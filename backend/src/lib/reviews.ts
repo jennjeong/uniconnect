@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto"
+import { groupVerifiedNow } from "./groupCheck.js"
 
 import { todayInKorea } from "./dates.js"
 import type { AcceptedProposal } from "./agreements.js"
@@ -27,8 +28,17 @@ export function agreementHeld(database: Database, proposal: AcceptedProposal) {
   return Boolean(agreement?.confirmed.group && agreement.confirmed.brand)
 }
 
+// 후기를 주고받는 두 계정이 확인된 계정인지: 브랜드는 사업자 확인, 학생단체는 운영자의 단체
+// 확인(기한 안)을 마쳤어야 한다. 수수료가 없어 협찬을 꾸미는 데 비용이 들지 않으므로, 아무나 두
+// 계정을 만들어 서로 후기를 남기지 못하게 한다. 계정이 없는 상대는 따지지 않는다.
+export function reviewersVerified(proposal: AcceptedProposal, now = new Date()) {
+  const brand = proposal.brand.account
+  const group = proposal.group.account
+  return (!brand || Boolean(brand.business)) && (!group || groupVerifiedNow(group, now))
+}
+
 // 한쪽이 지금 후기를 쓸 수 있는지: 공용 데모 계정이 아니고(후기는 모두에게
-// 보인다), 그날이 왔고, 양쪽이 전자계약서를 확인했고, 상대편에 후기를 보여
+// 보인다), 그날이 왔고, 양쪽이 전자계약서를 확인했고, 두 계정이 확인된 계정이고, 상대편에 후기를 보여
 // 줄 리스팅이 있어야 한다.
 export function canReview(database: Database, proposal: AcceptedProposal, side: ChatSide) {
   const aboutId = reviewTarget(proposal, side)
@@ -37,6 +47,7 @@ export function canReview(database: Database, proposal: AcceptedProposal, side: 
     !isDemoAccount(database, proposal[side].account) &&
     reviewOpen(proposal) &&
     agreementHeld(database, proposal) &&
+    reviewersVerified(proposal) &&
     aboutId !== undefined &&
     listings.some((listing) => listing.id === aboutId)
   )
