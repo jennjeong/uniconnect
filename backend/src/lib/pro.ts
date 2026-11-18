@@ -2,7 +2,6 @@ import { prices, sell, shiftLaterPeriods } from "./billing.js"
 import { addDays, koreanDay, todayInKorea } from "./dates.js"
 import { HttpError } from "./errors.js"
 import { isPro, localUntil, proUntil } from "./plan.js"
-import { reportAccess } from "./premiumReport.js"
 import { isDemoAccount } from "./reviews.js"
 import type { Account, Database } from "../types.js"
 
@@ -81,5 +80,4 @@ sell("pro", {
   },
 })
 
-reportAccess.push((database, account) => isPro(database, account.id))
 

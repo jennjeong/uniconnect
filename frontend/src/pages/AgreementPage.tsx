@@ -21,7 +21,6 @@ import { venueLink } from "../lib/checkin"
 import { formatDateTime, formatFullDate, todayIso } from "../lib/date"
 import { photoFromFile } from "../lib/image"
 import { fullWon } from "../lib/sponsorships"
-import { PaymentModal } from "../modals/PaymentModal"
 import type { Agreement, AgreementItem, ChatSide, MeasureMethod, MethodKind, MethodSide, Metrics, Review, Shipment, SnsPost, VenuePage } from "../types"
 import { agreementState } from "./AgreementsPage"
 
@@ -825,9 +824,8 @@ function CancelPanel({
   )
 }
 
-// 협찬의 가치(현금과 현물 환산). 행사가 끝날 때까지 양쪽 누구나 쓸 수 있고,
-// 그에 따른 플랫폼 수수료도 보여 준다. 브랜드는 확정할 때 가치의 15%를 내고
-// 학생단체는 내지 않는다.
+// 협찬의 가치(현금과 현물 환산). 행사가 끝날 때까지 양쪽 누구나 쓸 수 있고, 협찬 기록과
+// 성과(ROAS)의 기준이 된다. 플랫폼 수수료는 없다.
 function ValuePanel({
   agreement,
   busy,
@@ -840,7 +838,6 @@ function ValuePanel({
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState({ cash: "", inKind: "" })
   const value = agreement.value
-  const fee = agreement.fee
   const canceled = Boolean(agreement.cancel?.canceledAt)
   const open = () => {
     setDraft({ cash: String(value?.cash ?? ""), inKind: String(value?.inKind ?? "") })
@@ -851,7 +848,7 @@ function ValuePanel({
   return (
     <section aria-labelledby="value-title" className="agreement-section value-panel">
       <h2 id="value-title">
-        {t("협찬액과 수수료")}
+        {t("협찬액")}
         {!editing && !canceled && (
           <button className="subtle-link" onClick={open} type="button">
             <Icon name="edit" size={14} /> {value ? t("고치기") : t("적기")}
@@ -896,44 +893,18 @@ function ValuePanel({
               {value && <small>{t("현금 {cash} · 현물 {inKind}", { cash: fullWon(value.cash), inKind: fullWon(value.inKind) })}</small>}
             </dd>
           </div>
-          <div>
-            <dt>{t("플랫폼 수수료")}</dt>
-            <dd>
-              {fee.exempt ? (
-                t("없어요")
-              ) : agreement.side === "brand" ? (
-                <>
-                  {value ? fullWon(fee.amount) : t("협찬액의 {rate}%", { rate: Math.round(fee.rate * 100) })}
-                  <small>
-                    {!value
-                      ? t("협찬액을 적으면 정해져요")
-                      : fee.due === 0
-                        ? t("결제했어요")
-                        : fee.paid > 0
-                          ? t("{paid} 결제 · {due} 남음", { paid: fullWon(fee.paid), due: fullWon(fee.due) })
-                          : t("협찬액의 {rate}% · 부가세 별도", { rate: Math.round(fee.rate * 100) })}
-                  </small>
-                </>
-              ) : (
-                <>
-                  {t("학생단체는 무료예요")}
-                  <small>{t("브랜드가 협찬액의 {rate}%를 플랫폼 수수료로 내요", { rate: Math.round(fee.rate * 100) })}</small>
-                </>
-              )}
-            </dd>
-          </div>
         </dl>
       )}
     </section>
   )
 }
 
-// 협찬의 계약서(임시 전자 계약서): 양쪽, 행사와 브랜드가 주는 것, 가치와
-// 수수료. 시작하기 전에 여기서 정하는 행사 목표. 링크와 사진을 증빙으로
+// 협찬의 계약서(임시 전자 계약서): 양쪽, 행사와 브랜드가 주는 것, 가치.
+// 시작하기 전에 여기서 정하는 행사 목표. 링크와 사진을 증빙으로
 // 체크하는 각 쪽의 항목. 현재 상태의 항목에 대한 각 쪽의 확인. 그리고 인쇄(또는
 // 인쇄 창에서 PDF로 저장). 계약 조항: 계약서에 든 내용으로 읽는 계약으로, 번호,
 // 양 당사자, 아홉 조항(목적, 협찬 대상, 시기, 각 쪽의 의무, 결과 확인 방법,
-// 수수료, 변경과 취소, 연락처, 효력 발생)과 서명으로서의 각 쪽의 확인을 담는다.
+// 수수료 없음, 변경과 취소, 연락처, 효력 발생)과 서명으로서의 각 쪽의 확인을 담는다.
 // 이 페이지에서 합의한 내용을 말할 뿐 공인 전자서명은 아니다.
 // 현금 협찬금의 지급 기록. 돈은 플랫폼 밖에서 오가고, 예정일과 양쪽의 표시만 남긴다.
 function PayoutPanel({
@@ -1091,15 +1062,11 @@ function ContractTerms({ agreement }: { agreement: Agreement }) {
       : []),
     {
       title: t("수수료"),
-      body: agreement.fee.exempt
-        ? t("이 협찬에는 플랫폼 수수료가 없어요. 단체는 어떤 경우에도 수수료를 내지 않아요.")
-        : t("협찬사는 협찬액의 {rate}%를 플랫폼 수수료로 내고, 결제하면 이 계약서를 확인한 것으로 봐요. 단체는 수수료를 내지 않아요.", {
-            rate: Math.round(agreement.fee.rate * 100),
-          }),
+      body: t("이 협찬에는 플랫폼 수수료가 없어요. 협찬사와 단체 모두 uniconnect에 수수료를 내지 않아요."),
     },
     {
       title: t("변경과 취소"),
-      body: t("내용을 바꾸면 양쪽이 다시 확인해야 해요. 행사 전에는 한쪽이 이유를 적어 취소를 요청하고 상대가 동의하면 취소되고, 이때 낸 수수료는 돌려드려요."),
+      body: t("내용을 바꾸면 양쪽이 다시 확인해야 해요. 행사 전에는 한쪽이 이유를 적어 취소를 요청하고 상대가 동의하면 취소돼요."),
     },
     {
       title: t("개인정보"),
@@ -1480,7 +1447,6 @@ export function AgreementPage({
   const [failed, setFailed] = useState("")
   const [busy, setBusy] = useState(false)
   const [editing, setEditing] = useState(false)
-  const [paying, setPaying] = useState(false)
   // 감사 카드 이미지를 만드는 동안 true.
   const [carding, setCarding] = useState(false)
 
@@ -1669,14 +1635,7 @@ export function AgreementPage({
               </li>
             ))}
           </ul>
-          {!agreement.confirmed[side] && !editing && side === "brand" && agreement.fee.needsValue ? (
-            <p className="field-hint">{t("협찬액을 적으면 수수료를 결제하고 확인할 수 있어요.")}</p>
-          ) : !agreement.confirmed[side] && !editing && side === "brand" && agreement.fee.due > 0 ? (
-            <Pill disabled={busy} onClick={() => setPaying(true)}>
-              {t("수수료 {amount} 결제하고 확인하기", { amount: fullWon(agreement.fee.due) })}
-            </Pill>
-          ) : (
-            !agreement.confirmed[side] &&
+          {!agreement.confirmed[side] &&
             !editing && (
               <Pill
                 disabled={busy}
@@ -1691,8 +1650,7 @@ export function AgreementPage({
               >
                 {t("이 내용으로 확인하기")}
               </Pill>
-            )
-          )}
+            )}
         </div>
         )}
       </article>
@@ -1730,26 +1688,6 @@ export function AgreementPage({
           )
         }
       />
-
-      <Presence show={paying}>
-        <PaymentModal
-          amount={agreement.fee.due}
-          kind="fee"
-          lines={[
-            { label: t("협찬"), value: `${agreement.eventName} · ${agreement.group.name}` },
-            { label: t("협찬액"), value: fullWon((agreement.value?.cash ?? 0) + (agreement.value?.inKind ?? 0)) },
-            { label: t("수수료율"), value: `${Math.round(agreement.fee.rate * 100)}%` },
-            ...(agreement.fee.paid > 0 ? [{ label: t("이미 낸 수수료"), value: fullWon(agreement.fee.paid) }] : []),
-          ]}
-          onClose={() => setPaying(false)}
-          onTransferAsked={() => {
-            setPaying(false)
-            onNotice(t("계좌 입금을 요청했어요. 입금이 확인되면 계약서가 확인돼요."))
-          }}
-          targetId={agreement.id}
-          title={t("플랫폼 수수료 결제")}
-        />
-      </Presence>
 
       <PreEventCheck agreement={agreement} />
 

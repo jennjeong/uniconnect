@@ -11,18 +11,17 @@ import type { Account, PlanTable, PublicPlan } from "../types"
 // 공개 요금제 표. 금액과 한도는 서버(GET /api/billing/plans)의 값만 쓰고, 이름과
 // 설명은 여기서 쓴다. 준비 중인 요금제는 판매가 열리기 전까지 가격과 내용을
 // 약속하지 않는다.
-function planLines(plan: PublicPlan, reportPrice: number) {
+function planLines(plan: PublicPlan) {
   if (plan.id === "free") {
     return [
       t("한 달에 협찬 제안 {count}건", { count: plan.limits?.offersPerMonth ?? 0 }),
       t("성과 분석 · CSV · PDF"),
-      t("상세 분석 리포트 건당 {price}", { price: fullWon(reportPrice) }),
+      t("협찬마다 상세 분석 리포트"),
     ]
   }
   if (plan.id === "growth") {
     return [
       t("협찬 제안 제한 없음"),
-      t("상세 분석 리포트 모두 포함"),
       t("캠퍼스 포트폴리오 분석: 학교 · 시기 · 단체 종류별 성과와 다음 예산"),
       t("운영자 1:1 섭외 요청 한 달 {count}건", { count: plan.limits?.partnerRequestsPerMonth ?? 0 }),
       t("브랜드 카드에 PARTNERS 표시"),
@@ -96,7 +95,7 @@ export function PlansPage({
           <div className="plan-grid plans-table">
             {plans.map((plan) => {
               const current = isCurrent(plan)
-              const lines = planLines(plan, table.reportPrice)
+              const lines = planLines(plan)
               const className = ["plan-option", current && "current", plan.status === "soon" && "soon"].filter(Boolean).join(" ")
               return (
                 <article className={className} key={plan.id}>
@@ -142,11 +141,7 @@ export function PlansPage({
           </div>
           <ul className="plans-notes">
             <li>{t("금액은 부가세 별도예요. 결제할 때 {rate}%가 더해져요.", { rate: Math.round(table.vatRate * 100) })}</li>
-            <li>
-              {t("협찬이 성사되면 브랜드가 협찬액의 {rate}%를 수수료로 내요. 요금제와 상관없이 같아요.", {
-                rate: Math.round(table.feeRate * 100),
-              })}
-            </li>
+            <li>{t("협찬 수수료는 없어요. 협찬이 성사돼도 uniconnect에 따로 내는 돈이 없어요.")}</li>
             <li>{t("자동으로 결제되지 않아요. 끝나는 날이 다가오면 다시 결제해 이어서 쓸 수 있어요.")}</li>
             <li>{t("학생단체는 협찬 매칭을 무료로 써요.")}</li>
           </ul>

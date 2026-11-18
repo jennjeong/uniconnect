@@ -750,7 +750,7 @@ const referralBlocks = {
   missing: "상대 계정이 없어요",
   suspended: "정지된 계정이 있어요",
   canceled: "협찬이 취소됐어요",
-  refunded: "수수료가 환불됐어요",
+  value: "협찬액이 보상 기준보다 작아요",
 } as const
 
 // 친구 초대 보상: 파트너스 일수는 운영자가 승인해야 나간다(backend lib/referrals.ts).
@@ -792,7 +792,7 @@ function ReferralRewards({ token, onNotice }: { token: string; onNotice: Notice 
                 <div>
                   <strong>{t("{referrer} → {joined} · {days}일", { referrer, joined: item.joined?.name ?? t("탈퇴한 계정"), days: item.days })}</strong>
                   <small>
-                    {t("협찬 {value} · 낸 수수료 {fee}", { value: fullWon(item.value), fee: fullWon(item.feePaid) })} · {formatDateTime(item.createdAt)}
+                    {t("협찬 {value}", { value: fullWon(item.value) })} · {formatDateTime(item.createdAt)}
                   </small>
                   <small>
                     {t("사업자 확인: 초대자 {referrer}, 가입자 {joined}", { referrer: item.referrer?.business ? t("완료") : t("안 함"), joined: item.joined?.business ? t("완료") : t("안 함") })}

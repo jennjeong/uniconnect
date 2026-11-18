@@ -6,7 +6,7 @@ import type { Agreement, ChatSide } from "../types"
 type Action = { who: "me" | "them" | "both"; text: string; href?: string }
 
 // 계약서 맨 위: 지금 상태, 누가 무엇을 해야 하는지, 기한. 긴 조항과 당사자 정보보다
-// 먼저 보인다. 상태는 서버가 준 계약서(양쪽 확인, 협찬액, 수수료, 할 일)에서만 읽는다.
+// 먼저 보인다. 상태는 서버가 준 계약서(양쪽 확인, 할 일)에서만 읽는다.
 export function AgreementStatus({ agreement }: { agreement: Agreement }) {
   const side = agreement.side
   const other: ChatSide = side === "group" ? "brand" : "group"
@@ -38,17 +38,11 @@ export function AgreementStatus({ agreement }: { agreement: Agreement }) {
           ? [{ who: "me" as const, text: t("상대가 협찬 취소를 요청했어요. 동의하거나 거절해 주세요."), href: "#agreement-cancel-title" }]
           : []),
         ...(cancelAsked === side && otherMember ? [{ who: "them" as const, text: t("상대가 취소 요청에 답해야 해요.") }] : []),
-        ...(agreement.fee.needsValue
-          ? [{ who: "both" as const, text: t("협찬액(현금 + 현물)이 비어 있어요. 확인하기 전에 적어 주세요."), href: "#value-title" }]
-          : []),
         ...(!mine
           ? [
               {
                 who: "me" as const,
-                text:
-                  side === "brand" && agreement.fee.due > 0
-                    ? t("조건을 읽고 계약서를 확인해 주세요. 확인할 때 성사 수수료를 결제해요.")
-                    : t("조건을 읽고 계약서를 확인해 주세요."),
+                text: t("조건을 읽고 계약서를 확인해 주세요."),
                 href: "#agreement-confirm",
               },
             ]

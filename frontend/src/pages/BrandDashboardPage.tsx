@@ -144,7 +144,7 @@ export function BrandDashboardPage({
       kind: "mine",
       label: t("내가 확인할 계약서"),
       count: toConfirm,
-      detail: toConfirm > 0 ? t("확인할 때 성사 수수료를 결제해요") : t("확인할 계약서가 없어요"),
+      detail: toConfirm > 0 ? t("양쪽이 확인하면 협찬이 확정돼요") : t("확인할 계약서가 없어요"),
       onOpen: () => openContract(toConfirm, openTasks?.confirmId),
     },
     {
@@ -279,7 +279,7 @@ export function BrandDashboardPage({
               : pending.length > 0
                 ? t("조건을 보고 수락하거나 거절해 주세요.")
                 : toConfirm > 0
-                  ? t("양쪽이 계약서를 확인해야 협찬이 확정돼요. 수수료는 확인할 때 결제해요.")
+                  ? t("양쪽이 계약서를 확인해야 협찬이 확정돼요.")
                   : t("잘 맞는 학생단체에 먼저 제안하거나 캠페인을 등록해 두세요.")
           }
           facts={topFacts}
@@ -329,7 +329,7 @@ export function BrandDashboardPage({
             paused
               ? t("새 제안은 받지 않아요. 진행 중인 대화와 협찬은 그대로예요.")
               : memberHero && pending.length === 0 && toConfirm > 0
-                ? t("양쪽이 계약서를 확인해야 협찬이 확정돼요. 수수료는 확인할 때 결제해요.")
+                ? t("양쪽이 계약서를 확인해야 협찬이 확정돼요.")
               : noGroups && pending.length === 0
                 ? t("소개와 캠페인을 먼저 올려 두세요. 학생단체가 가입하면 바로 추천해 드려요.")
                 : t("학생 행사에서 쿠폰을 나누고, 매장에 온 손님까지 ROAS로 보여 드려요.")
@@ -661,7 +661,7 @@ export function BrandDashboardPage({
               <small>
                 {totals.roasMissing
                   ? t("협찬액이 정해진 협찬이 아직 없어요")
-                  : t("추정 매출 합계 ÷ 집행액 합계(현금 + 현물, 수수료 제외)예요.")}
+                  : t("추정 매출 합계 ÷ 집행액 합계(현금 + 현물)예요.")}
                 {totals.roasCounting && ` ${t("집계 중인 협찬이 있어 바뀔 수 있어요.")}`}
               </small>
             </div>

@@ -59,7 +59,7 @@ export function ValuePoints({ eyebrow, heading, points }: { eyebrow: string; hea
         ))}
       </ol>
       <p className="value-points-note" data-reveal>
-        {t("학생단체는 무료, 브랜드는 성사될 때만 수수료를 내요.")}
+        {t("협찬 수수료 없이, 학생단체와 브랜드가 바로 만나요.")}
       </p>
     </section>
   )

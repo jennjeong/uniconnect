@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto"
 import { Router } from "express"
 
-import { paidFor, prices } from "../lib/billing.js"
+import { paidFor } from "../lib/billing.js"
 import { HttpError } from "../lib/errors.js"
 import { canReadReport, premiumReport, reportOpen, sponsorshipFor } from "../lib/premiumReport.js"
 import { isDemoAccount } from "../lib/reviews.js"
@@ -9,8 +9,8 @@ import { getDatabase, saveDatabase } from "../store.js"
 import type { Database } from "../types.js"
 import { brandOwner } from "./requests.js"
 
-// 상세 성과 리포트(lib/premiumReport.ts)다. 브랜드가 산 자기 리포트(데모
-// 브랜드의 리포트는 방문자가 볼 수 있게 열려 있다)나 담긴 내용의 미리보기,
+// 상세 성과 리포트(lib/premiumReport.ts)다. 브랜드의 자기 리포트(무료, 행사 날부터. 데모
+// 브랜드의 샘플은 방문자가 볼 수 있게 열려 있다)나 담긴 내용의 미리보기,
 // 공유용 읽기 전용 링크, 리포트가 비교하는 매장 자체의 집계를 다룬다.
 export const insightsRouter = Router()
 
@@ -36,7 +36,6 @@ insightsRouter.get("/:id", async (req, res) => {
   if (!canReadReport(database, account, sponsorship.id, !req.account)) {
     res.json({
       locked: true,
-      price: prices.report,
       open: reportOpen(event),
       sponsorship: { id: sponsorship.id, groupName: sponsorship.groupName, eventName: event.name, date: event.date },
     })
@@ -59,7 +58,7 @@ insightsRouter.get("/:id", async (req, res) => {
 insightsRouter.put("/:id/lift", async (req, res) => {
   const { account, database, sponsorship } = owned(req, String(req.params.id))
   if (!req.account || isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 매장 방문 수를 적을 수 없어요.")
-  if (!canReadReport(database, account, sponsorship.id, !req.account)) throw new HttpError(402, "상세 리포트를 산 뒤에 적을 수 있어요.")
+  if (!canReadReport(database, account, sponsorship.id, !req.account)) throw new HttpError(409, "상세 리포트는 행사 날부터 열려요.")
   const count = (value: unknown) => {
     const number = Number(value)
     if (!Number.isFinite(number) || number < 0 || number > 100_000) throw new HttpError(400, "하루 방문객 수는 0부터 100,000까지의 숫자로 적어 주세요.")
@@ -79,7 +78,7 @@ insightsRouter.put("/:id/lift", async (req, res) => {
 insightsRouter.post("/:id/share", async (req, res) => {
   const { account, database, sponsorship } = owned(req, String(req.params.id))
   if (!req.account || isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 리포트를 공유할 수 없어요.")
-  if (!canReadReport(database, account, sponsorship.id, !req.account)) throw new HttpError(402, "상세 리포트를 산 뒤에 공유할 수 있어요.")
+  if (!canReadReport(database, account, sponsorship.id, !req.account)) throw new HttpError(409, "상세 리포트는 행사 날부터 공유할 수 있어요.")
   sponsorship.shareToken ??= randomBytes(18).toString("base64url")
   markOpened(database, account.id, sponsorship.id)
   await saveDatabase()

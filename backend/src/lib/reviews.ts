@@ -19,7 +19,7 @@ export const isDemoId = (database: Database, id: string | undefined) =>
 
 export const isDemoAccount = (database: Database, account: Account | undefined) => isDemoId(database, account?.id)
 
-// 양쪽이 협찬의 전자계약서를 확인했는지(브랜드는 수수료를 낸 뒤). 계정이
+// 양쪽이 협찬의 전자계약서를 확인했는지. 계정이
 // 없는 상대는 확인할 수 없으므로 그때는 필요 없다.
 export function agreementHeld(database: Database, proposal: AcceptedProposal) {
   if (!proposal.group.account || !proposal.brand.account) return true

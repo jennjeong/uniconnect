@@ -223,12 +223,10 @@ const en: Record<string, string> = {
   // 유료 서비스 (사업계획서의 수익 모델)
   "학생단체는 상단 광고 말고는 서비스를 무료로 써요. 브랜드는 아래 유료 서비스를 이용할 때 결제해요. 아래 금액은 부가세 별도이고, 결제할 때 부가세 10%를 더해요.":
     "Student groups use the service for free, except for top ads. Brands pay for the paid services below. The amounts below exclude VAT, and 10% VAT is added at checkout.",
-  "성사 수수료: 협찬이 확정될 때 협찬액(현금과 현물 환산 금액을 더한 값)의 15%를 브랜드가 내요. 브랜드는 임시 전자 계약서를 확인할 때 이 수수료를 결제하고, 협찬액을 올리면 늘어난 만큼을 더 내요.":
-    "Success fee: when a sponsorship is confirmed, the brand pays 15% of its value (cash plus the value of what is given in kind). The brand pays it when confirming the provisional e-contract, and pays the difference if the value goes up.",
+  "협찬 수수료: 협찬이 확정돼도 브랜드와 학생단체 모두 서비스에 수수료를 내지 않아요.":
+    "Sponsorship fee: none. Neither brands nor student groups pay the Service a fee when a sponsorship is confirmed.",
   "결제는 토스페이먼츠의 카드 결제창이나 계좌 입금으로 해요. 계좌 입금은 운영자가 입금을 확인하면 반영돼요. 카드 정보는 서비스가 받지 않고 토스페이먼츠가 처리해요.":
     "You pay by card through Toss Payments' payment window or by bank transfer. A bank transfer takes effect once the operators confirm it. The service never receives card details; Toss Payments handles them.",
-  "수수료 환불: 행사가 시작되기 전에 두 회원이 합의해 협찬을 취소하면 낸 수수료를 모두 돌려드려요. 협찬액을 낮췄을 때의 차액도 요청하면 돌려드려요. 행사가 시작된 뒤에는 돌려드리지 않아요.":
-    "Fee refunds: if both members agree to call the sponsorship off before the event begins, the whole fee is refunded. The difference is also refunded on request if the value goes down. Nothing is refunded once the event has begun.",
   "유료 서비스와 결제":
     "Paid Services and Payment",
   "협찬 금액, 제공 물품, 일정 같은 조건과 그 이행은 두 회원이 직접 정하고 책임져요. 협찬금은 브랜드가 학생단체에 직접 주고, 서비스는 맡아 두거나 대신 보내지 않아요.":
@@ -241,8 +239,8 @@ const en: Record<string, string> = {
     "5 years from payment (kept through this period even after leaving, as the E-Commerce Act requires)",
   "회원이 결제하면 주문 번호, 산 것, 금액, 이메일을 결제 대행사 토스페이먼츠(대한민국)에 보내 결제를 처리해요. 카드 정보는 토스페이먼츠가 직접 받고 서비스는 받지 않아요.":
     "When a member pays, the order number, what is bought, the amount and the email are sent to the payment processor Toss Payments (Republic of Korea) to process the payment. Toss Payments receives the card details directly; the service does not.",
-  "리포트 환불: 사고 나서 7일 안에 리포트를 열어 보지 않았으면 돌려드려요. 연 뒤에는 디지털 콘텐츠라 돌려드리지 않아요(전자상거래법 제17조 제2항 제5호). 이 점은 결제 화면에서 먼저 알려요.":
-    "Report refunds: refunded if not opened within 7 days of buying. Once opened, as digital content, it is not refunded (E-Commerce Act, Article 17(2)5). This is stated on the payment screen first.",
+  "수수료와 리포트를 유료로 받던 때(2026년 11월 18일까지) 낸 금액은 결제 기록으로 남고, 그 환불은 결제할 때의 약관을 따라요.":
+    "Amounts paid while the fee and the report were charged (until 18 November 2026) stay as payment records, and their refunds follow the terms at the time of payment.",
   "Growth 환불: 결제하고 7일 안에는 모두 돌려드리고, 그 뒤에는 남은 날만큼 날짜로 나눠 돌려드려요.":
     "Growth refunds: fully refunded within 7 days of paying, and after that for the days left, pro rata.",
   "참여자가 고르면 답하는 선택 설문(학년, 전공 계열, 쿠폰 가게에 가 본 적이 있는지, 성별)은 누가 답했는지 남기지 않고 행사별 숫자로만 모아요. 브랜드의 상세 분석 리포트에 관객 구성으로 보여요.":
@@ -263,14 +261,12 @@ const en: Record<string, string> = {
   "기수(운영진 이름과 맡기 시작한 날)": "Terms (each team’s name and the day it took over)",
   "협찬 기록과 인수인계 파일을 기수별로 나눠 보여 주기": "To show the sponsorship record and the handover file by term",
   "탈퇴하거나 지울 때까지": "Until you leave or delete them",
-  "상세 성과 리포트: 협찬 1건의 상세 성과 리포트를 50,000원(부가세 포함 55,000원)에 살 수 있어요. 행사 날부터 살 수 있고, 한 번 사면 계속 보고 PDF로 저장하고 링크로 공유할 수 있어요.":
-    "Detailed report: the detailed report of one sponsorship costs 50,000 KRW (55,000 KRW with VAT). It can be bought from the event's day; once bought it stays yours to view, save as a PDF and share by link.",
-  "Growth(이전 이름 캠퍼스 파트너스): 브랜드는 30일에 249,000원(부가세 포함 273,900원)으로 Growth를 쓸 수 있어요. 협찬 제안을 제한 없이 보내고(무료 요금제는 한 달에 5건), 상세 분석 리포트를 모두 보고, 캠퍼스 포트폴리오 분석을 쓰고, 운영자에게 1:1 섭외 요청을 한 달에 2건 보낼 수 있고, 브랜드 카드에 PARTNERS 표시가 붙어요. 자동으로 결제되지 않고, 다시 결제하면 남은 날 뒤에 30일이 이어져요.":
-    "Growth (formerly Campus Partners): brands can use Growth at 249,000 KRW (273,900 KRW with VAT) for 30 days. It sends proposals without a limit (the free plan sends 5 a month), opens every detailed analysis report, adds the campus portfolio analysis, sends the operators 2 one-to-one partner requests a month, and puts a PARTNERS mark on the brand card. It doesn't renew by itself; paying again adds 30 days after the days left.",
+  "상세 성과 리포트: 협찬 1건마다 무료로 제공해요. 행사 날부터 보고 PDF로 저장하고 링크로 공유할 수 있어요.":
+    "Detailed report: free for every sponsorship. It opens from the event's day, and can be saved as a PDF and shared by link.",
+  "Growth(이전 이름 캠퍼스 파트너스): 브랜드는 30일에 249,000원(부가세 포함 273,900원)으로 Growth를 쓸 수 있어요. 협찬 제안을 제한 없이 보내고(무료 요금제는 한 달에 5건), 캠퍼스 포트폴리오 분석을 쓰고, 운영자에게 1:1 섭외 요청을 한 달에 2건 보낼 수 있고, 브랜드 카드에 PARTNERS 표시가 붙어요. 자동으로 결제되지 않고, 다시 결제하면 남은 날 뒤에 30일이 이어져요.":
+    "Growth (formerly Campus Partners): brands can use Growth at 249,000 KRW (273,900 KRW with VAT) for 30 days. It sends proposals without a limit (the free plan sends 5 a month), adds the campus portfolio analysis, sends the operators 2 one-to-one partner requests a month, and puts a PARTNERS mark on the brand card. It doesn't renew by itself; paying again adds 30 days after the days left.",
   "상단 광고: 30일 동안 우리 소개를 상대편 목록 맨 위에 AD 표시와 함께 보여 줘요. 브랜드는 30일에 99,000원(부가세 포함 108,900원), 학생단체는 30일에 10,000원(부가세 포함 11,000원)이에요. 광고가 끝나기 전에 연장하면 10% 할인해요. 자동으로 결제되지 않고, 연장하면 남은 날 뒤에 30일이 이어져요. 환불은 캠퍼스 파트너스와 같아요.":
     "Top ads: for 30 days your listing shows first on the other side's list, marked AD. Brands pay 99,000 won (108,900 won with VAT) and student groups 10,000 won (11,000 won with VAT) for 30 days. Extending before an ad ends takes 10% off. Nothing renews by itself; an extension adds 30 days after the days left. Refunds work as for Campus Partners.",
-  "수수료 기준을 바꾸면 바뀐 기준은 시행일 이후에 확정되는 협찬에만 적용해요. 이미 확정된 협찬의 수수료는 그대로예요.":
-    "If the fee basis changes, the new basis applies only to sponsorships confirmed on or after its effective date. The fee of a sponsorship already confirmed stays the same.",
   "환불은 도움말 센터의 '관리자에게 질문하기'로 요청해 주세요. 카드 결제는 결제를 취소해 돌려드리고, 계좌 입금은 받은 계좌로 돌려드려요. 환불하기로 확인한 날부터 3영업일 안에 돌려드려요. 결제 내역과 영수증은 내 정보의 '결제 내역'에서 볼 수 있어요.":
     "Ask for refunds through 'Ask the operators' in the help center. Card payments are refunded by canceling them, and bank transfers to the account they came from, within 3 business days of confirming the refund. Your payments and receipts are under 'Payments' in My Account.",
   "산 것이 서비스가 표시하거나 광고한 내용과 다르면 위 기간과 상관없이, 받은 날부터 3개월 안에, 그 사실을 알았거나 알 수 있었던 날부터 30일 안에 환불을 요청할 수 있어요.":

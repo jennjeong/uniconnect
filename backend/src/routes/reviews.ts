@@ -35,8 +35,7 @@ reviewsRouter.put("/:proposalId", async (req, res) => {
   if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 후기를 쓸 수 없어요.")
   if (proposal.canceled) throw new HttpError(409, "취소된 협찬에는 후기를 남길 수 없어요.")
   if (!reviewOpen(proposal)) throw new HttpError(409, "행사 날부터 후기를 쓸 수 있어요.")
-  // e-contract에서 양쪽이 확정한 협찬만 쓸 수 있다(브랜드는 수수료를 낸
-  // 뒤여야 한다). 성사되지 않은 계약으로 두 계정이 서로 후기를 주고받지
+  // e-contract에서 양쪽이 확정한 협찬만 쓸 수 있다. 성사되지 않은 계약으로 두 계정이 서로 후기를 주고받지
   // 못하게 하려는 것이다.
   if (!agreementHeld(database, proposal)) {
     throw new HttpError(409, "양쪽이 임시 전자 계약서를 확인한 협찬에만 후기를 남길 수 있어요.")

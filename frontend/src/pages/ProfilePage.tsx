@@ -670,7 +670,7 @@ export function ProfilePage({
                     </RowButton>
                   }
                   label={t("결제 내역")}
-                  value={t("수수료, 상세 리포트, Growth 결제와 영수증이에요.")}
+                  value={t("결제 내역과 영수증이에요.")}
                 />
               )}
               <SettingsRow

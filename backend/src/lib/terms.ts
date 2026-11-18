@@ -23,7 +23,7 @@ export function parseTerms(value: unknown, event: EventItem | undefined, today =
   if (kinds.some((kind) => !sponsorTypes.includes(kind))) throw new HttpError(400, "협찬 형태를 목록에서 골라 주세요.")
 
   // 금액은 계약서의 협찬액이 되므로 협찬액과 같은 범위(1만 원 ~ 1억 원)만 받는다
-  // (lib/fees.ts parseValue). 그보다 작은 값으로 성사 수수료의 하한을 피하지 못하게.
+  // (lib/fees.ts parseValue).
   let amount: number | undefined
   if (body.amount !== undefined && body.amount !== null && text(body.amount) !== "") {
     amount = Number(body.amount)

@@ -45,7 +45,7 @@ export function PlanCard({ onNotice }: { onNotice: (message: string) => void }) 
       items: [
         t("한 달에 협찬 제안 {count}건", { count: plan.freeOffers }),
         t("성과 분석 · CSV · PDF"),
-        t("상세 분석 리포트 건당 {price}", { price: fullWon(prices.report) }),
+        t("협찬마다 상세 분석 리포트"),
       ],
     },
     {
@@ -55,7 +55,6 @@ export function PlanCard({ onNotice }: { onNotice: (message: string) => void }) 
       current: plan.pro,
       items: [
         t("협찬 제안 제한 없음"),
-        t("상세 분석 리포트 모두 포함"),
         t("캠퍼스 포트폴리오 분석: 학교 · 시기 · 단체 종류별 성과와 다음 예산"),
         t("운영자 1:1 섭외 요청 한 달 2건"),
         t("브랜드 카드에 PARTNERS 표시"),

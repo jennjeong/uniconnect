@@ -3,7 +3,6 @@ import { randomBytes, randomUUID } from "node:crypto"
 import { acceptedProposal, type AcceptedProposal } from "./agreements.js"
 import { grantPartners } from "./adminTools.js"
 import { HttpError } from "./errors.js"
-import { feeOf, feeState } from "./fees.js"
 import { notify } from "./notices.js"
 import { isDemoAccount } from "./reviews.js"
 import type { Account, Agreement, Database, ReferralReward } from "../types.js"
@@ -12,8 +11,8 @@ import type { Account, Agreement, Database, ReferralReward } from "../types.js"
 // Growth 일수. 학생 단체는 무료로 쓰므로 단체의 것은 세기만 한다.
 export const referralRewardDays = 30
 
-// 보상받는 협찬의 조건. 협찬액이 이만큼이고 수수료를 실제로 냈어야 한다. 본인
-// 계정끼리 적은 금액으로 Growth를 얻지 못하게 하려는 것이다.
+// 보상받는 협찬의 조건: 협찬액이 이만큼은 돼야 한다. 본인 계정끼리 적은 금액으로 Growth를
+// 얻지 못하게 하려는 것이며, 브랜드의 Growth 일수는 운영자가 승인해야 나간다.
 export const referralMinValue = 300_000
 // 한 사람이 한 해에 받을 수 있는 보상 수.
 export const referralRewardsPerYear = 3
@@ -56,11 +55,11 @@ function rewardsThisYear(database: Database, referrerId: string, year: string) {
   return recorded.length + older.length
 }
 
-// 협찬의 전자계약서를 양쪽이 확인하면(브랜드는 수수료를 낸 뒤) 누군가의
+// 협찬의 전자계약서를 양쪽이 확인하면 누군가의
 // 링크로 가입했고 아직 협찬이 없던 쪽마다 보상 기록을 한 번 만든다. 조건에
 // 못 미치는 협찬은 넘어가고 다음 협찬이 다시 기회를 얻는다. 초대한 계정
 // 자신과의 협찬에는 보상이 없다. Growth 일수는 운영자가 승인해야 나가므로
-// 수수료를 내서 Growth를 사는 길이 되지 않는다. 일수가 없는 학생단체의 것만
+// 협찬을 꾸며 Growth를 얻는 길이 되지 않는다. 일수가 없는 학생단체의 것만
 // 돌려주어 바로 알린다.
 export function rewardReferrals(
   database: Database,
@@ -68,9 +67,11 @@ export function rewardReferrals(
   now = new Date(),
 ) {
   const accounts = [proposal.group.account, proposal.brand.account]
-  const fee = feeState(database, agreement, proposal)
+  // 계정이 없는 브랜드(예시 리스팅)나 데모 계정이 낀 협찬은 보상하지 않는다.
+  if (!proposal.brand.account) return []
+  if (accounts.some((account) => account && isDemoAccount(database, account))) return []
   const value = agreement.value?.cash === undefined ? 0 : agreement.value.cash + agreement.value.inKind
-  if (fee.exempt || value < referralMinValue || fee.paid < feeOf({ cash: referralMinValue, inKind: 0 })) return []
+  if (value < referralMinValue) return []
   const year = now.toISOString().slice(0, 4)
   const told: { referrer: Account; joined: Account; days: number }[] = []
   for (const [index, joined] of accounts.entries()) {
@@ -102,7 +103,6 @@ function reviewOf(database: Database, reward: ReferralReward) {
   const joined = database.accounts.find((item) => item.id === reward.joinedId)
   const proposal = acceptedProposal(database, reward.proposalId)
   const agreement = database.agreements.find((item) => item.id === reward.proposalId)
-  const paid = proposal && agreement ? feeState(database, agreement, proposal).paid : 0
   const value = agreement?.value ? (agreement.value.cash ?? 0) + agreement.value.inKind : 0
   const blocked = !referrer || !joined
     ? "missing"
@@ -110,10 +110,10 @@ function reviewOf(database: Database, reward: ReferralReward) {
       ? "suspended"
       : !proposal || proposal.canceled
         ? "canceled"
-        : paid < feeOf({ cash: referralMinValue, inKind: 0 })
-          ? "refunded"
+        : value < referralMinValue
+          ? "value"
           : undefined
-  return { referrer, joined, paid, value, blocked }
+  return { referrer, joined, value, blocked }
 }
 
 // 콘솔에 보이는, 결정을 기다리는 보상. 오래된 것부터다.
@@ -121,7 +121,7 @@ export function waitingReferralRewards(database: Database) {
   return referralRewardsOf(database)
     .filter((reward) => reward.status === "waiting")
     .map((reward) => {
-      const { referrer, joined, paid, value, blocked } = reviewOf(database, reward)
+      const { referrer, joined, value, blocked } = reviewOf(database, reward)
       return {
         id: reward.id,
         createdAt: reward.createdAt,
@@ -130,7 +130,6 @@ export function waitingReferralRewards(database: Database) {
         referrer: referrer ? { id: referrer.id, name: referrer.name, business: Boolean(referrer.business) } : null,
         joined: joined ? { id: joined.id, name: joined.name, business: Boolean(joined.business), createdAt: joined.createdAt } : null,
         value,
-        feePaid: paid,
         blocked: blocked ?? null,
       }
     })

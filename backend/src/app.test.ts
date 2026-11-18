@@ -40,9 +40,6 @@ const { config, emailCodesExposed } = await import("./config.js")
 const { clearRateLimits } = await import("./lib/rateLimit.js")
 const { getDatabase, loadDatabase, saveDatabase } = await import("./store.js")
 const { DEMO_PASSWORD } = await import("./data/seed.js")
-// 수수료는 정해진 날(lib/fees.ts)부터 받는데 그날은 이미 지났다. 여기 사례들은
-// 그날 전인 것처럼 돌리고, 수수료 사례는 스스로 되돌린다.
-;(await import("./lib/fees.js")).feeStart.since = "9999-12-31"
 // 행사의 새 몫이 시작할 때처럼 모든 현장 집계를 0으로 둔다.
 const emptyVenue = (await import("./lib/methods.js")).emptyVenueCounts()
 
@@ -436,11 +433,11 @@ test("every sponsorship whose day has come has a detailed report, from its recor
   const { sponsorships } = (await call("GET", "/analytics", undefined, brand)).data as { sponsorships: { id: string; report?: string }[] }
   assert.ok(sponsorships.length > 1)
   assert.ok(sponsorships.every((item) => item.report && item.report !== "none"))
-  // 사기 전에는 잠겨 있고 기록에서 계산하며, 방문 수는 기록의 것이다.
+  // 리포트는 무료라 주인 브랜드에게 열려 있고, 측정한 행사가 없으면 기록에서 계산하며 방문 수는 기록의 것이다.
   const database = getDatabase()
   const owner = database.accounts.find((account) => account.id === database.demoAccountIds["브랜드"])!
   const unmeasured = database.sponsorships[owner.id].find((item) => !item.eventId)!
-  assert.equal((await call("GET", `/insights/${unmeasured.id}`, undefined, brand)).data.locked, true)
+  assert.equal((await call("GET", `/insights/${unmeasured.id}`, undefined, brand)).data.locked, false)
   const { premiumReport } = await import("./lib/premiumReport.js")
   const report = premiumReport(database, owner, unmeasured.id)!
   assert.equal(report.scorecard.find((item) => item.key === "visits")!.actual, unmeasured.visits)
@@ -494,20 +491,14 @@ test("an invitation link's code ties a sign-up to its inviter, rewarded once at 
     assert.equal((await call("POST", `/requests/${request.id}/accept`, undefined, token)).status, 200)
     return request.id
   }
-  // 보상에는 협찬액과 실제로 낸 수수료가 필요하다.
-  const { feeOf, feeStart } = await import("./lib/fees.js")
-  const started = feeStart.since
-  feeStart.since = "2000-01-01"
+  // 보상에는 협찬액(30만 원 이상)이 필요하다. 수수료는 없다.
   const confirm = async (id: string, brandToken: string, cash = 300_000) => {
     const database = getDatabase()
     const { acceptedProposal, agreementFor } = await import("./lib/agreements.js")
     agreementFor(database, acceptedProposal(database, id)!).agreement.value = { cash, inKind: 0 }
-    const supply = feeOf({ cash, inKind: 0 })
-    ;(database.payments ??= []).push({ id: `fee-${id}`, accountId: "x", accountName: "x", kind: "fee", targetId: id, orderName: "수수료", amount: supply, supply, status: "paid", method: "transfer", requestedAt: "" } as never)
     await call("POST", `/agreements/${id}/confirm`, undefined, group)
     await call("POST", `/agreements/${id}/confirm`, undefined, brandToken)
   }
-  try {
   // 초대한 계정 자신과의 협찬은 확정되어도 아무에게도 보상하지 않는다.
   await confirm(await propose("초대 공연", listingId, brand), brand)
   assert.equal(grants().length, 0)
@@ -580,10 +571,6 @@ test("an invitation link's code ties a sign-up to its inviter, rewarded once at 
   rewardReferrals(database, { agreement, proposal })
   assert.ok(groupAccount.referralRewardedAt)
   database.referralRewards = referralRewardsOf(database).filter((item) => !item.id.startsWith("cap-"))
-  } finally {
-    feeStart.since = started
-    getDatabase().payments = getDatabase().payments!.filter((item) => !item.id.startsWith("fee-"))
-  }
 })
 
 test("a member keeps up to ten proposal templates; the demo accounts keep none", async () => {
@@ -606,15 +593,13 @@ test("a member keeps up to ten proposal templates; the demo accounts keep none",
 })
 
 test("security: tokens, stale prices, refunds, late edits, codes and invitations are guarded", async () => {
-  const { feeOf, parseValue } = await import("./lib/fees.js")
+  const { parseValue } = await import("./lib/fees.js")
   const { markCancelled, markPaid, orderFor, paymentsOf } = await import("./lib/billing.js")
   const { addDays, todayInKorea } = await import("./lib/dates.js")
   const today = todayInKorea()
 
-  // 토큰 값으로는 수수료를 반올림해 없앨 수 없다. 최소 10,000원이고
-  // 수수료는 올림한다.
+  // 협찬액은 형식적인 값을 받지 않는다. 최소 10,000원이다.
   assert.throws(() => parseValue({ cash: 33 }), /1만 원 이상/)
-  assert.equal(feeOf({ cash: 10_001, inKind: 0 }), 1510)
 
   // 광고는 보낸 대상이 몇 개든 기다리는 주문 하나이므로 재가입 할인을 쌓아 둘
   // 수 없고, 낡은 금액은 확인할 때 승인하지 않는다.
@@ -1919,35 +1904,6 @@ test("the QR ceiling takes the smaller audience either side saw when confirming"
   assert.equal((await call("POST", `/agreements/${request.id}/confirm`, { audience: seen }, group)).status, 409)
   await call("POST", `/agreements/${request.id}/confirm`, { audience: 100_000 }, group)
   assert.equal(measurement.agreedAudience, seen)
-})
-
-test("the audience a brand saw when it started paying the fee caps the QR, whatever is raised before the payment lands", async () => {
-  const { feeStart } = await import("./lib/fees.js")
-  const { markPaid, paymentsOf } = await import("./lib/billing.js")
-  const started = feeStart.since
-  feeStart.since = "2000-01-01"
-  try {
-    const group = await signUpMember("pay-seen-club@syu.ac.kr", "pay-seen-pass-1234")
-    const groupId = getDatabase().accounts.find((account) => account.email === "pay-seen-club@syu.ac.kr")!.id
-    const { token: brand, listingId } = await listedMember("pay-seen@seen-cafe.kr", "pay-seen-pass-1234", "브랜드")
-    await call("POST", "/events", { name: "결제 공연", date: "2026-12-22", people: "100명", types: ["제품"] }, group)
-    await call("POST", "/proposals", { matchId: listingId }, group)
-    const request = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
-    await call("POST", `/requests/${request.id}/accept`, undefined, brand)
-    await call("GET", `/agreements/${request.id}`, undefined, brand)
-    await call("PUT", `/agreements/${request.id}/value`, { value: { cash: 200000, inKind: 0 } }, group)
-    const measurement = getDatabase().measurements.find((item) => item.accountId === groupId && item.eventId === request.eventId)!
-    const seen = measurement.goals.expectedAudience
-    const { order } = (await call("POST", "/billing/orders", { kind: "fee", targetId: request.id }, brand)).data
-    // 결제 중에 올리고 단체가 먼저 확인해도, 브랜드가 본 값이 기준이다.
-    measurement.goals.expectedAudience = 100_000
-    await call("POST", `/agreements/${request.id}/confirm`, { audience: 100_000 }, group)
-    const database = getDatabase()
-    markPaid(database, paymentsOf(database).find((item) => item.id === order.id)!, { method: "transfer" })
-    assert.equal(measurement.agreedAudience, seen)
-  } finally {
-    feeStart.since = started
-  }
 })
 
 test("a document keeps the extension of what it is, and an email can't dodge the free-mail list with a dot", async () => {
@@ -6251,12 +6207,10 @@ test("Vercel Cron sends the reminders with its secret, and nobody else can", asy
   }
 })
 
-test("a brand confirms an e-contract by paying the 15% fee, by card or by transfer, and a refund takes it back", async () => {
-  const { feeStart } = await import("./lib/fees.js")
-  const { toss } = await import("./lib/billing.js")
-  const saved = { since: feeStart.since, client: config.tossClientKey, secret: config.tossSecretKey, admin: config.adminToken }
-  const realToss = { confirm: toss.confirm, cancel: toss.cancel }
-  feeStart.since = "2000-01-01"
+test("a brand confirms an e-contract without paying, no new fee is ordered, and an old fee payment still refunds", async () => {
+  const { paymentsOf, toss } = await import("./lib/billing.js")
+  const saved = { admin: config.adminToken }
+  const realCancel = toss.cancel
   config.adminToken = "test-admin-token"
   const admin = (route: string, body?: unknown) =>
     fetch(`${baseUrl}/admin${route}`, {
@@ -6268,76 +6222,55 @@ test("a brand confirms an e-contract by paying the 15% fee, by card or by transf
     const group = await signUpMember("fee-club@syu.ac.kr", "fee-pass-123")
     const groupId = getDatabase().accounts.find((account) => account.email === "fee-club@syu.ac.kr")!.id
     const { token: brand, listingId } = await listedMember("fee@fee-cafe.kr", "fee-pass-123", "브랜드")
+    const brandAccount = getDatabase().accounts.find((account) => account.email === "fee@fee-cafe.kr")!
     await call("POST", "/events", { name: "수수료 공연", date: "2026-12-20", people: "150명", types: ["현금"] }, group)
     assert.equal((await call("POST", "/proposals", { matchId: listingId }, group)).status, 201)
     const request = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
     await call("POST", `/requests/${request.id}/accept`, undefined, brand)
 
-    // 가치가 먼저이고, 단체는 아무것도 내지 않고 확정한다.
-    assert.equal((await call("POST", `/agreements/${request.id}/confirm`, undefined, brand)).status, 409)
-    assert.equal((await call("PUT", `/agreements/${request.id}/value`, { value: { cash: 0, inKind: 0 } }, group)).status, 400)
-    const valued = (await call("PUT", `/agreements/${request.id}/value`, { value: { cash: 200000, inKind: 133333 } }, group)).data.agreement
-    assert.deepEqual([valued.fee.amount, valued.fee.due, valued.fee.rate], [50000, 50000, 0.15])
-    assert.equal((await call("POST", `/agreements/${request.id}/confirm`, undefined, brand)).status, 402)
+    // 수수료가 없어 브랜드도 결제 없이, 협찬액을 적기 전에도 확인한다. 계약서에는 수수료가 없다.
+    const opened = (await call("GET", `/agreements/${request.id}`, undefined, brand)).data.agreement
+    assert.equal(opened.fee, undefined)
+    assert.ok((await call("POST", `/agreements/${request.id}/confirm`, undefined, brand)).data.agreement.confirmed.brand)
     assert.ok((await call("POST", `/agreements/${request.id}/confirm`, undefined, group)).data.agreement.confirmed.group)
-
-    // 브랜드만 내야 할 수수료로 주문한다.
-    assert.equal((await call("POST", "/billing/orders", { kind: "fee", targetId: request.id }, group)).status, 403)
-    assert.equal((await call("POST", "/billing/orders", { kind: "fee", targetId: request.id }, await login("브랜드"))).status, 403)
-    assert.equal((await call("POST", "/billing/orders", { kind: "nope", targetId: request.id }, brand)).status, 404)
-    const { order } = (await call("POST", "/billing/orders", { kind: "fee", targetId: request.id }, brand)).data
-    assert.deepEqual([order.amount, order.supply, order.status, order.orderName], [55000, 50000, "pending", "수수료 공연 협찬 수수료"])
-    assert.equal(order.paymentKey, undefined)
-    // 기다리는 동안은 같은 주문이 돌아온다.
-    assert.equal((await call("POST", "/billing/orders", { kind: "fee", targetId: request.id }, brand)).data.order.id, order.id)
-
-    // 카드는 Toss 키가 없으면 꺼져 있고, 그다음에는 금액이 주문의 것이어야 한다.
-    const confirm = (amount: number) => call("POST", "/billing/confirm", { orderId: order.id, paymentKey: "pk-test", amount }, brand)
-    assert.equal((await confirm(50000)).status, 409)
-    config.tossClientKey = "live_ck_example"
-    config.tossSecretKey = "live_sk_example"
-    toss.confirm = async (_key, orderId, amount) => ({ status: "DONE", totalAmount: amount, orderId, receipt: { url: "https://receipt.example/1" }, approvedAt: "2026-10-29T12:00:00+09:00" })
-    assert.equal((await confirm(1000)).status, 400)
-    const paid = (await confirm(55000)).data.order
-    assert.deepEqual([paid.status, paid.method, paid.receiptUrl], ["paid", "card", "https://receipt.example/1"])
-    const after = (await call("GET", `/agreements/${request.id}`, undefined, brand)).data.agreement
-    assert.ok(after.confirmed.group && after.confirmed.brand)
-    assert.deepEqual([after.fee.paid, after.fee.due], [50000, 0])
+    // 새 수수료 주문과 리포트 주문은 받지 않는다.
+    assert.equal((await call("POST", "/billing/orders", { kind: "fee", targetId: request.id }, brand)).status, 410)
+    assert.equal((await call("POST", "/billing/orders", { kind: "report", targetId: "x" }, brand)).status, 410)
     const listed = (await call("GET", "/billing", undefined, brand)).data
-    assert.deepEqual([listed.card.clientKey, listed.payments.length, listed.prices.report], ["live_ck_example", 1, 50000])
-    assert.equal((await call("GET", "/billing", undefined, group)).data.payments.length, 0)
+    assert.equal(listed.prices.feeRate, undefined)
+    assert.equal(listed.prices.report, undefined)
 
-    // 가치가 오르면 차액이 남고, 여기서 계좌 이체로 낸다.
-    const raised = (await call("PUT", `/agreements/${request.id}/value`, { value: { cash: 300000, inKind: 100000 } }, brand)).data.agreement
-    assert.deepEqual([raised.fee.amount, raised.fee.due, raised.confirmed], [60000, 10000, {}])
-    const top = (await call("POST", "/billing/orders", { kind: "fee", targetId: request.id }, brand)).data.order
-    assert.equal(top.amount, 11000)
-    assert.ok((await call("POST", `/billing/orders/${top.id}/transfer`, undefined, brand)).data.order.transferRequestedAt)
-    assert.equal((await admin("/payments")).data.payments[0].id, top.id)
-    assert.equal((await admin(`/payments/${top.id}/paid`, {})).status, 200)
-    assert.equal((await admin(`/payments/${top.id}/paid`, {})).status, 409)
-    assert.ok((await call("GET", `/agreements/${request.id}`, undefined, brand)).data.agreement.confirmed.brand)
-
-    // 카드 결제를 환불하면 브랜드의 확정을 거둔다.
+    // 그 전에 카드로 낸 수수료는 기록으로 남고, 환불하면 그 결제로 이뤄진 브랜드의 확인을 거둔다.
+    const old = {
+      id: "old-fee",
+      accountId: brandAccount.id,
+      accountName: brandAccount.name,
+      kind: "fee" as const,
+      targetId: request.id,
+      orderName: "수수료 공연 협찬 수수료",
+      amount: 55000,
+      supply: 50000,
+      status: "paid" as const,
+      method: "card" as const,
+      paymentKey: "pk-old",
+      requestedAt: "2026-11-10T00:00:00.000Z",
+      paidAt: "2026-11-10T00:00:00.000Z",
+    }
+    paymentsOf(getDatabase()).push(old as never)
     const refunded: string[] = []
     toss.cancel = async (key) => {
       refunded.push(key)
     }
-    assert.equal((await admin(`/payments/${order.id}/cancel`, { reason: "테스트 환불" })).status, 200)
-    assert.deepEqual(refunded, ["pk-test"])
-    const back = (await call("GET", `/agreements/${request.id}`, undefined, brand)).data.agreement
-    assert.deepEqual([back.confirmed.brand, back.fee.due], [undefined, 50000])
-  // 계정의 내보내기는 결제를 담되 Toss의 키는 담지 않는다.
+    assert.equal((await admin(`/payments/${old.id}/cancel`, { reason: "테스트 환불" })).status, 200)
+    assert.deepEqual(refunded, ["pk-old"])
+    assert.equal((await call("GET", `/agreements/${request.id}`, undefined, brand)).data.agreement.confirmed.brand, undefined)
+    // 계정의 내보내기는 결제를 담되 Toss의 키는 담지 않는다.
     const exported = (await call("GET", "/auth/export", undefined, brand)).data
-    assert.equal(exported.payments.length, 2)
+    assert.equal(exported.payments.length, 1)
     assert.ok(exported.payments.every((payment: { paymentKey?: string }) => payment.paymentKey === undefined))
   } finally {
-    feeStart.since = saved.since
-    config.tossClientKey = saved.client
-    config.tossSecretKey = saved.secret
     config.adminToken = saved.admin
-    toss.confirm = realToss.confirm
-    toss.cancel = realToss.cancel
+    toss.cancel = realCancel
   }
 })
 
@@ -6989,16 +6922,15 @@ test("a card refund whose save fails is kept by its mark and recorded later, nev
   }
 })
 
-test("a brand buys a sponsorship's detailed report, adds its store's counts and shares it read-only", async () => {
+test("a brand reads its sponsorship's detailed report free from the event day, adds its store's counts and shares it read-only", async () => {
   const demo = await login("브랜드")
-  // 데모 브랜드의 샘플은 방문자에게 열려 있고, 데모 브랜드로 로그인하면
-  // 사는 모습을 보이도록 잠겨 있다.
+  // 데모 브랜드의 샘플은 방문자에게 열려 있고, 데모 브랜드로 로그인해도 열려 있다(리포트는 무료다).
   const sample = (await call("GET", "/insights/sp-busking")).data
   assert.equal(sample.locked, false)
-  assert.equal((await call("GET", "/insights/sp-busking", undefined, demo)).data.locked, true)
+  assert.equal((await call("GET", "/insights/sp-busking", undefined, demo)).data.locked, false)
   const listed = (await call("GET", "/analytics")).data.sponsorships
   assert.equal(listed.find((item: { id: string }) => item.id === "sp-busking").report, "open")
-  assert.equal((await call("GET", "/analytics", undefined, demo)).data.sponsorships.find((item: { id: string }) => item.id === "sp-busking").report, "locked")
+  assert.equal((await call("GET", "/analytics", undefined, demo)).data.sponsorships.find((item: { id: string }) => item.id === "sp-busking").report, "open")
   assert.equal(sample.report.sponsorship.eventName, "가을 버스킹 데이")
   assert.ok(["S", "A", "B", "C", "D"].includes(sample.report.grade))
   assert.deepEqual(sample.report.scorecard.map((item: { key: string }) => item.key), ["reach", "scans", "coupons", "visits", "qrRate", "visitRate", "roas"])
@@ -7011,7 +6943,7 @@ test("a brand buys a sponsorship's detailed report, adds its store's counts and 
   assert.equal(sample.report.fulfillment.items.length, 6)
   assert.equal((await call("PUT", "/insights/sp-busking/lift", { before: 30, during: 40 }, demo)).status, 403)
 
-  // 회원이 측정한 행사를 협찬하면 사기 전에는 미리보기다.
+  // 회원이 측정한 행사를 협찬하면 행사 날부터 무료로 열리고, 그 전에는 미리보기다.
   const group = await signUpMember("insight-club@syu.ac.kr", "insight-pass-123")
   const groupId = getDatabase().accounts.find((account) => account.email === "insight-club@syu.ac.kr")!.id
   const { token: brand, listingId } = await listedMember("insight@insight-cafe.kr", "insight-pass-123", "브랜드")
@@ -7022,37 +6954,26 @@ test("a brand buys a sponsorship's detailed report, adds its store's counts and 
   await call("POST", `/requests/${request.id}/accept`, undefined, brand)
   await call("GET", `/agreements/${request.id}`, undefined, brand)
   const id = `sp-${request.id}`
-  const locked = (await call("GET", `/insights/${id}`, undefined, brand)).data
-  assert.deepEqual([locked.locked, locked.price, locked.open], [true, 50000, true])
+  const event = Object.values(getDatabase().events).flat().find((item) => item.id === request.eventId)!
+  event.date = "2099-12-31"
+  const soon = (await call("GET", `/insights/${id}`, undefined, brand)).data
+  assert.deepEqual([soon.locked, soon.open, soon.price], [true, false, undefined])
+  assert.equal((await call("PUT", `/insights/${id}/lift`, { before: 30, during: 45 }, brand)).status, 409)
+  assert.equal((await call("POST", `/insights/${id}/share`, undefined, brand)).status, 409)
+  event.date = today
   assert.equal((await call("GET", `/insights/${id}`, undefined, group)).status, 404)
-  assert.equal((await call("PUT", `/insights/${id}/lift`, { before: 30, during: 45 }, brand)).status, 402)
-  assert.equal((await call("POST", `/insights/${id}/share`, undefined, brand)).status, 402)
-
-  // 이체로 사면 열린다.
-  const { order } = (await call("POST", "/billing/orders", { kind: "report", targetId: id }, brand)).data
-  assert.deepEqual([order.amount, order.orderName], [55000, "리포트 공연 상세 성과 리포트"])
-  const { markPaid, paymentsOf } = await import("./lib/billing.js")
-  markPaid(getDatabase(), paymentsOf(getDatabase()).find((item) => item.id === order.id)!, { method: "transfer" })
   const opened = (await call("GET", `/insights/${id}`, undefined, brand)).data
   assert.equal(opened.locked, false)
   assert.equal(opened.report.effect, null)
-  assert.equal((await call("POST", "/billing/orders", { kind: "report", targetId: "sp-nope" }, brand)).status, 404)
 
   // 매장의 집계는 평소 날과 비교한 효과를 준다.
   assert.equal((await call("PUT", `/insights/${id}/lift`, { before: 0, during: 45 }, brand)).status, 400)
   const effect = (await call("PUT", `/insights/${id}/lift`, { before: 30, during: 45 }, brand)).data.report.effect
   assert.deepEqual([effect.lift, effect.days, effect.extraVisitors], [50, 9, 135])
 
-  // 끄기 전까지는 읽기 전용 링크다. 공유도 산 리포트를 쓴 것이라 환불 기간이 끝난다.
-  const payment = paymentsOf(getDatabase()).find((item) => item.id === order.id)!
-  delete payment.openedAt
+  // 끄기 전까지는 읽기 전용 링크다.
   const { shareToken } = (await call("POST", `/insights/${id}/share`, undefined, brand)).data
-  assert.ok(payment.openedAt)
   assert.equal((await call("GET", `/insights/shared/${shareToken}`)).data.report.sponsorship.id, id)
-  // 환불되면 링크도 멈춘다.
-  payment.status = "cancelled"
-  assert.equal((await call("GET", `/insights/shared/${shareToken}`)).status, 404)
-  payment.status = "paid"
   // 정지된 브랜드의 링크는 정지된 동안 멈춘다.
   const sharer = getDatabase().accounts.find((item) => (getDatabase().sponsorships[item.id] ?? []).some((entry) => entry.id === id))!
   sharer.suspendedAt = new Date().toISOString()
@@ -7087,7 +7008,8 @@ test("a free brand sends five proposals a month; Pro lifts the limit for 30 days
   const growth = table.plans[2]
   assert.deepEqual([growth.price, growth.priceWithVat, growth.days, growth.orderKind], [249000, 273900, 30, "pro"])
   assert.deepEqual([table.plans[0].limits.offersPerMonth, growth.limits.offersPerMonth], [5, null])
-  assert.deepEqual([table.feeRate, table.vatRate, table.reportPrice], [0.15, 0.1, 50000])
+  // 수수료와 리포트 가격은 없다.
+  assert.deepEqual([table.feeRate, table.vatRate, table.reportPrice], [undefined, 0.1, undefined])
   // 준비 중인 Local은 결제가 열리기 전까지 가격과 주문 종류를 싣지 않는다.
   assert.deepEqual([table.plans[1].price, table.plans[1].priceWithVat, table.plans[1].orderKind], [null, null, null])
 

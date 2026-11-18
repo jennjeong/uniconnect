@@ -41,8 +41,6 @@ export default defineConfig({
       EXPOSE_EMAIL_CODES: "true",
       KAKAO_REST_API_KEY: "",
       NOMINATIM_URL: "",
-      // 어느 날짜든 수수료를 받으므로 오늘의 협찬도 수수료를 낸다.
-      FEES_SINCE: "2000-01-01",
       // 운영자 콘솔은 브라우저 테스트에서만 이 값으로 열린다.
       ADMIN_TOKEN: "e2e-admin-token",
       CODES_PER_CLIENT: "200",
