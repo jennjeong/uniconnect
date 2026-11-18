@@ -5,6 +5,7 @@ import { config } from "../config.js"
 import { paymentView } from "../lib/billing.js"
 import { acceptedProposalsOf, dropOrphanAgreements, removeUploads } from "../lib/agreements.js"
 import { inOpenDispute, retireDisputes } from "../lib/disputes.js"
+import { forgetPrograms } from "../lib/programs.js"
 import { findListing } from "../lib/catalog.js"
 import { deviceLabel } from "../lib/devices.js"
 import { applicationFolder, applicationFor, applicationsOf, holdApplication, parseDocument } from "../lib/applications.js"
@@ -607,6 +608,8 @@ function removeAccount(database: Database, account: Account) {
   // Its 찜 list, and its listing in everyone else's.
   delete database.saved[account.id]
   delete database.savedSearches?.[account.id]
+  // 캠퍼스 캠페인이다. 결제 기록은 따로 남는다.
+  forgetPrograms(database, account.id)
   for (const [saver, saved] of Object.entries(database.saved)) {
     database.saved[saver] = saved.filter((id) => id !== listingId)
     if (database.saved[saver].length === 0) delete database.saved[saver]
@@ -923,6 +926,7 @@ authRouter.get("/export", (req, res) => {
     sponsorships: database.sponsorships[account.id] ?? [],
     savedSearches: (database.savedSearches?.[account.id] ?? []).map(({ known: _known, ...search }) => search),
     localCampaign: database.localCampaigns?.[account.id] ?? null,
+    programs: (database.programs ?? []).filter((program) => program.accountId === account.id),
     measurements: database.measurements
       .filter((item) => item.accountId === account.id)
       .map(({ passes: _passes, log: _log, staffPin: _staffPin, groupPin: _groupPin, sponsors, ...measurement }) => ({

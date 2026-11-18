@@ -47,6 +47,7 @@ import { adminDisputesRouter, disputesRouter } from "./routes/disputes.js"
 import { blocksRouter, reportsRouter } from "./routes/reports.js"
 import { reviewsRouter } from "./routes/reviews.js"
 import { savedRouter } from "./routes/saved.js"
+import { adminProgramsRouter, programsRouter } from "./routes/programs.js"
 import { searchesRouter } from "./routes/searches.js"
 import { foldCounts, foldInBackground, movePassesToRows, passSql } from "./lib/passRows.js"
 import { getDatabase, refreshDatabase, storeHealth } from "./store.js"
@@ -222,11 +223,13 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   app.use("/api/errors", errorsRouter)
   app.use("/api/billing", billingRouter)
   app.use("/api/local", localRouter)
+  app.use("/api/programs", programsRouter)
   app.use("/api/admin", (_req, _res, next) => adminRequest.run({}, next))
   app.use("/api/admin", adminSessionRouter)
   app.use("/api/admin", adminRouter)
   app.use("/api/admin", adminMoreRouter)
   app.use("/api/admin/disputes", adminDisputesRouter)
+  app.use("/api/admin/programs", adminProgramsRouter)
   app.use("/api/announcements", announcementsRouter)
   app.use("/api/site", siteRouter)
   app.use("/api/cron", cronRouter)

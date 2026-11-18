@@ -232,7 +232,7 @@ export type Agreement = {
 }
 
 // 브랜드가 플랫폼에 내는 돈 (backend lib/billing.ts).
-export type PaymentKind = "fee" | "report" | "pro" | "ad" | "local"
+export type PaymentKind = "fee" | "report" | "pro" | "ad" | "local" | "program"
 
 export type Payment = {
   id: string
@@ -1231,6 +1231,8 @@ export type AdminOverview = {
     alerts: number
     // 결론이 나지 않은 협찬 분쟁(#335).
     disputes?: number
+    // 견적을 기다리는 캠퍼스 캠페인 요청서(#400).
+    programs?: number
   }
 }
 

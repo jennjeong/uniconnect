@@ -920,7 +920,7 @@ export type ShopInvite = {
 // 계정이 플랫폼에 내는 돈이다(lib/billing.ts). 협찬이 확정될 때 브랜드가
 // 내는 15% 수수료, 상세 리포트, Pro 한 달, 양쪽이 사는 상단 광고 한 달
 // (lib/ads.ts)이 있다.
-export type PaymentKind = "fee" | "report" | "pro" | "ad" | "local"
+export type PaymentKind = "fee" | "report" | "pro" | "ad" | "local" | "program"
 
 export type Payment = {
   // Toss Payments가 보는 주문 id이기도 하다.
@@ -1049,6 +1049,8 @@ export type Database = {
     states: { hash: string; provider: SocialProvider; intent: "login" | "link"; accountId?: string; expiresAt: number }[]
     handoffs: { hash: string; accountId: string; userAgent?: string; expiresAt: number }[]
   }
+  // 브랜드가 맡긴 캠퍼스 캠페인이다(lib/programs.ts, #400). 최신이 마지막이다.
+  programs?: Program[]
   // 운영자가 콘솔에서 한 일이며 최신이 마지막이다(lib/adminTools.ts).
   adminLog?: AdminLogEntry[]
   // 콘솔에 들어오는 사람과 그 세션이다(routes/adminSession.ts).
@@ -1116,7 +1118,7 @@ export type AdminLogEntry = {
   actor?: string
   action: AdminAction
   target: {
-    kind: "operator" | "backup" | "account" | "payment" | "inquiry" | "report" | "announcement" | "proposal" | "post" | "review" | "site" | "dispute"
+    kind: "operator" | "backup" | "account" | "payment" | "inquiry" | "report" | "announcement" | "proposal" | "post" | "review" | "site" | "dispute" | "program"
     id: string
   }
   // 신고의 처리 결과 같은, 방법에 대한 짧은 말이다.
@@ -1163,6 +1165,8 @@ export type AdminAction =
   | "note-saved"
   | "announcement-posted"
   | "announcement-ended"
+  | "program-quoted"
+  | "program-status"
 
 // 회원에 대한 운영자 메모로, 그 신고와 질문을 처리할 때 쓴다.
 export type AdminNote = { text: string; at: string }
@@ -1207,4 +1211,54 @@ export type BoardPost = {
   hiddenAt?: string
   createdAt: string
   updatedAt?: string
+}
+
+// 캠퍼스 캠페인의 단계다. 견적을 받은 캠페인은 결제를 기다리고, 결제되면 섭외 중이 된다.
+export type ProgramStatus = "접수" | "견적" | "섭외 중" | "집행 중" | "완료" | "취소"
+
+// 브랜드가 낸 캠퍼스 캠페인 요청서다.
+export type ProgramBrief = {
+  name: string
+  // 알리려는 제품이나 서비스다.
+  product: string
+  // 원하는 지역(시·도)이며 비어 있으면 어디든이다.
+  regions: string[]
+  // "YYYY-MM" 형식의 첫 달과 마지막 달이다.
+  from: string
+  to: string
+  // 원하는 학교 수와 학교마다 내놓을 수량이다.
+  schools: number
+  perSchool: number
+  // 대상 학생(학년, 전공 등)이다.
+  audience?: string
+  // 원하는 홍보 방식과 요청 사항이다.
+  asks?: string
+  // 브랜드가 생각한 전체 예산(원)이다.
+  budget?: number
+}
+
+// 견적의 실비 한 줄이다. 브랜드가 단체나 업체에 직접 내고, 플랫폼은 받지 않는다.
+export type ProgramCost = { label: string; amount: number }
+
+// 운영자가 쓴 견적이다. 플랫폼이 받는 것은 운영비(부가세 전)뿐이다.
+export type ProgramQuote = {
+  fee: number
+  costs: ProgramCost[]
+  note?: string
+  quotedAt: string
+}
+
+export type Program = {
+  id: string
+  accountId: string
+  brief: ProgramBrief
+  status: ProgramStatus
+  quote?: ProgramQuote
+  // 운영비를 낸 결제다.
+  paymentId?: string
+  paidAt?: string
+  // 취소 사유이며, 브랜드가 취소했으면 비어 있다.
+  cancelReason?: string
+  createdAt: string
+  updatedAt: string
 }

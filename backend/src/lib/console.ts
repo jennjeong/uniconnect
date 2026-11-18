@@ -39,7 +39,7 @@ export function overview(database: Database, now = new Date()) {
   const revenue = {
     total: paid.reduce((sum, payment) => sum + keptAmount(payment), 0),
     thisMonth: paid.filter((payment) => koreanDay(payment.paidAt ?? payment.requestedAt).slice(0, 7) === month).reduce((sum, payment) => sum + keptAmount(payment), 0),
-    byKind: { fee: 0, report: 0, pro: 0, ad: 0, local: 0 } as Record<PaymentKind, number>,
+    byKind: { fee: 0, report: 0, pro: 0, ad: 0, local: 0, program: 0 } as Record<PaymentKind, number>,
     partners: database.accounts.filter((account) => proUntil(database, account.id) !== null).length,
   }
   for (const payment of paid) revenue.byKind[payment.kind] += keptAmount(payment)
@@ -59,6 +59,8 @@ export function overview(database: Database, now = new Date()) {
       stale: staleProposals(database, now).length,
       cancels: database.agreements.filter((agreement) => agreementState(agreement) === "cancel").length,
       alerts: fieldAlerts(database, now).length,
+      // 견적을 기다리는 캠퍼스 캠페인 요청서다.
+      programs: (database.programs ?? []).filter((program) => program.status === "접수").length,
     },
   }
 }

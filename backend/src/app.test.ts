@@ -7209,8 +7209,8 @@ test("the operators' console lists what needs them, members with their record, a
     assert.equal((await fetch(`${baseUrl}/admin/overview`)).status, 403)
     const seen = (await admin("/overview")).data
     assert.equal(seen.weekly.length, 8)
-    assert.deepEqual(Object.keys(seen.attention).sort(), ["alerts", "applications", "cancels", "disputes", "inquiries", "referrals", "reports", "stale", "suspended", "transfers"])
-    assert.deepEqual(Object.keys(seen.revenue.byKind).sort(), ["ad", "fee", "local", "pro", "report"])
+    assert.deepEqual(Object.keys(seen.attention).sort(), ["alerts", "applications", "cancels", "disputes", "inquiries", "programs", "referrals", "reports", "stale", "suspended", "transfers"])
+    assert.deepEqual(Object.keys(seen.revenue.byKind).sort(), ["ad", "fee", "local", "pro", "program", "report"])
 
     await signUpMember("console@syu.ac.kr", "console-pass-123")
     const found = (await admin("/accounts?q=console%40syu")).data.accounts
@@ -9474,4 +9474,88 @@ test("the console tells a backup's last success, next run and whether it is late
   // 오래 떠 있는 서버는 한 시간마다다.
   const hourly = backupStatus([{ hour: "2026-11-14T21" }], [], now, { kind: "hourly", lastRunAt: Date.parse("2026-11-14T23:00:00Z") })
   assert.deepEqual([hourly.state, hourly.next], ["delayed", "2026-11-15T00:00:00.000Z"])
+})
+
+test("a brand asks for a campus campaign, the operators quote it and paying the operating fee starts it", async () => {
+  const { markCancelled, markPaid, paymentsOf } = await import("./lib/billing.js")
+  const { todayInKorea } = await import("./lib/dates.js")
+  const { config: settings } = await import("./config.js")
+  const { token: brand } = await listedMember("program@program-brand.kr", "program-pass-1!", "브랜드")
+  const { token: other } = await listedMember("program@other-brand.kr", "program-pass-1!", "브랜드")
+  const { token: group } = await listedMember("program@syu.ac.kr", "program-pass-1!", "학생단체")
+  const month = todayInKorea().slice(0, 7)
+  const brief = { name: "봄 학기 시음", product: "탄산수 신제품", regions: ["서울", "경기"], from: month, to: month, schools: 5, perSchool: 300, audience: "1~2학년" }
+
+  // 브랜드 회원만 낸다. 데모 계정과 학생단체는 못 낸다.
+  assert.equal((await call("POST", "/programs", brief, group)).status, 403)
+  assert.equal((await call("POST", "/programs", brief, await login("브랜드"))).status, 403)
+  assert.equal((await call("POST", "/programs", { ...brief, schools: 0 }, brand)).status, 400)
+  assert.equal((await call("POST", "/programs", { ...brief, from: "2000-01", to: "2000-02" }, brand)).status, 400)
+  const created = await call("POST", "/programs", brief, brand)
+  assert.equal(created.status, 201, JSON.stringify(created.data))
+  const id = created.data.program.id as string
+  assert.deepEqual([created.data.program.status, created.data.program.quote], ["접수", null])
+
+  // 다른 브랜드는 보지도 거두지도 못한다.
+  assert.equal((await call("GET", `/programs/${id}`, undefined, other)).status, 404)
+  assert.equal((await call("POST", `/programs/${id}/withdraw`, {}, other)).status, 404)
+  assert.equal((await call("GET", "/programs", undefined, other)).data.programs.length, 0)
+
+  // 견적 전에는 결제할 수 없다.
+  assert.equal((await call("POST", "/billing/orders", { kind: "program", targetId: id }, brand)).status, 409)
+
+  const savedToken = settings.adminToken
+  settings.adminToken = "test-admin-token"
+  const admin = async (method: string, path: string, body?: unknown) => {
+    const response = await fetch(`${baseUrl}/admin/programs${path}`, { method, headers: { "X-Admin-Token": "test-admin-token", "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined })
+    type View = { status: string; quote: { costTotal: number; feeWithVat: number } }
+    return { status: response.status, data: (await response.json().catch(() => null)) as { programs: { id: string }[]; program: View } }
+  }
+  try {
+    assert.equal((await fetch(`${baseUrl}/admin/programs`)).status, 403)
+    assert.ok((await admin("GET", "")).data.programs.some((item: { id: string }) => item.id === id))
+    assert.equal((await admin("PUT", `/${id}/quote`, { fee: 5_000 })).status, 400)
+    assert.equal((await admin("POST", `/${id}/status`, { status: "집행 중" })).status, 409)
+    const quoted = await admin("PUT", `/${id}/quote`, { fee: 1_500_000, costs: [{ label: "단체 지원금", amount: 2_500_000 }, { label: "물류", amount: 500_000 }] })
+    assert.equal(quoted.status, 200, JSON.stringify(quoted.data))
+    assert.deepEqual([quoted.data.program.status, quoted.data.program.quote.costTotal, quoted.data.program.quote.feeWithVat], ["견적", 3_000_000, 1_650_000])
+
+    // 플랫폼은 운영비(부가세 포함)만 받는다. 실비는 결제 금액에 들어가지 않는다.
+    assert.equal((await call("POST", "/billing/orders", { kind: "program", targetId: id }, other)).status, 404)
+    const order = await call("POST", "/billing/orders", { kind: "program", targetId: id }, brand)
+    assert.equal(order.status, 200, JSON.stringify(order.data))
+    assert.equal(order.data.order.amount, 1_650_000)
+    const payment = paymentsOf(getDatabase()).find((item) => item.id === order.data.order.id)!
+    markPaid(getDatabase(), payment, { method: "transfer" })
+    const paid = (await call("GET", `/programs/${id}`, undefined, brand)).data.program
+    assert.equal(paid.status, "섭외 중")
+    assert.ok(paid.paidAt)
+
+    // 결제한 뒤에는 브랜드가 직접 거두지 못하고, 견적도 바뀌지 않는다.
+    assert.equal((await call("POST", `/programs/${id}/withdraw`, {}, brand)).status, 409)
+    assert.equal((await admin("PUT", `/${id}/quote`, { fee: 10_000 })).status, 409)
+    assert.equal((await admin("POST", `/${id}/status`, { status: "취소" })).status, 409)
+    assert.equal((await admin("POST", `/${id}/status`, { status: "집행 중" })).data.program.status, "집행 중")
+
+    // 환불하면 캠페인이 멈춘다.
+    markCancelled(getDatabase(), payment, "테스트 환불")
+    assert.equal((await call("GET", `/programs/${id}`, undefined, brand)).data.program.status, "취소")
+  } finally {
+    settings.adminToken = savedToken
+  }
+
+  // 결제 전이면 브랜드가 거둔다. 결제 전 캠페인은 다섯 개까지다.
+  const second = (await call("POST", "/programs", brief, brand)).data.program.id
+  assert.equal((await call("POST", `/programs/${second}/withdraw`, {}, brand)).data.program.status, "취소")
+  for (let index = 0; index < 5; index += 1) assert.equal((await call("POST", "/programs", brief, brand)).status, 201)
+  assert.equal((await call("POST", "/programs", brief, brand)).status, 409)
+
+  // 내보내기에 들어가고, 탈퇴하면 지워진다.
+  const exported = (await call("GET", "/auth/export", undefined, brand)).data
+  assert.equal(exported.programs.length, 7)
+  const accountId = getDatabase().accounts.find((item) => item.email === "program@program-brand.kr")!.id
+  assert.equal((await call("DELETE", "/auth/account", { password: "program-pass-1!" }, brand)).status, 204)
+  assert.equal((getDatabase().programs ?? []).filter((item) => item.accountId === accountId).length, 0)
+  // 운영비 결제 기록은 남는다.
+  assert.ok(paymentsOf(getDatabase()).some((item) => item.kind === "program" && item.accountId === accountId))
 })
