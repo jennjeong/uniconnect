@@ -1,11 +1,11 @@
-import { Router } from "express"
 
 import { liveAnnouncements } from "../lib/adminTools.js"
 import { HttpError } from "../lib/errors.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { getDatabase, saveDatabase } from "../store.js"
+import { writeRouter } from "../middleware/retrying.js"
 
-export const announcementsRouter = Router()
+export const announcementsRouter = writeRouter()
 
 // 이 보는 사람에게 보이는 운영자 공지로, 사이트 맨 위에 띄운다.
 announcementsRouter.get("/", (req, res) => {

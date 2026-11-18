@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto"
-import { Router, type Request } from "express"
+import { type Request } from "express"
 
 import { config } from "../config.js"
 import { findListing } from "../lib/catalog.js"
@@ -10,8 +10,9 @@ import { isDemoAccount } from "../lib/reviews.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { Account, Database } from "../types.js"
+import { writeRouter } from "../middleware/retrying.js"
 
-export const calendarRouter = Router()
+export const calendarRouter = writeRouter()
 
 // 구독한 캘린더가 지난 날짜를 얼마나 거슬러 올라가 담는지 정한다.
 const keepDays = 90

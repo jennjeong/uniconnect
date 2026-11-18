@@ -1,10 +1,10 @@
-import { Router } from "express"
 
 import { browse, partnerCatalogOf } from "../lib/catalog.js"
 import { parseRole } from "../lib/validation.js"
 import { getDatabase } from "../store.js"
+import { writeRouter } from "../middleware/retrying.js"
 
-export const matchesRouter = Router()
+export const matchesRouter = writeRouter()
 
 // 반대편 쪽 상위 세 곳의 리스팅이다. 로그인한 사용자는 자기 역할의 매칭을
 // 받고, 방문자는 ?role=로 역할을 넘긴다. 추천 지수가 높아도 필수 조건이 어긋난

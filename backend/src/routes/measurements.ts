@@ -1,5 +1,4 @@
 import type { Request } from "express"
-import { Router } from "express"
 
 import { todayInKorea } from "../lib/dates.js"
 import { isDemoAccount } from "../lib/reviews.js"
@@ -19,8 +18,9 @@ import { postedReach } from "../lib/snsPosts.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { EventItem, Measurement } from "../types.js"
+import { writeRouter } from "../middleware/retrying.js"
 
-export const measurementsRouter = Router()
+export const measurementsRouter = writeRouter()
 
 // 어느 계정의 행사를 보여 줄지 정한다. 로그인한 계정(단체의 행사, 브랜드의
 // 캠페인)이거나, 방문자에게는 미리 보는 쪽의 데모 계정이다(?role=, 기본은

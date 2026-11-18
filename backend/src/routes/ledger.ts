@@ -1,5 +1,4 @@
 import { randomBytes } from "node:crypto"
-import { Router } from "express"
 
 import { acceptedProposalsOf, sideIn } from "../lib/agreements.js"
 import { findListing } from "../lib/catalog.js"
@@ -9,8 +8,9 @@ import { text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { Account, Database } from "../types.js"
+import { writeRouter } from "../middleware/retrying.js"
 
-export const ledgerRouter = Router()
+export const ledgerRouter = writeRouter()
 
 // 협찬 하나에 남길 수 있는 메모의 최대 길이다.
 const maxNote = 200

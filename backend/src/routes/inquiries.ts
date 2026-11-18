@@ -1,13 +1,13 @@
 import { randomUUID } from "node:crypto"
-import { Router } from "express"
 
 import { HttpError } from "../lib/errors.js"
 import { inquiryCategories, text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { Inquiry } from "../types.js"
+import { writeRouter } from "../middleware/retrying.js"
 
-export const inquiriesRouter = Router()
+export const inquiriesRouter = writeRouter()
 
 // 질문한 사람에게 보이는 질문의 모습이다. 누가 물었는지는 담지 않는다.
 export const inquiryView = ({ accountId: _accountId, ...inquiry }: Inquiry) => inquiry

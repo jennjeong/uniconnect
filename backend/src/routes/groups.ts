@@ -1,4 +1,3 @@
-import { Router } from "express"
 
 import { applicationsOf, holdApplication, parseDocument } from "../lib/applications.js"
 import { browse } from "../lib/catalog.js"
@@ -10,8 +9,9 @@ import { text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { Account, Database } from "../types.js"
+import { writeRouter } from "../middleware/retrying.js"
 
-export const groupsRouter = Router()
+export const groupsRouter = writeRouter()
 
 // 브랜드가 둘러볼 수 있는 모든 학생단체를 잘 맞는 순서로, 각 단체의 다음
 // 행사와 함께 보여 준다.

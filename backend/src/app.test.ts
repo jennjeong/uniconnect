@@ -38,7 +38,7 @@ process.env.ADMIN_TOKEN = "test-admin-token"
 const { createApp } = await import("./app.js")
 const { config, emailCodesExposed } = await import("./config.js")
 const { clearRateLimits } = await import("./lib/rateLimit.js")
-const { getDatabase, loadDatabase, saveDatabase } = await import("./store.js")
+const { backupSettled, getDatabase, loadDatabase, saveDatabase } = await import("./store.js")
 const { DEMO_PASSWORD } = await import("./data/seed.js")
 // 행사의 새 몫이 시작할 때처럼 모든 현장 집계를 0으로 둔다.
 const emptyVenue = (await import("./lib/methods.js")).emptyVenueCounts()
@@ -3730,6 +3730,14 @@ test("proposals, answers and new messages are emailed to the other side, never t
     // 단체의 제안은 메일로 브랜드에 닿고, 브랜드의 답은 단체에게 돌아온다.
     const today = todayInKorea()
     await call("POST", "/events", { name: "알림 공연", date: addDays(today, 10), types: ["현금"] }, group)
+    // 저장에 실패한 제안은 되돌려지므로 메일도 나가지 않는다(다시 보내면 한 통만 간다).
+    const dataFile = config.dataFile
+    config.dataFile = process.env.FRONTEND_DIST!
+    const unsaved = await call("POST", "/proposals", { matchId: brandListing }, group)
+    config.dataFile = dataFile
+    assert.equal(unsaved.status, 503)
+    await settle()
+    assert.equal(sent.filter((mail) => mail.to[0] === brandEmail).length, 0)
     assert.equal((await call("POST", "/proposals", { matchId: brandListing }, group)).status, 201)
     await settle()
     assert.equal(sent.find((mail) => mail.to[0] === brandEmail)?.subject, "[uniconnect] 새 협찬 제안이 왔어요")
@@ -5877,6 +5885,7 @@ test("the data is backed up at most hourly beside the data file, keeping the lat
   for (let hours = 2; hours <= 21; hours += 1) await writeFile(path.join(folder, named(hours * 30)), "{}")
   backups.lastAt = 0
   await saveDatabase()
+  await backupSettled()
   const copies = async () => (await readdir(folder)).filter((file) => file.startsWith("db-")).sort()
   const kept = await copies()
   assert.equal(kept.length, 20)
@@ -5885,6 +5894,7 @@ test("the data is backed up at most hourly beside the data file, keeping the lat
   assert.ok(JSON.parse(await readFile(path.join(folder, kept.at(-1)!), "utf8")).accounts.length > 0)
   // 한 시간 안에는 새 복사를 만들지 않는다.
   await saveDatabase()
+  await backupSettled()
   assert.deepEqual(await copies(), kept)
 
   // 정기 백업(크론, 한 시간 타이머)은 그 간격과 상관없이 찍는다.
@@ -6016,6 +6026,7 @@ test("operators sign in with a password and a code, which closes the shared toke
     // 내려받는 백업에는 비밀값이 없고, 누가 받았는지 남는다.
     backups.lastAt = 0
     await saveDatabase()
+    await backupSettled()
     const { backups: listed } = (await admin("GET", "/system", session)).data
     const download = await admin("GET", `/backups/${listed[0].hour}`, session)
     assert.equal(download.status, 200)

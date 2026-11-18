@@ -1,4 +1,3 @@
-import { Router } from "express"
 
 import { config } from "../config.js"
 import { listedTo, viewerFor } from "../lib/catalog.js"
@@ -8,8 +7,9 @@ import { exampleNearby, nearbyPlaces, nearestPlaces } from "../lib/places.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { placeCategories } from "../lib/validation.js"
 import { getDatabase } from "../store.js"
+import { writeRouter } from "../middleware/retrying.js"
 
-export const placesRouter = Router()
+export const placesRouter = writeRouter()
 
 // 조회할 때마다 Kakao에 다시 묻기 때문에(결과를 보관할 수 없다) 주소마다
 // 물을 수 있는 횟수를 제한하고, 묻는 종류마다 센다. 종류를 가끔 골라 보는

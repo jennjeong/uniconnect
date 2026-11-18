@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto"
 import type { Request } from "express"
-import { Router } from "express"
 
 import { findListing, ownerOf, shownTo } from "../lib/catalog.js"
 import { todayInKorea, toIsoDate } from "../lib/dates.js"
@@ -15,8 +14,9 @@ import { audienceYears, eventKinds, handoutWays, logoSpots, parseRole, promoPost
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { Account, Database, EventItem, RequestStatus, Role, SponsorPackage } from "../types.js"
+import { writeRouter } from "../middleware/retrying.js"
 
-export const eventsRouter = Router()
+export const eventsRouter = writeRouter()
 
 // 행사 기간이 첫날 뒤로 며칠까지 이어질 수 있는지 정한다.
 const maxDays = 89

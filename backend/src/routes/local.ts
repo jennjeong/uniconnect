@@ -1,4 +1,3 @@
-import { Router } from "express"
 import type { Request } from "express"
 
 import { config } from "../config.js"
@@ -13,9 +12,10 @@ import { text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { Account, Database, Measurement } from "../types.js"
+import { writeRouter } from "../middleware/retrying.js"
 
 // 브랜드의 Campus Local이다(lib/local.ts). 결제는 다른 상품처럼 `POST /api/billing/orders`로 한다.
-export const localRouter = Router()
+export const localRouter = writeRouter()
 
 function brandOnly(req: Request) {
   const account = requireAccount(req)

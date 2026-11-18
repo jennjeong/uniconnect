@@ -1,3 +1,5 @@
+import { waitUntil } from "@vercel/functions"
+
 import {
   createSeed,
   seedShift,
@@ -46,6 +48,9 @@ export { backupFolder, backups } from "./lib/storage.js"
 // 대의 기계에서는 JSON 파일에, Vercel에서는 Postgres에 쓴다.
 let database: Database | undefined
 let pendingWrite = Promise.resolve()
+// 저장할 때 찍는 시간별 백업이다. 쓰기 대기열 밖에서 돌아 요청의 답과 뒤에 대기한 쓰기를
+// 붙잡지 않는다(Vercel에서는 waitUntil로 끝까지 돈다).
+let pendingBackup = Promise.resolve()
 // 쓰기가 실패하면 돌아갈 마지막으로 쓴 데이터와, 쓰기가 일어나거나 데이터를
 // 새로 읽을 때마다 올라가는 횟수다.
 let durable = ""
@@ -164,6 +169,11 @@ export class SaveConflict extends HttpError {
 
 export const conflictRetry = { attempts: 8, waitMs: 40 }
 
+// 다시 하기 전에 기다린다. 복사본들이 같은 박자로 다시 부딪히지 않게 조금씩 다르게
+// 기다린다(middleware/retrying.ts도 쓴다).
+export const conflictPause = (attempt: number) =>
+  new Promise((resolve) => setTimeout(resolve, Math.random() * conflictRetry.waitMs * attempt))
+
 // 경합이 잦은 요청의 변경과 저장을 묶어, 다른 복사본에 밀려 되돌려지면 최신
 // 데이터에서 처음부터 다시 한다. `work`는 데이터를 getDatabase()에서 새로 찾아야
 // 하고, 메일이나 결제처럼 되돌릴 수 없는 일을 저장 전에 하면 안 된다. 다른 오류는
@@ -174,8 +184,7 @@ export async function retryConflicts<T>(work: () => Promise<T>) {
       return await work()
     } catch (error) {
       if (!(error instanceof SaveConflict) || attempt >= conflictRetry.attempts) throw error
-      // 복사본들이 같은 박자로 다시 부딪히지 않게 조금씩 다르게 기다린다.
-      await new Promise((resolve) => setTimeout(resolve, Math.random() * conflictRetry.waitMs * attempt))
+      await conflictPause(attempt)
       await refreshDatabase({ force: true })
     }
   }
@@ -403,11 +412,16 @@ export function saveDatabase() {
       throw new HttpError(503, notSaved)
     }
     durable = snapshot
-    await storage.backUp(snapshot)
+    // 앞선 백업 뒤에 잇는다. 찍을 때가 아닌 저장이 아직 도는 백업을 가리지 않게 한다.
+    pendingBackup = pendingBackup.then(() => storage.backUp(snapshot)).catch(() => {})
+    waitUntil(pendingBackup)
   })
   pendingWrite = write.catch(() => {})
   return write
 }
+
+// 저장할 때 시작한 백업이 끝나기를 기다린다(테스트용).
+export const backupSettled = () => pendingBackup
 
 // 정기 백업(routes/cron.ts, index.ts의 한 시간 타이머): 마지막으로 쓴 데이터를 저장할 때의
 // 한 시간 간격과 상관없이 찍는다. 실패하면 던진다(오류 기록에도 남는다). durable은 저장한
@@ -415,6 +429,7 @@ export function saveDatabase() {
 // 비밀값이 봉인된 채로 남게 한다.
 export async function backUpNow() {
   await pendingWrite
+  await pendingBackup
   const storage = currentStorage()
   const last = durable ? openDocument<Database>(durable) : getDatabase()
   await storage.backUp(sealDocument(last, storage.indent), true)

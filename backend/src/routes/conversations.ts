@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto"
 import { EventEmitter } from "node:events"
-import { Router, type Response } from "express"
+import type { Response } from "express"
 
 import { findListing, shownCatalog, shownTo } from "../lib/catalog.js"
 import { HttpError } from "../lib/errors.js"
@@ -13,8 +13,9 @@ import { requireAccount } from "../middleware/session.js"
 import { getDatabase, refreshDatabase, saveDatabase } from "../store.js"
 import { todayInKorea } from "../lib/dates.js"
 import type { Account, ChatAttachment, ChatSide, Conversation, Database, Meeting } from "../types.js"
+import { writeRouter } from "../middleware/retrying.js"
 
-export const conversationsRouter = Router()
+export const conversationsRouter = writeRouter()
 
 const sideOf = (account: Account): ChatSide => (account.role === "학생단체" ? "group" : "brand")
 

@@ -1,4 +1,3 @@
-import { Router } from "express"
 
 import { businessCheck } from "../lib/business.js"
 import { createListing, findListing, listingOwner } from "../lib/catalog.js"
@@ -13,8 +12,9 @@ import { brandOffers, factLabels, snsPlatforms, text } from "../lib/validation.j
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { BrandOffer, Match, Role } from "../types.js"
+import { writeRouter } from "../middleware/retrying.js"
 
-export const profileRouter = Router()
+export const profileRouter = writeRouter()
 
 const rows = (value: unknown) =>
   (Array.isArray(value) ? value : []) as (Record<string, unknown> | undefined)[]

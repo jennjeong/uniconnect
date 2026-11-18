@@ -1,12 +1,12 @@
-import { Router } from "express"
 
 import { listedTo, partnerCatalogOf } from "../lib/catalog.js"
 import { HttpError } from "../lib/errors.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { Account, Database } from "../types.js"
+import { writeRouter } from "../middleware/retrying.js"
 
-export const savedRouter = Router()
+export const savedRouter = writeRouter()
 
 // 한 계정이 저장해 둘 수 있는 리스팅의 최대 수다.
 const maxSaved = 200

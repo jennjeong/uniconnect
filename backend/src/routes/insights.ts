@@ -1,5 +1,4 @@
 import { randomBytes } from "node:crypto"
-import { Router } from "express"
 
 import { paidFor } from "../lib/billing.js"
 import { HttpError } from "../lib/errors.js"
@@ -8,11 +7,12 @@ import { isDemoAccount } from "../lib/reviews.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { Database } from "../types.js"
 import { brandOwner } from "./requests.js"
+import { writeRouter } from "../middleware/retrying.js"
 
 // 상세 성과 리포트(lib/premiumReport.ts)다. 브랜드의 자기 리포트(무료, 행사 날부터. 데모
 // 브랜드의 샘플은 방문자가 볼 수 있게 열려 있다)나 담긴 내용의 미리보기,
 // 공유용 읽기 전용 링크, 리포트가 비교하는 매장 자체의 집계를 다룬다.
-export const insightsRouter = Router()
+export const insightsRouter = writeRouter()
 
 
 function owned(req: Parameters<typeof brandOwner>[0], id: string) {

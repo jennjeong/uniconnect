@@ -1,4 +1,4 @@
-import { Router, type Request } from "express"
+import type { Request } from "express"
 
 import { acceptedProposal, sideIn } from "../lib/agreements.js"
 import { findListing } from "../lib/catalog.js"
@@ -9,8 +9,9 @@ import { reviewTags, text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { ChatSide, Review } from "../types.js"
+import { writeRouter } from "../middleware/retrying.js"
 
-export const reviewsRouter = Router()
+export const reviewsRouter = writeRouter()
 
 // 주소가 가리키는 수락된 제안을 두 쪽 중 한쪽의 입장에서 가져온다.
 function sponsorship(req: Request) {

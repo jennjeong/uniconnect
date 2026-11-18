@@ -1,5 +1,4 @@
 import { randomUUID } from "node:crypto"
-import { Router } from "express"
 
 import { industryOf, ownerOf, partnerCatalogOf, shownCatalog, shownTo } from "../lib/catalog.js"
 import { todayInKorea } from "../lib/dates.js"
@@ -15,8 +14,9 @@ import { isOpen } from "./board.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { Account, EventItem, RequestStatus, SponsorOffer, SponsorRequest } from "../types.js"
+import { writeRouter } from "../middleware/retrying.js"
 
-export const proposalsRouter = Router()
+export const proposalsRouter = writeRouter()
 
 // 계정이 제안한 id와 지금까지의 답을 보여 준다. 브랜드는 학생단체의 요청에,
 // 단체는 브랜드의 제안에 답한다. 계정이 있는 파트너만 답하고, 나머지는 "sent"로
@@ -251,13 +251,16 @@ proposalsRouter.post("/", async (req, res) => {
   const applying = post ? { postId: post.id } : {}
   const postLine = post ? [`모집 글: ${post.title}`] : []
 
+  // 받는 쪽의 메일은 저장한 뒤에 보낸다. 저장이 실패해 제안이 되돌려졌는데 메일만 나가고,
+  // 다시 보낼 때 또 나가는 일이 없게 한다.
+  let tell: (() => unknown) | undefined
   const current = database.proposals[account.id] ?? []
   if (!current.includes(matchId)) database.proposals[account.id] = [...current, matchId]
 
   if (!students && send && event) {
     const offer = { ...brandOffer(account, matchId, event, note), ...applying, ...(terms ? { terms } : {}) }
     database.offers.push(offer)
-    void notify(
+    tell = () => notify(
       ownerOf(database, "groups", matchId),
       "proposals",
       "새 협찬 제안이 왔어요",
@@ -291,7 +294,7 @@ proposalsRouter.post("/", async (req, res) => {
       status: "검토 중",
       createdAt: new Date().toISOString(),
     })
-    void notify(
+    tell = () => notify(
       ownerOf(database, "brands", matchId),
       "proposals",
       "새 협찬 제안이 왔어요",
@@ -300,6 +303,7 @@ proposalsRouter.post("/", async (req, res) => {
     )
   }
   await saveDatabase()
+  void tell?.()
   res.status(201).json(proposalState(account))
 })
 

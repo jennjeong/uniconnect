@@ -26,9 +26,10 @@ import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { ChatSide, Database, Dispute, DisputeOutcome, DisputeReason } from "../types.js"
 import { requireAdmin } from "./admin.js"
+import { writeRouter } from "../middleware/retrying.js"
 
 // 협찬 분쟁의 접수와 기록이다(lib/disputes.ts). 당사자와 운영자만 본다.
-export const disputesRouter = Router()
+export const disputesRouter = writeRouter()
 export const adminDisputesRouter = Router()
 
 const opensPerDay = createRateLimit({

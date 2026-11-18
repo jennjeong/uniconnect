@@ -1,14 +1,14 @@
-import { Router } from "express"
 
 import { HttpError } from "../lib/errors.js"
 import { isDemoAccount } from "../lib/reviews.js"
 import { addSearch, parseCriteria, partnersOf, searchesOf, searchView } from "../lib/savedSearches.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
+import { writeRouter } from "../middleware/retrying.js"
 
 // 관심 조건 저장과 새 상대 알림이다(lib/savedSearches.ts, #338). 상대 목록(학생단체에게는
 // 브랜드, 브랜드에게는 단체)의 조건을 저장한다.
-export const searchesRouter = Router()
+export const searchesRouter = writeRouter()
 
 searchesRouter.get("/", (req, res) => {
   const account = requireAccount(req)

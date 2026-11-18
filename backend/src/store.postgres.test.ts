@@ -268,6 +268,46 @@ test("a login pushed back by another copy still opens a session that's stored", 
   }
 })
 
+test("a member's write pushed back by another copy runs again on the newer data and keeps both", async () => {
+  const { createApp } = await import("./app.js")
+  const { useSql } = await import("./lib/sql.js")
+  const { DEMO_PASSWORD } = await import("./data/seed.js")
+  const server = createApp().listen(0)
+  await new Promise((resolve) => server.once("listening", resolve))
+  const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api`
+  let rivals = 0
+  try {
+    await store.refreshDatabase({ force: true })
+    const login = await fetch(`${base}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role: "브랜드", email: "hello@afternoon-coffee.kr", password: DEMO_PASSWORD }),
+    })
+    const { token, account } = (await login.json()) as { token: string; account: { id: string } }
+    const listing = store.getDatabase().groups.find((group) => !(store.getDatabase().saved[account.id] ?? []).includes(group.id))!
+    // 찜의 저장 바로 앞에서 다른 복사본이 먼저 쓴다. 전에는 503이었다.
+    useSql(async (text, params = []) => {
+      if (text.startsWith("update uniconnect_store set data") && rivals === 0) {
+        rivals += 1
+        await writeAsAnotherCopy((data) => {
+          data.proposals["rival-copy"] = ["moment-studio"]
+        })
+      }
+      return sql(text, params)
+    })
+    const saved = await fetch(`${base}/saved/${listing.id}`, { method: "PUT", headers: { Authorization: `Bearer ${token}` } })
+    assert.equal(saved.status, 204)
+    assert.equal(rivals, 1)
+    const { data } = await stored()
+    const kept = data as unknown as { saved: Record<string, string[]> }
+    assert.ok(kept.saved[account.id].includes(listing.id))
+    assert.deepEqual(data.proposals["rival-copy"], ["moment-studio"])
+  } finally {
+    useSql(sql)
+    await new Promise((resolve) => server.close(resolve))
+  }
+})
+
 test("the latest 20 hourly copies are kept, however old, and another copy doesn't overwrite one", async () => {
   await sql("delete from uniconnect_backups")
   const hoursAgo = (hours: number) => new Date(Math.floor(Date.now() / 3_600_000 - hours) * 3_600_000).toISOString()
@@ -276,6 +316,7 @@ test("the latest 20 hourly copies are kept, however old, and another copy doesn'
   }
   store.backups.lastAt = 0
   await store.saveDatabase()
+  await store.backupSettled()
   const rows = await sql("select taken_at, data from uniconnect_backups order by taken_at")
   // 새 복사를 더하고 최근 20개만 남는다. 열흘(19 × 12시간)이 넘은 것도 20개 안이면 남는다.
   assert.equal(rows.length, 20)
@@ -286,6 +327,7 @@ test("the latest 20 hourly copies are kept, however old, and another copy doesn'
   store.getDatabase().proposals["after-backup"] = ["moment-studio"]
   store.backups.lastAt = 0
   await store.saveDatabase()
+  await store.backupSettled()
   const [latest] = await sql("select data from uniconnect_backups order by taken_at desc limit 1")
   assert.equal(String(latest.data), newest)
 })

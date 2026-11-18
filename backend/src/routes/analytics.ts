@@ -1,4 +1,3 @@
-import { Router } from "express"
 
 import { isPro } from "../lib/plan.js"
 import { portfolio } from "../lib/portfolio.js"
@@ -6,8 +5,9 @@ import { reportState } from "../lib/premiumReport.js"
 import { finishedSponsorships } from "../lib/sponsorships.js"
 import { getDatabase } from "../store.js"
 import { brandOwner } from "./requests.js"
+import { writeRouter } from "../middleware/retrying.js"
 
-export const analyticsRouter = Router()
+export const analyticsRouter = writeRouter()
 
 // 브랜드의 끝난 협찬을 최신순으로 보여 주며(lib/sponsorships.ts), 각 협찬의
 // 상세 리포트가 어디까지 왔는지도 함께 담는다(lib/premiumReport.ts).

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto"
-import { Router, type Request } from "express"
+import { type Request } from "express"
 
 import { findListing, listedTo } from "../lib/catalog.js"
 import { addDays, todayInKorea, toIsoDate } from "../lib/dates.js"
@@ -11,8 +11,9 @@ import { parseRole, sponsorTypes, text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { Account, BoardPost, Database, Role } from "../types.js"
+import { writeRouter } from "../middleware/retrying.js"
 
-export const boardRouter = Router()
+export const boardRouter = writeRouter()
 
 const maxTitle = 60
 const maxBody = 1000

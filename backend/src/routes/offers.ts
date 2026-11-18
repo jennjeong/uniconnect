@@ -1,5 +1,4 @@
 import type { Request } from "express"
-import { Router } from "express"
 
 import { contractConfirmedAt, contractState } from "../lib/agreements.js"
 import { todayInKorea } from "../lib/dates.js"
@@ -13,8 +12,9 @@ import { recordSponsorship } from "../lib/sponsorships.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { RequestStatus } from "../types.js"
+import { writeRouter } from "../middleware/retrying.js"
 
-export const offersRouter = Router()
+export const offersRouter = writeRouter()
 
 // 받은편지함을 보여 줄 학생단체다. 로그인한 학생단체이거나, 학생 쪽을 미리
 // 보는 방문자에게는 데모 단체다. 브랜드 계정에는 받은 협찬함이 없다.

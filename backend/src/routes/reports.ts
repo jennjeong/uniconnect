@@ -1,5 +1,4 @@
 import { randomUUID } from "node:crypto"
-import { Router } from "express"
 
 import { findListing, listingOwner, partnerCatalogOf, shownTo } from "../lib/catalog.js"
 import { HttpError } from "../lib/errors.js"
@@ -9,9 +8,10 @@ import { reportReasons, text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { AbuseReport, Account, ChatSide, Database } from "../types.js"
+import { writeRouter } from "../middleware/retrying.js"
 
-export const reportsRouter = Router()
-export const blocksRouter = Router()
+export const reportsRouter = writeRouter()
+export const blocksRouter = writeRouter()
 
 // 한 시간에 누구나 신고하는 횟수보다 많은 수다.
 const reportsPerHour = createRateLimit({

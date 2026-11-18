@@ -22,6 +22,19 @@ export const hashToken = (token: string) => createHash("sha256").update(token).d
 // 않고도 기기 목록이 시간 단위로 맞도록 하기 위해서다.
 const lastUseEveryMs = 60 * 60 * 1000
 
+// 데이터를 새로 읽은 뒤(middleware/retrying.ts) 요청의 계정을 새 데이터에서 다시 찾는다.
+// 옛 객체를 고치면 저장되지 않는다. 그사이 정지됐거나 팀에서 빠졌으면 로그아웃한 것과 같다.
+export function reattachAccount(req: Request) {
+  if (!req.account) return
+  const account = getDatabase().accounts.find((item) => item.id === req.account!.id && !item.suspendedAt)
+  if (account && (!req.memberId || account.members?.some((item) => item.id === req.memberId))) {
+    req.account = account
+    return
+  }
+  delete req.account
+  delete req.memberId
+}
+
 // "Authorization: Bearer" 헤더로 로그인한 계정이 있으면 붙이고, 기기 목록을
 // 위해 세션의 사용을 기록한다.
 export async function readSession(req: Request, _res: Response, next: NextFunction) {

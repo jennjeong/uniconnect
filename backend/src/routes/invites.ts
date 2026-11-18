@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto"
-import { Router, type Request } from "express"
+import { type Request } from "express"
 
 import { findListing, withLiveEvent } from "../lib/catalog.js"
 import { HttpError } from "../lib/errors.js"
@@ -10,8 +10,9 @@ import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import { isDemoAccount } from "../lib/reviews.js"
 import type { Database, ShopInvite } from "../types.js"
+import { writeRouter } from "../middleware/retrying.js"
 
-export const invitesRouter = Router()
+export const invitesRouter = writeRouter()
 
 // 학생단체 하나가 초대할 수 있는 매장의 최대 수다(409 응답에는 100이라고 나온다).
 export const inviteLimit = 100

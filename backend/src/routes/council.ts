@@ -1,4 +1,3 @@
-import { Router } from "express"
 
 import { clubSummary, clubsOf, councilsPerClub, isCouncil, newCouncilCode, sameCode } from "../lib/council.js"
 import { HttpError } from "../lib/errors.js"
@@ -8,11 +7,12 @@ import { text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { Account } from "../types.js"
+import { writeRouter } from "../middleware/retrying.js"
 
 // 총학생회와 거기 속한 동아리다(lib/council.ts). 총학생회가 코드를 공유하면
 // 동아리가 내 정보에서 코드로 연결하고, 총학생회의 소속 단체 페이지에서 연결된
 // 동아리마다의 요약을 본다. 어느 쪽이든 언제든 연결을 끊을 수 있다.
-export const councilRouter = Router()
+export const councilRouter = writeRouter()
 
 // 주소별로 틀린 코드를 센다.
 const codeFailures = createRateLimit({

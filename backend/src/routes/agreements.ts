@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto"
-import { Router, type Request } from "express"
+import { type Request } from "express"
 
 import {
   acceptedProposal,
@@ -36,8 +36,9 @@ import { carriers, text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { AgreementItem, Database, SnsPost } from "../types.js"
+import { writeRouter } from "../middleware/retrying.js"
 
-export const agreementsRouter = Router()
+export const agreementsRouter = writeRouter()
 
 // 계약서 하나가 담을 수 있는 양이다.
 export const agreementLimits = { items: agreementItemLimit, links: 5, photos: 3, shipments: 10 }

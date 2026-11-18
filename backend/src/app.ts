@@ -81,6 +81,10 @@ const jsonBody = (limit: string) =>
     },
   })
 
+// 현장 집계(측정의 스캔, 쿠폰, 방문)를 답에 담지 않는 경로다(app.ts의 집계 합치기).
+// 새 경로가 집계를 보여 주면 여기서 빼야 한다.
+const countFree = /^\/(check-in|team|places|invites|conversations|inquiries|reports|blocks|saved|saved-searches|calendar|board|errors|announcements)(\/|$)/
+
 export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   const app = express()
   app.disable("x-powered-by")
@@ -153,8 +157,10 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
     await refreshDatabase({ force: req.method !== "GET" && req.method !== "HEAD" })
     if (passSql()) {
       await movePassesToRows()
-      // 현장의 요청은 기다리지 않는다. 집계를 읽을 수 있는 다른 요청은 합친 뒤에 답한다.
-      if (req.path.startsWith("/check-in/")) foldInBackground()
+      // 현장의 요청과 현장 집계를 보여 주지 않는 경로(countFree)는 기다리지 않는다. 행사 날에는
+      // 5초마다 한 요청이 합치기(문서 저장 포함)를 떠안으므로, 대화 확인처럼 잦은 요청이 그 값을
+      // 치르지 않게 한다. 집계를 읽을 수 있는 다른 요청은 합친 뒤에 답한다.
+      if (countFree.test(req.path)) foldInBackground()
       else await foldCounts().catch((error: Error) => console.error(`[passes] ${error.message}`))
     }
     next()
