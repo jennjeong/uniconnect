@@ -138,6 +138,7 @@ const BoardPage = lazyPage(() => import("./pages/BoardPage").then((module) => ({
 const PostPage = lazyPage(() => import("./pages/PostPage").then((module) => ({ default: module.PostPage })))
 const PostFormModal = lazyPage(() => import("./modals/PostFormModal").then((module) => ({ default: module.PostFormModal })))
 const LedgerPage = lazyPage(() => import("./pages/LedgerPage").then((module) => ({ default: module.LedgerPage })))
+const ProgramsPage = lazyPage(() => import("./pages/ProgramsPage").then((module) => ({ default: module.ProgramsPage })))
 const ExplorePage = lazyPage(() => import("./pages/ExplorePage").then((module) => ({ default: module.ExplorePage })))
 const EventsPage = lazyPage(() => import("./pages/EventsPage").then((module) => ({ default: module.EventsPage })))
 const PlansPage = lazyPage(() => import("./pages/PlansPage").then((module) => ({ default: module.PlansPage })))
@@ -628,6 +629,7 @@ function App() {
   const openLegal = (legal: LegalKind) => go({ page, legal })
 
   const openAgreements = () => go({ page, agreements: true })
+  const openPrograms = () => go({ page, programs: true })
 
   // 계정 자신의 행사 하나에 대한 목표 폼. 계약서에서 연다.
   const editGoals = (eventId: string) => {
@@ -1548,6 +1550,21 @@ function App() {
         />
       )
     }
+    if (view.programs || view.program) {
+      return (
+        <ProgramsPage
+          id={view.program}
+          brand={role === "브랜드" || !account}
+          sample={!member}
+          demo={account !== null && !member}
+          onOpen={(id) => go({ page, program: id })}
+          onBack={() => (view.program ? goBack({ page, programs: true }) : goBack({ page: "대시보드" }))}
+          onNotice={showNotice}
+          onLogin={() => openAuth("login")}
+          onSignup={() => openAuth("signup")}
+        />
+      )
+    }
     if (view.council) {
       return <CouncilPage onBack={() => goBack({ page, profile: "page" })} onNotice={showNotice} />
     }
@@ -2050,6 +2067,8 @@ function App() {
                     ? "agreements"
                   : view.council
                     ? "council"
+                  : view.programs || view.program
+                    ? `programs-${view.program ?? ""}`
                   : view.explore
                     ? "explore"
                   : view.ledger
@@ -2164,6 +2183,7 @@ function App() {
           onOpenMessages={openMessages}
           onOpenAgreements={openAgreements}
           onOpenBoard={openBoard}
+          onOpenPrograms={openPrograms}
           onOpenProfile={openProfile}
           onOpenFaq={openFaq}
           onOpenPlans={openPlans}

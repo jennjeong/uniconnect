@@ -907,6 +907,11 @@ const en: Record<string, string> = {
   "캠퍼스 캠페인은 브랜드 계정만 쓸 수 있어요.": "Campus campaigns are for brand accounts.",
   "데모 계정은 캠페인을 요청할 수 없어요.": "The demo account can't request a campaign.",
   "단계를 확인해 주세요.": "Check the stage.",
+  "캠퍼스 캠페인 견적이 나왔어요": "Your campus campaign quote is ready",
+  "'{name}' 캠페인의 견적이 나왔어요.": "The quote for '{name}' is ready.",
+  "운영비는 부가세를 더해 {name}원이에요.": "The operating fee is ₩{name} with VAT.",
+  "실비는 견적에 적힌 금액만큼 단체와 업체에 직접 지급해요.": "You pay the costs listed in the quote to the groups and vendors directly.",
+  "견적을 확인하고 운영비를 결제하면 학교 섭외를 시작해요.": "Check the quote and pay the operating fee, and we'll start finding schools.",
 }
 
 export default en

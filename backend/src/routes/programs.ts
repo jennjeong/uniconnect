@@ -2,6 +2,7 @@ import { Router } from "express"
 import type { Request } from "express"
 
 import { logAdmin } from "../lib/adminTools.js"
+import { withVat } from "../lib/billing.js"
 import { HttpError } from "../lib/errors.js"
 import {
   addProgram,
@@ -15,8 +16,10 @@ import {
   quoteProgram,
   withdrawProgram,
 } from "../lib/programs.js"
+import { notify } from "../lib/notices.js"
 import { isDemoAccount } from "../lib/reviews.js"
 import { text } from "../lib/validation.js"
+import { writeRouter } from "../middleware/retrying.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { ProgramStatus } from "../types.js"
@@ -24,7 +27,7 @@ import { requireAdmin } from "./admin.js"
 
 // 브랜드의 캠퍼스 캠페인이다(lib/programs.ts, #400). 운영비 결제는 다른 상품처럼
 // `POST /api/billing/orders`에 kind "program"과 캠페인 id로 한다.
-export const programsRouter = Router()
+export const programsRouter = writeRouter()
 
 function brandOnly(req: Request) {
   const account = requireAccount(req)
@@ -94,6 +97,19 @@ adminProgramsRouter.put("/:id/quote", async (req, res) => {
   quoteProgram(database, program, parseQuote(req.body))
   logAdmin(database, "program-quoted", { kind: "program", id: program.id })
   await saveDatabase()
+  // 저장한 뒤에 브랜드에게 알린다.
+  void notify(
+    database.accounts.find((account) => account.id === program.accountId),
+    "account",
+    "캠퍼스 캠페인 견적이 나왔어요",
+    [
+      `'${program.brief.name}' 캠페인의 견적이 나왔어요.`,
+      `운영비는 부가세를 더해 ${withVat(program.quote!.fee).toLocaleString("ko-KR")}원이에요.`,
+      "실비는 견적에 적힌 금액만큼 단체와 업체에 직접 지급해요.",
+      "견적을 확인하고 운영비를 결제하면 학교 섭외를 시작해요.",
+    ],
+    `/programs/${program.id}`,
+  )
   res.json({ program: programView(database, program) })
 })
 

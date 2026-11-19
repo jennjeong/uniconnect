@@ -46,6 +46,9 @@ export type View = {
   council?: true
   // 행사 둘러보기: 다른 단체의 다가오는 행사와 비슷한 행사의 사례 (/explore).
   explore?: true
+  // 브랜드의 캠퍼스 캠페인 목록과 요청서(/programs), 또는 그중 하나(/programs/<id>).
+  programs?: true
+  program?: string
   // 협찬 하나에 대한 브랜드의 상세 리포트 (/insights/<id>), 또는 링크로 읽기
   // 전용으로 공유한 것 (/report/<token>).
   insight?: string
@@ -117,6 +120,8 @@ export function viewPath(view: View) {
   if (view.agreements) return `${base}/agreements`
   if (view.council) return `${base}/council`
   if (view.explore) return `${base}/explore`
+  if (view.program) return `${base}/programs/${encodeURIComponent(view.program)}`
+  if (view.programs) return `${base}/programs`
   if (view.insight) return `${base}/insights/${encodeURIComponent(view.insight)}`
   if (view.sharedReport) return `${base}/report/${encodeURIComponent(view.sharedReport)}`
   if (view.ledger) return `${base}/ledger/${encodeURIComponent(view.ledger)}`
@@ -184,6 +189,7 @@ export function readView(location: Location = window.location): View {
   if (first === "insights") return named ? { page: "성과 분석", insight: named } : missing
   if (first === "report") return named && /^[\w-]+$/.test(named) ? { page: "대시보드", sharedReport: named } : missing
   if (first === "ledger") return named && /^[\w-]+$/.test(named) ? { page: "대시보드", ledger: named } : missing
+  if (first === "programs") return named ? { page: "대시보드", program: named } : { page: "대시보드", programs: true }
   if (first === "agreements") {
     return named ? { page: "대시보드", agreement: named } : { page: "대시보드", agreements: true }
   }
