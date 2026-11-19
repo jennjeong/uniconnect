@@ -3011,8 +3011,11 @@ test("a member's dashboard opens on the work waiting for them, and each row lead
   // 다른 테스트가 바꾸므로 어느 줄이 0건인지는 정하지 않는다. 계약서 확인을 기다리는 협찬이
   // 있으면 '다가오는 협찬 일정'은 0건이어도 위에 남는다).
   await expect(board.locator(".work-board-group .work-board-count").first()).toBeVisible()
-  const shown = await board.getByRole("listitem").count()
   const quiet = board.locator(".work-board-quiet summary")
+  // 줄이 다 그려진 뒤에 센다. 보이는 줄과 접힌 줄을 합쳐 일곱이 될 때까지 기다린다.
+  const folded = async () => Number(((await quiet.count()) ? await quiet.textContent() : "")?.match(/(\d+)가지/)?.[1] ?? 0)
+  await expect.poll(async () => (await board.getByRole("listitem").count()) + (await folded())).toBe(7)
+  const shown = await board.getByRole("listitem").count()
   if (shown < 7) {
     await expect(quiet).toHaveText(`0건인 일 ${7 - shown}가지`)
     await quiet.click()

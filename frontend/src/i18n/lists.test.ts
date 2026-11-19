@@ -7,6 +7,7 @@ import { methodInfo } from "../data/methods"
 import { metricInfo } from "../data/metrics"
 import { navItems } from "../data/navigation"
 import { placeCategories } from "../data/places"
+import { programStatusLabels } from "../data/programs"
 import { reportReasons } from "../data/reports"
 import { reviewTags } from "../data/reviews"
 import { accountTypeGroups, accountTypes, positionHints, roles } from "../data/roles"
@@ -35,6 +36,7 @@ describe("English for listed values", () => {
       ...carriers,
       ...eventKinds,
       ...regions,
+      ...Object.values(programStatusLabels),
       ...brandOffers,
       ...audienceYears,
       ...logoSpots,

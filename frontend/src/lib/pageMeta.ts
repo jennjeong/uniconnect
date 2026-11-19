@@ -200,6 +200,13 @@ export function pageMeta(
       noindex: true,
     }
   }
+  if (view.programs || view.program) {
+    return {
+      title: titled(t("캠퍼스 캠페인")),
+      description: t("여러 대학 행사에서 한 번에 캠페인을 집행하고 견적과 진행 단계를 봐요."),
+      noindex: true,
+    }
+  }
   if (view.council) {
     return {
       title: titled(t("소속 단체")),

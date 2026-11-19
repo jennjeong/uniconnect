@@ -1589,3 +1589,40 @@ export type Dispute = {
   notes?: { at: string; text: string }[]
   parties?: Record<ChatSide, string>
 }
+
+// 캠퍼스 캠페인(backend lib/programs.ts, #400): 브랜드가 여러 대학 행사에서 한 번에
+// 집행하는 캠페인이다. 플랫폼은 운영비만 받고, 실비는 금액만 보이며 브랜드가 직접 낸다.
+export type ProgramStatus = "접수" | "견적" | "섭외 중" | "집행 중" | "완료" | "취소"
+
+export type ProgramBrief = {
+  name: string
+  product: string
+  regions: string[]
+  // "YYYY-MM" 형식의 첫 달과 마지막 달.
+  from: string
+  to: string
+  schools: number
+  perSchool: number
+  audience?: string
+  asks?: string
+  budget?: number
+}
+
+export type Program = {
+  id: string
+  brief: ProgramBrief
+  status: ProgramStatus
+  quote: {
+    fee: number
+    costs: { label: string; amount: number }[]
+    note?: string
+    quotedAt: string
+    costTotal: number
+    feeWithVat: number
+  } | null
+  paidAt: string | null
+  transferRequested: boolean
+  cancelReason?: string
+  createdAt: string
+  updatedAt: string
+}

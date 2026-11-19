@@ -26,6 +26,7 @@ export function NavMenu({
   onOpenMessages,
   onOpenAgreements,
   onOpenBoard,
+  onOpenPrograms,
   onOpenProfile,
   onOpenFaq,
   onOpenPlans,
@@ -49,6 +50,8 @@ export function NavMenu({
   onOpenAgreements: () => void
   // 모집 게시판. 회원과 방문자 모두에게 보인다.
   onOpenBoard: () => void
+  // 브랜드의 캠퍼스 캠페인(/programs).
+  onOpenPrograms: () => void
   onOpenProfile: () => void
   onOpenFaq: () => void
   onOpenPlans: () => void
@@ -136,6 +139,11 @@ export function NavMenu({
               <button onClick={pick(onOpenBoard)} type="button">
                 {t("모집 게시판")}
               </button>
+              {role === "브랜드" && (
+                <button onClick={pick(onOpenPrograms)} type="button">
+                  {t("캠퍼스 캠페인")}
+                </button>
+              )}
               <button onClick={pick(onOpenProfile)} type="button">
                 {t("내 정보")}
               </button>
@@ -159,6 +167,11 @@ export function NavMenu({
               <button onClick={pick(onOpenBoard)} type="button">
                 {t("모집 게시판")}
               </button>
+              {role === "브랜드" && (
+                <button onClick={pick(onOpenPrograms)} type="button">
+                  {t("캠퍼스 캠페인")}
+                </button>
+              )}
               <button onClick={pick(onLogin)} type="button">
                 {t("로그인")}
               </button>

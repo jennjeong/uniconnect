@@ -1,5 +1,7 @@
 import type {
   Account,
+  Program,
+  ProgramBrief,
   ProposalTermsDraft,
   HistoryItem,
   AccountContact,
@@ -505,6 +507,11 @@ export const api = {
   block: (listingId: string) => request<{ ok: true }>("/blocks", { method: "POST", body: { listingId } }),
   unblock: (listingId: string) => request<void>(`/blocks/${encodeURIComponent(listingId)}`, { method: "DELETE" }),
   saved: () => request<{ saved: string[] }>("/saved"),
+  // 캠퍼스 캠페인(#400)
+  programs: () => request<{ programs: Program[] }>("/programs"),
+  program: (id: string) => request<{ program: Program }>(`/programs/${encodeURIComponent(id)}`),
+  createProgram: (body: ProgramBrief) => request<{ program: Program }>("/programs", { method: "POST", body }),
+  withdrawProgram: (id: string) => request<{ program: Program }>(`/programs/${encodeURIComponent(id)}/withdraw`, { method: "POST" }),
   savedSearches: () => request<{ searches: SavedSearch[] }>("/saved-searches"),
   saveSearch: (body: { name?: string; query?: string; industry?: string; kind?: string; school?: string }) =>
     request<{ search: SavedSearch }>("/saved-searches", { method: "POST", body }),

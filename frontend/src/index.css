@@ -16248,6 +16248,225 @@ body.checkin-body {
   font-weight: var(--weight-display);
 }
 
+/* 캠퍼스 캠페인 (pages/ProgramsPage.tsx) */
+.programs-empty,
+.programs-hint,
+.programs-canceled {
+  color: var(--ink-soft);
+}
+
+.programs-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.programs-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.programs-item:hover {
+  box-shadow: inset 0 0 0 1px var(--point);
+}
+
+.programs-item:focus-visible,
+.programs-chip:focus-visible {
+  outline: 2px solid var(--point);
+  outline-offset: 2px;
+}
+
+.programs-item span {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.programs-item strong {
+  font-weight: var(--weight-label);
+}
+
+.programs-item small {
+  color: var(--muted);
+}
+
+.programs-status {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--ink-soft);
+  font-style: normal;
+  font-weight: var(--weight-label);
+  font-size: 0.85rem;
+}
+
+.programs-status.status-1 {
+  background: var(--point);
+  color: var(--on-point);
+}
+
+.programs-form {
+  max-width: 640px;
+  margin-bottom: 24px;
+}
+
+.programs-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.programs-regions {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.programs-regions legend {
+  margin-bottom: 8px;
+}
+
+.programs-regions div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.programs-chip {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--ink-soft);
+  font: inherit;
+  font-weight: var(--weight-label);
+  cursor: pointer;
+}
+
+.programs-chip[aria-pressed="true"] {
+  background: var(--point);
+  color: var(--on-point);
+}
+
+.programs-chip:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.programs-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 20px;
+  padding: 0;
+  list-style: none;
+}
+
+.programs-steps li {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--muted);
+  font-weight: var(--weight-label);
+}
+
+.programs-steps li.done {
+  color: var(--ink-soft);
+}
+
+.programs-steps li.current {
+  background: var(--point);
+  color: var(--on-point);
+}
+
+.programs-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.programs-card {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.programs-card h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: var(--weight-label);
+}
+
+.programs-card dl {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 8px 16px;
+  margin: 0;
+}
+
+.programs-card dt {
+  color: var(--muted);
+}
+
+.programs-card dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.programs-quote {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.programs-quote th,
+.programs-quote td {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.programs-quote th {
+  color: var(--ink-soft);
+  font-weight: var(--weight-body);
+  text-align: left;
+}
+
+.programs-quote td {
+  font-weight: var(--weight-label);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.programs-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 720px) {
+  .programs-cards,
+  .programs-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* 화면의 코드가 도착하는 동안 (App의 지연 로딩 화면). */
 .page-loading {
   min-height: 50vh;
