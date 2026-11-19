@@ -9,6 +9,7 @@ import { HttpError } from "../lib/errors.js"
 // 브랜드가 살 수 있는 것으로, 각각 lib/billing.ts에 등록된다.
 import "../lib/feeSales.js"
 import "../lib/local.js"
+import "../lib/programs.js"
 import "../lib/reportSales.js"
 import { adOf } from "../lib/ads.js"
 import { isPro } from "../lib/plan.js"
