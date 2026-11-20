@@ -912,6 +912,19 @@ const en: Record<string, string> = {
   "운영비는 부가세를 더해 {name}원이에요.": "The operating fee is ₩{name} with VAT.",
   "실비는 견적에 적힌 금액만큼 단체와 업체에 직접 지급해요.": "You pay the costs listed in the quote to the groups and vendors directly.",
   "견적을 확인하고 운영비를 결제하면 학교 섭외를 시작해요.": "Check the quote and pay the operating fee, and we'll start finding schools.",
+  "운영비를 결제한 캠페인에만 후보를 담을 수 있어요.": "Candidates can be added only once the operating fee is paid.",
+  "후보 목록을 확인해 주세요.": "Check the candidate list.",
+  "후보는 100곳까지 담을 수 있어요.": "A campaign can hold up to 100 candidates.",
+  "같은 단체가 두 번 담겼어요.": "The same group is listed twice.",
+  "브랜드가 찾을 수 없는 단체예요.": "The brand can't find that group.",
+  "끝났거나 찾을 수 없는 행사예요.": "That event has ended or can't be found.",
+  "후보 메모는 100자까지예요.": "A candidate note can be up to 100 characters.",
+  "캠퍼스 캠페인 제안은 브랜드만 보낼 수 있어요.": "Only brands send campus campaign proposals.",
+  "섭외 중인 캠페인에서만 제안을 보낼 수 있어요.": "Proposals go out only while the campaign is finding schools.",
+  "이 캠페인의 후보가 아닌 단체예요.": "That group isn't a candidate for this campaign.",
+  "캠퍼스 캠페인 후보 학교가 준비됐어요": "Candidate schools for your campus campaign are ready",
+  "'{name}' 캠페인에 후보 학교 {count}곳을 담았어요.": "We picked {count} candidate schools for '{name}'.",
+  "후보를 보고 고른 학교에 제안을 보내 주세요.": "Look them over and send proposals to the ones you choose.",
 }
 
 export default en

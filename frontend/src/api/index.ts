@@ -1,7 +1,11 @@
 import type {
   Account,
+  AdminProgram,
+  AdminProgramGroup,
   Program,
   ProgramBrief,
+  ProgramCandidateDraft,
+  ProgramStatus,
   ProposalTermsDraft,
   HistoryItem,
   AccountContact,
@@ -286,7 +290,7 @@ export const api = {
   deletePost: (id: string) => request<void>(`/board/${encodeURIComponent(id)}`, { method: "DELETE" }),
   propose: (
     matchId: string,
-    draft: { eventId?: string; message?: string; postId?: string; terms?: ProposalTermsDraft } = {},
+    draft: { eventId?: string; message?: string; postId?: string; programId?: string; terms?: ProposalTermsDraft } = {},
   ) =>
     request<ProposalState>("/proposals", {
       method: "POST",
@@ -512,6 +516,15 @@ export const api = {
   program: (id: string) => request<{ program: Program }>(`/programs/${encodeURIComponent(id)}`),
   createProgram: (body: ProgramBrief) => request<{ program: Program }>("/programs", { method: "POST", body }),
   withdrawProgram: (id: string) => request<{ program: Program }>(`/programs/${encodeURIComponent(id)}/withdraw`, { method: "POST" }),
+  adminPrograms: (token: string) => request<{ programs: AdminProgram[] }>("/admin/programs", { headers: { "X-Admin-Token": token } }),
+  adminQuoteProgram: (token: string, id: string, body: { fee: number; costs: { label: string; amount: number }[]; note?: string }) =>
+    request<{ program: Program }>(`/admin/programs/${encodeURIComponent(id)}/quote`, { method: "PUT", body, headers: { "X-Admin-Token": token } }),
+  adminMoveProgram: (token: string, id: string, status: ProgramStatus, reason = "") =>
+    request<{ program: Program }>(`/admin/programs/${encodeURIComponent(id)}/status`, { method: "POST", body: { status, reason }, headers: { "X-Admin-Token": token } }),
+  adminProgramGroups: (token: string, id: string, q: string) =>
+    request<{ groups: AdminProgramGroup[] }>(`/admin/programs/${encodeURIComponent(id)}/groups?q=${encodeURIComponent(q)}`, { headers: { "X-Admin-Token": token } }),
+  adminProgramCandidates: (token: string, id: string, candidates: ProgramCandidateDraft[]) =>
+    request<{ program: Program }>(`/admin/programs/${encodeURIComponent(id)}/candidates`, { method: "PUT", body: { candidates }, headers: { "X-Admin-Token": token } }),
   savedSearches: () => request<{ searches: SavedSearch[] }>("/saved-searches"),
   saveSearch: (body: { name?: string; query?: string; industry?: string; kind?: string; school?: string }) =>
     request<{ search: SavedSearch }>("/saved-searches", { method: "POST", body }),

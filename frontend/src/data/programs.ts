@@ -1,4 +1,4 @@
-import type { Program, ProgramStatus } from "../types"
+import type { Program, ProgramSchoolState, ProgramStatus } from "../types"
 
 // 캠퍼스 캠페인의 단계를 보여 주는 말이다(값은 backend lib/programs.ts와 같다).
 // 견적이 나온 캠페인은 운영비 결제를 기다린다.
@@ -11,10 +11,23 @@ export const programStatusLabels: Record<ProgramStatus, string> = {
   취소: "취소됨",
 }
 
+// 캠페인 안에서 학교 하나가 있는 곳의 말이다(값은 backend lib/programs.ts의 schoolState와 같다).
+export const programSchoolLabels: Record<ProgramSchoolState, string> = {
+  후보: "후보",
+  대기: "답 기다리는 중",
+  수락: "수락, 계약 확인 전",
+  "계약 확인": "계약 확인",
+  "행사 완료": "행사 완료",
+  거절: "거절",
+  마감: "마감",
+  취소: "취소됨",
+}
+
 // 진행 막대에 놓는 단계 순서다. 취소는 막대에 없다.
 export const programSteps: ProgramStatus[] = ["접수", "견적", "섭외 중", "집행 중", "완료"]
 
-// 방문자와 데모 계정이 보는 예시다. 가상의 브랜드 캠페인이며 실제 견적이 아니다.
+// 방문자와 데모 계정이 보는 예시다. 가상의 브랜드 캠페인과 단체이며 실제 견적이 아니다.
+// 운영비를 낸 뒤 후보 학교에 제안을 보내는 단계다.
 export function exampleProgram(month: string): Program {
   return {
     id: "example",
@@ -29,7 +42,7 @@ export function exampleProgram(month: string): Program {
       audience: "1~2학년",
       asks: "부스 시음과 행사 SNS 게시 1회",
     },
-    status: "견적",
+    status: "섭외 중",
     quote: {
       fee: 1_500_000,
       costs: [
@@ -41,8 +54,14 @@ export function exampleProgram(month: string): Program {
       costTotal: 3_000_000,
       feeWithVat: 1_650_000,
     },
-    paidAt: null,
+    paidAt: `${month}-02T00:00:00.000Z`,
     transferRequested: false,
+    schools: [
+      { groupId: "example-a", name: "가온대 축제기획단", school: "가온대학교", event: { id: "example-a", name: "가온 봄 축제", date: `${month}-20` }, note: "축제 사흘, 하루 2,000명", state: "계약 확인", offerId: "example-a" },
+      { groupId: "example-b", name: "누리대 밴드 동아리", school: "누리대학교", event: { id: "example-b", name: "정기 공연", date: `${month}-24` }, state: "대기", offerId: "example-b" },
+      { groupId: "example-c", name: "다온대 학생회", school: "다온대학교", note: "새내기 행사 400명", state: "후보" },
+      { groupId: "example-d", name: "마루대 응원단", school: "마루대학교", state: "후보" },
+    ],
     createdAt: `${month}-01T00:00:00.000Z`,
     updatedAt: `${month}-01T00:00:00.000Z`,
   }

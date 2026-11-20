@@ -5,13 +5,13 @@ import { DemoPreview } from "../components/DemoPreview"
 import { PageIntro } from "../components/PageIntro"
 import { Pill } from "../components/Pill"
 import { Presence } from "../components/Presence"
-import { exampleProgram, programStatusLabels, programSteps } from "../data/programs"
+import { exampleProgram, programSchoolLabels, programStatusLabels, programSteps } from "../data/programs"
 import { regions } from "../data/universities"
 import { t, tc } from "../i18n"
-import { monthLabel, todayIso } from "../lib/date"
+import { formatDay, monthLabel, todayIso } from "../lib/date"
 import { fullWon } from "../lib/sponsorships"
 import { PaymentModal } from "../modals/PaymentModal"
-import type { Program, ProgramBrief } from "../types"
+import type { Program, ProgramBrief, ProgramSchool } from "../types"
 
 // 캠퍼스 캠페인(/programs, /programs/<id>): 브랜드가 여러 대학 행사에서 한 번에 집행할
 // 캠페인을 요청하고, 운영자의 견적을 보고 운영비를 결제하고, 진행 단계를 본다. 실비는
@@ -28,7 +28,14 @@ type Props = {
   onNotice: (message: string) => void
   onLogin: () => void
   onSignup: () => void
+  // 고른 후보 단체에 캠페인 제안을 보내는 폼을 연다(App의 일괄 제안, #402).
+  onPropose?: (groupIds: string[], programId: string) => void
+  // 제안을 보낸 뒤 늘어나 학교들의 상태를 다시 읽는다.
+  tick?: number
 }
+
+// 한 번에 제안을 보내는 단체의 수다(단체 찾기의 maxBulk와 같다).
+const maxPick = 10
 
 const thisMonth = () => todayIso().slice(0, 7)
 
@@ -236,7 +243,7 @@ function ProgramForm({ onDone }: { onDone: (program: Program) => void }) {
   )
 }
 
-function ProgramDetail({ id, sample, onBack, onNotice }: Props & { id: string }) {
+function ProgramDetail({ id, sample, onBack, onNotice, onPropose, tick }: Props & { id: string }) {
   const [program, setProgram] = useState<Program | null>(sample ? exampleProgram(thisMonth()) : null)
   const [failed, setFailed] = useState("")
   const [paying, setPaying] = useState(false)
@@ -245,7 +252,7 @@ function ProgramDetail({ id, sample, onBack, onNotice }: Props & { id: string })
   const load = useCallback(() => {
     if (sample) return
     api.program(id).then((result) => setProgram(result.program), (error: unknown) => setFailed(errorMessage(error)))
-  }, [id, sample])
+  }, [id, sample, tick]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(load, [load])
 
   if (!program) {
@@ -358,6 +365,14 @@ function ProgramDetail({ id, sample, onBack, onNotice }: Props & { id: string })
         </section>
       </div>
 
+      {(status === "섭외 중" || status === "집행 중" || program.schools.length > 0) && (
+        <ProgramSchools
+          canSend={!sample && (status === "섭외 중" || status === "집행 중") && Boolean(onPropose)}
+          onSend={(groupIds) => onPropose?.(groupIds, program.id)}
+          schools={program.schools}
+        />
+      )}
+
       {quote && (
         <Presence show={paying}>
           <PaymentModal
@@ -380,4 +395,79 @@ function ProgramDetail({ id, sample, onBack, onNotice }: Props & { id: string })
       )}
     </>
   )
+}
+
+// 캠페인의 학교들: 운영팀이 고른 후보와 보낸 제안이다. 브랜드는 후보를 골라 제안을 보내고,
+// 학교마다 기존 계약서와 측정이 이어진다.
+function ProgramSchools({ schools, canSend, onSend }: { schools: ProgramSchool[]; canSend: boolean; onSend: (groupIds: string[]) => void }) {
+  const [picked, setPicked] = useState<string[]>([])
+  const candidates = schools.filter((school) => school.state === "후보")
+  const live = picked.filter((id) => candidates.some((school) => school.groupId === id))
+  const toggle = (id: string) =>
+    setPicked((current) => (current.includes(id) ? current.filter((item) => item !== id) : current.length >= maxPick ? current : [...current, id]))
+  return (
+    <section className="programs-card programs-schools" aria-label={t("학교")}>
+      <h2>{t("학교 {count}곳", { count: schools.length })}</h2>
+      {schools.length === 0 ? (
+        <p className="programs-hint">{t("운영팀이 후보 학교를 고르고 있어요. 준비되면 메일로 알려 드려요.")}</p>
+      ) : (
+        <>
+          {canSend && candidates.length > 0 && (
+            <p className="programs-hint">{t("제안을 보낼 후보를 골라 주세요. 한 번에 {count}곳까지예요.", { count: maxPick })}</p>
+          )}
+          <ul className="programs-school-list">
+            {schools.map((school) => {
+              const pickable = canSend && school.state === "후보"
+              const body = (
+                <>
+                  <span className="programs-school-name">
+                    <strong>{school.name}</strong>
+                    <small>{school.school}</small>
+                  </span>
+                  {school.event && (
+                    <span className="programs-school-event">
+                      {school.event.name} · {formatDay(school.event.date)}
+                    </span>
+                  )}
+                  {school.note && <span className="programs-school-note">{school.note}</span>}
+                  <span className={`programs-school-state state-${programStateTone[school.state]}`}>{t(programSchoolLabels[school.state])}</span>
+                </>
+              )
+              return (
+                <li key={school.groupId}>
+                  {pickable ? (
+                    <label className="programs-school">
+                      <input checked={live.includes(school.groupId)} disabled={!live.includes(school.groupId) && live.length >= maxPick} onChange={() => toggle(school.groupId)} type="checkbox" />
+                      {body}
+                    </label>
+                  ) : (
+                    <div className="programs-school">{body}</div>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+          {canSend && candidates.length > 0 && (
+            <div className="programs-actions">
+              <Pill disabled={live.length === 0} onClick={() => onSend(live)}>
+                {live.length ? t("고른 {count}곳에 제안 보내기", { count: live.length }) : t("후보를 골라 주세요")}
+              </Pill>
+            </div>
+          )}
+        </>
+      )}
+    </section>
+  )
+}
+
+// 상태 칩의 색이다. 진행 중, 끝남, 멈춤으로 나눈다.
+const programStateTone: Record<ProgramSchool["state"], "wait" | "go" | "done" | "stop"> = {
+  후보: "wait",
+  대기: "wait",
+  수락: "go",
+  "계약 확인": "go",
+  "행사 완료": "done",
+  거절: "stop",
+  마감: "stop",
+  취소: "stop",
 }

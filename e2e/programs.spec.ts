@@ -49,3 +49,38 @@ test("a member brand requests a campus campaign, gets a quote and can withdraw b
   await expect(page.getByText("캠페인 요청을 거뒀어요.")).toBeVisible()
   await expect(page.getByText("취소된 캠페인이에요.")).toBeVisible()
 })
+
+test("a brand picks candidate schools the operators chose and proposes to them, and each school shows its progress", async ({ page, request }) => {
+  const admin = { "X-Admin-Token": "e2e-admin-token" }
+  const brand = await signUpMember(request, "브랜드", "e2e-source@source-soda.kr", "섭외 탄산수")
+  const group = await signUpMember(request, "학생단체", "e2e-source@syu.ac.kr", "섭외 밴드")
+  await request.put("/api/profile", { data: { intro: "캠퍼스에서 정기 공연을 여는 동아리예요.", offer: "관객 100명" }, headers: group.headers })
+  const today = new Date(Date.now() + 9 * 3600_000).toISOString().slice(0, 10)
+  expect((await request.post("/api/events", { data: { name: "섭외 시음 캠페인", date: today, people: "200명", types: ["제품"] }, headers: brand.headers })).status()).toBe(201)
+  const created = await request.post("/api/programs", {
+    data: { name: "섭외 시음", product: "탄산수", regions: [], from: today.slice(0, 7), to: today.slice(0, 7), schools: 1, perSchool: 100 },
+    headers: brand.headers,
+  })
+  const id = ((await created.json()) as { program: { id: string } }).program.id
+  expect((await request.put(`/api/admin/programs/${id}/quote`, { data: { fee: 100_000 }, headers: admin })).status()).toBe(200)
+  const order = (await (await request.post("/api/billing/orders", { data: { kind: "program", targetId: id }, headers: brand.headers })).json()) as { order: { id: string } }
+  expect((await request.post(`/api/admin/payments/${order.order.id}/paid`, { headers: admin })).status()).toBe(200)
+  const options = (await (await request.get(`/api/admin/programs/${id}/groups?q=${encodeURIComponent("섭외 밴드")}`, { headers: admin })).json()) as { groups: { id: string }[] }
+  expect(options.groups).toHaveLength(1)
+  const picked = await request.put(`/api/admin/programs/${id}/candidates`, { data: { candidates: [{ groupId: options.groups[0].id, note: "정기 공연 관객 100명" }] }, headers: admin })
+  expect(picked.status()).toBe(200)
+
+  await page.addInitScript((value) => localStorage.setItem("uniconnect-token", value), brand.token)
+  await page.goto(`/programs/${id}`)
+  const schools = page.getByRole("region", { name: "학교" })
+  await expect(schools).toContainText("정기 공연 관객 100명")
+  await expect(schools.getByRole("button", { name: "후보를 골라 주세요" })).toBeDisabled()
+  await schools.getByRole("checkbox").check()
+  await schools.getByRole("button", { name: "고른 1곳에 제안 보내기" }).click()
+  const dialog = page.getByRole("dialog")
+  await expect(dialog).toContainText("섭외 밴드")
+  await dialog.getByRole("button", { name: "제안 보내기", exact: true }).click()
+  await expect(page.getByText("1곳에 협찬 제안을 보냈어요.")).toBeVisible()
+  await expect(schools).toContainText("답 기다리는 중")
+  await expect(schools.getByRole("checkbox")).toHaveCount(0)
+})

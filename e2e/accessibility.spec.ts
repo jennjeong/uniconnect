@@ -128,7 +128,7 @@ test("the comparison of two brands has no critical or serious accessibility prob
 })
 
 // 토큰으로 콘솔을 연 뒤 운영자 콘솔의 모든 화면을 넓은 화면과 폰에서 본다.
-const consoleViews = ["overview", "insights", "members", "proposals", "operations", "live", "payments", "operators", "inquiries", "reports", "content", "errors", "notices", "log", "health", "system"]
+const consoleViews = ["overview", "insights", "members", "proposals", "operations", "programs", "live", "payments", "operators", "inquiries", "reports", "content", "errors", "notices", "log", "health", "system"]
 
 for (const width of [1280, 390]) {
   test(`the operators' console screens at ${width}px have no critical or serious accessibility problems`, async ({ page }) => {

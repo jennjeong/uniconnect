@@ -16460,6 +16460,143 @@ body.checkin-body {
   gap: 8px;
 }
 
+/* 캠페인의 학교들(#402): 후보를 골라 제안을 보내고, 학교마다 상태를 본다. */
+.programs-schools {
+  margin-top: 16px;
+}
+
+.programs-school-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.programs-school {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md, 14px);
+  background: var(--fill);
+}
+
+label.programs-school {
+  cursor: pointer;
+}
+
+.programs-school input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--point);
+}
+
+.programs-school-name {
+  display: grid;
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.programs-school-name small,
+.programs-school-event,
+.programs-school-note {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.programs-school-note {
+  flex-basis: 100%;
+}
+
+.programs-school-state {
+  margin-left: auto;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: 0.8125rem;
+  font-weight: var(--weight-label);
+  white-space: nowrap;
+}
+
+.programs-school-state.state-go {
+  background: var(--point);
+  color: var(--on-point);
+}
+
+.programs-school-state.state-done {
+  background: var(--goal-met);
+  color: var(--on-point);
+}
+
+.programs-school-state.state-stop {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--muted);
+}
+
+/* 콘솔의 캠퍼스 캠페인 화면. */
+.console-program-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 12px;
+}
+
+.console-program-list {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.console-program-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.console-program-list li em {
+  float: none;
+}
+
+.console-program-list input,
+.console-program-list select,
+.console-program-search input {
+  min-width: 0;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.875rem;
+}
+
+.console-program-list input {
+  flex: 1 1 160px;
+}
+
+.console-program-list button {
+  margin-left: auto;
+}
+
+.console-program-search {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.console-program-search input {
+  flex: 1;
+}
+
 @media (max-width: 720px) {
   .programs-cards,
   .programs-row {

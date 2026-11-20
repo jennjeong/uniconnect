@@ -6,10 +6,12 @@ import { withVat } from "../lib/billing.js"
 import { HttpError } from "../lib/errors.js"
 import {
   addProgram,
+  candidateOptions,
   findOwnProgram,
   moveProgram,
   ownPrograms,
   parseBrief,
+  parseCandidates,
   parseQuote,
   programsOf,
   programView,
@@ -121,5 +123,38 @@ adminProgramsRouter.post("/:id/status", async (req, res) => {
   moveProgram(database, program, status, text(req.body?.reason))
   logAdmin(database, "program-status", { kind: "program", id: program.id }, status)
   await saveDatabase()
+  res.json({ program: programView(database, program) })
+})
+
+// 후보로 담을 수 있는 단체다. 그 브랜드가 찾을 수 있는 회원 단체만 나온다.
+adminProgramsRouter.get("/:id/groups", async (req, res) => {
+  await requireAdmin(req)
+  const { database, program } = anyProgram(req.params.id)
+  res.json({ groups: candidateOptions(database, program, text(req.query.q)) })
+})
+
+// 후보 목록을 통째로 바꾼다. 새로 담긴 후보가 있으면 저장한 뒤 브랜드에게 알린다.
+adminProgramsRouter.put("/:id/candidates", async (req, res) => {
+  await requireAdmin(req)
+  const { database, program } = anyProgram(req.params.id)
+  const before = new Set((program.candidates ?? []).map((item) => item.groupId))
+  const candidates = parseCandidates(database, program, req.body)
+  const added = candidates.filter((item) => !before.has(item.groupId)).length
+  program.candidates = candidates
+  program.updatedAt = new Date().toISOString()
+  logAdmin(database, "program-candidates", { kind: "program", id: program.id }, String(candidates.length))
+  await saveDatabase()
+  if (added > 0) {
+    void notify(
+      database.accounts.find((account) => account.id === program.accountId),
+      "account",
+      "캠퍼스 캠페인 후보 학교가 준비됐어요",
+      [
+        `'${program.brief.name}' 캠페인에 후보 학교 ${added}곳을 담았어요.`,
+        "후보를 보고 고른 학교에 제안을 보내 주세요.",
+      ],
+      `/programs/${program.id}`,
+    )
+  }
   res.json({ program: programView(database, program) })
 })

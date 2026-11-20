@@ -10,6 +10,7 @@ import { notify } from "../lib/notices.js"
 import { createRateLimit, senderKey } from "../lib/rateLimit.js"
 import { statusOf } from "../lib/proposals.js"
 import { assertCanOffer } from "../lib/pro.js"
+import { programForOffer } from "../lib/programs.js"
 import { isOpen } from "./board.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -218,6 +219,9 @@ proposalsRouter.post("/", async (req, res) => {
     throw new HttpError(409, "마감됐거나 찾을 수 없는 모집 글이에요.")
   }
   const students = account.role === "학생단체"
+  // 캠퍼스 캠페인의 후보에게 보내는 제안이다(#402). 여느 제안과 같은 검사를 거친다.
+  const programId = text(req.body?.programId)
+  const program = programId ? programForOffer(database, account, programId, matchId) : undefined
   const note = text(req.body?.message)
   if (note.length > maxMessage) throw new HttpError(400, `메시지는 ${maxMessage}자 이하로 적어 주세요.`)
   const event = proposedEvent(account, text(req.body?.eventId))
@@ -247,8 +251,8 @@ proposalsRouter.post("/", async (req, res) => {
     )
 
   // 지원은 이미 대기 중인 것에 합쳐지지 않고 따로 도착해야 한다.
-  if (post && !send) throw new HttpError(409, "이 상대에게 보낸 제안이 이미 있어요. 받은 제안 · 보낸 제안에서 확인해 주세요.")
-  const applying = post ? { postId: post.id } : {}
+  if ((post || program) && !send) throw new HttpError(409, "이 상대에게 보낸 제안이 이미 있어요. 받은 제안 · 보낸 제안에서 확인해 주세요.")
+  const applying = { ...(post ? { postId: post.id } : {}), ...(program ? { programId: program.id } : {}) }
   const postLine = post ? [`모집 글: ${post.title}`] : []
 
   // 받는 쪽의 메일은 저장한 뒤에 보낸다. 저장이 실패해 제안이 되돌려졌는데 메일만 나가고,
