@@ -13,6 +13,15 @@ test("a visitor sees an example campus campaign with its quote", async ({ page }
   await expect(quote).toContainText("1,650,000원")
   await expect(quote).toContainText("uniconnect는 받지 않아요")
   await expect(page.getByRole("button", { name: "운영비 결제하기" })).toHaveCount(0)
+
+  // 통합 보고(#403): 합계와 학교별 결과, 같은 숫자의 CSV.
+  const results = page.getByRole("region", { name: "결과 보고" })
+  await expect(results).toContainText("32,609원")
+  await expect(results.getByRole("region", { name: "학교별 결과" })).toContainText("가온대 축제기획단")
+  const [download] = await Promise.all([page.waitForEvent("download"), results.getByRole("button", { name: "CSV 내려받기" }).click()])
+  expect(download.suggestedFilename()).toMatch(/^uniconnect-campaign-sample-.*\.csv$/)
+  const [pdf] = await Promise.all([page.waitForEvent("download"), results.getByRole("button", { name: "PDF 내려받기" }).click()])
+  expect(pdf.suggestedFilename()).toMatch(/\.pdf$/)
 })
 
 test("a member brand requests a campus campaign, gets a quote and can withdraw before paying", async ({ page, request }) => {

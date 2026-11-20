@@ -1642,6 +1642,47 @@ export type ProgramSchool = {
   offerId?: string
 }
 
+// 캠페인의 통합 보고(backend lib/programReport.ts, #403). 수치는 그 제안이 다룬 브랜드
+// 캠페인의 측정이며, sharedWith가 1보다 크면 그 학교들이 함께 낸 것이다.
+export type ProgramReportRow = {
+  groupId: string
+  name: string
+  school: string
+  campaignId: string
+  eventName: string
+  date: string
+  state: ProgramSchoolState
+  itemsDone: number
+  itemsTotal: number
+  proofs: number
+  sharedWith: number
+  scans: number
+  coupons: number
+  visits: number
+  sales: number
+  venue: number
+}
+
+export type ProgramReport = {
+  schools: ProgramReportRow[]
+  totals: {
+    sent: number
+    accepted: number
+    confirmed: number
+    finished: number
+    itemsDone: number
+    itemsTotal: number
+    proofs: number
+    scans: number
+    coupons: number
+    visits: number
+    sales: number
+    venue: number
+    cost: number
+    costPerVisit: number | null
+  }
+}
+
 // 콘솔이 보는 캠페인이다.
 export type AdminProgram = Program & { accountId: string; brandName: string }
 

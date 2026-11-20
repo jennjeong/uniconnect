@@ -5,6 +5,7 @@ import type {
   Program,
   ProgramBrief,
   ProgramCandidateDraft,
+  ProgramReport,
   ProgramStatus,
   ProposalTermsDraft,
   HistoryItem,
@@ -515,6 +516,7 @@ export const api = {
   programs: () => request<{ programs: Program[] }>("/programs"),
   program: (id: string) => request<{ program: Program }>(`/programs/${encodeURIComponent(id)}`),
   createProgram: (body: ProgramBrief) => request<{ program: Program }>("/programs", { method: "POST", body }),
+  programReport: (id: string) => request<{ report: ProgramReport }>(`/programs/${encodeURIComponent(id)}/report`),
   withdrawProgram: (id: string) => request<{ program: Program }>(`/programs/${encodeURIComponent(id)}/withdraw`, { method: "POST" }),
   adminPrograms: (token: string) => request<{ programs: AdminProgram[] }>("/admin/programs", { headers: { "X-Admin-Token": token } }),
   adminQuoteProgram: (token: string, id: string, body: { fee: number; costs: { label: string; amount: number }[]; note?: string }) =>

@@ -16538,6 +16538,91 @@ label.programs-school {
   color: var(--muted);
 }
 
+/* 캠페인의 통합 보고(#403): 합계 타일과 학교별 표. */
+.programs-results {
+  margin-top: 16px;
+}
+
+.programs-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.programs-kpis li {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  background: var(--fill);
+}
+
+.programs-kpis span,
+.programs-kpis small {
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.programs-kpis strong {
+  font-size: 1.4rem;
+  font-weight: var(--weight-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.programs-table-wrap {
+  overflow-x: auto;
+}
+
+.programs-table-wrap:focus-visible {
+  outline: 2px solid var(--point);
+  outline-offset: 2px;
+}
+
+.programs-report-table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.programs-report-table th,
+.programs-report-table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.programs-report-table thead th {
+  color: var(--muted);
+  font-weight: var(--weight-label);
+}
+
+.programs-report-table tbody th {
+  font-weight: var(--weight-label);
+}
+
+.programs-report-table td {
+  font-variant-numeric: tabular-nums;
+}
+
+.programs-report-table small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: var(--weight-body);
+}
+
+@media (max-width: 720px) {
+  .programs-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 /* 콘솔의 캠퍼스 캠페인 화면. */
 .console-program-actions {
   display: flex;

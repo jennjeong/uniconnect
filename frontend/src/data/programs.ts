@@ -1,4 +1,4 @@
-import type { Program, ProgramSchoolState, ProgramStatus } from "../types"
+import type { Program, ProgramReport, ProgramSchoolState, ProgramStatus } from "../types"
 
 // 캠퍼스 캠페인의 단계를 보여 주는 말이다(값은 backend lib/programs.ts와 같다).
 // 견적이 나온 캠페인은 운영비 결제를 기다린다.
@@ -57,12 +57,24 @@ export function exampleProgram(month: string): Program {
     paidAt: `${month}-02T00:00:00.000Z`,
     transferRequested: false,
     schools: [
-      { groupId: "example-a", name: "가온대 축제기획단", school: "가온대학교", event: { id: "example-a", name: "가온 봄 축제", date: `${month}-20` }, note: "축제 사흘, 하루 2,000명", state: "계약 확인", offerId: "example-a" },
-      { groupId: "example-b", name: "누리대 밴드 동아리", school: "누리대학교", event: { id: "example-b", name: "정기 공연", date: `${month}-24` }, state: "대기", offerId: "example-b" },
-      { groupId: "example-c", name: "다온대 학생회", school: "다온대학교", note: "새내기 행사 400명", state: "후보" },
+      { groupId: "example-a", name: "가온대 축제기획단", school: "가온대학교", event: { id: "example-a", name: "가온 봄 축제", date: `${month}-20` }, note: "축제 사흘, 하루 2,000명", state: "행사 완료", offerId: "example-a" },
+      { groupId: "example-b", name: "누리대 밴드 동아리", school: "누리대학교", event: { id: "example-b", name: "정기 공연", date: `${month}-24` }, state: "계약 확인", offerId: "example-b" },
+      { groupId: "example-c", name: "다온대 학생회", school: "다온대학교", note: "새내기 행사 400명", state: "대기", offerId: "example-c" },
       { groupId: "example-d", name: "마루대 응원단", school: "마루대학교", state: "후보" },
     ],
     createdAt: `${month}-01T00:00:00.000Z`,
     updatedAt: `${month}-01T00:00:00.000Z`,
+  }
+}
+
+// 예시 캠페인의 통합 보고다. 위 예시의 수락된 두 학교이며, 가상의 수치다.
+export function exampleProgramReport(month: string): ProgramReport {
+  const row = { itemsTotal: 3, sharedWith: 1 }
+  return {
+    schools: [
+      { ...row, groupId: "example-a", name: "가온대 축제기획단", school: "가온대학교", campaignId: "example-a", eventName: "가온 봄 축제 시음", date: `${month}-20`, state: "행사 완료", itemsDone: 3, proofs: 5, scans: 1240, coupons: 412, visits: 138, sales: 1_242_000, venue: 300 },
+      { ...row, groupId: "example-b", name: "누리대 밴드 동아리", school: "누리대학교", campaignId: "example-b", eventName: "정기 공연 시음", date: `${month}-24`, state: "계약 확인", itemsDone: 1, proofs: 1, scans: 0, coupons: 0, visits: 0, sales: 0, venue: 0 },
+    ],
+    totals: { sent: 3, accepted: 2, confirmed: 2, finished: 1, itemsDone: 4, itemsTotal: 6, proofs: 6, scans: 1240, coupons: 412, visits: 138, sales: 1_242_000, venue: 300, cost: 4_500_000, costPerVisit: 32_609 },
   }
 }
