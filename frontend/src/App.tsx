@@ -190,6 +190,9 @@ function App() {
   const [proposing, setProposing] = useState<Match | null>(null)
   // 일괄 제안: 제안 하나가 가는 단체들. 폼이 열려 있는 동안.
   const [proposingMany, setProposingMany] = useState<Match[] | null>(null)
+  // 일괄 제안이 캠퍼스 캠페인의 후보에게 가는 것이면 그 캠페인이다(#402).
+  const [proposingProgram, setProposingProgram] = useState<string | null>(null)
+  const [programTick, setProgramTick] = useState(0)
   // 신고하기나 차단하기를 누른 대상. 폼이 열려 있는 동안.
   const [safety, setSafety] = useState<{ mode: "report" | "block"; target: SafetyTarget } | null>(null)
   // 이 계정이 차단한 계정. 내 정보에서 쓴다.
@@ -977,6 +980,20 @@ function App() {
   const proposeMany = (targets: Match[]) => {
     track("contact_click", { method: "proposal", role })
     setProposingMany(targets)
+    setProposingProgram(null)
+    setActiveModal("propose-many")
+  }
+
+  // 캠퍼스 캠페인의 후보 단체에 일괄 제안을 보낸다. 단체 찾기에 보이는 단체만 고를 수 있다.
+  const proposeForProgram = (groupIds: string[], programId: string) => {
+    const targets = groups.filter((group) => groupIds.includes(group.id))
+    if (targets.length === 0) {
+      showNotice(t("단체 목록을 불러오지 못했어요. 잠시 뒤에 다시 시도해 주세요."))
+      return
+    }
+    track("contact_click", { method: "proposal", role })
+    setProposingMany(targets)
+    setProposingProgram(programId)
     setActiveModal("propose-many")
   }
 
@@ -989,7 +1006,13 @@ function App() {
     let sentCount = 0
     for (const target of proposingMany) {
       try {
-        applyProposals(await api.propose(target.id, { ...draft, message: draft.message.split("{상대}").join(target.name) }))
+        applyProposals(
+          await api.propose(target.id, {
+            ...draft,
+            ...(proposingProgram ? { programId: proposingProgram } : {}),
+            message: draft.message.split("{상대}").join(target.name),
+          }),
+        )
         sentCount += 1
         track("generate_lead", { method: "proposal", role })
       } catch (error) {
@@ -1003,6 +1026,7 @@ function App() {
     }
     // 서버가 준 사유로 폼에 보여 준다.
     if (sentCount === 0) throw new ApiError(400, failed.join(" · "))
+    if (proposingProgram) setProgramTick((tick) => tick + 1)
     showNotice(
       failed.length
         ? t("{sent}곳에 보냈고 {failed}곳은 보내지 못했어요. {reasons}", { sent: sentCount, failed: failed.length, reasons: failed.join(" · ") })
@@ -1562,6 +1586,8 @@ function App() {
           onNotice={showNotice}
           onLogin={() => openAuth("login")}
           onSignup={() => openAuth("signup")}
+          onPropose={member ? proposeForProgram : undefined}
+          tick={programTick}
         />
       )
     }

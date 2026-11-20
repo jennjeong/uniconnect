@@ -446,6 +446,8 @@ export type SponsorOffer = {
   message: string
   // 게시판 글에서 왔다면 그 지원 대상인 단체의 글이다.
   postId?: string
+  // 캠퍼스 캠페인의 후보로 보낸 제안이면 그 캠페인이다(lib/programs.ts, #402).
+  programId?: string
   terms?: ProposalTerms
   status: RequestStatus
   createdAt: string
@@ -1167,6 +1169,7 @@ export type AdminAction =
   | "announcement-ended"
   | "program-quoted"
   | "program-status"
+  | "program-candidates"
 
 // 회원에 대한 운영자 메모로, 그 신고와 질문을 처리할 때 쓴다.
 export type AdminNote = { text: string; at: string }
@@ -1259,6 +1262,21 @@ export type Program = {
   paidAt?: string
   // 취소 사유이며, 브랜드가 취소했으면 비어 있다.
   cancelReason?: string
+  // 운영자가 고른 후보 단체와 그 행사다. 브랜드가 골라 제안을 보낸다(#402).
+  candidates?: ProgramCandidate[]
   createdAt: string
   updatedAt: string
 }
+
+export type ProgramCandidate = {
+  // 단체의 리스팅이다.
+  groupId: string
+  // 후보로 본 그 단체의 다가오는 행사다.
+  eventId?: string
+  // 운영자가 브랜드에게 남기는 한 줄이다.
+  note?: string
+  addedAt: string
+}
+
+// 캠페인 안에서 학교 하나가 있는 곳이다. 제안과 계약서에서 매번 계산한다.
+export type ProgramSchoolState = "후보" | "대기" | "수락" | "계약 확인" | "행사 완료" | "거절" | "마감" | "취소"

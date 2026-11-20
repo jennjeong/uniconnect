@@ -1,9 +1,25 @@
 import { randomUUID } from "node:crypto"
 
-import type { Account, Database, Payment, Program, ProgramBrief, ProgramCost, ProgramQuote, ProgramStatus } from "../types.js"
+import type {
+  Account,
+  Database,
+  Payment,
+  Program,
+  ProgramBrief,
+  ProgramCandidate,
+  ProgramCost,
+  ProgramQuote,
+  ProgramSchoolState,
+  ProgramStatus,
+  SponsorOffer,
+} from "../types.js"
+import { contractState } from "./agreements.js"
 import { paymentsOf, sell, withVat } from "./billing.js"
+import { listedTo, shownTo } from "./catalog.js"
 import { todayInKorea } from "./dates.js"
 import { HttpError } from "./errors.js"
+import { ownerOf } from "./owners.js"
+import { statusOf } from "./proposals.js"
 import { text } from "./validation.js"
 
 // 캠퍼스 캠페인(#400): 브랜드가 여러 대학 행사에서 한 번에 집행하고 결과를 받는 상품이다.
@@ -22,6 +38,8 @@ export const programLimits = {
   costs: 10,
   // 운영비(부가세 전)의 범위다.
   minFee: 10_000,
+  // 운영자가 한 캠페인에 담는 후보 단체의 수다.
+  candidates: 100,
   maxFee: 100_000_000,
   maxAmount: 1_000_000_000,
 }
@@ -162,6 +180,123 @@ export function moveProgram(database: Database, program: Program, status: Progra
   program.updatedAt = now.toISOString()
 }
 
+// 후보를 담고 제안을 보내는 단계다. 운영비를 낸 뒤부터 끝나기 전까지다.
+const sourcing = (program: Program) => program.status === "섭외 중" || program.status === "집행 중"
+
+// 그 브랜드에게 보이는, 받은편지함이 있는 단체다. 운영자도 브랜드가 찾을 수 있는 단체만 담는다.
+function reachableGroup(database: Database, brand: Account, groupId: string) {
+  const listing = database.groups.find((item) => item.id === groupId)
+  const owner = ownerOf(database, "groups", groupId)
+  return listing && owner && listedTo(database, "groups", listing, brand) ? { listing, owner } : undefined
+}
+
+// 단체의 끝나지 않은 행사다.
+const upcomingEventsOf = (database: Database, accountId: string, today = todayInKorea()) =>
+  (database.events[accountId] ?? []).filter((event) => (event.endDate ?? event.date) >= today).sort((a, b) => a.date.localeCompare(b.date))
+
+// 콘솔에서 후보를 고를 때 보는, 그 브랜드가 찾을 수 있는 단체와 다가오는 행사다.
+export function candidateOptions(database: Database, program: Program, query: string) {
+  const brand = database.accounts.find((account) => account.id === program.accountId)
+  if (!brand) return []
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean)
+  return database.groups
+    .flatMap((listing) => {
+      const found = reachableGroup(database, brand, listing.id)
+      if (!found) return []
+      const haystack = `${listing.name} ${listing.school ?? ""}`.toLowerCase()
+      if (!words.every((word) => haystack.includes(word))) return []
+      const events = upcomingEventsOf(database, found.owner.id).map((event) => ({ id: event.id, name: event.name, date: event.date, people: event.people }))
+      return [{ id: listing.id, name: listing.name, school: listing.school ?? "", events }]
+    })
+    .slice(0, 30)
+}
+
+// 운영자가 고른 후보 목록을 확인한다. 이미 담긴 후보는 담은 때를 지킨다.
+export function parseCandidates(database: Database, program: Program, body: unknown, now = new Date()): ProgramCandidate[] {
+  if (!sourcing(program)) throw new HttpError(409, "운영비를 결제한 캠페인에만 후보를 담을 수 있어요.")
+  const brand = database.accounts.find((account) => account.id === program.accountId)
+  if (!brand) throw new HttpError(404, "캠페인을 찾을 수 없어요.")
+  const raw = (body as { candidates?: unknown } | null)?.candidates
+  if (!Array.isArray(raw)) throw new HttpError(400, "후보 목록을 확인해 주세요.")
+  if (raw.length > programLimits.candidates) throw new HttpError(400, "후보는 100곳까지 담을 수 있어요.")
+  const before = new Map((program.candidates ?? []).map((item) => [item.groupId, item]))
+  const seen = new Set<string>()
+  return raw.map((item) => {
+    const row = (item ?? {}) as Record<string, unknown>
+    const groupId = text(row.groupId)
+    if (seen.has(groupId)) throw new HttpError(400, "같은 단체가 두 번 담겼어요.")
+    seen.add(groupId)
+    const found = reachableGroup(database, brand, groupId)
+    if (!found) throw new HttpError(404, "브랜드가 찾을 수 없는 단체예요.")
+    const eventId = text(row.eventId)
+    if (eventId && !upcomingEventsOf(database, found.owner.id).some((event) => event.id === eventId)) {
+      throw new HttpError(409, "끝났거나 찾을 수 없는 행사예요.")
+    }
+    const note = limited(row.note, 100, "후보 메모는 100자까지예요.")
+    return {
+      groupId,
+      ...(eventId ? { eventId } : {}),
+      ...(note ? { note } : {}),
+      addedAt: before.get(groupId)?.addedAt ?? now.toISOString(),
+    }
+  })
+}
+
+// 브랜드가 캠페인 후보에게 제안을 보낼 수 있는지 확인하고 그 캠페인을 준다.
+export function programForOffer(database: Database, account: Account, programId: string, groupId: string) {
+  if (account.role !== "브랜드") throw new HttpError(400, "캠퍼스 캠페인 제안은 브랜드만 보낼 수 있어요.")
+  const program = findOwnProgram(database, account.id, programId)
+  if (!sourcing(program)) throw new HttpError(409, "섭외 중인 캠페인에서만 제안을 보낼 수 있어요.")
+  if (!(program.candidates ?? []).some((item) => item.groupId === groupId)) throw new HttpError(409, "이 캠페인의 후보가 아닌 단체예요.")
+  return program
+}
+
+// 캠페인으로 보낸 제안이다. 최신이 마지막이다.
+const programOffers = (database: Database, program: Program) =>
+  database.offers.filter((offer) => offer.programId === program.id && offer.fromAccountId === program.accountId)
+
+// 제안과 계약서에서 학교 하나의 상태를 계산한다.
+function schoolState(database: Database, program: Program, offer: SponsorOffer | undefined, today: string): ProgramSchoolState {
+  if (!offer) return "후보"
+  const status = statusOf(database, offer, today)
+  if (status === "검토 중") return "대기"
+  if (status === "거절") return "거절"
+  if (status === "마감") return "마감"
+  if (status === "취소됨") return "취소"
+  const group = Boolean(ownerOf(database, "groups", offer.groupId))
+  if (contractState(database, offer.id, { group, brand: true }) !== "confirmed") return "수락"
+  const campaign = (database.events[program.accountId] ?? []).find((event) => event.id === offer.campaignId)
+  const lastDay = campaign ? campaign.endDate ?? campaign.date : offer.campaignDate
+  return lastDay && lastDay < today ? "행사 완료" : "계약 확인"
+}
+
+// 캠페인의 학교들이다. 후보와 캠페인으로 보낸 제안을 합친다. 브랜드에게는 지금 보이는 단체만
+// 후보로 남기고(차단이나 숨김), 이미 보낸 제안은 그대로 보인다.
+export function programSchools(database: Database, program: Program, today = todayInKorea()) {
+  const brand = database.accounts.find((account) => account.id === program.accountId)
+  const offers = programOffers(database, program)
+  const ids = [...new Set([...(program.candidates ?? []).map((item) => item.groupId), ...offers.map((offer) => offer.groupId)])]
+  return ids.flatMap((groupId) => {
+    const listing = database.groups.find((item) => item.id === groupId)
+    const offer = offers.filter((item) => item.groupId === groupId).at(-1)
+    if (!listing || (!offer && !(brand && shownTo(database, "groups", listing, brand)))) return []
+    const candidate = program.candidates?.find((item) => item.groupId === groupId)
+    const owner = ownerOf(database, "groups", groupId)
+    const event = candidate?.eventId && owner ? (database.events[owner.id] ?? []).find((item) => item.id === candidate.eventId) : undefined
+    return [
+      {
+        groupId,
+        name: listing.name,
+        school: listing.school ?? "",
+        ...(event ? { event: { id: event.id, name: event.name, date: event.date } } : {}),
+        ...(candidate?.note ? { note: candidate.note } : {}),
+        state: schoolState(database, program, offer, today),
+        ...(offer ? { offerId: offer.id } : {}),
+      },
+    ]
+  })
+}
+
 // 브랜드와 콘솔이 보는 캠페인이다. 실비 합계와 결제할 금액(부가세 포함)을 더한다.
 export function programView(database: Database, program: Program) {
   const quote = program.quote
@@ -177,6 +312,7 @@ export function programView(database: Database, program: Program) {
     // 계좌이체를 요청해 운영자 확인을 기다린다.
     transferRequested: Boolean(pending?.transferRequestedAt),
     ...(program.cancelReason ? { cancelReason: program.cancelReason } : {}),
+    schools: programSchools(database, program),
     createdAt: program.createdAt,
     updatedAt: program.updatedAt,
   }

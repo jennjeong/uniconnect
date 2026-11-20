@@ -9570,3 +9570,79 @@ test("a brand asks for a campus campaign, the operators quote it and paying the 
   // 운영비 결제 기록은 남는다.
   assert.ok(paymentsOf(getDatabase()).some((item) => item.kind === "program" && item.accountId === accountId))
 })
+
+test("an operator picks candidate groups for a paid campus campaign, and the brand's proposals to them are tracked per school", async () => {
+  const { markPaid, paymentsOf } = await import("./lib/billing.js")
+  const { todayInKorea } = await import("./lib/dates.js")
+  const { config: settings } = await import("./config.js")
+  const { token: brand } = await listedMember("source@source-brand.kr", "source-pass-1!", "브랜드")
+  const { token: first, listingId: firstId } = await listedMember("source@syu.ac.kr", "source-pass-1!", "학생단체")
+  const { listingId: secondId } = await listedMember("source2@syu.ac.kr", "source-pass-1!", "학생단체")
+  const { listingId: outsiderId } = await listedMember("source3@syu.ac.kr", "source-pass-1!", "학생단체")
+  const today = todayInKorea()
+  const groupEvent = (await call("POST", "/events", { name: "가을 축제", date: today, people: "300명", types: ["제품"] }, first)).data
+  const groupEventId = (groupEvent.event ?? groupEvent.events?.at(-1))?.id as string
+  assert.ok(groupEventId, JSON.stringify(groupEvent))
+  assert.equal((await call("POST", "/events", { name: "시음 캠페인", date: today, people: "300명", types: ["제품"] }, brand)).status, 201)
+  const brief = { name: "가을 시음", product: "탄산수", regions: [], from: today.slice(0, 7), to: today.slice(0, 7), schools: 2, perSchool: 100 }
+  const id = (await call("POST", "/programs", brief, brand)).data.program.id as string
+
+  const savedToken = settings.adminToken
+  settings.adminToken = "test-admin-token"
+  const admin = async (method: string, path: string, body?: unknown) => {
+    const response = await fetch(`${baseUrl}/admin/programs${path}`, { method, headers: { "X-Admin-Token": "test-admin-token", "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined })
+    return { status: response.status, data: (await response.json().catch(() => null)) as { groups: { id: string; events: { id: string }[] }[] } }
+  }
+  try {
+    // 결제 전에는 후보를 담을 수 없다.
+    assert.equal((await admin("PUT", `/${id}/candidates`, { candidates: [{ groupId: firstId }] })).status, 409)
+    await admin("PUT", `/${id}/quote`, { fee: 100_000 })
+    const order = await call("POST", "/billing/orders", { kind: "program", targetId: id }, brand)
+    markPaid(getDatabase(), paymentsOf(getDatabase()).find((item) => item.id === order.data.order.id)!, { method: "transfer" })
+
+    // 콘솔은 그 브랜드가 찾을 수 있는 회원 단체와 다가오는 행사를 본다. 예시 단체는 없다.
+    // 결과는 30곳까지라, 이름으로 찾는다.
+    const firstName = getDatabase().groups.find((item) => item.id === firstId)!.name
+    const found = (await admin("GET", `/${id}/groups?q=${encodeURIComponent(firstName)}`)).data.groups
+    assert.ok(found.some((item) => item.id === firstId && item.events.some((event) => event.id === groupEventId)))
+    const options = (await admin("GET", `/${id}/groups?q=`)).data.groups
+    assert.ok(options.length <= 30)
+    assert.ok(!options.some((item) => getDatabase().groups.find((group) => group.id === item.id && !getDatabase().accounts.some((account) => account.groupId === group.id))))
+    assert.equal((await admin("PUT", `/${id}/candidates`, { candidates: [{ groupId: firstId }, { groupId: firstId }] })).status, 400)
+    assert.equal((await admin("PUT", `/${id}/candidates`, { candidates: [{ groupId: firstId, eventId: "nope" }] })).status, 409)
+    const picked = await admin("PUT", `/${id}/candidates`, { candidates: [{ groupId: firstId, eventId: groupEventId, note: "300명 축제" }, { groupId: secondId }] })
+    assert.equal(picked.status, 200, JSON.stringify(picked.data))
+  } finally {
+    settings.adminToken = savedToken
+  }
+  const schools = async () => (await call("GET", `/programs/${id}`, undefined, brand)).data.program.schools as { groupId: string; state: string; event?: { id: string } }[]
+  const listed = await schools()
+  assert.deepEqual(listed.map((item) => [item.groupId, item.state]), [[firstId, "후보"], [secondId, "후보"]])
+  assert.equal(listed[0].event?.id, groupEventId)
+
+  // 후보가 아닌 단체, 남의 캠페인, 데모 계정은 캠페인 제안을 못 보낸다.
+  assert.equal((await call("POST", "/proposals", { matchId: outsiderId, programId: id }, brand)).status, 409)
+  assert.equal((await call("POST", "/proposals", { matchId: firstId, programId: "nope" }, brand)).status, 404)
+  const sent = await call("POST", "/proposals", { matchId: firstId, programId: id, message: "함께해요" }, brand)
+  assert.equal(sent.status, 201, JSON.stringify(sent.data))
+  // 기다리는 제안이 있으면 다시 보내지 않는다(기존 검사 그대로).
+  assert.equal((await call("POST", "/proposals", { matchId: firstId, programId: id }, brand)).status, 409)
+  const offer = getDatabase().offers.find((item) => item.programId === id)!
+  assert.equal(offer.groupId, firstId)
+  assert.deepEqual((await schools()).map((item) => item.state), ["대기", "후보"])
+
+  // 수락, 양쪽 확인, 행사가 지나면 학교의 상태가 따라간다.
+  assert.equal((await call("POST", `/offers/${offer.id}/accept`, undefined, first)).status, 200)
+  assert.equal((await schools())[0].state, "수락")
+  await call("GET", `/agreements/${offer.id}`, undefined, brand)
+  for (const token of [brand, first]) {
+    const confirmed = await call("POST", `/agreements/${offer.id}/confirm`, undefined, token)
+    assert.equal(confirmed.status, 200, JSON.stringify(confirmed.data))
+  }
+  assert.equal((await schools())[0].state, "계약 확인")
+  const brandId = getDatabase().accounts.find((item) => item.email === "source@source-brand.kr")!.id
+  const campaign = getDatabase().events[brandId].find((item) => item.id === offer.campaignId)!
+  campaign.date = "2020-01-01"
+  assert.equal((await schools())[0].state, "행사 완료")
+  campaign.date = today
+})

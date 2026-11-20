@@ -1623,6 +1623,29 @@ export type Program = {
   paidAt: string | null
   transferRequested: boolean
   cancelReason?: string
+  // 후보와 캠페인으로 보낸 제안을 합친 학교들이다(#402).
+  schools: ProgramSchool[]
   createdAt: string
   updatedAt: string
 }
+
+// 캠페인 안에서 학교 하나가 있는 곳이다. 서버가 제안과 계약서에서 계산한다.
+export type ProgramSchoolState = "후보" | "대기" | "수락" | "계약 확인" | "행사 완료" | "거절" | "마감" | "취소"
+
+export type ProgramSchool = {
+  groupId: string
+  name: string
+  school: string
+  event?: { id: string; name: string; date: string }
+  note?: string
+  state: ProgramSchoolState
+  offerId?: string
+}
+
+// 콘솔이 보는 캠페인이다.
+export type AdminProgram = Program & { accountId: string; brandName: string }
+
+// 콘솔에서 후보로 담을 수 있는 단체와 다가오는 행사다.
+export type AdminProgramGroup = { id: string; name: string; school: string; events: { id: string; name: string; date: string; people: string }[] }
+
+export type ProgramCandidateDraft = { groupId: string; eventId?: string; note?: string }

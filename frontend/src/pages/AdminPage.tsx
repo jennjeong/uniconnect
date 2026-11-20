@@ -15,6 +15,7 @@ import { fullWon } from "../lib/sponsorships"
 import { useNotice } from "../hooks/useNotice"
 import { Members } from "./AdminMembers"
 import { Approvals, Content, Disputes, Insights, Live, Operations, ProposalDrawer, RevenuePanel, SystemPanel } from "./AdminMore"
+import { Programs } from "./AdminPrograms"
 import {
   ActivityLog,
   CsvButton,
@@ -453,6 +454,7 @@ type Section =
   | "members"
   | "proposals"
   | "operations"
+  | "programs"
   | "live"
   | "payments"
   | "approvals"
@@ -473,6 +475,7 @@ const sections: Section[] = [
   "members",
   "proposals",
   "operations",
+  "programs",
   "live",
   "payments",
   "approvals",
@@ -517,6 +520,7 @@ const sectionInfo: { key: Section; label: string; icon: IconName; group: (typeof
   { key: "members", label: "회원", icon: "users", group: "메뉴" },
   { key: "proposals", label: "제안 · 협찬", icon: "send", group: "메뉴" },
   { key: "operations", label: "협찬 운영", icon: "link", group: "메뉴" },
+  { key: "programs", label: "캠퍼스 캠페인", icon: "send", group: "메뉴" },
   { key: "live", label: "현장", icon: "scan", group: "메뉴" },
   { key: "payments", label: "결제 · 매출", icon: "won", group: "메뉴" },
   { key: "approvals", label: "가입 · 보상 승인", icon: "check", group: "지원" },
@@ -674,6 +678,7 @@ function Overview({ data, onGo }: { data: AdminOverview; onGo: (section: Section
     { label: t("확인할 계좌 입금"), count: attention.transfers, go: "payments" as Section, icon: "won" as IconName },
     { label: t("승인할 친구 초대 보상"), count: attention.referrals, go: "approvals" as Section, icon: "check" as IconName },
     { label: t("7일 넘게 답 없는 제안"), count: attention.stale, go: "operations" as Section, icon: "send" as IconName },
+    { label: t("견적을 기다리는 캠페인"), count: attention.programs ?? 0, go: "programs" as Section, icon: "won" as IconName },
     { label: t("취소 요청된 계약서"), count: attention.cancels, go: "operations" as Section, icon: "file" as IconName },
     { label: t("결론을 기다리는 분쟁"), count: attention.disputes ?? 0, go: "disputes" as Section, icon: "file" as IconName },
     { label: t("현장 이상 신호"), count: attention.alerts, go: "live" as Section, icon: "scan" as IconName },
@@ -1330,6 +1335,7 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
     payments: payments.filter((payment) => payment.status === "pending").length,
     operations: overview.attention.stale + overview.attention.cancels,
     live: overview.attention.alerts,
+    programs: overview.attention.programs ?? 0,
     disputes: overview.attention.disputes ?? 0,
   }
   const current = sectionInfo.find((item) => item.key === section)!
@@ -1637,6 +1643,8 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
         {section === "insights" && <Insights onNotice={onNotice} token={token} />}
 
         {section === "operations" && <Operations onNotice={onNotice} token={token} />}
+
+        {section === "programs" && <Programs onNotice={onNotice} token={token} />}
 
         {section === "live" && <Live onNotice={onNotice} token={token} />}
 
