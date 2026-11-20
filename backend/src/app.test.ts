@@ -9645,4 +9645,17 @@ test("an operator picks candidate groups for a paid campus campaign, and the bra
   campaign.date = "2020-01-01"
   assert.equal((await schools())[0].state, "행사 완료")
   campaign.date = today
+
+  // 통합 보고(#403): 수락된 학교의 이행, 증빙, 그 협찬 몫의 측정과 방문 1건당 비용이다.
+  const measurement = getDatabase().measurements.find((item) => item.eventId === offer.campaignId)!
+  Object.assign(measurement.metrics, { scans: 30, coupons: 8, visits: 4, samples: 20 })
+  const item = getDatabase().agreements.find((entry) => entry.id === offer.id)!.items.find((entry) => entry.side === "group")!
+  Object.assign(item, { doneAt: new Date().toISOString(), links: ["https://example.com/post"] })
+  const report = (await call("GET", `/programs/${id}/report`, undefined, brand)).data.report
+  assert.equal(report.schools.length, 1)
+  assert.deepEqual([report.schools[0].coupons, report.schools[0].visits, report.schools[0].venue, report.schools[0].itemsDone, report.schools[0].proofs, report.schools[0].sharedWith], [8, 4, 20, 1, 1, 1])
+  assert.deepEqual([report.totals.sent, report.totals.accepted, report.totals.confirmed, report.totals.scans], [1, 1, 1, 30])
+  // 운영비 10만 원(실비 없음)을 방문 4건으로 나눈다.
+  assert.equal(report.totals.costPerVisit, 25_000)
+  assert.equal((await call("GET", `/programs/${id}/report`, undefined, first)).status, 403)
 })

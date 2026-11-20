@@ -19,6 +19,7 @@ import {
   withdrawProgram,
 } from "../lib/programs.js"
 import { notify } from "../lib/notices.js"
+import { programReport } from "../lib/programReport.js"
 import { isDemoAccount } from "../lib/reviews.js"
 import { text } from "../lib/validation.js"
 import { writeRouter } from "../middleware/retrying.js"
@@ -57,6 +58,13 @@ programsRouter.get("/:id", (req, res) => {
   const account = brandOnly(req)
   const database = getDatabase()
   res.json({ program: programView(database, findOwnProgram(database, account.id, req.params.id)) })
+})
+
+// 캠페인의 통합 보고다(#403). 수락된 학교의 이행과 측정을 모은다.
+programsRouter.get("/:id/report", (req, res) => {
+  const account = brandOnly(req)
+  const database = getDatabase()
+  res.json({ report: programReport(database, findOwnProgram(database, account.id, req.params.id)) })
 })
 
 // 결제 전에 거둔다.

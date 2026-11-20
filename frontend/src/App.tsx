@@ -1587,6 +1587,7 @@ function App() {
           onLogin={() => openAuth("login")}
           onSignup={() => openAuth("signup")}
           onPropose={member ? proposeForProgram : undefined}
+          author={account?.name ?? t("예시 브랜드")}
           tick={programTick}
         />
       )

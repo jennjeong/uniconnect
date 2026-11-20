@@ -1,17 +1,20 @@
-import { useCallback, useEffect, useState } from "react"
+import { lazy, Suspense, useCallback, useEffect, useState } from "react"
 
 import { api, errorMessage } from "../api"
 import { DemoPreview } from "../components/DemoPreview"
 import { PageIntro } from "../components/PageIntro"
 import { Pill } from "../components/Pill"
 import { Presence } from "../components/Presence"
-import { exampleProgram, programSchoolLabels, programStatusLabels, programSteps } from "../data/programs"
+import { exampleProgram, exampleProgramReport, programSchoolLabels, programStatusLabels, programSteps } from "../data/programs"
 import { regions } from "../data/universities"
 import { t, tc } from "../i18n"
 import { formatDay, monthLabel, todayIso } from "../lib/date"
+import { saveFile } from "../lib/download"
+import { formatWon } from "../lib/kpis"
+import { programReportCsv } from "../lib/programReport"
 import { fullWon } from "../lib/sponsorships"
 import { PaymentModal } from "../modals/PaymentModal"
-import type { Program, ProgramBrief, ProgramSchool } from "../types"
+import type { Program, ProgramBrief, ProgramReport, ProgramSchool } from "../types"
 
 // 캠퍼스 캠페인(/programs, /programs/<id>): 브랜드가 여러 대학 행사에서 한 번에 집행할
 // 캠페인을 요청하고, 운영자의 견적을 보고 운영비를 결제하고, 진행 단계를 본다. 실비는
@@ -32,7 +35,11 @@ type Props = {
   onPropose?: (groupIds: string[], programId: string) => void
   // 제안을 보낸 뒤 늘어나 학교들의 상태를 다시 읽는다.
   tick?: number
+  // PDF 보고서에 적는 작성자(브랜드 이름)다.
+  author: string
 }
+
+const ProgramReportExport = lazy(() => import("../report/ProgramReportExport").then((module) => ({ default: module.ProgramReportExport })))
 
 // 한 번에 제안을 보내는 단체의 수다(단체 찾기의 maxBulk와 같다).
 const maxPick = 10
@@ -243,7 +250,7 @@ function ProgramForm({ onDone }: { onDone: (program: Program) => void }) {
   )
 }
 
-function ProgramDetail({ id, sample, onBack, onNotice, onPropose, tick }: Props & { id: string }) {
+function ProgramDetail({ id, sample, onBack, onNotice, onPropose, tick, author }: Props & { id: string }) {
   const [program, setProgram] = useState<Program | null>(sample ? exampleProgram(thisMonth()) : null)
   const [failed, setFailed] = useState("")
   const [paying, setPaying] = useState(false)
@@ -373,6 +380,10 @@ function ProgramDetail({ id, sample, onBack, onNotice, onPropose, tick }: Props 
         />
       )}
 
+      {program.schools.some((school) => reported.includes(school.state)) && (
+        <ProgramResults author={author} key={`${program.id}-${tick ?? 0}`} onNotice={onNotice} program={program} sample={sample} />
+      )}
+
       {quote && (
         <Presence show={paying}>
           <PaymentModal
@@ -470,4 +481,114 @@ const programStateTone: Record<ProgramSchool["state"], "wait" | "go" | "done" | 
   거절: "stop",
   마감: "stop",
   취소: "stop",
+}
+
+// 결과를 보고하는 학교의 상태다(backend lib/programReport.ts와 같다).
+const reported: ProgramSchool["state"][] = ["수락", "계약 확인", "행사 완료"]
+
+// 캠페인의 통합 보고(#403): 합계, 학교별 이행과 측정, CSV와 PDF. 셋은 같은 보고에서 나온다.
+function ProgramResults({ program, sample, author, onNotice }: { program: Program; sample: boolean; author: string; onNotice: (message: string) => void }) {
+  const [report, setReport] = useState<ProgramReport | null>(sample ? exampleProgramReport(program.brief.from) : null)
+  const [failed, setFailed] = useState("")
+  const [exporting, setExporting] = useState(false)
+  useEffect(() => {
+    if (sample) return
+    api.programReport(program.id).then((result) => setReport(result.report), (error: unknown) => setFailed(errorMessage(error)))
+  }, [program.id, sample])
+  const done = useCallback(
+    (failedExport: boolean) => {
+      setExporting(false)
+      if (failedExport) onNotice(t("PDF를 만들지 못했어요. 잠시 뒤에 다시 시도해 주세요."))
+    },
+    [onNotice],
+  )
+
+  if (!report) {
+    return (
+      <section className="programs-card programs-results" aria-label={t("결과 보고")}>
+        <h2>{t("결과 보고")}</h2>
+        <p className="programs-hint">{failed || t("불러오고 있어요…")}</p>
+      </section>
+    )
+  }
+  const { totals } = report
+  const shared = report.schools.some((row) => row.sharedWith > 1)
+  const tiles = [
+    { label: t("계약한 학교"), value: t("{count}곳", { count: totals.confirmed }), note: t("제안 {sent}곳 · 수락 {accepted}곳 · 행사 완료 {finished}곳", { sent: totals.sent, accepted: totals.accepted, finished: totals.finished }) },
+    { label: t("매장 방문"), value: t("{visits}명", { visits: totals.visits.toLocaleString() }), note: t("쿠폰 {coupons}장 · QR {scans}회", { coupons: totals.coupons.toLocaleString(), scans: totals.scans.toLocaleString() }) },
+    { label: t("방문 1건당 비용"), value: totals.costPerVisit === null ? "—" : formatWon(totals.costPerVisit), note: t("캠페인 비용 {cost} (운영비 + 실비)", { cost: formatWon(totals.cost) }) },
+    { label: t("단체 이행"), value: `${totals.itemsDone}/${totals.itemsTotal}`, note: t("증빙 {count}건 · 추정 매출 {sales}", { count: totals.proofs, sales: formatWon(totals.sales) }) },
+  ]
+  return (
+    <section className="programs-card programs-results" aria-label={t("결과 보고")}>
+      <h2>{t("결과 보고")}</h2>
+      <ul className="programs-kpis">
+        {tiles.map((tile) => (
+          <li key={tile.label}>
+            <span>{tile.label}</span>
+            <strong>{tile.value}</strong>
+            <small>{tile.note}</small>
+          </li>
+        ))}
+      </ul>
+      <div className="programs-table-wrap" role="region" aria-label={t("학교별 결과")} tabIndex={0}>
+        <table className="programs-report-table">
+          <thead>
+            <tr>
+              <th scope="col">{t("학교")}</th>
+              <th scope="col">{t("캠페인")}</th>
+              <th scope="col">{t("상태")}</th>
+              <th scope="col">{t("이행")}</th>
+              <th scope="col">{t("증빙")}</th>
+              <th scope="col">{t("쿠폰")}</th>
+              <th scope="col">{t("방문")}</th>
+              <th scope="col">{t("추정 매출")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {report.schools.map((row) => (
+              <tr key={row.groupId}>
+                <th scope="row">
+                  {row.name}
+                  <small>{row.school}</small>
+                </th>
+                <td>
+                  {row.eventName}
+                  {row.date && <small>{formatDay(row.date)}</small>}
+                </td>
+                <td>{t(programSchoolLabels[row.state])}</td>
+                <td>
+                  {row.itemsDone}/{row.itemsTotal}
+                </td>
+                <td>{row.proofs}</td>
+                <td>{row.coupons.toLocaleString()}</td>
+                <td>{row.visits.toLocaleString()}</td>
+                <td>
+                  {formatWon(row.sales)}
+                  {row.sharedWith > 1 && <small>{t("{count}곳 함께 집계", { count: row.sharedWith })}</small>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {shared && <p className="programs-hint">{t("같은 캠페인으로 보낸 학교들은 수치가 함께 집계돼요. 학교별로 보려면 학교마다 캠페인을 따로 등록해 보내 주세요.")}</p>}
+      <div className="programs-actions">
+        <Pill
+          onClick={() => saveFile(`uniconnect-campaign-${sample ? "sample-" : ""}${todayIso()}.csv`, programReportCsv(program, report, { sample }), "text/csv;charset=utf-8")}
+          variant="outline"
+        >
+          {t("CSV 내려받기")}
+        </Pill>
+        <Pill disabled={exporting} onClick={() => setExporting(true)} variant="outline">
+          {exporting ? t("PDF 만드는 중…") : t("PDF 내려받기")}
+        </Pill>
+      </div>
+      {exporting && (
+        <Suspense fallback={null}>
+          <ProgramReportExport author={author} onDone={done} program={program} report={report} sample={sample} />
+        </Suspense>
+      )}
+    </section>
+  )
 }
