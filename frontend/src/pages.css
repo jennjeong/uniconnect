@@ -4135,8 +4135,31 @@
 
 .propose-terms-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
   gap: var(--space-3);
+}
+
+/* 금액은 숫자와 읽기 보조가 들어갈 만큼, 내용은 더 넓게. 두 기한은 같은 너비로 묶는다. */
+.propose-terms-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  align-items: start;
+  gap: var(--space-3);
+}
+
+.propose-terms-pair.dates {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.propose-terms-pair .field-hint.warn {
+  grid-column: 1 / -1;
+  color: var(--ink);
+}
+
+@media (max-width: 560px) {
+  .propose-terms-pair,
+  .propose-terms-pair.dates {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .propose-dates {

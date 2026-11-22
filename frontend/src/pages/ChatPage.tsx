@@ -771,8 +771,8 @@ export function ChatPage({
           <p className="chat-hint">
             <Icon name="edit" size={14} />
             {touch
-              ? t("내 메시지를 꾹 누르면 수정하거나 삭제할 수 있어요.")
-              : t("내 메시지를 우클릭하면 수정하거나 삭제할 수 있어요.")}
+              ? t("내 메시지를 꾹 누르거나 옆의 ⋯ 버튼으로 수정·삭제할 수 있어요.")
+              : t("내 메시지 옆의 ⋯ 버튼(또는 우클릭)으로 수정·삭제할 수 있어요.")}
           </p>
         )}
         {planning && <MeetingForm busy={meetingBusy} onClose={() => setPlanning(false)} onSend={proposeMeeting} />}
