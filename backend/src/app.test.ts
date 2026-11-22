@@ -1196,13 +1196,13 @@ test("proposals are about an upcoming event, and a sponsor can be asked again fo
   assert.equal(mine().length, 1)
   assert.equal((await call("GET", "/proposals", undefined, student)).data.confirmed, 0)
   await call("POST", `/requests/${mine()[0].id}/accept`, undefined, brand)
-  // 확정된 협찬은 방향에 상관없이 센다. 브랜드의 것은 전부 그 기록이다.
+  // 수락만으로는 확정이 아니다. 양쪽이 계약서를 확인하면 양쪽에서 한 번씩 센다.
+  assert.equal((await call("GET", "/proposals", undefined, student)).data.confirmed, 0)
+  assert.equal((await call("GET", "/proposals", undefined, brand)).data.confirmed, 0)
+  await call("GET", `/agreements/${mine()[0].id}`, undefined, brand)
+  for (const side of [brand, student]) await call("POST", `/agreements/${mine()[0].id}/confirm`, undefined, side)
   assert.equal((await call("GET", "/proposals", undefined, student)).data.confirmed, 1)
-  const brandAccount = (await call("GET", "/auth/me", undefined, brand)).data.account.id as string
-  assert.equal(
-    (await call("GET", "/proposals", undefined, brand)).data.confirmed,
-    getDatabase().sponsorships[brandAccount].length,
-  )
+  assert.equal((await call("GET", "/proposals", undefined, brand)).data.confirmed, 1)
   const again = await call("POST", "/proposals", { matchId: brandId }, student)
   assert.equal(again.status, 409)
   assert.match(again.data.error, /이미 수락된 제안/)
@@ -3861,9 +3861,19 @@ test("sign-up asks who runs the account, which only the two sides of an agreemen
   const memberId = signup.data.account.id as string
   const request = getDatabase().requests.find((item) => item.fromAccountId === memberId)!
   await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+  // 수락만 된 때는 숨기고(처리방침: 협찬이 확정된 두 회원만), 확정도 아직 세지 않는다.
+  const waiting = (await call("GET", `/agreements/${request.id}`, undefined, brand)).data.agreement
+  assert.equal(waiting.contactsShown, false)
+  assert.equal(waiting.group.contact, undefined)
+  assert.equal(waiting.brand.contact, undefined)
+  assert.equal((await call("GET", "/proposals", undefined, token)).data.confirmed, 0)
+  for (const side of [brand, token]) assert.equal((await call("POST", `/agreements/${request.id}/confirm`, undefined, side)).status, 200)
   const agreement = (await call("GET", `/agreements/${request.id}`, undefined, brand)).data.agreement
+  assert.equal(agreement.contactsShown, true)
   assert.deepEqual(agreement.group.contact, { name: "박새임원", position: "부회장", phone: "010-2222-3333" })
   assert.deepEqual(agreement.brand.contact, testContact)
+  assert.equal((await call("GET", "/proposals", undefined, token)).data.confirmed, 1)
+  assert.equal((await call("GET", "/proposals", undefined, brand)).data.confirmed, 1)
 })
 
 test("the bell's read marks stay with the account, so every device shows the same dot", async () => {
@@ -9686,6 +9696,22 @@ test("an operator picks candidate groups for a paid campus campaign, and the bra
   // 운영비 10만 원(실비 없음)을 방문 4건으로 나눈다.
   assert.equal(report.totals.costPerVisit, 25_000)
   assert.equal((await call("GET", `/programs/${id}/report`, undefined, first)).status, 403)
+})
+
+test("an agreement without its proposal still names its event and both sides on the console's board", async () => {
+  const database = getDatabase()
+  const { agreementRow } = await import("./lib/adminInsights.js")
+  // 예시의 가을 버스킹은 협찬 기록(sp-busking)만 있고 원래 제안은 없다(앞선 테스트가 지웠으면 다시 만든다).
+  const { freshenDemoReport } = await import("./data/seed.js")
+  freshenDemoReport(database)
+  const busking = database.agreements.find((item) => item.id === "busking")!
+  const row = agreementRow(database, busking)
+  assert.deepEqual([row.missing, row.event, row.from], [true, "가을 버스킹 데이", "삼육대 뮤즈"])
+  assert.ok(row.to)
+  // 기록도 없는 예전 계약서도 빈 카드가 아니다.
+  const orphan = agreementRow(database, { id: "gone-agreement-1", kind: "request", items: [], confirmed: {}, createdAt: "2026-10-01T00:00:00.000Z", updatedAt: "2026-10-01T00:00:00.000Z" })
+  assert.equal(orphan.missing, true)
+  assert.match(orphan.event, /찾을 수 없는 계약서/)
 })
 
 test("without a way to deliver codes, sign-up and invites say so instead of claiming the mail went", async () => {
