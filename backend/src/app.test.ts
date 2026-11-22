@@ -3101,7 +3101,14 @@ test("server and browser errors are kept for the operators, and the first after 
   config.resendApiKey = "test-key"
   config.mailFrom = "uniconnect <no-reply@example.com>"
   config.operatorEmail = "ops@example.com"
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 40))
+  // 오류 기록과 메일은 응답 뒤에 따로 끝난다. 정한 시간만 기다리면 느린 CI에서 아직
+  // 끝나지 않았을 수 있어, 기다리는 것이 보일 때까지(최대 5초) 다시 본다.
+  const until = async (done: () => Promise<boolean> | boolean) => {
+    for (const started = Date.now(); !(await done()); ) {
+      if (Date.now() - started > 5000) throw new Error("기다린 것이 5초 안에 오지 않았어요.")
+      await new Promise((resolve) => setTimeout(resolve, 20))
+    }
+  }
   const errors = async () => {
     const response = await fetch(`${baseUrl}/admin/errors`, { headers: { "X-Admin-Token": "test-admin-token" } })
     return ((await response.json()) as { errors: { source: string; where: string; path: string; message: string }[] }).errors
@@ -3115,7 +3122,7 @@ test("server and browser errors are kept for the operators, and the first after 
     const failed = await call("POST", "/events", { name: "오류 공연", date: "2026-12-01", types: ["현금"] }, student)
     config.dataFile = dataFile
     assert.equal(failed.status, 503)
-    await settle()
+    await until(async () => (await errors()).length > 0 && alerts().length > 0)
     const [server] = await errors()
     assert.deepEqual([server.source, server.where], ["server", "POST /api/events"])
     assert.match(server.message, /되돌렸어요/)
@@ -3131,7 +3138,9 @@ test("server and browser errors are kept for the operators, and the first after 
       path: "/matches?from=bell",
     })
     assert.equal(reported.status, 204)
-    await settle()
+    await until(async () => (await errors())[0]?.source === "browser")
+    // 메일이 가지 않는 것을 보려면 잠시 더 둔다(가야 할 메일이었다면 이 사이에 간다).
+    await new Promise((resolve) => setTimeout(resolve, 100))
     const [browser] = await errors()
     assert.deepEqual([browser.source, browser.path, browser.where], ["browser", "/matches", "index-abc.js:1:200"])
     assert.equal(alerts().length, 1)
