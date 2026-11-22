@@ -23,6 +23,21 @@ export const oneLine = (text: string) =>
 
 export const mailConfigured = () => Boolean(config.resendApiKey && config.mailFrom)
 
+// 인증번호를 받는 사람에게 닿게 할 수 있는지: 메일이 설정됐거나, 개발용으로 화면에
+// 코드를 보여 준다(EXPOSE_EMAIL_CODES). 둘 다 아니면 코드는 어디에도 닿지 않는다.
+export const codesDeliverable = () => mailConfigured() || config.exposeEmailCodes
+
+// 코드를 보낼 수 없으면 성공처럼 답하지 않고, 코드를 만들기 전에 멈춘다.
+export function assertCodesDeliverable() {
+  if (!codesDeliverable()) {
+    throw new HttpError(503, "지금은 인증 메일을 보낼 수 없어요. 잠시 뒤에 다시 시도하거나 도움말 센터로 문의해 주세요.")
+  }
+}
+
+// 이 API 복사본에서 마지막으로 메일을 보낸 결과다(설정 여부와 실제 발송을 나눠 보인다).
+// 서버가 다시 켜지면 비고, 다른 복사본의 결과는 모른다. 주소나 내용은 남기지 않는다.
+export const mailHealth: { lastSentAt?: string; lastFailedAt?: string; lastError?: string } = {}
+
 // RESEND_API_KEY와 MAIL_FROM이 있으면 이메일을 보낸다. 없으면 서버 로그에만
 // 남긴다. Resend가 거절하면 던진다.
 export async function sendMail(to: string, subject: string, text: string) {
@@ -33,7 +48,12 @@ export async function sendMail(to: string, subject: string, text: string) {
   const response = await mailTransport
     .post({ from: config.mailFrom!, to: [to], subject: oneLine(subject), text })
     .catch(() => undefined)
-  if (!response?.ok) throw new Error(`Resend answered ${response?.status ?? "no response"}`)
+  if (!response?.ok) {
+    mailHealth.lastFailedAt = new Date().toISOString()
+    mailHealth.lastError = `Resend ${response?.status ?? "no response"}`
+    throw new Error(`Resend answered ${response?.status ?? "no response"}`)
+  }
+  mailHealth.lastSentAt = new Date().toISOString()
 }
 
 const subjects = {

@@ -1213,7 +1213,12 @@ export type Portfolio = {
 }
 
 // 운영자 콘솔 (backend lib/console.ts).
+// 설정이 비어 생기는 일(backend lib/adminTools.ts readiness): blocking은 회원 기능이 멈추고,
+// limited는 운영이나 안내가 줄어든다.
+export type Readiness = { key: string; level: "blocking" | "limited" }[]
+
 export type AdminOverview = {
+  readiness?: Readiness
   stats: PlatformStats
   weekly: { week: string; signups: number; proposals: number; accepted: number }[]
   revenue: { total: number; thisMonth: number; byKind: Record<PaymentKind, number>; partners: number }
@@ -1397,6 +1402,8 @@ export type SiteCounts = { groups: number; brands: number; schools: number; spon
 export type SiteState = {
   maintenance: { message: string } | null
   signupsClosed: boolean
+  // 인증 메일을 보낼 수 있는지다. false면 가입과 비밀번호 재설정이 막힌다.
+  mailReady?: boolean
   faq: SiteFaq
   counts?: SiteCounts
   // 운영자가 설정했다면 Kakao 지도의 JavaScript 키.
@@ -1472,6 +1479,9 @@ export type AdminHealth = {
   region: string | null
   commit: string | null
   data: { accounts: number; sessions: number; payments: number; logEntries: number }
+  // 이 API 복사본에서 마지막으로 메일을 보내거나 실패한 때다(설정과 실제 발송을 나눈다).
+  mail?: { lastSentAt?: string; lastFailedAt?: string; lastError?: string }
+  readiness?: Readiness
 }
 
 // 운영자가 사이트 맨 위에 띄우는 공지.
