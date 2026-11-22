@@ -24,8 +24,9 @@ const store = await import("./store.js")
 const { photos } = await import("./lib/photos.js")
 
 after(async () => {
+  await store.backupSettled()
   await db.close()
-  await rm(dataDir, { recursive: true, force: true })
+  await rm(dataDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })
 })
 
 const stored = async () => {

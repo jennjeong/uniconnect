@@ -58,7 +58,10 @@ beforeEach(() => clearRateLimits())
 
 after(async () => {
   await new Promise((resolve) => server.close(resolve))
-  await rm(dataDir, { recursive: true, force: true })
+  // 저장할 때의 백업과 오류 기록은 요청 밖에서 돈다. 끝나기를 기다리고, 그 사이에 쓰인 파일로
+  // 폴더가 비지 않았으면 다시 지운다.
+  await backupSettled()
+  await rm(dataDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })
 })
 
 // 가입이 요구하는 대로, 테스트에서 만든 계정을 운영하는 사람이다.
