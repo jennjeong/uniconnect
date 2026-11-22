@@ -48,6 +48,9 @@ export function sponsorshipTotals(sponsorships: Sponsorship[]) {
     // 협찬 확인 방식으로 현장이 확인한 것.
     ...(Object.fromEntries(venueKinds.map((kind) => [kind, sum(kind as keyof VenueCounts)])) as VenueCounts),
     roas: percent(pricedSales, spend),
+    // ROAS와 방문당 비용을 계산할 수 있는 협찬(협찬액이 정해진 것)과 비용 미확정 협찬의 수.
+    priced: priced.length,
+    unpriced: sponsorships.length - priced.length,
     // 협찬액이 정해진 협찬이 없으면 ROAS는 "—"다.
     roasMissing: priced.length === 0,
     // 그중 아직 집계 중인 것이 있으면 전체 ROAS도 중간값이다.

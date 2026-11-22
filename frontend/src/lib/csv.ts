@@ -82,14 +82,15 @@ export function analyticsCsv(sponsorships: Sponsorship[], { sample = false } = {
       item.groupName,
       item.eventName,
       item.date,
-      item.spend,
+      // 비용 미확정이면 집행액을 비운다(0원으로 읽히지 않게).
+      roasFigure(item) === null ? "" : item.spend,
       item.coupons,
       item.visits,
       item.sales,
       // 비용 미확정이면 비워 둔다(0%로 읽히지 않게).
       roasFigure(item) ?? "",
       item.targetRoas,
-      costPerVisit(item),
+      roasFigure(item) === null || item.visits === 0 ? "" : costPerVisit(item),
       ...counted.map((kind) => Number(item[kind as keyof Sponsorship] ?? 0)),
     ]),
   ])

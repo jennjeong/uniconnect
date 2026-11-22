@@ -81,9 +81,9 @@ export function LandingHero({
           <li className="result">
             <span className="record-step">{t("성과")}</span>
             <strong className="record-results">
-              <span>{t("QR 참여 {count}회", { count: 128 })} ·</span>{" "}
-              <span>{t("쿠폰 수령 {count}건", { count: 94 })} ·</span>{" "}
-              <span>{t("매장 방문 {count}회", { count: 41 })}</span>
+              <span>{t("QR 스캔 {count}회", { count: 128 })} ·</span>{" "}
+              <span>{t("쿠폰 수령 {count}장", { count: 94 })} ·</span>{" "}
+              <span>{t("매장 방문 {count}건", { count: 41 })}</span>
             </strong>
             <small>{t("현장에서 집계한 수치예요.")}</small>
           </li>
