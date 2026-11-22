@@ -4429,6 +4429,11 @@ input[type="search"]::-webkit-search-cancel-button {
 }
 
 /* 팝업: 흐려진 페이지 위의 흰 패널, 제목 위의 아이브로, 둥근 닫기 버튼. */
+/* 대화창이 열린 동안 뒤 페이지는 스크롤되지 않는다(components/Modal.tsx). */
+html.modal-open {
+  overflow: hidden;
+}
+
 .modal-backdrop {
   position: fixed;
   z-index: 110;
@@ -13607,6 +13612,9 @@ span.odometer {
   top: 0;
   left: 0;
   content: "0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9";
+  /* 지원하는 브라우저에서는 대체 텍스트를 비워 접근성 트리에 0~9가 나오지 않게 한다
+     (띠 전체는 AnimatedNumber가 aria-hidden으로도 숨긴다). */
+  content: "0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9" / "";
   white-space: pre;
   -webkit-text-fill-color: currentColor;
   transform: translateY(0);

@@ -4,6 +4,7 @@ import { errorMessage } from "../api"
 import { Modal } from "../components/Modal"
 import { sponsorOptions } from "../data/sponsorTypes"
 import { t } from "../i18n"
+import { formatWon } from "../lib/kpis"
 import { formatFullDate, formatPeriod, todayIso } from "../lib/date"
 import { fullWon } from "../lib/sponsorships"
 import type { EventItem, Match, ProposalTemplate, ProposalTermsDraft, Role } from "../types"
@@ -231,31 +232,44 @@ export function ProposeModal({
               ))}
             </div>
             <div className="propose-terms-grid">
-              <label>
-                {t("금액(원)")}
-                <input
-                  aria-describedby="propose-amount-hint"
-                  inputMode="numeric"
-                  onChange={(event) => setAmount(event.target.value.replace(/[^\d]/g, ""))}
-                  placeholder="300000"
-                  value={amount}
-                />
-                <small className="field-hint" id="propose-amount-hint">
-                  {t("1만 원 ~ 1억 원 · 계약서의 협찬액이 돼요")}
-                </small>
-              </label>
-              <label>
-                {t("내용 · 수량")}
-                <input maxLength={40} onChange={(event) => setQuantity(event.target.value)} placeholder={t("예) 립밤 샘플 200개")} value={quantity} />
-              </label>
-              <label>
-                {t("전달 기한")}
-                <input max={lastDay} min={today} onChange={(event) => setDeliverBy(event.target.value)} type="date" value={deliverBy} />
-              </label>
-              <label>
-                {t("응답 기한")}
-                <input max={chosen.date} min={today} onChange={(event) => setRespondBy(event.target.value)} type="date" value={respondBy} />
-              </label>
+              {/* 금액과 내용은 넓게, 두 기한은 한 묶음으로. 휴대폰에서는 한 줄에 하나씩. */}
+              <div className="propose-terms-pair">
+                <label>
+                  {t("금액(원)")}
+                  <input
+                    aria-describedby="propose-amount-hint"
+                    inputMode="numeric"
+                    onChange={(event) => setAmount(event.target.value.replace(/[^\d]/g, ""))}
+                    placeholder="300,000"
+                    value={amount ? Number(amount).toLocaleString("ko-KR") : ""}
+                  />
+                  <small className="field-hint" id="propose-amount-hint">
+                    {amount ? `${formatWon(Number(amount))} · ` : ""}
+                    {kinds.includes("현금") && kinds.some((kind) => kind !== "현금")
+                      ? t("현금과 현물을 합한 협찬 가치예요 · 계약서의 협찬액이 돼요")
+                      : t("1만 원 ~ 1억 원 · 계약서의 협찬액이 돼요")}
+                  </small>
+                </label>
+                <label>
+                  {t("내용 · 수량")}
+                  <input maxLength={40} onChange={(event) => setQuantity(event.target.value)} placeholder={t("예) 립밤 샘플 200개")} value={quantity} />
+                </label>
+              </div>
+              <div className="propose-terms-pair dates" role="group" aria-label={t("기한")}>
+                <label>
+                  {t("전달 기한")}
+                  <input max={lastDay} min={today} onChange={(event) => setDeliverBy(event.target.value)} type="date" value={deliverBy} />
+                </label>
+                <label>
+                  {t("응답 기한")}
+                  <input max={chosen.date} min={today} onChange={(event) => setRespondBy(event.target.value)} type="date" value={respondBy} />
+                </label>
+                {deliverBy && respondBy && respondBy > deliverBy && (
+                  <small className="field-hint warn" role="status">
+                    {t("응답 기한이 전달 기한보다 늦어요. 답을 받은 뒤에 물품을 보낼 수 있게 응답 기한을 앞당겨 주세요.")}
+                  </small>
+                )}
+              </div>
             </div>
             <label>
               {students ? t("브랜드에게 드리는 혜택") : t("단체에게 바라는 혜택")}
