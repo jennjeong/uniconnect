@@ -1,7 +1,31 @@
 @import 'tailwindcss';
 
 @theme {
-  --font-sans: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-sans: 'Pretendard Variable', Pretendard, 'Pretendard Fallback', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Pretendard가 오기 전에 쓰는 대체 글꼴(Arial)을 Pretendard의 폭과 높이에 맞춘다(#116).
+   맞추지 않으면 글꼴이 바뀌는 순간 첫 화면이 밀린다(PageSpeed 데스크톱 CLS 0.227).
+   값은 브라우저에서 두 글꼴을 재어 구했다: 폭은 보통 굵기 103%, 굵은 굵기 98%,
+   높이는 Pretendard의 위 0.95 · 아래 0.24에 맞춘다(size-adjust로 나눈 값). */
+@font-face {
+  font-family: 'Pretendard Fallback';
+  src: local('Arial'), local('ArialMT'), local('Liberation Sans'), local('Arimo');
+  font-weight: 100 549;
+  size-adjust: 103%;
+  ascent-override: 92.2%;
+  descent-override: 23.3%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: 'Pretendard Fallback';
+  src: local('Arial Bold'), local('Arial-BoldMT'), local('Liberation Sans Bold'), local('Arimo Bold');
+  font-weight: 550 900;
+  size-adjust: 98%;
+  ascent-override: 96.9%;
+  descent-override: 24.5%;
+  line-gap-override: 0%;
 }
 
 /* getlayers.ai의 Stride를 본떠 캠퍼스와 기업 사이의 협찬에 맞게 다시 물들였다:
