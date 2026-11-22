@@ -133,14 +133,20 @@ function parsePost(account: Account, body: Request["body"]) {
   if (account.role === "학생단체") {
     const event = (getDatabase().events[account.id] ?? []).find((item) => item.id === text(body?.eventId))
     if (!event || (event.endDate ?? event.date) < today) throw new HttpError(400, "협찬을 찾을 다가오는 행사를 골라 주세요.")
+    // 행사가 끝난 뒤에는 지원을 받지 않는다(lib/postDeadlines.ts).
+    const lastDay = event.endDate ?? event.date
+    if (deadline > lastDay) throw new HttpError(400, `마감일은 행사 마지막 날(${lastDay})까지로 골라 주세요.`)
     eventId = event.id
   }
   return { title, body: words, types, deadline, ...(eventId ? { eventId } : {}) }
 }
 
 // 주소로 찾는 계정 자신의 글이다.
+// 고치기, 닫기, 지우기가 함께 쓴다. 공유 데모 계정은 글을 올릴 수 없는 것처럼, 모두가 보는
+// 예시 글도 바꾸거나 지울 수 없다.
 function ownPost(req: Request) {
   const account = requireAccount(req)
+  if (isDemoAccount(getDatabase(), account)) throw new HttpError(403, "데모 계정은 모집 글을 바꿀 수 없어요.")
   const post = getDatabase().posts.find((item) => item.id === req.params.id && item.accountId === account.id)
   if (!post) throw new HttpError(404, "모집 글을 찾을 수 없어요.")
   return { account, post }

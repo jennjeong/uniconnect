@@ -1240,6 +1240,8 @@ export type ProgramBrief = {
   // 원하는 학교 수와 학교마다 내놓을 수량이다.
   schools: number
   perSchool: number
+  // 학교당 수량의 단위(개, 잔, 장 등)이며 없으면 단위 없이 보인다.
+  unit?: string
   // 대상 학생(학년, 전공 등)이다.
   audience?: string
   // 원하는 홍보 방식과 요청 사항이다.

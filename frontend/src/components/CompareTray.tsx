@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react"
 
-import { t } from "../i18n"
+import { locale, t } from "../i18n"
 import { formatDay } from "../lib/date"
 import { formatDistance } from "../lib/distance"
 import { BrandMark } from "./BrandMark"
@@ -46,6 +46,8 @@ export function CompareTray({
   onOpenDetail: (match: Match) => void
 }) {
   const [open, setOpen] = useState(false)
+  // 추천 지수의 항목별 비율은 필요할 때 펼친다.
+  const [partsOpen, setPartsOpen] = useState(false)
   const shown = open && items.length >= 2
   const parts = [...new Set(items.flatMap((item) => (item.scoreParts ?? []).map((part) => part.label)))]
   const row = (label: string, cell: (item: Match) => ReactNode) => (
@@ -108,25 +110,45 @@ export function CompareTray({
                 </tr>
               </thead>
               <tbody>
-                {row(t("추천 지수"), (item) => <b className={item.score === topScore ? "best" : undefined}>{item.score}</b>)}
-                {parts.map((label) =>
-                  row(t(label), (item) => {
-                    const part = item.scoreParts?.find((entry) => entry.label === label)
-                    return part ? (
-                      <span className="compare-bar">
-                        <i style={{ width: percentOf(part.value) }} />
-                        <small>{percentOf(part.value)}</small>
-                      </span>
-                    ) : (
-                      "—"
-                    )
-                  }),
-                )}
+                {kind === "group" &&
+                  row(t("다음 행사"), (item) =>
+                    item.eventName ? `${item.eventName}${item.eventDate ? ` · ${formatDay(item.eventDate)}` : ""}` : t("예정 행사 없음"),
+                  )}
+                {kind === "group" &&
+                  row(t("예상 인원"), (item) => (item.audience ? t("{count}명", { count: item.audience.toLocaleString(locale) }) : "—"))}
                 {row(t("거리"), (item) =>
                   item.distanceKm === undefined ? "—" : (
                     <span className={item.distanceKm === nearest ? "best" : undefined}>{formatDistance(item.distanceKm)}</span>
                   ),
                 )}
+                {row(kind === "brand" ? t("제공하는 협찬") : t("내세우는 점"), (item) => item.offer || "—")}
+                {row(t("추천 지수"), (item) => <b className={item.score === topScore ? "best" : undefined}>{item.score}</b>)}
+                {parts.length > 0 && (
+                  <tr>
+                    <th scope="row">
+                      <button aria-expanded={partsOpen} className="underline-link" onClick={() => setPartsOpen((open) => !open)} type="button">
+                        {partsOpen ? t("세부 비율 접기") : t("세부 비율 보기")}
+                      </button>
+                    </th>
+                    {items.map((item) => (
+                      <td key={item.id} />
+                    ))}
+                  </tr>
+                )}
+                {partsOpen &&
+                  parts.map((label) =>
+                    row(t(label), (item) => {
+                      const part = item.scoreParts?.find((entry) => entry.label === label)
+                      return part ? (
+                        <span className="compare-bar">
+                          <i style={{ width: percentOf(part.value) }} />
+                          <small>{percentOf(part.value)}</small>
+                        </span>
+                      ) : (
+                        "—"
+                      )
+                    }),
+                  )}
                 {row(t("파트너 후기"), (item) =>
                   item.reviewCount ? (
                     <span className={item.rating === topRating ? "best" : undefined}>
@@ -140,12 +162,6 @@ export function CompareTray({
                 {kind === "group"
                   ? row(t("학교"), (item) => item.school ?? "—")
                   : row(t("매장"), (item) => item.location?.address ?? "—")}
-                {kind === "group" &&
-                  row(t("다음 행사"), (item) =>
-                    item.eventName ? `${item.eventName}${item.eventDate ? ` · ${formatDay(item.eventDate)}` : ""}` : "—",
-                  )}
-                {kind === "group" && row(t("예상 인원"), (item) => (item.audience ? t("{count}명", { count: item.audience }) : "—"))}
-                {row(kind === "brand" ? t("제공하는 협찬") : t("내세우는 점"), (item) => item.offer || "—")}
                 {kind === "brand" && row(t("사업자 확인"), (item) => (item.businessVerified ? t("확인됨") : "—"))}
                 {kind === "group" && row(t("단체 확인"), (item) => (item.groupVerified ? t("확인됨") : "—"))}
                 {row(t("태그"), (item) => item.tags.slice(0, 4).join(", ") || "—")}

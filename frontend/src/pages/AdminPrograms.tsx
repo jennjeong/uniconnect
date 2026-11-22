@@ -131,7 +131,7 @@ function ProgramPanel({ program, token, onNotice, onChange }: { program: AdminPr
           {brief.perSchool > 0 && (
             <div>
               <dt>{t("학교당 수량")}</dt>
-              <dd>{brief.perSchool.toLocaleString()}</dd>
+              <dd>{`${brief.perSchool.toLocaleString()}${brief.unit ?? ""}`}</dd>
             </div>
           )}
           {brief.audience && (

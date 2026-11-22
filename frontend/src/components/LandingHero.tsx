@@ -66,7 +66,7 @@ export function LandingHero({
           <li className="from-group">
             <span className="record-step">{t("행사")}</span>
             <strong>{t("가을 버스킹 데이")}</strong>
-            <small>{t("삼육대 뮤즈 · 11월 12일 · 예상 120명")}</small>
+            <small>{t("삼육대 뮤즈 · 10월 12일 · 예상 160명")}</small>
           </li>
           <li className="from-brand">
             <span className="record-step">{t("지원 조건")}</span>

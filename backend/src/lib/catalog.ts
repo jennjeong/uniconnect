@@ -133,14 +133,20 @@ export function createListing(database: Database, account: Account): Match {
 // 계정이 있는 단체는 그 계정 캘린더의 다음 행사를 보여 준다.
 export function withLiveEvent(database: Database, group: Match): Match {
   const account = ownerOf(database, "groups", group.id)
-  if (!account) return group
   const today = todayInKorea()
+  if (!account) {
+    // 주인이 없는 예시는 적힌 행사가 지났으면 '다음 행사'가 없다.
+    return group.eventDate && group.eventDate < today
+      ? { ...group, eventId: undefined, eventName: undefined, eventDate: undefined, eventKind: undefined }
+      : group
+  }
   const next = (database.events[account.id] ?? [])
     // 여러 날에 걸친 행사는 마지막 날까지 다음 행사로 남는다.
     .filter((event) => (event.endDate ?? event.date) >= today)
     .sort((a, b) => a.date.localeCompare(b.date))[0]
   if (!next) return { ...group, eventId: undefined, eventName: undefined, eventDate: undefined, eventKind: undefined, audience: undefined }
-  const audience = Number(next.people.replace(/\D/g, "")) || undefined
+  // '예상 도달 4,200명'처럼 온라인 도달을 적은 행사는 현장 인원으로 세지 않는다.
+  const audience = /도달|온라인|조회/.test(next.people) ? undefined : Number(next.people.replace(/\D/g, "")) || undefined
   return { ...group, eventId: next.id, eventName: next.name, eventDate: next.date, eventKind: next.kind, audience }
 }
 
