@@ -12,7 +12,7 @@ import { applicationFolder, applicationFor, applicationsOf, holdApplication, par
 import { emailRuleError, normalizeEmail } from "../lib/email.js"
 import { forgetAdminRecords } from "../lib/adminTools.js"
 import { HttpError } from "../lib/errors.js"
-import { sendVerificationCode } from "../lib/mailer.js"
+import { assertCodesDeliverable, sendVerificationCode } from "../lib/mailer.js"
 import { notify } from "../lib/notices.js"
 import { chatFiles, eventPhotos, photos } from "../lib/photos.js"
 import { langOf, type Lang } from "../lib/i18n.js"
@@ -203,6 +203,7 @@ type CodePurpose = EmailCode["purpose"]
 // 위해 주소로 새 6자리 코드를 보내고, 만료 시각을 답한다. 메일은 앱이 보여 준
 // 언어로 쓴다.
 async function issueCode(email: string, role: Role, purpose: CodePurpose, lang: Lang, accountId?: string) {
+  assertCodesDeliverable()
   await codesPerEmail.take(email)
   const database = getDatabase()
   const code = String(randomInt(100000, 1000000))

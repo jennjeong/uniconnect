@@ -11,6 +11,7 @@ import { RolePicker } from "../components/RolePicker"
 import { t } from "../i18n"
 import { accountTypeGroups, accountTypes } from "../data/roles"
 import { formatRemaining } from "../lib/format"
+import { useSiteState } from "../hooks/useSiteState"
 import { passwordProblem } from "../lib/password"
 import { viewPath } from "../lib/route"
 import type { Role, Session } from "../types"
@@ -90,6 +91,13 @@ export function SignupModal({
   const invitedShop = Boolean(invite) && draft.role === "브랜드"
   const [document, setDocument] = useState<PickedDocument>()
   const verified = verification?.token !== undefined
+  // 운영 설정 때문에 지금은 가입을 끝낼 수 없는 경우다(인증 메일 없음, 가입 잠시 닫힘).
+  const site = useSiteState()
+  const blocked = site?.signupsClosed
+    ? t("지금은 새 가입을 잠시 받지 않아요. 잠시 뒤에 다시 시도해 주세요.")
+    : site?.mailReady === false
+      ? t("지금은 인증 메일을 보낼 수 없어 가입을 마칠 수 없어요. 도움말 센터로 문의해 주세요.")
+      : ""
   // 두 링크를 둘러싼 동의 문장. 보이는 언어로 쓴다.
   const [termsBefore, termsBetween, termsAfter] = t("{terms}과 {privacy}에 동의합니다.").split(
     /\{terms\}|\{privacy\}/,
@@ -191,6 +199,11 @@ export function SignupModal({
           }}
         />
         {/* 역할마다 가입에 필요한 것. 서버의 이메일 규칙(lib/email.ts)과 같다. */}
+        {blocked && (
+          <p className="form-error" role="alert">
+            {blocked}
+          </p>
+        )}
         <div aria-live="polite" className="signup-needs">
           {draft.role === "학생단체" ? (
             <p>{t("학교 이메일(ac.kr)과 담당자 이름 · 직책 · 휴대폰 번호가 필요해요.")}</p>
@@ -320,7 +333,7 @@ export function SignupModal({
             ) : (
               <button
                 className="field-action"
-                disabled={busy}
+                disabled={busy || Boolean(blocked)}
                 onClick={sendCode}
                 type="button"
               >

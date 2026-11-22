@@ -9687,3 +9687,25 @@ test("an operator picks candidate groups for a paid campus campaign, and the bra
   assert.equal(report.totals.costPerVisit, 25_000)
   assert.equal((await call("GET", `/programs/${id}/report`, undefined, first)).status, 403)
 })
+
+test("without a way to deliver codes, sign-up and invites say so instead of claiming the mail went", async () => {
+  const savedExpose = config.exposeEmailCodes
+  const savedToken = config.adminToken
+  config.adminToken = "test-admin-token"
+  try {
+    config.exposeEmailCodes = false
+    const before = getDatabase().emailCodes.length
+    const sent = await call("POST", "/auth/email-code", { role: "학생단체", email: "nomail@syu.ac.kr" })
+    assert.equal(sent.status, 503)
+    assert.match(sent.data.error, /보낼 수 없어요/)
+    // 코드를 만들지 않았다.
+    assert.equal(getDatabase().emailCodes.length, before)
+    assert.equal((await call("GET", "/site")).data.mailReady, false)
+    const health = await (await fetch(`${baseUrl}/admin/health`, { headers: { "X-Admin-Token": "test-admin-token" } })).json() as { readiness: { key: string; level: string }[] }
+    assert.deepEqual(health.readiness.find((item) => item.key === "mail"), { key: "mail", level: "blocking" })
+  } finally {
+    config.exposeEmailCodes = savedExpose
+    config.adminToken = savedToken
+  }
+  assert.equal((await call("GET", "/site")).data.mailReady, true)
+})
