@@ -105,7 +105,7 @@ function ProgramPanel({ program, token, onNotice, onChange }: { program: AdminPr
 
   return (
     <>
-      <section className="console-card" aria-label={t("요청서")}>
+      <section className="console-card span-2" aria-label={t("요청서")}>
         <h2>{brief.name}</h2>
         <dl className="console-facts">
           <div>
@@ -210,7 +210,7 @@ function QuoteForm({ program, busy, onSave }: { program: AdminProgram; busy: boo
   const setCost = (index: number, key: "label" | "amount", value: string) =>
     setCosts((current) => current.map((cost, at) => (at === index ? { ...cost, [key]: value } : cost)))
   return (
-    <section className="console-card">
+    <section className="console-card span-2">
       <h2>{program.quote ? t("견적 고치기") : t("견적 쓰기")}</h2>
       <p className="field-hint">{t("운영비는 부가세 전 금액이에요. 실비는 브랜드가 직접 지급하고, 금액만 보여요.")}</p>
       <form
@@ -387,7 +387,7 @@ function MarginForm({ program, busy, onSave }: { program: AdminProgram; busy: bo
   const [note, setNote] = useState(program.ops?.note ?? "")
   const { margin } = program
   return (
-    <section className="console-card" aria-label={t("손익")}>
+    <section className="console-card span-2" aria-label={t("손익")}>
       <h2>{t("손익")}</h2>
       <dl className="console-facts">
         <div>
