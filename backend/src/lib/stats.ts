@@ -1,4 +1,5 @@
 import { todayInKorea } from "./dates.js"
+import { allConfirmedSponsorships } from "./agreements.js"
 import { isDemoId } from "./reviews.js"
 import type { Database } from "../types.js"
 
@@ -45,7 +46,8 @@ export function platformStats(database: Database, now = new Date()): PlatformSta
     list.map((event) => ({ accountId, last: event.endDate ?? event.date })),
   )
   const proposals = [...database.requests, ...database.offers]
-  const sponsorships = Object.entries(database.sponsorships).flatMap(([accountId, list]) => list.map(() => accountId))
+  // 확정된 협찬: 양쪽이 계약서를 확인했고 취소되지 않은 것이다(수락만 된 것은 빼고 센다).
+  const sponsorships = allConfirmedSponsorships(database).map((item) => item.fromAccountId)
   // 대화는 어느 한쪽의 리스팅이 회원 것이면 실제 대화다.
   const memberListings = new Set(
     accounts.filter((account) => isReal(account.id)).flatMap((account) => [account.groupId, account.brandId]),
@@ -63,7 +65,7 @@ export function platformStats(database: Database, now = new Date()): PlatformSta
     proposals: count(proposals, (proposal) => isReal(proposal.fromAccountId)),
     accepted: count(proposals.filter((proposal) => proposal.status === "수락"), (proposal) => isReal(proposal.fromAccountId)),
     declined: count(proposals.filter((proposal) => proposal.status === "거절"), (proposal) => isReal(proposal.fromAccountId)),
-    sponsorships: count(sponsorships, isReal),
+    sponsorships: count(sponsorships, (accountId) => isReal(accountId)),
     scans: sum(database.measurements, (item) => item.metrics.scans, (item) => isReal(item.accountId)),
     coupons: sum(database.measurements, (item) => item.metrics.coupons, (item) => isReal(item.accountId)),
     visits: sum(database.measurements, (item) => item.metrics.visits, (item) => isReal(item.accountId)),
@@ -81,8 +83,6 @@ export function publicCounts(database: Database) {
     groups: groups.length,
     brands: members.filter((account) => account.role === "브랜드").length,
     schools: new Set(groups.map((account) => account.school.trim()).filter(Boolean)).size,
-    sponsorships: Object.entries(database.sponsorships)
-      .filter(([accountId]) => !isDemoId(database, accountId))
-      .reduce((total, [, list]) => total + list.length, 0),
+    sponsorships: allConfirmedSponsorships(database).filter((item) => item.fromAccountId && !isDemoId(database, item.fromAccountId)).length,
   }
 }
