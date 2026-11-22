@@ -9,7 +9,7 @@ import { PasswordRules } from "../components/PasswordRules"
 import { PositionField } from "../components/PositionField"
 import { RolePicker } from "../components/RolePicker"
 import { t } from "../i18n"
-import { accountTypeGroups, accountTypes } from "../data/roles"
+import { accountTypeGroups } from "../data/roles"
 import { formatRemaining } from "../lib/format"
 import { useSiteState } from "../hooks/useSiteState"
 import { passwordProblem } from "../lib/password"
@@ -19,7 +19,8 @@ import type { Role, Session } from "../types"
 const emptyDraft = (role: Role) => ({
   role,
   name: "",
-  type: accountTypes[role][0],
+  // 첫 항목(총학생회 등)을 미리 고르지 않고 직접 고르게 한다.
+  type: "",
   school: "",
   contactName: "",
   position: "",
@@ -47,6 +48,7 @@ function draftError(draft: Draft, verified: boolean) {
   if (!draft.name.trim()) {
     return draft.role === "학생단체" ? t("단체명을 입력해 주세요.") : t("브랜드명을 입력해 주세요.")
   }
+  if (!draft.type) return draft.role === "학생단체" ? t("단체 분류를 골라 주세요.") : t("업종을 골라 주세요.")
   if (draft.role === "학생단체" && !draft.school.trim()) return t("학교를 입력해 주세요.")
   if (!draft.contactName.trim()) return t("담당자 이름을 입력해 주세요.")
   if (!draft.position.trim()) return t("직책을 입력해 주세요.")
@@ -194,7 +196,7 @@ export function SignupModal({
           name="signup-role"
           value={draft.role}
           onChange={(role) => {
-            update({ role, type: accountTypes[role][0], position: "" })
+            update({ role, type: "", position: "" })
             resetVerification()
           }}
         />
@@ -238,7 +240,7 @@ export function SignupModal({
             {draft.role === "학생단체" ? t("단체명") : t("브랜드명")}
             <input
               autoComplete="organization"
-              placeholder={draft.role === "학생단체" ? t("예) 삼육대 뮤즈") : t("예) 오후의 커피")}
+              placeholder={draft.role === "학생단체" ? t("예) ○○대 공연 동아리") : t("예) ○○카페")}
               value={draft.name}
               onChange={(event) => update({ name: event.target.value })}
             />
@@ -249,6 +251,9 @@ export function SignupModal({
               value={draft.type}
               onChange={(event) => update({ type: event.target.value })}
             >
+              <option disabled value="">
+                {t("골라 주세요")}
+              </option>
               {accountTypeGroups[draft.role].map((group) => (
                 <optgroup key={group.label} label={t(group.label)}>
                   {group.types.map((type) => (
@@ -266,7 +271,7 @@ export function SignupModal({
             {t("학교")}
             <input
               maxLength={40}
-              placeholder={t("예) 삼육대학교")}
+              placeholder={t("예) ○○대학교")}
               value={draft.school}
               onChange={(event) => update({ school: event.target.value })}
             />

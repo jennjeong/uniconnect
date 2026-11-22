@@ -511,7 +511,7 @@ const actionLabels: Record<string, string> = {
   "dispute-decided": "분쟁 결론",
   "application-rejected": "가입 거절",
   "business-set": "사업자 확인 변경",
-  "partners-granted": "파트너스 부여",
+  "partners-granted": "Growth 부여",
   "demo-reset": "예시 데이터 초기화",
   "proposal-nudged": "답 부탁 알림",
   "post-hidden": "모집 글 숨김",
@@ -578,7 +578,7 @@ export function ActivityLog({ token, onNotice }: { token: string; onNotice: (mes
         <CsvButton
           name="activity-log"
           rows={() => [
-            [t("시각"), t("한 사람"), t("한 일"), t("대상"), t("이름"), t("내용")],
+            [t("시각"), t("작업자"), t("작업 내용"), t("대상"), t("이름"), t("내용")],
             ...shown.map((entry) => [entry.at, actorOf(entry), t(actionLabels[entry.action] ?? entry.action), t(kindLabels[entry.target.kind] ?? entry.target.kind), entry.label, entry.detail]),
           ]}
         />
@@ -592,8 +592,8 @@ export function ActivityLog({ token, onNotice }: { token: string; onNotice: (mes
           <thead>
             <tr>
               <th scope="col">{t("시각")}</th>
-              <th scope="col">{t("한 사람")}</th>
-              <th scope="col">{t("한 일")}</th>
+              <th scope="col">{t("작업자")}</th>
+              <th scope="col">{t("작업 내용")}</th>
               <th scope="col">{t("대상")}</th>
             </tr>
           </thead>

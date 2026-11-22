@@ -80,7 +80,7 @@ export function MatchDetailPage({
   const facts = [
     ...(match.facts ?? []),
     ...(match.popularity !== undefined
-      ? [{ label: "이번 학기 협찬", value: t("{count}회", { count: match.popularity }) }]
+      ? [{ label: "누적 협찬", value: t("{count}회", { count: match.popularity }) }]
       : []),
   ]
   const sns = match.sns ?? []
@@ -109,7 +109,7 @@ export function MatchDetailPage({
       ? { value: t("{count}명", { count: match.audience.toLocaleString(locale) }), label: t("예상 인원"), note: match.eventName }
       : nearby
     : match.popularity !== undefined
-      ? { value: t("{count}회", { count: match.popularity }), label: t("이번 학기 협찬"), note: t("학생단체와 함께한 협찬") }
+      ? { value: t("{count}회", { count: match.popularity }), label: t("누적 협찬"), note: t("uniconnect에 기록된 협찬") }
       : nearby
   const figures: ProfileFigure[] = [
     {

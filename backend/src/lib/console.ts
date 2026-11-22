@@ -54,7 +54,8 @@ export function overview(database: Database, now = new Date()) {
       inquiries: database.inquiries.filter((inquiry) => !inquiry.answer && !database.inquiryHandling?.[inquiry.id]?.heldAt).length,
       reports: database.reports.filter((report) => !report.resolution).length,
       disputes: (database.disputes ?? []).filter((dispute) => dispute.status !== "closed").length,
-      transfers: paymentsOf(database).filter((payment) => payment.status === "pending" && payment.transferRequestedAt).length,
+      // 실제 회원이 계좌 입금을 요청하고 기다리는 주문이다(콘솔의 '입금 확인 필요'와 같은 조건).
+      transfers: paymentsOf(database).filter((payment) => payment.status === "pending" && payment.transferRequestedAt && !isDemoId(database, payment.accountId)).length,
       suspended: database.accounts.filter((account) => account.suspendedAt).length,
       stale: staleProposals(database, now).length,
       cancels: database.agreements.filter((agreement) => agreementState(agreement) === "cancel").length,

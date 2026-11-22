@@ -1,4 +1,5 @@
 import { useContext, useEffect, useId, useRef, type ReactNode } from "react"
+import { createPortal } from "react-dom"
 
 import { useDialogFocus } from "../hooks/useDialogFocus"
 import { t } from "../i18n"
@@ -13,6 +14,9 @@ import { ClosingContext } from "./Presence"
 // 안에서는 닫히는 동안 아래로 미끄러진다. 열려 있는 동안 키보드를
 // 붙잡고(useDialogFocus), 제목에는 고유한 id가 있어서 하나가 닫히고 다른 하나가
 // 열릴 때 id를 같이 쓰지 않는다.
+// 열린 대화창의 수다(배경 스크롤 잠금).
+let openModals = 0
+
 export function Modal({
   name,
   kicker,
@@ -33,6 +37,17 @@ export function Modal({
   const titleId = useId()
   useDialogFocus(dialog, !closing)
 
+  // 열려 있는 동안 뒤 페이지가 스크롤되지 않게 한다. 대화창이 겹치면 마지막 것이 닫힐 때 푼다.
+  useEffect(() => {
+    if (closing) return
+    openModals += 1
+    document.documentElement.classList.add("modal-open")
+    return () => {
+      openModals -= 1
+      if (openModals === 0) document.documentElement.classList.remove("modal-open")
+    }
+  }, [closing])
+
   useEffect(() => {
     if (closing) return
     const closeOnEscape = (event: KeyboardEvent) => {
@@ -49,7 +64,8 @@ export function Modal({
     </div>
   )
 
-  return (
+  // 문서 맨 위에 그린다. 카드나 비교함처럼 자기 쌓임 맥락을 가진 곳 안에서 열려도 헤더 위에 온다.
+  return createPortal(
     <div
       className={closing ? "modal-backdrop closing" : "modal-backdrop"}
       role="presentation"
@@ -77,6 +93,7 @@ export function Modal({
         </button>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
