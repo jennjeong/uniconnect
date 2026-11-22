@@ -44,7 +44,7 @@ export function AdCard({ role, onNotice }: { role: Role; onNotice: (message: str
         <p>
           {ad.until
             ? t("{where} 맨 위에 보이고 있어요 · {date}까지", { where, date: formatFullDate(ad.until) })
-            : t("{days}일 동안 {where} 맨 위에 우리 소개를 보여 줘요. 한 달 {price}.", {
+            : t("{days}일 동안 {where} 맨 위에 우리 소개를 보여 줘요. {days}일 {price}(부가세 별도).", {
                 days: ad.days,
                 where,
                 price: fullWon(ad.price),

@@ -539,7 +539,7 @@ const en: Record<string, string> = {
   "다섯 가지 기준으로 점수를 매겨, 잘 맞는 상대부터 보여 드려요.": "Scored on five things, so the best fits come first.",
   "누구든 먼저 제안할 수 있어요. 수락하면 계약서가 생기고, 양쪽이 확인하면 협찬이 확정돼요.": "Either side can propose first. Accepting opens an e-contract, and it's a sponsorship once both sides confirm it.",
   "할 일은 계약서에 함께 적고, 끝낸 일은 사진으로 남겨요.": "Write the tasks into the contract together, and leave photos when done.",
-  "행사 날 QR · 쿠폰 · 방문이 저절로 세지고, 끝나면 리포트가 돼요.": "On the day QR, coupons and visits count themselves, and become a report.",
+  "행사 날 QR 스캔 · 쿠폰 수령 · 직원이 확인한 매장 방문이 쌓이고, 끝나면 성과 리포트가 돼요.": "On the day, QR scans, claimed coupons and store visits confirmed by staff add up, and become a results report after the event.",
   "잘 맞는 브랜드를 골라 보고 바로 협찬을 제안해요.": "Browse the brands that fit, and propose right away.",
   "잘 맞는 학생단체를 골라 보고 바로 협찬을 제안해요.": "Browse the groups that fit, and propose right away.",
   "QR · 쿠폰 · 매장 방문을 실시간으로 세고 목표와 비교해요.": "Count QR, coupons and visits live, against the goals.",

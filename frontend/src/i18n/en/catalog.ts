@@ -231,7 +231,7 @@ const en: Record<string, string> = {
   "학생단체의 추천 매칭": "student groups' matches",
   "브랜드의 단체 찾기": "brands' group search",
   "{where} 맨 위에 보이고 있어요 · {date}까지": "Showing at the top of {where} · until {date}",
-  "{days}일 동안 {where} 맨 위에 우리 소개를 보여 줘요. 한 달 {price}.": "Shows your listing at the top of {where} for {days} days. {price} a month.",
+  "{days}일 동안 {where} 맨 위에 우리 소개를 보여 줘요. {days}일 {price}(부가세 별도).": "Shows your listing at the top of {where} for {days} days. {price} per {days} days (before VAT).",
   "끝나기 전에 연장하면 10% 할인돼요.": "Extend before it ends for 10% off.",
   "광고 연장하기": "Extend ad",
   "광고하기": "Advertise",
