@@ -3,11 +3,11 @@ const en: Record<string, string> = {
   // 리포트 KPI (lib/kpis.ts)
   "도달 인원": "Reach",
   "QR 스캔 + 현장 밖 도달": "QR scans + off-site reach",
-  "QR 스캔 {scans}건에 목표 설정에서 적은 현장 밖 도달(SNS 등) {snsReach}명과 브랜드가 확인한 게시물 도달 {posted}명을 더한 값이에요.":
+  "QR 스캔 {scans}회에 목표 설정에서 적은 현장 밖 도달(SNS 등) {snsReach}명과 브랜드가 확인한 게시물 도달 {posted}명을 더한 값이에요.":
     "{scans} QR scans, plus the {snsReach} off-site reach (social media, etc.) entered in the goals and the {posted} reach of posts the brand confirmed.",
   "QR 참여율": "QR rate",
-  "QR 스캔 {scans}건": "{scans} QR scans",
-  "QR 스캔 {scans}건 ÷ 예상 관객 {audience}명": "{scans} QR scans ÷ {audience} expected audience",
+  "QR 스캔 {scans}회": "{scans} QR scans",
+  "QR 스캔 {scans}회 ÷ 예상 관객 {audience}명": "{scans} QR scans ÷ {audience} expected audience",
   "방문 전환율": "Visit rate",
   "{visits}명 방문": "{visits:visit|visits}",
   "매장 방문 {visits}건 ÷ QR 스캔 {scans}건": "{visits} store visits ÷ {scans} QR scans",
@@ -65,7 +65,7 @@ const en: Record<string, string> = {
   집행액: "Spend",
   "방문당 비용": "Cost per visit",
   "{coupons}장": "{coupons}",
-  "{visits}명": "{visits}",
+  "{visits}건": "{visits}",
   "목표 {target}%": "Goal {target}%",
   "집행액은 학생단체가 목표 설정에서 적은 협찬 가치이고 추정 매출은 매장 방문 수 × 학생단체가 적은 1인 예상 지출이에요. 실제 매출과 다를 수 있어요.":
     "Spend is the sponsorship value the student group set in its goals; estimated sales are store visits × the group's expected spend per person. Actual sales may differ.",
@@ -94,8 +94,7 @@ const en: Record<string, string> = {
   "목표 ROAS {target}%까지 {gap}%p 남았어요.": "{gap} points short of the {target}% ROAS goal.",
   "{spend}을 집행해 추정 매출 {sales}을 만들었어요. {verdict}":
     "Spent {spend} for an estimated {sales} in sales. {verdict}",
-  "쿠폰을 받은 {coupons}명 중 {visits}명({rate}%)이 매장을 찾았어요. 전체 평균은 {average}%예요.":
-    "{visits} of {coupons} coupon takers ({rate}%) visited the store, against an overall average of {average}%.",
+  "받은 쿠폰 {coupons}장 중 {visits}건({rate}%)이 매장 방문으로 이어졌어요. 전체 평균은 {average}%예요.": "{visits} of {coupons} coupons ({rate}%) led to a store visit, against an overall average of {average}%.",
   "방문 한 명당 {cost}이 들었어요. 전체 평균 {average}보다 적게 들었어요.":
     "Each visit cost {cost}, less than the overall average of {average}.",
   "방문 한 명당 {cost}이 들었어요. 전체 평균 {average}보다 많이 들었어요.":
@@ -126,9 +125,9 @@ const en: Record<string, string> = {
   "추정 ROAS {roas}%로 목표 {target}%보다 {summary}": "Est. ROAS was {roas}% against a {target}% goal: {summary}",
   "협찬 가치를 정하지 않아 ROAS는 계산하지 않았어요.": "ROAS wasn't calculated because no sponsorship value was set.",
   "QR 참여율은 {rate}%로 목표({target}%) 대비 {gap}예요.": "QR rate was {rate}%, {gap} against the {target}% goal.",
-  "QR 스캔 {scans}건에 매장 방문이 {visits}건({rate}%) 이어졌어요.":
+  "QR 스캔 {scans}회에 매장 방문이 {visits}건({rate}%) 이어졌어요.":
     "{scans} QR scans led to {visits} store visits ({rate}%).",
-  "{hour}에 스캔이 {scans}건으로 가장 많았어요. 다음 행사에서는 이 시간대에 부스 인력을 모아 보세요.":
+  "{hour}에 스캔이 {scans}회로 가장 많았어요. 다음 행사에서는 이 시간대에 부스 인력을 모아 보세요.":
     "Scans peaked at {hour} with {scans}. Put more booth staff on at that time at your next event.",
   "협찬 성과 리포트": "Sponsorship Performance Report",
   "예상 관객 {audience}명": "Expected audience {audience}",
@@ -173,7 +172,7 @@ const en: Record<string, string> = {
   "QR 참여자 대비 방문율": "Visits per QR participant",
   "쿠폰 수령자 대비 방문율": "Visits per coupon taken",
   "QR 참여자 대비 방문율 (%)": "Visits per QR participant (%)",
-  "매장 방문 {visits}건 ÷ QR 참여 {scans}명": "{visits} store visits ÷ {scans} QR participants",
+  "매장 방문 {visits}건 ÷ QR 스캔 {scans}회": "{visits} store visits ÷ {scans} QR scans",
   "전체 집행액 기준 추정 ROAS · 누적 집행액 {spend}": "Estimated ROAS on total spend · {spend} spent in all",
   "추정 매출 합계 ÷ 집행액 합계(현금 + 현물, 수수료 제외)예요.": "Total estimated sales ÷ total spend (cash plus goods, fee excluded).",
   "추정 ROAS 평균": "Average estimated ROAS",
@@ -198,6 +197,12 @@ const en: Record<string, string> = {
   "협찬액이 아직 정해지지 않아 ROAS를 계산하지 않았어요.": "The sponsorship value isn't set yet, so ROAS wasn't calculated.",
   "아직 방문을 집계하는 중이라 목표와 견주지 않았어요.": "Visits are still being counted, so it isn't compared with the goal yet.",
   "목표 {target} 대비 {rate}%": "{rate}% of the {target} goal",
+  "계산 가능 {priced}건 · 비용 미확정 {unpriced}건 · 현금과 현물 포함": "{priced} with a cost · {unpriced} cost not set · cash and in-kind",
+  "쿠폰 {coupons}장 중 {rate}%가 방문으로": "{rate}% of {coupons} coupons led to a visit",
+  "집계 중 · 비용 확정 {priced}건 · 방문 × 1인 예상 지출로 추정": "Still counting · {priced} with a cost · estimated as visits × expected spend",
+  "비용 확정 {priced}건 · 방문 × 1인 예상 지출로 추정": "{priced} with a cost · estimated as visits × expected spend",
+  "미확정": "Not set",
+  "방문 × 1인 예상 지출로 추정한 매출이 협찬액보다 많아요.": "Estimated sales (visits × expected spend) exceed the sponsorship value.",
 }
 
 export default en

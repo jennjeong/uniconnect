@@ -61,9 +61,14 @@ describe("sponsorship results", () => {
       signups: 0,
       experiences: 0,
       roas: 130,
+      priced: 3,
+      unpriced: 0,
       roasMissing: false,
       roasCounting: false,
     })
+    // 비용 미확정(0원) 협찬은 계산 가능 수에서 빠지고, 따로 센다.
+    const withUnpriced = sponsorshipTotals([...list, sponsorship({ id: "d", spend: 0, sales: 50000, visits: 5 })])
+    expect([withUnpriced.priced, withUnpriced.unpriced, withUnpriced.roas]).toEqual([3, 1, 130])
   })
 
   test("amounts read in won and 만원", () => {

@@ -1,3 +1,4 @@
+import { clampPostDeadlines } from "../lib/postDeadlines.js"
 import { addDays, todayInKorea } from "../lib/dates.js"
 import { emptyVenueCounts } from "../lib/methods.js"
 import { hashPassword } from "../lib/password.js"
@@ -59,7 +60,7 @@ export const demoContacts: Record<"학생단체" | "브랜드", AccountContact> 
 }
 
 // 학생 단체가 둘러볼 수 있는 브랜드. score는 데모 단체의 행사에 대한
-// 매칭 점수이고 popularity는 이번 학기 협찬 수다.
+// 매칭 점수이고 popularity는 누적 협찬 수다(주인이 있는 브랜드는 lib/brandProfile.ts가 기록 수로 바꾼다).
 export const seedBrands: Match[] = [
   {
     id: "afternoon-coffee",
@@ -1029,12 +1030,14 @@ export function freshenDemoReport(database: Pick<Database, "sponsorships" | "mea
 }
 
 // 예시 게시물은 데이터가 오래돼도 한 달 앞까지 열려 있다.
-export function freshenExamplePosts(database: Pick<Database, "posts" | "demoAccountIds">, now = new Date()) {
+export function freshenExamplePosts(database: Pick<Database, "posts" | "demoAccountIds"> & Partial<Pick<Database, "events">>, now = new Date()) {
   const demo = new Set(Object.values(database.demoAccountIds ?? {}))
   const today = todayInKorea(now)
   for (const post of database.posts) {
     if (demo.has(post.accountId) && post.deadline < addDays(today, 7)) post.deadline = addDays(today, 30)
   }
+  // 행사에 이어진 글은 행사가 끝나면 마감한다. 예시도 같다(행사 뒤에 마감이 오지 않게).
+  if (database.events) clampPostDeadlines(database as Pick<Database, "posts" | "events">)
 }
 
 // 데모 단체의 콘서트를 행사 페이지가 보여 주는 대로 둔다. 방문자가 단체가

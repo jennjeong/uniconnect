@@ -184,7 +184,9 @@ export type Agreement = {
   shipments?: Shipment[]
   snsPosts?: SnsPost[]
   side: ChatSide
-  // 각 당사자와 계정을 운영하는 담당자 (두 당사자에게만 보인다).
+  // 각 당사자와 계정을 운영하는 담당자. 담당자는 협찬이 확정된 뒤(양쪽이 계약서를 확인)에만
+  // 두 당사자에게 보인다(contactsShown).
+  contactsShown?: boolean
   group: { name: string; member: boolean; contact?: AccountContact }
   brand: { name: string; member: boolean; contact?: AccountContact }
   eventName: string
@@ -332,7 +334,8 @@ export type PaymentOrder = { order: Payment; customerKey: string; email: string 
 // 지금 돌려받는 금액. days는 전액이면 null이다.
 export type RefundQuote = { amount: number; days: number | null; whole: boolean }
 
-export type AdminPayment = Payment & { accountId: string; card: boolean }
+// example: 데모 계정의 예시 주문이다.
+export type AdminPayment = Payment & { accountId: string; card: boolean; example?: true }
 
 // 협찬 한쪽이 행사 뒤에 상대에 대해 쓴 후기.
 export type Review = {
@@ -1213,7 +1216,12 @@ export type Portfolio = {
 }
 
 // 운영자 콘솔 (backend lib/console.ts).
+// 설정이 비어 생기는 일(backend lib/adminTools.ts readiness): blocking은 회원 기능이 멈추고,
+// limited는 운영이나 안내가 줄어든다.
+export type Readiness = { key: string; level: "blocking" | "limited" }[]
+
 export type AdminOverview = {
+  readiness?: Readiness
   stats: PlatformStats
   weekly: { week: string; signups: number; proposals: number; accepted: number }[]
   revenue: { total: number; thisMonth: number; byKind: Record<PaymentKind, number>; partners: number }
@@ -1292,6 +1300,8 @@ export type AgreementState = "draft" | "one" | "both" | "done" | "cancel"
 
 export type AdminAgreementRow = {
   id: string
+  // 원래 제안을 찾을 수 없는 계약서다(예전 데이터). 상세를 열 수 없다.
+  missing?: boolean
   from: string
   to: string
   event: string
@@ -1397,6 +1407,8 @@ export type SiteCounts = { groups: number; brands: number; schools: number; spon
 export type SiteState = {
   maintenance: { message: string } | null
   signupsClosed: boolean
+  // 인증 메일을 보낼 수 있는지다. false면 가입과 비밀번호 재설정이 막힌다.
+  mailReady?: boolean
   faq: SiteFaq
   counts?: SiteCounts
   // 운영자가 설정했다면 Kakao 지도의 JavaScript 키.
@@ -1472,6 +1484,9 @@ export type AdminHealth = {
   region: string | null
   commit: string | null
   data: { accounts: number; sessions: number; payments: number; logEntries: number }
+  // 이 API 복사본에서 마지막으로 메일을 보내거나 실패한 때다(설정과 실제 발송을 나눈다).
+  mail?: { lastSentAt?: string; lastFailedAt?: string; lastError?: string }
+  readiness?: Readiness
 }
 
 // 운영자가 사이트 맨 위에 띄우는 공지.
@@ -1605,6 +1620,8 @@ export type ProgramBrief = {
   to: string
   schools: number
   perSchool: number
+  // 학교당 수량의 단위(개, 잔, 장 등)이며 없으면 단위 없이 보인다.
+  unit?: string
   audience?: string
   asks?: string
   budget?: number

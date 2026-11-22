@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto"
 import { industryOf, ownerOf, partnerCatalogOf, shownCatalog, shownTo } from "../lib/catalog.js"
 import { todayInKorea } from "../lib/dates.js"
 import { HttpError } from "../lib/errors.js"
-import { contractState, openTasksOf } from "../lib/agreements.js"
+import { confirmedSponsorshipsOf, contractState, openTasksOf } from "../lib/agreements.js"
 import { parseTerms, termLines } from "../lib/terms.js"
 import { text } from "../lib/validation.js"
 import { notify } from "../lib/notices.js"
@@ -48,11 +48,8 @@ function proposalState(account: Account) {
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt))) {
     statuses[item.partnerId] = item.status
   }
-  const confirmed =
-    account.role === "학생단체"
-      ? database.requests.filter((item) => item.fromAccountId === account.id && item.status === "수락").length +
-        database.offers.filter((item) => item.groupId === account.groupId && item.status === "수락").length
-      : (database.sponsorships[account.id] ?? []).length
+  // 확정은 수락이 아니라 양쪽이 계약서를 확인한 것이다(lib/agreements.ts의 공통 판정).
+  const confirmed = confirmedSponsorshipsOf(database, account).length
   // 계정이 보낸 것을 최신순으로 보여 주며, 받은 것과 함께 받은편지함에
   // 나열한다. 누구에게, 자기 어느 행사에 대해, 무엇을 제안했는지와 지금까지의
   // 답을 담는다.

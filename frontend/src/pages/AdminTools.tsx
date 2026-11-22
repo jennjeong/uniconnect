@@ -8,7 +8,7 @@ import { t } from "../i18n"
 import { formatDateTime, formatDay, formatPeriod } from "../lib/date"
 import { csvCell } from "../lib/csv"
 import { saveFile } from "../lib/download"
-import type { AdminAnnouncement, AdminHealth, AdminLogRow, AdminMemberDetail, AdminOperator, ErrorEntry } from "../types"
+import type { AdminAnnouncement, AdminHealth, AdminLogRow, AdminMemberDetail, AdminOperator, ErrorEntry, Readiness } from "../types"
 
 // 운영자 콘솔의 도구(pages/AdminPage.tsx): 회원 메모, 답변 템플릿, CSV 파일,
 // 사이트 공지, 운영자가 한 일의 로그, 설정된 서비스.
@@ -511,7 +511,7 @@ const actionLabels: Record<string, string> = {
   "dispute-decided": "분쟁 결론",
   "application-rejected": "가입 거절",
   "business-set": "사업자 확인 변경",
-  "partners-granted": "파트너스 부여",
+  "partners-granted": "Growth 부여",
   "demo-reset": "예시 데이터 초기화",
   "proposal-nudged": "답 부탁 알림",
   "post-hidden": "모집 글 숨김",
@@ -578,7 +578,7 @@ export function ActivityLog({ token, onNotice }: { token: string; onNotice: (mes
         <CsvButton
           name="activity-log"
           rows={() => [
-            [t("시각"), t("한 사람"), t("한 일"), t("대상"), t("이름"), t("내용")],
+            [t("시각"), t("작업자"), t("작업 내용"), t("대상"), t("이름"), t("내용")],
             ...shown.map((entry) => [entry.at, actorOf(entry), t(actionLabels[entry.action] ?? entry.action), t(kindLabels[entry.target.kind] ?? entry.target.kind), entry.label, entry.detail]),
           ]}
         />
@@ -592,8 +592,8 @@ export function ActivityLog({ token, onNotice }: { token: string; onNotice: (mes
           <thead>
             <tr>
               <th scope="col">{t("시각")}</th>
-              <th scope="col">{t("한 사람")}</th>
-              <th scope="col">{t("한 일")}</th>
+              <th scope="col">{t("작업자")}</th>
+              <th scope="col">{t("작업 내용")}</th>
               <th scope="col">{t("대상")}</th>
             </tr>
           </thead>
@@ -620,7 +620,7 @@ export function ActivityLog({ token, onNotice }: { token: string; onNotice: (mes
 }
 
 const checkLabels: Record<string, { label: string; off: string }> = {
-  mail: { label: "메일 보내기 (Resend)", off: "인증 코드와 알림 메일이 서버 로그에만 남아요." },
+  mail: { label: "메일 보내기 (Resend)", off: "인증 메일과 알림 메일을 보내지 못해요. 가입과 비밀번호 재설정이 막혀요." },
   siteUrl: { label: "사이트 주소 (SITE_URL)", off: "알림 메일에 링크가 빠져요." },
   operatorEmail: { label: "오류 알림 메일 (OPERATOR_EMAIL)", off: "새 오류를 메일로 받지 못해요." },
   cron: { label: "일정 알림 (CRON_SECRET)", off: "행사 3일 전 알림 메일이 나가지 않아요." },
@@ -638,6 +638,59 @@ const paymentModes: Record<AdminHealth["payments"], string> = {
   live: "실결제",
 }
 
+// 설정이 비어 생기는 일(backend lib/adminTools.ts readiness)의 제목과 영향이다.
+const readinessLabels: Record<string, { title: string; impact: string }> = {
+  mail: {
+    title: "인증 메일을 보낼 수 없어요",
+    impact: "새 가입, 비밀번호 재설정, 로그인 이메일 변경, 공동 관리자 초대가 막혀요. RESEND_API_KEY와 MAIL_FROM이 필요해요.",
+  },
+  mailDev: {
+    title: "인증번호를 화면에 보여 주는 개발 설정이에요",
+    impact: "메일 대신 화면에 인증번호가 나와요. 운영에서는 EXPOSE_EMAIL_CODES를 끄고 메일을 연결해 주세요.",
+  },
+  paymentsOff: { title: "카드 결제가 꺼져 있어요", impact: "브랜드는 계좌 입금으로만 결제하고, 운영자가 입금을 확인해야 해요." },
+  paymentsTest: { title: "카드 결제가 테스트 모드예요", impact: "카드 결제창에서 실제 돈이 오가지 않아요. 운영 전환에는 Toss 운영 키가 필요해요." },
+  secrets: {
+    title: "저장 비밀값 암호화가 꺼져 있어요",
+    impact: "2단계 로그인 비밀값, 결제 키, 현장 PIN, 인증번호가 데이터에 암호화되지 않은 채 저장돼요. SECRETS_KEY가 필요해요.",
+  },
+  errorMail: { title: "오류 알림 메일이 없어요", impact: "새 오류는 콘솔의 오류 목록에서만 볼 수 있어요. OPERATOR_EMAIL과 메일 연결이 필요해요." },
+  cron: { title: "정기 작업이 막혀 있어요", impact: "행사 3일 전 알림, 주간 요약, 정기 백업이 돌지 않아요. CRON_SECRET이 필요해요." },
+}
+
+const levelLabels = { blocking: "회원 기능 중단", limited: "운영 · 안내 제한" } as const
+
+// 개요와 서비스 상태의 맨 위에 보이는 설정 경고다. 회원 기능이 멈추는 것을 먼저 둔다.
+export function ReadinessList({ items, onOpen }: { items: Readiness; onOpen?: () => void }) {
+  const sorted = [...items].sort((a, b) => (a.level === b.level ? 0 : a.level === "blocking" ? -1 : 1))
+  return (
+    <section className="console-card wide console-readiness" aria-label={t("설정 경고")}>
+      <div className="console-card-head">
+        <div>
+          <h2>{t("설정 경고 {count}건", { count: sorted.length })}</h2>
+          <p>{t("서버 설정이 비어 회원이나 운영에 생기는 일이에요. 값은 보이지 않아요.")}</p>
+        </div>
+        {onOpen && (
+          <button className="console-text-button" onClick={onOpen} type="button">
+            {t("서비스 상태 보기")}
+          </button>
+        )}
+      </div>
+      <ul>
+        {sorted.map((item) => (
+          <li className={item.level} key={item.key}>
+            <em className={item.level === "blocking" ? "console-tag red" : "console-tag"}>{t(levelLabels[item.level])}</em>
+            <div>
+              <strong>{t(readinessLabels[item.key]?.title ?? item.key)}</strong>
+              <small>{t(readinessLabels[item.key]?.impact ?? "")}</small>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
 // 이 API 복사본에 설정된 서비스와, 각각이 없을 때 빠지는 것.
 export function ServiceHealth({ token, onNotice }: { token: string; onNotice: (message: string) => void }) {
   const [health, setHealth] = useState<AdminHealth>()
@@ -647,6 +700,7 @@ export function ServiceHealth({ token, onNotice }: { token: string; onNotice: (m
   if (!health) return <p className="field-hint">{t("불러오고 있어요…")}</p>
   return (
     <div className="console-grid">
+      {health.readiness && health.readiness.length > 0 && <ReadinessList items={health.readiness} />}
       <section className="console-card span-2">
         <h2>{t("서버")}</h2>
         <dl className="console-facts">
@@ -669,6 +723,17 @@ export function ServiceHealth({ token, onNotice }: { token: string; onNotice: (m
           <div>
             <dt>{t("저장 비밀값 암호화")}</dt>
             <dd>{health.secretsSealed === undefined ? "—" : health.secretsSealed ? t("켜짐") : t("꺼짐")}</dd>
+          </div>
+          <div>
+            <dt>{t("최근 메일 발송")}</dt>
+            <dd>
+              {health.mail?.lastSentAt
+                ? t("성공 {time}", { time: formatDateTime(health.mail.lastSentAt) })
+                : t("이 서버에서 아직 없음")}
+              {health.mail?.lastFailedAt && (
+                <small>{t("실패 {time} · {reason}", { time: formatDateTime(health.mail.lastFailedAt), reason: health.mail.lastError ?? "" })}</small>
+              )}
+            </dd>
           </div>
           <div>
             <dt>{t("배포 커밋")}</dt>

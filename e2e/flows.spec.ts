@@ -1565,6 +1565,7 @@ test("a new group signs up with the code shown on screen", async ({ page }) => {
   await page.getByRole("button", { name: "회원가입" }).first().click()
   const dialog = page.getByRole("dialog")
   await dialog.getByLabel("단체명").fill("테스트 동아리")
+  await dialog.getByLabel("단체 분류").selectOption({ index: 1 })
   await dialog.getByLabel("학교", { exact: true }).fill("삼육대학교")
   await dialog.getByLabel("담당자 이름").fill("테스트 담당자")
   await dialog.getByLabel("직책").selectOption("회장")
@@ -1809,6 +1810,7 @@ test("a member downloads their data and hands the account over to a new email", 
   await page.getByRole("button", { name: "회원가입" }).first().click()
   const signup = page.getByRole("dialog")
   await signup.getByLabel("단체명").fill("인수인계 동아리")
+  await signup.getByLabel("단체 분류").selectOption({ index: 1 })
   await signup.getByLabel("학교", { exact: true }).fill("삼육대학교")
   await signup.getByLabel("담당자 이름").fill("테스트 담당자")
   await signup.getByLabel("직책").selectOption("회장")
@@ -1864,6 +1866,7 @@ test("a shop a student group invited joins as a brand from the invitation", asyn
   await page.getByRole("button", { name: "가게로 가입하기" }).click()
   const signup = page.getByRole("dialog")
   await signup.getByLabel("브랜드명").fill("골목 카페")
+  await signup.getByLabel("업종").selectOption({ index: 1 })
   await signup.getByLabel("담당자 이름").fill("테스트 담당자")
   await signup.getByLabel("직책").selectOption("대표")
   await signup.getByLabel("휴대폰 번호").fill("010-1234-5678")
@@ -1900,6 +1903,7 @@ test("a shop with no company email signs up with a document and waits for approv
   await page.getByRole("button", { name: "가게로 가입하기" }).click()
   const signup = page.getByRole("dialog")
   await signup.getByLabel("브랜드명").fill("개인메일 카페")
+  await signup.getByLabel("업종").selectOption({ index: 1 })
   await signup.getByLabel("담당자 이름").fill("테스트 담당자")
   await signup.getByLabel("직책").selectOption("대표")
   await signup.getByLabel("휴대폰 번호").fill("010-1234-5678")
@@ -1933,12 +1937,15 @@ test("a brand opens an accepted proposal's agreement, confirms it and proves wha
   await page.locator(".request-card", { hasText: "서울여대 러너스" }).getByRole("button", { name: "계약서" }).click()
   await expect(page.getByRole("heading", { level: 1, name: "가을 캠퍼스 런 5K" })).toBeVisible()
   await expect(page.getByText("아직 uniconnect 계정이 없어요")).toBeVisible()
-  // 자기 쪽은 운영하는 사람을 연락할 전화번호와 함께 보여 준다.
-  await expect(page.locator(".agreement-contact")).toContainText("이오후 · 점장")
-  await expect(page.locator(".agreement-contact a")).toHaveAttribute("href", "tel:01000000001")
+  // 담당자 연락처는 협찬이 확정된 뒤(계정이 있는 쪽이 모두 확인)에만 보인다(개인정보 처리방침).
+  await expect(page.getByText("담당자 연락처는 양쪽이 계약서를 확인하면 보여요.", { exact: false })).toBeVisible()
+  await expect(page.locator(".agreement-contact")).toHaveCount(0)
 
   await page.getByRole("button", { name: "이 내용으로 확인하기" }).click()
   await expect(page.locator(".agreement-confirm .agreement-state")).toHaveText("상대 확인 기다리는 중")
+  // 상대에게 계정이 없으면 브랜드의 확인으로 확정되어, 자기 쪽 담당자가 전화번호와 함께 보인다.
+  await expect(page.locator(".agreement-contact")).toContainText("이오후 · 점장")
+  await expect(page.locator(".agreement-contact a")).toHaveAttribute("href", "tel:01000000001")
 
   // 브랜드가 첫 항목을 체크하고 링크와 사진으로 증빙한다.
   const item = page.locator(".agreement-item").first()
