@@ -37,7 +37,7 @@ const en: Record<string, string> = {
   "가입 승인": "Sign-up approvals",
   "가입 · 보상 승인": "Sign-up and reward approvals",
   "친구 초대 보상": "Invitation rewards",
-  "초대한 쪽과 초대받은 쪽이 다른 사업자인지 확인하고 승인해 주세요. 승인해야 파트너스 일수가 나가요.": "Check the inviter and the invited account are separate businesses before approving. Partners days go out only once you approve.",
+  "초대한 쪽과 초대받은 쪽이 다른 사업자인지 확인하고 승인해 주세요. 승인해야 Growth 일수가 나가요.": "Check the inviter and the invited account are separate businesses before approving. Partners days go out only once you approve.",
   "기다리는 보상이 없어요.": "No rewards are waiting.",
   "탈퇴한 계정": "Account that left",
   "{referrer} → {joined} · {days}일": "{referrer} → {joined} · {days} days",

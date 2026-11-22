@@ -235,6 +235,7 @@ export function Insights({ token, onNotice }: { token: string; onNotice: Notice 
       <section className="console-card span-2">
         <h2>{t("가입 주별 리텐션")}</h2>
         <p className="field-hint">{t("가입한 주 뒤 1~4주에 행사 등록 · 제안 · 로그인 중 하나라도 한 회원의 몫이에요.")}</p>
+        <p className="field-hint">{t("분모는 그 주에 가입한 실제 회원이에요. 가입한 회원이 없으면 '대상 없음', 그 주가 아직 지나지 않았으면 '관찰 전'이에요.")}</p>
         <table className="console-table plain console-cohort">
           <thead>
             <tr>
@@ -253,8 +254,8 @@ export function Insights({ token, onNotice }: { token: string; onNotice: Notice 
                 <th scope="row">{row.week.slice(5).replace("-", "/")}</th>
                 <td>{row.size}</td>
                 {row.active.map((share, index) => (
-                  <td key={index} style={share === null ? undefined : { background: `rgba(49, 130, 246, ${share / 120})` }}>
-                    {share === null ? "" : `${share}%`}
+                  <td key={index} style={share === null || row.size === 0 ? undefined : { background: `rgba(49, 130, 246, ${share / 120})` }}>
+                    {row.size === 0 ? t("대상 없음") : share === null ? <small>{t("관찰 전")}</small> : `${share}%`}
                   </td>
                 ))}
               </tr>
@@ -803,7 +804,7 @@ function ReferralRewards({ token, onNotice }: { token: string; onNotice: Notice 
       <div className="console-card-head">
         <div>
           <h2>{t("친구 초대 보상")}</h2>
-          <p>{t("초대한 쪽과 초대받은 쪽이 다른 사업자인지 확인하고 승인해 주세요. 승인해야 파트너스 일수가 나가요.")}</p>
+          <p>{t("초대한 쪽과 초대받은 쪽이 다른 사업자인지 확인하고 승인해 주세요. 승인해야 Growth 일수가 나가요.")}</p>
         </div>
       </div>
       {data.rewards.length === 0 ? (

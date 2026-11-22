@@ -66,7 +66,12 @@ export async function requireAdmin(req: Request) {
 // 모든 결제를 최신순으로 보여 준다. 확인을 기다리는 계좌 이체, 결제된 것,
 // 환불된 것이다.
 // 운영자 화면에도 결제 키는 보내지 않는다. 카드 결제인지만 알린다.
-const paymentForOperator = ({ paymentKey, ...payment }: Payment) => ({ ...payment, card: Boolean(paymentKey) })
+const paymentForOperator = ({ paymentKey, ...payment }: Payment) => ({
+  ...payment,
+  card: Boolean(paymentKey),
+  // 데모 계정의 예시 주문이다. 실제 처리할 일로 세지 않는다.
+  ...(isDemoAccount(getDatabase(), getDatabase().accounts.find((account) => account.id === payment.accountId)) ? { example: true as const } : {}),
+})
 
 adminRouter.get("/payments", async (req, res) => {
   await requireAdmin(req)

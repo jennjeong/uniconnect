@@ -5428,6 +5428,21 @@
   list-style: none;
 }
 
+/* 개요의 0건인 일: 한 줄로 접어 둔다. */
+.console-idle {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.console-idle summary {
+  cursor: pointer;
+}
+
+.console-idle p {
+  margin: 6px 0 0;
+}
+
 /* 설정 경고(개요와 서비스 상태 맨 위): 회원 기능이 멈추는 것을 먼저, 영향을 한 줄로. */
 .console-readiness ul {
   display: grid;
