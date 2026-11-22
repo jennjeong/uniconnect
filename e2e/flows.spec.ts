@@ -909,6 +909,8 @@ test("a group writes its event page on the form, adds a photo, and a brand reads
   await page.goto(`/new?date=${day}`)
   await page.getByLabel("행사명").fill("페이지 공연")
   await page.locator("label.check-row", { hasText: "행사 운영비 지원" }).click()
+  // 선택 입력(행사 페이지, 홍보 계획, 참가자 구성)은 접혀 있다가 펼친다.
+  await page.locator(".create-optional > summary").click()
   await page.getByLabel("행사 유형").selectOption("공연")
   await page.getByLabel("예산").fill("300000")
   await page.getByLabel("시작 시각").selectOption("18:00")

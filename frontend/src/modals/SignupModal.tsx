@@ -227,6 +227,12 @@ export function SignupModal({
             </>
           )}
         </div>
+        {/* 세 묶음으로 나눠 보인다. 모든 항목이 필수다. */}
+        <h3 className="signup-step">
+          <b aria-hidden="true">1</b>
+          {draft.role === "학생단체" ? t("단체 정보") : t("브랜드 정보")}
+          <small>{t("모두 필수")}</small>
+        </h3>
         <div className="form-row">
           <label>
             {draft.role === "학생단체" ? t("단체명") : t("브랜드명")}
@@ -266,6 +272,10 @@ export function SignupModal({
             />
           </label>
         )}
+        <h3 className="signup-step">
+          <b aria-hidden="true">2</b>
+          {t("담당자 · 이메일 인증")}
+        </h3>
         <div className="form-row">
           <label>
             {t("담당자 이름")}
@@ -387,6 +397,10 @@ export function SignupModal({
             </small>
           )}
         </div>
+        <h3 className="signup-step">
+          <b aria-hidden="true">3</b>
+          {t("비밀번호 · 동의")}
+        </h3>
         <div className="form-row">
           <PasswordField
             aria-describedby="signup-password-rules"
@@ -404,6 +418,12 @@ export function SignupModal({
           />
         </div>
         <PasswordRules id="signup-password-rules" password={draft.password} />
+        {/* 조건 충족(위)과 따로, 확인 칸이 같은지를 알린다. */}
+        {draft.confirm && (
+          <small aria-live="polite" className={draft.confirm === draft.password ? "field-hint success" : "field-hint"}>
+            {draft.confirm === draft.password ? t("비밀번호 확인이 일치해요.") : t("비밀번호 확인이 아직 일치하지 않아요.")}
+          </small>
+        )}
         <label className="terms-check">
           <input
             checked={draft.agreed}

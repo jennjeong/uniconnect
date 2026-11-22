@@ -97,6 +97,13 @@ export function EventCreatePage({
   const [handouts, setHandouts] = useState<string[]>(start.handouts)
   const [posts, setPosts] = useState<string[]>(start.posts)
   const [promoAgreed, setPromoAgreed] = useState(start.promoAgreed)
+  // 이미 채운 선택 입력이 있으면(수정, 복제, 초안) 그 묶음을 펼쳐 둔다.
+  const [optionalFilled] = useState(() =>
+    Boolean(
+      start.venue || start.intro || start.packages.length || start.kind || start.startTime || start.years.length || start.majors ||
+        start.spots.length || start.handouts.length || start.posts.length,
+    ),
+  )
 
   // 지금 양식의 값. 처음 값과 다르면 초안으로 저장하고, 같아지면 지운다.
   const current: EventForm = {
@@ -393,165 +400,6 @@ export function EventCreatePage({
               />
             )}
           </div>
-          {students && (
-            <div className="form-card event-page-card">
-              <h3 className="form-card-title">{t("행사 페이지")}</h3>
-              <p className="form-need">{t("선택 · 나중에 채워도 돼요")}</p>
-              <p className="form-card-caption">{t("브랜드가 행사를 판단하도록 장소와 소개, 협찬 혜택 묶음을 적어 주세요. 사진은 행사 상세에서 올려요.")}</p>
-              <label className="field">
-                <span>{t("행사 유형")}</span>
-                <select onChange={(changed) => setKind(changed.target.value)} value={kind}>
-                  <option value="">{t("고르지 않음")}</option>
-                  {eventKinds.map((item) => (
-                    <option key={item} value={item}>
-                      {t(item)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="field-pair">
-                <label className="field">
-                  <span>{t("시작 시각")}</span>
-                  <TimeSelect
-                    onChange={(time) => {
-                      setStartTime(time)
-                      if (!time || (endTime && endTime <= time)) setEndTime("")
-                    }}
-                    value={startTime}
-                  />
-                </label>
-                <label className="field">
-                  <span>{t("끝나는 시각")}</span>
-                  <TimeSelect after={startTime} disabled={!startTime} onChange={setEndTime} value={endTime} />
-                </label>
-              </div>
-              <label className="field">
-                <span>{t("장소")}</span>
-                <input
-                  maxLength={60}
-                  onChange={(changed) => setVenue(changed.target.value)}
-                  placeholder={t("예) 삼육대학교 대강당")}
-                  value={venue}
-                />
-              </label>
-              <label className="field">
-                <span>
-                  {t("행사 소개")} <em className="field-count">{intro.length}/1000</em>
-                </span>
-                <textarea
-                  maxLength={1000}
-                  onChange={(changed) => setIntro(changed.target.value)}
-                  placeholder={t("어떤 행사인지, 누가 오는지, 브랜드가 무엇을 할 수 있는지 적어 주세요.")}
-                  rows={5}
-                  value={intro}
-                />
-              </label>
-              <div className="package-editor">
-                <span className="field-label">{t("협찬 혜택 묶음")}</span>
-                {packages.map((item, index) => (
-                  <fieldset className="package-row" key={index}>
-                    <legend className="sr-only">{t("혜택 묶음 {count}", { count: index + 1 })}</legend>
-                    <input
-                      aria-label={t("묶음 이름")}
-                      maxLength={30}
-                      onChange={(changed) => changePackage(index, "name", changed.target.value)}
-                      placeholder={t("예) 메인 스폰서")}
-                      value={item.name}
-                    />
-                    <input
-                      aria-label={t("브랜드가 받는 것")}
-                      maxLength={200}
-                      onChange={(changed) => changePackage(index, "gives", changed.target.value)}
-                      placeholder={t("예) 무대 현수막 로고, SNS 게시물 2회")}
-                      value={item.gives}
-                    />
-                    <input
-                      aria-label={t("원하는 협찬")}
-                      maxLength={100}
-                      onChange={(changed) => changePackage(index, "asks", changed.target.value)}
-                      placeholder={t("예) 현금 30만원")}
-                      value={item.asks}
-                    />
-                    <button
-                      aria-label={t("혜택 묶음 {count} 빼기", { count: index + 1 })}
-                      className="delete-button"
-                      onClick={() => setPackages((current) => current.filter((_, at) => at !== index))}
-                      type="button"
-                    >
-                      <Icon name="close" size={16} />
-                    </button>
-                  </fieldset>
-                ))}
-                {packages.length < 4 && (
-                  <button
-                    className="cancel-button"
-                    onClick={() => setPackages((current) => [...current, { name: "", gives: "", asks: "" }])}
-                    type="button"
-                  >
-                    <Icon name="plus" size={15} /> {t("묶음 추가")}
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-          {students && (
-            <div aria-labelledby="promo-title" className="form-card" role="group">
-              <h3 className="form-card-title" id="promo-title">
-                {t("홍보 · 배포 계획")}
-              </h3>
-              <p className="form-need">{t("선택 · 나중에 채워도 돼요")}</p>
-              <p className="form-card-caption">{t("브랜드가 무엇을 받는지 고르면, 제안이 수락될 때 계약서의 할 일로 그대로 들어가요.")}</p>
-              {choices(t("로고가 보이는 곳"), logoSpots, spots, setSpots)}
-              {choices(t("현장 배포 방식"), handoutWays, handouts, setHandouts)}
-              {choices(t("SNS 홍보"), promoPosts, posts, setPosts)}
-              {promoChosen && (
-                <label className={promoAgreed ? "check-row checked promo-agree" : "check-row promo-agree"}>
-                  <input checked={promoAgreed} onChange={() => setPromoAgreed(!promoAgreed)} type="checkbox" />
-                  <span aria-hidden="true" className="check-box">
-                    <Icon name="check" size={14} />
-                  </span>
-                  <span className="check-copy">
-                    <strong>{t("고른 홍보를 이행할게요")}</strong>
-                    <small>{t("협찬을 받으면 고른 방식대로 홍보하고 계약서에서 증빙을 남겨요.")}</small>
-                  </span>
-                </label>
-              )}
-            </div>
-          )}
-          {students && (
-            <div aria-labelledby="makeup-title" className="form-card" role="group">
-              <h3 className="form-card-title" id="makeup-title">
-                {t("참가자 구성")}
-              </h3>
-              <p className="form-need">{t("선택 · 나중에 채워도 돼요")}</p>
-              <p className="form-card-caption">{t("정확하지 않아도 괜찮아요. 브랜드가 맞는 제품을 고르는 데 써요.")}</p>
-              <span className="field-label">{t("오는 사람")}</span>
-              <div className="check-list compact stagger">
-                {audienceYears.map((year) => {
-                  const checked = years.includes(year)
-                  return (
-                    <label className={checked ? "check-row checked" : "check-row"} key={year}>
-                      <input
-                        checked={checked}
-                        onChange={() => setYears((current) => (checked ? current.filter((item) => item !== year) : [...current, year]))}
-                        type="checkbox"
-                      />
-                      <span aria-hidden="true" className="check-box">
-                        <Icon name="check" size={14} />
-                      </span>
-                      <span className="check-copy">
-                        <strong>{t(year)}</strong>
-                      </span>
-                    </label>
-                  )
-                })}
-              </div>
-              <label className="field">
-                <span>{t("주요 전공")}</span>
-                <input maxLength={60} onChange={(changed) => setMajors(changed.target.value)} placeholder={t("예) 인공지능융합학부, 컴퓨터공학")} value={majors} />
-              </label>
-            </div>
-          )}
         </div>
 
         <div className="form-card date-card">
@@ -580,6 +428,176 @@ export function EventCreatePage({
           </p>
         </div>
       </div>
+
+      {students && (
+        <details className="create-optional" open={optionalFilled}>
+          <summary>
+            <strong>{t("선택 입력 · 행사 페이지, 홍보 계획, 참가자 구성")}</strong>
+            <small>{t("나중에 채워도 등록할 수 있어요. 채우면 브랜드가 행사를 판단하기 쉬워요.")}</small>
+          </summary>
+          <div className="create-optional-cards">
+          {(
+              <div className="form-card event-page-card">
+                <h3 className="form-card-title">{t("행사 페이지")}</h3>
+                <p className="form-need">{t("선택 · 나중에 채워도 돼요")}</p>
+                <p className="form-card-caption">{t("브랜드가 행사를 판단하도록 장소와 소개, 협찬 혜택 묶음을 적어 주세요. 사진은 행사 상세에서 올려요.")}</p>
+                <label className="field">
+                  <span>{t("행사 유형")}</span>
+                  <select onChange={(changed) => setKind(changed.target.value)} value={kind}>
+                    <option value="">{t("고르지 않음")}</option>
+                    {eventKinds.map((item) => (
+                      <option key={item} value={item}>
+                        {t(item)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div className="field-pair">
+                  <label className="field">
+                    <span>{t("시작 시각")}</span>
+                    <TimeSelect
+                      onChange={(time) => {
+                        setStartTime(time)
+                        if (!time || (endTime && endTime <= time)) setEndTime("")
+                      }}
+                      value={startTime}
+                    />
+                  </label>
+                  <label className="field">
+                    <span>{t("끝나는 시각")}</span>
+                    <TimeSelect after={startTime} disabled={!startTime} onChange={setEndTime} value={endTime} />
+                  </label>
+                </div>
+                <label className="field">
+                  <span>{t("장소")}</span>
+                  <input
+                    maxLength={60}
+                    onChange={(changed) => setVenue(changed.target.value)}
+                    placeholder={t("예) 삼육대학교 대강당")}
+                    value={venue}
+                  />
+                </label>
+                <label className="field">
+                  <span>
+                    {t("행사 소개")} <em className="field-count">{intro.length}/1000</em>
+                  </span>
+                  <textarea
+                    maxLength={1000}
+                    onChange={(changed) => setIntro(changed.target.value)}
+                    placeholder={t("어떤 행사인지, 누가 오는지, 브랜드가 무엇을 할 수 있는지 적어 주세요.")}
+                    rows={5}
+                    value={intro}
+                  />
+                </label>
+                <div className="package-editor">
+                  <span className="field-label">{t("협찬 혜택 묶음")}</span>
+                  {packages.map((item, index) => (
+                    <fieldset className="package-row" key={index}>
+                      <legend className="sr-only">{t("혜택 묶음 {count}", { count: index + 1 })}</legend>
+                      <input
+                        aria-label={t("묶음 이름")}
+                        maxLength={30}
+                        onChange={(changed) => changePackage(index, "name", changed.target.value)}
+                        placeholder={t("예) 메인 스폰서")}
+                        value={item.name}
+                      />
+                      <input
+                        aria-label={t("브랜드가 받는 것")}
+                        maxLength={200}
+                        onChange={(changed) => changePackage(index, "gives", changed.target.value)}
+                        placeholder={t("예) 무대 현수막 로고, SNS 게시물 2회")}
+                        value={item.gives}
+                      />
+                      <input
+                        aria-label={t("원하는 협찬")}
+                        maxLength={100}
+                        onChange={(changed) => changePackage(index, "asks", changed.target.value)}
+                        placeholder={t("예) 현금 30만원")}
+                        value={item.asks}
+                      />
+                      <button
+                        aria-label={t("혜택 묶음 {count} 빼기", { count: index + 1 })}
+                        className="delete-button"
+                        onClick={() => setPackages((current) => current.filter((_, at) => at !== index))}
+                        type="button"
+                      >
+                        <Icon name="close" size={16} />
+                      </button>
+                    </fieldset>
+                  ))}
+                  {packages.length < 4 && (
+                    <button
+                      className="cancel-button"
+                      onClick={() => setPackages((current) => [...current, { name: "", gives: "", asks: "" }])}
+                      type="button"
+                    >
+                      <Icon name="plus" size={15} /> {t("묶음 추가")}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+            {(
+              <div aria-labelledby="promo-title" className="form-card" role="group">
+                <h3 className="form-card-title" id="promo-title">
+                  {t("홍보 · 배포 계획")}
+                </h3>
+                <p className="form-need">{t("선택 · 나중에 채워도 돼요")}</p>
+                <p className="form-card-caption">{t("브랜드가 무엇을 받는지 고르면, 제안이 수락될 때 계약서의 할 일로 그대로 들어가요.")}</p>
+                {choices(t("로고가 보이는 곳"), logoSpots, spots, setSpots)}
+                {choices(t("현장 배포 방식"), handoutWays, handouts, setHandouts)}
+                {choices(t("SNS 홍보"), promoPosts, posts, setPosts)}
+                {promoChosen && (
+                  <label className={promoAgreed ? "check-row checked promo-agree" : "check-row promo-agree"}>
+                    <input checked={promoAgreed} onChange={() => setPromoAgreed(!promoAgreed)} type="checkbox" />
+                    <span aria-hidden="true" className="check-box">
+                      <Icon name="check" size={14} />
+                    </span>
+                    <span className="check-copy">
+                      <strong>{t("고른 홍보를 이행할게요")}</strong>
+                      <small>{t("협찬을 받으면 고른 방식대로 홍보하고 계약서에서 증빙을 남겨요.")}</small>
+                    </span>
+                  </label>
+                )}
+              </div>
+            )}
+            {(
+              <div aria-labelledby="makeup-title" className="form-card" role="group">
+                <h3 className="form-card-title" id="makeup-title">
+                  {t("참가자 구성")}
+                </h3>
+                <p className="form-need">{t("선택 · 나중에 채워도 돼요")}</p>
+                <p className="form-card-caption">{t("정확하지 않아도 괜찮아요. 브랜드가 맞는 제품을 고르는 데 써요.")}</p>
+                <span className="field-label">{t("오는 사람")}</span>
+                <div className="check-list compact stagger">
+                  {audienceYears.map((year) => {
+                    const checked = years.includes(year)
+                    return (
+                      <label className={checked ? "check-row checked" : "check-row"} key={year}>
+                        <input
+                          checked={checked}
+                          onChange={() => setYears((current) => (checked ? current.filter((item) => item !== year) : [...current, year]))}
+                          type="checkbox"
+                        />
+                        <span aria-hidden="true" className="check-box">
+                          <Icon name="check" size={14} />
+                        </span>
+                        <span className="check-copy">
+                          <strong>{t(year)}</strong>
+                        </span>
+                      </label>
+                    )
+                  })}
+                </div>
+                <label className="field">
+                  <span>{t("주요 전공")}</span>
+                  <input maxLength={60} onChange={(changed) => setMajors(changed.target.value)} placeholder={t("예) 인공지능융합학부, 컴퓨터공학")} value={majors} />
+                </label>
+              </div>
+            )}
+          </div>
+        </details>
+      )}
 
       {error && (
         <p className="form-error create-error" role="alert">

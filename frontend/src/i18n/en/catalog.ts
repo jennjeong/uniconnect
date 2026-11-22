@@ -771,6 +771,7 @@ const en: Record<string, string> = {
   "관심 조건 {name} 다시 걸기": "Apply saved search {name}",
   "관심 조건 {name} 지우기": "Remove saved search {name}",
   "새 상대 {count}": "{count} new",
+  "+{count}": "+{count}",
 }
 
 export default en

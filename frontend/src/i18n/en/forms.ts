@@ -1422,6 +1422,15 @@ const en: Record<string, string> = {
   "행사 3일 전 알림, 주간 요약, 정기 백업이 돌지 않아요. CRON_SECRET이 필요해요.": "Event reminders, the weekly digest and scheduled backups don't run. CRON_SECRET is needed.",
   "회원 기능 중단": "Member features stopped",
   "운영 · 안내 제한": "Operations limited",
+  "선택 입력 · 행사 페이지, 홍보 계획, 참가자 구성": "Optional · event page, promotion plan, audience",
+  "나중에 채워도 등록할 수 있어요. 채우면 브랜드가 행사를 판단하기 쉬워요.": "You can register without them and fill them in later. They help brands judge the event.",
+  "브랜드 정보": "Brand details",
+  "단체 정보": "Group details",
+  "모두 필수": "All required",
+  "담당자 · 이메일 인증": "Contact · email check",
+  "비밀번호 · 동의": "Password · consent",
+  "비밀번호 확인이 일치해요.": "The passwords match.",
+  "비밀번호 확인이 아직 일치하지 않아요.": "The passwords don't match yet.",
 }
 
 export default en
