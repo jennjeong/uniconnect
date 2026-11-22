@@ -23,6 +23,7 @@ import {
   Notices,
   Pager,
   readStored,
+  ReadinessList,
   Operators,
   ServiceHealth,
   SortHeader,
@@ -699,6 +700,7 @@ function Overview({ data, onGo }: { data: AdminOverview; onGo: (section: Section
   const revenueTop = Math.max(1, ...revenueKinds.map((item) => revenue.byKind[item.key]))
   return (
     <div className="console-grid">
+      {data.readiness && data.readiness.length > 0 && <ReadinessList items={data.readiness} onOpen={() => onGo("health")} />}
       <section className="console-card wide">
         <div className="console-card-head">
           <div>

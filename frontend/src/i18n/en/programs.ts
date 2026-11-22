@@ -147,6 +147,17 @@ const en: Record<string, string> = {
   "운영 시간": "Hours spent",
   "메모 (운영자만 봐요)": "Note (operators only)",
   "손익 저장": "Save margin",
+  "캠페인 비용 (원, 운영비 부가세 별도 + 실비)": "Campaign cost (won, fee before VAT + costs)",
+  "총 지급 예정액 (운영비 부가세 포함 + 실비)": "Total to pay (fee with VAT + costs)",
+  "실비 합계 {amount} · 브랜드가 행사 진행에 맞춰 단체와 업체에 직접 지급해요. uniconnect는 받지 않아요.": "Costs {amount} in all · the brand pays groups and vendors directly as the events go ahead. uniconnect doesn't take them.",
+  "목표 {target}곳 · 후보 {candidates} · 답 대기 {waiting} · 계약 {contracted} · 행사 완료 {done}": "Goal {target} · candidates {candidates} · awaiting answer {waiting} · contracted {contracted} · event done {done}",
+  "아직 {count}곳 더 필요해요": "{count} more needed",
+  "캠페인 비용 {cost} (운영비 부가세 별도 + 실비)": "Campaign cost {cost} (fee before VAT + costs)",
+  "최종 결과 보고": "Final results",
+  "중간 결과 보고": "Interim results",
+  "집계 대상 {count}곳 · {time} 기준": "{count} schools counted · as of {time}",
+  "행사를 마치지 않은 학교는 '집계 전'으로 보여요.": "Schools whose event hasn't finished show 'Not counted yet'.",
+  "집계 전": "Not counted yet",
 }
 
 export default en
