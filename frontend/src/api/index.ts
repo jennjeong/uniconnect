@@ -5,6 +5,8 @@ import type {
   Program,
   ProgramBrief,
   ProgramCandidateDraft,
+  ProgramMargin,
+  ProgramOps,
   ProgramReport,
   ProgramStatus,
   ProposalTermsDraft,
@@ -523,6 +525,8 @@ export const api = {
     request<{ program: Program }>(`/admin/programs/${encodeURIComponent(id)}/quote`, { method: "PUT", body, headers: { "X-Admin-Token": token } }),
   adminMoveProgram: (token: string, id: string, status: ProgramStatus, reason = "") =>
     request<{ program: Program }>(`/admin/programs/${encodeURIComponent(id)}/status`, { method: "POST", body: { status, reason }, headers: { "X-Admin-Token": token } }),
+  adminProgramOps: (token: string, id: string, body: { directCost: number; hours: number; note?: string }) =>
+    request<{ ops: ProgramOps; margin: ProgramMargin }>(`/admin/programs/${encodeURIComponent(id)}/ops`, { method: "PUT", body, headers: { "X-Admin-Token": token } }),
   adminProgramGroups: (token: string, id: string, q: string) =>
     request<{ groups: AdminProgramGroup[] }>(`/admin/programs/${encodeURIComponent(id)}/groups?q=${encodeURIComponent(q)}`, { headers: { "X-Admin-Token": token } }),
   adminProgramCandidates: (token: string, id: string, candidates: ProgramCandidateDraft[]) =>

@@ -282,6 +282,22 @@ export function Insights({ token, onNotice }: { token: string; onNotice: Notice 
         <p className="field-hint">{t("누가 찾았는지는 남기지 않고 횟수만 세요.")}</p>
         <Bars rows={data.searches.slice(0, 15).map((row) => ({ label: row.term, count: row.count }))} />
       </section>
+      <section className="console-card span-2" aria-label={t("캠퍼스 캠페인 전환")}>
+        <h2>{t("캠퍼스 캠페인 전환")}</h2>
+        <p className="field-hint">{t("견적을 받은 캠페인 중 결제한 비율과, 결제한 브랜드 중 다시 결제한 비율이에요.")}</p>
+        <div className="console-kpis small">
+          <div>
+            <span>{t("견적 → 결제")}</span>
+            <strong>{data.programs.quoteToPaid === null ? "—" : `${data.programs.quoteToPaid}%`}</strong>
+            <small>{t("요청 {requested} · 견적 {quoted} · 결제 {paid}", { requested: data.programs.requested, quoted: data.programs.quoted, paid: data.programs.paid })}</small>
+          </div>
+          <div>
+            <span>{t("재주문율")}</span>
+            <strong>{data.programs.repeatRate === null ? "—" : `${data.programs.repeatRate}%`}</strong>
+            <small>{t("결제한 브랜드 {brands} · 두 번 이상 {repeatBrands}", { brands: data.programs.brands, repeatBrands: data.programs.repeatBrands })}</small>
+          </div>
+        </div>
+      </section>
       <section className="console-card span-2">
         <h2>{t("종류별 회원")}</h2>
         <Bars rows={data.distribution.types.slice(0, 10).map((row) => ({ ...row, label: t(row.label) }))} />

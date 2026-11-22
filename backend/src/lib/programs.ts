@@ -14,7 +14,7 @@ import type {
   SponsorOffer,
 } from "../types.js"
 import { contractState } from "./agreements.js"
-import { paymentsOf, sell, withVat } from "./billing.js"
+import { paymentsOf, sell, supplyOf, withVat } from "./billing.js"
 import { listedTo, shownTo } from "./catalog.js"
 import { todayInKorea } from "./dates.js"
 import { HttpError } from "./errors.js"
@@ -295,6 +295,51 @@ export function programSchools(database: Database, program: Program, today = tod
       },
     ]
   })
+}
+
+// 운영자가 적는 실제 직접비와 운영 시간을 확인한다(#404).
+export function parseOps(body: unknown, now = new Date()): NonNullable<Program["ops"]> {
+  const input = (body ?? {}) as Record<string, unknown>
+  const directCost = count(input.directCost, 0, programLimits.maxAmount, "직접비를 확인해 주세요.")
+  const hours = typeof input.hours === "number" ? input.hours : Number.NaN
+  if (!Number.isFinite(hours) || hours < 0 || hours > 10_000 || Math.round(hours * 2) !== hours * 2) {
+    throw new HttpError(400, "운영 시간은 0.5시간 단위로 적어 주세요.")
+  }
+  const note = limited(input.note, 300, "손익 메모는 300자까지예요.")
+  return { directCost, hours, ...(note ? { note } : {}), updatedAt: now.toISOString() }
+}
+
+// 캠페인의 손익(#404): 매출은 결제된 운영비(부가세 전)이고, 환불되면 0이다. 남는 금액은
+// 매출에서 운영자가 적은 직접비를 뺀 것이며, 운영 시간으로 나눠 시간당 남는 금액을 본다.
+// 실비는 브랜드가 직접 내므로 매출에도 비용에도 들어가지 않는다.
+export function programMargin(database: Database, program: Program) {
+  const payment = program.paymentId ? paymentsOf(database).find((item) => item.id === program.paymentId) : undefined
+  const revenue = payment?.status === "paid" ? supplyOf(payment) : 0
+  const directCost = program.ops?.directCost ?? 0
+  const hours = program.ops?.hours ?? 0
+  const margin = revenue - directCost
+  return { revenue, directCost, hours, margin, perHour: hours > 0 ? Math.round(margin / hours) : null }
+}
+
+// 분석 화면의 캠페인 전환(#404): 견적을 받은 캠페인 중 결제한 비율, 결제한 브랜드 중
+// 두 번 이상 결제한 브랜드의 비율이다. 데모 계정은 캠페인을 낼 수 없어 모두 회원이다.
+export function programConversion(database: Database) {
+  const programs = programsOf(database)
+  const quoted = programs.filter((program) => program.quote)
+  const paid = programs.filter((program) => program.paidAt)
+  const paidBy = new Map<string, number>()
+  for (const program of paid) paidBy.set(program.accountId, (paidBy.get(program.accountId) ?? 0) + 1)
+  const repeat = [...paidBy.values()].filter((times) => times > 1).length
+  const percent = (part: number, whole: number) => (whole === 0 ? null : Math.round((part / whole) * 100))
+  return {
+    requested: programs.length,
+    quoted: quoted.length,
+    paid: paid.length,
+    quoteToPaid: percent(paid.length, quoted.length),
+    brands: paidBy.size,
+    repeatBrands: repeat,
+    repeatRate: percent(repeat, paidBy.size),
+  }
 }
 
 // 브랜드와 콘솔이 보는 캠페인이다. 실비 합계와 결제할 금액(부가세 포함)을 더한다.

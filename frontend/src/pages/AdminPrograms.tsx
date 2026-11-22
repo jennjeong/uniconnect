@@ -25,7 +25,7 @@ export function Programs({ token, onNotice }: { token: string; onNotice: Notice 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token])
   // 바뀐 캠페인을 목록에 반영한다.
-  const replace = (program: Program) =>
+  const replace = (program: Partial<AdminProgram> & { id: string }) =>
     setPrograms((current) => current?.map((item) => (item.id === program.id ? { ...item, ...program } : item)))
   const selected = programs?.find((item) => item.id === open)
 
@@ -50,6 +50,8 @@ export function Programs({ token, onNotice }: { token: string; onNotice: Notice 
                 <th scope="col">{t("브랜드")}</th>
                 <th scope="col">{t("단계")}</th>
                 <th scope="col">{t("학교")}</th>
+                <th scope="col">{t("매출")}</th>
+                <th scope="col">{t("남는 금액")}</th>
                 <th scope="col">{t("요청일")}</th>
               </tr>
             </thead>
@@ -66,6 +68,8 @@ export function Programs({ token, onNotice }: { token: string; onNotice: Notice 
                     <em className="console-tag">{t(programStatusLabels[program.status])}</em>
                   </td>
                   <td>{t("{sent}/{want}곳", { sent: program.schools.filter((school) => school.state !== "후보").length, want: program.brief.schools })}</td>
+                  <td>{fullWon(program.margin.revenue)}</td>
+                  <td>{fullWon(program.margin.margin)}</td>
                   <td>{formatDateTime(program.createdAt)}</td>
                 </tr>
               ))}
@@ -78,7 +82,7 @@ export function Programs({ token, onNotice }: { token: string; onNotice: Notice 
   )
 }
 
-function ProgramPanel({ program, token, onNotice, onChange }: { program: AdminProgram; token: string; onNotice: Notice; onChange: (program: Program) => void }) {
+function ProgramPanel({ program, token, onNotice, onChange }: { program: AdminProgram; token: string; onNotice: Notice; onChange: (program: Partial<AdminProgram> & { id: string }) => void }) {
   const [busy, setBusy] = useState(false)
   const { brief, status } = program
   const run = async (work: () => Promise<{ program: Program }>, notice: string) => {
@@ -180,6 +184,17 @@ function ProgramPanel({ program, token, onNotice, onChange }: { program: AdminPr
       </section>
 
       {(status === "접수" || status === "견적") && <QuoteForm busy={busy} onSave={(body) => void run(() => api.adminQuoteProgram(token, program.id, body), t("견적을 보냈어요."))} program={program} />}
+
+      <MarginForm
+        busy={busy}
+        onSave={(body) =>
+          void run(
+            () => api.adminProgramOps(token, program.id, body).then((result) => ({ program: { ...program, ops: result.ops, margin: result.margin } })),
+            t("손익을 저장했어요."),
+          )
+        }
+        program={program}
+      />
 
       {sourcing && <Candidates busy={busy} onSave={(list) => void run(() => api.adminProgramCandidates(token, program.id, list), t("후보를 저장했어요."))} program={program} token={token} onNotice={onNotice} />}
     </>
@@ -360,6 +375,64 @@ function Candidates({
             })}
           </ul>
         ))}
+    </section>
+  )
+}
+
+// 캠페인의 손익(#404): 운영자가 실제 직접비와 운영 시간을 적으면 결제된 운영비에서 빼
+// 남는 금액과 시간당 금액을 본다. 브랜드에게는 보이지 않는다.
+function MarginForm({ program, busy, onSave }: { program: AdminProgram; busy: boolean; onSave: (body: { directCost: number; hours: number; note?: string }) => void }) {
+  const [directCost, setDirectCost] = useState(String(program.ops?.directCost ?? ""))
+  const [hours, setHours] = useState(String(program.ops?.hours ?? ""))
+  const [note, setNote] = useState(program.ops?.note ?? "")
+  const { margin } = program
+  return (
+    <section className="console-card" aria-label={t("손익")}>
+      <h2>{t("손익")}</h2>
+      <dl className="console-facts">
+        <div>
+          <dt>{t("매출 (운영비, 부가세 전)")}</dt>
+          <dd>{fullWon(margin.revenue)}</dd>
+        </div>
+        <div>
+          <dt>{t("직접비")}</dt>
+          <dd>{fullWon(margin.directCost)}</dd>
+        </div>
+        <div>
+          <dt>{t("남는 금액")}</dt>
+          <dd>{fullWon(margin.margin)}</dd>
+        </div>
+        <div>
+          <dt>{t("시간당 남는 금액")}</dt>
+          <dd>{margin.perHour === null ? "—" : t("{amount} ({hours}시간)", { amount: fullWon(margin.perHour), hours: margin.hours })}</dd>
+        </div>
+      </dl>
+      <p className="field-hint">{t("실비는 브랜드가 직접 내서 매출에도 직접비에도 넣지 않아요. 환불되면 매출은 0이에요.")}</p>
+      <form
+        className="console-form"
+        onSubmit={(event) => {
+          event.preventDefault()
+          onSave({ directCost: Number(directCost) || 0, hours: Number(hours) || 0, ...(note.trim() ? { note: note.trim() } : {}) })
+        }}
+      >
+        <div className="console-form-row">
+          <label>
+            {t("실제 직접비 (원)")}
+            <input inputMode="numeric" min={0} onChange={(event) => setDirectCost(event.target.value)} type="number" value={directCost} />
+          </label>
+          <label>
+            {t("운영 시간")}
+            <input inputMode="decimal" min={0} onChange={(event) => setHours(event.target.value)} step={0.5} type="number" value={hours} />
+          </label>
+        </div>
+        <label>
+          {t("메모 (운영자만 봐요)")}
+          <textarea maxLength={300} onChange={(event) => setNote(event.target.value)} rows={2} value={note} />
+        </label>
+        <button className="primary-button" disabled={busy} type="submit">
+          {t("손익 저장")}
+        </button>
+      </form>
     </section>
   )
 }

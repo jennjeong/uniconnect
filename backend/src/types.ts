@@ -1170,6 +1170,7 @@ export type AdminAction =
   | "program-quoted"
   | "program-status"
   | "program-candidates"
+  | "program-ops"
 
 // 회원에 대한 운영자 메모로, 그 신고와 질문을 처리할 때 쓴다.
 export type AdminNote = { text: string; at: string }
@@ -1264,6 +1265,8 @@ export type Program = {
   cancelReason?: string
   // 운영자가 고른 후보 단체와 그 행사다. 브랜드가 골라 제안을 보낸다(#402).
   candidates?: ProgramCandidate[]
+  // 운영자만 보는 실제 직접비(원)와 쓴 운영 시간이다. 손익을 계산한다(#404).
+  ops?: { directCost: number; hours: number; note?: string; updatedAt: string }
   createdAt: string
   updatedAt: string
 }

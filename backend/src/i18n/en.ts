@@ -925,6 +925,9 @@ const en: Record<string, string> = {
   "캠퍼스 캠페인 후보 학교가 준비됐어요": "Candidate schools for your campus campaign are ready",
   "'{name}' 캠페인에 후보 학교 {count}곳을 담았어요.": "We picked {count} candidate schools for '{name}'.",
   "후보를 보고 고른 학교에 제안을 보내 주세요.": "Look them over and send proposals to the ones you choose.",
+  "직접비를 확인해 주세요.": "Check the direct cost.",
+  "운영 시간은 0.5시간 단위로 적어 주세요.": "Write the hours in steps of half an hour.",
+  "손익 메모는 300자까지예요.": "The margin note can be up to 300 characters.",
 }
 
 export default en
