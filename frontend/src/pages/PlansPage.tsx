@@ -11,19 +11,25 @@ import type { Account, PlanTable, PublicPlan } from "../types"
 // 공개 요금제 표. 금액과 한도는 서버(GET /api/billing/plans)의 값만 쓰고, 이름과
 // 설명은 여기서 쓴다. 준비 중인 요금제는 판매가 열리기 전까지 가격과 내용을
 // 약속하지 않는다.
+// 요금제의 첫째 차이는 한 달에 보낼 수 있는 제안 수다(2026-11-22 운영 결정). 카드 위에 크게 둔다.
+function planHeadline(plan: PublicPlan) {
+  if (!plan.limits || plan.status !== "open") return undefined
+  return plan.limits.offersPerMonth === null
+    ? t("협찬 제안 제한 없음")
+    : t("한 달에 협찬 제안 {count}건", { count: plan.limits.offersPerMonth })
+}
+
 function planLines(plan: PublicPlan) {
   if (plan.id === "free") {
     return [
-      t("한 달에 협찬 제안 {count}건", { count: plan.limits?.offersPerMonth ?? 0 }),
       t("성과 분석 · CSV · PDF"),
       t("협찬마다 상세 분석 리포트"),
     ]
   }
   if (plan.id === "growth") {
     return [
-      t("협찬 제안 제한 없음"),
       t("캠퍼스 포트폴리오 분석: 학교 · 시기 · 단체 종류별 성과와 다음 예산"),
-      t("운영자 1:1 섭외 요청 한 달 {count}건", { count: plan.limits?.partnerRequestsPerMonth ?? 0 }),
+      t("운영자 1:1 섭외 요청 한 달 {count}건: 3영업일 안에 맞는 단체 3곳 이상 추천", { count: plan.limits?.partnerRequestsPerMonth ?? 0 }),
       t("브랜드 카드에 PARTNERS 표시"),
       ...(plan.limits?.alwaysOnCoupons ? [t("상시 쿠폰과 월간 리포트 포함")] : []),
     ]
@@ -84,7 +90,9 @@ export function PlansPage({
   return (
     <section className="page-view plans-view">
       <PageIntro
-        description={t("협찬 제안이 많아지면 Growth로 넓혀요.")}
+        description={t("무료는 한 달에 협찬 제안 {count}건, Growth는 제한 없이 보내요.", {
+          count: table?.plans.find((plan) => plan.id === "free")?.limits?.offersPerMonth ?? 5,
+        })}
         eyebrow={t("요금제")}
         title={t("브랜드 요금제")}
       />
@@ -96,6 +104,7 @@ export function PlansPage({
             {plans.map((plan) => {
               const current = isCurrent(plan)
               const lines = planLines(plan)
+              const headline = planHeadline(plan)
               const className = ["plan-option", current && "current", plan.status === "soon" && "soon"].filter(Boolean).join(" ")
               return (
                 <article className={className} key={plan.id}>
@@ -116,6 +125,7 @@ export function PlansPage({
                       )}
                     </div>
                   )}
+                  {headline && <p className="plan-headline">{headline}</p>}
                   {plan.status === "soon" && <p>{t("동네 가게를 위한 요금제를 준비하고 있어요.")}</p>}
                   {lines.length > 0 && (
                     <ul>

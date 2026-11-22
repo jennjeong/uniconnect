@@ -104,6 +104,10 @@ export function PaymentsModal({ onClose, onNotice }: { onClose: () => void; onNo
                   {formatDateTime(payment.paidAt ?? payment.requestedAt)}
                   {payment.method && ` · ${payment.method === "card" ? t("카드") : t("계좌 입금")}`}
                   {payment.status === "pending" && payment.transferRequestedAt && ` · ${t("입금 확인 중")}`}
+                  {payment.status === "pending" &&
+                    payment.expiresAt &&
+                    ` · ${t(payment.transferRequestedAt ? "{date}까지 입금" : "{date}까지 결제", { date: formatDateTime(payment.expiresAt) })}`}
+                  {payment.status === "cancelled" && payment.expiredAt && ` · ${t("기한이 지나 취소")}`}
                   {payment.refundedAmount !== undefined && ` · ${t("{amount} 환불", { amount: fullWon(payment.refundedAmount) })}`}
                 </small>
               </div>

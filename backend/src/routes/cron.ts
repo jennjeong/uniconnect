@@ -13,6 +13,7 @@ import { sendSearchAlerts } from "../lib/savedSearches.js"
 import { sendPayoutReminders, sendReminders } from "../lib/reminders.js"
 import { refreshViews } from "../lib/snsPosts.js"
 import { sameSecret } from "../lib/secrets.js"
+import { runOrderExpiry } from "../lib/orderExpiry.js"
 import { backUpNow } from "../store.js"
 
 export const cronRouter = Router()
@@ -49,6 +50,7 @@ cronRouter.get("/reminders", async (req, res) => {
   const passes = await job("passes", () => prunePassRows())
   const cards = cardReady() ? await job("cards", reconcileCards) : undefined
   const refunds = cardReady() ? await job("refunds", reconcileRefunds) : undefined
+  const orders = await job("orders", () => runOrderExpiry())
   const sent = await job("reminders", () => sendReminders())
   const payouts = await job("payouts", () => sendPayoutReminders())
   const nudges = await job("nudges", () => sendProposalNudges())
@@ -61,5 +63,5 @@ cronRouter.get("/reminders", async (req, res) => {
     await backUpNow()
     return true
   })
-  res.status(failed.length > 0 ? 500 : 200).json({ counts, passes, cards, refunds, sent, payouts, nudges, searches, digests, views, payments, disputes, backup, failed })
+  res.status(failed.length > 0 ? 500 : 200).json({ counts, passes, cards, refunds, orders, sent, payouts, nudges, searches, digests, views, payments, disputes, backup, failed })
 })

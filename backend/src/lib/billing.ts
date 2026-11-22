@@ -144,6 +144,14 @@ export function productOf(kind: string) {
 
 export const paymentsOf = (database: Database) => (database.payments ??= [])
 
+// 결제를 기다리는 주문은 마지막으로 손댄 때부터 7일 뒤 스스로 취소된다(lib/orderExpiry.ts,
+// 2026-11-22 운영 결정). 주문, 다시 결제 창 열기, 계좌 이체 신청이 기한을 다시 센다.
+export const orderExpiry = { days: 7, warnHours: 24 }
+export const renewExpiry = (payment: Payment, now = new Date()) => {
+  payment.expiresAt = new Date(now.getTime() + orderExpiry.days * 86_400_000).toISOString()
+  delete payment.expiryWarnedAt
+}
+
 // 대상에 대한 계정의 결제 완료된 결제. 있으면 돌려준다.
 export const paidFor = (database: Database, accountId: string, kind: PaymentKind, targetId: string) =>
   paymentsOf(database).find(
@@ -168,6 +176,7 @@ export function orderFor(database: Database, account: Account, kind: string, req
     // 이를 주문과 대조한다.
     if (waiting.paymentKey) return waiting
     Object.assign(waiting, priced, { orderName })
+    renewExpiry(waiting)
     return waiting
   }
   const payment: Payment = {
@@ -181,6 +190,7 @@ export function orderFor(database: Database, account: Account, kind: string, req
     status: "pending",
     requestedAt: new Date().toISOString(),
   }
+  renewExpiry(payment)
   payments.push(payment)
   return payment
 }

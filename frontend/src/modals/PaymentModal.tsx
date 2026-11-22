@@ -142,6 +142,7 @@ export function PaymentModal({
             <button className={billing.card ? "cancel-button wide" : "primary-button wide"} disabled={busy} onClick={() => void pay("transfer")} type="button">
               {t("계좌 입금으로 요청하기")}
             </button>
+            <p className="payment-note">{t("계좌 입금은 요청한 날부터 7일 안에 해 주세요. 기한이 지나면 주문이 취소돼요.")}</p>
           </div>
         )}
         <p className="field-hint">{t("결제 내역과 영수증은 내 정보의 결제 내역에서 볼 수 있어요.")}</p>

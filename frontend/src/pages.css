@@ -9286,3 +9286,25 @@ th[aria-sort="descending"] .console-sort span {
 .demand tbody tr:last-child > * {
   border-bottom: 0;
 }
+
+/* 요금제의 첫째 차이인 한 달 제안 수(2026-11-22 운영 결정) */
+.plan-headline {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: var(--weight-strong);
+  color: var(--point-strong);
+}
+
+.plan-option.current .plan-headline {
+  color: var(--on-point);
+}
+
+/* 좁은 콘솔에서 카드 머리의 배지(대기 일수, 자동 취소, 답할 기한)가 넘치지 않게 줄을 바꾼다. */
+.admin-card-head,
+.admin-card-meta {
+  flex-wrap: wrap;
+}
+
+.admin-category {
+  white-space: nowrap;
+}

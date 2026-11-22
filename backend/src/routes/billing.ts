@@ -3,7 +3,7 @@ import { Router } from "express"
 import type { Request } from "express"
 
 import { config } from "../config.js"
-import { cardReady, memberRefundReason, orderFor, partialRefundOf, paymentsOf, paymentView, prices, productOf, testMode, toss, tossUnsure, withVat } from "../lib/billing.js"
+import { cardReady, memberRefundReason, orderFor, partialRefundOf, paymentsOf, paymentView, prices, productOf, renewExpiry, testMode, toss, tossUnsure, withVat } from "../lib/billing.js"
 import { askToss, reconcileCards, recordApproval, refundCard, settleCard, settleFromWebhook, stuckCards } from "../lib/cardRecovery.js"
 import { HttpError } from "../lib/errors.js"
 // 브랜드가 살 수 있는 것으로, 각각 lib/billing.ts에 등록된다.
@@ -99,6 +99,7 @@ billingRouter.post("/orders/:id/transfer", async (req, res) => {
   const account = requireAccount(req)
   const payment = ownWaiting(account.id, String(req.params.id))
   payment.transferRequestedAt ??= new Date().toISOString()
+  renewExpiry(payment)
   await saveDatabase()
   res.json({ order: paymentView(payment) })
 })

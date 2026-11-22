@@ -9903,3 +9903,50 @@ test("the shared demo accounts can't change or delete the example posts and exam
   assert.equal((await call("PUT", `/events/${made.id}`, { ...edit, name: "다시 바뀐 공연" }, student)).status, 200)
   assert.equal((await call("DELETE", `/events/${made.id}`, undefined, student)).status, 204)
 })
+
+test("orders left unpaid expire after 7 days, with a warning the day before a transfer's deadline", async () => {
+  const { orderFor, paymentsOf } = await import("./lib/billing.js")
+  const { expireOrders, ordersToWarn, reopenExpired, expiresAtOf } = await import("./lib/orderExpiry.js")
+  const { token: brand } = await listedMember("expiry@expiry-cafe.kr", "expiry-pass-123", "브랜드")
+  const account = getDatabase().accounts.find((item) => item.email === "expiry@expiry-cafe.kr")!
+  const order = orderFor(getDatabase(), account, "ad", "")
+  const day = 86_400_000
+  const created = Date.parse(order.requestedAt)
+  assert.ok(Math.abs(Date.parse(expiresAtOf(order)) - (created + 7 * day)) < 5_000)
+
+  // 계좌 이체를 신청하면 그때부터 7일을 다시 센다.
+  const asked = await call("POST", `/billing/orders/${order.id}/transfer`, undefined, brand)
+  assert.equal(asked.status, 200)
+  assert.ok(asked.data.order.expiresAt)
+  const deadline = Date.parse(expiresAtOf(order))
+
+  // 기한 하루 안에 들면 알릴 주문이고, 기한 전에는 취소되지 않는다.
+  const almost = new Date(deadline - 3_600_000)
+  // 데이터에는 다른 테스트의 주문도 있으므로 이 주문만 본다.
+  const warns = (at: Date) => ordersToWarn(getDatabase(), at).some((item) => item.id === order.id)
+  assert.equal(warns(almost), true)
+  assert.equal(warns(new Date(deadline - 2 * day)), false)
+  expireOrders(getDatabase(), almost)
+  assert.equal(order.status, "pending")
+
+  // 카드 승인이 오가는 주문은 기한이 지나도 그대로 둔다.
+  order.paymentKey = "pk_moving"
+  expireOrders(getDatabase(), new Date(deadline + 1))
+  assert.equal(order.status, "pending")
+  delete order.paymentKey
+
+  assert.ok(expireOrders(getDatabase(), new Date(deadline + 1)) >= 1)
+  assert.equal(order.status, "cancelled")
+  assert.ok(order.expiredAt)
+  const mine = (await call("GET", "/billing", undefined, brand)).data.payments as { id: string; expiredAt?: string }[]
+  assert.ok(mine.find((item) => item.id === order.id)?.expiredAt)
+
+  // 늦게 들어온 입금은 같은 건의 다른 주문이 없을 때만 다시 열어 확인할 수 있다.
+  const again = orderFor(getDatabase(), account, "ad", "")
+  assert.equal(reopenExpired(getDatabase(), order), false)
+  again.status = "cancelled"
+  assert.equal(reopenExpired(getDatabase(), order), true)
+  assert.equal(order.status, "pending")
+  // 여기서 끝나므로 이 주문들이 이후 테스트의 입금 대기 수에 들지 않게 지운다.
+  getDatabase().payments = paymentsOf(getDatabase()).filter((item) => item.accountId !== account.id)
+})

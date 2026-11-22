@@ -966,6 +966,11 @@ export type Payment = {
   paidAt?: string
   cancelledAt?: string
   cancelReason?: string
+  // 결제를 기다리는 주문이 스스로 취소되는 때와, 계좌 이체 주문에 하루 전 알림을 보낸 때,
+  // 기한이 지나 취소된 때다(lib/orderExpiry.ts).
+  expiresAt?: string
+  expiryWarnedAt?: string
+  expiredAt?: string
   // Pro나 광고의 경우, 결제한 한 달이 끝나는 날이다(한국 날짜).
   periodEnd?: string
   // 그 기간의 일수. 환불하면 뒤의 기간을 이만큼 앞당긴다.
