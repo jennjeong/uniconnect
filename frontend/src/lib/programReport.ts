@@ -22,7 +22,7 @@ export function programReportCsv(program: Program, report: ProgramReport, { samp
     [t("매장 방문"), totals.visits],
     [t("현장 확인"), totals.venue],
     [t("추정 매출 (원)"), totals.sales],
-    [t("캠페인 비용 (원, 운영비 + 실비)"), totals.cost],
+    [t("캠페인 비용 (원, 운영비 부가세 별도 + 실비)"), totals.cost],
     [t("방문 1건당 비용 (원)"), totals.costPerVisit ?? ""],
     [],
     [

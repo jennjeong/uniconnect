@@ -8,7 +8,7 @@ import { Presence } from "../components/Presence"
 import { exampleProgram, exampleProgramReport, programSchoolLabels, programStatusLabels, programSteps } from "../data/programs"
 import { regions } from "../data/universities"
 import { t, tc } from "../i18n"
-import { formatDay, monthLabel, todayIso } from "../lib/date"
+import { formatDateTime, formatDay, monthLabel, todayIso } from "../lib/date"
 import { saveFile } from "../lib/download"
 import { formatWon } from "../lib/kpis"
 import { programReportCsv } from "../lib/programReport"
@@ -349,10 +349,18 @@ function ProgramDetail({ id, sample, onBack, onNotice, onPropose, tick, author }
                       <td>{fullWon(cost.amount)}</td>
                     </tr>
                   ))}
+                  {quote.costs.length > 0 && (
+                    <tr className="programs-quote-total">
+                      <th scope="row">{t("총 지급 예정액 (운영비 부가세 포함 + 실비)")}</th>
+                      <td>{fullWon(quote.feeWithVat + quote.costTotal)}</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
               {quote.costs.length > 0 && (
-                <p className="programs-hint">{t("실비 {amount}는 단체와 업체에 직접 지급해요. uniconnect는 받지 않아요.", { amount: fullWon(quote.costTotal) })}</p>
+                <p className="programs-hint">
+                  {t("실비 합계 {amount} · 브랜드가 행사 진행에 맞춰 단체와 업체에 직접 지급해요. uniconnect는 받지 않아요.", { amount: fullWon(quote.costTotal) })}
+                </p>
               )}
               {quote.note && <p className="programs-hint">{quote.note}</p>}
             </>
@@ -374,6 +382,7 @@ function ProgramDetail({ id, sample, onBack, onNotice, onPropose, tick, author }
 
       {(status === "섭외 중" || status === "집행 중" || program.schools.length > 0) && (
         <ProgramSchools
+          target={brief.schools}
           canSend={!sample && (status === "섭외 중" || status === "집행 중") && Boolean(onPropose)}
           onSend={(groupIds) => onPropose?.(groupIds, program.id)}
           schools={program.schools}
@@ -410,15 +419,33 @@ function ProgramDetail({ id, sample, onBack, onNotice, onPropose, tick, author }
 
 // 캠페인의 학교들: 운영팀이 고른 후보와 보낸 제안이다. 브랜드는 후보를 골라 제안을 보내고,
 // 학교마다 기존 계약서와 측정이 이어진다.
-function ProgramSchools({ schools, canSend, onSend }: { schools: ProgramSchool[]; canSend: boolean; onSend: (groupIds: string[]) => void }) {
+function ProgramSchools({ schools, target, canSend, onSend }: { schools: ProgramSchool[]; target: number; canSend: boolean; onSend: (groupIds: string[]) => void }) {
   const [picked, setPicked] = useState<string[]>([])
   const candidates = schools.filter((school) => school.state === "후보")
+  // 목표에 모자란 학교 수: 계약했거나 행사를 마친 학교만 채운 것으로 센다(거절·마감·취소는 빠진다).
+  const secured = schools.filter((school) => school.state === "수락" || school.state === "계약 확인" || school.state === "행사 완료").length
+  const short = Math.max(0, target - secured)
   const live = picked.filter((id) => candidates.some((school) => school.groupId === id))
   const toggle = (id: string) =>
     setPicked((current) => (current.includes(id) ? current.filter((item) => item !== id) : current.length >= maxPick ? current : [...current, id]))
   return (
     <section className="programs-card programs-schools" aria-label={t("학교")}>
       <h2>{t("학교 {count}곳", { count: schools.length })}</h2>
+      <p className="programs-tally">
+        {t("목표 {target}곳 · 후보 {candidates} · 답 대기 {waiting} · 계약 {contracted} · 행사 완료 {done}", {
+          target,
+          candidates: candidates.length,
+          waiting: schools.filter((school) => school.state === "대기").length,
+          contracted: schools.filter((school) => school.state === "수락" || school.state === "계약 확인").length,
+          done: schools.filter((school) => school.state === "행사 완료").length,
+        })}
+        {short > 0 && (
+          <>
+            {" · "}
+            <strong>{t("아직 {count}곳 더 필요해요", { count: short })}</strong>
+          </>
+        )}
+      </p>
       {schools.length === 0 ? (
         <p className="programs-hint">{t("운영팀이 후보 학교를 고르고 있어요. 준비되면 메일로 알려 드려요.")}</p>
       ) : (
@@ -491,9 +518,17 @@ function ProgramResults({ program, sample, author, onNotice }: { program: Progra
   const [report, setReport] = useState<ProgramReport | null>(sample ? exampleProgramReport(program.brief.from) : null)
   const [failed, setFailed] = useState("")
   const [exporting, setExporting] = useState(false)
+  // 보고를 받은 때다(화면은 그때의 수치다).
+  const [loadedAt, setLoadedAt] = useState(() => new Date().toISOString())
   useEffect(() => {
     if (sample) return
-    api.programReport(program.id).then((result) => setReport(result.report), (error: unknown) => setFailed(errorMessage(error)))
+    api.programReport(program.id).then(
+      (result) => {
+        setReport(result.report)
+        setLoadedAt(new Date().toISOString())
+      },
+      (error: unknown) => setFailed(errorMessage(error)),
+    )
   }, [program.id, sample])
   const done = useCallback(
     (failedExport: boolean) => {
@@ -513,15 +548,21 @@ function ProgramResults({ program, sample, author, onNotice }: { program: Progra
   }
   const { totals } = report
   const shared = report.schools.some((row) => row.sharedWith > 1)
+  // 행사를 아직 마치지 않았고 센 것이 없는 학교는 0이 아니라 집계 전이다.
+  const pending = (row: ProgramReport["schools"][number]) => row.state !== "행사 완료" && row.coupons === 0 && row.visits === 0 && row.scans === 0
   const tiles = [
     { label: t("계약한 학교"), value: t("{count}곳", { count: totals.confirmed }), note: t("제안 {sent}곳 · 수락 {accepted}곳 · 행사 완료 {finished}곳", { sent: totals.sent, accepted: totals.accepted, finished: totals.finished }) },
-    { label: t("매장 방문"), value: t("{visits}명", { visits: totals.visits.toLocaleString() }), note: t("쿠폰 {coupons}장 · QR {scans}회", { coupons: totals.coupons.toLocaleString(), scans: totals.scans.toLocaleString() }) },
-    { label: t("방문 1건당 비용"), value: totals.costPerVisit === null ? "—" : formatWon(totals.costPerVisit), note: t("캠페인 비용 {cost} (운영비 + 실비)", { cost: formatWon(totals.cost) }) },
+    { label: t("매장 방문"), value: t("{visits}건", { visits: totals.visits.toLocaleString() }), note: t("쿠폰 {coupons}장 · QR {scans}회", { coupons: totals.coupons.toLocaleString(), scans: totals.scans.toLocaleString() }) },
+    { label: t("방문 1건당 비용"), value: totals.costPerVisit === null ? "—" : formatWon(totals.costPerVisit), note: t("캠페인 비용 {cost} (운영비 부가세 별도 + 실비)", { cost: formatWon(totals.cost) }) },
     { label: t("단체 이행"), value: `${totals.itemsDone}/${totals.itemsTotal}`, note: t("증빙 {count}건 · 추정 매출 {sales}", { count: totals.proofs, sales: formatWon(totals.sales) }) },
   ]
   return (
     <section className="programs-card programs-results" aria-label={t("결과 보고")}>
-      <h2>{t("결과 보고")}</h2>
+      <h2>{program.status === "완료" ? t("최종 결과 보고") : t("중간 결과 보고")}</h2>
+      <p className="programs-hint">
+        {t("집계 대상 {count}곳 · {time} 기준", { count: report.schools.length, time: formatDateTime(loadedAt) })}
+        {program.status !== "완료" && ` · ${t("행사를 마치지 않은 학교는 '집계 전'으로 보여요.")}`}
+      </p>
       <ul className="programs-kpis">
         {tiles.map((tile) => (
           <li key={tile.label}>
@@ -561,10 +602,10 @@ function ProgramResults({ program, sample, author, onNotice }: { program: Progra
                   {row.itemsDone}/{row.itemsTotal}
                 </td>
                 <td>{row.proofs}</td>
-                <td>{row.coupons.toLocaleString()}</td>
-                <td>{row.visits.toLocaleString()}</td>
+                <td>{pending(row) ? t("집계 전") : row.coupons.toLocaleString()}</td>
+                <td>{pending(row) ? t("집계 전") : row.visits.toLocaleString()}</td>
                 <td>
-                  {formatWon(row.sales)}
+                  {pending(row) ? t("집계 전") : formatWon(row.sales)}
                   {row.sharedWith > 1 && <small>{t("{count}곳 함께 집계", { count: row.sharedWith })}</small>}
                 </td>
               </tr>

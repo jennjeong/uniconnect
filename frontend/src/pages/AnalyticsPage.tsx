@@ -88,7 +88,11 @@ export function AnalyticsPage({
       label: t("누적 집행액"),
       value: manWon(totals.spend),
       unit: wonUnit(),
-      note: t("협찬 {count}건 · 현금과 현물 포함", { count: sponsorships.length }),
+      // 비용 미확정 협찬은 0원으로 더하지 않는다는 것을 숫자 옆에 밝힌다.
+      note:
+        totals.unpriced > 0
+          ? t("계산 가능 {priced}건 · 비용 미확정 {unpriced}건 · 현금과 현물 포함", { priced: totals.priced, unpriced: totals.unpriced })
+          : t("협찬 {count}건 · 현금과 현물 포함", { count: sponsorships.length }),
     },
     {
       label: t("쿠폰 수령"),
@@ -101,8 +105,8 @@ export function AnalyticsPage({
     {
       label: t("매장 방문"),
       value: totals.visits.toLocaleString("ko-KR"),
-      unit: countUnit("명"),
-      note: t("쿠폰 받은 학생의 {rate}%가 방문", { rate: visitRate }),
+      unit: countUnit("건"),
+      note: t("쿠폰 {coupons}장 중 {rate}%가 방문으로", { coupons: totals.coupons.toLocaleString("ko-KR"), rate: visitRate }),
     },
     {
       label: t("추정 ROAS(전체 집행액 기준)"),
@@ -111,8 +115,8 @@ export function AnalyticsPage({
       note: totals.roasMissing
         ? t("협찬액이 정해진 협찬이 아직 없어요")
         : totals.roasCounting
-          ? t("집계 중 · 추정 매출 {sales}", { sales: formatWon(totals.sales) })
-          : t("추정 매출 {sales}", { sales: formatWon(totals.sales) }),
+          ? t("집계 중 · 비용 확정 {priced}건 · 방문 × 1인 예상 지출로 추정", { priced: totals.priced })
+          : t("비용 확정 {priced}건 · 방문 × 1인 예상 지출로 추정", { priced: totals.priced }),
     },
   ]
 
@@ -289,13 +293,13 @@ export function AnalyticsPage({
                     {venueSummary(row) && <small className="venue-summary">{venueSummary(row)}</small>}
                   </span>
                   <span role="cell" data-label={t("집행액")}>
-                    {formatWon(row.spend)}
+                    {row.state === "cost" ? t("미확정") : formatWon(row.spend)}
                   </span>
                   <span role="cell" data-label={t("쿠폰 수령")}>
                     {t("{coupons}장", { coupons: row.coupons.toLocaleString("ko-KR") })}
                   </span>
                   <span role="cell" data-label={t("매장 방문")}>
-                    {t("{visits}명", { visits: row.visits.toLocaleString("ko-KR") })}
+                    {t("{visits}건", { visits: row.visits.toLocaleString("ko-KR") })}
                   </span>
                   <span role="cell" data-label={t("방문당 비용")}>
                     {row.state === "cost" || row.visits === 0 ? "—" : formatWon(row.perVisit)}

@@ -784,8 +784,8 @@ export function Roi({ report }: { report: PremiumReport }) {
         {breakEven === null
           ? t("1인 예상 지출이 없어 손익분기점을 계산하지 못했어요.")
           : visits >= breakEven
-            ? t("협찬액을 되찾는 데 방문 {need}명이 필요했고 {visits}명이 와서 {over}명을 넘겼어요.", { need: breakEven, visits, over: visits - breakEven })
-            : t("협찬액을 되찾으려면 방문 {need}명이 필요해요. 지금 {visits}명으로 {left}명 남았어요.", { need: breakEven, visits, left: breakEven - visits })}
+            ? t("협찬액을 되찾는 데 방문 {need}건이 필요했고 {visits}건이 확인돼 {over}건을 넘겼어요.", { need: breakEven, visits, over: visits - breakEven })
+            : t("협찬액을 되찾으려면 방문 {need}건이 필요해요. 지금 {visits}건이라 {left}건 남았어요.", { need: breakEven, visits, left: breakEven - visits })}
       </p>
       <table className="insight-table">
         <caption>{t("1인 지출에 따른 ROAS")}</caption>

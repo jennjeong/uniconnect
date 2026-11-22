@@ -157,12 +157,12 @@ export function ReportDocument({
       target: qrRate.target,
       gap: kpiGap(qrRate),
     }),
-    t("QR 스캔 {scans}건에 매장 방문이 {visits}건({rate}%) 이어졌어요.", {
+    t("QR 스캔 {scans}회에 매장 방문이 {visits}건({rate}%) 이어졌어요.", {
       scans: metrics.scans,
       visits: metrics.visits,
       rate: visitRate.current,
     }),
-    t("{hour}에 스캔이 {scans}건으로 가장 많았어요. 다음 행사에서는 이 시간대에 부스 인력을 모아 보세요.", {
+    t("{hour}에 스캔이 {scans}회로 가장 많았어요. 다음 행사에서는 이 시간대에 부스 인력을 모아 보세요.", {
       hour: hourLabel(peak),
       scans: peak.scans,
     }),
