@@ -771,6 +771,7 @@ const en: Record<string, string> = {
   "관심 조건 {name} 다시 걸기": "Apply saved search {name}",
   "관심 조건 {name} 지우기": "Remove saved search {name}",
   "새 상대 {count}": "{count} new",
+  "+{count}": "+{count}",
   "마감일은 행사 마지막 날({date})까지로 골라 주세요.": "Pick a deadline on or before the event's last day ({date}).",
   "행사가 끝나면 지원을 받지 않아요. 마지막 날({date})까지 고를 수 있어요.": "Applications close when the event ends. You can pick up to its last day ({date}).",
   "예정 행사 없음": "No upcoming event",

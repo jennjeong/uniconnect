@@ -110,15 +110,27 @@ export function WorkCard({
           </div>
           <ScoreBadge score={match.score} />
         </div>
+        {/* 위치·일정·후기는 사실 한 줄로, 확인·광고 표시와 핵심 태그는 그 아래에 작게. */}
+        {(date || match.distanceKm !== undefined || match.reviewCount) && (
+          <div className="work-facts">
+            {date && <DateLine date={date} />}
+            {match.distanceKm !== undefined && (
+              <span className="tag-distance">
+                <Icon name="pin" size={13} />
+                <span className="sr-only">{t("거리")}</span>
+                {formatDistance(match.distanceKm)}
+              </span>
+            )}
+            {match.reviewCount ? (
+              <span className="tag-rating">
+                <Stars rating={match.rating ?? 0} size={12} />
+                {match.rating?.toFixed(1)}
+                <small>{t("후기 {count}", { count: match.reviewCount })}</small>
+              </span>
+            ) : null}
+          </div>
+        )}
         <div className="work-tags">
-          {date && <DateLine date={date} />}
-          {match.distanceKm !== undefined && (
-            <span className="tag-distance">
-              <Icon name="pin" size={13} />
-              <span className="sr-only">{t("거리")}</span>
-              {formatDistance(match.distanceKm)}
-            </span>
-          )}
           {match.ad && (
             <span className="tag-ad" title={t("상단 광고")}>
               AD
@@ -142,20 +154,24 @@ export function WorkCard({
               {t("응답률 {rate}%", { rate: match.trust.response.rate })}
             </span>
           )}
-          {match.reviewCount ? (
-            <span className="tag-rating">
-              <Stars rating={match.rating ?? 0} size={12} />
-              {match.rating?.toFixed(1)}
-              <small>{t("후기 {count}", { count: match.reviewCount })}</small>
-            </span>
-          ) : null}
-          {tags ??
-            shownTags(match).map((tag) => (
-              <span key={tag}>{tag}</span>
-            ))}
+          {tags ?? <TopicTags tags={shownTags(match)} />}
         </div>
         <div className="work-actions">{children}</div>
       </div>
     </article>
+  )
+}
+
+// 카드에는 핵심 태그 두 개만 보이고 나머지는 수로 알린다(전부는 상세에서).
+function TopicTags({ tags }: { tags: string[] }) {
+  const shown = tags.slice(0, 2)
+  const more = tags.length - shown.length
+  return (
+    <>
+      {shown.map((tag) => (
+        <span key={tag}>{tag}</span>
+      ))}
+      {more > 0 && <span className="tag-more">{t("+{count}", { count: more })}</span>}
+    </>
   )
 }

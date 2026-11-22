@@ -3273,6 +3273,43 @@ input[type="search"]::-webkit-search-cancel-button {
 }
 
 /* 이름 바로 아래의 작은 태그 칩은 그 요약처럼 읽힌다. */
+/* 카드의 사실 한 줄(일정, 거리, 후기): 칩이 아니라 글자로, 태그보다 먼저. */
+.work-facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin-top: 2px;
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+.work-facts .date-line {
+  width: 100%;
+  margin: 0;
+}
+
+.work-facts .tag-distance,
+.work-facts .tag-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.work-facts .tag-distance {
+  color: var(--point-strong);
+  font-weight: var(--weight-label);
+}
+
+.work-facts .tag-rating {
+  color: var(--ink);
+  font-weight: var(--weight-label);
+}
+
+.work-tags > span.tag-more {
+  color: var(--muted);
+}
+
 .work-tags {
   display: flex;
   flex-wrap: wrap;
@@ -4761,6 +4798,33 @@ html.modal-open {
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 2;
+}
+
+/* 행사 등록의 선택 입력: 필수(기본 정보, 원하는 협찬, 일정) 뒤에 접어 둔다. */
+.create-optional {
+  margin-top: var(--space-5);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.create-optional > summary {
+  display: grid;
+  gap: 4px;
+  padding: var(--space-4) var(--space-5);
+  cursor: pointer;
+}
+
+.create-optional > summary small {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.create-optional-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: var(--space-4);
+  padding: 0 var(--space-4) var(--space-4);
 }
 
 .form-card {
@@ -7273,7 +7337,38 @@ html.modal-open {
   font-size: 0.8125rem;
 }
 
-.modal .terms-check {
+.modal /* 가입 폼의 세 묶음 제목(단체 정보, 담당자 · 인증, 비밀번호 · 동의). */
+.signup-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: var(--space-3) 0 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-label);
+}
+
+.signup-step b {
+  display: inline-grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--point);
+  color: var(--on-point);
+  font-size: 0.75rem;
+  font-weight: var(--weight-badge);
+}
+
+.signup-step small {
+  margin-left: auto;
+  color: var(--muted);
+  font-weight: var(--weight-body);
+}
+
+.terms-check {
   flex-direction: row;
   align-items: center;
   gap: 8px;

@@ -285,7 +285,9 @@ export function Members({
         {!rows ? (
           <p className="field-hint">{t("불러오고 있어요…")}</p>
         ) : (
-          <table className="console-table">
+          // 좁은 화면에서는 표의 최소 너비를 지키고 가로로 넘겨 본다(날짜·건수가 중간에 끊기지 않게).
+          <div aria-label={t("회원 목록")} className="console-table-scroll" role="region" tabIndex={0}>
+          <table className="console-table console-members-table">
             <thead>
               <tr>
                 <th className="console-pick" scope="col">
@@ -334,7 +336,9 @@ export function Members({
                     <button className="console-link" onClick={() => void show(row.id)} type="button">
                       {row.name}
                     </button>
-                    <small>{row.email}</small>
+                    <small className="console-email" title={row.email}>
+                      {row.email}
+                    </small>
                   </th>
                   {columns.has("type") && (
                     <td>
@@ -362,6 +366,7 @@ export function Members({
               ))}
             </tbody>
           </table>
+          </div>
         )}
         {rows && <Pager table={table} unit={t("명")} />}
       </section>
