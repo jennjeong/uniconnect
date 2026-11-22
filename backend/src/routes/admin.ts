@@ -19,6 +19,7 @@ import { platformStats } from "../lib/stats.js"
 import { text } from "../lib/validation.js"
 import { getDatabase, refreshDatabase, saveDatabase } from "../store.js"
 import { sameSecret } from "../lib/secrets.js"
+import { reopenExpired } from "../lib/orderExpiry.js"
 import type { Account, Announcement, Payment, ReportAction } from "../types.js"
 
 // 운영자는 FAQ 페이지에서 온 질문을 읽고 답하며 플랫폼의 수치를 본다.
@@ -104,6 +105,8 @@ async function settleWaiting(id: string) {
 adminRouter.post("/payments/:id/paid", async (req, res) => {
   await requireAdmin(req)
   const id = String(req.params.id)
+  // 입금 기한이 지나 취소된 주문은, 같은 건의 다른 주문이 없으면 다시 열어 확인한다.
+  reopenExpired(getDatabase(), paymentFor(id))
   if (paymentFor(id).status !== "pending") throw new HttpError(409, "기다리는 주문만 입금 확인할 수 있어요.")
   await settleWaiting(id)
   const payment = paymentFor(id)

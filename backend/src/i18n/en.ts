@@ -13,6 +13,15 @@ const en: Record<string, string> = {
   "로그인이 필요해요.": "Please log in.",
   "회원 유형을 선택해 주세요.": "Please choose a member type.",
 
+  // 결제 대기 주문의 기한(lib/orderExpiry.ts)
+  "'{name}' 주문이 내일 취소돼요": "Your '{name}' order is canceled tomorrow",
+  "'{name}' 주문의 입금 기한이 내일까지예요.": "The payment deadline for your '{name}' order is tomorrow.",
+  "아직 입금하지 않았다면 내일까지 입금해 주세요. 기한이 지나면 주문이 취소되고, 다시 주문하면 돼요.":
+    "If you haven't paid yet, please transfer by tomorrow. After that the order is canceled, and you can simply order again.",
+  "이미 입금했다면 그대로 기다려 주세요. 운영자가 확인하면 결제가 끝나요.":
+    "If you've already paid, please wait. The payment completes once an operator confirms it.",
+  "입금 기한 지남": "Payment deadline passed",
+
   // 요청 한도
   "관리자 인증 실패가 너무 많아요. 15분 뒤에 다시 시도해 주세요.":
     "Too many failed admin sign-ins. Please try again in 15 minutes.",

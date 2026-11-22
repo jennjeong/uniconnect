@@ -56,7 +56,7 @@ export function PlanCard({ onNotice }: { onNotice: (message: string) => void }) 
       items: [
         t("협찬 제안 제한 없음"),
         t("캠퍼스 포트폴리오 분석: 학교 · 시기 · 단체 종류별 성과와 다음 예산"),
-        t("운영자 1:1 섭외 요청 한 달 2건"),
+        t("운영자 1:1 섭외 요청 한 달 {count}건: 3영업일 안에 맞는 단체 3곳 이상 추천", { count: 2 }),
         t("브랜드 카드에 PARTNERS 표시"),
       ],
     },
@@ -103,7 +103,7 @@ export function PlanCard({ onNotice }: { onNotice: (message: string) => void }) 
               ({ plan: next }) => {
                 setBilling({ ...billing, plan: next })
                 setWanted("")
-                onNotice(t("섭외 요청을 보냈어요. 운영자가 맞는 단체를 찾아 FAQ의 내 질문으로 답해 드려요."))
+                onNotice(t("섭외 요청을 보냈어요. 3영업일 안에 FAQ의 내 질문으로 답해 드려요."))
               },
               (error: unknown) => onNotice(errorMessage(error)),
             ).finally(() => setAsking(false))
@@ -119,6 +119,9 @@ export function PlanCard({ onNotice }: { onNotice: (message: string) => void }) 
               value={wanted}
             />
           </label>
+          <p className="field-hint">
+            {t("운영자가 조건에 맞는 단체 3곳 이상을 골라 연락이 닿는지까지 확인하고, 3영업일 안에 답해 드려요. 제안과 조건 협의는 브랜드가 직접 해요.")}
+          </p>
           <button className="cancel-button" disabled={asking || plan.partnerRequestsLeft === 0 || wanted.trim().length < 10} type="submit">
             {t("섭외 요청 보내기")}
           </button>

@@ -254,6 +254,9 @@ export type Payment = {
   paidAt?: string
   cancelledAt?: string
   cancelReason?: string
+  // 결제를 기다리는 주문이 스스로 취소되는 때와, 그 기한이 지나 취소된 때다(7일).
+  expiresAt?: string
+  expiredAt?: string
   // 일부만 돌려준 결제는 상태가 paid로 남는다.
   refundedAmount?: number
   refundedAt?: string

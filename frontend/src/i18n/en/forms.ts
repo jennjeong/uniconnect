@@ -1492,6 +1492,17 @@ const en: Record<string, string> = {
   "등록을 마친 운영자가 생기면 공유 토큰은 자동으로 닫혀요. 그 뒤 활동 기록에 각자의 이름이 남아요.": "Once an operator finishes setup, the shared token closes by itself, and the activity log shows each person's name.",
   "전체": "All",
   "방문자": "Visitors",
+  "계좌 입금은 요청한 날부터 7일 안에 해 주세요. 기한이 지나면 주문이 취소돼요.": "Please transfer within 7 days of the request. After that the order is canceled.",
+  "기한이 지나 취소": "canceled after the deadline",
+  "무료는 한 달에 협찬 제안 {count}건, Growth는 제한 없이 보내요.": "The free plan sends {count} proposals a month; Growth sends as many as you like.",
+  "운영자 1:1 섭외 요청 한 달 {count}건: 3영업일 안에 맞는 단체 3곳 이상 추천": "{count} one-to-one partner requests a month: 3+ fitting groups recommended within 3 business days",
+  "섭외 요청을 보냈어요. 3영업일 안에 FAQ의 내 질문으로 답해 드려요.": "Request sent. We'll answer within 3 business days under My questions in the FAQ.",
+  "운영자가 조건에 맞는 단체 3곳 이상을 골라 연락이 닿는지까지 확인하고, 3영업일 안에 답해 드려요. 제안과 조건 협의는 브랜드가 직접 해요.": "The operators pick 3 or more groups that fit, check they can be reached, and answer within 3 business days. You make the proposal and settle the terms yourself.",
+  "{date} 자동 취소": "Auto-cancels {date}",
+  "답할 기한 지남": "Reply deadline passed",
+  "{date}까지 답하기": "Reply by {date}",
+  "{date}까지 입금": "pay by {date}",
+  "{date}까지 결제": "pay by {date}",
 }
 
 export default en

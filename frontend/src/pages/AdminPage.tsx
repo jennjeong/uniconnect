@@ -10,6 +10,7 @@ import { Toast } from "../components/Toast"
 import { SearchClear } from "../components/SearchClear"
 import { TabBar } from "../components/TabBar"
 import { locale, t } from "../i18n"
+import { businessDeadline, partnerReplyDays } from "../lib/businessDays"
 import { formatDateTime } from "../lib/date"
 import { fullWon } from "../lib/sponsorships"
 import { useNotice } from "../hooks/useNotice"
@@ -51,6 +52,17 @@ import type {
 
 // 운영자의 토큰은 이 탭에만 있고 탭이 닫히면 사라진다.
 const storageKey = "uniconnect-admin-token"
+
+// Growth 1:1 섭외 요청의 답 기한: 받은 날부터 3영업일(2026-11-22 운영 결정). 지나면 빨간색.
+function PartnerDeadline({ at }: { at: string }) {
+  const due = businessDeadline(at, partnerReplyDays)
+  const late = Date.now() > due.getTime()
+  return (
+    <span className={late ? "console-badge down" : "console-badge"}>
+      {late ? t("답할 기한 지남") : t("{date}까지 답하기", { date: formatDateTime(due.toISOString()) })}
+    </span>
+  )
+}
 
 function readToken() {
   try {
@@ -197,6 +209,7 @@ function InquiryCard({
         <span className="admin-category">{t(inquiry.category)}</span>
         <span className="admin-card-meta">
           {!inquiry.answer && <WaitBadge at={inquiry.createdAt} late={2} text={(days) => t("{days}일째 대기", { days })} />}
+          {!inquiry.answer && inquiry.category === "파트너스 섭외 요청" && <PartnerDeadline at={inquiry.createdAt} />}
           <time dateTime={inquiry.createdAt}>{formatDateTime(inquiry.createdAt)}</time>
         </span>
       </div>
@@ -385,6 +398,10 @@ function PaymentCard({
           {payment.status === "pending" && (
             <WaitBadge at={payment.requestedAt} late={3} text={(days) => t("{days}일째 입금 대기", { days })} />
           )}
+          {payment.status === "pending" && payment.expiresAt && (
+            <em className="console-tag">{t("{date} 자동 취소", { date: formatDateTime(payment.expiresAt) })}</em>
+          )}
+          {payment.status === "cancelled" && payment.expiredAt && <em className="console-tag">{t("기한이 지나 취소")}</em>}
           <time dateTime={payment.paidAt ?? payment.requestedAt}>{formatDateTime(payment.paidAt ?? payment.requestedAt)}</time>
         </span>
       </div>

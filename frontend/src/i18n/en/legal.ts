@@ -225,8 +225,8 @@ const en: Record<string, string> = {
     "Student groups use the service for free, except for top ads. Brands pay for the paid services below. The amounts below exclude VAT, and 10% VAT is added at checkout.",
   "협찬 수수료: 협찬이 확정돼도 브랜드와 학생단체 모두 서비스에 수수료를 내지 않아요.":
     "Sponsorship fee: none. Neither brands nor student groups pay the Service a fee when a sponsorship is confirmed.",
-  "결제는 토스페이먼츠의 카드 결제창이나 계좌 입금으로 해요. 계좌 입금은 운영자가 입금을 확인하면 반영돼요. 카드 정보는 서비스가 받지 않고 토스페이먼츠가 처리해요.":
-    "You pay by card through Toss Payments' payment window or by bank transfer. A bank transfer takes effect once the operators confirm it. The service never receives card details; Toss Payments handles them.",
+  "결제는 토스페이먼츠의 카드 결제창이나 계좌 입금으로 해요. 계좌 입금은 운영자가 입금을 확인하면 반영돼요. 결제를 마치지 않은 주문은 마지막으로 주문하거나 입금을 요청한 때부터 7일이 지나면 취소되고, 다시 주문하면 돼요. 카드 정보는 서비스가 받지 않고 토스페이먼츠가 처리해요.":
+    "You pay by card through Toss Payments' payment window or by bank transfer. A bank transfer takes effect once the operators confirm it. An order left unpaid is canceled 7 days after it was last placed or a transfer was requested, and you can simply order again. The service never receives card details; Toss Payments handles them.",
   "유료 서비스와 결제":
     "Paid Services and Payment",
   "협찬 금액, 제공 물품, 일정 같은 조건과 그 이행은 두 회원이 직접 정하고 책임져요. 협찬금은 브랜드가 학생단체에 직접 주고, 서비스는 맡아 두거나 대신 보내지 않아요.":
@@ -263,8 +263,8 @@ const en: Record<string, string> = {
   "탈퇴하거나 지울 때까지": "Until you leave or delete them",
   "상세 성과 리포트: 협찬 1건마다 무료로 제공해요. 행사 날부터 보고 PDF로 저장하고 링크로 공유할 수 있어요.":
     "Detailed report: free for every sponsorship. It opens from the event's day, and can be saved as a PDF and shared by link.",
-  "Growth(이전 이름 캠퍼스 파트너스): 브랜드는 30일에 249,000원(부가세 포함 273,900원)으로 Growth를 쓸 수 있어요. 협찬 제안을 제한 없이 보내고(무료 요금제는 한 달에 5건), 캠퍼스 포트폴리오 분석을 쓰고, 운영자에게 1:1 섭외 요청을 한 달에 2건 보낼 수 있고, 브랜드 카드에 PARTNERS 표시가 붙어요. 자동으로 결제되지 않고, 다시 결제하면 남은 날 뒤에 30일이 이어져요.":
-    "Growth (formerly Campus Partners): brands can use Growth at 249,000 KRW (273,900 KRW with VAT) for 30 days. It sends proposals without a limit (the free plan sends 5 a month), adds the campus portfolio analysis, sends the operators 2 one-to-one partner requests a month, and puts a PARTNERS mark on the brand card. It doesn't renew by itself; paying again adds 30 days after the days left.",
+  "Growth(이전 이름 캠퍼스 파트너스): 브랜드는 30일에 249,000원(부가세 포함 273,900원)으로 Growth를 쓸 수 있어요. 협찬 제안을 제한 없이 보내고(무료 요금제는 한 달에 5건), 캠퍼스 포트폴리오 분석을 쓰고, 운영자에게 1:1 섭외 요청을 한 달에 2건 보낼 수 있고(운영자가 3영업일 안에 조건에 맞는 단체 3곳 이상을 연락이 닿는지 확인해 추천하며, 제안과 조건 협의는 브랜드가 직접 해요), 브랜드 카드에 PARTNERS 표시가 붙어요. 자동으로 결제되지 않고, 다시 결제하면 남은 날 뒤에 30일이 이어져요.":
+    "Growth (formerly Campus Partners): brands can use Growth at 249,000 KRW (273,900 KRW with VAT) for 30 days. It sends proposals without a limit (the free plan sends 5 a month), adds the campus portfolio analysis, sends the operators 2 one-to-one partner requests a month (within 3 business days the operators recommend 3 or more fitting groups they've checked can be reached; the brand makes the proposal and settles the terms itself), and puts a PARTNERS mark on the brand card. It doesn't renew by itself; paying again adds 30 days after the days left.",
   "상단 광고: 30일 동안 우리 소개를 상대편 목록 맨 위에 AD 표시와 함께 보여 줘요. 브랜드는 30일에 99,000원(부가세 포함 108,900원), 학생단체는 30일에 10,000원(부가세 포함 11,000원)이에요. 광고가 끝나기 전에 연장하면 10% 할인해요. 자동으로 결제되지 않고, 연장하면 남은 날 뒤에 30일이 이어져요. 환불은 Growth와 같아요.":
     "Top ads: for 30 days your listing shows first on the other side's list, marked AD. Brands pay 99,000 won (108,900 won with VAT) and student groups 10,000 won (11,000 won with VAT) for 30 days. Extending before an ad ends takes 10% off. Nothing renews by itself; an extension adds 30 days after the days left. Refunds work as for Growth.",
   "환불은 도움말 센터의 '관리자에게 질문하기'로 요청해 주세요. 카드 결제는 결제를 취소해 돌려드리고, 계좌 입금은 받은 계좌로 돌려드려요. 환불하기로 확인한 날부터 3영업일 안에 돌려드려요. 결제 내역과 영수증은 내 정보의 '결제 내역'에서 볼 수 있어요.":

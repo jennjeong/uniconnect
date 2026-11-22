@@ -11,6 +11,7 @@ import { sendSearchAlerts } from "./lib/savedSearches.js"
 import { sendPayoutReminders, sendReminders } from "./lib/reminders.js"
 import { refreshViews } from "./lib/snsPosts.js"
 import { backupSchedule } from "./lib/backupStatus.js"
+import { runOrderExpiry } from "./lib/orderExpiry.js"
 import { backUpNow, loadDatabase } from "./store.js"
 
 await loadDatabase()
@@ -20,6 +21,7 @@ await loadDatabase()
 // 결제도 같은 시각에 정리한다.
 const remind = () => {
   if (cardReady()) reconcileCards().then(reconcileRefunds).catch((error: Error) => console.error(`[billing] ${error.message}`))
+  runOrderExpiry().catch((error: Error) => console.error(`[orders] ${error.message}`))
   sendReminders().catch((error: Error) => console.error(`[reminders] ${error.message}`))
   sendPayoutReminders().catch((error: Error) => console.error(`[payouts] ${error.message}`))
   sendProposalNudges().catch((error: Error) => console.error(`[nudges] ${error.message}`))
