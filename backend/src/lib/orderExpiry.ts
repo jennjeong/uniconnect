@@ -1,4 +1,5 @@
-import { orderExpiry, paymentsOf } from "./billing.js"
+import { orderExpiry, paymentsOf, productOf, withVat } from "./billing.js"
+import { HttpError } from "./errors.js"
 import { notify } from "./notices.js"
 import { isDemoId } from "./reviews.js"
 import { getDatabase, retryConflicts, saveDatabase } from "../store.js"
@@ -39,36 +40,31 @@ export const ordersToWarn = (database: Database, now = new Date()) =>
   })
 
 // 크론이 부른다. 하루 전 알림을 보내고 기한이 지난 주문을 취소한다.
+// 알렸다는 표시를 먼저 저장하고 메일은 그 뒤에 보낸다. 저장이 충돌하면 다른 복사본이 남긴
+// 표시를 다시 읽고 고르므로, 크론과 타이머가 함께 돌아도 같은 메일을 두 번 보내지 않는다.
 export async function runOrderExpiry(now = new Date()) {
-  const due = ordersToWarn(getDatabase(), now)
-  let warned = 0
-  for (const payment of due) {
-    const account = getDatabase().accounts.find((item) => item.id === payment.accountId)
+  const { due, expired } = await retryConflicts(async () => {
+    const database = getDatabase()
+    const due = ordersToWarn(database, now)
+    for (const payment of due) payment.expiryWarnedAt = now.toISOString()
+    const expired = expireOrders(database, now)
+    if (expired > 0 || due.length > 0) await saveDatabase()
+    return { due: due.map(({ accountId, orderName }) => ({ accountId, orderName })), expired }
+  })
+  for (const { accountId, orderName } of due) {
     notify(
-      account,
+      getDatabase().accounts.find((item) => item.id === accountId),
       "account",
-      `'${payment.orderName}' 주문이 내일 취소돼요`,
+      `'${orderName}' 주문이 내일 취소돼요`,
       [
-        `'${payment.orderName}' 주문의 입금 기한이 내일까지예요.`,
+        `'${orderName}' 주문의 입금 기한이 내일까지예요.`,
         "아직 입금하지 않았다면 내일까지 입금해 주세요. 기한이 지나면 주문이 취소되고, 다시 주문하면 돼요.",
         "이미 입금했다면 그대로 기다려 주세요. 운영자가 확인하면 결제가 끝나요.",
       ],
       "/me",
     )
-    warned += 1
   }
-  const expired = await retryConflicts(async () => {
-    const database = getDatabase()
-    const stamp = now.toISOString()
-    for (const { id } of due) {
-      const payment = paymentsOf(database).find((item) => item.id === id)
-      if (payment) payment.expiryWarnedAt = stamp
-    }
-    const count = expireOrders(database, now)
-    if (count > 0 || due.length > 0) await saveDatabase()
-    return count
-  })
-  return { warned, expired }
+  return { warned: due.length, expired }
 }
 
 // 운영자가 기한 뒤에 들어온 입금을 확인할 때: 같은 건의 다른 대기·완료 주문이 없으면 다시 연다.
@@ -83,9 +79,26 @@ export function reopenExpired(database: Database, payment: Payment) {
       (item.status === "pending" || item.status === "paid"),
   )
   if (other) return false
+  // 기한이 지난 뒤에는 대상이 바뀌었을 수 있다(캠페인의 견적을 다시 쓰거나 캠페인을 취소하는 잠금이
+  // 이때 풀린다). 지금 같은 금액으로 살 수 있을 때만 연다. 아니면 옛 금액으로 산 것을 주거나,
+  // 취소된 대상에 돈만 남는다.
+  if (!quotedSame(database, payment)) {
+    throw new HttpError(409, "기한이 지난 뒤 주문 내용이 바뀌어 다시 열 수 없어요. 입금한 돈은 돌려 드리고 새로 주문하도록 안내해 주세요.")
+  }
   payment.status = "pending"
   delete payment.cancelledAt
   delete payment.cancelReason
   delete payment.expiredAt
   return true
+}
+
+// 주문한 계정이 지금 같은 대상을 같은 금액(부가세 포함)으로 살 수 있는지.
+function quotedSame(database: Database, payment: Payment) {
+  const account = database.accounts.find((item) => item.id === payment.accountId)
+  if (!account) return false
+  try {
+    return withVat(productOf(payment.kind).quote(database, account, payment.targetId).amount) === payment.amount
+  } catch {
+    return false
+  }
 }

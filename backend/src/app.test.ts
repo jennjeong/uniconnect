@@ -9904,6 +9904,66 @@ test("the shared demo accounts can't change or delete the example posts and exam
   assert.equal((await call("DELETE", `/events/${made.id}`, undefined, student)).status, 204)
 })
 
+test("a campaign order that expired is not reopened once its quote changed or the campaign was cancelled", async () => {
+  const { paymentsOf } = await import("./lib/billing.js")
+  const { expiredReason } = await import("./lib/orderExpiry.js")
+  const { todayInKorea } = await import("./lib/dates.js")
+  const { config: settings } = await import("./config.js")
+  const { token: brand } = await listedMember("expired@campaign-brand.kr", "expired-pass-1!", "브랜드")
+  const month = todayInKorea().slice(0, 7)
+  const brief = { name: "기한 지난 캠페인", product: "음료", regions: ["서울"], from: month, to: month, schools: 2, perSchool: 100 }
+  const savedToken = settings.adminToken
+  settings.adminToken = "test-admin-token"
+  const admin = async (method: string, path: string, body?: unknown) => {
+    const response = await fetch(`${baseUrl}/admin${path}`, { method, headers: { "X-Admin-Token": "test-admin-token", "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined })
+    return { status: response.status, data: (await response.json().catch(() => null)) as { error?: string; program?: { status: string } } }
+  }
+  // 이체를 신청한 주문이 기한을 넘겨 취소된다(크론의 expireOrders가 하는 일을 이 주문에만 한다).
+  const expire = (id: string) => {
+    const payment = paymentsOf(getDatabase()).find((item) => item.id === id)!
+    const now = new Date().toISOString()
+    Object.assign(payment, { status: "cancelled", cancelledAt: now, cancelReason: expiredReason, expiredAt: now })
+    return payment
+  }
+  try {
+    // 견적이 그대로면 늦게 들어온 입금을 확인하고 섭외를 시작한다.
+    const kept = (await call("POST", "/programs", brief, brand)).data.program.id as string
+    await admin("PUT", `/programs/${kept}/quote`, { fee: 1_000_000 })
+    const keptOrder = (await call("POST", "/billing/orders", { kind: "program", targetId: kept }, brand)).data.order
+    await call("POST", `/billing/orders/${keptOrder.id}/transfer`, {}, brand)
+    expire(keptOrder.id)
+    assert.equal((await admin("POST", `/payments/${keptOrder.id}/paid`)).status, 200)
+    assert.equal((await call("GET", `/programs/${kept}`, undefined, brand)).data.program.status, "섭외 중")
+
+    // 만료로 잠금이 풀린 뒤 견적을 다시 쓰면, 옛 금액의 입금으로 섭외를 시작하지 않는다.
+    const requoted = (await call("POST", "/programs", brief, brand)).data.program.id as string
+    await admin("PUT", `/programs/${requoted}/quote`, { fee: 1_000_000 })
+    const oldOrder = (await call("POST", "/billing/orders", { kind: "program", targetId: requoted }, brand)).data.order
+    await call("POST", `/billing/orders/${oldOrder.id}/transfer`, {}, brand)
+    const old = expire(oldOrder.id)
+    assert.equal((await admin("PUT", `/programs/${requoted}/quote`, { fee: 2_000_000 })).status, 200)
+    const late = await admin("POST", `/payments/${oldOrder.id}/paid`)
+    assert.equal(late.status, 409)
+    assert.match(late.data.error ?? "", /다시 열 수 없어요/)
+    assert.deepEqual([old.status, old.expiredAt !== undefined], ["cancelled", true])
+    assert.equal((await call("GET", `/programs/${requoted}`, undefined, brand)).data.program.status, "견적")
+
+    // 만료 뒤 거둔 캠페인의 입금은 결제로 남기지 않는다.
+    const withdrawn = (await call("POST", "/programs", brief, brand)).data.program.id as string
+    await admin("PUT", `/programs/${withdrawn}/quote`, { fee: 1_000_000 })
+    const lostOrder = (await call("POST", "/billing/orders", { kind: "program", targetId: withdrawn }, brand)).data.order
+    await call("POST", `/billing/orders/${lostOrder.id}/transfer`, {}, brand)
+    const lost = expire(lostOrder.id)
+    assert.equal((await call("POST", `/programs/${withdrawn}/withdraw`, {}, brand)).data.program.status, "취소")
+    assert.equal((await admin("POST", `/payments/${lostOrder.id}/paid`)).status, 409)
+    assert.equal(lost.status, "cancelled")
+  } finally {
+    settings.adminToken = savedToken
+    const account = getDatabase().accounts.find((item) => item.email === "expired@campaign-brand.kr")!
+    getDatabase().payments = paymentsOf(getDatabase()).filter((item) => item.accountId !== account.id)
+  }
+})
+
 test("orders left unpaid expire after 7 days, with a warning the day before a transfer's deadline", async () => {
   const { orderFor, paymentsOf } = await import("./lib/billing.js")
   const { expireOrders, ordersToWarn, reopenExpired, expiresAtOf } = await import("./lib/orderExpiry.js")
