@@ -246,6 +246,24 @@ export function acceptedProposalsOf(database: Database, account: Account) {
     .sort((a, b) => (b.respondedAt ?? "").localeCompare(a.respondedAt ?? ""))
 }
 
+// 협찬이 확정됐는지: 취소되지 않았고, 계정이 있는 쪽이 모두 계약서를 확인했다(contractState).
+// 대시보드, 내 정보, 일정, 콘솔 통계, 연락처 공개가 모두 이 판정을 쓴다.
+export const isConfirmedSponsorship = (database: Database, proposal: AcceptedProposal) =>
+  !proposal.canceled &&
+  contractState(database, proposal.id, { group: Boolean(proposal.group.account), brand: Boolean(proposal.brand.account) }) === "confirmed"
+
+// 계정의 확정된 협찬이다. 받은 것과 보낸 것을 한 번씩 센다(제안 하나가 협찬 하나다).
+export const confirmedSponsorshipsOf = (database: Database, account: Account) =>
+  acceptedProposalsOf(database, account).filter((proposal) => isConfirmedSponsorship(database, proposal))
+
+// 플랫폼의 모든 확정된 협찬과 그 제안을 보낸 계정이다(콘솔 통계와 공개 수치).
+export function allConfirmedSponsorships(database: Database) {
+  return [...database.requests, ...database.offers].flatMap((item) => {
+    const proposal = acceptedProposal(database, item.id)
+    return proposal && isConfirmedSponsorship(database, proposal) ? [{ proposal, fromAccountId: item.fromAccountId }] : []
+  })
+}
+
 // 계약서 하나가 담을 수 있는 할 일의 수다(routes/agreements.ts의 agreementLimits.items).
 export const agreementItemLimit = 12
 
@@ -416,16 +434,18 @@ export function agreementView(database: Database, agreement: Agreement, proposal
   return {
     ...agreement,
     side,
-    // 각 측의 연락처. 수락된 제안의 두 측만 본다.
+    // 각 측의 담당자 연락처. 개인정보 처리방침대로 협찬이 확정된 뒤(양쪽이 계약서를
+    // 확인했고 취소되지 않음)에만 두 측에 보인다. 그전에는 메시지로 조율한다.
+    contactsShown: isConfirmedSponsorship(database, proposal),
     group: {
       name: proposal.group.name,
       member: Boolean(proposal.group.account),
-      ...(proposal.group.account?.contact ? { contact: proposal.group.account.contact } : {}),
+      ...(proposal.group.account?.contact && isConfirmedSponsorship(database, proposal) ? { contact: proposal.group.account.contact } : {}),
     },
     brand: {
       name: proposal.brand.name,
       member: Boolean(proposal.brand.account),
-      ...(proposal.brand.account?.contact ? { contact: proposal.brand.account.contact } : {}),
+      ...(proposal.brand.account?.contact && isConfirmedSponsorship(database, proposal) ? { contact: proposal.brand.account.contact } : {}),
     },
     eventName: proposal.eventName,
     eventDate: proposal.eventDate,

@@ -1933,12 +1933,15 @@ test("a brand opens an accepted proposal's agreement, confirms it and proves wha
   await page.locator(".request-card", { hasText: "서울여대 러너스" }).getByRole("button", { name: "계약서" }).click()
   await expect(page.getByRole("heading", { level: 1, name: "가을 캠퍼스 런 5K" })).toBeVisible()
   await expect(page.getByText("아직 uniconnect 계정이 없어요")).toBeVisible()
-  // 자기 쪽은 운영하는 사람을 연락할 전화번호와 함께 보여 준다.
-  await expect(page.locator(".agreement-contact")).toContainText("이오후 · 점장")
-  await expect(page.locator(".agreement-contact a")).toHaveAttribute("href", "tel:01000000001")
+  // 담당자 연락처는 협찬이 확정된 뒤(계정이 있는 쪽이 모두 확인)에만 보인다(개인정보 처리방침).
+  await expect(page.getByText("담당자 연락처는 양쪽이 계약서를 확인하면 보여요.", { exact: false })).toBeVisible()
+  await expect(page.locator(".agreement-contact")).toHaveCount(0)
 
   await page.getByRole("button", { name: "이 내용으로 확인하기" }).click()
   await expect(page.locator(".agreement-confirm .agreement-state")).toHaveText("상대 확인 기다리는 중")
+  // 상대에게 계정이 없으면 브랜드의 확인으로 확정되어, 자기 쪽 담당자가 전화번호와 함께 보인다.
+  await expect(page.locator(".agreement-contact")).toContainText("이오후 · 점장")
+  await expect(page.locator(".agreement-contact a")).toHaveAttribute("href", "tel:01000000001")
 
   // 브랜드가 첫 항목을 체크하고 링크와 사진으로 증빙한다.
   const item = page.locator(".agreement-item").first()

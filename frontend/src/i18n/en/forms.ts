@@ -1395,6 +1395,11 @@ const en: Record<string, string> = {
   "탈퇴한 회원이 남긴 내용은 지웠어요.": "What the member who left wrote was deleted.",
   "계약서가 없어진 협찬의 분쟁 기록": "Dispute records of sponsorships without a contract",
   "상대가 탈퇴해 계약서는 지워졌지만, 결론이 난 분쟁 기록은 정해진 기간 동안 남아요.": "The contract was deleted when the other side left, but the concluded dispute stays for a set period.",
+  "제안을 불러오지 못했어요": "Couldn't load the proposal",
+  "목록으로": "Back to the list",
+  "원래 제안을 찾을 수 없어요": "The original proposal can't be found",
+  "원래 제안이 없어 상세를 열 수 없어요": "No original proposal, so details can't open",
+  "담당자 연락처는 양쪽이 계약서를 확인하면 보여요. 그전에는 메시지로 이야기해 주세요.": "Contact details appear once both sides confirm the contract. Until then, talk through messages.",
 }
 
 export default en

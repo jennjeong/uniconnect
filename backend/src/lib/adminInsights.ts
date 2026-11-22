@@ -232,14 +232,31 @@ export function agreementState(agreement: Agreement): AgreementState {
   return sides >= 2 ? "both" : sides === 1 ? "one" : "draft"
 }
 
+// 계약서 id에 이어진 브랜드의 협찬 기록(sp-<id>)과 그 브랜드 이름이다.
+function recordOf(database: Database, agreementId: string) {
+  for (const [accountId, list] of Object.entries(database.sponsorships)) {
+    const found = list.find((item) => item.id === `sp-${agreementId}`)
+    if (found) {
+      const brand = database.accounts.find((account) => account.id === accountId)?.name ?? ""
+      return { group: found.groupName, brand, event: found.eventName, date: found.date }
+    }
+  }
+  return undefined
+}
+
 export function agreementRow(database: Database, agreement: Agreement) {
   const proposal = allProposals(database).find((item) => item.id === agreement.id)
+  // 원래 제안이 없는 계약서(예시의 가을 버스킹처럼 협찬 기록만 남은 것, 또는 예전 데이터)는
+  // 같은 협찬 기록(sp-<id>)에서 행사와 양쪽을 찾고, 그것도 없으면 알아볼 수 있는 제목을 단다.
+  // 상세(제안)는 열 수 없다는 표시(missing)를 붙인다.
+  const record = proposal ? undefined : recordOf(database, agreement.id)
   return {
     id: agreement.id,
-    from: proposal ? fromName(database, proposal) : "",
-    to: proposal ? toName(database, proposal) : "",
-    event: proposal ? proposalName(proposal) : "",
-    date: proposal ? proposalDate(proposal) : "",
+    ...(proposal ? {} : { missing: true }),
+    from: proposal ? fromName(database, proposal) : record?.group ?? "",
+    to: proposal ? toName(database, proposal) : record?.brand ?? "",
+    event: proposal ? proposalName(proposal) : record?.event ?? `원래 제안을 찾을 수 없는 계약서 (${agreement.id.slice(0, 8)})`,
+    date: proposal ? proposalDate(proposal) : record?.date ?? agreement.createdAt.slice(0, 10),
     state: agreementState(agreement),
     done: agreement.items.filter((item) => item.doneAt).length,
     items: agreement.items.length,

@@ -184,7 +184,9 @@ export type Agreement = {
   shipments?: Shipment[]
   snsPosts?: SnsPost[]
   side: ChatSide
-  // 각 당사자와 계정을 운영하는 담당자 (두 당사자에게만 보인다).
+  // 각 당사자와 계정을 운영하는 담당자. 담당자는 협찬이 확정된 뒤(양쪽이 계약서를 확인)에만
+  // 두 당사자에게 보인다(contactsShown).
+  contactsShown?: boolean
   group: { name: string; member: boolean; contact?: AccountContact }
   brand: { name: string; member: boolean; contact?: AccountContact }
   eventName: string
@@ -1292,6 +1294,8 @@ export type AgreementState = "draft" | "one" | "both" | "done" | "cancel"
 
 export type AdminAgreementRow = {
   id: string
+  // 원래 제안을 찾을 수 없는 계약서다(예전 데이터). 상세를 열 수 없다.
+  missing?: boolean
   from: string
   to: string
   event: string
