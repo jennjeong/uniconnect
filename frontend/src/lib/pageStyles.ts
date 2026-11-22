@@ -1,6 +1,7 @@
 import { lazy, type ComponentType } from "react"
 
 import { loadEnglish } from "../i18n"
+import { isChunkLoadError, reloadForNewDeploy } from "./staleChunks"
 
 // 첫 화면(소개, 대시보드, 헤더 · 메뉴 · 푸터, 로그인 · 가입, 404)에 쓰지 않는
 // 규칙은 pages.css에 있다. 첫 다운로드에서 빼서 첫 화면이 덜 기다리게 하고,
@@ -10,6 +11,15 @@ export const loadPageStyles = () => (styles ??= import("../pages.css"))
 
 // React.lazy와 같되, 화면을 그리기 전에 pages.css와 영어 사전의 나머지가 와 있게 한다.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+// 새 배포 뒤 이전 화면 파일을 불러오지 못하면 한 번만 새로 고친다(lib/staleChunks.ts).
 export function lazyPage<T extends ComponentType<any>>(load: () => Promise<{ default: T }>) {
-  return lazy(() => Promise.all([load(), loadPageStyles(), loadEnglish()]).then(([module]) => module))
+  return lazy(() =>
+    Promise.all([load(), loadPageStyles(), loadEnglish()])
+      .then(([module]) => module)
+      .catch((error: unknown) => {
+        // 새로 고치는 동안은 아무것도 그리지 않는다(Suspense가 계속 기다린다).
+        if (isChunkLoadError(error) && reloadForNewDeploy()) return new Promise<never>(() => undefined)
+        throw error
+      }),
+  )
 }

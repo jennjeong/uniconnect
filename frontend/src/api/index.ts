@@ -18,6 +18,7 @@ import type {
   AdminLoginDone,
   AdminLoginStart,
   AdminOperator,
+  OperatorReadiness,
   AdminAnnouncement,
   AdminEventRow,
   AdminHealth,
@@ -58,6 +59,7 @@ import type {
   CouncilLink,
   DeviceSession,
   ErrorEntry,
+  ErrorGroup,
   EventItem,
   EventMeasurement,
   EventPage,
@@ -584,7 +586,9 @@ export const api = {
       headers: { "X-Admin-Token": token },
     }),
   adminErrors: (token: string) =>
-    request<{ errors: ErrorEntry[] }>("/admin/errors", { headers: { "X-Admin-Token": token } }),
+    request<{ errors: ErrorEntry[]; groups?: ErrorGroup[]; deploy?: string | null }>("/admin/errors", { headers: { "X-Admin-Token": token } }),
+  adminMarkErrorGroup: (token: string, key: string, handled: boolean) =>
+    request<{ group: ErrorGroup }>(`/admin/errors/groups/${encodeURIComponent(key)}`, { method: "PUT", body: { handled }, headers: { "X-Admin-Token": token } }),
   adminSaveNote: (token: string, id: string, note: string) =>
     request<{ account: AdminMemberDetail }>(`/admin/accounts/${encodeURIComponent(id)}/note`, {
       method: "PUT",
@@ -643,7 +647,8 @@ export const api = {
   adminSession: (token: string) =>
     request<{ operator: AdminOperator | null; tokenClosed: boolean }>("/admin/session", { headers: { "X-Admin-Token": token } }),
   adminEndSession: (token: string) => request<void>("/admin/session", { method: "DELETE", headers: { "X-Admin-Token": token } }),
-  adminOperators: (token: string) => request<{ operators: AdminOperator[] }>("/admin/operators", { headers: { "X-Admin-Token": token } }),
+  adminOperators: (token: string) =>
+    request<{ operators: AdminOperator[]; readiness?: OperatorReadiness }>("/admin/operators", { headers: { "X-Admin-Token": token } }),
   adminAddOperator: (token: string, body: { email: string; name: string; password: string }) =>
     request<{ operator: AdminOperator }>("/admin/operators", { method: "POST", headers: { "X-Admin-Token": token }, body }),
   adminDisableOperator: (token: string, id: string) =>

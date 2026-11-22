@@ -15,11 +15,11 @@ import { fullWon } from "../lib/sponsorships"
 import { useNotice } from "../hooks/useNotice"
 import { Members } from "./AdminMembers"
 import { Approvals, Content, Disputes, Insights, Live, Operations, ProposalDrawer, RevenuePanel, SystemPanel } from "./AdminMore"
+import { ErrorsPanel } from "./AdminErrors"
 import { Programs } from "./AdminPrograms"
 import {
   ActivityLog,
   CsvButton,
-  groupErrors,
   Notices,
   Pager,
   readStored,
@@ -119,6 +119,11 @@ function ReportCard({
   const [busy, setBusy] = useState(false)
   const [reason, setReason] = useState("")
   const person = (who: AdminReport["about"]) => (who ? `${who.name} · ${t(who.role)} · ${who.email}` : t("탈퇴한 회원"))
+  // 서버가 허용하는 처리만 버튼으로 보인다. 예전 서버라 actions가 없으면 대상 종류로 정한다.
+  const can = (action: ReportAction) =>
+    report.actions
+      ? (report.actions as string[]).includes(action)
+      : action === "dismiss" || action === "suspend" || (action === "hide-review" && report.target.kind === "review") || (action === "hide-reply" && report.target.kind === "reply")
   const act = (action: ReportAction) => {
     setBusy(true)
     void onResolve(report, action, action === "suspend" ? reason.trim() : undefined).finally(() => setBusy(false))
@@ -144,23 +149,25 @@ function ReportCard({
         </div>
       ) : (
         <div className="admin-report-actions">
-          {report.about && <SuspendReason onChange={setReason} value={reason} />}
+          {report.about && can("suspend") && <SuspendReason onChange={setReason} value={reason} />}
           <button className="cancel-button" disabled={busy} onClick={() => act("dismiss")} type="button">
             {t("그대로 두기")}
           </button>
-          {report.target.kind === "review" && (
+          {can("hide-review") && (
             <button className="cancel-button" disabled={busy} onClick={() => act("hide-review")} type="button">
               {t("후기 내리기")}
             </button>
           )}
-          {report.target.kind === "reply" && (
+          {can("hide-reply") && (
             <button className="cancel-button" disabled={busy} onClick={() => act("hide-reply")} type="button">
               {t("답글 내리기")}
             </button>
           )}
-          <button className="decline-button" disabled={busy || !report.about} onClick={() => act("suspend")} type="button">
-            {t("계정 정지")}
-          </button>
+          {can("suspend") && (
+            <button className="decline-button" disabled={busy || !report.about} onClick={() => act("suspend")} type="button">
+              {t("계정 정지")}
+            </button>
+          )}
         </div>
       )}
     </article>
@@ -692,8 +699,9 @@ function Overview({ data, onGo }: { data: AdminOverview; onGo: (section: Section
   // 처리할 것이 있는 일을 먼저, 0건인 일은 접어 둔다.
   const busy = todo.filter((item) => item.count > 0)
   const idle = todo.filter((item) => item.count === 0)
-  const thisWeek = weekly.at(-1)
-  const lastWeek = weekly.at(-2)
+  // Array.prototype.at은 오래된 브라우저에 없어 인덱스로 읽는다.
+  const thisWeek = weekly[weekly.length - 1]
+  const lastWeek = weekly[weekly.length - 2]
   const answered = stats.accepted.real + stats.declined.real
   const rate = answered === 0 ? null : Math.round((stats.accepted.real / answered) * 100)
   const members = stats.students.real + stats.brands.real
@@ -1079,7 +1087,6 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
   const [profileOpen, setProfileOpen] = useState(false)
   const [search, setSearch] = useState("")
   const searchRef = useRef<HTMLInputElement>(null)
-  const [groupSame, setGroupSame] = useState(true)
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [sound, setSound] = useState(() => readStored(soundKey, true))
   const [dark, setDark] = useState(() => readStored(themeKey, false))
@@ -1689,38 +1696,7 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
 
         {section === "health" && <ServiceHealth onNotice={onNotice} token={token} />}
 
-        {section === "errors" && (
-          <section className="console-card">
-            <div className="console-filters">
-              <label className="console-check">
-                <input checked={groupSame} onChange={(event) => setGroupSame(event.target.checked)} type="checkbox" />
-                {t("같은 오류 묶기")}
-              </label>
-            </div>
-            {errors.length === 0 ? (
-              <p className="day-empty">{t("기록된 오류가 없어요.")}</p>
-            ) : (
-              <div className="admin-list">
-                {(groupSame ? groupErrors(errors) : errors.map((entry) => ({ entry, count: 1 }))).slice(0, 100).map(({ entry, count }) => (
-                  <article className="admin-card admin-error" key={entry.id}>
-                    <div className="admin-card-head">
-                      <span className="admin-category">{entry.source === "server" ? t("서버") : t("화면")}</span>
-                      <span className="admin-card-meta">
-                        {count > 1 && <span className="console-badge down">{t("{count}번", { count })}</span>}
-                        <time dateTime={entry.at}>{formatDateTime(entry.at)}</time>
-                      </span>
-                    </div>
-                    <p className="admin-question">{entry.message}</p>
-                    <p className="admin-from">
-                      {entry.where} · {entry.path}
-                    </p>
-                    {entry.stack && <pre className="admin-stack">{entry.stack}</pre>}
-                  </article>
-                ))}
-              </div>
-            )}
-          </section>
-        )}
+        {section === "errors" && <ErrorsPanel onNotice={onNotice} token={token} />}
       </main>
       </div>
       {helpOpen && (

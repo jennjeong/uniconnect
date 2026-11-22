@@ -128,8 +128,12 @@ function MemberMap({ map }: { map: AdminInsights["distribution"]["map"] }) {
 }
 
 // 분석 화면: 이번 달과 목표, 퍼널, 코호트, 회원 위치, 사람들이 검색하는 것.
+// 검색어를 셀 범위. 실제 수요는 회원 검색으로 보고, 방문자와 데모는 따로 본다.
+const searchScopeLabels = { all: "전체", member: "회원", visitor: "방문자", demo: "데모 계정" } as const
+
 export function Insights({ token, onNotice }: { token: string; onNotice: Notice }) {
   const [data, reload] = useAdmin(() => api.adminInsights(token), onNotice, [token])
+  const [searchScope, setSearchScope] = useState<keyof typeof searchScopeLabels>("member")
   const [editing, setEditing] = useState(false)
   const [targets, setTargets] = useState({ signups: "", proposals: "", revenue: "" })
   if (!data) return <p className="field-hint">{t("불러오고 있어요…")}</p>
@@ -281,7 +285,26 @@ export function Insights({ token, onNotice }: { token: string; onNotice: Notice 
       <section className="console-card span-2">
         <h2>{t("많이 찾은 검색어")}</h2>
         <p className="field-hint">{t("누가 찾았는지는 남기지 않고 횟수만 세요.")}</p>
-        <Bars rows={data.searches.slice(0, 15).map((row) => ({ label: row.term, count: row.count }))} />
+        {data.searchesBySource && (
+          <div className="console-segment" role="group" aria-label={t("검색어 범위")}>
+            {(["all", "member", "visitor", "demo"] as const).map((key) => (
+              <button aria-pressed={searchScope === key} key={key} onClick={() => setSearchScope(key)} type="button">
+                {t(searchScopeLabels[key])}
+              </button>
+            ))}
+          </div>
+        )}
+        {searchScope !== "all" && data.searchesBySource?.since && (
+          <p className="field-hint">{t("출처별로는 {date}부터 셌어요.", { date: formatDateTime(data.searchesBySource.since) })}</p>
+        )}
+        {(() => {
+          const rows = searchScope === "all" ? data.searches : data.searchesBySource?.[searchScope] ?? []
+          return rows.length === 0 ? (
+            <p className="day-empty">{t("이 범위의 검색어가 아직 없어요.")}</p>
+          ) : (
+            <Bars rows={rows.slice(0, 15).map((row) => ({ label: row.term, count: row.count }))} />
+          )
+        })()}
       </section>
       <section className="console-card span-2" aria-label={t("캠퍼스 캠페인 전환")}>
         <h2>{t("캠퍼스 캠페인 전환")}</h2>
@@ -1637,7 +1660,7 @@ export function Disputes({ token, onNotice }: { token: string; onNotice: Notice 
               </h2>
               <p>{t("{group} ↔ {brand}", { group: open.groupName, brand: open.brandName })}</p>
             </div>
-            {open.status === "open" && (
+            {(open.actions ? open.actions.includes("review") : open.status === "open") && (
               <button
                 className="primary-button"
                 disabled={busy}
