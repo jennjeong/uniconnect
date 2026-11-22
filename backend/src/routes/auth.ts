@@ -926,7 +926,8 @@ authRouter.get("/export", (req, res) => {
     sponsorships: database.sponsorships[account.id] ?? [],
     savedSearches: (database.savedSearches?.[account.id] ?? []).map(({ known: _known, ...search }) => search),
     localCampaign: database.localCampaigns?.[account.id] ?? null,
-    programs: (database.programs ?? []).filter((program) => program.accountId === account.id),
+    // 운영자만 보는 손익(ops)은 브랜드에게 내보내지 않는다.
+    programs: (database.programs ?? []).filter((program) => program.accountId === account.id).map(({ ops: _ops, ...program }) => program),
     measurements: database.measurements
       .filter((item) => item.accountId === account.id)
       .map(({ passes: _passes, log: _log, staffPin: _staffPin, groupPin: _groupPin, sponsors, ...measurement }) => ({

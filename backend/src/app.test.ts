@@ -9580,6 +9580,9 @@ test("a brand asks for a campus campaign, the operators quote it and paying the 
   // 내보내기에 들어가고, 탈퇴하면 지워진다.
   const exported = (await call("GET", "/auth/export", undefined, brand)).data
   assert.equal(exported.programs.length, 7)
+  // 운영자만 보는 손익은 내보내기에 없다.
+  assert.ok(exported.programs.every((program: Record<string, unknown>) => !("ops" in program)))
+  assert.ok(getDatabase().programs!.some((program) => program.ops))
   const accountId = getDatabase().accounts.find((item) => item.email === "program@program-brand.kr")!.id
   assert.equal((await call("DELETE", "/auth/account", { password: "program-pass-1!" }, brand)).status, 204)
   assert.equal((getDatabase().programs ?? []).filter((item) => item.accountId === accountId).length, 0)
