@@ -23,6 +23,7 @@ import {
   Notices,
   Pager,
   readStored,
+  ReadinessList,
   Operators,
   ServiceHealth,
   SortHeader,
@@ -692,6 +693,7 @@ function Overview({ data, onGo }: { data: AdminOverview; onGo: (section: Section
   const revenueTop = Math.max(1, ...revenueKinds.map((item) => revenue.byKind[item.key]))
   return (
     <div className="console-grid">
+      {data.readiness && data.readiness.length > 0 && <ReadinessList items={data.readiness} onOpen={() => onGo("health")} />}
       <StatCard
         badge={<span className="console-badge up">{t("이번 주 +{count}", { count: stats.newThisWeek.real })}</span>}
         icon="users"

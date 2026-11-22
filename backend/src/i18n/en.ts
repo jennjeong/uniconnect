@@ -928,6 +928,7 @@ const en: Record<string, string> = {
   "직접비를 확인해 주세요.": "Check the direct cost.",
   "운영 시간은 0.5시간 단위로 적어 주세요.": "Write the hours in steps of half an hour.",
   "손익 메모는 300자까지예요.": "The margin note can be up to 300 characters.",
+  "지금은 인증 메일을 보낼 수 없어요. 잠시 뒤에 다시 시도하거나 도움말 센터로 문의해 주세요.": "We can't send verification emails right now. Try again later or ask us through the help center.",
 }
 
 export default en

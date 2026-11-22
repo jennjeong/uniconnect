@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto"
 import { config } from "../config.js"
 import { createSeed } from "../data/seed.js"
 import { cardReady, paymentsOf, testMode } from "./billing.js"
+import { codesDeliverable, mailConfigured, mailHealth } from "./mailer.js"
 import { addDays, todayInKorea } from "./dates.js"
 import { HttpError } from "./errors.js"
 import { chatFiles, eventPhotos } from "./photos.js"
@@ -213,7 +214,23 @@ export function serviceHealth() {
     vercel: Boolean(process.env.VERCEL),
     region: process.env.VERCEL_REGION ?? null,
     commit: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? null,
+    mail: { ...mailHealth },
+    readiness: readiness(),
   }
+}
+
+// 설정이 비어 회원이나 운영자에게 생기는 일을 영향도로 나눈다(개요 맨 위와 서비스 상태).
+// blocking: 회원 기능이 멈춘다. limited: 운영이나 안내가 줄어든다. 값은 담지 않는다.
+export function readiness() {
+  const items: { key: string; level: "blocking" | "limited" }[] = []
+  if (!codesDeliverable()) items.push({ key: "mail", level: "blocking" })
+  else if (!mailConfigured()) items.push({ key: "mailDev", level: "limited" })
+  if (!cardReady()) items.push({ key: "paymentsOff", level: "limited" })
+  else if (testMode()) items.push({ key: "paymentsTest", level: "limited" })
+  if (!config.secretsKey) items.push({ key: "secrets", level: "limited" })
+  if (!config.operatorEmail || !mailConfigured()) items.push({ key: "errorMail", level: "limited" })
+  if (process.env.VERCEL && !config.cronSecret) items.push({ key: "cron", level: "limited" })
+  return items
 }
 
 // 회원의 태그를 다듬는다: 앞뒤 공백 제거, 짧게, 중복 없이, 최대 열 개.
@@ -325,6 +342,8 @@ export function siteState(database: Database) {
   return {
     maintenance: maintenance?.on ? { message: maintenance.message ?? "" } : null,
     signupsClosed: Boolean(maintenance?.blockSignups),
+    // 인증 메일을 보낼 수 있는지다. 아니면 가입 화면이 미리 알린다.
+    mailReady: codesDeliverable(),
   }
 }
 

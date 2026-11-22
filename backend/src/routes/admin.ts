@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto"
 import { Router, type Request } from "express"
 
 import { config } from "../config.js"
-import { adminLogRows, adminRequest, isLive, logAdmin, noteLimit, serviceHealth } from "../lib/adminTools.js"
+import { adminLogRows, adminRequest, isLive, logAdmin, noteLimit, readiness, serviceHealth } from "../lib/adminTools.js"
 import { cardReady, markCancelled, markPaid, markPartlyRefunded, partialRefundOf, paymentsOf } from "../lib/billing.js"
 import { askToss, reconcileRefunds, refundCard, refundOutside, settleCard, stuckRefunds } from "../lib/cardRecovery.js"
 import { duplicateIds } from "../lib/adminInsights.js"
@@ -287,7 +287,8 @@ adminRouter.post("/inquiries/:id/answer", async (req, res) => {
 // (lib/console.ts).
 adminRouter.get("/overview", async (req, res) => {
   await requireAdmin(req)
-  res.json(overview(getDatabase()))
+  // 맨 위에 보이는 설정 경고(서비스 상태와 같은 판정)를 함께 싣는다.
+  res.json({ ...overview(getDatabase()), readiness: readiness() })
 })
 
 // 모든 회원을 최신순으로 보여 주며, 이름, 이메일, 학교로 검색하고 쪽과

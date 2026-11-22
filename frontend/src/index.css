@@ -16572,6 +16572,24 @@ label.programs-school {
   color: var(--muted);
 }
 
+/* 학교 카드의 목표 대비 단계별 수와 견적의 총 지급 예정액 줄. */
+.programs-tally {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+.programs-tally strong {
+  color: var(--point-strong);
+}
+
+.programs-quote .programs-quote-total th,
+.programs-quote .programs-quote-total td {
+  border-bottom: 0;
+  color: var(--ink);
+  font-weight: var(--weight-label);
+}
+
 /* 캠페인의 통합 보고(#403): 합계 타일과 학교별 표. */
 .programs-results {
   margin-top: 16px;

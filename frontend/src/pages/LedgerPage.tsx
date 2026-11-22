@@ -66,7 +66,7 @@ export function LedgerPage({ token }: { token: string }) {
                 <p>{entry.gives}</p>
                 <span className="ledger-figures">
                   {entry.value !== undefined && <b>{formatWon(entry.value)}</b>}
-                  {entry.scans !== undefined && <span>{t("QR 참여 {count}명", { count: entry.scans.toLocaleString("ko-KR") })}</span>}
+                  {entry.scans !== undefined && <span>{t("QR 스캔 {count}회", { count: entry.scans.toLocaleString("ko-KR") })}</span>}
                 </span>
                 {entry.note && <p className="ledger-note">{entry.note}</p>}
               </li>
