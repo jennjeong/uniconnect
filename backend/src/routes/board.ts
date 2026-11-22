@@ -133,6 +133,9 @@ function parsePost(account: Account, body: Request["body"]) {
   if (account.role === "학생단체") {
     const event = (getDatabase().events[account.id] ?? []).find((item) => item.id === text(body?.eventId))
     if (!event || (event.endDate ?? event.date) < today) throw new HttpError(400, "협찬을 찾을 다가오는 행사를 골라 주세요.")
+    // 행사가 끝난 뒤에는 지원을 받지 않는다(lib/postDeadlines.ts).
+    const lastDay = event.endDate ?? event.date
+    if (deadline > lastDay) throw new HttpError(400, `마감일은 행사 마지막 날(${lastDay})까지로 골라 주세요.`)
     eventId = event.id
   }
   return { title, body: words, types, deadline, ...(eventId ? { eventId } : {}) }

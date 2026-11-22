@@ -1578,6 +1578,9 @@ export function AgreementPage({
       <AgreementStatus agreement={agreement} />
 
       <article className="agreement-sheet">
+        {agreement.contactsShown === false && !agreement.cancel?.canceledAt && (
+          <p className="agreement-note">{t("담당자 연락처는 양쪽이 계약서를 확인하면 보여요. 그전에는 메시지로 이야기해 주세요.")}</p>
+        )}
         <dl className="agreement-facts">
           {parties.map((party) => (
             <div key={party.side}>

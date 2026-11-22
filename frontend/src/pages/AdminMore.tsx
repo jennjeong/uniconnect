@@ -397,13 +397,13 @@ const stateLabels: Record<AgreementState, string> = {
 
 // 운영 화면 옆에 제안 하나를 전체로 보여 준다.
 export function ProposalDrawer({ token, id, onClose, onNotice }: { token: string; id: string; onClose: () => void; onNotice: Notice }) {
-  const [detail] = useAdmin<{ proposal: AdminProposalDetail }>(() => api.adminProposal(token, id), onNotice, [token, id])
+  const [detail, retry, , failed] = useAdmin<{ proposal: AdminProposalDetail }>(() => api.adminProposal(token, id), onNotice, [token, id])
   const proposal = detail?.proposal
   return (
     <aside aria-label={t("제안 상세")} className="console-card console-detail console-drawer">
       <header>
         <div>
-          <strong>{proposal?.event ?? t("불러오고 있어요…")}</strong>
+          <strong>{proposal?.event ?? (failed ? t("제안을 불러오지 못했어요") : t("불러오고 있어요…"))}</strong>
           {proposal && (
             <small>
               {proposal.from} → {proposal.to}
@@ -414,6 +414,16 @@ export function ProposalDrawer({ token, id, onClose, onNotice }: { token: string
           <Icon name="close" size={16} />
         </button>
       </header>
+      {failed && !proposal && (
+        <div className="admin-report-actions">
+          <button className="console-text-button" onClick={() => void retry()} type="button">
+            {t("다시 시도")}
+          </button>
+          <button className="console-text-button" onClick={onClose} type="button">
+            {t("목록으로")}
+          </button>
+        </div>
+      )}
       {proposal && (
         <>
           <dl className="console-facts">
@@ -520,11 +530,10 @@ export function Operations({ token, onNotice }: { token: string; onNotice: Notic
                     {t(stateLabels[state])} <em>{items.length}</em>
                   </h3>
                   {items.map((row) => (
-                    <button className="console-ticket" key={row.id} onClick={() => setOpen(row.id)} type="button">
+                    <button className="console-ticket" disabled={row.missing} key={row.id} onClick={() => setOpen(row.id)} type="button">
                       <strong>{row.event}</strong>
-                      <span>
-                        {row.from} → {row.to}
-                      </span>
+                      <span>{row.from || row.to ? `${row.from} → ${row.to}` : t("원래 제안을 찾을 수 없어요")}</span>
+                      {row.missing && <small className="console-warn">{t("원래 제안이 없어 상세를 열 수 없어요")}</small>}
                       <small>
                         {row.date} · {t("할 일 {done}/{items}", { done: row.done, items: row.items })}
                       </small>

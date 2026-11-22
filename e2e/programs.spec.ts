@@ -7,7 +7,7 @@ test("a visitor sees an example campus campaign with its quote", async ({ page }
   await page.goto("/programs")
   await expect(page.getByText("예시 캠페인이에요")).toBeVisible()
   await expect(page.getByRole("button", { name: "캠페인 요청하기" })).toHaveCount(0)
-  await page.getByRole("button", { name: /봄 학기 신제품 시음/ }).click()
+  await page.getByRole("button", { name: /신제품 캠퍼스 시음/ }).click()
   await expect(page).toHaveURL(/\/programs\/example$/)
   const quote = page.getByRole("region", { name: "견적" })
   await expect(quote).toContainText("1,650,000원")

@@ -599,7 +599,7 @@ const en: Record<string, string> = {
   "협찬 기록": "Sponsorship record",
   "예시": "Example",
   "가을 버스킹 데이": "Autumn Busking Day",
-  "삼육대 뮤즈 · 11월 12일 · 예상 120명": "Sahmyook Muse · Nov 12 · 120 expected",
+  "삼육대 뮤즈 · 10월 12일 · 예상 160명": "Sahmyook Muse · Oct 12 · 160 expected",
   "지원 조건": "Support",
   "아메리카노 쿠폰 150장 + 현금 20만 원": "150 Americano coupons + ₩200,000 cash",
   "오후의 커피 · 행사 3일 전까지 전달": "Afternoon Coffee · delivered 3 days before",
