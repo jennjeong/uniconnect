@@ -430,6 +430,18 @@ test("errors for the operators are rows of their own, never written beside the d
   assert.deepEqual(errors.map((entry) => entry.message).sort(), ["둘째 오류", "첫 오류"])
   assert.ok(errors.every((entry) => entry.path === "/api/test"))
   assert.equal(existsSync(path.join(dataDir, "errors.json")), false)
+  // 같은 오류는 행 하나에 세고, 확인함이 남는다.
+  const { errorGroups, markErrorGroup } = await import("./lib/errorLog.js")
+  await recordError({ source: "server", message: "첫 오류", where: "GET /api/test", path: "/api/test" })
+  const groups = await errorGroups()
+  assert.deepEqual(groups.map((group) => [group.message, group.count]).sort(), [["둘째 오류", 1], ["첫 오류", 2]])
+  const first = groups.find((group) => group.message === "첫 오류")!
+  assert.ok(first.firstAt < first.lastAt)
+  assert.equal(await markErrorGroup(first.key, true, "operator-1"), true)
+  assert.equal(await markErrorGroup("nothing", true, "operator-1"), false)
+  const marked = (await errorGroups()).find((group) => group.key === first.key)!
+  assert.deepEqual([marked.state, marked.handledBy], ["handled", "operator-1"])
+  assert.equal(existsSync(path.join(dataDir, "error-groups.json")), false)
 })
 
 test("a copy that loses the race to make the tables still loads the data", async () => {
@@ -446,8 +458,8 @@ test("a copy that loses the race to make the tables still loads the data", async
   useSql(racing)
   try {
     assert.ok((await store.loadDatabase()).accounts.length > 0)
-    // 데이터, 백업, 사진, 오류, 참여 기록 넷, 속도 제한 테이블을 각각 한 번씩 잃는다.
-    assert.equal(lost.size, 9)
+    // 데이터, 백업, 사진, 오류와 그 묶음, 참여 기록 넷, 속도 제한 테이블을 각각 한 번씩 잃는다.
+    assert.equal(lost.size, 10)
   } finally {
     useSql(sql)
   }

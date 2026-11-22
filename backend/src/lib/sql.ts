@@ -52,13 +52,15 @@ async function createTable(sql: Sql, text: string) {
 // JSON 문서 하나의 데이터, 시간별 복사본, 계약서 사진, 운영자용 최근 오류,
 // 모든 복사본이 공유하는 한도 카운트(lib/rateLimit.ts).
 export function ensureTables(sql: Sql) {
-  // 서로 기대지 않는 테이블이라 함께 만든다(콜드 스타트의 첫 요청이 아홉 번 오가지 않게).
+  // 서로 기대지 않는 테이블이라 함께 만든다(콜드 스타트의 첫 요청이 열 번 오가지 않게).
   tables ??= Promise.all(
     [
       "create table if not exists uniconnect_store (id smallint primary key, data text not null, version integer not null, saved_at timestamptz not null default now())",
       "create table if not exists uniconnect_backups (taken_at timestamptz primary key, data text not null)",
       "create table if not exists uniconnect_photos (agreement_id text not null, name text not null, data text not null, primary key (agreement_id, name))",
       "create table if not exists uniconnect_errors (id text primary key, at timestamptz not null, entry text not null)",
+      // 같은 오류의 묶음: 처음과 최근, 횟수, 그때 떠 있던 배포, 운영자의 확인(lib/errorLog.ts).
+      "create table if not exists uniconnect_error_groups (key text primary key, source text not null, sample text not null, first_at timestamptz not null, last_at timestamptz not null, count integer not null, first_deploy text, last_deploy text, handled_at timestamptz, handled_by text)",
       // 참여 기록과 쌓이는 집계다(lib/passRows.ts).
       "create table if not exists uniconnect_passes (code text not null, pass text not null, surveyed boolean not null default false, issued_at timestamptz not null default now(), primary key (code, pass))",
       "create table if not exists uniconnect_coupons (code text not null, number text not null, pass text not null, coupon_id text not null, visited boolean not null default false, issued_at timestamptz not null default now(), primary key (code, number), unique (code, pass, coupon_id))",

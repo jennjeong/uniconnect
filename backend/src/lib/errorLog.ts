@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto"
+import { createHash, randomUUID } from "node:crypto"
 import { readFile, writeFile } from "node:fs/promises"
 import path from "node:path"
 
@@ -22,6 +22,56 @@ export type ErrorEntry = {
   path: string
   // 줄을 찾을 수 있도록 서버 스택의 첫 프레임들.
   stack?: string
+}
+
+// 같은 오류의 묶음이다. 낱낱의 기록(최근 keep건)이 밀려나도 처음과 최근 발생, 횟수가 남는다.
+// deploy는 오류가 들어왔을 때 떠 있던 배포의 커밋(VERCEL_GIT_COMMIT_SHA 앞 7자, 로컬은 null)이라,
+// lastDeploy가 지금 배포(currentDeploy)와 같으면 지금 배포에서도 나는 오류다. 운영자가
+// "확인함"으로 두면 handledAt이 남고, 그 뒤에 다시 나면 state가 "again"이 된다.
+export type ErrorGroup = {
+  key: string
+  source: ErrorEntry["source"]
+  // 가장 최근 것의 내용이다.
+  message: string
+  where: string
+  path: string
+  stack?: string
+  firstAt: string
+  lastAt: string
+  count: number
+  firstDeploy: string | null
+  lastDeploy: string | null
+  handledAt: string | null
+  handledBy: string | null
+  state: "open" | "handled" | "again"
+}
+
+export const currentDeploy = () => process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? null
+
+// 묶음은 최근에 난 것부터 이만큼만 둔다.
+const keepGroups = 300
+
+// 같은 오류인지 가리는 열쇠. 배포마다 바뀌는 번들 이름의 해시와 줄 · 열, 경로 속 id(숫자가
+// 든 긴 조각)는 빼고 본다. 페이지 경로는 넣지 않는다(같은 오류가 여러 화면에서 난다).
+const normalize = (text: string) =>
+  text
+    .replace(/-[A-Za-z0-9_]{8}(?=\.(m?js|css)\b)/g, "")
+    .replace(/(\.m?js)(:\d+){1,2}/g, "$1")
+    .replace(/\/[^/\s?#]*\d[^/\s?#]*/g, (segment) => (segment.length > 6 ? "/:id" : segment))
+export const errorKey = (entry: Pick<ErrorEntry, "source" | "message" | "where">) =>
+  createHash("sha256").update(`${entry.source}\u0000${normalize(entry.message)}\u0000${normalize(entry.where)}`).digest("hex").slice(0, 32)
+
+const stateOf = (group: Omit<ErrorGroup, "state">): ErrorGroup["state"] =>
+  !group.handledAt ? "open" : group.lastAt > group.handledAt ? "again" : "handled"
+
+const groupsFile = () => path.join(path.dirname(config.dataFile), "error-groups.json")
+
+async function readFileGroups(): Promise<Omit<ErrorGroup, "state">[]> {
+  try {
+    return JSON.parse(await readFile(groupsFile(), "utf8")) as Omit<ErrorGroup, "state">[]
+  } catch {
+    return []
+  }
 }
 
 // 최근 것만 쪽마다 둔다. 브라우저 보고는 누구나 보낼 수 있으므로, 그것으로 서버 오류를
@@ -56,9 +106,24 @@ export async function recentErrors(): Promise<ErrorEntry[]> {
 
 async function store(entry: ErrorEntry) {
   const sql = databaseSql()
+  const key = errorKey(entry)
+  const deploy = currentDeploy()
+  const sample = JSON.stringify({ message: entry.message, where: entry.where, path: entry.path, ...(entry.stack ? { stack: entry.stack } : {}) })
   if (sql) {
     await ensureTables(sql)
     await sql("insert into uniconnect_errors (id, at, entry) values ($1, $2, $3)", [entry.id, entry.at, JSON.stringify(entry)])
+    // 한 문장으로 세서 복사본들이 함께 와도 잃지 않는다.
+    await sql(
+      `insert into uniconnect_error_groups (key, source, sample, first_at, last_at, count, first_deploy, last_deploy)
+       values ($1, $2, $3, $4, $4, 1, $5, $5)
+       on conflict (key) do update set sample = excluded.sample, count = uniconnect_error_groups.count + 1,
+         last_at = greatest(uniconnect_error_groups.last_at, excluded.last_at), last_deploy = excluded.last_deploy`,
+      [key, entry.source, sample, entry.at, deploy],
+    )
+    await sql(
+      "delete from uniconnect_error_groups where key not in (select key from uniconnect_error_groups order by last_at desc limit $1)",
+      [keepGroups],
+    )
     await sql(
       `delete from uniconnect_errors where (entry::json->>'source') = $2 and id not in
          (select id from uniconnect_errors where (entry::json->>'source') = $2 order by at desc limit $1)`,
@@ -70,8 +135,70 @@ async function store(entry: ErrorEntry) {
     const sorted = [...(await readFileEntries()), entry].sort((a, b) => b.at.localeCompare(a.at))
     const entries = (["server", "browser"] as const).flatMap((source) => sorted.filter((item) => item.source === source).slice(0, keep))
     await writeFile(errorsFile(), JSON.stringify(entries))
+    const groups = await readFileGroups()
+    const found = groups.find((group) => group.key === key)
+    const latest = { ...JSON.parse(sample), lastAt: entry.at, lastDeploy: deploy }
+    if (found) Object.assign(found, latest, { count: found.count + 1 })
+    else groups.push({ key, source: entry.source, ...latest, firstAt: entry.at, count: 1, firstDeploy: deploy, handledAt: null, handledBy: null })
+    groups.sort((a, b) => b.lastAt.localeCompare(a.lastAt))
+    await writeFile(groupsFile(), JSON.stringify(groups.slice(0, keepGroups)))
   })
   await fileQueue
+}
+
+const iso = (value: unknown) => (value === null || value === undefined ? null : new Date(value as string).toISOString())
+
+// 같은 오류의 묶음을 최근에 난 것부터.
+export async function errorGroups(): Promise<ErrorGroup[]> {
+  const sql = databaseSql()
+  const groups: Omit<ErrorGroup, "state">[] = sql
+    ? await (async () => {
+        await ensureTables(sql)
+        const rows = await sql(
+          "select key, source, sample, first_at, last_at, count, first_deploy, last_deploy, handled_at, handled_by from uniconnect_error_groups order by last_at desc limit $1",
+          [keepGroups],
+        )
+        return rows.map((row) => ({
+          key: String(row.key),
+          source: row.source as ErrorEntry["source"],
+          ...(JSON.parse(String(row.sample)) as Pick<ErrorEntry, "message" | "where" | "path" | "stack">),
+          firstAt: iso(row.first_at)!,
+          lastAt: iso(row.last_at)!,
+          count: Number(row.count),
+          firstDeploy: (row.first_deploy as string | null) ?? null,
+          lastDeploy: (row.last_deploy as string | null) ?? null,
+          handledAt: iso(row.handled_at),
+          handledBy: (row.handled_by as string | null) ?? null,
+        }))
+      })()
+    : await (async () => {
+        await fileQueue
+        return readFileGroups()
+      })()
+  return groups.map((group) => ({ ...group, state: stateOf(group) }))
+}
+
+// 운영자가 묶음을 확인함으로 두거나 되돌린다. 없는 묶음이면 false다.
+export async function markErrorGroup(key: string, handled: boolean, by: string | undefined, now = new Date()) {
+  const handledAt = handled ? now.toISOString() : null
+  const handledBy = handled ? (by ?? null) : null
+  const sql = databaseSql()
+  if (sql) {
+    await ensureTables(sql)
+    const rows = await sql("update uniconnect_error_groups set handled_at = $2, handled_by = $3 where key = $1 returning key", [key, handledAt, handledBy])
+    return rows.length > 0
+  }
+  let found = false
+  fileQueue = fileQueue.then(async () => {
+    const groups = await readFileGroups()
+    const group = groups.find((item) => item.key === key)
+    if (!group) return
+    found = true
+    Object.assign(group, { handledAt, handledBy })
+    await writeFile(groupsFile(), JSON.stringify(groups))
+  })
+  await fileQueue
+  return found
 }
 
 // 오류를 남기고, 조용한 한 시간 뒤 처음 난 오류면 OPERATOR_EMAIL로 운영자에게
@@ -123,8 +250,9 @@ export async function clearErrorLog() {
   if (sql) {
     await ensureTables(sql)
     await sql("delete from uniconnect_errors")
+    await sql("delete from uniconnect_error_groups")
     return
   }
-  fileQueue = fileQueue.then(() => writeFile(errorsFile(), "[]"))
+  fileQueue = fileQueue.then(() => Promise.all([writeFile(errorsFile(), "[]"), writeFile(groupsFile(), "[]")]))
   await fileQueue
 }

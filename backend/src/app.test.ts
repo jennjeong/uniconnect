@@ -2520,13 +2520,22 @@ test("members report and block one another, and operators act on the reports", a
     target: { kind: string }
     excerpt?: string
     about: { name: string }
+    actions: string[]
   }[]
   const find = (kind: string) => listed.find((item) => item.target.kind === kind)!
   assert.equal(find("message").excerpt, "광고 문자를 보내 드려요")
+  // 지금 할 수 있는 처리가 함께 온다. 후기 신고만 후기를 내릴 수 있다.
+  const actions = (item: { actions: string[] }) => item.actions
+  assert.deepEqual(actions(find("review")), ["dismiss", "hide-review", "suspend"])
+  assert.deepEqual(actions(find("account")), ["dismiss", "suspend"])
   assert.equal(find("account").about.name, "safety 카페")
   assert.equal((await admin("POST", `/admin/reports/${find("review").id}/resolve`, { action: "hide-review" })).status, 200)
   assert.equal((await call("GET", `/reviews?about=${groupListing}`)).data.reviews.length, 0)
   assert.equal((await admin("POST", `/admin/reports/${find("account").id}/resolve`, { action: "dismiss" })).status, 200)
+  // 처리된 신고는 다시 처리하지 않는다.
+  assert.equal((await admin("POST", `/admin/reports/${find("account").id}/resolve`, { action: "suspend" })).status, 409)
+  const after = (await admin("GET", "/admin/reports")).data.reports as { id: string; actions: string[] }[]
+  assert.deepEqual(after.find((item) => item.id === find("account").id)!.actions, [])
 
   // 차단하면 둘이 서로의 리스팅, 제안, 대화를 보지 못한다.
   assert.equal((await call("POST", "/blocks", { listingId: brandListing }, group)).status, 201)
@@ -6006,7 +6015,9 @@ test("operators sign in with a password and a code, which closes the shared toke
     assert.ok(setup.secret)
     // 설정이 끝나기 전에는 공유 토큰이 그대로 동작한다. 실패가 쌓이면 맞는 토큰도 막아서
     // 추측을 끝까지 시도하지 못한다.
-    assert.equal((await admin("GET", "/operators", shared)).status, 200)
+    // 준비 상태: 켜진 운영자 하나, 2단계 로그인은 아직 없고, 공유 토큰은 열려 있다.
+    const before = await admin("GET", "/operators", shared)
+    assert.deepEqual(before.data.readiness, { operators: 1, twoFactorOn: 0, tokenSet: true, tokenOpen: true })
     for (let count = 0; count < 10; count += 1) assert.equal((await admin("GET", "/overview", "guess")).status, 403)
     assert.equal((await admin("GET", "/operators", shared)).status, 429)
     await clearRateLimits()
@@ -6037,9 +6048,13 @@ test("operators sign in with a password and a code, which closes the shared toke
     assert.equal(database.adminLog!.at(-1)!.actor, operatorId)
     assert.equal(adminLogRows(database)[0].actorName, "첫 운영자")
 
+    // 2단계 로그인을 켠 운영자가 생겨 공유 토큰이 닫혔다. 아직 설정하지 않은 둘째도 센다.
+    assert.deepEqual((await admin("GET", "/operators", session)).data.readiness, { operators: 2, twoFactorOn: 1, tokenSet: true, tokenOpen: false })
+
     // 자기 자신은 끄지 못하고, 꺼진 운영자는 로그인하지 못한다.
     assert.equal((await admin("DELETE", `/operators/${operatorId}`, session)).status, 409)
     assert.equal((await admin("DELETE", `/operators/${second.data.operator.id}`, session)).data.operator.twoFactorOn, false)
+    assert.equal((await admin("GET", "/operators", session)).data.readiness.operators, 1)
     assert.equal((await admin("POST", "/session", "", { email: "second@uniconnect.kr", password })).status, 401)
 
     // 내려받는 백업에는 비밀값이 없고, 누가 받았는지 남는다.
@@ -7391,8 +7406,16 @@ test("the console's member tools, operations, content, analysis and system scree
     // 검색어는 누가 입력했는지 빼고 세고, 너무 짧은 것은 넘긴다.
     await call("POST", "/site/searches", { q: "  카페   쿠폰 " })
     await call("POST", "/site/searches", { q: "a" })
+    // 출처(방문자, 데모 계정, 회원)별로도 센다. 합계는 모두를 더한 것이다.
+    await call("POST", "/site/searches", { q: "카페 쿠폰" }, student)
     const insights = (await admin("GET", "/insights")).data
-    assert.deepEqual(insights.searches.find((item: { term: string }) => item.term === "카페 쿠폰"), { term: "카페 쿠폰", count: 1 })
+    type Counted = { term: string; count: number }[]
+    const counted = (list: Counted) => list.find((item) => item.term === "카페 쿠폰")?.count
+    assert.equal(counted(insights.searches), 2)
+    assert.equal(counted(insights.searchesBySource.visitor), 1)
+    assert.equal(counted(insights.searchesBySource.demo), 1)
+    assert.equal(counted(insights.searchesBySource.member), undefined)
+    assert.ok(insights.searchesBySource.since)
     // 퍼널은 역할별 도달 회원 수다. 결제는 브랜드만 센다.
     type Funnel = { role: string; steps: { step: string; count: number }[] }[]
     const funnel = insights.funnel as Funnel
@@ -8499,9 +8522,66 @@ test("odd search terms count like any other", async () => {
   const { countSearch } = await import("./lib/adminTools.js")
   const database = structuredClone(getDatabase())
   database.searchTerms = {}
-  countSearch(database, "constructor")
-  countSearch(database, "constructor")
+  countSearch(database, "constructor", "member")
+  countSearch(database, "constructor", "member")
   assert.equal(database.searchTerms.constructor, 2)
+  assert.equal(database.searchTermsBy?.member?.constructor, 2)
+})
+
+test("the same error is one group with its first and latest time, count and deploy, and an operator marks it handled", async () => {
+  const { clearErrorLog, recordError } = await import("./lib/errorLog.js")
+  await clearErrorLog()
+  const savedToken = config.adminToken
+  const savedDeploy = process.env.VERCEL_GIT_COMMIT_SHA
+  config.adminToken = "test-admin-token"
+  const admin = async (method: string, route: string, body?: unknown) => {
+    const response = await fetch(`${baseUrl}/admin${route}`, {
+      method,
+      headers: { "X-Admin-Token": "test-admin-token", ...(body === undefined ? {} : { "Content-Type": "application/json" }) },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    })
+    return { status: response.status, data: JSON.parse(await response.text()) }
+  }
+  type Group = { key: string; source: string; count: number; path: string; firstDeploy: string; lastDeploy: string; state: string; handledBy: string | null }
+  try {
+    // 배포가 바뀌어 번들 이름의 해시와 줄 · 열이 달라도 같은 오류다.
+    process.env.VERCEL_GIT_COMMIT_SHA = "aaaaaaa1111"
+    await recordError({ source: "browser", message: "Failed to fetch dynamically imported module: https://x.kr/assets/Board-AbCd1234.js", where: "index-Zx9y8w7v.js:1:200", path: "/board" })
+    process.env.VERCEL_GIT_COMMIT_SHA = "bbbbbbb2222"
+    await recordError({ source: "browser", message: "Failed to fetch dynamically imported module: https://x.kr/assets/Board-Qq7Rr8Ss.js", where: "index-Kk1Ll2Mm.js:1:310", path: "/matches" })
+    // 서버는 경로 속 id가 달라도 같은 라우트의 같은 오류다.
+    await recordError({ source: "server", message: "boom", where: "PUT /api/events/3f2c9d1e-77aa-4b1c-9d2e-0a1b2c3d4e5f", path: "/api/events/3f2c9d1e-77aa-4b1c-9d2e-0a1b2c3d4e5f" })
+    await recordError({ source: "server", message: "boom", where: "PUT /api/events/91ab2c3d-1111-4b1c-9d2e-0a1b2c3d4e5f", path: "/api/events/91ab2c3d-1111-4b1c-9d2e-0a1b2c3d4e5f" })
+    const listed = await admin("GET", "/errors")
+    assert.equal(listed.data.deploy, "bbbbbbb")
+    const groups = listed.data.groups as Group[]
+    assert.equal(groups.length, 2)
+    const chunk = groups.find((group) => group.source === "browser")!
+    assert.deepEqual(
+      [chunk.count, chunk.path, chunk.firstDeploy, chunk.lastDeploy, chunk.state],
+      [2, "/matches", "aaaaaaa", "bbbbbbb", "open"],
+    )
+    assert.equal(groups.find((group) => group.source === "server")!.count, 2)
+    assert.equal(listed.data.errors.length, 4)
+
+    // 확인함으로 두면 누가 했는지 남고, 그 뒤에 다시 나면 "again"이다.
+    assert.equal((await admin("PUT", `/errors/groups/${chunk.key}`, {})).status, 400)
+    assert.equal((await admin("PUT", "/errors/groups/nothing", { handled: true })).status, 404)
+    const marked = await admin("PUT", `/errors/groups/${chunk.key}`, { handled: true })
+    assert.deepEqual([marked.data.group.state, marked.data.group.handledBy], ["handled", "token"])
+    await new Promise((resolve) => setTimeout(resolve, 5))
+    await recordError({ source: "browser", message: "Failed to fetch dynamically imported module: https://x.kr/assets/Board-Zz0Yy9Xx.js", where: "index-Kk1Ll2Mm.js:1:310", path: "/board" })
+    const again = ((await admin("GET", "/errors")).data.groups as Group[]).find((group) => group.key === chunk.key)!
+    assert.deepEqual([again.state, again.count], ["again", 3])
+    const reopened = await admin("PUT", `/errors/groups/${chunk.key}`, { handled: false })
+    assert.deepEqual([reopened.data.group.state, reopened.data.group.handledBy], ["open", null])
+    assert.equal((await fetch(`${baseUrl}/admin/errors/groups/${chunk.key}`, { method: "PUT" })).status, 403)
+  } finally {
+    config.adminToken = savedToken
+    if (savedDeploy === undefined) delete process.env.VERCEL_GIT_COMMIT_SHA
+    else process.env.VERCEL_GIT_COMMIT_SHA = savedDeploy
+    await clearErrorLog()
+  }
 })
 
 test("malformed cookies and bodies are the sender's mistake, not server errors kept for operators", async () => {
@@ -8897,7 +8977,11 @@ test("a sponsorship dispute is recorded from opening to conclusion, and only its
   await asAdmin(async (admin) => {
     assert.equal((await fetch(`${baseUrl}/admin/disputes`)).status, 403)
     assert.ok((await admin("GET", "/overview")).data.attention.disputes >= 1)
+    // 지금 할 수 있는 처리가 함께 온다(lib/adminStates.ts).
+    const actionsOf = async () => (await admin("GET", "/disputes")).data.disputes.find((item: { id: string }) => item.id === id).actions
+    assert.deepEqual(await actionsOf(), ["review", "decide", "note"])
     assert.equal((await admin("POST", `/disputes/${id}/review`)).status, 200)
+    assert.deepEqual(await actionsOf(), ["decide", "note"])
     assert.equal((await admin("POST", `/disputes/${id}/review`)).status, 409)
     assert.equal((await admin("POST", `/disputes/${id}/notes`, { text: "이체 내역 확인 필요" })).status, 201)
     const row = (await admin("GET", "/disputes")).data.disputes.find((item: { id: string }) => item.id === id)
@@ -8908,6 +8992,7 @@ test("a sponsorship dispute is recorded from opening to conclusion, and only its
     assert.equal((await admin("POST", `/disputes/${id}/decision`, { outcome: "agreed" })).status, 400)
     assert.equal((await admin("POST", `/disputes/${id}/decision`, { outcome: "agreed", note: "양쪽이 다시 지급하기로 했어요." })).status, 200)
     assert.equal((await admin("POST", `/disputes/${id}/decision`, { outcome: "other", note: "뒤집기" })).status, 409)
+    assert.deepEqual(await actionsOf(), ["note"])
   })
   const closed = (await call("GET", `/disputes/${id}`, undefined, brand)).data.dispute
   assert.equal(closed.status, "closed")
@@ -9586,6 +9671,29 @@ test("a brand asks for a campus campaign, the operators quote it and paying the 
     // 환불하면 매출이 0이 되어 직접비만큼 모자란다.
     const refunded = (await (await fetch(`${baseUrl}/admin/programs`, { headers: { "X-Admin-Token": "test-admin-token" } })).json()) as { programs: { id: string; margin: { margin: number } }[] }
     assert.equal(refunded.programs.find((item: { id: string }) => item.id === id)!.margin.margin, -400_000)
+
+    // 계좌 이체를 기다리는 주문이 있으면 견적을 바꾸거나 캠페인을 취소하지 않는다. 옛 금액으로
+    // 입금 확인되거나, 취소된 캠페인의 주문이 결제되지 않게 한다.
+    const pending = (await call("POST", "/programs", brief, brand)).data.program.id as string
+    await admin("PUT", `/${pending}/quote`, { fee: 1_000_000 })
+    const transferOrder = (await call("POST", "/billing/orders", { kind: "program", targetId: pending }, brand)).data.order
+    assert.equal((await call("POST", `/billing/orders/${transferOrder.id}/transfer`, {}, brand)).status, 200)
+    assert.equal((await admin("PUT", `/${pending}/quote`, { fee: 3_000_000 })).status, 409)
+    assert.equal((await admin("POST", `/${pending}/status`, { status: "취소" })).status, 409)
+    assert.equal((await call("POST", `/programs/${pending}/withdraw`, {}, brand)).status, 409)
+    // 운영자가 주문을 취소하면 견적을 다시 쓸 수 있다.
+    const cancelOrder = await fetch(`${baseUrl}/admin/payments/${transferOrder.id}/cancel`, {
+      method: "POST",
+      headers: { "X-Admin-Token": "test-admin-token", "Content-Type": "application/json" },
+      body: JSON.stringify({ reason: "견적 변경" }),
+    })
+    assert.equal(cancelOrder.status, 200)
+    assert.equal((await admin("PUT", `/${pending}/quote`, { fee: 3_000_000 })).status, 200)
+    // 돈이 오가지 않는 대기 주문은 캠페인을 거둘 때 함께 취소된다.
+    const idle = (await call("POST", "/billing/orders", { kind: "program", targetId: pending }, brand)).data.order
+    assert.equal(idle.amount, 3_300_000)
+    assert.equal((await call("POST", `/programs/${pending}/withdraw`, {}, brand)).data.program.status, "취소")
+    assert.equal(paymentsOf(getDatabase()).find((item) => item.id === idle.id)!.status, "cancelled")
   } finally {
     settings.adminToken = savedToken
   }
@@ -9598,7 +9706,7 @@ test("a brand asks for a campus campaign, the operators quote it and paying the 
 
   // 내보내기에 들어가고, 탈퇴하면 지워진다.
   const exported = (await call("GET", "/auth/export", undefined, brand)).data
-  assert.equal(exported.programs.length, 7)
+  assert.equal(exported.programs.length, 8)
   // 운영자만 보는 손익은 내보내기에 없다.
   assert.ok(exported.programs.every((program: Record<string, unknown>) => !("ops" in program)))
   assert.ok(getDatabase().programs!.some((program) => program.ops))

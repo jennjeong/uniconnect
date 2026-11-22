@@ -8,10 +8,11 @@ import { askToss, reconcileRefunds, refundCard, refundOutside, settleCard, stuck
 import { duplicateIds } from "../lib/adminInsights.js"
 import { memberDetail, memberRow, overview, proposalRows } from "../lib/console.js"
 import { todayInKorea } from "../lib/dates.js"
-import { recentErrors } from "../lib/errorLog.js"
+import { currentDeploy, errorGroups, markErrorGroup, recentErrors } from "../lib/errorLog.js"
 import { HttpError } from "../lib/errors.js"
 import { notify, notifyRestored, notifySuspended } from "../lib/notices.js"
 import { operatorFor, tokenClosed } from "../lib/operators.js"
+import { reportActionsOf } from "../lib/adminStates.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { isDemoAccount } from "../lib/reviews.js"
 import { platformStats } from "../lib/stats.js"
@@ -180,7 +181,10 @@ adminRouter.get("/reports", async (req, res) => {
   const settled = (report: { resolution?: unknown }) => (report.resolution ? 1 : 0)
   const reports = [...database.reports]
     .sort((a, b) => settled(a) - settled(b) || b.createdAt.localeCompare(a.createdAt))
-    .map(({ reporterId, accountId, ...report }) => ({ ...report, reporter: person(reporterId), about: person(accountId) }))
+    .map((report) => {
+      const { reporterId, accountId, ...rest } = report
+      return { ...rest, reporter: person(reporterId), about: person(accountId), actions: reportActionsOf(database, report) }
+    })
   const suspended = database.accounts
     .filter((account) => account.suspendedAt)
     .map((account) => ({ id: account.id, name: account.name, role: account.role, email: account.email, suspendedAt: account.suspendedAt }))
@@ -201,6 +205,8 @@ adminRouter.post("/reports/:id/resolve", async (req, res) => {
   const database = getDatabase()
   const report = database.reports.find((item) => item.id === req.params.id)
   if (!report) throw new HttpError(404, "신고를 찾을 수 없어요.")
+  // 처리된 신고는 다시 처리하지 않는다(lib/adminStates.ts).
+  if (report.resolution) throw new HttpError(409, "이미 처리한 신고예요.")
   const action = text(req.body?.action) as ReportAction
   if (!reportActions.includes(action)) throw new HttpError(400, "처리 방법을 골라 주세요.")
   const now = new Date().toISOString()
@@ -233,10 +239,23 @@ adminRouter.post("/reports/:id/resolve", async (req, res) => {
   res.json({ ok: true, noticeSent: await notifySuspended(newlySuspended, suspensionReason(req) ?? report.reason) })
 })
 
-// 가장 최근의 서버와 브라우저 오류를 최신순으로 보여 준다.
+// 가장 최근의 서버와 브라우저 오류를 최신순으로, 그리고 같은 오류의 묶음(lib/errorLog.ts)을
+// 최근에 난 것부터 보여 준다. deploy는 지금 떠 있는 배포의 커밋이다.
 adminRouter.get("/errors", async (req, res) => {
   await requireAdmin(req)
-  res.json({ errors: await recentErrors() })
+  const [errors, groups] = await Promise.all([recentErrors(), errorGroups()])
+  res.json({ errors, groups, deploy: currentDeploy() })
+})
+
+// 오류 묶음을 확인함으로 두거나(handled: true) 되돌린다. 확인한 뒤 다시 나면 묶음의 state가
+// "again"이 된다.
+adminRouter.put("/errors/groups/:key", async (req, res) => {
+  await requireAdmin(req)
+  if (typeof req.body?.handled !== "boolean") throw new HttpError(400, "확인 여부를 골라 주세요.")
+  const found = await markErrorGroup(String(req.params.key), req.body.handled, adminRequest.getStore()?.actor)
+  if (!found) throw new HttpError(404, "오류 묶음을 찾을 수 없어요.")
+  const group = (await errorGroups()).find((item) => item.key === req.params.key)
+  res.json({ group })
 })
 
 // 정지된 계정을 다시 들여보낸다.

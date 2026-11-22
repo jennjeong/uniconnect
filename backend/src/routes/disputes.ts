@@ -27,6 +27,7 @@ import { getDatabase, saveDatabase } from "../store.js"
 import type { ChatSide, Database, Dispute, DisputeOutcome, DisputeReason } from "../types.js"
 import { requireAdmin } from "./admin.js"
 import { writeRouter } from "../middleware/retrying.js"
+import { disputeActionsOf } from "../lib/adminStates.js"
 
 // 협찬 분쟁의 접수와 기록이다(lib/disputes.ts). 당사자와 운영자만 본다.
 export const disputesRouter = writeRouter()
@@ -213,6 +214,8 @@ const adminDispute = (database: Database, id: unknown) => {
 const adminView = ({ evidence, ...dispute }: Dispute) => ({
   ...dispute,
   evidence: evidence.map(({ file: _file, ...item }) => item),
+  // 지금 할 수 있는 처리(lib/adminStates.ts).
+  actions: disputeActionsOf({ evidence, ...dispute }),
 })
 
 adminDisputesRouter.get("/", async (req, res) => {

@@ -1,7 +1,7 @@
 import { Router } from "express"
 
 import { config } from "../config.js"
-import { countSearch, searchTerm, siteState } from "../lib/adminTools.js"
+import { countSearch, searchSource, searchTerm, siteState } from "../lib/adminTools.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { publicCounts } from "../lib/stats.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -28,13 +28,14 @@ const searches = createRateLimit({
   message: "요청이 너무 많아요. 잠시 뒤에 다시 시도해 주세요.",
 })
 
-// 카탈로그에서 검색된 단어를 누가 검색했는지는 빼고 센다. 너무 짧거나 긴
-// 검색어는 조용히 넘긴다.
+// 카탈로그에서 검색된 단어를 누가 검색했는지는 빼고 센다. 방문자, 데모 계정, 회원 중
+// 어디서 왔는지만 나눈다(콘솔이 범위를 고른다). 너무 짧거나 긴 검색어는 조용히 넘긴다.
 siteRouter.post("/searches", async (req, res) => {
   await searches.take(clientKey(req))
   const term = searchTerm(req.body?.q)
   if (term) {
-    countSearch(getDatabase(), term)
+    const database = getDatabase()
+    countSearch(database, term, searchSource(database, req.account))
     await saveDatabase()
   }
   res.status(204).end()

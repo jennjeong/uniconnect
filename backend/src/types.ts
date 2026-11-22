@@ -988,6 +988,9 @@ export type ReferralReward = {
   decidedAt?: string
 }
 
+// 카탈로그 검색의 출처: 로그인하지 않은 방문자, 공용 데모 계정, 그 밖의 회원.
+export type SearchSource = "visitor" | "demo" | "member"
+
 export type CronRun = { at: string; sent: number; targets?: number; failed?: number; mail?: boolean; error?: true }
 
 export type Database = {
@@ -1071,8 +1074,12 @@ export type Database = {
   settings?: SiteSettings
   // 운영자가 추가한 도움말 센터 질문과, 숨긴 기본 질문이다.
   faq?: { added: FaqEntry[]; hidden: string[] }
-  // 방문자가 카탈로그 검색에 입력한 것을 누가 입력했는지는 빼고 센 것이다.
+  // 방문자가 카탈로그 검색에 입력한 것을 누가 입력했는지는 빼고 센 것이다. 출처를 가리지 않은
+  // 합계이며, 나눠 세기 전(searchTermsBy.since 전)의 검색도 들어 있다.
   searchTerms?: Record<string, number>
+  // 같은 검색을 출처(방문자, 공용 데모 계정, 회원)별로 나눠 센 것이다(lib/adminTools.ts
+  // countSearch). since는 나눠 세기 시작한 때다. 누가 검색했는지는 여기에도 남지 않는다.
+  searchTermsBy?: { since: string } & Partial<Record<SearchSource, Record<string, number>>>
   // 날짜 알림의 최근 실행이다(lib/reminders.ts). sent는 보낸 수이고, 그 뒤에 더한 값들은
   // 예전 기록에 없다: targets(보낼 대상), failed(메일이 실패한 수), mail(메일 서비스가 설정돼
   // 있었는지, 없으면 아무것도 나가지 않는다), error(실행이 도중에 실패함).

@@ -9,7 +9,8 @@ import { addDays, todayInKorea } from "./dates.js"
 import { HttpError } from "./errors.js"
 import { chatFiles, eventPhotos } from "./photos.js"
 import { proUntil } from "./plan.js"
-import type { Account, AdminAction, AdminLogEntry, Announcement, CronRun, Database, Payment } from "../types.js"
+import { isDemoAccount } from "./reviews.js"
+import type { Account, AdminAction, AdminLogEntry, Announcement, CronRun, Database, Payment, SearchSource } from "../types.js"
 
 // 콘솔은 최근 항목만 둔다.
 export const adminLogLimit = 500
@@ -325,16 +326,25 @@ export function searchTerm(value: unknown) {
   return term.length >= 2 && term.length <= 30 ? term : null
 }
 
-// 검색어를 세고 가장 많이 검색된 300개를 둔다.
-export function countSearch(database: Database, term: string) {
-  const terms = (database.searchTerms ??= {})
+// 한 표에 하나 더 센다. 300개를 넘으면 가장 많이 검색된 250개만 남긴 새 표를 돌려준다.
+function tally(terms: Record<string, number>, term: string) {
   // "constructor" 같은 검색어가 객체에 물려받은 값을 읽지 않게 한다.
   terms[term] = (Object.hasOwn(terms, term) ? terms[term] : 0) + 1
   const entries = Object.entries(terms)
-  if (entries.length > 300) {
-    database.searchTerms = Object.fromEntries(entries.sort((a, b) => b[1] - a[1]).slice(0, 250))
-  }
+  return entries.length > 300 ? Object.fromEntries(entries.sort((a, b) => b[1] - a[1]).slice(0, 250)) : terms
 }
+
+// 검색어를 합계와 출처별 표에 함께 센다. 각 표는 가장 많이 검색된 300개까지다. 누가
+// 검색했는지는 남기지 않는다.
+export function countSearch(database: Database, term: string, source: SearchSource, now = new Date()) {
+  database.searchTerms = tally(database.searchTerms ?? {}, term)
+  const bySource = (database.searchTermsBy ??= { since: now.toISOString() })
+  bySource[source] = tally(bySource[source] ?? {}, term)
+}
+
+// 검색한 요청의 출처.
+export const searchSource = (database: Database, account: Account | undefined): SearchSource =>
+  !account ? "visitor" : isDemoAccount(database, account) ? "demo" : "member"
 
 // 방문자에게 보이는 사이트의 스위치.
 export function siteState(database: Database) {

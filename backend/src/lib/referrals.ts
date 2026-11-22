@@ -131,6 +131,8 @@ export function waitingReferralRewards(database: Database) {
         joined: joined ? { id: joined.id, name: joined.name, business: Boolean(joined.business), createdAt: joined.createdAt } : null,
         value,
         blocked: blocked ?? null,
+        // 막힌 보상은 거절만 할 수 있다(lib/adminStates.ts).
+        actions: blocked ? ["reject"] : ["approve", "reject"],
       }
     })
 }

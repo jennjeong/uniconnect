@@ -90,6 +90,8 @@ teamRouter.post("/invites", async (req, res) => {
   if ((account.members?.length ?? 0) + open.length + waitingFor(account).length >= teamLimit) {
     throw new HttpError(409, `함께 관리하는 사람은 대표 말고 ${teamLimit}명까지예요.`)
   }
+  // 코드를 보낼 길이 없으면 오늘의 초대 수를 쓰기 전에 거절한다.
+  assertCodesDeliverable()
   await invitesPerDay.take(account.id)
   const code = String(randomInt(0, 1_000_000)).padStart(6, "0")
   const invite = {
@@ -100,7 +102,6 @@ teamRouter.post("/invites", async (req, res) => {
     invitedAt: new Date().toISOString(),
     expiresAt: Date.now() + inviteMs,
   }
-  assertCodesDeliverable()
   account.memberInvites = [...open, invite]
   await saveDatabase()
   const say = (line: string) => oneLine(translate(line, account.language ?? "ko"))

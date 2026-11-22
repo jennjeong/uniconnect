@@ -16,6 +16,7 @@ import {
   recipientOf,
   staleProposals,
   topSearches,
+  searchesBySource,
 } from "../lib/adminInsights.js"
 import { config } from "../config.js"
 import { backupSummary, backupWithoutSecrets, cleanTags, keepThroughRestore, grantPartners, logAdmin, resetExamples } from "../lib/adminTools.js"
@@ -66,6 +67,8 @@ adminMoreRouter.get("/applications", async (req, res) => {
       email,
       document: { name: document.name, size: document.size },
       requestedAt,
+      // 대기 중인 신청은 승인하거나 거절한다(lib/adminStates.ts).
+      actions: ["approve", "reject"],
       ...(account ? { brand: account.name, contact: account.contact } : {}),
       ...(linkAccountId && kind !== "group" ? { brand: name } : {}),
       // 대표자 이름과 학교를 서류와 맞춰 본다.
@@ -548,6 +551,7 @@ adminMoreRouter.get("/insights", async (req, res) => {
     distribution: distribution(database),
     kpi: monthKpi(database),
     searches: topSearches(database),
+    searchesBySource: searchesBySource(database),
     programs: programConversion(database),
   })
 })

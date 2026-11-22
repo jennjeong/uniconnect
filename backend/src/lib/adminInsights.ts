@@ -171,12 +171,25 @@ export function monthKpi(database: Database, now = new Date()) {
   return (["signups", "proposals", "revenue"] as const).map((key) => ({ key, actual: actual[key], target: targets[key] ?? null }))
 }
 
-// 가장 많이 검색된 단어. 누가 검색했는지는 담지 않는다.
-export const topSearches = (database: Database, limit = 30) =>
-  Object.entries(database.searchTerms ?? {})
+const top = (terms: Record<string, number> | undefined, limit: number) =>
+  Object.entries(terms ?? {})
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .slice(0, limit)
     .map(([term, count]) => ({ term, count }))
+
+// 가장 많이 검색된 단어. 누가 검색했는지는 담지 않는다. 합계(나눠 세기 전 것도 포함)와 출처별
+// 표다. since는 출처별로 세기 시작한 때이며, 아직 검색이 없으면 null이다.
+export const topSearches = (database: Database, limit = 30) => top(database.searchTerms, limit)
+
+export function searchesBySource(database: Database, limit = 30) {
+  const by = database.searchTermsBy
+  return {
+    since: by?.since ?? null,
+    visitor: top(by?.visitor, limit),
+    demo: top(by?.demo, limit),
+    member: top(by?.member, limit),
+  }
+}
 
 // `days`일이 지나도록 답을 기다리는 제안. 오래된 순.
 export function staleProposals(database: Database, now = new Date(), days = 7) {

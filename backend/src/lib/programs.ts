@@ -14,7 +14,7 @@ import type {
   SponsorOffer,
 } from "../types.js"
 import { contractState } from "./agreements.js"
-import { paymentsOf, sell, supplyOf, withVat } from "./billing.js"
+import { markCancelled, paymentsOf, sell, supplyOf, withVat } from "./billing.js"
 import { listedTo, shownTo } from "./catalog.js"
 import { todayInKorea } from "./dates.js"
 import { HttpError } from "./errors.js"
@@ -30,6 +30,8 @@ import { text } from "./validation.js"
 export const programLimits = {
   // 아직 결제하지 않은 캠페인(접수, 견적)을 한 계정이 이만큼까지 둔다.
   open: 5,
+  // 거둔 것까지 한 계정의 캠페인은 이만큼까지다. 만들고 거두기를 되풀이해 문서를 키우지 못하게 한다.
+  total: 50,
   regions: 5,
   schools: 50,
   perSchool: 100_000,
@@ -137,6 +139,7 @@ export function parseQuote(body: unknown, now = new Date()): ProgramQuote {
 export function addProgram(database: Database, account: Account, brief: ProgramBrief, now = new Date()) {
   const open = ownPrograms(database, account.id).filter((program) => program.status === "접수" || program.status === "견적")
   if (open.length >= programLimits.open) throw new HttpError(409, "결제 전인 캠페인은 다섯 개까지 둘 수 있어요.")
+  if (ownPrograms(database, account.id).length >= programLimits.total) throw new HttpError(409, "캠페인을 더 만들 수 없어요. 문의해 주세요.")
   const stamp = now.toISOString()
   const program: Program = { id: randomUUID(), accountId: account.id, brief, status: "접수", createdAt: stamp, updatedAt: stamp }
   programsOf(database).push(program)
@@ -147,10 +150,32 @@ export function addProgram(database: Database, account: Account, brief: ProgramB
 const waitingOrder = (database: Database, program: Program) =>
   paymentsOf(database).find((payment) => payment.kind === "program" && payment.targetId === program.id && payment.status === "pending")
 
+// 대기 중인 주문이 돈이 오가는 중인지: 카드 승인을 보냈거나(paymentKey), 계좌 이체를 하겠다고
+// 했다(transferRequestedAt). 그런 주문이 있으면 견적을 바꾸거나 캠페인을 취소하지 않는다. 이체는
+// 운영자가 입금을 확인하거나 주문을 취소(/api/admin/payments/:id/cancel)한 뒤에 한다. 아니면 옛
+// 금액으로 입금 확인되거나, 취소된 캠페인의 주문이 결제돼 돈만 남는다.
+function assertNoMoneyMoving(database: Database, program: Program, card: string, transfer: string) {
+  const order = waitingOrder(database, program)
+  if (order?.paymentKey) throw new HttpError(409, card)
+  if (order?.transferRequestedAt) throw new HttpError(409, transfer)
+}
+
+// 돈이 오가지 않는 대기 주문은 캠페인을 취소할 때 함께 취소한다. 나중에 결제되지 않게 한다.
+function cancelWaitingOrder(database: Database, program: Program) {
+  const order = waitingOrder(database, program)
+  if (order) markCancelled(database, order, "캠페인 취소")
+}
+
 // 브랜드가 결제 전에 거둔다. 결제를 마친 캠페인은 운영자가 환불하며 취소한다.
 export function withdrawProgram(database: Database, program: Program, now = new Date()) {
   if (program.status !== "접수" && program.status !== "견적") throw new HttpError(409, "결제한 캠페인은 문의로 취소를 요청해 주세요.")
-  if (waitingOrder(database, program)?.paymentKey) throw new HttpError(409, "결제를 확인하고 있어요. 잠시 뒤에 다시 시도해 주세요.")
+  assertNoMoneyMoving(
+    database,
+    program,
+    "결제를 확인하고 있어요. 잠시 뒤에 다시 시도해 주세요.",
+    "계좌 이체를 기다리는 주문이 있어요. 결제 내역에서 주문을 취소하거나 문의해 주세요.",
+  )
+  cancelWaitingOrder(database, program)
   program.status = "취소"
   program.updatedAt = now.toISOString()
 }
@@ -158,7 +183,12 @@ export function withdrawProgram(database: Database, program: Program, now = new 
 // 운영자가 견적을 쓴다. 결제하기 전에는 다시 쓸 수 있다.
 export function quoteProgram(database: Database, program: Program, quote: ProgramQuote) {
   if (program.status !== "접수" && program.status !== "견적") throw new HttpError(409, "결제 전인 캠페인만 견적을 바꿀 수 있어요.")
-  if (waitingOrder(database, program)?.paymentKey) throw new HttpError(409, "결제를 확인하는 중이라 견적을 바꿀 수 없어요.")
+  assertNoMoneyMoving(
+    database,
+    program,
+    "결제를 확인하는 중이라 견적을 바꿀 수 없어요.",
+    "계좌 이체를 기다리는 주문이 있어 견적을 바꿀 수 없어요. 입금을 확인하거나 주문을 취소한 뒤 다시 써 주세요.",
+  )
   program.quote = quote
   program.status = "견적"
   program.updatedAt = quote.quotedAt
@@ -171,7 +201,13 @@ export function moveProgram(database: Database, program: Program, status: Progra
     if (program.paymentId && paymentsOf(database).some((payment) => payment.id === program.paymentId && payment.status === "paid")) {
       throw new HttpError(409, "결제를 먼저 환불해야 취소할 수 있어요.")
     }
-    if (waitingOrder(database, program)?.paymentKey) throw new HttpError(409, "결제를 확인하는 중이라 취소할 수 없어요.")
+    assertNoMoneyMoving(
+      database,
+      program,
+      "결제를 확인하는 중이라 취소할 수 없어요.",
+      "계좌 이체를 기다리는 주문이 있어요. 입금을 확인하거나 주문을 먼저 취소해 주세요.",
+    )
+    cancelWaitingOrder(database, program)
     program.cancelReason = reason.slice(0, 200) || undefined
   } else if (!nextSteps[program.status]?.includes(status)) {
     throw new HttpError(409, "그 단계로 옮길 수 없어요.")

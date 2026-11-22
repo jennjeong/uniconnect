@@ -1,10 +1,11 @@
 import { randomBytes, randomUUID } from "node:crypto"
 import { Router } from "express"
 
+import { config } from "../config.js"
 import { adminRequest, logAdmin } from "../lib/adminTools.js"
 import { normalizeEmail } from "../lib/email.js"
 import { HttpError } from "../lib/errors.js"
-import { activeOperators, operatorFor, tokenClosed } from "../lib/operators.js"
+import { activeOperators, operatorFor, operatorReadiness, tokenClosed } from "../lib/operators.js"
 import { decoyPasswordHash, hashPassword, upgradePasswordHash, verifyPassword } from "../lib/password.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { newSecret, otpauthUrl } from "../lib/totp.js"
@@ -129,9 +130,11 @@ adminSessionRouter.delete("/session", async (req, res) => {
   res.json({ ok: true })
 })
 
+// 운영자 목록과 준비 상태(lib/operators.ts operatorReadiness)다.
 adminSessionRouter.get("/operators", async (req, res) => {
   await requireAdmin(req)
-  res.json({ operators: (getDatabase().operators ?? []).map(operatorView) })
+  const database = getDatabase()
+  res.json({ operators: (database.operators ?? []).map(operatorView), readiness: operatorReadiness(database, Boolean(config.adminToken)) })
 })
 
 // 운영자를 더한다. 그 사람은 받은 비밀번호로 처음 로그인하며 2단계 로그인을 설정한다.
