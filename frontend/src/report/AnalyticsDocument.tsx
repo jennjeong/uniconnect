@@ -145,7 +145,7 @@ export function AnalyticsDocument({
             </div>
             <div className="pdf-kpi">
               <span>{t("매장 방문")}</span>
-              <strong>{t("{visits}명", { visits: totals.visits.toLocaleString("ko-KR") })}</strong>
+              <strong>{t("{visits}건", { visits: totals.visits.toLocaleString("ko-KR") })}</strong>
               <small className="good">{t("쿠폰 받은 학생의 {rate}%", { rate: visitRate })}</small>
             </div>
             <div className="pdf-kpi">
@@ -206,11 +206,11 @@ export function AnalyticsDocument({
         const counted: Partial<Record<MetricKind, number>> = Object.fromEntries(venueKinds.map((kind) => [kind, row[kind as keyof typeof row] ?? 0]))
         const notes = [
           t("{spend}을 집행해 추정 매출 {sales}을 만들었어요. {verdict}", {
-            spend: formatWon(row.spend),
+            spend: row.state === "cost" ? t("미확정") : formatWon(row.spend),
             sales: formatWon(row.sales),
             verdict,
           }),
-          t("쿠폰을 받은 {coupons}명 중 {visits}명({rate}%)이 매장을 찾았어요. 전체 평균은 {average}%예요.", {
+          t("받은 쿠폰 {coupons}장 중 {visits}건({rate}%)이 매장 방문으로 이어졌어요. 전체 평균은 {average}%예요.", {
             coupons: row.coupons.toLocaleString("ko-KR"),
             visits: row.visits.toLocaleString("ko-KR"),
             rate: rowVisitRate,
@@ -247,7 +247,7 @@ export function AnalyticsDocument({
               </strong>
               <p>
                 {t("집행액 {spend} · 추정 매출 {sales} · 방문당 비용 {cost}", {
-                  spend: formatWon(row.spend),
+                  spend: row.state === "cost" ? t("미확정") : formatWon(row.spend),
                   sales: formatWon(row.sales),
                   cost: row.visits > 0 && row.state !== "cost" ? formatWon(row.perVisit) : "—",
                 })}
@@ -260,7 +260,7 @@ export function AnalyticsDocument({
               <div className="pdf-kpis">
                 <div className="pdf-kpi">
                   <span>{t("집행액")}</span>
-                  <strong>{formatWon(row.spend)}</strong>
+                  <strong>{row.state === "cost" ? t("미확정") : formatWon(row.spend)}</strong>
                   <small className="good">{t("현금과 현물 포함")}</small>
                 </div>
                 <div className="pdf-kpi">
@@ -270,7 +270,7 @@ export function AnalyticsDocument({
                 </div>
                 <div className="pdf-kpi">
                   <span>{t("매장 방문")}</span>
-                  <strong>{t("{visits}명", { visits: row.visits.toLocaleString("ko-KR") })}</strong>
+                  <strong>{t("{visits}건", { visits: row.visits.toLocaleString("ko-KR") })}</strong>
                   <small className="good">{t("쿠폰 받은 학생의 {rate}%", { rate: rowVisitRate })}</small>
                 </div>
                 <div className="pdf-kpi">

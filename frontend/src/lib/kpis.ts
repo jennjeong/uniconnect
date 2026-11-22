@@ -37,7 +37,7 @@ export function reportKpis(report: Report, metrics: Metrics): Kpi[] {
       current: report.reach,
       target: report.targets.reach,
       note: t("QR 스캔 + 현장 밖 도달"),
-      formula: t("QR 스캔 {scans}건에 목표 설정에서 적은 현장 밖 도달(SNS 등) {snsReach}명과 브랜드가 확인한 게시물 도달 {posted}명을 더한 값이에요.", {
+      formula: t("QR 스캔 {scans}회에 목표 설정에서 적은 현장 밖 도달(SNS 등) {snsReach}명과 브랜드가 확인한 게시물 도달 {posted}명을 더한 값이에요.", {
         scans: metrics.scans.toLocaleString("ko-KR"),
         snsReach: report.snsReach.toLocaleString("ko-KR"),
         posted: report.postedReach.toLocaleString("ko-KR"),
@@ -49,8 +49,8 @@ export function reportKpis(report: Report, metrics: Metrics): Kpi[] {
       unit: "%",
       current: percent(metrics.scans, report.expectedAudience),
       target: report.targets.qrRate,
-      note: t("QR 스캔 {scans}건", { scans: metrics.scans }),
-      formula: t("QR 스캔 {scans}건 ÷ 예상 관객 {audience}명", {
+      note: t("QR 스캔 {scans}회", { scans: metrics.scans }),
+      formula: t("QR 스캔 {scans}회 ÷ 예상 관객 {audience}명", {
         scans: metrics.scans,
         audience: report.expectedAudience,
       }),
@@ -65,7 +65,7 @@ export function reportKpis(report: Report, metrics: Metrics): Kpi[] {
       current: percent(metrics.visits, metrics.scans),
       target: report.targets.visitRate,
       note: t("{visits}명 방문", { visits: metrics.visits }),
-      formula: t("매장 방문 {visits}건 ÷ QR 참여 {scans}명", { visits: metrics.visits, scans: metrics.scans }),
+      formula: t("매장 방문 {visits}건 ÷ QR 스캔 {scans}회", { visits: metrics.visits, scans: metrics.scans }),
       missing: metrics.scans <= 0,
     },
     {

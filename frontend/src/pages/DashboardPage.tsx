@@ -576,7 +576,7 @@ export function DashboardPage({
               <strong>{report ? roasText(report) : "-"}</strong>
               <small>
                 {report && hasRoas(report) && report.roas >= 100
-                  ? t("함께한 브랜드가 쓴 금액보다 더 많이 돌아왔어요.")
+                  ? t("방문 × 1인 예상 지출로 추정한 매출이 협찬액보다 많아요.")
                   : t("목표까지 남은 만큼은 리포트에서 봐요.")}
               </small>
             </div>

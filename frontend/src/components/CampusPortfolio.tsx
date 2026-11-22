@@ -23,7 +23,7 @@ function Groups({ title, groups, label }: { title: string; groups: PortfolioGrou
             </span>
             <span className="portfolio-figure">
               <strong>ROAS {group.roas}%</strong>
-              <small>{t("{count}건 · {spend} · 방문 {visits}명", { count: group.count, spend: fullWon(group.spend), visits: group.visits })}</small>
+              <small>{t("{count}건 · {spend} · 방문 {visits}건", { count: group.count, spend: fullWon(group.spend), visits: group.visits })}</small>
             </span>
           </li>
         ))}

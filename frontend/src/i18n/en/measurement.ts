@@ -446,7 +446,7 @@ const en: Record<string, string> = {
   "{school} · 학생들에게 공개하는 협찬 내역이에요. uniconnect의 협찬 기록으로 만들었어요.": "{school} · The sponsorships shared with students, made from the uniconnect record.",
   "협찬 가치 합계": "Total value",
   "아직 공개할 협찬이 없어요.": "No sponsorships to show yet.",
-  "QR 참여 {count}명": "{count} QR check-ins",
+  "QR 스캔 {count}회": "{count} QR scans",
   "협찬 결산 공개": "Public sponsorship ledger",
   "학생들에게 받은 협찬과 쓰임을 링크 하나로 공개해요. 링크를 아는 누구나 볼 수 있어요.": "Share the sponsorships you received and how they were used with one link. Anyone with it can see.",
   "공개를 멈췄어요. 예전 링크는 더 열리지 않아요.": "Sharing stopped. The old link no longer opens.",
