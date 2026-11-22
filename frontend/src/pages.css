@@ -4943,6 +4943,33 @@
   outline-offset: 2px;
 }
 
+/* 회원 표: 좁은 화면에서는 최소 너비를 지키고 가로로 넘긴다. 날짜·건수·상태는 끊지 않고,
+   이메일은 한 줄로 줄여 전체는 제목(title)과 상세에서 본다. */
+.console-table-scroll {
+  overflow-x: auto;
+}
+
+.console-table-scroll:focus-visible {
+  outline: 2px solid var(--console-blue);
+  outline-offset: 2px;
+}
+
+.console-members-table {
+  min-width: 720px;
+}
+
+.console-members-table td {
+  white-space: nowrap;
+}
+
+.console-members-table .console-email {
+  display: block;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .console-table {
   width: 100%;
   border-collapse: collapse;

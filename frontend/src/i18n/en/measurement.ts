@@ -495,7 +495,7 @@ const en: Record<string, string> = {
   "개인정보": "Personal data",
   "서로의 담당자 연락처는 이 협찬을 위해서만 쓰고, 다른 곳에 알리지 않아요.": "Each side uses the other’s contact only for this sponsorship and shares it with no one.",
   "효력": "Effect",
-  "양쪽이 모두 확인한 때부터 효력이 생기고, 각자의 확인 시각이 서명을 대신해요.": "It takes effect once both sides confirm; each confirmation time stands for a signature.",
+  "양쪽이 모두 확인하면 이 내용으로 협찬이 확정되고, 각자 확인한 시각이 기록으로 남아요.": "Once both sides confirm, the sponsorship is settled on these terms, and each side's confirmation time is kept on record.",
   "계약 조항": "Contract terms",
   "계약 번호 {number} · 작성 {date}": "Contract {number} · made {date}",
   "제{number}조 ({title})": "Article {number} ({title})",

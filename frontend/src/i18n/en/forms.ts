@@ -1459,6 +1459,7 @@ const en: Record<string, string> = {
   "비밀번호 · 동의": "Password · consent",
   "비밀번호 확인이 일치해요.": "The passwords match.",
   "비밀번호 확인이 아직 일치하지 않아요.": "The passwords don't match yet.",
+  "회원 목록": "Member list",
 }
 
 export default en

@@ -1074,7 +1074,7 @@ function ContractTerms({ agreement }: { agreement: Agreement }) {
     },
     {
       title: t("효력"),
-      body: t("양쪽이 모두 확인한 때부터 효력이 생기고, 각자의 확인 시각이 서명을 대신해요."),
+      body: t("양쪽이 모두 확인하면 이 내용으로 협찬이 확정되고, 각자 확인한 시각이 기록으로 남아요."),
     },
   ]
   const signer = (side: AgreementItem["side"]) => {
@@ -1532,7 +1532,7 @@ export function AgreementPage({
       <section className="page-view agreement-view">
         <PageIntro
           onBack={onBack}
-          eyebrow={tc("eyebrow", "전자 계약서")}
+          eyebrow={tc("eyebrow", "임시 전자 계약서")}
           title={t("임시 전자 계약서")}
           description={!loggedIn ? undefined : failed || t("계약서를 불러오고 있어요…")}
         />
@@ -1564,7 +1564,7 @@ export function AgreementPage({
     <section className="page-view agreement-view">
       <PageIntro
         onBack={onBack}
-        eyebrow={tc("eyebrow", "전자 계약서")}
+        eyebrow={tc("eyebrow", "임시 전자 계약서")}
         title={agreement.eventName}
         description={`${t("임시 전자 계약서")} · ${agreement.group.name} × ${agreement.brand.name}`}
         actions={

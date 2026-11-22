@@ -226,7 +226,7 @@ const en: Record<string, string> = {
   "결과 보고는 사진 몇 장이 전부예요": "The result report is a few photos",
   "운영진이 바뀌면 협찬 기록도 같이 사라져요": "When the team changes, the sponsorship record goes with it",
   "추천 지수와 거리로 제안할 브랜드부터 골라 드려요": "We pick the brands to pitch by match and distance",
-  "전자 계약서에 물품 · 할 일 · 확인 방식을 남겨요": "The e-contract keeps the goods, tasks and how they're confirmed",
+  "임시 전자 계약서에 물품 · 할 일 · 확인 방식을 남겨요": "The provisional e-contract keeps the goods, tasks and how they're confirmed",
   "QR · 쿠폰 · 매장 방문이 저절로 집계돼 리포트가 돼요": "QR, coupons and store visits add up into a report by themselves",
   "제안서와 협찬 기록이 다음 운영진에게 그대로 이어져요": "Proposals and the sponsorship record pass to the next team intact",
   "업종 · 관심사 · 협찬 이력 · 함께한 기록 · 응답 준비 다섯 가지로 점수를 매기고, 왜 맞는지 막대로 보여 줘요.": "Scored on five things (industry, interests, sponsorship history, past work together, readiness to answer), with bars showing why.",

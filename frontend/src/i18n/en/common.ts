@@ -222,7 +222,7 @@ const en: Record<string, string> = {
   "실시간 성과@eyebrow": "Live Attribution",
   "알림@eyebrow": "Notifications",
   "이용약관@eyebrow": "Terms of Service",
-  "전자 계약서@eyebrow": "Agreement",
+  "임시 전자 계약서@eyebrow": "Provisional e-contract",
   "진행 완료@eyebrow": "Event Ended",
   "진행 전@eyebrow": "Before the Event",
   "진행 중@eyebrow": "Live Now",
