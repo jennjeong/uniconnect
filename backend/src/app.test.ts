@@ -9687,3 +9687,39 @@ test("an operator picks candidate groups for a paid campus campaign, and the bra
   assert.equal(report.totals.costPerVisit, 25_000)
   assert.equal((await call("GET", `/programs/${id}/report`, undefined, first)).status, 403)
 })
+
+test("a group's post closes with its event: no deadline after the event, and moving the event pulls it in", async () => {
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const today = todayInKorea()
+  const { token: group } = await listedMember("deadline@syu.ac.kr", "deadline-pass-1!")
+  const event = (await call("POST", "/events", { name: "마감 공연", date: addDays(today, 10), people: "100명", types: ["제품"] }, group)).data.event
+  const post = { title: "공연 협찬사를 찾아요", body: "음료를 협찬해 주실 곳을 찾아요.", types: ["제품"], eventId: event.id }
+  const late = await call("POST", "/board", { ...post, deadline: addDays(today, 20) }, group)
+  assert.equal(late.status, 400)
+  assert.match(late.data.error, /행사 마지막 날/)
+  const made = await call("POST", "/board", { ...post, deadline: addDays(today, 10) }, group)
+  assert.equal(made.status, 201, JSON.stringify(made.data))
+  // 행사를 앞당기면 글의 마감도 그날로 당겨진다.
+  assert.equal((await call("PUT", `/events/${event.id}`, { name: "마감 공연", date: addDays(today, 5), people: "100명", types: ["제품"] }, group)).status, 200)
+  assert.equal(getDatabase().posts.find((item) => item.id === made.data.post.id)!.deadline, addDays(today, 5))
+  // 예시 글도 이어진 행사보다 늦게 마감하지 않는다.
+  const example = getDatabase().posts.find((item) => item.id === "post-muse-concert")
+  if (example?.eventId) {
+    const { freshenExamplePosts } = await import("./data/seed.js")
+    freshenExamplePosts(getDatabase())
+    const concert = Object.values(getDatabase().events).flat().find((item) => item.id === example.eventId)
+    if (concert) assert.ok(example.deadline <= (concert.endDate ?? concert.date))
+  }
+})
+
+test("a listing's next event is one still to come, and online reach isn't counted as people", async () => {
+  const { withLiveEvent } = await import("./lib/catalog.js")
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const past = withLiveEvent(getDatabase(), { id: "nobody-owns-this", name: "예시", category: "공연 · 동아리", industry: "performance", offer: "", score: 70, tags: [], eventName: "지난 공연", eventDate: addDays(todayInKorea(), -3) })
+  assert.equal(past.eventName, undefined)
+  assert.equal(past.eventDate, undefined)
+  const { token: group, listingId } = await listedMember("reach@syu.ac.kr", "reach-pass-123!")
+  await call("POST", "/events", { name: "온라인 챌린지", date: addDays(todayInKorea(), 7), people: "예상 도달 4,200명", types: ["제품"] }, group)
+  const listing = getDatabase().groups.find((item) => item.id === listingId)!
+  assert.equal(withLiveEvent(getDatabase(), listing).audience, undefined)
+})

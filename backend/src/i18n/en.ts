@@ -928,6 +928,8 @@ const en: Record<string, string> = {
   "직접비를 확인해 주세요.": "Check the direct cost.",
   "운영 시간은 0.5시간 단위로 적어 주세요.": "Write the hours in steps of half an hour.",
   "손익 메모는 300자까지예요.": "The margin note can be up to 300 characters.",
+  "수량 단위는 6자까지 쓸 수 있어요.": "The quantity unit can be up to 6 characters.",
+  "마감일은 행사 마지막 날({date})까지로 골라 주세요.": "Pick a deadline on or before the event's last day ({date}).",
 }
 
 export default en

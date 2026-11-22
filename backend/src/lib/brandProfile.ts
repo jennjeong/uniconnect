@@ -30,7 +30,8 @@ export function brandProfile(database: Database, stored: Match): Match {
   ]
     .filter((tag) => tag && tag.length <= 12)
     .slice(0, 4)
-  return { ...listing, facts, tags }
+  // 누적 협찬은 태그의 '협찬 N회'와 같은 기록 수다(예전에는 고정된 예시 숫자가 남아 어긋났다).
+  return { ...listing, facts, tags, popularity: sponsored }
 }
 
 // "서울 노원구 공릉로 232" → "서울 노원구": 시와 구. 학생 단체가 매장을

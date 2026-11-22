@@ -98,6 +98,7 @@ export function parseBrief(body: unknown, today = todayInKorea()): ProgramBrief 
   }
   const schools = count(input.schools, 1, programLimits.schools, "학교 수는 1곳부터 50곳까지예요.")
   const perSchool = count(input.perSchool ?? 0, 0, programLimits.perSchool, "학교당 수량을 확인해 주세요.")
+  const unit = limited(input.unit, 6, "수량 단위는 6자까지 쓸 수 있어요.")
   const audience = limited(input.audience, 100, "대상 설명은 100자까지 쓸 수 있어요.")
   const asks = limited(input.asks, 500, "요청 사항은 500자까지 쓸 수 있어요.")
   const budget = input.budget === undefined || input.budget === null || input.budget === ""
@@ -111,6 +112,7 @@ export function parseBrief(body: unknown, today = todayInKorea()): ProgramBrief 
     to,
     schools,
     perSchool,
+    ...(unit && perSchool > 0 ? { unit } : {}),
     ...(audience ? { audience } : {}),
     ...(asks ? { asks } : {}),
     ...(budget !== undefined ? { budget } : {}),

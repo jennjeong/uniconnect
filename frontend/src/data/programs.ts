@@ -32,13 +32,14 @@ export function exampleProgram(month: string): Program {
   return {
     id: "example",
     brief: {
-      name: "봄 학기 신제품 시음",
+      name: "신제품 캠퍼스 시음",
       product: "저당 탄산수 신제품",
       regions: ["서울", "경기"],
       from: month,
       to: month,
       schools: 5,
       perSchool: 300,
+      unit: "잔",
       audience: "1~2학년",
       asks: "부스 시음과 행사 SNS 게시 1회",
     },

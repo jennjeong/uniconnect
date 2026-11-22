@@ -1605,6 +1605,8 @@ export type ProgramBrief = {
   to: string
   schools: number
   perSchool: number
+  // 학교당 수량의 단위(개, 잔, 장 등)이며 없으면 단위 없이 보인다.
+  unit?: string
   audience?: string
   asks?: string
   budget?: number

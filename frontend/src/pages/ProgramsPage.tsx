@@ -138,7 +138,7 @@ function ProgramList({ sample, onOpen, onBack, onNotice }: Props) {
 
 function ProgramForm({ onDone }: { onDone: (program: Program) => void }) {
   const month = thisMonth()
-  const [brief, setBrief] = useState({ name: "", product: "", regions: [] as string[], from: month, to: month, schools: "5", perSchool: "", audience: "", asks: "", budget: "" })
+  const [brief, setBrief] = useState({ name: "", product: "", regions: [] as string[], from: month, to: month, schools: "5", perSchool: "", unit: "", audience: "", asks: "", budget: "" })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
   const set = (key: keyof typeof brief) => (event: { target: { value: string } }) => setBrief((value) => ({ ...value, [key]: event.target.value }))
@@ -159,6 +159,7 @@ function ProgramForm({ onDone }: { onDone: (program: Program) => void }) {
         to: brief.to,
         schools: Number(brief.schools),
         perSchool: Number(brief.perSchool || 0),
+        ...(brief.unit.trim() ? { unit: brief.unit.trim() } : {}),
         ...(brief.audience.trim() ? { audience: brief.audience.trim() } : {}),
         ...(brief.asks.trim() ? { asks: brief.asks.trim() } : {}),
         ...(brief.budget ? { budget: Number(brief.budget) } : {}),
@@ -224,6 +225,10 @@ function ProgramForm({ onDone }: { onDone: (program: Program) => void }) {
         <label>
           {t("학교당 수량")}
           <input inputMode="numeric" min={0} onChange={set("perSchool")} placeholder="300" type="number" value={brief.perSchool} />
+        </label>
+        <label>
+          {t("수량 단위")}
+          <input maxLength={6} onChange={set("unit")} placeholder={t("잔, 개, 장")} value={brief.unit} />
         </label>
       </div>
       <label>
@@ -309,7 +314,7 @@ function ProgramDetail({ id, sample, onBack, onNotice, onPropose, tick, author }
             {brief.perSchool > 0 && (
               <>
                 <dt>{t("학교당 수량")}</dt>
-                <dd>{brief.perSchool.toLocaleString()}</dd>
+                <dd>{`${brief.perSchool.toLocaleString()}${brief.unit ?? ""}`}</dd>
               </>
             )}
             {brief.audience && (
