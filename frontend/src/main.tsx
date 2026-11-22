@@ -8,6 +8,7 @@ import { watchInstall } from './lib/install'
 import { whenIdle } from './lib/lite'
 import { keepOutOfSearch } from './lib/pageMeta'
 import { lazyPage, loadPageStyles } from './lib/pageStyles'
+import { reloadForNewDeploy } from './lib/staleChunks'
 import { keepReferral } from './lib/referral'
 import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css'
 import './index.css'
@@ -58,6 +59,11 @@ const StaffCheckInPage = lazyPage(() =>
 
 // 거기서만 불러오므로 회원은 내려받지 않는다.
 const AdminConsole = lazyPage(() => import('./pages/AdminPage').then((module) => ({ default: module.AdminConsole })))
+
+// Vite가 미리 불러오던 이전 배포의 파일이 없어졌을 때도 한 번만 새로 고친다(lib/staleChunks.ts).
+window.addEventListener('vite:preloadError', (event) => {
+  if (reloadForNewDeploy()) event.preventDefault()
+})
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

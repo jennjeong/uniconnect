@@ -5527,6 +5527,26 @@
   overflow-wrap: anywhere;
 }
 
+/* 운영자 준비 상태와 공유 토큰을 닫는 순서. */
+.console-operator-ready {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--fill);
+  font-size: 0.875rem;
+}
+
+.console-operator-ready p,
+.console-operator-ready ol {
+  margin: 0;
+}
+
+.console-operator-ready li.done {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
 .console-checks li.on > span {
   background: var(--green-soft);
   color: var(--green);

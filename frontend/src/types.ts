@@ -861,6 +861,8 @@ export type ReportAction = "dismiss" | "hide-review" | "hide-reply" | "suspend"
 // 원문, 그리고 처리한 내용.
 export type AdminReport = {
   id: string
+  // 서버가 지금 허용하는 처리(backend lib/adminStates.ts). 처리된 신고는 빈 목록이다.
+  actions?: ("dismiss" | "hide-review" | "hide-reply" | "suspend")[]
   target:
     | { kind: "account" }
     | { kind: "message"; conversationId: string; messageId: string }
@@ -880,6 +882,28 @@ export type SuspendedAccount = { id: string; name: string; role: Role; email: st
 
 // 서버가 실패한 요청이나 브라우저가 잡은 오류. 운영자가 읽는 그대로다 (backend
 // lib/errorLog.ts).
+// 같은 오류의 묶음(backend lib/errorLog.ts). state: open, handled(확인함), again(확인 뒤 다시 남).
+export type ErrorGroup = {
+  key: string
+  source: "server" | "browser"
+  message: string
+  where: string
+  path: string
+  stack?: string
+  firstAt: string
+  lastAt: string
+  count: number
+  firstDeploy: string | null
+  lastDeploy: string | null
+  handledAt: string | null
+  handledBy: string | null
+  state: "open" | "handled" | "again"
+}
+
+// 운영자 준비 상태(backend /api/admin/operators): 꺼지지 않은 운영자 수, 그중 2단계 로그인을
+// 켠 수, ADMIN_TOKEN이 설정됐는지, 공유 토큰을 아직 받는지.
+export type OperatorReadiness = { operators: number; twoFactorOn: number; tokenSet: boolean; tokenOpen: boolean }
+
 export type ErrorEntry = {
   id: string
   at: string
@@ -1427,6 +1451,8 @@ export type AdminInsights = {
   }
   kpi: { key: "signups" | "proposals" | "revenue"; actual: number; target: number | null }[]
   searches: { term: string; count: number }[]
+  // 같은 검색을 방문자, 데모 계정, 회원별로도 센 것이다. since는 나눠 세기 시작한 때다.
+  searchesBySource?: { since: string | null; visitor: { term: string; count: number }[]; demo: { term: string; count: number }[]; member: { term: string; count: number }[] }
   // 캠퍼스 캠페인의 견적 → 결제 전환과 재주문이다(#404). 비율은 퍼센트이며, 셀 것이 없으면 null이다.
   programs: { requested: number; quoted: number; paid: number; quoteToPaid: number | null; brands: number; repeatBrands: number; repeatRate: number | null }
 }
@@ -1574,6 +1600,8 @@ export type DisputeEvent = {
 // 협찬 분쟁(backend lib/disputes.ts). 당사자는 운영자 메모 없이 보고(side, canWithdraw,
 // canAddEvidence), 운영자는 메모와 parties까지 본다.
 export type Dispute = {
+  // 콘솔에서 지금 할 수 있는 처리(backend lib/adminStates.ts). 당사자 화면에는 없다.
+  actions?: ("review" | "decide" | "note")[]
   id: string
   agreementId: string
   eventName: string

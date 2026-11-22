@@ -8,7 +8,7 @@ import { t } from "../i18n"
 import { formatDateTime, formatDay, formatPeriod } from "../lib/date"
 import { csvCell } from "../lib/csv"
 import { saveFile } from "../lib/download"
-import type { AdminAnnouncement, AdminHealth, AdminLogRow, AdminMemberDetail, AdminOperator, ErrorEntry, Readiness } from "../types"
+import type { AdminAnnouncement, AdminHealth, AdminLogRow, AdminMemberDetail, AdminOperator, ErrorEntry, OperatorReadiness, Readiness } from "../types"
 
 // 운영자 콘솔의 도구(pages/AdminPage.tsx): 회원 메모, 답변 템플릿, CSV 파일,
 // 사이트 공지, 운영자가 한 일의 로그, 설정된 서비스.
@@ -774,13 +774,13 @@ export function ServiceHealth({ token, onNotice }: { token: string; onNotice: (m
 // 운영자 계정: 목록, 추가, 끄기. 새 운영자는 받은 비밀번호로 처음 로그인하며 2단계
 // 로그인을 등록한다. 등록을 마친 운영자가 생기면 공유 토큰이 닫힌다.
 export function Operators({ token, onNotice }: { token: string; onNotice: (message: string) => void }) {
-  const [data, setData] = useState<{ operators: AdminOperator[]; me: AdminOperator | null; tokenClosed: boolean }>()
+  const [data, setData] = useState<{ operators: AdminOperator[]; me: AdminOperator | null; tokenClosed: boolean; readiness?: OperatorReadiness }>()
   const [form, setForm] = useState({ name: "", email: "", password: "" })
   const [busy, setBusy] = useState(false)
 
   const load = useCallback(async () => {
-    const [{ operators }, session] = await Promise.all([api.adminOperators(token), api.adminSession(token)])
-    setData({ operators, me: session.operator, tokenClosed: session.tokenClosed })
+    const [{ operators, readiness }, session] = await Promise.all([api.adminOperators(token), api.adminSession(token)])
+    setData({ operators, me: session.operator, tokenClosed: session.tokenClosed, readiness })
   }, [token])
 
   useEffect(() => {
@@ -812,6 +812,24 @@ export function Operators({ token, onNotice }: { token: string; onNotice: (messa
             <p>{data.tokenClosed ? t("공유 토큰은 닫혔어요. 운영자 로그인으로만 들어올 수 있어요.") : t("공유 토큰이 열려 있어요. 2단계 로그인을 마친 운영자가 생기면 닫혀요.")}</p>
           </div>
         </div>
+        {data.readiness && (
+          <div className="console-operator-ready">
+            <p>
+              {t("운영자 {operators}명 · 2단계 로그인 {twoFactorOn}명 · 공유 토큰 {token}", {
+                operators: data.readiness.operators,
+                twoFactorOn: data.readiness.twoFactorOn,
+                token: data.readiness.tokenOpen ? t("열림") : data.readiness.tokenSet ? t("닫힘") : t("설정 안 됨"),
+              })}
+            </p>
+            {data.readiness.tokenOpen && (
+              <ol>
+                <li className={data.readiness.operators > 0 ? "done" : undefined}>{t("아래에서 개인 운영자를 추가해요(이름, 이메일, 첫 비밀번호).")}</li>
+                <li className={data.readiness.twoFactorOn > 0 ? "done" : undefined}>{t("그 운영자가 첫 로그인에서 2단계 로그인을 등록해요.")}</li>
+                <li>{t("등록을 마친 운영자가 생기면 공유 토큰은 자동으로 닫혀요. 그 뒤 활동 기록에 각자의 이름이 남아요.")}</li>
+              </ol>
+            )}
+          </div>
+        )}
         {data.operators.length === 0 ? (
           <p className="day-empty">{t("아직 운영자가 없어요.")}</p>
         ) : (

@@ -13,7 +13,7 @@ export function measureState(report: Report, today = todayIso()) {
 // 최근 순 목록에서 측정 페이지가 열 행사: 이미 시작한 것(진행 중인 행사, 없으면
 // 가장 최근에 열린 행사), 그것도 없으면 다음에 올 행사.
 export function defaultMeasurement(list: EventMeasurement[], today = todayIso()) {
-  return list.find((item) => item.report.eventDate <= today) ?? list.at(-1)
+  return list.find((item) => item.report.eventDate <= today) ?? list[list.length - 1]
 }
 
 // 결과가 행사에 대해 보여주는 집계: 전자계약서에서 양쪽이 확정한 방식의 것이다

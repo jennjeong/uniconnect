@@ -54,5 +54,5 @@ export function studentInsights(report: Report, metrics: Metrics) {
   }
   if (!survey) advice.push(t("다음 행사에서는 QR 뒤 설문을 꼭 안내해 보세요. 학년 · 전공 · 성별이 모이면 맞춤 제안이 쉬워져요."))
 
-  return { participation, couponRate, visitRate, responses: survey?.responses ?? 0, grade, field, gender, firstTime, hour, advice: survey ? advice.slice(0, 6) : [...advice.slice(0, -1).slice(0, 5), advice.at(-1)!] }
+  return { participation, couponRate, visitRate, responses: survey?.responses ?? 0, grade, field, gender, firstTime, hour, advice: survey ? advice.slice(0, 6) : [...advice.slice(0, -1).slice(0, 5), advice[advice.length - 1]] }
 }
