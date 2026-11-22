@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto"
+import { programConversion } from "../lib/programs.js"
 import { Router } from "express"
 
 import {
@@ -547,6 +548,7 @@ adminMoreRouter.get("/insights", async (req, res) => {
     distribution: distribution(database),
     kpi: monthKpi(database),
     searches: topSearches(database),
+    programs: programConversion(database),
   })
 })
 

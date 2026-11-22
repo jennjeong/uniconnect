@@ -12,6 +12,8 @@ import {
   ownPrograms,
   parseBrief,
   parseCandidates,
+  parseOps,
+  programMargin,
   parseQuote,
   programsOf,
   programView,
@@ -95,7 +97,13 @@ adminProgramsRouter.get("/", async (req, res) => {
   const programs = programsOf(database)
     .map((program) => {
       const account = database.accounts.find((item) => item.id === program.accountId)
-      return { ...programView(database, program), accountId: program.accountId, brandName: account?.name ?? "" }
+      return {
+        ...programView(database, program),
+        accountId: program.accountId,
+        brandName: account?.name ?? "",
+        ...(program.ops ? { ops: program.ops } : {}),
+        margin: programMargin(database, program),
+      }
     })
     .reverse()
   res.json({ programs })
@@ -165,4 +173,14 @@ adminProgramsRouter.put("/:id/candidates", async (req, res) => {
     )
   }
   res.json({ program: programView(database, program) })
+})
+
+// 실제 직접비와 운영 시간을 적는다(#404). 운영자만 보고, 브랜드에게는 보이지 않는다.
+adminProgramsRouter.put("/:id/ops", async (req, res) => {
+  await requireAdmin(req)
+  const { database, program } = anyProgram(req.params.id)
+  program.ops = parseOps(req.body)
+  logAdmin(database, "program-ops", { kind: "program", id: program.id })
+  await saveDatabase()
+  res.json({ ops: program.ops, margin: programMargin(database, program) })
 })

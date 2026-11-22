@@ -9548,9 +9548,25 @@ test("a brand asks for a campus campaign, the operators quote it and paying the 
     assert.equal((await admin("POST", `/${id}/status`, { status: "취소" })).status, 409)
     assert.equal((await admin("POST", `/${id}/status`, { status: "집행 중" })).data.program.status, "집행 중")
 
+    // 손익(#404): 매출은 결제된 운영비(부가세 전)이고, 운영자가 적은 직접비와 시간으로 남는 금액을 본다.
+    assert.equal((await admin("PUT", `/${id}/ops`, { directCost: 400_000, hours: 0.3 })).status, 400)
+    const ops = await fetch(`${baseUrl}/admin/programs/${id}/ops`, { method: "PUT", headers: { "X-Admin-Token": "test-admin-token", "Content-Type": "application/json" }, body: JSON.stringify({ directCost: 400_000, hours: 10 }) })
+    assert.deepEqual(((await ops.json()) as { margin: unknown }).margin, { revenue: 1_500_000, directCost: 400_000, hours: 10, margin: 1_100_000, perHour: 110_000 })
+    const listedMargin = (await (await fetch(`${baseUrl}/admin/programs`, { headers: { "X-Admin-Token": "test-admin-token" } })).json()) as { programs: { id: string; margin: { margin: number } }[] }
+    assert.equal(listedMargin.programs.find((item: { id: string }) => item.id === id)!.margin.margin, 1_100_000)
+    // 분석 화면: 견적 → 결제 전환과 재주문이다.
+    const insights = (await (await fetch(`${baseUrl}/admin/insights`, { headers: { "X-Admin-Token": "test-admin-token" } })).json()) as { programs: { quoted: number; paid: number; quoteToPaid: number | null } }
+    assert.ok(insights.programs.quoted >= 1 && insights.programs.paid >= 1)
+    assert.equal(typeof insights.programs.quoteToPaid, "number")
+    // 브랜드는 손익을 보지 않는다.
+    assert.equal((await call("GET", `/programs/${id}`, undefined, brand)).data.program.ops, undefined)
+
     // 환불하면 캠페인이 멈춘다.
     markCancelled(getDatabase(), payment, "테스트 환불")
     assert.equal((await call("GET", `/programs/${id}`, undefined, brand)).data.program.status, "취소")
+    // 환불하면 매출이 0이 되어 직접비만큼 모자란다.
+    const refunded = (await (await fetch(`${baseUrl}/admin/programs`, { headers: { "X-Admin-Token": "test-admin-token" } })).json()) as { programs: { id: string; margin: { margin: number } }[] }
+    assert.equal(refunded.programs.find((item: { id: string }) => item.id === id)!.margin.margin, -400_000)
   } finally {
     settings.adminToken = savedToken
   }
@@ -9564,6 +9580,9 @@ test("a brand asks for a campus campaign, the operators quote it and paying the 
   // 내보내기에 들어가고, 탈퇴하면 지워진다.
   const exported = (await call("GET", "/auth/export", undefined, brand)).data
   assert.equal(exported.programs.length, 7)
+  // 운영자만 보는 손익은 내보내기에 없다.
+  assert.ok(exported.programs.every((program: Record<string, unknown>) => !("ops" in program)))
+  assert.ok(getDatabase().programs!.some((program) => program.ops))
   const accountId = getDatabase().accounts.find((item) => item.email === "program@program-brand.kr")!.id
   assert.equal((await call("DELETE", "/auth/account", { password: "program-pass-1!" }, brand)).status, 204)
   assert.equal((getDatabase().programs ?? []).filter((item) => item.accountId === accountId).length, 0)

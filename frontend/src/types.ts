@@ -1415,6 +1415,8 @@ export type AdminInsights = {
   }
   kpi: { key: "signups" | "proposals" | "revenue"; actual: number; target: number | null }[]
   searches: { term: string; count: number }[]
+  // 캠퍼스 캠페인의 견적 → 결제 전환과 재주문이다(#404). 비율은 퍼센트이며, 셀 것이 없으면 null이다.
+  programs: { requested: number; quoted: number; paid: number; quoteToPaid: number | null; brands: number; repeatBrands: number; repeatRate: number | null }
 }
 
 export type AdminSystem = {
@@ -1684,7 +1686,18 @@ export type ProgramReport = {
 }
 
 // 콘솔이 보는 캠페인이다.
-export type AdminProgram = Program & { accountId: string; brandName: string }
+export type AdminProgram = Program & {
+  accountId: string
+  brandName: string
+  // 운영자만 보는 직접비와 운영 시간, 그리고 손익이다(#404).
+  ops?: ProgramOps
+  margin: ProgramMargin
+}
+
+export type ProgramOps = { directCost: number; hours: number; note?: string; updatedAt: string }
+
+// 매출은 결제된 운영비(부가세 전)이며 환불되면 0이다. 실비는 브랜드가 직접 내서 들어가지 않는다.
+export type ProgramMargin = { revenue: number; directCost: number; hours: number; margin: number; perHour: number | null }
 
 // 콘솔에서 후보로 담을 수 있는 단체와 다가오는 행사다.
 export type AdminProgramGroup = { id: string; name: string; school: string; events: { id: string; name: string; date: string; people: string }[] }
