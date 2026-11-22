@@ -1395,6 +1395,7 @@ const en: Record<string, string> = {
   "탈퇴한 회원이 남긴 내용은 지웠어요.": "What the member who left wrote was deleted.",
   "계약서가 없어진 협찬의 분쟁 기록": "Dispute records of sponsorships without a contract",
   "상대가 탈퇴해 계약서는 지워졌지만, 결론이 난 분쟁 기록은 정해진 기간 동안 남아요.": "The contract was deleted when the other side left, but the concluded dispute stays for a set period.",
+  "여러 학교 행사에 한 번에 집행하려면 캠퍼스 캠페인을 따로 요청해요. 요금제와 별도로 캠페인마다 운영비 견적을 받아요.": "To run across several schools at once, request a campus campaign. It is quoted separately from the plans, with an operating fee per campaign.",
   "현금과 현물을 합한 협찬 가치예요 · 계약서의 협찬액이 돼요": "The total value of cash and in-kind · becomes the contract's value",
   "기한": "Deadlines",
   "응답 기한이 전달 기한보다 늦어요. 답을 받은 뒤에 물품을 보낼 수 있게 응답 기한을 앞당겨 주세요.": "The reply deadline is after the delivery deadline. Move the reply deadline earlier so goods go out after the answer.",

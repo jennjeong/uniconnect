@@ -40,7 +40,7 @@ export default {
   "임시 전자 계약서로 정리하기": "Settle it in an e-contract",
   "두 쪽이 할 일을 계약서에 적고 함께 확인해요. 끝낸 일은 링크와 사진으로 남겨요.":
     "Both sides write down what each will do and confirm it together, then prove finished items with links and photos.",
-  "현장에서 재고 리포트로 보기": "Measure on site, then read the report",
+  "현장 반응을 성과 리포트로 보기": "Turn what happens on site into a results report",
   "행사 날 QR 스캔 · 쿠폰 · 매장 방문을 세고, 끝나면 성과 리포트와 ROAS로 정리해요.":
     "On the day, QR scans, coupons and store visits are counted; afterwards they become a results report and ROAS.",
 
