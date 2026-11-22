@@ -274,12 +274,21 @@ function followEvent(database: Database, account: Account, event: EventItem, dat
 // 주인이 행사나 캠페인을 바꾼다. 등록할 때와 같은 검사를 한다. 시작한
 // 뒤에는 결과를 그 날짜로 집계했으므로 날짜는 그대로 둔다. 그에 대한 제안과
 // 협찬이 따라가고, 파트너는 새 이름, 날짜, 인원을 알림으로 받는다.
+// 시드의 예시 행사(id가 event-로 시작한다)는 모두가 보는 예시라 공유 데모 계정이 바꾸거나
+// 지울 수 없다. 데모로 새로 만든 행사(무작위 id)는 체험할 수 있게 둔다.
+function assertNotSharedExample(database: Database, account: Account, eventId: string) {
+  if (isDemoAccount(database, account) && eventId.startsWith("event-")) {
+    throw new HttpError(403, "예시 행사는 바꾸거나 지울 수 없어요. 새 행사를 등록해 체험해 보세요.")
+  }
+}
+
 eventsRouter.put("/:id", async (req, res) => {
   const account = requireAccount(req)
   const students = account.role === "학생단체"
   const database = getDatabase()
   const event = (database.events[account.id] ?? []).find((item) => item.id === req.params.id)
   if (!event) throw new HttpError(404, "행사를 찾을 수 없어요.")
+  assertNotSharedExample(database, account, event.id)
   const fields = parseEventFields(account.role, req.body)
   const datesChanged = fields.date !== event.date || fields.endDate !== event.endDate
   if (datesChanged && event.date <= todayInKorea()) {
@@ -335,6 +344,7 @@ eventsRouter.delete("/:id", async (req, res) => {
   if (!events.some((event) => event.id === eventId)) {
     throw new HttpError(404, "행사를 찾을 수 없어요.")
   }
+  assertNotSharedExample(database, account, eventId)
   // 협찬의 기록과 결과는 협찬받은 행사에 달려 있다.
   if (isSponsored(database, eventId)) {
     throw new HttpError(409, "협찬이 확정된 행사는 지울 수 없어요. 협찬사와 먼저 이야기해 주세요.")

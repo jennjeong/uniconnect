@@ -9771,3 +9771,24 @@ test("without a way to deliver codes, sign-up and invites say so instead of clai
   }
   assert.equal((await call("GET", "/site")).data.mailReady, true)
 })
+
+test("the shared demo accounts can't change or delete the example posts and example events everyone sees", async () => {
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const student = await login("학생단체")
+  const brand = await login("브랜드")
+  const example = getDatabase().posts.find((item) => item.id === "post-muse-concert")
+  if (example) {
+    assert.equal((await call("PUT", `/board/${example.id}`, { title: "바뀐 제목", body: "x", types: ["제품"], deadline: example.deadline, eventId: example.eventId }, student)).status, 403)
+    assert.equal((await call("POST", `/board/${example.id}/close`, {}, student)).status, 403)
+    assert.equal((await call("DELETE", `/board/${example.id}`, undefined, student)).status, 403)
+  }
+  const coffee = getDatabase().posts.find((item) => item.id === "post-coffee-tasting")
+  if (coffee) assert.equal((await call("DELETE", `/board/${coffee.id}`, undefined, brand)).status, 403)
+  const edit = { name: "바뀐 공연", date: addDays(todayInKorea(), 20), people: "100명", types: ["제품"] }
+  assert.equal((await call("PUT", "/events/event-muse-concert", edit, student)).status, 403)
+  assert.equal((await call("DELETE", "/events/event-muse-concert", undefined, student)).status, 403)
+  // 데모로 새로 만든 행사는 체험할 수 있게 고치고 지울 수 있다.
+  const made = (await call("POST", "/events", edit, student)).data.event
+  assert.equal((await call("PUT", `/events/${made.id}`, { ...edit, name: "다시 바뀐 공연" }, student)).status, 200)
+  assert.equal((await call("DELETE", `/events/${made.id}`, undefined, student)).status, 204)
+})

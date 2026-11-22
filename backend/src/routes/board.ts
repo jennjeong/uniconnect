@@ -142,8 +142,11 @@ function parsePost(account: Account, body: Request["body"]) {
 }
 
 // 주소로 찾는 계정 자신의 글이다.
+// 고치기, 닫기, 지우기가 함께 쓴다. 공유 데모 계정은 글을 올릴 수 없는 것처럼, 모두가 보는
+// 예시 글도 바꾸거나 지울 수 없다.
 function ownPost(req: Request) {
   const account = requireAccount(req)
+  if (isDemoAccount(getDatabase(), account)) throw new HttpError(403, "데모 계정은 모집 글을 바꿀 수 없어요.")
   const post = getDatabase().posts.find((item) => item.id === req.params.id && item.accountId === account.id)
   if (!post) throw new HttpError(404, "모집 글을 찾을 수 없어요.")
   return { account, post }
