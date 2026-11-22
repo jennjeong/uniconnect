@@ -9814,6 +9814,16 @@ html.modal-open {
   box-shadow: var(--silver-ring);
 }
 
+/* 계약서 맨 위의 짧은 안내(담당자 연락처가 보이는 때 등). */
+.agreement-note {
+  margin: 0 0 var(--space-4);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm, 12px);
+  background: var(--fill);
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
 .agreement-facts {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -16568,6 +16578,24 @@ label.programs-school {
   background: transparent;
   box-shadow: inset 0 0 0 1px var(--line);
   color: var(--muted);
+}
+
+/* 학교 카드의 목표 대비 단계별 수와 견적의 총 지급 예정액 줄. */
+.programs-tally {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+.programs-tally strong {
+  color: var(--point-strong);
+}
+
+.programs-quote .programs-quote-total th,
+.programs-quote .programs-quote-total td {
+  border-bottom: 0;
+  color: var(--ink);
+  font-weight: var(--weight-label);
 }
 
 /* 캠페인의 통합 보고(#403): 합계 타일과 학교별 표. */

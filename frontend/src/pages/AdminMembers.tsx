@@ -520,13 +520,13 @@ function MemberDetail({
           {t("모든 기기 로그아웃")}
         </button>
         <span className="console-tool">
-          <select aria-label={t("파트너스 기간")} onChange={(event) => setDays(Number(event.target.value))} value={days}>
+          <select aria-label={t("Growth 기간")} onChange={(event) => setDays(Number(event.target.value))} value={days}>
             <option value={30}>{t("30일")}</option>
             <option value={90}>{t("90일")}</option>
             <option value={365}>{t("1년")}</option>
           </select>
           <button className="console-text-button" onClick={() => act(api.adminGrantPartners(token, open.id, days), t("Growth를 부여했어요."))} type="button">
-            {t("파트너스 부여")}
+            {t("Growth 부여")}
           </button>
         </span>
         {open.role === "브랜드" && (

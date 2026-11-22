@@ -49,6 +49,11 @@ export function PostFormModal({
   const toggle = (type: string) =>
     setTypes((current) => (current.includes(type) ? current.filter((item) => item !== type) : [...current, type]))
 
+  // 단체의 글은 고른 행사가 끝나면 마감한다(서버 routes/board.ts와 같다).
+  const chosenEvent = upcoming.find((event) => event.id === eventId)
+  const eventLastDay = students && chosenEvent ? chosenEvent.endDate ?? chosenEvent.date : undefined
+  const latest = eventLastDay && eventLastDay < addDaysIso(today, maxDeadlineDays) ? eventLastDay : addDaysIso(today, maxDeadlineDays)
+
   const save = async () => {
     const problem = !title.trim() || !body.trim()
       ? t("제목과 내용을 적어 주세요.")
@@ -56,7 +61,9 @@ export function PostFormModal({
         ? t("협찬 종류를 하나 이상 골라 주세요.")
         : students && !eventId
           ? t("협찬을 찾을 다가오는 행사를 골라 주세요.")
-          : ""
+          : eventLastDay && deadline > eventLastDay
+            ? t("마감일은 행사 마지막 날({date})까지로 골라 주세요.", { date: eventLastDay })
+            : ""
     if (problem) {
       setError(problem)
       return
@@ -144,12 +151,13 @@ export function PostFormModal({
         <label>
           {t("마감일")}
           <input
-            max={addDaysIso(today, maxDeadlineDays)}
+            max={latest}
             min={today}
             onChange={(changed) => setDeadline(changed.target.value)}
             type="date"
             value={deadline}
           />
+          {eventLastDay && <small className="field-hint">{t("행사가 끝나면 지원을 받지 않아요. 마지막 날({date})까지 고를 수 있어요.", { date: eventLastDay })}</small>}
         </label>
         {error && (
           <p className="form-error" role="alert">

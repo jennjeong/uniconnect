@@ -33,13 +33,13 @@ export function ProgramReportDocument({ program, report, author, sample }: { pro
           </div>
           <div className="pdf-kpi">
             <span>{t("매장 방문")}</span>
-            <strong>{t("{visits}명", { visits: totals.visits.toLocaleString("ko-KR") })}</strong>
+            <strong>{t("{visits}건", { visits: totals.visits.toLocaleString("ko-KR") })}</strong>
             <small>{t("쿠폰 {coupons}장 · QR {scans}회", { coupons: totals.coupons.toLocaleString("ko-KR"), scans: totals.scans.toLocaleString("ko-KR") })}</small>
           </div>
           <div className="pdf-kpi">
             <span>{t("방문 1건당 비용")}</span>
             <strong>{totals.costPerVisit === null ? "—" : formatWon(totals.costPerVisit)}</strong>
-            <small>{t("캠페인 비용 {cost} (운영비 + 실비)", { cost: formatWon(totals.cost) })}</small>
+            <small>{t("캠페인 비용 {cost} (운영비 부가세 별도 + 실비)", { cost: formatWon(totals.cost) })}</small>
           </div>
           <div className="pdf-kpi">
             <span>{t("단체 이행")}</span>

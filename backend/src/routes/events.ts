@@ -1,3 +1,4 @@
+import { clampPostDeadlines } from "../lib/postDeadlines.js"
 import { randomUUID } from "node:crypto"
 import type { Request } from "express"
 
@@ -235,6 +236,8 @@ const followed = (status: RequestStatus) => status === "검토 중" || status ==
 // 수정 내용을 그 복사본에 반영한다. 아직 대기 중이거나 수락된 제안마다
 // 상대편에게 볼 페이지와 함께 알린다.
 function followEvent(database: Database, account: Account, event: EventItem, datesChanged: boolean) {
+  // 이어진 모집 글은 새 마지막 날을 넘겨 지원받지 않는다.
+  if (datesChanged) clampPostDeadlines(database)
   const partners = new Map<string, string>()
   const follow = (sponsorship: { eventName: string; date: string; remindedAt?: string }) => {
     sponsorship.eventName = event.name
