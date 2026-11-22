@@ -5441,6 +5441,8 @@
 
 .console-idle p {
   margin: 6px 0 0;
+}
+
 /* 설정 경고(개요와 서비스 상태 맨 위): 회원 기능이 멈추는 것을 먼저, 영향을 한 줄로. */
 .console-readiness ul {
   display: grid;
