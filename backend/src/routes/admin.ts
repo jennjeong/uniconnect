@@ -14,7 +14,7 @@ import { notify, notifyRestored, notifySuspended } from "../lib/notices.js"
 import { operatorFor, tokenClosed } from "../lib/operators.js"
 import { reportActionsOf } from "../lib/adminStates.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
-import { isDemoAccount } from "../lib/reviews.js"
+import { isDemoAccount, isDemoId } from "../lib/reviews.js"
 import { platformStats } from "../lib/stats.js"
 import { text } from "../lib/validation.js"
 import { getDatabase, refreshDatabase, saveDatabase } from "../store.js"
@@ -70,7 +70,8 @@ const paymentForOperator = ({ paymentKey, ...payment }: Payment) => ({
   ...payment,
   card: Boolean(paymentKey),
   // 데모 계정의 예시 주문이다. 실제 처리할 일로 세지 않는다.
-  ...(isDemoAccount(getDatabase(), getDatabase().accounts.find((account) => account.id === payment.accountId)) ? { example: true as const } : {}),
+  // 결제마다 계정 목록을 훑지 않고 데모 id 두 개와만 견준다.
+  ...(isDemoId(getDatabase(), payment.accountId) ? { example: true as const } : {}),
 })
 
 adminRouter.get("/payments", async (req, res) => {
