@@ -308,7 +308,8 @@ function StatsPanel({ stats }: { stats: PlatformStats }) {
   )
 }
 
-const paymentKinds: Record<AdminPayment["kind"], string> = { fee: "수수료", report: "상세 리포트", pro: "Growth", ad: "상단 광고", local: "Campus Local", program: "캠퍼스 캠페인" }
+// 판매를 멈춘 상품(수수료, 상세 리포트)은 과거 주문 기록으로만 남는다.
+const paymentKinds: Record<AdminPayment["kind"], string> = { fee: "수수료 (판매 종료)", report: "상세 리포트 (판매 종료)", pro: "Growth", ad: "상단 광고", local: "Campus Local", program: "캠퍼스 캠페인" }
 
 // 운영자가 보는 결제 하나: 누가 얼마를 어떻게 언제 냈는지와, 상태가 허용하는
 // 작업(들어온 이체 확인, 대기 중인 주문 취소, 결제된 건 환불).
@@ -368,7 +369,10 @@ function PaymentCard({
   return (
     <article className="admin-card admin-payment">
       <div className="admin-card-head">
-        <span className="admin-category">{t(paymentKinds[payment.kind])}</span>
+        <span className="admin-category">
+          {t(paymentKinds[payment.kind])}
+          {payment.example && <em className="console-tag">{t("예시 주문")}</em>}
+        </span>
         <span className="admin-card-meta">
           {payment.status === "pending" && (
             <WaitBadge at={payment.requestedAt} late={3} text={(days) => t("{days}일째 입금 대기", { days })} />
@@ -684,6 +688,9 @@ function Overview({ data, onGo }: { data: AdminOverview; onGo: (section: Section
     { label: t("현장 이상 신호"), count: attention.alerts, go: "live" as Section, icon: "scan" as IconName },
     { label: t("정지된 계정"), count: attention.suspended, go: "reports" as Section, icon: "lock" as IconName },
   ]
+  // 처리할 것이 있는 일을 먼저, 0건인 일은 접어 둔다.
+  const busy = todo.filter((item) => item.count > 0)
+  const idle = todo.filter((item) => item.count === 0)
   const thisWeek = weekly.at(-1)
   const lastWeek = weekly.at(-2)
   const answered = stats.accepted.real + stats.declined.real
@@ -692,6 +699,39 @@ function Overview({ data, onGo }: { data: AdminOverview; onGo: (section: Section
   const revenueTop = Math.max(1, ...revenueKinds.map((item) => revenue.byKind[item.key]))
   return (
     <div className="console-grid">
+      <section className="console-card wide">
+        <div className="console-card-head">
+          <div>
+            <h2>{t("지금 처리할 일")}</h2>
+            <p>{t("실제 회원 기준이에요. 누르면 그 목록이 열려요.")}</p>
+          </div>
+        </div>
+        {busy.length === 0 ? (
+          <p className="day-empty">{t("지금 처리할 일이 없어요.")}</p>
+        ) : (
+          <ul className="console-todo">
+            {busy.map((item) => (
+              <li key={item.label}>
+                <button className="hot" onClick={() => onGo(item.go)} type="button">
+                  <span aria-hidden="true" className="console-todo-icon">
+                    <Icon name={item.icon} size={18} />
+                  </span>
+                  <span>{item.label}</span>
+                  <strong>{t("{count}건", { count: item.count })}</strong>
+                  <Icon name="chevron" size={16} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {idle.length > 0 && (
+          <details className="console-idle">
+            <summary>{t("0건인 일 {count}가지", { count: idle.length })}</summary>
+            <p>{idle.map((item) => item.label).join(" · ")}</p>
+          </details>
+        )}
+      </section>
+
       <StatCard
         badge={<span className="console-badge up">{t("이번 주 +{count}", { count: stats.newThisWeek.real })}</span>}
         icon="users"
@@ -717,7 +757,7 @@ function Overview({ data, onGo }: { data: AdminOverview; onGo: (section: Section
         value={(thisWeek?.proposals ?? 0).toLocaleString(locale)}
       />
       <StatCard
-        badge={<span className="console-badge">{t("파트너스 {count}곳", { count: revenue.partners })}</span>}
+        badge={<span className="console-badge">{t("Growth {count}곳", { count: revenue.partners })}</span>}
         icon="check"
         label={t("확정된 협찬")}
         value={stats.sponsorships.real.toLocaleString(locale)}
@@ -727,7 +767,7 @@ function Overview({ data, onGo }: { data: AdminOverview; onGo: (section: Section
         <div className="console-card-head">
           <div>
             <h2>{t("주간 가입 · 제안")}</h2>
-            <p>{t("실제 회원과 데모를 더한 수예요.")}</p>
+            <p>{t("실제 회원만 센 수예요(데모 계정과 예시 데이터는 빼요).")}</p>
           </div>
           <ul className="console-legend">
             <li className="signups">{t("가입")}</li>
@@ -759,24 +799,6 @@ function Overview({ data, onGo }: { data: AdminOverview; onGo: (section: Section
             <dd>{stats.declined.real.toLocaleString(locale)}</dd>
           </div>
         </dl>
-      </section>
-
-      <section className="console-card span-2">
-        <h2>{t("지금 처리할 일")}</h2>
-        <ul className="console-todo">
-          {todo.map((item) => (
-            <li key={item.label}>
-              <button className={item.count > 0 ? "hot" : undefined} onClick={() => onGo(item.go)} type="button">
-                <span aria-hidden="true" className="console-todo-icon">
-                  <Icon name={item.icon} size={18} />
-                </span>
-                <span>{item.label}</span>
-                <strong>{t("{count}건", { count: item.count })}</strong>
-                <Icon name="chevron" size={16} />
-              </button>
-            </li>
-          ))}
-        </ul>
       </section>
 
       <section className="console-card span-2">
@@ -1124,7 +1146,7 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
   const [tab, setTab] = useState<Tab>("waiting")
   const [kind, setKind] = useState("")
   const [reportTab, setReportTab] = useState<"open" | "done">("open")
-  const [paymentTab, setPaymentTab] = useState<"pending" | "paid" | "cancelled">("pending")
+  const [paymentTab, setPaymentTab] = useState<"transfer" | "pending" | "paid" | "cancelled">("transfer")
   const [error, setError] = useState("")
   const [loadedAt, setLoadedAt] = useState<string>()
   const [reload, setReload] = useState(0)
@@ -1327,12 +1349,13 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
   const openReports = reports.filter((report) => !report.resolution)
   const doneReports = reports.filter((report) => report.resolution)
   const shownReports = reportTab === "open" ? openReports : doneReports
-  const shownPayments = payments.filter((payment) => payment.status === paymentTab)
+  const needsTransfer = (payment: AdminPayment) => payment.status === "pending" && Boolean(payment.transferRequestedAt) && !payment.example
+  const shownPayments = payments.filter((payment) => (paymentTab === "transfer" ? needsTransfer(payment) : payment.status === paymentTab))
   const badges: Partial<Record<Section, number>> = {
     approvals: overview.attention.applications + overview.attention.referrals,
     inquiries: waiting.length,
     reports: openReports.length,
-    payments: payments.filter((payment) => payment.status === "pending").length,
+    payments: payments.filter(needsTransfer).length,
     operations: overview.attention.stale + overview.attention.cancels,
     live: overview.attention.alerts,
     programs: overview.attention.programs ?? 0,
@@ -1503,7 +1526,8 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
             <div className="console-filters">
               <TabBar
                 items={[
-                  { value: "pending", label: <>{t("결제 대기")}<em>{payments.filter((item) => item.status === "pending").length}</em></> },
+                  { value: "transfer", label: <>{t("입금 확인 필요")}<em>{payments.filter(needsTransfer).length}</em></> },
+                  { value: "pending", label: <>{t("결제 대기 전체")}<em>{payments.filter((item) => item.status === "pending").length}</em></> },
                   { value: "paid", label: <>{t("결제 완료")}<em>{payments.filter((item) => item.status === "paid").length}</em></> },
                   { value: "cancelled", label: <>{t("취소 · 환불")}<em>{payments.filter((item) => item.status === "cancelled").length}</em></> },
                 ]}

@@ -5428,6 +5428,21 @@
   list-style: none;
 }
 
+/* 개요의 0건인 일: 한 줄로 접어 둔다. */
+.console-idle {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.console-idle summary {
+  cursor: pointer;
+}
+
+.console-idle p {
+  margin: 6px 0 0;
+}
+
 .console-checks li.on > span {
   background: var(--green-soft);
   color: var(--green);

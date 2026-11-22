@@ -332,7 +332,8 @@ export type PaymentOrder = { order: Payment; customerKey: string; email: string 
 // 지금 돌려받는 금액. days는 전액이면 null이다.
 export type RefundQuote = { amount: number; days: number | null; whole: boolean }
 
-export type AdminPayment = Payment & { accountId: string; card: boolean }
+// example: 데모 계정의 예시 주문이다.
+export type AdminPayment = Payment & { accountId: string; card: boolean; example?: true }
 
 // 협찬 한쪽이 행사 뒤에 상대에 대해 쓴 후기.
 export type Review = {
