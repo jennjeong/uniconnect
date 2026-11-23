@@ -237,6 +237,11 @@
   background: var(--red-soft);
 }
 
+/* 호박색 AD 표시는 밝은 바탕색이라 다크 모드에서도 짙은 글자를 쓴다. */
+:root[data-theme="dark"] .ad-mark {
+  color: #1d2330;
+}
+
 /* PDF와 카드뉴스는 화면 밖에서 그려 파일이 된다. 다크 모드에서도 인쇄용 밝은 색을 쓴다. */
 :root[data-theme="dark"] :is(.pdf-export, .card-export) {
   --point-strong: #1b3f8f;

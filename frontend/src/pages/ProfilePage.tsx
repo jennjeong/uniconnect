@@ -86,7 +86,8 @@ function SettingsRow({
     <div className="settings-row">
       <dt id={labelId}>{label}</dt>
       <dd>{value}</dd>
-      {action && <div className="settings-action">{action}</div>}
+      {/* 정의 목록(dl) 안이므로 버튼 칸도 dd로 둔다. */}
+      {action && <dd className="settings-action">{action}</dd>}
     </div>
   )
 }
@@ -552,7 +553,7 @@ export function ProfilePage({
               {/* 다크 모드(#351, lib/theme.ts): 이 브라우저에 기억하고 바로 바꾼다. */}
               <SettingsRow
                 action={
-                  <span aria-labelledby="theme-label" className="lang-choice" role="group">
+                  <span aria-labelledby="theme-label" className="lang-choice theme-choice" role="group">
                     {themeChoices.map((item) => (
                       <button
                         aria-pressed={theme === item.value}
