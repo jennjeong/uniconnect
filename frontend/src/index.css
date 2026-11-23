@@ -156,6 +156,123 @@
   --ease-quart: cubic-bezier(0.25, 1, 0.5, 1);
 }
 
+/* Dark mode (#351, lib/theme.ts): 내 정보의 화면 테마에서 고르면 <html data-theme="dark">가 된다.
+   운영자 콘솔의 다크 팔레트(.console-body[data-console-theme="dark"])에서 왔다. 짙은 파랑 표면과
+   그라디언트는 그대로 두고, 흰 표면 · 회색 채움 · 글자 · 선만 바꾼다. 글자는 어두운 표면에서
+   4.5:1을 지키고, 파란 글자(--point-strong)는 더 밝은 파랑을 쓴다. 바탕 전체가 어두우므로
+   머리글은 밝은 로고를 쓴다(--surface-tone). */
+:root[data-theme="dark"] {
+  --point-strong: #8db4ff;
+  --point-line: #34507f;
+  --point-tint: #1d2b45;
+  --point-soft: #172133;
+  --point-bright: #7aa9ff;
+  --silver: #4a5262;
+  --silver-gradient: linear-gradient(180deg, #262c36 0%, #1f242d 100%);
+  --silver-ring: inset 0 0 0 1px #343b47, inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --ink: #e8ebf0;
+  --ink-soft: #c2c8d1;
+  --muted: #9aa3b0;
+  --faint: #6c7584;
+  --line: #2b313b;
+  --line-strong: #3a414d;
+  --fill: #242a33;
+  --fill-strong: #2f3641;
+  --surface: #1b1f27;
+  --surface-raised: #222731;
+  --canvas: #101318;
+  --slate: #2a303b;
+  --surface-tone: dark;
+  --goal-short: linear-gradient(90deg, #3a414d, #4d5666);
+  --green: #4bd394;
+  --green-soft: #183527;
+  --blue: #7aa9ff;
+  --blue-soft: #1d2b45;
+  --violet: #b9a6ff;
+  --violet-soft: #2a2347;
+  --orange: #ffb067;
+  --orange-soft: #3a2a1a;
+  --red: #ff6b75;
+  --red-soft: #3a1f24;
+  --shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  color-scheme: dark;
+}
+
+/* 흰 유리나 밝은 그라디언트로 그린 표면은 토큰 밖에 있어 다크 모드에서 따로 어둡게 한다. */
+:root[data-theme="dark"] .site-header::before {
+  background: linear-gradient(180deg, rgba(16, 19, 24, 0.94) 0%, rgba(16, 19, 24, 0.8) 50%, rgba(16, 19, 24, 0) 100%);
+}
+
+:root[data-theme="dark"] .nav-pill,
+:root[data-theme="dark"] .nav-menu-close,
+:root[data-theme="dark"] .nav-menu-roles,
+:root[data-theme="dark"] .notify-panel,
+:root[data-theme="dark"] .chat-input,
+:root[data-theme="dark"] .event-photo-remove,
+:root[data-theme="dark"] .place-map-ring,
+:root[data-theme="dark"] .work-tags > span:not(.date-line) {
+  background: rgba(27, 31, 39, 0.86);
+}
+
+:root[data-theme="dark"] .site-header.scrolled .nav-pill {
+  background: rgba(27, 31, 39, 0.94);
+}
+
+:root[data-theme="dark"] .work-card,
+:root[data-theme="dark"] .skeleton-card {
+  background:
+    radial-gradient(70% 46% at 50% 30%, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 72%),
+    linear-gradient(180deg, #232832 0%, #1b1f27 100%);
+}
+
+:root[data-theme="dark"] .checklist li.done {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+:root[data-theme="dark"] .page-loader {
+  background: var(--canvas);
+}
+
+:root[data-theme="dark"] .payout-late {
+  background: var(--red-soft);
+}
+
+/* PDF와 카드뉴스는 화면 밖에서 그려 파일이 된다. 다크 모드에서도 인쇄용 밝은 색을 쓴다. */
+:root[data-theme="dark"] :is(.pdf-export, .card-export) {
+  --point-strong: #1b3f8f;
+  --point-line: #c7d5f3;
+  --point-tint: #e6edfa;
+  --point-soft: #f2f6fd;
+  --point-bright: #2f63d9;
+  --silver: #c1c8d6;
+  --silver-gradient: linear-gradient(180deg, #f8f9fb 0%, #e9ecf2 100%);
+  --silver-ring: inset 0 0 0 1px rgba(193, 200, 214, 0.6), inset 0 1px 0 #fff;
+  --ink: #2b3343;
+  --ink-soft: #4d5668;
+  --muted: #636d7f;
+  --faint: #aeb6c4;
+  --line: #e1e5ec;
+  --line-strong: #cdd3dd;
+  --fill: #eef0f4;
+  --fill-strong: #e1e5ec;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --slate: #3b4456;
+  --surface-tone: light;
+  --goal-short: linear-gradient(90deg, #d3d9e3, #aab5c7);
+  --green: #1a7340;
+  --green-soft: #e5f4ea;
+  --blue: #2556c4;
+  --blue-soft: #e7eefc;
+  --violet: #6545cf;
+  --violet-soft: #efebfc;
+  --orange: #a64a0c;
+  --orange-soft: #fcecdf;
+  --red: #c2352b;
+  --red-soft: #fbe9e7;
+  color-scheme: light;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -389,7 +506,7 @@ strong {
 }
 
 button.nav-pill:hover {
-  background: #fff;
+  background: var(--surface);
 }
 
 /* 로고는 혼자 서 있으며, 진한 파랑 위에서 밝은 버전으로 크로스페이드할 수
@@ -480,8 +597,8 @@ button.nav-pill:hover {
 }
 
 .header-link.active .nav-count {
-  background: #fff;
-  color: var(--point);
+  background: var(--surface);
+  color: var(--point-strong);
 }
 
 /* 다음 행사: D-day를 진한 파랑 태그로, 그다음 이름. */
@@ -554,8 +671,8 @@ button.nav-pill:hover {
   margin-left: 2px;
   border: 0;
   border-radius: 50%;
-  background: #fff;
-  color: var(--point);
+  background: var(--surface);
+  color: var(--point-strong);
   box-shadow: inset 0 0 0 1.5px var(--point-line);
   font-size: 0.8125rem;
   font-weight: var(--weight-strong);
@@ -694,7 +811,7 @@ button.nav-pill:hover {
 }
 
 .nav-menu-close:hover {
-  background: #fff;
+  background: var(--surface);
 }
 
 .nav-menu-body {
@@ -771,7 +888,7 @@ button.nav-pill:hover {
 .nav-menu-item.active,
 .nav-menu-item:hover small,
 .nav-menu-item.active small {
-  color: var(--point);
+  color: var(--point-strong);
 }
 
 .nav-menu-item em,
@@ -816,7 +933,7 @@ button.nav-pill:hover {
 }
 
 .nav-menu-extra > button:hover {
-  color: var(--point);
+  color: var(--point-strong);
 }
 
 .nav-menu-roles {
@@ -863,7 +980,7 @@ button.nav-pill:hover {
   padding: 0;
   border: 0;
   background: none;
-  color: var(--point);
+  color: var(--point-strong);
   font-size: 0.75rem;
   font-weight: var(--weight-label);
   letter-spacing: 0.04em;
@@ -992,7 +1109,7 @@ button.nav-pill:hover {
 
 .footer-column button:hover,
 .footer-legal button:hover {
-  color: var(--point);
+  color: var(--point-strong);
   transform: translateX(4px);
 }
 
@@ -1034,7 +1151,7 @@ button.nav-pill:hover {
 }
 
 .footer-credit:hover {
-  color: var(--point);
+  color: var(--point-strong);
   text-decoration: underline;
 }
 
@@ -1312,7 +1429,7 @@ button.nav-pill:hover {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  color: var(--point);
+  color: var(--point-strong);
   font-size: 0.8125rem;
   font-weight: var(--weight-label);
   letter-spacing: 0;
@@ -1333,7 +1450,7 @@ button.nav-pill:hover {
 }
 
 .eyebrow.light::before {
-  background: #fff;
+  background: var(--surface);
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
 }
 
@@ -1353,7 +1470,7 @@ button.nav-pill:hover {
 }
 
 .back-pill:hover {
-  background: #fff;
+  background: var(--surface);
 }
 
 .back-pill .icon {
@@ -1398,8 +1515,8 @@ button.nav-pill:hover {
 }
 
 .pill.white {
-  background: #fff;
-  color: var(--point);
+  background: var(--surface);
+  color: var(--point-strong);
   box-shadow: 0 12px 28px -14px rgba(8, 20, 52, 0.55);
 }
 
@@ -1448,8 +1565,8 @@ button.nav-pill:hover {
 
 .pill.primary .pill-arrow,
 .pill.outline-light .pill-arrow {
-  background: #fff;
-  color: var(--point);
+  background: var(--surface);
+  color: var(--point-strong);
 }
 
 .pill-arrow .icon {
@@ -1556,7 +1673,7 @@ button.nav-pill:hover {
 }
 
 .subtle-link:hover {
-  color: var(--point);
+  color: var(--point-strong);
 }
 
 /* 카드와 대시보드의 제안 버튼. 답을 받은 것은 상태처럼 읽힌다. */
@@ -1622,13 +1739,13 @@ button.nav-pill:hover {
 }
 
 .proposal-cancel:hover {
-  color: var(--point);
+  color: var(--point-strong);
 }
 
 /* 진한 파랑 배너 위의 버튼은 흰색이 된다. */
 .cta-panel :is(.primary-button, .proposal-button:not(.done, .confirmed, .declined)) {
-  background: #fff;
-  color: var(--point);
+  background: var(--surface);
+  color: var(--point-strong);
 }
 
 /* 빛이 어디서 오든 읽히도록 한 서리 낀 네이비. */
@@ -1680,7 +1797,7 @@ button.nav-pill:hover {
 }
 
 .match-logo.has-logo {
-  background: #fff;
+  background: var(--surface);
   box-shadow: inset 0 0 0 1px var(--line);
 }
 
@@ -1942,7 +2059,7 @@ button.nav-pill:hover {
 }
 
 .nearby-layout button[aria-pressed='true'] {
-  background: #fff;
+  background: var(--surface);
   color: var(--point-strong);
   box-shadow: 0 2px 8px rgba(19, 48, 111, 0.12);
 }
@@ -2009,7 +2126,7 @@ button.nav-pill:hover {
 }
 
 .place-dot-key.invited {
-  background: #fff;
+  background: var(--surface);
   box-shadow: inset 0 0 0 3px var(--point-bright), 0 0 0 2px #fff;
 }
 
@@ -2291,8 +2408,8 @@ input[type="search"]::-webkit-search-cancel-button {
 }
 
 .bulk-bar .primary-button {
-  background: #fff;
-  color: var(--point);
+  background: var(--surface);
+  color: var(--point-strong);
 }
 
 .bulk-names {
@@ -2317,7 +2434,7 @@ input[type="search"]::-webkit-search-cancel-button {
 }
 
 .industry-chip.active {
-  color: var(--point);
+  color: var(--point-strong);
   box-shadow: none;
 }
 
@@ -2413,7 +2530,7 @@ input[type="search"]::-webkit-search-cancel-button {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--surface);
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.22);
   content: "";
 }
@@ -2551,7 +2668,7 @@ input[type="search"]::-webkit-search-cancel-button {
 
 .marquee-item > .icon {
   margin-left: 12px;
-  color: var(--point);
+  color: var(--point-strong);
 }
 
 .landing-side.blue {
@@ -2809,7 +2926,7 @@ input[type="search"]::-webkit-search-cancel-button {
   gap: 12px;
   padding: 14px 16px;
   border-radius: var(--radius-md);
-  background: #fff;
+  background: var(--surface);
   box-shadow: inset 0 0 0 1px var(--line);
 }
 
@@ -2914,7 +3031,7 @@ input[type="search"]::-webkit-search-cancel-button {
 
 .statement-chip.silver {
   background: var(--silver-gradient);
-  color: var(--point);
+  color: var(--point-strong);
   box-shadow: var(--silver-ring);
 }
 
@@ -2923,7 +3040,7 @@ input[type="search"]::-webkit-search-cancel-button {
 
 /* 흰색과 은색 위의 숫자는 포인트 파랑으로 읽힌다. */
 .kpi-card strong {
-  color: var(--point);
+  color: var(--point-strong);
 }
 
 /* Stride의 은색 카드로 된 추천 파트너 (components/WorkCard.tsx): 위쪽에
@@ -3045,7 +3162,7 @@ input[type="search"]::-webkit-search-cancel-button {
   place-items: center;
   border: 0;
   border-radius: 50%;
-  background: #fff;
+  background: var(--surface);
   color: var(--ink);
   box-shadow: inset 0 0 0 1px var(--line-strong);
 }
@@ -3074,14 +3191,14 @@ input[type="search"]::-webkit-search-cancel-button {
   place-items: center;
   border: 0;
   border-radius: 50%;
-  background: #fff;
+  background: var(--surface);
   color: var(--muted);
   box-shadow: inset 0 0 0 1px var(--line-strong);
 }
 
 .save-toggle:hover,
 .save-toggle[aria-pressed="true"] {
-  color: var(--point);
+  color: var(--point-strong);
 }
 
 .save-toggle[aria-pressed="true"] .icon,
@@ -3211,7 +3328,7 @@ input[type="search"]::-webkit-search-cancel-button {
 /* 캠퍼스 근처 매장 (NearbyPlaces.tsx): 이름의 첫 글자가 로고 자리에 선다. */
 .match-logo.monogram {
   background: var(--point-tint);
-  color: var(--point);
+  color: var(--point-strong);
   font-size: 2rem;
   font-weight: var(--weight-display);
   line-height: 1;
@@ -3261,7 +3378,7 @@ input[type="search"]::-webkit-search-cancel-button {
 }
 
 .work-title h3 button:hover {
-  color: var(--point);
+  color: var(--point-strong);
 }
 
 .work-name p {
@@ -3336,7 +3453,7 @@ input[type="search"]::-webkit-search-cancel-button {
 
 .work-tags .tag-event {
   background: var(--point-tint);
-  color: var(--point);
+  color: var(--point-strong);
   box-shadow: inset 0 0 0 1px var(--point-line);
 }
 
@@ -3380,7 +3497,7 @@ input[type="search"]::-webkit-search-cancel-button {
 }
 
 .proposal-button.unpartnered.invited {
-  background: #fff;
+  background: var(--surface);
   color: var(--point-strong);
   box-shadow: inset 0 0 0 1px var(--point-line);
 }
@@ -3408,7 +3525,7 @@ input[type="search"]::-webkit-search-cancel-button {
 }
 
 .work-title h3 a:hover {
-  color: var(--point);
+  color: var(--point-strong);
 }
 
 .work-actions .proposal-actions {
@@ -3543,7 +3660,7 @@ input[type="search"]::-webkit-search-cancel-button {
   padding: 5px 10px;
   border-radius: 999px;
   background: var(--point-tint);
-  color: var(--point);
+  color: var(--point-strong);
   font-size: 0.75rem;
   font-weight: var(--weight-badge);
 }
@@ -3924,7 +4041,7 @@ input[type="search"]::-webkit-search-cancel-button {
 }
 
 .stepper-detail-index {
-  color: var(--point);
+  color: var(--point-strong);
   font-size: 0.8125rem;
   font-weight: var(--weight-badge);
   letter-spacing: 0.06em;
@@ -3948,7 +4065,7 @@ input[type="search"]::-webkit-search-cancel-button {
   margin-top: 4px;
   padding: 6px 12px;
   border-radius: 999px;
-  background: #fff;
+  background: var(--surface);
   color: var(--ink-soft);
   box-shadow: inset 0 0 0 1px var(--line-strong);
   font-size: 0.75rem;
@@ -4209,8 +4326,8 @@ input[type="search"]::-webkit-search-cancel-button {
   width: 96px;
   height: 96px;
   border-radius: 28px;
-  background: #fff;
-  color: var(--point);
+  background: var(--surface);
+  color: var(--point-strong);
   box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.14);
   font-size: 2.5rem;
   font-weight: var(--weight-strong);
@@ -4263,7 +4380,7 @@ input[type="search"]::-webkit-search-cancel-button {
 
 .service-index {
   min-width: 2.5rem;
-  color: var(--point);
+  color: var(--point-strong);
   font-size: 0.875rem;
   font-weight: var(--weight-badge);
   font-variant-numeric: tabular-nums;
@@ -4443,7 +4560,7 @@ input[type="search"]::-webkit-search-cancel-button {
 
 .kpi-label .icon {
   margin-left: auto;
-  color: var(--point);
+  color: var(--point-strong);
 }
 
 .kpi-card strong {
@@ -4489,7 +4606,7 @@ html.modal-open {
   overflow-y: auto;
   padding: 32px;
   border-radius: var(--radius-lg);
-  background: #fff;
+  background: var(--surface);
   box-shadow:
     0 0 0 1px var(--line),
     0 40px 100px rgba(19, 48, 111, 0.2);
@@ -4592,7 +4709,7 @@ html.modal-open {
 .modal input:not([type='checkbox'], [type='radio']):focus,
 .modal select:focus {
   border-color: rgba(27, 63, 143, 0.45);
-  background: #fff;
+  background: var(--surface);
 }
 
 /* 입력한 것을 보여주는 눈 버튼이 있는 비밀번호 상자
@@ -5003,8 +5120,8 @@ html.modal-open {
 .deal-box.event .cancel-button {
   justify-self: start;
   margin-top: 4px;
-  background: #fff;
-  color: var(--point);
+  background: var(--surface);
+  color: var(--point-strong);
 }
 
 .pager button {
@@ -5284,7 +5401,7 @@ html.modal-open {
 .post-types span {
   padding: 4px 10px;
   border-radius: 999px;
-  background: #fff;
+  background: var(--surface);
   box-shadow: inset 0 0 0 1px var(--line);
   font-size: 0.75rem;
   font-weight: var(--weight-label);
@@ -5336,7 +5453,7 @@ html.modal-open {
   gap: 2px 12px;
   padding: 14px 16px;
   border-radius: var(--radius-sm);
-  background: #fff;
+  background: var(--surface);
   box-shadow: var(--ring);
 }
 
@@ -5668,7 +5785,7 @@ html.modal-open {
 }
 
 .agenda-day strong {
-  color: var(--point);
+  color: var(--point-strong);
   font-size: 1.125rem;
   font-weight: var(--weight-display);
   line-height: 1.1;
@@ -6902,8 +7019,8 @@ html.modal-open {
 
 /* 내 미팅은 진한 파랑 말풍선에 놓인다. */
 .chat-message.mine .meeting-actions :is(.cancel-button, .primary-button) {
-  background: #fff;
-  color: var(--point);
+  background: var(--surface);
+  color: var(--point-strong);
 }
 
 .chat-attach[aria-disabled="true"] {
@@ -7948,7 +8065,7 @@ html.modal-open {
 
 .invite-message textarea:focus {
   border-color: rgba(27, 63, 143, 0.45);
-  background: #fff;
+  background: var(--surface);
 }
 
 /* 초대 페이지 (pages/InvitePage.tsx): 왼쪽에 단체의 카드, 오른쪽에 매장이 얻는
@@ -7996,7 +8113,7 @@ html.modal-open {
   margin: 0;
   padding: 10px 14px;
   border-radius: var(--radius-sm);
-  background: #fff;
+  background: var(--surface);
   color: var(--ink);
   box-shadow: var(--ring);
 }
@@ -8608,7 +8725,7 @@ html.modal-open {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--surface);
   box-shadow: 0 2px 6px rgba(19, 48, 111, 0.25);
   content: "";
   transition: transform 0.2s var(--ease-out);
@@ -8892,7 +9009,7 @@ html.modal-open {
   gap: 8px 16px;
   padding: 14px 16px;
   border-radius: var(--radius-sm);
-  background: #fff;
+  background: var(--surface);
   box-shadow: var(--ring);
 }
 
@@ -8951,7 +9068,7 @@ html.modal-open {
 }
 
 .landing-hero h1 .accent {
-  color: var(--point);
+  color: var(--point-strong);
 }
 
 .landing-lead {
@@ -9856,7 +9973,7 @@ html.modal-open {
 }
 
 .agreement-post-state.is-confirmed {
-  color: var(--point);
+  color: var(--point-strong);
 }
 
 .agreement-post-ask,
@@ -9959,7 +10076,7 @@ html.modal-open {
   gap: 12px;
   padding: 20px;
   border-radius: var(--radius-md);
-  background: #fff;
+  background: var(--surface);
   box-shadow: var(--ring);
 }
 
@@ -10517,7 +10634,7 @@ html.modal-open {
 }
 
 .insight-fulfillment li.done .icon {
-  color: var(--point);
+  color: var(--point-strong);
   stroke-width: 2.6;
 }
 
@@ -11313,8 +11430,8 @@ html.modal-open {
 }
 
 .value-point.lead .value-point-action {
-  background: #fff;
-  color: var(--point);
+  background: var(--surface);
+  color: var(--point-strong);
 }
 
 .value-points-note {
@@ -11777,7 +11894,7 @@ html.modal-open {
   padding: 2px 8px;
   border-radius: 999px;
   background: var(--point-tint);
-  color: var(--point);
+  color: var(--point-strong);
   font-size: 0.6875rem;
   font-weight: var(--weight-badge);
   letter-spacing: 0.04em;
@@ -12185,7 +12302,7 @@ html.modal-open {
 
 .console-list em {
   float: right;
-  color: var(--point);
+  color: var(--point-strong);
   font-size: 0.75rem;
   font-style: normal;
   font-weight: var(--weight-label);
@@ -13186,7 +13303,7 @@ html.modal-open {
 .goals-list > div {
   padding: 14px 16px;
   border-radius: var(--radius-sm);
-  background: #fff;
+  background: var(--surface);
   box-shadow: var(--ring);
 }
 
@@ -13209,7 +13326,7 @@ html.modal-open {
   gap: 12px;
   padding: 14px 16px;
   border-radius: var(--radius-sm);
-  background: #fff;
+  background: var(--surface);
   box-shadow: var(--ring);
   color: var(--point-strong);
 }
@@ -13300,7 +13417,7 @@ html.modal-open {
   gap: 12px;
   padding: 16px 18px;
   border-radius: var(--radius-md);
-  background: #fff;
+  background: var(--surface);
   box-shadow: var(--ring);
 }
 
@@ -13541,7 +13658,7 @@ html.modal-open {
   padding: 0 14px;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  background: #fff;
+  background: var(--surface);
   color: var(--ink);
   font-size: 0.875rem;
 }
@@ -13886,7 +14003,7 @@ span.odometer {
   position: relative;
   padding: 8px 14px;
   border-radius: 999px;
-  background: #fff;
+  background: var(--surface);
   color: var(--ink-soft);
   box-shadow: inset 0 0 0 1px var(--line-strong);
   font-size: 0.8125rem;
@@ -13898,7 +14015,7 @@ span.odometer {
   padding: 12px 14px;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  background: #fff;
+  background: var(--surface);
   color: var(--ink);
   font-size: 0.875rem;
   line-height: 1.6;
@@ -15245,7 +15362,7 @@ span.odometer {
 
 .faq-item summary::after {
   flex: 0 0 auto;
-  color: var(--point);
+  color: var(--point-strong);
   content: "+";
   font-size: 1.375rem;
   font-weight: var(--weight-body);
@@ -15367,7 +15484,7 @@ span.odometer {
 }
 
 .not-found-link .icon:first-child {
-  color: var(--point);
+  color: var(--point-strong);
 }
 
 .not-found-link .icon:last-child {
@@ -15449,7 +15566,7 @@ span.odometer {
 }
 
 .legal-section li::marker {
-  color: var(--point);
+  color: var(--point-strong);
 }
 
 .legal-table-wrap {

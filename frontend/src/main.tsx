@@ -9,6 +9,7 @@ import { whenIdle } from './lib/lite'
 import { keepOutOfSearch } from './lib/pageMeta'
 import { lazyPage, loadPageStyles } from './lib/pageStyles'
 import { reloadForNewDeploy } from './lib/staleChunks'
+import { startTheme } from './lib/theme'
 import { keepReferral } from './lib/referral'
 import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css'
 import './index.css'
@@ -42,6 +43,10 @@ if (checkIn) {
 
 // 운영자 콘솔(/admin)도 회원용 헤더, 메뉴, 푸터 없이 단독으로 선다.
 const adminConsole = window.location.pathname.replace(/\/$/, '') === '/admin'
+
+// 회원 화면의 다크 모드(lib/theme.ts). 처음 그리기 전에 켜서 밝은 화면이 번쩍이지 않게 한다.
+// 콘솔은 자기 다크 모드를 쓴다.
+if (!adminConsole) startTheme()
 if (adminConsole) {
   document.body.classList.add('console-body')
   document.title = 'uniconnect Admin'

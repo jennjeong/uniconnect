@@ -16,8 +16,16 @@ import { lang, setLang, t, type Lang } from "../i18n"
 import { formatFullDate, toIsoDate } from "../lib/date"
 import { initialOf } from "../lib/format"
 import { referralLink } from "../lib/referral"
+import { readTheme, saveTheme, type ThemeChoice } from "../lib/theme"
 import { MeshBackdrop } from "../scenes/MeshBackdrop"
 import type { Account, BlockedListing, BusinessStatus, MailKind, Match, NavLabel, SocialProvider, GroupVerification } from "../types"
+
+// 내 정보의 화면 테마(#351).
+const themeChoices: { value: ThemeChoice; label: string }[] = [
+  { value: "light", label: "밝게" },
+  { value: "dark", label: "어둡게" },
+  { value: "system", label: "기기 설정" },
+]
 
 export type ActivityItem = {
   label: string
@@ -189,6 +197,7 @@ export function ProfilePage({
   const mailOff = account.mailOff ?? []
   const social = onTeam && owner ? socialProviders : []
   const together = Boolean(onTeam || onCouncil || onCouncilLink || blocked)
+  const [theme, setTheme] = useState<ThemeChoice>(readTheme)
   const [invite, setInvite] = useState<{ code: string; joined: number; rewarded: number; waiting: number; rewardDays: number } | null>(null)
   useEffect(() => {
     if (!canInvite) return
@@ -513,7 +522,7 @@ export function ProfilePage({
             </div>
           </SettingsCard>
 
-          <SettingsCard caption={t("화면의 언어와 받을 메일을 골라요.")} icon="bell" id="profile-prefs" title={t("알림과 표시")}>
+          <SettingsCard caption={t("화면의 언어와 테마, 받을 메일을 골라요.")} icon="bell" id="profile-prefs" title={t("알림과 표시")}>
             <dl className="settings-rows">
               {/* 다른 언어를 고르면 그 언어로 페이지를 다시 불러오고 다음
                  방문을 위해 기억한다. 푸터의 스위치와 같다. */}
@@ -539,6 +548,30 @@ export function ProfilePage({
                 label={t("언어")}
                 labelId="language-label"
                 value={t("화면과 메일에 쓰는 언어예요.")}
+              />
+              {/* 다크 모드(#351, lib/theme.ts): 이 브라우저에 기억하고 바로 바꾼다. */}
+              <SettingsRow
+                action={
+                  <span aria-labelledby="theme-label" className="lang-choice" role="group">
+                    {themeChoices.map((item) => (
+                      <button
+                        aria-pressed={theme === item.value}
+                        className={theme === item.value ? "active" : undefined}
+                        key={item.value}
+                        onClick={() => {
+                          setTheme(item.value)
+                          saveTheme(item.value)
+                        }}
+                        type="button"
+                      >
+                        {t(item.label)}
+                      </button>
+                    ))}
+                  </span>
+                }
+                label={t("화면 테마")}
+                labelId="theme-label"
+                value={t("이 브라우저에서 밝게 · 어둡게 · 기기 설정 따라 볼 수 있어요.")}
               />
             </dl>
             {onMail && (

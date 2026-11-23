@@ -644,7 +644,7 @@ const en: Record<string, string> = {
   "연결하면 {provider}로도 로그인할 수 있어요.": "Link it to log in with {provider} too.",
   "보기": "View",
   "지금 로그인한 기기를 보고 다른 기기를 로그아웃시켜요.": "See the devices logged in now and log the others out.",
-  "화면의 언어와 받을 메일을 골라요.": "Choose the language and the emails you get.",
+  "화면의 언어와 테마, 받을 메일을 골라요.": "Choose the language, the theme and the emails you get.",
   "화면과 메일에 쓰는 언어예요.": "The language of the screens and emails.",
   "계정을 함께 쓰는 사람과 연결한 단체, 차단한 상대예요.": "Who shares this account, the groups you linked and the accounts you blocked.",
   "임원이 각자 이메일로 같은 계정에 들어와요.": "Officers sign in to the same account with their own email.",
