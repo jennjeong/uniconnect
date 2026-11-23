@@ -1539,6 +1539,7 @@ const en: Record<string, string> = {
   "아직 추천에서 뺀 회원이 없어요.": "No member has removed a recommendation yet.",
   "학생단체가 브랜드를 뺀 이유": "Student groups removing brands",
   "브랜드가 학생단체를 뺀 이유": "Brands removing student groups",
+  "늦은 입금 확인": "Confirm late transfer",
 }
 
 export default en
