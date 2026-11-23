@@ -3765,9 +3765,13 @@
   border-top: 1px solid var(--line);
 }
 
-.settings-action {
+.settings-row .settings-action {
   display: flex;
   justify-content: flex-end;
+  color: inherit;
+  font-size: inherit;
+  line-height: normal;
+  overflow-wrap: normal;
 }
 
 .row-button.danger {
@@ -3891,9 +3895,16 @@
     grid-template-columns: minmax(0, 1fr) auto;
   }
 
-  .settings-action {
+  .settings-row .settings-action {
     grid-column: 2;
     grid-row: 1 / span 2;
+  }
+
+  /* 세 칸짜리 화면 테마는 좁은 화면에서 설명 아래 한 줄을 다 쓴다. */
+  .settings-row .settings-action:has(.theme-choice) {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    justify-content: flex-start;
   }
 }
 
