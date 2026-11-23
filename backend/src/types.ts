@@ -213,6 +213,9 @@ export type Account = {
   // Proposal messages saved to send again (제안 문구 템플릿), at most
   // maxTemplates; {상대} and {행사} are filled in when one is used.
   templates?: ProposalTemplate[]
+  // 브랜드가 분기마다 정한 협찬 예산(원), "2026-Q4" 같은 분기를 키로 한다(#336, lib/budget.ts).
+  // 보이는 분기만 남긴다.
+  budgets?: Record<string, number>
   // 계정이 앱을 마지막으로 쓴 언어로, 메일에 쓴다. 앱이 알려 주기 전까지는
   // 한국어다.
   language?: "ko" | "en"

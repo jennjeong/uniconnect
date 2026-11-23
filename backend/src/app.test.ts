@@ -628,6 +628,62 @@ test("a member takes a partner out of its recommendations and can bring it back"
   assert.equal((await call("PUT", `/dismissed/${brandId}`, { reason: "거리가 멀어요" }, await login("학생단체"))).status, 403)
 })
 
+test("a brand sets a quarter's sponsorship budget and sees what it spent and has planned", async () => {
+  const { budgetQuarters, quarterOf, quarterRange } = await import("./lib/budget.js")
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  assert.equal(quarterOf("2026-11-24"), "2026-Q4")
+  assert.equal(quarterOf("2027-01-01"), "2027-Q1")
+  assert.deepEqual(budgetQuarters("2026-02-10"), ["2025-Q2", "2025-Q3", "2025-Q4", "2026-Q1", "2026-Q2", "2026-Q3"])
+  assert.deepEqual(quarterRange("2028-Q1"), { start: "2028-01-01", end: "2028-03-31" })
+
+  const today = todayInKorea()
+  const quarter = quarterOf(today)
+  const { token: brand } = await listedMember("budget@budget-cafe.kr", "budget-pass-123", "브랜드")
+  const database = getDatabase()
+  const account = database.accounts.find((item) => item.email === "budget@budget-cafe.kr")!
+  const sponsorship = (id: string, date: string, spend: number) => ({ id, groupName: "단체", eventName: "행사", date, spend, coupons: 0, visits: 0, sales: 0, targetRoas: 150 })
+  const ahead = addDays(today, 1)
+  database.sponsorships[account.id] = [
+    sponsorship("b1", today, 300_000),
+    // 내일이 다음 분기면 이번 분기 표에는 없다.
+    ...(quarterOf(ahead) === quarter ? [sponsorship("b2", ahead, 200_000)] : []),
+    sponsorship("b3", today, 0),
+    sponsorship("b4", "2001-01-01", 999_000),
+  ]
+
+  assert.equal((await call("PUT", "/analytics/budget", { quarter, amount: 1.5 }, brand)).status, 400)
+  assert.equal((await call("PUT", "/analytics/budget", { quarter, amount: -1 }, brand)).status, 400)
+  assert.equal((await call("PUT", "/analytics/budget", { quarter: "2001-Q1", amount: 1_000 }, brand)).status, 400)
+  const saved = await call("PUT", "/analytics/budget", { quarter, amount: 1_000_000 }, brand)
+  assert.equal(saved.status, 200)
+  const row = saved.data.quarters.find((item: { quarter: string }) => item.quarter === quarter)
+  assert.equal(row.budget, 1_000_000)
+  assert.equal(row.spent, 300_000)
+  assert.equal(row.planned, quarterOf(ahead) === quarter ? 200_000 : 0)
+  assert.equal(row.unpriced, 1)
+  assert.equal(saved.data.current, quarter)
+  // 보이는 분기만 보내고, 오래된 협찬은 어느 분기에도 들지 않는다.
+  assert.equal(saved.data.quarters.length, 6)
+  assert.ok(saved.data.quarters.every((item: { count: number; quarter: string }) => item.quarter === quarter || item.count <= 1))
+  const read = await call("GET", "/analytics/budget", undefined, brand)
+  assert.equal(read.data.editable, true)
+  assert.equal((await call("GET", "/auth/export", undefined, brand)).data.account.budgets[quarter], 1_000_000)
+  // 지우면 남는 예산이 없다.
+  const cleared = await call("PUT", "/analytics/budget", { quarter, amount: null }, brand)
+  assert.equal(cleared.data.quarters.find((item: { quarter: string }) => item.quarter === quarter).budget, null)
+  assert.equal(getDatabase().accounts.find((item) => item.id === account.id)?.budgets, undefined)
+
+  // 단체, 데모 브랜드, 방문자.
+  const { token: group } = await listedMember("budget@syu.ac.kr", "budget-pass-123")
+  assert.equal((await call("GET", "/analytics/budget", undefined, group)).status, 403)
+  assert.equal((await call("PUT", "/analytics/budget", { quarter, amount: 1_000 }, await login("브랜드"))).status, 403)
+  const visitor = await call("GET", "/analytics/budget")
+  assert.equal(visitor.status, 200)
+  assert.equal(visitor.data.editable, false)
+  assert.equal((await call("PUT", "/analytics/budget", { quarter, amount: 1_000 })).status, 401)
+  delete database.sponsorships[account.id]
+})
+
 test("security: tokens, stale prices, refunds, late edits, codes and invitations are guarded", async () => {
   const { parseValue } = await import("./lib/fees.js")
   const { markCancelled, markPaid, orderFor, paymentsOf } = await import("./lib/billing.js")
