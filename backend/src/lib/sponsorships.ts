@@ -23,7 +23,7 @@ export function recordSponsorship(
 // 수, 추정 매출, 행사장이 방식별로 확인한 것, 낸 가치, 단체가 정한 ROAS
 // 목표. (측정이 로드될 때 모든 협찬사에게 몫을 주는데, 몫이 없으면 행사
 // 자체의 수치를 쓴다.)
-function withLiveFigures(database: Database, sponsorship: Sponsorship): Sponsorship {
+export function withLiveFigures(database: Database, sponsorship: Sponsorship): Sponsorship {
   const measurement = database.measurements.find((item) => item.eventId === sponsorship.eventId)
   if (!measurement) return sponsorship
   const sponsor = measurement.sponsors.find((item) => item.id === sponsorship.id)

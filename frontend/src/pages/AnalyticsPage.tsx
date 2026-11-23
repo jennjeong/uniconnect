@@ -1,6 +1,7 @@
 import { Fragment, useState, type CSSProperties, type ReactNode } from "react"
 
 import { AnimatedNumber } from "../components/AnimatedNumber"
+import { BudgetCard } from "../components/BudgetCard"
 import { CampusPortfolio } from "../components/CampusPortfolio"
 import { Icon } from "../components/Icon"
 import { PageIntro } from "../components/PageIntro"
@@ -329,6 +330,7 @@ export function AnalyticsPage({
           </div>
         </>
       )}
+      <BudgetCard />
       <CampusPortfolio onOpenPlan={onOpenPlan} />
       {campaign}
     </section>

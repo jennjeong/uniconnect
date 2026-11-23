@@ -507,6 +507,8 @@ export type Account = {
   terms?: { name: string; from: string }[]
   // 다시 보내려고 저장해 둔 제안 메시지. {상대}와 {행사}가 채워진다.
   templates?: ProposalTemplate[]
+  // 분기별 협찬 예산(원), "2026-Q4" 같은 분기가 키다(#336).
+  budgets?: Record<string, number>
   // 이메일을 받는 언어와, 계정이 끈 알림 메일의 종류.
   language?: "ko" | "en"
   mailOff?: MailKind[]
@@ -1756,3 +1758,20 @@ export type ProgramMargin = { revenue: number; directCost: number; hours: number
 export type AdminProgramGroup = { id: string; name: string; school: string; events: { id: string; name: string; date: string; people: string }[] }
 
 export type ProgramCandidateDraft = { groupId: string; eventId?: string; note?: string }
+
+// 성과 분석의 분기별 협찬 예산(backend lib/budget.ts).
+export type BudgetQuarter = {
+  quarter: string
+  start: string
+  end: string
+  budget: number | null
+  // 행사 날이 지난 협찬의 금액.
+  spent: number
+  // 수락했고 아직 날이 오지 않은 협찬의 금액.
+  planned: number
+  count: number
+  // 금액이 정해지지 않아 더하지 않은 협찬 수.
+  unpriced: number
+}
+
+export type BudgetView = { current: string; quarters: BudgetQuarter[]; editable: boolean }

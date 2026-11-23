@@ -6259,6 +6259,129 @@ th[aria-sort="descending"] .console-sort span {
   }
 }
 
+/* 성과 분석의 분기 협찬 예산 (components/BudgetCard.tsx, #336): 이번 분기의 네 수치와
+   집행 · 예정 막대, 다른 분기의 표, 예산을 적는 칸. */
+.budget-card {
+  display: grid;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.budget-now {
+  display: grid;
+  gap: 12px;
+}
+
+.budget-quarter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin: 0;
+}
+
+.budget-quarter strong {
+  font-size: 1.125rem;
+  font-weight: var(--weight-display);
+}
+
+.budget-quarter small {
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.budget-over {
+  color: var(--red);
+}
+
+.budget-meter {
+  display: flex;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--fill);
+}
+
+.budget-meter-spent {
+  background: var(--goal-met);
+}
+
+.budget-meter-planned {
+  background: var(--point-bright);
+  opacity: 0.45;
+}
+
+.budget-edit {
+  justify-self: start;
+}
+
+.budget-editor {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--point-tint);
+}
+
+.budget-editor label {
+  display: grid;
+  gap: 6px;
+  max-width: 280px;
+  font-size: 0.875rem;
+  font-weight: var(--weight-label);
+}
+
+.budget-editor input {
+  height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--ring);
+  font-size: 0.9375rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.budget-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.budget-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.budget-table th,
+.budget-table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--line);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.budget-table th:first-child {
+  text-align: left;
+}
+
+.budget-table thead th {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: var(--weight-label);
+}
+
+.budget-table tbody th {
+  font-weight: var(--weight-label);
+}
+
+.budget-table-wrap {
+  overflow-x: auto;
+  border-radius: 12px;
+}
+
 /* 브랜드의 내 정보에 있는 요금제 (components/PlanCard.tsx): 쓰고 있는 요금제,
    그다음 무료 요금제와 Pro를 나란히, 현재 것은 진한 파랑. */
 .plan-status {

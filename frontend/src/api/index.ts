@@ -92,6 +92,7 @@ import type {
   PlanTable,
   RefundQuote,
   PlatformStats,
+  BudgetView,
   Portfolio,
   PostDraft,
   PremiumReport,
@@ -401,6 +402,8 @@ export const api = {
   localReport: (month?: string) => request<LocalReport>(`/local/report${month ? `?month=${encodeURIComponent(month)}` : ""}`),
   billing: () => request<BillingInfo>("/billing"),
   portfolio: () => request<{ locked: true } | { locked: false; portfolio: Portfolio }>("/analytics/portfolio"),
+  budget: () => request<BudgetView>("/analytics/budget"),
+  setBudget: (quarter: string, amount: number | null) => request<BudgetView>("/analytics/budget", { method: "PUT", body: { quarter, amount } }),
   partnerRequest: (wanted: string) =>
     request<{ plan: BillingInfo["plan"] }>("/billing/partner-requests", { method: "POST", body: { request: wanted } }),
   order: (kind: PaymentKind, targetId: string) =>

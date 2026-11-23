@@ -954,6 +954,10 @@ const en: Record<string, string> = {
   "추천에서 뺄 상대를 찾을 수 없어요.": "We couldn't find that partner to remove.",
   "추천에서 빼는 이유를 골라 주세요.": "Pick a reason for removing the recommendation.",
   "관심 없음은 200곳까지 표시할 수 있어요. 몇 곳을 되돌려 주세요.": "You can mark up to 200 as not interested. Undo a few first.",
+  "브랜드만 예산을 볼 수 있어요.": "Only brands have a sponsorship budget.",
+  "데모 계정은 예산을 저장할 수 없어요.": "The demo accounts can't save a budget.",
+  "지난 3개 분기부터 다음 2개 분기까지 정할 수 있어요.": "You can set the last 3 quarters through the next 2.",
+  "예산은 0원부터 100억 원까지 원 단위로 적어 주세요.": "Enter a budget in won, from 0 to 10 billion.",
 }
 
 export default en
