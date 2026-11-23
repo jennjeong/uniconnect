@@ -1,4 +1,4 @@
-import { orderExpiry, paymentsOf, productOf, withVat } from "./billing.js"
+import { orderExpiry, paymentsOf, priceOrder } from "./billing.js"
 import { HttpError } from "./errors.js"
 import { notify } from "./notices.js"
 import { isDemoId } from "./reviews.js"
@@ -97,7 +97,7 @@ function quotedSame(database: Database, payment: Payment) {
   const account = database.accounts.find((item) => item.id === payment.accountId)
   if (!account) return false
   try {
-    return withVat(productOf(payment.kind).quote(database, account, payment.targetId).amount) === payment.amount
+    return priceOrder(database, account, payment.kind, payment.targetId, payment.promo?.code, payment.id).amount === payment.amount
   } catch {
     return false
   }

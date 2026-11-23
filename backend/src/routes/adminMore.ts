@@ -26,6 +26,7 @@ import { sendMail } from "../lib/mailer.js"
 import { photos, photoType } from "../lib/photos.js"
 import { approveReferralReward, referralRewardsOf, rejectReferralReward, tellReferrers, waitingReferralRewards } from "../lib/referrals.js"
 import { importBatches, importLimits, importListings, removeBatch } from "../lib/listingImport.js"
+import { normalizeCode, parsePromo, promoCodesOf, promoRows } from "../lib/promo.js"
 import { linkShop, tellInviters } from "../lib/shopInvites.js"
 import { memberDetail } from "../lib/console.js"
 import { backupStatus } from "../lib/backupStatus.js"
@@ -359,6 +360,33 @@ adminMoreRouter.delete("/listings/imports/:batch", async (req, res) => {
   logAdmin(database, "listings-import-removed", { kind: "site", id: String(req.params.batch) }, `${result.removed}`)
   await saveDatabase()
   res.json({ ...result, batches: importBatches(database) })
+})
+
+// 프로모션 코드(#346, lib/promo.ts): 목록, 만들기, 끄기. 끈 코드는 다시 켜지 않는다.
+adminMoreRouter.get("/promos", async (req, res) => {
+  await requireAdmin(req)
+  res.json({ promos: promoRows(getDatabase()) })
+})
+
+adminMoreRouter.post("/promos", async (req, res) => {
+  await requireAdmin(req)
+  const database = getDatabase()
+  const promo = parsePromo(database, (req.body ?? {}) as Record<string, unknown>)
+  promoCodesOf(database).push(promo)
+  logAdmin(database, "promo-created", { kind: "site", id: promo.code }, promo.percent ? `${promo.percent}%` : `${promo.amountOff}`)
+  await saveDatabase()
+  res.json({ promos: promoRows(database) })
+})
+
+adminMoreRouter.post("/promos/:code/disable", async (req, res) => {
+  await requireAdmin(req)
+  const database = getDatabase()
+  const promo = promoCodesOf(database).find((item) => item.code === normalizeCode(req.params.code))
+  if (!promo) throw new HttpError(404, "없는 프로모션 코드예요.")
+  promo.disabledAt ??= new Date().toISOString()
+  logAdmin(database, "promo-disabled", { kind: "site", id: promo.code })
+  await saveDatabase()
+  res.json({ promos: promoRows(database) })
 })
 
 // 시연 전에 예시 데이터를 시드대로 되돌린다.

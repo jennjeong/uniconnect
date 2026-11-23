@@ -241,6 +241,8 @@ export type PaymentKind = "fee" | "report" | "pro" | "ad" | "local" | "program"
 
 export type Payment = {
   id: string
+  // 쓴 프로모션 코드와 공급가액에서 뺀 금액(#346).
+  promo?: { code: string; discount: number }
   accountName: string
   kind: PaymentKind
   targetId: string
@@ -1784,4 +1786,22 @@ export type ImportAnswer = {
   valid: number
   results: { row: number; name: string; ok: boolean; message?: string }[]
   batches: ImportBatch[]
+}
+
+// 운영자가 만든 프로모션 코드(#346, backend lib/promo.ts).
+export type PromoRow = {
+  code: string
+  note?: string
+  percent?: number
+  amountOff?: number
+  kinds: PaymentKind[]
+  startsOn: string
+  endsOn: string
+  maxUses: number
+  createdAt: string
+  disabledAt?: string
+  state: "active" | "scheduled" | "ended" | "disabled"
+  used: number
+  paid: number
+  discounted: number
 }

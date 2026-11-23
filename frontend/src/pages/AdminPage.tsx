@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 
 import { ApiError, api, errorMessage } from "../api"
+import { PromoCodes } from "./AdminPromos"
 import logo from "../assets/brand/uniconnect_horizontal.svg"
 import { Icon, type IconName } from "../components/Icon"
 import { PasswordField } from "../components/PasswordField"
@@ -402,6 +403,7 @@ function PaymentCard({
             <em className="console-tag">{t("{date} 자동 취소", { date: formatDateTime(payment.expiresAt) })}</em>
           )}
           {payment.status === "cancelled" && payment.expiredAt && <em className="console-tag">{t("기한이 지나 취소")}</em>}
+          {payment.promo && <em className="console-tag">{t("코드 {code} −{amount}", { code: payment.promo.code, amount: fullWon(payment.promo.discount) })}</em>}
           <time dateTime={payment.paidAt ?? payment.requestedAt}>{formatDateTime(payment.paidAt ?? payment.requestedAt)}</time>
         </span>
       </div>
@@ -1553,6 +1555,8 @@ export function AdminPage({ onNotice }: { onNotice: (message: string) => void })
         {section === "proposals" && <Proposals onNotice={onNotice} token={token} />}
 
         {section === "payments" && <RevenuePanel payments={payments} />}
+
+        {section === "payments" && <PromoCodes onNotice={onNotice} token={token} />}
 
         {section === "payments" && (
           <section className="console-card">

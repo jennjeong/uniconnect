@@ -515,6 +515,8 @@ const actionLabels: Record<string, string> = {
   "demo-reset": "예시 데이터 초기화",
   "listings-imported": "목록 대량 등록",
   "listings-import-removed": "대량 등록 묶음 삭제",
+  "promo-created": "프로모션 코드 만들기",
+  "promo-disabled": "프로모션 코드 끄기",
   "proposal-nudged": "답 부탁 알림",
   "post-hidden": "모집 글 숨김",
   "post-shown": "모집 글 다시 보임",

@@ -96,6 +96,7 @@ import type {
   ImportAnswer,
   ImportBatch,
   Portfolio,
+  PromoRow,
   PostDraft,
   PremiumReport,
   ProfileDraft,
@@ -408,8 +409,15 @@ export const api = {
   setBudget: (quarter: string, amount: number | null) => request<BudgetView>("/analytics/budget", { method: "PUT", body: { quarter, amount } }),
   partnerRequest: (wanted: string) =>
     request<{ plan: BillingInfo["plan"] }>("/billing/partner-requests", { method: "POST", body: { request: wanted } }),
-  order: (kind: PaymentKind, targetId: string) =>
-    request<PaymentOrder>("/billing/orders", { method: "POST", body: { kind, targetId } }),
+  order: (kind: PaymentKind, targetId: string, promo?: string) =>
+    request<PaymentOrder>("/billing/orders", { method: "POST", body: { kind, targetId, ...(promo ? { promo } : {}) } }),
+  checkPromo: (kind: PaymentKind, targetId: string, code: string) =>
+    request<{ code: string; discount: number; supply: number; amount: number }>("/billing/promo", { method: "POST", body: { kind, targetId, code } }),
+  adminPromos: (token: string) => request<{ promos: PromoRow[] }>("/admin/promos", { headers: { "X-Admin-Token": token } }),
+  adminCreatePromo: (token: string, promo: Record<string, unknown>) =>
+    request<{ promos: PromoRow[] }>("/admin/promos", { method: "POST", body: promo, headers: { "X-Admin-Token": token } }),
+  adminDisablePromo: (token: string, code: string) =>
+    request<{ promos: PromoRow[] }>(`/admin/promos/${encodeURIComponent(code)}/disable`, { method: "POST", body: {}, headers: { "X-Admin-Token": token } }),
   askTransfer: (orderId: string) =>
     request<{ order: Payment }>(`/billing/orders/${encodeURIComponent(orderId)}/transfer`, { method: "POST" }),
   cancelOrder: (orderId: string) =>

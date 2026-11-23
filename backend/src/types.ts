@@ -933,9 +933,26 @@ export type ShopInvite = {
 // (lib/ads.ts)이 있다.
 export type PaymentKind = "fee" | "report" | "pro" | "ad" | "local" | "program"
 
+// 프로모션 코드(#346). percent나 amountOff 중 하나로 공급가액에서 빼고, kinds가 비었으면
+// 모든 상품에 쓴다. 기간은 한국 날짜이며, 대기 중이거나 결제된 주문만 횟수에 든다.
+export type PromoCode = {
+  code: string
+  note?: string
+  percent?: number
+  amountOff?: number
+  kinds: PaymentKind[]
+  startsOn: string
+  endsOn: string
+  maxUses: number
+  createdAt: string
+  disabledAt?: string
+}
+
 export type Payment = {
   // Toss Payments가 보는 주문 id이기도 하다.
   id: string
+  // 쓴 프로모션 코드와 공급가액에서 뺀 금액(#346, lib/promo.ts). supply는 뺀 뒤의 값이다.
+  promo?: { code: string; discount: number }
   // 결제한 계정이다. 결제 기록은 5년간 보관해야 하므로 계정이 떠난 뒤에는
   // 이름만 남기고, 기간이 지나면 지운다(lib/paymentRetention.ts).
   accountId: string
@@ -1063,6 +1080,8 @@ export type Database = {
   posts: BoardPost[]
   // 브랜드가 냈거나 내라고 요청받은 돈이다(lib/billing.ts).
   payments?: Payment[]
+  // 운영자가 만든 프로모션 코드(#346, lib/promo.ts).
+  promoCodes?: PromoCode[]
   // 진행 중인 Kakao나 Naver 로그인이다(routes/social.ts). 시작한 흐름마다의
   // state와, 끝난 로그인을 페이지에 넘기는 일회용 코드이며, 둘 다 해시로 두고
   // 몇 분만 둔다.
@@ -1172,6 +1191,8 @@ export type AdminAction =
   | "demo-reset"
   | "listings-imported"
   | "listings-import-removed"
+  | "promo-created"
+  | "promo-disabled"
   | "proposal-nudged"
   | "post-hidden"
   | "post-shown"
