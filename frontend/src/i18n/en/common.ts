@@ -241,6 +241,10 @@ const en: Record<string, string> = {
   "협찬 제안 관리@eyebrow": "Proposal Inbox",
   "협찬을 찾아요@eyebrow": "Sponsors Wanted",
   "메뉴@button": "Menu",
+  "업종 · 분야가 맞지 않아요": "Wrong industry or field",
+  "거리가 멀어요": "Too far away",
+  "규모가 맞지 않아요": "Wrong size",
+  "이미 알고 있는 곳이에요": "Already know them",
 }
 
 export default en

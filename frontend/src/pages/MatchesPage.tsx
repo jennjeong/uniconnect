@@ -11,12 +11,13 @@ import { NearbyPlaces } from "../components/NearbyPlaces"
 import { PageIntro } from "../components/PageIntro"
 import { ProposalControl } from "../components/ProposalControl"
 import { WorkCard } from "../components/WorkCard"
+import { DismissedList } from "../components/DismissedList"
 import { brandIndustries } from "../data/industries"
 import { useEntryState } from "../hooks/useEntryState"
 import { t, tc } from "../i18n"
 import { nearestFirst, shownTags } from "../lib/distance"
 import { matchesQuery } from "../lib/search"
-import type { Industry, Match, NearbyPlace, RequestStatus } from "../types"
+import type { DismissedListing, Industry, Match, NearbyPlace, RequestStatus } from "../types"
 
 // 범위: 무엇을 보는지. 정렬과 업종은 범위와 따로 고른다(components/CatalogControls.tsx).
 // '학교 앞 가게'는 정렬이 아니라 다른 목록(카카오의 실제 가게)이라 범위다.
@@ -41,6 +42,9 @@ export function MatchesPage({
   undelivered = [],
   saved,
   onToggleSave,
+  dismissed,
+  onDismiss,
+  onUndismiss,
   onOpenDetail,
   onPropose,
   onCancelProposal,
@@ -63,6 +67,10 @@ export function MatchesPage({
   // 계정이 저장한 브랜드(찜)를 최신순으로, 그리고 각 카드의 하트.
   saved: string[]
   onToggleSave: (match: Match) => void
+  // 회원만: 관심 없음으로 추천에서 뺀 곳(#341), 추천 탭 카드의 빼기와 되돌리기.
+  dismissed?: DismissedListing[]
+  onDismiss?: (match: Match) => void
+  onUndismiss?: (listingId: string) => void
   onOpenDetail: (match: Match) => void
   onPropose: (match: Match) => void
   onCancelProposal: (match: Match) => void
@@ -132,6 +140,7 @@ export function MatchesPage({
       saved={saved.includes(match.id)}
       onToggleSave={() => onToggleSave(match)}
       compared={compare.has(match.id)}
+      onDismiss={scope === "추천" && dismissed && onDismiss ? () => onDismiss(match) : undefined}
       onToggleCompare={() => compare.toggle(match.id)}
       tags={
         <>
@@ -299,6 +308,8 @@ export function MatchesPage({
           })}
         </ul>
       )}
+
+      {scope === "추천" && dismissed && onUndismiss && <DismissedList items={dismissed} onUndo={onUndismiss} />}
 
       <CompareTray
         items={compare.ids.flatMap((id) => new Map([...matches, ...brands].map((item) => [item.id, item])).get(id) ?? [])}

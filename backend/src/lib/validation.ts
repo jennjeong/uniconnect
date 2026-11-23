@@ -123,6 +123,10 @@ export const industries: readonly Industry[] = ["cafe", "photo", "wellness", "pe
 // 회원이 다른 회원을 신고하는 이유(routes/reports.ts), frontend/src/data/reports.ts.
 export const reportReasons = ["스팸 · 광고", "욕설 · 괴롭힘", "사기 의심", "기타"]
 
+// 추천에서 상대를 뺄 때 고르는 이유(관심 없음, #341). frontend/src/data/dismiss.ts와
+// 맞춰 둔다(lib/lists.sync.test.ts가 검사한다). 운영자는 분석에서 이유별 수만 본다.
+export const dismissReasons = ["업종 · 분야가 맞지 않아요", "거리가 멀어요", "규모가 맞지 않아요", "이미 알고 있는 곳이에요", "기타"]
+
 // 알림 이메일의 종류. 내 정보가 나열하는 순서다(frontend/src/data/mail.ts,
 // lib/lists.sync.test.ts가 검사한다).
 export const mailKinds: MailKind[] = ["proposals", "sponsorships", "messages", "reminders", "digest"]

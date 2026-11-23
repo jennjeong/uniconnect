@@ -47,6 +47,7 @@ import { adminDisputesRouter, disputesRouter } from "./routes/disputes.js"
 import { blocksRouter, reportsRouter } from "./routes/reports.js"
 import { reviewsRouter } from "./routes/reviews.js"
 import { savedRouter } from "./routes/saved.js"
+import { dismissedRouter } from "./routes/dismissed.js"
 import { adminProgramsRouter, programsRouter } from "./routes/programs.js"
 import { searchesRouter } from "./routes/searches.js"
 import { foldCounts, foldInBackground, movePassesToRows, passSql } from "./lib/passRows.js"
@@ -84,7 +85,7 @@ const jsonBody = (limit: string) =>
 
 // 현장 집계(측정의 스캔, 쿠폰, 방문)를 답에 담지 않는 경로다(app.ts의 집계 합치기).
 // 새 경로가 집계를 보여 주면 여기서 빼야 한다.
-const countFree = /^\/(check-in|team|places|invites|conversations|inquiries|reports|blocks|saved|saved-searches|calendar|board|errors|announcements)(\/|$)/
+const countFree = /^\/(check-in|team|places|invites|conversations|inquiries|reports|blocks|saved|saved-searches|dismissed|calendar|board|errors|announcements)(\/|$)/
 
 export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   const app = express()
@@ -223,6 +224,7 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   app.use("/api/disputes", disputesRouter)
   app.use("/api/blocks", blocksRouter)
   app.use("/api/saved", savedRouter)
+  app.use("/api/dismissed", dismissedRouter)
   app.use("/api/saved-searches", searchesRouter)
   app.use("/api/calendar", calendarRouter)
   app.use("/api/board", boardRouter)

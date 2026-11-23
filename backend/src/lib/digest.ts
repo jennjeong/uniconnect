@@ -1,4 +1,5 @@
 import { browse, ownersOf, partnerCatalogOf } from "./catalog.js"
+import { dismissedIds } from "./dismissed.js"
 import { todayInKorea } from "./dates.js"
 import { notify } from "./notices.js"
 import { sendInBatches } from "./reminders.js"
@@ -28,8 +29,9 @@ function joinedListings(database: Database, catalog: Catalog, now: Date) {
 // 없으면 목록을 만들지 않는다(대부분의 주가 그렇다).
 export function newPartners(database: Database, account: Account, now = new Date(), joined = joinedListings(database, catalogOf(account), now)) {
   if (joined.size === 0) return []
+  const dismissed = dismissedIds(database, account)
   return browse(database, catalogOf(account), account)
-    .filter((listing) => joined.has(listing.id))
+    .filter((listing) => joined.has(listing.id) && !dismissed.has(listing.id))
     .slice(0, named)
 }
 

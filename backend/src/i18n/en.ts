@@ -950,6 +950,10 @@ const en: Record<string, string> = {
   "마감일은 행사 마지막 날({date})까지로 골라 주세요.": "Pick a deadline on or before the event's last day ({date}).",
   "기한이 지난 뒤 주문 내용이 바뀌어 다시 열 수 없어요. 입금한 돈은 돌려 드리고 새로 주문하도록 안내해 주세요.": "The order changed after its deadline passed, so it can't be reopened. Return the transfer and ask them to order again.",
   "지금은 인증 메일을 보낼 수 없어요. 잠시 뒤에 다시 시도하거나 도움말 센터로 문의해 주세요.": "We can't send verification emails right now. Try again later or ask us through the help center.",
+  "체험 계정에서는 추천을 뺄 수 없어요. 가입하면 쓸 수 있어요.": "The demo accounts can't remove recommendations. Sign up to use it.",
+  "추천에서 뺄 상대를 찾을 수 없어요.": "We couldn't find that partner to remove.",
+  "추천에서 빼는 이유를 골라 주세요.": "Pick a reason for removing the recommendation.",
+  "관심 없음은 200곳까지 표시할 수 있어요. 몇 곳을 되돌려 주세요.": "You can mark up to 200 as not interested. Undo a few first.",
 }
 
 export default en

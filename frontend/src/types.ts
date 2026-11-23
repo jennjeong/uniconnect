@@ -30,6 +30,9 @@ export type Trust = { response: { count: number; rate?: number }; fulfilment?: {
 export type AgreementClause = { id: string; kind: string; title: string; text: string }
 
 // 저장한 관심 조건(backend lib/savedSearches.ts). fresh는 저장한 뒤 새로 맞아 아직 보지 않은 상대다.
+// 추천에서 뺀(관심 없음) 상대 하나(#341, GET /api/dismissed).
+export type DismissedListing = { listingId: string; reason: string; at: string; name: string }
+
 export type SavedSearch = {
   id: string
   name?: string
@@ -1063,6 +1066,7 @@ export type NavLabel =
   | "성과 분석"
 
 export type ModalName =
+  | "dismiss"
   | "portfolio-history"
   | "plan"
   | "compare"
@@ -1455,6 +1459,7 @@ export type AdminInsights = {
   kpi: { key: "signups" | "proposals" | "revenue"; actual: number; target: number | null }[]
   searches: { term: string; count: number }[]
   // 같은 검색을 방문자, 데모 계정, 회원별로도 센 것이다. since는 나눠 세기 시작한 때다.
+  dismissals?: { reason: string; groups: number; brands: number }[]
   searchesBySource?: { since: string | null; visitor: { term: string; count: number }[]; demo: { term: string; count: number }[]; member: { term: string; count: number }[] }
   // 캠퍼스 캠페인의 견적 → 결제 전환과 재주문이다(#404). 비율은 퍼센트이며, 셀 것이 없으면 null이다.
   programs: { requested: number; quoted: number; paid: number; quoteToPaid: number | null; brands: number; repeatBrands: number; repeatRate: number | null }

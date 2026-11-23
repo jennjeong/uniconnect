@@ -11,6 +11,7 @@ import { defaultMethods, isVenueMethod, methodInfo, methodKinds } from "../data/
 import { placeCategories } from "../data/places"
 import { mailKinds } from "../data/mail"
 import { reportReasons } from "../data/reports"
+import { dismissReasons } from "../data/dismiss"
 import { carriers } from "../data/carriers"
 import { audienceYears, eventKinds, handoutWays, logoSpots, promoPosts } from "../data/eventDetails"
 import { reviewTags } from "../data/reviews"
@@ -44,6 +45,7 @@ describe("the screens offer the choices the server takes", () => {
     expect(brandOffers).toEqual(server.brandOffers)
     expect(inquiryCategories).toEqual(server.inquiryCategories)
     expect(reportReasons).toEqual(server.reportReasons)
+    expect(dismissReasons).toEqual(server.dismissReasons)
     expect(carriers).toEqual(server.carriers)
     expect(eventKinds).toEqual(server.eventKinds)
     expect(audienceYears).toEqual(server.audienceYears)

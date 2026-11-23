@@ -307,6 +307,22 @@ export function Insights({ token, onNotice }: { token: string; onNotice: Notice 
           )
         })()}
       </section>
+      {data.dismissals && (
+        <section className="console-card span-2" aria-label={t("추천에서 뺀 이유")}>
+          <h2>{t("추천에서 뺀 이유")}</h2>
+          <p className="field-hint">{t("회원이 관심 없음을 고른 이유예요. 누가 누구를 뺐는지는 보이지 않아요. 추천 점수를 고칠 때 참고해요.")}</p>
+          {data.dismissals.every((row) => row.groups + row.brands === 0) ? (
+            <p className="day-empty">{t("아직 추천에서 뺀 회원이 없어요.")}</p>
+          ) : (
+            <>
+              <h3>{t("학생단체가 브랜드를 뺀 이유")}</h3>
+              <Bars rows={data.dismissals.map((row) => ({ label: t(row.reason), count: row.groups }))} />
+              <h3>{t("브랜드가 학생단체를 뺀 이유")}</h3>
+              <Bars rows={data.dismissals.map((row) => ({ label: t(row.reason), count: row.brands }))} />
+            </>
+          )}
+        </section>
+      )}
       <section className="console-card span-2" aria-label={t("캠퍼스 캠페인 전환")}>
         <h2>{t("캠퍼스 캠페인 전환")}</h2>
         <p className="field-hint">{t("견적을 받은 캠페인 중 결제한 비율과, 결제한 브랜드 중 다시 결제한 비율이에요.")}</p>

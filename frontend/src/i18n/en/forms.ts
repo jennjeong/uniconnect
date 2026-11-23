@@ -1523,6 +1523,22 @@ const en: Record<string, string> = {
   "공급가액 {amount}": "Net {amount}",
   "부가세 {amount}": "VAT {amount}",
   "운영자가 내준 무료 이용과 데모 계정의 결제는 빼요. 카드 결제가 테스트 모드인 동안에는 카드로 실제 돈이 오가지 않았어요.": "Free grants by operators and the demo accounts' payments are left out. While card payment is in test mode, card payments moved no real money.",
+  "{name} 추천에서 빼기": "Remove {name} from recommendations",
+  "다음 추천부터 빠져요. 전체 목록에는 그대로 있어요.": "They leave your next recommendations. They stay in the full list.",
+  "빼는 이유": "Reason",
+  "추천에서 빼기": "Remove from recommendations",
+  "추천을 고르려면 로그인해 주세요.": "Log in to tune your recommendations.",
+  "추천에서 뺐어요. 추천 탭 아래에서 되돌릴 수 있어요.": "Removed from recommendations. You can undo it below the Recommended tab.",
+  "다시 추천에 넣었어요.": "Back in your recommendations.",
+  "{name} 관심 없음": "Not interested in {name}",
+  "관심 없음": "Not interested",
+  "추천에서 뺀 곳 {count}": "Removed from recommendations ({count})",
+  "{name} 다시 추천받기": "Recommend {name} again",
+  "추천에서 뺀 이유": "Why members removed recommendations",
+  "회원이 관심 없음을 고른 이유예요. 누가 누구를 뺐는지는 보이지 않아요. 추천 점수를 고칠 때 참고해요.": "The reasons members gave for Not interested, without who removed whom. Use them when tuning the match score.",
+  "아직 추천에서 뺀 회원이 없어요.": "No member has removed a recommendation yet.",
+  "학생단체가 브랜드를 뺀 이유": "Student groups removing brands",
+  "브랜드가 학생단체를 뺀 이유": "Brands removing student groups",
 }
 
 export default en

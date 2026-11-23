@@ -18,6 +18,9 @@ export type PortfolioItem = { title: string; detail: string }
 
 // 반대편이 둘러보는 브랜드나 학생단체의 리스팅이다. 계정은 내 정보에서 자기
 // 리스팅을 고친다.
+// 추천에서 뺀(관심 없음) 상대 하나와 그 이유다(#341). 이유는 validation.ts의 dismissReasons 중 하나다.
+export type DismissedListing = { listingId: string; reason: string; at: string }
+
 // 저장한 관심 조건 하나다(lib/savedSearches.ts). known은 이미 맞았던 상대(다시 알리지 않음),
 // fresh는 저장한 뒤 새로 맞아 아직 보지 않은 상대다.
 export type SavedSearch = {
@@ -1048,6 +1051,8 @@ export type Database = {
   saved: Record<string, string[]>
   // 계정 id마다 저장한 관심 조건이다(lib/savedSearches.ts, #338).
   savedSearches?: Record<string, SavedSearch[]>
+  // 계정 id마다 추천에서 뺀 상대다(관심 없음, #341, routes/dismissed.ts). 최신순.
+  dismissed?: Record<string, DismissedListing[]>
   // 모집 게시판이다(routes/board.ts).
   posts: BoardPost[]
   // 브랜드가 냈거나 내라고 요청받은 돈이다(lib/billing.ts).

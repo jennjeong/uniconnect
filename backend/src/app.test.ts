@@ -595,6 +595,39 @@ test("a member keeps up to ten proposal templates; the demo accounts keep none",
   assert.equal((await call("PUT", "/auth/templates", { templates: [] }, await login("학생단체"))).status, 403)
 })
 
+test("a member takes a partner out of its recommendations and can bring it back", async () => {
+  await listedMember("dismiss@dismiss-cafe.kr", "dismiss-pass-123", "브랜드")
+  const { token: group } = await listedMember("dismiss@syu.ac.kr", "dismiss-pass-123")
+  // 이 단체에게 가장 잘 맞는 브랜드를 뺀다(앞선 테스트의 브랜드 회원도 목록에 있다).
+  const before = (await call("GET", "/matches", undefined, group)).data.matches as { id: string }[]
+  assert.ok(before.length > 0)
+  const brandId = before[0].id
+  assert.equal((await call("PUT", `/dismissed/${brandId}`, { reason: "아무 말" }, group)).status, 400)
+  assert.equal((await call("PUT", "/dismissed/nope", { reason: "거리가 멀어요" }, group)).status, 404)
+  assert.equal((await call("PUT", `/dismissed/${brandId}`, { reason: "거리가 멀어요" }, group)).status, 204)
+  // 추천에서는 빠지고, 전체 목록에는 그대로 있다.
+  assert.ok(!(await call("GET", "/matches", undefined, group)).data.matches.some((item: { id: string }) => item.id === brandId))
+  assert.ok((await call("GET", "/brands", undefined, group)).data.brands.some((item: { id: string }) => item.id === brandId))
+  const listed = await call("GET", "/dismissed", undefined, group)
+  assert.equal(listed.data.dismissed[0].listingId, brandId)
+  assert.equal(listed.data.dismissed[0].reason, "거리가 멀어요")
+  assert.equal((await call("GET", "/auth/export", undefined, group)).data.dismissed.length, 1)
+  // 운영자 분석은 이유별 수만 센다.
+  const { config: settings } = await import("./config.js")
+  const savedToken = settings.adminToken
+  settings.adminToken = "test-admin-token"
+  try {
+    const response = await fetch(`${baseUrl}/admin/insights`, { headers: { "X-Admin-Token": "test-admin-token" } })
+    const insights = (await response.json()) as { dismissals: { reason: string; groups: number }[] }
+    assert.equal(insights.dismissals.find((row) => row.reason === "거리가 멀어요")?.groups, 1)
+  } finally {
+    settings.adminToken = savedToken
+  }
+  assert.equal((await call("DELETE", `/dismissed/${brandId}`, undefined, group)).status, 204)
+  assert.ok((await call("GET", "/matches", undefined, group)).data.matches.some((item: { id: string }) => item.id === brandId))
+  assert.equal((await call("PUT", `/dismissed/${brandId}`, { reason: "거리가 멀어요" }, await login("학생단체"))).status, 403)
+})
+
 test("security: tokens, stale prices, refunds, late edits, codes and invitations are guarded", async () => {
   const { parseValue } = await import("./lib/fees.js")
   const { markCancelled, markPaid, orderFor, paymentsOf } = await import("./lib/billing.js")

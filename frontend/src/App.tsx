@@ -77,6 +77,7 @@ import type {
   Inquiry,
   MailKind,
   Match,
+  DismissedListing,
   MetricKind,
   Metrics,
   ModalName,
@@ -122,6 +123,7 @@ const InsightPage = lazyPage(() => import("./pages/InsightPage").then((module) =
 const TwoFactorModal = lazyPage(() => import("./modals/TwoFactorModal").then((module) => ({ default: module.TwoFactorModal })))
 const PlanModal = lazyPage(() => import("./modals/PlanModal").then((module) => ({ default: module.PlanModal })))
 const ProposeModal = lazyPage(() => import("./modals/ProposeModal").then((module) => ({ default: module.ProposeModal })))
+const DismissModal = lazyPage(() => import("./modals/DismissModal").then((module) => ({ default: module.DismissModal })))
 const SafetyModal = lazyPage(() => import("./modals/SafetyModal").then((module) => ({ default: module.SafetyModal })))
 const ResetPasswordModal = lazyPage(() => import("./modals/ResetPasswordModal").then((module) => ({ default: module.ResetPasswordModal })))
 const MetricLogModal = lazyPage(() => import("./modals/MetricLogModal").then((module) => ({ default: module.MetricLogModal })))
@@ -199,6 +201,9 @@ function App() {
   const [blocked, setBlocked] = useState<BlockedListing[]>([])
   // 저장한 리스팅(찜). 최신순이며 카탈로그의 찜 탭에서 쓴다.
   const [saved, setSaved] = useState<string[]>([])
+  // 관심 없음으로 추천에서 뺀 상대(#341)와, 빼려고 고른 상대.
+  const [dismissed, setDismissed] = useState<DismissedListing[]>([])
+  const [dismissing, setDismissing] = useState<Match | null>(null)
   // 모집 게시판 상태. 쓰거나 고치는 글, 지원서를 보낼 글, 게시판을 다시
   // 불러오려고 올리는 횟수.
   const [postForm, setPostForm] = useState<BoardPost | "new" | null>(null)
@@ -333,6 +338,7 @@ function App() {
     setInquiries([])
     setBlocked([])
     setSaved([])
+    setDismissed([])
   }
   // 학생단체가 볼 브랜드, 브랜드가 볼 학생단체, 그리고 지금 보는 사람 기준으로
   // 도착했는지 여부.
@@ -496,6 +502,7 @@ function App() {
             settle(api.inquiries(), (result) => setInquiries(result.inquiries)),
             settle(api.blocks(), (result) => setBlocked(result.blocked)),
             settle(api.saved(), (result) => setSaved(result.saved)),
+            settle(api.dismissed(), (result) => setDismissed(result.dismissed)),
           ]
         : []),
       ...(students
@@ -1137,6 +1144,44 @@ function App() {
         setSaved((list) => (wasSaved ? [match.id, ...without(list)] : without(list)))
         handleError(error)
       })
+  }
+
+  // 관심 없음(#341): 이유를 고르면 추천에서 빼고, 추천 상위를 다시 받아 빈자리를 채운다.
+  const startDismiss = (match: Match) => {
+    if (!account) {
+      requireLogin(t("추천을 고르려면 로그인해 주세요."))
+      return
+    }
+    setDismissing(match)
+    setActiveModal("dismiss")
+  }
+  const reloadMatches = () =>
+    api
+      .matches(role)
+      .then((result) => setMatches(result.matches))
+      .catch(() => {})
+  const dismissMatch = async (reason: string) => {
+    if (!dismissing) return
+    await api.dismiss(dismissing.id, reason)
+    const match = dismissing
+    closeModal()
+    setMatches((list) => list.filter((item) => item.id !== match.id))
+    setDismissed((list) => [
+      { listingId: match.id, reason, at: new Date().toISOString(), name: match.name },
+      ...list.filter((item) => item.listingId !== match.id),
+    ])
+    showNotice(t("추천에서 뺐어요. 추천 탭 아래에서 되돌릴 수 있어요."))
+    void reloadMatches()
+  }
+  const undismiss = (listingId: string) => {
+    api
+      .undismiss(listingId)
+      .then(() => {
+        setDismissed((list) => list.filter((item) => item.listingId !== listingId))
+        showNotice(t("다시 추천에 넣었어요."))
+        void reloadMatches()
+      })
+      .catch(handleError)
   }
 
   const openSafety = (mode: "report" | "block", target: SafetyTarget) => {
@@ -1796,6 +1841,9 @@ function App() {
             undelivered={undelivered}
             saved={saved}
             onToggleSave={toggleSaved}
+            dismissed={member ? dismissed : undefined}
+            onDismiss={startDismiss}
+            onUndismiss={undismiss}
             onOpenDetail={openDetail}
             onPropose={propose}
             onCancelProposal={cancelProposal}
@@ -1863,6 +1911,9 @@ function App() {
             undelivered={undelivered}
             saved={saved}
             onToggleSave={toggleSaved}
+            dismissed={member ? dismissed : undefined}
+            onDismiss={startDismiss}
+            onUndismiss={undismiss}
             onOpenDetail={openDetail}
             onPropose={propose}
             onCancelProposal={cancelProposal}
@@ -2425,6 +2476,11 @@ function App() {
               showNotice(t("서류를 보냈어요. 운영자가 확인하면 메일로 알려 드려요."))
             }}
           />
+        </Presence>
+      )}
+      {account && dismissing && (
+        <Presence show={activeModal === "dismiss"}>
+          <DismissModal name={dismissing.name} onClose={closeModal} onDismiss={dismissMatch} />
         </Presence>
       )}
       {account && safety && (
