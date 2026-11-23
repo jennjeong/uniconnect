@@ -93,6 +93,8 @@ import type {
   RefundQuote,
   PlatformStats,
   BudgetView,
+  ImportAnswer,
+  ImportBatch,
   Portfolio,
   PostDraft,
   PremiumReport,
@@ -641,6 +643,14 @@ export const api = {
   adminGrantPartners: (token: string, id: string, days: number) =>
     request<{ account: AdminMemberDetail }>(`/admin/accounts/${encodeURIComponent(id)}/partners`, { method: "POST", body: { days }, headers: { "X-Admin-Token": token } }),
   adminResetDemo: (token: string) => request<{ ok: true }>("/admin/demo/reset", { method: "POST", headers: { "X-Admin-Token": token } }),
+  adminImportListings: (token: string, rows: Record<string, string>[], dryRun: boolean) =>
+    request<ImportAnswer>("/admin/listings/import", { method: "POST", body: { rows, dryRun }, headers: { "X-Admin-Token": token } }),
+  adminImportBatches: (token: string) => request<{ batches: ImportBatch[] }>("/admin/listings/imports", { headers: { "X-Admin-Token": token } }),
+  adminRemoveImport: (token: string, batch: string) =>
+    request<{ removed: number; kept: number; batches: ImportBatch[] }>(`/admin/listings/imports/${encodeURIComponent(batch)}`, {
+      method: "DELETE",
+      headers: { "X-Admin-Token": token },
+    }),
   adminStale: (token: string) => request<{ proposals: AdminStaleProposal[] }>("/admin/proposals/stale", { headers: { "X-Admin-Token": token } }),
   adminProposal: (token: string, id: string) =>
     request<{ proposal: AdminProposalDetail }>(`/admin/proposals/${encodeURIComponent(id)}`, { headers: { "X-Admin-Token": token } }),

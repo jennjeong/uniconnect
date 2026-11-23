@@ -33,6 +33,7 @@ import { fullWon } from "../lib/sponsorships"
 import { kstMonth, kstStamp, taxLines, taxMonths, taxSummary } from "../lib/taxMonth"
 import type { Dispute, DisputeEvent, DisputeOutcome } from "../types"
 import type { AdminAgreementRow, AdminEventRow, AdminInsights, AdminInvites, AdminLive, AdminPayment, AdminPostRow, AdminProposalDetail, AdminReviewRow, AdminStaleProposal, AdminSystem, AgreementState, BackupSummary, FaqTopicKey, SiteFaq } from "../types"
+import { ImportListings } from "./AdminImport"
 import { CsvButton } from "./AdminTools"
 
 // 운영자 콘솔의 나머지(pages/AdminPage.tsx): 분석, 협찬 운영, 오늘의 행사,
@@ -1074,7 +1075,7 @@ export function Live({ token, onNotice }: { token: string; onNotice: Notice }) {
   )
 }
 
-type ContentTab = "posts" | "reviews" | "invites" | "faq"
+type ContentTab = "posts" | "reviews" | "invites" | "faq" | "import"
 
 // 콘텐츠: 게시판 글, 후기, 가게 초대, 도움말 센터.
 export function Content({ token, onNotice }: { token: string; onNotice: Notice }) {
@@ -1087,6 +1088,7 @@ export function Content({ token, onNotice }: { token: string; onNotice: Notice }
           { value: "reviews", label: t("후기") },
           { value: "invites", label: t("가게 초대") },
           { value: "faq", label: t("FAQ") },
+          { value: "import", label: t("대량 등록") },
         ]}
         label={t("콘텐츠 보기")}
         onChange={setTab}
@@ -1096,6 +1098,7 @@ export function Content({ token, onNotice }: { token: string; onNotice: Notice }
       {tab === "reviews" && <Reviews onNotice={onNotice} token={token} />}
       {tab === "invites" && <Invites onNotice={onNotice} token={token} />}
       {tab === "faq" && <FaqEditor onNotice={onNotice} token={token} />}
+      {tab === "import" && <ImportListings onNotice={onNotice} token={token} />}
     </section>
   )
 }

@@ -628,6 +628,52 @@ test("a member takes a partner out of its recommendations and can bring it back"
   assert.equal((await call("PUT", `/dismissed/${brandId}`, { reason: "거리가 멀어요" }, await login("학생단체"))).status, 403)
 })
 
+test("operators import listings in bulk: bad rows are named, good ones join the examples, and a batch can be removed", async () => {
+  const { config: settings } = await import("./config.js")
+  const savedToken = settings.adminToken
+  settings.adminToken = "import-admin-token"
+  const admin = (method: string, route: string, body?: unknown) =>
+    fetch(`${baseUrl}${route}`, {
+      method,
+      headers: { "X-Admin-Token": "import-admin-token", "Content-Type": "application/json" },
+      body: body ? JSON.stringify(body) : undefined,
+    }).then(async (response) => ({ status: response.status, data: (await response.json()) as any }))
+  try {
+    const rows = [
+      { side: "학생단체", name: "가져온 밴드", type: "밴드 · 음악 동아리", place: "삼육대학교", tags: "공연, 음악" },
+      { side: "브랜드", name: "가져온 카페", type: "카페 · 식음료", place: "서울 노원구 화랑로 815" },
+      { side: "회사", name: "틀린 구분", type: "카페 · 식음료" },
+      { side: "학생단체", name: "학교 없음", type: "공연 동아리" },
+      { side: "브랜드", name: "가져온 카페", type: "카페 · 식음료" },
+    ]
+    assert.equal((await admin("POST", "/admin/listings/import", { rows: [] })).status, 400)
+    const preview = await admin("POST", "/admin/listings/import", { rows })
+    assert.equal(preview.status, 200)
+    assert.equal(preview.data.valid, 2)
+    assert.equal(preview.data.created, 0)
+    assert.deepEqual(
+      preview.data.results.filter((item: { ok: boolean }) => !item.ok).map((item: { row: number }) => item.row),
+      [3, 4, 5],
+    )
+    assert.ok(!getDatabase().groups.some((item) => item.name === "가져온 밴드"))
+    const done = await admin("POST", "/admin/listings/import", { rows, dryRun: false })
+    assert.equal(done.data.created, 2)
+    assert.equal(done.data.batches[0].groups, 1)
+    // 주인이 없으므로 방문자에게는 보이고 회원에게는 보이지 않는다.
+    assert.ok((await call("GET", "/groups")).data.groups.some((item: { name: string }) => item.name === "가져온 밴드"))
+    const { token: brand } = await listedMember("import@import-cafe.kr", "import-pass-123", "브랜드")
+    assert.ok(!(await call("GET", "/groups", undefined, brand)).data.groups.some((item: { name: string }) => item.name === "가져온 밴드"))
+    // 같은 이름은 다시 넣지 않는다.
+    assert.equal((await admin("POST", "/admin/listings/import", { rows: rows.slice(0, 1) })).data.valid, 0)
+    const removed = await admin("DELETE", `/admin/listings/imports/${done.data.batch}`)
+    assert.deepEqual([removed.data.removed, removed.data.kept], [2, 0])
+    assert.ok(!getDatabase().groups.some((item) => item.name === "가져온 밴드"))
+    assert.equal((await admin("DELETE", `/admin/listings/imports/${done.data.batch}`)).status, 404)
+  } finally {
+    settings.adminToken = savedToken
+  }
+})
+
 test("a brand sets a quarter's sponsorship budget and sees what it spent and has planned", async () => {
   const { budgetQuarters, quarterOf, quarterRange } = await import("./lib/budget.js")
   const { addDays, todayInKorea } = await import("./lib/dates.js")

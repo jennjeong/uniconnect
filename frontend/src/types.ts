@@ -1775,3 +1775,13 @@ export type BudgetQuarter = {
 }
 
 export type BudgetView = { current: string; quarters: BudgetQuarter[]; editable: boolean }
+
+// 운영자 대량 등록(#350, backend lib/listingImport.ts).
+export type ImportBatch = { batch: string; at: string; groups: number; brands: number }
+export type ImportAnswer = {
+  batch: string
+  created: number
+  valid: number
+  results: { row: number; name: string; ok: boolean; message?: string }[]
+  batches: ImportBatch[]
+}

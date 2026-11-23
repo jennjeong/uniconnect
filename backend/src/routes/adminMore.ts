@@ -25,6 +25,7 @@ import { applicationFolder, applicationsOf } from "../lib/applications.js"
 import { sendMail } from "../lib/mailer.js"
 import { photos, photoType } from "../lib/photos.js"
 import { approveReferralReward, referralRewardsOf, rejectReferralReward, tellReferrers, waitingReferralRewards } from "../lib/referrals.js"
+import { importBatches, importLimits, importListings, removeBatch } from "../lib/listingImport.js"
 import { linkShop, tellInviters } from "../lib/shopInvites.js"
 import { memberDetail } from "../lib/console.js"
 import { backupStatus } from "../lib/backupStatus.js"
@@ -325,6 +326,39 @@ adminMoreRouter.post("/accounts/:id/partners", async (req, res) => {
   logAdmin(database, "partners-granted", { kind: "account", id: account.id }, `${days}`)
   await saveDatabase()
   res.json({ account: memberDetail(database, account) })
+})
+
+// 대량 등록(#350, lib/listingImport.ts): 운영자가 CSV로 읽은 행을 검사하고(dryRun) 넣는다.
+adminMoreRouter.post("/listings/import", async (req, res) => {
+  await requireAdmin(req)
+  const rows: unknown = req.body?.rows
+  if (!Array.isArray(rows) || rows.length === 0) throw new HttpError(400, "가져올 행이 없어요.")
+  if (rows.length > importLimits.rows) throw new HttpError(400, "한 번에 500행까지 가져올 수 있어요.")
+  if (rows.some((row) => !row || typeof row !== "object" || Array.isArray(row))) throw new HttpError(400, "행의 형식이 맞지 않아요.")
+  const database = getDatabase()
+  const dryRun = req.body?.dryRun !== false
+  const result = importListings(database, rows as Record<string, unknown>[], dryRun)
+  if (!dryRun && result.created > 0) {
+    logAdmin(database, "listings-imported", { kind: "site", id: result.batch }, `${result.created}`)
+    await saveDatabase()
+  }
+  res.json({ ...result, batches: importBatches(database) })
+})
+
+adminMoreRouter.get("/listings/imports", async (req, res) => {
+  await requireAdmin(req)
+  res.json({ batches: importBatches(getDatabase()) })
+})
+
+// 넣은 묶음을 지운다. 제안, 대화, 찜이 걸린 리스팅은 남는다.
+adminMoreRouter.delete("/listings/imports/:batch", async (req, res) => {
+  await requireAdmin(req)
+  const database = getDatabase()
+  const result = removeBatch(database, String(req.params.batch))
+  if (result.removed === 0 && result.kept === 0) throw new HttpError(404, "그 등록 묶음이 없어요.")
+  logAdmin(database, "listings-import-removed", { kind: "site", id: String(req.params.batch) }, `${result.removed}`)
+  await saveDatabase()
+  res.json({ ...result, batches: importBatches(database) })
 })
 
 // 시연 전에 예시 데이터를 시드대로 되돌린다.

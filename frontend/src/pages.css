@@ -5097,6 +5097,50 @@
   cursor: default;
 }
 
+/* 콘텐츠의 대량 등록 (pages/AdminImport.tsx, #350): 양식과 파일 고르기, 검사 결과, 등록한 묶음. */
+.console-import {
+  display: grid;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.console-import-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.console-file {
+  cursor: pointer;
+}
+
+.console-file:focus-within {
+  outline: 2px solid var(--point-bright);
+  outline-offset: 2px;
+}
+
+.console-import-preview {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--fill);
+}
+
+.console-import-preview p {
+  margin: 0;
+}
+
+.console-import .console-table tbody tr {
+  cursor: default;
+}
+
+.console-caption {
+  padding-bottom: 8px;
+  font-weight: var(--weight-label);
+  text-align: left;
+}
+
 .console-inline {
   padding: 2px 8px;
   border: 0;
