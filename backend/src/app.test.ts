@@ -649,7 +649,7 @@ test("a promo code takes its discount off the supply, keeps to its limits and is
     await admin("POST", "/admin/promos", { ...base, code: "LATER-1", percent: 10, startsOn: addDays(today, 3) })
     await admin("POST", "/admin/promos", { ...base, code: "ADS-ONLY", amountOff: 5000, kinds: ["ad"] })
 
-    const { token: brand } = await listedMember("promo@promo-cafe.kr", "promo-pass-123", "브랜드")
+    const { token: brand } = await listedMember("promocode@promocode-cafe.kr", "promo-pass-123", "브랜드")
     const plain = (await call("POST", "/billing/orders", { kind: "pro" }, brand)).data.order
     assert.equal((await call("POST", "/billing/promo", { kind: "pro", code: "nope" }, brand)).status, 404)
     assert.equal((await call("POST", "/billing/promo", { kind: "pro", code: "LATER-1" }, brand)).status, 409)
@@ -666,7 +666,7 @@ test("a promo code takes its discount off the supply, keeps to its limits and is
     assert.deepEqual(order.promo, { code: "FIRST-MONTH", discount: half })
 
     // 한 번만 쓰는 코드는 다른 계정이 쓰지 못한다.
-    const { token: other } = await listedMember("promo2@promo-cafe2.kr", "promo-pass-123", "브랜드")
+    const { token: other } = await listedMember("promocode2@promocode-cafe2.kr", "promo-pass-123", "브랜드")
     assert.equal((await call("POST", "/billing/promo", { kind: "pro", code: "FIRST-MONTH" }, other)).status, 409)
     assert.equal((await call("POST", "/billing/promo", { kind: "pro", code: "FIRST-MONTH" }, await login("브랜드"))).status, 403)
 
