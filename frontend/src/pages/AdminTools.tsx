@@ -513,6 +513,8 @@ const actionLabels: Record<string, string> = {
   "business-set": "사업자 확인 변경",
   "partners-granted": "Growth 부여",
   "demo-reset": "예시 데이터 초기화",
+  "listings-imported": "목록 대량 등록",
+  "listings-import-removed": "대량 등록 묶음 삭제",
   "proposal-nudged": "답 부탁 알림",
   "post-hidden": "모집 글 숨김",
   "post-shown": "모집 글 다시 보임",

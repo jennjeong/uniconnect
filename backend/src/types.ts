@@ -99,6 +99,9 @@ export type Match = {
   // 다음 행사의 종류(validation.ts eventKinds)로, 단체가 정했을 때만 있다.
   eventKind?: string
   audience?: number
+  // 운영자가 대량 등록으로 넣은 리스팅이다(#350, lib/listingImport.ts). 주인 계정이 없어
+  // 예시처럼 방문자와 데모 계정에게만 보이고, 등록 묶음(batch)째 지울 수 있다.
+  imported?: { at: string; batch: string }
   // 상세 페이지의 짧은 소개, 핵심 정보(쪽별 라벨은 lib/validation.ts), SNS
   // 계정, 포트폴리오다.
   intro?: string
@@ -1167,6 +1170,8 @@ export type AdminAction =
   | "dispute-decided"
   | "partners-granted"
   | "demo-reset"
+  | "listings-imported"
+  | "listings-import-removed"
   | "proposal-nudged"
   | "post-hidden"
   | "post-shown"

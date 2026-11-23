@@ -958,6 +958,19 @@ const en: Record<string, string> = {
   "데모 계정은 예산을 저장할 수 없어요.": "The demo accounts can't save a budget.",
   "지난 3개 분기부터 다음 2개 분기까지 정할 수 있어요.": "You can set the last 3 quarters through the next 2.",
   "예산은 0원부터 100억 원까지 원 단위로 적어 주세요.": "Enter a budget in won, from 0 to 10 billion.",
+  "가져올 행이 없어요.": "There are no rows to import.",
+  "한 번에 500행까지 가져올 수 있어요.": "You can import up to 500 rows at a time.",
+  "행의 형식이 맞지 않아요.": "A row is not in the right shape.",
+  "그 등록 묶음이 없어요.": "That import batch doesn't exist.",
+  "구분은 학생단체 또는 브랜드로 적어 주세요.": "Write 학생단체 or 브랜드 as the side.",
+  "이름은 1~40자로 적어 주세요.": "Names are 1 to 40 characters.",
+  "유형이 목록에 없어요. 양식의 유형 중 하나로 적어 주세요.": "That type isn't on the list. Use one of the template's types.",
+  "학생단체는 학교를 적어 주세요.": "Student groups need a school.",
+  "학교나 주소는 60자까지 적을 수 있어요.": "Schools and addresses are up to 60 characters.",
+  "소개는 300자까지 적을 수 있어요.": "Introductions are up to 300 characters.",
+  "제공 · 모집 내용은 60자까지 적을 수 있어요.": "Offers are up to 60 characters.",
+  "태그는 12자 이하로 4개까지 적어 주세요.": "Up to 4 tags of 12 characters or fewer.",
+  "같은 이름이 이미 있어요.": "That name is already listed.",
 }
 
 export default en
