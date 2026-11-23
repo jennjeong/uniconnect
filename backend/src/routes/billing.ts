@@ -3,7 +3,7 @@ import { Router } from "express"
 import type { Request } from "express"
 
 import { config } from "../config.js"
-import { cardReady, memberRefundReason, orderFor, partialRefundOf, paymentsOf, paymentView, prices, productOf, renewExpiry, testMode, toss, tossUnsure, withVat } from "../lib/billing.js"
+import { cardReady, memberRefundReason, orderFor, partialRefundOf, paymentsOf, paymentView, priceOrder, prices, productOf, renewExpiry, testMode, toss, tossUnsure, withVat } from "../lib/billing.js"
 import { askToss, reconcileCards, recordApproval, refundCard, settleCard, settleFromWebhook, stuckCards } from "../lib/cardRecovery.js"
 import { HttpError } from "../lib/errors.js"
 // 브랜드가 살 수 있는 것으로, 각각 lib/billing.ts에 등록된다.
@@ -81,9 +81,25 @@ billingRouter.post("/orders", async (req, res) => {
   if (isDemoAccount(database, account) && !testMode()) throw new HttpError(403, "데모 계정은 테스트 결제로만 시연할 수 있어요.")
   const kind = text(req.body?.kind)
   if (account.role !== "브랜드" && kind !== "ad") throw new HttpError(403, "결제는 브랜드 계정만 해요.")
-  const payment = orderFor(database, account, kind, text(req.body?.targetId))
+  const payment = orderFor(database, account, kind, text(req.body?.targetId), req.body?.promo)
   await saveDatabase()
   res.json({ order: paymentView(payment), customerKey: account.customerKey, email: account.email })
+})
+
+// 결제 창에서 프로모션 코드를 넣어 볼 때 할인과 금액을 알려 준다. 주문은 만들지 않는다.
+billingRouter.post("/promo", (req, res) => {
+  const account = requireAccount(req)
+  const database = getDatabase()
+  const kind = text(req.body?.kind)
+  if (account.role !== "브랜드" && kind !== "ad") throw new HttpError(403, "결제는 브랜드 계정만 해요.")
+  const product = productOf(kind)
+  const targetId = product.targetless ? "" : text(req.body?.targetId)
+  const waiting = paymentsOf(database).find(
+    (payment) => payment.accountId === account.id && payment.kind === kind && payment.targetId === targetId && payment.status === "pending",
+  )
+  const priced = priceOrder(database, account, kind, targetId, req.body?.code, waiting?.id)
+  if (!priced.promo) throw new HttpError(400, "프로모션 코드를 적어 주세요.")
+  res.json({ code: priced.promo.code, discount: priced.promo.discount, supply: priced.supply, amount: priced.amount })
 })
 
 function ownWaiting(accountId: string, id: string) {
@@ -153,11 +169,20 @@ billingRouter.post("/confirm", async (req, res) => {
   // 낡은 금액으로 승인하지 않는다. 키를 저장한 뒤에는 하지 않는다. 같은 승인을
   // 다시 시도한 것이면 이미 청구됐을 수 있다.
   if (!current.paymentKey) {
-    const quoted = productOf(current.kind).quote(getDatabase(), account, current.targetId).amount
+    // 프로모션 코드도 다시 본다. 그사이 끝났으면 할인 없는 금액으로 바꾼다(lib/promo.ts).
+    let priced
+    try {
+      priced = priceOrder(getDatabase(), account, current.kind, current.targetId, current.promo?.code, current.id)
+    } catch (error) {
+      if (!current.promo || !(error instanceof HttpError)) throw error
+      priced = priceOrder(getDatabase(), account, current.kind, current.targetId, undefined, current.id)
+    }
     // supply가 없는 주문은 부가세 전에 만든 것이다. 총액이 우연히 같아도 낡은
     // 주문이다.
-    if (withVat(quoted) !== current.amount || current.supply !== quoted) {
-      Object.assign(current, { supply: quoted, amount: withVat(quoted) })
+    if (priced.amount !== current.amount || current.supply !== priced.supply || current.promo?.discount !== priced.promo?.discount) {
+      Object.assign(current, { supply: priced.supply, amount: priced.amount })
+      if (priced.promo) current.promo = priced.promo
+      else delete current.promo
       await saveDatabase()
       throw new HttpError(409, "금액이 바뀌었어요. 바뀐 금액으로 다시 결제해 주세요.")
     }

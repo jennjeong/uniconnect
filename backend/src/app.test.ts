@@ -628,6 +628,60 @@ test("a member takes a partner out of its recommendations and can bring it back"
   assert.equal((await call("PUT", `/dismissed/${brandId}`, { reason: "거리가 멀어요" }, await login("학생단체"))).status, 403)
 })
 
+test("a promo code takes its discount off the supply, keeps to its limits and is priced again before paying", async () => {
+  const { config: settings } = await import("./config.js")
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const today = todayInKorea()
+  const savedToken = settings.adminToken
+  settings.adminToken = "promo-admin-token"
+  const admin = (method: string, route: string, body?: unknown) =>
+    fetch(`${baseUrl}${route}`, {
+      method,
+      headers: { "X-Admin-Token": "promo-admin-token", "Content-Type": "application/json" },
+      body: body ? JSON.stringify(body) : undefined,
+    }).then(async (response) => ({ status: response.status, data: (await response.json()) as any }))
+  try {
+    const base = { kinds: ["pro"], startsOn: today, endsOn: addDays(today, 30), maxUses: 1 }
+    assert.equal((await admin("POST", "/admin/promos", { ...base, code: "x" , percent: 10 })).status, 400)
+    assert.equal((await admin("POST", "/admin/promos", { ...base, code: "BOTH-1", percent: 10, amountOff: 1000 })).status, 400)
+    assert.equal((await admin("POST", "/admin/promos", { ...base, code: "first-month", percent: 50 })).status, 200)
+    assert.equal((await admin("POST", "/admin/promos", { ...base, code: "FIRST-MONTH", percent: 20 })).status, 409)
+    await admin("POST", "/admin/promos", { ...base, code: "LATER-1", percent: 10, startsOn: addDays(today, 3) })
+    await admin("POST", "/admin/promos", { ...base, code: "ADS-ONLY", amountOff: 5000, kinds: ["ad"] })
+
+    const { token: brand } = await listedMember("promo@promo-cafe.kr", "promo-pass-123", "브랜드")
+    const plain = (await call("POST", "/billing/orders", { kind: "pro" }, brand)).data.order
+    assert.equal((await call("POST", "/billing/promo", { kind: "pro", code: "nope" }, brand)).status, 404)
+    assert.equal((await call("POST", "/billing/promo", { kind: "pro", code: "LATER-1" }, brand)).status, 409)
+    assert.equal((await call("POST", "/billing/promo", { kind: "pro", code: "ADS-ONLY" }, brand)).status, 409)
+    const check = await call("POST", "/billing/promo", { kind: "pro", code: "first-month" }, brand)
+    assert.equal(check.status, 200)
+    const half = Math.floor(plain.supply / 2 / 10) * 10
+    assert.equal(check.data.discount, half)
+    // 같은 대기 주문에 코드를 넣으면 그 주문의 값이 바뀐다.
+    const order = (await call("POST", "/billing/orders", { kind: "pro", promo: "first-month" }, brand)).data.order
+    assert.equal(order.id, plain.id)
+    assert.equal(order.supply, plain.supply - half)
+    assert.equal(order.amount, Math.round((plain.supply - half) * 1.1))
+    assert.deepEqual(order.promo, { code: "FIRST-MONTH", discount: half })
+
+    // 한 번만 쓰는 코드는 다른 계정이 쓰지 못한다.
+    const { token: other } = await listedMember("promo2@promo-cafe2.kr", "promo-pass-123", "브랜드")
+    assert.equal((await call("POST", "/billing/promo", { kind: "pro", code: "FIRST-MONTH" }, other)).status, 409)
+    assert.equal((await call("POST", "/billing/promo", { kind: "pro", code: "FIRST-MONTH" }, await login("브랜드"))).status, 403)
+
+    // 코드를 꺼도 이미 쓴 횟수는 남고, 코드 없이 다시 주문하면 할인 없는 금액이다.
+    const listed = await admin("POST", "/admin/promos/first-month/disable")
+    assert.equal(listed.data.promos.find((item: { code: string }) => item.code === "FIRST-MONTH").state, "disabled")
+    assert.equal(listed.data.promos.find((item: { code: string }) => item.code === "FIRST-MONTH").used, 1)
+    const again = (await call("POST", "/billing/orders", { kind: "pro" }, brand)).data.order
+    assert.equal(again.supply, plain.supply)
+    assert.equal(again.promo, undefined)
+  } finally {
+    settings.adminToken = savedToken
+  }
+})
+
 test("operators import listings in bulk: bad rows are named, good ones join the examples, and a batch can be removed", async () => {
   const { config: settings } = await import("./config.js")
   const savedToken = settings.adminToken

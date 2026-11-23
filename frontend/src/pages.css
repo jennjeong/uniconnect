@@ -5141,6 +5141,72 @@
   text-align: left;
 }
 
+/* 결제 창의 프로모션 코드 (modals/PaymentModal.tsx, #346). */
+.payment-promo {
+  display: grid;
+  gap: 6px;
+}
+
+.payment-promo label {
+  font-size: 0.875rem;
+  font-weight: var(--weight-label);
+}
+
+.payment-promo > div {
+  display: flex;
+  gap: 8px;
+}
+
+.payment-promo input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--fill);
+  box-shadow: var(--ring);
+  font-size: 0.9375rem;
+  text-transform: uppercase;
+}
+
+.payment-promo p {
+  margin: 0;
+}
+
+.payment-lines > .payment-discount dd {
+  color: var(--point-strong);
+}
+
+/* 결제 · 매출의 프로모션 코드 (pages/AdminPromos.tsx): 쓸 수 있는 상품 고르기. */
+.console-kinds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 0.875rem;
+}
+
+.console-kinds legend {
+  width: 100%;
+  margin-bottom: 6px;
+  font-weight: var(--weight-label);
+}
+
+.console-kinds label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.console-sub {
+  display: block;
+  color: var(--muted);
+  font-weight: var(--weight-body);
+}
+
 .console-inline {
   padding: 2px 8px;
   border: 0;

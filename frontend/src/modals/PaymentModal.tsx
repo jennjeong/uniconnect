@@ -38,6 +38,10 @@ export function PaymentModal({
   const [agreed, setAgreed] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
+  // 적용한 프로모션 코드와 공급가액에서 뺀 금액(#346). 주문을 만들 때 서버가 다시 확인한다.
+  const [code, setCode] = useState("")
+  const [promo, setPromo] = useState<{ code: string; discount: number }>()
+  const [promoError, setPromoError] = useState("")
 
   useEffect(() => {
     let cancelled = false
@@ -57,8 +61,21 @@ export function PaymentModal({
   // 결제하지 않고 카드 결제창에서 돌아온 경우.
   usePageReturn(useCallback(() => setBusy(false), []))
 
-  const vat = billing ? Math.round(amount * billing.prices.vatRate) : undefined
-  const total = amount + (vat ?? 0)
+  const supply = amount - (promo?.discount ?? 0)
+  const vat = billing ? Math.round(supply * billing.prices.vatRate) : undefined
+  const total = supply + (vat ?? 0)
+
+  const applyPromo = async () => {
+    if (!code.trim()) return
+    setPromoError("")
+    try {
+      const answer = await api.checkPromo(kind, targetId, code.trim())
+      setPromo({ code: answer.code, discount: answer.discount })
+    } catch (failure) {
+      setPromo(undefined)
+      setPromoError(errorMessage(failure))
+    }
+  }
 
   const pay = async (how: "card" | "transfer") => {
     if (!agreed) {
@@ -68,7 +85,7 @@ export function PaymentModal({
     setBusy(true)
     setError("")
     try {
-      const order = await api.order(kind, targetId)
+      const order = await api.order(kind, targetId, promo?.code)
       if (how === "card" && billing?.card) {
         await payByCard(order, billing.card.clientKey)
         return
@@ -94,9 +111,15 @@ export function PaymentModal({
               <dd>{line.value}</dd>
             </div>
           ))}
+          {promo && (
+            <div className="payment-discount">
+              <dt>{t("할인 ({code})", { code: promo.code })}</dt>
+              <dd>−{fullWon(promo.discount)}</dd>
+            </div>
+          )}
           <div>
             <dt>{t("공급가액")}</dt>
-            <dd>{fullWon(amount)}</dd>
+            <dd>{fullWon(supply)}</dd>
           </div>
           <div>
             <dt>{t("부가세 ({rate}%)", { rate: Math.round((billing?.prices.vatRate ?? 0.1) * 100) })}</dt>
@@ -110,6 +133,38 @@ export function PaymentModal({
             </dd>
           </div>
         </dl>
+        <form
+          className="payment-promo"
+          onSubmit={(event) => {
+            event.preventDefault()
+            void applyPromo()
+          }}
+        >
+          <label htmlFor="payment-promo-code">{t("프로모션 코드")}</label>
+          <div>
+            <input
+              autoCapitalize="characters"
+              disabled={busy}
+              id="payment-promo-code"
+              maxLength={20}
+              onChange={(event) => {
+                setCode(event.target.value)
+                setPromo(undefined)
+                setPromoError("")
+              }}
+              value={code}
+            />
+            <button className="cancel-button" disabled={busy || !code.trim()} type="submit">
+              {t("적용")}
+            </button>
+          </div>
+          {promoError && (
+            <p className="form-error" role="alert">
+              {promoError}
+            </p>
+          )}
+          {promo && <p className="field-hint">{t("{amount} 할인을 적용했어요.", { amount: fullWon(promo.discount) })}</p>}
+        </form>
         <label className={agreed ? "check-row payment-agree checked" : "check-row payment-agree"}>
           <input checked={agreed} onChange={(event) => setAgreed(event.target.checked)} type="checkbox" />
           <span aria-hidden="true" className="check-box">

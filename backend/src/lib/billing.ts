@@ -4,6 +4,7 @@ import { config } from "../config.js"
 import type { Account, Database, Payment, PaymentKind } from "../types.js"
 import { addDays } from "./dates.js"
 import { HttpError } from "./errors.js"
+import { normalizeCode, promoDiscount } from "./promo.js"
 
 // 사업 계획의 수익 모델(표 9)을 부가세 전 가격으로 둔 것이다. 부가세는
 // 주문을 만들 때 위에 더한다(vatOf). 브랜드가 내고 학생 단체는 자기 광고만
@@ -160,22 +161,35 @@ export const paidFor = (database: Database, accountId: string, kind: PaymentKind
 
 // 계정의 주문. 같은 건의 대기 중인 주문이 있으면 그것을 오늘 가격과
 // 부가세로 맞추고 없으면 새로 만든다.
-export function orderFor(database: Database, account: Account, kind: string, requested: string) {
+// 주문의 값: 상품의 견적에서 프로모션 코드의 할인을 빼고(lib/promo.ts) 부가세를 붙인다.
+// 주문을 만들 때, 결제 직전에 다시 매길 때, 늦은 입금을 확인할 때 같은 기준을 쓴다.
+// except는 다시 매기는 주문 자신으로, 코드의 사용 횟수에서 뺀다.
+export function priceOrder(database: Database, account: Account, kind: string, targetId: string, promoCode?: unknown, except?: string) {
+  const { amount: quoted, orderName } = productOf(kind).quote(database, account, targetId)
+  if (quoted <= 0) throw new HttpError(409, "결제할 금액이 없어요.")
+  const promo = normalizeCode(promoCode) ? promoDiscount(database, account, kind as PaymentKind, quoted, promoCode, except) : undefined
+  const supply = quoted - (promo?.discount ?? 0)
+  return { orderName, quoted, supply, amount: withVat(supply), promo }
+}
+
+export function orderFor(database: Database, account: Account, kind: string, requested: string, promoCode?: unknown) {
   const product = productOf(kind)
   const targetId = product.targetless ? "" : requested
-  const { amount, orderName } = product.quote(database, account, targetId)
-  if (amount <= 0) throw new HttpError(409, "결제할 금액이 없어요.")
-  const priced = { supply: amount, amount: withVat(amount) }
-  account.customerKey ??= `uc_${randomBytes(18).toString("base64url")}`
   const payments = paymentsOf(database)
-  const waiting = payments.find(
+  const existing = payments.find(
     (payment) => payment.accountId === account.id && payment.kind === kind && payment.targetId === targetId && payment.status === "pending",
   )
+  const { orderName, supply, amount, promo } = priceOrder(database, account, kind, targetId, promoCode, existing?.id)
+  const priced = { supply, amount }
+  account.customerKey ??= `uc_${randomBytes(18).toString("base64url")}`
+  const waiting = existing
   if (waiting) {
     // 카드 승인이 이미 옛 금액을 청구했을 수 있으며, lib/cardRecovery.ts가
     // 이를 주문과 대조한다.
     if (waiting.paymentKey) return waiting
     Object.assign(waiting, priced, { orderName })
+    if (promo) waiting.promo = promo
+    else delete waiting.promo
     renewExpiry(waiting)
     return waiting
   }
@@ -187,6 +201,7 @@ export function orderFor(database: Database, account: Account, kind: string, req
     targetId,
     orderName,
     ...priced,
+    ...(promo ? { promo } : {}),
     status: "pending",
     requestedAt: new Date().toISOString(),
   }

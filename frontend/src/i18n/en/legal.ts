@@ -231,8 +231,8 @@ const en: Record<string, string> = {
     "Paid Services and Payment",
   "협찬 금액, 제공 물품, 일정 같은 조건과 그 이행은 두 회원이 직접 정하고 책임져요. 협찬금은 브랜드가 학생단체에 직접 주고, 서비스는 맡아 두거나 대신 보내지 않아요.":
     "The two members set and are responsible for the terms, such as the amount, the items given and the schedule, and for carrying them out. The brand pays the sponsorship money to the student group directly; the service neither holds nor forwards it.",
-  "결제 기록(주문 번호, 산 것, 금액, 결제 방법, 결제·취소 시각과 이유, 토스페이먼츠의 결제 키와 카드 영수증 주소, 고객 키)":
-    "Payment records (order number, what was bought, amount, payment method, when it was paid or canceled and why, Toss Payments' payment key and card receipt address, customer key)",
+  "결제 기록(주문 번호, 산 것, 금액, 쓴 프로모션 코드와 할인액, 결제 방법, 결제·취소 시각과 이유, 토스페이먼츠의 결제 키와 카드 영수증 주소, 고객 키)":
+    "Payment records (order number, what was bought, amount, the promo code used and its discount, payment method, when it was paid or canceled and why, Toss Payments' payment key and card receipt address, customer key)",
   "유료 서비스 결제와 환불, 세금 신고":
     "Paying for and refunding paid services, tax filing",
   "결제한 날부터 5년(전자상거래법에 따라 탈퇴해도 이 기간에는 보관)":

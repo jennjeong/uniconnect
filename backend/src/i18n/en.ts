@@ -971,6 +971,23 @@ const en: Record<string, string> = {
   "제공 · 모집 내용은 60자까지 적을 수 있어요.": "Offers are up to 60 characters.",
   "태그는 12자 이하로 4개까지 적어 주세요.": "Up to 4 tags of 12 characters or fewer.",
   "같은 이름이 이미 있어요.": "That name is already listed.",
+  "없는 프로모션 코드예요.": "That promo code doesn't exist.",
+  "데모 계정은 프로모션 코드를 쓸 수 없어요.": "The demo accounts can't use promo codes.",
+  "기간이 끝난 프로모션 코드예요.": "That promo code has ended.",
+  "아직 쓸 수 없는 프로모션 코드예요.": "That promo code isn't active yet.",
+  "이 상품에는 쓸 수 없는 프로모션 코드예요.": "That promo code doesn't apply to this product.",
+  "이미 쓴 프로모션 코드예요.": "You've already used that promo code.",
+  "사용 횟수가 다 찬 프로모션 코드예요.": "That promo code has been used up.",
+  "이 주문에는 할인할 금액이 없어요.": "There's nothing to discount on this order.",
+  "코드는 영문 대문자 · 숫자 · 하이픈 4~20자로 적어 주세요.": "Codes are 4 to 20 capital letters, digits or hyphens.",
+  "같은 코드가 이미 있어요.": "That code already exists.",
+  "프로모션 코드는 200개까지 만들 수 있어요.": "You can make up to 200 promo codes.",
+  "할인은 비율이나 금액 중 하나로 정해 주세요.": "Set the discount as either a percentage or an amount.",
+  "할인 비율은 1~90% 사이의 정수로 적어 주세요.": "Percentages are whole numbers from 1 to 90.",
+  "할인 금액은 100원부터 1,000만 원까지 적어 주세요.": "Amounts are from 100 to 10,000,000 won.",
+  "시작일과 종료일을 바르게 적어 주세요.": "Enter a valid start and end date.",
+  "사용 횟수는 1~10,000회로 적어 주세요.": "Uses are from 1 to 10,000.",
+  "프로모션 코드를 적어 주세요.": "Enter a promo code.",
 }
 
 export default en
