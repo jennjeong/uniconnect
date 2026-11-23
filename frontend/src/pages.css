@@ -4910,6 +4910,12 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
+  /* 카드(그리드) 안에서 탭이 많아도 화면 밖으로 밀려나지 않고 탭 줄이 옆으로 넘어간다. */
+  min-width: 0;
+}
+
+.console-filters .match-tabs {
+  overflow-x: auto;
 }
 
 /* Toss식 체크박스: 파랑으로 차오르며 흰 체크가 들어가는 둥근 정사각형. */
@@ -9307,4 +9313,14 @@ th[aria-sort="descending"] .console-sort span {
 
 .admin-category {
   white-space: nowrap;
+}
+
+/* 세무용 월별 자료의 달 고르기 (#345). */
+.console-tax-month {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-size: 0.875rem;
 }

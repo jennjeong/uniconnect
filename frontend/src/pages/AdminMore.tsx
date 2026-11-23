@@ -27,9 +27,10 @@ import {
   sameMaintenance,
   timeZoneLabel,
 } from "../lib/adminSystem"
-import { formatDateTime } from "../lib/date"
+import { formatDateTime, monthLabel } from "../lib/date"
 import { saveFile } from "../lib/download"
 import { fullWon } from "../lib/sponsorships"
+import { kstMonth, kstStamp, taxLines, taxMonths, taxSummary } from "../lib/taxMonth"
 import type { Dispute, DisputeEvent, DisputeOutcome } from "../types"
 import type { AdminAgreementRow, AdminEventRow, AdminInsights, AdminInvites, AdminLive, AdminPayment, AdminPostRow, AdminProposalDetail, AdminReviewRow, AdminStaleProposal, AdminSystem, AgreementState, BackupSummary, FaqTopicKey, SiteFaq } from "../types"
 import { CsvButton } from "./AdminTools"
@@ -333,11 +334,11 @@ export function Insights({ token, onNotice }: { token: string; onNotice: Notice 
 // 이미 불러온 결제로 계산한 상품별 월 매출, 사유별 환불, 월 정산 파일.
 export function RevenuePanel({ payments }: { payments: AdminPayment[] }) {
   const paid = payments.filter((payment) => payment.status === "paid" && payment.method !== "grant")
-  const months = [...new Set(paid.map((payment) => (payment.paidAt ?? payment.requestedAt).slice(0, 7)))].sort().slice(-6)
+  const monthOf = (payment: AdminPayment) => kstMonth(payment.paidAt ?? payment.requestedAt)
+  const months = [...new Set(paid.map(monthOf))].sort().slice(-6)
   const kinds = ["fee", "report", "pro", "ad", "local", "program"] as const
-  const kindLabels = { fee: "수수료", report: "상세 리포트", pro: "Growth", ad: "상단 광고", local: "Campus Local", program: "캠퍼스 캠페인" }
   const byMonth = months.map((month) => {
-    const rows = paid.filter((payment) => (payment.paidAt ?? payment.requestedAt).startsWith(month))
+    const rows = paid.filter((payment) => monthOf(payment) === month)
     return { month, ...Object.fromEntries(kinds.map((kind) => [kind, rows.filter((row) => row.kind === kind).reduce((sum, row) => sum + row.amount, 0)])) } as {
       month: string
     } & Record<(typeof kinds)[number], number>
@@ -367,7 +368,7 @@ export function RevenuePanel({ payments }: { payments: AdminPayment[] }) {
               [t("월"), t("상품"), t("건수"), t("합계"), t("공급가액"), t("부가세")],
               ...months.flatMap((month) =>
                 kinds.map((kind) => {
-                  const rows = paid.filter((payment) => payment.kind === kind && (payment.paidAt ?? payment.requestedAt).startsWith(month))
+                  const rows = paid.filter((payment) => payment.kind === kind && monthOf(payment) === month)
                   const total = rows.reduce((sum, row) => sum + row.amount, 0)
                   // 부가세를 위에 붙이기 전의 결제는 부가세를 가격 안에 품고
                   // 있었다.
@@ -389,7 +390,7 @@ export function RevenuePanel({ payments }: { payments: AdminPayment[] }) {
                     <i className={kind} key={kind} style={{ height: `${(row[kind] / top) * 100}%` }} />
                   ))}
                 </div>
-                <small>{Number(row.month.slice(5))}{t("월")}</small>
+                <small>{monthLabel(row.month)}</small>
               </li>
             ))}
           </ol>
@@ -402,11 +403,100 @@ export function RevenuePanel({ payments }: { payments: AdminPayment[] }) {
           ))}
         </ul>
       </section>
+      <TaxCard payments={payments} />
       <section className="console-card span-2">
         <h2>{t("취소 · 환불 사유")}</h2>
         <Bars rows={reasons} unit={t("건")} />
       </section>
     </div>
+  )
+}
+
+const kindLabels = { fee: "수수료", report: "상세 리포트", pro: "Growth", ad: "상단 광고", local: "Campus Local", program: "캠퍼스 캠페인" } as const
+const methodLabels = { card: "카드", transfer: "계좌 이체", grant: "운영자 지급" } as const
+
+// 세무용 월별 자료(#345): 고른 달(한국 시간)의 매출 · 환불을 공급가액과 부가세로 보이고,
+// 합계와 거래 내역을 CSV 하나로 내려받는다.
+function TaxCard({ payments }: { payments: AdminPayment[] }) {
+  const months = taxMonths(payments)
+  const [picked, setPicked] = useState<string>()
+  const month = picked && months.includes(picked) ? picked : months[0]
+  const lines = month ? taxLines(payments, month) : []
+  const summary = taxSummary(lines)
+  const figures = [
+    { label: t("매출"), value: summary.sales },
+    { label: t("환불"), value: summary.refunds },
+    { label: t("신고할 금액"), value: { ...summary.net, count: undefined } },
+  ]
+  return (
+    <section aria-label={t("세무용 월별 자료")} className="console-card span-2">
+      <div className="console-card-head">
+        <div>
+          <h2>{t("세무용 월별 자료")}</h2>
+          <p>{t("한국 시간으로 센 달이에요. 매출은 결제된 달에, 환불은 돌려준 달에 잡아요.")}</p>
+        </div>
+        {month && (
+          <CsvButton
+            name={`tax-${month}`}
+            rows={() => [
+              [t("구분"), t("건수"), t("합계"), t("공급가액"), t("부가세")],
+              ...figures.map(({ label, value }) => [label, value.count ?? "", value.total, value.supply, value.vat]),
+              [],
+              [t("상품"), t("매출 건수"), t("매출 공급가액"), t("매출 부가세"), t("환불 건수"), t("환불 공급가액"), t("환불 부가세")],
+              ...summary.byKind.map((row) => [t(kindLabels[row.kind]), row.sales.count, row.sales.supply, row.sales.vat, row.refunds.count, row.refunds.supply, row.refunds.vat]),
+              [],
+              [t("구분"), t("일시(한국 시간)"), t("주문 번호"), t("상품"), t("주문명"), t("구매자"), t("결제 수단"), t("합계"), t("공급가액"), t("부가세"), t("영수증")],
+              ...lines.map((line) => {
+                const sign = line.type === "refund" ? -1 : 1
+                return [
+                  line.type === "sale" ? t("매출") : t("환불"),
+                  kstStamp(line.at),
+                  line.payment.id,
+                  t(kindLabels[line.payment.kind]),
+                  line.payment.orderName,
+                  line.payment.accountName,
+                  line.payment.method ? t(methodLabels[line.payment.method]) : "",
+                  sign * line.total,
+                  sign * line.supply,
+                  sign * line.vat,
+                  line.payment.receiptUrl ?? "",
+                ]
+              }),
+            ]}
+          />
+        )}
+      </div>
+      {!month ? (
+        <p className="day-empty">{t("아직 매출이나 환불이 없어요.")}</p>
+      ) : (
+        <>
+          <label className="console-tax-month">
+            {t("달")}
+            <select onChange={(event) => setPicked(event.target.value)} value={month}>
+              {months.map((item) => (
+                <option key={item} value={item}>
+                  {monthLabel(item, true)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="console-kpis small">
+            {figures.map(({ label, value }) => (
+              <div key={label}>
+                <span>
+                  {label}
+                  {value.count !== undefined && ` · ${t("{count}건", { count: value.count })}`}
+                </span>
+                <strong>{fullWon(value.total)}</strong>
+                <small>{t("공급가액 {amount}", { amount: fullWon(value.supply) })}</small>
+                <small>{t("부가세 {amount}", { amount: fullWon(value.vat) })}</small>
+              </div>
+            ))}
+          </div>
+          <p className="field-hint">{t("운영자가 내준 무료 이용과 데모 계정의 결제는 빼요. 카드 결제가 테스트 모드인 동안에는 카드로 실제 돈이 오가지 않았어요.")}</p>
+        </>
+      )}
+    </section>
   )
 }
 
