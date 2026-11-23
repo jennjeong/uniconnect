@@ -10,6 +10,7 @@ import { DemoPreview } from "../components/DemoPreview"
 import { PageIntro } from "../components/PageIntro"
 import { ProposalControl } from "../components/ProposalControl"
 import { WorkCard } from "../components/WorkCard"
+import { DismissedList } from "../components/DismissedList"
 import { eventKinds } from "../data/eventDetails"
 import { groupFields } from "../data/industries"
 import { regions, universities, type Region } from "../data/universities"
@@ -18,7 +19,7 @@ import { t, tc } from "../i18n"
 import { todayIso } from "../lib/date"
 import { nearestFirst, shownTags } from "../lib/distance"
 import { matchesGroupFilters, matchesQuery, noGroupFilters, type GroupFilters } from "../lib/search"
-import type { Industry, Match, RequestStatus } from "../types"
+import type { DismissedListing, Industry, Match, RequestStatus } from "../types"
 
 // 범위: 무엇을 보는지. 정렬과 필터는 범위와 따로 고른다(components/CatalogControls.tsx).
 type Scope = "전체" | "추천" | "찜"
@@ -62,6 +63,9 @@ export function GroupsPage({
   undelivered = [],
   saved,
   onToggleSave,
+  dismissed,
+  onDismiss,
+  onUndismiss,
   onOpenDetail,
   onPropose,
   onCancelProposal,
@@ -87,6 +91,10 @@ export function GroupsPage({
   // 계정이 저장한 단체(찜)를 최신순으로, 그리고 각 카드의 하트.
   saved: string[]
   onToggleSave: (match: Match) => void
+  // 회원만: 관심 없음으로 추천에서 뺀 곳(#341), 추천 탭 카드의 빼기와 되돌리기.
+  dismissed?: DismissedListing[]
+  onDismiss?: (match: Match) => void
+  onUndismiss?: (listingId: string) => void
   onOpenDetail: (match: Match) => void
   onPropose: (match: Match) => void
   onCancelProposal: (match: Match) => void
@@ -188,6 +196,7 @@ export function GroupsPage({
       saved={saved.includes(group.id)}
       onToggleSave={() => onToggleSave(group)}
       compared={compare.has(group.id)}
+      onDismiss={scope === "추천" && dismissed && onDismiss ? () => onDismiss(group) : undefined}
       // 제안 하나에 보낼 단체를 고르는 일과 비교는 함께할 수 없다.
       onToggleCompare={picking ? undefined : () => compare.toggle(group.id)}
       date={group.eventDate}
@@ -439,6 +448,8 @@ export function GroupsPage({
           </button>
         </div>
       )}
+
+      {!picking && scope === "추천" && dismissed && onUndismiss && <DismissedList items={dismissed} onUndo={onUndismiss} />}
 
       {!picking && (
       <CompareTray

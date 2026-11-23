@@ -43,6 +43,7 @@ import type {
   Agreement,
   AgreementSummary,
   SavedSearch,
+  DismissedListing,
   BillingInfo,
   BlockedListing,
   BoardPost,
@@ -516,6 +517,10 @@ export const api = {
   block: (listingId: string) => request<{ ok: true }>("/blocks", { method: "POST", body: { listingId } }),
   unblock: (listingId: string) => request<void>(`/blocks/${encodeURIComponent(listingId)}`, { method: "DELETE" }),
   saved: () => request<{ saved: string[] }>("/saved"),
+  dismissed: () => request<{ dismissed: DismissedListing[] }>("/dismissed"),
+  dismiss: (listingId: string, reason: string) =>
+    request<void>(`/dismissed/${encodeURIComponent(listingId)}`, { method: "PUT", body: { reason } }),
+  undismiss: (listingId: string) => request<void>(`/dismissed/${encodeURIComponent(listingId)}`, { method: "DELETE" }),
   // 캠퍼스 캠페인(#400)
   programs: () => request<{ programs: Program[] }>("/programs"),
   program: (id: string) => request<{ program: Program }>(`/programs/${encodeURIComponent(id)}`),

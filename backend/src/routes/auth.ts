@@ -609,6 +609,14 @@ function removeAccount(database: Database, account: Account) {
   // Its 찜 list, and its listing in everyone else's.
   delete database.saved[account.id]
   delete database.savedSearches?.[account.id]
+  // 이 계정이 추천에서 뺀 상대, 그리고 남들이 이 계정의 리스팅을 뺀 표시다(#341).
+  if (database.dismissed) {
+    delete database.dismissed[account.id]
+    for (const [owner, list] of Object.entries(database.dismissed)) {
+      database.dismissed[owner] = list.filter((item) => item.listingId !== listingId)
+      if (database.dismissed[owner].length === 0) delete database.dismissed[owner]
+    }
+  }
   // 캠퍼스 캠페인이다. 결제 기록은 따로 남는다.
   forgetPrograms(database, account.id)
   for (const [saver, saved] of Object.entries(database.saved)) {
@@ -954,6 +962,10 @@ authRouter.get("/export", (req, res) => {
     saved: (database.saved[account.id] ?? []).map((id) => ({
       id,
       name: [...database.brands, ...database.groups].find((item) => item.id === id)?.name ?? null,
+    })),
+    dismissed: (database.dismissed?.[account.id] ?? []).map((item) => ({
+      ...item,
+      name: [...database.brands, ...database.groups].find((listing) => listing.id === item.listingId)?.name ?? null,
     })),
     blocked: (database.blocks[account.id] ?? []).map(
       (id) => database.accounts.find((item) => item.id === id)?.name ?? id,

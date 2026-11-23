@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto"
+import { dismissStats } from "../lib/dismissed.js"
 import { programConversion } from "../lib/programs.js"
 import { Router } from "express"
 
@@ -553,6 +554,7 @@ adminMoreRouter.get("/insights", async (req, res) => {
     searches: topSearches(database),
     searchesBySource: searchesBySource(database),
     programs: programConversion(database),
+    dismissals: dismissStats(database),
   })
 })
 

@@ -27,6 +27,7 @@ export function WorkCard({
   onToggleSave,
   compared,
   onToggleCompare,
+  onDismiss,
   children,
 }: {
   match: Match
@@ -45,6 +46,8 @@ export function WorkCard({
   // 비교: 비교에 담겼는지와, 담거나 빼는 버튼 (components/CompareTray.tsx).
   compared?: boolean
   onToggleCompare?: () => void
+  // 관심 없음(#341): 추천 탭의 카드에서 이 상대를 추천에서 뺀다.
+  onDismiss?: () => void
   // 아래쪽의 동작. 제안 버튼 같은 것.
   children: ReactNode
 }) {
@@ -81,6 +84,17 @@ export function WorkCard({
             >
               <Icon name={compared ? "check" : "plus"} size={16} />
               <span aria-hidden="true">{t("비교")}</span>
+            </button>
+          )}
+          {onDismiss && (
+            <button
+              aria-label={t("{name} 관심 없음", { name: match.name })}
+              className="save-toggle dismiss-toggle"
+              onClick={onDismiss}
+              title={t("관심 없음")}
+              type="button"
+            >
+              <Icon name="close" size={16} />
             </button>
           )}
           <button
