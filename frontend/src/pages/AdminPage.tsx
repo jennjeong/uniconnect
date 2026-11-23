@@ -429,6 +429,13 @@ function PaymentCard({
             </button>
           </>
         )}
+        {payment.status === "cancelled" && payment.expiredAt && !payment.example && (
+          // 기한이 지나 취소된 주문에 늦게 들어온 입금: 서버가 같은 금액으로 살 수 있을 때만 다시 열고 결제로 바꾼다.
+          // 내용이 바뀌었으면 409와 함께 돌려주라는 안내가 알림으로 뜬다.
+          <button className="detail-button" onClick={() => onPaid(payment)} type="button">
+            {t("늦은 입금 확인")}
+          </button>
+        )}
         {payment.status === "paid" &&
           payment.refundedAmount === undefined &&
           (sure ? (
