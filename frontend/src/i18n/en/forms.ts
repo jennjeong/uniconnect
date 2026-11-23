@@ -1629,6 +1629,11 @@ const en: Record<string, string> = {
   "이미 쓴 프로모션 코드예요.": "You've already used that promo code.",
   "사용 횟수가 다 찬 프로모션 코드예요.": "That promo code has been used up.",
   "이 주문에는 할인할 금액이 없어요.": "There's nothing to discount on this order.",
+  "밝게": "Light",
+  "어둡게": "Dark",
+  "기기 설정": "Device setting",
+  "화면 테마": "Theme",
+  "이 브라우저에서 밝게 · 어둡게 · 기기 설정 따라 볼 수 있어요.": "Show this browser light, dark or following your device.",
 }
 
 export default en
