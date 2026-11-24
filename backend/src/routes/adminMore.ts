@@ -27,6 +27,7 @@ import { photos, photoType } from "../lib/photos.js"
 import { approveReferralReward, referralRewardsOf, rejectReferralReward, tellReferrers, waitingReferralRewards } from "../lib/referrals.js"
 import { importBatches, importLimits, importListings, removeBatch } from "../lib/listingImport.js"
 import { normalizeCode, parsePromo, promoCodesOf, promoRows } from "../lib/promo.js"
+import { experimentsView, findExperiment, resetExperiment, switchExperiment } from "../lib/experiments.js"
 import { linkShop, tellInviters } from "../lib/shopInvites.js"
 import { memberDetail } from "../lib/console.js"
 import { backupStatus } from "../lib/backupStatus.js"
@@ -618,6 +619,39 @@ adminMoreRouter.get("/insights", async (req, res) => {
     programs: programConversion(database),
     dismissals: dismissStats(database),
   })
+})
+
+// A/B 테스트(#347): 실험마다 갈래별 노출 · 전환과 판정, 켜고 끄기, 숫자 지우기.
+adminMoreRouter.get("/experiments", async (req, res) => {
+  await requireAdmin(req)
+  res.json({ experiments: experimentsView(getDatabase()) })
+})
+
+const experimentOf = (key: unknown) => {
+  const experiment = findExperiment(key)
+  if (!experiment) throw new HttpError(404, "그런 실험이 없어요.")
+  return experiment
+}
+
+adminMoreRouter.put("/experiments/:key", async (req, res) => {
+  await requireAdmin(req)
+  const experiment = experimentOf(req.params.key)
+  if (typeof req.body?.on !== "boolean") throw new HttpError(400, "켤지 끌지 알려 주세요.")
+  const database = getDatabase()
+  switchExperiment(database, experiment.key, req.body.on)
+  logAdmin(database, "experiment-switched", { kind: "site", id: experiment.key }, req.body.on ? "on" : "off")
+  await saveDatabase()
+  res.json({ experiments: experimentsView(database) })
+})
+
+adminMoreRouter.post("/experiments/:key/reset", async (req, res) => {
+  await requireAdmin(req)
+  const experiment = experimentOf(req.params.key)
+  const database = getDatabase()
+  resetExperiment(database, experiment.key)
+  logAdmin(database, "experiment-reset", { kind: "site", id: experiment.key })
+  await saveDatabase()
+  res.json({ experiments: experimentsView(database) })
 })
 
 const target = (value: unknown) => {

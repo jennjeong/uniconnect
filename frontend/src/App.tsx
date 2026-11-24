@@ -43,6 +43,7 @@ import {
   type NotificationItem,
 } from "./lib/notifications"
 import { track } from "./lib/analytics"
+import { convertExperiments } from "./lib/experiments"
 import { applyPageMeta, pageMeta } from "./lib/pageMeta"
 import { install } from "./lib/install"
 import { installReveal } from "./lib/reveal"
@@ -2583,6 +2584,7 @@ function App() {
           }}
           onSignedUp={(session) => {
             track("sign_up", { method: "email", role: session.account.role })
+            convertExperiments("sign_up")
             startSession(session, t("{name} 계정으로 가입했어요. 환영해요!", { name: session.account.name }))
           }}
           onLogin={(next) => openAuth("login", next)}

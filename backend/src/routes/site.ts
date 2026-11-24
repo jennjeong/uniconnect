@@ -2,6 +2,7 @@ import { Router } from "express"
 
 import { config } from "../config.js"
 import { countSearch, searchSource, searchTerm, siteState } from "../lib/adminTools.js"
+import { countExperiment, runningExperiments } from "../lib/experiments.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { publicCounts } from "../lib/stats.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -17,6 +18,7 @@ siteRouter.get("/", (_req, res) => {
     ...siteState(database),
     faq: database.faq ?? { added: [], hidden: [] },
     counts: publicCounts(database),
+    experiments: runningExperiments(database),
     ...(config.kakaoMapKey ? { maps: { kakao: config.kakaoMapKey } } : {}),
   })
 })
@@ -38,5 +40,21 @@ siteRouter.post("/searches", async (req, res) => {
     countSearch(database, term, searchSource(database, req.account))
     await saveDatabase()
   }
+  res.status(204).end()
+})
+
+const experimentHits = createRateLimit({
+  label: "A/B 테스트 집계",
+  limit: 60,
+  windowMs: 15 * 60 * 1000,
+  message: "요청이 너무 많아요. 잠시 뒤에 다시 시도해 주세요.",
+})
+
+// A/B 테스트의 노출과 전환을 횟수로만 센다(lib/experiments.ts). 누가 보냈는지는 남기지
+// 않는다. 꺼진 실험이나 없는 갈래는 조용히 넘긴다.
+siteRouter.post("/experiments", async (req, res) => {
+  await experimentHits.take(clientKey(req))
+  const database = getDatabase()
+  if (countExperiment(database, req.body?.key, req.body?.variant, req.body?.event)) await saveDatabase()
   res.status(204).end()
 })

@@ -5108,6 +5108,38 @@
   cursor: default;
 }
 
+/* 분석의 A/B 테스트 (pages/AdminExperiments.tsx, #347): 실험마다 켜기 · 숫자 지우기, 갈래별 표, 판정. */
+.console-experiment {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.console-experiment h3 {
+  margin: 0;
+}
+
+.console-experiment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.console-experiment-verdict {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.875rem;
+}
+
+.console-experiment-verdict.a-wins,
+.console-experiment-verdict.b-wins {
+  color: var(--point-strong);
+  font-weight: var(--weight-semibold);
+}
+
 /* 콘텐츠의 대량 등록 (pages/AdminImport.tsx, #350): 양식과 파일 고르기, 검사 결과, 등록한 묶음. */
 .console-import {
   display: grid;

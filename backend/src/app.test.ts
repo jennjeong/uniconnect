@@ -7608,6 +7608,28 @@ test("the console's member tools, operations, content, analysis and system scree
     assert.equal(counted(insights.searchesBySource.demo), 1)
     assert.equal(counted(insights.searchesBySource.member), undefined)
     assert.ok(insights.searchesBySource.since)
+    // A/B 테스트는 켜진 실험의 알맞은 갈래만 횟수로 센다(#347).
+    assert.deepEqual(site.experiments, [])
+    await call("POST", "/site/experiments", { key: "landing-entry", variant: "A", event: "seen" })
+    assert.equal((await admin("GET", "/experiments")).data.experiments[0].variants[0].seen, 0)
+    assert.equal((await admin("PUT", "/experiments/nope", { on: true })).status, 404)
+    assert.equal((await admin("PUT", "/experiments/landing-entry", {})).status, 400)
+    assert.equal((await admin("PUT", "/experiments/landing-entry", { on: true })).data.experiments[0].on, true)
+    assert.deepEqual((await call("GET", "/site")).data.experiments, ["landing-entry"])
+    for (const [variant, event] of [["A", "seen"], ["A", "seen"], ["B", "seen"], ["B", "converted"], ["C", "seen"], ["A", "clicked"]])
+      await call("POST", "/site/experiments", { key: "landing-entry", variant, event })
+    await call("POST", "/site/experiments", { key: "constructor", variant: "A", event: "seen" })
+    const tried = (await admin("GET", "/experiments")).data.experiments[0]
+    assert.deepEqual(
+      tried.variants.map((row: { variant: string; seen: number; converted: number }) => [row.variant, row.seen, row.converted]),
+      [["A", 2, 0], ["B", 1, 1]],
+    )
+    assert.equal(tried.verdict, "too-early")
+    const cleared = (await admin("POST", "/experiments/landing-entry/reset")).data.experiments[0]
+    assert.equal(cleared.variants[1].seen, 0)
+    await admin("PUT", "/experiments/landing-entry", { on: false })
+    assert.deepEqual((await call("GET", "/site")).data.experiments, [])
+
     // 퍼널은 역할별 도달 회원 수다. 결제는 브랜드만 센다.
     type Funnel = { role: string; steps: { step: string; count: number }[] }[]
     const funnel = insights.funnel as Funnel
@@ -10198,4 +10220,13 @@ test("orders left unpaid expire after 7 days, with a warning the day before a tr
   assert.equal(order.status, "pending")
   // 여기서 끝나므로 이 주문들이 이후 테스트의 입금 대기 수에 들지 않게 지운다.
   getDatabase().payments = paymentsOf(getDatabase()).filter((item) => item.accountId !== account.id)
+})
+
+test("an A/B test compares two rates only once each side has 30 views", async () => {
+  const { compareRates } = await import("./lib/experiments.js")
+  assert.deepEqual(compareRates({ seen: 29, converted: 5 }, { seen: 100, converted: 50 }), { z: null, p: null })
+  const clear = compareRates({ seen: 1000, converted: 50 }, { seen: 1000, converted: 100 })
+  assert.ok(clear.z! > 0 && clear.p! < 0.05)
+  assert.ok(compareRates({ seen: 200, converted: 20 }, { seen: 200, converted: 22 }).p! > 0.05)
+  assert.deepEqual(compareRates({ seen: 40, converted: 0 }, { seen: 40, converted: 0 }), { z: 0, p: 1 })
 })

@@ -33,6 +33,7 @@ import { fullWon } from "../lib/sponsorships"
 import { kstMonth, kstStamp, taxLines, taxMonths, taxSummary } from "../lib/taxMonth"
 import type { Dispute, DisputeEvent, DisputeOutcome } from "../types"
 import type { AdminAgreementRow, AdminEventRow, AdminInsights, AdminInvites, AdminLive, AdminPayment, AdminPostRow, AdminProposalDetail, AdminReviewRow, AdminStaleProposal, AdminSystem, AgreementState, BackupSummary, FaqTopicKey, SiteFaq } from "../types"
+import { Experiments } from "./AdminExperiments"
 import { ImportListings } from "./AdminImport"
 import { CsvButton } from "./AdminTools"
 
@@ -344,6 +345,7 @@ export function Insights({ token, onNotice }: { token: string; onNotice: Notice 
         <h2>{t("종류별 회원")}</h2>
         <Bars rows={data.distribution.types.slice(0, 10).map((row) => ({ ...row, label: t(row.label) }))} />
       </section>
+      <Experiments onNotice={onNotice} token={token} />
     </div>
   )
 }

@@ -1,4 +1,5 @@
 import type {
+  AdminExperiment,
   Account,
   AdminProgram,
   AdminProgramGroup,
@@ -413,6 +414,19 @@ export const api = {
     request<PaymentOrder>("/billing/orders", { method: "POST", body: { kind, targetId, ...(promo ? { promo } : {}) } }),
   checkPromo: (kind: PaymentKind, targetId: string, code: string) =>
     request<{ code: string; discount: number; supply: number; amount: number }>("/billing/promo", { method: "POST", body: { kind, targetId, code } }),
+  adminExperiments: (token: string) =>
+    request<{ experiments: AdminExperiment[] }>("/admin/experiments", { headers: { "X-Admin-Token": token } }),
+  adminSwitchExperiment: (token: string, key: string, on: boolean) =>
+    request<{ experiments: AdminExperiment[] }>(`/admin/experiments/${encodeURIComponent(key)}`, {
+      method: "PUT",
+      headers: { "X-Admin-Token": token },
+      body: { on },
+    }),
+  adminResetExperiment: (token: string, key: string) =>
+    request<{ experiments: AdminExperiment[] }>(`/admin/experiments/${encodeURIComponent(key)}/reset`, {
+      method: "POST",
+      headers: { "X-Admin-Token": token },
+    }),
   adminPromos: (token: string) => request<{ promos: PromoRow[] }>("/admin/promos", { headers: { "X-Admin-Token": token } }),
   adminCreatePromo: (token: string, promo: Record<string, unknown>) =>
     request<{ promos: PromoRow[] }>("/admin/promos", { method: "POST", body: promo, headers: { "X-Admin-Token": token } }),
@@ -640,6 +654,8 @@ export const api = {
   // 사이트 전체가 읽는 운영자의 스위치: 점검, 가입, FAQ.
   siteState: () => request<SiteState>("/site"),
   countSearch: (q: string) => request<void>("/site/searches", { method: "POST", body: { q } }),
+  countExperiment: (key: string, variant: string, event: "seen" | "converted") =>
+    request<void>("/site/experiments", { method: "POST", body: { key, variant, event } }),
   adminLogout: (token: string, id: string) =>
     request<{ account: AdminMemberDetail }>(`/admin/accounts/${encodeURIComponent(id)}/logout`, { method: "POST", headers: { "X-Admin-Token": token } }),
   adminTags: (token: string, id: string, tags: string[]) =>
