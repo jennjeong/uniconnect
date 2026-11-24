@@ -24,6 +24,7 @@ const appPaths = [
   /^\/report\/[\w-]+\/?$/,
   /^\/ledger\/[\w-]+\/?$/,
   /^\/check-in\/[\w-]+(\/(staff|group))?\/?$/,
+  /^\/coupons\/?$/,
 ]
 
 export const isAppPath = (pathname: string) => appPaths.some((pattern) => pattern.test(pathname))

@@ -36,7 +36,9 @@ keepReferral()
 // 페이지(/check-in/<code>/staff)를, 학생단체의 직원은 자기
 // 페이지(/check-in/<code>/group)를 본다. 어느 것도 검색 결과에 나오면 안 된다.
 const checkIn = currentCheckIn()
-if (checkIn) {
+// 참여자의 쿠폰함(/coupons)도 체크인 페이지처럼 앱 없이 선다.
+const couponWallet = window.location.pathname.replace(/\/$/, '') === '/coupons'
+if (checkIn || couponWallet) {
   document.body.classList.add('checkin-body')
   keepOutOfSearch()
 }
@@ -62,6 +64,10 @@ const StaffCheckInPage = lazyPage(() =>
   import('./checkin/StaffCheckInPage').then((module) => ({ default: module.StaffCheckInPage })),
 )
 
+const CouponWalletPage = lazyPage(() =>
+  import('./checkin/CouponWalletPage').then((module) => ({ default: module.CouponWalletPage })),
+)
+
 // 거기서만 불러오므로 회원은 내려받지 않는다.
 const AdminConsole = lazyPage(() => import('./pages/AdminPage').then((module) => ({ default: module.AdminConsole })))
 
@@ -81,6 +87,10 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         ) : (
           <CheckInPage code={checkIn.code} />
         )}
+      </React.Suspense>
+    ) : couponWallet ? (
+      <React.Suspense fallback={null}>
+        <CouponWalletPage />
       </React.Suspense>
     ) : adminConsole ? (
       <React.Suspense fallback={null}>

@@ -544,6 +544,22 @@ const en: Record<string, string> = {
   "참여 내역을 불러오는 중이에요.": "Loading the participation log…",
   "예시 집계이며 상세 기록은 제공되지 않아요.": "These are example totals; the detailed log isn't provided.",
   "누적 숫자는 집계됐지만, 상세 기록은 보관 기간이 지나 남아 있지 않아요.": "The totals were counted, but the detailed log is past its keeping period.",
+  "매장에서 이 번호를 직원에게 보여 주세요.": "Show this number to the staff at the store.",
+  "이미지를 만들지 못했어요. 화면을 캡처해 주세요.": "Couldn't make the image. Please take a screenshot.",
+  "{store} 쿠폰을 이미지로 저장": "Save the {store} coupon as an image",
+  "이미지로 저장": "Save as image",
+  "받은 쿠폰 모아 보기": "See all my coupons",
+  "쓸 수 있어요": "Ready to use",
+  "방문 확인됨": "Visit confirmed",
+  "기한 지남": "Expired",
+  "쿠폰함": "Coupons",
+  "받은 쿠폰": "My coupons",
+  "쓸 수 있는 쿠폰 {count}장": "{count} coupons ready to use",
+  "행사 QR로 받은 쿠폰이 여기 모여요.": "Coupons from event QR codes gather here.",
+  "이 휴대폰의 이 브라우저에만 남아요. 잃어버리지 않게 이미지로도 저장해 두세요.": "They stay only in this browser on this phone. Save them as images too so you don't lose them.",
+  "아직 받은 쿠폰이 없어요. 행사장의 QR을 스캔해 보세요.": "No coupons yet. Scan the QR code at an event.",
+  "{store} 쿠폰을 쿠폰함에서 지우기": "Remove the {store} coupon from my coupons",
+  "행사 QR로 받은 쿠폰은 참여 기록(익명 참여 번호)과 함께 그 휴대폰의 브라우저 저장소(localStorage)에 둬요. 쿠폰함(/coupons)은 이것만 모아 보여 주고 서버에 따로 보내지 않아요. 쿠폰함에서 지우거나 브라우저 데이터를 지우면 사라져요.": "Coupons taken through an event QR code are kept with the check-in record (an anonymous participant number) in that phone's browser storage (localStorage). The coupon page (/coupons) only gathers them and sends nothing more to the server. They go when removed from the coupon page or when the browser's data is cleared.",
 }
 
 export default en
