@@ -232,6 +232,7 @@ const en: Record<string, string> = {
   "{participant}로 기록됐어요.": "You're checked in as {participant}.",
   "행사 참여자 전용 쿠폰": "For event guests only",
   "쿠폰 번호": "Coupon number",
+  "{date}까지 쓸 수 있었어요": "Was valid until {date}",
   "{store} 쿠폰 받기": "Get {store} coupon",
   "쿠폰 받기": "Get coupon",
   "방문이 확인됐어요. 맛있게 드세요!": "Visit confirmed. Enjoy!",

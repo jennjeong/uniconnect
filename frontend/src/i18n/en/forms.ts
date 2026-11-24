@@ -1651,6 +1651,7 @@ const en: Record<string, string> = {
   "실험을 시작했어요.": "Started the test.",
   "실험 멈추기": "Stop test",
   "실험 시작": "Start test",
+  "가입 (승인 대기 포함)": "Sign-up (including those awaiting approval)",
   "이 실험의 숫자를 모두 지우고 처음부터 셀까요?": "Clear this test's counts and start counting again?",
   "숫자를 지웠어요.": "Cleared the counts.",
   "숫자 지우기": "Clear counts",
@@ -1660,7 +1661,7 @@ const en: Record<string, string> = {
   "전환": "Conversions",
   "A/B 테스트 켜기 · 끄기": "A/B test on · off",
   "A/B 테스트 숫자 지우기": "A/B test counts cleared",
-  "문구를 비교하는 A/B 테스트가 켜져 있으면, 어느 문구를 보여 줄지 정하려고 무작위 번호와 본 문구를 브라우저 저장소(localStorage)에 둬요. 번호는 서버에 보내지 않고, 서버는 문구별로 보인 횟수와 가입으로 이어진 횟수만 세요.": "While an A/B test comparing wordings runs, a random number and the wording shown are kept in browser storage (localStorage) to decide which wording to show. The number is never sent to the server, which counts only how often each wording was shown and led to a sign-up.",
+  "문구를 비교하는 A/B 테스트가 켜져 있으면, 어느 문구를 보여 줄지 정하려고 무작위 번호와 켜진 실험, 본 문구를 브라우저 저장소(localStorage)에 둬요. 번호는 서버에 보내지 않고, 서버는 문구별로 보인 횟수와 가입으로 이어진 횟수만 세요.": "While an A/B test comparing wordings runs, a random number, the running tests and the wording shown are kept in browser storage (localStorage) to decide which wording to show. The number is never sent to the server, which counts only how often each wording was shown and led to a sign-up.",
 }
 
 export default en

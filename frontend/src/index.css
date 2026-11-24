@@ -9122,6 +9122,11 @@ html.modal-open {
   font-size: 0.8125rem;
 }
 
+/* A/B 테스트의 문구를 정하는 동안(lib/experiments.ts) 자리만 지킨다. */
+.landing-entry small.landing-entry-waiting {
+  visibility: hidden;
+}
+
 .landing-entry.blue {
   background: var(--point);
   box-shadow: none;

@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises"
 
+import AxeBuilder from "@axe-core/playwright"
 import { expect, test, type Page } from "@playwright/test"
 
 import { codeAt, stepAt } from "../backend/src/lib/totp"
@@ -3163,4 +3164,70 @@ test("either side of an agreement opens a dispute, both add to it, and an operat
   await expect(record).toContainText("브랜드가 이번 주 안에 보내기로 합의했어요.")
   await expect(record).not.toContainText("양쪽에 입금 일정을 물어볼 것")
   await expect(record.getByLabel("남길 말")).toHaveCount(0)
+})
+
+test("coupons stay on the phone after the event's record is gone", async ({ page }) => {
+  await page.addInitScript(() => {
+    const coupons = { "sp-busking": { number: "UC-KEEPME", store: "오후의 커피 공릉점", title: "아메리카노 1+1", takenAt: "2026-10-27T03:00:00Z" } }
+    localStorage.setItem("uniconnect-checkin-20261012", JSON.stringify({ participant: "참여자 #1", pass: "gone", coupons }))
+  })
+  await page.route("**/api/check-in/20261012/passes/*", (route) => route.fulfill({ status: 404, json: { error: "참여 기록을 찾을 수 없어요." } }))
+  await page.route("**/api/check-in/20261012/scans", (route) => route.fulfill({ status: 409, json: { error: "행사가 끝났어요." } }))
+  await page.goto("/check-in/20261012")
+  await expect(page.getByRole("alert")).toHaveText("행사가 끝났어요.")
+  await expect(page.getByText("UC-KEEPME")).toBeVisible()
+  const kept = await page.evaluate(() => JSON.parse(localStorage.getItem("uniconnect-checkin-20261012")!))
+  expect(kept.pass).toBeUndefined()
+  expect(kept.coupons["sp-busking"].number).toBe("UC-KEEPME")
+  await expect(page.getByText(/직원에게 보여 주세요/)).toHaveCount(0)
+  // 쿠폰함은 기한 지난 것으로 보여 주고, 그 글자도 읽을 만큼 짙다.
+  await page.goto("/coupons")
+  await expect(page.getByText("기한 지남")).toBeVisible()
+  const found = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze()
+  expect(found.violations.filter((item) => ["critical", "serious"].includes(item.impact ?? "")).map((item) => item.id)).toEqual([])
+})
+
+test("an A/B wording never changes once it is shown, and only a shown and confirmed run counts", async ({ browser }) => {
+  // 컴퓨터 속도에 기대지 않게 순서를 정한다: 제때면 기다림(0.5초)이 끝나지 않게 하고,
+  // 늦으면 A가 보인 뒤에야 서버의 답을 보낸다.
+  for (const late of [false, true]) {
+    const context = await browser.newContext()
+    const page = await context.newPage()
+    const sent: string[] = []
+    let release = () => {}
+    const shown = new Promise<void>((resolve) => (release = resolve))
+    if (!late) release()
+    await page.addInitScript((keepWaiting) => {
+      // 이 번호는 B다(lib/experiments.ts의 pickVariant).
+      localStorage.setItem("uniconnect-ab-id", "id-B")
+      if (!keepWaiting) return
+      const original = window.setTimeout
+      window.setTimeout = ((run: () => void, ms?: number) => original(run, ms === 500 ? 600_000 : ms)) as typeof window.setTimeout
+    }, !late)
+    await page.route("**/api/site", async (route) => {
+      const answer = await (await route.fetch()).json()
+      await shown
+      await route.fulfill({ json: { ...answer, experiments: { "landing-entry": "run-1" } } })
+    })
+    await page.route("**/api/site/experiments", (route) => {
+      sent.push(route.request().postDataJSON().variant)
+      return route.fulfill({ status: 204 })
+    })
+    const line = page.locator(".landing-entry small").first()
+    const first = late ? "행사 협찬 받기" : "무료로 가입하고 협찬 받기"
+    await page.goto("/")
+    await expect(line).toBeVisible()
+    await expect(line).toHaveText(first)
+    release()
+    await expect.poll(() => page.evaluate(() => localStorage.getItem("uniconnect-ab-running"))).toContain("run-1")
+    await page.waitForTimeout(500)
+    // 늦게 온 답은 이번 화면을 바꾸지도 세지도 않는다.
+    await expect(line).toHaveText(first)
+    expect(sent).toEqual(late ? [] : ["B"])
+    // 다음 방문은 답을 기다리지 않고 자기 문구로 시작한다.
+    await page.reload()
+    await expect(line).toHaveText("무료로 가입하고 협찬 받기")
+    await expect.poll(() => sent).toEqual(["B"])
+    await context.close()
+  }
 })

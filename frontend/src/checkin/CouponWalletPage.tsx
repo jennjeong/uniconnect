@@ -5,8 +5,7 @@ import logo from "../assets/brand/uniconnect_horizontal.svg"
 import { Icon } from "../components/Icon"
 import { t } from "../i18n"
 import { saveCouponImage } from "../lib/couponImage"
-import { hideCoupon, mergeTaken, readCheckIn, savedCheckIns, walletCoupons, writeCheckIn, type CouponState, type WalletCoupon } from "../lib/couponWallet"
-import { formatFullDate } from "../lib/date"
+import { couponUntilText, hideCoupon, mergeTaken, readCheckIn, savedCheckIns, walletCoupons, writeCheckIn, type CouponState, type WalletCoupon } from "../lib/couponWallet"
 
 const stateLabel: Record<CouponState, string> = {
   ready: "쓸 수 있어요",
@@ -88,7 +87,7 @@ export function CouponWalletPage() {
                 <div className="coupon-code">
                   <span>{t("쿠폰 번호")}</span>
                   <strong>{coupon.number}</strong>
-                  {coupon.until && <small>{t("{date}까지 쓸 수 있어요", { date: formatFullDate(coupon.until) })}</small>}
+                  {coupon.until && <small>{couponUntilText(coupon.until, coupon.state !== "expired")}</small>}
                 </div>
                 <div className="wallet-actions">
                   {coupon.state === "ready" && (

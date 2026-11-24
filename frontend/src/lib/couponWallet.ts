@@ -1,4 +1,5 @@
-import { addDaysIso, toIsoDate } from "./date"
+import { t } from "../i18n"
+import { addDaysIso, formatFullDate, toIsoDate } from "./date"
 
 // 이 휴대폰의 쿠폰함(#352). 참여자가 행사 QR로 받은 쿠폰은 행사마다
 // localStorage의 `uniconnect-checkin-<code>`에 남는다(CheckInPage). 쿠폰함(/coupons)은
@@ -53,6 +54,14 @@ export function writeCheckIn(code: string, checkIn: CheckIn | null) {
   }
 }
 
+// 서버가 더는 모르는 패스를 버리고 쿠폰은 남긴다. 그 번호는 이제 쓸 수 없다.
+export function keepWithoutPass(code: string, checkIn: CheckIn | null): CheckIn | null {
+  if (!checkIn) return null
+  const { pass: _gone, ...rest } = checkIn
+  writeCheckIn(code, rest)
+  return rest
+}
+
 // 서버가 답한 쿠폰 상태에 이 휴대폰이 받을 때 적어 둔 것(가게, 내용, 받은 때)을 붙인다.
 export function mergeTaken(
   saved: Record<string, TakenCoupon> | undefined,
@@ -85,6 +94,11 @@ export function couponUntil(coupon: TakenCoupon) {
   return coupon.expiresAt ? toIsoDate(date) : addDaysIso(toIsoDate(date), couponDays)
 }
 
+export const couponUntilText = (until: string, open: boolean) =>
+  open
+    ? t("{date}까지 쓸 수 있어요", { date: formatFullDate(until) })
+    : t("{date}까지 쓸 수 있었어요", { date: formatFullDate(until) })
+
 // 서버가 준 기한은 그 시각까지, 행사 쿠폰은 마지막 날이 끝날 때까지 쓸 수 있다.
 export function couponState(coupon: TakenCoupon, now = new Date()): CouponState {
   if (coupon.visited) return "used"
@@ -109,7 +123,8 @@ export function walletCoupons(entries: [string, CheckIn | null][], now = new Dat
           eventName: checkIn?.eventName,
           groupName: checkIn?.groupName,
           until: couponUntil(coupon),
-          state: couponState(coupon, now),
+          // 패스가 없으면 가게가 확인할 수 없는 번호라 기한 지난 것으로 본다.
+          state: !coupon.visited && !checkIn?.pass ? "expired" : couponState(coupon, now),
         })),
     )
     .sort((a, b) => order[a.state] - order[b.state] || (b.takenAt ?? "").localeCompare(a.takenAt ?? ""))

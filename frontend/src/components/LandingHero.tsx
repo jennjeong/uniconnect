@@ -18,8 +18,11 @@ export function LandingHero({
   onInstall?: () => void
 }) {
   // A/B 테스트(#347): B는 시작 버튼의 아랫줄을 가입이 무료라는 말로 바꾼다.
-  const variant = useExperiment("landing-entry", useSiteState()?.experiments)
+  const site = useSiteState()
+  const { variant, ready } = useExperiment("landing-entry", site && (site.experiments ?? {}))
   const free = variant === "B"
+  // 문구를 정하는 동안(첫 방문, 길어야 0.5초) 자리는 지키고 글자만 감춘다.
+  const copy = ready ? undefined : "landing-entry-waiting"
   return (
     <section aria-labelledby="landing-title" className="landing-hero">
       <div className="landing-hero-copy">
@@ -37,7 +40,7 @@ export function LandingHero({
             <RoleMark role="학생단체" size={32} />
             <span>
               <strong>{t("학생단체로 시작")}</strong>
-              <small>{free ? t("무료로 가입하고 협찬 받기") : t("행사 협찬 받기")}</small>
+              <small className={copy}>{free ? t("무료로 가입하고 협찬 받기") : t("행사 협찬 받기")}</small>
             </span>
             <Icon name="arrow" size={18} />
           </button>
@@ -45,7 +48,7 @@ export function LandingHero({
             <RoleMark role="브랜드" size={32} />
             <span>
               <strong>{t("브랜드로 시작")}</strong>
-              <small>{free ? t("무료로 가입하고 학생 행사 찾기") : t("학생 행사 협찬하기")}</small>
+              <small className={copy}>{free ? t("무료로 가입하고 학생 행사 찾기") : t("학생 행사 협찬하기")}</small>
             </span>
             <Icon name="arrow" size={18} />
           </button>
