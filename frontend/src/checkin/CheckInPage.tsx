@@ -6,7 +6,7 @@ import { Icon } from "../components/Icon"
 import { surveyOptions, surveyQuestions, type SurveyKey } from "../data/survey"
 import { t } from "../i18n"
 import { saveCouponImage } from "../lib/couponImage"
-import { couponUntil, mergeTaken, readCheckIn, writeCheckIn, type CheckIn } from "../lib/couponWallet"
+import { couponState, couponUntil, couponUntilText, keepWithoutPass, mergeTaken, readCheckIn, writeCheckIn, type CheckIn, type TakenCoupon } from "../lib/couponWallet"
 import { formatFullDate } from "../lib/date"
 import type { CheckInInfo } from "../types"
 
@@ -79,10 +79,32 @@ export function CheckInPage({ code }: { code: string }) {
   }
 
   // 패스가 생기기 전에 저장된 체크인이나 서버가 더는 모르는 체크인은 다시
-  // 스캔한다.
+  // 스캔한다. 받은 쿠폰이 있으면 다시 스캔된 뒤에만 새로 시작한다: 끝난 행사는
+  // 스캔을 받지 않으므로, 패스만 버리고 쿠폰은 기록으로 남긴다(쿠폰함).
+  const reopening = useRef(false)
   const restart = () => {
-    scanned.current = false
-    save(null)
+    if (Object.keys(checkIn?.coupons ?? {}).length === 0) {
+      scanned.current = false
+      save(null)
+      return
+    }
+    if (reopening.current) return
+    reopening.current = true
+    api
+      .recordCheckIn(code, "scans")
+      .then(({ entry, pass }) => {
+        reopening.current = false
+        save({ participant: entry.participant, pass })
+      })
+      .catch((caught) => {
+        // 잠깐의 실패(요청 제한, 서버 오류)에는 그대로 두고, 페이지를 다시 열 때 한 번 더 해 본다.
+        const closed = caught instanceof ApiError && caught.status >= 400 && caught.status < 500 && caught.status !== 429
+        if (closed) {
+          reopening.current = false
+          setCheckIn((current) => keepWithoutPass(code, current))
+        }
+        setError(errorMessage(caught))
+      })
   }
 
   useEffect(() => {
@@ -190,7 +212,9 @@ export function CheckInPage({ code }: { code: string }) {
   }
 
   const taken = checkIn?.coupons ?? {}
-  const anyWaiting = Object.values(taken).some((coupon) => !coupon.visited)
+  // 가게에서 보여 줄 수 있는 쿠폰: 패스가 있고 아직 쓸 수 있는 것.
+  const usable = (coupon: TakenCoupon) => Boolean(checkIn?.pass) && couponState(coupon) === "ready"
+  const anyWaiting = Object.values(taken).some(usable)
 
   return (
     <div className="checkin">
@@ -238,7 +262,7 @@ export function CheckInPage({ code }: { code: string }) {
                         <span>{t("쿠폰 번호")}</span>
                         <strong>{mine.number}</strong>
                         {couponUntil(mine) && (
-                          <small>{t("{date}까지 쓸 수 있어요", { date: formatFullDate(couponUntil(mine)!) })}</small>
+                          <small>{couponUntilText(couponUntil(mine)!, usable(mine) || Boolean(mine.visited))}</small>
                         )}
                         <button
                           aria-label={t("{store} 쿠폰을 이미지로 저장", { store: coupon.store })}

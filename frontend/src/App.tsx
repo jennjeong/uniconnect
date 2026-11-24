@@ -2579,6 +2579,7 @@ function App() {
           invite={view.invite}
           onClose={closeModal}
           onPending={() => {
+            convertExperiments("sign_up")
             closeModal()
             showNotice(t("서류를 보냈어요. 운영자가 확인하면 메일로 알려 드려요."))
           }}

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 
 import { api } from "../api"
 import { faqs, type FaqItem } from "../data/faq"
+import { rememberRunning } from "../lib/experiments"
 import type { SiteState } from "../types"
 
 // 사이트 전체가 읽는 운영진의 스위치 (GET /api/site). 점검 여부, 가입이 열려
@@ -15,6 +16,7 @@ export function refreshSiteState() {
   loading = api.siteState().then(
     (state) => {
       cached = state
+      rememberRunning(state.experiments ?? {})
       for (const listener of listeners) listener(state)
       return state
     },

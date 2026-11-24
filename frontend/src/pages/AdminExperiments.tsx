@@ -14,7 +14,7 @@ const verdictLabels: Record<AdminExperiment["verdict"], string> = {
   "a-wins": "A가 더 많이 목표로 이어졌어요.",
 }
 
-const goalLabels: Record<string, string> = { sign_up: "가입" }
+const goalLabels: Record<string, string> = { sign_up: "가입 (승인 대기 포함)" }
 
 // 운영자 콘솔 분석의 A/B 테스트(#347). 실험은 코드에 있고(data/experiments.ts),
 // 여기서는 켜고 끄고, 갈래별 노출 · 전환과 판정을 보고, 숫자를 처음부터 다시 센다.

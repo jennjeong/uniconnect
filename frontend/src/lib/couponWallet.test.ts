@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { couponState, couponUntil, mergeTaken, walletCoupons } from "./couponWallet"
+import { couponState, couponUntil, keepWithoutPass, mergeTaken, walletCoupons } from "./couponWallet"
 
 const now = new Date("2026-11-24T12:00:00Z")
 
@@ -36,6 +36,7 @@ describe("coupon wallet", () => {
           "e2",
           {
             participant: "P-2",
+            pass: "pass-2",
             coupons: {
               b: { number: "B1", takenAt: "2026-11-22T00:00:00Z" },
               c: { number: "C1", takenAt: "2026-11-23T00:00:00Z" },
@@ -53,5 +54,19 @@ describe("coupon wallet", () => {
       ["A1", "used"],
     ])
     expect(coupons[2].eventName).toBe("가을 공연")
+  })
+
+  it("keeps the coupons, as expired, once the server has dropped the pass", () => {
+    const kept = keepWithoutPass("e1", {
+      participant: "P-1",
+      pass: "gone",
+      coupons: { a: { number: "A1", visited: true }, b: { number: "B1", takenAt: "2026-11-24T00:00:00Z" } },
+    })
+    expect(kept?.pass).toBeUndefined()
+    expect(walletCoupons([["e1", kept]], now).map((coupon) => [coupon.number, coupon.state])).toEqual([
+      ["A1", "used"],
+      ["B1", "expired"],
+    ])
+    expect(keepWithoutPass("e1", null)).toBeNull()
   })
 })

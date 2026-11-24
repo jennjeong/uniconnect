@@ -9252,9 +9252,16 @@ th[aria-sort="descending"] .console-sort span {
   color: var(--on-point);
 }
 
+/* 흐리게(opacity) 하면 글자 대비가 모자라므로 테두리와 바탕으로 가른다. */
 .wallet-coupon.used,
 .wallet-coupon.expired {
-  opacity: 0.72;
+  border-color: var(--line);
+  background: var(--surface);
+}
+
+.wallet-coupon.used .coupon-code,
+.wallet-coupon.expired .coupon-code {
+  background: var(--fill);
 }
 
 .wallet-actions {
