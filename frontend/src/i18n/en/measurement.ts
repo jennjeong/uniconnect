@@ -559,7 +559,7 @@ const en: Record<string, string> = {
   "이 휴대폰의 이 브라우저에만 남아요. 잃어버리지 않게 이미지로도 저장해 두세요.": "They stay only in this browser on this phone. Save them as images too so you don't lose them.",
   "아직 받은 쿠폰이 없어요. 행사장의 QR을 스캔해 보세요.": "No coupons yet. Scan the QR code at an event.",
   "{store} 쿠폰을 쿠폰함에서 지우기": "Remove the {store} coupon from my coupons",
-  "행사 QR로 받은 쿠폰은 참여 기록(익명 참여 번호)과 함께 그 휴대폰의 브라우저 저장소(localStorage)에 둬요. 쿠폰함(/coupons)은 이것만 모아 보여 주고 서버에 따로 보내지 않아요. 쿠폰함에서 지우거나 브라우저 데이터를 지우면 사라져요.": "Coupons taken through an event QR code are kept with the check-in record (an anonymous participant number) in that phone's browser storage (localStorage). The coupon page (/coupons) only gathers them and sends nothing more to the server. They go when removed from the coupon page or when the browser's data is cleared.",
+  "행사 QR로 받은 쿠폰은 참여 기록(익명 참여 번호)과 함께 그 휴대폰의 브라우저 저장소(localStorage)에 둬요. 쿠폰함(/coupons)은 이것을 모아 보여 주고, 열 때 매장 방문이 확인됐는지 알려고 참여 기록의 무작위 번호를 서버에 한 번 보내요. 쿠폰함에서 지우면 목록에서 숨겨지고, 브라우저 데이터를 지우면 사라져요.": "Coupons taken through an event QR code are kept with the check-in record (an anonymous participant number) in that phone's browser storage (localStorage). The coupon page (/coupons) gathers them and, when opened, sends the check-in record's random number to the server once to ask whether a store visit was confirmed. Removing one from the coupon page hides it from the list, and clearing the browser's data deletes them.",
 }
 
 export default en

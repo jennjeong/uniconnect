@@ -1,3 +1,5 @@
+import { addDaysIso, toIsoDate } from "./date"
+
 // 이 휴대폰의 쿠폰함(#352). 참여자가 행사 QR로 받은 쿠폰은 행사마다
 // localStorage의 `uniconnect-checkin-<code>`에 남는다(CheckInPage). 쿠폰함(/coupons)은
 // 그 기록을 모두 모아 보여 주고, 쿠폰마다 이미지로 저장하게 한다.
@@ -70,23 +72,25 @@ export type WalletCoupon = TakenCoupon & {
   id: string
   eventName?: string
   groupName?: string
-  // 쓸 수 있는 마지막 순간(ISO). 서버 값이 없으면 받은 때부터 7일, 그것도 없으면 모른다.
+  // 쓸 수 있는 마지막 날. 서버 값이 없으면 받은 날부터 7일, 그것도 없으면 모른다.
   until?: string
   state: CouponState
 }
 
+// 쓸 수 있는 마지막 날(이 휴대폰의 날짜). UTC로 자르면 한국의 오전에는 하루 이르다.
 export function couponUntil(coupon: TakenCoupon) {
-  if (coupon.expiresAt) return coupon.expiresAt
-  if (!coupon.takenAt) return undefined
-  const taken = new Date(coupon.takenAt)
-  if (Number.isNaN(taken.getTime())) return undefined
-  return new Date(taken.getTime() + couponDays * 86_400_000).toISOString()
+  const moment = coupon.expiresAt ?? coupon.takenAt
+  const date = moment ? new Date(moment) : undefined
+  if (!date || Number.isNaN(date.getTime())) return undefined
+  return coupon.expiresAt ? toIsoDate(date) : addDaysIso(toIsoDate(date), couponDays)
 }
 
+// 서버가 준 기한은 그 시각까지, 행사 쿠폰은 마지막 날이 끝날 때까지 쓸 수 있다.
 export function couponState(coupon: TakenCoupon, now = new Date()): CouponState {
   if (coupon.visited) return "used"
+  if (coupon.expiresAt) return new Date(coupon.expiresAt).getTime() < now.getTime() ? "expired" : "ready"
   const until = couponUntil(coupon)
-  return until && new Date(until).getTime() < now.getTime() ? "expired" : "ready"
+  return until && until < toIsoDate(now) ? "expired" : "ready"
 }
 
 const order: Record<CouponState, number> = { ready: 0, used: 1, expired: 2 }

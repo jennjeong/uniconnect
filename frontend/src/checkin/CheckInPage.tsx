@@ -238,7 +238,7 @@ export function CheckInPage({ code }: { code: string }) {
                         <span>{t("쿠폰 번호")}</span>
                         <strong>{mine.number}</strong>
                         {couponUntil(mine) && (
-                          <small>{t("{date}까지 쓸 수 있어요", { date: formatFullDate(couponUntil(mine)!.slice(0, 10)) })}</small>
+                          <small>{t("{date}까지 쓸 수 있어요", { date: formatFullDate(couponUntil(mine)!) })}</small>
                         )}
                         <button
                           aria-label={t("{store} 쿠폰을 이미지로 저장", { store: coupon.store })}

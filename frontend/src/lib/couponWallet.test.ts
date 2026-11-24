@@ -6,8 +6,11 @@ const now = new Date("2026-11-24T12:00:00Z")
 
 describe("coupon wallet", () => {
   it("dates a coupon from the server, else seven days after it was taken", () => {
-    expect(couponUntil({ number: "1", expiresAt: "2026-12-01T00:00:00Z", takenAt: "2026-11-01T00:00:00Z" })).toBe("2026-12-01T00:00:00Z")
-    expect(couponUntil({ number: "1", takenAt: "2026-11-20T00:00:00.000Z" })).toBe("2026-11-27T00:00:00.000Z")
+    expect(couponUntil({ number: "1", expiresAt: new Date(2026, 11, 1, 8).toISOString() })).toBe("2026-12-01")
+    // 이 휴대폰의 이른 아침에 받아도 그날부터 센다.
+    expect(couponUntil({ number: "1", takenAt: new Date(2026, 10, 20, 1).toISOString() })).toBe("2026-11-27")
+    expect(couponState({ number: "1", takenAt: new Date(2026, 10, 20, 1).toISOString() }, new Date(2026, 10, 27, 23))).toBe("ready")
+    expect(couponState({ number: "1", takenAt: new Date(2026, 10, 20, 1).toISOString() }, new Date(2026, 10, 28, 1))).toBe("expired")
     expect(couponUntil({ number: "1" })).toBeUndefined()
   })
 

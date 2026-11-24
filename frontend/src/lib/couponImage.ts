@@ -67,7 +67,7 @@ export function drawCoupon(canvas: HTMLCanvasElement, coupon: CouponPicture) {
   if (coupon.until) {
     context.fillStyle = "#1d4ed8"
     context.font = font(600, 36)
-    context.fillText(fit(context, t("{date}까지 쓸 수 있어요", { date: formatFullDate(coupon.until.slice(0, 10)) }), inner), 170, 640)
+    context.fillText(fit(context, t("{date}까지 쓸 수 있어요", { date: formatFullDate(coupon.until) }), inner), 170, 640)
   }
 
   context.textAlign = "center"

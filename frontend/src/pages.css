@@ -9145,6 +9145,11 @@ th[aria-sort="descending"] .console-sort span {
   gap: 8px;
 }
 
+/* 다크 모드에서는 짙은 로고가 바탕에 묻혀 흰색으로 보인다. */
+:root[data-theme="dark"] .checkin-header img {
+  filter: brightness(0) invert(1);
+}
+
 /* 쿠폰 이미지 저장과 쿠폰함(/coupons, #352) */
 .coupon-save {
   display: inline-flex;

@@ -5,7 +5,7 @@ import logo from "../assets/brand/uniconnect_horizontal.svg"
 import { Icon } from "../components/Icon"
 import { t } from "../i18n"
 import { saveCouponImage } from "../lib/couponImage"
-import { hideCoupon, mergeTaken, savedCheckIns, walletCoupons, writeCheckIn, type CouponState, type WalletCoupon } from "../lib/couponWallet"
+import { hideCoupon, mergeTaken, readCheckIn, savedCheckIns, walletCoupons, writeCheckIn, type CouponState, type WalletCoupon } from "../lib/couponWallet"
 import { formatFullDate } from "../lib/date"
 
 const stateLabel: Record<CouponState, string> = {
@@ -29,7 +29,9 @@ export function CouponWalletPage() {
     void Promise.allSettled(
       open.map(([code, checkIn]) =>
         api.checkInPass(code, checkIn!.pass!).then(({ coupons: server }) => {
-          writeCheckIn(code, { ...checkIn!, coupons: mergeTaken(checkIn!.coupons, server) })
+          // 답을 기다리는 동안 쿠폰을 숨겼을 수 있으니 지금 저장된 것에 붙인다.
+          const current = readCheckIn(code)
+          if (current?.pass === checkIn!.pass) writeCheckIn(code, { ...current, coupons: mergeTaken(current!.coupons, server) })
         }),
       ),
     ).then(() => {
@@ -86,7 +88,7 @@ export function CouponWalletPage() {
                 <div className="coupon-code">
                   <span>{t("쿠폰 번호")}</span>
                   <strong>{coupon.number}</strong>
-                  {coupon.until && <small>{t("{date}까지 쓸 수 있어요", { date: formatFullDate(coupon.until.slice(0, 10)) })}</small>}
+                  {coupon.until && <small>{t("{date}까지 쓸 수 있어요", { date: formatFullDate(coupon.until) })}</small>}
                 </div>
                 <div className="wallet-actions">
                   {coupon.state === "ready" && (
