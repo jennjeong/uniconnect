@@ -5,15 +5,10 @@ import logo from "../assets/brand/uniconnect_horizontal.svg"
 import { Icon } from "../components/Icon"
 import { surveyOptions, surveyQuestions, type SurveyKey } from "../data/survey"
 import { t } from "../i18n"
+import { saveCouponImage } from "../lib/couponImage"
+import { couponUntil, mergeTaken, readCheckIn, writeCheckIn, type CheckIn } from "../lib/couponWallet"
 import { formatFullDate } from "../lib/date"
 import type { CheckInInfo } from "../types"
-
-// 이 휴대폰이 행사에서 한 일. 새로고침해도 두 번 세지 않도록 저장해 둔다.
-// `pass`는 서버가 쿠폰을 한 번씩만 세게 하고, `coupons`는 가게 직원이 자기
-// 기기에서 방문을 확인할 때 쓰는 번호를 쿠폰 id별로(스폰서마다 하나) 담는다.
-type TakenCoupon = { number: string; visited?: boolean; expiresAt?: string }
-// 선택 설문을 이 휴대폰에서 보냈거나 건너뛰면 `surveyed`.
-type CheckIn = { participant: string; pass?: string; coupons?: Record<string, TakenCoupon>; surveyed?: true }
 
 // 선택 질문 세 개. 각각 선택지가 한 줄이고, 한 번 보내거나 건너뛴다.
 function Survey({ onSend, onSkip }: { onSend: (answers: Partial<Record<SurveyKey, string>>) => Promise<void>; onSkip: () => void }) {
@@ -67,25 +62,6 @@ const couponTerms = "발급일부터 7일 동안 쓸 수 있어요"
 // 가게가 방문을 확인했는지 휴대폰이 묻는 주기.
 const visitCheckMs = 3_000
 
-const storageKey = (code: string) => `uniconnect-checkin-${code}`
-
-function readCheckIn(code: string): CheckIn | null {
-  try {
-    return JSON.parse(localStorage.getItem(storageKey(code)) ?? "null")
-  } catch {
-    return null
-  }
-}
-
-function writeCheckIn(code: string, checkIn: CheckIn | null) {
-  try {
-    if (checkIn) localStorage.setItem(storageKey(code), JSON.stringify(checkIn))
-    else localStorage.removeItem(storageKey(code))
-  } catch {
-    // 저장소가 없으면 새로고침 때 다시 셀 수 있다. 방문 자체는 동작한다.
-  }
-}
-
 // 참가자가 행사 QR을 스캔해 들어오는 페이지. 그 행사의 스캔을 기록하고 스폰서별
 // 쿠폰을 번호와 함께 준다. 가게 직원은 자기 기기(StaffCheckInPage)에서 그
 // 번호로 방문을 확인하고, 이 페이지는 그것을 확인됨으로 보여 준다.
@@ -138,14 +114,9 @@ export function CheckInPage({ code }: { code: string }) {
         .checkInPass(code, pass)
         .then(({ coupons }) => {
           if (cancelled) return
-          const taken = Object.fromEntries(
-            Object.entries(coupons).flatMap(([id, coupon]) =>
-              coupon.number ? [[id, { number: coupon.number, visited: coupon.visited, expiresAt: coupon.expiresAt }]] : [],
-            ),
-          )
           setCheckIn((current) => {
             if (current?.pass !== pass) return current
-            const next = { ...current, coupons: taken }
+            const next = { ...current, coupons: mergeTaken(current.coupons, coupons) }
             writeCheckIn(code, next)
             return next
           })
@@ -171,13 +142,51 @@ export function CheckInPage({ code }: { code: string }) {
     setError("")
     try {
       const { coupon } = await api.recordCheckIn(code, "coupons", { pass: checkIn.pass, couponId })
-      if (coupon) save({ ...checkIn, coupons: { ...checkIn.coupons, [couponId]: { number: coupon } } })
+      const shown = info?.coupons.find((item) => item.id === couponId)
+      if (coupon)
+        save({
+          ...checkIn,
+          coupons: {
+            ...checkIn.coupons,
+            [couponId]: { number: coupon, store: shown?.store, title: shown?.title, takenAt: new Date().toISOString() },
+          },
+        })
     } catch (caught) {
       if (caught instanceof ApiError && caught.status === 403) restart()
       else setError(errorMessage(caught))
     } finally {
       setBusy("")
     }
+  }
+
+  // 쿠폰함(/coupons)이 서버에 묻지 않고 그릴 수 있게 행사 이름과 쿠폰 내용을 적어 둔다.
+  useEffect(() => {
+    if (!info || !checkIn) return
+    const coupons = Object.fromEntries(
+      Object.entries(checkIn.coupons ?? {}).map(([id, coupon]) => {
+        const shown = info.coupons.find((item) => item.id === id)
+        return [id, { ...coupon, store: coupon.store ?? shown?.store, title: coupon.title ?? shown?.title }]
+      }),
+    )
+    const changed =
+      checkIn.eventName !== info.eventName ||
+      checkIn.groupName !== info.groupName ||
+      Object.entries(coupons).some(([id, coupon]) => coupon.store !== checkIn.coupons?.[id]?.store || coupon.title !== checkIn.coupons?.[id]?.title)
+    if (changed) save({ ...checkIn, eventName: info.eventName, groupName: info.groupName, coupons })
+  }, [info, checkIn])
+
+  const keepImage = async (couponId: string) => {
+    const shown = info?.coupons.find((item) => item.id === couponId)
+    const mine = checkIn?.coupons?.[couponId]
+    if (!shown || !mine) return
+    const saved = await saveCouponImage({
+      store: shown.store,
+      title: shown.title,
+      number: mine.number,
+      eventName: info?.eventName,
+      until: couponUntil(mine),
+    })
+    if (!saved) setError(t("이미지를 만들지 못했어요. 화면을 캡처해 주세요."))
   }
 
   const taken = checkIn?.coupons ?? {}
@@ -228,7 +237,17 @@ export function CheckInPage({ code }: { code: string }) {
                       <div className="coupon-code">
                         <span>{t("쿠폰 번호")}</span>
                         <strong>{mine.number}</strong>
-                        {mine.expiresAt && <small>{t("{date}까지 쓸 수 있어요", { date: formatFullDate(mine.expiresAt.slice(0, 10)) })}</small>}
+                        {couponUntil(mine) && (
+                          <small>{t("{date}까지 쓸 수 있어요", { date: formatFullDate(couponUntil(mine)!) })}</small>
+                        )}
+                        <button
+                          aria-label={t("{store} 쿠폰을 이미지로 저장", { store: coupon.store })}
+                          className="coupon-save"
+                          onClick={() => void keepImage(coupon.id)}
+                          type="button"
+                        >
+                          <Icon name="download" size={16} /> {t("이미지로 저장")}
+                        </button>
                       </div>
                     ) : (
                       <button
@@ -266,6 +285,12 @@ export function CheckInPage({ code }: { code: string }) {
                 }}
                 onSkip={() => save({ ...checkIn, surveyed: true })}
               />
+            )}
+
+            {Object.keys(taken).length > 0 && (
+              <a className="checkin-wallet-link" href="/coupons">
+                {t("받은 쿠폰 모아 보기")}
+              </a>
             )}
 
             {anyWaiting && (

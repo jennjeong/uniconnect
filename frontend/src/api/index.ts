@@ -654,8 +654,8 @@ export const api = {
   // 사이트 전체가 읽는 운영자의 스위치: 점검, 가입, FAQ.
   siteState: () => request<SiteState>("/site"),
   countSearch: (q: string) => request<void>("/site/searches", { method: "POST", body: { q } }),
-  countExperiment: (key: string, variant: string, event: "seen" | "converted") =>
-    request<void>("/site/experiments", { method: "POST", body: { key, variant, event } }),
+  countExperiment: (key: string, variant: string, event: "seen" | "converted", run: string) =>
+    request<void>("/site/experiments", { method: "POST", body: { key, variant, event, run } }),
   adminLogout: (token: string, id: string) =>
     request<{ account: AdminMemberDetail }>(`/admin/accounts/${encodeURIComponent(id)}/logout`, { method: "POST", headers: { "X-Admin-Token": token } }),
   adminTags: (token: string, id: string, tags: string[]) =>

@@ -1638,7 +1638,7 @@ const en: Record<string, string> = {
   "무료로 가입하고 학생 행사 찾기": "Join free and find student events",
   "A/B 테스트": "A/B tests",
   "방문자를 두 문구로 나눠 어느 쪽이 목표로 더 이어지는지 세요. 누가 어느 쪽을 봤는지는 남기지 않고 횟수만 세요.": "Visitors are split between two wordings to see which leads to the goal more. Only counts are kept, never who saw which.",
-  "아직 판단하기 일러요. 갈래마다 30번 넘게 보여야 해요.": "Too early to tell. Each variant needs over 30 views.",
+  "아직 판단하기 일러요. 갈래마다 30번 이상 보여야 해요.": "Too early to tell. Each variant needs at least 30 views.",
   "두 문구의 차이가 우연일 수 있어요.": "The difference may be chance.",
   "B가 더 많이 목표로 이어졌어요.": "B led to the goal more often.",
   "A가 더 많이 목표로 이어졌어요.": "A led to the goal more often.",

@@ -1448,8 +1448,8 @@ export type SiteState = {
   counts?: SiteCounts
   // 운영자가 설정했다면 Kakao 지도의 JavaScript 키.
   maps?: { kakao: string }
-  // 지금 켜진 A/B 테스트의 키(lib/experiments.ts).
-  experiments?: string[]
+  // 지금 켜진 A/B 테스트의 키와 회차(lib/experiments.ts).
+  experiments?: Record<string, string>
 }
 
 // 콘솔의 A/B 테스트 결과(backend/src/lib/experiments.ts의 experimentView).

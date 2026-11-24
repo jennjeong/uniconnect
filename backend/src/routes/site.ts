@@ -55,6 +55,6 @@ const experimentHits = createRateLimit({
 siteRouter.post("/experiments", async (req, res) => {
   await experimentHits.take(clientKey(req))
   const database = getDatabase()
-  if (countExperiment(database, req.body?.key, req.body?.variant, req.body?.event)) await saveDatabase()
+  if (countExperiment(database, req.body?.key, req.body?.variant, req.body?.event, req.body?.run)) await saveDatabase()
   res.status(204).end()
 })

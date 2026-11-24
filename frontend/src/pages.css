@@ -9177,6 +9177,93 @@ th[aria-sort="descending"] .console-sort span {
   gap: 8px;
 }
 
+/* 다크 모드에서는 짙은 로고가 바탕에 묻혀 흰색으로 보인다. */
+:root[data-theme="dark"] .checkin-header img {
+  filter: brightness(0) invert(1);
+}
+
+/* 쿠폰 이미지 저장과 쿠폰함(/coupons, #352) */
+.coupon-save {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  margin-top: 8px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--point-strong);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.coupon-save:hover {
+  border-color: var(--point-strong);
+}
+
+.coupon-save:focus-visible,
+.checkin-wallet-link:focus-visible {
+  outline: 2px solid var(--point-strong);
+  outline-offset: 2px;
+}
+
+.checkin-wallet-link {
+  display: block;
+  margin: 4px 0 12px;
+  color: var(--point-strong);
+  font-size: 0.875rem;
+  font-weight: var(--weight-semibold);
+  text-align: center;
+}
+
+.wallet-note,
+.wallet-empty {
+  margin: 0 0 14px;
+  color: var(--ink-soft);
+  font-size: 0.8125rem;
+  text-align: center;
+}
+
+.wallet-empty {
+  padding: 28px 12px;
+  border: 1px dashed var(--line);
+  border-radius: 14px;
+}
+
+.wallet-state {
+  align-self: flex-start;
+  margin-bottom: 6px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--ink-soft);
+  font-size: 0.75rem;
+  font-weight: var(--weight-extrabold);
+}
+
+.wallet-coupon.ready .wallet-state {
+  background: var(--point);
+  color: var(--on-point);
+}
+
+.wallet-coupon.used,
+.wallet-coupon.expired {
+  opacity: 0.72;
+}
+
+.wallet-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
 .checkin-footer {
   color: var(--muted);
   font-size: 0.6875rem;

@@ -1174,6 +1174,8 @@ export type AdminLogEntry = {
 // A/B 테스트 하나의 상태. 누가 봤는지는 없고 갈래별 횟수만 있다.
 export type ExperimentRecord = {
   on: boolean
+  // 숫자를 지우면 바뀌는 회차. 브라우저가 본 회차와 같을 때만 센다.
+  run?: string
   startedAt?: string
   stoppedAt?: string
   counts: Record<string, { seen: number; converted: number }>

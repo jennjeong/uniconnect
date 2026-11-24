@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto"
+
 import type { Database, ExperimentRecord } from "../types.js"
 
 // A/B 테스트(#347). 화면의 문구를 두 가지로 나눠 보여 주고, 어느 쪽이 목표(가입)로
@@ -30,25 +32,32 @@ export function experimentRecord(database: Database, key: string): ExperimentRec
   return (database.experiments[key] ??= { on: false, counts: {} })
 }
 
-// 지금 켜진 실험의 키. GET /api/site가 브라우저에 알린다.
-export const runningExperiments = (database: Database) =>
-  experimentList.filter((item) => database.experiments?.[item.key]?.on).map((item) => item.key)
+// 지금 켜진 실험의 키와 회차. GET /api/site가 브라우저에 알린다.
+export const runningExperiments = (database: Database): Record<string, string> =>
+  Object.fromEntries(
+    experimentList.flatMap((item) => {
+      const record = database.experiments?.[item.key]
+      return record?.on && record.run ? [[item.key, record.run]] : []
+    }),
+  )
 
-// 켜진 실험의 알맞은 갈래만 센다. 맞지 않으면 아무것도 하지 않고 false.
-export function countExperiment(database: Database, key: unknown, variant: unknown, event: unknown) {
+// 켜진 실험의 지금 회차, 알맞은 갈래만 센다. 맞지 않으면 아무것도 하지 않고 false.
+// 숫자를 지우기 전에 문구를 본 브라우저의 전환이 새 숫자에 섞이지 않는다.
+export function countExperiment(database: Database, key: unknown, variant: unknown, event: unknown, run: unknown) {
   const experiment = findExperiment(key)
   if (!experiment || !(experiment.variants as readonly string[]).includes(String(variant))) return false
   if (!(experimentEvents as readonly string[]).includes(String(event))) return false
   const record = database.experiments?.[experiment.key]
-  if (!record?.on) return false
+  if (!record?.on || !record.run || record.run !== run) return false
   const counts = (record.counts[String(variant)] ??= { seen: 0, converted: 0 })
   counts[event as ExperimentEvent] += 1
   return true
 }
 
-// 두 비율의 차이가 우연인지 보는 z 검정(양측). 한쪽이라도 노출이 30번 안 되면 판정하지 않는다.
+// 두 비율의 차이가 우연인지 보는 z 검정(양측). 한쪽이라도 노출이 30번 안 되거나, 전환이
+// 노출보다 많아 숫자를 믿을 수 없으면 판정하지 않는다.
 export function compareRates(a: { seen: number; converted: number }, b: { seen: number; converted: number }) {
-  if (a.seen < 30 || b.seen < 30) return { z: null, p: null }
+  if (a.seen < 30 || b.seen < 30 || a.converted > a.seen || b.converted > b.seen) return { z: null, p: null }
   const pa = a.converted / a.seen
   const pb = b.converted / b.seen
   const pooled = (a.converted + b.converted) / (a.seen + b.seen)
@@ -98,6 +107,8 @@ export function switchExperiment(database: Database, key: string, on: boolean, n
   if (record.on === on) return record
   record.on = on
   if (on) {
+    // 멈췄다 다시 켜면 같은 회차를 이어 센다. 회차는 처음 켤 때와 숫자를 지울 때 바뀐다.
+    record.run ??= randomUUID()
     record.startedAt = now.toISOString()
     delete record.stoppedAt
   } else record.stoppedAt = now.toISOString()
@@ -108,6 +119,7 @@ export function switchExperiment(database: Database, key: string, on: boolean, n
 export function resetExperiment(database: Database, key: string, now = new Date()) {
   const record = experimentRecord(database, key)
   record.counts = {}
+  record.run = randomUUID()
   if (record.on) record.startedAt = now.toISOString()
   return record
 }

@@ -8,7 +8,7 @@ import type { AdminExperiment } from "../types"
 type Notice = (message: string) => void
 
 const verdictLabels: Record<AdminExperiment["verdict"], string> = {
-  "too-early": "아직 판단하기 일러요. 갈래마다 30번 넘게 보여야 해요.",
+  "too-early": "아직 판단하기 일러요. 갈래마다 30번 이상 보여야 해요.",
   "no-difference": "두 문구의 차이가 우연일 수 있어요.",
   "b-wins": "B가 더 많이 목표로 이어졌어요.",
   "a-wins": "A가 더 많이 목표로 이어졌어요.",
