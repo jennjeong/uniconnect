@@ -31,7 +31,7 @@ export function CouponWalletPage() {
         api.checkInPass(code, checkIn!.pass!).then(({ coupons: server }) => {
           // 답을 기다리는 동안 쿠폰을 숨겼을 수 있으니 지금 저장된 것에 붙인다.
           const current = readCheckIn(code)
-          if (current?.pass === checkIn!.pass) writeCheckIn(code, { ...current, coupons: mergeTaken(current!.coupons, server) })
+          if (current && current.pass === checkIn!.pass) writeCheckIn(code, { ...current, coupons: mergeTaken(current.coupons, server) })
         }),
       ),
     ).then(() => {
