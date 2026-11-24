@@ -2,6 +2,8 @@ import { describe, expect, test } from "vitest"
 
 import { createSeed, DEMO_PASSWORD } from "../../../backend/src/data/seed"
 import * as serverCouncil from "../../../backend/src/lib/council"
+import { experimentList } from "../../../backend/src/lib/experiments"
+import { experiments } from "../data/experiments"
 import * as serverMethods from "../../../backend/src/lib/methods"
 import * as server from "../../../backend/src/lib/validation"
 import { demoAccounts, demoPassword } from "../data/demo"
@@ -107,4 +109,10 @@ test("the demo accounts the login popup offers are the seed's", async () => {
     const account = seed.accounts.find((item) => item.id === seed.demoAccountIds[role])!
     expect(demoAccounts[role]).toEqual({ email: account.email, name: account.name })
   }
+})
+
+test("the A/B tests are the server's (#347)", () => {
+  expect(experiments.map((item) => ({ key: item.key, goal: item.goal, variants: [...item.variants] }))).toEqual(
+    experimentList.map((item) => ({ key: item.key, goal: item.goal, variants: [...item.variants] })),
+  )
 })

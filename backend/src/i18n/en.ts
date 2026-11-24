@@ -988,6 +988,8 @@ const en: Record<string, string> = {
   "시작일과 종료일을 바르게 적어 주세요.": "Enter a valid start and end date.",
   "사용 횟수는 1~10,000회로 적어 주세요.": "Uses are from 1 to 10,000.",
   "프로모션 코드를 적어 주세요.": "Enter a promo code.",
+  "그런 실험이 없어요.": "There's no such experiment.",
+  "켤지 끌지 알려 주세요.": "Say whether to turn it on or off.",
 }
 
 export default en

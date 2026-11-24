@@ -494,6 +494,8 @@ export function Notices({ token, onNotice }: { token: string; onNotice: (message
 }
 
 const actionLabels: Record<string, string> = {
+  "experiment-switched": "A/B 테스트 켜기 · 끄기",
+  "experiment-reset": "A/B 테스트 숫자 지우기",
   "account-logged-out": "강제 로그아웃",
   "account-tagged": "태그 변경",
   "application-approved": "가입 승인",

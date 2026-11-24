@@ -1082,6 +1082,8 @@ export type Database = {
   payments?: Payment[]
   // 운영자가 만든 프로모션 코드(#346, lib/promo.ts).
   promoCodes?: PromoCode[]
+  // A/B 테스트(lib/experiments.ts). 실험 키마다 켜짐과 갈래별 노출 · 전환 횟수만 둔다.
+  experiments?: Record<string, ExperimentRecord>
   // 진행 중인 Kakao나 Naver 로그인이다(routes/social.ts). 시작한 흐름마다의
   // state와, 끝난 로그인을 페이지에 넘기는 일회용 코드이며, 둘 다 해시로 두고
   // 몇 분만 둔다.
@@ -1169,7 +1171,19 @@ export type AdminLogEntry = {
   detail?: string
 }
 
+// A/B 테스트 하나의 상태. 누가 봤는지는 없고 갈래별 횟수만 있다.
+export type ExperimentRecord = {
+  on: boolean
+  // 숫자를 지우면 바뀌는 회차. 브라우저가 본 회차와 같을 때만 센다.
+  run?: string
+  startedAt?: string
+  stoppedAt?: string
+  counts: Record<string, { seen: number; converted: number }>
+}
+
 export type AdminAction =
+  | "experiment-switched"
+  | "experiment-reset"
   | "operator-created"
   | "operator-disabled"
   | "operator-logged-in"
