@@ -82,6 +82,8 @@ describe("the server's page list matches the screens", () => {
     expect(isAppPath("/check-in/20261012")).toBe(true)
     expect(isAppPath("/check-in/20261012/staff")).toBe(true)
     expect(isAppPath("/check-in/20261012/group")).toBe(true)
+    expect(isAppPath("/coupons")).toBe(true)
+    expect(isAppPath("/coupons/x")).toBe(false)
   })
 })
 
@@ -134,6 +136,8 @@ describe("Vercel's rewrites match the server's page list", () => {
     "/invite/a.b",
     "/agreements/a/b",
     "/check-in/20261012/other",
+    "/coupons",
+    "/coupons/x",
     "/llms.txt",
     "/.well-known/ai-catalog.json",
   ])("%s gets the same answer from both", (path) => {
