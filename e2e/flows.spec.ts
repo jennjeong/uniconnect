@@ -3188,15 +3188,25 @@ test("coupons stay on the phone after the event's record is gone", async ({ page
 })
 
 test("an A/B wording never changes once it is shown, and only a shown and confirmed run counts", async ({ browser }) => {
-  for (const delay of [0, 1500]) {
+  // 컴퓨터 속도에 기대지 않게 순서를 정한다: 제때면 기다림(0.5초)이 끝나지 않게 하고,
+  // 늦으면 A가 보인 뒤에야 서버의 답을 보낸다.
+  for (const late of [false, true]) {
     const context = await browser.newContext()
     const page = await context.newPage()
     const sent: string[] = []
-    // 무작위 번호를 고정한다. 이 번호는 B다(lib/experiments.ts의 pickVariant).
-    await page.addInitScript(() => localStorage.setItem("uniconnect-ab-id", "id-B"))
+    let release = () => {}
+    const shown = new Promise<void>((resolve) => (release = resolve))
+    if (!late) release()
+    await page.addInitScript((keepWaiting) => {
+      // 이 번호는 B다(lib/experiments.ts의 pickVariant).
+      localStorage.setItem("uniconnect-ab-id", "id-B")
+      if (!keepWaiting) return
+      const original = window.setTimeout
+      window.setTimeout = ((run: () => void, ms?: number) => original(run, ms === 500 ? 600_000 : ms)) as typeof window.setTimeout
+    }, !late)
     await page.route("**/api/site", async (route) => {
       const answer = await (await route.fetch()).json()
-      await new Promise((resolve) => setTimeout(resolve, delay))
+      await shown
       await route.fulfill({ json: { ...answer, experiments: { "landing-entry": "run-1" } } })
     })
     await page.route("**/api/site/experiments", (route) => {
@@ -3204,16 +3214,19 @@ test("an A/B wording never changes once it is shown, and only a shown and confir
       return route.fulfill({ status: 204 })
     })
     const line = page.locator(".landing-entry small").first()
+    const first = late ? "행사 협찬 받기" : "무료로 가입하고 협찬 받기"
     await page.goto("/")
-    await expect(line).toHaveText(delay ? "행사 협찬 받기" : "무료로 가입하고 협찬 받기")
     await expect(line).toBeVisible()
-    await page.waitForTimeout(2000)
+    await expect(line).toHaveText(first)
+    release()
+    await expect.poll(() => page.evaluate(() => localStorage.getItem("uniconnect-ab-running"))).toContain("run-1")
+    await page.waitForTimeout(500)
     // 늦게 온 답은 이번 화면을 바꾸지도 세지도 않는다.
-    await expect(line).toHaveText(delay ? "행사 협찬 받기" : "무료로 가입하고 협찬 받기")
-    expect(sent).toEqual(delay ? [] : ["B"])
+    await expect(line).toHaveText(first)
+    expect(sent).toEqual(late ? [] : ["B"])
     // 다음 방문은 답을 기다리지 않고 자기 문구로 시작한다.
     await page.reload()
-    await expect(line).toHaveText("무료로 가입하고 협찬 받기", { timeout: 1000 })
+    await expect(line).toHaveText("무료로 가입하고 협찬 받기")
     await expect.poll(() => sent).toEqual(["B"])
     await context.close()
   }
