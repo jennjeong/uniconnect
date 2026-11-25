@@ -2144,7 +2144,7 @@ button.nav-pill:hover {
   background: var(--point);
 }
 
-/* 지도 윗가장자리 근처에서는 이름이 핀 아래로 간다 (KakaoMap의 keepInside). */
+/* 지도 윗가장자리 근처에서는 이름이 핀 아래로 간다 (KakaoMap의 placeName). */
 .place-dot-name.below {
   top: calc(100% + 4px);
   bottom: auto;

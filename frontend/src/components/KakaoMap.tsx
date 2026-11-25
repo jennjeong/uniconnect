@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { t } from "../i18n"
-import { pinShifts } from "../lib/placeMap"
+import { namePlace, pinShifts } from "../lib/placeMap"
 
 // 이 지도가 쓰는 Kakao Maps SDK의 부분.
 type LatLng = object
@@ -61,17 +61,27 @@ function loadKakao(key: string) {
   return loading
 }
 
-// 고른 가게의 이름표를 옆이나 핀 아래로 옮겨, 지도 가장자리 근처에서도 지도
-// 안에 머물게 한다.
-function keepInside(name: HTMLElement, box: HTMLElement | null) {
-  if (!box) return
-  const edge = 8
-  const area = box.getBoundingClientRect()
+// 가운데 이름표 아래의 뾰족한 끝(kakao-campus의 margin-bottom)과, 핀이 이름표에서
+// 떨어질 여백.
+const campusPointer = 10
+const campusGap = 2
+
+// 고른 가게의 이름표를 지도 안에 두고 가운데 이름(`campus`)을 덮지 않게 한다
+// (lib/placeMap.ts의 namePlace).
+function placeName(name: HTMLElement, box: HTMLElement | null, campus: HTMLElement | undefined) {
+  if (!box || !name.parentElement) return
+  name.classList.remove("below")
+  name.style.removeProperty("--name-shift")
   const label = name.getBoundingClientRect()
   if (label.width === 0) return
-  const shift = Math.max(area.left + edge - label.left, 0) + Math.min(area.right - edge - label.right, 0)
-  name.style.setProperty("--name-shift", `${Math.round(shift)}px`)
-  name.classList.toggle("below", label.top < area.top + edge)
+  const place = namePlace(
+    label,
+    name.parentElement.getBoundingClientRect(),
+    box.getBoundingClientRect(),
+    campus?.getBoundingClientRect(),
+  )
+  name.style.setProperty("--name-shift", `${Math.round(place.shift)}px`)
+  name.classList.toggle("below", place.below)
 }
 
 // 지도 위의 마크 하나. 위치, 이름, 색을 정하는 클래스(place-dot의 상태), 스크린
@@ -104,6 +114,8 @@ export function KakaoMap({
   const box = useRef<HTMLDivElement>(null)
   const [ready, setReady] = useState<{ maps: KakaoMaps; map: KakaoMapObject }>()
   const placed = useRef<{ overlay: KakaoOverlay; position: LatLng }[]>([])
+  const campus = useRef<HTMLElement>(undefined)
+  const picked = useRef<HTMLElement>(undefined)
   const select = useRef(onSelect)
   select.current = onSelect
 
@@ -129,9 +141,10 @@ export function KakaoMap({
     const mark = document.createElement("span")
     mark.className = "kakao-campus"
     mark.textContent = centerName
+    campus.current = mark
     // 핀들 아래에 두어, 중심 옆에 있는 핀도 누를 수 있게 한다.
     const overlays = [new maps.CustomOverlay({ position: home, content: mark, yAnchor: 1, zIndex: 0 })]
-    let name: HTMLElement | undefined
+    picked.current = undefined
     placed.current = []
     for (const pin of pins) {
       const position = new maps.LatLng(pin.lat, pin.lng)
@@ -143,7 +156,7 @@ export function KakaoMap({
       dot.setAttribute("aria-pressed", String(selected === pin.id))
       dot.addEventListener("click", () => select.current(pin.id))
       if (selected === pin.id) {
-        name = document.createElement("span")
+        const name = document.createElement("span")
         name.className = "place-dot-name"
         name.setAttribute("aria-hidden", "true")
         name.append(pin.name)
@@ -153,6 +166,7 @@ export function KakaoMap({
           name.append(detail)
         }
         dot.append(name)
+        picked.current = name
       }
       // 핀의 뾰족한 끝이 그 지점에 오도록 한다.
       const overlay = new maps.CustomOverlay({ position, content: dot, yAnchor: 1, zIndex: selected === pin.id ? 2 : 1, clickable: true })
@@ -160,11 +174,7 @@ export function KakaoMap({
       placed.current.push({ overlay, position })
     }
     for (const overlay of overlays) overlay.setMap(map)
-    // Kakao가 오버레이를 배치한 뒤에 한 번 측정한다.
-    const picked = name
-    const frame = picked ? requestAnimationFrame(() => keepInside(picked, box.current)) : 0
     return () => {
-      cancelAnimationFrame(frame)
       for (const overlay of overlays) overlay.setMap(null)
     }
   }, [ready, centerName, center.lat, center.lng, pins, selected])
@@ -181,18 +191,39 @@ export function KakaoMap({
     map.setBounds(bounds, 40, 40, 40, 40)
   }, [ready, center.lat, center.lng, pins])
 
-  // 가까운 핀끼리 덮어 누를 수 없게 되지 않도록 벌린다. 겹침은 배율에만
-  // 달려 있으므로 배율이 바뀔 때 다시 잰다.
+  // 가까운 핀끼리, 또는 가운데 이름을 덮지 않도록 벌린다. 겹침은 배율에만
+  // 달려 있으므로 배율이 바뀔 때 다시 재고, 고른 가게의 이름표는 Kakao가 핀을
+  // 배치한 뒤에 맞춘다.
   useEffect(() => {
     if (!ready) return
     const { maps, map } = ready
     let level: number | undefined
+    let frame = 0
     const spread = () => {
+      cancelAnimationFrame(frame)
+      // 동작 줄이기에서는 0.01ms 전환 때문에 옮긴 자리가 한 프레임 늦게 보인다.
+      frame = requestAnimationFrame(() => {
+        frame = requestAnimationFrame(() => {
+          if (picked.current) placeName(picked.current, box.current, campus.current)
+        })
+      })
+      const mark = campus.current
+      // 아직 화면에 놓이지 않아 잴 수 없으면 다음 idle에서 다시 잰다.
+      const measured = mark && mark.offsetWidth > 0
       if (level === map.getLevel()) return
-      level = map.getLevel()
+      if (measured) level = map.getLevel()
       const projection = map.getProjection()
       const points = placed.current.map(({ position }) => projection.containerPointFromCoords(position))
-      const shifts = pinShifts(points)
+      const home = projection.containerPointFromCoords(new maps.LatLng(center.lat, center.lng))
+      const keepOut = measured
+        ? {
+            left: home.x - mark.offsetWidth / 2 - campusGap,
+            right: home.x + mark.offsetWidth / 2 + campusGap,
+            top: home.y - mark.offsetHeight - campusPointer - campusGap,
+            bottom: home.y,
+          }
+        : undefined
+      const shifts = pinShifts(points, keepOut)
       placed.current.forEach(({ overlay, position }, index) => {
         const { x, y } = shifts[index]
         const moved = new maps.Point(points[index].x + x, points[index].y + y)
@@ -201,7 +232,10 @@ export function KakaoMap({
     }
     spread()
     maps.event.addListener(map, "idle", spread)
-    return () => maps.event.removeListener(map, "idle", spread)
+    return () => {
+      cancelAnimationFrame(frame)
+      maps.event.removeListener(map, "idle", spread)
+    }
   }, [ready, centerName, center.lat, center.lng, pins, selected])
 
   return (

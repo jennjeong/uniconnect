@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 
-import { catalogScale, mapPosition, mapRings, mapScale, offsetMetres, offsetPosition, pinGap, pinShifts, spreadPositions, walkMinutes } from "./placeMap"
+import { catalogScale, mapPosition, mapRings, mapScale, namePlace, offsetMetres, offsetPosition, pinCovers, pinGap, pinShifts, spreadPositions, walkMinutes } from "./placeMap"
 
 const campus = { lat: 37.64201, lng: 127.10562 }
 
@@ -76,6 +76,32 @@ describe("the schematic map of the shops around a campus", () => {
       }
     }
     expect(pinShifts(points.map(({ x, y }) => ({ x: x * 40, y: y * 40 })).slice(0, 3))).toEqual([{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }])
+  })
+
+  test("keeps pins off the name in the middle of a real map", () => {
+    const home = { left: 100, right: 200, top: 60, bottom: 100 }
+    const points = [{ x: 150, y: 100 }, { x: 150, y: 90 }, { x: 190, y: 120 }, { x: 110, y: 70 }, { x: 300, y: 80 }]
+    const shifts = pinShifts(points, home)
+    for (const [index, point] of points.entries()) {
+      expect(pinCovers({ x: point.x + shifts[index].x, y: point.y + shifts[index].y }, home)).toBe(false)
+    }
+    expect(shifts[4]).toEqual({ x: 0, y: 0 })
+  })
+
+  test("puts a picked name where it stays in the map and off the name in the middle", () => {
+    const box = (left: number, top: number, width: number, height: number) => ({ left, right: left + width, top, bottom: top + height })
+    const area = box(0, 0, 400, 300)
+    const home = box(160, 140, 80, 34)
+    // 멀리 있으면 핀 위 가운데에 그대로 둔다.
+    expect(namePlace(box(20, 30, 100, 26), box(56, 62, 28, 34), area, home)).toEqual({ below: false, shift: 0 })
+    // 위 가장자리에서는 핀 아래에 둔다.
+    expect(namePlace(box(20, 2, 100, 26), box(56, 34, 28, 34), area, home)).toEqual({ below: true, shift: 0 })
+    // 옆 가장자리에서는 안으로 옮긴다.
+    expect(namePlace(box(-30, 30, 100, 26), box(6, 62, 28, 34), area, home)).toEqual({ below: false, shift: 38 })
+    // 바로 아래의 핀은 이름을 아래로, 옆의 핀은 옆으로 옮긴다.
+    expect(namePlace(box(150, 145, 100, 26), box(186, 177, 28, 34), area, home)).toEqual({ below: true, shift: 0 })
+    expect(namePlace(box(90, 128, 100, 26), box(126, 160, 28, 14), area, home)).toEqual({ below: true, shift: 0 })
+    expect(namePlace(box(85, 120, 100, 26), box(121, 152, 28, 34), area, box(160, 140, 80, 90))).toEqual({ below: false, shift: -29 })
   })
 
   test("draws catalog listings by their offsets on a scale in kilometres", () => {
