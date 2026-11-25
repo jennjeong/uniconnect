@@ -77,6 +77,10 @@ export const config = {
   // SNS 게시물의 조회수를 읽는 YouTube Data API 키(lib/snsPosts.ts). 없으면
   // 게시물은 링크와 캡처로 확인한다.
   youtubeApiKey: process.env.YOUTUBE_API_KEY,
+  // 휴대폰 푸시 알림의 VAPID 키 한 쌍이다(lib/push.ts, `npm run vapid`로 만든다). 둘과
+  // SITE_URL(또는 SUPPORT_EMAIL)이 있어야 회원이 기기 알림을 켤 수 있다.
+  vapidPublicKey: process.env.VAPID_PUBLIC_KEY,
+  vapidPrivateKey: process.env.VAPID_PRIVATE_KEY,
   // 조용한 한 시간 뒤에 새 오류가 생기면 운영자에게 알린다(lib/errorLog.ts).
   // 메일이 설정된 뒤에 동작한다.
   operatorEmail: process.env.OPERATOR_EMAIL,

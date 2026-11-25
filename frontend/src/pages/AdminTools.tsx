@@ -636,6 +636,7 @@ const checkLabels: Record<string, { label: string; off: string }> = {
   geocoder: { label: "주소 → 지도 (Nominatim)", off: "매장 주소에 거리가 붙지 않아요." },
   youtube: { label: "유튜브 조회수", off: "SNS 게시물은 링크와 캡처로만 확인해요." },
   nts: { label: "사업자 확인 (국세청)", off: "브랜드가 사업자 등록을 확인할 수 없어요." },
+  push: { label: "휴대폰 푸시 알림 (VAPID)", off: "회원이 기기 알림을 켤 수 없어요." },
 }
 
 const paymentModes: Record<AdminHealth["payments"], string> = {

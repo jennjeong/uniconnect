@@ -315,7 +315,12 @@ export type Session = {
   lastUsedAt?: number
   // 계정에 로그인한 공동 관리자다(Account.members). 주인의 로그인에는 없다.
   memberId?: string
+  // 이 기기에서 켠 푸시 알림이다(lib/push.ts). 로그인이 끝나면 함께 사라진다.
+  push?: PushTarget
 }
+
+// 브라우저가 준 푸시 구독: 푸시 서버의 주소와, 그 기기만 풀 수 있게 암호화할 키.
+export type PushTarget = { endpoint: string; p256dh: string; auth: string }
 
 export type EmailCode = {
   email: string

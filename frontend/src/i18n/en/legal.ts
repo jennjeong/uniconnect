@@ -116,6 +116,16 @@ const en: Record<string, string> = {
     "Recruit board posts (title, text, kinds of sponsorship, deadline, event) and which posts you applied to",
   "협찬 상대를 모집하고, 상대 쪽 회원이 보고 지원하도록 보여 주기":
     "Looking for sponsorship partners, and showing the posts to the other side's members so they can apply",
+  "이 기기 알림을 켠 경우 브라우저가 만든 푸시 주소와 암호화 키": "If you turn on device notifications, the push address and encryption keys your browser made",
+  "새 제안과 메시지, 다가오는 일정을 그 기기에 알리기": "To tell that device about new proposals, messages and coming dates",
+  "알림을 끄거나 그 기기의 로그인이 끝날 때까지(최대 7일)": "Until you turn notifications off or that device's login ends (7 days at most)",
+  "이 기기 알림을 켜면, 다시 로그인했을 때 이어지도록 켠 계정의 번호와 푸시 주소를 브라우저 저장소(localStorage)에 둬요. 알림을 끄거나 직접 로그아웃하면 지워져요.": "If you turn on device notifications, the account's number and the push address are kept in browser storage (localStorage) so they continue when you log in again. They are deleted when you turn notifications off or log out.",
+  "이 기기 알림을 켜면, 그 브라우저를 만든 회사(Google, Apple, Mozilla, Microsoft, 모두 미국)의 푸시 서버를 거쳐 알림을 보내요. 알림의 제목과 짧은 안내는 그 기기만 풀 수 있게 암호화해서 푸시 서버는 읽을 수 없고, 메시지 내용은 싣지 않아요.": "If you turn on device notifications, they go through the push servers of the company that made your browser (Google, Apple, Mozilla or Microsoft, all in the United States). A notification's title and short line are encrypted so that only that device can read them, and message text is left out.",
+  "브라우저 회사의 푸시 서버: Google LLC, Apple Inc., Mozilla Corporation, Microsoft Corporation (각 회사 개인정보 안내의 문의 경로)": "Browser companies' push servers: Google LLC, Apple Inc., Mozilla Corporation, Microsoft Corporation (the contact in each company's privacy notice)",
+  "푸시 주소와, 그 기기만 풀 수 있게 암호화한 알림": "The push address, and the notification encrypted for that device alone",
+  "이 기기 알림을 켠 회원에게 알릴 때 네트워크로": "Over the network, when notifying a member who turned device notifications on",
+  "기기에 알림 전하기": "Delivering notifications to the device",
+  "전하지 못하면 최대 하루, 그 밖은 그 회사의 보관 정책을 따라요": "Up to a day if undelivered, otherwise that company's retention policy",
   "받을 메일 설정과 메일 언어": "Your email choices and email language",
   "고른 종류의 알림 메일만, 쓰는 언어로 보내기": "Sending only the kinds of notice email you chose, in the language you use",
   "탈퇴하거나 바꿀 때까지": "Until you leave or change them",
@@ -345,8 +355,8 @@ const en: Record<string, string> = {
     "Turning addresses into coordinates to work out the distance from schools",
   "그 재단의 보관 정책을 따라요":
     "Under that foundation's retention policy",
-  "국외 이전을 거부하려면 탈퇴하거나 해당 기능을 쓰지 않으면 돼요. Vercel과 Neon 없이는 서비스를 제공할 수 없어서 거부하면 서비스를 쓸 수 없어요. 매장 주소를 적지 않으면 학교와의 거리를 볼 수 없어요. Google Analytics 쿠키는 브라우저 설정에서 막을 수 있고, 막아도 서비스를 그대로 쓸 수 있어요.":
-    "To refuse a transfer abroad, leave the Service or don't use the feature concerned. The Service can't run without Vercel and Neon, so refusing them means not using the Service. Without a shop address, distance from schools isn't shown. Google Analytics cookies can be blocked in browser settings, and the Service works the same.",
+  "국외 이전을 거부하려면 탈퇴하거나 해당 기능을 쓰지 않으면 돼요. Vercel과 Neon 없이는 서비스를 제공할 수 없어서 거부하면 서비스를 쓸 수 없어요. 매장 주소를 적지 않으면 학교와의 거리를 볼 수 없어요. Google Analytics 쿠키는 브라우저 설정에서 막을 수 있고, 막아도 서비스를 그대로 쓸 수 있어요. 이 기기 알림은 켜지 않으면 푸시 서버로 보내지 않아요.":
+    "To refuse a transfer abroad, leave the Service or don't use the feature concerned. The Service can't run without Vercel and Neon, so refusing them means not using the Service. Without a shop address, distance from schools isn't shown. Google Analytics cookies can be blocked in browser settings, and the Service works the same. Nothing is sent to push servers unless you turn on device notifications.",
   "파기 절차와 방법":
     "How information is destroyed",
   "보유 기간이 끝나거나 처리 목적을 이루면 지체 없이 지워요.":

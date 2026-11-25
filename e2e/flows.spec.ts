@@ -2125,6 +2125,95 @@ test("visitors see a partner's reviews, a group reviews the brand after its even
   await expect(page.locator(".profile-review .review-reply")).toContainText("다음 공연도 함께해요!")
 })
 
+// 브라우저의 푸시를 흉내 낸다. 테스트 서버에는 푸시 키가 없어 서버의 답도 흉내 낸다.
+async function fakePush(page: Page, permission: NotificationPermission = "default") {
+  const server = { on: false, puts: 0, deletes: 0, tests: 0 }
+  await page.route("**/api/push", async (route) => {
+    const method = route.request().method()
+    if (method === "PUT") {
+      server.on = true
+      server.puts += 1
+      return route.fulfill({ json: { on: true } })
+    }
+    if (method === "DELETE") {
+      server.on = false
+      server.deletes += 1
+      return route.fulfill({ status: 204 })
+    }
+    return route.fulfill({ json: { key: "BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4", on: server.on } })
+  })
+  await page.route("**/api/push/test", (route) => {
+    server.tests += 1
+    return route.fulfill({ status: 204 })
+  })
+  await page.addInitScript((start) => {
+    let held: object | null = null
+    const made = {
+      endpoint: "https://fcm.googleapis.com/fcm/send/e2e",
+      options: {},
+      toJSON: () => ({ endpoint: "https://fcm.googleapis.com/fcm/send/e2e", keys: { p256dh: "a", auth: "b" } }),
+      unsubscribe: async () => ((held = null), true),
+    }
+    const pushManager = { getSubscription: async () => held, subscribe: async () => (held = made) }
+    Object.defineProperty(navigator.serviceWorker, "ready", { get: async () => ({ pushManager, active: null }) })
+    // 허용을 물으면 허용한다.
+    const state = { permission: sessionStorage.getItem("e2e-permission") ?? start }
+    Object.defineProperty(Notification, "permission", { get: () => state.permission })
+    Notification.requestPermission = async () => {
+      if (state.permission === "default") state.permission = "granted"
+      sessionStorage.setItem("e2e-permission", state.permission)
+      return state.permission as NotificationPermission
+    }
+  }, permission)
+  return server
+}
+
+test("a member gets notices on this device, kept through a new login and ended by logging out", async ({ page, request }) => {
+  const { token } = await signUpMember(request, "학생단체", "e2e-push@syu.ac.kr", "알림 동아리")
+  const server = await fakePush(page)
+  await page.goto("/")
+  await page.evaluate((value) => localStorage.setItem("uniconnect-token", value), token)
+  await page.goto("/me")
+  await page.getByRole("button", { name: "이 기기 알림 켜기" }).click()
+  await expect(page.getByText("이 기기의 알림을 켰어요.")).toBeVisible()
+  expect(server.puts).toBe(1)
+  await page.getByRole("button", { name: "이 기기에 시험 알림 보내기" }).click()
+  await expect(page.getByText("시험 알림을 보냈어요.")).toBeVisible()
+  expect(server.tests).toBe(1)
+  // 로그인이 새로 시작되면 묻지 않고 이어진다.
+  server.on = false
+  await page.reload()
+  await expect.poll(() => server.puts).toBe(2)
+  // 끄면 서버에서도 지우고 이어지지 않는다.
+  await page.goto("/me")
+  await page.getByRole("button", { name: "이 기기 알림 끄기" }).click()
+  await expect(page.getByText("이 기기의 알림을 껐어요.")).toBeVisible()
+  expect(server.deletes).toBe(1)
+  expect(await page.evaluate(() => localStorage.getItem("uniconnect-push"))).toBeNull()
+  // 다시 켜고 직접 로그아웃하면 이 브라우저가 기억한 것도 지워진다.
+  await page.getByRole("button", { name: "이 기기 알림 켜기" }).click()
+  await expect(page.getByRole("button", { name: "이 기기 알림 끄기" })).toBeVisible()
+  await page.getByRole("button", { name: "로그아웃" }).last().click()
+  await expect(page.getByText("로그아웃했어요.")).toBeVisible()
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("uniconnect-push"))).toBeNull()
+})
+
+test("the device notices say when the browser blocks them, and stay hidden without the server's key", async ({ page, request }) => {
+  const { token } = await signUpMember(request, "학생단체", "e2e-push-no@syu.ac.kr", "알림 없는 동아리")
+  await page.goto("/")
+  await page.evaluate((value) => localStorage.setItem("uniconnect-token", value), token)
+  // 테스트 서버에는 키가 없다.
+  const answered = page.waitForResponse("**/api/push")
+  await page.goto("/me")
+  await answered
+  await expect(page.getByText("화면 테마")).toBeVisible()
+  await expect(page.getByText("이 기기 알림", { exact: true })).toHaveCount(0)
+  await fakePush(page, "denied")
+  await page.reload()
+  await expect(page.getByText("알림이 차단돼 있어요. 브라우저 설정에서 허용해 주세요.")).toBeVisible()
+  await expect(page.getByRole("button", { name: "이 기기 알림 켜기" })).toHaveCount(0)
+})
+
 test("the app can be installed, and the calendar gives its dates to calendar apps", async ({ page, request }) => {
   // 매니페스트와 아이콘과 서비스 워커를 서빙하며, 사이트로 가는 링크는
   // 설치한 앱이 아니라 브라우저에서 열라고 요청한다.

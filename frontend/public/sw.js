@@ -67,3 +67,51 @@ self.addEventListener("fetch", (event) => {
     )
   }
 })
+
+// Push notices (#108): the server sends a short title, sometimes a line, and
+// the screen it leads to (backend lib/push.ts). A browser shows every push it
+// was sent, so one that can't be read still says something.
+self.addEventListener("push", (event) => {
+  let message = {}
+  try {
+    message = event.data ? event.data.json() : {}
+  } catch {
+    // Shown without the details.
+  }
+  const base = self.registration.scope
+  event.waitUntil(
+    self.registration.showNotification(message.title || "uniconnect", {
+      body: message.body || "",
+      icon: new URL("icons/icon-192.png", base).href,
+      badge: new URL("icons/icon-192.png", base).href,
+      tag: message.path || "uniconnect",
+      renotify: true,
+      data: { path: message.path || "/" },
+    }),
+  )
+})
+
+// A pressed notice opens its screen, only on this site: in a tab already open
+// when there is one.
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close()
+  const home = new URL(self.registration.scope)
+  let target = home
+  try {
+    const path = String((event.notification.data && event.notification.data.path) || "/")
+    const asked = new URL(path.replace(/^\/+/, ""), home)
+    if (asked.origin === home.origin) target = asked
+  } catch {
+    // The home screen instead.
+  }
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (tabs) => {
+      const tab = tabs.find((item) => new URL(item.url).origin === home.origin)
+      if (tab) {
+        const moved = await tab.navigate(target.href).catch(() => null)
+        if (moved) return moved.focus()
+      }
+      return self.clients.openWindow(target.href)
+    }),
+  )
+})

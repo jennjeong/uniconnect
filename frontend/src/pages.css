@@ -3779,6 +3779,15 @@
   color: var(--red);
 }
 
+.settings-row .settings-action .row-button + .row-button {
+  margin-left: 6px;
+}
+
+.push-note {
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
 .settings-ok {
   display: inline-flex;
   align-items: center;

@@ -257,6 +257,11 @@ export const api = {
   updateContact: (body: AccountContact) => request<{ account: Account }>("/auth/contact", { method: "PUT", body }),
   savePreferences: (body: { language?: "ko" | "en"; mailOff?: MailKind[] }) =>
     request<{ account: Account }>("/auth/preferences", { method: "PUT", body }),
+  // 이 로그인의 기기 알림 (lib/push.ts). 켤 수 없으면 key가 null이다.
+  push: () => request<{ key: string | null; on: boolean }>("/push"),
+  savePush: (body: PushSubscriptionJSON) => request<{ on: true }>("/push", { method: "PUT", body }),
+  removePush: () => request<void>("/push", { method: "DELETE" }),
+  testPush: () => request<void>("/push/test", { method: "POST", body: {} }),
   referral: () => request<{ code: string; joined: number; rewarded: number; waiting: number; rewardDays: number }>("/auth/referral"),
   saveTerms: (terms: { name: string; from: string }[]) =>
     request<{ account: Account }>("/auth/terms", { method: "PUT", body: { terms } }),

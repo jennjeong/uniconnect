@@ -991,6 +991,15 @@ const en: Record<string, string> = {
   "프로모션 코드를 적어 주세요.": "Enter a promo code.",
   "그런 실험이 없어요.": "There's no such experiment.",
   "켤지 끌지 알려 주세요.": "Say whether to turn it on or off.",
+  "데모 계정은 기기 알림을 켤 수 없어요.": "The demo accounts can't turn on device notifications.",
+  "지금은 기기 알림을 켤 수 없어요.": "Device notifications aren't available right now.",
+  "이 브라우저의 알림 정보를 읽지 못했어요.": "We couldn't read this browser's notification details.",
+  "이 기기의 알림을 먼저 켜 주세요.": "Turn on notifications on this device first.",
+  "이 기기의 알림이 끊겼어요. 다시 켜 주세요.": "Notifications on this device were disconnected. Turn them on again.",
+  "시험 알림을 보내지 못했어요. 잠시 뒤에 다시 시도해 주세요.": "We couldn't send the test notification. Try again in a while.",
+  "시험 알림을 너무 많이 보냈어요. 잠시 뒤에 다시 시도해 주세요.": "Too many test notifications. Try again in a while.",
+  "uniconnect 알림이 켜졌어요": "uniconnect notifications are on",
+  "새 제안과 메시지를 이 기기로 알려 드려요.": "New proposals and messages will show up on this device.",
 }
 
 export default en

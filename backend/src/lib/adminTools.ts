@@ -2,6 +2,7 @@ import { AsyncLocalStorage } from "node:async_hooks"
 import { randomUUID } from "node:crypto"
 
 import { config } from "../config.js"
+import { pushKey } from "./push.js"
 import { createSeed } from "../data/seed.js"
 import { cardReady, paymentsOf, testMode } from "./billing.js"
 import { codesDeliverable, mailConfigured, mailHealth } from "./mailer.js"
@@ -211,6 +212,7 @@ export function serviceHealth() {
       { key: "geocoder", on: on(config.nominatimUrl) },
       { key: "youtube", on: on(config.youtubeApiKey) },
       { key: "nts", on: on(config.ntsServiceKey) },
+      { key: "push", on: on(pushKey()) },
     ],
     vercel: Boolean(process.env.VERCEL),
     region: process.env.VERCEL_REGION ?? null,

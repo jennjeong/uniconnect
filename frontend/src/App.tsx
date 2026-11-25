@@ -822,6 +822,7 @@ function App() {
     // 직접 로그아웃하면 같은 기기의 다음 사람이 보지 않게 이 계정의 양식 초안도 지운다.
     // (로그인이 만료된 것은 지우지 않는다: 다시 로그인하면 이어서 쓴다.)
     if (account) clearDraftsOf(account.id)
+    void import("./lib/push").then(({ forgetPush }) => forgetPush()).catch(() => undefined)
     try {
       await api.logout()
     } catch {
@@ -1111,6 +1112,12 @@ function App() {
       .then((result) => setAccount(result.account))
       .catch(() => undefined)
   }, [member, account])
+
+  // 이 브라우저에서 켜 둔 기기 알림을 새 로그인에 이어 준다 (lib/push.ts).
+  const pushAccount = member ? account.id : undefined
+  useEffect(() => {
+    if (pushAccount) void import("./lib/push").then(({ resumePush }) => resumePush(pushAccount)).catch(() => undefined)
+  }, [pushAccount])
 
   // 목록에서 숨기기 (내 정보) and 다시 보이게 하기 (the dashboard's hero).
   const pauseListing = (paused: boolean) => {
@@ -1786,6 +1793,7 @@ function App() {
           onVerifyGroup={() => setActiveModal("group-check")}
           onPause={member ? pauseListing : undefined}
           onMail={member ? saveMailOff : undefined}
+          push={member ? { onNotice: showNotice, onError: handleError } : undefined}
         />
       )
     }
