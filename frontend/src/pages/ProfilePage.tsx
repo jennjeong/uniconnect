@@ -7,6 +7,7 @@ import { Pill } from "../components/Pill"
 import { AdCard } from "../components/AdCard"
 import { LocalCard } from "../components/LocalCard"
 import { PlanCard } from "../components/PlanCard"
+import { PushSetting } from "../components/PushSetting"
 import { RevealTitle } from "../components/RevealText"
 import { ShareButton } from "../components/ShareButton"
 import { mailKinds } from "../data/mail"
@@ -137,6 +138,7 @@ export function ProfilePage({
   onVerifyGroup,
   onPause,
   onMail,
+  push,
   canInvite = false,
 }: {
   account: Account
@@ -187,6 +189,8 @@ export function ProfilePage({
   onPause?: (paused: boolean) => void
   // 받을 메일: 끌 알림 이메일의 종류. 데모 계정에는 없다.
   onMail?: (mailOff: MailKind[]) => void
+  // 이 기기 알림: 알리는 말과 오류를 보여 준다. 데모 계정에는 없다.
+  push?: { onNotice: (message: string) => void; onError: (error: unknown) => void }
   // 친구 초대: 계정의 초대 링크와 그 진행 결과. 회원 전용.
   canInvite?: boolean
 }) {
@@ -523,7 +527,7 @@ export function ProfilePage({
             </div>
           </SettingsCard>
 
-          <SettingsCard caption={t("화면의 언어와 테마, 받을 메일을 골라요.")} icon="bell" id="profile-prefs" title={t("알림과 표시")}>
+          <SettingsCard caption={t("화면의 언어와 테마, 받을 알림을 골라요.")} icon="bell" id="profile-prefs" title={t("알림과 표시")}>
             <dl className="settings-rows">
               {/* 다른 언어를 고르면 그 언어로 페이지를 다시 불러오고 다음
                  방문을 위해 기억한다. 푸터의 스위치와 같다. */}
@@ -574,6 +578,7 @@ export function ProfilePage({
                 labelId="theme-label"
                 value={t("이 브라우저에서 밝게 · 어둡게 · 기기 설정 따라 볼 수 있어요.")}
               />
+              {push && <PushSetting account={account.id} onError={push.onError} onNotice={push.onNotice} />}
             </dl>
             {onMail && (
               <fieldset aria-labelledby="mail-label" className="mail-choices">

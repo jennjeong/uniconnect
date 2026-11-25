@@ -11,7 +11,8 @@
     "start": "npm run start --prefix backend",
     "typecheck": "npm run typecheck --prefix backend && npm run typecheck --prefix frontend",
     "test": "npm run test --prefix backend && npm run test --prefix frontend",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "vapid": "node scripts/vapid-keys.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",

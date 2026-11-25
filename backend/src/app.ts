@@ -22,6 +22,7 @@ import { councilRouter } from "./routes/council.js"
 import { socialRouter } from "./routes/social.js"
 import { brandsRouter } from "./routes/brands.js"
 import { calendarRouter } from "./routes/calendar.js"
+import { pushRouter } from "./routes/push.js"
 import { checkInRouter } from "./routes/checkin.js"
 import { conversationsRouter } from "./routes/conversations.js"
 import { cronRouter } from "./routes/cron.js"
@@ -227,6 +228,7 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
   app.use("/api/dismissed", dismissedRouter)
   app.use("/api/saved-searches", searchesRouter)
   app.use("/api/calendar", calendarRouter)
+  app.use("/api/push", pushRouter)
   app.use("/api/board", boardRouter)
   app.use("/api/errors", errorsRouter)
   app.use("/api/billing", billingRouter)

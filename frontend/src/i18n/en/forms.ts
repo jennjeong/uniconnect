@@ -860,6 +860,8 @@ const en: Record<string, string> = {
   "주소 → 지도 (Nominatim)": "Address → map (Nominatim)",
   "매장 주소에 거리가 붙지 않아요.": "Store addresses get no distance.",
   "사업자 확인 (국세청)": "Business check (NTS)",
+  "휴대폰 푸시 알림 (VAPID)": "Phone push notices (VAPID)",
+  "회원이 기기 알림을 켤 수 없어요.": "Members can't turn on device notifications.",
   "브랜드가 사업자 등록을 확인할 수 없어요.": "Brands can't verify their business registration.",
   // 콘솔의 분석, 운영, 콘텐츠, 시스템 화면
   "점검 중": "Maintenance",

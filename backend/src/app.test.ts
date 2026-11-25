@@ -10268,3 +10268,172 @@ test("promo codes can't be found by trying one after another", async () => {
   // 코드 없는 주문은 막지 않는다.
   assert.equal((await call("POST", "/billing/orders", { kind: "pro" }, brand)).status, 200)
 })
+
+test("a push notice is sealed as the standard's own example, for that device alone", async () => {
+  const { createECDH } = await import("node:crypto")
+  const { encryptFor, parsePushTarget } = await import("./lib/push.js")
+  // RFC 8291의 예시(5절)다.
+  const target = {
+    endpoint: "https://updates.push.services.mozilla.com/wpush/v2/example",
+    p256dh: "BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4",
+    auth: "BTBZMqHH6r4Tts7J_aSIgg",
+  }
+  const sealed = encryptFor(target, "When I grow up, I want to be a watermelon", {
+    salt: Buffer.from("DGv6ra1nlYgDCS1FRnbzlw", "base64url"),
+    privateKey: Buffer.from("yfWPiYE-n46HLnH0KqZOF1fJJU3MYrct3AELtAQ-oRw", "base64url"),
+  })
+  assert.equal(
+    sealed.toString("base64url"),
+    "DGv6ra1nlYgDCS1FRnbzlwAAEABBBP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A_yl95bQpu6cVPTpK4Mqgkf1CXztLVBSt2Ks3oZwbuwXPXLWyouBWLVWGNWQexSgSxsj_Qulcy4a-fN",
+  )
+
+  // 브라우저들의 푸시 서버가 아닌 주소와 잘못된 키는 받지 않는다.
+  const body = (endpoint: string, keys: object = { p256dh: target.p256dh, auth: target.auth }) => ({ endpoint, keys })
+  const device = createECDH("prime256v1")
+  device.generateKeys()
+  assert.ok(parsePushTarget(body("https://fcm.googleapis.com/fcm/send/abc", { p256dh: device.getPublicKey("base64url"), auth: target.auth })))
+  assert.ok(parsePushTarget(body("https://web.push.apple.com/abc")))
+  assert.ok(parsePushTarget(body("https://wns2-sg2p.notify.windows.com/w/?token=abc")))
+  for (const endpoint of [
+    "http://fcm.googleapis.com/a",
+    "https://fcm.googleapis.com:8443/a",
+    "https://user@fcm.googleapis.com/a",
+    "https://fcm.googleapis.com.evil.example/a",
+    "https://evilnotify.windows.com.example/a",
+    "https://127.0.0.1/a",
+    "https://169.254.169.254/latest",
+    "https://notify.windows.com.evil.kr/a",
+    "not a url",
+    `https://fcm.googleapis.com/${"a".repeat(1000)}`,
+  ])
+    assert.equal(parsePushTarget(body(endpoint)), undefined, endpoint)
+  const good = "https://fcm.googleapis.com/fcm/send/abc"
+  assert.equal(parsePushTarget(body(good, { p256dh: Buffer.concat([Buffer.from([4]), Buffer.alloc(64, 1)]).toString("base64url"), auth: target.auth })), undefined)
+  assert.equal(parsePushTarget(body(good, { p256dh: target.p256dh, auth: "short" })), undefined)
+  assert.equal(parsePushTarget(null), undefined)
+})
+
+test("a member turns push notices on for one login, and they end with it", async () => {
+  const { createDecipheriv, createECDH, createPublicKey, hkdfSync, verify } = await import("node:crypto")
+  const { pushTransport } = await import("./lib/push.js")
+  const { notify } = await import("./lib/notices.js")
+  const { mailTransport } = await import("./lib/mailer.js")
+  const server = createECDH("prime256v1")
+  server.generateKeys()
+  const device = createECDH("prime256v1")
+  device.generateKeys()
+  const auth = Buffer.alloc(16, 7)
+  const endpoint = "https://fcm.googleapis.com/fcm/send/device-one"
+  const subscription = { endpoint, keys: { p256dh: device.getPublicKey("base64url"), auth: auth.toString("base64url") } }
+  const saved = { key: config.vapidPublicKey, secret: config.vapidPrivateKey, site: config.siteUrl }
+  const realPost = pushTransport.post
+  const realMail = mailTransport.post
+  const sent: { endpoint: string; headers: Record<string, string>; body: Buffer }[] = []
+  let status = 201
+  pushTransport.post = async (to, headers, body) => {
+    sent.push({ endpoint: to, headers, body })
+    return new Response(null, { status })
+  }
+  // 기기가 자기 키로 여는 그대로 연다.
+  const open = (body: Buffer) => {
+    const theirs = body.subarray(21, 86)
+    const hkdf = (secret: Buffer, salt: Buffer, info: Buffer | string, length: number) => Buffer.from(hkdfSync("sha256", secret, salt, info, length))
+    const material = hkdf(device.computeSecret(theirs), auth, Buffer.concat([Buffer.from("WebPush: info\0"), device.getPublicKey(), theirs]), 32)
+    const cipher = createDecipheriv("aes-128-gcm", hkdf(material, body.subarray(0, 16), "Content-Encoding: aes128gcm\0", 16), hkdf(material, body.subarray(0, 16), "Content-Encoding: nonce\0", 12))
+    cipher.setAuthTag(body.subarray(-16))
+    const plain = Buffer.concat([cipher.update(body.subarray(86, -16)), cipher.final()])
+    return JSON.parse(plain.subarray(0, -1).toString()) as { title: string; body?: string; path: string }
+  }
+  const account = (email: string) => getDatabase().accounts.find((item) => item.email === email)!
+  const pushes = () => getDatabase().sessions.filter((session) => session.push?.endpoint === endpoint)
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 60))
+  try {
+    const token = await signUpMember("push-club@syu.ac.kr", "push-pass-123")
+    const other = await signUpMember("push-other@syu.ac.kr", "push-pass-123")
+    const email = "push-club@syu.ac.kr"
+    // 키가 없으면 켤 수 없고, 앱은 설정을 보이지 않는다.
+    config.vapidPublicKey = undefined
+    assert.deepEqual((await call("GET", "/push", undefined, token)).data, { key: null, on: false })
+    assert.equal((await call("PUT", "/push", subscription, token)).status, 503)
+    config.vapidPublicKey = server.getPublicKey("base64url")
+    const raw = Buffer.alloc(32)
+    server.getPrivateKey().copy(raw, 32 - server.getPrivateKey().length)
+    config.vapidPrivateKey = raw.toString("base64url")
+    config.siteUrl = "https://uniconnect.example/"
+
+    assert.equal((await call("GET", "/push")).status, 401)
+    const demo = await login("학생단체")
+    assert.deepEqual((await call("GET", "/push", undefined, demo)).data, { key: null, on: false })
+    assert.equal((await call("PUT", "/push", subscription, demo)).status, 403)
+    assert.deepEqual((await call("GET", "/push", undefined, token)).data, { key: config.vapidPublicKey, on: false })
+    assert.equal((await call("PUT", "/push", { ...subscription, endpoint: "https://internal.example/a" }, token)).status, 400)
+    assert.equal((await call("POST", "/push/test", {}, token)).status, 409)
+    assert.equal((await call("PUT", "/push", subscription, token)).status, 200)
+    assert.equal((await call("GET", "/push", undefined, token)).data.on, true)
+
+    // 시험 알림: 우리가 보냈다는 서명이 맞고, 기기만 열 수 있다.
+    assert.equal((await call("POST", "/push/test", {}, token)).status, 204)
+    assert.equal(sent.length, 1)
+    assert.equal(open(sent[0].body).title, "uniconnect 알림이 켜졌어요")
+    const [, jwt] = /^vapid t=([^,]+), k=/.exec(sent[0].headers.Authorization)!
+    const [head, claims, signature] = jwt.split(".")
+    const jwk = { kty: "EC", crv: "P-256", x: server.getPublicKey().subarray(1, 33).toString("base64url"), y: server.getPublicKey().subarray(33).toString("base64url") }
+    assert.ok(verify("sha256", Buffer.from(`${head}.${claims}`), { key: createPublicKey({ format: "jwk", key: jwk }), dsaEncoding: "ieee-p1363" }, Buffer.from(signature, "base64url")))
+    const said = JSON.parse(Buffer.from(claims, "base64url").toString())
+    assert.equal(said.aud, "https://fcm.googleapis.com")
+    assert.equal(said.sub, "https://uniconnect.example")
+
+    // 알림 메일과 같은 때에 가고, 메일을 꺼도 간다. 메시지 내용은 싣지 않는다.
+    sent.length = 0
+    account(email).mailOff = ["proposals", "messages"]
+    await notify(account(email), "proposals", "새 협찬 제안이 왔어요", ["첫 줄\n둘째 줄"], "/offers")
+    await notify(account(email), "messages", "새 메시지가 왔어요", ["상대: 비밀 이야기"], "/messages/1")
+    await notify(account(email), "digest", "이번 주 추천", ["요약"], "/matches")
+    await settle()
+    assert.deepEqual(sent.map((item) => open(item.body)), [
+      { title: "새 협찬 제안이 왔어요", body: "첫 줄 둘째 줄", path: "/offers" },
+      { title: "새 메시지가 왔어요", path: "/messages/1" },
+    ])
+    // 다른 회원에게는 가지 않는다.
+    sent.length = 0
+    await notify(account("push-other@syu.ac.kr"), "proposals", "새 협찬 제안이 왔어요", ["줄"], "/offers")
+    await settle()
+    assert.equal(sent.length, 0)
+
+    // 같은 브라우저에서 다른 계정으로 켜면 앞 계정의 알림은 끊긴다.
+    assert.equal((await call("PUT", "/push", subscription, other)).status, 200)
+    assert.equal((await call("GET", "/push", undefined, token)).data.on, false)
+    assert.equal(pushes().length, 1)
+    // 구독이 끝났다는 답이 오면 지운다.
+    status = 410
+    await notify(account("push-other@syu.ac.kr"), "proposals", "협찬 제안이 왔어요", ["줄"], "/offers")
+    await settle()
+    assert.equal(pushes().length, 0)
+    status = 201
+
+    // 끄면 끊기고, 로그아웃하면 로그인과 함께 사라진다.
+    await call("PUT", "/push", subscription, token)
+    assert.equal((await call("DELETE", "/push", undefined, token)).status, 204)
+    assert.equal(pushes().length, 0)
+    await call("PUT", "/push", subscription, token)
+    await call("POST", "/auth/logout", {}, token)
+    assert.equal(pushes().length, 0)
+    // 정지된 계정에는 보내지 않는다.
+    await call("PUT", "/push", subscription, other)
+    account("push-other@syu.ac.kr").suspendedAt = new Date().toISOString()
+    sent.length = 0
+    await notify(account("push-other@syu.ac.kr"), "proposals", "정지 뒤 제안", ["줄"], "/offers")
+    await settle()
+    assert.equal(sent.length, 0)
+    delete account("push-other@syu.ac.kr").suspendedAt
+    // 구독은 계정이 받는 데이터에 담기지 않는다.
+    assert.ok(!JSON.stringify((await call("GET", "/auth/me", undefined, other)).data).includes("device-one"))
+    assert.ok(!JSON.stringify((await call("GET", "/auth/sessions", undefined, other)).data).includes("device-one"))
+  } finally {
+    pushTransport.post = realPost
+    mailTransport.post = realMail
+    config.vapidPublicKey = saved.key
+    config.vapidPrivateKey = saved.secret
+    config.siteUrl = saved.site
+  }
+})
