@@ -62,10 +62,15 @@ export function mapRings({ radius, step }: { radius: number; step: number }) {
 
 // 점들이 서로 겹칠 곳(한 건물 안의 매장)에서 떨어뜨린 위치. 각 점은 자기
 // 자리에서 작은 나선을 그리며 나아가, 앞선 모든 점에서 `gap` 퍼센트 떨어질
-// 때까지 움직이므로 모두 누를 수 있다.
-export function spreadPositions(positions: { left: number; top: number }[], gap = 3.4) {
+// 때까지 움직이므로 모두 누를 수 있다. `blocked`인 자리에는 두지 않는다.
+export function spreadPositions(
+  positions: { left: number; top: number }[],
+  gap = 3.4,
+  blocked: (point: { left: number; top: number }) => boolean = () => false,
+) {
   const placed: { left: number; top: number }[] = []
   const crowded = (point: { left: number; top: number }) =>
+    blocked(point) ||
     placed.some((other) => Math.hypot(other.left - point.left, other.top - point.top) < gap - 1e-9)
   return positions.map((position) => {
     let next = position
@@ -79,13 +84,61 @@ export function spreadPositions(positions: { left: number; top: number }[], gap 
   })
 }
 
-// 실제 지도 위에서 겹치는 핀을 옮길 거리(픽셀). 핀의 누르는 자리는 28×34이고,
-// 앞선 핀은 제자리에 둔다. 확대하면 자리가 벌어져 0으로 돌아온다.
+// 실제 지도 위에서 겹치는 핀을 옮길 거리(픽셀). 앞선 핀은 제자리에 두고, 모든
+// 핀은 가운데 이름표(`keepOut`, 같은 좌표의 사각형)를 덮지 않게 비켜선다.
+// 확대하면 자리가 벌어져 0으로 돌아온다.
 export const pinGap = 32
+const pinWidth = 28
+const pinHeight = 34
 
-export function pinShifts(points: { x: number; y: number }[]) {
-  const spread = spreadPositions(points.map(({ x, y }) => ({ left: x, top: y })), pinGap)
+export type PixelBox = { left: number; right: number; top: number; bottom: number }
+
+// 끝이 (x, y)에 놓인 핀이 사각형에 걸치는가.
+export const pinCovers = ({ x, y }: { x: number; y: number }, box: PixelBox) =>
+  x + pinWidth / 2 > box.left && x - pinWidth / 2 < box.right && y > box.top && y - pinHeight < box.bottom
+
+export function pinShifts(points: { x: number; y: number }[], keepOut?: PixelBox) {
+  const spread = spreadPositions(
+    points.map(({ x, y }) => ({ left: x, top: y })),
+    pinGap,
+    ({ left, top }) => Boolean(keepOut && pinCovers({ x: left, y: top }, keepOut)),
+  )
   return spread.map(({ left, top }, index) => ({ x: left - points[index].x, y: top - points[index].y }))
+}
+
+// 고른 가게의 이름표를 둘 자리: 핀 위나 아래, 그리고 가로로 옮길 거리. 지도
+// 안에 머물면서 가운데 이름을 덮지 않는 자리 가운데 가장 조금 옮기는 곳이다.
+// 좁아서 그런 자리가 없으면 지도 안에만 머문다. `label`은 옮기기 전 핀 위의 자리다.
+const nameEdge = 8
+const nameGap = 4
+
+export function namePlace(label: PixelBox, pin: PixelBox, area: PixelBox, home?: PixelBox) {
+  const inside = (shift: number) =>
+    Math.min(Math.max(shift, area.left + nameEdge - label.left), area.right - nameEdge - label.right)
+  const height = label.bottom - label.top
+  const base = inside(0)
+  // 핀에서 떨어지면 다른 핀의 이름처럼 보이므로, 핀 위에 걸쳐 있는 만큼만 옮긴다.
+  const reach = (label.right - label.left) / 2 - nameEdge
+  const aside = home
+    ? [home.left - nameGap - label.right, home.right + nameGap - label.left].map(inside).filter((shift) => Math.abs(shift) <= reach)
+    : []
+  const shifts = [base, ...aside]
+  const options = [false, true].flatMap((below) => {
+    const top = below ? pin.bottom + nameGap : label.top
+    if (top < area.top + nameEdge || top + height > area.bottom) return []
+    return shifts
+      .filter(
+        (shift) =>
+          !home ||
+          label.right + shift <= home.left ||
+          label.left + shift >= home.right ||
+          top + height <= home.top ||
+          top >= home.bottom,
+      )
+      .map((shift) => ({ below, shift }))
+  })
+  const cost = (option: { below: boolean; shift: number }) => Math.abs(option.shift) + (option.below ? 12 : 0)
+  return options.sort((a, b) => cost(a) - cost(b))[0] ?? { below: label.top < area.top + nameEdge, shift: base }
 }
 
 // 카탈로그 지도의 눈금 (CatalogMap.tsx): 파트너는 한 골목이 아니라 킬로미터

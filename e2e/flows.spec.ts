@@ -1839,6 +1839,15 @@ test("on Kakao's map every shop can be pressed when they crowd together, and a p
     await dots.nth(index).click({ timeout: 3000 })
     await expect(dots.nth(index)).toHaveAttribute("aria-pressed", "true")
   }
+  // 어느 핀도, 고른 이름도 학교 이름을 덮지 않는다.
+  const covering = () => page.evaluate(() => {
+    const home = document.querySelector(".kakao-campus")!.getBoundingClientRect()
+    return [...document.querySelectorAll(".kakao-dot, .place-dot-name")].filter((item) => {
+      const box = item.getBoundingClientRect()
+      return box.left < home.right - 1 && box.right > home.left + 1 && box.top < home.bottom - 1 && box.bottom > home.top + 1
+    }).length
+  })
+  await expect.poll(covering).toBe(0)
   const moved = () => dots.evaluateAll((items) => items.filter((item) => item.parentElement?.dataset.moved === "true").length)
   expect(await moved()).toBeGreaterThan(0)
   // 이름표는 다크 모드에서도 흰 글자에 어두운 바탕이다.
