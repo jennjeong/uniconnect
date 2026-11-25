@@ -10437,3 +10437,283 @@ test("a member turns push notices on for one login, and they end with it", async
     config.siteUrl = saved.site
   }
 })
+
+// 앞서 연결한 소셜 로그인과 끝나지 않은 로그인을 계정에 둔다.
+function linkSocial(email: string) {
+  const database = getDatabase()
+  const account = database.accounts.find((item) => item.email === email)!
+  account.social = { kakao: { id: `kakao-${email}`, linkedAt: new Date().toISOString() } }
+  account.loginTicket = { hash: "old-ticket", expiresAt: Date.now() + 60_000, tries: 0 }
+  database.oauth ??= { states: [], handoffs: [] }
+  database.oauth.states.push({ hash: `s-${email}`, provider: "kakao", intent: "link", accountId: account.id, expiresAt: Date.now() + 60_000 })
+  database.oauth.handoffs.push({ hash: `h-${email}`, accountId: account.id, expiresAt: Date.now() + 60_000 })
+  const left = () => ({
+    social: account.social,
+    ticket: account.loginTicket,
+    flows: [...database.oauth!.states, ...database.oauth!.handoffs].filter((item) => item.accountId === account.id).length,
+  })
+  return { account, left }
+}
+
+test("changing the password or handing over the login email ends linked social logins and unfinished sign-ins", async () => {
+  const nothing = { social: undefined, ticket: undefined, flows: 0 }
+  const changed = await signUpMember("cut-one@syu.ac.kr", "cut-pass-1234!")
+  const one = linkSocial("cut-one@syu.ac.kr")
+  // 틀린 비밀번호로는 아무것도 바뀌지 않는다.
+  assert.equal((await call("POST", "/auth/password", { current: "wrong-pass-12!", next: "cut-pass-5678!" }, changed)).status, 400)
+  assert.equal(one.left().flows, 2)
+  assert.equal((await call("POST", "/auth/password", { current: "cut-pass-1234!", next: "cut-pass-5678!" }, changed)).status, 204)
+  assert.deepEqual(one.left(), nothing)
+
+  const handed = await signUpMember("cut-two@syu.ac.kr", "cut-pass-1234!")
+  const two = linkSocial("cut-two@syu.ac.kr")
+  const sent = await call("POST", "/auth/email/code", { email: "cut-next@syu.ac.kr", password: "cut-pass-1234!" }, handed)
+  const moved = await call("POST", "/auth/email", { email: "cut-next@syu.ac.kr", code: sent.data.devCode }, handed)
+  assert.equal(moved.status, 200)
+  assert.equal(moved.data.account.socialLinks, undefined)
+  assert.deepEqual(two.left(), nothing)
+})
+
+test("a co-admin's password change leaves the owner's social login alone", async () => {
+  const { hashPassword } = await import("./lib/password.js")
+  await signUpMember("cut-owner@syu.ac.kr", "cut-pass-1234!")
+  const { account, left } = linkSocial("cut-owner@syu.ac.kr")
+  account.members = [{ id: "cut-member", email: "cut-member@syu.ac.kr", name: "팀원", passwordHash: await hashPassword("cut-pass-1234!"), addedAt: new Date().toISOString() }]
+  const { token } = await logInCoAdmin("cut-member@syu.ac.kr", "cut-pass-1234!")
+  assert.equal((await call("POST", "/auth/password", { current: "cut-pass-1234!", next: "cut-pass-5678!" }, token)).status, 204)
+  assert.ok(left().social)
+})
+
+// `work`가 도는 사이에 다른 저장이 실패해 데이터가 새 객체로 되돌아가게 한다.
+async function whileDataReloads<T>(work: () => Promise<T>) {
+  const { currentStorage } = await import("./lib/storage.js")
+  await saveDatabase()
+  const storage = currentStorage()
+  const realWrite = storage.write
+  const running = work()
+  await new Promise((resolve) => setTimeout(resolve, 60))
+  storage.write = () => Promise.reject(new Error("another copy went first"))
+  await assert.rejects(saveDatabase())
+  storage.write = realWrite
+  return running
+}
+
+test("a password change or reset isn't lost when the data is read anew while the password is checked", async () => {
+  const email = "reload-pass@syu.ac.kr"
+  const token = await signUpMember(email, "reload-pass-1!")
+  const logIn = async (password: string) => (await call("POST", "/auth/login", { role: "학생단체", email, password })).status
+  const changed = await whileDataReloads(() => call("POST", "/auth/password", { current: "reload-pass-1!", next: "reload-pass-2!" }, token))
+  assert.equal(changed.status, 204)
+  assert.deepEqual([await logIn("reload-pass-1!"), await logIn("reload-pass-2!")], [401, 200])
+
+  await call("POST", "/auth/password-reset/code", { email })
+  const code = getDatabase().emailCodes.find((item) => item.email === email && item.purpose === "reset")!.code
+  const reset = await whileDataReloads(() => call("POST", "/auth/password-reset", { email, code, password: "reload-pass-3!" }))
+  assert.equal(reset.status, 200)
+  assert.deepEqual([await logIn("reload-pass-2!"), await logIn("reload-pass-3!")], [401, 200])
+  // 쓴 코드는 되살아나지 않는다.
+  assert.equal((await call("POST", "/auth/password-reset", { email, code, password: "reload-pass-4!" })).status, 400)
+
+  const fresh = await call("POST", "/auth/login", { role: "학생단체", email, password: "reload-pass-3!" })
+  const setup = await whileDataReloads(() => call("POST", "/auth/two-factor/setup", { password: "reload-pass-3!" }, fresh.data.token))
+  assert.equal(setup.status, 200)
+  assert.equal(getDatabase().accounts.find((item) => item.email === email)!.pendingTwoFactor!.secret, setup.data.secret)
+})
+
+test("removing a team member renews the venue PINs they could see, and leaves the rest", async () => {
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const { token: group } = await listedMember("left-club@syu.ac.kr", "left-pass-123!")
+  const account = () => getDatabase().accounts.find((item) => item.email === "left-club@syu.ac.kr")!
+  const add = async (name: string, inDays: number) =>
+    (await call("POST", "/events", { name, date: addDays(todayInKorea(), inDays), people: "100명", types: ["제품"] }, group)).data.event as { id: string }
+  const now = await add("오늘 행사", 5)
+  const later = await add("나중 행사", 9)
+  await call("GET", "/measurements", undefined, group)
+  getDatabase().events[account().id].find((item) => item.id === now.id)!.date = todayInKorea()
+  const of = (id: string) => getDatabase().measurements.find((item) => item.eventId === id)!
+  const before = { now: { ...of(now.id) }, later: { ...of(later.id) } }
+  account().members = [{ id: "left-1", email: "left-one@syu.ac.kr", name: "나간 사람", passwordHash: "x", addedAt: new Date().toISOString() }]
+  const removed = await call("DELETE", "/team/members/left-1", undefined, group)
+  assert.equal(removed.status, 200)
+  assert.equal(removed.data.pinsChanged, true)
+  assert.notEqual(of(now.id).groupPin, before.now.groupPin)
+  assert.notEqual(of(now.id).staffPin, before.now.staffPin)
+  assert.deepEqual([of(later.id).groupPin, of(later.id).staffPin], [before.later.groupPin, before.later.staffPin])
+
+  // 매장 방문 확인까지 끝났으면 둔다.
+  const ended = of(now.id).groupPin
+  getDatabase().events[account().id].find((item) => item.id === now.id)!.date = addDays(todayInKorea(), -9)
+  account().members = [{ id: "left-2", email: "left-two@syu.ac.kr", name: "나간 사람", passwordHash: "x", addedAt: new Date().toISOString() }]
+  assert.equal((await call("DELETE", "/team/members/left-2", undefined, group)).data.pinsChanged, false)
+  assert.equal(of(now.id).groupPin, ended)
+})
+
+test("a brand's removed team member loses its store PIN at a group's event, not the group's own", async () => {
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const group = await signUpMember("left-host@syu.ac.kr", "left-pass-123!")
+  const groupId = getDatabase().accounts.find((item) => item.email === "left-host@syu.ac.kr")!.id
+  const { token: brand, listingId } = await listedMember("left@left-cafe.kr", "left-pass-123!", "브랜드")
+  await call("POST", "/events", { name: "협찬 공연", date: addDays(todayInKorea(), 9), people: "100명", types: ["제품"] }, group)
+  await call("POST", "/proposals", { matchId: listingId }, group)
+  const request = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
+  await call("POST", `/requests/${request.id}/accept`, undefined, brand)
+  await call("GET", `/agreements/${request.id}`, undefined, brand)
+  getDatabase().events[groupId].find((item) => item.id === request.eventId)!.date = todayInKorea()
+  const measurement = getDatabase().measurements.find((item) => item.eventId === request.eventId)!
+  const [store, own] = [measurement.sponsors[0].staffPin, measurement.groupPin]
+  const account = getDatabase().accounts.find((item) => item.email === "left@left-cafe.kr")!
+  account.members = [{ id: "left-3", email: "left-three@left-cafe.kr", name: "나간 사람", passwordHash: "x", addedAt: new Date().toISOString() }]
+  assert.equal((await call("DELETE", "/team/members/left-3", undefined, brand)).data.pinsChanged, true)
+  assert.notEqual(measurement.sponsors[0].staffPin, store)
+  assert.equal(measurement.groupPin, own)
+})
+
+test("the sample report compares examples with examples, never with members' events", async () => {
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const { emptyMetrics } = await import("./lib/measurements.js")
+  const database = getDatabase()
+  const sample = async () => JSON.stringify((await call("GET", "/insights/sp-busking")).data).replace(/"issuedAt":"[^"]*"/, "")
+  const before = await sample()
+  await signUpMember("bench-club@syu.ac.kr", "bench-pass-1!")
+  const account = database.accounts.find((item) => item.email === "bench-club@syu.ac.kr")!
+  const demo = database.measurements.find((item) => item.eventId === "event-busking-day")!
+  for (const [index, scans] of [40, 50, 60].entries()) {
+    const id = `bench-${index}`
+    database.events[account.id].push({ id, name: id, date: addDays(todayInKorea(), -20), people: "100명", types: [], status: "집행 완료", createdAt: new Date().toISOString() } as never)
+    database.measurements.push({ ...structuredClone(demo), accountId: account.id, eventId: id, code: `bench-${index}`, sponsors: [], metrics: { ...emptyMetrics(), scans, coupons: 10, visits: 5 } })
+  }
+  try {
+    assert.equal(await sample(), before)
+  } finally {
+    database.measurements = database.measurements.filter((item) => item.accountId !== account.id)
+    database.events[account.id] = []
+  }
+})
+
+test("a review or reply an operator took down stays down when its author deletes and writes it again", async () => {
+  const { todayInKorea } = await import("./lib/dates.js")
+  const { token: group } = await listedMember("down-club@syu.ac.kr", "down-pass-123!")
+  const groupId = getDatabase().accounts.find((item) => item.email === "down-club@syu.ac.kr")!.id
+  const { token: brand, listingId } = await listedMember("down@down-cafe.kr", "down-pass-123!", "브랜드")
+  await verifyForReviews("down-club@syu.ac.kr", "down@down-cafe.kr")
+  await call("POST", "/events", { name: "내린 후기 공연", date: todayInKorea(), people: "100명", types: ["제품"] }, group)
+  await call("POST", "/proposals", { matchId: listingId }, group)
+  const { id } = getDatabase().requests.find((item) => item.fromAccountId === groupId)!
+  await call("POST", `/requests/${id}/accept`, undefined, brand)
+  for (const token of [group, brand]) await call("POST", `/agreements/${id}/confirm`, undefined, token)
+  const route = `/reviews/${id}`
+  const shown = async () => (await call("GET", `/reviews?about=${listingId}`)).data.reviews as { comment: string; reply?: { text?: string; hidden?: boolean } }[]
+  const review = () => getDatabase().reviews.find((item) => item.id === `${id}:group`)!
+
+  assert.equal((await call("PUT", route, { rating: 1, comment: "나쁜 말" }, group)).status, 201)
+  assert.equal((await call("PUT", `${route}/reply`, { text: "나쁜 답" }, brand)).status, 201)
+  // 답글만 내린 뒤 지우고 다시 쓴다.
+  review().reply!.hiddenAt = new Date().toISOString()
+  assert.equal((await call("DELETE", `${route}/reply`, undefined, brand)).status, 204)
+  assert.equal((await call("PUT", `${route}/reply`, { text: "다시 쓴 답" }, brand)).status, 201)
+  assert.ok(review().reply!.hiddenAt)
+  assert.equal(JSON.stringify(await shown()).includes("다시 쓴 답"), false)
+  // 후기를 지우고 다시 써도 내린 답글은 내려진 채다.
+  assert.equal((await call("DELETE", route, undefined, group)).status, 204)
+  assert.equal((await call("PUT", route, { rating: 1, comment: "나쁜 말" }, group)).status, 201)
+  assert.equal((await call("PUT", `${route}/reply`, { text: "또 쓴 답" }, brand)).status, 201)
+  assert.ok(review().reply!.hiddenAt)
+
+  await asAdmin(async (admin) => {
+    assert.equal((await admin("POST", `/reviews/${id}:group/hide`)).status, 204)
+    assert.equal((await call("DELETE", route, undefined, group)).status, 204)
+    assert.equal((await call("PUT", route, { rating: 1, comment: "나쁜 말" }, group)).status, 201)
+    assert.deepEqual(await shown(), [])
+    // 남는 기록에는 내용이 없다.
+    assert.equal(JSON.stringify(getDatabase().reviewTakedowns).includes("나쁜"), false)
+    // 운영자가 다시 보이게 하면 그 뒤로는 지우고 써도 보인다.
+    assert.equal((await admin("POST", `/reviews/${id}:group/show`)).status, 204)
+  })
+  assert.equal((await call("DELETE", route, undefined, group)).status, 204)
+  assert.equal((await call("PUT", route, { rating: 5, comment: "고마워요" }, group)).status, 201)
+  assert.deepEqual((await shown()).map((item) => item.comment), ["고마워요"])
+  // 탈퇴하면 기록도 사라진다.
+  assert.equal((await call("DELETE", "/auth/account", { password: "down-pass-123!" }, group)).status, 204)
+  assert.equal((getDatabase().reviewTakedowns ?? []).some((item) => item.reviewId.startsWith(id)), false)
+})
+
+test("files in a conversation and event plans take the extension of what they are, old ones too", async () => {
+  const { upgradeDatabase } = await import("./store.js")
+  const { sentName } = await import("./lib/photos.js")
+  assert.equal(sentName("견적서.hta", "a.pdf", "file"), "견적서.pdf")
+  assert.equal(sentName("test‮fdp.bat", "a.pdf", "file"), "test fdp.pdf")
+  assert.equal(sentName("../..\\x:y.pdf", "a.pdf", "file"), ".. .. x y.pdf")
+  assert.equal(sentName("기획안 v1.2.pdf", "a.pdf", "file"), "기획안 v1.2.pdf")
+  assert.equal(sentName("", "a.png", "photo"), "photo.png")
+  const { token: group } = await listedMember("name-club@syu.ac.kr", "name-pass-123!")
+  const { listingId } = await listedMember("name@name-cafe.kr", "name-pass-123!", "브랜드")
+  const chat = (await call("POST", "/conversations", { partnerId: listingId }, group)).data.conversation
+  const file = `data:application/pdf;base64,${Buffer.from("%PDF-1.4\n").toString("base64")}`
+  const sent = await call("POST", `/conversations/${chat.id}/attachments`, { file, name: "견적서.html" }, group)
+  assert.equal(sent.data.conversation.messages.at(-1).attachment.name, "견적서.pdf")
+  const message = getDatabase().conversations.find((item) => item.id === chat.id)!.messages.at(-1)!
+  message.attachment!.name = "옛날.bat"
+  upgradeDatabase(getDatabase())
+  assert.equal(message.attachment!.name, "옛날.pdf")
+})
+
+test("files sent at once can't go past an account's 10 MB", async () => {
+  const { photos } = await import("./lib/photos.js")
+  const { token: group } = await listedMember("quota-club@syu.ac.kr", "quota-pass-1!")
+  const { listingId } = await listedMember("quota@quota-cafe.kr", "quota-pass-1!", "브랜드")
+  const chat = (await call("POST", "/conversations", { partnerId: listingId }, group)).data.conversation
+  const file = `data:application/pdf;base64,${Buffer.concat([Buffer.from("%PDF-1.4\n"), Buffer.alloc(1_900_000, 32)]).toString("base64")}`
+  const store = photos()
+  const realPut = store.put
+  store.put = async (...args) => {
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    return realPut.apply(store, args)
+  }
+  try {
+    const sent = await Promise.all(Array.from({ length: 8 }, () => call("POST", `/conversations/${chat.id}/attachments`, { file, name: "a.pdf" }, group)))
+    assert.deepEqual(sent.map((item) => item.status).sort(), [201, 201, 201, 201, 201, 409, 409, 409])
+  } finally {
+    store.put = realPut
+  }
+  const kept = getDatabase().conversations.find((item) => item.id === chat.id)!.messages
+  assert.equal(kept.length, 5)
+})
+
+test("one business number is verified on one account even when two ask at once", async () => {
+  const { businessCheck } = await import("./lib/business.js")
+  const realValidate = businessCheck.validate
+  const savedKey = config.ntsServiceKey
+  config.ntsServiceKey = "test-key"
+  businessCheck.validate = async () => {
+    await new Promise((resolve) => setTimeout(resolve, 200))
+    return "valid"
+  }
+  try {
+    const tokens = [await signUpMember("twin@twin-one.kr", "twin-pass-123!", "브랜드"), await signUpMember("twin@twin-two.kr", "twin-pass-123!", "브랜드")]
+    const form = { number: "987-65-43210", startDate: "2020-03-02", owner: "김대표" }
+    const answers = await Promise.all(tokens.map((token) => call("POST", "/profile/business", form, token)))
+    assert.deepEqual(answers.map((item) => item.status).sort(), [200, 409])
+    assert.equal(getDatabase().accounts.filter((item) => item.business?.number === "9876543210").length, 1)
+  } finally {
+    businessCheck.validate = realValidate
+    config.ntsServiceKey = savedKey
+  }
+})
+
+test("questions are limited by the hour, and by how many wait for an answer", async () => {
+  const token = await signUpMember("ask-much@syu.ac.kr", "ask-pass-1234!")
+  const ask = (who = token) => call("POST", "/inquiries", { category: "기타", question: "자주 묻는 질문이에요" }, who)
+  const statuses: number[] = []
+  for (let index = 0; index < 11; index += 1) statuses.push((await ask()).status)
+  assert.deepEqual([statuses.filter((status) => status === 201).length, statuses.at(-1)], [10, 429])
+  // 주소를 바꿔 가며 데모 계정으로 보내도 끝없이 쌓이지 않는다.
+  const demo = await login("학생단체")
+  const demoId = getDatabase().demoAccountIds.학생단체
+  const before = getDatabase().inquiries
+  getDatabase().inquiries = [...before, ...Array.from({ length: 50 }, (_, index) => ({ id: `q-${index}`, accountId: demoId, category: "기타", question: "질문", createdAt: new Date().toISOString() }))]
+  try {
+    assert.equal((await ask(demo)).status, 429)
+  } finally {
+    getDatabase().inquiries = before
+  }
+})

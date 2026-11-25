@@ -9,7 +9,8 @@ import { passwordProblem } from "../lib/password"
 
 // 내 정보에서 비밀번호를 바꾼다. 현재 비밀번호와 새 비밀번호 두 번. 다른 기기는
 // 로그아웃되고 이 기기는 로그인된 채 남는다.
-export function PasswordModal({ onClose, onChanged }: { onClose: () => void; onChanged: () => void }) {
+// 대표의 연결된 소셜 로그인도 서버가 함께 끊는다(social).
+export function PasswordModal({ social, onClose, onChanged }: { social: boolean; onClose: () => void; onChanged: () => void }) {
   const [draft, setDraft] = useState({ current: "", next: "", confirm: "" })
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
@@ -50,7 +51,11 @@ export function PasswordModal({ onClose, onChanged }: { onClose: () => void; onC
           void submit()
         }}
       >
-        <p className="auth-lead">{t("비밀번호를 바꾸면 다른 기기에서는 로그아웃돼요.")}</p>
+        <p className="auth-lead">
+          {social
+            ? t("비밀번호를 바꾸면 다른 기기에서는 로그아웃되고 카카오·네이버 연결도 끊겨요. 내 정보에서 다시 연결할 수 있어요.")
+            : t("비밀번호를 바꾸면 다른 기기에서는 로그아웃돼요.")}
+        </p>
         {field("current", t("지금 비밀번호"), "current-password")}
         {field("next", t("새 비밀번호"), "new-password", "password-rules")}
         {field("confirm", t("새 비밀번호 확인"), "new-password")}

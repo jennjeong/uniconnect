@@ -272,6 +272,7 @@ const en: Record<string, string> = {
   "백업 복원": "Backup restored",
   "저장 비밀값 암호화": "Stored secrets encrypted",
   "켜짐": "On",
+  "현장 PIN도 새로 만들었어요. 현장에 알려 주세요.": "On-site PINs changed. Share the new ones with the people on site.",
   "공개 링크가 멈췄어요. 필요하면 새로 만들어 주세요.": "Public links were stopped. Make new ones if you need them.",
   "복원": "Restore",
   "지금 계정 {now} · 백업 계정 {then} · 행사 {events} · 제안 {proposals}": "Accounts now {now} · in backup {then} · events {events} · proposals {proposals}",

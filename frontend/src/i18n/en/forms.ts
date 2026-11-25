@@ -146,8 +146,8 @@ const en: Record<string, string> = {
   "비밀번호 변경": "Change Password",
   "로그인 이메일 바꾸기": "Change login email",
   "내 데이터 내려받기": "Download my data",
-  "단체나 브랜드를 넘겨줄 때 새 담당자의 이메일로 로그인 이메일을 바꿔요. 바꾸면 다른 기기에서는 로그아웃돼요.":
-    "When you hand a group or brand over, change the login email to the new person's. Other devices are logged out.",
+  "단체나 브랜드를 넘겨줄 때 새 담당자의 이메일로 로그인 이메일을 바꿔요. 바꾸면 다른 기기에서는 로그아웃되고 카카오·네이버 연결도 끊겨요.":
+    "When you hand a group or brand over, change the login email to the new person's. Other devices are logged out, and Kakao and Naver are unlinked.",
   "새 이메일로 인증번호를 보냈어요: {email}": "We sent a code to the new email: {email}",
   "새 로그인 이메일": "New login email",
   "새 로그인 이메일을 입력해 주세요.": "Please enter the new login email.",
@@ -155,6 +155,8 @@ const en: Record<string, string> = {
   "이메일 바꾸기": "Change email",
   "로그인 이메일을 바꿨어요. 다른 기기에서는 로그아웃됐어요.": "Login email changed. Other devices were logged out.",
   "내 데이터를 내려받았어요.": "Your data was downloaded.",
+  "비밀번호를 바꾸면 다른 기기에서는 로그아웃되고 카카오·네이버 연결도 끊겨요. 내 정보에서 다시 연결할 수 있어요.":
+    "Changing your password logs you out on other devices and unlinks Kakao and Naver. You can link them again in My Info.",
   "비밀번호를 바꾸면 다른 기기에서는 로그아웃돼요.": "Changing your password logs you out on other devices.",
   "지금 비밀번호": "Current password",
   "비밀번호 바꾸기": "Change password",

@@ -146,6 +146,14 @@ export function parsePdf(file: unknown) {
   return { bytes, name: `${randomUUID()}.pdf` }
 }
 
+// 보낸 파일을 저장할 이름. 확장자는 내용을 따른다. 보낸 이름의 것을 남기면 받은 사람이
+// 내려받아 연 PDF가 .html이나 .bat로 실행될 수 있다. 글자 방향을 뒤집어 확장자를 속이는
+// 문자 같은 보이지 않는 문자도 뺀다.
+export function sentName(sent: string, kept: string, fallback: string) {
+  const stem = sent.replace(/[\\/:*?"<>|\p{C}]+/gu, " ").replace(/\.[^.]*$/, "").trim().slice(0, 70).trim()
+  return `${stem || fallback}.${kept.split(".").pop()}`
+}
+
 // 보관된 사진이나 파일을 내려보낼 때의 타입.
 export const photoType = (name: string) =>
   name.endsWith(".pdf")

@@ -2433,9 +2433,12 @@ function App() {
       </Presence>
       <Presence show={activeModal === "password"}>
         <PasswordModal
+          social={Boolean(account?.socialLinks?.length && !account.asMember)}
           onClose={closeModal}
           onChanged={() => {
             setActiveModal(null)
+            // 서버가 대표의 소셜 로그인 연결도 끊었다.
+            setAccount((current) => (current && !current.asMember ? { ...current, socialLinks: undefined } : current))
             showNotice(t("비밀번호를 바꿨어요. 다른 기기에서는 로그아웃됐어요."))
           }}
         />

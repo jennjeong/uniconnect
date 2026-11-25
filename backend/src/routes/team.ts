@@ -2,17 +2,19 @@ import { createHash, randomInt, randomUUID } from "node:crypto"
 import { Router } from "express"
 
 import { config } from "../config.js"
+import { renewSeenPins } from "../lib/agreements.js"
 import { applicationsOf, holdApplication, parseDocument } from "../lib/applications.js"
 import { emailRuleError, normalizeEmail } from "../lib/email.js"
 import { HttpError } from "../lib/errors.js"
 import { translate } from "../lib/i18n.js"
 import { assertCodesDeliverable, oneLine, sendMail } from "../lib/mailer.js"
+import { notify } from "../lib/notices.js"
 import { hashPassword } from "../lib/password.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { isDemoAccount } from "../lib/reviews.js"
 import { emailTaken, requireOwner, teamLimit } from "../lib/team.js"
 import { checkPassword, text } from "../lib/validation.js"
-import { requireAccount } from "../middleware/session.js"
+import { currentAccount, requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
 import type { Account } from "../types.js"
 
@@ -77,22 +79,29 @@ teamRouter.get("/", (req, res) => {
 // 메일로 간다(개발 중에는 가입 코드처럼 devCode로 돌려준다). 같은 주소를 다시
 // 초대하면 새 코드를 보낸다.
 teamRouter.post("/invites", async (req, res) => {
-  const account = requireOwner(req, requireAccount(req))
+  const before = requireOwner(req, requireAccount(req))
   const database = getDatabase()
-  if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 함께 관리할 사람을 초대할 수 없어요.")
+  if (isDemoAccount(database, before)) throw new HttpError(403, "데모 계정은 함께 관리할 사람을 초대할 수 없어요.")
   const name = text(req.body?.name)
   const email = normalizeEmail(req.body?.email)
   if (!name || name.length > 30) throw new HttpError(400, "초대할 사람의 이름을 30자 이하로 적어 주세요.")
-  const ruleError = emailRuleError(account.role, email)
+  const ruleError = emailRuleError(before.role, email)
   if (ruleError) throw new HttpError(400, ruleError)
-  if (emailTaken(database, email)) throw new HttpError(409, "이미 uniconnect에서 쓰는 이메일이에요. 다른 이메일로 초대해 주세요.")
-  const open = (account.memberInvites ?? []).filter((invite) => invite.expiresAt > Date.now() && invite.email !== email)
-  if ((account.members?.length ?? 0) + open.length + waitingFor(account).length >= teamLimit) {
-    throw new HttpError(409, `함께 관리하는 사람은 대표 말고 ${teamLimit}명까지예요.`)
+  const openFor = (account: Account) => {
+    if (emailTaken(database, email)) throw new HttpError(409, "이미 uniconnect에서 쓰는 이메일이에요. 다른 이메일로 초대해 주세요.")
+    const open = (account.memberInvites ?? []).filter((invite) => invite.expiresAt > Date.now() && invite.email !== email)
+    if ((account.members?.length ?? 0) + open.length + waitingFor(account).length >= teamLimit) {
+      throw new HttpError(409, `함께 관리하는 사람은 대표 말고 ${teamLimit}명까지예요.`)
+    }
+    return open
   }
+  openFor(before)
   // 코드를 보낼 길이 없으면 오늘의 초대 수를 쓰기 전에 거절한다.
   assertCodesDeliverable()
-  await invitesPerDay.take(account.id)
+  await invitesPerDay.take(before.id)
+  // 세는 동안 데이터를 새로 읽었을 수 있어 다시 찾는다.
+  const account = currentAccount(req)
+  const open = openFor(account)
   const code = String(randomInt(0, 1_000_000)).padStart(6, "0")
   const invite = {
     id: randomUUID(),
@@ -116,7 +125,8 @@ teamRouter.post("/invites", async (req, res) => {
       ].join("\n"),
     )
   } catch {
-    account.memberInvites = account.memberInvites.filter((item) => item.id !== invite.id)
+    const fresh = currentAccount(req)
+    fresh.memberInvites = (fresh.memberInvites ?? []).filter((item) => item.id !== invite.id)
     await saveDatabase()
     throw new HttpError(502, "초대 메일을 보내지 못했어요. 잠시 후 다시 시도해 주세요.")
   }
@@ -145,8 +155,20 @@ teamRouter.delete("/members/:id", async (req, res) => {
   delete account.calendarFeed
   if (account.ledger) delete account.ledger.token
   for (const sponsorship of shared) delete sponsorship.shareToken
+  // 현장 PIN도 로그인 없이 통하므로, 빠진 사람이 봤을 수 있는 것을 새로 만든다.
+  const { pinsChanged, told } = renewSeenPins(database, account)
   await saveDatabase()
-  res.json({ team: teamView(account, req.memberId), linksStopped })
+  // PIN은 메일에 넣지 않는다. 함께 쓰는 쪽은 자기 계약서에서 새 PIN을 본다.
+  for (const { account: partner, proposal } of told) {
+    void notify(
+      partner,
+      "sponsorships",
+      "현장 PIN이 바뀌었어요",
+      [`'${proposal.eventName}' 현장 PIN이 바뀌었어요. 계약서에서 새 PIN을 확인해 주세요.`],
+      `/agreements/${encodeURIComponent(proposal.id)}`,
+    )
+  }
+  res.json({ team: teamView(account, req.memberId), linksStopped, pinsChanged })
 })
 
 // 초대받은 사람이 이메일, 코드, 자기 비밀번호, 재직 증빙으로 합류한다. 재직
@@ -169,17 +191,21 @@ teamRouter.post("/join", async (req, res) => {
   const hash = codeHash(email, String(req.body?.code ?? ""))
   const found = invites.find((item) => item.invite.codeHash === hash)
   if (!found) throw new HttpError(400, "초대 코드가 올바르지 않아요.")
-  const { account, invite } = found
-  if (account.suspendedAt) throw new HttpError(403, "운영 정책에 따라 이용이 정지된 계정이에요.")
+  const { account: before, invite } = found
+  if (before.suspendedAt) throw new HttpError(403, "운영 정책에 따라 이용이 정지된 계정이에요.")
   const password = checkPassword(String(req.body?.password ?? ""))
   const document = parseDocument(req.body?.document, "재직 증명 서류를 올려 주세요.")
   // 느린 해시 전에 코드를 소진해, 코드 하나로 공동 관리자 한 명만 만든다.
-  account.memberInvites = account.memberInvites!.filter((item) => item !== invite)
+  before.memberInvites = before.memberInvites!.filter((item) => item !== invite)
   const passwordHash = await hashPassword(password)
-  if (emailTaken(database, email)) throw new HttpError(409, "이미 uniconnect에서 쓰는 이메일이에요.")
-  const member = { id: randomUUID(), name: invite.name, email, passwordHash, addedAt: new Date().toISOString() }
   await joinFailures.reset(limitKey)
   await joinTriesPerEmail.reset(email)
+  // 기다리는 동안 데이터를 새로 읽었을 수 있어 다시 찾고, 되살아났을 수 있는 초대를 다시 소진한다.
+  const account = database.accounts.find((item) => item.id === before.id && !item.suspendedAt)
+  if (!account) throw new HttpError(400, "이 이메일로 온 초대가 없거나 기간이 지났어요. 대표에게 다시 초대해 달라고 해 주세요.")
+  account.memberInvites = (account.memberInvites ?? []).filter((item) => item.id !== invite.id)
+  if (emailTaken(database, email)) throw new HttpError(409, "이미 uniconnect에서 쓰는 이메일이에요.")
+  const member = { id: randomUUID(), name: invite.name, email, passwordHash, addedAt: new Date().toISOString() }
   await holdApplication(database, saveDatabase, document, { kind: "member", name: invite.name, email, accountId: account.id, member })
   res.status(202).json({ pending: true })
 })

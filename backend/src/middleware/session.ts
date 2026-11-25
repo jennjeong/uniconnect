@@ -71,6 +71,13 @@ export async function readSession(req: Request, _res: Response, next: NextFuncti
   next()
 }
 
+// 기다리는 동안(비밀번호 확인, 한도 세기) 데이터를 새로 읽었으면 앞서 찾은 계정은 저장되지
+// 않는 옛 객체다. 기다린 뒤 계정을 고치기 직전에 부른다.
+export function currentAccount(req: Request) {
+  reattachAccount(req)
+  return requireAccount(req)
+}
+
 export function requireAccount(req: Request) {
   if (!req.account) throw new HttpError(401, "로그인이 필요해요.")
   return req.account

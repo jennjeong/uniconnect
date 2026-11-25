@@ -90,6 +90,8 @@ export function keepThroughRestore(current: Database, restored: Database) {
   restored.sessions = current.sessions.filter((session) => accounts.has(session.accountId))
   restored.foldedCounts = current.foldedCounts
   restored.adminLog = current.adminLog
+  // 내린 후기를 지우고 다시 써서 되살리지 못하게 한다.
+  restored.reviewTakedowns = current.reviewTakedowns
   // 쓴 재설정 코드와 끝난 소셜 로그인이 되살아나지 않게 한다.
   restored.emailCodes = current.emailCodes
   restored.oauth = current.oauth

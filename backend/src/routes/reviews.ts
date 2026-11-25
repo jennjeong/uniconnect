@@ -4,7 +4,19 @@ import { acceptedProposal, sideIn } from "../lib/agreements.js"
 import { findListing } from "../lib/catalog.js"
 import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
-import { agreementHeld, reviewersVerified, isDemoAccount, publicReview, reviewOpen, reviewsAbout, reviewSummary, reviewTarget } from "../lib/reviews.js"
+import {
+  agreementHeld,
+  hiddenMark,
+  isDemoAccount,
+  keepTakedown,
+  publicReview,
+  reviewersVerified,
+  reviewOpen,
+  reviewsAbout,
+  reviewSummary,
+  reviewTarget,
+  takenDown,
+} from "../lib/reviews.js"
 import { reviewTags, text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -77,12 +89,12 @@ reviewsRouter.put("/:proposalId", async (req, res) => {
     ...(existing ? { updatedAt: now } : {}),
     // 운영자가 내린 후기는 다시 써도 내려진 채로 있고, 상대편의 답글도
     // 함께 남는다.
-    ...(existing?.hiddenAt ? { hiddenAt: existing.hiddenAt } : {}),
+    ...hiddenMark(existing?.hiddenAt ?? takenDown(database, id, "review")),
     ...(existing?.reply ? { reply: existing.reply } : {}),
   }
   database.reviews = [...database.reviews.filter((item) => item.id !== id), review]
   await saveDatabase()
-  if (!existing) {
+  if (!existing && !review.hiddenAt) {
     void notify(
       (side === "group" ? proposal.brand : proposal.group).account,
       "sponsorships",
@@ -96,7 +108,11 @@ reviewsRouter.put("/:proposalId", async (req, res) => {
 
 reviewsRouter.delete("/:proposalId", async (req, res) => {
   const { database, id } = sponsorship(req)
-  if (!database.reviews.some((review) => review.id === id)) throw new HttpError(404, "지울 후기가 없어요.")
+  const review = database.reviews.find((item) => item.id === id)
+  if (!review) throw new HttpError(404, "지울 후기가 없어요.")
+  if (review.hiddenAt) keepTakedown(database, id, "review", review.hiddenAt)
+  // 답글도 함께 사라진다.
+  if (review.reply?.hiddenAt) keepTakedown(database, id, "reply", review.reply.hiddenAt)
   database.reviews = database.reviews.filter((review) => review.id !== id)
   await saveDatabase()
   res.status(204).end()
@@ -128,10 +144,10 @@ reviewsRouter.put("/:proposalId/reply", async (req, res) => {
     createdAt: before?.createdAt ?? now,
     ...(before ? { updatedAt: now } : {}),
     // 운영자가 내린 답글은 다시 써도 내려진 채로 있다.
-    ...(before?.hiddenAt ? { hiddenAt: before.hiddenAt } : {}),
+    ...hiddenMark(before?.hiddenAt ?? takenDown(database, review.id, "reply")),
   }
   await saveDatabase()
-  if (!before) {
+  if (!before && !review.reply.hiddenAt) {
     void notify(
       proposal[other].account,
       "sponsorships",
@@ -146,6 +162,7 @@ reviewsRouter.put("/:proposalId/reply", async (req, res) => {
 reviewsRouter.delete("/:proposalId/reply", async (req, res) => {
   const { database, review } = reviewOfMe(req)
   if (!review?.reply) throw new HttpError(404, "지울 답글이 없어요.")
+  if (review.reply.hiddenAt) keepTakedown(database, review.id, "reply", review.reply.hiddenAt)
   delete review.reply
   await saveDatabase()
   res.status(204).end()

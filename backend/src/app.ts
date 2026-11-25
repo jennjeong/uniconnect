@@ -9,7 +9,7 @@ import { adminRequest } from "./lib/adminTools.js"
 import { clientKey, createRateLimit, senderKey } from "./lib/rateLimit.js"
 import { HttpError } from "./lib/errors.js"
 import { langOf, translate } from "./lib/i18n.js"
-import { readSession } from "./middleware/session.js"
+import { reattachAccount, readSession } from "./middleware/session.js"
 import { adminRouter } from "./routes/admin.js"
 import { announcementsRouter } from "./routes/announcements.js"
 import { adminMoreRouter } from "./routes/adminMore.js"
@@ -185,6 +185,8 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
     if (!reading && !/^\/(check-in|admin|cron|site|errors)(\/|$)/.test(req.path)) {
       if (req.account) await writesPerAccount.take(senderKey(req, getDatabase(), req.account))
       else await writesPerAddress.take(clientKey(req))
+      // 세는 동안 데이터를 새로 읽었을 수 있다.
+      reattachAccount(req)
     }
     next()
   })

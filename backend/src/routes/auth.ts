@@ -24,9 +24,9 @@ import { hashRecovery, recoveryHashesOf } from "../lib/secrets.js"
 import { matchStep, newRecoveryCodes, newSecret, otpauthUrl } from "../lib/totp.js"
 import { accountTypes, checkPassword, mailKinds, parseContact, parseRole, text } from "../lib/validation.js"
 import { forgetReferralRewards, referralRewardsOf, referralStats, referrerOf } from "../lib/referrals.js"
-import { hashToken, requireAccount } from "../middleware/session.js"
+import { currentAccount, hashToken, requireAccount } from "../middleware/session.js"
 import { getDatabase, retryConflicts, saveDatabase } from "../store.js"
-import { isDemoAccount } from "../lib/reviews.js"
+import { isDemoAccount, pruneTakedowns } from "../lib/reviews.js"
 import type { Account, Database, EmailCode, MailKind, PublicAccount, Role, Session, SocialProvider } from "../types.js"
 
 export const authRouter = Router()
@@ -137,13 +137,29 @@ export const twoFactorGuesses = createRateLimit({
   message: "2단계 인증 코드를 너무 많이 틀렸어요. 1시간 뒤에 다시 시도해 주세요.",
 })
 
-async function checkCurrentPassword(req: Request, account: Account) {
-  const limitKey = `${clientKey(req)} ${account.email}`
+// 확인하는 동안 데이터를 새로 읽었을 수 있어, 고칠 계정을 다시 찾아 돌려준다.
+async function checkCurrentPassword(req: Request, before: Account) {
+  const limitKey = `${clientKey(req)} ${before.email}`
+  const checked = before.passwordHash
   await loginFailures.take(limitKey)
-  if (!(await verifyPassword(String(req.body?.password ?? ""), account.passwordHash))) {
+  if (!(await verifyPassword(String(req.body?.password ?? ""), checked))) {
     throw new HttpError(400, "비밀번호가 올바르지 않아요.")
   }
   await loginFailures.reset(limitKey)
+  const account = currentAccount(req)
+  // 그사이 비밀번호가 바뀌었으면 그쪽이 이긴다.
+  if (!samePasswordHash(checked, account.passwordHash)) throw new HttpError(400, "비밀번호가 올바르지 않아요.")
+  return account
+}
+
+// 비밀번호나 대표가 바뀌면 앞서 연결한 소셜 로그인과 끝나지 않은 로그인이 남아 문이 되지
+// 않게 끊는다. 본인이 연결했던 것이면 내 정보에서 다시 연결하면 된다.
+function cutOtherSignIns(database: Database, account: Account) {
+  delete account.social
+  delete account.loginTicket
+  if (!database.oauth) return
+  database.oauth.states = database.oauth.states.filter((item) => item.accountId !== account.id)
+  database.oauth.handoffs = database.oauth.handoffs.filter((item) => item.accountId !== account.id)
 }
 
 // 비밀번호 뒤에 로그인이 코드를 기다리는 시간과, 코드를 틀릴 수 있는
@@ -404,20 +420,27 @@ authRouter.post("/password-reset", async (req, res) => {
   const database = getDatabase()
   // 같은 코드를 가진 다른 요청이 그사이 썼을 수 있다.
   if (!database.emailCodes.includes(entry)) throw new HttpError(400, "인증번호를 먼저 받아 주세요.")
-  const account = database.accounts.find((item) => item.email === email)
-  if (!account) throw new HttpError(404, "가입된 이메일이 아니에요.")
-  if (isDemo(account)) throw new HttpError(403, demoLocked)
-  if (account.suspendedAt) throw new HttpError(403, suspendedMessage)
+  const before = database.accounts.find((item) => item.email === email)
+  if (!before) throw new HttpError(404, "가입된 이메일이 아니에요.")
+  if (isDemo(before)) throw new HttpError(403, demoLocked)
+  if (before.suspendedAt) throw new HttpError(403, suspendedMessage)
+  const hashBefore = before.passwordHash
   // 느린 해시 전에 소진하므로, 코드 하나로는 비밀번호 하나만 정한다.
   database.emailCodes = database.emailCodes.filter((item) => item !== entry)
-  account.passwordHash = await hashPassword(password)
-  // 주인의 로그인은 끝나고, 공동 관리자의 로그인은 남는다.
-  database.sessions = database.sessions.filter((session) => session.accountId !== account.id || session.memberId)
-  // 계정을 빼앗겼다가 되찾는 길이므로, 빼앗은 사람이 연결해 둔 소셜 로그인도 끊는다.
-  // 본인이 연결했던 것이면 내 정보에서 다시 연결하면 된다.
-  delete account.social
+  const passwordHash = await hashPassword(password)
   // 메일을 받는 사람이 맞으니, 다른 사람이 일부러 쌓은 실패로 막히지 않게 집계도 지운다.
   await Promise.all([loginFailures.reset(`${clientKey(req)} ${email}`), loginFailuresPerEmail.reset(email)])
+  // 기다리는 동안 데이터를 새로 읽었을 수 있어 다시 찾고, 되살아났을 수 있는 코드를 다시
+  // 소진한다. 그사이 비밀번호나 이메일이 바뀌었으면 그쪽이 이긴다.
+  const account = database.accounts.find((item) => item.id === before.id && item.email === email)
+  if (!account || !samePasswordHash(hashBefore, account.passwordHash)) throw new HttpError(400, "인증번호를 먼저 받아 주세요.")
+  if (account.suspendedAt) throw new HttpError(403, suspendedMessage)
+  database.emailCodes = database.emailCodes.filter((item) => !(item.email === email && item.purpose === "reset" && item.code === entry.code))
+  account.passwordHash = passwordHash
+  // 주인의 로그인은 끝나고, 공동 관리자의 로그인은 남는다.
+  database.sessions = database.sessions.filter((session) => session.accountId !== account.id || session.memberId)
+  // 계정을 빼앗겼다가 되찾는 길이므로, 빼앗은 사람이 연결해 둔 것도 끊는다.
+  cutOtherSignIns(database, account)
   // 이메일만으로는 2단계 로그인을 통과하지 못한다. 다음에 코드를 묻는다.
   if (account.twoFactor) {
     const ticket = startTicket(account, req)
@@ -444,7 +467,7 @@ authRouter.post("/login", async (req, res) => {
   const owner = database.accounts.find((item) => item.email === email)
   // 공동 관리자는 자기 비밀번호로 함께 운영하는 계정에 로그인한다.
   const team = owner ? undefined : memberByEmail(database, email)
-  const account = owner ?? team?.account
+  let account = owner ?? team?.account
   const hashBefore = team ? team.member.passwordHash : account?.passwordHash
 
   // 없는 이메일도 같은 시간이 걸리게 미끼 해시를 확인한다.
@@ -468,17 +491,26 @@ authRouter.post("/login", async (req, res) => {
   }
   // 예전 강도로 저장된 비밀번호는 맞는 비밀번호를 받은 지금 다시 만든다. 아래의 저장이 함께 남긴다.
   await upgradePasswordHash(team ? memberOf(account, team.member.id) ?? team.member : account, password)
+  // 기다리는 동안 데이터를 새로 읽었을 수 있어 다시 찾는다. 그사이 바뀐 비밀번호, 정지, 켠
+  // 2단계 로그인이 이긴다.
+  const accountId = account.id
+  account = database.accounts.find((item) => item.id === accountId)
+  const member = team && account ? memberOf(account, team.member.id) : undefined
+  if (!account || (team && !member) || !samePasswordHash(hashBefore, (member ?? account).passwordHash)) {
+    throw new HttpError(401, "이메일 또는 비밀번호가 올바르지 않아요.")
+  }
+  if (account.suspendedAt) throw new HttpError(403, suspendedMessage)
   // 공동 관리자는 2단계 로그인이 있어야 한다. 승인 뒤 첫 로그인에서 설정하며,
   // 첫 코드가 둘을 함께 끝낸다.
-  if (team) {
-    const ticket = startTicket(team.member, req)
-    if (team.member.twoFactor) {
+  if (member) {
+    const ticket = startTicket(member, req)
+    if (member.twoFactor) {
       await saveDatabase()
       res.json({ twoFactor: true, ticket })
       return
     }
     const secret = newSecret()
-    team.member.pendingTwoFactor = { secret, createdAt: Date.now() }
+    member.pendingTwoFactor = { secret, createdAt: Date.now() }
     await saveDatabase()
     res.json({ twoFactor: true, ticket, setup: { secret, url: otpauthUrl(secret, email) } })
     return
@@ -493,9 +525,10 @@ authRouter.post("/login", async (req, res) => {
   // 다른 복사본에 밀리면 최신 데이터에서 세션을 다시 만든다. 그사이 초기화, 변경,
   // 삭제, 정지가 있었으면 그쪽이 이긴다.
   const opened = await retryConflicts(async () => {
-      const current = getDatabase().accounts.find((item) => item.id === account.id)
+      const current = getDatabase().accounts.find((item) => item.id === accountId)
       if (!current || !samePasswordHash(hashBefore, current.passwordHash)) throw new HttpError(401, "이메일 또는 비밀번호가 올바르지 않아요.")
       if (current.suspendedAt) throw new HttpError(403, suspendedMessage)
+      if (current.twoFactor) throw new HttpError(401, "로그인 시간이 지났어요. 비밀번호부터 다시 입력해 주세요.")
       const token = startSession(current.id, req)
       await saveDatabase()
       return { token, account: current }
@@ -593,6 +626,7 @@ function removeAccount(database: Database, account: Account) {
   database.reviews = database.reviews.filter(
     (review) => review.authorAccountId !== account.id && (!listingId || review.aboutId !== listingId),
   )
+  pruneTakedowns(database)
   // 이 계정이 한 신고와 이 계정에 대한 신고, 양쪽의 차단이다.
   database.reports = database.reports.filter(
     (report) => report.reporterId !== account.id && report.accountId !== account.id,
@@ -667,20 +701,14 @@ function removeAccount(database: Database, account: Account) {
 // 탈퇴는 비밀번호를 다시 입력하면 계정과 계정이 만든 모든 것을 영구히
 // 삭제한다. 데모 계정은 남아 있어 데모가 모두에게 계속 동작한다.
 authRouter.delete("/account", async (req, res) => {
-  const account = requireOwner(req, requireAccount(req))
+  const before = requireOwner(req, requireAccount(req))
   const database = getDatabase()
-  if (isDemo(account)) throw new HttpError(403, "데모 계정은 탈퇴할 수 없어요.")
+  if (isDemo(before)) throw new HttpError(403, "데모 계정은 탈퇴할 수 없어요.")
   // 탈퇴하면 그쪽의 말과 증빙이 지워지므로, 결론 전에 탈퇴해 기록을 없애지 못하게 한다.
-  if (inOpenDispute(database, account.id)) {
+  if (inOpenDispute(database, before.id)) {
     throw new HttpError(409, "진행 중인 협찬 분쟁이 있어 지금은 탈퇴할 수 없어요. 분쟁이 끝나거나 거둔 뒤에 탈퇴해 주세요.")
   }
-  const limitKey = `${clientKey(req)} ${account.email}`
-  await loginFailures.take(limitKey)
-  if (!(await verifyPassword(String(req.body?.password ?? ""), account.passwordHash))) {
-    // 앱이 만료된 세션으로 읽는 401은 쓰지 않는다.
-    throw new HttpError(400, "비밀번호가 올바르지 않아요.")
-  }
-  await loginFailures.reset(limitKey)
+  const account = await checkCurrentPassword(req, before)
   const dropped = removeAccount(database, account)
   await saveDatabase()
   await removeUploads(dropped.folders, dropped.files)
@@ -816,20 +844,28 @@ authRouter.put("/notices", async (req, res) => {
 // 기기는 로그아웃되고 이 기기는 로그인이 유지된다. 공동 관리자는 자기
 // 비밀번호를 바꾼다.
 authRouter.post("/password", async (req, res) => {
-  const account = requireAccount(req)
-  if (isDemo(account)) throw new HttpError(403, demoLocked)
-  const member = memberOf(account, req.memberId)
+  const before = requireAccount(req)
+  if (isDemo(before)) throw new HttpError(403, demoLocked)
+  const self = memberOf(before, req.memberId) ?? before
+  const hashBefore = self.passwordHash
   const next = checkPassword(String(req.body?.next ?? ""))
-  const limitKey = `${clientKey(req)} ${member?.email ?? account.email}`
+  const limitKey = `${clientKey(req)} ${self.email}`
   await loginFailures.take(limitKey)
-  if (!(await verifyPassword(String(req.body?.current ?? ""), member?.passwordHash ?? account.passwordHash))) {
+  if (!(await verifyPassword(String(req.body?.current ?? ""), hashBefore))) {
     // 앱이 만료된 세션으로 읽는 401은 쓰지 않는다.
     throw new HttpError(400, "지금 비밀번호가 올바르지 않아요.")
   }
   await loginFailures.reset(limitKey)
   const passwordHash = await hashPassword(next)
-  if (member) member.passwordHash = passwordHash
-  else account.passwordHash = passwordHash
+  // 기다리는 동안 데이터를 새로 읽었을 수 있어 다시 찾는다. 그사이 바뀐 비밀번호가 이긴다.
+  const account = currentAccount(req)
+  const member = memberOf(account, req.memberId)
+  const holder = member ?? account
+  if (!samePasswordHash(hashBefore, holder.passwordHash)) throw new HttpError(400, "지금 비밀번호가 올바르지 않아요.")
+  holder.passwordHash = passwordHash
+  // 비밀번호를 아는 사람이 있을지 몰라 바꾸는 것일 수 있다. 소셜 로그인은 대표의 것이다.
+  if (member) delete member.loginTicket
+  else cutOtherSignIns(getDatabase(), account)
   const keep = req.sessionToken ? hashToken(req.sessionToken) : ""
   getDatabase().sessions = getDatabase().sessions.filter(
     (session) => session.accountId !== account.id || session.memberId !== req.memberId || session.tokenHash === keep,
@@ -864,10 +900,11 @@ authRouter.post("/email/code", async (req, res) => {
 // 2단계다. 새 주소로 온 코드가 계정을 그 주소로 옮긴다. 다른 기기는
 // 로그아웃되고 옛 주소로 알림이 간다.
 authRouter.post("/email", async (req, res) => {
-  const account = requireOwner(req, requireAccount(req))
+  requireOwner(req, requireAccount(req))
   await verifyPerClient.take(clientKey(req))
   const email = normalizeEmail(req.body?.email)
   const entry = await checkCode(email, text(req.body?.code), "change")
+  const account = currentAccount(req)
   const database = getDatabase()
   if (entry.accountId !== account.id || !database.emailCodes.includes(entry)) {
     throw new HttpError(400, "인증번호를 먼저 받아 주세요.")
@@ -878,6 +915,8 @@ authRouter.post("/email", async (req, res) => {
   const previous = account.email
   database.emailCodes = database.emailCodes.filter((item) => item !== entry)
   account.email = email
+  // 앞 대표의 소셜 로그인이 새 대표의 계정을 열지 않게 한다.
+  cutOtherSignIns(database, account)
   // 이메일을 넘기면 대표가 바뀐 것이라, 앞 대표로 받은 단체 확인은 이어지지 않는다.
   // 기다리던 확인 신청과 앞 대표의 서류도 지운다.
   delete account.groupVerified
@@ -980,10 +1019,11 @@ authRouter.get("/me", (req, res) => {
 // 내 정보에서 2단계 로그인을 켠다. 먼저 비밀번호를 받고, 앱용 새 비밀 값(QR
 // 주소)을 만들어 코드로 확인한 뒤에야 효력이 생긴다.
 authRouter.post("/two-factor/setup", async (req, res) => {
-  const account = requireOwner(req, requireAccount(req))
-  if (isDemo(account)) throw new HttpError(403, "데모 계정은 2단계 인증을 켤 수 없어요.")
+  const before = requireOwner(req, requireAccount(req))
+  if (isDemo(before)) throw new HttpError(403, "데모 계정은 2단계 인증을 켤 수 없어요.")
+  if (before.twoFactor) throw new HttpError(409, "2단계 인증이 이미 켜져 있어요.")
+  const account = await checkCurrentPassword(req, before)
   if (account.twoFactor) throw new HttpError(409, "2단계 인증이 이미 켜져 있어요.")
-  await checkCurrentPassword(req, account)
   const secret = newSecret()
   account.pendingTwoFactor = { secret, createdAt: Date.now() }
   await saveDatabase()
@@ -992,33 +1032,34 @@ authRouter.post("/two-factor/setup", async (req, res) => {
 
 // 앱의 첫 코드로 켜고, 복구 코드는 이때 한 번만 보여 준다.
 authRouter.post("/two-factor/enable", async (req, res) => {
-  const account = requireOwner(req, requireAccount(req))
+  const limitKey = `${clientKey(req)} ${requireOwner(req, requireAccount(req)).email}`
+  await loginFailures.take(limitKey)
+  const account = currentAccount(req)
   const pending = account.pendingTwoFactor
   if (!pending || pending.createdAt + 30 * minute < Date.now()) {
     throw new HttpError(409, "설정 시간이 지났어요. 처음부터 다시 켜 주세요.")
   }
-  const limitKey = `${clientKey(req)} ${account.email}`
-  await loginFailures.take(limitKey)
   const recoveryCodes = enableTwoFactor(account, String(req.body?.code ?? ""))
   if (!recoveryCodes) throw new HttpError(400, "코드가 올바르지 않아요. 인증 앱에 보이는 6자리 코드를 입력해 주세요.")
-  await loginFailures.reset(limitKey)
   await saveDatabase()
+  await loginFailures.reset(limitKey)
   res.json({ account: toPublic(account, req.memberId), recoveryCodes })
 })
 
 // 끄려면 비밀번호와 코드(또는 복구 코드)를 받는다.
 authRouter.post("/two-factor/disable", async (req, res) => {
-  const account = requireOwner(req, requireAccount(req))
-  if (!account.twoFactor) throw new HttpError(409, "2단계 인증이 꺼져 있어요.")
-  await checkCurrentPassword(req, account)
-  await twoFactorGuesses.take(account.id)
+  const before = requireOwner(req, requireAccount(req))
+  if (!before.twoFactor) throw new HttpError(409, "2단계 인증이 꺼져 있어요.")
+  await checkCurrentPassword(req, before)
+  await twoFactorGuesses.take(before.id)
+  const account = currentAccount(req)
   if (!useCode(account, String(req.body?.code ?? ""))) {
     throw new HttpError(400, "코드가 올바르지 않아요. 인증 앱의 6자리 코드나 복구 코드를 입력해 주세요.")
   }
-  await twoFactorGuesses.release(account.id)
   delete account.twoFactor
   delete account.loginTicket
   await saveDatabase()
+  await twoFactorGuesses.release(account.id)
   res.json({ account: toPublic(account, req.memberId) })
 })
 

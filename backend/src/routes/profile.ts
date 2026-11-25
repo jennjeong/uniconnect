@@ -176,8 +176,12 @@ profileRouter.post("/business", async (req, res) => {
   if (!/^\d{10}$/.test(number)) throw new HttpError(400, "사업자등록번호 10자리를 적어 주세요.")
   if (!/^\d{8}$/.test(startDate)) throw new HttpError(400, "개업일자를 골라 주세요.")
   if (!owner || owner.length > 30) throw new HttpError(400, "대표자 성명을 적어 주세요.")
-  const taken = database.accounts.some((item) => item.id !== account.id && item.business?.number === number)
-  if (taken) throw new HttpError(409, "이미 다른 계정에서 확인한 사업자등록번호예요.")
+  const assertFree = () => {
+    if (getDatabase().accounts.some((item) => item.id !== account.id && item.business?.number === number)) {
+      throw new HttpError(409, "이미 다른 계정에서 확인한 사업자등록번호예요.")
+    }
+  }
+  assertFree()
   await businessChecksPerHour.take(account.id)
   let result
   try {
@@ -193,6 +197,8 @@ profileRouter.post("/business", async (req, res) => {
   // 다시 찾는다. 확인하는 동안 데이터를 새로 읽었을 수 있다.
   const fresh = getDatabase().accounts.find((item) => item.id === account.id)
   if (!fresh) throw new HttpError(404, "계정을 찾을 수 없어요.")
+  // 확인하는 동안 다른 계정이 같은 번호를 먼저 확인했을 수 있다.
+  assertFree()
   fresh.business = { number, verifiedAt: new Date().toISOString() }
   await saveDatabase()
   res.json({ business: { number: shownNumber(number), verifiedAt: fresh.business.verifiedAt } })

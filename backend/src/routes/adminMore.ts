@@ -36,7 +36,7 @@ import { HttpError } from "../lib/errors.js"
 import { grantGroupCheck } from "../lib/groupCheck.js"
 import { notify } from "../lib/notices.js"
 import { limitStatus } from "../lib/rateLimit.js"
-import { isDemoAccount } from "../lib/reviews.js"
+import { dropTakedown, isDemoAccount } from "../lib/reviews.js"
 import { currentStorage } from "../lib/storage.js"
 import { text } from "../lib/validation.js"
 import { getDatabase, restoreDatabase, saveDatabase, upgradeDatabase } from "../store.js"
@@ -524,7 +524,10 @@ adminMoreRouter.post("/reviews/:id/:action", async (req, res) => {
   const logged = { hide: "review-hidden", show: "review-shown", pin: "review-pinned", unpin: "review-unpinned" } as const
   if (!Object.hasOwn(logged, action)) throw new HttpError(400, "할 일을 골라 주세요.")
   if (action === "hide") review.hiddenAt = now
-  if (action === "show") delete review.hiddenAt
+  if (action === "show") {
+    delete review.hiddenAt
+    dropTakedown(database, review.id, "review")
+  }
   if (action === "pin") review.pinnedAt = now
   if (action === "unpin") delete review.pinnedAt
   logAdmin(database, logged[action as keyof typeof logged], { kind: "review", id: review.id })

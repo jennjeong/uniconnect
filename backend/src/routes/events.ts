@@ -8,7 +8,7 @@ import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
 import { eventDemand } from "../lib/demand.js"
 import { eventCases, exploreEvents } from "../lib/explore.js"
-import { eventPhotos, folderBytes, forgetPhotos, parsePdf, parsePhoto, photoName, photoType, photos } from "../lib/photos.js"
+import { eventPhotos, folderBytes, forgetPhotos, parsePdf, parsePhoto, photoName, photoType, photos, sentName } from "../lib/photos.js"
 import { isDemoAccount } from "../lib/reviews.js"
 import { isSponsored } from "../lib/sponsorships.js"
 import { audienceYears, eventKinds, handoutWays, logoSpots, parseRole, promoPosts, sponsorTypes, text } from "../lib/validation.js"
@@ -496,7 +496,7 @@ eventsRouter.post("/:id/plan", async (req, res) => {
   await assertCanUpload(req)
   const parsed = parsePdf(req.body?.file)
   if (!parsed) throw new HttpError(400, "기획안은 2MB 이하의 PDF로 올려 주세요.")
-  const name = text(req.body?.name).replace(/[\\/:*?"<>|]+/g, " ").slice(0, 80) || "기획안.pdf"
+  const name = sentName(text(req.body?.name), parsed.name, "기획안")
   const store = photos()
   await store.put(eventPhotos(event.id), parsed.name, parsed.bytes)
   let previous: string | undefined
