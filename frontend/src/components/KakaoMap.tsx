@@ -1,15 +1,30 @@
 import { useEffect, useRef, useState } from "react"
 import { t } from "../i18n"
+import { pinShifts } from "../lib/placeMap"
 
 // 이 지도가 쓰는 Kakao Maps SDK의 부분.
 type LatLng = object
-type KakaoOverlay = { setMap(map: KakaoMapObject | null): void }
-type KakaoMapObject = { setBounds(bounds: object, ...padding: number[]): void; relayout(): void }
+type KakaoPoint = { x: number; y: number }
+type KakaoOverlay = { setMap(map: KakaoMapObject | null): void; setPosition(position: LatLng): void }
+type KakaoMapObject = {
+  setBounds(bounds: object, ...padding: number[]): void
+  relayout(): void
+  getLevel(): number
+  getProjection(): {
+    containerPointFromCoords(position: LatLng): KakaoPoint
+    coordsFromContainerPoint(point: KakaoPoint): LatLng
+  }
+}
 type KakaoMaps = {
   load(done: () => void): void
   LatLng: new (lat: number, lng: number) => LatLng
+  Point: new (x: number, y: number) => KakaoPoint
   LatLngBounds: new () => { extend(point: LatLng): void }
   Map: new (el: HTMLElement, options: { center: LatLng; level: number }) => KakaoMapObject
+  event: {
+    addListener(target: KakaoMapObject, type: string, handler: () => void): void
+    removeListener(target: KakaoMapObject, type: string, handler: () => void): void
+  }
   CustomOverlay: new (options: { position: LatLng; content: HTMLElement; yAnchor?: number; zIndex?: number; clickable?: boolean }) => KakaoOverlay
 }
 
@@ -88,6 +103,7 @@ export function KakaoMap({
 }) {
   const box = useRef<HTMLDivElement>(null)
   const [ready, setReady] = useState<{ maps: KakaoMaps; map: KakaoMapObject }>()
+  const placed = useRef<{ overlay: KakaoOverlay; position: LatLng }[]>([])
   const select = useRef(onSelect)
   select.current = onSelect
 
@@ -116,6 +132,7 @@ export function KakaoMap({
     // 핀들 아래에 두어, 중심 옆에 있는 핀도 누를 수 있게 한다.
     const overlays = [new maps.CustomOverlay({ position: home, content: mark, yAnchor: 1, zIndex: 0 })]
     let name: HTMLElement | undefined
+    placed.current = []
     for (const pin of pins) {
       const position = new maps.LatLng(pin.lat, pin.lng)
       const dot = document.createElement("button")
@@ -138,7 +155,9 @@ export function KakaoMap({
         dot.append(name)
       }
       // 핀의 뾰족한 끝이 그 지점에 오도록 한다.
-      overlays.push(new maps.CustomOverlay({ position, content: dot, yAnchor: 1, zIndex: selected === pin.id ? 2 : 1, clickable: true }))
+      const overlay = new maps.CustomOverlay({ position, content: dot, yAnchor: 1, zIndex: selected === pin.id ? 2 : 1, clickable: true })
+      overlays.push(overlay)
+      placed.current.push({ overlay, position })
     }
     for (const overlay of overlays) overlay.setMap(map)
     // Kakao가 오버레이를 배치한 뒤에 한 번 측정한다.
@@ -161,6 +180,29 @@ export function KakaoMap({
     map.relayout()
     map.setBounds(bounds, 40, 40, 40, 40)
   }, [ready, center.lat, center.lng, pins])
+
+  // 가까운 핀끼리 덮어 누를 수 없게 되지 않도록 벌린다. 겹침은 배율에만
+  // 달려 있으므로 배율이 바뀔 때 다시 잰다.
+  useEffect(() => {
+    if (!ready) return
+    const { maps, map } = ready
+    let level: number | undefined
+    const spread = () => {
+      if (level === map.getLevel()) return
+      level = map.getLevel()
+      const projection = map.getProjection()
+      const points = placed.current.map(({ position }) => projection.containerPointFromCoords(position))
+      const shifts = pinShifts(points)
+      placed.current.forEach(({ overlay, position }, index) => {
+        const { x, y } = shifts[index]
+        const moved = new maps.Point(points[index].x + x, points[index].y + y)
+        overlay.setPosition(x === 0 && y === 0 ? position : projection.coordsFromContainerPoint(moved))
+      })
+    }
+    spread()
+    maps.event.addListener(map, "idle", spread)
+    return () => maps.event.removeListener(map, "idle", spread)
+  }, [ready, centerName, center.lat, center.lng, pins, selected])
 
   return (
     <div aria-label={label} className="kakao-map" role="group">
