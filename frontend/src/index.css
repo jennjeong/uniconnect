@@ -6102,7 +6102,7 @@ html.modal-open {
   left: 50%;
   padding: 3px 8px;
   border-radius: 8px;
-  background: var(--ink);
+  background: var(--slate);
   color: #fff;
   font-size: 0.8125rem;
   font-style: normal;

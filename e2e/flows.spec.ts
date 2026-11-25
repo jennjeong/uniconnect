@@ -1708,8 +1708,29 @@ window.kakao = { maps: {
   load: (done) => done(),
   LatLng: function (lat, lng) { this.lat = lat; this.lng = lng },
   LatLngBounds: function () { this.extend = () => {} },
-  Map: function (el) { this.el = el; this.setBounds = () => {}; this.relayout = () => {} },
-  CustomOverlay: function (o) { this.setMap = (map) => { if (map) map.el.append(o.content); else o.content.remove() } },
+  Point: function (x, y) { this.x = x; this.y = y },
+  event: {
+    addListener: (map, type, run) => { if (type === "idle") map.idle.push(run) },
+    removeListener: (map, type, run) => { map.idle = map.idle.filter((item) => item !== run) },
+  },
+  Map: function (el, options) {
+    this.el = el; this.idle = []; this.level = 9
+    this.setBounds = () => {}
+    this.relayout = () => {}
+    this.getLevel = () => this.level
+    // 한 단계 확대할 때마다 두 배로 벌어진다.
+    this.point = (at) => {
+      const scale = 4000 * 2 ** (9 - this.level)
+      return { x: 150 + (at.lng - options.center.lng) * scale, y: 120 - (at.lat - options.center.lat) * scale }
+    }
+    this.coords = ({ x, y }) => {
+      const scale = 4000 * 2 ** (9 - this.level)
+      return { lat: options.center.lat - (y - 120) / scale, lng: options.center.lng + (x - 150) / scale }
+    }
+    this.getProjection = () => ({ containerPointFromCoords: this.point, coordsFromContainerPoint: this.coords })
+    window.zoomTo = (level) => { this.level = level; this.idle.forEach((run) => run()) }
+  },
+  CustomOverlay: function (o) { this.setPosition = () => {}; this.setMap = (map) => { if (map) map.el.append(o.content); else o.content.remove() } },
 } }`
 
 test("가까운 순's map sits on Kakao's map once a key is set, and on the sketch when Kakao doesn't load", async ({ page }) => {
@@ -1741,8 +1762,8 @@ test("가까운 순's map sits on Kakao's map once a key is set, and on the sket
 
 // 모든 오버레이를 지도의 왼쪽 가장자리에 Kakao처럼 zIndex 순으로 쌓는다.
 const edgeKakaoSdk = fakeKakaoSdk.replace(
-  "CustomOverlay: function (o) { this.setMap = (map) => { if (map) map.el.append(o.content); else o.content.remove() } },",
-  `CustomOverlay: function (o) { this.setMap = (map) => {
+  "CustomOverlay: function (o) { this.setPosition = () => {}; this.setMap = (map) => { if (map) map.el.append(o.content); else o.content.remove() } },",
+  `CustomOverlay: function (o) { this.setPosition = () => {}; this.setMap = (map) => {
     if (!map) return o.content.remove()
     const holder = document.createElement("div")
     holder.style.cssText = "position:absolute;left:0;top:50%;z-index:" + (o.zIndex ?? 0)
@@ -1775,6 +1796,60 @@ test("on Kakao's map the campus label lets the shops beside it be pressed, and a
     expect(label!.x).toBeGreaterThanOrEqual(box!.x)
     expect(label!.x + label!.width).toBeLessThanOrEqual(box!.x + box!.width)
   }).toPass()
+})
+
+// 각 오버레이를 지도의 제자리에 놓는다(핀의 끝이 그 지점이다).
+const placedKakaoSdk = fakeKakaoSdk.replace(
+  "CustomOverlay: function (o) { this.setPosition = () => {}; this.setMap = (map) => { if (map) map.el.append(o.content); else o.content.remove() } },",
+  `CustomOverlay: function (o) {
+    const holder = document.createElement("div")
+    holder.style.cssText = "position:absolute;transform:translate(-50%,-100%);z-index:" + (o.zIndex ?? 0)
+    holder.append(o.content)
+    this.draw = () => {
+      const { x, y } = this.map.point(this.at ?? o.position)
+      holder.style.left = x + "px"
+      holder.style.top = y + "px"
+      holder.dataset.moved = String(Boolean(this.at) && this.at !== o.position)
+    }
+    this.setPosition = (at) => { this.at = at; if (this.map) this.draw() }
+    this.setMap = (map) => {
+      if (!map) return holder.remove()
+      this.map = map
+      map.el.append(holder)
+      this.draw()
+    } },`,
+)
+
+test("on Kakao's map every shop can be pressed when they crowd together, and a picked name reads in dark mode", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.addInitScript(() => localStorage.setItem("uniconnect-theme", "dark"))
+  await page.route("**/api/site", async (route) => {
+    const response = await route.fetch()
+    await route.fulfill({ response, json: { ...(await response.json()), maps: { kakao: "test-key" } } })
+  })
+  await page.route("https://dapi.kakao.com/**", (route) => route.fulfill({ contentType: "text/javascript", body: placedKakaoSdk }))
+  await page.goto("/matches")
+  await page.getByRole("tab", { name: "학교 앞 가게" }).click()
+  await page.getByRole("group", { name: "보기 방식" }).getByRole("button", { name: "지도" }).click()
+  const dots = page.locator(".kakao-map .kakao-dot")
+  await expect(dots.nth(1)).toBeVisible()
+  const count = await dots.count()
+  for (let index = 0; index < count; index += 1) {
+    // 다른 핀이 덮고 있으면 click이 실패한다.
+    await dots.nth(index).click({ timeout: 3000 })
+    await expect(dots.nth(index)).toHaveAttribute("aria-pressed", "true")
+  }
+  const moved = () => dots.evaluateAll((items) => items.filter((item) => item.parentElement?.dataset.moved === "true").length)
+  expect(await moved()).toBeGreaterThan(0)
+  // 이름표는 다크 모드에서도 흰 글자에 어두운 바탕이다.
+  const brightest = await page
+    .locator(".place-dot-name")
+    .first()
+    .evaluate((name) => Math.max(...getComputedStyle(name).backgroundColor.match(/\d+/g)!.slice(0, 3).map(Number)))
+  expect(brightest).toBeLessThan(100)
+  // 확대하면 겹치지 않으므로 모든 핀이 제자리로 돌아온다.
+  await page.evaluate(() => (window as unknown as { zoomTo(level: number): void }).zoomTo(0))
+  expect(await moved()).toBe(0)
 })
 
 test("brands and student groups can be searched and filtered", async ({ page }) => {

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 
-import { catalogScale, mapPosition, mapRings, mapScale, offsetMetres, offsetPosition, spreadPositions, walkMinutes } from "./placeMap"
+import { catalogScale, mapPosition, mapRings, mapScale, offsetMetres, offsetPosition, pinGap, pinShifts, spreadPositions, walkMinutes } from "./placeMap"
 
 const campus = { lat: 37.64201, lng: 127.10562 }
 
@@ -63,6 +63,19 @@ describe("the schematic map of the shops around a campus", () => {
     }
     // 각각 제자리에 가깝게 머문다.
     for (const point of spread.slice(1)) expect(Math.hypot(point.left - 60, point.top - 60)).toBeLessThan(12)
+  })
+
+  test("moves only the pins another one covers on a real map", () => {
+    const points = [{ x: 10, y: 10 }, { x: 200, y: 120 }, { x: 203, y: 121 }, { x: 200, y: 120 }, { x: 210, y: 115 }]
+    const shifts = pinShifts(points)
+    expect(shifts.slice(0, 2)).toEqual([{ x: 0, y: 0 }, { x: 0, y: 0 }])
+    const moved = points.map((point, index) => ({ x: point.x + shifts[index].x, y: point.y + shifts[index].y }))
+    for (let a = 0; a < moved.length; a += 1) {
+      for (let b = a + 1; b < moved.length; b += 1) {
+        expect(Math.hypot(moved[a].x - moved[b].x, moved[a].y - moved[b].y)).toBeGreaterThanOrEqual(pinGap - 1e-9)
+      }
+    }
+    expect(pinShifts(points.map(({ x, y }) => ({ x: x * 40, y: y * 40 })).slice(0, 3))).toEqual([{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }])
   })
 
   test("draws catalog listings by their offsets on a scale in kilometres", () => {

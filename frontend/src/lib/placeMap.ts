@@ -79,6 +79,15 @@ export function spreadPositions(positions: { left: number; top: number }[], gap 
   })
 }
 
+// 실제 지도 위에서 겹치는 핀을 옮길 거리(픽셀). 핀의 누르는 자리는 28×34이고,
+// 앞선 핀은 제자리에 둔다. 확대하면 자리가 벌어져 0으로 돌아온다.
+export const pinGap = 32
+
+export function pinShifts(points: { x: number; y: number }[]) {
+  const spread = spreadPositions(points.map(({ x, y }) => ({ left: x, top: y })), pinGap)
+  return spread.map(({ left, top }, index) => ({ x: left - points[index].x, y: top - points[index].y }))
+}
+
 // 카탈로그 지도의 눈금 (CatalogMap.tsx): 파트너는 한 골목이 아니라 킬로미터
 // 단위로 떨어져 있다.
 const wideScales = [
