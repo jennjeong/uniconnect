@@ -4804,8 +4804,8 @@ html.modal-open {
   min-height: 52px;
   align-items: center;
   gap: 10px;
-  padding: 0 22px;
-  border-radius: 999px;
+  padding: 10px 22px;
+  border-radius: 26px;
   background: var(--slate);
   color: #fff;
   box-shadow: 0 16px 40px rgba(19, 48, 111, 0.28);
