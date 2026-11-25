@@ -55,7 +55,9 @@ analyticsRouter.put("/budget", async (req, res) => {
   if (!owner) throw new HttpError(401, "로그인이 필요해요.")
   if (owner.role !== "브랜드") throw new HttpError(403, "브랜드만 예산을 볼 수 있어요.")
   if (isDemoAccount(database, owner)) throw new HttpError(403, "데모 계정은 예산을 저장할 수 없어요.")
-  const result = setBudget(owner, req.body?.quarter, req.body?.amount ?? null)
+  // 지우기는 amount: null로만 한다. amount가 빠진 요청이 예산을 지우지 않게 한다.
+  if (!req.body || typeof req.body !== "object" || !("amount" in req.body)) throw new HttpError(400, "예산은 0원부터 100억 원까지 원 단위로 적어 주세요.")
+  const result = setBudget(owner, req.body.quarter, req.body.amount)
   if (result === "quarter") throw new HttpError(400, "지난 3개 분기부터 다음 2개 분기까지 정할 수 있어요.")
   if (result === "amount") throw new HttpError(400, "예산은 0원부터 100억 원까지 원 단위로 적어 주세요.")
   await saveDatabase()

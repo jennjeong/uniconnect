@@ -1,5 +1,5 @@
 import type { Database, Measurement, Program } from "../types.js"
-import { paymentsOf } from "./billing.js"
+import { paymentsOf, supplyOf } from "./billing.js"
 import { estimatedSales } from "./measurements.js"
 import { venueCountsOf } from "./methods.js"
 import { programSchools } from "./programs.js"
@@ -56,9 +56,9 @@ export function programReport(database: Database, program: Program) {
   const campaigns = [...new Set(offers.map((offer) => offer.campaignId).filter(Boolean))]
   const measured = campaigns.map((id) => figuresOf(measurementOf(id)))
   const total = (key: keyof Figures) => measured.reduce((sum, item) => sum + item[key], 0)
-  // 캠페인 비용: 낸 운영비(부가세 전)와 견적의 실비다. 환불된 운영비는 세지 않는다.
-  const paid = paymentsOf(database).some((payment) => payment.id === program.paymentId && payment.status === "paid")
-  const cost = program.quote ? (paid ? program.quote.fee : 0) + program.quote.costs.reduce((sum, item) => sum + item.amount, 0) : 0
+  // 캠페인 비용: 실제로 낸 운영비(부가세 전, 프로모션 할인 뒤)와 견적의 실비다. 환불된 운영비는 세지 않는다.
+  const payment = paymentsOf(database).find((item) => item.id === program.paymentId && item.status === "paid")
+  const cost = program.quote ? (payment ? supplyOf(payment) : 0) + program.quote.costs.reduce((sum, item) => sum + item.amount, 0) : 0
   const visits = total("visits")
   return {
     schools: rows,

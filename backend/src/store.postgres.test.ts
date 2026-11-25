@@ -459,8 +459,8 @@ test("a copy that loses the race to make the tables still loads the data", async
   useSql(racing)
   try {
     assert.ok((await store.loadDatabase()).accounts.length > 0)
-    // 데이터, 백업, 사진, 오류와 그 묶음, 참여 기록 넷, 속도 제한 테이블을 각각 한 번씩 잃는다.
-    assert.equal(lost.size, 10)
+    // 데이터, 백업, 사진, 오류와 그 묶음, 참여 기록 넷, A/B 횟수, 속도 제한 테이블을 각각 한 번씩 잃는다.
+    assert.equal(lost.size, 11)
   } finally {
     useSql(sql)
   }
@@ -779,4 +779,38 @@ test("a 2FA code pushed back by another copy still logs in, and the used code do
     await store.saveDatabase()
     await new Promise((resolve) => server.close(resolve))
   }
+})
+
+test("A/B counts go to their own rows without saving the document, and every copy's count adds up", async () => {
+  const { experimentsView, recordExperiment, resetExperiment, switchExperiment, dropOldRuns } = await import("./lib/experiments.js")
+  await store.loadDatabase()
+  const database = store.getDatabase()
+  switchExperiment(database, "landing-entry", true)
+  await store.saveDatabase()
+  const run = database.experiments!["landing-entry"].run!
+  const before = (await stored()).version
+  // 여러 복사본이 함께 센다: 한 문장씩 더하므로 잃지 않는다.
+  const hits = [
+    ...Array.from({ length: 12 }, () => recordExperiment(database, "landing-entry", "A", "seen", run)),
+    ...Array.from({ length: 3 }, () => recordExperiment(database, "landing-entry", "A", "converted", run)),
+    ...Array.from({ length: 5 }, () => recordExperiment(database, "landing-entry", "B", "seen", run)),
+  ]
+  assert.deepEqual(new Set(await Promise.all(hits)), new Set(["table"]))
+  // 지난 회차나 없는 갈래는 세지 않는다.
+  assert.equal(await recordExperiment(database, "landing-entry", "A", "seen", "old-run"), false)
+  assert.equal(await recordExperiment(database, "landing-entry", "C", "seen", run), false)
+  // 문서는 저장되지 않았다.
+  assert.equal((await stored()).version, before)
+  const [view] = await experimentsView(database)
+  assert.deepEqual(view.variants.map((item) => [item.variant, item.seen, item.converted]), [["A", 12, 3], ["B", 5, 0]])
+
+  // 숫자를 지우면 새 회차는 0부터 세고, 지난 회차의 행은 치운다.
+  resetExperiment(database, "landing-entry")
+  await store.saveDatabase()
+  await dropOldRuns(database, "landing-entry")
+  const [cleared] = await experimentsView(database)
+  assert.deepEqual(cleared.variants.map((item) => item.seen), [0, 0])
+  assert.deepEqual(await sql("select run from uniconnect_experiment_counts where run = $1", [run]), [])
+  switchExperiment(database, "landing-entry", false)
+  await store.saveDatabase()
 })

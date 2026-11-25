@@ -103,13 +103,15 @@ export function importBatches(database: Database) {
   return [...batches.values()].sort((a, b) => b.at.localeCompare(a.at))
 }
 
-// 묶음을 지운다. 제안이나 찜, 관심 없음이 걸린 리스팅은 남기고 그 수를 돌려준다.
+// 묶음을 지운다. 제안, 대화, 찜, 관심 없음이 걸린 리스팅은 남기고 그 수를 돌려준다.
 export function removeBatch(database: Database, batch: string) {
   const used = new Set<string>([
     ...database.requests.map((item) => item.brandId),
     ...database.offers.map((item) => item.groupId),
     ...database.conversations.flatMap((item) => [item.groupId, item.brandId]),
     ...Object.values(database.saved ?? {}).flat(),
+    // 데모 계정이 주인 없는 리스팅에 보낸 제안은 요청 없이 제안 목록에만 남는다.
+    ...Object.values(database.proposals ?? {}).flat(),
     ...Object.values(database.dismissed ?? {}).flatMap((list) => list.map((item) => item.listingId)),
   ])
   let removed = 0

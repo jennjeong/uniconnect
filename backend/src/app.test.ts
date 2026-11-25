@@ -758,6 +758,9 @@ test("a brand sets a quarter's sponsorship budget and sees what it spent and has
   assert.equal(saved.status, 200)
   const row = saved.data.quarters.find((item: { quarter: string }) => item.quarter === quarter)
   assert.equal(row.budget, 1_000_000)
+  // amount가 빠진 요청은 예산을 지우지 않는다.
+  assert.equal((await call("PUT", "/analytics/budget", { quarter }, brand)).status, 400)
+  assert.equal((await call("GET", "/analytics/budget", undefined, brand)).data.quarters.find((item: { quarter: string }) => item.quarter === quarter).budget, 1_000_000)
   assert.equal(row.spent, 300_000)
   assert.equal(row.planned, quarterOf(ahead) === quarter ? 200_000 : 0)
   assert.equal(row.unpriced, 1)
@@ -7634,10 +7637,13 @@ test("the console's member tools, operations, content, analysis and system scree
     assert.equal((await admin("GET", "/experiments")).data.experiments[0].variants[1].converted, 0)
     const secondRun = (await call("GET", "/site")).data.experiments["landing-entry"]
     assert.notEqual(secondRun, firstRun)
+    const resumedFrom = (await admin("GET", "/experiments")).data.experiments[0].startedAt
     await admin("PUT", "/experiments/landing-entry", { on: false })
     assert.deepEqual((await call("GET", "/site")).data.experiments, {})
     await admin("PUT", "/experiments/landing-entry", { on: true })
     assert.equal((await call("GET", "/site")).data.experiments["landing-entry"], secondRun)
+    // 다시 켜도 이어 세는 회차의 시작 시각은 그대로다.
+    assert.equal((await admin("GET", "/experiments")).data.experiments[0].startedAt, resumedFrom)
     await admin("PUT", "/experiments/landing-entry", { on: false })
 
     // 퍼널은 역할별 도달 회원 수다. 결제는 브랜드만 센다.
@@ -10027,6 +10033,14 @@ test("an operator picks candidate groups for a paid campus campaign, and the bra
   assert.deepEqual([report.totals.sent, report.totals.accepted, report.totals.confirmed, report.totals.scans], [1, 1, 1, 30])
   // 운영비 10만 원(실비 없음)을 방문 4건으로 나눈다.
   assert.equal(report.totals.costPerVisit, 25_000)
+  // 프로모션 코드로 할인받았으면 실제로 낸 운영비가 비용이다.
+  const feePayment = getDatabase().payments!.find((entry) => entry.id === getDatabase().programs!.find((entry) => entry.id === id)!.paymentId)!
+  const fullSupply = feePayment.supply
+  Object.assign(feePayment, { supply: 60_000, promo: { code: "HALF-OFF", discount: 40_000 } })
+  const discounted = (await call("GET", `/programs/${id}/report`, undefined, brand)).data.report
+  assert.deepEqual([discounted.totals.cost, discounted.totals.costPerVisit], [60_000, 15_000])
+  Object.assign(feePayment, { supply: fullSupply })
+  delete feePayment.promo
   assert.equal((await call("GET", `/programs/${id}/report`, undefined, first)).status, 403)
 })
 
@@ -10241,4 +10255,16 @@ test("an A/B test compares two rates only once each side has 30 views", async ()
   // 전환이 노출보다 많으면 믿을 수 없는 숫자라 판정하지 않는다.
   assert.deepEqual(compareRates({ seen: 30, converted: 40 }, { seen: 30, converted: 35 }), { z: null, p: null })
   assert.deepEqual(compareRates({ seen: 40, converted: 0 }, { seen: 40, converted: 0 }), { z: 0, p: 1 })
+})
+
+test("promo codes can't be found by trying one after another", async () => {
+  const { token: brand } = await listedMember("guess@promo-guess.kr", "guess-pass-123", "브랜드")
+  for (let index = 0; index < 20; index += 1) {
+    assert.equal((await call("POST", "/billing/promo", { kind: "pro", code: `GUESS-${index}` }, brand)).status, 404)
+  }
+  // 확인과 주문 모두 같은 한도를 쓴다.
+  assert.equal((await call("POST", "/billing/promo", { kind: "pro", code: "GUESS-20" }, brand)).status, 429)
+  assert.equal((await call("POST", "/billing/orders", { kind: "pro", promo: "GUESS-21" }, brand)).status, 429)
+  // 코드 없는 주문은 막지 않는다.
+  assert.equal((await call("POST", "/billing/orders", { kind: "pro" }, brand)).status, 200)
 })

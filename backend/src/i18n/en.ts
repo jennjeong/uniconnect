@@ -949,6 +949,7 @@ const en: Record<string, string> = {
   "예시 행사는 바꾸거나 지울 수 없어요. 새 행사를 등록해 체험해 보세요.": "Example events can't be changed or deleted. Register a new event to try it out.",
   "마감일은 행사 마지막 날({date})까지로 골라 주세요.": "Pick a deadline on or before the event's last day ({date}).",
   "기한이 지난 뒤 주문 내용이 바뀌어 다시 열 수 없어요. 입금한 돈은 돌려 드리고 새로 주문하도록 안내해 주세요.": "The order changed after its deadline passed, so it can't be reopened. Return the transfer and ask them to order again.",
+  "프로모션 코드를 너무 많이 넣었어요. 잠시 뒤에 다시 시도해 주세요.": "Too many promo code tries. Try again in a while.",
   "지금은 인증 메일을 보낼 수 없어요. 잠시 뒤에 다시 시도하거나 도움말 센터로 문의해 주세요.": "We can't send verification emails right now. Try again later or ask us through the help center.",
   "체험 계정에서는 추천을 뺄 수 없어요. 가입하면 쓸 수 있어요.": "The demo accounts can't remove recommendations. Sign up to use it.",
   "추천에서 뺄 상대를 찾을 수 없어요.": "We couldn't find that partner to remove.",

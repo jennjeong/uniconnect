@@ -2,7 +2,7 @@ import { Router } from "express"
 
 import { config } from "../config.js"
 import { countSearch, searchSource, searchTerm, siteState } from "../lib/adminTools.js"
-import { countExperiment, runningExperiments } from "../lib/experiments.js"
+import { recordExperiment, runningExperiments } from "../lib/experiments.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { publicCounts } from "../lib/stats.js"
 import { getDatabase, saveDatabase } from "../store.js"
@@ -55,6 +55,7 @@ const experimentHits = createRateLimit({
 siteRouter.post("/experiments", async (req, res) => {
   await experimentHits.take(clientKey(req))
   const database = getDatabase()
-  if (countExperiment(database, req.body?.key, req.body?.variant, req.body?.event, req.body?.run)) await saveDatabase()
+  const counted = await recordExperiment(database, req.body?.key, req.body?.variant, req.body?.event, req.body?.run)
+  if (counted === "document") await saveDatabase()
   res.status(204).end()
 })

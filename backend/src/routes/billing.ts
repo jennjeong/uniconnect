@@ -16,6 +16,8 @@ import { isPro } from "../lib/plan.js"
 import { planTable } from "../lib/planTable.js"
 import { partnerRequestCategory, partnerRequestsPerMonth, partnerRequestsThisMonth, planOf } from "../lib/pro.js"
 import { isDemoAccount } from "../lib/reviews.js"
+import { normalizeCode } from "../lib/promo.js"
+import { createRateLimit, senderKey } from "../lib/rateLimit.js"
 import { requireOwner } from "../lib/team.js"
 import { text } from "../lib/validation.js"
 import { requireAccount } from "../middleware/session.js"
@@ -81,15 +83,26 @@ billingRouter.post("/orders", async (req, res) => {
   if (isDemoAccount(database, account) && !testMode()) throw new HttpError(403, "데모 계정은 테스트 결제로만 시연할 수 있어요.")
   const kind = text(req.body?.kind)
   if (account.role !== "브랜드" && kind !== "ad") throw new HttpError(403, "결제는 브랜드 계정만 해요.")
+  if (normalizeCode(req.body?.promo)) await promoTries.take(senderKey(req, database, account))
   const payment = orderFor(database, account, kind, text(req.body?.targetId), req.body?.promo)
   await saveDatabase()
   res.json({ order: paymentView(payment), customerKey: account.customerKey, email: account.email })
 })
 
+// 코드를 넣어 볼 수 있는 횟수. 없는 코드(404)와 있는 코드(409)의 답이 달라서, 한도가 없으면
+// 짧은 코드를 차례로 넣어 찾아낼 수 있다. 주문에 코드를 넣는 것도 같이 센다.
+const promoTries = createRateLimit({
+  label: "프로모션 코드 확인",
+  limit: 20,
+  windowMs: 60 * 60 * 1000,
+  message: "프로모션 코드를 너무 많이 넣었어요. 잠시 뒤에 다시 시도해 주세요.",
+})
+
 // 결제 창에서 프로모션 코드를 넣어 볼 때 할인과 금액을 알려 준다. 주문은 만들지 않는다.
-billingRouter.post("/promo", (req, res) => {
+billingRouter.post("/promo", async (req, res) => {
   const account = requireAccount(req)
   const database = getDatabase()
+  await promoTries.take(senderKey(req, database, account))
   const kind = text(req.body?.kind)
   if (account.role !== "브랜드" && kind !== "ad") throw new HttpError(403, "결제는 브랜드 계정만 해요.")
   const product = productOf(kind)

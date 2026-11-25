@@ -52,7 +52,7 @@ async function createTable(sql: Sql, text: string) {
 // JSON 문서 하나의 데이터, 시간별 복사본, 계약서 사진, 운영자용 최근 오류,
 // 모든 복사본이 공유하는 한도 카운트(lib/rateLimit.ts).
 export function ensureTables(sql: Sql) {
-  // 서로 기대지 않는 테이블이라 함께 만든다(콜드 스타트의 첫 요청이 열 번 오가지 않게).
+  // 서로 기대지 않는 테이블이라 함께 만든다(콜드 스타트의 첫 요청이 열한 번 오가지 않게).
   tables ??= Promise.all(
     [
       "create table if not exists uniconnect_store (id smallint primary key, data text not null, version integer not null, saved_at timestamptz not null default now())",
@@ -66,6 +66,8 @@ export function ensureTables(sql: Sql) {
       "create table if not exists uniconnect_coupons (code text not null, number text not null, pass text not null, coupon_id text not null, visited boolean not null default false, issued_at timestamptz not null default now(), primary key (code, number), unique (code, pass, coupon_id))",
       "create table if not exists uniconnect_counts (id bigserial primary key, code text not null, kind text not null, sponsor_id text, answers text, at timestamptz not null default now())",
       "create table if not exists uniconnect_fold (id smallint primary key, at timestamptz not null)",
+      // A/B 테스트의 갈래별 노출 · 전환 횟수다. 방문마다 데이터 문서를 저장하지 않게 따로 센다(lib/experiments.ts).
+      "create table if not exists uniconnect_experiment_counts (key text not null, run text not null, variant text not null, seen integer not null, converted integer not null, primary key (key, run, variant))",
       "create table if not exists uniconnect_limits (name text not null, key text not null, count integer not null, reset_at bigint not null, primary key (name, key))",
     ].map((text) => createTable(sql, text)),
   )
