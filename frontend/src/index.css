@@ -9788,6 +9788,22 @@ html.modal-open {
   color: var(--orange);
 }
 
+/* 팝업의 .modal label(세로 쌓기, 위 여백)이 칩에 오지 않게 한다. */
+.modal .chip-check {
+  flex-direction: row;
+  margin-top: 0;
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-label);
+  letter-spacing: 0;
+}
+
+/* 제안 조건 묶음은 위 선택칸과 떨어져 시작한다. */
+.modal .propose-terms,
+.modal .propose-date-choice {
+  margin-top: var(--space-5);
+}
+
 .chip-check input {
   width: 16px;
   height: 16px;

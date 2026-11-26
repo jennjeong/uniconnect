@@ -13,7 +13,8 @@ import type { Account, Database, PaymentKind, PromoCode } from "../types.js"
 
 export const promoLimits = { codes: 200, minSupply: 1_000, maxPercent: 90, maxUses: 10_000 }
 
-export const promoKinds: PaymentKind[] = ["fee", "report", "pro", "ad", "local", "program"]
+// 지금 파는 상품만 고를 수 있다. 판매를 멈춘 수수료와 상세 리포트(feeSales.ts, reportSales.ts)는 뺐다.
+export const promoKinds: PaymentKind[] = ["pro", "ad", "local", "program"]
 
 export const normalizeCode = (value: unknown) => (typeof value === "string" ? value.trim().toUpperCase() : "")
 

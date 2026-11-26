@@ -845,6 +845,7 @@ function ValuePanel({
   }
   const won = (input: string) => Number(input.replace(/[^0-9]/g, "") || 0)
   const total = (value?.cash ?? 0) + (value?.inKind ?? 0)
+  const proposedAmount = agreement.terms?.amount
   return (
     <section aria-labelledby="value-title" className="agreement-section value-panel">
       <h2 id="value-title">
@@ -891,6 +892,10 @@ function ValuePanel({
             <dd>
               {value ? fullWon(total) : t("아직 적지 않았어요")}
               {value && <small>{t("현금 {cash} · 현물 {inKind}", { cash: fullWon(value.cash), inKind: fullWon(value.inKind) })}</small>}
+              {/* 제안 금액이 현금과 현물에 걸쳐 있으면 계약서는 비워 두고 나눠 적게 한다(lib/agreements.ts seededValue). */}
+              {!value && proposedAmount && !canceled && (
+                <small>{t("제안 금액 {amount} · 현금과 현물로 나눠 적어 주세요", { amount: fullWon(proposedAmount) })}</small>
+              )}
             </dd>
           </div>
         </dl>

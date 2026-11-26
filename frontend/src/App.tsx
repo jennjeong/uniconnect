@@ -1646,7 +1646,14 @@ function App() {
       )
     }
     if (view.council) {
-      return <CouncilPage onBack={() => goBack({ page, profile: "page" })} onNotice={showNotice} />
+      return (
+        <CouncilPage
+          loggedIn={account !== null}
+          onBack={() => goBack({ page, profile: "page" })}
+          onLogin={() => openAuth("login")}
+          onNotice={showNotice}
+        />
+      )
     }
     if (view.ledger) return <LedgerPage token={view.ledger} />
     if (view.explore) {
