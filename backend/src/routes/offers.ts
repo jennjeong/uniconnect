@@ -88,6 +88,7 @@ offersRouter.post("/:id/:decision", async (req, res) => {
 
   offer.status = decision
   offer.respondedAt = new Date().toISOString()
+  offer.respondedBy = req.memberId ?? "owner"
   if (decision === "수락" && offer.fromAccountId) {
     const campaign = database.events[offer.fromAccountId]?.find((item) => item.id === offer.campaignId)
     if (campaign?.status === "매칭 중") campaign.status = "집행 예정"

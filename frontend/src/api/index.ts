@@ -143,6 +143,8 @@ export type SignupPayload = {
   invite?: string
   document?: { file: string; name: string }
   contact: AccountContact
+  // 브랜드의 관심 협찬 유형(선택).
+  sponsorKinds?: string[]
 }
 
 export type EventDraft = Pick<

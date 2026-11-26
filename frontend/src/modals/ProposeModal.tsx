@@ -83,6 +83,8 @@ export function ProposeModal({
   const [deliverBy, setDeliverBy] = useState("")
   const [benefits, setBenefits] = useState("")
   const [respondBy, setRespondBy] = useState("")
+  // 보내기 전에 한 번 보는 화면. 고치기를 누르면 같은 입력으로 돌아간다.
+  const [reviewing, setReviewing] = useState(false)
   const pickEvent = (id: string) => {
     setEventId(id)
     const next = upcoming.find((event) => event.id === id)
@@ -113,8 +115,8 @@ export function ProposeModal({
     }
   }
 
-  const send = async () => {
-    if (busy) return
+  // 첫 단계: 입력을 검사하고 보낼 내용을 보여 준다.
+  const review = () => {
     if (mismatch && !dateChoice) {
       setError(t("날짜가 달라요. 이 날짜로 진행할지, 날짜 조정을 요청할지 골라 주세요."))
       return
@@ -123,6 +125,12 @@ export function ProposeModal({
       setError(t("조정하고 싶은 날짜를 골라 주세요."))
       return
     }
+    setError("")
+    setReviewing(true)
+  }
+
+  const send = async () => {
+    if (busy) return
     setBusy(true)
     setError("")
     try {
@@ -147,9 +155,30 @@ export function ProposeModal({
         noValidate
         onSubmit={(event) => {
           event.preventDefault()
-          void send()
+          if (reviewing) void send()
+          else review()
         }}
       >
+        {reviewing ? (
+          <ProposalReview
+            busy={busy}
+            error={error}
+            onEdit={() => setReviewing(false)}
+            rows={[
+              [t("받는 곳"), targets ? targets.map((target) => target.name).join(", ") : match.name],
+              [students ? t("제안할 행사") : t("제안할 캠페인"), chosen ? `${chosen.name} · ${formatPeriod(chosen.date, chosen.endDate)}` : ""],
+              [t("협찬 형태"), kinds.map((kind) => t(kind)).join(" · ")],
+              [t("금액(원)"), terms.amount ? formatWon(terms.amount) : ""],
+              [t("내용 · 수량"), quantity.trim()],
+              [t("전달 기한"), deliverBy ? formatFullDate(deliverBy) : ""],
+              [t("응답 기한"), respondBy ? formatFullDate(respondBy) : ""],
+              [students ? t("브랜드에게 드리는 혜택") : t("단체에게 바라는 혜택"), benefits.trim()],
+              [t("일정"), mismatch ? (dateChoice === "adjust" ? t("{date}로 조정 요청", { date: formatFullDate(adjustTo) }) : t("상대 행사 날짜대로")) : ""],
+              [t("전할 메시지"), message.trim() || t("기본 인사말")],
+            ]}
+          />
+        ) : (
+          <>
         {upcoming.length > 0 ? (
           <label>
             {students ? t("제안할 행사") : t("제안할 캠페인")}
@@ -387,10 +416,54 @@ export function ProposeModal({
             {error}
           </p>
         )}
-        <button className="primary-button wide" disabled={busy} type="submit">
-          {t("제안 보내기")}
+        <button className="primary-button wide" type="submit">
+          {t("보낼 내용 확인하기")}
         </button>
+          </>
+        )}
       </form>
     </Modal>
+  )
+}
+
+// 보내기 전의 검토: 고른 조건을 한 줄씩(비운 것은 빼고) 보이고, 고치기와 보내기를 나란히 둔다.
+function ProposalReview({
+  rows,
+  busy,
+  error,
+  onEdit,
+}: {
+  rows: [string, string][]
+  busy: boolean
+  error: string
+  onEdit: () => void
+}) {
+  return (
+    <div className="propose-review">
+      <p className="auth-lead">{t("이대로 보낼까요? 보낸 뒤에는 답을 기다리는 동안 고칠 수 없고, 거둔 뒤 다시 보낼 수 있어요.")}</p>
+      <dl>
+        {rows
+          .filter(([, value]) => value)
+          .map(([label, value]) => (
+            <div key={label}>
+              <dt>{label}</dt>
+              <dd>{value}</dd>
+            </div>
+          ))}
+      </dl>
+      {error && (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      )}
+      <div className="propose-review-actions">
+        <button className="cancel-button" disabled={busy} onClick={onEdit} type="button">
+          {t("고치기")}
+        </button>
+        <button className="primary-button" disabled={busy} type="submit">
+          {t("제안 보내기")}
+        </button>
+      </div>
+    </div>
   )
 }

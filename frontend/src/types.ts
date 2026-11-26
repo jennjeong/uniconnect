@@ -485,6 +485,8 @@ export type ProposalTemplate = { id: string; name: string; text: string }
 
 export type Account = {
   id: string
+  // 브랜드가 가입할 때 고른 관심 협찬 유형. 첫 캠페인 양식이 이것으로 시작한다.
+  sponsorKinds?: string[]
   // 인증 앱을 쓰는 2단계 로그인이 켜져 있다.
   twoFactorOn?: true
   // 계정 주인이 아니라 공동 관리자가 로그인했을 때 설정된다.
@@ -1566,6 +1568,8 @@ export type ExploreEvent = {
   endDate?: string
   kind?: string
   people: string
+  types: string[]
+  status: EventStatus
   venue?: string
   intro?: string
   packages: { name: string; gives: string }[]

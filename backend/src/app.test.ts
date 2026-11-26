@@ -11016,3 +11016,10 @@ test("a full QR ceiling emails the owner once a day, and the owner raises it twi
     config.mailFrom = undefined
   }
 })
+
+test("a brand keeps the sponsorship kinds it picked at sign-up, known ones only, and a group keeps none", async () => {
+  const brand = await signUpMember("kinds@kinds-cafe.kr", "kinds-pass-123", "브랜드", { sponsorKinds: ["제품", "없는 유형", "제품", "현금"] })
+  assert.deepEqual((await call("GET", "/auth/me", undefined, brand)).data.account.sponsorKinds, ["현금", "제품"])
+  const group = await signUpMember("kinds-club@syu.ac.kr", "kinds-pass-123", "학생단체", { sponsorKinds: ["현금"] })
+  assert.equal((await call("GET", "/auth/me", undefined, group)).data.account.sponsorKinds, undefined)
+})

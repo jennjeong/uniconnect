@@ -1,5 +1,5 @@
 import { t } from "../i18n"
-import { dDayLabel, formatDateTime, formatDay } from "../lib/date"
+import { dDayLabel, formatDateTime, formatDay, todayIso } from "../lib/date"
 import { preEventCheck } from "../lib/preEventCheck"
 import type { Agreement, ChatSide } from "../types"
 
@@ -60,6 +60,10 @@ export function AgreementStatus({ agreement }: { agreement: Agreement }) {
       ]
   const allDone = confirmed && !canceled && !cancelAsked && actions.length === 0
 
+  // 협찬의 네 단계 중 지금 어디인지: 제안 수락은 계약서가 생긴 것으로 지났고, 양쪽 확인,
+  // 행사 준비(행사 날까지), 성과 · 후기 순이다.
+  const stages = [t("제안 수락"), t("계약서 확인"), t("행사 준비"), t("성과 · 후기")]
+  const stage = !confirmed ? 1 : agreement.eventDate && agreement.eventDate >= todayIso() ? 2 : 3
   const deliverBy = agreement.terms?.deliverBy
   return (
     <section aria-label={t("계약 상태")} className={`agreement-status ${tone}`}>
@@ -69,6 +73,12 @@ export function AgreementStatus({ agreement }: { agreement: Agreement }) {
           <small>{t("{date} 확인", { date: formatDateTime(theirs && theirs > mine ? theirs : mine) })}</small>
         )}
       </p>
+      {!canceled && (
+        <p className="agreement-stage">
+          <span>{t("{step}/{total}단계 · {name}", { step: stage + 1, total: stages.length, name: stages[stage] })}</span>
+          <span>{t("마지막 변경 {date}", { date: formatDateTime(agreement.updatedAt) })}</span>
+        </p>
+      )}
       {allDone && <p className="field-hint">{t("지금 남은 할 일이 없어요.")}</p>}
       {actions.length > 0 && (
         <ul className="agreement-actions-list">

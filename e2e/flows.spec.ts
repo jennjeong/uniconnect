@@ -1312,6 +1312,7 @@ test("a group posts on the recruit board, and a brand applies with its campaign"
   await apply.getByRole("button", { name: "저장", exact: true }).click()
   await expect(brandPage.getByText("제안 문구를 저장했어요.")).toBeVisible()
   await expect(apply.getByLabel("저장한 문구")).toContainText("첫 지원")
+  await apply.getByRole("button", { name: "보낼 내용 확인하기" }).click()
   await apply.getByRole("button", { name: "제안 보내기" }).click()
   await expect(brandPage.getByText("지원했어요 · 검토 중")).toBeVisible()
 
@@ -1346,6 +1347,7 @@ test("a brand offers one campaign to several groups at once", async ({ page, req
   await page.getByRole("button", { name: "한 번에 제안하기" }).click()
   const form = page.getByRole("dialog", { name: "2곳에 협찬 제안" })
   await expect(form.getByLabel("제안할 캠페인")).toContainText("일괄 시음회")
+  await form.getByRole("button", { name: "보낼 내용 확인하기" }).click()
   await form.getByRole("button", { name: "제안 보내기" }).click()
   await expect(page.getByText("2곳에 협찬 제안을 보냈어요.")).toBeVisible()
   await expect(page.getByRole("region", { name: "여러 곳에 제안" })).toContainText("0곳 골랐어요")
@@ -1377,13 +1379,18 @@ test("a brand sees its campaign and the group's event dates side by side, choose
   await expect(choice.getByRole("radio")).toHaveCount(2)
   await expect(choice.getByRole("radio", { checked: true })).toHaveCount(0)
   await form.getByLabel("전할 메시지").fill("함께해요.")
-  await form.getByRole("button", { name: "제안 보내기" }).click()
+  await form.getByRole("button", { name: "보낼 내용 확인하기" }).click()
   await expect(form.getByText("이 날짜로 진행할지, 날짜 조정을 요청할지 골라 주세요")).toBeVisible()
   await choice.getByText("날짜 조정을 요청해요").click()
   await expect(choice.getByRole("radio", { name: "날짜 조정을 요청해요" })).toBeChecked()
   await choice.getByLabel("바꾸고 싶은 날짜").fill(kst(25))
   // 조건은 캠페인에서 가져오고 고칠 수 있다.
   await form.getByLabel("내용 · 수량").fill("시음 쿠폰 100장")
+  // 보내기 전에 고른 조건을 한 번 본다.
+  await form.getByRole("button", { name: "보낼 내용 확인하기" }).click()
+  const review = form.locator(".propose-review")
+  await expect(review).toContainText("시음 쿠폰 100장")
+  await expect(review).toContainText("조정 요청")
   await form.getByRole("button", { name: "제안 보내기" }).click()
   await expect(form).toBeHidden()
   const sent = (await (await request.get("/api/offers", { headers: group.headers })).json()) as {
@@ -1417,6 +1424,7 @@ test("a student group proposes and the brand accepts", async ({ browser }) => {
   const form = student.getByRole("dialog")
   await expect(form.getByLabel("제안할 행사")).toBeVisible()
   await form.getByLabel("전할 메시지").fill("현장 부스와 SNS로 브랜드를 알릴게요.")
+  await form.getByRole("button", { name: "보낼 내용 확인하기" }).click()
   await form.getByRole("button", { name: "제안 보내기" }).click()
   await expect(form).toBeHidden()
   await expect(student.locator(".profile-actions").getByText("제안 보냄")).toBeVisible()

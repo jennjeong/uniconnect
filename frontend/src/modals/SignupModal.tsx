@@ -12,6 +12,7 @@ import { t } from "../i18n"
 import { accountTypeGroups } from "../data/roles"
 import { formatRemaining } from "../lib/format"
 import { useSiteState } from "../hooks/useSiteState"
+import { sponsorOptions } from "../data/sponsorTypes"
 import { passwordProblem } from "../lib/password"
 import { viewPath } from "../lib/route"
 import type { Role, Session } from "../types"
@@ -30,6 +31,8 @@ const emptyDraft = (role: Role) => ({
   confirm: "",
   agreed: false,
   over14: false,
+  // 브랜드의 관심 협찬 유형(선택).
+  sponsorKinds: [] as string[],
 })
 
 type Draft = ReturnType<typeof emptyDraft>
@@ -174,6 +177,7 @@ export function SignupModal({
           agreedToTerms: draft.agreed,
           over14: draft.over14,
           contact: { name: draft.contactName.trim(), position: draft.position.trim(), phone: draft.phone },
+          ...(draft.role === "브랜드" && draft.sponsorKinds.length ? { sponsorKinds: draft.sponsorKinds } : {}),
           ...(keptReferral() ? { referral: keptReferral() } : {}),
           ...(invitedShop && document ? { invite, document } : {}),
       })
@@ -233,7 +237,7 @@ export function SignupModal({
         <h3 className="signup-step">
           <b aria-hidden="true">1</b>
           {draft.role === "학생단체" ? t("단체 정보") : t("브랜드 정보")}
-          <small>{t("모두 필수")}</small>
+          <small>{draft.role === "학생단체" ? t("모두 필수") : t("관심 협찬 유형 말고는 필수")}</small>
         </h3>
         <div className="form-row">
           <label>
@@ -266,6 +270,32 @@ export function SignupModal({
             </select>
           </label>
         </div>
+        {draft.role === "브랜드" && (
+          <fieldset className="signup-kinds">
+            <legend>
+              {t("관심 협찬 유형")} <small>{t("선택")}</small>
+            </legend>
+            <div className="propose-kinds">
+              {sponsorOptions.브랜드.map((option) => (
+                <label className={draft.sponsorKinds.includes(option.value) ? "chip-check checked" : "chip-check"} key={option.value}>
+                  <input
+                    checked={draft.sponsorKinds.includes(option.value)}
+                    onChange={() =>
+                      update({
+                        sponsorKinds: draft.sponsorKinds.includes(option.value)
+                          ? draft.sponsorKinds.filter((kind) => kind !== option.value)
+                          : [...draft.sponsorKinds, option.value],
+                      })
+                    }
+                    type="checkbox"
+                  />
+                  {t(option.value)}
+                </label>
+              ))}
+            </div>
+            <small className="field-hint">{t("첫 캠페인을 등록할 때 이 유형으로 시작해요. 나중에 바꿀 수 있어요.")}</small>
+          </fieldset>
+        )}
         {draft.role === "학생단체" && (
           <label>
             {t("학교")}

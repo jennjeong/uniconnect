@@ -740,6 +740,25 @@ button.nav-pill:hover {
   background: var(--goal-mark);
 }
 
+/* 아주 좁은 휴대폰에서는 칩이 로고 글자를 덮지 않게 점만 남긴다. 글은 화면 읽기용으로 남고,
+   화면 위의 "예시 · 학기" 띠가 같은 것을 말한다. */
+@media (max-width: 400px) {
+  .demo-chip {
+    width: 32px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .demo-chip-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
 /* 소개의 로그인 옆 회원가입은 페이지가 스크롤됐든 아니든 포인트 파랑이다. */
 .site-header .nav-pill.signup-pill {
   padding: 0 20px;
@@ -2622,7 +2641,9 @@ input[type="search"]::-webkit-search-cancel-button {
   margin-left: 0.04em;
 }
 
-.hero-stats span {
+/* 라벨만(li의 바로 아래 span). 숫자 안의 span(AnimatedNumber의 띠)까지 잡으면 숫자가 라벨
+   크기로 줄어든다. */
+.hero-stats li > span {
   color: rgba(255, 255, 255, 0.8);
   font-size: 0.8125rem;
   font-weight: var(--weight-label);
@@ -9344,6 +9365,20 @@ html.modal-open {
 
 /* 계약서 맨 위의 지금 상태(components/AgreementStatus.tsx): 한 줄의 상태, 누가 무엇을
    할지의 목록, 기한. 왼쪽 띠의 색이 상태를 말하고, 글로도 같은 것을 쓴다. */
+.agreement-stage {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px var(--space-4);
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+.agreement-stage span:first-child {
+  color: var(--ink);
+  font-weight: var(--weight-label);
+}
+
 .agreement-status {
   display: grid;
   gap: var(--space-3);
@@ -17400,7 +17435,7 @@ textarea {
     font-size: 1.375rem;
   }
 
-  .meeting-hero.compact .hero-stats span {
+  .meeting-hero.compact .hero-stats li > span {
     font-size: var(--text-xs);
   }
 }
@@ -17431,4 +17466,137 @@ textarea {
   font-weight: var(--weight-label);
   text-decoration: underline;
   cursor: pointer;
+}
+
+/* 가입 양식에서 브랜드의 관심 협찬 유형(선택): 칩 묶음과 짧은 안내. */
+.signup-kinds {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.signup-kinds legend {
+  margin-bottom: var(--space-2);
+  padding: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-label);
+}
+
+.signup-kinds legend small {
+  color: var(--muted);
+  font-weight: var(--weight-body);
+}
+
+/* 휴대폰의 아래 메뉴(layout/BottomBar.tsx). 넓은 화면에서는 머리의 메뉴가 대신한다. 아이콘과
+   이름은 한 칸의 가운데 세로줄에 맞추고, 지금 화면은 굵은 이름과 채운 아이콘 바탕으로 보인다.
+   아래 안전 영역만큼 띄우고, 키보드가 올라오거나 행사 페이지가 자기 행동 줄을 붙일 때는 숨는다. */
+.bottom-bar {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .bottom-bar {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 30;
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    padding: 6px var(--space-2) calc(6px + env(safe-area-inset-bottom));
+    background: var(--surface);
+    box-shadow: 0 -1px 0 var(--line);
+  }
+
+  .bottom-bar button {
+    display: grid;
+    min-height: 52px;
+    justify-items: center;
+    align-content: center;
+    gap: 2px;
+    padding: 4px 2px;
+    border: 0;
+    background: none;
+    color: var(--muted);
+  }
+
+  .bottom-bar-icon {
+    position: relative;
+    display: grid;
+    width: 44px;
+    height: 28px;
+    place-items: center;
+    border-radius: 999px;
+  }
+
+  .bottom-bar-icon .icon {
+    stroke: currentColor;
+  }
+
+  .bottom-bar-label {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 0.6875rem;
+    font-weight: var(--weight-body);
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .bottom-bar button.active {
+    color: var(--point-strong);
+  }
+
+  .bottom-bar button.active .bottom-bar-icon {
+    background: var(--point-tint);
+  }
+
+  .bottom-bar button.active .bottom-bar-label {
+    font-weight: var(--weight-strong);
+  }
+
+  .bottom-bar button:focus-visible {
+    outline: 2px solid var(--point);
+    outline-offset: -2px;
+  }
+
+  .bottom-bar-count {
+    position: absolute;
+    top: -4px;
+    right: 2px;
+    min-width: 16px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: var(--point);
+    color: var(--on-point);
+    font-size: 0.625rem;
+    font-weight: var(--weight-badge);
+    line-height: 16px;
+    text-align: center;
+  }
+
+  body:has(.bottom-bar) {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
+  }
+
+  /* 아래에 붙는 다른 것들(비교 · 일괄 제안 줄, 알림 토스트, 사이트 공지)은 메뉴 위로 올린다. */
+  body:has(.bottom-bar) .compare-tray,
+  body:has(.bottom-bar) .bulk-bar {
+    bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+
+  body:has(.bottom-bar) .toast,
+  body:has(.bottom-bar) .site-notices {
+    bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+
+  /* 키보드가 올라온 동안(BottomBar가 data-keyboard를 단다)과 행사 페이지의 행동 줄이 있을 때는
+     숨긴다. 아래 여백은 그대로 두어, 누르는 사이 페이지가 움직이지 않게 한다. */
+  .bottom-bar[data-keyboard="true"],
+  body:has(.event-actions) .bottom-bar {
+    display: none;
+  }
 }

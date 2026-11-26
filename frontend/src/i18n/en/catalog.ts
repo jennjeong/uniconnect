@@ -796,6 +796,16 @@ const en: Record<string, string> = {
   "uniconnect에 기록된 협찬": "Sponsorships recorded on uniconnect",
   "수량 단위": "Unit",
   "잔, 개, 장": "cups, pcs, sheets",
+  "적용한 조건": "Filters applied",
+  "조건 초기화": "Clear filters",
+  "행사를 불러오지 못했어요.": "We couldn't load the events.",
+  "아직 등록된 다가오는 행사가 없어요.": "No upcoming events have been posted yet.",
+  "단체 찾기에서 학생단체를 먼저 살펴보세요.": "Meanwhile, look through the student groups in Find Groups.",
+  "우리 행사를 먼저 등록해 보세요.": "Post your own event first.",
+  "지원 유형 협의": "Support to be agreed",
+  "이 단체에 보낸 제안이 답을 기다리고 있어요.": "Your proposal to this group is waiting for an answer.",
+  "보낸 제안 보기": "See sent proposals",
+  "이 단체와 협찬이 확정됐어요. 더 나중 캠페인으로 다시 제안할 수 있어요.": "You have a confirmed sponsorship with this group. You can propose again for a later campaign.",
 }
 
 export default en

@@ -211,6 +211,9 @@ export type Account = {
   // 2026-03-01부터). 협찬 기록이 임기별로 읽히며 최대 20개다.
   terms?: { name: string; from: string }[]
   referralCode?: string
+  // 브랜드가 가입할 때 고른 관심 협찬 유형(validation.ts sponsorTypes). 첫 캠페인 양식이 이것으로
+  // 시작한다. 고르지 않으면 없다.
+  sponsorKinds?: string[]
   // 무료 요금제 브랜드가 이번 한국 달에 보낸 제안 수. 제안을 거두거나 행사가
   // 지워져도 줄지 않는다(lib/pro.ts의 offersThisMonth).
   offersSent?: { month: string; count: number }
@@ -435,6 +438,8 @@ export type SponsorRequest = {
   status: RequestStatus
   createdAt: string
   respondedAt?: string
+  // 답한 사람: 계정 주인이면 "owner", 공동 관리자면 그 사람의 id(lib/team.ts).
+  respondedBy?: string
   // 답이 없어 받은 쪽에 다시 알린 단계(1: 3일, 2: 7일)와 마지막으로 알린 때(lib/nudges.ts).
   nudgeStage?: 1 | 2
   nudgedAt?: string
@@ -469,6 +474,8 @@ export type SponsorOffer = {
   status: RequestStatus
   createdAt: string
   respondedAt?: string
+  // 답한 사람: 계정 주인이면 "owner", 공동 관리자면 그 사람의 id(lib/team.ts).
+  respondedBy?: string
   // 답이 없어 받은 쪽에 다시 알린 단계(1: 3일, 2: 7일)와 마지막으로 알린 때(lib/nudges.ts).
   nudgeStage?: 1 | 2
   nudgedAt?: string

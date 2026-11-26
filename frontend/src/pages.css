@@ -1385,6 +1385,112 @@
   font-weight: var(--weight-label);
 }
 
+/* 행사 둘러보기의 카드: 행사명과 상태가 한 줄, 그 아래 학교 · 단체 · 날짜, 지원 유형과 남은 날. */
+.explore-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.explore-card-top h3 {
+  margin: 0;
+  font-size: var(--text-lg);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+}
+
+.explore-card-top h3 button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+}
+
+.explore-status {
+  flex: none;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-badge);
+  white-space: nowrap;
+}
+
+.explore-status.open {
+  background: var(--point);
+  color: var(--on-point);
+}
+
+.explore-status.set,
+.explore-status.done {
+  background: var(--fill-strong);
+  color: var(--ink-soft);
+}
+
+.explore-card-meta,
+.explore-card-asks {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.explore-card-meta {
+  color: var(--ink-soft);
+}
+
+.explore-card-asks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px var(--space-3);
+  color: var(--ink);
+  font-weight: var(--weight-label);
+}
+
+.explore-dday {
+  color: var(--point-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.explore-card-sub {
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.explore-card {
+  gap: var(--space-2);
+}
+
+.explore-card .explore-intro {
+  margin-top: var(--space-2);
+}
+
+.explore-applied {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  margin: 0 0 var(--space-4);
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+.explore-state {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+  padding: var(--space-6) 0;
+  color: var(--ink-soft);
+}
+
+.explore-state p {
+  margin: 0;
+  color: var(--ink);
+  font-weight: var(--weight-label);
+}
+
 .explore-intro {
   display: -webkit-box;
   margin: 0;
@@ -9763,4 +9869,97 @@ th[aria-sort="descending"] .console-sort span {
 .dismissed-list li small {
   color: var(--muted);
   font-size: 0.8125rem;
+}
+
+/* 행사 페이지에서 보는 브랜드의 기본 행동(EventDetailPage의 EventActions). 휴대폰에서는 화면
+   아래에 붙어, 소개와 패키지를 읽은 뒤에도 바로 누른다. */
+.event-actions {
+  display: grid;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.event-actions-state {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px var(--space-3);
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+.event-actions-buttons {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.event-actions-buttons button {
+  width: 100%;
+  min-height: 48px;
+}
+
+@media (max-width: 720px) {
+  .event-group .event-actions {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 20;
+    padding: var(--space-3) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom));
+    background: var(--surface);
+    box-shadow: 0 -1px 0 var(--line), 0 -12px 24px -20px rgba(19, 48, 111, 0.4);
+  }
+
+  /* 붙은 행동 줄이 푸터와 마지막 내용을 가리지 않게 그만큼 띄운다. */
+  body:has(.event-page .event-actions) {
+    padding-bottom: calc(120px + env(safe-area-inset-bottom));
+  }
+
+  .event-actions-buttons {
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  }
+}
+
+/* 제안 보내기 전 검토(ProposeModal의 ProposalReview): 이름표와 값을 두 열로, 버튼은 한 줄에. */
+.propose-review {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.propose-review dl {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+
+.propose-review dl > div {
+  display: grid;
+  grid-template-columns: minmax(6.5rem, 34%) minmax(0, 1fr);
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.propose-review dt {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.propose-review dd {
+  margin: 0;
+  color: var(--ink);
+  font-weight: var(--weight-label);
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+  word-break: keep-all;
+}
+
+.propose-review-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: var(--space-2);
+}
+
+.propose-review-actions button {
+  min-height: 48px;
 }

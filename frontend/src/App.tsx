@@ -25,6 +25,7 @@ import { pageFor } from "./data/navigation"
 import { useInstallState } from "./hooks/useInstallState"
 import { useNotice } from "./hooks/useNotice"
 import { Footer } from "./layout/Footer"
+import { BottomBar } from "./layout/BottomBar"
 import { Header } from "./layout/Header"
 import { NavMenu } from "./layout/NavMenu"
 import { socialNames } from "./data/social"
@@ -1610,6 +1611,17 @@ function App() {
           onEdit={(eventId) => go({ page, edit: eventId })}
           onCopy={(eventId) => go({ page, create: todayIso(), copy: eventId })}
           onOpenGroup={students ? undefined : (listingId) => go({ page: "단체 찾기", detail: listingId })}
+          onPropose={
+            students
+              ? undefined
+              : (listingId) => {
+                  const match = catalog.find((item) => item.id === listingId)
+                  if (match) propose(match)
+                  else go({ page: "단체 찾기", detail: listingId })
+                }
+          }
+          onOpenSent={account ? () => openInbox("sent") : undefined}
+          proposalStatus={(listingId) => statuses[listingId]}
           onNotice={showNotice}
           canUpload={member}
         />
@@ -1739,6 +1751,7 @@ function App() {
           role={role}
           copyFrom={copySource}
           initialDate={creating}
+          defaultTypes={account?.sponsorKinds}
           draftStorageKey={account ? draftKey(account.id, copySource ? `copy:${copySource.id}` : "new") : undefined}
           onCancel={() => goBack({ page })}
           onSubmit={createEvent}
@@ -2243,6 +2256,11 @@ function App() {
           </PageEnter>
         )}
       </main>
+
+      {/* 휴대폰의 아래 메뉴. 소개 페이지, 운영 콘솔, 대화창(키보드)에는 두지 않는다. */}
+      {!landing && !view.admin && !chatOpen && (
+        <BottomBar active={menuPage} badges={badges} onNavigate={navigate} role={role} />
+      )}
 
       {/* 대화는 메시지 입력창을 화면 아래에 둔다. 가입 유도는 소개와 대시보드의
          푸터 머리에만 나온다. */}

@@ -22,7 +22,7 @@ import { freezeSponsorships } from "../lib/sponsorships.js"
 import { emailTaken, memberByEmail, memberOf, requireOwner } from "../lib/team.js"
 import { hashRecovery, recoveryHashesOf } from "../lib/secrets.js"
 import { matchStep, newRecoveryCodes, newSecret, otpauthUrl } from "../lib/totp.js"
-import { accountTypes, checkPassword, mailKinds, parseContact, parseRole, text } from "../lib/validation.js"
+import { accountTypes, checkPassword, mailKinds, parseContact, parseRole, sponsorTypes, text } from "../lib/validation.js"
 import { forgetReferralRewards, referralRewardsOf, referralStats, referrerOf } from "../lib/referrals.js"
 import { currentAccount, hashToken, requireAccount } from "../middleware/session.js"
 import { getDatabase, retryConflicts, saveDatabase } from "../store.js"
@@ -328,6 +328,11 @@ authRouter.post("/signup", async (req, res) => {
   if (role === "학생단체" && !school) throw new HttpError(400, "학교를 입력해 주세요.")
   if (school.length > 40) throw new HttpError(400, "학교는 40자 이하로 입력해 주세요.")
   const contact = parseContact(body.contact)
+  // 브랜드의 관심 협찬 유형(선택). 아는 유형만 한 번씩 남긴다.
+  const sponsorKinds =
+    role === "브랜드" && Array.isArray(body.sponsorKinds)
+      ? sponsorTypes.filter((kind) => (body.sponsorKinds as unknown[]).includes(kind))
+      : []
   const database = getDatabase()
   const shopInvite = role === "브랜드" && invited(database, body.invite)
   const ruleError = emailRuleError(role, email, { personal: shopInvite })
@@ -369,6 +374,7 @@ authRouter.post("/signup", async (req, res) => {
     school: role === "학생단체" ? school : "",
     email,
     contact,
+    ...(sponsorKinds.length ? { sponsorKinds } : {}),
     passwordHash,
     termsAgreedAt: now,
     createdAt: now,

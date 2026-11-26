@@ -88,6 +88,9 @@ export function EventDetailPage({
   onEdit,
   onCopy,
   onOpenGroup,
+  onPropose,
+  onOpenSent,
+  proposalStatus,
   onNotice,
   canUpload,
 }: {
@@ -100,6 +103,11 @@ export function EventDetailPage({
   onCopy: (eventId: string) => void
   // 보는 브랜드를 위한 단체 프로필(단체 카탈로그는 브랜드의 것이다).
   onOpenGroup?: (listingId: string) => void
+  // 보는 브랜드가 이 단체에 협찬을 제안한다. 이미 보낸 제안의 상태를 함께 받아, 누르기 전에
+  // 지금 상태와 할 수 있는 일을 보여 준다(답을 기다리는 제안은 두 번 보내지 않는다).
+  onPropose?: (listingId: string) => void
+  onOpenSent?: () => void
+  proposalStatus?: (listingId: string) => string | undefined
   onNotice: (message: string) => void
 }) {
   const [data, setData] = useState<EventPage | null>(null)
@@ -429,13 +437,60 @@ export function EventDetailPage({
           <BrandMark match={group} large />
           <strong>{group.name}</strong>
           <span>{[group.school, t(group.category)].filter(Boolean).join(" · ")}</span>
-          {onOpenGroup && !own && (
-            <button className="primary-button" onClick={() => onOpenGroup(group.id)} type="button">
-              {t("단체 프로필 보기")}
-            </button>
+          {!own && (onPropose || onOpenGroup) && (
+            <EventActions
+              onOpenGroup={onOpenGroup && (() => onOpenGroup(group.id))}
+              onOpenSent={onOpenSent}
+              onPropose={onPropose && (() => onPropose(group.id))}
+              status={proposalStatus?.(group.id)}
+            />
           )}
         </aside>
       </div>
     </section>
+  )
+}
+
+// 보는 브랜드의 기본 행동: 협찬 제안하기와 단체 프로필. 휴대폰에서는 화면 아래에 붙어 스크롤한
+// 뒤에도 찾는다. 답을 기다리는 제안이 있으면 버튼 대신 그 상태와 보낸 제안으로 가는 길을 보인다.
+function EventActions({
+  status,
+  onPropose,
+  onOpenGroup,
+  onOpenSent,
+}: {
+  status?: string
+  onPropose?: () => void
+  onOpenGroup?: () => void
+  onOpenSent?: () => void
+}) {
+  const waiting = status === "검토 중"
+  return (
+    <div className="event-actions">
+      {waiting ? (
+        <p className="event-actions-state" role="status">
+          {t("이 단체에 보낸 제안이 답을 기다리고 있어요.")}
+          {onOpenSent && (
+            <button className="underline-link" onClick={onOpenSent} type="button">
+              {t("보낸 제안 보기")}
+            </button>
+          )}
+        </p>
+      ) : status === "수락" ? (
+        <p className="event-actions-state">{t("이 단체와 협찬이 확정됐어요. 더 나중 캠페인으로 다시 제안할 수 있어요.")}</p>
+      ) : null}
+      <div className="event-actions-buttons">
+        {onPropose && !waiting && (
+          <button className="primary-button" onClick={onPropose} type="button">
+            {t("협찬 제안하기")}
+          </button>
+        )}
+        {onOpenGroup && (
+          <button className={onPropose && !waiting ? "cancel-button" : "primary-button"} onClick={onOpenGroup} type="button">
+            {t("단체 프로필 보기")}
+          </button>
+        )}
+      </div>
+    </div>
   )
 }
