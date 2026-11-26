@@ -293,7 +293,7 @@ const en: Record<string, string> = {
   // 체크인 (routes/checkin.ts)
   "행사를 찾을 수 없어요. QR을 다시 스캔해 주세요.": "We couldn't find the event. Please scan the QR code again.",
   "이 네트워크에서 QR 스캔이 너무 많아요. 잠시 후 다시 시도해 주세요.": "Too many QR scans from this network. Please try again in a moment.",
-  "이 행사의 참여 수가 예상 인원의 3배를 넘어 더 기록하지 않아요. 행사 주최 측에 알려 주세요.": "This event has passed three times its expected audience, so no more are counted. Please tell the organizers.",
+  "이 행사의 참여 수가 상한에 닿아 더 기록하지 않아요. 행사 주최 측에 알려 주세요.": "This event has reached its check-in limit, so no more are counted. Please tell the organizers.",
   "사업자등록증이나 재직 서류를 올려 주세요.": "Please upload a business registration or proof of employment.",
   "재직 증명 서류를 올려 주세요.": "Please upload proof of employment.",
   "가입 서류를 확인하고 있어요. 승인되면 메일로 알려 드려요.": "We're checking your document. We'll email you once it's approved.",
@@ -1005,6 +1005,20 @@ const en: Record<string, string> = {
   "시험 알림을 너무 많이 보냈어요. 잠시 뒤에 다시 시도해 주세요.": "Too many test notifications. Try again in a while.",
   "uniconnect 알림이 켜졌어요": "uniconnect notifications are on",
   "새 제안과 메시지를 이 기기로 알려 드려요.": "New proposals and messages will show up on this device.",
+  "일정이 바뀌어 계약서 확인이 풀렸어요. 새 일정을 보고 다시 확인해 주세요.":
+    "The dates changed, so both confirmations were cleared. Please check the new dates and confirm again.",
+  "상대가 할 일은 상대만 지울 수 있어요.": "Only the other side can remove its own items.",
+  "상대가 할 일을 다른 쪽으로 옮길 수 없어요.": "You can't move the other side's item to another side.",
+  "상대가 끝냈거나 증빙을 붙인 일은 고칠 수 없어요.": "You can't change an item the other side has finished or proved.",
+  "끝냈거나 증빙을 붙인 일은 할 사람을 바꿀 수 없어요.": "An item that's finished or proved can't change sides.",
+  "QR 참여 기록이 상한에 닿았어요": "QR check-ins reached the limit",
+  "'{event}'의 QR 참여 기록이 상한에 닿아 새 참가자를 기록하지 않고 있어요.": "Check-ins for '{event}' reached the limit, so new participants aren't being recorded.",
+  "실제 참가자가 막혔다면 QR 팝업에서 상한을 늘려 주세요.": "If real participants are blocked, raise the limit from the QR popup.",
+  "소개를 찾을 수 없어요.": "We couldn't find the profile.",
+  "데모 계정은 상한을 바꿀 수 없어요.": "The demo account can't change the limit.",
+  "이 행사에는 QR 상한이 없어요.": "This event has no QR limit.",
+  "상한은 더 늘릴 수 없어요. 운영자에게 문의해 주세요.": "The limit can't go higher. Please contact the operators.",
+  "운영 정책에 따라 멈춘 계정이라 현장 기록을 받을 수 없어요.": "This account is suspended under our policy, so venue records can't be taken.",
 }
 
 export default en

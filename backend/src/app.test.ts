@@ -2905,13 +2905,22 @@ test("accounts write the listing the other side sees", async () => {
   assert.equal((await call("PUT", "/profile", { ...draft, intro: "짧아요" }, student)).status, 400)
   const badSns = { ...draft, sns: [{ platform: "메신저", handle: "@x" }] }
   assert.equal((await call("PUT", "/profile", badSns, student)).status, 400)
-  const saved = await call("PUT", "/profile", draft, student)
-  assert.equal(saved.status, 200)
-  assert.deepEqual(saved.data.profile.facts, [{ label: "회원 수", value: "45명" }])
-
-  // 브랜드는 새 소개를 바로 본다.
+  // 공용 데모 계정은 편집을 체험만 한다: 검사는 거치지만 저장하지 않아, 방문자가 보는
+  // 예시는 그대로다.
+  const tried = await call("PUT", "/profile", draft, student)
+  assert.equal(tried.status, 200)
+  assert.equal(tried.data.demo, true)
+  assert.notEqual(tried.data.profile.offer, draft.offer)
   const { groups } = (await call("GET", "/groups")).data
-  assert.equal(groups.find((group: { id: string }) => group.id === "syu-muse").offer, draft.offer)
+  assert.notEqual(groups.find((group: { id: string }) => group.id === "syu-muse").offer, draft.offer)
+
+  // 회원은 저장하고, 단체가 고를 수 없는 항목은 버린다.
+  const writer = await signUpMember("writer@syu.ac.kr", "writer-pass-123")
+  const saved = await call("PUT", "/profile", draft, writer)
+  assert.equal(saved.status, 200)
+  assert.equal(saved.data.demo, undefined)
+  assert.deepEqual(saved.data.profile.facts, [{ label: "회원 수", value: "45명" }])
+  assert.equal(saved.data.profile.offer, draft.offer)
 
   // 새 계정은 소개를 저장해야 목록에 오른다.
   const sent = await call("POST", "/auth/email-code", { role: "브랜드", email: "hi@newbrand.co.kr" })
@@ -3499,7 +3508,7 @@ test("wrong staff PINs are limited per address and per event", async () => {
       headers: { "Content-Type": "application/json", ...headers },
       body: JSON.stringify({ pin, coupon }),
     }).then((response) => response.status)
-  for (let i = 0; i < 10; i += 1) assert.equal(await staff("999999"), 403)
+  for (let i = 0; i < 5; i += 1) assert.equal(await staff("999999"), 403)
   assert.equal(await staff("101234"), 429)
 
   // 여러 주소(신뢰하는 프록시)에서 와도 틀린 PIN이 30번이면 행사 자체가
@@ -4171,13 +4180,16 @@ test("older sessions with a plain token keep working, stored as its hash", async
 })
 
 test("listings take a small PNG, JPEG or WebP logo, and drop it on request", async () => {
-  const student = await login("학생단체")
+  const student = await signUpMember("logo@syu.ac.kr", "logo-pass-123")
+  const viewer = await signUpMember("logo@logo-cafe.kr", "logo-pass-123", "브랜드")
   const draft = { intro: "삼육대학교 밴드 동아리예요. 정기 공연을 열어요.", offer: "관객 150명 · SNS 홍보" }
   const png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
   const saved = await call("PUT", "/profile", { ...draft, logo: png }, student)
   assert.equal(saved.status, 200)
   assert.equal(saved.data.profile.logo, png)
-  const listed = (await call("GET", "/groups")).data.groups.find((group: { id: string }) => group.id === "syu-muse")
+  const listed = (await call("GET", "/groups", undefined, viewer)).data.groups.find(
+    (group: { id: string }) => group.id === saved.data.profile.id,
+  )
   assert.equal(listed.logo, png)
 
   // 빼 두면 그대로이고, SVG와 다른 종류와 큰 것은 거절한다.
@@ -4346,8 +4358,12 @@ test("catalogs say how far each listing is from the viewer's campus or store", a
 
 test("a brand's store address is placed on the map through OpenStreetMap once a geocoder is set", async () => {
   const { geocoder } = await import("./lib/geocode.js")
-  const brand = await login("브랜드")
-  const listing = getDatabase().brands.find((item) => item.id === "afternoon-coffee")!
+  // 서울과기대의 회원 단체와, 주소를 바꿔 가며 거리를 보는 회원 브랜드다.
+  const { token: brand, listingId: brandId } = await listedMember("geo@geo-cafe.kr", "geo-pass-123", "브랜드")
+  const campusGroup = await signUpMember("geo@seoultech.ac.kr", "geo-pass-123", "학생단체", { school: "서울과학기술대학교" })
+  const groupId = (await call("PUT", "/profile", { intro: "캠퍼스에서 정기 공연을 여는 동아리예요.", offer: "관객 100명" }, campusGroup)).data
+    .profile.id as string
+  const listing = getDatabase().brands.find((item) => item.id === brandId)!
   const saved = structuredClone(listing)
   const form = (address?: string) => ({
     intro: listing.intro,
@@ -4363,8 +4379,8 @@ test("a brand's store address is placed on the map through OpenStreetMap once a 
   const nominatim = config.nominatimUrl
   config.nominatimUrl = undefined
   try {
-    // 빼 두면 주소와 위치가 남는다.
-    assert.equal((await call("PUT", "/profile", form(), brand)).data.profile.location.lat, saved.location!.lat)
+    // 빼 두면 주소는 그대로다(아직 없다).
+    assert.equal((await call("PUT", "/profile", form(), brand)).data.profile.location, undefined)
     // 지오코더가 없으면 새 주소는 위치 없이 보관되므로 거리가 없다.
     const unplaced = (await call("PUT", "/profile", form("서울 노원구 화랑로 815"), brand)).data.profile
     assert.deepEqual(unplaced.location, { address: "서울 노원구 화랑로 815" })
@@ -4388,7 +4404,7 @@ test("a brand's store address is placed on the map through OpenStreetMap once a 
     assert.deepEqual(placed.location, { address: "서울 노원구 공릉로 232", lat, lng })
     assert.deepEqual(asked, ["서울 노원구 화랑로 815", "서울 노원구 공릉로 232"])
     const near = (await call("GET", "/groups", undefined, brand)).data.groups
-    assert.equal(near.find((group: { id: string }) => group.id === "seoultech-band").distanceKm, 0)
+    assert.equal(near.find((group: { id: string }) => group.id === groupId).distanceKm, 0)
     // 위치가 잡힌 주소는 다시 찾지 않는다.
     await call("PUT", "/profile", form("서울 노원구 공릉로 232"), brand)
     assert.equal(asked.length, 2)
@@ -7717,7 +7733,7 @@ test("a QR can't be run up: one address is limited by the event's size, and an e
   measurement.metrics.scans = 100
   const ceiling = await scan()
   assert.equal(ceiling.status, 409)
-  assert.match(ceiling.data.error, /3배/)
+  assert.match(ceiling.data.error, /상한/)
   // 두 쪽이 확인한 뒤에는 주인이 예상 인원을 올려도 상한이 그대로다(한쪽이 확인한
   // 뒤에 올린 값도 기준이 되지 않는다는 것은 아래 테스트가 본다).
   measurement.agreedAudience = 10
@@ -8371,12 +8387,12 @@ test("guesses sent all at once can't slip past the PIN limit, and right PINs don
   const measurement = getDatabase().measurements.find((item) => demo.has(item.accountId))!
   const right = measurement.sponsors[0]?.staffPin ?? measurement.staffPin
   const session = (pin: string) => call("POST", `/check-in/${measurement.code}/staff/session`, { pin })
-  // 맞는 PIN은 한도(10번)를 넘게 써도 막히지 않는다.
+  // 맞는 PIN은 한도(5번)를 넘게 써도 막히지 않는다.
   for (let index = 0; index < 15; index += 1) assert.equal((await session(right)).status, 200)
-  // 한꺼번에 보낸 틀린 추측 중 10개만 비교되고 나머지는 429다.
+  // 한꺼번에 보낸 틀린 추측 중 5개만 비교되고 나머지는 429다.
   const answers = await Promise.all(Array.from({ length: 40 }, () => session("000000")))
-  assert.equal(answers.filter((item) => item.status === 403).length, 10)
-  assert.equal(answers.filter((item) => item.status === 429).length, 30)
+  assert.equal(answers.filter((item) => item.status === 403).length, 5)
+  assert.equal(answers.filter((item) => item.status === 429).length, 35)
   // 그 주소에서는 맞는 PIN도 막힌다.
   assert.equal((await session(right)).status, 429)
 })
@@ -8608,7 +8624,7 @@ test("a known password can't keep guessing two-factor codes with new tickets, an
   assert.equal((await tryCode(await ticket(), codeAt(secret, stepAt(Date.now())))).status, 429)
 })
 
-test("a right PIN keeps working for staff after strangers use up the event's PIN limit, but not for new addresses", async () => {
+test("a right PIN keeps working after strangers use up the event's PIN limit, even from a new address", async () => {
   const demo = new Set(Object.values(getDatabase().demoAccountIds))
   const measurement = getDatabase().measurements.find((item) => demo.has(item.accountId))!
   const right = measurement.sponsors[0]?.staffPin ?? measurement.staffPin
@@ -8626,17 +8642,20 @@ test("a right PIN keeps working for staff after strangers use up the event's PIN
     ).status
   try {
     assert.equal(await session("10.2.0.1", right), 200)
-    // 처음 보는 네 주소가 행사 한도(30번)를 다 쓴다.
+    // 처음 보는 여덟 주소가 행사 한도(30번)를 다 쓴다.
     const statuses: number[] = []
-    for (let index = 0; index < 31; index += 1) statuses.push(await session(`10.2.1.${index % 4}`, "000000"))
+    for (let index = 0; index < 31; index += 1) statuses.push(await session(`10.2.1.${index % 8}`, "000000"))
     assert.equal(statuses.filter((status) => status === 403).length, 30)
     assert.equal(statuses.at(-1), 429)
+    // 한도가 차도 맞는 PIN은 들어간다. 처음 보는 주소(새 기기)에서도 그렇다.
     assert.equal(await session("10.2.0.1", right), 200)
-    assert.equal(await session("10.2.0.2", right), 429)
-    // 맞힌 주소도 틀린 시도는 주소 한도(10번)에 걸린다.
+    assert.equal(await session("10.2.0.2", right), 200)
+    // 처음 보는 주소의 틀린 시도는 여전히 막힌다.
+    assert.equal(await session("10.2.0.3", "000000"), 429)
+    // 맞힌 주소도 틀린 시도는 주소 한도(5번)에 걸린다.
     const known: number[] = []
-    for (let index = 0; index < 11; index += 1) known.push(await session("10.2.0.1", "000000"))
-    assert.equal(known.filter((status) => status === 403).length, 10)
+    for (let index = 0; index < 6; index += 1) known.push(await session("10.2.0.1", "000000"))
+    assert.equal(known.filter((status) => status === 403).length, 5)
     assert.equal(known.at(-1), 429)
   } finally {
     await new Promise((resolve) => other.close(resolve))
@@ -9635,7 +9654,14 @@ test("a contract template by sponsorship kind fills in the agreement's clauses a
   assert.equal(cleared.items.length, items)
   assert.deepEqual(cleared.confirmed, {})
   // 할 일이 가득 차면 형태의 할 일은 더하지 않고 조항만 붙인다.
-  const full = Array.from({ length: 12 }, (_, index) => ({ side: "group", label: `할 일 ${index + 1}` }))
+  // 상대(브랜드)의 할 일은 지울 수 없으니 그대로 두고 우리 할 일로 채운다.
+  const theirs = cleared.items
+    .filter((item: { side: string }) => item.side === "brand")
+    .map(({ id, side, label }: { id: string; side: string; label: string }) => ({ id, side, label }))
+  const full = [
+    ...theirs,
+    ...Array.from({ length: 12 - theirs.length }, (_, index) => ({ side: "group", label: `할 일 ${index + 1}` })),
+  ]
   assert.equal((await call("PUT", `/agreements/${request.id}/items`, { items: full }, group)).status, 200)
   const capped = (await call("PUT", `/agreements/${request.id}/template`, { kinds: ["현금"] }, group)).data.agreement
   assert.equal(capped.items.length, 12)
@@ -10785,15 +10811,15 @@ test("addresses that know one PIN of an event share a cap, so they can't guess a
       })
     ).status
   try {
-    // 주소 네 곳이 맞는 PIN으로 표시를 받고, 각자 주소 한도(10번)까지 틀린 PIN을 보낸다.
+    // 주소 일곱 곳이 맞는 PIN으로 표시를 받고, 각자 주소 한도(5번)까지 틀린 PIN을 보낸다.
     const statuses: number[] = []
-    for (let address = 0; address < 4; address += 1) {
+    for (let address = 0; address < 7; address += 1) {
       assert.equal(await session(`10.3.0.${address}`, right), 200)
-      for (let index = 0; index < 10; index += 1) statuses.push(await session(`10.3.0.${address}`, "000000"))
+      for (let index = 0; index < 5; index += 1) statuses.push(await session(`10.3.0.${address}`, "000000"))
     }
     // 맞힌 주소들의 틀린 시도는 행사마다 30번까지만 비교된다.
     assert.equal(statuses.filter((status) => status === 403).length, 30)
-    assert.equal(statuses.filter((status) => status === 429).length, 10)
+    assert.equal(statuses.filter((status) => status === 429).length, 5)
     // 모르는 사람의 틀린 시도는 이 한도를 쓰지 않으므로, 처음 보는 주소는 그대로 시도할 수 있다.
     assert.equal(await session("10.3.1.1", right), 200)
   } finally {
@@ -10821,11 +10847,11 @@ test("addresses that know one PIN fill only that PIN's cap, so they can't lock o
   try {
     // 매장 직원 한 곳이 먼저 맞혀 둔다.
     assert.equal(await session("staff", "10.4.9.9", staffPin), 200)
-    // 단체 PIN을 아는 주소 세 곳이 매장 PIN을 30번 틀려 단체 쪽 한도를 다 쓴다.
+    // 단체 PIN을 아는 주소 여섯 곳이 매장 PIN을 30번 틀려 단체 쪽 한도를 다 쓴다.
     const statuses: number[] = []
-    for (let address = 0; address < 3; address += 1) {
+    for (let address = 0; address < 6; address += 1) {
       assert.equal(await session("group", `10.4.0.${address}`, measurement.groupPin), 200)
-      for (let index = 0; index < 10; index += 1) statuses.push(await session("staff", `10.4.0.${address}`, "000000"))
+      for (let index = 0; index < 5; index += 1) statuses.push(await session("staff", `10.4.0.${address}`, "000000"))
     }
     assert.deepEqual([...new Set(statuses)], [403])
     assert.equal(await session("staff", "10.4.0.0", "000000"), 429)
@@ -10865,5 +10891,128 @@ test("in a campaign several groups joined, only the brand sets the result method
   for (const [index, group] of groups.entries()) {
     const agreement = (await call("GET", paths[index], undefined, group.token)).data.agreement
     assert.equal(agreement.confirmed.group, undefined, `group ${index}`)
+  }
+})
+
+// 2026-11-27의 정책 결정 7건(보안 점검 run-2에서 정책으로 남긴 것).
+test("a withdrawn proposal still counts toward a free brand's five a month", async () => {
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const { token: brand } = await listedMember("cap@cap-cafe.kr", "cap-pass-123", "브랜드")
+  const groups: string[] = []
+  for (let index = 0; index < 6; index += 1) groups.push((await listedMember(`cap-club-${index}@syu.ac.kr`, "cap-pass-123")).listingId)
+  await call("POST", "/events", { name: "한도 캠페인", date: addDays(todayInKorea(), 20), people: "50명", types: ["제품"] }, brand)
+  for (const group of groups.slice(0, 5)) assert.equal((await call("POST", "/proposals", { matchId: group }, brand)).status, 201)
+  // 거둬도 이미 메일이 간 제안이라 한도는 돌아오지 않는다.
+  assert.equal((await call("DELETE", `/proposals/${groups[0]}`, undefined, brand)).status, 200)
+  assert.equal((await call("POST", "/proposals", { matchId: groups[5] }, brand)).status, 402)
+  assert.equal((await call("GET", "/billing", undefined, brand)).data.plan.offersThisMonth, 5)
+})
+
+// 수락된 단체의 제안 하나와 그 계약서. 양쪽이 확인한 상태로 돌려준다.
+async function confirmedAgreement(prefix: string) {
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const { token: group } = await listedMember(`${prefix}-club@syu.ac.kr`, `${prefix}-pass-123`)
+  const { token: brand, listingId } = await listedMember(`${prefix}@${prefix}-cafe.kr`, `${prefix}-pass-123`, "브랜드")
+  const fields = { name: `${prefix} 공연`, date: addDays(todayInKorea(), 30), people: "80명", types: ["제품"] }
+  const event = (await call("POST", "/events", fields, group)).data.event
+  assert.equal((await call("POST", "/proposals", { matchId: listingId, eventId: event.id }, group)).status, 201)
+  const request = getDatabase().requests.find((item) => item.brandId === listingId)!
+  assert.equal((await call("POST", `/requests/${request.id}/accept`, undefined, brand)).status, 200)
+  const agreement = (await call("GET", `/agreements/${request.id}`, undefined, group)).data.agreement
+  assert.equal((await call("POST", `/agreements/${request.id}/confirm`, undefined, group)).status, 200)
+  assert.equal((await call("POST", `/agreements/${request.id}/confirm`, undefined, brand)).status, 200)
+  return { group, brand, event, fields, id: request.id as string, items: agreement.items as { id: string; side: string; label: string }[] }
+}
+
+test("moving a confirmed sponsorship's event to a new date asks both sides to confirm again; a new name doesn't", async () => {
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const { group, brand, event, fields, id } = await confirmedAgreement("moved")
+  const confirmed = async () => Object.keys((await call("GET", `/agreements/${id}`, undefined, brand)).data.agreement.confirmed).sort()
+  assert.deepEqual(await confirmed(), ["brand", "group"])
+  assert.equal((await call("PUT", `/events/${event.id}`, { ...fields, name: "새 이름 공연" }, group)).status, 200)
+  assert.deepEqual(await confirmed(), ["brand", "group"])
+  assert.equal((await call("PUT", `/events/${event.id}`, { ...fields, name: "새 이름 공연", date: addDays(todayInKorea(), 45) }, group)).status, 200)
+  assert.deepEqual(await confirmed(), [])
+})
+
+test("an agreement's bulk edit can't remove, move or rewrite the other side's finished items", async () => {
+  const { group, brand, id, items } = await confirmedAgreement("items")
+  const plain = items.map(({ id: itemId, side, label }) => ({ id: itemId, side, label }))
+  const brandItem = plain.find((item) => item.side === "brand")!
+  const groupItem = plain.find((item) => item.side === "group")!
+  const put = (list: unknown[], token = group) => call("PUT", `/agreements/${id}/items`, { items: list }, token)
+  // 상대 할 일은 지우지도, 내 쪽으로 옮기지도 못한다.
+  assert.equal((await put(plain.filter((item) => item !== brandItem))).status, 403)
+  assert.equal((await put(plain.map((item) => (item === brandItem ? { ...item, side: "group" } : item)))).status, 403)
+  // 상대가 끝낸 일은 문구도 그대로다. 아직 손대지 않은 일은 고칠 수 있다.
+  assert.equal((await call("PATCH", `/agreements/${id}/items/${brandItem.id}`, { done: true }, brand)).status, 200)
+  assert.equal((await put(plain.map((item) => (item === brandItem ? { ...item, label: "바꾼 문구" } : item)))).status, 403)
+  assert.equal((await put(plain.map((item) => (item === groupItem ? { ...item, label: "우리 일 고침" } : item)))).status, 200)
+  // 끝낸 내 일은 할 사람을 바꾸지 못한다(그 완료가 상대 것이 되지 않게).
+  const after = (await call("GET", `/agreements/${id}`, undefined, brand)).data.agreement.items as typeof items
+  const moved = after.map(({ id: itemId, side, label }) => ({ id: itemId, side: itemId === brandItem.id ? "group" : side, label }))
+  assert.equal((await put(moved, brand)).status, 403)
+  assert.ok(after.find((item) => item.id === brandItem.id)!.side === "brand")
+})
+
+test("a suspended account's venue PIN records stop, while participants still check in", async () => {
+  const demo = new Set(Object.values(getDatabase().demoAccountIds))
+  const measurement = getDatabase().measurements.find((item) => demo.has(item.accountId) && item.groupPin)!
+  const owner = getDatabase().accounts.find((item) => item.id === measurement.accountId)!
+  const session = () => call("POST", `/check-in/${measurement.code}/group/session`, { pin: measurement.groupPin })
+  assert.equal((await session()).status, 200)
+  owner.suspendedAt = new Date().toISOString()
+  try {
+    const refused = await session()
+    assert.equal(refused.status, 403)
+    assert.match(refused.data.error, /멈춘 계정/)
+    assert.equal((await call("POST", `/check-in/${measurement.code}/scans`)).status, 200)
+  } finally {
+    delete owner.suspendedAt
+  }
+  assert.equal((await session()).status, 200)
+})
+
+test("a full QR ceiling emails the owner once a day, and the owner raises it twice at most", async () => {
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const { mailTransport } = await import("./lib/mailer.js")
+  const group = await signUpMember("ceiling-club@syu.ac.kr", "ceiling-pass-123")
+  const made = await call("POST", "/events", { name: "상한 공연", date: addDays(todayInKorea(), 3), people: "10명", types: ["제품"] }, group)
+  const eventId = made.data.event.id as string
+  const { report } = (await call("GET", `/measurements/${eventId}`, undefined, group)).data
+  assert.deepEqual(report.scanCeiling, { limit: 100, canRaise: true })
+  const owner = getDatabase().accounts.find((item) => item.email === "ceiling-club@syu.ac.kr")!
+  getDatabase().events[owner.id][0].date = todayInKorea()
+  const measurement = getDatabase().measurements.find((item) => item.code === report.code)!
+  measurement.metrics.scans = 100
+
+  const realPost = mailTransport.post
+  const sent: { to: string[]; subject: string }[] = []
+  mailTransport.post = async (body) => {
+    sent.push(body)
+    return new Response(null, { status: 200 })
+  }
+  config.resendApiKey = "test-key"
+  config.mailFrom = "uniconnect <no-reply@example.com>"
+  try {
+    const scan = () => call("POST", `/check-in/${report.code}/scans`)
+    assert.equal((await scan()).status, 409)
+    assert.equal((await scan()).status, 409)
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    const told = sent.filter((mail) => mail.subject.includes("상한"))
+    assert.equal(told.length, 1)
+    assert.deepEqual(told[0].to, ["ceiling-club@syu.ac.kr"])
+
+    // 주인만, 처음 상한만큼씩 두 번까지 늘린다.
+    assert.equal((await call("POST", `/measurements/${eventId}/ceiling`)).status, 401)
+    const raised = (await call("POST", `/measurements/${eventId}/ceiling`, undefined, group)).data.report
+    assert.deepEqual(raised.scanCeiling, { limit: 200, canRaise: true })
+    assert.equal((await scan()).status, 200)
+    assert.deepEqual((await call("POST", `/measurements/${eventId}/ceiling`, undefined, group)).data.report.scanCeiling, { limit: 300, canRaise: false })
+    assert.equal((await call("POST", `/measurements/${eventId}/ceiling`, undefined, group)).status, 409)
+  } finally {
+    mailTransport.post = realPost
+    config.resendApiKey = undefined
+    config.mailFrom = undefined
   }
 })

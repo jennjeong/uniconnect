@@ -242,6 +242,14 @@ profileRouter.get("/", (req, res) => {
 profileRouter.put("/", async (req, res) => {
   const account = requireAccount(req)
   const profile = parseProfile(req.body, account.role)
+  // 공용 데모 계정의 소개는 방문자 모두가 보는 예시다. 편집은 체험만 하고 저장하지 않는다
+  // (2026-11-27 결정). 검사는 그대로 거쳐 틀린 입력은 여느 때처럼 알린다.
+  if (isDemoAccount(getDatabase(), account)) {
+    const listing = findListing(getDatabase(), account)
+    if (!listing) throw new HttpError(404, "소개를 찾을 수 없어요.")
+    res.json({ profile: shownProfile(getDatabase(), listing), demo: true })
+    return
+  }
   const { logo, address, ...rest } = profile
   const before = findListing(getDatabase(), account)?.location
   const placed = address === before?.address && before?.lat !== undefined

@@ -1612,7 +1612,7 @@ test("a new group signs up with the code shown on screen", async ({ page }) => {
   await expect(page.getByRole("tab", { name: "학교 앞 가게" })).toHaveAttribute("aria-selected", "true")
 })
 
-test("brands show how far their store is from the school, and a brand keeps its store address", async ({ browser }) => {
+test("brands show how far their store is from the school, and a brand keeps its store address", async ({ browser, request }) => {
   // 방문자는 데모 단체의 캠퍼스와 데모 매장을 본다.
   const student = await (await browser.newContext()).newPage()
   await student.goto("/matches")
@@ -1621,9 +1621,8 @@ test("brands show how far their store is from the school, and a brand keeps its 
   // 온라인 브랜드는 매장이 없으므로 거리가 없다.
   await expect(student.locator(".work-card", { hasText: "프레시온" }).locator(".tag-distance")).toHaveCount(0)
 
-  const brand = await (await browser.newContext()).newPage()
   // 여기서는 Kakao의 주소 검색이 주소를 고르는 버튼 하나로 대신한다.
-  await brand.addInitScript(() => {
+  const fakePostcode = () => {
     type Options = { oncomplete: (data: { roadAddress: string; jibunAddress: string; address: string }) => void }
     ;(window as unknown as { daum: unknown }).daum = {
       Postcode: class {
@@ -1636,7 +1635,9 @@ test("brands show how far their store is from the school, and a brand keeps its 
         }
       },
     }
-  })
+  }
+  const brand = await (await browser.newContext()).newPage()
+  await brand.addInitScript(fakePostcode)
   await brand.goto("/")
   await logIn(brand, "브랜드", "hello@afternoon-coffee.kr")
   await brand.goto("/me/edit")
@@ -1661,16 +1662,28 @@ test("brands show how far their store is from the school, and a brand keeps its 
   await brand.getByRole("button", { name: "화랑로 815 고르기" }).click()
   await expect(brand.getByLabel("매장 주소")).toHaveValue("서울 노원구 화랑로 815")
   await brand.getByRole("button", { name: "저장하기" }).click()
-  await expect(brand.getByText(/소개를 저장했어요/)).toBeVisible()
-  // 여기서는 서버에 지도 키가 없으므로 새 주소에는 아직 위치가 없고 단체에는
-  // 거리가 나오지 않는다.
-  await brand.goto("/groups")
-  await sortNearest(brand)
-  await expect(brand.locator(".work-card").first()).toBeVisible()
-  await expect(brand.locator(".tag-distance")).toHaveCount(0)
+  // 공용 데모 계정은 방문자가 보는 예시라 저장하지 않는다.
+  await expect(brand.getByText("데모 계정은 소개를 저장하지 않아요. 가입하면 내 소개로 저장돼요.")).toBeVisible()
   await brand.goto("/me/edit")
-  await expect(brand.getByLabel("매장 주소")).toHaveValue("서울 노원구 화랑로 815")
-  await expect(brand.getByText(/아직 이 주소를 지도에서 찾지 못해/)).toBeVisible()
+  await expect(brand.getByLabel("매장 주소")).toHaveValue("서울 노원구 공릉역 2번 출구 앞")
+
+  // 회원 브랜드는 고른 주소를 저장한다. 여기서는 서버에 지도 키가 없으므로 새 주소에는
+  // 아직 위치가 없다.
+  const member = await signUpMember(request, "브랜드", "e2e-address@address-cafe.kr", "주소 카페")
+  const owner = await (await browser.newContext()).newPage()
+  await owner.addInitScript(fakePostcode)
+  await owner.addInitScript((value) => localStorage.setItem("uniconnect-token", value), member.token)
+  await owner.goto("/me/edit")
+  await owner.getByRole("button", { name: "주소 검색" }).click()
+  await owner.getByRole("button", { name: "화랑로 815 고르기" }).click()
+  await owner.getByRole("button", { name: "저장하기" }).click()
+  await expect(owner.getByText(/소개를 저장했어요/)).toBeVisible()
+  await owner.goto("/me/edit")
+  await expect(owner.getByLabel("매장 주소")).toHaveValue("서울 노원구 화랑로 815")
+  await expect(owner.getByText(/아직 이 주소를 지도에서 찾지 못해/)).toBeVisible()
+  // 이후 사례가 이 회원 브랜드를 보지 않게 떠난다.
+  const left = await request.delete("/api/auth/account", { data: { password: "e2e-pass-123" }, headers: member.headers })
+  expect(left.status()).toBe(204)
 })
 
 test("the language is set in 내 정보, and the page stays where it was", async ({ page }) => {

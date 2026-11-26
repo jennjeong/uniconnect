@@ -5,7 +5,7 @@ import { Modal } from "../components/Modal"
 import { QrCode } from "../components/QrCode"
 import { RotatePin } from "../components/RotatePin"
 import { useDialogFocus } from "../hooks/useDialogFocus"
-import { t } from "../i18n"
+import { locale, t } from "../i18n"
 import { checkInLink, staffCheckInLink, venueLink } from "../lib/checkin"
 import { formatFullDate } from "../lib/date"
 import { nextTabIndex } from "../lib/tabKeys"
@@ -20,11 +20,13 @@ export function QrModal({
   onClose,
   onCopied,
   onRotatePin,
+  onRaiseCeiling,
 }: {
   report: Report
   onClose: () => void
   onCopied: (message: string) => void
   onRotatePin: (page: VenuePage) => Promise<unknown>
+  onRaiseCeiling: () => Promise<unknown>
 }) {
   const link = checkInLink(report)
   const staffLink = staffCheckInLink(report)
@@ -52,7 +54,7 @@ export function QrModal({
     if (wasPresenting.current && !presenting) presentButton.current?.focus()
     wasPresenting.current = presenting
   }, [presenting])
-  const hasOperatorInfo = Boolean(report.staffPin || report.groupPin || report.pinsFrom)
+  const hasOperatorInfo = Boolean(report.staffPin || report.groupPin || report.pinsFrom || report.scanCeiling)
 
   // 주소를 그대로 복사하고 결과를 알린다(보이는 줄바꿈은 복사에 들어가지 않는다).
   const copy = async (value: string, done: string) => {
@@ -172,6 +174,7 @@ export function QrModal({
               {t("직원 PIN과 단체 확인 PIN은 행사 하루 전인 {date}부터 여기에 보여요.", { date: formatFullDate(report.pinsFrom) })}
             </p>
           )}
+          {report.scanCeiling && <ScanCeiling ceiling={report.scanCeiling} onRaise={onRaiseCeiling} />}
           {(report.staffPin || (report.groupPin && report.sponsors?.length)) && (
             <OperatorCard
               title={t("매장 직원용 방문 확인")}
@@ -264,5 +267,41 @@ function OperatorCard({
       </div>
       {children}
     </section>
+  )
+}
+
+// QR로 기록하는 참가자 수의 상한. 체크인 주소는 참가자 누구나 알아 낯선 사람이 채울 수
+// 있으므로, 차서 실제 참가자가 막히면 주인이 여기서 늘린다(서버가 메일로도 알린다).
+function ScanCeiling({ ceiling, onRaise }: { ceiling: NonNullable<Report["scanCeiling"]>; onRaise: () => Promise<unknown> }) {
+  const [asking, setAsking] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const raise = async () => {
+    setBusy(true)
+    try {
+      await onRaise()
+      setAsking(false)
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <div className="qr-ceiling rotate-pin">
+      <small>{t("QR로 {count}명까지 기록해요. 차면 메일로 알려 드려요.", { count: ceiling.limit.toLocaleString(locale) })}</small>
+      {ceiling.canRaise &&
+        (asking ? (
+          <span className="rotate-pin-actions">
+            <button className="row-button point" disabled={busy} onClick={() => void raise()} type="button">
+              {t("상한 늘리기")}
+            </button>
+            <button className="row-button" disabled={busy} onClick={() => setAsking(false)} type="button">
+              {t("그대로 두기")}
+            </button>
+          </span>
+        ) : (
+          <button className="row-button" onClick={() => setAsking(true)} type="button">
+            {t("QR 상한 늘리기")}
+          </button>
+        ))}
+    </div>
   )
 }

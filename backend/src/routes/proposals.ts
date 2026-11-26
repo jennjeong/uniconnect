@@ -9,7 +9,7 @@ import { text } from "../lib/validation.js"
 import { notify } from "../lib/notices.js"
 import { createRateLimit, senderKey } from "../lib/rateLimit.js"
 import { statusOf } from "../lib/proposals.js"
-import { assertCanOffer } from "../lib/pro.js"
+import { assertCanOffer, countOffer } from "../lib/pro.js"
 import { programForOffer } from "../lib/programs.js"
 import { isOpen } from "./board.js"
 import { requireAccount } from "../middleware/session.js"
@@ -261,6 +261,7 @@ proposalsRouter.post("/", async (req, res) => {
   if (!students && send && event) {
     const offer = { ...brandOffer(account, matchId, event, note), ...applying, ...(terms ? { terms } : {}) }
     database.offers.push(offer)
+    countOffer(database.accounts.find((item) => item.id === account.id) ?? account)
     tell = () => notify(
       ownerOf(database, "groups", matchId),
       "proposals",

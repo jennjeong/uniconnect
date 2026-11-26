@@ -1007,6 +1007,8 @@ export type Report = {
   pinMisses?: number
   // 이 계정이 PIN을 바꿀 수 있다. 공용 데모 계정은 없다.
   canRotatePin?: boolean
+  // QR 스캔 상한과 주인이 더 늘릴 수 있는지. 상한이 있는 행사의 주인에게만 온다.
+  scanCeiling?: { limit: number; canRaise: boolean }
   // 스폰서가 생기기 전의 행사 확인 방식(양쪽이 확정한 그대로. 각 스폰서의 것은
   // 아래에 있다)과, 현장이 행사 전체에 대해 확인한 것.
   methods: MeasureMethod[]
