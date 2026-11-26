@@ -35,23 +35,35 @@ export function LandingHero({
         <p className="landing-lead">
           {t("학생단체는 행사에 맞는 브랜드를 찾고, 브랜드는 쿠폰과 매장 방문으로 결과가 남는 학생 행사를 협찬해요.")}
         </p>
+        {/* 두 역할의 시작을 나란히 비교한다. 버튼은 같은 높이와 배치이고, 그 역할이 얻는 결과는
+            버튼 바로 아래 한 문장이다(버튼의 이름에 들어가지 않게 aria-describedby로 잇는다). */}
         <div className="landing-entries">
-          <button className="landing-entry" onClick={() => onSignup("학생단체")} type="button">
-            <RoleMark role="학생단체" size={32} />
-            <span>
-              <strong>{t("학생단체로 시작")}</strong>
-              <small className={copy}>{free ? t("무료로 가입하고 협찬 받기") : t("행사 협찬 받기")}</small>
-            </span>
-            <Icon name="arrow" size={18} />
-          </button>
-          <button className="landing-entry blue" onClick={() => onSignup("브랜드")} type="button">
-            <RoleMark role="브랜드" size={32} />
-            <span>
-              <strong>{t("브랜드로 시작")}</strong>
-              <small className={copy}>{free ? t("무료로 가입하고 학생 행사 찾기") : t("학생 행사 협찬하기")}</small>
-            </span>
-            <Icon name="arrow" size={18} />
-          </button>
+          <div className="landing-entry-cell">
+            <button aria-describedby="entry-group-gets" className="landing-entry" onClick={() => onSignup("학생단체")} type="button">
+              <RoleMark role="학생단체" size={32} />
+              <span>
+                <strong>{t("학생단체로 시작")}</strong>
+                <small className={copy}>{free ? t("무료로 가입하고 협찬 받기") : t("행사 협찬 받기")}</small>
+              </span>
+              <Icon name="arrow" size={18} />
+            </button>
+            <p className="landing-entry-gets" id="entry-group-gets">
+              {t("맞는 브랜드를 추천받고, 계약부터 성과까지 한곳에 남겨요.")}
+            </p>
+          </div>
+          <div className="landing-entry-cell">
+            <button aria-describedby="entry-brand-gets" className="landing-entry blue" onClick={() => onSignup("브랜드")} type="button">
+              <RoleMark role="브랜드" size={32} />
+              <span>
+                <strong>{t("브랜드로 시작")}</strong>
+                <small className={copy}>{free ? t("무료로 가입하고 학생 행사 찾기") : t("학생 행사 협찬하기")}</small>
+              </span>
+              <Icon name="arrow" size={18} />
+            </button>
+            <p className="landing-entry-gets" id="entry-brand-gets">
+              {t("협찬한 행사의 결과를 쿠폰과 매장 방문 수로 확인해요.")}
+            </p>
+          </div>
         </div>
         <p className="landing-hero-tools">
           <a className="underline-link" href="#examples">
