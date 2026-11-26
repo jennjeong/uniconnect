@@ -17,6 +17,7 @@ const appPaths = [
   /^\/admin\/?$/,
   /^\/council\/?$/,
   /^\/explore\/?$/,
+  /^\/developers\/?$/,
   /^\/programs(\/[^/]+)?\/?$/,
   /^\/invite\/[\w-]+\/?$/,
   /^\/agreements(\/[^/]+)?\/?$/,

@@ -46,6 +46,8 @@ export type View = {
   council?: true
   // 행사 둘러보기: 다른 단체의 다가오는 행사와 비슷한 행사의 사례 (/explore).
   explore?: true
+  // 개발자용 구조 지도: 코드의 파트와 연결 (/developers).
+  developers?: true
   // 브랜드의 캠퍼스 캠페인 목록과 요청서(/programs), 또는 그중 하나(/programs/<id>).
   programs?: true
   program?: string
@@ -120,6 +122,7 @@ export function viewPath(view: View) {
   if (view.agreements) return `${base}/agreements`
   if (view.council) return `${base}/council`
   if (view.explore) return `${base}/explore`
+  if (view.developers) return `${base}/developers`
   if (view.program) return `${base}/programs/${encodeURIComponent(view.program)}`
   if (view.programs) return `${base}/programs`
   if (view.insight) return `${base}/insights/${encodeURIComponent(view.insight)}`
@@ -177,6 +180,7 @@ export function readView(location: Location = window.location): View {
   if (first === "admin") return second ? missing : { page: "대시보드", admin: true }
   if (first === "council") return second ? missing : { page: "대시보드", council: true }
   if (first === "explore") return second ? missing : { page: "대시보드", explore: true }
+  if (first === "developers") return second ? missing : { page: "대시보드", developers: true }
   const named = second === undefined ? undefined : decodeSegment(second)
   if (second !== undefined && named === undefined) return missing
   if (first === "messages") {

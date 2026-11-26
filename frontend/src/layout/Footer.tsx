@@ -32,6 +32,7 @@ export function Footer({
   onOpenPlans,
   onOpenLegal,
   onEditProfile,
+  onOpenDevelopers,
   onLogin,
   onSignup,
   onLogout,
@@ -53,6 +54,8 @@ export function Footer({
   onOpenPlans: () => void
   onOpenLegal: (kind: LegalKind) => void
   onEditProfile: () => void
+  // 개발자용 구조 지도(/developers).
+  onOpenDevelopers: () => void
   onLogin: () => void
   onSignup: () => void
   onLogout: () => void
@@ -162,6 +165,18 @@ export function Footer({
               </ul>
             </div>
           ))}
+          {/* About us: 서비스를 한 줄로 소개하고, 코드의 구조가 궁금한 개발자를 구조 지도로 보낸다. */}
+          <div className="footer-column footer-about">
+            <span>About us</span>
+            <p>{t("학생 현장과 브랜드를 잇는 팀이 만들어요. 어떻게 만들었는지 궁금하다면 구조 지도를 열어 보세요.")}</p>
+            <ul>
+              <li>
+                <button onClick={onOpenDevelopers} type="button">
+                  {t("개발자용 구조 지도")}
+                </button>
+              </li>
+            </ul>
+          </div>
         </div>
 
         <p aria-hidden="true" className="footer-wordmark">

@@ -142,6 +142,7 @@ const PostPage = lazyPage(() => import("./pages/PostPage").then((module) => ({ d
 const PostFormModal = lazyPage(() => import("./modals/PostFormModal").then((module) => ({ default: module.PostFormModal })))
 const LedgerPage = lazyPage(() => import("./pages/LedgerPage").then((module) => ({ default: module.LedgerPage })))
 const ProgramsPage = lazyPage(() => import("./pages/ProgramsPage").then((module) => ({ default: module.ProgramsPage })))
+const DevelopersPage = lazyPage(() => import("./pages/DevelopersPage").then((module) => ({ default: module.DevelopersPage })))
 const ExplorePage = lazyPage(() => import("./pages/ExplorePage").then((module) => ({ default: module.ExplorePage })))
 const EventsPage = lazyPage(() => import("./pages/EventsPage").then((module) => ({ default: module.EventsPage })))
 const PlansPage = lazyPage(() => import("./pages/PlansPage").then((module) => ({ default: module.PlansPage })))
@@ -1656,6 +1657,7 @@ function App() {
       )
     }
     if (view.ledger) return <LedgerPage token={view.ledger} />
+    if (view.developers) return <DevelopersPage />
     if (view.explore) {
       return (
         <ExplorePage
@@ -2165,6 +2167,8 @@ function App() {
                     ? `programs-${view.program ?? ""}`
                   : view.explore
                     ? "explore"
+                  : view.developers
+                    ? "developers"
                   : view.ledger
                     ? `ledger-${view.ledger}`
                   : view.insight || view.sharedReport
@@ -2257,6 +2261,7 @@ function App() {
           onOpenPlans={openPlans}
           onOpenLegal={openLegal}
           onEditProfile={() => go({ page, profile: "edit" })}
+          onOpenDevelopers={() => go({ page, developers: true })}
           onLogin={() => openAuth("login")}
           onSignup={() => openAuth("signup")}
           onLogout={logout}
