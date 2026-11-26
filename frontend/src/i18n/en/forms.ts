@@ -395,8 +395,8 @@ const en: Record<string, string> = {
   "혜택 묶음마다 이름과 브랜드가 받는 것을 적어 주세요.": "Give each package a name and what the brand gets.",
   "할 일 고치기": "Edit items",
   "할 일을 고쳤어요. 두 쪽 모두 다시 확인해 주세요.": "Items updated. Both sides need to confirm again.",
-  "고치고 저장하면 두 쪽 모두 다시 확인해야 해요. 그대로 둔 할 일의 링크와 사진은 남아요.":
-    "Once saved, both sides need to confirm again. Items you keep keep their links and photos.",
+  "고치고 저장하면 두 쪽 모두 다시 확인해야 해요. 그대로 둔 할 일의 링크와 사진은 남아요. 상대가 할 일은 지울 수 없어요.":
+    "Once saved, both sides need to confirm again. Items you keep keep their links and photos. You can't remove the other side's items.",
   "할 사람": "Who",
   "할 일": "Item",
   "할 일 지우기": "Remove item",
@@ -1681,6 +1681,11 @@ const en: Record<string, string> = {
   "성과 · 후기": "Results · review",
   "{step}/{total}단계 · {name}": "Step {step} of {total} · {name}",
   "마지막 변경 {date}": "Last changed {date}",
+  "QR로 {count}명까지 기록해요. 차면 메일로 알려 드려요.": "QR records up to {count} people. We'll email you if it fills up.",
+  "상한 늘리기": "Raise the limit",
+  "QR 상한 늘리기": "Raise the QR limit",
+  "QR 상한을 늘렸어요. 참가자가 다시 기록할 수 있어요.": "The QR limit is higher. Participants can check in again.",
+  "데모 계정은 소개를 저장하지 않아요. 가입하면 내 소개로 저장돼요.": "The demo account doesn't save its profile. Sign up to save your own.",
 }
 
 export default en

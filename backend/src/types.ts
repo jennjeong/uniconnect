@@ -211,6 +211,9 @@ export type Account = {
   // 2026-03-01부터). 협찬 기록이 임기별로 읽히며 최대 20개다.
   terms?: { name: string; from: string }[]
   referralCode?: string
+  // 무료 요금제 브랜드가 이번 한국 달에 보낸 제안 수. 제안을 거두거나 행사가
+  // 지워져도 줄지 않는다(lib/pro.ts의 offersThisMonth).
+  offersSent?: { month: string; count: number }
   referredBy?: string
   referralRewardedAt?: string
   // Proposal messages saved to send again (제안 문구 템플릿), at most
@@ -606,6 +609,10 @@ export type Measurement = {
   daily?: Record<string, { scans: number; coupons: number; visits: number }>
   // 오늘(한국 날짜) 틀린 현장 PIN으로, 운영자 경보에 쓴다.
   pinMisses?: { day: string; count: number }
+  // 주인이 QR 스캔 상한을 늘린 횟수(lib/measurements.ts scanCeiling, 최대 ceilingRaises번)와
+  // 상한이 찼다고 주인에게 알린 한국 날짜다.
+  ceilingRaised?: number
+  ceilingFullOn?: string
 }
 
 // 행사 하나의 성과 리포트로, 그 측정과 행사 전에 정한 목표에서 계산한다.
@@ -644,6 +651,8 @@ export type Report = {
   staffPin?: string
   // 학생단체의 현장 PIN으로, 행사를 가진 단체에게만 보인다.
   groupPin?: string
+  // QR 스캔 상한과 주인이 더 늘릴 수 있는지. 상한이 있는 행사의 주인에게만 보인다.
+  scanCeiling?: { limit: number; canRaise: boolean }
   // 협찬사가 생기기 전 행사를 확인하는 방식(양쪽이 확정한 대로)이다. 협찬사
   // 쪽은 아래에 있다.
   methods: MeasureMethod[]

@@ -16,6 +16,7 @@ import {
   settleEventCoupons,
 } from "../lib/passRows.js"
 import { HttpError } from "../lib/errors.js"
+import { notify } from "../lib/notices.js"
 import { campaignUntil } from "../lib/plan.js"
 import {
   assertOpen,
@@ -129,12 +130,13 @@ const scansFromOneAddress = (database: Database, measurement: Measurement) =>
 const couponExpiry = (measurement: Measurement, issuedAt: string | undefined) =>
   measurement.alwaysOn && issuedAt ? new Date(Date.parse(issuedAt) + couponDays * 24 * 60 * 60 * 1000).toISOString() : undefined
 
-// 직원 PIN이 틀린 횟수를 주소와 행사별로, 행사 단독으로도 센다. 여섯 자리
-// 숫자는 한 곳에서도 여러 곳에서도 추측할 수 없어야 한다(행사 한도에서
-// 100만 개를 모두 시도하는 데 약 8,000시간이 걸린다).
+// 직원 PIN이 틀린 횟수를 주소와 행사별로, 행사 단독으로도 센다. 체크인 주소는 참가자
+// 누구나 알므로 행사 한도는 낯선 사람도 채울 수 있다. 그래서 행사 한도가 차도 맞는 PIN은
+// 들어가고(2026-11-27 결정), 틀린 시도만 막는다. 추측은 주소별 한도가 늦춘다(주소 하나에서
+// 15분에 5번, 여섯 자리 숫자 100만 개를 모두 시도하려면 주소 하나로 약 5만 시간).
 const pinFailures = createRateLimit({
   label: "직원 PIN · 주소별",
-  limit: 10,
+  limit: 5,
   windowMs: 15 * 60 * 1000,
   message: "직원 PIN을 너무 많이 틀렸어요. 15분 뒤에 다시 시도해 주세요.",
 })
@@ -223,16 +225,18 @@ async function recordInRows(req: Request<{ code: string }>, sql: Sql, kind: "sca
   if (kind === "scans") {
     const ceiling = scanCeiling(getDatabase(), measurement)
     if (measurement.metrics.scans >= ceiling) {
-      throw new HttpError(409, "이 행사의 참여 수가 예상 인원의 3배를 넘어 더 기록하지 않아요. 행사 주최 측에 알려 주세요.")
+      await tellCeilingFull(measurement)
+      throw new HttpError(409, "이 행사의 참여 수가 상한에 닿아 더 기록하지 않아요. 행사 주최 측에 알려 주세요.")
     }
     const pass = randomBytes(16).toString("hex")
     const { before, added } = await issuePass(sql, code, pass, Math.min(passLimit, ceiling))
     if (!added) {
+      if (before < passLimit) await tellCeilingFull(measurement)
       throw new HttpError(
         409,
         before >= passLimit
           ? "이 행사의 참여 기록이 가득 찼어요. 행사 주최 측에 알려 주세요."
-          : "이 행사의 참여 수가 예상 인원의 3배를 넘어 더 기록하지 않아요. 행사 주최 측에 알려 주세요.",
+          : "이 행사의 참여 수가 상한에 닿아 더 기록하지 않아요. 행사 주최 측에 알려 주세요.",
       )
     }
     return { entry: metricEntry(measurement, "scans", undefined, before + 1, at), pass }
@@ -287,7 +291,8 @@ async function recordCheckIn(req: Request<{ code: string }>, kind: ReturnType<ty
       throw new HttpError(409, "이 행사의 참여 기록이 가득 찼어요. 행사 주최 측에 알려 주세요.")
     }
     if (measurement.metrics.scans >= scanCeiling(getDatabase(), measurement)) {
-      throw new HttpError(409, "이 행사의 참여 수가 예상 인원의 3배를 넘어 더 기록하지 않아요. 행사 주최 측에 알려 주세요.")
+      await tellCeilingFull(measurement)
+      throw new HttpError(409, "이 행사의 참여 수가 상한에 닿아 더 기록하지 않아요. 행사 주최 측에 알려 주세요.")
     }
     const entry = recordMetric(measurement, kind)
     const pass = randomBytes(16).toString("hex")
@@ -437,13 +442,20 @@ async function knownHolder(req: Request, measurement: Measurement) {
 
 // PIN을 비교하기 전에 센다. 비교한 뒤에 세면 한꺼번에 보낸 추측이 모두 한도 검사를
 // 통과한다. 맞으면 `releasePin`으로 돌려주므로 직원의 정상 확인은 한도를 쓰지 않는다.
+// 행사 한도가 찼으면 그 답(429)을 `full`로 돌려준다. PIN이 맞으면 무시하고, 틀리면 던진다.
 async function reservePin(req: Request, measurement: Measurement) {
   const here = `${clientKey(req)} ${req.params.code}`
   await pinFailures.take(here)
   const known = await knownHolder(req, measurement)
-  if (known) await pinFailuresKnown.take(`${req.params.code} ${known}`)
-  else await pinFailuresPerEvent.take(String(req.params.code))
-  return known
+  let full: HttpError | undefined
+  try {
+    if (known) await pinFailuresKnown.take(`${req.params.code} ${known}`)
+    else await pinFailuresPerEvent.take(String(req.params.code))
+  } catch (error) {
+    if (!(error instanceof HttpError) || error.status !== 429) throw error
+    full = error
+  }
+  return { known, full }
 }
 
 // `known`은 `reservePin`의 답이고 `holder`는 방금 맞힌 PIN의 주인이다. 센 쪽 한도에만
@@ -455,27 +467,68 @@ async function releasePin(req: Request, known: string | undefined, holder: strin
   if (known !== holder) await pinVerified.hit(`${here} ${holder}`)
 }
 
+// QR 스캔 상한이 찼다고 행사 주인에게 하루 한 번 알린다. 주인은 QR 팝업에서 상한을 늘린다.
+async function tellCeilingFull(seen: Measurement) {
+  // 기다리는 사이 데이터를 새로 읽었을 수 있어 지금의 측정을 다시 찾는다.
+  const measurement = getDatabase().measurements.find((item) => item.code === seen.code) ?? seen
+  const today = todayInKorea()
+  if (measurement.ceilingFullOn === today) return
+  measurement.ceilingFullOn = today
+  // 알림 기록일 뿐이므로 저장에 실패해도 답은 바뀌지 않는다.
+  await saveDatabase().catch(() => undefined)
+  const database = getDatabase()
+  const owner = database.accounts.find((item) => item.id === measurement.accountId)
+  const event = eventOf(database, measurement)
+  void notify(
+    owner,
+    "account",
+    "QR 참여 기록이 상한에 닿았어요",
+    [
+      `'${event?.name ?? ""}'의 QR 참여 기록이 상한에 닿아 새 참가자를 기록하지 않고 있어요.`,
+      "실제 참가자가 막혔다면 QR 팝업에서 상한을 늘려 주세요.",
+    ],
+    "/measurement",
+  )
+}
+
+// 운영자가 정지한 계정은 PIN으로 현장 기록(방문, 집계)을 남기지 못한다. 행사의 주인이나,
+// 매장 PIN이면 그 협찬사가 정지됐을 때다. 참가자의 QR과 쿠폰은 그대로 둬, 이미 온
+// 참가자와 상대 쪽이 피해를 보지 않게 한다(2026-11-27 결정).
+function assertActiveAtVenue(measurement: Measurement, sponsor?: EventSponsor) {
+  const database = getDatabase()
+  const suspended = (id: string | undefined) => Boolean(id && database.accounts.find((item) => item.id === id)?.suspendedAt)
+  const brandOf = (sponsorshipId: string) =>
+    Object.entries(database.sponsorships).find(([, list]) => list.some((item) => item.id === sponsorshipId))?.[0]
+  if (suspended(measurement.accountId) || (sponsor && suspended(brandOf(sponsor.id)))) {
+    throw new HttpError(403, "운영 정책에 따라 멈춘 계정이라 현장 기록을 받을 수 없어요.")
+  }
+}
+
 // 브랜드의 페이지(/staff)는 받은 매장 PIN에 해당하는 몫을 연다. 협찬사의
 // 몫이거나, 협찬사가 없는 동안에는 행사 자체의 몫이다.
 async function staffShare(req: Request, measurement: Measurement): Promise<EventSponsor | undefined> {
-  const known = await reservePin(req, measurement)
+  const { known, full } = await reservePin(req, measurement)
   const pin = text(req.body?.pin)
   const sponsor = measurement.sponsors.find((item) => item.staffPin === pin)
   if (measurement.sponsors.length ? !sponsor : pin !== measurement.staffPin) {
+    if (full) throw full
     await refusePin(req, "직원 PIN이 맞지 않아요. 행사 주최 측에 확인해 주세요.")
   }
   await releasePin(req, known, sponsor?.id ?? "event")
+  assertActiveAtVenue(measurement, sponsor)
   return sponsor
 }
 
 // 학생단체의 페이지(/group)는 단체 자신의 PIN을 받아 행사의 모든 몫을
 // 연다.
 async function checkGroupPin(req: Request, measurement: Measurement) {
-  const known = await reservePin(req, measurement)
+  const { known, full } = await reservePin(req, measurement)
   if (text(req.body?.pin) !== measurement.groupPin) {
+    if (full) throw full
     await refusePin(req, "단체 확인 PIN이 맞지 않아요. 임시 전자 계약서에서 확인해 주세요.")
   }
   await releasePin(req, known, "group")
+  assertActiveAtVenue(measurement)
 }
 
 // 현장 페이지가 보여 주는 몫 하나다. 누구의 것인지, 이쪽이 거기서 확정하는

@@ -6,6 +6,7 @@ import { HttpError } from "../lib/errors.js"
 import {
   applySponsorGoals,
   buildReport,
+  ceilingRaises,
   ensureMeasurement,
   parseGoals,
   parseKind,
@@ -13,6 +14,7 @@ import {
   pinsFrom,
   pinsOpen,
   rotatePin,
+  scanCeiling,
 } from "../lib/measurements.js"
 import { postedReach } from "../lib/snsPosts.js"
 import { requireAccount } from "../middleware/session.js"
@@ -39,11 +41,15 @@ function measurementOwner(req: Request) {
 // 언제 보일지 알려 준다.
 function pinsFor(req: Request, measurement: Measurement, event: EventItem) {
   if (!req.account) return {}
-  if (!pinsOpen(getDatabase(), measurement, event)) return { pinsDay: pinsFrom(event) }
+  const database = getDatabase()
+  const limit = scanCeiling(database, measurement)
+  const ceiling = Number.isFinite(limit) ? { limit, canRaise: (measurement.ceilingRaised ?? 0) < ceilingRaises } : undefined
+  if (!pinsOpen(database, measurement, event)) return { pinsDay: pinsFrom(event), ceiling }
   return {
     withPin: !measurement.sponsors.length,
     withGroupPin: req.account.role === "학생단체",
-    canRotatePin: !isDemoAccount(getDatabase(), req.account),
+    canRotatePin: !isDemoAccount(database, req.account),
+    ceiling,
   }
 }
 
@@ -99,6 +105,20 @@ measurementsRouter.post("/:eventId/pin", async (req, res) => {
   rotatePin(measurement, undefined, page === "group" ? "group" : "brand")
   await saveDatabase()
   res.json({ metrics: measurement.metrics, report: buildReport(measurement, event, pinsFor(req, measurement, event)) })
+})
+
+// 행사 주인이 QR 스캔 상한을 늘린다. 낯선 사람이 상한을 채워 실제 참가자가 막혔을 때
+// 행사 중에도 풀 수 있게 한다. 한 번에 처음 상한만큼, 최대 ceilingRaises번이다.
+measurementsRouter.post("/:eventId/ceiling", async (req, res) => {
+  const account = requireAccount(req)
+  const { measurement, event } = await ownedMeasurement(req)
+  const database = getDatabase()
+  if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 상한을 바꿀 수 없어요.")
+  if (!Number.isFinite(scanCeiling(database, measurement))) throw new HttpError(409, "이 행사에는 QR 상한이 없어요.")
+  if ((measurement.ceilingRaised ?? 0) >= ceilingRaises) throw new HttpError(409, "상한은 더 늘릴 수 없어요. 운영자에게 문의해 주세요.")
+  measurement.ceilingRaised = (measurement.ceilingRaised ?? 0) + 1
+  await saveDatabase()
+  res.json({ metrics: measurement.metrics, report: reportOf(req, measurement, event) })
 })
 
 // 참여 기록을 최신순으로 보여 주며, ?kind=로 측정 하나로 좁힐 수 있다.

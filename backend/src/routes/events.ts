@@ -239,6 +239,17 @@ function followEvent(database: Database, account: Account, event: EventItem, dat
   // 이어진 모집 글은 새 마지막 날을 넘겨 지원받지 않는다.
   if (datesChanged) clampPostDeadlines(database)
   const partners = new Map<string, string>()
+  // 날짜는 계약 내용이다. 확정된 계약서는 양쪽 확인을 풀어 새 일정으로 다시
+  // 확인받는다(협찬액, 항목, 확인 방식을 바꿀 때와 같다). 이름만 바뀌면 그대로 둔다.
+  const reconfirm = new Set<string>()
+  const unconfirm = (proposalId: string) => {
+    if (!datesChanged) return
+    const agreement = database.agreements.find((item) => item.id === proposalId)
+    if (!agreement || Object.keys(agreement.confirmed).length === 0) return
+    agreement.confirmed = {}
+    agreement.updatedAt = new Date().toISOString()
+    reconfirm.add(proposalId)
+  }
   const follow = (sponsorship: { eventName: string; date: string; remindedAt?: string }) => {
     sponsorship.eventName = event.name
     sponsorship.date = event.date
@@ -251,6 +262,7 @@ function followEvent(database: Database, account: Account, event: EventItem, dat
       request.eventName = event.name
       request.eventDate = event.date
       request.people = event.people ? `예상 인원 ${event.people}` : "인원 협의"
+      if (request.status === "수락") unconfirm(request.id)
       const brand = ownerOf(database, "brands", request.brandId)
       if (brand) partners.set(brand.id, request.status === "수락" ? `/agreements/${request.id}` : "/inbox")
     }
@@ -262,13 +274,18 @@ function followEvent(database: Database, account: Account, event: EventItem, dat
       if (offer.fromAccountId !== account.id || offer.campaignId !== event.id || !followed(offer.status)) continue
       offer.campaignName = event.name
       offer.campaignDate = event.date
+      if (offer.status === "수락") unconfirm(offer.id)
       const sponsorship = (database.sponsorships[account.id] ?? []).find((item) => item.id === `sp-${offer.id}`)
       if (sponsorship) follow(sponsorship)
       const group = ownerOf(database, "groups", offer.groupId)
       if (group) partners.set(group.id, offer.status === "수락" ? `/agreements/${offer.id}` : "/offers")
     }
   }
-  return [...partners].map(([id, path]) => ({ account: database.accounts.find((item) => item.id === id), path }))
+  return [...partners].map(([id, path]) => ({
+    account: database.accounts.find((item) => item.id === id),
+    path,
+    reconfirm: path.startsWith("/agreements/") && reconfirm.has(path.slice("/agreements/".length)),
+  }))
 }
 
 // 주인이 행사나 캠페인을 바꾼다. 등록할 때와 같은 검사를 한다. 시작한
@@ -328,7 +345,11 @@ eventsRouter.put("/:id", async (req, res) => {
         partner.account,
         "sponsorships",
         `${what} 정보가 바뀌었어요`,
-        [`${account.name}에서 '${before.name}' ${what} 정보를 바꿨어요.`, ...lines],
+        [
+          `${account.name}에서 '${before.name}' ${what} 정보를 바꿨어요.`,
+          ...lines,
+          ...(partner.reconfirm ? ["일정이 바뀌어 계약서 확인이 풀렸어요. 새 일정을 보고 다시 확인해 주세요."] : []),
+        ],
         partner.path,
       )
     }

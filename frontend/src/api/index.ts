@@ -335,7 +335,7 @@ export const api = {
   portfolioHistory: () => request<{ items: HistoryItem[] }>("/profile/history"),
   pauseProfile: (paused: boolean) => request<{ profile: Match }>("/profile/pause", { method: "PUT", body: { paused } }),
   saveProfile: (body: ProfileDraft) =>
-    request<{ profile: Match }>("/profile", { method: "PUT", body }),
+    request<{ profile: Match; demo?: true }>("/profile", { method: "PUT", body }),
 
   nearbyPlaces: (category: string) =>
     request<NearbyPlaces>(`/places?category=${encodeURIComponent(category)}`),
@@ -838,6 +838,9 @@ export const api = {
       method: "POST",
       body: { page },
     }),
+  // 행사 주인이 QR 스캔 상한을 늘린다.
+  raiseScanCeiling: (eventId: string) =>
+    request<{ metrics: Metrics; report: Report }>(`/measurements/${encodeURIComponent(eventId)}/ceiling`, { method: "POST" }),
   // 계약서에서 이쪽 현장 PIN을 새로 만든다.
   rotateAgreementPin: (id: string, page?: VenuePage) =>
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/pin`, { method: "POST", body: { page } }),
