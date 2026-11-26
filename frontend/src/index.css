@@ -9458,7 +9458,8 @@ html.modal-open {
   grid-template-columns: 3.25rem minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-3) var(--space-2);
+  /* 왼쪽 강조선(3px)과 건수 사이를 16px 넘게 띄운다. 선이 없는 줄도 같은 자리에 맞춘다. */
+  padding: var(--space-3) var(--space-2) var(--space-3) var(--space-5);
   border: 0;
   background: none;
   color: var(--ink);
@@ -9529,7 +9530,7 @@ html.modal-open {
 
 .work-board-group h3 {
   margin: var(--space-5) 0 0;
-  padding: 0 var(--space-2) var(--space-2);
+  padding: 0 var(--space-2) var(--space-2) var(--space-5);
   border-bottom: 1px solid var(--line);
   color: var(--muted);
   font-size: var(--text-sm);
@@ -9596,7 +9597,7 @@ html.modal-open {
   align-content: start;
   gap: 2px;
   min-width: 0;
-  padding-left: var(--space-3);
+  padding-left: var(--space-4);
   border-left: 2px solid var(--line-strong);
 }
 
