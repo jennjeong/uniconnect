@@ -5,6 +5,7 @@ import { reconcileCards, reconcileRefunds } from "./lib/cardRecovery.js"
 import { purgeDisputes } from "./lib/disputeRetention.js"
 import { mailConfigured } from "./lib/mailer.js"
 import { sendDigests } from "./lib/digest.js"
+import { foldCounts, prunePassRows } from "./lib/passRows.js"
 import { prunePayments } from "./lib/paymentRetention.js"
 import { sendProposalNudges } from "./lib/nudges.js"
 import { sendSearchAlerts } from "./lib/savedSearches.js"
@@ -30,6 +31,10 @@ const remind = () => {
   refreshViews().catch((error: Error) => console.error(`[youtube] ${error.message}`))
   prunePayments().catch((error: Error) => console.error(`[payments] ${error.message}`))
   purgeDisputes().catch((error: Error) => console.error(`[disputes] ${error.message}`))
+  // Postgres에 둔 체크인 기록도 보관 기한이 지나면 지운다(Vercel에서는 routes/cron.ts가 한다).
+  foldCounts({ force: true })
+    .then(() => prunePassRows())
+    .catch((error: Error) => console.error(`[passes] ${error.message}`))
   // 정기 백업. 실패는 오류 기록에 남는다(lib/storage.ts).
   backupSchedule.lastRunAt = Date.now()
   backUpNow().catch(() => {})

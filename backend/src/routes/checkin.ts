@@ -153,6 +153,15 @@ const pinVerified = createRateLimit({
   windowMs: 12 * 60 * 60 * 1000,
   message: "직원 PIN을 확인한 주소",
 })
+// 이미 맞힌 주소들의 틀린 시도는 행사마다 따로 센다. 행사의 PIN 하나를 아는 사람(다른
+// 협찬사 직원이나 단체)이 주소를 여럿 맞혀 두고 다른 협찬사의 매장 PIN을 추측하는 것을
+// 막는다. 이 한도는 PIN을 맞힌 주소만 채울 수 있어, 모르는 사람이 직원을 막지 못한다.
+const pinFailuresKnown = createRateLimit({
+  label: "직원 PIN · 확인된 주소의 행사별",
+  limit: 30,
+  windowMs: 15 * 60 * 1000,
+  message: "이 행사의 직원 PIN이 너무 많이 틀렸어요. 15분 뒤에 다시 시도해 주세요.",
+})
 
 const wrongCouponNumber = "쿠폰 번호를 찾을 수 없어요. 다시 확인해 주세요."
 
@@ -417,16 +426,16 @@ async function reservePin(req: Request) {
   const here = `${clientKey(req)} ${req.params.code}`
   await pinFailures.take(here)
   const known = await pinVerified.seen(here)
-  if (!known) await pinFailuresPerEvent.take(String(req.params.code))
+  await (known ? pinFailuresKnown : pinFailuresPerEvent).take(String(req.params.code))
   return known
 }
 
-// `known`은 `reservePin`의 답이다. 행사 한도에 세지 않았으면 돌려주지도 않는다. 돌려주면
-// 다른 사람의 틀린 시도가 지워진다.
+// `known`은 `reservePin`의 답이다. 센 쪽 한도에만 돌려준다. 다른 쪽에 돌려주면 다른
+// 사람의 틀린 시도가 지워진다.
 async function releasePin(req: Request, known: boolean) {
   const here = `${clientKey(req)} ${req.params.code}`
   await pinFailures.release(here)
-  if (known) return
+  if (known) return pinFailuresKnown.release(String(req.params.code))
   await Promise.all([pinFailuresPerEvent.release(String(req.params.code)), pinVerified.hit(here)])
 }
 

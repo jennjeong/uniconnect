@@ -109,6 +109,16 @@ export function TeamModal({ onClose, onNotice }: { onClose: () => void; onNotice
                     {item.email} · {t("운영자 서류 확인 중")}
                   </small>
                 </span>
+                {owner && (
+                  <button
+                    className="cancel-button"
+                    disabled={busy}
+                    onClick={() => void run(() => api.cancelWaiting(item.id), t("합류 신청을 거뒀어요."))}
+                    type="button"
+                  >
+                    {t("신청 거두기")}
+                  </button>
+                )}
               </li>
             ))}
             {team.invites.map((item) => (

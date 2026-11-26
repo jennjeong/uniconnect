@@ -255,6 +255,19 @@ export async function movePassesToRows() {
 
 // 더는 필요 없는 행을 지운다(prunePasses와 같은 기준). 행사가 없어진 측정의 행도 함께
 // 지운다. 지운 참여 기록 수를 돌려준다.
+// 데모 초기화 때 데모 행사의 체크인 기록을 모두 지운다. 문서 안의 기록은 초기화가 바꾸지만,
+// Postgres의 행은 따로 지워야 한다.
+export async function clearDemoRows() {
+  const sql = passSql()
+  if (!sql) return 0
+  await ensureTables(sql)
+  const database = getDatabase()
+  const demo = database.measurements.filter((measurement) => isDemoEvent(database, measurement)).map((measurement) => measurement.code)
+  if (!demo.length) return 0
+  await sql("delete from uniconnect_coupons where code = any($1::text[])", [demo])
+  return (await sql("delete from uniconnect_passes where code = any($1::text[]) returning pass", [demo])).length
+}
+
 export async function prunePassRows(now = todayInKorea()) {
   const sql = passSql()
   if (!sql) return 0
@@ -267,11 +280,17 @@ export async function prunePassRows(now = todayInKorea()) {
   const alwaysOn: string[] = []
   const finished: string[] = []
   const visiting: string[] = []
+  const demo: string[] = []
   for (const measurement of database.measurements) {
     const event = eventOf(database, measurement)
     if (!event) continue
     codes.push(measurement.code)
-    if (isDemoEvent(database, measurement)) continue
+    // 데모 행사는 날짜와 상관없이 누구나 시험하므로, 하루 지난 기록을 지운다. 지우지 않으면
+    // 고정된 데모 코드의 행이 한도까지 쌓여 데모 QR이 영영 막힌다.
+    if (isDemoEvent(database, measurement)) {
+      demo.push(measurement.code)
+      continue
+    }
     // 상시 캠페인은 기록마다 발급하고 7일 뒤에 지운다. 쿠폰이 지워진 패스도 그때 함께 간다.
     if (measurement.alwaysOn) {
       alwaysOn.push(measurement.code)
@@ -292,6 +311,12 @@ export async function prunePassRows(now = todayInKorea()) {
          returning pass`,
         [alwaysOn, couponDays],
       )
+    ).length
+  }
+  if (demo.length) {
+    await sql("delete from uniconnect_coupons where code = any($1::text[]) and issued_at < now() - interval '1 day'", [demo])
+    removed += (
+      await sql("delete from uniconnect_passes where code = any($1::text[]) and issued_at < now() - interval '1 day' returning pass", [demo])
     ).length
   }
   if (finished.length) {

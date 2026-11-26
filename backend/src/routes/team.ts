@@ -3,12 +3,13 @@ import { Router } from "express"
 
 import { config } from "../config.js"
 import { renewSeenPins } from "../lib/agreements.js"
-import { applicationsOf, holdApplication, parseDocument } from "../lib/applications.js"
+import { applicationFolder, applicationsOf, holdApplication, parseDocument } from "../lib/applications.js"
 import { emailRuleError, normalizeEmail } from "../lib/email.js"
 import { HttpError } from "../lib/errors.js"
 import { translate } from "../lib/i18n.js"
 import { assertCodesDeliverable, oneLine, sendMail } from "../lib/mailer.js"
 import { notify } from "../lib/notices.js"
+import { photos } from "../lib/photos.js"
 import { hashPassword } from "../lib/password.js"
 import { clientKey, createRateLimit } from "../lib/rateLimit.js"
 import { isDemoAccount } from "../lib/reviews.js"
@@ -137,6 +138,19 @@ teamRouter.delete("/invites/:id", async (req, res) => {
   const account = requireOwner(req, requireAccount(req))
   account.memberInvites = (account.memberInvites ?? []).filter((invite) => invite.id !== req.params.id)
   await saveDatabase()
+  res.json({ team: teamView(account, req.memberId) })
+})
+
+// 합류해서 운영자 확인을 기다리는 사람을 주인이 거둔다. 승인되기 전에 마음을
+// 바꾸거나 계정을 넘길 때, 기다리던 신청이 나중에 공동 관리자가 되지 않게 한다.
+teamRouter.delete("/waiting/:id", async (req, res) => {
+  const account = requireOwner(req, requireAccount(req))
+  const database = getDatabase()
+  const application = waitingFor(account).find((item) => item.id === req.params.id && item.kind === "member")
+  if (!application) throw new HttpError(404, "기다리는 사람을 찾을 수 없어요.")
+  database.applications = applicationsOf(database).filter((item) => item !== application)
+  await saveDatabase()
+  await photos().removeAll([applicationFolder(application.id)]).catch(() => undefined)
   res.json({ team: teamView(account, req.memberId) })
 })
 

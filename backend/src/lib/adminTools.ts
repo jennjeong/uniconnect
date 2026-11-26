@@ -99,6 +99,19 @@ export function keepThroughRestore(current: Database, restored: Database) {
     const now = current.accounts.find((item) => item.id === account.id)
     if (now) keepAccountSecurity(account, now, restored)
   }
+  // 차단은 지금대로 둔다. 푼 차단과 새 차단 모두 백업 시점으로 돌아가지 않는다.
+  restored.blocks = current.blocks
+  // 새로 만든 현장 PIN은 유출이 의심될 때 바꾸는 것이라, 복원해도 옛 PIN이 다시 통하지 않는다.
+  for (const measurement of restored.measurements) {
+    const now = current.measurements.find((item) => item.eventId === measurement.eventId)
+    if (!now) continue
+    measurement.staffPin = now.staffPin
+    measurement.groupPin = now.groupPin
+    for (const sponsor of measurement.sponsors ?? []) {
+      const pin = now.sponsors?.find((item) => item.id === sponsor.id)?.staffPin
+      if (pin) sponsor.staffPin = pin
+    }
+  }
   // 멈춘 리포트 공유 링크도 다시 열리지 않는다.
   for (const [accountId, list] of Object.entries(restored.sponsorships)) {
     for (const sponsorship of list) {
@@ -123,6 +136,9 @@ const securityFields = [
   "social",
   "calendarFeed",
   "groupVerified",
+  // 학생회 코드를 새로 만들거나 동아리 연결을 끊은 것도 되돌리지 않는다.
+  "councilCode",
+  "councils",
 ] as const
 
 function keepAccountSecurity(account: Account, now: Account, restored: Database) {

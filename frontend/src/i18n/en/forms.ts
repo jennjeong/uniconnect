@@ -497,6 +497,8 @@ const en: Record<string, string> = {
   "초대함 · {date}까지": "Invited · until {date}",
   "초대를 취소했어요.": "Invitation canceled.",
   "초대 취소": "Cancel invitation",
+  "신청 거두기": "Withdraw",
+  "합류 신청을 거뒀어요.": "The join request was withdrawn.",
   이름: "Name",
   "예) 부회장 김하나": "e.g. Vice president Hana Kim",
   "초대할 이메일": "Email to invite",

@@ -68,6 +68,8 @@ localRouter.post("/campaign", async (req, res) => {
 localRouter.put("/campaign", async (req, res) => {
   const account = brandOnly(req)
   const database = getDatabase()
+  // 참여자가 보는 쿠폰 문구라, 공용 데모 로그인으로는 바꾸지 못한다.
+  if (isDemoAccount(database, account)) throw new HttpError(403, "데모 계정은 쿠폰 문구를 바꿀 수 없어요.")
   const { event, measurement } = ownCampaign(database, account)
   measurement.goals.coupon = parseCoupon(req.body)
   event.name = measurement.goals.coupon.store
