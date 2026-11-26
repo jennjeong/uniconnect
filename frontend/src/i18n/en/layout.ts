@@ -80,6 +80,7 @@ const en: Record<string, string> = {
   "처음으로": "Start over",
   "첫 로그인 전": "Before first login",
   "첫 운영자를 만들 때만 써요. 2단계 로그인을 마친 운영자가 생기면 닫혀요.": "Only for creating the first operator. It closes once an operator finishes two-step login.",
+  "코드": "Code",
   "콘솔로 들어가기": "Go to the console",
   "키를 직접 넣을 때": "To enter the key by hand",
   "토큰이 맞지 않거나 이미 닫혔어요.": "That token doesn't match or is already closed.",
