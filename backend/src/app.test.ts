@@ -10801,6 +10801,42 @@ test("addresses that know one PIN of an event share a cap, so they can't guess a
   }
 })
 
+test("addresses that know one PIN fill only that PIN's cap, so they can't lock out staff who know another", async () => {
+  const demo = new Set(Object.values(getDatabase().demoAccountIds))
+  // 앞 테스트가 첫 데모 행사의 한도를 썼으므로 다른 행사로 한다.
+  const measurement = getDatabase().measurements.filter((item) => demo.has(item.accountId) && item.groupPin).at(-1)!
+  const staffPin = measurement.sponsors[0]?.staffPin ?? measurement.staffPin
+  const proxied = createApp()
+  proxied.set("trust proxy", true)
+  const other = proxied.listen(0)
+  await new Promise((resolve) => other.once("listening", resolve))
+  const session = async (page: "staff" | "group", address: string, pin: string) =>
+    (
+      await fetch(`http://127.0.0.1:${(other.address() as AddressInfo).port}/api/check-in/${measurement.code}/${page}/session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Forwarded-For": address },
+        body: JSON.stringify({ pin }),
+      })
+    ).status
+  try {
+    // 매장 직원 한 곳이 먼저 맞혀 둔다.
+    assert.equal(await session("staff", "10.4.9.9", staffPin), 200)
+    // 단체 PIN을 아는 주소 세 곳이 매장 PIN을 30번 틀려 단체 쪽 한도를 다 쓴다.
+    const statuses: number[] = []
+    for (let address = 0; address < 3; address += 1) {
+      assert.equal(await session("group", `10.4.0.${address}`, measurement.groupPin), 200)
+      for (let index = 0; index < 10; index += 1) statuses.push(await session("staff", `10.4.0.${address}`, "000000"))
+    }
+    assert.deepEqual([...new Set(statuses)], [403])
+    assert.equal(await session("staff", "10.4.0.0", "000000"), 429)
+    // 매장 PIN을 아는 직원은 막히지 않는다. 한 번 틀려도 비교되고, 맞으면 들어간다.
+    assert.equal(await session("staff", "10.4.9.9", "000000"), 403)
+    assert.equal(await session("staff", "10.4.9.9", staffPin), 200)
+  } finally {
+    other.close()
+  }
+})
+
 test("in a campaign several groups joined, only the brand sets the result methods, and every group confirms again", async () => {
   const { addDays, todayInKorea } = await import("./lib/dates.js")
   const { token: brand } = await listedMember("methods-brand@methods-cafe.kr", "methods-pass-123", "브랜드")

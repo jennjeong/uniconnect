@@ -153,9 +153,10 @@ const pinVerified = createRateLimit({
   windowMs: 12 * 60 * 60 * 1000,
   message: "직원 PIN을 확인한 주소",
 })
-// 이미 맞힌 주소들의 틀린 시도는 행사마다 따로 센다. 행사의 PIN 하나를 아는 사람(다른
-// 협찬사 직원이나 단체)이 주소를 여럿 맞혀 두고 다른 협찬사의 매장 PIN을 추측하는 것을
-// 막는다. 이 한도는 PIN을 맞힌 주소만 채울 수 있어, 모르는 사람이 직원을 막지 못한다.
+// 이미 맞힌 주소들의 틀린 시도는 행사와 맞힌 PIN마다 따로 센다. 행사의 PIN 하나를 아는
+// 사람(다른 협찬사 직원이나 단체)이 주소를 여럿 맞혀 두고 다른 협찬사의 매장 PIN을 추측하는
+// 것을 막는다. 이 한도는 같은 PIN을 맞힌 주소만 채울 수 있어, 모르는 사람도, 다른 PIN을 아는
+// 사람도 직원을 막지 못한다.
 const pinFailuresKnown = createRateLimit({
   label: "직원 PIN · 확인된 주소의 행사별",
   limit: 30,
@@ -420,46 +421,61 @@ async function refusePin(req: Request, message: string): Promise<never> {
   throw new HttpError(403, message)
 }
 
+// 행사의 PIN마다의 주인이다. 단체 PIN은 "group", 협찬사가 없는 동안의 매장 PIN은
+// "event", 그 뒤에는 협찬사 id다.
+const pinHolders = (measurement: Measurement) => [
+  "group",
+  ...(measurement.sponsors.length ? measurement.sponsors.map((sponsor) => sponsor.id) : ["event"]),
+]
+
+// 이 주소가 이 행사에서 맞힌 적 있는 PIN의 주인. 처음 보는 주소면 없음.
+async function knownHolder(req: Request, measurement: Measurement) {
+  const here = `${clientKey(req)} ${req.params.code}`
+  for (const holder of pinHolders(measurement)) if (await pinVerified.seen(`${here} ${holder}`)) return holder
+  return undefined
+}
+
 // PIN을 비교하기 전에 센다. 비교한 뒤에 세면 한꺼번에 보낸 추측이 모두 한도 검사를
 // 통과한다. 맞으면 `releasePin`으로 돌려주므로 직원의 정상 확인은 한도를 쓰지 않는다.
-async function reservePin(req: Request) {
+async function reservePin(req: Request, measurement: Measurement) {
   const here = `${clientKey(req)} ${req.params.code}`
   await pinFailures.take(here)
-  const known = await pinVerified.seen(here)
-  await (known ? pinFailuresKnown : pinFailuresPerEvent).take(String(req.params.code))
+  const known = await knownHolder(req, measurement)
+  if (known) await pinFailuresKnown.take(`${req.params.code} ${known}`)
+  else await pinFailuresPerEvent.take(String(req.params.code))
   return known
 }
 
-// `known`은 `reservePin`의 답이다. 센 쪽 한도에만 돌려준다. 다른 쪽에 돌려주면 다른
-// 사람의 틀린 시도가 지워진다.
-async function releasePin(req: Request, known: boolean) {
+// `known`은 `reservePin`의 답이고 `holder`는 방금 맞힌 PIN의 주인이다. 센 쪽 한도에만
+// 돌려준다. 다른 쪽에 돌려주면 다른 사람의 틀린 시도가 지워진다.
+async function releasePin(req: Request, known: string | undefined, holder: string) {
   const here = `${clientKey(req)} ${req.params.code}`
   await pinFailures.release(here)
-  if (known) return pinFailuresKnown.release(String(req.params.code))
-  await Promise.all([pinFailuresPerEvent.release(String(req.params.code)), pinVerified.hit(here)])
+  await (known ? pinFailuresKnown.release(`${req.params.code} ${known}`) : pinFailuresPerEvent.release(String(req.params.code)))
+  if (known !== holder) await pinVerified.hit(`${here} ${holder}`)
 }
 
 // 브랜드의 페이지(/staff)는 받은 매장 PIN에 해당하는 몫을 연다. 협찬사의
 // 몫이거나, 협찬사가 없는 동안에는 행사 자체의 몫이다.
 async function staffShare(req: Request, measurement: Measurement): Promise<EventSponsor | undefined> {
-  const known = await reservePin(req)
+  const known = await reservePin(req, measurement)
   const pin = text(req.body?.pin)
   const sponsor = measurement.sponsors.find((item) => item.staffPin === pin)
   if (measurement.sponsors.length ? !sponsor : pin !== measurement.staffPin) {
     await refusePin(req, "직원 PIN이 맞지 않아요. 행사 주최 측에 확인해 주세요.")
   }
-  await releasePin(req, known)
+  await releasePin(req, known, sponsor?.id ?? "event")
   return sponsor
 }
 
 // 학생단체의 페이지(/group)는 단체 자신의 PIN을 받아 행사의 모든 몫을
 // 연다.
 async function checkGroupPin(req: Request, measurement: Measurement) {
-  const known = await reservePin(req)
+  const known = await reservePin(req, measurement)
   if (text(req.body?.pin) !== measurement.groupPin) {
     await refusePin(req, "단체 확인 PIN이 맞지 않아요. 임시 전자 계약서에서 확인해 주세요.")
   }
-  await releasePin(req, known)
+  await releasePin(req, known, "group")
 }
 
 // 현장 페이지가 보여 주는 몫 하나다. 누구의 것인지, 이쪽이 거기서 확정하는
