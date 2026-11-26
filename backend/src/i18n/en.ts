@@ -323,7 +323,6 @@ const en: Record<string, string> = {
   "읽은 알림을 알 수 없어요.": "We couldn't tell which notices you've read.",
   "찜할 상대를 찾을 수 없어요.": "We couldn't find who you wanted to save.",
   "데모 계정은 소개를 숨길 수 없어요.": "The demo accounts can't hide their listings.",
-  "데모 계정은 소개를 바꿀 수 없어요.": "The demo account can't change its profile.",
   "데모 계정은 쿠폰 문구를 바꿀 수 없어요.": "The demo account can't change the coupon text.",
   "숨길지 다시 보일지 알 수 없어요.": "We couldn't tell whether to hide or show your listing.",
   "숨길 소개가 아직 없어요. 내 정보에서 먼저 소개를 써 주세요.": "You have no listing to hide yet. Write one from My account first.",

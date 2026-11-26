@@ -38,7 +38,6 @@ process.env.ADMIN_TOKEN = "test-admin-token"
 const { createApp } = await import("./app.js")
 const { config, emailCodesExposed } = await import("./config.js")
 const { clearRateLimits } = await import("./lib/rateLimit.js")
-const { exampleEdits } = await import("./routes/profile.js")
 const { backupSettled, getDatabase, loadDatabase, saveDatabase } = await import("./store.js")
 const { DEMO_PASSWORD } = await import("./data/seed.js")
 // 행사의 새 몫이 시작할 때처럼 모든 현장 집계를 0으로 둔다.
@@ -55,10 +54,7 @@ before(async () => {
 })
 
 // 모든 요청이 127.0.0.1에서 오므로 사례마다 제한을 새로 시작한다.
-beforeEach(() => {
-  exampleEdits.open = false
-  return clearRateLimits()
-})
+beforeEach(() => clearRateLimits())
 
 after(async () => {
   await new Promise((resolve) => server.close(resolve))
@@ -2890,8 +2886,6 @@ test("a brand verifies its business with the National Tax Service, and its listi
 })
 
 test("accounts write the listing the other side sees", async () => {
-  // 데모 계정의 예시 소개를 고쳐 보는 테스트라 잠시 연다(lib는 막는다).
-  exampleEdits.open = true
   const student = await login("학생단체")
   const mine = (await call("GET", "/profile", undefined, student)).data.profile
   assert.equal(mine.id, "syu-muse")
@@ -4177,8 +4171,6 @@ test("older sessions with a plain token keep working, stored as its hash", async
 })
 
 test("listings take a small PNG, JPEG or WebP logo, and drop it on request", async () => {
-  // 데모 계정의 예시 소개를 고쳐 보는 테스트라 잠시 연다(lib는 막는다).
-  exampleEdits.open = true
   const student = await login("학생단체")
   const draft = { intro: "삼육대학교 밴드 동아리예요. 정기 공연을 열어요.", offer: "관객 150명 · SNS 홍보" }
   const png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
@@ -4353,8 +4345,6 @@ test("catalogs say how far each listing is from the viewer's campus or store", a
 })
 
 test("a brand's store address is placed on the map through OpenStreetMap once a geocoder is set", async () => {
-  // 데모 계정의 예시 소개를 고쳐 보는 테스트라 잠시 연다(lib는 막는다).
-  exampleEdits.open = true
   const { geocoder } = await import("./lib/geocode.js")
   const brand = await login("브랜드")
   const listing = getDatabase().brands.find((item) => item.id === "afternoon-coffee")!
@@ -10777,15 +10767,6 @@ test("restoring a backup keeps new venue PINs, council codes and links, and bloc
   assert.deepEqual(backup.blocks, { [account.id]: ["someone"] })
 })
 
-test("the shared demo accounts can't rewrite the example profiles every visitor sees", async () => {
-  for (const role of ["학생단체", "브랜드"] as const) {
-    const demo = await login(role)
-    const body = role === "학생단체" ? { intro: "바꾼 소개", offer: "없음" } : { intro: "바꾼 소개", offers: ["음료 · 식품"] }
-    const refused = await call("PUT", "/profile", body, demo)
-    assert.equal(refused.status, 403, role)
-    assert.match(refused.data.error, /데모 계정/)
-  }
-})
 
 test("addresses that know one PIN of an event share a cap, so they can't guess another sponsor's PIN", async () => {
   const demo = new Set(Object.values(getDatabase().demoAccountIds))

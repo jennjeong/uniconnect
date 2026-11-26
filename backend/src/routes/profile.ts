@@ -239,13 +239,8 @@ profileRouter.get("/", (req, res) => {
 // 반대편이 보는 리스팅을 저장하며, 처음이면 만든다. 새 매장 주소이거나 아직
 // 위치가 없는 주소(지도 키가 설정되기 전에 저장한 것)는 아무것도 바꾸기 전에
 // 먼저 지도에 위치를 잡는다(lib/geocode.ts).
-// 테스트만 연다. 예시 소개를 고쳐 보는 테스트가 데모 계정으로 저장할 수 있게 한다.
-export const exampleEdits = { open: false }
-
 profileRouter.put("/", async (req, res) => {
   const account = requireAccount(req)
-  // 데모 계정의 소개는 모든 방문자가 보는 예시라, 공용 로그인으로 바꾸지 못한다.
-  if (!exampleEdits.open && isDemoAccount(getDatabase(), account)) throw new HttpError(403, "데모 계정은 소개를 바꿀 수 없어요.")
   const profile = parseProfile(req.body, account.role)
   const { logo, address, ...rest } = profile
   const before = findListing(getDatabase(), account)?.location
