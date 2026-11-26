@@ -306,7 +306,7 @@ export function Header({
             <>
               {demo && (
                 <span className="nav-pill demo-chip" title={t("로그인하지 않아 예시 데이터로 보여요")}>
-                  {t("예시 화면")}
+                  <span className="demo-chip-text">{t("예시 화면")}</span>
                 </span>
               )}
               <button className="nav-pill login-pill" onClick={onLogin} type="button">

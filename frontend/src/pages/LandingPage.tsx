@@ -1,9 +1,13 @@
 import type { CSSProperties } from "react"
 
-import analyticsExample from "../assets/examples/analytics.jpg"
-import groupsExample from "../assets/examples/groups.jpg"
-import matchesExample from "../assets/examples/matches.jpg"
-import measurementExample from "../assets/examples/measurement.jpg"
+import analyticsEn from "../assets/examples/analytics-en.jpg"
+import analyticsKo from "../assets/examples/analytics.jpg"
+import groupsEn from "../assets/examples/groups-en.jpg"
+import groupsKo from "../assets/examples/groups.jpg"
+import matchesEn from "../assets/examples/matches-en.jpg"
+import matchesKo from "../assets/examples/matches.jpg"
+import measurementEn from "../assets/examples/measurement-en.jpg"
+import measurementKo from "../assets/examples/measurement.jpg"
 import { FaqSection } from "../components/FaqSection"
 import { Icon } from "../components/Icon"
 import { LandingHero } from "../components/LandingHero"
@@ -11,7 +15,7 @@ import { Lines } from "../components/Lines"
 import { Pill } from "../components/Pill"
 import { RevealTitle } from "../components/RevealText"
 import { RoleMark } from "../components/RoleMark"
-import { t } from "../i18n"
+import { lang, t } from "../i18n"
 import type { NavLabel, Role } from "../types"
 
 const pad = (value: number) => String(value).padStart(2, "0")
@@ -42,6 +46,13 @@ const steps: { title: string; detail: string }[] = [
     detail: t("행사 날 QR 스캔 · 쿠폰 수령 · 직원이 확인한 매장 방문이 쌓이고, 끝나면 성과 리포트가 돼요."),
   },
 ]
+
+// 예시 화면 그림은 보는 언어로 찍은 것이다(데모 데이터의 이름은 그대로 한국어).
+const en = lang === "en"
+const analyticsExample = en ? analyticsEn : analyticsKo
+const groupsExample = en ? groupsEn : groupsKo
+const matchesExample = en ? matchesEn : matchesKo
+const measurementExample = en ? measurementEn : measurementKo
 
 // 데모 계정의 데이터로 둘러보는 회원 화면. 그림은 그 화면이며 예시로 표시한다.
 const examples: { page: NavLabel; role: Role; image: string; description: string }[] = [

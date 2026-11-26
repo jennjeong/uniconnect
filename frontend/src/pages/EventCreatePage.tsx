@@ -20,8 +20,11 @@ export function EventCreatePage({
   onCancel,
   onSubmit,
   draftStorageKey,
+  defaultTypes,
 }: {
   role: Role
+  // 새로 등록할 때(복제가 아닐 때) 처음 고른 지원 유형. 브랜드가 가입할 때 고른 관심 협찬 유형이다.
+  defaultTypes?: string[]
   // 고치는 행사나 캠페인. 없으면 새로 만든다.
   event?: EventItem
   // 새 행사가 시작하는 바탕이 되는 이전 행사(행사 복제). 날짜만 빼고 모두
@@ -52,7 +55,7 @@ export function EventCreatePage({
       // 첫날, 그리고 여러 날이면 마지막 날.
       date: event?.date ?? initialDate,
       endDate: event?.endDate,
-      types: source?.types ?? [],
+      types: source?.types ?? (event ? [] : (defaultTypes ?? [])),
       typeNote: source?.typeNote ?? "",
       // 단체의 행사 페이지: 장소, 내용, 제공하는 패키지.
       venue: source?.venue ?? "",

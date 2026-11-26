@@ -1686,6 +1686,10 @@ const en: Record<string, string> = {
   "QR 상한 늘리기": "Raise the QR limit",
   "QR 상한을 늘렸어요. 참가자가 다시 기록할 수 있어요.": "The QR limit is higher. Participants can check in again.",
   "데모 계정은 소개를 저장하지 않아요. 가입하면 내 소개로 저장돼요.": "The demo account doesn't save its profile. Sign up to save your own.",
+  "관심 협찬 유형 말고는 필수": "All required except interests",
+  "관심 협찬 유형": "Sponsorships you're interested in",
+  "첫 캠페인을 등록할 때 이 유형으로 시작해요. 나중에 바꿀 수 있어요.": "Your first campaign starts with these. You can change them later.",
+  "선택": "Optional",
 }
 
 export default en
