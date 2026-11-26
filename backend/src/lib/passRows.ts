@@ -253,10 +253,9 @@ export async function movePassesToRows() {
   })
 }
 
-// 더는 필요 없는 행을 지운다(prunePasses와 같은 기준). 행사가 없어진 측정의 행도 함께
-// 지운다. 지운 참여 기록 수를 돌려준다.
 // 데모 초기화 때 데모 행사의 체크인 기록을 모두 지운다. 문서 안의 기록은 초기화가 바꾸지만,
-// Postgres의 행은 따로 지워야 한다.
+// Postgres의 행은 따로 지워야 한다. 아직 합치지 않은 집계 행도 지운다. 남기면 다음 합치기가
+// 초기화 전의 스캔과 쿠폰을 새 데모 숫자에 더한다.
 export async function clearDemoRows() {
   const sql = passSql()
   if (!sql) return 0
@@ -264,10 +263,13 @@ export async function clearDemoRows() {
   const database = getDatabase()
   const demo = database.measurements.filter((measurement) => isDemoEvent(database, measurement)).map((measurement) => measurement.code)
   if (!demo.length) return 0
+  await sql("delete from uniconnect_counts where code = any($1::text[])", [demo])
   await sql("delete from uniconnect_coupons where code = any($1::text[])", [demo])
   return (await sql("delete from uniconnect_passes where code = any($1::text[]) returning pass", [demo])).length
 }
 
+// 더는 필요 없는 행을 지운다(prunePasses와 같은 기준). 행사가 없어진 측정의 행도 함께
+// 지운다. 지운 참여 기록 수를 돌려준다.
 export async function prunePassRows(now = todayInKorea()) {
   const sql = passSql()
   if (!sql) return 0

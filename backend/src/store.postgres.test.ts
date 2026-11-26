@@ -825,6 +825,9 @@ test("the demo event's check-in rows go after a day and on a demo reset, so the 
   await passRows.prunePassRows()
   const left = (await sql("select pass from uniconnect_passes where code = $1 and pass like 'demo-%'", [code])).map((row) => row.pass)
   assert.deepEqual(left, ["demo-new"])
+  // 초기화 전에 들어와 아직 합치지 않은 집계도 함께 지워, 새 데모 숫자에 더해지지 않는다.
+  await sql("insert into uniconnect_counts (code, kind) values ($1, 'scans')", [code])
   assert.ok((await passRows.clearDemoRows()) >= 1)
   assert.equal((await sql("select pass from uniconnect_passes where code = $1", [code])).length, 0)
+  assert.equal((await sql("select id from uniconnect_counts where code = $1", [code])).length, 0)
 })
