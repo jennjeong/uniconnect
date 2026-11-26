@@ -814,3 +814,17 @@ test("A/B counts go to their own rows without saving the document, and every cop
   switchExperiment(database, "landing-entry", false)
   await store.saveDatabase()
 })
+
+test("the demo event's check-in rows go after a day and on a demo reset, so the public demo QR never fills up", async () => {
+  const passRows = await import("./lib/passRows.js")
+  const database = store.getDatabase()
+  const demo = new Set(Object.values(database.demoAccountIds))
+  const code = database.measurements.find((item) => demo.has(item.accountId))!.code
+  await passRows.prunePassRows()
+  await sql("insert into uniconnect_passes (code, pass, issued_at) values ($1, 'demo-old', now() - interval '2 days'), ($1, 'demo-new', now())", [code])
+  await passRows.prunePassRows()
+  const left = (await sql("select pass from uniconnect_passes where code = $1 and pass like 'demo-%'", [code])).map((row) => row.pass)
+  assert.deepEqual(left, ["demo-new"])
+  assert.ok((await passRows.clearDemoRows()) >= 1)
+  assert.equal((await sql("select pass from uniconnect_passes where code = $1", [code])).length, 0)
+})

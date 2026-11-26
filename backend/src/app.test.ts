@@ -38,6 +38,7 @@ process.env.ADMIN_TOKEN = "test-admin-token"
 const { createApp } = await import("./app.js")
 const { config, emailCodesExposed } = await import("./config.js")
 const { clearRateLimits } = await import("./lib/rateLimit.js")
+const { exampleEdits } = await import("./routes/profile.js")
 const { backupSettled, getDatabase, loadDatabase, saveDatabase } = await import("./store.js")
 const { DEMO_PASSWORD } = await import("./data/seed.js")
 // 행사의 새 몫이 시작할 때처럼 모든 현장 집계를 0으로 둔다.
@@ -54,7 +55,10 @@ before(async () => {
 })
 
 // 모든 요청이 127.0.0.1에서 오므로 사례마다 제한을 새로 시작한다.
-beforeEach(() => clearRateLimits())
+beforeEach(() => {
+  exampleEdits.open = false
+  return clearRateLimits()
+})
 
 after(async () => {
   await new Promise((resolve) => server.close(resolve))
@@ -2886,6 +2890,8 @@ test("a brand verifies its business with the National Tax Service, and its listi
 })
 
 test("accounts write the listing the other side sees", async () => {
+  // 데모 계정의 예시 소개를 고쳐 보는 테스트라 잠시 연다(lib는 막는다).
+  exampleEdits.open = true
   const student = await login("학생단체")
   const mine = (await call("GET", "/profile", undefined, student)).data.profile
   assert.equal(mine.id, "syu-muse")
@@ -4171,6 +4177,8 @@ test("older sessions with a plain token keep working, stored as its hash", async
 })
 
 test("listings take a small PNG, JPEG or WebP logo, and drop it on request", async () => {
+  // 데모 계정의 예시 소개를 고쳐 보는 테스트라 잠시 연다(lib는 막는다).
+  exampleEdits.open = true
   const student = await login("학생단체")
   const draft = { intro: "삼육대학교 밴드 동아리예요. 정기 공연을 열어요.", offer: "관객 150명 · SNS 홍보" }
   const png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
@@ -4345,6 +4353,8 @@ test("catalogs say how far each listing is from the viewer's campus or store", a
 })
 
 test("a brand's store address is placed on the map through OpenStreetMap once a geocoder is set", async () => {
+  // 데모 계정의 예시 소개를 고쳐 보는 테스트라 잠시 연다(lib는 막는다).
+  exampleEdits.open = true
   const { geocoder } = await import("./lib/geocode.js")
   const brand = await login("브랜드")
   const listing = getDatabase().brands.find((item) => item.id === "afternoon-coffee")!
@@ -5116,8 +5126,9 @@ test("a venue PIN several groups share on a campaign is changed only by the bran
   await call("POST", `/offers/${offerOne.id}/accept`, undefined, first)
   await call("POST", `/offers/${offerTwo.id}/accept`, undefined, second)
   const methods = [{ kind: "qr", side: "group" }, { kind: "experience", side: "group" }]
+  // 여러 단체가 함께하는 캠페인의 확인 방식은 브랜드가 한 번 정한다.
+  assert.equal((await call("PUT", `/agreements/${offerOne.id}/methods`, { methods }, brand)).status, 200)
   for (const [id, group] of [[offerOne.id, first], [offerTwo.id, second]]) {
-    await call("PUT", `/agreements/${id}/methods`, { methods }, group)
     await call("POST", `/agreements/${id}/confirm`, undefined, group)
     await call("POST", `/agreements/${id}/confirm`, undefined, brand)
   }
@@ -10715,5 +10726,127 @@ test("questions are limited by the hour, and by how many wait for an answer", as
     assert.equal((await ask(demo)).status, 429)
   } finally {
     getDatabase().inquiries = before
+  }
+})
+
+test("an owner withdraws a co-admin still waiting for the operators, and an email handover drops one", async () => {
+  const owner = await signUpMember("wait-owner@syu.ac.kr", "wait-pass-123")
+  const invite = async (email: string) => (await call("POST", "/team/invites", { name: "부원", email }, owner)).data.devCode as string
+  const join = (email: string, code: string) => call("POST", "/team/join", { email, code, password: "wait-join-123", document: proofDocument })
+  const waiting = async () => (await call("GET", "/team", undefined, owner)).data.team.waiting as { id: string }[]
+
+  assert.equal((await join("wait-one@syu.ac.kr", await invite("wait-one@syu.ac.kr"))).status, 202)
+  const [first] = await waiting()
+  // 다른 계정은 남의 신청을 찾지 못하고, 주인은 거둔다. 거둔 신청은 승인될 수 없다.
+  assert.equal((await call("DELETE", `/team/waiting/${first.id}`, undefined, await login("학생단체"))).status, 404)
+  assert.equal((await call("DELETE", `/team/waiting/${first.id}`, undefined, owner)).status, 200)
+  assert.deepEqual(await waiting(), [])
+  assert.equal(getDatabase().applications?.some((item) => item.id === first.id), false)
+
+  // 계정을 이메일로 넘기면 앞 대표가 받아 둔 신청도 사라진다.
+  assert.equal((await join("wait-two@syu.ac.kr", await invite("wait-two@syu.ac.kr"))).status, 202)
+  assert.equal((await waiting()).length, 1)
+  const sent = await call("POST", "/auth/email/code", { email: "wait-new@syu.ac.kr", password: "wait-pass-123" }, owner)
+  assert.equal((await call("POST", "/auth/email", { email: "wait-new@syu.ac.kr", code: sent.data.devCode }, owner)).status, 200)
+  assert.deepEqual(await waiting(), [])
+  assert.equal(getDatabase().applications?.some((item) => item.kind === "member" && item.email === "wait-two@syu.ac.kr"), false)
+})
+
+test("restoring a backup keeps new venue PINs, council codes and links, and blocks as they are now", async () => {
+  const { keepThroughRestore } = await import("./lib/adminTools.js")
+  const current = structuredClone(getDatabase())
+  const measurement = current.measurements.find((item) => item.sponsors.length)!
+  const [account] = current.accounts
+  account.councilCode = { code: "NEW-CODE", createdAt: "2026-11-20T00:00:00.000Z" }
+  account.councils = []
+  current.blocks = { [account.id]: ["someone"] }
+  measurement.staffPin = "111111"
+  measurement.groupPin = "222222"
+  measurement.sponsors[0].staffPin = "333333"
+  const backup = structuredClone(current)
+  const old = backup.measurements.find((item) => item.eventId === measurement.eventId)!
+  old.staffPin = "999991"
+  old.groupPin = "999992"
+  old.sponsors[0].staffPin = "999993"
+  backup.accounts[0].councilCode = { code: "OLD-CODE", createdAt: "2026-11-01T00:00:00.000Z" }
+  backup.accounts[0].councils = [{ accountId: "old-council", linkedAt: "2026-11-01T00:00:00.000Z" }]
+  backup.blocks = {}
+  keepThroughRestore(current, backup)
+  assert.deepEqual([old.staffPin, old.groupPin, old.sponsors[0].staffPin], ["111111", "222222", "333333"])
+  assert.deepEqual([backup.accounts[0].councilCode?.code, backup.accounts[0].councils], ["NEW-CODE", []])
+  assert.deepEqual(backup.blocks, { [account.id]: ["someone"] })
+})
+
+test("the shared demo accounts can't rewrite the example profiles every visitor sees", async () => {
+  for (const role of ["학생단체", "브랜드"] as const) {
+    const demo = await login(role)
+    const body = role === "학생단체" ? { intro: "바꾼 소개", offer: "없음" } : { intro: "바꾼 소개", offers: ["음료 · 식품"] }
+    const refused = await call("PUT", "/profile", body, demo)
+    assert.equal(refused.status, 403, role)
+    assert.match(refused.data.error, /데모 계정/)
+  }
+})
+
+test("addresses that know one PIN of an event share a cap, so they can't guess another sponsor's PIN", async () => {
+  const demo = new Set(Object.values(getDatabase().demoAccountIds))
+  const measurement = getDatabase().measurements.find((item) => demo.has(item.accountId))!
+  const right = measurement.sponsors[0]?.staffPin ?? measurement.staffPin
+  const proxied = createApp()
+  proxied.set("trust proxy", true)
+  const other = proxied.listen(0)
+  await new Promise((resolve) => other.once("listening", resolve))
+  const session = async (address: string, pin: string) =>
+    (
+      await fetch(`http://127.0.0.1:${(other.address() as AddressInfo).port}/api/check-in/${measurement.code}/staff/session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Forwarded-For": address },
+        body: JSON.stringify({ pin }),
+      })
+    ).status
+  try {
+    // 주소 네 곳이 맞는 PIN으로 표시를 받고, 각자 주소 한도(10번)까지 틀린 PIN을 보낸다.
+    const statuses: number[] = []
+    for (let address = 0; address < 4; address += 1) {
+      assert.equal(await session(`10.3.0.${address}`, right), 200)
+      for (let index = 0; index < 10; index += 1) statuses.push(await session(`10.3.0.${address}`, "000000"))
+    }
+    // 맞힌 주소들의 틀린 시도는 행사마다 30번까지만 비교된다.
+    assert.equal(statuses.filter((status) => status === 403).length, 30)
+    assert.equal(statuses.filter((status) => status === 429).length, 10)
+    // 모르는 사람의 틀린 시도는 이 한도를 쓰지 않으므로, 처음 보는 주소는 그대로 시도할 수 있다.
+    assert.equal(await session("10.3.1.1", right), 200)
+  } finally {
+    other.close()
+  }
+})
+
+test("in a campaign several groups joined, only the brand sets the result methods, and every group confirms again", async () => {
+  const { addDays, todayInKorea } = await import("./lib/dates.js")
+  const { token: brand } = await listedMember("methods-brand@methods-cafe.kr", "methods-pass-123", "브랜드")
+  const groups = [await listedMember("methods-one@syu.ac.kr", "methods-pass-123"), await listedMember("methods-two@syu.ac.kr", "methods-pass-123")]
+  await call("POST", "/events", { name: "함께하는 캠페인", date: addDays(todayInKorea(), 5), types: ["제품"] }, brand)
+  const paths: string[] = []
+  for (const group of groups) {
+    assert.equal((await call("POST", "/proposals", { matchId: group.listingId }, brand)).status, 201)
+    const [offer] = (await call("GET", "/offers", undefined, group.token)).data.offers
+    await call("POST", `/offers/${offer.id}/accept`, undefined, group.token)
+    paths.push(`/agreements/${offer.id}`)
+  }
+  const methods = [
+    { kind: "qr", side: "group" },
+    { kind: "coupon", side: "group" },
+    { kind: "visit", side: "brand" },
+    { kind: "booth", side: "group" },
+  ]
+  // 한 단체는 모두가 쓰는 방식을 바꾸지 못한다.
+  const refused = await call("PUT", `${paths[0]}/methods`, { methods }, groups[0].token)
+  assert.equal(refused.status, 409)
+  assert.match(refused.data.error, /브랜드가 정해요/)
+  // 두 단체가 확인한 뒤 브랜드가 바꾸면, 두 계약서 모두 다시 확인해야 한다.
+  for (const [index, group] of groups.entries()) await call("POST", `${paths[index]}/confirm`, undefined, group.token)
+  assert.equal((await call("PUT", `${paths[0]}/methods`, { methods }, brand)).status, 200)
+  for (const [index, group] of groups.entries()) {
+    const agreement = (await call("GET", paths[index], undefined, group.token)).data.agreement
+    assert.equal(agreement.confirmed.group, undefined, `group ${index}`)
   }
 })

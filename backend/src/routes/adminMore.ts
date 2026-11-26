@@ -23,6 +23,7 @@ import { config } from "../config.js"
 import { backupSummary, backupWithoutSecrets, cleanTags, keepThroughRestore, grantPartners, logAdmin, resetExamples } from "../lib/adminTools.js"
 import { applicationFolder, applicationsOf } from "../lib/applications.js"
 import { sendMail } from "../lib/mailer.js"
+import { clearDemoRows } from "../lib/passRows.js"
 import { photos, photoType } from "../lib/photos.js"
 import { approveReferralReward, referralRewardsOf, rejectReferralReward, tellReferrers, waitingReferralRewards } from "../lib/referrals.js"
 import { importBatches, importLimits, importListings, removeBatch } from "../lib/listingImport.js"
@@ -398,6 +399,7 @@ adminMoreRouter.post("/demo/reset", async (req, res) => {
   upgradeDatabase(database)
   logAdmin(database, "demo-reset", { kind: "site", id: "demo" })
   await saveDatabase()
+  await clearDemoRows().catch((error: Error) => console.error(`[demo reset] ${error.message}`))
   // 초기화는 끝났으므로 파일을 못 지워도 실패로 답하지 않는다.
   await photos().removeAll(leftovers).catch((error: Error) => console.error(`[demo reset] ${error.message}`))
   res.json({ ok: true })

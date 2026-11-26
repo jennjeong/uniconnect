@@ -920,7 +920,11 @@ authRouter.post("/email", async (req, res) => {
   // 이메일을 넘기면 대표가 바뀐 것이라, 앞 대표로 받은 단체 확인은 이어지지 않는다.
   // 기다리던 확인 신청과 앞 대표의 서류도 지운다.
   delete account.groupVerified
-  const handedOver = applicationsOf(database).filter((item) => item.kind === "group" && item.linkAccountId === account.id)
+  // 앞 대표가 초대해 합류를 기다리던 공동 관리자 신청도 지운다. 새 대표가 모르는 사람이
+  // 운영자 승인으로 들어오지 않게 한다.
+  const handedOver = applicationsOf(database).filter(
+    (item) => (item.kind === "group" && item.linkAccountId === account.id) || (item.kind === "member" && item.accountId === account.id),
+  )
   database.applications = applicationsOf(database).filter((item) => !handedOver.includes(item))
   // 주인의 다른 로그인은 끝나고, 공동 관리자의 로그인은 남는다.
   const keep = req.sessionToken ? hashToken(req.sessionToken) : ""
@@ -928,6 +932,7 @@ authRouter.post("/email", async (req, res) => {
     (session) => session.accountId !== account.id || session.memberId || session.tokenHash === keep,
   )
   await saveDatabase()
+  await photos().removeAll(handedOver.map((item) => applicationFolder(item.id))).catch(() => undefined)
   void notify(
     { ...account, email: previous },
     "account",

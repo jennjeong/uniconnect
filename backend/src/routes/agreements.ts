@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto"
 import { type Request } from "express"
 
 import {
+  campaignGroups,
   acceptedProposal,
   acceptedProposalsOf,
   type AcceptedProposal,
@@ -273,23 +274,35 @@ agreementsRouter.put("/:id/methods", async (req, res) => {
   const share = agreementShare(database, proposal)
   if (!share) throw new HttpError(409, "행사가 정해진 협찬만 협찬 확인 방식을 정할 수 있어요.")
   if (share.event.date <= todayInKorea()) throw new HttpError(409, "행사가 시작돼 협찬 확인 방식을 더 바꿀 수 없어요.")
+  // 브랜드 캠페인의 확인 방식은 캠페인 하나에 하나라, 함께하는 단체 모두에게 걸린다.
+  // 여러 단체가 함께하면 한 단체가 바꾸지 못하고(단체 PIN과 같다), 브랜드가 바꾸면
+  // 모든 단체의 계약서 확인을 풀어 다시 확인하게 한다.
+  const together = share.sponsor ? [] : campaignGroups(database, proposal)
+  if (side === "group" && together.length > 1) {
+    throw new HttpError(409, "여러 단체가 함께하는 캠페인의 확인 방식은 브랜드가 정해요.")
+  }
   const { agreement } = agreementFor(database, proposal)
   const changed = JSON.stringify(methods) !== JSON.stringify(methodsOf(share.measurement, share.sponsor))
   if (share.sponsor) share.sponsor.methods = methods
   else share.measurement.methods = methods
+  const affected = together.length > 1 ? together.map((item) => ({ proposal: item, agreement: agreementFor(database, item).agreement })) : [{ proposal, agreement }]
   if (changed) {
-    agreement.confirmed = {}
-    agreement.updatedAt = new Date().toISOString()
+    for (const item of affected) {
+      item.agreement.confirmed = {}
+      item.agreement.updatedAt = new Date().toISOString()
+    }
   }
   await saveDatabase()
   if (changed) {
-    void notify(
-      side === "group" ? proposal.brand.account : proposal.group.account,
-      "sponsorships",
-      "임시 전자 계약서가 바뀌었어요",
-      [`${account.name}에서 '${proposal.eventName}' 협찬의 협찬 확인 방식을 바꿨어요. 바뀐 내용을 보고 다시 확인해 주세요.`],
-      `/agreements/${encodeURIComponent(agreement.id)}`,
-    )
+    for (const item of affected) {
+      void notify(
+        side === "group" ? item.proposal.brand.account : item.proposal.group.account,
+        "sponsorships",
+        "임시 전자 계약서가 바뀌었어요",
+        [`${account.name}에서 '${item.proposal.eventName}' 협찬의 협찬 확인 방식을 바꿨어요. 바뀐 내용을 보고 다시 확인해 주세요.`],
+        `/agreements/${encodeURIComponent(item.agreement.id)}`,
+      )
+    }
   }
   res.json({ agreement: agreementView(database, agreement, proposal, side) })
 })

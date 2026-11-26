@@ -230,6 +230,7 @@ export const api = {
   inviteMember: (body: { name: string; email: string }) =>
     request<{ team: Team; devCode?: string }>("/team/invites", { method: "POST", body }),
   cancelInvite: (id: string) => request<{ team: Team }>(`/team/invites/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  cancelWaiting: (id: string) => request<{ team: Team }>(`/team/waiting/${encodeURIComponent(id)}`, { method: "DELETE" }),
   removeMember: (id: string) => request<{ team: Team; linksStopped?: boolean; pinsChanged?: boolean }>(`/team/members/${encodeURIComponent(id)}`, { method: "DELETE" }),
   // 초대받은 사람 자신이 이메일로 받은 코드로 계정에 로그인한다.
   joinTeam: (body: { email: string; code: string; password: string; document: { file: string; name: string } }) =>
