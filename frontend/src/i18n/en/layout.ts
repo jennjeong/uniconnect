@@ -704,6 +704,8 @@ const en: Record<string, string> = {
   "점검 모드 켜기": "Enable maintenance mode",
   "점검 모드 끄기": "Disable maintenance mode",
   "백업 작업": "Backup actions",
+  "개발자용 구조 지도": "Architecture map for developers",
+  "학생 현장과 브랜드를 잇는 팀이 만들어요. 어떻게 만들었는지 궁금하다면 구조 지도를 열어 보세요.": "Built by a team linking campus events and brands. Curious how it's made? Open the architecture map.",
   "복원할 백업: {date}": "Restore point: {date}",
   "백업 이후에 추가하거나 변경한 계정, 행사, 제안 등의 데이터는 사라지거나 이전 상태로 돌아갈 수 있어요.": "Accounts, events, proposals and other data added or changed after this backup may be lost or rolled back.",
 }

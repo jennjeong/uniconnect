@@ -38,7 +38,8 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          if (response.ok) {
+          // 개발자용 구조 지도(/developers/)는 앱이 아니므로 오프라인 셸로 남기지 않는다.
+          if (response.ok && !url.pathname.startsWith("/developers/")) {
             const copy = response.clone()
             event.waitUntil(caches.open(SHELL_CACHE).then((cache) => cache.put("shell", copy)))
           }
