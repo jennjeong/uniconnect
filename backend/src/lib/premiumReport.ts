@@ -48,13 +48,14 @@ function eventFigures(measurement: Measurement) {
   }
 }
 
-// 비교할 행사. 끝났고 스캔이 있는 행사 중 이 행사를 뺀 것이다. 회원은
-// 회원의 행사와, 데모는 예시까지 모든 행사와 비교한다.
+// 비교할 행사. 끝났고 스캔이 있는 행사 중 이 행사를 뺀 것이다. 회원은 회원의
+// 행사끼리, 데모는 예시끼리 비교한다. 샘플 리포트는 로그인하지 않은 방문자도
+// 읽으므로 회원의 결과가 섞이면 안 된다.
 function comparable(database: Database, measurement: Measurement, demo: boolean) {
   const today = todayInKorea()
   return database.measurements.filter((other) => {
     if (other === measurement || other.metrics.scans === 0 || other.alwaysOn) return false
-    if (!demo && isDemoId(database, other.accountId)) return false
+    if (isDemoId(database, other.accountId) !== demo) return false
     const event = eventOf(database, other)
     return Boolean(event && (event.endDate ?? event.date) < today)
   })

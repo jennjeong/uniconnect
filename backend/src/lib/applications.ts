@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto"
 
 import { HttpError } from "./errors.js"
-import { parsePdf, parsePhoto, photos } from "./photos.js"
+import { parsePdf, parsePhoto, photos, sentName } from "./photos.js"
 import { text } from "./validation.js"
 import type { Application, Database } from "../types.js"
 
@@ -23,11 +23,7 @@ export function parseDocument(input: unknown, missing: string) {
   const body = (input ?? {}) as { file?: unknown; name?: unknown }
   const parsed = parsePhoto(body.file) ?? parsePdf(body.file)
   if (!parsed) throw new HttpError(400, missing)
-  // 확장자는 내용을 따른다. 보낸 이름의 것을 남기면 운영자가 내려받아 연 파일이
-  // .html로 실행될 수 있다.
-  const stem = text(body.name).replace(/[\\/:*?"<>|\p{Cc}]+/gu, " ").replace(/\.[^.]*$/, "").trim().slice(0, 70)
-  const name = `${stem || "서류"}.${parsed.name.split(".").pop()}`
-  return { file: parsed.name, bytes: parsed.bytes, name }
+  return { file: parsed.name, bytes: parsed.bytes, name: sentName(text(body.name), parsed.name, "서류") }
 }
 
 // 서류를 보관하고 신청을 더한다. 저장이 실패하면 서류도 지우고 신청은

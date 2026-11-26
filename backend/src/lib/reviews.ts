@@ -3,7 +3,7 @@ import { groupVerifiedNow } from "./groupCheck.js"
 
 import { todayInKorea } from "./dates.js"
 import type { AcceptedProposal } from "./agreements.js"
-import type { Account, ChatSide, Database, Review } from "../types.js"
+import type { Account, ChatSide, Database, Review, ReviewTakedown } from "../types.js"
 
 // 후기는 행사 당일에 열린다(날짜가 없는 행사는 바로). 취소되지 않은
 // 협찬에 한한다.
@@ -103,3 +103,26 @@ export const publicReview = (review: Review) => ({
       }
     : {}),
 })
+
+// 운영자가 내린 뒤 쓴 사람이 지운 후기나 답글의 기록(types.ts의 ReviewTakedown). 다시 쓰면
+// 내려진 채로 시작한다.
+export const takenDown = (database: Database, reviewId: string, part: ReviewTakedown["part"]) =>
+  database.reviewTakedowns?.find((item) => item.reviewId === reviewId && item.part === part)?.hiddenAt
+
+export function dropTakedown(database: Database, reviewId: string, part: ReviewTakedown["part"]) {
+  database.reviewTakedowns = (database.reviewTakedowns ?? []).filter((item) => item.reviewId !== reviewId || item.part !== part)
+}
+
+export function keepTakedown(database: Database, reviewId: string, part: ReviewTakedown["part"], hiddenAt: string) {
+  dropTakedown(database, reviewId, part)
+  database.reviewTakedowns!.push({ reviewId, part, hiddenAt })
+}
+
+// 협찬이 없어지거나 취소되면 그 후기를 다시 쓸 수 없으므로 기록도 지운다.
+export function pruneTakedowns(database: Database) {
+  if (!database.reviewTakedowns?.length) return
+  const open = new Set([...database.requests, ...database.offers].filter((item) => !item.canceledAt).map((item) => item.id))
+  database.reviewTakedowns = database.reviewTakedowns.filter((item) => open.has(item.reviewId.slice(0, item.reviewId.lastIndexOf(":"))))
+}
+
+export const hiddenMark = (hiddenAt: string | undefined) => (hiddenAt ? { hiddenAt } : {})

@@ -995,6 +995,8 @@ const en: Record<string, string> = {
   "지금은 기기 알림을 켤 수 없어요.": "Device notifications aren't available right now.",
   "이 브라우저의 알림 정보를 읽지 못했어요.": "We couldn't read this browser's notification details.",
   "이 기기의 알림을 먼저 켜 주세요.": "Turn on notifications on this device first.",
+  "질문을 너무 많이 보냈어요. 1시간 뒤에 다시 보내 주세요.": "You've sent too many questions. Try again in an hour.",
+  "답을 기다리는 질문이 많아요. 답변을 받은 뒤 다시 보내 주세요.": "You have many questions waiting for an answer. Send more once they're answered.",
   "이 기기의 알림이 끊겼어요. 다시 켜 주세요.": "Notifications on this device were disconnected. Turn them on again.",
   "시험 알림을 보내지 못했어요. 잠시 뒤에 다시 시도해 주세요.": "We couldn't send the test notification. Try again in a while.",
   "시험 알림을 너무 많이 보냈어요. 잠시 뒤에 다시 시도해 주세요.": "Too many test notifications. Try again in a while.",

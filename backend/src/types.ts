@@ -893,6 +893,10 @@ export type Review = {
   reply?: { text: string; createdAt: string; updatedAt?: string; hiddenAt?: string }
 }
 
+// 운영자가 내린 뒤 쓴 사람이 지운 후기나 답글이다. 지우고 다시 써도 내려진 채로
+// 있도록 어느 것이었는지와 내린 시각만 남기고 내용은 남기지 않는다.
+export type ReviewTakedown = { reviewId: string; part: "review" | "reply"; hiddenAt: string }
+
 // 신고에 대해 운영자가 한 일이다. 아무것도 안 함, 후기나 그 답글을 내림,
 // 계정을 정지함이 있다.
 export type ReportAction = "dismiss" | "hide-review" | "hide-reply" | "suspend"
@@ -1075,6 +1079,7 @@ export type Database = {
   // 대화를 더 이상 보지 못한다.
   blocks: Record<string, string[]>
   reviews: Review[]
+  reviewTakedowns?: ReviewTakedown[]
   // The listings each account saved (찜), newest first, by account id.
   saved: Record<string, string[]>
   // 계정 id마다 저장한 관심 조건이다(lib/savedSearches.ts, #338).

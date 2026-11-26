@@ -25,6 +25,7 @@ import { HttpError } from "./lib/errors.js"
 import { emptyMetrics, eventOf, newStaffPin, prunePasses, syncSponsors, upgradePins } from "./lib/measurements.js"
 import { upgradeMethods } from "./lib/methods.js"
 import { currentStorage, StaleWrite } from "./lib/storage.js"
+import { sentName } from "./lib/photos.js"
 import { openDocument, sealDocument } from "./lib/secrets.js"
 import { renamedAccountTypes } from "./lib/validation.js"
 import { hashToken } from "./middleware/session.js"
@@ -227,6 +228,13 @@ export function upgradeDatabase(stored: Database) {
   delete (stored as { matches?: unknown }).matches
   stored.conversations ??= seedConversations()
   stored.inquiries ??= []
+  // 확장자가 내용을 따르기 전에 올린 채팅 파일과 행사 기획안의 이름이다.
+  for (const { attachment } of stored.conversations.flatMap((item) => item.messages)) {
+    if (attachment) attachment.name = sentName(attachment.name, attachment.file, "file")
+  }
+  for (const { plan } of Object.values(stored.events ?? {}).flat()) {
+    if (plan) plan.name = sentName(plan.name, plan.file, "기획안")
+  }
   stored.invites ??= []
   stored.agreements ??= []
   stored.reports ??= []

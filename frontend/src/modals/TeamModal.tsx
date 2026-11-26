@@ -24,15 +24,23 @@ export function TeamModal({ onClose, onNotice }: { onClose: () => void; onNotice
     )
   }, [])
 
-  const run = async (change: () => Promise<{ team: Team; devCode?: string; linksStopped?: boolean }>, notice: string) => {
+  const run = async (change: () => Promise<{ team: Team; devCode?: string; linksStopped?: boolean; pinsChanged?: boolean }>, notice: string) => {
     setBusy(true)
     setError("")
     try {
       const result = await change()
       setTeam(result.team)
       setDevCode(result.devCode ?? "")
-      // 빠진 사람이 알 수 있던 공개 링크는 서버가 멈춘다.
-      onNotice(result.linksStopped ? `${notice} ${t("공개 링크가 멈췄어요. 필요하면 새로 만들어 주세요.")}` : notice)
+      // 빠진 사람이 알 수 있던 공개 링크는 서버가 멈추고, 현장 PIN은 새로 만든다.
+      onNotice(
+        [
+          notice,
+          result.linksStopped && t("공개 링크가 멈췄어요. 필요하면 새로 만들어 주세요."),
+          result.pinsChanged && t("현장 PIN도 새로 만들었어요. 현장에 알려 주세요."),
+        ]
+          .filter(Boolean)
+          .join(" "),
+      )
       return true
     } catch (caught) {
       setError(errorMessage(caught))

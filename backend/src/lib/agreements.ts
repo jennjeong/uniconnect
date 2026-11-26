@@ -5,15 +5,15 @@ import type { DisputeFiles } from "./disputes.js"
 import { todayInKorea } from "./dates.js"
 import { parseValue } from "./fees.js"
 import { HttpError } from "./errors.js"
-import { ensureMeasurement, pinMissesToday, pinsFrom, pinsOpen, rotatePin } from "./measurements.js"
+import { checkInWindow, ensureMeasurement, eventOf, pinMissesToday, pinsFrom, pinsOpen, rotatePin } from "./measurements.js"
 import { activeMethodsOf, confirmsAt, isVenueKind, methodsOf, venueCountsOf } from "./methods.js"
 import { payoutView } from "./payouts.js"
 import { photos } from "./photos.js"
-import { canReview, isDemoAccount, publicReview, reviewOpen } from "./reviews.js"
+import { canReview, isDemoAccount, pruneTakedowns, publicReview, reviewOpen } from "./reviews.js"
 import { isSponsored } from "./sponsorships.js"
 import { sponsorTypes } from "./validation.js"
 import { ownerOf } from "./owners.js"
-import type { Account, Agreement, AgreementItem, ChatSide, Database, EventItem, ProposalTerms } from "../types.js"
+import type { Account, Agreement, AgreementItem, ChatSide, Database, EventItem, EventSponsor, Measurement, ProposalTerms } from "../types.js"
 
 export { uploadsFolder } from "./photos.js"
 
@@ -121,6 +121,7 @@ export function cancelSponsorship(database: Database, proposal: AcceptedProposal
     measurement.sponsors = measurement.sponsors.filter((sponsor) => sponsor.id !== sponsorshipId)
   }
   database.reviews = database.reviews.filter((review) => review.proposalId !== proposal.id)
+  pruneTakedowns(database)
   const sponsored = sponsoredEvent(database, proposal)
   if (sponsored && sponsored.event.status === "집행 예정" && !isSponsored(database, sponsored.event.id)) {
     sponsored.event.status = "매칭 중"
@@ -217,6 +218,52 @@ export function rotateVenuePin(database: Database, proposal: AcceptedProposal, s
     throw new HttpError(409, "PIN은 보이는 날부터 바꿀 수 있어요.")
   }
   rotatePin(share.measurement, share.sponsor, side)
+}
+
+// 팀에서 빠진 사람이 이 계정으로 봤을 수 있는 현장 PIN을 새로 만든다. 이미 보이는 PIN만이고
+// 매장 방문 확인까지 끝난 행사는 둔다. PIN은 로그인 없이 통하므로 다른 단체와 함께 쓰는 것도
+// 바꾸고, 알릴 쪽(같은 캠페인의 다른 단체와 브랜드)을 돌려준다.
+export function renewSeenPins(database: Database, account: Account) {
+  const told: { account: Account; proposal: AcceptedProposal }[] = []
+  let pinsChanged = false
+  const renew = (measurement: Measurement, sponsor: EventSponsor | undefined, side: ChatSide) => {
+    rotatePin(measurement, sponsor, side)
+    pinsChanged = true
+  }
+  const seen = (measurement: Measurement, event: EventItem) =>
+    pinsOpen(database, measurement, event) && todayInKorea() <= checkInWindow(event).visitsEnd
+  for (const measurement of database.measurements) {
+    if (measurement.accountId !== account.id) continue
+    if (measurement.alwaysOn) {
+      renew(measurement, undefined, "brand")
+      continue
+    }
+    const event = eventOf(database, measurement)
+    if (!event || !seen(measurement, event)) continue
+    if (account.role === "학생단체") renew(measurement, undefined, "group")
+    if (!measurement.sponsors.length) renew(measurement, undefined, "brand")
+  }
+  const shared = new Set<Measurement>()
+  for (const proposal of acceptedProposalsOf(database, account)) {
+    const side = sideIn(proposal, account)
+    const share = proposal.canceled ? undefined : agreementShare(database, proposal)
+    // 자기 행사의 PIN은 위에서 바꿨다.
+    if (!share || !side || share.measurement.accountId === account.id || !seen(share.measurement, share.event)) continue
+    if (side === "brand") {
+      renew(share.measurement, share.sponsor, "brand")
+      continue
+    }
+    if (shared.has(share.measurement)) continue
+    shared.add(share.measurement)
+    renew(share.measurement, undefined, "group")
+    const groups = campaignGroups(database, proposal)
+    for (const other of groups) {
+      const partner = other.group.account
+      if (partner && partner.id !== account.id) told.push({ account: partner, proposal: other })
+    }
+    if (groups.length > 1 && proposal.brand.account) told.push({ account: proposal.brand.account, proposal })
+  }
+  return { pinsChanged, told }
 }
 
 // 수락된 제안에서 계정이 맡는 쪽. 없으면 없음.

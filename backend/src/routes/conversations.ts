@@ -5,7 +5,7 @@ import type { Response } from "express"
 import { findListing, shownCatalog, shownTo } from "../lib/catalog.js"
 import { HttpError } from "../lib/errors.js"
 import { notify } from "../lib/notices.js"
-import { chatFiles, fileName, forgetPhotos, parsePdf, parsePhoto, photoType, photos } from "../lib/photos.js"
+import { chatFiles, fileName, forgetPhotos, parsePdf, parsePhoto, photoType, photos, sentName } from "../lib/photos.js"
 import { createRateLimit, senderKey } from "../lib/rateLimit.js"
 import { isDemoAccount } from "../lib/reviews.js"
 import { text } from "../lib/validation.js"
@@ -277,9 +277,11 @@ async function addMessage(
 
 conversationsRouter.post("/:id/messages", async (req, res) => {
   const account = requireAccount(req)
-  const conversation = findOwn(account, req.params.id)
+  findOwn(account, req.params.id)
   const message = messageText(req.body?.text)
   await countMessage(req, account)
+  // 세는 동안 데이터를 새로 읽었을 수 있어 다시 찾는다.
+  const conversation = findOwn(account, req.params.id)
   await addMessage(account, conversation, { text: message }, message.slice(0, 80))
   res.status(201).json({ conversation: view(conversation, sideOf(account), true) })
 })
@@ -310,9 +312,10 @@ function parseMeeting(body: Record<string, unknown> | undefined) {
 // 거절하고 기다리는 동안 보낸 쪽이 취소할 수 있다.
 conversationsRouter.post("/:id/meetings", async (req, res) => {
   const account = requireAccount(req)
-  const conversation = findOwn(account, req.params.id)
+  findOwn(account, req.params.id)
   const { meeting, note } = parseMeeting(req.body)
   await countMessage(req, account)
+  const conversation = findOwn(account, req.params.id)
   const line = `미팅 제안: ${meeting.date} ${meeting.time} · ${meeting.place}`
   await addMessage(account, conversation, { text: note || line, meeting }, line)
   res.status(201).json({ conversation: view(conversation, sideOf(account), true) })
@@ -377,22 +380,26 @@ conversationsRouter.post("/:id/attachments", async (req, res) => {
   const account = requireAccount(req)
   const conversation = findOwn(account, req.params.id)
   if (isDemoAccount(getDatabase(), account)) throw new HttpError(403, "데모 계정은 파일을 보낼 수 없어요.")
-  // 보낼 때의 이름이되 폴더와 이상한 문자는 뺀다.
-  const sentName = text(req.body?.name).split(/[\\/]/).pop()!.replace(/[\u0000-\u001f]/g, "").slice(0, 80)
   const photo = parsePhoto(req.body?.file)
   const kept = photo ?? parsePdf(req.body?.file)
   if (!kept) throw new HttpError(400, "사진(PNG, JPG, WebP)이나 2MB 이하의 PDF를 보내 주세요.")
-  if (storedBytes(getDatabase(), account) + kept.bytes.length > maxStoredBytes) {
-    throw new HttpError(409, "보낸 파일이 10MB를 넘어요. 지난 파일 메시지를 지운 뒤 다시 보내 주세요.")
+  const assertRoom = () => {
+    if (storedBytes(getDatabase(), account) + kept.bytes.length > maxStoredBytes) {
+      throw new HttpError(409, "보낸 파일이 10MB를 넘어요. 지난 파일 메시지를 지운 뒤 다시 보내 주세요.")
+    }
   }
+  assertRoom()
   await countMessage(req, account)
   const store = photos()
   await store.put(chatFiles(conversation.id), kept.name, kept.bytes)
   const type = photo ? "image" : "pdf"
-  const name = sentName || (photo ? "photo" : "file.pdf")
+  // 보낼 때의 이름이되 폴더와 이상한 문자는 뺀다.
+  const name = sentName(text(req.body?.name).split(/[\\/]/).pop()!, kept.name, photo ? "photo" : "file")
   try {
     // 다시 찾는다. 파일이 들어오는 동안 데이터를 새로 읽었을 수 있다.
     const fresh = findOwn(account, req.params.id)
+    // 그사이 함께 보낸 다른 파일까지 세어 다시 확인한다. 여기부터 메시지를 더할 때까지 기다리지 않는다.
+    assertRoom()
     await addMessage(
       account,
       fresh,
