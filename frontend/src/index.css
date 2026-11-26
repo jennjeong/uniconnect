@@ -1082,6 +1082,11 @@ button.nav-pill:hover {
   line-height: 1.65;
 }
 
+.footer-about a {
+  display: inline-block;
+  text-decoration: none;
+}
+
 .footer-about p {
   margin: 18px 0 0;
   color: var(--ink-soft);
@@ -1107,6 +1112,7 @@ button.nav-pill:hover {
 }
 
 .footer-column button,
+.footer-column a,
 .footer-legal button {
   padding: 0;
   border: 0;
@@ -1120,6 +1126,7 @@ button.nav-pill:hover {
 }
 
 .footer-column button:hover,
+.footer-column a:hover,
 .footer-legal button:hover {
   color: var(--point-strong);
   transform: translateX(4px);
@@ -17055,6 +17062,7 @@ textarea {
 
   /* 손가락으로 누르는 것은 44px 이상(WCAG 2.5.5, Apple HIG). */
   .footer-column button,
+.footer-column a,
   .footer-policies > button,
   .footer-legal > button,
   .underline-link,
@@ -17072,6 +17080,7 @@ textarea {
   }
 
   .footer-column button,
+.footer-column a,
   .underline-link,
   .subtle-link {
     display: inline-flex;

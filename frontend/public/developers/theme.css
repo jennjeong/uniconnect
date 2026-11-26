@@ -1,0 +1,49 @@
+/* uniconnect 구조 지도의 색과 글꼴. floorplan 지도의 색 변수를 사이트의 토큰 값(frontend/src/index.css)으로
+   바꾼다. 밝은 화면은 짙은 파랑과 은색, 어두운 화면은 사이트의 다크 모드 값을 따른다. 배치는 건드리지 않는다. */
+@font-face {
+  font-family: "Pretendard Variable";
+  font-weight: 45 920;
+  font-style: normal;
+  font-display: swap;
+  src: url("fonts/PretendardVariable.woff2") format("woff2-variations");
+}
+
+:root,
+:root[data-theme="dark"] {
+  --sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Segoe UI", sans-serif;
+  --bg: #101318; --bg-rgb: 16, 19, 24; --grid: #222731;
+  --surface: #1b1f27; --surface-hover: #222731; --raise: #242a33; --raise-2: #2f3641;
+  --elev: rgba(27, 31, 39, .9); --dir-bg: rgba(27, 31, 39, .72); --menu-solid: rgba(27, 31, 39, .96);
+  --palette-bg: rgba(27, 31, 39, .97); --modal-bg: rgba(27, 31, 39, .98);
+  --text: #e8ebf0; --text-2: #c2c8d1; --text-3: #9aa3b0; --text-4: #7c8594;
+  --on: #8fb6ff; --on-hover: #b3cdff; --on-text: #101318;
+  --ring: rgba(143, 182, 255, .9); --focus: rgba(143, 182, 255, .2);
+  --recent: #8fb6ff; --on-recent-text: #101318;
+  --k-import: #4a5262; --k-http: #7aa9ff; --k-call: #a9c4ff; --k-rpc: #a9c4ff; --k-data: #8fb6ff; --k-config: #6c7584; --k-contains: #3a414d;
+  --n-ui: #8fb6ff; --n-service: #7aa9ff; --n-feature: #a9c4ff; --n-library: #c2c8d1; --n-data: #7fc4e8;
+  --n-external: #b9c2d0; --n-test: #9aa3b0; --n-script: #9aa3b0; --n-config: #9aa3b0; --n-misc: #9aa3b0;
+  --n-dir: #9aa3b0; --n-file: #9aa3b0; --n-module: #9aa3b0; --n-route: #7aa9ff; --n-symbol: #a9c4ff; --n-connector: #6c7584;
+  --m-GET: #8fb6ff; --m-POST: #7fc4e8; --m-PUT: #ffb067; --m-PATCH: #b9a6ff; --m-DELETE: #ff6b75; --m-CALL: #a9c4ff; --m-ANY: #9aa3b0;
+}
+
+:root[data-theme="light"] {
+  --bg: #f4f6fa; --bg-rgb: 244, 246, 250; --grid: #dde3ee; --ink: 43, 51, 67;
+  --surface: #ffffff; --surface-hover: #f7f9fc; --raise: #eef0f4; --raise-2: #e1e5ec;
+  --elev: rgba(255, 255, 255, .94); --dir-bg: rgba(255, 255, 255, .74); --menu-solid: rgba(255, 255, 255, .97);
+  --palette-bg: rgba(255, 255, 255, .98); --modal-bg: rgba(255, 255, 255, .98);
+  --hair: rgba(43, 51, 67, .1); --hair-2: rgba(43, 51, 67, .16);
+  --text: #2b3343; --text-2: #4d5668; --text-3: #636d7f; --text-4: #6b7486;
+  --on: #1b3f8f; --on-hover: #13306f; --on-text: #ffffff;
+  --ring: rgba(27, 63, 143, .9); --focus: rgba(47, 99, 217, .18);
+  --recent: #1b3f8f; --on-recent-text: #ffffff;
+  --shadow-card: 0 0 0 1px rgba(43, 51, 67, .1), 0 1px 2px rgba(43, 51, 67, .05), 0 12px 28px -18px rgba(27, 63, 143, .28);
+  --shadow-float: 0 0 0 1px rgba(43, 51, 67, .1), 0 20px 48px -22px rgba(27, 63, 143, .35);
+  --k-import: #aab5c7; --k-http: #2f63d9; --k-call: #3d6ad0; --k-rpc: #3d6ad0; --k-data: #1b3f8f; --k-config: #636d7f; --k-contains: #cdd3dd;
+  --n-ui: #1b3f8f; --n-service: #2f63d9; --n-feature: #3d6ad0; --n-library: #4d5668; --n-data: #1d6f93;
+  --n-external: #636d7f; --n-test: #6b7486; --n-script: #6b7486; --n-config: #6b7486; --n-misc: #6b7486;
+  --n-dir: #636d7f; --n-file: #636d7f; --n-module: #636d7f; --n-route: #2f63d9; --n-symbol: #3d6ad0; --n-connector: #8a94a6;
+  --m-GET: #1b3f8f; --m-POST: #1d6f93; --m-PUT: #946000; --m-PATCH: #6a45d6; --m-DELETE: #c0392b; --m-CALL: #3d6ad0; --m-ANY: #636d7f;
+}
+
+/* 한글 제목은 자간을 좁히지 않는다(사이트의 한글 규칙). */
+:lang(ko) body { word-break: keep-all; font-synthesis: none; }

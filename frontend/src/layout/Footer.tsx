@@ -32,7 +32,6 @@ export function Footer({
   onOpenPlans,
   onOpenLegal,
   onEditProfile,
-  onOpenDevelopers,
   onLogin,
   onSignup,
   onLogout,
@@ -54,8 +53,6 @@ export function Footer({
   onOpenPlans: () => void
   onOpenLegal: (kind: LegalKind) => void
   onEditProfile: () => void
-  // 개발자용 구조 지도(/developers).
-  onOpenDevelopers: () => void
   onLogin: () => void
   onSignup: () => void
   onLogout: () => void
@@ -171,9 +168,10 @@ export function Footer({
             <p>{t("학생 현장과 브랜드를 잇는 팀이 만들어요. 어떻게 만들었는지 궁금하다면 구조 지도를 열어 보세요.")}</p>
             <ul>
               <li>
-                <button onClick={onOpenDevelopers} type="button">
-                  {t("개발자용 구조 지도")}
-                </button>
+                {/* 구조 지도는 앱 밖의 정적 페이지다(scripts/developer-map.mjs가 만든다). */}
+                <a href="/developers/map.html" rel="noopener" target="_blank">
+                  {t("개발자용 구조 지도")} ↗
+                </a>
               </li>
             </ul>
           </div>

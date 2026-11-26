@@ -1,0 +1,1 @@
+if (/AppleWebKit/.test(navigator.userAgent) && !/Chrome|Chromium|Edg|OPR/.test(navigator.userAgent)) document.documentElement.classList.add('wk');

@@ -193,12 +193,6 @@ export function pageMeta(
       noindex: true,
     }
   }
-  if (view.developers) {
-    return {
-      title: titled(t("개발자용 구조 지도")),
-      description: t("uniconnect의 코드가 어떤 파트로 나뉘고 서로 어떻게 이어지는지 보여 주는 지도예요."),
-    }
-  }
   if (view.explore) {
     return {
       title: titled(t("다른 단체 행사 둘러보기")),
