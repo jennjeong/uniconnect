@@ -1604,6 +1604,17 @@ function App() {
           onEdit={(eventId) => go({ page, edit: eventId })}
           onCopy={(eventId) => go({ page, create: todayIso(), copy: eventId })}
           onOpenGroup={students ? undefined : (listingId) => go({ page: "단체 찾기", detail: listingId })}
+          onPropose={
+            students
+              ? undefined
+              : (listingId) => {
+                  const match = catalog.find((item) => item.id === listingId)
+                  if (match) propose(match)
+                  else go({ page: "단체 찾기", detail: listingId })
+                }
+          }
+          onOpenSent={account ? () => openInbox("sent") : undefined}
+          proposalStatus={(listingId) => statuses[listingId]}
           onNotice={showNotice}
           canUpload={member}
         />

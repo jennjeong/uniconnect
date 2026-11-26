@@ -1671,6 +1671,16 @@ const en: Record<string, string> = {
   "A/B 테스트 켜기 · 끄기": "A/B test on · off",
   "A/B 테스트 숫자 지우기": "A/B test counts cleared",
   "문구를 비교하는 A/B 테스트가 켜져 있으면, 어느 문구를 보여 줄지 정하려고 무작위 번호와 켜진 실험, 본 문구를 브라우저 저장소(localStorage)에 둬요. 번호는 서버에 보내지 않고, 서버는 문구별로 보인 횟수와 가입으로 이어진 횟수만 세요.": "While an A/B test comparing wordings runs, a random number, the running tests and the wording shown are kept in browser storage (localStorage) to decide which wording to show. The number is never sent to the server, which counts only how often each wording was shown and led to a sign-up.",
+  "받는 곳": "To",
+  "기본 인사말": "The usual greeting",
+  "{date}로 조정 요청": "Asking to move it to {date}",
+  "상대 행사 날짜대로": "On the partner's event date",
+  "보낼 내용 확인하기": "Review before sending",
+  "이대로 보낼까요? 보낸 뒤에는 답을 기다리는 동안 고칠 수 없고, 거둔 뒤 다시 보낼 수 있어요.": "Send it like this? While it waits for an answer it can't be edited; you can withdraw it and send again.",
+  "행사 준비": "Getting ready",
+  "성과 · 후기": "Results · review",
+  "{step}/{total}단계 · {name}": "Step {step} of {total} · {name}",
+  "마지막 변경 {date}": "Last changed {date}",
 }
 
 export default en

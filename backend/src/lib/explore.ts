@@ -32,6 +32,9 @@ export function exploreEvents(database: Database, viewer?: Account) {
           ...(event.endDate ? { endDate: event.endDate } : {}),
           ...(event.kind ? { kind: event.kind } : {}),
           people: event.people,
+          // 브랜드가 고르는 데 쓰는 지원 유형과 지금 협찬을 찾는지(매칭 중)다.
+          types: event.types,
+          status: event.status,
           ...(event.venue ? { venue: event.venue } : {}),
           ...(event.intro ? { intro: event.intro.slice(0, introLength) } : {}),
           packages: (event.packages ?? []).slice(0, 4).map(({ name, gives }) => ({ name, gives })),

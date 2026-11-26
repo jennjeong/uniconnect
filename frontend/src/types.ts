@@ -1564,6 +1564,8 @@ export type ExploreEvent = {
   endDate?: string
   kind?: string
   people: string
+  types: string[]
+  status: EventStatus
   venue?: string
   intro?: string
   packages: { name: string; gives: string }[]

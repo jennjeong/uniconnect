@@ -9302,6 +9302,20 @@ html.modal-open {
 
 /* 계약서 맨 위의 지금 상태(components/AgreementStatus.tsx): 한 줄의 상태, 누가 무엇을
    할지의 목록, 기한. 왼쪽 띠의 색이 상태를 말하고, 글로도 같은 것을 쓴다. */
+.agreement-stage {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px var(--space-4);
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+.agreement-stage span:first-child {
+  color: var(--ink);
+  font-weight: var(--weight-label);
+}
+
 .agreement-status {
   display: grid;
   gap: var(--space-3);

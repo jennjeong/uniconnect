@@ -88,6 +88,7 @@ test("a brand picks candidate schools the operators chose and proposes to them, 
   await schools.getByRole("button", { name: "고른 1곳에 제안 보내기" }).click()
   const dialog = page.getByRole("dialog")
   await expect(dialog).toContainText("섭외 밴드")
+  await dialog.getByRole("button", { name: "보낼 내용 확인하기" }).click()
   await dialog.getByRole("button", { name: "제안 보내기", exact: true }).click()
   await expect(page.getByText("1곳에 협찬 제안을 보냈어요.")).toBeVisible()
   await expect(schools).toContainText("답 기다리는 중")

@@ -432,6 +432,8 @@ export type SponsorRequest = {
   status: RequestStatus
   createdAt: string
   respondedAt?: string
+  // 답한 사람: 계정 주인이면 "owner", 공동 관리자면 그 사람의 id(lib/team.ts).
+  respondedBy?: string
   // 답이 없어 받은 쪽에 다시 알린 단계(1: 3일, 2: 7일)와 마지막으로 알린 때(lib/nudges.ts).
   nudgeStage?: 1 | 2
   nudgedAt?: string
@@ -466,6 +468,8 @@ export type SponsorOffer = {
   status: RequestStatus
   createdAt: string
   respondedAt?: string
+  // 답한 사람: 계정 주인이면 "owner", 공동 관리자면 그 사람의 id(lib/team.ts).
+  respondedBy?: string
   // 답이 없어 받은 쪽에 다시 알린 단계(1: 3일, 2: 7일)와 마지막으로 알린 때(lib/nudges.ts).
   nudgeStage?: 1 | 2
   nudgedAt?: string
