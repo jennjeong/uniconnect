@@ -357,7 +357,14 @@ export const estimatedSales = (measurement: Measurement) =>
 export function buildReport(
   measurement: Measurement,
   event: EventItem,
-  { withPin = false, withGroupPin = false, pinsDay = "", canRotatePin = false, posted = { confirmed: 0, pending: 0 } } = {},
+  {
+    withPin = false,
+    withGroupPin = false,
+    pinsDay = "",
+    canRotatePin = false,
+    ceiling = undefined as Report["scanCeiling"],
+    posted = { confirmed: 0, pending: 0 },
+  } = {},
 ): Report {
   const { goals, metrics } = measurement
   const sponsorValue = goals.valueBreakdown.reduce((sum, part) => sum + part.value, 0)
@@ -383,6 +390,7 @@ export function buildReport(
     ...(withGroupPin ? { groupPin: measurement.groupPin } : {}),
     ...(pinsDay ? { pinsFrom: pinsDay } : {}),
     ...(canRotatePin ? { canRotatePin } : {}),
+    ...(ceiling ? { scanCeiling: ceiling } : {}),
     methods: activeMethodsOf(measurement),
     venue: venueCountsOf(metrics),
     // 학생 단체 자신의 리포트용 참석자 정보. 행사 종류, 예상 참석자, 그리고
@@ -435,10 +443,15 @@ export const pinsOpen = (database: Database, measurement: Measurement, event: Ev
 // 행사가 세는 스캔의 상한. 돌려 쓰는 QR로 도달이 예상보다 크게 부풀지
 // 않도록 예상 인원의 세 배, 최소 100으로 한다. 데모 계정의 방문자가
 // 무엇을 시도해도 같다.
+// 체크인 주소는 참가자 누구나 알아 낯선 사람도 상한을 채울 수 있다. 차면 주인에게 알리고,
+// 주인은 한 번에 처음 상한만큼, 최대 `ceilingRaises`번 늘린다(2026-11-27 결정).
+export const ceilingRaises = 2
+const baseCeiling = (measurement: Measurement) =>
+  Math.max(100, (measurement.agreedAudience ?? measurement.goals.expectedAudience) * 3)
 export const scanCeiling = (database: Database, measurement: Measurement) =>
   isDemoEvent(database, measurement) || measurement.alwaysOn
     ? Infinity
-    : Math.max(100, (measurement.agreedAudience ?? measurement.goals.expectedAudience) * 3)
+    : baseCeiling(measurement) * (1 + Math.min(measurement.ceilingRaised ?? 0, ceilingRaises))
 
 // 행사 기간 밖의 스캔이나 쿠폰, 쿠폰이 소진된 뒤의 방문을 거절한다.
 export function assertOpen(database: Database, measurement: Measurement, event: EventItem, kind: MetricKind) {

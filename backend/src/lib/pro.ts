@@ -20,10 +20,21 @@ export const partnerRequestCategory = "파트너스 섭외 요청"
 
 const koreanMonth = (at: string) => koreanDay(at).slice(0, 7)
 
-// 브랜드가 이번 달에 보낸 제안.
+// 브랜드가 이번 달에 보낸 제안. 보낸 순간 한 건으로 세고, 거둔 제안도 빼지
+// 않는다(상대에게는 이미 메일이 갔다). 카운터가 생기기 전에 보낸 제안은 남은
+// 기록으로 센다.
 export function offersThisMonth(database: Database, accountId: string) {
   const month = todayInKorea().slice(0, 7)
-  return database.offers.filter((offer) => offer.fromAccountId === accountId && koreanMonth(offer.createdAt) === month).length
+  const live = database.offers.filter((offer) => offer.fromAccountId === accountId && koreanMonth(offer.createdAt) === month).length
+  const sent = database.accounts.find((item) => item.id === accountId)?.offersSent
+  return Math.max(live, sent?.month === month ? sent.count : 0)
+}
+
+// 브랜드가 제안 하나를 보냈다.
+export function countOffer(account: Account) {
+  const month = todayInKorea().slice(0, 7)
+  const count = account.offersSent?.month === month ? account.offersSent.count : 0
+  account.offersSent = { month, count: count + 1 }
 }
 
 // 이번 달 제안을 다 쓴 무료 브랜드를 막는다(데모 브랜드는 제외).

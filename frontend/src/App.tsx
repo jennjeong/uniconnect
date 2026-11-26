@@ -1317,7 +1317,13 @@ function App() {
   // 폼에 보여 줄 문제를 돌려주고, 저장되면 null.
   const saveProfile = async (draft: ProfileDraft) => {
     try {
-      const { profile } = await api.saveProfile(draft)
+      const { profile, demo } = await api.saveProfile(draft)
+      // 데모 계정은 체험만 하고 서버가 저장하지 않는다(방문자가 보는 예시라서).
+      if (demo) {
+        goBack({ page, profile: "page" })
+        showNotice(t("데모 계정은 소개를 저장하지 않아요. 가입하면 내 소개로 저장돼요."))
+        return null
+      }
       setListing(profile)
       // 카탈로그의 점수와 거리는 리스팅으로 계산한다.
       setRefreshTick((tick) => tick + 1)
@@ -2349,6 +2355,14 @@ function App() {
               try {
                 updateMeasurement({ eventId: report.eventId, ...(await api.rotateEventPin(report.eventId, page)) })
                 showNotice(t("새 PIN을 만들었어요. 지금까지 쓰던 PIN은 막혔어요."))
+              } catch (error) {
+                showNotice(errorMessage(error))
+              }
+            }}
+            onRaiseCeiling={async () => {
+              try {
+                updateMeasurement({ eventId: report.eventId, ...(await api.raiseScanCeiling(report.eventId)) })
+                showNotice(t("QR 상한을 늘렸어요. 참가자가 다시 기록할 수 있어요."))
               } catch (error) {
                 showNotice(errorMessage(error))
               }

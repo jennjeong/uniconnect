@@ -187,7 +187,7 @@ function ItemRow({
   )
 }
 
-type Draft = { id?: string; side: ChatSide; label: string }
+type Draft = { id?: string; side: ChatSide; label: string; started?: boolean }
 
 // 쓰는 중인 항목: 각 쪽의 목록, 항목의 문구, 추가와 삭제. 저장하면 양쪽이 다시
 // 확인해야 한다.
@@ -203,19 +203,31 @@ function ItemsEditor({
   onSave: (items: Draft[]) => void
 }) {
   const [drafts, setDrafts] = useState<Draft[]>(() =>
-    agreement.items.map(({ id, side, label }) => ({ id, side, label })),
+    agreement.items.map(({ id, side, label, doneAt, links, photos }) => ({
+      id,
+      side,
+      label,
+      started: Boolean(doneAt) || links.length > 0 || photos.length > 0,
+    })),
   )
   const names: Record<ChatSide, string> = { group: agreement.group.name, brand: agreement.brand.name }
   const update = (index: number, next: Partial<Draft>) =>
     setDrafts(drafts.map((draft, at) => (at === index ? { ...draft, ...next } : draft)))
   return (
     <div className="agreement-editor">
-      <p className="field-hint">{t("고치고 저장하면 두 쪽 모두 다시 확인해야 해요. 그대로 둔 할 일의 링크와 사진은 남아요.")}</p>
+      <p className="field-hint">
+        {t("고치고 저장하면 두 쪽 모두 다시 확인해야 해요. 그대로 둔 할 일의 링크와 사진은 남아요. 상대가 할 일은 지울 수 없어요.")}
+      </p>
       <ul>
-        {drafts.map((draft, index) => (
+        {drafts.map((draft, index) => {
+          // 서버와 같은 규칙(routes/agreements.ts): 상대의 할 일은 지우거나 옮기지 못하고,
+          // 끝냈거나 증빙이 붙은 일은 할 사람을 바꾸지 못하며 상대 것이면 문구도 그대로다.
+          const theirs = Boolean(draft.id) && draft.side !== agreement.side
+          return (
           <li key={draft.id ?? `new-${index}`}>
             <select
               aria-label={t("할 사람")}
+              disabled={theirs || draft.started}
               onChange={(event) => update(index, { side: event.target.value as ChatSide })}
               value={draft.side}
             >
@@ -226,19 +238,21 @@ function ItemsEditor({
               aria-label={t("할 일")}
               maxLength={80}
               onChange={(event) => update(index, { label: event.target.value })}
+              readOnly={theirs && draft.started}
               value={draft.label}
             />
             <button
               aria-label={t("할 일 지우기")}
               className="agreement-remove"
-              disabled={drafts.length <= 1}
+              disabled={drafts.length <= 1 || theirs}
               onClick={() => setDrafts(drafts.filter((_, at) => at !== index))}
               type="button"
             >
               <Icon name="close" size={12} />
             </button>
           </li>
-        ))}
+          )
+        })}
       </ul>
       <div className="agreement-editor-actions">
         {drafts.length < 12 && (

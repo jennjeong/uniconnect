@@ -211,6 +211,22 @@ agreementsRouter.put("/:id/items", async (req, res) => {
     return { id: String(raw?.id ?? ""), side: itemSide as AgreementItem["side"], label }
   })
   const { agreement } = agreementFor(database, proposal)
+  // 상대의 할 일은 상대 것이다. 지우거나 내 쪽으로 옮길 수 없고, 상대가 끝냈거나
+  // 증빙을 붙인 뒤에는 문구도 그대로다. 내 할 일도 끝냈거나 증빙이 있으면 할
+  // 사람을 바꾸지 않는다(그 완료와 증빙이 상대 것으로 넘어가지 않게).
+  const started = (item: AgreementItem) => Boolean(item.doneAt) || item.links.length > 0 || item.photos.length > 0
+  for (const item of agreement.items) {
+    const next = written.find((entry) => entry.id === item.id)
+    if (item.side !== side) {
+      if (!next) throw new HttpError(403, "상대가 할 일은 상대만 지울 수 있어요.")
+      if (next.side !== item.side) throw new HttpError(403, "상대가 할 일을 다른 쪽으로 옮길 수 없어요.")
+      if (started(item) && next.label !== item.label) {
+        throw new HttpError(403, "상대가 끝냈거나 증빙을 붙인 일은 고칠 수 없어요.")
+      }
+    } else if (next && started(item) && next.side !== item.side) {
+      throw new HttpError(403, "끝냈거나 증빙을 붙인 일은 할 사람을 바꿀 수 없어요.")
+    }
+  }
   const items = written.map(({ id, side: itemSide, label }): AgreementItem => {
     const kept = agreement.items.find((item) => item.id === id)
     return kept ? { ...kept, side: itemSide, label } : { id: randomUUID(), side: itemSide, label, links: [], photos: [] }
