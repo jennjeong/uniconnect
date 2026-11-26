@@ -12,14 +12,26 @@ import type { CouncilClub } from "../types"
 // 전용으로 보여 준다. 다가올 행사, 열린 제안, 협찬, 지금까지의 결과가 나온다.
 // 메시지, 연락처, 계약서는 동아리의 것으로 남는다. 학생회는 동아리를 뺄 수
 // 있고, 새 코드를 만들면 더는 동아리가 연결되지 않는다.
-export function CouncilPage({ onBack, onNotice }: { onBack: () => void; onNotice: (message: string) => void }) {
+export function CouncilPage({
+  loggedIn,
+  onBack,
+  onLogin,
+  onNotice,
+}: {
+  loggedIn: boolean
+  onBack: () => void
+  onLogin: () => void
+  onNotice: (message: string) => void
+}) {
   const [data, setData] = useState<{ code: string; clubs: CouncilClub[] } | null>(null)
   const [failed, setFailed] = useState("")
   const [removing, setRemoving] = useState<string>()
 
+  // 로그인하지 않은 방문자에게는 묻지 않는다(401이 콘솔에 남는다).
   useEffect(() => {
+    if (!loggedIn) return
     api.councilClubs().then(setData, (error: unknown) => setFailed(errorMessage(error)))
-  }, [])
+  }, [loggedIn])
 
   const run = async (change: () => Promise<void>) => {
     try {
@@ -27,6 +39,20 @@ export function CouncilPage({ onBack, onNotice }: { onBack: () => void; onNotice
     } catch (error) {
       onNotice(errorMessage(error))
     }
+  }
+
+  if (!loggedIn) {
+    return (
+      <section className="page-view council-page">
+        <PageIntro onBack={onBack} eyebrow={tc("eyebrow", "학생회")} title={t("소속 단체")} description={t("동아리를 코드로 연결하면 행사와 협찬 현황을 함께 봐요.")} />
+        <div className="day-empty messages-empty">
+          <p>{t("학생회 계정으로 로그인하면 연결된 동아리를 볼 수 있어요.")}</p>
+          <button className="primary-button" onClick={onLogin} type="button">
+            {t("로그인")}
+          </button>
+        </div>
+      </section>
+    )
   }
 
   if (!data) {

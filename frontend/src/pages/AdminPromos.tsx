@@ -11,10 +11,8 @@ type Notice = (message: string) => void
 const kinds: { value: PaymentKind; label: string }[] = [
   { value: "pro", label: "Growth" },
   { value: "ad", label: "상단 광고" },
-  { value: "report", label: "상세 리포트" },
   { value: "local", label: "Campus Local" },
   { value: "program", label: "캠퍼스 캠페인" },
-  { value: "fee", label: "수수료" },
 ]
 
 const stateLabels: Record<PromoRow["state"], string> = { active: "사용 중", scheduled: "시작 전", ended: "끝남", disabled: "꺼짐" }
