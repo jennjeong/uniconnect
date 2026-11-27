@@ -10,7 +10,8 @@ import { Icon } from "./Icon"
 // 협찬을 묶는 한 가지 방식. 그룹별 ROAS를 막대로 보여 주고 건수, 금액, 방문
 // 수를 곁들인다.
 function Groups({ title, groups, label }: { title: string; groups: PortfolioGroup[]; label?: (key: string) => string }) {
-  const top = Math.max(1, ...groups.map((group) => group.roas))
+  // 집행액이 0원인 묶음은 ROAS를 계산할 수 없어 0%가 아닌 "—"로 둔다.
+  const top = Math.max(1, ...groups.filter((group) => group.spend > 0).map((group) => group.roas))
   return (
     <figure className="portfolio-groups">
       <figcaption>{title}</figcaption>
@@ -19,10 +20,10 @@ function Groups({ title, groups, label }: { title: string; groups: PortfolioGrou
           <li key={group.key}>
             <span className="portfolio-key">{label ? label(group.key) : group.key}</span>
             <span aria-hidden="true" className="portfolio-bar">
-              <i style={{ width: `${(group.roas / top) * 100}%` }} />
+              <i style={{ width: `${group.spend > 0 ? (group.roas / top) * 100 : 0}%` }} />
             </span>
             <span className="portfolio-figure">
-              <strong>ROAS {group.roas}%</strong>
+              <strong>ROAS {group.spend > 0 ? `${group.roas}%` : "—"}</strong>
               <small>{t("{count}건 · {spend} · 방문 {visits}건", { count: group.count, spend: fullWon(group.spend), visits: group.visits })}</small>
             </span>
           </li>
@@ -119,7 +120,7 @@ export function CampusPortfolio({ onOpenPlan }: { onOpenPlan: () => void }) {
             </div>
             <div>
               <dt>{t("추정 ROAS(전체 집행액 기준)")}</dt>
-              <dd>{answer.portfolio.totals.roas}%</dd>
+              <dd>{answer.portfolio.totals.spend > 0 ? `${answer.portfolio.totals.roas}%` : "—"}</dd>
             </div>
             <div>
               <dt>{t("방문 1명당 비용")}</dt>

@@ -1011,6 +1011,8 @@ const en: Record<string, string> = {
   "상대가 할 일을 다른 쪽으로 옮길 수 없어요.": "You can't move the other side's item to another side.",
   "상대가 끝냈거나 증빙을 붙인 일은 고칠 수 없어요.": "You can't change an item the other side has finished or proved.",
   "같은 할 일이 두 번 들어 있어요.": "The same item is listed twice.",
+  "그사이 상대가 할 일을 고쳤어요. 바뀐 내용을 불러왔으니 보고 다시 고쳐 주세요.":
+    "The other side changed the items meanwhile. We loaded the new list, so look it over and make your changes again.",
   "끝냈거나 증빙을 붙인 일은 할 사람을 바꿀 수 없어요.": "An item that's finished or proved can't change sides.",
   "QR 참여 기록이 상한에 닿았어요": "QR check-ins reached the limit",
   "'{event}'의 QR 참여 기록이 상한에 닿아 새 참가자를 기록하지 않고 있어요.": "Check-ins for '{event}' reached the limit, so new participants aren't being recorded.",

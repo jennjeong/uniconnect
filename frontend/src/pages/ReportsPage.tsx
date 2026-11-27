@@ -230,9 +230,9 @@ export function ReportsPage({
                     <span
                       role="cell"
                       data-label="ROAS"
-                      className={sponsor.roas >= report.targets.roas ? "analytics-roas met" : "analytics-roas"}
+                      className={sponsor.value > 0 && sponsor.roas >= report.targets.roas ? "analytics-roas met" : "analytics-roas"}
                     >
-                      {sponsor.roas}%
+                      {sponsor.value > 0 ? `${sponsor.roas}%` : "—"}
                     </span>
                   </div>
                 ))}

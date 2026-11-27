@@ -10959,6 +10959,29 @@ test("an agreement's bulk edit can't remove, move or rewrite the other side's fi
   const moved = after.map(({ id: itemId, side, label }) => ({ id: itemId, side: itemId === brandItem.id ? "group" : side, label }))
   assert.equal((await put(moved, brand)).status, 403)
   assert.ok(after.find((item) => item.id === brandItem.id)!.side === "brand")
+
+  // 고치기 시작할 때 본 목록(before)을 보내면, 그사이 상대가 고친 것을 덮어쓰지 않는다.
+  const seen = after.map(({ id: itemId, side, label }) => ({ id: itemId, side, label }))
+  const groupOwn = seen.find((item) => item.side === "group")!
+  assert.equal(
+    (await put(seen.map((item) => (item === groupOwn ? { ...item, label: "단체가 먼저 고침" } : item)))).status,
+    200,
+  )
+  const stale = await call(
+    "PUT",
+    `/agreements/${id}/items`,
+    { items: [...seen, { side: "brand", label: "브랜드가 더한 일" }], before: seen },
+    brand,
+  )
+  assert.equal(stale.status, 409)
+  assert.match(stale.data.error, /그사이 상대가/)
+  const kept = (await call("GET", `/agreements/${id}`, undefined, brand)).data.agreement.items as typeof items
+  assert.ok(kept.some((item) => item.label === "단체가 먼저 고침"))
+  assert.ok(!kept.some((item) => item.label === "브랜드가 더한 일"))
+  // 지금 목록을 before로 보내면 그대로 저장된다.
+  const now = kept.map(({ id: itemId, side, label }) => ({ id: itemId, side, label }))
+  const fresh = await call("PUT", `/agreements/${id}/items`, { items: [...now, { side: "brand", label: "브랜드가 더한 일" }], before: now }, brand)
+  assert.equal(fresh.status, 200)
 })
 
 test("a suspended account's venue PIN records stop, while participants still check in", async () => {

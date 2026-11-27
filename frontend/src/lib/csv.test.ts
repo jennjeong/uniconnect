@@ -43,6 +43,7 @@ describe("CSV files", () => {
       venue: noVenue,
       sponsors: [
         { id: "s1", brandName: "오후의 커피", coupon: { store: "오후의 커피", title: "음료 1잔" }, value: 300000, coupons: 40, visits: 12, roas: 243, methods: [], ...noVenue },
+        { id: "s2", brandName: "밤의 서점", coupon: { store: "밤의 서점", title: "책갈피" }, value: 0, coupons: 3, visits: 1, roas: 0, methods: [], ...noVenue },
       ],
     } as unknown as Report
     const metrics: Metrics = { scans: 128, coupons: 40, visits: 12, ...noVenue }
@@ -52,6 +53,8 @@ describe("CSV files", () => {
     expect(file).toContain("QR 스캔,128")
     expect(file).toContain("2026-10-12,18,20")
     expect(file).toContain("오후의 커피,300000,40,12,243")
+    // 협찬 가치가 0원이면 ROAS는 0이 아니라 계산할 수 없는 값이라 빈칸으로 둔다.
+    expect(file).toContain("밤의 서점,0,3,1,")
   })
 
   test("analytics have a line per sponsorship, and a column only for the counts some have", () => {

@@ -90,7 +90,7 @@ export function HeadlineFigures({ report }: { report: PremiumReport }) {
     { label: t("도달"), value: withUnit(find("reach").actual, "명"), note: t("현장 QR + SNS") },
     { label: t("매장 방문"), value: withUnit(find("visits").actual, "명"), note: t("쿠폰으로 확인") },
     { label: t("추정 매출"), value: fullWon(report.sales), note: t("방문 × 1인 {spend}", { spend: fullWon(report.averageSpend) }) },
-    { label: t("추정 ROAS"), value: `${find("roas").actual}%`, note: t("목표 {target}%", { target: find("roas").target }) },
+    { label: t("추정 ROAS"), value: report.spend > 0 ? `${find("roas").actual}%` : "—", note: t("목표 {target}%", { target: find("roas").target }) },
   ]
   return (
     <dl className="insight-figures">
@@ -120,7 +120,9 @@ export function KeyFindings({ report }: { report: PremiumReport }) {
       words: t(gradeWords[report.grade]),
       rate: report.achievement,
     }),
-    roas.actual >= roas.target
+    report.spend <= 0
+      ? t("협찬 가치를 정하면 ROAS가 계산돼요.")
+      : roas.actual >= roas.target
       ? t("협찬액 {spend}으로 추정 매출 {sales}을 만들어 ROAS {roas}%를 기록했어요. 목표 {target}%보다 {gap}%p 높아요.", {
           spend: fullWon(report.spend),
           sales: fullWon(report.sales),
@@ -801,7 +803,7 @@ export function Roi({ report }: { report: PremiumReport }) {
             <tr className={row.factor === 1 ? "current" : undefined} key={row.factor}>
               <th scope="row">{row.factor === 1 ? t("학생단체 추정") : row.factor < 1 ? t("20% 적게") : t("20% 많이")}</th>
               <td>{fullWon(row.spendPerVisit)}</td>
-              <td>{row.roas}%</td>
+              <td>{report.spend > 0 ? `${row.roas}%` : "—"}</td>
             </tr>
           ))}
         </tbody>

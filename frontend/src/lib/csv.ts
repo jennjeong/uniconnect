@@ -51,7 +51,7 @@ export function reportCsv(report: Report, metrics: Metrics): string {
   }
   if (report.sponsors?.length) {
     rows.push([], [t("협찬사"), t("협찬 가치(원)"), t(metricInfo.coupons.label), t(metricInfo.visits.label), "ROAS (%)"])
-    rows.push(...report.sponsors.map((sponsor) => [sponsor.brandName, sponsor.value, sponsor.coupons, sponsor.visits, sponsor.roas]))
+    rows.push(...report.sponsors.map((sponsor) => [sponsor.brandName, sponsor.value, sponsor.coupons, sponsor.visits, sponsor.value > 0 ? sponsor.roas : ""]))
   }
   return toCsv(rows)
 }

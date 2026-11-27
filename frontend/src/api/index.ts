@@ -347,8 +347,13 @@ export const api = {
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/template`, { method: "PUT", body: { kinds } }),
   saveMeasureMethods: (id: string, methods: MeasureMethod[]) =>
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/methods`, { method: "PUT", body: { methods } }),
-  saveAgreementItems: (id: string, items: { id?: string; side: Agreement["side"]; label: string }[]) =>
-    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/items`, { method: "PUT", body: { items } }),
+  // before: 고치기 시작할 때 본 목록. 그사이 상대가 고쳤으면 409가 온다.
+  saveAgreementItems: (
+    id: string,
+    items: { id?: string; side: Agreement["side"]; label: string }[],
+    before?: { id: string; side: Agreement["side"]; label: string }[],
+  ) =>
+    request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/items`, { method: "PUT", body: { items, before } }),
   // 화면에서 본 예상 인원을 함께 보낸다.
   confirmAgreement: (id: string, audience?: number) =>
     request<{ agreement: Agreement }>(`/agreements/${encodeURIComponent(id)}/confirm`, { method: "POST", body: { audience } }),
