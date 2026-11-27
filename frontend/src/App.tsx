@@ -49,7 +49,7 @@ import { applyPageMeta, pageMeta } from "./lib/pageMeta"
 import { install } from "./lib/install"
 import { installReveal } from "./lib/reveal"
 import { installRipple } from "./lib/ripple"
-import { entryView, menuPageOf, roleOfPage, viewPath, type HistoryEntry, type View } from "./lib/route"
+import { entryView, menuPageOf, roleOfPage, staysAfterLogin, viewPath, type HistoryEntry, type View } from "./lib/route"
 import { clearEntryState, forgetEntriesFrom } from "./hooks/useEntryState"
 import { clearDraftsOf, draftKey } from "./lib/drafts"
 import { applyPendingScroll, keepPosition, queueRestore, queueTop, trackScroll } from "./lib/scroll"
@@ -702,7 +702,7 @@ function App() {
   const startSession = (session: Session & { recoveryLeft?: number }, message: string, next?: View) => {
     setToken(session.token)
     setAccount(session.account)
-    go(next ?? (view.invite || view.agreement || view.agreements ? view : { page: "대시보드" }), true)
+    go(next ?? (staysAfterLogin(view, session.account.role) ? view : { page: "대시보드" }), true)
     setActiveModal(null)
     const left = session.recoveryLeft
     // 이 브라우저가 저장소를 막아 두었으면 로그인은 이 탭에서만 유지된다.

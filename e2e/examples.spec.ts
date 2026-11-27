@@ -55,7 +55,8 @@ test("a typed login and closing the window drop the example partner", async ({ p
   await login.getByLabel("비밀번호", { exact: true }).fill("uniconnect2026")
   await login.getByRole("button", { name: "학생단체로 로그인" }).click()
   await expect(login).toBeHidden()
-  await expect(page).toHaveURL(/\/dashboard$/)
+  // 보던 목록에 그대로 머물되, 예시 상대의 제안 창은 열리지 않는다.
+  await expect(page).toHaveURL(/\/matches$/)
   await expect(page.getByRole("dialog", { name: /협찬 제안/ })).toHaveCount(0)
 })
 

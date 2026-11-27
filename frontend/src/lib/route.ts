@@ -97,6 +97,16 @@ export function roleOfPage(page: NavLabel): Role | undefined {
   return brandPages.includes(page) ? "브랜드" : "학생단체"
 }
 
+// 로그인하거나 가입한 뒤에도 그 화면에 머무는지. 보던 화면이 그 계정의 것이면
+// 그대로 두고, 소개(/), 없는 주소, 운영자 화면, 다른 역할의 메뉴 페이지는
+// 대시보드로 보낸다. 초대 화면은 역할과 상관없이 둔다(받은 쪽이 거기서 이어 간다).
+export function staysAfterLogin(view: View, role: Role) {
+  if (view.invite) return true
+  if (view.home || view.missing || view.admin) return false
+  if (view.page === "대시보드" && Object.keys(view).length === 1) return false
+  return (roleOfPage(view.page) ?? role) === role
+}
+
 // 앱은 기본 경로(base path) 아래에서 서빙될 수 있다 (vite.config.ts).
 const base = import.meta.env.BASE_URL.replace(/\/$/, "")
 

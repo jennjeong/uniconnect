@@ -254,6 +254,8 @@ const en: Record<string, string> = {
   "자주 묻는 질문": "Frequently Asked Questions",
   "자주 묻는 질문 전체 보기": "See all questions",
   "찾는 답이 없어요. 관리자에게 직접 물어보세요.": "Can't find your answer? Ask our team directly.",
+  "메일로 물어봐도 돼요.": "You can also email us.",
+  "문의 {email}": "Contact {email}",
 
   // 찾을 수 없음 (pages/NotFoundPage.tsx)
   "페이지를 찾을 수 없어요": "Page Not Found",

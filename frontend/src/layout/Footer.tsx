@@ -3,7 +3,7 @@ import { type CSSProperties, useRef } from "react"
 import logo from "../assets/brand/uniconnect_horizontal.svg"
 import { Icon } from "../components/Icon"
 import { Pill } from "../components/Pill"
-import { legalDocs, type LegalKind } from "../data/legal"
+import { legalDocs, operator, type LegalKind } from "../data/legal"
 import { RevealTitle } from "../components/RevealText"
 import { navItems } from "../data/navigation"
 import { createLabel, roles } from "../data/roles"
@@ -186,6 +186,10 @@ export function Footer({
           {/* 캠퍼스와 매장의 위치는 OpenStreetMap 데이터(ODbL)로 찾으며, 이 데이터는 출처 표기를 요구한다. */}
           <a className="footer-credit" href="https://www.openstreetmap.org/copyright" rel="noopener noreferrer" target="_blank">
             Map data © OpenStreetMap contributors
+          </a>
+          {/* 운영자에게 닿는 메일. 약관 · 처리방침의 주소와 같은 값(data/legal.ts)을 쓴다. */}
+          <a className="footer-credit" href={`mailto:${operator.email}`}>
+            {t("문의 {email}", { email: operator.email })}
           </a>
           <nav aria-label={t("약관과 방침")} className="footer-policies">
             {(Object.keys(legalDocs) as LegalKind[]).map((kind) => (

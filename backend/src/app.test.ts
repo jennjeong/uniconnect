@@ -1447,6 +1447,48 @@ test("a notice email keeps each line on one line, whatever a member's name holds
   }
 })
 
+test("a mail Resend can't take for a moment is sent once more with the same key, and a refused one is not", async () => {
+  const { mailTransport, mailRetry, sendMail } = await import("./lib/mailer.js")
+  const realPost = mailTransport.post
+  const realWait = mailRetry.waitMs
+  const keys: (string | undefined)[] = []
+  let answers: (number | "down")[] = []
+  mailTransport.post = async (_body, key) => {
+    keys.push(key)
+    const answer = answers.shift() ?? 200
+    if (answer === "down") throw new Error("network")
+    return new Response(null, { status: answer })
+  }
+  config.resendApiKey = "test-key"
+  config.mailFrom = "uniconnect <no-reply@example.com>"
+  mailRetry.waitMs = 1
+  try {
+    // 잠시 받지 못하면(503, 답 없음) 같은 키로 한 번 더 보내 닿는다.
+    for (const first of [503, 429, "down"] as const) {
+      keys.length = 0
+      answers = [first, 200]
+      await sendMail("retry@retry-check.kr", "제목", "본문")
+      assert.equal(keys.length, 2)
+      assert.ok(keys[0] && keys[0] === keys[1])
+    }
+    // 두 번 다 안 되면 실패로 알린다.
+    keys.length = 0
+    answers = [500, 500]
+    await assert.rejects(sendMail("retry@retry-check.kr", "제목", "본문"))
+    assert.equal(keys.length, 2)
+    // 주소나 내용이 틀린 거절은 다시 보내지 않는다.
+    keys.length = 0
+    answers = [422]
+    await assert.rejects(sendMail("retry@retry-check.kr", "제목", "본문"))
+    assert.equal(keys.length, 1)
+  } finally {
+    mailTransport.post = realPost
+    mailRetry.waitMs = realWait
+    config.resendApiKey = undefined
+    config.mailFrom = undefined
+  }
+})
+
 test("an event is edited with the same checks, and its proposals, sponsorships and partners follow", async () => {
   const { mailTransport } = await import("./lib/mailer.js")
   const { addDays, todayInKorea } = await import("./lib/dates.js")
@@ -6407,14 +6449,15 @@ test("a reminder or digest whose mail failed goes again on the next run, and one
     database.sponsorships = {}
     const now = new Date("2031-03-04T03:00:00Z")
     const show = () => database.events[group.id][0]
+    // 보내지 못한 메일은 그 자리에서 한 번 더 보내 본다(lib/mailer.ts의 mailRetry).
     assert.equal(await sendReminders(database, now), 0)
-    assert.equal(tries, 1)
+    assert.equal(tries, 2)
     assert.equal(show().remindedAt, undefined)
     up = true
     assert.equal(await sendReminders(database, now), 1)
     assert.ok(show().remindedAt)
     assert.equal(await sendReminders(database, now), 0)
-    assert.equal(tries, 2)
+    assert.equal(tries, 3)
 
     // 2031년 3월 3일은 월요일이다. 새로 합류한 브랜드를 알리지 못하면 표시하지 않는다.
     for (const account of database.accounts) account.createdAt = "2020-01-01T00:00:00.000Z"

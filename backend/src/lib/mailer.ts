@@ -1,17 +1,29 @@
+import { randomUUID } from "node:crypto"
 import { config } from "../config.js"
 import { HttpError } from "./errors.js"
 import { translate, type Lang } from "./i18n.js"
 
 // Resend(https://resend.com)에 이메일 한 통을 보낸다. 테스트는 `post`를 바꿔
 // 보내지 않고 나갈 내용을 확인한다.
+// `key`는 Resend의 Idempotency-Key다. 다시 보낼 때 같은 키를 써서, 첫 요청이 사실
+// 닿았어도 메일이 두 통 가지 않게 한다.
 export const mailTransport = {
-  post: (body: { from: string; to: string[]; subject: string; text: string }) =>
+  post: (body: { from: string; to: string[]; subject: string; text: string }, key?: string) =>
     fetch("https://api.resend.com/emails", {
       method: "POST",
-      headers: { Authorization: `Bearer ${config.resendApiKey}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${config.resendApiKey}`,
+        "Content-Type": "application/json",
+        ...(key ? { "Idempotency-Key": key } : {}),
+      },
       body: JSON.stringify(body),
     }),
 }
+
+// 답이 없거나 Resend가 잠시 받지 못할 때(429, 5xx) 한 번만 다시 보낸다. 주소나 내용이
+// 틀린 거절(4xx)은 다시 보내도 같으므로 그대로 실패한다.
+export const mailRetry = { waitMs: 800 }
+const worthRetrying = (response: Response | undefined) => !response || response.status === 429 || response.status >= 500
 
 // 메일 본문의 한 줄과 제목에 넣기 전에, 회원이 쓴 값(이름 등)의 줄바꿈과 제어 문자를 공백으로
 // 바꾼다. 줄을 끼워 넣어 서비스가 보낸 안내처럼 보이게 하지 못하게 한다.
@@ -45,9 +57,14 @@ export async function sendMail(to: string, subject: string, text: string) {
     console.log(config.isProduction ? "[mail] not configured: a mail wasn't sent" : `[mail] ${to} · ${subject}`)
     return
   }
-  const response = await mailTransport
-    .post({ from: config.mailFrom!, to: [to], subject: oneLine(subject), text })
-    .catch(() => undefined)
+  const body = { from: config.mailFrom!, to: [to], subject: oneLine(subject), text }
+  const key = randomUUID()
+  const send = () => mailTransport.post(body, key).catch(() => undefined)
+  let response = await send()
+  if (worthRetrying(response)) {
+    await new Promise((resolve) => setTimeout(resolve, mailRetry.waitMs))
+    response = await send()
+  }
   if (!response?.ok) {
     mailHealth.lastFailedAt = new Date().toISOString()
     mailHealth.lastError = `Resend ${response?.status ?? "no response"}`

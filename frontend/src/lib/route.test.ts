@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from "vitest"
 
-import { entryView, menuPageOf, readView, roleOfPage, viewPath } from "./route"
+import { entryView, menuPageOf, readView, roleOfPage, staysAfterLogin, viewPath } from "./route"
 import { sampleViews } from "./route.samples"
 
 const at = (path: string) => new URL(path, "http://localhost") as unknown as Location
@@ -73,5 +73,25 @@ describe("menuPageOf", () => {
     expect(menuPageOf({ page: "대시보드", board: true }, "대시보드")).toBeUndefined()
     expect(menuPageOf({ page: "대시보드", faq: true }, "대시보드")).toBeUndefined()
     expect(menuPageOf({ page: "대시보드", missing: "/nowhere" }, "대시보드")).toBeUndefined()
+  })
+})
+
+describe("after logging in", () => {
+  test("a member stays on the screen it was reading when the screen is its own", () => {
+    expect(staysAfterLogin({ page: "대시보드", board: true }, "학생단체")).toBe(true)
+    expect(staysAfterLogin({ page: "대시보드", explore: true }, "브랜드")).toBe(true)
+    expect(staysAfterLogin({ page: "추천 매칭", detail: "b1" }, "학생단체")).toBe(true)
+    expect(staysAfterLogin({ page: "단체 찾기" }, "브랜드")).toBe(true)
+    expect(staysAfterLogin({ page: "대시보드", agreement: "p1" }, "브랜드")).toBe(true)
+    expect(staysAfterLogin({ page: "대시보드", invite: "abc" }, "학생단체")).toBe(true)
+  })
+
+  test("the introduction, the other side's pages, the console and a missing address go to the dashboard", () => {
+    expect(staysAfterLogin({ page: "대시보드", home: true }, "학생단체")).toBe(false)
+    expect(staysAfterLogin({ page: "대시보드" }, "브랜드")).toBe(false)
+    expect(staysAfterLogin({ page: "단체 찾기" }, "학생단체")).toBe(false)
+    expect(staysAfterLogin({ page: "추천 매칭", detail: "b1" }, "브랜드")).toBe(false)
+    expect(staysAfterLogin({ page: "대시보드", admin: true }, "브랜드")).toBe(false)
+    expect(staysAfterLogin({ page: "대시보드", missing: "/nope" }, "학생단체")).toBe(false)
   })
 })
