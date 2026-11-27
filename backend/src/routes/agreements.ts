@@ -215,6 +215,15 @@ agreementsRouter.put("/:id/items", async (req, res) => {
   const ids = written.map((entry) => entry.id).filter(Boolean)
   if (new Set(ids).size !== ids.length) throw new HttpError(400, "같은 할 일이 두 번 들어 있어요.")
   const { agreement } = agreementFor(database, proposal)
+  const terms = (list: Pick<AgreementItem, "id" | "side" | "label">[]) =>
+    JSON.stringify(list.map(({ id, side: who, label }) => [id, who, label]))
+  // 고치기 시작할 때 본 목록(before)이 지금과 다르면, 그사이 상대가 고친 것을 덮어쓰지 않고
+  // 409로 돌려보낸다. 화면은 계약서를 다시 불러 바뀐 내용 위에서 고치게 한다.
+  const before = req.body?.before
+  if (Array.isArray(before)) {
+    const seen = before.map((raw) => ({ id: String(raw?.id ?? ""), side: raw?.side, label: text(raw?.label) }))
+    if (terms(seen) !== terms(agreement.items)) throw new HttpError(409, "그사이 상대가 할 일을 고쳤어요. 바뀐 내용을 불러왔으니 보고 다시 고쳐 주세요.")
+  }
   // 상대의 할 일은 상대 것이다. 지우거나 내 쪽으로 옮길 수 없고, 상대가 끝냈거나
   // 증빙을 붙인 뒤에는 문구도 그대로다. 내 할 일도 끝냈거나 증빙이 있으면 할
   // 사람을 바꾸지 않는다(그 완료와 증빙이 상대 것으로 넘어가지 않게).
@@ -235,7 +244,6 @@ agreementsRouter.put("/:id/items", async (req, res) => {
     const kept = agreement.items.find((item) => item.id === id)
     return kept ? { ...kept, side: itemSide, label } : { id: randomUUID(), side: itemSide, label, links: [], photos: [] }
   })
-  const terms = (list: AgreementItem[]) => JSON.stringify(list.map(({ id, side: who, label }) => [id, who, label]))
   const removed = agreement.items.filter((item) => !items.some((next) => next.id === item.id))
   const changed = terms(items) !== terms(agreement.items)
   agreement.items = items

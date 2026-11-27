@@ -200,8 +200,10 @@ function ItemsEditor({
   agreement: Agreement
   busy: boolean
   onCancel: () => void
-  onSave: (items: Draft[]) => void
+  onSave: (items: Draft[], before: { id: string; side: ChatSide; label: string }[]) => void
 }) {
+  // 고치기 시작할 때의 목록. 저장할 때 함께 보내, 그사이 상대가 고쳤으면 덮어쓰지 않는다.
+  const [before] = useState(() => agreement.items.map(({ id, side, label }) => ({ id, side, label })))
   const [drafts, setDrafts] = useState<Draft[]>(() =>
     agreement.items.map(({ id, side, label, doneAt, links, photos }) => ({
       id,
@@ -268,7 +270,7 @@ function ItemsEditor({
         <button className="cancel-button" onClick={onCancel} type="button">
           {t("취소")}
         </button>
-        <button className="primary-button" disabled={busy} onClick={() => onSave(drafts)} type="button">
+        <button className="primary-button" disabled={busy} onClick={() => onSave(drafts, before)} type="button">
           {t("저장")}
         </button>
       </div>
@@ -1502,6 +1504,30 @@ export function AgreementPage({
     }
   }
 
+  // 할 일을 한 번에 고친다. 그사이 상대가 고쳐 409가 오면, 바뀐 계약서를 불러와 편집을 닫고
+  // 왜 저장되지 않았는지 알린다(다시 열면 새 목록에서 시작한다).
+  const saveItems = async (items: Draft[], before: { id: string; side: ChatSide; label: string }[]) => {
+    if (!agreement) return
+    setBusy(true)
+    try {
+      setAgreement((await api.saveAgreementItems(agreement.id, items, before)).agreement)
+      onNotice(t("할 일을 고쳤어요. 두 쪽 모두 다시 확인해 주세요."))
+      setEditing(false)
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 409) {
+        try {
+          setAgreement((await api.agreement(agreement.id)).agreement)
+          setEditing(false)
+        } catch {
+          // 다시 불러오지 못하면 편집을 그대로 두고 안내만 한다.
+        }
+      }
+      onError(error)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   // 이쪽의 후기를 쓰고(null이면 지운다) 지금 상태로 보여 준다.
   const saveReview = async (body: { rating: number; tags: string[]; comment: string } | null) => {
     if (!agreement) return false
@@ -1773,11 +1799,7 @@ export function AgreementPage({
           agreement={agreement}
           busy={busy}
           onCancel={() => setEditing(false)}
-          onSave={(items) =>
-            void run(() => api.saveAgreementItems(agreement.id, items), t("할 일을 고쳤어요. 두 쪽 모두 다시 확인해 주세요.")).then(
-              (saved) => saved && setEditing(false),
-            )
-          }
+          onSave={(items, before) => void saveItems(items, before)}
         />
       ) : (
         <>
