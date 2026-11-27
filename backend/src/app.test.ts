@@ -6174,6 +6174,33 @@ test("Vercel serves the pages with the same security headers the API sends", asy
   assert.deepEqual(sent.sort(), pages.map(({ key }) => key.toLowerCase()).sort())
 })
 
+test("Vercel sends only the old address's pages to the site address, never its API", async () => {
+  const { fileURLToPath } = await import("node:url")
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..")
+  const vercel = JSON.parse(await readFile(path.join(root, "vercel.json"), "utf8")) as {
+    redirects: { source: string; has?: { type: string; value: string }[]; destination: string; permanent?: boolean }[]
+  }
+  const site = JSON.parse(await readFile(path.join(root, "frontend", "site.config.json"), "utf8")) as { url: string }
+  assert.equal(vercel.redirects.length, 1)
+  const [rule] = vercel.redirects
+  // 예전 주소 하나만 잡는다. 새 주소와 미리보기 배포 주소는 그대로다.
+  assert.deepEqual(rule.has, [{ type: "host", value: "uniconnect-pied.vercel.app" }])
+  assert.equal(rule.permanent, true)
+  // 사이트 주소(canonical, 사이트맵과 같은 곳)로 경로를 그대로 붙여 보낸다.
+  assert.equal(rule.destination, `${site.url}/:path`)
+  // `/:path(정규식)`의 정규식이 앞의 `/`를 뗀 경로를 받는다. API는 넘기지 않는다: 열린 탭의
+  // 요청은 쿠키 없이 다른 주소로 가게 되고, 토스 웹훅과 구독한 캘린더는 넘어감을 따라오지 않는다.
+  const inner = /^\/:path\((.+)\)$/.exec(rule.source)?.[1]
+  assert.ok(inner, rule.source)
+  const moved = (route: string) => new RegExp(`^(?:${inner})$`).test(route.replace(/^\//, ""))
+  for (const route of ["/", "/faq", "/matches", "/check-in/abc123/staff", "/report/token-1", "/sitemap.xml", "/assets/index.js"]) {
+    assert.ok(moved(route), route)
+  }
+  for (const route of ["/api/site", "/api/health", "/api/billing/webhook", "/api/calendar/token.ics", "/api/auth/social/kakao/callback"]) {
+    assert.ok(!moved(route), route)
+  }
+})
+
 test("the Vercel entry reads the data on its first request and serves the API", async () => {
   const { createServer } = await import("node:http")
   const { default: handler } = await import("./vercel.js")
