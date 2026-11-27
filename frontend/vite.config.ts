@@ -102,14 +102,6 @@ function siteDocument(config: SiteConfiguration): Plugin {
   const description = config.description ?? ''
   const favicon = config.icons?.icon ?? '/favicon.svg'
   const socialImage = config.openGraph?.image ?? ''
-  // 대표 주소. 기존 Vercel 주소로 들어와도 검색엔진과 공유 미리보기가 이 주소를 쓰게 한다.
-  const siteUrl = (() => {
-    try {
-      return config.url ? new URL(config.url).origin : ''
-    } catch {
-      return ''
-    }
-  })()
   const language = sanitizeHtmlValue(config.language) || 'en'
   const googleAnalyticsId = sanitizeHtmlValue(config.analytics?.googleAnalyticsId)
   const headStart = config.customScripts?.headStart ?? ''
@@ -195,13 +187,9 @@ function siteDocument(config: SiteConfiguration): Plugin {
         if (favicon) {
           tags.push({ tag: 'link', attrs: { rel: 'icon', href: favicon }, injectTo: 'head' })
         }
-        if (siteUrl) {
-          // 화면마다 applyPageMeta가 경로를 붙여 고친다(lib/pageMeta.ts).
-          tags.push(
-            { tag: 'link', attrs: { rel: 'canonical', href: `${siteUrl}/` }, injectTo: 'head' },
-            { tag: 'meta', attrs: { property: 'og:url', content: `${siteUrl}/` }, injectTo: 'head' },
-          )
-        }
+        // canonical과 og:url은 여기서 넣지 않는다. 모든 경로가 이 HTML 하나를 받으므로, 넣으면
+        // JS를 돌리지 않는 수집기(네이버 일부, 메신저 미리보기)가 모든 페이지를 첫 페이지의
+        // 사본으로 읽는다. 화면마다 applyPageMeta가 자기 경로로 만든다(lib/pageMeta.ts).
         if (title) {
           tags.push({ tag: 'meta', attrs: { property: 'og:title', content: title }, injectTo: 'head' })
         }

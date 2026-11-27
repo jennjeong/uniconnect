@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import type { Match, NavLabel } from "../types"
-import { pageMeta } from "./pageMeta"
+import { pageMeta, siteAddress } from "./pageMeta"
 import type { View } from "./route"
 
 const meta = (view: Partial<View>, detail?: Match) => {
@@ -44,5 +44,20 @@ describe("which screens search engines may list", () => {
     ] satisfies Partial<View>[]) {
       expect(meta(view).noindex).toBe(true)
     }
+  })
+})
+
+describe("siteAddress", () => {
+  it("points each path at the site address, without the query or hash", () => {
+    expect(siteAddress("/faq")).toBe("https://uniconnectkr.com/faq")
+    expect(siteAddress("/")).toBe("https://uniconnectkr.com/")
+    expect(siteAddress("/matches?from=old#top")).toBe("https://uniconnectkr.com/matches")
+    // 기존 주소나 미리보기 주소로 열어도 경로만 쓴다.
+    expect(siteAddress("/groups", "https://uniconnectkr.com/anything")).toBe("https://uniconnectkr.com/groups")
+  })
+
+  it("gives nothing without a usable site address", () => {
+    expect(siteAddress("/faq", "")).toBeUndefined()
+    expect(siteAddress("/faq", "not a url")).toBeUndefined()
   })
 })

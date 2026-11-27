@@ -1,3 +1,4 @@
+import siteConfiguration from "../../site.config.json"
 import { legalDocs } from "../data/legal"
 import { lang, t } from "../i18n"
 import type { Match, NavLabel, Role } from "../types"
@@ -266,15 +267,37 @@ export function applyPageMeta({ title, description, noindex }: PageMeta) {
   pointAtSiteAddress()
 }
 
-// canonical과 og:url을 대표 주소 + 지금 경로로 맞춘다. 대표 주소는 빌드가 넣은
-// canonical의 origin이라, 기존 주소나 미리보기 주소로 열어도 대표 주소를 가리킨다.
-// 쿼리는 계정이나 링크 하나의 것이라 붙이지 않는다.
+// 대표 주소(site.config.json의 url) + 경로. 기존 주소나 미리보기 주소로 열어도 대표 주소를
+// 가리킨다. 쿼리와 #은 계정이나 링크 하나의 것이라 붙이지 않는다. 주소가 없거나 틀리면 없다.
+export function siteAddress(path: string, siteUrl: string | undefined = siteConfiguration.url) {
+  try {
+    if (!siteUrl) return undefined
+    const address = new URL(path, new URL(siteUrl).origin)
+    return `${address.origin}${address.pathname}`
+  } catch {
+    return undefined
+  }
+}
+
+// canonical과 og:url을 대표 주소 + 지금 경로로 만든다. 빌드는 이 둘을 넣지 않는다: 모든
+// 경로가 같은 HTML을 받아, 넣으면 모든 페이지가 첫 페이지를 가리킨다(vite.config.ts).
 export function pointAtSiteAddress(path = window.location.pathname) {
-  const canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
-  if (!canonical) return
-  const href = new URL(path, new URL(canonical.href).origin).href
+  const href = siteAddress(path)
+  if (!href) return
+  let canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
+  if (!canonical) {
+    canonical = document.createElement("link")
+    canonical.rel = "canonical"
+    document.head.append(canonical)
+  }
   canonical.href = href
-  document.querySelector('meta[property="og:url"]')?.setAttribute("content", href)
+  let url = document.querySelector<HTMLMetaElement>('meta[property="og:url"]')
+  if (!url) {
+    url = document.createElement("meta")
+    url.setAttribute("property", "og:url")
+    document.head.append(url)
+  }
+  url.content = href
 }
 
 // 화면이 계정이나 링크 하나를 위한 것이면 noindex인 robots 메타를 두고(체크인
