@@ -372,9 +372,9 @@ const en: Record<string, string> = {
 
   // 컴포넌트
   "회원 유형": "Account type",
-  "추천 지수 {score}. 성사 확률이 아니라 업종 · 태그 · 실적 · 함께한 이력 · 응답 준비로 매긴 추천 순서예요.": "Recommendation score {score}. Not a chance of success: an ordering from industry, tags, track record, past work together and readiness to answer.",
+  "추천 지수 {score}. 성사 확률이 아니라 업종 · 태그 · 실적 · 함께한 이력 · 응답 준비로 매긴 추천 순서예요.": "Match score {score}. Not a chance of success: an ordering from industry, tags, track record, past work together and readiness to answer.",
   "성사 확률이 아니라 추천 순서예요": "an ordering, not a chance of success",
-  "추천 지수": "Recommendation score",
+  "추천 지수": "Match score",
   "끊기지 않는": "An unbroken",
   "협찬의 고리": "chain of sponsors",
   "함께라서 더 단단하게": "Stronger together",
