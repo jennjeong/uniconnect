@@ -17468,6 +17468,11 @@ textarea {
   cursor: pointer;
 }
 
+a.site-notice-more {
+  display: inline-flex;
+  align-items: center;
+}
+
 /* 가입 양식에서 브랜드의 관심 협찬 유형(선택): 칩 묶음과 짧은 안내. */
 .signup-kinds {
   display: grid;

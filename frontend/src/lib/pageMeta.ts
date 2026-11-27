@@ -263,6 +263,18 @@ export function applyPageMeta({ title, description, noindex }: PageMeta) {
     document.querySelector(selector)?.setAttribute("content", description)
   }
   keepOutOfSearch(noindex === true)
+  pointAtSiteAddress()
+}
+
+// canonical과 og:url을 대표 주소 + 지금 경로로 맞춘다. 대표 주소는 빌드가 넣은
+// canonical의 origin이라, 기존 주소나 미리보기 주소로 열어도 대표 주소를 가리킨다.
+// 쿼리는 계정이나 링크 하나의 것이라 붙이지 않는다.
+export function pointAtSiteAddress(path = window.location.pathname) {
+  const canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
+  if (!canonical) return
+  const href = new URL(path, new URL(canonical.href).origin).href
+  canonical.href = href
+  document.querySelector('meta[property="og:url"]')?.setAttribute("content", href)
 }
 
 // 화면이 계정이나 링크 하나를 위한 것이면 noindex인 robots 메타를 두고(체크인
