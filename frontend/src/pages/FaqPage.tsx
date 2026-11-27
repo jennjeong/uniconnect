@@ -6,6 +6,7 @@ import { Presence } from "../components/Presence"
 import { RevealTitle } from "../components/RevealText"
 import { SearchClear } from "../components/SearchClear"
 import { faqTopics, type FaqTopic } from "../data/faq"
+import { operator } from "../data/legal"
 import { useFaqs } from "../hooks/useSiteState"
 import { t, tc } from "../i18n"
 import { AskModal } from "../modals/AskModal"
@@ -227,6 +228,9 @@ export function FaqPage({
             <button className="primary-button" onClick={goAsk} type="button">
               {t("관리자에게 질문하기")}
             </button>
+            <p className="field-hint">
+              {t("메일로 물어봐도 돼요.")} <a href={`mailto:${operator.email}`}>{operator.email}</a>
+            </p>
           </div>
         ) : (
           <FaqList items={shown} key={`${topic}-${words}-${picked}`} openQuestion={picked} />
