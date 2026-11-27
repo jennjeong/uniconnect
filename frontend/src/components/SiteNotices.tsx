@@ -7,6 +7,15 @@ import { Icon } from "./Icon"
 
 const dismissedKey = "uniconnect-dismissed-notices"
 
+// 공지가 약관이나 처리방침을 말하면 펼쳤을 때 그 문서로 바로 가는 링크를 단다.
+// 공지는 한 줄 요점만 두고, 적용 대상 · 기준 시각 · 예외 같은 자세한 내용은 문서에서 읽는다.
+const documentOf = (text: string) =>
+  /이용약관|약관/.test(text)
+    ? { href: "/terms", label: t("이용약관 보기") }
+    : /개인정보/.test(text)
+      ? { href: "/privacy", label: t("개인정보 처리방침 보기") }
+      : undefined
+
 function readDismissed(): string[] {
   try {
     return JSON.parse(localStorage.getItem(dismissedKey) ?? "[]") as string[]
@@ -58,10 +67,16 @@ export function SiteNotices({ viewer, infoShown = true }: { viewer: string; info
         >
           <Icon name={notice.tone === "warning" ? "bell" : "spark"} size={16} />
           <span className="site-notice-text">{lang === "en" ? notice.textEn || t(notice.text) : notice.text}</span>
-          {!open.includes(notice.id) && (
+          {!open.includes(notice.id) ? (
             <button className="site-notice-more" onClick={() => setOpen([...open, notice.id])} type="button">
               {t("자세히")}
             </button>
+          ) : (
+            documentOf(notice.text) && (
+              <a className="site-notice-more" href={documentOf(notice.text)?.href}>
+                {documentOf(notice.text)?.label}
+              </a>
+            )
           )}
           <button
             aria-label={t("공지 닫기")}

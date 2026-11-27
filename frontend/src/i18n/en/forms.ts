@@ -778,6 +778,8 @@ const en: Record<string, string> = {
   "오류": "Errors",
   // 운영자 콘솔 도구 (pages/AdminTools.tsx)와 사이트 공지
   "공지 닫기": "Close the notice",
+  "이용약관 보기": "Read the terms",
+  "개인정보 처리방침 보기": "Read the privacy policy",
   "{days}일째 대기": "Waiting {days} days",
   "{days}일째 입금 대기": "Transfer due {days} days",
   "종류": "Kind",
