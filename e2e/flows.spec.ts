@@ -27,12 +27,12 @@ async function logIn(page: Page, role: "학생단체" | "브랜드", email: stri
 
 test("search engines find the sitemap from robots.txt", async ({ request }) => {
   const robots = await (await request.get("/robots.txt")).text()
-  expect(robots).toContain("Sitemap: https://uniconnect-pied.vercel.app/sitemap.xml")
+  expect(robots).toContain("Sitemap: https://uniconnectkr.com/sitemap.xml")
   const sitemap = await request.get("/sitemap.xml")
   expect(sitemap.status()).toBe(200)
   expect(sitemap.headers()["content-type"]).toMatch(/xml/)
   const xml = await sitemap.text()
-  expect(xml).toContain("<loc>https://uniconnect-pied.vercel.app/faq</loc>")
+  expect(xml).toContain("<loc>https://uniconnectkr.com/faq</loc>")
   // 검색에서 뺀 화면은 계속 빠져 있다.
   expect(xml).not.toContain("/dashboard")
 })

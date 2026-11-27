@@ -217,7 +217,7 @@ npm run dev
 - 네이버 서치어드바이저와 구글 서치 콘솔의 사이트 소유 확인은 `site.json`의 `verification.naver` · `verification.google`에 받은 코드를 넣으면 모든 페이지 머리에 확인용 메타 태그(`naver-site-verification` · `google-site-verification`)가 들어간다. 등록하는 순서:
   1. 네이버 서치어드바이저(searchadvisor.naver.com)에서 사이트 주소를 등록하고, 'HTML 태그' 방식의 `content` 값을 받는다.
   2. 그 값을 `verification.naver`에 넣어 배포한 뒤 서치어드바이저에서 '소유확인'을 누른다.
-  3. '요청 → 사이트맵 제출'에 `https://uniconnect-pied.vercel.app/sitemap.xml`을 넣는다. 구글 서치 콘솔도 같은 방식이다.
+  3. '요청 → 사이트맵 제출'에 `https://uniconnectkr.com/sitemap.xml`을 넣는다. 구글 서치 콘솔도 같은 방식이다.
 - `frontend/public/llms.txt`는 AI 에이전트에게 서비스와 주요 화면을 소개한다.
 
 ### 로고
