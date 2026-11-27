@@ -210,6 +210,10 @@ agreementsRouter.put("/:id/items", async (req, res) => {
     if (label.length > 80) throw new HttpError(400, "할 일은 80자 이하로 적어 주세요.")
     return { id: String(raw?.id ?? ""), side: itemSide as AgreementItem["side"], label }
   })
+  // 있던 할 일은 한 번만 적을 수 있다. 같은 id를 두 번 보내면 아래 검사는 첫 번째만 보고,
+  // 두 번째가 그 일의 완료와 증빙을 가진 채 다른 쪽으로 옮겨진다.
+  const ids = written.map((entry) => entry.id).filter(Boolean)
+  if (new Set(ids).size !== ids.length) throw new HttpError(400, "같은 할 일이 두 번 들어 있어요.")
   const { agreement } = agreementFor(database, proposal)
   // 상대의 할 일은 상대 것이다. 지우거나 내 쪽으로 옮길 수 없고, 상대가 끝냈거나
   // 증빙을 붙인 뒤에는 문구도 그대로다. 내 할 일도 끝냈거나 증빙이 있으면 할

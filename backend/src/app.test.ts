@@ -10947,6 +10947,12 @@ test("an agreement's bulk edit can't remove, move or rewrite the other side's fi
   // 상대가 끝낸 일은 문구도 그대로다. 아직 손대지 않은 일은 고칠 수 있다.
   assert.equal((await call("PATCH", `/agreements/${id}/items/${brandItem.id}`, { done: true }, brand)).status, 200)
   assert.equal((await put(plain.map((item) => (item === brandItem ? { ...item, label: "바꾼 문구" } : item)))).status, 403)
+  // 같은 일을 두 번 적어, 그대로 둔 첫 번째로 검사를 넘기고 두 번째를 내 쪽으로 옮기지 못한다.
+  assert.equal((await put([...plain, { ...brandItem, side: "group", label: "가져온 일" }])).status, 400)
+  assert.equal(
+    (await call("GET", `/agreements/${id}`, undefined, group)).data.agreement.items.filter((item: { id: string }) => item.id === brandItem.id).length,
+    1,
+  )
   assert.equal((await put(plain.map((item) => (item === groupItem ? { ...item, label: "우리 일 고침" } : item)))).status, 200)
   // 끝낸 내 일은 할 사람을 바꾸지 못한다(그 완료가 상대 것이 되지 않게).
   const after = (await call("GET", `/agreements/${id}`, undefined, brand)).data.agreement.items as typeof items
