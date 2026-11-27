@@ -31,7 +31,7 @@ export type LegalDoc = {
 export const legalEffectiveDate = "2026-11-14"
 
 // 운영자이자 개인정보 보호책임자. 사업자 등록 전이라 상호와 등록번호는 아직 없다.
-export const operator = { name: "정은재", phone: "010-9208-0624" }
+export const operator = { name: "정은재", phone: "010-9208-0624", email: "help@uniconnectkr.com" }
 
 export const legalDraftNote =
   t("이 문서는 법률 검토를 받기 전의 초안이에요. 정식 출시 전에 검토를 받아 고칠 예정이에요.")
@@ -60,7 +60,8 @@ export const legalDocs: Record<LegalKind, LegalDoc> = {
         items: [
           t("운영자: {name}", operator),
           t("전화: {phone}", operator),
-          t("서비스에 관한 문의는 위 전화나 도움말 센터의 '관리자에게 질문하기'로 받아요."),
+          t("이메일: {email}", operator),
+          t("서비스에 관한 문의는 위 전화나 이메일, 도움말 센터의 '관리자에게 질문하기'로 받아요."),
         ],
       },
       {
@@ -460,8 +461,8 @@ export const legalDocs: Record<LegalKind, LegalDoc> = {
       {
         title: t("문의"),
         body: [
-          t("개인정보 보호책임자: 운영자 {name} · 전화 {phone}", operator),
-          t("개인정보에 관한 문의와 요청은 위 전화나 도움말 센터의 '관리자에게 질문하기'로 보내 주세요. 개인정보 침해에 대한 상담은 개인정보침해신고센터(국번 없이 118)에서도 받을 수 있어요."),
+          t("개인정보 보호책임자: 운영자 {name} · 전화 {phone} · 이메일 {email}", operator),
+          t("개인정보에 관한 문의와 요청은 위 전화나 이메일, 도움말 센터의 '관리자에게 질문하기'로 보내 주세요. 개인정보 침해에 대한 상담은 개인정보침해신고센터(국번 없이 118)에서도 받을 수 있어요."),
         ],
       },
     ],
