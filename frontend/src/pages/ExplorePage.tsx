@@ -163,7 +163,8 @@ export function ExplorePage({
         <ul className="post-grid stagger" key={`${kind}-${groupType}`}>
           {shown.map((event, index) => (
             <li key={event.id} style={{ "--i": index } as CSSProperties}>
-              {/* 행사명 → 학교 · 단체 · 날짜 → 지원 유형 · 남은 날 순으로 훑는다. 상태는 늘 오른쪽 위. */}
+              {/* 행사명 → 학교 · 단체 · 날짜 → 지원 유형 · 상태 · 남은 날 순으로 훑는다. 행사명이 한 줄을 다 쓰고,
+                  상태와 남은 날은 늘 셋째 줄 오른쪽에 있다. */}
               <article className="post-card explore-card">
                 <div className="explore-card-top">
                   <h3>
@@ -171,7 +172,6 @@ export function ExplorePage({
                       {event.name}
                     </button>
                   </h3>
-                  <span className={`explore-status ${statusTone[event.status] ?? "open"}`}>{t(event.status)}</span>
                 </div>
                 <p className="explore-card-meta">
                   {[event.group.school, event.group.name + (event.own ? ` · ${t("우리 단체")}` : ""), formatPeriod(event.date, event.endDate)]
@@ -180,7 +180,10 @@ export function ExplorePage({
                 </p>
                 <p className="explore-card-asks">
                   <span>{event.types.map((type) => t(type)).join(" · ") || t("지원 유형 협의")}</span>
-                  <span className="explore-dday">{dDayLabel(event.date)}</span>
+                  <span className="explore-card-state">
+                    <span className={`explore-status ${statusTone[event.status] ?? "open"}`}>{t(event.status)}</span>
+                    <span className="explore-dday">{dDayLabel(event.date)}</span>
+                  </span>
                 </p>
                 <small className="explore-card-sub">
                   {[event.venue, event.people && t("예상 {count}명", { count: event.people.replace(/명$/, "") })].filter(Boolean).join(" · ")}

@@ -97,14 +97,6 @@ export function WorkCard({
               <Icon name="close" size={16} />
             </button>
           )}
-          <button
-            aria-label={t("{name} 상세 정보", { name: match.name })}
-            className="work-badge"
-            onClick={onOpenDetail}
-            type="button"
-          >
-            <Icon name="arrowUpRight" size={18} />
-          </button>
         </span>
       </div>
 
@@ -116,7 +108,8 @@ export function WorkCard({
         <div className="work-title">
           <div className="work-name">
             <h3>
-              <button onClick={onOpenDetail} type="button">
+              {/* 이름을 눌러도 상세로 가지만, 키보드 순서에서는 아래 '상세 정보' 하나만 둔다. */}
+              <button onClick={onOpenDetail} tabIndex={-1} type="button">
                 {match.name}
               </button>
             </h3>

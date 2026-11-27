@@ -1385,7 +1385,7 @@
   font-weight: var(--weight-label);
 }
 
-/* 행사 둘러보기의 카드: 행사명과 상태가 한 줄, 그 아래 학교 · 단체 · 날짜, 지원 유형과 남은 날. */
+/* 행사 둘러보기의 카드: 행사명 한 줄, 그 아래 학교 · 단체 · 날짜, 지원 유형과 상태 · 남은 날. */
 .explore-card-top {
   display: flex;
   align-items: flex-start;
@@ -1447,6 +1447,13 @@
   gap: 4px var(--space-3);
   color: var(--ink);
   font-weight: var(--weight-label);
+}
+
+.explore-card-state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
 }
 
 .explore-dday {
