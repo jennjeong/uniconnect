@@ -895,6 +895,33 @@ test("health check and unknown routes", async () => {
   assert.equal((await call("GET", "/nope")).status, 404)
 })
 
+test("a sitemap page gets its own copy of the page from seo/, and every other address the shared one", async () => {
+  const seo = path.join(process.env.FRONTEND_DIST!, "seo")
+  await mkdir(seo, { recursive: true })
+  await writeFile(path.join(seo, "faq.html"), "<!doctype html><title>uniconnect FAQ</title>")
+  await writeFile(path.join(seo, "matches.html"), "<!doctype html><title>uniconnect matches</title>")
+  const page = async (route: string) => {
+    const response = await fetch(baseUrl.replace(/\/api$/, "") + route)
+    return { status: response.status, title: /<title>([^<]*)<\/title>/.exec(await response.text())?.[1] }
+  }
+  try {
+    // 자기 사본이 있는 한 단계짜리 주소. 쿼리는 상관없다.
+    assert.deepEqual(await page("/faq"), { status: 200, title: "uniconnect FAQ" })
+    assert.deepEqual(await page("/faq?from=footer"), { status: 200, title: "uniconnect FAQ" })
+    assert.deepEqual(await page("/matches"), { status: 200, title: "uniconnect matches" })
+    // 사본이 없는 화면, 더 깊은 주소, 대문자는 공용 페이지를 받는다.
+    assert.deepEqual(await page("/"), { status: 200, title: "uniconnect" })
+    assert.deepEqual(await page("/dashboard"), { status: 200, title: "uniconnect" })
+    assert.deepEqual(await page("/matches/cafe-1"), { status: 200, title: "uniconnect" })
+    assert.deepEqual(await page("/FAQ"), { status: 404, title: "uniconnect" })
+    assert.deepEqual(await page("/nope"), { status: 404, title: "uniconnect" })
+    // seo/ 밖의 파일 이름으로는 닿지 않는다.
+    assert.deepEqual(await page("/..%2Findex"), { status: 404, title: "uniconnect" })
+  } finally {
+    await rm(seo, { recursive: true, force: true })
+  }
+})
+
 test("pages load for every screen's address, and others answer 404", async () => {
   const page = async (route: string) => {
     const response = await fetch(baseUrl.replace(/\/api$/, "") + route)
