@@ -2,9 +2,11 @@ import { defineConfig, type HtmlTagDescriptor, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'node:path'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 
 import siteConfiguration from './site.config.json'
 import { sitemapXml } from './src/lib/sitemap'
+import { pageDocuments } from './src/lib/pageDocument'
 import { gaInitScript } from './src/lib/gaInit'
 import { en } from './src/i18n/en'
 import common from './src/i18n/en/common'
@@ -118,8 +120,22 @@ function siteDocument(config: SiteConfiguration): Plugin {
   }
   const gaInit = googleAnalyticsId ? gaInitScript(googleAnalyticsId) : ''
 
+  let outDir = ''
   return {
     name: 'site-document',
+    configResolved(resolved) {
+      if (resolved.command === 'build') outDir = path.resolve(resolved.root, resolved.build.outDir)
+    },
+    // 사이트맵의 페이지마다 자기 제목, 설명, canonical을 가진 HTML을 seo/에 둔다
+    // (lib/pageDocument.ts). 검색에서 빠진 사이트에는 만들지 않는다.
+    closeBundle() {
+      if (!outDir || !sitemap) return
+      const html = readFileSync(path.join(outDir, 'index.html'), 'utf8')
+      const documents = pageDocuments(html, config.sitemap ?? [], config.url)
+      if (!documents.length) return
+      mkdirSync(path.join(outDir, 'seo'), { recursive: true })
+      for (const [name, doc] of documents) writeFileSync(path.join(outDir, 'seo', `${name}.html`), doc)
+    },
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         if (!robotsTxt || req.url?.split('?')[0] !== '/robots.txt') return next()

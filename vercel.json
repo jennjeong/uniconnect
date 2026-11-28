@@ -19,6 +19,12 @@
   ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api" },
+    { "source": "/matches", "destination": "/seo/matches.html" },
+    { "source": "/groups", "destination": "/seo/groups.html" },
+    { "source": "/faq", "destination": "/seo/faq.html" },
+    { "source": "/plans", "destination": "/seo/plans.html" },
+    { "source": "/terms", "destination": "/seo/terms.html" },
+    { "source": "/privacy", "destination": "/seo/privacy.html" },
     { "source": "/:section(matches|groups)/:id?", "destination": "/index.html" },
     {
       "source": "/:page(dashboard|offers|events|measurement|reports|inbox|campaigns|analytics|new|faq|plans|terms|privacy|admin|council|explore|coupons)",
