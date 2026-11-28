@@ -108,7 +108,8 @@ export function staysAfterLogin(view: View, role: Role) {
 }
 
 // 앱은 기본 경로(base path) 아래에서 서빙될 수 있다 (vite.config.ts).
-const base = import.meta.env.BASE_URL.replace(/\/$/, "")
+// 빌드 설정(vite.config.ts)이 사이트맵 페이지의 HTML을 만들며 이 파일을 읽을 때는 env가 없다.
+const base = (import.meta.env?.BASE_URL ?? "/").replace(/\/$/, "")
 
 export function viewPath(view: View) {
   if (view.missing) return `${base}${view.missing}`

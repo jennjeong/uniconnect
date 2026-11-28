@@ -256,6 +256,10 @@ export function createApp({ loaded }: { loaded?: () => Promise<void> } = {}) {
     // (그러면 페이지가 404 화면을 보여 준다).
     app.use((req, res, next) => {
       if (req.method !== "GET") return next()
+      // 사이트맵의 페이지는 자기 제목과 canonical을 가진 사본을 받는다(frontend/src/lib/pageDocument.ts).
+      const page = /^\/([a-z]+(?:-[a-z]+)*)$/.exec(req.path)?.[1]
+      const own = page && path.join(config.frontendDist, "seo", `${page}.html`)
+      if (own && existsSync(own)) return res.sendFile(own)
       res.status(isAppPath(req.path) ? 200 : 404).sendFile(path.join(config.frontendDist, "index.html"))
     })
   }
