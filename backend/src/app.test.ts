@@ -1503,6 +1503,17 @@ test("a mail Resend can't take for a moment is sent once more with the same key,
     answers = [500, 500]
     await assert.rejects(sendMail("retry@retry-check.kr", "제목", "본문"))
     assert.equal(keys.length, 2)
+    // 다시 보낸 요청이 409(첫 요청을 아직 처리 중)면 같은 키로 한 번 더 물어 그 결과를 따른다.
+    keys.length = 0
+    answers = ["down", 409, 200]
+    await sendMail("retry@retry-check.kr", "제목", "본문")
+    assert.equal(keys.length, 3)
+    assert.ok(keys.every((key) => key === keys[0]))
+    // 처음부터 409인 것은 처리 중이 아니라 거절이라 다시 보내지 않는다.
+    keys.length = 0
+    answers = [409]
+    await assert.rejects(sendMail("retry@retry-check.kr", "제목", "본문"))
+    assert.equal(keys.length, 1)
     // 주소나 내용이 틀린 거절은 다시 보내지 않는다.
     keys.length = 0
     answers = [422]
