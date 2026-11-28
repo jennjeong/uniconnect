@@ -22,8 +22,13 @@ export const mailTransport = {
 
 // 답이 없거나 Resend가 잠시 받지 못할 때(429, 5xx) 한 번만 다시 보낸다. 주소나 내용이
 // 틀린 거절(4xx)은 다시 보내도 같으므로 그대로 실패한다.
+// 다시 보낸 요청이 409를 받으면 같은 키의 첫 요청을 Resend가 아직 처리하는 중이다
+// (concurrent_idempotent_requests). 실패로 두면 다음 크론이 새 키로 보내 두 통이 갈 수
+// 있으므로, 조금 더 기다려 같은 키로 한 번 더 묻는다. 그때는 첫 요청의 결과가 돌아온다.
 export const mailRetry = { waitMs: 800 }
 const worthRetrying = (response: Response | undefined) => !response || response.status === 429 || response.status >= 500
+const stillProcessing = (response: Response | undefined) => response?.status === 409
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 // 메일 본문의 한 줄과 제목에 넣기 전에, 회원이 쓴 값(이름 등)의 줄바꿈과 제어 문자를 공백으로
 // 바꾼다. 줄을 끼워 넣어 서비스가 보낸 안내처럼 보이게 하지 못하게 한다.
@@ -62,8 +67,12 @@ export async function sendMail(to: string, subject: string, text: string) {
   const send = () => mailTransport.post(body, key).catch(() => undefined)
   let response = await send()
   if (worthRetrying(response)) {
-    await new Promise((resolve) => setTimeout(resolve, mailRetry.waitMs))
+    await wait(mailRetry.waitMs)
     response = await send()
+    if (stillProcessing(response)) {
+      await wait(mailRetry.waitMs * 2)
+      response = await send()
+    }
   }
   if (!response?.ok) {
     mailHealth.lastFailedAt = new Date().toISOString()
